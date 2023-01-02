@@ -826,6 +826,10 @@ Outlines / edge detection:
     
   https://atyuwen.github.io/posts/normal-reconstruction/
 
+  https://twitter.com/csims314/status/1482123212188180490
+  https://github.com/OmarShehata/webgl-outlines
+  https://omar-shehata.medium.com/better-outline-rendering-using-surface-ids-with-webgl-e13cdab1fd94
+
 Linearize depth:
   https://learnopengl.com/Advanced-OpenGL/Depth-testing
   https://learnopengl.com/Advanced-Lighting/Shadows/Shadow-Mapping
@@ -959,3 +963,615 @@ Anti-aliasing:
 "Sokpop: I built a 3D engine in 2D":
   https://www.youtube.com/watch?v=chtRPC1ISyA
   example project: https://sokpop.itch.io/sokpop-fake-3d-demo
+
+Decals:
+  https://tuket.github.io/posts/2022-08-05-explosion-decals/
+
+Falconeer clouds:
+  https://youtu.be/5d8tx6K6hkk?t=6896
+  spheres, noise texture, fresnel effect to hide outside edges
+  tri-planar mapping to ea sphere
+    e.g. tri-planar: https://gamedevelopment.tutsplus.com/articles/use-tri-planar-texture-mapping-for-better-terrain--gamedev-13821
+  clouds are lit by using the skybox gradient (not lit on sphere)
+    "if i were to turn off the distortion, they would disappear into the sky"
+  sorting and clipping isn't an issue since clouds are so similar w/ tri-planar mapping
+  still does alpha sorting?
+
+Falconeer floodlights:
+  triangular prism,
+  addative,
+  fade out w/ depth blend so u don't get ugly intersections
+
+Reternal particle system:
+  This is a great talk about the custom particle system used in Reternal for everything incl tentacles
+  https://www.youtube.com/watch?v=qbkb8ap7vts
+  This could be a great starting point for our own particle system, and I think it fits nicely with the Cy workflow
+
+  "Semi-Lagrangian grid-based fluid sim"
+    centered around the player, running at all time
+      simulates air flow
+    particles can simple from it
+      and affect it?
+
+Twitter thread on downsampling, blur, and bloom:
+  https://twitter.com/BartWronsk/status/1570399970406305800
+  "
+  Downsample = lowpass filter + decimate (take one pixel in N).
+  Blur = lowpass filter.
+  "
+  what is Nyquist?
+  https://bartwronski.com/2022/03/07/fast-gpu-friendly-antialiasing-downsampling-filter/
+
+Ratchet and Clank team on lighting:
+  https://www.youtube.com/watch?v=geErfczxwjc
+  exposure is super important to get right
+
+"Let's talk about different ways of providing per draw data. What are their CPU and GPU performance implications?
+
+UBOs, instance rate VB, push constants...":
+  https://twitter.com/SebAaltonen/status/1573927036015546369
+
+Shadow maps take 2 by ThinMatrix:
+  https://www.youtube.com/watch?v=uueB2kVvbHo
+  Only render backfaces in shadow pass
+    challange: little light gaps at the seems
+  use percent-closer filtering + random-ish offsets
+    ideally circular; ideally comparison-filter (?)
+  update shadow map region based on camera
+
+HypeHype and Blender guys talking about line rendering:
+  https://twitter.com/hypersomniac_/status/1575776294096490496
+  https://twitter.com/SebAaltonen/status/1575778699378675712
+
+Recommendations for learning graphics programming:
+  https://medium.com/vrtigo/resources-for-beginning-graphics-programming-c0da724381bc
+  https://interplayoflight.wordpress.com/2018/07/08/how-to-start-learn-graphics-programming/
+  https://erkaman.github.io/posts/beginner_computer_graphics.html
+  https://www.realtimerendering.com
+  https://foundationsofgameenginedev.com
+
+Frustum culling:
+  https://bruop.github.io/frustum_culling/
+  better, seperating axis theorem:
+    https://gamedev.stackexchange.com/questions/44500/how-many-and-which-axes-to-use-for-3d-obb-collision-with-sat/44501#44501
+
+To sleuth:
+  https://www.reedbeta.com
+
+Bundling + frustum culling?
+  https://computergraphics.stackexchange.com/questions/13021/how-to-do-frustum-culling-with-draw-call-bundling
+  https://computergraphics.stackexchange.com/questions/4066/whats-the-main-difference-of-pipeline-process-between-vulkan-and-dx12
+  secondary command buffers (vulkan):
+    https://community.khronos.org/t/what-are-the-advantages-of-secondary-command-buffers/6977/5
+  dx12 vs vulkan:
+    https://computergraphics.stackexchange.com/questions/4066/whats-the-main-difference-of-pipeline-process-between-vulkan-and-dx12
+
+"GPU-driven rendering":
+  Offload culling and LOD selection to GPU?
+  https://advances.realtimerendering.com/s2015/aaltonenhaar_siggraph2015_combined_final_footer_220dpi.pdf
+
+Links from @reedbeta:
+    "Domipheus Labs", "Domipheus Labs", http://labs.domipheus.com/blog/feed/, http://labs.domipheus.com/blog
+    .mischief.mayhem.soap., .mischief.mayhem.soap., http://msinilo.pl/blog/?feed=rss2, http://msinilo.pl/blog2/
+    0 FPS, 0 FPS, https://0fps.net/feed/, https://0fps.net
+    A Graphics guy's note, A Graphics guy's note, https://agraphicsguy.wordpress.com/feed/, https://agraphicsguy.wordpress.com
+    A Random Walk Through Geek-Space, A Random Walk Through Geek-Space, http://www.sebastiansylvan.com/index.xml, https://www.sebastiansylvan.com/
+    Accidentally Quadratic, Accidentally Quadratic, http://accidentallyquadratic.tumblr.com/rss, https://accidentallyquadratic.tumblr.com/
+    Alexandre Pestana, Alexandre Pestana, http://www.alexandre-pestana.com/feed/, http://www.alexandre-pestana.com
+    Algorithmic Assertions, Algorithmic Assertions, http://algassert.com/feed.xml, http://algassert.com
+    Andreas Fredriksson, Andreas Fredriksson, http://deplinenoise.wordpress.com/feed/, https://deplinenoise.wordpress.com
+    Andrzej's C++ blog, Andrzej's C++ blog, http://akrzemi1.wordpress.com/feed/, https://akrzemi1.wordpress.com
+    Angelo Pesce, Angelo Pesce, http://c0de517e.blogspot.com/feeds/posts/default, http://c0de517e.blogspot.com/
+    Anteru's blog, Anteru's blog, https://anteru.net/rss.xml, https://anteru.net/
+    Apoorva Joshi, Apoorva Joshi, http://apoorvaj.io/feed.xml, http://apoorvaj.io
+    Aras' website, Aras' website, http://aras-p.info/atom.xml, https://aras-p.info/
+    Articles by Eric Arnebäck, Articles by Eric Arnebäck, https://erkaman.github.io/rss.xml, https://erkaman.github.io/articles.html
+    Arvid Gerstmann, Arvid Gerstmann, https://arvid.io/rss/, https://arvid.io/
+    Attila Áfra, Attila Áfra, http://voxelium.wordpress.com/feed/, https://voxelium.wordpress.com
+    Augmented Pixels, Augmented Pixels, https://www.tobias-franke.eu/log/rss/index.xml, https://www.tobias-franke.eu/
+    Avoyd devlog, Avoyd devlog, http://www.enkisoftware.com/rss, https://www.enkisoftware.com/
+    Bart Wronski, Bart Wronski, https://bartwronski.com/feed/, https://bartwronski.com
+    Bit Bashing, Bit Bashing, https://bitbashing.io/feed.xml, https://bitbashing.io/
+    bitsquid: development blog, bitsquid: development blog, http://bitsquid.blogspot.com/feeds/posts/default, http://bitsquid.blogspot.com/
+    Blog - Binomial, Blog - Binomial, http://www.binomial.info/blog?format=RSS, http://www.binomial.info/blog/
+    Blog - Stephanie Hurlburt, Blog - Stephanie Hurlburt, http://stephaniehurlburt.com/blog?format=RSS, http://stephaniehurlburt.com/blog/
+    Brian Karis, Brian Karis, http://graphicrants.blogspot.com/feeds/posts/default, http://graphicrants.blogspot.com/
+    Brian Sharpe, Brian Sharpe, http://briansharpe.wordpress.com/feed/, https://briansharpe.wordpress.com
+    Bruce Dawson, Bruce Dawson, http://randomascii.wordpress.com/feed/, https://randomascii.wordpress.com
+    C++ Secrets, C++ Secrets, http://cppsecrets.blogspot.com/feeds/posts/default, http://cppsecrets.blogspot.com/
+    Casey Muratori's Blog, Casey Muratori's Blog, http://mollyrocket.com/casey/stream_atom.rss, https://caseymuratori.com/blog
+    Cass Everitt, Cass Everitt, http://blog.xyzw.us/feeds/posts/default?alt=rss, http://blog.xyzw.us/
+    Casual Effects, Casual Effects, http://casual-effects.blogspot.com/feeds/posts/default, http://casual-effects.blogspot.com/
+    cbloom rants, cbloom rants, http://cbloomrants.blogspot.com/feeds/posts/default, http://cbloomrants.blogspot.com/
+    Christer Ericson, Christer Ericson, http://realtimecollisiondetection.net/blog/?feed=rss2, http://realtimecollisiondetection.net/blog
+    Christian Schüler, Christian Schüler, http://www.thetenthplanet.de/feed, http://www.thetenthplanet.de
+    Code &amp; Visuals, Code &amp; Visuals, http://blog.yiningkarlli.com/feeds/posts/default/, http://blog.yiningkarlli.com/
+    Code Capsule, Code Capsule, http://codecapsule.com/feed/, http://codecapsule.com
+    code4k, code4k, http://code4k.blogspot.com/feeds/posts/default, http://code4k.blogspot.com/
+    Coded Interactions, Coded Interactions, https://blog.dimitridiakopoulos.com/rss/, https://blog.dimitridiakopoulos.com/
+    CodeItNow, CodeItNow, http://www.rorydriscoll.com/feed/, http://www.rorydriscoll.com
+    codersnotes.com, codersnotes.com, http://www.codersnotes.com/rss/, http://www.codersnotes.com
+    Coding Horror, Coding Horror, http://feeds.feedburner.com/codinghorror/, https://blog.codinghorror.com/
+    Colour Science, Colour Science, https://www.colour-science.org/rss.xml, https://www.colour-science.org/
+    Computing and Recording, Computing and Recording, https://computingandrecording.wordpress.com/feed/, https://computingandrecording.wordpress.com
+    copypastepixel, copypastepixel, http://copypastepixel.blogspot.com/feeds/posts/default, http://copypastepixel.blogspot.com/
+    Cyril Crassin, Cyril Crassin, https://blog.icare3d.org/feeds/posts/default, https://blog.icare3d.org/
+    Dan Luu, Dan Luu, http://danluu.com/atom.xml, http://danluu.com/
+    Dev Curious - Medium, Dev Curious - Medium, https://blog.forrestthewoods.com/feed, https://blog.forrestthewoods.com?source=rss----4e87161953d9---4
+    Dreams of flashy pixels (on a white website), Dreams of flashy pixels (on a white website), https://flashypixels.wordpress.com/feed/, https://flashypixels.wordpress.com
+    duangle, duangle, https://blog.duangle.com/feeds/posts/default, https://blog.duangle.com/
+    Embedded in Academia, Embedded in Academia, http://blog.regehr.org/feed, https://blog.regehr.org
+    Emily Price, Emily Price, https://emilypriceisright.com/feed/, https://emilypriceisright.com
+    EpicShaders, EpicShaders, http://www.epicshaders.com/feed/, https://www.epicshaders.com
+    Extreme Learning, Extreme Learning, http://extremelearning.com.au/feed/, http://extremelearning.com.au
+    Fabian Giesen, Fabian Giesen, http://fgiesen.wordpress.com/feed/, https://fgiesen.wordpress.com
+    Fabien Sanglard, Fabien Sanglard, http://fabiensanglard.net/rss.xml, http://fabiensanglard.net
+    Filmic Worlds, Filmic Worlds, http://filmicworlds.com/feed.xml, http://filmicworlds.com/
+    Forward Scattering - The Weblog of Nicholas Chapman, Forward Scattering - The Weblog of Nicholas Chapman, http://www.forwardscattering.org/rss, http://www.forwardscattering.org/
+    fuzzy notepad, fuzzy notepad, http://eev.ee/feeds/atom.xml, https://eev.ee/
+    Fuzzy Reflection, Fuzzy Reflection, https://fuzzyreflection.com/feed/, https://fuzzyreflection.com
+    Gaffer On Games, Gaffer On Games, http://new.gafferongames.com/index.xml, https://gafferongames.com/
+    Gaming Reality, Gaming Reality, http://www.petecollier.com/?feed=rss2, http://www.petecollier.com
+    Gazoo.vrv, Gazoo.vrv, http://donw.io/index.xml, http://donw.io/
+    General Protection Fault, General Protection Fault, https://gpfault.net/rss.xml, http://www.gpfault.net/
+    Giliam de Carpentier, Giliam de Carpentier, http://www.decarpentier.nl/feed, http://www.decarpentier.nl
+    ginsweater's blog, ginsweater's blog, http://ginsweater.com/blog/feed/, http://ginsweater.com/blog
+    glowybits, glowybits, http://www.glowybits.com/index.xml, http://www.glowybits.com/index.xml
+    GPU Dissector, GPU Dissector, http://gpudissector.blogspot.com/feeds/posts/default, http://gpudissector.blogspot.com/
+    GPU Pro, GPU Pro, http://gpupro.blogspot.com/feeds/posts/default, http://gpupro.blogspot.com/
+    GPU Zen, GPU Zen, http://gpuzen.blogspot.com/feeds/posts/default?alt=rss, http://gpuzen.blogspot.com/
+    Graham Wihlidal, Graham Wihlidal, https://www.wihlidal.com/feed.xml, https://www.wihlidal.com/
+    Humus, Humus, http://www.humus.name/rss.xml, http://www.humus.name
+    I'm doing it wrong, I'm doing it wrong, http://imdoingitwrong.wordpress.com/feed/, https://imdoingitwrong.wordpress.com
+    Ignacio Castaño, Ignacio Castaño, http://castano.ludicon.com/blog/feed/, http://www.ludicon.com/castano/blog
+    Imagination, Imagination, https://imgtec.com/feed/, https://www.imgtec.com
+    Industrial Arithmetic, Industrial Arithmetic, http://industrialarithmetic.blogspot.com/feeds/posts/default, http://industrialarithmetic.blogspot.com/
+    Infinite-Realities, Infinite-Realities, http://ir-ltd.net/feed/, http://ir-ltd.net
+    James Dolan, James Dolan, http://jamesdolan.blogspot.com/feeds/posts/default, http://jamesdolan.blogspot.com/
+    James McNeill, James McNeill, http://playtechs.blogspot.com/feeds/posts/default, http://playtechs.blogspot.com/
+    Jendrik Illner - 3D Programmer on Jendrik Illner - 3D Programmer, Jendrik Illner - 3D Programmer on Jendrik Illner - 3D Programmer, https://www.jendrikillner.com/index.xml, https://www.jendrikillner.com/
+    Jeroen Baert, Jeroen Baert, https://www.forceflow.be/feed/, https://www.forceflow.be
+    Joe Duffy's Blog, Joe Duffy's Blog, http://joeduffyblog.com/feed.xml, http://joeduffyblog.com/
+    Johan Andersson, Johan Andersson, http://repi.blogspot.com/feeds/posts/default, http://repi.blogspot.com/
+    John Ahlgren, John Ahlgren, http://john-ahlgren.blogspot.com/feeds/posts/default, http://john-ahlgren.blogspot.com/
+    John Calsbeek, John Calsbeek, http://www.johncalsbeek.com/feed.xml, http://www.johncalsbeek.com
+    John White, John White, http://johnwhite3d.blogspot.com/feeds/posts/default, http://johnwhite3d.blogspot.com/
+    Jon Olick - Home, Jon Olick - Home, https://www.jonolick.com/2/feed, https://www.jonolick.com/home
+    Joost's Dev Blog, Joost's Dev Blog, http://joostdevblog.blogspot.com/feeds/posts/default, http://joostdevblog.blogspot.com/
+    Jorge Jimenez, Jorge Jimenez, http://www.iryoku.com/feed, http://www.iryoku.com
+    Julia Evans, Julia Evans, http://jvns.ca/atom.xml, http://jvns.ca
+    Kate Murphy, Kate Murphy, https://kate.io/feed.xml, https://kate.io/
+    Kosmokleaner, Kosmokleaner, http://kosmokleaner.wordpress.com/feed/, https://kosmokleaner.wordpress.com
+    kosmonaut's blog, kosmonaut's blog, http://kosmonautblog.wordpress.com/feed/, https://kosmonautblog.wordpress.com
+    Kostas Anagnostou, Kostas Anagnostou, http://interplayoflight.wordpress.com/feed/, https://interplayoflight.wordpress.com
+    Krister Walfridsson’s blog, Krister Walfridsson’s blog, https://kristerw.blogspot.com/feeds/posts/default, https://kristerw.blogspot.com/
+    Krzysztof Narkowicz, Krzysztof Narkowicz, http://knarkowicz.wordpress.com/feed/, https://knarkowicz.wordpress.com
+    Lei Zhang (antiagainst)'s Blog, Lei Zhang (antiagainst)'s Blog, https://antiagainst.github.io/index.xml, https://antiagainst.github.io/
+    Lia-Sae's Blog, Lia-Sae's Blog, http://feeds.lia-sae.net/main.rss.xml, http://lia-sae.net/
+    Light is beautiful, Light is beautiful, http://lousodrome.net/blog/light/feed/, http://lousodrome.net/blog/light
+    Maister's Graphics Adventures, Maister's Graphics Adventures, http://themaister.net/blog/feed/, http://themaister.net/blog
+    marc-b-reynolds.github.io, marc-b-reynolds.github.io, http://marc-b-reynolds.github.io/feed.xml, http://marc-b-reynolds.github.io
+    Marcelo's WebLog, Marcelo's WebLog, http://blogs.msdn.com/marcelolr/rss.xml, https://blogs.msdn.microsoft.com/marcelolr
+    Marmakoide's Blog, Marmakoide's Blog, http://blog.marmakoide.org/?feed=rss2, http://blog.marmakoide.org
+    Matt Pettineo, Matt Pettineo, http://mynameismjp.wordpress.com/feed/, https://mynameismjp.wordpress.com
+    Matt Pharr’s blog, Matt Pharr’s blog, http://pharr.org/matt/blog/feed.xml, https://pharr.org/matt/blog/
+    Matt Swoboda, Matt Swoboda, http://directtovideo.wordpress.com/feed/, https://directtovideo.wordpress.com
+    me == DeanoC, me == DeanoC, http://deanoc.com/rss.xml, http://deanoc.com/
+    Mediocre game technology, Mediocre game technology, https://tuxedolabs.blogspot.com/feeds/posts/default?alt=rss, https://tuxedolabs.blogspot.com/
+    Michal Valient, Michal Valient, http://www.dimension3.sk/feed/, http://www.dimension3.sk
+    Miles Macklin, Miles Macklin, http://blog.mmacklin.com/feed/, http://blog.mmacklin.com
+    Ming-Lun "Allen" Chou | 周明倫, Ming-Lun "Allen" Chou | 周明倫, http://allenchou.net/feed/, http://allenchou.net
+    Molecular Musings, Molecular Musings, http://molecularmusings.wordpress.com/feed/, https://blog.molecular-matters.com
+    Moments in Graphics, Moments in Graphics, http://momentsingraphics.de/?feed=rss2, http://momentsingraphics.de
+    Morten Mikkelsen, Morten Mikkelsen, http://mmikkelsen3d.blogspot.com/feeds/posts/default, http://mmikkelsen3d.blogspot.com/
+    Mr F, Mr F, http://ndotl.wordpress.com/feed/, https://ndotl.wordpress.com
+    Nathan Reed’s coding blog, Nathan Reed’s coding blog, http://reedbeta.com/feed/, http://reedbeta.com/
+    njs blog, njs blog, https://vorpus.org/blog/feeds/atom.xml, https://vorpus.org/blog/
+    nlguillemot, nlguillemot, https://nlguillemot.wordpress.com/feed/, https://nlguillemot.wordpress.com
+    NVIDIA Developer Blog, NVIDIA Developer Blog, http://developer.nvidia.com/blog/feed/2, https://devblogs.nvidia.com
+    OpenGL SuperBible, OpenGL SuperBible, http://www.openglsuperbible.com/feed/, http://www.openglsuperbible.com
+    Our Machinery, Our Machinery, https://ourmachinery.com/index.xml, https://ourmachinery.com/
+    Outerra, Outerra, https://outerra.blogspot.com/feeds/posts/default, https://outerra.blogspot.com/
+    Pablo Zurita's blog, Pablo Zurita's blog, http://pzurita.wordpress.com/feed/, https://pzurita.wordpress.com
+    Pete Shirley's Graphics Blog, Pete Shirley's Graphics Blog, http://psgraphics.blogspot.com/feeds/posts/default, http://psgraphics.blogspot.com/
+    Peter Sikachev Dev Blog, Peter Sikachev Dev Blog, http://petersikachev.blogspot.com/feeds/posts/default?alt=rss, http://petersikachev.blogspot.com/
+    pixel jet stream, pixel jet stream, https://pixeljetstream.blogspot.com/feeds/posts/default, https://pixeljetstream.blogspot.com/
+    Pointers Gone Wild, Pointers Gone Wild, http://pointersgonewild.com/feed/, https://pointersgonewild.com
+    Preshing on Programming, Preshing on Programming, https://preshing.com/feed, https://preshing.com/
+    Programming in the 21st Century, Programming in the 21st Century, http://prog21.dadgum.com/atom.xml, http://prog21.dadgum.com/
+    Promit's Ventspace, Promit's Ventspace, http://ventspace.wordpress.com/feed/, https://ventspace.wordpress.com
+    Pronounced /ˈʃɪ.vəʊ.æ/, Pronounced /ˈʃɪ.vəʊ.æ/, https://blog.shivoa.net/feeds/posts/default, https://blog.shivoa.net/
+    Rambles about code, games and other things, Rambles about code, games and other things, http://chainedchaos31.tumblr.com/rss, http://chainedchaos31.tumblr.com/
+    Randy Gaul's Game Programming Blog, Randy Gaul's Game Programming Blog, http://www.randygaul.net/feed/, http://www.randygaul.net
+    Ray Tracey's blog, Ray Tracey's blog, http://raytracey.blogspot.com/feeds/posts/default, http://raytracey.blogspot.com/
+    Real-Time Rendering, Real-Time Rendering, http://www.realtimerendering.com/blog/feed/, http://www.realtimerendering.com/blog
+    Real-Time Voxels, Real-Time Voxels, http://realtimevoxels.blogspot.com/feeds/posts/default, http://realtimevoxels.blogspot.com/
+    Rendering Equations, Rendering Equations, https://schuttejoe.github.io/index.xml, https://schuttejoe.github.io/
+    Rich Geldreich's Tech Blog, Rich Geldreich's Tech Blog, http://richg42.blogspot.com/feeds/posts/default, http://richg42.blogspot.com/
+    Run Hello, Run Hello, http://msm.grumpybumpers.com/?feed=rss2, https://msm.runhello.com
+    Sébastien Lagarde, Sébastien Lagarde, http://seblagarde.wordpress.com/feed/, https://seblagarde.wordpress.com
+    Sam Martin, Sam Martin, http://www.palgorithm.co.uk/feed/, http://www.palgorithm.co.uk
+    Sanders' blog, Sanders' blog, https://sandervanrossen.blogspot.com/feeds/posts/default, https://sandervanrossen.blogspot.com/
+    Shiny Pixels, Shiny Pixels, http://vec3.ca/feed/, http://vec3.ca
+    Simon schreibt., Simon schreibt., http://simonschreibt.blogspot.com/feeds/posts/default, http://simonschreibt.blogspot.com/
+    Simon's Graphics Blog, Simon's Graphics Blog, http://sjbrown.co.uk/index.xml, http://sjbrown.co.uk/
+    Snorri Sturluson, Snorri Sturluson, https://snorristurluson.github.io/feed.xml, https://snorristurluson.github.io//
+    Solid Angle, Solid Angle, http://solid-angle.blogspot.com/feeds/posts/default, https://solid-angle.blogspot.com/
+    Sophie's Blog, Sophie's Blog, http://www.sophiehoulden.com/feed/, http://www.sophiehoulden.com
+    Stephen Hill, Stephen Hill, http://blog.selfshadow.com/feed/, http://blog.selfshadow.com/
+    Steve McAuley, Steve McAuley, http://blog.stevemcauley.com/feed/, http://blog.stevemcauley.com
+    Stevey's Blog Rants, Stevey's Blog Rants, http://steve-yegge.blogspot.com/feeds/posts/default, http://steve-yegge.blogspot.com/
+    Stories by April Wensel on Medium, Stories by April Wensel on Medium, https://medium.com/feed/@Aprilw, https://medium.com/@Aprilw?source=rss-e52a7bee92a7------2
+    Stories by Ben Golus on Medium, Stories by Ben Golus on Medium, https://medium.com/feed/@bgolus, https://medium.com/@bgolus?source=rss-d4d33ac3d661------2
+    Stories by Fred Jennings on Medium, Stories by Fred Jennings on Medium, https://medium.com/feed/@Esquiring, https://medium.com/@Esquiring?source=rss-91833865fa3f------2
+    Stories by Steve Yegge on Medium, Stories by Steve Yegge on Medium, https://medium.com/feed/@steve.yegge, https://medium.com/@steve.yegge?source=rss-c1ec701babb7------2
+    Syntopia, Syntopia, http://blog.hvidtfeldts.net/index.php/feed/, http://blog.hvidtfeldts.net
+    The Big Mud Puddle, The Big Mud Puddle, http://evincarofautumn.blogspot.com/feeds/posts/default, http://evincarofautumn.blogspot.com/
+    The blog at the bottom of the sea, The blog at the bottom of the sea, http://blog.demofox.org/feed/, https://blog.demofox.org
+    The blog of Kyle Halladay, The blog of Kyle Halladay, http://kylehalladay.com/atom.xml, http://kylehalladay.com
+    The Brain Dump, The Brain Dump, http://floooh.github.com/feed.xml, https://floooh.github.com/
+    The Burning Basis Vector, The Burning Basis Vector, http://www.joshbarczak.com/blog/?feed=rss2, http://www.joshbarczak.com/blog
+    The Code Deposit, The Code Deposit, http://codedeposit.blogspot.com/feeds/posts/default, http://codedeposit.blogspot.com/
+    The Hacks of Life, The Hacks of Life, http://hacksoflife.blogspot.com/feeds/posts/default, http://hacksoflife.blogspot.com/
+    The Legend of GameDev, The Legend of GameDev, http://david.fancyfishgames.com/feeds/posts/default, http://david.fancyfishgames.com/
+    The Old New Thing, The Old New Thing, http://blogs.msdn.com/oldnewthing/rss.xml, https://blogs.msdn.microsoft.com/oldnewthing
+    The Visual Studio Blog, The Visual Studio Blog, http://blogs.msdn.com/b/visualstudio/rss.aspx, https://blogs.msdn.microsoft.com/visualstudio
+    The Witness, The Witness, http://the-witness.net/news/feed/, http://the-witness.net/news
+    Tom Bissell, Tom Bissell, http://grantland.com/contributors/tom-bissell/feed/, http://grantland.com
+    Tom Forsyth, Tom Forsyth, http://tomforsyth1000.github.io/blog.wiki.xml, http://eelpi.gotdns.org/blog.wiki.html
+    Tom Hammersley, Tom Hammersley, http://tomhammersley.blogspot.com/feeds/posts/default, http://tomhammersley.blogspot.com/
+    Tony Albrecht, Tony Albrecht, http://seven-degrees-of-freedom.blogspot.com/feeds/posts/default, http://seven-degrees-of-freedom.blogspot.com/
+    TRYING TO FIND THE OBVIOUS, TRYING TO FIND THE OBVIOUS, http://www.hlsl.co.uk/blog?format=RSS, http://www.hlsl.co.uk/
+    Video Encoding &amp; Streaming Technologies, Video Encoding &amp; Streaming Technologies, http://sonnati.wordpress.com/feed/, https://sonnati.wordpress.com
+    Wicked Engine DevBlog, Wicked Engine DevBlog, https://turanszkij.wordpress.com/feed/, https://turanszkij.wordpress.com
+    Will push pixels for food, Will push pixels for food, http://www.gijskaerts.com/wordpress/?feed=rss2, http://www.gijskaerts.com/wordpress
+    Windows Subsystem for Linux, Windows Subsystem for Linux, https://blogs.msdn.microsoft.com/wsl/feed/, https://blogs.msdn.microsoft.com/wsl
+    Wolfgang Engel, Wolfgang Engel, http://diaryofagraphicsprogrammer.blogspot.com/feeds/posts/default, http://diaryofagraphicsprogrammer.blogspot.com/
+    WORK: A Guide, WORK: A Guide, https://www.workaguide.com/?format=rss, https://www.workaguide.com/
+    xoofx, xoofx, http://xoofx.com/feed.xml, http://xoofx.com/
+    Yosoygames, Yosoygames, http://yosoygames.com.ar/wp/feed/, http://www.yosoygames.com.ar/wp
+    Yuriy O'Donnell, Yuriy O'Donnell, http://kayru.org/feed.xml, http://kayru.org/
+    Zack Rusin, Zack Rusin, http://zrusin.blogspot.com/feeds/posts/default, http://zrusin.blogspot.com/
+    Zero Wind :: Jamie Wong, Zero Wind :: Jamie Wong, http://feeds.feedburner.com/JamieWong, http://jamie-wong.com/
+    zeuxcg.org, zeuxcg.org, http://zeuxcg.org/feed/, http://zeuxcg.org
+    ZigguratVertigo's Hideout, ZigguratVertigo's Hideout, http://zigguratvertigo.com/feed/, https://colinbarrebrisebois.com
+
+Algebraic Geometry for Computer Graphics:
+  https://courses.cs.washington.edu/courses/cse590b/13au/
+  hn commenter recommended:
+    http://www.cs.uu.nl/docs/vakken/magr/2021-2022/index.html
+
+Wind on terrain simulation:
+  https://nickmcd.me/2022/10/01/procedural-wind-and-clouds-using-gpu-accelerated-lattice-boltzmann-method/
+
+Indirect draw in WebGPU?
+  https://github.com/gpuweb/gpuweb/issues/2189
+  https://gpuweb.github.io/gpuweb/#dom-gpurendercommandsmixin-drawindirect
+
+Backstory on splitting render passes?
+  https://github.com/gpuweb/gpuweb/issues/2046#issuecomment-909981545
+
+Regarding Nanite:
+  https://golden-mandolin-675.notion.site/Notes-about-Nanite-in-UE5-1-preview-1bd49cb5986a46629214b82f9ce58ae5
+  https://www.youtube.com/watch?v=eviSykqSUUw
+  https://docs.unrealengine.com/5.0/en-US/nanite-virtualized-geometry-in-unreal-engine/
+    meshes are analyzed and broken down into hierarchical clusters of triangle groups.
+    clusters are swapped on the fly at varying levels of detail based on the camera view, and connect perfectly without cracks to neighboring clusters within the same object. Data is streamed in on demand so that only visible detail needs to reside in memory. Nanite runs in its own rendering pass that completely bypasses traditional draw calls.
+    Nanite is currently limited to rigid meshes
+    "the maximum number of instances that can be present in the scene is hard-locked to 16 million instances"
+      uint24 ?
+      "Only instances streamed in are counted towards the total."
+  https://advances.realtimerendering.com/s2021/Karis_Nanite_SIGGRAPH_Advances_2021_final.pdf
+    considered:
+      voxels
+        doesn't work well for hard surfaces, animation, and uses too much space
+        it's a form of uniform resampling, which will never work
+      subdivision Surfaces
+        doesn't make things low-poly enough
+      displacement maps
+        doesn't work on bike chain, can't increase genus of a surface
+         it's a form of uniform resampling
+      Geometry images, 
+        same as displacement maps
+      Point rendering
+        super fast (?)
+        requires hole filling, a basically unsolvable problem
+          intentional gap or hole?
+        needs extra connectivity data, aka triangle index buffer (lol)
+        seems ripe for ML
+        Denoising is a form of sparse data interpolation
+      triangles
+        "for our requirements have found no higher quality or faster solution than triangles."
+        "If you can build an art style around the aesthetics of one of these other representations and embrace their pros and cons they could be incredibly valuable but Unreal can’t impose an art style."
+      Renderer now retained mode
+        ● GPU scene representation persists across frames
+        ● Sparsely updated where things change
+        ● All vertex/index data in single large resource
+      Per view:
+        ● GPU instance cull
+        ● Triangle rasterization
+      If only drawing depth the entire scene can draw with 1 DrawIndirect
+      unreal has a "retained mode design"
+      mesh data is stored in single large resources.
+      This means we can touch any of it at once without requiring bindless resources to do so.
+      necessary building blocks for a GPU driven pipeline.
+      Group triangles into clusters
+        ● Build bounding data for each cluster
+      Cull clusters based on bounds 
+        ● Frustum cull
+        ● Occlusion cull
+          Hierarchical Z-Buffer (HZB)
+      We are all familiar with cluster culling made popular by [40] and, [41] but the idea goes way back, at least to 1996 [37]
+      "We have found cone based backface culling is not typically worthwhile"
+      occlusion culling:
+        The test is identical to [39].
+        Visible objects last frame are likely still visible this frame
+        Two pass:
+          Draw what was visible in the previous frame
+          Build HZB
+          Draw what is visible now but wasn’t in the last frame
+          Conservative, Only falls apart under extreme visibility changes
+      First GPU occlusion: “March of the Froblins” [38]
+      First two-pass occlusion: “Patch-based Occlusion Culling for Hardware Tessellation” [19]
+      "Decouple visibility from material"
+        want to eliminate:
+          Switching shaders during rasterization
+          Overdraw for material eval
+          Depth prepass to avoid overdraw
+          Pixel quad inefficiencies from dense meshes
+        options:
+          object space shading:
+            REYES
+            Texture space shading
+            but these overshade by 4x or more
+              maybe solvable through caching but: view dependent, animating, non UV based, materials r too common
+          Deferred materials
+      Visibility Buffer
+        Write geometry data to screen:
+          Depth, InstanceID, TriangleID
+        Material shader per pixel:
+          Load VisBuffer
+          Load instance transform
+          Load 3 vert indexes
+          Load 3 positions
+          Transform positions to screen
+          Derive barycentric coordinates (?TO LEARN) for pixel
+          Load and lerp attributes
+        Sounds crazy? Not as slow as it seems
+          Lots of cache hits
+          No overdraw or pixel quad inefficiencies
+        Material pass writes GBuffer
+          Integrates with rest of our deferred shading renderer
+        Now we can draw all opaque geometry with 1 draw
+          Completely GPU driven
+          Not just depth prepass
+          Rasterize triangles once per view
+      "CPU cost is independent from number of objects in the scene or in view."
+      "Materials are a draw per shader"
+      "rasterize triangles once per view"
+      Linear scaling in instances can be ok
+        "We can handle a million instances easily."
+      Linear scaling in triangles is not ok
+      "Memory bandwidth is not a good vector to lean on."
+      the cost of rendering geometry should scale with screen resolution, not scene complexity.
+      hierarchy of LODs, Simplest is tree of clusters
+        Parents are the simplified versions of their children
+      view dependent cut of LOD tree
+        "based on the screen space projected error of the cluster."
+      Request data on demand during rendering
+        Like virtual texturing
+      Cracks!
+        Naive solution: Lock shared boundary edges during simplification
+          Collects dense cruft, Especially between deep subtrees
+      Cracks solution:
+        Can detect these cases during build
+        Group clusters
+          Force them to make the same LOD decision
+          Now free to unlock shared edges and collapse them
+        The key idea is to alternate group boundaries from level to level by grouping different clusters.
+        What is a boundary in one level becomes the interior in the next level
+    It wasn’t until years later after partly implementing QuickVDR that I tried rereading it once again and it sunk in how insightful it really was as a super set of multiple schemes.
+      I highly recommend reading this dissertation by Federico Ponchio https://d-nb.info/997062789/34 if the original paper doesn’t make sense at first. The slides for the paper are also helpful http://vcg.isti.cnr.it/Publications/2005/CGGMPS05/Slide_BatchedMT_Vis05.pdf
+    "we want groups of multiples of 128 triangles such that they can be divided into clusters of exactly 128."
+     Build operations
+      Cluster original triangles
+      While NumClusters > 1
+        Group clusters to clean their shared boundary
+        Merge triangles from group into shared list
+        Simplify to 50% the # of triangles
+        Split simplified triangle list into clusters (128 tris)
+    Group those with the most shared boundary edges ● Less boundary edges == less locked edges
+      This problem is called graph partitioning
+      Partition a graph optimizing for minimum edge cut cost
+      "Use METIS library to solve"
+    TODO: impl http://gamma.cs.unc.edu/QVDR/
+    Mesh simplify
+      Edge collapsing
+        "typical edge collapsing decimation"
+      Picks smallest error edge first
+      Error calculated using Quadric Error Metric (QEM)
+      Optimizes position of new vertex for minimal error
+      Highly refined
+      Returns estimate of error introduced
+        Later projected on screen to number of pixels error
+        The hardest part!
+      "So I calculate the average surface area per triangle and rescale the mesh such that that is roughly a constant I chose as a good mix of position to attribute balance."
+      "That small guy on the shoulder of the big guy is actually a really important case to get right."
+    Runtime LOD cutting on cluster DAG:
+      parallel on GPU, no communication or expansion
+      Draw a cluster when:
+        Parent error is too high &&
+        Our error is small enough
+      only works if there is a unique cut,
+        so force error to be monotonic
+    No LOD popping b/c of:
+      < 1 pixel error
+        between parent and child LOD?
+        "This is the reason why getting an accurate error estimate is so important."
+      (temporal antialiasing) TAA
+    When can we LOD cull a cluster?
+      Render: ParentError > threshold && ClusterError <= threshold
+      Cull: ParentError <= threshold || ClusterError > threshold
+        "we build a BVH (bounding volume hierarchy?) over the clusters."
+          "Traversing this tree is a classic parallel expansion work scheduling problem."
+          Persistent threads model:
+            Can’t spawn new threads. Reuse them instead!
+            Manage our own job queue
+            Single dispatch with enough worker threads to fill GPU
+            "Use simple multi-producer multi-consumer (MPMC) job-queue to communicate between threads"
+    TOLEARN: "Cluster selection must be isotropic like mip selection"
+    TODO: when rendering engineers say "vertex colors", what do they mean?
+    My summary of what's novel about nanite:
+      Better triangle cluster boundries than prior work
+      Better LOD switching b/c of good error estimation
+      Basically really good at solving cracks between clusteres of triangles w/ different LODs
+      Lots of engineering throughout to make it practical
+      Why now?
+        SSDs are necessary,
+        GPUs are powerful enough for a ton of per-pixel work
+        There's a threshold in GPU and memory that needs to be crossed in order to get such scene complexity-invariant results
+      Weakest at folliage like leaves and grass; still a big TODO for them
+      
+
+  Unanswered:
+    https://gamedev.stackexchange.com/questions/198454/how-does-unreal-engine-5-nanite-works
+      
+to read, nanite guys: 
+  https://www.wihlidal.com/blog/
+  http://graphicrants.blogspot.com
+
+HZB:
+  https://docs.unrealengine.com/4.26/en-US/RenderingAndGraphics/VisibilityCulling/
+
+HiZ culling:
+  https://www.rastergrid.com/blog/2010/10/hierarchical-z-map-based-occlusion-culling/
+
+Unreal Lumen:
+  https://knarkowicz.wordpress.com/2022/08/18/journey-to-lumen/
+  http://advances.realtimerendering.com/s2022/index.html#Lumen
+
+HPG panel talk:
+  https://youtu.be/CoGo_3C7xR0?t=14108
+
+ZeniMax guy blog:
+  https://alextardif.com/eden.html
+
+WickedEngine:
+  https://wickedengine.net
+
+"what a "minimum viable" gpu api would look like":
+  https://twitter.com/nice_byte/status/1579187394880090112
+  "
+  dynamic rendering is very good. toss renderpasses, subpasses and framebuffers into the trash bin.
+  programmable vertex pulling only.
+  fully bindless. no binding images, buffers or anything else, ever. toss descriptor sets to the same pile as renderpasses.
+  in fact, no "buffers". preallocate chunks of different types of memory (e.g. for constants, for vert data), expose them to shaders and let the shader figure it out.
+  eliminate the concept of "samplers" from cpu code.  shaders have an indexable table of predefined samplers, and use them as necessary.
+  no msaa. everyone's doing taa these days anyway
+  do something so that the application knows what kinds of memory it's going to need _before_ it starts creating resources. right now in vk you don't know which heap you want until you actually create an image or buffer.
+  synchronization can probably be kept at api level. if you write your code carefully you can keep it to a minimum anyway.
+  "
+
+TAA (temporal anti-aliasing):
+  https://en.wikipedia.org/wiki/Temporal_anti-aliasing
+  seems like everybody uses this; more performant than MSAA?
+  Brief overview of AA: https://www.youtube.com/watch?v=g8iliJFLHSQ
+  TAA impl in INSIDE: https://www.youtube.com/watch?v=2XXS5UyNjjU
+  Brian Karis re TAA: https://twitter.com/BrianKaris/status/1327712610364522496
+
+  "Optical flow. :) I’d very seriously consider it. ILK can be super fast on the GPU."
+    ?
+
+"Monte Carlo integration of the rendering equation":
+  What is it?
+  https://twitter.com/BrianKaris/status/1327713322184019968?s=20&t=i_47-O6x15oB2ujl1OQjOA
+  
+  https://www.cs.rpi.edu/~cutler/classes/advancedgraphics/S08/lectures/17_monte_carlo.pdf
+
+TODO: Dreams' point-based renderer
+  "atomic scattering points" ?
+  "vray proxies", "grave hope"
+  infinitesimal points
+    fast scatter through binning
+      64bit atomics
+    holes and AA
+    thickening problem
+    prefiltered AA doesn't work
+    binning points === nearest neighbor filtering
+  
+
+Concepts to clarify:
+  "Filtering"
+    Pre-filtering ?
+  mip-maps
+  denoising
+  prefix sum
+  caches: where, how big, when it matters,
+  CSG
+  How does ray tracing hardware work??
+    "blast"
+    "t-lass" ?
+    BVHs
+
+Big question: how do user shaders work with Nanite?
+  connection / handoff is confusing to me
+
+"What are the most distracting *visual* artifacts in video games that bother you, personally, most of the time?"
+  "Banding in subtle gradients. Just throw a simple dither in post it's free!"
+    https://www.shadertoy.com/view/MdccD2
+
+"Please stop using screen-space reflections [...]"
+  ray tracing or cube map under the water
+
+Half-edge data structures:
+  http://15462.courses.cs.cmu.edu/fall2018/lecture/meshes/slide_028
+
+Transparency:
+  http://learnwebgl.brown37.net/11_advanced_rendering/alpha_blending.html
+  http://www.opengl-tutorial.org/intermediate-tutorials/tutorial-10-transparency/
+  https://learnopengl.com/Advanced-OpenGL/Blending
+
+What is: parallax mapping
+  https://twitter.com/SebAaltonen/status/1593577976637038592
+  terms: parallax mapping", QDM (xbox360 era), UGC, shell mapping (xbox1 era), Cone step mapping
+  "If you need runtime compose with generate - I would still use it. Soft shadows in texture space are a nice boon too if composed to minimize sample count"
+  "parallax mapping of any kind is a risk that needs to account for sliding textures and limited silhouettes; especially with UGC where you don't want people wasting time covering up the artefacts."
+  https://developer.nvidia.com/gpugems/gpugems3/part-iii-rendering/chapter-18-relaxed-cone-stepping-relief-mapping
+  https://www.gamedevs.org/uploads/quadtree-displacement-mapping-with-height-blending.pdf
+    https://www.gdcvault.com/play/1012014/Quadtree-Displacement-Mapping-with-Height
+    Michal Drobot
+  https://www.unrealengine.com/marketplace/en-US/product/get-relief-rcsm-generator?sessionInvalidated=true
+  
+BotW lighting overview:
+  https://www.youtube.com/watch?v=By7qcgaqGI4&t=2s
+  more BoTW:
+    cedec 2017
+
+  great website for disecting old game rendering:
+    https://noclip.website
+
+  cell shading in Windwaker:
+    https://www.youtube.com/watch?v=mnxs6CR6Zrk
+
+  mario galaxy gravity and shadows:
+    https://www.youtube.com/watch?v=QLH_0T_xv3I
+
+Returnal Particles:
+  https://twitter.com/SharmanJag/status/1607712952601219072
+  3/ Basics. A particle size equals the voxel size. Particles request for vacant slots in a volume while moving. The voxels are represented with a single bit. 1 : "Occupied" and 0 : "Vacant". Requests are atomic operations. If "occupied", we resolve the collision, otherwise move.
+  6/ Oh dear, the creature we created the effect for is not watertight. Well, I made a look-up table to map each vertex to a bone segment. All we needed to do was to populate each triangle with points and trace towards the bone while requesting for occupancy. Now we have our volume
+
+More amazing Returnal grass:
+  https://twitter.com/JankkilaRisto/status/1605905980528553984
+  12/ Here's the final version of the effect again, with a split screen showing the particle structure. The first particle in the chain is given velocity towards the player head. We damp the velocity when the particle is within a given radius from the player.
+
+"Learning Modern 3D Graphics Programming (2012)":
+  https://paroj.github.io/gltut/
+  https://news.ycombinator.com/item?id=34165295
+
+WebGPU native samples:
+  https://github.com/samdauwe/webgpu-native-examples
+
+Vulkan guides:
+  https://vkguide.dev
+  https://vulkan-tutorial.com

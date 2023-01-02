@@ -74,7 +74,7 @@ function registerConnectToServer(em: EntityManager) {
 
 function registerHandleJoin(em: EntityManager) {
   let handleJoin = (
-    peers: { peer: Peer; inbox: Inbox; outbox: Outbox }[],
+    peers: readonly { peer: Peer; inbox: Inbox; outbox: Outbox }[],
     { me }: { me: { pid: number; host: boolean } }
   ) => {
     for (let { peer, inbox, outbox } of peers) {
@@ -114,7 +114,7 @@ function registerHandleJoin(em: EntityManager) {
 
 function registerHandleJoinResponse(em: EntityManager) {
   let handleJoinResponse = (
-    peers: { peer: Peer; inbox: Inbox; outbox: Outbox }[],
+    peers: readonly { peer: Peer; inbox: Inbox; outbox: Outbox }[],
     { eventsToNetwork }: { eventsToNetwork: ToNetworkEvent[] }
   ) => {
     for (let { peer, inbox, outbox } of peers) {

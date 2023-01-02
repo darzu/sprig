@@ -1,8 +1,9 @@
 import { mathMap } from "../../math.js";
+import { vec4 } from "../../sprig-matrix.js";
 import { createRenderTextureToQuad } from "../gpu-helper.js";
 import { CY } from "../gpu-registry.js";
+import { UVUNWRAP_MASK } from "../pipeline-masks.js";
 import { oceanPoolPtr } from "./std-ocean.js";
-import { vec4 } from "../../sprig-matrix.js";
 
 // TODO(@darzu): parameterize and generalize this for other meshes
 
@@ -52,9 +53,6 @@ fn vertMain(input: VertexInput) -> VertexOutput {
   return output;
 }
 `;
-
-// TODO(@darzu): how to ensure there aren't collisions? Probably won't be a problem..
-export const UVUNWRAP_MASK = 0x0001;
 
 // TODO(@darzu): it isn't great having two pipelines for this, but I'm not
 //    sure of a better way. render attachments need to be the same size

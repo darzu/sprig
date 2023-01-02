@@ -18,8 +18,8 @@ import {
   RenderableDef,
 } from "../render/renderer-ecs.js";
 import { RendererDef } from "../render/renderer-ecs.js";
-import { ColorDef } from "../color.js";
 import { tempVec3 } from "../temp-pool.js";
+import { ColorDef } from "../color-ecs.js";
 
 export interface ClothConstruct {
   location: vec3;
@@ -172,12 +172,15 @@ onInit((em: EntityManager) => {
     (cloths, { renderer }) => {
       for (let cloth of cloths) {
         // NOTE: this cast is only safe so long as we're sure this mesh isn't being shared
-        const m = cloth.renderable.meshHandle.readonlyMesh! as Mesh;
+        const m = cloth.renderable.meshHandle.mesh! as Mesh;
         m.pos.forEach((p, i) => {
           const originalIndex = cloth.clothLocal.posMap.get(i)!;
           return vec3.copy(p, cloth.springGrid.positions[originalIndex]);
         });
-        renderer.renderer.updateMesh(cloth.renderable.meshHandle, m);
+        renderer.renderer.stdPool.updateMeshVertices(
+          cloth.renderable.meshHandle,
+          m
+        );
       }
     },
     "updateClothMesh"

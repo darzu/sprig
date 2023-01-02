@@ -34,9 +34,11 @@ fn vert_main(@builtin(vertex_index) VertexIndex : u32) -> VertexOutput {
 @fragment
 fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
   // TODO(@darzu): it'd be great if we could just output lines and compose elsewhere
-  var color = textureSample(colorTex, samp, uv).rgb;
+  var colorA = textureSample(colorTex, samp, uv);
+  var color = colorA.rgb;
+  var alpha = colorA.a;
 
-  let dims : vec2<i32> = textureDimensions(surfTex);
+  let dims : vec2<i32> = vec2<i32>(textureDimensions(surfTex));
   let dimsF = vec2<f32>(dims);
 
   let lineWidth = 2.0;
@@ -102,7 +104,7 @@ fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
   //   color *= 0.0;
   // }
 
-  return vec4(color, 1.0);
+  return vec4(color, alpha);
 }
 
 fn u32toVec3f32(i: u32, max: u32) -> vec3<f32> {

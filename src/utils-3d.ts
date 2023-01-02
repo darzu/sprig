@@ -9,13 +9,24 @@ import { tempVec2, tempVec3 } from "./temp-pool.js";
 // math utilities
 export function computeTriangleNormal(p1: vec3, p2: vec3, p3: vec3): vec3 {
   // cross product of two edges, https://www.khronos.org/opengl/wiki/Calculating_a_Surface_Normal
-  const n = vec3.cross(vec3.sub(p2, p1, vec3.create()), vec3.sub(p3, p1, vec3.create()), vec3.create());
+  const n = vec3.cross(
+    vec3.sub(p2, p1, vec3.create()),
+    vec3.sub(p3, p1, vec3.create()),
+    vec3.create()
+  );
   vec3.normalize(n, n);
   return n;
 }
 
 export function randNormalVec3(out: vec3) {
   vec3.set(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5, out);
+  vec3.normalize(out, out);
+  return out;
+}
+
+export function randNormalPosVec3(out?: vec3) {
+  if (!out) out = vec3.create();
+  vec3.set(Math.random(), Math.random(), Math.random(), out);
   vec3.normalize(out, out);
   return out;
 }
@@ -161,7 +172,7 @@ export function uintToVec3unorm(i: number, max: number): vec3 {
     (((((i % 7) + 1) & 1) >> 0) * (Math.floor(i / 7) + 1)) / Math.ceil(max / 7),
     (((((i % 7) + 1) & 2) >> 1) * (Math.floor(i / 7) + 1)) / Math.ceil(max / 7),
     (((((i % 7) + 1) & 4) >> 2) * (Math.floor(i / 7) + 1)) / Math.ceil(max / 7),
-]);
+  ]);
 }
 
 // Changes all vec2s to be in the range [0,1] based on the max and min values
@@ -212,4 +223,32 @@ export function signedAreaOfTriangle(a: vec2, b: vec2, c: vec2): number {
   vec2.sub(c, a, ac);
   let cross = vec2.cross(ab, ac);
   return 0.5 * cross[2];
+}
+
+// TODO(@darzu):  move to sprig-matrix.ts
+
+export function vec3Reverse(out: vec3) {
+  const t = out[0];
+  out[0] = out[2];
+  out[2] = t;
+  return out;
+}
+
+export function vec4Reverse(out: vec4) {
+  let t = out[0];
+  out[0] = out[3];
+  out[3] = t;
+  t = out[1];
+  out[1] = out[2];
+  out[2] = t;
+  return out;
+}
+
+export function vec4RotateLeft(out: vec4) {
+  let t = out[0];
+  out[0] = out[1];
+  out[1] = out[2];
+  out[2] = out[3];
+  out[3] = t;
+  return out;
 }

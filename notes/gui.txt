@@ -30,3 +30,14 @@ Game UIs:
 
 "we can fix it in ui" UI dev community?
   https://wecanfixitinui.com 
+
+For enabling-disabling things when part of a larger article:
+  if ("IntersectionObserver" in window) {
+      const observer = new IntersectionObserver(entries => {
+          entries.forEach(entry => { entry.target.drawer.set_visible(entry.isIntersecting); })
+      }, { rootMargin: "300px" })
+
+      all_containers.forEach(container => observer.observe(container));
+  } else {
+      all_containers.forEach(container => container.drawer.set_visible(true));
+  }

@@ -1,0 +1,12 @@
+Theme: Every 10 seconds
+
+Survive below deck
+Waves of enemies come at you
+
+TODO:
+- Hosting
+- WebGL impl? Or Electron + Chrome Canary
+- Assets:
+  - cannon, cannon ball,
+  - home ship
+  - 

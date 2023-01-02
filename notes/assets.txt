@@ -167,3 +167,38 @@ High quality assets:
 
 3D clay-ish assets (free?):
   https://kaylousberg.itch.io
+
+Mesh Retopology on ipad:
+  https://apps.apple.com/us/app/cozyblanket/id1608079174
+
+Mesh data structures:
+  https://observablehq.com/@2talltim/mesh-data-structures-traversal
+  DCEL or half-edge data structure
+  https://www.enseignement.polytechnique.fr/informatique/INF562/Slides/MeshDataStructures.pdf
+    class Halfedge{
+      Halfedge  prev, next, opposite;
+      Vertex v;
+      Face f;
+    }class Vertex{
+      Halfedge  e;
+      Point p;
+    }
+    class Face{
+    Halfedge e; }
+  Triangle based DS: many operations can be done in O(n)
+  What about a quad-based representation?
+  https://graphics.stanford.edu/courses/cs468-10-fall/LectureSlides/02_Mesh_Data_Structures.pdf
+  "Shared Vertex" is just the start vert buffer + index buffer approach
+
+I think game dev art assets often use Perforce:
+  https://www.perforce.com/blog/vcs/version-control-for-binary-files
+  https://www.perforce.com/indie-studio-pack
+  mentioned by: https://www.youtube.com/watch?v=3DXAVeJh_-0
+  e.g.: https://twitter.com/delaneykingrox/status/1593289402058706944
+
+Perforce:
+  Talked to Taylor
+  Perforce Helix Core
+  Free version: 5 people, 1,000 files, "unlimited" file size
+  Beyond 5 people: ~$400/year/person including first 5
+    might be able to get discount from sales folks

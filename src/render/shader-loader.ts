@@ -1,9 +1,9 @@
 import { Component, EM } from "../entity-manager.js";
 import { onInit } from "../init.js";
-import { assert } from "../test.js";
+import { assert } from "../util.js";
 import { getText } from "../webget.js";
 
-const DEFAULT_SHADER_PATH = "/shaders/";
+const DEFAULT_SHADER_PATH = "shaders/";
 
 export const ShaderPaths = [
   "std-mesh",
@@ -18,6 +18,7 @@ export const ShaderPaths = [
   "std-screen-quad-vert",
   "std-rand",
   "std-stars",
+  "xp-alpha",
 ] as const;
 
 export type ShaderName = typeof ShaderPaths[number];

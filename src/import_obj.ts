@@ -7,7 +7,7 @@
 // http://paulbourke.net/dataformats/obj/
 import { vec2, vec3, vec4, quat, mat4 } from "./sprig-matrix.js";
 import { RawMesh } from "./render/mesh.js";
-import { assert } from "./test.js";
+import { assert, never } from "./util.js";
 import { idPair, IdPair, isString } from "./util.js";
 
 /*
@@ -31,28 +31,26 @@ export function isParseError(m: any | ParseError): m is ParseError {
 
 function parseVec(p: string[], len: 2): vec2 | ParseError;
 function parseVec(p: string[], len: 3): vec3 | ParseError;
-function parseVec(
-  p: string[],
-  len: number
-): number[] | vec2 | vec3 | ParseError {
+function parseVec(p: string[], len: number): vec2 | vec3 | ParseError {
   const nums = p.map((s) => parseFloat(s));
   if (nums.some((n) => isNaN(n) || !isFinite(n)))
     return `invalid vector-${len} format: ${p.join(" ")}`;
   if (nums.length !== len)
     return `invalid vector-${len} format: ${p.join(" ")}`;
   if (len === 2) return vec2.clone(nums as [number, number]);
-  if (len === 3) return vec3.clone(nums as [number, number, number]);
-  return nums;
+  else if (len === 3) return vec3.clone(nums as [number, number, number]);
+  else assert(false);
 }
 
 function parseFaceVert(s: string): vec3 | ParseError {
   // parse v1/t1/n1 into [v1, t1, n1]
   const parts = s.split("/");
   if (parts.length !== 3) return `invalid face vertex: ${s}`;
-  const nums = vec3.clone(
-    parts.map((s) => parseFloat(s)) as [number, number, number]
+  return vec3.fromValues(
+    parseFloat(parts[0]),
+    parseFloat(parts[1]),
+    parseFloat(parts[2])
   );
-  return nums;
 }
 function parseFace(p: string[]): vec3[] | ParseError {
   const verts = p.map((s) => parseFaceVert(s));
@@ -64,8 +62,7 @@ function parseLineVert(s: string): vec2 | ParseError {
   // parse v1/t1 into [v1, t1]
   const parts = s.split("/");
   if (parts.length !== 2) return `invalid line vertex: ${s}`;
-  const nums = vec2.clone(parts.map((s) => parseFloat(s)) as [number, number]);
-  return nums;
+  return vec2.fromValues(parseFloat(parts[0]), parseFloat(parts[1]));
 }
 function parseLine(p: string[]): vec2[] | ParseError {
   const verts = p.map((s) => parseLineVert(s));
@@ -189,9 +186,9 @@ export function importObj(obj: string): RawMesh[] | ParseError {
         // triangle
         // TODO(@darzu): clockwise or counter clockwise?
         if (FLIP_FACES) {
-          tri.push(reverse(vec3.clone(inds as [number, number, number])));
+          tri.push(vec3.fromValues(inds[2], inds[1], inds[0]));
         } else {
-          tri.push(vec3.clone(inds as [number, number, number]));
+          tri.push(vec3.fromValues(inds[0], inds[1], inds[2]));
         }
       } else if (inds.length === 4) {
         // quad
@@ -201,11 +198,23 @@ export function importObj(obj: string): RawMesh[] | ParseError {
         if (FLIP_FACES) {
           // tri.push(reverse(tri1));
           // tri.push(reverse(tri2));
-          quad.push(vec4.clone([inds[3], inds[2], inds[1], inds[0]]));
+          quad.push(vec4.fromValues(inds[3], inds[2], inds[1], inds[0]));
         } else {
           // tri.push(tri1);
           // tri.push(tri2);
-          quad.push(vec4.clone([inds[0], inds[1], inds[2], inds[3]]));
+          quad.push(vec4.fromValues(inds[0], inds[1], inds[2], inds[3]));
+        }
+      } else if (inds.length === 8) {
+        // TODO(@darzu): any large n-gon that's convex can just be made into a triangle fan
+        // TODO(@darzu): convexity test. probably something about sum of interior angles
+        // TODO(@darzu): HACK. ignore 8 sided faces?
+        // triangle fan
+        for (let i = 1; i < 7; i++) {
+          if (FLIP_FACES) {
+            tri.push(vec3.clone([inds[0], inds[i + 1], inds[i]]));
+          } else {
+            tri.push(vec3.clone([inds[0], inds[i], inds[i + 1]]));
+          }
         }
       } else {
         return `unsupported: ${faceOpt.length}-sided face`;
@@ -255,9 +264,6 @@ export function importObj(obj: string): RawMesh[] | ParseError {
       if (isNaN(vi) || vi < 0 || maxInd < vi)
         return `invalid vertex index '${vi + 1}'`;
     return null;
-  }
-  function reverse(v: vec3): vec3 {
-    return vec3.clone([v[2], v[1], v[0]]);
   }
   function sortByGreedyDistance(inds: number[]) {
     // TODO(@darzu): improve perf?

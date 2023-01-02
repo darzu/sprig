@@ -168,13 +168,13 @@ export function registerTurretSystems(em: EntityManager) {
         if (DeletedDef.isOn(c)) continue;
         if (c.turret.mannedId !== player.id) continue;
 
-        c.yawpitch.yaw += -res.inputs.mouseMovX * 0.005;
+        c.yawpitch.yaw += -res.inputs.mouseMov[0] * 0.005;
         c.yawpitch.yaw = clamp(
           c.yawpitch.yaw,
           c.turret.minYaw,
           c.turret.maxYaw
         );
-        c.yawpitch.pitch += -res.inputs.mouseMovY * 0.002;
+        c.yawpitch.pitch += -res.inputs.mouseMov[1] * 0.002;
         c.yawpitch.pitch = clamp(
           c.yawpitch.pitch,
           c.turret.minPitch,

@@ -8,7 +8,6 @@ import {
 import { TimeDef } from "../time.js";
 import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
 import { jitter } from "../math.js";
-import { ColorDef } from "../color.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import {
   PhysicsParentDef,
@@ -32,7 +31,6 @@ import { BulletDef, fireBullet } from "./bullet.js";
 import { DeletedDef, OnDeleteDef } from "../delete.js";
 import { LifetimeDef } from "./lifetime.js";
 import { PlayerShipLocalDef } from "./player-ship.js";
-import { Music, MusicDef } from "../music.js";
 import { defineNetEntityHelper } from "../em_helpers.js";
 import { DetectedEventsDef, eventWizard } from "../net/events.js";
 import { raiseBulletEnemyShip } from "./bullet-collision.js";
@@ -40,6 +38,8 @@ import { GameStateDef, GameState } from "./gamestate.js";
 import { cloneMesh, scaleMesh3 } from "../render/mesh.js";
 import { ShipDef } from "./ship.js";
 import { UVDirDef, UVPosDef } from "./ocean.js";
+import { ColorDef } from "../color-ecs.js";
+import { AudioDef, Music } from "../audio.js";
 
 export const EnemyDef = EM.defineComponent("enemy", () => {
   return {
@@ -228,7 +228,7 @@ export const raiseBreakEnemyShip = eventWizard(
   "break-enemyShip",
   [[EnemyShipLocalDef, PositionDef, RotationDef]] as const,
   ([enemyShip]) => {
-    const res = EM.getResources([AssetsDef, MusicDef])!;
+    const res = EM.getResources([AssetsDef, AudioDef])!;
     breakEnemyShip(EM, enemyShip, res.assets.boat_broken, res.music);
   }
 );
@@ -287,7 +287,11 @@ vec2.rotate(o.uvDir, vec2.ZEROS, radYaw, o.uvDir);
               2,
               cannon.world.position,
               cannon.world.rotation,
-              bulletSpeed
+              bulletSpeed,
+              // TODO(@darzu): what stats here?
+              0.02,
+              6,
+              10
             );
           }
         }
@@ -298,7 +302,7 @@ vec2.rotate(o.uvDir, vec2.ZEROS, radYaw, o.uvDir);
 
   em.registerSystem(
     [EnemyShipLocalDef, PositionDef, RotationDef],
-    [PhysicsResultsDef, AssetsDef, MusicDef, MeDef, DetectedEventsDef],
+    [PhysicsResultsDef, AssetsDef, AudioDef, MeDef, DetectedEventsDef],
     (objs, res) => {
       for (let enemyShip of objs) {
         const hits = res.physicsResults.collidesWith.get(enemyShip.id);

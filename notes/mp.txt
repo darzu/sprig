@@ -471,3 +471,6 @@ P2P stuff by Yousef Amar:
   https://amar.io/thesis.pdf
   https://yousefamar.com/res/papers/PID5999227.pdf
   https://github.com/yousefamar/p2p-peer/blob/master/src/index.ts
+
+arithmetic compression:
+  https://github.com/rygorous/A/blob/master/main.cpp

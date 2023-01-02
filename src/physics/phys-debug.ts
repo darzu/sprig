@@ -1,7 +1,7 @@
 import { ColliderDef } from "./collider.js";
 import { EM, EntityManager } from "../entity-manager.js";
 import { AssetsDef, LocalMeshes } from "../game/assets.js";
-import { ColorDef } from "../color.js";
+import { ColorDef } from "../color-ecs.js";
 import { InputsDef } from "../inputs.js";
 import { mathMap } from "../math.js";
 import { cloneMesh, mapMeshPositions, RawMesh } from "../render/mesh.js";
@@ -25,6 +25,8 @@ import {
   updateFrameFromPosRotScale,
 } from "./transform.js";
 import { vec3 } from "../sprig-matrix.js";
+
+// TODO(@darzu): re-enable all this! it requires line drawing again
 
 export const PhysicsDbgDef = EM.defineComponent("_physDbgState", () => {
   return {
@@ -57,6 +59,7 @@ export function registerPhysicsDebuggerSystem(em: EntityManager) {
             const dbgE = em.newEntity();
 
             // with a wireframe mesh
+            // TODO(@darzu): doesn't work w/o our line renderer
             em.addComponent(
               dbgE.id,
               RenderableConstructDef,

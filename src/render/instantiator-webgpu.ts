@@ -1,5 +1,7 @@
+import { PERF_DBG_GPU, VERBOSE_LOG } from "../flags.js";
 import { ControllableDef } from "../game/controllable.js";
-import { assert } from "../test.js";
+import { vec4 } from "../sprig-matrix.js";
+import { assert } from "../util.js";
 import {
   never,
   capitalize,
@@ -7,6 +9,7 @@ import {
   uncapitalize,
   isString,
   isFunction,
+  dbgLogOnce,
 } from "../util.js";
 import {
   PtrKindToResourceType,
@@ -36,9 +39,10 @@ import {
   texTypeToSampleType,
 } from "./gpu-struct.js";
 import { createMeshPool, MeshHandle } from "./mesh-pool.js";
+import { DEFAULT_MASK } from "./pipeline-masks.js";
 import { oceanPoolPtr } from "./pipelines/std-ocean.js";
 import { ShaderSet } from "./shader-loader.js";
-import { vec4 } from "../sprig-matrix.js";
+import { GPUBufferUsage } from "./webgpu-hacks.js";
 
 // TODO(@darzu): visibility restrictions:
 /*
@@ -159,7 +163,6 @@ export function createCyResources(
   );
 
   // create resources
-  // TODO(@darzu): IMPL
   const kindToNameToRes: {
     [K in PtrKind]: { [name: string]: PtrKindToResourceType[K] };
   } = {
@@ -208,6 +211,9 @@ export function createCyResources(
     const lengthOrData = typeof r.init === "number" ? r.init : r.init();
     const buf = createCyArray(device, r.struct, usage, lengthOrData);
     kindToNameToRes.array[r.name] = buf;
+    if (PERF_DBG_GPU) {
+      console.log(`CyArray ${r.name}: ${r.struct.size * buf.length}b`);
+    }
   });
   // create one-buffers
   cy.kindToPtrs.singleton.forEach((r) => {
@@ -219,11 +225,17 @@ export function createCyResources(
       r.init ? r.init() : undefined
     );
     kindToNameToRes.singleton[r.name] = buf;
+    if (PERF_DBG_GPU) {
+      console.log(`CySingleton ${r.name}: ${r.struct.size}b`);
+    }
   });
   // create idx-buffers
   cy.kindToPtrs.idxBuffer.forEach((r) => {
     const buf = createCyIdxBuf(device, r.init());
     kindToNameToRes.idxBuffer[r.name] = buf;
+    if (PERF_DBG_GPU) {
+      console.log(`CyIdx ${r.name}: ${buf.size}b`);
+    }
   });
   // create mesh pools
   cy.kindToPtrs.meshPool.forEach((r) => {
@@ -469,10 +481,39 @@ export function createCyResources(
     if (isRenderPipelinePtr(p)) {
       const output = normalizeColorAttachments(p.output);
 
-      // TODO(@darzu): support blend modes
       const targets: GPUColorTargetState[] = output.map((o) => {
+        // TODO(@darzu): support configuring blend modes!
+        // let blend = o.blend;
+        // if (o.ptr.format === "rgba16float") {
+        //   // TODO(@darzu): this is a stub. Needs cooperation w/ depth buffer.
+        //   //   see: https://gpuweb.github.io/gpuweb/#blend-state
+        //   blend = {
+        //     color: {
+        //       srcFactor: "src-alpha",
+        //       dstFactor: "one-minus-src-alpha",
+        //       operation: "add",
+        //     },
+        //     // color: {
+        //     //   srcFactor: "src",
+        //     //   dstFactor: "dst",
+        //     //   operation: "add",
+        //     // },
+        //     alpha: {
+        //       srcFactor: "one",
+        //       dstFactor: "zero",
+        //       operation: "add",
+        //     },
+        //     // alpha: {
+        //     //   srcFactor: "src",
+        //     //   dstFactor: "dst",
+        //     //   operation: "add",
+        //     // },
+        //   };
+        // }
+
         return {
           format: o.ptr.format,
+          blend: o.blend,
         };
       });
 
@@ -481,7 +522,7 @@ export function createCyResources(
         // TODO(@darzu): parameterize
         // TODO(@darzu): hack
         // const depthWriteEnabled = p.name === "renderStars" ? false : true;
-        let depthWriteEnabled = true;
+        let depthWriteEnabled = !p.depthReadonly;
         depthStencilOpts = {
           depthWriteEnabled,
           depthCompare: "less",
@@ -632,7 +673,7 @@ export function createCyResources(
         };
         kindToNameToRes.renderPipeline[p.name] = cyPipeline;
       } else if (p.meshOpt.stepMode === "single-draw") {
-        // TODO(@darzu): IMPL// render shader
+        // render shader
         // TODO(@darzu): pass vertex buffer and instance buffer into shader
         const shaderStr =
           `${shaderResStructs.join("\n")}\n` +
@@ -710,9 +751,10 @@ export function createCyResources(
     }
   }
 
-  console.log(
-    `createCyResources took: ${(performance.now() - start).toFixed(1)}ms`
-  );
+  if (VERBOSE_LOG)
+    console.log(
+      `createCyResources took: ${(performance.now() - start).toFixed(1)}ms`
+    );
 
   return {
     kindToNameToRes,
@@ -817,16 +859,18 @@ export function bundleRenderPipelines(
       // TODO(@darzu): filter meshes?
       for (let m of p.pool.allMeshes) {
         // TODO(@darzu): DBG
-        if (p.pool.opts.computeVertsData === oceanPoolPtr.computeVertsData) {
-          console.log(`OCEAN MESH: ${m.mId} has: ${meshHandleIds.has(m.mId)}`);
-        }
+        // if (p.pool.opts.computeVertsData === oceanPoolPtr.computeVertsData) {
+        // console.log(`OCEAN MESH: ${m.mId} has: ${meshHandleIds.has(m.mId)}`);
+        // }
         if (!meshHandleIds.has(m.mId)) continue;
-        if (p.ptr.meshOpt.meshMask && (p.ptr.meshOpt.meshMask & m.mask) === 0)
-          continue;
+        let mask = p.ptr.meshOpt.meshMask ?? DEFAULT_MASK;
+        if ((mask & m.mask) === 0) continue;
         bundleEnc.setBindGroup(1, uniBG, [
           m.uniIdx * p.pool.opts.unis.struct.size,
         ]);
-        bundleEnc.drawIndexed(m.triNum * 3, undefined, m.triIdx * 3, m.vertIdx);
+        // TODO(@darzu): do we always want to draw max or do we want to rebundle?
+        let numTri = m.reserved?.maxTriNum ?? m.triNum;
+        bundleEnc.drawIndexed(numTri * 3, undefined, m.triIdx * 3, m.vertIdx);
         dbgNumTris += m.triNum * 3;
       }
     } else if (p.ptr.meshOpt.stepMode === "single-draw") {
@@ -922,7 +966,7 @@ export function startBundleRenderer(
       seenTextures.add(o.ptr.name);
       let tex = resources.kindToNameToRes.texture[o.ptr.name]!;
       const doClear = isFirst ? o.clear === "once" : o.clear === "always";
-      const defaultColor = o.defaultColor ?? vec4.clone([0, 0, 0, 1]);
+      const defaultColor = o.defaultColor ?? vec4.fromValues(0, 0, 0, 1);
       const viewOverride = o.ptr.attachToCanvas
         ? context.getCurrentTexture().createView()
         : undefined;
@@ -946,6 +990,7 @@ export function startBundleRenderer(
       // TODO(@darzu): parameterize depth attachment?
       depthStencilAttachment: depthAtt,
     });
+    renderPassEncoder.setBlendConstant([1, 1, 1, 1]); // TODO(@darzu): hack? settable?
 
     renderPassEncoder.executeBundles([bundle]);
     renderPassEncoder.end();

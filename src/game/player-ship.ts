@@ -17,13 +17,12 @@ import {
   MultiCollider,
 } from "../physics/collider.js";
 import { copyAABB, createAABB } from "../physics/broadphase.js";
-import { ColorDef } from "../color.js";
 import { PhysicsResultsDef } from "../physics/nonintersection.js";
 import { BulletDef } from "./bullet.js";
 import { DeletedDef } from "../delete.js";
 import { clamp, min } from "../math.js";
 import { createCannon } from "./cannon.js";
-import { MusicDef } from "../music.js";
+import { AudioDef } from "../audio.js";
 import { LocalPlayerDef, PlayerDef } from "./player.js";
 import { CameraDef } from "../camera.js";
 import { InputsDef } from "../inputs.js";
@@ -40,6 +39,7 @@ import { PartyDef } from "./party.js";
 import { ShipDef } from "./ship.js";
 import { createMastNow, MastLocalDef, MastPropsDef } from "./sail.js";
 import { makeOrrery, OrreryDef } from "./orrery.js";
+import { ColorDef } from "../color-ecs.js";
 
 // TODO(@darzu): impl. occassionaly syncable components with auto-versioning
 
@@ -324,7 +324,7 @@ export function registerShipSystems(em: EntityManager) {
     "ship-hit",
     [[PlayerShipLocalDef]] as const,
     ([ship], partIdx: number) => {
-      const music = em.getResource(MusicDef)!;
+      const music = em.getResource(AudioDef)!;
       const part = ship.playerShipLocal.parts[partIdx]()!;
       part.renderable.enabled = false;
       part.shipPart.damaged = true;
@@ -340,7 +340,7 @@ export function registerShipSystems(em: EntityManager) {
   em.registerSystem(
     [PlayerShipPropsDef, PlayerShipLocalDef, PositionDef, AuthorityDef],
     [
-      MusicDef,
+      AudioDef,
       InputsDef,
       CameraDef,
       GameStateDef,

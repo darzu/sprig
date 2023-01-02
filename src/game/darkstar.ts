@@ -1,4 +1,3 @@
-import { ColorDef } from "../color.js";
 import { createRef, defineNetEntityHelper } from "../em_helpers.js";
 import { EM, EntityManager, EntityW } from "../entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
@@ -12,9 +11,10 @@ import {
 import { tempVec3 } from "../temp-pool.js";
 import { vec3Dbg } from "../utils-3d.js";
 import { AssetsDef } from "./assets.js";
-import { GameState, GameStateDef } from "./gamestate.js";
 import { PointLightDef } from "../render/lights.js";
 import { FLAG_UNLIT } from "../render/pipelines/std-scene.js";
+import { ColorDef } from "../color-ecs.js";
+import { GameState, GameStateDef } from "./gamestate.js";
 
 const DARKSTAR_SPEED = 1;
 

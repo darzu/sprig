@@ -2,7 +2,7 @@ import { Component, EM, EntityManager } from "../entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
 import { InputsDef } from "../inputs.js";
 import { RenderableDef } from "../render/renderer-ecs.js";
-import { clearTint, setTint, TintsDef } from "../color.js";
+import { clearTint, setTint, TintsDef } from "../color-ecs.js";
 import { AuthorityDef } from "./components.js";
 
 const NetDebugStateDef = EM.defineComponent("netDebugState", () => ({
@@ -27,15 +27,15 @@ export function registerNetDebugSystem(em: EntityManager) {
       if (res.inputs.keyClicks["6"])
         netDebugState.dbgAuthority = !netDebugState.dbgAuthority;
       for (const o of objs) {
-        em.ensureComponentOn(o, TintsDef);
         if (netDebugState.dbgAuthority) {
+          em.ensureComponentOn(o, TintsDef);
           setTint(
             o.tints,
             AUTHORITY_TINT_NAME,
             AUTHORITY_TINTS[o.authority.pid] || AUTHORITY_TINTS[0]
           );
         } else {
-          clearTint(o.tints, AUTHORITY_TINT_NAME);
+          if (TintsDef.isOn(o)) clearTint(o.tints, AUTHORITY_TINT_NAME);
         }
       }
     },

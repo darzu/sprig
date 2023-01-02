@@ -1,4 +1,4 @@
-import { ColorDef } from "../color.js";
+import { ColorDef } from "../color-ecs.js";
 import { createRef, defineNetEntityHelper } from "../em_helpers.js";
 import { EM, EntityManager, EntityW } from "../entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
@@ -260,7 +260,7 @@ onInit((em) => {
         ) => {
           // TODO: "read only mesh," eh? not so much
           rotations.push(quat.identity(tempQuat()));
-          mapMeshPositions(sailMeshHandle.readonlyMesh!, (pos, i) => {
+          mapMeshPositions(sailMeshHandle.mesh!, (pos, i) => {
             const ribIndex = Math.floor(i / 3);
             const ribRotationBot = rotations[ribIndex];
             const ribRotationTop = rotations[ribIndex + 1];
@@ -271,9 +271,9 @@ onInit((em) => {
             }
             return pos;
           });
-          res.renderer.renderer.updateMesh(
+          res.renderer.renderer.stdPool.updateMeshVertices(
             sailMeshHandle,
-            sailMeshHandle.readonlyMesh!
+            sailMeshHandle.mesh!
           );
         };
 
@@ -329,7 +329,7 @@ onInit((em) => {
           const [force, area] = sailForceAndSignedArea(sail, star);
           const accel = vec3.dot(shipDirection, force);
 
-          const localVerts = sail.renderable.meshHandle.readonlyMesh!.pos;
+          const localVerts = sail.renderable.meshHandle.mesh!.pos;
 
           const realArea = Math.abs(
             signedAreaOfTriangle(
@@ -373,7 +373,7 @@ function sailForceAndSignedArea(
     sail.world.position
   );
 
-  const localVerts = sail.renderable.meshHandle.readonlyMesh!.pos;
+  const localVerts = sail.renderable.meshHandle.mesh!.pos;
 
   const worldVerts = localVerts.map((pos) => {
     return vec3.transformMat4(pos, sail.world.transform);

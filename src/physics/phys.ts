@@ -25,7 +25,7 @@ import {
 import { Collider } from "./collider.js";
 import { AABB, aabbCenter } from "./broadphase.js";
 import { registerNarrowPhaseSystems } from "./narrowphase.js";
-import { assert } from "../test.js";
+import { assert } from "../util.js";
 import { tempVec3 } from "../temp-pool.js";
 
 // TODO(@darzu): PHYSICS TODO:

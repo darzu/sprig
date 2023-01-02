@@ -1,5 +1,5 @@
-import { EntityManager, EM, Entity } from "../entity-manager.js";
-import { applyTints, TintsDef } from "../color.js";
+import { EntityManager, EM, Entity, EntityW } from "../entity-manager.js";
+import { AlphaDef, applyTints, TintsDef } from "../color-ecs.js";
 import { CameraViewDef } from "../camera.js";
 import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
 import {
@@ -10,18 +10,18 @@ import {
   updateFrameFromPosRotScale,
   copyFrame,
 } from "../physics/transform.js";
-import { ColorDef } from "../color.js";
+import { ColorDef } from "../color-ecs.js";
 import { MotionSmoothingDef } from "../motion-smoothing.js";
-import { DeletedDef } from "../delete.js";
+import { DeadDef, DeletedDef } from "../delete.js";
 import { stdRenderPipeline } from "./pipelines/std-mesh.js";
 import { computeUniData, MeshUniformTS } from "./pipelines/std-scene.js";
 import { CanvasDef } from "../canvas.js";
 import { FORCE_WEBGL } from "../main.js";
 import { createRenderer } from "./renderer-webgpu.js";
 import { CyPipelinePtr, CyTexturePtr } from "./gpu-registry.js";
-import { createFrame } from "../physics/nonintersection.js";
+import { createFrame, WorldFrameDef } from "../physics/nonintersection.js";
 import { tempVec3 } from "../temp-pool.js";
-import { isMeshHandle, MeshHandle } from "./mesh-pool.js";
+import { isMeshHandle, MeshHandle, MeshReserve } from "./mesh-pool.js";
 import { Mesh } from "./mesh.js";
 import { SceneTS } from "./pipelines/std-scene.js";
 import { max } from "../math.js";
@@ -39,7 +39,13 @@ import {
   OceanMeshHandle,
   OceanUniTS,
 } from "./pipelines/std-ocean.js";
-import { assert } from "../test.js";
+import { assert } from "../util.js";
+import {
+  DONT_SMOOTH_WORLD_FRAME,
+  PERF_DBG_GPU,
+  VERBOSE_LOG,
+} from "../flags.js";
+import { ALPHA_MASK } from "./pipeline-masks.js";
 
 const BLEND_SIMULATION_FRAMES_STRATEGY: "interpolate" | "extrapolate" | "none" =
   "none";
@@ -52,17 +58,29 @@ export interface RenderableConstruct {
   //  later it is in the mesh handle.
   readonly mask?: number;
   readonly poolKind: PoolKind;
+  // TODO(@darzu): little hacky: hidden vs enabled?
+  // NOTE:
+  //   "enabled" objects are debundled and not sent to the GPU.
+  //   "hidden" objects are sent to the GPU w/ scale 0 (so they don't appear).
+  //   hidden objects might be more efficient in object pools b/c it causes
+  //   less rebundling, but this needs measurement.
+  readonly hidden: boolean;
   meshOrProto: Mesh | MeshHandle;
+  readonly reserve?: MeshReserve;
 }
 
 export const RenderableConstructDef = EM.defineComponent(
   "renderableConstruct",
   (
+    // TODO(@darzu): this constructor is too messy, we should use a params obj instead
     meshOrProto: Mesh | MeshHandle,
     enabled: boolean = true,
+    // TODO(@darzu): do we need sort layers? Do we use them?
     sortLayer: number = 0,
     mask?: number,
-    poolKind: PoolKind = "std"
+    poolKind: PoolKind = "std",
+    hidden: boolean = false,
+    reserve?: MeshReserve
   ) => {
     const r: RenderableConstruct = {
       enabled,
@@ -70,13 +88,17 @@ export const RenderableConstructDef = EM.defineComponent(
       meshOrProto,
       mask,
       poolKind,
+      hidden,
+      reserve,
     };
     return r;
   }
 );
 
 export interface Renderable {
+  // TODO(@darzu): clean up these options...
   enabled: boolean;
+  hidden: boolean;
   sortLayer: number;
   meshHandle: MeshHandle;
 }
@@ -165,6 +187,13 @@ export function registerUpdateSmoothedWorldFrames(em: EntityManager) {
       _hasRendererWorldFrame.clear();
 
       for (const o of objs) {
+        // TODO(@darzu): PERF HACK!
+        if (DONT_SMOOTH_WORLD_FRAME) {
+          em.ensureComponentOn(o, SmoothedWorldFrameDef);
+          em.ensureComponentOn(o, PrevSmoothedWorldFrameDef);
+          continue;
+        }
+
         updateSmoothedWorldFrame(em, o);
       }
     },
@@ -235,6 +264,13 @@ export function registerUpdateRendererWorldFrames(em: EntityManager) {
     (objs) => {
       for (let o of objs) {
         em.ensureComponentOn(o, RendererWorldFrameDef);
+
+        // TODO(@darzu): HACK!
+        if (DONT_SMOOTH_WORLD_FRAME) {
+          (o as any).rendererWorldFrame = (o as any).world;
+          continue;
+        }
+
         switch (BLEND_SIMULATION_FRAMES_STRATEGY) {
           case "interpolate":
             interpolateFrames(
@@ -261,36 +297,121 @@ export function registerUpdateRendererWorldFrames(em: EntityManager) {
   );
 }
 
+const _lastMeshHandleTransform = new Map<number, mat4>();
+const _lastMeshHandleHidden = new Map<number, boolean>();
+
 export function registerRenderer(em: EntityManager) {
+  // NOTE: we use "renderListDeadHidden" and "renderList" to construct a custom
+  //  query of renderable objects that include dead, hidden objects. The reason
+  //  for this is that it causes a more stable entity list when we have object
+  //  pools, and thus we have to rebundle less often.
+  const renderObjs: EntityW<
+    [typeof RendererWorldFrameDef, typeof RenderableDef]
+  >[] = [];
+  em.registerSystem(
+    [RendererWorldFrameDef, RenderableDef, DeadDef],
+    [],
+    (objs, _) => {
+      renderObjs.length = 0;
+      for (let o of objs)
+        if (o.renderable.enabled && o.renderable.hidden && !DeletedDef.isOn(o))
+          renderObjs.push(o);
+    },
+    "renderListDeadHidden"
+  );
   em.registerSystem(
     [RendererWorldFrameDef, RenderableDef],
+    [],
+    (objs, _) => {
+      for (let o of objs)
+        if (o.renderable.enabled && !DeletedDef.isOn(o)) renderObjs.push(o);
+    },
+    "renderList"
+  );
+
+  em.registerSystem(
+    null, // NOTE: see "renderList*" systems and NOTE above. We use those to construct our query.
     [CameraViewDef, RendererDef, TimeDef, PartyDef],
-    (objs, res) => {
+    (_, res) => {
       const renderer = res.renderer.renderer;
       const cameraView = res.cameraView;
 
-      objs = objs.filter((o) => o.renderable.enabled && !DeletedDef.isOn(o));
+      const objs = renderObjs;
 
       // ensure our mesh handle is up to date
       for (let o of objs) {
         if (RenderDataStdDef.isOn(o)) {
-          // color / tint
-          if (ColorDef.isOn(o)) {
-            vec3.copy(o.renderDataStd.tint, o.color);
-          }
-          if (TintsDef.isOn(o)) {
-            applyTints(o.tints, o.renderDataStd.tint);
+          if (o.renderable.hidden) {
+            // TODO(@darzu): hidden stuff is a bit wierd
+            // TODO(@darzu): hidden stuff is a bit wierd
+mat4.fromScaling(vec3.ZEROS, o.renderDataStd.transform);
           }
 
+          let tintChange = false;
+          if (!o.renderable.hidden) {
+            // color / tint
+            let prevTint = vec3.copy(tempVec3(), o.renderDataStd.tint);
+            if (ColorDef.isOn(o)) vec3.copy(o.renderDataStd.tint, o.color);
+            if (TintsDef.isOn(o)) applyTints(o.tints, o.renderDataStd.tint);
+            if (vec3.sqrDist(prevTint, o.renderDataStd.tint) > 0.01)
+              tintChange = true;
+
+            // apha
+            if (AlphaDef.isOn(o)) {
+              if (o.renderDataStd.alpha !== o.alpha) tintChange = true;
+              o.renderDataStd.alpha = o.alpha;
+              // TODO(@darzu): MASK HACK! it's also in renderable construct?!
+              o.renderable.meshHandle.mask = ALPHA_MASK;
+            }
+          }
+
+          let lastHidden = _lastMeshHandleHidden.get(
+            o.renderable.meshHandle.mId
+          );
+          let hiddenChanged = lastHidden !== o.renderable.hidden;
+          _lastMeshHandleHidden.set(
+            o.renderable.meshHandle.mId,
+            o.renderable.hidden
+          );
+
+          // TODO(@darzu): actually we only set this at creation now so that
+          //  it's overridable for gameplay
           // id
-          o.renderDataStd.id = o.renderable.meshHandle.mId;
+          // o.renderDataStd.id = o.renderable.meshHandle.mId;
 
           // transform
-          mat4.copy(o.renderDataStd.transform, o.rendererWorldFrame.transform);
-          res.renderer.renderer.updateStdUniform(
-            o.renderable.meshHandle,
-            o.renderDataStd
+          // TODO(@darzu): hACK! ONLY UPDATE UNIFORM IF WE"VE MOVED/SCALED/ROT OR COLOR CHANGED OR HIDDEN CHANGED
+          // TODO(@darzu): probably the less hacky way to do this is require uniforms provide a
+          //    hash function
+          let lastTran = _lastMeshHandleTransform.get(
+            o.renderable.meshHandle.mId
           );
+          const thisTran = o.rendererWorldFrame.transform;
+          if (
+            hiddenChanged ||
+            tintChange ||
+            !lastTran ||
+            !mat4.equals(lastTran, thisTran)
+            // vec3.sqrDist(lastTran, thisTran) > 0.01
+          ) {
+            if (!o.renderable.hidden)
+              mat4.copy(
+                o.renderDataStd.transform,
+                o.rendererWorldFrame.transform
+              );
+            res.renderer.renderer.stdPool.updateUniform(
+              o.renderable.meshHandle,
+              o.renderDataStd
+            );
+            if (!lastTran) {
+              lastTran = mat4.create();
+              _lastMeshHandleTransform.set(
+                o.renderable.meshHandle.mId,
+                lastTran
+              );
+            }
+            mat4.copy(lastTran, thisTran);
+          }
         } else if (RenderDataOceanDef.isOn(o)) {
           // color / tint
           if (ColorDef.isOn(o)) {
@@ -308,7 +429,7 @@ export function registerRenderer(em: EntityManager) {
             o.renderDataOcean.transform,
             o.rendererWorldFrame.transform
           );
-          res.renderer.renderer.updateOceanUniform(
+          res.renderer.renderer.oceanPool.updateUniform(
             o.renderable.meshHandle,
             o.renderDataOcean
           );
@@ -317,7 +438,7 @@ export function registerRenderer(em: EntityManager) {
 
       // TODO(@darzu): this is currently unused, and maybe should be dropped.
       // sort
-      objs.sort((a, b) => b.renderable.sortLayer - a.renderable.sortLayer);
+      // objs.sort((a, b) => b.renderable.sortLayer - a.renderable.sortLayer);
 
       // render
       // TODO(@darzu):
@@ -331,8 +452,8 @@ export function registerRenderer(em: EntityManager) {
       const pointLights = em
         .filterEntities([PointLightDef, RendererWorldFrameDef])
         .map((e) => {
-          e.pointLight.viewProj = positionAndTargetToOrthoViewProjMatrix(
-            mat4.create(),
+          positionAndTargetToOrthoViewProjMatrix(
+            e.pointLight.viewProj,
             e.rendererWorldFrame.position,
             cameraView.location
           );
@@ -369,6 +490,7 @@ export function registerRenderer(em: EntityManager) {
         cameraPos: cameraView.location,
         numPointLights: pointLights.length,
       });
+      // console.log(`pointLights.length: ${pointLights.length}`);
 
       renderer.updatePointLights(pointLights);
 
@@ -377,11 +499,31 @@ export function registerRenderer(em: EntityManager) {
         res.renderer.pipelines
       );
 
-      if (objs.length && res.renderer.pipelines.length)
+      if (objs.length && res.renderer.pipelines.length) {
         dbgLogOnce(
           "first-frame",
           `Rendering first frame at: ${performance.now().toFixed(2)}ms`
         );
+      }
+
+      // Performance logging
+      if (PERF_DBG_GPU) {
+        const stats = res.renderer.renderer.stdPool._stats;
+        const totalBytes =
+          stats._accumTriDataQueued +
+          stats._accumUniDataQueued +
+          stats._accumVertDataQueued;
+        const totalKb = totalBytes / 1024;
+        if (totalKb > 100) {
+          console.log(`Big frame: ${totalKb.toFixed(0)}kb`);
+          console.log(`tris: ${stats._accumTriDataQueued / 1024}kb`);
+          console.log(`uni: ${stats._accumUniDataQueued / 1024}kb`);
+          console.log(`vert: ${stats._accumVertDataQueued / 1024}kb`);
+        }
+        stats._accumTriDataQueued = 0;
+        stats._accumUniDataQueued = 0;
+        stats._accumVertDataQueued = 0;
+      }
     },
     "stepRenderer"
   );
@@ -402,18 +544,25 @@ export function registerConstructRenderablesSystem(em: EntityManager) {
               e.renderableConstruct.poolKind === "std",
               `Instanced meshes only supported for std pool`
             );
-            meshHandle = res.renderer.renderer.addMeshInstance(
+            // TODO(@darzu): renderableConstruct is getting to large and wierd
+            assert(
+              !e.renderableConstruct.reserve,
+              `cannot have a reserve when adding an instance`
+            );
+            meshHandle = res.renderer.renderer.stdPool.addMeshInstance(
               e.renderableConstruct.meshOrProto
             );
-            mesh = meshHandle.readonlyMesh!;
+            mesh = meshHandle.mesh!;
           } else {
             if (e.renderableConstruct.poolKind === "std") {
-              meshHandle = res.renderer.renderer.addMesh(
-                e.renderableConstruct.meshOrProto
+              meshHandle = res.renderer.renderer.stdPool.addMesh(
+                e.renderableConstruct.meshOrProto,
+                e.renderableConstruct.reserve
               );
             } else if (e.renderableConstruct.poolKind === "ocean") {
-              meshHandle = res.renderer.renderer.addOcean(
-                e.renderableConstruct.meshOrProto
+              meshHandle = res.renderer.renderer.oceanPool.addMesh(
+                e.renderableConstruct.meshOrProto,
+                e.renderableConstruct.reserve
               );
             } else {
               never(e.renderableConstruct.poolKind);
@@ -426,11 +575,13 @@ export function registerConstructRenderablesSystem(em: EntityManager) {
 
           em.addComponent(e.id, RenderableDef, {
             enabled: e.renderableConstruct.enabled,
+            hidden: false,
             sortLayer: e.renderableConstruct.sortLayer,
             meshHandle,
           });
           if (e.renderableConstruct.poolKind === "std") {
-            em.addComponent(e.id, RenderDataStdDef, computeUniData(mesh));
+            em.ensureComponentOn(e, RenderDataStdDef, computeUniData(mesh));
+            e.renderDataStd.id = meshHandle.mId;
           } else if (e.renderableConstruct.poolKind === "ocean") {
             em.addComponent(
               e.id,
@@ -508,7 +659,7 @@ async function chooseAndInitRenderer(
     const adapter = await navigator.gpu?.requestAdapter();
     if (adapter) {
       const supportsTimestamp = adapter.features.has("timestamp-query");
-      if (!supportsTimestamp)
+      if (!supportsTimestamp && VERBOSE_LOG)
         console.log(
           "GPU profiling disabled: device does not support timestamp queries"
         );
@@ -517,6 +668,8 @@ async function chooseAndInitRenderer(
       });
       // TODO(@darzu): uses cast while waiting for webgpu-types.d.ts to be updated
       const context = canvas.getContext("webgpu");
+      // console.log("webgpu context:");
+      // console.dir(context);
       if (context) {
         renderer = createRenderer(canvas, device, context, shaders);
         if (renderer) usingWebGPU = true;
@@ -526,10 +679,23 @@ async function chooseAndInitRenderer(
   // TODO(@darzu): re-enable WebGL
   // if (!rendererInit)
   //   rendererInit = attachToCanvasWebgl(canvas, MAX_MESHES, MAX_VERTICES);
-  if (!renderer) throw "Unable to create webgl or webgpu renderer";
-  console.log(`Renderer: ${usingWebGPU ? "webGPU" : "webGL"}`);
+  if (!renderer) {
+    displayWebGPUError();
+    throw new Error("Unable to create webgl or webgpu renderer");
+  }
+  if (VERBOSE_LOG) console.log(`Renderer: ${usingWebGPU ? "webGPU" : "webGL"}`);
 
   // add to ECS
   // TODO(@darzu): this is a little wierd to do this in an async callback
   em.addSingletonComponent(RendererDef, renderer, usingWebGPU, []);
+}
+
+export function displayWebGPUError() {
+  const style = `font-size: 48px;
+      color: green;
+      margin: 24px;
+      max-width: 600px;`;
+  document.getElementsByTagName(
+    "body"
+  )[0].innerHTML = `<div style="${style}">This page requires WebGPU which isn't yet supported in your browser!<br>Or something else went wrong that was my fault.<br><br>U can try Chrome >106.<br><br>🙂</div>`;
 }

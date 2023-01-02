@@ -60,6 +60,13 @@ export function copyFrame(out: Frame, frame: Frame) {
   mat4.copy(out.transform, frame.transform);
 }
 
+export function identityFrame(out: Frame) {
+  vec3.zero(out.position);
+  vec3.copy(out.scale, vec3.ONES);
+  quat.identity(out.rotation);
+  mat4.identity(out.transform);
+}
+
 // TRANSFORM
 export const TransformDef = EM.defineComponent("transform", (t?: mat4) => {
   return t ?? mat4.create();
@@ -185,6 +192,7 @@ export function registerUpdateLocalFromPosRotScale(
     null,
     [],
     (objs) => {
+      // TODO(@darzu): PERF. Hacky custom query! Not cached n stuff.
       for (let o of em.entities.values()) {
         if (!o.id) continue;
         // TODO(@darzu): do we really want these on every entity?

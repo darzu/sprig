@@ -11,7 +11,6 @@ import {
   RotationDef,
   ScaleDef,
 } from "../physics/transform.js";
-import { ColorDef } from "../color.js";
 import { registerEventHandler, DetectedEventsDef } from "../net/events.js";
 import { LocalPlayerDef, PlayerDef } from "./player.js";
 import { InteractableDef, InRangeDef } from "./interact.js";

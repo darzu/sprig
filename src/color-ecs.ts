@@ -43,3 +43,6 @@ export function clearTint(tints: Tints, name: string) {
     vec3.set(0, 0, 0, current);
   }
 }
+
+export const AlphaDef = EM.defineComponent("alpha", (c?: number) => c ?? 1.0);
+export type Alpha = Component<typeof AlphaDef>;

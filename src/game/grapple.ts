@@ -12,7 +12,7 @@ import {
 } from "../physics/transform.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { AssetsDef } from "./assets.js";
-import { ColorDef } from "../color.js";
+import { ColorDef } from "../color-ecs.js";
 import { InteractableDef } from "./interact.js";
 
 const DBG_GRAPPLE = false;
