@@ -2,9 +2,12 @@
 // https://people.cs.clemson.edu/~dhouse/courses/405/docs/brief-obj-file-format.html
 // http://paulbourke.net/dataformats/obj/
 
-import { vec2, vec3, vec4 } from "./gl-matrix.js";
+// Import .obj files into sprig format
+// https://people.cs.clemson.edu/~dhouse/courses/405/docs/brief-obj-file-format.html
+// http://paulbourke.net/dataformats/obj/
+import { vec2, vec3, vec4, quat, mat4 } from "./sprig-matrix.js";
 import { RawMesh } from "./render/mesh.js";
-import { assert } from "./util.js";
+import { assert, never } from "./util.js";
 import { idPair, IdPair, isString } from "./util.js";
 
 /*
@@ -28,21 +31,26 @@ export function isParseError(m: any | ParseError): m is ParseError {
 
 function parseVec(p: string[], len: 2): vec2 | ParseError;
 function parseVec(p: string[], len: 3): vec3 | ParseError;
-function parseVec(p: string[], len: number): number[] | vec3 | ParseError {
+function parseVec(p: string[], len: number): vec2 | vec3 | ParseError {
   const nums = p.map((s) => parseFloat(s));
   if (nums.some((n) => isNaN(n) || !isFinite(n)))
     return `invalid vector-${len} format: ${p.join(" ")}`;
   if (nums.length !== len)
     return `invalid vector-${len} format: ${p.join(" ")}`;
-  return nums;
+  if (len === 2) return vec2.clone(nums as [number, number]);
+  else if (len === 3) return vec3.clone(nums as [number, number, number]);
+  else assert(false);
 }
 
 function parseFaceVert(s: string): vec3 | ParseError {
   // parse v1/t1/n1 into [v1, t1, n1]
   const parts = s.split("/");
   if (parts.length !== 3) return `invalid face vertex: ${s}`;
-  const nums = parts.map((s) => parseFloat(s)) as vec3;
-  return nums;
+  return vec3.fromValues(
+    parseFloat(parts[0]),
+    parseFloat(parts[1]),
+    parseFloat(parts[2])
+  );
 }
 function parseFace(p: string[]): vec3[] | ParseError {
   const verts = p.map((s) => parseFaceVert(s));
@@ -54,8 +62,7 @@ function parseLineVert(s: string): vec2 | ParseError {
   // parse v1/t1 into [v1, t1]
   const parts = s.split("/");
   if (parts.length !== 2) return `invalid line vertex: ${s}`;
-  const nums = parts.map((s) => parseFloat(s)) as vec2;
-  return nums;
+  return vec2.fromValues(parseFloat(parts[0]), parseFloat(parts[1]));
 }
 function parseLine(p: string[]): vec2[] | ParseError {
   const verts = p.map((s) => parseLineVert(s));
@@ -116,7 +123,7 @@ export function importObj(obj: string): RawMesh[] | ParseError {
     // finish mesh
     for (let i = 0; i < tri.length + quad.length; i++) {
       // TODO(@darzu): import color
-      colors.push([0.0, 0.0, 0.0]);
+      colors.push(vec3.clone([0.0, 0.0, 0.0]));
       // colors.push([0.2, 0.2, 0.2]);
     }
     const m: RawMesh = { pos, tri, quad, colors, lines };
@@ -165,7 +172,7 @@ export function importObj(obj: string): RawMesh[] | ParseError {
       const indsErr = checkIndices(inds, pos.length - 1);
       if (isParseError(indsErr)) return indsErr + ` in line: ${p.join(" ")}`;
       if (inds.length !== 2) return `Too many indices in line: ${p.join(" ")}`;
-      lines.push(inds as vec2);
+      lines.push(vec2.clone(inds as [number, number]));
     } else if (kind === "f") {
       // parse face
       //    f v1/t1/n1 v2/t2/n2 .... vn/tn/nn
@@ -179,9 +186,9 @@ export function importObj(obj: string): RawMesh[] | ParseError {
         // triangle
         // TODO(@darzu): clockwise or counter clockwise?
         if (FLIP_FACES) {
-          tri.push(reverse(inds as vec3));
+          tri.push(vec3.fromValues(inds[2], inds[1], inds[0]));
         } else {
-          tri.push(inds as vec3);
+          tri.push(vec3.fromValues(inds[0], inds[1], inds[2]));
         }
       } else if (inds.length === 4) {
         // quad
@@ -191,11 +198,11 @@ export function importObj(obj: string): RawMesh[] | ParseError {
         if (FLIP_FACES) {
           // tri.push(reverse(tri1));
           // tri.push(reverse(tri2));
-          quad.push([inds[3], inds[2], inds[1], inds[0]]);
+          quad.push(vec4.fromValues(inds[3], inds[2], inds[1], inds[0]));
         } else {
           // tri.push(tri1);
           // tri.push(tri2);
-          quad.push([inds[0], inds[1], inds[2], inds[3]]);
+          quad.push(vec4.fromValues(inds[0], inds[1], inds[2], inds[3]));
         }
       } else if (inds.length === 8) {
         // TODO(@darzu): any large n-gon that's convex can just be made into a triangle fan
@@ -204,9 +211,9 @@ export function importObj(obj: string): RawMesh[] | ParseError {
         // triangle fan
         for (let i = 1; i < 7; i++) {
           if (FLIP_FACES) {
-            tri.push([inds[0], inds[i + 1], inds[i]]);
+            tri.push(vec3.clone([inds[0], inds[i + 1], inds[i]]));
           } else {
-            tri.push([inds[0], inds[i], inds[i + 1]]);
+            tri.push(vec3.clone([inds[0], inds[i], inds[i + 1]]));
           }
         }
       } else {
@@ -258,9 +265,6 @@ export function importObj(obj: string): RawMesh[] | ParseError {
         return `invalid vertex index '${vi + 1}'`;
     return null;
   }
-  function reverse(v: vec3): vec3 {
-    return [v[2], v[1], v[0]];
-  }
   function sortByGreedyDistance(inds: number[]) {
     // TODO(@darzu): improve perf?
     const res: number[] = [inds[0]];
@@ -302,12 +306,14 @@ export function importObj(obj: string): RawMesh[] | ParseError {
 
     const indPairs: vec2[] = [];
     for (let i = 0; i < inds.length; i++) {
-      indPairs.push([inds[i], inds[i + 1 === inds.length ? 0 : i + 1]]);
+      indPairs.push(
+        vec2.clone([inds[i], inds[i + 1 === inds.length ? 0 : i + 1]])
+      );
     }
     for (let [i0, i1] of indPairs) {
       const hash = idPair(i0, i1);
       if (!seenLines.has(hash)) {
-        lines.push([i0, i1]);
+        lines.push(vec2.clone([i0, i1]));
         seenLines.add(hash);
       }
     }

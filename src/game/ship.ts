@@ -1,6 +1,6 @@
 import { DevConsoleDef } from "../console.js";
 import { EM } from "../entity-manager.js";
-import { vec2 } from "../gl-matrix.js";
+import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
 import { onInit } from "../init.js";
 import { InputsDef } from "../inputs.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
@@ -42,8 +42,8 @@ onInit((em) => {
           // TODO(@darzu): This doesn't seem great. We need a better way to
           //    do  UVDir->Rotation
           //vec2.normalize(s.uvDir, s.uvDir);
-          const scaled = vec2.scale(tempVec2(), s.uvDir, s.ship.speed);
-          vec2.add(s.uvPos, s.uvPos, scaled);
+          const scaled = vec2.scale(s.uvDir, s.ship.speed);
+          vec2.add(s.uvPos, scaled, s.uvPos);
         }
       }
     },

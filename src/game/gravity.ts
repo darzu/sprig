@@ -1,5 +1,5 @@
 import { EM, EntityManager } from "../entity-manager.js";
-import { vec3 } from "../gl-matrix.js";
+import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
 import { onInit } from "../init.js";
 import { LinearVelocityDef } from "../physics/motion.js";
 import { tempVec3 } from "../temp-pool.js";
@@ -14,10 +14,10 @@ onInit((em: EntityManager) => {
     [GravityDef, LinearVelocityDef],
     [TimeDef],
     (objs, res) => {
-      const t = tempVec3();
+      const t = vec3.tmp();
       for (let b of objs) {
-        vec3.scale(t, b.gravity, 0.00001 * res.time.dt);
-        vec3.add(b.linearVelocity, b.linearVelocity, t);
+        vec3.scale(b.gravity, 0.00001 * res.time.dt, t);
+        vec3.add(b.linearVelocity, t, b.linearVelocity);
       }
     },
     "applyGravity"

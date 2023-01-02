@@ -1,6 +1,5 @@
-import { mat3, mat4, vec2, vec3 } from "../gl-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, mat3 } from "../sprig-matrix.js";
 import { clamp } from "../math.js";
-import { tempMat3, tempVec3 } from "../temp-pool.js";
 import { range } from "../util.js";
 import { vec3Floor } from "../utils-3d.js";
 
@@ -141,7 +140,8 @@ export function checkBroadphase(
   //      3000 objs @[2000, 200, 2000]: 1.2-7.6ms, 180,000-400,000 overlaps, 4,400 cell checks
   if (BROAD_PHASE === "GRID") {
     // initialize world
-    if (!_worldGrid) _worldGrid = createWorldGrid(universeAABB, [10, 10, 10]);
+    if (!_worldGrid)
+      _worldGrid = createWorldGrid(universeAABB, vec3.clone([10, 10, 10]));
     // place objects in grid
     for (let o of objs) {
       let ll = _objToObjLL[o.id];
@@ -170,7 +170,8 @@ export function checkBroadphase(
         for (let x = o.minCoord[0]; x <= o.maxCoord[0]; x++) {
           for (let y = o.minCoord[1]; y <= o.maxCoord[1]; y++) {
             for (let z = o.minCoord[2]; z <= o.maxCoord[2]; z++) {
-              const c = _worldGrid.grid[gridIdx(_worldGrid, [x, y, z])];
+              const c =
+                _worldGrid.grid[gridIdx(_worldGrid, vec3.clone([x, y, z]))];
               checkCell(o, c);
             }
           }
@@ -218,8 +219,8 @@ interface ObjLL {
   prev: WorldCell | ObjLL | null;
 }
 function createWorldGrid(aabb: AABB, cellSize: vec3): WorldGrid {
-  const chunkSize = vec3.sub(vec3.create(), aabb.max, aabb.min);
-  const dims = vec3.div(vec3.create(), chunkSize, cellSize);
+  const chunkSize = vec3.sub(aabb.max, aabb.min, vec3.create());
+  const dims = vec3.div(chunkSize, cellSize, vec3.create());
   vec3Floor(dims, dims);
   const gridLength = dims[0] * dims[1] * dims[2];
   console.log(gridLength);
@@ -250,7 +251,7 @@ function gridIdx(g: WorldGrid, coord: vec3): number {
   return idx;
 }
 function gridCoord(out: vec3, g: WorldGrid, pos: vec3): vec3 {
-  vec3.div(out, vec3.sub(out, pos, g.aabb.min), g.cellSize);
+  vec3.div(vec3.sub(pos, g.aabb.min, out), g.cellSize, out);
   // clamp coordinates onto world grid
   // TODO(@darzu): should we use multiple grids?
   out[0] = clamp(Math.floor(out[0]), 0, g.dimensions[0] - 1);
@@ -359,7 +360,7 @@ export function rayVsRay(ra: Ray, rb: Ray): vec3 | undefined {
 
   if (isNaN(ta) || !isFinite(ta) || ta < 0.0) return undefined;
 
-  const pt = vec3.add(vec3.create(), b, vec3.scale(tempVec3(), db, tb));
+  const pt = vec3.add(b, vec3.scale(db, tb), vec3.create());
 
   // TODO(@darzu): this doesn't handle the third axis!!
 
@@ -445,9 +446,9 @@ function octtree(parentObjs: Map<number, AABB>, aabb: AABB): OctTree | null {
     return null;
   }
   const nextLen = vec3.scale(
-    _scratchVec3,
-    vec3.sub(_scratchVec3, aabb.max, aabb.min),
-    0.5
+    vec3.sub(aabb.max, aabb.min, _scratchVec3),
+    0.5,
+    _scratchVec3
   );
   if (thisObjs.size <= 2 || nextLen[0] <= _octtreeMinLen)
     return {
@@ -460,8 +461,12 @@ function octtree(parentObjs: Map<number, AABB>, aabb: AABB): OctTree | null {
     for (let yMin of [aabb.min[1], aabb.min[1] + nextLen[1]]) {
       for (let zMin of [aabb.min[2], aabb.min[2] + nextLen[2]]) {
         childAABBs.push({
-          min: [xMin, yMin, zMin],
-          max: [xMin + nextLen[0], yMin + nextLen[1], zMin + nextLen[2]],
+          min: vec3.clone([xMin, yMin, zMin]),
+          max: vec3.clone([
+            xMin + nextLen[0],
+            yMin + nextLen[1],
+            zMin + nextLen[2],
+          ]),
         });
       }
     }
@@ -562,35 +567,35 @@ export function copyAABB(out: AABB, a: AABB) {
 
 export function getAABBCorners(aabb: AABB): vec3[] {
   const points: vec3[] = [
-    [aabb.max[0], aabb.max[1], aabb.max[2]],
-    [aabb.max[0], aabb.max[1], aabb.min[2]],
-    [aabb.max[0], aabb.min[1], aabb.max[2]],
-    [aabb.max[0], aabb.min[1], aabb.min[2]],
+    vec3.clone([aabb.max[0], aabb.max[1], aabb.max[2]]),
+    vec3.clone([aabb.max[0], aabb.max[1], aabb.min[2]]),
+    vec3.clone([aabb.max[0], aabb.min[1], aabb.max[2]]),
+    vec3.clone([aabb.max[0], aabb.min[1], aabb.min[2]]),
 
-    [aabb.min[0], aabb.max[1], aabb.max[2]],
-    [aabb.min[0], aabb.max[1], aabb.min[2]],
-    [aabb.min[0], aabb.min[1], aabb.max[2]],
-    [aabb.min[0], aabb.min[1], aabb.min[2]],
+    vec3.clone([aabb.min[0], aabb.max[1], aabb.max[2]]),
+    vec3.clone([aabb.min[0], aabb.max[1], aabb.min[2]]),
+    vec3.clone([aabb.min[0], aabb.min[1], aabb.max[2]]),
+    vec3.clone([aabb.min[0], aabb.min[1], aabb.min[2]]),
   ];
   return points;
 }
 
 const tempAabbCorners: vec3[] = range(8).map((_) => vec3.create());
 export function getAABBCornersTemp(aabb: AABB): vec3[] {
-  vec3.set(tempAabbCorners[0], aabb.max[0], aabb.max[1], aabb.max[2]);
-  vec3.set(tempAabbCorners[1], aabb.max[0], aabb.max[1], aabb.min[2]);
-  vec3.set(tempAabbCorners[2], aabb.max[0], aabb.min[1], aabb.max[2]);
-  vec3.set(tempAabbCorners[3], aabb.max[0], aabb.min[1], aabb.min[2]);
-  vec3.set(tempAabbCorners[4], aabb.min[0], aabb.max[1], aabb.max[2]);
-  vec3.set(tempAabbCorners[5], aabb.min[0], aabb.max[1], aabb.min[2]);
-  vec3.set(tempAabbCorners[6], aabb.min[0], aabb.min[1], aabb.max[2]);
-  vec3.set(tempAabbCorners[7], aabb.min[0], aabb.min[1], aabb.min[2]);
+  vec3.set(aabb.max[0], aabb.max[1], aabb.max[2], tempAabbCorners[0]);
+  vec3.set(aabb.max[0], aabb.max[1], aabb.min[2], tempAabbCorners[1]);
+  vec3.set(aabb.max[0], aabb.min[1], aabb.max[2], tempAabbCorners[2]);
+  vec3.set(aabb.max[0], aabb.min[1], aabb.min[2], tempAabbCorners[3]);
+  vec3.set(aabb.min[0], aabb.max[1], aabb.max[2], tempAabbCorners[4]);
+  vec3.set(aabb.min[0], aabb.max[1], aabb.min[2], tempAabbCorners[5]);
+  vec3.set(aabb.min[0], aabb.min[1], aabb.max[2], tempAabbCorners[6]);
+  vec3.set(aabb.min[0], aabb.min[1], aabb.min[2], tempAabbCorners[7]);
   return tempAabbCorners;
 }
 
 export function transformAABB(out: AABB, t: mat4) {
   const wCorners = getAABBCornersTemp(out);
-  wCorners.forEach((p) => vec3.transformMat4(p, p, t));
+  wCorners.forEach((p) => vec3.transformMat4(p, t, p));
   getAABBFromPositions(out, wCorners);
 }
 
@@ -621,8 +626,8 @@ export function mergeAABBs(out: AABB, a: AABB, b: AABB): AABB {
 }
 
 export function getAABBFromPositions(out: AABB, positions: vec3[]): AABB {
-  vec3.set(out.min, Infinity, Infinity, Infinity);
-  vec3.set(out.max, -Infinity, -Infinity, -Infinity);
+  vec3.set(Infinity, Infinity, Infinity, out.min);
+  vec3.set(-Infinity, -Infinity, -Infinity, out.max);
 
   for (let pos of positions) {
     updateAABBWithPoint(out, pos);
@@ -641,13 +646,13 @@ export interface Line {
   len: number;
 }
 export function getLineEnd(out: vec3, line: Line) {
-  vec3.scale(out, line.ray.dir, line.len);
-  vec3.add(out, line.ray.org, out);
+  vec3.scale(line.ray.dir, line.len, out);
+  vec3.add(line.ray.org, out, out);
   return out;
 }
 export function getLineMid(out: vec3, line: Line) {
-  vec3.scale(out, line.ray.dir, line.len * 0.5);
-  vec3.add(out, line.ray.org, out);
+  vec3.scale(line.ray.dir, line.len * 0.5, out);
+  vec3.add(line.ray.org, out, out);
   return out;
 }
 
@@ -677,7 +682,7 @@ export function copyLine(out: Line, a: Line): Line {
 
 export function createLine(a: vec3, b: vec3): Line {
   const len = vec3.dist(a, b);
-  const dir = vec3.sub(vec3.create(), b, a);
+  const dir = vec3.sub(b, a, vec3.create());
   vec3.normalize(dir, dir);
   return {
     ray: {
@@ -690,11 +695,12 @@ export function createLine(a: vec3, b: vec3): Line {
 
 export function transformLine(out: Line, t: mat4) {
   // TODO(@darzu): this code needs review. It might not work right with scaling
+  // TODO(@darzu): this code needs review. It might not work right with scaling
   vec3.normalize(out.ray.dir, out.ray.dir); // might not be needed if inputs r always normalized
-  vec3.transformMat4(out.ray.org, out.ray.org, t);
-  const t3 = mat3.fromMat4(tempMat3(), t);
-  vec3.transformMat3(out.ray.dir, out.ray.dir, t3);
-  const lenScale = vec3.len(out.ray.dir);
+  vec3.transformMat4(out.ray.org, t, out.ray.org);
+  const t3 = mat3.fromMat4(t);
+  vec3.transformMat3(out.ray.dir, t3, out.ray.dir);
+  const lenScale = vec3.length(out.ray.dir);
   out.len = out.len * lenScale;
   vec3.normalize(out.ray.dir, out.ray.dir);
   return out;
@@ -705,7 +711,7 @@ export function raySphereIntersections(
   sphere: Sphere
 ): vec2 | undefined {
   // https://iquilezles.org/articles/intersectors/
-  const a = vec3.sub(tempVec3(), ray.org, sphere.org);
+  const a = vec3.sub(ray.org, sphere.org);
   const b = vec3.dot(a, ray.dir);
   const c = vec3.dot(a, a) - sphere.rad * sphere.rad;
   const h = b * b - c;

@@ -23,6 +23,7 @@ import { initClothSandbox } from "./game/game-cloth.js";
 import { initCubeGame } from "./game/xp-cube.js";
 import { callSpringSystems } from "./game/spring.js";
 import { callClothSystems } from "./game/cloth.js";
+import { resetTempMatrixBuffer } from "./sprig-matrix.js";
 
 export const FORCE_WEBGL = false;
 export const MAX_MESHES = 20000;
@@ -270,6 +271,7 @@ async function startGame(localPeerName: string, host: string | null) {
       }
       accumulator -= TIMESTEP;
       tick(EM, TIMESTEP);
+      resetTempMatrixBuffer();
       callFixedTimestepSystems();
       loops++;
     }

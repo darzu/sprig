@@ -1,4 +1,4 @@
-import { mat3, mat4, quat, vec2, vec3, vec4 } from "./gl-matrix.js";
+import { vec2, vec3, vec4, quat, mat4 } from "./sprig-matrix.js";
 import { avg, mathMap } from "./math.js";
 import { AABB } from "./physics/broadphase.js";
 import { tempVec2, tempVec3 } from "./temp-pool.js";
@@ -10,56 +10,56 @@ import { tempVec2, tempVec3 } from "./temp-pool.js";
 export function computeTriangleNormal(p1: vec3, p2: vec3, p3: vec3): vec3 {
   // cross product of two edges, https://www.khronos.org/opengl/wiki/Calculating_a_Surface_Normal
   const n = vec3.cross(
-    vec3.create(),
-    vec3.sub(vec3.create(), p2, p1),
-    vec3.sub(vec3.create(), p3, p1)
+    vec3.sub(p2, p1, vec3.create()),
+    vec3.sub(p3, p1, vec3.create()),
+    vec3.create()
   );
   vec3.normalize(n, n);
   return n;
 }
 
 export function randNormalVec3(out: vec3) {
-  vec3.set(out, Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5);
+  vec3.set(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5, out);
   vec3.normalize(out, out);
   return out;
 }
 
 export function randNormalPosVec3(out?: vec3) {
   if (!out) out = vec3.create();
-  vec3.set(out, Math.random(), Math.random(), Math.random());
+  vec3.set(Math.random(), Math.random(), Math.random(), out);
   vec3.normalize(out, out);
   return out;
 }
 
 export function randNormalVec2(out: vec2) {
-  vec2.set(out, Math.random() - 0.5, Math.random() - 0.5);
+  vec2.set(Math.random() - 0.5, Math.random() - 0.5, out);
   vec2.normalize(out, out);
   return out;
 }
 
 // matrix utilities
 export function pitch(m: mat4, rad: number) {
-  return mat4.rotateX(m, m, rad);
+  return mat4.rotateX(m, rad, m);
 }
 export function yaw(m: mat4, rad: number) {
-  return mat4.rotateY(m, m, rad);
+  return mat4.rotateY(m, rad, m);
 }
 export function roll(m: mat4, rad: number) {
-  return mat4.rotateZ(m, m, rad);
+  return mat4.rotateZ(m, rad, m);
 }
 export function moveX(m: mat4, n: number) {
-  return mat4.translate(m, m, [n, 0, 0]);
+  return mat4.translate(m, [n, 0, 0], m);
 }
 export function moveY(m: mat4, n: number) {
-  return mat4.translate(m, m, [0, n, 0]);
+  return mat4.translate(m, [0, n, 0], m);
 }
 export function moveZ(m: mat4, n: number) {
-  return mat4.translate(m, m, [0, 0, n]);
+  return mat4.translate(m, [0, 0, n], m);
 }
 export function getPositionFromTransform(t: mat4): vec3 {
   // TODO(@darzu): not really necessary
   const pos = vec3.create();
-  vec3.transformMat4(pos, pos, t);
+  vec3.transformMat4(pos, t, pos);
   return pos;
 }
 // vec utilities
@@ -86,7 +86,7 @@ export function vec4Dbg(v: vec4): string {
 }
 export function quatDbg(q: quat): string {
   const axis = tempVec3();
-  const n = quat.getAxisAngle(axis, q);
+  const n = quat.getAxisAngle(q, axis);
   return `${vec3Dbg(axis)}*${n.toFixed(2)}`;
 }
 export function mat4Dbg(v: mat4): string {
@@ -117,10 +117,10 @@ export function vec3Mid(out: vec3, a: vec3, b: vec3): vec3 {
 // assumes local up axis is [0,1,0] and forward is [0,0,1]
 export function quatFromUpForward(out: quat, up: vec3, forwardish: vec3): quat {
   // https://stackoverflow.com/questions/52413464/look-at-quaternion-using-up-vector/52551983#52551983
-  const side = vec3.cross(tempVec3(), forwardish, up);
+  const side = vec3.cross(forwardish, up);
   vec3.negate(side, side); // TODO(@darzu): is this negate right?
   vec3.normalize(side, side);
-  const backward = vec3.cross(tempVec3(), side, up);
+  const backward = vec3.cross(side, up);
 
   const trace = side[0] + up[1] + backward[2];
   if (trace > 0.0) {
@@ -168,11 +168,11 @@ export function farthestPointInDir(points: vec3[], d: vec3): vec3 {
 }
 
 export function uintToVec3unorm(i: number, max: number): vec3 {
-  return [
+  return vec3.clone([
     (((((i % 7) + 1) & 1) >> 0) * (Math.floor(i / 7) + 1)) / Math.ceil(max / 7),
     (((((i % 7) + 1) & 2) >> 1) * (Math.floor(i / 7) + 1)) / Math.ceil(max / 7),
     (((((i % 7) + 1) & 4) >> 2) * (Math.floor(i / 7) + 1)) / Math.ceil(max / 7),
-  ];
+  ]);
 }
 
 // Changes all vec2s to be in the range [0,1] based on the max and min values
@@ -199,7 +199,7 @@ export function positionAndTargetToOrthoViewProjMatrix(
   target: vec3
 ): mat4 {
   const viewMatrix = out;
-  mat4.lookAt(viewMatrix, position, target, [0, 1, 0]);
+  mat4.lookAt(position, target, [0, 1, 0], viewMatrix);
   const projectionMatrix = mat4.create();
   const dist = vec3.dist(position, target);
   {
@@ -210,18 +210,18 @@ export function positionAndTargetToOrthoViewProjMatrix(
     const near = dist * 0.2;
     // TODO: examine this carefully-derived constant
     const far = dist * 1.5;
-    mat4.ortho(projectionMatrix, left, right, bottom, top, near, far);
+    mat4.ortho(left, right, bottom, top, near, far, projectionMatrix);
   }
-  mat4.multiply(viewMatrix, projectionMatrix, viewMatrix);
+  mat4.mul(projectionMatrix, viewMatrix, viewMatrix);
   return viewMatrix;
 }
 
 export function signedAreaOfTriangle(a: vec2, b: vec2, c: vec2): number {
   const ab = tempVec2();
   const ac = tempVec2();
-  vec2.subtract(ab, b, a);
-  vec2.subtract(ac, c, a);
-  let cross = vec2.cross(tempVec3(), ab, ac);
+  vec2.sub(b, a, ab);
+  vec2.sub(c, a, ac);
+  let cross = vec2.cross(ab, ac);
   return 0.5 * cross[2];
 }
 

@@ -1,4 +1,4 @@
-import { mat4, vec3 } from "../../gl-matrix.js";
+import { vec2, vec3, vec4, quat, mat4 } from "../../sprig-matrix.js";
 import { assert } from "../../util.js";
 import { computeTriangleNormal } from "../../utils-3d.js";
 import { comparisonSamplerPtr, CY, linearSamplerPtr } from "../gpu-registry.js";
@@ -127,10 +127,10 @@ function computeOceanVertsData(
   // TODO(@darzu): change
   const vertsData: OceanVertTS[] = m.pos.map((pos, i) => ({
     position: pos,
-    color: [1.0, 0.0, 1.0], // per-face; changed below
+    color: vec3.fromValues(1.0, 0.0, 1.0), // per-face; changed below
     tangent: m.tangents![i],
     normal: m.normals![i],
-    uv: m.uvs ? m.uvs[i] : [0.0, 0.0],
+    uv: m.uvs ? m.uvs[i] : vec2.fromValues(0.0, 0.0),
     surfaceId: 0, // per-face; changed below
   }));
   // TODO: compute tangents here? right now tangents are wrong if we

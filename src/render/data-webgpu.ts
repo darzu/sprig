@@ -21,7 +21,7 @@ import {
 } from "./gpu-registry.js";
 import { MeshPool } from "./mesh-pool.js";
 import { BLACK } from "../game/assets.js";
-import { vec2, vec3, vec4 } from "../gl-matrix.js";
+import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
 import { GPUBufferUsage } from "./webgpu-hacks.js";
 import { PERF_DBG_GPU } from "../flags.js";
 
@@ -354,7 +354,7 @@ export function createCyTexture(
     queueUpdate(data);
   }
 
-  const black: vec4 = [0, 0, 0, 1];
+  const black: vec4 = vec4.clone([0, 0, 0, 1]);
 
   return cyTex;
 

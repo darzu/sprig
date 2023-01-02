@@ -1,6 +1,6 @@
 import { Canvas, CanvasDef } from "./canvas.js";
 import { Component, EM, EntityManager } from "./entity-manager.js";
-import { vec2 } from "./gl-matrix.js";
+import { vec2, vec3, vec4, quat, mat4 } from "./sprig-matrix.js";
 import { clamp } from "./math.js";
 
 // Consider: https://www.reddit.com/r/gamedev/comments/w1dau6/input_buffering_action_canceling_and_also/
@@ -75,16 +75,8 @@ export function registerInputsSystem(em: EntityManager): void {
       if (mousedrag.isDragging) {
         vec2.copy(mousedrag.dragLastEnd, mousedrag.dragEnd);
         vec2.copy(mousedrag.dragEnd, inputs.mousePos);
-        vec2.set(
-          mousedrag.dragMin,
-          Math.min(mousedrag.dragStart[0], mousedrag.dragEnd[0]),
-          Math.min(mousedrag.dragStart[1], mousedrag.dragEnd[1])
-        );
-        vec2.set(
-          mousedrag.dragMax,
-          Math.max(mousedrag.dragStart[0], mousedrag.dragEnd[0]),
-          Math.max(mousedrag.dragStart[1], mousedrag.dragEnd[1])
-        );
+        vec2.set(Math.min(mousedrag.dragStart[0], mousedrag.dragEnd[0]), Math.min(mousedrag.dragStart[1], mousedrag.dragEnd[1]), mousedrag.dragMin);
+        vec2.set(Math.max(mousedrag.dragStart[0], mousedrag.dragEnd[0]), Math.max(mousedrag.dragStart[1], mousedrag.dragEnd[1]), mousedrag.dragMax);
         vec2.copy(mousedrag.dragMov, inputs.mouseMov);
       }
     },

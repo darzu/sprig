@@ -1,4 +1,4 @@
-import { vec3 } from "./gl-matrix.js";
+import { vec2, vec3, vec4, quat, mat4 } from "./sprig-matrix.js";
 import { RawMesh } from "./render/mesh.js";
 
 // TODO(@darzu): maybe never mind any of this? doesn't get much more compressed that .toFixed(2)'ing everything
@@ -27,7 +27,7 @@ export function importSprigMesh(smesh: SprigMesh): RawMesh {
   };
 
   // TODO(@darzu): colors
-  res.colors = res.tri!.map((_) => [0.1, 0.1, 0.1]);
+  res.colors = res.tri!.map((_) => vec3.fromValues(0.1, 0.1, 0.1));
 
   return res as RawMesh;
 }
@@ -53,7 +53,7 @@ function deserializeVecArray(b64: string): vec3[] {
     throw `cannot deserialize float32 array into vec3s if it isnt a multiple of 3`;
   const res: vec3[] = [];
   for (let i = 0; i < f32s.length; i += 3) {
-    res.push([f32s[i], f32s[i + 1], f32s[i + 2]]);
+    res.push(vec3.clone([f32s[i], f32s[i + 1], f32s[i + 2]]));
   }
   return res;
 }

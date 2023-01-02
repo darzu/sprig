@@ -21,7 +21,7 @@ import { noisePipes } from "../render/pipelines/std-noise.js";
 import { DevConsoleDef } from "../console.js";
 import { initOcean, OceanDef, oceanJfa, UVPosDef, UVDirDef } from "./ocean.js";
 import { asyncTimeout } from "../util.js";
-import { vec2, vec3 } from "../gl-matrix.js";
+import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
 import { AnimateToDef } from "../animate-to.js";
 import { createSpawner, SpawnerDef } from "./spawner.js";
 import { tempVec3 } from "../temp-pool.js";
@@ -46,10 +46,10 @@ function spawnRandomDarkStar(
   vec3.normalize(orbitalAxis, orbitalAxis);
 
   // TODO: this only works because the darkstar is orbiting the origin
-  const perpendicular = vec3.cross(tempVec3(), approxPosition, orbitalAxis);
-  const starPosition = vec3.cross(perpendicular, orbitalAxis, perpendicular);
+  const perpendicular = vec3.cross(approxPosition, orbitalAxis);
+  const starPosition = vec3.cross(orbitalAxis, perpendicular, perpendicular);
   vec3.normalize(starPosition, starPosition);
-  vec3.scale(starPosition, starPosition, vec3.length(approxPosition));
+  vec3.scale(starPosition, vec3.length(approxPosition), starPosition);
 
   return createDarkStarNow(
     res,
@@ -152,15 +152,15 @@ export async function initHyperspaceGame(em: EntityManager) {
       res.assets.ship_fangs.proto
     );
     em.ensureComponentOn(eShip, PositionDef);
-    em.ensureComponentOn(eShip, UVPosDef, [0.2, 0.1]);
+    em.ensureComponentOn(eShip, UVPosDef, vec2.clone([0.2, 0.1]));
 
-    const ship = createPlayerShip([0.1, 0.1]);
+    const ship = createPlayerShip(vec2.clone([0.1, 0.1]));
     const ship2 = await em.whenEntityHas(ship, UVPosDef);
 
     const NUM_ENEMY = 40;
 
     for (let i = 0; i < NUM_ENEMY; i++) {
-      let enemyUVPos: vec2 = [Math.random(), Math.random()];
+      let enemyUVPos: vec2 = vec2.clone([Math.random(), Math.random()]);
       // TODO(@darzu): re-enable
       // while (ocean.uvToEdgeDist(enemyUVPos) < 0.1) {
       //   enemyUVPos = [Math.random(), Math.random()];
@@ -170,9 +170,9 @@ export async function initHyperspaceGame(em: EntityManager) {
       const enemyEndPos = vec3.create();
       ocean.uvToGerstnerDispAndNorm(enemyEndPos, tempVec3(), enemyUVPos);
       // vec3.add(enemyEndPos, enemyEndPos, [0, 10, 0]);
-      const enemyStartPos = vec3.sub(vec3.create(), enemyEndPos, [0, 20, 0]);
+      const enemyStartPos = vec3.sub(enemyEndPos, [0, 20, 0], vec3.create());
 
-      const towardsPlayerDir = vec2.sub(vec2.create(), ship2.uvPos, enemyUVPos);
+      const towardsPlayerDir = vec2.sub(ship2.uvPos, enemyUVPos, vec2.create());
       vec2.normalize(towardsPlayerDir, towardsPlayerDir);
 
       // console.log("creating spawner");
@@ -192,10 +192,10 @@ export async function initHyperspaceGame(em: EntityManager) {
 
     // TODO: this only works because the darkstar is orbiting the origin
     const approxPosition = vec3.fromValues(-1000, 2000, -1000);
-    const perpendicular = vec3.cross(tempVec3(), approxPosition, orbitalAxis);
-    const starPosition = vec3.cross(perpendicular, orbitalAxis, perpendicular);
+    const perpendicular = vec3.cross(approxPosition, orbitalAxis);
+    const starPosition = vec3.cross(orbitalAxis, perpendicular, perpendicular);
     vec3.normalize(starPosition, starPosition);
-    vec3.scale(starPosition, starPosition, vec3.length(approxPosition));
+    vec3.scale(starPosition, vec3.length(approxPosition), starPosition);
 
     const star1 = spawnRandomDarkStar(
       res,

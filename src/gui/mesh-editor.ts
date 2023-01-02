@@ -2,7 +2,7 @@ import { ColorDef } from "../color-ecs.js";
 import { EM, EntityW } from "../entity-manager.js";
 import { AssetsDef, GameMesh } from "../game/assets.js";
 import { gameplaySystems } from "../game/game.js";
-import { mat3, mat4, quat, vec3 } from "../gl-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, mat3 } from "../sprig-matrix.js";
 import {
   extrudeQuad,
   HEdge,
@@ -20,7 +20,6 @@ import {
   RendererDef,
   RenderableDef,
 } from "../render/renderer-ecs.js";
-import { tempMat3, tempMat4, tempVec3 } from "../temp-pool.js";
 import { assert } from "../util.js";
 import { randNormalPosVec3, vec3Mid } from "../utils-3d.js";
 import { ButtonsStateDef, ButtonDef } from "./button.js";
@@ -154,9 +153,9 @@ async function createMeshEditor() {
         "std",
         false
       );
-      EM.ensureComponentOn(hpEnt_, PositionDef, [0, 0.1, 0]);
+      EM.ensureComponentOn(hpEnt_, PositionDef, vec3.clone([0, 0.1, 0]));
       // TODO(@darzu): make scale configurable
-      EM.ensureComponentOn(hpEnt_, ScaleDef, [5, 5, 5]);
+      EM.ensureComponentOn(hpEnt_, ScaleDef, vec3.clone([5, 5, 5]));
       const hpEnt = await EM.whenEntityHas(
         hpEnt_,
         RenderableDef,
@@ -243,7 +242,7 @@ async function createMeshEditor() {
     // console.dir(res);
     assert(res.hp && res.hpEnt);
     const pos = vec3.copy(g.position, res.hp.mesh.pos[hv.vi]);
-    vec3.transformMat4(pos, pos, res.hpEnt.world.transform);
+    vec3.transformMat4(pos, res.hpEnt.world.transform, pos);
     pos[1] = 0.2; // TODO(@darzu): this z-layering stuff is wierd
 
     return g;
@@ -295,9 +294,9 @@ async function createMeshEditor() {
     // TODO(@darzu): PERF, expensive inverse
     // TODO(@darzu): doesn't account for parent translation
     // TODO(@darzu): should be done via parenting
-    const invTrans4 = mat4.invert(tempMat4(), res.hpEnt.world.transform);
-    const invTrans3 = mat3.fromMat4(tempMat3(), invTrans4);
-    const posE = vec3.transformMat3(tempVec3(), glyph.position, invTrans3);
+    const invTrans4 = mat4.invert(res.hpEnt.world.transform);
+    const invTrans3 = mat3.fromMat4(invTrans4);
+    const posE = vec3.transformMat3(glyph.position, invTrans3);
 
     vertPos[0] = posE[0];
     vertPos[2] = posE[2];
@@ -309,13 +308,13 @@ async function createMeshEditor() {
     if (glyph) {
       assert(res.hp);
 
-      const pos0 = vec3.copy(tempVec3(), res.hp.mesh.pos[he.orig.vi]);
-      vec3.transformMat4(pos0, pos0, res.hpEnt.world.transform);
-      const pos1 = vec3.copy(tempVec3(), res.hp.mesh.pos[he.twin.orig.vi]);
-      vec3.transformMat4(pos1, pos1, res.hpEnt.world.transform);
-      const diff = vec3.sub(tempVec3(), pos1, pos0);
+      const pos0 = vec3.copy(vec3.tmp(), res.hp.mesh.pos[he.orig.vi]);
+      vec3.transformMat4(pos0, res.hpEnt.world.transform, pos0);
+      const pos1 = vec3.copy(vec3.tmp(), res.hp.mesh.pos[he.twin.orig.vi]);
+      vec3.transformMat4(pos1, res.hpEnt.world.transform, pos1);
+      const diff = vec3.sub(pos1, pos0);
       const theta = Math.atan2(diff[0], diff[2]) + Math.PI * 0.5;
-      quat.fromEuler(glyph.rotation, 0, theta, 0);
+      quat.fromEuler(0, theta, 0, glyph.rotation);
       vec3Mid(glyph.position, pos0, pos1);
       glyph.position[1] = 0.2;
     }

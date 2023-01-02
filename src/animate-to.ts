@@ -2,7 +2,7 @@
 // TODO(@darzu): share code with smoothing?
 
 import { EM } from "./entity-manager.js";
-import { vec3 } from "./gl-matrix.js";
+import { vec2, vec3, vec4, quat, mat4 } from "./sprig-matrix.js";
 import { onInit } from "./init.js";
 import { PositionDef } from "./physics/transform.js";
 import { TimeDef } from "./time.js";
@@ -60,12 +60,13 @@ onInit(() => {
 
         const percentPath = c.animateTo.easeFn(percentTime);
 
-        vec3.sub(delta, c.animateTo.endPos, c.animateTo.startPos);
+        vec3.sub(c.animateTo.endPos, c.animateTo.startPos, delta);
 
         // TODO(@darzu): support other (non-linear) paths
-        vec3.scale(delta, delta, percentPath);
+        // TODO(@darzu): support other (non-linear) paths
+vec3.scale(delta, percentPath, delta);
 
-        vec3.add(c.position, c.animateTo.startPos, delta);
+        vec3.add(c.animateTo.startPos, delta, c.position);
       }
 
       // clean up finished

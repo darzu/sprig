@@ -2,7 +2,7 @@ import { CameraView } from "./camera.js";
 import { ColorDef } from "./color-ecs.js";
 import { EM, Entity, EntityW } from "./entity-manager.js";
 import { AssetsDef } from "./game/assets.js";
-import { vec2, vec3 } from "./gl-matrix.js";
+import { vec2, vec3, vec4, quat, mat4 } from "./sprig-matrix.js";
 import { mathMap } from "./math.js";
 import { getLineEnd, Line, Ray } from "./physics/broadphase.js";
 import { PositionDef, ScaleDef } from "./physics/transform.js";
@@ -29,9 +29,9 @@ export async function drawLine2(line: Line, color: vec3) {
 }
 export async function drawLine(start: vec3, end: vec3, color: vec3) {
   start = vec3.clone(start);
-  const start2 = vec3.add(vec3.create(), start, [0.2, 0.2, 0.2]);
+  const start2 = vec3.add(start, [0.2, 0.2, 0.2], vec3.create());
   end = vec3.clone(end);
-  const end2 = vec3.add(vec3.create(), end, [0.1, 0.1, 0.1]);
+  const end2 = vec3.add(end, [0.1, 0.1, 0.1], vec3.create());
 
   const pos = [start, start2, end2, end];
 
@@ -61,9 +61,9 @@ export async function drawLine(start: vec3, end: vec3, color: vec3) {
 }
 export function createLine(start: vec3, end: vec3, color: vec3) {
   start = vec3.clone(start);
-  const start2 = vec3.add(vec3.create(), start, [0.2, 0.2, 0.2]);
+  const start2 = vec3.add(start, [0.2, 0.2, 0.2], vec3.create());
   end = vec3.clone(end);
-  const end2 = vec3.add(vec3.create(), end, [0.1, 0.1, 0.1]);
+  const end2 = vec3.add(end, [0.1, 0.1, 0.1], vec3.create());
 
   const pos = [start, start2, end2, end];
 
@@ -74,8 +74,8 @@ export function createLine(start: vec3, end: vec3, color: vec3) {
     tri: [],
     // TODO(@darzu): HACK
     quad: [
-      [0, 1, 2, 3],
-      [3, 2, 1, 0],
+      vec4.clone([0, 1, 2, 3]),
+      vec4.clone([3, 2, 1, 0]),
     ],
     colors: [color, color],
     // TODO(@darzu): use line rendering!
@@ -99,7 +99,7 @@ export async function drawBall(
   EM.ensureComponentOn(e, ColorDef, color);
   EM.ensureComponentOn(e, RenderableConstructDef, res.assets.ball.proto);
   EM.ensureComponentOn(e, PositionDef, pos);
-  EM.ensureComponentOn(e, ScaleDef, [size, size, size]);
+  EM.ensureComponentOn(e, ScaleDef, vec3.clone([size, size, size]));
   return e;
 }
 
@@ -109,7 +109,7 @@ export async function randomizeMeshColors(e: Entity) {
   const meshH = e2.renderable.meshHandle;
   const mesh = meshH.mesh!;
   for (let c of mesh.colors)
-    vec3.set(c, Math.random(), Math.random(), Math.random());
+    vec3.set(Math.random(), Math.random(), Math.random(), c);
   res.renderer.renderer.stdPool.updateMeshVertices(meshH, mesh);
 }
 
@@ -123,16 +123,16 @@ export function screenPosToWorldPos(
 
   const viewX = mathMap(screenPos[0], 0, cameraView.width, -1, 1);
   const viewY = mathMap(screenPos[1], 0, cameraView.height, 1, -1);
-  const viewPos3 = vec3.set(tempVec3(), viewX, viewY, screenDepth);
+  const viewPos3 = vec3.set(viewX, viewY, screenDepth);
 
-  return vec3.transformMat4(out, viewPos3, invViewProj);
+  return vec3.transformMat4(viewPos3, invViewProj, out);
 }
 
 export function screenPosToRay(screenPos: vec2, cameraView: CameraView): Ray {
   const origin = screenPosToWorldPos(vec3.create(), screenPos, cameraView, -1);
   const target = screenPosToWorldPos(tempVec3(), screenPos, cameraView, 0);
 
-  const dir = vec3.sub(vec3.create(), target, origin);
+  const dir = vec3.sub(target, origin, vec3.create());
   vec3.normalize(dir, dir);
 
   const r: Ray = {

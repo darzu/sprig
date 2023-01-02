@@ -1,6 +1,6 @@
 import { CanvasDef } from "../canvas.js";
 import { EM, EntityManager, EntityW } from "../entity-manager.js";
-import { mat4, vec2, vec3 } from "../gl-matrix.js";
+import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
 import { InputsDef } from "../inputs.js";
 import { mathMap } from "../math.js";
 import { AABB, Ray, RayHit } from "../physics/broadphase.js";
@@ -78,19 +78,15 @@ function registerObjClicker(em: EntityManager) {
           const e = EM.findEntity(firstHit.id, [ColorDef]);
           if (e) {
             EM.ensureComponentOn(e, TintsDef);
-            e.tints.set("select", [0, 0.2, 0]);
+            e.tints.set("select", vec3.clone([0, 0.2, 0]));
             // e.color[1] += 0.1;
           }
         }
 
         // draw our ray
         const rayDist = firstHit?.dist || 1000;
-        const color: vec3 = firstHit ? [0, 1, 0] : [1, 0, 0];
-        const endPoint = vec3.add(
-          vec3.create(),
-          r.org,
-          vec3.scale(tempVec3(), r.dir, rayDist)
-        );
+        const color: vec3 = firstHit ? vec3.clone([0, 1, 0]) : vec3.clone([1, 0, 0]);
+        const endPoint = vec3.add(r.org, vec3.scale(r.dir, rayDist), vec3.create());
         drawLine(r.org, endPoint, color);
       }
     },
@@ -161,10 +157,10 @@ function registerAABBBuilder(em: EntityManager) {
               vec3.copy(vec3.create(), lastB.position)
             );
           } else {
-            em.ensureComponentOn(b, ScaleDef, [2, 1, 1]);
-            em.ensureComponentOn(b, PositionDef, [0, 0, 0]);
+            em.ensureComponentOn(b, ScaleDef, vec3.clone([2, 1, 1]));
+            em.ensureComponentOn(b, PositionDef, vec3.clone([0, 0, 0]));
           }
-          em.ensureComponentOn(b, ColorDef, [0.1, 0.3, 0.2]);
+          em.ensureComponentOn(b, ColorDef, vec3.clone([0.1, 0.3, 0.2]));
           em.ensureComponentOn(
             b,
             RenderableConstructDef,

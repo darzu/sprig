@@ -5,7 +5,7 @@ import { Mesh } from "./mesh.js";
 import { CyArray, CyIdxBuffer } from "./data-webgpu.js";
 import { PERF_DBG_GPU, VERBOSE_MESH_POOL_STATS } from "../flags.js";
 import { ComputeVertsDataFn } from "./gpu-registry.js";
-import { vec3, vec4 } from "../gl-matrix.js";
+import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
 import { DEFAULT_MASK } from "./pipeline-masks.js";
 
 // Mesh: lossless, all the data of a model/asset from blender

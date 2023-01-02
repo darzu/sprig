@@ -5,6 +5,7 @@
 //  https://en.wikipedia.org/wiki/Color_difference
 
 import { clamp } from "../math.js";
+import { vec3 } from "../sprig-matrix.js";
 import { assert } from "../util.js";
 import { never, range } from "../util.js";
 import {
@@ -130,15 +131,15 @@ export function toXYZD65(clr: Color): XYZD65 {
   return FLRGBToXYZD65(toFLRGB(clr));
 }
 
-export function toV3(c: Color): [number, number, number] {
-  if (isHSL(c)) return [c.h, c.s, c.l];
-  else if (isRGB(c)) return [c.r, c.g, c.b];
-  else if (isLAB(c)) return [c.l, c.a, c.b];
-  else if (isFRGB(c)) return [c.fr, c.fg, c.fb];
-  else if (isFLRGB(c)) return [c.flr, c.flg, c.flb];
-  else if (isLRGB(c)) return [c.lr, c.lg, c.lb];
-  else if (isXYZ(c)) return [c.x, c.y, c.z];
-  else if (isLCH(c)) return [c.l, c.c, c.h];
+export function toV3(c: Color): vec3 {
+  if (isHSL(c)) return vec3.fromValues(c.h, c.s, c.l);
+  else if (isRGB(c)) return vec3.fromValues(c.r, c.g, c.b);
+  else if (isLAB(c)) return vec3.fromValues(c.l, c.a, c.b);
+  else if (isFRGB(c)) return vec3.fromValues(c.fr, c.fg, c.fb);
+  else if (isFLRGB(c)) return vec3.fromValues(c.flr, c.flg, c.flb);
+  else if (isLRGB(c)) return vec3.fromValues(c.lr, c.lg, c.lb);
+  else if (isXYZ(c)) return vec3.fromValues(c.x, c.y, c.z);
+  else if (isLCH(c)) return vec3.fromValues(c.l, c.c, c.h);
   never(c);
 }
 

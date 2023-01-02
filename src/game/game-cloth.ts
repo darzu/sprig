@@ -1,7 +1,7 @@
 import { CameraDef } from "../camera.js";
 import { ColorDef } from "../color-ecs.js";
 import { EntityManager } from "../entity-manager.js";
-import { vec3, quat } from "../gl-matrix.js";
+import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
 import { InputsDef } from "../inputs.js";
 import { mathMapNEase } from "../math.js";
 import { ColliderDef } from "../physics/collider.js";
@@ -75,7 +75,7 @@ export async function initClothSandbox(em: EntityManager, hosting: boolean) {
 
   const g = createGhost();
   vec3.copy(g.position, [0, 1, -1.2]);
-  quat.setAxisAngle(g.rotation, [0.0, -1.0, 0.0], 1.62);
+  quat.setAxisAngle([0.0, -1.0, 0.0], 1.62, g.rotation);
   g.controllable.sprintMul = 3;
 
   // TODO(@darzu): this shouldn't be necessary
@@ -103,17 +103,17 @@ export async function initClothSandbox(em: EntityManager, hosting: boolean) {
 
   const plane = em.newEntity();
   em.ensureComponentOn(plane, RenderableConstructDef, res.assets.plane.proto);
-  em.ensureComponentOn(plane, ColorDef, [0.2, 0.3, 0.2]);
-  em.ensureComponentOn(plane, PositionDef, [0, -5, 0]);
+  em.ensureComponentOn(plane, ColorDef, vec3.clone([0.2, 0.3, 0.2]));
+  em.ensureComponentOn(plane, PositionDef, vec3.clone([0, -5, 0]));
 
   const ship = em.newEntity();
   em.ensureComponentOn(ship, RenderableConstructDef, res.assets.ship.proto);
   em.ensureComponentOn(ship, ColorDef, ENEMY_SHIP_COLOR);
-  em.ensureComponentOn(ship, PositionDef, [20, -2, 0]);
+  em.ensureComponentOn(ship, PositionDef, vec3.clone([20, -2, 0]));
   em.ensureComponentOn(
     ship,
     RotationDef,
-    quat.fromEuler(quat.create(), 0, Math.PI * 0.1, 0)
+    quat.fromEuler(0, Math.PI * 0.1, 0, quat.create())
   );
 
   // const ocean = em.newEntity();
@@ -139,10 +139,10 @@ export async function initClothSandbox(em: EntityManager, hosting: boolean) {
 
   const box = em.newEntity();
   em.ensureComponentOn(box, RenderableConstructDef, res.assets.cube.proto);
-  em.ensureComponentOn(box, ColorDef, [0.1, 0.1, 0.1]);
-  em.ensureComponentOn(box, PositionDef, [0, 0, 3]);
+  em.ensureComponentOn(box, ColorDef, vec3.clone([0.1, 0.1, 0.1]));
+  em.ensureComponentOn(box, PositionDef, vec3.clone([0, 0, 3]));
   em.ensureComponentOn(box, RotationDef);
-  em.ensureComponentOn(box, AngularVelocityDef, [0, 0.001, 0.001]);
+  em.ensureComponentOn(box, AngularVelocityDef, vec3.clone([0, 0.001, 0.001]));
   em.ensureComponentOn(box, WorldFrameDef);
   em.ensureComponentOn(box, ColliderDef, {
     shape: "AABB",
@@ -152,16 +152,16 @@ export async function initClothSandbox(em: EntityManager, hosting: boolean) {
 
   const cloth = em.newEntity();
   em.ensureComponentOn(cloth, ClothConstructDef, {
-    location: [0, 0, 0],
-    color: [0.9, 0.9, 0.8],
+    location: vec3.clone([0, 0, 0]),
+    color: vec3.clone([0.9, 0.9, 0.8]),
     rows: 5,
     columns: 5,
     distance: 2,
   });
   const F = 100.0;
-  em.ensureComponentOn(cloth, ForceDef, [F, F, F]);
+  em.ensureComponentOn(cloth, ForceDef, vec3.clone([F, F, F]));
 
-  const line = await drawLine(vec3.create(), vec3.create(), [0, 1, 0]);
+  const line = await drawLine(vec3.create(), vec3.create(), vec3.clone([0, 1, 0]));
 
   em.registerSystem(
     [ClothConstructDef, ClothLocalDef, WorldFrameDef, ForceDef],
@@ -172,12 +172,8 @@ export async function initClothSandbox(em: EntityManager, hosting: boolean) {
 
       // cursor to cloth
       const cursorPos = res.globalCursor3d.cursor()!.world.position;
-      const midpoint = vec3.scale(
-        tempVec3(),
-        [cloth.clothConstruct.columns / 2, cloth.clothConstruct.rows / 2, 0],
-        cloth.clothConstruct.distance
-      );
-      const clothPos = vec3.add(midpoint, midpoint, cloth.world.position);
+      const midpoint = vec3.scale([cloth.clothConstruct.columns / 2, cloth.clothConstruct.rows / 2, 0], cloth.clothConstruct.distance);
+      const clothPos = vec3.add(midpoint, cloth.world.position, midpoint);
 
       // line from cursor to cloth
       line.renderable.enabled = true;
@@ -190,9 +186,9 @@ export async function initClothSandbox(em: EntityManager, hosting: boolean) {
       );
 
       // scale the force
-      const delta = vec3.sub(tempVec3(), clothPos, cursorPos);
-      const dist = vec3.len(delta);
-      vec3.normalize(cloth.force, delta);
+      const delta = vec3.sub(clothPos, cursorPos);
+      const dist = vec3.length(delta);
+      vec3.normalize(delta, cloth.force);
       const strength = mathMapNEase(dist, 4, 20, 0, 500, (p) =>
         EASE_INQUAD(1.0 - p)
       );
@@ -200,7 +196,7 @@ export async function initClothSandbox(em: EntityManager, hosting: boolean) {
 
       // apply the force?
       if (res.inputs.keyDowns["e"]) {
-        vec3.scale(cloth.force, cloth.force, strength);
+        vec3.scale(cloth.force, strength, cloth.force);
       } else {
         vec3.copy(cloth.force, [0, 0, 0]);
         if (RenderableDef.isOn(line)) {

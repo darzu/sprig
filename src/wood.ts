@@ -3,7 +3,7 @@ import { EM, Entity, EntityManager } from "./entity-manager.js";
 import { AllMeshSymbols, BLACK } from "./game/assets.js";
 import { BulletDef } from "./game/bullet.js";
 import { GravityDef } from "./game/gravity.js";
-import { mat4, quat, vec2, vec3, vec4 } from "./gl-matrix.js";
+import { vec2, vec3, vec4, quat, mat4 } from "./sprig-matrix.js";
 import { createIdxPool } from "./idx-pool.js";
 import { onInit } from "./init.js";
 import { jitter } from "./math.js";
@@ -303,7 +303,7 @@ onInit((em: EntityManager) => {
                 ...(seg.quadFrontIdx ? [seg.quadFrontIdx] : []),
               ]) {
                 const q = mesh.quad[qi];
-                vec4.set(q, 0, 0, 0, 0);
+                vec4.set(0, 0, 0, 0, q);
                 qMin = Math.min(qMin, qi);
                 qMax = Math.max(qMax, qi);
               }
@@ -337,19 +337,19 @@ onInit((em: EntityManager) => {
                 const splinter = pool.getNext();
                 vec3.copy(splinter.color, w.color);
                 const pos = getLineMid(vec3.create(), seg.midLine);
-                vec3.transformMat4(pos, pos, w.world.transform);
+                vec3.transformMat4(pos, w.world.transform, pos);
                 EM.ensureComponentOn(splinter, PositionDef);
                 vec3.copy(splinter.position, pos);
                 const rot = getSegmentRotation(seg, false);
-                quat.mul(rot, rot, w.world.rotation); // TODO(@darzu): !VERIFY! this works
+                quat.mul(rot, w.world.rotation, rot); // TODO(@darzu): !VERIFY! this works
                 EM.ensureComponentOn(splinter, RotationDef);
                 quat.copy(splinter.rotation, rot);
                 const spin = randNormalVec3(vec3.create());
                 const vel = vec3.clone(spin);
-                vec3.scale(spin, spin, 0.01);
+                vec3.scale(spin, 0.01, spin);
                 em.ensureComponentOn(splinter, AngularVelocityDef);
                 vec3.copy(splinter.angularVelocity, spin);
-                vec3.scale(vel, vel, 0.01);
+                vec3.scale(vel, 0.01, vel);
                 em.ensureComponentOn(splinter, LinearVelocityDef);
                 vec3.copy(splinter.linearVelocity, spin);
                 em.ensureComponentOn(splinter, GravityDef);
@@ -566,7 +566,7 @@ function addSplinterEnd(
   const rot = getSegmentRotation(seg, top);
   // TODO(@darzu): put these into a pool
   // TODO(@darzu): perf? probably don't need to normalize, just use same surface ID and provoking vert for all
-  const cursor = mat4.fromRotationTranslation(mat4.create(), rot, pos);
+  const cursor = mat4.fromRotationTranslation(rot, pos, mat4.create());
   {
     const b = createTimberBuilder(_tempSplinterMesh);
     b.width = W;
@@ -580,7 +580,8 @@ function addSplinterEnd(
     const loop = top ? seg.vertNextLoopIdxs : seg.vertLastLoopIdxs;
     for (let vi = b.mesh.pos.length - 4; vi < b.mesh.pos.length; vi++) {
       const p = b.mesh.pos[vi];
-      for (let lp of loop.map((vi2) => wood.mesh.pos[vi2])) {
+      for (let vi2 of loop) {
+        const lp = wood.mesh.pos[vi2];
         if (vec3.sqrDist(p, lp) < snapDistSqr) {
           vec3.copy(p, lp);
           break;
@@ -590,7 +591,7 @@ function addSplinterEnd(
     b.addEndQuad(true);
 
     b.setCursor(cursor);
-    mat4.translate(b.cursor, b.cursor, [0, 0.1, 0]);
+    mat4.translate(b.cursor, [0, 0.1, 0], b.cursor);
     b.addSplinteredEnd(b.mesh.pos.length, 5);
 
     // TODO(@darzu): triangle vs quad coloring doesn't work
@@ -642,7 +643,7 @@ function createSplinterEnd(
   // TODO(@darzu): put these into a pool
   const splinter = EM.newEntity();
   // TODO(@darzu): perf? probably don't need to normalize, just use same surface ID and provoking vert for all
-  const cursor = mat4.fromRotationTranslation(mat4.create(), rot, pos);
+  const cursor = mat4.fromRotationTranslation(rot, pos, mat4.create());
   let _splinterMesh: RawMesh = createEmptyMesh("splinterEnd");
   {
     const b = createTimberBuilder(_splinterMesh);
@@ -657,7 +658,8 @@ function createSplinterEnd(
     const loop = top ? seg.vertNextLoopIdxs : seg.vertLastLoopIdxs;
     for (let vi = b.mesh.pos.length - 4; vi < b.mesh.pos.length; vi++) {
       const p = b.mesh.pos[vi];
-      for (let lp of loop.map((vi2) => boardMesh.pos[vi2])) {
+      for (let vi2 of loop) {
+        const lp = boardMesh.pos[vi2];
         if (vec3.sqrDist(p, lp) < snapDistSqr) {
           vec3.copy(p, lp);
           break;
@@ -667,7 +669,7 @@ function createSplinterEnd(
     b.addEndQuad(true);
 
     b.setCursor(cursor);
-    mat4.translate(b.cursor, b.cursor, [0, 0.1, 0]);
+    mat4.translate(b.cursor, [0, 0.1, 0], b.cursor);
     b.addSplinteredEnd(b.mesh.pos.length, 5);
 
     // TODO(@darzu): triangle vs quad coloring doesn't work
@@ -676,11 +678,11 @@ function createSplinterEnd(
   }
   const splinterMesh = normalizeMesh(_splinterMesh);
   EM.ensureComponentOn(splinter, RenderableConstructDef, splinterMesh);
-  EM.ensureComponentOn(splinter, ColorDef, [
-    Math.random(),
-    Math.random(),
-    Math.random(),
-  ]);
+  EM.ensureComponentOn(
+    splinter,
+    ColorDef,
+    vec3.clone([Math.random(), Math.random(), Math.random()])
+  );
   EM.ensureComponentOn(splinter, PositionDef);
   EM.ensureComponentOn(splinter, RotationDef);
   EM.ensureComponentOn(splinter, WorldFrameDef);
@@ -707,19 +709,20 @@ export function setSideQuadIdxs(
   q3: vec4
 ) {
   // for provoking, we use loop1:2,3 and loop2:0,1
-  vec4.set(q0, loop2Vi + 3, loop2Vi + 2, loop1Vi + 2, loop1Vi + 3);
-  vec4.set(q1, loop2Vi + 2, loop2Vi + 1, loop1Vi + 1, loop1Vi + 2);
-  vec4.set(q2, loop1Vi + 1, loop2Vi + 1, loop2Vi + 0, loop1Vi + 0);
-  vec4.set(q3, loop1Vi + 0, loop2Vi + 0, loop2Vi + 3, loop1Vi + 3);
+  // for provoking, we use loop1:2,3 and loop2:0,1
+  vec4.set(loop2Vi + 3, loop2Vi + 2, loop1Vi + 2, loop1Vi + 3, q0);
+  vec4.set(loop2Vi + 2, loop2Vi + 1, loop1Vi + 1, loop1Vi + 2, q1);
+  vec4.set(loop1Vi + 1, loop2Vi + 1, loop2Vi + 0, loop1Vi + 0, q2);
+  vec4.set(loop1Vi + 0, loop2Vi + 0, loop2Vi + 3, loop1Vi + 3, q3);
 }
 
 export function setEndQuadIdxs(loopVi: number, q: vec4, facingDown: boolean) {
   // for provoking, we use loop 0 or 3
   // prettier-ignore
   if (facingDown)
-    vec4.set(q, loopVi + 3, loopVi + 2, loopVi + 1, loopVi + 0);
+    vec4.set(loopVi + 3, loopVi + 2, loopVi + 1, loopVi + 0, q);
   else
-    vec4.set(q, loopVi + 0, loopVi + 1, loopVi + 2, loopVi + 3);
+    vec4.set(loopVi + 0, loopVi + 1, loopVi + 2, loopVi + 3, q);
 }
 
 export type TimberBuilder = ReturnType<typeof createTimberBuilder>;
@@ -754,8 +757,8 @@ export function createTimberBuilder(mesh: RawMesh) {
 
     const v0 = vec3.fromValues(0, 0, b.depth);
     const v1 = vec3.fromValues(0, 0, -b.depth);
-    vec3.transformMat4(v0, v0, cursor);
-    vec3.transformMat4(v1, v1, cursor);
+    vec3.transformMat4(v0, cursor, v0);
+    vec3.transformMat4(v1, cursor, v1);
     mesh.pos.push(v0, v1);
 
     const v_tm = vi + 0;
@@ -764,9 +767,9 @@ export function createTimberBuilder(mesh: RawMesh) {
     const v_bbr = lastLoopEndVi + -3;
     const v_bbl = lastLoopEndVi + -2;
     // +D side
-    mesh.tri.push([v_tm, v_tbl, v_tbr]);
+    mesh.tri.push(vec3.clone([v_tm, v_tbl, v_tbr]));
     // -D side
-    mesh.tri.push([v_tm + 1, v_bbr, v_bbl]);
+    mesh.tri.push(vec3.clone([v_tm + 1, v_bbr, v_bbl]));
 
     let v_tlast = v_tbl;
     let v_blast = v_bbl;
@@ -785,31 +788,31 @@ export function createTimberBuilder(mesh: RawMesh) {
 
       // TODO(@darzu): HACK! This ensures that adjacent "teeth" in the splinter
       //    are properly manifold/convex/something-something
-      let cross_last_this = vec2.cross(tempVec3(), [lastX, lastY], [x, y]);
+      let cross_last_this = vec2.cross([lastX, lastY], [x, y]);
       let maxLoop = 10;
       while (cross_last_this[2] > 0 && maxLoop > 0) {
         if (x < 0) y += 0.1;
         else y -= 0.1;
-        vec2.cross(cross_last_this, [lastX, lastY], [x, y]);
+        vec2.cross([lastX, lastY], [x, y], cross_last_this);
         maxLoop--;
       }
       if (VERBOSE_LOG && cross_last_this[2] > 0) console.warn(`non-manifold!`);
 
       // +D side
       const vtj = vec3.fromValues(x, y, d);
-      vec3.transformMat4(vtj, vtj, cursor);
+      vec3.transformMat4(vtj, cursor, vtj);
       const vtji = mesh.pos.length;
       mesh.pos.push(vtj);
-      mesh.tri.push([v_tm, vtji, v_tlast]);
+      mesh.tri.push(vec3.clone([v_tm, vtji, v_tlast]));
 
       // -D side
       const vbj = vec3.fromValues(x, y, -d);
-      vec3.transformMat4(vbj, vbj, cursor);
+      vec3.transformMat4(vbj, cursor, vbj);
       mesh.pos.push(vbj);
-      mesh.tri.push([v_tm + 1, v_blast, vtji + 1]);
+      mesh.tri.push(vec3.clone([v_tm + 1, v_blast, vtji + 1]));
 
       // D to -D quad
-      mesh.quad.push([v_blast, v_tlast, vtji, vtji + 1]);
+      mesh.quad.push(vec4.clone([v_blast, v_tlast, vtji, vtji + 1]));
 
       v_tlast = vtji;
       v_blast = vtji + 1;
@@ -818,12 +821,12 @@ export function createTimberBuilder(mesh: RawMesh) {
       lastY = y;
     }
     // +D side
-    mesh.tri.push([v_tm, v_tbr, v_tlast]);
+    mesh.tri.push(vec3.clone([v_tm, v_tbr, v_tlast]));
     // -D side
-    mesh.tri.push([v_tm + 1, v_blast, v_bbr]);
+    mesh.tri.push(vec3.clone([v_tm + 1, v_blast, v_bbr]));
 
     // D to -D quad
-    mesh.quad.push([v_blast, v_tlast, v_tbr, v_bbr]);
+    mesh.quad.push(vec4.clone([v_blast, v_tlast, v_tbr, v_bbr]));
   }
 
   // NOTE: for provoking vertices,
@@ -856,10 +859,10 @@ export function createTimberBuilder(mesh: RawMesh) {
     const v1 = vec3.fromValues(b.width, 0, -b.depth);
     const v2 = vec3.fromValues(-b.width, 0, -b.depth);
     const v3 = vec3.fromValues(-b.width, 0, b.depth);
-    vec3.transformMat4(v0, v0, cursor);
-    vec3.transformMat4(v1, v1, cursor);
-    vec3.transformMat4(v2, v2, cursor);
-    vec3.transformMat4(v3, v3, cursor);
+    vec3.transformMat4(v0, cursor, v0);
+    vec3.transformMat4(v1, cursor, v1);
+    vec3.transformMat4(v2, cursor, v2);
+    vec3.transformMat4(v3, cursor, v3);
     mesh.pos.push(v0, v1, v2, v3);
   }
 }
@@ -878,10 +881,10 @@ interface BoardSeg {
   width: number;
   depth: number;
   // TODO(@darzu): establish convention e.g. top-left, top-right, etc.
-  vertLastLoopIdxs: [VI, VI, VI, VI];
-  vertNextLoopIdxs: [VI, VI, VI, VI];
+  vertLastLoopIdxs: vec4; // [VI, VI, VI, VI];
+  vertNextLoopIdxs: vec4; // [VI, VI, VI, VI];
   // TODO(@darzu): establish convention e.g. top, left, right, bottom
-  quadSideIdxs: [QI, QI, QI, QI];
+  quadSideIdxs: vec4; // [QI, QI, QI, QI];
   quadBackIdx?: QI;
   quadFrontIdx?: QI;
 }
@@ -1003,7 +1006,7 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
     const boardVis = new Set<number>();
     const boardQis = new Set<number>();
 
-    const startLoop = vec4.clone(m.quad[startQi]) as [VI, VI, VI, VI];
+    const startLoop = vec4.clone(m.quad[startQi]); // as [VI, VI, VI, VI];
     startLoop.sort((a, b) => a - b); // TODO(@darzu): HACK?
 
     // build the board
@@ -1034,7 +1037,7 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
     return undefined;
 
     function addBoardSegment(
-      lastLoop: [VI, VI, VI, VI],
+      lastLoop: vec4, // [VI, VI, VI, VI],
       isFirstLoop: boolean = false
     ): BoardSeg[] | undefined {
       // start tracking this segment
@@ -1061,7 +1064,7 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
           console.log(`invalid board: next loop has ${nextLoop_.length} verts`);
         return undefined;
       }
-      const nextLoop = nextLoop_ as [VI, VI, VI, VI];
+      const nextLoop = vec4.clone(nextLoop_ as [VI, VI, VI, VI]);
       nextLoop.sort((a, b) => a - b); // TODO(@darzu): HACK?
 
       // add next loop verts to segment
@@ -1116,9 +1119,9 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
         // TODO(@darzu): i hate doing this vec4->number[] conversion just to get map.. wth
         const ps = [...m.quad[qi]].map((vi) => m.pos[vi]);
         // NOTE: assumes segments are parallelograms
-        const ab = vec3.subtract(tempVec3(), ps[1], ps[0]);
-        const ac = vec3.subtract(tempVec3(), ps[3], ps[0]);
-        const areaNorm = vec3.cross(vec3.create(), ab, ac);
+        const ab = vec3.sub(ps[1], ps[0]);
+        const ac = vec3.sub(ps[3], ps[0]);
+        const areaNorm = vec3.cross(ab, ac, vec3.create());
         return areaNorm;
       }
 
@@ -1132,12 +1135,9 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
         );
         if (endQuads.length === 1) {
           const endQuad = endQuads[0];
-          const sideQuads = segQis.filter((qi) => qi !== endQuad) as [
-            QI,
-            QI,
-            QI,
-            QI
-          ];
+          const sideQuads = vec4.clone(
+            segQis.filter((qi) => qi !== endQuad) as [QI, QI, QI, QI]
+          );
           seg = {
             localAABB: aabb,
             midLine: mid,
@@ -1174,7 +1174,7 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
           depth,
           vertLastLoopIdxs: lastLoop,
           vertNextLoopIdxs: nextLoop,
-          quadSideIdxs: segQis as [QI, QI, QI, QI],
+          quadSideIdxs: vec4.clone(segQis as [QI, QI, QI, QI]),
         };
       }
 
@@ -1348,28 +1348,28 @@ export function unshareProvokingForWood(m: RawMesh, woodState: WoodState) {
   ) {
     if ((!preferVis || preferVis.includes(i0)) && !provokingVis.has(i0)) {
       provokingVis.add(i0);
-      m.quad[qi] = [i0, i1, i2, i3];
+      m.quad[qi] = vec4.clone([i0, i1, i2, i3]);
       return true;
     } else if (
       (!preferVis || preferVis.includes(i1)) &&
       !provokingVis.has(i1)
     ) {
       provokingVis.add(i1);
-      m.quad[qi] = [i1, i2, i3, i0];
+      m.quad[qi] = vec4.clone([i1, i2, i3, i0]);
       return true;
     } else if (
       (!preferVis || preferVis.includes(i2)) &&
       !provokingVis.has(i2)
     ) {
       provokingVis.add(i2);
-      m.quad[qi] = [i2, i3, i0, i1];
+      m.quad[qi] = vec4.clone([i2, i3, i0, i1]);
       return true;
     } else if (
       (!preferVis || preferVis.includes(i3)) &&
       !provokingVis.has(i3)
     ) {
       provokingVis.add(i3);
-      m.quad[qi] = [i3, i0, i1, i2];
+      m.quad[qi] = vec4.clone([i3, i0, i1, i2]);
       return true;
     } else {
       return false;

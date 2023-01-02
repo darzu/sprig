@@ -16,13 +16,19 @@ export type mat3 = Float32ArrayOfLength<9>;
 
 export type mat4 = Float32ArrayOfLength<16>;
 
+// TODO(@darzu): All cases of:
+//    vec*.clone([...])
+//  should be
+//    vec*.fromValues(...)
+//  or something simpler (v3(), vc3(), ...)
+
 // TODO(@darzu): perhaps all non-temp (and temp) vecs should be suballocations on bigger Float32Arrays
 //    this might give some perf wins w/ cache hits
 function float32ArrayOfLength<N extends number>(n: N): Float32ArrayOfLength<N> {
   return new Float32Array(n) as Float32ArrayOfLength<N>;
 }
 
-const BUFFER_SIZE = 40000;
+const BUFFER_SIZE = 80000;
 const buffer = new ArrayBuffer(BUFFER_SIZE);
 let bufferIndex = 0;
 function tmpArray<N extends number>(n: N): Float32ArrayOfLength<N> {
@@ -57,6 +63,10 @@ export module vec2 {
 
   export function copy(out: T, v1: InputT): T {
     return GL.copy(out, v1) as T;
+  }
+
+  export function zero(out?: T): T {
+    return GL.zero(out ?? tmp()) as T;
   }
 
   export function set(n0: number, n1: number, out?: T): T {
@@ -100,10 +110,9 @@ export module vec2 {
   export function dot(v1: InputT, v2: InputT): number {
     return GL.dot(v1, v2);
   }
-  // unused
-  // export function cross(v1: InputT, v2: InputT, out?: vec3.T): vec3.T {
-  //   return GL.cross(out ?? vec3.tmp(), v1, v2) as vec3.T;
-  // }
+  export function cross(v1: InputT, v2: InputT, out?: vec3.T): vec3.T {
+    return GL.cross(out ?? vec3.tmp(), v1, v2) as vec3.T;
+  }
   export function scale(v1: InputT, n: number, out?: T): T {
     return GL.scale(out ?? tmp(), v1, n) as T;
   }
@@ -141,6 +150,7 @@ export module vec3 {
     return GL.clone(v) as T;
   }
 
+  // TODO(@darzu): maybe copy should have an optional out param?
   export function copy(out: T, v1: InputT): T {
     return GL.copy(out, v1) as T;
   }
@@ -203,6 +213,9 @@ export module vec3 {
   export function sqrDist(v1: InputT, v2: InputT): number {
     return GL.dist(v1, v2);
   }
+  export function sqrLen(v: InputT): number {
+    return GL.sqrLen(v);
+  }
 
   export function lerp(v1: InputT, v2: InputT, n: number, out?: T): T {
     return GL.lerp(out ?? tmp(), v1, v2, n) as T;
@@ -216,8 +229,21 @@ export module vec3 {
     return GL.transformMat4(out ?? tmp(), v1, v2) as T;
   }
 
+  export function transformMat3(v1: InputT, v2: mat3.InputT, out?: T): T {
+    return GL.transformMat3(out ?? tmp(), v1, v2) as T;
+  }
+
   export function zero(out?: T): T {
     return GL.zero(out ?? tmp()) as T;
+  }
+
+  export function rotateY(
+    point: InputT,
+    origin: InputT,
+    rad: number,
+    out?: T
+  ): T {
+    return GL.rotateY(out ?? tmp(), point, origin, rad) as T;
   }
 }
 
@@ -349,6 +375,10 @@ export module quat {
     return GL.copy(out, v1) as T;
   }
 
+  export function set(x: number, y: number, z: number, w: number, out?: T): T {
+    return GL.set(out ?? tmp(), x, y, z, w) as T;
+  }
+
   export const IDENTITY = identity(create());
 
   export function equals(v1: InputT, v2: InputT): boolean {
@@ -455,6 +485,10 @@ export module mat4 {
     return GL.invert(out ?? tmp(), v1) as T;
   }
 
+  export function scale(a: InputT, v: vec3.InputT, out?: T): T {
+    return GL.scale(out ?? tmp(), a, v) as T;
+  }
+
   export function fromRotationTranslation(
     q: quat.InputT,
     v: vec3.InputT,
@@ -484,6 +518,10 @@ export module mat4 {
 
   export function fromScaling(v: vec3.InputT, out?: T): T {
     return GL.fromScaling(out ?? tmp(), v) as T;
+  }
+
+  export function fromTranslation(v: vec3.InputT, out?: T): T {
+    return GL.fromTranslation(out ?? tmp(), v) as T;
   }
 
   export function fromXRotation(rad: number, out?: T): T {
@@ -555,5 +593,96 @@ export module mat4 {
 
   export function translate(m: InputT, v: vec3.InputT, out?: T): T {
     return GL.translate(out ?? tmp(), m, v) as T;
+  }
+}
+
+export module mat3 {
+  export type T = mat3;
+  // prettier-ignore
+  export type InputT = T | readonly [number, number, number,
+                                     number, number, number,
+                                     number, number, number];
+  const GL = GLM.mat3;
+
+  export function tmp(): T {
+    return tmpArray(9);
+  }
+
+  export function create(): T {
+    return float32ArrayOfLength(9);
+  }
+
+  export function clone(v: InputT): T {
+    return GL.clone(v) as T;
+  }
+
+  export function copy(out: T, v1: InputT): T {
+    return GL.copy(out, v1) as T;
+  }
+
+  export const IDENTITY = identity(create());
+
+  export function equals(v1: InputT, v2: InputT): boolean {
+    return GL.equals(v1, v2);
+  }
+  export function exactEquals(v1: InputT, v2: InputT): boolean {
+    return GL.exactEquals(v1, v2);
+  }
+
+  export function set(
+    m00: number,
+    m01: number,
+    m02: number,
+    m10: number,
+    m11: number,
+    m12: number,
+    m20: number,
+    m21: number,
+    m22: number,
+    out?: T
+  ): T {
+    return GL.set(
+      out ?? tmp(),
+      m00,
+      m01,
+      m02,
+      m10,
+      m11,
+      m12,
+      m20,
+      m21,
+      m22
+    ) as T;
+  }
+
+  export function add(v1: InputT, v2: InputT, out?: T): T {
+    return GL.add(out ?? tmp(), v1, v2) as T;
+  }
+  export function mul(v1: InputT, v2: InputT, out?: T): T {
+    return GL.mul(out ?? tmp(), v1, v2) as T;
+  }
+
+  export function identity(out?: T): T {
+    return GL.identity(out ?? tmp()) as T;
+  }
+
+  export function invert(v1: InputT, out?: T): T {
+    return GL.invert(out ?? tmp(), v1) as T;
+  }
+
+  export function scale(a: InputT, v: vec2.InputT, out?: T): T {
+    return GL.scale(out ?? tmp(), a, v) as T;
+  }
+
+  export function fromScaling(v: vec2.InputT, out?: T): T {
+    return GL.fromScaling(out ?? tmp(), v) as T;
+  }
+
+  export function fromQuat(q: quat, out?: T): T {
+    return GL.fromQuat(out ?? tmp(), q) as T;
+  }
+
+  export function fromMat4(q: mat4, out?: T): T {
+    return GL.fromMat4(out ?? tmp(), q) as T;
   }
 }

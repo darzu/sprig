@@ -4,7 +4,7 @@ import { ENDESGA16 } from "../color/palettes.js";
 import { EM, EntityW } from "../entity-manager.js";
 import { AssetsDef } from "../game/assets.js";
 import { gameplaySystems } from "../game/game.js";
-import { vec3 } from "../gl-matrix.js";
+import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
 import { MouseDragDef } from "../inputs.js";
 import { ColliderDef } from "../physics/collider.js";
 import { PhysicsResultsDef } from "../physics/nonintersection.js";
@@ -57,9 +57,9 @@ async function initDragBox(): Promise<EntityW<[typeof PositionDef]>> {
   const dragBoxMesh = cloneMesh(assets.unitCube.mesh);
   EM.ensureComponentOn(dragBox, AlphaDef, 0.2);
   EM.ensureComponentOn(dragBox, RenderableConstructDef, dragBoxMesh);
-  EM.ensureComponentOn(dragBox, PositionDef, [0, 0.2, 0]);
-  EM.ensureComponentOn(dragBox, ScaleDef, [1, 1, 1]);
-  EM.ensureComponentOn(dragBox, ColorDef, [0.0, 120 / 255, 209 / 255]);
+  EM.ensureComponentOn(dragBox, PositionDef, vec3.clone([0, 0.2, 0]));
+  EM.ensureComponentOn(dragBox, ScaleDef, vec3.clone([1, 1, 1]));
+  EM.ensureComponentOn(dragBox, ColorDef, vec3.clone([0.0, 120 / 255, 209 / 255]));
   EM.ensureComponentOn(dragBox, ColliderDef, {
     shape: "AABB",
     solid: false,
@@ -90,7 +90,7 @@ async function initDragBox(): Promise<EntityW<[typeof PositionDef]>> {
         );
         max[1] = 1;
 
-        const size = vec3.sub(tempVec3(), max, min);
+        const size = vec3.sub(max, min);
         vec3.copy(dragBox.position, min);
         vec3.copy(dragBox.scale, size);
       }
@@ -137,7 +137,7 @@ export async function initWidgets(cursorId: number) {
           cameraView
         );
         end[1] = 0;
-        vec3.sub(worldDrag, end, start);
+        vec3.sub(end, start, worldDrag);
       }
 
       // update widget states
@@ -157,7 +157,8 @@ export async function initWidgets(cursorId: number) {
             const w = EM.findEntity(wi, [PositionDef]);
             assert(w);
             // TODO(@darzu): think about world positions and parenting..
-            vec3.add(w.position, w.position, worldDrag);
+            // TODO(@darzu): think about world positions and parenting..
+vec3.add(w.position, worldDrag, w.position);
             moved.add(wi);
           }
         } else {

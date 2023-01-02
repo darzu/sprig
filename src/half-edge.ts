@@ -1,6 +1,6 @@
 import { DBG_ASSERT } from "./flags.js";
 import { BLACK } from "./game/assets.js";
-import { vec3 } from "./gl-matrix.js";
+import { vec2, vec3, vec4, quat, mat4 } from "./sprig-matrix.js";
 import { hexAvg } from "./hex.js";
 import { RawMesh } from "./render/mesh.js";
 import { tempVec3 } from "./temp-pool.js";
@@ -282,25 +282,25 @@ export function extrudeQuad(hp: HPoly, he: HEdge): HPolyDelta {
   const vi0a = v0a.vi;
   const p0b = hp.mesh.pos[he.twin.prev.orig.vi];
   const p0a = hp.mesh.pos[vi0a];
-  vec3.sub(p0, p0a, p0b);
-  vec3.add(p0, p0, p0a);
+  vec3.sub(p0a, p0b, p0);
+  vec3.add(p0, p0a, p0);
 
   const p1 = vec3.create();
   const v1a = he.twin.next.orig;
   const vi1a = v1a.vi;
   const p1b = hp.mesh.pos[he.twin.next.next.orig.vi];
   const p1a = hp.mesh.pos[vi1a];
-  vec3.sub(p1, p1a, p1b);
-  vec3.add(p1, p1, p1a);
+  vec3.sub(p1a, p1b, p1);
+  vec3.add(p1, p1a, p1);
 
   // move positions so they're the same length as the original edge
   const len = vec3.dist(p0a, p1a);
-  const p01 = vec3.sub(tempVec3(), p0, p1);
+  const p01 = vec3.sub(p0, p1);
   const len2 = vec3.length(p01);
   const lenScale = (len2 - len) / (2 * len2);
-  vec3.scale(p01, p01, lenScale);
-  vec3.sub(p0, p0, p01);
-  vec3.add(p1, p1, p01);
+  vec3.scale(p01, lenScale, p01);
+  vec3.sub(p0, p01, p0);
+  vec3.add(p1, p01, p1);
 
   // start verts
   const vi0 = hp.mesh.pos.push(p0) - 1;
@@ -309,7 +309,7 @@ export function extrudeQuad(hp: HPoly, he: HEdge): HPolyDelta {
   const v1: HVert_ = { vi: vi1 };
 
   // create face
-  const qi = hp.mesh.quad.push([vi0, vi1, vi1a, vi0a]) - 1;
+  const qi = hp.mesh.quad.push(vec4.clone([vi0, vi1, vi1a, vi0a])) - 1;
   const f: HFace = {
     fi: qi,
     edg: he,

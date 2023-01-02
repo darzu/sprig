@@ -1,4 +1,4 @@
-import { vec3 } from "../gl-matrix.js";
+import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
 import { tempVec3 } from "../temp-pool.js";
 import { EM, EntityManager } from "../entity-manager.js";
 import { TimeDef } from "../time.js";
@@ -172,21 +172,17 @@ function addSpringForce(g: SpringGrid, point: number, force: vec3) {
     log(`spring force on ${point}`);
     switch (g.springType) {
       case SpringType.SimpleDistance:
-        vec3.sub(distanceVec, g.positions[point], g.positions[o]);
+        vec3.sub(g.positions[point], g.positions[o], distanceVec);
         let distance = vec3.length(distanceVec);
         vec3.normalize(distanceVec, distanceVec);
-        vec3.scale(
-          distanceVec,
-          distanceVec,
-          g.kOnAxis * (g.distance - distance)
-        );
+        vec3.scale(distanceVec, g.kOnAxis * (g.distance - distance), distanceVec);
         break;
       case SpringType.DesiredLocation:
         targetLocation(g, o, direction, distanceVec);
         log("vectors");
         log(distanceVec);
         log(g.positions[point]);
-        vec3.sub(distanceVec, distanceVec, g.positions[point]);
+        vec3.sub(distanceVec, g.positions[point], distanceVec);
 
         // distanceVec now stores the vector between this point and
         // where it "should" be as far as this neighbor is concerned.  We
@@ -206,8 +202,8 @@ function addSpringForce(g: SpringGrid, point: number, force: vec3) {
         }
         distanceVec[2] = distanceVec[2] * g.kOffAxis;
     }
-    vec3.scale(distanceVec, distanceVec, 1.0 / neighbors.length);
-    vec3.add(force, force, distanceVec);
+    vec3.scale(distanceVec, 1.0 / neighbors.length, distanceVec);
+    vec3.add(force, distanceVec, force);
   }
 }
 
@@ -221,18 +217,18 @@ export function stepSprings(g: SpringGrid, dt: number) {
       log(`${point} fixed`);
       continue;
     }
-    vec3.sub(velocityVec, g.positions[point], g.prevPositions[point]);
-    vec3.scale(velocityVec, velocityVec, dt);
+    vec3.sub(g.positions[point], g.prevPositions[point], velocityVec);
+    vec3.scale(velocityVec, dt, velocityVec);
     //console.log("applying a force");
     vec3.copy(forceVec, g.externalForce);
     // console.log(`externalForce: ${vec3Dbg(forceVec)}`); // TODO(@darzu):
     addSpringForce(g, point, forceVec);
-    vec3.scale(forceVec, forceVec, dt * dt);
+    vec3.scale(forceVec, dt * dt, forceVec);
     if (vec3.length(velocityVec) > EPSILON) {
-      vec3.add(g.nextPositions[point], g.nextPositions[point], velocityVec);
+      vec3.add(g.nextPositions[point], velocityVec, g.nextPositions[point]);
     }
     if (vec3.length(forceVec) > EPSILON) {
-      vec3.add(g.nextPositions[point], g.nextPositions[point], forceVec);
+      vec3.add(g.nextPositions[point], forceVec, g.nextPositions[point]);
     }
     // vec3.add(g.velocities[point], g.velocities[point], forceVec);
     // const speed = vec3.length(g.velocities[point]);

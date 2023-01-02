@@ -1,6 +1,6 @@
 import { ASSET_LOG_VERT_CHANGES, DBG_ASSERT, DBG_FANG_SHIP } from "../flags.js";
 import { createFabric } from "../game/assets.js";
-import { vec3, vec2, mat4, vec4 } from "../gl-matrix.js";
+import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
 import { max, sum } from "../math.js";
 import {
   AABB,
@@ -233,7 +233,7 @@ export function unshareProvokingVerticesWithMap(input: RawMesh): {
       )
     );
     input.quad.forEach((v, qi) => {
-      quadIdxToNeighborIshCount[qi] = (v as number[]) // TSC can't handle the Float32Array/number[] ambiguity :(
+      quadIdxToNeighborIshCount[qi] = v
         .map((vi) => vertIdxToFaceCount[vi])
         .reduce((p, n) => p + n, 0);
     });
@@ -263,16 +263,16 @@ export function unshareProvokingVerticesWithMap(input: RawMesh): {
     if (!provoking[i0]) {
       // First vertex is unused as a provoking vertex, so we'll use it for this triangle.
       provoking[i0] = true;
-      tri.push([i0, i1, i2]);
+      tri.push(vec3.clone([i0, i1, i2]));
     } else if (!provoking[i1]) {
       // First vertex was taken, so let's see if we can rotate the indices to get an unused
       // provoking vertex.
       provoking[i1] = true;
-      tri.push([i1, i2, i0]);
+      tri.push(vec3.clone([i1, i2, i0]));
     } else if (!provoking[i2]) {
       // ditto
       provoking[i2] = true;
-      tri.push([i2, i0, i1]);
+      tri.push(vec3.clone([i2, i0, i1]));
     } else {
       // All vertices are taken, so create a new one
       const i3 = pos.length;
@@ -282,7 +282,7 @@ export function unshareProvokingVerticesWithMap(input: RawMesh): {
       if (tangents) tangents.push(input.tangents![i0]);
       if (normals) normals.push(input.normals![i0]);
       provoking[i3] = true;
-      tri.push([i3, i1, i2]);
+      tri.push(vec3.clone([i3, i1, i2]));
     }
   });
 
@@ -293,20 +293,20 @@ export function unshareProvokingVerticesWithMap(input: RawMesh): {
     if (!provoking[i0]) {
       // First vertex is unused as a provoking vertex, so we'll use it for this triangle.
       provoking[i0] = true;
-      quad[qi] = [i0, i1, i2, i3];
+      quad[qi] = vec4.clone([i0, i1, i2, i3]);
     } else if (!provoking[i1]) {
       // First vertex was taken, so let's see if we can rotate the indices to get an unused
       // provoking vertex.
       provoking[i1] = true;
-      quad[qi] = [i1, i2, i3, i0];
+      quad[qi] = vec4.clone([i1, i2, i3, i0]);
     } else if (!provoking[i2]) {
       // ditto
       provoking[i2] = true;
-      quad[qi] = [i2, i3, i0, i1];
+      quad[qi] = vec4.clone([i2, i3, i0, i1]);
     } else if (!provoking[i3]) {
       // ditto
       provoking[i3] = true;
-      quad[qi] = [i3, i0, i1, i2];
+      quad[qi] = vec4.clone([i3, i0, i1, i2]);
     } else {
       // All vertices are taken, so create a new one
       const i4 = pos.length;
@@ -317,7 +317,7 @@ export function unshareProvokingVerticesWithMap(input: RawMesh): {
       if (tangents) tangents.push(input.tangents![i0]);
       if (normals) normals.push(input.normals![i0]);
       provoking[i4] = true;
-      quad[qi] = [i4, i1, i2, i3];
+      quad[qi] = vec4.clone([i4, i1, i2, i3]);
       // console.log(`duplicating: ${i0}!`);
 
       // TODO(@darzu): DBG
@@ -435,13 +435,13 @@ export function mapMeshPositions(
   m.pos = m.pos.map(map);
 }
 export function scaleMesh(m: RawMesh, by: number) {
-  mapMeshPositions(m, (p) => vec3.scale(vec3.create(), p, by));
+  mapMeshPositions(m, (p) => vec3.scale(p, by, vec3.create()));
 }
 export function scaleMesh3(m: RawMesh, by: vec3) {
-  mapMeshPositions(m, (p) => vec3.multiply(vec3.create(), p, by));
+  mapMeshPositions(m, (p) => vec3.mul(p, by, vec3.create()));
 }
 export function transformMesh(m: RawMesh, t: mat4) {
-  mapMeshPositions(m, (p) => vec3.transformMat4(vec3.create(), p, t));
+  mapMeshPositions(m, (p) => vec3.transformMat4(p, t, vec3.create()));
   return m;
 }
 // split mesh by connectivity
@@ -616,7 +616,7 @@ export function getMeshAsGrid(m: RawMesh): {
 
   function place(vi: number, x: number, y: number) {
     grid[x][y] = vi;
-    coords[vi] = [x, y];
+    coords[vi] = vec2.clone([x, y]);
     worklist.push({ vi, x, y });
 
     if (!dbgCheckState()) {
@@ -735,14 +735,14 @@ export function getMeshAsGrid(m: RawMesh): {
     // );
 
     // Debugging
-    drawBall(m.pos[last], 1.0, [0.2, 0.2, 0.9]);
-    drawBall(m.pos[current], 1.0, [0.2, 0.9, 0.2]);
+    drawBall(m.pos[last], 1.0, vec3.clone([0.2, 0.2, 0.9]));
+    drawBall(m.pos[current], 1.0, vec3.clone([0.2, 0.9, 0.2]));
     cEdges.forEach((n, i) => {
       const red = 0.7 + i * 0.1;
-      drawBall(m.pos[n], 0.8, [red, 0.2, 0.2]);
+      drawBall(m.pos[n], 0.8, vec3.clone([red, 0.2, 0.2]));
       edges[n].forEach((n2, i2) => {
         // drawLine(m.pos[n], m.pos[n2], [red, 0.2, 0.2]);
-        drawBall(m.pos[n2], 0.5, [red, 0.2, 0.2]);
+        drawBall(m.pos[n2], 0.5, vec3.clone([red, 0.2, 0.2]));
       });
     });
 
@@ -814,20 +814,19 @@ export function mergeMeshes(rs: RawMesh[]): RawMesh {
     m.tri = [
       ...m.tri,
       ...r.tri.map(
-        (t) => [t[0] + posIdx, t[1] + posIdx, t[2] + posIdx] as vec3
+        (t) => vec3.clone([t[0] + posIdx, t[1] + posIdx, t[2] + posIdx]) as vec3
       ),
     ];
     m.quad = [
       ...m.quad,
-      ...r.quad.map(
-        (t) =>
-          [t[0] + posIdx, t[1] + posIdx, t[2] + posIdx, t[3] + posIdx] as vec4
+      ...r.quad.map((t) =>
+        vec4.clone([t[0] + posIdx, t[1] + posIdx, t[2] + posIdx, t[3] + posIdx])
       ),
     ];
     if (m.lines)
       m.lines = [
         ...m.lines,
-        ...r.lines!.map((t) => [t[0] + posIdx, t[1] + posIdx] as vec2),
+        ...r.lines!.map((t) => vec2.clone([t[0] + posIdx, t[1] + posIdx])),
       ];
     m.colors = [...m.colors, ...r.colors];
     if (m.surfaceIds) m.surfaceIds = [...m.surfaceIds, ...r.surfaceIds!];

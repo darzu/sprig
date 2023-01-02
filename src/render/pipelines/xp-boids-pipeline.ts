@@ -1,6 +1,7 @@
 // BOIDS
 
-import { vec3 } from "../../gl-matrix.js";
+// BOIDS
+import { vec2, vec3, vec4, quat, mat4 } from "../../sprig-matrix.js";
 import { jitter } from "../../math.js";
 import { range } from "../../util.js";
 import { createRenderTextureToQuad } from "../gpu-helper.js";
@@ -17,8 +18,8 @@ const boidData0 = CY.createArray("boidData0", {
   struct: BoidData,
   init: () =>
     range(numBoids).map((_, i) => ({
-      pos: [jitter(10), jitter(10), jitter(10)] as vec3,
-      vel: [jitter(10), jitter(10), jitter(10)] as vec3,
+      pos: vec3.clone([jitter(10), jitter(10), jitter(10)]) as vec3,
+      vel: vec3.clone([jitter(10), jitter(10), jitter(10)]) as vec3,
     })),
 });
 const boidData1 = CY.createArray("boidData1", {
@@ -32,10 +33,10 @@ const BoidVert = createCyStruct({
 const boidVerts = CY.createArray("boidVerts", {
   struct: BoidVert,
   init: () => [
-    { pos: [1, 1, 1] },
-    { pos: [1, -1, -1] },
-    { pos: [-1, 1, -1] },
-    { pos: [-1, -1, 1] },
+    { pos: vec3.clone([1, 1, 1]) },
+    { pos: vec3.clone([1, -1, -1]) },
+    { pos: vec3.clone([-1, 1, -1]) },
+    { pos: vec3.clone([-1, -1, 1]) },
   ],
 });
 const boidInds = CY.createIdxBuf("boidIdx", {
@@ -145,8 +146,8 @@ const boidWindow = createCyStruct(
 const boidWindowUni = CY.createSingleton("boidWindow", {
   struct: boidWindow,
   init: () => ({
-    xPos: [0, 1],
-    yPos: [0, 1],
+    xPos: vec2.clone([0, 1]),
+    yPos: vec2.clone([0, 1]),
   }),
 });
 
