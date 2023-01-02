@@ -225,6 +225,8 @@ export function signedAreaOfTriangle(a: vec2, b: vec2, c: vec2): number {
   return 0.5 * cross[2];
 }
 
+// TODO(@darzu):  move to sprig-matrix.ts
+
 export function vec3Reverse(out: vec3) {
   const t = out[0];
   out[0] = out[2];
