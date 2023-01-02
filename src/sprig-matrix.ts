@@ -22,6 +22,44 @@ export type mat4 = Float32ArrayOfLength<16>;
 //    vec*.fromValues(...)
 //  or something simpler (v3(), vc3(), ...)
 
+// TODO(@darzu): CONSIDER "forever", "readonly", and literals with something like:
+/*
+interface ReadonlyFloat32ArrayOfLength<N extends number>
+  extends Omit<
+    Float32ArrayOfLength<N>,
+    "copyWithin" | "fill" | "reverse" | "set" | "sort"
+  > {
+  readonly [n: number]: number;
+}
+
+declare const _forever: unique symbol;
+
+// a vec3 "forever", means it isn't temp
+export type vec3f =
+  | [number, number, number]
+  | (Float32ArrayOfLength<3> & { [_forever]: true });
+// a vec3 "readonly", means the vec won't be modified through that alias
+export type vec3r =
+  | readonly [number, number, number]
+  | ReadonlyFloat32ArrayOfLength<3>;
+// a vec3 is either forever or temp, but it can't be
+export type vec3 = vec3f | Float32ArrayOfLength<3>;
+
+let eg_vec3f: vec3f = [0, 0, 0] as vec3f;
+let eg_vec3r: vec3r = [0, 0, 0] as vec3r;
+let eg_vec3: vec3 = vec3.create() as vec3;
+
+// eg_vec3 = eg_vec3r; // illegal (weakens "readonly")
+// eg_vec3 = eg_vec3f; // legal (unspecified if its temp or forever)
+// eg_vec3r = eg_vec3; // legal (strengthens alias promise)
+// eg_vec3r = eg_vec3f; // legal (strengthens alias promise)
+// eg_vec3f = eg_vec3; // illegal (could be temp)
+// eg_vec3f = eg_vec3r; // illegal (could be temp)
+// eg_vec3fr = eg_vec3; // illegal (could be temp)
+// eg_vec3fr = eg_vec3f; // legal (strengthening w/ readonly promise)
+// eg_vec3fr = eg_vec3r; // illegal (could be temp)
+*/
+
 // TODO(@darzu): perhaps all non-temp (and temp) vecs should be suballocations on bigger Float32Arrays
 //    this might give some perf wins w/ cache hits
 function float32ArrayOfLength<N extends number>(n: N): Float32ArrayOfLength<N> {
