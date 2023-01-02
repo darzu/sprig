@@ -129,7 +129,7 @@ import { gameplaySystems } from "./game.js";
   [ ] add dark/fog ends
 */
 
-const DBG_PLAYER = true;
+const DBG_PLAYER = false;
 
 let pirateKills = 0;
 let healthPercent = 100;
