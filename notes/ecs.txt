@@ -66,3 +66,42 @@ Our Machinery ECS:
     They're asking people to delete their copies in 14 days :/
     They may have editted their EULA for this? https://news.ycombinator.com/item?id=32301177
     Yup, you can't trust closed source: https://twitter.com/AliceICecile/status/1553907629172342787
+
+
+Bevy:
+  V2, archtypes and more:
+    https://bevyengine.org/news/bevy-0-5/#component-storage-the-problem
+  bundles n stuff: 
+    https://bevyengine.org/news/bevy-0-9/#improved-entity-component-apis
+  system dependencies:
+    https://bevyengine.org/news/bevy-0-5/#explicit-system-dependencies-and-system-labels
+    https://bevyengine.org/news/bevy-0-9/#exclusive-system-rework
+  "stageless":
+    https://github.com/bevyengine/rfcs/pull/45
+    https://github.com/bevyengine/rfcs/blob/main/rfcs/45-stageless.md
+
+Phases/dependencies/scheduling design:
+  init functions:
+    all registered, not automatically run
+    provides: list of resources and systems (just initing/reg'ing the system, not running it)
+    requires: list of other resource (and systems??) they need to init
+    kind of like a one-shot system, gets to request stuff, but also provides stuff and isn't called unless needed
+  systems:
+    registered by init functions, 
+    once registered, will later be canidate scheduling (but not automatically run)
+    requires: 
+      resources, entity query
+      ordering w/ other systems (after "physics", before "render", with "LD51 game")
+    provides:
+      labels (name, "physics")
+  constraints:
+    seperate from systems, we can declare ambient constraints like:
+    "physics" before "rendering"
+    must run: "physics", "ld51 game", "networking" (unordered)
+    these are the "top level" things stitch together a game/scene
+  solver/scheduler:
+    takes all these requires/provides/constraints into account
+    comes up with an ordered list of init functions to run
+      only running those required to fullfill constraints
+    comes up with an ordered list of systems to repeatedly run
+      again only running those required to fullfill constraints
