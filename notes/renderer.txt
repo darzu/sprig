@@ -1575,3 +1575,6 @@ WebGPU native samples:
 Vulkan guides:
   https://vkguide.dev
   https://vulkan-tutorial.com
+
+FP16 in shaders?
+  https://interplayoflight.wordpress.com/2022/12/30/experimenting-with-fp16-in-shaders/

@@ -43,7 +43,7 @@ export type EntityW<
 export type Entities<CS extends ComponentDef[]> = EntityW<CS>[];
 export type ReadonlyEntities<CS extends ComponentDef[]> =
   readonly EntityW<CS>[];
-export type SystemFN<
+export type SystemFn<
   CS extends ComponentDef[] | null,
   RS extends ComponentDef[]
 > = (
@@ -54,7 +54,17 @@ export type SystemFN<
 type System<CS extends ComponentDef[] | null, RS extends ComponentDef[]> = {
   cs: CS;
   rs: RS;
-  callback: SystemFN<CS, RS>;
+  callback: SystemFn<CS, RS>;
+  name: string;
+  id: number;
+};
+
+export type InitFn<RS extends ComponentDef[]> = (rs: EntityW<RS>) => void;
+type InitFNReg<RS extends ComponentDef[]> = {
+  requires: RS;
+  fn: InitFn<RS>;
+
+  // TODO(@darzu): optional metadata?
   name: string;
   id: number;
 };
@@ -536,24 +546,33 @@ export class EntityManager {
     return res;
   }
 
-  private _nextSystemId = 1;
+  // TODO(@darzu): instead of "name", system should havel "labelConstraints"
+  public registerInit<RS extends ComponentDef[]>(
+    requires: [...RS],
+    initFn: InitFn<RS>,
+    name: string
+  ): void {
+    // TODO(@darzu):
+    throw "TODO";
+  }
 
+  private _nextSystemId = 1;
   public registerSystem<CS extends ComponentDef[], RS extends ComponentDef[]>(
     cs: [...CS],
     rs: [...RS],
-    callback: SystemFN<CS, RS>,
+    callback: SystemFn<CS, RS>,
     name: string
   ): void;
   public registerSystem<CS extends null, RS extends ComponentDef[]>(
-    cs: CS,
+    cs: null,
     rs: [...RS],
-    callback: SystemFN<CS, RS>,
+    callback: SystemFn<CS, RS>,
     name: string
   ): void;
   public registerSystem<CS extends ComponentDef[], RS extends ComponentDef[]>(
     cs: [...CS] | null,
     rs: [...RS],
-    callback: SystemFN<CS, RS>,
+    callback: SystemFn<CS, RS>,
     name: string
   ): void {
     name = name || callback.name;
