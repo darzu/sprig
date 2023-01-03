@@ -34,7 +34,7 @@ export const Cursor3dDef = EM.defineComponent("cursor3d", () => ({
 }));
 
 export function registerCursorSystems(em: EntityManager) {
-  em.addSingletonComponent(GlobalCursor3dDef);
+  em.addResource(GlobalCursor3dDef);
 
   em.registerSystem(
     null,
@@ -64,9 +64,9 @@ export function registerCursorSystems(em: EntityManager) {
 
       // shoot a ray from screen center to figure out where to put the cursor
       const screenMid: vec2 = vec2.clone([
-    res.cameraView.width * 0.5,
-    res.cameraView.height * 0.4,
-]);
+        res.cameraView.width * 0.5,
+        res.cameraView.height * 0.4,
+      ]);
       const r = screenPosToRay(screenMid, res.cameraView);
       let cursorDistance = c.cursor3d.maxDistance;
 
@@ -92,7 +92,7 @@ export function registerCursorSystems(em: EntityManager) {
 
       // place the cursor
       // place the cursor
-vec3.add(r.org, vec3.scale(r.dir, cursorDistance), c.position);
+      vec3.add(r.org, vec3.scale(r.dir, cursorDistance), c.position);
 
       // NOTE/HACK: since the cursor is updated after the render view is updated, we need
       //    to update it's world frame ourselves

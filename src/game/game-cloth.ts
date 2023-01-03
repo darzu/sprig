@@ -47,7 +47,7 @@ import { TextDef } from "./ui.js";
 // TODO(@darzu): BROKEN. cloth sandbox isn't lit right and cloth isn't there
 
 export async function initClothSandbox(em: EntityManager, hosting: boolean) {
-  const camera = em.addSingletonComponent(CameraDef);
+  const camera = em.addResource(CameraDef);
   camera.fov = Math.PI * 0.5;
 
   const res = await em.whenResources(AssetsDef, GlobalCursor3dDef, RendererDef);
@@ -161,7 +161,11 @@ export async function initClothSandbox(em: EntityManager, hosting: boolean) {
   const F = 100.0;
   em.ensureComponentOn(cloth, ForceDef, vec3.clone([F, F, F]));
 
-  const line = await drawLine(vec3.create(), vec3.create(), vec3.clone([0, 1, 0]));
+  const line = await drawLine(
+    vec3.create(),
+    vec3.create(),
+    vec3.clone([0, 1, 0])
+  );
 
   em.registerSystem(
     [ClothConstructDef, ClothLocalDef, WorldFrameDef, ForceDef],
@@ -172,7 +176,10 @@ export async function initClothSandbox(em: EntityManager, hosting: boolean) {
 
       // cursor to cloth
       const cursorPos = res.globalCursor3d.cursor()!.world.position;
-      const midpoint = vec3.scale([cloth.clothConstruct.columns / 2, cloth.clothConstruct.rows / 2, 0], cloth.clothConstruct.distance);
+      const midpoint = vec3.scale(
+        [cloth.clothConstruct.columns / 2, cloth.clothConstruct.rows / 2, 0],
+        cloth.clothConstruct.distance
+      );
       const clothPos = vec3.add(midpoint, cloth.world.position, midpoint);
 
       // line from cursor to cloth

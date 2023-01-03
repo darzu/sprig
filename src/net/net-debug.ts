@@ -23,7 +23,7 @@ export function registerNetDebugSystem(em: EntityManager) {
     [AuthorityDef, RenderableDef],
     [InputsDef],
     (objs, res) => {
-      const netDebugState = em.ensureSingletonComponent(NetDebugStateDef);
+      const netDebugState = em.ensureResource(NetDebugStateDef);
       if (res.inputs.keyClicks["6"])
         netDebugState.dbgAuthority = !netDebugState.dbgAuthority;
       for (const o of objs) {

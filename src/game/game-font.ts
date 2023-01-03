@@ -105,7 +105,7 @@ async function initUICursor() {
     aabb: cursorLocalAABB,
   });
 
-  EM.addSingletonComponent(UICursorDef, cursor);
+  EM.addResource(UICursorDef, cursor);
 }
 
 export async function initFontEditor(em: EntityManager) {
@@ -169,7 +169,7 @@ export async function initFontEditor(em: EntityManager) {
   }
 
   {
-    const camera = EM.addSingletonComponent(CameraDef);
+    const camera = EM.addResource(CameraDef);
     camera.fov = Math.PI * 0.5;
     camera.targetId = 0;
   }

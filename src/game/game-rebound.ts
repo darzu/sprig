@@ -34,7 +34,7 @@ import { shadowPipelines } from "../render/pipelines/std-shadow.js";
 // TODO(@darzu): BROKEN. camera is in a wonky place?
 
 export async function initReboundSandbox(em: EntityManager, hosting: boolean) {
-  const camera = em.addSingletonComponent(CameraDef);
+  const camera = em.addResource(CameraDef);
   camera.fov = Math.PI * 0.5;
 
   let tableId = -1;

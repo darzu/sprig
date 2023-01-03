@@ -7,5 +7,5 @@ export const PartyDef = EM.defineComponent("party", () => ({
 }));
 
 onInit((em) => {
-  em.addSingletonComponent(PartyDef);
+  em.addResource(PartyDef);
 });

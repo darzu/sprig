@@ -2,7 +2,7 @@ import { CameraViewDef } from "../camera.js";
 import { AlphaDef, ColorDef } from "../color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { EM, EntityW } from "../entity-manager.js";
-import { AssetsDef } from "../game/assets.js";
+import { Assets, AssetsDef } from "../game/assets.js";
 import { gameplaySystems } from "../game/game.js";
 import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
 import { MouseDragDef } from "../inputs.js";
@@ -117,15 +117,15 @@ EM.registerInit({
   requireRs: [AssetsDef],
   provideRs: [WidgetLayerDef],
   provideLs: ["updateWidgets", "colorWidgets"],
-  fn: async function (rs) {
-    throw new Error("Function not implemented.");
-  },
-  name: "",
+  // name: "initWidgets",
+  fn: initWidgets,
 });
 
+// { assets }: EntityW<[typeof AssetsDef]>
 export async function initWidgets() {
-  EM.addSingletonComponent(WidgetLayerDef);
+  EM.addResource(WidgetLayerDef);
 
+  // TODO(@darzu): move to resource?
   const dragBox = await initDragBox();
 
   // TODO(@darzu):

@@ -76,7 +76,7 @@ export async function initButtonGUI() {
     const btnGMesh = gameMeshFromMesh(btnMesh_[0], res.renderer.renderer);
     // btnMesh.colors.forEach((c) => vec3.copy(c, ENDESGA16.lightGray));
 
-    EM.addSingletonComponent(ButtonsStateDef, btnGMesh);
+    EM.addResource(ButtonsStateDef, btnGMesh);
   }
 
   EM.registerSystem(

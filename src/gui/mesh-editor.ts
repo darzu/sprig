@@ -347,7 +347,7 @@ export async function initMeshEditor() {
 
   {
     const me = await createMeshEditor();
-    EM.addSingletonComponent(MeshEditorDef, me);
+    EM.addResource(MeshEditorDef, me);
   }
 
   // TODO(@darzu): DBG only

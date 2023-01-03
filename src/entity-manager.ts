@@ -61,17 +61,17 @@ type System<CS extends ComponentDef[] | null, RS extends ComponentDef[]> = {
 
 type Label = string;
 
-export type InitFn<RS extends ComponentDef[]> = (
-  rs: EntityW<RS>
-) => Promise<void>;
+// export type InitFn<RS extends ComponentDef[]> = (
+//   rs: EntityW<RS>
+// ) => Promise<void>;
 export interface InitFNReg<RS extends ComponentDef[]> {
   requireRs: RS;
   provideRs: ComponentDef[];
   provideLs: Label[]; // system labels
-  fn: InitFn<RS>;
+  fn: (rs: EntityW<RS>) => Promise<void>;
 
   // TODO(@darzu): optional metadata?
-  name: string;
+  // name: string;
   // id: number;
 }
 // type _InitFNReg = InitFNReg & {
@@ -284,7 +284,7 @@ export class EntityManager {
     ...args: Pargs
   ): P {
     this.checkComponent(def);
-    if (id === 0) throw `hey, use addSingletonComponent!`;
+    if (id === 0) throw `hey, use addResource!`;
     const c = def.construct(...args);
     const e = this.entities.get(id)!;
     // TODO: this is hacky--EM shouldn't know about "deleted"
@@ -360,11 +360,10 @@ export class EntityManager {
     }
   }
 
-  public addSingletonComponent<
-    N extends string,
-    P,
-    Pargs extends any[] = any[]
-  >(def: ComponentDef<N, P, Pargs>, ...args: Pargs): P {
+  public addResource<N extends string, P, Pargs extends any[] = any[]>(
+    def: ComponentDef<N, P, Pargs>,
+    ...args: Pargs
+  ): P {
     this.checkComponent(def);
     const c = def.construct(...args);
     const e = this.entities.get(0)!;
@@ -374,22 +373,21 @@ export class EntityManager {
     return c;
   }
 
-  public ensureSingletonComponent<
-    N extends string,
-    P,
-    Pargs extends any[] = any[]
-  >(def: ComponentDef<N, P, Pargs>, ...args: Pargs): P {
+  public ensureResource<N extends string, P, Pargs extends any[] = any[]>(
+    def: ComponentDef<N, P, Pargs>,
+    ...args: Pargs
+  ): P {
     this.checkComponent(def);
     const e = this.entities.get(0)!;
     const alreadyHas = def.name in e;
     if (!alreadyHas) {
-      return this.addSingletonComponent(def, ...args);
+      return this.addResource(def, ...args);
     } else {
       return (e as any)[def.name];
     }
   }
 
-  public removeSingletonComponent<C extends ComponentDef>(def: C) {
+  public removeResource<C extends ComponentDef>(def: C) {
     const e = this.entities.get(0)! as any;
     if (def.name in e) {
       delete e[def.name];
@@ -399,7 +397,7 @@ export class EntityManager {
   }
 
   // TODO(@darzu): should this be public??
-  // TODO(@darzu): rename to findSingletonComponent
+  // TODO(@darzu): rename to findResource
   public getResource<C extends ComponentDef>(
     c: C
   ): (C extends ComponentDef<any, infer P> ? P : never) | undefined {

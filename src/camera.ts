@@ -160,7 +160,7 @@ export function registerCameraSystems(em: EntityManager) {
     "retargetCamera"
   );
 
-  em.addSingletonComponent(CameraViewDef);
+  em.addResource(CameraViewDef);
   em.registerSystem(
     null,
     [CameraViewDef, CameraDef, MeDef, CanvasDef],

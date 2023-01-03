@@ -229,15 +229,15 @@ async function startGame(localPeerName: string, host: string | null) {
   EM.setIdRange("local", 1, 10000);
   // TODO(@darzu): ECS stuff
   // init ECS
-  EM.addSingletonComponent(PeerNameDef, localPeerName);
+  EM.addResource(PeerNameDef, localPeerName);
   if (hosting) {
     // TODO(@darzu): ECS
     EM.setDefaultRange("net");
     EM.setIdRange("net", 10001, 20000);
-    EM.addSingletonComponent(MeDef, 0, true);
-    EM.addSingletonComponent(HostDef);
+    EM.addResource(MeDef, 0, true);
+    EM.addResource(HostDef);
   } else {
-    EM.addSingletonComponent(JoinDef, host!);
+    EM.addResource(JoinDef, host!);
   }
 
   registerCommonSystems(EM);

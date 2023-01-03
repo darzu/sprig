@@ -275,7 +275,7 @@ export async function initPathEditor() {
 
   {
     const me = await createPathEditor();
-    EM.addSingletonComponent(PathEditorDef, me);
+    EM.addResource(PathEditorDef, me);
   }
 
   // TODO(@darzu): DBG only

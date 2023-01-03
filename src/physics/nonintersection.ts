@@ -209,8 +209,8 @@ export const PhysicsBroadCollidersDef = EM.defineComponent(
 export type PhysicsBroadColliders = Component<typeof PhysicsBroadCollidersDef>;
 
 export function registerPhysicsStateInit(em: EntityManager) {
-  em.addSingletonComponent(PhysicsResultsDef);
-  em.addSingletonComponent(PhysicsBroadCollidersDef);
+  em.addResource(PhysicsResultsDef);
+  em.addResource(PhysicsBroadCollidersDef);
 
   // TODO(@darzu): actually, this doesn't seem needed? delete?
   // // rectify dead objects with the physics system.
@@ -551,7 +551,7 @@ export function registerPhysicsContactSystems(em: EntityManager) {
             for (let c of o._phys.colliders) {
               // TODO(@darzu): PARENT. translate world AABBs?
               // TODO(@darzu): PARENT. translate world AABBs?
-vec3.add(c.localAABB.min, refl, c.localAABB.min);
+              vec3.add(c.localAABB.min, refl, c.localAABB.min);
               vec3.add(c.localAABB.max, refl, c.localAABB.max);
               vec3.add(c.localPos, refl, c.localPos);
             }

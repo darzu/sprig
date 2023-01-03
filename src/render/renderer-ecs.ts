@@ -167,12 +167,24 @@ function updateSmoothedWorldFrame(em: EntityManager, o: Entity) {
   mat4.copy(o.smoothedWorldFrame.transform, o.transform);
   updateFrameFromTransform(o.smoothedWorldFrame);
   if (MotionSmoothingDef.isOn(o)) {
-    vec3.add(o.smoothedWorldFrame.position, o.motionSmoothing.positionError, o.smoothedWorldFrame.position);
-    quat.mul(o.smoothedWorldFrame.rotation, o.motionSmoothing.rotationError, o.smoothedWorldFrame.rotation);
+    vec3.add(
+      o.smoothedWorldFrame.position,
+      o.motionSmoothing.positionError,
+      o.smoothedWorldFrame.position
+    );
+    quat.mul(
+      o.smoothedWorldFrame.rotation,
+      o.motionSmoothing.rotationError,
+      o.smoothedWorldFrame.rotation
+    );
     updateFrameFromPosRotScale(o.smoothedWorldFrame);
   }
   if (parent) {
-    mat4.mul(parent.smoothedWorldFrame.transform, o.smoothedWorldFrame.transform, o.smoothedWorldFrame.transform);
+    mat4.mul(
+      parent.smoothedWorldFrame.transform,
+      o.smoothedWorldFrame.transform,
+      o.smoothedWorldFrame.transform
+    );
     updateFrameFromTransform(o.smoothedWorldFrame);
   }
   if (firstFrame) copyFrame(o.prevSmoothedWorldFrame, o.smoothedWorldFrame);
@@ -227,13 +239,13 @@ function extrapolateFrames(
 ) {
   // out.position = next.position + alpha * (next.position - prev.position)
   // out.position = next.position + alpha * (next.position - prev.position)
-vec3.sub(next.position, prev.position, out.position);
+  vec3.sub(next.position, prev.position, out.position);
   vec3.scale(out.position, alpha, out.position);
   vec3.add(out.position, next.position, out.position);
 
   // see https://answers.unity.com/questions/168779/extrapolating-quaternion-rotation.html
   // see https://answers.unity.com/questions/168779/extrapolating-quaternion-rotation.html
-quat.invert(prev.rotation, out.rotation);
+  quat.invert(prev.rotation, out.rotation);
   quat.mul(next.rotation, out.rotation, out.rotation);
   const axis = tempVec3();
   let angle = quat.getAxisAngle(out.rotation, axis);
@@ -250,7 +262,7 @@ quat.invert(prev.rotation, out.rotation);
 
   // out.scale = next.scale + alpha * (next.scale - prev.scale)
   // out.scale = next.scale + alpha * (next.scale - prev.scale)
-vec3.sub(next.scale, prev.scale, out.scale);
+  vec3.sub(next.scale, prev.scale, out.scale);
   vec3.scale(out.scale, alpha, out.scale);
   vec3.add(out.scale, next.scale, out.scale);
 
@@ -344,7 +356,7 @@ export function registerRenderer(em: EntityManager) {
           if (o.renderable.hidden) {
             // TODO(@darzu): hidden stuff is a bit wierd
             // TODO(@darzu): hidden stuff is a bit wierd
-mat4.fromScaling(vec3.ZEROS, o.renderDataStd.transform);
+            mat4.fromScaling(vec3.ZEROS, o.renderDataStd.transform);
           }
 
           let tintChange = false;
@@ -687,7 +699,7 @@ async function chooseAndInitRenderer(
 
   // add to ECS
   // TODO(@darzu): this is a little wierd to do this in an async callback
-  em.addSingletonComponent(RendererDef, renderer, usingWebGPU, []);
+  em.addResource(RendererDef, renderer, usingWebGPU, []);
 }
 
 export function displayWebGPUError() {

@@ -333,7 +333,7 @@ export function registerEventSystems(em: EntityManager) {
     [HostDef],
     (inboxes) => {
       for (let { id, inbox, outbox } of inboxes) {
-        let requestedEvents = em.ensureSingletonComponent(RequestedEventsDef);
+        let requestedEvents = em.ensureResource(RequestedEventsDef);
         const eventRequestState = em.ensureComponent(id, EventSyncDef);
         const eventRequests = inbox.get(MessageType.EventRequests) || [];
         let shouldSendAck = false;
@@ -403,7 +403,7 @@ export function registerEventSystems(em: EntityManager) {
     null,
     [DetectedEventsDef, HostDef, MeDef],
     ([], { detectedEvents, me }) => {
-      const requestedEvents = em.ensureSingletonComponent(RequestedEventsDef);
+      const requestedEvents = em.ensureResource(RequestedEventsDef);
       while (detectedEvents.events.length > 0) {
         const event = detectedEvents.events.shift()!;
         const authorityId = eventAuthorityEntity(event.type, event.entities);
@@ -563,8 +563,8 @@ export function registerEventSystems(em: EntityManager) {
 }
 
 export function addEventComponents(em: EntityManager) {
-  em.addSingletonComponent(DetectedEventsDef);
-  em.addSingletonComponent(EventsDef);
+  em.addResource(DetectedEventsDef);
+  em.addResource(EventsDef);
 }
 
 export function eventWizard<ES extends EDef<any>[], Extra>(

@@ -224,9 +224,9 @@ export function registerNetSystems(em: EntityManager) {
   }
   const net = new Net(peerName);
   // TODO: startup system to set up components
-  em.addSingletonComponent(NetStatsDef);
-  em.addSingletonComponent(EventsFromNetworkDef);
-  em.addSingletonComponent(EventsToNetworkDef);
+  em.addResource(NetStatsDef);
+  em.addResource(EventsFromNetworkDef);
+  em.addResource(EventsToNetworkDef);
   em.registerSystem(
     null,
     [NetStatsDef],

@@ -27,7 +27,7 @@ import { GlobalCursor3dDef } from "./cursor.js";
 import { createGhost } from "./game.js";
 
 export async function initCubeGame(em: EntityManager) {
-  const camera = em.addSingletonComponent(CameraDef);
+  const camera = em.addResource(CameraDef);
   camera.fov = Math.PI * 0.5;
 
   const res = await em.whenResources(AssetsDef, GlobalCursor3dDef, RendererDef);

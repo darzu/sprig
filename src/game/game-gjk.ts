@@ -27,7 +27,7 @@ import { createGhost } from "./game.js";
 
 let __frame = 0;
 export async function initGJKSandbox(em: EntityManager, hosting: boolean) {
-  const camera = em.addSingletonComponent(CameraDef);
+  const camera = em.addResource(CameraDef);
   camera.fov = Math.PI * 0.5;
 
   const res = await em.whenResources(AssetsDef, GlobalCursor3dDef, RendererDef);
@@ -260,7 +260,7 @@ export async function initGJKSandbox(em: EntityManager, hosting: boolean) {
 
       // console.log(backTravel);
       // console.log(backTravel);
-vec3.sub(b2.position, backTravel, b2.position);
+      vec3.sub(b2.position, backTravel, b2.position);
 
       lastWorldPos = [
         vec3.clone(b1.position),

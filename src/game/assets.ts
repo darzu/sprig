@@ -157,7 +157,7 @@ const MeshModify: Partial<{
     unshareProvokingForWood(m, woodState);
 
     const woodAssets: WoodAssets =
-      EM.getResource(WoodAssetsDef) ?? EM.addSingletonComponent(WoodAssetsDef);
+      EM.getResource(WoodAssetsDef) ?? EM.addResource(WoodAssetsDef);
 
     woodAssets["ship_fangs"] = woodState;
 
@@ -172,7 +172,7 @@ const MeshModify: Partial<{
   //   unshareProvokingForWood(m, woodState);
 
   //   const woodAssets: WoodAssets =
-  //     EM.getResource(WoodAssetsDef) ?? EM.addSingletonComponent(WoodAssetsDef);
+  //     EM.getResource(WoodAssetsDef) ?? EM.addResource(WoodAssetsDef);
 
   //   woodAssets["timber_rib"] = woodState;
 
@@ -1010,7 +1010,7 @@ export const AssetsDef = EM.defineComponent("assets", (meshes: GameMeshes) => {
 export type Assets = Component<typeof AssetsDef>;
 
 onInit(async (em) => {
-  em.addSingletonComponent(AssetLoaderDef);
+  em.addResource(AssetLoaderDef);
 
   // start loading of assets
   const { assetLoader, renderer } = await em.whenResources(
@@ -1024,7 +1024,7 @@ onInit(async (em) => {
   // TODO(@darzu): do we want this try-catch here? It just obscures errors.
   // try {
   const result = await assetsPromise;
-  em.addSingletonComponent(AssetsDef, result);
+  em.addResource(AssetsDef, result);
   // } catch (failureReason) {
   //   // TODO(@darzu): fail more gracefully
   //   throw `Failed to load assets: ${failureReason}`;

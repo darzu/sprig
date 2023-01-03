@@ -37,7 +37,7 @@ export function updateAvg(avg: number, curr: number): number {
 }
 
 export function registerDevSystems(em: EntityManager) {
-  em.addSingletonComponent(DevConsoleDef);
+  em.addResource(DevConsoleDef);
 
   em.registerSystem(
     null,

@@ -8,7 +8,7 @@ export const TimeDef = EM.defineComponent("time", () => ({
 }));
 
 export function tick(em: EntityManager, dt: number) {
-  const time = em.ensureSingletonComponent(TimeDef);
+  const time = em.ensureResource(TimeDef);
   time.lastTime = time.time;
   time.time += dt;
   time.step += 1;

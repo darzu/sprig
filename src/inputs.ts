@@ -41,7 +41,7 @@ export const MouseDragDef = EM.defineComponent("mousedrag", () => ({
 export function registerInputsSystem(em: EntityManager): void {
   let inputsReader: (() => Inputs) | null = null;
 
-  EM.addSingletonComponent(InputsDef);
+  EM.addResource(InputsDef);
   em.registerSystem(
     null,
     [InputsDef, CanvasDef],
@@ -53,7 +53,7 @@ export function registerInputsSystem(em: EntityManager): void {
     "inputs"
   );
 
-  em.addSingletonComponent(MouseDragDef);
+  em.addResource(MouseDragDef);
   em.registerSystem(
     null,
     [InputsDef, MouseDragDef],
@@ -75,8 +75,16 @@ export function registerInputsSystem(em: EntityManager): void {
       if (mousedrag.isDragging) {
         vec2.copy(mousedrag.dragLastEnd, mousedrag.dragEnd);
         vec2.copy(mousedrag.dragEnd, inputs.mousePos);
-        vec2.set(Math.min(mousedrag.dragStart[0], mousedrag.dragEnd[0]), Math.min(mousedrag.dragStart[1], mousedrag.dragEnd[1]), mousedrag.dragMin);
-        vec2.set(Math.max(mousedrag.dragStart[0], mousedrag.dragEnd[0]), Math.max(mousedrag.dragStart[1], mousedrag.dragEnd[1]), mousedrag.dragMax);
+        vec2.set(
+          Math.min(mousedrag.dragStart[0], mousedrag.dragEnd[0]),
+          Math.min(mousedrag.dragStart[1], mousedrag.dragEnd[1]),
+          mousedrag.dragMin
+        );
+        vec2.set(
+          Math.max(mousedrag.dragStart[0], mousedrag.dragEnd[0]),
+          Math.max(mousedrag.dragStart[1], mousedrag.dragEnd[1]),
+          mousedrag.dragMax
+        );
         vec2.copy(mousedrag.dragMov, inputs.mouseMov);
       }
     },
