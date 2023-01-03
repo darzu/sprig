@@ -14,6 +14,7 @@ import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { tempVec3 } from "../temp-pool.js";
 import { assert } from "../util.js";
 import { screenPosToWorldPos } from "../utils-game.js";
+import { UICursorDef } from "../game/game-font.js";
 
 // adornments are: entities that are parented to an entity's mesh parts
 //    [ ] track changes via version number on the mesh data
@@ -59,7 +60,11 @@ async function initDragBox(): Promise<EntityW<[typeof PositionDef]>> {
   EM.ensureComponentOn(dragBox, RenderableConstructDef, dragBoxMesh);
   EM.ensureComponentOn(dragBox, PositionDef, vec3.clone([0, 0.2, 0]));
   EM.ensureComponentOn(dragBox, ScaleDef, vec3.clone([1, 1, 1]));
-  EM.ensureComponentOn(dragBox, ColorDef, vec3.clone([0.0, 120 / 255, 209 / 255]));
+  EM.ensureComponentOn(
+    dragBox,
+    ColorDef,
+    vec3.clone([0.0, 120 / 255, 209 / 255])
+  );
   EM.ensureComponentOn(dragBox, ColliderDef, {
     shape: "AABB",
     solid: false,
@@ -107,7 +112,18 @@ async function initDragBox(): Promise<EntityW<[typeof PositionDef]>> {
 //    have a registration table where an init function can specify which resources and systems it provides
 //    then other code can require a certain resource / system, then it calls the right init function
 
-export async function initWidgets(cursorId: number) {
+// TODO(@darzu): IMPL
+EM.registerInit({
+  requireRs: [AssetsDef],
+  provideRs: [WidgetLayerDef],
+  provideLs: ["updateWidgets", "colorWidgets"],
+  fn: async function (rs) {
+    throw new Error("Function not implemented.");
+  },
+  name: "",
+});
+
+export async function initWidgets() {
   EM.addSingletonComponent(WidgetLayerDef);
 
   const dragBox = await initDragBox();
@@ -116,8 +132,25 @@ export async function initWidgets(cursorId: number) {
   // TODO(@darzu): refactor. Also have undo-stack
   EM.registerSystem(
     null,
-    [WidgetLayerDef, PhysicsResultsDef, MouseDragDef, CameraViewDef],
-    (_, { widgets, physicsResults, mousedrag, cameraView }) => {
+    [
+      WidgetLayerDef,
+      PhysicsResultsDef,
+      MouseDragDef,
+      CameraViewDef,
+      UICursorDef,
+    ],
+    (
+      _,
+      {
+        widgets,
+        physicsResults,
+        mousedrag,
+        cameraView,
+        uiCursor: {
+          cursor: { id: cursorId },
+        },
+      }
+    ) => {
       const { selected, hover, moved } = widgets;
 
       moved.clear();
@@ -158,7 +191,7 @@ export async function initWidgets(cursorId: number) {
             assert(w);
             // TODO(@darzu): think about world positions and parenting..
             // TODO(@darzu): think about world positions and parenting..
-vec3.add(w.position, worldDrag, w.position);
+            vec3.add(w.position, worldDrag, w.position);
             moved.add(wi);
           }
         } else {

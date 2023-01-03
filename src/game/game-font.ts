@@ -79,6 +79,35 @@ const DBG_3D = false; // TODO(@darzu): add in-game smooth transition!
 const PANEL_W = 4 * 12;
 const PANEL_H = 3 * 12;
 
+export const UICursorDef = EM.defineComponent(
+  "uiCursor",
+  (cursor: EntityW<[typeof PositionDef]>) => ({
+    cursor,
+  })
+);
+
+// TODO(@darzu): use registerInit
+async function initUICursor() {
+  const { assets } = await EM.whenResources(AssetsDef);
+
+  // TODO(@darzu):
+  // Cursor
+  const cursor = EM.newEntity();
+  EM.ensureComponentOn(cursor, ColorDef, vec3.clone([0.1, 0.1, 0.1]));
+  EM.ensureComponentOn(cursor, PositionDef, vec3.clone([0, 1.0, 0]));
+  EM.ensureComponentOn(cursor, RenderableConstructDef, assets.he_octo.proto);
+  const cursorLocalAABB = copyAABB(createAABB(), assets.he_octo.aabb);
+  cursorLocalAABB.min[1] = -1;
+  cursorLocalAABB.max[1] = 1;
+  EM.ensureComponentOn(cursor, ColliderDef, {
+    shape: "AABB",
+    solid: false,
+    aabb: cursorLocalAABB,
+  });
+
+  EM.addSingletonComponent(UICursorDef, cursor);
+}
+
 export async function initFontEditor(em: EntityManager) {
   initButtonGUI();
 
@@ -151,28 +180,17 @@ export async function initFontEditor(em: EntityManager) {
       canvas.htmlCanvas.unlockMouse()
     );
 
-  const { assets } = await EM.whenResources(AssetsDef);
+  // const { assets } = await EM.whenResources(AssetsDef);
 
-  // Cursor
-  const cursor = EM.newEntity();
-  EM.ensureComponentOn(cursor, ColorDef, vec3.clone([0.1, 0.1, 0.1]));
-  EM.ensureComponentOn(cursor, PositionDef, vec3.clone([0, 1.0, 0]));
-  EM.ensureComponentOn(cursor, RenderableConstructDef, assets.he_octo.proto);
-  const cursorLocalAABB = copyAABB(createAABB(), assets.he_octo.aabb);
-  cursorLocalAABB.min[1] = -1;
-  cursorLocalAABB.max[1] = 1;
-  EM.ensureComponentOn(cursor, ColliderDef, {
-    shape: "AABB",
-    solid: false,
-    aabb: cursorLocalAABB,
-  });
+  initUICursor();
 
   // TODO(@darzu): de-duplicate this with very similar code in other "games"
   EM.registerSystem(
     null,
-    [CameraViewDef, CanvasDef, CameraDef, InputsDef],
+    [CameraViewDef, CanvasDef, CameraDef, InputsDef, UICursorDef],
     async (_, res) => {
       const { cameraView, htmlCanvas, inputs } = res;
+      const cursor = res.uiCursor.cursor;
 
       if (res.camera.targetId) return;
 
@@ -348,10 +366,10 @@ export async function initFontEditor(em: EntityManager) {
   // TODO(@darzu): HACKY. Cursor or 2d gui or something needs some better
   //    abstracting
   // EM.whenResources(ButtonsStateDef).then((res) => {
-  res.buttonsState.cursorId = cursor.id;
+  // res.buttonsState.cursorId = cursor.id;
   // });
 
-  initMeshEditor(cursor.id);
+  initMeshEditor();
 
   lineStuff();
 }

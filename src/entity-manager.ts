@@ -59,15 +59,24 @@ type System<CS extends ComponentDef[] | null, RS extends ComponentDef[]> = {
   id: number;
 };
 
-export type InitFn<RS extends ComponentDef[]> = (rs: EntityW<RS>) => void;
-type InitFNReg<RS extends ComponentDef[]> = {
-  requires: RS;
+type Label = string;
+
+export type InitFn<RS extends ComponentDef[]> = (
+  rs: EntityW<RS>
+) => Promise<void>;
+export interface InitFNReg<RS extends ComponentDef[]> {
+  requireRs: RS;
+  provideRs: ComponentDef[];
+  provideLs: Label[]; // system labels
   fn: InitFn<RS>;
 
   // TODO(@darzu): optional metadata?
   name: string;
-  id: number;
-};
+  // id: number;
+}
+// type _InitFNReg = InitFNReg & {
+//   id: number;
+// }
 
 // TODO(@darzu): think about naming some more...
 type OneShotSystem<
@@ -547,13 +556,11 @@ export class EntityManager {
   }
 
   // TODO(@darzu): instead of "name", system should havel "labelConstraints"
-  public registerInit<RS extends ComponentDef[]>(
-    requires: [...RS],
-    initFn: InitFn<RS>,
-    name: string
-  ): void {
+  public registerInit<RS extends ComponentDef[]>(opts: InitFNReg<RS>): void {
     // TODO(@darzu):
-    throw "TODO";
+    // throw "TODO";
+    console.log(`TODO IMPL registerInit`);
+    console.dir(opts);
   }
 
   private _nextSystemId = 1;

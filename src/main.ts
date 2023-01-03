@@ -31,7 +31,7 @@ export const MAX_VERTICES = 21844;
 const ENABLE_NET = false;
 const AUTOSTART = true;
 
-const GAME = "ld51" as
+const GAME = "font" as
   | "gjk"
   | "rebound" // broken-ish
   | "ld51"

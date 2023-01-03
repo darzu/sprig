@@ -269,9 +269,9 @@ async function createPathEditor() {
   }
 }
 
-export async function initPathEditor(cursorId: number) {
+export async function initPathEditor() {
   // TODO(@darzu):  only call if mesh editor hasn't initted widgets!
-  initWidgets(cursorId);
+  initWidgets();
 
   {
     const me = await createPathEditor();

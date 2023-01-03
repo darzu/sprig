@@ -342,8 +342,8 @@ async function createMeshEditor() {
   }
 }
 
-export async function initMeshEditor(cursorId: number) {
-  initWidgets(cursorId);
+export async function initMeshEditor() {
+  initWidgets();
 
   {
     const me = await createMeshEditor();

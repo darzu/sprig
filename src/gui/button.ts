@@ -9,6 +9,7 @@ import { PhysicsResultsDef } from "../physics/nonintersection.js";
 import { scaleMesh } from "../render/mesh.js";
 import { RendererDef } from "../render/renderer-ecs.js";
 import { assert } from "../util.js";
+import { UICursorDef } from "../game/game-font.js";
 
 // TODO(@darzu): this should really go in assets.ts to follow the current patern.
 //    BUT I'm disatisfied with the current pattern. Subsystems should be able to
@@ -56,7 +57,7 @@ export const ButtonsStateDef = EM.defineComponent(
     clickByKey: {} as { [key: string]: number | undefined },
 
     // TODO(@darzu): is this state right or necessary?
-    cursorId: 0,
+    // cursorId: 0,
     gmesh,
   })
 );
@@ -80,7 +81,7 @@ export async function initButtonGUI() {
 
   EM.registerSystem(
     [ButtonDef],
-    [PhysicsResultsDef, ButtonsStateDef, InputsDef],
+    [PhysicsResultsDef, ButtonsStateDef, InputsDef, UICursorDef],
     (es, res) => {
       // reset by-key state
       for (let key of Object.keys(res.buttonsState.clickByKey))
@@ -89,7 +90,7 @@ export async function initButtonGUI() {
       for (let btn of es) {
         const colW = res.physicsResults.collidesWith.get(btn.id);
         const isHover = (colW ?? []).some(
-          (oId) => oId === res.buttonsState.cursorId
+          (oId) => oId === res.uiCursor.cursor.id
         );
 
         const wasHover = res.buttonsState.hover[btn.id];
