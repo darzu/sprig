@@ -68,18 +68,18 @@ export interface InitFNReg<RS extends ComponentDef[]> {
   requireRs: RS;
   provideRs: ComponentDef[];
   provideLs: Label[]; // system labels
-  fn: (rs: EntityW<RS>) => Promise<void>;
+  fn: (rs: EntityW<RS, 0>) => Promise<void>;
 
   // TODO(@darzu): optional metadata?
   // name: string;
-  // id: number;
+  id: number;
 }
 // type _InitFNReg = InitFNReg & {
 //   id: number;
 // }
 
 // TODO(@darzu): think about naming some more...
-type OneShotSystem<
+type EntityPromise<
   //eCS extends ComponentDef[],
   CS extends ComponentDef[],
   ID extends number
@@ -87,13 +87,8 @@ type OneShotSystem<
   e: EntityW<any[], ID>;
   cs: CS;
   callback: (e: EntityW<[...CS], ID>) => void;
-  name: string;
+  // name: string;
 };
-function isOneShotSystem(
-  s: OneShotSystem<any, any> | System<any, any>
-): s is OneShotSystem<any, any> {
-  return "e" in s;
-}
 
 type EDefId<ID extends number, CS extends ComponentDef[]> = [ID, ...CS];
 type ESetId<DS extends EDefId<number, any>[]> = {
@@ -121,9 +116,10 @@ interface SystemStats {
 
 export class EntityManager {
   entities: Map<number, Entity> = new Map();
+  ent0: Entity & { id: 0 };
   systems: Map<string, System<any[] | null, any[]>> = new Map();
   systemsById: Map<number, System<any[] | null, any[]>> = new Map();
-  oneShotSystems: Map<string, OneShotSystem<any[], any>> = new Map();
+  entityPromises: Map<number, EntityPromise<ComponentDef[], any>[]> = new Map();
   components: Map<number, ComponentDef<any, any>> = new Map();
   serializers: Map<
     number,
@@ -152,7 +148,8 @@ export class EntityManager {
   private _componentToSystems: Map<string, number[]> = new Map();
 
   constructor() {
-    this.entities.set(0, { id: 0 });
+    this.ent0 = { id: 0 };
+    this.entities.set(0, this.ent0);
     // TODO(@darzu): maintain _entitiesToSystems for ent 0?
   }
 
@@ -320,6 +317,10 @@ export class EntityManager {
       }
     }
 
+    // track changes for entity promises
+    // TODO(@darzu): PERF. maybe move all the system query update stuff to use this too?
+    this._changedEntities.add(e.id);
+
     return c;
   }
 
@@ -349,6 +350,8 @@ export class EntityManager {
     }
   }
   // TODO(@darzu): do we want to make this the standard way we do ensureComponent and addComponent ?
+  // TODO(@darzu): rename to "set" and have "maybeSet" w/ a thunk as a way to short circuit unnecessary init?
+  //      and maybe "strictSet" as the version that throws if it exists (renamed from "addComponent")
   public ensureComponentOn<N extends string, P, Pargs extends any[] = any[]>(
     e: Entity,
     def: ComponentDef<N, P, Pargs>,
@@ -366,10 +369,11 @@ export class EntityManager {
   ): P {
     this.checkComponent(def);
     const c = def.construct(...args);
-    const e = this.entities.get(0)!;
+    const e = this.ent0;
     if (def.name in e)
       throw `double defining singleton component ${def.name} on ${e.id}!`;
     (e as any)[def.name] = c;
+    this._changedEntities.add(0); // TODO(@darzu): seperate Resources from Entities
     return c;
   }
 
@@ -378,7 +382,7 @@ export class EntityManager {
     ...args: Pargs
   ): P {
     this.checkComponent(def);
-    const e = this.entities.get(0)!;
+    const e = this.ent0;
     const alreadyHas = def.name in e;
     if (!alreadyHas) {
       return this.addResource(def, ...args);
@@ -388,7 +392,7 @@ export class EntityManager {
   }
 
   public removeResource<C extends ComponentDef>(def: C) {
-    const e = this.entities.get(0)! as any;
+    const e = this.ent0 as any;
     if (def.name in e) {
       delete e[def.name];
     } else {
@@ -401,7 +405,7 @@ export class EntityManager {
   public getResource<C extends ComponentDef>(
     c: C
   ): (C extends ComponentDef<any, infer P> ? P : never) | undefined {
-    const e = this.entities.get(0)!;
+    const e = this.ent0;
     if (c.name in e) {
       return (e as any)[c.name];
     }
@@ -410,7 +414,7 @@ export class EntityManager {
   public getResources<RS extends ComponentDef[]>(
     rs: [...RS]
   ): EntityW<RS, 0> | undefined {
-    const e = this.entities.get(0)!;
+    const e = this.ent0;
     if (rs.every((r) => r.name in e)) return e as any;
     return undefined;
   }
@@ -553,12 +557,35 @@ export class EntityManager {
     return res;
   }
 
+  // initFns: InitFNReg<any>[] = [];
+  initFnsByResource: Map<string, InitFNReg<ComponentDef[]>> = new Map();
+  initFnHasStarted: Set<number> = new Set();
+  // TODO(@darzu): IMPL?
+  // pendingResources: Map<string, Promise<ComponentDef<any>>> = new Map();
+  _nextInitFnId = 1;
+
   // TODO(@darzu): instead of "name", system should havel "labelConstraints"
-  public registerInit<RS extends ComponentDef[]>(opts: InitFNReg<RS>): void {
+  public registerInit<RS extends ComponentDef[]>(
+    reg: Omit<InitFNReg<RS>, "id">
+  ): void {
     // TODO(@darzu):
     // throw "TODO";
-    console.log(`TODO IMPL registerInit`);
-    console.dir(opts);
+    console.log(`registerInit: ${reg.provideRs.join(",")}`);
+    // console.dir(opts);
+
+    const regWId: InitFNReg<RS> = {
+      ...reg,
+      id: this._nextInitFnId++,
+    };
+
+    // this.initFns.push(reg);
+    for (let p of reg.provideRs) {
+      assert(
+        !this.initFnsByResource.has(p.name),
+        `Resource: '${p.name}' already has an init fn!`
+      );
+      this.initFnsByResource.set(p.name, regWId);
+    }
   }
 
   private _nextSystemId = 1;
@@ -631,11 +658,10 @@ export class EntityManager {
     }
   }
 
-  private nextOneShotSuffix = 0;
   public whenResources<RS extends ComponentDef[]>(
     ...rs: RS
-  ): Promise<EntityW<RS>> {
-    return this.whenEntityHas(this.entities.get(0)!, ...rs);
+  ): Promise<EntityW<RS, 0>> {
+    return this.whenEntityHas(this.ent0, ...rs);
   }
 
   hasSystem(name: string) {
@@ -673,6 +699,7 @@ export class EntityManager {
     this.sysStats[s.name].queries++;
     this.sysStats[s.name].queryTime += afterQuery - start;
     if (rs) {
+      // we have the resources
       s.callback(es, rs);
       let afterCall = performance.now();
       this.sysStats[s.name].calls++;
@@ -682,6 +709,9 @@ export class EntityManager {
         this.sysStats[s.name].maxCallTime,
         thisCallTime
       );
+    } else {
+      // we don't yet have the resources, check if we can init any
+      this.startInitFnsFor(s.rs);
     }
 
     return true;
@@ -691,49 +721,119 @@ export class EntityManager {
     if (!this.tryCallSystem(name)) throw `No system named ${name}`;
   }
 
-  callOneShotSystems() {
-    const beforeOneShots = performance.now();
-    let calledSystems: Set<string> = new Set();
-    this.oneShotSystems.forEach((s) => {
-      if (!s.cs.every((c) => c.name in s.e)) return;
+  // TODO(@darzu): use version numbers instead of dirty flag?
+  _changedEntities = new Set<number>();
 
-      const afterOneShotQuery = performance.now();
-      const stats = this.sysStats["__oneShots"];
-      stats.queries += 1;
-      stats.queryTime += afterOneShotQuery - beforeOneShots;
+  // _dbgFirstXFrames = 10;
+  // dbgStrEntityPromises() {
+  //   let res = "";
+  //   res += `changed ents: ${[...this._changedEntities.values()].join(",")}\n`;
+  //   this.entityPromises.forEach((promises, id) => {
+  //     for (let s of promises) {
+  //       const unmet = s.cs.filter((c) => !c.isOn(s.e)).map((c) => c.name);
+  //       res += `#${id} is waiting for ${unmet.join(",")}\n`;
+  //     }
+  //   });
+  //   return res;
+  // }
 
-      calledSystems.add(s.name);
-      // TODO(@darzu): how to handle async callbacks and their timing?
-      s.callback(s.e);
+  startInitFnsFor(cs: ComponentDef[]) {
+    for (let c of cs) {
+      if (!c.isOn(this.ent0) && this.initFnsByResource.has(c.name)) {
+        // bookkeeping
+        const initFn = this.initFnsByResource.get(c.name)!;
+        this.initFnsByResource.delete(c.name);
+        if (this.initFnHasStarted.has(initFn.id)) continue;
+        this.initFnHasStarted.add(initFn.id);
 
-      const afterOneShotCall = performance.now();
-      stats.calls += 1;
-      const thisCallTime = afterOneShotCall - afterOneShotQuery;
-      stats.callTime += thisCallTime;
-      stats.maxCallTime = Math.max(stats.maxCallTime, thisCallTime);
-    });
-    for (let name of calledSystems) {
-      this.oneShotSystems.delete(name);
+        // enqueue init fn
+        console.log(`enqueuing init fn for: ${c.name}`);
+        this.whenResources(...initFn.requireRs).then(async (res) => {
+          await initFn.fn(res);
+          // check that the init fn fullfilled its contract
+          assert(c.isOn(this.ent0), `Init fn failed to provide: ${c.name}`);
+        });
+      }
     }
   }
 
+  checkEntityPromises() {
+    // console.dir(this.entityPromises);
+    // console.log(this.dbgStrEntityPromises());
+    // this._dbgFirstXFrames--;
+    // if (this._dbgFirstXFrames <= 0) throw "STOP";
+
+    const beforeOneShots = performance.now();
+
+    // for resources, check init fns
+    // TODO(@darzu): also check and call init functions for systems!!
+    const resourcePromises = this.entityPromises.get(0);
+    if (resourcePromises) {
+      for (let p of resourcePromises) this.startInitFnsFor(p.cs);
+    }
+
+    let finishedEntities: Set<number> = new Set();
+    this.entityPromises.forEach((promises, id) => {
+      // no change
+      if (!this._changedEntities.has(id)) {
+        // console.log(`no change on: ${id}`);
+        return;
+      }
+
+      // check each promise (reverse so we can remove)
+      for (let idx = promises.length - 1; idx >= 0; idx--) {
+        const s = promises[idx];
+
+        // promise full filled?
+        if (!s.cs.every((c) => c.name in s.e)) {
+          // console.log(`still doesn't match: ${id}`);
+          continue;
+        }
+
+        // call callback
+        const afterOneShotQuery = performance.now();
+        const stats = this.sysStats["__oneShots"];
+        stats.queries += 1;
+        stats.queryTime += afterOneShotQuery - beforeOneShots;
+
+        promises.splice(idx, 1);
+        // TODO(@darzu): how to handle async callbacks and their timing?
+        s.callback(s.e);
+
+        const afterOneShotCall = performance.now();
+        stats.calls += 1;
+        const thisCallTime = afterOneShotCall - afterOneShotQuery;
+        stats.callTime += thisCallTime;
+        stats.maxCallTime = Math.max(stats.maxCallTime, thisCallTime);
+      }
+
+      // clean up
+      if (promises.length === 0) finishedEntities.add(id);
+    });
+
+    // clean up
+    for (let id of finishedEntities) {
+      this.entityPromises.delete(id);
+    }
+    this._changedEntities.clear();
+  }
+
   // TODO(@darzu): good or terrible name?
+  // TODO(@darzu): another version for checking entity promises?
   whyIsntSystemBeingCalled(name: string): void {
     // TODO(@darzu): more features like check against a specific set of entities
-    const sys = this.systems.get(name) ?? this.oneShotSystems.get(name);
+    const sys = this.systems.get(name);
     if (!sys) {
       console.warn(`No systems found with name: '${name}'`);
       return;
     }
 
     let haveAllResources = true;
-    if (!isOneShotSystem(sys)) {
-      for (let _r of sys.rs) {
-        let r = _r as ComponentDef;
-        if (!this.getResource(r)) {
-          console.warn(`System '${name}' missing resource: ${r.name}`);
-          haveAllResources = false;
-        }
+    for (let _r of sys.rs) {
+      let r = _r as ComponentDef;
+      if (!this.getResource(r)) {
+        console.warn(`System '${name}' missing resource: ${r.name}`);
+        haveAllResources = false;
       }
     }
 
@@ -757,10 +857,10 @@ export class EntityManager {
 
     // TODO(@darzu): this is too copy-pasted from registerSystem
     // TODO(@darzu): need unified query maybe?
-    let _name = "oneShot" + this.nextOneShotSuffix++;
+    // let _name = "oneShot" + this.++;
 
-    if (this.oneShotSystems.has(_name))
-      throw `One-shot single system named ${_name} already defined.`;
+    // if (this.entityPromises.has(_name))
+    //   throw `One-shot single system named ${_name} already defined.`;
 
     // use one bucket for all one shots. Change this if we want more granularity
     this.sysStats["__oneShots"] = this.sysStats["__oneShots"] ?? {
@@ -772,14 +872,16 @@ export class EntityManager {
     };
 
     return new Promise<EntityW<CS, ID>>((resolve, reject) => {
-      const sys: OneShotSystem<CS, ID> = {
+      const sys: EntityPromise<CS, ID> = {
         e,
         cs,
         callback: resolve,
-        name: _name,
+        // name: _name,
       };
 
-      this.oneShotSystems.set(_name, sys);
+      if (this.entityPromises.has(e.id))
+        this.entityPromises.get(e.id)!.push(sys);
+      else this.entityPromises.set(e.id, [sys]);
     });
   }
 }

@@ -213,7 +213,7 @@ function callFixedTimestepSystems() {
   EM.callSystem("renderView");
   EM.callSystem("constructRenderables");
   if (DBG_ASSERT) EM.callSystem("deadCleanupWarning"); // SHOULD BE LAST(-ish); warns if cleanup is missing
-  EM.callOneShotSystems();
+  EM.checkEntityPromises();
   EM.loops++;
 }
 

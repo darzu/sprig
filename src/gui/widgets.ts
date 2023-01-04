@@ -121,8 +121,7 @@ EM.registerInit({
   fn: initWidgets,
 });
 
-// { assets }: EntityW<[typeof AssetsDef]>
-export async function initWidgets() {
+async function initWidgets({ assets }: EntityW<[typeof AssetsDef]>) {
   EM.addResource(WidgetLayerDef);
 
   // TODO(@darzu): move to resource?
