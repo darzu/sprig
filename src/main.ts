@@ -31,14 +31,16 @@ export const MAX_VERTICES = 21844;
 const ENABLE_NET = false;
 const AUTOSTART = true;
 
-const GAME = "font" as
-  | "gjk"
-  | "rebound" // broken-ish
-  | "ld51"
-  | "font"
-  | "hyperspace"
-  | "cloth" // broken-ish
-  | "cube";
+const ALL_GAMES = [
+  "gjk",
+  "rebound", // broken-ish
+  "ld51",
+  "font",
+  "hyperspace",
+  "cloth", // broken-ish
+  "cube",
+] as const;
+const GAME: typeof ALL_GAMES[number] = "ld51";
 
 // Run simulation with a fixed timestep @ 60hz
 const TIMESTEP = 1000 / 60;

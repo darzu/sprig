@@ -169,7 +169,7 @@ export async function initFontEditor(em: EntityManager) {
   }
 
   {
-    const camera = EM.addResource(CameraDef);
+    const { camera } = await EM.whenResources(CameraDef);
     camera.fov = Math.PI * 0.5;
     camera.targetId = 0;
   }

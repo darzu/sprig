@@ -27,10 +27,13 @@ import { createGhost } from "./game.js";
 
 let __frame = 0;
 export async function initGJKSandbox(em: EntityManager, hosting: boolean) {
-  const camera = em.addResource(CameraDef);
-  camera.fov = Math.PI * 0.5;
-
-  const res = await em.whenResources(AssetsDef, GlobalCursor3dDef, RendererDef);
+  const res = await em.whenResources(
+    AssetsDef,
+    GlobalCursor3dDef,
+    RendererDef,
+    CameraDef
+  );
+  res.camera.fov = Math.PI * 0.5;
 
   res.renderer.pipelines = [
     // ...shadowPipelines,

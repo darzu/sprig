@@ -153,15 +153,15 @@ export const LD51CannonDef = EM.defineComponent("ld51Cannon", () => {
 });
 
 export async function initRogueGame(em: EntityManager, hosting: boolean) {
-  const camera = em.addResource(CameraDef);
-  camera.fov = Math.PI * 0.5;
-
   const res = await em.whenResources(
     AssetsDef,
     // WoodAssetsDef,
     // GlobalCursor3dDef,
-    RendererDef
+    RendererDef,
+    CameraDef
   );
+
+  res.camera.fov = Math.PI * 0.5;
 
   res.renderer.pipelines = [
     ...shadowPipelines,

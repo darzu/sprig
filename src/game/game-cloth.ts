@@ -47,10 +47,14 @@ import { TextDef } from "./ui.js";
 // TODO(@darzu): BROKEN. cloth sandbox isn't lit right and cloth isn't there
 
 export async function initClothSandbox(em: EntityManager, hosting: boolean) {
-  const camera = em.addResource(CameraDef);
+  const res = await em.whenResources(
+    AssetsDef,
+    GlobalCursor3dDef,
+    RendererDef,
+    CameraDef
+  );
+  const camera = res.camera;
   camera.fov = Math.PI * 0.5;
-
-  const res = await em.whenResources(AssetsDef, GlobalCursor3dDef, RendererDef);
   let renderPipelinesPtrs: CyRenderPipelinePtr[] = [
     // TODO(@darzu):
     ...shadowPipelines,
