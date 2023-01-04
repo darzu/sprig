@@ -1285,6 +1285,7 @@ Philosophy:
   Productivity is just problem solving + overhead.
 
 To learn: barycentrics
+  ChatGPT: "Barycentric coordinates are a set of weights that can be used to interpolate the attributes of a triangle in 2D or 3D space. They are called "barycentric" coordinates because they are based on the barycenter, which is the center of mass of a triangle."
 
 Advice and bad advice:
   https://www.youtube.com/watch?v=miwrDpbb25Q

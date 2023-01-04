@@ -1420,6 +1420,7 @@ Regarding Nanite:
             Single dispatch with enough worker threads to fill GPU
             "Use simple multi-producer multi-consumer (MPMC) job-queue to communicate between threads"
     TOLEARN: "Cluster selection must be isotropic like mip selection"
+      isotropic: "same in all orientations/directions"
     TODO: when rendering engineers say "vertex colors", what do they mean?
     My summary of what's novel about nanite:
       Better triangle cluster boundries than prior work

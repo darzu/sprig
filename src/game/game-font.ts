@@ -1,53 +1,29 @@
 import { CameraDef, CameraViewDef } from "../camera.js";
 import { CanvasDef } from "../canvas.js";
-import { AlphaDef, ColorDef } from "../color-ecs.js";
+import { ColorDef } from "../color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { dbg } from "../debugger.js";
 import { EM, EntityManager, EntityW } from "../entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
 import { ButtonDef, ButtonsStateDef, initButtonGUI } from "../gui/button.js";
 import { initMeshEditor, MeshEditorDef } from "../gui/mesh-editor.js";
 import { lineStuff } from "../gui/path-editor.js";
-import {
-  extrudeQuad,
-  HEdge,
-  HPoly,
-  HVert,
-  meshToHalfEdgePoly,
-} from "../half-edge.js";
-import { exportObj, importObj } from "../import_obj.js";
-import { InputsDef, MouseDragDef } from "../inputs.js";
+import { exportObj } from "../import_obj.js";
+import { InputsDef } from "../inputs.js";
 import { mathMap } from "../math.js";
-import { copyAABB, createAABB, Ray, rayVsRay } from "../physics/broadphase.js";
+import { copyAABB, createAABB } from "../physics/broadphase.js";
 import { ColliderDef } from "../physics/collider.js";
-import { PhysicsResultsDef } from "../physics/nonintersection.js";
-import { PositionDef, RotationDef, ScaleDef } from "../physics/transform.js";
+import { PositionDef } from "../physics/transform.js";
 import { PointLightDef } from "../render/lights.js";
 import { MeshReserve } from "../render/mesh-pool.js";
-import {
-  cloneMesh,
-  getAABBFromMesh,
-  LineMesh,
-  Mesh,
-  normalizeMesh,
-  RawMesh,
-  scaleMesh,
-  transformMesh,
-  unshareProvokingVertices,
-} from "../render/mesh.js";
+import { cloneMesh, Mesh, scaleMesh } from "../render/mesh.js";
 import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
 import { alphaRenderPipeline } from "../render/pipelines/xp-alpha.js";
-import {
-  RendererDef,
-  RenderableConstructDef,
-  RenderableDef,
-} from "../render/renderer-ecs.js";
-import { tempMat4, tempVec3 } from "../temp-pool.js";
+import { RendererDef, RenderableConstructDef } from "../render/renderer-ecs.js";
 import { assert } from "../util.js";
-import { randNormalPosVec3, vec3Mid } from "../utils-3d.js";
-import { screenPosToWorldPos } from "../utils-game.js";
+import { randNormalPosVec3 } from "../utils-3d.js";
 import {
   AssetsDef,
   GameMesh,
