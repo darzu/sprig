@@ -1,5 +1,5 @@
 import { ColorDef } from "../color-ecs.js";
-import { EM } from "../entity-manager.js";
+import { EM, EntityW } from "../entity-manager.js";
 import { GameMesh, gameMeshFromMesh } from "../game/assets.js";
 import { gameplaySystems } from "../game/game.js";
 import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
@@ -62,9 +62,14 @@ export const ButtonsStateDef = EM.defineComponent(
   })
 );
 
-export async function initButtonGUI() {
-  const res = await EM.whenResources(RendererDef);
+EM.registerInit({
+  requireRs: [RendererDef],
+  provideRs: [ButtonsStateDef],
+  provideLs: [],
+  fn: initButtonGUI,
+});
 
+async function initButtonGUI(res: EntityW<[typeof RendererDef]>) {
   // init ButtonsStateDef
   {
     const btnMesh_ = importObj(BTN_OBJ);

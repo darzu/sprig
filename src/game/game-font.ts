@@ -5,7 +5,7 @@ import { ENDESGA16 } from "../color/palettes.js";
 import { dbg } from "../debugger.js";
 import { EM, EntityManager, EntityW } from "../entity-manager.js";
 import { vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
-import { ButtonDef, ButtonsStateDef, initButtonGUI } from "../gui/button.js";
+import { ButtonDef, ButtonsStateDef } from "../gui/button.js";
 import { initMeshEditor, MeshEditorDef } from "../gui/mesh-editor.js";
 import { lineStuff } from "../gui/path-editor.js";
 import { exportObj } from "../import_obj.js";
@@ -62,32 +62,31 @@ export const UICursorDef = EM.defineComponent(
   })
 );
 
-// TODO(@darzu): use registerInit
-async function initUICursor() {
-  const { assets } = await EM.whenResources(AssetsDef);
+EM.registerInit({
+  requireRs: [AssetsDef],
+  provideRs: [UICursorDef],
+  provideLs: [],
+  fn: async ({ assets }) => {
+    // Cursor
+    const cursor = EM.newEntity();
+    EM.ensureComponentOn(cursor, ColorDef, vec3.clone([0.1, 0.1, 0.1]));
+    EM.ensureComponentOn(cursor, PositionDef, vec3.clone([0, 1.0, 0]));
+    EM.ensureComponentOn(cursor, RenderableConstructDef, assets.he_octo.proto);
+    const cursorLocalAABB = copyAABB(createAABB(), assets.he_octo.aabb);
+    cursorLocalAABB.min[1] = -1;
+    cursorLocalAABB.max[1] = 1;
+    EM.ensureComponentOn(cursor, ColliderDef, {
+      shape: "AABB",
+      solid: false,
+      aabb: cursorLocalAABB,
+    });
 
-  // TODO(@darzu):
-  // Cursor
-  const cursor = EM.newEntity();
-  EM.ensureComponentOn(cursor, ColorDef, vec3.clone([0.1, 0.1, 0.1]));
-  EM.ensureComponentOn(cursor, PositionDef, vec3.clone([0, 1.0, 0]));
-  EM.ensureComponentOn(cursor, RenderableConstructDef, assets.he_octo.proto);
-  const cursorLocalAABB = copyAABB(createAABB(), assets.he_octo.aabb);
-  cursorLocalAABB.min[1] = -1;
-  cursorLocalAABB.max[1] = 1;
-  EM.ensureComponentOn(cursor, ColliderDef, {
-    shape: "AABB",
-    solid: false,
-    aabb: cursorLocalAABB,
-  });
-
-  EM.addResource(UICursorDef, cursor);
-}
+    EM.addResource(UICursorDef, cursor);
+  },
+});
 
 export async function initFontEditor(em: EntityManager) {
-  initButtonGUI();
-
-  console.log(`panel ${PANEL_W}x${PANEL_H}`);
+  // console.log(`panel ${PANEL_W}x${PANEL_H}`);
 
   // initCamera();
 
@@ -157,8 +156,6 @@ export async function initFontEditor(em: EntityManager) {
     );
 
   // const { assets } = await EM.whenResources(AssetsDef);
-
-  initUICursor();
 
   // TODO(@darzu): de-duplicate this with very similar code in other "games"
   EM.registerSystem(

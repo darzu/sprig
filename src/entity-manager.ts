@@ -1,4 +1,4 @@
-import { DBG_ASSERT, DBG_TRYCALLSYSTEM } from "./flags.js";
+import { DBG_ASSERT, DBG_RESOURCE_INIT, DBG_TRYCALLSYSTEM } from "./flags.js";
 import { Serializer, Deserializer } from "./serialize.js";
 import { assert, assertDbg, hashCode, Intersect } from "./util.js";
 
@@ -65,10 +65,10 @@ type Label = string;
 //   rs: EntityW<RS>
 // ) => Promise<void>;
 export interface InitFNReg<RS extends ComponentDef[]> {
-  requireRs: RS;
+  requireRs: [...RS];
   provideRs: ComponentDef[];
   provideLs: Label[]; // system labels
-  fn: (rs: EntityW<RS, 0>) => Promise<void>;
+  fn: (rs: EntityW<RS>) => Promise<void>;
 
   // TODO(@darzu): optional metadata?
   // name: string;
@@ -570,7 +570,10 @@ export class EntityManager {
   ): void {
     // TODO(@darzu):
     // throw "TODO";
-    console.log(`registerInit: ${reg.provideRs.join(",")}`);
+    if (DBG_RESOURCE_INIT)
+      console.log(
+        `registerInit: ${reg.provideRs.map((p) => p.name).join(",")}`
+      );
     // console.dir(opts);
 
     const regWId: InitFNReg<RS> = {
@@ -747,7 +750,7 @@ export class EntityManager {
         this.initFnHasStarted.add(initFn.id);
 
         // enqueue init fn
-        console.log(`enqueuing init fn for: ${c.name}`);
+        if (DBG_RESOURCE_INIT) console.log(`enqueuing init fn for: ${c.name}`);
         this.whenResources(...initFn.requireRs).then(async (res) => {
           await initFn.fn(res);
           // check that the init fn fullfilled its contract
