@@ -138,8 +138,8 @@ export function createLabelSolver(): LabelSolver {
   function getPlan(): Label[] {
     if (lastVersion < dag.version) {
       const dagWalk = dag.getWalk();
-      console.log("dagWalk");
-      console.dir(dagWalk);
+      // console.log("dagWalk");
+      // console.dir(dagWalk);
       lastPlan = dagWalk.map((idx) => idxToLbl.get(idx)!);
       lastVersion = dag.version;
     }

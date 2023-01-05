@@ -1,5 +1,5 @@
 import { createLabelSolver, Label, LabelConstraint } from "./em-labels.js";
-import { DBG_ASSERT, DBG_RESOURCE_INIT, DBG_TRYCALLSYSTEM } from "./flags.js";
+import { DBG_ASSERT, DBG_INIT_DEPS, DBG_TRYCALLSYSTEM } from "./flags.js";
 import { Serializer, Deserializer } from "./serialize.js";
 import { createDag } from "./util-dag.js";
 import { assert, assertDbg, hashCode, Intersect, never } from "./util.js";
@@ -427,17 +427,17 @@ export class EntityManager {
   }
 
   // TODO(@darzu): rename these to "requireSystem" or somethingE
-  _dbgOldPlan: string[] = []; // TODO(@darzu): REMOVE
+  // _dbgOldPlan: string[] = []; // TODO(@darzu): REMOVE
   public tryCallSystem(name: string): boolean {
     // throw "IMPL";
     this.addConstraint(["requires", name]);
-    this._dbgOldPlan.push(name); // TODO(@darzu): DBG
+    // this._dbgOldPlan.push(name); // TODO(@darzu): DBG
     return true;
   }
   public callSystem(name: string) {
     // throw `IMPL`;
     this.addConstraint(["requires", name]);
-    this._dbgOldPlan.push(name); // TODO(@darzu): DBG
+    // this._dbgOldPlan.push(name); // TODO(@darzu): DBG
   }
   public addConstraint(con: LabelConstraint) {
     this.labelSolver.addConstraint(con);
@@ -448,11 +448,12 @@ export class EntityManager {
     // TODO(@darzu):
     // console.log("OLD PLAN:");
     // console.log(this._tempPlan);
-    if (this._dbgLastVersion !== this.labelSolver.getVersion()) {
-      this._dbgLastVersion = this.labelSolver.getVersion();
-      console.log("NEW PLAN:");
-      console.log(this.labelSolver.getPlan());
-    }
+    if (DBG_INIT_DEPS)
+      if (this._dbgLastVersion !== this.labelSolver.getVersion()) {
+        this._dbgLastVersion = this.labelSolver.getVersion();
+        console.log("NEW PLAN:");
+        console.log(this.labelSolver.getPlan());
+      }
 
     const plan = this.labelSolver.getPlan();
     // const plan = this._tempPlan;
@@ -461,8 +462,7 @@ export class EntityManager {
       this._tryCallSystem(s);
     }
 
-    this._dbgOldPlan.length = 0;
-
+    // this._dbgOldPlan.length = 0;
     // if (this.dbgLoops > 100) throw "STOP";
   }
 
@@ -617,7 +617,7 @@ export class EntityManager {
   ): void {
     // TODO(@darzu):
     // throw "TODO";
-    if (DBG_RESOURCE_INIT)
+    if (DBG_INIT_DEPS)
       console.log(
         `registerInit: ${reg.provideRs.map((p) => p.name).join(",")}`
       );
@@ -797,7 +797,7 @@ export class EntityManager {
         this.initFnHasStarted.add(initFn.id);
 
         // enqueue init fn
-        if (DBG_RESOURCE_INIT) console.log(`enqueuing init fn for: ${c.name}`);
+        if (DBG_INIT_DEPS) console.log(`enqueuing init fn for: ${c.name}`);
         this.whenResources(...initFn.requireRs).then(async (res) => {
           await initFn.fn(res);
           // check that the init fn fullfilled its contract
