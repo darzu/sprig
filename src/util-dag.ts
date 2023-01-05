@@ -33,7 +33,23 @@ function createDag(): Dag {
     version++;
   }
   function doTopologicalSort(): number[] {
-    throw "TODO!";
+    const walk: number[] = [];
+    const want = new Set<number>();
+    const done = new Set<number>();
+
+    for (let r of roots) visit(r);
+
+    return walk;
+
+    // when visit returns, n will be done
+    function visit(n: number) {
+      if (want.has(n)) throw "DAG cycle";
+      want.add(n);
+      for (let d of edges.get(n) ?? []) if (!done.has(d)) visit(d);
+      done.add(n);
+      walk.push(n);
+      want.delete(n);
+    }
   }
   function getWalk() {
     if (lastWalkVersion < version) lastWalk = doTopologicalSort();
