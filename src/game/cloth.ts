@@ -124,11 +124,6 @@ function clothMesh(cloth: ClothConstruct): {
   return { mesh: normalizeMesh(mesh), posMap };
 }
 
-export function callClothSystems(em: EntityManager) {
-  em.requireSystem("buildCloths");
-  em.requireSystem("updateClothMesh");
-}
-
 onInit((em: EntityManager) => {
   em.registerSystem(
     [ClothConstructDef],

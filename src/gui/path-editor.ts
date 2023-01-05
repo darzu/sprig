@@ -329,7 +329,7 @@ export async function initPathEditor() {
     },
     "editHPoly"
   );
-  gameplaySystems.push("editHPoly");
+  EM.requireGameplaySystem("editHPoly");
 }
 
 // TODO(@darzu): can/should this be merged with half-edge stuff?

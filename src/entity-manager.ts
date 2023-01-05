@@ -151,7 +151,7 @@ export class EntityManager {
   private _systemsToComponents: Map<number, string[]> = new Map();
   private _componentToSystems: Map<string, number[]> = new Map();
 
-  private labelSolver = createLabelSolver();
+  labelSolver = createLabelSolver();
 
   constructor() {
     this.ent0 = { id: 0 };
@@ -437,6 +437,10 @@ export class EntityManager {
   public requireSystem(name: string) {
     this.addConstraint(["requires", name]);
     // this._dbgOldPlan.push(name); // TODO(@darzu): DBG
+  }
+  // TODO(@darzu): legacy thing; gotta replace with labels/phases
+  public requireGameplaySystem(name: string) {
+    this.addConstraint(["requires", name]);
   }
   public addConstraint(con: LabelConstraint) {
     this.labelSolver.addConstraint(con);

@@ -250,10 +250,6 @@ export function stepSprings(g: SpringGrid, dt: number) {
   }
 }
 
-export function callSpringSystems(em: EntityManager) {
-  em.requireSystem("spring");
-}
-
 onInit((em) => {
   em.registerSystem(
     [SpringGridDef, ForceDef],

@@ -124,7 +124,7 @@ async function initDragBox(): Promise<EntityW<[typeof PositionDef]>> {
     "updateDragbox"
   );
   // TODO(@darzu):
-  // gameplaySystems.push("updateDragbox");
+  // EM.requireGameplaySystem("updateDragbox");
 
   // TODO(@darzu): store this on a resource?
   return dragBox;
@@ -248,7 +248,7 @@ async function initWidgets({ assets }: EntityW<[typeof AssetsDef]>) {
     "updateWidgets"
   );
   // TODO(@darzu):
-  // gameplaySystems.push("updateWidgets");
+  // EM.requireGameplaySystem("updateWidgets");
 
   EM.registerSystem(
     [WidgetDef, ColorDef],
@@ -275,5 +275,5 @@ async function initWidgets({ assets }: EntityW<[typeof AssetsDef]>) {
     "colorWidgets"
   );
   // TODO(@darzu):
-  // gameplaySystems.push("colorWidgets");
+  // EM.requireGameplaySystem("colorWidgets");
 }

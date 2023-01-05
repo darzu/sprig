@@ -244,7 +244,7 @@ export async function initFontEditor(em: EntityManager) {
     },
     "uiCameraView"
   );
-  gameplaySystems.push("uiCameraView");
+  EM.requireGameplaySystem("uiCameraView");
 
   // Starter mesh for each letter
   const quadMesh: Mesh = {
@@ -332,7 +332,7 @@ export async function initFontEditor(em: EntityManager) {
     },
     `letterBtnClick`
   );
-  gameplaySystems.push(`letterBtnClick`);
+  EM.requireGameplaySystem(`letterBtnClick`);
 
   // TODO(@darzu): HACKY. Cursor or 2d gui or something needs some better
   //    abstracting

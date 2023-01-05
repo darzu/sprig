@@ -21,8 +21,6 @@ import { initGJKSandbox } from "./game/game-gjk.js";
 import { initHyperspaceGame } from "./game/game-hyperspace.js";
 import { initClothSandbox } from "./game/game-cloth.js";
 import { initCubeGame } from "./game/xp-cube.js";
-import { callSpringSystems } from "./game/spring.js";
-import { callClothSystems } from "./game/cloth.js";
 import { resetTempMatrixBuffer } from "./sprig-matrix.js";
 
 export const FORCE_WEBGL = false;
@@ -52,7 +50,7 @@ const MAX_SIM_LOOPS = 1;
 
 export let gameStarted = false;
 
-function callFixedTimestepSystems() {
+function legacyRequireAllTheSystems() {
   // TODO(@darzu): calling systems still needs more massaging.
   //    - uncalled systems maybe should give a warning? Or at least a one-time read out.
   //    - Lets use types for this. String matching the name is brittle and unnessessary
@@ -163,12 +161,12 @@ function callFixedTimestepSystems() {
   EM.requireSystem("physicsApplyAngularVelocity");
   if (GAME === "gjk") {
     // TODO(@darzu): Doug, we should talk about this. It is only registered after a one-shot
-    if (EM.hasSystem("checkGJK")) EM.requireSystem("checkGJK");
+    EM.maybeRequireSystem("checkGJK");
   }
 
   // TODO(@darzu): HACK. we need to think better how to let different areas, like a sandbox game, register systems
   //    to be called in a less cumbersome way than adding text and guards in here.
-  for (let sys of gameplaySystems) EM.requireSystem(sys);
+  // for (let sys of gameplaySystems) EM.requireSystem(sys);
 
   EM.requireSystem("updateLocalFromPosRotScale");
   EM.requireSystem("updateWorldFromLocalAndParent");
@@ -180,8 +178,12 @@ function callFixedTimestepSystems() {
   EM.requireSystem("debugMeshes");
   EM.requireSystem("debugMeshTransform");
   EM.requireSystem("bulletCollision");
-  callSpringSystems(EM);
-  callClothSystems(EM);
+
+  EM.requireSystem("spring");
+
+  EM.requireSystem("buildCloths");
+  EM.requireSystem("updateClothMesh");
+
   EM.requireSystem("modelerOnOff");
   EM.requireSystem("modelerClicks");
   EM.requireSystem("aabbBuilder");
@@ -215,12 +217,11 @@ function callFixedTimestepSystems() {
   EM.requireSystem("renderView");
   EM.requireSystem("constructRenderables");
   if (DBG_ASSERT) EM.requireSystem("deadCleanupWarning"); // SHOULD BE LAST(-ish); warns if cleanup is missing
+}
 
-  // TODO(@darzu): debugging
+function callFixedTimestepSystems() {
   EM.callSystems();
-
   EM.checkEntityPromises();
-
   EM.dbgLoops++;
 }
 
@@ -261,6 +262,8 @@ async function startGame(localPeerName: string, host: string | null) {
   else if (GAME === "ld51") initRogueGame(EM, hosting);
   else if (GAME === "font") initFontEditor(EM);
   else never(GAME, "TODO game");
+
+  legacyRequireAllTheSystems();
 
   let previous_frame_time = start_of_time;
   let accumulator = 0;
