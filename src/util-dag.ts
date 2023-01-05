@@ -1,12 +1,12 @@
 // directed-acyclic graph solver
-interface Dag {
+export interface Dag {
   addRoot(r: number): void;
   addEdge(dependant: number, dependee: number): void;
   getWalk(): number[];
 }
 
 // DAG solver
-function createDag(): Dag {
+export function createDag(): Dag {
   const solver: Dag = {
     addRoot,
     addEdge,
@@ -56,8 +56,10 @@ function createDag(): Dag {
     }
   }
   function getWalk() {
-    if (lastWalkVersion < version) lastWalk = doTopologicalSort();
-    lastWalkVersion = version;
+    if (lastWalkVersion < version) {
+      lastWalk = doTopologicalSort();
+      lastWalkVersion = version;
+    }
     return lastWalk;
   }
 }

@@ -1,5 +1,7 @@
+import { createLabelSolver, Label, LabelConstraint } from "./em-labels.js";
 import { DBG_ASSERT, DBG_RESOURCE_INIT, DBG_TRYCALLSYSTEM } from "./flags.js";
 import { Serializer, Deserializer } from "./serialize.js";
+import { createDag } from "./util-dag.js";
 import { assert, assertDbg, hashCode, Intersect, never } from "./util.js";
 
 // TODO(@darzu): for perf, we really need to move component data to be
@@ -59,112 +61,6 @@ type System<CS extends ComponentDef[] | null, RS extends ComponentDef[]> = {
   id: number;
 };
 
-type Label = string;
-
-/*
-label constraints:
-a resource can require a label
-a label can specify being called before or after other labels
-*/
-
-// TODO(@darzu): There's some deep similarity between all this "requires", "provides" and
-//    JS module "imports", "exports"; can we/should we leverage that?
-
-// Resource and Systems dependencies and lifecycles:
-//  can systems force resources into existance? Yes, in the query
-//  can resources force resources into existance? Yes, in the init requirements
-//  can resources force systems into existance? Yes, resource can require systems
-//  can a game force a resource into existance? Yes, just await that resource
-//  can a game force a system into existance? Yes, root-level system
-
-type RequireLabel = ["requires", Label];
-type ResourceRequiresLabel = [ComponentDef, "requires", Label];
-type LabelBeforeLabel = [Label, "before", Label];
-type LabelAfterLabel = [Label, "after", Label];
-
-type LabelConstraint =
-  | RequireLabel
-  | ResourceRequiresLabel
-  | LabelBeforeLabel
-  | LabelAfterLabel;
-
-function isRequireLabel(c: LabelConstraint): c is RequireLabel {
-  return c.length === 2 && c[0] === "requires";
-}
-function isResourceRequiresLabel(
-  c: LabelConstraint
-): c is ResourceRequiresLabel {
-  return c.length === 3 && c[1] === "requires";
-}
-function isLabelBeforeLabel(c: LabelConstraint): c is LabelBeforeLabel {
-  return c.length === 2 && c[1] === "before";
-}
-function isLabelAfterLabel(c: LabelConstraint): c is LabelAfterLabel {
-  return c.length === 2 && c[1] === "after";
-}
-
-// Execution plan:
-// ordered list of labels
-// map from label to systems
-// (cached) ordered list of systems
-// set of required labels
-//
-
-interface LabelSolver {
-  addConstraint(c: LabelConstraint): void;
-  getPlan(): Label[];
-  notifyOfResource(r: ComponentDef): void;
-}
-
-// DAG solver
-// TODO(@darzu): generalize this for any DAG solving
-function createLabelSolver(): LabelSolver {
-  const solver: LabelSolver = {
-    addConstraint,
-    notifyOfResource,
-    getPlan,
-  };
-
-  const plan: Label[] = [];
-  const req = new Set<Label>(); // top-level
-  const dep = new Map<Label, Set<Label>>(); // key depends on values
-  const res = new Set<string>(); // present resources
-
-  return solver;
-
-  function notifyOfResource(r: ComponentDef) {
-    res.add(r.name);
-
-    // TODO(@darzu): CHECK INVARIENTS!
-  }
-
-  function addDependency(a: Label, b: Label) {
-    // a depends on b
-    if (dep.has(a)) dep.get(a)!.add(b);
-    else dep.set(a, new Set<Label>().add(b));
-
-    // TODO(@darzu): CHECK INVARIENTS!
-  }
-
-  function addConstraint(con: LabelConstraint) {
-    if (isRequireLabel(con)) {
-      const [_, label] = con;
-      req.add(label);
-    } else if (isResourceRequiresLabel(con)) {
-      const [resource, _, label] = con;
-    } else if (isLabelAfterLabel(con)) {
-    } else if (isLabelBeforeLabel(con)) {
-    } else {
-      never(con);
-    }
-
-    // TODO(@darzu): CHECK INVARIENTS!
-  }
-  function getPlan(): Label[] {
-    return plan;
-  }
-}
-
 export interface InitFNReg<RS extends ComponentDef[]> {
   requireRs: [...RS];
   provideRs: ComponentDef[];
@@ -215,6 +111,11 @@ interface SystemStats {
   calls: number;
 }
 
+// TODO(@darzu): Instead of having one big EM class,
+//    we should seperate out all seperable concerns,
+//    and then just | them together as the top-level
+//    thing. Maybe even use the "$" symbol?! (probs not)
+
 export class EntityManager {
   entities: Map<number, Entity> = new Map();
   ent0: Entity & { id: 0 };
@@ -247,6 +148,8 @@ export class EntityManager {
   private _entitiesToSystems: Map<number, number[]> = new Map();
   private _systemsToComponents: Map<number, string[]> = new Map();
   private _componentToSystems: Map<string, number[]> = new Map();
+
+  private labelSolver = createLabelSolver();
 
   constructor() {
     this.ent0 = { id: 0 };
@@ -475,6 +378,7 @@ export class EntityManager {
       throw `double defining singleton component ${def.name} on ${e.id}!`;
     (e as any)[def.name] = c;
     this._changedEntities.add(0); // TODO(@darzu): seperate Resources from Entities
+    this.labelSolver.addResource(def);
     return c;
   }
 
@@ -521,8 +425,7 @@ export class EntityManager {
   }
 
   public addConstraint(con: LabelConstraint) {
-    // TODO(@darzu): IMPL
-    console.log(`TODO: impl for: ${JSON.stringify(con)}`);
+    this.labelSolver.addConstraint(con);
   }
 
   public hasEntity(id: number) {

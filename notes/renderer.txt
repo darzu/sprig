@@ -1579,3 +1579,6 @@ Vulkan guides:
 
 FP16 in shaders?
   https://interplayoflight.wordpress.com/2022/12/30/experimenting-with-fp16-in-shaders/
+
+Geometry node limits:
+  from max: Can do lists but not lists of lists
