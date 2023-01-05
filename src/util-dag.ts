@@ -33,6 +33,10 @@ function createDag(): Dag {
     version++;
   }
   function doTopologicalSort(): number[] {
+    // TODO(@darzu): we might want a more stable sort, i recommend:
+    //    determine longest depth from roots for each node
+    //    sort within each depth-layer
+    //    walk from farthest cohorts backward toward roots
     const walk: number[] = [];
     const want = new Set<number>();
     const done = new Set<number>();
