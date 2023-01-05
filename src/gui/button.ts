@@ -65,7 +65,7 @@ export const ButtonsStateDef = EM.defineComponent(
 EM.registerInit({
   requireRs: [RendererDef],
   provideRs: [ButtonsStateDef],
-  provideLs: [],
+  provideLs: ["buttonStateUpdate", "buttonColors"],
   fn: initButtonGUI,
 });
 
@@ -119,7 +119,7 @@ async function initButtonGUI(res: EntityW<[typeof RendererDef]>) {
     },
     "buttonStateUpdate"
   );
-  gameplaySystems.push("buttonStateUpdate");
+  // gameplaySystems.push("buttonStateUpdate");
 
   EM.registerSystem(
     [ButtonDef, ColorDef],
@@ -144,5 +144,5 @@ async function initButtonGUI(res: EntityW<[typeof RendererDef]>) {
     },
     "buttonColors"
   );
-  gameplaySystems.push("buttonColors");
+  // gameplaySystems.push("buttonColors");
 }

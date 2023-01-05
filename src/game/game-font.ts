@@ -88,8 +88,6 @@ EM.registerInit({
 export async function initFontEditor(em: EntityManager) {
   // console.log(`panel ${PANEL_W}x${PANEL_H}`);
 
-  // initCamera();
-
   const res = await em.whenResources(AssetsDef, RendererDef, ButtonsStateDef);
 
   res.renderer.pipelines = [
