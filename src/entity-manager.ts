@@ -428,14 +428,13 @@ export class EntityManager {
 
   // TODO(@darzu): rename these to "requireSystem" or somethingE
   // _dbgOldPlan: string[] = []; // TODO(@darzu): REMOVE
-  public tryCallSystem(name: string): boolean {
-    // throw "IMPL";
+  // TODO(@darzu): this makes no sense so what should this represent?
+  public maybeRequireSystem(name: string): boolean {
     this.addConstraint(["requires", name]);
     // this._dbgOldPlan.push(name); // TODO(@darzu): DBG
     return true;
   }
-  public callSystem(name: string) {
-    // throw `IMPL`;
+  public requireSystem(name: string) {
     this.addConstraint(["requires", name]);
     // this._dbgOldPlan.push(name); // TODO(@darzu): DBG
   }
@@ -768,7 +767,7 @@ export class EntityManager {
   }
 
   private _callSystem(name: string) {
-    if (!this.tryCallSystem(name)) throw `No system named ${name}`;
+    if (!this.maybeRequireSystem(name)) throw `No system named ${name}`;
   }
 
   // TODO(@darzu): use version numbers instead of dirty flag?

@@ -175,7 +175,11 @@ function addSpringForce(g: SpringGrid, point: number, force: vec3) {
         vec3.sub(g.positions[point], g.positions[o], distanceVec);
         let distance = vec3.length(distanceVec);
         vec3.normalize(distanceVec, distanceVec);
-        vec3.scale(distanceVec, g.kOnAxis * (g.distance - distance), distanceVec);
+        vec3.scale(
+          distanceVec,
+          g.kOnAxis * (g.distance - distance),
+          distanceVec
+        );
         break;
       case SpringType.DesiredLocation:
         targetLocation(g, o, direction, distanceVec);
@@ -247,7 +251,7 @@ export function stepSprings(g: SpringGrid, dt: number) {
 }
 
 export function callSpringSystems(em: EntityManager) {
-  em.callSystem("spring");
+  em.requireSystem("spring");
 }
 
 onInit((em) => {

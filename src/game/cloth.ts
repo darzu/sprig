@@ -125,8 +125,8 @@ function clothMesh(cloth: ClothConstruct): {
 }
 
 export function callClothSystems(em: EntityManager) {
-  em.callSystem("buildCloths");
-  em.callSystem("updateClothMesh");
+  em.requireSystem("buildCloths");
+  em.requireSystem("updateClothMesh");
 }
 
 onInit((em: EntityManager) => {
