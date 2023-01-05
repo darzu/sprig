@@ -49,6 +49,27 @@ function createWidgetLayer(): WidgetLayer {
   };
 }
 
+// TODO(@darzu): FOR INIT STUFF,
+//    have a registration table where an init function can specify which resources and systems it provides
+//    then other code can require a certain resource / system, then it calls the right init function
+
+// TODO(@darzu): IMPL
+EM.registerInit({
+  requireRs: [AssetsDef],
+  provideRs: [WidgetLayerDef],
+  provideLs: ["updateWidgets", "colorWidgets", "updateDragbox"],
+  // name: "initWidgets",
+  fn: initWidgets,
+});
+EM.addConstraint([WidgetLayerDef, "requires", "updateWidgets"]);
+// TODO(@darzu): instead of having these explit dependencies, maybe we should use an
+//  existance dependency disjoint set w/ the assumption that all constraints create
+//  an existance dependency
+EM.addConstraint([WidgetLayerDef, "requires", "colorWidgets"]);
+EM.addConstraint([WidgetLayerDef, "requires", "updateDragbox"]);
+EM.addConstraint(["colorWidgets", "after", "updateWidgets"]);
+EM.addConstraint(["updateDragbox", "before", "updateWidgets"]);
+
 async function initDragBox(): Promise<EntityW<[typeof PositionDef]>> {
   const { assets } = await EM.whenResources(AssetsDef);
 
@@ -102,24 +123,12 @@ async function initDragBox(): Promise<EntityW<[typeof PositionDef]>> {
     },
     "updateDragbox"
   );
-  gameplaySystems.push("updateDragbox");
+  // TODO(@darzu):
+  // gameplaySystems.push("updateDragbox");
 
   // TODO(@darzu): store this on a resource?
   return dragBox;
 }
-
-// TODO(@darzu): FOR INIT STUFF,
-//    have a registration table where an init function can specify which resources and systems it provides
-//    then other code can require a certain resource / system, then it calls the right init function
-
-// TODO(@darzu): IMPL
-EM.registerInit({
-  requireRs: [AssetsDef],
-  provideRs: [WidgetLayerDef],
-  provideLs: ["updateWidgets", "colorWidgets"],
-  // name: "initWidgets",
-  fn: initWidgets,
-});
 
 async function initWidgets({ assets }: EntityW<[typeof AssetsDef]>) {
   EM.addResource(WidgetLayerDef);
@@ -238,7 +247,8 @@ async function initWidgets({ assets }: EntityW<[typeof AssetsDef]>) {
     },
     "updateWidgets"
   );
-  gameplaySystems.push("updateWidgets");
+  // TODO(@darzu):
+  // gameplaySystems.push("updateWidgets");
 
   EM.registerSystem(
     [WidgetDef, ColorDef],
@@ -264,5 +274,6 @@ async function initWidgets({ assets }: EntityW<[typeof AssetsDef]>) {
     },
     "colorWidgets"
   );
-  gameplaySystems.push("colorWidgets");
+  // TODO(@darzu):
+  // gameplaySystems.push("colorWidgets");
 }

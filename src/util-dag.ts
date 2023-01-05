@@ -3,6 +3,7 @@ export interface Dag {
   addRoot(r: number): void;
   addEdge(dependant: number, dependee: number): void;
   getWalk(): number[];
+  version: number;
 }
 
 // DAG solver
@@ -11,26 +12,32 @@ export function createDag(): Dag {
     addRoot,
     addEdge,
     getWalk,
+    version: 1,
   };
 
   const roots = new Set<number>(); // top-level
   const edges = new Map<number, Set<number>>(); // key depends on values
 
-  let version = 1;
   let lastWalkVersion = -1;
   let lastWalk: number[] = [];
 
   return solver;
 
   function addRoot(r: number) {
+    if (roots.has(r)) return;
     roots.add(r);
-    version++;
+    solver.version++;
   }
   function addEdge(a: number, b: number) {
     // a = dependant, b = dependee
-    if (edges.has(a)) edges.get(a)!.add(b);
-    else edges.set(a, new Set<number>().add(b));
-    version++;
+    if (edges.has(a)) {
+      let dependees = edges.get(a)!;
+      if (dependees.has(b)) return;
+      dependees.add(b);
+    } else {
+      edges.set(a, new Set<number>().add(b));
+    }
+    solver.version++;
   }
   function doTopologicalSort(): number[] {
     // TODO(@darzu): we might want a more stable sort, i recommend:
@@ -47,18 +54,19 @@ export function createDag(): Dag {
 
     // when visit returns, n will be done
     function visit(n: number) {
+      if (done.has(n)) return;
       if (want.has(n)) throw "DAG cycle";
       want.add(n);
-      for (let d of edges.get(n) ?? []) if (!done.has(d)) visit(d);
+      for (let d of edges.get(n) ?? []) visit(d);
       done.add(n);
       walk.push(n);
       want.delete(n);
     }
   }
   function getWalk() {
-    if (lastWalkVersion < version) {
+    if (lastWalkVersion < solver.version) {
       lastWalk = doTopologicalSort();
-      lastWalkVersion = version;
+      lastWalkVersion = solver.version;
     }
     return lastWalk;
   }

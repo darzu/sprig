@@ -415,4 +415,7 @@ export async function initMeshEditor() {
     "editHPoly"
   );
   gameplaySystems.push("editHPoly");
+
+  // TODO(@darzu): is this necessary?
+  EM.addConstraint(["editHPoly", "after", "updateWidgets"]);
 }

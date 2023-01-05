@@ -138,7 +138,9 @@ export class EntityManager {
     // time spent maintaining the query caches
     queryCacheTime: 0, // TODO(@darzu): IMPL
   };
-  loops: number = 0;
+
+  // TODO(@darzu): move elsewhere
+  dbgLoops: number = 0;
 
   // TODO(@darzu): PERF. maybe the entities list should be maintained sorted. That
   //    would make certain scan operations (like updating them on component add/remove)
@@ -424,8 +426,44 @@ export class EntityManager {
     return undefined;
   }
 
+  // TODO(@darzu): rename these to "requireSystem" or somethingE
+  _dbgOldPlan: string[] = []; // TODO(@darzu): REMOVE
+  public tryCallSystem(name: string): boolean {
+    // throw "IMPL";
+    this.addConstraint(["requires", name]);
+    this._dbgOldPlan.push(name); // TODO(@darzu): DBG
+    return true;
+  }
+  public callSystem(name: string) {
+    // throw `IMPL`;
+    this.addConstraint(["requires", name]);
+    this._dbgOldPlan.push(name); // TODO(@darzu): DBG
+  }
   public addConstraint(con: LabelConstraint) {
     this.labelSolver.addConstraint(con);
+  }
+
+  _dbgLastVersion = -1;
+  public callSystems() {
+    // TODO(@darzu):
+    // console.log("OLD PLAN:");
+    // console.log(this._tempPlan);
+    if (this._dbgLastVersion !== this.labelSolver.getVersion()) {
+      this._dbgLastVersion = this.labelSolver.getVersion();
+      console.log("NEW PLAN:");
+      console.log(this.labelSolver.getPlan());
+    }
+
+    const plan = this.labelSolver.getPlan();
+    // const plan = this._tempPlan;
+
+    for (let s of plan) {
+      this._tryCallSystem(s);
+    }
+
+    this._dbgOldPlan.length = 0;
+
+    // if (this.dbgLoops > 100) throw "STOP";
   }
 
   public hasEntity(id: number) {
@@ -680,7 +718,7 @@ export class EntityManager {
     return this.systems.has(name);
   }
 
-  tryCallSystem(name: string): boolean {
+  private _tryCallSystem(name: string): boolean {
     // TODO(@darzu):
     // if (name.endsWith("Build")) console.log(`calling ${name}`);
     // if (name == "groundPropsBuild") console.log("calling groundPropsBuild");
@@ -729,7 +767,7 @@ export class EntityManager {
     return true;
   }
 
-  callSystem(name: string) {
+  private _callSystem(name: string) {
     if (!this.tryCallSystem(name)) throw `No system named ${name}`;
   }
 

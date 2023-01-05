@@ -39,16 +39,17 @@ function isResourceRequiresLabel(
   return c.length === 3 && c[1] === "requires";
 }
 function isLabelBeforeLabel(c: LabelConstraint): c is LabelBeforeLabel {
-  return c.length === 2 && c[1] === "before";
+  return c.length === 3 && c[1] === "before";
 }
 function isLabelAfterLabel(c: LabelConstraint): c is LabelAfterLabel {
-  return c.length === 2 && c[1] === "after";
+  return c.length === 3 && c[1] === "after";
 }
 
 export interface LabelSolver {
   addResource(r: ComponentDef): void;
   addConstraint(c: LabelConstraint): void;
   getPlan(): Label[];
+  getVersion(): number;
 }
 
 // DAG solver
@@ -58,10 +59,17 @@ export function createLabelSolver(): LabelSolver {
     addResource,
     addConstraint,
     getPlan,
+    getVersion,
   };
 
   // DAG for our dependencies
   const dag = createDag();
+
+  // TODO(@darzu): we might need an existance (cyclic) dependency graph in addition to the normal DAG
+  //    for example, saying "foo before physics" means that if foo and physics runs, it should run before
+  //    physics, but it doesn't mean that physics needs foo in order to run nor does foo need physics in order
+  //    to run.
+  // TODO(@darzu): we should probably come up with wordage that disambiguates all of these constraint subtlties
 
   // label<->idx bookkeeping for the dag
   let nextLblIdx = 1;
@@ -69,7 +77,6 @@ export function createLabelSolver(): LabelSolver {
   const idxToLbl = new Map<number, Label>();
 
   let lastVersion = -1;
-  let version = 1;
   let lastPlan: Label[] = [];
 
   // TODO(@darzu): rm
@@ -83,6 +90,9 @@ export function createLabelSolver(): LabelSolver {
 
   return solver;
 
+  function getVersion() {
+    return dag.version;
+  }
   function getIdx(l: Label): number {
     let idx = lblToIdx.get(l);
     if (!idx) {
@@ -100,7 +110,6 @@ export function createLabelSolver(): LabelSolver {
       labelsWaitingOnResource.delete(r.name);
       for (let l of lbls) dag.addRoot(getIdx(l));
     }
-    version++;
   }
   function addConstraint(con: LabelConstraint) {
     if (isRequireLabel(con)) {
@@ -125,12 +134,14 @@ export function createLabelSolver(): LabelSolver {
     } else {
       never(con);
     }
-    version++;
   }
   function getPlan(): Label[] {
-    if (lastVersion < version) {
-      lastPlan = dag.getWalk().map((idx) => idxToLbl.get(idx)!);
-      lastVersion = version;
+    if (lastVersion < dag.version) {
+      const dagWalk = dag.getWalk();
+      console.log("dagWalk");
+      console.dir(dagWalk);
+      lastPlan = dagWalk.map((idx) => idxToLbl.get(idx)!);
+      lastVersion = dag.version;
     }
     return lastPlan;
   }

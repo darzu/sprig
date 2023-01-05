@@ -215,8 +215,13 @@ function callFixedTimestepSystems() {
   EM.callSystem("renderView");
   EM.callSystem("constructRenderables");
   if (DBG_ASSERT) EM.callSystem("deadCleanupWarning"); // SHOULD BE LAST(-ish); warns if cleanup is missing
+
+  // TODO(@darzu): debugging
+  EM.callSystems();
+
   EM.checkEntityPromises();
-  EM.loops++;
+
+  EM.dbgLoops++;
 }
 
 async function startGame(localPeerName: string, host: string | null) {

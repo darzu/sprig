@@ -275,7 +275,7 @@ g.cameraFollow.pitchOffset = ${target.cameraFollow.pitchOffset.toFixed(3)};
         ((t * 100) / totalTime).toFixed(1) +
         "%" +
         " (" +
-        (t / EM.loops).toFixed(2) +
+        (t / EM.dbgLoops).toFixed(2) +
         "ms, max:" +
         m.toFixed(1) +
         "ms)" +
@@ -283,7 +283,7 @@ g.cameraFollow.pitchOffset = ${target.cameraFollow.pitchOffset.toFixed(3)};
     }
 
     out += "\n";
-    out += "time per frame: " + (totalTime / EM.loops).toFixed(3) + "ms";
+    out += "time per frame: " + (totalTime / EM.dbgLoops).toFixed(3) + "ms";
     console.log(out);
   },
 };
