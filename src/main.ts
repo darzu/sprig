@@ -38,7 +38,7 @@ const ALL_GAMES = [
   "cloth", // broken-ish
   "cube",
 ] as const;
-const GAME: typeof ALL_GAMES[number] = "font";
+const GAME: typeof ALL_GAMES[number] = "ld51";
 
 // Run simulation with a fixed timestep @ 60hz
 const TIMESTEP = 1000 / 60;
