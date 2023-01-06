@@ -52,7 +52,7 @@ export function registerInteractionSystem(em: EntityManager) {
         if (InRangeDef.isOn(interactable)) {
           em.removeComponent(interactable.id, InRangeDef);
         }
-        em.ensureComponentOn(interactable, TintsDef);
+        em.set(interactable, TintsDef);
         clearTint(interactable.tints, INTERACTION_TINT_NAME);
       }
       // find an interactable within range of the player
@@ -62,8 +62,8 @@ export function registerInteractionSystem(em: EntityManager) {
       if (interactableColliderId) {
         const interactable = interactablesMap.get(interactableColliderId)!;
         if (!DeletedDef.isOn(interactable)) {
-          em.ensureComponentOn(interactable, InRangeDef);
-          em.ensureComponentOn(interactable, TintsDef);
+          em.set(interactable, InRangeDef);
+          em.set(interactable, TintsDef);
           setTint(interactable.tints, INTERACTION_TINT_NAME, INTERACTION_TINT);
         }
       }

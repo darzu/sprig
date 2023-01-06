@@ -338,21 +338,21 @@ onInit((em: EntityManager) => {
                 vec3.copy(splinter.color, w.color);
                 const pos = getLineMid(vec3.create(), seg.midLine);
                 vec3.transformMat4(pos, w.world.transform, pos);
-                EM.ensureComponentOn(splinter, PositionDef);
+                EM.set(splinter, PositionDef);
                 vec3.copy(splinter.position, pos);
                 const rot = getSegmentRotation(seg, false);
                 quat.mul(rot, w.world.rotation, rot); // TODO(@darzu): !VERIFY! this works
-                EM.ensureComponentOn(splinter, RotationDef);
+                EM.set(splinter, RotationDef);
                 quat.copy(splinter.rotation, rot);
                 const spin = randNormalVec3(vec3.create());
                 const vel = vec3.clone(spin);
                 vec3.scale(spin, 0.01, spin);
-                em.ensureComponentOn(splinter, AngularVelocityDef);
+                em.set(splinter, AngularVelocityDef);
                 vec3.copy(splinter.angularVelocity, spin);
                 vec3.scale(vel, 0.01, vel);
-                em.ensureComponentOn(splinter, LinearVelocityDef);
+                em.set(splinter, LinearVelocityDef);
                 vec3.copy(splinter.linearVelocity, spin);
-                em.ensureComponentOn(splinter, GravityDef);
+                em.set(splinter, GravityDef);
                 vec3.copy(splinter.gravity, [0, -3, 0]);
               }
 
@@ -678,15 +678,15 @@ function createSplinterEnd(
     b.mesh.tri.forEach((_) => b.mesh.colors.push(vec3.clone(BLACK)));
   }
   const splinterMesh = normalizeMesh(_splinterMesh);
-  EM.ensureComponentOn(splinter, RenderableConstructDef, splinterMesh);
-  EM.ensureComponentOn(
+  EM.set(splinter, RenderableConstructDef, splinterMesh);
+  EM.set(
     splinter,
     ColorDef,
     vec3.clone([Math.random(), Math.random(), Math.random()])
   );
-  EM.ensureComponentOn(splinter, PositionDef);
-  EM.ensureComponentOn(splinter, RotationDef);
-  EM.ensureComponentOn(splinter, WorldFrameDef);
+  EM.set(splinter, PositionDef);
+  EM.set(splinter, RotationDef);
+  EM.set(splinter, WorldFrameDef);
   return splinter;
 }
 

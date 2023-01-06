@@ -68,23 +68,20 @@ export function createLine(start: vec3, end: vec3, color: vec3) {
   const pos = [start, start2, end2, end];
 
   const e = EM.newEntity();
-  EM.ensureComponentOn(e, ColorDef, color);
+  EM.set(e, ColorDef, color);
   const m: Mesh = {
     pos,
     tri: [],
     // TODO(@darzu): HACK
-    quad: [
-      vec4.clone([0, 1, 2, 3]),
-      vec4.clone([3, 2, 1, 0]),
-    ],
+    quad: [vec4.clone([0, 1, 2, 3]), vec4.clone([3, 2, 1, 0])],
     colors: [color, color],
     // TODO(@darzu): use line rendering!
     // lines: [[0, 1]],
     surfaceIds: [1, 2],
     usesProvoking: true,
   };
-  EM.ensureComponentOn(e, RenderableConstructDef, m);
-  EM.ensureComponentOn(e, PositionDef);
+  EM.set(e, RenderableConstructDef, m);
+  EM.set(e, PositionDef);
 
   return e;
 }
@@ -96,10 +93,10 @@ export async function drawBall(
 ): Promise<EntityW<[typeof PositionDef]>> {
   let res = await EM.whenResources(AssetsDef);
   const e = EM.newEntity();
-  EM.ensureComponentOn(e, ColorDef, color);
-  EM.ensureComponentOn(e, RenderableConstructDef, res.assets.ball.proto);
-  EM.ensureComponentOn(e, PositionDef, pos);
-  EM.ensureComponentOn(e, ScaleDef, vec3.clone([size, size, size]));
+  EM.set(e, ColorDef, color);
+  EM.set(e, RenderableConstructDef, res.assets.ball.proto);
+  EM.set(e, PositionDef, pos);
+  EM.set(e, ScaleDef, vec3.clone([size, size, size]));
   return e;
 }
 

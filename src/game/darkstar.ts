@@ -49,10 +49,10 @@ export const { DarkStarPropsDef, DarkStarLocalDef, createDarkStarNow } =
     build: (star, res) => {
       const em: EntityManager = EM;
       vec3.copy(star.position, star.darkStarProps.pos);
-      em.ensureComponentOn(star, RenderableConstructDef, res.assets.ball.proto);
-      em.ensureComponentOn(star, ScaleDef, vec3.fromValues(100, 100, 100));
-      em.ensureComponentOn(star, ColorDef, star.darkStarProps.color);
-      em.ensureComponentOn(star, PointLightDef);
+      em.set(star, RenderableConstructDef, res.assets.ball.proto);
+      em.set(star, ScaleDef, vec3.fromValues(100, 100, 100));
+      em.set(star, ColorDef, star.darkStarProps.color);
+      em.set(star, PointLightDef);
       star.pointLight.constant = 1.0;
       vec3.copy(star.pointLight.ambient, star.color);
       vec3.scale(star.pointLight.ambient, 0.2, star.pointLight.ambient);
@@ -99,9 +99,16 @@ onInit((em) => {
         const movementDirection = vec3.add(basis1, basis1, basis2);
         vec3.normalize(movementDirection, movementDirection);
         */
-        const movementDirection = vec3.cross(toCenter, star.darkStarProps.orbitalAxis);
+        const movementDirection = vec3.cross(
+          toCenter,
+          star.darkStarProps.orbitalAxis
+        );
         vec3.normalize(movementDirection, movementDirection);
-        vec3.add(star.position, vec3.scale(movementDirection, DARKSTAR_SPEED, movementDirection), star.position);
+        vec3.add(
+          star.position,
+          vec3.scale(movementDirection, DARKSTAR_SPEED, movementDirection),
+          star.position
+        );
 
         vec3.sub(star.darkStarProps.orbiting, star.position, toCenter);
         const newDistance = vec3.length(toCenter);
@@ -109,7 +116,7 @@ onInit((em) => {
         vec3.scale(toCenter, newDistance - distance, toCenter);
         //console.log(`distance ${distance}, newDistance ${newDistance}`);
         //console.log(`distance ${distance}, newDistance ${newDistance}`);
-vec3.add(star.position, toCenter, star.position);
+        vec3.add(star.position, toCenter, star.position);
       }
     },
     "darkStarOrbit"

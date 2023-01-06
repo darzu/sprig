@@ -131,12 +131,12 @@ onInit((em: EntityManager) => {
     (cloths, res) => {
       for (let cloth of cloths) {
         if (FinishedDef.isOn(cloth)) continue;
-        em.ensureComponentOn(cloth, PositionDef, cloth.clothConstruct.location);
-        em.ensureComponentOn(cloth, ColorDef, cloth.clothConstruct.color);
+        em.set(cloth, PositionDef, cloth.clothConstruct.location);
+        em.set(cloth, ColorDef, cloth.clothConstruct.color);
         const { mesh, posMap } = clothMesh(cloth.clothConstruct);
-        em.ensureComponentOn(cloth, ClothLocalDef, posMap);
-        em.ensureComponentOn(cloth, RenderableConstructDef, mesh);
-        em.ensureComponentOn(
+        em.set(cloth, ClothLocalDef, posMap);
+        em.set(cloth, RenderableConstructDef, mesh);
+        em.set(
           cloth,
           SpringGridDef,
           SpringType.SimpleDistance,
@@ -150,12 +150,12 @@ onInit((em: EntityManager) => {
           ],
           cloth.clothConstruct.distance
         );
-        em.ensureComponentOn(cloth, ForceDef);
-        em.ensureComponentOn(cloth, AuthorityDef, res.me.pid);
-        em.ensureComponentOn(cloth, SyncDef);
+        em.set(cloth, ForceDef);
+        em.set(cloth, AuthorityDef, res.me.pid);
+        em.set(cloth, SyncDef);
         cloth.sync.dynamicComponents = [ClothConstructDef.id];
         cloth.sync.fullComponents = [PositionDef.id, ForceDef.id];
-        em.ensureComponentOn(cloth, FinishedDef);
+        em.set(cloth, FinishedDef);
       }
     },
     "buildCloths"

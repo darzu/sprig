@@ -52,7 +52,7 @@ import { PlayerShipLocalDef } from "./player-ship.js";
 export function createPlayer(em: EntityManager) {
   // console.log("create player!");
   const e = em.newEntity();
-  em.ensureComponentOn(e, PlayerPropsDef, vec3.fromValues(0, 100, 0));
+  em.set(e, PlayerPropsDef, vec3.fromValues(0, 100, 0));
   em.addResource(LocalPlayerDef, e.id);
   return e;
 }
@@ -133,22 +133,18 @@ export function registerPlayerSystems(em: EntityManager) {
           scaleMesh3(m, vec3.clone([0.75, 0.75, 0.4]));
           em.addComponent(e.id, RenderableConstructDef, m);
         }
-        em.ensureComponentOn(e, AuthorityDef, res.me.pid);
+        em.set(e, AuthorityDef, res.me.pid);
         if (!PlayerDef.isOn(e)) {
-          em.ensureComponentOn(e, PlayerDef);
+          em.set(e, PlayerDef);
 
           // create legs
           function makeLeg(x: number): Entity {
             const l = em.newEntity();
-            em.ensureComponentOn(l, PositionDef, vec3.clone([x, -1.5, 0]));
-            em.ensureComponentOn(
-              l,
-              RenderableConstructDef,
-              res.assets.cube.proto
-            );
-            em.ensureComponentOn(l, ScaleDef, vec3.clone([0.15, 0.75, 0.15]));
-            em.ensureComponentOn(l, ColorDef, vec3.clone([0.05, 0.05, 0.05]));
-            em.ensureComponentOn(l, PhysicsParentDef, e.id);
+            em.set(l, PositionDef, vec3.clone([x, -1.5, 0]));
+            em.set(l, RenderableConstructDef, res.assets.cube.proto);
+            em.set(l, ScaleDef, vec3.clone([0.15, 0.75, 0.15]));
+            em.set(l, ColorDef, vec3.clone([0.05, 0.05, 0.05]));
+            em.set(l, PhysicsParentDef, e.id);
             return l;
           }
           e.player.leftLegId = makeLeg(-0.5).id;
@@ -164,7 +160,7 @@ export function registerPlayerSystems(em: EntityManager) {
           (collider as AABBCollider).aabb = playerAABB;
         }
         if (!SyncDef.isOn(e)) {
-          em.ensureComponentOn(e, SyncDef, [
+          em.set(e, SyncDef, [
             PositionDef.id,
             RotationDef.id,
             // TODO(@darzu): maybe sync this via events instead
@@ -174,8 +170,8 @@ export function registerPlayerSystems(em: EntityManager) {
         }
         em.ensureComponent(e.id, PhysicsParentDef);
 
-        em.ensureComponentOn(e, ControllableDef);
-        em.ensureComponentOn(e, CameraFollowDef, 1);
+        em.set(e, ControllableDef);
+        em.set(e, CameraFollowDef, 1);
         setCameraFollowPosition(e, "thirdPersonOverShoulder");
 
         em.addComponent(e.id, FinishedDef);

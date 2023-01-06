@@ -103,22 +103,22 @@ export const { MastPropsDef, MastLocalDef, createMastNow } =
     build: (mast, res) => {
       const em: EntityManager = EM;
 
-      em.ensureComponentOn(mast, PositionDef, vec3.clone([0, 0, 0]));
+      em.set(mast, PositionDef, vec3.clone([0, 0, 0]));
 
-      em.ensureComponentOn(mast, RenderableConstructDef, res.assets.mast.mesh);
-      em.ensureComponentOn(mast, PhysicsParentDef, mast.mastProps.shipId);
-      em.ensureComponentOn(mast, ColorDef, vec3.clone(BOAT_COLOR));
+      em.set(mast, RenderableConstructDef, res.assets.mast.mesh);
+      em.set(mast, PhysicsParentDef, mast.mastProps.shipId);
+      em.set(mast, ColorDef, vec3.clone(BOAT_COLOR));
       vec3.scale(mast.color, 0.5, mast.color);
 
       const createRib = (width: number) => {
         const rib = em.newEntity();
-        em.ensureComponentOn(rib, PositionDef, vec3.clone([0, BOOM_HEIGHT, 0]));
-        em.ensureComponentOn(rib, RenderableConstructDef, res.assets.mast.mesh);
-        em.ensureComponentOn(rib, ScaleDef, vec3.clone([0.5 * width, 0.5, 0.5 * width]));
-        em.ensureComponentOn(rib, RotationDef);
-        em.ensureComponentOn(rib, ColorDef, vec3.clone(BOAT_COLOR));
+        em.set(rib, PositionDef, vec3.clone([0, BOOM_HEIGHT, 0]));
+        em.set(rib, RenderableConstructDef, res.assets.mast.mesh);
+        em.set(rib, ScaleDef, vec3.clone([0.5 * width, 0.5, 0.5 * width]));
+        em.set(rib, RotationDef);
+        em.set(rib, ColorDef, vec3.clone(BOAT_COLOR));
         vec3.scale(rib.color, 0.7, rib.color);
-        em.ensureComponentOn(rib, PhysicsParentDef, mast.id);
+        em.set(rib, PhysicsParentDef, mast.id);
         return rib;
       };
       mast.mastLocal.boom1 = range(RIB_COUNT).map((i) =>
@@ -129,17 +129,13 @@ export const { MastPropsDef, MastLocalDef, createMastNow } =
       );
 
       const sail1 = em.newEntity();
-      em.ensureComponentOn(sail1, PositionDef, vec3.clone([0, BOOM_HEIGHT, 0]));
-      em.ensureComponentOn(
-        sail1,
-        RenderableConstructDef,
-        cloneMesh(res.assets.sail.mesh)
-      );
+      em.set(sail1, PositionDef, vec3.clone([0, BOOM_HEIGHT, 0]));
+      em.set(sail1, RenderableConstructDef, cloneMesh(res.assets.sail.mesh));
       //em.ensureComponentOn(sail1, ScaleDef, [12, 12, 12]);
-      em.ensureComponentOn(sail1, RotationDef);
-      em.ensureComponentOn(sail1, SailColorDef, STAR1_COLOR);
-      em.ensureComponentOn(sail1, ColorDef, vec3.clone(DEFAULT_SAIL_COLOR));
-      em.ensureComponentOn(sail1, PhysicsParentDef, mast.id);
+      em.set(sail1, RotationDef);
+      em.set(sail1, SailColorDef, STAR1_COLOR);
+      em.set(sail1, ColorDef, vec3.clone(DEFAULT_SAIL_COLOR));
+      em.set(sail1, PhysicsParentDef, mast.id);
       em.whenEntityHas(
         sail1,
         RenderDataStdDef,
@@ -153,17 +149,13 @@ export const { MastPropsDef, MastLocalDef, createMastNow } =
       });
 
       const sail2 = em.newEntity();
-      em.ensureComponentOn(sail2, PositionDef, vec3.clone([0, BOOM_HEIGHT, 0]));
-      em.ensureComponentOn(
-        sail2,
-        RenderableConstructDef,
-        cloneMesh(res.assets.sail.mesh)
-      );
+      em.set(sail2, PositionDef, vec3.clone([0, BOOM_HEIGHT, 0]));
+      em.set(sail2, RenderableConstructDef, cloneMesh(res.assets.sail.mesh));
       //em.ensureComponentOn(sail2, ScaleDef, [12, 12, 12]);
-      em.ensureComponentOn(sail2, RotationDef);
-      em.ensureComponentOn(sail2, SailColorDef, STAR2_COLOR);
-      em.ensureComponentOn(sail2, ColorDef, vec3.clone(DEFAULT_SAIL_COLOR));
-      em.ensureComponentOn(sail2, PhysicsParentDef, mast.id);
+      em.set(sail2, RotationDef);
+      em.set(sail2, SailColorDef, STAR2_COLOR);
+      em.set(sail2, ColorDef, vec3.clone(DEFAULT_SAIL_COLOR));
+      em.set(sail2, PhysicsParentDef, mast.id);
       em.whenEntityHas(
         sail2,
         RenderDataStdDef,
@@ -178,13 +170,9 @@ export const { MastPropsDef, MastLocalDef, createMastNow } =
 
       // create seperate hitbox for interacting with the mast
       const interactBox = em.newEntity();
-      em.ensureComponentOn(
-        interactBox,
-        PhysicsParentDef,
-        mast.mastProps.shipId
-      );
-      em.ensureComponentOn(interactBox, PositionDef, vec3.clone([0, 0, 0]));
-      em.ensureComponentOn(interactBox, ColliderDef, {
+      em.set(interactBox, PhysicsParentDef, mast.mastProps.shipId);
+      em.set(interactBox, PositionDef, vec3.clone([0, 0, 0]));
+      em.set(interactBox, ColliderDef, {
         shape: "AABB",
         solid: false,
         aabb: {
@@ -246,12 +234,20 @@ onInit((em) => {
 
         mast.mastLocal.boom1.forEach((ribRef, i) => {
           const rib = ribRef()!;
-          quat.rotateX(quat.IDENTITY, mast.boomPitches.boom1 * (1 - i / RIB_COUNT), rib.rotation);
+          quat.rotateX(
+            quat.IDENTITY,
+            mast.boomPitches.boom1 * (1 - i / RIB_COUNT),
+            rib.rotation
+          );
         });
         mast.mastLocal.boom2.forEach((ribRef, i) => {
           const rib = ribRef()!;
           quat.rotateY(quat.IDENTITY, Math.PI, rib.rotation);
-          quat.rotateX(rib.rotation, mast.boomPitches.boom2 * (1 - i / RIB_COUNT), rib.rotation);
+          quat.rotateX(
+            rib.rotation,
+            mast.boomPitches.boom2 * (1 - i / RIB_COUNT),
+            rib.rotation
+          );
         });
 
         const adjustSailVertices = (
@@ -265,9 +261,17 @@ onInit((em) => {
             const ribRotationBot = rotations[ribIndex];
             const ribRotationTop = rotations[ribIndex + 1];
             if (i % 3 == 1) {
-              vec3.transformQuat([0, BOOM_LENGTH * 0.9, 0], ribRotationTop, pos);
+              vec3.transformQuat(
+                [0, BOOM_LENGTH * 0.9, 0],
+                ribRotationTop,
+                pos
+              );
             } else if (i % 3 == 2) {
-              vec3.transformQuat([0, BOOM_LENGTH * 0.99, 0], ribRotationBot, pos);
+              vec3.transformQuat(
+                [0, BOOM_LENGTH * 0.99, 0],
+                ribRotationBot,
+                pos
+              );
             }
             return pos;
           });
@@ -346,11 +350,16 @@ onInit((em) => {
           // );
 
           // console.log(
-//   `Color lerp is ${
-//     accel / realArea
-//   }, realArea ${realArea}, accel ${accel}`
-// );
-vec3.lerp(DEFAULT_SAIL_COLOR, vec3.normalize(star.color), clamp((accel / realArea) * 5000, 0, 1), sail.color);
+          //   `Color lerp is ${
+          //     accel / realArea
+          //   }, realArea ${realArea}, accel ${accel}`
+          // );
+          vec3.lerp(
+            DEFAULT_SAIL_COLOR,
+            vec3.normalize(star.color),
+            clamp((accel / realArea) * 5000, 0, 1),
+            sail.color
+          );
 
           ship.ship.speed += accel * 0.0001;
           //console.log(`Speed is ${ship.ship.speed}`);
@@ -390,7 +399,10 @@ function sailForceAndSignedArea(
       vec2.fromValues(starViewVerts[2][0], starViewVerts[2][1])
     ) * RIB_COUNT;
 
-  const sailNormal = vec3.cross(vec3.sub(worldVerts[1], worldVerts[0]), vec3.sub(worldVerts[2], worldVerts[0]));
+  const sailNormal = vec3.cross(
+    vec3.sub(worldVerts[1], worldVerts[0]),
+    vec3.sub(worldVerts[2], worldVerts[0])
+  );
 
   vec3.normalize(sailNormal, sailNormal);
   return [vec3.scale(sailNormal, area, sailNormal), area];

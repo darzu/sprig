@@ -77,7 +77,7 @@ function registerObjClicker(em: EntityManager) {
           // increase green
           const e = EM.findEntity(firstHit.id, [ColorDef]);
           if (e) {
-            EM.ensureComponentOn(e, TintsDef);
+            EM.set(e, TintsDef);
             e.tints.set("select", vec3.clone([0, 0.2, 0]));
             // e.color[1] += 0.1;
           }
@@ -150,29 +150,17 @@ function registerAABBBuilder(em: EntityManager) {
             ScaleDef,
           ]);
 
-          em.ensureComponentOn(b, ModelBoxDef);
+          em.set(b, ModelBoxDef);
           if (lastB) {
-            em.ensureComponentOn(
-              b,
-              ScaleDef,
-              vec3.copy(vec3.create(), lastB.scale)
-            );
-            em.ensureComponentOn(
-              b,
-              PositionDef,
-              vec3.copy(vec3.create(), lastB.position)
-            );
+            em.set(b, ScaleDef, vec3.copy(vec3.create(), lastB.scale));
+            em.set(b, PositionDef, vec3.copy(vec3.create(), lastB.position));
           } else {
-            em.ensureComponentOn(b, ScaleDef, vec3.clone([2, 1, 1]));
-            em.ensureComponentOn(b, PositionDef, vec3.clone([0, 0, 0]));
+            em.set(b, ScaleDef, vec3.clone([2, 1, 1]));
+            em.set(b, PositionDef, vec3.clone([0, 0, 0]));
           }
-          em.ensureComponentOn(b, ColorDef, vec3.clone([0.1, 0.3, 0.2]));
-          em.ensureComponentOn(
-            b,
-            RenderableConstructDef,
-            res.assets.cube.proto
-          );
-          em.ensureComponentOn(b, ColliderDef, {
+          em.set(b, ColorDef, vec3.clone([0.1, 0.3, 0.2]));
+          em.set(b, RenderableConstructDef, res.assets.cube.proto);
+          em.set(b, ColliderDef, {
             shape: "AABB",
             solid: false,
             aabb: res.assets.cube.aabb,

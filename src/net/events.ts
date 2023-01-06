@@ -176,7 +176,7 @@ function runEvent<Extra>(type: string, em: EntityManager, event: Event<Extra>) {
   const entities = event.entities.map((id, idx) => {
     const entity = em.findEntity(id, [])!;
     for (const cdef of handler.entities[idx] as ComponentDef[]) {
-      em.ensureComponentOn(entity, cdef);
+      em.set(entity, cdef);
     }
     return entity;
   });

@@ -75,9 +75,9 @@ export function registerToolSystems(em: EntityManager) {
       // TODO(@darzu): add interact box
       // em.removeComponent(tool.id, InteractableDef);
       // TODO(@darzu): add interact box
-// em.removeComponent(tool.id, InteractableDef);
-vec3.set(0, 0, -1.5, tool.position);
-      em.ensureComponentOn(tool, ScaleDef);
+      // em.removeComponent(tool.id, InteractableDef);
+      vec3.set(0, 0, -1.5, tool.position);
+      em.set(tool, ScaleDef);
       vec3.copy(tool.scale, [0.5, 0.5, 0.5]);
       player.player.tool = tool.id;
       if (ColliderDef.isOn(tool)) tool.collider.solid = false;
@@ -95,7 +95,7 @@ vec3.set(0, 0, -1.5, tool.position);
       // TODO(@darzu): add interact box
       // em.addComponent(tool.id, InteractableDef);
       vec3.copy(tool.position, location!);
-      em.ensureComponentOn(tool, ScaleDef);
+      em.set(tool, ScaleDef);
       vec3.copy(tool.scale, [1, 1, 1]);
       player.player.tool = 0;
       if (ColliderDef.isOn(tool)) tool.collider.solid = true;

@@ -34,7 +34,7 @@ export type Noodle = Component<typeof NoodleDef>;
 // TODO(@darzu): DEBUGGING
 export function debugCreateNoodles(em: EntityManager) {
   const e = em.newEntity();
-  em.ensureComponentOn(e, NoodleDef, [
+  em.set(e, NoodleDef, [
     {
       pos: vec3.clone([0, 0, 0]),
       dir: vec3.clone([0, -1, 0]),
@@ -45,8 +45,8 @@ export function debugCreateNoodles(em: EntityManager) {
     },
   ]);
   const m = createNoodleMesh(0.1, vec3.clone([0.2, 0.05, 0.05]));
-  em.ensureComponentOn(e, RenderableConstructDef, m);
-  em.ensureComponentOn(e, PositionDef, vec3.clone([5, -5, 0]));
+  em.set(e, RenderableConstructDef, m);
+  em.set(e, PositionDef, vec3.clone([5, -5, 0]));
 
   // TODO(@darzu): test cube faces (update: they are correct)
   // const cube = em.newEntity();

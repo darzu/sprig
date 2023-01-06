@@ -51,7 +51,7 @@ export async function initCubeGame(em: EntityManager) {
 
   // TODO(@darzu): this shouldn't be necessary
   const m2 = cloneMesh(res.assets.cube.mesh);
-  em.ensureComponentOn(e, RenderableConstructDef, m2);
+  em.set(e, RenderableConstructDef, m2);
 
   {
     // auto-gen; use dbg.saveCamera() to update
@@ -68,13 +68,13 @@ export async function initCubeGame(em: EntityManager) {
   boxM.colors = boxM.surfaceIds.map((_, i) => uintToVec3unorm(i, sIdMax));
   // boxM.colors = boxM.surfaceIds.map((_, i) => [0.1, i / 12, 0.1]);
   // console.dir(boxM.colors);
-  em.ensureComponentOn(box, RenderableConstructDef, boxM);
+  em.set(box, RenderableConstructDef, boxM);
   // em.ensureComponentOn(box, ColorDef, [0.1, 0.4, 0.1]);
-  em.ensureComponentOn(box, PositionDef, vec3.clone([0, 0, 3]));
-  em.ensureComponentOn(box, RotationDef);
-  em.ensureComponentOn(box, AngularVelocityDef, vec3.clone([0, 0.001, 0.001]));
-  em.ensureComponentOn(box, WorldFrameDef);
-  em.ensureComponentOn(box, ColliderDef, {
+  em.set(box, PositionDef, vec3.clone([0, 0, 3]));
+  em.set(box, RotationDef);
+  em.set(box, AngularVelocityDef, vec3.clone([0, 0.001, 0.001]));
+  em.set(box, WorldFrameDef);
+  em.set(box, ColliderDef, {
     shape: "AABB",
     solid: false,
     aabb: res.assets.cube.aabb,

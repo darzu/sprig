@@ -77,16 +77,12 @@ async function initDragBox(): Promise<EntityW<[typeof PositionDef]>> {
   // TODO(@darzu): dragbox should be part of some 2d gui abstraction thing
   const dragBox = EM.newEntity();
   const dragBoxMesh = cloneMesh(assets.unitCube.mesh);
-  EM.ensureComponentOn(dragBox, AlphaDef, 0.2);
-  EM.ensureComponentOn(dragBox, RenderableConstructDef, dragBoxMesh);
-  EM.ensureComponentOn(dragBox, PositionDef, vec3.clone([0, 0.2, 0]));
-  EM.ensureComponentOn(dragBox, ScaleDef, vec3.clone([1, 1, 1]));
-  EM.ensureComponentOn(
-    dragBox,
-    ColorDef,
-    vec3.clone([0.0, 120 / 255, 209 / 255])
-  );
-  EM.ensureComponentOn(dragBox, ColliderDef, {
+  EM.set(dragBox, AlphaDef, 0.2);
+  EM.set(dragBox, RenderableConstructDef, dragBoxMesh);
+  EM.set(dragBox, PositionDef, vec3.clone([0, 0.2, 0]));
+  EM.set(dragBox, ScaleDef, vec3.clone([1, 1, 1]));
+  EM.set(dragBox, ColorDef, vec3.clone([0.0, 120 / 255, 209 / 255]));
+  EM.set(dragBox, ColliderDef, {
     shape: "AABB",
     solid: false,
     aabb: assets.unitCube.aabb,

@@ -50,7 +50,12 @@ export function updateFrameFromTransform(f: Frame): asserts f is Frame {
 }
 
 export function updateFrameFromPosRotScale(f: Frame) {
-  f.transform = mat4.fromRotationTranslationScale(f.rotation, f.position, f.scale, f.transform);
+  f.transform = mat4.fromRotationTranslationScale(
+    f.rotation,
+    f.position,
+    f.scale,
+    f.transform
+  );
 }
 
 export function copyFrame(out: Frame, frame: Frame) {
@@ -157,7 +162,7 @@ function updateWorldFromLocalAndParent(o: Transformable) {
 
     // update relative to parent
     // update relative to parent
-mat4.mul(parent.world.transform, o.transform, o.world.transform);
+    mat4.mul(parent.world.transform, o.transform, o.world.transform);
     updateFrameFromTransform(o.world);
   } else {
     // no parent
@@ -176,7 +181,7 @@ export function registerInitTransforms(em: EntityManager) {
     (objs) => {
       for (let o of objs) {
         if (!WorldFrameDef.isOn(o)) {
-          em.ensureComponentOn(o, WorldFrameDef);
+          em.set(o, WorldFrameDef);
           copyFrame(o.world, o);
         }
       }
@@ -202,10 +207,10 @@ export function registerUpdateLocalFromPosRotScale(
           ScaleDef.isOn(o) ||
           TransformDef.isOn(o)
         ) {
-          em.ensureComponentOn(o, PositionDef);
-          em.ensureComponentOn(o, RotationDef);
-          em.ensureComponentOn(o, ScaleDef);
-          em.ensureComponentOn(o, TransformDef);
+          em.set(o, PositionDef);
+          em.set(o, RotationDef);
+          em.set(o, ScaleDef);
+          em.set(o, TransformDef);
         }
       }
     },

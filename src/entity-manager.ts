@@ -358,7 +358,7 @@ export class EntityManager {
   // TODO(@darzu): do we want to make this the standard way we do ensureComponent and addComponent ?
   // TODO(@darzu): rename to "set" and have "maybeSet" w/ a thunk as a way to short circuit unnecessary init?
   //      and maybe "strictSet" as the version that throws if it exists (renamed from "addComponent")
-  public ensureComponentOn<N extends string, P, Pargs extends any[] = any[]>(
+  public set<N extends string, P, Pargs extends any[] = any[]>(
     e: Entity,
     def: ComponentDef<N, P, Pargs>,
     ...args: Pargs

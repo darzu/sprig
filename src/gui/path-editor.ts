@@ -126,7 +126,7 @@ async function createPathEditor() {
       };
 
       const hpEnt_ = EM.newEntity();
-      EM.ensureComponentOn(
+      EM.set(
         hpEnt_,
         RenderableConstructDef,
         res.outMesh,
@@ -137,7 +137,7 @@ async function createPathEditor() {
         false,
         reserve
       );
-      EM.ensureComponentOn(hpEnt_, PositionDef, vec3.clone([0, 0.1, 0]));
+      EM.set(hpEnt_, PositionDef, vec3.clone([0, 0.1, 0]));
       // TODO(@darzu): make scale configurable
       // EM.ensureComponentOn(hpEnt_, ScaleDef, [5, 5, 5]);
       const hpEnt = await EM.whenEntityHas(
@@ -192,12 +192,12 @@ async function createPathEditor() {
   function _createGlyph(gm: GameMesh) {
     // TODO(@darzu): de-duplicate
     const glyph_ = EM.newEntity();
-    EM.ensureComponentOn(glyph_, RenderableConstructDef, gm.proto, false);
-    EM.ensureComponentOn(glyph_, ColorDef);
-    EM.ensureComponentOn(glyph_, PositionDef);
-    EM.ensureComponentOn(glyph_, RotationDef, quat.create());
-    EM.ensureComponentOn(glyph_, WidgetDef);
-    EM.ensureComponentOn(glyph_, ColliderDef, {
+    EM.set(glyph_, RenderableConstructDef, gm.proto, false);
+    EM.set(glyph_, ColorDef);
+    EM.set(glyph_, PositionDef);
+    EM.set(glyph_, RotationDef, quat.create());
+    EM.set(glyph_, WidgetDef);
+    EM.set(glyph_, ColliderDef, {
       shape: "AABB",
       solid: false,
       aabb: gm.aabb,
@@ -213,8 +213,8 @@ async function createPathEditor() {
     if (!glyphPool[idx]) {
       // create if missing
       const glyph_ = _createGlyph(assets.he_octo);
-      EM.ensureComponentOn(glyph_, HLineDef, hl);
-      EM.ensureComponentOn(glyph_, ButtonDef, "glyph-vert");
+      EM.set(glyph_, HLineDef, hl);
+      EM.set(glyph_, ButtonDef, "glyph-vert");
       const glyph = await EM.whenEntityHas(
         glyph_,
         HLineDef,
@@ -423,19 +423,15 @@ export async function lineStuff() {
   const gmesh = gameMeshFromMesh(extMesh, renderer.renderer);
 
   const extEnt = EM.newEntity();
-  EM.ensureComponentOn(extEnt, RenderableConstructDef, gmesh.proto);
-  EM.ensureComponentOn(extEnt, PositionDef, vec3.clone([0, 0.5, 0]));
+  EM.set(extEnt, RenderableConstructDef, gmesh.proto);
+  EM.set(extEnt, PositionDef, vec3.clone([0, 0.5, 0]));
 
   for (let ln of lns) {
     const vertGlyph = EM.newEntity();
-    EM.ensureComponentOn(vertGlyph, RenderableConstructDef, assets.cube.proto);
-    EM.ensureComponentOn(vertGlyph, PositionDef, vec3.clone(lnMesh.pos[ln.vi]));
-    EM.ensureComponentOn(
-      vertGlyph,
-      ColorDef,
-      vec3.clone([0.1, 0.2 + ln.vi * 0.1, 0.1])
-    );
-    EM.ensureComponentOn(vertGlyph, ScaleDef, vec3.clone([0.2, 0.2, 0.2]));
+    EM.set(vertGlyph, RenderableConstructDef, assets.cube.proto);
+    EM.set(vertGlyph, PositionDef, vec3.clone(lnMesh.pos[ln.vi]));
+    EM.set(vertGlyph, ColorDef, vec3.clone([0.1, 0.2 + ln.vi * 0.1, 0.1]));
+    EM.set(vertGlyph, ScaleDef, vec3.clone([0.2, 0.2, 0.2]));
     vertGlyph.position[1] = 0.5;
   }
 

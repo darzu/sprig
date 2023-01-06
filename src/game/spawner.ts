@@ -46,13 +46,13 @@ export function createSpawner(
   animate?: Partial<AnimateTo>
 ) {
   const e = EM.newEntity();
-  EM.ensureComponentOn(e, SpawnerDef);
-  EM.ensureComponentOn(e, UVPosDef, uvPos);
-  EM.ensureComponentOn(e, UVDirDef, uvDir);
-  EM.ensureComponentOn(e, PositionDef);
-  EM.ensureComponentOn(e, RotationDef);
+  EM.set(e, SpawnerDef);
+  EM.set(e, UVPosDef, uvPos);
+  EM.set(e, UVDirDef, uvDir);
+  EM.set(e, PositionDef);
+  EM.set(e, RotationDef);
   // TODO(@darzu): put AuthorityDef and sync stuff on spawner
-  if (animate) EM.ensureComponentOn(e, AnimateToDef, animate);
+  if (animate) EM.set(e, AnimateToDef, animate);
   return e;
 }
 

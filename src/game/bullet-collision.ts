@@ -68,8 +68,8 @@ export const raiseBulletBullet = eventWizard(
   ([b1, b2]) => {
     // assert(false, `raiseBulletBullet doesnt work on ld51`); // TODO(@darzu): ld51
     // This bullet might have already been deleted via the sync system
-    EM.ensureComponentOn(b1, DeletedDef);
-    EM.ensureComponentOn(b2, DeletedDef);
+    EM.set(b1, DeletedDef);
+    EM.set(b2, DeletedDef);
   },
   {
     // The authority entity is the one with the lowest id
@@ -91,7 +91,7 @@ export const raiseBulletEnemyShip = eventWizard(
   () => [[BulletDef], [EnemyShipLocalDef, PositionDef, RotationDef]] as const,
   ([bullet, enemyShip]) => {
     // assert(false, `raiseBulletEnemyShip doesnt work on ld51`); // TODO(@darzu): ld51
-    EM.ensureComponentOn(bullet, DeletedDef);
+    EM.set(bullet, DeletedDef);
     const res = EM.getResources([AssetsDef, AudioDef])!;
     breakEnemyShip(EM, enemyShip, res.assets.boat_broken, res.music);
   }

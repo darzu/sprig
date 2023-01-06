@@ -66,7 +66,7 @@ export const { CannonPropsDef, CannonLocalDef, createCannon } =
         solid: true,
         aabb: res.assets.cannon.aabb,
       });
-      em.ensureComponentOn(e, PhysicsParentDef, props.parentId);
+      em.set(e, PhysicsParentDef, props.parentId);
     },
   });
 

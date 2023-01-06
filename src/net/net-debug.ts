@@ -28,7 +28,7 @@ export function registerNetDebugSystem(em: EntityManager) {
         netDebugState.dbgAuthority = !netDebugState.dbgAuthority;
       for (const o of objs) {
         if (netDebugState.dbgAuthority) {
-          em.ensureComponentOn(o, TintsDef);
+          em.set(o, TintsDef);
           setTint(
             o.tints,
             AUTHORITY_TINT_NAME,

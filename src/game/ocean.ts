@@ -94,7 +94,7 @@ export async function initOcean() {
 
   const ocean = EM.newEntity();
   let oceanEntId = ocean.id; // hacky?
-  EM.ensureComponentOn(
+  EM.set(
     ocean,
     RenderableConstructDef,
     res.assets.ocean.mesh,
@@ -104,9 +104,9 @@ export async function initOcean() {
     UVUNWRAP_MASK | DEFAULT_MASK,
     "ocean"
   );
-  EM.ensureComponentOn(ocean, ColorDef, vec3.clone([0.1, 0.3, 0.8]));
+  EM.set(ocean, ColorDef, vec3.clone([0.1, 0.3, 0.8]));
   //EM.ensureComponentOn(ocean, PositionDef, [12000, 180, 0]);
-  EM.ensureComponentOn(ocean, PositionDef);
+  EM.set(ocean, PositionDef);
 
   let ocean2 = await EM.whenEntityHas(ocean, RenderableDef, RenderDataOceanDef);
 

@@ -43,7 +43,7 @@ function registerConstructorSystem<
       for (let e of es) {
         if (FinishedDef.isOn(e)) continue;
         callback(e as EntityW<[C]>, res);
-        em.ensureComponentOn(e, FinishedDef);
+        em.set(e, FinishedDef);
       }
     },
     `${def.name}Build`
@@ -125,13 +125,13 @@ export function defineNetEntityHelper<
     (e, res) => {
       // TYPE HACK
       const me = (res as any as EntityW<[typeof MeDef]>).me;
-      em.ensureComponentOn(e, AuthorityDef, me.pid);
+      em.set(e, AuthorityDef, me.pid);
 
-      em.ensureComponentOn(e, localDef);
-      em.ensureComponentOn(e, SyncDef);
+      em.set(e, localDef);
+      em.set(e, SyncDef);
       e.sync.fullComponents = [propsDef.id];
       e.sync.dynamicComponents = opts.dynamicComponents.map((d) => d.id);
-      for (let d of opts.dynamicComponents) em.ensureComponentOn(e, d);
+      for (let d of opts.dynamicComponents) em.set(e, d);
 
       // TYPE HACK
       const _e = e as any as EntityW<
@@ -150,17 +150,17 @@ export function defineNetEntityHelper<
 
   const createNew = (...args: Pargs1) => {
     const e = em.newEntity();
-    em.ensureComponentOn(e, propsDef, ...args);
+    em.set(e, propsDef, ...args);
     return e;
   };
 
   const createNewNow = (res: EntityW<RS>, ...args: Pargs1) => {
     const e = em.newEntity();
-    em.ensureComponentOn(e, propsDef, ...args);
+    em.set(e, propsDef, ...args);
     // TODO(@darzu): maybe we should force users to give us the MeDef? it's probably always there tho..
     // TODO(@darzu): Think about what if buid() is async...
     constructFn(e, res as EntityW<[...RS, typeof MeDef]>);
-    em.ensureComponentOn(e, FinishedDef);
+    em.set(e, FinishedDef);
     return e;
   };
 

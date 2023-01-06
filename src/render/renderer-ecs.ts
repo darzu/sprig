@@ -161,8 +161,8 @@ function updateSmoothedWorldFrame(em: EntityManager, o: Entity) {
   }
   let firstFrame = false;
   if (!SmoothedWorldFrameDef.isOn(o)) firstFrame = true;
-  em.ensureComponentOn(o, SmoothedWorldFrameDef);
-  em.ensureComponentOn(o, PrevSmoothedWorldFrameDef);
+  em.set(o, SmoothedWorldFrameDef);
+  em.set(o, PrevSmoothedWorldFrameDef);
   copyFrame(o.prevSmoothedWorldFrame, o.smoothedWorldFrame);
   mat4.copy(o.smoothedWorldFrame.transform, o.transform);
   updateFrameFromTransform(o.smoothedWorldFrame);
@@ -201,8 +201,8 @@ export function registerUpdateSmoothedWorldFrames(em: EntityManager) {
       for (const o of objs) {
         // TODO(@darzu): PERF HACK!
         if (DONT_SMOOTH_WORLD_FRAME) {
-          em.ensureComponentOn(o, SmoothedWorldFrameDef);
-          em.ensureComponentOn(o, PrevSmoothedWorldFrameDef);
+          em.set(o, SmoothedWorldFrameDef);
+          em.set(o, PrevSmoothedWorldFrameDef);
           continue;
         }
 
@@ -275,7 +275,7 @@ export function registerUpdateRendererWorldFrames(em: EntityManager) {
     [],
     (objs) => {
       for (let o of objs) {
-        em.ensureComponentOn(o, RendererWorldFrameDef);
+        em.set(o, RendererWorldFrameDef);
 
         // TODO(@darzu): HACK!
         if (DONT_SMOOTH_WORLD_FRAME) {
@@ -592,7 +592,7 @@ export function registerConstructRenderablesSystem(em: EntityManager) {
             meshHandle,
           });
           if (e.renderableConstruct.poolKind === "std") {
-            em.ensureComponentOn(e, RenderDataStdDef, computeUniData(mesh));
+            em.set(e, RenderDataStdDef, computeUniData(mesh));
             e.renderDataStd.id = meshHandle.mId;
           } else if (e.renderableConstruct.poolKind === "ocean") {
             em.addComponent(

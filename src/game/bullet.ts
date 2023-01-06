@@ -96,14 +96,14 @@ export function createOrResetBullet(
 ) {
   const props = e.bulletConstruct;
   assertDbg(props);
-  em.ensureComponentOn(e, PositionDef);
+  em.set(e, PositionDef);
   vec3.copy(e.position, props.location);
-  em.ensureComponentOn(e, RotationDef);
-  em.ensureComponentOn(e, LinearVelocityDef);
+  em.set(e, RotationDef);
+  em.set(e, LinearVelocityDef);
   vec3.copy(e.linearVelocity, props.linearVelocity);
-  em.ensureComponentOn(e, AngularVelocityDef);
+  em.set(e, AngularVelocityDef);
   vec3.copy(e.angularVelocity, props.angularVelocity);
-  em.ensureComponentOn(e, ColorDef);
+  em.set(e, ColorDef);
   if (props.team === 1) {
     vec3.copy(e.color, ENDESGA16.deepGreen);
   } else if (props.team === 2) {
@@ -111,24 +111,24 @@ export function createOrResetBullet(
   } else {
     vec3.copy(e.color, ENDESGA16.orange);
   }
-  em.ensureComponentOn(e, MotionSmoothingDef);
-  em.ensureComponentOn(e, RenderableConstructDef, assets.ball.proto);
-  em.ensureComponentOn(e, AuthorityDef, pid);
-  em.ensureComponentOn(e, BulletDef);
+  em.set(e, MotionSmoothingDef);
+  em.set(e, RenderableConstructDef, assets.ball.proto);
+  em.set(e, AuthorityDef, pid);
+  em.set(e, BulletDef);
   e.bullet.team = props.team;
   e.bullet.health = props.health;
-  em.ensureComponentOn(e, ColliderDef, {
+  em.set(e, ColliderDef, {
     shape: "AABB",
     solid: false,
     aabb: assets.ball.aabb,
   });
-  em.ensureComponentOn(e, LifetimeDef);
+  em.set(e, LifetimeDef);
   e.lifetime.ms = 4000;
-  em.ensureComponentOn(e, SyncDef);
+  em.set(e, SyncDef);
   e.sync.dynamicComponents = [PositionDef.id];
   e.sync.fullComponents = [BulletConstructDef.id];
-  em.ensureComponentOn(e, PredictDef);
-  em.ensureComponentOn(e, GravityDef);
+  em.set(e, PredictDef);
+  em.set(e, GravityDef);
   e.gravity[1] = -props.gravity;
 }
 
@@ -187,7 +187,7 @@ export async function fireBullet(
   let e: BulletEnt;
   if (_bulletPool.length < _maxBullets) {
     let e_ = em.newEntity();
-    em.ensureComponentOn(e_, BulletConstructDef);
+    em.set(e_, BulletConstructDef);
     e = e_;
     _bulletPool.push(e);
   } else {
@@ -249,15 +249,15 @@ async function initBulletPartPool() {
     let bset: BulletPart[] = [];
     for (let part of assets.ball_broken) {
       const pe = em.newEntity();
-      em.ensureComponentOn(pe, RenderableConstructDef, part.proto);
-      em.ensureComponentOn(pe, ColorDef);
-      em.ensureComponentOn(pe, RotationDef);
-      em.ensureComponentOn(pe, PositionDef);
-      em.ensureComponentOn(pe, LinearVelocityDef);
-      em.ensureComponentOn(pe, AngularVelocityDef);
+      em.set(pe, RenderableConstructDef, part.proto);
+      em.set(pe, ColorDef);
+      em.set(pe, RotationDef);
+      em.set(pe, PositionDef);
+      em.set(pe, LinearVelocityDef);
+      em.set(pe, AngularVelocityDef);
       // em.ensureComponentOn(pe, LifetimeDef, 2000);
-      em.ensureComponentOn(pe, GravityDef, vec3.clone([0, -4, 0]));
-      em.ensureComponentOn(pe, SplinterParticleDef);
+      em.set(pe, GravityDef, vec3.clone([0, -4, 0]));
+      em.set(pe, SplinterParticleDef);
       bset.push(pe);
     }
     bulletPartPool.push(bset);
@@ -296,14 +296,14 @@ export async function breakBullet(
     vec3.add(vel, [0, -1, 0], vel);
     vec3.normalize(vel, vel);
     vec3.scale(vel, 0.02, vel);
-    em.ensureComponentOn(pe, LinearVelocityDef);
+    em.set(pe, LinearVelocityDef);
     vec3.copy(pe.linearVelocity, vel);
-    em.ensureComponentOn(pe, AngularVelocityDef);
+    em.set(pe, AngularVelocityDef);
     vec3.copy(pe.angularVelocity, vel);
     // em.ensureComponentOn(pe, LifetimeDef, 2000);
-    em.ensureComponentOn(pe, GravityDef);
+    em.set(pe, GravityDef);
     vec3.copy(pe.gravity, [0, -4, 0]);
   }
 
-  em.ensureComponentOn(bullet, DeadDef);
+  em.set(bullet, DeadDef);
 }

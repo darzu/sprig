@@ -53,9 +53,9 @@ export const endGame = eventWizard(
     res.gameState.time = 0;
     for (const partRef of ship.playerShipLocal.parts) {
       const part = partRef();
-      if (part) EM.ensureComponentOn(part, DeletedDef);
+      if (part) EM.set(part, DeletedDef);
     }
-    EM.ensureComponentOn(ship, DeletedDef);
+    EM.set(ship, DeletedDef);
     if (ship.playerShipProps.cannonLId)
       EM.ensureComponent(ship.playerShipProps.cannonLId, DeletedDef);
     if (ship.playerShipProps.cannonRId)
@@ -83,11 +83,11 @@ export const endGame = eventWizard(
       PhysicsParentDef,
     ])!;
     vec3.copy(gem.position, gem.world.position);
-    EM.ensureComponentOn(gem, RotationDef);
+    EM.set(gem, RotationDef);
     quat.copy(gem.rotation, gem.world.rotation);
-    EM.ensureComponentOn(gem, LinearVelocityDef, vec3.clone([0, 0.01, 0]));
+    EM.set(gem, LinearVelocityDef, vec3.clone([0, 0.01, 0]));
     EM.removeComponent(gem.id, PhysicsParentDef);
-    EM.ensureComponentOn(gem, LifetimeDef, 4000);
+    EM.set(gem, LifetimeDef, 4000);
   },
   {
     legalEvent: () => EM.getResource(GameStateDef)!.state === GameState.PLAYING,

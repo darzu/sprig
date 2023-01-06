@@ -41,25 +41,21 @@ const ORRERY_SCALE = 0.001;
 export async function makeOrrery(em: EntityManager, parentId: number) {
   const res = await em.whenResources(AssetsDef);
   const orrery = em.newEntity();
-  em.ensureComponentOn(orrery, OrreryDef);
-  em.ensureComponentOn(orrery, PhysicsParentDef, parentId);
-  em.ensureComponentOn(orrery, PositionDef, vec3.clone([0, 4, 4]));
+  em.set(orrery, OrreryDef);
+  em.set(orrery, PhysicsParentDef, parentId);
+  em.set(orrery, PositionDef, vec3.clone([0, 4, 4]));
 
   // put a ship model at the center of it
   const shipModel = em.newEntity();
-  em.ensureComponentOn(shipModel, PhysicsParentDef, orrery.id);
-  em.ensureComponentOn(shipModel, PositionDef, vec3.clone([0, 0, 0]));
-  em.ensureComponentOn(
+  em.set(shipModel, PhysicsParentDef, orrery.id);
+  em.set(shipModel, PositionDef, vec3.clone([0, 0, 0]));
+  em.set(shipModel, RenderableConstructDef, res.assets.ship.proto);
+  em.set(
     shipModel,
-    RenderableConstructDef,
-    res.assets.ship.proto
+    ScaleDef,
+    vec3.clone([ORRERY_SCALE * 40, ORRERY_SCALE * 40, ORRERY_SCALE * 40])
   );
-  em.ensureComponentOn(shipModel, ScaleDef, vec3.clone([
-    ORRERY_SCALE * 40,
-    ORRERY_SCALE * 40,
-    ORRERY_SCALE * 40,
-]));
-  em.ensureComponentOn(shipModel, ColorDef, BOAT_COLOR);
+  em.set(shipModel, ColorDef, BOAT_COLOR);
 }
 
 export const OrreryDef = EM.defineComponent("orrery", () => ({
@@ -80,15 +76,11 @@ onInit((em: EntityManager) => {
       for (let orrery of es) {
         while (orrery.orrery.orreryStars.length < stars.length) {
           const orreryStar = em.newEntity();
-          em.ensureComponentOn(orreryStar, PositionDef);
-          em.ensureComponentOn(orreryStar, PhysicsParentDef, orrery.id);
-          em.ensureComponentOn(orreryStar, ColorDef);
-          em.ensureComponentOn(
-            orreryStar,
-            RenderableConstructDef,
-            res.assets.ball.proto
-          );
-          em.ensureComponentOn(orreryStar, ScaleDef, vec3.clone([0.25, 0.25, 0.25]));
+          em.set(orreryStar, PositionDef);
+          em.set(orreryStar, PhysicsParentDef, orrery.id);
+          em.set(orreryStar, ColorDef);
+          em.set(orreryStar, RenderableConstructDef, res.assets.ball.proto);
+          em.set(orreryStar, ScaleDef, vec3.clone([0.25, 0.25, 0.25]));
           orrery.orrery.orreryStars.push(createRef(orreryStar));
         }
         const intoOrrerySpace = mat4.invert(orrery.world.transform);
@@ -96,7 +88,11 @@ onInit((em: EntityManager) => {
           const orreryStar = orrery.orrery.orreryStars[i]()!;
           vec3.copy(orreryStar.color, star.color);
           vec3.copy(orreryStar.position, star.world.position);
-          vec3.transformMat4(orreryStar.position, intoOrrerySpace, orreryStar.position);
+          vec3.transformMat4(
+            orreryStar.position,
+            intoOrrerySpace,
+            orreryStar.position
+          );
           vec3.scale(orreryStar.position, ORRERY_SCALE, orreryStar.position);
         });
       }

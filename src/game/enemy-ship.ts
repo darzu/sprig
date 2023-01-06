@@ -57,22 +57,22 @@ export function createEnemy(
   pos: vec3
 ): EntityW<[typeof EnemyDef]> {
   const e = em.newEntity();
-  em.ensureComponentOn(e, EnemyDef);
-  em.ensureComponentOn(e, PositionDef, pos);
-  em.ensureComponentOn(e, RotationDef, quat.create());
+  em.set(e, EnemyDef);
+  em.set(e, PositionDef, pos);
+  em.set(e, RotationDef, quat.create());
   const torso = cloneMesh(assets.cube.mesh);
   scaleMesh3(torso, vec3.clone([0.75, 0.75, 0.4]));
-  em.ensureComponentOn(e, RenderableConstructDef, torso);
-  em.ensureComponentOn(e, ColorDef, vec3.clone([0.2, 0.0, 0]));
-  em.ensureComponentOn(e, PhysicsParentDef, parent);
+  em.set(e, RenderableConstructDef, torso);
+  em.set(e, ColorDef, vec3.clone([0.2, 0.0, 0]));
+  em.set(e, PhysicsParentDef, parent);
 
   function makeLeg(x: number): Entity {
     const l = em.newEntity();
-    em.ensureComponentOn(l, PositionDef, vec3.clone([x, -1.75, 0]));
-    em.ensureComponentOn(l, RenderableConstructDef, assets.cube.proto);
-    em.ensureComponentOn(l, ScaleDef, vec3.clone([0.1, 1.0, 0.1]));
-    em.ensureComponentOn(l, ColorDef, vec3.clone([0.05, 0.05, 0.05]));
-    em.ensureComponentOn(l, PhysicsParentDef, e.id);
+    em.set(l, PositionDef, vec3.clone([x, -1.75, 0]));
+    em.set(l, RenderableConstructDef, assets.cube.proto);
+    em.set(l, ScaleDef, vec3.clone([0.1, 1.0, 0.1]));
+    em.set(l, ColorDef, vec3.clone([0.05, 0.05, 0.05]));
+    em.set(l, PhysicsParentDef, e.id);
     return l;
   }
   e.enemy.leftLegId = makeLeg(-0.5).id;
@@ -129,29 +129,25 @@ export const { EnemyShipPropsDef, EnemyShipLocalDef, createEnemyShip } =
     build: (e, res) => {
       const em: EntityManager = EM;
 
-      em.ensureComponentOn(e, ShipDef);
+      em.set(e, ShipDef);
       e.ship.speed = e.enemyShipProps.speed;
 
-      em.ensureComponentOn(e, ColorDef, ENEMY_SHIP_COLOR);
-      em.ensureComponentOn(e, MotionSmoothingDef);
-      em.ensureComponentOn(
-        e,
-        RenderableConstructDef,
-        res.assets.enemyShip.mesh
-      );
+      em.set(e, ColorDef, ENEMY_SHIP_COLOR);
+      em.set(e, MotionSmoothingDef);
+      em.set(e, RenderableConstructDef, res.assets.enemyShip.mesh);
 
-      em.ensureComponentOn(e, UVPosDef);
+      em.set(e, UVPosDef);
       vec2.copy(e.uvPos, e.enemyShipProps.uvLoc);
-      em.ensureComponentOn(e, UVDirDef);
+      em.set(e, UVDirDef);
       vec2.copy(e.uvDir, e.enemyShipProps.uvDir);
 
-      em.ensureComponentOn(e, PhysicsParentDef, e.enemyShipProps.parent);
+      em.set(e, PhysicsParentDef, e.enemyShipProps.parent);
 
       // fire zone is local, not synced
       // TODO(@darzu): fire zone should probably be host-only
       const fireZone = em.newEntity();
       const fireZoneSize = 40;
-      em.ensureComponentOn(fireZone, ColliderDef, {
+      em.set(fireZone, ColliderDef, {
         solid: false,
         shape: "AABB",
         aabb: {
@@ -159,16 +155,16 @@ export const { EnemyShipPropsDef, EnemyShipLocalDef, createEnemyShip } =
           max: vec3.clone([2, 2, fireZoneSize]),
         },
       });
-      em.ensureComponentOn(fireZone, PhysicsParentDef, e.id);
-      em.ensureComponentOn(fireZone, PositionDef, vec3.clone([0, 0, -fireZoneSize]));
-      em.ensureComponentOn(fireZone, FireZoneDef);
+      em.set(fireZone, PhysicsParentDef, e.id);
+      em.set(fireZone, PositionDef, vec3.clone([0, 0, -fireZoneSize]));
+      em.set(fireZone, FireZoneDef);
       e.enemyShipLocal.fireZoneId = fireZone.id;
 
-      em.ensureComponentOn(e, OnDeleteDef, () => {
+      em.set(e, OnDeleteDef, () => {
         em.ensureComponent(e.enemyShipLocal.fireZoneId, DeletedDef);
 
         const cannon = em.findEntity(e.enemyShipLocal.childCannonId, [])!;
-        em.ensureComponentOn(cannon, DeletedDef);
+        em.set(cannon, DeletedDef);
 
         const enemy = em.findEntity(e.enemyShipLocal.childEnemyId, [
           WorldFrameDef,
@@ -183,11 +179,11 @@ export const { EnemyShipPropsDef, EnemyShipLocalDef, createEnemyShip } =
           em.removeComponent(enemy.id, PhysicsParentDef);
           vec3.copy(enemy.position, enemy.world.position);
           quat.copy(enemy.rotation, enemy.world.rotation);
-          em.ensureComponentOn(enemy, LinearVelocityDef, vec3.clone([0, -0.002, 0]));
+          em.set(enemy, LinearVelocityDef, vec3.clone([0, -0.002, 0]));
         }
       });
 
-      em.ensureComponentOn(e, ColliderDef, {
+      em.set(e, ColliderDef, {
         shape: "AABB",
         // TODO(@darzu):
         solid: false,
@@ -196,20 +192,16 @@ export const { EnemyShipPropsDef, EnemyShipLocalDef, createEnemyShip } =
       });
 
       const cannon = em.newEntity();
-      em.ensureComponentOn(
-        cannon,
-        RenderableConstructDef,
-        res.assets.cannon.proto
-      );
-      em.ensureComponentOn(cannon, PhysicsParentDef, e.id);
-      em.ensureComponentOn(cannon, PositionDef, vec3.clone([0, 2, 0]));
+      em.set(cannon, RenderableConstructDef, res.assets.cannon.proto);
+      em.set(cannon, PhysicsParentDef, e.id);
+      em.set(cannon, PositionDef, vec3.clone([0, 2, 0]));
 
       const cannonRot = quat.create();
       const pitch = Math.PI * 0.08;
       // quat.rotateY(cannonRot, cannonRot, Math.PI * 0.5);
       // quat.rotateY(cannonRot, cannonRot, Math.PI * 0.5);
-quat.rotateX(cannonRot, pitch, cannonRot);
-      em.ensureComponentOn(cannon, RotationDef, cannonRot);
+      quat.rotateX(cannonRot, pitch, cannonRot);
+      em.set(cannon, RotationDef, cannonRot);
       e.enemyShipLocal.childCannonId = cannon.id;
 
       // child enemy
@@ -217,7 +209,7 @@ quat.rotateX(cannonRot, pitch, cannonRot);
       e.enemyShipLocal.childEnemyId = en.id;
       if (e.authority.pid === res.me.pid) {
         // destroy after 1 minute
-        em.ensureComponentOn(e, LifetimeDef, 1000 * 60);
+        em.set(e, LifetimeDef, 1000 * 60);
       }
     },
   });
@@ -246,8 +238,8 @@ export function registerEnemyShipSystems(em: EntityManager) {
         // TODO(@darzu):  * 0.02
 
         // o.enemyShipProps.uvDir += rad;
-// TODO(@darzu):  * 0.02
-vec2.rotate(o.uvDir, vec2.ZEROS, radYaw, o.uvDir);
+        // TODO(@darzu):  * 0.02
+        vec2.rotate(o.uvDir, vec2.ZEROS, radYaw, o.uvDir);
       }
     },
     "stepEnemyShips"
@@ -335,7 +327,7 @@ export function breakEnemyShip(
   enemyShipParts: GameMesh[],
   music: Music
 ) {
-  em.ensureComponentOn(enemyShip, DeletedDef);
+  em.set(enemyShip, DeletedDef);
 
   music.playChords([3], "minor", 2.0, 5.0, -1);
 
@@ -343,10 +335,10 @@ export function breakEnemyShip(
     const pe = em.newEntity();
     // TODO(@darzu): use some sort of chunks particle system, we don't
     //  need entity ids for these.
-    em.ensureComponentOn(pe, RenderableConstructDef, part.proto);
-    em.ensureComponentOn(pe, ColorDef, ENEMY_SHIP_COLOR);
-    em.ensureComponentOn(pe, RotationDef, quat.clone(enemyShip.rotation));
-    em.ensureComponentOn(pe, PositionDef, vec3.clone(enemyShip.position));
+    em.set(pe, RenderableConstructDef, part.proto);
+    em.set(pe, ColorDef, ENEMY_SHIP_COLOR);
+    em.set(pe, RotationDef, quat.clone(enemyShip.rotation));
+    em.set(pe, PositionDef, vec3.clone(enemyShip.position));
     // em.ensureComponentOn(pe, ColliderDef, {
     //   shape: "AABB",
     //   solid: false,
@@ -359,10 +351,10 @@ export function breakEnemyShip(
     const vel = com;
     // const vel = vec3.sub(vec3.create(), com, enemyShip.position);
     // const vel = vec3.sub(vec3.create(), com, enemyShip.position);
-vec3.normalize(vel, vel);
+    vec3.normalize(vel, vel);
     vec3.add(vel, [0, -0.6, 0], vel);
     vec3.scale(vel, 0.005, vel);
-    em.ensureComponentOn(pe, LinearVelocityDef, vel);
+    em.set(pe, LinearVelocityDef, vel);
     const spin = vec3.fromValues(
       Math.random() - 0.5,
       Math.random() - 0.5,
@@ -370,8 +362,8 @@ vec3.normalize(vel, vel);
     );
     vec3.normalize(spin, spin);
     vec3.scale(spin, 0.001, spin);
-    em.ensureComponentOn(pe, AngularVelocityDef, spin);
-    em.ensureComponentOn(pe, LifetimeDef, 2000);
+    em.set(pe, AngularVelocityDef, spin);
+    em.set(pe, LifetimeDef, 2000);
   }
 }
 

@@ -60,22 +60,22 @@ export function constructNetTurret(
     typeof RotationDef
   ]
 > {
-  EM.ensureComponentOn(e, YawPitchDef);
+  EM.set(e, YawPitchDef);
   e.yawpitch.yaw = startYaw;
   e.yawpitch.pitch = startPitch;
-  EM.ensureComponentOn(e, TurretDef);
+  EM.set(e, TurretDef);
   e.turret.minYaw += startYaw;
   e.turret.maxYaw += startYaw;
   e.turret.cameraYawOffset = cameraYawOffset;
   e.turret.cameraPitchOffset = cameraPitchOffset;
   e.turret.cameraYawFactor = cameraYawFactor;
 
-  EM.ensureComponentOn(e, RotationDef);
-  EM.ensureComponentOn(e, SyncDef);
+  EM.set(e, RotationDef);
+  EM.set(e, SyncDef);
   e.sync.dynamicComponents.push(YawPitchDef.id);
 
   // setup camera params
-  EM.ensureComponentOn(e, CameraFollowDef, 0);
+  EM.set(e, CameraFollowDef, 0);
   vec3.copy(e.cameraFollow.positionOffset, cameraFollowOffset);
   e.cameraFollow.yawOffset = cameraYawOffset;
   e.cameraFollow.pitchOffset = cameraPitchOffset;
@@ -87,9 +87,9 @@ export function constructNetTurret(
     const interactAABB = copyAABB(createAABB(), aabbOrInteractionEntity);
     vec3.scale(interactAABB.min, 2, interactAABB.min);
     vec3.scale(interactAABB.max, 2, interactAABB.max);
-    EM.ensureComponentOn(interactBox, PhysicsParentDef, e.id);
-    EM.ensureComponentOn(interactBox, PositionDef, vec3.clone([0, 0, 0]));
-    EM.ensureComponentOn(interactBox, ColliderDef, {
+    EM.set(interactBox, PhysicsParentDef, e.id);
+    EM.set(interactBox, PositionDef, vec3.clone([0, 0, 0]));
+    EM.set(interactBox, ColliderDef, {
       shape: "AABB",
       solid: false,
       aabb: interactAABB,
@@ -97,7 +97,7 @@ export function constructNetTurret(
   } else {
     interactBox = aabbOrInteractionEntity;
   }
-  EM.ensureComponentOn(e, InteractableDef);
+  EM.set(e, InteractableDef);
   e.interaction.colliderId = interactBox.id;
 }
 
