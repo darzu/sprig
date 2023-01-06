@@ -33,7 +33,7 @@ export type Noodle = Component<typeof NoodleDef>;
 
 // TODO(@darzu): DEBUGGING
 export function debugCreateNoodles(em: EntityManager) {
-  const e = em.newEntity();
+  const e = em.new();
   em.set(e, NoodleDef, [
     {
       pos: V(0, 0, 0),

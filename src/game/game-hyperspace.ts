@@ -138,7 +138,7 @@ export async function initHyperspaceGame(em: EntityManager) {
 
   if (me.host) {
     // experimental ship:
-    const eShip = em.newEntity();
+    const eShip = em.new();
     em.set(eShip, RenderableConstructDef, res.assets.ship_fangs.proto);
     em.set(eShip, PositionDef);
     em.set(eShip, UVPosDef, vec2.clone([0.2, 0.1]));

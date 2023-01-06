@@ -105,12 +105,12 @@ export async function initClothSandbox(em: EntityManager, hosting: boolean) {
   c.renderable.enabled = true;
   c.cursor3d.maxDistance = 10;
 
-  const plane = em.newEntity();
+  const plane = em.new();
   em.set(plane, RenderableConstructDef, res.assets.plane.proto);
   em.set(plane, ColorDef, V(0.2, 0.3, 0.2));
   em.set(plane, PositionDef, V(0, -5, 0));
 
-  const ship = em.newEntity();
+  const ship = em.new();
   em.set(ship, RenderableConstructDef, res.assets.ship.proto);
   em.set(ship, ColorDef, ENEMY_SHIP_COLOR);
   em.set(ship, PositionDef, V(20, -2, 0));
@@ -137,7 +137,7 @@ export async function initClothSandbox(em: EntityManager, hosting: boolean) {
   //   quat.fromEuler(quat.create(), 0, Math.PI * 0.1, 0)
   // );
 
-  const box = em.newEntity();
+  const box = em.new();
   em.set(box, RenderableConstructDef, res.assets.cube.proto);
   em.set(box, ColorDef, V(0.1, 0.1, 0.1));
   em.set(box, PositionDef, V(0, 0, 3));
@@ -150,7 +150,7 @@ export async function initClothSandbox(em: EntityManager, hosting: boolean) {
     aabb: res.assets.cube.aabb,
   });
 
-  const cloth = em.newEntity();
+  const cloth = em.new();
   em.set(cloth, ClothConstructDef, {
     location: V(0, 0, 0),
     color: V(0.9, 0.9, 0.8),

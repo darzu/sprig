@@ -55,7 +55,7 @@ export function createSplinterPool(
       depth
     );
     const splinterMesh = normalizeMesh(_splinterMesh);
-    const splinter = em.newEntity();
+    const splinter = em.new();
     em.set(splinter, RenderableConstructDef, splinterMesh);
     em.set(splinter, ColorDef, color);
     em.set(splinter, PositionDef);

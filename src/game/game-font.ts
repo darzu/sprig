@@ -68,7 +68,7 @@ EM.registerInit({
   provideLs: [],
   fn: async ({ assets }) => {
     // Cursor
-    const cursor = EM.newEntity();
+    const cursor = EM.new();
     EM.set(cursor, ColorDef, V(0.1, 0.1, 0.1));
     EM.set(cursor, PositionDef, V(0, 1.0, 0));
     EM.set(cursor, RenderableConstructDef, assets.he_octo.proto);
@@ -98,7 +98,7 @@ export async function initFontEditor(em: EntityManager) {
     postProcess,
   ];
 
-  const sunlight = em.newEntity();
+  const sunlight = em.new();
   em.set(sunlight, PointLightDef);
   sunlight.pointLight.constant = 1.0;
   vec3.copy(sunlight.pointLight.ambient, [0.8, 0.8, 0.8]);
@@ -106,7 +106,7 @@ export async function initFontEditor(em: EntityManager) {
   // TODO(@darzu): weird, why does renderable need to be on here?
   em.set(sunlight, RenderableConstructDef, res.assets.ball.proto, false);
 
-  const panel = em.newEntity();
+  const panel = em.new();
   const panelMesh = makePlaneMesh(
     -PANEL_W * 0.5,
     PANEL_W * 0.5,
@@ -286,7 +286,7 @@ export async function initFontEditor(em: EntityManager) {
 
     polyBank.set(i, gmesh);
 
-    const btn = EM.newEntity();
+    const btn = EM.new();
     EM.set(btn, RenderableConstructDef, gmesh.proto);
     EM.set(btn, PositionDef, V(-24 + i * 2, 0.1, 12));
     EM.set(btn, ButtonDef, btnKey, i, {

@@ -64,7 +64,7 @@ export async function initReboundSandbox(em: EntityManager, hosting: boolean) {
   assert(RenderableDef.isOn(c));
   c.renderable.enabled = false;
 
-  const p = em.newEntity();
+  const p = em.new();
   em.set(p, RenderableConstructDef, res.assets.plane.proto);
   em.set(p, ColorDef, V(0.2, 0.3, 0.2));
   em.set(p, PositionDef, V(0, -10, 0));
@@ -74,7 +74,7 @@ export async function initReboundSandbox(em: EntityManager, hosting: boolean) {
     aabb: res.assets.plane.aabb,
   });
 
-  const t = em.newEntity();
+  const t = em.new();
   em.set(t, RenderableConstructDef, res.assets.gridPlane.proto);
   em.set(t, ColorDef, V(0.2, 0.2, 0.9));
   em.set(t, PositionDef, V(0, 0, 0));
@@ -91,7 +91,7 @@ export async function initReboundSandbox(em: EntityManager, hosting: boolean) {
   const cubeDef = em.defineComponent("cube", () => true);
 
   function spawn(m: GameMesh, pos: vec3) {
-    const e = em.newEntity();
+    const e = em.new();
     em.set(e, RenderableConstructDef, m.proto);
     const [r, g, b] = [jitter(0.1) + 0.2, jitter(0.1) + 0.2, jitter(0.1) + 0.2];
     em.set(e, ColorDef, V(r, g, b));

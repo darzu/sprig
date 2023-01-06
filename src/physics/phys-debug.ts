@@ -56,7 +56,7 @@ export function registerPhysicsDebuggerSystem(em: EntityManager) {
         if (!res._physDbgState.colliderMeshes.has(e.id)) {
           for (let c of e._phys.colliders) {
             // create debug entity
-            const dbgE = em.newEntity();
+            const dbgE = em.new();
 
             // with a wireframe mesh
             // TODO(@darzu): doesn't work w/o our line renderer

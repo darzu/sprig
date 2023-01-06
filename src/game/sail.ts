@@ -111,7 +111,7 @@ export const { MastPropsDef, MastLocalDef, createMastNow } =
       vec3.scale(mast.color, 0.5, mast.color);
 
       const createRib = (width: number) => {
-        const rib = em.newEntity();
+        const rib = em.new();
         em.set(rib, PositionDef, V(0, BOOM_HEIGHT, 0));
         em.set(rib, RenderableConstructDef, res.assets.mast.mesh);
         em.set(rib, ScaleDef, V(0.5 * width, 0.5, 0.5 * width));
@@ -128,7 +128,7 @@ export const { MastPropsDef, MastLocalDef, createMastNow } =
         createRef(createRib(i === 0 ? 1 : 0.7))
       );
 
-      const sail1 = em.newEntity();
+      const sail1 = em.new();
       em.set(sail1, PositionDef, V(0, BOOM_HEIGHT, 0));
       em.set(sail1, RenderableConstructDef, cloneMesh(res.assets.sail.mesh));
       //em.ensureComponentOn(sail1, ScaleDef, [12, 12, 12]);
@@ -148,7 +148,7 @@ export const { MastPropsDef, MastLocalDef, createMastNow } =
         mast.mastLocal.sail1 = createRef(sail1);
       });
 
-      const sail2 = em.newEntity();
+      const sail2 = em.new();
       em.set(sail2, PositionDef, V(0, BOOM_HEIGHT, 0));
       em.set(sail2, RenderableConstructDef, cloneMesh(res.assets.sail.mesh));
       //em.ensureComponentOn(sail2, ScaleDef, [12, 12, 12]);
@@ -169,7 +169,7 @@ export const { MastPropsDef, MastLocalDef, createMastNow } =
       });
 
       // create seperate hitbox for interacting with the mast
-      const interactBox = em.newEntity();
+      const interactBox = em.new();
       em.set(interactBox, PhysicsParentDef, mast.mastProps.shipId);
       em.set(interactBox, PositionDef, V(0, 0, 0));
       em.set(interactBox, ColliderDef, {

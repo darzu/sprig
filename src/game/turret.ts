@@ -83,7 +83,7 @@ export function constructNetTurret(
   let interactBox: Entity;
   // create separate hitbox for interacting with the turret
   if ("min" in aabbOrInteractionEntity) {
-    interactBox = EM.newEntity();
+    interactBox = EM.new();
     const interactAABB = copyAABB(createAABB(), aabbOrInteractionEntity);
     vec3.scale(interactAABB.min, 2, interactAABB.min);
     vec3.scale(interactAABB.max, 2, interactAABB.max);

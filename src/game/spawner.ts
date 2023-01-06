@@ -45,7 +45,7 @@ export function createSpawner(
   uvDir: vec2,
   animate?: Partial<AnimateTo>
 ) {
-  const e = EM.newEntity();
+  const e = EM.new();
   EM.set(e, SpawnerDef);
   EM.set(e, UVPosDef, uvPos);
   EM.set(e, UVDirDef, uvDir);

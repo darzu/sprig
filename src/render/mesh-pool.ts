@@ -265,6 +265,16 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
       !m.quad.length || m.tri.length % 2 === 0,
       `tri.length not even for ${m.dbgName}`
     );
+    const faceNum = m.tri.length + m.quad.length;
+    console.dir(m);
+    assert(
+      m.colors.length === faceNum,
+      `${m.dbgName}: Inconsistent face num ${faceNum} vs color num ${m.colors.length}`
+    );
+    assert(
+      m.surfaceIds.length === faceNum,
+      `${m.dbgName}: Inconsistent face num ${faceNum} vs surface IDs num ${m.surfaceIds.length}`
+    );
 
     assertDbg(pool.numTris % 2 === 0, "alignment");
     const handle: MeshHandle = {

@@ -170,7 +170,7 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
     postProcess,
   ];
 
-  const sunlight = em.newEntity();
+  const sunlight = em.new();
   em.set(sunlight, PointLightDef);
   // sunlight.pointLight.constant = 1.0;
   sunlight.pointLight.constant = 1.0;
@@ -183,7 +183,7 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
   // const c = res.globalCursor3d.cursor()!;
   // if (RenderableDef.isOn(c)) c.renderable.enabled = false;
 
-  const ground = em.newEntity();
+  const ground = em.new();
   const groundMesh = cloneMesh(res.assets.hex.mesh);
   transformMesh(
     groundMesh,
@@ -240,7 +240,7 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
   // });
 
   // TIMBER
-  const timber = em.newEntity();
+  const timber = em.new();
 
   const {
     timberState,
@@ -287,7 +287,7 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
   const realFloorHeight = timberPos[1] + floorHeight;
   for (let i = 0; i < 2; i++) {
     const isLeft = i === 0 ? 1 : -1;
-    const cannon = em.newEntity();
+    const cannon = em.new();
     em.set(cannon, RenderableConstructDef, res.assets.ld51_cannon.proto);
     em.set(cannon, PositionDef, V(-7.5, realFloorHeight + 2, -4 * isLeft));
     em.set(cannon, RotationDef);
@@ -300,7 +300,7 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
     // TODO(@darzu): USE PALETTE PROPERLY
     vec3.scale(cannon.color, 0.5, cannon.color);
     {
-      const interactBox = EM.newEntity();
+      const interactBox = EM.new();
       const interactAABB = copyAABB(createAABB(), res.assets.ld51_cannon.aabb);
       vec3.scale(interactAABB.min, 2, interactAABB.min);
       vec3.scale(interactAABB.max, 2, interactAABB.max);
@@ -346,13 +346,13 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
     let ball = _goodBalls[idx];
 
     if (!ball) {
-      const newBall = em.newEntity();
+      const newBall = em.new();
       em.set(newBall, RenderableConstructDef, res.assets.ball.proto);
       em.set(newBall, ColorDef, ENDESGA16.orange);
       em.set(newBall, PositionDef);
       em.set(newBall, LinearVelocityDef);
       em.set(newBall, GravityDef);
-      const interactBox = EM.newEntity();
+      const interactBox = EM.new();
       const interactAABB = copyAABB(createAABB(), res.assets.ball.aabb);
       vec3.scale(interactAABB.min, 2, interactAABB.min);
       vec3.scale(interactAABB.max, 2, interactAABB.max);
@@ -548,7 +548,7 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
 
     // create ship bounds
     // TODO(@darzu): move into shipyard?
-    const colFloor = em.newEntity();
+    const colFloor = em.new();
     const flAABB: AABB = {
       // prettier-ignore
       min: vec3.clone([
@@ -570,7 +570,7 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
     em.set(colFloor, PositionDef);
     em.set(colFloor, ColWallDef);
 
-    const colLeftWall = em.newEntity();
+    const colLeftWall = em.new();
     em.set(colLeftWall, ColliderDef, {
       shape: "AABB",
       solid: true,
@@ -586,7 +586,7 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
     em.set(colLeftWall, PositionDef);
     em.set(colLeftWall, ColWallDef);
 
-    const colRightWall = em.newEntity();
+    const colRightWall = em.new();
     em.set(colRightWall, ColliderDef, {
       shape: "AABB",
       solid: true,
@@ -598,7 +598,7 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
     em.set(colRightWall, PositionDef);
     em.set(colRightWall, ColWallDef);
 
-    const colFrontWall = em.newEntity();
+    const colFrontWall = em.new();
     em.set(colFrontWall, ColliderDef, {
       shape: "AABB",
       solid: true,
@@ -618,7 +618,7 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
     em.set(colFrontWall, PositionDef);
     em.set(colFrontWall, ColWallDef);
 
-    const colBackWall = em.newEntity();
+    const colBackWall = em.new();
     em.set(colBackWall, ColliderDef, {
       shape: "AABB",
       solid: true,
@@ -1134,7 +1134,7 @@ async function spawnPirate(rad: number) {
     // NEW PIRATE
 
     // make platform
-    const platform = em.newEntity();
+    const platform = em.new();
     em.set(platform, ColorDef);
     vec3.copy(platform.color, ENDESGA16.deepBrown);
     em.set(platform, PositionDef);
@@ -1147,7 +1147,7 @@ async function spawnPirate(rad: number) {
     em.set(platform, RenderableConstructDef, groundMesh);
 
     // make cannon
-    const cannon = em.newEntity();
+    const cannon = em.new();
     em.set(cannon, RenderableConstructDef, res.assets.ld51_cannon.proto);
     em.set(cannon, PositionDef);
     em.set(cannon, PhysicsParentDef, platform.id);
@@ -1156,7 +1156,7 @@ async function spawnPirate(rad: number) {
     vec3.copy(cannon.position, [0, 2, 0]);
 
     // make timber
-    const timber = em.newEntity();
+    const timber = em.new();
     const _timberMesh = createEmptyMesh("pirateShip");
     const builder = createTimberBuilder(_timberMesh);
     appendPirateShip(builder);

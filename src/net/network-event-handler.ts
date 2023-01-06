@@ -31,7 +31,7 @@ export function registerHandleNetworkEvents(em: EntityManager) {
           break;
         case NetworkEventType.NewConnection: {
           console.log("new connection");
-          let { id } = em.newEntity();
+          let { id } = em.new();
           let peer = em.addComponent(id, PeerDef);
           peer.address = event.address;
           em.addComponent(id, InboxDef);

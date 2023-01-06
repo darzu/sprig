@@ -79,7 +79,7 @@ export const { GemPropsDef, GemLocalDef, createGem } = defineNetEntityHelper(
       em.set(gem, ColorDef);
 
       // create seperate hitbox for interacting with the gem
-      const interactBox = em.newEntity();
+      const interactBox = em.new();
       const interactAABB = copyAABB(createAABB(), res.assets.spacerock.aabb);
       em.set(interactBox, PhysicsParentDef, gem.id);
       em.set(interactBox, PositionDef, V(0, 0, 0));
@@ -119,7 +119,7 @@ export const { RudderPropsDef, RudderLocalDef, createRudderNow } =
       vec3.scale(rudder.color, 0.5, rudder.color);
 
       // create seperate hitbox for interacting with the rudder
-      const interactBox = em.newEntity();
+      const interactBox = em.new();
       em.set(interactBox, PhysicsParentDef, rudder.rudderProps.shipId);
       em.set(interactBox, PositionDef, V(0, 0, -12));
       em.set(interactBox, ColliderDef, {
@@ -254,7 +254,7 @@ export const { PlayerShipPropsDef, PlayerShipLocalDef, createPlayerShip } =
       const shipFloor = min(BARGE_AABBS.map((c) => c.max[1]));
       for (let i = 0; i < res.assets.ship_broken.length; i++) {
         const m = res.assets.ship_broken[i];
-        const part = em.newEntity();
+        const part = em.new();
         em.set(part, PhysicsParentDef, s.id);
         em.set(part, RenderableConstructDef, m.proto);
         em.set(part, ColorDef, BOAT_COLOR);

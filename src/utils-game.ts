@@ -67,7 +67,7 @@ export function createLine(start: vec3, end: vec3, color: vec3) {
 
   const pos = [start, start2, end2, end];
 
-  const e = EM.newEntity();
+  const e = EM.new();
   EM.set(e, ColorDef, color);
   const m: Mesh = {
     pos,
@@ -92,7 +92,7 @@ export async function drawBall(
   color: vec3
 ): Promise<EntityW<[typeof PositionDef]>> {
   let res = await EM.whenResources(AssetsDef);
-  const e = EM.newEntity();
+  const e = EM.new();
   EM.set(e, ColorDef, color);
   EM.set(e, RenderableConstructDef, res.assets.ball.proto);
   EM.set(e, PositionDef, pos);

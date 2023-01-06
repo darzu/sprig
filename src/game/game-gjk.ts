@@ -42,7 +42,7 @@ export async function initGJKSandbox(em: EntityManager, hosting: boolean) {
     postProcess,
   ];
 
-  const sunlight = em.newEntity();
+  const sunlight = em.new();
   em.set(sunlight, PointLightDef);
   sunlight.pointLight.constant = 1.0;
   vec3.copy(sunlight.pointLight.ambient, [0.8, 0.8, 0.8]);
@@ -76,12 +76,12 @@ export async function initGJKSandbox(em: EntityManager, hosting: boolean) {
   const c = res.globalCursor3d.cursor()!;
   if (RenderableDef.isOn(c)) c.renderable.enabled = false;
 
-  const p = em.newEntity();
+  const p = em.new();
   em.set(p, RenderableConstructDef, res.assets.plane.proto);
   em.set(p, ColorDef, V(0.2, 0.3, 0.2));
   em.set(p, PositionDef, V(0, -5, 0));
 
-  const b1 = em.newEntity();
+  const b1 = em.new();
   const m1 = cloneMesh(res.assets.cube.mesh);
   em.set(b1, RenderableConstructDef, m1);
   em.set(b1, ColorDef, V(0.1, 0.1, 0.1));
@@ -121,7 +121,7 @@ export async function initGJKSandbox(em: EntityManager, hosting: boolean) {
   //   halfsize: res.assets.cube.halfsize,
   // });
 
-  const b3 = em.newEntity();
+  const b3 = em.new();
   const m3 = cloneMesh(res.assets.ball.mesh);
   em.set(b3, RenderableConstructDef, m3);
   em.set(b3, ColorDef, V(0.1, 0.1, 0.1));
@@ -134,7 +134,7 @@ export async function initGJKSandbox(em: EntityManager, hosting: boolean) {
     aabb: res.assets.ball.aabb,
   });
 
-  const b4 = em.newEntity();
+  const b4 = em.new();
   const m4 = cloneMesh(res.assets.tetra.mesh);
   em.set(b4, RenderableConstructDef, m4);
   em.set(b4, ColorDef, V(0.1, 0.1, 0.1));

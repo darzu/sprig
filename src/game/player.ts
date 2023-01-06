@@ -51,7 +51,7 @@ import { PlayerShipLocalDef } from "./player-ship.js";
 
 export function createPlayer(em: EntityManager) {
   // console.log("create player!");
-  const e = em.newEntity();
+  const e = em.new();
   em.set(e, PlayerPropsDef, V(0, 100, 0));
   em.addResource(LocalPlayerDef, e.id);
   return e;
@@ -138,7 +138,7 @@ export function registerPlayerSystems(em: EntityManager) {
 
           // create legs
           function makeLeg(x: number): Entity {
-            const l = em.newEntity();
+            const l = em.new();
             em.set(l, PositionDef, V(x, -1.5, 0));
             em.set(l, RenderableConstructDef, res.assets.cube.proto);
             em.set(l, ScaleDef, V(0.15, 0.75, 0.15));

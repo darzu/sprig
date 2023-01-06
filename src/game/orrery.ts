@@ -40,13 +40,13 @@ const ORRERY_SCALE = 0.001;
 
 export async function makeOrrery(em: EntityManager, parentId: number) {
   const res = await em.whenResources(AssetsDef);
-  const orrery = em.newEntity();
+  const orrery = em.new();
   em.set(orrery, OrreryDef);
   em.set(orrery, PhysicsParentDef, parentId);
   em.set(orrery, PositionDef, V(0, 4, 4));
 
   // put a ship model at the center of it
-  const shipModel = em.newEntity();
+  const shipModel = em.new();
   em.set(shipModel, PhysicsParentDef, orrery.id);
   em.set(shipModel, PositionDef, V(0, 0, 0));
   em.set(shipModel, RenderableConstructDef, res.assets.ship.proto);
@@ -75,7 +75,7 @@ onInit((em: EntityManager) => {
 
       for (let orrery of es) {
         while (orrery.orrery.orreryStars.length < stars.length) {
-          const orreryStar = em.newEntity();
+          const orreryStar = em.new();
           em.set(orreryStar, PositionDef);
           em.set(orreryStar, PhysicsParentDef, orrery.id);
           em.set(orreryStar, ColorDef);

@@ -4,6 +4,7 @@ import { ENDESGA16 } from "../color/palettes.js";
 import { EntityManager } from "../entity-manager.js";
 import { AssetsDef } from "../game/assets.js";
 import { createGhost } from "../game/game.js";
+import { createGrassTile, GrassTileOpts, GrassTilesetOpts } from "../grass.js";
 import { ColliderDef } from "../physics/collider.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import { PositionDef } from "../physics/transform.js";
@@ -29,6 +30,7 @@ export async function initLD52(em: EntityManager, hosting: boolean) {
 
   res.camera.fov = Math.PI * 0.5;
 
+  // renderer
   res.renderer.pipelines = [
     ...shadowPipelines,
     stdRenderPipeline,
@@ -37,13 +39,13 @@ export async function initLD52(em: EntityManager, hosting: boolean) {
   ];
 
   // Ship
-  const ship = em.newEntity();
+  const ship = em.new();
   em.set(ship, RenderableConstructDef, res.assets.cube.proto);
   em.set(ship, PositionDef, V(0, 0, 0));
   em.set(ship, ColorDef, ENDESGA16.darkGreen);
 
   // Sun
-  const sunlight = em.newEntity();
+  const sunlight = em.new();
   em.set(sunlight, PointLightDef);
   // sunlight.pointLight.constant = 1.0;
   sunlight.pointLight.constant = 1.0;
@@ -54,17 +56,44 @@ export async function initLD52(em: EntityManager, hosting: boolean) {
   em.set(sunlight, RenderableConstructDef, res.assets.ball.proto);
 
   // ground
-  const ground = em.newEntity();
+  const ground = em.new();
   const groundMesh = cloneMesh(res.assets.hex.mesh);
   transformMesh(
     groundMesh,
     mat4.fromRotationTranslationScale(quat.IDENTITY, [0, -2, 0], [20, 2, 20])
   );
   em.set(ground, RenderableConstructDef, groundMesh);
-  em.set(ground, ColorDef, ENDESGA16.blue);
+  em.set(ground, ColorDef, ENDESGA16.midBrown);
   // em.ensureComponentOn(p, ColorDef, [0.2, 0.3, 0.2]);
   em.set(ground, PositionDef, V(0, 0, 0));
   // em.ensureComponentOn(plane, PositionDef, [0, -5, 0]);
+
+  // grass
+  {
+    const setOpts: GrassTilesetOpts = {
+      bladeW: 0.2,
+      // bladeH: 3,
+      // bladeH: 1.6,
+      // bladeH: 1.5,
+      bladeH: 1.8,
+      // TODO(@darzu): debugging
+      // spacing: 1,
+      // tileSize: 4,
+      spacing: 0.25,
+      tileSize: 16,
+      // tileSize: 10,
+      tilesPerSide: 5,
+    };
+    const maxBladeDraw = ((setOpts.tilesPerSide - 1) / 2) * setOpts.tileSize;
+    const tileOpts: GrassTileOpts = {
+      ...setOpts,
+      maxBladeDraw,
+    };
+    const grMesh = createGrassTile(tileOpts);
+    const gr = em.new();
+    em.set(gr, RenderableConstructDef, grMesh);
+    em.set(gr, PositionDef);
+  }
 
   if (DBG_PLAYER) {
     const g = createGhost();

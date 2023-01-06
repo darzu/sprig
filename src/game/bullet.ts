@@ -186,7 +186,7 @@ export async function fireBullet(
 
   let e: BulletEnt;
   if (_bulletPool.length < _maxBullets) {
-    let e_ = em.newEntity();
+    let e_ = em.new();
     em.set(e_, BulletConstructDef);
     e = e_;
     _bulletPool.push(e);
@@ -248,7 +248,7 @@ async function initBulletPartPool() {
   for (let i = 0; i < numSetsInPool; i++) {
     let bset: BulletPart[] = [];
     for (let part of assets.ball_broken) {
-      const pe = em.newEntity();
+      const pe = em.new();
       em.set(pe, RenderableConstructDef, part.proto);
       em.set(pe, ColorDef);
       em.set(pe, RotationDef);

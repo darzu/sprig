@@ -75,7 +75,7 @@ async function initDragBox(): Promise<EntityW<[typeof PositionDef]>> {
 
   // create dragbox
   // TODO(@darzu): dragbox should be part of some 2d gui abstraction thing
-  const dragBox = EM.newEntity();
+  const dragBox = EM.new();
   const dragBoxMesh = cloneMesh(assets.unitCube.mesh);
   EM.set(dragBox, AlphaDef, 0.2);
   EM.set(dragBox, RenderableConstructDef, dragBoxMesh);

@@ -21,12 +21,12 @@ export async function registerGrappleDbgSystems(em: EntityManager) {
   if (!DBG_GRAPPLE) return;
 
   const res = await em.whenResources(AssetsDef);
-  const h = em.newEntity();
+  const h = em.new();
   em.set(h, PositionDef, V(0, 0, 0));
   em.set(h, ColorDef, V(0.1, 0.1, 0.1));
   em.set(h, RenderableConstructDef, res.assets.grappleHook.proto);
 
-  const g = em.newEntity();
+  const g = em.new();
   em.set(g, PositionDef, V(0, 0, 0));
   em.set(g, ColorDef, V(0.1, 0.1, 0.1));
   em.set(g, RenderableConstructDef, res.assets.grappleGun.proto);

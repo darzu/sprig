@@ -93,7 +93,7 @@ export async function initOcean() {
   // console.log("initOcean");
   const res = await EM.whenResources(RendererDef, AssetsDef, TimeDef);
 
-  const ocean = EM.newEntity();
+  const ocean = EM.new();
   let oceanEntId = ocean.id; // hacky?
   EM.set(
     ocean,

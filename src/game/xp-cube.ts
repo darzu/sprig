@@ -62,7 +62,7 @@ export async function initCubeGame(em: EntityManager) {
     e.cameraFollow.pitchOffset = -0.267;
   }
 
-  const box = em.newEntity();
+  const box = em.new();
   const boxM = cloneMesh(res.assets.cube.mesh);
   const sIdMax = max(boxM.surfaceIds);
   boxM.colors = boxM.surfaceIds.map((_, i) => uintToVec3unorm(i, sIdMax));

@@ -142,7 +142,7 @@ function registerAABBBuilder(em: EntityManager) {
           }
         } else {
           // create new box
-          const b = em.newEntity();
+          const b = em.new();
           const lastB = em.findEntity(res.modeler.latestBoxId, [
             PositionDef,
             ScaleDef,

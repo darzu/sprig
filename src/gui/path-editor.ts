@@ -125,7 +125,7 @@ async function createPathEditor() {
         maxLineNum: 0,
       };
 
-      const hpEnt_ = EM.newEntity();
+      const hpEnt_ = EM.new();
       EM.set(
         hpEnt_,
         RenderableConstructDef,
@@ -191,7 +191,7 @@ async function createPathEditor() {
 
   function _createGlyph(gm: GameMesh) {
     // TODO(@darzu): de-duplicate
-    const glyph_ = EM.newEntity();
+    const glyph_ = EM.new();
     EM.set(glyph_, RenderableConstructDef, gm.proto, false);
     EM.set(glyph_, ColorDef);
     EM.set(glyph_, PositionDef);
@@ -416,12 +416,12 @@ export async function lineStuff() {
 
   const gmesh = gameMeshFromMesh(extMesh, renderer.renderer);
 
-  const extEnt = EM.newEntity();
+  const extEnt = EM.new();
   EM.set(extEnt, RenderableConstructDef, gmesh.proto);
   EM.set(extEnt, PositionDef, V(0, 0.5, 0));
 
   for (let ln of lns) {
-    const vertGlyph = EM.newEntity();
+    const vertGlyph = EM.new();
     EM.set(vertGlyph, RenderableConstructDef, assets.cube.proto);
     EM.set(vertGlyph, PositionDef, vec3.clone(lnMesh.pos[ln.vi]));
     EM.set(vertGlyph, ColorDef, V(0.1, 0.2 + ln.vi * 0.1, 0.1));
