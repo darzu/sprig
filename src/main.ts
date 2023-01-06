@@ -22,6 +22,7 @@ import { initHyperspaceGame } from "./game/game-hyperspace.js";
 import { initClothSandbox } from "./game/game-cloth.js";
 import { initCubeGame } from "./game/xp-cube.js";
 import { resetTempMatrixBuffer, V } from "./sprig-matrix.js";
+import { initLD52 } from "./ld52/game-ld52.js";
 
 export const FORCE_WEBGL = false;
 export const MAX_MESHES = 20000;
@@ -33,12 +34,13 @@ const ALL_GAMES = [
   "gjk",
   "rebound", // broken-ish
   "ld51",
+  "ld52",
   "font",
   "hyperspace",
   "cloth", // broken-ish
   "cube",
 ] as const;
-const GAME: typeof ALL_GAMES[number] = "ld51";
+const GAME: typeof ALL_GAMES[number] = "ld52";
 
 // Run simulation with a fixed timestep @ 60hz
 const TIMESTEP = 1000 / 60;
@@ -261,6 +263,7 @@ async function startGame(localPeerName: string, host: string | null) {
   else if (GAME === "cube") initCubeGame(EM);
   else if (GAME === "ld51") initRogueGame(EM, hosting);
   else if (GAME === "font") initFontEditor(EM);
+  else if (GAME === "ld52") initLD52(EM, hosting);
   else never(GAME, "TODO game");
 
   legacyRequireAllTheSystems();
