@@ -36,9 +36,11 @@ export async function initLD52(em: EntityManager, hosting: boolean) {
     postProcess,
   ];
 
+  // Ship
   const ship = em.newEntity();
   em.set(ship, RenderableConstructDef, res.assets.cube.proto);
   em.set(ship, PositionDef, V(0, 0, 0));
+  em.set(ship, ColorDef, ENDESGA16.darkGreen);
 
   // Sun
   const sunlight = em.newEntity();
@@ -59,7 +61,7 @@ export async function initLD52(em: EntityManager, hosting: boolean) {
     mat4.fromRotationTranslationScale(quat.IDENTITY, [0, -2, 0], [20, 2, 20])
   );
   em.set(ground, RenderableConstructDef, groundMesh);
-  em.set(ground, ColorDef, vec3.clone(ENDESGA16.blue));
+  em.set(ground, ColorDef, ENDESGA16.blue);
   // em.ensureComponentOn(p, ColorDef, [0.2, 0.3, 0.2]);
   em.set(ground, PositionDef, V(0, 0, 0));
   // em.ensureComponentOn(plane, PositionDef, [0, -5, 0]);

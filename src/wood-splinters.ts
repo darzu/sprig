@@ -57,7 +57,7 @@ export function createSplinterPool(
     const splinterMesh = normalizeMesh(_splinterMesh);
     const splinter = em.newEntity();
     em.set(splinter, RenderableConstructDef, splinterMesh);
-    em.set(splinter, ColorDef, vec3.clone(color));
+    em.set(splinter, ColorDef, color);
     em.set(splinter, PositionDef);
     em.set(splinter, RotationDef);
     em.set(splinter, AngularVelocityDef);

@@ -190,7 +190,7 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
     mat4.fromRotationTranslationScale(quat.IDENTITY, [0, -2, 0], [20, 2, 20])
   );
   em.set(ground, RenderableConstructDef, groundMesh);
-  em.set(ground, ColorDef, vec3.clone(ENDESGA16.blue));
+  em.set(ground, ColorDef, ENDESGA16.blue);
   // em.ensureComponentOn(p, ColorDef, [0.2, 0.3, 0.2]);
   em.set(ground, PositionDef, V(0, 0, 0));
   // em.ensureComponentOn(plane, PositionDef, [0, -5, 0]);
@@ -256,7 +256,7 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
 
   em.set(timber, RenderableConstructDef, timberMesh);
   em.set(timber, WoodStateDef, timberState);
-  em.set(timber, ColorDef, vec3.clone(ENDESGA16.darkBrown));
+  em.set(timber, ColorDef, ENDESGA16.darkBrown);
   // em.ensureComponentOn(timber, ColorDef, [0.1, 0.1, 0.1]);
   // const scale = 1 * Math.pow(0.8, ti);
   const scale = 1;
@@ -295,7 +295,7 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
     if (isLeft !== 1) {
       quat.rotateY(cannon.rotation, Math.PI, cannon.rotation);
     }
-    em.set(cannon, ColorDef, vec3.clone(ENDESGA16.darkGreen));
+    em.set(cannon, ColorDef, ENDESGA16.darkGreen);
     // TODO(@darzu): USE PALETTE PROPERLY
     // TODO(@darzu): USE PALETTE PROPERLY
     vec3.scale(cannon.color, 0.5, cannon.color);
@@ -348,7 +348,7 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
     if (!ball) {
       const newBall = em.newEntity();
       em.set(newBall, RenderableConstructDef, res.assets.ball.proto);
-      em.set(newBall, ColorDef, vec3.clone(ENDESGA16.orange));
+      em.set(newBall, ColorDef, ENDESGA16.orange);
       em.set(newBall, PositionDef);
       em.set(newBall, LinearVelocityDef);
       em.set(newBall, GravityDef);
@@ -649,7 +649,7 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
       scaleMesh3(mesh, size);
       transformMesh(mesh, mat4.fromTranslation(center));
       em.set(aabbEnt, RenderableConstructDef, mesh);
-      em.set(aabbEnt, ColorDef, vec3.clone(ENDESGA16.orange));
+      em.set(aabbEnt, ColorDef, ENDESGA16.orange);
     }
 
     // BULLET VS COLLIDERS
@@ -1151,7 +1151,7 @@ async function spawnPirate(rad: number) {
     em.set(cannon, RenderableConstructDef, res.assets.ld51_cannon.proto);
     em.set(cannon, PositionDef);
     em.set(cannon, PhysicsParentDef, platform.id);
-    em.set(cannon, ColorDef, vec3.clone(ENDESGA16.darkGray));
+    em.set(cannon, ColorDef, ENDESGA16.darkGray);
     em.set(cannon, RotationDef);
     vec3.copy(cannon.position, [0, 2, 0]);
 
@@ -1174,7 +1174,7 @@ async function spawnPirate(rad: number) {
     reserveSplinterSpace(timberState, 10);
     em.set(timber, RenderableConstructDef, timberMesh);
     em.set(timber, WoodStateDef, timberState);
-    em.set(timber, ColorDef, vec3.clone(ENDESGA16.red));
+    em.set(timber, ColorDef, ENDESGA16.red);
     const timberAABB = getAABBFromMesh(timberMesh);
     em.set(timber, PositionDef, V(0, builder.width, 0));
     em.set(timber, RotationDef);

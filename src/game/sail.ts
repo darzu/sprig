@@ -107,7 +107,7 @@ export const { MastPropsDef, MastLocalDef, createMastNow } =
 
       em.set(mast, RenderableConstructDef, res.assets.mast.mesh);
       em.set(mast, PhysicsParentDef, mast.mastProps.shipId);
-      em.set(mast, ColorDef, vec3.clone(BOAT_COLOR));
+      em.set(mast, ColorDef, BOAT_COLOR);
       vec3.scale(mast.color, 0.5, mast.color);
 
       const createRib = (width: number) => {
@@ -116,7 +116,7 @@ export const { MastPropsDef, MastLocalDef, createMastNow } =
         em.set(rib, RenderableConstructDef, res.assets.mast.mesh);
         em.set(rib, ScaleDef, V(0.5 * width, 0.5, 0.5 * width));
         em.set(rib, RotationDef);
-        em.set(rib, ColorDef, vec3.clone(BOAT_COLOR));
+        em.set(rib, ColorDef, BOAT_COLOR);
         vec3.scale(rib.color, 0.7, rib.color);
         em.set(rib, PhysicsParentDef, mast.id);
         return rib;
@@ -134,7 +134,7 @@ export const { MastPropsDef, MastLocalDef, createMastNow } =
       //em.ensureComponentOn(sail1, ScaleDef, [12, 12, 12]);
       em.set(sail1, RotationDef);
       em.set(sail1, SailColorDef, STAR1_COLOR);
-      em.set(sail1, ColorDef, vec3.clone(DEFAULT_SAIL_COLOR));
+      em.set(sail1, ColorDef, DEFAULT_SAIL_COLOR);
       em.set(sail1, PhysicsParentDef, mast.id);
       em.whenEntityHas(
         sail1,
@@ -154,7 +154,7 @@ export const { MastPropsDef, MastLocalDef, createMastNow } =
       //em.ensureComponentOn(sail2, ScaleDef, [12, 12, 12]);
       em.set(sail2, RotationDef);
       em.set(sail2, SailColorDef, STAR2_COLOR);
-      em.set(sail2, ColorDef, vec3.clone(DEFAULT_SAIL_COLOR));
+      em.set(sail2, ColorDef, DEFAULT_SAIL_COLOR);
       em.set(sail2, PhysicsParentDef, mast.id);
       em.whenEntityHas(
         sail2,

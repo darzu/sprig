@@ -115,7 +115,7 @@ export const { RudderPropsDef, RudderLocalDef, createRudderNow } =
 
       em.set(rudder, RenderableConstructDef, res.assets.rudder.mesh);
       em.set(rudder, PhysicsParentDef, rudder.rudderProps.shipId);
-      em.set(rudder, ColorDef, vec3.clone(BOAT_COLOR));
+      em.set(rudder, ColorDef, BOAT_COLOR);
       vec3.scale(rudder.color, 0.5, rudder.color);
 
       // create seperate hitbox for interacting with the rudder
@@ -257,7 +257,7 @@ export const { PlayerShipPropsDef, PlayerShipLocalDef, createPlayerShip } =
         const part = em.newEntity();
         em.set(part, PhysicsParentDef, s.id);
         em.set(part, RenderableConstructDef, m.proto);
-        em.set(part, ColorDef, vec3.clone(BOAT_COLOR));
+        em.set(part, ColorDef, BOAT_COLOR);
         em.set(part, PositionDef, V(0, 0, 0));
         const isCritical = criticalPartIdxes.includes(i);
         em.set(part, ShipPartDef, isCritical);
