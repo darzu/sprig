@@ -1,5 +1,5 @@
 import { ColorDef } from "../color-ecs.js";
-import { EM } from "../entity-manager.js";
+import { EM, EntityW } from "../entity-manager.js";
 import { GameMesh, gameMeshFromMesh } from "../game/assets.js";
 import { gameplaySystems } from "../game/game.js";
 import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
@@ -9,6 +9,7 @@ import { PhysicsResultsDef } from "../physics/nonintersection.js";
 import { scaleMesh } from "../render/mesh.js";
 import { RendererDef } from "../render/renderer-ecs.js";
 import { assert } from "../util.js";
+import { UICursorDef } from "../game/game-font.js";
 
 // TODO(@darzu): this should really go in assets.ts to follow the current patern.
 //    BUT I'm disatisfied with the current pattern. Subsystems should be able to
@@ -56,14 +57,19 @@ export const ButtonsStateDef = EM.defineComponent(
     clickByKey: {} as { [key: string]: number | undefined },
 
     // TODO(@darzu): is this state right or necessary?
-    cursorId: 0,
+    // cursorId: 0,
     gmesh,
   })
 );
 
-export async function initButtonGUI() {
-  const res = await EM.whenResources(RendererDef);
+EM.registerInit({
+  requireRs: [RendererDef],
+  provideRs: [ButtonsStateDef],
+  provideLs: ["buttonStateUpdate", "buttonColors"],
+  fn: initButtonGUI,
+});
 
+async function initButtonGUI(res: EntityW<[typeof RendererDef]>) {
   // init ButtonsStateDef
   {
     const btnMesh_ = importObj(BTN_OBJ);
@@ -75,12 +81,12 @@ export async function initButtonGUI() {
     const btnGMesh = gameMeshFromMesh(btnMesh_[0], res.renderer.renderer);
     // btnMesh.colors.forEach((c) => vec3.copy(c, ENDESGA16.lightGray));
 
-    EM.addSingletonComponent(ButtonsStateDef, btnGMesh);
+    EM.addResource(ButtonsStateDef, btnGMesh);
   }
 
   EM.registerSystem(
     [ButtonDef],
-    [PhysicsResultsDef, ButtonsStateDef, InputsDef],
+    [PhysicsResultsDef, ButtonsStateDef, InputsDef, UICursorDef],
     (es, res) => {
       // reset by-key state
       for (let key of Object.keys(res.buttonsState.clickByKey))
@@ -89,7 +95,7 @@ export async function initButtonGUI() {
       for (let btn of es) {
         const colW = res.physicsResults.collidesWith.get(btn.id);
         const isHover = (colW ?? []).some(
-          (oId) => oId === res.buttonsState.cursorId
+          (oId) => oId === res.uiCursor.cursor.id
         );
 
         const wasHover = res.buttonsState.hover[btn.id];
@@ -113,7 +119,7 @@ export async function initButtonGUI() {
     },
     "buttonStateUpdate"
   );
-  gameplaySystems.push("buttonStateUpdate");
+  EM.requireGameplaySystem("buttonStateUpdate");
 
   EM.registerSystem(
     [ButtonDef, ColorDef],
@@ -138,5 +144,5 @@ export async function initButtonGUI() {
     },
     "buttonColors"
   );
-  gameplaySystems.push("buttonColors");
+  EM.requireGameplaySystem("buttonColors");
 }

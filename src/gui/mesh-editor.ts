@@ -23,7 +23,7 @@ import {
 import { assert } from "../util.js";
 import { randNormalPosVec3, vec3Mid } from "../utils-3d.js";
 import { ButtonsStateDef, ButtonDef } from "./button.js";
-import { initWidgets, WidgetDef, WidgetLayerDef } from "./widgets.js";
+import { WidgetDef, WidgetLayerDef } from "./widgets.js";
 
 // TODO(@darzu): do we need this ptr indirection? can't we just add/remove component? how does this interact
 //  with pools?
@@ -342,12 +342,12 @@ async function createMeshEditor() {
   }
 }
 
-export async function initMeshEditor(cursorId: number) {
-  initWidgets(cursorId);
+export async function initMeshEditor() {
+  // initWidgets();
 
   {
     const me = await createMeshEditor();
-    EM.addSingletonComponent(MeshEditorDef, me);
+    EM.addResource(MeshEditorDef, me);
   }
 
   // TODO(@darzu): DBG only
@@ -414,5 +414,8 @@ export async function initMeshEditor(cursorId: number) {
     },
     "editHPoly"
   );
-  gameplaySystems.push("editHPoly");
+  EM.requireGameplaySystem("editHPoly");
+
+  // TODO(@darzu): is this necessary?
+  EM.addConstraint(["editHPoly", "after", "updateWidgets"]);
 }

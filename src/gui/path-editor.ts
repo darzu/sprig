@@ -25,7 +25,7 @@ import {
 import { assert } from "../util.js";
 import { randNormalPosVec3, vec3Mid } from "../utils-3d.js";
 import { ButtonsStateDef, ButtonDef } from "./button.js";
-import { initWidgets, WidgetDef, WidgetLayerDef } from "./widgets.js";
+import { WidgetDef, WidgetLayerDef } from "./widgets.js";
 
 const HLineDef = EM.defineComponent("hline", (hl: HLine) => ({
   hl,
@@ -269,13 +269,13 @@ async function createPathEditor() {
   }
 }
 
-export async function initPathEditor(cursorId: number) {
+export async function initPathEditor() {
   // TODO(@darzu):  only call if mesh editor hasn't initted widgets!
-  initWidgets(cursorId);
+  // initWidgets();
 
   {
     const me = await createPathEditor();
-    EM.addSingletonComponent(PathEditorDef, me);
+    EM.addResource(PathEditorDef, me);
   }
 
   // TODO(@darzu): DBG only
@@ -329,7 +329,7 @@ export async function initPathEditor(cursorId: number) {
     },
     "editHPoly"
   );
-  gameplaySystems.push("editHPoly");
+  EM.requireGameplaySystem("editHPoly");
 }
 
 // TODO(@darzu): can/should this be merged with half-edge stuff?

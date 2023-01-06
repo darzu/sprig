@@ -61,10 +61,7 @@ function spawnRandomDarkStar(
 }
 
 export async function initHyperspaceGame(em: EntityManager) {
-  const camera = em.addSingletonComponent(CameraDef);
-  camera.fov = Math.PI * 0.5;
-
-  em.addSingletonComponent(GameStateDef);
+  em.addResource(GameStateDef);
 
   em.whenResources(OceanDef).then(async () => {
     // await awaitTimeout(1000); // TODO(@darzu): what is happening
@@ -111,7 +108,9 @@ export async function initHyperspaceGame(em: EntityManager) {
     "hyperspaceGame"
   );
 
-  const res = await em.whenResources(AssetsDef, RendererDef);
+  const res = await em.whenResources(AssetsDef, RendererDef, CameraDef);
+
+  res.camera.fov = Math.PI * 0.5;
 
   // const ghost = createGhost(em);
   // em.ensureComponentOn(ghost, RenderableConstructDef, res.assets.cube.proto);

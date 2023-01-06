@@ -85,8 +85,14 @@ function registerObjClicker(em: EntityManager) {
 
         // draw our ray
         const rayDist = firstHit?.dist || 1000;
-        const color: vec3 = firstHit ? vec3.clone([0, 1, 0]) : vec3.clone([1, 0, 0]);
-        const endPoint = vec3.add(r.org, vec3.scale(r.dir, rayDist), vec3.create());
+        const color: vec3 = firstHit
+          ? vec3.clone([0, 1, 0])
+          : vec3.clone([1, 0, 0]);
+        const endPoint = vec3.add(
+          r.org,
+          vec3.scale(r.dir, rayDist),
+          vec3.create()
+        );
         drawLine(r.org, endPoint, color);
       }
     },
@@ -96,7 +102,7 @@ function registerObjClicker(em: EntityManager) {
 
 export function registerModeler(em: EntityManager) {
   // create our modeler
-  em.addSingletonComponent(ModelerDef);
+  em.addResource(ModelerDef);
 
   registerObjClicker(em);
   registerAABBBuilder(em);

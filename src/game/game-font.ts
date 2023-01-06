@@ -1,53 +1,29 @@
 import { CameraDef, CameraViewDef } from "../camera.js";
 import { CanvasDef } from "../canvas.js";
-import { AlphaDef, ColorDef } from "../color-ecs.js";
+import { ColorDef } from "../color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { dbg } from "../debugger.js";
 import { EM, EntityManager, EntityW } from "../entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
-import { ButtonDef, ButtonsStateDef, initButtonGUI } from "../gui/button.js";
+import { vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { ButtonDef, ButtonsStateDef } from "../gui/button.js";
 import { initMeshEditor, MeshEditorDef } from "../gui/mesh-editor.js";
 import { lineStuff } from "../gui/path-editor.js";
-import {
-  extrudeQuad,
-  HEdge,
-  HPoly,
-  HVert,
-  meshToHalfEdgePoly,
-} from "../half-edge.js";
-import { exportObj, importObj } from "../import_obj.js";
-import { InputsDef, MouseDragDef } from "../inputs.js";
+import { exportObj } from "../import_obj.js";
+import { InputsDef } from "../inputs.js";
 import { mathMap } from "../math.js";
-import { copyAABB, createAABB, Ray, rayVsRay } from "../physics/broadphase.js";
+import { copyAABB, createAABB } from "../physics/broadphase.js";
 import { ColliderDef } from "../physics/collider.js";
-import { PhysicsResultsDef } from "../physics/nonintersection.js";
-import { PositionDef, RotationDef, ScaleDef } from "../physics/transform.js";
+import { PositionDef } from "../physics/transform.js";
 import { PointLightDef } from "../render/lights.js";
 import { MeshReserve } from "../render/mesh-pool.js";
-import {
-  cloneMesh,
-  getAABBFromMesh,
-  LineMesh,
-  Mesh,
-  normalizeMesh,
-  RawMesh,
-  scaleMesh,
-  transformMesh,
-  unshareProvokingVertices,
-} from "../render/mesh.js";
+import { cloneMesh, Mesh, scaleMesh } from "../render/mesh.js";
 import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
 import { alphaRenderPipeline } from "../render/pipelines/xp-alpha.js";
-import {
-  RendererDef,
-  RenderableConstructDef,
-  RenderableDef,
-} from "../render/renderer-ecs.js";
-import { tempMat4, tempVec3 } from "../temp-pool.js";
+import { RendererDef, RenderableConstructDef } from "../render/renderer-ecs.js";
 import { assert } from "../util.js";
-import { randNormalPosVec3, vec3Mid } from "../utils-3d.js";
-import { screenPosToWorldPos } from "../utils-game.js";
+import { randNormalPosVec3 } from "../utils-3d.js";
 import {
   AssetsDef,
   GameMesh,
@@ -79,12 +55,38 @@ const DBG_3D = false; // TODO(@darzu): add in-game smooth transition!
 const PANEL_W = 4 * 12;
 const PANEL_H = 3 * 12;
 
+export const UICursorDef = EM.defineComponent(
+  "uiCursor",
+  (cursor: EntityW<[typeof PositionDef]>) => ({
+    cursor,
+  })
+);
+
+EM.registerInit({
+  requireRs: [AssetsDef],
+  provideRs: [UICursorDef],
+  provideLs: [],
+  fn: async ({ assets }) => {
+    // Cursor
+    const cursor = EM.newEntity();
+    EM.ensureComponentOn(cursor, ColorDef, vec3.clone([0.1, 0.1, 0.1]));
+    EM.ensureComponentOn(cursor, PositionDef, vec3.clone([0, 1.0, 0]));
+    EM.ensureComponentOn(cursor, RenderableConstructDef, assets.he_octo.proto);
+    const cursorLocalAABB = copyAABB(createAABB(), assets.he_octo.aabb);
+    cursorLocalAABB.min[1] = -1;
+    cursorLocalAABB.max[1] = 1;
+    EM.ensureComponentOn(cursor, ColliderDef, {
+      shape: "AABB",
+      solid: false,
+      aabb: cursorLocalAABB,
+    });
+
+    EM.addResource(UICursorDef, cursor);
+  },
+});
+
 export async function initFontEditor(em: EntityManager) {
-  initButtonGUI();
-
-  console.log(`panel ${PANEL_W}x${PANEL_H}`);
-
-  // initCamera();
+  // console.log(`panel ${PANEL_W}x${PANEL_H}`);
 
   const res = await em.whenResources(AssetsDef, RendererDef, ButtonsStateDef);
 
@@ -140,7 +142,7 @@ export async function initFontEditor(em: EntityManager) {
   }
 
   {
-    const camera = EM.addSingletonComponent(CameraDef);
+    const { camera } = await EM.whenResources(CameraDef);
     camera.fov = Math.PI * 0.5;
     camera.targetId = 0;
   }
@@ -151,28 +153,15 @@ export async function initFontEditor(em: EntityManager) {
       canvas.htmlCanvas.unlockMouse()
     );
 
-  const { assets } = await EM.whenResources(AssetsDef);
-
-  // Cursor
-  const cursor = EM.newEntity();
-  EM.ensureComponentOn(cursor, ColorDef, vec3.clone([0.1, 0.1, 0.1]));
-  EM.ensureComponentOn(cursor, PositionDef, vec3.clone([0, 1.0, 0]));
-  EM.ensureComponentOn(cursor, RenderableConstructDef, assets.he_octo.proto);
-  const cursorLocalAABB = copyAABB(createAABB(), assets.he_octo.aabb);
-  cursorLocalAABB.min[1] = -1;
-  cursorLocalAABB.max[1] = 1;
-  EM.ensureComponentOn(cursor, ColliderDef, {
-    shape: "AABB",
-    solid: false,
-    aabb: cursorLocalAABB,
-  });
+  // const { assets } = await EM.whenResources(AssetsDef);
 
   // TODO(@darzu): de-duplicate this with very similar code in other "games"
   EM.registerSystem(
     null,
-    [CameraViewDef, CanvasDef, CameraDef, InputsDef],
+    [CameraViewDef, CanvasDef, CameraDef, InputsDef, UICursorDef],
     async (_, res) => {
       const { cameraView, htmlCanvas, inputs } = res;
+      const cursor = res.uiCursor.cursor;
 
       if (res.camera.targetId) return;
 
@@ -255,7 +244,7 @@ export async function initFontEditor(em: EntityManager) {
     },
     "uiCameraView"
   );
-  gameplaySystems.push("uiCameraView");
+  EM.requireGameplaySystem("uiCameraView");
 
   // Starter mesh for each letter
   const quadMesh: Mesh = {
@@ -343,15 +332,15 @@ export async function initFontEditor(em: EntityManager) {
     },
     `letterBtnClick`
   );
-  gameplaySystems.push(`letterBtnClick`);
+  EM.requireGameplaySystem(`letterBtnClick`);
 
   // TODO(@darzu): HACKY. Cursor or 2d gui or something needs some better
   //    abstracting
   // EM.whenResources(ButtonsStateDef).then((res) => {
-  res.buttonsState.cursorId = cursor.id;
+  // res.buttonsState.cursorId = cursor.id;
   // });
 
-  initMeshEditor(cursor.id);
+  initMeshEditor();
 
   lineStuff();
 }

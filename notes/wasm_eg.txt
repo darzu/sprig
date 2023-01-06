@@ -1,0 +1,101 @@
+// hello_42.wat:
+(module
+  (func $i (import "imports" "imported_func") (param i32))
+  (func (export "exported_func")
+    i32.const 42
+    call $i
+  )
+)
+
+// hello_42.js:
+const importObject = {
+  imports: {
+    imported_func(n) {
+      console.log(n+1);
+    },
+  },
+};
+const wasmInstance =
+      new WebAssembly.Instance(wasmModule, importObject);
+const { exported_func } = wasmInstance.exports;
+exported_func();
+
+// hello_42.wasm (ish):
+0000000: 0061 736d                                 ; WASM_BINARY_MAGIC
+0000004: 0100 0000                                 ; WASM_BINARY_VERSION
+; section "Type" (1)
+0000008: 01                                        ; section code
+0000009: 00                                        ; section size (guess)
+000000a: 02                                        ; num types
+; func type 0
+000000b: 60                                        ; func
+000000c: 01                                        ; num params
+000000d: 7f                                        ; i32
+000000e: 00                                        ; num results
+; func type 1
+000000f: 60                                        ; func
+0000010: 00                                        ; num params
+0000011: 00                                        ; num results
+0000009: 08                                        ; FIXUP section size
+; section "Import" (2)
+0000012: 02                                        ; section code
+0000013: 00                                        ; section size (guess)
+0000014: 01                                        ; num imports
+; import header 0
+0000015: 07                                        ; string length
+0000016: 696d 706f 7274 73                        imports  ; import module name
+000001d: 0d                                        ; string length
+000001e: 696d 706f 7274 6564 5f66 756e 63         imported_func  ; import field name
+000002b: 00                                        ; import kind
+000002c: 00                                        ; import signature index
+0000013: 19                                        ; FIXUP section size
+; section "Function" (3)
+000002d: 03                                        ; section code
+000002e: 00                                        ; section size (guess)
+000002f: 01                                        ; num functions
+0000030: 01                                        ; function 0 signature index
+000002e: 02                                        ; FIXUP section size
+; section "Export" (7)
+0000031: 07                                        ; section code
+0000032: 00                                        ; section size (guess)
+0000033: 01                                        ; num exports
+0000034: 0d                                        ; string length
+0000035: 6578 706f 7274 6564 5f66 756e 63         exported_func  ; export name
+0000042: 00                                        ; export kind
+0000043: 01                                        ; export func index
+0000032: 11                                        ; FIXUP section size
+; section "Code" (10)
+0000044: 0a                                        ; section code
+0000045: 00                                        ; section size (guess)
+0000046: 01                                        ; num functions
+; function body 0
+0000047: 00                                        ; func body size (guess)
+0000048: 00                                        ; local decl count
+0000049: 41                                        ; i32.const
+000004a: 2a                                        ; i32 literal
+000004b: 10                                        ; call
+000004c: 00                                        ; function index
+000004d: 0b                                        ; end
+0000047: 06                                        ; FIXUP func body size
+0000045: 08                                        ; FIXUP section size
+; section "name"
+000004e: 00                                        ; section code
+000004f: 00                                        ; section size (guess)
+0000050: 04                                        ; string length
+0000051: 6e61 6d65                                name  ; custom section name
+0000055: 01                                        ; name subsection type
+0000056: 00                                        ; subsection size (guess)
+0000057: 01                                        ; num names
+0000058: 00                                        ; elem index
+0000059: 01                                        ; string length
+000005a: 69                                       i  ; elem name 0
+0000056: 04                                        ; FIXUP subsection size
+000005b: 02                                        ; local name type
+000005c: 00                                        ; subsection size (guess)
+000005d: 02                                        ; num functions
+000005e: 00                                        ; function index
+000005f: 00                                        ; num locals
+0000060: 01                                        ; function index
+0000061: 00                                        ; num locals
+000005c: 05                                        ; FIXUP subsection size
+000004f: 12                                        ; FIXUP section size

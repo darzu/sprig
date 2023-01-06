@@ -207,6 +207,10 @@ Perf stats on Chrome:
   open -a 'Google Chrome Canary' --args --disable-dawn-features=disallow_unsafe_apis
   
 To learn: occlusion queries
+  ChatGPT: An occlusion query works by rendering an object's axis-aligned bounding box to the depth buffer and then checking to see if any pixels in the bounding box passed the depth test.
+  https://developer.nvidia.com/gpugems/gpugems2/part-i-geometric-complexity/chapter-6-hardware-occlusion-queries-made-useful
+  WebGPU:
+    https://www.w3.org/TR/webgpu/#occlusion
 
 Memory Caches, CPU:
   What is a cache line?

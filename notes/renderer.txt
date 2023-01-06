@@ -1420,6 +1420,7 @@ Regarding Nanite:
             Single dispatch with enough worker threads to fill GPU
             "Use simple multi-producer multi-consumer (MPMC) job-queue to communicate between threads"
     TOLEARN: "Cluster selection must be isotropic like mip selection"
+      isotropic: "same in all orientations/directions"
     TODO: when rendering engineers say "vertex colors", what do they mean?
     My summary of what's novel about nanite:
       Better triangle cluster boundries than prior work
@@ -1575,3 +1576,9 @@ WebGPU native samples:
 Vulkan guides:
   https://vkguide.dev
   https://vulkan-tutorial.com
+
+FP16 in shaders?
+  https://interplayoflight.wordpress.com/2022/12/30/experimenting-with-fp16-in-shaders/
+
+Geometry node limits:
+  from max: Can do lists but not lists of lists

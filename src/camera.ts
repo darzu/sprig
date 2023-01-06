@@ -38,6 +38,16 @@ export const CameraDef = EM.defineComponent("camera", () => {
 });
 export type CameraProps = Component<typeof CameraDef>;
 
+// TODO(@darzu): maybe make a shortcut for this; "registerTrivialInit" ?
+EM.registerInit({
+  requireRs: [],
+  provideRs: [CameraDef],
+  provideLs: [],
+  fn: async () => {
+    EM.addResource(CameraDef);
+  },
+});
+
 export const CameraViewDef = EM.defineComponent("cameraView", () => {
   return {
     aspectRatio: 1,
@@ -160,7 +170,7 @@ export function registerCameraSystems(em: EntityManager) {
     "retargetCamera"
   );
 
-  em.addSingletonComponent(CameraViewDef);
+  em.addResource(CameraViewDef);
   em.registerSystem(
     null,
     [CameraViewDef, CameraDef, MeDef, CanvasDef],

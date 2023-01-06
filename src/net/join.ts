@@ -134,8 +134,8 @@ function registerHandleJoinResponse(em: EntityManager) {
             let address = message.readString();
             eventsToNetwork.push({ type: NetworkEventType.Connect, address });
           }
-          em.addSingletonComponent(MeDef, pid, false);
-          em.removeSingletonComponent(JoinDef);
+          em.addResource(MeDef, pid, false);
+          em.removeResource(JoinDef);
         }
       }
     }

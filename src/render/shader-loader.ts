@@ -61,7 +61,7 @@ async function loadShaders(): Promise<ShaderSet> {
 }
 
 onInit(async (em) => {
-  em.addSingletonComponent(ShaderLoaderDef);
+  em.addResource(ShaderLoaderDef);
 
   // start loading of shaders
   const { shaderLoader } = await em.whenResources(ShaderLoaderDef);
@@ -72,7 +72,7 @@ onInit(async (em) => {
   shaderLoader.promise = shadersPromise;
   shadersPromise.then(
     (result) => {
-      em.addSingletonComponent(ShadersDef, result);
+      em.addResource(ShadersDef, result);
     },
     (failureReason) => {
       // TODO(@darzu): fail more gracefully

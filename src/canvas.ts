@@ -22,7 +22,7 @@ export function registerInitCanvasSystem(em: EntityManager) {
       if (!!em.getResource(CanvasDef)) return;
       const canvas = init();
 
-      const comp = em.addSingletonComponent(CanvasDef, canvas);
+      const comp = em.addResource(CanvasDef, canvas);
 
       comp.unlockMouse = () => {
         comp.shouldLockMouseOnClick = false;

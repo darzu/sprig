@@ -179,3 +179,7 @@ Outward dev story:
 
   pre-launch vid: https://www.youtube.com/watch?v=noPLDvUhxyk
 
+"How Computers Work" series by Sebastian Lague:
+  https://www.youtube.com/watch?v=QZwneRb-zqA&list=PLFt_AvWsXl0dPhqVsKt1Ni_46ARyiCGSq&index=1
+  Very nicely animated version of "Code" Petzold book
+  Very cool circuit maker system

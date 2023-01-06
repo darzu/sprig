@@ -44,7 +44,7 @@ export function registerUISystems(em: EntityManager) {
   const debugDiv = document.getElementById("debug-div") as HTMLDivElement;
   const lowerDiv = document.getElementById("lower-div") as HTMLDivElement;
 
-  em.addSingletonComponent(TextDef, upperDiv, debugDiv, lowerDiv);
+  em.addResource(TextDef, upperDiv, debugDiv, lowerDiv);
 
   em.registerSystem(
     null,

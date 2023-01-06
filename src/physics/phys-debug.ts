@@ -45,7 +45,7 @@ export const DbgMeshDef = EM.defineComponent(
 );
 
 export function registerPhysicsDebuggerSystem(em: EntityManager) {
-  em.addSingletonComponent(PhysicsDbgDef);
+  em.addResource(PhysicsDbgDef);
 
   // add collider meshes
   em.registerSystem(

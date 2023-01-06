@@ -2,7 +2,7 @@ import { CameraViewDef } from "../camera.js";
 import { AlphaDef, ColorDef } from "../color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { EM, EntityW } from "../entity-manager.js";
-import { AssetsDef } from "../game/assets.js";
+import { Assets, AssetsDef } from "../game/assets.js";
 import { gameplaySystems } from "../game/game.js";
 import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
 import { MouseDragDef } from "../inputs.js";
@@ -14,6 +14,7 @@ import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { tempVec3 } from "../temp-pool.js";
 import { assert } from "../util.js";
 import { screenPosToWorldPos } from "../utils-game.js";
+import { UICursorDef } from "../game/game-font.js";
 
 // adornments are: entities that are parented to an entity's mesh parts
 //    [ ] track changes via version number on the mesh data
@@ -48,6 +49,27 @@ function createWidgetLayer(): WidgetLayer {
   };
 }
 
+// TODO(@darzu): FOR INIT STUFF,
+//    have a registration table where an init function can specify which resources and systems it provides
+//    then other code can require a certain resource / system, then it calls the right init function
+
+// TODO(@darzu): IMPL
+EM.registerInit({
+  requireRs: [AssetsDef],
+  provideRs: [WidgetLayerDef],
+  provideLs: ["updateWidgets", "colorWidgets", "updateDragbox"],
+  // name: "initWidgets",
+  fn: initWidgets,
+});
+EM.addConstraint([WidgetLayerDef, "requires", "updateWidgets"]);
+// TODO(@darzu): instead of having these explit dependencies, maybe we should use an
+//  existance dependency disjoint set w/ the assumption that all constraints create
+//  an existance dependency
+EM.addConstraint([WidgetLayerDef, "requires", "colorWidgets"]);
+EM.addConstraint([WidgetLayerDef, "requires", "updateDragbox"]);
+EM.addConstraint(["colorWidgets", "after", "updateWidgets"]);
+EM.addConstraint(["updateDragbox", "before", "updateWidgets"]);
+
 async function initDragBox(): Promise<EntityW<[typeof PositionDef]>> {
   const { assets } = await EM.whenResources(AssetsDef);
 
@@ -59,7 +81,11 @@ async function initDragBox(): Promise<EntityW<[typeof PositionDef]>> {
   EM.ensureComponentOn(dragBox, RenderableConstructDef, dragBoxMesh);
   EM.ensureComponentOn(dragBox, PositionDef, vec3.clone([0, 0.2, 0]));
   EM.ensureComponentOn(dragBox, ScaleDef, vec3.clone([1, 1, 1]));
-  EM.ensureComponentOn(dragBox, ColorDef, vec3.clone([0.0, 120 / 255, 209 / 255]));
+  EM.ensureComponentOn(
+    dragBox,
+    ColorDef,
+    vec3.clone([0.0, 120 / 255, 209 / 255])
+  );
   EM.ensureComponentOn(dragBox, ColliderDef, {
     shape: "AABB",
     solid: false,
@@ -97,27 +123,42 @@ async function initDragBox(): Promise<EntityW<[typeof PositionDef]>> {
     },
     "updateDragbox"
   );
-  gameplaySystems.push("updateDragbox");
+  // TODO(@darzu):
+  // EM.requireGameplaySystem("updateDragbox");
 
   // TODO(@darzu): store this on a resource?
   return dragBox;
 }
 
-// TODO(@darzu): FOR INIT STUFF,
-//    have a registration table where an init function can specify which resources and systems it provides
-//    then other code can require a certain resource / system, then it calls the right init function
+async function initWidgets({ assets }: EntityW<[typeof AssetsDef]>) {
+  EM.addResource(WidgetLayerDef);
 
-export async function initWidgets(cursorId: number) {
-  EM.addSingletonComponent(WidgetLayerDef);
-
+  // TODO(@darzu): move to resource?
   const dragBox = await initDragBox();
 
   // TODO(@darzu):
   // TODO(@darzu): refactor. Also have undo-stack
   EM.registerSystem(
     null,
-    [WidgetLayerDef, PhysicsResultsDef, MouseDragDef, CameraViewDef],
-    (_, { widgets, physicsResults, mousedrag, cameraView }) => {
+    [
+      WidgetLayerDef,
+      PhysicsResultsDef,
+      MouseDragDef,
+      CameraViewDef,
+      UICursorDef,
+    ],
+    (
+      _,
+      {
+        widgets,
+        physicsResults,
+        mousedrag,
+        cameraView,
+        uiCursor: {
+          cursor: { id: cursorId },
+        },
+      }
+    ) => {
       const { selected, hover, moved } = widgets;
 
       moved.clear();
@@ -158,7 +199,7 @@ export async function initWidgets(cursorId: number) {
             assert(w);
             // TODO(@darzu): think about world positions and parenting..
             // TODO(@darzu): think about world positions and parenting..
-vec3.add(w.position, worldDrag, w.position);
+            vec3.add(w.position, worldDrag, w.position);
             moved.add(wi);
           }
         } else {
@@ -206,7 +247,8 @@ vec3.add(w.position, worldDrag, w.position);
     },
     "updateWidgets"
   );
-  gameplaySystems.push("updateWidgets");
+  // TODO(@darzu):
+  // EM.requireGameplaySystem("updateWidgets");
 
   EM.registerSystem(
     [WidgetDef, ColorDef],
@@ -232,5 +274,6 @@ vec3.add(w.position, worldDrag, w.position);
     },
     "colorWidgets"
   );
-  gameplaySystems.push("colorWidgets");
+  // TODO(@darzu):
+  // EM.requireGameplaySystem("colorWidgets");
 }

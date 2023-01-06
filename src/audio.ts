@@ -26,7 +26,7 @@ export const AudioDef = EM.defineComponent("music", createAudioResource);
 export type Music = Component<typeof AudioDef>;
 
 export function registerMusicSystems(em: EntityManager) {
-  em.addSingletonComponent(AudioDef);
+  em.addResource(AudioDef);
 
   let once = true;
   em.registerSystem(

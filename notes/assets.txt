@@ -48,6 +48,7 @@ SketchFab:
 
 TO LEARN:
     UV Wraps ?
+      same thing as UV mapping; just the 2d<->3d bijection between texture and vertices 
 
 Procedural by example:
     https://www.youtube.com/watch?v=yED9t2tImog

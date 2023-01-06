@@ -129,7 +129,7 @@ import { gameplaySystems } from "./game.js";
   [ ] add dark/fog ends
 */
 
-const DBG_PLAYER = false;
+const DBG_PLAYER = true;
 
 let pirateKills = 0;
 let healthPercent = 100;
@@ -153,15 +153,15 @@ export const LD51CannonDef = EM.defineComponent("ld51Cannon", () => {
 });
 
 export async function initRogueGame(em: EntityManager, hosting: boolean) {
-  const camera = em.addSingletonComponent(CameraDef);
-  camera.fov = Math.PI * 0.5;
-
   const res = await em.whenResources(
     AssetsDef,
     // WoodAssetsDef,
     // GlobalCursor3dDef,
-    RendererDef
+    RendererDef,
+    CameraDef
   );
+
+  res.camera.fov = Math.PI * 0.5;
 
   res.renderer.pipelines = [
     ...shadowPipelines,
@@ -445,7 +445,7 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
     },
     "ld51PlayerFireCannon"
   );
-  gameplaySystems.push("ld51PlayerFireCannon");
+  EM.requireGameplaySystem("ld51PlayerFireCannon");
 
   const splinterObjId = 7654;
   em.registerSystem(
@@ -478,7 +478,7 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
     },
     "splintersOnFloor"
   );
-  gameplaySystems.push("splintersOnFloor");
+  EM.requireGameplaySystem("splintersOnFloor");
 
   // const quadIdsNeedReset = new Set<number>();
 
@@ -537,7 +537,7 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
     },
     "ld51Ghost"
   );
-  if (DBG_PLAYER) gameplaySystems.push("ld51Ghost");
+  if (DBG_PLAYER) EM.requireGameplaySystem("ld51Ghost");
 
   // TODO(@darzu): breakBullet
   em.registerSystem(
@@ -552,7 +552,7 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
     },
     "breakBullets"
   );
-  gameplaySystems.push("breakBullets");
+  EM.requireGameplaySystem("breakBullets");
 
   // Create player
   {
@@ -735,7 +735,7 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
         },
         "bulletBounce"
       );
-      gameplaySystems.push("bulletBounce");
+      EM.requireGameplaySystem("bulletBounce");
     }
 
     // dead bullet maintenance
@@ -757,7 +757,7 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
       },
       "deadBullets"
     );
-    gameplaySystems.push("deadBullets");
+    EM.requireGameplaySystem("deadBullets");
 
     // starter ammo
     {
@@ -788,7 +788,7 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
       },
       "fallingGoodBalls"
     );
-    gameplaySystems.push("fallingGoodBalls");
+    EM.requireGameplaySystem("fallingGoodBalls");
 
     em.registerSystem(
       [GoodBallDef, InteractableDef, InRangeDef, PositionDef],
@@ -813,7 +813,7 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
       },
       "pickUpBalls"
     );
-    gameplaySystems.push("pickUpBalls");
+    EM.requireGameplaySystem("pickUpBalls");
 
     if (DBG_PLAYER) {
       const g = createGhost();
@@ -921,7 +921,7 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
       },
       "progressGame"
     );
-    gameplaySystems.push("progressGame");
+    EM.requireGameplaySystem("progressGame");
   }
 
   function getCurrentHealth() {
@@ -1051,7 +1051,7 @@ async function startPirates() {
     },
     "spawnPirates"
   );
-  gameplaySystems.push("spawnPirates");
+  EM.requireGameplaySystem("spawnPirates");
 
   const fireStagger = 150;
   // const tiltPeriod = 5700;
@@ -1113,7 +1113,7 @@ async function startPirates() {
     },
     "updatePiratePlatforms"
   );
-  gameplaySystems.push("updatePiratePlatforms");
+  EM.requireGameplaySystem("updatePiratePlatforms");
 }
 
 // TODO(@darzu): this is wierd. should probably just be component on root entity w/ pointer to others

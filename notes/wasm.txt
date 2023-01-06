@@ -1,0 +1,12 @@
+Spec:
+  https://webassembly.github.io/spec/core/bikeshed/#introduction③
+  https://developer.mozilla.org/en-US/docs/WebAssembly/Text_format_to_wasm
+
+https://webassembly.github.io/wabt/demo/wat2wasm/
+
+JS API:
+  https://developer.mozilla.org/en-US/docs/WebAssembly/JavaScript_interface
+
+Wabt, "wabbit":
+  https://github.com/webassembly/wabt
+

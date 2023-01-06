@@ -240,26 +240,32 @@ export async function initOcean() {
     const norm = uvToNorm(tempVec3(), uv);
     const tang = uvToTang(tempVec3(), uv);
     const perp = vec3.cross(tang, norm);
-    const disp = vec3.add(vec3.scale(perp, outDisp[0]), vec3.add(vec3.scale(norm, outDisp[1]), vec3.scale(tang, outDisp[2])));
+    const disp = vec3.add(
+      vec3.scale(perp, outDisp[0]),
+      vec3.add(vec3.scale(norm, outDisp[1]), vec3.scale(tang, outDisp[2]))
+    );
     // outDisp[0] = pos[0] + disp[0] * 0.5;
     // outDisp[1] = pos[1] + disp[1];
     // outDisp[2] = pos[2] + disp[2] * 0.5;
     // outDisp[0] = pos[0] + disp[0] * 0.5;
-// outDisp[1] = pos[1] + disp[1];
-// outDisp[2] = pos[2] + disp[2] * 0.5;
-vec3.add(pos, disp, outDisp);
+    // outDisp[1] = pos[1] + disp[1];
+    // outDisp[2] = pos[2] + disp[2] * 0.5;
+    vec3.add(pos, disp, outDisp);
 
-    const gNorm = vec3.add(vec3.scale(perp, outNorm[0]), vec3.add(vec3.scale(norm, outNorm[1]), vec3.scale(tang, outNorm[2])));
+    const gNorm = vec3.add(
+      vec3.scale(perp, outNorm[0]),
+      vec3.add(vec3.scale(norm, outNorm[1]), vec3.scale(tang, outNorm[2]))
+    );
     vec3.copy(outNorm, gNorm);
 
     // HACK: smooth out norm?
     // HACK: smooth out norm?
-vec3.add(outNorm, vec3.scale(norm, 2.0), outNorm);
+    vec3.add(outNorm, vec3.scale(norm, 2.0), outNorm);
     vec3.normalize(outNorm, outNorm);
   };
 
   // TODO(@darzu): hacky hacky way to do this
-  const oceanRes = EM.addSingletonComponent(OceanDef, {
+  const oceanRes = EM.addResource(OceanDef, {
     ent: createRef(oceanEntId, [PositionDef]),
     uvToPos,
     uvToNorm,
@@ -355,11 +361,11 @@ EM.registerSystem(
 
       // TODO(@darzu): this is horrible.
       // console.log(`copying: ${e.id}`);
-// const newNorm = tempVec3();
-// res.ocean.uvToGerstnerDispAndNorm(tempVec3(), newNorm, e.uvPos);
-// vec3.copy(e.rotation, newNorm);
-// TODO(@darzu): this is horrible.
-vec2.normalize(e.uvDir, e.uvDir);
+      // const newNorm = tempVec3();
+      // res.ocean.uvToGerstnerDispAndNorm(tempVec3(), newNorm, e.uvPos);
+      // vec3.copy(e.rotation, newNorm);
+      // TODO(@darzu): this is horrible.
+      vec2.normalize(e.uvDir, e.uvDir);
       const scaledUVDir = vec2.scale(e.uvDir, 0.0001);
       const aheadUV = vec2.add(e.uvPos, scaledUVDir);
       const aheadPos = tempVec3();
