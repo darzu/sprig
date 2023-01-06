@@ -266,7 +266,7 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
       `tri.length not even for ${m.dbgName}`
     );
     const faceNum = m.tri.length + m.quad.length;
-    console.dir(m);
+    // console.dir(m);
     assert(
       m.colors.length === faceNum,
       `${m.dbgName}: Inconsistent face num ${faceNum} vs color num ${m.colors.length}`

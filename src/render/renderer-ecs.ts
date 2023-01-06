@@ -566,7 +566,7 @@ export function registerConstructRenderablesSystem(em: EntityManager) {
             );
             mesh = meshHandle.mesh!;
           } else {
-            console.dir(e);
+            // console.dir(e);
             if (e.renderableConstruct.poolKind === "std") {
               meshHandle = res.renderer.renderer.stdPool.addMesh(
                 e.renderableConstruct.meshOrProto,
