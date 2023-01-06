@@ -1,9 +1,9 @@
 import { EM, Component } from "../entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 
 export const LinearVelocityDef = EM.defineComponent(
   "linearVelocity",
-  (v?: vec3) => v || vec3.fromValues(0, 0, 0)
+  (v?: vec3) => v || V(0, 0, 0)
 );
 export type LinearVelocity = Component<typeof LinearVelocityDef>;
 EM.registerSerializerPair(
@@ -14,7 +14,7 @@ EM.registerSerializerPair(
 
 export const AngularVelocityDef = EM.defineComponent(
   "angularVelocity",
-  (v?: vec3) => v || vec3.fromValues(0, 0, 0)
+  (v?: vec3) => v || V(0, 0, 0)
 );
 export type AngularVelocity = Component<typeof AngularVelocityDef>;
 EM.registerSerializerPair(

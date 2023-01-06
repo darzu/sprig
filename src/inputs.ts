@@ -1,6 +1,6 @@
 import { Canvas, CanvasDef } from "./canvas.js";
 import { Component, EM, EntityManager } from "./entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4 } from "./sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "./sprig-matrix.js";
 import { clamp } from "./math.js";
 
 // Consider: https://www.reddit.com/r/gamedev/comments/w1dau6/input_buffering_action_canceling_and_also/

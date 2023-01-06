@@ -1,5 +1,5 @@
 import { Component, EM, EntityManager } from "../entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { createFrame, WorldFrameDef } from "./nonintersection.js";
 import { tempVec3, tempQuat } from "../temp-pool.js";
 import { FALSE, dbgLogOnce } from "../util.js";
@@ -81,7 +81,7 @@ export type Transform = mat4;
 // POSITION
 export const PositionDef = EM.defineComponent(
   "position",
-  (p?: vec3) => p || vec3.fromValues(0, 0, 0)
+  (p?: vec3) => p || V(0, 0, 0)
 );
 export type Position = Component<typeof PositionDef>;
 EM.registerSerializerPair(
@@ -105,7 +105,7 @@ EM.registerSerializerPair(
 // SCALE
 export const ScaleDef = EM.defineComponent(
   "scale",
-  (by?: vec3) => by || vec3.fromValues(1, 1, 1)
+  (by?: vec3) => by || V(1, 1, 1)
 );
 export type Scale = Component<typeof ScaleDef>;
 EM.registerSerializerPair(

@@ -21,7 +21,7 @@ import { initGJKSandbox } from "./game/game-gjk.js";
 import { initHyperspaceGame } from "./game/game-hyperspace.js";
 import { initClothSandbox } from "./game/game-cloth.js";
 import { initCubeGame } from "./game/xp-cube.js";
-import { resetTempMatrixBuffer } from "./sprig-matrix.js";
+import { resetTempMatrixBuffer, V } from "./sprig-matrix.js";
 
 export const FORCE_WEBGL = false;
 export const MAX_MESHES = 20000;

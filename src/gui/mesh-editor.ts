@@ -2,7 +2,7 @@ import { ColorDef } from "../color-ecs.js";
 import { EM, EntityW } from "../entity-manager.js";
 import { AssetsDef, GameMesh } from "../game/assets.js";
 import { gameplaySystems } from "../game/game.js";
-import { vec2, vec3, vec4, quat, mat4, mat3 } from "../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, mat3, V } from "../sprig-matrix.js";
 import {
   extrudeQuad,
   HEdge,
@@ -153,9 +153,9 @@ async function createMeshEditor() {
         "std",
         false
       );
-      EM.set(hpEnt_, PositionDef, vec3.clone([0, 0.1, 0]));
+      EM.set(hpEnt_, PositionDef, V(0, 0.1, 0));
       // TODO(@darzu): make scale configurable
-      EM.set(hpEnt_, ScaleDef, vec3.clone([5, 5, 5]));
+      EM.set(hpEnt_, ScaleDef, V(5, 5, 5));
       const hpEnt = await EM.whenEntityHas(
         hpEnt_,
         RenderableDef,

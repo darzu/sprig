@@ -24,7 +24,7 @@ import {
   ScaleDef,
   updateFrameFromPosRotScale,
 } from "./transform.js";
-import { vec3 } from "../sprig-matrix.js";
+import { vec3, V } from "../sprig-matrix.js";
 
 // TODO(@darzu): re-enable all this! it requires line drawing again
 
@@ -69,7 +69,7 @@ export function registerPhysicsDebuggerSystem(em: EntityManager) {
             );
 
             // colored
-            em.addComponent(dbgE.id, ColorDef, vec3.clone([0, 1, 0]));
+            em.addComponent(dbgE.id, ColorDef, V(0, 1, 0));
 
             // positioned and scaled
             em.set(dbgE, PositionDef);

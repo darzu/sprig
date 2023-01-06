@@ -2,7 +2,7 @@ import { CameraView } from "./camera.js";
 import { ColorDef } from "./color-ecs.js";
 import { EM, Entity, EntityW } from "./entity-manager.js";
 import { AssetsDef } from "./game/assets.js";
-import { vec2, vec3, vec4, quat, mat4 } from "./sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "./sprig-matrix.js";
 import { mathMap } from "./math.js";
 import { getLineEnd, Line, Ray } from "./physics/broadphase.js";
 import { PositionDef, ScaleDef } from "./physics/transform.js";
@@ -96,7 +96,7 @@ export async function drawBall(
   EM.set(e, ColorDef, color);
   EM.set(e, RenderableConstructDef, res.assets.ball.proto);
   EM.set(e, PositionDef, pos);
-  EM.set(e, ScaleDef, vec3.clone([size, size, size]));
+  EM.set(e, ScaleDef, V(size, size, size));
   return e;
 }
 

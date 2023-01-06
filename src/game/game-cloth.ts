@@ -1,7 +1,7 @@
 import { CameraDef } from "../camera.js";
 import { ColorDef } from "../color-ecs.js";
 import { EntityManager } from "../entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { InputsDef } from "../inputs.js";
 import { mathMapNEase } from "../math.js";
 import { ColliderDef } from "../physics/collider.js";
@@ -107,13 +107,13 @@ export async function initClothSandbox(em: EntityManager, hosting: boolean) {
 
   const plane = em.newEntity();
   em.set(plane, RenderableConstructDef, res.assets.plane.proto);
-  em.set(plane, ColorDef, vec3.clone([0.2, 0.3, 0.2]));
-  em.set(plane, PositionDef, vec3.clone([0, -5, 0]));
+  em.set(plane, ColorDef, V(0.2, 0.3, 0.2));
+  em.set(plane, PositionDef, V(0, -5, 0));
 
   const ship = em.newEntity();
   em.set(ship, RenderableConstructDef, res.assets.ship.proto);
   em.set(ship, ColorDef, ENEMY_SHIP_COLOR);
-  em.set(ship, PositionDef, vec3.clone([20, -2, 0]));
+  em.set(ship, PositionDef, V(20, -2, 0));
   em.set(ship, RotationDef, quat.fromEuler(0, Math.PI * 0.1, 0, quat.create()));
 
   // const ocean = em.newEntity();
@@ -139,10 +139,10 @@ export async function initClothSandbox(em: EntityManager, hosting: boolean) {
 
   const box = em.newEntity();
   em.set(box, RenderableConstructDef, res.assets.cube.proto);
-  em.set(box, ColorDef, vec3.clone([0.1, 0.1, 0.1]));
-  em.set(box, PositionDef, vec3.clone([0, 0, 3]));
+  em.set(box, ColorDef, V(0.1, 0.1, 0.1));
+  em.set(box, PositionDef, V(0, 0, 3));
   em.set(box, RotationDef);
-  em.set(box, AngularVelocityDef, vec3.clone([0, 0.001, 0.001]));
+  em.set(box, AngularVelocityDef, V(0, 0.001, 0.001));
   em.set(box, WorldFrameDef);
   em.set(box, ColliderDef, {
     shape: "AABB",
@@ -152,20 +152,16 @@ export async function initClothSandbox(em: EntityManager, hosting: boolean) {
 
   const cloth = em.newEntity();
   em.set(cloth, ClothConstructDef, {
-    location: vec3.clone([0, 0, 0]),
-    color: vec3.clone([0.9, 0.9, 0.8]),
+    location: V(0, 0, 0),
+    color: V(0.9, 0.9, 0.8),
     rows: 5,
     columns: 5,
     distance: 2,
   });
   const F = 100.0;
-  em.set(cloth, ForceDef, vec3.clone([F, F, F]));
+  em.set(cloth, ForceDef, V(F, F, F));
 
-  const line = await drawLine(
-    vec3.create(),
-    vec3.create(),
-    vec3.clone([0, 1, 0])
-  );
+  const line = await drawLine(vec3.create(), vec3.create(), V(0, 1, 0));
 
   em.registerSystem(
     [ClothConstructDef, ClothLocalDef, WorldFrameDef, ForceDef],

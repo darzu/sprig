@@ -1,7 +1,7 @@
 import { ColorDef } from "../color-ecs.js";
 import { createRef, defineNetEntityHelper, Ref } from "../em_helpers.js";
 import { EM, EntityManager, EntityW } from "../entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { onInit } from "../init.js";
 import { InputsDef } from "../inputs.js";
 import { clamp } from "../math.js";
@@ -43,17 +43,17 @@ export async function makeOrrery(em: EntityManager, parentId: number) {
   const orrery = em.newEntity();
   em.set(orrery, OrreryDef);
   em.set(orrery, PhysicsParentDef, parentId);
-  em.set(orrery, PositionDef, vec3.clone([0, 4, 4]));
+  em.set(orrery, PositionDef, V(0, 4, 4));
 
   // put a ship model at the center of it
   const shipModel = em.newEntity();
   em.set(shipModel, PhysicsParentDef, orrery.id);
-  em.set(shipModel, PositionDef, vec3.clone([0, 0, 0]));
+  em.set(shipModel, PositionDef, V(0, 0, 0));
   em.set(shipModel, RenderableConstructDef, res.assets.ship.proto);
   em.set(
     shipModel,
     ScaleDef,
-    vec3.clone([ORRERY_SCALE * 40, ORRERY_SCALE * 40, ORRERY_SCALE * 40])
+    V(ORRERY_SCALE * 40, ORRERY_SCALE * 40, ORRERY_SCALE * 40)
   );
   em.set(shipModel, ColorDef, BOAT_COLOR);
 }
@@ -80,7 +80,7 @@ onInit((em: EntityManager) => {
           em.set(orreryStar, PhysicsParentDef, orrery.id);
           em.set(orreryStar, ColorDef);
           em.set(orreryStar, RenderableConstructDef, res.assets.ball.proto);
-          em.set(orreryStar, ScaleDef, vec3.clone([0.25, 0.25, 0.25]));
+          em.set(orreryStar, ScaleDef, V(0.25, 0.25, 0.25));
           orrery.orrery.orreryStars.push(createRef(orreryStar));
         }
         const intoOrrerySpace = mat4.invert(orrery.world.transform);

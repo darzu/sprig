@@ -1,6 +1,6 @@
 import { ASSET_LOG_VERT_CHANGES, DBG_ASSERT, DBG_FANG_SHIP } from "../flags.js";
 import { createFabric } from "../game/assets.js";
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { max, sum } from "../math.js";
 import {
   AABB,
@@ -263,16 +263,16 @@ export function unshareProvokingVerticesWithMap(input: RawMesh): {
     if (!provoking[i0]) {
       // First vertex is unused as a provoking vertex, so we'll use it for this triangle.
       provoking[i0] = true;
-      tri.push(vec3.clone([i0, i1, i2]));
+      tri.push(V(i0, i1, i2));
     } else if (!provoking[i1]) {
       // First vertex was taken, so let's see if we can rotate the indices to get an unused
       // provoking vertex.
       provoking[i1] = true;
-      tri.push(vec3.clone([i1, i2, i0]));
+      tri.push(V(i1, i2, i0));
     } else if (!provoking[i2]) {
       // ditto
       provoking[i2] = true;
-      tri.push(vec3.clone([i2, i0, i1]));
+      tri.push(V(i2, i0, i1));
     } else {
       // All vertices are taken, so create a new one
       const i3 = pos.length;
@@ -282,7 +282,7 @@ export function unshareProvokingVerticesWithMap(input: RawMesh): {
       if (tangents) tangents.push(input.tangents![i0]);
       if (normals) normals.push(input.normals![i0]);
       provoking[i3] = true;
-      tri.push(vec3.clone([i3, i1, i2]));
+      tri.push(V(i3, i1, i2));
     }
   });
 
@@ -735,14 +735,14 @@ export function getMeshAsGrid(m: RawMesh): {
     // );
 
     // Debugging
-    drawBall(m.pos[last], 1.0, vec3.clone([0.2, 0.2, 0.9]));
-    drawBall(m.pos[current], 1.0, vec3.clone([0.2, 0.9, 0.2]));
+    drawBall(m.pos[last], 1.0, V(0.2, 0.2, 0.9));
+    drawBall(m.pos[current], 1.0, V(0.2, 0.9, 0.2));
     cEdges.forEach((n, i) => {
       const red = 0.7 + i * 0.1;
-      drawBall(m.pos[n], 0.8, vec3.clone([red, 0.2, 0.2]));
+      drawBall(m.pos[n], 0.8, V(red, 0.2, 0.2));
       edges[n].forEach((n2, i2) => {
         // drawLine(m.pos[n], m.pos[n2], [red, 0.2, 0.2]);
-        drawBall(m.pos[n2], 0.5, vec3.clone([red, 0.2, 0.2]));
+        drawBall(m.pos[n2], 0.5, V(red, 0.2, 0.2));
       });
     });
 
@@ -814,7 +814,7 @@ export function mergeMeshes(rs: RawMesh[]): RawMesh {
     m.tri = [
       ...m.tri,
       ...r.tri.map(
-        (t) => vec3.clone([t[0] + posIdx, t[1] + posIdx, t[2] + posIdx]) as vec3
+        (t) => V(t[0] + posIdx, t[1] + posIdx, t[2] + posIdx) as vec3
       ),
     ];
     m.quad = [

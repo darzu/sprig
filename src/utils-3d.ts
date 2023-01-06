@@ -1,4 +1,4 @@
-import { vec2, vec3, vec4, quat, mat4 } from "./sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "./sprig-matrix.js";
 import { avg, mathMap } from "./math.js";
 import { AABB } from "./physics/broadphase.js";
 import { tempVec2, tempVec3 } from "./temp-pool.js";
@@ -103,7 +103,7 @@ export function centroid(vs: vec3[]): vec3 {
   const avgX = avg(vs.map((v) => v[0]));
   const avgY = avg(vs.map((v) => v[1]));
   const avgZ = avg(vs.map((v) => v[2]));
-  return vec3.fromValues(avgX, avgY, avgZ);
+  return V(avgX, avgY, avgZ);
 }
 // TODO(@darzu):  move into gl-matrix?
 export function vec3Mid(out: vec3, a: vec3, b: vec3): vec3 {

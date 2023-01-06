@@ -1,7 +1,7 @@
 import { ColorDef } from "../color-ecs.js";
 import { createRef, defineNetEntityHelper } from "../em_helpers.js";
 import { EM, EntityManager, EntityW } from "../entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { onInit } from "../init.js";
 import { InputsDef } from "../inputs.js";
 import { clamp } from "../math.js";
@@ -42,7 +42,7 @@ import {
 import { ShipDef } from "./ship.js";
 import { constructNetTurret, TurretDef } from "./turret.js";
 
-const DEFAULT_SAIL_COLOR = vec3.fromValues(0.05, 0.05, 0.05);
+const DEFAULT_SAIL_COLOR = V(0.05, 0.05, 0.05);
 const BOOM_LENGTH = 20;
 const MAST_LENGTH = 40;
 const BOOM_HEIGHT = MAST_LENGTH - BOOM_LENGTH - 2;
@@ -103,7 +103,7 @@ export const { MastPropsDef, MastLocalDef, createMastNow } =
     build: (mast, res) => {
       const em: EntityManager = EM;
 
-      em.set(mast, PositionDef, vec3.clone([0, 0, 0]));
+      em.set(mast, PositionDef, V(0, 0, 0));
 
       em.set(mast, RenderableConstructDef, res.assets.mast.mesh);
       em.set(mast, PhysicsParentDef, mast.mastProps.shipId);
@@ -112,9 +112,9 @@ export const { MastPropsDef, MastLocalDef, createMastNow } =
 
       const createRib = (width: number) => {
         const rib = em.newEntity();
-        em.set(rib, PositionDef, vec3.clone([0, BOOM_HEIGHT, 0]));
+        em.set(rib, PositionDef, V(0, BOOM_HEIGHT, 0));
         em.set(rib, RenderableConstructDef, res.assets.mast.mesh);
-        em.set(rib, ScaleDef, vec3.clone([0.5 * width, 0.5, 0.5 * width]));
+        em.set(rib, ScaleDef, V(0.5 * width, 0.5, 0.5 * width));
         em.set(rib, RotationDef);
         em.set(rib, ColorDef, vec3.clone(BOAT_COLOR));
         vec3.scale(rib.color, 0.7, rib.color);
@@ -129,7 +129,7 @@ export const { MastPropsDef, MastLocalDef, createMastNow } =
       );
 
       const sail1 = em.newEntity();
-      em.set(sail1, PositionDef, vec3.clone([0, BOOM_HEIGHT, 0]));
+      em.set(sail1, PositionDef, V(0, BOOM_HEIGHT, 0));
       em.set(sail1, RenderableConstructDef, cloneMesh(res.assets.sail.mesh));
       //em.ensureComponentOn(sail1, ScaleDef, [12, 12, 12]);
       em.set(sail1, RotationDef);
@@ -149,7 +149,7 @@ export const { MastPropsDef, MastLocalDef, createMastNow } =
       });
 
       const sail2 = em.newEntity();
-      em.set(sail2, PositionDef, vec3.clone([0, BOOM_HEIGHT, 0]));
+      em.set(sail2, PositionDef, V(0, BOOM_HEIGHT, 0));
       em.set(sail2, RenderableConstructDef, cloneMesh(res.assets.sail.mesh));
       //em.ensureComponentOn(sail2, ScaleDef, [12, 12, 12]);
       em.set(sail2, RotationDef);
@@ -171,13 +171,13 @@ export const { MastPropsDef, MastLocalDef, createMastNow } =
       // create seperate hitbox for interacting with the mast
       const interactBox = em.newEntity();
       em.set(interactBox, PhysicsParentDef, mast.mastProps.shipId);
-      em.set(interactBox, PositionDef, vec3.clone([0, 0, 0]));
+      em.set(interactBox, PositionDef, V(0, 0, 0));
       em.set(interactBox, ColliderDef, {
         shape: "AABB",
         solid: false,
         aabb: {
-          min: vec3.fromValues(-1, -1, -1),
-          max: vec3.fromValues(1, 1, 1),
+          min: V(-1, -1, -1),
+          max: V(1, 1, 1),
         },
       });
       // TODO: setting the yawFactor to -1 is kind of hacky
@@ -189,7 +189,7 @@ export const { MastPropsDef, MastLocalDef, createMastNow } =
         Math.PI,
         -Math.PI / 8,
         -1,
-        vec3.clone([0, 20, 50])
+        V(0, 20, 50)
       );
 
       mast.turret.maxPitch = 0;
@@ -328,7 +328,7 @@ onInit((em) => {
           //console.log(`Sail force is ${vec3Dbg(sailForce)}`);
           //console.log(`Area of sail from star is ${area}`);
 
-          const shipDirection = vec3.fromValues(0, 0, -1);
+          const shipDirection = V(0, 0, -1);
           vec3.transformQuat(shipDirection, ship.world.rotation, shipDirection);
           const [force, area] = sailForceAndSignedArea(sail, star);
           const accel = vec3.dot(shipDirection, force);

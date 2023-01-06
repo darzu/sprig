@@ -1,7 +1,7 @@
 // player controller component and system
 
 // player controller component and system
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { InputsDef } from "../inputs.js";
 import { EM, Entity, EntityManager, EntityW } from "../entity-manager.js";
 import { TimeDef } from "../time.js";
@@ -52,7 +52,7 @@ import { PlayerShipLocalDef } from "./player-ship.js";
 export function createPlayer(em: EntityManager) {
   // console.log("create player!");
   const e = em.newEntity();
-  em.set(e, PlayerPropsDef, vec3.fromValues(0, 100, 0));
+  em.set(e, PlayerPropsDef, V(0, 100, 0));
   em.addResource(LocalPlayerDef, e.id);
   return e;
 }
@@ -123,14 +123,13 @@ export function registerPlayerSystems(em: EntityManager) {
         if (!LinearVelocityDef.isOn(e))
           em.addComponent(e.id, LinearVelocityDef);
         // console.log("making player!");
-        if (!ColorDef.isOn(e))
-          em.addComponent(e.id, ColorDef, vec3.clone([0, 0.2, 0]));
+        if (!ColorDef.isOn(e)) em.addComponent(e.id, ColorDef, V(0, 0.2, 0));
         if (!MotionSmoothingDef.isOn(e))
           em.addComponent(e.id, MotionSmoothingDef);
         if (!RenderableConstructDef.isOn(e)) {
           // console.log("creating rend");
           const m = cloneMesh(res.assets.cube.mesh);
-          scaleMesh3(m, vec3.clone([0.75, 0.75, 0.4]));
+          scaleMesh3(m, V(0.75, 0.75, 0.4));
           em.addComponent(e.id, RenderableConstructDef, m);
         }
         em.set(e, AuthorityDef, res.me.pid);
@@ -140,10 +139,10 @@ export function registerPlayerSystems(em: EntityManager) {
           // create legs
           function makeLeg(x: number): Entity {
             const l = em.newEntity();
-            em.set(l, PositionDef, vec3.clone([x, -1.5, 0]));
+            em.set(l, PositionDef, V(x, -1.5, 0));
             em.set(l, RenderableConstructDef, res.assets.cube.proto);
-            em.set(l, ScaleDef, vec3.clone([0.15, 0.75, 0.15]));
-            em.set(l, ColorDef, vec3.clone([0.05, 0.05, 0.05]));
+            em.set(l, ScaleDef, V(0.15, 0.75, 0.15));
+            em.set(l, ColorDef, V(0.05, 0.05, 0.05));
             em.set(l, PhysicsParentDef, e.id);
             return l;
           }
@@ -316,7 +315,7 @@ export function registerPlayerSystems(em: EntityManager) {
             for (let yi = 0; yi <= SPREAD; yi++) {
               const x = (xi - SPREAD / 2) * GAP;
               const y = (yi - SPREAD / 2) * GAP;
-              let bullet_axis = vec3.fromValues(0, 0, -1);
+              let bullet_axis = V(0, 0, -1);
               bullet_axis = vec3.transformQuat(
                 bullet_axis,
                 p.rotation,
@@ -324,7 +323,7 @@ export function registerPlayerSystems(em: EntityManager) {
               );
               const position = vec3.add(
                 p.world.position,
-                vec3.fromValues(x, y, 0),
+                V(x, y, 0),
                 vec3.create()
               );
               const linearVelocity = vec3.scale(
@@ -404,9 +403,7 @@ export function registerPlayerSystems(em: EntityManager) {
 
           // draw our ray
           const rayDist = doesHit ? firstHit.dist : 1000;
-          const color: vec3 = doesHit
-            ? vec3.clone([0, 1, 0])
-            : vec3.clone([1, 0, 0]);
+          const color: vec3 = doesHit ? V(0, 1, 0) : V(1, 0, 0);
           const endPoint = vec3.add(
             r.org,
             vec3.scale(r.dir, rayDist),

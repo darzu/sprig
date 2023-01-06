@@ -90,8 +90,8 @@ function createGrassTile(
     }
   }
 
-  const aabbMin: vec3 = vec3.fromValues(-spacing, 0, -spacing);
-  const aabbMax: vec3 = vec3.fromValues(
+  const aabbMin: vec3 = V(-spacing, 0, -spacing);
+  const aabbMax: vec3 = V(
     size + spacing,
     bladeH * 2,
     size + spacing

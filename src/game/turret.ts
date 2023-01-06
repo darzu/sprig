@@ -5,7 +5,7 @@ import {
   EntityW,
   Component,
 } from "../entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import {
   PhysicsParentDef,
   PositionDef,
@@ -88,7 +88,7 @@ export function constructNetTurret(
     vec3.scale(interactAABB.min, 2, interactAABB.min);
     vec3.scale(interactAABB.max, 2, interactAABB.max);
     EM.set(interactBox, PhysicsParentDef, e.id);
-    EM.set(interactBox, PositionDef, vec3.clone([0, 0, 0]));
+    EM.set(interactBox, PositionDef, V(0, 0, 0));
     EM.set(interactBox, ColliderDef, {
       shape: "AABB",
       solid: false,

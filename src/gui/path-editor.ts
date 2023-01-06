@@ -2,7 +2,7 @@ import { ColorDef } from "../color-ecs.js";
 import { EM, EntityW } from "../entity-manager.js";
 import { AssetsDef, GameMesh, gameMeshFromMesh } from "../game/assets.js";
 import { gameplaySystems } from "../game/game.js";
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import {
   extrudeQuad,
   HEdge,
@@ -137,7 +137,7 @@ async function createPathEditor() {
         false,
         reserve
       );
-      EM.set(hpEnt_, PositionDef, vec3.clone([0, 0.1, 0]));
+      EM.set(hpEnt_, PositionDef, V(0, 0.1, 0));
       // TODO(@darzu): make scale configurable
       // EM.ensureComponentOn(hpEnt_, ScaleDef, [5, 5, 5]);
       const hpEnt = await EM.whenEntityHas(
@@ -362,13 +362,7 @@ function meshToHLines(m: LineMesh): HLine {
 // TODO(@darzu): rename
 export async function lineStuff() {
   const lnMesh: RawMesh & LineMesh = {
-    pos: [
-      vec3.clone([1, 0, 1]),
-      vec3.clone([2, 0, 2]),
-      vec3.clone([4, 0, 3]),
-      vec3.clone([8, 0, 3]),
-      vec3.clone([8, 0, 6]),
-    ],
+    pos: [V(1, 0, 1), V(2, 0, 2), V(4, 0, 3), V(8, 0, 3), V(8, 0, 6)],
     tri: [],
     quad: [],
     lines: [
@@ -424,14 +418,14 @@ export async function lineStuff() {
 
   const extEnt = EM.newEntity();
   EM.set(extEnt, RenderableConstructDef, gmesh.proto);
-  EM.set(extEnt, PositionDef, vec3.clone([0, 0.5, 0]));
+  EM.set(extEnt, PositionDef, V(0, 0.5, 0));
 
   for (let ln of lns) {
     const vertGlyph = EM.newEntity();
     EM.set(vertGlyph, RenderableConstructDef, assets.cube.proto);
     EM.set(vertGlyph, PositionDef, vec3.clone(lnMesh.pos[ln.vi]));
-    EM.set(vertGlyph, ColorDef, vec3.clone([0.1, 0.2 + ln.vi * 0.1, 0.1]));
-    EM.set(vertGlyph, ScaleDef, vec3.clone([0.2, 0.2, 0.2]));
+    EM.set(vertGlyph, ColorDef, V(0.1, 0.2 + ln.vi * 0.1, 0.1));
+    EM.set(vertGlyph, ScaleDef, V(0.2, 0.2, 0.2));
     vertGlyph.position[1] = 0.5;
   }
 

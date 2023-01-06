@@ -1,7 +1,7 @@
 import { CameraDef } from "../camera.js";
 import { DeletedDef } from "../delete.js";
 import { EM, EntityManager } from "../entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { AuthorityDef, HostDef, MeDef } from "../net/components.js";
 import { eventWizard } from "../net/events.js";
 import { LinearVelocityDef } from "../physics/motion.js";
@@ -85,7 +85,7 @@ export const endGame = eventWizard(
     vec3.copy(gem.position, gem.world.position);
     EM.set(gem, RotationDef);
     quat.copy(gem.rotation, gem.world.rotation);
-    EM.set(gem, LinearVelocityDef, vec3.clone([0, 0.01, 0]));
+    EM.set(gem, LinearVelocityDef, V(0, 0.01, 0));
     EM.removeComponent(gem.id, PhysicsParentDef);
     EM.set(gem, LifetimeDef, 4000);
   },

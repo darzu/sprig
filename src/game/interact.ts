@@ -1,6 +1,6 @@
 import { Component, EM, Entity, EntityManager } from "../entity-manager.js";
 import { LocalPlayerDef, PlayerDef } from "./player.js";
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import {
   Position,
@@ -27,7 +27,7 @@ export const InteractableDef = EM.defineComponent(
 
 export const InRangeDef = EM.defineComponent("inRange", () => true);
 
-const INTERACTION_TINT = vec3.fromValues(0.1, 0.2, 0.1);
+const INTERACTION_TINT = V(0.1, 0.2, 0.1);
 const INTERACTION_TINT_NAME = "interaction";
 
 export function registerInteractionSystem(em: EntityManager) {

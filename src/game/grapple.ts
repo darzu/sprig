@@ -1,6 +1,6 @@
 import { defineNetEntityHelper } from "../em_helpers.js";
 import { EM, EntityManager } from "../entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { onInit } from "../init.js";
 import { MeDef } from "../net/components.js";
 import { copyAABB, createAABB } from "../physics/broadphase.js";
@@ -22,12 +22,12 @@ export async function registerGrappleDbgSystems(em: EntityManager) {
 
   const res = await em.whenResources(AssetsDef);
   const h = em.newEntity();
-  em.set(h, PositionDef, vec3.clone([0, 0, 0]));
-  em.set(h, ColorDef, vec3.clone([0.1, 0.1, 0.1]));
+  em.set(h, PositionDef, V(0, 0, 0));
+  em.set(h, ColorDef, V(0.1, 0.1, 0.1));
   em.set(h, RenderableConstructDef, res.assets.grappleHook.proto);
 
   const g = em.newEntity();
-  em.set(g, PositionDef, vec3.clone([0, 0, 0]));
-  em.set(g, ColorDef, vec3.clone([0.1, 0.1, 0.1]));
+  em.set(g, PositionDef, V(0, 0, 0));
+  em.set(g, ColorDef, V(0.1, 0.1, 0.1));
   em.set(g, RenderableConstructDef, res.assets.grappleGun.proto);
 }

@@ -21,7 +21,7 @@ import { noisePipes } from "../render/pipelines/std-noise.js";
 import { DevConsoleDef } from "../console.js";
 import { initOcean, OceanDef, oceanJfa, UVPosDef, UVDirDef } from "./ocean.js";
 import { asyncTimeout } from "../util.js";
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { AnimateToDef } from "../animate-to.js";
 import { createSpawner, SpawnerDef } from "./spawner.js";
 import { tempVec3 } from "../temp-pool.js";
@@ -36,7 +36,7 @@ function spawnRandomDarkStar(
   approxPosition: vec3,
   color: vec3
 ) {
-  const orbitalAxis = vec3.fromValues(
+  const orbitalAxis = V(
     Math.random() - 0.5,
     Math.random() - 0.5,
     Math.random() - 0.5
@@ -51,13 +51,7 @@ function spawnRandomDarkStar(
   vec3.normalize(starPosition, starPosition);
   vec3.scale(starPosition, vec3.length(approxPosition), starPosition);
 
-  return createDarkStarNow(
-    res,
-    starPosition,
-    color,
-    vec3.fromValues(0, 0, 0),
-    orbitalAxis
-  );
+  return createDarkStarNow(res, starPosition, color, V(0, 0, 0), orbitalAxis);
 }
 
 export async function initHyperspaceGame(em: EntityManager) {
@@ -178,7 +172,7 @@ export async function initHyperspaceGame(em: EntityManager) {
         easeFn: EASE_INQUAD,
       });
     }
-    const orbitalAxis = vec3.fromValues(
+    const orbitalAxis = V(
       Math.random() - 0.5,
       Math.random() - 0.5,
       Math.random() - 0.5
@@ -186,7 +180,7 @@ export async function initHyperspaceGame(em: EntityManager) {
     vec3.normalize(orbitalAxis, orbitalAxis);
 
     // TODO: this only works because the darkstar is orbiting the origin
-    const approxPosition = vec3.fromValues(-1000, 2000, -1000);
+    const approxPosition = V(-1000, 2000, -1000);
     const perpendicular = vec3.cross(approxPosition, orbitalAxis);
     const starPosition = vec3.cross(orbitalAxis, perpendicular, perpendicular);
     vec3.normalize(starPosition, starPosition);
@@ -194,15 +188,11 @@ export async function initHyperspaceGame(em: EntityManager) {
 
     const star1 = spawnRandomDarkStar(
       res,
-      vec3.fromValues(-1000, 2000, -1000),
+      V(-1000, 2000, -1000),
       STAR1_COLOR
-      //vec3.fromValues(0, 0, 0)
+      //V(0, 0, 0)
     );
 
-    const star2 = spawnRandomDarkStar(
-      res,
-      vec3.fromValues(0, 0, 2000),
-      STAR2_COLOR
-    );
+    const star2 = spawnRandomDarkStar(res, V(0, 0, 2000), STAR2_COLOR);
   }
 }

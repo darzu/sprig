@@ -1,7 +1,7 @@
 import { EntityManager, EM, Entity, EntityW } from "../entity-manager.js";
 import { AlphaDef, applyTints, TintsDef } from "../color-ecs.js";
 import { CameraViewDef } from "../camera.js";
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import {
   Frame,
   TransformDef,
@@ -459,7 +459,7 @@ export function registerRenderer(em: EntityManager) {
       // console.log(`mId 24: ${!!m24.length}, e10003: ${!!e10003.length}`);
 
       // TODO(@darzu): go elsewhere
-      // const lightPosition = vec3.fromValues(50, 100, -100);
+      // const lightPosition = V(50, 100, -100);
 
       const pointLights = em
         .filterEntities([PointLightDef, RendererWorldFrameDef])
@@ -478,7 +478,7 @@ export function registerRenderer(em: EntityManager) {
         });
 
       // const lightPosition =
-      //   pointLights[0]?.position ?? vec3.fromValues(0, 0, 0);
+      //   pointLights[0]?.position ?? V(0, 0, 0);
 
       // TODO(@darzu): this maxSurfaceId calculation is super inefficient, we need
       //  to move this out of this loop.

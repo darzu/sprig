@@ -171,6 +171,17 @@ export module vec2 {
   }
 }
 
+// TODO(@darzu): do we want?
+export function V(...xs: [number, number]): vec2;
+export function V(...xs: [number, number, number]): vec3;
+export function V(...xs: [number, number, number, number]): vec4;
+export function V(...xs: number[]): vec2 | vec3 | vec4 {
+  if (xs.length === 4) return vec4.fromValues(xs[0], xs[1], xs[2], xs[3]);
+  else if (xs.length === 3) return V(xs[0], xs[1], xs[2]);
+  else if (xs.length === 2) return V(xs[0], xs[1], xs[2]);
+  else throw new Error(`Unsupported vec size: ${xs.length}`);
+}
+
 // TODO(@darzu): use "namespace" keyword instead of "module" (re: https://www.typescriptlang.org/docs/handbook/namespaces.html)
 export module vec3 {
   export type T = vec3;

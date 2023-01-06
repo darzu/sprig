@@ -1,6 +1,6 @@
 import { createRef, defineNetEntityHelper } from "../em_helpers.js";
 import { EM, EntityManager, EntityW } from "../entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { onInit } from "../init.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { PositionDef, ScaleDef } from "../physics/transform.js";
@@ -18,8 +18,8 @@ import { GameState, GameStateDef } from "./gamestate.js";
 
 const DARKSTAR_SPEED = 1;
 
-export const STAR1_COLOR = vec3.fromValues(0.8, 0.3, 0.3);
-export const STAR2_COLOR = vec3.fromValues(0.3, 0.8, 0.6);
+export const STAR1_COLOR = V(0.8, 0.3, 0.3);
+export const STAR2_COLOR = V(0.3, 0.8, 0.6);
 
 export const { DarkStarPropsDef, DarkStarLocalDef, createDarkStarNow } =
   defineNetEntityHelper(EM, {
@@ -33,7 +33,7 @@ export const { DarkStarPropsDef, DarkStarLocalDef, createDarkStarNow } =
       pos: pos ?? vec3.create(),
       color: color ?? vec3.create(),
       orbiting: orbiting ?? vec3.create(),
-      orbitalAxis: orbitalAxis ?? vec3.fromValues(1, 0, 0),
+      orbitalAxis: orbitalAxis ?? V(1, 0, 0),
     }),
     serializeProps: (o, buf) => {
       buf.writeVec3(o.pos);
@@ -50,7 +50,7 @@ export const { DarkStarPropsDef, DarkStarLocalDef, createDarkStarNow } =
       const em: EntityManager = EM;
       vec3.copy(star.position, star.darkStarProps.pos);
       em.set(star, RenderableConstructDef, res.assets.ball.proto);
-      em.set(star, ScaleDef, vec3.fromValues(100, 100, 100));
+      em.set(star, ScaleDef, V(100, 100, 100));
       em.set(star, ColorDef, star.darkStarProps.color);
       em.set(star, PointLightDef);
       star.pointLight.constant = 1.0;
@@ -79,11 +79,11 @@ onInit((em) => {
         const distance = vec3.length(toCenter);
         // TODO: revisit random orbits
         /*
-        let arbitraryVector = vec3.fromValues(1, 0, 0);
+        let arbitraryVector = V(1, 0, 0);
         let basis1 = vec3.cross(arbitraryVector, arbitraryVector, toCenter);
         if (vec3.length(basis1) < 0.001) {
           console.log("ended up with a tiny basis vector");
-          arbitraryVector = vec3.fromValues(0, 1, 0);
+          arbitraryVector = V(0, 1, 0);
           basis1 = vec3.cross(arbitraryVector, arbitraryVector, toCenter);
         }
         const basis2 = vec3.cross(tempVec3(), basis1, toCenter);

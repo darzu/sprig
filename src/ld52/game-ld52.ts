@@ -7,6 +7,7 @@ import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
 import { shadowPipelines } from "../render/pipelines/std-shadow.js";
 import { RenderableConstructDef, RendererDef } from "../render/renderer-ecs.js";
+import { V } from "../sprig-matrix.js";
 
 export async function initLD52(em: EntityManager, hosting: boolean) {
   const res = await em.whenResources(
@@ -28,5 +29,5 @@ export async function initLD52(em: EntityManager, hosting: boolean) {
 
   const ship = em.newEntity();
   em.set(ship, RenderableConstructDef, res.assets.cube.proto);
-  // em.set(ship, PositionDef, [0,0,0])
+  em.set(ship, PositionDef, V(0, 0, 0));
 }

@@ -1,6 +1,6 @@
 import { CanvasDef } from "../canvas.js";
 import { EM, EntityManager, EntityW } from "../entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { InputsDef } from "../inputs.js";
 import { mathMap } from "../math.js";
 import { AABB, Ray, RayHit } from "../physics/broadphase.js";
@@ -78,16 +78,14 @@ function registerObjClicker(em: EntityManager) {
           const e = EM.findEntity(firstHit.id, [ColorDef]);
           if (e) {
             EM.set(e, TintsDef);
-            e.tints.set("select", vec3.clone([0, 0.2, 0]));
+            e.tints.set("select", V(0, 0.2, 0));
             // e.color[1] += 0.1;
           }
         }
 
         // draw our ray
         const rayDist = firstHit?.dist || 1000;
-        const color: vec3 = firstHit
-          ? vec3.clone([0, 1, 0])
-          : vec3.clone([1, 0, 0]);
+        const color: vec3 = firstHit ? V(0, 1, 0) : V(1, 0, 0);
         const endPoint = vec3.add(
           r.org,
           vec3.scale(r.dir, rayDist),
@@ -155,10 +153,10 @@ function registerAABBBuilder(em: EntityManager) {
             em.set(b, ScaleDef, vec3.copy(vec3.create(), lastB.scale));
             em.set(b, PositionDef, vec3.copy(vec3.create(), lastB.position));
           } else {
-            em.set(b, ScaleDef, vec3.clone([2, 1, 1]));
-            em.set(b, PositionDef, vec3.clone([0, 0, 0]));
+            em.set(b, ScaleDef, V(2, 1, 1));
+            em.set(b, PositionDef, V(0, 0, 0));
           }
-          em.set(b, ColorDef, vec3.clone([0.1, 0.3, 0.2]));
+          em.set(b, ColorDef, V(0.1, 0.3, 0.2));
           em.set(b, RenderableConstructDef, res.assets.cube.proto);
           em.set(b, ColliderDef, {
             shape: "AABB",

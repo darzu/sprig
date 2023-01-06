@@ -1,6 +1,6 @@
 import { Collider, ColliderDef, DefaultLayer, Layer } from "./collider.js";
 import { Component, EM, Entity, EntityManager } from "../entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import {
   CollidesWith,
   computeContactData,
@@ -55,7 +55,7 @@ export function createFrame(): Frame {
   return {
     position: vec3.create(),
     rotation: quat.create(),
-    scale: vec3.fromValues(1, 1, 1),
+    scale: V(1, 1, 1),
     transform: mat4.create(),
   };
 }
@@ -82,12 +82,12 @@ export interface PhysCollider {
 const DUMMY_COLLIDER: PhysCollider = {
   id: 0,
   oId: 0,
-  aabb: { min: vec3.clone([0, 0, 0]), max: vec3.clone([0, 0, 0]) },
-  localAABB: { min: vec3.clone([0, 0, 0]), max: vec3.clone([0, 0, 0]) },
-  selfAABB: { min: vec3.clone([0, 0, 0]), max: vec3.clone([0, 0, 0]) },
+  aabb: { min: V(0, 0, 0), max: V(0, 0, 0) },
+  localAABB: { min: V(0, 0, 0), max: V(0, 0, 0) },
+  selfAABB: { min: V(0, 0, 0), max: V(0, 0, 0) },
   parentOId: 0,
-  localPos: vec3.clone([0, 0, 0]),
-  lastLocalPos: vec3.clone([0, 0, 0]),
+  localPos: V(0, 0, 0),
+  lastLocalPos: V(0, 0, 0),
   myLayers: 0b1,
   targetLayers: 0xffff,
 };

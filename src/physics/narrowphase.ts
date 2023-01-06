@@ -2,7 +2,7 @@ import { EntityManager, EntityW } from "../entity-manager.js";
 import { AssetsDef } from "../game/assets.js";
 import { ColorDef } from "../color-ecs.js";
 import { LocalPlayerDef } from "../game/player.js";
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { BoxCollider, Collider } from "./collider.js";
 import { PhysicsObject, WorldFrameDef } from "./nonintersection.js";
@@ -225,7 +225,7 @@ export function penetrationDepth(
   s1: Shape,
   s2: Shape,
   simplex: vec3[],
-  offset: vec3 = vec3.clone([0, 0, 0])
+  offset: vec3 = V(0, 0, 0)
 ): number {
   if (vec3.equals(s1.travel, s2.travel)) return Infinity;
   const forwardDir = vec3.sub(s1.travel, s2.travel);
@@ -259,9 +259,9 @@ export function penetrationDepth(
   }
 
   let minD = Infinity;
-  let minPerp: vec3 = vec3.clone([NaN, NaN, NaN]);
+  let minPerp: vec3 = V(NaN, NaN, NaN);
   let minVs: vec3[] = [];
-  let minNotV: vec3 = vec3.clone([NaN, NaN, NaN]);
+  let minNotV: vec3 = V(NaN, NaN, NaN);
 
   if (vec3.dot(ABCperp, backwardDir) > 0) {
     const ABCnorm = vec3.normalize(ABCperp);

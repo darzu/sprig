@@ -1,4 +1,4 @@
-import { vec2, vec3, vec4, quat, mat4 } from "../../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../../sprig-matrix.js";
 import { assertDbg } from "../../util.js";
 import { computeTriangleNormal } from "../../utils-3d.js";
 import { CY } from "../gpu-registry.js";
@@ -236,15 +236,15 @@ export const sceneBufPtr = CY.createSingleton("scene", {
 export function setupScene(): SceneTS {
   // create a directional light and compute it's projection (for shadows) and direction
   // TODO(@darzu): should be named "dirLight1" etc. These are direction + strength, not unit.
-  // const dirLight1 = vec3.fromValues(1, -1 * 2, 1);
+  // const dirLight1 = V(1, -1 * 2, 1);
   // vec3.normalize(dirLight1, dirLight1);
   // vec3.scale(dirLight1, dirLight1, 2.0);
 
-  // const dirLight2 = vec3.fromValues(1, -1 * 1, -1);
+  // const dirLight2 = V(1, -1 * 1, -1);
   // vec3.normalize(dirLight2, dirLight2);
   // vec3.scale(dirLight2, dirLight2, 0.5);
 
-  // const dirLight3 = vec3.fromValues(0, -1 * 0.5, 1);
+  // const dirLight3 = V(0, -1 * 0.5, 1);
   // vec3.normalize(dirLight3, dirLight3);
   // vec3.scale(dirLight3, dirLight3, 0.2);
 

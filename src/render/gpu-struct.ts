@@ -1,4 +1,4 @@
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { align, max, sum } from "../math.js";
 import { assert } from "../util.js";
 import { objMap } from "../util.js";
@@ -235,8 +235,7 @@ function wgslTypeToDummyVal<T extends WGSLType>(
     if (wgsl === "f32") return Math.random() * 100.0;
     if (wgsl === "vec2<f32>")
       return vec2.fromValues(Math.random(), Math.random());
-    const randVec3 = () =>
-      vec3.fromValues(Math.random(), Math.random(), Math.random());
+    const randVec3 = () => V(Math.random(), Math.random(), Math.random());
     if (wgsl === "vec3<f32>") return randVec3();
     const randVec4 = () =>
       vec4.fromValues(
@@ -252,7 +251,13 @@ function wgslTypeToDummyVal<T extends WGSLType>(
     const randQuat = () =>
       quat.fromEuler(randAngle(), randAngle(), randAngle(), quat.create());
     if (wgsl === "mat4x4<f32>")
-      return mat4.fromRotationTranslationScaleOrigin(randQuat(), randVec3(), randVec3(), randVec3(), mat4.create());
+      return mat4.fromRotationTranslationScaleOrigin(
+        randQuat(),
+        randVec3(),
+        randVec3(),
+        randVec3(),
+        mat4.create()
+      );
 
     throw `wgslTypeToDummyVal is missing ${wgsl}`;
   }

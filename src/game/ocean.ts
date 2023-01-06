@@ -1,7 +1,7 @@
 import { AnimateToDef } from "../animate-to.js";
 import { createRef, Ref } from "../em_helpers.js";
 import { EM, EntityManager } from "../entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { InputsDef } from "../inputs.js";
 import { clamp } from "../math.js";
 import {
@@ -104,7 +104,7 @@ export async function initOcean() {
     UVUNWRAP_MASK | DEFAULT_MASK,
     "ocean"
   );
-  EM.set(ocean, ColorDef, vec3.clone([0.1, 0.3, 0.8]));
+  EM.set(ocean, ColorDef, V(0.1, 0.3, 0.8));
   //EM.ensureComponentOn(ocean, PositionDef, [12000, 180, 0]);
   EM.set(ocean, PositionDef);
 

@@ -1,5 +1,5 @@
 import { EM, EntityManager } from "../entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import {
   RenderableConstructDef,
@@ -43,7 +43,7 @@ import { ColorDef } from "../color-ecs.js";
 
 // TODO(@darzu): impl. occassionaly syncable components with auto-versioning
 
-export const BOAT_COLOR: vec3 = vec3.clone([0.2, 0.1, 0.05]);
+export const BOAT_COLOR: vec3 = V(0.2, 0.1, 0.05);
 
 export const ShipPartDef = EM.defineComponent(
   "shipPart",
@@ -72,7 +72,7 @@ export const { GemPropsDef, GemLocalDef, createGem } = defineNetEntityHelper(
     build: (gem, res) => {
       const em: EntityManager = EM;
 
-      em.set(gem, PositionDef, vec3.clone([0, 0, 10]));
+      em.set(gem, PositionDef, V(0, 0, 10));
 
       em.set(gem, RenderableConstructDef, res.assets.spacerock.proto);
       em.set(gem, PhysicsParentDef, gem.gemProps.shipId);
@@ -82,7 +82,7 @@ export const { GemPropsDef, GemLocalDef, createGem } = defineNetEntityHelper(
       const interactBox = em.newEntity();
       const interactAABB = copyAABB(createAABB(), res.assets.spacerock.aabb);
       em.set(interactBox, PhysicsParentDef, gem.id);
-      em.set(interactBox, PositionDef, vec3.clone([0, 0, 0]));
+      em.set(interactBox, PositionDef, V(0, 0, 0));
       em.set(interactBox, ColliderDef, {
         shape: "AABB",
         solid: false,
@@ -111,7 +111,7 @@ export const { RudderPropsDef, RudderLocalDef, createRudderNow } =
     build: (rudder, res) => {
       const em: EntityManager = EM;
 
-      em.set(rudder, PositionDef, vec3.clone([0, 0.5, -15]));
+      em.set(rudder, PositionDef, V(0, 0.5, -15));
 
       em.set(rudder, RenderableConstructDef, res.assets.rudder.mesh);
       em.set(rudder, PhysicsParentDef, rudder.rudderProps.shipId);
@@ -121,13 +121,13 @@ export const { RudderPropsDef, RudderLocalDef, createRudderNow } =
       // create seperate hitbox for interacting with the rudder
       const interactBox = em.newEntity();
       em.set(interactBox, PhysicsParentDef, rudder.rudderProps.shipId);
-      em.set(interactBox, PositionDef, vec3.clone([0, 0, -12]));
+      em.set(interactBox, PositionDef, V(0, 0, -12));
       em.set(interactBox, ColliderDef, {
         shape: "AABB",
         solid: false,
         aabb: {
-          min: vec3.fromValues(-1, -2, -2),
-          max: vec3.fromValues(1, 2, 2.5),
+          min: V(-1, -2, -2),
+          max: V(1, 2, 2.5),
         },
       });
       constructNetTurret(
@@ -138,7 +138,7 @@ export const { RudderPropsDef, RudderLocalDef, createRudderNow } =
         Math.PI,
         -Math.PI / 8,
         1.5,
-        vec3.clone([0, 20, 50])
+        V(0, 20, 50)
       );
 
       rudder.turret.maxPitch = 0;
@@ -207,14 +207,14 @@ export const { PlayerShipPropsDef, PlayerShipLocalDef, createPlayerShip } =
         // create cannons
         const cannonPitch = Math.PI * +0.05;
         const cannonR = createCannon(
-          vec3.clone([-6, 3, 5]),
+          V(-6, 3, 5),
           Math.PI * 0.5,
           cannonPitch,
           s.id
         );
         s.playerShipProps.cannonRId = cannonR.id;
         const cannonL = createCannon(
-          vec3.clone([6, 3, 5]),
+          V(6, 3, 5),
           Math.PI * 1.5,
           cannonPitch,
           s.id
@@ -258,7 +258,7 @@ export const { PlayerShipPropsDef, PlayerShipLocalDef, createPlayerShip } =
         em.set(part, PhysicsParentDef, s.id);
         em.set(part, RenderableConstructDef, m.proto);
         em.set(part, ColorDef, vec3.clone(BOAT_COLOR));
-        em.set(part, PositionDef, vec3.clone([0, 0, 0]));
+        em.set(part, PositionDef, V(0, 0, 0));
         const isCritical = criticalPartIdxes.includes(i);
         em.set(part, ShipPartDef, isCritical);
         em.set(part, ColliderDef, {

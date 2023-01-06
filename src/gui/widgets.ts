@@ -4,7 +4,7 @@ import { ENDESGA16 } from "../color/palettes.js";
 import { EM, EntityW } from "../entity-manager.js";
 import { Assets, AssetsDef } from "../game/assets.js";
 import { gameplaySystems } from "../game/game.js";
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { MouseDragDef } from "../inputs.js";
 import { ColliderDef } from "../physics/collider.js";
 import { PhysicsResultsDef } from "../physics/nonintersection.js";
@@ -79,9 +79,9 @@ async function initDragBox(): Promise<EntityW<[typeof PositionDef]>> {
   const dragBoxMesh = cloneMesh(assets.unitCube.mesh);
   EM.set(dragBox, AlphaDef, 0.2);
   EM.set(dragBox, RenderableConstructDef, dragBoxMesh);
-  EM.set(dragBox, PositionDef, vec3.clone([0, 0.2, 0]));
-  EM.set(dragBox, ScaleDef, vec3.clone([1, 1, 1]));
-  EM.set(dragBox, ColorDef, vec3.clone([0.0, 120 / 255, 209 / 255]));
+  EM.set(dragBox, PositionDef, V(0, 0.2, 0));
+  EM.set(dragBox, ScaleDef, V(1, 1, 1));
+  EM.set(dragBox, ColorDef, V(0.0, 120 / 255, 209 / 255));
   EM.set(dragBox, ColliderDef, {
     shape: "AABB",
     solid: false,

@@ -12,7 +12,7 @@ import { AssetsDef } from "./assets.js";
 import { ColorDef } from "../color-ecs.js";
 import { assert } from "../util.js";
 import { CameraViewDef } from "../camera.js";
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import {
   PhysicsResultsDef,
   WorldFrameDef,
@@ -47,7 +47,7 @@ export function registerCursorSystems(em: EntityManager) {
         em.addComponent(id, PositionDef);
         const wireframe: Mesh = { ...res.assets.ball.mesh, tri: [] };
         em.addComponent(id, RenderableConstructDef, wireframe, true);
-        em.addComponent(id, ColorDef, vec3.clone([0, 1, 1]));
+        em.addComponent(id, ColorDef, V(0, 1, 1));
         res.globalCursor3d.cursor = createRef(id, [Cursor3dDef, WorldFrameDef]);
       }
     },
