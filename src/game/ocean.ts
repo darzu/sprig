@@ -90,6 +90,7 @@ EM.registerSerializerPair(
 export const oceanJfa = createJfaPipelines(uvMaskTex, "exterior");
 
 export async function initOcean() {
+  // console.log("initOcean");
   const res = await EM.whenResources(RendererDef, AssetsDef, TimeDef);
 
   const ocean = EM.newEntity();

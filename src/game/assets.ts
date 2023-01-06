@@ -63,7 +63,8 @@ const BACKUP_ASSET_PATH = "https://sprig.land/assets/";
 
 const RemoteMeshes = {
   ship: "barge.sprig.obj",
-  ship_fangs: "enemy_ship_fangs.sprig.obj",
+  // ship_fangs: "enemy_ship_fangs.sprig.obj",
+  ship_fangs: "ball.sprig.obj", // TODO: FOR PERF
   ball: "ball.sprig.obj",
   pick: "pick.sprig.obj",
   spaceore: "spaceore.sprig.obj",
@@ -77,7 +78,8 @@ const RemoteMeshes = {
   grappleGunUnloaded: "grapple-gun-unloaded.sprig.obj",
   rudder: "rudder.sprig.obj",
   // TODO(@darzu): including hyperspace-ocean makes load time ~100ms slower :/
-  ocean: "hyperspace-ocean.sprig.obj",
+  // ocean: "hyperspace-ocean.sprig.obj",
+  ocean: "ball.sprig.obj", // TODO: FOR PERF
 } as const;
 
 type RemoteMeshSymbols = keyof typeof RemoteMeshes;
@@ -140,6 +142,8 @@ const MeshModify: Partial<{
   [P in AllMeshSymbols]: (m: RawMesh) => RawMesh;
 }> = {
   ship_fangs: (m) => {
+    if ("true") return m; // TODO(@darzu): FOR PERF
+
     // m.colors = m.colors.map((c) => [0.2, 0.2, 0.2]);
     m.surfaceIds = m.colors.map((_, i) => i);
     // console.log(`
@@ -205,6 +209,7 @@ const MeshModify: Partial<{
     return m;
   },
   ocean: (m) => {
+    if ("true") return m; // TODO(@darzu): FOR PERF
     // TODO(@darzu): extract out all this setUV stuff.
     // reduce duplicate positions
     // console.log("OCEAN");
