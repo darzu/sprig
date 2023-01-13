@@ -1289,3 +1289,6 @@ To learn: barycentrics
 
 Advice and bad advice:
   https://www.youtube.com/watch?v=miwrDpbb25Q
+
+Storage using SQLLite on web:
+  https://developer.chrome.com/blog/sqlite-wasm-in-the-browser-backed-by-the-origin-private-file-system/
