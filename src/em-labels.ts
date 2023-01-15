@@ -50,6 +50,8 @@ export interface LabelSolver {
   addConstraint(c: LabelConstraint): void;
   getPlan(): Label[];
   getVersion(): number;
+
+  dbgInfo(): string;
 }
 
 // DAG solver
@@ -60,6 +62,7 @@ export function createLabelSolver(): LabelSolver {
     addConstraint,
     getPlan,
     getVersion,
+    dbgInfo,
   };
 
   // DAG for our dependencies
@@ -90,6 +93,12 @@ export function createLabelSolver(): LabelSolver {
 
   return solver;
 
+  function dbgInfo(): string {
+    let res = ``;
+    for (let [r, ls] of labelsWaitingOnResource.entries())
+      res += `waiting: ${r} <- [${ls.join(",")}]\n`;
+    return res;
+  }
   function getVersion() {
     return dag.version;
   }

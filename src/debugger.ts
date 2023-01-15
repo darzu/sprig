@@ -251,7 +251,9 @@ g.cameraFollow.pitchOffset = ${target.cameraFollow.pitchOffset.toFixed(3)};
   cmp: (name: string) => {
     return cmpByName(name);
   },
-
+  deps: () => {
+    console.log(EM.labelSolver.dbgInfo() + `\n` + EM.dbgEntityPromises());
+  },
   summarizeStats: () => {
     let stats = EM.sysStats;
     let totalQueryTime = Object.values(stats)

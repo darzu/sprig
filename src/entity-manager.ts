@@ -810,6 +810,16 @@ export class EntityManager {
     }
   }
 
+  dbgEntityPromises(): string {
+    let res = "";
+    for (let [id, prom] of this.entityPromises.entries()) {
+      res += `ent waiting: ${id} <- (${prom
+        .flatMap((p) => p.cs.map((c) => c.name))
+        .join(",")})\n`;
+    }
+    return res;
+  }
+
   checkEntityPromises() {
     // console.dir(this.entityPromises);
     // console.log(this.dbgStrEntityPromises());
