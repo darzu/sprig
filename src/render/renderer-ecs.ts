@@ -538,7 +538,7 @@ export function registerRenderer(em: EntityManager) {
       renderer.updatePointLights(pointLights);
 
       // TODO(@darzu): dbg
-      console.log(`pipelines: ${res.renderer.pipelines.map((p) => p.name)}`);
+      // console.log(`pipelines: ${res.renderer.pipelines.map((p) => p.name)}`);
       renderer.submitPipelines(
         objs.map((o) => o.renderable.meshHandle),
         res.renderer.pipelines
