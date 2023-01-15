@@ -5,7 +5,7 @@ import { ENDESGA16 } from "../color/palettes.js";
 import { DeadDef, DeletedDef } from "../delete.js";
 import { createRef } from "../em_helpers.js";
 import { EM, Entity, EntityManager, EntityW } from "../entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { InputsDef } from "../inputs.js";
 import { jitter } from "../math.js";
 import { AudioDef, randChordId } from "../audio.js";
@@ -170,29 +170,29 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
     postProcess,
   ];
 
-  const sunlight = em.newEntity();
+  const sunlight = em.new();
   em.ensureComponentOn(sunlight, PointLightDef);
   // sunlight.pointLight.constant = 1.0;
   sunlight.pointLight.constant = 1.0;
   vec3.copy(sunlight.pointLight.ambient, [0.4, 0.4, 0.4]);
   // vec3.scale(sunlight.pointLight.ambient, sunlight.pointLight.ambient, 0.2);
   vec3.copy(sunlight.pointLight.diffuse, [0.5, 0.5, 0.5]);
-  em.ensureComponentOn(sunlight, PositionDef, vec3.clone([50, 100, 10]));
+  em.ensureComponentOn(sunlight, PositionDef, V(50, 100, 10));
   em.ensureComponentOn(sunlight, RenderableConstructDef, res.assets.ball.proto);
 
   // const c = res.globalCursor3d.cursor()!;
   // if (RenderableDef.isOn(c)) c.renderable.enabled = false;
 
-  const ground = em.newEntity();
+  const ground = em.new();
   const groundMesh = cloneMesh(res.assets.hex.mesh);
   transformMesh(
     groundMesh,
     mat4.fromRotationTranslationScale(quat.IDENTITY, [0, -2, 0], [20, 2, 20])
   );
   em.ensureComponentOn(ground, RenderableConstructDef, groundMesh);
-  em.ensureComponentOn(ground, ColorDef, vec3.clone(ENDESGA16.blue));
+  em.ensureComponentOn(ground, ColorDef, ENDESGA16.blue);
   // em.ensureComponentOn(p, ColorDef, [0.2, 0.3, 0.2]);
-  em.ensureComponentOn(ground, PositionDef, vec3.clone([0, 0, 0]));
+  em.ensureComponentOn(ground, PositionDef, V(0, 0, 0));
   // em.ensureComponentOn(plane, PositionDef, [0, -5, 0]);
 
   // const cube = em.newEntity();
@@ -240,7 +240,7 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
   // });
 
   // TIMBER
-  const timber = em.newEntity();
+  const timber = em.new();
 
   const {
     timberState,
@@ -256,7 +256,7 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
 
   em.ensureComponentOn(timber, RenderableConstructDef, timberMesh);
   em.ensureComponentOn(timber, WoodStateDef, timberState);
-  em.ensureComponentOn(timber, ColorDef, vec3.clone(ENDESGA16.darkBrown));
+  em.ensureComponentOn(timber, ColorDef, ENDESGA16.darkBrown);
   // em.ensureComponentOn(timber, ColorDef, [0.1, 0.1, 0.1]);
   // const scale = 1 * Math.pow(0.8, ti);
   const scale = 1;
@@ -272,7 +272,7 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
   em.ensureComponentOn(timber, PositionDef, timberPos);
   // em.ensureComponentOn(timber, PositionDef, [0, 0, -4]);
   em.ensureComponentOn(timber, RotationDef);
-  em.ensureComponentOn(timber, ScaleDef, vec3.clone([scale, scale, scale]));
+  em.ensureComponentOn(timber, ScaleDef, V(scale, scale, scale));
   em.ensureComponentOn(timber, WorldFrameDef);
   em.ensureComponentOn(timber, ColliderDef, {
     shape: "AABB",
@@ -287,7 +287,7 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
   const realFloorHeight = timberPos[1] + floorHeight;
   for (let i = 0; i < 2; i++) {
     const isLeft = i === 0 ? 1 : -1;
-    const cannon = em.newEntity();
+    const cannon = em.new();
     em.ensureComponentOn(
       cannon,
       RenderableConstructDef,
@@ -296,24 +296,24 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
     em.ensureComponentOn(
       cannon,
       PositionDef,
-      vec3.clone([-7.5, realFloorHeight + 2, -4 * isLeft])
+      V(-7.5, realFloorHeight + 2, -4 * isLeft)
     );
     em.ensureComponentOn(cannon, RotationDef);
     quat.rotateX(cannon.rotation, Math.PI * 0.01 * isLeft, cannon.rotation);
     if (isLeft !== 1) {
       quat.rotateY(cannon.rotation, Math.PI, cannon.rotation);
     }
-    em.ensureComponentOn(cannon, ColorDef, vec3.clone(ENDESGA16.darkGreen));
+    em.ensureComponentOn(cannon, ColorDef, ENDESGA16.darkGreen);
     // TODO(@darzu): USE PALETTE PROPERLY
     // TODO(@darzu): USE PALETTE PROPERLY
     vec3.scale(cannon.color, 0.5, cannon.color);
     {
-      const interactBox = EM.newEntity();
+      const interactBox = EM.new();
       const interactAABB = copyAABB(createAABB(), res.assets.ld51_cannon.aabb);
       vec3.scale(interactAABB.min, 2, interactAABB.min);
       vec3.scale(interactAABB.max, 2, interactAABB.max);
       EM.ensureComponentOn(interactBox, PhysicsParentDef, cannon.id);
-      EM.ensureComponentOn(interactBox, PositionDef, vec3.clone([0, 0, 0]));
+      EM.ensureComponentOn(interactBox, PositionDef, V(0, 0, 0));
       EM.ensureComponentOn(interactBox, ColliderDef, {
         shape: "AABB",
         solid: false,
@@ -354,22 +354,22 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
     let ball = _goodBalls[idx];
 
     if (!ball) {
-      const newBall = em.newEntity();
+      const newBall = em.new();
       em.ensureComponentOn(
         newBall,
         RenderableConstructDef,
         res.assets.ball.proto
       );
-      em.ensureComponentOn(newBall, ColorDef, vec3.clone(ENDESGA16.orange));
+      em.ensureComponentOn(newBall, ColorDef, ENDESGA16.orange);
       em.ensureComponentOn(newBall, PositionDef);
       em.ensureComponentOn(newBall, LinearVelocityDef);
       em.ensureComponentOn(newBall, GravityDef);
-      const interactBox = EM.newEntity();
+      const interactBox = EM.new();
       const interactAABB = copyAABB(createAABB(), res.assets.ball.aabb);
       vec3.scale(interactAABB.min, 2, interactAABB.min);
       vec3.scale(interactAABB.max, 2, interactAABB.max);
       EM.ensureComponentOn(interactBox, PhysicsParentDef, newBall.id);
-      EM.ensureComponentOn(interactBox, PositionDef, vec3.clone([0, 0, 0]));
+      EM.ensureComponentOn(interactBox, PositionDef, V(0, 0, 0));
       EM.ensureComponentOn(interactBox, ColliderDef, {
         shape: "AABB",
         solid: false,
@@ -408,7 +408,7 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
         ) {
           const ballHealth = 2.0;
 
-          let bulletAxis = vec3.fromValues(0, 0, -1);
+          let bulletAxis = V(0, 0, -1);
           vec3.transformQuat(bulletAxis, c.world.rotation, bulletAxis);
           vec3.normalize(bulletAxis, bulletAxis);
           const bulletPos = vec3.clone(c.world.position);
@@ -560,7 +560,7 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
 
     // create ship bounds
     // TODO(@darzu): move into shipyard?
-    const colFloor = em.newEntity();
+    const colFloor = em.new();
     const flAABB: AABB = {
       // prettier-ignore
       min: vec3.clone([
@@ -582,7 +582,7 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
     em.ensureComponentOn(colFloor, PositionDef);
     em.ensureComponentOn(colFloor, ColWallDef);
 
-    const colLeftWall = em.newEntity();
+    const colLeftWall = em.new();
     em.ensureComponentOn(colLeftWall, ColliderDef, {
       shape: "AABB",
       solid: true,
@@ -592,25 +592,25 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
           realFloorHeight + 0.5,
           flAABB.min[2] - 2,
         ]),
-        max: vec3.clone([flAABB.max[0], realCeilHeight, flAABB.min[2]]),
+        max: V(flAABB.max[0], realCeilHeight, flAABB.min[2]),
       },
     });
     em.ensureComponentOn(colLeftWall, PositionDef);
     em.ensureComponentOn(colLeftWall, ColWallDef);
 
-    const colRightWall = em.newEntity();
+    const colRightWall = em.new();
     em.ensureComponentOn(colRightWall, ColliderDef, {
       shape: "AABB",
       solid: true,
       aabb: {
-        min: vec3.clone([flAABB.min[0], realFloorHeight + 0.5, flAABB.max[2]]),
-        max: vec3.clone([flAABB.max[0], realCeilHeight, flAABB.max[2] + 2]),
+        min: V(flAABB.min[0], realFloorHeight + 0.5, flAABB.max[2]),
+        max: V(flAABB.max[0], realCeilHeight, flAABB.max[2] + 2),
       },
     });
     em.ensureComponentOn(colRightWall, PositionDef);
     em.ensureComponentOn(colRightWall, ColWallDef);
 
-    const colFrontWall = em.newEntity();
+    const colFrontWall = em.new();
     em.ensureComponentOn(colFrontWall, ColliderDef, {
       shape: "AABB",
       solid: true,
@@ -630,7 +630,7 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
     em.ensureComponentOn(colFrontWall, PositionDef);
     em.ensureComponentOn(colFrontWall, ColWallDef);
 
-    const colBackWall = em.newEntity();
+    const colBackWall = em.new();
     em.ensureComponentOn(colBackWall, ColliderDef, {
       shape: "AABB",
       solid: true,
@@ -640,7 +640,7 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
           realFloorHeight + 0.5,
           flAABB.min[2] + 0.5,
         ]),
-        max: vec3.clone([flAABB.min[0], realCeilHeight, flAABB.max[2] - 0.5]),
+        max: V(flAABB.min[0], realCeilHeight, flAABB.max[2] - 0.5),
       },
     });
     em.ensureComponentOn(colBackWall, PositionDef);
@@ -661,7 +661,7 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
       scaleMesh3(mesh, size);
       transformMesh(mesh, mat4.fromTranslation(center));
       em.ensureComponentOn(aabbEnt, RenderableConstructDef, mesh);
-      em.ensureComponentOn(aabbEnt, ColorDef, vec3.clone(ENDESGA16.orange));
+      em.ensureComponentOn(aabbEnt, ColorDef, ENDESGA16.orange);
     }
 
     // BULLET VS COLLIDERS
@@ -819,14 +819,14 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
       const g = createGhost();
       vec3.copy(g.position, [0, 1, -1.2]);
       quat.setAxisAngle([0.0, -1.0, 0.0], 1.62, g.rotation);
-      g.cameraFollow.positionOffset = vec3.clone([0, 0, 5]);
+      g.cameraFollow.positionOffset = V(0, 0, 5);
       g.controllable.speed *= 0.5;
       g.controllable.sprintMul = 10;
       const sphereMesh = cloneMesh(res.assets.ball.mesh);
       const visible = false;
       em.ensureComponentOn(g, RenderableConstructDef, sphereMesh, visible);
-      em.ensureComponentOn(g, ColorDef, vec3.clone([0.1, 0.1, 0.1]));
-      em.ensureComponentOn(g, PositionDef, vec3.clone([0, 0, 0]));
+      em.ensureComponentOn(g, ColorDef, V(0.1, 0.1, 0.1));
+      em.ensureComponentOn(g, PositionDef, V(0, 0, 0));
       // em.ensureComponentOn(b2, PositionDef, [0, 0, -1.2]);
       em.ensureComponentOn(g, WorldFrameDef);
       // em.ensureComponentOn(b2, PhysicsParentDef, g.id);
@@ -1146,7 +1146,7 @@ async function spawnPirate(rad: number) {
     // NEW PIRATE
 
     // make platform
-    const platform = em.newEntity();
+    const platform = em.new();
     em.ensureComponentOn(platform, ColorDef);
     vec3.copy(platform.color, ENDESGA16.deepBrown);
     em.ensureComponentOn(platform, PositionDef);
@@ -1159,7 +1159,7 @@ async function spawnPirate(rad: number) {
     em.ensureComponentOn(platform, RenderableConstructDef, groundMesh);
 
     // make cannon
-    const cannon = em.newEntity();
+    const cannon = em.new();
     em.ensureComponentOn(
       cannon,
       RenderableConstructDef,
@@ -1167,12 +1167,12 @@ async function spawnPirate(rad: number) {
     );
     em.ensureComponentOn(cannon, PositionDef);
     em.ensureComponentOn(cannon, PhysicsParentDef, platform.id);
-    em.ensureComponentOn(cannon, ColorDef, vec3.clone(ENDESGA16.darkGray));
+    em.ensureComponentOn(cannon, ColorDef, ENDESGA16.darkGray);
     em.ensureComponentOn(cannon, RotationDef);
     vec3.copy(cannon.position, [0, 2, 0]);
 
     // make timber
-    const timber = em.newEntity();
+    const timber = em.new();
     const _timberMesh = createEmptyMesh("pirateShip");
     const builder = createTimberBuilder(_timberMesh);
     appendPirateShip(builder);
@@ -1190,13 +1190,9 @@ async function spawnPirate(rad: number) {
     reserveSplinterSpace(timberState, 10);
     em.ensureComponentOn(timber, RenderableConstructDef, timberMesh);
     em.ensureComponentOn(timber, WoodStateDef, timberState);
-    em.ensureComponentOn(timber, ColorDef, vec3.clone(ENDESGA16.red));
+    em.ensureComponentOn(timber, ColorDef, ENDESGA16.red);
     const timberAABB = getAABBFromMesh(timberMesh);
-    em.ensureComponentOn(
-      timber,
-      PositionDef,
-      vec3.clone([0, builder.width, 0])
-    );
+    em.ensureComponentOn(timber, PositionDef, V(0, builder.width, 0));
     em.ensureComponentOn(timber, RotationDef);
     em.ensureComponentOn(timber, ColliderDef, {
       shape: "AABB",

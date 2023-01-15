@@ -5,7 +5,7 @@
 // Import .obj files into sprig format
 // https://people.cs.clemson.edu/~dhouse/courses/405/docs/brief-obj-file-format.html
 // http://paulbourke.net/dataformats/obj/
-import { vec2, vec3, vec4, quat, mat4 } from "./sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "./sprig-matrix.js";
 import { RawMesh } from "./render/mesh.js";
 import { assert, never } from "./util.js";
 import { idPair, IdPair, isString } from "./util.js";
@@ -46,11 +46,7 @@ function parseFaceVert(s: string): vec3 | ParseError {
   // parse v1/t1/n1 into [v1, t1, n1]
   const parts = s.split("/");
   if (parts.length !== 3) return `invalid face vertex: ${s}`;
-  return vec3.fromValues(
-    parseFloat(parts[0]),
-    parseFloat(parts[1]),
-    parseFloat(parts[2])
-  );
+  return V(parseFloat(parts[0]), parseFloat(parts[1]), parseFloat(parts[2]));
 }
 function parseFace(p: string[]): vec3[] | ParseError {
   const verts = p.map((s) => parseFaceVert(s));
@@ -123,7 +119,7 @@ export function importObj(obj: string): RawMesh[] | ParseError {
     // finish mesh
     for (let i = 0; i < tri.length + quad.length; i++) {
       // TODO(@darzu): import color
-      colors.push(vec3.clone([0.0, 0.0, 0.0]));
+      colors.push(V(0.0, 0.0, 0.0));
       // colors.push([0.2, 0.2, 0.2]);
     }
     const m: RawMesh = { pos, tri, quad, colors, lines };
@@ -186,9 +182,9 @@ export function importObj(obj: string): RawMesh[] | ParseError {
         // triangle
         // TODO(@darzu): clockwise or counter clockwise?
         if (FLIP_FACES) {
-          tri.push(vec3.fromValues(inds[2], inds[1], inds[0]));
+          tri.push(V(inds[2], inds[1], inds[0]));
         } else {
-          tri.push(vec3.fromValues(inds[0], inds[1], inds[2]));
+          tri.push(V(inds[0], inds[1], inds[2]));
         }
       } else if (inds.length === 4) {
         // quad
@@ -211,9 +207,9 @@ export function importObj(obj: string): RawMesh[] | ParseError {
         // triangle fan
         for (let i = 1; i < 7; i++) {
           if (FLIP_FACES) {
-            tri.push(vec3.clone([inds[0], inds[i + 1], inds[i]]));
+            tri.push(V(inds[0], inds[i + 1], inds[i]));
           } else {
-            tri.push(vec3.clone([inds[0], inds[i], inds[i + 1]]));
+            tri.push(V(inds[0], inds[i], inds[i + 1]));
           }
         }
       } else {

@@ -3,7 +3,7 @@ import { EM, Entity, EntityManager } from "./entity-manager.js";
 import { AllMeshSymbols, BLACK } from "./game/assets.js";
 import { BulletDef } from "./game/bullet.js";
 import { GravityDef } from "./game/gravity.js";
-import { vec2, vec3, vec4, quat, mat4 } from "./sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "./sprig-matrix.js";
 import { createIdxPool } from "./idx-pool.js";
 import { onInit } from "./init.js";
 import { jitter } from "./math.js";
@@ -642,7 +642,7 @@ function createSplinterEnd(
 
   const rot = getSegmentRotation(seg, top);
   // TODO(@darzu): put these into a pool
-  const splinter = EM.newEntity();
+  const splinter = EM.new();
   // TODO(@darzu): perf? probably don't need to normalize, just use same surface ID and provoking vert for all
   const cursor = mat4.fromRotationTranslation(rot, pos, mat4.create());
   let _splinterMesh: RawMesh = createEmptyMesh("splinterEnd");
@@ -682,7 +682,7 @@ function createSplinterEnd(
   EM.ensureComponentOn(
     splinter,
     ColorDef,
-    vec3.clone([Math.random(), Math.random(), Math.random()])
+    V(Math.random(), Math.random(), Math.random())
   );
   EM.ensureComponentOn(splinter, PositionDef);
   EM.ensureComponentOn(splinter, RotationDef);
@@ -756,8 +756,8 @@ export function createTimberBuilder(mesh: RawMesh) {
   function addSplinteredEnd(lastLoopEndVi: number, numJags: number) {
     const vi = mesh.pos.length;
 
-    const v0 = vec3.fromValues(0, 0, b.depth);
-    const v1 = vec3.fromValues(0, 0, -b.depth);
+    const v0 = V(0, 0, b.depth);
+    const v1 = V(0, 0, -b.depth);
     vec3.transformMat4(v0, cursor, v0);
     vec3.transformMat4(v1, cursor, v1);
     mesh.pos.push(v0, v1);
@@ -768,9 +768,9 @@ export function createTimberBuilder(mesh: RawMesh) {
     const v_bbr = lastLoopEndVi + -3;
     const v_bbl = lastLoopEndVi + -2;
     // +D side
-    mesh.tri.push(vec3.clone([v_tm, v_tbl, v_tbr]));
+    mesh.tri.push(V(v_tm, v_tbl, v_tbr));
     // -D side
-    mesh.tri.push(vec3.clone([v_tm + 1, v_bbr, v_bbl]));
+    mesh.tri.push(V(v_tm + 1, v_bbr, v_bbl));
 
     let v_tlast = v_tbl;
     let v_blast = v_bbl;
@@ -800,17 +800,17 @@ export function createTimberBuilder(mesh: RawMesh) {
       if (VERBOSE_LOG && cross_last_this[2] > 0) console.warn(`non-manifold!`);
 
       // +D side
-      const vtj = vec3.fromValues(x, y, d);
+      const vtj = V(x, y, d);
       vec3.transformMat4(vtj, cursor, vtj);
       const vtji = mesh.pos.length;
       mesh.pos.push(vtj);
-      mesh.tri.push(vec3.clone([v_tm, vtji, v_tlast]));
+      mesh.tri.push(V(v_tm, vtji, v_tlast));
 
       // -D side
-      const vbj = vec3.fromValues(x, y, -d);
+      const vbj = V(x, y, -d);
       vec3.transformMat4(vbj, cursor, vbj);
       mesh.pos.push(vbj);
-      mesh.tri.push(vec3.clone([v_tm + 1, v_blast, vtji + 1]));
+      mesh.tri.push(V(v_tm + 1, v_blast, vtji + 1));
 
       // D to -D quad
       mesh.quad.push(vec4.clone([v_blast, v_tlast, vtji, vtji + 1]));
@@ -822,9 +822,9 @@ export function createTimberBuilder(mesh: RawMesh) {
       lastY = y;
     }
     // +D side
-    mesh.tri.push(vec3.clone([v_tm, v_tbr, v_tlast]));
+    mesh.tri.push(V(v_tm, v_tbr, v_tlast));
     // -D side
-    mesh.tri.push(vec3.clone([v_tm + 1, v_blast, v_bbr]));
+    mesh.tri.push(V(v_tm + 1, v_blast, v_bbr));
 
     // D to -D quad
     mesh.quad.push(vec4.clone([v_blast, v_tlast, v_tbr, v_bbr]));
@@ -856,10 +856,10 @@ export function createTimberBuilder(mesh: RawMesh) {
 
   function addLoopVerts() {
     // TODO(@darzu): ensure this agrees with the width/depth calculation in addBoard
-    const v0 = vec3.fromValues(b.width, 0, b.depth);
-    const v1 = vec3.fromValues(b.width, 0, -b.depth);
-    const v2 = vec3.fromValues(-b.width, 0, -b.depth);
-    const v3 = vec3.fromValues(-b.width, 0, b.depth);
+    const v0 = V(b.width, 0, b.depth);
+    const v1 = V(b.width, 0, -b.depth);
+    const v2 = V(-b.width, 0, -b.depth);
+    const v3 = V(-b.width, 0, b.depth);
     vec3.transformMat4(v0, cursor, v0);
     vec3.transformMat4(v1, cursor, v1);
     vec3.transformMat4(v2, cursor, v2);

@@ -1,7 +1,7 @@
 import { AnimateTo, AnimateToDef } from "../animate-to.js";
 import { createRef, Ref } from "../em_helpers.js";
 import { EM, Entity } from "../entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { onInit } from "../init.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { eventWizard } from "../net/events.js";
@@ -45,7 +45,7 @@ export function createSpawner(
   uvDir: vec2,
   animate?: Partial<AnimateTo>
 ) {
-  const e = EM.newEntity();
+  const e = EM.new();
   EM.ensureComponentOn(e, SpawnerDef);
   EM.ensureComponentOn(e, UVPosDef, uvPos);
   EM.ensureComponentOn(e, UVDirDef, uvDir);

@@ -41,7 +41,8 @@ fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
   let dims : vec2<i32> = vec2<i32>(textureDimensions(surfTex));
   let dimsF = vec2<f32>(dims);
 
-  let lineWidth = 2.0;
+// TODO(@darzu): 1.0 for LD52
+  let lineWidth = 1.0;
   // let lineWidth = 3.0; // OLD
   // TODO(@darzu): DBG WIREFRAME
   //let lineWidth = 1.0;

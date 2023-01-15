@@ -2,7 +2,7 @@ import { ColorDef } from "../color-ecs.js";
 import { EM, EntityW } from "../entity-manager.js";
 import { AssetsDef, GameMesh } from "../game/assets.js";
 import { gameplaySystems } from "../game/game.js";
-import { vec2, vec3, vec4, quat, mat4, mat3 } from "../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, mat3, V } from "../sprig-matrix.js";
 import {
   extrudeQuad,
   HEdge,
@@ -142,7 +142,7 @@ async function createMeshEditor() {
         handle
       );
     } else {
-      const hpEnt_ = EM.newEntity();
+      const hpEnt_ = EM.new();
       EM.ensureComponentOn(
         hpEnt_,
         RenderableConstructDef,
@@ -153,9 +153,9 @@ async function createMeshEditor() {
         "std",
         false
       );
-      EM.ensureComponentOn(hpEnt_, PositionDef, vec3.clone([0, 0.1, 0]));
+      EM.ensureComponentOn(hpEnt_, PositionDef, V(0, 0.1, 0));
       // TODO(@darzu): make scale configurable
-      EM.ensureComponentOn(hpEnt_, ScaleDef, vec3.clone([5, 5, 5]));
+      EM.ensureComponentOn(hpEnt_, ScaleDef, V(5, 5, 5));
       const hpEnt = await EM.whenEntityHas(
         hpEnt_,
         RenderableDef,
@@ -191,7 +191,7 @@ async function createMeshEditor() {
   }
 
   function _createGlyph(gm: GameMesh) {
-    const glyph_ = EM.newEntity();
+    const glyph_ = EM.new();
     EM.ensureComponentOn(glyph_, RenderableConstructDef, gm.proto, false);
     EM.ensureComponentOn(glyph_, ColorDef);
     EM.ensureComponentOn(glyph_, PositionDef);

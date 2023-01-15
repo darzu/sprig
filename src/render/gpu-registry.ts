@@ -1,4 +1,4 @@
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { assert } from "../util.js";
 import {
   CyStructDesc,
@@ -15,8 +15,8 @@ import { ShaderName, ShaderSet } from "./shader-loader.js";
 // TODO(@darzu): ENABLE AA
 // export const antiAliasSampleCount = 4;
 
-export interface CyResourcePtr {
-  kind: PtrKind;
+export interface CyResourcePtr<K extends PtrKind = PtrKind> {
+  kind: K;
   name: string;
 }
 

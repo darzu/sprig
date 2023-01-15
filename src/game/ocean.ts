@@ -1,7 +1,7 @@
 import { AnimateToDef } from "../animate-to.js";
 import { createRef, Ref } from "../em_helpers.js";
 import { EM, EntityManager } from "../entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { InputsDef } from "../inputs.js";
 import { clamp } from "../math.js";
 import {
@@ -90,9 +90,10 @@ EM.registerSerializerPair(
 export const oceanJfa = createJfaPipelines(uvMaskTex, "exterior");
 
 export async function initOcean() {
+  // console.log("initOcean");
   const res = await EM.whenResources(RendererDef, AssetsDef, TimeDef);
 
-  const ocean = EM.newEntity();
+  const ocean = EM.new();
   let oceanEntId = ocean.id; // hacky?
   EM.ensureComponentOn(
     ocean,
@@ -104,7 +105,7 @@ export async function initOcean() {
     UVUNWRAP_MASK | DEFAULT_MASK,
     "ocean"
   );
-  EM.ensureComponentOn(ocean, ColorDef, vec3.clone([0.1, 0.3, 0.8]));
+  EM.ensureComponentOn(ocean, ColorDef, V(0.1, 0.3, 0.8));
   //EM.ensureComponentOn(ocean, PositionDef, [12000, 180, 0]);
   EM.ensureComponentOn(ocean, PositionDef);
 

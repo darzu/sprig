@@ -1,4 +1,4 @@
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { tempVec3 } from "../temp-pool.js";
 import { EM, EntityManager } from "../entity-manager.js";
 import { TimeDef } from "../time.js";
@@ -65,7 +65,7 @@ export const SpringGridDef = EM.defineComponent(
     const nextPositions: vec3[] = [];
     for (let y = 0; y < rows; y++) {
       for (let x = 0; x < columns; x++) {
-        let pos = vec3.fromValues(x * distance, y * distance, 0);
+        let pos = V(x * distance, y * distance, 0);
         positions.push(pos);
         prevPositions.push(vec3.clone(pos));
         nextPositions.push(vec3.create());

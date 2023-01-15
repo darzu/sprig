@@ -2,7 +2,7 @@ import { CameraView } from "./camera.js";
 import { ColorDef } from "./color-ecs.js";
 import { EM, Entity, EntityW } from "./entity-manager.js";
 import { AssetsDef } from "./game/assets.js";
-import { vec2, vec3, vec4, quat, mat4 } from "./sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "./sprig-matrix.js";
 import { mathMap } from "./math.js";
 import { getLineEnd, Line, Ray } from "./physics/broadphase.js";
 import { PositionDef, ScaleDef } from "./physics/transform.js";
@@ -15,6 +15,7 @@ import {
   RendererDef,
 } from "./render/renderer-ecs.js";
 import { tempVec3 } from "./temp-pool.js";
+import { randNormalPosVec3 } from "./utils-3d.js";
 
 // TODO(@darzu): move this helper elsewhere?
 // TODO(@darzu): would be dope to support thickness;
@@ -67,16 +68,13 @@ export function createLine(start: vec3, end: vec3, color: vec3) {
 
   const pos = [start, start2, end2, end];
 
-  const e = EM.newEntity();
+  const e = EM.new();
   EM.ensureComponentOn(e, ColorDef, color);
   const m: Mesh = {
     pos,
     tri: [],
     // TODO(@darzu): HACK
-    quad: [
-      vec4.clone([0, 1, 2, 3]),
-      vec4.clone([3, 2, 1, 0]),
-    ],
+    quad: [V(0, 1, 2, 3), V(3, 2, 1, 0)],
     colors: [color, color],
     // TODO(@darzu): use line rendering!
     // lines: [[0, 1]],
@@ -95,11 +93,11 @@ export async function drawBall(
   color: vec3
 ): Promise<EntityW<[typeof PositionDef]>> {
   let res = await EM.whenResources(AssetsDef);
-  const e = EM.newEntity();
+  const e = EM.new();
   EM.ensureComponentOn(e, ColorDef, color);
   EM.ensureComponentOn(e, RenderableConstructDef, res.assets.ball.proto);
   EM.ensureComponentOn(e, PositionDef, pos);
-  EM.ensureComponentOn(e, ScaleDef, vec3.clone([size, size, size]));
+  EM.ensureComponentOn(e, ScaleDef, V(size, size, size));
   return e;
 }
 
@@ -141,4 +139,8 @@ export function screenPosToRay(screenPos: vec2, cameraView: CameraView): Ray {
   };
 
   return r;
+}
+
+export function randColor(v?: vec3): vec3 {
+  return randNormalPosVec3(v);
 }

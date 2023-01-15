@@ -240,7 +240,7 @@ export class EntityManager {
   }
 
   // TODO(@darzu): dont return the entity!
-  public newEntity(rangeName?: string): Entity {
+  public new(rangeName?: string): Entity {
     if (rangeName === undefined) rangeName = this.defaultRange;
     const range = this.ranges[rangeName];
     if (!range) {

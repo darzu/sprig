@@ -13,7 +13,7 @@ export const GhostDef = EM.defineComponent("ghost", () => ({}));
 
 export function createGhost() {
   const em: EntityManager = EM;
-  const g = em.newEntity();
+  const g = em.new();
   em.ensureComponentOn(g, GhostDef);
   em.ensureComponentOn(g, ControllableDef);
   g.controllable.modes.canFall = false;

@@ -5,7 +5,7 @@ import { Mesh } from "./mesh.js";
 import { CyArray, CyIdxBuffer } from "./data-webgpu.js";
 import { PERF_DBG_GPU, VERBOSE_MESH_POOL_STATS } from "../flags.js";
 import { ComputeVertsDataFn } from "./gpu-registry.js";
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { DEFAULT_MASK } from "./pipeline-masks.js";
 
 // Mesh: lossless, all the data of a model/asset from blender
@@ -264,6 +264,16 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     assert(
       !m.quad.length || m.tri.length % 2 === 0,
       `tri.length not even for ${m.dbgName}`
+    );
+    const faceNum = m.tri.length + m.quad.length;
+    // console.dir(m);
+    assert(
+      m.colors.length === faceNum,
+      `${m.dbgName}: Inconsistent face num ${faceNum} vs color num ${m.colors.length}`
+    );
+    assert(
+      m.surfaceIds.length === faceNum,
+      `${m.dbgName}: Inconsistent face num ${faceNum} vs surface IDs num ${m.surfaceIds.length}`
     );
 
     assertDbg(pool.numTris % 2 === 0, "alignment");

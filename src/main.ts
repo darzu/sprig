@@ -13,7 +13,7 @@ import { registerCommonSystems } from "./game/game-init.js";
 import { setSimulationAlpha } from "./render/renderer-ecs.js";
 import { never } from "./util.js";
 // import { initHyperspaceGame } from "./game/game-hyperspace.js";
-import { DBG_ASSERT, VERBOSE_LOG } from "./flags.js";
+import { DBG_ASSERT, ENABLE_NET, VERBOSE_LOG } from "./flags.js";
 import { initRogueGame } from "./game/game-rogue.js";
 import { gameplaySystems } from "./game/game.js";
 import { initFontEditor } from "./game/game-font.js";
@@ -21,24 +21,25 @@ import { initGJKSandbox } from "./game/game-gjk.js";
 import { initHyperspaceGame } from "./game/game-hyperspace.js";
 import { initClothSandbox } from "./game/game-cloth.js";
 import { initCubeGame } from "./game/xp-cube.js";
-import { resetTempMatrixBuffer } from "./sprig-matrix.js";
+import { resetTempMatrixBuffer, V } from "./sprig-matrix.js";
+import { initLD52 } from "./ld52/game-ld52.js";
 
 export const FORCE_WEBGL = false;
 export const MAX_MESHES = 20000;
 export const MAX_VERTICES = 21844;
-const ENABLE_NET = false;
 const AUTOSTART = true;
 
 const ALL_GAMES = [
   "gjk",
   "rebound", // broken-ish
   "ld51",
+  "ld52",
   "font",
   "hyperspace",
   "cloth", // broken-ish
   "cube",
 ] as const;
-const GAME: typeof ALL_GAMES[number] = "font";
+const GAME: typeof ALL_GAMES[number] = "ld52";
 
 // Run simulation with a fixed timestep @ 60hz
 const TIMESTEP = 1000 / 60;
@@ -56,9 +57,11 @@ function legacyRequireAllTheSystems() {
   //    - Lets use types for this. String matching the name is brittle and unnessessary
   EM.requireSystem("inputs");
   EM.requireSystem("mouseDrag");
-  EM.requireSystem("getStatsFromNet");
-  EM.requireSystem("getEventsFromNet");
-  EM.requireSystem("sendEventsToNet");
+  if (ENABLE_NET) {
+    EM.requireSystem("getStatsFromNet");
+    EM.requireSystem("getEventsFromNet");
+    EM.requireSystem("sendEventsToNet");
+  }
   EM.requireSystem("canvas");
   EM.requireSystem("uiText");
   EM.requireSystem("devConsoleToggle");
@@ -69,14 +72,16 @@ function legacyRequireAllTheSystems() {
   // EM.callSystem("updateScore");
   EM.requireSystem("renderInit");
   EM.requireSystem("musicStart");
-  EM.requireSystem("handleNetworkEvents");
-  EM.requireSystem("recordPreviousLocations");
-  EM.requireSystem("clearRemoteUpdatesMarker");
-  EM.requireSystem("netUpdate");
-  EM.requireSystem("predict");
-  EM.requireSystem("connectToServer");
-  EM.requireSystem("handleJoin");
-  EM.requireSystem("handleJoinResponse");
+  if (ENABLE_NET) {
+    EM.requireSystem("handleNetworkEvents");
+    EM.requireSystem("recordPreviousLocations");
+    EM.requireSystem("clearRemoteUpdatesMarker");
+    EM.requireSystem("netUpdate");
+    EM.requireSystem("predict");
+    EM.requireSystem("connectToServer");
+    EM.requireSystem("handleJoin");
+    EM.requireSystem("handleJoinResponse");
+  }
   EM.requireSystem("buildBullets");
   EM.requireSystem("buildCursor");
   EM.requireSystem("placeCursorAtScreenCenter");
@@ -193,10 +198,13 @@ function legacyRequireAllTheSystems() {
   }
   EM.requireSystem("animateTo");
 
-  EM.requireSystem("netDebugSystem");
-  EM.requireSystem("netAck");
-  EM.requireSystem("netSync");
-  EM.requireSystem("sendOutboxes");
+  if (ENABLE_NET) {
+    EM.requireSystem("netDebugSystem");
+    EM.requireSystem("netAck");
+    EM.requireSystem("netSync");
+    EM.requireSystem("sendOutboxes");
+  }
+
   EM.requireSystem("detectedEventsToHost");
   EM.requireSystem("handleEventRequests");
   EM.requireSystem("handleEventRequestAcks");
@@ -261,6 +269,7 @@ async function startGame(localPeerName: string, host: string | null) {
   else if (GAME === "cube") initCubeGame(EM);
   else if (GAME === "ld51") initRogueGame(EM, hosting);
   else if (GAME === "font") initFontEditor(EM);
+  else if (GAME === "ld52") initLD52(EM, hosting);
   else never(GAME, "TODO game");
 
   legacyRequireAllTheSystems();

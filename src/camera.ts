@@ -6,7 +6,7 @@ import {
   EntityW,
   WithComponent,
 } from "./entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4 } from "./sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "./sprig-matrix.js";
 import { max } from "./math.js";
 import { AuthorityDef, MeDef } from "./net/components.js";
 import { WorldFrameDef } from "./physics/nonintersection.js";
@@ -71,10 +71,10 @@ export const CameraFollowDef = EM.defineComponent(
 );
 
 export const CAMERA_OFFSETS = {
-  thirdPerson: vec3.clone([0, 0, 10]),
+  thirdPerson: V(0, 0, 10),
   // thirdPersonOverShoulder: [1, 3, 2],
-  thirdPersonOverShoulder: vec3.clone([2, 2, 4]),
-  firstPerson: vec3.clone([0, 0, 0]),
+  thirdPersonOverShoulder: V(2, 2, 4),
+  firstPerson: V(0, 0, 0),
 } as const;
 
 export function setCameraFollowPosition(

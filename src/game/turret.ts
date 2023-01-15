@@ -5,7 +5,7 @@ import {
   EntityW,
   Component,
 } from "../entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import {
   PhysicsParentDef,
   PositionDef,
@@ -39,6 +39,8 @@ export const TurretDef = EM.defineComponent("turret", () => {
     cameraPitchOffset: 0,
     invertYaw: false,
     cameraYawFactor: 0,
+    keyboardControls: false,
+    keyboardSpeed: 1,
   };
 });
 
@@ -50,7 +52,9 @@ export function constructNetTurret(
   cameraYawOffset: number = 0,
   cameraPitchOffset: number = -Math.PI / 8,
   cameraYawFactor: number = 0,
-  cameraFollowOffset: vec3 = CAMERA_OFFSETS.thirdPersonOverShoulder
+  cameraFollowOffset: vec3 = CAMERA_OFFSETS.thirdPersonOverShoulder,
+  keyboardControls: boolean = false,
+  keyboardSpeed: number = 1
 ): asserts e is EntityW<
   [
     typeof TurretDef,
@@ -69,6 +73,8 @@ export function constructNetTurret(
   e.turret.cameraYawOffset = cameraYawOffset;
   e.turret.cameraPitchOffset = cameraPitchOffset;
   e.turret.cameraYawFactor = cameraYawFactor;
+  e.turret.keyboardControls = keyboardControls;
+  e.turret.keyboardSpeed = keyboardSpeed;
 
   EM.ensureComponentOn(e, RotationDef);
   EM.ensureComponentOn(e, SyncDef);
@@ -83,12 +89,12 @@ export function constructNetTurret(
   let interactBox: Entity;
   // create separate hitbox for interacting with the turret
   if ("min" in aabbOrInteractionEntity) {
-    interactBox = EM.newEntity();
+    interactBox = EM.new();
     const interactAABB = copyAABB(createAABB(), aabbOrInteractionEntity);
     vec3.scale(interactAABB.min, 2, interactAABB.min);
     vec3.scale(interactAABB.max, 2, interactAABB.max);
     EM.ensureComponentOn(interactBox, PhysicsParentDef, e.id);
-    EM.ensureComponentOn(interactBox, PositionDef, vec3.clone([0, 0, 0]));
+    EM.ensureComponentOn(interactBox, PositionDef, V(0, 0, 0));
     EM.ensureComponentOn(interactBox, ColliderDef, {
       shape: "AABB",
       solid: false,
@@ -167,14 +173,28 @@ export function registerTurretSystems(em: EntityManager) {
       for (let c of turrets) {
         if (DeletedDef.isOn(c)) continue;
         if (c.turret.mannedId !== player.id) continue;
-
-        c.yawpitch.yaw += -res.inputs.mouseMov[0] * 0.005;
+        if (c.turret.keyboardControls) {
+          if (res.inputs.keyDowns["a"])
+            c.yawpitch.yaw += c.turret.keyboardSpeed * 0.005;
+          if (res.inputs.keyDowns["d"])
+            c.yawpitch.yaw -= c.turret.keyboardSpeed * 0.005;
+        } else {
+          c.yawpitch.yaw += -res.inputs.mouseMov[0] * 0.005;
+        }
         c.yawpitch.yaw = clamp(
           c.yawpitch.yaw,
           c.turret.minYaw,
           c.turret.maxYaw
         );
-        c.yawpitch.pitch += -res.inputs.mouseMov[1] * 0.002;
+
+        if (c.turret.keyboardControls) {
+          if (res.inputs.keyDowns["s"])
+            c.yawpitch.pitch -= c.turret.keyboardSpeed * 0.002;
+          if (res.inputs.keyDowns["w"])
+            c.yawpitch.pitch += c.turret.keyboardSpeed * 0.002;
+        } else {
+          c.yawpitch.pitch += -res.inputs.mouseMov[1] * 0.002;
+        }
         c.yawpitch.pitch = clamp(
           c.yawpitch.pitch,
           c.turret.minPitch,

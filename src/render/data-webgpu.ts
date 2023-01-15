@@ -21,7 +21,7 @@ import {
 } from "./gpu-registry.js";
 import { MeshPool } from "./mesh-pool.js";
 import { BLACK } from "../game/assets.js";
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { GPUBufferUsage } from "./webgpu-hacks.js";
 import { PERF_DBG_GPU } from "../flags.js";
 
@@ -66,7 +66,14 @@ export interface CyTexture {
   format: GPUTextureFormat;
   usage: GPUTextureUsageFlags;
   // TODO(@darzu): support partial texture update?
-  queueUpdate: (data: Float32Array) => void;
+  queueUpdate: (
+    data: Float32Array,
+    // TODO(@darzu): make optional
+    x?: number,
+    y?: number,
+    w?: number,
+    h?: number
+  ) => void;
   resize: (width: number, height: number) => void;
   attachment: (opts?: {
     doClear?: boolean;
@@ -374,19 +381,40 @@ export function createCyTexture(
     });
   }
 
-  // const queueUpdate = (data: Float32Array) => {
-  function queueUpdate(data: Float32Array) {
+  // TODO(@darzu): support different data types (instead of Float32)
+  function queueUpdate(
+    data: Float32Array,
+    x?: number,
+    y?: number,
+    w?: number,
+    h?: number
+  ) {
+    if (bytesPerVal % data.BYTES_PER_ELEMENT !== 0) {
+      console.warn(
+        `mismatch between ${cyTex.ptr.name}.queueUpdate data el size ${data.BYTES_PER_ELEMENT} vs tex el size ${bytesPerVal}`
+      );
+    }
+    x = x ?? 0;
+    y = y ?? 0;
+    w = w ?? cyTex.size[0] - x;
+    h = h ?? cyTex.size[1] - y;
     device.queue.writeTexture(
-      { texture: cyTex.texture },
+      {
+        origin: {
+          x,
+          y,
+        },
+        texture: cyTex.texture,
+      },
       data,
       {
         offset: 0,
-        bytesPerRow: cyTex.size[0] * bytesPerVal,
-        rowsPerImage: cyTex.size[1],
+        bytesPerRow: w * bytesPerVal,
+        // rowsPerImage: cyTex.size[1],
       },
       {
-        width: cyTex.size[0],
-        height: cyTex.size[1],
+        width: w,
+        height: h,
         // TODO(@darzu): what does this mean?
         depthOrArrayLayers: 1,
       }

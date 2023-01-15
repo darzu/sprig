@@ -5,7 +5,7 @@ import {
   Entity,
   EntityW,
 } from "../entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { FinishedDef } from "../build.js";
 import { ColorDef } from "../color-ecs.js";
 import {
@@ -61,9 +61,9 @@ export const BulletConstructDef = EM.defineComponent(
     health?: number
   ) => {
     return {
-      location: loc ?? vec3.fromValues(0, 0, 0),
-      linearVelocity: vel ?? vec3.fromValues(0, 1, 0),
-      angularVelocity: angVel ?? vec3.fromValues(0, 0, 0),
+      location: loc ?? V(0, 0, 0),
+      linearVelocity: vel ?? V(0, 1, 0),
+      angularVelocity: angVel ?? V(0, 0, 0),
       team: team ?? 0,
       gravity: gravity ?? 0,
       health: health ?? 0,
@@ -186,7 +186,7 @@ export async function fireBullet(
 
   let e: BulletEnt;
   if (_bulletPool.length < _maxBullets) {
-    let e_ = em.newEntity();
+    let e_ = em.new();
     em.ensureComponentOn(e_, BulletConstructDef);
     e = e_;
     _bulletPool.push(e);
@@ -201,7 +201,7 @@ export async function fireBullet(
     if (_nextBulletIdx >= _bulletPool.length) _nextBulletIdx = 0;
   }
 
-  let bulletAxis = vec3.fromValues(0, 0, -1);
+  let bulletAxis = V(0, 0, -1);
   vec3.transformQuat(bulletAxis, rotation, bulletAxis);
   vec3.normalize(bulletAxis, bulletAxis);
   const linearVelocity = vec3.scale(bulletAxis, speed, vec3.create());
@@ -248,7 +248,7 @@ async function initBulletPartPool() {
   for (let i = 0; i < numSetsInPool; i++) {
     let bset: BulletPart[] = [];
     for (let part of assets.ball_broken) {
-      const pe = em.newEntity();
+      const pe = em.new();
       em.ensureComponentOn(pe, RenderableConstructDef, part.proto);
       em.ensureComponentOn(pe, ColorDef);
       em.ensureComponentOn(pe, RotationDef);
@@ -256,7 +256,7 @@ async function initBulletPartPool() {
       em.ensureComponentOn(pe, LinearVelocityDef);
       em.ensureComponentOn(pe, AngularVelocityDef);
       // em.ensureComponentOn(pe, LifetimeDef, 2000);
-      em.ensureComponentOn(pe, GravityDef, vec3.clone([0, -4, 0]));
+      em.ensureComponentOn(pe, GravityDef, V(0, -4, 0));
       em.ensureComponentOn(pe, SplinterParticleDef);
       bset.push(pe);
     }

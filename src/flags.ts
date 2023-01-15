@@ -12,4 +12,6 @@ export const PERF_DBG_EM = false;
 export const ENABLE_AUDIO = true;
 export const DBG_FANG_SHIP = false;
 export const DBG_TRYCALLSYSTEM = false;
-export const DBG_INIT_DEPS = true;
+export const DBG_INIT_DEPS = false;
+export const DEBUG_INPUTS = false;
+export const ENABLE_NET = false; // TODO(@darzu): was for LD52

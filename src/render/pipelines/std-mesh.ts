@@ -1,7 +1,7 @@
 import { ENDESGA16 } from "../../color/palettes.js";
 // import { oceanJfa } from "../../game/ocean.js";
 // import { oceanJfa } from "../../game/ocean.js";
-import { vec2, vec3, vec4, quat, mat4 } from "../../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../../sprig-matrix.js";
 import { createRenderTextureToQuad } from "../gpu-helper.js";
 import { comparisonSamplerPtr, CY, linearSamplerPtr } from "../gpu-registry.js";
 import { pointLightsPtr } from "../lights.js";
@@ -58,8 +58,9 @@ export const stdRenderPipeline = CY.createRenderPipeline("triRender", {
     // TODO(@darzu): support textures
     // { ptr: clothTexPtr0, access: "read", alias: "clothTex" },
   ],
-  cullMode: "back",
-  // cullMode: "none",
+  // TODO(@darzu): hack for ld52
+  // cullMode: "back",
+  cullMode: "none",
   meshOpt: {
     pool: meshPoolPtr,
     stepMode: "per-mesh-handle",

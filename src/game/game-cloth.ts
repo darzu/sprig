@@ -1,7 +1,7 @@
 import { CameraDef } from "../camera.js";
 import { ColorDef } from "../color-ecs.js";
 import { EntityManager } from "../entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { InputsDef } from "../inputs.js";
 import { mathMapNEase } from "../math.js";
 import { ColliderDef } from "../physics/collider.js";
@@ -105,15 +105,15 @@ export async function initClothSandbox(em: EntityManager, hosting: boolean) {
   c.renderable.enabled = true;
   c.cursor3d.maxDistance = 10;
 
-  const plane = em.newEntity();
+  const plane = em.new();
   em.ensureComponentOn(plane, RenderableConstructDef, res.assets.plane.proto);
-  em.ensureComponentOn(plane, ColorDef, vec3.clone([0.2, 0.3, 0.2]));
-  em.ensureComponentOn(plane, PositionDef, vec3.clone([0, -5, 0]));
+  em.ensureComponentOn(plane, ColorDef, V(0.2, 0.3, 0.2));
+  em.ensureComponentOn(plane, PositionDef, V(0, -5, 0));
 
-  const ship = em.newEntity();
+  const ship = em.new();
   em.ensureComponentOn(ship, RenderableConstructDef, res.assets.ship.proto);
   em.ensureComponentOn(ship, ColorDef, ENEMY_SHIP_COLOR);
-  em.ensureComponentOn(ship, PositionDef, vec3.clone([20, -2, 0]));
+  em.ensureComponentOn(ship, PositionDef, V(20, -2, 0));
   em.ensureComponentOn(
     ship,
     RotationDef,
@@ -141,12 +141,12 @@ export async function initClothSandbox(em: EntityManager, hosting: boolean) {
   //   quat.fromEuler(quat.create(), 0, Math.PI * 0.1, 0)
   // );
 
-  const box = em.newEntity();
+  const box = em.new();
   em.ensureComponentOn(box, RenderableConstructDef, res.assets.cube.proto);
-  em.ensureComponentOn(box, ColorDef, vec3.clone([0.1, 0.1, 0.1]));
-  em.ensureComponentOn(box, PositionDef, vec3.clone([0, 0, 3]));
+  em.ensureComponentOn(box, ColorDef, V(0.1, 0.1, 0.1));
+  em.ensureComponentOn(box, PositionDef, V(0, 0, 3));
   em.ensureComponentOn(box, RotationDef);
-  em.ensureComponentOn(box, AngularVelocityDef, vec3.clone([0, 0.001, 0.001]));
+  em.ensureComponentOn(box, AngularVelocityDef, V(0, 0.001, 0.001));
   em.ensureComponentOn(box, WorldFrameDef);
   em.ensureComponentOn(box, ColliderDef, {
     shape: "AABB",
@@ -154,22 +154,18 @@ export async function initClothSandbox(em: EntityManager, hosting: boolean) {
     aabb: res.assets.cube.aabb,
   });
 
-  const cloth = em.newEntity();
+  const cloth = em.new();
   em.ensureComponentOn(cloth, ClothConstructDef, {
-    location: vec3.clone([0, 0, 0]),
-    color: vec3.clone([0.9, 0.9, 0.8]),
+    location: V(0, 0, 0),
+    color: V(0.9, 0.9, 0.8),
     rows: 5,
     columns: 5,
     distance: 2,
   });
   const F = 100.0;
-  em.ensureComponentOn(cloth, ForceDef, vec3.clone([F, F, F]));
+  em.ensureComponentOn(cloth, ForceDef, V(F, F, F));
 
-  const line = await drawLine(
-    vec3.create(),
-    vec3.create(),
-    vec3.clone([0, 1, 0])
-  );
+  const line = await drawLine(vec3.create(), vec3.create(), V(0, 1, 0));
 
   em.registerSystem(
     [ClothConstructDef, ClothLocalDef, WorldFrameDef, ForceDef],

@@ -59,9 +59,12 @@ import { registerEnemyShipSystems } from "./enemy-ship.js";
 import { registerNetSystems } from "../net/net.js";
 import { registerNoodleSystem } from "./noodles.js";
 import { registerToolSystems } from "./tool.js";
+import { ENABLE_NET } from "../flags.js";
 
 export function registerCommonSystems(em: EntityManager) {
-  registerNetSystems(em);
+  if (ENABLE_NET) {
+    registerNetSystems(em);
+  }
 
   registerInitCanvasSystem(em);
   registerUISystems(em);
