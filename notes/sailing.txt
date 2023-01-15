@@ -1,0 +1,20 @@
+Boat physics:
+  https://physicstoday.scitation.org/doi/10.1063/1.2883908
+
+sail physics and lift:
+  https://www.youtube.com/watch?v=yqwb4HIrORM
+
+how to sail:
+  https://www.youtube.com/watch?v=WjBYRUZbU4Y
+
+sailing faster on modern boat:
+  https://www.youtube.com/watch?v=ClMisGS9WJg
+
+more sailing physics:
+  https://www.youtube.com/watch?v=jJtvGF8vZbE
+
+"sail faster than the wind":
+  https://www.youtube.com/watch?v=u5InZ6iknUM
+
+Long sailing math:
+  https://www.youtube.com/watch?v=LmR_faMxWeg
