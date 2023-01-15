@@ -426,3 +426,9 @@ Input latency:
 
 Vsync test
   https://www.vsynctester.com/index.html
+
+Box2D 3.0 plans:
+  https://box2d.org/posts/2023/01/starting-box2d-3.0/
+  handles not pointers,
+  multithreading,
+  
