@@ -62,8 +62,6 @@ NOTES:
 - Cut grass by updating a texture that has cut/not cut or maybe cut-height
 */
 
-const DBG_PLAYER = true;
-
 const WORLD_SIZE = 1024;
 
 const RED_DAMAGE_CUTTING = 10;

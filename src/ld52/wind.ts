@@ -1,5 +1,6 @@
 import { Component, EM } from "../entity-manager.js";
 import { randInt } from "../math.js";
+import { RendererDef } from "../render/renderer-ecs.js";
 import { V, vec3 } from "../sprig-matrix.js";
 import { TimeDef } from "../time.js";
 import { range } from "../util.js";
@@ -36,13 +37,17 @@ function setWindAngle(wind: Component<typeof WindDef>, angle: number) {
 
 EM.registerSystem(
   [],
-  [WindDef, TimeDef],
+  [WindDef, TimeDef, RendererDef],
   (_, res) => {
     if (res.time.step % STEPS_ON_WIND_DIR === 0) {
       const angle = WIND_ANGLES[randInt(0, 7)];
       console.log(`changing wind to ${angle}`);
       res.wind.oldAngle = res.wind.targetAngle;
       res.wind.targetAngle = angle;
+
+      res.renderer.renderer.updateScene({
+        windDir: res.wind.dir,
+      });
     }
   },
   "changeWind"

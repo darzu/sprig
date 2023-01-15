@@ -351,7 +351,7 @@ export function registerRenderer(em: EntityManager) {
 
   em.registerSystem(
     null, // NOTE: see "renderList*" systems and NOTE above. We use those to construct our query.
-    [CameraViewDef, RendererDef, TimeDef, PartyDef, WindDef],
+    [CameraViewDef, RendererDef, TimeDef, PartyDef],
     (_, res) => {
       const renderer = res.renderer.renderer;
       const cameraView = res.cameraView;
@@ -530,7 +530,6 @@ export function registerRenderer(em: EntityManager) {
         maxSurfaceId,
         partyPos: res.party.pos,
         partyDir: res.party.dir,
-        windDir: res.wind.dir,
         cameraPos: cameraView.location,
         numPointLights: pointLights.length,
       });
@@ -538,6 +537,8 @@ export function registerRenderer(em: EntityManager) {
 
       renderer.updatePointLights(pointLights);
 
+      // TODO(@darzu): dbg
+      console.log(`pipelines: ${res.renderer.pipelines.map((p) => p.name)}`);
       renderer.submitPipelines(
         objs.map((o) => o.renderable.meshHandle),
         res.renderer.pipelines
