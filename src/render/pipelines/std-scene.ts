@@ -1,6 +1,7 @@
-import { vec2, vec3, vec4, quat, mat4 } from "../../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../../sprig-matrix.js";
 import { assertDbg } from "../../util.js";
 import { computeTriangleNormal } from "../../utils-3d.js";
+import { randColor } from "../../utils-game.js";
 import { CY } from "../gpu-registry.js";
 import { createCyStruct, CyToTS } from "../gpu-struct.js";
 import { MAX_INDICES, MeshHandle } from "../mesh-pool.js";
@@ -201,6 +202,13 @@ export const SceneStruct = createCyStruct(
     // dirLight3: "vec3<f32>",
     cameraPos: "vec3<f32>",
     partyPos: "vec3<f32>",
+
+    // TODO(@darzu): these were added for LD52
+    partyDir: "vec3<f32>",
+    windDir: "vec3<f32>",
+    secColor: "vec3<f32>",
+    terColor: "vec3<f32>",
+
     // TODO(@darzu): timeDelta vs totalTime
     time: "f32",
     canvasAspectRatio: "f32",
@@ -218,11 +226,15 @@ export const SceneStruct = createCyStruct(
       // views.f32.set(data.dirLight3, offsets_32[4]);
       views.f32.set(data.cameraPos, offsets_32[1]);
       views.f32.set(data.partyPos, offsets_32[2]);
-      views.f32[offsets_32[3]] = data.time;
-      views.f32[offsets_32[4]] = data.canvasAspectRatio;
-      views.u32[offsets_32[5]] = data.maxSurfaceId;
-      views.u32[offsets_32[6]] = data.numPointLights;
-      views.u32[offsets_32[7]] = data.numGerstnerWaves;
+      views.f32.set(data.partyDir, offsets_32[3]);
+      views.f32.set(data.windDir, offsets_32[4]);
+      views.f32.set(data.secColor, offsets_32[5]);
+      views.f32.set(data.terColor, offsets_32[6]);
+      views.f32[offsets_32[7]] = data.time;
+      views.f32[offsets_32[8]] = data.canvasAspectRatio;
+      views.u32[offsets_32[9]] = data.maxSurfaceId;
+      views.u32[offsets_32[10]] = data.numPointLights;
+      views.u32[offsets_32[11]] = data.numGerstnerWaves;
     },
   }
 );
@@ -236,15 +248,15 @@ export const sceneBufPtr = CY.createSingleton("scene", {
 export function setupScene(): SceneTS {
   // create a directional light and compute it's projection (for shadows) and direction
   // TODO(@darzu): should be named "dirLight1" etc. These are direction + strength, not unit.
-  // const dirLight1 = vec3.fromValues(1, -1 * 2, 1);
+  // const dirLight1 = V(1, -1 * 2, 1);
   // vec3.normalize(dirLight1, dirLight1);
   // vec3.scale(dirLight1, dirLight1, 2.0);
 
-  // const dirLight2 = vec3.fromValues(1, -1 * 1, -1);
+  // const dirLight2 = V(1, -1 * 1, -1);
   // vec3.normalize(dirLight2, dirLight2);
   // vec3.scale(dirLight2, dirLight2, 0.5);
 
-  // const dirLight3 = vec3.fromValues(0, -1 * 0.5, 1);
+  // const dirLight3 = V(0, -1 * 0.5, 1);
   // vec3.normalize(dirLight3, dirLight3);
   // vec3.scale(dirLight3, dirLight3, 0.2);
 
@@ -256,6 +268,10 @@ export function setupScene(): SceneTS {
     // dirLight3,
     cameraPos: vec3.create(), // updated later
     partyPos: vec3.create(), // updated later
+    partyDir: vec3.create(), // updated later
+    windDir: vec3.create(), // updated later
+    secColor: randColor(), // updated later
+    terColor: randColor(), // updated later
     time: 0, // updated later
     canvasAspectRatio: 1, // updated later
     maxSurfaceId: 1, // updated later

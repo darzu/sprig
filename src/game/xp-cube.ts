@@ -1,6 +1,6 @@
 import { CameraDef } from "../camera.js";
 import { EntityManager } from "../entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { max } from "../math.js";
 import { ColliderDef } from "../physics/collider.js";
 import { AngularVelocityDef } from "../physics/motion.js";
@@ -62,7 +62,7 @@ export async function initCubeGame(em: EntityManager) {
     e.cameraFollow.pitchOffset = -0.267;
   }
 
-  const box = em.newEntity();
+  const box = em.new();
   const boxM = cloneMesh(res.assets.cube.mesh);
   const sIdMax = max(boxM.surfaceIds);
   boxM.colors = boxM.surfaceIds.map((_, i) => uintToVec3unorm(i, sIdMax));
@@ -70,9 +70,9 @@ export async function initCubeGame(em: EntityManager) {
   // console.dir(boxM.colors);
   em.ensureComponentOn(box, RenderableConstructDef, boxM);
   // em.ensureComponentOn(box, ColorDef, [0.1, 0.4, 0.1]);
-  em.ensureComponentOn(box, PositionDef, vec3.clone([0, 0, 3]));
+  em.ensureComponentOn(box, PositionDef, V(0, 0, 3));
   em.ensureComponentOn(box, RotationDef);
-  em.ensureComponentOn(box, AngularVelocityDef, vec3.clone([0, 0.001, 0.001]));
+  em.ensureComponentOn(box, AngularVelocityDef, V(0, 0.001, 0.001));
   em.ensureComponentOn(box, WorldFrameDef);
   em.ensureComponentOn(box, ColliderDef, {
     shape: "AABB",

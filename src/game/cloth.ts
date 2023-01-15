@@ -1,6 +1,6 @@
 import { ColliderDef } from "../physics/collider.js";
 import { Component, EM, EntityManager } from "../entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
 import { SyncDef, AuthorityDef, Me, MeDef } from "../net/components.js";
 import { Serializer, Deserializer } from "../serialize.js";
@@ -31,8 +31,8 @@ export interface ClothConstruct {
 export const ClothConstructDef = EM.defineComponent(
   "clothConstruct",
   (c: Partial<ClothConstruct>) => ({
-    location: c.location ?? vec3.fromValues(0, 0, 0),
-    color: c.color ?? vec3.fromValues(0, 0, 0),
+    location: c.location ?? V(0, 0, 0),
+    color: c.color ?? V(0, 0, 0),
     rows: c.rows ?? 2,
     columns: c.columns ?? 2,
     distance: c.distance ?? 1,
@@ -82,25 +82,25 @@ function clothMesh(cloth: ClothConstruct): {
       y = y + 1;
       continue;
     }
-    pos.push(vec3.fromValues(x * cloth.distance, y * cloth.distance, 0));
+    pos.push(V(x * cloth.distance, y * cloth.distance, 0));
     uvs.push(vec2.clone([x / (cloth.columns - 1), y / (cloth.rows - 1)]));
     // add triangles
     if (y > 0) {
       if (x > 0) {
         // front
-        tri.push(vec3.fromValues(i, i - 1, i - cloth.columns));
-        colors.push(vec3.fromValues(0, 0, 0));
+        tri.push(V(i, i - 1, i - cloth.columns));
+        colors.push(V(0, 0, 0));
         // back
-        tri.push(vec3.fromValues(i - cloth.columns, i - 1, i));
-        colors.push(vec3.fromValues(0, 0, 0));
+        tri.push(V(i - cloth.columns, i - 1, i));
+        colors.push(V(0, 0, 0));
       }
       if (x < cloth.columns - 1) {
         // front
-        tri.push(vec3.fromValues(i, i - cloth.columns, i - cloth.columns + 1));
-        colors.push(vec3.fromValues(0, 0, 0));
+        tri.push(V(i, i - cloth.columns, i - cloth.columns + 1));
+        colors.push(V(0, 0, 0));
         // back
-        tri.push(vec3.fromValues(i - cloth.columns + 1, i - cloth.columns, i));
-        colors.push(vec3.fromValues(0, 0, 0));
+        tri.push(V(i - cloth.columns + 1, i - cloth.columns, i));
+        colors.push(V(0, 0, 0));
       }
     }
     // add lines

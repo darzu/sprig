@@ -1,6 +1,6 @@
 import { EntityManager } from "../entity-manager.js";
 import { PredictDef } from "./components.js";
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { tempVec3, tempQuat } from "../temp-pool.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
 import { AngularVelocityDef, LinearVelocityDef } from "../physics/motion.js";
@@ -23,7 +23,7 @@ export function registerPredictSystem(em: EntityManager) {
             quat.normalize(deltaRotation, deltaRotation);
             // note--quat multiplication is not commutative, need to multiply on the left
             // note--quat multiplication is not commutative, need to multiply on the left
-quat.mul(deltaRotation, entity.rotation, entity.rotation);
+            quat.mul(deltaRotation, entity.rotation, entity.rotation);
           }
         }
         entity.predict.dt = 0;

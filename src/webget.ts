@@ -38,6 +38,9 @@ export function getJson(url: string): Promise<any> {
 export function getText(url: string): Promise<string> {
   return getFile(url, "text");
 }
+export function getBytes(url: string): Promise<ArrayBuffer> {
+  return getFile(url, "arraybuffer");
+}
 export function getXml(url: string): Promise<HTMLElement> {
   return getFile(url, "document").then(
     (xmlResp: Document) => xmlResp.documentElement

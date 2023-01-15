@@ -1,7 +1,7 @@
 import { EntityManager, EM, Entity, EntityW } from "../entity-manager.js";
 import { AlphaDef, applyTints, TintsDef } from "../color-ecs.js";
 import { CameraViewDef } from "../camera.js";
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import {
   Frame,
   TransformDef,
@@ -21,7 +21,12 @@ import { createRenderer } from "./renderer-webgpu.js";
 import { CyPipelinePtr, CyTexturePtr } from "./gpu-registry.js";
 import { createFrame, WorldFrameDef } from "../physics/nonintersection.js";
 import { tempVec3 } from "../temp-pool.js";
-import { isMeshHandle, MeshHandle, MeshReserve } from "./mesh-pool.js";
+import {
+  isMeshHandle,
+  MeshHandle,
+  MeshPool,
+  MeshReserve,
+} from "./mesh-pool.js";
 import { Mesh } from "./mesh.js";
 import { SceneTS } from "./pipelines/std-scene.js";
 import { max } from "../math.js";
@@ -46,11 +51,14 @@ import {
   VERBOSE_LOG,
 } from "../flags.js";
 import { ALPHA_MASK } from "./pipeline-masks.js";
+import { RenderDataGrassDef, computeGrassUniData } from "../ld52/xp-grass.js";
+import { WindDef } from "../ld52/wind.js";
 
 const BLEND_SIMULATION_FRAMES_STRATEGY: "interpolate" | "extrapolate" | "none" =
   "none";
 
-export type PoolKind = "std" | "ocean";
+// TODO(@darzu): we need a better way to handle arbitrary pools
+export type PoolKind = "std" | "ocean" | "grass";
 export interface RenderableConstruct {
   readonly enabled: boolean;
   readonly sortLayer: number;
@@ -343,7 +351,7 @@ export function registerRenderer(em: EntityManager) {
 
   em.registerSystem(
     null, // NOTE: see "renderList*" systems and NOTE above. We use those to construct our query.
-    [CameraViewDef, RendererDef, TimeDef, PartyDef],
+    [CameraViewDef, RendererDef, TimeDef, PartyDef, WindDef],
     (_, res) => {
       const renderer = res.renderer.renderer;
       const cameraView = res.cameraView;
@@ -445,6 +453,28 @@ export function registerRenderer(em: EntityManager) {
             o.renderable.meshHandle,
             o.renderDataOcean
           );
+        } else if (RenderDataGrassDef.isOn(o)) {
+          // TODO(@darzu): do we need all this for grass?
+          // color / tint
+          if (ColorDef.isOn(o)) {
+            vec3.copy(o.renderDataGrass.tint, o.color);
+          }
+          if (TintsDef.isOn(o)) {
+            applyTints(o.tints, o.renderDataGrass.tint);
+          }
+
+          // id
+          // o.renderDataGrass.id = o.renderable.meshHandle.mId;
+
+          // transform
+          mat4.copy(
+            o.renderDataGrass.transform,
+            o.rendererWorldFrame.transform
+          );
+          res.renderer.renderer.grassPool.updateUniform(
+            o.renderable.meshHandle,
+            o.renderDataGrass
+          );
         }
       }
 
@@ -459,7 +489,7 @@ export function registerRenderer(em: EntityManager) {
       // console.log(`mId 24: ${!!m24.length}, e10003: ${!!e10003.length}`);
 
       // TODO(@darzu): go elsewhere
-      // const lightPosition = vec3.fromValues(50, 100, -100);
+      // const lightPosition = V(50, 100, -100);
 
       const pointLights = em
         .filterEntities([PointLightDef, RendererWorldFrameDef])
@@ -478,14 +508,14 @@ export function registerRenderer(em: EntityManager) {
         });
 
       // const lightPosition =
-      //   pointLights[0]?.position ?? vec3.fromValues(0, 0, 0);
+      //   pointLights[0]?.position ?? V(0, 0, 0);
 
       // TODO(@darzu): this maxSurfaceId calculation is super inefficient, we need
       //  to move this out of this loop.
       let maxSurfaceId = 1000;
       // let maxSurfaceId = max(
       //   objs
-      //     .map((o) => o.renderable.meshHandle.readonlyMesh?.surfaceIds ?? [0])
+      //     .map((o) => o.renderable.meshHandle.readonlyMesh?.GF ?? [0])
       //     .reduce((p, n) => [...p, ...n], [])
       // );
       // TODO(@darzu): DBG
@@ -499,6 +529,8 @@ export function registerRenderer(em: EntityManager) {
         canvasAspectRatio: res.cameraView.aspectRatio,
         maxSurfaceId,
         partyPos: res.party.pos,
+        partyDir: res.party.dir,
+        windDir: res.wind.dir,
         cameraPos: cameraView.location,
         numPointLights: pointLights.length,
       });
@@ -541,6 +573,21 @@ export function registerRenderer(em: EntityManager) {
   );
 }
 
+export function poolKindToPool(
+  renderer: Renderer,
+  kind: PoolKind
+): MeshPool<any, any> {
+  if (kind === "std") {
+    return renderer.stdPool;
+  } else if (kind === "ocean") {
+    return renderer.oceanPool;
+  } else if (kind === "grass") {
+    return renderer.grassPool;
+  } else {
+    never(kind);
+  }
+}
+
 export function registerConstructRenderablesSystem(em: EntityManager) {
   em.registerSystem(
     [RenderableConstructDef],
@@ -552,20 +599,21 @@ export function registerConstructRenderablesSystem(em: EntityManager) {
           let meshHandle: MeshHandle;
           let mesh: Mesh;
           if (isMeshHandle(e.renderableConstruct.meshOrProto)) {
-            assert(
-              e.renderableConstruct.poolKind === "std",
-              `Instanced meshes only supported for std pool`
-            );
             // TODO(@darzu): renderableConstruct is getting to large and wierd
             assert(
               !e.renderableConstruct.reserve,
               `cannot have a reserve when adding an instance`
             );
-            meshHandle = res.renderer.renderer.stdPool.addMeshInstance(
+            let pool = poolKindToPool(
+              res.renderer.renderer,
+              e.renderableConstruct.poolKind
+            );
+            meshHandle = pool.addMeshInstance(
               e.renderableConstruct.meshOrProto
             );
             mesh = meshHandle.mesh!;
           } else {
+            // console.dir(e);
             if (e.renderableConstruct.poolKind === "std") {
               meshHandle = res.renderer.renderer.stdPool.addMesh(
                 e.renderableConstruct.meshOrProto,
@@ -573,6 +621,11 @@ export function registerConstructRenderablesSystem(em: EntityManager) {
               );
             } else if (e.renderableConstruct.poolKind === "ocean") {
               meshHandle = res.renderer.renderer.oceanPool.addMesh(
+                e.renderableConstruct.meshOrProto,
+                e.renderableConstruct.reserve
+              );
+            } else if (e.renderableConstruct.poolKind === "grass") {
+              meshHandle = res.renderer.renderer.grassPool.addMesh(
                 e.renderableConstruct.meshOrProto,
                 e.renderableConstruct.reserve
               );
@@ -595,11 +648,19 @@ export function registerConstructRenderablesSystem(em: EntityManager) {
             em.ensureComponentOn(e, RenderDataStdDef, computeUniData(mesh));
             e.renderDataStd.id = meshHandle.mId;
           } else if (e.renderableConstruct.poolKind === "ocean") {
-            em.addComponent(
-              e.id,
+            em.ensureComponentOn(
+              e,
               RenderDataOceanDef,
               computeOceanUniData(mesh)
             );
+            e.renderDataOcean.id = meshHandle.mId;
+          } else if (e.renderableConstruct.poolKind === "grass") {
+            em.ensureComponentOn(
+              e,
+              RenderDataGrassDef,
+              computeGrassUniData(mesh)
+            );
+            e.renderDataGrass.id = meshHandle.mId;
           } else {
             never(e.renderableConstruct.poolKind);
           }
@@ -669,6 +730,7 @@ async function chooseAndInitRenderer(
   if (!FORCE_WEBGL) {
     // try webgpu first
     const adapter = await navigator.gpu?.requestAdapter();
+    if (!adapter) console.error("navigator.gpu?.requestAdapter() failed");
     if (adapter) {
       const supportsTimestamp = adapter.features.has("timestamp-query");
       if (!supportsTimestamp && VERBOSE_LOG)

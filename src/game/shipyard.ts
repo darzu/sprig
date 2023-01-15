@@ -1,5 +1,5 @@
 import { DBG_ASSERT } from "../flags.js";
-import { vec2, vec3, vec4, quat, mat4, mat3 } from "../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, mat3, V } from "../sprig-matrix.js";
 import { jitter } from "../math.js";
 import { Mesh, RawMesh, validateMesh } from "../render/mesh.js";
 import { assert, assertDbg } from "../util.js";
@@ -50,7 +50,7 @@ export function createHomeShip(): HomeShip {
   const ribSpace = 3;
 
   for (let i = 0; i < ribCount; i++) {
-    const p = translatePath(makeRibPath(i), vec3.clone([i * ribSpace, 0, 0]));
+    const p = translatePath(makeRibPath(i), V(i * ribSpace, 0, 0));
 
     appendBoard(builder.mesh, {
       path: p,
@@ -59,7 +59,7 @@ export function createHomeShip(): HomeShip {
     });
 
     appendBoard(builder.mesh, {
-      path: mirrorPath(clonePath(p), vec3.clone([0, 0, 1])),
+      path: mirrorPath(clonePath(p), V(0, 0, 1)),
       width: ribWidth,
       depth: ribDepth,
     });
@@ -123,7 +123,7 @@ export function createHomeShip(): HomeShip {
       const ccwf = ccw ? -1 : 1;
       let xFactor = 0.05;
 
-      const wallOffset: vec3 = vec3.clone([-ribWidth, 0, ribDepth * -ccwf]);
+      const wallOffset: vec3 = V(-ribWidth, 0, ribDepth * -ccwf);
 
       const cursor2 = mat4.create();
       mat4.rotateX(cursor2, Math.PI * 0.4 * -ccwf, cursor2);
@@ -177,7 +177,7 @@ export function createHomeShip(): HomeShip {
       const ccwf = ccw ? -1 : 1;
       let xFactor = 0.05;
 
-      const wallOffset: vec3 = vec3.clone([-ribWidth, 0, ribDepth * -ccwf]);
+      const wallOffset: vec3 = V(-ribWidth, 0, ribDepth * -ccwf);
 
       const cursor2 = mat4.create();
       // mat4.rotateX(cursor2, cursor2, Math.PI * 0.4 * -ccwf);
@@ -488,10 +488,10 @@ function appendBoard(mesh: RawMesh, board: Board) {
 
   function addLoopVerts(n: PathNode) {
     // width/depth
-    const v0 = vec3.fromValues(board.width, 0, board.depth);
-    const v1 = vec3.fromValues(board.width, 0, -board.depth);
-    const v2 = vec3.fromValues(-board.width, 0, -board.depth);
-    const v3 = vec3.fromValues(-board.width, 0, board.depth);
+    const v0 = V(board.width, 0, board.depth);
+    const v1 = V(board.width, 0, -board.depth);
+    const v2 = V(-board.width, 0, -board.depth);
+    const v3 = V(-board.width, 0, board.depth);
     // rotate
     vec3.transformQuat(v0, n.rot, v0);
     vec3.transformQuat(v1, n.rot, v1);

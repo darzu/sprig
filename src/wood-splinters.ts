@@ -4,7 +4,7 @@ import { ColorDef } from "./color-ecs.js";
 import { EntityW, EntityManager, EM } from "./entity-manager.js";
 import { AssetsDef, BLACK } from "./game/assets.js";
 import { GravityDef } from "./game/gravity.js";
-import { vec2, vec3, vec4, quat, mat4 } from "./sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "./sprig-matrix.js";
 import { jitter } from "./math.js";
 import { getLineMid } from "./physics/broadphase.js";
 import { LinearVelocityDef, AngularVelocityDef } from "./physics/motion.js";
@@ -55,9 +55,9 @@ export function createSplinterPool(
       depth
     );
     const splinterMesh = normalizeMesh(_splinterMesh);
-    const splinter = em.newEntity();
+    const splinter = em.new();
     em.ensureComponentOn(splinter, RenderableConstructDef, splinterMesh);
-    em.ensureComponentOn(splinter, ColorDef, vec3.clone(color));
+    em.ensureComponentOn(splinter, ColorDef, color);
     em.ensureComponentOn(splinter, PositionDef);
     em.ensureComponentOn(splinter, RotationDef);
     em.ensureComponentOn(splinter, AngularVelocityDef);

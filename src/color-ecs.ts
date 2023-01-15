@@ -1,9 +1,9 @@
 import { Component, EM, EntityManager } from "./entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4 } from "./sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "./sprig-matrix.js";
 
-export const ColorDef = EM.defineComponent(
-  "color",
-  (c?: vec3) => c ?? vec3.create()
+export const ColorDef = EM.defineComponent("color", (c?: vec3.InputT) =>
+  // TODO(@darzu): we need a better copy-in vs ref convention
+  vec3.clone(c ?? vec3.ZEROS)
 );
 export type Color = Component<typeof ColorDef>;
 

@@ -1,7 +1,7 @@
 // https://drafts.csswg.org/css-color/#lab-colors
 // https://drafts.csswg.org/css-color/#color-conversion-code
 
-import { vec3 } from "../sprig-matrix.js";
+import { vec3, V } from "../sprig-matrix.js";
 import {
   CIELAB,
   FLRGB,

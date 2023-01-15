@@ -1,6 +1,6 @@
 import { EM, EntityManager } from "../entity-manager.js";
 import { TimeDef } from "../time.js";
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { ColorDef } from "../color-ecs.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { PhysicsParentDef, PositionDef } from "../physics/transform.js";
@@ -28,7 +28,7 @@ export const { CannonPropsDef, CannonLocalDef, createCannon } =
       parentId?: number
     ) => {
       return {
-        location: loc ?? vec3.fromValues(0, 0, 0),
+        location: loc ?? V(0, 0, 0),
         yaw: yaw ?? 0,
         pitch: pitch ?? 0,
         parentId: parentId ?? 0,
@@ -59,7 +59,7 @@ export const { CannonPropsDef, CannonLocalDef, createCannon } =
       const props = e.cannonProps;
       em.ensureComponent(e.id, PositionDef, props.location);
       constructNetTurret(e, props.yaw, props.pitch, res.assets.cannon.aabb);
-      em.ensureComponent(e.id, ColorDef, vec3.clone([0, 0, 0]));
+      em.ensureComponent(e.id, ColorDef, V(0, 0, 0));
       em.ensureComponent(e.id, RenderableConstructDef, res.assets.cannon.mesh);
       em.ensureComponent(e.id, ColliderDef, {
         shape: "AABB",

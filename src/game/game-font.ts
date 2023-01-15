@@ -4,7 +4,7 @@ import { ColorDef } from "../color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { dbg } from "../debugger.js";
 import { EM, EntityManager, EntityW } from "../entity-manager.js";
-import { vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { ButtonDef, ButtonsStateDef } from "../gui/button.js";
 import { initMeshEditor, MeshEditorDef } from "../gui/mesh-editor.js";
 import { lineStuff } from "../gui/path-editor.js";
@@ -68,9 +68,9 @@ EM.registerInit({
   provideLs: [],
   fn: async ({ assets }) => {
     // Cursor
-    const cursor = EM.newEntity();
-    EM.ensureComponentOn(cursor, ColorDef, vec3.clone([0.1, 0.1, 0.1]));
-    EM.ensureComponentOn(cursor, PositionDef, vec3.clone([0, 1.0, 0]));
+    const cursor = EM.new();
+    EM.ensureComponentOn(cursor, ColorDef, V(0.1, 0.1, 0.1));
+    EM.ensureComponentOn(cursor, PositionDef, V(0, 1.0, 0));
     EM.ensureComponentOn(cursor, RenderableConstructDef, assets.he_octo.proto);
     const cursorLocalAABB = copyAABB(createAABB(), assets.he_octo.aabb);
     cursorLocalAABB.min[1] = -1;
@@ -98,11 +98,11 @@ export async function initFontEditor(em: EntityManager) {
     postProcess,
   ];
 
-  const sunlight = em.newEntity();
+  const sunlight = em.new();
   em.ensureComponentOn(sunlight, PointLightDef);
   sunlight.pointLight.constant = 1.0;
   vec3.copy(sunlight.pointLight.ambient, [0.8, 0.8, 0.8]);
-  em.ensureComponentOn(sunlight, PositionDef, vec3.clone([10, 100, 10]));
+  em.ensureComponentOn(sunlight, PositionDef, V(10, 100, 10));
   // TODO(@darzu): weird, why does renderable need to be on here?
   em.ensureComponentOn(
     sunlight,
@@ -111,7 +111,7 @@ export async function initFontEditor(em: EntityManager) {
     false
   );
 
-  const panel = em.newEntity();
+  const panel = em.new();
   const panelMesh = makePlaneMesh(
     -PANEL_W * 0.5,
     PANEL_W * 0.5,
@@ -120,10 +120,10 @@ export async function initFontEditor(em: EntityManager) {
   );
   // panelMesh.colors[0] = [0.1, 0.3, 0.1];
   // panelMesh.colors[1] = [0.1, 0.1, 0.3];
-  panelMesh.colors[0] = vec3.clone([0.4, 0.4, 0.4]);
+  panelMesh.colors[0] = V(0.4, 0.4, 0.4);
   em.ensureComponentOn(panel, RenderableConstructDef, panelMesh);
   // em.ensureComponentOn(panel, ColorDef, [0.2, 0.3, 0.2]);
-  em.ensureComponentOn(panel, PositionDef, vec3.clone([0, 0, 0]));
+  em.ensureComponentOn(panel, PositionDef, V(0, 0, 0));
 
   if (DBG_3D) {
     const g = createGhost();
@@ -250,12 +250,7 @@ export async function initFontEditor(em: EntityManager) {
   const quadMesh: Mesh = {
     quad: [vec4.clone([0, 1, 2, 3])],
     tri: [],
-    pos: [
-      vec3.clone([1, 0, -1]),
-      vec3.clone([-1, 0, -1]),
-      vec3.clone([-1, 0, 1]),
-      vec3.clone([1, 0, 1]),
-    ],
+    pos: [V(1, 0, -1), V(-1, 0, -1), V(-1, 0, 1), V(1, 0, 1)],
     colors: [randNormalPosVec3()],
     surfaceIds: [1],
     usesProvoking: true,
@@ -296,9 +291,9 @@ export async function initFontEditor(em: EntityManager) {
 
     polyBank.set(i, gmesh);
 
-    const btn = EM.newEntity();
+    const btn = EM.new();
     EM.ensureComponentOn(btn, RenderableConstructDef, gmesh.proto);
-    EM.ensureComponentOn(btn, PositionDef, vec3.clone([-24 + i * 2, 0.1, 12]));
+    EM.ensureComponentOn(btn, PositionDef, V(-24 + i * 2, 0.1, 12));
     EM.ensureComponentOn(btn, ButtonDef, btnKey, i, {
       default: ENDESGA16.lightGray,
       hover: ENDESGA16.darkGray,

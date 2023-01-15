@@ -1,10 +1,12 @@
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { assert } from "../util.js";
 import {
   CY,
   CyPipelinePtr,
+  CyResourcePtr,
   CyTexturePtr,
   isRenderPipelinePtr,
+  PtrKind,
 } from "./gpu-registry.js";
 import { MeshHandle, MeshPool } from "./mesh-pool.js";
 import { Mesh } from "./mesh.js";
@@ -16,6 +18,7 @@ import {
   CyPipeline,
   isRenderPipeline,
   CyArray,
+  PtrKindToResourceType,
 } from "./data-webgpu.js";
 import {
   VertexStruct,
@@ -49,6 +52,11 @@ import {
 import { GPUBufferUsage } from "./webgpu-hacks.js";
 import { PERF_DBG_GPU, VERBOSE_LOG } from "../flags.js";
 import { dbgLogOnce } from "../util.js";
+import {
+  GrassVertStruct,
+  GrassUniStruct,
+  grassPoolPtr,
+} from "../ld52/xp-grass.js";
 
 // TODO(@darzu): Try using drawIndirect !!
 //    https://gpuweb.github.io/gpuweb/#dom-gpurendercommandsmixin-drawindirect
@@ -86,6 +94,11 @@ export function createRenderer(
     typeof OceanUniStruct.desc
   > = cyKindToNameToRes.meshPool[oceanPoolPtr.name]!;
 
+  const grassPool: MeshPool<
+    typeof GrassVertStruct.desc,
+    typeof GrassUniStruct.desc
+  > = cyKindToNameToRes.meshPool[grassPoolPtr.name]!;
+
   const renderer = {
     drawLines: true,
     drawTris: true,
@@ -112,6 +125,7 @@ export function createRenderer(
     // gpu commands
     submitPipelines,
     readTexture,
+    getCyResource,
     stats,
 
     // debug
@@ -120,6 +134,7 @@ export function createRenderer(
     // TODO(@darzu): collapose the renderer-webgpu layer, it shouldn't exist
     stdPool,
     oceanPool,
+    grassPool,
   };
 
   // TODO(@darzu): collapse this with MeshPool._stats
@@ -330,6 +345,12 @@ export function createRenderer(
 
     // submit render passes to GPU
     device.queue.submit([commandEncoder.finish()]);
+  }
+
+  function getCyResource<K extends PtrKind>(
+    ptr: CyResourcePtr<K>
+  ): PtrKindToResourceType[K] | undefined {
+    return cyKindToNameToRes[ptr.kind][ptr.name];
   }
 
   async function readTexture(ptr: CyTexturePtr): Promise<ArrayBuffer> {

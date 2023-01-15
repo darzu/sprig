@@ -14,7 +14,7 @@ import {
 } from "../render/renderer-ecs.js";
 import { assert } from "../util.js";
 import { RendererDef } from "../render/renderer-ecs.js";
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { vec3Dbg } from "../utils-3d.js";
 import { CUBE_FACES, CUBE_MESH } from "./assets.js";
 
@@ -33,20 +33,20 @@ export type Noodle = Component<typeof NoodleDef>;
 
 // TODO(@darzu): DEBUGGING
 export function debugCreateNoodles(em: EntityManager) {
-  const e = em.newEntity();
+  const e = em.new();
   em.ensureComponentOn(e, NoodleDef, [
     {
-      pos: vec3.clone([0, 0, 0]),
-      dir: vec3.clone([0, -1, 0]),
+      pos: V(0, 0, 0),
+      dir: V(0, -1, 0),
     },
     {
-      pos: vec3.clone([2, 2, 2]),
-      dir: vec3.clone([0, 1, 0]),
+      pos: V(2, 2, 2),
+      dir: V(0, 1, 0),
     },
   ]);
-  const m = createNoodleMesh(0.1, vec3.clone([0.2, 0.05, 0.05]));
+  const m = createNoodleMesh(0.1, V(0.2, 0.05, 0.05));
   em.ensureComponentOn(e, RenderableConstructDef, m);
-  em.ensureComponentOn(e, PositionDef, vec3.clone([5, -5, 0]));
+  em.ensureComponentOn(e, PositionDef, V(5, -5, 0));
 
   // TODO(@darzu): test cube faces (update: they are correct)
   // const cube = em.newEntity();
@@ -96,6 +96,6 @@ export function registerNoodleSystem(em: EntityManager) {
 export function createNoodleMesh(thickness: number, color: vec3): Mesh {
   const m = cloneMesh(CUBE_MESH);
   m.colors.forEach((c) => vec3.copy(c, color));
-  scaleMesh3(m, vec3.clone([thickness, 0.0, thickness]));
+  scaleMesh3(m, V(thickness, 0.0, thickness));
   return normalizeMesh(m);
 }

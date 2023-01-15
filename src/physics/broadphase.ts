@@ -1,4 +1,4 @@
-import { vec2, vec3, vec4, quat, mat4, mat3 } from "../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, mat3, V } from "../sprig-matrix.js";
 import { clamp } from "../math.js";
 import { range } from "../util.js";
 import { vec3Floor } from "../utils-3d.js";
@@ -140,8 +140,7 @@ export function checkBroadphase(
   //      3000 objs @[2000, 200, 2000]: 1.2-7.6ms, 180,000-400,000 overlaps, 4,400 cell checks
   if (BROAD_PHASE === "GRID") {
     // initialize world
-    if (!_worldGrid)
-      _worldGrid = createWorldGrid(universeAABB, vec3.clone([10, 10, 10]));
+    if (!_worldGrid) _worldGrid = createWorldGrid(universeAABB, V(10, 10, 10));
     // place objects in grid
     for (let o of objs) {
       let ll = _objToObjLL[o.id];
@@ -170,8 +169,7 @@ export function checkBroadphase(
         for (let x = o.minCoord[0]; x <= o.maxCoord[0]; x++) {
           for (let y = o.minCoord[1]; y <= o.maxCoord[1]; y++) {
             for (let z = o.minCoord[2]; z <= o.maxCoord[2]; z++) {
-              const c =
-                _worldGrid.grid[gridIdx(_worldGrid, vec3.clone([x, y, z]))];
+              const c = _worldGrid.grid[gridIdx(_worldGrid, V(x, y, z))];
               checkCell(o, c);
             }
           }
@@ -461,7 +459,7 @@ function octtree(parentObjs: Map<number, AABB>, aabb: AABB): OctTree | null {
     for (let yMin of [aabb.min[1], aabb.min[1] + nextLen[1]]) {
       for (let zMin of [aabb.min[2], aabb.min[2] + nextLen[2]]) {
         childAABBs.push({
-          min: vec3.clone([xMin, yMin, zMin]),
+          min: V(xMin, yMin, zMin),
           max: vec3.clone([
             xMin + nextLen[0],
             yMin + nextLen[1],
@@ -555,8 +553,8 @@ export interface AABB {
 }
 export function createAABB(): AABB {
   return {
-    min: vec3.fromValues(Infinity, Infinity, Infinity),
-    max: vec3.fromValues(-Infinity, -Infinity, -Infinity),
+    min: V(Infinity, Infinity, Infinity),
+    max: V(-Infinity, -Infinity, -Infinity),
   };
 }
 export function copyAABB(out: AABB, a: AABB) {
@@ -567,15 +565,15 @@ export function copyAABB(out: AABB, a: AABB) {
 
 export function getAABBCorners(aabb: AABB): vec3[] {
   const points: vec3[] = [
-    vec3.clone([aabb.max[0], aabb.max[1], aabb.max[2]]),
-    vec3.clone([aabb.max[0], aabb.max[1], aabb.min[2]]),
-    vec3.clone([aabb.max[0], aabb.min[1], aabb.max[2]]),
-    vec3.clone([aabb.max[0], aabb.min[1], aabb.min[2]]),
+    V(aabb.max[0], aabb.max[1], aabb.max[2]),
+    V(aabb.max[0], aabb.max[1], aabb.min[2]),
+    V(aabb.max[0], aabb.min[1], aabb.max[2]),
+    V(aabb.max[0], aabb.min[1], aabb.min[2]),
 
-    vec3.clone([aabb.min[0], aabb.max[1], aabb.max[2]]),
-    vec3.clone([aabb.min[0], aabb.max[1], aabb.min[2]]),
-    vec3.clone([aabb.min[0], aabb.min[1], aabb.max[2]]),
-    vec3.clone([aabb.min[0], aabb.min[1], aabb.min[2]]),
+    V(aabb.min[0], aabb.max[1], aabb.max[2]),
+    V(aabb.min[0], aabb.max[1], aabb.min[2]),
+    V(aabb.min[0], aabb.min[1], aabb.max[2]),
+    V(aabb.min[0], aabb.min[1], aabb.min[2]),
   ];
   return points;
 }
@@ -592,6 +590,20 @@ export function getAABBCornersTemp(aabb: AABB): vec3[] {
   vec3.set(aabb.min[0], aabb.min[1], aabb.min[2], tempAabbCorners[7]);
   return tempAabbCorners;
 }
+
+// const tempAabbXZCorners = range(4).map((_) => vec2.create()) as [
+//   vec2,
+//   vec2,
+//   vec2,
+//   vec2
+// ];
+// export function getAabbXZCornersTemp(aabb: AABB): [vec2, vec2, vec2, vec2] {
+//   vec2.set(aabb.max[0], aabb.max[2], tempAabbXZCorners[0]);
+//   vec2.set(aabb.max[0], aabb.min[2], tempAabbXZCorners[1]);
+//   vec2.set(aabb.min[0], aabb.max[2], tempAabbXZCorners[2]);
+//   vec2.set(aabb.min[0], aabb.min[2], tempAabbXZCorners[3]);
+//   return tempAabbXZCorners;
+// }
 
 export function transformAABB(out: AABB, t: mat4) {
   const wCorners = getAABBCornersTemp(out);

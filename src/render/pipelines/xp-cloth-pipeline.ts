@@ -4,7 +4,9 @@ const CLOTH_SIZE = 10; // TODO(@darzu):
 
 const clothTexPtrDesc: Parameters<typeof CY.createTexture>[1] = {
   size: [CLOTH_SIZE, CLOTH_SIZE],
-  format: "rgba16float",
+  // format: "rgba16float",
+  // TODO(@darzu): what's going on with format type
+  format: "rgba32float",
   init: () => {
     const clothData = new Float32Array(10 * 10 * 4);
     for (let x = 0; x < 10; x++) {

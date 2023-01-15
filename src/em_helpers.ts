@@ -149,13 +149,13 @@ export function defineNetEntityHelper<
   );
 
   const createNew = (...args: Pargs1) => {
-    const e = em.newEntity();
+    const e = em.new();
     em.ensureComponentOn(e, propsDef, ...args);
     return e;
   };
 
   const createNewNow = (res: EntityW<RS>, ...args: Pargs1) => {
-    const e = em.newEntity();
+    const e = em.new();
     em.ensureComponentOn(e, propsDef, ...args);
     // TODO(@darzu): maybe we should force users to give us the MeDef? it's probably always there tho..
     // TODO(@darzu): Think about what if buid() is async...

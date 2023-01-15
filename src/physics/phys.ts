@@ -1,4 +1,4 @@
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { dbgDirOnce, __isSMI } from "../util.js";
 import {
   PhysCollider,
@@ -196,7 +196,7 @@ function computeContactDataInternal(
     }
   }
 
-  const bToANorm = vec3.fromValues(0, 0, 0);
+  const bToANorm = V(0, 0, 0);
   if (dim >= 0) bToANorm[dim] = dir;
 
   return {
@@ -328,12 +328,12 @@ function computeReboundDataInternal(
 //     }
 //   }
 
-//   const aOverlap = vec3.fromValues(0, 0, 0); // TODO(@darzu): perf; unnecessary alloc
+//   const aOverlap = V(0, 0, 0); // TODO(@darzu): perf; unnecessary alloc
 //   if (0 < aDim)
 //     aOverlap[aDim] =
 //       Math.sign(a.lastPos[aDim] - a.currPos[aDim]) * aOverlapNum;
 
-//   const bOverlap = vec3.fromValues(0, 0, 0);
+//   const bOverlap = V(0, 0, 0);
 //   if (0 < bDim)
 //     bOverlap[bDim] =
 //       Math.sign(b.lastPos[bDim] - b.currPos[bDim]) * bOverlapNum;

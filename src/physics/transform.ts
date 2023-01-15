@@ -1,5 +1,5 @@
 import { Component, EM, EntityManager } from "../entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4 } from "../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { createFrame, WorldFrameDef } from "./nonintersection.js";
 import { tempVec3, tempQuat } from "../temp-pool.js";
 import { FALSE, dbgLogOnce } from "../util.js";
@@ -50,7 +50,12 @@ export function updateFrameFromTransform(f: Frame): asserts f is Frame {
 }
 
 export function updateFrameFromPosRotScale(f: Frame) {
-  f.transform = mat4.fromRotationTranslationScale(f.rotation, f.position, f.scale, f.transform);
+  f.transform = mat4.fromRotationTranslationScale(
+    f.rotation,
+    f.position,
+    f.scale,
+    f.transform
+  );
 }
 
 export function copyFrame(out: Frame, frame: Frame) {
@@ -76,7 +81,7 @@ export type Transform = mat4;
 // POSITION
 export const PositionDef = EM.defineComponent(
   "position",
-  (p?: vec3) => p || vec3.fromValues(0, 0, 0)
+  (p?: vec3) => p || V(0, 0, 0)
 );
 export type Position = Component<typeof PositionDef>;
 EM.registerSerializerPair(
@@ -100,7 +105,7 @@ EM.registerSerializerPair(
 // SCALE
 export const ScaleDef = EM.defineComponent(
   "scale",
-  (by?: vec3) => by || vec3.fromValues(1, 1, 1)
+  (by?: vec3) => by || V(1, 1, 1)
 );
 export type Scale = Component<typeof ScaleDef>;
 EM.registerSerializerPair(
@@ -157,7 +162,7 @@ function updateWorldFromLocalAndParent(o: Transformable) {
 
     // update relative to parent
     // update relative to parent
-mat4.mul(parent.world.transform, o.transform, o.world.transform);
+    mat4.mul(parent.world.transform, o.transform, o.world.transform);
     updateFrameFromTransform(o.world);
   } else {
     // no parent
