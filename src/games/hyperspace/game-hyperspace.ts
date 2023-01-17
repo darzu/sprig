@@ -75,12 +75,13 @@ export async function initHyperspaceGame(em: EntityManager) {
     "debugLoop"
   );
 
-  const grid = [[...shadowDepthTextures]];
-  //   //
-  //   [oceanJfa._inputMaskTex, oceanJfa._uvMaskTex],
-  //   //
-  //   [oceanJfa.voronoiTex, shadowDepthTexture],
-  // ];
+  // const grid = [[...shadowDepthTextures]];
+  const grid = [
+    //
+    [oceanJfa._inputMaskTex, oceanJfa._uvMaskTex],
+    //
+    [oceanJfa.voronoiTex, oceanJfa.sdfTex],
+  ];
   // let grid = noiseGridFrame;
   // const grid = [[oceanJfa._voronoiTexs[0]], [oceanJfa._voronoiTexs[1]]];
 
@@ -99,7 +100,7 @@ export async function initHyperspaceGame(em: EntityManager) {
         // ...blurPipelines,
 
         postProcess,
-        // ...(res.dev.showConsole ? gridCompose : []),
+        ...(res.dev.showConsole ? gridCompose : []),
       ];
     },
     "hyperspaceGame"

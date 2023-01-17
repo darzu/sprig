@@ -106,7 +106,7 @@ export function createJfaPipelines(
   // TODO(@darzu): configurable SDF size?
   const sdfTex = CY.createTexture(namePrefix + "SdfTex", {
     // size: [size, size],
-    size: [64, 64],
+    size: [256, 256],
     format: "r8unorm",
     // format: "r16float",
   });

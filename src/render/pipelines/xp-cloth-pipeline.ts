@@ -1,6 +1,6 @@
 import { CY } from "../gpu-registry.js";
 
-const CLOTH_SIZE = 10; // TODO(@darzu):
+const CLOTH_SIZE = 16; // TODO(@darzu):
 
 const clothTexPtrDesc: Parameters<typeof CY.createTexture>[1] = {
   size: [CLOTH_SIZE, CLOTH_SIZE],
@@ -8,10 +8,10 @@ const clothTexPtrDesc: Parameters<typeof CY.createTexture>[1] = {
   // TODO(@darzu): what's going on with format type
   format: "rgba32float",
   init: () => {
-    const clothData = new Float32Array(10 * 10 * 4);
-    for (let x = 0; x < 10; x++) {
-      for (let y = 0; y < 10; y++) {
-        const i = (y + x * 10) * 3;
+    const clothData = new Float32Array(CLOTH_SIZE * CLOTH_SIZE * 4);
+    for (let x = 0; x < CLOTH_SIZE; x++) {
+      for (let y = 0; y < CLOTH_SIZE; y++) {
+        const i = (y + x * CLOTH_SIZE) * 3;
         clothData[i + 0] = i / clothData.length;
         clothData[i + 1] = i / clothData.length;
         clothData[i + 2] = i / clothData.length;
