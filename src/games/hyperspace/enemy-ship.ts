@@ -36,7 +36,7 @@ import { DetectedEventsDef, eventWizard } from "../../net/events.js";
 import { raiseBulletEnemyShip } from "../bullet-collision.js";
 import { GameStateDef, GameState } from "./gamestate.js";
 import { cloneMesh, scaleMesh3 } from "../../render/mesh.js";
-import { ShipDef } from "./ship.js";
+import { UVShipDef } from "./uv-ship.js";
 import { UVDirDef, UVPosDef } from "./ocean.js";
 import { ColorDef } from "../../color-ecs.js";
 import { AudioDef, Music } from "../../audio.js";
@@ -129,8 +129,8 @@ export const { EnemyShipPropsDef, EnemyShipLocalDef, createEnemyShip } =
     build: (e, res) => {
       const em: EntityManager = EM;
 
-      em.ensureComponentOn(e, ShipDef);
-      e.ship.speed = e.enemyShipProps.speed;
+      em.ensureComponentOn(e, UVShipDef);
+      e.uvship.speed = e.enemyShipProps.speed;
 
       em.ensureComponentOn(e, ColorDef, ENEMY_SHIP_COLOR);
       em.ensureComponentOn(e, MotionSmoothingDef);
@@ -235,7 +235,7 @@ export const raiseBreakEnemyShip = eventWizard(
 
 export function registerEnemyShipSystems(em: EntityManager) {
   em.registerSystem(
-    [EnemyShipLocalDef, EnemyShipPropsDef, UVDirDef, ShipDef, AuthorityDef],
+    [EnemyShipLocalDef, EnemyShipPropsDef, UVDirDef, UVShipDef, AuthorityDef],
     [TimeDef, MeDef],
     (enemyShips, res) => {
       for (let o of enemyShips) {

@@ -37,7 +37,7 @@ import {
   PlayerShipLocalDef,
   PlayerShipPropsDef,
 } from "./hyperspace/player-ship.js";
-import { ShipDef } from "./hyperspace/ship.js";
+import { UVShipDef } from "./hyperspace/uv-ship.js";
 import { constructNetTurret, TurretDef } from "./turret.js";
 
 const ORRERY_SCALE = 0.001;

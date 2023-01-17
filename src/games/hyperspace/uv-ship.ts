@@ -9,7 +9,7 @@ import { vec2Dbg, vec3Dbg } from "../../utils-3d.js";
 import { GameStateDef, GameState } from "./gamestate.js";
 import { UVPosDef, UVDirDef } from "./ocean.js";
 
-export const ShipDef = EM.defineComponent("ship", () => {
+export const UVShipDef = EM.defineComponent("uvship", () => {
   return {
     speed: 0,
   };
@@ -17,7 +17,7 @@ export const ShipDef = EM.defineComponent("ship", () => {
 
 onInit((em) => {
   em.registerSystem(
-    [ShipDef, UVPosDef, UVDirDef, AuthorityDef],
+    [UVShipDef, UVPosDef, UVDirDef, AuthorityDef],
     [GameStateDef, MeDef, InputsDef, DevConsoleDef],
     (ships, res) => {
       if (res.gameState.state !== GameState.PLAYING) return;
@@ -36,13 +36,13 @@ onInit((em) => {
         //   );
         // }
 
-        if (Math.abs(s.ship.speed) > 0.00001) {
+        if (Math.abs(s.uvship.speed) > 0.00001) {
           // NOTE: we scale uvDir by speed so that the look-ahead used for
           //    UVDir->Rotation works.
           // TODO(@darzu): This doesn't seem great. We need a better way to
           //    do  UVDir->Rotation
           //vec2.normalize(s.uvDir, s.uvDir);
-          const scaled = vec2.scale(s.uvDir, s.ship.speed);
+          const scaled = vec2.scale(s.uvDir, s.uvship.speed);
           vec2.add(s.uvPos, scaled, s.uvPos);
         }
       }

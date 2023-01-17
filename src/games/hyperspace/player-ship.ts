@@ -36,8 +36,12 @@ import { constructNetTurret, TurretDef } from "../turret.js";
 import { YawPitchDef } from "../../yawpitch.js";
 import { UVPosDef, UVDirDef } from "./ocean.js";
 import { PartyDef } from "../party.js";
-import { ShipDef } from "./ship.js";
-import { createMastNow, MastLocalDef, MastPropsDef } from "./sail.js";
+import { UVShipDef } from "./uv-ship.js";
+import {
+  createHypMastNow,
+  HypMastLocalDef,
+  HypMastPropsDef,
+} from "./hypersail.js";
 import { makeOrrery, OrreryDef } from "../orrery.js";
 import { ColorDef } from "../../color-ecs.js";
 
@@ -172,7 +176,7 @@ export const { PlayerShipPropsDef, PlayerShipLocalDef, createPlayerShip } =
       cannonLId: 0,
       cannonRId: 0,
       rudder: createRef(0, [RudderPropsDef, YawPitchDef]),
-      mast: createRef(0, [MastPropsDef, MastLocalDef]),
+      mast: createRef(0, [HypMastPropsDef, HypMastLocalDef]),
     }),
     serializeProps: (c, buf) => {
       buf.writeVec2(c.uvPos);
@@ -213,7 +217,7 @@ export const { PlayerShipPropsDef, PlayerShipLocalDef, createPlayerShip } =
         const r = createRudderNow(res, s.id);
         s.playerShipProps.rudder = createRef(r);
 
-        const m = createMastNow(res, s.id);
+        const m = createHypMastNow(res, s.id);
         s.playerShipProps.mast = createRef(m);
 
         // create cannons
@@ -242,9 +246,9 @@ export const { PlayerShipPropsDef, PlayerShipLocalDef, createPlayerShip } =
 
       em.ensureComponentOn(s, MotionSmoothingDef);
 
-      em.ensureComponentOn(s, ShipDef);
+      em.ensureComponentOn(s, UVShipDef);
 
-      s.ship.speed = 0;
+      s.uvship.speed = 0;
       // s.playerShipLocal.speed = 0.005 * 3; // TODO(@darzu): DEBUG SPEED
       // em.ensureComponentOn(s, LinearVelocityDef, [0, 0, 0]);
       // em.ensureComponentOn(s, AngularVelocityDef);
@@ -389,7 +393,7 @@ export function registerShipSystems(em: EntityManager) {
 
   em.registerSystem(
     [
-      ShipDef,
+      UVShipDef,
       PlayerShipLocalDef,
       PlayerShipPropsDef,
       // LinearVelocityDef,
@@ -413,9 +417,9 @@ export function registerShipSystems(em: EntityManager) {
         // s.angularVelocity[1] = -0.0001;
 
         // SPEED
-        if (res.inputs.keyDowns["z"]) s.ship.speed += 0.00001;
-        if (res.inputs.keyDowns["x"]) s.ship.speed -= 0.00001;
-        s.ship.speed = clamp(s.ship.speed, -0.001, 0.001);
+        if (res.inputs.keyDowns["z"]) s.uvship.speed += 0.00001;
+        if (res.inputs.keyDowns["x"]) s.uvship.speed -= 0.00001;
+        s.uvship.speed = clamp(s.uvship.speed, -0.001, 0.001);
         //s.ship.speed = Math.max(0, s.ship.speed);
 
         // STEERING

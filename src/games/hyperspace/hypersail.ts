@@ -39,7 +39,7 @@ import {
   PlayerShipLocalDef,
   PlayerShipPropsDef,
 } from "./player-ship.js";
-import { ShipDef } from "./ship.js";
+import { UVShipDef } from "./uv-ship.js";
 import { constructNetTurret, TurretDef } from "../turret.js";
 
 const DEFAULT_SAIL_COLOR = V(0.05, 0.05, 0.05);
@@ -70,9 +70,9 @@ const SailColorDef = EM.defineComponent(
 );
 
 // TODO: we need warnings if you forget to call the buildProps system!
-export const { MastPropsDef, MastLocalDef, createMastNow } =
+export const { HypMastPropsDef, HypMastLocalDef, createHypMastNow } =
   defineNetEntityHelper(EM, {
-    name: "mast",
+    name: "hypMast",
     defaultProps: (shipId?: number) => ({
       shipId: shipId ?? 0,
     }),
@@ -106,7 +106,7 @@ export const { MastPropsDef, MastLocalDef, createMastNow } =
       em.ensureComponentOn(mast, PositionDef, V(0, 0, 0));
 
       em.ensureComponentOn(mast, RenderableConstructDef, res.assets.mast.mesh);
-      em.ensureComponentOn(mast, PhysicsParentDef, mast.mastProps.shipId);
+      em.ensureComponentOn(mast, PhysicsParentDef, mast.hypMastProps.shipId);
       em.ensureComponentOn(mast, ColorDef, BOAT_COLOR);
       vec3.scale(mast.color, 0.5, mast.color);
 
@@ -121,10 +121,10 @@ export const { MastPropsDef, MastLocalDef, createMastNow } =
         em.ensureComponentOn(rib, PhysicsParentDef, mast.id);
         return rib;
       };
-      mast.mastLocal.boom1 = range(RIB_COUNT).map((i) =>
+      mast.hypMastLocal.boom1 = range(RIB_COUNT).map((i) =>
         createRef(createRib(i === 0 ? 1 : 0.7))
       );
-      mast.mastLocal.boom2 = range(RIB_COUNT).map((i) =>
+      mast.hypMastLocal.boom2 = range(RIB_COUNT).map((i) =>
         createRef(createRib(i === 0 ? 1 : 0.7))
       );
 
@@ -149,7 +149,7 @@ export const { MastPropsDef, MastLocalDef, createMastNow } =
         ColorDef
       ).then((sail1) => {
         sail1.renderDataStd.flags |= FLAG_UNLIT;
-        mast.mastLocal.sail1 = createRef(sail1);
+        mast.hypMastLocal.sail1 = createRef(sail1);
       });
 
       const sail2 = em.new();
@@ -173,7 +173,7 @@ export const { MastPropsDef, MastLocalDef, createMastNow } =
         ColorDef
       ).then((sail2) => {
         sail2.renderDataStd.flags |= FLAG_UNLIT;
-        mast.mastLocal.sail2 = createRef(sail2);
+        mast.hypMastLocal.sail2 = createRef(sail2);
       });
 
       // create seperate hitbox for interacting with the mast
@@ -181,7 +181,7 @@ export const { MastPropsDef, MastLocalDef, createMastNow } =
       em.ensureComponentOn(
         interactBox,
         PhysicsParentDef,
-        mast.mastProps.shipId
+        mast.hypMastProps.shipId
       );
       em.ensureComponentOn(interactBox, PositionDef, V(0, 0, 0));
       em.ensureComponentOn(interactBox, ColliderDef, {
@@ -215,7 +215,7 @@ export const { MastPropsDef, MastLocalDef, createMastNow } =
 
 onInit((em) => {
   em.registerSystem(
-    [MastPropsDef, MastLocalDef, TurretDef, BoomPitchesDef],
+    [HypMastPropsDef, HypMastLocalDef, TurretDef, BoomPitchesDef],
     [InputsDef, RendererDef],
     (masts, res) => {
       for (let mast of masts) {
@@ -244,7 +244,7 @@ onInit((em) => {
           );
         }
 
-        mast.mastLocal.boom1.forEach((ribRef, i) => {
+        mast.hypMastLocal.boom1.forEach((ribRef, i) => {
           const rib = ribRef()!;
           quat.rotateX(
             quat.IDENTITY,
@@ -252,7 +252,7 @@ onInit((em) => {
             rib.rotation
           );
         });
-        mast.mastLocal.boom2.forEach((ribRef, i) => {
+        mast.hypMastLocal.boom2.forEach((ribRef, i) => {
           const rib = ribRef()!;
           quat.rotateY(quat.IDENTITY, Math.PI, rib.rotation);
           quat.rotateX(
@@ -294,17 +294,17 @@ onInit((em) => {
         };
 
         // update sails
-        const sail1 = mast.mastLocal.sail1();
+        const sail1 = mast.hypMastLocal.sail1();
         if (sail1)
           adjustSailVertices(
             sail1.renderable.meshHandle,
-            mast.mastLocal.boom1.map((b) => b()!.rotation)
+            mast.hypMastLocal.boom1.map((b) => b()!.rotation)
           );
-        const sail2 = mast.mastLocal.sail2();
+        const sail2 = mast.hypMastLocal.sail2();
         if (sail2)
           adjustSailVertices(
             sail2.renderable.meshHandle,
-            mast.mastLocal.boom2.map((b) => b()!.rotation)
+            mast.hypMastLocal.boom2.map((b) => b()!.rotation)
           );
       }
     },
@@ -312,7 +312,7 @@ onInit((em) => {
   );
 
   em.registerSystem(
-    [PlayerShipPropsDef, ShipDef, WorldFrameDef, AuthorityDef],
+    [PlayerShipPropsDef, UVShipDef, WorldFrameDef, AuthorityDef],
     [MeDef, GameStateDef],
     (es, res) => {
       if (res.gameState.state !== GameState.PLAYING) {
@@ -326,8 +326,8 @@ onInit((em) => {
           ColorDef,
         ]);
         const sails = [
-          ship.playerShipProps.mast()!.mastLocal.sail1()!,
-          ship.playerShipProps.mast()!.mastLocal.sail2()!,
+          ship.playerShipProps.mast()!.hypMastLocal.sail1()!,
+          ship.playerShipProps.mast()!.hypMastLocal.sail2()!,
         ];
         for (let sail of sails) {
           const star = stars.find((s) => vec3.equals(s.color, sail.sailColor));
@@ -373,7 +373,7 @@ onInit((em) => {
             sail.color
           );
 
-          ship.ship.speed += accel * 0.0001;
+          ship.uvship.speed += accel * 0.0001;
           //console.log(`Speed is ${ship.ship.speed}`);
         }
       }
