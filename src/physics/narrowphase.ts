@@ -1,7 +1,7 @@
 import { EntityManager, EntityW } from "../entity-manager.js";
-import { AssetsDef } from "../game/assets.js";
+import { AssetsDef } from "../assets.js";
 import { ColorDef } from "../color-ecs.js";
-import { LocalPlayerDef } from "../game/player.js";
+import { LocalPlayerDef } from "../games/player.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { BoxCollider, Collider } from "./collider.js";

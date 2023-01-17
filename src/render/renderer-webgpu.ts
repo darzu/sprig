@@ -56,7 +56,7 @@ import {
   GrassVertStruct,
   GrassUniStruct,
   grassPoolPtr,
-} from "../ld52/xp-grass.js";
+} from "../smol/xp-grass.js";
 
 // TODO(@darzu): Try using drawIndirect !!
 //    https://gpuweb.github.io/gpuweb/#dom-gpurendercommandsmixin-drawindirect

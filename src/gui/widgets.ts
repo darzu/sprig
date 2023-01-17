@@ -2,8 +2,8 @@ import { CameraViewDef } from "../camera.js";
 import { AlphaDef, ColorDef } from "../color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { EM, EntityW } from "../entity-manager.js";
-import { Assets, AssetsDef } from "../game/assets.js";
-import { gameplaySystems } from "../game/game.js";
+import { Assets, AssetsDef } from "../assets.js";
+import { gameplaySystems } from "../games/ghost.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { MouseDragDef } from "../inputs.js";
 import { ColliderDef } from "../physics/collider.js";
@@ -14,7 +14,7 @@ import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { tempVec3 } from "../temp-pool.js";
 import { assert } from "../util.js";
 import { screenPosToWorldPos } from "../utils-game.js";
-import { UICursorDef } from "../game/game-font.js";
+import { UICursorDef } from "../games/game-font.js";
 
 // adornments are: entities that are parented to an entity's mesh parts
 //    [ ] track changes via version number on the mesh data

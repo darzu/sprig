@@ -37,7 +37,7 @@ import {
 import { ShadersDef, ShaderSet } from "./shader-loader.js";
 import { dbgLogOnce, never } from "../util.js";
 import { TimeDef } from "../time.js";
-import { PartyDef } from "../game/party.js";
+import { PartyDef } from "../games/party.js";
 import { PointLightDef, pointLightsPtr, PointLightTS } from "./lights.js";
 import {
   computeOceanUniData,
@@ -51,8 +51,8 @@ import {
   VERBOSE_LOG,
 } from "../flags.js";
 import { ALPHA_MASK } from "./pipeline-masks.js";
-import { RenderDataGrassDef, computeGrassUniData } from "../ld52/xp-grass.js";
-import { WindDef } from "../ld52/wind.js";
+import { RenderDataGrassDef, computeGrassUniData } from "../smol/xp-grass.js";
+import { WindDef } from "../smol/wind.js";
 
 const BLEND_SIMULATION_FRAMES_STRATEGY: "interpolate" | "extrapolate" | "none" =
   "none";

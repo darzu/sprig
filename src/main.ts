@@ -7,22 +7,22 @@ import { MeDef, JoinDef, HostDef, PeerNameDef } from "./net/components.js";
 import { addEventComponents } from "./net/events.js";
 import { dbg } from "./debugger.js";
 import { DevConsoleDef } from "./console.js";
-import { initReboundSandbox } from "./game/game-rebound.js";
+import { initReboundSandbox } from "./games/game-rebound.js";
 // import { callClothSystems } from "./game/cloth.js";
-import { registerCommonSystems } from "./game/game-init.js";
+import { registerCommonSystems } from "./games/game-init.js";
 import { setSimulationAlpha } from "./render/renderer-ecs.js";
 import { never } from "./util.js";
 // import { initHyperspaceGame } from "./game/game-hyperspace.js";
 import { DBG_ASSERT, ENABLE_NET, VERBOSE_LOG } from "./flags.js";
-import { initRogueGame } from "./game/game-rogue.js";
-import { gameplaySystems } from "./game/game.js";
-import { initFontEditor } from "./game/game-font.js";
-import { initGJKSandbox } from "./game/game-gjk.js";
-import { initHyperspaceGame } from "./game/game-hyperspace.js";
-import { initClothSandbox } from "./game/game-cloth.js";
-import { initCubeGame } from "./game/xp-cube.js";
+import { initRogueGame } from "./games/game-rogue.js";
+import { gameplaySystems } from "./games/ghost.js";
+import { initFontEditor } from "./games/game-font.js";
+import { initGJKSandbox } from "./games/game-gjk.js";
+import { initHyperspaceGame } from "./games/hyperspace/game-hyperspace.js";
+import { initClothSandbox } from "./games/game-cloth.js";
+import { initCubeGame } from "./games/xp-cube.js";
 import { resetTempMatrixBuffer, V } from "./sprig-matrix.js";
-import { initLD52 } from "./ld52/game-ld52.js";
+import { initSmol } from "./smol/game-smol.js";
 
 export const FORCE_WEBGL = false;
 export const MAX_MESHES = 20000;
@@ -33,13 +33,13 @@ const ALL_GAMES = [
   "gjk",
   "rebound", // broken-ish
   "ld51",
-  "ld52",
+  "smol",
   "font",
   "hyperspace",
   "cloth", // broken-ish
   "cube",
 ] as const;
-const GAME: typeof ALL_GAMES[number] = "ld52";
+const GAME: typeof ALL_GAMES[number] = "hyperspace";
 
 // Run simulation with a fixed timestep @ 60hz
 const TIMESTEP = 1000 / 60;
@@ -269,7 +269,7 @@ async function startGame(localPeerName: string, host: string | null) {
   else if (GAME === "cube") initCubeGame(EM);
   else if (GAME === "ld51") initRogueGame(EM, hosting);
   else if (GAME === "font") initFontEditor(EM);
-  else if (GAME === "ld52") initLD52(EM, hosting);
+  else if (GAME === "smol") initSmol(EM, hosting);
   else never(GAME, "TODO game");
 
   legacyRequireAllTheSystems();
