@@ -72,7 +72,7 @@ const SHIP_START_POS: vec3 = V(0, 2, -WORLD_SIZE * 0.5 * 0.6);
 
 // const WORLD_HEIGHT = 1024;
 
-export async function initLD52(em: EntityManager, hosting: boolean) {
+export async function initSmol(em: EntityManager, hosting: boolean) {
   const res = await em.whenResources(
     AssetsDef,
     // WoodAssetsDef,

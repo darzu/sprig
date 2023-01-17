@@ -22,7 +22,7 @@ import { initHyperspaceGame } from "./game/game-hyperspace.js";
 import { initClothSandbox } from "./game/game-cloth.js";
 import { initCubeGame } from "./game/xp-cube.js";
 import { resetTempMatrixBuffer, V } from "./sprig-matrix.js";
-import { initLD52 } from "./ld52/game-ld52.js";
+import { initSmol } from "./smol/game-smol.js";
 
 export const FORCE_WEBGL = false;
 export const MAX_MESHES = 20000;
@@ -269,7 +269,7 @@ async function startGame(localPeerName: string, host: string | null) {
   else if (GAME === "cube") initCubeGame(EM);
   else if (GAME === "ld51") initRogueGame(EM, hosting);
   else if (GAME === "font") initFontEditor(EM);
-  else if (GAME === "ld52") initLD52(EM, hosting);
+  else if (GAME === "ld52") initSmol(EM, hosting);
   else never(GAME, "TODO game");
 
   legacyRequireAllTheSystems();
