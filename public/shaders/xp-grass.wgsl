@@ -32,8 +32,8 @@ fn vert_main(input: VertexInput) -> VertexOutput {
     //let origHeight = worldPos.y;
     let toParty = dispPos.xyz - scene.partyPos;
     
-    let partyDist = length(toParty);
-    let spawnF = 1.0 - smoothstep(grassUni.spawnDist - 5.0, grassUni.spawnDist, partyDist);
+    let cameraDist = length(dispPos.xyz - scene.cameraPos);
+    let spawnF = 1.0 - smoothstep(grassUni.spawnDist - 5.0, grassUni.spawnDist, cameraDist);
 
     //let partyDirNorm = normalize(toParty);
     let zDist = dot(toParty, scene.partyDir);
