@@ -40,7 +40,7 @@ import { AssetsDef } from "../assets.js";
 import { ClothConstructDef, ClothLocalDef } from "./cloth.js";
 import { GlobalCursor3dDef } from "./cursor.js";
 import { ENEMY_SHIP_COLOR } from "./enemy-ship.js";
-import { createGhost } from "./game.js";
+import { createGhost } from "./ghost.js";
 import { ForceDef } from "./spring.js";
 import { TextDef } from "./ui.js";
 

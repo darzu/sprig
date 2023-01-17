@@ -23,7 +23,7 @@ import { tempVec3 } from "../temp-pool.js";
 import { farthestPointInDir } from "../utils-3d.js";
 import { AssetsDef, GameMesh } from "../assets.js";
 import { GlobalCursor3dDef } from "./cursor.js";
-import { createGhost } from "./game.js";
+import { createGhost } from "./ghost.js";
 
 let __frame = 0;
 export async function initGJKSandbox(em: EntityManager, hosting: boolean) {

@@ -25,7 +25,7 @@ import { AssetsDef, GameMesh } from "../assets.js";
 import { GlobalCursor3dDef } from "./cursor.js";
 // import { ForceDef, SpringGridDef } from "./spring.js";
 import { TextDef } from "./ui.js";
-import { createGhost } from "./game.js";
+import { createGhost } from "./ghost.js";
 import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";

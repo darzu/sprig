@@ -76,7 +76,7 @@ import {
   fireBullet,
 } from "./bullet.js";
 import { ControllableDef } from "./controllable.js";
-import { createGhost, GhostDef } from "./game.js";
+import { createGhost, GhostDef } from "./ghost.js";
 import { GravityDef } from "./gravity.js";
 import { InRangeDef, InteractableDef } from "./interact.js";
 import { LifetimeDef } from "./lifetime.js";
@@ -85,7 +85,7 @@ import { TextDef } from "./ui.js";
 import { createIdxPool } from "../idx-pool.js";
 import { randNormalPosVec3, randNormalVec3 } from "../utils-3d.js";
 import { createHomeShip } from "./shipyard.js";
-import { gameplaySystems } from "./game.js";
+import { gameplaySystems } from "./ghost.js";
 
 /*
   Game mechanics:

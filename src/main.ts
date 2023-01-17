@@ -15,7 +15,7 @@ import { never } from "./util.js";
 // import { initHyperspaceGame } from "./game/game-hyperspace.js";
 import { DBG_ASSERT, ENABLE_NET, VERBOSE_LOG } from "./flags.js";
 import { initRogueGame } from "./games/game-rogue.js";
-import { gameplaySystems } from "./games/game.js";
+import { gameplaySystems } from "./games/ghost.js";
 import { initFontEditor } from "./games/game-font.js";
 import { initGJKSandbox } from "./games/game-gjk.js";
 import { initHyperspaceGame } from "./games/game-hyperspace.js";
@@ -33,13 +33,13 @@ const ALL_GAMES = [
   "gjk",
   "rebound", // broken-ish
   "ld51",
-  "ld52",
+  "smol",
   "font",
   "hyperspace",
   "cloth", // broken-ish
   "cube",
 ] as const;
-const GAME: typeof ALL_GAMES[number] = "ld52";
+const GAME: typeof ALL_GAMES[number] = "smol";
 
 // Run simulation with a fixed timestep @ 60hz
 const TIMESTEP = 1000 / 60;
@@ -269,7 +269,7 @@ async function startGame(localPeerName: string, host: string | null) {
   else if (GAME === "cube") initCubeGame(EM);
   else if (GAME === "ld51") initRogueGame(EM, hosting);
   else if (GAME === "font") initFontEditor(EM);
-  else if (GAME === "ld52") initSmol(EM, hosting);
+  else if (GAME === "smol") initSmol(EM, hosting);
   else never(GAME, "TODO game");
 
   legacyRequireAllTheSystems();

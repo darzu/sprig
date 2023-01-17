@@ -8,7 +8,7 @@ import { ENDESGA16 } from "../color/palettes.js";
 import { EM, EntityManager, EntityW } from "../entity-manager.js";
 import { AssetsDef } from "../assets.js";
 import { ControllableDef } from "../games/controllable.js";
-import { createGhost } from "../games/game.js";
+import { createGhost } from "../games/ghost.js";
 import { LocalPlayerDef, PlayerDef } from "../games/player.js";
 import {
   createGrassTile,

@@ -24,7 +24,7 @@ import {
 import { uintToVec3unorm } from "../utils-3d.js";
 import { AssetsDef } from "../assets.js";
 import { GlobalCursor3dDef } from "./cursor.js";
-import { createGhost } from "./game.js";
+import { createGhost } from "./ghost.js";
 import { PointLightDef } from "../render/lights.js";
 
 export async function initCubeGame(em: EntityManager) {

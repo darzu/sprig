@@ -41,23 +41,23 @@ import { UVDirDef, UVPosDef } from "./ocean.js";
 import { ColorDef } from "../color-ecs.js";
 import { AudioDef, Music } from "../audio.js";
 
-export const EnemyDef = EM.defineComponent("enemy", () => {
+export const EnemyCrewDef = EM.defineComponent("enemyCrew", () => {
   return {
     leftLegId: 0,
     rightLegId: 0,
   };
 });
 
-export type Enemy = Component<typeof EnemyDef>;
+export type EnemyCrew = Component<typeof EnemyCrewDef>;
 
-export function createEnemy(
+export function createEnemyCrew(
   em: EntityManager,
   assets: Assets,
   parent: number,
   pos: vec3
-): EntityW<[typeof EnemyDef]> {
+): EntityW<[typeof EnemyCrewDef]> {
   const e = em.new();
-  em.ensureComponentOn(e, EnemyDef);
+  em.ensureComponentOn(e, EnemyCrewDef);
   em.ensureComponentOn(e, PositionDef, pos);
   em.ensureComponentOn(e, RotationDef, quat.create());
   const torso = cloneMesh(assets.cube.mesh);
@@ -75,8 +75,8 @@ export function createEnemy(
     em.ensureComponentOn(l, PhysicsParentDef, e.id);
     return l;
   }
-  e.enemy.leftLegId = makeLeg(-0.5).id;
-  e.enemy.rightLegId = makeLeg(0.5).id;
+  e.enemyCrew.leftLegId = makeLeg(-0.5).id;
+  e.enemyCrew.rightLegId = makeLeg(0.5).id;
   return e;
 }
 
@@ -174,12 +174,12 @@ export const { EnemyShipPropsDef, EnemyShipLocalDef, createEnemyShip } =
           WorldFrameDef,
           PositionDef,
           RotationDef,
-          EnemyDef,
+          EnemyCrewDef,
         ]);
         if (enemy) {
           em.ensureComponent(enemy.id, LifetimeDef, 4000);
-          em.ensureComponent(enemy.enemy.leftLegId, LifetimeDef, 4000);
-          em.ensureComponent(enemy.enemy.rightLegId, LifetimeDef, 4000);
+          em.ensureComponent(enemy.enemyCrew.leftLegId, LifetimeDef, 4000);
+          em.ensureComponent(enemy.enemyCrew.rightLegId, LifetimeDef, 4000);
           em.removeComponent(enemy.id, PhysicsParentDef);
           vec3.copy(enemy.position, enemy.world.position);
           quat.copy(enemy.rotation, enemy.world.rotation);
@@ -213,7 +213,7 @@ export const { EnemyShipPropsDef, EnemyShipLocalDef, createEnemyShip } =
       e.enemyShipLocal.childCannonId = cannon.id;
 
       // child enemy
-      const en = createEnemy(em, res.assets, e.id, V(2, 3, 0));
+      const en = createEnemyCrew(em, res.assets, e.id, V(2, 3, 0));
       e.enemyShipLocal.childEnemyId = en.id;
       if (e.authority.pid === res.me.pid) {
         // destroy after 1 minute
