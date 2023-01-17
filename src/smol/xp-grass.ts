@@ -228,7 +228,7 @@ export const grassPoolPtr = CY.createMeshPool("grassPool", {
 });
 
 export const GrassCutTexPtr = CY.createTexture("grassCut", {
-  size: [1024, 1024],
+  size: [1024, 512],
   // TODO(@darzu): we want the smaller format
   format: "r32float",
   // format: "r8unorm",

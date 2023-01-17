@@ -17,10 +17,13 @@ fn vert_main(input: VertexInput) -> VertexOutput {
     
     let worldPos: vec4<f32> = grassUni.transform * vec4<f32>(position, 1.0);
     
+    let texY: i32 = i32(worldPos.x + 256.0);
+    let texX: i32 = i32(worldPos.z + 512.0);
+    let texCoord = vec2<i32>(texX, texY);
 
     // TODO(@darzu): process cut height correctly
-    let cut = textureLoad(grassCut, vec2<i32>(i32(worldPos.x + 512.0), i32(worldPos.z + 512.0)), 0).x;
-    let colorKey = textureLoad(grassMap, vec2<i32>(i32(worldPos.x + 512.0), i32(worldPos.z + 512.0)), 0).x;
+    let cut = textureLoad(grassCut, texCoord, 0).x;
+    let colorKey = textureLoad(grassMap, texCoord, 0).x;
     let y = worldPos.y * min(1.3 - cut, 1.0);
     // let cutHeight = textureSample(grassCut, samp, worldPos.xz).x;
     var dispPos = vec4<f32>(worldPos.x + cos(worldPos.x + scene.time * 0.001) * y * 0.1, y, worldPos.z + sin(worldPos.z + scene.time * 0.001) * y * 0.1, worldPos.w);

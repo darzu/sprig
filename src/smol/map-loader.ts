@@ -3,21 +3,25 @@ import { onInit } from "../init.js";
 import { assert } from "../util.js";
 import { getBytes } from "../webget.js";
 
-const DEFAULT_MAP_PATH = "assets/ld52_maps/";
+// const DEFAULT_MAP_PATH = "assets/ld52_maps/";
+const DEFAULT_MAP_PATH = "assets/smol_maps/";
 
-export const MapPaths = [
-  "map1",
-  "map2",
-  "map3",
-  "map4",
-  "map_maze",
-  "map_narrow",
-] as const;
+// export const MapPaths = [
+//   "map1",
+//   "map2",
+//   "map3",
+//   "map4",
+//   "map_maze",
+//   "map_narrow",
+// ] as const;
+export const MapPaths = ["obstacles1"] as const;
 
 export type MapName = typeof MapPaths[number];
 
 export interface Map {
   bytes: Uint8ClampedArray;
+  width: number;
+  height: number;
 }
 
 export type MapSet = { [P in MapName]: Map };
@@ -36,7 +40,7 @@ async function loadMaps(): Promise<MapSet> {
     const path = `${DEFAULT_MAP_PATH}${name}.png`;
     // return getBytes(path);
 
-    return new Promise<Uint8ClampedArray>((resolve, reject) => {
+    return new Promise<Map>((resolve, reject) => {
       const img = new Image();
       img.src = path;
       img.onload = function (e) {
@@ -48,7 +52,12 @@ async function loadMaps(): Promise<MapSet> {
         canvas.height = img.height;
         context.drawImage(img, 0, 0);
         const imgData = context.getImageData(0, 0, img.width, img.height);
-        resolve(imgData.data);
+        const map: Map = {
+          bytes: imgData.data,
+          width: img.width,
+          height: img.height,
+        };
+        resolve(map);
       };
     });
   });
@@ -58,9 +67,7 @@ async function loadMaps(): Promise<MapSet> {
   const set: Partial<MapSet> = {};
 
   for (let i = 0; i < MapPaths.length; i++) {
-    set[MapPaths[i]] = {
-      bytes: maps[i],
-    };
+    set[MapPaths[i]] = maps[i];
   }
 
   return set as MapSet;

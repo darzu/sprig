@@ -8,7 +8,7 @@ import { ENDESGA16 } from "../color/palettes.js";
 import { EM, EntityManager, EntityW } from "../entity-manager.js";
 import { AssetsDef } from "../assets.js";
 import { ControllableDef } from "../games/controllable.js";
-import { createGhost } from "../games/ghost.js";
+import { createGhost, GhostDef } from "../games/ghost.js";
 import { LocalPlayerDef, PlayerDef } from "../games/player.js";
 import {
   createGrassTile,
@@ -53,6 +53,7 @@ import { ScoreDef } from "./score.js";
 import { raiseManTurret } from "../games/turret.js";
 import { TextDef } from "../games/ui.js";
 import { VERBOSE_LOG } from "../flags.js";
+import { CanvasDef } from "../canvas.js";
 
 /*
 TODO:
@@ -62,13 +63,16 @@ NOTES:
 - Cut grass by updating a texture that has cut/not cut or maybe cut-height
 */
 
-const WORLD_SIZE = 1024;
+const DBG_PLAYER = false;
+
+const WORLD_WIDTH = 1024;
+const WORLD_HEIGHT = 512;
 
 const RED_DAMAGE_CUTTING = 10;
 const RED_DAMAGE_PER_FRAME = 40;
 const GREEN_HEALING = 1;
 
-const SHIP_START_POS: vec3 = V(0, 2, -WORLD_SIZE * 0.5 * 0.6);
+const SHIP_START_POS: vec3 = V(0, 2, -WORLD_WIDTH * 0.5 * 0.6);
 
 // const WORLD_HEIGHT = 1024;
 
@@ -108,12 +112,15 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
   em.requireSystem("updateScoreDisplay");
   em.requireSystem("detectGameEnd");
   // start map
-  setMap(em, "map1");
+  setMap(em, "obstacles1");
 
   // ground
   const ground = em.new();
   const groundMesh = cloneMesh(res.assets.unitCube.mesh);
-  transformMesh(groundMesh, mat4.fromScaling(V(WORLD_SIZE, 1.0, WORLD_SIZE)));
+  transformMesh(
+    groundMesh,
+    mat4.fromScaling(V(WORLD_HEIGHT, 1.0, WORLD_WIDTH))
+  );
   em.ensureComponentOn(ground, RenderableConstructDef, groundMesh);
   em.ensureComponentOn(ground, ColorDef, V(0.1, 0.5, 0.1));
   // em.set(ground, ColorDef, ENDESGA16.darkGreen);
@@ -121,7 +128,7 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
   em.ensureComponentOn(
     ground,
     PositionDef,
-    V(-WORLD_SIZE * 0.5, -1.1, -WORLD_SIZE * 0.5)
+    V(-WORLD_HEIGHT * 0.5, -1.1, -WORLD_WIDTH * 0.5)
   );
   // em.ensureComponentOn(plane, PositionDef, [0, -5, 0]);
 
@@ -212,22 +219,70 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
   em.requireSystem("sailShip");
   em.requireSystem("shipParty");
 
+  // dbg ghost
+
   // player
-  const player = await createPlayer();
-  player.physicsParent.id = ship.id;
-  // vec3.set(0, 3, -1, player.position);
-  const rudder = ship.ld52ship.rudder()!;
-  vec3.copy(player.position, rudder.position);
-  player.position[1] = 1.45;
-  assert(CameraFollowDef.isOn(rudder));
-  raiseManTurret(player, rudder);
+  if (!DBG_PLAYER) {
+    const player = await createPlayer();
+    player.physicsParent.id = ship.id;
+    // vec3.set(0, 3, -1, player.position);
+    const rudder = ship.ld52ship.rudder()!;
+    vec3.copy(player.position, rudder.position);
+    player.position[1] = 1.45;
+    assert(CameraFollowDef.isOn(rudder));
+    raiseManTurret(player, rudder);
+  }
+
+  if (DBG_PLAYER) {
+    const g = createGhost();
+    // vec3.copy(g.position, [0, 1, -1.2]);
+    // quat.setAxisAngle([0.0, -1.0, 0.0], 1.62, g.rotation);
+    // g.cameraFollow.positionOffset = V(0, 0, 5);
+    g.controllable.speed *= 0.5;
+    g.controllable.sprintMul = 10;
+    const sphereMesh = cloneMesh(res.assets.ball.mesh);
+    const visible = false;
+    em.ensureComponentOn(g, RenderableConstructDef, sphereMesh, visible);
+    em.ensureComponentOn(g, ColorDef, V(0.1, 0.1, 0.1));
+    // em.ensureComponentOn(g, PositionDef, V(0, 0, 0));
+    // em.ensureComponentOn(b2, PositionDef, [0, 0, -1.2]);
+    em.ensureComponentOn(g, WorldFrameDef);
+    // em.ensureComponentOn(b2, PhysicsParentDef, g.id);
+    em.ensureComponentOn(g, ColliderDef, {
+      shape: "AABB",
+      solid: false,
+      aabb: res.assets.ball.aabb,
+    });
+
+    vec3.copy(g.position, [-28.11, 26.0, -28.39]);
+    quat.copy(g.rotation, [0.0, -0.94, 0.0, 0.34]);
+    vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
+    g.cameraFollow.yawOffset = 0.0;
+    g.cameraFollow.pitchOffset = -0.593;
+
+    em.registerSystem(
+      [GhostDef, WorldFrameDef, ColliderDef],
+      [InputsDef, CanvasDef],
+      async (ps, { inputs, htmlCanvas }) => {
+        if (!ps.length) return;
+
+        const ghost = ps[0];
+
+        if (!htmlCanvas.hasFirstInteraction) return;
+      },
+      "smolGhost"
+    );
+    EM.requireGameplaySystem("smolGhost");
+  }
 
   // update grass
   EM.registerSystem(
-    null,
-    [LocalPlayerDef],
-    (_, res) => {
-      const player = EM.findEntity(res.localPlayer.playerId, [WorldFrameDef]);
+    [CameraFollowDef, WorldFrameDef],
+    [],
+    (es, res) => {
+      const player = es[0];
+      // console.log(player.world.position);
+      // const player = EM.findEntity(res.localPlayer.playerId, [WorldFrameDef]);
       if (player) for (let t of ts) t.update(player.world.position);
     },
     "updateGrass"
@@ -286,12 +341,13 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
     grassCutTex.size[0] * grassCutTex.size[1]
   );
   assert(
-    WORLD_SIZE === grassCutTex.size[0] && WORLD_SIZE === grassCutTex.size[1]
+    WORLD_WIDTH === grassCutTex.size[0] && WORLD_HEIGHT === grassCutTex.size[1]
   );
 
-  const worldToTex = (x: number) => Math.floor(x + WORLD_SIZE / 2);
-  // const worldToTexZ = (z: number) => Math.floor(z + WORLD_HEIGHT / 2);
-  const texToWorld = (x: number) => x - WORLD_SIZE / 2 + 0.5;
+  const worldXToTexY = (x: number) => Math.floor(x + WORLD_HEIGHT / 2);
+  const worldZToTexX = (z: number) => Math.floor(z + WORLD_WIDTH / 2);
+  const texXToWorldZ = (x: number) => x - WORLD_WIDTH / 2 + 0.5;
+  const texYToWorldX = (x: number) => x - WORLD_HEIGHT / 2 + 0.5;
 
   score.onLevelEnd.push(() => {
     worldCutData.fill(0.0);
@@ -320,8 +376,8 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
       const selfAABB = ship._phys.colliders[0].selfAABB;
 
       // window texture
-      const winXi = worldToTex(worldAABB.min[0]);
-      const winYi = worldToTex(worldAABB.min[2]);
+      const winYi = worldXToTexY(worldAABB.min[0]);
+      const winXi = worldZToTexX(worldAABB.min[2]);
       const winWi = Math.ceil(worldAABB.max[0] - worldAABB.min[0]);
       const winHi = Math.ceil(worldAABB.max[2] - worldAABB.min[2]);
 
@@ -347,8 +403,8 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
       // update world texture data
       for (let xi = winXi; xi < winXi + winWi; xi++) {
         for (let yi = winYi; yi < winYi + winHi; yi++) {
-          const x = texToWorld(xi);
-          const z = texToWorld(yi);
+          const z = texXToWorldZ(xi);
+          const x = texYToWorldX(yi);
 
           let toParty = vec3.sub(V(x, 0, z), res.party.pos);
           let zDist = vec3.dot(toParty, res.party.dir);
@@ -357,7 +413,7 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
           let xDist = vec3.dot(toParty, partyX);
 
           if (Math.abs(xDist) < shipW * 0.5 && Math.abs(zDist) < shipH * 0.5) {
-            const idx = xi + yi * WORLD_SIZE;
+            const idx = xi + yi * WORLD_WIDTH;
 
             const color = res.grassMap.map[idx];
 
@@ -405,7 +461,7 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
       // copy from world texture data to update window
       for (let xi = winXi; xi < winXi + winWi; xi++) {
         for (let yi = winYi; yi < winYi + winHi; yi++) {
-          const worldIdx = xi + yi * WORLD_SIZE;
+          const worldIdx = xi + yi * WORLD_WIDTH;
           const val = worldCutData[worldIdx];
           const winIdx = xi - winXi + (yi - winYi) * winWi;
           windowData[winIdx] = val;

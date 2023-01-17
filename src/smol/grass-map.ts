@@ -8,7 +8,7 @@ import { MapName, MapsDef } from "./map-loader.js";
 import { ScoreDef } from "./score.js";
 
 const WIDTH = 1024;
-const HEIGHT = 1024;
+const HEIGHT = 512;
 
 export const GrassMapTexPtr = CY.createTexture("grassMap", {
   size: [WIDTH, HEIGHT],
@@ -26,27 +26,36 @@ export const GrassMapDef = EM.defineComponent(
 export async function setMap(em: EntityManager, name: MapName) {
   const res = await em.whenResources(MapsDef, RendererDef, ScoreDef);
 
-  let buf = res.maps[name].bytes;
+  const map = res.maps[name];
+
+  let buf = map.bytes;
   // yikes
   // buf = buf.slice(0x8a);
   // const view = new Uint32Array(buf.buffer);
   // assert(view.length === WIDTH * HEIGHT, "map has bad size");
   assert(buf.length === WIDTH * HEIGHT * 4, "map has bad size");
+  assert(map.width === WIDTH, `map.width: ${map.width}`);
+  assert(map.height === HEIGHT, `map.height: ${map.height}`);
 
   const W = 2;
-  const texBuf = new Float32Array(WIDTH * HEIGHT);
+  const texBuf = new Float32Array(map.width * map.height);
   let totalPurple = 0;
-  for (let x = 0; x < WIDTH; x += 1) {
-    for (let y = 0; y < HEIGHT; y += 1) {
-      const rIdx = x * 4 + y * WIDTH * 4;
+  for (let x = 0; x < map.width; x += 1) {
+    for (let y = 0; y < map.height; y += 1) {
+      const rIdx = x * 4 + y * map.width * 4;
       const r = buf[rIdx + 0];
       const g = buf[rIdx + 1];
       const b = buf[rIdx + 2];
       // console.log(r, g, b);
       // note: we flip y b/c we're mapping to x/z
-      const outIdx = x + (HEIGHT - 1 - y) * WIDTH;
+      const outIdx = x + (map.height - 1 - y) * map.width;
       // r,g,b each range from 0-255
-      if (x <= W || y <= W || x >= WIDTH - 1 - W || y >= HEIGHT - 1 - W) {
+      if (
+        x <= W ||
+        y <= W ||
+        x >= map.width - 1 - W ||
+        y >= map.height - 1 - W
+      ) {
         texBuf[outIdx] = 0.5;
       } else if (g > 100) {
         texBuf[outIdx] = 0.0;
