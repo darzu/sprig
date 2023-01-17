@@ -29,7 +29,7 @@ import {
   GameMesh,
   gameMeshFromMesh,
   makePlaneMesh,
-} from "./assets.js";
+} from "../assets.js";
 import { createGhost, gameplaySystems } from "./game.js";
 import { TextDef } from "./ui.js";
 

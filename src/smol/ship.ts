@@ -1,7 +1,7 @@
 import { ColorDef } from "../color-ecs.js";
 import { createRef } from "../em_helpers.js";
 import { EM, EntityManager, EntityW } from "../entity-manager.js";
-import { AssetsDef, BARGE_AABBS } from "../game/assets.js";
+import { AssetsDef, BARGE_AABBS } from "../assets.js";
 import { vec3, quat } from "../sprig-matrix.js";
 import { LinearVelocityDef } from "../physics/motion.js";
 import {
@@ -17,12 +17,12 @@ import {
   ColliderDef,
   MultiCollider,
 } from "../physics/collider.js";
-import { constructNetTurret, TurretDef } from "../game/turret.js";
+import { constructNetTurret, TurretDef } from "../games/turret.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { YawPitchDef } from "../yawpitch.js";
-import { PartyDef } from "../game/party.js";
+import { PartyDef } from "../games/party.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
-import { InteractableDef } from "../game/interact.js";
+import { InteractableDef } from "../games/interact.js";
 import { vec3Dbg } from "../utils-3d.js";
 import { CameraFollowDef } from "../camera.js";
 import { createSock } from "./windsock.js";

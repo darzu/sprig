@@ -11,7 +11,7 @@ import {
   shadowPipelines,
 } from "../render/pipelines/std-shadow.js";
 import { initStars, renderStars } from "../render/pipelines/std-stars.js";
-import { AssetsDef } from "./assets.js";
+import { AssetsDef } from "../assets.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { createPlayer } from "./player.js";
 import { createPlayerShip } from "./player-ship.js";

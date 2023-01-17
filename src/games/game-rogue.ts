@@ -68,7 +68,7 @@ import {
   WoodStateDef,
   _numSplinterEnds,
 } from "../wood.js";
-import { AssetsDef, BLACK } from "./assets.js";
+import { AssetsDef, BLACK } from "../assets.js";
 import {
   breakBullet,
   BulletConstructDef,

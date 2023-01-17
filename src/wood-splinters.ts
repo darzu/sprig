@@ -2,8 +2,8 @@
 
 import { ColorDef } from "./color-ecs.js";
 import { EntityW, EntityManager, EM } from "./entity-manager.js";
-import { AssetsDef, BLACK } from "./game/assets.js";
-import { GravityDef } from "./game/gravity.js";
+import { AssetsDef, BLACK } from "./assets.js";
+import { GravityDef } from "./games/gravity.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "./sprig-matrix.js";
 import { jitter } from "./math.js";
 import { getLineMid } from "./physics/broadphase.js";

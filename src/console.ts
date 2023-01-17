@@ -1,6 +1,6 @@
 import { EM, EntityManager } from "./entity-manager.js";
 import { PERF_DBG_GPU } from "./flags.js";
-import { TextDef } from "./game/ui.js";
+import { TextDef } from "./games/ui.js";
 import { InputsDef } from "./inputs.js";
 import {
   _lastCollisionTestTimeMs,

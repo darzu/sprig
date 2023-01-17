@@ -36,7 +36,7 @@ import {
   vec2Dbg,
   vec3Dbg,
 } from "../utils-3d.js";
-import { AssetsDef } from "./assets.js";
+import { AssetsDef } from "../assets.js";
 import { ColorDef } from "../color-ecs.js";
 import { DEFAULT_MASK, UVUNWRAP_MASK } from "../render/pipeline-masks.js";
 

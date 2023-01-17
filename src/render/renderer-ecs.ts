@@ -37,7 +37,7 @@ import {
 import { ShadersDef, ShaderSet } from "./shader-loader.js";
 import { dbgLogOnce, never } from "../util.js";
 import { TimeDef } from "../time.js";
-import { PartyDef } from "../game/party.js";
+import { PartyDef } from "../games/party.js";
 import { PointLightDef, pointLightsPtr, PointLightTS } from "./lights.js";
 import {
   computeOceanUniData,

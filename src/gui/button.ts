@@ -1,7 +1,7 @@
 import { ColorDef } from "../color-ecs.js";
 import { EM, EntityW } from "../entity-manager.js";
-import { GameMesh, gameMeshFromMesh } from "../game/assets.js";
-import { gameplaySystems } from "../game/game.js";
+import { GameMesh, gameMeshFromMesh } from "../assets.js";
+import { gameplaySystems } from "../games/game.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { importObj } from "../import_obj.js";
 import { InputsDef } from "../inputs.js";
@@ -9,7 +9,7 @@ import { PhysicsResultsDef } from "../physics/nonintersection.js";
 import { scaleMesh } from "../render/mesh.js";
 import { RendererDef } from "../render/renderer-ecs.js";
 import { assert } from "../util.js";
-import { UICursorDef } from "../game/game-font.js";
+import { UICursorDef } from "../games/game-font.js";
 
 // TODO(@darzu): this should really go in assets.ts to follow the current patern.
 //    BUT I'm disatisfied with the current pattern. Subsystems should be able to

@@ -1,5 +1,5 @@
 import { EM } from "../entity-manager.js";
-import { TextDef } from "../game/ui.js";
+import { TextDef } from "../games/ui.js";
 import { TimeDef } from "../time.js";
 import { setMap } from "./grass-map.js";
 import { MapPaths } from "./map-loader.js";

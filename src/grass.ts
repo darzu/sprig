@@ -1,6 +1,6 @@
 import { ColorDef } from "./color-ecs.js";
 import { EM, EntityW } from "./entity-manager.js";
-import { gameMeshFromMesh } from "./game/assets.js";
+import { gameMeshFromMesh } from "./assets.js";
 import { RenderDataGrassDef } from "./smol/xp-grass.js";
 import { jitter, align } from "./math.js";
 import { PositionDef } from "./physics/transform.js";

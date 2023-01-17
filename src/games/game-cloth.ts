@@ -36,7 +36,7 @@ import { tempVec3 } from "../temp-pool.js";
 import { EASE_INQUAD } from "../util-ease.js";
 import { assert } from "../util.js";
 import { drawLine } from "../utils-game.js";
-import { AssetsDef } from "./assets.js";
+import { AssetsDef } from "../assets.js";
 import { ClothConstructDef, ClothLocalDef } from "./cloth.js";
 import { GlobalCursor3dDef } from "./cursor.js";
 import { ENEMY_SHIP_COLOR } from "./enemy-ship.js";

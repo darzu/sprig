@@ -26,7 +26,7 @@ import { AABBCollider, Collider, ColliderDef } from "../physics/collider.js";
 import { copyAABB, createAABB, Ray } from "../physics/broadphase.js";
 import { tempVec3 } from "../temp-pool.js";
 import { cloneMesh, scaleMesh3 } from "../render/mesh.js";
-import { AssetsDef } from "./assets.js";
+import { AssetsDef } from "../assets.js";
 import { LinearVelocityDef } from "../physics/motion.js";
 import { MotionSmoothingDef } from "../motion-smoothing.js";
 import { ModelerDef } from "./modeler.js";

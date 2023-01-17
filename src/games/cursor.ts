@@ -8,7 +8,7 @@ import {
   PositionDef,
   updateFrameFromPosRotScale,
 } from "../physics/transform.js";
-import { AssetsDef } from "./assets.js";
+import { AssetsDef } from "../assets.js";
 import { ColorDef } from "../color-ecs.js";
 import { assert } from "../util.js";
 import { CameraViewDef } from "../camera.js";

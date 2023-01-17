@@ -15,7 +15,7 @@ import {
   setSideQuadIdxs,
   setEndQuadIdxs,
 } from "../wood.js";
-import { BLACK } from "./assets.js";
+import { BLACK } from "../assets.js";
 
 const numRibSegs = 8;
 

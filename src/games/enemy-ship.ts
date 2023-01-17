@@ -20,7 +20,7 @@ import {
 import { ColliderDef } from "../physics/collider.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { aabbCenter } from "../physics/broadphase.js";
-import { Assets, AssetsDef, GameMesh } from "./assets.js";
+import { Assets, AssetsDef, GameMesh } from "../assets.js";
 import { AngularVelocityDef, LinearVelocityDef } from "../physics/motion.js";
 import { MotionSmoothingDef } from "../motion-smoothing.js";
 import {

@@ -29,11 +29,11 @@ import {
 import { RendererDef } from "../render/renderer-ecs.js";
 import { tempVec3 } from "../temp-pool.js";
 import { ColorDef } from "../color-ecs.js";
-import { AssetsDef } from "../game/assets.js";
+import { AssetsDef } from "../assets.js";
 import { ColliderDef } from "../physics/collider.js";
-import { constructNetTurret, TurretDef } from "../game/turret.js";
+import { constructNetTurret, TurretDef } from "../games/turret.js";
 import { InputsDef } from "../inputs.js";
-import { LocalPlayerDef, PlayerDef } from "../game/player.js";
+import { LocalPlayerDef, PlayerDef } from "../games/player.js";
 import { DeletedDef } from "../delete.js";
 import { clamp } from "../math.js";
 import { createRef } from "../em_helpers.js";

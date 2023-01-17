@@ -21,7 +21,7 @@ import {
 } from "../render/renderer-ecs.js";
 import { tempVec3 } from "../temp-pool.js";
 import { farthestPointInDir } from "../utils-3d.js";
-import { AssetsDef, GameMesh } from "./assets.js";
+import { AssetsDef, GameMesh } from "../assets.js";
 import { GlobalCursor3dDef } from "./cursor.js";
 import { createGhost } from "./game.js";
 

@@ -1,7 +1,7 @@
 import { CameraView } from "./camera.js";
 import { ColorDef } from "./color-ecs.js";
 import { EM, Entity, EntityW } from "./entity-manager.js";
-import { AssetsDef } from "./game/assets.js";
+import { AssetsDef } from "./assets.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "./sprig-matrix.js";
 import { mathMap } from "./math.js";
 import { getLineEnd, Line, Ray } from "./physics/broadphase.js";

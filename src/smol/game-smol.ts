@@ -6,10 +6,10 @@ import {
 import { ColorDef } from "../color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { EM, EntityManager, EntityW } from "../entity-manager.js";
-import { AssetsDef } from "../game/assets.js";
-import { ControllableDef } from "../game/controllable.js";
-import { createGhost } from "../game/game.js";
-import { LocalPlayerDef, PlayerDef } from "../game/player.js";
+import { AssetsDef } from "../assets.js";
+import { ControllableDef } from "../games/controllable.js";
+import { createGhost } from "../games/game.js";
+import { LocalPlayerDef, PlayerDef } from "../games/player.js";
 import {
   createGrassTile,
   createGrassTileset,
@@ -44,14 +44,14 @@ import { createShip, ShipDef } from "./ship.js";
 import { CY } from "../render/gpu-registry.js";
 import { assert } from "../util.js";
 import { texTypeToBytes } from "../render/gpu-struct.js";
-import { PartyDef } from "../game/party.js";
+import { PartyDef } from "../games/party.js";
 import { GrassMapDef, setMap } from "./grass-map.js";
 import { getAABBCornersTemp } from "../physics/broadphase.js";
 import { rasterizeTri } from "../raster.js";
 import { InputsDef } from "../inputs.js";
 import { ScoreDef } from "./score.js";
-import { raiseManTurret } from "../game/turret.js";
-import { TextDef } from "../game/ui.js";
+import { raiseManTurret } from "../games/turret.js";
+import { TextDef } from "../games/ui.js";
 import { VERBOSE_LOG } from "../flags.js";
 
 /*

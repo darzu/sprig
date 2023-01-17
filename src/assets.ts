@@ -1,6 +1,6 @@
-import { Component, EM, EntityManager } from "../entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
-import { importObj, isParseError } from "../import_obj.js";
+import { Component, EM, EntityManager } from "./entity-manager.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "./sprig-matrix.js";
+import { importObj, isParseError } from "./import_obj.js";
 import {
   cloneMesh,
   getAABBFromMesh,
@@ -16,14 +16,14 @@ import {
   scaleMesh3,
   transformMesh,
   validateMesh,
-} from "../render/mesh.js";
-import { AABB } from "../physics/broadphase.js";
-import { RendererDef } from "../render/renderer-ecs.js";
-import { Renderer } from "../render/renderer-ecs.js";
-import { assert } from "../util.js";
-import { objMap, range } from "../util.js";
-import { getText } from "../webget.js";
-import { AABBCollider } from "../physics/collider.js";
+} from "./render/mesh.js";
+import { AABB } from "./physics/broadphase.js";
+import { RendererDef } from "./render/renderer-ecs.js";
+import { Renderer } from "./render/renderer-ecs.js";
+import { assert } from "./util.js";
+import { objMap, range } from "./util.js";
+import { getText } from "./webget.js";
+import { AABBCollider } from "./physics/collider.js";
 import {
   computeTriangleNormal,
   farthestPointInDir,
@@ -33,11 +33,11 @@ import {
   uintToVec3unorm,
   vec3Reverse,
   vec4Reverse,
-} from "../utils-3d.js";
-import { MeshHandle, MeshReserve } from "../render/mesh-pool.js";
-import { onInit } from "../init.js";
-import { jitter, mathMap, max, min } from "../math.js";
-import { VERBOSE_LOG } from "../flags.js";
+} from "./utils-3d.js";
+import { MeshHandle, MeshReserve } from "./render/mesh-pool.js";
+import { onInit } from "./init.js";
+import { jitter, mathMap, max, min } from "./math.js";
+import { VERBOSE_LOG } from "./flags.js";
 import {
   createEmptyMesh,
   createTimberBuilder,
@@ -46,8 +46,8 @@ import {
   unshareProvokingForWood,
   WoodAssets,
   WoodAssetsDef,
-} from "../wood.js";
-import { tempMat4, tempVec3 } from "../temp-pool.js";
+} from "./wood.js";
+import { tempMat4, tempVec3 } from "./temp-pool.js";
 
 // TODO: load these via streaming
 // TODO(@darzu): it's really bad that all these assets are loaded for each game

@@ -19,7 +19,7 @@ import {
 import { RendererDef } from "../render/renderer-ecs.js";
 import { assert } from "../util.js";
 import { TimeDef } from "../time.js";
-import { AssetsDef, GameMesh } from "./assets.js";
+import { AssetsDef, GameMesh } from "../assets.js";
 // import { ENEMY_SHIP_COLOR } from "./enemy-ship.js";
 // import { ClothConstructDef, ClothLocalDef } from "./cloth.js";
 import { GlobalCursor3dDef } from "./cursor.js";

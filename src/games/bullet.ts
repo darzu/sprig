@@ -15,7 +15,7 @@ import {
 import { Position, PositionDef, RotationDef } from "../physics/transform.js";
 import { ColliderDef } from "../physics/collider.js";
 import { AuthorityDef, MeDef, SyncDef, PredictDef } from "../net/components.js";
-import { Assets, AssetsDef } from "./assets.js";
+import { Assets, AssetsDef } from "../assets.js";
 import {
   AngularVelocity,
   AngularVelocityDef,

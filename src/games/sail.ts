@@ -31,7 +31,7 @@ import {
   vec3Dbg,
 } from "../utils-3d.js";
 import { YawPitchDef, yawpitchToQuat } from "../yawpitch.js";
-import { AssetsDef } from "./assets.js";
+import { AssetsDef } from "../assets.js";
 import { DarkStarPropsDef, STAR1_COLOR, STAR2_COLOR } from "./darkstar.js";
 import { GameState, GameStateDef } from "./gamestate.js";
 import {
