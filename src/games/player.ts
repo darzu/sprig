@@ -44,7 +44,7 @@ import { DevConsoleDef } from "../console.js";
 import { max } from "../math.js";
 import { AnimateToDef } from "../animate-to.js";
 import { vec3Dbg } from "../utils-3d.js";
-import { PlayerShipLocalDef } from "./player-ship.js";
+import { PlayerShipLocalDef } from "./hyperspace/player-ship.js";
 
 // TODO(@darzu): it'd be great if these could hook into some sort of
 //    dev mode you could toggle at runtime.

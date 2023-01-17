@@ -18,7 +18,7 @@ import { initRogueGame } from "./games/game-rogue.js";
 import { gameplaySystems } from "./games/ghost.js";
 import { initFontEditor } from "./games/game-font.js";
 import { initGJKSandbox } from "./games/game-gjk.js";
-import { initHyperspaceGame } from "./games/game-hyperspace.js";
+import { initHyperspaceGame } from "./games/hyperspace/game-hyperspace.js";
 import { initClothSandbox } from "./games/game-cloth.js";
 import { initCubeGame } from "./games/xp-cube.js";
 import { resetTempMatrixBuffer, V } from "./sprig-matrix.js";
@@ -39,7 +39,7 @@ const ALL_GAMES = [
   "cloth", // broken-ish
   "cube",
 ] as const;
-const GAME: typeof ALL_GAMES[number] = "smol";
+const GAME: typeof ALL_GAMES[number] = "hyperspace";
 
 // Run simulation with a fixed timestep @ 60hz
 const TIMESTEP = 1000 / 60;

@@ -1,37 +1,37 @@
-import { ColorDef } from "../color-ecs.js";
-import { createRef, defineNetEntityHelper } from "../em_helpers.js";
-import { EM, EntityManager, EntityW } from "../entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
-import { onInit } from "../init.js";
-import { InputsDef } from "../inputs.js";
-import { clamp } from "../math.js";
-import { AuthorityDef, MeDef } from "../net/components.js";
-import { ColliderDef } from "../physics/collider.js";
-import { WorldFrameDef } from "../physics/nonintersection.js";
+import { ColorDef } from "../../color-ecs.js";
+import { createRef, defineNetEntityHelper } from "../../em_helpers.js";
+import { EM, EntityManager, EntityW } from "../../entity-manager.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../../sprig-matrix.js";
+import { onInit } from "../../init.js";
+import { InputsDef } from "../../inputs.js";
+import { clamp } from "../../math.js";
+import { AuthorityDef, MeDef } from "../../net/components.js";
+import { ColliderDef } from "../../physics/collider.js";
+import { WorldFrameDef } from "../../physics/nonintersection.js";
 import {
   PhysicsParentDef,
   PositionDef,
   RotationDef,
   ScaleDef,
-} from "../physics/transform.js";
-import { MeshHandle } from "../render/mesh-pool.js";
-import { cloneMesh, mapMeshPositions } from "../render/mesh.js";
-import { FLAG_UNLIT } from "../render/pipelines/std-scene.js";
+} from "../../physics/transform.js";
+import { MeshHandle } from "../../render/mesh-pool.js";
+import { cloneMesh, mapMeshPositions } from "../../render/mesh.js";
+import { FLAG_UNLIT } from "../../render/pipelines/std-scene.js";
 import {
   RenderableConstructDef,
   RenderableDef,
   RenderDataStdDef,
   RendererDef,
-} from "../render/renderer-ecs.js";
-import { tempMat4, tempQuat, tempVec2, tempVec3 } from "../temp-pool.js";
-import { range } from "../util.js";
+} from "../../render/renderer-ecs.js";
+import { tempMat4, tempQuat, tempVec2, tempVec3 } from "../../temp-pool.js";
+import { range } from "../../util.js";
 import {
   signedAreaOfTriangle,
   positionAndTargetToOrthoViewProjMatrix,
   vec3Dbg,
-} from "../utils-3d.js";
-import { YawPitchDef, yawpitchToQuat } from "../yawpitch.js";
-import { AssetsDef } from "../assets.js";
+} from "../../utils-3d.js";
+import { YawPitchDef, yawpitchToQuat } from "../../yawpitch.js";
+import { AssetsDef } from "../../assets.js";
 import { DarkStarPropsDef, STAR1_COLOR, STAR2_COLOR } from "./darkstar.js";
 import { GameState, GameStateDef } from "./gamestate.js";
 import {
@@ -40,7 +40,7 @@ import {
   PlayerShipPropsDef,
 } from "./player-ship.js";
 import { ShipDef } from "./ship.js";
-import { constructNetTurret, TurretDef } from "./turret.js";
+import { constructNetTurret, TurretDef } from "../turret.js";
 
 const DEFAULT_SAIL_COLOR = V(0.05, 0.05, 0.05);
 const BOOM_LENGTH = 20;

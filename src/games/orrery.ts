@@ -26,14 +26,18 @@ import {
 } from "../utils-3d.js";
 import { YawPitchDef, yawpitchToQuat } from "../yawpitch.js";
 import { AssetsDef } from "../assets.js";
-import { DarkStarPropsDef, STAR1_COLOR, STAR2_COLOR } from "./darkstar.js";
-import { GameState, GameStateDef } from "./gamestate.js";
+import {
+  DarkStarPropsDef,
+  STAR1_COLOR,
+  STAR2_COLOR,
+} from "./hyperspace/darkstar.js";
+import { GameState, GameStateDef } from "./hyperspace/gamestate.js";
 import {
   BOAT_COLOR,
   PlayerShipLocalDef,
   PlayerShipPropsDef,
-} from "./player-ship.js";
-import { ShipDef } from "./ship.js";
+} from "./hyperspace/player-ship.js";
+import { ShipDef } from "./hyperspace/ship.js";
 import { constructNetTurret, TurretDef } from "./turret.js";
 
 const ORRERY_SCALE = 0.001;

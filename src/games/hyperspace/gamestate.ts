@@ -1,25 +1,25 @@
-import { CameraDef } from "../camera.js";
-import { DeletedDef } from "../delete.js";
-import { EM, EntityManager } from "../entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
-import { AuthorityDef, HostDef, MeDef } from "../net/components.js";
-import { eventWizard } from "../net/events.js";
-import { LinearVelocityDef } from "../physics/motion.js";
-import { WorldFrameDef } from "../physics/nonintersection.js";
+import { CameraDef } from "../../camera.js";
+import { DeletedDef } from "../../delete.js";
+import { EM, EntityManager } from "../../entity-manager.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../../sprig-matrix.js";
+import { AuthorityDef, HostDef, MeDef } from "../../net/components.js";
+import { eventWizard } from "../../net/events.js";
+import { LinearVelocityDef } from "../../physics/motion.js";
+import { WorldFrameDef } from "../../physics/nonintersection.js";
 import {
   PhysicsParentDef,
   PositionDef,
   RotationDef,
-} from "../physics/transform.js";
-import { TimeDef } from "../time.js";
-import { LifetimeDef } from "./lifetime.js";
-import { LocalPlayerDef, PlayerDef, PlayerPropsDef } from "./player.js";
+} from "../../physics/transform.js";
+import { TimeDef } from "../../time.js";
+import { LifetimeDef } from "../lifetime.js";
+import { LocalPlayerDef, PlayerDef, PlayerPropsDef } from "../player.js";
 import {
   createPlayerShip,
   PlayerShipLocalDef,
   PlayerShipPropsDef,
 } from "./player-ship.js";
-import { AudioDef } from "../audio.js";
+import { AudioDef } from "../../audio.js";
 
 const RESTART_TIME_MS = 5000;
 

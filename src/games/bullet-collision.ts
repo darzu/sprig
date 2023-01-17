@@ -21,7 +21,7 @@ import { AssetsDef } from "../assets.js";
 import { AudioDef } from "../audio.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
 import { assert, NumberTuple } from "../util.js";
-import { breakEnemyShip, EnemyShipLocalDef } from "./enemy-ship.js";
+import { breakEnemyShip, EnemyShipLocalDef } from "./hyperspace/enemy-ship.js";
 
 const ENABLE_BULLETBULLET = false;
 

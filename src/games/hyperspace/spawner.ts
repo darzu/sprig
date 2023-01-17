@@ -1,18 +1,18 @@
-import { AnimateTo, AnimateToDef } from "../animate-to.js";
-import { createRef, Ref } from "../em_helpers.js";
-import { EM, Entity } from "../entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
-import { onInit } from "../init.js";
-import { AuthorityDef, MeDef } from "../net/components.js";
-import { eventWizard } from "../net/events.js";
-import { AABBCollider, ColliderDef } from "../physics/collider.js";
-import { LinearVelocityDef } from "../physics/motion.js";
-import { WorldFrameDef } from "../physics/nonintersection.js";
+import { AnimateTo, AnimateToDef } from "../../animate-to.js";
+import { createRef, Ref } from "../../em_helpers.js";
+import { EM, Entity } from "../../entity-manager.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../../sprig-matrix.js";
+import { onInit } from "../../init.js";
+import { AuthorityDef, MeDef } from "../../net/components.js";
+import { eventWizard } from "../../net/events.js";
+import { AABBCollider, ColliderDef } from "../../physics/collider.js";
+import { LinearVelocityDef } from "../../physics/motion.js";
+import { WorldFrameDef } from "../../physics/nonintersection.js";
 import {
   PhysicsParentDef,
   PositionDef,
   RotationDef,
-} from "../physics/transform.js";
+} from "../../physics/transform.js";
 import { spawnEnemyShip } from "./enemy-ship.js";
 import { UVDirDef, UVPosDef } from "./ocean.js";
 

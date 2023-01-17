@@ -4,11 +4,11 @@ import {
   Entity,
   EntityW,
   Component,
-} from "../entity-manager.js";
-import { TimeDef } from "../time.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
-import { jitter } from "../math.js";
-import { RenderableConstructDef } from "../render/renderer-ecs.js";
+} from "../../entity-manager.js";
+import { TimeDef } from "../../time.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../../sprig-matrix.js";
+import { jitter } from "../../math.js";
+import { RenderableConstructDef } from "../../render/renderer-ecs.js";
 import {
   PhysicsParentDef,
   Position,
@@ -16,30 +16,30 @@ import {
   Rotation,
   RotationDef,
   ScaleDef,
-} from "../physics/transform.js";
-import { ColliderDef } from "../physics/collider.js";
-import { AuthorityDef, MeDef } from "../net/components.js";
-import { aabbCenter } from "../physics/broadphase.js";
-import { Assets, AssetsDef, GameMesh } from "../assets.js";
-import { AngularVelocityDef, LinearVelocityDef } from "../physics/motion.js";
-import { MotionSmoothingDef } from "../motion-smoothing.js";
+} from "../../physics/transform.js";
+import { ColliderDef } from "../../physics/collider.js";
+import { AuthorityDef, MeDef } from "../../net/components.js";
+import { aabbCenter } from "../../physics/broadphase.js";
+import { Assets, AssetsDef, GameMesh } from "../../assets.js";
+import { AngularVelocityDef, LinearVelocityDef } from "../../physics/motion.js";
+import { MotionSmoothingDef } from "../../motion-smoothing.js";
 import {
   PhysicsResultsDef,
   WorldFrameDef,
-} from "../physics/nonintersection.js";
-import { BulletDef, fireBullet } from "./bullet.js";
-import { DeletedDef, OnDeleteDef } from "../delete.js";
-import { LifetimeDef } from "./lifetime.js";
+} from "../../physics/nonintersection.js";
+import { BulletDef, fireBullet } from "../bullet.js";
+import { DeletedDef, OnDeleteDef } from "../../delete.js";
+import { LifetimeDef } from "../lifetime.js";
 import { PlayerShipLocalDef } from "./player-ship.js";
-import { defineNetEntityHelper } from "../em_helpers.js";
-import { DetectedEventsDef, eventWizard } from "../net/events.js";
-import { raiseBulletEnemyShip } from "./bullet-collision.js";
+import { defineNetEntityHelper } from "../../em_helpers.js";
+import { DetectedEventsDef, eventWizard } from "../../net/events.js";
+import { raiseBulletEnemyShip } from "../bullet-collision.js";
 import { GameStateDef, GameState } from "./gamestate.js";
-import { cloneMesh, scaleMesh3 } from "../render/mesh.js";
+import { cloneMesh, scaleMesh3 } from "../../render/mesh.js";
 import { ShipDef } from "./ship.js";
 import { UVDirDef, UVPosDef } from "./ocean.js";
-import { ColorDef } from "../color-ecs.js";
-import { AudioDef, Music } from "../audio.js";
+import { ColorDef } from "../../color-ecs.js";
+import { AudioDef, Music } from "../../audio.js";
 
 export const EnemyCrewDef = EM.defineComponent("enemyCrew", () => {
   return {
