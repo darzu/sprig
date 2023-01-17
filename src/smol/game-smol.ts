@@ -45,7 +45,7 @@ import { CY } from "../render/gpu-registry.js";
 import { assert } from "../util.js";
 import { texTypeToBytes } from "../render/gpu-struct.js";
 import { PartyDef } from "../games/party.js";
-import { GrassMapDef, setMap } from "./grass-map.js";
+import { GrassMapDef, GrassMapTexPtr, setMap } from "./grass-map.js";
 import { getAABBCornersTemp } from "../physics/broadphase.js";
 import { rasterizeTri } from "../raster.js";
 import { InputsDef } from "../inputs.js";
@@ -54,6 +54,8 @@ import { raiseManTurret } from "../games/turret.js";
 import { TextDef } from "../games/ui.js";
 import { VERBOSE_LOG } from "../flags.js";
 import { CanvasDef } from "../canvas.js";
+import { createJfaPipelines } from "../render/pipelines/std-jump-flood.js";
+import { createGridComposePipelines } from "../render/pipelines/std-compose.js";
 
 /*
 TODO:
@@ -76,7 +78,17 @@ const SHIP_START_POS: vec3 = V(0, 2, -WORLD_WIDTH * 0.5 * 0.6);
 
 // const WORLD_HEIGHT = 1024;
 
+export const mapJfa = createJfaPipelines(GrassMapTexPtr, "exterior");
+
 export async function initSmol(em: EntityManager, hosting: boolean) {
+  const dbgGrid = [
+    //
+    [mapJfa._inputMaskTex, mapJfa._uvMaskTex],
+    //
+    [mapJfa.voronoiTex, mapJfa.sdfTex],
+  ];
+  let dbgGridCompose = createGridComposePipelines(dbgGrid);
+
   const res = await em.whenResources(
     AssetsDef,
     // WoodAssetsDef,
@@ -87,14 +99,34 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
 
   res.camera.fov = Math.PI * 0.5;
 
-  // renderer
-  res.renderer.pipelines = [
-    ...shadowPipelines,
-    stdRenderPipeline,
-    renderGrassPipe,
-    outlineRender,
-    postProcess,
-  ];
+  // res.renderer.renderer.submitPipelines(
+  //   [],
+  //   // [unwrapPipeline, unwrapPipeline2]
+  //   [...mapJfa.allPipes()]
+  // );
+
+  console.dir(mapJfa);
+  console.dir(dbgGridCompose);
+
+  em.registerSystem(
+    null,
+    [RendererDef, DevConsoleDef],
+    (_, res) => {
+      // renderer
+      res.renderer.pipelines = [
+        ...shadowPipelines,
+        stdRenderPipeline,
+        renderGrassPipe,
+        outlineRender,
+        postProcess,
+        ...(res.dev.showConsole
+          ? [...mapJfa.allPipes(), ...dbgGridCompose]
+          : []),
+      ];
+    },
+    "smolGameRenderPipelines"
+  );
+  em.requireSystem("smolGameRenderPipelines");
 
   // Sun
   const sunlight = em.new();

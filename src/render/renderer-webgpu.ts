@@ -384,7 +384,7 @@ export function createRenderer(
     // bytesPerRow: align(tex.size[0] * bytesPerVal, 256), // TODO: alignment?
     const bytesPerRow = tex.size[0] * bytesPerVal;
     if (bytesPerRow % 256 !== 0) {
-      console.log(`texture alignment issues for: ${tex.ptr.name}`);
+      console.warn(`texture alignment issues for: ${tex.ptr.name}`);
     }
     commandEncoder.copyTextureToBuffer(
       {

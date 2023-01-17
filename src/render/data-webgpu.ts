@@ -399,10 +399,6 @@ export function createCyTexture(
     w = w ?? cyTex.size[0] - x;
     h = h ?? cyTex.size[1] - y;
     const bytesPerRow = w * bytesPerVal;
-    if (bytesPerRow % 256 !== 0)
-      console.warn(
-        `${cyTex.ptr.name}'s bytesPerRow (${bytesPerRow}) must be multiple of 256`
-      );
     device.queue.writeTexture(
       {
         origin: {

@@ -79,9 +79,9 @@ fn vert_main(input: VertexInput) -> VertexOutput {
     if (colorKey < 0.1) {
       color = vec3<f32>(0.1, 0.5, 0.1) + randV3 * 0.1;
     } else if (colorKey < 0.6) {
-      color = vec3<f32>(0.5, 0.1, 0.1) + randV3 * 0.1;
-    } else {
       color = vec3<f32>(0.2, 0.1, 0.2) + randV3 * 0.1;
+    } else {
+      color = vec3<f32>(0.5, 0.1, 0.1) + randV3 * 0.1;
     }
     // color *= spawnF;
     color *= 2.0;

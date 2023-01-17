@@ -56,14 +56,14 @@ export async function setMap(em: EntityManager, name: MapName) {
         x >= map.width - 1 - W ||
         y >= map.height - 1 - W
       ) {
-        texBuf[outIdx] = 0.5;
+        texBuf[outIdx] = 1.0;
       } else if (g > 100) {
         texBuf[outIdx] = 0.0;
       } else if (r > 100 && b > 100) {
-        texBuf[outIdx] = 1.0;
+        texBuf[outIdx] = 0.5;
         totalPurple++;
       } else if (r > 100) {
-        texBuf[outIdx] = 0.5;
+        texBuf[outIdx] = 1.0;
       }
     }
   }
