@@ -1,4 +1,10 @@
-import { EntityManager, EM, Entity, EntityW } from "../entity-manager.js";
+import {
+  EntityManager,
+  EM,
+  Entity,
+  EntityW,
+  ComponentDef,
+} from "../entity-manager.js";
 import { AlphaDef, applyTints, TintsDef } from "../color-ecs.js";
 import { CameraViewDef } from "../camera.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
@@ -128,17 +134,6 @@ export const RenderDataOceanDef = EM.defineComponent(
   "renderDataOcean",
   (r: OceanUniTS) => r
 );
-
-// export interface RenderableOcean {
-//   enabled: boolean;
-//   sortLayer: number;
-//   meshHandle: OceanMeshHandle;
-// }
-
-// export const RenderableOceanDef = EM.defineComponent(
-//   "renderableOcean",
-//   (r: RenderableOcean) => r
-// );
 
 const _hasRendererWorldFrame = new Set();
 
@@ -321,6 +316,143 @@ export function registerUpdateRendererWorldFrames(em: EntityManager) {
 const _lastMeshHandleTransform = new Map<number, mat4>();
 const _lastMeshHandleHidden = new Map<number, boolean>();
 
+function updateStdRenderData(
+  o: EntityW<
+    [
+      typeof RenderableDef,
+      typeof RenderDataStdDef,
+      typeof RendererWorldFrameDef
+    ]
+  >
+): boolean {
+  if (o.renderable.hidden) {
+    // TODO(@darzu): hidden stuff is a bit wierd
+    mat4.fromScaling(vec3.ZEROS, o.renderDataStd.transform);
+  }
+
+  let tintChange = false;
+  if (!o.renderable.hidden) {
+    // color / tint
+    let prevTint = vec3.copy(tempVec3(), o.renderDataStd.tint);
+    if (ColorDef.isOn(o)) vec3.copy(o.renderDataStd.tint, o.color);
+    if (TintsDef.isOn(o)) applyTints(o.tints, o.renderDataStd.tint);
+    if (vec3.sqrDist(prevTint, o.renderDataStd.tint) > 0.01) tintChange = true;
+
+    // apha
+    if (AlphaDef.isOn(o)) {
+      if (o.renderDataStd.alpha !== o.alpha) tintChange = true;
+      o.renderDataStd.alpha = o.alpha;
+      // TODO(@darzu): MASK HACK! it's also in renderable construct?!
+      o.renderable.meshHandle.mask = ALPHA_MASK;
+    }
+  }
+
+  let lastHidden = _lastMeshHandleHidden.get(o.renderable.meshHandle.mId);
+  let hiddenChanged = lastHidden !== o.renderable.hidden;
+  _lastMeshHandleHidden.set(o.renderable.meshHandle.mId, o.renderable.hidden);
+
+  // TODO(@darzu): actually we only set this at creation now so that
+  //  it's overridable for gameplay
+  // id
+  // o.renderDataStd.id = o.renderable.meshHandle.mId;
+
+  // transform
+  // TODO(@darzu): hACK! ONLY UPDATE UNIFORM IF WE"VE MOVED/SCALED/ROT OR COLOR CHANGED OR HIDDEN CHANGED
+  // TODO(@darzu): probably the less hacky way to do this is require uniforms provide a
+  //    hash function
+  let lastTran = _lastMeshHandleTransform.get(o.renderable.meshHandle.mId);
+  const thisTran = o.rendererWorldFrame.transform;
+  if (
+    hiddenChanged ||
+    tintChange ||
+    !lastTran ||
+    !mat4.equals(lastTran, thisTran)
+    // vec3.sqrDist(lastTran, thisTran) > 0.01
+  ) {
+    if (!o.renderable.hidden)
+      mat4.copy(o.renderDataStd.transform, o.rendererWorldFrame.transform);
+
+    if (!lastTran) {
+      lastTran = mat4.create();
+      _lastMeshHandleTransform.set(o.renderable.meshHandle.mId, lastTran);
+    }
+    mat4.copy(lastTran, thisTran);
+    return true;
+  }
+  return false;
+}
+
+function updateOceanRenderData(
+  o: EntityW<
+    [
+      typeof RenderableDef,
+      typeof RenderDataOceanDef,
+      typeof RendererWorldFrameDef
+    ]
+  >
+): boolean {
+  // color / tint
+  if (ColorDef.isOn(o)) {
+    vec3.copy(o.renderDataOcean.tint, o.color);
+  }
+  if (TintsDef.isOn(o)) {
+    applyTints(o.tints, o.renderDataOcean.tint);
+  }
+
+  // id
+  o.renderDataOcean.id = o.renderable.meshHandle.mId;
+
+  // transform
+  mat4.copy(o.renderDataOcean.transform, o.rendererWorldFrame.transform);
+  return true;
+}
+function updateGrassRenderData(
+  o: EntityW<
+    [
+      typeof RenderableDef,
+      typeof RenderDataGrassDef,
+      typeof RendererWorldFrameDef
+    ]
+  >
+): boolean {
+  // TODO(@darzu): do we need all this for grass?
+  // color / tint
+  if (ColorDef.isOn(o)) {
+    vec3.copy(o.renderDataGrass.tint, o.color);
+  }
+  if (TintsDef.isOn(o)) {
+    applyTints(o.tints, o.renderDataGrass.tint);
+  }
+  // id
+  // o.renderDataGrass.id = o.renderable.meshHandle.mId;
+  // transform
+  mat4.copy(o.renderDataGrass.transform, o.rendererWorldFrame.transform);
+  return true;
+}
+
+export const poolKindToDataDef = {
+  std: RenderDataStdDef,
+  ocean: RenderDataOceanDef,
+  grass: RenderDataGrassDef,
+};
+type Assert_PoolKindToDataDef = typeof poolKindToDataDef[PoolKind];
+
+export const poolKindToDataUpdate: {
+  [k in PoolKind]: (
+    o: EntityW<
+      [
+        typeof RenderableDef,
+        typeof poolKindToDataDef[k],
+        typeof RendererWorldFrameDef
+      ]
+    >
+  ) => boolean;
+} = {
+  std: updateStdRenderData,
+  ocean: updateOceanRenderData,
+  grass: updateGrassRenderData,
+};
+
 export function registerRenderer(em: EntityManager) {
   // NOTE: we use "renderListDeadHidden" and "renderList" to construct a custom
   //  query of renderable objects that include dead, hidden objects. The reason
@@ -361,121 +493,25 @@ export function registerRenderer(em: EntityManager) {
 
       // ensure our mesh handle is up to date
       for (let o of objs) {
+        // TODO(@darzu): generalize mesh pool kind stuff
         if (RenderDataStdDef.isOn(o)) {
-          if (o.renderable.hidden) {
-            // TODO(@darzu): hidden stuff is a bit wierd
-            // TODO(@darzu): hidden stuff is a bit wierd
-            mat4.fromScaling(vec3.ZEROS, o.renderDataStd.transform);
-          }
-
-          let tintChange = false;
-          if (!o.renderable.hidden) {
-            // color / tint
-            let prevTint = vec3.copy(tempVec3(), o.renderDataStd.tint);
-            if (ColorDef.isOn(o)) vec3.copy(o.renderDataStd.tint, o.color);
-            if (TintsDef.isOn(o)) applyTints(o.tints, o.renderDataStd.tint);
-            if (vec3.sqrDist(prevTint, o.renderDataStd.tint) > 0.01)
-              tintChange = true;
-
-            // apha
-            if (AlphaDef.isOn(o)) {
-              if (o.renderDataStd.alpha !== o.alpha) tintChange = true;
-              o.renderDataStd.alpha = o.alpha;
-              // TODO(@darzu): MASK HACK! it's also in renderable construct?!
-              o.renderable.meshHandle.mask = ALPHA_MASK;
-            }
-          }
-
-          let lastHidden = _lastMeshHandleHidden.get(
-            o.renderable.meshHandle.mId
-          );
-          let hiddenChanged = lastHidden !== o.renderable.hidden;
-          _lastMeshHandleHidden.set(
-            o.renderable.meshHandle.mId,
-            o.renderable.hidden
-          );
-
-          // TODO(@darzu): actually we only set this at creation now so that
-          //  it's overridable for gameplay
-          // id
-          // o.renderDataStd.id = o.renderable.meshHandle.mId;
-
-          // transform
-          // TODO(@darzu): hACK! ONLY UPDATE UNIFORM IF WE"VE MOVED/SCALED/ROT OR COLOR CHANGED OR HIDDEN CHANGED
-          // TODO(@darzu): probably the less hacky way to do this is require uniforms provide a
-          //    hash function
-          let lastTran = _lastMeshHandleTransform.get(
-            o.renderable.meshHandle.mId
-          );
-          const thisTran = o.rendererWorldFrame.transform;
-          if (
-            hiddenChanged ||
-            tintChange ||
-            !lastTran ||
-            !mat4.equals(lastTran, thisTran)
-            // vec3.sqrDist(lastTran, thisTran) > 0.01
-          ) {
-            if (!o.renderable.hidden)
-              mat4.copy(
-                o.renderDataStd.transform,
-                o.rendererWorldFrame.transform
-              );
+          if (updateStdRenderData(o))
             res.renderer.renderer.stdPool.updateUniform(
               o.renderable.meshHandle,
               o.renderDataStd
             );
-            if (!lastTran) {
-              lastTran = mat4.create();
-              _lastMeshHandleTransform.set(
-                o.renderable.meshHandle.mId,
-                lastTran
-              );
-            }
-            mat4.copy(lastTran, thisTran);
-          }
         } else if (RenderDataOceanDef.isOn(o)) {
-          // color / tint
-          if (ColorDef.isOn(o)) {
-            vec3.copy(o.renderDataOcean.tint, o.color);
-          }
-          if (TintsDef.isOn(o)) {
-            applyTints(o.tints, o.renderDataOcean.tint);
-          }
-
-          // id
-          o.renderDataOcean.id = o.renderable.meshHandle.mId;
-
-          // transform
-          mat4.copy(
-            o.renderDataOcean.transform,
-            o.rendererWorldFrame.transform
-          );
-          res.renderer.renderer.oceanPool.updateUniform(
-            o.renderable.meshHandle,
-            o.renderDataOcean
-          );
+          if (updateOceanRenderData(o))
+            res.renderer.renderer.oceanPool.updateUniform(
+              o.renderable.meshHandle,
+              o.renderDataOcean
+            );
         } else if (RenderDataGrassDef.isOn(o)) {
-          // TODO(@darzu): do we need all this for grass?
-          // color / tint
-          if (ColorDef.isOn(o)) {
-            vec3.copy(o.renderDataGrass.tint, o.color);
-          }
-          if (TintsDef.isOn(o)) {
-            applyTints(o.tints, o.renderDataGrass.tint);
-          }
-
-          // id
-          // o.renderDataGrass.id = o.renderable.meshHandle.mId;
-
-          // transform
-          mat4.copy(
-            o.renderDataGrass.transform,
-            o.rendererWorldFrame.transform
-          );
-          res.renderer.renderer.grassPool.updateUniform(
-            o.renderable.meshHandle,
-            o.renderDataGrass
-          );
+          if (updateGrassRenderData(o))
+            res.renderer.renderer.grassPool.updateUniform(
+              o.renderable.meshHandle,
+              o.renderDataGrass
+            );
         }
       }
 
@@ -600,40 +636,25 @@ export function registerConstructRenderablesSystem(em: EntityManager) {
         if (!RenderableDef.isOn(e)) {
           let meshHandle: MeshHandle;
           let mesh: Mesh;
+          const pool = poolKindToPool(
+            res.renderer.renderer,
+            e.renderableConstruct.poolKind
+          );
           if (isMeshHandle(e.renderableConstruct.meshOrProto)) {
             // TODO(@darzu): renderableConstruct is getting to large and wierd
             assert(
               !e.renderableConstruct.reserve,
               `cannot have a reserve when adding an instance`
             );
-            let pool = poolKindToPool(
-              res.renderer.renderer,
-              e.renderableConstruct.poolKind
-            );
             meshHandle = pool.addMeshInstance(
               e.renderableConstruct.meshOrProto
             );
             mesh = meshHandle.mesh!;
           } else {
-            // console.dir(e);
-            if (e.renderableConstruct.poolKind === "std") {
-              meshHandle = res.renderer.renderer.stdPool.addMesh(
-                e.renderableConstruct.meshOrProto,
-                e.renderableConstruct.reserve
-              );
-            } else if (e.renderableConstruct.poolKind === "ocean") {
-              meshHandle = res.renderer.renderer.oceanPool.addMesh(
-                e.renderableConstruct.meshOrProto,
-                e.renderableConstruct.reserve
-              );
-            } else if (e.renderableConstruct.poolKind === "grass") {
-              meshHandle = res.renderer.renderer.grassPool.addMesh(
-                e.renderableConstruct.meshOrProto,
-                e.renderableConstruct.reserve
-              );
-            } else {
-              never(e.renderableConstruct.poolKind);
-            }
+            meshHandle = pool.addMesh(
+              e.renderableConstruct.meshOrProto,
+              e.renderableConstruct.reserve
+            );
             mesh = e.renderableConstruct.meshOrProto;
           }
           if (e.renderableConstruct.mask) {
@@ -646,6 +667,7 @@ export function registerConstructRenderablesSystem(em: EntityManager) {
             sortLayer: e.renderableConstruct.sortLayer,
             meshHandle,
           });
+
           if (e.renderableConstruct.poolKind === "std") {
             em.ensureComponentOn(e, RenderDataStdDef, computeUniData(mesh));
             e.renderDataStd.id = meshHandle.mId;
