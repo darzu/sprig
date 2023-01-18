@@ -58,6 +58,7 @@ const BLEND_SIMULATION_FRAMES_STRATEGY: "interpolate" | "extrapolate" | "none" =
   "none";
 
 // TODO(@darzu): we need a better way to handle arbitrary pools
+// TODO(@darzu): support height map?
 export type PoolKind = "std" | "ocean" | "grass";
 export interface RenderableConstruct {
   readonly enabled: boolean;

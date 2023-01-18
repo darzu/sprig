@@ -6,7 +6,7 @@ import {
 import { ColorDef } from "../color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { EM, EntityManager, EntityW } from "../entity-manager.js";
-import { AssetsDef } from "../assets.js";
+import { AssetsDef, createFlatQuadMesh, gameMeshFromMesh } from "../assets.js";
 import { ControllableDef } from "../games/controllable.js";
 import { createGhost, GhostDef } from "../games/ghost.js";
 import { LocalPlayerDef, PlayerDef } from "../games/player.js";
@@ -107,6 +107,14 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
 
   console.dir(mapJfa);
   console.dir(dbgGridCompose);
+
+  // height map
+  // const heightMapRes = 0.25;
+  // const heightmapMesh = createFlatQuadMesh(WORLD_WIDTH, WORLD_HEIGHT);
+  // const hm = em.new();
+  // em.ensureComponentOn(hm, RenderableConstructDef, heightmapMesh);
+  // em.ensureComponentOn(hm, PositionDef);
+  // // TODO(@darzu): update heightmap from SDF
 
   em.registerSystem(
     null,

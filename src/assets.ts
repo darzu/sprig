@@ -655,24 +655,24 @@ function createGridPlane(width: number, height: number): RawMesh {
   return m;
 }
 
-const DBG_FABRIC = createFabric(5);
+const DBG_FABRIC = createFlatQuadMesh(5, 5);
 
-export function createFabric(size: number): RawMesh {
+export function createFlatQuadMesh(width: number, height: number): Mesh {
   const pos: vec3[] = [];
   const quad: vec4[] = [];
   const uvs: vec2[] = [];
 
   // create each vert
-  for (let x = 0; x < size; x++) {
-    for (let y = 0; y < size; y++) {
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
       pos.push(V(x, y, 0));
-      uvs.push(vec2.clone([x / size, y / size]));
+      uvs.push(vec2.clone([x / width, y / height]));
     }
   }
 
   // create each quad
-  for (let x = 0; x < size - 1; x++) {
-    for (let y = 0; y < size - 1; y++) {
+  for (let y = 0; y < height - 1; y++) {
+    for (let x = 0; x < width - 1; x++) {
       const q: vec4 = vec4.clone([
         idx(x, y),
         idx(x + 1, y),
@@ -690,11 +690,13 @@ export function createFabric(size: number): RawMesh {
     uvs,
     quad,
     colors: quad.map((_, i) => V(i / quad.length, 0.2, 0.2)),
-    dbgName: `fabric-${size}`,
+    dbgName: `fabric-${width}x${height}`,
+    surfaceIds: quad.map((_, i) => i + 1),
+    usesProvoking: true,
   };
 
   function idx(x: number, y: number): number {
-    return x * size + y;
+    return x + y * width;
   }
   // TODO(@darzu): return
 }
