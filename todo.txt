@@ -24,9 +24,7 @@ BIG FEATURES:
 [ ] Flexible particle system
 [ ] Basic textures on meshes
 [ ] Skeletal animation
-[ ] Rust WASM proof-of-concept
 [ ] Sound and music player for 3d party sound
-[ ] Perf testing sandboxes and regression tests
 
 QUALITY-OF-LIFE:
 [ ] EM usability
@@ -36,3 +34,25 @@ QUALITY-OF-LIFE:
   nice typed registries of resources that are perhaps also game specific. Also we
   don't want e.g. "cube game" to need load assets for ocean and fang ship just b/c we want the Assets typed registry.
 [ ] All "createXX" -> "mkXX" ?
+
+PERF STRATEGY:
+[ ] Rust WASM proof-of-concept
+[ ] Understand each per-frame allocation site:
+  [ ] js arrays and objects
+  [ ] typed arrays/buffers (sprig-matrix but also serialize buffers etc)
+  [ ] closures (functions created in inner loops?)
+  [ ] other hidden allocs?
+[ ] Get JS heap to flatline in dev tools
+[ ] Understand L2 cache hit rate
+[ ] View assembly thats actually run by Chrome for some inner loop work
+[ ] Understand GPU utilization and cache hit rates
+[ ] Understand GPU memory usage
+[ ] Perf testing sandboxes and regression tests
+[ ] Understand chrome object perf cliffs e.g. demotion out of fast int / SMI
+[ ] custom build-time tools for whole program optimization and analysis including:
+  [ ] tree shaking / program slicing
+  [ ] inlining vector operations
+  [ ] inline single-reference things
+  [ ] change pass-by-ptr to pass-by-value for some vecs?
+    e.g. if we know some vector isn't read latter, we can pass its components to a fn instead of the vec
+[ ] visualize where all our data is in memory

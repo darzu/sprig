@@ -41,6 +41,11 @@ export interface BroadphaseResult {
 
 let octObjs = new Map<number, AABB>();
 
+// TODO(@darzu): PERF DBG
+// const finReg = new FinalizationRegistry((msg) => {
+//   console.log(msg);
+// });
+
 export let _lastCollisionTestTimeMs = 0; // TODO(@darzu): hack for stat debugging
 let _collidesWith: CollidesWith = new Map();
 export function checkBroadphase(
@@ -102,6 +107,9 @@ export function checkBroadphase(
     octObjs.clear();
     objs.forEach((o) => octObjs.set(o.id, o.aabb));
     const tree = octtree(octObjs, universeAABB);
+
+    // if (tree) finReg.register(tree, `Oct tree collected!`);
+
     function octCheckOverlap(tree: OctTree) {
       // check ea obj
       for (let obj of tree.objs.entries()) {
