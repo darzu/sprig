@@ -1,7 +1,10 @@
 import { CameraFollowDef } from "./camera.js";
 import { ComponentDef, EM, Entity, EntityW } from "./entity-manager.js";
+import { PERF_DBG_F32S, PERF_DBG_F32S_ALLOCS } from "./flags.js";
 import { SyncDef } from "./net/components.js";
 import { PositionDef, RotationDef } from "./physics/transform.js";
+import { _f32sLineMap } from "./sprig-matrix.js";
+import { assert } from "./util.js";
 import { quatDbg, vec3Dbg, vec4Dbg } from "./utils-3d.js";
 
 // TODO(@darzu): debugging helpers
@@ -253,6 +256,21 @@ g.cameraFollow.pitchOffset = ${target.cameraFollow.pitchOffset.toFixed(3)};
   },
   deps: () => {
     console.log(EM.labelSolver.dbgInfo() + `\n` + EM.dbgEntityPromises());
+  },
+  f32sBlameClear: () => {
+    assert(PERF_DBG_F32S_ALLOCS);
+    _f32sLineMap.clear();
+  },
+  f32sBlame: () => {
+    assert(PERF_DBG_F32S_ALLOCS);
+    const ents = [..._f32sLineMap.entries()].filter(
+      (e) =>
+        e[0] !== "Error" &&
+        !e[0].includes("sprig-matrix.js") &&
+        !e[0].endsWith("(<anonymous>)")
+    );
+    ents.sort((a, b) => b[1] - a[1]);
+    console.dir(ents);
   },
   summarizeStats: () => {
     let stats = EM.sysStats;

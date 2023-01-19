@@ -428,6 +428,7 @@ const _mapPool: Map<number, AABB>[] = range(_mapPoolSize).map(
 );
 let _nextMap = 0;
 const _scratchVec3: vec3 = vec3.create();
+// TODO(@darzu): PERF. This is creating waayy too many non-temp vecs
 function octtree(parentObjs: Map<number, AABB>, aabb: AABB): OctTree | null {
   if (_nextMap >= _mapPool.length)
     throw `Exceeding _mapPool! max: ${_mapPoolSize}`;

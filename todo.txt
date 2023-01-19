@@ -1,3 +1,5 @@
+(Code base-wide todos only, smaller stuff should go into the relevant .ts file.)
+
 BIG REFACTORS / DEBT:
 [ ] System ordering and phases
   Now that we have dependencies DAG we need to make sure our physics, networking, rendering, gameplay stuff happens in the right order.
@@ -10,6 +12,7 @@ BIG REFACTORS / DEBT:
 [ ] Mesh/RawMesh and asset data
   Right now Mesh/RawMesh/GameMesh is a very strange split and definitely doesn't
   capture well what different data different assets have/need.
+  [ ] compute{Grass,Ocean,Std}VertsData has a lot of duplication
 [ ] Re-enable smoothing and fix perf (disabled for LD51)
 [ ] timestep stuff: Re-enable, fix perf, and clarify (disabled for LD51)
 
@@ -22,7 +25,8 @@ BIG FEATURES:
 [ ] Basic textures on meshes
 [ ] Skeletal animation
 [ ] Rust WASM proof-of-concept
-[ ] Sound and music player
+[ ] Sound and music player for 3d party sound
+[ ] Perf testing sandboxes and regression tests
 
 QUALITY-OF-LIFE:
 [ ] EM usability

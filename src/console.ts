@@ -1,5 +1,5 @@
 import { EM, EntityManager } from "./entity-manager.js";
-import { PERF_DBG_GPU } from "./flags.js";
+import { PERF_DBG_F32S, PERF_DBG_GPU } from "./flags.js";
 import { TextDef } from "./games/ui.js";
 import { InputsDef } from "./inputs.js";
 import {
@@ -10,6 +10,7 @@ import {
 } from "./physics/broadphase.js";
 import { _gpuQueueBufferWriteBytes } from "./render/data-webgpu.js";
 import { RendererDef } from "./render/renderer-ecs.js";
+import { _f32sCount } from "./sprig-matrix.js";
 
 export const DevConsoleDef = EM.defineComponent("dev", () => {
   const stats = {
@@ -53,6 +54,8 @@ export function registerDevSystems(em: EntityManager) {
   let maxFrameGPUBytes = 0;
 
   let warmUpFrame = 60 * 3;
+
+  let lastF32s = 0;
 
   em.registerSystem(
     null,
@@ -115,6 +118,10 @@ export function registerDevSystems(em: EntityManager) {
 
       const avgFPS = 1000 / avgFrameTime;
 
+      // TODO(@darzu): PERF DBG
+      const newF32s = _f32sCount - lastF32s;
+      lastF32s = _f32sCount;
+
       const dbgTxt =
         controlsStr +
         ` ` +
@@ -140,7 +147,14 @@ export function registerDevSystems(em: EntityManager) {
         `skew: ${skew.join(",")} ` +
         `ping: ${ping.join(",")} ` +
         `${usingWebGPU ? "WebGPU" : "WebGL"} ` +
-        `pipelines: ${pipelineTimesTxts.join(",")}`;
+        `pipelines: ${pipelineTimesTxts.join(",")} ` +
+        (PERF_DBG_F32S
+          ? `f32s: ${(
+              (newF32s * Float32Array.BYTES_PER_ELEMENT) /
+              1024
+            ).toFixed(1)}kb `
+          : "") +
+        ``;
 
       res.text.debugText = dbgTxt;
     },
