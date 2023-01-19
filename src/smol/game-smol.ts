@@ -446,11 +446,19 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
           const z = texXToWorldZ(xi);
           const x = texYToWorldX(yi);
 
-          let toParty = vec3.sub(V(x, 0, z), res.party.pos);
-          let zDist = vec3.dot(toParty, res.party.dir);
-
-          let partyX = vec3.cross(res.party.dir, V(0, 1, 0));
-          let xDist = vec3.dot(toParty, partyX);
+          // NOTE: PERF! we inlined all the dot products and cross products here for a
+          //  perf win.
+          // TODO(@darzu): make it easier to do this inlining automatically?
+          // let toParty = vec3.sub(V(x, 0, z), res.party.pos);
+          // let zDist = vec3.dot(toParty, res.party.dir);
+          // let partyX = vec3.cross(res.party.dir, V(0, 1, 0));
+          // let xDist = vec3.dot(toParty, partyX);
+          const toPartyX = x - res.party.pos[0];
+          const toPartyZ = z - res.party.pos[2];
+          const dirX = res.party.dir[0];
+          const dirZ = res.party.dir[2];
+          const zDist = toPartyX * dirX + toPartyZ * dirZ;
+          const xDist = toPartyX * -dirZ + toPartyZ * dirX;
 
           if (Math.abs(xDist) < shipW * 0.5 && Math.abs(zDist) < shipH * 0.5) {
             const idx = xi + yi * WORLD_WIDTH;

@@ -4138,12 +4138,12 @@ export var mat4 = /*#__PURE__*/Object.freeze({
      */
 
     function cross(out, a, b) {
-        var ax = a[0],
-            ay = a[1],
-            az = a[2];
-        var bx = b[0],
-            by = b[1],
-            bz = b[2];
+        const ax = a[0];
+        const ay = a[1];
+        const az = a[2];
+        const bx = b[0];
+        const by = b[1];
+        const bz = b[2];
         out[0] = ay * bz - az * by;
         out[1] = az * bx - ax * bz;
         out[2] = ax * by - ay * bx;
