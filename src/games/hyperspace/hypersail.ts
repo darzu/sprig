@@ -16,11 +16,13 @@ import {
 } from "../../physics/transform.js";
 import { MeshHandle } from "../../render/mesh-pool.js";
 import { cloneMesh, mapMeshPositions } from "../../render/mesh.js";
-import { FLAG_UNLIT } from "../../render/pipelines/std-scene.js";
+import {
+  FLAG_UNLIT,
+  RenderDataStdDef,
+} from "../../render/pipelines/std-scene.js";
 import {
   RenderableConstructDef,
   RenderableDef,
-  RenderDataStdDef,
   RendererDef,
 } from "../../render/renderer-ecs.js";
 import { tempMat4, tempQuat, tempVec2, tempVec3 } from "../../temp-pool.js";

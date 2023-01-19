@@ -57,6 +57,7 @@ import {
 } from "./utils-3d.js";
 import { createSplinterPool, SplinterPool } from "./wood-splinters.js";
 import { DBG_ASSERT, VERBOSE_LOG } from "./flags.js";
+import { meshPoolPtr } from "./render/pipelines/std-scene.js";
 
 /* TODO(@darzu):
 [ ] standardize naming: wood or timber or ??
@@ -263,6 +264,7 @@ onInit((em: EntityManager) => {
     [WoodStateDef, WorldFrameDef, WoodHealthDef, RenderableDef, ColorDef],
     [RendererDef],
     async (es, res) => {
+      const stdPool = res.renderer.renderer.getCyResource(meshPoolPtr)!;
       // TODO(@darzu):
       for (let w of es) {
         // TODO(@darzu): track start and end offsets for each
@@ -469,28 +471,13 @@ onInit((em: EntityManager) => {
           vertIntervals.finishInterval();
 
           for (let { min, max } of triIntervals.intervals)
-            res.renderer.renderer.stdPool.updateMeshTriangles(
-              meshHandle,
-              mesh,
-              min,
-              max - min + 1
-            );
+            stdPool.updateMeshTriangles(meshHandle, mesh, min, max - min + 1);
 
           for (let { min, max } of quadIntervals.intervals)
-            res.renderer.renderer.stdPool.updateMeshQuads(
-              meshHandle,
-              mesh,
-              min,
-              max - min + 1
-            );
+            stdPool.updateMeshQuads(meshHandle, mesh, min, max - min + 1);
 
           for (let { min, max } of vertIntervals.intervals)
-            res.renderer.renderer.stdPool.updateMeshVertices(
-              meshHandle,
-              mesh,
-              min,
-              max - min + 1
-            );
+            stdPool.updateMeshVertices(meshHandle, mesh, min, max - min + 1);
         }
       }
     },

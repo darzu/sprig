@@ -1,3 +1,4 @@
+import { ComponentDef } from "../entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { assert } from "../util.js";
 import {
@@ -101,8 +102,10 @@ export type ComputeVertsDataFn<V extends CyStructDesc> = (
 ) => CyToTS<V>[];
 
 // MESH POOL
-export interface CyMeshPoolPtr<V extends CyStructDesc, U extends CyStructDesc>
-  extends CyResourcePtr {
+export interface CyMeshPoolPtr<
+  V extends CyStructDesc = CyStructDesc,
+  U extends CyStructDesc = CyStructDesc
+> extends CyResourcePtr {
   kind: "meshPool";
   // TODO(@darzu): remove id and name, this doesn't need to be inited directly
   computeVertsData: ComputeVertsDataFn<V>;
@@ -111,6 +114,8 @@ export interface CyMeshPoolPtr<V extends CyStructDesc, U extends CyStructDesc>
   unisPtr: CyArrayPtr<U>;
   triIndsPtr: CyIdxBufferPtr;
   lineIndsPtr: CyIdxBufferPtr;
+  // TODO(@darzu): really unsure how I feel about having an EM component here in CY
+  dataDef: ComponentDef<string, CyToTS<U>, [CyToTS<U>]>;
 }
 
 // PIPELINES

@@ -45,7 +45,6 @@ import { shadowPipelines } from "../render/pipelines/std-shadow.js";
 import {
   RendererDef,
   RenderableConstructDef,
-  RenderDataStdDef,
   RenderableDef,
 } from "../render/renderer-ecs.js";
 import { tempMat4, tempVec3 } from "../temp-pool.js";
@@ -86,6 +85,7 @@ import { createIdxPool } from "../idx-pool.js";
 import { randNormalPosVec3, randNormalVec3 } from "../utils-3d.js";
 import { createHomeShip } from "./shipyard.js";
 import { gameplaySystems } from "./ghost.js";
+import { RenderDataStdDef } from "../render/pipelines/std-scene.js";
 
 /*
   Game mechanics:

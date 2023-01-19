@@ -3,6 +3,7 @@ import { assert } from "./util.js";
 
 let hasInitPassed = false;
 const onInitFns: ((em: EntityManager) => void)[] = [];
+// TODO(@darzu): convert all uses of onInit into em.registerInit ?
 export function onInit(fn: (em: EntityManager) => void) {
   assert(
     !hasInitPassed,

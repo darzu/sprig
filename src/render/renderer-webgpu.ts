@@ -2,6 +2,7 @@ import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { assert } from "../util.js";
 import {
   CY,
+  CyMeshPoolPtr,
   CyPipelinePtr,
   CyResourcePtr,
   CyTexturePtr,
@@ -36,7 +37,7 @@ import {
 } from "./instantiator-webgpu.js";
 import { SceneStruct, SceneTS } from "./pipelines/std-scene.js";
 import { ShaderSet } from "./shader-loader.js";
-import { texTypeToBytes } from "./gpu-struct.js";
+import { CyStructDesc, texTypeToBytes } from "./gpu-struct.js";
 import { align } from "../math.js";
 import { pointLightsPtr, PointLightStruct, PointLightTS } from "./lights.js";
 import {
@@ -84,20 +85,15 @@ export function createRenderer(
   const resources = createCyResources(CY, shaders, device);
   const cyKindToNameToRes = resources.kindToNameToRes;
 
-  const stdPool: MeshPool<
-    typeof VertexStruct.desc,
-    typeof MeshUniformStruct.desc
-  > = cyKindToNameToRes.meshPool[meshPoolPtr.name]!;
-
-  const oceanPool: MeshPool<
-    typeof OceanVertStruct.desc,
-    typeof OceanUniStruct.desc
-  > = cyKindToNameToRes.meshPool[oceanPoolPtr.name]!;
-
-  const grassPool: MeshPool<
-    typeof GrassVertStruct.desc,
-    typeof GrassUniStruct.desc
-  > = cyKindToNameToRes.meshPool[grassPoolPtr.name]!;
+  const stdPool = getCyResource(meshPoolPtr)!;
+  // const oceanPool: MeshPool<
+  //   typeof OceanVertStruct.desc,
+  //   typeof OceanUniStruct.desc
+  // > = cyKindToNameToRes.meshPool[oceanPoolPtr.name]!;
+  // const grassPool: MeshPool<
+  //   typeof GrassVertStruct.desc,
+  //   typeof GrassUniStruct.desc
+  // > = cyKindToNameToRes.meshPool[grassPoolPtr.name]!;
 
   const renderer = {
     drawLines: true,
@@ -125,6 +121,10 @@ export function createRenderer(
     // gpu commands
     submitPipelines,
     readTexture,
+    // TODO(@darzu): maybe have a "typed library" thingy where u can
+    //  declare: i want my registery to have these things and u get
+    //  strong typings just like as if they were dumped right here
+    //  (like the pools used to be)
     getCyResource,
     stats,
 
@@ -133,8 +133,8 @@ export function createRenderer(
 
     // TODO(@darzu): collapose the renderer-webgpu layer, it shouldn't exist
     stdPool,
-    oceanPool,
-    grassPool,
+    // oceanPool,
+    // grassPool,
   };
 
   // TODO(@darzu): collapse this with MeshPool._stats
@@ -347,6 +347,12 @@ export function createRenderer(
     device.queue.submit([commandEncoder.finish()]);
   }
 
+  function getCyResource<V extends CyStructDesc, U extends CyStructDesc>(
+    ptr: CyMeshPoolPtr<V, U>
+  ): MeshPool<V, U> | undefined;
+  function getCyResource<K extends PtrKind>(
+    ptr: CyResourcePtr<K>
+  ): PtrKindToResourceType[K] | undefined;
   function getCyResource<K extends PtrKind>(
     ptr: CyResourcePtr<K>
   ): PtrKindToResourceType[K] | undefined {

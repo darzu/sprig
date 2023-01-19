@@ -1,7 +1,7 @@
 import { ColorDef } from "./color-ecs.js";
 import { EM, EntityW } from "./entity-manager.js";
 import { gameMeshFromMesh } from "./assets.js";
-import { RenderDataGrassDef } from "./smol/xp-grass.js";
+import { grassPoolPtr, RenderDataGrassDef } from "./smol/xp-grass.js";
 import { jitter, align } from "./math.js";
 import { PositionDef } from "./physics/transform.js";
 import { MeshPool, MeshHandle, MeshPoolOpts } from "./render/mesh-pool.js";
@@ -176,7 +176,8 @@ export async function createGrassTileset(
 
   const _tileMesh = createGrassTile(tileOpts);
   // const tileGMesh = gameMeshFromMesh(_tileMesh, renderer.renderer);
-  const tileProto = renderer.renderer.grassPool.addMesh(_tileMesh);
+  const grassPool = renderer.renderer.getCyResource(grassPoolPtr)!;
+  const tileProto = grassPool.addMesh(_tileMesh);
 
   const tileProms: Promise<
     EntityW<
@@ -199,7 +200,7 @@ export async function createGrassTileset(
         undefined,
         undefined,
         undefined,
-        "grass"
+        grassPoolPtr
       );
       EM.ensureComponentOn(tile, ColorDef, randColor());
       // mat4.translate(tile.transform, tile.transform, [x, 0, z]);

@@ -1,4 +1,6 @@
-import { EM } from "../entity-manager.js";
+import { ColorDef, TintsDef, applyTints } from "../color-ecs.js";
+import { EM, EntityW } from "../entity-manager.js";
+import { onInit } from "../init.js";
 import {
   comparisonSamplerPtr,
   CY,
@@ -17,6 +19,11 @@ import {
   normalsTexturePtr,
 } from "../render/pipelines/std-scene.js";
 import { shadowDepthTextures } from "../render/pipelines/std-shadow.js";
+import {
+  RenderableDef,
+  RendererDef,
+  RendererWorldFrameDef,
+} from "../render/renderer-ecs.js";
 import { mat4, V, vec3 } from "../sprig-matrix.js";
 import { assert, assertDbg } from "../util.js";
 import { computeTriangleNormal } from "../utils-3d.js";
@@ -216,6 +223,10 @@ export function computeGrassUniData(m: Mesh): GrassUniTS {
   return uni;
 }
 
+export const RenderDataGrassDef = EM.defineComponent(
+  "renderDataGrass",
+  (r: GrassUniTS) => r
+);
 export const grassPoolPtr = CY.createMeshPool("grassPool", {
   computeVertsData: computeGrassVertsData,
   // TODO(@darzu): per-mesh unis should maybe be optional? I don't think
@@ -225,6 +236,8 @@ export const grassPoolPtr = CY.createMeshPool("grassPool", {
   unisPtr: grassUnisPtr,
   triIndsPtr: grassTriIndsPtr,
   lineIndsPtr: grassLineIndsPtr,
+  // TODO(@darzu): this dataDef is v weird
+  dataDef: RenderDataGrassDef,
 });
 
 export const GrassCutTexPtr = CY.createTexture("grassCut", {
@@ -279,7 +292,32 @@ export const renderGrassPipe = CY.createRenderPipeline("grassRender", {
   `,
 });
 
-export const RenderDataGrassDef = EM.defineComponent(
-  "renderDataGrass",
-  (r: GrassUniTS) => r
-);
+onInit((em) => {
+  em.registerSystem(
+    [RenderableDef, RenderDataGrassDef, RendererWorldFrameDef],
+    [RendererDef],
+    (objs, res) => {
+      const pool = res.renderer.renderer.getCyResource(grassPoolPtr)!;
+      for (let o of objs) {
+        // TODO(@darzu): do we need all this for grass?
+        // color / tint
+        if (ColorDef.isOn(o)) {
+          vec3.copy(o.renderDataGrass.tint, o.color);
+        }
+        if (TintsDef.isOn(o)) {
+          applyTints(o.tints, o.renderDataGrass.tint);
+        }
+        // id
+        // o.renderDataGrass.id = o.renderable.meshHandle.mId;
+        // transform
+        mat4.copy(o.renderDataGrass.transform, o.rendererWorldFrame.transform);
+
+        pool.updateUniform(o.renderable.meshHandle, o.renderDataGrass);
+      }
+    },
+    "updateGrassRenderData"
+  );
+  em.requireSystem("updateGrassRenderData");
+  em.addConstraint(["updateGrassRenderData", "after", "renderList"]);
+  em.addConstraint(["updateGrassRenderData", "before", "stepRenderer"]);
+});

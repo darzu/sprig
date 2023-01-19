@@ -26,6 +26,7 @@ import { assert } from "../util.js";
 import { randNormalPosVec3, vec3Mid } from "../utils-3d.js";
 import { ButtonsStateDef, ButtonDef } from "./button.js";
 import { WidgetDef, WidgetLayerDef } from "./widgets.js";
+import { meshPoolPtr } from "../render/pipelines/std-scene.js";
 
 const HLineDef = EM.defineComponent("hline", (hl: HLine) => ({
   hl,
@@ -88,6 +89,7 @@ async function createPathEditor() {
   };
 
   const { renderer, assets } = await EM.whenResources(RendererDef, AssetsDef);
+  const stdPool = renderer.renderer.getCyResource(meshPoolPtr)!;
 
   return res;
 
@@ -133,7 +135,7 @@ async function createPathEditor() {
         true,
         undefined,
         undefined,
-        "std",
+        meshPoolPtr,
         false,
         reserve
       );
@@ -158,22 +160,13 @@ async function createPathEditor() {
       // copyMesh(res.outMesh, newOutMesh);
 
       // TODO(@darzu): move elsewhere
-      renderer.renderer.stdPool.updateMeshQuads(
+      stdPool.updateMeshQuads(res.outEnt.renderable.meshHandle, res.outMesh);
+      stdPool.updateMeshTriangles(
         res.outEnt.renderable.meshHandle,
         res.outMesh
       );
-      renderer.renderer.stdPool.updateMeshTriangles(
-        res.outEnt.renderable.meshHandle,
-        res.outMesh
-      );
-      renderer.renderer.stdPool.updateMeshSize(
-        res.outEnt.renderable.meshHandle,
-        res.outMesh
-      );
-      renderer.renderer.stdPool.updateMeshVertices(
-        res.outEnt.renderable.meshHandle,
-        res.outMesh
-      );
+      stdPool.updateMeshSize(res.outEnt.renderable.meshHandle, res.outMesh);
+      stdPool.updateMeshVertices(res.outEnt.renderable.meshHandle, res.outMesh);
     }
 
     // vert glyphs
@@ -315,16 +308,17 @@ export async function initPathEditor() {
       // }
 
       // update mesh
+      const stdPool = renderer.renderer.getCyResource(meshPoolPtr)!;
       const handle = e.outEnt.renderable.meshHandle;
       if (didEnlargeMesh) {
-        renderer.renderer.stdPool.updateMeshSize(handle, handle.mesh!);
+        stdPool.updateMeshSize(handle, handle.mesh!);
         if (handle.mesh!.quad.length)
-          renderer.renderer.stdPool.updateMeshQuads(handle, handle.mesh!);
+          stdPool.updateMeshQuads(handle, handle.mesh!);
         if (handle.mesh!.tri.length)
-          renderer.renderer.stdPool.updateMeshTriangles(handle, handle.mesh!);
+          stdPool.updateMeshTriangles(handle, handle.mesh!);
       }
       if (didUpdateMesh || didEnlargeMesh) {
-        renderer.renderer.stdPool.updateMeshVertices(handle, handle.mesh!);
+        stdPool.updateMeshVertices(handle, handle.mesh!);
       }
     },
     "editHPoly"

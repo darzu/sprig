@@ -4,9 +4,10 @@ import { CyStructDesc, CyToTS } from "./gpu-struct.js";
 import { Mesh } from "./mesh.js";
 import { CyArray, CyIdxBuffer } from "./data-webgpu.js";
 import { PERF_DBG_GPU, VERBOSE_MESH_POOL_STATS } from "../flags.js";
-import { ComputeVertsDataFn } from "./gpu-registry.js";
+import { ComputeVertsDataFn, CyMeshPoolPtr } from "./gpu-registry.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { DEFAULT_MASK } from "./pipeline-masks.js";
+import { ComponentDef } from "../entity-manager.js";
 
 // Mesh: lossless, all the data of a model/asset from blender
 // MeshPool: lossy, a reduced set of attributes for vertex, line, triangle, and model uniforms
@@ -57,15 +58,18 @@ export function isMeshHandle(m: any): m is MeshHandle {
 }
 
 // TODO(@darzu): de-duplicate between here and CyMeshPoolPtr
+// TODO(@darzu): wait definitely need a ptr to ptr.
 export interface MeshPoolOpts<V extends CyStructDesc, U extends CyStructDesc> {
-  computeVertsData: ComputeVertsDataFn<V>;
-  computeUniData: (m: Mesh) => CyToTS<U>;
+  // computeVertsData: ComputeVertsDataFn<V>;
+  // computeUniData: (m: Mesh) => CyToTS<U>;
   verts: CyArray<V>;
   unis: CyArray<U>;
   triInds: CyIdxBuffer;
   lineInds: CyIdxBuffer;
   // TODO(@darzu): needed?
-  shiftMeshIndices: boolean;
+  // shiftMeshIndices: boolean;
+  // TODO(@darzu): EM things is weird!
+  // dataDef: ComponentDef<string, CyToTS<U>, [CyToTS<U>]>;
 }
 
 function createMeshPoolDbgStats() {
@@ -214,7 +218,9 @@ function computeQuadData(
 }
 
 export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
-  opts: MeshPoolOpts<V, U>
+  // TODO(@darzu): having both otps and ptr is strange
+  opts: MeshPoolOpts<V, U>,
+  ptr: CyMeshPoolPtr<V, U>
 ) {
   logMeshPoolStats(opts);
 
@@ -229,6 +235,7 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
 
   const pool = {
     opts,
+    ptr,
     allMeshes,
     numTris: 0,
     numVerts: 0,
@@ -304,7 +311,7 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     if (m.quad.length) updateMeshQuads(handle, m);
     if (m.tri.length) updateMeshTriangles(handle, m);
     if (m.pos.length) updateMeshVertices(handle, m);
-    const uni = opts.computeUniData(m);
+    const uni = ptr.computeUniData(m);
     updateUniform(handle, uni);
 
     return handle;
@@ -344,7 +351,7 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     vertIdx = vertIdx ?? 0;
     vertCount = vertCount ?? newMesh.pos.length;
 
-    const data = opts.computeVertsData(newMesh, vertIdx, vertCount);
+    const data = ptr.computeVertsData(newMesh, vertIdx, vertCount);
     opts.verts.queueUpdates(data, handle.vertIdx + vertIdx, 0, vertCount);
     if (PERF_DBG_GPU)
       _stats._accumVertDataQueued += vertCount * opts.verts.struct.size;

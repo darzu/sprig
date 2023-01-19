@@ -20,11 +20,15 @@ import { ColorDef } from "../color-ecs.js";
 import { MotionSmoothingDef } from "../motion-smoothing.js";
 import { DeadDef, DeletedDef } from "../delete.js";
 import { stdRenderPipeline } from "./pipelines/std-mesh.js";
-import { computeUniData, MeshUniformTS } from "./pipelines/std-scene.js";
+import {
+  computeUniData,
+  meshPoolPtr,
+  MeshUniformTS,
+} from "./pipelines/std-scene.js";
 import { CanvasDef } from "../canvas.js";
 import { FORCE_WEBGL } from "../main.js";
 import { createRenderer } from "./renderer-webgpu.js";
-import { CyPipelinePtr, CyTexturePtr } from "./gpu-registry.js";
+import { CyMeshPoolPtr, CyPipelinePtr, CyTexturePtr } from "./gpu-registry.js";
 import { createFrame, WorldFrameDef } from "../physics/nonintersection.js";
 import { tempVec3 } from "../temp-pool.js";
 import {
@@ -65,14 +69,14 @@ const BLEND_SIMULATION_FRAMES_STRATEGY: "interpolate" | "extrapolate" | "none" =
 
 // TODO(@darzu): we need a better way to handle arbitrary pools
 // TODO(@darzu): support height map?
-export type PoolKind = "std" | "ocean" | "grass";
+// export type PoolKind = "std" | "ocean" | "grass";
 export interface RenderableConstruct {
   readonly enabled: boolean;
   readonly sortLayer: number;
   // TODO(@darzu): mask is inconsitently placed; here it is in the component,
   //  later it is in the mesh handle.
   readonly mask?: number;
-  readonly poolKind: PoolKind;
+  readonly pool: CyMeshPoolPtr<any, any>;
   // TODO(@darzu): little hacky: hidden vs enabled?
   // NOTE:
   //   "enabled" objects are debundled and not sent to the GPU.
@@ -93,7 +97,7 @@ export const RenderableConstructDef = EM.defineComponent(
     // TODO(@darzu): do we need sort layers? Do we use them?
     sortLayer: number = 0,
     mask?: number,
-    poolKind: PoolKind = "std",
+    pool?: CyMeshPoolPtr<any, any>,
     hidden: boolean = false,
     reserve?: MeshReserve
   ) => {
@@ -102,7 +106,7 @@ export const RenderableConstructDef = EM.defineComponent(
       sortLayer: sortLayer,
       meshOrProto,
       mask,
-      poolKind,
+      pool: pool ?? meshPoolPtr,
       hidden,
       reserve,
     };
@@ -125,15 +129,10 @@ export const RenderableDef = EM.defineComponent(
 
 // TODO: standardize names more
 
-export const RenderDataStdDef = EM.defineComponent(
-  "renderDataStd",
-  (r: MeshUniformTS) => r
-);
-
-export const RenderDataOceanDef = EM.defineComponent(
-  "renderDataOcean",
-  (r: OceanUniTS) => r
-);
+// export const RenderDataStdDef = EM.defineComponent(
+//   "renderDataStd",
+//   (r: MeshUniformTS) => r
+// );
 
 const _hasRendererWorldFrame = new Set();
 
@@ -313,145 +312,28 @@ export function registerUpdateRendererWorldFrames(em: EntityManager) {
   );
 }
 
-const _lastMeshHandleTransform = new Map<number, mat4>();
-const _lastMeshHandleHidden = new Map<number, boolean>();
+// export const poolKindToDataDef = {
+//   std: RenderDataStdDef,
+//   ocean: RenderDataOceanDef,
+//   grass: RenderDataGrassDef,
+// };
+// type Assert_PoolKindToDataDef = typeof poolKindToDataDef[PoolKind];
 
-function updateStdRenderData(
-  o: EntityW<
-    [
-      typeof RenderableDef,
-      typeof RenderDataStdDef,
-      typeof RendererWorldFrameDef
-    ]
-  >
-): boolean {
-  if (o.renderable.hidden) {
-    // TODO(@darzu): hidden stuff is a bit wierd
-    mat4.fromScaling(vec3.ZEROS, o.renderDataStd.transform);
-  }
-
-  let tintChange = false;
-  if (!o.renderable.hidden) {
-    // color / tint
-    let prevTint = vec3.copy(tempVec3(), o.renderDataStd.tint);
-    if (ColorDef.isOn(o)) vec3.copy(o.renderDataStd.tint, o.color);
-    if (TintsDef.isOn(o)) applyTints(o.tints, o.renderDataStd.tint);
-    if (vec3.sqrDist(prevTint, o.renderDataStd.tint) > 0.01) tintChange = true;
-
-    // apha
-    if (AlphaDef.isOn(o)) {
-      if (o.renderDataStd.alpha !== o.alpha) tintChange = true;
-      o.renderDataStd.alpha = o.alpha;
-      // TODO(@darzu): MASK HACK! it's also in renderable construct?!
-      o.renderable.meshHandle.mask = ALPHA_MASK;
-    }
-  }
-
-  let lastHidden = _lastMeshHandleHidden.get(o.renderable.meshHandle.mId);
-  let hiddenChanged = lastHidden !== o.renderable.hidden;
-  _lastMeshHandleHidden.set(o.renderable.meshHandle.mId, o.renderable.hidden);
-
-  // TODO(@darzu): actually we only set this at creation now so that
-  //  it's overridable for gameplay
-  // id
-  // o.renderDataStd.id = o.renderable.meshHandle.mId;
-
-  // transform
-  // TODO(@darzu): hACK! ONLY UPDATE UNIFORM IF WE"VE MOVED/SCALED/ROT OR COLOR CHANGED OR HIDDEN CHANGED
-  // TODO(@darzu): probably the less hacky way to do this is require uniforms provide a
-  //    hash function
-  let lastTran = _lastMeshHandleTransform.get(o.renderable.meshHandle.mId);
-  const thisTran = o.rendererWorldFrame.transform;
-  if (
-    hiddenChanged ||
-    tintChange ||
-    !lastTran ||
-    !mat4.equals(lastTran, thisTran)
-    // vec3.sqrDist(lastTran, thisTran) > 0.01
-  ) {
-    if (!o.renderable.hidden)
-      mat4.copy(o.renderDataStd.transform, o.rendererWorldFrame.transform);
-
-    if (!lastTran) {
-      lastTran = mat4.create();
-      _lastMeshHandleTransform.set(o.renderable.meshHandle.mId, lastTran);
-    }
-    mat4.copy(lastTran, thisTran);
-    return true;
-  }
-  return false;
-}
-
-function updateOceanRenderData(
-  o: EntityW<
-    [
-      typeof RenderableDef,
-      typeof RenderDataOceanDef,
-      typeof RendererWorldFrameDef
-    ]
-  >
-): boolean {
-  // color / tint
-  if (ColorDef.isOn(o)) {
-    vec3.copy(o.renderDataOcean.tint, o.color);
-  }
-  if (TintsDef.isOn(o)) {
-    applyTints(o.tints, o.renderDataOcean.tint);
-  }
-
-  // id
-  o.renderDataOcean.id = o.renderable.meshHandle.mId;
-
-  // transform
-  mat4.copy(o.renderDataOcean.transform, o.rendererWorldFrame.transform);
-  return true;
-}
-function updateGrassRenderData(
-  o: EntityW<
-    [
-      typeof RenderableDef,
-      typeof RenderDataGrassDef,
-      typeof RendererWorldFrameDef
-    ]
-  >
-): boolean {
-  // TODO(@darzu): do we need all this for grass?
-  // color / tint
-  if (ColorDef.isOn(o)) {
-    vec3.copy(o.renderDataGrass.tint, o.color);
-  }
-  if (TintsDef.isOn(o)) {
-    applyTints(o.tints, o.renderDataGrass.tint);
-  }
-  // id
-  // o.renderDataGrass.id = o.renderable.meshHandle.mId;
-  // transform
-  mat4.copy(o.renderDataGrass.transform, o.rendererWorldFrame.transform);
-  return true;
-}
-
-export const poolKindToDataDef = {
-  std: RenderDataStdDef,
-  ocean: RenderDataOceanDef,
-  grass: RenderDataGrassDef,
-};
-type Assert_PoolKindToDataDef = typeof poolKindToDataDef[PoolKind];
-
-export const poolKindToDataUpdate: {
-  [k in PoolKind]: (
-    o: EntityW<
-      [
-        typeof RenderableDef,
-        typeof poolKindToDataDef[k],
-        typeof RendererWorldFrameDef
-      ]
-    >
-  ) => boolean;
-} = {
-  std: updateStdRenderData,
-  ocean: updateOceanRenderData,
-  grass: updateGrassRenderData,
-};
+// export const poolKindToDataUpdate: {
+//   [k in PoolKind]: (
+//     o: EntityW<
+//       [
+//         typeof RenderableDef,
+//         typeof poolKindToDataDef[k],
+//         typeof RendererWorldFrameDef
+//       ]
+//     >
+//   ) => boolean;
+// } = {
+//   std: updateStdRenderData,
+//   ocean: updateOceanRenderData,
+//   grass: updateGrassRenderData,
+// };
 
 export function registerRenderer(em: EntityManager) {
   // NOTE: we use "renderListDeadHidden" and "renderList" to construct a custom
@@ -492,28 +374,28 @@ export function registerRenderer(em: EntityManager) {
       const objs = renderObjs;
 
       // ensure our mesh handle is up to date
-      for (let o of objs) {
-        // TODO(@darzu): generalize mesh pool kind stuff
-        if (RenderDataStdDef.isOn(o)) {
-          if (updateStdRenderData(o))
-            res.renderer.renderer.stdPool.updateUniform(
-              o.renderable.meshHandle,
-              o.renderDataStd
-            );
-        } else if (RenderDataOceanDef.isOn(o)) {
-          if (updateOceanRenderData(o))
-            res.renderer.renderer.oceanPool.updateUniform(
-              o.renderable.meshHandle,
-              o.renderDataOcean
-            );
-        } else if (RenderDataGrassDef.isOn(o)) {
-          if (updateGrassRenderData(o))
-            res.renderer.renderer.grassPool.updateUniform(
-              o.renderable.meshHandle,
-              o.renderDataGrass
-            );
-        }
-      }
+      // for (let o of objs) {
+      //   // TODO(@darzu): generalize mesh pool kind stuff
+      //   if (RenderDataStdDef.isOn(o)) {
+      //     if (updateStdRenderData(o))
+      //       res.renderer.renderer.stdPool.updateUniform(
+      //         o.renderable.meshHandle,
+      //         o.renderDataStd
+      //       );
+      //   } else if (RenderDataOceanDef.isOn(o)) {
+      //     if (updateOceanRenderData(o))
+      //       res.renderer.renderer.oceanPool.updateUniform(
+      //         o.renderable.meshHandle,
+      //         o.renderDataOcean
+      //       );
+      //   } else if (RenderDataGrassDef.isOn(o)) {
+      //     if (updateGrassRenderData(o))
+      //       res.renderer.renderer.grassPool.updateUniform(
+      //         o.renderable.meshHandle,
+      //         o.renderDataGrass
+      //       );
+      //   }
+      // }
 
       // TODO(@darzu): this is currently unused, and maybe should be dropped.
       // sort
@@ -590,7 +472,8 @@ export function registerRenderer(em: EntityManager) {
 
       // Performance logging
       if (PERF_DBG_GPU) {
-        const stats = res.renderer.renderer.stdPool._stats;
+        const stdPool = res.renderer.renderer.getCyResource(meshPoolPtr)!;
+        const stats = stdPool._stats;
         const totalBytes =
           stats._accumTriDataQueued +
           stats._accumUniDataQueued +
@@ -611,20 +494,20 @@ export function registerRenderer(em: EntityManager) {
   );
 }
 
-export function poolKindToPool(
-  renderer: Renderer,
-  kind: PoolKind
-): MeshPool<any, any> {
-  if (kind === "std") {
-    return renderer.stdPool;
-  } else if (kind === "ocean") {
-    return renderer.oceanPool;
-  } else if (kind === "grass") {
-    return renderer.grassPool;
-  } else {
-    never(kind);
-  }
-}
+// export function poolKindToPool(
+//   renderer: Renderer,
+//   kind: PoolKind
+// ): MeshPool<any, any> {
+//   if (kind === "std") {
+//     return renderer.stdPool;
+//   } else if (kind === "ocean") {
+//     return renderer.oceanPool;
+//   } else if (kind === "grass") {
+//     return renderer.grassPool;
+//   } else {
+//     never(kind);
+//   }
+// }
 
 export function registerConstructRenderablesSystem(em: EntityManager) {
   em.registerSystem(
@@ -636,10 +519,9 @@ export function registerConstructRenderablesSystem(em: EntityManager) {
         if (!RenderableDef.isOn(e)) {
           let meshHandle: MeshHandle;
           let mesh: Mesh;
-          const pool = poolKindToPool(
-            res.renderer.renderer,
-            e.renderableConstruct.poolKind
-          );
+          const pool = res.renderer.renderer.getCyResource(
+            e.renderableConstruct.pool
+          )!;
           if (isMeshHandle(e.renderableConstruct.meshOrProto)) {
             // TODO(@darzu): renderableConstruct is getting to large and wierd
             assert(
@@ -668,25 +550,15 @@ export function registerConstructRenderablesSystem(em: EntityManager) {
             meshHandle,
           });
 
-          if (e.renderableConstruct.poolKind === "std") {
-            em.ensureComponentOn(e, RenderDataStdDef, computeUniData(mesh));
-            e.renderDataStd.id = meshHandle.mId;
-          } else if (e.renderableConstruct.poolKind === "ocean") {
-            em.ensureComponentOn(
-              e,
-              RenderDataOceanDef,
-              computeOceanUniData(mesh)
-            );
-            e.renderDataOcean.id = meshHandle.mId;
-          } else if (e.renderableConstruct.poolKind === "grass") {
-            em.ensureComponentOn(
-              e,
-              RenderDataGrassDef,
-              computeGrassUniData(mesh)
-            );
-            e.renderDataGrass.id = meshHandle.mId;
-          } else {
-            never(e.renderableConstruct.poolKind);
+          // pool.updateUniform
+          em.ensureComponentOn(
+            e,
+            pool.ptr.dataDef,
+            pool.ptr.computeUniData(mesh)
+          );
+          // TODO(@darzu): HACK! We need some notion of required uni data maybe? Or common uni data
+          if ("id" in e[pool.ptr.dataDef.name]) {
+            e[pool.ptr.dataDef.name]["id"] = meshHandle.mId;
           }
         }
       }

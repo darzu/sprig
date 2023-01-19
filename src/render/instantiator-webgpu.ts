@@ -247,16 +247,15 @@ export function createCyResources(
       verts && unis && triInds && lineInds,
       `Missing buffer for mesh pool ${r.name}`
     );
-    const pool = createMeshPool({
-      computeVertsData: r.computeVertsData,
-      computeUniData: r.computeUniData,
-      verts,
-      unis,
-      triInds,
-      lineInds,
-      // TODO(@darzu): support more?
-      shiftMeshIndices: false,
-    });
+    const pool = createMeshPool(
+      {
+        verts,
+        unis,
+        triInds,
+        lineInds,
+      },
+      r
+    );
     kindToNameToRes.meshPool[r.name] = pool;
   });
   // create texture

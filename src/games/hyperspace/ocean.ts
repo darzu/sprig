@@ -11,7 +11,11 @@ import {
 } from "../../physics/transform.js";
 import { createTextureReader } from "../../render/cpu-texture.js";
 import { createJfaPipelines } from "../../render/pipelines/std-jump-flood.js";
-import { GerstnerWaveTS } from "../../render/pipelines/std-ocean.js";
+import {
+  GerstnerWaveTS,
+  oceanPoolPtr,
+  RenderDataOceanDef,
+} from "../../render/pipelines/std-ocean.js";
 import {
   unwrapPipeline,
   unwrapPipeline2,
@@ -23,7 +27,6 @@ import {
 import {
   RenderableConstructDef,
   RenderableDef,
-  RenderDataOceanDef,
   RendererDef,
 } from "../../render/renderer-ecs.js";
 import { tempVec2, tempVec3 } from "../../temp-pool.js";
@@ -103,7 +106,7 @@ export async function initOcean() {
     true,
     0,
     UVUNWRAP_MASK | DEFAULT_MASK,
-    "ocean"
+    oceanPoolPtr
   );
   EM.ensureComponentOn(ocean, ColorDef, V(0.1, 0.3, 0.8));
   //EM.ensureComponentOn(ocean, PositionDef, [12000, 180, 0]);
@@ -114,10 +117,9 @@ export async function initOcean() {
   // TODO(@darzu):
   const preOceanGPU = performance.now();
 
-  res.renderer.renderer.oceanPool.updateUniform(
-    ocean2.renderable.meshHandle,
-    ocean2.renderDataOcean
-  );
+  res.renderer.renderer
+    .getCyResource(oceanPoolPtr)!
+    .updateUniform(ocean2.renderable.meshHandle, ocean2.renderDataOcean);
 
   res.renderer.renderer.submitPipelines(
     [ocean2.renderable.meshHandle],

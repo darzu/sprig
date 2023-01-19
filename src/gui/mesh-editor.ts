@@ -24,6 +24,7 @@ import { assert } from "../util.js";
 import { randNormalPosVec3, vec3Mid } from "../utils-3d.js";
 import { ButtonsStateDef, ButtonDef } from "./button.js";
 import { WidgetDef, WidgetLayerDef } from "./widgets.js";
+import { meshPoolPtr } from "../render/pipelines/std-scene.js";
 
 // TODO(@darzu): do we need this ptr indirection? can't we just add/remove component? how does this interact
 //  with pools?
@@ -150,7 +151,7 @@ async function createMeshEditor() {
         true,
         undefined,
         undefined,
-        "std",
+        meshPoolPtr,
         false
       );
       EM.ensureComponentOn(hpEnt_, PositionDef, V(0, 0.1, 0));

@@ -1,3 +1,4 @@
+import { EM } from "../../entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../../sprig-matrix.js";
 import { assertDbg } from "../../util.js";
 import { computeTriangleNormal } from "../../utils-3d.js";
@@ -105,6 +106,10 @@ const meshUnisPtr = CY.createArray("meshUni", {
   init: MAX_MESHES,
 });
 
+export const RenderDataStdDef = EM.defineComponent(
+  "renderDataStd",
+  (r: MeshUniformTS) => r
+);
 export const meshPoolPtr = CY.createMeshPool("meshPool", {
   computeVertsData,
   computeUniData,
@@ -112,6 +117,8 @@ export const meshPoolPtr = CY.createMeshPool("meshPool", {
   unisPtr: meshUnisPtr,
   triIndsPtr: meshTriIndsPtr,
   lineIndsPtr: meshLineIndsPtr,
+  // TODO(@darzu): this dataDef is v weird
+  dataDef: RenderDataStdDef,
 });
 
 // TODO: does this need to be passed into the mesh pool anymore?

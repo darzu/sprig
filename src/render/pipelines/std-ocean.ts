@@ -1,3 +1,6 @@
+import { ColorDef, TintsDef, applyTints } from "../../color-ecs.js";
+import { EM, EntityW } from "../../entity-manager.js";
+import { onInit } from "../../init.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../../sprig-matrix.js";
 import { assert } from "../../util.js";
 import { computeTriangleNormal } from "../../utils-3d.js";
@@ -6,6 +9,11 @@ import { createCyStruct, CyToTS } from "../gpu-struct.js";
 import { pointLightsPtr } from "../lights.js";
 import { MeshHandle } from "../mesh-pool.js";
 import { getAABBFromMesh, Mesh } from "../mesh.js";
+import {
+  RenderableDef,
+  RendererDef,
+  RendererWorldFrameDef,
+} from "../renderer-ecs.js";
 import { GPUBufferUsage } from "../webgpu-hacks.js";
 import {
   sceneBufPtr,
@@ -157,6 +165,10 @@ export function computeOceanUniData(m: Mesh): OceanUniTS {
   return uni;
 }
 
+export const RenderDataOceanDef = EM.defineComponent(
+  "renderDataOcean",
+  (r: OceanUniTS) => r
+);
 export const oceanPoolPtr = CY.createMeshPool("oceanPool", {
   computeVertsData: computeOceanVertsData,
   // TODO(@darzu): per-mesh unis should maybe be optional? I don't think
@@ -166,6 +178,8 @@ export const oceanPoolPtr = CY.createMeshPool("oceanPool", {
   unisPtr: oceanUnisPtr,
   triIndsPtr: oceanTriIndsPtr,
   lineIndsPtr: oceanLineIndsPtr,
+  // TODO(@darzu): this dataDef is v weird
+  dataDef: RenderDataOceanDef,
 });
 
 export const renderOceanPipe = CY.createRenderPipeline("oceanRender", {
@@ -205,4 +219,40 @@ export const renderOceanPipe = CY.createRenderPipeline("oceanRender", {
   ${shaderSet["std-rand"].code}
   ${shaderSet["std-ocean"].code}
   `,
+});
+
+// export const RenderDataOceanDef = EM.defineComponent(
+//   "renderDataOcean",
+//   (r: OceanUniTS) => r
+// );
+
+onInit((em) => {
+  em.registerSystem(
+    [RenderableDef, RenderDataOceanDef, RendererWorldFrameDef],
+    [RendererDef],
+    (objs, res) => {
+      const pool = res.renderer.renderer.getCyResource(oceanPoolPtr)!;
+      for (let o of objs) {
+        // color / tint
+        if (ColorDef.isOn(o)) {
+          vec3.copy(o.renderDataOcean.tint, o.color);
+        }
+        if (TintsDef.isOn(o)) {
+          applyTints(o.tints, o.renderDataOcean.tint);
+        }
+
+        // id
+        o.renderDataOcean.id = o.renderable.meshHandle.mId;
+
+        // transform
+        mat4.copy(o.renderDataOcean.transform, o.rendererWorldFrame.transform);
+
+        pool.updateUniform(o.renderable.meshHandle, o.renderDataOcean);
+      }
+    },
+    "updateOceanRenderData"
+  );
+  em.requireSystem("updateOceanRenderData");
+  em.addConstraint(["updateOceanRenderData", "after", "renderList"]);
+  em.addConstraint(["updateOceanRenderData", "before", "stepRenderer"]);
 });
