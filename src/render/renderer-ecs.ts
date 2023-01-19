@@ -312,6 +312,8 @@ export function registerUpdateRendererWorldFrames(em: EntityManager) {
   );
 }
 
+// TODO(@darzu): We need to add constraints for updateRendererWorldFrames and such w/ respect to gameplay, physics, and rendering!
+
 // export const poolKindToDataDef = {
 //   std: RenderDataStdDef,
 //   ocean: RenderDataOceanDef,
@@ -492,6 +494,17 @@ export function registerRenderer(em: EntityManager) {
     },
     "stepRenderer"
   );
+
+  em.requireSystem("renderListDeadHidden");
+  em.requireSystem("renderList");
+  em.requireSystem("stepRenderer");
+  em.addConstraint([
+    "renderListDeadHidden",
+    "after",
+    "updateRendererWorldFrames",
+  ]);
+  em.addConstraint(["renderListDeadHidden", "before", "renderList"]);
+  em.addConstraint(["renderList", "before", "stepRenderer"]);
 }
 
 // export function poolKindToPool(
@@ -521,7 +534,8 @@ export function registerConstructRenderablesSystem(em: EntityManager) {
           let mesh: Mesh;
           const pool = res.renderer.renderer.getCyResource(
             e.renderableConstruct.pool
-          )!;
+          );
+          assert(pool);
           if (isMeshHandle(e.renderableConstruct.meshOrProto)) {
             // TODO(@darzu): renderableConstruct is getting to large and wierd
             assert(
@@ -551,13 +565,13 @@ export function registerConstructRenderablesSystem(em: EntityManager) {
           });
 
           // pool.updateUniform
-          em.ensureComponentOn(
-            e,
-            pool.ptr.dataDef,
-            pool.ptr.computeUniData(mesh)
-          );
+          const uni = pool.ptr.computeUniData(mesh);
+          em.ensureComponentOn(e, pool.ptr.dataDef, uni);
           // TODO(@darzu): HACK! We need some notion of required uni data maybe? Or common uni data
           if ("id" in e[pool.ptr.dataDef.name]) {
+            // console.log(
+            //   `setting ${e.id}.${pool.ptr.dataDef.name}.id = ${meshHandle.mId}`
+            // );
             e[pool.ptr.dataDef.name]["id"] = meshHandle.mId;
           }
         }

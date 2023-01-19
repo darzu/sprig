@@ -216,9 +216,11 @@ function legacyRequireAllTheSystems() {
 
   EM.requireSystem("runEvents");
   EM.requireSystem("delete");
+
   EM.requireSystem("smoothMotion");
   EM.requireSystem("updateMotionSmoothing");
   EM.requireSystem("updateSmoothedWorldFrames");
+
   EM.requireSystem("smoothCamera");
   EM.requireSystem("cameraFollowTarget");
   EM.requireSystem("retargetCamera");
@@ -299,9 +301,9 @@ async function startGame(localPeerName: string, host: string | null) {
     EM.requireSystem("updateCameraView");
     {
       // NOTE: these 3 must stay together in this order. See NOTE above renderListDeadHidden
-      EM.requireSystem("renderListDeadHidden");
-      EM.requireSystem("renderList");
-      EM.requireSystem("stepRenderer");
+      // EM.requireSystem("renderListDeadHidden");
+      // EM.requireSystem("renderList");
+      // EM.requireSystem("stepRenderer");
     }
     let jsTime = performance.now() - before_frame;
     let frameTime = frame_time - previous_frame_time;

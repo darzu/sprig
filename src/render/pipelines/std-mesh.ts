@@ -177,6 +177,13 @@ onInit((em) => {
     },
     "stdRenderableDataUpdate"
   );
+  em.requireSystem("stdRenderListDeadHidden");
+  em.requireSystem("stdRenderList");
+  em.requireSystem("stdRenderableDataUpdate");
+  em.addConstraint(["stdRenderListDeadHidden", "after", "renderList"]);
+  em.addConstraint(["stdRenderListDeadHidden", "before", "stdRenderList"]);
+  em.addConstraint(["stdRenderList", "before", "stdRenderableDataUpdate"]);
+  em.addConstraint(["stdRenderableDataUpdate", "before", "stepRenderer"]);
 });
 
 function updateStdRenderData(
