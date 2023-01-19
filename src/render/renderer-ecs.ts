@@ -61,7 +61,7 @@ import {
   VERBOSE_LOG,
 } from "../flags.js";
 import { ALPHA_MASK } from "./pipeline-masks.js";
-import { RenderDataGrassDef, computeGrassUniData } from "../smol/xp-grass.js";
+import { RenderDataGrassDef, computeGrassUniData } from "../smol/std-grass.js";
 import { WindDef } from "../smol/wind.js";
 
 const BLEND_SIMULATION_FRAMES_STRATEGY: "interpolate" | "extrapolate" | "none" =

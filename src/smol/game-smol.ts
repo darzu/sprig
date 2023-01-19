@@ -36,7 +36,7 @@ import { mat3, mat4, quat, V, vec3 } from "../sprig-matrix.js";
 import { createMast, createSail, MastDef, SAIL_FURL_RATE } from "./sail.js";
 import { quatFromUpForward, randNormalPosVec3 } from "../utils-3d.js";
 import { randColor } from "../utils-game.js";
-import { GrassCutTexPtr, grassPoolPtr, renderGrassPipe } from "./xp-grass.js";
+import { GrassCutTexPtr, grassPoolPtr, renderGrassPipe } from "./std-grass.js";
 import { WindDef } from "./wind.js";
 import { DevConsoleDef } from "../console.js";
 import { clamp, sum } from "../math.js";
