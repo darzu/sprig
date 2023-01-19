@@ -1,0 +1,34 @@
+BIG REFACTORS / DEBT:
+[ ] System ordering and phases
+  Now that we have dependencies DAG we need to make sure our physics, networking, rendering, gameplay stuff happens in the right order.
+[ ] Multi-game seperation
+  Right now we have a bunch of duplicate "ship", "player", "enemy", "cannon" code thats different for the different games. This should be unified or seperated out more cleanly. Long term of course engine and game need to be more seperate.
+[ ] EM seperation
+  right now EM is sort of a dumping ground for all global registration and book keeping, this can probably be seperate into multiple different registrers
+[ ] components-as-columns & cache perf
+  Right now our ECS (probably) doesn't actually give us the cache hit rate perf we should be able to get by storing components in columns nicely.
+[ ] Mesh/RawMesh and asset data
+  Right now Mesh/RawMesh/GameMesh is a very strange split and definitely doesn't
+  capture well what different data different assets have/need.
+[ ] Re-enable smoothing and fix perf (disabled for LD51)
+[ ] timestep stuff: Re-enable, fix perf, and clarify (disabled for LD51)
+
+BIG FEATURES:
+[ ] Multiplayer reconnect
+[ ] GPU-driven rendering options
+[ ] GPU-based mesh generation (grass, particles, etc)
+  Perhaps inspired by Returnal folks.
+[ ] Flexible particle system
+[ ] Basic textures on meshes
+[ ] Skeletal animation
+[ ] Rust WASM proof-of-concept
+[ ] Sound and music player
+
+QUALITY-OF-LIFE:
+[ ] EM usability
+  rename 'ensureComponentOn', 'registerSystem', 'registerInit'. These are used a ton and 
+[ ] Typed registries pattern
+  Like how Assets and renderer{.stdPool, .grassPool, .oceanPool} provide nice typing, we should be able to figure out the right pattern so that we can have
+  nice typed registries of resources that are perhaps also game specific. Also we
+  don't want e.g. "cube game" to need load assets for ocean and fang ship just b/c we want the Assets typed registry.
+[ ] All "createXX" -> "mkXX" ?

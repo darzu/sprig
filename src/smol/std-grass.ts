@@ -1,5 +1,5 @@
 import { ColorDef, TintsDef, applyTints } from "../color-ecs.js";
-import { EM, EntityW } from "../entity-manager.js";
+import { EM } from "../entity-manager.js";
 import { onInit } from "../init.js";
 import {
   comparisonSamplerPtr,
@@ -9,13 +9,12 @@ import {
 import { createCyStruct, CyToTS } from "../render/gpu-struct.js";
 import { pointLightsPtr } from "../render/lights.js";
 import { MAX_INDICES, MeshHandle } from "../render/mesh-pool.js";
-import { Mesh, getAABBFromMesh } from "../render/mesh.js";
+import { Mesh } from "../render/mesh.js";
 import {
   sceneBufPtr,
   litTexturePtr,
   surfacesTexturePtr,
   mainDepthTex,
-  computeVertsData,
   normalsTexturePtr,
 } from "../render/pipelines/std-scene.js";
 import { shadowDepthTextures } from "../render/pipelines/std-shadow.js";
@@ -25,7 +24,7 @@ import {
   RendererWorldFrameDef,
 } from "../render/renderer-ecs.js";
 import { mat4, V, vec3 } from "../sprig-matrix.js";
-import { assert, assertDbg } from "../util.js";
+import { assertDbg } from "../util.js";
 import { computeTriangleNormal } from "../utils-3d.js";
 import { GrassMapTexPtr } from "./grass-map.js";
 
@@ -36,31 +35,14 @@ const MAX_GRASS_MESHES = 500;
 export const GrassVertStruct = createCyStruct(
   {
     position: "vec3<f32>",
-    // color: "vec3<f32>",
     normal: "vec3<f32>",
-    // tangent towards +u
-    // tangent: "vec3<f32>",
-    // uv: "vec2<f32>",
     surfaceId: "u32",
   },
   {
     isCompact: true,
-    serializer: (
-      {
-        position,
-        normal,
-        //  color, normal, tangent, uv,
-        surfaceId,
-      },
-      _,
-      offsets_32,
-      views
-    ) => {
+    serializer: ({ position, normal, surfaceId }, _, offsets_32, views) => {
       views.f32.set(position, offsets_32[0]);
-      // views.f32.set(color, offsets_32[1]);
       views.f32.set(normal, offsets_32[1]);
-      // views.f32.set(tangent, offsets_32[3]);
-      // views.f32.set(uv, offsets_32[4]);
       views.u32[offsets_32[2]] = surfaceId;
     },
   }
@@ -91,33 +73,6 @@ export const GrassUniStruct = createCyStruct(
 );
 export type GrassUniTS = CyToTS<typeof GrassUniStruct.desc>;
 export type GrassMeshHandle = MeshHandle;
-
-// const MAX_GERSTNER_WAVES = 8;
-
-// export const GerstnerWaveStruct = createCyStruct(
-//   {
-//     D: "vec2<f32>",
-//     Q: "f32",
-//     A: "f32",
-//     w: "f32",
-//     phi: "f32",
-//     // TODO: solve alignment issues--shouldn't need manual padding
-//     padding1: "f32",
-//     padding2: "f32",
-//   },
-//   {
-//     isUniform: true,
-//     hackArray: true,
-//   }
-// );
-
-// export type GerstnerWaveTS = CyToTS<typeof GerstnerWaveStruct.desc>;
-
-// export const gerstnerWavesPtr = CY.createArray("gerstnerWave", {
-//   struct: GerstnerWaveStruct,
-//   init: MAX_GERSTNER_WAVES,
-//   forceUsage: GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM,
-// });
 
 export const grassVertsPtr = CY.createArray("grassVertsBuf", {
   struct: GrassVertStruct,

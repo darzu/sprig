@@ -280,6 +280,7 @@ export function createCyRegistry() {
   //   register.kind() because some descriptions have custom type parameters
   //   we want to provide good typing for.
 
+  // TODO(@darzu): rename all "createX" to "mkX" for brevity?
   return {
     nameToPtr,
     kindToPtrs,

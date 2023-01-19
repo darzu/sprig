@@ -350,7 +350,6 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
   ) {
     vertIdx = vertIdx ?? 0;
     vertCount = vertCount ?? newMesh.pos.length;
-
     const data = ptr.computeVertsData(newMesh, vertIdx, vertCount);
     opts.verts.queueUpdates(data, handle.vertIdx + vertIdx, 0, vertCount);
     if (PERF_DBG_GPU)
