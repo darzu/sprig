@@ -275,7 +275,7 @@ const MeshModify: Partial<{
           const posNX = m.pos[grid[xIndex + 1][yIndex]];
           const posNY = m.pos[grid[xIndex][yIndex + 1]];
 
-          normal = computeTriangleNormal(pos, posNX, posNY);
+          normal = computeTriangleNormal(pos, posNX, posNY, vec3.create());
 
           tangent = vec3.sub(posNX, pos, m.tangents[grid[xIndex][yIndex]]);
           vec3.normalize(tangent, tangent);

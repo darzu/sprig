@@ -39,6 +39,8 @@ export interface BroadphaseResult {
   checkRay: (r: Ray) => RayHit[];
 }
 
+let octObjs = new Map<number, AABB>();
+
 export let _lastCollisionTestTimeMs = 0; // TODO(@darzu): hack for stat debugging
 let _collidesWith: CollidesWith = new Map();
 export function checkBroadphase(
@@ -97,8 +99,8 @@ export function checkBroadphase(
   //      100 objs: 0.1ms, 1,200 overlaps + 6,000 enclosed-bys
   if (BROAD_PHASE === "OCT") {
     // TODO(@darzu): check layer masks
-    // TODO(@darzu): PERF. Is this really created every frame?!
-    const octObjs = new Map<number, AABB>(objs.map((o) => [o.id, o.aabb])); // TODO(@darzu): necessary?
+    octObjs.clear();
+    objs.forEach((o) => octObjs.set(o.id, o.aabb));
     const tree = octtree(octObjs, universeAABB);
     function octCheckOverlap(tree: OctTree) {
       // check ea obj
@@ -456,6 +458,7 @@ function octtree(parentObjs: Map<number, AABB>, aabb: AABB): OctTree | null {
       children: [null, null, null, null, null, null, null, null],
     };
   const childAABBs: AABB[] = [];
+  // TODO(@darzu): PERF. way too much alloc'ing here!
   for (let xMin of [aabb.min[0], aabb.min[0] + nextLen[0]]) {
     for (let yMin of [aabb.min[1], aabb.min[1] + nextLen[1]]) {
       for (let zMin of [aabb.min[2], aabb.min[2] + nextLen[2]]) {
@@ -564,20 +567,21 @@ export function copyAABB(out: AABB, a: AABB) {
   return out;
 }
 
-export function getAABBCorners(aabb: AABB): vec3[] {
-  const points: vec3[] = [
-    V(aabb.max[0], aabb.max[1], aabb.max[2]),
-    V(aabb.max[0], aabb.max[1], aabb.min[2]),
-    V(aabb.max[0], aabb.min[1], aabb.max[2]),
-    V(aabb.max[0], aabb.min[1], aabb.min[2]),
+// TODO(@darzu): too much alloc
+// export function getAABBCorners(aabb: AABB): vec3[] {
+//   const points: vec3[] = [
+//     V(aabb.max[0], aabb.max[1], aabb.max[2]),
+//     V(aabb.max[0], aabb.max[1], aabb.min[2]),
+//     V(aabb.max[0], aabb.min[1], aabb.max[2]),
+//     V(aabb.max[0], aabb.min[1], aabb.min[2]),
 
-    V(aabb.min[0], aabb.max[1], aabb.max[2]),
-    V(aabb.min[0], aabb.max[1], aabb.min[2]),
-    V(aabb.min[0], aabb.min[1], aabb.max[2]),
-    V(aabb.min[0], aabb.min[1], aabb.min[2]),
-  ];
-  return points;
-}
+//     V(aabb.min[0], aabb.max[1], aabb.max[2]),
+//     V(aabb.min[0], aabb.max[1], aabb.min[2]),
+//     V(aabb.min[0], aabb.min[1], aabb.max[2]),
+//     V(aabb.min[0], aabb.min[1], aabb.min[2]),
+//   ];
+//   return points;
+// }
 
 const tempAabbCorners: vec3[] = range(8).map((_) => vec3.create());
 export function getAABBCornersTemp(aabb: AABB): vec3[] {

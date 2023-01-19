@@ -270,7 +270,11 @@ g.cameraFollow.pitchOffset = ${target.cameraFollow.pitchOffset.toFixed(3)};
         !e[0].endsWith("(<anonymous>)")
     );
     ents.sort((a, b) => b[1] - a[1]);
-    console.dir(ents);
+    let res = ``;
+    for (let [ln, num] of ents) {
+      res += `${ln}: ${((num * 4) / 1024).toFixed(1)}kb\n`;
+    }
+    console.log(res);
   },
   summarizeStats: () => {
     let stats = EM.sysStats;

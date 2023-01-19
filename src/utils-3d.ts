@@ -7,13 +7,16 @@ import { tempVec2, tempVec3 } from "./temp-pool.js";
 //  to subsume gl-matrix into our own libraries.
 
 // math utilities
-export function computeTriangleNormal(p1: vec3, p2: vec3, p3: vec3): vec3 {
+const _t1 = vec3.create();
+const _t2 = vec3.create();
+export function computeTriangleNormal(
+  p1: vec3,
+  p2: vec3,
+  p3: vec3,
+  out?: vec3
+): vec3 {
   // cross product of two edges, https://www.khronos.org/opengl/wiki/Calculating_a_Surface_Normal
-  const n = vec3.cross(
-    vec3.sub(p2, p1, vec3.create()),
-    vec3.sub(p3, p1, vec3.create()),
-    vec3.create()
-  );
+  const n = vec3.cross(vec3.sub(p2, p1, _t1), vec3.sub(p3, p1, _t2), out);
   vec3.normalize(n, n);
   return n;
 }
@@ -200,7 +203,7 @@ export function positionAndTargetToOrthoViewProjMatrix(
 ): mat4 {
   const viewMatrix = out;
   mat4.lookAt(position, target, [0, 1, 0], viewMatrix);
-  const projectionMatrix = mat4.create();
+  const projectionMatrix = mat4.tmp();
   const dist = vec3.dist(position, target);
   {
     const left = -80;

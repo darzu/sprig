@@ -961,13 +961,15 @@ export function startBundleRenderer(
   let seenTextures: Set<string> = new Set();
   let seenDepthTextures: Set<string> = new Set();
 
+  const black4 = V(0, 0, 0, 1);
+
   function render(p: CyRenderPipeline, bundle: GPURenderBundle) {
     let colorAttachments: GPURenderPassColorAttachment[] = p.output.map((o) => {
       const isFirst = !seenTextures.has(o.ptr.name);
       seenTextures.add(o.ptr.name);
       let tex = resources.kindToNameToRes.texture[o.ptr.name]!;
       const doClear = isFirst ? o.clear === "once" : o.clear === "always";
-      const defaultColor = o.defaultColor ?? vec4.fromValues(0, 0, 0, 1);
+      const defaultColor = o.defaultColor ?? black4;
       const viewOverride = o.ptr.attachToCanvas
         ? context.getCurrentTexture().createView()
         : undefined;

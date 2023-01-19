@@ -130,12 +130,12 @@ function computeGrassVertsData(
     const dIdx = provVi - startIdx;
     // TODO(@darzu): add support for writting to all three vertices (for non-provoking vertex setups)
     // TODO(@darzu): what to do about normals. If we're modifying verts, they need to recompute. But it might be in the mesh.
-    const normal = computeTriangleNormal(
+    computeTriangleNormal(
       m.pos[triInd[0]],
       m.pos[triInd[1]],
-      m.pos[triInd[2]]
+      m.pos[triInd[2]],
+      tempVertsData[dIdx].normal
     );
-    tempVertsData[dIdx].normal = normal;
     const faceIdx = i + m.quad.length; // quads first
     // TODO(@darzu): QUAD DATA BEING FIRST BUT TRIANGLES INDICES BEING FIRST IS INCONSISTENT
     // tempVertsData[dIdx].color = m.colors[faceIdx];
@@ -149,12 +149,12 @@ function computeGrassVertsData(
     if (provVi < startIdx || startIdx + count <= provVi) return;
 
     const dIdx = provVi - startIdx;
-    const normal = computeTriangleNormal(
+    computeTriangleNormal(
       m.pos[quadInd[0]],
       m.pos[quadInd[1]],
-      m.pos[quadInd[2]]
+      m.pos[quadInd[2]],
+      tempVertsData[dIdx].normal
     );
-    tempVertsData[dIdx].normal = normal;
     const faceIdx = i; // quads first
     // TODO(@darzu): QUAD DATA BEING FIRST BUT TRIANGLES INDICES BEING FIRST IS INCONSISTENT
     // tempVertsData[dIdx].color = m.colors[faceIdx];
