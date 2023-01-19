@@ -39,7 +39,7 @@ const ALL_GAMES = [
   "cloth", // broken-ish
   "cube",
 ] as const;
-const GAME: typeof ALL_GAMES[number] = "smol";
+const GAME: typeof ALL_GAMES[number] = "hyperspace";
 
 // Run simulation with a fixed timestep @ 60hz
 const TIMESTEP = 1000 / 60;

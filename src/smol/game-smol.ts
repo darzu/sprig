@@ -441,6 +441,8 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
       let redHurt = false;
 
       // update world texture data
+      // TODO(@darzu): PERF! track min/max window that is actually updated and send
+      //    smaller than window updates to GPU!
       for (let xi = winXi; xi < winXi + winWi; xi++) {
         for (let yi = winYi; yi < winYi + winHi; yi++) {
           const z = texXToWorldZ(xi);

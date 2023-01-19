@@ -74,24 +74,6 @@ export const GrassUniStruct = createCyStruct(
 export type GrassUniTS = CyToTS<typeof GrassUniStruct.desc>;
 export type GrassMeshHandle = MeshHandle;
 
-export const grassVertsPtr = CY.createArray("grassVertsBuf", {
-  struct: GrassVertStruct,
-  init: MAX_GRASS_VERTS,
-});
-
-const grassTriIndsPtr = CY.createIdxBuf("grassTriIndsBuf", {
-  init: MAX_GRASS_VERTS * 3,
-});
-
-const grassLineIndsPtr = CY.createIdxBuf("grassLineIndsBuf", {
-  init: MAX_GRASS_VERTS * 2,
-});
-
-const grassUnisPtr = CY.createArray("grassUni", {
-  struct: GrassUniStruct,
-  init: MAX_GRASS_MESHES,
-});
-
 function createEmptyVertexTS(): GrassVertTS {
   return {
     position: vec3.create(),
@@ -187,10 +169,18 @@ export const grassPoolPtr = CY.createMeshPool("grassPool", {
   // TODO(@darzu): per-mesh unis should maybe be optional? I don't think
   //     the grass needs them
   computeUniData: computeGrassUniData,
-  vertsPtr: grassVertsPtr,
-  unisPtr: grassUnisPtr,
-  triIndsPtr: grassTriIndsPtr,
-  lineIndsPtr: grassLineIndsPtr,
+  vertsPtr: CY.createArray("grassVertsBuf", {
+    struct: GrassVertStruct,
+    init: MAX_GRASS_VERTS,
+  }),
+  unisPtr: CY.createArray("grassUni", {
+    struct: GrassUniStruct,
+    init: MAX_GRASS_MESHES,
+  }),
+  triIndsPtr: CY.createIdxBuf("grassTriIndsBuf", { init: MAX_GRASS_VERTS * 3 }),
+  lineIndsPtr: CY.createIdxBuf("grassLineIndsBuf", {
+    init: MAX_GRASS_VERTS * 2,
+  }),
   // TODO(@darzu): this dataDef is v weird
   dataDef: RenderDataGrassDef,
 });
