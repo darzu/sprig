@@ -94,11 +94,11 @@ const meshVertsPtr = CY.createArray("meshVertsBuf", {
 });
 
 const meshTriIndsPtr = CY.createIdxBuf("meshTriIndsBuf", {
-  init: () => MAX_VERTICES * 3,
+  init: MAX_VERTICES * 3,
 });
 
 const meshLineIndsPtr = CY.createIdxBuf("meshLineIndsBuf", {
-  init: () => MAX_VERTICES * 2,
+  init: MAX_VERTICES * 2,
 });
 
 const meshUnisPtr = CY.createArray("meshUni", {

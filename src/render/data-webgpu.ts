@@ -289,10 +289,10 @@ export function createCyArray<O extends CyStructDesc>(
 
 export function createCyIdxBuf(
   device: GPUDevice,
-  lenOrData: number | Uint16Array
+  length: number,
+  data?: Uint16Array
 ): CyIdxBuffer {
-  const hasInitData = !isNumber(lenOrData);
-  const length = hasInitData ? lenOrData.length : lenOrData;
+  const hasInitData = !!data;
 
   const size = align(length * Uint16Array.BYTES_PER_ELEMENT, 4);
   // console.log(`idx size: ${size}`);
@@ -311,7 +311,6 @@ export function createCyIdxBuf(
   };
 
   if (hasInitData) {
-    const data = lenOrData;
     const mappedBuf = new Uint16Array(_buf.getMappedRange());
     assert(mappedBuf.length >= data.length, "mappedBuf.length >= data.length");
     mappedBuf.set(data);

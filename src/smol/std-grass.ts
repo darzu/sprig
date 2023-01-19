@@ -125,11 +125,11 @@ export const grassVertsPtr = CY.createArray("grassVertsBuf", {
 });
 
 const grassTriIndsPtr = CY.createIdxBuf("grassTriIndsBuf", {
-  init: () => MAX_GRASS_VERTS * 3,
+  init: MAX_GRASS_VERTS * 3,
 });
 
 const grassLineIndsPtr = CY.createIdxBuf("grassLineIndsBuf", {
-  init: () => MAX_GRASS_VERTS * 2,
+  init: MAX_GRASS_VERTS * 2,
 });
 
 const grassUnisPtr = CY.createArray("grassUni", {

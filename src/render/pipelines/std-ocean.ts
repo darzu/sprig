@@ -111,11 +111,11 @@ export const oceanVertsPtr = CY.createArray("oceanVertsBuf", {
 });
 
 const oceanTriIndsPtr = CY.createIdxBuf("oceanTriIndsBuf", {
-  init: () => MAX_OCEAN_VERTS * 3,
+  init: MAX_OCEAN_VERTS * 3,
 });
 
 const oceanLineIndsPtr = CY.createIdxBuf("oceanLineIndsBuf", {
-  init: () => MAX_OCEAN_VERTS * 2,
+  init: MAX_OCEAN_VERTS * 2,
 });
 
 const oceanUnisPtr = CY.createArray("oceanUni", {

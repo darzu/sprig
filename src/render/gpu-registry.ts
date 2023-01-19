@@ -24,7 +24,7 @@ export interface CyResourcePtr<K extends PtrKind = PtrKind> {
 // BUFFERS
 export interface CyIdxBufferPtr extends CyResourcePtr {
   kind: "idxBuffer";
-  init: () => Uint16Array | number;
+  init: (() => Uint16Array) | number;
 }
 
 export interface CyArrayPtr<O extends CyStructDesc> extends CyResourcePtr {

@@ -231,7 +231,9 @@ export function createCyResources(
   });
   // create idx-buffers
   cy.kindToPtrs.idxBuffer.forEach((r) => {
-    const buf = createCyIdxBuf(device, r.init());
+    const data = typeof r.init === "function" ? r.init() : undefined;
+    const length: number = data ? data.length : (r.init as number);
+    const buf = createCyIdxBuf(device, length, data);
     kindToNameToRes.idxBuffer[r.name] = buf;
     if (PERF_DBG_GPU) {
       console.log(`CyIdx ${r.name}: ${buf.size}b`);
