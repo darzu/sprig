@@ -1,10 +1,13 @@
 import { CameraFollowDef } from "./camera.js";
 import { ComponentDef, EM, Entity, EntityW } from "./entity-manager.js";
-import { PERF_DBG_F32S, PERF_DBG_F32S_ALLOCS } from "./flags.js";
+import {
+  PERF_DBG_F32S,
+  PERF_DBG_F32S_BLAME,
+  PERF_DBG_GPU_BLAME,
+} from "./flags.js";
 import { SyncDef } from "./net/components.js";
 import { PositionDef, RotationDef } from "./physics/transform.js";
-import { _f32sLineMap } from "./sprig-matrix.js";
-import { assert } from "./util.js";
+import { assert, dbgClearBlame, dbgGetBlame } from "./util.js";
 import { quatDbg, vec3Dbg, vec4Dbg } from "./utils-3d.js";
 
 // TODO(@darzu): debugging helpers
@@ -258,16 +261,35 @@ g.cameraFollow.pitchOffset = ${target.cameraFollow.pitchOffset.toFixed(3)};
     console.log(EM.labelSolver.dbgInfo() + `\n` + EM.dbgEntityPromises());
   },
   f32sBlameClear: () => {
-    assert(PERF_DBG_F32S_ALLOCS);
-    _f32sLineMap.clear();
+    assert(PERF_DBG_F32S_BLAME);
+    dbgClearBlame("f32s");
   },
   f32sBlame: () => {
-    assert(PERF_DBG_F32S_ALLOCS);
-    const ents = [..._f32sLineMap.entries()].filter(
+    assert(PERF_DBG_F32S_BLAME);
+    const ents = [...dbgGetBlame("f32s")!.entries()].filter(
       (e) =>
         e[0] !== "Error" &&
         !e[0].includes("sprig-matrix.js") &&
         !e[0].endsWith("(<anonymous>)")
+    );
+    ents.sort((a, b) => b[1] - a[1]);
+    let res = ``;
+    for (let [ln, num] of ents) {
+      res += `${ln}: ${((num * 4) / 1024).toFixed(1)}kb\n`;
+    }
+    console.log(res);
+  },
+  gpuBlameClear: () => {
+    assert(PERF_DBG_GPU_BLAME);
+    dbgClearBlame("gpu");
+  },
+  gpuBlame: () => {
+    assert(PERF_DBG_GPU_BLAME);
+    const ents = [...dbgGetBlame("gpu")!.entries()].filter(
+      (e) => e[0] !== "Error"
+      // &&
+      // !e[0].includes("sprig-matrix.js") &&
+      // !e[0].endsWith("(<anonymous>)")
     );
     ents.sort((a, b) => b[1] - a[1]);
     let res = ``;

@@ -1,5 +1,6 @@
-import { PERF_DBG_F32S, PERF_DBG_F32S_ALLOCS } from "./flags.js";
+import { PERF_DBG_F32S, PERF_DBG_F32S_BLAME } from "./flags.js";
 import * as GLM from "./gl-matrix.js";
+import { dbgAddBlame } from "./util.js";
 
 interface Float32ArrayOfLength<N extends number> extends Float32Array {
   length: N;
@@ -61,20 +62,14 @@ let eg_vec3: vec3 = vec3.create() as vec3;
 // eg_vec3fr = eg_vec3r; // illegal (could be temp)
 */
 
-export let _f32sLineMap = new Map<string, number>();
 export let _f32sCount = 0; // TODO(@darzu): PERF DBG!
 // TODO(@darzu): perhaps all non-temp (and temp) vecs should be suballocations on bigger Float32Arrays
 //    this might give some perf wins w/ cache hits
 function float32ArrayOfLength<N extends number>(n: N): Float32ArrayOfLength<N> {
   if (PERF_DBG_F32S) _f32sCount += n; // TODO(@darzu): PERF. very inner-loop. does this have a perf cost even when the flag is disabled?
   // console.log(new Error().stack!);
-  if (PERF_DBG_F32S_ALLOCS) {
-    new Error()
-      .stack!.split("\n")
-      .map((ln) => ln.trim())
-      .forEach((ln) => {
-        _f32sLineMap.set(ln, (_f32sLineMap.get(ln) ?? 0) + n);
-      });
+  if (PERF_DBG_F32S_BLAME) {
+    dbgAddBlame("f32s", n);
   }
   return new Float32Array(n) as Float32ArrayOfLength<N>;
 }

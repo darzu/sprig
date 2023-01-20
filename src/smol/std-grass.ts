@@ -237,6 +237,8 @@ export const renderGrassPipe = CY.createRenderPipeline("grassRender", {
   `,
 });
 
+const _lastTilePos = new Map<number, vec3>();
+
 onInit((em) => {
   em.registerSystem(
     [RenderableDef, RenderDataGrassDef, RendererWorldFrameDef],
@@ -244,6 +246,17 @@ onInit((em) => {
     (objs, res) => {
       const pool = res.renderer.renderer.getCyResource(grassPoolPtr)!;
       for (let o of objs) {
+        let lastPos = _lastTilePos.get(o.id);
+        if (!lastPos) {
+          lastPos = V(Infinity, Infinity, Infinity);
+          _lastTilePos.set(o.id, lastPos);
+        }
+        const newPos = mat4.getTranslation(o.rendererWorldFrame.transform);
+        if (vec3.sqrDist(lastPos, newPos) < 0.01) {
+          continue;
+        }
+        vec3.copy(lastPos, newPos);
+
         // TODO(@darzu): do we need all this for grass?
         // color / tint
         if (ColorDef.isOn(o)) {

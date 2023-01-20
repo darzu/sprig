@@ -127,6 +127,8 @@ export function createGrassTile(opts: GrassTileOpts): Mesh {
   return m2;
 }
 
+// export const GrassTileDef = EM.defineComponent("grassTile", () => true);
+
 type GrassTile = EntityW<[typeof PositionDef]>;
 
 interface GrassTileset {

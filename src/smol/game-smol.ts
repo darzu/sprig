@@ -127,9 +127,7 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
         renderGrassPipe,
         outlineRender,
         postProcess,
-        ...(res.dev.showConsole
-          ? [...mapJfa.allPipes(), ...dbgGridCompose]
-          : []),
+        ...(res.dev.showConsole ? dbgGridCompose : []),
       ];
     },
     "smolGameRenderPipelines"
@@ -152,7 +150,10 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
   em.requireSystem("updateScoreDisplay");
   em.requireSystem("detectGameEnd");
   // start map
-  setMap(em, "obstacles1");
+  await setMap(em, "obstacles1");
+
+  // TODO(@darzu):
+  res.renderer.renderer.submitPipelines([], [...mapJfa.allPipes()]);
 
   // ground
   const ground = em.new();
@@ -431,8 +432,6 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
         return;
       }
 
-      const windowData = getArrayForBox(winWi, winHi);
-
       const shipW = selfAABB.max[0] - selfAABB.min[0];
       const shipH = selfAABB.max[2] - selfAABB.min[2];
       let healthChanges = 0;
@@ -443,6 +442,10 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
       // update world texture data
       // TODO(@darzu): PERF! track min/max window that is actually updated and send
       //    smaller than window updates to GPU!
+      let minWinXi = Infinity;
+      let maxWinXi = -Infinity;
+      let minWinYi = Infinity;
+      let maxWinYi = -Infinity;
       for (let xi = winXi; xi < winXi + winWi; xi++) {
         for (let yi = winYi; yi < winYi + winHi; yi++) {
           const z = texXToWorldZ(xi);
@@ -468,7 +471,7 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
             const color = res.grassMap.map[idx];
 
             if (ship.ld52ship.cuttingEnabled) {
-              if (worldCutData[idx] != 1) {
+              if (worldCutData[idx] < 1) {
                 // we are cutting this grass for the first time
                 if (color < 0.1) {
                   // green
@@ -483,8 +486,12 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
                   // purple
                   cutPurple += 1;
                 }
+                minWinXi = Math.min(minWinXi, xi);
+                maxWinXi = Math.max(maxWinXi, xi);
+                minWinYi = Math.min(minWinYi, yi);
+                maxWinYi = Math.max(maxWinYi, yi);
+                worldCutData[idx] = 1;
               }
-              worldCutData[idx] = 1;
             } else {
               if (0.1 < color && color < 0.6) {
                 // red
@@ -509,18 +516,29 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
       res.score.cutPurple += cutPurple;
 
       // copy from world texture data to update window
-      for (let xi = winXi; xi < winXi + winWi; xi++) {
-        for (let yi = winYi; yi < winYi + winHi; yi++) {
-          const worldIdx = xi + yi * WORLD_WIDTH;
-          const val = worldCutData[worldIdx];
-          const winIdx = xi - winXi + (yi - winYi) * winWi;
-          windowData[winIdx] = val;
+      const hasUpdate = minWinXi <= maxWinXi && minWinYi <= maxWinYi;
+      // console.log(`hasUpdate: ${hasUpdate}`);
+      if (hasUpdate) {
+        const innerWinW = maxWinXi - minWinXi + 1;
+        const innerWinH = maxWinYi - minWinYi + 1;
+        const windowData = getArrayForBox(innerWinW, innerWinH);
+        for (let xi = minWinXi; xi <= maxWinXi; xi++) {
+          for (let yi = minWinYi; yi <= maxWinYi; yi++) {
+            const worldIdx = xi + yi * WORLD_WIDTH;
+            const val = worldCutData[worldIdx];
+            const winIdx = xi - minWinXi + (yi - minWinYi) * innerWinW;
+            windowData[winIdx] = val;
+          }
         }
+        grassCutTex.queueUpdate(
+          windowData,
+          minWinXi,
+          minWinYi,
+          innerWinW,
+          innerWinH
+        );
       }
-
       // console.dir(data);
-
-      grassCutTex.queueUpdate(windowData, winXi, winYi, winWi, winHi);
 
       // rasterizeTri
     },

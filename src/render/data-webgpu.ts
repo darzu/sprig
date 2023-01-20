@@ -1,5 +1,5 @@
 import { align } from "../math.js";
-import { assert, assertDbg } from "../util.js";
+import { assert, assertDbg, dbgAddBlame } from "../util.js";
 import { dbgLogOnce, isNumber } from "../util.js";
 import {
   CyStructDesc,
@@ -23,7 +23,7 @@ import { MeshPool } from "./mesh-pool.js";
 import { BLACK } from "../assets.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { GPUBufferUsage } from "./webgpu-hacks.js";
-import { PERF_DBG_GPU } from "../flags.js";
+import { PERF_DBG_GPU, PERF_DBG_GPU_BLAME } from "../flags.js";
 
 export interface CyBuffer<O extends CyStructDesc> {
   struct: CyStruct<O>;
@@ -180,6 +180,7 @@ export function createCySingleton<O extends CyStructDesc>(
     assertDbg(b.byteLength % 4 === 0, `alignment`);
     device.queue.writeBuffer(_buf, 0, b);
     if (PERF_DBG_GPU) _gpuQueueBufferWriteBytes += b.byteLength;
+    if (PERF_DBG_GPU_BLAME) dbgAddBlame("gpu", b.byteLength);
   }
 
   function binding(idx: number, plurality: "one" | "many"): GPUBindGroupEntry {
@@ -243,7 +244,8 @@ export function createCyArray<O extends CyStructDesc>(
     assertDbg(bufOffset % 4 === 0, `alignment`);
     assertDbg(b.length % 4 === 0, `alignment`);
     device.queue.writeBuffer(_buf, bufOffset, b);
-    if (PERF_DBG_GPU) _gpuQueueBufferWriteBytes += b.length;
+    if (PERF_DBG_GPU) _gpuQueueBufferWriteBytes += b.byteLength;
+    if (PERF_DBG_GPU_BLAME) dbgAddBlame("gpu", b.byteLength);
   }
 
   // TODO(@darzu): somewhat hacky way to reuse Uint8Arrays here; we could do some more global pool
@@ -274,6 +276,7 @@ export function createCyArray<O extends CyStructDesc>(
     assertDbg(bufOffset % 4 === 0, `alignment`);
     device.queue.writeBuffer(_buf, bufOffset, serialized, 0, dataSize);
     if (PERF_DBG_GPU) _gpuQueueBufferWriteBytes += dataSize;
+    if (PERF_DBG_GPU_BLAME) dbgAddBlame("gpu", dataSize);
   }
 
   function binding(idx: number, plurality: "one" | "many"): GPUBindGroupEntry {
@@ -323,6 +326,7 @@ export function createCyIdxBuf(
     assertDbg(startByte % 4 === 0, `alignment`);
     device.queue.writeBuffer(_buf, startByte, data);
     if (PERF_DBG_GPU) _gpuQueueBufferWriteBytes += data.byteLength;
+    if (PERF_DBG_GPU_BLAME) dbgAddBlame("gpu", data.byteLength);
   }
 
   return buf;

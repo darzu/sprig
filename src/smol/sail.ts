@@ -39,6 +39,7 @@ import { createRef } from "../em_helpers.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import { WindDef } from "./wind.js";
 import { YawPitchDef } from "../yawpitch.js";
+import { assert } from "../util.js";
 
 const SAIL_TURN_SPEED = 5;
 export const SAIL_FURL_RATE = 0.02;
@@ -153,37 +154,47 @@ EM.registerSystem(
   "applyWindToSail"
 );
 
+let _lastSailBillow = 0;
+let _lastSailUnfurl = 0;
 EM.registerSystem(
   [SailDef, RenderableDef],
   [RendererDef],
   (es, { renderer }) => {
-    for (let e of es) {
-      // NOTE: this cast is only safe so long as we're sure this mesh isn't being shared
-      const m = e.renderable.meshHandle.mesh! as Mesh;
-      m.pos.forEach((p, i) => {
-        const originalIndex = e.sail.posMap.get(i)!;
-        let y = Math.floor(originalIndex / (e.sail.width + 1));
-        let parabY;
-        if (e.sail.height % 2 == 0) {
-          parabY = y - e.sail.height / 2;
+    assert(es.length <= 1);
+    if (!es.length) return;
+    const e = es[0];
+    if (
+      Math.abs(e.sail.billowAmount - _lastSailBillow) < 0.01 &&
+      Math.abs(e.sail.unfurledAmount - _lastSailUnfurl) < 0.01
+    )
+      // no change
+      return;
+    // NOTE: this cast is only safe so long as we're sure this mesh isn't being shared
+    const m = e.renderable.meshHandle.mesh! as Mesh;
+    m.pos.forEach((p, i) => {
+      const originalIndex = e.sail.posMap.get(i)!;
+      let y = Math.floor(originalIndex / (e.sail.width + 1));
+      let parabY;
+      if (e.sail.height % 2 == 0) {
+        parabY = y - e.sail.height / 2;
+      } else {
+        if (y < e.sail.height / 2) {
+          parabY = y - Math.ceil(e.sail.height / 2);
         } else {
-          if (y < e.sail.height / 2) {
-            parabY = y - Math.ceil(e.sail.height / 2);
-          } else {
-            parabY = y - Math.floor(e.sail.height / 2);
-          }
+          parabY = y - Math.floor(e.sail.height / 2);
         }
-        p[2] = -(
-          e.sail.billowAmount *
-          BILLOW_FACTOR *
-          e.sail.unfurledAmount *
-          (parabY ** 2 - Math.ceil(e.sail.height / 2) ** 2)
-        );
-        p[1] = -y * e.sail.unfurledAmount;
-      });
-      // TODO: perf: detect when we actually need to update this
-      renderer.renderer.stdPool.updateMeshVertices(e.renderable.meshHandle, m);
-    }
+      }
+      p[2] = -(
+        e.sail.billowAmount *
+        BILLOW_FACTOR *
+        e.sail.unfurledAmount *
+        (parabY ** 2 - Math.ceil(e.sail.height / 2) ** 2)
+      );
+      p[1] = -y * e.sail.unfurledAmount;
+    });
+    renderer.renderer.stdPool.updateMeshVertices(e.renderable.meshHandle, m);
+    _lastSailBillow = e.sail.billowAmount;
+    _lastSailUnfurl = e.sail.unfurledAmount;
   },
   "billow"
 );

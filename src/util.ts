@@ -299,3 +299,24 @@ export function boxInBox(
   // larger aspect-ratio means "more landscape", so we're height-constrained
   else return boundH * childAR;
 }
+
+let blameMaps = new Map<string, Map<string, number>>();
+export function dbgAddBlame(kind: string, amount: number) {
+  let map = blameMaps.get(kind);
+  if (!map) {
+    map = new Map<string, number>();
+    blameMaps.set(kind, map);
+  }
+  new Error()
+    .stack!.split("\n")
+    .map((ln) => ln.trim())
+    .forEach((ln) => {
+      map!.set(ln, (map!.get(ln) ?? 0) + amount);
+    });
+}
+export function dbgGetBlame(kind: string) {
+  return blameMaps.get(kind);
+}
+export function dbgClearBlame(kind: string) {
+  blameMaps.get(kind)?.clear();
+}
