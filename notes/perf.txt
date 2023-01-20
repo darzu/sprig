@@ -284,3 +284,35 @@ FinalizationRegistry:
   "A FinalizationRegistry object lets you request a callback when an object is garbage-collected."
   This might let us track non-garbage collected objects!
   
+"Memory in Javascript— Beyond Leaks":
+  https://medium.com/walkme-engineering/memory-in-javascript-beyond-leaks-8c1d697c655c
+  eh, nothing new here.
+
+Measuring cache misses?
+  https://perf.wiki.kernel.org/index.php/Tutorial#Counting_with_perf_stat
+  https://www.quora.com/Whats-the-easiest-way-to-profile-my-application-to-see-the-CPU-cache-L1-L2-hit-miss-ratio-on-Linux
+  https://stackoverflow.com/questions/34325735/how-to-measure-l1-l2-l3-cache-hits-misses-in-osx
+  https://developers.redhat.com/blog/2014/03/10/determining-whether-an-application-has-poor-cache-performance-2
+    Performance Monitoring Units "PMU" hardware
+    https://en.wikipedia.org/wiki/Hardware_performance_counter
+
+Apple GPU perf counters:
+  https://developer.apple.com/documentation/metal/performance_tuning/optimizing_performance_with_gpu_counters
+
+Optimizing for Apple Silicon:
+  https://developer.apple.com/documentation/apple-silicon/tuning-your-code-s-performance-for-apple-silicon
+
+Apple Instruments wwdc vids:
+  https://developer.apple.com/videos/play/wwdc2019/411/
+  https://developer.apple.com/videos/play/wwdc2018/410/
+  https://developer.apple.com/videos/play/wwdc2022/10106/
+  https://developer.apple.com/videos/play/wwdc2021/10211/
+
+"Go Bindless:"
+  https://developer.apple.com/videos/play/wwdc2022/10101
+
+Chrome Alloc profiler tool:
+  https://developer.chrome.com/docs/devtools/memory-problems/allocation-profiler/
+
+V8 dev:
+  https://stackoverflow.com/users/6036428/jmrk

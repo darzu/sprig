@@ -154,7 +154,9 @@ export class EntityManager {
   labelSolver = createLabelSolver();
 
   constructor() {
-    this.ent0 = { id: 0 };
+    const ent0 = Object.create(null); // no prototype
+    ent0.id = 0;
+    this.ent0 = ent0 as Entity & { id: 0 };
     this.entities.set(0, this.ent0);
     // TODO(@darzu): maintain _entitiesToSystems for ent 0?
   }
@@ -171,7 +173,9 @@ export class EntityManager {
       name,
       construct,
       id,
-      isOn: <E extends Entity>(e: E): e is E & { [K in N]: P } => name in e,
+      isOn: <E extends Entity>(e: E): e is E & { [K in N]: P } =>
+        // (e as Object).hasOwnProperty(name),
+        name in e,
     };
     this.components.set(id, component);
     return component;
@@ -248,7 +252,11 @@ export class EntityManager {
     }
     if (range.nextId >= range.maxId)
       throw `EntityManager has exceeded its id range!`;
-    const e = { id: range.nextId++ };
+    // TODO(@darzu): does it matter using Object.create(null) here? It's kinda cleaner
+    //  to not have a prototype (toString etc).
+    // const e = { id: range.nextId++ };
+    const e = Object.create(null);
+    e.id = range.nextId++;
     if (e.id > 2 ** 15)
       console.warn(
         `We're halfway through our local entity ID space! Physics assumes IDs are < 2^16`
@@ -264,7 +272,9 @@ export class EntityManager {
     if (this.nextId <= id && id < this.maxId)
     throw `EntityManager cannot register foreign ids inside its local range; ${this.nextId} <= ${id} && ${id} < ${this.maxId}!`;
     */
-    const e = { id: id };
+    // const e = { id: id };
+    const e = Object.create(null); // no prototype
+    e.id = id;
     this.entities.set(e.id, e);
     this._entitiesToSystems.set(e.id, []);
     return e;

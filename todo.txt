@@ -25,6 +25,7 @@ BIG FEATURES:
 [ ] Basic textures on meshes
 [ ] Skeletal animation
 [ ] Sound and music player for 3d party sound
+[ ] TS static tools for refactor and perf
 
 QUALITY-OF-LIFE:
 [ ] EM usability
