@@ -5,6 +5,7 @@ BIG REFACTORS / DEBT:
   Now that we have dependencies DAG we need to make sure our physics, networking, rendering, gameplay stuff happens in the right order.
 [ ] Multi-game seperation
   Right now we have a bunch of duplicate "ship", "player", "enemy", "cannon" code thats different for the different games. This should be unified or seperated out more cleanly. Long term of course engine and game need to be more seperate.
+    [ ] unify ships and sails to all use uv pos and dir
 [ ] EM seperation
   right now EM is sort of a dumping ground for all global registration and book keeping, this can probably be seperate into multiple different registrers
 [ ] components-as-columns & cache perf
@@ -14,7 +15,9 @@ BIG REFACTORS / DEBT:
   capture well what different data different assets have/need.
   [ ] compute{Grass,Ocean,Std}VertsData has a lot of duplication
 [ ] Re-enable smoothing and fix perf (disabled for LD51)
-[ ] timestep stuff: Re-enable, fix perf, and clarify (disabled for LD51)
+[ ] Re-enable timestep stuff and fix perf and clarify (disabled for LD51)
+[ ] Re-enable multiple shadow casters
+[ ] Unify shader code snippets like getShadowVis
 
 BIG FEATURES:
 [ ] Multiplayer reconnect

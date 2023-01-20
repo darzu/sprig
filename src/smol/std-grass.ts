@@ -233,7 +233,7 @@ export const renderGrassPipe = CY.createRenderPipeline("grassRender", {
   depthStencil: mainDepthTex,
   shader: (shaderSet) => `
   ${shaderSet["std-rand"].code}
-  ${shaderSet["xp-grass"].code}
+  ${shaderSet["std-grass"].code}
   `,
 });
 
