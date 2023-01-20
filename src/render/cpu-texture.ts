@@ -19,8 +19,16 @@ export interface TextureReader<A extends 1 | 2 | 3 | 4> {
   data: ArrayBuffer;
   format: GPUTextureFormat;
   outArity: A;
-  read: (out: ArityToVec<A>, xi: number, yi: number) => ArityToVec<A>;
-  sample: (out: ArityToVec<A>, x: number, y: number) => ArityToVec<A>;
+  read: (
+    xi: number,
+    yi: number,
+    out?: A extends 1 ? undefined : ArityToVec<A>
+  ) => ArityToVec<A>;
+  sample: (
+    x: number,
+    y: number,
+    out?: A extends 1 ? undefined : ArityToVec<A>
+  ) => ArityToVec<A>;
 }
 
 // TODO(@darzu): we want a whole CPU-side texture library including
@@ -58,29 +66,34 @@ export function createTextureReader<A extends 1 | 2 | 3 | 4>(
   }
 
   function read(
-    out: number | vec2 | vec3 | vec4,
     x: number,
-    y: number
+    y: number,
+    out?: number | vec2 | vec3 | vec4
   ): number | vec2 | vec3 | vec4 {
     // TODO(@darzu): share code with sample
     const xi = clamp(Math.round(x), 0, size[0] - 1);
     const yi = clamp(Math.round(y), 0, size[1] - 1);
     const idx = getIdx(xi, yi);
 
-    assert(typeof out === "number" || out.length === outArity);
+    assert(typeof out === "number" || !out || out.length === outArity);
     if (outArity === 1) {
       return f32[idx];
     } else if (outArity === 2) {
-      return vec2.set(f32[idx], f32[idx + 1], out as vec2);
+      return vec2.set(f32[idx], f32[idx + 1], (out ?? vec2.tmp()) as vec2);
     } else if (outArity === 3) {
-      return vec3.set(f32[idx], f32[idx + 1], f32[idx + 2], out as vec3);
+      return vec3.set(
+        f32[idx],
+        f32[idx + 1],
+        f32[idx + 2],
+        (out ?? vec3.tmp()) as vec3
+      );
     } else if (outArity === 4) {
       return vec4.set(
         f32[idx + 0],
         f32[idx + 1],
         f32[idx + 2],
         f32[idx + 3],
-        out as vec4
+        (out ?? vec4.tmp()) as vec4
       );
     } else {
       never(outArity);
@@ -92,20 +105,20 @@ export function createTextureReader<A extends 1 | 2 | 3 | 4>(
     if (outArity === 1) {
       return read(0, xi, yi) === 0;
     } else if (outArity === 2) {
-      return vec2.equals(read(tempVec2(), xi, yi) as vec2, vec2.ZEROS);
+      return vec2.equals(read(xi, yi, tempVec2()) as vec2, vec2.ZEROS);
     } else if (outArity === 3) {
-      return vec3.equals(read(tempVec3(), xi, yi) as vec3, vec3.ZEROS);
+      return vec3.equals(read(xi, yi, tempVec3()) as vec3, vec3.ZEROS);
     } else if (outArity === 4) {
-      return vec4.equals(read(tempVec4(), xi, yi) as vec4, vec4.ZEROS);
+      return vec4.equals(read(xi, yi, tempVec4()) as vec4, vec4.ZEROS);
     } else {
       never(outArity);
     }
   }
 
   function sample(
-    out: number | vec2 | vec3 | vec4,
     x: number,
-    y: number
+    y: number,
+    out?: number | vec2 | vec3 | vec4
   ): number | vec2 | vec3 | vec4 {
     x = clamp(x, 0, size[0] - 1);
     y = clamp(y, 0, size[1] - 1);
@@ -150,20 +163,25 @@ export function createTextureReader<A extends 1 | 2 | 3 | 4>(
       return outA;
     }
 
-    assert(typeof out === "number" || out.length === outArity);
+    assert(typeof out === "number" || !out || out.length === outArity);
     if (outArity === 1) {
       return _sample(0);
     } else if (outArity === 2) {
-      return vec2.set(_sample(0), _sample(1), out as vec2);
+      return vec2.set(_sample(0), _sample(1), (out ?? vec2.tmp()) as vec2);
     } else if (outArity === 3) {
-      return vec3.set(_sample(0), _sample(1), _sample(2), out as vec3);
+      return vec3.set(
+        _sample(0),
+        _sample(1),
+        _sample(2),
+        (out ?? vec3.tmp()) as vec3
+      );
     } else if (outArity === 4) {
       return vec4.set(
         _sample(0),
         _sample(1),
         _sample(2),
         _sample(3),
-        out as vec4
+        (out ?? vec4.tmp()) as vec4
       );
     } else {
       never(outArity);

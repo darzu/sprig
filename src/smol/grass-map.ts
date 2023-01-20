@@ -67,34 +67,6 @@ export async function setMap(em: EntityManager, name: MapName) {
       }
     }
   }
-  // view.reverse().forEach((v, i) => {
-  //   if (
-  //     i % WIDTH === 0 ||
-  //     i % WIDTH === WIDTH - 1 ||
-  //     i < WIDTH ||
-  //     WIDTH * (HEIGHT - 1) < i
-  //   ) {
-  //     texBuf[i] = 0.5;
-  //     return;
-  //   }
-  //   dbgLogOnce(v + "");
-  //   switch (v) {
-  //     case GREEN:
-  //       texBuf[i] = 0.0;
-  //       break;
-  //     case PURPLE:
-  //       console.log("purple");
-  //       texBuf[i] = 1.0;
-  //       totalPurple++;
-  //       break;
-  //     case RED:
-  //       texBuf[i] = 0.5;
-  //       break;
-  //     default:
-  //       texBuf[i] = 0.0;
-  //       break;
-  //   }
-  // });
   const texResource = res.renderer.renderer.getCyResource(GrassMapTexPtr)!;
   texResource.queueUpdate(texBuf);
 

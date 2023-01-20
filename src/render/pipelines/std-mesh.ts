@@ -71,8 +71,8 @@ export const stdRenderPipeline = CY.createRenderPipeline("triRender", {
     // { ptr: clothTexPtr0, access: "read", alias: "clothTex" },
   ],
   // TODO(@darzu): hack for ld52
-  // cullMode: "back",
-  cullMode: "none",
+  cullMode: "back",
+  // cullMode: "none",
   meshOpt: {
     pool: meshPoolPtr,
     stepMode: "per-mesh-handle",

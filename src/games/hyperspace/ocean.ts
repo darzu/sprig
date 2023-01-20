@@ -170,7 +170,6 @@ export async function initOcean() {
     uvToTangTex.format
   );
 
-  // TODO(@darzu): SDF disabled b/c alignment issue
   const sdfReader = createTextureReader(
     sdfData,
     oceanJfa.sdfTex.size,
@@ -209,25 +208,25 @@ export async function initOcean() {
     const x = uv[0] * uvToPosReader.size[0];
     const y = uv[1] * uvToPosReader.size[1];
     // console.log(`${x},${y}`);
-    return uvToPosReader.sample(out, x, y);
+    return uvToPosReader.sample(x, y, out);
   };
   const uvToNorm = (out: vec3, uv: vec2) => {
     const x = uv[0] * uvToNormReader.size[0];
     const y = uv[1] * uvToNormReader.size[1];
     // console.log(`${x},${y}`);
-    return uvToNormReader.sample(out, x, y);
+    return uvToNormReader.sample(x, y, out);
   };
   const uvToTang = (out: vec3, uv: vec2) => {
     const x = uv[0] * uvToTangReader.size[0];
     const y = uv[1] * uvToTangReader.size[1];
     // console.log(`${x},${y}`);
-    return uvToTangReader.sample(out, x, y);
+    return uvToTangReader.sample(x, y, out);
   };
   // TODO(@darzu): re-enable
   const uvToEdgeDist = (uv: vec2) => {
     const x = uv[0] * uvToNormReader.size[0];
     const y = uv[1] * uvToNormReader.size[1];
-    return sdfReader.sample(NaN, x, y);
+    return sdfReader.sample(x, y);
   };
 
   const uvToGerstnerDispAndNorm = (outDisp: vec3, outNorm: vec3, uv: vec2) => {

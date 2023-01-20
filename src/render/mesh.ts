@@ -428,6 +428,12 @@ export function getHalfsizeFromAABB(aabb: AABB): vec3 {
   return out;
 }
 
+export function mutateMeshPositions(
+  m: RawMesh,
+  mutate: (p: vec3, i: number) => void
+) {
+  m.pos.forEach(mutate);
+}
 export function mapMeshPositions(
   m: RawMesh,
   map: (p: vec3, i: number) => vec3

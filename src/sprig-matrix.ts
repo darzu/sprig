@@ -95,7 +95,7 @@ export module vec2 {
   export type InputT = T | readonly [number, number];
   const GL = GLM.vec2;
 
-  function tmp(): T {
+  export function tmp(): T {
     return tmpArray(2);
   }
 

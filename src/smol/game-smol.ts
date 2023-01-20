@@ -26,7 +26,12 @@ import {
   RotationDef,
 } from "../physics/transform.js";
 import { PointLightDef } from "../render/lights.js";
-import { cloneMesh, transformMesh } from "../render/mesh.js";
+import {
+  cloneMesh,
+  mapMeshPositions,
+  mutateMeshPositions,
+  transformMesh,
+} from "../render/mesh.js";
 import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
@@ -56,6 +61,7 @@ import { VERBOSE_LOG } from "../flags.js";
 import { CanvasDef } from "../canvas.js";
 import { createJfaPipelines } from "../render/pipelines/std-jump-flood.js";
 import { createGridComposePipelines } from "../render/pipelines/std-compose.js";
+import { createTextureReader } from "../render/cpu-texture.js";
 
 /*
 TODO:
@@ -99,22 +105,8 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
 
   res.camera.fov = Math.PI * 0.5;
 
-  // res.renderer.renderer.submitPipelines(
-  //   [],
-  //   // [unwrapPipeline, unwrapPipeline2]
-  //   [...mapJfa.allPipes()]
-  // );
-
-  console.dir(mapJfa);
-  console.dir(dbgGridCompose);
-
-  // height map
-  // const heightMapRes = 0.25;
-  // const heightmapMesh = createFlatQuadMesh(WORLD_WIDTH, WORLD_HEIGHT);
-  // const hm = em.new();
-  // em.ensureComponentOn(hm, RenderableConstructDef, heightmapMesh);
-  // em.ensureComponentOn(hm, PositionDef);
-  // // TODO(@darzu): update heightmap from SDF
+  // console.dir(mapJfa);
+  // console.dir(dbgGridCompose);
 
   em.registerSystem(
     null,
@@ -149,11 +141,45 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
   const score = em.addResource(ScoreDef);
   em.requireSystem("updateScoreDisplay");
   em.requireSystem("detectGameEnd");
+
   // start map
   await setMap(em, "obstacles1");
 
-  // TODO(@darzu):
+  // once the map is loaded, we can run JFA
   res.renderer.renderer.submitPipelines([], [...mapJfa.allPipes()]);
+
+  // TODO(@darzu): simplify this pattern
+  const terraTex = await res.renderer.renderer.readTexture(mapJfa.sdfTex);
+  const terraReader = createTextureReader(
+    terraTex,
+    mapJfa.sdfTex.size,
+    1,
+    mapJfa.sdfTex.format
+  );
+  function sampleTerra(worldX: number, worldZ: number) {
+    // TODO(@darzu): IMPL
+    let xi = ((worldX + WORLD_WIDTH * 0.5) / WORLD_WIDTH) * terraReader.size[0];
+    let yi =
+      ((worldZ + WORLD_HEIGHT * 0.5) / WORLD_WIDTH) * terraReader.size[1];
+    // xi = clamp(xi, 0, terraReader.size[0]);
+    // yi = clamp(yi, 0, terraReader.size[1]);
+    return terraReader.sample(xi, yi);
+  }
+
+  // height map
+  const terraVertsPerWorldUnit = 0.25;
+  const terraXCount = Math.floor(WORLD_WIDTH * terraVertsPerWorldUnit);
+  const terraZCount = Math.floor(WORLD_HEIGHT * terraVertsPerWorldUnit);
+  const terraMesh = createFlatQuadMesh(terraXCount, terraZCount);
+  mutateMeshPositions(terraMesh, (p) => {
+    p[0] *= 1 / terraVertsPerWorldUnit - WORLD_WIDTH * 0.5;
+    p[2] *= 1 / terraVertsPerWorldUnit - WORLD_HEIGHT * 0.5;
+  });
+  const hm = em.new();
+  // TODO(@darzu): TOO MANY VERTS! Need multiple buffers..
+  // em.ensureComponentOn(hm, RenderableConstructDef, terraMesh);
+  em.ensureComponentOn(hm, PositionDef);
+  // TODO(@darzu): update terra from SDF
 
   // ground
   const ground = em.new();
@@ -516,6 +542,7 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
       res.score.cutPurple += cutPurple;
 
       // copy from world texture data to update window
+      // NOTE: we shrink the window to only include what has changed
       const hasUpdate = minWinXi <= maxWinXi && minWinYi <= maxWinYi;
       // console.log(`hasUpdate: ${hasUpdate}`);
       if (hasUpdate) {

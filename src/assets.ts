@@ -663,21 +663,21 @@ export function createFlatQuadMesh(width: number, height: number): Mesh {
   const uvs: vec2[] = [];
 
   // create each vert
-  for (let y = 0; y < height; y++) {
+  for (let z = 0; z < height; z++) {
     for (let x = 0; x < width; x++) {
-      pos.push(V(x, y, 0));
-      uvs.push(vec2.clone([x / width, y / height]));
+      pos.push(V(x, 0, z));
+      uvs.push(V(x / width, z / height));
     }
   }
 
   // create each quad
-  for (let y = 0; y < height - 1; y++) {
+  for (let z = 0; z < height - 1; z++) {
     for (let x = 0; x < width - 1; x++) {
       const q: vec4 = vec4.clone([
-        idx(x, y),
-        idx(x + 1, y),
-        idx(x + 1, y + 1),
-        idx(x, y + 1),
+        idx(x, z),
+        idx(x + 1, z),
+        idx(x + 1, z + 1),
+        idx(x, z + 1),
       ]);
       quad.push(q);
       quad.push(vec4.clone([q[3], q[2], q[1], q[0]]));
@@ -695,8 +695,8 @@ export function createFlatQuadMesh(width: number, height: number): Mesh {
     usesProvoking: true,
   };
 
-  function idx(x: number, y: number): number {
-    return x + y * width;
+  function idx(x: number, z: number): number {
+    return x + z * width;
   }
   // TODO(@darzu): return
 }

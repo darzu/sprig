@@ -8,6 +8,7 @@ import { createCyStruct, CyToTS } from "../gpu-struct.js";
 import { MAX_INDICES, MeshHandle } from "../mesh-pool.js";
 import { getAABBFromMesh, Mesh } from "../mesh.js";
 
+// TODO(@darzu): SUPPORT MULTIPLE VERT & INDEX BUFFERS PER POOL!
 export const MAX_MESHES = 20000;
 export const MAX_VERTICES = MAX_INDICES; // 21844;
 
