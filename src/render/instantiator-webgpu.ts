@@ -100,6 +100,7 @@ export function createCyResources(
       cyNameToBufferUsage[p.meshOpt.instance.name] |= GPUBufferUsage.VERTEX;
       cyNameToBufferUsage[p.meshOpt.vertex.name] |= GPUBufferUsage.VERTEX;
     } else if (p.meshOpt.stepMode === "per-mesh-handle") {
+      // TODO(@darzu): MULTI-BUFF.
       cyNameToBufferUsage[p.meshOpt.pool.vertsPtr.name] |=
         GPUBufferUsage.VERTEX;
       cyNameToBufferUsage[p.meshOpt.pool.unisPtr.name] |=
@@ -112,6 +113,7 @@ export function createCyResources(
   });
   // mesh pools have vert and uniform buffers
   cy.kindToPtrs.meshPool.forEach((p) => {
+    // TODO(@darzu): MULTI-BUFF.
     cyNameToBufferUsage[p.vertsPtr.name] |= GPUBufferUsage.VERTEX;
     cyNameToBufferUsage[p.unisPtr.name] |= GPUBufferUsage.UNIFORM;
   });
@@ -241,6 +243,7 @@ export function createCyResources(
   });
   // create mesh pools
   cy.kindToPtrs.meshPool.forEach((r) => {
+    // TODO(@darzu): MULTI-BUFF.
     const verts = kindToNameToRes.array[r.vertsPtr.name];
     const unis = kindToNameToRes.array[r.unisPtr.name];
     const triInds = kindToNameToRes.idxBuffer[r.triIndsPtr.name];
@@ -256,6 +259,8 @@ export function createCyResources(
         triInds,
         lineInds,
       },
+      // TODO(@darzu): MULTI-BUFF.
+      // device,
       r
     );
     kindToNameToRes.meshPool[r.name] = pool;
@@ -606,6 +611,7 @@ export function createCyResources(
         kindToNameToRes.renderPipeline[p.name] = cyPipeline;
       } else if (p.meshOpt.stepMode === "per-mesh-handle") {
         // TODO(@darzu): de-duplicate with above?
+        // TODO(@darzu): MULTI-BUFF.
         const vertBuf = kindToNameToRes.array[p.meshOpt.pool.vertsPtr.name];
         const idxBuffer =
           kindToNameToRes.idxBuffer[p.meshOpt.pool.triIndsPtr.name];
@@ -623,6 +629,8 @@ export function createCyResources(
 
         const vertexInputStruct =
           `struct VertexInput {\n` +
+          // TODO(@darzu): MULTI-BUFF.
+          // `${pool.ptr.vertsStruct.wgsl(false, 0)}\n` +
           `${vertBuf.struct.wgsl(false, 0)}\n` +
           `}\n`;
 
@@ -653,6 +661,8 @@ export function createCyResources(
           vertex: {
             module: shader,
             entryPoint: p.shaderVertexEntry,
+            // TODO(@darzu): MULTI-BUFF.
+            // buffers: [pool.ptr.vertsStruct.vertexLayout("vertex", 0)],
             buffers: [vertBuf.struct.vertexLayout("vertex", 0)],
           },
           fragment: {
@@ -665,6 +675,7 @@ export function createCyResources(
         const rndrPipeline = device.createRenderPipeline(rndrPipelineDesc);
         const cyPipeline: CyRenderPipeline = {
           ptr: p,
+          // TODO(@darzu): MULTI-BUFF
           indexBuf: idxBuffer,
           vertexBuf: vertBuf,
           pipeline: rndrPipeline,
@@ -836,15 +847,20 @@ export function bundleRenderPipelines(
       bundleEnc.setBindGroup(0, resBindGroup);
     }
 
+    // TODO(@darzu): MULTI-BUFF
     if (p.indexBuf) bundleEnc.setIndexBuffer(p.indexBuf.buffer, "uint16");
     if (p.vertexBuf) bundleEnc.setVertexBuffer(0, p.vertexBuf.buffer);
     if (p.ptr.meshOpt.stepMode === "per-instance") {
       assert(!!p.instanceBuf && !!p.indexBuf);
+      // TODO(@darzu): MULTI-BUFF
+      // bundleEnc.setIndexBuffer(p.indexBuf.buffer, "uint16");
+      // if (p.vertexBuf) bundleEnc.setVertexBuffer(0, p.vertexBuf.buffer);
       bundleEnc.setVertexBuffer(1, p.instanceBuf.buffer);
       bundleEnc.drawIndexed(p.indexBuf.length, p.instanceBuf.length, 0, 0);
       dbgNumTris += p.instanceBuf.length * (p.indexBuf.length / 3);
     } else if (p.ptr.meshOpt.stepMode === "per-mesh-handle") {
       assert(!!p.pool && p.bindGroupLayouts.length >= 2);
+      assert(p.pool.ptr === p.ptr.meshOpt.pool);
       const uniBGLayout = p.bindGroupLayouts[1]; // TODO(@darzu): hacky convention?
       const uniUsage: CyGlobalUsage<CyArrayPtr<any>> = {
         ptr: p.ptr.meshOpt.pool.unisPtr,
@@ -857,6 +873,10 @@ export function bundleRenderPipelines(
         [uniUsage],
         "one"
       );
+      // TODO(@darzu): IMPL
+      // TODO(@darzu): MULTI-BUFF
+      // bundleEnc.setIndexBuffer(p.indexBuf.buffer, "uint16");
+      // bundleEnc.setVertexBuffer(0, p.vertexBuf.buffer);
       // TODO(@darzu): filter meshes?
       for (let m of p.pool.allMeshes) {
         // TODO(@darzu): DBG

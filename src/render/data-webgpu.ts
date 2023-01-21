@@ -125,6 +125,7 @@ export function isRenderPipeline(p: CyPipeline): p is CyRenderPipeline {
 export interface CyRenderPipeline {
   ptr: CyRenderPipelinePtr;
   // resourceLayouts: CyBufferPtrLayout<any>[];
+  // TODO(@darzu): there's redundency between these bufs and the pool; need better segmentation
   vertexBuf?: CyArray<any>;
   indexBuf?: CyIdxBuffer;
   instanceBuf?: CyArray<any>;
@@ -302,6 +303,7 @@ export function createCyIdxBuf(
 
   const _buf = device.createBuffer({
     size: size,
+    // TODO(@darzu): update usages based on.. usage
     usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
     mappedAtCreation: hasInitData,
   });

@@ -316,3 +316,8 @@ Chrome Alloc profiler tool:
 
 V8 dev:
   https://stackoverflow.com/users/6036428/jmrk
+
+Allocator:
+  https://twitter.com/SebAaltonen/status/1616771875413049344
+  LZCNT: Count the Number of Leading Zero Bits
+  POPCNT: 

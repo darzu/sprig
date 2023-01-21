@@ -2,12 +2,13 @@ import { align, alignDown } from "../math.js";
 import { assert, assertDbg } from "../util.js";
 import { CyStructDesc, CyToTS } from "./gpu-struct.js";
 import { Mesh } from "./mesh.js";
-import { CyArray, CyIdxBuffer } from "./data-webgpu.js";
+import { createCyArray, CyArray, CyIdxBuffer } from "./data-webgpu.js";
 import { PERF_DBG_GPU, VERBOSE_MESH_POOL_STATS } from "../flags.js";
 import { ComputeVertsDataFn, CyMeshPoolPtr } from "./gpu-registry.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { DEFAULT_MASK } from "./pipeline-masks.js";
 import { ComponentDef } from "../entity-manager.js";
+import { GPUBufferUsage } from "./webgpu-hacks.js";
 
 // Mesh: lossless, all the data of a model/asset from blender
 // MeshPool: lossy, a reduced set of attributes for vertex, line, triangle, and model uniforms
@@ -59,6 +60,7 @@ export function isMeshHandle(m: any): m is MeshHandle {
 
 // TODO(@darzu): de-duplicate between here and CyMeshPoolPtr
 // TODO(@darzu): wait definitely need a ptr to ptr.
+// TODO(@darzu): MULTI-BUFF remove?
 export interface MeshPoolOpts<V extends CyStructDesc, U extends CyStructDesc> {
   // computeVertsData: ComputeVertsDataFn<V>;
   // computeUniData: (m: Mesh) => CyToTS<U>;
@@ -217,12 +219,23 @@ function computeQuadData(
   return new Uint16Array(tempQuadData.buffer, 0, dataLen);
 }
 
+// TODO(@darzu): MULTI-BUFF
+const UNI_USAGE = GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM;
+const VERT_USAGE = GPUBufferUsage.COPY_DST | GPUBufferUsage.VERTEX;
+
 export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
   // TODO(@darzu): having both otps and ptr is strange
   opts: MeshPoolOpts<V, U>,
+  // device: GPUDevice,
   ptr: CyMeshPoolPtr<V, U>
 ) {
   logMeshPoolStats(opts);
+
+  // TODO(@darzu): we can either create arrays in here, or we can create ptrs and have the instantiator create them
+  //    I kinda like the latter since then everything is named and registered and in the future we want late Cy regstered
+  //    resource creation for e.g. the ocean.
+
+  // const uniArray = createCyArray(
 
   const poolMaxMeshes = opts.unis.length;
   const poolMaxTris = Math.ceil(opts.triInds.length / 3);
@@ -251,7 +264,6 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     updateMeshInstance,
   };
 
-  // TODO(@darzu): default to all 1s?
   function addMesh(m: Mesh, reserved?: MeshReserve): MeshHandle {
     const vertNum = m.pos.length;
     const maxVertNum = reserved?.maxVertNum ?? vertNum;

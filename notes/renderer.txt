@@ -1582,3 +1582,13 @@ FP16 in shaders?
 
 Geometry node limits:
   from max: Can do lists but not lists of lists
+
+https://usegpu.live:
+  Use.GPU is a set of declarative, reactive WebGPU legos. Compose live graphs, layouts, meshes and shaders, on the fly.
+  It has a built-in shader linker and binding generator, which means a lot of the tedium of common GPU programming is eliminated, without compromising on flexibility.
+  https://usegpu.live/demo/geometry/lines
+  https://gitlab.com/unconed/use.gpu/-/blob/master/packages/app/src/pages/geometry/lines.tsx
+  by https://acko.net/
+
+Text rendering w/ Slug:
+  http://sluglibrary.com/

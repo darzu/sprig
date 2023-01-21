@@ -110,6 +110,14 @@ export interface CyMeshPoolPtr<
   // TODO(@darzu): remove id and name, this doesn't need to be inited directly
   computeVertsData: ComputeVertsDataFn<V>;
   computeUniData: (m: Mesh) => CyToTS<U>;
+  // TODO(@darzu): MULTI-BUFF. prep for multi-buffer pools
+  // vertsStruct: CyStruct<V>;
+  // unisStruct: CyStruct<U>;
+  // // TODO(@darzu): do we need these max's? maybe we make them optional
+  // maxTris: number;
+  // maxLines: number;
+  // maxUnis: number;
+  // maxVerts: number;
   vertsPtr: CyArrayPtr<V>;
   unisPtr: CyArrayPtr<U>;
   triIndsPtr: CyIdxBufferPtr;
@@ -207,6 +215,7 @@ export interface CyRenderPipelinePtr extends CyResourcePtr {
   shaderFragmentEntry: string;
   cullMode?: GPUCullMode;
   frontFace?: GPUFrontFace;
+  // TODO(@darzu): move vertexBuf into mesh opt?
   meshOpt: CyMeshOpt;
   // TODO(@darzu): really need to allow changing attachments at runtime. Useful
   //   for tutorial animations at a minimum
