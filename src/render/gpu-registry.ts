@@ -2,6 +2,11 @@ import { ComponentDef } from "../entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { assert } from "../util.js";
 import {
+  CyCompPipeline,
+  CyRenderPipeline,
+  PtrKindToResourceType,
+} from "./data-webgpu.js";
+import {
   CyStructDesc,
   CyStruct,
   CyToTS,
@@ -256,9 +261,15 @@ export type CyRegistry = ReturnType<typeof createCyRegistry>;
 
 export const CY: CyRegistry = createCyRegistry();
 
-export function createCyRegistry() {
-  let nameToPtr: { [name: string]: CyResourcePtr } = {};
-  let kindToPtrs: { [K in PtrKind]: PtrKindToPtrType[K][] } = {
+// TODO(@darzu): kinda hacky?
+CY.kindToPtrs.sampler.push(linearSamplerPtr);
+CY.kindToPtrs.sampler.push(nearestSamplerPtr);
+CY.kindToPtrs.sampler.push(comparisonSamplerPtr);
+
+export type CyKindToPtrSet = { [K in PtrKind]: PtrKindToPtrType[K][] };
+
+function emptyCyKindToPtrSet(): CyKindToPtrSet {
+  return {
     array: [],
     singleton: [],
     idxBuffer: [],
@@ -267,13 +278,19 @@ export function createCyRegistry() {
     compPipeline: [],
     renderPipeline: [],
     meshPool: [],
-    sampler: [
-      linearSamplerPtr,
-      // linearUnfilterSamplerPtr,
-      nearestSamplerPtr,
-      comparisonSamplerPtr,
-    ],
+    sampler: [],
   };
+}
+
+export function createCyRegistry() {
+  let nameToPtr: { [name: string]: CyResourcePtr } = {};
+  // TODO(@darzu): IMPL fill from instantiator
+  let kindToNameToRes: {
+    [K in PtrKind]: { [name: string]: PtrKindToResourceType[K] };
+  };
+
+  let flight = 1; // TODO(@darzu): IMPL!
+  let nextFlightPtrs = emptyCyKindToPtrSet();
 
   function registerCyResource<R extends CyResourcePtr>(ptr: R): R {
     assert(
@@ -281,7 +298,7 @@ export function createCyRegistry() {
       `already registered Cy resource with name: ${ptr.name}`
     );
     nameToPtr[ptr.name] = ptr;
-    kindToPtrs[ptr.kind].push(ptr as any);
+    nextFlightPtrs[ptr.kind].push(ptr as any);
     return ptr;
   }
 
@@ -292,7 +309,7 @@ export function createCyRegistry() {
   // TODO(@darzu): rename all "createX" to "mkX" for brevity?
   return {
     nameToPtr,
-    kindToPtrs,
+    kindToPtrs: nextFlightPtrs,
     createSingleton: <O extends CyStructDesc>(
       name: string,
       desc: Omit_kind_name<CySingletonPtr<O>>
