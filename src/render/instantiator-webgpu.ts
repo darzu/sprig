@@ -76,13 +76,13 @@ function collectBufferUsages(cy: CyRegistry): CyBufferUsages {
   const bufferUsages: CyBufferUsages = {};
   // all buffers are updatable via queue
   // TODO(@darzu): option for some to opt out? for perf?
-  [...cy.kindToPtrs.array, ...cy.kindToPtrs.singleton].forEach(
-    (r) => (bufferUsages[r.name] |= GPUBufferUsage.COPY_DST)
-  );
+  [...cy.kindToPtrs.array, ...cy.kindToPtrs.singleton].forEach((r) => {
+    bufferUsages[r.name] |= GPUBufferUsage.COPY_DST;
+  });
   // all singleton buffers are probably used as uniforms
-  cy.kindToPtrs.singleton.forEach(
-    (p) => (bufferUsages[p.name] |= GPUBufferUsage.UNIFORM)
-  );
+  cy.kindToPtrs.singleton.forEach((p) => {
+    bufferUsages[p.name] |= GPUBufferUsage.UNIFORM;
+  });
   // all pipeline global resources are storage or uniform
   // TODO(@darzu): be more precise?
   [...cy.kindToPtrs.compPipeline, ...cy.kindToPtrs.renderPipeline].forEach(
@@ -203,6 +203,14 @@ export function createCyResources(
   shaders: ShaderSet,
   device: GPUDevice
 ): CyResources {
+  // TODO(@darzu): instantiator refactor goals:
+  // [ ] better usage inference so we don't need "hackArray", "forceUsage", etc.
+  // [ ] multi-flight instantiation so we can e.g. define and create ocean resources
+  //     only if ocean init is run and needed.
+  // [ ] support multiple vertex & index buffers in mesh pools, maybe by creating
+  //     them in future flights
+  // [ ] support indirect-draw / GPU-based rendering; unknown what needs to change here
+
   const start = performance.now();
 
   const bufferUsages = collectBufferUsages(cy);
@@ -231,9 +239,8 @@ export function createCyResources(
     const usage = bufferUsages[r.name]!;
     const lengthOrData = typeof r.init === "number" ? r.init : r.init();
     const buf = createCyArray(device, r.struct, usage, lengthOrData);
-    if (PERF_DBG_GPU) {
+    if (PERF_DBG_GPU)
       console.log(`CyArray ${r.name}: ${r.struct.size * buf.length}b`);
-    }
     kindToNameToRes.array[r.name] = buf;
   });
 

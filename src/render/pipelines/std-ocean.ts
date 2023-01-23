@@ -87,7 +87,7 @@ export const GerstnerWaveStruct = createCyStruct(
     A: "f32",
     w: "f32",
     phi: "f32",
-    // TODO: solve alignment issues--shouldn't need manual padding
+    // TODO(@darzu): HACK! solve alignment issues--shouldn't need manual padding
     padding1: "f32",
     padding2: "f32",
   },

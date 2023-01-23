@@ -40,6 +40,7 @@ export interface CySingleton<O extends CyStructDesc> extends CyBuffer<O> {
   queueUpdate: (data: CyToTS<O>) => void;
 }
 export interface CyArray<O extends CyStructDesc> extends CyBuffer<O> {
+  // TODO(@darzu): maybe always have a .ptr? That would enforce using the CyRegistry sorta
   length: number;
   queueUpdate: (data: CyToTS<O>, idx: number) => void;
   queueUpdates: (

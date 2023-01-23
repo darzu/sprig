@@ -36,6 +36,7 @@ export interface CyArrayPtr<O extends CyStructDesc> extends CyResourcePtr {
   kind: "array";
   struct: CyStruct<O>;
   init: (() => CyToTS<O>[]) | number;
+  // TODO(@darzu): HACK. we try to infer usage flags and this is our escape hatch
   forceUsage?: GPUBufferUsageFlags;
 }
 export interface CySingletonPtr<O extends CyStructDesc> extends CyResourcePtr {
@@ -284,12 +285,14 @@ function emptyCyKindToPtrSet(): CyKindToPtrSet {
 
 export function createCyRegistry() {
   let nameToPtr: { [name: string]: CyResourcePtr } = {};
-  // TODO(@darzu): IMPL fill from instantiator
-  let kindToNameToRes: {
-    [K in PtrKind]: { [name: string]: PtrKindToResourceType[K] };
-  };
 
-  let flight = 1; // TODO(@darzu): IMPL!
+  // TODO(@darzu): impl multi-flight registry & instantiation; see createCyResources comments
+  // // TODO(@darzu): IMPL fill from instantiator
+  // let kindToNameToRes: {
+  //   [K in PtrKind]: { [name: string]: PtrKindToResourceType[K] };
+  // };
+  // let flight = 1; // TODO(@darzu): IMPL!
+
   let nextFlightPtrs = emptyCyKindToPtrSet();
 
   function registerCyResource<R extends CyResourcePtr>(ptr: R): R {
