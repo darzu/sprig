@@ -1596,3 +1596,7 @@ Text rendering w/ Slug:
 Rotate 2d sprite via 3 sheers:
   https://cohost.org/tomforsyth/post/891823-rotation-with-three
   https://www.ocf.berkeley.edu/~fricke/projects/israel/paeth/rotation_by_shearing.html
+  shader: https://www.shadertoy.com/view/dlfXRM
+
+Takedown voxel frame analysis:
+  https://acko.net/blog/teardown-frame-teardown/

@@ -895,24 +895,27 @@ export function bundleRenderPipelines(
         [uniUsage],
         "one"
       );
-      // TODO(@darzu): IMPL
       // TODO(@darzu): MULTI-BUFF
-      bundleEnc.setIndexBuffer(p.pool.sets[0].inds.buffer, "uint16");
-      bundleEnc.setVertexBuffer(0, p.pool.sets[0].verts.buffer);
-      // TODO(@darzu): filter meshes?
-      for (let m of p.pool.sets[0].meshes) {
-        // TODO(@darzu): DBG
-        // if (p.pool.opts.computeVertsData === oceanPoolPtr.computeVertsData) {
-        // console.log(`OCEAN MESH: ${m.mId} has: ${meshHandleIds.has(m.mId)}`);
-        // }
-        if (!meshHandleIds.has(m.mId)) continue;
-        let mask = p.ptr.meshOpt.meshMask ?? DEFAULT_MASK;
-        if ((mask & m.mask) === 0) continue;
-        bundleEnc.setBindGroup(1, uniBG, [m.uniIdx * p.pool.unis.struct.size]);
-        // TODO(@darzu): do we always want to draw max or do we want to rebundle?
-        let numTri = m.reserved?.maxTriNum ?? m.triNum;
-        bundleEnc.drawIndexed(numTri * 3, undefined, m.triIdx * 3, m.vertIdx);
-        dbgNumTris += m.triNum * 3;
+      for (let set of p.pool.sets) {
+        bundleEnc.setIndexBuffer(set.inds.buffer, "uint16");
+        bundleEnc.setVertexBuffer(0, set.verts.buffer);
+        // TODO(@darzu): filter meshes?
+        for (let m of set.meshes) {
+          // TODO(@darzu): DBG
+          // if (p.pool.opts.computeVertsData === oceanPoolPtr.computeVertsData) {
+          // console.log(`OCEAN MESH: ${m.mId} has: ${meshHandleIds.has(m.mId)}`);
+          // }
+          if (!meshHandleIds.has(m.mId)) continue;
+          let mask = p.ptr.meshOpt.meshMask ?? DEFAULT_MASK;
+          if ((mask & m.mask) === 0) continue;
+          bundleEnc.setBindGroup(1, uniBG, [
+            m.uniIdx * p.pool.unis.struct.size,
+          ]);
+          // TODO(@darzu): do we always want to draw max or do we want to rebundle?
+          let numTri = m.reserved?.maxTriNum ?? m.triNum;
+          bundleEnc.drawIndexed(numTri * 3, undefined, m.triIdx * 3, m.vertIdx);
+          dbgNumTris += m.triNum * 3;
+        }
       }
     } else if (p.ptr.meshOpt.stepMode === "single-draw") {
       bundleEnc.draw(p.ptr.meshOpt.vertexCount, 1, 0, 0);

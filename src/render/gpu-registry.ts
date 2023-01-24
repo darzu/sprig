@@ -121,9 +121,10 @@ export interface CyMeshPoolPtr<
   unisStruct: CyStruct<U>;
   // TODO(@darzu): do we need these max's? maybe we make them optional
   maxMeshes: number;
-  maxTris: number;
-  maxLines: number;
-  maxVerts: number;
+  maxSets: number;
+  setMaxTris: number;
+  setMaxLines: number;
+  setMaxVerts: number;
   // vertsPtr: CyArrayPtr<V>;
   // unisPtr: CyArrayPtr<U>;
   // triIndsPtr: CyIdxBufferPtr;

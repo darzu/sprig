@@ -1,5 +1,5 @@
 import { align, alignDown } from "../math.js";
-import { assert, assertDbg } from "../util.js";
+import { assert, assertDbg, dbgLogOnce } from "../util.js";
 import { CyStructDesc, CyToTS } from "./gpu-struct.js";
 import { Mesh } from "./mesh.js";
 import {
@@ -42,6 +42,7 @@ export interface MeshHandle {
   readonly mId: number;
 
   // geo offsets
+  readonly setIdx: number;
   readonly uniIdx: number;
   readonly vertIdx: number;
   readonly triIdx: number;
@@ -102,16 +103,16 @@ export type MeshPool<
 
 function logMeshPoolStats(pool: MeshPool<any, any>) {
   // TODO(@darzu): re-do this with consideration of multi-buffer stuff
-  const maxMeshes = pool.unis.length;
-  const maxTris = pool.sets[0].inds.length / 3;
-  const maxVerts = pool.sets[0].verts.length;
+  const maxMeshes = pool.ptr.maxMeshes;
+  const maxTris = pool.sets.length * pool.ptr.setMaxTris;
+  const maxVerts = pool.sets.length * pool.ptr.setMaxVerts;
   // const maxLines = opts.lineInds.length / 2;
-  const maxLines = pool.ptr.maxLines;
-  const vertStruct = pool.sets[0].verts.struct;
-  const uniStruct = pool.unis.struct;
+  const maxLines = pool.sets.length * pool.ptr.setMaxLines;
+  const vertStruct = pool.ptr.vertsStruct;
+  const uniStruct = pool.ptr.unisStruct;
 
-  if (MAX_INDICES < maxVerts)
-    throw `Too many vertices (${maxVerts})! W/ Uint16, we can only support '${maxVerts}' verts`;
+  // if (MAX_INDICES < maxVerts)
+  //   throw `Too many vertices (${maxVerts})! W/ Uint16, we can only support '${maxVerts}' verts`;
 
   if (VERBOSE_MESH_POOL_STATS) {
     // log our estimated space usage stats
@@ -277,42 +278,58 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     verts: CyArray<V>;
     indsPtr: CyIdxBufferPtr;
     inds: CyIdxBuffer;
+    numTris: number;
+    numVerts: number;
+    numLines: number;
     meshes: MeshHandle[];
   };
 
-  function newBuffSet(idx: number, maxVerts: number, maxTris: number): BuffSet {
+  function createBuffSet(idx: number): BuffSet {
     // TODO(@darzu): support multi
     const vertsPtr = CY.createArray(vertsName(idx), {
       struct: ptr.vertsStruct,
-      init: maxVerts,
+      init: ptr.setMaxVerts,
     });
     const verts = createCyArray(
       device,
       vertsPtr.name,
       vertsPtr.struct,
       VERT_USAGE,
-      maxVerts
+      ptr.setMaxVerts
     );
     resources.kindToNameToRes.array[vertsPtr.name] = verts;
     const indsPtr = CY.createIdxBuf(indsName(idx), {
-      init: maxTris * 3, // TODO(@darzu): alignment?
+      init: ptr.setMaxTris * 3, // TODO(@darzu): alignment?
     });
-    const inds = createCyIdxBuf(device, indsPtr.name, maxTris * 3);
+    const inds = createCyIdxBuf(device, indsPtr.name, ptr.setMaxTris * 3);
     resources.kindToNameToRes.idxBuffer[indsPtr.name] = inds;
     return {
       vertsPtr,
       verts,
       indsPtr,
       inds,
+      numTris: 0,
+      numVerts: 0,
+      numLines: 0,
       meshes: [],
     };
   }
 
   const sets: BuffSet[] = [];
 
-  let currSet = newBuffSet(0, ptr.maxVerts, ptr.maxTris);
+  const getTotalMeshCount = () => sets.reduce((p, n) => p + n.meshes.length, 0);
 
-  sets.push(currSet);
+  let currSetIdx = 0;
+
+  const pushNewBuffSet = () => {
+    assert(sets.length + 1 <= ptr.maxSets, "Too many sets!");
+    currSetIdx = sets.length;
+    if (PERF_DBG_GPU)
+      console.log(`Creating new set @${currSetIdx} for: ${ptr.name}`);
+    sets.push(createBuffSet(currSetIdx));
+  };
+
+  pushNewBuffSet();
 
   const _stats = createMeshPoolDbgStats();
 
@@ -325,11 +342,7 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     unis,
 
     sets,
-    currSet,
 
-    numTris: 0,
-    numVerts: 0,
-    numLines: 0,
     _stats,
     updateUniform,
     addMesh,
@@ -342,22 +355,22 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
   };
 
   function addMesh(m: Mesh, reserved?: MeshReserve): MeshHandle {
-    const vertNum = m.pos.length;
-    const maxVertNum = reserved?.maxVertNum ?? vertNum;
-    const triNum = m.tri.length + m.quad.length * 2;
-    const maxTriNum = reserved?.maxTriNum ?? triNum;
-    const lineNum = m.lines?.length ?? 0;
-    const maxLineNum = reserved?.maxLineNum ?? lineNum;
-    assert(vertNum <= maxVertNum, "Inconsistent num of vertices!");
-    assert(triNum <= maxTriNum, "Inconsistent num of triangles!");
-    assert(lineNum <= maxLineNum, "Inconsistent num of lines!");
-    assert(
-      pool.sets[0].meshes.length + 1 <= ptr.maxMeshes,
-      "Too many meshes!!"
-    );
-    assert(pool.numVerts + maxVertNum <= ptr.maxVerts, "Too many vertices!!");
-    assert(pool.numTris + maxTriNum <= ptr.maxTris, "Too many triangles!!");
-    assert(pool.numLines + maxLineNum <= ptr.maxLines, "Too many lines!!");
+    // check mesh count
+    const uniIdx = getTotalMeshCount();
+    assert(uniIdx + 1 <= ptr.maxMeshes, "Too many meshes!!");
+
+    // determine this size
+    const _vertNum = m.pos.length;
+    const vertNum = reserved?.maxVertNum ?? _vertNum;
+    const _triNum = m.tri.length + m.quad.length * 2;
+    const triNum = reserved?.maxTriNum ?? _triNum;
+    const _lineNum = m.lines?.length ?? 0;
+    const lineNum = reserved?.maxLineNum ?? _lineNum;
+    assert(_vertNum <= vertNum, "Inconsistent num of vertices!");
+    assert(_triNum <= triNum, "Inconsistent num of triangles!");
+    assert(_lineNum <= lineNum, "Inconsistent num of lines!");
+
+    // check integrity
     assert(m.usesProvoking, `mesh must use provoking vertices`);
     // TODO(@darzu): what to do about this requirement...
     assert(
@@ -374,30 +387,48 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
       m.surfaceIds.length === faceNum,
       `${m.dbgName}: Inconsistent face num ${faceNum} vs surface IDs num ${m.surfaceIds.length}`
     );
+    assertDbg(pool.sets[currSetIdx].numTris % 2 === 0, "alignment");
 
-    assertDbg(pool.numTris % 2 === 0, "alignment");
+    // check if theoretically fit in any set
+    // TODO(@darzu): this doesn't account for fragmentation
+    assert(vertNum <= ptr.setMaxVerts, `Too many vertices!! ${vertNum}`);
+    assert(triNum <= ptr.setMaxTris, `Too many triangles!! ${triNum}`);
+    assert(lineNum <= ptr.setMaxLines, `Too many lines!! ${lineNum}`);
+
+    // check if we fit in the current set
+    // TODO(@darzu): this doesn't account for fragmentation
+    const doesFit =
+      pool.sets[currSetIdx].numVerts + vertNum <= ptr.setMaxVerts &&
+      pool.sets[currSetIdx].numTris + triNum <= ptr.setMaxTris &&
+      pool.sets[currSetIdx].numLines + lineNum <= ptr.setMaxLines;
+
+    // create a new set if needed
+    if (!doesFit) pushNewBuffSet();
+    const currSet = pool.sets[currSetIdx];
+
     const handle: MeshHandle = {
       mId: nextMeshId++,
       // enabled: true,
-      triNum,
-      lineNum,
-      vertNum,
-      vertIdx: pool.numVerts,
-      triIdx: pool.numTris,
-      lineIdx: pool.numLines,
-      uniIdx: sets[0].meshes.length,
+      triNum: _triNum,
+      lineNum: _lineNum,
+      vertNum: _vertNum,
+      vertIdx: currSet.numVerts,
+      triIdx: currSet.numTris,
+      lineIdx: currSet.numLines,
+      setIdx: currSetIdx,
+      uniIdx,
       mesh: m,
       mask: DEFAULT_MASK,
       reserved,
       //shaderData: uni,
     };
 
-    pool.numTris += maxTriNum;
+    currSet.numTris += triNum;
     // NOTE: mesh's triangle start idx needs to be 4-byte aligned, and we start the
-    pool.numTris = align(pool.numTris, 2);
-    pool.numLines += maxLineNum;
-    pool.numVerts += maxVertNum;
-    pool.currSet.meshes.push(handle);
+    currSet.numTris = align(currSet.numTris, 2);
+    currSet.numLines += lineNum;
+    currSet.numVerts += vertNum;
+    currSet.meshes.push(handle);
 
     // submit data to GPU
     if (m.quad.length) updateMeshQuads(handle, m);
@@ -409,18 +440,16 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     return handle;
   }
   function addMeshInstance(m: MeshHandle): MeshHandle {
-    if (pool.sets[0].meshes.length + 1 > ptr.maxMeshes)
-      throw "Too many meshes!";
+    const uniOffset = getTotalMeshCount();
+    if (uniOffset + 1 > ptr.maxMeshes) throw "Too many meshes!";
 
-    const uniOffset = sets[0].meshes.length;
     const newHandle: MeshHandle = {
       ...m,
       uniIdx: uniOffset,
       mId: nextMeshId++,
-      //shaderData: d,
     };
-    pool.currSet.meshes.push(newHandle);
-    //updateUniform(newHandle);
+    pool.sets[m.setIdx].meshes.push(newHandle);
+
     return newHandle;
   }
   function updateMeshInstance(m: MeshHandle, proto: MeshHandle): void {
@@ -444,14 +473,10 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     vertIdx = vertIdx ?? 0;
     vertCount = vertCount ?? newMesh.pos.length;
     const data = ptr.computeVertsData(newMesh, vertIdx, vertCount);
-    pool.sets[0].verts.queueUpdates(
-      data,
-      handle.vertIdx + vertIdx,
-      0,
-      vertCount
-    );
+    const set = pool.sets[handle.setIdx];
+    set.verts.queueUpdates(data, handle.vertIdx + vertIdx, 0, vertCount);
     if (PERF_DBG_GPU)
-      _stats._accumVertDataQueued += vertCount * pool.sets[0].verts.struct.size;
+      _stats._accumVertDataQueued += vertCount * set.verts.struct.size;
   }
   function updateMeshTriangles(
     handle: MeshHandle,
@@ -482,7 +507,8 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     assertDbg(handle.triIdx % 2 === 0);
     const triData = computeTriData(newMesh, alignedTriIdx, alignedTriCount);
     assertDbg(triData.byteLength % 4 === 0, "alignment");
-    pool.sets[0].inds.queueUpdate(triData, (handle.triIdx + alignedTriIdx) * 3);
+    const set = pool.sets[handle.setIdx];
+    set.inds.queueUpdate(triData, (handle.triIdx + alignedTriIdx) * 3);
     if (PERF_DBG_GPU) _stats._accumTriDataQueued += triData.length * 2.0;
   }
   function updateMeshQuads(
@@ -502,7 +528,8 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     let bufQuadIdx = bufQuadIndsStart + quadIdx * 2 * 3;
     assertDbg(bufQuadIdx % 2 === 0);
     assertDbg(quadData.length % 2 === 0);
-    pool.sets[0].inds.queueUpdate(quadData, bufQuadIdx);
+    const set = pool.sets[handle.setIdx];
+    set.inds.queueUpdate(quadData, bufQuadIdx);
     if (PERF_DBG_GPU) _stats._accumTriDataQueued += quadData.byteLength;
   }
 

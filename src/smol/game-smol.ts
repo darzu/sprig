@@ -176,8 +176,7 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
     p[2] *= 1 / terraVertsPerWorldUnit - WORLD_HEIGHT * 0.5;
   });
   const hm = em.new();
-  // TODO(@darzu): TOO MANY VERTS! Need multiple buffers..
-  // em.ensureComponentOn(hm, RenderableConstructDef, terraMesh);
+  em.ensureComponentOn(hm, RenderableConstructDef, terraMesh);
   em.ensureComponentOn(hm, PositionDef);
   // TODO(@darzu): update terra from SDF
 
