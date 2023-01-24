@@ -177,8 +177,8 @@ export const oceanPoolPtr = CY.createMeshPool("oceanPool", {
   unisStruct: OceanUniStruct,
   vertsStruct: OceanVertStruct,
   maxMeshes: MAX_OCEAN_MESHES,
-  maxTris: MAX_OCEAN_VERTS * 3,
-  maxLines: MAX_OCEAN_VERTS * 2, // TODO(@darzu): we don't need these..
+  maxTris: MAX_OCEAN_VERTS,
+  maxLines: MAX_OCEAN_VERTS, // TODO(@darzu): don't need ??!
   maxVerts: MAX_OCEAN_VERTS,
   // vertsPtr: oceanVertsPtr,
   // unisPtr: oceanUnisPtr,

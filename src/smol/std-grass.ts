@@ -184,8 +184,8 @@ export const grassPoolPtr = CY.createMeshPool("grassPool", {
   vertsStruct: GrassVertStruct,
   unisStruct: GrassUniStruct,
   maxMeshes: MAX_GRASS_MESHES,
-  maxTris: MAX_GRASS_VERTS * 3, // TODO(@darzu): probably want 1-1
-  maxLines: MAX_GRASS_VERTS * 2, // TODO(@darzu): don't need these
+  maxTris: MAX_GRASS_VERTS, // TODO(@darzu): probably want 1-1
+  maxLines: 0, // TODO(@darzu): don't need these
   maxVerts: MAX_GRASS_VERTS,
   // TODO(@darzu): this dataDef is v weird
   dataDef: RenderDataGrassDef,
