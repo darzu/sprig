@@ -105,24 +105,6 @@ export const gerstnerWavesPtr = CY.createArray("gerstnerWave", {
   forceUsage: GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM,
 });
 
-// export const oceanVertsPtr = CY.createArray("oceanVertsBuf", {
-//   struct: OceanVertStruct,
-//   init: MAX_OCEAN_VERTS,
-// });
-
-// const oceanTriIndsPtr = CY.createIdxBuf("oceanTriIndsBuf", {
-//   init: MAX_OCEAN_VERTS * 3,
-// });
-
-// const oceanLineIndsPtr = CY.createIdxBuf("oceanLineIndsBuf", {
-//   init: MAX_OCEAN_VERTS * 2,
-// });
-
-// const oceanUnisPtr = CY.createArray("oceanUni", {
-//   struct: OceanUniStruct,
-//   init: MAX_OCEAN_MESHES,
-// });
-
 // TODO(@darzu): de-duplicate with std-scene's computeVertsData
 function computeOceanVertsData(
   m: Mesh,
@@ -181,10 +163,6 @@ export const oceanPoolPtr = CY.createMeshPool("oceanPool", {
   setMaxTris: MAX_OCEAN_VERTS,
   setMaxLines: MAX_OCEAN_VERTS, // TODO(@darzu): don't need ??!
   setMaxVerts: MAX_OCEAN_VERTS,
-  // vertsPtr: oceanVertsPtr,
-  // unisPtr: oceanUnisPtr,
-  // triIndsPtr: oceanTriIndsPtr,
-  // lineIndsPtr: oceanLineIndsPtr,
   // TODO(@darzu): this dataDef is v weird
   dataDef: RenderDataOceanDef,
 });

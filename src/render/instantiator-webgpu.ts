@@ -50,6 +50,16 @@ import { oceanPoolPtr } from "./pipelines/std-ocean.js";
 import { ShaderSet } from "./shader-loader.js";
 import { GPUBufferUsage } from "./webgpu-hacks.js";
 
+// TODO(@darzu): instantiator refactor goals:
+// [ ] better usage inference so we don't need "hackArray", "forceUsage", etc.
+// [ ] multi-flight instantiation so we can e.g. define and create ocean resources
+//     only if ocean init is run and needed.
+// [x] support multiple vertex & index buffers in mesh pools, maybe by creating
+//     them in future flights
+// [ ] support indirect-draw / GPU-based rendering; unknown what needs to change here
+// [ ] support typed & named collections of instantiated GPU resources, e.g. OceanRes
+//      would have .gerstnerWaves: CyArray
+
 // TODO(@darzu): visibility restrictions:
 /*
 If entry.visibility includes VERTEX:
@@ -104,9 +114,7 @@ function collectBufferUsages(cy: CyRegistry): CyBufferUsages {
       bufferUsages[p.meshOpt.instance.name] |= GPUBufferUsage.VERTEX;
       bufferUsages[p.meshOpt.vertex.name] |= GPUBufferUsage.VERTEX;
     } else if (p.meshOpt.stepMode === "per-mesh-handle") {
-      // TODO(@darzu): MULTI-BUFF.
-      // bufferUsages[p.meshOpt.pool.vertsPtr.name] |= GPUBufferUsage.VERTEX;
-      // bufferUsages[p.meshOpt.pool.unisPtr.name] |= GPUBufferUsage.UNIFORM;
+      // NOTE: mesh pools own and create their own dynamic number of vertex + index buffers
     } else if (p.meshOpt.stepMode === "single-draw") {
       // TODO(@darzu): any buffers?
     } else {
@@ -115,9 +123,7 @@ function collectBufferUsages(cy: CyRegistry): CyBufferUsages {
   });
   // mesh pools have vert and uniform buffers
   cy.kindToPtrs.meshPool.forEach((p) => {
-    // TODO(@darzu): MULTI-BUFF.
-    // bufferUsages[p.vertsPtr.name] |= GPUBufferUsage.VERTEX;
-    // bufferUsages[p.unisPtr.name] |= GPUBufferUsage.UNIFORM;
+    // NOTE: mesh pools own and create their own dynamic number of vertex + index buffers
   });
   // apply forced usages
   // TODO(@darzu): ideally, we would understand the scenarios where we need this
@@ -209,16 +215,6 @@ export function createCyResources(
   shaders: ShaderSet,
   device: GPUDevice
 ): CyResources {
-  // TODO(@darzu): instantiator refactor goals:
-  // [ ] better usage inference so we don't need "hackArray", "forceUsage", etc.
-  // [ ] multi-flight instantiation so we can e.g. define and create ocean resources
-  //     only if ocean init is run and needed.
-  // [ ] support multiple vertex & index buffers in mesh pools, maybe by creating
-  //     them in future flights
-  // [ ] support indirect-draw / GPU-based rendering; unknown what needs to change here
-  // [ ] support typed & named collections of instantiated GPU resources, e.g. OceanRes
-  //      would have .gerstnerWaves: CyArray
-
   const start = performance.now();
 
   const bufferUsages = collectBufferUsages(cy);
@@ -273,27 +269,7 @@ export function createCyResources(
 
   // create mesh pools
   cy.kindToPtrs.meshPool.forEach((r) => {
-    // TODO(@darzu): MULTI-BUFF.
-    // const verts = kindToNameToRes.array[r.vertsPtr.name];
-    // const unis = kindToNameToRes.array[r.unisPtr.name];
-    // const triInds = kindToNameToRes.idxBuffer[r.triIndsPtr.name];
-    // const lineInds = kindToNameToRes.idxBuffer[r.lineIndsPtr.name];
-    // assert(
-    //   verts && unis && triInds && lineInds,
-    //   `Missing buffer for mesh pool ${r.name}`
-    // );
-    const pool = createMeshPool(
-      // {
-      //   verts,
-      //   unis,
-      //   triInds,
-      //   lineInds,
-      // },
-      // TODO(@darzu): MULTI-BUFF.
-      device,
-      { kindToNameToRes },
-      r
-    );
+    const pool = createMeshPool(device, { kindToNameToRes }, r);
     kindToNameToRes.meshPool[r.name] = pool;
   });
 
@@ -462,11 +438,6 @@ function createCyPipeline(
       return cyPipeline;
     } else if (p.meshOpt.stepMode === "per-mesh-handle") {
       // TODO(@darzu): de-duplicate with above?
-      // TODO(@darzu): MULTI-BUFF.
-      // const vertBuf = kindToNameToRes.array[p.meshOpt.pool.vertsPtr.name];
-      // const idxBuffer =
-      //   kindToNameToRes.idxBuffer[p.meshOpt.pool.triIndsPtr.name];
-      // const uniBuf = kindToNameToRes.array[p.meshOpt.pool.unisPtr.name];
       const pool: MeshPool<any, any> =
         kindToNameToRes.meshPool[p.meshOpt.pool.name];
 
@@ -487,9 +458,7 @@ function createCyPipeline(
 
       const vertexInputStruct =
         `struct VertexInput {\n` +
-        // TODO(@darzu): MULTI-BUFF.
         `${pool.ptr.vertsStruct.wgsl(false, 0)}\n` +
-        // `${vertBuf.struct.wgsl(false, 0)}\n` +
         `}\n`;
 
       // render shader
@@ -519,9 +488,7 @@ function createCyPipeline(
         vertex: {
           module: shader,
           entryPoint: p.shaderVertexEntry,
-          // TODO(@darzu): MULTI-BUFF.
           buffers: [pool.ptr.vertsStruct.vertexLayout("vertex", 0)],
-          // buffers: [vertBuf.struct.vertexLayout("vertex", 0)],
         },
         fragment: {
           module: shader,
@@ -533,9 +500,6 @@ function createCyPipeline(
       const rndrPipeline = device.createRenderPipeline(rndrPipelineDesc);
       const cyPipeline: CyRenderPipeline = {
         ptr: p,
-        // TODO(@darzu): MULTI-BUFF
-        // indexBuf: idxBuffer,
-        // vertexBuf: vertBuf,
         pipeline: rndrPipeline,
         pool,
         bindGroupLayouts: [resBindGroupLayout, uniBGLayout],
@@ -869,12 +833,8 @@ export function bundleRenderPipelines(
       bundleEnc.setBindGroup(0, resBindGroup);
     }
 
-    // TODO(@darzu): MULTI-BUFF
-    // if (p.indexBuf) bundleEnc.setIndexBuffer(p.indexBuf.buffer, "uint16");
-    // if (p.vertexBuf) bundleEnc.setVertexBuffer(0, p.vertexBuf.buffer);
     if (p.ptr.meshOpt.stepMode === "per-instance") {
       assert(!!p.instanceBuf && !!p.indexBuf);
-      // TODO(@darzu): MULTI-BUFF
       bundleEnc.setIndexBuffer(p.indexBuf.buffer, "uint16");
       if (p.vertexBuf) bundleEnc.setVertexBuffer(0, p.vertexBuf.buffer);
       bundleEnc.setVertexBuffer(1, p.instanceBuf.buffer);
@@ -895,7 +855,6 @@ export function bundleRenderPipelines(
         [uniUsage],
         "one"
       );
-      // TODO(@darzu): MULTI-BUFF
       for (let set of p.pool.sets) {
         bundleEnc.setIndexBuffer(set.inds.buffer, "uint16");
         bundleEnc.setVertexBuffer(0, set.verts.buffer);

@@ -71,20 +71,6 @@ export function isMeshHandle(m: any): m is MeshHandle {
   return "mId" in m;
 }
 
-// TODO(@darzu): de-duplicate between here and CyMeshPoolPtr
-// TODO(@darzu): wait definitely need a ptr to ptr.
-// TODO(@darzu): MULTI-BUFF remove?
-// export interface MeshPoolOpts<V extends CyStructDesc, U extends CyStructDesc> {
-//   // computeVertsData: ComputeVertsDataFn<V>;
-//   // computeUniData: (m: Mesh) => CyToTS<U>;
-//   verts: CyArray<V>;
-//   unis: CyArray<U>;
-//   triInds: CyIdxBuffer;
-//   lineInds: CyIdxBuffer;
-//   // TODO(@darzu): needed?
-//   // shiftMeshIndices: boolean;
-// }
-
 function createMeshPoolDbgStats() {
   return {
     _accumTriDataQueued: 0,
@@ -232,7 +218,6 @@ function computeQuadData(
   return new Uint16Array(tempQuadData.buffer, 0, dataLen);
 }
 
-// TODO(@darzu): MULTI-BUFF
 const UNI_USAGE = GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM;
 const VERT_USAGE = GPUBufferUsage.COPY_DST | GPUBufferUsage.VERTEX;
 
@@ -243,23 +228,11 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
   resources: CyResources,
   ptr: CyMeshPoolPtr<V, U>
 ) {
-  // TODO(@darzu): we can either create arrays in here, or we can create ptrs and have the instantiator create them
-  //    I kinda like the latter since then everything is named and registered and in the future we want late Cy regstered
-  //    resource creation for e.g. the ocean.
-
-  // const uniArray = createCyArray(
-
-  // const poolMaxMeshes = pool.unis.length;
-  // const poolMaxTris = Math.ceil(pool.sets[0].inds.length / 3);
-  // const poolMaxVerts = pool.sets[0].verts.length;
-  // const poolMaxLines = opts.lineInds.length / 2;
-
-  // TODO(@darzu): register uni resource w/ registry?
-
   const unisName = `${ptr.name}Unis`;
   const vertsName = (i: number) => `${ptr.name}Verts${i}`;
   const indsName = (i: number) => `${ptr.name}Inds${i}`;
 
+  // TODO(@darzu): move resource creation to the instantiator?
   const unisPtr = CY.createArray(unisName, {
     struct: ptr.unisStruct,
     init: ptr.maxMeshes,
@@ -334,15 +307,10 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
   const _stats = createMeshPoolDbgStats();
 
   const pool = {
-    // opts,
     ptr,
-
-    // TODO(@darzu): IMPL
     unisPtr,
     unis,
-
     sets,
-
     _stats,
     updateUniform,
     addMesh,
@@ -355,6 +323,9 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
   };
 
   function addMesh(m: Mesh, reserved?: MeshReserve): MeshHandle {
+    // TODO(@darzu): handle fragmentation! Right now we always try to add
+    //    to latest set
+
     // check mesh count
     const uniIdx = getTotalMeshCount();
     assert(uniIdx + 1 <= ptr.maxMeshes, "Too many meshes!!");
@@ -390,13 +361,11 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     assertDbg(pool.sets[currSetIdx].numTris % 2 === 0, "alignment");
 
     // check if theoretically fit in any set
-    // TODO(@darzu): this doesn't account for fragmentation
     assert(vertNum <= ptr.setMaxVerts, `Too many vertices!! ${vertNum}`);
     assert(triNum <= ptr.setMaxTris, `Too many triangles!! ${triNum}`);
     assert(lineNum <= ptr.setMaxLines, `Too many lines!! ${lineNum}`);
 
     // check if we fit in the current set
-    // TODO(@darzu): this doesn't account for fragmentation
     const doesFit =
       pool.sets[currSetIdx].numVerts + vertNum <= ptr.setMaxVerts &&
       pool.sets[currSetIdx].numTris + triNum <= ptr.setMaxTris &&

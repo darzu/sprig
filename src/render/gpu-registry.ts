@@ -116,7 +116,6 @@ export interface CyMeshPoolPtr<
   // TODO(@darzu): remove id and name, this doesn't need to be inited directly
   computeVertsData: ComputeVertsDataFn<V>;
   computeUniData: (m: Mesh) => CyToTS<U>;
-  // TODO(@darzu): MULTI-BUFF. prep for multi-buffer pools
   vertsStruct: CyStruct<V>;
   unisStruct: CyStruct<U>;
   // TODO(@darzu): do we need these max's? maybe we make them optional
@@ -125,10 +124,6 @@ export interface CyMeshPoolPtr<
   setMaxTris: number;
   setMaxLines: number;
   setMaxVerts: number;
-  // vertsPtr: CyArrayPtr<V>;
-  // unisPtr: CyArrayPtr<U>;
-  // triIndsPtr: CyIdxBufferPtr;
-  // lineIndsPtr: CyIdxBufferPtr;
   // TODO(@darzu): really unsure how I feel about having an EM component here in CY
   dataDef: ComponentDef<string, CyToTS<U>, [CyToTS<U>]>;
 }

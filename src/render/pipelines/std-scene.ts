@@ -89,24 +89,6 @@ export const FLAG_UNLIT = 1;
 
 export type MeshUniformTS = CyToTS<typeof MeshUniformStruct.desc>;
 
-// const meshVertsPtr = CY.createArray("meshVertsBuf", {
-//   struct: VertexStruct,
-//   init: MAX_VERTICES,
-// });
-
-// const meshTriIndsPtr = CY.createIdxBuf("meshTriIndsBuf", {
-//   init: MAX_VERTICES * 3,
-// });
-
-// const meshLineIndsPtr = CY.createIdxBuf("meshLineIndsBuf", {
-//   init: MAX_VERTICES * 2,
-// });
-
-// const meshUnisPtr = CY.createArray("meshUni", {
-//   struct: MeshUniformStruct,
-//   init: MAX_MESHES,
-// });
-
 export const RenderDataStdDef = EM.defineComponent(
   "renderDataStd",
   (r: MeshUniformTS) => r
@@ -121,10 +103,6 @@ export const meshPoolPtr = CY.createMeshPool("meshPool", {
   setMaxTris: MAX_VERTICES * 2,
   setMaxLines: MAX_VERTICES,
   setMaxVerts: MAX_VERTICES,
-  // vertsPtr: meshVertsPtr,
-  // unisPtr: meshUnisPtr,
-  // triIndsPtr: meshTriIndsPtr,
-  // lineIndsPtr: meshLineIndsPtr,
   // TODO(@darzu): this dataDef is v weird
   dataDef: RenderDataStdDef,
 });
