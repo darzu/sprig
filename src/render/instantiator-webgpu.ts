@@ -897,10 +897,10 @@ export function bundleRenderPipelines(
       );
       // TODO(@darzu): IMPL
       // TODO(@darzu): MULTI-BUFF
-      bundleEnc.setIndexBuffer(p.pool.inds0.buffer, "uint16");
-      bundleEnc.setVertexBuffer(0, p.pool.verts0.buffer);
+      bundleEnc.setIndexBuffer(p.pool.sets[0].inds.buffer, "uint16");
+      bundleEnc.setVertexBuffer(0, p.pool.sets[0].verts.buffer);
       // TODO(@darzu): filter meshes?
-      for (let m of p.pool.allMeshes) {
+      for (let m of p.pool.sets[0].meshes) {
         // TODO(@darzu): DBG
         // if (p.pool.opts.computeVertsData === oceanPoolPtr.computeVertsData) {
         // console.log(`OCEAN MESH: ${m.mId} has: ${meshHandleIds.has(m.mId)}`);

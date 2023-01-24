@@ -223,7 +223,7 @@ export async function createGrassTileset(
 
   // const pool = builder.finish();
 
-  // const tiles = pool.allMeshes;
+  // const tiles = pool.sets[0].meshes;
 
   // handle grass tile movement
   function update(target: vec3) {
