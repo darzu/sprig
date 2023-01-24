@@ -15,7 +15,7 @@ fn vert_main(input: VertexInput) -> VertexOutput {
 
     var output : VertexOutput;
     
-    let worldPos: vec4<f32> = grassUni.transform * vec4<f32>(position, 1.0);
+    let worldPos: vec4<f32> = meshUni.transform * vec4<f32>(position, 1.0);
     
     let texY: i32 = i32(worldPos.x + 256.0);
     let texX: i32 = i32(worldPos.z + 512.0);
@@ -33,7 +33,7 @@ fn vert_main(input: VertexInput) -> VertexOutput {
     let toParty = dispPos.xyz - scene.partyPos;
     
     let cameraDist = length(dispPos.xyz - scene.cameraPos);
-    let spawnF = 1.0 - smoothstep(grassUni.spawnDist - 5.0, grassUni.spawnDist, cameraDist);
+    let spawnF = 1.0 - smoothstep(meshUni.spawnDist - 5.0, meshUni.spawnDist, cameraDist);
 
     //let partyDirNorm = normalize(toParty);
     let zDist = dot(toParty, scene.partyDir);
@@ -66,9 +66,9 @@ fn vert_main(input: VertexInput) -> VertexOutput {
     output.worldPos = flattenedDispPos;
     output.position = scene.cameraViewProjMatrix * output.worldPos;
     // TODO: use inverse-transpose matrix for normals as per: https://learnopengl.com/Lighting/Basic-Lighting
-    output.normal = (grassUni.transform * vec4<f32>(normal, 0.0)).xyz;
-    // output.color = color + grassUni.tint;
-    //output.color = grassUni.tint;
+    output.normal = (meshUni.transform * vec4<f32>(normal, 0.0)).xyz;
+    // output.color = color + meshUni.tint;
+    //output.color = meshUni.tint;
     // TODO: this is bad
     rand_seed = worldPos.xz;
     let rr = rand();
@@ -96,7 +96,7 @@ fn vert_main(input: VertexInput) -> VertexOutput {
     }
     output.color = color;
     output.surface = input.surfaceId;
-    output.id = grassUni.id;
+    output.id = meshUni.id;
 
     return output;
 }
@@ -143,7 +143,7 @@ fn frag_main(input: VertexOutput) -> FragOut {
     let normal = normalize(input.normal);
 
     // var lightingColor: vec3<f32> = vec3<f32>(0.0, 0.0, 0.0);
-    // let unlit = grassUni.flags & (1u >> 0u);
+    // let unlit = meshUni.flags & (1u >> 0u);
     // TODO(@darzu): re-enable multi-point lights
     // for (var i: u32 = 0u; i < scene.numPointLights; i++) {
     let light = pointLights.ms[0];

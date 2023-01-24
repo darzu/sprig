@@ -39,9 +39,9 @@ struct VertexOutput {
 @vertex
 fn vertMain(input: VertexInput) -> VertexOutput {
   var output: VertexOutput;
-  let worldPos = oceanUni.transform * vec4<f32>(input.position, 1.0);
-  let normal =  oceanUni.transform * vec4<f32>(input.normal, 0.0);
-  let tangent =  oceanUni.transform * vec4<f32>(input.tangent, 0.0);
+  let worldPos = meshUni.transform * vec4<f32>(input.position, 1.0);
+  let normal =  meshUni.transform * vec4<f32>(input.normal, 0.0);
+  let tangent =  meshUni.transform * vec4<f32>(input.tangent, 0.0);
 
   output.uv = input.uv;
   output.worldPos = worldPos;

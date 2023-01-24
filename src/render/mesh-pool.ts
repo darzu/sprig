@@ -2,13 +2,24 @@ import { align, alignDown } from "../math.js";
 import { assert, assertDbg } from "../util.js";
 import { CyStructDesc, CyToTS } from "./gpu-struct.js";
 import { Mesh } from "./mesh.js";
-import { createCyArray, CyArray, CyIdxBuffer } from "./data-webgpu.js";
+import {
+  createCyArray,
+  createCyIdxBuf,
+  CyArray,
+  CyIdxBuffer,
+} from "./data-webgpu.js";
 import { PERF_DBG_GPU, VERBOSE_MESH_POOL_STATS } from "../flags.js";
-import { ComputeVertsDataFn, CyMeshPoolPtr } from "./gpu-registry.js";
+import {
+  ComputeVertsDataFn,
+  CY,
+  CyArrayPtr,
+  CyMeshPoolPtr,
+} from "./gpu-registry.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { DEFAULT_MASK } from "./pipeline-masks.js";
 import { ComponentDef } from "../entity-manager.js";
 import { GPUBufferUsage } from "./webgpu-hacks.js";
+import { CyResources } from "./instantiator-webgpu.js";
 
 // Mesh: lossless, all the data of a model/asset from blender
 // MeshPool: lossy, a reduced set of attributes for vertex, line, triangle, and model uniforms
@@ -61,18 +72,16 @@ export function isMeshHandle(m: any): m is MeshHandle {
 // TODO(@darzu): de-duplicate between here and CyMeshPoolPtr
 // TODO(@darzu): wait definitely need a ptr to ptr.
 // TODO(@darzu): MULTI-BUFF remove?
-export interface MeshPoolOpts<V extends CyStructDesc, U extends CyStructDesc> {
-  // computeVertsData: ComputeVertsDataFn<V>;
-  // computeUniData: (m: Mesh) => CyToTS<U>;
-  verts: CyArray<V>;
-  unis: CyArray<U>;
-  triInds: CyIdxBuffer;
-  lineInds: CyIdxBuffer;
-  // TODO(@darzu): needed?
-  // shiftMeshIndices: boolean;
-  // TODO(@darzu): EM things is weird!
-  // dataDef: ComponentDef<string, CyToTS<U>, [CyToTS<U>]>;
-}
+// export interface MeshPoolOpts<V extends CyStructDesc, U extends CyStructDesc> {
+//   // computeVertsData: ComputeVertsDataFn<V>;
+//   // computeUniData: (m: Mesh) => CyToTS<U>;
+//   verts: CyArray<V>;
+//   unis: CyArray<U>;
+//   triInds: CyIdxBuffer;
+//   lineInds: CyIdxBuffer;
+//   // TODO(@darzu): needed?
+//   // shiftMeshIndices: boolean;
+// }
 
 function createMeshPoolDbgStats() {
   return {
@@ -90,13 +99,15 @@ export type MeshPool<
   U extends CyStructDesc
 > = ReturnType<typeof createMeshPool<V, U>>;
 
-function logMeshPoolStats(opts: MeshPoolOpts<any, any>) {
-  const maxMeshes = opts.unis.length;
-  const maxTris = opts.triInds.length / 3;
-  const maxVerts = opts.verts.length;
-  const maxLines = opts.lineInds.length / 2;
-  const vertStruct = opts.verts.struct;
-  const uniStruct = opts.unis.struct;
+function logMeshPoolStats(pool: MeshPool<any, any>) {
+  // TODO(@darzu): re-do this with consideration of multi-buffer stuff
+  const maxMeshes = pool.unis.length;
+  const maxTris = pool.inds0.length / 3;
+  const maxVerts = pool.verts0.length;
+  // const maxLines = opts.lineInds.length / 2;
+  const maxLines = pool.ptr.maxLines;
+  const vertStruct = pool.verts0.struct;
+  const uniStruct = pool.unis.struct;
 
   if (MAX_INDICES < maxVerts)
     throw `Too many vertices (${maxVerts})! W/ Uint16, we can only support '${maxVerts}' verts`;
@@ -225,30 +236,77 @@ const VERT_USAGE = GPUBufferUsage.COPY_DST | GPUBufferUsage.VERTEX;
 
 export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
   // TODO(@darzu): having both otps and ptr is strange
-  opts: MeshPoolOpts<V, U>,
-  // device: GPUDevice,
+  // opts: MeshPoolOpts<V, U>,
+  device: GPUDevice,
+  resources: CyResources,
   ptr: CyMeshPoolPtr<V, U>
 ) {
-  logMeshPoolStats(opts);
-
   // TODO(@darzu): we can either create arrays in here, or we can create ptrs and have the instantiator create them
   //    I kinda like the latter since then everything is named and registered and in the future we want late Cy regstered
   //    resource creation for e.g. the ocean.
 
   // const uniArray = createCyArray(
 
-  const poolMaxMeshes = opts.unis.length;
-  const poolMaxTris = Math.ceil(opts.triInds.length / 3);
-  const poolMaxVerts = opts.verts.length;
-  const poolMaxLines = opts.lineInds.length / 2;
+  // const poolMaxMeshes = pool.unis.length;
+  // const poolMaxTris = Math.ceil(pool.inds0.length / 3);
+  // const poolMaxVerts = pool.verts0.length;
+  // const poolMaxLines = opts.lineInds.length / 2;
+
+  // TODO(@darzu): register uni resource w/ registry?
+
+  const unisName = `${ptr.name}Unis`;
+  const vertsName = (i: number) => `${ptr.name}Verts${i}`;
+  const indsName = (i: number) => `${ptr.name}Inds${i}`;
+
+  const unisPtr = CY.createArray(unisName, {
+    struct: ptr.unisStruct,
+    init: ptr.maxMeshes,
+  });
+  const unis = createCyArray(
+    device,
+    unisPtr.name,
+    unisPtr.struct,
+    UNI_USAGE,
+    ptr.maxMeshes
+  );
+  resources.kindToNameToRes.array[unisPtr.name] = unis;
+
+  // TODO(@darzu): support multi
+  const verts0Ptr = CY.createArray(vertsName(0), {
+    struct: ptr.vertsStruct,
+    init: ptr.maxVerts,
+  });
+  const verts0 = createCyArray(
+    device,
+    verts0Ptr.name,
+    verts0Ptr.struct,
+    VERT_USAGE,
+    ptr.maxVerts
+  );
+  resources.kindToNameToRes.array[verts0Ptr.name] = verts0;
+
+  const inds0Ptr = CY.createIdxBuf(indsName(0), {
+    init: ptr.maxTris * 3, // TODO(@darzu): alignment?
+  });
+  const inds0 = createCyIdxBuf(device, inds0Ptr.name, ptr.maxTris * 3);
+  resources.kindToNameToRes.idxBuffer[inds0Ptr.name] = inds0;
 
   const allMeshes: MeshHandle[] = [];
 
   const _stats = createMeshPoolDbgStats();
 
   const pool = {
-    opts,
+    // opts,
     ptr,
+
+    // TODO(@darzu): IMPL
+    unisPtr,
+    unis,
+    verts0Ptr,
+    verts0,
+    inds0Ptr,
+    inds0,
+
     allMeshes,
     numTris: 0,
     numVerts: 0,
@@ -274,10 +332,10 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     assert(vertNum <= maxVertNum, "Inconsistent num of vertices!");
     assert(triNum <= maxTriNum, "Inconsistent num of triangles!");
     assert(lineNum <= maxLineNum, "Inconsistent num of lines!");
-    assert(pool.allMeshes.length + 1 <= poolMaxMeshes, "Too many meshes!!");
-    assert(pool.numVerts + maxVertNum <= poolMaxVerts, "Too many vertices!!");
-    assert(pool.numTris + maxTriNum <= poolMaxTris, "Too many triangles!!");
-    assert(pool.numLines + maxLineNum <= poolMaxLines, "Too many lines!!");
+    assert(pool.allMeshes.length + 1 <= ptr.maxMeshes, "Too many meshes!!");
+    assert(pool.numVerts + maxVertNum <= ptr.maxVerts, "Too many vertices!!");
+    assert(pool.numTris + maxTriNum <= ptr.maxTris, "Too many triangles!!");
+    assert(pool.numLines + maxLineNum <= ptr.maxLines, "Too many lines!!");
     assert(m.usesProvoking, `mesh must use provoking vertices`);
     // TODO(@darzu): what to do about this requirement...
     assert(
@@ -329,7 +387,7 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     return handle;
   }
   function addMeshInstance(m: MeshHandle): MeshHandle {
-    if (pool.allMeshes.length + 1 > poolMaxMeshes) throw "Too many meshes!";
+    if (pool.allMeshes.length + 1 > ptr.maxMeshes) throw "Too many meshes!";
 
     const uniOffset = allMeshes.length;
     const newHandle: MeshHandle = {
@@ -363,9 +421,9 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     vertIdx = vertIdx ?? 0;
     vertCount = vertCount ?? newMesh.pos.length;
     const data = ptr.computeVertsData(newMesh, vertIdx, vertCount);
-    opts.verts.queueUpdates(data, handle.vertIdx + vertIdx, 0, vertCount);
+    pool.verts0.queueUpdates(data, handle.vertIdx + vertIdx, 0, vertCount);
     if (PERF_DBG_GPU)
-      _stats._accumVertDataQueued += vertCount * opts.verts.struct.size;
+      _stats._accumVertDataQueued += vertCount * pool.verts0.struct.size;
   }
   function updateMeshTriangles(
     handle: MeshHandle,
@@ -396,7 +454,7 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     assertDbg(handle.triIdx % 2 === 0);
     const triData = computeTriData(newMesh, alignedTriIdx, alignedTriCount);
     assertDbg(triData.byteLength % 4 === 0, "alignment");
-    opts.triInds.queueUpdate(triData, (handle.triIdx + alignedTriIdx) * 3);
+    pool.inds0.queueUpdate(triData, (handle.triIdx + alignedTriIdx) * 3);
     if (PERF_DBG_GPU) _stats._accumTriDataQueued += triData.length * 2.0;
   }
   function updateMeshQuads(
@@ -416,7 +474,7 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     let bufQuadIdx = bufQuadIndsStart + quadIdx * 2 * 3;
     assertDbg(bufQuadIdx % 2 === 0);
     assertDbg(quadData.length % 2 === 0);
-    opts.triInds.queueUpdate(quadData, bufQuadIdx);
+    pool.inds0.queueUpdate(quadData, bufQuadIdx);
     if (PERF_DBG_GPU) _stats._accumTriDataQueued += quadData.byteLength;
   }
 
@@ -446,9 +504,11 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
   }
 
   function updateUniform(m: MeshHandle, d: CyToTS<U>): void {
-    opts.unis.queueUpdate(d, m.uniIdx);
-    if (PERF_DBG_GPU) _stats._accumUniDataQueued += opts.unis.struct.size;
+    pool.unis.queueUpdate(d, m.uniIdx);
+    if (PERF_DBG_GPU) _stats._accumUniDataQueued += pool.unis.struct.size;
   }
+
+  logMeshPoolStats(pool);
 
   return pool;
 }

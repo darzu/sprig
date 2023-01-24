@@ -103,20 +103,20 @@ fn vert_main(input: VertexInput) -> VertexOutput {
     // let displacedPos = flattenedPos + wave0 + wave0a;// wave0 + wave0a + wave1; //+ wave2;
 
     var output : VertexOutput;
-    let worldPos: vec4<f32> = oceanUni.transform * vec4<f32>(displacedPos, 1.0);
+    let worldPos: vec4<f32> = meshUni.transform * vec4<f32>(displacedPos, 1.0);
 
     let finalPos = worldPos;
 
     output.worldPos = finalPos;
     output.position = scene.cameraViewProjMatrix * finalPos;
     // TODO: use inverse-transpose matrix for normals as per: https://learnopengl.com/Lighting/Basic-Lighting
-    //output.normal = normalize(oceanUni.transform * vec4<f32>(normal, 0.0)).xyz;
-    output.normal = normalize(oceanUni.transform * vec4<f32>(gerstNormal, 0.0)).xyz;
-    output.color = color + oceanUni.tint;
+    //output.normal = normalize(meshUni.transform * vec4<f32>(normal, 0.0)).xyz;
+    output.normal = normalize(meshUni.transform * vec4<f32>(gerstNormal, 0.0)).xyz;
+    output.color = color + meshUni.tint;
     // output.color = tangent; // DBG TANGENT
     //output.color = output.normal;
     output.surface = input.surfaceId;
-    output.id = oceanUni.id;
+    output.id = meshUni.id;
 
     output.uv = uv;
 

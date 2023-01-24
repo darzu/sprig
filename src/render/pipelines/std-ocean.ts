@@ -105,23 +105,23 @@ export const gerstnerWavesPtr = CY.createArray("gerstnerWave", {
   forceUsage: GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM,
 });
 
-export const oceanVertsPtr = CY.createArray("oceanVertsBuf", {
-  struct: OceanVertStruct,
-  init: MAX_OCEAN_VERTS,
-});
+// export const oceanVertsPtr = CY.createArray("oceanVertsBuf", {
+//   struct: OceanVertStruct,
+//   init: MAX_OCEAN_VERTS,
+// });
 
-const oceanTriIndsPtr = CY.createIdxBuf("oceanTriIndsBuf", {
-  init: MAX_OCEAN_VERTS * 3,
-});
+// const oceanTriIndsPtr = CY.createIdxBuf("oceanTriIndsBuf", {
+//   init: MAX_OCEAN_VERTS * 3,
+// });
 
-const oceanLineIndsPtr = CY.createIdxBuf("oceanLineIndsBuf", {
-  init: MAX_OCEAN_VERTS * 2,
-});
+// const oceanLineIndsPtr = CY.createIdxBuf("oceanLineIndsBuf", {
+//   init: MAX_OCEAN_VERTS * 2,
+// });
 
-const oceanUnisPtr = CY.createArray("oceanUni", {
-  struct: OceanUniStruct,
-  init: MAX_OCEAN_MESHES,
-});
+// const oceanUnisPtr = CY.createArray("oceanUni", {
+//   struct: OceanUniStruct,
+//   init: MAX_OCEAN_MESHES,
+// });
 
 // TODO(@darzu): de-duplicate with std-scene's computeVertsData
 function computeOceanVertsData(
@@ -174,10 +174,16 @@ export const oceanPoolPtr = CY.createMeshPool("oceanPool", {
   // TODO(@darzu): per-mesh unis should maybe be optional? I don't think
   //     the ocean needs them
   computeUniData: computeOceanUniData,
-  vertsPtr: oceanVertsPtr,
-  unisPtr: oceanUnisPtr,
-  triIndsPtr: oceanTriIndsPtr,
-  lineIndsPtr: oceanLineIndsPtr,
+  unisStruct: OceanUniStruct,
+  vertsStruct: OceanVertStruct,
+  maxMeshes: MAX_OCEAN_MESHES,
+  maxTris: MAX_OCEAN_VERTS * 3,
+  maxLines: MAX_OCEAN_VERTS * 2, // TODO(@darzu): we don't need these..
+  maxVerts: MAX_OCEAN_VERTS,
+  // vertsPtr: oceanVertsPtr,
+  // unisPtr: oceanUnisPtr,
+  // triIndsPtr: oceanTriIndsPtr,
+  // lineIndsPtr: oceanLineIndsPtr,
   // TODO(@darzu): this dataDef is v weird
   dataDef: RenderDataOceanDef,
 });

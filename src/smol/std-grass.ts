@@ -169,18 +169,24 @@ export const grassPoolPtr = CY.createMeshPool("grassPool", {
   // TODO(@darzu): per-mesh unis should maybe be optional? I don't think
   //     the grass needs them
   computeUniData: computeGrassUniData,
-  vertsPtr: CY.createArray("grassVertsBuf", {
-    struct: GrassVertStruct,
-    init: MAX_GRASS_VERTS,
-  }),
-  unisPtr: CY.createArray("grassUni", {
-    struct: GrassUniStruct,
-    init: MAX_GRASS_MESHES,
-  }),
-  triIndsPtr: CY.createIdxBuf("grassTriIndsBuf", { init: MAX_GRASS_VERTS * 3 }),
-  lineIndsPtr: CY.createIdxBuf("grassLineIndsBuf", {
-    init: MAX_GRASS_VERTS * 2,
-  }),
+  // vertsPtr: CY.createArray("grassVertsBuf", {
+  //   struct: GrassVertStruct,
+  //   init: MAX_GRASS_VERTS,
+  // }),
+  // unisPtr: CY.createArray("grassUni", {
+  //   struct: GrassUniStruct,
+  //   init: MAX_GRASS_MESHES,
+  // }),
+  // triIndsPtr: CY.createIdxBuf("grassTriIndsBuf", { init: MAX_GRASS_VERTS * 3 }),
+  // lineIndsPtr: CY.createIdxBuf("grassLineIndsBuf", {
+  //   init: MAX_GRASS_VERTS * 2,
+  // }),
+  vertsStruct: GrassVertStruct,
+  unisStruct: GrassUniStruct,
+  maxMeshes: MAX_GRASS_MESHES,
+  maxTris: MAX_GRASS_VERTS * 3, // TODO(@darzu): probably want 1-1
+  maxLines: MAX_GRASS_VERTS * 2, // TODO(@darzu): don't need these
+  maxVerts: MAX_GRASS_VERTS,
   // TODO(@darzu): this dataDef is v weird
   dataDef: RenderDataGrassDef,
 });

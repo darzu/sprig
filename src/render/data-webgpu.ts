@@ -143,8 +143,10 @@ export interface CySampler {
 
 export let _gpuQueueBufferWriteBytes = 0;
 
+// TODO(@darzu): just take a ptr?
 export function createCySingleton<O extends CyStructDesc>(
   device: GPUDevice,
+  name: string,
   struct: CyStruct<O>,
   usage: GPUBufferUsageFlags,
   initData?: CyToTS<O>
@@ -194,15 +196,21 @@ export function createCySingleton<O extends CyStructDesc>(
     };
   }
 
+  if (PERF_DBG_GPU) {
+    console.log(`CySingleton ${name}: ${struct.size}b`);
+  }
+
   return buf;
 }
 
 export function createCyArray<O extends CyStructDesc>(
   device: GPUDevice,
+  name: string,
   struct: CyStruct<O>,
   usage: GPUBufferUsageFlags,
   lenOrData: number | CyToTS<O>[]
 ): CyArray<O> {
+  // TODO(@darzu): just take in a ptr?
   const hasInitData = typeof lenOrData !== "number";
   const length = hasInitData ? lenOrData.length : lenOrData;
 
@@ -289,11 +297,15 @@ export function createCyArray<O extends CyStructDesc>(
     };
   }
 
+  if (PERF_DBG_GPU)
+    console.log(`CyArray ${name}: ${struct.size * buf.length}b`);
+
   return buf;
 }
 
 export function createCyIdxBuf(
   device: GPUDevice,
+  name: string,
   length: number,
   data?: Uint16Array
 ): CyIdxBuffer {
@@ -307,6 +319,7 @@ export function createCyIdxBuf(
     // TODO(@darzu): update usages based on.. usage
     usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
     mappedAtCreation: hasInitData,
+    label: name,
   });
 
   const buf: CyIdxBuffer = {
@@ -330,6 +343,10 @@ export function createCyIdxBuf(
     device.queue.writeBuffer(_buf, startByte, data);
     if (PERF_DBG_GPU) _gpuQueueBufferWriteBytes += data.byteLength;
     if (PERF_DBG_GPU_BLAME) dbgAddBlame("gpu", data.byteLength);
+  }
+
+  if (PERF_DBG_GPU) {
+    console.log(`CyIdx ${name}: ${buf.size}b`);
   }
 
   return buf;
