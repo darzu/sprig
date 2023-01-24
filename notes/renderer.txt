@@ -249,6 +249,7 @@ Frame analysis:
     https://news.ycombinator.com/item?id=9770020
   http://www.adriancourreges.com/blog/2015/03/10/deus-ex-human-revolution-graphics-study/
     https://news.ycombinator.com/item?id=9565891
+  https://mamoniem.com/behind-the-pretty-frames-elden-ring/
 
 BLOGS TO SCAN:
   https://www.ea.com/frostbite/news
@@ -264,6 +265,7 @@ BLOGS TO SCAN:
     http://courses.cs.washington.edu/courses/csep557/ Trends in Computer Graphics
     http://courses.cs.washington.edu/courses/cse557/ Computer Graphics
   http://madebyevan.com
+  https://mamoniem.com
 
 coloring models:
   https://www.willusher.io/webgl-ewa-splatter/#Dinosaur
@@ -1441,6 +1443,9 @@ to read, nanite guys:
   https://www.wihlidal.com/blog/
   http://graphicrants.blogspot.com
 
+Nanite frame analysis:
+  https://www.elopezr.com/a-macro-view-of-nanite/
+
 HZB:
   https://docs.unrealengine.com/4.26/en-US/RenderingAndGraphics/VisibilityCulling/
 
@@ -1598,5 +1603,50 @@ Rotate 2d sprite via 3 sheers:
   https://www.ocf.berkeley.edu/~fricke/projects/israel/paeth/rotation_by_shearing.html
   shader: https://www.shadertoy.com/view/dlfXRM
 
-Takedown voxel frame analysis:
+Teardown voxel frame analysis:
   https://acko.net/blog/teardown-frame-teardown/
+  deferred rendering,
+    albedo rgb, normal xyz, 
+    (roughness, reflectivity, metallic, emissive), 
+    motion xy, water mask
+    depth linear z (u16)
+    z-buffer: inverse z (f32)
+  draw call: 36 verts, 12 triangles cube
+    not voxels, instead object bounding box
+    objects are 3d volume textures w/ 1byte/voxel
+  transparency: 50% screen-door effect
+  custom "early-z":
+    custom z buffer, copied out 8 times/frame
+    8 batches, can only early-z against previous batches
+  cables, ropes and wires single seperate draw call
+  another draw: smoke particles
+    CPU simulated
+    "the renderer makes eager use of blue-noise based screen door transparency"
+  final pass: map-wide water
+    "The game also has dynamic foam ripples on the water, when swimming or driving a boat. For this, the last N ripples are stored and evaluated in the same water shader, expanding and fading out over time"
+  volumetric level wide shadow map:
+    "Unlike the regular voxel objects, this map is actually 1-bit. Each of its 8-bit texels stores 2×2×2 voxels. So it's actually a 3504×200×3000 voxel volume. Like the other 3D textures, this has 2 additional MIP levels to accelerate raytracing, but it has that additional "-1" MIP level inside the bits, which requires a custom loop to trace through it."
+       CPU-rendered, updated via dedicated thread (probably)
+  light:
+    "As is typical in a deferred renderer, each source of light is drawn individually into a light buffer, affecting only the pixels within the light's volume"
+    "As this is irradiance, it does not yet factor in the color of each surface."
+      denoise: "This uses a spiral-shaped blur filter around each point, weighted by distance.
+    "Interestingly, while it looks like a height-based fog which thins out by elevation, it is actually just based on vertical view direction. A clever trick, and a fair amount cheaper.
+  "This is now the fourth time that temporal reprojection and blending was applied in one frame: this is no surprise, given how much stochastic sampling was used to produce the image in the first place."
+
+Teardown author blog:
+  https://blog.voxagon.se/2020/12/03/spraycan.html
+
+Teardown guy:
+  https://www.gdcvault.com/play/1020142/Physics-for-Game-Programmers-Sprinkle
+  https://ubm-twvideo01.s3.amazonaws.com/o1/vault/GDC2014/Presentations/Gustafsson_Dennis_Sprinkle_Fluids.pdf
+
+Graphics blogs to read:
+  http://www.kecho.me
+  http://www.pauliehughes.com
+
+"NVIDIA Nsight Graphics", like RenderDoc:
+  https://developer.nvidia.com/nsight-graphics
+
+Another interesting blog:
+  https://nothke.github.io
