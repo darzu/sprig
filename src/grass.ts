@@ -4,7 +4,6 @@ import { gameMeshFromMesh } from "./assets.js";
 import { grassPoolPtr, RenderDataGrassDef } from "./smol/std-grass.js";
 import { jitter, align } from "./math.js";
 import { PositionDef } from "./physics/transform.js";
-import { MeshPool, MeshHandle, MeshPoolOpts } from "./render/mesh-pool.js";
 import { Mesh, RawMesh } from "./render/mesh.js";
 import {
   RenderableConstructDef,
@@ -223,8 +222,6 @@ export async function createGrassTileset(
   }
 
   // const pool = builder.finish();
-
-  // const tiles = pool.allMeshes;
 
   // handle grass tile movement
   function update(target: vec3) {

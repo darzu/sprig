@@ -144,8 +144,8 @@ export function createRenderer(
       numVerts: 0,
     };
     for (let p of Object.values(cyKindToNameToRes.meshPool)) {
-      stats.numTris += p.numTris;
-      stats.numVerts += p.numVerts;
+      stats.numTris += p.sets.reduce((p, n) => p + n.numTris, 0);
+      stats.numVerts += p.sets.reduce((p, n) => p + n.numVerts, 0);
     }
     return stats;
   }

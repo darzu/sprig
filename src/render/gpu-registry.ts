@@ -36,6 +36,7 @@ export interface CyArrayPtr<O extends CyStructDesc> extends CyResourcePtr {
   kind: "array";
   struct: CyStruct<O>;
   init: (() => CyToTS<O>[]) | number;
+  // TODO(@darzu): HACK. we try to infer usage flags and this is our escape hatch
   forceUsage?: GPUBufferUsageFlags;
 }
 export interface CySingletonPtr<O extends CyStructDesc> extends CyResourcePtr {
@@ -115,18 +116,14 @@ export interface CyMeshPoolPtr<
   // TODO(@darzu): remove id and name, this doesn't need to be inited directly
   computeVertsData: ComputeVertsDataFn<V>;
   computeUniData: (m: Mesh) => CyToTS<U>;
-  // TODO(@darzu): MULTI-BUFF. prep for multi-buffer pools
-  // vertsStruct: CyStruct<V>;
-  // unisStruct: CyStruct<U>;
-  // // TODO(@darzu): do we need these max's? maybe we make them optional
-  // maxTris: number;
-  // maxLines: number;
-  // maxUnis: number;
-  // maxVerts: number;
-  vertsPtr: CyArrayPtr<V>;
-  unisPtr: CyArrayPtr<U>;
-  triIndsPtr: CyIdxBufferPtr;
-  lineIndsPtr: CyIdxBufferPtr;
+  vertsStruct: CyStruct<V>;
+  unisStruct: CyStruct<U>;
+  // TODO(@darzu): do we need these max's? maybe we make them optional
+  maxMeshes: number;
+  maxSets: number;
+  setMaxTris: number;
+  setMaxLines: number;
+  setMaxVerts: number;
   // TODO(@darzu): really unsure how I feel about having an EM component here in CY
   dataDef: ComponentDef<string, CyToTS<U>, [CyToTS<U>]>;
 }
@@ -284,12 +281,14 @@ function emptyCyKindToPtrSet(): CyKindToPtrSet {
 
 export function createCyRegistry() {
   let nameToPtr: { [name: string]: CyResourcePtr } = {};
-  // TODO(@darzu): IMPL fill from instantiator
-  let kindToNameToRes: {
-    [K in PtrKind]: { [name: string]: PtrKindToResourceType[K] };
-  };
 
-  let flight = 1; // TODO(@darzu): IMPL!
+  // TODO(@darzu): impl multi-flight registry & instantiation; see createCyResources comments
+  // // TODO(@darzu): IMPL fill from instantiator
+  // let kindToNameToRes: {
+  //   [K in PtrKind]: { [name: string]: PtrKindToResourceType[K] };
+  // };
+  // let flight = 1; // TODO(@darzu): IMPL!
+
   let nextFlightPtrs = emptyCyKindToPtrSet();
 
   function registerCyResource<R extends CyResourcePtr>(ptr: R): R {

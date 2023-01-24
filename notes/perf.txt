@@ -321,3 +321,9 @@ Allocator:
   https://twitter.com/SebAaltonen/status/1616771875413049344
   LZCNT: Count the Number of Leading Zero Bits
   POPCNT: 
+
+TBDR:
+  "I allow next render pass to run vertex shaders before the previous pass finishes. This is the biggest optimization you want on mobile TBDR GPUs."
+  https://twitter.com/SebAaltonen/status/1617488998825447424
+  tile-based deferred rendering?
+  https://developer.apple.com/documentation/metal/tailor_your_apps_for_apple_gpus_and_tile-based_deferred_rendering

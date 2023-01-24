@@ -40,14 +40,25 @@ import {
   CyPipelinePtr,
 } from "./gpu-registry.js";
 import {
+  CyStruct,
   GPUBufferBindingTypeToWgslVar,
   texTypeToSampleType,
 } from "./gpu-struct.js";
-import { createMeshPool, MeshHandle } from "./mesh-pool.js";
+import { createMeshPool, MeshHandle, MeshPool } from "./mesh-pool.js";
 import { DEFAULT_MASK } from "./pipeline-masks.js";
 import { oceanPoolPtr } from "./pipelines/std-ocean.js";
 import { ShaderSet } from "./shader-loader.js";
 import { GPUBufferUsage } from "./webgpu-hacks.js";
+
+// TODO(@darzu): instantiator refactor goals:
+// [ ] better usage inference so we don't need "hackArray", "forceUsage", etc.
+// [ ] multi-flight instantiation so we can e.g. define and create ocean resources
+//     only if ocean init is run and needed.
+// [x] support multiple vertex & index buffers in mesh pools, maybe by creating
+//     them in future flights
+// [ ] support indirect-draw / GPU-based rendering; unknown what needs to change here
+// [ ] support typed & named collections of instantiated GPU resources, e.g. OceanRes
+//      would have .gerstnerWaves: CyArray
 
 // TODO(@darzu): visibility restrictions:
 /*
@@ -76,13 +87,13 @@ function collectBufferUsages(cy: CyRegistry): CyBufferUsages {
   const bufferUsages: CyBufferUsages = {};
   // all buffers are updatable via queue
   // TODO(@darzu): option for some to opt out? for perf?
-  [...cy.kindToPtrs.array, ...cy.kindToPtrs.singleton].forEach(
-    (r) => (bufferUsages[r.name] |= GPUBufferUsage.COPY_DST)
-  );
+  [...cy.kindToPtrs.array, ...cy.kindToPtrs.singleton].forEach((r) => {
+    bufferUsages[r.name] |= GPUBufferUsage.COPY_DST;
+  });
   // all singleton buffers are probably used as uniforms
-  cy.kindToPtrs.singleton.forEach(
-    (p) => (bufferUsages[p.name] |= GPUBufferUsage.UNIFORM)
-  );
+  cy.kindToPtrs.singleton.forEach((p) => {
+    bufferUsages[p.name] |= GPUBufferUsage.UNIFORM;
+  });
   // all pipeline global resources are storage or uniform
   // TODO(@darzu): be more precise?
   [...cy.kindToPtrs.compPipeline, ...cy.kindToPtrs.renderPipeline].forEach(
@@ -103,9 +114,7 @@ function collectBufferUsages(cy: CyRegistry): CyBufferUsages {
       bufferUsages[p.meshOpt.instance.name] |= GPUBufferUsage.VERTEX;
       bufferUsages[p.meshOpt.vertex.name] |= GPUBufferUsage.VERTEX;
     } else if (p.meshOpt.stepMode === "per-mesh-handle") {
-      // TODO(@darzu): MULTI-BUFF.
-      bufferUsages[p.meshOpt.pool.vertsPtr.name] |= GPUBufferUsage.VERTEX;
-      bufferUsages[p.meshOpt.pool.unisPtr.name] |= GPUBufferUsage.UNIFORM;
+      // NOTE: mesh pools own and create their own dynamic number of vertex + index buffers
     } else if (p.meshOpt.stepMode === "single-draw") {
       // TODO(@darzu): any buffers?
     } else {
@@ -114,9 +123,7 @@ function collectBufferUsages(cy: CyRegistry): CyBufferUsages {
   });
   // mesh pools have vert and uniform buffers
   cy.kindToPtrs.meshPool.forEach((p) => {
-    // TODO(@darzu): MULTI-BUFF.
-    bufferUsages[p.vertsPtr.name] |= GPUBufferUsage.VERTEX;
-    bufferUsages[p.unisPtr.name] |= GPUBufferUsage.UNIFORM;
+    // NOTE: mesh pools own and create their own dynamic number of vertex + index buffers
   });
   // apply forced usages
   // TODO(@darzu): ideally, we would understand the scenarios where we need this
@@ -171,7 +178,11 @@ function collectTextureUsages(cy: CyRegistry): CyTextureUsages {
   return texUsages;
 }
 
-function createCySampler(device: GPUDevice, s: CySamplerPtr): CySampler {
+function createCySampler(
+  device: GPUDevice,
+  name: string,
+  s: CySamplerPtr
+): CySampler {
   // TODO(@darzu): other sampler features?
   let desc: GPUSamplerDescriptor;
   if (
@@ -192,6 +203,7 @@ function createCySampler(device: GPUDevice, s: CySamplerPtr): CySampler {
       compare: "less",
     };
   } else never(s, "todo");
+  desc.label = name;
   return {
     ptr: s,
     sampler: device.createSampler(desc),
@@ -223,17 +235,14 @@ export function createCyResources(
 
   // create singleton resources
   for (let s of cy.kindToPtrs.sampler) {
-    kindToNameToRes.sampler[s.name] = createCySampler(device, s);
+    kindToNameToRes.sampler[s.name] = createCySampler(device, s.name, s);
   }
 
   // create many-buffers
   cy.kindToPtrs.array.forEach((r) => {
     const usage = bufferUsages[r.name]!;
     const lengthOrData = typeof r.init === "number" ? r.init : r.init();
-    const buf = createCyArray(device, r.struct, usage, lengthOrData);
-    if (PERF_DBG_GPU) {
-      console.log(`CyArray ${r.name}: ${r.struct.size * buf.length}b`);
-    }
+    const buf = createCyArray(device, r.name, r.struct, usage, lengthOrData);
     kindToNameToRes.array[r.name] = buf;
   });
 
@@ -242,49 +251,25 @@ export function createCyResources(
     const usage = bufferUsages[r.name]!;
     const buf = createCySingleton(
       device,
+      r.name,
       r.struct,
       usage,
       r.init ? r.init() : undefined
     );
     kindToNameToRes.singleton[r.name] = buf;
-    if (PERF_DBG_GPU) {
-      console.log(`CySingleton ${r.name}: ${r.struct.size}b`);
-    }
   });
 
   // create idx-buffers
   cy.kindToPtrs.idxBuffer.forEach((r) => {
     const data = typeof r.init === "function" ? r.init() : undefined;
     const length: number = data ? data.length : (r.init as number);
-    const buf = createCyIdxBuf(device, length, data);
+    const buf = createCyIdxBuf(device, r.name, length, data);
     kindToNameToRes.idxBuffer[r.name] = buf;
-    if (PERF_DBG_GPU) {
-      console.log(`CyIdx ${r.name}: ${buf.size}b`);
-    }
   });
 
   // create mesh pools
   cy.kindToPtrs.meshPool.forEach((r) => {
-    // TODO(@darzu): MULTI-BUFF.
-    const verts = kindToNameToRes.array[r.vertsPtr.name];
-    const unis = kindToNameToRes.array[r.unisPtr.name];
-    const triInds = kindToNameToRes.idxBuffer[r.triIndsPtr.name];
-    const lineInds = kindToNameToRes.idxBuffer[r.lineIndsPtr.name];
-    assert(
-      verts && unis && triInds && lineInds,
-      `Missing buffer for mesh pool ${r.name}`
-    );
-    const pool = createMeshPool(
-      {
-        verts,
-        unis,
-        triInds,
-        lineInds,
-      },
-      // TODO(@darzu): MULTI-BUFF.
-      // device,
-      r
-    );
+    const pool = createMeshPool(device, { kindToNameToRes }, r);
     kindToNameToRes.meshPool[r.name] = pool;
   });
 
@@ -453,27 +438,27 @@ function createCyPipeline(
       return cyPipeline;
     } else if (p.meshOpt.stepMode === "per-mesh-handle") {
       // TODO(@darzu): de-duplicate with above?
-      // TODO(@darzu): MULTI-BUFF.
-      const vertBuf = kindToNameToRes.array[p.meshOpt.pool.vertsPtr.name];
-      const idxBuffer =
-        kindToNameToRes.idxBuffer[p.meshOpt.pool.triIndsPtr.name];
-      const uniBuf = kindToNameToRes.array[p.meshOpt.pool.unisPtr.name];
-      const pool = kindToNameToRes.meshPool[p.meshOpt.pool.name];
+      const pool: MeshPool<any, any> =
+        kindToNameToRes.meshPool[p.meshOpt.pool.name];
 
+      // TODO(@darzu): we shouldn't need the uni ptr here, just the struct
       const uniUsage: CyGlobalUsage<CyArrayPtr<any>> = {
-        ptr: p.meshOpt.pool.unisPtr,
+        ptr: pool.unisPtr,
         access: "read",
+        // TODO(@darzu): use different aliases?
+        alias: "meshUni",
       };
       const uniBGLayout = mkBindGroupLayout([uniUsage], true);
+      // const uniBGLayout = device.createBindGroupLayout({
+      //   entries: [pool.ptr.unisStruct.layout(0, shaderStage, "uniform", true)],
+      // });
 
       const uniStruct = globalToWgslDefs(uniUsage, "one");
       const uniVar = globalToWgslVars(uniUsage, "one", 1, 0, shaderStage);
 
       const vertexInputStruct =
         `struct VertexInput {\n` +
-        // TODO(@darzu): MULTI-BUFF.
-        // `${pool.ptr.vertsStruct.wgsl(false, 0)}\n` +
-        `${vertBuf.struct.wgsl(false, 0)}\n` +
+        `${pool.ptr.vertsStruct.wgsl(false, 0)}\n` +
         `}\n`;
 
       // render shader
@@ -503,9 +488,7 @@ function createCyPipeline(
         vertex: {
           module: shader,
           entryPoint: p.shaderVertexEntry,
-          // TODO(@darzu): MULTI-BUFF.
-          // buffers: [pool.ptr.vertsStruct.vertexLayout("vertex", 0)],
-          buffers: [vertBuf.struct.vertexLayout("vertex", 0)],
+          buffers: [pool.ptr.vertsStruct.vertexLayout("vertex", 0)],
         },
         fragment: {
           module: shader,
@@ -517,9 +500,6 @@ function createCyPipeline(
       const rndrPipeline = device.createRenderPipeline(rndrPipelineDesc);
       const cyPipeline: CyRenderPipeline = {
         ptr: p,
-        // TODO(@darzu): MULTI-BUFF
-        indexBuf: idxBuffer,
-        vertexBuf: vertBuf,
         pipeline: rndrPipeline,
         pool,
         bindGroupLayouts: [resBindGroupLayout, uniBGLayout],
@@ -699,6 +679,7 @@ function createCyPipeline(
     };
     return device.createBindGroupLayout(bindGroupLayoutDesc);
   }
+
   function globalToWgslDefs(
     r: CyGlobalUsage<CyGlobal>,
     plurality: "one" | "many"
@@ -852,14 +833,10 @@ export function bundleRenderPipelines(
       bundleEnc.setBindGroup(0, resBindGroup);
     }
 
-    // TODO(@darzu): MULTI-BUFF
-    if (p.indexBuf) bundleEnc.setIndexBuffer(p.indexBuf.buffer, "uint16");
-    if (p.vertexBuf) bundleEnc.setVertexBuffer(0, p.vertexBuf.buffer);
     if (p.ptr.meshOpt.stepMode === "per-instance") {
       assert(!!p.instanceBuf && !!p.indexBuf);
-      // TODO(@darzu): MULTI-BUFF
-      // bundleEnc.setIndexBuffer(p.indexBuf.buffer, "uint16");
-      // if (p.vertexBuf) bundleEnc.setVertexBuffer(0, p.vertexBuf.buffer);
+      bundleEnc.setIndexBuffer(p.indexBuf.buffer, "uint16");
+      if (p.vertexBuf) bundleEnc.setVertexBuffer(0, p.vertexBuf.buffer);
       bundleEnc.setVertexBuffer(1, p.instanceBuf.buffer);
       bundleEnc.drawIndexed(p.indexBuf.length, p.instanceBuf.length, 0, 0);
       dbgNumTris += p.instanceBuf.length * (p.indexBuf.length / 3);
@@ -868,7 +845,7 @@ export function bundleRenderPipelines(
       assert(p.pool.ptr === p.ptr.meshOpt.pool);
       const uniBGLayout = p.bindGroupLayouts[1]; // TODO(@darzu): hacky convention?
       const uniUsage: CyGlobalUsage<CyArrayPtr<any>> = {
-        ptr: p.ptr.meshOpt.pool.unisPtr,
+        ptr: p.pool.unisPtr,
         access: "read",
       };
       const uniBG = mkBindGroup(
@@ -878,26 +855,26 @@ export function bundleRenderPipelines(
         [uniUsage],
         "one"
       );
-      // TODO(@darzu): IMPL
-      // TODO(@darzu): MULTI-BUFF
-      // bundleEnc.setIndexBuffer(p.indexBuf.buffer, "uint16");
-      // bundleEnc.setVertexBuffer(0, p.vertexBuf.buffer);
-      // TODO(@darzu): filter meshes?
-      for (let m of p.pool.allMeshes) {
-        // TODO(@darzu): DBG
-        // if (p.pool.opts.computeVertsData === oceanPoolPtr.computeVertsData) {
-        // console.log(`OCEAN MESH: ${m.mId} has: ${meshHandleIds.has(m.mId)}`);
-        // }
-        if (!meshHandleIds.has(m.mId)) continue;
-        let mask = p.ptr.meshOpt.meshMask ?? DEFAULT_MASK;
-        if ((mask & m.mask) === 0) continue;
-        bundleEnc.setBindGroup(1, uniBG, [
-          m.uniIdx * p.pool.opts.unis.struct.size,
-        ]);
-        // TODO(@darzu): do we always want to draw max or do we want to rebundle?
-        let numTri = m.reserved?.maxTriNum ?? m.triNum;
-        bundleEnc.drawIndexed(numTri * 3, undefined, m.triIdx * 3, m.vertIdx);
-        dbgNumTris += m.triNum * 3;
+      for (let set of p.pool.sets) {
+        bundleEnc.setIndexBuffer(set.inds.buffer, "uint16");
+        bundleEnc.setVertexBuffer(0, set.verts.buffer);
+        // TODO(@darzu): filter meshes?
+        for (let m of set.meshes) {
+          // TODO(@darzu): DBG
+          // if (p.pool.opts.computeVertsData === oceanPoolPtr.computeVertsData) {
+          // console.log(`OCEAN MESH: ${m.mId} has: ${meshHandleIds.has(m.mId)}`);
+          // }
+          if (!meshHandleIds.has(m.mId)) continue;
+          let mask = p.ptr.meshOpt.meshMask ?? DEFAULT_MASK;
+          if ((mask & m.mask) === 0) continue;
+          bundleEnc.setBindGroup(1, uniBG, [
+            m.uniIdx * p.pool.unis.struct.size,
+          ]);
+          // TODO(@darzu): do we always want to draw max or do we want to rebundle?
+          let numTri = m.reserved?.maxTriNum ?? m.triNum;
+          bundleEnc.drawIndexed(numTri * 3, undefined, m.triIdx * 3, m.vertIdx);
+          dbgNumTris += m.triNum * 3;
+        }
       }
     } else if (p.ptr.meshOpt.stepMode === "single-draw") {
       bundleEnc.draw(p.ptr.meshOpt.vertexCount, 1, 0, 0);

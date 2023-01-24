@@ -18,6 +18,7 @@ export const PointLightStruct = createCyStruct(
     linear: "f32",
     quadratic: "f32",
   },
+  // TODO(@darzu): HACK:
   { isUniform: true, hackArray: true }
 );
 

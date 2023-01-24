@@ -18,10 +18,11 @@ BIG REFACTORS / DEBT:
 [ ] Re-enable timestep stuff and fix perf and clarify (disabled for LD51)
 [ ] Re-enable multiple shadow casters
 [ ] Unify shader code snippets like getShadowVis
+[ ] Switch to actual deferred rendering; right now we do way to much in first fragment
 
 BIG FEATURES:
 [ ] Multiplayer reconnect
-[ ] GPU-driven rendering options
+[ ] GPU-driven rendering options via indirect draw
 [ ] GPU-based mesh generation (grass, particles, etc)
   Perhaps inspired by Returnal folks.
 [ ] Flexible particle system
