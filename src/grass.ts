@@ -198,6 +198,7 @@ export async function createGrassTileset(
         tile,
         RenderableConstructDef,
         tileProto,
+        // false,
         undefined,
         undefined,
         undefined,

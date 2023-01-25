@@ -71,7 +71,7 @@ NOTES:
 - Cut grass by updating a texture that has cut/not cut or maybe cut-height
 */
 
-const DBG_PLAYER = false;
+const DBG_PLAYER = true;
 
 // world map is centered around 0,0
 const WORLD_WIDTH = 1024; // width runs +z
@@ -213,6 +213,8 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
     bladeW: 0.2,
     // bladeH: 3,
     // bladeH: 1.6,
+    // bladeH: 2.6,
+    // bladeH: 3.2,
     // bladeH: 1.5,
     // bladeH: 1.8,
     bladeH: 4.2,
@@ -332,11 +334,17 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
       aabb: res.assets.ball.aabb,
     });
 
-    vec3.copy(g.position, [-28.11, 26.0, -28.39]);
-    quat.copy(g.rotation, [0.0, -0.94, 0.0, 0.34]);
+    // vec3.copy(g.position, [-28.11, 26.0, -28.39]);
+    // quat.copy(g.rotation, [0.0, -0.94, 0.0, 0.34]);
+    // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
+    // g.cameraFollow.yawOffset = 0.0;
+    // g.cameraFollow.pitchOffset = -0.593;
+
+    vec3.copy(g.position, [-34.72, 50.31, -437.72]);
+    quat.copy(g.rotation, [0.0, -0.99, 0.0, 0.16]);
     vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
     g.cameraFollow.yawOffset = 0.0;
-    g.cameraFollow.pitchOffset = -0.593;
+    g.cameraFollow.pitchOffset = -0.452;
 
     em.registerSystem(
       [GhostDef, WorldFrameDef, ColliderDef],
