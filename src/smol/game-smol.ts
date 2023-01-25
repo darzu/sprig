@@ -71,7 +71,7 @@ NOTES:
 - Cut grass by updating a texture that has cut/not cut or maybe cut-height
 */
 
-const DBG_PLAYER = true;
+const DBG_PLAYER = false;
 
 // world map is centered around 0,0
 const WORLD_WIDTH = 1024; // width runs +z

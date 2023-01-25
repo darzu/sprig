@@ -67,33 +67,36 @@ fn vert_main(input: VertexInput) -> VertexOutput {
     output.position = scene.cameraViewProjMatrix * output.worldPos;
     // TODO: use inverse-transpose matrix for normals as per: https://learnopengl.com/Lighting/Basic-Lighting
     output.normal = (meshUni.transform * vec4<f32>(normal, 0.0)).xyz;
+
     // output.color = color + meshUni.tint;
-    //output.color = meshUni.tint;
+
+    var color = meshUni.tint.xyz;
+    // output.color = meshUni.tint;
     // TODO: this is bad
-    rand_seed = worldPos.xz;
-    let rr = rand();
-    let rg = rand();
-    let rb = rand();
-    let randV3 = vec3<f32>(rr - 0.5, rg - 0.5, rb - 0.5);
-    var color: vec3<f32>;
-    if (colorKey < 0.1) {
-      color = vec3<f32>(0.1, 0.5, 0.1) + randV3 * 0.1;
-    } else if (colorKey < 0.6) {
-      color = vec3<f32>(0.2, 0.1, 0.2) + randV3 * 0.1;
-    } else {
-      color = vec3<f32>(0.5, 0.1, 0.1) + randV3 * 0.1;
-    }
-    // color *= spawnF;
-    color *= 2.0;
+    // rand_seed = worldPos.xz;
+    // let rr = rand();
+    // let rg = rand();
+    // let rb = rand();
+    // let randV3 = vec3<f32>(rr - 0.5, rg - 0.5, rb - 0.5);
+    // var color: vec3<f32>;
+    // if (colorKey < 0.1) {
+    //   color = vec3<f32>(0.1, 0.5, 0.1) + randV3 * 0.1;
+    // } else if (colorKey < 0.6) {
+    //   color = vec3<f32>(0.2, 0.1, 0.2) + randV3 * 0.1;
+    // } else {
+    //   color = vec3<f32>(0.5, 0.1, 0.1) + randV3 * 0.1;
+    // }
+    // // color *= spawnF;
+    // color *= 2.0;
     if (cut > 0.1) {
       color *= 0.2;
     }
-    let secRand = rand();
-    if (secRand < 0.05) {
-      color = scene.secColor; //  + vec3<f32>(0.5);
-    } else if (secRand < 0.07) {
-      color = scene.terColor;
-    }
+    // let secRand = rand();
+    // if (secRand < 0.05) {
+    //   color = scene.secColor; //  + vec3<f32>(0.5);
+    // } else if (secRand < 0.07) {
+    //   color = scene.terColor;
+    // }
     output.color = color;
     output.surface = input.surfaceId;
     output.id = meshUni.id;
