@@ -173,7 +173,7 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
   const worldUnitPerTerraVerts = 1 / terraVertsPerWorldUnit;
   const terraZCount = Math.floor(WORLD_WIDTH * terraVertsPerWorldUnit);
   const terraXCount = Math.floor(WORLD_HEIGHT * terraVertsPerWorldUnit);
-  const terraMesh = createFlatQuadMesh(terraXCount, terraZCount);
+  const terraMesh = createFlatQuadMesh(terraZCount, terraXCount);
   mutateMeshPositions(terraMesh, (p, i) => {
     // console.log("i: " + vec3Dbg(p));
     const x = p[0] * worldUnitPerTerraVerts - WORLD_HEIGHT * 0.5;
