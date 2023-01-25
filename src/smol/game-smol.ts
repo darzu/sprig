@@ -39,7 +39,7 @@ import { shadowPipelines } from "../render/pipelines/std-shadow.js";
 import { RenderableConstructDef, RendererDef } from "../render/renderer-ecs.js";
 import { mat3, mat4, quat, V, vec3 } from "../sprig-matrix.js";
 import { createMast, createSail, MastDef, SAIL_FURL_RATE } from "./sail.js";
-import { quatFromUpForward, randNormalPosVec3 } from "../utils-3d.js";
+import { quatFromUpForward, randNormalPosVec3, vec3Dbg } from "../utils-3d.js";
 import { randColor } from "../utils-game.js";
 import { GrassCutTexPtr, grassPoolPtr, renderGrassPipe } from "./std-grass.js";
 import { WindDef } from "./wind.js";
@@ -71,16 +71,17 @@ NOTES:
 - Cut grass by updating a texture that has cut/not cut or maybe cut-height
 */
 
-const DBG_PLAYER = false;
+const DBG_PLAYER = true;
 
-const WORLD_WIDTH = 1024;
-const WORLD_HEIGHT = 512;
+// world map is centered around 0,0
+const WORLD_WIDTH = 1024; // width runs +z
+const WORLD_HEIGHT = 512; // height runs +x
 
 const RED_DAMAGE_CUTTING = 10;
 const RED_DAMAGE_PER_FRAME = 40;
 const GREEN_HEALING = 1;
 
-const SHIP_START_POS: vec3 = V(0, 2, -WORLD_WIDTH * 0.5 * 0.6);
+const SHIP_START_POS: vec3 = V(0, 2, -WORLD_WIDTH * 0.5 * 0.8);
 
 // const WORLD_HEIGHT = 1024;
 
@@ -157,23 +158,32 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
     mapJfa.sdfTex.format
   );
   function sampleTerra(worldX: number, worldZ: number) {
-    // TODO(@darzu): IMPL
-    let xi = ((worldX + WORLD_WIDTH * 0.5) / WORLD_WIDTH) * terraReader.size[0];
+    let xi = ((worldZ + WORLD_WIDTH * 0.5) / WORLD_WIDTH) * terraReader.size[0];
     let yi =
-      ((worldZ + WORLD_HEIGHT * 0.5) / WORLD_WIDTH) * terraReader.size[1];
+      ((worldX + WORLD_HEIGHT * 0.5) / WORLD_HEIGHT) * terraReader.size[1];
     // xi = clamp(xi, 0, terraReader.size[0]);
     // yi = clamp(yi, 0, terraReader.size[1]);
-    return terraReader.sample(xi, yi);
+    const height = terraReader.sample(xi, yi) / 256;
+    // console.log(`xi: ${xi}, yi: ${yi} => ${height}`);
+    return height;
   }
 
   // height map
   const terraVertsPerWorldUnit = 0.25;
-  const terraXCount = Math.floor(WORLD_WIDTH * terraVertsPerWorldUnit);
-  const terraZCount = Math.floor(WORLD_HEIGHT * terraVertsPerWorldUnit);
+  const worldUnitPerTerraVerts = 1 / terraVertsPerWorldUnit;
+  const terraZCount = Math.floor(WORLD_WIDTH * terraVertsPerWorldUnit);
+  const terraXCount = Math.floor(WORLD_HEIGHT * terraVertsPerWorldUnit);
   const terraMesh = createFlatQuadMesh(terraXCount, terraZCount);
-  mutateMeshPositions(terraMesh, (p) => {
-    p[0] *= 1 / terraVertsPerWorldUnit - WORLD_WIDTH * 0.5;
-    p[2] *= 1 / terraVertsPerWorldUnit - WORLD_HEIGHT * 0.5;
+  mutateMeshPositions(terraMesh, (p, i) => {
+    // console.log("i: " + vec3Dbg(p));
+    const x = p[0] * worldUnitPerTerraVerts - WORLD_HEIGHT * 0.5;
+    const z = p[2] * worldUnitPerTerraVerts - WORLD_WIDTH * 0.5;
+    const y = sampleTerra(x, z) * 100.0;
+    p[0] = x;
+    p[1] = y;
+    p[2] = z;
+    // console.log("o: " + vec3Dbg(p));
+    // if (i > 10) throw "stop";
   });
   const hm = em.new();
   em.ensureComponentOn(hm, RenderableConstructDef, terraMesh);
@@ -256,9 +266,11 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
     RenderableConstructDef,
     grMesh,
     undefined,
+    // false,
     undefined,
     undefined,
     grassPoolPtr
+    // true
   );
   em.ensureComponentOn(gr, ColorDef, randColor());
   em.ensureComponentOn(gr, PositionDef);
@@ -413,7 +425,7 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
   const worldXToTexY = (x: number) => Math.floor(x + WORLD_HEIGHT / 2);
   const worldZToTexX = (z: number) => Math.floor(z + WORLD_WIDTH / 2);
   const texXToWorldZ = (x: number) => x - WORLD_WIDTH / 2 + 0.5;
-  const texYToWorldX = (x: number) => x - WORLD_HEIGHT / 2 + 0.5;
+  const texYToWorldX = (y: number) => y - WORLD_HEIGHT / 2 + 0.5;
 
   score.onLevelEnd.push(() => {
     worldCutData.fill(0.0);
@@ -444,8 +456,10 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
       // window texture
       const winYi = worldXToTexY(worldAABB.min[0]);
       const winXi = worldZToTexX(worldAABB.min[2]);
-      const winWi = Math.ceil(worldAABB.max[0] - worldAABB.min[0]);
-      const winHi = Math.ceil(worldAABB.max[2] - worldAABB.min[2]);
+      // NOTE: width is based on world Z and tex X
+      //       height is based on world X and tex Y
+      const winWi = Math.ceil(worldAABB.max[2] - worldAABB.min[2]);
+      const winHi = Math.ceil(worldAABB.max[0] - worldAABB.min[0]);
 
       if (
         winXi < 0 ||
@@ -457,8 +471,8 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
         return;
       }
 
-      const shipW = selfAABB.max[0] - selfAABB.min[0];
-      const shipH = selfAABB.max[2] - selfAABB.min[2];
+      const shipW = selfAABB.max[2] - selfAABB.min[2];
+      const shipH = selfAABB.max[0] - selfAABB.min[0];
       let healthChanges = 0;
       let cutPurple = 0;
 
@@ -490,7 +504,7 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
           const zDist = toPartyX * dirX + toPartyZ * dirZ;
           const xDist = toPartyX * -dirZ + toPartyZ * dirX;
 
-          if (Math.abs(xDist) < shipW * 0.5 && Math.abs(zDist) < shipH * 0.5) {
+          if (Math.abs(zDist) < shipW * 0.5 && Math.abs(xDist) < shipH * 0.5) {
             const idx = xi + yi * WORLD_WIDTH;
 
             const color = res.grassMap.map[idx];
