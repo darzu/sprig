@@ -39,13 +39,15 @@ export function createTextureReader<A extends 1 | 2 | 3 | 4>(
   outArity: A,
   format: GPUTextureFormat
 ): TextureReader<A> {
-  const f32 = new Float32Array(data);
-
+  // TODO(@darzu): make generic?
+  let tData: Float32Array | Uint8Array;
   let stride: number;
   if (format === "rgba32float") {
     stride = 4;
+    tData = new Float32Array(data);
   } else if (format === "r8unorm") {
     stride = 1;
+    tData = new Uint8Array(data);
   } else {
     throw new Error(`unimplemented texture format: ${format} in TextureReader`);
   }
@@ -77,22 +79,22 @@ export function createTextureReader<A extends 1 | 2 | 3 | 4>(
 
     assert(typeof out === "number" || !out || out.length === outArity);
     if (outArity === 1) {
-      return f32[idx];
+      return tData[idx];
     } else if (outArity === 2) {
-      return vec2.set(f32[idx], f32[idx + 1], (out ?? vec2.tmp()) as vec2);
+      return vec2.set(tData[idx], tData[idx + 1], (out ?? vec2.tmp()) as vec2);
     } else if (outArity === 3) {
       return vec3.set(
-        f32[idx],
-        f32[idx + 1],
-        f32[idx + 2],
+        tData[idx],
+        tData[idx + 1],
+        tData[idx + 2],
         (out ?? vec3.tmp()) as vec3
       );
     } else if (outArity === 4) {
       return vec4.set(
-        f32[idx + 0],
-        f32[idx + 1],
-        f32[idx + 2],
-        f32[idx + 3],
+        tData[idx + 0],
+        tData[idx + 1],
+        tData[idx + 2],
+        tData[idx + 3],
         (out ?? vec4.tmp()) as vec4
       );
     } else {
@@ -157,8 +159,10 @@ export function createTextureReader<A extends 1 | 2 | 3 | 4>(
     }
 
     function _sample(offset: 0 | 1 | 2 | 3): number {
-      const outAy0 = f32[ix0y0 + offset] * (1 - dx) + f32[ix1y0 + offset] * dx;
-      const outAy1 = f32[ix0y1 + offset] * (1 - dx) + f32[ix1y1 + offset] * dx;
+      const outAy0 =
+        tData[ix0y0 + offset] * (1 - dx) + tData[ix1y0 + offset] * dx;
+      const outAy1 =
+        tData[ix0y1 + offset] * (1 - dx) + tData[ix1y1 + offset] * dx;
       const outA = outAy0 * (1 - dy) + outAy1 * dy;
       return outA;
     }
