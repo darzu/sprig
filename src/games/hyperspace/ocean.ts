@@ -43,6 +43,8 @@ import { AssetsDef } from "../../assets.js";
 import { ColorDef } from "../../color-ecs.js";
 import { DEFAULT_MASK, UVUNWRAP_MASK } from "../../render/pipeline-masks.js";
 
+// TODO(@darzu): refactor this to not assume a specific ocean shape
+
 const DISABLE_GERSTNER = false;
 
 export interface Ocean {

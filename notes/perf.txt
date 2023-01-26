@@ -327,3 +327,11 @@ TBDR:
   https://twitter.com/SebAaltonen/status/1617488998825447424
   tile-based deferred rendering?
   https://developer.apple.com/documentation/metal/tailor_your_apps_for_apple_gpus_and_tile-based_deferred_rendering
+
+Move vector operations onto the stack:
+  1. we remove all out params from all vec/mat stuff, then all vec computations will use temp vecs
+  2. you have to use vec3.copy(myLongtermVec, tempVec) to save anything
+  3. then since we'll know there there isn't any vec reuse happening, we can inline all those vec operations at build time into just scalar stuff
+
+  Added bonus that the code will all look cleaner, with the exception of the copy().
+  during normal dev, you don't do the build step, everything runs fine.

@@ -1650,3 +1650,31 @@ Graphics blogs to read:
 
 Another interesting blog:
   https://nothke.github.io
+
+Optimizing PS vs VS:
+  https://twitter.com/SebAaltonen/status/1618647617105465344
+  count the "varyings"
+  "Varyings are very expensive on mobile, especially for high triangle count content. VS needs to store them to memory and PS needs to load them from memory. Passing things though VS is never a win. Just load directly in PS from UBO."
+  Me: "Noob graphics question: if a varying is marked for flat interpolation, does that still count against you?"
+    Seb: "I am not 100% sure about Apple HW in this regard. On AMD hardware, you don't get the interpolation instructions, but you get a LDS load instead. Because the varyings are in LDS. Apple HW still needs to load it from memory however. Don't know how much you save with nointerp."
+    LDS: "low discrepancy sequence" ?
+      or "low density storage"?
+    AH! "Local Data Share"
+
+Optimizing GPU occupancy and resource usage with large thread groups:
+  https://gpuopen.com/learn/optimizing-gpu-occupancy-resource-usage-large-thread-groups/
+  Local Data Share
+
+"Implementing a GPU-driven debug line renderer"
+  https://www.gijskaerts.com/wordpress/?p=190
+  https://twitter.com/BelgianRenderer/status/1451990908757372929
+
+DX11 "printf":
+  http://c0de517e.blogspot.com/2013/07/dx11-gpu-printf.html
+
+Nanite SW rasterizer b/c of memory bandwidth?
+  https://twitter.com/tom_forsyth/status/1399446806476386304
+  "MeshShaders should give us the same capability to decompress and pass directly to the HWrast. But as far as I know Nanite doesn't currently use them - they were developed in parallel."
+
+"Gpu Driven Text":
+  https://jorenjoestar.github.io/post/gpu_driven_text/gpu_driven_text/

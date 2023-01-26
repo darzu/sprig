@@ -1292,3 +1292,7 @@ Advice and bad advice:
 
 Storage using SQLLite on web:
   https://developer.chrome.com/blog/sqlite-wasm-in-the-browser-backed-by-the-origin-private-file-system/
+
+Electron vs NWjs?
+  https://www.electronjs.org
+  https://nwjs.io

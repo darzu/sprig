@@ -79,3 +79,6 @@ Funding update for Patreons:
 
 Good YouTube details:
   https://brickexperimentchannel.wordpress.com/2022/11/19/my-youtube-earnings/
+
+Chrome webstore:
+  https://developer.chrome.com/docs/webstore/money/
