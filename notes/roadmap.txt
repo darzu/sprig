@@ -1,0 +1,164 @@
+20 year roadmap (probably optimistic)
+  sprig.land/techtree ? /roadmap redirects
+
+Goals:
+  Simplest, funnest way to write complex games and interactive experiences
+  Blocks are awesome
+  Powerful, self-boosting ecosystem
+
+Financing:
+  Game 1 (sailing), est $200-$2k revenue
+  Game 2 (sailing probably), est $2k-$20k revenue
+  Game n, eventually $200k+ revenue
+  Keep making a games until finances have stabilized so I have time for other tasks. Est ~5-10 years.
+  Patreon:
+    Hopefully picks up as there is more learning content
+  Kick starter
+  Publisher
+
+Platform capabilities / Tooling / IDE:
+  Real-time multiplayer
+    For gaming
+    For shared tool editting (e.g. Google Docs, Figma)
+    Peer-to-peer
+    Can have many read-only viewers
+  Cross-platform performant 3D+2D rendering
+    For games and tools
+  Session state timeline
+    scrubable like RTS game timeline (think LoL replay)
+    like Google Docs edit history
+    Also useful for multiplayer session state, saving and rollback
+    useful for time-travel debugging
+    cached screenshots (but enough state to regenerate them)
+    can be forked into a tree / multiple timelines
+  Screen recording
+    Synchronized w/ session recording
+    Stream-able to Twitch etc
+    including webcam if desired (e.g. streaming)
+  Voice chat
+    maybe synced w/ screen recording & session state
+    usable for real-time collab and multiplayer
+  Version management and version hosting
+    e.g. view any build, any git hash, at specific timeline state
+  Standalone dedicated server
+  Project hosting and state
+    e.g. glitch or MakeCode
+    host projects and library code
+  Composable ECS system
+    composable engine and game code using ECS and a provides/requires registry system
+    Like ES6 modules, but more engine aware
+  IDE/engine version managment
+    Once it works, it will always work
+    Help auto-migrate forward; fully safe, can always rollback
+  Profiler
+    GPU: occupancy of shader cores, bandwidth, alu utilization, fpu util, texture read cache hit rate, vertex time, fragment time, etc.
+    CPU: L2 cache, branch misses, cpu utilization, memory pressure
+  Blocks language & editor
+    c-style structs
+    sum and product types, pattern matching, type narrowing,
+    stack vs heap, lifetimes
+    on JS/TS? on Rust?
+  built-time code manipulation & static analysis:
+    program slicing,
+    inling / unabstracting <-> abstracting / extracting to fn
+    easy to write game-specific static help (like semantics/types aware linters)
+  compiler capabilities:
+    program optimization, tree shaking, etc.
+  runtime / dynamic analysis:
+    profiling, optimization, debugging,
+    creating benchmarks; check perf regressions
+  collaborative editting
+  debugger
+    time-travel debugging
+    engine / game-aware help
+    edit-and-continue / hot reload
+  cloud features:
+    project hosting,
+      including libraries, extensions etc.
+    identity,
+    match making,
+    server hosting,
+    device benchmarking 
+      (test & profile on representative set of hardware)
+      or crowdsource benchmarking! Have test users submit runs
+  ECS
+    used for games and tooling
+    composable framework for extensions and libraries too
+    deep static-analysis / language support
+  cross-cutting composability system for:
+    ECS (if u need the column-store speedyness)
+    import/export - provides/requires,
+  cross-platform support
+    pc (mac, windows, linux), chromebook, xbox, ps4/5, ios, android,
+    embedded: m0/m4 ?
+  custom browser
+    maybe just electron, perhaps slimmed down / tree shaken
+  custom OS
+    motivations: 
+      learning/teaching
+      perhaps extreme profiling / debugging
+      perhaps bare metal cheap embedded device stuff
+    custom GPU drivers, maybe like asahi project
+  GUI
+    2d mesh editor -> path editor -> font editor -> text rendering
+      word wrapping,
+      glyph editting
+    react-style retained mode
+
+
+Learning content:
+  Interactive blog posts like RedBlob and ciechanow.ski
+    Coupled w/ a YouTube video
+    Both the blog and video would have timesteps that are synchronized w/ the sessions state log,
+    Can follow along in IDE
+      either in after the fact using the log
+      or in real-time in read-only mode for streams
+  Large knowledge graph
+    Wiki style,
+    maybe also vizualized like a skill tree / tech tree
+  Tools for creating learning content
+    session recorder, but also editting the session state
+    diagram creation
+    embedded 3d render and interactive content
+  Screeds about software development
+    the right time & place to abstract
+    anti- dependencies
+    time estimation
+  Game studies / re-creations:
+    Let's create {Elden Ring, Minecraft, LoL, Overwatch} in 1 hr
+
+Asset creation:
+  3D modeling
+    LOD generation
+    pre-computing/baking game specific stuff
+  VFX
+  2D sprites and textures
+  Audio effect editor
+  Music editor
+  Map / terrain creation
+    like mapgen4
+
+Game feature:
+  Water
+  Terrain
+  Particle system
+  rendering:
+    Global illumination
+    GPU-driven ?
+    different looks: PBR, cell shaded, painterly
+  physics system
+  Wood planks
+  Grass
+    + cutting
+  Planets / non-flat objects
+    Gravity fields (e.g. mario galaxy)
+  procedural content:
+    trees, 
+  Infinte tile LODs
+    for open world and "infinte" procedural gen
+  character system
+    procedural animations?
+  ECS query language
+    query optimizer, efficient caching, hints to developer
+  Tech-tree DAG
+    Use for this chart :)

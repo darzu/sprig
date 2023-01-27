@@ -82,3 +82,8 @@ Good YouTube details:
 
 Chrome webstore:
   https://developer.chrome.com/docs/webstore/money/
+
+Art grants:
+  ?
+  Epic developer grant
+  Canadian media fund? (like Outward)

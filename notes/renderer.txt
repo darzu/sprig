@@ -1678,3 +1678,6 @@ Nanite SW rasterizer b/c of memory bandwidth?
 
 "Gpu Driven Text":
   https://jorenjoestar.github.io/post/gpu_driven_text/gpu_driven_text/
+
+M1 gpu driver:
+  https://asahilinux.org/2022/12/gpu-drivers-now-in-asahi-linux/
