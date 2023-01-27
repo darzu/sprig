@@ -686,11 +686,17 @@ export function createFlatQuadMesh(width: number, height: number): Mesh {
     }
   }
 
+  // TODO(@darzu): PERF. this is soo much wasted memory
+  const normals = pos.map((_) => V(0, 1, 0));
+  const tangents = pos.map((_) => V(-1, 0, 0)); // TODO(@darzu): what should tangent be? should it be optional?
+
   return {
     pos,
     tri: [],
     uvs,
     quad,
+    normals,
+    tangents,
     colors: quad.map((_, i) => V(i / quad.length, 0.2, 0.2)),
     dbgName: `fabric-${width}x${height}`,
     surfaceIds: quad.map((_, i) => i + 1),

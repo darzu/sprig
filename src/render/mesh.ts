@@ -21,6 +21,13 @@ import { drawBall, drawLine } from "../utils-game.js";
 //    as the data is often redundant. Instead we should make a "line" version of a mesh if
 //    we want to show it as a wireframe. Esp thinking about half-edge data structure, what
 //    do we do with lines if its duplicate connectivity.
+// TODO(@darzu): probably the way to do cpu mesh data is to mimic components:
+//      MyMesh = MPos & MColor & MSurfaceIds
+//    or something. Basically for every granularity that is needed, we have some
+//    definition that includes just those fields and then we "&" them all together
+//    for stuff that needs more.
+// TODO(@darzu): for many attributes we don't want a full dense array but a fn
+//    e.g. for colors, maybe they're all or mostly black; or for normals, they might all be straight up
 
 // defines the geometry and coloring of a mesh
 // geometry: pos, tri, quad, lines,

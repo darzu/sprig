@@ -42,25 +42,38 @@ import {
 import { AssetsDef } from "../../assets.js";
 import { ColorDef } from "../../color-ecs.js";
 import { DEFAULT_MASK, UVUNWRAP_MASK } from "../../render/pipeline-masks.js";
+import { Mesh } from "../../render/mesh.js";
 
 // TODO(@darzu): refactor this to not assume a specific ocean shape
 
 const DISABLE_GERSTNER = false;
 
-export interface Ocean {
+// TODO(@darzu): what is an ocean
+//    water surface
+//    defined by gerstner waves
+//    bounded by some mesh
+//      a uv mesh
+//      waves operates on 0-1 uvs
+//      need to translate
+//    has position
+
+// TODO(@darzu): could possibly be generalize to work with polar coordinates?
+// TODO(@darzu): perhaps there should be a uv + "height" which is just displacement along the normal
+export interface UVSurface {
+  // TODO(@darzu): Goal: translate to/from 3D world/local space and 2D uv space
   ent: Ref<[typeof PositionDef]>;
   // TODO(@darzu): uvDistanceToEdge, read the SDF
   uvToPos: (out: vec3, uv: vec2) => vec3;
   // TODO(@darzu): normal and tangent could probably come straight from CPU mesh
   uvToNorm: (out: vec3, uv: vec2) => vec3;
   uvToTang: (out: vec3, uv: vec2) => vec3;
-  // TODO(@darzu): re-enable
   uvToEdgeDist: (uv: vec2) => number;
   uvToGerstnerDispAndNorm: (outDisp: vec3, outNorm: vec3, uv: vec2) => void;
   gerstnerWaves: GerstnerWaveTS[];
 }
 
-export const OceanDef = EM.defineComponent("ocean", (o: Ocean) => {
+// TODO(@darzu): rename "ocean" to "uvsurface" or similar
+export const OceanDef = EM.defineComponent("ocean", (o: UVSurface) => {
   return o;
 });
 
@@ -94,9 +107,9 @@ EM.registerSerializerPair(
 
 export const oceanJfa = createJfaPipelines(uvMaskTex, "exterior");
 
-export async function initOcean() {
+export async function initOcean(oceanMesh: Mesh) {
   // console.log("initOcean");
-  const res = await EM.whenResources(RendererDef, AssetsDef, TimeDef);
+  const res = await EM.whenResources(RendererDef, TimeDef);
 
   const ocean = EM.new();
   let oceanEntId = ocean.id; // hacky?
@@ -104,7 +117,7 @@ export async function initOcean() {
     ocean,
     RenderableConstructDef,
     // TODO(@darzu): SEPERATE THIS DEPENDENCY! Need ocean w/o mesh
-    res.assets.ocean.mesh,
+    oceanMesh,
     // TODO(@darzu): needed?
     true,
     0,
@@ -290,7 +303,7 @@ export async function initOcean() {
   // res.time.time
 }
 
-// TODO(@darzu): maintain compatibility with std-ocean.wgsl
+// IMPORTANT NOTE: maintain compatibility with std-ocean.wgsl
 function gerstner(
   outDisp: vec3,
   outNorm: vec3,

@@ -7,7 +7,7 @@ import { computeTriangleNormal } from "../../utils-3d.js";
 import { comparisonSamplerPtr, CY, linearSamplerPtr } from "../gpu-registry.js";
 import { createCyStruct, CyToTS } from "../gpu-struct.js";
 import { pointLightsPtr } from "../lights.js";
-import { MeshHandle } from "../mesh-pool.js";
+import { MAX_INDICES, MeshHandle } from "../mesh-pool.js";
 import { getAABBFromMesh, Mesh } from "../mesh.js";
 import {
   RenderableDef,
@@ -23,7 +23,7 @@ import {
 } from "./std-scene.js";
 import { shadowDepthTextures } from "./std-shadow.js";
 
-const MAX_OCEAN_VERTS = 10000;
+const MAX_OCEAN_VERTS = MAX_INDICES;
 const MAX_OCEAN_MESHES = 1;
 
 // TODO(@darzu): change
@@ -160,7 +160,7 @@ export const oceanPoolPtr = CY.createMeshPool("oceanPool", {
   vertsStruct: OceanVertStruct,
   maxMeshes: MAX_OCEAN_MESHES,
   maxSets: 1,
-  setMaxTris: MAX_OCEAN_VERTS,
+  setMaxTris: MAX_OCEAN_VERTS * 2,
   setMaxLines: MAX_OCEAN_VERTS, // TODO(@darzu): don't need ??!
   setMaxVerts: MAX_OCEAN_VERTS,
   // TODO(@darzu): this dataDef is v weird

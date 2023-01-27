@@ -6,6 +6,7 @@ import { UVUNWRAP_MASK } from "../pipeline-masks.js";
 import { oceanPoolPtr } from "./std-ocean.js";
 
 // TODO(@darzu): parameterize and generalize this for other meshes
+// TODO(@darzu): these textures r using way more data than they need.. but probably that doesn't matter
 
 export const uvToPosTex = CY.createTexture("uvToPosTex", {
   size: [128, 128],

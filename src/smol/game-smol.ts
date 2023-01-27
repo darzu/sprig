@@ -62,6 +62,8 @@ import { CanvasDef } from "../canvas.js";
 import { createJfaPipelines } from "../render/pipelines/std-jump-flood.js";
 import { createGridComposePipelines } from "../render/pipelines/std-compose.js";
 import { createTextureReader } from "../render/cpu-texture.js";
+import { initOcean, OceanDef } from "../games/hyperspace/ocean.js";
+import { renderOceanPipe } from "../render/pipelines/std-ocean.js";
 
 /*
 TODO:
@@ -71,7 +73,7 @@ NOTES:
 - Cut grass by updating a texture that has cut/not cut or maybe cut-height
 */
 
-const DBG_PLAYER = true;
+const DBG_PLAYER = false;
 
 // world map is centered around 0,0
 const WORLD_WIDTH = 1024; // width runs +z
@@ -117,7 +119,8 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
       res.renderer.pipelines = [
         ...shadowPipelines,
         stdRenderPipeline,
-        renderGrassPipe,
+        renderOceanPipe,
+        // renderGrassPipe,
         outlineRender,
         postProcess,
         ...(res.dev.showConsole ? dbgGridCompose : []),
@@ -174,38 +177,58 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
   const terraZCount = Math.floor(WORLD_WIDTH * terraVertsPerWorldUnit);
   const terraXCount = Math.floor(WORLD_HEIGHT * terraVertsPerWorldUnit);
   const terraMesh = createFlatQuadMesh(terraZCount, terraXCount);
+  // let minY = Infinity;
   mutateMeshPositions(terraMesh, (p, i) => {
     // console.log("i: " + vec3Dbg(p));
     const x = p[0] * worldUnitPerTerraVerts - WORLD_HEIGHT * 0.5;
     const z = p[2] * worldUnitPerTerraVerts - WORLD_WIDTH * 0.5;
     const y = sampleTerra(x, z) * 100.0;
+    // minY = Math.min(minY, y);
     p[0] = x;
-    p[1] = y;
+    p[1] = y <= 1.0 ? -30 : y; // TODO(@darzu): wierd hack
     p[2] = z;
     // console.log("o: " + vec3Dbg(p));
     // if (i > 10) throw "stop";
   });
+  // console.log(`heightmap minY: ${minY}`);
   const hm = em.new();
   em.ensureComponentOn(hm, RenderableConstructDef, terraMesh);
   em.ensureComponentOn(hm, PositionDef);
   // TODO(@darzu): update terra from SDF
 
+  // ocean
+  const oceanVertsPerWorldUnit = 0.25;
+  const worldUnitPerOceanVerts = 1 / oceanVertsPerWorldUnit;
+  const oceanZCount = Math.floor(WORLD_WIDTH * oceanVertsPerWorldUnit);
+  const oceanXCount = Math.floor(WORLD_HEIGHT * oceanVertsPerWorldUnit);
+  const oceanMesh = createFlatQuadMesh(oceanZCount, oceanXCount);
+  mutateMeshPositions(oceanMesh, (p, i) => {
+    const x = p[0] * worldUnitPerOceanVerts - WORLD_HEIGHT * 0.5;
+    const z = p[2] * worldUnitPerOceanVerts - WORLD_WIDTH * 0.5;
+    const y = 0.0;
+    p[0] = x;
+    p[1] = y;
+    p[2] = z;
+  });
+  initOcean(oceanMesh);
+  const { ocean } = await em.whenResources(OceanDef);
+
   // ground
-  const ground = em.new();
-  const groundMesh = cloneMesh(res.assets.unitCube.mesh);
-  transformMesh(
-    groundMesh,
-    mat4.fromScaling(V(WORLD_HEIGHT, 1.0, WORLD_WIDTH))
-  );
-  em.ensureComponentOn(ground, RenderableConstructDef, groundMesh);
-  em.ensureComponentOn(ground, ColorDef, V(0.1, 0.5, 0.1));
-  // em.set(ground, ColorDef, ENDESGA16.darkGreen);
-  // em.ensureComponentOn(p, ColorDef, [0.2, 0.3, 0.2]);
-  em.ensureComponentOn(
-    ground,
-    PositionDef,
-    V(-WORLD_HEIGHT * 0.5, -1.1, -WORLD_WIDTH * 0.5)
-  );
+  // const ground = em.new();
+  // const groundMesh = cloneMesh(res.assets.unitCube.mesh);
+  // transformMesh(
+  //   groundMesh,
+  //   mat4.fromScaling(V(WORLD_HEIGHT, 1.0, WORLD_WIDTH))
+  // );
+  // em.ensureComponentOn(ground, RenderableConstructDef, groundMesh);
+  // em.ensureComponentOn(ground, ColorDef, V(0.1, 0.5, 0.1));
+  // // em.set(ground, ColorDef, ENDESGA16.darkGreen);
+  // // em.ensureComponentOn(p, ColorDef, [0.2, 0.3, 0.2]);
+  // em.ensureComponentOn(
+  //   ground,
+  //   PositionDef,
+  //   V(-WORLD_HEIGHT * 0.5, -1.1, -WORLD_WIDTH * 0.5)
+  // );
   // em.ensureComponentOn(plane, PositionDef, [0, -5, 0]);
 
   // grass
