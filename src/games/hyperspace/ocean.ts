@@ -107,7 +107,7 @@ EM.registerSerializerPair(
 
 export const oceanJfa = createJfaPipelines(uvMaskTex, "exterior");
 
-export async function initOcean(oceanMesh: Mesh) {
+export async function initOcean(oceanMesh: Mesh, color: vec3) {
   // console.log("initOcean");
   const res = await EM.whenResources(RendererDef, TimeDef);
 
@@ -124,7 +124,7 @@ export async function initOcean(oceanMesh: Mesh) {
     UVUNWRAP_MASK | DEFAULT_MASK,
     oceanPoolPtr
   );
-  EM.ensureComponentOn(ocean, ColorDef, V(0.1, 0.3, 0.8));
+  EM.ensureComponentOn(ocean, ColorDef, color);
   //EM.ensureComponentOn(ocean, PositionDef, [12000, 180, 0]);
   EM.ensureComponentOn(ocean, PositionDef);
 

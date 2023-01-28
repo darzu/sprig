@@ -125,7 +125,8 @@ fn vert_main(input: VertexInput) -> VertexOutput {
 
 struct FragOut {
   @location(0) color: vec4<f32>,
-  @location(1) surface: vec2<u32>,
+  @location(1) normal: vec4<f32>,
+  @location(2) surface: vec2<u32>,
 }
 
 @fragment
@@ -133,7 +134,8 @@ fn frag_main(input: VertexOutput) -> FragOut {
     let normal = normalize(input.normal);
 
     var lightingColor: vec3<f32> = vec3<f32>(0.0, 0.0, 0.0);
-    let unlit = 0u;
+    var lightingIntensity = 0.0;
+    let isUnlit = 0u;
     // TODO(@darzu): de-dupe light code w/ std-mesh?
     for (var i: u32 = 0u; i < scene.numPointLights; i++) {
         let light = pointLights.ms[i];
@@ -152,13 +154,23 @@ fn frag_main(input: VertexOutput) -> FragOut {
         let shadowVis = getShadowVis(shadowPos, input.normal, normalize(toLight), i);
         //lightingColor = lightingColor + clamp(abs((light.ambient * attenuation) + (light.diffuse * angle * attenuation * shadowVis)), vec3(0.0), vec3(1.0));
         //lightingColor += light.ambient;
-        lightingColor = lightingColor + f32(1u - unlit) * ((light.ambient * attenuation) + (light.diffuse * angle * attenuation * shadowVis));
+        lightingColor = lightingColor + f32(1u - isUnlit) 
+          * ((light.ambient * attenuation) + (light.diffuse * angle * attenuation * shadowVis));
+        lightingIntensity = (light.ambient.r * attenuation) 
+          + (light.diffuse.r * angle * attenuation * shadowVis);
     }
-    let litColor = input.color * (lightingColor + vec3(f32(unlit)));
+    const shades = 10.0;
+    lightingIntensity = ceil(lightingIntensity * shades) / shades;
+    let litColor = input.color * lightingIntensity;
+    // let litColor = input.color * (lightingColor + vec3(f32(isUnlit)));
+    // let litColor = input.color; // * (lightingColor + vec3(f32(isUnlit)));
+    // let celColor = 
 
     
     var out: FragOut;
     out.color = vec4<f32>(litColor, 1.0);
+
+    out.normal = vec4<f32>(normal, 1.0);
 
     out.surface.r = input.surface;
     out.surface.g = input.id;

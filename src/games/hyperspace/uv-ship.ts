@@ -18,11 +18,16 @@ export const UVShipDef = EM.defineComponent("uvship", () => {
 onInit((em) => {
   em.registerSystem(
     [UVShipDef, UVPosDef, UVDirDef, AuthorityDef],
-    [GameStateDef, MeDef, InputsDef, DevConsoleDef],
+    [
+      // GameStateDef,
+      MeDef,
+      InputsDef,
+      DevConsoleDef,
+    ],
     (ships, res) => {
-      if (res.gameState.state !== GameState.PLAYING) return;
+      // if (res.gameState.state !== GameState.PLAYING) return;
       for (let s of ships) {
-        if (s.authority.pid !== res.me.pid) continue;
+        // if (s.authority.pid !== res.me.pid) continue;
 
         // console.log(
         //   `ship speed: ${s.ship.speed}, dir: ${s.uvDir[0]}, ${s.uvDir[1]}`

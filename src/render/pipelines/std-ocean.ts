@@ -20,6 +20,7 @@ import {
   litTexturePtr,
   mainDepthTex,
   surfacesTexturePtr,
+  normalsTexturePtr,
 } from "./std-scene.js";
 import { shadowDepthTextures } from "./std-shadow.js";
 
@@ -30,11 +31,14 @@ const MAX_OCEAN_MESHES = 1;
 export const OceanVertStruct = createCyStruct(
   {
     position: "vec3<f32>",
+    // TODO(@darzu): PERF. don't need per-vertex color..
     color: "vec3<f32>",
     normal: "vec3<f32>",
     // tangent towards +u
+    // TODO(@darzu): should be able to reconstruct?
     tangent: "vec3<f32>",
     uv: "vec2<f32>",
+    // TODO(@darzu): shouldn't need surface
     surfaceId: "u32",
   },
   {
@@ -192,6 +196,10 @@ export const renderOceanPipe = CY.createRenderPipeline("oceanRender", {
   output: [
     {
       ptr: litTexturePtr,
+      clear: "never",
+    },
+    {
+      ptr: normalsTexturePtr,
       clear: "never",
     },
     {

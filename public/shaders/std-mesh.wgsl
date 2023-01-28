@@ -83,9 +83,16 @@ fn frag_main(input: VertexOutput) -> FragOut {
      // Convert XY to (0, 1), Y is flipped because texture coords are Y-down.
     let shadowPos = vec3<f32>(posFromLight.xy * vec2<f32>(0.5, -0.5) + vec2<f32>(0.5, 0.5), posFromLight.z);
     let shadowVis = getShadowVis(shadowPos, input.normal, toLight, 0);
+
+    // cel shading:
+    // var lightingIntensity = (light.ambient.r * attenuation) + (light.diffuse.r * angle * attenuation * shadowVis);
+    // const shades = 10.0;
+    // lightingIntensity = ceil(lightingIntensity * shades) / shades;
+
     let lightingColor = (light.ambient * attenuation) + (light.diffuse * angle * attenuation * shadowVis);
     // }
     let litColor = input.color * lightingColor;
+    // let litColor = input.color * lightingIntensity;
 
     var out: FragOut;
     out.color = vec4<f32>(litColor, 1.0);

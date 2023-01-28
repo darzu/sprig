@@ -66,8 +66,16 @@ import { initOcean, OceanDef } from "../games/hyperspace/ocean.js";
 import { renderOceanPipe } from "../render/pipelines/std-ocean.js";
 
 /*
-TODO:
-[ ] PERF. Disable backface culling ONLY on grass
+WATER TODO:
+[ ] Try cel shading the water
+[ ] White foam; foam pattern
+[ ] Try evaluating gerstner in pixel shader for more detailed normal?
+[ ] Transparency / alpha
+[ ] Underwater shader
+[ ] Wake behind boat
+[ ] Fresnel effect
+[ ] Tweak gerstner definitions
+[ ] Fix PBR-ness of mesh colors + lights + lighting equations
 
 NOTES:
 - Cut grass by updating a texture that has cut/not cut or maybe cut-height
@@ -194,6 +202,8 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
   const hm = em.new();
   em.ensureComponentOn(hm, RenderableConstructDef, terraMesh);
   em.ensureComponentOn(hm, PositionDef);
+  // TODO(@darzu): maybe do a sable-like gradient accross the terrain, based on view dist or just uv?
+  em.ensureComponentOn(hm, ColorDef, V(0.4, 0.2, 0.2));
   // TODO(@darzu): update terra from SDF
 
   // ocean
@@ -210,7 +220,8 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
     p[1] = y;
     p[2] = z;
   });
-  initOcean(oceanMesh);
+  // TODO(@darzu): I don't think the PBR-ness of this color is right
+  initOcean(oceanMesh, V(0.1, 0.3, 0.8));
   const { ocean } = await em.whenResources(OceanDef);
 
   // ground

@@ -133,7 +133,7 @@ export async function initHyperspaceGame(em: EntityManager) {
   // one-time GPU jobs
   res.renderer.renderer.submitPipelines([], [...noisePipes, initStars]);
 
-  initOcean(res.assets.ocean.mesh);
+  initOcean(res.assets.ocean.mesh, V(0.1, 0.3, 0.8));
 
   // TODO(@darzu): dbg
   //await asyncTimeout(2000);
