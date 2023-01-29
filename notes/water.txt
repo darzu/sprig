@@ -97,3 +97,20 @@ Waves in Sprigland, 8/24/22:
       - Falconeer uses ~60k tris
     [ ] sliders for real-time adjustment
     [ ] 
+
+Far Cry 5:
+  https://www.youtube.com/watch?v=4oDtGnQNCx4
+
+New water TODO:
+  [x] Try cel shading the water
+  [ ] White foam; foam pattern
+  [ ] Try evaluating gerstner in pixel shader for more detailed normal?
+  [ ] Transparency / alpha
+  [ ] Underwater shader
+  [ ] Wake behind boat
+  [ ] Fresnel effect
+  [ ] Tweak gerstner definitions
+  [ ] Fix PBR-ness of mesh colors + lights + lighting equations
+  [ ] flow maps
+  [ ] reflection
+  [ ] refraction

@@ -195,28 +195,25 @@ export async function initOcean(oceanMesh: Mesh, color: vec3) {
 
   // console.log("adding OceanDef");
 
+  const dir1 = randNormalVec2(vec2.create());
+  const dir2 = randNormalVec2(vec2.create());
+  // const dir3 = randNormalVec2(vec2.create());
+  const dir3 = V(0.6656193733215332, -0.7462913990020752);
+  console.dir({ dir1, dir2, dir3 });
+
+  const len = 2.0; // distance between crests
+  const freq = (2 * Math.PI) / len;
+  const speed = 1.0; // crest distance per second
+  const amp = 1.0; // crest height
+  const phi = speed * freq;
+  const Q = 1.08 * 4.0;
+
   const gerstnerWaves = [
-    createGerstnerWave(
-      1.08 * 2.0,
-      10 * 0.5,
-      randNormalVec2(vec2.create()),
-      0.5 / 20.0,
-      0.5
-    ),
-    createGerstnerWave(
-      1.08 * 2.0,
-      10 * 0.5,
-      randNormalVec2(vec2.create()),
-      0.5 / 20.0,
-      0.5
-    ),
-    createGerstnerWave(
-      1.08 * 2.0,
-      2 * 0.5,
-      randNormalVec2(vec2.create()),
-      0.5 / 4.0,
-      1
-    ),
+    createGerstnerWave(Q, amp, dir3, freq, phi),
+    // createGerstnerWave(1.08 * 2.0, 10 * 0.5, dir1, 0.5 / 20.0, 0.5),
+    // createGerstnerWave(1.08 * 2.0, 10 * 0.5, dir2, 0.5 / 20.0, 0.5),
+    // createGerstnerWave(1.08 * 2.0, 2 * 0.5, dir3, 0.5 / 4.0, 1),
+    // createGerstnerWave(1.08 * 4.0, 0.05 * 0.5, dir2, 0.5 / 0.1, 1),
     //createGerstnerWave(1, 0.5, randNormalVec2(vec2.create()), 0.5 / 1.0, 3),
   ];
 
@@ -407,19 +404,19 @@ EM.registerSystem(
 
 function createGerstnerWave(
   Q: number,
-  A: number,
-  D: vec2,
-  w: number,
+  amp: number,
+  dir: vec2,
+  freq: number,
   phi: number
 ): GerstnerWaveTS {
   if (DISABLE_GERSTNER) {
-    A = 0.0;
+    amp = 0.0;
     phi = 0.0;
     Q = 0.0;
-    D = vec2.clone([1, 0]);
-    w = 0.0;
+    dir = vec2.clone([1, 0]);
+    freq = 0.0;
   }
-  return { D, Q, A, w, phi, padding1: 0, padding2: 0 };
+  return { D: dir, Q, A: amp, w: freq, phi, padding1: 0, padding2: 0 };
 }
 
 // TODO(@darzu): debug movement on the ocean

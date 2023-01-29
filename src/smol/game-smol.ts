@@ -66,22 +66,11 @@ import { initOcean, OceanDef } from "../games/hyperspace/ocean.js";
 import { renderOceanPipe } from "../render/pipelines/std-ocean.js";
 
 /*
-WATER TODO:
-[ ] Try cel shading the water
-[ ] White foam; foam pattern
-[ ] Try evaluating gerstner in pixel shader for more detailed normal?
-[ ] Transparency / alpha
-[ ] Underwater shader
-[ ] Wake behind boat
-[ ] Fresnel effect
-[ ] Tweak gerstner definitions
-[ ] Fix PBR-ness of mesh colors + lights + lighting equations
-
 NOTES:
 - Cut grass by updating a texture that has cut/not cut or maybe cut-height
 */
 
-const DBG_PLAYER = false;
+const DBG_PLAYER = true;
 
 // world map is centered around 0,0
 const WORLD_WIDTH = 1024; // width runs +z
