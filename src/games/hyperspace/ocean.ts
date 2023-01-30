@@ -203,7 +203,7 @@ export async function initOcean(oceanMesh: Mesh, color: vec3) {
   // artist parameters:
   // const medLen = minLen * 2.0;
   // const medLen = minLen * 2.0;
-  const medLen = 100;
+  const medLen = 10;
   // const medLen = minLen * 2000.0;
   // const medLen = 16000.0; // TODO(@darzu): This equates to ~100 world units. WHY is this so far off?
   // const medLen = 100.0;
@@ -211,10 +211,10 @@ export async function initOcean(oceanMesh: Mesh, color: vec3) {
   const steepness = 1; // 0-1
   // const speed = 10.0; // meters per second
   // const speed = 100000.0; // meters per second
-  const speed = 1000.0; // TODO(@darzu): Speed definitely isn't working right yet
+  const speed = 100.0; // TODO(@darzu): Speed definitely isn't working right yet
   // const speed = 1.0;
   // const speed = 0;
-  const medAmp = 3.0; // author's choice
+  const medAmp = 5.0; // author's choice
 
   const dt = 60 / 1000; // TODO(@darzu): maybe?
   const GRAV = 9.8 * dt * dt;
@@ -231,19 +231,51 @@ export async function initOcean(oceanMesh: Mesh, color: vec3) {
   const medDir = V(1.0, 0.0);
   // console.dir({ dir1, dir2, dir3 });
 
-  let numWaves = 3;
+  type GerstnerParam = {
+    dirOff: vec2;
+    lenFactor: number;
+  };
 
+  const waveParams: GerstnerParam[] = [
+    { dirOff: V(0, 0), lenFactor: 1.0 },
+    // {
+    //   dirOff: V(0, 1),
+    //   lenFactor: 0.21,
+    // },
+    // {
+    //   dirOff: V(0, -1),
+    //   lenFactor: 0.3,
+    // },
+    // {
+    //   dirOff: V(0, 0.5),
+    //   lenFactor: 0.4,
+    // },
+    // {
+    //   dirOff: V(1, 1),
+    //   lenFactor: 0.5,
+    // },
+    // {
+    //   dirOff: V(1, -1),
+    //   lenFactor: 2.0,
+    // },
+    // {
+    //   dirOff: V(1, -1.5),
+    //   lenFactor: 4.0,
+    // },
+  ];
+
+  let numWaves = waveParams.length;
   let gerstnerWaves: GerstnerWaveTS[] = [];
-  {
-    const dir = medDir;
+  for (let p of waveParams) {
+    const dir = vec2.clone(vec2.normalize(vec2.add(medDir, p.dirOff)));
     // const len = 2.0; // distance between crests
-    const len = medLen;
+    const len = medLen * p.lenFactor;
     // const crestSpeed = speed / (len * dt); // crest distance per second
     const crestSpeed = speed / len;
     // const freq = (2 * Math.PI) / len;
     const freq = freqFromLen(len);
-    console.log(`len: ${len}`);
-    console.log(`freq: ${freq}`);
+    // console.log(`len: ${len}`);
+    // console.log(`freq: ${freq}`);
     // const amp = 1.0; // crest height
     const amp = medAmp; // crest height
     const phi = crestSpeed * freq;
@@ -253,26 +285,26 @@ export async function initOcean(oceanMesh: Mesh, color: vec3) {
 
     gerstnerWaves.push(createGerstnerWave(Q, amp, dir, freq, phi));
   }
-  {
-    const dir = vec2.clone(vec2.normalize(vec2.add(medDir, V(1, 1))));
-    const len = medLen * 0.5;
-    const crestSpeed = speed / len;
-    const freq = freqFromLen(len);
-    const amp = len * ampOverLen;
-    const phi = crestSpeed * freq;
-    const Q = steepness / (freq * amp * numWaves);
-    gerstnerWaves.push(createGerstnerWave(Q, amp, dir, freq, phi));
-  }
-  {
-    const dir = vec2.clone(vec2.normalize(vec2.add(medDir, V(1, -1))));
-    const len = medLen * 2.0;
-    const crestSpeed = speed / len;
-    const freq = freqFromLen(len);
-    const amp = len * ampOverLen;
-    const phi = crestSpeed * freq;
-    const Q = steepness / (freq * amp * numWaves);
-    gerstnerWaves.push(createGerstnerWave(Q, amp, dir, freq, phi));
-  }
+  // {
+  //   const dir = ;
+  //   const len = medLen * 0.5;
+  //   const crestSpeed = speed / len;
+  //   const freq = freqFromLen(len);
+  //   const amp = len * ampOverLen;
+  //   const phi = crestSpeed * freq;
+  //   const Q = steepness / (freq * amp * numWaves);
+  //   gerstnerWaves.push(createGerstnerWave(Q, amp, dir, freq, phi));
+  // }
+  // {
+  //   const dir = ;
+  //   const len = medLen * 2.0;
+  //   const crestSpeed = speed / len;
+  //   const freq = freqFromLen(len);
+  //   const amp = len * ampOverLen;
+  //   const phi = crestSpeed * freq;
+  //   const Q = steepness / (freq * amp * numWaves);
+  //   gerstnerWaves.push(createGerstnerWave(Q, amp, dir, freq, phi));
+  // }
 
   // createGerstnerWave(1.08 * 2.0, 10 * 0.5, dir1, 0.5 / 20.0, 0.5),
   // createGerstnerWave(1.08 * 2.0, 10 * 0.5, dir2, 0.5 / 20.0, 0.5),
