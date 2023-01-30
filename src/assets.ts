@@ -245,6 +245,26 @@ const MeshModify: Partial<{
     // }
     const xLen = grid.length;
     const yLen = grid[0].length;
+
+    // TODO(@darzu): I forgot why we want this? From https://github.com/darzu/sprig/pull/59
+    // redo quad indices based on the grid (optional?)
+    for (let xi = 0; xi < xLen - 1; xi++) {
+      for (let yi = 0; yi < yLen - 1; yi++) {
+        const qi = gridXYtoQuad(xi, yi);
+        vec4.copy(m.quad[qi], [
+          grid[xi][yi],
+          grid[xi + 1][yi],
+          grid[xi + 1][yi + 1],
+          grid[xi][yi + 1],
+        ]);
+      }
+    }
+    function gridXYtoQuad(xi: number, yi: number): number {
+      const qi = yi + xi * (yLen - 1);
+      assert(qi < m.quad.length, "quads and grid mismatch!");
+      return qi;
+    }
+
     // console.log(`xLen:${xLen},yLen:${yLen}`);
     const uvs = m.pos.map((_, vi) => vec2.create());
     m.uvs = uvs;

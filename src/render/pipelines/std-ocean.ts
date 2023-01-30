@@ -213,6 +213,7 @@ export const renderOceanPipe = CY.createRenderPipeline("oceanRender", {
   depthStencil: mainDepthTex,
   shader: (shaderSet) => `
   ${shaderSet["std-rand"].code}
+  ${shaderSet["std-gerstner"].code}
   ${shaderSet["std-ocean"].code}
   `,
 });

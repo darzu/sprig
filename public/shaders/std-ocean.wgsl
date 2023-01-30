@@ -59,31 +59,6 @@ fn getShadowVis(shadowPos: vec3<f32>, normal: vec3<f32>, lightDir: vec3<f32>, in
   return visibility;
 }
 
-fn gerstner(uv: vec2<f32>, t: f32) -> mat2x3<f32> {
-    var displacement = vec3<f32>(0.0, 0.0, 0.0);
-    var normal = vec3<f32>(0.0, 0.0, 0.0);
-    for (var i = 0u; i < scene.numGerstnerWaves; i++) {
-        let wave = gerstnerWaves.ms[i];
-        displacement = displacement +
-            vec3<f32>(wave.Q * wave.A + wave.D.x * cos(dot(wave.w * wave.D, uv) + wave.phi * t),
-                      wave.A * sin(dot(wave.w * wave.D, uv) + wave.phi * t),
-                      wave.Q * wave.A + wave.D.y * cos(dot(wave.w * wave.D, uv) + wave.phi * t));
-        normal = normal +
-            vec3<f32>(-1.0 * wave.D.x * wave.w * wave.A * cos(wave.w * dot(wave.D, uv) + wave.phi * t),
-                      wave.Q * wave.w * wave.A * sin(wave.w * dot(wave.D, uv) + wave.phi * t),
-                      -1.0 * wave.D.y * wave.w * wave.A * cos(wave.w * dot(wave.D, uv) + wave.phi * t));
-    }
-    normal.y = 1.0 - normal.y;
-    normalize(normal);
-    return mat2x3(displacement, normal);
-
-    // TODO(@darzu): hack disable gerstner
-    // return mat2x3(
-    //     vec3<f32>(0.0, 0.0, 0.0),
-    //     vec3<f32>(0.0, 1.0, 0.0)
-    // );
-}
-
 @vertex
 fn vert_main(input: VertexInput) -> VertexOutput {
     let position = input.position;
