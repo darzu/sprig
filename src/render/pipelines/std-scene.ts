@@ -299,6 +299,9 @@ export const positionsTexturePtr = CY.createTexture("positionsTexture", {
   // TODO(@darzu): support anti-aliasing again
 });
 
+// NOTE: this texture seems to get corrupted when rendered to without backface
+//    (or frontface) culling enabled. I don't understand why considering the
+//    float textures seem to be fine..
 export const surfacesTexturePtr = CY.createTexture("surfacesTexture", {
   size: [100, 100],
   onCanvasResize: (w, h) => [w, h],
