@@ -202,7 +202,8 @@ export async function initOcean(oceanMesh: Mesh, color: vec3) {
 
   // artist parameters:
   // const medLen = minLen * 2.0;
-  const medLen = minLen * 2.0;
+  // const medLen = minLen * 2.0;
+  const medLen = 100;
   // const medLen = minLen * 2000.0;
   // const medLen = 16000.0; // TODO(@darzu): This equates to ~100 world units. WHY is this so far off?
   // const medLen = 100.0;
@@ -210,14 +211,15 @@ export async function initOcean(oceanMesh: Mesh, color: vec3) {
   const steepness = 1; // 0-1
   // const speed = 10.0; // meters per second
   // const speed = 100000.0; // meters per second
-  const speed = 10.0;
+  const speed = 1000.0; // TODO(@darzu): Speed definitely isn't working right yet
   // const speed = 1.0;
   // const speed = 0;
-  const medAmp = 10.0; // author's choice
+  const medAmp = 3.0; // author's choice
 
   const dt = 60 / 1000; // TODO(@darzu): maybe?
   const GRAV = 9.8 * dt * dt;
   // const GRAV = 9.8; // m/s^2, assumes world dist 1 = 1 meter
+  // TODO(@darzu): which one?!
   const freqFromLen = (l: number) => Math.sqrt((GRAV * Math.PI * 2.0) / l);
   // const freqFromLen = (l: number) => 2 / l;
 
@@ -229,13 +231,15 @@ export async function initOcean(oceanMesh: Mesh, color: vec3) {
   const medDir = V(1.0, 0.0);
   // console.dir({ dir1, dir2, dir3 });
 
-  let numWaves = 1;
+  let numWaves = 3;
 
   let gerstnerWaves: GerstnerWaveTS[] = [];
   {
+    const dir = medDir;
     // const len = 2.0; // distance between crests
     const len = medLen;
-    const crestSpeed = speed / (len * dt); // crest distance per second
+    // const crestSpeed = speed / (len * dt); // crest distance per second
+    const crestSpeed = speed / len;
     // const freq = (2 * Math.PI) / len;
     const freq = freqFromLen(len);
     console.log(`len: ${len}`);
@@ -247,7 +251,27 @@ export async function initOcean(oceanMesh: Mesh, color: vec3) {
     const Q = steepness / (freq * amp * numWaves);
     // const Q = steepness / (freq * len * numWaves);
 
-    gerstnerWaves.push(createGerstnerWave(Q, amp, medDir, freq, phi));
+    gerstnerWaves.push(createGerstnerWave(Q, amp, dir, freq, phi));
+  }
+  {
+    const dir = vec2.clone(vec2.normalize(vec2.add(medDir, V(1, 1))));
+    const len = medLen * 0.5;
+    const crestSpeed = speed / len;
+    const freq = freqFromLen(len);
+    const amp = len * ampOverLen;
+    const phi = crestSpeed * freq;
+    const Q = steepness / (freq * amp * numWaves);
+    gerstnerWaves.push(createGerstnerWave(Q, amp, dir, freq, phi));
+  }
+  {
+    const dir = vec2.clone(vec2.normalize(vec2.add(medDir, V(1, -1))));
+    const len = medLen * 2.0;
+    const crestSpeed = speed / len;
+    const freq = freqFromLen(len);
+    const amp = len * ampOverLen;
+    const phi = crestSpeed * freq;
+    const Q = steepness / (freq * amp * numWaves);
+    gerstnerWaves.push(createGerstnerWave(Q, amp, dir, freq, phi));
   }
 
   // createGerstnerWave(1.08 * 2.0, 10 * 0.5, dir1, 0.5 / 20.0, 0.5),

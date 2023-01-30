@@ -103,6 +103,9 @@ Far Cry 5:
 
 New water TODO:
   [x] Try cel shading the water
+  [ ] Bug: ensure wave dir aligns w/ world vec2
+  [ ] Bug: fix wave length not matching world units
+  [ ] Bug: fix crest speed not working right when length varies
   [ ] White foam; foam pattern
   [ ] Try evaluating gerstner in pixel shader for more detailed normal?
   [ ] Transparency / alpha
