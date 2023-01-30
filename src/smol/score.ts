@@ -25,12 +25,13 @@ EM.registerSystem(
   [ScoreDef, TextDef],
   (_, res) => {
     if (!res.score.gameEnding && !res.score.levelEnding) {
-      res.text.upperText = `health: ${(res.score.shipHealth / 100).toFixed(
-        0
-      )}\nharvested: ${(
-        (res.score.cutPurple / res.score.totalPurple) *
-        100
-      ).toFixed(2)}%`;
+      // TODO(@darzu): re-IMPL
+      // res.text.upperText = `health: ${(res.score.shipHealth / 100).toFixed(
+      //   0
+      // )}\nharvested: ${(
+      //   (res.score.cutPurple / res.score.totalPurple) *
+      //   100
+      // ).toFixed(2)}%`;
     }
   },
   "updateScoreDisplay"

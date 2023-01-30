@@ -1681,3 +1681,35 @@ Nanite SW rasterizer b/c of memory bandwidth?
 
 M1 gpu driver:
   https://asahilinux.org/2022/12/gpu-drivers-now-in-asahi-linux/
+
+Nanite, Lumen, and virtual shadow maps in Fortnite:
+  https://www.unrealengine.com/en-US/tech-blog/bringing-nanite-to-fortnite-battle-royale-in-chapter-4
+    Looks like they opted to use geometry to define leaves instead of masked materials
+    "we added new logic to the Nanite builder (an option called “Preserve Area” that can be enabled under mesh “Nanite Settings”) that redistributes the lost area to the remaining triangles by dilating out the open boundary edges."
+    Nanite trees (~300-500k) vs before (~10-20k)
+    "World Position logic now being evaluated inside of Nanite’s rasterizer"
+    Moved wind into texture, read from that during World Position Offset eval in rasterizer   
+      they use Houdini Vellum for wind sim
+      lookup position + quat
+    "Landscape" grass?
+      https://docs.unrealengine.com/5.0/en-US/creating-landscapes-in-unreal-engine/
+      "We used opaque materials with actual geometry for the blades of grass"
+        like Ghost of T.
+  https://www.unrealengine.com/en-US/tech-blog/virtual-shadow-maps-in-fortnite-battle-royale-chapter-4
+  https://www.unrealengine.com/en-US/tech-blog/lumen-brings-real-time-global-illumination-to-fortnite-battle-royale-chapter-4
+
+What is Unreal's "World Position Offset" ? Used extensively in Fortnite for animation:
+  https://docs.unrealengine.com/4.27/en-US/Resources/ContentExamples/MaterialNodes/1_10/
+  oh this is just vertex shader stuff, just manipulating the output position
+  Comes with this caveat:
+  "When using World Position Offset to expand your object beyond its original bounds, keep in mind that the renderer still uses those original bounds. This means that you may see culling and shadowing errors. "
+  this seems to imply they don't allow vertex position manipulation in custom materials for shadows, zdepth, culling etc. Makes sense.
+
+How does Unreal's "SplineThicken" work?
+  "The SplineThicken function serves as a way to make very thin polygons look thicker at render time. This is perfect for cables, hair, grass, and other such objects."
+
+IMPORTANT: Using WebGPU from native C++:
+  https://eliemichel.github.io/LearnWebGPU/
+
+Look at matrices:
+  https://blog.42yeah.is/rendering/2023/01/28/look-at.html

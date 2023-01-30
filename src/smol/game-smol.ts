@@ -204,10 +204,11 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
       RenderableConstructDef,
       res.assets.unitCube.proto
     );
-    em.ensureComponentOn(refCol, ScaleDef, V(1, 10, 1));
-    em.ensureComponentOn(refCol, PositionDef, V(0, 0, 0));
+    em.ensureComponentOn(refCol, ScaleDef, V(1, 100, 1));
+    em.ensureComponentOn(refCol, PositionDef);
     vec3.copy(refCol.position, SHIP_START_POS);
-    refCol.position[2] += i * 2;
+    refCol.position[1] = -50;
+    refCol.position[2] += i * 2 + 30;
     em.ensureComponentOn(refCol, ColorDef, V(0.1, 1, 0.1));
   }
 
@@ -382,11 +383,17 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
     // g.cameraFollow.yawOffset = 0.0;
     // g.cameraFollow.pitchOffset = -0.593;
 
-    vec3.copy(g.position, [-34.72, 50.31, -437.72]);
-    quat.copy(g.rotation, [0.0, -0.99, 0.0, 0.16]);
+    // vec3.copy(g.position, [-34.72, 50.31, -437.72]);
+    // quat.copy(g.rotation, [0.0, -0.99, 0.0, 0.16]);
+    // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
+    // g.cameraFollow.yawOffset = 0.0;
+    // g.cameraFollow.pitchOffset = -0.452;
+
+    vec3.copy(g.position, [-310.03, 26.0, -389.47]);
+    quat.copy(g.rotation, [0.0, -0.71, 0.0, 0.71]);
     vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
     g.cameraFollow.yawOffset = 0.0;
-    g.cameraFollow.pitchOffset = -0.452;
+    g.cameraFollow.pitchOffset = -0.287;
 
     em.registerSystem(
       [GhostDef, WorldFrameDef, ColliderDef],

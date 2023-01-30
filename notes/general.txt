@@ -1296,3 +1296,7 @@ Storage using SQLLite on web:
 Electron vs NWjs?
   https://www.electronjs.org
   https://nwjs.io
+
+Really interesting article about dynamic linking and ABIs in Swift and Rust
+  https://faultlore.com/blah/swift-abi/
+  it's honestly just a good vehical to dive deep into certain language design elements I don't keep cached in much.

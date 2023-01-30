@@ -202,24 +202,31 @@ export async function initOcean(oceanMesh: Mesh, color: vec3) {
 
   // artist parameters:
   // const medLen = minLen * 2.0;
-  const medLen = minLen * 2000.0;
+  const medLen = minLen * 2.0;
+  // const medLen = minLen * 2000.0;
+  // const medLen = 16000.0; // TODO(@darzu): This equates to ~100 world units. WHY is this so far off?
+  // const medLen = 100.0;
   // const steepness = 0.5; // 0-1
-  const steepness = 0; // 0-1
+  const steepness = 1; // 0-1
   // const speed = 10.0; // meters per second
   // const speed = 100000.0; // meters per second
-  const speed = 0.0;
+  const speed = 10.0;
   // const speed = 1.0;
   // const speed = 0;
   const medAmp = 10.0; // author's choice
 
-  const GRAV = 9.8; // m/s^2, assumes world dist 1 = 1 meter
-  const freqFromLen = (l: number) => Math.sqrt((GRAV * (Math.PI * 2.0)) / l);
+  const dt = 60 / 1000; // TODO(@darzu): maybe?
+  const GRAV = 9.8 * dt * dt;
+  // const GRAV = 9.8; // m/s^2, assumes world dist 1 = 1 meter
+  const freqFromLen = (l: number) => Math.sqrt((GRAV * Math.PI * 2.0) / l);
+  // const freqFromLen = (l: number) => 2 / l;
 
   const ampOverLen = medAmp / medLen;
 
   // const dir3 = randNormalVec2(vec2.create());
   // const medDir = V(0.6656193733215332, -0.7462913990020752);
-  const medDir = V(0.0, -1);
+  // const medDir = V(0.0, -1);
+  const medDir = V(1.0, 0.0);
   // console.dir({ dir1, dir2, dir3 });
 
   let numWaves = 1;
@@ -228,14 +235,17 @@ export async function initOcean(oceanMesh: Mesh, color: vec3) {
   {
     // const len = 2.0; // distance between crests
     const len = medLen;
-    const crestSpeed = speed / len; // crest distance per second
+    const crestSpeed = speed / (len * dt); // crest distance per second
     // const freq = (2 * Math.PI) / len;
     const freq = freqFromLen(len);
+    console.log(`len: ${len}`);
+    console.log(`freq: ${freq}`);
     // const amp = 1.0; // crest height
     const amp = medAmp; // crest height
     const phi = crestSpeed * freq;
     // const Q = 1.08 * 4.0;
-    const Q = steepness / (freq * len * numWaves);
+    const Q = steepness / (freq * amp * numWaves);
+    // const Q = steepness / (freq * len * numWaves);
 
     gerstnerWaves.push(createGerstnerWave(Q, amp, medDir, freq, phi));
   }
