@@ -24,6 +24,7 @@ import {
   PhysicsParentDef,
   PositionDef,
   RotationDef,
+  ScaleDef,
 } from "../physics/transform.js";
 import { PointLightDef } from "../render/lights.js";
 import {
@@ -44,7 +45,7 @@ import { randColor } from "../utils-game.js";
 import { GrassCutTexPtr, grassPoolPtr, renderGrassPipe } from "./std-grass.js";
 import { WindDef } from "./wind.js";
 import { DevConsoleDef } from "../console.js";
-import { clamp, sum } from "../math.js";
+import { clamp, max, sum } from "../math.js";
 import { createShip, ShipDef } from "./ship.js";
 import { CY } from "../render/gpu-registry.js";
 import { assert } from "../util.js";
@@ -195,12 +196,30 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
   em.ensureComponentOn(hm, ColorDef, V(0.4, 0.2, 0.2));
   // TODO(@darzu): update terra from SDF
 
+  // reference columns
+  for (let i = 0; i < 50; i++) {
+    const refCol = em.new();
+    em.ensureComponentOn(
+      refCol,
+      RenderableConstructDef,
+      res.assets.unitCube.proto
+    );
+    em.ensureComponentOn(refCol, ScaleDef, V(1, 10, 1));
+    em.ensureComponentOn(refCol, PositionDef, V(0, 0, 0));
+    vec3.copy(refCol.position, SHIP_START_POS);
+    refCol.position[2] += i * 2;
+    em.ensureComponentOn(refCol, ColorDef, V(0.1, 1, 0.1));
+  }
+
   // ocean
   const oceanVertsPerWorldUnit = 0.25;
   const worldUnitPerOceanVerts = 1 / oceanVertsPerWorldUnit;
   const oceanZCount = Math.floor(WORLD_WIDTH * oceanVertsPerWorldUnit);
   const oceanXCount = Math.floor(WORLD_HEIGHT * oceanVertsPerWorldUnit);
   const oceanMesh = createFlatQuadMesh(oceanZCount, oceanXCount);
+  const maxSurfId = max(oceanMesh.surfaceIds);
+  console.log("maxSurfId");
+  console.log(maxSurfId);
   mutateMeshPositions(oceanMesh, (p, i) => {
     const x = p[0] * worldUnitPerOceanVerts - WORLD_HEIGHT * 0.5;
     const z = p[2] * worldUnitPerOceanVerts - WORLD_WIDTH * 0.5;

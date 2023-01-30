@@ -186,7 +186,7 @@ export const renderOceanPipe = CY.createRenderPipeline("oceanRender", {
     // { ptr: oceanJfa.sdfTex, alias: "sdf" },
   ],
   // TODO(@darzu): for perf, maybe do backface culling
-  cullMode: "none",
+  cullMode: "back",
   meshOpt: {
     pool: oceanPoolPtr,
     stepMode: "per-mesh-handle",
@@ -197,14 +197,17 @@ export const renderOceanPipe = CY.createRenderPipeline("oceanRender", {
     {
       ptr: litTexturePtr,
       clear: "never",
+      // clear: "always",
     },
     {
       ptr: normalsTexturePtr,
       clear: "never",
+      // clear: "always",
     },
     {
       ptr: surfacesTexturePtr,
       clear: "never",
+      // clear: "always",
     },
   ],
   depthStencil: mainDepthTex,

@@ -76,6 +76,12 @@ fn gerstner(uv: vec2<f32>, t: f32) -> mat2x3<f32> {
     normal.y = 1.0 - normal.y;
     normalize(normal);
     return mat2x3(displacement, normal);
+
+    // TODO(@darzu): hack disable gerstner
+    // return mat2x3(
+    //     vec3<f32>(0.0, 0.0, 0.0),
+    //     vec3<f32>(0.0, 1.0, 0.0)
+    // );
 }
 
 @vertex

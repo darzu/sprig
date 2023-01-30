@@ -123,12 +123,14 @@ export async function initOcean(oceanMesh: Mesh, color: vec3) {
     0,
     UVUNWRAP_MASK | DEFAULT_MASK,
     oceanPoolPtr
+    // meshPoolPtr
   );
   EM.ensureComponentOn(ocean, ColorDef, color);
   //EM.ensureComponentOn(ocean, PositionDef, [12000, 180, 0]);
   EM.ensureComponentOn(ocean, PositionDef);
 
   let ocean2 = await EM.whenEntityHas(ocean, RenderableDef, RenderDataOceanDef);
+  // let ocean2 = await EM.whenEntityHas(ocean, RenderableDef, RenderDataStdDef);
 
   // TODO(@darzu):
   const preOceanGPU = performance.now();
@@ -195,27 +197,55 @@ export async function initOcean(oceanMesh: Mesh, color: vec3) {
 
   // console.log("adding OceanDef");
 
-  const dir1 = randNormalVec2(vec2.create());
-  const dir2 = randNormalVec2(vec2.create());
+  const edgeLen = 4.0; // TODO(@darzu): parameterize? Based on worldUnitPerOceanVerts
+  const minLen = 2 * edgeLen;
+
+  // artist parameters:
+  // const medLen = minLen * 2.0;
+  const medLen = minLen * 2000.0;
+  // const steepness = 0.5; // 0-1
+  const steepness = 0; // 0-1
+  // const speed = 10.0; // meters per second
+  // const speed = 100000.0; // meters per second
+  const speed = 0.0;
+  // const speed = 1.0;
+  // const speed = 0;
+  const medAmp = 10.0; // author's choice
+
+  const GRAV = 9.8; // m/s^2, assumes world dist 1 = 1 meter
+  const freqFromLen = (l: number) => Math.sqrt((GRAV * (Math.PI * 2.0)) / l);
+
+  const ampOverLen = medAmp / medLen;
+
   // const dir3 = randNormalVec2(vec2.create());
-  const dir3 = V(0.6656193733215332, -0.7462913990020752);
-  console.dir({ dir1, dir2, dir3 });
+  // const medDir = V(0.6656193733215332, -0.7462913990020752);
+  const medDir = V(0.0, -1);
+  // console.dir({ dir1, dir2, dir3 });
 
-  const len = 2.0; // distance between crests
-  const freq = (2 * Math.PI) / len;
-  const speed = 1.0; // crest distance per second
-  const amp = 1.0; // crest height
-  const phi = speed * freq;
-  const Q = 1.08 * 4.0;
+  let numWaves = 1;
 
-  const gerstnerWaves = [
-    createGerstnerWave(Q, amp, dir3, freq, phi),
-    // createGerstnerWave(1.08 * 2.0, 10 * 0.5, dir1, 0.5 / 20.0, 0.5),
-    // createGerstnerWave(1.08 * 2.0, 10 * 0.5, dir2, 0.5 / 20.0, 0.5),
-    // createGerstnerWave(1.08 * 2.0, 2 * 0.5, dir3, 0.5 / 4.0, 1),
-    // createGerstnerWave(1.08 * 4.0, 0.05 * 0.5, dir2, 0.5 / 0.1, 1),
-    //createGerstnerWave(1, 0.5, randNormalVec2(vec2.create()), 0.5 / 1.0, 3),
-  ];
+  let gerstnerWaves: GerstnerWaveTS[] = [];
+  {
+    // const len = 2.0; // distance between crests
+    const len = medLen;
+    const crestSpeed = speed / len; // crest distance per second
+    // const freq = (2 * Math.PI) / len;
+    const freq = freqFromLen(len);
+    // const amp = 1.0; // crest height
+    const amp = medAmp; // crest height
+    const phi = crestSpeed * freq;
+    // const Q = 1.08 * 4.0;
+    const Q = steepness / (freq * len * numWaves);
+
+    gerstnerWaves.push(createGerstnerWave(Q, amp, medDir, freq, phi));
+  }
+
+  // createGerstnerWave(1.08 * 2.0, 10 * 0.5, dir1, 0.5 / 20.0, 0.5),
+  // createGerstnerWave(1.08 * 2.0, 10 * 0.5, dir2, 0.5 / 20.0, 0.5),
+  // createGerstnerWave(1.08 * 2.0, 2 * 0.5, dir3, 0.5 / 4.0, 1),
+  // createGerstnerWave(1.08 * 4.0, 0.05 * 0.5, dir2, 0.5 / 0.1, 1),
+  //createGerstnerWave(1, 0.5, randNormalVec2(vec2.create()), 0.5 / 1.0, 3),
+  // ];
 
   const uvToPos = (out: vec3, uv: vec2) => {
     const x = uv[0] * uvToPosReader.size[0];
@@ -416,7 +446,17 @@ function createGerstnerWave(
     dir = vec2.clone([1, 0]);
     freq = 0.0;
   }
-  return { D: dir, Q, A: amp, w: freq, phi, padding1: 0, padding2: 0 };
+  const res: GerstnerWaveTS = {
+    D: dir,
+    Q,
+    A: amp,
+    w: freq,
+    phi,
+    padding1: 0,
+    padding2: 0,
+  };
+  // console.log(JSON.stringify(res));
+  return res;
 }
 
 // TODO(@darzu): debug movement on the ocean
