@@ -1713,3 +1713,29 @@ IMPORTANT: Using WebGPU from native C++:
 
 Look at matrices:
   https://blog.42yeah.is/rendering/2023/01/28/look-at.html
+
+To read:
+  http://advances.realtimerendering.com
+  https://www.youtube.com/channel/UC9V4KS8ggGQe_Hfeg1OQrWw
+
+Graphics reading list:
+  https://interplayoflight.wordpress.com/2018/09/30/readings-on-the-state-of-the-art-in-rendering/
+
+Rendering Engine Architecture Conference:
+  https://enginearchitecture.realtimerendering.com
+  https://www.youtube.com/channel/UCWhvzM3b8N_JbmmoM1fkeGg
+
+WASM threads:
+  https://www.youtube.com/watch?v=khM7iilBgc0
+  https://medium.com/google-earth/performance-of-web-assembly-a-thread-on-threading-54f62fd50cf7
+
+Coop-coep for SharedArrayBuffer, performance.measureUserAgentSpecificMemory():
+  https://web.dev/coop-coep/
+    "Use COOP and COEP to set up a cross-origin isolated environment and enable powerful features like SharedArrayBuffer, performance.measureUserAgentSpecificMemory() and high resolution timer with better precision."
+
+Offscreen canvas:
+  https://medium.com/samsung-internet-dev/offscreencanvas-workers-and-performance-3023ca15d7c7
+
+WASM SIMD:
+  https://v8.dev/features/simd
+  https://www.infoq.com/articles/webassembly-simd-multithreading-performance-gains/

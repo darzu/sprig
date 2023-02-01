@@ -41,3 +41,38 @@ For enabling-disabling things when part of a larger article:
   } else {
       all_containers.forEach(container => container.drawer.set_visible(true));
   }
+
+Svelte
+    https://svelte.dev
+    tutorial:
+      https://svelte.dev/tutorial/basics
+    replacement for react?
+    "Svelte is a compiler that knows at build time how things could change in your app, rather than waiting to do the work at run time."
+    https://svelte.dev/blog/virtual-dom-is-pure-overhead
+    "Tentative conclusion after being burned in performance too many times: Diffing (like in React, but by no means is this unique to React) is a sign that there's something wrong with your framework design."
+      https://twitter.com/pcwalton/status/1015694528857047040
+    "Since we're a compiler, we can do that by instrumenting assignments behind the scenes:":
+      `count += 1;` -> `count += 1; $$invalidate('count', count);`
+      https://svelte.dev/blog/svelte-3-rethinking-reactivity
+    original hypothesis: https://svelte.dev/blog/frameworks-without-the-framework
+
+Lol: "The Polymer library is in maintenance mode. For new development, we recommend Lit."
+
+Pheonix?
+  https://www.phoenixframework.org
+  "Phoenix overtakes Svelte’s spot as the most loved web framework."
+  Erlang / Elixir thing
+  elixir: https://elixir-lang.org
+
+Next.js: react but shifts some work to server?
+
+Sciter:
+  https://sciter.com
+  like an alternative browser engine designed for apps? https://sciter.com/developers/engine-architecture/
+
+What are "Document fragments" ?
+
+https://fresh.deno.dev:
+  "The next-gen web framework."
+  there r soo many...
+    "no JS is shipped to the client by default."

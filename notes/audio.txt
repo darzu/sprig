@@ -1,2 +1,5 @@
 "Why does an A note on a piano sound different from an A note on a violin, if they're both supposed to be at 440 hz?"
     https://omarshehata.me/notebook/exploring_sound
+
+Audio Worklets for less glitchy audio:
+  https://developer.chrome.com/blog/audio-worklet/

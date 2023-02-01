@@ -26,3 +26,15 @@ TODO:
 - [ ] Render num literal
 - [ ] Render str literal
 - [ ] Render bool literal
+
+Coloration modes:
+  Like debug colorings in a renderer (over draw, triangles, etc)
+  - GPU vs CPU code,
+  - ECS coloring (entities, components, systems),
+  - from benchmark / dynamic trace: 
+    - lines visited
+    - time spent
+  - library coloring (math, physics, render, etc), like MakeCode
+  perhaps multiple colors: top band, center, bottom band ?
+
+Structured editting Done Right is a big opportunity

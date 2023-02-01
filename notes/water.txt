@@ -101,6 +101,12 @@ Waves in Sprigland, 8/24/22:
 Far Cry 5:
   https://www.youtube.com/watch?v=4oDtGnQNCx4
 
+Gerstner tutorial (Unity):
+  https://catlikecoding.com/unity/tutorials/flow/waves/
+
+Unreal Gerstner:
+  https://80.lv/articles/tutorial-ocean-shader-with-gerstner-waves/
+
 New water TODO:
   [x] Try cel shading the water
   [ ] Bug: ensure wave dir aligns w/ world vec2
@@ -117,3 +123,7 @@ New water TODO:
   [ ] flow maps
   [ ] reflection
   [ ] refraction
+
+Sine wave:
+  y = A*sin(x*w + p*t)
+  https://www.desmos.com/calculator/tjjloylhez

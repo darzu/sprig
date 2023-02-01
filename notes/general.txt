@@ -1300,3 +1300,41 @@ Electron vs NWjs?
 Really interesting article about dynamic linking and ABIs in Swift and Rust
   https://faultlore.com/blah/swift-abi/
   it's honestly just a good vehical to dive deep into certain language design elements I don't keep cached in much.
+
+Complaints about apple and ios browser:
+  https://infrequently.org/2021/04/progress-delayed/
+  https://infrequently.org/2021/08/webkit-ios-deep-dive/
+
+Browser level lazy loading:
+  https://web.dev/lazy-loading-images/#images-inline-browser-level
+  good for long, interactive articles?
+
+Compression Streams:
+  Enable developers to compress data efficiently without downloading large amounts of code to the browser.
+
+Shared Workers and Broadcast Channels:
+  https://developer.mozilla.org/en-US/docs/Web/API/SharedWorker
+  https://developer.chrome.com/blog/broadcastchannel/
+  
+Background sync:
+  https://developer.chrome.com/blog/background-sync/
+  https://developer.chrome.com/articles/periodic-background-sync/
+
+Web devices:
+  Web Bluetooth
+  Web MIDI
+  Web USB
+  Web Serial
+  Web HID
+  Web NFC
+
+Misc chrome features:
+  Shape Detection
+  Generic Sensors API
+
+Browser perf is accessibility:
+  https://infrequently.org/2022/12/performance-baseline-2023/
+  https://brucelawson.co.uk/2022/bad-performance-is-bad-accessibility/
+
+JS has labels & goto?!
+  https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/label
