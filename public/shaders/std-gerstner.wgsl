@@ -1,6 +1,7 @@
+// IMPORTANT: MUST MATCH gerstner.ts
 fn gerstner(uv: vec2<f32>, t: f32) -> mat2x3<f32> {
-     var displacement = vec3<f32>(0.0, 0.0, 0.0);
-     var normal = vec3<f32>(0.0, 0.0, 0.0);
+     var displacement = vec3(0.0, 0.0, 0.0);
+     var normal = vec3(0.0, 0.0, 0.0);
      for (var i = 0u; i < scene.numGerstnerWaves; i++) {
          let wave = gerstnerWaves.ms[i];
          let D = wave.D;
