@@ -10,15 +10,10 @@ import { DISABLE_GERSTNER } from "../../flags.js";
 //  [ ] create water shape as good looking as valheim's
 //      [ ] as good as falconeers
 
-type GerstnerParam = {
+type GerstnerParams = {
   dir: vec2;
   len: number;
-  amp: number;
-  speed: number;
-};
-type GerstnerParam2 = {
-  dir: vec2;
-  len: number;
+  speed: number; // units per second
   steep: number;
 };
 
@@ -27,56 +22,43 @@ export function createWaves(): GerstnerWaveTS[] {
 
   const edgeLen = 4.0; // TODO(@darzu): parameterize? Based on worldUnitPerOceanVerts
   const minLen = 2 * edgeLen;
-  const medLen = minLen * 2.0;
 
-  const steepness = 1; // 0-1
+  // TODO(@darzu): dt ?
+  // const dt = 60 / 1000;
+  // / 1000
+  // const dt = 1 / 60;
+  const dt = 1 / 1000;
+  // const GRAV = 9.8 * dt * dt; // m/s^2, assumes world dist 1 = 1 meter
 
-  const medAmp = 5.0; // author's choice
-
-  const dt = 60 / 1000; // TODO(@darzu): maybe?
-  const GRAV = 9.8 * dt * dt; // m/s^2, assumes world dist 1 = 1 meter
-  // TODO(@darzu): which one?!
-  const freqFromLen = (l: number) => Math.sqrt((GRAV * Math.PI * 2.0) / l);
-  // const freqFromLen = (l: number) => 2 / l;
-
-  const ampOverLen = medAmp / medLen;
-
-  const waveParams: GerstnerParam[] = [
-    { dir: V(1, 0), amp: 2.0, len: minLen * 2.0 * 2.0, speed: 10 },
+  const params: GerstnerParams[] = [
+    // { dir: V(1, 0), len: 100, speed: 0, steep: 1 },
+    // { dir: V(1, 0), len: 100, speed: 100, steep: 1 },
+    // { dir: V(1, 0), len: 20, speed: 50, steep: 1 },
+    { dir: V(1, 0), len: 100, speed: 10, steep: 1 },
   ];
 
-  const waveParams2: GerstnerParam2[] = [
-    // { dir: V(1.0, 0.0), len: medLen * 2, steep: 0.2 },
-  ];
+  const res: GerstnerWaveTS[] = [];
 
-  let numWaves = waveParams.length + waveParams2.length;
-  let gerstnerWaves: GerstnerWaveTS[] = [];
-  for (let p of waveParams) gerstnerWaves.push(paramToWave(p));
-  for (let p of waveParams2) gerstnerWaves.push(param2ToWave(p));
+  for (let p of params) res.push(mkGerstnerFrom(p));
 
-  function paramToWave(p: GerstnerParam): GerstnerWaveTS {
-    const D = vec2.normalize(p.dir, vec2.create());
-    const len = p.len;
-    const crestSpeed = p.speed;
-    const w = (2 * Math.PI) / len;
-    const A = p.amp;
-    const phi = crestSpeed * w;
-    const Q = steepness / (w * A * numWaves);
-    return mkGerstnerWaveTS({ Q, A, D, w, phi });
+  return res;
+
+  function mkGerstnerFrom(params: GerstnerParams): GerstnerWaveTS {
+    // TODO(@darzu): IMPL:
+    // [~] dir
+    // [x] len
+    // [x] speed
+    // [ ] steep
+    const D = params.dir;
+    const w = (2 * Math.PI) / params.len;
+    const A = 10;
+    const Q = 0;
+    // const speed = Math.sqrt(9.8 / w);
+    const speed = params.speed;
+    const phi = speed * w * dt;
+
+    return mkGerstnerWaveTS({ Q, w, D, A, phi });
   }
-
-  function param2ToWave(p: GerstnerParam2): GerstnerWaveTS {
-    const steepness = p.steep;
-    const wavelength = p.len;
-    let w = (2 * Math.PI) / wavelength;
-    let phi = Math.sqrt(9.8 / w);
-    let D = vec2.normalize(p.dir, vec2.create());
-    let A = steepness / w;
-    let Q = 1.0; // ???
-    return mkGerstnerWaveTS({ Q, A, D, w, phi });
-  }
-
-  return gerstnerWaves;
 }
 
 function mkGerstnerWaveTS(params: Partial<GerstnerWaveTS>): GerstnerWaveTS {
@@ -98,7 +80,7 @@ export function compute_gerstner(
   outNorm: vec3,
   waves: GerstnerWaveTS[],
   uv: vec2,
-  t: number
+  t: number // ms
 ): void {
   vec3.zero(outDisp);
   vec3.zero(outNorm);
@@ -140,3 +122,31 @@ function catlike_gerstner(
   p[1] = a * Math.sin(f);
   p[2] += d[1] * (a * Math.cos(f));
 }
+
+function test_gerstner() {
+  // NOTE: use this to sanity check math properties like period and max amplitude
+  const dt = 1 / 1000;
+  const len = 50;
+  const speed = 10;
+  const D = V(1, 0);
+  const w = (2 * Math.PI) / len;
+  const A = 10;
+  const Q = 0;
+  const phi = speed * w * dt;
+  const wave = mkGerstnerWaveTS({ Q, w, D, A, phi });
+  const waves = [wave];
+
+  const disp = vec3.create();
+  const norm = vec3.create();
+  const uv = V(10, 10);
+  // let max = -Infinity;
+  for (let t_ms = 0; t_ms < 10 * 1000; t_ms += 16) {
+    compute_gerstner(disp, norm, waves, uv, t_ms);
+    const y = disp[1];
+    // max = Math.max(max, y);
+    if (Math.abs(y - A) < A * 0.05) {
+      console.log(`${t_ms.toFixed(0)}: max ${y.toFixed(1)}`);
+    }
+  }
+}
+// test_gerstner();

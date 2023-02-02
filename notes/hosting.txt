@@ -41,6 +41,9 @@ Cloudflare Free tier
   https://pages.cloudflare.com
   In beta: R2
     $0.015 per GB of data stored per month, no egress fees
+
+Cloudflare IPFS:
+  https://blog.cloudflare.com/distributed-web-gateway/
     
 Netlify free
   https://www.netlify.com/pricing

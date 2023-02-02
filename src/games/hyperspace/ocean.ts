@@ -227,8 +227,9 @@ export async function initOcean(oceanMesh: Mesh, color: vec3) {
       outDisp,
       outNorm,
       gerstnerWaves,
+      // TODO(@darzu): reconcile input xy and uv or worldspace units
       vec2.scale(uv, 1000),
-      res.time.time * 0.001
+      res.time.time
     );
 
     const pos = uvToPos(tempVec3(), uv);

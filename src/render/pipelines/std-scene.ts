@@ -204,7 +204,7 @@ export const SceneStruct = createCyStruct(
     terColor: "vec3<f32>",
 
     // TODO(@darzu): timeDelta vs totalTime
-    time: "f32",
+    time: "f32", // in ms
     canvasAspectRatio: "f32",
     maxSurfaceId: "u32",
     numPointLights: "u32",

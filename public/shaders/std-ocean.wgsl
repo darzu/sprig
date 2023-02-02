@@ -73,7 +73,7 @@ fn vert_main(input: VertexInput) -> VertexOutput {
     let surfBasis = mat3x3<f32>(perp, normal, tangent);
     // TODO(@darzu): PERF. don't transform twice..
     let oldWorldPos = meshUni.transform * vec4<f32>(position, 1.0);
-    let gerst = gerstner(oldWorldPos.zx, scene.time * .001);
+    let gerst = gerstner(oldWorldPos.zx, scene.time);
     // let gerst = gerstner(uv * 1000, scene.time * .001);
 
     // let displacedPos = position;
@@ -121,7 +121,7 @@ fn frag_main(input: VertexOutput) -> FragOut {
     // let normal = normalize(input.normal);
 
     // let gerst = gerstner(input.uv * 1000, scene.time * .001);
-    let gerst = gerstner(input.worldPos.zx, scene.time * .001);
+    let gerst = gerstner(input.worldPos.zx, scene.time);
     let normal = gerst[1];
 
     var lightingColor: vec3<f32> = vec3<f32>(0.0, 0.0, 0.0);

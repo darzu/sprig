@@ -1338,3 +1338,6 @@ Browser perf is accessibility:
 
 JS has labels & goto?!
   https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/label
+
+Consider base58/56 as a better human-ish encoding (vs b64),
+  Used in IPFS and bitcoin(?)
