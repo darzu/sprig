@@ -2,19 +2,18 @@ import { vec3, vec2, V } from "../../sprig-matrix.js";
 import { GerstnerWaveTS } from "../../render/pipelines/std-ocean.js";
 import { DISABLE_GERSTNER } from "../../flags.js";
 
-// Goals:
-//  [ ] speed parameter that is either derived from other parameters,
-//        or world-unit accurate and consistent
-//  [ ] understand all the terms in the equations
-//      [ ] circle vs eliptical orbits?
-//  [ ] create water shape as good looking as valheim's
-//      [ ] as good as falconeers
+// TODO(@darzu): [ ] shape bigger waves using fourier-ish approach
 
-type GerstnerParams = {
-  dir: vec2;
+type GDirLenSteep = {
+  dirRad: number;
   len: number;
-  speed: number; // units per second
   steep: number;
+};
+type GDirLenAmpSpeed = {
+  dirRad: number;
+  len: number;
+  amp: number;
+  speed: number;
 };
 
 export function createWaves(): GerstnerWaveTS[] {
@@ -28,32 +27,53 @@ export function createWaves(): GerstnerWaveTS[] {
   // / 1000
   // const dt = 1 / 60;
   const dt = 1 / 1000;
-  // const GRAV = 9.8 * dt * dt; // m/s^2, assumes world dist 1 = 1 meter
+  const GRAV = 9.8; // m/s^2, assumes world dist 1 = 1 meter
 
-  const params: GerstnerParams[] = [
-    // { dir: V(1, 0), len: 100, speed: 0, steep: 1 },
-    // { dir: V(1, 0), len: 100, speed: 100, steep: 1 },
-    // { dir: V(1, 0), len: 20, speed: 50, steep: 1 },
-    { dir: V(1, 0), len: 100, speed: 10, steep: 1 },
+  const roughness = 0.7;
+
+  const p1: GDirLenSteep[] = [
+    { dirRad: 0, len: minLen * 4.05, steep: 0.4 },
+    { dirRad: 0.67, len: minLen * 4.3, steep: 0.4 },
+    { dirRad: 1.21, len: minLen * 7, steep: 0.2 },
+    { dirRad: -2.17, len: minLen * 13, steep: 0.4 },
+    { dirRad: -1.05, len: minLen * 5, steep: 0.1 },
+    { dirRad: -1.78, len: minLen * 5.3, steep: 0.2 },
+    { dirRad: 1.91, len: minLen * 5.7, steep: 0.2 },
+  ];
+  const _speed = Math.sqrt((GRAV * minLen * 20) / (2 * Math.PI)) * 0.6;
+  const p2: GDirLenAmpSpeed[] = [
+    { dirRad: -0.12, len: minLen * 10, amp: 10 * roughness, speed: _speed },
+    { dirRad: -0.12, len: minLen * 20, amp: 14 * roughness, speed: _speed },
+    //
   ];
 
   const res: GerstnerWaveTS[] = [];
 
-  for (let p of params) res.push(mkGerstnerFrom(p));
+  const totalSteep = p1.reduce((p, n) => p + n.steep, 0);
+  const steepFactor = roughness / totalSteep;
+
+  for (let p of p1) res.push(mkGerstnerFromDirLenSteep(p));
+  for (let p of p2) res.push(mkGerstnerFromDirLenAmpSpeed(p));
 
   return res;
 
-  function mkGerstnerFrom(params: GerstnerParams): GerstnerWaveTS {
-    // TODO(@darzu): IMPL:
-    // [~] dir
-    // [x] len
-    // [x] speed
-    // [ ] steep
-    const D = params.dir;
+  function mkGerstnerFromDirLenSteep(params: GDirLenSteep): GerstnerWaveTS {
+    const D = vec2.fromRadians(params.dirRad, V(0, 0));
     const w = (2 * Math.PI) / params.len;
-    const A = 10;
+    const A = (params.steep * steepFactor) / w;
+    const Q = 1;
+    const speed = Math.sqrt(GRAV / w);
+    const phi = speed * w * dt;
+
+    return mkGerstnerWaveTS({ Q, w, D, A, phi });
+  }
+  function mkGerstnerFromDirLenAmpSpeed(
+    params: GDirLenAmpSpeed
+  ): GerstnerWaveTS {
+    const D = vec2.fromRadians(params.dirRad, V(0, 0));
+    const w = (2 * Math.PI) / params.len;
+    const A = params.amp;
     const Q = 0;
-    // const speed = Math.sqrt(9.8 / w);
     const speed = params.speed;
     const phi = speed * w * dt;
 

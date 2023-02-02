@@ -127,3 +127,13 @@ New water TODO:
 Sine wave:
   y = A*sin(x*w + p*t)
   https://www.desmos.com/calculator/tjjloylhez
+
+Fourier transforms:
+  interactive articles:
+    https://www.myfourierepicycles.com
+    https://olgaritme.com/posts/drawing-with-the-fourier-series/index.html
+    https://www.jezzamon.com/fourier/
+  3b1b:
+    https://www.youtube.com/watch?v=spUNpyF58BY
+    https://www.youtube.com/watch?v=r6sGWTCMz2k
+  https://www.youtube.com/watch?v=ds0cmAV-Yek
