@@ -29,7 +29,13 @@ export function createWaves(): GerstnerWaveTS[] {
   const dt = 1 / 1000;
   const GRAV = 9.8; // m/s^2, assumes world dist 1 = 1 meter
 
-  const roughness = 0.7;
+  const roughness = 0.4;
+  const steepness = 1.0 * roughness;
+  const bigWave = 1.0 * roughness;
+  const littleSpikes = 1.0 * roughness;
+
+  const speedFromFreq = (w: number) => Math.sqrt(GRAV / w);
+  const speedFromLen = (l: number) => Math.sqrt((GRAV * l) / (2 * Math.PI));
 
   const p1: GDirLenSteep[] = [
     { dirRad: 0, len: minLen * 4.05, steep: 0.4 },
@@ -40,17 +46,31 @@ export function createWaves(): GerstnerWaveTS[] {
     { dirRad: -1.78, len: minLen * 5.3, steep: 0.2 },
     { dirRad: 1.91, len: minLen * 5.7, steep: 0.2 },
   ];
-  const _speed = Math.sqrt((GRAV * minLen * 20) / (2 * Math.PI)) * 0.6;
+  const _speed = speedFromLen(minLen * 20) * 0.6;
   const p2: GDirLenAmpSpeed[] = [
-    { dirRad: -0.12, len: minLen * 10, amp: 10 * roughness, speed: _speed },
-    { dirRad: -0.12, len: minLen * 20, amp: 14 * roughness, speed: _speed },
+    // biggest wave:
+    { dirRad: -0.12, len: minLen * 10, amp: 10 * bigWave, speed: _speed },
+    { dirRad: -0.12, len: minLen * 20, amp: 14 * bigWave, speed: _speed },
+    // little spiky guys:
+    {
+      dirRad: -5.4,
+      len: minLen * 1.5,
+      amp: 1.5 * littleSpikes,
+      speed: 4.3,
+    },
+    {
+      dirRad: 5.14,
+      len: minLen * 1.3,
+      amp: 1.5 * littleSpikes,
+      speed: 3.7,
+    },
     //
   ];
 
   const res: GerstnerWaveTS[] = [];
 
   const totalSteep = p1.reduce((p, n) => p + n.steep, 0);
-  const steepFactor = roughness / totalSteep;
+  const steepFactor = steepness / totalSteep;
 
   for (let p of p1) res.push(mkGerstnerFromDirLenSteep(p));
   for (let p of p2) res.push(mkGerstnerFromDirLenAmpSpeed(p));
@@ -62,7 +82,7 @@ export function createWaves(): GerstnerWaveTS[] {
     const w = (2 * Math.PI) / params.len;
     const A = (params.steep * steepFactor) / w;
     const Q = 1;
-    const speed = Math.sqrt(GRAV / w);
+    const speed = speedFromFreq(w);
     const phi = speed * w * dt;
 
     return mkGerstnerWaveTS({ Q, w, D, A, phi });
