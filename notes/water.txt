@@ -100,6 +100,28 @@ Waves in Sprigland, 8/24/22:
 
 Far Cry 5:
   https://www.youtube.com/watch?v=4oDtGnQNCx4
+  VGPRs? "Vector General-Purpose Registers"
+  precision lowering cannot be automatic:
+    full precision is usually required for:
+      texture coordinates for sizes of 512 texels or higher
+      normal vectors in cartesian coordinates
+      math like:
+        subtracting two nearly equal numbers
+        dividing to a number close to 0
+        iterative math that can accumulate into a large error
+    register pressure is a common bottleneck
+      low register usage allows shaders to run more threads concurrently,
+        in order to counter memory latency.
+        occupancy increases at discrete thresholds
+        narrowly missing a threshold should be avoided
+        optimizing lower occupancy shaders yields higher gains
+      main source of pressure: maximum number of simultaneous live registers
+        e.g. for material blending:
+          memory reads are performed early and cached
+          loop unrolling
+          large number of intermediary values
+    Radeon GPU Analyzer will show you live register analysis
+
 
 Gerstner tutorial (Unity):
   https://catlikecoding.com/unity/tutorials/flow/waves/

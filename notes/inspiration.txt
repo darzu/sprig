@@ -187,3 +187,13 @@ Outward dev story:
 Everest-Pipkin
   Barnacle Goose
     some big art grant?
+
+"anime homing missiles":
+  https://blog.littlepolygon.com/posts/missile/
+  v cool low-poly effect
+  iterative vs closed form motion:
+    closed-form (usually) perferable when you know the whole path!
+  "Rotation Minimizing Frames":
+    https://twitter.com/xewlupus/status/1620852368542932993
+    aka "Frenet frames" and "Bishop frames" ?
+

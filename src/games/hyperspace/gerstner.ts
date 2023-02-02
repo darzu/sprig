@@ -2,7 +2,15 @@ import { vec3, vec2, V } from "../../sprig-matrix.js";
 import { GerstnerWaveTS } from "../../render/pipelines/std-ocean.js";
 import { DISABLE_GERSTNER } from "../../flags.js";
 
-// TODO(@darzu): [ ] shape bigger waves using fourier-ish approach
+// NOTE: tips for getting good waves:
+//    - combine waves with the same frequency and speed to create interesting shapes,
+//        mouch like fourier series
+//    - use very small (just above minimum), steep waves to add spikyness to the whole ocean. These don't need any Q (i.e. just sine waves) since you won't
+//        notice the horizontal sway that small
+//    - you can push total Q/steepness above 1 and you usually won't notice loops if there are enough waves
+//    - a con (and a pro) of gerstner over sine waves is they add a lot of horizontal sway, this is more true the bigger the wave
+//        for this reason, for now, I've decided that my biggest shaped waves are pure sine waves so you don't get a huge amount of swaying
+// TODO(@darzu): [ ] interactively shape bigger waves using fourier-ish approach
 
 type GDirLenSteep = {
   dirRad: number;
@@ -29,7 +37,7 @@ export function createWaves(): GerstnerWaveTS[] {
   const dt = 1 / 1000;
   const GRAV = 9.8; // m/s^2, assumes world dist 1 = 1 meter
 
-  const roughness = 0.4;
+  const roughness = 0.5;
   const steepness = 1.0 * roughness;
   const bigWave = 1.0 * roughness;
   const littleSpikes = 1.0 * roughness;
@@ -50,7 +58,7 @@ export function createWaves(): GerstnerWaveTS[] {
   const p2: GDirLenAmpSpeed[] = [
     // biggest wave:
     { dirRad: -0.12, len: minLen * 10, amp: 10 * bigWave, speed: _speed },
-    { dirRad: -0.12, len: minLen * 20, amp: 14 * bigWave, speed: _speed },
+    // { dirRad: -0.12, len: minLen * 20, amp: 14 * bigWave, speed: _speed },
     // little spiky guys:
     {
       dirRad: -5.4,

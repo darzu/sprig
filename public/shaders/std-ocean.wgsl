@@ -125,7 +125,7 @@ fn frag_main(input: VertexOutput) -> FragOut {
     let normal = gerst[1];
 
     var lightingColor: vec3<f32> = vec3<f32>(0.0, 0.0, 0.0);
-    var lightingIntensity = 0.0;
+    // var lightingIntensity = 0.0;
     let isUnlit = 0u;
     // TODO(@darzu): de-dupe light code w/ std-mesh?
     for (var i: u32 = 0u; i < scene.numPointLights; i++) {
@@ -147,8 +147,8 @@ fn frag_main(input: VertexOutput) -> FragOut {
         //lightingColor += light.ambient;
         lightingColor = lightingColor + f32(1u - isUnlit) 
           * ((light.ambient * attenuation) + (light.diffuse * angle * attenuation * shadowVis));
-        lightingIntensity = (light.ambient.r * attenuation) 
-          + (light.diffuse.r * angle * attenuation * shadowVis);
+        // lightingIntensity = (light.ambient.r * attenuation) 
+        //   + (light.diffuse.r * angle * attenuation * shadowVis);
     }
     const shades = 10.0;
     // lightingIntensity = ceil(lightingIntensity * shades) / shades;
@@ -159,9 +159,9 @@ fn frag_main(input: VertexOutput) -> FragOut {
 
     
     var out: FragOut;
-    // out.color = vec4<f32>(litColor, 1.0);
+    out.color = vec4<f32>(litColor, 1.0);
 
-    out.color = vec4<f32>(normal, 1.0);
+    // out.color = vec4<f32>(normal, 1.0);
 
     out.normal = vec4<f32>(normal, 1.0);
 
