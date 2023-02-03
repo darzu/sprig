@@ -159,3 +159,6 @@ Fourier transforms:
     https://www.youtube.com/watch?v=spUNpyF58BY
     https://www.youtube.com/watch?v=r6sGWTCMz2k
   https://www.youtube.com/watch?v=ds0cmAV-Yek
+
+Determining a waterline on the camera:
+  https://twitter.com/_staggart_/status/1411339746828226561

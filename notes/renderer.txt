@@ -1739,3 +1739,7 @@ Offscreen canvas:
 WASM SIMD:
   https://v8.dev/features/simd
   https://www.infoq.com/articles/webassembly-simd-multithreading-performance-gains/
+
+Paint like Miyazaki:
+  http://ghiblicon.blogspot.com/2015/01/ghibli-museum-sketching-set-miyazaki.html
+  https://animationobsessive.substack.com/p/how-to-paint-like-hayao-miyazaki

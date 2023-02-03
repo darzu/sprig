@@ -18,7 +18,7 @@ import {
 } from "../grass.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { ColliderDef } from "../physics/collider.js";
-import { LinearVelocityDef } from "../physics/motion.js";
+import { AngularVelocityDef, LinearVelocityDef } from "../physics/motion.js";
 import { PhysicsStateDef, WorldFrameDef } from "../physics/nonintersection.js";
 import {
   PhysicsParentDef,
@@ -40,7 +40,12 @@ import { shadowPipelines } from "../render/pipelines/std-shadow.js";
 import { RenderableConstructDef, RendererDef } from "../render/renderer-ecs.js";
 import { mat3, mat4, quat, V, vec3 } from "../sprig-matrix.js";
 import { createMast, createSail, MastDef, SAIL_FURL_RATE } from "./sail.js";
-import { quatFromUpForward, randNormalPosVec3, vec3Dbg } from "../utils-3d.js";
+import {
+  quatFromUpForward,
+  randNormalPosVec3,
+  randNormalVec3,
+  vec3Dbg,
+} from "../utils-3d.js";
 import { randColor } from "../utils-game.js";
 import { GrassCutTexPtr, grassPoolPtr, renderGrassPipe } from "./std-grass.js";
 import { WindDef } from "./wind.js";
@@ -133,10 +138,12 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
   em.ensureComponentOn(sunlight, PointLightDef);
   // sunlight.pointLight.constant = 1.0;
   sunlight.pointLight.constant = 1.0;
-  vec3.copy(sunlight.pointLight.ambient, [0.4, 0.4, 0.4]);
+  sunlight.pointLight.linear = 0.0;
+  sunlight.pointLight.quadratic = 0.0;
+  vec3.copy(sunlight.pointLight.ambient, [0.2, 0.2, 0.2]);
   // vec3.scale(sunlight.pointLight.ambient, sunlight.pointLight.ambient, 0.2);
   vec3.copy(sunlight.pointLight.diffuse, [0.5, 0.5, 0.5]);
-  em.ensureComponentOn(sunlight, PositionDef, V(50, 100, 10));
+  em.ensureComponentOn(sunlight, PositionDef, V(50, 300, 10));
   em.ensureComponentOn(sunlight, RenderableConstructDef, res.assets.ball.proto);
 
   // score
@@ -196,21 +203,53 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
   em.ensureComponentOn(hm, ColorDef, V(0.4, 0.2, 0.2));
   // TODO(@darzu): update terra from SDF
 
-  // reference columns
-  for (let i = 0; i < 50; i++) {
-    const refCol = em.new();
-    em.ensureComponentOn(
-      refCol,
-      RenderableConstructDef,
-      res.assets.unitCube.proto
-    );
-    em.ensureComponentOn(refCol, ScaleDef, V(1, 100, 1));
-    em.ensureComponentOn(refCol, PositionDef);
-    vec3.copy(refCol.position, SHIP_START_POS);
-    refCol.position[1] = -50;
-    refCol.position[2] += i * 2 + 30;
-    em.ensureComponentOn(refCol, ColorDef, V(0.1, 1, 0.1));
-  }
+  // // reference columns
+  // for (let i = 0; i < 50; i++) {
+  //   const refCol = em.new();
+  //   em.ensureComponentOn(
+  //     refCol,
+  //     RenderableConstructDef,
+  //     res.assets.unitCube.proto
+  //   );
+  //   em.ensureComponentOn(refCol, ScaleDef, V(1, 100, 1));
+  //   em.ensureComponentOn(refCol, PositionDef);
+  //   vec3.copy(refCol.position, SHIP_START_POS);
+  //   refCol.position[1] = -50;
+  //   refCol.position[2] += i * 2 + 30;
+  //   em.ensureComponentOn(refCol, ColorDef, V(0.1, 1, 0.1));
+  // }
+  for (let r = 0; r < 2; r++)
+    for (let i = 0; i < 10; i++) {
+      const bigCube = em.new();
+      const even = i % 2 === 0 ? 1 : 0;
+      em.ensureComponentOn(
+        bigCube,
+        RenderableConstructDef,
+        even ? res.assets.ball.proto : res.assets.cube.proto
+      );
+      em.ensureComponentOn(bigCube, ScaleDef, V(50, 50, 50));
+      em.ensureComponentOn(
+        bigCube,
+        RotationDef,
+        quat.fromEuler(
+          Math.random() * Math.PI,
+          Math.random() * Math.PI,
+          Math.random() * Math.PI,
+          quat.create()
+        )
+      );
+      em.ensureComponentOn(
+        bigCube,
+        AngularVelocityDef,
+        vec3.scale(randNormalVec3(vec3.tmp()), 0.0005, vec3.create())
+      );
+      em.ensureComponentOn(
+        bigCube,
+        PositionDef,
+        V(i * 20, r * 100, i * 20 - even * 100)
+      );
+      em.ensureComponentOn(bigCube, ColorDef, randColor());
+    }
 
   // ocean
   const oceanVertsPerWorldUnit = 0.25;
@@ -361,8 +400,8 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
     // vec3.copy(g.position, [0, 1, -1.2]);
     // quat.setAxisAngle([0.0, -1.0, 0.0], 1.62, g.rotation);
     // g.cameraFollow.positionOffset = V(0, 0, 5);
-    g.controllable.speed *= 0.5;
-    g.controllable.sprintMul = 10;
+    g.controllable.speed *= 2.0;
+    g.controllable.sprintMul = 15;
     const sphereMesh = cloneMesh(res.assets.ball.mesh);
     const visible = false;
     em.ensureComponentOn(g, RenderableConstructDef, sphereMesh, visible);
@@ -389,11 +428,17 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
     // g.cameraFollow.yawOffset = 0.0;
     // g.cameraFollow.pitchOffset = -0.452;
 
-    vec3.copy(g.position, [-310.03, 26.0, -389.47]);
-    quat.copy(g.rotation, [0.0, -0.71, 0.0, 0.71]);
+    // vec3.copy(g.position, [-310.03, 26.0, -389.47]);
+    // quat.copy(g.rotation, [0.0, -0.71, 0.0, 0.71]);
+    // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
+    // g.cameraFollow.yawOffset = 0.0;
+    // g.cameraFollow.pitchOffset = -0.287;
+
+    vec3.copy(g.position, [129.81, 192.0, -183.24]);
+    quat.copy(g.rotation, [0.0, -1.0, 0.0, -0.06]);
     vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
     g.cameraFollow.yawOffset = 0.0;
-    g.cameraFollow.pitchOffset = -0.287;
+    g.cameraFollow.pitchOffset = -0.624;
 
     em.registerSystem(
       [GhostDef, WorldFrameDef, ColliderDef],
