@@ -192,3 +192,6 @@ Skeletal animation:
   Memory layout:
     https://youtu.be/ZzMnu3v_MOw?t=680
   TODO: mesh morphing
+
+"Dual-quaternion skinning":
+  https://twitter.com/ENDESGA/status/1617377084653047809

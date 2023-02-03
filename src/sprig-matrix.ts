@@ -6,6 +6,7 @@ interface Float32ArrayOfLength<N extends number> extends Float32Array {
   length: N;
 }
 
+// TODO(@darzu): rename vec2 -> V2, vec3 -> V3 ?
 export type vec2 = Float32ArrayOfLength<2>;
 
 export type vec3 = Float32ArrayOfLength<3>;
@@ -127,6 +128,11 @@ export module vec2 {
     out[0] = n0;
     out[1] = n1;
     return out;
+  }
+
+  // NOTE: output is normalized
+  export function fromRadians(radians: number, out?: T): T {
+    return set(Math.cos(radians), Math.sin(radians), out);
   }
 
   export const ZEROS = fromValues(0, 0);

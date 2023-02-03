@@ -82,7 +82,7 @@ export const OceanUniStruct = createCyStruct(
 export type OceanUniTS = CyToTS<typeof OceanUniStruct.desc>;
 export type OceanMeshHandle = MeshHandle;
 
-const MAX_GERSTNER_WAVES = 8;
+const MAX_GERSTNER_WAVES = 12;
 
 export const GerstnerWaveStruct = createCyStruct(
   {
@@ -186,7 +186,7 @@ export const renderOceanPipe = CY.createRenderPipeline("oceanRender", {
     // { ptr: oceanJfa.sdfTex, alias: "sdf" },
   ],
   // TODO(@darzu): for perf, maybe do backface culling
-  cullMode: "none",
+  cullMode: "back",
   meshOpt: {
     pool: oceanPoolPtr,
     stepMode: "per-mesh-handle",
@@ -197,19 +197,23 @@ export const renderOceanPipe = CY.createRenderPipeline("oceanRender", {
     {
       ptr: litTexturePtr,
       clear: "never",
+      // clear: "always",
     },
     {
       ptr: normalsTexturePtr,
       clear: "never",
+      // clear: "always",
     },
     {
       ptr: surfacesTexturePtr,
       clear: "never",
+      // clear: "always",
     },
   ],
   depthStencil: mainDepthTex,
   shader: (shaderSet) => `
   ${shaderSet["std-rand"].code}
+  ${shaderSet["std-gerstner"].code}
   ${shaderSet["std-ocean"].code}
   `,
 });

@@ -43,10 +43,9 @@ import { AssetsDef } from "../../assets.js";
 import { ColorDef } from "../../color-ecs.js";
 import { DEFAULT_MASK, UVUNWRAP_MASK } from "../../render/pipeline-masks.js";
 import { Mesh } from "../../render/mesh.js";
+import { compute_gerstner, createWaves } from "./gerstner.js";
 
 // TODO(@darzu): refactor this to not assume a specific ocean shape
-
-const DISABLE_GERSTNER = false;
 
 // TODO(@darzu): what is an ocean
 //    water surface
@@ -123,12 +122,14 @@ export async function initOcean(oceanMesh: Mesh, color: vec3) {
     0,
     UVUNWRAP_MASK | DEFAULT_MASK,
     oceanPoolPtr
+    // meshPoolPtr
   );
   EM.ensureComponentOn(ocean, ColorDef, color);
   //EM.ensureComponentOn(ocean, PositionDef, [12000, 180, 0]);
   EM.ensureComponentOn(ocean, PositionDef);
 
   let ocean2 = await EM.whenEntityHas(ocean, RenderableDef, RenderDataOceanDef);
+  // let ocean2 = await EM.whenEntityHas(ocean, RenderableDef, RenderDataStdDef);
 
   // TODO(@darzu):
   const preOceanGPU = performance.now();
@@ -193,33 +194,6 @@ export async function initOcean(oceanMesh: Mesh, color: vec3) {
     oceanJfa.sdfTex.format
   );
 
-  // console.log("adding OceanDef");
-
-  const gerstnerWaves = [
-    createGerstnerWave(
-      1.08 * 2.0,
-      10 * 0.5,
-      randNormalVec2(vec2.create()),
-      0.5 / 20.0,
-      0.5
-    ),
-    createGerstnerWave(
-      1.08 * 2.0,
-      10 * 0.5,
-      randNormalVec2(vec2.create()),
-      0.5 / 20.0,
-      0.5
-    ),
-    createGerstnerWave(
-      1.08 * 2.0,
-      2 * 0.5,
-      randNormalVec2(vec2.create()),
-      0.5 / 4.0,
-      1
-    ),
-    //createGerstnerWave(1, 0.5, randNormalVec2(vec2.create()), 0.5 / 1.0, 3),
-  ];
-
   const uvToPos = (out: vec3, uv: vec2) => {
     const x = uv[0] * uvToPosReader.size[0];
     const y = uv[1] * uvToPosReader.size[1];
@@ -245,14 +219,17 @@ export async function initOcean(oceanMesh: Mesh, color: vec3) {
     return sdfReader.sample(x, y);
   };
 
+  const gerstnerWaves = createWaves();
+
   const uvToGerstnerDispAndNorm = (outDisp: vec3, outNorm: vec3, uv: vec2) => {
     // TODO(@darzu): impl
-    gerstner(
+    compute_gerstner(
       outDisp,
       outNorm,
       gerstnerWaves,
+      // TODO(@darzu): reconcile input xy and uv or worldspace units
       vec2.scale(uv, 1000),
-      res.time.time * 0.001
+      res.time.time
     );
 
     const pos = uvToPos(tempVec3(), uv);
@@ -301,32 +278,6 @@ export async function initOcean(oceanMesh: Mesh, color: vec3) {
 
   // TODO(@darzu): Gerstner on CPU
   // res.time.time
-}
-
-// IMPORTANT NOTE: maintain compatibility with std-ocean.wgsl
-function gerstner(
-  outDisp: vec3,
-  outNorm: vec3,
-  waves: GerstnerWaveTS[],
-  uv: vec2,
-  t: number
-): void {
-  vec3.zero(outDisp);
-  vec3.zero(outNorm);
-  for (let i = 0; i < waves.length; i++) {
-    let w = waves[i];
-    const WDuv_phi_t = w.w * vec2.dot(w.D, uv) + w.phi * t;
-    const cos_WDuv_phi_t = Math.cos(WDuv_phi_t);
-    const sin_WDuv_phi_t = Math.sin(WDuv_phi_t);
-    outDisp[0] += w.Q * w.A + w.D[0] * cos_WDuv_phi_t;
-    outDisp[1] += w.A * sin_WDuv_phi_t;
-    outDisp[2] += w.Q * w.A + w.D[1] * cos_WDuv_phi_t;
-    outNorm[0] += -1.0 * w.D[0] * w.w * w.A * cos_WDuv_phi_t;
-    outNorm[1] += w.Q * w.w * w.A * sin_WDuv_phi_t;
-    outNorm[2] += -1.0 * w.D[1] * w.w * w.A * cos_WDuv_phi_t;
-  }
-  outNorm[1] = 1.0 - outNorm[1];
-  vec3.normalize(outNorm, outNorm);
 }
 
 EM.registerSystem(
@@ -404,23 +355,6 @@ EM.registerSystem(
   },
   "oceanUVDirToRot"
 );
-
-function createGerstnerWave(
-  Q: number,
-  A: number,
-  D: vec2,
-  w: number,
-  phi: number
-): GerstnerWaveTS {
-  if (DISABLE_GERSTNER) {
-    A = 0.0;
-    phi = 0.0;
-    Q = 0.0;
-    D = vec2.clone([1, 0]);
-    w = 0.0;
-  }
-  return { D, Q, A, w, phi, padding1: 0, padding2: 0 };
-}
 
 // TODO(@darzu): debug movement on the ocean
 // EM.registerSystem(

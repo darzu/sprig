@@ -46,6 +46,8 @@ export interface RawMesh {
   surfaceIds?: number[];
   // per-vertex data
   uvs?: vec2[]; // optional; one uv per vertex
+  // TODO(@darzu): normals and tangents need some thought and work. Are they face or vert? Right now seems like vert.
+  // TODO(@darzu): right now normals and tangents are only read by the computeOceanVertsData (I think)
   tangents?: vec3[]; // optional; one tangent per vertex
   normals?: vec3[]; // optional; one tangent per vertex
   // TODO(@darzu):
@@ -363,6 +365,7 @@ export function unshareProvokingVerticesWithMap(input: RawMesh): {
       ...input,
       pos,
       uvs,
+      normals,
       tangents,
       tri,
       quad,

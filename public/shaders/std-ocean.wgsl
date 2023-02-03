@@ -2,6 +2,7 @@ struct VertexOutput {
   // TODO(@darzu): change
     @location(0) normal : vec3<f32>,
     @location(1) color : vec3<f32>,
+    // TODO(@darzu): can we get rid of worldPos if we do our own depth invert?
     @location(2) worldPos: vec4<f32>,
     @location(3) uv: vec2<f32>,
     @location(4) @interpolate(flat) surface: u32,
@@ -58,25 +59,6 @@ fn getShadowVis(shadowPos: vec3<f32>, normal: vec3<f32>, lightDir: vec3<f32>, in
   return visibility;
 }
 
-fn gerstner(uv: vec2<f32>, t: f32) -> mat2x3<f32> {
-    var displacement = vec3<f32>(0.0, 0.0, 0.0);
-    var normal = vec3<f32>(0.0, 0.0, 0.0);
-    for (var i = 0u; i < scene.numGerstnerWaves; i++) {
-        let wave = gerstnerWaves.ms[i];
-        displacement = displacement +
-            vec3<f32>(wave.Q * wave.A + wave.D.x * cos(dot(wave.w * wave.D, uv) + wave.phi * t),
-                      wave.A * sin(dot(wave.w * wave.D, uv) + wave.phi * t),
-                      wave.Q * wave.A + wave.D.y * cos(dot(wave.w * wave.D, uv) + wave.phi * t));
-        normal = normal +
-            vec3<f32>(-1.0 * wave.D.x * wave.w * wave.A * cos(wave.w * dot(wave.D, uv) + wave.phi * t),
-                      wave.Q * wave.w * wave.A * sin(wave.w * dot(wave.D, uv) + wave.phi * t),
-                      -1.0 * wave.D.y * wave.w * wave.A * cos(wave.w * dot(wave.D, uv) + wave.phi * t));
-    }
-    normal.y = 1.0 - normal.y;
-    normalize(normal);
-    return mat2x3(displacement, normal);
-}
-
 @vertex
 fn vert_main(input: VertexInput) -> VertexOutput {
     let position = input.position;
@@ -89,10 +71,15 @@ fn vert_main(input: VertexInput) -> VertexOutput {
     let flattenedPos = vec3<f32>(uv.x - 1.0, 0, uv.y) * 1000;
     // TODO(@darzu): we're not totally sure about x,y,z vs normal,tangent,perp
     let surfBasis = mat3x3<f32>(perp, normal, tangent);
-    let gerst = gerstner(input.uv * 1000, scene.time * .001);
+    // TODO(@darzu): PERF. don't transform twice..
+    let oldWorldPos = meshUni.transform * vec4<f32>(position, 1.0);
+    let gerst = gerstner(oldWorldPos.zx, scene.time);
+    // let gerst = gerstner(uv * 1000, scene.time * .001);
 
     // let displacedPos = position;
     let displacedPos = position + surfBasis * gerst[0];
+
+    // TODO(@darzu): oh hmm the UVs also need to be displaced
 
     //let displacedPos = flattenedPos + gerst[0];
     let gerstNormal = surfBasis * gerst[1];
@@ -131,10 +118,14 @@ struct FragOut {
 
 @fragment
 fn frag_main(input: VertexOutput) -> FragOut {
-    let normal = normalize(input.normal);
+    // let normal = normalize(input.normal);
+
+    // let gerst = gerstner(input.uv * 1000, scene.time * .001);
+    let gerst = gerstner(input.worldPos.zx, scene.time);
+    let normal = gerst[1];
 
     var lightingColor: vec3<f32> = vec3<f32>(0.0, 0.0, 0.0);
-    var lightingIntensity = 0.0;
+    // var lightingIntensity = 0.0;
     let isUnlit = 0u;
     // TODO(@darzu): de-dupe light code w/ std-mesh?
     for (var i: u32 = 0u; i < scene.numPointLights; i++) {
@@ -143,7 +134,7 @@ fn frag_main(input: VertexOutput) -> FragOut {
         let distance = length(toLight);
         let attenuation = 1.0 / (light.constant + light.linear * distance +
                                  light.quadratic * distance * distance);
-        let angle = clamp(dot(normalize(toLight), input.normal), 0.0, 1.0);
+        let angle = clamp(dot(normalize(toLight), normal), 0.0, 1.0);
         // XY is in (-1, 1) space, Z is in (0, 1) space
         let posFromLight = (pointLights.ms[i].viewProj * input.worldPos).xyz;
         
@@ -151,24 +142,26 @@ fn frag_main(input: VertexOutput) -> FragOut {
         let shadowPos = vec3<f32>(posFromLight.xy * vec2<f32>(0.5, -0.5) + vec2<f32>(0.5, 0.5),
                                   posFromLight.z
                                   );
-        let shadowVis = getShadowVis(shadowPos, input.normal, normalize(toLight), i);
+        let shadowVis = getShadowVis(shadowPos, normal, normalize(toLight), i);
         //lightingColor = lightingColor + clamp(abs((light.ambient * attenuation) + (light.diffuse * angle * attenuation * shadowVis)), vec3(0.0), vec3(1.0));
         //lightingColor += light.ambient;
         lightingColor = lightingColor + f32(1u - isUnlit) 
           * ((light.ambient * attenuation) + (light.diffuse * angle * attenuation * shadowVis));
-        lightingIntensity = (light.ambient.r * attenuation) 
-          + (light.diffuse.r * angle * attenuation * shadowVis);
+        // lightingIntensity = (light.ambient.r * attenuation) 
+        //   + (light.diffuse.r * angle * attenuation * shadowVis);
     }
     const shades = 10.0;
-    lightingIntensity = ceil(lightingIntensity * shades) / shades;
-    let litColor = input.color * lightingIntensity;
-    // let litColor = input.color * (lightingColor + vec3(f32(isUnlit)));
+    // lightingIntensity = ceil(lightingIntensity * shades) / shades;
+    // let litColor = input.color * lightingIntensity;
+    let litColor = input.color * (lightingColor + vec3(f32(isUnlit)));
     // let litColor = input.color; // * (lightingColor + vec3(f32(isUnlit)));
     // let celColor = 
 
     
     var out: FragOut;
     out.color = vec4<f32>(litColor, 1.0);
+
+    // out.color = vec4<f32>(normal, 1.0);
 
     out.normal = vec4<f32>(normal, 1.0);
 

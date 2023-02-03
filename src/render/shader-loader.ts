@@ -8,6 +8,7 @@ const DEFAULT_SHADER_PATH = "shaders/";
 export const ShaderPaths = [
   "std-mesh",
   "std-ocean",
+  "std-gerstner",
   "std-outline",
   "std-blur",
   "std-post",

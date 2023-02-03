@@ -97,3 +97,68 @@ Waves in Sprigland, 8/24/22:
       - Falconeer uses ~60k tris
     [ ] sliders for real-time adjustment
     [ ] 
+
+Far Cry 5:
+  https://www.youtube.com/watch?v=4oDtGnQNCx4
+  VGPRs? "Vector General-Purpose Registers"
+  precision lowering cannot be automatic:
+    full precision is usually required for:
+      texture coordinates for sizes of 512 texels or higher
+      normal vectors in cartesian coordinates
+      math like:
+        subtracting two nearly equal numbers
+        dividing to a number close to 0
+        iterative math that can accumulate into a large error
+    register pressure is a common bottleneck
+      low register usage allows shaders to run more threads concurrently,
+        in order to counter memory latency.
+        occupancy increases at discrete thresholds
+        narrowly missing a threshold should be avoided
+        optimizing lower occupancy shaders yields higher gains
+      main source of pressure: maximum number of simultaneous live registers
+        e.g. for material blending:
+          memory reads are performed early and cached
+          loop unrolling
+          large number of intermediary values
+    Radeon GPU Analyzer will show you live register analysis
+
+
+Gerstner tutorial (Unity):
+  https://catlikecoding.com/unity/tutorials/flow/waves/
+
+Unreal Gerstner:
+  https://80.lv/articles/tutorial-ocean-shader-with-gerstner-waves/
+
+New water TODO:
+  [x] Try cel shading the water
+  [ ] Bug: ensure wave dir aligns w/ world vec2
+  [ ] Bug: fix wave length not matching world units
+  [ ] Bug: fix crest speed not working right when length varies
+  [ ] White foam; foam pattern
+  [ ] Try evaluating gerstner in pixel shader for more detailed normal?
+  [ ] Transparency / alpha
+  [ ] Underwater shader
+  [ ] Wake behind boat
+  [ ] Fresnel effect
+  [ ] Tweak gerstner definitions
+  [ ] Fix PBR-ness of mesh colors + lights + lighting equations
+  [ ] flow maps
+  [ ] reflection
+  [ ] refraction
+
+Sine wave:
+  y = A*sin(x*w + p*t)
+  https://www.desmos.com/calculator/tjjloylhez
+
+Fourier transforms:
+  interactive articles:
+    https://www.myfourierepicycles.com
+    https://olgaritme.com/posts/drawing-with-the-fourier-series/index.html
+    https://www.jezzamon.com/fourier/
+  3b1b:
+    https://www.youtube.com/watch?v=spUNpyF58BY
+    https://www.youtube.com/watch?v=r6sGWTCMz2k
+  https://www.youtube.com/watch?v=ds0cmAV-Yek
+
+Determining a waterline on the camera:
+  https://twitter.com/_staggart_/status/1411339746828226561
