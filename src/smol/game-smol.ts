@@ -441,11 +441,11 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
     // g.cameraFollow.yawOffset = 0.0;
     // g.cameraFollow.pitchOffset = -0.593;
 
-    // vec3.copy(g.position, [-34.72, 50.31, -437.72]);
-    // quat.copy(g.rotation, [0.0, -0.99, 0.0, 0.16]);
-    // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
-    // g.cameraFollow.yawOffset = 0.0;
-    // g.cameraFollow.pitchOffset = -0.452;
+    vec3.copy(g.position, [-34.72, 50.31, -437.72]);
+    quat.copy(g.rotation, [0.0, -0.99, 0.0, 0.16]);
+    vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
+    g.cameraFollow.yawOffset = 0.0;
+    g.cameraFollow.pitchOffset = -0.452;
 
     // vec3.copy(g.position, [-310.03, 26.0, -389.47]);
     // quat.copy(g.rotation, [0.0, -0.71, 0.0, 0.71]);
@@ -453,11 +453,11 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
     // g.cameraFollow.yawOffset = 0.0;
     // g.cameraFollow.pitchOffset = -0.287;
 
-    vec3.copy(g.position, [129.81, 192.0, -183.24]);
-    quat.copy(g.rotation, [0.0, -1.0, 0.0, -0.06]);
-    vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
-    g.cameraFollow.yawOffset = 0.0;
-    g.cameraFollow.pitchOffset = -0.624;
+    // vec3.copy(g.position, [129.81, 192.0, -183.24]);
+    // quat.copy(g.rotation, [0.0, -1.0, 0.0, -0.06]);
+    // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
+    // g.cameraFollow.yawOffset = 0.0;
+    // g.cameraFollow.pitchOffset = -0.624;
 
     em.registerSystem(
       [GhostDef, WorldFrameDef, ColliderDef],
