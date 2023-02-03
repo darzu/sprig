@@ -187,10 +187,15 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
     // console.log("i: " + vec3Dbg(p));
     const x = p[0] * worldUnitPerTerraVerts - WORLD_HEIGHT * 0.5;
     const z = p[2] * worldUnitPerTerraVerts - WORLD_WIDTH * 0.5;
-    const y = sampleTerra(x, z) * 100.0;
+    let y = sampleTerra(x, z) * 100.0;
     // minY = Math.min(minY, y);
+
+    // TODO(@darzu): wierd hack for shorline:
+    if (y <= 1.0) y = -30;
+    else y += Math.random(); // TODO(@darzu): jitter for less uniform look?
+
     p[0] = x;
-    p[1] = y <= 1.0 ? -30 : y; // TODO(@darzu): wierd hack
+    p[1] = y;
     p[2] = z;
     // console.log("o: " + vec3Dbg(p));
     // if (i > 10) throw "stop";
