@@ -36,7 +36,10 @@ import {
 import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
-import { shadowPipelines } from "../render/pipelines/std-shadow.js";
+import {
+  shadowDepthTextures,
+  shadowPipelines,
+} from "../render/pipelines/std-shadow.js";
 import { RenderableConstructDef, RendererDef } from "../render/renderer-ecs.js";
 import { mat3, mat4, quat, V, vec3 } from "../sprig-matrix.js";
 import { createMast, createSail, MastDef, SAIL_FURL_RATE } from "./sail.js";
@@ -74,6 +77,16 @@ import { renderOceanPipe } from "../render/pipelines/std-ocean.js";
 /*
 NOTES:
 - Cut grass by updating a texture that has cut/not cut or maybe cut-height
+
+TODO:
+Shading and appearance
+[ ] fix shadow mapping
+[ ] shading from skybox
+[ ] cooler and warmer shading from "sun" and skybox
+[ ] bring back some gradient on terrain
+PERF:
+[ ] reduce triangles on terrain
+[ ] reduce triangles on ocean
 */
 
 const DBG_PLAYER = true;
@@ -97,7 +110,8 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
     //
     [mapJfa._inputMaskTex, mapJfa._uvMaskTex],
     //
-    [mapJfa.voronoiTex, mapJfa.sdfTex],
+    // [mapJfa.voronoiTex, mapJfa.sdfTex],
+    [shadowDepthTextures[0], shadowDepthTextures[0]],
   ];
   let dbgGridCompose = createGridComposePipelines(dbgGrid);
 

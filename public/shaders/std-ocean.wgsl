@@ -1,10 +1,10 @@
 struct VertexOutput {
   // TODO(@darzu): change
-    @location(0) normal : vec3<f32>,
-    @location(1) color : vec3<f32>,
+    @location(0) @interpolate(flat) normal : vec3<f32>,
+    @location(1) @interpolate(flat) color : vec3<f32>,
     // TODO(@darzu): can we get rid of worldPos if we do our own depth invert?
-    @location(2) worldPos: vec4<f32>,
-    @location(3) uv: vec2<f32>,
+    @location(2) @interpolate(flat) worldPos: vec4<f32>,
+    @location(3) @interpolate(flat) uv: vec2<f32>,
     @location(4) @interpolate(flat) surface: u32,
     @location(5) @interpolate(flat) id: u32,
     @builtin(position) position : vec4<f32>,
@@ -118,11 +118,11 @@ struct FragOut {
 
 @fragment
 fn frag_main(input: VertexOutput) -> FragOut {
-    // let normal = normalize(input.normal);
+    let normal = normalize(input.normal);
 
     // let gerst = gerstner(input.uv * 1000, scene.time * .001);
-    let gerst = gerstner(input.worldPos.zx, scene.time);
-    let normal = gerst[1];
+    // let gerst = gerstner(input.worldPos.zx, scene.time);
+    // let normal = gerst[1];
 
     var lightingColor: vec3<f32> = vec3<f32>(0.0, 0.0, 0.0);
     // var lightingIntensity = 0.0;
@@ -150,7 +150,7 @@ fn frag_main(input: VertexOutput) -> FragOut {
         // lightingIntensity = (light.ambient.r * attenuation) 
         //   + (light.diffuse.r * angle * attenuation * shadowVis);
     }
-    const shades = 10.0;
+    // const shades = 10.0;
     // lightingIntensity = ceil(lightingIntensity * shades) / shades;
     // let litColor = input.color * lightingIntensity;
     let litColor = input.color * (lightingColor + vec3(f32(isUnlit)));

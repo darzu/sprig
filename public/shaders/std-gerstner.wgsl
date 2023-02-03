@@ -18,7 +18,7 @@ fn gerstner(uv: vec2<f32>, t: f32) -> mat2x3<f32> {
          normal.y += wave.Q * wave.w * wave.A * _sin;
      }
      // TODO(@darzu): "1.0 -" before normalization seems very sus.
-     normal.y = -(1.0 - normal.y);
+     normal.y = (1.0 - normal.y);
      normalize(normal);
      return mat2x3(displacement, normal);
 }
