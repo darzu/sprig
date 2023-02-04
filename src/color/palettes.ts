@@ -2,6 +2,7 @@ import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { objMap } from "../util.js";
 import { toV3, toFRGB, parseHex } from "./color.js";
 
+// TODO(@darzu): BUG: these are in sRGB, we need them in linear before we use them!
 export const ENDESGA16 = objMap(
   {
     lightBrown: "#e4a672",

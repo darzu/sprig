@@ -68,6 +68,8 @@ import { createGridComposePipelines } from "../render/pipelines/std-compose.js";
 import { createTextureReader } from "../render/cpu-texture.js";
 import { initOcean, OceanDef } from "../games/hyperspace/ocean.js";
 import { renderOceanPipe } from "../render/pipelines/std-ocean.js";
+import { SKY_MASK } from "../render/pipeline-masks.js";
+import { skyPipeline } from "../render/pipelines/std-sky.js";
 
 /*
 NOTES:
@@ -130,6 +132,7 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
       // renderer
       res.renderer.pipelines = [
         ...shadowPipelines,
+        skyPipeline,
         stdRenderPipeline,
         renderOceanPipe,
         // renderGrassPipe,
@@ -273,7 +276,14 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
   skyMesh.pos.forEach((p) => vec3.scale(p, SKY_HALFSIZE, p));
   skyMesh.quad.forEach((f) => vec4.reverse(f, f));
   skyMesh.tri.forEach((f) => vec3.reverse(f, f));
-  em.ensureComponentOn(sky, RenderableConstructDef, skyMesh);
+  em.ensureComponentOn(
+    sky,
+    RenderableConstructDef,
+    skyMesh,
+    undefined,
+    undefined,
+    SKY_MASK
+  );
   em.ensureComponentOn(sky, ColorDef, V(0.9, 0.9, 0.9));
 
   // ocean

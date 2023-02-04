@@ -1743,3 +1743,6 @@ WASM SIMD:
 Paint like Miyazaki:
   http://ghiblicon.blogspot.com/2015/01/ghibli-museum-sketching-set-miyazaki.html
   https://animationobsessive.substack.com/p/how-to-paint-like-hayao-miyazaki
+
+Ghost of T talk on wind, cloth, grass, particles:
+  https://www.youtube.com/watch?v=d61_o4CGQd8
