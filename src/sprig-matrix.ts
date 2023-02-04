@@ -316,6 +316,10 @@ export module vec3 {
   ): T {
     return GL.rotateY(out ?? tmp(), point, origin, rad) as T;
   }
+
+  export function reverse(v: InputT, out?: T): T {
+    return set(v[2], v[1], v[0], out);
+  }
 }
 
 export module vec4 {
@@ -427,6 +431,10 @@ export module vec4 {
 
   export function zero(out?: T): T {
     return GL.zero(out ?? tmp()) as T;
+  }
+
+  export function reverse(v: InputT, out?: T): T {
+    return set(v[3], v[2], v[1], v[0], out);
   }
 }
 
