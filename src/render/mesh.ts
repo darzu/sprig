@@ -437,13 +437,8 @@ export function getHalfsizeFromAABB(aabb: AABB): vec3 {
   out[2] = (a[2] - b[2]) * 0.5;
   return out;
 }
-
-export function mutateMeshPositions(
-  m: RawMesh,
-  mutate: (p: vec3, i: number) => void
-) {
-  m.pos.forEach(mutate);
-}
+// TODO(@darzu): PERF. this is pretty inefficient. We're mutating the mesh,
+//   so we should be re-using the vecs
 export function mapMeshPositions(
   m: RawMesh,
   map: (p: vec3, i: number) => vec3

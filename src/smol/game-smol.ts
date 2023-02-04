@@ -27,12 +27,7 @@ import {
   ScaleDef,
 } from "../physics/transform.js";
 import { PointLightDef } from "../render/lights.js";
-import {
-  cloneMesh,
-  mapMeshPositions,
-  mutateMeshPositions,
-  transformMesh,
-} from "../render/mesh.js";
+import { cloneMesh, mapMeshPositions, transformMesh } from "../render/mesh.js";
 import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
@@ -41,7 +36,7 @@ import {
   shadowPipelines,
 } from "../render/pipelines/std-shadow.js";
 import { RenderableConstructDef, RendererDef } from "../render/renderer-ecs.js";
-import { mat3, mat4, quat, V, vec3 } from "../sprig-matrix.js";
+import { mat3, mat4, quat, V, vec3, vec4 } from "../sprig-matrix.js";
 import { createMast, createSail, MastDef, SAIL_FURL_RATE } from "./sail.js";
 import {
   quatFromUpForward,
@@ -197,7 +192,7 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
   const terraXCount = Math.floor(WORLD_HEIGHT * terraVertsPerWorldUnit);
   const terraMesh = createFlatQuadMesh(terraZCount, terraXCount);
   // let minY = Infinity;
-  mutateMeshPositions(terraMesh, (p, i) => {
+  terraMesh.pos.forEach((p, i) => {
     // console.log("i: " + vec3Dbg(p));
     const x = p[0] * worldUnitPerTerraVerts - WORLD_HEIGHT * 0.5;
     const z = p[2] * worldUnitPerTerraVerts - WORLD_WIDTH * 0.5;
@@ -270,6 +265,17 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
       em.ensureComponentOn(bigCube, ColorDef, randColor());
     }
 
+  // skybox?
+  const SKY_HALFSIZE = 1000;
+  const sky = EM.new();
+  em.ensureComponentOn(sky, PositionDef);
+  const skyMesh = cloneMesh(res.assets.cube.mesh);
+  skyMesh.pos.forEach((p) => vec3.scale(p, SKY_HALFSIZE, p));
+  skyMesh.quad.forEach((f) => vec4.reverse(f, f));
+  skyMesh.tri.forEach((f) => vec3.reverse(f, f));
+  em.ensureComponentOn(sky, RenderableConstructDef, skyMesh);
+  em.ensureComponentOn(sky, ColorDef, V(0.9, 0.9, 0.9));
+
   // ocean
   const oceanVertsPerWorldUnit = 0.25;
   const worldUnitPerOceanVerts = 1 / oceanVertsPerWorldUnit;
@@ -279,7 +285,7 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
   const maxSurfId = max(oceanMesh.surfaceIds);
   console.log("maxSurfId");
   console.log(maxSurfId);
-  mutateMeshPositions(oceanMesh, (p, i) => {
+  oceanMesh.pos.forEach((p, i) => {
     const x = p[0] * worldUnitPerOceanVerts - WORLD_HEIGHT * 0.5;
     const z = p[2] * worldUnitPerOceanVerts - WORLD_WIDTH * 0.5;
     const y = 0.0;

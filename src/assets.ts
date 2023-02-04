@@ -387,6 +387,7 @@ export const CUBE_MESH: RawMesh = {
     V(-1.0, -1.0, -1.0),
     V(+1.0, -1.0, -1.0),
   ],
+  // TODO(@darzu): use quads
   tri: [
     V(0, 1, 2),
     V(0, 2, 3),
