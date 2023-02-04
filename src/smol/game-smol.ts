@@ -132,10 +132,11 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
       // renderer
       res.renderer.pipelines = [
         ...shadowPipelines,
-        skyPipeline,
+        // skyPipeline,
         stdRenderPipeline,
         renderOceanPipe,
         // renderGrassPipe,
+        skyPipeline,
         outlineRender,
         postProcess,
         ...(res.dev.showConsole ? dbgGridCompose : []),

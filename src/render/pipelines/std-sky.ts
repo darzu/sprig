@@ -2,7 +2,12 @@ import { V } from "../../sprig-matrix.js";
 import { CY, linearSamplerPtr } from "../gpu-registry.js";
 import { pointLightsPtr } from "../lights.js";
 import { SKY_MASK } from "../pipeline-masks.js";
-import { sceneBufPtr, meshPoolPtr, litTexturePtr } from "./std-scene.js";
+import {
+  sceneBufPtr,
+  meshPoolPtr,
+  litTexturePtr,
+  mainDepthTex,
+} from "./std-scene.js";
 
 export const skyPipeline = CY.createRenderPipeline("skyPipeline", {
   globals: [
@@ -23,10 +28,13 @@ export const skyPipeline = CY.createRenderPipeline("skyPipeline", {
     {
       ptr: litTexturePtr,
       // TODO(@darzu): clear never? since we should be writting to the whole tex?
-      clear: "once",
-      defaultColor: V(0.015, 0.015, 0.015, 1.0),
+      clear: "never",
+      // defaultColor: V(0.015, 0.015, 0.015, 1.0),
     },
   ],
+  depthReadonly: true,
+  depthStencil: mainDepthTex,
+  depthCompare: "less-equal",
   shader: (shaderSet) => `
   ${shaderSet["std-rand"].code}
   ${shaderSet["std-sky"].code}

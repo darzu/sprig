@@ -224,6 +224,7 @@ export interface CyRenderPipelinePtr extends CyResourcePtr {
   output: CyColorAttachment[];
   depthStencil?: CyDepthTexturePtr;
   depthReadonly?: boolean;
+  depthCompare?: GPUCompareFunction;
 }
 
 export type CyPipelinePtr = CyCompPipelinePtr | CyRenderPipelinePtr;

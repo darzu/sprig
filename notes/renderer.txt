@@ -1746,3 +1746,6 @@ Paint like Miyazaki:
 
 Ghost of T talk on wind, cloth, grass, particles:
   https://www.youtube.com/watch?v=d61_o4CGQd8
+
+Skybox:
+  https://learnopengl.com/Advanced-OpenGL/Cubemaps

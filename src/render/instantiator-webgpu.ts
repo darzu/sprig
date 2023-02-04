@@ -363,7 +363,7 @@ function createCyPipeline(
       let depthWriteEnabled = !p.depthReadonly;
       depthStencilOpts = {
         depthWriteEnabled,
-        depthCompare: "less",
+        depthCompare: p.depthCompare ?? "less",
         format: p.depthStencil.format,
       };
     }
