@@ -1,5 +1,4 @@
 import { ASSET_LOG_VERT_CHANGES, DBG_ASSERT, DBG_FANG_SHIP } from "../flags.js";
-import { createFlatQuadMesh } from "../assets.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { max, sum } from "../math.js";
 import {

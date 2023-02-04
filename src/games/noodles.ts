@@ -16,7 +16,7 @@ import { assert } from "../util.js";
 import { RendererDef } from "../render/renderer-ecs.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { vec3Dbg } from "../utils-3d.js";
-import { CUBE_FACES, CUBE_MESH } from "../assets.js";
+import { CUBE_MESH } from "../primatives.js";
 
 export interface NoodleSeg {
   pos: vec3;

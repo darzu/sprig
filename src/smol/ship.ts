@@ -1,7 +1,7 @@
 import { ColorDef } from "../color-ecs.js";
 import { createRef } from "../em_helpers.js";
 import { EM, EntityManager, EntityW } from "../entity-manager.js";
-import { AssetsDef, BARGE_AABBS } from "../assets.js";
+import { AssetsDef } from "../assets.js";
 import { vec3, quat } from "../sprig-matrix.js";
 import { LinearVelocityDef } from "../physics/motion.js";
 import {
@@ -26,6 +26,7 @@ import { InteractableDef } from "../games/interact.js";
 import { vec3Dbg } from "../utils-3d.js";
 import { CameraFollowDef } from "../camera.js";
 import { createSock } from "./windsock.js";
+import { BARGE_AABBS } from "../primatives.js";
 
 export const ShipDef = EM.defineComponent("ld52ship", () => ({
   mast: createRef(0, [MastDef, RotationDef]),

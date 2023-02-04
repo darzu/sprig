@@ -6,7 +6,7 @@ import {
 import { ColorDef } from "../color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { EM, EntityManager, EntityW } from "../entity-manager.js";
-import { AssetsDef, createFlatQuadMesh, gameMeshFromMesh } from "../assets.js";
+import { AssetsDef, gameMeshFromMesh } from "../assets.js";
 import { ControllableDef } from "../games/controllable.js";
 import { createGhost, GhostDef } from "../games/ghost.js";
 import { LocalPlayerDef, PlayerDef } from "../games/player.js";
@@ -70,6 +70,7 @@ import { initOcean, OceanDef } from "../games/hyperspace/ocean.js";
 import { renderOceanPipe } from "../render/pipelines/std-ocean.js";
 import { SKY_MASK } from "../render/pipeline-masks.js";
 import { skyPipeline } from "../render/pipelines/std-sky.js";
+import { createFlatQuadMesh } from "../primatives.js";
 
 /*
 NOTES:

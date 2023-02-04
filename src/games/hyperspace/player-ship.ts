@@ -10,7 +10,8 @@ import {
   PositionDef,
   RotationDef,
 } from "../../physics/transform.js";
-import { AssetsDef, BARGE_AABBS } from "../../assets.js";
+import { AssetsDef } from "../../assets.js";
+import { BARGE_AABBS } from "../../primatives.js";
 import {
   AABBCollider,
   ColliderDef,

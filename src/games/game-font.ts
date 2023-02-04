@@ -24,14 +24,10 @@ import { alphaRenderPipeline } from "../render/pipelines/xp-alpha.js";
 import { RendererDef, RenderableConstructDef } from "../render/renderer-ecs.js";
 import { assert } from "../util.js";
 import { randNormalPosVec3 } from "../utils-3d.js";
-import {
-  AssetsDef,
-  GameMesh,
-  gameMeshFromMesh,
-  makePlaneMesh,
-} from "../assets.js";
+import { AssetsDef, GameMesh, gameMeshFromMesh } from "../assets.js";
 import { createGhost, gameplaySystems } from "./ghost.js";
 import { TextDef } from "./ui.js";
+import { makePlaneMesh } from "../primatives.js";
 
 /*
 TODO(@darzu):
