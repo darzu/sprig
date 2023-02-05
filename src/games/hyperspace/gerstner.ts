@@ -12,6 +12,11 @@ import { DISABLE_GERSTNER } from "../../flags.js";
 //        for this reason, for now, I've decided that my biggest shaped waves are pure sine waves so you don't get a huge amount of swaying
 // TODO(@darzu): [ ] interactively shape bigger waves using fourier-ish approach
 
+const roughness = 0.5;
+const steepness = 1.0 * roughness;
+const bigWave = 1.0 * roughness;
+const littleSpikes = 1.0 * roughness;
+
 type GDirLenSteep = {
   dirRad: number;
   len: number;
@@ -36,11 +41,6 @@ export function createWaves(): GerstnerWaveTS[] {
   // const dt = 1 / 60;
   const dt = 1 / 1000;
   const GRAV = 9.8; // m/s^2, assumes world dist 1 = 1 meter
-
-  const roughness = 0.5;
-  const steepness = 1.0 * roughness;
-  const bigWave = 1.0 * roughness;
-  const littleSpikes = 1.0 * roughness;
 
   const speedFromFreq = (w: number) => Math.sqrt(GRAV / w);
   const speedFromLen = (l: number) => Math.sqrt((GRAV * l) / (2 * Math.PI));

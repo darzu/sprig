@@ -1752,3 +1752,5 @@ Skybox:
 
 What's a swapchain ?
   general name for double or tripple buffer
+
+What is tiling? Deferred tiling?

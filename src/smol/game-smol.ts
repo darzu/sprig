@@ -240,9 +240,10 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
   //   em.ensureComponentOn(refCol, ColorDef, V(0.1, 1, 0.1));
   // }
   for (let r = 0; r < 2; r++)
-    for (let i = 0; i < 16; i++) {
-      const color = Object.values(ENDESGA16)[i];
+    for (let i = 0; i < 8; i++) {
+      const color = Object.values(ENDESGA16)[i + r * 8];
       const bigCube = em.new();
+      const i2 = Math.floor(i / 2) * 2.0;
       const even = i % 2 === 0 ? 1 : 0;
       em.ensureComponentOn(
         bigCube,
@@ -268,7 +269,11 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
       em.ensureComponentOn(
         bigCube,
         PositionDef,
-        V(i * 20 - 100 - r * 50, r * 100, i * 20 - even * 100 - 100 + r * 50)
+        V(
+          i2 * 30 + even * 100 - 100 - r * 50,
+          r * 100,
+          i2 * 30 - even * 100 - 100 + r * 50
+        )
       );
       // em.ensureComponentOn(bigCube, ColorDef, randColor());
       em.ensureComponentOn(bigCube, ColorDef, color);
