@@ -206,7 +206,7 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
 
     // TODO(@darzu): wierd hack for shorline:
     if (y <= 1.0) y = -30;
-    else y += Math.random(); // TODO(@darzu): jitter for less uniform look?
+    else y += Math.random() * 2.0; // TODO(@darzu): jitter for less uniform look?
 
     p[0] = x;
     p[1] = y;
