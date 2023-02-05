@@ -47,6 +47,7 @@ import {
 import { createMeshPool, MeshHandle, MeshPool } from "./mesh-pool.js";
 import { DEFAULT_MASK } from "./pipeline-masks.js";
 import { oceanPoolPtr } from "./pipelines/std-ocean.js";
+import { canvasFormat } from "./pipelines/std-scene.js";
 import { ShaderSet } from "./shader-loader.js";
 import { GPUBufferUsage } from "./webgpu-hacks.js";
 
@@ -788,8 +789,6 @@ function normalizeGlobals(globals: CyGlobalParam[]): CyGlobalUsage<CyGlobal>[] {
   });
   return resUsages;
 }
-
-const canvasFormat = navigator.gpu?.getPreferredCanvasFormat();
 
 export function bundleRenderPipelines(
   device: GPUDevice,

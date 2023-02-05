@@ -35,7 +35,7 @@ export function FRGBToFLRGB({ fr, fg, fb }: FRGB): FLRGB {
   // to linear light (un-companded) form.
   // https://en.wikipedia.org/wiki/SRGB
   // TODO for negative values, extend linear portion on reflection of axis, then add pow below that
-  function lin(val: number) {
+  function linOfficial(val: number) {
     let sign = val < 0 ? -1 : 1;
     let abs = Math.abs(val);
     if (abs < 0.04045) {
@@ -43,6 +43,10 @@ export function FRGBToFLRGB({ fr, fg, fb }: FRGB): FLRGB {
     }
     return sign * Math.pow((abs + 0.055) / 1.055, 2.4);
   }
+  function linCheap(val: number) {
+    return Math.pow(val, 2.2);
+  }
+  const lin = linCheap;
   return { flr: lin(fr), flg: lin(fg), flb: lin(fb) };
 }
 
@@ -52,7 +56,7 @@ export function FLRGBToFRGB({ flr, flg, flb }: FLRGB): FRGB {
   // https://en.wikipedia.org/wiki/SRGB
   // For negative values, linear portion extends on reflection
   // of axis, then uses reflected pow below that
-  function gam(val: number) {
+  function gamOfficial(val: number) {
     let sign = val < 0 ? -1 : 1;
     let abs = Math.abs(val);
 
@@ -62,6 +66,10 @@ export function FLRGBToFRGB({ flr, flg, flb }: FLRGB): FRGB {
 
     return 12.92 * val;
   }
+  function gamCheap(val: number) {
+    return Math.pow(val, 1 / 2.2);
+  }
+  const gam = gamCheap;
   return { fr: gam(flr), fg: gam(flg), fb: gam(flb) };
 }
 

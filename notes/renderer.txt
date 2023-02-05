@@ -1749,3 +1749,6 @@ Ghost of T talk on wind, cloth, grass, particles:
 
 Skybox:
   https://learnopengl.com/Advanced-OpenGL/Cubemaps
+
+What's a swapchain ?
+  general name for double or tripple buffer
