@@ -1,3 +1,4 @@
+import { clamp } from "../math.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { objMap } from "../util.js";
 import { toV3, toFRGB, parseHex, toFLRGB } from "./color.js";
@@ -25,3 +26,14 @@ export const ENDESGA16 = objMap(
     return toV3(toFLRGB(parseHex(val))) as vec3;
   }
 );
+export const AllEndesga16 = Object.values(ENDESGA16);
+export function randEndesga16() {
+  const i = clamp(Math.floor(Math.random() * AllEndesga16.length), 0, 15);
+  return AllEndesga16[i];
+}
+let _nextEnd = 0;
+export function seqEndesga16() {
+  _nextEnd += 1;
+  if (_nextEnd > 15) _nextEnd = 0;
+  return AllEndesga16[_nextEnd];
+}

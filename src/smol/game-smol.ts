@@ -70,7 +70,7 @@ import { initOcean, OceanDef } from "../games/hyperspace/ocean.js";
 import { renderOceanPipe } from "../render/pipelines/std-ocean.js";
 import { SKY_MASK } from "../render/pipeline-masks.js";
 import { skyPipeline } from "../render/pipelines/std-sky.js";
-import { createFlatQuadMesh } from "../primatives.js";
+import { createFlatQuadMesh, makeDome } from "../primatives.js";
 
 /*
 NOTES:
@@ -239,61 +239,67 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
   //   refCol.position[2] += i * 2 + 30;
   //   em.ensureComponentOn(refCol, ColorDef, V(0.1, 1, 0.1));
   // }
-  for (let r = 0; r < 2; r++)
-    for (let i = 0; i < 8; i++) {
-      const color = Object.values(ENDESGA16)[i + r * 8];
-      const bigCube = em.new();
-      const i2 = Math.floor(i / 2) * 2.0;
-      const even = i % 2 === 0 ? 1 : 0;
-      em.ensureComponentOn(
-        bigCube,
-        RenderableConstructDef,
-        even ? res.assets.ball.proto : res.assets.cube.proto
-      );
-      em.ensureComponentOn(bigCube, ScaleDef, V(50, 50, 50));
-      em.ensureComponentOn(
-        bigCube,
-        RotationDef,
-        quat.fromEuler(
-          Math.random() * Math.PI,
-          Math.random() * Math.PI,
-          Math.random() * Math.PI,
-          quat.create()
-        )
-      );
-      em.ensureComponentOn(
-        bigCube,
-        AngularVelocityDef,
-        vec3.scale(randNormalVec3(vec3.tmp()), 0.0005, vec3.create())
-      );
-      em.ensureComponentOn(
-        bigCube,
-        PositionDef,
-        V(
-          i2 * 30 + even * 100 - 100 - r * 50,
-          r * 100,
-          i2 * 30 - even * 100 - 100 + r * 50
-        )
-      );
-      // em.ensureComponentOn(bigCube, ColorDef, randColor());
-      em.ensureComponentOn(bigCube, ColorDef, color);
-    }
+  if (!"true")
+    for (let r = 0; r < 2; r++)
+      for (let i = 0; i < 8; i++) {
+        const color = Object.values(ENDESGA16)[i + r * 8];
+        const bigCube = em.new();
+        const i2 = Math.floor(i / 2) * 2.0;
+        const even = i % 2 === 0 ? 1 : 0;
+        em.ensureComponentOn(
+          bigCube,
+          RenderableConstructDef,
+          even ? res.assets.ball.proto : res.assets.cube.proto
+        );
+        em.ensureComponentOn(bigCube, ScaleDef, V(50, 50, 50));
+        em.ensureComponentOn(
+          bigCube,
+          RotationDef,
+          quat.fromEuler(
+            Math.random() * Math.PI,
+            Math.random() * Math.PI,
+            Math.random() * Math.PI,
+            quat.create()
+          )
+        );
+        em.ensureComponentOn(
+          bigCube,
+          AngularVelocityDef,
+          vec3.scale(randNormalVec3(vec3.tmp()), 0.0005, vec3.create())
+        );
+        em.ensureComponentOn(
+          bigCube,
+          PositionDef,
+          V(
+            i2 * 30 + even * 100 - 100 - r * 50,
+            r * 100,
+            i2 * 30 - even * 100 - 100 + r * 50
+          )
+        );
+        // em.ensureComponentOn(bigCube, ColorDef, randColor());
+        em.ensureComponentOn(bigCube, ColorDef, color);
+      }
 
   // skybox?
+
+  // sky dome?
+  const domeMesh = makeDome(16, 8, 100);
+
   const SKY_HALFSIZE = 1000;
   const sky = EM.new();
   em.ensureComponentOn(sky, PositionDef);
-  const skyMesh = cloneMesh(res.assets.cube.mesh);
-  skyMesh.pos.forEach((p) => vec3.scale(p, SKY_HALFSIZE, p));
-  skyMesh.quad.forEach((f) => vec4.reverse(f, f));
-  skyMesh.tri.forEach((f) => vec3.reverse(f, f));
+  // const skyMesh = cloneMesh(res.assets.cube.mesh);
+  // skyMesh.pos.forEach((p) => vec3.scale(p, SKY_HALFSIZE, p));
+  // skyMesh.quad.forEach((f) => vec4.reverse(f, f));
+  // skyMesh.tri.forEach((f) => vec3.reverse(f, f));
+  const skyMesh = domeMesh;
   em.ensureComponentOn(
     sky,
     RenderableConstructDef,
     skyMesh,
     undefined,
-    undefined,
-    SKY_MASK
+    undefined
+    // SKY_MASK
   );
   // em.ensureComponentOn(sky, ColorDef, V(0.9, 0.9, 0.9));
 
@@ -469,11 +475,11 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
     // g.cameraFollow.yawOffset = 0.0;
     // g.cameraFollow.pitchOffset = -0.593;
 
-    vec3.copy(g.position, [-34.72, 50.31, -437.72]);
-    quat.copy(g.rotation, [0.0, -0.99, 0.0, 0.16]);
-    vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
-    g.cameraFollow.yawOffset = 0.0;
-    g.cameraFollow.pitchOffset = -0.452;
+    // vec3.copy(g.position, [-34.72, 50.31, -437.72]);
+    // quat.copy(g.rotation, [0.0, -0.99, 0.0, 0.16]);
+    // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
+    // g.cameraFollow.yawOffset = 0.0;
+    // g.cameraFollow.pitchOffset = -0.452;
 
     // vec3.copy(g.position, [-310.03, 26.0, -389.47]);
     // quat.copy(g.rotation, [0.0, -0.71, 0.0, 0.71]);
@@ -486,6 +492,12 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
     // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
     // g.cameraFollow.yawOffset = 0.0;
     // g.cameraFollow.pitchOffset = -0.624;
+
+    vec3.copy(g.position, [1.12, 54.25, -42.04]);
+    quat.copy(g.rotation, [0.0, -1.0, 0.0, 0.03]);
+    vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
+    g.cameraFollow.yawOffset = 0.0;
+    g.cameraFollow.pitchOffset = 0.656;
 
     em.registerSystem(
       [GhostDef, WorldFrameDef, ColliderDef],

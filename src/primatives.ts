@@ -1,6 +1,7 @@
 // which triangles belong to which faces
 
 import { BLACK } from "./assets.js";
+import { ENDESGA16, randEndesga16, seqEndesga16 } from "./color/palettes.js";
 import { AABB } from "./physics/broadphase.js";
 import {
   cloneMesh,
@@ -14,6 +15,7 @@ import {
 import { mat4, quat, V, vec2, vec3, vec4 } from "./sprig-matrix.js";
 import { assert, range } from "./util.js";
 import { uintToVec3unorm } from "./utils-3d.js";
+import { drawBall } from "./utils-game.js";
 import { createTimberBuilder, createEmptyMesh } from "./wood.js";
 
 // TODO(@darzu): A bunch of stuff shouldn't be in here like barge and sail stuff
@@ -594,13 +596,59 @@ scaleMesh3(BOAT_MESH, V(10, 0.6, 5));
 export const BULLET_MESH = cloneMesh(CUBE_MESH);
 scaleMesh(BULLET_MESH, 0.3);
 
-export function makeDome(lon: number, lat: number) {
-  assert(lon % 1 === 0 && lon > 0);
-  assert(lat % 1 === 0 && lat > 0);
+export function makeDome(numLon: number, numLat: number, r: number): Mesh {
+  assert(numLon % 1 === 0 && numLon > 0);
+  assert(numLat % 1 === 0 && numLat > 0);
+  const uvs: vec2[] = [];
+  const pos: vec3[] = [];
+  const tri: vec3[] = [];
+  const quad: vec4[] = [];
   // TODO(@darzu): polar coordinates from these long and lats
-  for (let y = 0; y < lat; y++) {
-    for (let x = 0; x < lon; x++) {
-      // TODO(@darzu):
+  for (let lat = 0; lat < numLat; lat++) {
+    const inc = Math.PI * 0.5 * (lat / numLat);
+    for (let lon = 0; lon < numLon; lon++) {
+      const azi = Math.PI * 2 * (lon / numLon);
+      const x = r * Math.sin(inc) * Math.cos(azi);
+      const z = r * Math.sin(inc) * Math.sin(azi);
+      const y = r * Math.cos(inc);
+      pos.push(V(x, y, z));
+      uvs.push(V(azi, inc));
+      drawBall(V(x, y, z), 1, seqEndesga16());
+      if (lat === 0) break; // at the tip-top, we only need one pos
+      if (lat === 1) {
+        // top triangles
+        let i3 = pos.length - 2;
+        if (i3 == 0) i3 += numLon;
+        const t = V(pos.length - 1, 0, i3);
+        // console.log(t);
+        tri.push(t);
+      } else {
+        const i0 = pos.length - 1;
+        const i1 = pos.length - 1 - numLon;
+        let i2 = pos.length - 2 - numLon;
+        let i3 = pos.length - 2;
+        if (lon === 0) {
+          i2 += numLon;
+          i3 += numLon;
+        }
+        console.log({ i0, i1, i2, i3 });
+        quad.push(V(i0, i1, i2, i3));
+      }
     }
   }
+
+  const faceNum = tri.length + quad.length;
+
+  console.log(`dome: ${pos.length} verts, ${faceNum} faces`);
+
+  const mesh: Mesh = {
+    pos,
+    tri,
+    quad,
+    uvs,
+    surfaceIds: range(faceNum).map((i) => i + 1),
+    colors: range(faceNum).map((_) => seqEndesga16()),
+    usesProvoking: true,
+  };
+  return mesh;
 }
