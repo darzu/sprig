@@ -219,7 +219,8 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
   em.ensureComponentOn(hm, RenderableConstructDef, terraMesh);
   em.ensureComponentOn(hm, PositionDef);
   // TODO(@darzu): maybe do a sable-like gradient accross the terrain, based on view dist or just uv?
-  em.ensureComponentOn(hm, ColorDef, V(0.4, 0.2, 0.2));
+  // em.ensureComponentOn(hm, ColorDef, V(0.4, 0.2, 0.2));
+  em.ensureComponentOn(hm, ColorDef, ENDESGA16.lightGray);
   // TODO(@darzu): update terra from SDF
 
   // // reference columns
@@ -238,7 +239,8 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
   //   em.ensureComponentOn(refCol, ColorDef, V(0.1, 1, 0.1));
   // }
   for (let r = 0; r < 2; r++)
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 16; i++) {
+      const color = Object.values(ENDESGA16)[i];
       const bigCube = em.new();
       const even = i % 2 === 0 ? 1 : 0;
       em.ensureComponentOn(
@@ -265,9 +267,10 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
       em.ensureComponentOn(
         bigCube,
         PositionDef,
-        V(i * 20, r * 100, i * 20 - even * 100)
+        V(i * 20 - 100 - r * 50, r * 100, i * 20 - even * 100 - 100 + r * 50)
       );
-      em.ensureComponentOn(bigCube, ColorDef, randColor());
+      // em.ensureComponentOn(bigCube, ColorDef, randColor());
+      em.ensureComponentOn(bigCube, ColorDef, color);
     }
 
   // skybox?
@@ -286,7 +289,7 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
     undefined,
     SKY_MASK
   );
-  em.ensureComponentOn(sky, ColorDef, V(0.9, 0.9, 0.9));
+  // em.ensureComponentOn(sky, ColorDef, V(0.9, 0.9, 0.9));
 
   // ocean
   const oceanVertsPerWorldUnit = 0.25;
@@ -306,7 +309,8 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
     p[2] = z;
   });
   // TODO(@darzu): I don't think the PBR-ness of this color is right
-  initOcean(oceanMesh, V(0.1, 0.3, 0.8));
+  // initOcean(oceanMesh, V(0.1, 0.3, 0.8));
+  initOcean(oceanMesh, ENDESGA16.blue);
   const { ocean } = await em.whenResources(OceanDef);
 
   // ground

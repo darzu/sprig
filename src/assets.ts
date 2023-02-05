@@ -153,6 +153,7 @@ const blackoutColor: (m: RawMesh) => RawMesh = (m: RawMesh) => {
   m.colors.map((c) => vec3.zero(c));
   return m;
 };
+
 const MeshModify: Partial<{
   [P in AllMeshSymbols]: (m: RawMesh) => RawMesh;
 }> = {

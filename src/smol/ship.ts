@@ -27,6 +27,7 @@ import { vec3Dbg } from "../utils-3d.js";
 import { CameraFollowDef } from "../camera.js";
 import { createSock } from "./windsock.js";
 import { BARGE_AABBS } from "../primatives.js";
+import { ENDESGA16 } from "../color/palettes.js";
 
 export const ShipDef = EM.defineComponent("ld52ship", () => ({
   mast: createRef(0, [MastDef, RotationDef]),
@@ -72,7 +73,8 @@ export async function createShip(em: EntityManager) {
   em.ensureComponentOn(ent, PositionDef, V(0, 2, 0));
   em.ensureComponentOn(ent, RotationDef);
   em.ensureComponentOn(ent, LinearVelocityDef);
-  em.ensureComponentOn(ent, ColorDef, V(0.5, 0.3, 0.1));
+  // em.ensureComponentOn(ent, ColorDef, V(0.5, 0.3, 0.1));
+  em.ensureComponentOn(ent, ColorDef, ENDESGA16.lightBrown);
 
   const mast = await createMast(em);
   em.ensureComponentOn(mast, PhysicsParentDef, ent.id);
@@ -146,7 +148,8 @@ async function createRudder(em: EntityManager) {
   const ent = em.new();
   em.ensureComponentOn(ent, RudderDef);
   em.ensureComponentOn(ent, RenderableConstructDef, res.assets.rudder.proto);
-  em.ensureComponentOn(ent, ColorDef, V(0.2, 0.1, 0.05));
+  // em.ensureComponentOn(ent, ColorDef, V(0.2, 0.1, 0.05));
+  em.ensureComponentOn(ent, ColorDef, ENDESGA16.midBrown);
   em.ensureComponentOn(ent, PositionDef);
   em.ensureComponentOn(ent, RotationDef);
   em.ensureComponentOn(ent, AuthorityDef, res.me.pid);

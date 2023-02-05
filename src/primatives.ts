@@ -12,7 +12,7 @@ import {
   transformMesh,
 } from "./render/mesh.js";
 import { mat4, quat, V, vec2, vec3, vec4 } from "./sprig-matrix.js";
-import { range } from "./util.js";
+import { assert, range } from "./util.js";
 import { uintToVec3unorm } from "./utils-3d.js";
 import { createTimberBuilder, createEmptyMesh } from "./wood.js";
 
@@ -593,3 +593,14 @@ scaleMesh3(BOAT_MESH, V(10, 0.6, 5));
 
 export const BULLET_MESH = cloneMesh(CUBE_MESH);
 scaleMesh(BULLET_MESH, 0.3);
+
+export function makeDome(lon: number, lat: number) {
+  assert(lon % 1 === 0 && lon > 0);
+  assert(lat % 1 === 0 && lat > 0);
+  // TODO(@darzu): polar coordinates from these long and lats
+  for (let y = 0; y < lat; y++) {
+    for (let x = 0; x < lon; x++) {
+      // TODO(@darzu):
+    }
+  }
+}

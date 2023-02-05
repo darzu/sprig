@@ -40,6 +40,7 @@ import { WorldFrameDef } from "../physics/nonintersection.js";
 import { WindDef } from "./wind.js";
 import { YawPitchDef } from "../yawpitch.js";
 import { assert } from "../util.js";
+import { ENDESGA16 } from "../color/palettes.js";
 
 const SAIL_TURN_SPEED = 5;
 export const SAIL_FURL_RATE = 0.02;
@@ -130,7 +131,8 @@ export function createSail(
   em.ensureComponentOn(ent, ScaleDef, V(scale, scale, scale));
   em.ensureComponentOn(ent, PositionDef);
   em.ensureComponentOn(ent, RotationDef);
-  em.ensureComponentOn(ent, ColorDef, V(0.9, 0.9, 0.9));
+  // em.ensureComponentOn(ent, ColorDef, V(0.9, 0.9, 0.9));
+  em.ensureComponentOn(ent, ColorDef, ENDESGA16.red);
   return ent;
 }
 
@@ -218,7 +220,8 @@ export async function createMast(em: EntityManager) {
   });
   em.ensureComponentOn(ent, PositionDef);
   em.ensureComponentOn(ent, RotationDef);
-  em.ensureComponentOn(ent, ColorDef, V(0.8, 0.7, 0.3));
+  // em.ensureComponentOn(ent, ColorDef, V(0.8, 0.7, 0.3));
+  em.ensureComponentOn(ent, ColorDef, ENDESGA16.darkBrown);
   em.ensureComponentOn(ent, AuthorityDef, res.me.pid);
 
   // EM.set(ent, YawPitchDef);
