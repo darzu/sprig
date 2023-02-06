@@ -612,7 +612,9 @@ export function makeDome(numLon: number, numLat: number, r: number): Mesh {
       const z = r * Math.sin(inc) * Math.sin(azi);
       const y = r * Math.cos(inc);
       pos.push(V(x, y, z));
-      uvs.push(V(azi, inc));
+      const u = azi / (Math.PI * 2.0);
+      const v = inc / (Math.PI * 0.5);
+      uvs.push(V(u, v));
       // drawBall(V(x, y, z), 1, seqEndesga16());
       if (lat === 0) break; // at the tip-top, we only need one pos
       if (lat === 1) {

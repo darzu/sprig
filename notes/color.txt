@@ -46,3 +46,6 @@ Oklab and oklch coming to CSS4?
 OKlab on shadertoy:
   https://www.shadertoy.com/view/WtccD7
   https://www.shadertoy.com/view/ttcyRS
+
+Color theory:
+  https://tint2hue.wordpress.com

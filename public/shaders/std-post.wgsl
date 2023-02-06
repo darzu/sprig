@@ -50,10 +50,10 @@ fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
 
 
   // vignette
-  let vigUV = uv * (1.0 - uv.yx);
-  var vig = vigUV.x*vigUV.y * 3.0; // multiply with sth for intensity
-  vig = pow(vig, 0.15); // change pow for modifying the extend of the  vignette
-  color *= vig;
+  // let vigUV = uv * (1.0 - uv.yx);
+  // var vig = vigUV.x*vigUV.y * 3.0; // multiply with sth for intensity
+  // vig = pow(vig, 0.15); // change pow for modifying the extend of the  vignette
+  // color *= vig;
 
   // TESTING RAND
   // rand_seed = uv;

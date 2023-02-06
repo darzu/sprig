@@ -20,7 +20,11 @@ struct FragOut {
 fn frag_main(input: VertexOutput) -> FragOut {
     var out: FragOut;
     const yTop = 200;
-    let color = mix(vec3(0.0), vec3(1.0), input.uv.y);
+    // const botColor = vec3(0.1, 0.1, 0.1);
+    const botColor = vec3(1.0);
+    const topColor = vec3(0.0, 0.0, 1.0);
+    let color = mix(topColor, botColor, input.uv.y);
     out.color = vec4<f32>(color, 1.0);
+    // out.color = vec4<f32>(input.uv, 0.0, 1.0);
     return out;
 }

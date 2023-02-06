@@ -486,17 +486,17 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
     // g.cameraFollow.yawOffset = 0.0;
     // g.cameraFollow.pitchOffset = -0.287;
 
-    // vec3.copy(g.position, [129.81, 192.0, -183.24]);
-    // quat.copy(g.rotation, [0.0, -1.0, 0.0, -0.06]);
-    // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
-    // g.cameraFollow.yawOffset = 0.0;
-    // g.cameraFollow.pitchOffset = -0.624;
-
-    vec3.copy(g.position, [1.12, 54.25, -42.04]);
-    quat.copy(g.rotation, [0.0, -1.0, 0.0, 0.03]);
+    vec3.copy(g.position, [129.81, 192.0, -183.24]);
+    quat.copy(g.rotation, [0.0, -1.0, 0.0, -0.06]);
     vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
     g.cameraFollow.yawOffset = 0.0;
-    g.cameraFollow.pitchOffset = 0.656;
+    g.cameraFollow.pitchOffset = -0.624;
+
+    // vec3.copy(g.position, [1.12, 54.25, -42.04]);
+    // quat.copy(g.rotation, [0.0, -1.0, 0.0, 0.03]);
+    // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
+    // g.cameraFollow.yawOffset = 0.0;
+    // g.cameraFollow.pitchOffset = 0.656;
 
     em.registerSystem(
       [GhostDef, WorldFrameDef, ColliderDef],
