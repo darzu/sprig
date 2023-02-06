@@ -286,7 +286,7 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
   const SKY_HALFSIZE = 1000;
   const domeMesh = makeDome(16, 8, SKY_HALFSIZE);
   const sky = EM.new();
-  em.ensureComponentOn(sky, PositionDef);
+  em.ensureComponentOn(sky, PositionDef, V(0, -100, 0));
   // const skyMesh = cloneMesh(res.assets.cube.mesh);
   // skyMesh.pos.forEach((p) => vec3.scale(p, SKY_HALFSIZE, p));
   // skyMesh.quad.forEach((f) => vec4.reverse(f, f));

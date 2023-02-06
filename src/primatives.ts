@@ -604,7 +604,7 @@ export function makeDome(numLon: number, numLat: number, r: number): Mesh {
   const tri: vec3[] = [];
   const quad: vec4[] = [];
   // TODO(@darzu): polar coordinates from these long and lats
-  for (let lat = 0; lat < numLat + 1; lat++) {
+  for (let lat = 0; lat <= numLat; lat++) {
     const inc = Math.PI * 0.5 * (lat / numLat);
     for (let lon = 0; lon < numLon; lon++) {
       const azi = Math.PI * 2 * (lon / numLon);
@@ -613,7 +613,7 @@ export function makeDome(numLon: number, numLat: number, r: number): Mesh {
       const y = r * Math.cos(inc);
       pos.push(V(x, y, z));
       const u = azi / (Math.PI * 2.0);
-      const v = inc / (Math.PI * 0.5);
+      const v = 1 - inc / (Math.PI * 0.5);
       uvs.push(V(u, v));
       // drawBall(V(x, y, z), 1, seqEndesga16());
       if (lat === 0) break; // at the tip-top, we only need one pos
@@ -636,7 +636,27 @@ export function makeDome(numLon: number, numLat: number, r: number): Mesh {
         // console.log({ i0, i1, i2, i3 });
         quad.push(V(i0, i1, i2, i3));
       }
+      // if (lat === numLat) {
+      //   const i0 = pos.length - 1;
+      //   let i1 = pos.length - 2;
+      //   if (lon === 0) {
+      //     i1 += numLon;
+      //   }
+      //   let i2 = pos.length;
+      // }
     }
+  }
+  // final floor of dome
+  let centerIdx = pos.length;
+  pos.push(V(0, 0, 0));
+  uvs.push(V(0, 0));
+  for (let lon = 0; lon < numLon; lon++) {
+    let i0 = pos.length - lon - 1;
+    let i1 = pos.length - lon - 2;
+    if (lon === 0) {
+      i0 -= numLon;
+    }
+    tri.push(V(i0, i1, centerIdx));
   }
 
   const faceNum = tri.length + quad.length;
