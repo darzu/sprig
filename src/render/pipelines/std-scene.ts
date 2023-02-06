@@ -1,6 +1,6 @@
 import { EM } from "../../entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../../sprig-matrix.js";
-import { assertDbg } from "../../util.js";
+import { assert, assertDbg } from "../../util.js";
 import { computeTriangleNormal } from "../../utils-3d.js";
 import { randColor } from "../../utils-game.js";
 import { CY } from "../gpu-registry.js";
@@ -18,19 +18,13 @@ export const VertexStruct = createCyStruct(
     color: "vec3<f32>",
     normal: "vec3<f32>",
     // TODO(@darzu): add UV back? needed for ocean stuff?
-    // uv: "vec2<f32>",
+    uv: "vec2<f32>",
     surfaceId: "u32",
   },
   {
     isCompact: true,
     serializer: (
-      {
-        position,
-        color,
-        normal,
-        // uv,
-        surfaceId,
-      },
+      { position, color, normal, uv, surfaceId },
       _,
       offsets_32,
       views
@@ -38,9 +32,9 @@ export const VertexStruct = createCyStruct(
       views.f32.set(position, offsets_32[0]);
       views.f32.set(color, offsets_32[1]);
       views.f32.set(normal, offsets_32[2]);
-      // views.f32.set(uv, offsets_32[3]);
+      views.f32.set(uv, offsets_32[3]);
       // views.u32[offsets_32[4]] = surfaceId;
-      views.u32[offsets_32[3]] = surfaceId;
+      views.u32[offsets_32[4]] = surfaceId;
     },
   }
 );
@@ -51,7 +45,7 @@ export function createEmptyVertexTS(): VertexTS {
     color: vec3.create(),
     // tangent: m.tangents ? m.tangents[i] : [1.0, 0.0, 0.0],
     normal: vec3.create(),
-    // uv: m.uvs ? m.uvs[i] : [0.0, 0.0],
+    uv: V(0, 0),
     surfaceId: 0,
   };
 }
@@ -137,10 +131,17 @@ export function computeVertsData(
   while (tempVertsData.length < count)
     tempVertsData.push(createEmptyVertexTS());
 
+  assertDbg(
+    !m.uvs || m.uvs.length === m.pos.length,
+    `uvs.length != pos.length for ${m.dbgName}`
+  );
+  // if (!(!m.uvs || m.uvs.length === m.pos.length)) console.dir(m);
+
   for (let vi = startIdx; vi < startIdx + count; vi++) {
     const dIdx = vi - startIdx;
     // NOTE: assignment is fine since this better not be used without being re-assigned
     tempVertsData[dIdx].position = m.pos[vi];
+    if (m.uvs) tempVertsData[dIdx].uv = m.uvs[vi];
     // TODO(@darzu): UVs and other properties?
   }
   // NOTE: for per-face data (e.g. color and surface IDs), first all the quads then tris

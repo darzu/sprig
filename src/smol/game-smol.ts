@@ -283,9 +283,8 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
   // skybox?
 
   // sky dome?
-  const domeMesh = makeDome(16, 8, 100);
-
   const SKY_HALFSIZE = 1000;
+  const domeMesh = makeDome(16, 8, SKY_HALFSIZE);
   const sky = EM.new();
   em.ensureComponentOn(sky, PositionDef);
   // const skyMesh = cloneMesh(res.assets.cube.mesh);
@@ -298,8 +297,8 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
     RenderableConstructDef,
     skyMesh,
     undefined,
-    undefined
-    // SKY_MASK
+    undefined,
+    SKY_MASK
   );
   // em.ensureComponentOn(sky, ColorDef, V(0.9, 0.9, 0.9));
 

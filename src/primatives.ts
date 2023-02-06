@@ -604,7 +604,7 @@ export function makeDome(numLon: number, numLat: number, r: number): Mesh {
   const tri: vec3[] = [];
   const quad: vec4[] = [];
   // TODO(@darzu): polar coordinates from these long and lats
-  for (let lat = 0; lat < numLat; lat++) {
+  for (let lat = 0; lat < numLat + 1; lat++) {
     const inc = Math.PI * 0.5 * (lat / numLat);
     for (let lon = 0; lon < numLon; lon++) {
       const azi = Math.PI * 2 * (lon / numLon);
@@ -613,7 +613,7 @@ export function makeDome(numLon: number, numLat: number, r: number): Mesh {
       const y = r * Math.cos(inc);
       pos.push(V(x, y, z));
       uvs.push(V(azi, inc));
-      drawBall(V(x, y, z), 1, seqEndesga16());
+      // drawBall(V(x, y, z), 1, seqEndesga16());
       if (lat === 0) break; // at the tip-top, we only need one pos
       if (lat === 1) {
         // top triangles
@@ -631,7 +631,7 @@ export function makeDome(numLon: number, numLat: number, r: number): Mesh {
           i2 += numLon;
           i3 += numLon;
         }
-        console.log({ i0, i1, i2, i3 });
+        // console.log({ i0, i1, i2, i3 });
         quad.push(V(i0, i1, i2, i3));
       }
     }
@@ -639,7 +639,7 @@ export function makeDome(numLon: number, numLat: number, r: number): Mesh {
 
   const faceNum = tri.length + quad.length;
 
-  console.log(`dome: ${pos.length} verts, ${faceNum} faces`);
+  // console.log(`dome: ${pos.length} verts, ${faceNum} faces`);
 
   const mesh: Mesh = {
     pos,
@@ -649,6 +649,7 @@ export function makeDome(numLon: number, numLat: number, r: number): Mesh {
     surfaceIds: range(faceNum).map((i) => i + 1),
     colors: range(faceNum).map((_) => seqEndesga16()),
     usesProvoking: true,
+    dbgName: `dome${numLat}x${numLon}x${r}`,
   };
   return mesh;
 }

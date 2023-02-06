@@ -52,7 +52,6 @@ function sockMesh(): Mesh {
   const tri: vec3[] = [V(0, 1, 2), V(2, 1, 0)];
   const colors: vec3[] = tri.map((_) => V(0, 0, 0));
   const lines: vec2[] = [];
-  const uvs: vec2[] = [];
 
   return {
     pos,
@@ -60,9 +59,9 @@ function sockMesh(): Mesh {
     quad: [],
     colors,
     lines,
-    uvs,
     usesProvoking: true,
     surfaceIds: tri.map((_, ti) => ti + 1),
+    dbgName: "windsock",
   };
 }
 
