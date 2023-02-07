@@ -242,7 +242,8 @@ export function registerCameraSystems(em: EntityManager) {
           cameraView.aspectRatio,
           1,
           // TODO(@darzu): hacky; why does it have to be so big
-          100000.0 /*view distance*/,
+          // 100000.0 /*view distance*/,
+          1000.0 /*view distance*/,
           projectionMatrix
         );
       }

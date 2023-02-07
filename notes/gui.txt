@@ -22,6 +22,9 @@ CSS box model:
   immediate mode vs retained mode GUI
     https://docs.microsoft.com/en-us/windows/win32/learnwin32/retained-mode-versus-immediate-mode
 
+Xilem: an architecture for UI in Rust:
+  https://raphlinus.github.io/rust/gui/2022/05/07/ui-architecture.html
+
 Game UI database:
   https://www.gameuidatabase.com
 

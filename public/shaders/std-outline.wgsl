@@ -41,6 +41,8 @@ fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
   let dims : vec2<i32> = vec2<i32>(textureDimensions(surfTex));
   let dimsF = vec2<f32>(dims);
 
+  let h = textureSample(depthTex, samp, uv);
+
 // TODO(@darzu): 1.0 for LD52
   let lineWidth = 2.0;
   // let lineWidth = 3.0; // OLD
@@ -61,7 +63,6 @@ fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
   let sB = textureLoad(surfTex, vec2<i32>(b), 0);  
 
   // TODO(@darzu): do i need to do expensive sampling for depth and norm? why not just load
-  let h = textureSample(depthTex, samp, uv);
   let hT = textureSample(depthTex, samp, t / dimsF);
   let hL = textureSample(depthTex, samp, l / dimsF);
   let hR = textureSample(depthTex, samp, r / dimsF);
@@ -96,9 +97,10 @@ fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
   let edgeLum = clamp(edgeLight - edgeDark, -0.7, 1.0);
   if (surfaceDidChange || objectDidChange) {
     color *= 1.0 + edgeLum;
+    // color *= 1.0 + edgeLum;
     // TODO(@darzu): DEBUG WIREFRAME
     // color *= 2.0;
-    // color = vec3(0.8);
+    // color = vec3(0.1);
   }
   // DEBUG WIREFRAME
   // else {

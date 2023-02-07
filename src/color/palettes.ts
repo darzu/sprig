@@ -1,6 +1,7 @@
 import { clamp } from "../math.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { objMap } from "../util.js";
+import { vec3Dbg } from "../utils-3d.js";
 import { toV3, toFRGB, parseHex, toFLRGB } from "./color.js";
 
 export const ENDESGA16 = objMap(
@@ -37,3 +38,18 @@ export function seqEndesga16() {
   if (_nextEnd > 15) _nextEnd = 0;
   return AllEndesga16[_nextEnd];
 }
+
+export const COLOR_SAMPLES = objMap(
+  {
+    jb_skyblue: "#5775D0",
+    jb_skywhite: "#DFE6DB",
+  },
+  (val, name) => {
+    return toV3(toFLRGB(parseHex(val))) as vec3;
+  }
+);
+
+// for (let _k of Object.keys(COLOR_SAMPLES)) {
+//   const k = _k as keyof typeof COLOR_SAMPLES;
+//   console.log(`${k}: ${vec3Dbg(COLOR_SAMPLES[k])}`);
+// }

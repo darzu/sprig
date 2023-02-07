@@ -13,9 +13,9 @@ fn gerstner(uv: vec2<f32>, t: f32) -> mat2x3<f32> {
         // TODO(@darzu): what's the right way to handle this?
         //  displacement.y += wave.A * _sin;
          displacement.y -= wave.A * _sin;
-         normal.x += -1.0 * D.x * wave.w * wave.A * _cos;
-         normal.z += -1.0 * D.y * wave.w * wave.A * _cos;
-         normal.y += wave.Q * wave.w * wave.A * _sin;
+         normal.x += -1.0 * D.x * wave.w * wave.A * _cos * wave.normalWeight;
+         normal.z += -1.0 * D.y * wave.w * wave.A * _cos * wave.normalWeight;
+         normal.y += wave.Q * wave.w * wave.A * _sin * wave.normalWeight;
      }
      // TODO(@darzu): "1.0 -" before normalization seems very sus.
      normal.y = (1.0 - normal.y);

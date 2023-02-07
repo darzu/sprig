@@ -21,12 +21,14 @@ type GDirLenSteep = {
   dirRad: number;
   len: number;
   steep: number;
+  normalWeight?: number;
 };
 type GDirLenAmpSpeed = {
   dirRad: number;
   len: number;
   amp: number;
   speed: number;
+  normalWeight?: number;
 };
 
 export function createWaves(): GerstnerWaveTS[] {
@@ -65,12 +67,14 @@ export function createWaves(): GerstnerWaveTS[] {
       len: minLen * 1.5,
       amp: 1.5 * littleSpikes,
       speed: 4.3,
+      normalWeight: 0.0, // NOTE: no normal contribution
     },
     {
       dirRad: 5.14,
       len: minLen * 1.3,
       amp: 1.5 * littleSpikes,
       speed: 3.7,
+      normalWeight: 0.0, // NOTE: no normal contribution
     },
     //
   ];
@@ -92,8 +96,9 @@ export function createWaves(): GerstnerWaveTS[] {
     const Q = 1;
     const speed = speedFromFreq(w);
     const phi = speed * w * dt;
+    const normalWeight = params.normalWeight;
 
-    return mkGerstnerWaveTS({ Q, w, D, A, phi });
+    return mkGerstnerWaveTS({ Q, w, D, A, phi, normalWeight });
   }
   function mkGerstnerFromDirLenAmpSpeed(
     params: GDirLenAmpSpeed
@@ -102,23 +107,22 @@ export function createWaves(): GerstnerWaveTS[] {
     const w = (2 * Math.PI) / params.len;
     const A = params.amp;
     const Q = 0;
-    const speed = params.speed;
+    const { speed, normalWeight } = params;
     const phi = speed * w * dt;
 
-    return mkGerstnerWaveTS({ Q, w, D, A, phi });
+    return mkGerstnerWaveTS({ Q, w, D, A, phi, normalWeight });
   }
 }
 
 function mkGerstnerWaveTS(params: Partial<GerstnerWaveTS>): GerstnerWaveTS {
   return {
-    D: V(1, 0),
-    Q: 0,
-    A: 1,
-    w: 1,
-    phi: 1,
-    padding1: 0,
+    D: params.D ?? V(1, 0),
+    Q: params.Q ?? 0,
+    A: params.A ?? 1,
+    w: params.w ?? 1,
+    phi: params.phi ?? 1,
+    normalWeight: params.normalWeight ?? 1.0,
     padding2: 0,
-    ...params,
   };
 }
 

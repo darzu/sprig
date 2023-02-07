@@ -1697,6 +1697,9 @@ Nanite, Lumen, and virtual shadow maps in Fortnite:
         like Ghost of T.
   https://www.unrealengine.com/en-US/tech-blog/virtual-shadow-maps-in-fortnite-battle-royale-chapter-4
   https://www.unrealengine.com/en-US/tech-blog/lumen-brings-real-time-global-illumination-to-fortnite-battle-royale-chapter-4
+  plus more:
+    https://www.unrealengine.com/en-US/blog/battle-testing-unreal-engine-5-1-s-new-features-on-fortnite-battle-royale-chapter-4
+    Local Exposure, Temporal Super Resolution, Clouds,
 
 What is Unreal's "World Position Offset" ? Used extensively in Fortnite for animation:
   https://docs.unrealengine.com/4.27/en-US/Resources/ContentExamples/MaterialNodes/1_10/
@@ -1754,3 +1757,16 @@ What's a swapchain ?
   general name for double or tripple buffer
 
 What is tiling? Deferred tiling?
+
+Virtual Shadow Maps:
+  https://www.unrealengine.com/en-US/tech-blog/virtual-shadow-maps-in-fortnite-battle-royale-chapter-4
+  "Ray-traced shadows are not currently a good fit as they are not performant when forced to rebuild acceleration structures to account for the significant dynamic deformation and animation"
+  Previously:
+    There are several conventional shadow map cascades near the player.
+    Beyond these, there is a mix of distance field shadows and a single “far” cascade that covers most,
+    The player character gets a dedicated per-object shadow map
+    Screen-space contact shadows are layered on top of all of this to try to recover some of the detail missed by the low-resolution techniques and fill in any missing shadows in the distance.
+  two additional constraints heavily undercut the ability to cache shadow maps: 
+    a significant amount of animated deformation
+      —chiefly trees—
+    a continuously moving sun.

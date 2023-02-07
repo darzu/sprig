@@ -91,8 +91,10 @@ export const GerstnerWaveStruct = createCyStruct(
     A: "f32",
     w: "f32",
     phi: "f32",
+    // used to reduce this wave's normal contribution, otherwise small detailed waves dominate
+    // TODO(@darzu): is this a hack?
+    normalWeight: "f32",
     // TODO(@darzu): HACK! solve alignment issues--shouldn't need manual padding
-    padding1: "f32",
     padding2: "f32",
   },
   {
