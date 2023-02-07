@@ -167,13 +167,19 @@ fn frag_main(input: VertexOutput) -> FragOut {
         fresnelIntensity += f0 + (1.0 - f0) * pow(1.0 - cameraAng, 5.0);
     }
 
-    // cell shading:
-    const shades = 10.0;
-    lightingIntensity = ceil(lightingIntensity * shades) / shades;
+    // cel shading:
+    let lightCel = ceil(lightingIntensity * 10.0) / 10.0;
+    let fresnelCel = ceil(fresnelIntensity * 5.0) / 5.0;
+    // non-cel shading
+    // let lightCel = lightingIntensity;
+    // let fresnelCel = fresnelIntensity;
 
     // regular shading:
-    let litColor = input.color * lightingIntensity 
-      + fresnelColor * fresnelIntensity; // * 0.5;
+    // let litColor = input.color * lightingIntensity;
+    let litColor = mix(
+      input.color * lightCel, 
+      fresnelColor, 
+    fresnelCel * 0.3); // * 0.5;
     // let litColor = input.color * (lightingColor + vec3(f32(isUnlit)));
 
     // unlit:
