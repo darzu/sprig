@@ -168,6 +168,7 @@ fn frag_main(input: VertexOutput) -> FragOut {
     }
 
     // cel shading:
+    // TODO(@darzu): kinda hacky to have seperate bands for these?
     let lightCel = ceil(lightingIntensity * 10.0) / 10.0;
     let fresnelCel = ceil(fresnelIntensity * 5.0) / 5.0;
     // non-cel shading
