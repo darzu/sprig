@@ -49,6 +49,10 @@ export const COLOR_SAMPLES = objMap(
   }
 );
 
+// for (let _k of Object.keys(ENDESGA16)) {
+//   const k = _k as keyof typeof ENDESGA16;
+//   console.log(`${k}: ${vec3Dbg(ENDESGA16[k])}`);
+// }
 // for (let _k of Object.keys(COLOR_SAMPLES)) {
 //   const k = _k as keyof typeof COLOR_SAMPLES;
 //   console.log(`${k}: ${vec3Dbg(COLOR_SAMPLES[k])}`);
