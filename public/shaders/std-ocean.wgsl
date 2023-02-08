@@ -166,6 +166,8 @@ fn frag_main(input: VertexOutput) -> FragOut {
         // Fresnel-Schlick ?
         fresnelIntensity += f0 + (1.0 - f0) * pow(1.0 - cameraAng, 5.0);
     }
+    // TODO(@darzu): consider using this rim-lighting approach instead of this fersnel
+    //      https://lettier.github.io/3d-game-shaders-for-beginners/rim-lighting.html
 
     // cel shading:
     // TODO(@darzu): kinda hacky to have seperate bands for these?
