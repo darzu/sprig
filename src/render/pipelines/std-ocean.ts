@@ -21,6 +21,7 @@ import {
   mainDepthTex,
   surfacesTexturePtr,
   normalsTexturePtr,
+  unlitTexturePtr,
 } from "./std-scene.js";
 import { shadowDepthTextures } from "./std-shadow.js";
 
@@ -197,7 +198,7 @@ export const renderOceanPipe = CY.createRenderPipeline("oceanRender", {
   shaderFragmentEntry: "frag_main",
   output: [
     {
-      ptr: litTexturePtr,
+      ptr: unlitTexturePtr,
       clear: "never",
       // clear: "always",
     },

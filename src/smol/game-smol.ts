@@ -71,6 +71,7 @@ import { renderOceanPipe } from "../render/pipelines/std-ocean.js";
 import { SKY_MASK } from "../render/pipeline-masks.js";
 import { skyPipeline } from "../render/pipelines/std-sky.js";
 import { createFlatQuadMesh, makeDome } from "../primatives.js";
+import { deferredPipeline } from "../render/pipelines/std-deferred.js";
 
 /*
 NOTES:
@@ -137,6 +138,7 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
         stdRenderPipeline,
         // renderGrassPipe,
         renderOceanPipe,
+        deferredPipeline,
         skyPipeline,
         outlineRender,
         postProcess,
