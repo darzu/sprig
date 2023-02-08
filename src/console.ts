@@ -53,20 +53,23 @@ export function registerDevSystems(em: EntityManager) {
   let avgGPUBytes = 0;
   let maxFrameGPUBytes = 0;
 
-  let warmUpFrame = 60 * 3;
+  const warmUpFrame = 60 * 3;
+  let frameCount = 0;
 
   let lastF32s = 0;
+
+  let pipelineTimes: Map<string, bigint> = new Map();
 
   em.registerSystem(
     null,
     [RendererDef, TextDef, DevConsoleDef],
     async (_, res) => {
-      warmUpFrame--;
+      frameCount++;
 
       if (PERF_DBG_GPU) {
         const frameBytes = _gpuQueueBufferWriteBytes - lastGPUBytes;
 
-        if (warmUpFrame <= 0) {
+        if (warmUpFrame <= frameCount) {
           maxFrameGPUBytes = Math.max(maxFrameGPUBytes, frameBytes);
           if (frameBytes >= 1024 * 100) {
             console.log(`Big frame!: ${(frameBytes / 1024).toFixed(0)}kb`);
@@ -103,7 +106,9 @@ export function registerDevSystems(em: EntityManager) {
         ping: [],
       };
 
-      const pipelineTimes = await res.renderer.renderer.stats();
+      if (frameCount % 60 === 0) {
+        pipelineTimes = await res.renderer.renderer.stats();
+      }
 
       let pipelineTimesTxts: string[] = [];
       pipelineTimes.forEach((time, pipeline) =>

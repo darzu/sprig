@@ -343,3 +343,7 @@ Move vector operations onto the stack:
     shadowPipeline0 0.01, triRender 0.36, oceanRender 28.94, skyPipeline 0.17, 
     outlineRender 0.26, postProcess 0.08, composeViews_0x0 0.02, composeViews_1x0 0.02, 
     composeViews_0x1 0.02, composeViews_1x1 0.01
+
+Attaching renderdoc:
+  set RENDERDOC_HOOK_EGL=0
+  C:\Users\darzu>"C:\Users\darzu\AppData\Local\Google\Chrome SxS\Application\chrome.exe" --disable-dawn-features=disallow_unsafe_apis --disable-gpu-sandbox --gpu-startup-dialog
