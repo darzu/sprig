@@ -8,6 +8,7 @@ import {
   mainDepthTex,
   sceneBufPtr,
   litTexturePtr,
+  positionsTexturePtr,
 } from "./std-scene.js";
 import { shadowDepthTextures } from "./std-shadow.js";
 
@@ -16,7 +17,7 @@ export const deferredPipeline = CY.createRenderPipeline("deferredRender", {
     { ptr: linearSamplerPtr, alias: "samp" },
     { ptr: unlitTexturePtr, alias: "colorTex" },
     { ptr: normalsTexturePtr, alias: "normTex" },
-    // { ptr: positionsTexturePtr, alias: "posTex" },
+    { ptr: positionsTexturePtr, alias: "posTex" },
     { ptr: surfacesTexturePtr, alias: "surfTex" },
     { ptr: mainDepthTex, alias: "depthTex" },
     ...shadowDepthTextures.map((tex, i) => ({

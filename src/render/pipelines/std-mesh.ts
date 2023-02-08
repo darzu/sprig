@@ -94,17 +94,17 @@ export const stdRenderPipeline = CY.createRenderPipeline("stdMeshRender", {
     {
       ptr: normalsTexturePtr,
       clear: "once",
-      defaultColor: vec4.clone([0, 0, 0, 0]),
+      defaultColor: V(0, 0, 0, 0),
     },
-    // {
-    //   ptr: positionsTexturePtr,
-    //   clear: "once",
-    //   defaultColor: [0, 0, 0, 0],
-    // },
+    {
+      ptr: positionsTexturePtr,
+      clear: "once",
+      defaultColor: V(0, 0, 0, 0),
+    },
     {
       ptr: surfacesTexturePtr,
       clear: "once",
-      defaultColor: vec4.clone([0, 0, 0, 0]),
+      defaultColor: V(0, 0, 0, 0),
     },
   ],
   depthStencil: mainDepthTex,
