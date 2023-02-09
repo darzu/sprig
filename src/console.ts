@@ -146,8 +146,7 @@ export function registerDevSystems(em: EntityManager) {
         `entities:${EM.entities.size} ` +
         `skew: ${skew.join(",")} ` +
         `ping: ${ping.join(",")} ` +
-        `${usingWebGPU ? "WebGPU" : "WebGL"} ` +
-        `pipelines: ${pipelineTimesTxts.join(",")} ` +
+        `WebGPU pipelines: ${pipelineTimesTxts.join(",")} ` +
         (PERF_DBG_F32S
           ? `f32s: ${(
               (newF32s * Float32Array.BYTES_PER_ELEMENT) /

@@ -335,3 +335,12 @@ Move vector operations onto the stack:
 
   Added bonus that the code will all look cleaner, with the exception of the copy().
   during normal dev, you don't do the build step, everything runs fine.
+
+Chrome flags:
+  --gpu-launcher
+
+  https://peter.sh/experiments/chromium-command-line-switches/
+  https://chromium.googlesource.com/chromium/src/+/main/docs/gpu/debugging_gpu_related_code.md#debugging-in-the-gpu-process
+
+Dawn + Node:
+  https://dawn.googlesource.com/dawn/+/refs/heads/chromium/4959/src/dawn/node/
