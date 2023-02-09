@@ -392,3 +392,6 @@ GPU architecture resources:
   https://interplayoflight.wordpress.com/2020/05/09/gpu-architecture-resources/
   how nvidia gpus work: https://developer.nvidia.com/content/life-triangle-nvidias-logical-pipeline
   how amd gpus work: https://gpuopen.com/presentations/2019/nordic-game-2019-triangles-are-precious.pdf
+
+PIX + Chrome:
+  https://gist.github.com/Popov72/41f71cbf8d55f2cb8cae93f439eee347
