@@ -35,14 +35,14 @@ const MAX_GRASS_MESHES = 500;
 // TODO(@darzu): change
 export const GrassVertStruct = createCyStruct(
   {
-    position: "vec3<f32>",
+    myPos: "vec3<f32>",
     normal: "vec3<f32>",
     surfaceId: "u32",
   },
   {
     isCompact: true,
-    serializer: ({ position, normal, surfaceId }, _, offsets_32, views) => {
-      views.f32.set(position, offsets_32[0]);
+    serializer: ({ myPos, normal, surfaceId }, _, offsets_32, views) => {
+      views.f32.set(myPos, offsets_32[0]);
       views.f32.set(normal, offsets_32[1]);
       views.u32[offsets_32[2]] = surfaceId;
     },
@@ -77,7 +77,7 @@ export type GrassMeshHandle = MeshHandle;
 
 function createEmptyVertexTS(): GrassVertTS {
   return {
-    position: vec3.create(),
+    myPos: vec3.create(),
     // color: vec3.create(),
     // tangent: m.tangents ? m.tangents[i] : [1.0, 0.0, 0.0],
     normal: vec3.create(),
@@ -100,7 +100,7 @@ function computeGrassVertsData(
   for (let vi = startIdx; vi < startIdx + count; vi++) {
     const dIdx = vi - startIdx;
     // NOTE: assignment is fine since this better not be used without being re-assigned
-    tempVertsData[dIdx].position = m.pos[vi];
+    tempVertsData[dIdx].myPos = m.pos[vi];
     // TODO(@darzu): UVs and other properties?
   }
   // NOTE: for per-face data (e.g. color and surface IDs), first all the quads then tris

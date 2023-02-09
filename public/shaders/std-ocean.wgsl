@@ -16,14 +16,14 @@ struct VertexOutput {
 const shadowDepthTextureSize = 2048.0;
 // const shadowDepthTextureSize = vec2<f32>(textureDimensions(shadowMap, 0.0));
 
-fn sampleShadowTexture(pos: vec2<f32>, depth: f32, index: u32) -> f32 {
+fn sampleShadowTexture(myPos: vec2<f32>, depth: f32, index: u32) -> f32 {
   // TODO(@darzu): re-enable multi-shadow? probably w/ option
     // if (index == 0) {
-        return textureSampleCompare(shadowMap0, shadowSampler, pos, depth);
+        return textureSampleCompare(shadowMap0, shadowSampler, myPos, depth);
     // } else if (index == 1) {
-    //     return textureSampleCompare(shadowMap1, shadowSampler, pos, depth);
+    //     return textureSampleCompare(shadowMap1, shadowSampler, myPos, depth);
     // } else {
-    //     return textureSampleCompare(shadowMap2, shadowSampler, pos, depth);
+    //     return textureSampleCompare(shadowMap2, shadowSampler, myPos, depth);
     // }
 }
 
@@ -64,7 +64,7 @@ fn getShadowVis(shadowPos: vec3<f32>, normal: vec3<f32>, lightDir: vec3<f32>, in
 
 @vertex
 fn vert_main(input: VertexInput) -> VertexOutput {
-    let position = input.position;
+    let position = input.myPos;
     let uv = input.uv;
     let color = input.color;
     let normal = input.normal;

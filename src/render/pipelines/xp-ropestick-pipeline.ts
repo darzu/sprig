@@ -206,12 +206,12 @@ loop {
 }
 
 `;
-export const compRopePipelinePtr = CY.createComputePipeline("ropeComp", {
-  globals: [sceneBufPtr, ropePointBufPtr, ropeStickBufPtr],
-  shaderComputeEntry: "main",
-  workgroupCounts: [1, 1, 1],
-  shader: () => shader,
-});
+// export const compRopePipelinePtr = CY.createComputePipeline("ropeComp", {
+//   globals: [sceneBufPtr, ropePointBufPtr, ropeStickBufPtr],
+//   shaderComputeEntry: "main",
+//   workgroupCounts: [1, 1, 1],
+//   shader: () => shader,
+// });
 
 // rope particle render
 const ParticleVertStruct = createCyStruct(

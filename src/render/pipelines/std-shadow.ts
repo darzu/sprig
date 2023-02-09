@@ -26,7 +26,7 @@ const numShadowMaps = 1;
 export const shadowDepthTextures = range(numShadowMaps).map((i) =>
   CY.createDepthTexture(`shadowTex${i}`, {
     size: [2048, 2048],
-    format: "depth16unorm",
+    format: "depth32float",
   })
 );
 // const shadowOutTexture = CY.createTexture("shadowOut", {

@@ -997,7 +997,7 @@ export function startBundleRenderer(
     renderPassEncoder.setBlendConstant([1, 1, 1, 1]); // TODO(@darzu): hack? settable?
 
     renderPassEncoder.executeBundles([bundle]);
-    renderPassEncoder.end();
+    if (renderPassEncoder.end) renderPassEncoder.end();
 
     lastPipeline = p;
   }
@@ -1050,7 +1050,7 @@ export function doCompute(
   compPassEncoder.dispatchWorkgroups(...pipeline.workgroupCounts);
   // compPassEncoder.writeTimestamp(querySet, 1);
 
-  compPassEncoder.end();
+  if (compPassEncoder.end) compPassEncoder.end();
 }
 
 export function onCanvasResizeAll(

@@ -456,6 +456,7 @@ export function createCyTexture(
     return {
       view: opts?.viewOverride ?? cyTex.texture.createView(),
       loadOp,
+      loadValue: backgroundColor,
       clearValue: backgroundColor,
       storeOp: "store",
     };
@@ -485,10 +486,12 @@ export function createCyDepthTexture(
       view: tex.texture.createView(),
       depthLoadOp: clear ? "clear" : "load",
       depthClearValue: 1.0,
+      depthLoadValue: 1.0,
       depthStoreOp: "store",
+      stencilLoadValue: 0.0,
       stencilLoadOp: hasStencil ? "clear" : undefined,
       stencilClearValue: hasStencil ? 0 : undefined,
-      stencilStoreOp: hasStencil ? "store" : undefined,
+      stencilStoreOp: hasStencil ? "store" : "discard",
     };
   }
 }

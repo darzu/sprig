@@ -6,7 +6,7 @@ struct VertexOutput {
 @vertex
 fn vert_main(input: VertexInput) -> VertexOutput {
     var output : VertexOutput;    
-    let worldPos = vec4(input.position, 1.0);
+    let worldPos = vec4(input.myPos, 1.0);
     output.position = (scene.cameraViewProjMatrix * worldPos).xyww;
     output.uv = input.uv;
     return output;

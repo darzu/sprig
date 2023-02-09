@@ -5,7 +5,7 @@ struct VertexOutput {
 
 @vertex
 fn vert_main(input: VertexInput) -> VertexOutput {
-    let position = input.position;
+    let position = input.myPos;
     let color = input.color;
 
     var output : VertexOutput;

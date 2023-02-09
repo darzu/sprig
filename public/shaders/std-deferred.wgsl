@@ -7,7 +7,7 @@ struct VertexOutput {
 fn vert_main(@builtin(vertex_index) VertexIndex : u32) -> VertexOutput {
   let xs = vec2(-1.0, 1.0);
   let ys = vec2(-1.0, 1.0);
-  var pos = array<vec2<f32>, 6>(
+  var myPos = array<vec2<f32>, 6>(
     vec2<f32>(xs.x, ys.x),
     vec2<f32>(xs.y, ys.x),
     vec2<f32>(xs.y, ys.y),
@@ -26,7 +26,7 @@ fn vert_main(@builtin(vertex_index) VertexIndex : u32) -> VertexOutput {
   );
 
   var output : VertexOutput;
-  output.Position = vec4<f32>(pos[VertexIndex], 0.0, 1.0);
+  output.Position = vec4<f32>(myPos[VertexIndex], 0.0, 1.0);
   output.uv = uv[VertexIndex];
   return output;
 }
@@ -34,8 +34,8 @@ fn vert_main(@builtin(vertex_index) VertexIndex : u32) -> VertexOutput {
 
 const shadowDepthTextureSize = 2048.0;
 
-fn sampleShadowTexture(pos: vec2<f32>, depth: f32, index: u32) -> f32 {
-  return textureSampleCompare(shadowMap0, shadowSampler, pos, depth);
+fn sampleShadowTexture(myPos: vec2<f32>, depth: f32, index: u32) -> f32 {
+  return textureSampleCompare(shadowMap0, shadowSampler, myPos, depth);
 }
 
 fn getShadowVis(shadowPos: vec3<f32>, normal: vec3<f32>, lightDir: vec3<f32>, index: u32) -> f32 {

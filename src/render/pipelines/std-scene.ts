@@ -14,7 +14,7 @@ export const MAX_VERTICES = MAX_INDICES; // 21844;
 
 export const VertexStruct = createCyStruct(
   {
-    position: "vec3<f32>",
+    myPos: "vec3<f32>",
     color: "vec3<f32>",
     normal: "vec3<f32>",
     // TODO(@darzu): add UV back? needed for ocean stuff?
@@ -24,12 +24,12 @@ export const VertexStruct = createCyStruct(
   {
     isCompact: true,
     serializer: (
-      { position, color, normal, uv, surfaceId },
+      { myPos, color, normal, uv, surfaceId },
       _,
       offsets_32,
       views
     ) => {
-      views.f32.set(position, offsets_32[0]);
+      views.f32.set(myPos, offsets_32[0]);
       views.f32.set(color, offsets_32[1]);
       views.f32.set(normal, offsets_32[2]);
       views.f32.set(uv, offsets_32[3]);
@@ -41,7 +41,7 @@ export const VertexStruct = createCyStruct(
 export type VertexTS = CyToTS<typeof VertexStruct.desc>;
 export function createEmptyVertexTS(): VertexTS {
   return {
-    position: vec3.create(),
+    myPos: vec3.create(),
     color: vec3.create(),
     // tangent: m.tangents ? m.tangents[i] : [1.0, 0.0, 0.0],
     normal: vec3.create(),
@@ -140,7 +140,7 @@ export function computeVertsData(
   for (let vi = startIdx; vi < startIdx + count; vi++) {
     const dIdx = vi - startIdx;
     // NOTE: assignment is fine since this better not be used without being re-assigned
-    tempVertsData[dIdx].position = m.pos[vi];
+    tempVertsData[dIdx].myPos = m.pos[vi];
     if (m.uvs) tempVertsData[dIdx].uv = m.uvs[vi];
     // TODO(@darzu): UVs and other properties?
   }
@@ -276,8 +276,8 @@ export function setupScene(): SceneTS {
 }
 
 // TODO(@darzu): safer way to grab this format?
-export const canvasFormat: GPUTextureFormat =
-  navigator.gpu?.getPreferredCanvasFormat() ?? "bgra8unorm";
+export const canvasFormat: GPUTextureFormat = "bgra8unorm";
+// navigator.gpu?.getPreferredCanvasFormat() ?? "bgra8unorm";
 // export const canvasFormat: GPUTextureFormat = "bgra8unorm";
 // export const canvasFormat: GPUTextureFormat = "bgra8unorm-srgb";
 // export const canvasFormat: GPUTextureFormat = "rgba8unorm";

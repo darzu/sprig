@@ -38,7 +38,7 @@ struct VertexOutput {
     // TODO(@darzu): use scene.partyPos
     let hyperspeedFactor = 10.0; // 1.0 = none, 2.0 = ea 1.0 ship forward stars go backward 1.0
     var wrappedPos = (
-      fract(star.pos - scene.partyPos * hyperspeedFactor / starBoxSize)
+      fract(star.myPos - scene.partyPos * hyperspeedFactor / starBoxSize)
       - 0.5 
       ) * starBoxSize + scene.partyPos;
 

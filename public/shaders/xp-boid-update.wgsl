@@ -3,14 +3,14 @@
 fn main(@builtin(global_invocation_id) GlobalInvocationID : vec3<u32>) {
   var index : u32 = GlobalInvocationID.x;
 
-  var vPos = inBoids.ms[index].pos;
+  var vPos = inBoids.ms[index].myPos;
   var vVel = inBoids.ms[index].vel;
   var cMass = vec3<f32>(0.0, 0.0, 0.0);
   var cVel = vec3<f32>(0.0, 0.0, 0.0);
   var colVel = vec3<f32>(0.0, 0.0, 0.0);
   var cMassCount : u32 = 0u;
   var cVelCount : u32 = 0u;
-  var pos : vec3<f32>;
+  var myPos : vec3<f32>;
   var vel : vec3<f32>;
 
   for (var i : u32 = 0u; i < numBoids; i = i + 1u) {
@@ -18,16 +18,16 @@ fn main(@builtin(global_invocation_id) GlobalInvocationID : vec3<u32>) {
       continue;
     }
 
-    pos = inBoids.ms[i].pos.xyz;
+    myPos = inBoids.ms[i].myPos.xyz;
     vel = inBoids.ms[i].vel.xyz;
-    if (distance(pos, vPos) < boidParams.cohesionDistance) {
-      cMass = cMass + pos;
+    if (distance(myPos, vPos) < boidParams.cohesionDistance) {
+      cMass = cMass + myPos;
       cMassCount = cMassCount + 1u;
     }
-    if (distance(pos, vPos) < boidParams.seperationDistance) {
-      colVel = colVel - (pos - vPos);
+    if (distance(myPos, vPos) < boidParams.seperationDistance) {
+      colVel = colVel - (myPos - vPos);
     }
-    if (distance(pos, vPos) < boidParams.alignDistance) {
+    if (distance(myPos, vPos) < boidParams.alignDistance) {
       cVel = cVel + vel;
       cVelCount = cVelCount + 1u;
     }
@@ -68,6 +68,6 @@ fn main(@builtin(global_invocation_id) GlobalInvocationID : vec3<u32>) {
     vPos.z = -boidParams.worldSize;
   }
   // Write back
-  outBoids.ms[index].pos = vPos;
+  outBoids.ms[index].myPos = vPos;
   outBoids.ms[index].vel = vVel;
 }

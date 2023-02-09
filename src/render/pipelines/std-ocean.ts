@@ -32,7 +32,7 @@ const MAX_OCEAN_MESHES = 1;
 // TODO(@darzu): change
 export const OceanVertStruct = createCyStruct(
   {
-    position: "vec3<f32>",
+    myPos: "vec3<f32>",
     // TODO(@darzu): PERF. don't need per-vertex color..
     color: "vec3<f32>",
     normal: "vec3<f32>",
@@ -46,12 +46,12 @@ export const OceanVertStruct = createCyStruct(
   {
     isCompact: true,
     serializer: (
-      { position, color, normal, tangent, uv, surfaceId },
+      { myPos, color, normal, tangent, uv, surfaceId },
       _,
       offsets_32,
       views
     ) => {
-      views.f32.set(position, offsets_32[0]);
+      views.f32.set(myPos, offsets_32[0]);
       views.f32.set(color, offsets_32[1]);
       views.f32.set(normal, offsets_32[2]);
       views.f32.set(tangent, offsets_32[3]);
@@ -124,7 +124,7 @@ function computeOceanVertsData(
   assert(!!m.tangents, "ocean meshes assumed to have tangents");
   // TODO(@darzu): change
   const vertsData: OceanVertTS[] = m.pos.map((pos, i) => ({
-    position: pos,
+    myPos: pos,
     color: V(1.0, 0.0, 1.0), // per-face; changed below
     tangent: m.tangents![i],
     normal: m.normals![i],

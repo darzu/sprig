@@ -5,7 +5,7 @@ struct VertexOutput {
 
 @vertex
 fn vert_main(@builtin(vertex_index) VertexIndex : u32) -> VertexOutput {
-  var pos = array<vec2<f32>, 6>(
+  var myPos = array<vec2<f32>, 6>(
     vec2<f32>(quad.minX, quad.minY),
     vec2<f32>(quad.maxX, quad.minY),
     vec2<f32>(quad.maxX, quad.maxY),
@@ -24,7 +24,7 @@ fn vert_main(@builtin(vertex_index) VertexIndex : u32) -> VertexOutput {
   );
 
   var output : VertexOutput;
-  output.Position = vec4<f32>(pos[VertexIndex], 0.0, 1.0);
+  output.Position = vec4<f32>(myPos[VertexIndex], 0.0, 1.0);
   output.uv = uv[VertexIndex];
   return output;
 }

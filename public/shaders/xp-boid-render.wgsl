@@ -1,5 +1,5 @@
 struct VertexOutput {
-  @builtin(position) pos: vec4<f32>,
+  @builtin(position) myPos: vec4<f32>,
   @location(0) worldPos: vec3<f32>,
 }
 
@@ -7,13 +7,13 @@ struct VertexOutput {
 fn vert_main(vIn: VertexInput, iIn: InstanceInput) -> VertexOutput {
   // let angle = -atan2(iIn.vel.x, iIn.vel.y);
   // let posXY = vec2<f32>(
-  //     (vIn.pos.x * cos(angle)) - (vIn.pos.y * sin(angle)),
-  //     (vIn.pos.x * sin(angle)) + (vIn.pos.y * cos(angle)));
-  // let worldPos = vec3<f32>(posXY * 0.1 + iIn.pos.xy, vIn.pos.z * 0.1 + iIn.pos.z);
-  let worldPos = vec3<f32>(vIn.pos.xyz * 0.1 + iIn.pos.xyz);
+  //     (vIn.myPos.x * cos(angle)) - (vIn.myPos.y * sin(angle)),
+  //     (vIn.myPos.x * sin(angle)) + (vIn.myPos.y * cos(angle)));
+  // let worldPos = vec3<f32>(posXY * 0.1 + iIn.myPos.xy, vIn.myPos.z * 0.1 + iIn.myPos.z);
+  let worldPos = vec3<f32>(vIn.myPos.xyz * 0.1 + iIn.myPos.xyz);
   var output: VertexOutput;
   output.worldPos = worldPos;
-  output.pos = scene.cameraViewProjMatrix * vec4<f32>(worldPos, 1.0);
+  output.myPos = scene.cameraViewProjMatrix * vec4<f32>(worldPos, 1.0);
   return output;
 }
 

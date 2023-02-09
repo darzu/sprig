@@ -26,7 +26,7 @@ import {
   cmpClothPipelinePtr0,
   cmpClothPipelinePtr1,
 } from "../render/pipelines/xp-cloth-pipeline.js";
-import { compRopePipelinePtr } from "../render/pipelines/xp-ropestick-pipeline.js";
+// import { compRopePipelinePtr } from "../render/pipelines/xp-ropestick-pipeline.js";
 import {
   RendererDef,
   RenderableConstructDef,
@@ -71,7 +71,7 @@ export async function initClothSandbox(em: EntityManager, hosting: boolean) {
   let computePipelinesPtrs: CyCompPipelinePtr[] = [
     cmpClothPipelinePtr0,
     cmpClothPipelinePtr1,
-    compRopePipelinePtr,
+    // compRopePipelinePtr,
     boidComp0,
     boidComp1,
   ];
