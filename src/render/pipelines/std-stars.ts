@@ -1,7 +1,7 @@
 import { CY } from "../gpu-registry.js";
 import { createCyStruct, CyToTS } from "../gpu-struct.js";
 import { outlinedTexturePtr } from "./std-outline.js";
-import { mainDepthTex, litTexturePtr, sceneBufPtr } from "./std-scene.js";
+import { mainDepthTex, sceneBufPtr } from "./std-scene.js";
 
 // TODO(@darzu): generalize for other billboard usage?
 

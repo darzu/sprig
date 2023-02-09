@@ -427,6 +427,7 @@ export function registerRenderer(em: EntityManager) {
             ...rest,
           };
         });
+      dbgLogOnce(`Num point lights: ${pointLights.length}`);
 
       // const lightPosition =
       //   pointLights[0]?.position ?? V(0, 0, 0);

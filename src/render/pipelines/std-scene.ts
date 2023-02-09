@@ -282,7 +282,13 @@ export const canvasFormat: GPUTextureFormat =
 // export const canvasFormat: GPUTextureFormat = "bgra8unorm-srgb";
 // export const canvasFormat: GPUTextureFormat = "rgba8unorm";
 
-export const litTexturePtr = CY.createTexture("mainTexture", {
+export const unlitTexturePtr = CY.createTexture("unlitTexture", {
+  size: [100, 100],
+  onCanvasResize: (w, h) => [w, h],
+  format: "rgba16float",
+  // TODO(@darzu): support anti-aliasing again
+});
+export const litTexturePtr = CY.createTexture("litTexture", {
   size: [100, 100],
   onCanvasResize: (w, h) => [w, h],
   format: "rgba16float",

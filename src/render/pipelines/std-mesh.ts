@@ -25,6 +25,7 @@ import {
   sceneBufPtr,
   surfacesTexturePtr,
   RenderDataStdDef,
+  unlitTexturePtr,
 } from "./std-scene.js";
 import { shadowDepthTextures } from "./std-shadow.js";
 
@@ -52,7 +53,7 @@ import { shadowDepthTextures } from "./std-shadow.js";
 //  [x] light source: scene rendered with multiple point sources
 //      [x] light sailing
 
-export const stdRenderPipeline = CY.createRenderPipeline("triRender", {
+export const stdRenderPipeline = CY.createRenderPipeline("stdMeshRender", {
   globals: [
     sceneBufPtr,
     { ptr: linearSamplerPtr, alias: "samp" },
@@ -81,7 +82,7 @@ export const stdRenderPipeline = CY.createRenderPipeline("triRender", {
   shaderFragmentEntry: "frag_main",
   output: [
     {
-      ptr: litTexturePtr,
+      ptr: unlitTexturePtr,
       clear: "once",
       // defaultColor: [0.0, 0.0, 0.0, 1.0],
       // defaultColor: [0.1, 0.1, 0.1, 1.0],
@@ -93,17 +94,17 @@ export const stdRenderPipeline = CY.createRenderPipeline("triRender", {
     {
       ptr: normalsTexturePtr,
       clear: "once",
-      defaultColor: vec4.clone([0, 0, 0, 0]),
+      defaultColor: V(0, 0, 0, 0),
     },
-    // {
-    //   ptr: positionsTexturePtr,
-    //   clear: "once",
-    //   defaultColor: [0, 0, 0, 0],
-    // },
+    {
+      ptr: positionsTexturePtr,
+      clear: "once",
+      defaultColor: V(0, 0, 0, 0),
+    },
     {
       ptr: surfacesTexturePtr,
       clear: "once",
-      defaultColor: vec4.clone([0, 0, 0, 0]),
+      defaultColor: V(0, 0, 0, 0),
     },
   ],
   depthStencil: mainDepthTex,
@@ -112,26 +113,6 @@ export const stdRenderPipeline = CY.createRenderPipeline("triRender", {
   ${shaderSet["std-mesh"].code}
   `,
 });
-
-export const { pipeline: normalDbg } = createRenderTextureToQuad(
-  "normalDbg",
-  normalsTexturePtr,
-  litTexturePtr,
-  0.2,
-  0.8,
-  0.2,
-  0.8
-);
-
-export const { pipeline: positionDbg } = createRenderTextureToQuad(
-  "positionDbg",
-  positionsTexturePtr,
-  litTexturePtr,
-  0.2,
-  0.8,
-  -0.8,
-  -0.2
-);
 
 const _lastMeshHandleTransform = new Map<number, mat4>();
 const _lastMeshHandleHidden = new Map<number, boolean>();

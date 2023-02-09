@@ -419,23 +419,27 @@ export function createRenderer(
     return gpuBuffer.getMappedRange();
   }
 
+  const byteSize = (MAX_PIPELINES + 1) * 8;
+  // We need to have 2 buffers here because you can't have MAP_READ
+  // and QUERY_RESOLVE on the same buffer. We resolve the QuerySet
+  // to one buffer, then copy it to another for reading.
+  const resolveBuffer = device.createBuffer({
+    // GPUSize64s
+    size: byteSize,
+    usage: GPUBufferUsage.QUERY_RESOLVE | GPUBufferUsage.COPY_SRC,
+    mappedAtCreation: false, // mapped post texture copy
+  });
   async function stats(): Promise<Map<string, bigint>> {
     if (!timestampQuerySet) return new Map();
-    const byteSize = (MAX_PIPELINES + 1) * 8;
-    // We need to have 2 buffers here because you can't have MAP_READ
-    // and QUERY_RESOLVE on the same buffer. We resolve the QuerySet
-    // to one buffer, then copy it to another for reading.
-    const resolveBuffer = device.createBuffer({
-      // GPUSize64s
-      size: byteSize,
-      usage: GPUBufferUsage.QUERY_RESOLVE | GPUBufferUsage.COPY_SRC,
-      mappedAtCreation: false, // mapped post texture copy
-    });
+
+    // console.log("getting stats!");
+
     const copyBuffer = device.createBuffer({
       size: byteSize,
       usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
       mappedAtCreation: false, // mapped post texture copy
     });
+
     const commandEncoder = device.createCommandEncoder();
     commandEncoder.resolveQuerySet(
       timestampQuerySet,

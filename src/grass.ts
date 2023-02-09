@@ -144,7 +144,7 @@ interface GrassTileset {
 export async function createGrassTileset(
   opts: GrassTilesetOpts
 ): Promise<GrassTileset> {
-  console.log("createGrassTileset");
+  // console.log("createGrassTileset");
 
   const { renderer } = await EM.whenResources(RendererDef);
 

@@ -22,6 +22,7 @@ export const ShaderPaths = [
   "xp-alpha",
   "std-grass",
   "std-sky",
+  "std-deferred",
 ] as const;
 
 export type ShaderName = typeof ShaderPaths[number];

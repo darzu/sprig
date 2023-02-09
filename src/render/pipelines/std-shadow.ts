@@ -1,9 +1,7 @@
 import { range } from "../../util.js";
-import { createRenderTextureToQuad } from "../gpu-helper.js";
-import { CY, linearSamplerPtr } from "../gpu-registry.js";
-import { createCyStruct } from "../gpu-struct.js";
+import { CY } from "../gpu-registry.js";
 import { pointLightsPtr } from "../lights.js";
-import { litTexturePtr, meshPoolPtr, sceneBufPtr } from "./std-scene.js";
+import { meshPoolPtr } from "./std-scene.js";
 
 // NOTES:
 //  https://github.com/darzu/sprig/pull/3
