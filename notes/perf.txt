@@ -354,6 +354,10 @@ Beyond Performance: Introducing NVIDIA's New Graphics Debugger
 The Peak-Performance-Percentage Analysis Method for Optimizing Any GPU Workload
   https://developer.nvidia.com/blog/the-peak-performance-analysis-method-for-optimizing-any-gpu-workload/
 
+Gpu perf opt:
+  (2012) https://on-demand.gputechconf.com/gtc/2012/presentations/S0514-GTC2012-GPU-Performance-Analysis.pdf
+  (2020) https://developer.nvidia.com/siggraph/2020/video/sigg01
+
 Debugger vs optimizer:
   RenderDoc better for debugging,
   Nsight, xcode instruments -> better for optimizing b/c it uses proprietary stuff
@@ -361,3 +365,22 @@ Debugger vs optimizer:
 
 List of GPU perf optimization resources:
   https://gist.github.com/silvesthu/505cf0cbf284bb4b971f6834b8fec93d
+
+Async compute deep dive:
+  https://gpuopen.com/wp-content/uploads/2017/03/GDC2017-Asynchronous-Compute-Deep-Dive.pdf
+  https://www.gdcvault.com/play/1024385/Advanced-Graphics-Tech-Async-Compute
+
+D3D12 and Vulkan done right:
+  https://gpuopen.com/wp-content/uploads/2017/03/GDC2017-D3D12-And-Vulkan-Done-Right.pdf
+  https://www.gdcvault.com/play/1024732/Advanced-Graphics-Tech-D3D12-and
+
+Render Hell:
+  https://simonschreibt.de/gat/renderhell/
+
+Latency numbers every programmer should know:
+  https://gist.github.com/hellerbarde/2843375
+
+GPU architecture resources:
+  https://interplayoflight.wordpress.com/2020/05/09/gpu-architecture-resources/
+  how nvidia gpus work: https://developer.nvidia.com/content/life-triangle-nvidias-logical-pipeline
+  how amd gpus work: https://gpuopen.com/presentations/2019/nordic-game-2019-triangles-are-precious.pdf
