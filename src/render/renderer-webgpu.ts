@@ -423,51 +423,52 @@ export function createRenderer(
   // We need to have 2 buffers here because you can't have MAP_READ
   // and QUERY_RESOLVE on the same buffer. We resolve the QuerySet
   // to one buffer, then copy it to another for reading.
-  const resolveBuffer = device.createBuffer({
-    // GPUSize64s
-    size: byteSize,
-    usage: GPUBufferUsage.QUERY_RESOLVE | GPUBufferUsage.COPY_SRC,
-    mappedAtCreation: false, // mapped post texture copy
-  });
+  // const resolveBuffer = device.createBuffer({
+  //   // GPUSize64s
+  //   size: byteSize,
+  //   usage: GPUBufferUsage.QUERY_RESOLVE | GPUBufferUsage.COPY_SRC,
+  //   mappedAtCreation: false, // mapped post texture copy
+  // });
   async function stats(): Promise<Map<string, bigint>> {
-    if (!timestampQuerySet) return new Map();
+    return new Map();
+    // if (!timestampQuerySet)
 
-    // console.log("getting stats!");
+    // // console.log("getting stats!");
 
-    const copyBuffer = device.createBuffer({
-      size: byteSize,
-      usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
-      mappedAtCreation: false, // mapped post texture copy
-    });
+    // const copyBuffer = device.createBuffer({
+    //   size: byteSize,
+    //   usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
+    //   mappedAtCreation: false, // mapped post texture copy
+    // });
 
-    const commandEncoder = device.createCommandEncoder();
-    commandEncoder.resolveQuerySet(
-      timestampQuerySet,
-      0,
-      MAX_PIPELINES + 1,
-      resolveBuffer,
-      0
-    );
-    commandEncoder.copyBufferToBuffer(
-      resolveBuffer,
-      0,
-      copyBuffer,
-      0,
-      byteSize
-    );
-    device.queue.submit([commandEncoder.finish()]);
-    await copyBuffer.mapAsync(GPUMapMode.READ, 0, byteSize);
+    // const commandEncoder = device.createCommandEncoder();
+    // commandEncoder.resolveQuerySet(
+    //   timestampQuerySet,
+    //   0,
+    //   MAX_PIPELINES + 1,
+    //   resolveBuffer,
+    //   0
+    // );
+    // commandEncoder.copyBufferToBuffer(
+    //   resolveBuffer,
+    //   0,
+    //   copyBuffer,
+    //   0,
+    //   byteSize
+    // );
+    // device.queue.submit([commandEncoder.finish()]);
+    // await copyBuffer.mapAsync(GPUMapMode.READ, 0, byteSize);
 
-    const times = new BigUint64Array(copyBuffer.getMappedRange());
+    // const times = new BigUint64Array(copyBuffer.getMappedRange());
 
-    const res = new Map();
-    let lastTime = times.at(0)!;
-    for (let i = 0; i < lastPipelines.length; i++) {
-      const t = times.at(i + 1)!;
-      res.set(lastPipelines[i].ptr.name, t - lastTime);
-      lastTime = t;
-    }
-    return res;
+    // const res = new Map();
+    // let lastTime = times.at(0)!;
+    // for (let i = 0; i < lastPipelines.length; i++) {
+    //   const t = times.at(i + 1)!;
+    //   res.set(lastPipelines[i].ptr.name, t - lastTime);
+    //   lastTime = t;
+    // }
+    // return res;
   }
 
   return renderer;
