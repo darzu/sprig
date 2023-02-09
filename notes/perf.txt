@@ -347,3 +347,17 @@ Move vector operations onto the stack:
 Attaching renderdoc:
   set RENDERDOC_HOOK_EGL=0
   C:\Users\darzu>"C:\Users\darzu\AppData\Local\Google\Chrome SxS\Application\chrome.exe" --disable-dawn-features=disallow_unsafe_apis --disable-gpu-sandbox --gpu-startup-dialog
+
+Beyond Performance: Introducing NVIDIA's New Graphics Debugger
+  https://www.youtube.com/watch?v=X1-qi2w4cMs
+
+The Peak-Performance-Percentage Analysis Method for Optimizing Any GPU Workload
+  https://developer.nvidia.com/blog/the-peak-performance-analysis-method-for-optimizing-any-gpu-workload/
+
+Debugger vs optimizer:
+  RenderDoc better for debugging,
+  Nsight, xcode instruments -> better for optimizing b/c it uses proprietary stuff
+  
+
+List of GPU perf optimization resources:
+  https://gist.github.com/silvesthu/505cf0cbf284bb4b971f6834b8fec93d

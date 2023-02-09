@@ -119,7 +119,9 @@ type GPUPrimitiveTopology =
   | "line-strip"
   | "triangle-list"
   | "triangle-strip";
-type GPUQueryType = "occlusion" | "pipeline-statistics" | "timestamp";
+type GPUQueryType =
+  | "occlusion" /*Removed: | "pipeline-statistics"*/
+  | "timestamp";
 type GPUSamplerBindingType = "filtering" | "non-filtering" | "comparison";
 type GPUStencilOperation =
   | "keep"
