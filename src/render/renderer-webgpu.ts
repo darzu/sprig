@@ -432,7 +432,7 @@ export function createRenderer(
   async function stats(): Promise<Map<string, bigint>> {
     if (!timestampQuerySet) return new Map();
 
-    console.log("getting stats!");
+    // console.log("getting stats!");
 
     const copyBuffer = device.createBuffer({
       size: byteSize,
