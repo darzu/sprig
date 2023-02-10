@@ -26,5 +26,10 @@ wgpu:
   more accessible
   non-chrome googlers use it
 
-dawn:
+Node + Dawn:
   C++, google webgpu impl
+  https://dawn.googlesource.com/dawn/+/refs/heads/chromium/4959/src/dawn/node/
+
+Deno + WebGPU:
+  https://deno.com/blog/v1.8#experimental-support-for-the-webgpu-api
+  https://github.com/denoland/webgpu-examples
