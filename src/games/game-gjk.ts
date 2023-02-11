@@ -24,6 +24,7 @@ import { farthestPointInDir } from "../utils-3d.js";
 import { AssetsDef, GameMesh } from "../assets.js";
 import { GlobalCursor3dDef } from "./cursor.js";
 import { createGhost } from "./ghost.js";
+import { deferredPipeline } from "../render/pipelines/std-deferred.js";
 
 let __frame = 0;
 export async function initGJKSandbox(em: EntityManager, hosting: boolean) {
@@ -38,6 +39,7 @@ export async function initGJKSandbox(em: EntityManager, hosting: boolean) {
   res.renderer.pipelines = [
     // ...shadowPipelines,
     stdRenderPipeline,
+    deferredPipeline,
     outlineRender,
     postProcess,
   ];

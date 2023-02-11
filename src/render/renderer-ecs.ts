@@ -413,17 +413,17 @@ export function registerRenderer(em: EntityManager) {
       // const lightPosition = V(50, 100, -100);
 
       const pointLights = em
-        .filterEntities([PointLightDef, RendererWorldFrameDef])
+        .filterEntities([PointLightDef, WorldFrameDef])
         .map((e) => {
           positionAndTargetToOrthoViewProjMatrix(
             e.pointLight.viewProj,
-            e.rendererWorldFrame.position,
+            e.world.position,
             cameraView.location
           );
           let { viewProj, ...rest } = e.pointLight;
           return {
             viewProj,
-            position: e.rendererWorldFrame.position,
+            position: e.world.position,
             ...rest,
           };
         });
