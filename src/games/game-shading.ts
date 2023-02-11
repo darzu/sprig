@@ -15,6 +15,7 @@ import { quat, V, vec3 } from "../sprig-matrix.js";
 import { createGhost } from "./ghost.js";
 
 export async function initShadingGame() {
+  // TODO(@darzu): HACK. these have to be set before the CY instantiator runs.
   outlineRender.fragOverrides!.lineWidth = 3.0;
 
   const { renderer } = await EM.whenResources(RendererDef);
