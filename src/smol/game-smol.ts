@@ -157,7 +157,7 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
   sunlight.pointLight.linear = 0.0;
   sunlight.pointLight.quadratic = 0.0;
   // vec3.copy(sunlight.pointLight.ambient, [1.0, 1.0, 1.0]);
-  vec3.copy(sunlight.pointLight.ambient, [0.2, 0.2, 0.2]);
+  // vec3.copy(sunlight.pointLight.ambient, [0.2, 0.2, 0.2]);
   // vec3.scale(sunlight.pointLight.ambient, sunlight.pointLight.ambient, 0.2);
   vec3.copy(sunlight.pointLight.diffuse, [0.5, 0.5, 0.5]);
   em.ensureComponentOn(sunlight, PositionDef, V(50, 300, 10));
@@ -241,46 +241,46 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
   //   refCol.position[2] += i * 2 + 30;
   //   em.ensureComponentOn(refCol, ColorDef, V(0.1, 1, 0.1));
   // }
-  if (!"true")
-    for (let r = 0; r < 2; r++)
-      for (let i = 0; i < 8; i++) {
-        const color = Object.values(ENDESGA16)[i + r * 8];
-        const bigCube = em.new();
-        const i2 = Math.floor(i / 2) * 2.0;
-        const even = i % 2 === 0 ? 1 : 0;
-        em.ensureComponentOn(
-          bigCube,
-          RenderableConstructDef,
-          even ? res.assets.ball.proto : res.assets.cube.proto
-        );
-        em.ensureComponentOn(bigCube, ScaleDef, V(50, 50, 50));
-        em.ensureComponentOn(
-          bigCube,
-          RotationDef,
-          quat.fromEuler(
-            Math.random() * Math.PI,
-            Math.random() * Math.PI,
-            Math.random() * Math.PI,
-            quat.create()
-          )
-        );
-        em.ensureComponentOn(
-          bigCube,
-          AngularVelocityDef,
-          vec3.scale(randNormalVec3(vec3.tmp()), 0.0005, vec3.create())
-        );
-        em.ensureComponentOn(
-          bigCube,
-          PositionDef,
-          V(
-            i2 * 30 + even * 100 - 100 - r * 50,
-            r * 100,
-            i2 * 30 - even * 100 - 100 + r * 50
-          )
-        );
-        // em.ensureComponentOn(bigCube, ColorDef, randColor());
-        em.ensureComponentOn(bigCube, ColorDef, color);
-      }
+  // if (!"true")
+  for (let r = 0; r < 2; r++)
+    for (let i = 0; i < 8; i++) {
+      const color = Object.values(ENDESGA16)[i + r * 8];
+      const bigCube = em.new();
+      const i2 = Math.floor(i / 2) * 2.0;
+      const even = i % 2 === 0 ? 1 : 0;
+      em.ensureComponentOn(
+        bigCube,
+        RenderableConstructDef,
+        even ? res.assets.ball.proto : res.assets.cube.proto
+      );
+      em.ensureComponentOn(bigCube, ScaleDef, V(50, 50, 50));
+      em.ensureComponentOn(
+        bigCube,
+        RotationDef,
+        quat.fromEuler(
+          Math.random() * Math.PI,
+          Math.random() * Math.PI,
+          Math.random() * Math.PI,
+          quat.create()
+        )
+      );
+      em.ensureComponentOn(
+        bigCube,
+        AngularVelocityDef,
+        vec3.scale(randNormalVec3(vec3.tmp()), 0.0005, vec3.create())
+      );
+      em.ensureComponentOn(
+        bigCube,
+        PositionDef,
+        V(
+          i2 * 30 + even * 100 - 100 - r * 50,
+          r * 100,
+          i2 * 30 - even * 100 - 100 + r * 50
+        )
+      );
+      // em.ensureComponentOn(bigCube, ColorDef, randColor());
+      em.ensureComponentOn(bigCube, ColorDef, color);
+    }
 
   // skybox?
 

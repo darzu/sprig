@@ -19,7 +19,7 @@ fn vert_main(input: VertexInput) -> VertexOutput {
 
     output.worldPos = worldPos;
     output.position = scene.cameraViewProjMatrix * worldPos;
-    // TODO: use inverse-transpose matrix for normals as per: https://learnopengl.com/Lighting/Basic-Lighting
+    // TODO(@darzu): for non-uniform scaling, we need to use inverse-transpose matrix for normals as per: https://learnopengl.com/Lighting/Basic-Lighting
     output.normal = (meshUni.transform * vec4<f32>(normal, 0.0)).xyz;
     output.color = color + meshUni.tint;
 
@@ -68,7 +68,8 @@ fn frag_main(input: VertexOutput) -> FragOut {
     out.color = vec4<f32>(input.color, 1.0);
     out.position = input.worldPos;
 
-    out.normal = vec4(normalize((scene.cameraViewProjMatrix * vec4<f32>(input.normal, 0.0)).xyz), 1.0);
+    out.normal = vec4<f32>(normalize(input.normal), 1.0);
+    // out.normal = vec4(normalize((scene.cameraViewProjMatrix * vec4<f32>(input.normal, 0.0)).xyz), 1.0);
     out.surface.r = input.surface;
     out.surface.g = input.id;
 

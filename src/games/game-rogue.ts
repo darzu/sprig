@@ -86,6 +86,7 @@ import { randNormalPosVec3, randNormalVec3 } from "../utils-3d.js";
 import { createHomeShip } from "./shipyard.js";
 import { gameplaySystems } from "./ghost.js";
 import { RenderDataStdDef } from "../render/pipelines/std-scene.js";
+import { deferredPipeline } from "../render/pipelines/std-deferred.js";
 
 /*
   Game mechanics:
@@ -166,6 +167,7 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
   res.renderer.pipelines = [
     ...shadowPipelines,
     stdRenderPipeline,
+    deferredPipeline,
     outlineRender,
     postProcess,
   ];

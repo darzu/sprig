@@ -395,3 +395,10 @@ GPU architecture resources:
 
 PIX + Chrome:
   https://gist.github.com/Popov72/41f71cbf8d55f2cb8cae93f439eee347
+
+deep clone:
+  structuredClone()
+  https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm
+
+Transfer array buffers between JS threads:
+  https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Transferable_objects

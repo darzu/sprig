@@ -119,20 +119,17 @@ fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
   // TODO(@darzu): consider using this rim-lighting approach instead of this fersnel
   //      https://lettier.github.io/3d-game-shaders-for-beginners/rim-lighting.html
 
+  fresnelIntensity = 0.0;
+
   // cel shading:
   // TODO(@darzu): kinda hacky to have seperate bands for these?
-  let lightCel = ceil(lightingIntensity * 10.0) / 10.0;
-  let fresnelCel = ceil(fresnelIntensity * 5.0) / 5.0;
-  // non-cel shading
-  // let lightCel = lightingIntensity;
-  // let fresnelCel = fresnelIntensity;
+  // lightingIntensity = ceil(lightingIntensity * 10.0) / 10.0;
+  // fresnelIntensity = ceil(fresnelIntensity * 5.0) / 5.0;
 
-  // regular shading:
-  // let litColor = color * lightingIntensity;
   let litColor = mix(
-    color * lightCel, 
+    color * lightingIntensity, 
     fresnelColor, 
-  fresnelCel * 0.3); // * 0.5;
+  fresnelIntensity * 0.3); // * 0.5;
 
   return vec4(litColor, alpha);
 }
