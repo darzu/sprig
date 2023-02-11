@@ -28,6 +28,7 @@ import { AssetsDef, GameMesh, gameMeshFromMesh } from "../assets.js";
 import { createGhost, gameplaySystems } from "./ghost.js";
 import { TextDef } from "./ui.js";
 import { makePlaneMesh } from "../primatives.js";
+import { deferredPipeline } from "../render/pipelines/std-deferred.js";
 
 /*
 TODO(@darzu):
@@ -91,6 +92,7 @@ export async function initFontEditor(em: EntityManager) {
     stdRenderPipeline,
     alphaRenderPipeline,
     outlineRender,
+    deferredPipeline,
     postProcess,
   ];
 

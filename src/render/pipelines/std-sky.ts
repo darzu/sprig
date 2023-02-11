@@ -2,11 +2,13 @@ import { V } from "../../sprig-matrix.js";
 import { CY, linearSamplerPtr } from "../gpu-registry.js";
 import { pointLightsPtr } from "../lights.js";
 import { SKY_MASK } from "../pipeline-masks.js";
+import { outlinedTexturePtr } from "./std-outline.js";
 import {
   sceneBufPtr,
   meshPoolPtr,
   litTexturePtr,
   mainDepthTex,
+  unlitTexturePtr,
 } from "./std-scene.js";
 
 export const skyPipeline = CY.createRenderPipeline("skyPipeline", {

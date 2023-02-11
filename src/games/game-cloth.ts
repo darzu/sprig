@@ -43,6 +43,7 @@ import { ENEMY_SHIP_COLOR } from "./hyperspace/enemy-ship.js";
 import { createGhost } from "./ghost.js";
 import { ForceDef } from "./spring.js";
 import { TextDef } from "./ui.js";
+import { deferredPipeline } from "../render/pipelines/std-deferred.js";
 
 // TODO(@darzu): BROKEN. cloth sandbox isn't lit right and cloth isn't there
 
@@ -66,6 +67,7 @@ export async function initClothSandbox(em: EntityManager, hosting: boolean) {
     // normalDbg,
     // positionDbg,
     outlineRender,
+    deferredPipeline,
     postProcess,
   ];
   let computePipelinesPtrs: CyCompPipelinePtr[] = [

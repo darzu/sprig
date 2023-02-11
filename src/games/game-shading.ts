@@ -23,8 +23,8 @@ export async function initShadingGame() {
   // render pipelines
   renderer.pipelines = [
     stdRenderPipeline,
-    deferredPipeline,
     outlineRender,
+    deferredPipeline,
     postProcess,
   ];
 

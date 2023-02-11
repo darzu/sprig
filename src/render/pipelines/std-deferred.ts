@@ -15,7 +15,7 @@ import { shadowDepthTextures } from "./std-shadow.js";
 export const deferredPipeline = CY.createRenderPipeline("deferredRender", {
   globals: [
     { ptr: linearSamplerPtr, alias: "samp" },
-    { ptr: unlitTexturePtr, alias: "colorTex" },
+    { ptr: outlinedTexturePtr, alias: "colorTex" },
     { ptr: normalsTexturePtr, alias: "normTex" },
     { ptr: positionsTexturePtr, alias: "posTex" },
     { ptr: surfacesTexturePtr, alias: "surfTex" },

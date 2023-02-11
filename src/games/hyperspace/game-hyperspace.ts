@@ -96,11 +96,10 @@ export async function initHyperspaceGame(em: EntityManager) {
         ...shadowPipelines,
         stdRenderPipeline,
         renderOceanPipe,
-        deferredPipeline,
         outlineRender,
+        deferredPipeline,
         // renderStars,
         // ...blurPipelines,
-
         postProcess,
         ...(res.dev.showConsole ? gridCompose : []),
       ];

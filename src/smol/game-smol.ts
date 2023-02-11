@@ -138,9 +138,9 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
         stdRenderPipeline,
         // renderGrassPipe,
         renderOceanPipe,
+        outlineRender,
         deferredPipeline,
         skyPipeline,
-        outlineRender,
         postProcess,
         ...(res.dev.showConsole ? dbgGridCompose : []),
       ];
@@ -156,9 +156,7 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
   sunlight.pointLight.constant = 1.0;
   sunlight.pointLight.linear = 0.0;
   sunlight.pointLight.quadratic = 0.0;
-  // vec3.copy(sunlight.pointLight.ambient, [1.0, 1.0, 1.0]);
-  // vec3.copy(sunlight.pointLight.ambient, [0.2, 0.2, 0.2]);
-  // vec3.scale(sunlight.pointLight.ambient, sunlight.pointLight.ambient, 0.2);
+  vec3.copy(sunlight.pointLight.ambient, [0.2, 0.2, 0.2]);
   vec3.copy(sunlight.pointLight.diffuse, [0.5, 0.5, 0.5]);
   em.ensureComponentOn(sunlight, PositionDef, V(50, 300, 10));
   em.ensureComponentOn(sunlight, RenderableConstructDef, res.assets.ball.proto);

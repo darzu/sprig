@@ -30,6 +30,7 @@ import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
 import { shadowPipelines } from "../render/pipelines/std-shadow.js";
+import { deferredPipeline } from "../render/pipelines/std-deferred.js";
 
 // TODO(@darzu): BROKEN. camera is in a wonky place?
 
@@ -50,6 +51,7 @@ export async function initReboundSandbox(em: EntityManager, hosting: boolean) {
     ...shadowPipelines,
     stdRenderPipeline,
     outlineRender,
+    deferredPipeline,
     postProcess,
   ];
 

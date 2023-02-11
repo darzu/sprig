@@ -119,6 +119,7 @@ fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
   // TODO(@darzu): consider using this rim-lighting approach instead of this fersnel
   //      https://lettier.github.io/3d-game-shaders-for-beginners/rim-lighting.html
 
+  // HACK: disables fresnel
   fresnelIntensity = 0.0;
 
   // cel shading:

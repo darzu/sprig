@@ -5,6 +5,7 @@ import {
   surfacesTexturePtr,
   mainDepthTex,
   sceneBufPtr,
+  unlitTexturePtr,
 } from "./std-scene.js";
 
 export const outlinedTexturePtr = CY.createTexture("outlinesTexture", {
@@ -18,7 +19,7 @@ export const outlinedTexturePtr = CY.createTexture("outlinesTexture", {
 export const outlineRender = CY.createRenderPipeline("outlineRender", {
   globals: [
     { ptr: linearSamplerPtr, alias: "samp" },
-    { ptr: litTexturePtr, alias: "colorTex" },
+    { ptr: unlitTexturePtr, alias: "colorTex" },
     { ptr: normalsTexturePtr, alias: "normTex" },
     // { ptr: positionsTexturePtr, alias: "posTex" },
     { ptr: surfacesTexturePtr, alias: "surfTex" },

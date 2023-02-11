@@ -39,8 +39,8 @@ export async function initGJKSandbox(em: EntityManager, hosting: boolean) {
   res.renderer.pipelines = [
     // ...shadowPipelines,
     stdRenderPipeline,
-    deferredPipeline,
     outlineRender,
+    deferredPipeline,
     postProcess,
   ];
 
