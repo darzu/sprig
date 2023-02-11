@@ -1345,3 +1345,6 @@ Consider base58/56 as a better human-ish encoding (vs b64),
 Open source game:
   https://github.com/open-duelyst/duelyst
 
+Chrome flags:
+  https://peter.sh/experiments/chromium-command-line-switches/
+
