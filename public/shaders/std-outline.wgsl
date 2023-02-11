@@ -31,6 +31,15 @@ fn vert_main(@builtin(vertex_index) VertexIndex : u32) -> VertexOutput {
   return output;
 }
 
+// TODO(@darzu): 1.0 for LD52
+override lineWidth: f32;
+// let lineWidth = 3.0; // OLD
+// TODO(@darzu): DBG WIREFRAME
+//let lineWidth = 1.0;
+// NOTE: we make the line width depend on resolution b/c that gives a more consistent
+//    look across resolutions.
+// let lineWidth = max((f32(dims.r) / 800.0), 1.0);
+
 @fragment
 fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
   // TODO(@darzu): it'd be great if we could just output lines and compose elsewhere
@@ -43,14 +52,6 @@ fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
 
   let h = textureSample(depthTex, samp, uv);
 
-// TODO(@darzu): 1.0 for LD52
-  let lineWidth = 2.0;
-  // let lineWidth = 3.0; // OLD
-  // TODO(@darzu): DBG WIREFRAME
-  //let lineWidth = 1.0;
-  // NOTE: we make the line width depend on resolution b/c that gives a more consistent
-  //    look across resolutions.
-  // let lineWidth = max((f32(dims.r) / 800.0), 1.0);
 
   let coord = uv * vec2<f32>(dims);
   let t = coord - vec2(0.0, lineWidth);

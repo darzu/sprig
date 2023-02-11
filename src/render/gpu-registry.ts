@@ -208,10 +208,14 @@ export function getTexFromAttachment(t: CyColorAttachment): CyTexturePtr {
   return isResourcePtr(t) ? t : t.ptr;
 }
 
-export interface CyRenderPipelinePtr extends CyResourcePtr {
+export interface CyRenderPipelinePtr<
+  FO extends Record<string, GPUPipelineConstantValue> = {},
+  VO extends Record<string, GPUPipelineConstantValue> = {}
+> extends CyResourcePtr {
   kind: "renderPipeline";
   globals: CyGlobalParam[];
-  overrides?: Record<string, GPUPipelineConstantValue>;
+  fragOverrides?: FO;
+  vertOverrides?: VO;
   shader: ((shaders: ShaderSet) => string) | ShaderName;
   shaderVertexEntry: string;
   shaderFragmentEntry: string;
@@ -370,10 +374,13 @@ export function createCyRegistry() {
         name,
       });
     },
-    createRenderPipeline: (
+    createRenderPipeline: <
+      FO extends Record<string, GPUPipelineConstantValue> = {},
+      VO extends Record<string, GPUPipelineConstantValue> = {}
+    >(
       name: string,
-      desc: Omit_kind_name<CyRenderPipelinePtr>
-    ): CyRenderPipelinePtr => {
+      desc: Omit_kind_name<CyRenderPipelinePtr<FO, VO>>
+    ): CyRenderPipelinePtr<FO, VO> => {
       return registerCyResource({
         ...desc,
         kind: "renderPipeline",

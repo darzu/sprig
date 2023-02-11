@@ -15,6 +15,8 @@ import { quat, V, vec3 } from "../sprig-matrix.js";
 import { createGhost } from "./ghost.js";
 
 export async function initShadingGame() {
+  outlineRender.fragOverrides!.lineWidth = 3.0;
+
   const { renderer } = await EM.whenResources(RendererDef);
 
   // render pipelines

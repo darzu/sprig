@@ -535,14 +535,14 @@ function createCyPipeline(
           module: shader,
           entryPoint: p.shaderVertexEntry,
           // TODO(@darzu): constants
-          constants: p.overrides,
+          constants: p.vertOverrides,
         },
         fragment: {
           module: shader,
           entryPoint: p.shaderFragmentEntry,
           targets,
           // TODO(@darzu): constants
-          constants: p.overrides,
+          constants: p.fragOverrides,
         },
       };
       const rndrPipeline = device.createRenderPipeline(rndrPipelineDesc);
@@ -811,6 +811,9 @@ export function bundleRenderPipelines(
     const bundleEnc = device.createRenderBundleEncoder({
       colorFormats,
       depthStencilFormat: p.ptr.depthStencil?.format,
+      depthReadOnly: p.ptr.depthReadonly,
+      // TODO(@darzu): seperate stencil vs depth readonly
+      stencilReadOnly: p.ptr.depthReadonly,
       // TODO(@darzu): ANTI-ALIAS
       // sampleCount: antiAliasSampleCount,
     });
