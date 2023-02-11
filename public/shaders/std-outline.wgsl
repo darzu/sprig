@@ -40,6 +40,12 @@ override lineWidth: f32;
 //    look across resolutions.
 // let lineWidth = max((f32(dims.r) / 800.0), 1.0);
 
+fn sampleScreenNormal(uv: vec2<f32>) -> vec3<f32> {
+  // Converts from world to screen space
+  // TODO(@darzu): PERF!! this seems kinda expensive to do 5 times....
+  return normalize((scene.cameraViewProjMatrix * vec4(textureSample(normTex, samp, uv).xyz, 0.0)).xyz);
+}
+
 @fragment
 fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
   // TODO(@darzu): it'd be great if we could just output lines and compose elsewhere
@@ -51,7 +57,6 @@ fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
   let dimsF = vec2<f32>(dims);
 
   let h = textureSample(depthTex, samp, uv);
-
 
   let coord = uv * vec2<f32>(dims);
   let t = coord - vec2(0.0, lineWidth);
@@ -76,11 +81,11 @@ fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
   let depthDy = ((hT - h) - (h - hB));
   let depthFactor = (abs(depthDx) + abs(depthDy)) * 100.0;
 
-  let n = normalize(textureSample(normTex, samp, uv).xyz);
-  let nT = normalize(textureSample(normTex, samp, t / dimsF).xyz);
-  let nL = normalize(textureSample(normTex, samp, l / dimsF).xyz);
-  let nR = normalize(textureSample(normTex, samp, r / dimsF).xyz);
-  let nB = normalize(textureSample(normTex, samp, b / dimsF).xyz);
+  let n = sampleScreenNormal(uv);
+  let nT = sampleScreenNormal(t / dimsF);
+  let nL = sampleScreenNormal(l / dimsF);
+  let nR = sampleScreenNormal(r / dimsF);
+  let nB = sampleScreenNormal(b / dimsF);
   
   let surfaceDidChange = sT.r != sB.r || sL.r != sR.r;
   let objectDidChange = sT.g != sB.g || sL.g != sR.g;

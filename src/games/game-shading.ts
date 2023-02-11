@@ -48,7 +48,7 @@ export async function initShadingGame() {
   // ground
   const ground = EM.new();
   EM.ensureComponentOn(ground, RenderableConstructDef, assets.plane.proto);
-  EM.ensureComponentOn(ground, ColorDef, ENDESGA16.lightGreen);
+  EM.ensureComponentOn(ground, ColorDef, ENDESGA16.blue);
   EM.ensureComponentOn(ground, PositionDef);
 
   // avatar
