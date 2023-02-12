@@ -69,7 +69,9 @@ fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
   var color = textureSample(colorTex, samp, uv).rgb;
   let alpha = 1.0;
   // TODO(@darzu): std-ocean and std-mesh store and use normal differently
-  let normal = textureSample(normTex, samp, uv).xyz;
+  let normalAndFresnel = textureSample(normTex, samp, uv);
+  let normal = normalAndFresnel.xyz;
+  let hasFresnel = normalAndFresnel.w;
   let worldPos = textureSample(posTex, samp, uv);
 
   // read gerstner directly for normal:
@@ -120,7 +122,7 @@ fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
   //      https://lettier.github.io/3d-game-shaders-for-beginners/rim-lighting.html
 
   // HACK: disables fresnel
-  fresnelIntensity = 0.0;
+  fresnelIntensity *= hasFresnel;
 
   // cel shading:
   // TODO(@darzu): kinda hacky to have seperate bands for these?

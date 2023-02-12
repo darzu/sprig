@@ -20,7 +20,7 @@ import {
   litTexturePtr,
   mainDepthTex,
   surfacesTexturePtr,
-  normalsTexturePtr,
+  worldNormsAndFresTexPtr,
   unlitTexturePtr,
   positionsTexturePtr,
 } from "./std-scene.js";
@@ -204,7 +204,7 @@ export const renderOceanPipe = CY.createRenderPipeline("oceanRender", {
       // clear: "always",
     },
     {
-      ptr: normalsTexturePtr,
+      ptr: worldNormsAndFresTexPtr,
       clear: "never",
       // clear: "always",
     },

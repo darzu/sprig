@@ -68,7 +68,9 @@ fn frag_main(input: VertexOutput) -> FragOut {
     out.color = vec4<f32>(input.color, 1.0);
     out.position = input.worldPos;
 
-    out.normal = vec4<f32>(normalize(input.normal), 1.0);
+    const fresnel = 0.0;
+
+    out.normal = vec4<f32>(normalize(input.normal), fresnel);
     // out.normal = vec4(normalize((scene.cameraViewProjMatrix * vec4<f32>(input.normal, 0.0)).xyz), 1.0);
     out.surface.r = input.surface;
     out.surface.g = input.id;

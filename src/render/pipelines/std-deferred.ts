@@ -3,7 +3,7 @@ import { pointLightsPtr } from "../lights.js";
 import { outlinedTexturePtr } from "./std-outline.js";
 import {
   unlitTexturePtr,
-  normalsTexturePtr,
+  worldNormsAndFresTexPtr,
   surfacesTexturePtr,
   mainDepthTex,
   sceneBufPtr,
@@ -16,7 +16,7 @@ export const deferredPipeline = CY.createRenderPipeline("deferredRender", {
   globals: [
     { ptr: linearSamplerPtr, alias: "samp" },
     { ptr: outlinedTexturePtr, alias: "colorTex" },
-    { ptr: normalsTexturePtr, alias: "normTex" },
+    { ptr: worldNormsAndFresTexPtr, alias: "normTex" },
     { ptr: positionsTexturePtr, alias: "posTex" },
     { ptr: surfacesTexturePtr, alias: "surfTex" },
     { ptr: mainDepthTex, alias: "depthTex" },

@@ -110,36 +110,36 @@ struct FragOut {
   @location(2) surface: vec2<u32>,
 }
 
-const shadowDepthTextureSize = 2048.0;
+// const shadowDepthTextureSize = 2048.0;
 
-fn sampleShadowTexture(pos: vec2<f32>, depth: f32, index: u32) -> f32 {
-  return textureSampleCompare(shadowMap0, shadowSampler, pos, depth);
-}
+// fn sampleShadowTexture(pos: vec2<f32>, depth: f32, index: u32) -> f32 {
+//   return textureSampleCompare(shadowMap0, shadowSampler, pos, depth);
+// }
 
-fn getShadowVis(shadowPos: vec3<f32>, normal: vec3<f32>, lightDir: vec3<f32>, index: u32) -> f32 {
-  // See: https://learnopengl.com/Advanced-Lighting/Shadows/Shadow-Mapping
-  // Note: a better bias would look something like "max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);"
-  let shadowBias = 0.0002;
-  let shadowDepth = shadowPos.z; // * f32(shadowPos.z <= 1.0);
-  let outsideShadow = 1.0 - f32(0.0 < shadowPos.x && shadowPos.x < 1.0 
-                && 0.0 < shadowPos.y && shadowPos.y < 1.0);
+// fn getShadowVis(shadowPos: vec3<f32>, normal: vec3<f32>, lightDir: vec3<f32>, index: u32) -> f32 {
+//   // See: https://learnopengl.com/Advanced-Lighting/Shadows/Shadow-Mapping
+//   // Note: a better bias would look something like "max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);"
+//   let shadowBias = 0.0002;
+//   let shadowDepth = shadowPos.z; // * f32(shadowPos.z <= 1.0);
+//   let outsideShadow = 1.0 - f32(0.0 < shadowPos.x && shadowPos.x < 1.0 
+//                 && 0.0 < shadowPos.y && shadowPos.y < 1.0);
 
-  var visibility : f32 = 0.0;
-  let oneOverShadowDepthTextureSize = 1.0 / shadowDepthTextureSize;
-  for (var y : i32 = -1 ; y <= 1 ; y = y + 1) {
-      for (var x : i32 = -1 ; x <= 1 ; x = x + 1) {
-          let offset : vec2<f32> = vec2<f32>(
-          f32(x) * oneOverShadowDepthTextureSize,
-          f32(y) * oneOverShadowDepthTextureSize);
+//   var visibility : f32 = 0.0;
+//   let oneOverShadowDepthTextureSize = 1.0 / shadowDepthTextureSize;
+//   for (var y : i32 = -1 ; y <= 1 ; y = y + 1) {
+//       for (var x : i32 = -1 ; x <= 1 ; x = x + 1) {
+//           let offset : vec2<f32> = vec2<f32>(
+//           f32(x) * oneOverShadowDepthTextureSize,
+//           f32(y) * oneOverShadowDepthTextureSize);
 
-          visibility = visibility + sampleShadowTexture(shadowPos.xy + offset, shadowDepth - shadowBias, index);
-      }
-  }
-  visibility = visibility / 9.0;
-  visibility = min(outsideShadow + visibility, 1.0);
+//           visibility = visibility + sampleShadowTexture(shadowPos.xy + offset, shadowDepth - shadowBias, index);
+//       }
+//   }
+//   visibility = visibility / 9.0;
+//   visibility = min(outsideShadow + visibility, 1.0);
 
-  return visibility;
-}
+//   return visibility;
+// }
 
 @fragment
 fn frag_main(input: VertexOutput) -> FragOut {
@@ -149,23 +149,27 @@ fn frag_main(input: VertexOutput) -> FragOut {
     // let unlit = meshUni.flags & (1u >> 0u);
     // TODO(@darzu): re-enable multi-point lights
     // for (var i: u32 = 0u; i < scene.numPointLights; i++) {
-    let light = pointLights.ms[0];
-    let toLight = normalize(light.position - input.worldPos.xyz);
-    // let distance = length(toLight);
-    let attenuation = 1.0 / light.constant;
-    let angle = clamp(dot(toLight, normal), 0.0, 1.0);
-    let posFromLight = (pointLights.ms[0].viewProj * input.worldPos).xyz;
-     // Convert XY to (0, 1), Y is flipped because texture coords are Y-down.
-    let shadowPos = vec3<f32>(posFromLight.xy * vec2<f32>(0.5, -0.5) + vec2<f32>(0.5, 0.5), posFromLight.z);
-    let shadowVis = getShadowVis(shadowPos, input.normal, toLight, 0);
-    let lightingColor = (light.ambient * attenuation) + (light.diffuse * angle * attenuation * shadowVis);
-    // }
-    let litColor = input.color * lightingColor;
+    // let light = pointLights.ms[0];
+    // let toLight = normalize(light.position - input.worldPos.xyz);
+    // // let distance = length(toLight);
+    // let attenuation = 1.0 / light.constant;
+    // let angle = clamp(dot(toLight, normal), 0.0, 1.0);
+    // let posFromLight = (pointLights.ms[0].viewProj * input.worldPos).xyz;
+    //  // Convert XY to (0, 1), Y is flipped because texture coords are Y-down.
+    // let shadowPos = vec3<f32>(posFromLight.xy * vec2<f32>(0.5, -0.5) + vec2<f32>(0.5, 0.5), posFromLight.z);
+    // let shadowVis = getShadowVis(shadowPos, input.normal, toLight, 0);
+    // let lightingColor = (light.ambient * attenuation) + (light.diffuse * angle * attenuation * shadowVis);
+    // // }
+    // let litColor = input.color * lightingColor;
 
     var out: FragOut;
-    out.color = vec4<f32>(litColor, 1.0);
+    // out.color = vec4<f32>(litColor, 1.0);
+    out.color = vec4<f32>(input.color, 1.0);
 
-    out.normal = vec4(normalize((scene.cameraViewProjMatrix * vec4<f32>(input.normal, 0.0)).xyz), 1.0);
+    const fresnel = 0.0;
+
+    out.normal = vec4<f32>(normalize(input.normal), fresnel);
+    // out.normal = vec4(normalize((scene.cameraViewProjMatrix * vec4<f32>(input.normal, 0.0)).xyz), 1.0);
     out.surface.r = input.surface;
     out.surface.g = input.id;
 

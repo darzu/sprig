@@ -15,7 +15,7 @@ import {
   litTexturePtr,
   surfacesTexturePtr,
   mainDepthTex,
-  normalsTexturePtr,
+  worldNormsAndFresTexPtr,
   unlitTexturePtr,
 } from "../render/pipelines/std-scene.js";
 import { shadowDepthTextures } from "../render/pipelines/std-shadow.js";
@@ -217,7 +217,7 @@ export const renderGrassPipe = CY.createRenderPipeline("grassRender", {
       clear: "never",
     },
     {
-      ptr: normalsTexturePtr,
+      ptr: worldNormsAndFresTexPtr,
       clear: "never",
       defaultColor: V(0, 0, 0, 0),
     },

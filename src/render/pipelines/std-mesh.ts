@@ -20,7 +20,7 @@ import {
   mainDepthTex,
   litTexturePtr,
   meshPoolPtr,
-  normalsTexturePtr,
+  worldNormsAndFresTexPtr,
   positionsTexturePtr,
   sceneBufPtr,
   surfacesTexturePtr,
@@ -92,7 +92,7 @@ export const stdRenderPipeline = CY.createRenderPipeline("stdMeshRender", {
       // defaultColor: [0.7, 0.8, 1.0, 1.0],
     },
     {
-      ptr: normalsTexturePtr,
+      ptr: worldNormsAndFresTexPtr,
       clear: "once",
       defaultColor: V(0, 0, 0, 0),
     },

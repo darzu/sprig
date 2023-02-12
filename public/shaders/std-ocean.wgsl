@@ -197,9 +197,11 @@ fn frag_main(input: VertexOutput) -> FragOut {
 
     // out.color = vec4<f32>(normal, 1.0);
 
+    const fresnel = 1.0;
+
     // TODO(@darzu): this normal is way different then std-mesh's normal
     // out.normal = vec4(normalize((scene.cameraViewProjMatrix * vec4<f32>(input.normal, 0.0)).xyz), 1.0);
-    out.normal = vec4<f32>(normalize(input.normal), 1.0);
+    out.normal = vec4<f32>(normalize(input.normal), fresnel);
     out.position = input.worldPos;
 
     out.surface.r = input.surface;

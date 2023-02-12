@@ -48,7 +48,7 @@ import { randColor } from "../utils-game.js";
 import { GrassCutTexPtr, grassPoolPtr, renderGrassPipe } from "./std-grass.js";
 import { WindDef } from "./wind.js";
 import { DevConsoleDef } from "../console.js";
-import { clamp, max, sum } from "../math.js";
+import { clamp, jitter, max, sum } from "../math.js";
 import { createShip, ShipDef } from "./ship.js";
 import { CY } from "../render/gpu-registry.js";
 import { assert } from "../util.js";
@@ -271,9 +271,11 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
         bigCube,
         PositionDef,
         V(
-          i2 * 30 + even * 100 - 100 - r * 50,
+          // i2 * 30 + even * 100 - 100 - r * 50,
+          jitter(WORLD_HEIGHT * 0.5),
           r * 100,
-          i2 * 30 - even * 100 - 100 + r * 50
+          // i2 * 30 - even * 100 - 100 + r * 50
+          jitter(WORLD_WIDTH * 0.5)
         )
       );
       // em.ensureComponentOn(bigCube, ColorDef, randColor());

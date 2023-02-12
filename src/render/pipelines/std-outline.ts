@@ -1,7 +1,7 @@
 import { CY, linearSamplerPtr } from "../gpu-registry.js";
 import {
   litTexturePtr,
-  normalsTexturePtr,
+  worldNormsAndFresTexPtr,
   surfacesTexturePtr,
   mainDepthTex,
   sceneBufPtr,
@@ -20,7 +20,7 @@ export const outlineRender = CY.createRenderPipeline("outlineRender", {
   globals: [
     { ptr: linearSamplerPtr, alias: "samp" },
     { ptr: unlitTexturePtr, alias: "colorTex" },
-    { ptr: normalsTexturePtr, alias: "normTex" },
+    { ptr: worldNormsAndFresTexPtr, alias: "normTex" },
     // { ptr: positionsTexturePtr, alias: "posTex" },
     { ptr: surfacesTexturePtr, alias: "surfTex" },
     { ptr: mainDepthTex, alias: "depthTex" },

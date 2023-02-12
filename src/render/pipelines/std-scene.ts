@@ -295,7 +295,7 @@ export const litTexturePtr = CY.createTexture("litTexture", {
   // TODO(@darzu): support anti-aliasing again
 });
 
-export const normalsTexturePtr = CY.createTexture("normalsTexture", {
+export const worldNormsAndFresTexPtr = CY.createTexture("worldNormsTex", {
   size: [100, 100],
   onCanvasResize: (w, h) => [w, h],
   format: "rgba16float",
