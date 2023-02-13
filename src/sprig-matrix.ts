@@ -653,6 +653,12 @@ export module mat4 {
     return GL.rotateZ(out ?? tmp(), v1, n) as T;
   }
 
+  /*
+  Generates a orthogonal projection matrix with the given bounds
+
+  It's a scale and translation matrix. 
+  Smooshes left/right/top/bottom/near/far into 1:1:1
+  */
   export function ortho(
     left: number,
     right: number,
@@ -662,7 +668,27 @@ export module mat4 {
     far: number,
     out?: T
   ): T {
-    return GL.ortho(out ?? tmp(), left, right, bottom, top, near, far) as T;
+    const lr = 1 / (left - right);
+    const bt = 1 / (bottom - top);
+    const nf = 1 / (near - far);
+    const _out = out ?? mat4.tmp();
+    _out[0] = -2 * lr;
+    _out[1] = 0;
+    _out[2] = 0;
+    _out[3] = 0;
+    _out[4] = 0;
+    _out[5] = -2 * bt;
+    _out[6] = 0;
+    _out[7] = 0;
+    _out[8] = 0;
+    _out[9] = 0;
+    _out[10] = 2 * nf;
+    _out[11] = 0;
+    _out[12] = (left + right) * lr;
+    _out[13] = (top + bottom) * bt;
+    _out[14] = (far + near) * nf;
+    _out[15] = 1;
+    return _out;
   }
 
   export function perspective(
@@ -684,21 +710,22 @@ export module mat4 {
   - rotate to the camera's view:
       create an orthonormalized set of basis vectors from camera forward, up, right
   */
+  // TODO(@darzu): extract orthonormalization / Gram–Schmidt process?
   export function lookAt(
     eye: vec3.InputT,
     center: vec3.InputT,
     up: vec3.InputT,
     out?: T
   ): T {
-    let eyex = eye[0];
-    let eyey = eye[1];
-    let eyez = eye[2];
-    let upx = up[0];
-    let upy = up[1];
-    let upz = up[2];
-    let centerx = center[0];
-    let centery = center[1];
-    let centerz = center[2];
+    const eyex = eye[0];
+    const eyey = eye[1];
+    const eyez = eye[2];
+    const upx = up[0];
+    const upy = up[1];
+    const upz = up[2];
+    const centerx = center[0];
+    const centery = center[1];
+    const centerz = center[2];
 
     if (
       Math.abs(eyex - centerx) < EPSILON &&

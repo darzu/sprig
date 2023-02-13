@@ -2,6 +2,7 @@ import { vec2, vec3, vec4, quat, mat4, V } from "./sprig-matrix.js";
 import { avg, mathMap } from "./math.js";
 import { AABB } from "./physics/broadphase.js";
 import { tempVec2, tempVec3 } from "./temp-pool.js";
+import { assertDbg, TupleN } from "./util.js";
 
 // TODO(@darzu): a lot of these need to move into gl-matrix; or rather, we need
 //  to subsume gl-matrix into our own libraries.
@@ -196,6 +197,32 @@ export function normalizeVec2s(vs: vec2[], min: number, max: number): void {
   }
 }
 
+const screenCorners: TupleN<vec3, 8> = [
+  V(+1.0, +1.0, +1.0),
+  V(-1.0, +1.0, +1.0),
+  V(-1.0, -1.0, +1.0),
+  V(+1.0, -1.0, +1.0),
+  V(+1.0, +1.0, -1.0),
+  V(-1.0, +1.0, -1.0),
+  V(-1.0, -1.0, -1.0),
+  V(+1.0, -1.0, -1.0),
+];
+
+const _tempWorldCorners: TupleN<vec3, 8> = screenCorners.map((_) =>
+  V(0, 0, 0)
+) as TupleN<vec3, 8>;
+export function getFrustumWorldCorners(
+  invViewProj: mat4,
+  out?: TupleN<vec3, 8>
+) {
+  out = out ?? _tempWorldCorners;
+  assertDbg(out.length === screenCorners.length);
+  for (let i = 0; i < screenCorners.length; i++)
+    vec3.transformMat4(screenCorners[i], invViewProj, out[i]);
+  return out;
+}
+
+// TODO(@darzu): kinda hate this fn..
 export function positionAndTargetToOrthoViewProjMatrix(
   out: mat4,
   position: vec3,

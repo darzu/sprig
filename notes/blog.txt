@@ -259,3 +259,12 @@ Instead of being "data-driven", we should be "data-informed"
 There are no game engines that have both:
   "real 3D" -> can make an actual performant game for Steam
   "obsessive simplicity" -> can teach beginners like Scratch, Kodu, MakeCode, etc.
+
+Programming is several skills:
+  Understanding what existing code is doing
+  Understanding what the layers/APIs you have to work with are
+  "implementing a function"; solving a problem within an abstraction
+    e.g. algorithm and data structure problem solving
+  Defining boundries/abstractions
+
+There is no universal advice (including this advice)

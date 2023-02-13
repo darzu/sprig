@@ -1,44 +1,18 @@
 import { ColorDef } from "../color-ecs.js";
-import { createRef, defineNetEntityHelper, Ref } from "../em_helpers.js";
-import { EM, EntityManager, EntityW } from "../entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
+import { createRef, Ref } from "../em_helpers.js";
+import { EM, EntityManager } from "../entity-manager.js";
+import { vec3, mat4, V } from "../sprig-matrix.js";
 import { onInit } from "../init.js";
-import { InputsDef } from "../inputs.js";
-import { clamp } from "../math.js";
-import { AuthorityDef, MeDef } from "../net/components.js";
-import { ColliderDef } from "../physics/collider.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import {
   PhysicsParentDef,
   PositionDef,
-  RotationDef,
   ScaleDef,
 } from "../physics/transform.js";
-import { cloneMesh, mapMeshPositions } from "../render/mesh.js";
-import { FLAG_UNLIT } from "../render/pipelines/std-scene.js";
-import { RenderableConstructDef, RendererDef } from "../render/renderer-ecs.js";
-import { tempMat4, tempQuat, tempVec2, tempVec3 } from "../temp-pool.js";
-import { range } from "../util.js";
-import {
-  signedAreaOfTriangle,
-  positionAndTargetToOrthoViewProjMatrix,
-  vec3Dbg,
-} from "../utils-3d.js";
-import { YawPitchDef, yawpitchToQuat } from "../yawpitch.js";
+import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { AssetsDef } from "../assets.js";
-import {
-  DarkStarPropsDef,
-  STAR1_COLOR,
-  STAR2_COLOR,
-} from "./hyperspace/darkstar.js";
-import { GameState, GameStateDef } from "./hyperspace/gamestate.js";
-import {
-  BOAT_COLOR,
-  PlayerShipLocalDef,
-  PlayerShipPropsDef,
-} from "./hyperspace/player-ship.js";
-import { UVShipDef } from "./hyperspace/uv-ship.js";
-import { constructNetTurret, TurretDef } from "./turret.js";
+import { DarkStarPropsDef } from "./hyperspace/darkstar.js";
+import { BOAT_COLOR } from "./hyperspace/player-ship.js";
 
 const ORRERY_SCALE = 0.001;
 

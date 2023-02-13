@@ -40,12 +40,9 @@ import {
 import { Mesh } from "./mesh.js";
 import { SceneTS } from "./pipelines/std-scene.js";
 import { max } from "../math.js";
-import {
-  positionAndTargetToOrthoViewProjMatrix,
-  vec3Dbg,
-} from "../utils-3d.js";
+import { getFrustumWorldCorners, vec3Dbg } from "../utils-3d.js";
 import { ShadersDef, ShaderSet } from "./shader-loader.js";
-import { dbgLogOnce, never } from "../util.js";
+import { dbgLogOnce, never, range, TupleN } from "../util.js";
 import { TimeDef } from "../time.js";
 import { PartyDef } from "../games/party.js";
 import { PointLightDef, pointLightsPtr, PointLightTS } from "./lights.js";
@@ -63,6 +60,7 @@ import {
 import { ALPHA_MASK } from "./pipeline-masks.js";
 import { RenderDataGrassDef, computeGrassUniData } from "../smol/std-grass.js";
 import { WindDef } from "../smol/wind.js";
+import { createAABB, getAABBFromPositions } from "../physics/broadphase.js";
 
 const BLEND_SIMULATION_FRAMES_STRATEGY: "interpolate" | "extrapolate" | "none" =
   "none";
@@ -366,6 +364,11 @@ export function registerRenderer(em: EntityManager) {
     "renderList"
   );
 
+  const _tempViewCorners: TupleN<vec3, 8> = range(8).map((_) =>
+    V(0, 0, 0)
+  ) as TupleN<vec3, 8>;
+  const _tempViewAABB = createAABB();
+
   em.registerSystem(
     null, // NOTE: see "renderList*" systems and NOTE above. We use those to construct our query.
     [CameraViewDef, RendererDef, TimeDef, PartyDef],
@@ -374,30 +377,6 @@ export function registerRenderer(em: EntityManager) {
       const cameraView = res.cameraView;
 
       const objs = renderObjs;
-
-      // ensure our mesh handle is up to date
-      // for (let o of objs) {
-      //   // TODO(@darzu): generalize mesh pool kind stuff
-      //   if (RenderDataStdDef.isOn(o)) {
-      //     if (updateStdRenderData(o))
-      //       res.renderer.renderer.stdPool.updateUniform(
-      //         o.renderable.meshHandle,
-      //         o.renderDataStd
-      //       );
-      //   } else if (RenderDataOceanDef.isOn(o)) {
-      //     if (updateOceanRenderData(o))
-      //       res.renderer.renderer.oceanPool.updateUniform(
-      //         o.renderable.meshHandle,
-      //         o.renderDataOcean
-      //       );
-      //   } else if (RenderDataGrassDef.isOn(o)) {
-      //     if (updateGrassRenderData(o))
-      //       res.renderer.renderer.grassPool.updateUniform(
-      //         o.renderable.meshHandle,
-      //         o.renderDataGrass
-      //       );
-      //   }
-      // }
 
       // TODO(@darzu): this is currently unused, and maybe should be dropped.
       // sort
@@ -409,18 +388,51 @@ export function registerRenderer(em: EntityManager) {
       // const e10003 = objs.filter((o) => o.id === 10003);
       // console.log(`mId 24: ${!!m24.length}, e10003: ${!!e10003.length}`);
 
-      // TODO(@darzu): go elsewhere
-      // const lightPosition = V(50, 100, -100);
+      // TODO(@darzu): move point light and casading shadow map code to its own system
+      const visibleWorldCorners = getFrustumWorldCorners(
+        cameraView.invViewProjMat
+      );
 
       const pointLights = em
         .filterEntities([PointLightDef, WorldFrameDef])
         .map((e) => {
-          // TODO(@darzu): CSM: viewProj needs to depend on how we slice shadow map cascades
-          positionAndTargetToOrthoViewProjMatrix(
-            e.pointLight.viewProj,
-            e.world.position,
-            cameraView.location
+          // TODO(@darzu): CSM: support multiple slices
+          // TODO(@darzu): support non-ortho shadows for point lights!
+          const lightPos = e.world.position;
+          const viewTmp = mat4.lookAt(lightPos, [0, 0, 0], [0, 1, 0]);
+
+          // translate & rotate camera frustum world corners into light view
+          visibleWorldCorners.forEach((p, i) =>
+            vec3.transformMat4(p, viewTmp, _tempViewCorners[i])
           );
+
+          getAABBFromPositions(_tempViewAABB, _tempViewCorners);
+
+          // TODO(@darzu): IMPL
+          const projTmp = mat4.ortho(
+            // left/right
+            _tempViewAABB.min[0],
+            _tempViewAABB.max[0],
+            // bottom/top
+            // _tempViewAABB.min[1],
+            // _tempViewAABB.max[1],
+            -100,
+            +100,
+            // near/far
+            _tempViewAABB.min[2],
+            _tempViewAABB.max[2]
+          );
+
+          mat4.mul(projTmp, viewTmp, e.pointLight.viewProj);
+
+          // NOTE: this old way of calculating the light's viewProj was pretty broken for non-directional
+          // positionAndTargetToOrthoViewProjMatrix(
+          //   e.pointLight.viewProj,
+          //   e.world.position,
+          //   cameraView.location
+          // );
+
+          // TODO(@darzu): HACK. what's up with this ordering?
           let { viewProj, ...rest } = e.pointLight;
           return {
             viewProj,
