@@ -415,6 +415,7 @@ export function registerRenderer(em: EntityManager) {
       const pointLights = em
         .filterEntities([PointLightDef, WorldFrameDef])
         .map((e) => {
+          // TODO(@darzu): CSM: viewProj needs to depend on how we slice shadow map cascades
           positionAndTargetToOrthoViewProjMatrix(
             e.pointLight.viewProj,
             e.world.position,

@@ -1770,3 +1770,16 @@ Virtual Shadow Maps:
     a significant amount of animated deformation
       —chiefly trees—
     a continuously moving sun.
+
+Filament:
+  https://google.github.io/filament/Filament.html
+
+Cascaded shadow maps (CSM):
+  https://learnopengl.com/Advanced-Lighting/Shadows/Shadow-Mapping
+  https://developer.download.nvidia.com/SDK/10.5/opengl/src/cascaded_shadow_maps/doc/cascaded_shadow_maps.pdf
+  https://alextardif.com/shadowmapping.html
+  https://learn.microsoft.com/en-us/windows/win32/dxtecharts/cascaded-shadow-maps
+
+Unity URP:
+  Async:
+    volumetric, SSAO, SSR, 

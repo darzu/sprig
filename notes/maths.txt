@@ -48,3 +48,21 @@ Bezier curves:
     also: Bernstein Polynomial Form
     need approx solutions for even distance along curve
   https://www.redblobgames.com/articles/curved-paths/
+
+LookAt matrix:
+  https://carmencincotti.com/2022-04-25/cameras-theory-webgpu/
+    https://medium.com/@carmencincotti/lets-look-at-magic-lookat-matrices-c77e53ebdf78
+    https://dev.to/carmencincotti/lets-look-at-magic-lookat-matrices-1c7o
+  https://www.euclideanspace.com/maths/algebra/vectors/lookat/index.htm
+  https://learnopengl.com/Getting-started/Camera
+  first, translate the camera to 0,0,0
+  then it's a rotation to the coordinate system from the point of view of the camera:
+    direction away from camera,
+    direction up from camera,
+    direction right of camera,
+  process for orthonormalizing a set of vectors:
+    e.g. camera dir + world up into camera forward, right, and up
+    https://en.wikipedia.org/wiki/Gram–Schmidt_process
+
+
+http://immersivemath.com/ila/index.html

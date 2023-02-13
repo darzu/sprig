@@ -2,6 +2,8 @@ import { PERF_DBG_F32S, PERF_DBG_F32S_BLAME } from "./flags.js";
 import * as GLM from "./gl-matrix.js";
 import { dbgAddBlame } from "./util.js";
 
+const EPSILON = 0.000001;
+
 interface Float32ArrayOfLength<N extends number> extends Float32Array {
   length: N;
 }
@@ -673,13 +675,96 @@ export module mat4 {
     return GL.perspective(out ?? tmp(), fovy, aspect, near, far) as T;
   }
 
+  /*
+  Generates a look-at matrix with the given eye position, focal point, and up axis.
+  If you want a matrix that actually makes an object look at another object, you should use targetTo instead.
+
+  This is an optimized version of:
+  - translate the eye to (0,0,0)
+  - rotate to the camera's view:
+      create an orthonormalized set of basis vectors from camera forward, up, right
+  */
   export function lookAt(
-    v1: vec3.InputT,
-    v2: vec3.InputT,
-    v3: vec3.InputT,
+    eye: vec3.InputT,
+    center: vec3.InputT,
+    up: vec3.InputT,
     out?: T
   ): T {
-    return GL.lookAt(out ?? tmp(), v1, v2, v3) as T;
+    let eyex = eye[0];
+    let eyey = eye[1];
+    let eyez = eye[2];
+    let upx = up[0];
+    let upy = up[1];
+    let upz = up[2];
+    let centerx = center[0];
+    let centery = center[1];
+    let centerz = center[2];
+
+    if (
+      Math.abs(eyex - centerx) < EPSILON &&
+      Math.abs(eyey - centery) < EPSILON &&
+      Math.abs(eyez - centerz) < EPSILON
+    ) {
+      return identity(out);
+    }
+
+    let z0 = eyex - centerx;
+    let z1 = eyey - centery;
+    let z2 = eyez - centerz;
+    let len = 1 / Math.hypot(z0, z1, z2);
+    z0 *= len;
+    z1 *= len;
+    z2 *= len;
+    let x0 = upy * z2 - upz * z1;
+    let x1 = upz * z0 - upx * z2;
+    let x2 = upx * z1 - upy * z0;
+    len = Math.hypot(x0, x1, x2);
+
+    if (!len) {
+      x0 = 0;
+      x1 = 0;
+      x2 = 0;
+    } else {
+      len = 1 / len;
+      x0 *= len;
+      x1 *= len;
+      x2 *= len;
+    }
+
+    let y0 = z1 * x2 - z2 * x1;
+    let y1 = z2 * x0 - z0 * x2;
+    let y2 = z0 * x1 - z1 * x0;
+    len = Math.hypot(y0, y1, y2);
+
+    if (!len) {
+      y0 = 0;
+      y1 = 0;
+      y2 = 0;
+    } else {
+      len = 1 / len;
+      y0 *= len;
+      y1 *= len;
+      y2 *= len;
+    }
+
+    const _out = out ?? mat4.tmp();
+    _out[0] = x0;
+    _out[1] = y0;
+    _out[2] = z0;
+    _out[3] = 0;
+    _out[4] = x1;
+    _out[5] = y1;
+    _out[6] = z1;
+    _out[7] = 0;
+    _out[8] = x2;
+    _out[9] = y2;
+    _out[10] = z2;
+    _out[11] = 0;
+    _out[12] = -(x0 * eyex + x1 * eyey + x2 * eyez);
+    _out[13] = -(y0 * eyex + y1 * eyey + y2 * eyez);
+    _out[14] = -(z0 * eyex + z1 * eyey + z2 * eyez);
+    _out[15] = 1;
+    return _out;
   }
 
   export function translate(m: InputT, v: vec3.InputT, out?: T): T {
