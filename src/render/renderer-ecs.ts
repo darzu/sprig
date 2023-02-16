@@ -489,7 +489,7 @@ export function registerRenderer(em: EntityManager) {
             const tmpCorners = getFrustumWorldCorners(invShadow);
             tmpCorners.forEach((v) => {
               // dbgLogLineBatch(vec3Dbg(v));
-              drawBall(vec3.clone(v), 1, V(0, 1, 0));
+              // drawBall(vec3.clone(v), 1, V(0, 1, 0));
             });
           }
 

@@ -11,7 +11,7 @@ export interface EntityPoolParams<CS extends readonly ComponentDef[]> {
   maxBehavior: "crash" | "rand-despawn"; // | "ring-buffer",
   // TODO(@darzu): specify max behavior: ring buffer, "random free", crash?
   create: () => Promise<EntityW<CS>>;
-  onSpawn: (e: EntityW<CS>) => void;
+  onSpawn: (e: EntityW<CS>) => Promise<void>;
   onDespawn: (e: EntityW<CS>) => void;
 }
 
@@ -43,18 +43,25 @@ export function createEntityPool<CS extends readonly ComponentDef[]>(
     if (!ents[idx]) {
       // new entity
       ent = await params.create();
+      ents[idx] = ent;
       entIdToIdx.set(ent.id, idx);
     }
     // take existing
     else ent = ents[idx];
     // spawn
-    params.onSpawn(ent);
+    await params.onSpawn(ent);
     return ent;
   }
   function despawn(e: Entity) {
     const idx = entIdToIdx.get(e.id);
+    // if (!(idx !== undefined && ents[idx] === e)) {
+    //   console.dir(entIdToIdx);
+    //   console.dir(ents);
+    //   console.dir(e);
+    //   console.log(idx);
+    // }
     assert(
-      idx && ents[idx] === e,
+      idx !== undefined && ents[idx] === e,
       `despawning entity that isnt in pool: ${e.id}`
     );
     params.onDespawn(e as EntityW<CS>);
