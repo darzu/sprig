@@ -203,3 +203,6 @@ Perforce:
   Free version: 5 people, 1,000 files, "unlimited" file size
   Beyond 5 people: ~$400/year/person including first 5
     might be able to get discount from sales folks
+
+Regarding "art direction":
+  https://shahriyarshahrabi.medium.com/introduction-to-art-direction-for-games-c43fe0162cf6

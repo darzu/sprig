@@ -16,6 +16,7 @@ import { computeNewError, reduceError } from "./smoothing.js";
 import { tempQuat, tempVec3 } from "./temp-pool.js";
 import { TimeDef } from "./time.js";
 import { yawpitchToQuat } from "./yawpitch.js";
+import { createAABB } from "./physics/broadphase.js";
 
 export type PerspectiveMode = "perspective" | "ortho";
 export type CameraMode = "thirdPerson" | "thirdPersonOverShoulder";
@@ -24,7 +25,13 @@ export const CameraDef = EM.defineComponent("camera", () => {
   return {
     perspectiveMode: "perspective" as PerspectiveMode,
     fov: (2 * Math.PI) / 5,
+    nearClipDist: 1,
+    viewDist: 1000,
     targetId: 0,
+    maxWorldAABB: createAABB(
+      V(-Infinity, -Infinity, -Infinity),
+      V(Infinity, Infinity, Infinity)
+    ),
     positionOffset: vec3.create(),
     rotationOffset: quat.create(),
     // smoothing:
@@ -48,6 +55,7 @@ EM.registerInit({
   },
 });
 
+// TODO(@darzu): what goes in camera vs cameraView? Looks like cameraView is derived stuff
 export const CameraViewDef = EM.defineComponent("cameraView", () => {
   return {
     aspectRatio: 1,
@@ -240,10 +248,8 @@ export function registerCameraSystems(em: EntityManager) {
         mat4.perspective(
           camera.fov,
           cameraView.aspectRatio,
-          1,
-          // TODO(@darzu): hacky; why does it have to be so big
-          // 100000.0 /*view distance*/,
-          1000.0 /*view distance*/,
+          camera.nearClipDist,
+          camera.viewDist,
           projectionMatrix
         );
       }

@@ -97,10 +97,10 @@ export function mat4Dbg(v: mat4): string {
   const ns = [...v].map((n) => n.toFixed(2));
   return (
     "" +
-    `[${ns[0]},${ns[1]},${ns[2]},${ns[3]}
- ${ns[4]},${ns[5]},${ns[6]},${ns[7]}
- ${ns[8]},${ns[9]},${ns[10]},${ns[11]}
- ${ns[12]},${ns[13]},${ns[14]},${ns[15]}]`
+    `${ns[0]}\t|${ns[4]}\t|${ns[8]}\t|${ns[12]}
+ ${ns[1]}\t|${ns[5]}\t|${ns[9]}\t|${ns[13]}
+ ${ns[2]}\t|${ns[6]}\t|${ns[10]}\t|${ns[14]}
+ ${ns[3]}\t|${ns[7]}\t|${ns[11]}\t|${ns[15]}`
   );
 }
 export function centroid(vs: vec3[]): vec3 {

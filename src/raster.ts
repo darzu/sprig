@@ -1,6 +1,7 @@
 // https://chat.openai.com/chat: "Write a rasterization algorithm in javascript"
 // TODO(@darzu): don't think I like using AI for this..
 // TODO(@darzu): raster doesn't work yet
+// TODO(@darzu): https://kristoffer-dyrkorn.github.io/triangle-rasterizer/
 
 import { vec2 } from "./sprig-matrix.js";
 import { assert } from "./util.js";

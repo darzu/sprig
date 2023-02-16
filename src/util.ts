@@ -199,6 +199,18 @@ export function dbgOnce(key: string): boolean {
   } else return false;
 }
 
+// HACK: these two functions are just to make copying text out of the
+//  browser's console window easier b/c by batching you don't get line
+//  numbers.
+let __logBatch = "";
+export function dbgLogLineBatch(msg: string) {
+  __logBatch += msg + "\n";
+}
+export function dbgLogNextBatch() {
+  if (__logBatch) console.log(__logBatch);
+  __logBatch = "";
+}
+
 export function isArray(t: any): t is any[] {
   return Array.isArray(t);
 }

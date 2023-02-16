@@ -33,7 +33,7 @@ const AUTOSTART = true;
 const ALL_GAMES = [
   "gjk",
   "rebound", // broken-ish
-  "ld51",
+  "rogue",
   "smol",
   "font",
   "hyperspace",
@@ -41,7 +41,7 @@ const ALL_GAMES = [
   "cube",
   "shading",
 ] as const;
-const GAME: typeof ALL_GAMES[number] = "smol";
+const GAME: typeof ALL_GAMES[number] = "rogue";
 
 // Run simulation with a fixed timestep @ 60hz
 const TIMESTEP = 1000 / 60;
@@ -130,7 +130,7 @@ function legacyRequireAllTheSystems() {
     // EM.callSystem("initWooden");
     EM.requireSystem("runWooden");
   }
-  if (GAME === "ld51") {
+  if (GAME === "rogue") {
     // EM.callSystem("initWooden");
     EM.requireSystem("runWooden");
     EM.requireSystem("woodHealth");
@@ -271,7 +271,7 @@ async function startGame(localPeerName: string, host: string | null) {
   else if (GAME === "cloth") initClothSandbox(EM, hosting);
   else if (GAME === "hyperspace") initHyperspaceGame(EM);
   else if (GAME === "cube") initCubeGame(EM);
-  else if (GAME === "ld51") initRogueGame(EM, hosting);
+  else if (GAME === "rogue") initRogueGame(EM, hosting);
   else if (GAME === "font") initFontEditor(EM);
   else if (GAME === "smol") initSmol(EM, hosting);
   else if (GAME === "shading") initShadingGame();

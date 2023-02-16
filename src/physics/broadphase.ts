@@ -563,15 +563,22 @@ export interface AABB {
   min: vec3;
   max: vec3;
 }
-export function createAABB(): AABB {
+export function createAABB(min?: vec3, max?: vec3): AABB {
   return {
-    min: V(Infinity, Infinity, Infinity),
-    max: V(-Infinity, -Infinity, -Infinity),
+    min: min ?? V(Infinity, Infinity, Infinity),
+    max: max ?? V(-Infinity, -Infinity, -Infinity),
   };
 }
 export function copyAABB(out: AABB, a: AABB) {
   vec3.copy(out.min, a.min);
   vec3.copy(out.max, a.max);
+  return out;
+}
+export function clampToAABB(v: vec3, aabb: AABB, out?: vec3): vec3 {
+  out = out ?? vec3.tmp();
+  out[0] = clamp(v[0], aabb.min[0], aabb.max[0]);
+  out[1] = clamp(v[1], aabb.min[1], aabb.max[1]);
+  out[2] = clamp(v[2], aabb.min[2], aabb.max[2]);
   return out;
 }
 

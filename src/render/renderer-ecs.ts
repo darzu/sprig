@@ -6,7 +6,7 @@ import {
   ComponentDef,
 } from "../entity-manager.js";
 import { AlphaDef, applyTints, TintsDef } from "../color-ecs.js";
-import { CameraViewDef } from "../camera.js";
+import { CameraDef, CameraViewDef } from "../camera.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import {
   Frame,
@@ -40,9 +40,22 @@ import {
 import { Mesh } from "./mesh.js";
 import { SceneTS } from "./pipelines/std-scene.js";
 import { max } from "../math.js";
-import { getFrustumWorldCorners, vec3Dbg } from "../utils-3d.js";
+import {
+  aabbDbg,
+  getFrustumWorldCorners,
+  mat4Dbg,
+  vec3Dbg,
+} from "../utils-3d.js";
 import { ShadersDef, ShaderSet } from "./shader-loader.js";
-import { dbgLogOnce, never, range, TupleN } from "../util.js";
+import {
+  dbgLogLineBatch,
+  dbgLogNextBatch,
+  dbgLogOnce,
+  dbgOnce,
+  never,
+  range,
+  TupleN,
+} from "../util.js";
 import { TimeDef } from "../time.js";
 import { PartyDef } from "../games/party.js";
 import { PointLightDef, pointLightsPtr, PointLightTS } from "./lights.js";
@@ -60,7 +73,12 @@ import {
 import { ALPHA_MASK } from "./pipeline-masks.js";
 import { RenderDataGrassDef, computeGrassUniData } from "../smol/std-grass.js";
 import { WindDef } from "../smol/wind.js";
-import { createAABB, getAABBFromPositions } from "../physics/broadphase.js";
+import {
+  clampToAABB,
+  createAABB,
+  getAABBFromPositions,
+} from "../physics/broadphase.js";
+import { drawBall } from "../utils-game.js";
 
 const BLEND_SIMULATION_FRAMES_STRATEGY: "interpolate" | "extrapolate" | "none" =
   "none";
@@ -369,10 +387,12 @@ export function registerRenderer(em: EntityManager) {
   ) as TupleN<vec3, 8>;
   const _tempViewAABB = createAABB();
 
+  let __frame = 0;
   em.registerSystem(
     null, // NOTE: see "renderList*" systems and NOTE above. We use those to construct our query.
-    [CameraViewDef, RendererDef, TimeDef, PartyDef],
+    [CameraDef, CameraViewDef, RendererDef, TimeDef, PartyDef],
     (_, res) => {
+      __frame++;
       const renderer = res.renderer.renderer;
       const cameraView = res.cameraView;
 
@@ -389,9 +409,23 @@ export function registerRenderer(em: EntityManager) {
       // console.log(`mId 24: ${!!m24.length}, e10003: ${!!e10003.length}`);
 
       // TODO(@darzu): move point light and casading shadow map code to its own system
+      // TODO(@darzu): move this into CameraView?
       const visibleWorldCorners = getFrustumWorldCorners(
         cameraView.invViewProjMat
       );
+      // TODO(@darzu): we probably want the actual world frustum to be clamped by this max as well
+      visibleWorldCorners.forEach((v) =>
+        clampToAABB(v, res.camera.maxWorldAABB, v)
+      );
+
+      if (__frame > 10 && dbgOnce("drawCameraViewFrustum")) {
+        // TODO(@darzu): would be great to draw as wireframe
+        dbgLogLineBatch(`camera view frustum world corners:`);
+        visibleWorldCorners.forEach((v) => {
+          dbgLogLineBatch(vec3Dbg(v));
+          drawBall(vec3.clone(v), 1, V(1, 0, 0));
+        });
+      }
 
       const pointLights = em
         .filterEntities([PointLightDef, WorldFrameDef])
@@ -406,6 +440,17 @@ export function registerRenderer(em: EntityManager) {
             vec3.transformMat4(p, viewTmp, _tempViewCorners[i])
           );
 
+          if (__frame > 10 && dbgOnce("drawLightCorners")) {
+            dbgLogLineBatch(`light pos: ${vec3Dbg(lightPos)}`);
+
+            // TODO(@darzu): would be great to draw as wireframe
+            dbgLogLineBatch(`light view-space world corners:`);
+            _tempViewCorners.forEach((v) => {
+              dbgLogLineBatch(vec3Dbg(v));
+              // drawBall(vec3.clone(v), 1, V(0, 0, 1));
+            });
+          }
+
           getAABBFromPositions(_tempViewAABB, _tempViewCorners);
 
           // TODO(@darzu): IMPL
@@ -414,16 +459,39 @@ export function registerRenderer(em: EntityManager) {
             _tempViewAABB.min[0],
             _tempViewAABB.max[0],
             // bottom/top
-            // _tempViewAABB.min[1],
-            // _tempViewAABB.max[1],
-            -100,
-            +100,
+            _tempViewAABB.min[1],
+            _tempViewAABB.max[1],
+            // -100,
+            // +100,
             // near/far
             _tempViewAABB.min[2],
             _tempViewAABB.max[2]
           );
 
           mat4.mul(projTmp, viewTmp, e.pointLight.viewProj);
+
+          if (__frame > 10 && dbgOnce("drawShadowFrustum")) {
+            dbgLogLineBatch(`shadow view mat4:`);
+            dbgLogLineBatch(mat4Dbg(viewTmp));
+            dbgLogLineBatch(`shadow proj mat4:`);
+            dbgLogLineBatch(mat4Dbg(projTmp));
+            dbgLogLineBatch(`shadow view-proj mat4:`);
+            dbgLogLineBatch(mat4Dbg(e.pointLight.viewProj));
+
+            dbgLogLineBatch(`shadow frustum view-space bounds:`);
+            dbgLogLineBatch(aabbDbg(_tempViewAABB));
+
+            dbgLogLineBatch(`shadow frustum world corners:`);
+            // TODO(@darzu): would be great to draw as wireframe
+          }
+          if (__frame > 10) {
+            const invShadow = mat4.invert(e.pointLight.viewProj);
+            const tmpCorners = getFrustumWorldCorners(invShadow);
+            tmpCorners.forEach((v) => {
+              // dbgLogLineBatch(vec3Dbg(v));
+              drawBall(vec3.clone(v), 1, V(0, 1, 0));
+            });
+          }
 
           // NOTE: this old way of calculating the light's viewProj was pretty broken for non-directional
           // positionAndTargetToOrthoViewProjMatrix(
@@ -440,6 +508,9 @@ export function registerRenderer(em: EntityManager) {
             ...rest,
           };
         });
+
+      dbgLogNextBatch();
+
       dbgLogOnce(`Num point lights: ${pointLights.length}`);
 
       // const lightPosition =
