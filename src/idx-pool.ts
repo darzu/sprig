@@ -68,6 +68,7 @@ export function createIdxPool(size: number) {
     next,
     free,
     reset,
+    _cursor: () => cursor, // HACK: don't expose?
     numFree: () => numFree,
   };
 }
