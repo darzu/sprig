@@ -16,6 +16,8 @@ import {
 } from "./render/renderer-ecs.js";
 import { tempVec3 } from "./temp-pool.js";
 import { randNormalPosVec3 } from "./utils-3d.js";
+import { createEntityPool } from "./entity-pool.js";
+import { DeadDef } from "./delete.js";
 
 // TODO(@darzu): move this helper elsewhere?
 // TODO(@darzu): would be dope to support thickness;
@@ -87,17 +89,38 @@ export function createLine(start: vec3, end: vec3, color: vec3) {
   return e;
 }
 
+const _ballPool = createEntityPool<
+  [typeof ColorDef, typeof PositionDef, typeof ScaleDef]
+>({
+  max: 100,
+  maxBehavior: "rand-despawn",
+  create: async () => {
+    let res = await EM.whenResources(AssetsDef);
+    const e = EM.new();
+    EM.ensureComponentOn(e, ColorDef);
+    EM.ensureComponentOn(e, RenderableConstructDef, res.assets.ball.proto);
+    EM.ensureComponentOn(e, PositionDef);
+    EM.ensureComponentOn(e, ScaleDef);
+    return e;
+  },
+  onSpawn: async (e) => {
+    EM.tryRemoveComponent(e.id, DeadDef);
+  },
+  onDespawn: (e) => {
+    EM.ensureComponentOn(e, DeadDef);
+    e.dead.processed = true;
+  },
+});
+
 export async function drawBall(
   pos: vec3,
   size: number,
   color: vec3
 ): Promise<EntityW<[typeof PositionDef]>> {
-  let res = await EM.whenResources(AssetsDef);
-  const e = EM.new();
-  EM.ensureComponentOn(e, ColorDef, color);
-  EM.ensureComponentOn(e, RenderableConstructDef, res.assets.ball.proto);
-  EM.ensureComponentOn(e, PositionDef, pos);
-  EM.ensureComponentOn(e, ScaleDef, V(size, size, size));
+  const e = await _ballPool.spawn();
+  vec3.copy(e.color, color);
+  vec3.copy(e.position, pos);
+  vec3.set(size, size, size, e.scale);
   return e;
 }
 
