@@ -6,6 +6,7 @@ import { DevConsoleDef } from "../console.js";
 import { EM } from "../entity-manager.js";
 import { AngularVelocityDef, LinearVelocityDef } from "../physics/motion.js";
 import { PositionDef } from "../physics/transform.js";
+import { createGizmoMesh, createLineMesh } from "../primatives.js";
 import { PointLightDef } from "../render/lights.js";
 import { createGridComposePipelines } from "../render/pipelines/std-compose.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
@@ -87,6 +88,12 @@ export async function initShadingGame() {
   EM.ensureComponentOn(ground, RenderableConstructDef, assets.plane.proto);
   EM.ensureComponentOn(ground, ColorDef, ENDESGA16.blue);
   EM.ensureComponentOn(ground, PositionDef);
+
+  // gizmo
+  const gizmoMesh = createGizmoMesh();
+  const gizmo = EM.new();
+  EM.ensureComponentOn(gizmo, RenderableConstructDef, gizmoMesh);
+  EM.ensureComponentOn(gizmo, PositionDef, V(0, 1, 0));
 
   // avatar
   const avatar = createGhost();

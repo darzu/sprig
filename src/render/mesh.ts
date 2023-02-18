@@ -799,7 +799,7 @@ export function getMeshAsGrid(m: RawMesh): {
   }
 }
 
-export function mergeMeshes(rs: RawMesh[]): RawMesh {
+export function mergeMeshes(...rs: RawMesh[]): RawMesh {
   if (rs.length === 1) return rs[0];
 
   let posIdx = 0;

@@ -47,6 +47,7 @@ export function createSplinterPool(
     const topW = 0.6 + jitter(0.4);
     const botW = 0.6 + jitter(0.4);
 
+    // TODO(@darzu): PERF. use instances instead of seperate meshes for splinters
     const _splinterMesh = mkTimberSplinterFree(
       topW,
       botW,

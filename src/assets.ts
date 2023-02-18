@@ -488,7 +488,7 @@ async function loadTxtInternal(relPath: string): Promise<string> {
 }
 async function loadMeshInternal(relPath: string): Promise<RawMesh> {
   const res = await loadMeshSetInternal(relPath);
-  return mergeMeshes(res);
+  return mergeMeshes(...res);
 }
 async function loadMeshSetInternal(relPath: string): Promise<RawMesh[]> {
   // download
