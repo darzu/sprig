@@ -474,3 +474,7 @@ P2P stuff by Yousef Amar:
 
 arithmetic compression:
   https://github.com/rygorous/A/blob/master/main.cpp
+
+Source engine lag compensation:
+  https://developer.valvesoftware.com/wiki/Source_Multiplayer_Networking#Lag_compensation
+  more: https://wiki.facepunch.com/gmod/Prediction

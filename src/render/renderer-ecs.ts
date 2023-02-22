@@ -15,6 +15,7 @@ import {
   updateFrameFromTransform,
   updateFrameFromPosRotScale,
   copyFrame,
+  PositionDef,
 } from "../physics/transform.js";
 import { ColorDef } from "../color-ecs.js";
 import { MotionSmoothingDef } from "../motion-smoothing.js";
@@ -37,7 +38,7 @@ import {
   MeshPool,
   MeshReserve,
 } from "./mesh-pool.js";
-import { Mesh } from "./mesh.js";
+import { mapMeshPositions, Mesh } from "./mesh.js";
 import { SceneTS } from "./pipelines/std-scene.js";
 import { max } from "../math.js";
 import {
@@ -79,6 +80,7 @@ import {
   getAABBFromPositions,
 } from "../physics/broadphase.js";
 import { drawBall } from "../utils-game.js";
+import { createGizmoMesh } from "../primatives.js";
 
 const BLEND_SIMULATION_FRAMES_STRATEGY: "interpolate" | "extrapolate" | "none" =
   "none";
@@ -464,13 +466,31 @@ export function registerRenderer(em: EntityManager) {
             // -100,
             // +100,
             // near/far
-            _tempViewAABB.min[2],
-            _tempViewAABB.max[2]
+            -_tempViewAABB.max[2],
+            -_tempViewAABB.min[2]
+            // 1,
+            // 100
           );
 
           mat4.mul(projTmp, viewTmp, e.pointLight.viewProj);
 
-          if (__frame > 10 && dbgOnce("drawShadowFrustum")) {
+          if (__frame > 200 && dbgOnce("drawShadowFrustum")) {
+            // view gizmo
+            // TODO(@darzu): IMPL
+            {
+              const invView = mat4.invert(viewTmp);
+              // gizmo
+              const gizmoMesh = createGizmoMesh();
+              mapMeshPositions(gizmoMesh, (p) =>
+                vec3.transformMat4(p, invView, p)
+              );
+
+              const gizmo = EM.new();
+              EM.ensureComponentOn(gizmo, RenderableConstructDef, gizmoMesh);
+              EM.ensureComponentOn(gizmo, PositionDef, V(0, 0, 0));
+              // EM.ensureComponentOn(gizmo, PhysicsParentDef, e.id);
+            }
+
             dbgLogLineBatch(`shadow view mat4:`);
             dbgLogLineBatch(mat4Dbg(viewTmp));
             dbgLogLineBatch(`shadow proj mat4:`);
@@ -484,13 +504,14 @@ export function registerRenderer(em: EntityManager) {
             dbgLogLineBatch(`shadow frustum world corners:`);
             // TODO(@darzu): would be great to draw as wireframe
           }
-          if (__frame > 10) {
+          if (__frame > 10 && __frame % 100 === 0) {
             const invShadow = mat4.invert(e.pointLight.viewProj);
             const tmpCorners = getFrustumWorldCorners(invShadow);
             tmpCorners.forEach((v) => {
               // dbgLogLineBatch(vec3Dbg(v));
               drawBall(vec3.clone(v), 1, V(0, 1, 0));
             });
+            dbgLogLineBatch(aabbDbg(_tempViewAABB));
           }
 
           // NOTE: this old way of calculating the light's viewProj was pretty broken for non-directional

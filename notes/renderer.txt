@@ -1783,3 +1783,6 @@ Cascaded shadow maps (CSM):
 Unity URP:
   Async:
     volumetric, SSAO, SSR, 
+
+Ambient occlusion using an object id texture?
+  https://publications.lib.chalmers.se/records/fulltext/127825.pdf
