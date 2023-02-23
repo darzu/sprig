@@ -402,3 +402,19 @@ deep clone:
 
 Transfer array buffers between JS threads:
   https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Transferable_objects
+
+Love and Lua: vectors?
+  Apparently Love's Lua has the same non-stack restriction for vectors as JS
+  https://love2d.org/forums/viewtopic.php?t=82815
+    https://www.youtube.com/watch?v=wTjyM7d7_YA#t=23m6s
+    https://love2d.org/forums/viewtopic.php?f=3&t=81457&start=50#p193807
+  "You pretty much have to choose between arithmetic operator overloads or no-garbage vectors (e.g. CPML has no-garbage APIs, and then the arithmetic operators which do generate garbage).
+  I did experiment with the gc metamethod and a pool of FFI vectors, but it ended up being slower than just plain FFI structs of doubles (which still generates garbage)."
+    Lua math library: https://github.com/excessive/cpml
+    https://love2d.org/forums/viewtopic.php?f=5&t=82770
+  Lua has "metatables":
+    https://www.lua.org/pil/13.html
+
+Roblox uses "Luau":
+  https://luau-lang.org/performance#native-vector-math
+  "[we] provide a native value type that can store a 32-bit floating point vector with 3 components", "which essentially means we have native 3-wide SIMD support"

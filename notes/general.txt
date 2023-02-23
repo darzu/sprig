@@ -1354,3 +1354,27 @@ coordinate system:
   Same as Bevy, Godot, Minecraft
     https://bevy-cheatbook.github.io/features/coords.html
     https://twitter.com/FreyaHolmer/status/1325556229410861056
+
+
+Roblox:
+  https://www.youtube.com/watch?v=fegbyALcnpI&t=1160s
+    http://enginearchitecture.realtimerendering.com/downloads/reac2021_the_rendering_architecture_of_roblox.pdf
+  Roblox Studio is a GUI over the runtime data model;
+    99% of the things it can do can be done at runtime too
+  Rendering:
+    Aggressive graceful degredation
+      Keep playable at all costs
+    Time-slice everything:
+      incremental updates & fixed budgets
+      shadow maps, probes, voxels,
+      even vertex buffer creation
+    "FrameRateManager"
+      like dynamic resolution
+      from sun only w/ no shadows -> dynamic lights and EVSM F+
+  Rendering, today (2021):
+    "old school" two threads: main + render
+    prepare (sync) -> render (parallel w/ next frame sim)
+  Drawing:
+    Uses "cluster", ~100 objects per draw call
+  Lot of dynamic objects in a scene, but only a small fraction actually change
+
