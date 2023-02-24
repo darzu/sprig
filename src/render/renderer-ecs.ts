@@ -43,6 +43,7 @@ import { SceneTS } from "./pipelines/std-scene.js";
 import { max } from "../math.js";
 import {
   aabbDbg,
+  frustumFromBounds,
   getFrustumWorldCorners,
   mat4Dbg,
   vec3Dbg,
@@ -384,17 +385,10 @@ export function registerRenderer(em: EntityManager) {
     "renderList"
   );
 
-  const _tempViewCorners: TupleN<vec3, 8> = range(8).map((_) =>
-    V(0, 0, 0)
-  ) as TupleN<vec3, 8>;
-  const _tempViewAABB = createAABB();
-
-  let __frame = 0;
   em.registerSystem(
     null, // NOTE: see "renderList*" systems and NOTE above. We use those to construct our query.
     [CameraDef, CameraViewDef, RendererDef, TimeDef, PartyDef],
     (_, res) => {
-      __frame++;
       const renderer = res.renderer.renderer;
       const cameraView = res.cameraView;
 
@@ -420,99 +414,18 @@ export function registerRenderer(em: EntityManager) {
         clampToAABB(v, res.camera.maxWorldAABB, v)
       );
 
-      if (__frame > 10 && dbgOnce("drawCameraViewFrustum")) {
-        // TODO(@darzu): would be great to draw as wireframe
-        dbgLogLineBatch(`camera view frustum world corners:`);
-        visibleWorldCorners.forEach((v) => {
-          dbgLogLineBatch(vec3Dbg(v));
-          drawBall(vec3.clone(v), 1, V(1, 0, 0));
-        });
-      }
-
       const pointLights = em
         .filterEntities([PointLightDef, WorldFrameDef])
         .map((e) => {
           // TODO(@darzu): CSM: support multiple slices
           // TODO(@darzu): support non-ortho shadows for point lights!
           const lightPos = e.world.position;
-          const viewTmp = mat4.lookAt(lightPos, [0, 0, 0], [0, 1, 0]);
 
-          // translate & rotate camera frustum world corners into light view
-          visibleWorldCorners.forEach((p, i) =>
-            vec3.transformMat4(p, viewTmp, _tempViewCorners[i])
+          frustumFromBounds(
+            visibleWorldCorners,
+            lightPos,
+            e.pointLight.viewProj
           );
-
-          if (__frame > 10 && dbgOnce("drawLightCorners")) {
-            dbgLogLineBatch(`light pos: ${vec3Dbg(lightPos)}`);
-
-            // TODO(@darzu): would be great to draw as wireframe
-            dbgLogLineBatch(`light view-space world corners:`);
-            _tempViewCorners.forEach((v) => {
-              dbgLogLineBatch(vec3Dbg(v));
-              // drawBall(vec3.clone(v), 1, V(0, 0, 1));
-            });
-          }
-
-          getAABBFromPositions(_tempViewAABB, _tempViewCorners);
-
-          // TODO(@darzu): IMPL
-          const projTmp = mat4.ortho(
-            // left/right
-            _tempViewAABB.min[0],
-            _tempViewAABB.max[0],
-            // bottom/top
-            _tempViewAABB.min[1],
-            _tempViewAABB.max[1],
-            // -100,
-            // +100,
-            // near/far
-            -_tempViewAABB.max[2],
-            -_tempViewAABB.min[2]
-            // 1,
-            // 100
-          );
-
-          mat4.mul(projTmp, viewTmp, e.pointLight.viewProj);
-
-          if (__frame > 200 && dbgOnce("drawShadowFrustum")) {
-            // view gizmo
-            // TODO(@darzu): IMPL
-            {
-              const invView = mat4.invert(viewTmp);
-              // gizmo
-              const gizmoMesh = createGizmoMesh();
-              mapMeshPositions(gizmoMesh, (p) =>
-                vec3.transformMat4(p, invView, p)
-              );
-
-              const gizmo = EM.new();
-              EM.ensureComponentOn(gizmo, RenderableConstructDef, gizmoMesh);
-              EM.ensureComponentOn(gizmo, PositionDef, V(0, 0, 0));
-              // EM.ensureComponentOn(gizmo, PhysicsParentDef, e.id);
-            }
-
-            dbgLogLineBatch(`shadow view mat4:`);
-            dbgLogLineBatch(mat4Dbg(viewTmp));
-            dbgLogLineBatch(`shadow proj mat4:`);
-            dbgLogLineBatch(mat4Dbg(projTmp));
-            dbgLogLineBatch(`shadow view-proj mat4:`);
-            dbgLogLineBatch(mat4Dbg(e.pointLight.viewProj));
-
-            dbgLogLineBatch(`shadow frustum view-space bounds:`);
-            dbgLogLineBatch(aabbDbg(_tempViewAABB));
-
-            dbgLogLineBatch(`shadow frustum world corners:`);
-            // TODO(@darzu): would be great to draw as wireframe
-          }
-          if (__frame > 10 && __frame % 100 === 0) {
-            const invShadow = mat4.invert(e.pointLight.viewProj);
-            const tmpCorners = getFrustumWorldCorners(invShadow);
-            tmpCorners.forEach((v) => {
-              // dbgLogLineBatch(vec3Dbg(v));
-              drawBall(vec3.clone(v), 1, V(0, 1, 0));
-            });
-            dbgLogLineBatch(aabbDbg(_tempViewAABB));
-          }
 
           // NOTE: this old way of calculating the light's viewProj was pretty broken for non-directional
           // positionAndTargetToOrthoViewProjMatrix(
@@ -529,10 +442,6 @@ export function registerRenderer(em: EntityManager) {
             ...rest,
           };
         });
-
-      dbgLogNextBatch();
-
-      dbgLogOnce(`Num point lights: ${pointLights.length}`);
 
       // const lightPosition =
       //   pointLights[0]?.position ?? V(0, 0, 0);

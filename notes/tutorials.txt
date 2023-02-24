@@ -59,3 +59,8 @@ about teaching CS for non-techies:
   The first point they make is: "I want to use ue5 because I feel the “ceiling” of what you can do is much higher"
     This is why it's so important for beginner-friendly game engines to have high ceilings! People aren't stupid, they don't want to invest in something that is ultimately not going to let them reach their goals.
     
+MrBeast compressed advice:
+  https://www.youtube.com/watch?v=09wcDevb1q4
+  
+MrBeast documentary:
+  https://www.youtube.com/watch?v=_Qq6sCvz4Z0
