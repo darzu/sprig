@@ -46,6 +46,7 @@ import {
   frustumFromBounds,
   getFrustumWorldCorners,
   mat4Dbg,
+  positionAndTargetToOrthoViewProjMatrix,
   vec3Dbg,
 } from "../utils-3d.js";
 import { ShadersDef, ShaderSet } from "./shader-loader.js";
@@ -430,8 +431,8 @@ export function registerRenderer(em: EntityManager) {
           // NOTE: this old way of calculating the light's viewProj was pretty broken for non-directional
           // positionAndTargetToOrthoViewProjMatrix(
           //   e.pointLight.viewProj,
-          //   e.world.position,
-          //   cameraView.location
+          //   lightPos,
+          //   V(0, 0, 0)
           // );
 
           // TODO(@darzu): HACK. what's up with this ordering?

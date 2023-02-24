@@ -8,6 +8,7 @@ import { canvasTexturePtr } from "./std-scene.js";
 
 const padding = 0.05;
 
+let __nextGridId = 1;
 // TODO(@darzu): make grid a parameter
 export function createGridComposePipelines(
   grid: (CyTexturePtr | CyDepthTexturePtr)[][]
@@ -21,6 +22,8 @@ export function createGridComposePipelines(
 
   let pipes: CyRenderPipelinePtr[] = [];
 
+  const idStr = `${__nextGridId++}`;
+
   for (let ri = 0; ri < grid.length; ri++) {
     for (let ci = 0; ci < grid[ri].length; ci++) {
       const tex = grid[ri][ci];
@@ -30,7 +33,7 @@ export function createGridComposePipelines(
       const yMin = yMax - uvHeight;
       pipes.push(
         createRenderTextureToQuad(
-          `composeViews_${ci}x${ri}`,
+          `composeViews_${idStr}_${ci}x${ri}`,
           tex,
           canvasTexturePtr,
           xMin,

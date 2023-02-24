@@ -215,15 +215,16 @@ export function normalizeVec2s(vs: vec2[], min: number, max: number): void {
   }
 }
 
+// corners of the WebGPU NDC clip-space (-1,-1,0):(1,1,1)
 const screenCorners: TupleN<vec3, 8> = [
   V(+1.0, +1.0, +1.0),
-  V(-1.0, +1.0, +1.0),
-  V(-1.0, -1.0, +1.0),
+  V(+1.0, +1.0, 0.0),
   V(+1.0, -1.0, +1.0),
-  V(+1.0, +1.0, -1.0),
-  V(-1.0, +1.0, -1.0),
-  V(-1.0, -1.0, -1.0),
-  V(+1.0, -1.0, -1.0),
+  V(+1.0, -1.0, 0.0),
+  V(-1.0, +1.0, +1.0),
+  V(-1.0, +1.0, 0.0),
+  V(-1.0, -1.0, +1.0),
+  V(-1.0, -1.0, 0.0),
 ];
 
 const _tempWorldCorners: TupleN<vec3, 8> = screenCorners.map((_) =>
@@ -312,8 +313,11 @@ export function frustumFromBounds(
   const viewTmp = mat4.lookAt(eyePos, [0, 0, 0], [0, 1, 0]);
 
   // resize temp buffers if needed
+  // TODO(@darzu): PERF. doesn't work so well if we get variable numbers of world points
   while (__tempViewCorners.length < worldCorners.length)
     __tempViewCorners.push(vec3.create());
+  if (__tempViewCorners.length > worldCorners.length)
+    __tempViewCorners.length = worldCorners.length;
 
   // translate & rotate camera frustum world corners into light view
   worldCorners.forEach((p, i) =>
@@ -329,6 +333,8 @@ export function frustumFromBounds(
     __tempViewAABB.min[0],
     __tempViewAABB.max[0],
     // bottom/top
+    // __tempViewAABB.min[1],
+    // __tempViewAABB.max[1],
     __tempViewAABB.min[1],
     __tempViewAABB.max[1],
     // -100,
@@ -336,6 +342,10 @@ export function frustumFromBounds(
     // near/far
     -__tempViewAABB.max[2],
     -__tempViewAABB.min[2]
+    // -__tempViewAABB.min[2],
+    // -__tempViewAABB.max[2]
+    // __tempViewAABB.min[2],
+    // __tempViewAABB.max[2]
     // 1,
     // 100
   );
@@ -412,3 +422,18 @@ OLD FRUSTUM DEBUG CODE:
 
   dbgLogOnce(`Num point lights: ${pointLights.length}`);
 */
+
+// TODO(@darzu): Testing frustum stuff
+// {
+//   console.log("FRUSTUM TESTS");
+//   // const proj = mat4.perspective(2, 1, 1, 15);
+//   // const proj = mat4.ortho(-10, 10, -10, 10, 0, 10);
+//   const proj = mat4.frustum(-10, 10, -10, 10, -10, 10);
+//   // const view = mat4.lookAt(V(0, 0, -10), V(0, 0, 0), V(0, 1, 0));
+//   const view = mat4.identity();
+//   // const viewProj = mat4.mul(proj, view);
+//   const viewProj = proj;
+//   const invViewProj = mat4.invert(viewProj);
+//   console.log(vec3Dbg(vec3.transformMat4(V(-1, -1, -1), invViewProj)));
+//   console.log(vec3Dbg(vec3.transformMat4(V(1, 1, 1), invViewProj)));
+// }

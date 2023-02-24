@@ -653,11 +653,24 @@ export module mat4 {
     return GL.rotateZ(out ?? tmp(), v1, n) as T;
   }
 
+  export function frustum(
+    left: number,
+    right: number,
+    bottom: number,
+    top: number,
+    near: number,
+    far: number,
+    out?: T
+  ): T {
+    return GL.frustum(out ?? tmp(), left, right, bottom, top, near, far) as T;
+  }
+
   /*
   Generates a orthogonal projection matrix with the given bounds
 
   It's a scale and translation matrix. 
-  Smooshes left/right/top/bottom/near/far into 1:1:1
+  Smooshes left/right/top/bottom/near/far 
+  from y-up, right-handed into [-1,-1,0]x[1,1,1], y-up, left-handed (WebGPU NDC clip-space)
   */
   export function ortho(
     left: number,
@@ -682,15 +695,18 @@ export module mat4 {
     _out[7] = 0;
     _out[8] = 0;
     _out[9] = 0;
-    _out[10] = 2 * nf;
+    // _out[10] = 2 * nf; // For WebGL NDC
+    _out[10] = nf; // For WebGPU NDC
     _out[11] = 0;
     _out[12] = (left + right) * lr;
     _out[13] = (top + bottom) * bt;
-    _out[14] = (far + near) * nf;
+    // _out[14] = (far + near) * nf; // For WebGL NDC
+    _out[14] = near * nf; // For WebGPU NDC
     _out[15] = 1;
     return _out;
   }
 
+  // TODO(@darzu): what clip-space does this assume?
   export function perspective(
     fovy: number,
     aspect: number,
