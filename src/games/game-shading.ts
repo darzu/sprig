@@ -137,8 +137,13 @@ export async function initShadingGame() {
       EM.ensureComponentOn(p, PositionDef, pos);
       EM.ensureComponentOn(p, ColorDef, V(0, 1, 0));
     }
+
+    // TODO(@darzu): IMPORTANT. figure out mat4.perspective's clip-space!
+
     const frust = mat4.create();
     frustumFromBounds(worldCorners, sun.position, frust);
+    // mat4.perspective(Math.PI * 0.5, 1920 / 1080, 1, 10, frust);
+
     const invFrust = mat4.invert(frust);
     const frustCorners = getFrustumWorldCorners(invFrust);
     for (let i = 0; i < frustCorners.length; i++) {

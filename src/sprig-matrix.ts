@@ -706,7 +706,19 @@ export module mat4 {
     return _out;
   }
 
-  // TODO(@darzu): what clip-space does this assume?
+  /**
+  Generates a perspective projection matrix with the given bounds.
+  Passing null/undefined/no value for far will generate infinite projection matrix.
+  
+  Seems to output into [-1,-1,0]x[1,1,1], y-up, left-handed (WebGPU NDC clip-space)
+
+  @param {number} fovy Vertical field of view in radians
+  @param {number} aspect Aspect ratio. typically viewport width/height
+  @param {number} near Near bound of the frustum, must be >0
+  @param {number} far Far bound of the frustum, can be null or Infinity
+  @param {mat4} out mat4 frustum matrix will be written into
+  @returns {mat4} out
+  */
   export function perspective(
     fovy: number,
     aspect: number,
@@ -714,7 +726,33 @@ export module mat4 {
     far: number,
     out?: T
   ): T {
-    return GL.perspective(out ?? tmp(), fovy, aspect, near, far) as T;
+    out = out ?? tmp();
+    const f = 1.0 / Math.tan(fovy / 2);
+    out[0] = f / aspect;
+    out[1] = 0;
+    out[2] = 0;
+    out[3] = 0;
+    out[4] = 0;
+    out[5] = f;
+    out[6] = 0;
+    out[7] = 0;
+    out[8] = 0;
+    out[9] = 0;
+    out[11] = -1;
+    out[12] = 0;
+    out[13] = 0;
+    out[15] = 0;
+
+    if (far != null && far !== Infinity) {
+      const nf = 1 / (near - far);
+      out[10] = (far + near) * nf;
+      out[14] = 2 * far * near * nf;
+    } else {
+      out[10] = -1;
+      out[14] = -2 * near;
+    }
+
+    return out;
   }
 
   /*

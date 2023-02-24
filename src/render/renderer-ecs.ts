@@ -422,6 +422,8 @@ export function registerRenderer(em: EntityManager) {
           // TODO(@darzu): support non-ortho shadows for point lights!
           const lightPos = e.world.position;
 
+          // TODO(@darzu): need to quantize this right so that we don't get
+          //   jitter on shadow edges when panning the camera
           frustumFromBounds(
             visibleWorldCorners,
             lightPos,
