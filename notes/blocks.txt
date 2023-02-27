@@ -38,3 +38,7 @@ Coloration modes:
   perhaps multiple colors: top band, center, bottom band ?
 
 Structured editting Done Right is a big opportunity
+
+"Civet: The Modern Way to Write TypeScript":
+  https://civet.dev
+  a set of potentially interesting ideas for simplifying ts

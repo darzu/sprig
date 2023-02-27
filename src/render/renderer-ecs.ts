@@ -79,6 +79,7 @@ import { WindDef } from "../smol/wind.js";
 import {
   clampToAABB,
   createAABB,
+  getAABBCornersTemp,
   getAABBFromPositions,
 } from "../physics/broadphase.js";
 import { drawBall } from "../utils-game.js";
@@ -407,13 +408,17 @@ export function registerRenderer(em: EntityManager) {
 
       // TODO(@darzu): move point light and casading shadow map code to its own system
       // TODO(@darzu): move this into CameraView?
-      const visibleWorldCorners = getFrustumWorldCorners(
-        cameraView.invViewProjMat
-      );
-      // TODO(@darzu): we probably want the actual world frustum to be clamped by this max as well
-      visibleWorldCorners.forEach((v) =>
-        clampToAABB(v, res.camera.maxWorldAABB, v)
-      );
+      const dynamicShadowFrustum = true;
+      let visibleWorldCorners: vec3[];
+      if (dynamicShadowFrustum) {
+        visibleWorldCorners = getFrustumWorldCorners(cameraView.invViewProjMat);
+        // TODO(@darzu): we probably want the actual world frustum to be clamped by this max as well
+        visibleWorldCorners.forEach((v) =>
+          clampToAABB(v, res.camera.maxWorldAABB, v)
+        );
+      } else {
+        visibleWorldCorners = getAABBCornersTemp(res.camera.maxWorldAABB);
+      }
 
       const pointLights = em
         .filterEntities([PointLightDef, WorldFrameDef])

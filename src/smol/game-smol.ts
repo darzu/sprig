@@ -55,7 +55,11 @@ import { assert } from "../util.js";
 import { texTypeToBytes } from "../render/gpu-struct.js";
 import { PartyDef } from "../games/party.js";
 import { GrassMapDef, GrassMapTexPtr, setMap } from "./grass-map.js";
-import { getAABBCornersTemp } from "../physics/broadphase.js";
+import {
+  copyAABB,
+  createAABB,
+  getAABBCornersTemp,
+} from "../physics/broadphase.js";
 import { rasterizeTri } from "../raster.js";
 import { InputsDef } from "../inputs.js";
 import { ScoreDef } from "./score.js";
@@ -123,6 +127,13 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
   );
 
   res.camera.fov = Math.PI * 0.5;
+  copyAABB(
+    res.camera.maxWorldAABB,
+    createAABB(
+      V(-WORLD_HEIGHT * 1.1, -100, -WORLD_WIDTH * 1.1),
+      V(WORLD_HEIGHT * 1.1, 100, WORLD_WIDTH * 1.1)
+    )
+  );
 
   // console.dir(mapJfa);
   // console.dir(dbgGridCompose);

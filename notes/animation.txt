@@ -195,3 +195,6 @@ Skeletal animation:
 
 "Dual-quaternion skinning":
   https://twitter.com/ENDESGA/status/1617377084653047809
+
+Inverse kinimatics for creatures:
+  https://blog.littlepolygon.com/posts/twobone/
