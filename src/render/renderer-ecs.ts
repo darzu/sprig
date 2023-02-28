@@ -387,10 +387,14 @@ export function registerRenderer(em: EntityManager) {
     "renderList"
   );
 
+  let __frame = 1; // TODO(@darzu): DBG
+
   em.registerSystem(
     null, // NOTE: see "renderList*" systems and NOTE above. We use those to construct our query.
     [CameraDef, CameraViewDef, RendererDef, TimeDef, PartyDef],
     (_, res) => {
+      __frame++; // TODO(@darzu): DBG
+
       const renderer = res.renderer.renderer;
       const cameraView = res.cameraView;
 
@@ -416,6 +420,9 @@ export function registerRenderer(em: EntityManager) {
         visibleWorldCorners.forEach((v) =>
           clampToAABB(v, res.camera.maxWorldAABB, v)
         );
+        if (__frame % 100 === 0) {
+          console.log(visibleWorldCorners.map((c) => vec3Dbg(c)).join(","));
+        }
       } else {
         visibleWorldCorners = getAABBCornersTemp(res.camera.maxWorldAABB);
       }

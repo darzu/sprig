@@ -302,8 +302,8 @@ export function vec4RotateLeft(out: vec4) {
   return out;
 }
 
-const __tempViewCorners: vec3[] = [];
-const __tempViewAABB = createAABB();
+const _tempViewCorners: vec3[] = [];
+const _tempViewAABB = createAABB();
 export function frustumFromBounds(
   worldCorners: vec3[],
   eyePos: vec3,
@@ -314,126 +314,32 @@ export function frustumFromBounds(
 
   // resize temp buffers if needed
   // TODO(@darzu): PERF. doesn't work so well if we get variable numbers of world points
-  while (__tempViewCorners.length < worldCorners.length)
-    __tempViewCorners.push(vec3.create());
-  if (__tempViewCorners.length > worldCorners.length)
-    __tempViewCorners.length = worldCorners.length;
+  while (_tempViewCorners.length < worldCorners.length)
+    _tempViewCorners.push(vec3.create());
+  if (_tempViewCorners.length > worldCorners.length)
+    _tempViewCorners.length = worldCorners.length;
 
   // translate & rotate camera frustum world corners into light view
   worldCorners.forEach((p, i) =>
-    vec3.transformMat4(p, viewTmp, __tempViewCorners[i])
+    vec3.transformMat4(p, viewTmp, _tempViewCorners[i])
   );
 
   // get view-space bounds
-  getAABBFromPositions(__tempViewAABB, __tempViewCorners);
+  getAABBFromPositions(_tempViewAABB, _tempViewCorners);
 
   // create view-space orthographic projection
   const projTmp = mat4.ortho(
     // left/right
-    __tempViewAABB.min[0],
-    __tempViewAABB.max[0],
+    _tempViewAABB.min[0],
+    _tempViewAABB.max[0],
     // bottom/top
-    // __tempViewAABB.min[1],
-    // __tempViewAABB.max[1],
-    __tempViewAABB.min[1],
-    __tempViewAABB.max[1],
-    // -100,
-    // +100,
+    _tempViewAABB.min[1],
+    _tempViewAABB.max[1],
     // near/far
-    -__tempViewAABB.max[2],
-    -__tempViewAABB.min[2]
-    // -__tempViewAABB.min[2],
-    // -__tempViewAABB.max[2]
-    // __tempViewAABB.min[2],
-    // __tempViewAABB.max[2]
-    // 1,
-    // 100
+    -_tempViewAABB.max[2],
+    -_tempViewAABB.min[2]
   );
 
   // compose final view-projection matrix
   mat4.mul(projTmp, viewTmp, outFrust);
 }
-
-/*
-OLD FRUSTUM DEBUG CODE:
-
-  if (__frame > 10 && dbgOnce("drawCameraViewFrustum")) {
-    // TODO(@darzu): would be great to draw as wireframe
-    dbgLogLineBatch(`camera view frustum world corners:`);
-    visibleWorldCorners.forEach((v) => {
-      dbgLogLineBatch(vec3Dbg(v));
-      drawBall(vec3.clone(v), 1, V(1, 0, 0));
-    });
-  }
-
-
-      if (__frame > 10 && dbgOnce("drawLightCorners")) {
-        dbgLogLineBatch(`light pos: ${vec3Dbg(lightPos)}`);
-
-        // TODO(@darzu): would be great to draw as wireframe
-        dbgLogLineBatch(`light view-space world corners:`);
-        _tempViewCorners.forEach((v) => {
-          dbgLogLineBatch(vec3Dbg(v));
-          // drawBall(vec3.clone(v), 1, V(0, 0, 1));
-        });
-      }
-      if (__frame > 200 && dbgOnce("drawShadowFrustum")) {
-        // view gizmo
-        // TODO(@darzu): IMPL
-        {
-          const invView = mat4.invert(viewTmp);
-          // gizmo
-          const gizmoMesh = createGizmoMesh();
-          mapMeshPositions(gizmoMesh, (p) =>
-            vec3.transformMat4(p, invView, p)
-          );
-
-          const gizmo = EM.new();
-          EM.ensureComponentOn(gizmo, RenderableConstructDef, gizmoMesh);
-          EM.ensureComponentOn(gizmo, PositionDef, V(0, 0, 0));
-          // EM.ensureComponentOn(gizmo, PhysicsParentDef, e.id);
-        }
-
-        dbgLogLineBatch(`shadow view mat4:`);
-        dbgLogLineBatch(mat4Dbg(viewTmp));
-        dbgLogLineBatch(`shadow proj mat4:`);
-        dbgLogLineBatch(mat4Dbg(projTmp));
-        dbgLogLineBatch(`shadow view-proj mat4:`);
-        dbgLogLineBatch(mat4Dbg(e.pointLight.viewProj));
-
-        dbgLogLineBatch(`shadow frustum view-space bounds:`);
-        dbgLogLineBatch(aabbDbg(_tempViewAABB));
-
-        dbgLogLineBatch(`shadow frustum world corners:`);
-        // TODO(@darzu): would be great to draw as wireframe
-      }
-      if (__frame > 10 && __frame % 100 === 0) {
-        const invShadow = mat4.invert(e.pointLight.viewProj);
-        const tmpCorners = getFrustumWorldCorners(invShadow);
-        tmpCorners.forEach((v) => {
-          // dbgLogLineBatch(vec3Dbg(v));
-          drawBall(vec3.clone(v), 1, V(0, 1, 0));
-        });
-        dbgLogLineBatch(aabbDbg(_tempViewAABB));
-      }
-
-
-  dbgLogNextBatch();
-
-  dbgLogOnce(`Num point lights: ${pointLights.length}`);
-*/
-
-// TODO(@darzu): Testing frustum stuff
-// {
-//   console.log("FRUSTUM TESTS");
-//   // const proj = mat4.perspective(2, 1, 1, 15);
-//   // const proj = mat4.ortho(-10, 10, -10, 10, 0, 10);
-//   const proj = mat4.frustum(-10, 10, -10, 10, -10, 10);
-//   // const view = mat4.lookAt(V(0, 0, -10), V(0, 0, 0), V(0, 1, 0));
-//   const view = mat4.identity();
-//   // const viewProj = mat4.mul(proj, view);
-//   const viewProj = proj;
-//   const invViewProj = mat4.invert(viewProj);
-//   console.log(vec3Dbg(vec3.transformMat4(V(-1, -1, -1), invViewProj)));
-//   console.log(vec3Dbg(vec3.transformMat4(V(1, 1, 1), invViewProj)));
-// }

@@ -92,3 +92,10 @@ Maybe instead of "beginner" "advanced" "expert" UI modes,
     the opinionated rails.
   But it's not "beginner" b/c big complex games can be made with that initial set
     of opinionated choices.
+
+Might be good to be very opinionated and support my one workflow style
+  Each additional alternate workflow imposes a maintance burden
+  We'd have to think about each feature and which workflows it breaks
+  very hard to think about when you need to page-in a non-familiar workflow
+  and very time consuming to put out a call to community to comment on workflow breakage
+
