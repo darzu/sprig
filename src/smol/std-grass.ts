@@ -94,6 +94,7 @@ function computeGrassVertsData(
 ): GrassVertTS[] {
   assertDbg(0 <= startIdx && startIdx + count <= m.pos.length);
 
+  // TODO(@darzu): use resizeArray?
   while (tempVertsData.length < count)
     tempVertsData.push(createEmptyVertexTS());
 

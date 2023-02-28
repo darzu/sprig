@@ -414,9 +414,11 @@ export function registerRenderer(em: EntityManager) {
       // TODO(@darzu): move this into CameraView?
       const dynamicShadowFrustum = true;
       let visibleWorldCorners: vec3[];
-      if (dynamicShadowFrustum) {
+      if (dynamicShadowFrustum && cameraComputed.shadowCascadeMats.length) {
         visibleWorldCorners = getFrustumWorldCorners(
           cameraComputed.invViewProjMat
+          // cameraComputed.shadowCascadeMats[1].invViewProj
+          // cameraComputed.shadowCascadeMats[0].invViewProj
         );
         // TODO(@darzu): we probably want the actual world frustum to be clamped by this max as well
         visibleWorldCorners.forEach((v) =>

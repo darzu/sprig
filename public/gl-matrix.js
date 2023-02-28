@@ -2319,8 +2319,9 @@ export var mat3 = /*#__PURE__*/Object.freeze({
         var a30 = a[12],
             a31 = a[13],
             a32 = a[14],
-            a33 = a[15]; // Cache only the current line of the second matrix
-
+            a33 = a[15]; 
+            
+        // Cache only the current line of the second matrix
         var b0 = b[0],
             b1 = b[1],
             b2 = b[2],

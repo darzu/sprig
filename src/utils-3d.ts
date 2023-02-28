@@ -6,7 +6,7 @@ import {
   getAABBFromPositions,
 } from "./physics/broadphase.js";
 import { tempVec2, tempVec3 } from "./temp-pool.js";
-import { assertDbg, range, TupleN } from "./util.js";
+import { assertDbg, range, resizeArray, TupleN } from "./util.js";
 
 // TODO(@darzu): a lot of these need to move into gl-matrix; or rather, we need
 //  to subsume gl-matrix into our own libraries.
@@ -314,10 +314,7 @@ export function frustumFromBounds(
 
   // resize temp buffers if needed
   // TODO(@darzu): PERF. doesn't work so well if we get variable numbers of world points
-  while (_tempViewCorners.length < worldCorners.length)
-    _tempViewCorners.push(vec3.create());
-  if (_tempViewCorners.length > worldCorners.length)
-    _tempViewCorners.length = worldCorners.length;
+  resizeArray(_tempViewCorners, worldCorners.length, () => vec3.create());
 
   // translate & rotate camera frustum world corners into light view
   worldCorners.forEach((p, i) =>

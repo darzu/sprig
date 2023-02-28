@@ -17,6 +17,7 @@ import { tempQuat, tempVec3 } from "./temp-pool.js";
 import { TimeDef } from "./time.js";
 import { yawpitchToQuat } from "./yawpitch.js";
 import { createAABB } from "./physics/broadphase.js";
+import { assert, dbgDirOnce, resizeArray } from "./util.js";
 
 export type PerspectiveMode = "perspective" | "ortho";
 export type CameraMode = "thirdPerson" | "thirdPersonOverShoulder";
@@ -27,6 +28,8 @@ export const CameraDef = EM.defineComponent("camera", () => {
     fov: (2 * Math.PI) / 5,
     nearClipDist: 1,
     viewDist: 1000,
+    // TODO(@darzu): what r good cascade numbers here?
+    shadowCascades: [1 / 24, 1],
     targetId: 0,
     maxWorldAABB: createAABB(
       V(-Infinity, -Infinity, -Infinity),
@@ -55,7 +58,15 @@ EM.registerInit({
   },
 });
 
-// TODO(@darzu): what goes in camera vs cameraComputed? Looks like cameraComputed is derived stuff
+export type ShadowCascade = {
+  near: number;
+  far: number;
+  viewProj: mat4;
+  invViewProj: mat4;
+};
+
+// NOTE: cameraComputed should only have derived values based on properties in camera
+// TODO(@darzu): CameraDef also has computed stuff..
 export const CameraComputedDef = EM.defineComponent("cameraComputed", () => {
   return {
     aspectRatio: 1,
@@ -64,6 +75,7 @@ export const CameraComputedDef = EM.defineComponent("cameraComputed", () => {
     viewProjMat: mat4.create(),
     invViewProjMat: mat4.create(),
     location: vec3.create(),
+    shadowCascadeMats: [] as ShadowCascade[],
   };
 });
 export type CameraView = Component<typeof CameraComputedDef>;
@@ -198,7 +210,7 @@ export function registerCameraSystems(em: EntityManager) {
       cameraComputed.width = htmlCanvas.canvas.clientWidth;
       cameraComputed.height = htmlCanvas.canvas.clientHeight;
 
-      let viewMatrix = mat4.create();
+      let viewMatrix = mat4.tmp();
       if (targetEnt) {
         const computedTranslation = vec3.add(
           frame.position,
@@ -220,7 +232,7 @@ export function registerCameraSystems(em: EntityManager) {
 
       mat4.mul(
         viewMatrix,
-        mat4.fromQuat(computedCameraRotation, mat4.create()),
+        mat4.fromQuat(computedCameraRotation, mat4.tmp()),
         viewMatrix
       );
 
@@ -232,7 +244,7 @@ export function registerCameraSystems(em: EntityManager) {
       mat4.translate(viewMatrix, computedCameraTranslation, viewMatrix);
       mat4.invert(viewMatrix, viewMatrix);
 
-      const projectionMatrix = mat4.create();
+      const viewProj = cameraComputed.viewProjMat;
       if (camera.perspectiveMode === "ortho") {
         const ORTHO_SIZE = 10;
         mat4.ortho(
@@ -242,7 +254,7 @@ export function registerCameraSystems(em: EntityManager) {
           ORTHO_SIZE,
           -400,
           100,
-          projectionMatrix
+          viewProj
         );
       } else {
         mat4.perspective(
@@ -250,15 +262,50 @@ export function registerCameraSystems(em: EntityManager) {
           cameraComputed.aspectRatio,
           camera.nearClipDist,
           camera.viewDist,
-          projectionMatrix
+          viewProj
         );
       }
-      const viewProj = mat4.mul(projectionMatrix, viewMatrix, mat4.create());
-
-      cameraComputed.viewProjMat = viewProj;
+      cameraComputed.viewProjMat = mat4.mul(viewProj, viewMatrix, viewProj);
       cameraComputed.invViewProjMat = mat4.invert(
         cameraComputed.viewProjMat,
         cameraComputed.invViewProjMat
+      );
+
+      // compute shadow cascade viewProj matrices
+      // TODO(@darzu): properly support ortho?
+      resizeArray(
+        cameraComputed.shadowCascadeMats,
+        camera.shadowCascades.length,
+        () => ({
+          near: NaN,
+          far: NaN,
+          viewProj: mat4.create(),
+          invViewProj: mat4.create(),
+        })
+      );
+      let shadowNearFrac = camera.nearClipDist / camera.viewDist;
+      for (let i = 0; i < camera.shadowCascades.length; i++) {
+        const shadowFarFrac = camera.shadowCascades[i];
+        assert(shadowFarFrac <= 1.0);
+        const cascade = cameraComputed.shadowCascadeMats[i];
+        cascade.near = camera.viewDist * shadowNearFrac;
+        cascade.far = camera.viewDist * shadowFarFrac;
+
+        mat4.perspective(
+          camera.fov,
+          cameraComputed.aspectRatio,
+          cascade.near,
+          cascade.far,
+          cascade.viewProj
+        );
+        mat4.mul(cascade.viewProj, viewMatrix, cascade.viewProj);
+        mat4.invert(cascade.viewProj, cascade.invViewProj);
+
+        shadowNearFrac = shadowFarFrac;
+      }
+      dbgDirOnce(
+        "cameraComputed.shadowCascadeMats",
+        cameraComputed.shadowCascadeMats
       );
     },
     "updateCameraView"

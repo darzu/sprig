@@ -56,6 +56,7 @@ onInit((em: EntityManager) => {
       ]);
 
       for (let orrery of es) {
+        // TODO(@darzu): use resizeArray?
         while (orrery.orrery.orreryStars.length < stars.length) {
           const orreryStar = em.new();
           em.ensureComponentOn(orreryStar, PositionDef);

@@ -332,3 +332,13 @@ export function dbgGetBlame(kind: string) {
 export function dbgClearBlame(kind: string) {
   blameMaps.get(kind)?.clear();
 }
+
+// TODO(@darzu): would be nice to have a dbg mode where we assert that this isn't
+//    being triggered at different lengths at a callsite in the steady state
+// TODO(@darzu): actually we probably don't want this fn, better to just do a while loop + assert length hasn't shrunk?
+export function resizeArray<T>(arr: T[], len: number, make: () => T) {
+  // if it's too small, append new elements
+  while (arr.length < len) arr.push(make());
+  // if it's too big, chop off the extra (hacky JS pattern)
+  if (arr.length > len) arr.length = len;
+}
