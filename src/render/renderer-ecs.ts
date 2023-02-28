@@ -6,7 +6,7 @@ import {
   ComponentDef,
 } from "../entity-manager.js";
 import { AlphaDef, applyTints, TintsDef } from "../color-ecs.js";
-import { CameraDef, CameraViewDef } from "../camera.js";
+import { CameraDef, CameraComputedDef } from "../camera.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import {
   Frame,
@@ -391,12 +391,12 @@ export function registerRenderer(em: EntityManager) {
 
   em.registerSystem(
     null, // NOTE: see "renderList*" systems and NOTE above. We use those to construct our query.
-    [CameraDef, CameraViewDef, RendererDef, TimeDef, PartyDef],
+    [CameraDef, CameraComputedDef, RendererDef, TimeDef, PartyDef],
     (_, res) => {
       __frame++; // TODO(@darzu): DBG
 
       const renderer = res.renderer.renderer;
-      const cameraView = res.cameraView;
+      const cameraComputed = res.cameraComputed;
 
       const objs = renderObjs;
 
@@ -415,7 +415,9 @@ export function registerRenderer(em: EntityManager) {
       const dynamicShadowFrustum = true;
       let visibleWorldCorners: vec3[];
       if (dynamicShadowFrustum) {
-        visibleWorldCorners = getFrustumWorldCorners(cameraView.invViewProjMat);
+        visibleWorldCorners = getFrustumWorldCorners(
+          cameraComputed.invViewProjMat
+        );
         // TODO(@darzu): we probably want the actual world frustum to be clamped by this max as well
         visibleWorldCorners.forEach((v) =>
           clampToAABB(v, res.camera.maxWorldAABB, v)
@@ -474,14 +476,14 @@ export function registerRenderer(em: EntityManager) {
       // console.log(`maxSurfaceId: ${maxSurfaceId}`);
 
       renderer.updateScene({
-        cameraViewProjMatrix: cameraView.viewProjMat,
+        cameraViewProjMatrix: cameraComputed.viewProjMat,
         //lightViewProjMatrix,
         time: res.time.time,
-        canvasAspectRatio: res.cameraView.aspectRatio,
+        canvasAspectRatio: res.cameraComputed.aspectRatio,
         maxSurfaceId,
         partyPos: res.party.pos,
         partyDir: res.party.dir,
-        cameraPos: cameraView.location,
+        cameraPos: cameraComputed.location,
         numPointLights: pointLights.length,
       });
       // console.log(`pointLights.length: ${pointLights.length}`);

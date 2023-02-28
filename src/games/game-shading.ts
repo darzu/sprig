@@ -1,5 +1,5 @@
 import { AssetsDef } from "../assets.js";
-import { CameraDef, CameraViewDef } from "../camera.js";
+import { CameraDef, CameraComputedDef } from "../camera.js";
 import { ColorDef } from "../color-ecs.js";
 import { AllEndesga16, ENDESGA16 } from "../color/palettes.js";
 import { DevConsoleDef } from "../console.js";
@@ -180,7 +180,7 @@ export async function initShadingGame() {
   //   null,
   //   [CameraViewDef],
   //   (_, res) => {
-  //     const viewCorners = getFrustumWorldCorners(res.cameraView.invViewProjMat);
+  //     const viewCorners = getFrustumWorldCorners(res.cameraComputed.invViewProjMat);
   //     for (let i = 0; i < 8; i++) {
   //       vec3.copy(myViewCorners[i].position, viewCorners[i]);
   //     }

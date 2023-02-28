@@ -137,21 +137,29 @@ export async function randomizeMeshColors(e: Entity) {
 export function screenPosToWorldPos(
   out: vec3,
   screenPos: vec2,
-  cameraView: CameraView,
+  cameraComputed: CameraView,
   screenDepth: number = 0
 ): vec3 {
-  const invViewProj = cameraView.invViewProjMat;
+  const invViewProj = cameraComputed.invViewProjMat;
 
-  const viewX = mathMap(screenPos[0], 0, cameraView.width, -1, 1);
-  const viewY = mathMap(screenPos[1], 0, cameraView.height, 1, -1);
+  const viewX = mathMap(screenPos[0], 0, cameraComputed.width, -1, 1);
+  const viewY = mathMap(screenPos[1], 0, cameraComputed.height, 1, -1);
   const viewPos3 = vec3.set(viewX, viewY, screenDepth);
 
   return vec3.transformMat4(viewPos3, invViewProj, out);
 }
 
-export function screenPosToRay(screenPos: vec2, cameraView: CameraView): Ray {
-  const origin = screenPosToWorldPos(vec3.create(), screenPos, cameraView, -1);
-  const target = screenPosToWorldPos(tempVec3(), screenPos, cameraView, 0);
+export function screenPosToRay(
+  screenPos: vec2,
+  cameraComputed: CameraView
+): Ray {
+  const origin = screenPosToWorldPos(
+    vec3.create(),
+    screenPos,
+    cameraComputed,
+    -1
+  );
+  const target = screenPosToWorldPos(tempVec3(), screenPos, cameraComputed, 0);
 
   const dir = vec3.sub(target, origin, vec3.create());
   vec3.normalize(dir, dir);

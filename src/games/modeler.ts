@@ -17,7 +17,7 @@ import { vec3Dbg } from "../utils-3d.js";
 import { AssetsDef } from "../assets.js";
 import { ColorDef, TintsDef } from "../color-ecs.js";
 import { drawLine, screenPosToRay } from "../utils-game.js";
-import { CameraView, CameraViewDef } from "../camera.js";
+import { CameraView, CameraComputedDef } from "../camera.js";
 
 const ENABLED = true;
 
@@ -55,14 +55,14 @@ function registerObjClicker(em: EntityManager) {
   // look for object clicks
   em.registerSystem(
     null,
-    [ModelerDef, CameraViewDef, InputsDef, PhysicsResultsDef],
+    [ModelerDef, CameraComputedDef, InputsDef, PhysicsResultsDef],
     (_, res) => {
       if (!res.modeler.clickerEnabled) return;
 
       if (res.inputs.lclick) {
         const screenPos: vec2 = res.inputs.mousePos;
 
-        const r = screenPosToRay(screenPos, res.cameraView);
+        const r = screenPosToRay(screenPos, res.cameraComputed);
 
         // check for hits
         const hits = res.physicsResults.checkRay(r);

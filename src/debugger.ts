@@ -21,7 +21,7 @@ interface DbgEnt extends Entity {
 // meshHandle,time,netTimer,physicsTimer,inputs,collider,motion,inWorld,finished,sync,
 // peer,host,authority,deleted,me,inbox,outbox,netStats,eventsFromNetwork,
 // eventsToNetwork,networkReady,join,bullet,bulletConstruct,cubeConstruct,player,
-// playerProps,camera,transform,motionSmoothing,parent,renderable,cameraView,
+// playerProps,camera,transform,motionSmoothing,parent,renderable,cameraComputed,
 // physicsResults,_phys,enemyShip,enemyShipConstruct,detectedEvents,requestedEvents,events,
 // groundConstruct,shipConstruct,hatConstruct,color,hat
 

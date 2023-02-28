@@ -1,4 +1,4 @@
-import { CameraDef, CameraViewDef } from "../camera.js";
+import { CameraDef, CameraComputedDef } from "../camera.js";
 import { CanvasDef } from "../canvas.js";
 import { ColorDef } from "../color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
@@ -156,23 +156,23 @@ export async function initFontEditor(em: EntityManager) {
   // TODO(@darzu): de-duplicate this with very similar code in other "games"
   EM.registerSystem(
     null,
-    [CameraViewDef, CanvasDef, CameraDef, InputsDef, UICursorDef],
+    [CameraComputedDef, CanvasDef, CameraDef, InputsDef, UICursorDef],
     async (_, res) => {
-      const { cameraView, htmlCanvas, inputs } = res;
+      const { cameraComputed, htmlCanvas, inputs } = res;
       const cursor = res.uiCursor.cursor;
 
       if (res.camera.targetId) return;
 
       // update aspect ratio and size
-      cameraView.aspectRatio = Math.abs(
+      cameraComputed.aspectRatio = Math.abs(
         htmlCanvas.canvas.width / htmlCanvas.canvas.height
       );
-      cameraView.width = htmlCanvas.canvas.clientWidth;
-      cameraView.height = htmlCanvas.canvas.clientHeight;
+      cameraComputed.width = htmlCanvas.canvas.clientWidth;
+      cameraComputed.height = htmlCanvas.canvas.clientHeight;
 
       // dbgLogOnce(
-      //   `ar${cameraView.aspectRatio.toFixed(2)}`,
-      //   `ar ${cameraView.aspectRatio.toFixed(2)}`
+      //   `ar${cameraComputed.aspectRatio.toFixed(2)}`,
+      //   `ar ${cameraComputed.aspectRatio.toFixed(2)}`
       // );
 
       let viewMatrix = mat4.create();
@@ -191,9 +191,9 @@ export async function initFontEditor(em: EntityManager) {
       const padPanelH = PANEL_H + VIEW_PAD * 2;
 
       const padPanelAR = padPanelW / padPanelH;
-      const cameraAR = cameraView.width / cameraView.height;
+      const cameraAR = cameraComputed.width / cameraComputed.height;
 
-      // const maxPanelW = boxInBox(cameraView.width, cameraView.height, panelAR);
+      // const maxPanelW = boxInBox(cameraComputed.width, cameraComputed.height, panelAR);
 
       let adjPanelW: number;
       let adjPanelH: number;
@@ -221,10 +221,10 @@ export async function initFontEditor(em: EntityManager) {
 
       const viewProj = mat4.mul(projectionMatrix, viewMatrix, mat4.create());
 
-      cameraView.viewProjMat = viewProj;
-      cameraView.invViewProjMat = mat4.invert(
-        cameraView.viewProjMat,
-        cameraView.invViewProjMat
+      cameraComputed.viewProjMat = viewProj;
+      cameraComputed.invViewProjMat = mat4.invert(
+        cameraComputed.viewProjMat,
+        cameraComputed.invViewProjMat
       );
 
       let cursorFracX = inputs.mousePos[0] / htmlCanvas.canvas.clientWidth;
@@ -235,7 +235,7 @@ export async function initFontEditor(em: EntityManager) {
           mathMap(cursorFracY, 0, 1, 1, -1),
           0,
         ],
-        cameraView.invViewProjMat
+        cameraComputed.invViewProjMat
       );
       cursor.position[0] = cursorWorldPos[0];
       cursor.position[2] = cursorWorldPos[2];

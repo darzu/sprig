@@ -55,8 +55,8 @@ EM.registerInit({
   },
 });
 
-// TODO(@darzu): what goes in camera vs cameraView? Looks like cameraView is derived stuff
-export const CameraViewDef = EM.defineComponent("cameraView", () => {
+// TODO(@darzu): what goes in camera vs cameraComputed? Looks like cameraComputed is derived stuff
+export const CameraComputedDef = EM.defineComponent("cameraComputed", () => {
   return {
     aspectRatio: 1,
     width: 100,
@@ -66,7 +66,7 @@ export const CameraViewDef = EM.defineComponent("cameraView", () => {
     location: vec3.create(),
   };
 });
-export type CameraView = Component<typeof CameraViewDef>;
+export type CameraView = Component<typeof CameraComputedDef>;
 
 export const CameraFollowDef = EM.defineComponent(
   "cameraFollow",
@@ -178,12 +178,12 @@ export function registerCameraSystems(em: EntityManager) {
     "retargetCamera"
   );
 
-  em.addResource(CameraViewDef);
+  em.addResource(CameraComputedDef);
   em.registerSystem(
     null,
-    [CameraViewDef, CameraDef, MeDef, CanvasDef],
+    [CameraComputedDef, CameraDef, MeDef, CanvasDef],
     (_, resources) => {
-      const { cameraView, camera, me, htmlCanvas } = resources;
+      const { cameraComputed, camera, me, htmlCanvas } = resources;
 
       let targetEnt = em.findEntity(camera.targetId, [RendererWorldFrameDef]);
 
@@ -192,11 +192,11 @@ export function registerCameraSystems(em: EntityManager) {
       const frame = targetEnt.rendererWorldFrame;
 
       // update aspect ratio and size
-      cameraView.aspectRatio = Math.abs(
+      cameraComputed.aspectRatio = Math.abs(
         htmlCanvas.canvas.width / htmlCanvas.canvas.height
       );
-      cameraView.width = htmlCanvas.canvas.clientWidth;
-      cameraView.height = htmlCanvas.canvas.clientHeight;
+      cameraComputed.width = htmlCanvas.canvas.clientWidth;
+      cameraComputed.height = htmlCanvas.canvas.clientHeight;
 
       let viewMatrix = mat4.create();
       if (targetEnt) {
@@ -210,7 +210,7 @@ export function registerCameraSystems(em: EntityManager) {
           frame.scale,
           viewMatrix
         );
-        vec3.copy(cameraView.location, computedTranslation);
+        vec3.copy(cameraComputed.location, computedTranslation);
       }
 
       const computedCameraRotation = quat.mul(
@@ -247,7 +247,7 @@ export function registerCameraSystems(em: EntityManager) {
       } else {
         mat4.perspective(
           camera.fov,
-          cameraView.aspectRatio,
+          cameraComputed.aspectRatio,
           camera.nearClipDist,
           camera.viewDist,
           projectionMatrix
@@ -255,10 +255,10 @@ export function registerCameraSystems(em: EntityManager) {
       }
       const viewProj = mat4.mul(projectionMatrix, viewMatrix, mat4.create());
 
-      cameraView.viewProjMat = viewProj;
-      cameraView.invViewProjMat = mat4.invert(
-        cameraView.viewProjMat,
-        cameraView.invViewProjMat
+      cameraComputed.viewProjMat = viewProj;
+      cameraComputed.invViewProjMat = mat4.invert(
+        cameraComputed.viewProjMat,
+        cameraComputed.invViewProjMat
       );
     },
     "updateCameraView"

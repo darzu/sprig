@@ -1,4 +1,4 @@
-import { CameraViewDef } from "../camera.js";
+import { CameraComputedDef } from "../camera.js";
 import { AlphaDef, ColorDef } from "../color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { EM, EntityW } from "../entity-manager.js";
@@ -90,8 +90,8 @@ async function initDragBox(): Promise<EntityW<[typeof PositionDef]>> {
 
   EM.registerSystem(
     null,
-    [MouseDragDef, CameraViewDef, WidgetLayerDef],
-    (_, { mousedrag, cameraView, widgets }) => {
+    [MouseDragDef, CameraComputedDef, WidgetLayerDef],
+    (_, { mousedrag, cameraComputed, widgets }) => {
       // update dragbox
       if (widgets.cursor || mousedrag.isDragEnd) {
         // hide dragbox
@@ -102,13 +102,13 @@ async function initDragBox(): Promise<EntityW<[typeof PositionDef]>> {
         const min = screenPosToWorldPos(
           tempVec3(),
           mousedrag.dragMin,
-          cameraView
+          cameraComputed
         );
         min[1] = 0;
         const max = screenPosToWorldPos(
           tempVec3(),
           mousedrag.dragMax,
-          cameraView
+          cameraComputed
         );
         max[1] = 1;
 
@@ -140,7 +140,7 @@ async function initWidgets({ assets }: EntityW<[typeof AssetsDef]>) {
       WidgetLayerDef,
       PhysicsResultsDef,
       MouseDragDef,
-      CameraViewDef,
+      CameraComputedDef,
       UICursorDef,
     ],
     (
@@ -149,7 +149,7 @@ async function initWidgets({ assets }: EntityW<[typeof AssetsDef]>) {
         widgets,
         physicsResults,
         mousedrag,
-        cameraView,
+        cameraComputed,
         uiCursor: {
           cursor: { id: cursorId },
         },
@@ -165,13 +165,13 @@ async function initWidgets({ assets }: EntityW<[typeof AssetsDef]>) {
         const start = screenPosToWorldPos(
           tempVec3(),
           mousedrag.dragLastEnd,
-          cameraView
+          cameraComputed
         );
         start[1] = 0;
         const end = screenPosToWorldPos(
           tempVec3(),
           mousedrag.dragEnd,
-          cameraView
+          cameraComputed
         );
         end[1] = 0;
         vec3.sub(end, start, worldDrag);

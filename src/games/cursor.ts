@@ -11,7 +11,7 @@ import {
 import { AssetsDef } from "../assets.js";
 import { ColorDef } from "../color-ecs.js";
 import { assert } from "../util.js";
-import { CameraViewDef } from "../camera.js";
+import { CameraComputedDef } from "../camera.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import {
   PhysicsResultsDef,
@@ -58,7 +58,7 @@ export function registerCursorSystems(em: EntityManager) {
 
   em.registerSystem(
     [Cursor3dDef, PositionDef, ColorDef],
-    [CameraViewDef, PhysicsResultsDef],
+    [CameraComputedDef, PhysicsResultsDef],
     (cs, res) => {
       if (!cs.length) return;
       const c = cs[0];
@@ -66,10 +66,10 @@ export function registerCursorSystems(em: EntityManager) {
 
       // shoot a ray from screen center to figure out where to put the cursor
       const screenMid: vec2 = vec2.clone([
-        res.cameraView.width * 0.5,
-        res.cameraView.height * 0.4,
+        res.cameraComputed.width * 0.5,
+        res.cameraComputed.height * 0.4,
       ]);
-      const r = screenPosToRay(screenMid, res.cameraView);
+      const r = screenPosToRay(screenMid, res.cameraComputed);
       let cursorDistance = c.cursor3d.maxDistance;
 
       // if we hit something with that ray, put the cursor there
