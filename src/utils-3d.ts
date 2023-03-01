@@ -333,7 +333,8 @@ export function frustumFromBounds(
     _tempViewAABB.min[1],
     _tempViewAABB.max[1],
     // near/far
-    -_tempViewAABB.max[2],
+    -1.0, // TODO(@darzu): HACK?
+    // -_tempViewAABB.max[2],
     -_tempViewAABB.min[2]
   );
 

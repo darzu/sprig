@@ -114,7 +114,7 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
     [mapJfa._inputMaskTex, mapJfa._uvMaskTex],
     //
     // [mapJfa.voronoiTex, mapJfa.sdfTex],
-    [shadowDepthTextures[0], shadowDepthTextures[0]],
+    [shadowDepthTextures[0], shadowDepthTextures[1]],
   ];
   let dbgGridCompose = createGridComposePipelines(dbgGrid);
 

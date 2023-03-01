@@ -21,7 +21,8 @@ import { meshPoolPtr } from "./std-scene.js";
 // // TODO(@darzu): TODO
 
 // TODO(@darzu): Multiple shadow maps for multiple shadow casters
-const numShadowMaps = 1;
+// TODO(@darzu): Multiple shadow maps for cascading shadow maps
+const numShadowMaps = 2;
 
 export const shadowDepthTextures = range(numShadowMaps).map((i) =>
   CY.createDepthTexture(`shadowTex${i}`, {
@@ -47,10 +48,11 @@ export const shadowPipelines = range(numShadowMaps).map((i) =>
     shaderVertexEntry: "vert_main",
     shaderFragmentEntry: "frag_main",
     cullMode: "front", // TODO(@darzu): alternative to depth bias?
+    // TODO(@darzu): support multiple lights again
     shader: () => `
   @vertex
   fn vert_main(input: VertexInput) -> @builtin(position) vec4<f32> {
-    return pointLights.ms[${i}].viewProj * meshUni.transform * vec4<f32>(input.position, 1.0);
+    return pointLights.ms[0].viewProj${i} * meshUni.transform * vec4<f32>(input.position, 1.0);
   }
 
   @fragment fn frag_main() { }

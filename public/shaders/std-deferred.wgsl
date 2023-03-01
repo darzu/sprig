@@ -100,7 +100,7 @@ fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
       let halfway = normalize(toLight + normal); // TODO(@darzu): use?!
       let cameraAng = clamp(dot(normalize(toCamera), normal), 0.0, 1.0);
       // XY is in (-1, 1) space, Z is in (0, 1) space
-      let posFromLight = (pointLights.ms[i].viewProj * worldPos).xyz;
+      let posFromLight = (pointLights.ms[i].viewProj0 * worldPos).xyz;
       
       // Convert XY to (0, 1), Y is flipped because texture coords are Y-down.
       let shadowPos = vec3<f32>(posFromLight.xy * vec2<f32>(0.5, -0.5) + vec2<f32>(0.5, 0.5),

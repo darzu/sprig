@@ -410,57 +410,54 @@ export function registerRenderer(em: EntityManager) {
       // const e10003 = objs.filter((o) => o.id === 10003);
       // console.log(`mId 24: ${!!m24.length}, e10003: ${!!e10003.length}`);
 
-      // TODO(@darzu): move point light and casading shadow map code to its own system
-      // TODO(@darzu): move this into CameraView?
-      const dynamicShadowFrustum = true;
-      let visibleWorldCorners: vec3[];
-      if (dynamicShadowFrustum && cameraComputed.shadowCascadeMats.length) {
-        visibleWorldCorners = getFrustumWorldCorners(
-          cameraComputed.invViewProjMat
-          // cameraComputed.shadowCascadeMats[1].invViewProj
-          // cameraComputed.shadowCascadeMats[0].invViewProj
-        );
-        // TODO(@darzu): we probably want the actual world frustum to be clamped by this max as well
-        visibleWorldCorners.forEach((v) =>
-          clampToAABB(v, res.camera.maxWorldAABB, v)
-        );
-        if (__frame % 100 === 0) {
-          console.log(visibleWorldCorners.map((c) => vec3Dbg(c)).join(","));
-        }
-      } else {
-        visibleWorldCorners = getAABBCornersTemp(res.camera.maxWorldAABB);
-      }
-
+      // update position
       const pointLights = em
         .filterEntities([PointLightDef, WorldFrameDef])
         .map((e) => {
-          // TODO(@darzu): CSM: support multiple slices
-          // TODO(@darzu): support non-ortho shadows for point lights!
-          const lightPos = e.world.position;
-
-          // TODO(@darzu): need to quantize this right so that we don't get
-          //   jitter on shadow edges when panning the camera
-          frustumFromBounds(
-            visibleWorldCorners,
-            lightPos,
-            e.pointLight.viewProj
-          );
-
-          // NOTE: this old way of calculating the light's viewProj was pretty broken for non-directional
-          // positionAndTargetToOrthoViewProjMatrix(
-          //   e.pointLight.viewProj,
-          //   lightPos,
-          //   V(0, 0, 0)
-          // );
-
-          // TODO(@darzu): HACK. what's up with this ordering?
-          let { viewProj, ...rest } = e.pointLight;
-          return {
-            viewProj,
-            position: e.world.position,
-            ...rest,
-          };
+          vec3.copy(e.pointLight.position, e.world.position);
+          return e.pointLight;
         });
+
+      const NUM_CASCADES = 2;
+      // TODO(@darzu): move point light and casading shadow map code to its own system
+      // TODO(@darzu): move this into CameraView?
+      // TODO(@darzu): CSM: support multiple slices
+      // TODO(@darzu): support non-ortho shadows for point lights!
+      if (cameraComputed.shadowCascadeMats.length)
+        for (let e of pointLights) {
+          for (let i = 0; i < NUM_CASCADES; i++) {
+            const visibleWorldCorners = getFrustumWorldCorners(
+              // cameraComputed.invViewProjMat
+              cameraComputed.shadowCascadeMats[i].invViewProj
+              // cameraComputed.shadowCascadeMats[0].invViewProj
+            );
+            // TODO(@darzu): we probably want the actual world frustum to be clamped by this max as well
+            visibleWorldCorners.forEach((v) =>
+              clampToAABB(v, res.camera.maxWorldAABB, v)
+            );
+            if (__frame % 100 === 0) {
+              console.log(visibleWorldCorners.map((c) => vec3Dbg(c)).join(","));
+            }
+
+            // TODO(@darzu): CALC e.depth0
+
+            let viewProj: mat4;
+            if (i === 0) viewProj = e.viewProj0;
+            else if (i === 1) viewProj = e.viewProj1;
+            else assert(false);
+
+            // TODO(@darzu): need to quantize this right so that we don't get
+            //   jitter on shadow edges when panning the camera
+            frustumFromBounds(visibleWorldCorners, e.position, viewProj);
+
+            // NOTE: this old way of calculating the light's viewProj was pretty broken for non-directional
+            // positionAndTargetToOrthoViewProjMatrix(
+            //   e.pointLight.viewProj,
+            //   lightPos,
+            //   V(0, 0, 0)
+            // );
+          }
+        }
 
       // const lightPosition =
       //   pointLights[0]?.position ?? V(0, 0, 0);

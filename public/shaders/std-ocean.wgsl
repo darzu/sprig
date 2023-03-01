@@ -28,39 +28,39 @@ fn sampleShadowTexture(pos: vec2<f32>, depth: f32, index: u32) -> f32 {
 }
 
 // TODO(@darzu): de-dupe w/ std-mesh
-fn getShadowVis(shadowPos: vec3<f32>, normal: vec3<f32>, lightDir: vec3<f32>, index: u32) -> f32 {
-  // See: https://learnopengl.com/Advanced-Lighting/Shadows/Shadow-Mapping
-  // Note: a better bias would look something like "max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);"
-    //let shadowBias = 0.007;
-    //let shadowBias = 0.001;
-    //let shadowBias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
-  let shadowBias = 0.0002;
-  let shadowDepth = shadowPos.z; // * f32(shadowPos.z <= 1.0);
-  let outsideShadow = 1.0 - f32(0.0 < shadowPos.x && shadowPos.x < 1.0 
-                && 0.0 < shadowPos.y && shadowPos.y < 1.0);
-  //let shadowSamp = sampleShadowTexture(shadowPos.xy, shadowDepth - shadowBias, index);
+// fn getShadowVis(shadowPos: vec3<f32>, normal: vec3<f32>, lightDir: vec3<f32>, index: u32) -> f32 {
+//   // See: https://learnopengl.com/Advanced-Lighting/Shadows/Shadow-Mapping
+//   // Note: a better bias would look something like "max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);"
+//     //let shadowBias = 0.007;
+//     //let shadowBias = 0.001;
+//     //let shadowBias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
+//   let shadowBias = 0.0002;
+//   let shadowDepth = shadowPos.z; // * f32(shadowPos.z <= 1.0);
+//   let outsideShadow = 1.0 - f32(0.0 < shadowPos.x && shadowPos.x < 1.0 
+//                 && 0.0 < shadowPos.y && shadowPos.y < 1.0);
+//   //let shadowSamp = sampleShadowTexture(shadowPos.xy, shadowDepth - shadowBias, index);
 
-  //Percentage-closer filtering. Sample texels in the region
-  //to smooth the result.
-  var visibility : f32 = 0.0;
-  let oneOverShadowDepthTextureSize = 1.0 / shadowDepthTextureSize;
-  for (var y : i32 = -1 ; y <= 1 ; y = y + 1) {
-      for (var x : i32 = -1 ; x <= 1 ; x = x + 1) {
-          let offset : vec2<f32> = vec2<f32>(
-          f32(x) * oneOverShadowDepthTextureSize,
-          f32(y) * oneOverShadowDepthTextureSize);
+//   //Percentage-closer filtering. Sample texels in the region
+//   //to smooth the result.
+//   var visibility : f32 = 0.0;
+//   let oneOverShadowDepthTextureSize = 1.0 / shadowDepthTextureSize;
+//   for (var y : i32 = -1 ; y <= 1 ; y = y + 1) {
+//       for (var x : i32 = -1 ; x <= 1 ; x = x + 1) {
+//           let offset : vec2<f32> = vec2<f32>(
+//           f32(x) * oneOverShadowDepthTextureSize,
+//           f32(y) * oneOverShadowDepthTextureSize);
 
-          visibility = visibility + sampleShadowTexture(shadowPos.xy + offset, shadowDepth - shadowBias, index);
-      }
-  }
-  visibility = visibility / 9.0;
-  // var visibility = textureSampleCompare(shadowMap, shadowSampler, 
-  //                                       shadowPos.xy, shadowDepth - shadowBias);
+//           visibility = visibility + sampleShadowTexture(shadowPos.xy + offset, shadowDepth - shadowBias, index);
+//       }
+//   }
+//   visibility = visibility / 9.0;
+//   // var visibility = textureSampleCompare(shadowMap, shadowSampler, 
+//   //                                       shadowPos.xy, shadowDepth - shadowBias);
  
-  visibility = min(outsideShadow + visibility, 1.0);
+//   visibility = min(outsideShadow + visibility, 1.0);
 
-  return visibility;
-}
+//   return visibility;
+// }
 
 @vertex
 fn vert_main(input: VertexInput) -> VertexOutput {
