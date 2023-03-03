@@ -221,10 +221,10 @@ export async function initFontEditor(em: EntityManager) {
 
       const viewProj = mat4.mul(projectionMatrix, viewMatrix, mat4.create());
 
-      cameraComputed.viewProjMat = viewProj;
-      cameraComputed.invViewProjMat = mat4.invert(
-        cameraComputed.viewProjMat,
-        cameraComputed.invViewProjMat
+      cameraComputed.viewProj = viewProj;
+      cameraComputed.invViewProj = mat4.invert(
+        cameraComputed.viewProj,
+        cameraComputed.invViewProj
       );
 
       let cursorFracX = inputs.mousePos[0] / htmlCanvas.canvas.clientWidth;
@@ -235,7 +235,7 @@ export async function initFontEditor(em: EntityManager) {
           mathMap(cursorFracY, 0, 1, 1, -1),
           0,
         ],
-        cameraComputed.invViewProjMat
+        cameraComputed.invViewProj
       );
       cursor.position[0] = cursorWorldPos[0];
       cursor.position[2] = cursorWorldPos[2];

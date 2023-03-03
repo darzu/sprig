@@ -336,7 +336,11 @@ export function dbgClearBlame(kind: string) {
 // TODO(@darzu): would be nice to have a dbg mode where we assert that this isn't
 //    being triggered at different lengths at a callsite in the steady state
 // TODO(@darzu): actually we probably don't want this fn, better to just do a while loop + assert length hasn't shrunk?
-export function resizeArray<T>(arr: T[], len: number, make: () => T) {
+export function resizeArray<T, T2 extends T>(
+  arr: T[],
+  len: number,
+  make: () => T2 // TS HACK: we have to use `T2 extends T` here otherwise TS would allow T to infer as that intersection of arr and make
+) {
   // if it's too small, append new elements
   while (arr.length < len) arr.push(make());
   // if it's too big, chop off the extra (hacky JS pattern)

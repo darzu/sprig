@@ -61,6 +61,7 @@ EM.registerInit({
 export type ShadowCascade = {
   near: number;
   far: number;
+  farZ: number;
   viewProj: mat4;
   invViewProj: mat4;
 };
@@ -72,8 +73,9 @@ export const CameraComputedDef = EM.defineComponent("cameraComputed", () => {
     aspectRatio: 1,
     width: 100,
     height: 100,
-    viewProjMat: mat4.create(),
-    invViewProjMat: mat4.create(),
+    proj: mat4.create(),
+    viewProj: mat4.create(),
+    invViewProj: mat4.create(),
     location: vec3.create(),
     shadowCascadeMats: [] as ShadowCascade[],
   };
@@ -244,7 +246,6 @@ export function registerCameraSystems(em: EntityManager) {
       mat4.translate(viewMatrix, computedCameraTranslation, viewMatrix);
       mat4.invert(viewMatrix, viewMatrix);
 
-      const viewProj = cameraComputed.viewProjMat;
       if (camera.perspectiveMode === "ortho") {
         const ORTHO_SIZE = 10;
         mat4.ortho(
@@ -254,7 +255,7 @@ export function registerCameraSystems(em: EntityManager) {
           ORTHO_SIZE,
           -400,
           100,
-          viewProj
+          cameraComputed.proj
         );
       } else {
         mat4.perspective(
@@ -262,14 +263,11 @@ export function registerCameraSystems(em: EntityManager) {
           cameraComputed.aspectRatio,
           camera.nearClipDist,
           camera.viewDist,
-          viewProj
+          cameraComputed.proj
         );
       }
-      cameraComputed.viewProjMat = mat4.mul(viewProj, viewMatrix, viewProj);
-      cameraComputed.invViewProjMat = mat4.invert(
-        cameraComputed.viewProjMat,
-        cameraComputed.invViewProjMat
-      );
+      mat4.mul(cameraComputed.proj, viewMatrix, cameraComputed.viewProj);
+      mat4.invert(cameraComputed.viewProj, cameraComputed.invViewProj);
 
       // compute shadow cascade viewProj matrices
       // TODO(@darzu): properly support ortho?
@@ -279,6 +277,7 @@ export function registerCameraSystems(em: EntityManager) {
         () => ({
           near: NaN,
           far: NaN,
+          farZ: NaN,
           viewProj: mat4.create(),
           invViewProj: mat4.create(),
         })
@@ -290,6 +289,10 @@ export function registerCameraSystems(em: EntityManager) {
         const cascade = cameraComputed.shadowCascadeMats[i];
         cascade.near = camera.viewDist * shadowNearFrac;
         cascade.far = camera.viewDist * shadowFarFrac;
+        cascade.farZ = vec3.transformMat4(
+          [0, 0, -cascade.far],
+          cameraComputed.proj
+        )[2];
 
         mat4.perspective(
           camera.fov,

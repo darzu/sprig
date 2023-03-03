@@ -9,6 +9,7 @@ const MAX_POINT_LIGHTS = 12;
 export const PointLightStruct = createCyStruct(
   {
     // TODO(@darzu): 1 per cascade; better way to do this?
+    viewProjAll: "mat4x4<f32>",
     viewProj0: "mat4x4<f32>",
     viewProj1: "mat4x4<f32>",
     position: "vec3<f32>",
@@ -32,6 +33,7 @@ export type PointLightTS = CyToTS<typeof PointLightStruct.desc>;
 
 function createDefaultPointLight(): PointLightTS {
   return {
+    viewProjAll: mat4.create(),
     viewProj0: mat4.create(),
     viewProj1: mat4.create(),
     position: vec3.create(),

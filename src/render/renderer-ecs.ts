@@ -425,10 +425,12 @@ export function registerRenderer(em: EntityManager) {
       // TODO(@darzu): support non-ortho shadows for point lights!
       if (cameraComputed.shadowCascadeMats.length)
         for (let e of pointLights) {
+          mat4.copy(e.viewProjAll, cameraComputed.viewProj);
           for (let i = 0; i < NUM_CASCADES; i++) {
+            const cascade = cameraComputed.shadowCascadeMats[i];
             const visibleWorldCorners = getFrustumWorldCorners(
               // cameraComputed.invViewProjMat
-              cameraComputed.shadowCascadeMats[i].invViewProj
+              cascade.invViewProj
               // cameraComputed.shadowCascadeMats[0].invViewProj
             );
             // TODO(@darzu): we probably want the actual world frustum to be clamped by this max as well
@@ -439,7 +441,11 @@ export function registerRenderer(em: EntityManager) {
               console.log(visibleWorldCorners.map((c) => vec3Dbg(c)).join(","));
             }
 
-            // TODO(@darzu): CALC e.depth0
+            // TODO(@darzu): HACKY ifs. why not arrays?
+
+            if (i === 0) e.depth0 = cascade.farZ;
+            else if (i === 1) e.depth1 = cascade.farZ;
+            else assert(false);
 
             let viewProj: mat4;
             if (i === 0) viewProj = e.viewProj0;
@@ -475,7 +481,7 @@ export function registerRenderer(em: EntityManager) {
       // console.log(`maxSurfaceId: ${maxSurfaceId}`);
 
       renderer.updateScene({
-        cameraViewProjMatrix: cameraComputed.viewProjMat,
+        cameraViewProjMatrix: cameraComputed.viewProj,
         //lightViewProjMatrix,
         time: res.time.time,
         canvasAspectRatio: res.cameraComputed.aspectRatio,

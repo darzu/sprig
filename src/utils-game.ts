@@ -140,7 +140,7 @@ export function screenPosToWorldPos(
   cameraComputed: CameraView,
   screenDepth: number = 0
 ): vec3 {
-  const invViewProj = cameraComputed.invViewProjMat;
+  const invViewProj = cameraComputed.invViewProj;
 
   const viewX = mathMap(screenPos[0], 0, cameraComputed.width, -1, 1);
   const viewY = mathMap(screenPos[1], 0, cameraComputed.height, 1, -1);

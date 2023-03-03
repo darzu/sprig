@@ -35,7 +35,12 @@ fn vert_main(@builtin(vertex_index) VertexIndex : u32) -> VertexOutput {
 const shadowDepthTextureSize = 2048.0;
 
 fn sampleShadowTexture(pos: vec2<f32>, depth: f32, index: u32) -> f32 {
-  return textureSampleCompare(shadowMap0, shadowSampler, pos, depth);
+  // TODO(@darzu): use array
+  if (index == 0u) {
+    return textureSampleCompare(shadowMap0, shadowSampler, pos, depth);
+  } else {
+    return textureSampleCompare(shadowMap1, shadowSampler, pos, depth);
+  }
 }
 
 fn getShadowVis(shadowPos: vec3<f32>, normal: vec3<f32>, lightDir: vec3<f32>, index: u32) -> f32 {
@@ -54,7 +59,7 @@ fn getShadowVis(shadowPos: vec3<f32>, normal: vec3<f32>, lightDir: vec3<f32>, in
           f32(x) * oneOverShadowDepthTextureSize,
           f32(y) * oneOverShadowDepthTextureSize);
 
-          visibility = visibility + sampleShadowTexture(shadowPos.xy + offset, shadowDepth - shadowBias, index);
+          visibility += sampleShadowTexture(shadowPos.xy + offset, shadowDepth - shadowBias, index);
       }
   }
   visibility = visibility / 9.0;
@@ -99,14 +104,29 @@ fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
       let lightAng = clamp(dot(toLight, normal), 0.0, 1.0);
       let halfway = normalize(toLight + normal); // TODO(@darzu): use?!
       let cameraAng = clamp(dot(normalize(toCamera), normal), 0.0, 1.0);
+
+      // TODO(@darzu): too much extra math?
+      let shadowFullZ = (pointLights.ms[i].viewProjAll * worldPos).z;
+
+      var cascadeIdx = 0u;
+      if (shadowFullZ > light.depth0) {
+        cascadeIdx = 1u;
+      }
+
+      var viewProj = pointLights.ms[i].viewProj0;
+      if (cascadeIdx == 1u) {
+        viewProj = pointLights.ms[i].viewProj1;
+      }
+
       // XY is in (-1, 1) space, Z is in (0, 1) space
-      let posFromLight = (pointLights.ms[i].viewProj0 * worldPos).xyz;
+      let posFromLight = (viewProj * worldPos).xyz;
       
       // Convert XY to (0, 1), Y is flipped because texture coords are Y-down.
       let shadowPos = vec3<f32>(posFromLight.xy * vec2<f32>(0.5, -0.5) + vec2<f32>(0.5, 0.5),
                                 posFromLight.z
                                 );
-      let shadowVis = getShadowVis(shadowPos, normal, toLight, i);
+
+      let shadowVis = getShadowVis(shadowPos, normal, toLight, cascadeIdx);
       //lightingColor = lightingColor + clamp(abs((light.ambient * attenuation) + (light.diffuse * lightAng * attenuation * shadowVis)), vec3(0.0), vec3(1.0));
       //lightingColor += light.ambient;
       // lightingColor = lightingColor + f32(1u - isUnlit) 
