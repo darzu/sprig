@@ -158,8 +158,12 @@ function collectTextureUsages(cy: CyRegistry): CyTextureUsages {
       const name = isResourcePtr(o) ? o.name : o.ptr.name;
       texUsages[name] |= GPUTextureUsage.RENDER_ATTACHMENT;
     });
-    if (p.depthStencil)
-      texUsages[p.depthStencil.name] |= GPUTextureUsage.RENDER_ATTACHMENT;
+    if (p.depthStencil) {
+      const depthPtr = isResourcePtr(p.depthStencil)
+        ? p.depthStencil
+        : p.depthStencil.ptr;
+      texUsages[depthPtr.name] |= GPUTextureUsage.RENDER_ATTACHMENT;
+    }
   });
   [...cy.kindToPtrs.renderPipeline, ...cy.kindToPtrs.compPipeline].forEach(
     (p) => {
@@ -191,20 +195,22 @@ function createCySampler(
     // || s.name === "linearUnfilterSampler"
   ) {
     desc = {
+      label: s.name,
       minFilter: "linear",
       magFilter: "linear",
     };
   } else if (s.name === "nearestSampler") {
     desc = {
+      label: s.name,
       minFilter: "nearest",
       magFilter: "nearest",
     };
   } else if (s.name === "comparison") {
     desc = {
+      label: s.name,
       compare: "less",
     };
   } else never(s, "todo");
-  desc.label = name;
   return {
     ptr: s,
     sampler: device.createSampler(desc),
@@ -362,10 +368,13 @@ function createCyPipeline(
       // TODO(@darzu): hack
       // const depthWriteEnabled = p.name === "renderStars" ? false : true;
       let depthWriteEnabled = !p.depthReadonly;
+      const depthPtr = isResourcePtr(p.depthStencil)
+        ? p.depthStencil
+        : p.depthStencil.ptr;
       depthStencilOpts = {
         depthWriteEnabled,
         depthCompare: p.depthCompare ?? "less",
-        format: p.depthStencil.format,
+        format: depthPtr.format,
       };
     }
 
@@ -398,9 +407,11 @@ function createCyPipeline(
 
       // render pipeline
       const shader = device.createShaderModule({
+        label: `${p.name}_shader`,
         code: shaderStr,
       });
       const rndrPipelineDesc: GPURenderPipelineDescriptor = {
+        label: `${p.name}_pipeDesc`,
         // TODO(@darzu): allow this to be parameterized
         primitive,
         depthStencil: depthStencilOpts,
@@ -409,6 +420,7 @@ function createCyPipeline(
         //   count: antiAliasSampleCount,
         // },
         layout: device.createPipelineLayout({
+          label: `${p.name}_pipeLayout`,
           bindGroupLayouts: [resBindGroupLayout],
         }),
         vertex: {
@@ -474,9 +486,11 @@ function createCyPipeline(
 
       // render pipeline
       const shader = device.createShaderModule({
+        label: `${p.name}_shader`,
         code: shaderStr,
       });
       const rndrPipelineDesc: GPURenderPipelineDescriptor = {
+        label: `${p.name}_pipeDesc`,
         primitive,
         depthStencil: depthStencilOpts,
         // TODO(@darzu): ANTI-ALIAS
@@ -484,6 +498,7 @@ function createCyPipeline(
         //   count: antiAliasSampleCount,
         // },
         layout: device.createPipelineLayout({
+          label: `${p.name}_pipeLayout`,
           bindGroupLayouts: [resBindGroupLayout, uniBGLayout],
         }),
         vertex: {
@@ -517,9 +532,11 @@ function createCyPipeline(
 
       // render pipeline
       const shader = device.createShaderModule({
+        label: `${p.name}_shader`,
         code: shaderStr,
       });
       const rndrPipelineDesc: GPURenderPipelineDescriptor = {
+        label: `${p.name}_pipeDesc`,
         // TODO(@darzu): do we want depth stencil and multisample for this??
         primitive,
         // TODO(@darzu): depth stencil should be optional?
@@ -529,6 +546,7 @@ function createCyPipeline(
         //   count: antiAliasSampleCount,
         // },
         layout: device.createPipelineLayout({
+          label: `${p.name}_pipeLayout`,
           bindGroupLayouts: [resBindGroupLayout],
         }),
         vertex: {
@@ -563,11 +581,14 @@ function createCyPipeline(
       `${shaderCore}\n`;
 
     let compPipeline = device.createComputePipeline({
+      label: `${p.name}_computePipeline`,
       layout: device.createPipelineLayout({
+        label: `${p.name}_pipeLayout`,
         bindGroupLayouts: [resBindGroupLayout],
       }),
       compute: {
         module: device.createShaderModule({
+          label: `${p.name}_shader`,
           code: shaderStr,
         }),
         entryPoint: p.shaderComputeEntry ?? "main",
@@ -631,7 +652,10 @@ function createCyPipeline(
           // TODO(@darzu): need a mapping of format -> sample type?
           // texture: { sampleType: "float" },
           // texture: { sampleType: "depth" },
-          texture: { sampleType: sampleType },
+          texture: {
+            sampleType: sampleType,
+            viewDimension: r.ptr.count ? "2d-array" : "2d",
+          },
         };
       } else {
         // Note: writable storage textures aren't allowed in the vertex stage
@@ -673,6 +697,7 @@ function createCyPipeline(
     dynamic: boolean
   ) {
     const bindGroupLayoutDesc: GPUBindGroupLayoutDescriptor = {
+      label: `${p.name}_bindGLD`,
       entries: ptrs.map((r, i) => {
         const res = mkGlobalLayoutEntry(i, r, dynamic);
         return res;
@@ -739,12 +764,22 @@ function createCyPipeline(
       const varName = r.alias ?? uncapitalize(r.ptr.name);
       if (!r.access || r.access === "read") {
         // TODO(@darzu): handle other formats?
+        // TODO(@darzu): needs a D.R.Y. pass
         if (r.ptr.kind === "depthTexture") {
-          return `@group(${groupIdx}) @binding(${bindingIdx}) var ${varName} : texture_depth_2d;`;
+          if (r.ptr.count && r.ptr.count > 1) {
+            return `@group(${groupIdx}) @binding(${bindingIdx}) var ${varName} : texture_depth_2d_array;`;
+          } else {
+            return `@group(${groupIdx}) @binding(${bindingIdx}) var ${varName} : texture_depth_2d;`;
+          }
         } else if (r.ptr.format.endsWith("uint")) {
+          assert(!r.ptr.count, `TODO IMPL!`);
           return `@group(${groupIdx}) @binding(${bindingIdx}) var ${varName} : texture_2d<u32>;`;
         } else {
-          return `@group(${groupIdx}) @binding(${bindingIdx}) var ${varName} : texture_2d<f32>;`;
+          if (r.ptr.count && r.ptr.count > 1) {
+            return `@group(${groupIdx}) @binding(${bindingIdx}) var ${varName} : texture_2d_array<f32>;`;
+          } else {
+            return `@group(${groupIdx}) @binding(${bindingIdx}) var ${varName} : texture_2d<f32>;`;
+          }
         }
       } else
         return `@group(${groupIdx}) @binding(${bindingIdx}) var ${varName} : texture_storage_2d<${r.ptr.format}, ${r.access}>;`;
@@ -808,9 +843,13 @@ export function bundleRenderPipelines(
       return o.ptr.format;
     });
     // TODO(@darzu): create once?
+    const depthStencilPtr = isResourcePtr(p.ptr.depthStencil)
+      ? p.ptr.depthStencil
+      : p.ptr.depthStencil?.ptr;
     const bundleEnc = device.createRenderBundleEncoder({
+      label: `${p.ptr.name}_bundleEnc`,
       colorFormats,
-      depthStencilFormat: p.ptr.depthStencil?.format,
+      depthStencilFormat: depthStencilPtr?.format,
       depthReadOnly: p.ptr.depthReadonly,
       // TODO(@darzu): seperate stencil vs depth readonly
       stencilReadOnly: p.ptr.depthReadonly,
@@ -914,11 +953,23 @@ function mkBindGroupEntry(
     return buf.binding(idx, bufPlurality);
   } else if (r.ptr.kind === "texture" || r.ptr.kind === "depthTexture") {
     const tex = kindToNameToRes[r.ptr.kind][r.ptr.name]!;
-    return {
+    // assert(!tex.ptr.count, `TODO: impl mkBindGroupEntry for coutn`);
+    const res: GPUBindGroupEntry = {
       binding: idx,
       // TODO(@darzu): does this view need to be updated on resize?
-      resource: tex.texture.createView(),
+      resource: tex.texture.createView({
+        label: `${r.ptr.name}_viewForBGE`,
+        dimension: tex.ptr.count && tex.ptr.count > 1 ? "2d-array" : "2d",
+        arrayLayerCount: tex.ptr.count ?? 1,
+      }),
     };
+    // TODO(@darzu): SHADOWS DON"T WORK
+    // if (tex.ptr.count) {
+    //   console.log(`binding ${tex.ptr.name} at idx: ${idx}`);
+    //   console.dir(res);
+    //   // (window as any).myTex = tex.texture;
+    // }
+    return res;
   } else if (r.ptr.kind === "sampler") {
     const sampler = kindToNameToRes.sampler[r.ptr.name];
     return {
@@ -938,6 +989,7 @@ export function mkBindGroup(
   bufPlurality: "one" | "many"
 ) {
   const bindGroup = device.createBindGroup({
+    label: `${ptrs.map((p) => p.ptr.name).join("-")}_bindGroup`,
     layout: layout,
     entries: ptrs.map((r, i) => {
       return mkBindGroupEntry(device, resources, i, r, bufPlurality);
@@ -974,6 +1026,7 @@ export function startBundleRenderer(
       let tex = resources.kindToNameToRes.texture[o.ptr.name]!;
       const doClear = isFirst ? o.clear === "once" : o.clear === "always";
       const defaultColor = o.defaultColor ?? black4;
+      assert(!tex.ptr.count, `TODO: impl array texture for render()`);
       const viewOverride = o.ptr.attachToCanvas
         ? context.getCurrentTexture().createView()
         : undefined;
@@ -981,16 +1034,23 @@ export function startBundleRenderer(
     });
     let depthAtt: GPURenderPassDepthStencilAttachment | undefined = undefined;
     if (p.ptr.depthStencil) {
-      const isFirst = !seenDepthTextures.has(p.ptr.depthStencil.name);
-      seenDepthTextures.add(p.ptr.depthStencil.name);
-      const depthTex =
-        resources.kindToNameToRes.depthTexture[p.ptr.depthStencil.name];
+      const depthPtr = isResourcePtr(p.ptr.depthStencil)
+        ? p.ptr.depthStencil
+        : p.ptr.depthStencil.ptr;
+      const layerIdx = isResourcePtr(p.ptr.depthStencil)
+        ? 0
+        : p.ptr.depthStencil.idx;
+      const attKey = `${depthPtr.name}_${layerIdx}`;
+      const isFirst = !seenDepthTextures.has(attKey);
+      seenDepthTextures.add(attKey);
+      const depthTex = resources.kindToNameToRes.depthTexture[depthPtr.name];
       // TODO(@darzu): parameterize doClear like we do textures above
       const doClear = isFirst ? true : false;
-      depthAtt = depthTex.depthAttachment(doClear);
+      depthAtt = depthTex.depthAttachment(doClear, layerIdx);
     }
 
     renderPassEncoder = commandEncoder.beginRenderPass({
+      label: `${p.ptr.name}_renderPass`,
       // TODO(@darzu): OUTPUT, different render targets
       //    need different pass per different output; start with one bundle per pipeline
       colorAttachments,
@@ -1006,13 +1066,13 @@ export function startBundleRenderer(
   }
 
   // TODO(@darzu): support multi-output
-  function isOutputEq(a: CyRenderPipeline, b: CyRenderPipeline) {
-    return (
-      a.output.length === b.output.length &&
-      a.output.every((a, i) => a.ptr.name === b.output[i].ptr.name) &&
-      a.ptr.depthStencil?.name === b.ptr.depthStencil?.name
-    );
-  }
+  // function isOutputEq(a: CyRenderPipeline, b: CyRenderPipeline) {
+  //   return (
+  //     a.output.length === b.output.length &&
+  //     a.output.every((a, i) => a.ptr.name === b.output[i].ptr.name) &&
+  //     a.ptr.depthStencil?.name === b.ptr.depthStencil?.name
+  //   );
+  // }
 
   return { render };
 }

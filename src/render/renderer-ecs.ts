@@ -437,9 +437,9 @@ export function registerRenderer(em: EntityManager) {
             visibleWorldCorners.forEach((v) =>
               clampToAABB(v, res.camera.maxWorldAABB, v)
             );
-            if (__frame % 100 === 0) {
-              console.log(visibleWorldCorners.map((c) => vec3Dbg(c)).join(","));
-            }
+            // if (__frame % 100 === 0) {
+            //   console.log(visibleWorldCorners.map((c) => vec3Dbg(c)).join(","));
+            // }
 
             // TODO(@darzu): HACKY ifs. why not arrays?
 
@@ -685,6 +685,7 @@ async function chooseAndInitRenderer(
           "GPU profiling disabled: device does not support timestamp queries"
         );
       const device = await adapter.requestDevice({
+        label: `sprigDevice`,
         requiredFeatures: supportsTimestamp ? ["timestamp-query"] : [],
       });
       // TODO(@darzu): uses cast while waiting for webgpu-types.d.ts to be updated

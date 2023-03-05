@@ -179,11 +179,6 @@ export const renderOceanPipe = CY.createRenderPipeline("oceanRender", {
   globals: [
     sceneBufPtr,
     { ptr: linearSamplerPtr, alias: "samp" },
-    ...shadowDepthTextures.map((tex, i) => ({
-      ptr: tex,
-      alias: `shadowMap${i}`,
-    })),
-    { ptr: comparisonSamplerPtr, alias: "shadowSampler" },
     gerstnerWavesPtr,
     pointLightsPtr,
 

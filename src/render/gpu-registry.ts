@@ -54,6 +54,8 @@ export interface CyTexturePtr extends CyResourcePtr {
   kind: "texture";
   // TODO(@darzu): collapse size and onCanvasResize as XOR
   size: [number, number];
+  // TODO(@darzu): rename to "layers" ?
+  count?: number; // TODO(@darzu): revisit how we want to distinguish array from single
   onCanvasResize?: (
     canvasWidth: number,
     canvasHeight: number
@@ -61,7 +63,7 @@ export interface CyTexturePtr extends CyResourcePtr {
   format: GPUTextureFormat;
   // TODO(@darzu): is this where we want to expose this?
   // TODO(@darzu): we need agreement with the pipeline
-  sampleCount?: number;
+  // sampleCount?: number;
   attachToCanvas?: boolean;
   // TODO(@darzu): make optional:
   init?: () => Float32Array; // TODO(@darzu): | TexTypeAsTSType<F>[]
@@ -168,7 +170,7 @@ export interface CyAttachment {
 }
 
 export function isResourcePtr(p: any): p is CyResourcePtr {
-  return !!(p as CyResourcePtr).kind;
+  return p && (p as CyResourcePtr).kind;
 }
 
 export interface CyCompPipelinePtr extends CyResourcePtr {
@@ -208,6 +210,11 @@ export function getTexFromAttachment(t: CyColorAttachment): CyTexturePtr {
   return isResourcePtr(t) ? t : t.ptr;
 }
 
+// TODO(@darzu): unify with CyColorAttachment?
+export type CyDepthAttachment =
+  | CyDepthTexturePtr
+  | { ptr: CyDepthTexturePtr; idx: number };
+
 export interface CyRenderPipelinePtr<
   FO extends Record<string, GPUPipelineConstantValue> = {},
   VO extends Record<string, GPUPipelineConstantValue> = {}
@@ -226,7 +233,7 @@ export interface CyRenderPipelinePtr<
   // TODO(@darzu): really need to allow changing attachments at runtime. Useful
   //   for tutorial animations at a minimum
   output: CyColorAttachment[];
-  depthStencil?: CyDepthTexturePtr;
+  depthStencil?: CyDepthAttachment;
   depthReadonly?: boolean;
   depthCompare?: GPUCompareFunction;
 }

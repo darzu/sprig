@@ -84,7 +84,11 @@ export interface CyTexture {
 }
 export interface CyDepthTexture extends Omit<CyTexture, "ptr"> {
   ptr: CyDepthTexturePtr;
-  depthAttachment: (clear: boolean) => GPURenderPassDepthStencilAttachment;
+  depthAttachment: (
+    clear: boolean,
+    // TODO(@darzu): make optional?
+    layerIdx: number
+  ) => GPURenderPassDepthStencilAttachment;
 }
 
 export type PtrKindToResourceType = {
@@ -154,6 +158,7 @@ export function createCySingleton<O extends CyStructDesc>(
   assert(struct.opts?.isUniform, "CyOne struct must be created with isUniform");
 
   const _buf = device.createBuffer({
+    label: `${name}_singleton`,
     size: struct.size,
     // TODO(@darzu): parameterize these
     // TODO(@darzu): be precise
@@ -223,6 +228,7 @@ export function createCyArray<O extends CyStructDesc>(
   // }
 
   const _buf = device.createBuffer({
+    label: `${name}_array`,
     size: struct.size * length,
     // TODO(@darzu): parameterize these
     usage,
@@ -358,7 +364,7 @@ export function createCyTexture(
   ptr: CyTexturePtr,
   usage: GPUTextureUsageFlags
 ): CyTexture {
-  const { size, format, init, sampleCount } = ptr;
+  const { size, format, init } = ptr;
   // TODO(@darzu): parameterize
   // TODO(@darzu): be more precise
   const bytesPerVal = texTypeToBytes[format]!;
@@ -391,20 +397,24 @@ export function createCyTexture(
   function resize(width: number, height: number) {
     cyTex.size[0] = width;
     cyTex.size[1] = height;
-    // TODO(@darzu): feels wierd to mutate the descriptor...
+    // TODO(@darzu): HACK. feels wierd to mutate the descriptor...
     ptr.size[0] = width;
     ptr.size[1] = height;
+
+    const size = ptr.count ? [width, height, ptr.count] : [width, height];
+
     (cyTex.texture as GPUTexture | undefined)?.destroy();
     cyTex.texture = device.createTexture({
-      size: cyTex.size,
-      format: format,
+      label: `${ptr.name}_tex`,
+      size,
+      format,
       dimension: "2d",
-      sampleCount,
+      // sampleCount,
       usage,
     });
   }
 
-  // TODO(@darzu): support different data types (instead of Float32)
+  // TODO(@darzu): support updating different data types (instead of Float32Array)
   function queueUpdate(
     data: Float32Array,
     x?: number,
@@ -417,6 +427,7 @@ export function createCyTexture(
         `mismatch between ${cyTex.ptr.name}.queueUpdate data el size ${data.BYTES_PER_ELEMENT} vs tex el size ${bytesPerVal}`
       );
     }
+    assert(!ptr.count, `TODO: impl queueUpdate for texture arrays`);
     x = x ?? 0;
     y = y ?? 0;
     w = w ?? cyTex.size[0] - x;
@@ -450,6 +461,8 @@ export function createCyTexture(
     defaultColor?: vec2 | vec3 | vec4;
     viewOverride?: GPUTextureView;
   }): GPURenderPassColorAttachment {
+    assert(!ptr.count, `TODO: impl attachment for texture arrays`);
+
     const loadOp: GPULoadOp = opts?.doClear ? "clear" : "load";
 
     const backgroundColor = opts?.defaultColor ?? black;
@@ -478,11 +491,17 @@ export function createCyDepthTexture(
   });
 
   function depthAttachment(
-    clear: boolean
+    clear: boolean,
+    layerIdx: number
   ): GPURenderPassDepthStencilAttachment {
     return {
-      // TODO(@darzu): create these less often??
-      view: tex.texture.createView(),
+      // TODO(@darzu): PERF. create these less often??
+      view: tex.texture.createView({
+        label: `${ptr.name}_viewForDepthAtt`,
+        dimension: "2d",
+        baseArrayLayer: layerIdx,
+        arrayLayerCount: 1,
+      }),
       depthLoadOp: clear ? "clear" : "load",
       depthClearValue: 1.0,
       depthStoreOp: "store",

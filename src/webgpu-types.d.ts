@@ -512,7 +512,9 @@ interface GPUObjectDescriptorBase {
   /**
    * The initial value of {@link GPUObjectBase#label|GPUObjectBase.label}.
    */
-  label?: string;
+  // TODO(@darzu): DZ HACK, for debugging forcing labels everywhere we can
+  // label?: string;
+  label: string;
 }
 
 interface GPUOrigin2DDict {
@@ -808,7 +810,9 @@ interface GPUObjectBase {
    * It has no specified format, and therefore cannot be reliably machine-parsed.
    * In any given situation, the user agent may or may not choose to use this label.
    */
-  label: string | null;
+  // TODO(@darzu): HACK, forcing labels for better debugging
+  // label: string | null;
+  label: string;
 }
 
 interface GPUPipelineBase {

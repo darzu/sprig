@@ -35,12 +35,7 @@ fn vert_main(@builtin(vertex_index) VertexIndex : u32) -> VertexOutput {
 const shadowDepthTextureSize = 2048.0;
 
 fn sampleShadowTexture(pos: vec2<f32>, depth: f32, index: u32) -> f32 {
-  // TODO(@darzu): use array
-  if (index == 0u) {
-    return textureSampleCompare(shadowMap0, shadowSampler, pos, depth);
-  } else {
-    return textureSampleCompare(shadowMap1, shadowSampler, pos, depth);
-  }
+  return textureSampleCompare(shadowMap, shadowSampler, pos, index, depth);
 }
 
 fn getShadowVis(shadowPos: vec3<f32>, normal: vec3<f32>, lightDir: vec3<f32>, index: u32) -> f32 {

@@ -20,10 +20,7 @@ export const deferredPipeline = CY.createRenderPipeline("deferredRender", {
     { ptr: positionsTexturePtr, alias: "posTex" },
     { ptr: surfacesTexturePtr, alias: "surfTex" },
     { ptr: mainDepthTex, alias: "depthTex" },
-    ...shadowDepthTextures.map((tex, i) => ({
-      ptr: tex,
-      alias: `shadowMap${i}`,
-    })),
+    { ptr: shadowDepthTextures, alias: "shadowMap" },
     { ptr: comparisonSamplerPtr, alias: "shadowSampler" },
     pointLightsPtr,
     sceneBufPtr,

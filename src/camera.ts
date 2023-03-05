@@ -306,10 +306,10 @@ export function registerCameraSystems(em: EntityManager) {
 
         shadowNearFrac = shadowFarFrac;
       }
-      dbgDirOnce(
-        "cameraComputed.shadowCascadeMats",
-        cameraComputed.shadowCascadeMats
-      );
+      // dbgDirOnce(
+      //   "cameraComputed.shadowCascadeMats",
+      //   cameraComputed.shadowCascadeMats
+      // );
     },
     "updateCameraView"
   );

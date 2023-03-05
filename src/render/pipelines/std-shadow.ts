@@ -24,12 +24,12 @@ import { meshPoolPtr } from "./std-scene.js";
 // TODO(@darzu): Multiple shadow maps for cascading shadow maps
 const numShadowMaps = 2;
 
-export const shadowDepthTextures = range(numShadowMaps).map((i) =>
-  CY.createDepthTexture(`shadowTex${i}`, {
-    size: [2048, 2048],
-    format: "depth16unorm",
-  })
-);
+export const shadowDepthTextures = CY.createDepthTexture(`shadowTex`, {
+  size: [2048, 2048],
+  format: "depth16unorm",
+  count: numShadowMaps,
+  // TODO(@darzu): IMPL CSM
+});
 // const shadowOutTexture = CY.createTexture("shadowOut", {
 //   //   size: [1024, 1024],
 //   format: "rgba8unorm",
@@ -44,7 +44,7 @@ export const shadowPipelines = range(numShadowMaps).map((i) =>
       stepMode: "per-mesh-handle",
     },
     output: [],
-    depthStencil: shadowDepthTextures[i],
+    depthStencil: { ptr: shadowDepthTextures, idx: i },
     shaderVertexEntry: "vert_main",
     shaderFragmentEntry: "frag_main",
     cullMode: "front", // TODO(@darzu): alternative to depth bias?

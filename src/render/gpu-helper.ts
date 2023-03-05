@@ -2,10 +2,12 @@ import { assert } from "../util.js";
 import { isFunction, never } from "../util.js";
 import {
   CY,
+  CyDepthAttachment,
   CyDepthTexturePtr,
   CyRenderPipelinePtr,
   CySingletonPtr,
   CyTexturePtr,
+  isResourcePtr,
   linearSamplerPtr,
 } from "./gpu-registry.js";
 import {
@@ -42,7 +44,7 @@ export const fullQuad = CY.createSingleton(`fullQuadStruct`, {
 
 export function createRenderTextureToQuad(
   name: string,
-  inTex: CyTexturePtr | CyDepthTexturePtr,
+  inTexAtt: CyTexturePtr | CyDepthAttachment,
   outTex: CyTexturePtr,
   minX = -1,
   maxX = 1,
@@ -78,12 +80,17 @@ export function createRenderTextureToQuad(
       maxY,
     }),
   });
+
+  const inTex = isResourcePtr(inTexAtt) ? inTexAtt : inTexAtt.ptr;
+  const inIdx = isResourcePtr(inTexAtt) ? 0 : inTexAtt.idx;
+  const isArray = !!inTex.count;
+
   const inTexIsUnfilterable = texTypeToSampleType[inTex.format]?.every((f) =>
     f.startsWith("unfilterable")
   );
   // TODO(@darzu): turn on-off sampling?
   const doSample = !inTexIsUnfilterable && sample;
-  outTex.format;
+  // outTex.format;
   const shader = (shaders: ShaderSet) => {
     const inputArity = TexTypeToElementArity[inTex.format];
     assert(inputArity, `Missing texture element arity for: ${inTex.format}`);
@@ -125,6 +132,19 @@ export function createRenderTextureToQuad(
         ? `.xyzw`
         : never(inputArity);
 
+    let sampleStr;
+    if (!doSample) {
+      if (!isArray)
+        sampleStr = `let inPx = textureLoad(inTex, xy, 0)${loadSuffix};`;
+      else
+        sampleStr = `let inPx = textureLoad(inTex, xy, ${inIdx}, 0)${loadSuffix};`;
+    } else {
+      if (!isArray)
+        sampleStr = `let inPx = textureSample(inTex, mySampler, uv)${loadSuffix};`;
+      else
+        sampleStr = `let inPx = textureSample(inTex, mySampler, uv, ${inIdx})${loadSuffix};`;
+    }
+
     return `
     ${libs ? libs.map((l) => shaders[l].code).join("\n") : ""}
 
@@ -136,12 +156,7 @@ export function createRenderTextureToQuad(
       let dimsI : vec2<i32> = vec2<i32>(textureDimensions(inTex));
       let dimsF = vec2<f32>(dimsI);
       let xy = vec2<i32>(uv * dimsF);
-      ${
-        // TODO(@darzu): don't like this...
-        !doSample
-          ? `let inPx = textureLoad(inTex, xy, 0)${loadSuffix};`
-          : `let inPx = textureSample(inTex, mySampler, uv)${loadSuffix};`
-      }
+      ${sampleStr}
       ${fSnip}
     }
   `;

@@ -76,6 +76,7 @@ export function createRenderer(
 ) {
   const timestampQuerySet = device.features.has("timestamp-query")
     ? device.createQuerySet({
+        label: `sprigTimestampQuerySet`,
         type: "timestamp",
         count: MAX_PIPELINES + 1, // start of execution + after each pipeline
       })
@@ -370,6 +371,7 @@ export function createRenderer(
 
     // TODO(@darzu): re-use buffers! and/or make it a CyBuffer-thing
     const gpuBuffer = device.createBuffer({
+      label: `sprigReadTexBuf`,
       size: byteSize,
       usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
       mappedAtCreation: false, // mapped post texture copy
@@ -424,6 +426,7 @@ export function createRenderer(
   // and QUERY_RESOLVE on the same buffer. We resolve the QuerySet
   // to one buffer, then copy it to another for reading.
   const resolveBuffer = device.createBuffer({
+    label: `sprig_timestampQuerySet_resolveBuf`,
     // GPUSize64s
     size: byteSize,
     usage: GPUBufferUsage.QUERY_RESOLVE | GPUBufferUsage.COPY_SRC,
@@ -435,6 +438,7 @@ export function createRenderer(
     // console.log("getting stats!");
 
     const copyBuffer = device.createBuffer({
+      label: `sprig_timestampQuerySet_copyBuf`,
       size: byteSize,
       usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
       mappedAtCreation: false, // mapped post texture copy

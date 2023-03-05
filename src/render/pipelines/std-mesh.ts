@@ -57,11 +57,6 @@ export const stdRenderPipeline = CY.createRenderPipeline("stdMeshRender", {
   globals: [
     sceneBufPtr,
     { ptr: linearSamplerPtr, alias: "samp" },
-    ...shadowDepthTextures.map((tex, i) => ({
-      ptr: tex,
-      alias: `shadowMap${i}`,
-    })),
-    { ptr: comparisonSamplerPtr, alias: "shadowSampler" },
     // TODO(@darzu): object-specific SDFs?
     // TODO(@darzu): REMOVE HARD-CODED DEPENDENCY ON OCEAN SDF!
     // { ptr: oceanJfa.sdfTex, alias: "sdf" },
