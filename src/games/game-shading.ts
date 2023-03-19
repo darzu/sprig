@@ -34,6 +34,7 @@ const dbgGrid = [
   //
   // [mapJfa.voronoiTex, mapJfa.sdfTex],
   [{ ptr: shadowDepthTextures, idx: 0 }],
+  [{ ptr: shadowDepthTextures, idx: 1 }],
 ];
 let dbgGridCompose = createGridComposePipelines(dbgGrid);
 

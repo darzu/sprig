@@ -57,6 +57,7 @@ fn vertMain(input: VertexInput) -> VertexOutput {
 
 // TODO(@darzu): it isn't great having two pipelines for this, but I'm not
 //    sure of a better way. render attachments need to be the same size
+// TODO(@darzu): BROKEN. max fragment output is 32 bytes! So we had to disable worldTang
 export const unwrapPipeline2 = CY.createRenderPipeline("unwrapPipe2", {
   globals: [],
   shader: () => `
@@ -65,14 +66,14 @@ export const unwrapPipeline2 = CY.createRenderPipeline("unwrapPipe2", {
   struct FragOut {
     @location(0) worldPos: vec4<f32>,
     @location(1) worldNorm: vec4<f32>,
-    @location(2) worldTang: vec4<f32>,
+    // @location(2) worldTang: vec4<f32>,
   }
 
   @fragment fn fragMain(input: VertexOutput) -> FragOut {
     var output: FragOut;
     output.worldPos = vec4(input.worldPos.xyz, 0.0);
     output.worldNorm = vec4(normalize(input.normal.xyz), 0.0);
-    output.worldTang = vec4(normalize(input.tangent.xyz), 0.0);
+    // output.worldTang = vec4(normalize(input.tangent.xyz), 0.0);
     return output;
   }
   `,
@@ -95,11 +96,11 @@ export const unwrapPipeline2 = CY.createRenderPipeline("unwrapPipe2", {
       clear: "once",
       defaultColor: vec4.clone([0.0, 0.0, 0.0, 0.0]),
     },
-    {
-      ptr: uvToTangTex,
-      clear: "once",
-      defaultColor: vec4.clone([0.0, 0.0, 0.0, 0.0]),
-    },
+    // {
+    //   ptr: uvToTangTex,
+    //   clear: "once",
+    //   defaultColor: vec4.clone([0.0, 0.0, 0.0, 0.0]),
+    // },
   ],
 });
 export const unwrapPipeline = CY.createRenderPipeline("unwrapPipe", {
