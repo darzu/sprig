@@ -87,8 +87,15 @@ export async function initFontEditor(em: EntityManager) {
 
   const res = await em.whenResources(AssetsDef, RendererDef, ButtonsStateDef);
 
+  // res.renderer.pipelines = [
+  //   // ...shadowPipelines,
+  //   stdRenderPipeline,
+  //   alphaRenderPipeline,
+  //   outlineRender,
+  //   deferredPipeline,
+  //   postProcess,
+  // ];
   res.renderer.pipelines = [
-    // ...shadowPipelines,
     stdRenderPipeline,
     alphaRenderPipeline,
     outlineRender,

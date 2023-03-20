@@ -6,6 +6,7 @@ import {
   litTexturePtr,
   meshPoolPtr,
   sceneBufPtr,
+  unlitTexturePtr,
 } from "./std-scene.js";
 
 export const alphaRenderPipeline = CY.createRenderPipeline("alphaRender", {
@@ -25,9 +26,8 @@ export const alphaRenderPipeline = CY.createRenderPipeline("alphaRender", {
   shaderFragmentEntry: "frag_main",
   output: [
     {
-      ptr: litTexturePtr,
+      ptr: unlitTexturePtr,
       clear: "never",
-      // TODO(@darzu): don't write to depth buffer
       // TODO(@darzu): is this the right blend state?
       blend: {
         color: {
