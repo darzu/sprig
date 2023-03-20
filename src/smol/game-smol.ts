@@ -92,7 +92,7 @@ PERF:
 [ ] reduce triangles on ocean
 */
 
-const DBG_PLAYER = true;
+const DBG_PLAYER = false;
 
 // world map is centered around 0,0
 const WORLD_WIDTH = 1024; // width runs +z
@@ -255,48 +255,48 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
   //   refCol.position[2] += i * 2 + 30;
   //   em.ensureComponentOn(refCol, ColorDef, V(0.1, 1, 0.1));
   // }
-  // if (!"true")
-  for (let r = 0; r < 2; r++)
-    for (let i = 0; i < 8; i++) {
-      const color = Object.values(ENDESGA16)[i + r * 8];
-      const bigCube = em.new();
-      const i2 = Math.floor(i / 2) * 2.0;
-      const even = i % 2 === 0 ? 1 : 0;
-      em.ensureComponentOn(
-        bigCube,
-        RenderableConstructDef,
-        even ? res.assets.ball.proto : res.assets.cube.proto
-      );
-      em.ensureComponentOn(bigCube, ScaleDef, V(50, 50, 50));
-      em.ensureComponentOn(
-        bigCube,
-        RotationDef,
-        quat.fromEuler(
-          Math.random() * Math.PI,
-          Math.random() * Math.PI,
-          Math.random() * Math.PI,
-          quat.create()
-        )
-      );
-      em.ensureComponentOn(
-        bigCube,
-        AngularVelocityDef,
-        vec3.scale(randNormalVec3(vec3.tmp()), 0.0005, vec3.create())
-      );
-      em.ensureComponentOn(
-        bigCube,
-        PositionDef,
-        V(
-          // i2 * 30 + even * 100 - 100 - r * 50,
-          jitter(WORLD_HEIGHT * 0.5),
-          r * 100,
-          // i2 * 30 - even * 100 - 100 + r * 50
-          jitter(WORLD_WIDTH * 0.5)
-        )
-      );
-      // em.ensureComponentOn(bigCube, ColorDef, randColor());
-      em.ensureComponentOn(bigCube, ColorDef, color);
-    }
+  if (!"true")
+    for (let r = 0; r < 2; r++)
+      for (let i = 0; i < 8; i++) {
+        const color = Object.values(ENDESGA16)[i + r * 8];
+        const bigCube = em.new();
+        const i2 = Math.floor(i / 2) * 2.0;
+        const even = i % 2 === 0 ? 1 : 0;
+        em.ensureComponentOn(
+          bigCube,
+          RenderableConstructDef,
+          even ? res.assets.ball.proto : res.assets.cube.proto
+        );
+        em.ensureComponentOn(bigCube, ScaleDef, V(50, 50, 50));
+        em.ensureComponentOn(
+          bigCube,
+          RotationDef,
+          quat.fromEuler(
+            Math.random() * Math.PI,
+            Math.random() * Math.PI,
+            Math.random() * Math.PI,
+            quat.create()
+          )
+        );
+        em.ensureComponentOn(
+          bigCube,
+          AngularVelocityDef,
+          vec3.scale(randNormalVec3(vec3.tmp()), 0.0005, vec3.create())
+        );
+        em.ensureComponentOn(
+          bigCube,
+          PositionDef,
+          V(
+            // i2 * 30 + even * 100 - 100 - r * 50,
+            jitter(WORLD_HEIGHT * 0.5),
+            r * 100,
+            // i2 * 30 - even * 100 - 100 + r * 50
+            jitter(WORLD_WIDTH * 0.5)
+          )
+        );
+        // em.ensureComponentOn(bigCube, ColorDef, randColor());
+        em.ensureComponentOn(bigCube, ColorDef, color);
+      }
 
   // skybox?
 

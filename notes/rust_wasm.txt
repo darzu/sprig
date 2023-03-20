@@ -57,3 +57,6 @@ Mandelbrot perf with wasm:
 
 Minimal example of animating the HTML5 canvas from C++ using OpenGL through WebAssembly
   https://github.com/timhutton/opengl-canvas-wasm
+
+"a world to win: webassembly for the rest of us":
+  https://www.wingolog.org/archives/2023/03/20/a-world-to-win-webassembly-for-the-rest-of-us
