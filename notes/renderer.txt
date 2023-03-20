@@ -1812,3 +1812,14 @@ Roblox lighting:
 Forward+:
   https://www.3dgep.com/forward-plus/#Forward
   https://takahiroharada.files.wordpress.com/2015/04/forward_plus.pdf
+
+Depth Z non-linearity, linear Z, reverse Z:
+  perspective matrices have Z proprotional to 1/z in clip space, so all precision is at front
+  to linearize, u need to reverse what the perspective matrix did
+  reverse Z: set the near plane to 1 and far plane to 0
+    "the quasi-logarithmic distribution of floating-point somewhat cancels the 1/z nonlinearity"
+  https://developer.nvidia.com/content/depth-precision-visualized
+  https://learnopengl.com/Advanced-OpenGL/Depth-testing
+    // assumes ndc is [-1,1]
+    float ndc = depth * 2.0 - 1.0; 
+    float linearDepth = (2.0 * near * far) / (far + near - ndc * (far - near));	

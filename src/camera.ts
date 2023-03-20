@@ -29,6 +29,7 @@ export const CameraDef = EM.defineComponent("camera", () => {
     nearClipDist: 1,
     viewDist: 1000,
     // TODO(@darzu): what r good cascade numbers here?
+    // shadowCascades: [1 / 2, 1],
     shadowCascades: [1 / 24, 1],
     targetId: 0,
     maxWorldAABB: createAABB(
@@ -62,6 +63,7 @@ export type ShadowCascade = {
   near: number;
   far: number;
   farZ: number;
+  // TODO(@darzu): this should probably be renamed so we know this is viewProj from the camera not the light perspective!
   viewProj: mat4;
   invViewProj: mat4;
 };

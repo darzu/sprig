@@ -43,10 +43,10 @@ fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
     color = mix(color, vec3(0.2, 0.2, 0.5), pow(depth, 300.0));
   }
 
-  // color += pow(bloom, vec3(2.0));
-  // color = max(color, bloom);
-  color += bloom; // * 10.0;
-  // color = bloom;
+  // // color += pow(bloom, vec3(2.0));
+  // // color = max(color, bloom);
+  // color += bloom; // * 10.0;
+  // // color = bloom;
 
 
   // vignette

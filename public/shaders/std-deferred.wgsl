@@ -72,7 +72,7 @@ fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
   let normalAndFresnel = textureSample(normTex, samp, uv);
   let normal = normalAndFresnel.xyz;
   let hasFresnel = normalAndFresnel.w;
-  let worldPos = textureSample(posTex, samp, uv);
+  let worldPos = textureSample(posTex, samp, uv).xyz;
 
   // read gerstner directly for normal:
   // let gerst = gerstner(worldPos.zx, scene.time);
@@ -90,36 +90,51 @@ fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
   const f0 = 0.02;
   for (var i: u32 = 0u; i < scene.numPointLights; i++) {
       let light = pointLights.ms[i];
-      let toLight_ = light.position - worldPos.xyz;
+      let toLight_ = light.position - worldPos;
       let lightDist = length(toLight_);
       let toLight = toLight_ / lightDist;
-      let toCamera = scene.cameraPos - worldPos.xyz;
+      let toCamera = scene.cameraPos - worldPos;
       let attenuation = 1.0 / (light.constant + light.linear * lightDist +
                                 light.quadratic * lightDist * lightDist);
       let lightAng = clamp(dot(toLight, normal), 0.0, 1.0);
       let halfway = normalize(toLight + normal); // TODO(@darzu): use?!
       let cameraAng = clamp(dot(normalize(toCamera), normal), 0.0, 1.0);
 
+      // TODO(@darzu): cascade selection is wrong
       // TODO(@darzu): too much extra math?
-      let shadowFullZ = (pointLights.ms[i].viewProjAll * worldPos).z;
+      // let shadowFullZ = (pointLights.ms[i].viewProjAll * vec4(worldPos, 1.0)).z;
+      let shadowFull = (scene.cameraViewProjMatrix * vec4(worldPos, 1.0));
+      let shadowFullZ = shadowFull.z / shadowFull.w;
+      // var r = shadowFullZ;
+      // var g = 0.0;
+      // if (shadowFullZ > 0.99) {
+      //   g = shadowFullZ;
+      //   r = 0.0;
+      // }
+      // // var b = shadowFull.w;
+      // var b = 0.0;
+      // // if (shadowFullZ > 0.95) {
+      // //   b = 1.0;
+      // //   g = 0.0;
+      // // }
+      // return vec4(r, g, b, alpha);
 
+      // TODO(@darzu): DBG: try outputing depth from camera as result?
       var cascadeIdx = 0u;
+      var viewProj = pointLights.ms[i].viewProj0;
       if (shadowFullZ > light.depth0) {
         cascadeIdx = 1u;
-      }
-
-      var viewProj = pointLights.ms[i].viewProj0;
-      if (cascadeIdx == 1u) {
         viewProj = pointLights.ms[i].viewProj1;
       }
 
       // XY is in (-1, 1) space, Z is in (0, 1) space
-      let posFromLight = (viewProj * worldPos).xyz;
+      let posFromLight = (viewProj * vec4(worldPos, 1.0)).xyz;
       
       // Convert XY to (0, 1), Y is flipped because texture coords are Y-down.
       let shadowPos = vec3<f32>(posFromLight.xy * vec2<f32>(0.5, -0.5) + vec2<f32>(0.5, 0.5),
                                 posFromLight.z
                                 );
+      // return vec4(shadowPos, alpha);
 
       let shadowVis = getShadowVis(shadowPos, normal, toLight, cascadeIdx);
       //lightingColor = lightingColor + clamp(abs((light.ambient * attenuation) + (light.diffuse * lightAng * attenuation * shadowVis)), vec3(0.0), vec3(1.0));

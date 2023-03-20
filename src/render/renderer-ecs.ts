@@ -426,6 +426,7 @@ export function registerRenderer(em: EntityManager) {
       if (cameraComputed.shadowCascadeMats.length)
         for (let e of pointLights) {
           mat4.copy(e.viewProjAll, cameraComputed.viewProj);
+          // console.dir(e.viewProjAll);
           for (let i = 0; i < NUM_CASCADES; i++) {
             const cascade = cameraComputed.shadowCascadeMats[i];
             const visibleWorldCorners = getFrustumWorldCorners(
@@ -442,7 +443,7 @@ export function registerRenderer(em: EntityManager) {
             // }
 
             // TODO(@darzu): HACKY ifs. why not arrays?
-
+            // console.log(`cascade ${i}, farZ: ${cascade.farZ}`);
             if (i === 0) e.depth0 = cascade.farZ;
             else if (i === 1) e.depth1 = cascade.farZ;
             else assert(false);
