@@ -53,7 +53,11 @@ export async function createShip(em: EntityManager) {
   const res = await em.whenResources(AssetsDef);
   const ent = em.new();
   em.ensureComponentOn(ent, ShipDef);
-  em.ensureComponentOn(ent, RenderableConstructDef, res.assets.ship.proto);
+  em.ensureComponentOn(
+    ent,
+    RenderableConstructDef,
+    res.assets.ship_small.proto
+  );
   // em.set(ent, ColliderDef, {
   //   shape: "AABB",
   //   solid: true,

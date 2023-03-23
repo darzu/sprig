@@ -79,6 +79,7 @@ const BACKUP_ASSET_PATH = "https://sprig.land/assets/";
 
 const RemoteMeshes = {
   ship: "barge.sprig.obj",
+  ship_small: "player_ship_small.sprig.obj",
   ship_fangs: "enemy_ship_fangs.sprig.obj",
   // ship_fangs: "ball.sprig.obj", // TODO: FOR PERF
   ball: "ball.sprig.obj",
@@ -137,6 +138,13 @@ const MeshTransforms: Partial<{
   ),
   ocean: mat4.fromScaling([2, 2, 2], mat4.create()),
   ship_fangs: mat4.fromScaling([3, 3, 3], mat4.create()),
+  ship_small: mat4.fromRotationTranslationScaleOrigin(
+    quat.IDENTITY,
+    [0, 0, 0],
+    [6, 6, 6],
+    [0, 0, 0],
+    mat4.create()
+  ),
   ld51_cannon: mat4.fromRotationTranslationScale(
     quat.rotateX(quat.IDENTITY, Math.PI * -0.5, quat.create()),
     [0, 0, 0],
