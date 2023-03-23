@@ -92,7 +92,7 @@ PERF:
 [ ] reduce triangles on ocean
 */
 
-const DBG_PLAYER = false;
+const DBG_PLAYER = true;
 
 // world map is centered around 0,0
 const WORLD_WIDTH = 1024; // width runs +z
@@ -340,7 +340,7 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
   // TODO(@darzu): I don't think the PBR-ness of this color is right
   // initOcean(oceanMesh, V(0.1, 0.3, 0.8));
   initOcean(oceanMesh, ENDESGA16.blue);
-  const { ocean } = await em.whenResources(OceanDef);
+  await em.whenResources(OceanDef); // TODO(@darzu): need to wait?
 
   // ground
   // const ground = em.new();
@@ -450,6 +450,34 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
   vec3.copy(ship.position, SHIP_START_POS);
   em.requireSystem("sailShip");
   em.requireSystem("shipParty");
+
+  // bouyancy
+  const bouy = em.new();
+  em.ensureComponentOn(bouy, PositionDef);
+  em.ensureComponentOn(bouy, ScaleDef, V(5, 5, 5));
+  em.ensureComponentOn(bouy, RenderableConstructDef, res.assets.ball.proto);
+  em.ensureComponentOn(bouy, ColorDef, ENDESGA16.lightGreen);
+  em.registerSystem(
+    [ShipDef],
+    [OceanDef],
+    (ships, res) => {
+      // TODO(@darzu): unify with UV ship stuff?
+      if (!ships.length) return;
+      const [ship] = ships;
+      const { ocean } = res;
+
+      const uv = V(0.5, 0.5);
+      let pos = vec3.tmp();
+      ocean.uvToPos(pos, uv);
+      let disp = vec3.tmp();
+      let norm = vec3.tmp();
+      ocean.uvToGerstnerDispAndNorm(disp, norm, uv);
+      vec3.add(pos, disp, bouy.position);
+      // console.log(vec3Dbg(bouy.position));
+    },
+    "shipBouyancy"
+  );
+  em.requireSystem("shipBouyancy");
 
   // dbg ghost
 

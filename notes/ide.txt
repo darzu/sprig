@@ -99,3 +99,5 @@ Might be good to be very opinionated and support my one workflow style
   very hard to think about when you need to page-in a non-familiar workflow
   and very time consuming to put out a call to community to comment on workflow breakage
 
+My twitter thread re: editor undo + subject undo:
+  https://twitter.com/sprigland/status/1638636277334675456

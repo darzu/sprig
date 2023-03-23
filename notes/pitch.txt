@@ -43,3 +43,10 @@ What it's unlikely to have:
 A well crafted story with character development and plot surprises
 Environment, creature, and ship models that impress you with their detail and realism
 AAA-game lighting, animation, and polish
+
+"Figma for games"
+  Closer match than Google Docs
+  Neatly explains why typescript / web-tech
+  It's professional capable tool, but relatively friendly
+  Designs can be exported
+  Not OT or CRDT based, good ol' game-style multiplayer
