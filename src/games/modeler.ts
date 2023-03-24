@@ -13,7 +13,7 @@ import {
 import { PositionDef, ScaleDef } from "../physics/transform.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { tempVec3 } from "../temp-pool.js";
-import { vec3Dbg } from "../utils-3d.js";
+import { vec3Dbg, vec3Dbg2 } from "../utils-3d.js";
 import { AssetsDef } from "../assets.js";
 import { ColorDef, TintsDef } from "../color-ecs.js";
 import { drawLine, screenPosToRay } from "../utils-game.js";
@@ -110,7 +110,7 @@ export function aabbListToStr(aabbs: AABB[]): string {
   let resStr = "";
   resStr += `const aabbs: AABB[] = [`;
   for (let aabb of aabbs) {
-    resStr += `{min: ${vec3Dbg(aabb.min)}, max: ${vec3Dbg(aabb.max)}},`;
+    resStr += `{min: ${vec3Dbg2(aabb.min)}, max: ${vec3Dbg2(aabb.max)}},`;
   }
   resStr += `];`;
   return resStr;

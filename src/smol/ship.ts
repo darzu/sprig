@@ -26,7 +26,7 @@ import { InteractableDef } from "../games/interact.js";
 import { vec3Dbg } from "../utils-3d.js";
 import { CameraFollowDef } from "../camera.js";
 import { createSock } from "./windsock.js";
-import { BARGE_AABBS } from "../primatives.js";
+import { BARGE_AABBS, SHIP_SMALL_AABBS } from "../primatives.js";
 import { ENDESGA16 } from "../color/palettes.js";
 
 export const ShipDef = EM.defineComponent("ld52ship", () => ({
@@ -67,7 +67,7 @@ export async function createShip(em: EntityManager) {
     shape: "Multi",
     solid: true,
     // TODO(@darzu): integrate these in the assets pipeline
-    children: BARGE_AABBS.map((aabb) => ({
+    children: SHIP_SMALL_AABBS.map((aabb) => ({
       shape: "AABB",
       solid: true,
       aabb,

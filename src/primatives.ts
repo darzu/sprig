@@ -587,6 +587,14 @@ export const BARGE_AABBS: AABB[] = RAW_BARGE_AABBS.map((aabb) => {
   return aabb;
 });
 
+export const SHIP_SMALL_AABBS: AABB[] = [
+  { min: V(-5.15, -1.8, -21.15), max: V(5.35, 0.2, 10.15) },
+  { min: V(4.95, -1.05, -25.15), max: V(8.45, 3.05, 8.95) },
+  { min: V(-8.55, -1.05, -25.15), max: V(-5.05, 3.05, 8.95) },
+  { min: V(-7.5, -1.05, 7.25), max: V(7.1, 3.05, 11.55) },
+  { min: V(-7.5, -1.05, -25.15), max: V(7.1, 3.05, -20.85) },
+];
+
 // const shipMinX = min(SHIP_AABBS.map((a) => a.min[0]));
 // const shipMaxX = min(SHIP_AABBS.map((a) => a.max[0]));
 // console.log(`${(shipMaxX + shipMinX) / 2}`);

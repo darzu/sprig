@@ -87,6 +87,9 @@ export function vec2Dbg(v: vec2): string {
 export function vec3Dbg(v: vec3): string {
   return `[${v[0].toFixed(2)},${v[1].toFixed(2)},${v[2].toFixed(2)}]`;
 }
+export function vec3Dbg2(v: vec3): string {
+  return `V(${v[0].toFixed(2)},${v[1].toFixed(2)},${v[2].toFixed(2)})`;
+}
 export function vec4Dbg(v: vec4): string {
   return `[${v[0].toFixed(2)},${v[1].toFixed(2)},${v[2].toFixed(
     2
