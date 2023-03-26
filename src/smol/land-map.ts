@@ -10,13 +10,13 @@ import { ScoreDef } from "./score.js";
 const WIDTH = 1024;
 const HEIGHT = 512;
 
-export const GrassMapTexPtr = CY.createTexture("grassMap", {
+export const LandMapTexPtr = CY.createTexture("landMap", {
   size: [WIDTH, HEIGHT],
   format: "r32float",
 });
 
-export const GrassMapDef = EM.defineComponent(
-  "grassMap",
+export const LandMapDef = EM.defineComponent(
+  "landMap",
   (name: string, map: Float32Array) => ({
     name,
     map,
@@ -49,6 +49,7 @@ export async function setMap(em: EntityManager, name: MapName) {
       // console.log(r, g, b);
       // note: we flip y b/c we're mapping to x/z
       const outIdx = x + (map.height - 1 - y) * map.width;
+      // TODO(@darzu): texture should probably be ints
       // r,g,b each range from 0-255
       if (
         x <= W ||
@@ -67,14 +68,14 @@ export async function setMap(em: EntityManager, name: MapName) {
       }
     }
   }
-  const texResource = res.renderer.renderer.getCyResource(GrassMapTexPtr)!;
+  const texResource = res.renderer.renderer.getCyResource(LandMapTexPtr)!;
   texResource.queueUpdate(texBuf);
 
-  const grassMap = em.ensureResource(GrassMapDef, name, texBuf);
+  const landMap = em.ensureResource(LandMapDef, name, texBuf);
   res.score.totalPurple = totalPurple;
   res.score.cutPurple = 0;
-  grassMap.map = texBuf;
-  grassMap.name = name;
+  landMap.map = texBuf;
+  landMap.name = name;
 
   // set random secondary/teriary colors
   const purpleness = (c: vec3) => c[0] * c[2];

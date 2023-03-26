@@ -23,7 +23,7 @@ fn vert_main(input: VertexInput) -> VertexOutput {
 
     // TODO(@darzu): process cut height correctly
     let cut = textureLoad(grassCut, texCoord, 0).x;
-    let colorKey = textureLoad(grassMap, texCoord, 0).x;
+    let colorKey = textureLoad(landMap, texCoord, 0).x;
     let y = worldPos.y * min(1.3 - cut, 1.0);
     // let cutHeight = textureSample(grassCut, samp, worldPos.xz).x;
     var dispPos = vec4<f32>(worldPos.x + cos(worldPos.x + scene.time * 0.001) * y * 0.1, y, worldPos.z + sin(worldPos.z + scene.time * 0.001) * y * 0.1, worldPos.w);

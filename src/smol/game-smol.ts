@@ -54,7 +54,7 @@ import { CY } from "../render/gpu-registry.js";
 import { assert } from "../util.js";
 import { texTypeToBytes } from "../render/gpu-struct.js";
 import { PartyDef } from "../games/party.js";
-import { GrassMapDef, GrassMapTexPtr, setMap } from "./grass-map.js";
+import { LandMapDef, LandMapTexPtr, setMap } from "./land-map.js";
 import {
   copyAABB,
   createAABB,
@@ -106,7 +106,7 @@ const SHIP_START_POS: vec3 = V(0, 2, -WORLD_WIDTH * 0.5 * 0.8);
 
 // const WORLD_HEIGHT = 1024;
 
-export const mapJfa = createJfaPipelines(GrassMapTexPtr, "exterior");
+export const mapJfa = createJfaPipelines(LandMapTexPtr, "exterior");
 
 export async function initSmol(em: EntityManager, hosting: boolean) {
   const dbgGrid = [
@@ -654,7 +654,7 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
 
   EM.registerSystem(
     [ShipDef, PositionDef, WorldFrameDef, PhysicsStateDef],
-    [PartyDef, GrassMapDef, ScoreDef],
+    [PartyDef, LandMapDef, ScoreDef],
     (es, res) => {
       if (!es.length) return;
       const ship = es[0];
@@ -719,7 +719,7 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
           if (Math.abs(zDist) < shipW * 0.5 && Math.abs(xDist) < shipH * 0.5) {
             const idx = xi + yi * WORLD_WIDTH;
 
-            const color = res.grassMap.map[idx];
+            const color = res.landMap.map[idx];
 
             if (ship.ld52ship.cuttingEnabled) {
               if (worldCutData[idx] < 1) {

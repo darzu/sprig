@@ -27,7 +27,7 @@ import {
 import { mat4, V, vec3 } from "../sprig-matrix.js";
 import { assertDbg } from "../util.js";
 import { computeTriangleNormal } from "../utils-3d.js";
-import { GrassMapTexPtr } from "./grass-map.js";
+import { LandMapTexPtr } from "./land-map.js";
 
 const MAX_GRASS_VERTS = MAX_INDICES;
 const MAX_GRASS_MESHES = 500;
@@ -196,7 +196,7 @@ export const renderGrassPipe = CY.createRenderPipeline("grassRender", {
     // gerstnerWavesPtr,
     pointLightsPtr,
     GrassCutTexPtr,
-    GrassMapTexPtr,
+    LandMapTexPtr,
     // { ptr: grassJfa.sdfTex, alias: "sdf" },
   ],
   // TODO(@darzu): for perf, maybe do backface culling
