@@ -58,6 +58,8 @@ Svelte
       `count += 1;` -> `count += 1; $$invalidate('count', count);`
       https://svelte.dev/blog/svelte-3-rethinking-reactivity
     original hypothesis: https://svelte.dev/blog/frameworks-without-the-framework
+    Thoughts on Svelte: https://tyhopp.com/notes/thoughts-on-svelte
+      https://news.ycombinator.com/item?id=35324430
 
 Lol: "The Polymer library is in maintenance mode. For new development, we recommend Lit."
 
@@ -82,3 +84,6 @@ https://fresh.deno.dev:
 
 HTML drag events:
   https://simblob.blogspot.com/2023/02/making-of-draggable-objects.html
+
+Well regarded window manager:
+  https://awesomewm.org

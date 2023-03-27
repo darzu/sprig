@@ -35,7 +35,7 @@ const MapLoaderDef = EM.defineComponent("mapLoader", () => {
 export const MapsDef = EM.defineComponent("maps", (maps: MapSet) => maps);
 export type Maps = Component<typeof MapsDef>;
 
-async function loadMaps(): Promise<MapSet> {
+async function loadMapsData(): Promise<MapSet> {
   const mapPromises = MapPaths.map(async (name) => {
     const path = `${DEFAULT_MAP_PATH}${name}.png`;
     // return getBytes(path);
@@ -73,6 +73,7 @@ async function loadMaps(): Promise<MapSet> {
   return set as MapSet;
 }
 
+// TODO(@darzu): use registerInit so this only runs if needed
 onInit(async (em) => {
   em.addResource(MapLoaderDef);
 
@@ -81,7 +82,7 @@ onInit(async (em) => {
 
   assert(!mapLoader.promise, "somehow we're double loading maps");
 
-  const mapsPromise = loadMaps();
+  const mapsPromise = loadMapsData();
   mapLoader.promise = mapsPromise;
   mapsPromise.then(
     (result) => {

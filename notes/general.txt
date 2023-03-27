@@ -1378,3 +1378,8 @@ Roblox:
     Uses "cluster", ~100 objects per draw call
   Lot of dynamic objects in a scene, but only a small fraction actually change
 
+"Juice" and game feel:
+  https://garden.bradwoods.io/notes/design/juice
+
+WebGL newsletter:
+  https://offscreencanvas.com

@@ -38,7 +38,7 @@ export async function setMap(em: EntityManager, name: MapName) {
   assert(map.height === HEIGHT, `map.height: ${map.height}`);
 
   const W = 2;
-  const texBuf = new Float32Array(map.width * map.height);
+  const landData = new Float32Array(map.width * map.height);
   let totalPurple = 0;
   for (let x = 0; x < map.width; x += 1) {
     for (let y = 0; y < map.height; y += 1) {
@@ -57,24 +57,24 @@ export async function setMap(em: EntityManager, name: MapName) {
         x >= map.width - 1 - W ||
         y >= map.height - 1 - W
       ) {
-        texBuf[outIdx] = 1.0;
+        landData[outIdx] = 1.0;
       } else if (g > 100) {
-        texBuf[outIdx] = 0.0;
+        landData[outIdx] = 0.0;
       } else if (r > 100 && b > 100) {
-        texBuf[outIdx] = 0.5;
+        landData[outIdx] = 0.5;
         totalPurple++;
       } else if (r > 100) {
-        texBuf[outIdx] = 1.0;
+        landData[outIdx] = 1.0;
       }
     }
   }
   const texResource = res.renderer.renderer.getCyResource(LandMapTexPtr)!;
-  texResource.queueUpdate(texBuf);
+  texResource.queueUpdate(landData);
 
-  const landMap = em.ensureResource(LandMapDef, name, texBuf);
+  const landMap = em.ensureResource(LandMapDef, name, landData);
   res.score.totalPurple = totalPurple;
   res.score.cutPurple = 0;
-  landMap.map = texBuf;
+  landMap.map = landData;
   landMap.name = name;
 
   // set random secondary/teriary colors
