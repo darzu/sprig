@@ -9,21 +9,14 @@ import { onInit } from "./init.js";
 import { jitter } from "./math.js";
 import { AudioDef } from "./audio.js";
 import {
-  AABB,
-  copyAABB,
   copyLine,
-  createAABB,
   createLine,
-  doesOverlapAABB,
   emptyLine,
-  getAABBFromPositions,
   getLineEnd,
   getLineMid,
   Line,
   lineSphereIntersections,
-  mergeAABBs,
   Sphere,
-  transformAABB,
   transformLine,
 } from "./physics/broadphase.js";
 import { ColliderDef } from "./physics/collider.js";
@@ -58,6 +51,15 @@ import {
 import { createSplinterPool, SplinterPool } from "./wood-splinters.js";
 import { DBG_ASSERT, VERBOSE_LOG } from "./flags.js";
 import { meshPoolPtr } from "./render/pipelines/std-scene.js";
+import {
+  createAABB,
+  copyAABB,
+  transformAABB,
+  doesOverlapAABB,
+  AABB,
+  mergeAABBs,
+  getAABBFromPositions,
+} from "./physics/aabb.js";
 
 /* TODO(@darzu):
 [ ] standardize naming: wood or timber or ??

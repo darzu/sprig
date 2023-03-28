@@ -1,4 +1,5 @@
 // TODO(@darzu): UNUSED; was intended for existance-dependencies for systems/resources
+// aka union-find
 export interface DisjointSet {
   // adds a new "id" in its own set
   add(id: number): void;

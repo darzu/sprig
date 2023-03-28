@@ -17,7 +17,7 @@ import {
   transformMesh,
   validateMesh,
 } from "./render/mesh.js";
-import { AABB } from "./physics/broadphase.js";
+import { AABB } from "./physics/aabb.js";
 import { RendererDef } from "./render/renderer-ecs.js";
 import { Renderer } from "./render/renderer-ecs.js";
 import { assert } from "./util.js";

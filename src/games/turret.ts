@@ -21,7 +21,7 @@ import {
   CAMERA_OFFSETS,
   setCameraFollowPosition,
 } from "../camera.js";
-import { AABB, copyAABB, createAABB } from "../physics/broadphase.js";
+import { AABB, copyAABB, createAABB } from "../physics/aabb.js";
 import { InputsDef } from "../inputs.js";
 import { clamp } from "../math.js";
 import { DeletedDef } from "../delete.js";

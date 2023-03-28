@@ -1,4 +1,5 @@
 import { Component, EM, EntityManager } from "../entity-manager.js";
+import { AABB } from "../physics/aabb.js";
 import { CY } from "../render/gpu-registry.js";
 import { RendererDef } from "../render/renderer-ecs.js";
 import { V, vec3 } from "../sprig-matrix.js";
@@ -23,6 +24,26 @@ export const LandMapDef = EM.defineComponent(
   })
 );
 
+type MapBlobRun = { y: number; x0: number; x1: number };
+interface MapBlob {
+  color: vec3;
+  aabb: AABB;
+  runs: MapBlobRun[]; // sorted by y
+}
+
+// TODO(@darzu): use union-find to track islands?
+//  or extract all color blobs as x,y offset + sub-img data ?
+//    this could then be processed down into points of interest
+//    and the land map
+//  perhaps arranged as a tree so you could see if a blob encloses another blob
+//    either with "encloses" (tree) or "touching" relationships
+// TODO(@darzu): ! extract islands as run-length encoded sections
+// TODO(@darzu): create a "generateLegend" helper fn? creates a png with
+//  all the colors and their meanings
+// TODO(@darzu): is there such a thing as layered png? png with layers.
+// TODO(@darzu): also what compression does png use?
+function parseMap() {}
+
 export async function setMap(em: EntityManager, name: MapName) {
   const res = await em.whenResources(MapsDef, RendererDef, ScoreDef);
 
@@ -46,6 +67,7 @@ export async function setMap(em: EntityManager, name: MapName) {
       const r = buf[rIdx + 0];
       const g = buf[rIdx + 1];
       const b = buf[rIdx + 2];
+      const a = buf[rIdx + 3]; // unused?
       // console.log(r, g, b);
       // note: we flip y b/c we're mapping to x/z
       const outIdx = x + (map.height - 1 - y) * map.width;

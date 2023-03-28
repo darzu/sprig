@@ -2,7 +2,7 @@
 
 import { BLACK } from "./assets.js";
 import { ENDESGA16, randEndesga16, seqEndesga16 } from "./color/palettes.js";
-import { AABB } from "./physics/broadphase.js";
+import { AABB } from "./physics/aabb.js";
 import {
   cloneMesh,
   mapMeshPositions,

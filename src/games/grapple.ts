@@ -3,7 +3,7 @@ import { EM, EntityManager } from "../entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { onInit } from "../init.js";
 import { MeDef } from "../net/components.js";
-import { copyAABB, createAABB } from "../physics/broadphase.js";
+import { copyAABB, createAABB } from "../physics/aabb.js";
 import { ColliderDef } from "../physics/collider.js";
 import {
   PhysicsParentDef,

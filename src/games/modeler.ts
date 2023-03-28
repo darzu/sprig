@@ -3,7 +3,8 @@ import { EM, EntityManager, EntityW } from "../entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { InputsDef } from "../inputs.js";
 import { mathMap } from "../math.js";
-import { AABB, Ray, RayHit } from "../physics/broadphase.js";
+import { Ray, RayHit } from "../physics/broadphase.js";
+import { AABB } from "../physics/aabb.js";
 import { ColliderDef } from "../physics/collider.js";
 import {
   PhysicsBroadCollidersDef,

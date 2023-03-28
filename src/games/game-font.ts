@@ -11,7 +11,7 @@ import { lineStuff } from "../gui/path-editor.js";
 import { exportObj } from "../import_obj.js";
 import { InputsDef } from "../inputs.js";
 import { mathMap } from "../math.js";
-import { copyAABB, createAABB } from "../physics/broadphase.js";
+import { copyAABB, createAABB } from "../physics/aabb.js";
 import { ColliderDef } from "../physics/collider.js";
 import { PositionDef } from "../physics/transform.js";
 import { PointLightDef } from "../render/lights.js";

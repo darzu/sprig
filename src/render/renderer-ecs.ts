@@ -81,7 +81,7 @@ import {
   createAABB,
   getAABBCornersTemp,
   getAABBFromPositions,
-} from "../physics/broadphase.js";
+} from "../physics/aabb.js";
 import { drawBall } from "../utils-game.js";
 import { createGizmoMesh } from "../primatives.js";
 

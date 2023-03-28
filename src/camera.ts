@@ -16,7 +16,7 @@ import { computeNewError, reduceError } from "./smoothing.js";
 import { tempQuat, tempVec3 } from "./temp-pool.js";
 import { TimeDef } from "./time.js";
 import { yawpitchToQuat } from "./yawpitch.js";
-import { createAABB } from "./physics/broadphase.js";
+import { createAABB } from "./physics/aabb.js";
 import { assert, dbgDirOnce, resizeArray } from "./util.js";
 
 export type PerspectiveMode = "perspective" | "ortho";

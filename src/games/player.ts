@@ -23,7 +23,8 @@ import {
 } from "../physics/nonintersection.js";
 import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
 import { AABBCollider, Collider, ColliderDef } from "../physics/collider.js";
-import { copyAABB, createAABB, Ray } from "../physics/broadphase.js";
+import { Ray } from "../physics/broadphase.js";
+import { copyAABB, createAABB } from "../physics/aabb.js";
 import { tempVec3 } from "../temp-pool.js";
 import { cloneMesh, scaleMesh3 } from "../render/mesh.js";
 import { AssetsDef } from "../assets.js";

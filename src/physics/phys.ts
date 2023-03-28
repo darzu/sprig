@@ -23,7 +23,7 @@ import {
   registerUpdateWorldFromLocalAndParent,
 } from "./transform.js";
 import { Collider } from "./collider.js";
-import { AABB, aabbCenter } from "./broadphase.js";
+import { AABB, aabbCenter } from "./aabb.js";
 import { registerNarrowPhaseSystems } from "./narrowphase.js";
 import { assert } from "../util.js";
 import { tempVec3 } from "../temp-pool.js";

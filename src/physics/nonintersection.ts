@@ -10,20 +10,22 @@ import {
   ReboundData,
 } from "./phys.js";
 import {
-  AABB,
-  aabbCenter,
   checkBroadphase,
   collisionPairs,
-  copyAABB,
-  createAABB,
-  doesOverlapAABB,
-  doesTouchAABB,
   Ray,
   RayHit,
   rayHitDist,
   resetCollidesWithSet,
-  transformAABB,
 } from "./broadphase.js";
+import {
+  AABB,
+  aabbCenter,
+  copyAABB,
+  createAABB,
+  doesOverlapAABB,
+  doesTouchAABB,
+  transformAABB,
+} from "./aabb.js";
 import {
   Frame,
   IDENTITY_FRAME,

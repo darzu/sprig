@@ -5,7 +5,7 @@ import { ColorDef } from "../color-ecs.js";
 import { InputsDef } from "../inputs.js";
 import { mathMap } from "../math.js";
 import { cloneMesh, mapMeshPositions, RawMesh } from "../render/mesh.js";
-import { AABB } from "./broadphase.js";
+import { AABB } from "./aabb.js";
 import {
   PhysicsBroadCollidersDef,
   PhysicsStateDef,

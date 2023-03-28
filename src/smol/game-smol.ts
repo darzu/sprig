@@ -55,11 +55,7 @@ import { assert } from "../util.js";
 import { texTypeToBytes } from "../render/gpu-struct.js";
 import { PartyDef } from "../games/party.js";
 import { LandMapDef, LandMapTexPtr, setMap } from "./land-map.js";
-import {
-  copyAABB,
-  createAABB,
-  getAABBCornersTemp,
-} from "../physics/broadphase.js";
+import { copyAABB, createAABB, getAABBCornersTemp } from "../physics/aabb.js";
 import { rasterizeTri } from "../raster.js";
 import { InputsDef } from "../inputs.js";
 import { ScoreDef } from "./score.js";

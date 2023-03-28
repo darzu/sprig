@@ -15,7 +15,7 @@ import {
   AABB,
   updateAABBWithPoint,
   aabbCenter,
-} from "../physics/broadphase.js";
+} from "../physics/aabb.js";
 import { AABBCollider, ColliderDef } from "../physics/collider.js";
 import { AngularVelocityDef, LinearVelocityDef } from "../physics/motion.js";
 import {
