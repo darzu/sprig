@@ -44,19 +44,12 @@ interface MapBlob {
   runs: MapBlobRun[];
 }
 
-// TODO(@darzu): use union-find to track islands?
-//  or extract all color blobs as x,y offset + sub-img data ?
-//    this could then be processed down into points of interest
-//    and the land map
-//  perhaps arranged as a tree so you could see if a blob encloses another blob
-//    either with "encloses" (tree) or "touching" relationships
-// TODO(@darzu): ! extract islands as run-length encoded sections
-// TODO(@darzu): create a "generateLegend" helper fn? creates a png with
-//  all the colors and their meanings
-// TODO(@darzu): is there such a thing as layered png? png with layers.
-// TODO(@darzu): also what compression does png use?
 // NOTE: we mutate the maps as we parse them (so we have easier bookkeeping)
-// TODO(@darzu): PERF. If we read the .png huffman table directly, we can probably massively speed this up
+// TODO(@darzu): PERF! If we read the .png huffman table directly, we can probably massively speed this up
+// TODO(@darzu): PERF! Or if we switch to .qoi, the format is much easier to decode/encode b/c it uses run-length encoding
+// TODO(@darzu): feature: is there such a thing as layered png? png with layers.
+// TODO(@darzu): feature: create a "generateLegend" helper fn? creates a png with
+//                        all the colors and their meanings
 function parseAndMutateIntoMapBlobs(
   rgbaBytes: Uint8ClampedArray,
   width: number,
@@ -74,22 +67,6 @@ function parseAndMutateIntoMapBlobs(
       if (!vec4.equals(clr, vec4.ZEROS) && !vec4.equals(clr, white)) {
         blobs.push(parseBlob(x, y));
       }
-
-      // // console.log(r, g, b);
-      // // note: we flip y b/c we're mapping to x/z
-      // const outIdx = x + (height - 1 - y) * width;
-      // // TODO(@darzu): texture should probably be ints
-      // // r,g,b each range from 0-255
-      // if (x <= W || y <= W || x >= width - 1 - W || y >= height - 1 - W) {
-      //   landData[outIdx] = 1.0;
-      // } else if (g > 100) {
-      //   landData[outIdx] = 0.0;
-      // } else if (r > 100 && b > 100) {
-      //   landData[outIdx] = 0.5;
-      //   totalPurple++;
-      // } else if (r > 100) {
-      //   landData[outIdx] = 1.0;
-      // }
     }
   }
 
@@ -178,10 +155,6 @@ export function parseAndMutateIntoMapData(
   let __start = performance.now();
 
   let buf = mapBytes.bytes;
-  // yikes
-  // buf = buf.slice(0x8a);
-  // const view = new Uint32Array(buf.buffer);
-  // assert(view.length === WIDTH * HEIGHT, "map has bad size");
   assert(buf.length === WIDTH * HEIGHT * 4, "map has bad size");
   assert(mapBytes.width === WIDTH, `map.width: ${mapBytes.width}`);
   assert(mapBytes.height === HEIGHT, `map.height: ${mapBytes.height}`);
