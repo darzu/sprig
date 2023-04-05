@@ -105,3 +105,9 @@ Phases/dependencies/scheduling design:
       only running those required to fullfill constraints
     comes up with an ordered list of systems to repeatedly run
       again only running those required to fullfill constraints
+
+Game Programming Patterns
+  https://gameprogrammingpatterns.com/contents.html
+
+Unreal's "Mass Entity":
+  https://docs.unrealengine.com/5.0/en-US/overview-of-mass-entity-in-unreal-engine/

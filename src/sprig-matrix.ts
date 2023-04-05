@@ -375,7 +375,7 @@ export module vec4 {
   }
 
   export const ZEROS = fromValues(0, 0, 0, 0);
-  export const ONES = fromValues(1, 1, 1, 0);
+  export const ONES = fromValues(1, 1, 1, 1);
 
   export function equals(v1: InputT, v2: InputT): boolean {
     return GL.equals(v1, v2);

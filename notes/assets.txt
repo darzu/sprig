@@ -206,3 +206,8 @@ Perforce:
 
 Regarding "art direction":
   https://shahriyarshahrabi.medium.com/introduction-to-art-direction-for-games-c43fe0162cf6
+
+Open source photogrammetry:
+  https://alicevision.org
+  commercial gold standard seems to be? https://www.capturingreality.com
+    https://twitter.com/gleb_alexandrov/status/1643307640607350787

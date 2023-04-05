@@ -47,12 +47,6 @@ export function doesTouchAABB(a: AABB, b: AABB, threshold: number) {
   );
 }
 
-export interface AABB2 {
-  min: vec2;
-  max: vec2;
-}
-
-// TODO(@darzu): extract AABB and helpers to seperate file
 export interface AABB {
   min: vec3;
   max: vec3;
@@ -132,15 +126,9 @@ export function aabbCenter(out: vec3, a: AABB): vec3 {
   return out;
 }
 export function updateAABBWithPoint(aabb: AABB, pos: vec3): AABB {
-  aabb.min[0] = Math.min(pos[0], aabb.min[0]);
-  aabb.min[1] = Math.min(pos[1], aabb.min[1]);
-  aabb.min[2] = Math.min(pos[2], aabb.min[2]);
-  aabb.max[0] = Math.max(pos[0], aabb.max[0]);
-  aabb.max[1] = Math.max(pos[1], aabb.max[1]);
-  aabb.max[2] = Math.max(pos[2], aabb.max[2]);
-  return aabb;
+  return updateAABBWithPoint_(aabb, pos[0], pos[1], pos[2]);
 }
-export function updateAABBWithPoint2(
+export function updateAABBWithPoint_(
   aabb: AABB,
   x: number,
   y: number,
@@ -173,5 +161,32 @@ export function getAABBFromPositions(out: AABB, positions: vec3[]): AABB {
     updateAABBWithPoint(out, pos);
   }
 
+  return out;
+}
+
+// 2D AABB stuff
+
+export interface AABB2 {
+  min: vec2;
+  max: vec2;
+}
+
+export function updateAABBWithPoint2(aabb: AABB2, pos: vec2): AABB2 {
+  return updateAABBWithPoint2_(aabb, pos[0], pos[1]);
+}
+export function updateAABBWithPoint2_(
+  aabb: AABB2,
+  x: number,
+  y: number
+): AABB2 {
+  aabb.min[0] = Math.min(x, aabb.min[0]);
+  aabb.min[1] = Math.min(y, aabb.min[1]);
+  aabb.max[0] = Math.max(x, aabb.max[0]);
+  aabb.max[1] = Math.max(y, aabb.max[1]);
+  return aabb;
+}
+export function aabbCenter2(out: vec2, a: AABB2): vec2 {
+  out[0] = (a.min[0] + a.max[0]) * 0.5;
+  out[1] = (a.min[1] + a.max[1]) * 0.5;
   return out;
 }

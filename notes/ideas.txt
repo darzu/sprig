@@ -101,3 +101,23 @@ For backwards compatibility long term:
     partial program analysis.
   Old code would still work, it just has to be pegged to a specific version
   Just a thought.
+
+Make a game about solving problems using mechanisms like here:
+  https://www.youtube.com/@thang010146
+  https://www.autodesk.com/products/inventor/overview
+
+Car mechanics explainer:
+  show a flat rendering of all the car systems
+    all the connections, arranged like a circuit, not caring about space
+  show where all the sensors are in the system
+    every sensor: https://www.youtube.com/watch?v=dK4mb1yS0dY&t=1057s
+  show the view that the engine control unit sees of the world
+  show all the voltages, fluid types, etc throughout the system
+  different overlays like:
+    temperature, mechanical forces, voltages, fluid types, failure likelyhood
+    year introduced,
+  then show how it all folds up to fit into the physical form
+  maybe some systems start as a black box (e.g. transmission, engine block), but you can click to expand into its subsystems
+
+Make a gameplay involving controlling machinery like:
+  https://www.youtube.com/watch?v=7_iyiOLpRVA
