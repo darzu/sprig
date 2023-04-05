@@ -8,7 +8,8 @@ import {
 import { CY } from "../render/gpu-registry.js";
 import { RendererDef } from "../render/renderer-ecs.js";
 import { V, vec3, vec4 } from "../sprig-matrix.js";
-import { assert, dbgLogOnce } from "../util.js";
+import { assert, assertDbg, dbgLogOnce } from "../util.js";
+import { vec4Dbg } from "../utils-3d.js";
 import { randColor } from "../utils-game.js";
 import { MapName, MapsDef } from "./map-loader.js";
 import { ScoreDef } from "./score.js";
@@ -61,11 +62,14 @@ function parseAndMutateMapBlobs(
 ): MapBlob[] {
   const blobs: MapBlob[] = [];
 
+  const white = V(255, 255, 255, 255);
+
   let _tmpclr = vec4.tmp();
   for (let x = 0; x < width; x += 1) {
     for (let y = 0; y < height; y += 1) {
+      const clr = getColor(x, y, _tmpclr);
       // found something?
-      if (!vec4.equals(getColor(x, y, _tmpclr), vec4.ZEROS)) {
+      if (!vec4.equals(clr, vec4.ZEROS) && !vec4.equals(clr, white)) {
         blobs.push(parseBlob(x, y));
       }
 
@@ -127,44 +131,48 @@ function parseAndMutateMapBlobs(
     const checkColor = (x: number, y: number) =>
       vec4.equals(color, getColor(x, y));
 
-    // TODO(@darzu):
     parseRun(x, y);
+
+    blob.runs.sort((a, b) => a.y - b.y);
 
     return blob;
 
     function parseRun(x: number, y: number): void {
-      // walk as far left as we can
-      let x0 = x;
-      // NOTE: MOST of the time runs will be started v close to the left end anyway
-      while (checkColor(x0 - 1, y)) x0 -= 1;
-      let x1 = x0; // NOTE: outputed x1 is exclusive
-      // walk right and clear as we go
+      // assumption: MOST of the time runs will be started v close to the left end anyway
+      assertDbg(checkColor(x, y), `invalid parseRun`);
+      // clear to the left
+      let x0 = x; // NOTE: outputed x0 is inclusive
+      while (checkColor(x0 - 1, y)) {
+        x0 -= 1;
+        clearColor(x0, y);
+      }
+      // clear to the right
+      let x1 = x; // NOTE: outputed x1 is exclusive
       while (checkColor(x1, y)) {
         clearColor(x1, y);
-        // check above
-        if (checkColor(x1, y + 1)) {
-          parseRun(x1, y + 1);
-        }
-        // TODO(@darzu): how do we make sure there isn't a race here?
-        // // check below
-        // if (checkColor(x1, y - 1)) {
-        //   parseRun(x1, y - 1);
-        // }
         x1 += 1;
       }
       // store run & update counts
       const len = x1 - x0;
-      assert(x0 <= x && x < x1, `invalid run w/ length ${x1 - x0}`);
+      assertDbg(x0 <= x && x < x1 && len > 0, `invalid run w/ length ${len}`);
+      //NOTE: aabb min is inclusive, max is exclusive
       updateAABBWithPoint2_(blob.aabb, x0, y);
       updateAABBWithPoint2_(blob.aabb, x1, y + 1);
       blob.area += len;
       blob.runs.push({ y, x0, x1 });
+      // check for new runs above and below
+      for (let xi = x0; xi < x1; xi++) {
+        if (checkColor(xi, y + 1)) parseRun(xi, y + 1);
+        if (checkColor(xi, y - 1)) parseRun(xi, y - 1);
+      }
     }
   }
 }
 
 export async function setMap(em: EntityManager, name: MapName) {
   const res = await em.whenResources(MapsDef, RendererDef, ScoreDef);
+
+  let __start = performance.now();
 
   const map = res.maps[name];
 
@@ -178,11 +186,27 @@ export async function setMap(em: EntityManager, name: MapName) {
   assert(map.height === HEIGHT, `map.height: ${map.height}`);
 
   const blobs = parseAndMutateMapBlobs(buf, map.width, map.height);
-  console.dir(blobs);
+
+  // TODO(@darzu): DEBUGGING:
+  for (let b of blobs) console.log(`clr: ${vec4Dbg(b.color)}, area: ${b.area}`);
 
   const W = 2;
   const landData = new Float32Array(map.width * map.height);
   let totalPurple = 0;
+
+  for (let blob of blobs) {
+    // is it land?
+    if (blob.color[0] > 100) {
+      for (let r of blob.runs) {
+        for (let x = r.x0; x < r.x1; x++) {
+          // const idx = x * 4 + r.y * map.width * 4;
+          // TODO(@darzu): parameterize this transform?
+          const outIdx = x + (map.height - 1 - r.y) * map.width;
+          landData[outIdx] = 1.0;
+        }
+      }
+    }
+  }
   // for (let x = 0; x < map.width; x += 1) {
   //   for (let y = 0; y < map.height; y += 1) {
   //     const rIdx = x * 4 + y * map.width * 4;
@@ -232,4 +256,8 @@ export async function setMap(em: EntityManager, name: MapName) {
     secColor,
     terColor,
   });
+
+  // TODO(@darzu): dbg
+  const __elapsed = performance.now() - __start;
+  console.log(`setMap elapsed: ${__elapsed.toFixed(1)}ms`);
 }
