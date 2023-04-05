@@ -853,6 +853,22 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
   const { text } = await EM.whenResources(TextDef);
   text.lowerText =
     "W/S: unfurl/furl, A/D: turn, SPACE: harvest on/off, E: use/unuse rudder";
+
+  // DEBUG check map load settings
+  {
+    const level = await EM.whenResources(LevelMapDef);
+    level.levelMap.towers.forEach((tPos) => {
+      const ball = em.new();
+      em.ensureComponentOn(ball, PositionDef);
+      ball.position[2] = texXToWorldZ(tPos[0]);
+      // TODO(@darzu): parameterize these transforms! Can/should we use matrices for these maybe?
+      ball.position[0] = texYToWorldX(WORLD_HEIGHT - 1 - tPos[1]);
+      ball.position[1] = 20;
+      em.ensureComponentOn(ball, ScaleDef, V(5, 5, 5));
+      em.ensureComponentOn(ball, RenderableConstructDef, res.assets.ball.proto);
+      em.ensureComponentOn(ball, ColorDef, ENDESGA16.yellow);
+    });
+  }
 }
 
 async function createPlayer() {

@@ -24,6 +24,7 @@ export const LandMapTexPtr = CY.createTexture("landMap", {
   format: "r32float",
 });
 
+// TODO(@darzu): should this thing be game-aware?
 export const LevelMapDef = EM.defineComponent("levelMap", () => ({
   name: "unknown",
   land: new Float32Array(),
