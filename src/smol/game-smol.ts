@@ -145,7 +145,6 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
       // renderer
       res.renderer.pipelines = [
         ...shadowPipelines,
-        // skyPipeline,
         stdRenderPipeline,
         // renderGrassPipe,
         renderOceanPipe,
@@ -715,7 +714,7 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
           if (Math.abs(zDist) < shipW * 0.5 && Math.abs(xDist) < shipH * 0.5) {
             const idx = xi + yi * WORLD_WIDTH;
 
-            const color = res.landMap.map[idx];
+            const color = res.landMap.land[idx];
 
             if (ship.ld52ship.cuttingEnabled) {
               if (worldCutData[idx] < 1) {

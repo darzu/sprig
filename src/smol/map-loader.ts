@@ -18,29 +18,32 @@ export const MapPaths = ["obstacles1"] as const;
 
 export type MapName = typeof MapPaths[number];
 
-export interface Map {
+export interface MapBytes {
   bytes: Uint8ClampedArray;
   width: number;
   height: number;
 }
 
-export type MapSet = { [P in MapName]: Map };
+export type MapBytesSet = { [P in MapName]: MapBytes };
 
-const MapLoaderDef = EM.defineComponent("mapLoader", () => {
+const MapBytesLoaderDef = EM.defineComponent("mapBytesLoader", () => {
   return {
-    promise: null as Promise<MapSet> | null,
+    promise: null as Promise<MapBytesSet> | null,
   };
 });
 
-export const MapsDef = EM.defineComponent("maps", (maps: MapSet) => maps);
-export type Maps = Component<typeof MapsDef>;
+export const MapBytesSetDef = EM.defineComponent(
+  "mapBytesSet",
+  (mapBytesSet: MapBytesSet) => mapBytesSet
+);
 
-async function loadMapsData(): Promise<MapSet> {
+async function loadMapsData(): Promise<MapBytesSet> {
+  // TODO(@darzu): PERF. Load on demand instead of all at once
   const mapPromises = MapPaths.map(async (name) => {
     const path = `${DEFAULT_MAP_PATH}${name}.png`;
     // return getBytes(path);
 
-    return new Promise<Map>((resolve, reject) => {
+    return new Promise<MapBytes>((resolve, reject) => {
       const img = new Image();
       img.src = path;
       img.onload = function (e) {
@@ -52,7 +55,7 @@ async function loadMapsData(): Promise<MapSet> {
         canvas.height = img.height;
         context.drawImage(img, 0, 0);
         const imgData = context.getImageData(0, 0, img.width, img.height);
-        const map: Map = {
+        const map: MapBytes = {
           bytes: imgData.data,
           width: img.width,
           height: img.height,
@@ -64,29 +67,29 @@ async function loadMapsData(): Promise<MapSet> {
 
   const maps = await Promise.all(mapPromises);
 
-  const set: Partial<MapSet> = {};
+  const set: Partial<MapBytesSet> = {};
 
   for (let i = 0; i < MapPaths.length; i++) {
     set[MapPaths[i]] = maps[i];
   }
 
-  return set as MapSet;
+  return set as MapBytesSet;
 }
 
 // TODO(@darzu): use registerInit so this only runs if needed
 onInit(async (em) => {
-  em.addResource(MapLoaderDef);
+  em.addResource(MapBytesLoaderDef);
 
   // start loading of maps
-  const { mapLoader } = await em.whenResources(MapLoaderDef);
+  const { mapBytesLoader } = await em.whenResources(MapBytesLoaderDef);
 
-  assert(!mapLoader.promise, "somehow we're double loading maps");
+  assert(!mapBytesLoader.promise, "somehow we're double loading maps");
 
   const mapsPromise = loadMapsData();
-  mapLoader.promise = mapsPromise;
+  mapBytesLoader.promise = mapsPromise;
   mapsPromise.then(
     (result) => {
-      em.addResource(MapsDef, result);
+      em.addResource(MapBytesSetDef, result);
     },
     (failureReason) => {
       // TODO(@darzu): fail more gracefully

@@ -11,7 +11,7 @@ import { V, vec3, vec4 } from "../sprig-matrix.js";
 import { assert, assertDbg, dbgLogOnce } from "../util.js";
 import { vec4Dbg } from "../utils-3d.js";
 import { randColor } from "../utils-game.js";
-import { MapName, MapsDef } from "./map-loader.js";
+import { MapName, MapBytesSetDef, MapBytes } from "./map-loader.js";
 import { ScoreDef } from "./score.js";
 
 const WIDTH = 1024;
@@ -24,11 +24,12 @@ export const LandMapTexPtr = CY.createTexture("landMap", {
 
 export const LandMapDef = EM.defineComponent(
   "landMap",
-  (name: string, map: Float32Array) => ({
-    name,
-    map,
+  (name?: string, land?: Float32Array) => ({
+    name: name ?? "unknown",
+    land: land ?? new Float32Array(),
   })
 );
+type LandMap = Component<typeof LandMapDef>;
 
 type MapBlobRun = {
   y: number;
@@ -55,7 +56,7 @@ interface MapBlob {
 // TODO(@darzu): also what compression does png use?
 // NOTE: we mutate the maps as we parse them (so we have easier bookkeeping)
 // TODO(@darzu): PERF. If we read the .png huffman table directly, we can probably massively speed this up
-function parseAndMutateMapBlobs(
+function parseAndMutateIntoMapBlobs(
   rgbaBytes: Uint8ClampedArray,
   width: number,
   height: number
@@ -169,29 +170,31 @@ function parseAndMutateMapBlobs(
   }
 }
 
-export async function setMap(em: EntityManager, name: MapName) {
-  const res = await em.whenResources(MapsDef, RendererDef, ScoreDef);
-
+export function parseAndMutateIntoMapData(
+  mapBytes: MapBytes,
+  name: string
+): LandMap {
   let __start = performance.now();
 
-  const map = res.maps[name];
-
-  let buf = map.bytes;
+  let buf = mapBytes.bytes;
   // yikes
   // buf = buf.slice(0x8a);
   // const view = new Uint32Array(buf.buffer);
   // assert(view.length === WIDTH * HEIGHT, "map has bad size");
   assert(buf.length === WIDTH * HEIGHT * 4, "map has bad size");
-  assert(map.width === WIDTH, `map.width: ${map.width}`);
-  assert(map.height === HEIGHT, `map.height: ${map.height}`);
+  assert(mapBytes.width === WIDTH, `map.width: ${mapBytes.width}`);
+  assert(mapBytes.height === HEIGHT, `map.height: ${mapBytes.height}`);
 
-  const blobs = parseAndMutateMapBlobs(buf, map.width, map.height);
+  const blobs = parseAndMutateIntoMapBlobs(
+    buf,
+    mapBytes.width,
+    mapBytes.height
+  );
 
-  // TODO(@darzu): DEBUGGING:
-  for (let b of blobs) console.log(`clr: ${vec4Dbg(b.color)}, area: ${b.area}`);
+  // for (let b of blobs) console.log(`clr: ${vec4Dbg(b.color)}, area: ${b.area}`);
 
   const W = 2;
-  const landData = new Float32Array(map.width * map.height);
+  const landData = new Float32Array(mapBytes.width * mapBytes.height);
   let totalPurple = 0;
 
   for (let blob of blobs) {
@@ -199,51 +202,46 @@ export async function setMap(em: EntityManager, name: MapName) {
     if (blob.color[0] > 100) {
       for (let r of blob.runs) {
         for (let x = r.x0; x < r.x1; x++) {
-          // const idx = x * 4 + r.y * map.width * 4;
           // TODO(@darzu): parameterize this transform?
-          const outIdx = x + (map.height - 1 - r.y) * map.width;
+          const outIdx = x + (mapBytes.height - 1 - r.y) * mapBytes.width;
           landData[outIdx] = 1.0;
         }
       }
     }
   }
-  // for (let x = 0; x < map.width; x += 1) {
-  //   for (let y = 0; y < map.height; y += 1) {
-  //     const rIdx = x * 4 + y * map.width * 4;
-  //     const r = buf[rIdx + 0];
-  //     const g = buf[rIdx + 1];
-  //     const b = buf[rIdx + 2];
-  //     const a = buf[rIdx + 3]; // unused?
-  //     // console.log(r, g, b);
-  //     // note: we flip y b/c we're mapping to x/z
-  //     const outIdx = x + (map.height - 1 - y) * map.width;
-  //     // TODO(@darzu): texture should probably be ints
-  //     // r,g,b each range from 0-255
-  //     if (
-  //       x <= W ||
-  //       y <= W ||
-  //       x >= map.width - 1 - W ||
-  //       y >= map.height - 1 - W
-  //     ) {
-  //       landData[outIdx] = 1.0;
-  //     } else if (g > 100) {
-  //       landData[outIdx] = 0.0;
-  //     } else if (r > 100 && b > 100) {
-  //       landData[outIdx] = 0.5;
-  //       totalPurple++;
-  //     } else if (r > 100) {
-  //       landData[outIdx] = 1.0;
-  //     }
-  //   }
-  // }
-  const texResource = res.renderer.renderer.getCyResource(LandMapTexPtr)!;
-  texResource.queueUpdate(landData);
 
-  const landMap = em.ensureResource(LandMapDef, name, landData);
+  const landMap: LandMap = {
+    land: landData,
+    name,
+  };
+
+  // TODO(@darzu): dbg:
+  const __elapsed = performance.now() - __start;
+  console.log(`setMap elapsed: ${__elapsed.toFixed(1)}ms`);
+
+  return landMap;
+}
+
+export async function setMap(em: EntityManager, name: MapName) {
+  const res = await em.whenResources(MapBytesSetDef, RendererDef, ScoreDef);
+
+  let __start = performance.now();
+
+  const mapBytes = res.mapBytesSet[name];
+
+  let totalPurple = 0;
+
+  const landMap = parseAndMutateIntoMapData(mapBytes, name);
+
+  const texResource = res.renderer.renderer.getCyResource(LandMapTexPtr)!;
+  texResource.queueUpdate(landMap.land);
+
+  // TODO(@darzu): hacky. i wish there was a way to do "createOrSet" instead of just "ensure"
+  const resLandMap = em.ensureResource(LandMapDef);
+  Object.assign(resLandMap, landMap);
+
   res.score.totalPurple = totalPurple;
   res.score.cutPurple = 0;
-  landMap.map = landData;
-  landMap.name = name;
 
   // set random secondary/teriary colors
   const purpleness = (c: vec3) => c[0] * c[2];
@@ -257,7 +255,7 @@ export async function setMap(em: EntityManager, name: MapName) {
     terColor,
   });
 
-  // TODO(@darzu): dbg
+  // TODO(@darzu): dbg:
   const __elapsed = performance.now() - __start;
   console.log(`setMap elapsed: ${__elapsed.toFixed(1)}ms`);
 }
