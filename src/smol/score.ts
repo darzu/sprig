@@ -1,7 +1,7 @@
 import { EM } from "../entity-manager.js";
 import { TextDef } from "../games/ui.js";
 import { TimeDef } from "../time.js";
-import { setMap } from "./land-map.js";
+import { setMap } from "./level-map.js";
 import { MapPaths } from "./map-loader.js";
 
 export const ScoreDef = EM.defineComponent("score", () => ({

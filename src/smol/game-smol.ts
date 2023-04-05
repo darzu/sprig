@@ -54,7 +54,7 @@ import { CY } from "../render/gpu-registry.js";
 import { assert } from "../util.js";
 import { texTypeToBytes } from "../render/gpu-struct.js";
 import { PartyDef } from "../games/party.js";
-import { LandMapDef, LandMapTexPtr, setMap } from "./land-map.js";
+import { LevelMapDef, LandMapTexPtr, setMap } from "./level-map.js";
 import { copyAABB, createAABB, getAABBCornersTemp } from "../physics/aabb.js";
 import { rasterizeTri } from "../raster.js";
 import { InputsDef } from "../inputs.js";
@@ -649,7 +649,7 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
 
   EM.registerSystem(
     [ShipDef, PositionDef, WorldFrameDef, PhysicsStateDef],
-    [PartyDef, LandMapDef, ScoreDef],
+    [PartyDef, LevelMapDef, ScoreDef],
     (es, res) => {
       if (!es.length) return;
       const ship = es[0];
@@ -714,7 +714,7 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
           if (Math.abs(zDist) < shipW * 0.5 && Math.abs(xDist) < shipH * 0.5) {
             const idx = xi + yi * WORLD_WIDTH;
 
-            const color = res.landMap.land[idx];
+            const color = res.levelMap.land[idx];
 
             if (ship.ld52ship.cuttingEnabled) {
               if (worldCutData[idx] < 1) {

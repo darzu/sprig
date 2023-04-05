@@ -1,13 +1,15 @@
 import { Component, EM, EntityManager } from "../entity-manager.js";
+import { VERBOSE_LOG } from "../flags.js";
 import {
   AABB,
   AABB2,
+  aabbCenter2,
   updateAABBWithPoint2,
   updateAABBWithPoint2_,
 } from "../physics/aabb.js";
 import { CY } from "../render/gpu-registry.js";
 import { RendererDef } from "../render/renderer-ecs.js";
-import { V, vec3, vec4 } from "../sprig-matrix.js";
+import { V, vec2, vec3, vec4 } from "../sprig-matrix.js";
 import { assert, assertDbg, dbgLogOnce } from "../util.js";
 import { vec4Dbg } from "../utils-3d.js";
 import { randColor } from "../utils-game.js";
@@ -22,14 +24,13 @@ export const LandMapTexPtr = CY.createTexture("landMap", {
   format: "r32float",
 });
 
-export const LandMapDef = EM.defineComponent(
-  "landMap",
-  (name?: string, land?: Float32Array) => ({
-    name: name ?? "unknown",
-    land: land ?? new Float32Array(),
-  })
-);
-type LandMap = Component<typeof LandMapDef>;
+export const LevelMapDef = EM.defineComponent("levelMap", () => ({
+  name: "unknown",
+  land: new Float32Array(),
+  towers: [] as vec2[],
+  startPos: V(0, 0),
+}));
+type LevelMap = Component<typeof LevelMapDef>;
 
 type MapBlobRun = {
   y: number;
@@ -173,7 +174,7 @@ function parseAndMutateIntoMapBlobs(
 export function parseAndMutateIntoMapData(
   mapBytes: MapBytes,
   name: string
-): LandMap {
+): LevelMap {
   let __start = performance.now();
 
   let buf = mapBytes.bytes;
@@ -191,15 +192,16 @@ export function parseAndMutateIntoMapData(
     mapBytes.height
   );
 
-  // for (let b of blobs) console.log(`clr: ${vec4Dbg(b.color)}, area: ${b.area}`);
+  // if (VERBOSE_LOG)
+  for (let b of blobs) console.log(`clr: ${vec4Dbg(b.color)}, area: ${b.area}`);
 
   const W = 2;
   const landData = new Float32Array(mapBytes.width * mapBytes.height);
   let totalPurple = 0;
 
+  // extract land data
   for (let blob of blobs) {
-    // is it land?
-    if (blob.color[0] > 100) {
+    if (blob.color[0] > 200) {
       for (let r of blob.runs) {
         for (let x = r.x0; x < r.x1; x++) {
           // TODO(@darzu): parameterize this transform?
@@ -210,16 +212,33 @@ export function parseAndMutateIntoMapData(
     }
   }
 
-  const landMap: LandMap = {
+  // extract start pos
+  const startBlob = blobs.filter(
+    (b) => b.color[0] < 100 && b.color[1] < 100 && b.color[2] > 200
+  )[0];
+  assert(!!startBlob, `no start blob`);
+  const startPos = aabbCenter2(vec2.create(), startBlob.aabb);
+
+  // extract tower locations
+  const towers = blobs
+    .filter((b) => b.color[0] > 200 && b.color[1] > 200 && b.color[2] < 100)
+    .map((b) => aabbCenter2(vec2.create(), b.aabb));
+
+  const levelMap: LevelMap = {
     land: landData,
     name,
+    startPos,
+    towers,
   };
+
+  // TODO(@darzu): DBG:
+  console.dir(levelMap);
 
   // TODO(@darzu): dbg:
   const __elapsed = performance.now() - __start;
   console.log(`setMap elapsed: ${__elapsed.toFixed(1)}ms`);
 
-  return landMap;
+  return levelMap;
 }
 
 export async function setMap(em: EntityManager, name: MapName) {
@@ -231,14 +250,14 @@ export async function setMap(em: EntityManager, name: MapName) {
 
   let totalPurple = 0;
 
-  const landMap = parseAndMutateIntoMapData(mapBytes, name);
+  const levelMap = parseAndMutateIntoMapData(mapBytes, name);
 
   const texResource = res.renderer.renderer.getCyResource(LandMapTexPtr)!;
-  texResource.queueUpdate(landMap.land);
+  texResource.queueUpdate(levelMap.land);
 
   // TODO(@darzu): hacky. i wish there was a way to do "createOrSet" instead of just "ensure"
-  const resLandMap = em.ensureResource(LandMapDef);
-  Object.assign(resLandMap, landMap);
+  const resLandMap = em.ensureResource(LevelMapDef);
+  Object.assign(resLandMap, levelMap);
 
   res.score.totalPurple = totalPurple;
   res.score.cutPurple = 0;

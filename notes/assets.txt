@@ -211,3 +211,10 @@ Open source photogrammetry:
   https://alicevision.org
   commercial gold standard seems to be? https://www.capturingreality.com
     https://twitter.com/gleb_alexandrov/status/1643307640607350787
+
+"Quite OK Image Format", PNG competitor:
+  https://phoboslab.org/log/2021/11/qoi-fast-lossless-image-compression
+  https://qoiformat.org
+    https://qoiformat.org/qoi-specification.pdf
+  https://github.com/phoboslab/qoi
+  https://news.ycombinator.com/item?id=35448357
