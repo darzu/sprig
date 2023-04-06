@@ -61,6 +61,8 @@ import {
   getAABBFromPositions,
 } from "./physics/aabb.js";
 
+// TODO(@darzu): remove all references to pirates
+
 /* TODO(@darzu):
 [ ] standardize naming: wood or timber or ??
 [ ] remove gameplay specific stuff like

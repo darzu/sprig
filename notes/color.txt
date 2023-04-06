@@ -4,6 +4,21 @@
     https://www.w3.org/TR/2008/REC-WCAG20-20081211/#relativeluminancedef
     https://www.w3.org/TR/2008/REC-WCAG20-20081211/#contrast-ratiodef
 
+APAC and WCAG3 stuff:
+  https://www.myndex.com/APCA/
+  http://myndex.com/CVD/
+  APCA vs WCAG2:
+    https://gist.github.com/Myndex/069a4079b0de2930e72d5401bde9af98
+    https://gist.github.com/Myndex/c30dba273aa5eca426ad9f5200917c9d
+    https://gist.github.com/Myndex/1dadb6dcac596f1cd7a5686a076f697f
+  red-green color blindness affects ~8.5% (8% male, 0.5% female) of people
+  https://huetone.ardov.me
+
+//  https://css-tricks.com/converting-color-spaces-in-javascript/
+//  https://www.w3.org/TR/2008/REC-WCAG20-20081211/#relativeluminancedef
+//  https://www.w3.org/TR/2008/REC-WCAG20-20081211/#contrast-ratiodef
+//  https://en.wikipedia.org/wiki/Color_difference
+
 oklab
     https://bottosson.github.io/posts/oklab/
     review: https://raphlinus.github.io/color/2021/01/18/oklab-critique.html

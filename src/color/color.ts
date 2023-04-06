@@ -1,9 +1,3 @@
-// References:
-//  https://css-tricks.com/converting-color-spaces-in-javascript/
-//  https://www.w3.org/TR/2008/REC-WCAG20-20081211/#relativeluminancedef
-//  https://www.w3.org/TR/2008/REC-WCAG20-20081211/#contrast-ratiodef
-//  https://en.wikipedia.org/wiki/Color_difference
-
 import { clamp } from "../math.js";
 import { vec3, V } from "../sprig-matrix.js";
 import { assert } from "../util.js";

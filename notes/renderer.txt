@@ -1823,3 +1823,7 @@ Depth Z non-linearity, linear Z, reverse Z:
     // assumes ndc is [-1,1]
     float ndc = depth * 2.0 - 1.0; 
     float linearDepth = (2.0 * near * far) / (far + near - ndc * (far - near));	
+
+Vulkan's design issues: "The problem statement at the beginning of this document is an extremely well conceived and lucid analysis of Vulkan's design issues.":
+  https://github.com/KhronosGroup/Vulkan-Docs/blob/main/proposals/VK_EXT_shader_object.adoc#problem-statement
+  https://twitter.com/EricLengyel/status/1641866274404982784
