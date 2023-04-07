@@ -148,7 +148,8 @@ const MeshTransforms: Partial<{
   ld51_cannon: mat4.fromRotationTranslationScale(
     quat.rotateX(quat.IDENTITY, Math.PI * -0.5, quat.create()),
     [0, 0, 0],
-    [0.8, 0.8, 0.8],
+    // [0.8, 0.8, 0.8], // LD51 size
+    [1.2, 1.2, 1.2],
     mat4.create()
   ),
 };

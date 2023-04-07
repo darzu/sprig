@@ -26,6 +26,7 @@ import {
   Mesh,
   getAABBFromMesh,
   RawMesh,
+  scaleMesh,
 } from "../render/mesh.js";
 import {
   RendererDef,
@@ -221,7 +222,7 @@ const towerPool = createEntityPool<
     const groundMesh = cloneMesh(res.assets.hex.mesh);
     transformMesh(
       groundMesh,
-      mat4.fromRotationTranslationScale(quat.IDENTITY, [0, -1, 0], [4, 1, 4])
+      mat4.fromRotationTranslationScale(quat.IDENTITY, [0, -6, 0], [8, 6, 8])
     );
     EM.ensureComponentOn(platform, RenderableConstructDef, groundMesh);
 
@@ -236,7 +237,7 @@ const towerPool = createEntityPool<
     EM.ensureComponentOn(cannon, PhysicsParentDef, platform.id);
     EM.ensureComponentOn(cannon, ColorDef, ENDESGA16.darkGray);
     EM.ensureComponentOn(cannon, RotationDef);
-    vec3.copy(cannon.position, [0, 2, 0]);
+    vec3.copy(cannon.position, [0, 6, -6]);
 
     // make timber
     const timber = EM.new();
@@ -244,6 +245,7 @@ const towerPool = createEntityPool<
     const builder = createTimberBuilder(_timberMesh);
     appendTower(builder);
     _timberMesh.surfaceIds = _timberMesh.colors.map((_, i) => i);
+    scaleMesh(_timberMesh, 2);
     const timberState = getBoardsFromMesh(_timberMesh);
     // unshareProvokingForWood(_timberMesh, timberState);
     verifyUnsharedProvokingForWood(_timberMesh, timberState);
