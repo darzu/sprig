@@ -15,7 +15,6 @@ import {
   aabbCenter,
 } from "../physics/aabb.js";
 import { ColliderDef } from "../physics/collider.js";
-import { WorldFrameDef } from "../physics/nonintersection.js";
 import {
   PositionDef,
   RotationDef,
@@ -40,7 +39,6 @@ import {
   TimberBuilder,
   WoodHealthDef,
   WoodStateDef,
-  registerDestroyPirateHandler,
   createEmptyMesh,
   createTimberBuilder,
   getBoardsFromMesh,
@@ -50,25 +48,16 @@ import {
   resetWoodHealth,
   resetWoodState,
 } from "../wood.js";
-import { fireBullet } from "./bullet.js";
 
-const DBG_PIRATES = false;
-
-const maxPirates = DBG_PIRATES ? 3 : 10;
-const numStartPirates = DBG_PIRATES ? maxPirates : 2;
-
-export let pirateNextSpawn = 0;
-
-const tenSeconds = 1000 * (DBG_PIRATES ? 3 : 10);
-
-export let pirateSpawnTimer = tenSeconds;
-const minSpawnTimer = 3000;
+// TODO(@darzu): what's registerDestroyPirateHandler about?
 
 const pitchSpeed = 0.000042;
 
-export let pirateKills = 0;
+const maxTowers = 20;
 
-export function appendPirateShip(b: TimberBuilder): RawMesh {
+// TODO(@darzu): de-dupe with pirate.ts
+
+export function appendTower(b: TimberBuilder): RawMesh {
   const firstQuadIdx = b.mesh.quad.length;
 
   const length = 18;
@@ -125,29 +114,22 @@ export function appendPirateShip(b: TimberBuilder): RawMesh {
   return b.mesh;
 }
 
-const startDelay = 0;
-// const startDelay = 1000;
-
-export const PiratePlatformDef = EM.defineComponent(
-  "piratePlatform",
+export const TowerPlatformDef = EM.defineComponent(
+  "towerPlatform",
   (
     cannon: EntityW<[typeof PositionDef, typeof RotationDef]>,
     timber: EntityW<[typeof WoodHealthDef, typeof WoodStateDef]>
   ) => {
     return {
-      // cannon: EntityW<[typeof PositionDef, typeof RotationDef]>;
-      // timber: EntityW<[typeof WoodHealthDef, typeof WoodStateDef]>;
       cannon: createRef<[typeof PositionDef, typeof RotationDef]>(cannon),
       timber: createRef<[typeof WoodHealthDef, typeof WoodStateDef]>(timber),
-      tiltPeriod: 0,
-      tiltTimer: 0,
       lastFire: 0,
       poolIdx: -1, // TODO(@darzu): HACK. this is for object pooling
     };
   }
 );
 
-function rotatePiratePlatform(
+function rotateTowerPlatform(
   p: EntityW<[typeof PositionDef, typeof RotationDef]>,
   rad: number
 ) {
@@ -155,110 +137,78 @@ function rotatePiratePlatform(
   quat.rotateY(p.rotation, rad, p.rotation);
 }
 
-export async function startPirates() {
+// TODO(@darzu): IMPL & CALL!
+export async function startTowers(towerPositions: vec3[]) {
   const em: EntityManager = EM;
 
   // TODO(@darzu): HACK!
-  registerDestroyPirateHandler(destroyPirateShip);
+  // registerDestroyTowerHandler(destroyTower);
 
-  for (let i = 0; i < numStartPirates; i++) {
-    const p = await spawnPirate(i * ((2 * Math.PI) / numStartPirates));
+  // TODO(@darzu): SPAWN
+  // for (let i = 0; i < numStartTowers; i++) {
+  //   const p = await spawnTower(i * ((2 * Math.PI) / numStartTowers));
+  // }
+  const towerPromises: Promise<void>[] = [];
+  for (let pos of towerPositions) {
+    const p = spawnTower(pos);
+    towerPromises.push(p);
   }
+  await Promise.all(towerPromises);
 
-  pirateNextSpawn = pirateSpawnTimer;
+  // TODO(@darzu): TOWER AI
   em.registerSystem(
-    [PiratePlatformDef],
+    [TowerPlatformDef, PositionDef, RotationDef],
     [TimeDef],
     (ps, res) => {
-      const pirateCount = ps.length;
-      if (res.time.time > pirateNextSpawn) {
-        pirateNextSpawn += pirateSpawnTimer;
-
-        // console.log("SPAWN");
-
-        const rad = Math.random() * 2 * Math.PI;
-        if (pirateCount < maxPirates) {
-          spawnPirate(rad);
-
-          if (pirateCount < 2) {
-            spawnPirate(rad + Math.PI);
-          }
-        }
-        pirateSpawnTimer *= 0.95;
-        pirateSpawnTimer = Math.max(pirateSpawnTimer, minSpawnTimer);
-      }
-    },
-    "spawnPirates"
-  );
-  EM.requireGameplaySystem("spawnPirates");
-
-  const fireStagger = 150;
-  // const tiltPeriod = 5700;
-  em.registerSystem(
-    [PiratePlatformDef, PositionDef, RotationDef],
-    [TimeDef],
-    (ps, res) => {
-      // const sinceLastFire = res.time.time - lastFire;
-      // let beginFire = sinceLastFire > tenSeconds;
-      // if (beginFire) {
-      //   console.log("broadside!");
-      //   lastFire = res.time.time;
+      // let pIdx = 0;
+      // for (let p of ps) {
+      //   pIdx++;
+      //   // rotate platform
+      //   const R = Math.PI * -0.001;
+      //   rotateTowerPlatform(p, R);
+      //   const c = p.towerPlatform.cannon()!;
+      //   // pitch cannons
+      //   p.towerPlatform.tiltTimer += res.time.dt;
+      //   const upMode =
+      //     p.towerPlatform.tiltTimer % p.towerPlatform.tiltPeriod >
+      //     p.towerPlatform.tiltPeriod * 0.5;
+      //   if (RotationDef.isOn(c)) {
+      //     let r = Math.PI * pitchSpeed * res.time.dt * (upMode ? -1 : 1);
+      //     quat.rotateX(c.rotation, r, c.rotation);
+      //   }
+      //   // fire cannons
+      //   const myTime = res.time.time + pIdx * fireStagger;
+      //   let doFire = myTime - p.towerPlatform.lastFire > towerSpawnTimer;
+      //   if (doFire) {
+      //     p.towerPlatform.lastFire = myTime;
+      //     if (WorldFrameDef.isOn(c)) {
+      //       // console.log(`tower fire`);
+      //       // TODO(@darzu): DBG!!!!!
+      //       // const ballHealth = 20.0;
+      //       const ballHealth = 2.0;
+      //       fireBullet(
+      //         em,
+      //         2,
+      //         c.world.position,
+      //         c.world.rotation,
+      //         0.05,
+      //         0.02,
+      //         3,
+      //         ballHealth
+      //       );
+      //     }
+      //   }
       // }
-
-      let pIdx = 0;
-      for (let p of ps) {
-        pIdx++;
-
-        // rotate platform
-        const R = Math.PI * -0.001;
-        rotatePiratePlatform(p, R);
-
-        const c = p.piratePlatform.cannon()!;
-
-        // pitch cannons
-        p.piratePlatform.tiltTimer += res.time.dt;
-        const upMode =
-          p.piratePlatform.tiltTimer % p.piratePlatform.tiltPeriod >
-          p.piratePlatform.tiltPeriod * 0.5;
-        if (RotationDef.isOn(c)) {
-          let r = Math.PI * pitchSpeed * res.time.dt * (upMode ? -1 : 1);
-          quat.rotateX(c.rotation, r, c.rotation);
-        }
-
-        // fire cannons
-        const myTime = res.time.time + pIdx * fireStagger;
-        let doFire = myTime - p.piratePlatform.lastFire > pirateSpawnTimer;
-        if (doFire) {
-          p.piratePlatform.lastFire = myTime;
-          if (WorldFrameDef.isOn(c)) {
-            // console.log(`pirate fire`);
-
-            // TODO(@darzu): DBG!!!!!
-            // const ballHealth = 20.0;
-            const ballHealth = 2.0;
-            fireBullet(
-              em,
-              2,
-              c.world.position,
-              c.world.rotation,
-              0.05,
-              0.02,
-              3,
-              ballHealth
-            );
-          }
-        }
-      }
     },
-    "updatePiratePlatforms"
+    "updateTowerPlatforms"
   );
-  EM.requireGameplaySystem("updatePiratePlatforms");
+  EM.requireGameplaySystem("updateTowerPlatforms");
 }
 
-const piratePool = createEntityPool<
-  [typeof PiratePlatformDef, typeof PositionDef, typeof RotationDef]
+const towerPool = createEntityPool<
+  [typeof TowerPlatformDef, typeof PositionDef, typeof RotationDef]
 >({
-  max: maxPirates,
+  max: maxTowers,
   maxBehavior: "crash",
   create: async () => {
     const res = await EM.whenResources(AssetsDef, RendererDef, TimeDef);
@@ -290,9 +240,9 @@ const piratePool = createEntityPool<
 
     // make timber
     const timber = EM.new();
-    const _timberMesh = createEmptyMesh("pirateShip");
+    const _timberMesh = createEmptyMesh("tower");
     const builder = createTimberBuilder(_timberMesh);
-    appendPirateShip(builder);
+    appendTower(builder);
     _timberMesh.surfaceIds = _timberMesh.colors.map((_, i) => i);
     const timberState = getBoardsFromMesh(_timberMesh);
     // unshareProvokingForWood(_timberMesh, timberState);
@@ -321,7 +271,7 @@ const piratePool = createEntityPool<
     EM.ensureComponentOn(timber, PhysicsParentDef, platform.id);
 
     // make joint entity
-    EM.ensureComponentOn(platform, PiratePlatformDef, cannon, timber);
+    EM.ensureComponentOn(platform, TowerPlatformDef, cannon, timber);
 
     return platform;
   },
@@ -331,8 +281,8 @@ const piratePool = createEntityPool<
 
     // set/reset platform, cannon, and wood properties
     const platform = p;
-    const cannon = p.piratePlatform.cannon()!;
-    const timber = p.piratePlatform.timber()!;
+    const cannon = p.towerPlatform.cannon()!;
+    const timber = p.towerPlatform.timber()!;
 
     // reset timber
     resetWoodHealth(timber.woodHealth);
@@ -358,9 +308,9 @@ const piratePool = createEntityPool<
     const tiltPeriod = 5700 + jitter(3000);
     const tiltTimer = Math.random() * tiltPeriod;
 
-    platform.piratePlatform.lastFire = res.time.time + startDelay;
-    platform.piratePlatform.tiltPeriod = tiltPeriod;
-    platform.piratePlatform.tiltTimer = tiltTimer;
+    platform.towerPlatform.lastFire = res.time.time; // + startDelay;
+    // platform.towerPlatform.tiltPeriod = tiltPeriod;
+    // platform.towerPlatform.tiltTimer = tiltTimer;
 
     quat.identity(cannon.rotation);
     quat.rotateX(cannon.rotation, initialPitch, cannon.rotation);
@@ -378,9 +328,9 @@ const piratePool = createEntityPool<
   onDespawn: (e) => {
     // TODO(@darzu): impl
     // console.log(`destroy ${id}`);
-    const timber = e.piratePlatform.timber()!;
+    const timber = e.towerPlatform.timber()!;
 
-    // pirateShip
+    // tower
     if (!DeadDef.isOn(e)) {
       // dead platform
       EM.ensureComponentOn(e, DeadDef);
@@ -388,15 +338,15 @@ const piratePool = createEntityPool<
       e.dead.processed = true;
 
       // dead cannon
-      if (e.piratePlatform.cannon()) {
-        const c = e.piratePlatform.cannon()!;
+      if (e.towerPlatform.cannon()) {
+        const c = e.towerPlatform.cannon()!;
         EM.ensureComponentOn(c, DeadDef);
         if (RenderableDef.isOn(c)) c.renderable.hidden = true;
         c.dead.processed = true;
       }
 
-      // kill count
-      pirateKills += 1;
+      // // kill count
+      // towerKills += 1;
 
       // dead music
       const music = EM.getResource(AudioDef);
@@ -417,17 +367,15 @@ const piratePool = createEntityPool<
   },
 });
 
-async function spawnPirate(rad: number) {
+async function spawnTower(pos: vec3) {
   // TODO(@darzu): move custom params into spawn fn?
-  const platform = await piratePool.spawn();
-  rotatePiratePlatform(platform, rad);
+  const platform = await towerPool.spawn();
+  // rotateTowerPlatform(platform, rad);
+  vec3.copy(platform.position, pos);
 }
 
-export function destroyPirateShip(id: number) {
-  const pirate = EM.findEntity(id, [
-    PiratePlatformDef,
-    PositionDef,
-    RotationDef,
-  ]);
-  if (pirate && !DeadDef.isOn(pirate)) piratePool.despawn(pirate);
+// TODO(@darzu): hook this up?
+function destroyTower(id: number) {
+  const tower = EM.findEntity(id, [TowerPlatformDef, PositionDef, RotationDef]);
+  if (tower && !DeadDef.isOn(tower)) towerPool.despawn(tower);
 }

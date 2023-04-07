@@ -72,6 +72,7 @@ import { SKY_MASK } from "../render/pipeline-masks.js";
 import { skyPipeline } from "../render/pipelines/std-sky.js";
 import { createFlatQuadMesh, makeDome } from "../primatives.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
+import { startTowers } from "../games/tower.js";
 
 /*
 NOTES:
@@ -854,20 +855,28 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
   text.lowerText =
     "W/S: unfurl/furl, A/D: turn, SPACE: harvest on/off, E: use/unuse rudder";
 
-  // DEBUG check map load settings
+  // Spawn towers
   {
     const level = await EM.whenResources(LevelMapDef);
-    level.levelMap.towers.forEach((tPos) => {
-      const ball = em.new();
-      em.ensureComponentOn(ball, PositionDef);
-      ball.position[2] = texXToWorldZ(tPos[0]);
-      // TODO(@darzu): parameterize these transforms! Can/should we use matrices for these maybe?
-      ball.position[0] = texYToWorldX(WORLD_HEIGHT - 1 - tPos[1]);
-      ball.position[1] = 20;
-      em.ensureComponentOn(ball, ScaleDef, V(5, 5, 5));
-      em.ensureComponentOn(ball, RenderableConstructDef, res.assets.ball.proto);
-      em.ensureComponentOn(ball, ColorDef, ENDESGA16.yellow);
-    });
+    const tower3DPoses = level.levelMap.towers.map((tPos) =>
+      V(
+        texYToWorldX(WORLD_HEIGHT - 1 - tPos[1]),
+        20, // TODO(@darzu): Look up from height map
+        texXToWorldZ(tPos[0])
+      )
+    );
+    await startTowers(tower3DPoses);
+    // level.levelMap.towers.forEach((tPos) => {
+    //   const ball = em.new();
+    //   em.ensureComponentOn(ball, PositionDef);
+    //   ball.position[2] = texXToWorldZ(tPos[0]);
+    //   // TODO(@darzu): parameterize these transforms! Can/should we use matrices for these maybe?
+    //   ball.position[0] = texYToWorldX(WORLD_HEIGHT - 1 - tPos[1]);
+    //   ball.position[1] = 20;
+    //   em.ensureComponentOn(ball, ScaleDef, V(5, 5, 5));
+    //   em.ensureComponentOn(ball, RenderableConstructDef, res.assets.ball.proto);
+    //   em.ensureComponentOn(ball, ColorDef, ENDESGA16.yellow);
+    // });
   }
 }
 

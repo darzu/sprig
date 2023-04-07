@@ -418,3 +418,7 @@ Love and Lua: vectors?
 Roblox uses "Luau":
   https://luau-lang.org/performance#native-vector-math
   "[we] provide a native value type that can store a 32-bit floating point vector with 3 components", "which essentially means we have native 3-wide SIMD support"
+
+Sometimes use "var" instead of "let"/"const":
+  https://github.com/microsoft/TypeScript/issues/52924
+  https://github.com/microsoft/TypeScript/pull/52832

@@ -43,7 +43,7 @@ export function createHomeShip(): HomeShip {
   // RIBS
   const ribWidth = 0.5;
   const ribDepth = 0.4;
-  const builder = createTimberBuilder(_timberMesh);
+  const builder: TimberBuilder = createTimberBuilder(_timberMesh);
   builder.width = ribWidth;
   builder.depth = ribDepth;
   const ribCount = 10;
