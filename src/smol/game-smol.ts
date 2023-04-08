@@ -36,7 +36,7 @@ import {
   shadowPipelines,
 } from "../render/pipelines/std-shadow.js";
 import { RenderableConstructDef, RendererDef } from "../render/renderer-ecs.js";
-import { mat3, mat4, quat, V, vec3, vec4 } from "../sprig-matrix.js";
+import { mat3, mat4, quat, V, vec2, vec3, vec4 } from "../sprig-matrix.js";
 import { createMast, createSail, MastDef, SAIL_FURL_RATE } from "./sail.js";
 import {
   quatFromUpForward,
@@ -99,9 +99,22 @@ const RED_DAMAGE_CUTTING = 10;
 const RED_DAMAGE_PER_FRAME = 40;
 const GREEN_HEALING = 1;
 
-const SHIP_START_POS: vec3 = V(0, 2, -WORLD_WIDTH * 0.5 * 0.8);
+// const SHIP_START_POS: vec3 = V(0, 2, -WORLD_WIDTH * 0.5 * 0.8);
 
 // const WORLD_HEIGHT = 1024;
+
+const worldXToTexY = (x: number) => Math.floor(x + WORLD_HEIGHT / 2);
+const worldZToTexX = (z: number) => Math.floor(z + WORLD_WIDTH / 2);
+const texXToWorldZ = (x: number) => x - WORLD_WIDTH / 2 + 0.5;
+const texYToWorldX = (y: number) => y - WORLD_HEIGHT / 2 + 0.5;
+
+const level2DtoWorld3D = (levelPos: vec2, y: number, out: vec3) =>
+  vec3.set(
+    texYToWorldX(WORLD_HEIGHT - 1 - levelPos[1]),
+    y,
+    texXToWorldZ(levelPos[0]),
+    out
+  );
 
 export const mapJfa = createJfaPipelines(LandMapTexPtr, "exterior");
 
@@ -440,40 +453,44 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
   em.requireSystem("changeWind");
   em.requireSystem("smoothWind");
 
+  // load level
+  const level = await EM.whenResources(LevelMapDef);
+
   const ship = await createShip(em);
   // move down
   // ship.position[2] = -WORLD_SIZE * 0.5 * 0.6;
-  vec3.copy(ship.position, SHIP_START_POS);
+  level2DtoWorld3D(level.levelMap.startPos, 15, ship.position);
+  // vec3.copy(ship.position, SHIP_START_POS);
   em.requireSystem("sailShip");
   em.requireSystem("shipParty");
 
   // bouyancy
-  const bouy = em.new();
-  em.ensureComponentOn(bouy, PositionDef);
-  em.ensureComponentOn(bouy, ScaleDef, V(5, 5, 5));
-  em.ensureComponentOn(bouy, RenderableConstructDef, res.assets.ball.proto);
-  em.ensureComponentOn(bouy, ColorDef, ENDESGA16.lightGreen);
-  em.registerSystem(
-    [ShipDef],
-    [OceanDef],
-    (ships, res) => {
-      // TODO(@darzu): unify with UV ship stuff?
-      if (!ships.length) return;
-      const [ship] = ships;
-      const { ocean } = res;
+  // const bouy = em.new();
+  // em.ensureComponentOn(bouy, PositionDef);
+  // em.ensureComponentOn(bouy, ScaleDef, V(5, 5, 5));
+  // em.ensureComponentOn(bouy, RenderableConstructDef, res.assets.ball.proto);
+  // em.ensureComponentOn(bouy, ColorDef, ENDESGA16.lightGreen);
+  // em.registerSystem(
+  //   [ShipDef],
+  //   [OceanDef],
+  //   (ships, res) => {
+  //     // TODO(@darzu): unify with UV ship stuff?
+  //     if (!ships.length) return;
+  //     const [ship] = ships;
+  //     const { ocean } = res;
 
-      const uv = V(0.5, 0.5);
-      let pos = vec3.tmp();
-      ocean.uvToPos(pos, uv);
-      let disp = vec3.tmp();
-      let norm = vec3.tmp();
-      ocean.uvToGerstnerDispAndNorm(disp, norm, uv);
-      vec3.add(pos, disp, bouy.position);
-      // console.log(vec3Dbg(bouy.position));
-    },
-    "shipBouyancy"
-  );
-  em.requireSystem("shipBouyancy");
+  //     const uv = V(0.5, 0.5);
+  //     let pos = vec3.tmp();
+  //     ocean.uvToPos(pos, uv);
+  //     let disp = vec3.tmp();
+  //     let norm = vec3.tmp();
+  //     ocean.uvToGerstnerDispAndNorm(disp, norm, uv);
+  //     vec3.add(pos, disp, bouy.position);
+  //     // console.log(vec3Dbg(bouy.position));
+  //   },
+  //   "shipBouyancy"
+  // );
+  // em.requireSystem("shipBouyancy");
 
   // dbg ghost
 
@@ -546,11 +563,26 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
     // g.cameraFollow.yawOffset = 0.0;
     // g.cameraFollow.pitchOffset = -0.391;
 
-    vec3.copy(g.position, [-103.66, 32.56, -389.96]);
-    quat.copy(g.rotation, [0.0, -1.0, 0.0, -0.09]);
+    // tower close up:
+    // vec3.copy(g.position, [-103.66, 32.56, -389.96]);
+    // quat.copy(g.rotation, [0.0, -1.0, 0.0, -0.09]);
+    // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
+    // g.cameraFollow.yawOffset = 0.0;
+    // g.cameraFollow.pitchOffset = -0.423;
+
+    // high up:
+    // vec3.copy(g.position, [-140.25, 226.5, -366.78]);
+    // quat.copy(g.rotation, [0.0, -0.99, 0.0, 0.15]);
+    // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
+    // g.cameraFollow.yawOffset = 0.0;
+    // g.cameraFollow.pitchOffset = -1.009;
+
+    // top down landscape:
+    vec3.copy(g.position, [-357.47, 342.5, -35.34]);
+    quat.copy(g.rotation, [0.0, -0.71, 0.0, 0.71]);
     vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
     g.cameraFollow.yawOffset = 0.0;
-    g.cameraFollow.pitchOffset = -0.423;
+    g.cameraFollow.pitchOffset = -1.098;
 
     em.registerSystem(
       [GhostDef, WorldFrameDef, ColliderDef],
@@ -636,16 +668,12 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
     WORLD_WIDTH === grassCutTex.size[0] && WORLD_HEIGHT === grassCutTex.size[1]
   );
 
-  const worldXToTexY = (x: number) => Math.floor(x + WORLD_HEIGHT / 2);
-  const worldZToTexX = (z: number) => Math.floor(z + WORLD_WIDTH / 2);
-  const texXToWorldZ = (x: number) => x - WORLD_WIDTH / 2 + 0.5;
-  const texYToWorldX = (y: number) => y - WORLD_HEIGHT / 2 + 0.5;
-
   score.onLevelEnd.push(() => {
     worldCutData.fill(0.0);
     grassCutTex.queueUpdate(worldCutData);
     // vec3.set(0, 0, 0, ship.position);
-    vec3.copy(ship.position, SHIP_START_POS);
+    // vec3.copy(ship.position, SHIP_START_POS);
+    level2DtoWorld3D(level.levelMap.startPos, 2, ship.position);
     quat.identity(ship.rotation);
     vec3.set(0, 0, 0, ship.linearVelocity);
     const sail = ship.ld52ship.mast()!.mast.sail()!.sail;
@@ -860,15 +888,15 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
   const { text } = await EM.whenResources(TextDef);
   text.lowerText =
     "W/S: unfurl/furl, A/D: turn, SPACE: harvest on/off, E: use/unuse rudder";
+  if (DBG_PLAYER) text.lowerText = "";
 
   // Spawn towers
   {
-    const level = await EM.whenResources(LevelMapDef);
     const tower3DPoses = level.levelMap.towers.map((tPos) =>
-      V(
-        texYToWorldX(WORLD_HEIGHT - 1 - tPos[1]),
-        20, // TODO(@darzu): Look up from height map
-        texXToWorldZ(tPos[0])
+      level2DtoWorld3D(
+        tPos,
+        20, // TODO(@darzu): lookup from heightmap?
+        vec3.create()
       )
     );
     await startTowers(tower3DPoses);
