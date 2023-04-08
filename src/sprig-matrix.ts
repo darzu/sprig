@@ -198,6 +198,17 @@ export function V(...xs: number[]): vec2 | vec3 | vec4 {
   else throw new Error(`Unsupported vec size: ${xs.length}`);
 }
 
+// temp vectors:
+export function tV(...xs: [number, number]): vec2;
+export function tV(...xs: [number, number, number]): vec3;
+export function tV(...xs: [number, number, number, number]): vec4;
+export function tV(...xs: number[]): vec2 | vec3 | vec4 {
+  if (xs.length === 4) return vec4.set(xs[0], xs[1], xs[2], xs[3]);
+  else if (xs.length === 3) return vec3.set(xs[0], xs[1], xs[2]);
+  else if (xs.length === 2) return vec2.set(xs[0], xs[1]);
+  else throw new Error(`Unsupported vec size: ${xs.length}`);
+}
+
 // TODO(@darzu): use "namespace" keyword instead of "module" (re: https://www.typescriptlang.org/docs/handbook/namespaces.html)
 export module vec3 {
   export type T = vec3;

@@ -6,7 +6,7 @@ import { DeadDef } from "../delete.js";
 import { createRef } from "../em_helpers.js";
 import { EM, EntityW, EntityManager } from "../entity-manager.js";
 import { createEntityPool } from "../entity-pool.js";
-import { mat4, vec3, quat } from "../sprig-matrix.js";
+import { mat4, vec3, quat, vec2, tV } from "../sprig-matrix.js";
 import { jitter } from "../math.js";
 import {
   AABB,
@@ -49,6 +49,7 @@ import {
   resetWoodHealth,
   resetWoodState,
 } from "../wood.js";
+import { ShipDef } from "../smol/ship.js";
 
 // TODO(@darzu): what's registerDestroyPirateHandler about?
 
@@ -152,13 +153,13 @@ export const TowerPlatformDef = EM.defineComponent(
   }
 );
 
-function rotateTowerPlatform(
-  p: EntityW<[typeof PositionDef, typeof RotationDef]>,
-  rad: number
-) {
-  vec3.rotateY(p.position, vec3.ZEROS, rad, p.position);
-  quat.rotateY(p.rotation, rad, p.rotation);
-}
+// function rotateTowerPlatform(
+//   p: EntityW<[typeof PositionDef, typeof RotationDef]>,
+//   rad: number
+// ) {
+//   vec3.rotateY(p.position, vec3.ZEROS, rad, p.position);
+//   quat.rotateY(p.rotation, rad, p.rotation);
+// }
 
 // TODO(@darzu): IMPL & CALL!
 export async function startTowers(towerPositions: vec3[]) {
@@ -178,11 +179,28 @@ export async function startTowers(towerPositions: vec3[]) {
   }
   await Promise.all(towerPromises);
 
-  // TODO(@darzu): TOWER AI
+  // TODO(@darzu): IMPL TOWER AI
   em.registerSystem(
     [TowerPlatformDef, PositionDef, RotationDef],
     [TimeDef],
-    (ps, res) => {
+    (es, res) => {
+      // TODO(@darzu): IMPL turn towards player
+      const target = EM.filterEntities([ShipDef, PositionDef])[0];
+      if (!target) return;
+
+      // TODO(@darzu): doesn't work yet
+      const fwd = tV(0, 1); // TODO(@darzu): determine emperically?
+      for (let tower of es) {
+        // const fwd = vec2.tmp();
+        const toward = vec2.normalize([
+          target.position[0] - tower.position[0],
+          target.position[2] - tower.position[2],
+        ]);
+        const angleBetween = Math.acos(vec2.dot(fwd, toward));
+        quat.rotateY(quat.IDENTITY, angleBetween, tower.rotation);
+        // console.log(`turning by: ${angleBetween}`);
+      }
+
       // let pIdx = 0;
       // for (let p of ps) {
       //   pIdx++;
