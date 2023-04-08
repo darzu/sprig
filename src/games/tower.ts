@@ -75,20 +75,42 @@ export function appendTower(b: TimberBuilder): RawMesh {
   // mat4.rotateX(b.cursor, b.cursor, Math.PI * -0.3 * 0.5);
 
   for (let hi = 0; hi < 5; hi++) {
-    let numSegs = hi === 0 || hi === 4 ? 6 : 5;
+    const isMidSeg = !(hi === 0 || hi === 4);
+    const numSegs = isMidSeg ? 5 : 6;
     const midness = 2 - Math.floor(Math.abs(hi - 2));
     const segLen = length / 5 + midness * 0.2;
+    const openSize = segLen * 0.3;
     mat4.copy(b.cursor, cursor2);
     const aabb: AABB = createAABB();
     const firstVi = b.mesh.pos.length;
-    b.addLoopVerts();
-    b.addEndQuad(true);
+    // const jy = () => jitter(0.05); // little bit of up-down jitter
+    if (isMidSeg) {
+      mat4.rotateX(b.cursor, -Math.PI * xFactor * 0.5 * 2, b.cursor);
+      mat4.translate(b.cursor, [0, -openSize, 0], b.cursor);
+      mat4.rotateX(b.cursor, Math.PI * xFactor * 0.5, b.cursor);
+      b.addLoopVerts();
+      b.addEndQuad(true);
+      mat4.rotateX(b.cursor, -Math.PI * xFactor * 0.5, b.cursor);
+      mat4.translate(b.cursor, [0, openSize, 0], b.cursor);
+      mat4.rotateX(b.cursor, Math.PI * xFactor * 0.5 * 2, b.cursor);
+      b.addLoopVerts();
+      b.addSideQuads();
+    } else {
+      b.addLoopVerts();
+      b.addEndQuad(true);
+    }
     for (let i = 0; i < numSegs; i++) {
       mat4.translate(b.cursor, [0, segLen, 0], b.cursor);
       mat4.rotateX(b.cursor, Math.PI * xFactor * 0.5, b.cursor);
       b.addLoopVerts();
       b.addSideQuads();
       mat4.rotateX(b.cursor, Math.PI * xFactor * 0.5, b.cursor);
+    }
+    if (isMidSeg) {
+      mat4.translate(b.cursor, [0, openSize, 0], b.cursor);
+      mat4.rotateX(b.cursor, -Math.PI * xFactor * 0.5, b.cursor);
+      b.addLoopVerts();
+      b.addSideQuads();
     }
     b.addEndQuad(false);
 
@@ -105,7 +127,7 @@ export function appendTower(b: TimberBuilder): RawMesh {
       vec3.sub(p, mid, p);
     }
 
-    mat4.translate(cursor2, [-(b.width * 2.0 + 0.05), 0, 0], cursor2);
+    mat4.translate(cursor2, [-((b.width * 2.0) /*+ 0.05*/), 0, 0], cursor2);
   }
 
   for (let qi = firstQuadIdx; qi < b.mesh.quad.length; qi++)
