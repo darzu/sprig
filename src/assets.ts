@@ -51,6 +51,7 @@ import { tempMat4, tempVec3 } from "./temp-pool.js";
 import {
   BOAT_MESH,
   BULLET_MESH,
+  createGizmoMesh,
   CUBE_MESH,
   DBG_FABRIC,
   GRID_PLANE_MESH,
@@ -425,6 +426,7 @@ export const LocalMeshes = {
   sail: makeSailMesh,
   // timber_rib: mkTimberRib,
   timber_splinter: mkTimberSplinterEnd,
+  gizmo: () => createGizmoMesh(),
 } as const;
 
 type LocalMeshSymbols = keyof typeof LocalMeshes;

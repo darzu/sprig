@@ -912,6 +912,20 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
     //   em.ensureComponentOn(ball, ColorDef, ENDESGA16.yellow);
     // });
   }
+
+  // world gizmo
+  const worldGizmo = EM.new();
+  EM.ensureComponentOn(
+    worldGizmo,
+    PositionDef,
+    V(-WORLD_HEIGHT / 2, 0, -WORLD_WIDTH / 2)
+  );
+  EM.ensureComponentOn(worldGizmo, ScaleDef, V(100, 100, 100));
+  EM.ensureComponentOn(
+    worldGizmo,
+    RenderableConstructDef,
+    res.assets.gizmo.proto
+  );
 }
 
 async function createPlayer() {
