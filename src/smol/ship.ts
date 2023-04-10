@@ -7,6 +7,7 @@ import { LinearVelocityDef } from "../physics/motion.js";
 import {
   PhysicsParentDef,
   PositionDef,
+  ScaleDef,
   RotationDef,
 } from "../physics/transform.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
@@ -92,10 +93,19 @@ export async function createShip(em: EntityManager) {
 
   const rudder = await createRudder(em);
   em.ensureComponentOn(rudder, PhysicsParentDef, ent.id);
-  console.log("setting position");
+  // console.log("setting position");
   vec3.set(0, 0, -12, rudder.position);
 
   ent.ld52ship.rudder = createRef(rudder);
+
+  // make debug gizmo
+  // TODO(@darzu): would be nice to have as a little helper function?
+  const gizmo = EM.new();
+  EM.ensureComponentOn(gizmo, PositionDef, V(0, 20, 0));
+  EM.ensureComponentOn(gizmo, ScaleDef, V(10, 10, 10));
+  EM.ensureComponentOn(gizmo, PhysicsParentDef, ent.id);
+  EM.ensureComponentOn(gizmo, RenderableConstructDef, res.assets.gizmo.proto);
+
   return ent;
 }
 

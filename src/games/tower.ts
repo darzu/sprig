@@ -19,6 +19,7 @@ import {
   PositionDef,
   RotationDef,
   PhysicsParentDef,
+  ScaleDef,
 } from "../physics/transform.js";
 import {
   cloneMesh,
@@ -278,6 +279,14 @@ const towerPool = createEntityPool<
     EM.ensureComponentOn(cannon, ColorDef, ENDESGA16.darkGray);
     EM.ensureComponentOn(cannon, RotationDef);
     vec3.copy(cannon.position, [0, 6, -6]);
+
+    // make debug gizmo
+    // TODO(@darzu): would be nice to have as a little helper function?
+    const gizmo = EM.new();
+    EM.ensureComponentOn(gizmo, PositionDef, V(0, 20, 0));
+    EM.ensureComponentOn(gizmo, ScaleDef, V(10, 10, 10));
+    EM.ensureComponentOn(gizmo, PhysicsParentDef, platform.id);
+    EM.ensureComponentOn(gizmo, RenderableConstructDef, res.assets.gizmo.proto);
 
     // make timber
     const timber = EM.new();
