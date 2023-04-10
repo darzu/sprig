@@ -7,7 +7,7 @@ import { createRef } from "../em_helpers.js";
 import { EM, EntityW, EntityManager } from "../entity-manager.js";
 import { createEntityPool } from "../entity-pool.js";
 import { mat4, vec3, quat, vec2, tV } from "../sprig-matrix.js";
-import { jitter } from "../math.js";
+import { clamp, jitter } from "../math.js";
 import {
   AABB,
   createAABB,
@@ -194,14 +194,17 @@ export async function startTowers(towerPositions: vec3[]) {
       // TODO(@darzu): doesn't work yet
       const fwd = tV(0, 0, -1);
       for (let tower of es) {
-        const angleBetween = angleBetweenXZ(
+        let angleBetween = angleBetweenXZ(
           tower.position,
           tower.rotation,
           fwd,
           res.party.pos
         );
-        if (Math.abs(angleBetween) > 0.01)
+        const TURN_SPEED = 0.01;
+        if (Math.abs(angleBetween) > 0.01) {
+          angleBetween = clamp(angleBetween, -TURN_SPEED, TURN_SPEED);
           quat.rotateY(tower.rotation, angleBetween, tower.rotation);
+        }
         // console.log(`turning by: ${angleBetween}`);
       }
 
