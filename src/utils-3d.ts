@@ -340,3 +340,24 @@ export function frustumFromBounds(
   // compose final view-projection matrix
   mat4.mul(projTmp, viewTmp, outFrust);
 }
+
+export const UP = V(0, 1, 0); // TODO(@darzu): formalize coordinate system somewhere?
+const __angleBetweenXZTmp0 = vec3.create();
+const __angleBetweenXZTmp1 = vec3.create();
+const __angleBetweenXZTmp2 = vec3.create();
+export function angleBetweenXZ(
+  pos: vec3,
+  rot: quat,
+  fwd: vec3, // NOTE: fwd needs to be normalized and with 0 y component
+  target: vec3
+): number {
+  const toward = vec3.normalize(
+    [target[0] - pos[0], 0, target[2] - pos[2]],
+    __angleBetweenXZTmp0
+  );
+  const currFwd = vec3.transformQuat(fwd, rot, __angleBetweenXZTmp1);
+  const currSide = vec3.cross(currFwd, UP, __angleBetweenXZTmp2);
+  const sign = -Math.sign(vec3.dot(currSide, toward));
+  const angleBetween = sign * Math.acos(vec3.dot(currFwd, toward));
+  return angleBetween;
+}

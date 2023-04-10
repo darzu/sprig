@@ -217,14 +217,14 @@ EM.registerSystem(
 EM.addConstraint(["sailShip", "after", "mastForce"]);
 EM.addConstraint(["sailShip", "after", "easeRudderLD52"]);
 
-EM.registerSystem(
-  [ShipDef, PositionDef, RotationDef],
-  [PartyDef],
-  (es, res) => {
-    if (es[0]) {
-      vec3.transformQuat(AHEAD_DIR, es[0].rotation, res.party.dir);
-      vec3.copy(res.party.pos, es[0].position);
-    }
-  },
-  "shipParty"
-);
+// EM.registerSystem(
+//   [ShipDef, PositionDef, RotationDef],
+//   [PartyDef],
+//   (es, res) => {
+//     if (es[0]) {
+//       vec3.transformQuat(AHEAD_DIR, es[0].rotation, res.party.dir);
+//       vec3.copy(res.party.pos, es[0].position);
+//     }
+//   },
+//   "shipParty"
+// );

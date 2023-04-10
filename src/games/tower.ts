@@ -52,6 +52,7 @@ import {
 } from "../wood.js";
 import { ShipDef } from "../smol/ship.js";
 import { PartyDef } from "./party.js";
+import { angleBetweenXZ } from "../utils-3d.js";
 
 // TODO(@darzu): what's registerDestroyPirateHandler about?
 
@@ -191,17 +192,16 @@ export async function startTowers(towerPositions: vec3[]) {
       if (!target) return;
 
       // TODO(@darzu): doesn't work yet
-      const fwd = tV(0, 0, -1); // TODO(@darzu): determine emperically?
+      const fwd = tV(0, 0, -1);
       for (let tower of es) {
-        // const fwd = vec2.tmp();
-        const toward = vec3.normalize([
-          target[0] - tower.position[0],
-          0,
-          target[2] - tower.position[2],
-        ]);
-        const angleBetween = Math.acos(vec3.dot(fwd, toward));
-        const sign = -Math.sign(toward[0]); // user perpendicular to fwd axis for sign
-        quat.rotateY(quat.IDENTITY, angleBetween * sign, tower.rotation);
+        const angleBetween = angleBetweenXZ(
+          tower.position,
+          tower.rotation,
+          fwd,
+          res.party.pos
+        );
+        if (Math.abs(angleBetween) > 0.01)
+          quat.rotateY(tower.rotation, angleBetween, tower.rotation);
         // console.log(`turning by: ${angleBetween}`);
       }
 
