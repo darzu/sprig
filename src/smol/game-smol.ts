@@ -597,6 +597,19 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
       "smolGhost"
     );
     EM.requireGameplaySystem("smolGhost");
+
+    em.registerSystem(
+      [GhostDef, WorldFrameDef],
+      [PartyDef],
+      async (ps, res) => {
+        if (!ps.length) return;
+        const ghost = ps[0];
+        vec3.copy(res.party.pos, ghost.world.position);
+      },
+      "smolGhostParty"
+    );
+    EM.requireGameplaySystem("smolGhostParty");
+    // EM.addConstraint(["smolGhostParty", "after", "shipParty"]);
   }
 
   // update grass

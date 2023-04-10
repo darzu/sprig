@@ -51,6 +51,7 @@ import {
   resetWoodState,
 } from "../wood.js";
 import { ShipDef } from "../smol/ship.js";
+import { PartyDef } from "./party.js";
 
 // TODO(@darzu): what's registerDestroyPirateHandler about?
 
@@ -183,22 +184,24 @@ export async function startTowers(towerPositions: vec3[]) {
   // TODO(@darzu): IMPL TOWER AI
   em.registerSystem(
     [TowerPlatformDef, PositionDef, RotationDef],
-    [TimeDef],
+    [TimeDef, PartyDef],
     (es, res) => {
       // TODO(@darzu): IMPL turn towards player
-      const target = EM.filterEntities([ShipDef, PositionDef])[0];
+      const target = res.party.pos;
       if (!target) return;
 
       // TODO(@darzu): doesn't work yet
-      const fwd = tV(0, 1); // TODO(@darzu): determine emperically?
+      const fwd = tV(0, 0, -1); // TODO(@darzu): determine emperically?
       for (let tower of es) {
         // const fwd = vec2.tmp();
-        const toward = vec2.normalize([
-          target.position[0] - tower.position[0],
-          target.position[2] - tower.position[2],
+        const toward = vec3.normalize([
+          target[0] - tower.position[0],
+          0,
+          target[2] - tower.position[2],
         ]);
-        const angleBetween = Math.acos(vec2.dot(fwd, toward));
-        quat.rotateY(quat.IDENTITY, angleBetween, tower.rotation);
+        const angleBetween = Math.acos(vec3.dot(fwd, toward));
+        const sign = -Math.sign(toward[0]); // user perpendicular to fwd axis for sign
+        quat.rotateY(quat.IDENTITY, angleBetween * sign, tower.rotation);
         // console.log(`turning by: ${angleBetween}`);
       }
 
