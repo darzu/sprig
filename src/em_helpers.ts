@@ -75,6 +75,8 @@ export type NetEntityDefs<
 };
 
 // TODO(@darzu): what happens if build() is async???!
+// TODO(@darzu): I think i'd prefer this to be a struct, not a function call
+//                also this might need to be merged with entity pool helper?
 export function defineNetEntityHelper<
   N extends string,
   P1,

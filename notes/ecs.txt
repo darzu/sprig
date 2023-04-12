@@ -111,3 +111,6 @@ Game Programming Patterns
 
 Unreal's "Mass Entity":
   https://docs.unrealengine.com/5.0/en-US/overview-of-mass-entity-in-unreal-engine/
+
+Our Machinery's "the Truth" data model:
+  https://web.archive.org/web/20220727114600/https://ourmachinery.com/post/the-story-behind-the-truth-designing-a-data-model/

@@ -53,6 +53,13 @@ import {
 import { ShipDef } from "../smol/ship.js";
 import { PartyDef } from "./party.js";
 import { angleBetweenXZ } from "../utils-3d.js";
+import {
+  adjustSail,
+  adjustSailVertices,
+  createRibSailNow,
+  RibSailLocalDef,
+} from "./hyperspace/ribsail.js";
+import { MeDef } from "../net/components.js";
 
 // TODO(@darzu): what's registerDestroyPirateHandler about?
 
@@ -259,7 +266,7 @@ const towerPool = createEntityPool<
   max: maxTowers,
   maxBehavior: "crash",
   create: async () => {
-    const res = await EM.whenResources(AssetsDef, RendererDef, TimeDef);
+    const res = await EM.whenResources(AssetsDef, RendererDef, TimeDef, MeDef);
     // make platform
     const platform = EM.new();
     EM.ensureComponentOn(platform, ColorDef);
@@ -329,6 +336,22 @@ const towerPool = createEntityPool<
 
     // make joint entity
     EM.ensureComponentOn(platform, TowerPlatformDef, cannon, timber);
+
+    // make sail
+    const sail = createRibSailNow(res);
+    EM.ensureComponentOn(sail, PhysicsParentDef, platform.id);
+    sail.position[1] += 10; // deployed height ?
+
+    // TODO(@darzu): move sail adjustment elsewhere
+    adjustSail(sail, Math.PI / 4);
+    EM.whenEntityHas(sail, RenderableDef, RibSailLocalDef).then((sail) => {
+      const rots = sail.ribSailLocal.ribs.map((b) => b()!.rotation);
+      adjustSailVertices(
+        res.renderer.renderer,
+        sail.renderable.meshHandle,
+        rots
+      );
+    });
 
     return platform;
   },

@@ -43,12 +43,17 @@ import {
 } from "./player-ship.js";
 import { UVShipDef } from "./uv-ship.js";
 import { constructNetTurret, TurretDef } from "../turret.js";
+import {
+  DEFAULT_SAIL_COLOR,
+  getSailMeshArea,
+  sailForceAndSignedArea,
+} from "./ribsail.js";
 
-const DEFAULT_SAIL_COLOR = V(0.05, 0.05, 0.05);
+// TODO(@darzu): refactor this so that our towers can use this
+
 const BOOM_LENGTH = 20;
 const MAST_LENGTH = 40;
 const BOOM_HEIGHT = MAST_LENGTH - BOOM_LENGTH - 2;
-const RIB_COUNT = 6;
 
 const BoomPitchesDef = EM.defineComponent("boomPitches", () => ({
   boom1: Math.PI / 4,
@@ -85,8 +90,8 @@ export const { HypMastPropsDef, HypMastLocalDef, createHypMastNow } =
       o.shipId = buf.readUint32();
     },
     defaultLocal: () => ({
-      boom1: range(RIB_COUNT).map(() => createRef(0, [RotationDef])),
-      boom2: range(RIB_COUNT).map(() => createRef(0, [RotationDef])),
+      // boom1: createSailRefs(),
+      // boom2: createSailRefs(),
       sail1: createRef(0, [
         RenderableDef,
         WorldFrameDef,
@@ -112,71 +117,35 @@ export const { HypMastPropsDef, HypMastLocalDef, createHypMastNow } =
       em.ensureComponentOn(mast, ColorDef, BOAT_COLOR);
       vec3.scale(mast.color, 0.5, mast.color);
 
-      const createRib = (width: number) => {
-        const rib = em.new();
-        em.ensureComponentOn(rib, PositionDef, V(0, BOOM_HEIGHT, 0));
-        em.ensureComponentOn(rib, RenderableConstructDef, res.assets.mast.mesh);
-        em.ensureComponentOn(rib, ScaleDef, V(0.5 * width, 0.5, 0.5 * width));
-        em.ensureComponentOn(rib, RotationDef);
-        em.ensureComponentOn(rib, ColorDef, BOAT_COLOR);
-        vec3.scale(rib.color, 0.7, rib.color);
-        em.ensureComponentOn(rib, PhysicsParentDef, mast.id);
-        return rib;
-      };
-      mast.hypMastLocal.boom1 = range(RIB_COUNT).map((i) =>
-        createRef(createRib(i === 0 ? 1 : 0.7))
-      );
-      mast.hypMastLocal.boom2 = range(RIB_COUNT).map((i) =>
-        createRef(createRib(i === 0 ? 1 : 0.7))
-      );
+      // createRib(mast.id, BOOM_HEIGHT)
+      // mast.hypMastLocal.boom1 = createSail();
+      // mast.hypMastLocal.boom2 = createSail();
 
-      const sail1 = em.new();
-      em.ensureComponentOn(sail1, PositionDef, V(0, BOOM_HEIGHT, 0));
-      em.ensureComponentOn(
-        sail1,
-        RenderableConstructDef,
-        cloneMesh(res.assets.sail.mesh)
-      );
-      //em.ensureComponentOn(sail1, ScaleDef, [12, 12, 12]);
-      em.ensureComponentOn(sail1, RotationDef);
-      em.ensureComponentOn(sail1, SailColorDef, STAR1_COLOR);
-      em.ensureComponentOn(sail1, ColorDef, DEFAULT_SAIL_COLOR);
-      em.ensureComponentOn(sail1, PhysicsParentDef, mast.id);
-      em.whenEntityHas(
-        sail1,
-        RenderDataStdDef,
-        RenderableDef,
-        WorldFrameDef,
-        SailColorDef,
-        ColorDef
-      ).then((sail1) => {
-        sail1.renderDataStd.flags |= FLAG_UNLIT;
-        mast.hypMastLocal.sail1 = createRef(sail1);
-      });
+      // const sail1 = TODO; // TODO(@darzu):
 
-      const sail2 = em.new();
-      em.ensureComponentOn(sail2, PositionDef, V(0, BOOM_HEIGHT, 0));
-      em.ensureComponentOn(
-        sail2,
-        RenderableConstructDef,
-        cloneMesh(res.assets.sail.mesh)
-      );
-      //em.ensureComponentOn(sail2, ScaleDef, [12, 12, 12]);
-      em.ensureComponentOn(sail2, RotationDef);
-      em.ensureComponentOn(sail2, SailColorDef, STAR2_COLOR);
-      em.ensureComponentOn(sail2, ColorDef, DEFAULT_SAIL_COLOR);
-      em.ensureComponentOn(sail2, PhysicsParentDef, mast.id);
-      em.whenEntityHas(
-        sail2,
-        RenderDataStdDef,
-        RenderableDef,
-        WorldFrameDef,
-        SailColorDef,
-        ColorDef
-      ).then((sail2) => {
-        sail2.renderDataStd.flags |= FLAG_UNLIT;
-        mast.hypMastLocal.sail2 = createRef(sail2);
-      });
+      // const sail2 = em.new();
+      // em.ensureComponentOn(sail2, PositionDef, V(0, BOOM_HEIGHT, 0));
+      // em.ensureComponentOn(
+      //   sail2,
+      //   RenderableConstructDef,
+      //   cloneMesh(res.assets.sail.mesh)
+      // );
+      // //em.ensureComponentOn(sail2, ScaleDef, [12, 12, 12]);
+      // em.ensureComponentOn(sail2, RotationDef);
+      // em.ensureComponentOn(sail2, SailColorDef, STAR2_COLOR);
+      // em.ensureComponentOn(sail2, ColorDef, DEFAULT_SAIL_COLOR);
+      // em.ensureComponentOn(sail2, PhysicsParentDef, mast.id);
+      // em.whenEntityHas(
+      //   sail2,
+      //   RenderDataStdDef,
+      //   RenderableDef,
+      //   WorldFrameDef,
+      //   SailColorDef,
+      //   ColorDef
+      // ).then((sail2) => {
+      //   sail2.renderDataStd.flags |= FLAG_UNLIT;
+      //   mast.hypMastLocal.sail2 = createRef(sail2);
+      // });
 
       // create seperate hitbox for interacting with the mast
       const interactBox = em.new();
@@ -246,68 +215,42 @@ onInit((em) => {
           );
         }
 
-        mast.hypMastLocal.boom1.forEach((ribRef, i) => {
-          const rib = ribRef()!;
-          quat.rotateX(
-            quat.IDENTITY,
-            mast.boomPitches.boom1 * (1 - i / RIB_COUNT),
-            rib.rotation
-          );
-        });
-        mast.hypMastLocal.boom2.forEach((ribRef, i) => {
-          const rib = ribRef()!;
-          quat.rotateY(quat.IDENTITY, Math.PI, rib.rotation);
-          quat.rotateX(
-            rib.rotation,
-            mast.boomPitches.boom2 * (1 - i / RIB_COUNT),
-            rib.rotation
-          );
-        });
-
-        const adjustSailVertices = (
-          sailMeshHandle: MeshHandle,
-          rotations: quat[]
-        ) => {
-          // TODO: "read only mesh," eh? not so much
-          rotations.push(quat.identity(tempQuat()));
-          mapMeshPositions(sailMeshHandle.mesh!, (pos, i) => {
-            const ribIndex = Math.floor(i / 3);
-            const ribRotationBot = rotations[ribIndex];
-            const ribRotationTop = rotations[ribIndex + 1];
-            if (i % 3 == 1) {
-              vec3.transformQuat(
-                [0, BOOM_LENGTH * 0.9, 0],
-                ribRotationTop,
-                pos
-              );
-            } else if (i % 3 == 2) {
-              vec3.transformQuat(
-                [0, BOOM_LENGTH * 0.99, 0],
-                ribRotationBot,
-                pos
-              );
-            }
-            return pos;
-          });
-          res.renderer.renderer.stdPool.updateMeshVertices(
-            sailMeshHandle,
-            sailMeshHandle.mesh!
-          );
-        };
+        // TODO(@darzu): IMPL
+        // todo update ribs
+        // mast.hypMastLocal.boom1.forEach((ribRef, i) => {
+        //   const rib = ribRef()!;
+        //   quat.rotateX(
+        //     quat.IDENTITY,
+        //     mast.boomPitches.boom1 * (1 - i / RIB_COUNT),
+        //     rib.rotation
+        //   );
+        // });
+        // mast.hypMastLocal.boom2.forEach((ribRef, i) => {
+        //   const rib = ribRef()!;
+        //   quat.rotateY(quat.IDENTITY, Math.PI, rib.rotation);
+        //   quat.rotateX(
+        //     rib.rotation,
+        //     mast.boomPitches.boom2 * (1 - i / RIB_COUNT),
+        //     rib.rotation
+        //   );
+        // });
 
         // update sails
-        const sail1 = mast.hypMastLocal.sail1();
-        if (sail1)
-          adjustSailVertices(
-            sail1.renderable.meshHandle,
-            mast.hypMastLocal.boom1.map((b) => b()!.rotation)
-          );
-        const sail2 = mast.hypMastLocal.sail2();
-        if (sail2)
-          adjustSailVertices(
-            sail2.renderable.meshHandle,
-            mast.hypMastLocal.boom2.map((b) => b()!.rotation)
-          );
+        // TODO(@darzu): IMPL
+        // todo update sails
+
+        // const sail1 = mast.hypMastLocal.sail1();
+        // if (sail1)
+        //   adjustSailVertices(
+        //     sail1.renderable.meshHandle,
+        //     mast.hypMastLocal.boom1.map((b) => b()!.rotation)
+        //   );
+        // const sail2 = mast.hypMastLocal.sail2();
+        // if (sail2)
+        //   adjustSailVertices(
+        //     sail2.renderable.meshHandle,
+        //     mast.hypMastLocal.boom2.map((b) => b()!.rotation)
+        //   );
       }
     },
     "updateMastBoom"
@@ -344,17 +287,14 @@ onInit((em) => {
 
           const shipDirection = V(0, 0, -1);
           vec3.transformQuat(shipDirection, ship.world.rotation, shipDirection);
-          const [force, area] = sailForceAndSignedArea(sail, star);
+          const [force, area] = sailForceAndSignedArea(
+            sail,
+            star.world.position
+          );
           const accel = vec3.dot(shipDirection, force);
 
-          const localVerts = sail.renderable.meshHandle.mesh!.pos;
-
           const realArea = Math.abs(
-            signedAreaOfTriangle(
-              vec2.fromValues(localVerts[0][1], localVerts[0][2]),
-              vec2.fromValues(localVerts[1][1], localVerts[1][2]),
-              vec2.fromValues(localVerts[2][1], localVerts[2][2])
-            ) * RIB_COUNT
+            getSailMeshArea(sail.renderable.meshHandle.mesh!.pos)
           );
 
           // console.log(
@@ -383,41 +323,3 @@ onInit((em) => {
     "sail"
   );
 });
-
-function sailForceAndSignedArea(
-  sail: EntityW<
-    [typeof SailColorDef, typeof RenderableDef, typeof WorldFrameDef]
-  >,
-  star: EntityW<[typeof DarkStarPropsDef, typeof WorldFrameDef]>
-): [vec3, number] {
-  const viewProjMatrix = positionAndTargetToOrthoViewProjMatrix(
-    tempMat4(),
-    star.world.position,
-    sail.world.position
-  );
-
-  const localVerts = sail.renderable.meshHandle.mesh!.pos;
-
-  const worldVerts = localVerts.map((pos) => {
-    return vec3.transformMat4(pos, sail.world.transform);
-  });
-
-  const starViewVerts = worldVerts.map((pos) => {
-    return vec3.transformMat4(pos, viewProjMatrix);
-  });
-
-  const area =
-    signedAreaOfTriangle(
-      vec2.fromValues(starViewVerts[0][0], starViewVerts[0][1]),
-      vec2.fromValues(starViewVerts[1][0], starViewVerts[1][1]),
-      vec2.fromValues(starViewVerts[2][0], starViewVerts[2][1])
-    ) * RIB_COUNT;
-
-  const sailNormal = vec3.cross(
-    vec3.sub(worldVerts[1], worldVerts[0]),
-    vec3.sub(worldVerts[2], worldVerts[0])
-  );
-
-  vec3.normalize(sailNormal, sailNormal);
-  return [vec3.scale(sailNormal, area, sailNormal), area];
-}
