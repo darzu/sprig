@@ -51,10 +51,6 @@ import {
 
 // TODO(@darzu): refactor this so that our towers can use this
 
-const BOOM_LENGTH = 20;
-const MAST_LENGTH = 40;
-const BOOM_HEIGHT = MAST_LENGTH - BOOM_LENGTH - 2;
-
 const BoomPitchesDef = EM.defineComponent("boomPitches", () => ({
   boom1: Math.PI / 4,
   boom2: Math.PI / 4,

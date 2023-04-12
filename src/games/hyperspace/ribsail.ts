@@ -34,7 +34,10 @@ import { STAR1_COLOR, DarkStarPropsDef } from "./darkstar.js";
 
 const RIB_COUNT = 6;
 export const DEFAULT_SAIL_COLOR = V(0.05, 0.05, 0.05);
+
 const BOOM_LENGTH = 20;
+// const MAST_LENGTH = 40;
+// const BOOM_HEIGHT = MAST_LENGTH - BOOM_LENGTH - 2;
 
 export const { RibSailPropsDef, RibSailLocalDef, createRibSailNow } =
   defineNetEntityHelper(EM, {
@@ -63,8 +66,8 @@ export const { RibSailPropsDef, RibSailLocalDef, createRibSailNow } =
     build: (sail, res) => {
       // const sail = EM.new();
 
-      // EM.ensureComponentOn(sail, PositionDef, V(0, BOOM_HEIGHT, 0));
-      EM.ensureComponentOn(sail, PositionDef, V(0, 0, 0));
+      EM.ensureComponentOn(sail, PositionDef, V(0, 5, 0));
+      // EM.ensureComponentOn(sail, PositionDef, V(0, 0, 0));
       EM.ensureComponentOn(
         sail,
         RenderableConstructDef,
@@ -86,6 +89,15 @@ export const { RibSailPropsDef, RibSailLocalDef, createRibSailNow } =
         sail1.renderDataStd.flags |= FLAG_UNLIT;
         // mast.hypMastLocal.sail1 = createRef(sail1);
       });
+
+      const mast = EM.new();
+
+      EM.ensureComponentOn(mast, PositionDef, V(0, -20, 0));
+      EM.ensureComponentOn(mast, ScaleDef, V(0.5, 1.0, 0.5));
+      EM.ensureComponentOn(mast, RenderableConstructDef, res.assets.mast.mesh);
+      EM.ensureComponentOn(mast, PhysicsParentDef, sail.id);
+      EM.ensureComponentOn(mast, ColorDef, BOAT_COLOR);
+      vec3.scale(mast.color, 0.5, mast.color);
 
       sail.ribSailLocal.ribs = range(RIB_COUNT).map((i) => {
         const isEnd = i === 0;
