@@ -53,12 +53,7 @@ import {
 import { ShipDef } from "../smol/ship.js";
 import { PartyDef } from "./party.js";
 import { angleBetweenXZ } from "../utils-3d.js";
-import {
-  adjustSail,
-  adjustSailVertices,
-  createRibSailNow,
-  RibSailLocalDef,
-} from "./hyperspace/ribsail.js";
+import { createRibSailNow, RibSailLocalDef } from "./hyperspace/ribsail.js";
 import { MeDef } from "../net/components.js";
 
 // TODO(@darzu): what's registerDestroyPirateHandler about?
@@ -152,11 +147,13 @@ export const TowerPlatformDef = EM.defineComponent(
   "towerPlatform",
   (
     cannon: EntityW<[typeof PositionDef, typeof RotationDef]>,
-    timber: EntityW<[typeof WoodHealthDef, typeof WoodStateDef]>
+    timber: EntityW<[typeof WoodHealthDef, typeof WoodStateDef]>,
+    sail: EntityW<[typeof RotationDef]>
   ) => {
     return {
       cannon: createRef<[typeof PositionDef, typeof RotationDef]>(cannon),
       timber: createRef<[typeof WoodHealthDef, typeof WoodStateDef]>(timber),
+      sail: createRef<[typeof RotationDef]>(sail),
       lastFire: 0,
       poolIdx: -1, // TODO(@darzu): HACK. this is for object pooling
     };
@@ -334,24 +331,20 @@ const towerPool = createEntityPool<
     EM.ensureComponentOn(timber, WoodHealthDef, timberHealth);
     EM.ensureComponentOn(timber, PhysicsParentDef, platform.id);
 
-    // make joint entity
-    EM.ensureComponentOn(platform, TowerPlatformDef, cannon, timber);
-
     // make sail
     const sail = createRibSailNow(res);
     EM.ensureComponentOn(sail, PhysicsParentDef, platform.id);
-    sail.position[1] += 10; // deployed height ?
+    sail.position[1] += 15; // deployed height ?
+    // quat.rotateY(sail.rotation, Math.PI / 8, sail.rotation);
 
-    // TODO(@darzu): move sail adjustment elsewhere
-    adjustSail(sail, Math.PI / 4);
-    EM.whenEntityHas(sail, RenderableDef, RibSailLocalDef).then((sail) => {
-      const rots = sail.ribSailLocal.ribs.map((b) => b()!.rotation);
-      adjustSailVertices(
-        res.renderer.renderer,
-        sail.renderable.meshHandle,
-        rots
-      );
-    });
+    // TODO(@darzu): two trails?
+    // const sail2 = createRibSailNow(res);
+    // EM.ensureComponentOn(sail2, PhysicsParentDef, platform.id);
+    // sail2.position[1] += 15;
+    // quat.rotateY(sail2.rotation, -Math.PI / 8, sail2.rotation);
+
+    // make joint entity
+    EM.ensureComponentOn(platform, TowerPlatformDef, cannon, timber, sail);
 
     return platform;
   },

@@ -12,6 +12,7 @@ import {
   RenderableConstructDef,
   RenderableDef,
   Renderer,
+  RendererDef,
 } from "../../render/renderer-ecs.js";
 import { quat, V, vec2, vec3 } from "../../sprig-matrix.js";
 import { range } from "../../util.js";
@@ -31,6 +32,7 @@ import {
   positionAndTargetToOrthoViewProjMatrix,
 } from "../../utils-3d.js";
 import { STAR1_COLOR, DarkStarPropsDef } from "./darkstar.js";
+import { onInit } from "../../init.js";
 
 const RIB_COUNT = 6;
 export const DEFAULT_SAIL_COLOR = V(0.05, 0.05, 0.05);
@@ -43,16 +45,19 @@ export const { RibSailPropsDef, RibSailLocalDef, createRibSailNow } =
   defineNetEntityHelper(EM, {
     name: "ribSail",
     defaultProps: () => ({
-      // shipId: shipId ?? 0,
+      // pitch: Math.PI / 2,
     }),
     serializeProps: (o, buf) => {
-      // buf.writeUint32(o.shipId);
+      // buf.writeFloat32(o.pitch);
     },
     deserializeProps: (o, buf) => {
-      // o.shipId = buf.readUint32();
+      // o.pitch = buf.readFloat32();
     },
     defaultLocal: () => ({
       // TODO(@darzu): move the ribs into the sail mesh?
+      pitch: Math.PI / 2,
+      _lastPitch: NaN,
+
       ribs: range(RIB_COUNT).map(() => createRef(0, [RotationDef])),
       // sail: createRef(0, [
       //   RenderableDef,
@@ -66,7 +71,7 @@ export const { RibSailPropsDef, RibSailLocalDef, createRibSailNow } =
     build: (sail, res) => {
       // const sail = EM.new();
 
-      EM.ensureComponentOn(sail, PositionDef, V(0, 5, 0));
+      EM.ensureComponentOn(sail, PositionDef, V(0, 0, 0));
       // EM.ensureComponentOn(sail, PositionDef, V(0, 0, 0));
       EM.ensureComponentOn(
         sail,
@@ -122,32 +127,50 @@ export const { RibSailPropsDef, RibSailLocalDef, createRibSailNow } =
   });
 type RibSail = ReturnType<typeof createRibSailNow>;
 
-export function adjustSail(sail: RibSail, boom: number) {
-  sail.ribSailLocal.ribs.forEach((ribRef, i) => {
-    const rib = ribRef()!;
-    quat.rotateX(quat.IDENTITY, boom * (1 - i / RIB_COUNT), rib.rotation);
-  });
-}
+onInit(() => {
+  EM.registerSystem(
+    [RibSailLocalDef, RenderableDef],
+    [RendererDef],
+    (cs, res) => {
+      for (let sail of cs) {
+        if (sail.ribSailLocal.pitch === sail.ribSailLocal._lastPitch) continue;
 
-export function adjustSailVertices(
-  renderer: Renderer,
-  sailMeshHandle: MeshHandle,
-  rotations: quat[]
-) {
-  rotations.push(quat.identity(tempQuat()));
-  mapMeshPositions(sailMeshHandle.mesh!, (pos, i) => {
-    const ribIndex = Math.floor(i / 3);
-    const ribRotationBot = rotations[ribIndex];
-    const ribRotationTop = rotations[ribIndex + 1];
-    if (i % 3 == 1) {
-      vec3.transformQuat([0, BOOM_LENGTH * 0.9, 0], ribRotationTop, pos);
-    } else if (i % 3 == 2) {
-      vec3.transformQuat([0, BOOM_LENGTH * 0.99, 0], ribRotationBot, pos);
-    }
-    return pos;
-  });
-  renderer.stdPool.updateMeshVertices(sailMeshHandle, sailMeshHandle.mesh!);
-}
+        sail.ribSailLocal.ribs.forEach((ribRef, i) => {
+          const rib = ribRef()!;
+          quat.rotateX(
+            quat.IDENTITY,
+            sail.ribSailLocal.pitch * (1 - i / RIB_COUNT),
+            rib.rotation
+          );
+        });
+
+        const rotations = sail.ribSailLocal.ribs.map((b) => b()!.rotation);
+
+        rotations.push(quat.identity(tempQuat()));
+        mapMeshPositions(sail.renderable.meshHandle.mesh!, (pos, i) => {
+          const ribIndex = Math.floor(i / 3);
+          const ribRotationBot = rotations[ribIndex];
+          const ribRotationTop = rotations[ribIndex + 1];
+          if (i % 3 == 1) {
+            vec3.transformQuat([0, BOOM_LENGTH * 0.9, 0], ribRotationTop, pos);
+          } else if (i % 3 == 2) {
+            vec3.transformQuat([0, BOOM_LENGTH * 0.99, 0], ribRotationBot, pos);
+          }
+          return pos;
+        });
+        res.renderer.renderer.stdPool.updateMeshVertices(
+          sail.renderable.meshHandle,
+          sail.renderable.meshHandle.mesh!
+        );
+
+        sail.ribSailLocal._lastPitch = sail.ribSailLocal.pitch;
+      }
+    },
+    `updateRibSail`
+  );
+  // TODO(@darzu): only require this if one exists?
+  EM.requireSystem("updateRibSail");
+});
 
 // HACK: ASSUMES MESH IS assets.sail.mesh
 export function getSailMeshArea(verts: vec3[]) {
