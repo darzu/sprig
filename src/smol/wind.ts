@@ -6,7 +6,7 @@ import { TimeDef } from "../time.js";
 import { range } from "../util.js";
 
 const STEPS_ON_WIND_DIR = 6000;
-// const STEPS_ON_WIND_DIR = 600;
+// const STEPS_ON_WIND_DIR = 400;
 const WIND_CHANGE_STEPS = 300;
 
 const EPSILON = 0.001;
@@ -66,8 +66,8 @@ EM.registerSystem(
   [],
   [WindDef],
   (_, { wind }) => {
-    const diff = angleBetweenRadians(wind.angle, wind.targetAngle);
-    if (Math.abs(diff) > EPSILON) {
+    if (Math.abs(wind.angle - wind.targetAngle) > EPSILON) {
+      const diff = angleBetweenRadians(wind.targetAngle, wind.oldAngle);
       setWindAngle(wind, wind.angle + diff / WIND_CHANGE_STEPS);
     }
   },
