@@ -113,6 +113,7 @@ Car mechanics explainer:
     every sensor: https://www.youtube.com/watch?v=dK4mb1yS0dY&t=1057s
   show the view that the engine control unit sees of the world
   show all the voltages, fluid types, etc throughout the system
+    different fluid & air systems will list expected pressure and temperature ranges, under different conditions
   different overlays like:
     temperature, mechanical forces, voltages, fluid types, failure likelyhood
     year introduced,

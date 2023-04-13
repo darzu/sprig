@@ -345,7 +345,7 @@ export const UP = V(0, 1, 0); // TODO(@darzu): formalize coordinate system somew
 const __angleBetweenXZTmp0 = vec3.create();
 const __angleBetweenXZTmp1 = vec3.create();
 const __angleBetweenXZTmp2 = vec3.create();
-export function angleBetweenXZ(
+export function angleBetweenPosXZ(
   pos: vec3,
   rot: quat,
   fwd: vec3, // NOTE: fwd needs to be normalized and with 0 y component
@@ -356,8 +356,12 @@ export function angleBetweenXZ(
     __angleBetweenXZTmp0
   );
   const currFwd = vec3.transformQuat(fwd, rot, __angleBetweenXZTmp1);
-  const currSide = vec3.cross(currFwd, UP, __angleBetweenXZTmp2);
-  const sign = -Math.sign(vec3.dot(currSide, toward));
-  const angleBetween = sign * Math.acos(vec3.dot(currFwd, toward));
+  return angleBetweenXZ(currFwd, toward);
+}
+
+export function angleBetweenXZ(dir1: vec3, dir2: vec3): number {
+  const currSide = vec3.cross(dir1, UP, __angleBetweenXZTmp2);
+  const sign = -Math.sign(vec3.dot(currSide, dir2));
+  const angleBetween = sign * Math.acos(vec3.dot(dir1, dir2));
   return angleBetween;
 }

@@ -52,9 +52,10 @@ import {
 } from "../wood.js";
 import { ShipDef } from "../smol/ship.js";
 import { PartyDef } from "./party.js";
-import { angleBetweenXZ } from "../utils-3d.js";
+import { angleBetweenPosXZ, angleBetweenXZ } from "../utils-3d.js";
 import { createRibSailNow, RibSailLocalDef } from "./hyperspace/ribsail.js";
 import { MeDef } from "../net/components.js";
+import { WindDef } from "../smol/wind.js";
 
 // TODO(@darzu): what's registerDestroyPirateHandler about?
 
@@ -186,29 +187,39 @@ export async function startTowers(towerPositions: vec3[]) {
   }
   await Promise.all(towerPromises);
 
-  // TODO(@darzu): IMPL TOWER AI
   em.registerSystem(
     [TowerPlatformDef, PositionDef, RotationDef],
-    [TimeDef, PartyDef],
+    [TimeDef, PartyDef, WindDef],
     (es, res) => {
-      // TODO(@darzu): IMPL turn towards player
       const target = res.party.pos;
-      if (!target) return;
+      if (!target) return; // TODO(@darzu): fold up sail!
 
-      // TODO(@darzu): doesn't work yet
       const fwd = tV(0, 0, -1);
+      const behind = tV(0, 0, 1);
       for (let tower of es) {
-        let angleBetween = angleBetweenXZ(
+        const angleToParty = angleBetweenPosXZ(
           tower.position,
           tower.rotation,
           fwd,
           res.party.pos
         );
+        // turn the tower
         const TURN_SPEED = 0.01;
-        if (Math.abs(angleBetween) > 0.01) {
-          angleBetween = clamp(angleBetween, -TURN_SPEED, TURN_SPEED);
-          quat.rotateY(tower.rotation, angleBetween, tower.rotation);
+        if (Math.abs(angleToParty) > 0.01) {
+          const angleDelta = clamp(angleToParty, -TURN_SPEED, TURN_SPEED);
+          quat.rotateY(tower.rotation, angleDelta, tower.rotation);
         }
+
+        // set the sail
+        const sailFwd = vec3.transformQuat(behind, tower.rotation);
+        const angleToWind = angleBetweenXZ(sailFwd, res.wind.dir);
+        const sailAngle = angleToWind - angleToParty;
+        quat.rotateY(
+          quat.IDENTITY,
+          sailAngle,
+          tower.towerPlatform.sail()!.rotation
+        );
+
         // console.log(`turning by: ${angleBetween}`);
       }
 

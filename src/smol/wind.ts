@@ -6,6 +6,7 @@ import { TimeDef } from "../time.js";
 import { range } from "../util.js";
 
 const STEPS_ON_WIND_DIR = 6000;
+// const STEPS_ON_WIND_DIR = 600;
 const WIND_CHANGE_STEPS = 300;
 
 const EPSILON = 0.001;
@@ -53,15 +54,21 @@ EM.registerSystem(
   "changeWind"
 );
 
+function angleBetweenRadians(a: number, b: number): number {
+  let diff = a - b;
+  // lol there's definitely an analytic way to do this
+  while (diff > Math.PI) diff -= Math.PI * 2;
+  while (diff < -Math.PI) diff += Math.PI * 2;
+  return diff;
+}
+
 EM.registerSystem(
   [],
   [WindDef],
   (_, { wind }) => {
-    if (Math.abs(wind.angle - wind.targetAngle) > EPSILON) {
-      setWindAngle(
-        wind,
-        wind.angle + (wind.targetAngle - wind.oldAngle) / WIND_CHANGE_STEPS
-      );
+    const diff = angleBetweenRadians(wind.angle, wind.targetAngle);
+    if (Math.abs(diff) > EPSILON) {
+      setWindAngle(wind, wind.angle + diff / WIND_CHANGE_STEPS);
     }
   },
   "smoothWind"
