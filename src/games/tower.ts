@@ -56,6 +56,8 @@ import { angleBetweenPosXZ, angleBetweenXZ } from "../utils-3d.js";
 import { createRibSailNow, RibSailLocalDef } from "./hyperspace/ribsail.js";
 import { MeDef } from "../net/components.js";
 import { WindDef } from "../smol/wind.js";
+import { WorldFrameDef } from "../physics/nonintersection.js";
+import { fireBullet } from "./bullet.js";
 
 // TODO(@darzu): what's registerDestroyPirateHandler about?
 
@@ -147,12 +149,17 @@ export function appendTower(b: TimberBuilder): RawMesh {
 export const TowerPlatformDef = EM.defineComponent(
   "towerPlatform",
   (
-    cannon: EntityW<[typeof PositionDef, typeof RotationDef]>,
+    cannon: EntityW<
+      [typeof PositionDef, typeof RotationDef, typeof WorldFrameDef]
+    >,
     timber: EntityW<[typeof WoodHealthDef, typeof WoodStateDef]>,
     sail: EntityW<[typeof RotationDef]>
   ) => {
     return {
-      cannon: createRef<[typeof PositionDef, typeof RotationDef]>(cannon),
+      cannon:
+        createRef<
+          [typeof PositionDef, typeof RotationDef, typeof WorldFrameDef]
+        >(cannon),
       timber: createRef<[typeof WoodHealthDef, typeof WoodStateDef]>(timber),
       sail: createRef<[typeof RotationDef]>(sail),
       lastFire: 0,
@@ -187,86 +194,48 @@ export async function startTowers(towerPositions: vec3[]) {
   }
   await Promise.all(towerPromises);
 
-  em.registerSystem(
-    [TowerPlatformDef, PositionDef, RotationDef],
-    [TimeDef, PartyDef, WindDef],
-    (es, res) => {
-      const target = res.party.pos;
-      if (!target) return; // TODO(@darzu): fold up sail!
+  EM.requireGameplaySystem("updateTowerPlatforms");
+  EM.requireGameplaySystem("updateTowerAttack");
+}
 
-      const fwd = tV(0, 0, -1);
-      const behind = tV(0, 0, 1);
-      for (let tower of es) {
-        const angleToParty = angleBetweenPosXZ(
-          tower.position,
-          tower.rotation,
-          fwd,
-          res.party.pos
-        );
-        // turn the tower
-        const TURN_SPEED = 0.01;
-        if (Math.abs(angleToParty) > 0.01) {
-          const angleDelta = clamp(angleToParty, -TURN_SPEED, TURN_SPEED);
-          quat.rotateY(tower.rotation, angleDelta, tower.rotation);
-        }
+EM.registerSystem(
+  [TowerPlatformDef, PositionDef, RotationDef],
+  [TimeDef, PartyDef, WindDef],
+  (es, res) => {
+    const target = res.party.pos;
+    if (!target) return; // TODO(@darzu): fold up sail!
 
-        // set the sail
-        const sailFwd = vec3.transformQuat(behind, tower.rotation);
-        const angleToWind = angleBetweenXZ(sailFwd, res.wind.dir);
-        const sailAngle = angleToWind - angleToParty;
-        quat.rotateY(
-          quat.IDENTITY,
-          sailAngle,
-          tower.towerPlatform.sail()!.rotation
-        );
-
-        // console.log(`turning by: ${angleBetween}`);
+    const fwd = tV(0, 0, -1);
+    const behind = tV(0, 0, 1);
+    for (let tower of es) {
+      const angleToParty = angleBetweenPosXZ(
+        tower.position,
+        tower.rotation,
+        fwd,
+        res.party.pos
+      );
+      // turn the tower
+      const TURN_SPEED = 0.01;
+      if (Math.abs(angleToParty) > 0.01) {
+        const angleDelta = clamp(angleToParty, -TURN_SPEED, TURN_SPEED);
+        quat.rotateY(tower.rotation, angleDelta, tower.rotation);
       }
 
-      // let pIdx = 0;
-      // for (let p of ps) {
-      //   pIdx++;
-      //   // rotate platform
-      //   const R = Math.PI * -0.001;
-      //   rotateTowerPlatform(p, R);
-      //   const c = p.towerPlatform.cannon()!;
-      //   // pitch cannons
-      //   p.towerPlatform.tiltTimer += res.time.dt;
-      //   const upMode =
-      //     p.towerPlatform.tiltTimer % p.towerPlatform.tiltPeriod >
-      //     p.towerPlatform.tiltPeriod * 0.5;
-      //   if (RotationDef.isOn(c)) {
-      //     let r = Math.PI * pitchSpeed * res.time.dt * (upMode ? -1 : 1);
-      //     quat.rotateX(c.rotation, r, c.rotation);
-      //   }
-      //   // fire cannons
-      //   const myTime = res.time.time + pIdx * fireStagger;
-      //   let doFire = myTime - p.towerPlatform.lastFire > towerSpawnTimer;
-      //   if (doFire) {
-      //     p.towerPlatform.lastFire = myTime;
-      //     if (WorldFrameDef.isOn(c)) {
-      //       // console.log(`tower fire`);
-      //       // TODO(@darzu): DBG!!!!!
-      //       // const ballHealth = 20.0;
-      //       const ballHealth = 2.0;
-      //       fireBullet(
-      //         em,
-      //         2,
-      //         c.world.position,
-      //         c.world.rotation,
-      //         0.05,
-      //         0.02,
-      //         3,
-      //         ballHealth
-      //       );
-      //     }
-      //   }
-      // }
-    },
-    "updateTowerPlatforms"
-  );
-  EM.requireGameplaySystem("updateTowerPlatforms");
-}
+      // set the sail
+      const sailFwd = vec3.transformQuat(behind, tower.rotation);
+      const angleToWind = angleBetweenXZ(sailFwd, res.wind.dir);
+      const sailAngle = angleToWind - angleToParty;
+      quat.rotateY(
+        quat.IDENTITY,
+        sailAngle,
+        tower.towerPlatform.sail()!.rotation
+      );
+
+      // console.log(`turning by: ${angleBetween}`);
+    }
+  },
+  "updateTowerPlatforms"
+);
 
 const towerPool = createEntityPool<
   [typeof TowerPlatformDef, typeof PositionDef, typeof RotationDef]
@@ -300,6 +269,7 @@ const towerPool = createEntityPool<
     EM.ensureComponentOn(cannon, ColorDef, ENDESGA16.darkGray);
     EM.ensureComponentOn(cannon, RotationDef);
     vec3.copy(cannon.position, [0, 6, -6]);
+    EM.ensureComponentOn(cannon, WorldFrameDef);
 
     // make debug gizmo
     // TODO(@darzu): would be nice to have as a little helper function?
@@ -463,3 +433,67 @@ function destroyTower(id: number) {
   const tower = EM.findEntity(id, [TowerPlatformDef, PositionDef, RotationDef]);
   if (tower && !DeadDef.isOn(tower)) towerPool.despawn(tower);
 }
+
+const towerFireSpeed = 1000;
+
+// tower attack
+EM.registerSystem(
+  [TowerPlatformDef, PositionDef, RotationDef],
+  [TimeDef, PartyDef],
+  (es, res) => {
+    const target = res.party.pos;
+    if (!target) return;
+
+    // TODO(@darzu): projectile prediction
+
+    let idx = 0;
+    for (let tower of es) {
+      idx++;
+
+      // fire cannons
+      const nextFire =
+        tower.towerPlatform.lastFire + towerFireSpeed + idx * 150;
+      let doFire = res.time.time > nextFire;
+      if (doFire) {
+        // console.log(
+        //   `fire! ${nextFire} > ${res.time.time}, last: ${tower.towerPlatform.lastFire}`
+        // );
+        tower.towerPlatform.lastFire = res.time.time;
+        const cannon = tower.towerPlatform.cannon()!;
+        // console.log(`tower fire`);
+        // TODO(@darzu): DBG!!!!!
+        // const ballHealth = 20.0;
+        const ballHealth = 2.0;
+        fireBullet(
+          EM,
+          2,
+          cannon.world.position,
+          cannon.world.rotation,
+          0.05,
+          0.02,
+          3,
+          ballHealth
+        );
+      }
+    }
+
+    // let pIdx = 0;
+    // for (let p of ps) {
+    //   pIdx++;
+    //   // rotate platform
+    //   const R = Math.PI * -0.001;
+    //   rotateTowerPlatform(p, R);
+    //   const c = p.towerPlatform.cannon()!;
+    //   // pitch cannons
+    //   p.towerPlatform.tiltTimer += res.time.dt;
+    //   const upMode =
+    //     p.towerPlatform.tiltTimer % p.towerPlatform.tiltPeriod >
+    //     p.towerPlatform.tiltPeriod * 0.5;
+    //   if (RotationDef.isOn(c)) {
+    //     let r = Math.PI * pitchSpeed * res.time.dt * (upMode ? -1 : 1);
+    //     quat.rotateX(c.rotation, r, c.rotation);
+    //   }
+    // }
+  },
+  "updateTowerAttack"
+);
