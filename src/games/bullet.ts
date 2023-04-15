@@ -5,7 +5,7 @@ import {
   Entity,
   EntityW,
 } from "../entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V, tV } from "../sprig-matrix.js";
 import { FinishedDef } from "../build.js";
 import { ColorDef } from "../color-ecs.js";
 import {
@@ -306,4 +306,30 @@ export async function breakBullet(
   }
 
   em.ensureComponentOn(bullet, DeadDef);
+}
+
+const __simTemp1 = vec3.create();
+export function* simulateBullet(
+  pos: vec3,
+  rot: quat,
+  speed: number,
+  gravity: number,
+  dt: number
+): Generator<vec3, never> {
+  let bulletAxis = tV(0, 0, -1);
+  vec3.transformQuat(bulletAxis, rot, bulletAxis);
+  vec3.normalize(bulletAxis, bulletAxis);
+  const linVel = vec3.scale(bulletAxis, speed, vec3.create());
+  const grav = V(0, -gravity, 0);
+
+  yield pos;
+
+  while (true) {
+    // gravity
+    vec3.add(linVel, vec3.scale(grav, 0.00001 * dt, __simTemp1), linVel);
+    // velocity
+    vec3.add(pos, vec3.scale(linVel, dt, __simTemp1), pos);
+
+    yield pos;
+  }
 }

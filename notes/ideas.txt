@@ -122,3 +122,7 @@ Car mechanics explainer:
 
 Make a gameplay involving controlling machinery like:
   https://www.youtube.com/watch?v=7_iyiOLpRVA
+
+Tiny magmetic light-only timer for pomodoro
+  or vscode touchbar app
+  or macos topbar icon

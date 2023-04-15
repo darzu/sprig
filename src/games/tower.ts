@@ -28,6 +28,7 @@ import {
   getAABBFromMesh,
   RawMesh,
   scaleMesh,
+  mergeMeshes,
 } from "../render/mesh.js";
 import {
   RendererDef,
@@ -52,12 +53,14 @@ import {
 } from "../wood.js";
 import { ShipDef } from "../smol/ship.js";
 import { PartyDef } from "./party.js";
-import { angleBetweenPosXZ, angleBetweenXZ } from "../utils-3d.js";
+import { angleBetweenPosXZ, angleBetweenXZ, vec3Dbg } from "../utils-3d.js";
 import { createRibSailNow, RibSailLocalDef } from "./hyperspace/ribsail.js";
 import { MeDef } from "../net/components.js";
 import { WindDef } from "../smol/wind.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
-import { fireBullet } from "./bullet.js";
+import { fireBullet, simulateBullet } from "./bullet.js";
+import { createLineMesh } from "../primatives.js";
+import { dbgOnce } from "../util.js";
 
 // TODO(@darzu): what's registerDestroyPirateHandler about?
 
@@ -436,11 +439,15 @@ function destroyTower(id: number) {
 
 const towerFireSpeed = 1000;
 
+let __frame = 0; // TODO(@darzu): DBG
+
 // tower attack
 EM.registerSystem(
   [TowerPlatformDef, PositionDef, RotationDef],
   [TimeDef, PartyDef],
   (es, res) => {
+    __frame++;
+
     const target = res.party.pos;
     if (!target) return;
 
@@ -455,11 +462,45 @@ EM.registerSystem(
         tower.towerPlatform.lastFire + towerFireSpeed + idx * 150;
       let doFire = res.time.time > nextFire;
       if (doFire) {
+        const cannon = tower.towerPlatform.cannon()!;
+        const speed = 0.05;
+        const rotSpeed = 0.02;
+        const gravity = 3;
+
+        if (__frame > 400 && idx <= 1 && dbgOnce(`dbgProjectile${idx}`)) {
+          // DEBUGGING PROJECTILE
+          const dbgLine = EM.new();
+          EM.ensureComponentOn(dbgLine, PositionDef);
+          // console.log(res.time.dt);
+          const sim = simulateBullet(
+            vec3.clone(cannon.world.position),
+            quat.clone(cannon.world.rotation),
+            speed,
+            gravity,
+            16.66 // TODO(@darzu): proper dt
+          );
+
+          let pos0 = vec3.tmp();
+          let pos1 = vec3.tmp();
+          vec3.copy(pos1, sim.next().value);
+          console.log(vec3Dbg(pos1));
+          let lines: Mesh[] = [];
+          for (let i = 0; i < 100; i++) {
+            vec3.copy(pos0, pos1);
+            vec3.copy(pos1, sim.next().value);
+            console.log(vec3Dbg(pos1));
+            lines.push(createLineMesh(1.0, pos0, pos1));
+          }
+          const mesh = mergeMeshes(...lines) as Mesh;
+          mesh.usesProvoking = true;
+
+          EM.ensureComponentOn(dbgLine, RenderableConstructDef, mesh);
+          EM.ensureComponentOn(dbgLine, ColorDef, ENDESGA16.orange);
+        }
         // console.log(
         //   `fire! ${nextFire} > ${res.time.time}, last: ${tower.towerPlatform.lastFire}`
         // );
         tower.towerPlatform.lastFire = res.time.time;
-        const cannon = tower.towerPlatform.cannon()!;
         // console.log(`tower fire`);
         // TODO(@darzu): DBG!!!!!
         // const ballHealth = 20.0;
@@ -469,9 +510,9 @@ EM.registerSystem(
           2,
           cannon.world.position,
           cannon.world.rotation,
-          0.05,
-          0.02,
-          3,
+          speed,
+          rotSpeed,
+          gravity,
           ballHealth
         );
       }
