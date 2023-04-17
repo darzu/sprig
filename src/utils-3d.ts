@@ -359,9 +359,25 @@ export function angleBetweenPosXZ(
   return angleBetweenXZ(currFwd, toward);
 }
 
-export function angleBetweenXZ(dir1: vec3, dir2: vec3): number {
-  const currSide = vec3.cross(dir1, UP, __angleBetweenXZTmp2);
-  const sign = -Math.sign(vec3.dot(currSide, dir2));
-  const angleBetween = sign * Math.acos(vec3.dot(dir1, dir2));
-  return angleBetween;
+// NOTE: assumes dir1 and dir2 are normalized
+export function angleBetweenXZ(norm1: vec3, norm2: vec3): number {
+  // const currSide = vec3.cross(dir1, UP, __angleBetweenXZTmp2);
+  // const sign = -Math.sign(vec3.dot(currSide, dir2));
+  // const angleBetween = sign * Math.acos(vec3.dot(dir1, dir2));
+  // return angleBetween;
+
+  return angleBetween(norm1[2], norm1[0], norm2[2], norm2[0]);
+}
+
+// NOTE: assumes <x0, y0> and <x1, y1> are normalized
+export function angleBetween(
+  x0: number,
+  y0: number,
+  x1: number,
+  y1: number
+): number {
+  const cross = x0 * y1 - x1 * y0;
+  const sign = Math.sign(cross);
+  const dot = x0 * x1 + y0 * y1;
+  return sign * Math.acos(dot);
 }

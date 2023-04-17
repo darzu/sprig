@@ -94,6 +94,7 @@ import {
   pirateSpawnTimer,
   startPirates,
 } from "./pirate.js";
+import { ParametricDef } from "./parametric-motion.js";
 
 /*
   Game mechanics:
@@ -418,7 +419,9 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
             c.world.rotation,
             0.05,
             0.02,
-            3,
+            // gravity:
+            // 3, (non-parametric)
+            1.5, // parametric
             ballHealth
           );
 
@@ -537,7 +540,13 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
 
   // TODO(@darzu): breakBullet
   em.registerSystem(
-    [BulletDef, ColorDef, WorldFrameDef, LinearVelocityDef],
+    [
+      BulletDef,
+      ColorDef,
+      WorldFrameDef,
+      // LinearVelocityDef
+      ParametricDef,
+    ],
     [],
     (es, res) => {
       for (let b of es) {
@@ -684,8 +693,9 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
           BulletConstructDef,
           BulletDef,
           ColorDef,
-          LinearVelocityDef,
-          GravityDef,
+          // LinearVelocityDef,
+          // GravityDef,
+          ParametricDef,
           WorldFrameDef,
         ],
         [PhysicsResultsDef],
@@ -714,8 +724,9 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
                 for (let w of walls) {
                   assert(w);
                   if (w.id === targetSide.id || w.id === targetFrontBack.id) {
-                    vec3.zero(b.linearVelocity);
-                    vec3.zero(b.gravity);
+                    // TODO(@darzu): these don't apply with parametric:
+                    // vec3.zero(b.linearVelocity);
+                    // vec3.zero(b.gravity);
                     if (_goodBallPool.numFree() > 0) {
                       // em.ensureComponentOn(b, DeletedDef);
                       em.ensureComponentOn(b, DeadDef);

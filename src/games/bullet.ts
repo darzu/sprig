@@ -14,7 +14,13 @@ import {
 } from "../render/renderer-ecs.js";
 import { Position, PositionDef, RotationDef } from "../physics/transform.js";
 import { ColliderDef } from "../physics/collider.js";
-import { AuthorityDef, MeDef, SyncDef, PredictDef } from "../net/components.js";
+import {
+  AuthorityDef,
+  MeDef,
+  SyncDef,
+  PredictDef,
+  Me,
+} from "../net/components.js";
 import { Assets, AssetsDef } from "../assets.js";
 import {
   AngularVelocity,
@@ -24,7 +30,7 @@ import {
 } from "../physics/motion.js";
 import { MotionSmoothingDef } from "../motion-smoothing.js";
 import { LifetimeDef } from "./lifetime.js";
-import { TimeDef } from "../time.js";
+import { Time, TimeDef } from "../time.js";
 import { GravityDef } from "./gravity.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
@@ -34,6 +40,7 @@ import { randNormalVec3 } from "../utils-3d.js";
 import { SplinterParticleDef } from "../wood.js";
 import { tempVec3 } from "../temp-pool.js";
 import { assert, assertDbg } from "../util.js";
+import { ParametricDef } from "./parametric-motion.js";
 
 // TODO(@darzu): MULTIPLAYER BULLETS might have been broken during LD51
 
@@ -91,16 +98,15 @@ EM.registerSerializerPair(
 export function createOrResetBullet(
   em: EntityManager,
   e: Entity & { bulletConstruct: BulletConstruct },
-  pid: number,
-  assets: Assets
+  res: { me: Me; assets: Assets; time: Time }
 ) {
   const props = e.bulletConstruct;
   assertDbg(props);
   em.ensureComponentOn(e, PositionDef);
   vec3.copy(e.position, props.location);
   em.ensureComponentOn(e, RotationDef);
-  em.ensureComponentOn(e, LinearVelocityDef);
-  vec3.copy(e.linearVelocity, props.linearVelocity);
+  // em.ensureComponentOn(e, LinearVelocityDef);
+  // vec3.copy(e.linearVelocity, props.linearVelocity);
   em.ensureComponentOn(e, AngularVelocityDef);
   vec3.copy(e.angularVelocity, props.angularVelocity);
   em.ensureComponentOn(e, ColorDef);
@@ -112,15 +118,15 @@ export function createOrResetBullet(
     vec3.copy(e.color, ENDESGA16.orange);
   }
   em.ensureComponentOn(e, MotionSmoothingDef);
-  em.ensureComponentOn(e, RenderableConstructDef, assets.ball.proto);
-  em.ensureComponentOn(e, AuthorityDef, pid);
+  em.ensureComponentOn(e, RenderableConstructDef, res.assets.ball.proto);
+  em.ensureComponentOn(e, AuthorityDef, res.me.pid);
   em.ensureComponentOn(e, BulletDef);
   e.bullet.team = props.team;
   e.bullet.health = props.health;
   em.ensureComponentOn(e, ColliderDef, {
     shape: "AABB",
     solid: false,
-    aabb: assets.ball.aabb,
+    aabb: res.assets.ball.aabb,
   });
   em.ensureComponentOn(e, LifetimeDef);
   e.lifetime.ms = 4000;
@@ -128,8 +134,15 @@ export function createOrResetBullet(
   e.sync.dynamicComponents = [PositionDef.id];
   e.sync.fullComponents = [BulletConstructDef.id];
   em.ensureComponentOn(e, PredictDef);
-  em.ensureComponentOn(e, GravityDef);
-  e.gravity[1] = -props.gravity;
+  // em.ensureComponentOn(e, GravityDef);
+  // e.gravity[1] = -props.gravity;
+
+  // TODO(@darzu): MULTIPLAYER: fix sync & predict to work with parametric motion
+  em.ensureComponentOn(e, ParametricDef);
+  vec3.copy(e.parametric.init.pos, props.location);
+  vec3.copy(e.parametric.init.vel, props.linearVelocity);
+  vec3.copy(e.parametric.init.grav, [0, -props.gravity, 0]);
+  e.parametric.startMs = res.time.time;
 }
 
 export function registerBuildBulletsSystem(em: EntityManager) {
@@ -216,9 +229,9 @@ export async function fireBullet(
   e.bulletConstruct.health = health;
 
   // TODO(@darzu): This breaks multiplayer maybe!
-  // TODO(@darzu): need to think how multiplayer and entity pools interact.
-  const { me, assets } = await em.whenResources(MeDef, AssetsDef);
-  createOrResetBullet(em, e, me.pid, assets);
+  // TODO(@darzu): MULTIPLAYER. need to think how multiplayer and entity pools interact.
+  const res = await em.whenResources(MeDef, TimeDef, AssetsDef);
+  createOrResetBullet(em, e, res);
 }
 
 type BulletPart = EntityW<[typeof PositionDef, typeof ColorDef]>;
@@ -271,7 +284,8 @@ export async function breakBullet(
       typeof BulletDef,
       typeof WorldFrameDef,
       typeof ColorDef,
-      typeof LinearVelocityDef
+      // typeof LinearVelocityDef
+      typeof ParametricDef
     ]
   >
 ) {
@@ -289,7 +303,9 @@ export async function breakBullet(
     if (!pe || !bullet || !bullet.world) continue;
     vec3.copy(pe.position, bullet.world.position);
     vec3.copy(pe.color, bullet.color);
-    const vel = vec3.clone(bullet.linearVelocity);
+    // const vel = vec3.clone(bullet.linearVelocity);
+    const vel = vec3.clone(bullet.parametric.init.vel);
+    vel[1] = -vel[1]; // assume we're at the end of a parabola
     vec3.normalize(vel, vel);
     vec3.negate(vel, vel);
     vec3.add(vel, randNormalVec3(tempVec3()), vel);
@@ -332,4 +348,19 @@ export function* simulateBullet(
 
     yield pos;
   }
+}
+
+// TODO(@darzu): de-dupe with parametric-motion.ts
+export function predictBullet(
+  pos: vec3,
+  vel: vec3,
+  grav: vec3,
+  t: number,
+  out?: vec3
+): vec3 {
+  out = out ?? vec3.tmp();
+  out[0] = pos[0] + vel[0] * t + grav[0] * 0.00001 * t * t;
+  out[1] = pos[1] + vel[1] * t + grav[1] * 0.00001 * t * t;
+  out[2] = pos[2] + vel[2] * t + grav[2] * 0.00001 * t * t;
+  return out;
 }

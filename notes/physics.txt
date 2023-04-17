@@ -432,3 +432,12 @@ Box2D 3.0 plans:
   handles not pointers,
   multithreading,
   
+prediction and physics using parametric motion:
+  for some motion, namely cannon projectiles, instead of using velocity + gravity simulation every frame, I think the better thing is just to specify a parametric i.e. fn(time) function and then each frame you just calculate where it should be along that function by passing in the time since that fn started.
+
+  This has a lot of nice properties. 
+  #1 it's totally frame rate independent. The same time will always produce the same output. Unlike an iterative velocity + gravity approach where the size of the step drastically changes the path.
+  #2 network prediction can be better maybe even perfect. Since you know the timestamp and the parametric function, you don't need to lerp forward along velocity or anything (which gets less accurate the bigger the step), you simply evaluate at the right time
+  #3 analytic AI prediction. Enemy AI needs to be able to aim their cannon. With a parametric equation we can solve for the appropriate angle to aim and the fuzz it to change probability of hit.
+
+  One cool thing about our system is that this is trivial for our physics to handle since it only cares about previous frame vs current frame positions, unlike a traditional physics system where being able to impart impulses is the main way they maintain constraints and they can only do that if objects are moving according to velocity + acceleration + jerk.

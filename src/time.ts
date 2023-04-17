@@ -6,6 +6,7 @@ export const TimeDef = EM.defineComponent("time", () => ({
   step: 0,
   dt: 0,
 }));
+export type Time = Component<typeof TimeDef>;
 
 export function tick(em: EntityManager, dt: number) {
   const time = em.ensureResource(TimeDef);

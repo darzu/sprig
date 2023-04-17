@@ -53,12 +53,17 @@ import {
 } from "../wood.js";
 import { ShipDef } from "../smol/ship.js";
 import { PartyDef } from "./party.js";
-import { angleBetweenPosXZ, angleBetweenXZ, vec3Dbg } from "../utils-3d.js";
+import {
+  angleBetween,
+  angleBetweenPosXZ,
+  angleBetweenXZ,
+  vec3Dbg,
+} from "../utils-3d.js";
 import { createRibSailNow, RibSailLocalDef } from "./hyperspace/ribsail.js";
 import { MeDef } from "../net/components.js";
 import { WindDef } from "../smol/wind.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
-import { fireBullet, simulateBullet } from "./bullet.js";
+import { fireBullet, predictBullet, simulateBullet } from "./bullet.js";
 import { createLineMesh } from "../primatives.js";
 import { dbgOnce } from "../util.js";
 
@@ -273,6 +278,18 @@ const towerPool = createEntityPool<
     EM.ensureComponentOn(cannon, RotationDef);
     vec3.copy(cannon.position, [0, 6, -6]);
     EM.ensureComponentOn(cannon, WorldFrameDef);
+    {
+      // DBG cannon gizmo
+      const gizmo = EM.new();
+      EM.ensureComponentOn(gizmo, PositionDef, V(0, 0, 0));
+      EM.ensureComponentOn(gizmo, ScaleDef, V(2, 2, 2));
+      EM.ensureComponentOn(gizmo, PhysicsParentDef, cannon.id);
+      EM.ensureComponentOn(
+        gizmo,
+        RenderableConstructDef,
+        res.assets.gizmo.proto
+      );
+    }
 
     // make debug gizmo
     // TODO(@darzu): would be nice to have as a little helper function?
@@ -465,9 +482,29 @@ EM.registerSystem(
         const cannon = tower.towerPlatform.cannon()!;
         const speed = 0.05;
         const rotSpeed = 0.02;
-        const gravity = 3;
+        const oldGravity = 3;
+        const gravity = 1.5;
 
         if (__frame > 400 && idx <= 1 && dbgOnce(`dbgProjectile${idx}`)) {
+          drawSimBulletTrail(16.666, ENDESGA16.orange);
+          drawSimBulletTrail(100, ENDESGA16.yellow);
+          drawSimBulletTrail(1000, ENDESGA16.lightGreen);
+          drawSimBulletTrail2(16.666, ENDESGA16.red);
+          drawSimBulletTrail2(400, ENDESGA16.darkRed);
+
+          const fwd = vec3.transformQuat([0, 0, -1], cannon.rotation);
+          const fireAngle = angleBetween(1, 0, -fwd[2], fwd[1]);
+          // console.log("fireAngle");
+          // console.log(fireAngle);
+          // console.log(vec3Dbg(fwd));
+
+          // x(t) = x0 + v0*t*cos(theta)
+          // y(t) = y0 + v0*t*sin(theta) - g*t^2
+
+          // TODO(@darzu): implement parametric projectile path for bullet!
+        }
+
+        function drawSimBulletTrail(dt: number, color: vec3) {
           // DEBUGGING PROJECTILE
           const dbgLine = EM.new();
           EM.ensureComponentOn(dbgLine, PositionDef);
@@ -476,8 +513,8 @@ EM.registerSystem(
             vec3.clone(cannon.world.position),
             quat.clone(cannon.world.rotation),
             speed,
-            gravity,
-            16.66 // TODO(@darzu): proper dt
+            oldGravity,
+            dt
           );
 
           let pos0 = vec3.tmp();
@@ -495,8 +532,40 @@ EM.registerSystem(
           mesh.usesProvoking = true;
 
           EM.ensureComponentOn(dbgLine, RenderableConstructDef, mesh);
-          EM.ensureComponentOn(dbgLine, ColorDef, ENDESGA16.orange);
+          EM.ensureComponentOn(dbgLine, ColorDef, color);
         }
+        function drawSimBulletTrail2(dt: number, color: vec3) {
+          // DEBUGGING PROJECTILE
+          const dbgLine = EM.new();
+          EM.ensureComponentOn(dbgLine, PositionDef);
+          // console.log(res.time.dt);
+          const dir = vec3.transformQuat([0, 0, -1], cannon.world.rotation);
+          const pred = (t: number) =>
+            predictBullet(
+              vec3.clone(cannon.world.position),
+              vec3.scale(dir, speed),
+              tV(0, -gravity, 0),
+              t
+            );
+
+          let pos0 = vec3.tmp();
+          let pos1 = vec3.tmp();
+          vec3.copy(pos1, pred(0));
+          console.log(vec3Dbg(pos1));
+          let lines: Mesh[] = [];
+          for (let i = 0; i < 100; i++) {
+            vec3.copy(pos0, pos1);
+            vec3.copy(pos1, pred(i * dt));
+            console.log(vec3Dbg(pos1));
+            lines.push(createLineMesh(1.0, pos0, pos1));
+          }
+          const mesh = mergeMeshes(...lines) as Mesh;
+          mesh.usesProvoking = true;
+
+          EM.ensureComponentOn(dbgLine, RenderableConstructDef, mesh);
+          EM.ensureComponentOn(dbgLine, ColorDef, color);
+        }
+
         // console.log(
         //   `fire! ${nextFire} > ${res.time.time}, last: ${tower.towerPlatform.lastFire}`
         // );

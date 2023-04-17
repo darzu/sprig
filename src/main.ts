@@ -43,7 +43,7 @@ const ALL_GAMES = [
   "shading",
   "modeling",
 ] as const;
-const GAME: typeof ALL_GAMES[number] = "smol";
+const GAME: typeof ALL_GAMES[number] = "rogue";
 
 // Run simulation with a fixed timestep @ 60hz
 const TIMESTEP = 1000 / 60;
@@ -139,6 +139,7 @@ function legacyRequireAllTheSystems() {
   }
   EM.requireSystem("updateBullets");
   EM.requireSystem("applyGravity");
+  EM.requireSystem("updateParametricMotion");
   if (GAME === "hyperspace") {
     // TODO(@darzu): noodles broken?
     EM.requireSystem("updateNoodles");
