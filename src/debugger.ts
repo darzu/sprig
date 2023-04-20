@@ -3,6 +3,7 @@ import { ComponentDef, EM, Entity, EntityW } from "./entity-manager.js";
 import {
   PERF_DBG_F32S,
   PERF_DBG_F32S_BLAME,
+  PERF_DBG_F32S_TEMP_BLAME,
   PERF_DBG_GPU_BLAME,
 } from "./flags.js";
 import { SyncDef } from "./net/components.js";
@@ -267,6 +268,26 @@ g.cameraFollow.pitchOffset = ${target.cameraFollow.pitchOffset.toFixed(3)};
   f32sBlame: () => {
     assert(PERF_DBG_F32S_BLAME);
     const ents = [...dbgGetBlame("f32s")!.entries()].filter(
+      (e) =>
+        e[0] !== "Error" &&
+        !e[0].includes("sprig-matrix.js") &&
+        !e[0].endsWith("(<anonymous>)")
+    );
+    ents.sort((a, b) => b[1] - a[1]);
+    let res = ``;
+    for (let [ln, num] of ents) {
+      res += `${ln}: ${((num * 4) / 1024).toFixed(1)}kb\n`;
+    }
+    console.log(res);
+  },
+  tempf32sBlameClear: () => {
+    assert(PERF_DBG_F32S_TEMP_BLAME);
+    dbgClearBlame("temp_f32s");
+  },
+  tempf32sBlame: () => {
+    // TODO(@darzu): DE-DUPE with above
+    assert(PERF_DBG_F32S_TEMP_BLAME);
+    const ents = [...dbgGetBlame("temp_f32s")!.entries()].filter(
       (e) =>
         e[0] !== "Error" &&
         !e[0].includes("sprig-matrix.js") &&

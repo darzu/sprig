@@ -28,15 +28,19 @@ export const ENDESGA16 = objMap(
   }
 );
 export const AllEndesga16 = Object.values(ENDESGA16);
+export const AllEndesga16Names = Object.keys(ENDESGA16);
 export function randEndesga16() {
   const i = clamp(Math.floor(Math.random() * AllEndesga16.length), 0, 15);
   return AllEndesga16[i];
 }
 let _nextEnd = 0;
-export function seqEndesga16() {
+export function seqEndesga16NextIdx() {
   _nextEnd += 1;
   if (_nextEnd > 15) _nextEnd = 0;
-  return AllEndesga16[_nextEnd];
+  return _nextEnd;
+}
+export function seqEndesga16() {
+  return AllEndesga16[seqEndesga16NextIdx()];
 }
 
 export const COLOR_SAMPLES = objMap(

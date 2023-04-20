@@ -18,3 +18,4 @@ export const DEBUG_INPUTS = false;
 export const ENABLE_NET = false; // TODO(@darzu): was for LD52
 export const PERF_DBG_F32S = false;
 export const PERF_DBG_F32S_BLAME = false;
+export const PERF_DBG_F32S_TEMP_BLAME = false;

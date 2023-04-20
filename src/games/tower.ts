@@ -1,7 +1,13 @@
 import { BLACK, AssetsDef } from "../assets.js";
 import { AudioDef } from "../audio.js";
 import { ColorDef } from "../color-ecs.js";
-import { ENDESGA16 } from "../color/palettes.js";
+import {
+  AllEndesga16,
+  AllEndesga16Names,
+  ENDESGA16,
+  seqEndesga16,
+  seqEndesga16NextIdx,
+} from "../color/palettes.js";
 import { DeadDef } from "../delete.js";
 import { createRef } from "../em_helpers.js";
 import { EM, EntityW, EntityManager } from "../entity-manager.js";
@@ -66,6 +72,7 @@ import { WorldFrameDef } from "../physics/nonintersection.js";
 import { fireBullet, predictBullet, simulateBullet } from "./bullet.js";
 import { createLineMesh } from "../primatives.js";
 import { dbgOnce } from "../util.js";
+import { drawBall } from "../utils-game.js";
 
 // TODO(@darzu): what's registerDestroyPirateHandler about?
 
@@ -223,7 +230,9 @@ EM.registerSystem(
         res.party.pos
       );
       // turn the tower
-      const TURN_SPEED = 0.01;
+      // TODO(@darzu): DEBUGGING:
+      // const TURN_SPEED = 0.01;
+      const TURN_SPEED = 0.1;
       if (Math.abs(angleToParty) > 0.01) {
         const angleDelta = clamp(angleToParty, -TURN_SPEED, TURN_SPEED);
         quat.rotateY(tower.rotation, angleDelta, tower.rotation);
@@ -485,17 +494,81 @@ EM.registerSystem(
         const oldGravity = 3;
         const gravity = 1.5;
 
-        if (__frame > 400 && idx <= 1 && dbgOnce(`dbgProjectile${idx}`)) {
-          drawSimBulletTrail(16.666, ENDESGA16.orange);
-          drawSimBulletTrail(100, ENDESGA16.yellow);
-          drawSimBulletTrail(1000, ENDESGA16.lightGreen);
-          drawSimBulletTrail2(16.666, ENDESGA16.red);
-          drawSimBulletTrail2(400, ENDESGA16.darkRed);
+        if (__frame > 40 && idx <= 1 && dbgOnce(`dbgProjectile${idx}`)) {
+          // drawSimBulletTrail(16.666, ENDESGA16.orange);
+          // drawSimBulletTrail(100, ENDESGA16.yellow);
+          // drawSimBulletTrail(1000, ENDESGA16.lightGreen);
+          // drawSimBulletTrail2(16.666, ENDESGA16.red);
+          // drawSimBulletTrail2(400, ENDESGA16.darkRed);
 
           const fwd = vec3.transformQuat([0, 0, -1], cannon.rotation);
           const fireAngle = angleBetween(1, 0, -fwd[2], fwd[1]);
-          // console.log("fireAngle");
-          // console.log(fireAngle);
+
+          // // gravity
+          // vec3.add(linVel, vec3.scale(grav, 0.00001 * dt, __simTemp1), linVel);
+          // // velocity
+          // vec3.add(pos, vec3.scale(linVel, dt, __simTemp1), pos);
+
+          // range
+          //  (v^2 * sin(2*theta)) / g
+          // console.log(`fireAngle:${fireAngle}`);
+          const range =
+            (speed ** 2 * Math.sin(2 * fireAngle)) / (2 * gravity * 0.00001);
+          function drawRange(range: number, color: vec3) {
+            // console.log(`range: ${range}`);
+            const fwdXZ = vec3.clone(fwd);
+            fwdXZ[1] = 0;
+            vec3.normalize(fwdXZ, fwdXZ);
+            // console.log("local fwdXZ: " + vec3Dbg(fwdXZ));
+            vec3.transformQuat(fwdXZ, tower.rotation, fwdXZ);
+            // console.log("world fwdXZ: " + vec3Dbg(fwdXZ));
+            const impactPoint = vec3.add(
+              vec3.scale(fwdXZ, range),
+              cannon.world.position
+            );
+            // console.log("impactPoint: " + vec3Dbg(impactPoint));
+            drawBall(vec3.clone(impactPoint), 2, color);
+          }
+          // drawRange(range, ENDESGA16.red);
+
+          const v = speed;
+          const g = 2 * gravity * 0.00001;
+          const theta = fireAngle;
+          // const y0 = cannon.world.position[1];
+          const y0 = 0;
+          const range2 =
+            (v ** 2 / g) *
+            Math.sin(2 * theta) *
+            (1 + Math.sqrt(1 + (2 * g * y0) / (v ** 2 * Math.sin(theta) ** 2)));
+          const h = 0;
+          const range3 =
+            v ** (2 / g) *
+            Math.sin(2 * theta) *
+            (1 +
+              Math.sqrt((1 + (2 * g * h) / v) ** (2 * Math.sin(theta) ** 2)));
+          // drawRange(range2, ENDESGA16.orange);
+          // drawRange(range3, ENDESGA16.yellow);
+
+          {
+            // const R = 100;
+            const theta = (R: number) => (1 / 2) * Math.asin((g * R) / v ** 2);
+
+            for (let r = 0; r < 100; r += 10) {
+              if (isNaN(r)) continue;
+              const angle = theta(r);
+              const colorIdx = seqEndesga16NextIdx();
+              const color = AllEndesga16[colorIdx];
+              const colorName = AllEndesga16Names[colorIdx];
+              console.log(`R ${r} -> theta ${angle.toFixed(2)} (${colorName})`);
+              const dir = V(0, Math.sin(angle), -Math.cos(angle));
+              vec3.transformQuat(dir, tower.rotation, dir);
+              drawSimBulletTrail2(200, color, dir, 10);
+              drawRange(r, color);
+            }
+          }
+
+          console.log("fireAngle");
+          console.log(fireAngle);
           // console.log(vec3Dbg(fwd));
 
           // x(t) = x0 + v0*t*cos(theta)
@@ -520,12 +593,12 @@ EM.registerSystem(
           let pos0 = vec3.tmp();
           let pos1 = vec3.tmp();
           vec3.copy(pos1, sim.next().value);
-          console.log(vec3Dbg(pos1));
+          // console.log(vec3Dbg(pos1));
           let lines: Mesh[] = [];
           for (let i = 0; i < 100; i++) {
             vec3.copy(pos0, pos1);
             vec3.copy(pos1, sim.next().value);
-            console.log(vec3Dbg(pos1));
+            // console.log(vec3Dbg(pos1));
             lines.push(createLineMesh(1.0, pos0, pos1));
           }
           const mesh = mergeMeshes(...lines) as Mesh;
@@ -534,29 +607,38 @@ EM.registerSystem(
           EM.ensureComponentOn(dbgLine, RenderableConstructDef, mesh);
           EM.ensureComponentOn(dbgLine, ColorDef, color);
         }
-        function drawSimBulletTrail2(dt: number, color: vec3) {
+        var __temp1 = vec3.tmp();
+        var __temp2 = vec3.tmp();
+        var __temp3 = vec3.tmp();
+        var __temp4 = vec3.tmp();
+        var __temp5 = vec3.tmp();
+        function drawSimBulletTrail2(
+          dt: number,
+          color: vec3,
+          _dir?: vec3,
+          cycles?: number
+        ) {
           // DEBUGGING PROJECTILE
           const dbgLine = EM.new();
           EM.ensureComponentOn(dbgLine, PositionDef);
           // console.log(res.time.dt);
-          const dir = vec3.transformQuat([0, 0, -1], cannon.world.rotation);
+          const dir =
+            _dir ??
+            vec3.transformQuat([0, 0, -1], cannon.world.rotation, __temp1);
+          const vel = vec3.scale(dir, speed, __temp1);
+          const grav = vec3.set(0, -gravity, 0, __temp2);
           const pred = (t: number) =>
-            predictBullet(
-              vec3.clone(cannon.world.position),
-              vec3.scale(dir, speed),
-              tV(0, -gravity, 0),
-              t
-            );
+            predictBullet(cannon.world.position, vel, grav, t, __temp5);
 
-          let pos0 = vec3.tmp();
-          let pos1 = vec3.tmp();
+          let pos0 = vec3.zero(__temp3);
+          let pos1 = vec3.zero(__temp4);
           vec3.copy(pos1, pred(0));
-          console.log(vec3Dbg(pos1));
+          // console.log(vec3Dbg(pos1));
           let lines: Mesh[] = [];
-          for (let i = 0; i < 100; i++) {
+          for (let i = 0; i < (cycles ?? 100); i++) {
             vec3.copy(pos0, pos1);
             vec3.copy(pos1, pred(i * dt));
-            console.log(vec3Dbg(pos1));
+            // console.log(vec3Dbg(pos1));
             lines.push(createLineMesh(1.0, pos0, pos1));
           }
           const mesh = mergeMeshes(...lines) as Mesh;

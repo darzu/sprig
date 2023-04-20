@@ -578,11 +578,18 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
     // g.cameraFollow.pitchOffset = -1.009;
 
     // top down landscape:
-    vec3.copy(g.position, [-357.47, 342.5, -35.34]);
-    quat.copy(g.rotation, [0.0, -0.71, 0.0, 0.71]);
+    // vec3.copy(g.position, [-357.47, 342.5, -35.34]);
+    // quat.copy(g.rotation, [0.0, -0.71, 0.0, 0.71]);
+    // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
+    // g.cameraFollow.yawOffset = 0.0;
+    // g.cameraFollow.pitchOffset = -1.098;
+
+    // tower 1 close up
+    vec3.copy(g.position, [-157.32, 54.5, -328.04]);
+    quat.copy(g.rotation, [0.0, -0.7, 0.0, 0.72]);
     vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
     g.cameraFollow.yawOffset = 0.0;
-    g.cameraFollow.pitchOffset = -1.098;
+    g.cameraFollow.pitchOffset = -0.576;
 
     em.registerSystem(
       [GhostDef, WorldFrameDef, ColliderDef],

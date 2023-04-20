@@ -1,6 +1,10 @@
-import { PERF_DBG_F32S, PERF_DBG_F32S_BLAME } from "./flags.js";
+import {
+  PERF_DBG_F32S,
+  PERF_DBG_F32S_BLAME,
+  PERF_DBG_F32S_TEMP_BLAME,
+} from "./flags.js";
 import * as GLM from "./gl-matrix.js";
-import { dbgAddBlame } from "./util.js";
+import { dbgAddBlame, dbgClearBlame } from "./util.js";
 
 const EPSILON = 0.000001;
 
@@ -82,7 +86,16 @@ const buffer = new ArrayBuffer(BUFFER_SIZE);
 let bufferIndex = 0;
 function tmpArray<N extends number>(n: N): Float32ArrayOfLength<N> {
   if (bufferIndex + n * Float32Array.BYTES_PER_ELEMENT > BUFFER_SIZE) {
+    if (PERF_DBG_F32S_TEMP_BLAME) {
+      if ((window as any).dbg) {
+        // TODO(@darzu): HACK debugging
+        (window as any).dbg.tempf32sBlame();
+      }
+    }
     throw `Too many temp Float32Arrays allocated--try increasing BUFFER_SIZE`;
+  }
+  if (PERF_DBG_F32S_TEMP_BLAME) {
+    dbgAddBlame("temp_f32s", n);
   }
   const arr = new Float32Array(buffer, bufferIndex, n);
   bufferIndex += arr.byteLength;
@@ -91,6 +104,10 @@ function tmpArray<N extends number>(n: N): Float32ArrayOfLength<N> {
 
 export function resetTempMatrixBuffer() {
   bufferIndex = 0;
+
+  if (PERF_DBG_F32S_TEMP_BLAME) {
+    dbgClearBlame("temp_f32s");
+  }
 }
 
 export module vec2 {

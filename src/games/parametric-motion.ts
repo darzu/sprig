@@ -1,8 +1,6 @@
 import { EM, EntityManager } from "../entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
+import { vec3, V } from "../sprig-matrix.js";
 import { onInit } from "../init.js";
-import { LinearVelocityDef } from "../physics/motion.js";
-import { tempVec3 } from "../temp-pool.js";
 import { TimeDef } from "../time.js";
 import { PositionDef } from "../physics/transform.js";
 
@@ -56,3 +54,22 @@ export function paramProjectileFn(
   out[2] = start.pos[2] + start.vel[2] * t + start.grav[2] * 0.00001 * t * t;
   return out;
 }
+
+// TODO(@darzu): determine the right angle to hit the player
+// TODO(@darzu): determine the right angle to maximize distance
+// TODO(@darzu): determine the angles that will miss the player
+// TODO(@darzu): determine the angles that will miss the player
+// TODO(@darzu): determine the velocity and gravity parameters that allows range X
+
+// export function paramProjectileStats(start: ParamProjectile) {
+//   // y(t) = y0 + vy * t + ay * t * t;
+//   // 0 = y0 + vy * t + ay * t * t;
+//   // quadradic equation
+//   // t = (-vy +- sqrt(vy**2 - 4*ay*y0)) / 2*ay
+//   // TODO(@darzu):
+//   const vy = start.vel[1];
+//   const y0 = start.pos[1];
+//   const ay = start.grav[1];
+
+//   const yZeroT = ((-vy + -sqrt(vy ** 2 - 4 * ay * y0)) / 2) * ay;
+// }

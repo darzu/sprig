@@ -166,8 +166,9 @@ export function parseAndMutateIntoMapData(
     mapBytes.height
   );
 
-  // if (VERBOSE_LOG)
-  for (let b of blobs) console.log(`clr: ${vec4Dbg(b.color)}, area: ${b.area}`);
+  if (VERBOSE_LOG)
+    for (let b of blobs)
+      console.log(`clr: ${vec4Dbg(b.color)}, area: ${b.area}`);
 
   const W = 2;
   const landData = new Float32Array(mapBytes.width * mapBytes.height);
@@ -206,7 +207,7 @@ export function parseAndMutateIntoMapData(
   };
 
   // TODO(@darzu): DBG:
-  console.dir(levelMap);
+  // console.dir(levelMap);
 
   // TODO(@darzu): dbg:
   const __elapsed = performance.now() - __start;
