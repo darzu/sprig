@@ -795,6 +795,7 @@ export function getMeshAsGrid(m: RawMesh): {
   }
 }
 
+// TODO(@darzu): PERF. probably instead of doing merge meshes, we should have a MeshBuilder
 export function mergeMeshes(...rs: RawMesh[]): RawMesh {
   if (rs.length === 1) return rs[0];
 

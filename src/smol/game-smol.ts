@@ -73,6 +73,7 @@ import { skyPipeline } from "../render/pipelines/std-sky.js";
 import { createFlatQuadMesh, makeDome } from "../primatives.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
 import { startTowers } from "../games/tower.js";
+import { createGraph3DAxesMesh } from "../gizmos.js";
 
 /*
 NOTES:
@@ -527,42 +528,6 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
       aabb: res.assets.ball.aabb,
     });
 
-    // vec3.copy(g.position, [-28.11, 26.0, -28.39]);
-    // quat.copy(g.rotation, [0.0, -0.94, 0.0, 0.34]);
-    // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
-    // g.cameraFollow.yawOffset = 0.0;
-    // g.cameraFollow.pitchOffset = -0.593;
-
-    // vec3.copy(g.position, [-34.72, 50.31, -437.72]);
-    // quat.copy(g.rotation, [0.0, -0.99, 0.0, 0.16]);
-    // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
-    // g.cameraFollow.yawOffset = 0.0;
-    // g.cameraFollow.pitchOffset = -0.452;
-
-    // vec3.copy(g.position, [-310.03, 26.0, -389.47]);
-    // quat.copy(g.rotation, [0.0, -0.71, 0.0, 0.71]);
-    // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
-    // g.cameraFollow.yawOffset = 0.0;
-    // g.cameraFollow.pitchOffset = -0.287;
-
-    // vec3.copy(g.position, [129.81, 192.0, -183.24]);
-    // quat.copy(g.rotation, [0.0, -1.0, 0.0, -0.06]);
-    // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
-    // g.cameraFollow.yawOffset = 0.0;
-    // g.cameraFollow.pitchOffset = -0.624;
-
-    // vec3.copy(g.position, [1.12, 54.25, -42.04]);
-    // quat.copy(g.rotation, [0.0, -1.0, 0.0, 0.03]);
-    // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
-    // g.cameraFollow.yawOffset = 0.0;
-    // g.cameraFollow.pitchOffset = 0.656;
-
-    // vec3.copy(g.position, [-12.87, 22.0, -442.46]);
-    // quat.copy(g.rotation, [0.0, -1.0, 0.0, -0.1]);
-    // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
-    // g.cameraFollow.yawOffset = 0.0;
-    // g.cameraFollow.pitchOffset = -0.391;
-
     // tower close up:
     // vec3.copy(g.position, [-103.66, 32.56, -389.96]);
     // quat.copy(g.rotation, [0.0, -1.0, 0.0, -0.09]);
@@ -585,11 +550,18 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
     // g.cameraFollow.pitchOffset = -1.098;
 
     // tower 1 close up
-    vec3.copy(g.position, [-157.32, 54.5, -328.04]);
-    quat.copy(g.rotation, [0.0, -0.7, 0.0, 0.72]);
+    // vec3.copy(g.position, [-157.32, 54.5, -328.04]);
+    // quat.copy(g.rotation, [0.0, -0.7, 0.0, 0.72]);
+    // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
+    // g.cameraFollow.yawOffset = 0.0;
+    // g.cameraFollow.pitchOffset = -0.576;
+
+    // world origin
+    vec3.copy(g.position, [-223.25, 40.5, -432.01]);
+    quat.copy(g.rotation, [0.0, -0.58, 0.0, 0.81]);
     vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
     g.cameraFollow.yawOffset = 0.0;
-    g.cameraFollow.pitchOffset = -0.576;
+    g.cameraFollow.pitchOffset = -0.378;
 
     em.registerSystem(
       [GhostDef, WorldFrameDef, ColliderDef],
@@ -944,6 +916,28 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
     worldGizmo,
     RenderableConstructDef,
     res.assets.gizmo.proto
+  );
+
+  // debug graphing
+  const graphMesh = createGraph3DAxesMesh({
+    intervalLength: V(12, 13, 14),
+    domainSize: {
+      min: V(0, 0, 0),
+      max: V(100, 100, 100),
+    },
+    worldSize: {
+      min: V(0, 0, 0),
+      max: V(50, 50, 50),
+    },
+    axisWidth: 0.5,
+    intervalGap: 0.25,
+  });
+  const graph = EM.new();
+  EM.ensureComponentOn(graph, RenderableConstructDef, graphMesh);
+  EM.ensureComponentOn(
+    graph,
+    PositionDef,
+    vec3.add(worldGizmo.position, [50, 10, 50], V(0, 0, 0))
   );
 }
 

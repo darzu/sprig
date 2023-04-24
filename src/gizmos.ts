@@ -1,15 +1,17 @@
+import { AABB } from "./physics/aabb.js";
 import { Mesh, mergeMeshes } from "./render/mesh.js";
-import { vec3, V } from "./sprig-matrix.js";
-import { orthonormalize } from "./utils-3d.js";
+import { vec3, V, tV } from "./sprig-matrix.js";
+import { orthonormalize, vec3Dbg } from "./utils-3d.js";
 import { createEmptyMesh } from "./wood.js";
 
 const _UP = V(0, 1, 0);
 export function createLineMesh(
   width: number,
-  start: vec3,
-  end: vec3,
-  up?: vec3
+  start: vec3.InputT,
+  end: vec3.InputT,
+  up?: vec3.InputT
 ): Mesh {
+  // TODO(@darzu): PERF!! So many temps
   // TODO(@darzu): I'm dissatisfied with how we do mesh building. Should be a
   //    better way. Maybe it's just the stupid vec stuff.
   // TODO(@darzu): consider building straight into the serialize buffers?
@@ -75,5 +77,43 @@ export function createGizmoMesh(): Mesh {
   });
   (mesh as Mesh).usesProvoking = true;
   // console.dir(mesh);
+  return mesh;
+}
+
+export interface GraphOptions {
+  intervalLength: vec3;
+  intervalGap: number;
+  domainSize: AABB;
+  worldSize: AABB;
+  axisWidth: number;
+}
+
+export function createGraph3DAxesMesh(opts: GraphOptions): Mesh {
+  let axes: Mesh[] = [];
+  // const gap = opts.axisWidth * 0.2; // TODO(@darzu): tweak
+  const halfWidth = opts.axisWidth * 0.5;
+  const ups = [tV(0, 1, 0), tV(0, 0, 1), tV(1, 0, 0)];
+  for (let i of [0, 1, 2]) {
+    const domainLength = opts.domainSize.max[i] - opts.domainSize.min[i];
+    const numIntervals = Math.ceil(domainLength / opts.intervalLength[i]);
+    const worldLength = opts.worldSize.max[i] - opts.worldSize.min[i];
+    const worldIntLength = worldLength / numIntervals;
+    let _start = vec3.tmp();
+    let _end = vec3.tmp();
+    for (let j = 0; j < numIntervals; j++) {
+      vec3.set(-halfWidth, -halfWidth, -halfWidth, _start);
+      vec3.set(-halfWidth, -halfWidth, -halfWidth, _end);
+      _start[i] = j * worldIntLength + opts.intervalGap;
+      _end[i] = (j + 1) * worldIntLength - opts.intervalGap;
+      // console.log(`${vec3Dbg(_start)} -> ${vec3Dbg(_end)}`);
+      const ln = createLineMesh(opts.axisWidth, _start, _end, ups[i]);
+      ln.colors.forEach((c) => (c[i] = 1.0)); // set R, G, or B
+      axes.push(ln);
+    }
+  }
+
+  const mesh = mergeMeshes(...axes) as Mesh;
+  mesh.usesProvoking = true;
+
   return mesh;
 }
