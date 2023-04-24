@@ -1,13 +1,6 @@
-import {
-  EntityManager,
-  EM,
-  Entity,
-  EntityW,
-  ComponentDef,
-} from "../entity-manager.js";
-import { AlphaDef, applyTints, TintsDef } from "../color-ecs.js";
+import { EntityManager, EM, Entity, EntityW } from "../entity-manager.js";
 import { CameraDef, CameraComputedDef } from "../camera.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
+import { vec3, quat, mat4 } from "../sprig-matrix.js";
 import {
   Frame,
   TransformDef,
@@ -15,75 +8,31 @@ import {
   updateFrameFromTransform,
   updateFrameFromPosRotScale,
   copyFrame,
-  PositionDef,
 } from "../physics/transform.js";
-import { ColorDef } from "../color-ecs.js";
 import { MotionSmoothingDef } from "../motion-smoothing.js";
 import { DeadDef, DeletedDef } from "../delete.js";
-import { stdRenderPipeline } from "./pipelines/std-mesh.js";
-import {
-  computeUniData,
-  meshPoolPtr,
-  MeshUniformTS,
-} from "./pipelines/std-scene.js";
+import { meshPoolPtr } from "./pipelines/std-scene.js";
 import { CanvasDef } from "../canvas.js";
 import { FORCE_WEBGL } from "../main.js";
 import { createRenderer } from "./renderer-webgpu.js";
-import { CyMeshPoolPtr, CyPipelinePtr, CyTexturePtr } from "./gpu-registry.js";
+import { CyMeshPoolPtr, CyPipelinePtr } from "./gpu-registry.js";
 import { createFrame, WorldFrameDef } from "../physics/nonintersection.js";
 import { tempVec3 } from "../temp-pool.js";
-import {
-  isMeshHandle,
-  MeshHandle,
-  MeshPool,
-  MeshReserve,
-} from "./mesh-pool.js";
-import { mapMeshPositions, Mesh } from "./mesh.js";
-import { SceneTS } from "./pipelines/std-scene.js";
-import { max } from "../math.js";
-import {
-  aabbDbg,
-  frustumFromBounds,
-  getFrustumWorldCorners,
-  mat4Dbg,
-  positionAndTargetToOrthoViewProjMatrix,
-  vec3Dbg,
-} from "../utils-3d.js";
+import { isMeshHandle, MeshHandle, MeshReserve } from "./mesh-pool.js";
+import { Mesh } from "./mesh.js";
+import { frustumFromBounds, getFrustumWorldCorners } from "../utils-3d.js";
 import { ShadersDef, ShaderSet } from "./shader-loader.js";
-import {
-  dbgLogLineBatch,
-  dbgLogNextBatch,
-  dbgLogOnce,
-  dbgOnce,
-  never,
-  range,
-  TupleN,
-} from "../util.js";
+import { dbgLogOnce } from "../util.js";
 import { TimeDef } from "../time.js";
 import { PartyDef } from "../games/party.js";
-import { PointLightDef, pointLightsPtr, PointLightTS } from "./lights.js";
-import {
-  computeOceanUniData,
-  OceanMeshHandle,
-  OceanUniTS,
-} from "./pipelines/std-ocean.js";
+import { PointLightDef } from "./lights.js";
 import { assert } from "../util.js";
 import {
   DONT_SMOOTH_WORLD_FRAME,
   PERF_DBG_GPU,
   VERBOSE_LOG,
 } from "../flags.js";
-import { ALPHA_MASK } from "./pipeline-masks.js";
-import { RenderDataGrassDef, computeGrassUniData } from "../smol/std-grass.js";
-import { WindDef } from "../smol/wind.js";
-import {
-  clampToAABB,
-  createAABB,
-  getAABBCornersTemp,
-  getAABBFromPositions,
-} from "../physics/aabb.js";
-import { drawBall } from "../utils-game.js";
-import { createGizmoMesh } from "../primatives.js";
+import { clampToAABB } from "../physics/aabb.js";
 
 const BLEND_SIMULATION_FRAMES_STRATEGY: "interpolate" | "extrapolate" | "none" =
   "none";

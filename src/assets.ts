@@ -51,7 +51,6 @@ import { tempMat4, tempVec3 } from "./temp-pool.js";
 import {
   BOAT_MESH,
   BULLET_MESH,
-  createGizmoMesh,
   CUBE_MESH,
   DBG_FABRIC,
   GRID_PLANE_MESH,
@@ -65,6 +64,7 @@ import {
   TETRA_MESH,
   TRI_FENCE,
 } from "./primatives.js";
+import { createGizmoMesh } from "./gizmos.js";
 
 // TODO: load these via streaming
 // TODO(@darzu): it's really bad that all these assets are loaded for each game

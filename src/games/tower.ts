@@ -75,9 +75,9 @@ import {
   predictBullet,
   simulateBullet,
 } from "./bullet.js";
-import { createLineMesh } from "../primatives.js";
 import { dbgOnce } from "../util.js";
 import { drawBall } from "../utils-game.js";
+import { createLineMesh } from "../gizmos.js";
 
 // TODO(@darzu): what's registerDestroyPirateHandler about?
 
