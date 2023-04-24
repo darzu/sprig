@@ -12,7 +12,9 @@ import { DISABLE_GERSTNER } from "../../flags.js";
 //        for this reason, for now, I've decided that my biggest shaped waves are pure sine waves so you don't get a huge amount of swaying
 // TODO(@darzu): [ ] interactively shape bigger waves using fourier-ish approach
 
-const roughness = 0.5;
+// TODO(@darzu): EXPORT THIS VAR
+const roughness = 0.1;
+// const roughness = 0.5;
 const steepness = 1.0 * roughness;
 const bigWave = 1.0 * roughness;
 const littleSpikes = 1.0 * roughness;

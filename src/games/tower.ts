@@ -69,7 +69,12 @@ import { createRibSailNow, RibSailLocalDef } from "./hyperspace/ribsail.js";
 import { MeDef } from "../net/components.js";
 import { WindDef } from "../smol/wind.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
-import { fireBullet, predictBullet, simulateBullet } from "./bullet.js";
+import {
+  bulletTimeOfFlight,
+  fireBullet,
+  predictBullet,
+  simulateBullet,
+} from "./bullet.js";
 import { createLineMesh } from "../primatives.js";
 import { dbgOnce } from "../util.js";
 import { drawBall } from "../utils-game.js";
@@ -514,7 +519,7 @@ EM.registerSystem(
           // console.log(`fireAngle:${fireAngle}`);
           const range =
             (speed ** 2 * Math.sin(2 * fireAngle)) / (2 * gravity * 0.00001);
-          function drawRange(range: number, color: vec3) {
+          function drawRange(range: number, color: vec3, y: number) {
             // console.log(`range: ${range}`);
             const fwdXZ = vec3.clone(fwd);
             fwdXZ[1] = 0;
@@ -526,6 +531,8 @@ EM.registerSystem(
               vec3.scale(fwdXZ, range),
               cannon.world.position
             );
+            // drawBall(vec3.clone(impactPoint), 2, color);
+            impactPoint[1] = y; // TODO(@darzu):
             // console.log("impactPoint: " + vec3Dbg(impactPoint));
             drawBall(vec3.clone(impactPoint), 2, color);
           }
@@ -534,13 +541,15 @@ EM.registerSystem(
           const v = speed;
           const g = 2 * gravity * 0.00001;
           const theta = fireAngle;
-          // const y0 = cannon.world.position[1];
-          const y0 = 0;
+          const y0 = cannon.world.position[1];
+          console.log(`y0: ${y0}`);
+          // const y0 = 0;
           const range2 =
             (v ** 2 / g) *
             Math.sin(2 * theta) *
             (1 + Math.sqrt(1 + (2 * g * y0) / (v ** 2 * Math.sin(theta) ** 2)));
-          const h = 0;
+          // const h = 0;
+          const h = y0;
           const range3 =
             v ** (2 / g) *
             Math.sin(2 * theta) *
@@ -551,19 +560,50 @@ EM.registerSystem(
 
           {
             // const R = 100;
-            const theta = (R: number) => (1 / 2) * Math.asin((g * R) / v ** 2);
+            const rangeToAngleFlat = (R: number) =>
+              (1 / 2) * Math.asin((g * R) / v ** 2);
+            // const theta2 = (R: number) =>
+            //   // (1 / 2) * Math.asin((g * R) / (v ** 2 + 2 * g * y0));
+            //   // (1 / 2) * Math.asin((g * R) / (v ** 2 + 2 * g * y0));
+            //   Math.atan(
+            //     (v ** 2 -
+            //       Math.sqrt(v ** 4 - g * (g * R ** 2 + 2 * y0 * v ** 2))) /
+            //       (g * R)
+            //   );
+            const range2 = (theta: number) =>
+              (v ** 2 / g) * Math.sin(2 * theta) +
+              h * Math.cos(theta) ** 2 * Math.sqrt(g / (2 * v ** 2));
+            const rang2Term = (theta: number) =>
+              h * Math.cos(theta) ** 2 * Math.sqrt(g / (2 * v ** 2));
 
             for (let r = 0; r < 100; r += 10) {
-              if (isNaN(r)) continue;
-              const angle = theta(r);
+              // if (isNaN(r)) continue;
+              const angle = rangeToAngleFlat(r);
+              if (isNaN(angle)) continue;
               const colorIdx = seqEndesga16NextIdx();
               const color = AllEndesga16[colorIdx];
               const colorName = AllEndesga16Names[colorIdx];
               console.log(`R ${r} -> theta ${angle.toFixed(2)} (${colorName})`);
               const dir = V(0, Math.sin(angle), -Math.cos(angle));
               vec3.transformQuat(dir, tower.rotation, dir);
-              drawSimBulletTrail2(200, color, dir, 10);
-              drawRange(r, color);
+              drawRange(r, color, y0);
+
+              const vy = Math.sin(angle) * speed;
+              const tof = bulletTimeOfFlight(vy, y0, -gravity * 0.00001);
+              const vel = vec3.scale(dir, speed);
+              const impact = predictBullet(
+                cannon.world.position,
+                vel,
+                tV(0, -gravity, 0),
+                tof
+              );
+              drawBall(vec3.clone(impact), 2, color);
+
+              drawSimBulletTrail2(200, color, dir, tof / 200 + 1);
+
+              // const r2 = range2(angle);
+              // console.log(`extra: ${rang2Term(angle)}`);
+              // drawRange(r2, color, y0 - 2);
             }
           }
 

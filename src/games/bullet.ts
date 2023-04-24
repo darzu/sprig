@@ -364,3 +364,35 @@ export function predictBullet(
   out[2] = pos[2] + vel[2] * t + grav[2] * 0.00001 * t * t;
   return out;
 }
+
+// TODO(@darzu): parameterize by target y
+export function bulletTimeOfFlight(vy: number, y0: number, ay: number): number {
+  console.dir({ vy, y0, ay });
+  const s = Math.sqrt(vy ** 2 - 4 * ay * y0);
+  const tof1 = (-vy + s) / (2 * ay);
+  const tof2 = (-vy - s) / (2 * ay);
+  console.log(`tof1: ${tof1} vs tof2: ${tof2}`);
+  return Math.max(tof1, tof2);
+}
+
+// TODO-30: impl and test range->angle w/ polynomial approx
+
+export function initBulletPredictors() {
+  // TODO(@darzu):
+
+  const angleAndRange: [number, number][] = [];
+}
+
+// TODO(@darzu): IMPL
+// export function bulletRangeToAngle(
+//   initPos: vec3,
+//   // TODO(@darzu): use velocity vector again so we can work in 3D?
+//   initVel: number,
+//   grav: vec3,
+//   range: number,
+//   out?: vec3
+// ): number {
+//   // range = initPos[0] + vel[0] * t + grav[0] * 0.00001 * t * t;
+//   // 0 = initPos[1] + vel[1] * t + grav[1] * 0.00001 * t * t;
+//   // return out;
+// }

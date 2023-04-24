@@ -441,3 +441,9 @@ prediction and physics using parametric motion:
   #3 analytic AI prediction. Enemy AI needs to be able to aim their cannon. With a parametric equation we can solve for the appropriate angle to aim and the fuzz it to change probability of hit.
 
   One cool thing about our system is that this is trivial for our physics to handle since it only cares about previous frame vs current frame positions, unlike a traditional physics system where being able to impart impulses is the main way they maintain constraints and they can only do that if objects are moving according to velocity + acceleration + jerk.
+
+Projectile physics:
+  https://phys.libretexts.org/Bookshelves/University_Physics/Book%3A_Physics_(Boundless)/3%3A_Two-Dimensional_Kinematics/3.3%3A_Projectile_Motion
+
+  const theta = (R: number) => (1 / 2) * Math.asin((g * R) / v ** 2);
+  const R = (speed ** 2 * Math.sin(2 * theta)) / g;
