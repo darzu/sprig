@@ -87,3 +87,10 @@ HTML drag events:
 
 Well regarded window manager:
   https://awesomewm.org
+
+C++ imgui:
+  https://github.com/ocornut/imgui
+  "Dear ImGui: Bloat-free Graphical User interface for C++ with minimal dependencies"
+  used by tons of AAA games
+  https://github.com/ocornut/imgui/wiki/Software-using-dear-imgui
+  not meant to be user facing

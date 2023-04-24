@@ -354,34 +354,45 @@ export function* simulateBullet(
 export function predictBullet(
   pos: vec3,
   vel: vec3,
-  grav: vec3,
+  accel: vec3,
   t: number,
   out?: vec3
 ): vec3 {
   out = out ?? vec3.tmp();
-  out[0] = pos[0] + vel[0] * t + grav[0] * 0.00001 * t * t;
-  out[1] = pos[1] + vel[1] * t + grav[1] * 0.00001 * t * t;
-  out[2] = pos[2] + vel[2] * t + grav[2] * 0.00001 * t * t;
+  out[0] = pos[0] + vel[0] * t + accel[0] * t * t;
+  out[1] = pos[1] + vel[1] * t + accel[1] * t * t;
+  out[2] = pos[2] + vel[2] * t + accel[2] * t * t;
   return out;
 }
 
 // TODO(@darzu): parameterize by target y
 export function bulletTimeOfFlight(vy: number, y0: number, ay: number): number {
-  console.dir({ vy, y0, ay });
+  // console.dir({ vy, y0, ay });
   const s = Math.sqrt(vy ** 2 - 4 * ay * y0);
   const tof1 = (-vy + s) / (2 * ay);
   const tof2 = (-vy - s) / (2 * ay);
-  console.log(`tof1: ${tof1} vs tof2: ${tof2}`);
+  // console.log(`tof1: ${tof1} vs tof2: ${tof2}`);
   return Math.max(tof1, tof2);
 }
 
 // TODO-30: impl and test range->angle w/ polynomial approx
+// TODO-30: graph a surface
 
-export function initBulletPredictors() {
-  // TODO(@darzu):
+// export function createBulletPreditor(vy: number, ay: number, y0: number) {
+//   // TODO(@darzu):
 
-  const angleAndRange: [number, number][] = [];
-}
+//   const angleAndRange: [number, number][] = [];
+
+//   const vy = Math.sin(angle) * speed;
+//   const tof = bulletTimeOfFlight(vy, y0, -gravity * 0.00001);
+//   const vel = vec3.scale(dir, speed);
+//   const impact = predictBullet(
+//     cannon.world.position,
+//     vel,
+//     tV(0, -gravity * 0.00001, 0),
+//     tof
+//   );
+// }
 
 // TODO(@darzu): IMPL
 // export function bulletRangeToAngle(

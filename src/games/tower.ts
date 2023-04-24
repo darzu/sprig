@@ -594,7 +594,7 @@ EM.registerSystem(
               const impact = predictBullet(
                 cannon.world.position,
                 vel,
-                tV(0, -gravity, 0),
+                tV(0, -gravity * 0.00001, 0),
                 tof
               );
               drawBall(vec3.clone(impact), 2, color);
@@ -666,7 +666,7 @@ EM.registerSystem(
             _dir ??
             vec3.transformQuat([0, 0, -1], cannon.world.rotation, __temp1);
           const vel = vec3.scale(dir, speed, __temp1);
-          const grav = vec3.set(0, -gravity, 0, __temp2);
+          const grav = vec3.set(0, -gravity * 0.00001, 0, __temp2);
           const pred = (t: number) =>
             predictBullet(cannon.world.position, vel, grav, t, __temp5);
 
