@@ -282,7 +282,12 @@ function createGridPlane(width: number, height: number): RawMesh {
 
 export const DBG_FABRIC = createFlatQuadMesh(5, 5);
 
-export function createFlatQuadMesh(width: number, height: number): Mesh {
+export function createFlatQuadMesh(
+  width: number,
+  height: number,
+  doubleSided = false
+): Mesh {
+  assert(width > 1 && height > 1);
   const pos: vec3[] = [];
   const quad: vec4[] = [];
   const uvs: vec2[] = [];
@@ -300,13 +305,24 @@ export function createFlatQuadMesh(width: number, height: number): Mesh {
   // create each quad
   for (let x = 0; x < height - 1; x++) {
     for (let z = 0; z < width - 1; z++) {
-      const q: vec4 = vec4.clone([
-        idx(x, z + 1),
-        idx(x + 1, z + 1),
-        idx(x + 1, z),
-        idx(x, z),
-      ]);
-      quad.push(q);
+      quad.push(
+        V(
+          idx(x, z + 1), //
+          idx(x + 1, z + 1),
+          idx(x + 1, z),
+          idx(x, z)
+        )
+      );
+      if (doubleSided) {
+        quad.push(
+          V(
+            idx(x, z), //
+            idx(x + 1, z),
+            idx(x + 1, z + 1),
+            idx(x, z + 1)
+          )
+        );
+      }
       // quad.push(vec4.clone([q[3], q[2], q[1], q[0]]));
     }
   }

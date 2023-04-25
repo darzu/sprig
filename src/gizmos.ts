@@ -1,6 +1,8 @@
 import { AABB } from "./physics/aabb.js";
+import { createFlatQuadMesh } from "./primatives.js";
 import { Mesh, mergeMeshes } from "./render/mesh.js";
 import { vec3, V, tV } from "./sprig-matrix.js";
+import { assert } from "./util.js";
 import { orthonormalize, vec3Dbg } from "./utils-3d.js";
 import { createEmptyMesh } from "./wood.js";
 
@@ -105,6 +107,9 @@ export function createGraph3DAxesMesh(opts: GraphOptions): Mesh {
       vec3.set(-halfWidth, -halfWidth, -halfWidth, _end);
       _start[i] = j * worldIntLength + opts.intervalGap;
       _end[i] = (j + 1) * worldIntLength - opts.intervalGap;
+      // TODO(@darzu): TEST world min
+      vec3.add(_start, opts.worldSize.min, _start);
+      vec3.add(_end, opts.worldSize.min, _end);
       // console.log(`${vec3Dbg(_start)} -> ${vec3Dbg(_end)}`);
       const ln = createLineMesh(opts.axisWidth, _start, _end, ups[i]);
       ln.colors.forEach((c) => (c[i] = 1.0)); // set R, G, or B
@@ -115,5 +120,22 @@ export function createGraph3DAxesMesh(opts: GraphOptions): Mesh {
   const mesh = mergeMeshes(...axes) as Mesh;
   mesh.usesProvoking = true;
 
+  return mesh;
+}
+
+export function createGraph3DDataMesh(data: vec3[][]): Mesh {
+  assert(data.length > 1 && data[0].length > 1);
+  const xLen = data.length;
+  const zLen = data[0].length;
+  const mesh = createFlatQuadMesh(zLen, xLen, true);
+  // mesh.surfaceIds.fill(1);
+  for (let x = 0; x < xLen; x++) {
+    assert(data[x].length === zLen);
+    for (let z = 0; z < zLen; z++) {
+      const idx = z + x * zLen;
+      const pos = data[x][z];
+      vec3.copy(mesh.pos[idx], pos);
+    }
+  }
   return mesh;
 }
