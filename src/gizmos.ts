@@ -83,7 +83,7 @@ export function createGizmoMesh(): Mesh {
 }
 
 export interface GraphOptions {
-  intervalLength: vec3;
+  intervalDomainLength: vec3;
   intervalGap: number;
   domainSize: AABB;
   worldSize: AABB;
@@ -97,7 +97,7 @@ export function createGraph3DAxesMesh(opts: GraphOptions): Mesh {
   const ups = [tV(0, 1, 0), tV(0, 0, 1), tV(1, 0, 0)];
   for (let i of [0, 1, 2]) {
     const domainLength = opts.domainSize.max[i] - opts.domainSize.min[i];
-    const numIntervals = Math.ceil(domainLength / opts.intervalLength[i]);
+    const numIntervals = Math.ceil(domainLength / opts.intervalDomainLength[i]);
     const worldLength = opts.worldSize.max[i] - opts.worldSize.min[i];
     const worldIntLength = worldLength / numIntervals;
     let _start = vec3.tmp();

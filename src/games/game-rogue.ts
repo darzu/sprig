@@ -15,6 +15,7 @@ import {
   AABB,
   updateAABBWithPoint,
   aabbCenter,
+  getHalfsizeFromAABB,
 } from "../physics/aabb.js";
 import { AABBCollider, ColliderDef } from "../physics/collider.js";
 import { AngularVelocityDef, LinearVelocityDef } from "../physics/motion.js";
@@ -32,7 +33,6 @@ import { PointLightDef } from "../render/lights.js";
 import {
   cloneMesh,
   getAABBFromMesh,
-  getHalfsizeFromAABB,
   Mesh,
   scaleMesh3,
   transformMesh,
@@ -661,7 +661,7 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
       // debug render floor
       const mesh = cloneMesh(res.assets.cube.mesh);
       assert(aabbEnt.collider.shape === "AABB");
-      const size = getHalfsizeFromAABB(aabbEnt.collider.aabb);
+      const size = getHalfsizeFromAABB(aabbEnt.collider.aabb, vec3.create());
       const center = aabbCenter(tempVec3(), aabbEnt.collider.aabb);
       scaleMesh3(mesh, size);
       transformMesh(mesh, mat4.fromTranslation(center));

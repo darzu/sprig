@@ -74,6 +74,7 @@ import { createFlatQuadMesh, makeDome } from "../primatives.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
 import { startTowers } from "../games/tower.js";
 import { createGraph3DAxesMesh, createGraph3DDataMesh } from "../gizmos.js";
+import { createGraph3D } from "../utils-gizmos.js";
 
 /*
 NOTES:
@@ -918,29 +919,7 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
     res.assets.gizmo.proto
   );
 
-  // debug graphing
-  const graphMesh = createGraph3DAxesMesh({
-    intervalLength: V(12, 13, 14),
-    domainSize: {
-      min: V(0, 0, 0),
-      max: V(100, 100, 100),
-    },
-    worldSize: {
-      min: V(0, 0, 0),
-      max: V(50, 50, 50),
-    },
-    axisWidth: 0.5,
-    intervalGap: 0.25,
-  });
-  const graph = EM.new();
-  EM.ensureComponentOn(graph, RenderableConstructDef, graphMesh);
-  EM.ensureComponentOn(
-    graph,
-    PositionDef,
-    vec3.add(worldGizmo.position, [50, 10, 50], V(0, 0, 0))
-  );
-
-  // TODO(@darzu): IMPROVE:
+  // debugging createGraph3D
   let data: vec3[][] = [];
   for (let x = 0; x < 12; x++) {
     data[x] = [];
@@ -948,16 +927,7 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
       data[x][z] = V(x, x + z, z);
     }
   }
-  const graphSurf = EM.new();
-  const graphSurfMesh = createGraph3DDataMesh(data);
-  EM.ensureComponentOn(graphSurf, RenderableConstructDef, graphSurfMesh);
-  EM.ensureComponentOn(
-    graphSurf,
-    PositionDef
-    // vec3.add(worldGizmo.position, [50, 10, 50], V(0, 0, 0))
-  );
-  EM.ensureComponentOn(graphSurf, PhysicsParentDef, graph.id);
-  EM.ensureComponentOn(graphSurf, ColorDef, ENDESGA16.lightGreen);
+  createGraph3D(vec3.add(worldGizmo.position, [50, 10, 50], V(0, 0, 0)), data);
 }
 
 async function createPlayer() {

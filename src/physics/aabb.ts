@@ -1,6 +1,7 @@
 import { clamp } from "../math.js";
 import { mat4, V, vec2, vec3 } from "../sprig-matrix.js";
 import { range } from "../util.js";
+import { vec3Mid } from "../utils-3d.js";
 
 export function __resetAABBDbgCounters() {
   _doesOverlapAABBs = 0;
@@ -188,5 +189,24 @@ export function updateAABBWithPoint2_(
 export function aabbCenter2(out: vec2, a: AABB2): vec2 {
   out[0] = (a.min[0] + a.max[0]) * 0.5;
   out[1] = (a.min[1] + a.max[1]) * 0.5;
+  return out;
+}
+
+// TODO(@darzu): add out param
+export function getCenterFromAABB(aabb: AABB): vec3 {
+  return vec3Mid(vec3.create(), aabb.min, aabb.max);
+}
+export function getSizeFromAABB(aabb: AABB, out?: vec3): vec3 {
+  out = out ?? vec3.tmp();
+  out[0] = aabb.max[0] - aabb.min[0];
+  out[1] = aabb.max[1] - aabb.min[1];
+  out[2] = aabb.max[2] - aabb.min[2];
+  return out;
+}
+export function getHalfsizeFromAABB(aabb: AABB, out?: vec3): vec3 {
+  out = out ?? vec3.tmp();
+  out[0] = (aabb.max[0] - aabb.min[0]) * 0.5;
+  out[1] = (aabb.max[1] - aabb.min[1]) * 0.5;
+  out[2] = (aabb.max[2] - aabb.min[2]) * 0.5;
   return out;
 }

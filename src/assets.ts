@@ -4,8 +4,6 @@ import { importObj, isParseError } from "./import_obj.js";
 import {
   cloneMesh,
   getAABBFromMesh,
-  getCenterFromAABB,
-  getHalfsizeFromAABB,
   getMeshAsGrid,
   mapMeshPositions,
   mergeMeshes,
@@ -17,7 +15,11 @@ import {
   transformMesh,
   validateMesh,
 } from "./render/mesh.js";
-import { AABB } from "./physics/aabb.js";
+import {
+  AABB,
+  getCenterFromAABB,
+  getHalfsizeFromAABB,
+} from "./physics/aabb.js";
 import { RendererDef } from "./render/renderer-ecs.js";
 import { Renderer } from "./render/renderer-ecs.js";
 import { assert } from "./util.js";
@@ -586,7 +588,7 @@ export function gameMeshFromMesh(
   const mesh = normalizeMesh(rawMesh);
   const aabb = getAABBFromMesh(mesh);
   const center = getCenterFromAABB(aabb);
-  const halfsize = getHalfsizeFromAABB(aabb);
+  const halfsize = getHalfsizeFromAABB(aabb, vec3.create());
   const proto = renderer.stdPool.addMesh(mesh, reserve);
   const uniqueVerts = getUniqueVerts(mesh);
   const support = (d: vec3) => farthestPointInDir(uniqueVerts, d);

@@ -420,18 +420,6 @@ export function normalizeMesh(inM: RawMesh): Mesh {
 export function getAABBFromMesh(m: RawMesh): AABB {
   return getAABBFromPositions(createAABB(), m.pos);
 }
-export function getCenterFromAABB(aabb: AABB): vec3 {
-  return vec3Mid(vec3.create(), aabb.min, aabb.max);
-}
-export function getHalfsizeFromAABB(aabb: AABB): vec3 {
-  const out = vec3.create();
-  const a = aabb.max;
-  const b = aabb.min;
-  out[0] = (a[0] - b[0]) * 0.5;
-  out[1] = (a[1] - b[1]) * 0.5;
-  out[2] = (a[2] - b[2]) * 0.5;
-  return out;
-}
 // TODO(@darzu): PERF. this is pretty inefficient. We're mutating the mesh,
 //   so we should be re-using the vecs
 export function mapMeshPositions(
