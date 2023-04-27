@@ -16,7 +16,7 @@ onInit((em: EntityManager) => {
     (objs, res) => {
       const t = vec3.tmp();
       for (let b of objs) {
-        vec3.scale(b.gravity, 0.00001 * res.time.dt, t);
+        vec3.scale(b.gravity, res.time.dt, t);
         vec3.add(b.linearVelocity, t, b.linearVelocity);
       }
     },

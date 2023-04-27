@@ -69,16 +69,12 @@ import { createRibSailNow, RibSailLocalDef } from "./hyperspace/ribsail.js";
 import { MeDef } from "../net/components.js";
 import { WindDef } from "../smol/wind.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
-import {
-  bulletTimeOfFlight,
-  fireBullet,
-  predictBullet,
-  simulateBullet,
-} from "./bullet.js";
+import { bulletTimeOfFlight, fireBullet, simulateBullet } from "./bullet.js";
 import { dbgOnce } from "../util.js";
 import { drawBall } from "../utils-game.js";
 import { createGraph3DAxesMesh, createLineMesh } from "../gizmos.js";
 import { createGraph3D } from "../utils-gizmos.js";
+import { projectilePosition } from "./parametric-motion.js";
 
 // TODO(@darzu): what's registerDestroyPirateHandler about?
 
@@ -495,12 +491,12 @@ EM.registerSystem(
       let doFire = res.time.time > nextFire;
       if (doFire) {
         const cannon = tower.towerPlatform.cannon()!;
-        const speed = 0.05;
-        // const speed = 0.1;
+        // const speed = 0.05;
+        const speed = 0.1;
         const rotSpeed = 0.02;
-        const oldGravity = 3;
-        const gravity = 1.5;
-        // const gravity = 6.0;
+        const oldGravity = 3 * 0.00001;
+        // const gravity = 1.5;
+        const gravity = 3.5 * 0.00001;
 
         if (__frame > 40 && idx <= 1 && dbgOnce(`dbgProjectile${idx}`)) {
           // drawSimBulletTrail(16.666, ENDESGA16.orange);
@@ -513,15 +509,14 @@ EM.registerSystem(
           const fireAngle = angleBetween(1, 0, -fwd[2], fwd[1]);
 
           // // gravity
-          // vec3.add(linVel, vec3.scale(grav, 0.00001 * dt, __simTemp1), linVel);
+          // vec3.add(linVel, vec3.scale(grav, dt, __simTemp1), linVel);
           // // velocity
           // vec3.add(pos, vec3.scale(linVel, dt, __simTemp1), pos);
 
           // range
           //  (v^2 * sin(2*theta)) / g
           // console.log(`fireAngle:${fireAngle}`);
-          const range =
-            (speed ** 2 * Math.sin(2 * fireAngle)) / (2 * gravity * 0.00001);
+          const range = (speed ** 2 * Math.sin(2 * fireAngle)) / (2 * gravity);
           function drawRange(range: number, color: vec3, y: number) {
             // console.log(`range: ${range}`);
             const fwdXZ = vec3.clone(fwd);
@@ -542,7 +537,7 @@ EM.registerSystem(
           // drawRange(range, ENDESGA16.red);
 
           const v = speed;
-          const g = 2 * gravity * 0.00001;
+          const g = 2 * gravity;
           const theta = fireAngle;
           const y0 = cannon.world.position[1];
           console.log(`y0: ${y0}`);
@@ -592,12 +587,12 @@ EM.registerSystem(
               drawRange(r, color, y0);
 
               const vy = Math.sin(angle) * speed;
-              const tof = bulletTimeOfFlight(vy, y0, -gravity * 0.00001);
+              const tof = bulletTimeOfFlight(vy, y0, -gravity);
               const vel = vec3.scale(dir, speed);
-              const impact = predictBullet(
+              const impact = projectilePosition(
                 cannon.world.position,
                 vel,
-                tV(0, -gravity * 0.00001, 0),
+                tV(0, -gravity, 0),
                 tof
               );
               drawBall(vec3.clone(impact), 2, color);
@@ -632,9 +627,14 @@ EM.registerSystem(
               const dir = tV(0, Math.sin(angle), -Math.cos(angle));
               const vel = vec3.scale(dir, speed);
               const vy = vel[1];
-              const ay = -gravity * 0.00001;
+              const ay = -gravity;
               const tof = bulletTimeOfFlight(vy, y0, ay);
-              const impact = predictBullet(tV(0, 0, 0), vel, tV(0, ay, 0), tof);
+              const impact = projectilePosition(
+                tV(0, 0, 0),
+                vel,
+                tV(0, ay, 0),
+                tof
+              );
               const range = -impact[2];
               angleVsSpeedData[i][j] = V(angle, range, speed);
             }
@@ -663,9 +663,9 @@ EM.registerSystem(
                 const dir = tV(0, Math.sin(angle), -Math.cos(angle));
                 const vel = vec3.scale(dir, speed);
                 const vy = vel[1];
-                const ay = -gravity * 0.00001;
+                const ay = -gravity;
                 const tof = bulletTimeOfFlight(vy, height, ay);
-                const impact = predictBullet(
+                const impact = projectilePosition(
                   tV(0, 0, 0),
                   vel,
                   tV(0, ay, 0),
@@ -703,9 +703,9 @@ EM.registerSystem(
                 const gravity = 1.0 + j * (5.0 / 10.0);
                 const vel = vec3.scale(dir, speed);
                 const vy = vel[1];
-                const ay = -gravity * 0.00001;
+                const ay = -gravity;
                 const tof = bulletTimeOfFlight(vy, height, ay);
-                const impact = predictBullet(
+                const impact = projectilePosition(
                   tV(0, 0, 0),
                   vel,
                   tV(0, ay, 0),
@@ -779,9 +779,9 @@ EM.registerSystem(
             _dir ??
             vec3.transformQuat([0, 0, -1], cannon.world.rotation, __temp1);
           const vel = vec3.scale(dir, speed, __temp1);
-          const grav = vec3.set(0, -gravity * 0.00001, 0, __temp2);
+          const grav = vec3.set(0, -gravity, 0, __temp2);
           const pred = (t: number) =>
-            predictBullet(cannon.world.position, vel, grav, t, __temp5);
+            projectilePosition(cannon.world.position, vel, grav, t, __temp5);
 
           let pos0 = vec3.zero(__temp3);
           let pos1 = vec3.zero(__temp4);

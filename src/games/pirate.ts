@@ -243,7 +243,7 @@ export async function startPirates() {
               c.world.rotation,
               0.05,
               0.02,
-              3,
+              3 * 0.00001,
               ballHealth
             );
           }

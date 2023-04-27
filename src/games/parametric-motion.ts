@@ -7,7 +7,7 @@ import { PositionDef } from "../physics/transform.js";
 export interface ParamProjectile {
   pos: vec3;
   vel: vec3;
-  grav: vec3;
+  accel: vec3;
 }
 
 export const ParametricDef = EM.defineComponent(
@@ -17,7 +17,7 @@ export const ParametricDef = EM.defineComponent(
       init: init ?? {
         pos: V(0, 0, 0),
         vel: V(0, 1, 0),
-        grav: V(0, 0, 0),
+        accel: V(0, 0, 0),
       },
       startMs: startMs ?? 0,
     };
@@ -31,8 +31,10 @@ onInit((em: EntityManager) => {
     [TimeDef],
     (es, res) => {
       for (let e of es) {
-        paramProjectileFn(
-          e.parametric.init,
+        projectilePosition(
+          e.parametric.init.pos,
+          e.parametric.init.vel,
+          e.parametric.init.accel,
           res.time.time - e.parametric.startMs,
           e.position
         );
@@ -42,16 +44,17 @@ onInit((em: EntityManager) => {
   );
 });
 
-export function paramProjectileFn(
-  start: ParamProjectile,
+export function projectilePosition(
+  pos: vec3,
+  vel: vec3,
+  accel: vec3,
   t: number,
   out?: vec3
 ): vec3 {
   out = out ?? vec3.tmp();
-  // TODO(@darzu): HACK. move 0.00001 elsewhere? fix units?
-  out[0] = start.pos[0] + start.vel[0] * t + start.grav[0] * 0.00001 * t * t;
-  out[1] = start.pos[1] + start.vel[1] * t + start.grav[1] * 0.00001 * t * t;
-  out[2] = start.pos[2] + start.vel[2] * t + start.grav[2] * 0.00001 * t * t;
+  out[0] = pos[0] + vel[0] * t + accel[0] * t * t;
+  out[1] = pos[1] + vel[1] * t + accel[1] * t * t;
+  out[2] = pos[2] + vel[2] * t + accel[2] * t * t;
   return out;
 }
 

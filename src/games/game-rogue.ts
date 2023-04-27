@@ -386,7 +386,7 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
     }
 
     vec3.copy(ball.position, pos);
-    vec3.copy(ball.gravity, [0, -3, 0]);
+    vec3.copy(ball.gravity, [0, -3 * 0.00001, 0]);
     vec3.zero(ball.linearVelocity);
     if (ScaleDef.isOn(ball)) vec3.copy(ball.scale, vec3.ONES);
   }
@@ -421,7 +421,7 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
             0.02,
             // gravity:
             // 3, (non-parametric)
-            1.5, // parametric
+            1.5 * 0.00001, // parametric
             ballHealth
           );
 
@@ -519,7 +519,16 @@ export async function initRogueGame(em: EntityManager, hosting: boolean) {
         const fireDir = quat.create();
         quat.copy(fireDir, ghost.world.rotation);
         const ballHealth = 2.0;
-        fireBullet(em, 1, firePos, fireDir, 0.05, 0.02, 3, ballHealth);
+        fireBullet(
+          em,
+          1,
+          firePos,
+          fireDir,
+          0.05,
+          0.02,
+          3 * 0.00001,
+          ballHealth
+        );
       }
 
       if (inputs.keyClicks["r"]) {

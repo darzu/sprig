@@ -36,7 +36,7 @@ export const ControllableDef = EM.defineComponent("controllable", () => {
   return {
     speed: 0.0005,
     sprintMul: 3,
-    gravity: 0.1,
+    gravity: 0.1 / 1000,
     jumpSpeed: 0.003,
     turnSpeed: 0.001,
     requiresPointerLock: true,
@@ -93,7 +93,7 @@ export function registerControllableSystems(em: EntityManager) {
         }
 
         if (modes.canFall)
-          c.linearVelocity[1] -= (c.controllable.gravity / 1000) * res.time.dt;
+          c.linearVelocity[1] -= c.controllable.gravity * res.time.dt;
 
         if (modes.canJump)
           if (res.inputs.keyClicks[" "])

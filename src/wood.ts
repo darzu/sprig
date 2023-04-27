@@ -359,7 +359,7 @@ onInit((em: EntityManager) => {
                 em.ensureComponentOn(splinter, LinearVelocityDef);
                 vec3.copy(splinter.linearVelocity, spin);
                 em.ensureComponentOn(splinter, GravityDef);
-                vec3.copy(splinter.gravity, [0, -3, 0]);
+                vec3.copy(splinter.gravity, [0, -3 * 0.00001, 0]);
               }
 
               if (h.prev && !h.prev.broken) {

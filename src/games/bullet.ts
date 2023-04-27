@@ -141,7 +141,7 @@ export function createOrResetBullet(
   em.ensureComponentOn(e, ParametricDef);
   vec3.copy(e.parametric.init.pos, props.location);
   vec3.copy(e.parametric.init.vel, props.linearVelocity);
-  vec3.copy(e.parametric.init.grav, [0, -props.gravity, 0]);
+  vec3.copy(e.parametric.init.accel, [0, -props.gravity, 0]);
   e.parametric.startMs = res.time.time;
 }
 
@@ -168,7 +168,7 @@ export function registerBulletUpdate(em: EntityManager) {
     (bullets, res) => {
       // for (let b of bullets) {
       //   b.linearVelocity[1] -=
-      //     0.00001 * b.bulletConstruct.gravity * res.time.dt;
+      //     b.bulletConstruct.gravity * res.time.dt;
       // }
     },
     "updateBullets"
@@ -269,7 +269,7 @@ async function initBulletPartPool() {
       em.ensureComponentOn(pe, LinearVelocityDef);
       em.ensureComponentOn(pe, AngularVelocityDef);
       // em.ensureComponentOn(pe, LifetimeDef, 2000);
-      em.ensureComponentOn(pe, GravityDef, V(0, -4, 0));
+      em.ensureComponentOn(pe, GravityDef, V(0, -4 * 0.00001, 0));
       em.ensureComponentOn(pe, SplinterParticleDef);
       bset.push(pe);
     }
@@ -318,7 +318,7 @@ export async function breakBullet(
     vec3.copy(pe.angularVelocity, vel);
     // em.ensureComponentOn(pe, LifetimeDef, 2000);
     em.ensureComponentOn(pe, GravityDef);
-    vec3.copy(pe.gravity, [0, -4, 0]);
+    vec3.copy(pe.gravity, [0, -4 * 0.00001, 0]);
   }
 
   em.ensureComponentOn(bullet, DeadDef);
@@ -342,27 +342,12 @@ export function* simulateBullet(
 
   while (true) {
     // gravity
-    vec3.add(linVel, vec3.scale(grav, 0.00001 * dt, __simTemp1), linVel);
+    vec3.add(linVel, vec3.scale(grav, dt, __simTemp1), linVel);
     // velocity
     vec3.add(pos, vec3.scale(linVel, dt, __simTemp1), pos);
 
     yield pos;
   }
-}
-
-// TODO(@darzu): de-dupe with parametric-motion.ts
-export function predictBullet(
-  pos: vec3,
-  vel: vec3,
-  accel: vec3,
-  t: number,
-  out?: vec3
-): vec3 {
-  out = out ?? vec3.tmp();
-  out[0] = pos[0] + vel[0] * t + accel[0] * t * t;
-  out[1] = pos[1] + vel[1] * t + accel[1] * t * t;
-  out[2] = pos[2] + vel[2] * t + accel[2] * t * t;
-  return out;
 }
 
 // TODO(@darzu): parameterize by target y
@@ -375,6 +360,32 @@ export function bulletTimeOfFlight(vy: number, y0: number, ay: number): number {
   return Math.max(tof1, tof2);
 }
 
+function bulletAngleFromRange() {
+  // for (let i = 0; i <= 10; i++) {
+  //   const angle = i * ((Math.PI * 0.5) / 10);
+  //   angleVsHeightData[i] = [];
+  //   for (let j = 0; j < 10; j++) {
+  //     const height = j * ((y0 * 2) / 10);
+  //     const dir = tV(0, Math.sin(angle), -Math.cos(angle));
+  //     const vel = vec3.scale(dir, speed);
+  //     const vy = vel[1];
+  //     const ay = -gravity * 0.00001;
+  //     const tof = bulletTimeOfFlight(vy, height, ay);
+  //     const impact = predictBullet(
+  //       tV(0, 0, 0),
+  //       vel,
+  //       tV(0, ay, 0),
+  //       tof
+  //     );
+  //     const range = -impact[2];
+  //     angleVsHeightData[i][j] = V(angle, range, height);
+  //   }
+  //   // console.log(
+  //   //   angleVsHeightData[i].map((v) => vec3Dbg(v)).join(", ")
+  //   // );
+  // }
+}
+
 // TODO-30: impl and test range->angle w/ polynomial approx
 // TODO-30: graph a surface
 
@@ -384,12 +395,12 @@ export function bulletTimeOfFlight(vy: number, y0: number, ay: number): number {
 //   const angleAndRange: [number, number][] = [];
 
 //   const vy = Math.sin(angle) * speed;
-//   const tof = bulletTimeOfFlight(vy, y0, -gravity * 0.00001);
+//   const tof = bulletTimeOfFlight(vy, y0, -gravity);
 //   const vel = vec3.scale(dir, speed);
 //   const impact = predictBullet(
 //     cannon.world.position,
 //     vel,
-//     tV(0, -gravity * 0.00001, 0),
+//     tV(0, -gravity, 0),
 //     tof
 //   );
 // }
@@ -403,7 +414,7 @@ export function bulletTimeOfFlight(vy: number, y0: number, ay: number): number {
 //   range: number,
 //   out?: vec3
 // ): number {
-//   // range = initPos[0] + vel[0] * t + grav[0] * 0.00001 * t * t;
-//   // 0 = initPos[1] + vel[1] * t + grav[1] * 0.00001 * t * t;
+//   // range = initPos[0] + vel[0] * t + grav[0] * t * t;
+//   // 0 = initPos[1] + vel[1] * t + grav[1] * t * t;
 //   // return out;
 // }

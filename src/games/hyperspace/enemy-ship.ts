@@ -290,7 +290,7 @@ export function registerEnemyShipSystems(em: EntityManager) {
               bulletSpeed,
               // TODO(@darzu): what stats here?
               0.02,
-              6,
+              6 * 0.00001,
               10
             );
           }
