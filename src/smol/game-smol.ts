@@ -135,7 +135,7 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
   let dbgGridCompose = createGridComposePipelines(dbgGrid);
 
   // TODO(@darzu): HACK. these have to be set before the CY instantiator runs.
-  outlineRender.fragOverrides!.lineWidth = 2.0;
+  outlineRender.fragOverrides!.lineWidth = 3.0;
 
   const res = await em.whenResources(
     AssetsDef,
