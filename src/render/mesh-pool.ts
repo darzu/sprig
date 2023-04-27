@@ -295,7 +295,10 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
   let currSetIdx = 0;
 
   const pushNewBuffSet = () => {
-    assert(sets.length + 1 <= ptr.maxSets, "Too many sets!");
+    assert(
+      sets.length + 1 <= ptr.maxSets,
+      `Too many mesh-pool BuffSet! max: ${ptr.maxSets}`
+    );
     currSetIdx = sets.length;
     if (PERF_DBG_GPU)
       console.log(`Creating new set @${currSetIdx} for: ${ptr.name}`);

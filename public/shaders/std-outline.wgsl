@@ -103,15 +103,15 @@ fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
   let edgeLum = clamp(edgeLight - edgeDark, -0.7, 1.0);
   if (surfaceDidChange || objectDidChange) {
     color *= 1.0 + edgeLum;
-    // color *= 1.0 + edgeLum;
+
     // TODO(@darzu): DEBUG WIREFRAME
     // color *= 2.0;
     // color = vec3(0.1);
   }
   // DEBUG WIREFRAME
-  // else {
-  //   color *= 0.0;
-  // }
+  else {
+    color *= 0.0;
+  }
 
   return vec4(color, alpha);
 }

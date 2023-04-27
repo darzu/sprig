@@ -78,6 +78,7 @@ import {
 import { dbgOnce } from "../util.js";
 import { drawBall } from "../utils-game.js";
 import { createGraph3DAxesMesh, createLineMesh } from "../gizmos.js";
+import { createGraph3D } from "../utils-gizmos.js";
 
 // TODO(@darzu): what's registerDestroyPirateHandler about?
 
@@ -495,9 +496,11 @@ EM.registerSystem(
       if (doFire) {
         const cannon = tower.towerPlatform.cannon()!;
         const speed = 0.05;
+        // const speed = 0.1;
         const rotSpeed = 0.02;
         const oldGravity = 3;
         const gravity = 1.5;
+        // const gravity = 6.0;
 
         if (__frame > 40 && idx <= 1 && dbgOnce(`dbgProjectile${idx}`)) {
           // drawSimBulletTrail(16.666, ENDESGA16.orange);
@@ -615,6 +618,116 @@ EM.registerSystem(
           // y(t) = y0 + v0*t*sin(theta) - g*t^2
 
           // TODO(@darzu): implement parametric projectile path for bullet!
+
+          // const y0 = cannon.world.position[1]; // TODO(@darzu): parameterize w/ height too
+
+          const angleVsSpeedData: vec3[][] = [];
+
+          // NB: default speed is 0.05
+          for (let i = 0; i <= 10; i++) {
+            const angle = i * ((Math.PI * 0.5) / 10);
+            angleVsSpeedData[i] = [];
+            for (let j = 0; j < 10; j++) {
+              const speed = j * (0.5 / 10);
+              const dir = tV(0, Math.sin(angle), -Math.cos(angle));
+              const vel = vec3.scale(dir, speed);
+              const vy = vel[1];
+              const ay = -gravity * 0.00001;
+              const tof = bulletTimeOfFlight(vy, y0, ay);
+              const impact = predictBullet(tV(0, 0, 0), vel, tV(0, ay, 0), tof);
+              const range = -impact[2];
+              angleVsSpeedData[i][j] = V(angle, range, speed);
+            }
+            // console.log(angleVsSpeedData[i].map((v) => vec3Dbg(v)).join(", "));
+          }
+
+          // console.log(`angle vs speed vs range:`);
+          // console.dir(angleVsSpeedData);
+
+          // graph angle vs speed vs range
+          createGraph3D(
+            vec3.add(tower.position, [50, 10, 50], V(0, 0, 0)),
+            angleVsSpeedData
+          );
+
+          {
+            const angleVsHeightData: vec3[][] = [];
+
+            // NB: default speed is 0.05
+            const speed = 0.05;
+            for (let i = 0; i <= 10; i++) {
+              const angle = i * ((Math.PI * 0.5) / 10);
+              angleVsHeightData[i] = [];
+              for (let j = 0; j < 10; j++) {
+                const height = j * ((y0 * 2) / 10);
+                const dir = tV(0, Math.sin(angle), -Math.cos(angle));
+                const vel = vec3.scale(dir, speed);
+                const vy = vel[1];
+                const ay = -gravity * 0.00001;
+                const tof = bulletTimeOfFlight(vy, height, ay);
+                const impact = predictBullet(
+                  tV(0, 0, 0),
+                  vel,
+                  tV(0, ay, 0),
+                  tof
+                );
+                const range = -impact[2];
+                angleVsHeightData[i][j] = V(angle, range, height);
+              }
+              // console.log(
+              //   angleVsHeightData[i].map((v) => vec3Dbg(v)).join(", ")
+              // );
+            }
+
+            // console.log(`angle vs speed vs range:`);
+            // console.dir(angleVsHeightData);
+
+            // graph angle vs speed vs range
+            createGraph3D(
+              vec3.add(tower.position, [110, 10, 50], V(0, 0, 0)),
+              angleVsHeightData
+            );
+          }
+
+          {
+            const speedVsGravityData: vec3[][] = [];
+
+            // NB: default speed is 0.05
+            const height = 0;
+            const angle = Math.PI * 0.25;
+            const dir = tV(0, Math.sin(angle), -Math.cos(angle));
+            for (let i = 0; i <= 10; i++) {
+              const speed = (0.25 / 10) * i;
+              speedVsGravityData[i] = [];
+              for (let j = 0; j < 10; j++) {
+                const gravity = 1.0 + j * (5.0 / 10.0);
+                const vel = vec3.scale(dir, speed);
+                const vy = vel[1];
+                const ay = -gravity * 0.00001;
+                const tof = bulletTimeOfFlight(vy, height, ay);
+                const impact = predictBullet(
+                  tV(0, 0, 0),
+                  vel,
+                  tV(0, ay, 0),
+                  tof
+                );
+                const range = -impact[2];
+                speedVsGravityData[i][j] = V(gravity, range, speed);
+              }
+              // console.log(
+              //   speedVsGravityData[i].map((v) => vec3Dbg(v)).join(", ")
+              // );
+            }
+
+            // console.log(`angle vs speed vs range:`);
+            // console.dir(speedVsGravityData);
+
+            // graph angle vs speed vs range
+            createGraph3D(
+              vec3.add(tower.position, [170, 10, 50], V(0, 0, 0)),
+              speedVsGravityData
+            );
+          }
         }
 
         function drawSimBulletTrail(dt: number, color: vec3) {

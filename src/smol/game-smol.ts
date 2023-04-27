@@ -134,6 +134,9 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
   ];
   let dbgGridCompose = createGridComposePipelines(dbgGrid);
 
+  // TODO(@darzu): HACK. these have to be set before the CY instantiator runs.
+  outlineRender.fragOverrides!.lineWidth = 2.0;
+
   const res = await em.whenResources(
     AssetsDef,
     // WoodAssetsDef,
@@ -551,18 +554,18 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
     // g.cameraFollow.pitchOffset = -1.098;
 
     // tower 1 close up
-    // vec3.copy(g.position, [-157.32, 54.5, -328.04]);
-    // quat.copy(g.rotation, [0.0, -0.7, 0.0, 0.72]);
-    // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
-    // g.cameraFollow.yawOffset = 0.0;
-    // g.cameraFollow.pitchOffset = -0.576;
-
-    // world origin
-    vec3.copy(g.position, [-223.25, 40.5, -432.01]);
-    quat.copy(g.rotation, [0.0, -0.58, 0.0, 0.81]);
+    vec3.copy(g.position, [-157.32, 54.5, -328.04]);
+    quat.copy(g.rotation, [0.0, -0.7, 0.0, 0.72]);
     vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
     g.cameraFollow.yawOffset = 0.0;
-    g.cameraFollow.pitchOffset = -0.378;
+    g.cameraFollow.pitchOffset = -0.576;
+
+    // world origin
+    // vec3.copy(g.position, [-223.25, 40.5, -432.01]);
+    // quat.copy(g.rotation, [0.0, -0.58, 0.0, 0.81]);
+    // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
+    // g.cameraFollow.yawOffset = 0.0;
+    // g.cameraFollow.pitchOffset = -0.378;
 
     em.registerSystem(
       [GhostDef, WorldFrameDef, ColliderDef],

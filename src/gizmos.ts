@@ -82,7 +82,7 @@ export function createGizmoMesh(): Mesh {
   return mesh;
 }
 
-export interface GraphOptions {
+export interface GraphAxesMeshOpts {
   intervalDomainLength: vec3;
   intervalGap: number;
   domainSize: AABB;
@@ -90,7 +90,7 @@ export interface GraphOptions {
   axisWidth: number;
 }
 
-export function createGraph3DAxesMesh(opts: GraphOptions): Mesh {
+export function createGraph3DAxesMesh(opts: GraphAxesMeshOpts): Mesh {
   let axes: Mesh[] = [];
   // const gap = opts.axisWidth * 0.2; // TODO(@darzu): tweak
   const halfWidth = opts.axisWidth * 0.5;

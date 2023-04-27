@@ -218,3 +218,7 @@ Open source photogrammetry:
     https://qoiformat.org/qoi-specification.pdf
   https://github.com/phoboslab/qoi
   https://news.ycombinator.com/item?id=35448357
+
+3D modeler:
+  https://www.blockbench.net
+  https://www.youtube.com/watch?v=WbyCbA1c8BM

@@ -4,7 +4,7 @@ import { EM } from "./entity-manager.js";
 import {
   createGraph3DAxesMesh,
   createGraph3DDataMesh,
-  GraphOptions,
+  GraphAxesMeshOpts,
 } from "./gizmos.js";
 import {
   AABB,
@@ -19,8 +19,9 @@ import {
 } from "./physics/transform.js";
 import { RenderableConstructDef } from "./render/renderer-ecs.js";
 import { V, vec3 } from "./sprig-matrix.js";
+import { vec3Dbg } from "./utils-3d.js";
 
-function getDataDomain(data: vec3[][]): AABB {
+export function getDataDomain(data: vec3[][]): AABB {
   const aabb = createAABB(
     V(Infinity, Infinity, Infinity),
     V(-Infinity, -Infinity, -Infinity)
@@ -34,7 +35,10 @@ export function createGraph3D(pos: vec3, data: vec3[][]) {
   const domain = getDataDomain(data);
   const domainSize = getSizeFromAABB(domain);
 
-  const opts: GraphOptions = {
+  // console.log("domain");
+  // console.dir(domain);
+
+  const opts: GraphAxesMeshOpts = {
     intervalDomainLength: vec3.scale(domainSize, 0.1),
     domainSize: domain,
     // {
@@ -59,18 +63,20 @@ export function createGraph3D(pos: vec3, data: vec3[][]) {
   EM.ensureComponentOn(graph, PositionDef, pos);
 
   const surfScale = vec3.div(worldSize, domainSize, vec3.create());
+  // console.log(`surfScale: ${vec3Dbg(surfScale)}`);
 
   const graphSurf = EM.new();
   const graphSurfMesh = createGraph3DDataMesh(data);
   EM.ensureComponentOn(graphSurf, RenderableConstructDef, graphSurfMesh);
   EM.ensureComponentOn(
     graphSurf,
-    PositionDef
+    PositionDef,
+    vec3.mul(vec3.negate(domain.min), surfScale, vec3.create())
     // vec3.add(worldGizmo.position, [50, 10, 50], V(0, 0, 0))
   );
   EM.ensureComponentOn(graphSurf, PhysicsParentDef, graph.id);
   EM.ensureComponentOn(graphSurf, ColorDef, ENDESGA16.lightGreen);
   EM.ensureComponentOn(graphSurf, ScaleDef, surfScale);
 
-  return graphMesh;
+  return graph;
 }
