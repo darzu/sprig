@@ -324,6 +324,8 @@ export async function breakBullet(
   em.ensureComponentOn(bullet, DeadDef);
 }
 
+// TODO(@darzu): simulateBullet shouldn't be needed any more since we use
+//    the analyitic parameteric equations in parametric-motion.ts
 const __simTemp1 = vec3.create();
 export function* simulateBullet(
   pos: vec3,
@@ -349,72 +351,3 @@ export function* simulateBullet(
     yield pos;
   }
 }
-
-// TODO(@darzu): parameterize by target y
-export function bulletTimeOfFlight(vy: number, y0: number, ay: number): number {
-  // console.dir({ vy, y0, ay });
-  const s = Math.sqrt(vy ** 2 - 4 * ay * y0);
-  const tof1 = (-vy + s) / (2 * ay);
-  const tof2 = (-vy - s) / (2 * ay);
-  // console.log(`tof1: ${tof1} vs tof2: ${tof2}`);
-  return Math.max(tof1, tof2);
-}
-
-function bulletAngleFromRange() {
-  // for (let i = 0; i <= 10; i++) {
-  //   const angle = i * ((Math.PI * 0.5) / 10);
-  //   angleVsHeightData[i] = [];
-  //   for (let j = 0; j < 10; j++) {
-  //     const height = j * ((y0 * 2) / 10);
-  //     const dir = tV(0, Math.sin(angle), -Math.cos(angle));
-  //     const vel = vec3.scale(dir, speed);
-  //     const vy = vel[1];
-  //     const ay = -gravity * 0.00001;
-  //     const tof = bulletTimeOfFlight(vy, height, ay);
-  //     const impact = predictBullet(
-  //       tV(0, 0, 0),
-  //       vel,
-  //       tV(0, ay, 0),
-  //       tof
-  //     );
-  //     const range = -impact[2];
-  //     angleVsHeightData[i][j] = V(angle, range, height);
-  //   }
-  //   // console.log(
-  //   //   angleVsHeightData[i].map((v) => vec3Dbg(v)).join(", ")
-  //   // );
-  // }
-}
-
-// TODO-30: impl and test range->angle w/ polynomial approx
-// TODO-30: graph a surface
-
-// export function createBulletPreditor(vy: number, ay: number, y0: number) {
-//   // TODO(@darzu):
-
-//   const angleAndRange: [number, number][] = [];
-
-//   const vy = Math.sin(angle) * speed;
-//   const tof = bulletTimeOfFlight(vy, y0, -gravity);
-//   const vel = vec3.scale(dir, speed);
-//   const impact = predictBullet(
-//     cannon.world.position,
-//     vel,
-//     tV(0, -gravity, 0),
-//     tof
-//   );
-// }
-
-// TODO(@darzu): IMPL
-// export function bulletRangeToAngle(
-//   initPos: vec3,
-//   // TODO(@darzu): use velocity vector again so we can work in 3D?
-//   initVel: number,
-//   grav: vec3,
-//   range: number,
-//   out?: vec3
-// ): number {
-//   // range = initPos[0] + vel[0] * t + grav[0] * t * t;
-//   // 0 = initPos[1] + vel[1] * t + grav[1] * t * t;
-//   // return out;
-// }

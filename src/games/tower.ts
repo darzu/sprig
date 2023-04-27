@@ -69,12 +69,16 @@ import { createRibSailNow, RibSailLocalDef } from "./hyperspace/ribsail.js";
 import { MeDef } from "../net/components.js";
 import { WindDef } from "../smol/wind.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
-import { bulletTimeOfFlight, fireBullet, simulateBullet } from "./bullet.js";
+import { fireBullet, simulateBullet } from "./bullet.js";
 import { dbgOnce } from "../util.js";
 import { drawBall } from "../utils-game.js";
 import { createGraph3DAxesMesh, createLineMesh } from "../gizmos.js";
 import { createGraph3D } from "../utils-gizmos.js";
-import { projectilePosition } from "./parametric-motion.js";
+import {
+  projectilePosition,
+  projectileRange,
+  projectileTimeOfFlight,
+} from "./parametric-motion.js";
 
 // TODO(@darzu): what's registerDestroyPirateHandler about?
 
@@ -587,7 +591,7 @@ EM.registerSystem(
               drawRange(r, color, y0);
 
               const vy = Math.sin(angle) * speed;
-              const tof = bulletTimeOfFlight(vy, y0, -gravity);
+              const tof = projectileTimeOfFlight(vy, y0, -gravity);
               const vel = vec3.scale(dir, speed);
               const impact = projectilePosition(
                 cannon.world.position,
@@ -624,18 +628,7 @@ EM.registerSystem(
             angleVsSpeedData[i] = [];
             for (let j = 0; j < 10; j++) {
               const speed = j * (0.5 / 10);
-              const dir = tV(0, Math.sin(angle), -Math.cos(angle));
-              const vel = vec3.scale(dir, speed);
-              const vy = vel[1];
-              const ay = -gravity;
-              const tof = bulletTimeOfFlight(vy, y0, ay);
-              const impact = projectilePosition(
-                tV(0, 0, 0),
-                vel,
-                tV(0, ay, 0),
-                tof
-              );
-              const range = -impact[2];
+              const range = projectileRange(angle, speed, y0, -gravity);
               angleVsSpeedData[i][j] = V(angle, range, speed);
             }
             // console.log(angleVsSpeedData[i].map((v) => vec3Dbg(v)).join(", "));
@@ -660,18 +653,7 @@ EM.registerSystem(
               angleVsHeightData[i] = [];
               for (let j = 0; j < 10; j++) {
                 const height = j * ((y0 * 2) / 10);
-                const dir = tV(0, Math.sin(angle), -Math.cos(angle));
-                const vel = vec3.scale(dir, speed);
-                const vy = vel[1];
-                const ay = -gravity;
-                const tof = bulletTimeOfFlight(vy, height, ay);
-                const impact = projectilePosition(
-                  tV(0, 0, 0),
-                  vel,
-                  tV(0, ay, 0),
-                  tof
-                );
-                const range = -impact[2];
+                const range = projectileRange(angle, speed, height, -gravity);
                 angleVsHeightData[i][j] = V(angle, range, height);
               }
               // console.log(
@@ -695,23 +677,13 @@ EM.registerSystem(
             // NB: default speed is 0.05
             const height = 0;
             const angle = Math.PI * 0.25;
-            const dir = tV(0, Math.sin(angle), -Math.cos(angle));
             for (let i = 0; i <= 10; i++) {
               const speed = (0.25 / 10) * i;
               speedVsGravityData[i] = [];
               for (let j = 0; j < 10; j++) {
                 const gravity = 1.0 + j * (5.0 / 10.0);
-                const vel = vec3.scale(dir, speed);
-                const vy = vel[1];
                 const ay = -gravity;
-                const tof = bulletTimeOfFlight(vy, height, ay);
-                const impact = projectilePosition(
-                  tV(0, 0, 0),
-                  vel,
-                  tV(0, ay, 0),
-                  tof
-                );
-                const range = -impact[2];
+                const range = projectileRange(angle, speed, height, ay);
                 speedVsGravityData[i][j] = V(gravity, range, speed);
               }
               // console.log(
