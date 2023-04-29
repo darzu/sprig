@@ -1,5 +1,7 @@
+import { mat3, vec3 } from "./sprig-matrix.js";
 import { EaseFn } from "./util-ease.js";
 import { assert } from "./util.js";
+import { vec3Dbg } from "./utils-3d.js";
 
 // functions
 export function sum(ns: number[]): number {
@@ -76,4 +78,41 @@ export function mathMapNEase(
   let progress = (n - inMin) / (inMax - inMin);
   if (easeFn) progress = easeFn(progress);
   return progress * (outMax - outMin) + outMin;
+}
+
+// returns [a,b,c] from y = a*x^2 + b*x + c
+// given [x0, y0], [x1, y1], [x2, y2]
+export function parabolaFromPoints(
+  x0: number,
+  y0: number,
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number
+): vec3 {
+  const inv = mat3.invert([
+    // column 1
+    x0 ** 2,
+    x1 ** 2,
+    x2 ** 2,
+    // column 2
+    x0,
+    x1,
+    x2,
+    // column 3
+    1,
+    1,
+    1,
+  ]);
+  const abc = vec3.transformMat3([y0, y1, y2], inv, vec3.create());
+  return abc;
+
+  // // parabola test:
+  // // y = x**2 + 1 from [0,1], [-2, 5], [1,2]
+  // console.log(`parabolaFromPoints test: `);
+  // console.log(vec3Dbg(parabolaFromPoints(0, 1, -2, 5, 1, 2)));
+  // // y = 1.2x**2 -1x+ 2.3
+  // console.log(
+  //   vec3Dbg(parabolaFromPoints(1, 2.5, -0.48, 3.056, 3, 10.1))
+  // );
 }

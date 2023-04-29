@@ -3,6 +3,8 @@ import { vec3, V, vec2, tV } from "../sprig-matrix.js";
 import { onInit } from "../init.js";
 import { TimeDef } from "../time.js";
 import { PositionDef } from "../physics/transform.js";
+import { assert } from "../util.js";
+import { parabolaFromPoints } from "../math.js";
 
 export interface ParamProjectile {
   pos: vec3;
@@ -113,19 +115,40 @@ export function projectileRange(
   return range;
 }
 
-type ProjectileAngleFromRangeFn = (angle: number) => number;
-function mkProjectileAngleFromRangeFn(y0: number, speed: number, ay: number) {
-  const angleVsRangeData: vec2[] = [];
+// TODO(@darzu): generalize into: invertFunctionAsParabola(fn: (x: number) => number, x0: number, x1: number, x2: number): (y: number) => number
+export type ProjectileAngleFromRangeFn = (range: number) => number;
+export function mkProjectileAngleFromRangeFn(
+  y0: number,
+  speed: number,
+  ay: number
+) {
+  const data: vec2[] = []; // angle vs range
   for (let angle of [0, Math.PI / 8, Math.PI / 4]) {
     const range = projectileRange(angle, speed, y0, ay);
-    angleVsRangeData.push(V(angle, range));
+    data.push(V(range, angle));
   }
 
-  // TODO(@darzu): IMPL!!
+  assert(data.length == 3);
+  const parabola = parabolaFromPoints(
+    data[0][0],
+    data[0][1],
+    data[1][0],
+    data[1][1],
+    data[2][0],
+    data[2][1]
+  );
 
-  // console.log(
-  //   angleVsHeightData[i].map((v) => vec3Dbg(v)).join(", ")
-  // );
+  const a = parabola[0],
+    b = parabola[1],
+    c = parabola[2];
+
+  console.log(
+    `mkProjectileAngleFromRangeFn parabola: ${a.toFixed(2)}*x^2 + ${b.toFixed(
+      2
+    )}*x + ${c.toFixed(2)}`
+  );
+
+  return (range: number) => a * range ** 2 + b * range + c;
 }
 
 // TODO-30: impl and test range->angle w/ polynomial approx

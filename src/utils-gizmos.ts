@@ -31,8 +31,14 @@ export function getDataDomain(data: vec3[][]): AABB {
 }
 
 // TODO(@darzu): take in data
-export function createGraph3D(pos: vec3, data: vec3[][]) {
-  const domain = getDataDomain(data);
+export function createGraph3D(
+  pos: vec3,
+  data: vec3[][],
+  color?: vec3,
+  domain?: AABB
+) {
+  color = color ?? ENDESGA16.lightGreen;
+  domain = domain ?? getDataDomain(data);
   const domainSize = getSizeFromAABB(domain);
 
   // console.log("domain");
@@ -75,7 +81,7 @@ export function createGraph3D(pos: vec3, data: vec3[][]) {
     // vec3.add(worldGizmo.position, [50, 10, 50], V(0, 0, 0))
   );
   EM.ensureComponentOn(graphSurf, PhysicsParentDef, graph.id);
-  EM.ensureComponentOn(graphSurf, ColorDef, ENDESGA16.lightGreen);
+  EM.ensureComponentOn(graphSurf, ColorDef, color);
   EM.ensureComponentOn(graphSurf, ScaleDef, surfScale);
 
   return graph;

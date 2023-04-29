@@ -13,12 +13,14 @@ import { createRef } from "../em_helpers.js";
 import { EM, EntityW, EntityManager } from "../entity-manager.js";
 import { createEntityPool } from "../entity-pool.js";
 import { mat4, vec3, quat, vec2, tV } from "../sprig-matrix.js";
-import { clamp, jitter } from "../math.js";
+import { clamp, jitter, parabolaFromPoints } from "../math.js";
 import {
   AABB,
   createAABB,
   updateAABBWithPoint,
   aabbCenter,
+  mergeAABBs,
+  clampToAABB,
 } from "../physics/aabb.js";
 import { ColliderDef } from "../physics/collider.js";
 import {
@@ -73,8 +75,9 @@ import { fireBullet, simulateBullet } from "./bullet.js";
 import { dbgOnce } from "../util.js";
 import { drawBall } from "../utils-game.js";
 import { createGraph3DAxesMesh, createLineMesh } from "../gizmos.js";
-import { createGraph3D } from "../utils-gizmos.js";
+import { createGraph3D, getDataDomain } from "../utils-gizmos.js";
 import {
+  mkProjectileAngleFromRangeFn,
   projectilePosition,
   projectileRange,
   projectileTimeOfFlight,
@@ -578,9 +581,16 @@ EM.registerSystem(
             const rang2Term = (theta: number) =>
               h * Math.cos(theta) ** 2 * Math.sqrt(g / (2 * v ** 2));
 
-            for (let r = 0; r < 100; r += 10) {
+            const angleFromRange = mkProjectileAngleFromRangeFn(
+              y0,
+              speed,
+              -gravity
+            );
+
+            for (let r = 50; r < 150; r += 10) {
               // if (isNaN(r)) continue;
-              const angle = rangeToAngleFlat(r);
+              // const angle = rangeToAngleFlat(r);
+              const angle = angleFromRange(r);
               if (isNaN(angle)) continue;
               const colorIdx = seqEndesga16NextIdx();
               const color = AllEndesga16[colorIdx];
@@ -645,29 +655,55 @@ EM.registerSystem(
 
           {
             const angleVsHeightData: vec3[][] = [];
+            const angleVsHeightData2: vec3[][] = [];
 
             // NB: default speed is 0.05
             const speed = 0.05;
-            for (let i = 0; i <= 10; i++) {
-              const angle = i * ((Math.PI * 0.5) / 10);
-              angleVsHeightData[i] = [];
-              for (let j = 0; j < 10; j++) {
-                const height = j * ((y0 * 2) / 10);
+            for (let j = 0; j < 10; j++) {
+              const height = j * ((y0 * 2) / 10);
+              const angleFromRange = mkProjectileAngleFromRangeFn(
+                height,
+                speed,
+                -gravity
+              );
+              angleVsHeightData[j] = [];
+              angleVsHeightData2[j] = [];
+              for (let i = 0; i <= 10; i++) {
+                const angle = i * ((Math.PI * 0.5) / 10);
                 const range = projectileRange(angle, speed, height, -gravity);
-                angleVsHeightData[i][j] = V(angle, range, height);
+                const predictedAngle = angleFromRange(range);
+                angleVsHeightData[j][i] = V(height, range, angle);
+                angleVsHeightData2[j][i] = V(height, range, predictedAngle);
               }
               // console.log(
               //   angleVsHeightData[i].map((v) => vec3Dbg(v)).join(", ")
               // );
             }
 
-            // console.log(`angle vs speed vs range:`);
-            // console.dir(angleVsHeightData);
+            console.log(`angle vs speed vs range 2:`);
+            console.dir(angleVsHeightData2);
+
+            const domain = getDataDomain(angleVsHeightData);
+            const domain2 = getDataDomain(angleVsHeightData2);
+            console.dir(domain);
+            console.dir(domain2);
+            // mergeAABBs(domain, domain, domain2);
+            angleVsHeightData2.forEach((vs) =>
+              vs.forEach((v) => clampToAABB(v, domain, v))
+            );
 
             // graph angle vs speed vs range
             createGraph3D(
               vec3.add(tower.position, [110, 10, 50], V(0, 0, 0)),
-              angleVsHeightData
+              angleVsHeightData,
+              ENDESGA16.lightGreen,
+              domain
+            );
+            createGraph3D(
+              vec3.add(tower.position, [110, 10, 50], V(0, 0, 0)),
+              angleVsHeightData2,
+              ENDESGA16.yellow,
+              domain
             );
           }
 
@@ -700,38 +736,11 @@ EM.registerSystem(
               speedVsGravityData
             );
           }
+
+          // predict the right range
+          // mkProjectileAngleFromRangeFn
         }
 
-        function drawSimBulletTrail(dt: number, color: vec3) {
-          // DEBUGGING PROJECTILE
-          const dbgLine = EM.new();
-          EM.ensureComponentOn(dbgLine, PositionDef);
-          // console.log(res.time.dt);
-          const sim = simulateBullet(
-            vec3.clone(cannon.world.position),
-            quat.clone(cannon.world.rotation),
-            speed,
-            oldGravity,
-            dt
-          );
-
-          let pos0 = vec3.tmp();
-          let pos1 = vec3.tmp();
-          vec3.copy(pos1, sim.next().value);
-          // console.log(vec3Dbg(pos1));
-          let lines: Mesh[] = [];
-          for (let i = 0; i < 100; i++) {
-            vec3.copy(pos0, pos1);
-            vec3.copy(pos1, sim.next().value);
-            // console.log(vec3Dbg(pos1));
-            lines.push(createLineMesh(1.0, pos0, pos1));
-          }
-          const mesh = mergeMeshes(...lines) as Mesh;
-          mesh.usesProvoking = true;
-
-          EM.ensureComponentOn(dbgLine, RenderableConstructDef, mesh);
-          EM.ensureComponentOn(dbgLine, ColorDef, color);
-        }
         var __temp1 = vec3.tmp();
         var __temp2 = vec3.tmp();
         var __temp3 = vec3.tmp();
