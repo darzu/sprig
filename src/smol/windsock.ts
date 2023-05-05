@@ -1,46 +1,15 @@
-import {
-  Component,
-  EM,
-  Entity,
-  EntityManager,
-  EntityW,
-} from "../ecs/entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4, V, mat3 } from "../sprig-matrix.js";
-import {
-  PhysicsParentDef,
-  PositionDef,
-  RotationDef,
-  ScaleDef,
-} from "../physics/transform.js";
-import { SyncDef, AuthorityDef, Me, MeDef } from "../net/components.js";
-import { Serializer, Deserializer } from "../serialize.js";
-import { FinishedDef } from "../ecs/em_helpers.js";
-import { onInit } from "../init.js";
-import {
-  Mesh,
-  normalizeMesh,
-  scaleMesh,
-  unshareProvokingVerticesWithMap,
-} from "../render/mesh.js";
+import { EM, EntityManager } from "../ecs/entity-manager.js";
+import { vec2, vec3, V, mat3 } from "../sprig-matrix.js";
+import { PositionDef, RotationDef, ScaleDef } from "../physics/transform.js";
+import { Mesh } from "../render/mesh.js";
 import {
   RenderableConstructDef,
   RenderableDef,
 } from "../render/renderer-ecs.js";
 import { RendererDef } from "../render/renderer-ecs.js";
-import { tempVec3 } from "../temp-pool.js";
 import { ColorDef } from "../color-ecs.js";
-import { AssetsDef } from "../assets.js";
-import { ColliderDef } from "../physics/collider.js";
-import { constructNetTurret, TurretDef } from "../games/turret.js";
-import { InputsDef } from "../inputs.js";
-import { LocalPlayerDef, PlayerDef } from "../games/player.js";
-import { DeletedDef } from "../delete.js";
-import { clamp } from "../math.js";
-import { createRef } from "../ecs/em_helpers.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import { WindDef } from "./wind.js";
-import { YawPitchDef } from "../yawpitch.js";
-import { vec3Dbg } from "../utils-3d.js";
 import { assert } from "../util.js";
 
 export const SockDef = EM.defineComponent("sock", () => ({

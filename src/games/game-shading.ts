@@ -40,7 +40,7 @@ let dbgGridCompose = createGridComposePipelines(dbgGrid);
 
 export async function initShadingGame() {
   // TODO(@darzu): HACK. these have to be set before the CY instantiator runs.
-  outlineRender.fragOverrides!.lineWidth = 3.0;
+  // outlineRender.fragOverrides!.lineWidth = 1.0;
 
   const { renderer } = await EM.whenResources(RendererDef);
 

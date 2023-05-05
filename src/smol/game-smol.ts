@@ -135,7 +135,7 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
   let dbgGridCompose = createGridComposePipelines(dbgGrid);
 
   // TODO(@darzu): HACK. these have to be set before the CY instantiator runs.
-  outlineRender.fragOverrides!.lineWidth = 3.0;
+  // outlineRender.fragOverrides!.lineWidth = 3.0;
 
   const res = await em.whenResources(
     AssetsDef,
@@ -197,7 +197,7 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
 
   // start map
   // TODO(@darzu): BROKEN
-  // await setMap(em, "obstacles1");
+  await setMap(em, "tacking");
 
   // once the map is loaded, we can run JFA
   res.renderer.renderer.submitPipelines([], [...mapJfa.allPipes()]);
