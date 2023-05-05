@@ -643,19 +643,21 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
   //   await startTowers(tower3DPoses);
   // }
 
-  // world gizmo
-  const worldGizmo = EM.new();
-  EM.ensureComponentOn(
-    worldGizmo,
-    PositionDef,
-    V(-WORLD_HEIGHT / 2, 0, -WORLD_WIDTH / 2)
-  );
-  EM.ensureComponentOn(worldGizmo, ScaleDef, V(100, 100, 100));
-  EM.ensureComponentOn(
-    worldGizmo,
-    RenderableConstructDef,
-    res.assets.gizmo.proto
-  );
+  if (DBG_PLAYER) {
+    // world gizmo
+    const worldGizmo = EM.new();
+    EM.ensureComponentOn(
+      worldGizmo,
+      PositionDef,
+      V(-WORLD_HEIGHT / 2, 0, -WORLD_WIDTH / 2)
+    );
+    EM.ensureComponentOn(worldGizmo, ScaleDef, V(100, 100, 100));
+    EM.ensureComponentOn(
+      worldGizmo,
+      RenderableConstructDef,
+      res.assets.gizmo.proto
+    );
+  }
 
   // // debugging createGraph3D
   // let data: vec3[][] = [];
