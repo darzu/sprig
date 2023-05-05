@@ -38,7 +38,7 @@ import { DeadDef } from "../ecs/delete.js";
 import { AudioDef } from "../audio/audio.js";
 import { randNormalVec3 } from "../utils/utils-3d.js";
 import { SplinterParticleDef } from "../wood/wood.js";
-import { tempVec3 } from "../temp-pool.js";
+import { tempVec3 } from "../matrix/temp-pool.js";
 import { assert, assertDbg } from "../utils/util.js";
 import { ParametricDef } from "../games/parametric-motion.js";
 

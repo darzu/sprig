@@ -18,7 +18,7 @@ import {
   RenderableDef,
   RendererDef,
 } from "../render/renderer-ecs.js";
-import { tempVec3 } from "../temp-pool.js";
+import { tempVec3 } from "../matrix/temp-pool.js";
 import { randNormalPosVec3 } from "./utils-3d.js";
 import { createEntityPool } from "../ecs/entity-pool.js";
 import { DeadDef } from "../ecs/delete.js";

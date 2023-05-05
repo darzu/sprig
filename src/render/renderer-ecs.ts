@@ -17,7 +17,7 @@ import { FORCE_WEBGL } from "../main.js";
 import { createRenderer } from "./renderer-webgpu.js";
 import { CyMeshPoolPtr, CyPipelinePtr } from "./gpu-registry.js";
 import { createFrame, WorldFrameDef } from "../physics/nonintersection.js";
-import { tempVec3 } from "../temp-pool.js";
+import { tempVec3 } from "../matrix/temp-pool.js";
 import { isMeshHandle, MeshHandle, MeshReserve } from "./mesh-pool.js";
 import { Mesh } from "../meshes/mesh.js";
 import {

@@ -30,7 +30,7 @@ import { asyncTimeout } from "../utils/util.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { AnimateToDef } from "../animation/animate-to.js";
 import { createSpawner, SpawnerDef } from "./uv-spawner.js";
-import { tempVec3 } from "../temp-pool.js";
+import { tempVec3 } from "../matrix/temp-pool.js";
 import { createDarkStarNow, STAR1_COLOR, STAR2_COLOR } from "./darkstar.js";
 import { renderOceanPipe } from "../render/pipelines/std-ocean.js";
 import { EASE_INQUAD } from "../utils/util-ease.js";

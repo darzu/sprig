@@ -23,7 +23,7 @@ import {
   WorldFrameDef,
 } from "../physics/nonintersection.js";
 import { RayHit } from "../physics/broadphase.js";
-import { tempVec3 } from "../temp-pool.js";
+import { tempVec3 } from "../matrix/temp-pool.js";
 import { createRef, Ref } from "../ecs/em_helpers.js";
 import { screenPosToRay } from "../utils/utils-game.js";
 

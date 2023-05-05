@@ -29,7 +29,7 @@ import {
   RenderableDef,
   RendererDef,
 } from "../render/renderer-ecs.js";
-import { tempVec2, tempVec3 } from "../temp-pool.js";
+import { tempVec2, tempVec3 } from "../matrix/temp-pool.js";
 import { TimeDef } from "../time/time.js";
 import { asyncTimeout, dbgLogOnce, range } from "../utils/util.js";
 import {

@@ -22,7 +22,7 @@ import { WorldFrameDef } from "../physics/nonintersection.js";
 import { MeshHandle } from "../render/mesh-pool.js";
 import { cloneMesh, mapMeshPositions, RawMesh } from "../meshes/mesh.js";
 import { RenderDataStdDef, FLAG_UNLIT } from "../render/pipelines/std-scene.js";
-import { tempQuat, tempMat4 } from "../temp-pool.js";
+import { tempQuat, tempMat4 } from "../matrix/temp-pool.js";
 import {
   signedAreaOfTriangle,
   positionAndTargetToOrthoViewProjMatrix,

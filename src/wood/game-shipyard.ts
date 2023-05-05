@@ -47,7 +47,7 @@ import {
   RenderableConstructDef,
   RenderableDef,
 } from "../render/renderer-ecs.js";
-import { tempMat4, tempVec3 } from "../temp-pool.js";
+import { tempMat4, tempVec3 } from "../matrix/temp-pool.js";
 import { assert } from "../utils/util.js";
 import { TimeDef } from "../time/time.js";
 import {

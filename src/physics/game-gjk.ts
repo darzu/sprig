@@ -19,7 +19,7 @@ import {
   RenderableConstructDef,
   RenderableDef,
 } from "../render/renderer-ecs.js";
-import { tempVec3 } from "../temp-pool.js";
+import { tempVec3 } from "../matrix/temp-pool.js";
 import { farthestPointInDir } from "../utils/utils-3d.js";
 import { AssetsDef, GameMesh } from "../meshes/assets.js";
 import { GlobalCursor3dDef } from "../gui/cursor.js";

@@ -18,7 +18,7 @@ import {
   RenderableDef,
 } from "../render/renderer-ecs.js";
 import { RendererDef } from "../render/renderer-ecs.js";
-import { tempVec3 } from "../temp-pool.js";
+import { tempVec3 } from "../matrix/temp-pool.js";
 import { ColorDef } from "../color/color-ecs.js";
 
 export interface ClothConstruct {

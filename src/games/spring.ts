@@ -1,5 +1,5 @@
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
-import { tempVec3 } from "../temp-pool.js";
+import { tempVec3 } from "../matrix/temp-pool.js";
 import { EM, EntityManager } from "../ecs/entity-manager.js";
 import { TimeDef } from "../time/time.js";
 import { onInit } from "../init.js";

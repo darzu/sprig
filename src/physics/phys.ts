@@ -24,7 +24,7 @@ import { Collider } from "./collider.js";
 import { AABB, aabbCenter } from "./aabb.js";
 import { registerNarrowPhaseSystems } from "./narrowphase.js";
 import { assert } from "../utils/util.js";
-import { tempVec3 } from "../temp-pool.js";
+import { tempVec3 } from "../matrix/temp-pool.js";
 import {
   registerPhysicsApplyLinearVelocity,
   registerPhysicsApplyAngularVelocity,

@@ -22,7 +22,7 @@ import {
   RenderableDef,
   RendererDef,
 } from "../render/renderer-ecs.js";
-import { tempMat4, tempQuat, tempVec2, tempVec3 } from "../temp-pool.js";
+import { tempMat4, tempQuat, tempVec2, tempVec3 } from "../matrix/temp-pool.js";
 import { range } from "../utils/util.js";
 import {
   signedAreaOfTriangle,

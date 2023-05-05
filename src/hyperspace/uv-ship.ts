@@ -4,7 +4,7 @@ import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { onInit } from "../init.js";
 import { InputsDef } from "../input/inputs.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
-import { tempVec2 } from "../temp-pool.js";
+import { tempVec2 } from "../matrix/temp-pool.js";
 import { vec2Dbg, vec3Dbg } from "../utils/utils-3d.js";
 import { GameStateDef, HyperspaceGameState } from "./hyperspace-gamestate.js";
 import { UVPosDef, UVDirDef } from "../ocean/ocean.js";

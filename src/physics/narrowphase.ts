@@ -8,7 +8,7 @@ import { BoxCollider, Collider } from "./collider.js";
 import { PhysicsObject, WorldFrameDef } from "./nonintersection.js";
 import { PhysicsParentDef, PositionDef } from "./transform.js";
 import { centroid, SupportFn, vec3Dbg } from "../utils/utils-3d.js";
-import { tempVec3 } from "../temp-pool.js";
+import { tempVec3 } from "../matrix/temp-pool.js";
 import { PAD } from "./phys.js";
 import { TupleN } from "../utils/util.js";
 

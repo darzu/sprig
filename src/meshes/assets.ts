@@ -49,7 +49,7 @@ import {
   WoodAssets,
   WoodAssetsDef,
 } from "../wood/wood.js";
-import { tempMat4, tempVec3 } from "../temp-pool.js";
+import { tempMat4, tempVec3 } from "../matrix/temp-pool.js";
 import {
   BOAT_MESH,
   BULLET_MESH,

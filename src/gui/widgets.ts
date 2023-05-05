@@ -11,7 +11,7 @@ import { PhysicsResultsDef } from "../physics/nonintersection.js";
 import { PositionDef, ScaleDef } from "../physics/transform.js";
 import { cloneMesh } from "../meshes/mesh.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
-import { tempVec3 } from "../temp-pool.js";
+import { tempVec3 } from "../matrix/temp-pool.js";
 import { assert } from "../utils/util.js";
 import { screenPosToWorldPos } from "../utils/utils-game.js";
 import { UICursorDef } from "./game-font.js";

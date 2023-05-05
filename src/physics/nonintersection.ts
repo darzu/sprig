@@ -37,7 +37,7 @@ import {
   updateFrameFromPosRotScale,
 } from "./transform.js";
 import { IdPair, idPair } from "../utils/util.js";
-import { tempVec3 } from "../temp-pool.js";
+import { tempVec3 } from "../matrix/temp-pool.js";
 
 // TODO(@darzu): we use "object", "obj", "o" everywhere in here, we should use "entity", "ent", "e"
 

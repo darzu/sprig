@@ -26,7 +26,7 @@ import {
   RenderableDef,
 } from "../render/renderer-ecs.js";
 import { RendererDef } from "../render/renderer-ecs.js";
-import { tempVec3 } from "../temp-pool.js";
+import { tempVec3 } from "../matrix/temp-pool.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { AssetsDef } from "../meshes/assets.js";
 import { ColliderDef } from "../physics/collider.js";

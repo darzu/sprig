@@ -1,7 +1,7 @@
 import { Component, EM, EntityManager } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { createFrame, WorldFrameDef } from "./nonintersection.js";
-import { tempVec3, tempQuat } from "../temp-pool.js";
+import { tempVec3, tempQuat } from "../matrix/temp-pool.js";
 import { FALSE, dbgLogOnce } from "../utils/util.js";
 
 // Axis:

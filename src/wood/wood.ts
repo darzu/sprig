@@ -42,7 +42,7 @@ import {
   RenderableDef,
   RendererDef,
 } from "../render/renderer-ecs.js";
-import { tempVec3 } from "../temp-pool.js";
+import { tempVec3 } from "../matrix/temp-pool.js";
 import { assert, assertDbg, createIntervalTracker } from "../utils/util.js";
 import { range } from "../utils/util.js";
 import {
