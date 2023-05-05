@@ -3,8 +3,8 @@
 // TODO(@darzu): raster doesn't work yet
 // TODO(@darzu): https://kristoffer-dyrkorn.github.io/triangle-rasterizer/
 
-import { vec2 } from "./sprig-matrix.js";
-import { assert } from "./utils/util.js";
+import { vec2 } from "../sprig-matrix.js";
+import { assert } from "./util.js";
 
 // TODO(@darzu): can we be more efficient by rasterizing a quad directly?
 export function rasterizeTri(

@@ -1,6 +1,6 @@
 import { createLabelSolver, Label, LabelConstraint } from "./em-labels.js";
 import { DBG_ASSERT, DBG_INIT_DEPS, DBG_TRYCALLSYSTEM } from "../flags.js";
-import { Serializer, Deserializer } from "../serialize.js";
+import { Serializer, Deserializer } from "../utils/serialize.js";
 import { createDag } from "../utils/util-dag.js";
 import {
   assert,

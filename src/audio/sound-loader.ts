@@ -3,7 +3,7 @@ import { Component, EM } from "../ecs/entity-manager.js";
 import { VERBOSE_LOG } from "../flags.js";
 import { onInit } from "../init.js";
 import { assert } from "../utils/util.js";
-import { getBytes } from "../webget.js";
+import { getBytes } from "../fetch/webget.js";
 
 const DEFAULT_SOUND_PATH = "assets/sounds/";
 

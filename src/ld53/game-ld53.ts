@@ -67,7 +67,7 @@ import {
   getSizeFromAABB,
   updateAABBWithPoint,
 } from "../physics/aabb.js";
-import { rasterizeTri } from "../raster.js";
+import { rasterizeTri } from "../utils/raster.js";
 import { InputsDef } from "../inputs.js";
 import { raiseManTurret } from "../turret/turret.js";
 import { TextDef } from "../games/ui.js";

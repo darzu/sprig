@@ -14,7 +14,7 @@ import {
 import { registerEventHandler, DetectedEventsDef } from "../net/events.js";
 import { LocalPlayerDef, PlayerDef } from "./player.js";
 import { InteractableDef, InRangeDef } from "./interact.js";
-import { Deserializer, Serializer } from "../serialize.js";
+import { Deserializer, Serializer } from "../utils/serialize.js";
 
 export const ToolDef = EM.defineComponent("tool", (type?: string) => ({
   type,

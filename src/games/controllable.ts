@@ -1,4 +1,4 @@
-import { AnimateToDef } from "../animate-to.js";
+import { AnimateToDef } from "../animation/animate-to.js";
 import { CameraFollowDef } from "../camera/camera.js";
 import { CanvasDef } from "../render/canvas.js";
 import { EM, EntityManager } from "../ecs/entity-manager.js";

@@ -1,7 +1,7 @@
 import { Component, EM } from "../ecs/entity-manager.js";
 import { onInit } from "../init.js";
 import { assert } from "../utils/util.js";
-import { getText } from "../webget.js";
+import { getText } from "../fetch/webget.js";
 
 const DEFAULT_SHADER_PATH = "shaders/";
 

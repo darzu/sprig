@@ -1,4 +1,4 @@
-import { Serializer, Deserializer } from "../serialize.js";
+import { Serializer, Deserializer } from "../utils/serialize.js";
 import { Peer } from "./peer.js";
 import { EntityManager } from "../ecs/entity-manager.js";
 import { never } from "../utils/util.js";

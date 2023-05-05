@@ -12,7 +12,7 @@ import { AuthorityDef, MeDef } from "../net/components.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
 import { RendererWorldFrameDef } from "../render/renderer-ecs.js";
-import { computeNewError, reduceError } from "../smoothing.js";
+import { computeNewError, reduceError } from "../utils/smoothing.js";
 import { tempQuat, tempVec3 } from "../temp-pool.js";
 import { TimeDef } from "../time.js";
 import { yawpitchToQuat } from "../turret/yawpitch.js";

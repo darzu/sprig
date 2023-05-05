@@ -43,7 +43,7 @@ import { GlobalCursor3dDef } from "./cursor.js";
 import { drawLine } from "../utils/utils-game.js";
 import { DevConsoleDef } from "../debug/console.js";
 import { max } from "../utils/math.js";
-import { AnimateToDef } from "../animate-to.js";
+import { AnimateToDef } from "../animation/animate-to.js";
 import { vec3Dbg } from "../utils/utils-3d.js";
 import { HsShipLocalDef } from "../hyperspace/hyperspace-ship.js";
 

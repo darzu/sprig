@@ -1,4 +1,4 @@
-import { AnimateToDef } from "../animate-to.js";
+import { AnimateToDef } from "../animation/animate-to.js";
 import { createRef, Ref } from "../ecs/em_helpers.js";
 import { EM, EntityManager } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";

@@ -6,7 +6,7 @@ import {
   PhysicsParentDef,
   RotationDef,
 } from "./physics/transform.js";
-import { computeNewError, reduceError } from "./smoothing.js";
+import { computeNewError, reduceError } from "./utils/smoothing.js";
 import { RemoteUpdatesDef } from "./net/components.js";
 
 // Determined via binary search--smaller -> jerky, larger -> floaty

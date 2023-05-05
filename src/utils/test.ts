@@ -1,9 +1,9 @@
 // Some serialization and deserialization tests
 
-import { RUN_UNIT_TESTS, VERBOSE_LOG } from "./flags.js";
-import { testImporters } from "./meshes/import_obj.js";
+import { RUN_UNIT_TESTS, VERBOSE_LOG } from "../flags.js";
+import { testImporters } from "../meshes/import_obj.js";
 import { Serializer, Deserializer } from "./serialize.js";
-import { assert, testPackUnpackI16 } from "./utils/util.js";
+import { assert, testPackUnpackI16 } from "./util.js";
 
 function testBasics() {
   let s = new Serializer(100);

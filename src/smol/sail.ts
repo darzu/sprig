@@ -13,7 +13,7 @@ import {
   ScaleDef,
 } from "../physics/transform.js";
 import { SyncDef, AuthorityDef, Me, MeDef } from "../net/components.js";
-import { Serializer, Deserializer } from "../serialize.js";
+import { Serializer, Deserializer } from "../utils/serialize.js";
 import { FinishedDef } from "../ecs/em_helpers.js";
 import { onInit } from "../init.js";
 import {

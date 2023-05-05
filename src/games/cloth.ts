@@ -3,7 +3,7 @@ import { Component, EM, EntityManager } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
 import { SyncDef, AuthorityDef, Me, MeDef } from "../net/components.js";
-import { Serializer, Deserializer } from "../serialize.js";
+import { Serializer, Deserializer } from "../utils/serialize.js";
 import { FinishedDef } from "../ecs/em_helpers.js";
 import { Assets, AssetsDef } from "../meshes/assets.js";
 import { SpringType, SpringGridDef, ForceDef } from "./spring.js";

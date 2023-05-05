@@ -24,7 +24,7 @@ import { RendererDef } from "../render/renderer-ecs.js";
 import { Renderer } from "../render/renderer-ecs.js";
 import { assert } from "../utils/util.js";
 import { objMap, range } from "../utils/util.js";
-import { getText } from "../webget.js";
+import { getText } from "../fetch/webget.js";
 import { AABBCollider } from "../physics/collider.js";
 import {
   computeTriangleNormal,

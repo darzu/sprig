@@ -1,5 +1,5 @@
 import { MessageType } from "./message.js";
-import { Deserializer } from "../serialize.js";
+import { Deserializer } from "../utils/serialize.js";
 
 export enum NetworkEventType {
   Ready,
