@@ -1827,3 +1827,22 @@ Depth Z non-linearity, linear Z, reverse Z:
 Vulkan's design issues: "The problem statement at the beginning of this document is an extremely well conceived and lucid analysis of Vulkan's design issues.":
   https://github.com/KhronosGroup/Vulkan-Docs/blob/main/proposals/VK_EXT_shader_object.adoc#problem-statement
   https://twitter.com/EricLengyel/status/1641866274404982784
+
+"I want to talk about WebGPU":
+  https://cohost.org/mcc/post/1406157-i-want-to-talk-about
+  http://dryad.technology
+
+Who is "Timothy Lottes"?
+  Brian Karis (Nanite) asking about videos: https://twitter.com/BrianKaris/status/1653593003368546304
+  Sebastian Aaltonen (HypeHyper,Ubisoft,Unity) soliciting opinion from: https://twitter.com/SebAaltonen/status/1653708606636802049
+  tanh(mmalex) (Dream's guy) being effusive about him: https://twitter.com/mmalex/status/1653642891804266497
+  https://www.mobygames.com/person/515834/timothy-lottes/
+  https://news.ycombinator.com/item?id=5122674
+  https://news.ycombinator.com/item?id=5120991
+  https://schedule2019.gdconf.com/speaker/lottes-timothy.39755
+    Timothy Lottes is an optimization-obsessed developer working as part of the AMD Graphics Performance R&D (GPRD) team, with prior experience at Epic, NVIDIA, Human Head Studios, and ILM. He is based in AMD Orlando working with the GPU hardware team, Vulkan driver team, and directly with game developers.
+  https://www.gdcvault.com/play/1023512/Advanced-Graphics-Techniques-Tutorial-Day
+    Timothy Lottes is an Engineer in the Developer Technology group at NVIDIA. Prior Timothy was a console game developer at Human Head Studios, in Systems Research and Development at Industrial Light and Magic, and owner/photographer/developer of Farrar Focus, a fine art landscape photography and digital photo development tools business.  
+
+Kvark (rust wgpu guy):
+  spri-v problems: http://kvark.github.io/spirv/2021/05/01/spirv-horrors.html

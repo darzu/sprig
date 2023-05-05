@@ -44,7 +44,7 @@ import { ParametricDef } from "./parametric-motion.js";
 
 // TODO(@darzu): MULTIPLAYER BULLETS might have been broken during LD51
 
-const _maxBullets = 15;
+const _maxBullets = 100;
 
 export const BulletDef = EM.defineComponent(
   "bullet",
@@ -129,7 +129,7 @@ export function createOrResetBullet(
     aabb: res.assets.ball.aabb,
   });
   em.ensureComponentOn(e, LifetimeDef);
-  e.lifetime.ms = 4000;
+  e.lifetime.ms = 8000;
   em.ensureComponentOn(e, SyncDef);
   e.sync.dynamicComponents = [PositionDef.id];
   e.sync.fullComponents = [BulletConstructDef.id];
@@ -143,6 +143,7 @@ export function createOrResetBullet(
   vec3.copy(e.parametric.init.vel, props.linearVelocity);
   vec3.copy(e.parametric.init.accel, [0, -props.gravity, 0]);
   e.parametric.startMs = res.time.time;
+  return e;
 }
 
 export function registerBuildBulletsSystem(em: EntityManager) {
@@ -187,13 +188,14 @@ export async function fireBullet(
   speed: number, // = 0.02,
   rotationSpeed: number, // = 0.02,
   gravity: number, // = 6
-  health: number
+  health: number,
+  bulletAxis: vec3.InputT
 ) {
   {
     const music = EM.getResource(AudioDef);
     if (music) {
       // for (let i = 0; i < 10; i++) music.playChords([3], "minor", 2.0, 5.0, 1);
-      music.playChords([3], "minor", 2.0, 1.0, 1);
+      //music.playChords([3], "minor", 2.0, 1.0, 1);
     }
   }
 
@@ -214,11 +216,11 @@ export async function fireBullet(
     if (_nextBulletIdx >= _bulletPool.length) _nextBulletIdx = 0;
   }
 
-  let bulletAxis = V(0, 0, -1);
-  vec3.transformQuat(bulletAxis, rotation, bulletAxis);
-  vec3.normalize(bulletAxis, bulletAxis);
-  const linearVelocity = vec3.scale(bulletAxis, speed, vec3.create());
-  const angularVelocity = vec3.scale(bulletAxis, rotationSpeed, vec3.create());
+  // let bulletAxis = V(1, 0, 0);
+  const axis = vec3.transformQuat(bulletAxis, rotation, vec3.tmp());
+  vec3.normalize(axis, axis);
+  const linearVelocity = vec3.scale(axis, speed, vec3.create());
+  const angularVelocity = vec3.scale(axis, rotationSpeed, vec3.create());
 
   assertDbg(e.bulletConstruct, `bulletConstruct missing on: ${e.id}`);
   vec3.copy(e.bulletConstruct.location, location);
@@ -231,7 +233,7 @@ export async function fireBullet(
   // TODO(@darzu): This breaks multiplayer maybe!
   // TODO(@darzu): MULTIPLAYER. need to think how multiplayer and entity pools interact.
   const res = await em.whenResources(MeDef, TimeDef, AssetsDef);
-  createOrResetBullet(em, e, res);
+  return createOrResetBullet(em, e, res);
 }
 
 type BulletPart = EntityW<[typeof PositionDef, typeof ColorDef]>;
@@ -309,7 +311,8 @@ export async function breakBullet(
     vec3.normalize(vel, vel);
     vec3.negate(vel, vel);
     vec3.add(vel, randNormalVec3(tempVec3()), vel);
-    vec3.add(vel, [0, -1, 0], vel);
+    // vec3.add(vel, [0, -1, 0], vel);
+    vec3.add(vel, [0, +1, 0], vel);
     vec3.normalize(vel, vel);
     vec3.scale(vel, 0.02, vel);
     em.ensureComponentOn(pe, LinearVelocityDef);

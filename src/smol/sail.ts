@@ -259,9 +259,10 @@ export async function createMast(em: EntityManager) {
   // ent.turret.maxYaw = Math.PI / 2;
   // ent.turret.minYaw = -Math.PI / 2;
 
-  const sail = createSail(em, 8, 8, 2);
+  const sailWidth = 14;
+  const sail = createSail(em, sailWidth, 8, 2);
   em.ensureComponentOn(sail, PhysicsParentDef, ent.id);
-  sail.position[0] = -8;
+  sail.position[0] = -sailWidth;
   sail.position[1] = 38;
   sail.position[2] = 0.51;
   ent.mast.sail = createRef(sail);

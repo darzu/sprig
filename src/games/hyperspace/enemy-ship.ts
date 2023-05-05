@@ -291,7 +291,8 @@ export function registerEnemyShipSystems(em: EntityManager) {
               // TODO(@darzu): what stats here?
               0.02,
               6 * 0.00001,
-              10
+              10,
+              [0, 0, -1]
             );
           }
         }
@@ -337,7 +338,7 @@ export function breakEnemyShip(
 ) {
   em.ensureComponentOn(enemyShip, DeletedDef);
 
-  music.playChords([3], "minor", 2.0, 5.0, -1);
+  //music.playChords([3], "minor", 2.0, 5.0, -1);
 
   for (let part of enemyShipParts) {
     const pe = em.new();

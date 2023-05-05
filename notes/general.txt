@@ -1391,3 +1391,16 @@ PNG uses "DEFLATE" compression:
   PNG uses DEFLATE, a non-patented lossless data compression algorithm involving a combination of LZ77 and Huffman coding. Permissively licensed DEFLATE implementations, such as zlib, are widely available.
   http://www.libpng.org/pub/png/
   https://github.com/madler/zlib
+
+.mov to .mp4 for twitter:
+  # tells you stats:
+  ffmpeg -i ~/screenshots/ld53-mov.mov 
+
+# crop 278px off of width (to make square), 
+# scales to 720x720, sets codec to h264 and aac
+ffmpeg -i my-movie.mov -vcodec h264 \
+  -acodec aac -filter:v "crop=in_w-278:in_h,scale=720:720" \
+  my-movie.mp4
+
+Bluesky's "Ecosystem Overview":
+  https://gitlab.com/bluesky-community1/decentralized-ecosystem#ecosystem-overview

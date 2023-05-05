@@ -88,7 +88,7 @@ export function doesSimplexOverlapOrigin(s: vec3[]) {
     [s[1], s[2], s[3]],
   ];
 
-  const center = centroid(s);
+  const center = centroid(...s);
 
   for (let t of tris) {
     const [C, B, A] = t;
@@ -96,7 +96,7 @@ export function doesSimplexOverlapOrigin(s: vec3[]) {
     const AC = vec3.sub(C, A, vec3.create());
     const ABCperp = vec3.cross(AB, AC, vec3.create());
     vec3.normalize(ABCperp, ABCperp);
-    const triCenter = centroid(t);
+    const triCenter = centroid(...t);
     const triCenterToSimplexCenter = vec3.sub(center, triCenter, vec3.create());
     vec3.normalize(triCenterToSimplexCenter, triCenterToSimplexCenter);
     if (vec3.dot(ABCperp, triCenterToSimplexCenter) < 0)
@@ -146,7 +146,7 @@ export function gjk(
     }
     // console.log(`adding: ${A}`);
     simplex.push(A);
-    const newDist = vec3.length(centroid(simplex));
+    const newDist = vec3.length(centroid(...simplex));
     // if (newDist > distToOrigin) {
     //   console.warn(`moving away from origin!`);
     // }

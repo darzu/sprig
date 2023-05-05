@@ -1,8 +1,11 @@
 <!DOCTYPE html>
-<html style="font-size: 12px;">
+<html style="font-size: 12px">
   <head>
-    <meta charset="utf-8">
-    <meta http-equiv="origin-trial" content="AqUcFYiVuU2a6zW8Q7gp5Ujs1FS4oh1VzQxiv2v0IFvkFqebGgKlfP0cV2NlQcnHo/cLdiyKJETsB0P8yAaE3g4AAABKeyJvcmlnaW4iOiJodHRwczovL3NwcmlnLmxhbmQ6NDQzIiwiZmVhdHVyZSI6IldlYkdQVSIsImV4cGlyeSI6MTY5MTcxMTk5OX0=">
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="origin-trial"
+      content="AqUcFYiVuU2a6zW8Q7gp5Ujs1FS4oh1VzQxiv2v0IFvkFqebGgKlfP0cV2NlQcnHo/cLdiyKJETsB0P8yAaE3g4AAABKeyJvcmlnaW4iOiJodHRwczovL3NwcmlnLmxhbmQ6NDQzIiwiZmVhdHVyZSI6IldlYkdQVSIsImV4cGlyeSI6MTY5MTcxMTk5OX0="
+    />
     <title>🌱🏞</title>
     <style>
       * {
@@ -11,18 +14,18 @@
       }
 
       body {
-          height: 100%;
-          position: absolute;
-          overflow: hidden;
-          /* useful when screen capturing with:
+        height: 100%;
+        position: absolute;
+        overflow: hidden;
+        /* useful when screen capturing with:
           AA
           --
           BB
           window arrangement
           */
-          /* top: -100px; */
+        /* top: -100px; */
       }
-      
+
       #debug-div {
         position: absolute;
         top: 128px;
@@ -34,6 +37,14 @@
       #lower-div {
         position: absolute;
         bottom: 24px;
+        left: 24px;
+        color: yellow;
+        font-family: monospace;
+        font-size: 24px;
+      }
+      #help-div {
+        position: absolute;
+        bottom: 60px;
         left: 24px;
         color: white;
         font-family: monospace;
@@ -52,7 +63,6 @@
   </head>
 
   <body>
-
     <div id="server-controls">
       <button id="server-start">Start server</button>
       <input type="text" id="server-id" />
@@ -63,6 +73,7 @@
     <div id="debug-div"> </div>
     <div id="lower-div"> </div>
     <div id="title-div"> </div>
+    <div id="help-div"> </div>
 
     <script src="./main.js" type="module"></script>
   </body>

@@ -4,7 +4,8 @@ import { assert } from "../util.js";
 import { getBytes } from "../webget.js";
 
 // const DEFAULT_MAP_PATH = "assets/ld52_maps/";
-const DEFAULT_MAP_PATH = "assets/smol_maps/";
+//const DEFAULT_MAP_PATH = "assets/smol_maps/";
+const DEFAULT_MAP_PATH = "assets/ld53_maps/";
 
 // export const MapPaths = [
 //   "map1",
@@ -14,9 +15,29 @@ const DEFAULT_MAP_PATH = "assets/smol_maps/";
 //   "map_maze",
 //   "map_narrow",
 // ] as const;
-export const MapPaths = ["obstacles1"] as const;
+export const MapPaths = [
+  "tutorial-dock-under-cannon",
+  "tutorial-attack-the-towers",
+  "dont-go-right",
+  "thread-needle",
+  "every-which-way",
+  "tacking",
+  "surprise",
+
+  // "rangetest",
+] as const;
 
 export type MapName = typeof MapPaths[number];
+
+export const MapHelp: Partial<Record<MapName, string>> = {
+  "tutorial-attack-the-towers":
+    "the dock is straight ahead. use your cannons on these towers!",
+  "tutorial-dock-under-cannon": "sail to the green dock to deliver your cargo!",
+  "dont-go-right":
+    "shoot out a complete ring of bricks to quickly destroy a tower!",
+  "thread-needle":
+    "smooth sailing! remember: fighting isn't always the answer!",
+};
 
 export interface MapBytes {
   bytes: Uint8ClampedArray;

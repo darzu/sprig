@@ -81,7 +81,7 @@ function float32ArrayOfLength<N extends number>(n: N): Float32ArrayOfLength<N> {
   return new Float32Array(n) as Float32ArrayOfLength<N>;
 }
 
-const BUFFER_SIZE = 80000;
+const BUFFER_SIZE = 8000;
 const buffer = new ArrayBuffer(BUFFER_SIZE);
 let bufferIndex = 0;
 function tmpArray<N extends number>(n: N): Float32ArrayOfLength<N> {
@@ -92,7 +92,9 @@ function tmpArray<N extends number>(n: N): Float32ArrayOfLength<N> {
         (window as any).dbg.tempf32sBlame();
       }
     }
-    throw `Too many temp Float32Arrays allocated--try increasing BUFFER_SIZE`;
+    throw `Too many temp Float32Arrays allocated! Use PERF_DBG_F32S_TEMP_BLAME to find culprit. Or if you must, try increasing BUFFER_SIZE (currently ${
+      (Float32Array.BYTES_PER_ELEMENT * BUFFER_SIZE) / 1024
+    }kb)`;
   }
   if (PERF_DBG_F32S_TEMP_BLAME) {
     dbgAddBlame("temp_f32s", n);
@@ -280,6 +282,12 @@ export module vec3 {
 
   export function add(v1: InputT, v2: InputT, out?: T): T {
     return GL.add(out ?? tmp(), v1, v2) as T;
+  }
+  export function sum(out: T, ...vs: InputT[]): T {
+    out[0] = vs.reduce((p, n) => p + n[0], 0);
+    out[1] = vs.reduce((p, n) => p + n[1], 0);
+    out[2] = vs.reduce((p, n) => p + n[2], 0);
+    return out;
   }
   export function sub(v1: InputT, v2: InputT, out?: T): T {
     return GL.sub(out ?? tmp(), v1, v2) as T;
@@ -547,8 +555,14 @@ export module quat {
   export function rotateZ(v1: InputT, n: number, out?: T) {
     return GL.rotateZ(out ?? tmp(), v1, n) as T;
   }
+  // export function rotateMat3(v1: InputT, m: mat3, out?: T) {
+  //   // TODO(@darzu): IMPL!
+  // }
   export function fromEuler(x: number, y: number, z: number, out?: T): T {
     return GL.fromEuler(out ?? tmp(), x, y, z) as T;
+  }
+  export function fromMat3(m: mat3, out?: T): T {
+    return GL.fromMat3(out ?? tmp(), m) as T;
   }
 }
 
@@ -899,6 +913,30 @@ export module mat3 {
     out[0] = 1;
     out[4] = 1;
     out[8] = 1;
+    return out;
+  }
+
+  export function fromValues(
+    m00: number,
+    m01: number,
+    m02: number,
+    m10: number,
+    m11: number,
+    m12: number,
+    m20: number,
+    m21: number,
+    m22: number
+  ) {
+    var out = float32ArrayOfLength(9);
+    out[0] = m00;
+    out[1] = m01;
+    out[2] = m02;
+    out[3] = m10;
+    out[4] = m11;
+    out[5] = m12;
+    out[6] = m20;
+    out[7] = m21;
+    out[8] = m22;
     return out;
   }
 

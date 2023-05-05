@@ -244,7 +244,8 @@ export async function startPirates() {
               0.05,
               0.02,
               3 * 0.00001,
-              ballHealth
+              ballHealth,
+              [0, 0, -1]
             );
           }
         }

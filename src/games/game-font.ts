@@ -16,7 +16,7 @@ import { ColliderDef } from "../physics/collider.js";
 import { PositionDef } from "../physics/transform.js";
 import { PointLightDef } from "../render/lights.js";
 import { MeshReserve } from "../render/mesh-pool.js";
-import { cloneMesh, Mesh, scaleMesh } from "../render/mesh.js";
+import { cloneMesh, Mesh, scaleMesh, stringifyMesh } from "../render/mesh.js";
 import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
@@ -328,6 +328,10 @@ export async function initFontEditor(em: EntityManager) {
         res.text.upperDiv.style.fontSize = "256px";
         res.text.upperDiv.style.top = "-64px";
         // res.text.upperDiv.style.color = "";
+
+        // TODO(@darzu): HACKy export:
+        console.log(`mesh '${btnIdx}'`);
+        console.log(stringifyMesh(poly.proto.mesh!));
       }
     },
     `letterBtnClick`
@@ -342,5 +346,5 @@ export async function initFontEditor(em: EntityManager) {
 
   initMeshEditor();
 
-  lineStuff();
+  if (false) lineStuff();
 }

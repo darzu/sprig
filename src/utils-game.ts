@@ -5,7 +5,11 @@ import { AssetsDef } from "./assets.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "./sprig-matrix.js";
 import { mathMap } from "./math.js";
 import { getLineEnd, Line, Ray } from "./physics/broadphase.js";
-import { PositionDef, ScaleDef } from "./physics/transform.js";
+import {
+  PhysicsParentDef,
+  PositionDef,
+  ScaleDef,
+} from "./physics/transform.js";
 import { MeshHandle } from "./render/mesh-pool.js";
 import { Mesh } from "./render/mesh.js";
 import {
@@ -174,4 +178,19 @@ export function screenPosToRay(
 
 export function randColor(v?: vec3): vec3 {
   return randNormalPosVec3(v);
+}
+
+export async function addGizmoChild(
+  parent: Entity,
+  scale: number = 1,
+  offset: vec3.InputT = [0, 0, 0]
+): Promise<Entity> {
+  // make debug gizmo
+  const gizmo = EM.new();
+  EM.ensureComponentOn(gizmo, PositionDef, vec3.clone(offset));
+  EM.ensureComponentOn(gizmo, ScaleDef, V(scale, scale, scale));
+  EM.ensureComponentOn(gizmo, PhysicsParentDef, parent.id);
+  const { assets } = await EM.whenResources(AssetsDef);
+  EM.ensureComponentOn(gizmo, RenderableConstructDef, assets.gizmo.proto);
+  return gizmo;
 }

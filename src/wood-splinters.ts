@@ -17,6 +17,8 @@ import {
   createTimberBuilder,
   SplinterParticleDef,
 } from "./wood.js";
+import { RenderDataStdDef } from "./render/pipelines/std-scene.js";
+import { onInit } from "./init.js";
 
 // TODO(@darzu): generalize for any entity pool
 
@@ -57,7 +59,16 @@ export function createSplinterPool(
     );
     const splinterMesh = normalizeMesh(_splinterMesh);
     const splinter = em.new();
-    em.ensureComponentOn(splinter, RenderableConstructDef, splinterMesh);
+    em.ensureComponentOn(
+      splinter,
+      RenderableConstructDef,
+      splinterMesh,
+      true,
+      0,
+      undefined,
+      undefined,
+      true // hidden
+    );
     em.ensureComponentOn(splinter, ColorDef, color);
     em.ensureComponentOn(splinter, PositionDef);
     em.ensureComponentOn(splinter, RotationDef);
@@ -140,3 +151,37 @@ export const mkTimberSplinterFree = (
 
   return b.mesh;
 };
+
+onInit(() => {
+  const splinterObjId = 7654;
+  EM.registerSystem(
+    [
+      SplinterParticleDef,
+      LinearVelocityDef,
+      AngularVelocityDef,
+      GravityDef,
+      PositionDef,
+      RotationDef,
+      RenderDataStdDef,
+    ],
+    [],
+    (splinters, res) => {
+      for (let s of splinters) {
+        if (s.position[1] <= 0) {
+          // TODO(@darzu): zero these instead of remove?
+          EM.removeComponent(s.id, LinearVelocityDef);
+          EM.removeComponent(s.id, GravityDef);
+          EM.removeComponent(s.id, AngularVelocityDef);
+
+          s.position[1] = 0;
+          quat.identity(s.rotation);
+          quat.rotateX(s.rotation, Math.PI * 0.5, s.rotation);
+          quat.rotateZ(s.rotation, Math.PI * Math.random(), s.rotation);
+          s.renderDataStd.id = splinterObjId; // stops z-fighting
+          // console.log("freeze!");
+        }
+      }
+    },
+    "splintersOnFloor"
+  );
+});

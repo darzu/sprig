@@ -12,7 +12,7 @@ export const outlinedTexturePtr = CY.createTexture("outlinesTexture", {
   size: [100, 100],
   onCanvasResize: (w, h) => [w, h],
   // TODO(@darzu): probably only need 1 float 16 per pixel
-  format: "rgba16float",
+  format: "rgba8unorm",
   // TODO(@darzu): support anti-aliasing again
 });
 

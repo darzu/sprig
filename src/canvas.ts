@@ -48,9 +48,20 @@ export function registerInitCanvasSystem(em: EntityManager) {
 
 let _imgPixelatedTimeoutHandle = 0;
 // let pixelRatio = 2.0;
-let pixelRatio = window.devicePixelRatio || 1;
+// let pixelRatio = window.devicePixelRatio || 1;
+let pixelRatio = 1.0;
 // pixelRatio = 0.5;
 function init(): HTMLCanvasElement {
+  console.log(
+    `preferred device pixel ratio: ${window.devicePixelRatio} vs ours: ${pixelRatio}`
+  );
+  console.log(
+    `initial canvas size: ${window.innerWidth * pixelRatio} x ${
+      window.innerHeight * pixelRatio
+    }\n${
+      (window.innerWidth * pixelRatio * window.innerHeight * pixelRatio) / 1024
+    }kpx`
+  );
   const canvasOpt = document.getElementById("sample-canvas");
   if (!canvasOpt) throw `can't find HTML canvas to attach to`;
   const canvas = canvasOpt as HTMLCanvasElement;

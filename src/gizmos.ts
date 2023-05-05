@@ -7,6 +7,11 @@ import { orthonormalize, vec3Dbg } from "./utils-3d.js";
 import { createEmptyMesh } from "./wood.js";
 
 const _UP = V(0, 1, 0);
+const _t1 = vec3.create();
+const _t2 = vec3.create();
+const _t3 = vec3.create();
+const _t4 = vec3.create();
+const _t5 = vec3.create();
 export function createLineMesh(
   width: number,
   start: vec3.InputT,
@@ -17,11 +22,11 @@ export function createLineMesh(
   // TODO(@darzu): I'm dissatisfied with how we do mesh building. Should be a
   //    better way. Maybe it's just the stupid vec stuff.
   // TODO(@darzu): consider building straight into the serialize buffers?
-  up = vec3.copy(vec3.tmp(), up ?? _UP);
+  up = vec3.copy(_t1, up ?? _UP);
   // TODO(@darzu): IMPL
-  const fwd = vec3.sub(end, start);
+  const fwd = vec3.sub(end, start, _t2);
   const len = vec3.length(fwd);
-  const right = vec3.tmp();
+  const right = _t3;
   orthonormalize(fwd, up, right);
   // console.log(vec3Dbg(fwd));
   // console.log(vec3Dbg(up));
@@ -30,8 +35,8 @@ export function createLineMesh(
   vec3.scale(fwd, len, fwd);
   vec3.scale(right, width * 0.5, right);
   vec3.scale(up, width * 0.5, up);
-  const left = vec3.negate(right);
-  const down = vec3.negate(up);
+  const left = vec3.negate(right, _t4);
+  const down = vec3.negate(up, _t5);
 
   const mesh = createEmptyMesh("line");
 
@@ -67,9 +72,9 @@ export function createLineMesh(
 
 export function createGizmoMesh(): Mesh {
   const mesh = mergeMeshes(
-    createLineMesh(0.1, V(0.05, 0, 0), V(1, 0, 0)),
-    createLineMesh(0.1, V(0, 0.05, 0), V(0, 1, 0), V(1, 0, 0)),
-    createLineMesh(0.1, V(0, 0, 0.05), V(0, 0, 1))
+    createLineMesh(0.1, [0.05, 0, 0], [1, 0, 0]),
+    createLineMesh(0.1, [0, 0.05, 0], [0, 1, 0], [1, 0, 0]),
+    createLineMesh(0.1, [0, 0, 0.05], [0, 0, 1])
   ) as Mesh;
   // const mesh = createLineMesh(1, V(0, 0, 0), V(10, 0, 0));
   mesh.colors.forEach((c, i) => {

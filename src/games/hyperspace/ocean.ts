@@ -195,18 +195,21 @@ export async function initOcean(oceanMesh: Mesh, color: vec3) {
   );
 
   const uvToPos = (out: vec3, uv: vec2) => {
+    console.warn(`uvToPos is disabled! tex format issues`);
     const x = uv[0] * uvToPosReader.size[0];
     const y = uv[1] * uvToPosReader.size[1];
     // console.log(`${x},${y}`);
     return uvToPosReader.sample(x, y, out);
   };
   const uvToNorm = (out: vec3, uv: vec2) => {
+    console.warn(`uvToNorm is disabled! tex format issues`);
     const x = uv[0] * uvToNormReader.size[0];
     const y = uv[1] * uvToNormReader.size[1];
     // console.log(`${x},${y}`);
     return uvToNormReader.sample(x, y, out);
   };
   const uvToTang = (out: vec3, uv: vec2) => {
+    console.warn(`uvToTang is disabled! tex format issues`);
     const x = uv[0] * uvToTangReader.size[0];
     const y = uv[1] * uvToTangReader.size[1];
     // console.log(`${x},${y}`);
@@ -214,6 +217,7 @@ export async function initOcean(oceanMesh: Mesh, color: vec3) {
   };
   // TODO(@darzu): re-enable
   const uvToEdgeDist = (uv: vec2) => {
+    console.warn(`uvToEdgeDist is disabled! tex format issues`);
     const x = uv[0] * uvToNormReader.size[0];
     const y = uv[1] * uvToNormReader.size[1];
     return sdfReader.sample(x, y);
@@ -221,42 +225,68 @@ export async function initOcean(oceanMesh: Mesh, color: vec3) {
 
   const gerstnerWaves = createWaves();
 
+  // TODO(@darzu): HACK!
+  const __temp1 = vec2.create();
+  const __temp2 = vec3.create();
+  const __temp3 = vec3.create();
+  const __temp4 = vec3.create();
+  const __temp5 = vec3.create();
+  const __temp6 = vec3.create();
+  const __temp7 = vec3.create();
+  const __temp8 = vec3.create();
+  const __temp9 = vec3.create();
+  const __temp10 = vec3.create();
+  const __temp11 = vec3.create();
   const uvToGerstnerDispAndNorm = (outDisp: vec3, outNorm: vec3, uv: vec2) => {
+    // console.log(`uv: ${uv}`);
     // TODO(@darzu): impl
     compute_gerstner(
       outDisp,
       outNorm,
       gerstnerWaves,
       // TODO(@darzu): reconcile input xy and uv or worldspace units
-      vec2.scale(uv, 1000),
+      // TODO(@darzu): wtf is this 1000x about?!
+      vec2.scale(uv, 1000, __temp1),
+      // uv,
       res.time.time
     );
 
-    const pos = uvToPos(tempVec3(), uv);
-    const norm = uvToNorm(tempVec3(), uv);
-    const tang = uvToTang(tempVec3(), uv);
-    const perp = vec3.cross(tang, norm);
-    const disp = vec3.add(
-      vec3.scale(perp, outDisp[0]),
-      vec3.add(vec3.scale(norm, outDisp[1]), vec3.scale(tang, outDisp[2]))
-    );
-    // outDisp[0] = pos[0] + disp[0] * 0.5;
-    // outDisp[1] = pos[1] + disp[1];
-    // outDisp[2] = pos[2] + disp[2] * 0.5;
-    // outDisp[0] = pos[0] + disp[0] * 0.5;
-    // outDisp[1] = pos[1] + disp[1];
-    // outDisp[2] = pos[2] + disp[2] * 0.5;
-    vec3.add(pos, disp, outDisp);
+    // TODO(@darzu): waht is this code below?
+    // const pos = uvToPos(__temp2, uv);
+    // const norm = uvToNorm(__temp3, uv);
+    // const tang = uvToTang(__temp4, uv);
+    // const perp = vec3.cross(tang, norm, __temp5);
+    // const disp = vec3.add(
+    //   vec3.scale(perp, outDisp[0], __temp6),
+    //   vec3.add(
+    //     vec3.scale(norm, outDisp[1], __temp7),
+    //     vec3.scale(tang, outDisp[2], __temp8),
+    //     __temp11
+    //   ),
+    //   __temp9
+    // );
+    // // outDisp[0] = pos[0] + disp[0] * 0.5;
+    // // outDisp[1] = pos[1] + disp[1];
+    // // outDisp[2] = pos[2] + disp[2] * 0.5;
+    // // outDisp[0] = pos[0] + disp[0] * 0.5;
+    // // outDisp[1] = pos[1] + disp[1];
+    // // outDisp[2] = pos[2] + disp[2] * 0.5;
+    // vec3.add(pos, disp, outDisp);
 
-    const gNorm = vec3.add(
-      vec3.scale(perp, outNorm[0]),
-      vec3.add(vec3.scale(norm, outNorm[1]), vec3.scale(tang, outNorm[2]))
-    );
-    vec3.copy(outNorm, gNorm);
+    // const gNorm = vec3.add(
+    //   vec3.scale(perp, outNorm[0], __temp6),
+    //   vec3.add(
+    //     vec3.scale(norm, outNorm[1], __temp7),
+    //     vec3.scale(tang, outNorm[2], __temp8),
+    //     __temp11
+    //   ),
+    //   __temp10
+    // );
+    // vec3.copy(outNorm, gNorm);
 
-    // HACK: smooth out norm?
-    vec3.add(outNorm, vec3.scale(norm, 2.0), outNorm);
-    vec3.normalize(outNorm, outNorm);
+    // // HACK: smooth out norm?
+    // vec3.add(outNorm, vec3.scale(norm, 2.0, __temp6), outNorm);
+    // vec3.normalize(outNorm, outNorm);
   };
 
   // TODO(@darzu): hacky hacky way to do this
@@ -280,6 +310,8 @@ export async function initOcean(oceanMesh: Mesh, color: vec3) {
   // res.time.time
 }
 
+const __temp1 = vec3.create();
+const __temp2 = vec3.create();
 EM.registerSystem(
   [UVPosDef, PositionDef],
   [OceanDef],
@@ -290,8 +322,8 @@ EM.registerSystem(
       if (PhysicsParentDef.isOn(e) && e.physicsParent.id !== 0) continue;
       if (AnimateToDef.isOn(e)) continue;
       // console.log(`copying: ${e.id}`);
-      const newPos = tempVec3();
-      res.ocean.uvToGerstnerDispAndNorm(newPos, tempVec3(), e.uvPos);
+      const newPos = __temp1;
+      res.ocean.uvToGerstnerDispAndNorm(newPos, __temp2, e.uvPos);
       // const newPos = res.ocean.uvToPos(tempVec3(), e.uvPos);
 
       // if (e.id > 10001) {
@@ -313,6 +345,8 @@ EM.registerSystem(
   "oceanUVtoPos"
 );
 
+const __temp3 = vec2.create();
+const __temp4 = vec3.create();
 EM.registerSystem(
   [UVPosDef, UVDirDef, PositionDef, RotationDef],
   [OceanDef],
@@ -335,17 +369,17 @@ EM.registerSystem(
       // vec3.copy(e.rotation, newNorm);
       // TODO(@darzu): this is horrible.
       vec2.normalize(e.uvDir, e.uvDir);
-      const scaledUVDir = vec2.scale(e.uvDir, 0.0001);
-      const aheadUV = vec2.add(e.uvPos, scaledUVDir);
-      const aheadPos = tempVec3();
-      res.ocean.uvToGerstnerDispAndNorm(aheadPos, tempVec3(), aheadUV);
+      const scaledUVDir = vec2.scale(e.uvDir, 0.0001, __temp3);
+      const aheadUV = vec2.add(e.uvPos, scaledUVDir, __temp3);
+      const aheadPos = __temp1;
+      res.ocean.uvToGerstnerDispAndNorm(aheadPos, __temp2, aheadUV);
       // const aheadPos = res.ocean.uvToPos(tempVec3(), aheadUV);
 
       // TODO(@darzu): want SDF-based bounds checking
       if (!vec3.exactEquals(aheadPos, vec3.ZEROS)) {
-        const forwardish = vec3.sub(aheadPos, e.position);
-        const newNorm = tempVec3();
-        res.ocean.uvToGerstnerDispAndNorm(tempVec3(), newNorm, e.uvPos);
+        const forwardish = vec3.sub(aheadPos, e.position, __temp1);
+        const newNorm = __temp2;
+        res.ocean.uvToGerstnerDispAndNorm(__temp4, newNorm, e.uvPos);
         quatFromUpForward(e.rotation, newNorm, forwardish);
         // console.log(
         //   `UVDir ${[e.uvDir[0], e.uvDir[1]]} -> ${quatDbg(e.rotation)}`
