@@ -165,8 +165,8 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
       res.renderer.pipelines = [
         ...shadowPipelines,
         stdRenderPipeline,
-        // renderGrassPipe,
-        renderOceanPipe,
+        renderGrassPipe,
+        // renderOceanPipe,
         outlineRender,
         deferredPipeline,
         skyPipeline,
