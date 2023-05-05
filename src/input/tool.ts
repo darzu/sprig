@@ -12,8 +12,8 @@ import {
   ScaleDef,
 } from "../physics/transform.js";
 import { registerEventHandler, DetectedEventsDef } from "../net/events.js";
-import { LocalPlayerDef, PlayerDef } from "./player.js";
-import { InteractableDef, InRangeDef } from "../input/interact.js";
+import { LocalPlayerDef, PlayerDef } from "../games/player.js";
+import { InteractableDef, InRangeDef } from "./interact.js";
 import { Deserializer, Serializer } from "../utils/serialize.js";
 
 export const ToolDef = EM.defineComponent("tool", (type?: string) => ({

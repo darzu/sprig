@@ -12,7 +12,7 @@ import {
 } from "../physics/transform.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { V } from "../matrix/sprig-matrix.js";
-import { createMast, MastDef } from "./sail.js";
+import { createMast, MastDef } from "../wind/sail.js";
 import {
   AABBCollider,
   ColliderDef,

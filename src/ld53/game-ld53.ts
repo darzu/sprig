@@ -105,7 +105,7 @@ import { LandMapTexPtr, LevelMapDef, setMap } from "../smol/level-map.js";
 import { GrassCutTexPtr, grassPoolPtr } from "../grass/std-grass.js";
 import { setWindAngle, WindDef } from "../wind/wind.js";
 import { cannonDefaultPitch, createShip, ShipDef } from "../smol/ship.js";
-import { SAIL_FURL_RATE } from "../smol/sail.js";
+import { SAIL_FURL_RATE } from "../wind/sail.js";
 import { spawnStoneTower, StoneTowerDef, towerPool } from "./stone.js";
 import { LandDef } from "./land-ship.js";
 import { DeadDef } from "../ecs/delete.js";

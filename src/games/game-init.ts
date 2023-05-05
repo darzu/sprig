@@ -61,7 +61,7 @@ import { registerGameStateSystems } from "../hyperspace/hyperspace-gamestate.js"
 import { registerEnemyShipSystems } from "../hyperspace/uv-enemy-ship.js";
 import { registerNetSystems } from "../net/net.js";
 import { registerNoodleSystem } from "../animation/noodles.js";
-import { registerToolSystems } from "./tool.js";
+import { registerToolSystems } from "../input/tool.js";
 import { ENABLE_NET } from "../flags.js";
 
 export function registerCommonSystems(em: EntityManager) {

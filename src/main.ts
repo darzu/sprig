@@ -19,7 +19,7 @@ import { gameplaySystems } from "./debug/ghost.js";
 import { initFontEditor } from "./gui/game-font.js";
 import { initGJKSandbox } from "./physics/game-gjk.js";
 import { initHyperspaceGame } from "./hyperspace/game-hyperspace.js";
-import { initClothSandbox } from "./games/game-cloth.js";
+import { initClothSandbox } from "./cloth/game-cloth.js";
 import { initCubeGame } from "./debug/xp-cube.js";
 import { resetTempMatrixBuffer, V } from "./matrix/sprig-matrix.js";
 import { initGrassGame } from "./grass/game-grass.js";
