@@ -93,7 +93,7 @@ import {
   pirateNextSpawn,
   pirateSpawnTimer,
   startPirates,
-} from "../games/pirate.js";
+} from "./pirate.js";
 import { ParametricDef } from "../motion/parametric-motion.js";
 import { addGizmoChild } from "../utils/utils-game.js";
 import { createBarrelMesh } from "./barrel.js";

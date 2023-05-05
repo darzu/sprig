@@ -9,7 +9,7 @@ import { dbg } from "./debug/debugger.js";
 import { DevConsoleDef } from "./debug/console.js";
 import { initReboundSandbox } from "./physics/game-rebound.js";
 // import { callClothSystems } from "./game/cloth.js";
-import { registerCommonSystems } from "./games/game-init.js";
+import { registerCommonSystems } from "./game-init.js";
 import { setSimulationAlpha } from "./render/renderer-ecs.js";
 import { never } from "./utils/util.js";
 // import { initHyperspaceGame } from "./game/game-hyperspace.js";

@@ -2,7 +2,7 @@ import { CanvasDef } from "../render/canvas.js";
 import { createRef } from "../ecs/em_helpers.js";
 import { EM } from "../ecs/entity-manager.js";
 import { VERBOSE_LOG } from "../flags.js";
-import { PartyDef } from "../games/party.js";
+import { PartyDef } from "./party.js";
 import { TextDef } from "../gui/ui.js";
 import { ShipHealthDef } from "./ship-health.js";
 import { createAABB, pointInAABB } from "../physics/aabb.js";

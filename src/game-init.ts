@@ -1,31 +1,31 @@
-import { EntityManager } from "../ecs/entity-manager.js";
-import { InputsDef } from "../input/inputs.js";
-import { registerInitTransforms } from "../physics/transform.js";
-import { LocalPlayerDef, registerPlayerSystems } from "./player.js";
+import { EntityManager } from "./ecs/entity-manager.js";
+import { InputsDef } from "./input/inputs.js";
+import { registerInitTransforms } from "./physics/transform.js";
+import { LocalPlayerDef, registerPlayerSystems } from "./games/player.js";
 import {
   CameraDef,
   CameraFollowDef,
   registerCameraSystems,
   setCameraFollowPosition,
-} from "../camera/camera.js";
+} from "./camera/camera.js";
 import {
   registerHandleNetworkEvents,
   registerSendOutboxes,
-} from "../net/network-event-handler.js";
-import { registerJoinSystems } from "../net/join.js";
+} from "./net/network-event-handler.js";
+import { registerJoinSystems } from "./net/join.js";
 import {
   registerSyncSystem,
   registerUpdateSystem,
   registerAckUpdateSystem,
-} from "../net/sync.js";
-import { registerPredictSystem } from "../net/predict.js";
-import { registerEventSystems } from "../net/events.js";
-import { registerBulletCollisionSystem } from "../cannons/bullet-collision.js";
+} from "./net/sync.js";
+import { registerPredictSystem } from "./net/predict.js";
+import { registerEventSystems } from "./net/events.js";
+import { registerBulletCollisionSystem } from "./cannons/bullet-collision.js";
 import {
   registerBuildBulletsSystem,
   registerBulletUpdate,
-} from "../cannons/bullet.js";
-import { registerInitCanvasSystem } from "../render/canvas.js";
+} from "./cannons/bullet.js";
+import { registerInitCanvasSystem } from "./render/canvas.js";
 import {
   registerConstructRenderablesSystem,
   registerRenderer,
@@ -33,35 +33,35 @@ import {
   registerUpdateRendererWorldFrames,
   registerUpdateSmoothedWorldFrames,
   RendererDef,
-} from "../render/renderer-ecs.js";
+} from "./render/renderer-ecs.js";
 import {
   registerDeadEntitiesSystem,
   registerDeleteEntitiesSystem,
-} from "../ecs/delete.js";
-import { registerCannonSystems } from "../cannons/cannon.js";
-import { registerInteractionSystem } from "../input/interact.js";
-import { registerModeler } from "../meshes/modeler.js";
+} from "./ecs/delete.js";
+import { registerCannonSystems } from "./cannons/cannon.js";
+import { registerInteractionSystem } from "./input/interact.js";
+import { registerModeler } from "./meshes/modeler.js";
 import {
   registerMotionSmoothingRecordLocationsSystem,
   registerMotionSmoothingSystems,
-} from "../render/motion-smoothing.js";
-import { registerCursorSystems } from "../gui/cursor.js";
-import { registerPhysicsSystems } from "../physics/phys.js";
-import { registerUpdateLifetimes } from "../ecs/lifetime.js";
-import { registerMusicSystems } from "../audio/audio.js";
-import { registerNetDebugSystem } from "../net/net-debug.js";
-import { callInitFns } from "../init.js";
-import { registerTurretSystems } from "../turret/turret.js";
-import { registerUISystems } from "../gui/ui.js";
-import { registerDevSystems } from "../debug/console.js";
-import { registerControllableSystems } from "../input/controllable.js";
-import { registerShipSystems } from "../hyperspace/hyperspace-ship.js";
-import { registerGameStateSystems } from "../hyperspace/hyperspace-gamestate.js";
-import { registerEnemyShipSystems } from "../hyperspace/uv-enemy-ship.js";
-import { registerNetSystems } from "../net/net.js";
-import { registerNoodleSystem } from "../animation/noodles.js";
-import { registerToolSystems } from "../input/tool.js";
-import { ENABLE_NET } from "../flags.js";
+} from "./render/motion-smoothing.js";
+import { registerCursorSystems } from "./gui/cursor.js";
+import { registerPhysicsSystems } from "./physics/phys.js";
+import { registerUpdateLifetimes } from "./ecs/lifetime.js";
+import { registerMusicSystems } from "./audio/audio.js";
+import { registerNetDebugSystem } from "./net/net-debug.js";
+import { callInitFns } from "./init.js";
+import { registerTurretSystems } from "./turret/turret.js";
+import { registerUISystems } from "./gui/ui.js";
+import { registerDevSystems } from "./debug/console.js";
+import { registerControllableSystems } from "./input/controllable.js";
+import { registerShipSystems } from "./hyperspace/hyperspace-ship.js";
+import { registerGameStateSystems } from "./hyperspace/hyperspace-gamestate.js";
+import { registerEnemyShipSystems } from "./hyperspace/uv-enemy-ship.js";
+import { registerNetSystems } from "./net/net.js";
+import { registerNoodleSystem } from "./animation/noodles.js";
+import { registerToolSystems } from "./input/tool.js";
+import { ENABLE_NET } from "./flags.js";
 
 export function registerCommonSystems(em: EntityManager) {
   if (ENABLE_NET) {

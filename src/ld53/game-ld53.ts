@@ -67,7 +67,7 @@ import { clamp, jitter, max, sum } from "../utils/math.js";
 import { CY } from "../render/gpu-registry.js";
 import { assert, dbgOnce } from "../utils/util.js";
 import { texTypeToBytes } from "../render/gpu-struct.js";
-import { PartyDef } from "../games/party.js";
+import { PartyDef } from "./party.js";
 import {
   copyAABB,
   createAABB,

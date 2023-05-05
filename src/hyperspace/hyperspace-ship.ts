@@ -41,7 +41,7 @@ import { DevConsoleDef } from "../debug/console.js";
 import { constructNetTurret, TurretDef } from "../turret/turret.js";
 import { YawPitchDef } from "../turret/yawpitch.js";
 import { UVPosDef, UVDirDef } from "../ocean/ocean.js";
-import { PartyDef } from "../games/party.js";
+import { PartyDef } from "../ld53/party.js";
 import { UVShipDef } from "./uv-ship.js";
 import {
   createHypMastNow,
