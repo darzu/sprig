@@ -24,7 +24,7 @@ import { DeletedDef } from "../ecs/delete.js";
 import { clamp, min } from "../utils/math.js";
 import { createCannon } from "../cannons/cannon.js";
 import { AudioDef } from "../audio/audio.js";
-import { LocalPlayerDef, PlayerDef } from "../games/hs-player.js";
+import { LocalPlayerDef, PlayerDef } from "./hs-player.js";
 import { CameraDef } from "../camera/camera.js";
 import { InputsDef } from "../input/inputs.js";
 import { InRangeDef, InteractableDef } from "../input/interact.js";

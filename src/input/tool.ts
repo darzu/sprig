@@ -12,7 +12,7 @@ import {
   ScaleDef,
 } from "../physics/transform.js";
 import { registerEventHandler, DetectedEventsDef } from "../net/events.js";
-import { LocalPlayerDef, PlayerDef } from "../games/hs-player.js";
+import { LocalPlayerDef, PlayerDef } from "../hyperspace/hs-player.js";
 import { InteractableDef, InRangeDef } from "./interact.js";
 import { Deserializer, Serializer } from "../utils/serialize.js";
 

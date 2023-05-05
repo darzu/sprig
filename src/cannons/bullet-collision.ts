@@ -12,7 +12,7 @@ import {
   EntityManager,
   ESet,
 } from "../ecs/entity-manager.js";
-import { PlayerDef } from "../games/hs-player.js";
+import { PlayerDef } from "../hyperspace/hs-player.js";
 import { PhysicsResultsDef } from "../physics/nonintersection.js";
 import { AuthorityDef } from "../net/components.js";
 import { BulletDef } from "./bullet.js";

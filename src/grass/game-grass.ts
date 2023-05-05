@@ -5,7 +5,7 @@ import { EM, EntityManager } from "../ecs/entity-manager.js";
 import { AssetsDef } from "../meshes/assets.js";
 import { ControllableDef } from "../input/controllable.js";
 import { createGhost, GhostDef } from "../debug/ghost.js";
-import { LocalPlayerDef, PlayerDef } from "../games/hs-player.js";
+import { LocalPlayerDef, PlayerDef } from "../hyperspace/hs-player.js";
 import {
   createGrassTile,
   createGrassTileset,

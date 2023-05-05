@@ -32,7 +32,7 @@ import { AssetsDef } from "../meshes/assets.js";
 import { ColliderDef } from "../physics/collider.js";
 import { constructNetTurret, TurretDef } from "../turret/turret.js";
 import { InputsDef } from "../input/inputs.js";
-import { LocalPlayerDef, PlayerDef } from "../games/hs-player.js";
+import { LocalPlayerDef, PlayerDef } from "../hyperspace/hs-player.js";
 import { DeletedDef } from "../ecs/delete.js";
 import { clamp } from "../utils/math.js";
 import { createRef } from "../ecs/em_helpers.js";

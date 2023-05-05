@@ -79,7 +79,11 @@ import { createGhost, GhostDef } from "../debug/ghost.js";
 import { GravityDef } from "../motion/gravity.js";
 import { InRangeDef, InteractableDef } from "../input/interact.js";
 import { LifetimeDef } from "../ecs/lifetime.js";
-import { createPlayer, LocalPlayerDef, PlayerDef } from "../games/hs-player.js";
+import {
+  createPlayer,
+  LocalPlayerDef,
+  PlayerDef,
+} from "../hyperspace/hs-player.js";
 import { TextDef } from "../gui/ui.js";
 import { createIdxPool } from "../utils/idx-pool.js";
 import { randNormalPosVec3, randNormalVec3 } from "../utils/utils-3d.js";

@@ -13,11 +13,7 @@ import {
 } from "../physics/transform.js";
 import { TimeDef } from "../time/time.js";
 import { LifetimeDef } from "../ecs/lifetime.js";
-import {
-  LocalPlayerDef,
-  PlayerDef,
-  PlayerPropsDef,
-} from "../games/hs-player.js";
+import { LocalPlayerDef, PlayerDef, PlayerPropsDef } from "./hs-player.js";
 import {
   createHsShip,
   HsShipLocalDef,
