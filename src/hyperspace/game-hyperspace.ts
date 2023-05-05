@@ -1,43 +1,40 @@
-import { CameraDef } from "../../camera.js";
-import { EntityManager, EntityW } from "../../entity-manager.js";
-import { PositionDef, RotationDef, ScaleDef } from "../../physics/transform.js";
-import {
-  RendererDef,
-  RenderableConstructDef,
-} from "../../render/renderer-ecs.js";
-import { blurPipelines } from "../../render/pipelines/std-blur.js";
-import { stdRenderPipeline } from "../../render/pipelines/std-mesh.js";
-import { postProcess } from "../../render/pipelines/std-post.js";
-import { outlineRender } from "../../render/pipelines/std-outline.js";
+import { CameraDef } from "../camera.js";
+import { EntityManager, EntityW } from "../entity-manager.js";
+import { PositionDef, RotationDef, ScaleDef } from "../physics/transform.js";
+import { RendererDef, RenderableConstructDef } from "../render/renderer-ecs.js";
+import { blurPipelines } from "../render/pipelines/std-blur.js";
+import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
+import { postProcess } from "../render/pipelines/std-post.js";
+import { outlineRender } from "../render/pipelines/std-outline.js";
 import {
   shadowDepthTextures,
   shadowPipelines,
-} from "../../render/pipelines/std-shadow.js";
-import { initStars, renderStars } from "../../render/pipelines/std-stars.js";
-import { AssetsDef } from "../../assets.js";
-import { AuthorityDef, MeDef } from "../../net/components.js";
-import { createPlayer } from "../player.js";
+} from "../render/pipelines/std-shadow.js";
+import { initStars, renderStars } from "../render/pipelines/std-stars.js";
+import { AssetsDef } from "../assets.js";
+import { AuthorityDef, MeDef } from "../net/components.js";
+import { createPlayer } from "../games/player.js";
 import { createHsShip } from "./hyperspace-ship.js";
 import { GameStateDef } from "./hyperspace-gamestate.js";
-import { createGridComposePipelines } from "../../render/pipelines/std-compose.js";
-import { noisePipes } from "../../render/pipelines/std-noise.js";
-import { DevConsoleDef } from "../../console.js";
+import { createGridComposePipelines } from "../render/pipelines/std-compose.js";
+import { noisePipes } from "../render/pipelines/std-noise.js";
+import { DevConsoleDef } from "../console.js";
 import {
   initOcean,
   OceanDef,
   oceanJfa,
   UVPosDef,
   UVDirDef,
-} from "../../ocean/ocean.js";
-import { asyncTimeout } from "../../util.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../../sprig-matrix.js";
-import { AnimateToDef } from "../../animate-to.js";
+} from "../ocean/ocean.js";
+import { asyncTimeout } from "../util.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
+import { AnimateToDef } from "../animate-to.js";
 import { createSpawner, SpawnerDef } from "./uv-spawner.js";
-import { tempVec3 } from "../../temp-pool.js";
+import { tempVec3 } from "../temp-pool.js";
 import { createDarkStarNow, STAR1_COLOR, STAR2_COLOR } from "./darkstar.js";
-import { renderOceanPipe } from "../../render/pipelines/std-ocean.js";
-import { EASE_INQUAD } from "../../util-ease.js";
-import { deferredPipeline } from "../../render/pipelines/std-deferred.js";
+import { renderOceanPipe } from "../render/pipelines/std-ocean.js";
+import { EASE_INQUAD } from "../util-ease.js";
+import { deferredPipeline } from "../render/pipelines/std-deferred.js";
 
 // export let jfaMaxStep = VISUALIZE_JFA ? 0 : 999;
 

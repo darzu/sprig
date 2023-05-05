@@ -24,7 +24,7 @@ import { assert, NumberTuple } from "../util.js";
 import {
   breakEnemyShip,
   EnemyShipLocalDef,
-} from "./hyperspace/uv-enemy-ship.js";
+} from "../hyperspace/uv-enemy-ship.js";
 
 const ENABLE_BULLETBULLET = false;
 

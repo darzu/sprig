@@ -1,57 +1,57 @@
-import { EM, EntityManager } from "../../entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../../sprig-matrix.js";
-import { AuthorityDef, MeDef } from "../../net/components.js";
+import { EM, EntityManager } from "../entity-manager.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
+import { AuthorityDef, MeDef } from "../net/components.js";
 import {
   RenderableConstructDef,
   RenderableDef,
-} from "../../render/renderer-ecs.js";
+} from "../render/renderer-ecs.js";
 import {
   PhysicsParentDef,
   PositionDef,
   RotationDef,
-} from "../../physics/transform.js";
-import { AssetsDef } from "../../assets.js";
-import { BARGE_AABBS } from "../../primatives.js";
+} from "../physics/transform.js";
+import { AssetsDef } from "../assets.js";
+import { BARGE_AABBS } from "../primatives.js";
 import {
   AABBCollider,
   ColliderDef,
   MultiCollider,
-} from "../../physics/collider.js";
-import { copyAABB, createAABB } from "../../physics/aabb.js";
-import { PhysicsResultsDef } from "../../physics/nonintersection.js";
-import { BulletDef } from "../bullet.js";
-import { DeletedDef } from "../../delete.js";
-import { clamp, min } from "../../math.js";
-import { createCannon } from "../cannon.js";
-import { AudioDef } from "../../audio.js";
-import { LocalPlayerDef, PlayerDef } from "../player.js";
-import { CameraDef } from "../../camera.js";
-import { InputsDef } from "../../inputs.js";
-import { InRangeDef, InteractableDef } from "../interact.js";
+} from "../physics/collider.js";
+import { copyAABB, createAABB } from "../physics/aabb.js";
+import { PhysicsResultsDef } from "../physics/nonintersection.js";
+import { BulletDef } from "../games/bullet.js";
+import { DeletedDef } from "../delete.js";
+import { clamp, min } from "../math.js";
+import { createCannon } from "../games/cannon.js";
+import { AudioDef } from "../audio.js";
+import { LocalPlayerDef, PlayerDef } from "../games/player.js";
+import { CameraDef } from "../camera.js";
+import { InputsDef } from "../inputs.js";
+import { InRangeDef, InteractableDef } from "../games/interact.js";
 import {
   endGame,
   HyperspaceGameState,
   GameStateDef,
   startGame,
 } from "./hyperspace-gamestate.js";
-import { createRef, defineNetEntityHelper, Ref } from "../../em_helpers.js";
-import { DetectedEventsDef, eventWizard } from "../../net/events.js";
-import { MotionSmoothingDef } from "../../motion-smoothing.js";
-import { DevConsoleDef } from "../../console.js";
-import { constructNetTurret, TurretDef } from "../turret.js";
-import { YawPitchDef } from "../../yawpitch.js";
-import { UVPosDef, UVDirDef } from "../../ocean/ocean.js";
-import { PartyDef } from "../party.js";
+import { createRef, defineNetEntityHelper, Ref } from "../em_helpers.js";
+import { DetectedEventsDef, eventWizard } from "../net/events.js";
+import { MotionSmoothingDef } from "../motion-smoothing.js";
+import { DevConsoleDef } from "../console.js";
+import { constructNetTurret, TurretDef } from "../games/turret.js";
+import { YawPitchDef } from "../yawpitch.js";
+import { UVPosDef, UVDirDef } from "../ocean/ocean.js";
+import { PartyDef } from "../games/party.js";
 import { UVShipDef } from "./uv-ship.js";
 import {
   createHypMastNow,
   HypMastLocalDef,
   HypMastPropsDef,
 } from "./hypersail.js";
-import { makeOrrery, OrreryDef } from "../orrery.js";
-import { ColorDef } from "../../color-ecs.js";
+import { makeOrrery, OrreryDef } from "../games/orrery.js";
+import { ColorDef } from "../color-ecs.js";
 import { createGem, GemPropsDef } from "./gem.js";
-import { ENDESGA16 } from "../../color/palettes.js";
+import { ENDESGA16 } from "../color/palettes.js";
 
 // TODO(@darzu): impl. occassionaly syncable components with auto-versioning
 

@@ -14,7 +14,7 @@ import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { tempVec3 } from "../temp-pool.js";
 import { assert } from "../util.js";
 import { screenPosToWorldPos } from "../utils-game.js";
-import { UICursorDef } from "../games/game-font.js";
+import { UICursorDef } from "./game-font.js";
 
 // adornments are: entities that are parented to an entity's mesh parts
 //    [ ] track changes via version number on the mesh data

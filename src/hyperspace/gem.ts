@@ -1,14 +1,14 @@
-import { AssetsDef } from "../../assets.js";
-import { ColorDef } from "../../color-ecs.js";
-import { defineNetEntityHelper } from "../../em_helpers.js";
-import { EM, EntityManager } from "../../entity-manager.js";
-import { MeDef } from "../../net/components.js";
-import { copyAABB, createAABB } from "../../physics/aabb.js";
-import { ColliderDef } from "../../physics/collider.js";
-import { PositionDef, PhysicsParentDef } from "../../physics/transform.js";
-import { RenderableConstructDef } from "../../render/renderer-ecs.js";
-import { V } from "../../sprig-matrix.js";
-import { InteractableDef } from "../interact.js";
+import { AssetsDef } from "../assets.js";
+import { ColorDef } from "../color-ecs.js";
+import { defineNetEntityHelper } from "../em_helpers.js";
+import { EM, EntityManager } from "../entity-manager.js";
+import { MeDef } from "../net/components.js";
+import { copyAABB, createAABB } from "../physics/aabb.js";
+import { ColliderDef } from "../physics/collider.js";
+import { PositionDef, PhysicsParentDef } from "../physics/transform.js";
+import { RenderableConstructDef } from "../render/renderer-ecs.js";
+import { V } from "../sprig-matrix.js";
+import { InteractableDef } from "../games/interact.js";
 
 export const { GemPropsDef, GemLocalDef, createGem } = defineNetEntityHelper(
   EM,

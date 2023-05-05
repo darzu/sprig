@@ -67,7 +67,7 @@ import {
   angleBetweenXZ,
   vec3Dbg,
 } from "../utils-3d.js";
-import { createRibSailNow, RibSailLocalDef } from "./hyperspace/ribsail.js";
+import { createRibSailNow, RibSailLocalDef } from "../hyperspace/ribsail.js";
 import { MeDef } from "../net/components.js";
 import { WindDef } from "../smol/wind.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";

@@ -1,38 +1,35 @@
-import { AssetsDef } from "../../assets.js";
-import { ColorDef } from "../../color-ecs.js";
-import { createRef } from "../../em_helpers.js";
-import { EM, EntityW } from "../../entity-manager.js";
+import { AssetsDef } from "../assets.js";
+import { ColorDef } from "../color-ecs.js";
+import { createRef } from "../em_helpers.js";
+import { EM, EntityW } from "../entity-manager.js";
 import {
   PositionDef,
   ScaleDef,
   RotationDef,
   PhysicsParentDef,
-} from "../../physics/transform.js";
+} from "../physics/transform.js";
 import {
   RenderableConstructDef,
   RenderableDef,
   Renderer,
   RendererDef,
-} from "../../render/renderer-ecs.js";
-import { quat, V, vec2, vec3 } from "../../sprig-matrix.js";
-import { range } from "../../util.js";
-import { defineNetEntityHelper } from "../../em_helpers.js";
-import { MeDef } from "../../net/components.js";
-import { WorldFrameDef } from "../../physics/nonintersection.js";
-import { MeshHandle } from "../../render/mesh-pool.js";
-import { cloneMesh, mapMeshPositions, RawMesh } from "../../render/mesh.js";
-import {
-  RenderDataStdDef,
-  FLAG_UNLIT,
-} from "../../render/pipelines/std-scene.js";
-import { tempQuat, tempMat4 } from "../../temp-pool.js";
+} from "../render/renderer-ecs.js";
+import { quat, V, vec2, vec3 } from "../sprig-matrix.js";
+import { range } from "../util.js";
+import { defineNetEntityHelper } from "../em_helpers.js";
+import { MeDef } from "../net/components.js";
+import { WorldFrameDef } from "../physics/nonintersection.js";
+import { MeshHandle } from "../render/mesh-pool.js";
+import { cloneMesh, mapMeshPositions, RawMesh } from "../render/mesh.js";
+import { RenderDataStdDef, FLAG_UNLIT } from "../render/pipelines/std-scene.js";
+import { tempQuat, tempMat4 } from "../temp-pool.js";
 import {
   signedAreaOfTriangle,
   positionAndTargetToOrthoViewProjMatrix,
-} from "../../utils-3d.js";
+} from "../utils-3d.js";
 import { STAR1_COLOR, DarkStarPropsDef } from "./darkstar.js";
-import { onInit } from "../../init.js";
-import { ENDESGA16 } from "../../color/palettes.js";
+import { onInit } from "../init.js";
+import { ENDESGA16 } from "../color/palettes.js";
 
 const RIB_COUNT = 6;
 export const DEFAULT_SAIL_COLOR = V(0.05, 0.05, 0.05);

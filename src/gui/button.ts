@@ -9,7 +9,7 @@ import { PhysicsResultsDef } from "../physics/nonintersection.js";
 import { scaleMesh } from "../render/mesh.js";
 import { RendererDef } from "../render/renderer-ecs.js";
 import { assert } from "../util.js";
-import { UICursorDef } from "../games/game-font.js";
+import { UICursorDef } from "./game-font.js";
 
 // TODO(@darzu): this should really go in assets.ts to follow the current patern.
 //    BUT I'm disatisfied with the current pattern. Subsystems should be able to
