@@ -4,7 +4,7 @@ import {
   Entity,
   EntityW,
   Component,
-} from "../entity-manager.js";
+} from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import {
   PhysicsParentDef,
@@ -25,7 +25,7 @@ import { AABB, copyAABB, createAABB } from "../physics/aabb.js";
 import { InputsDef } from "../inputs.js";
 import { clamp } from "../math.js";
 import { DeletedDef } from "../delete.js";
-import { defineSerializableComponent } from "../em_helpers.js";
+import { defineSerializableComponent } from "../ecs/em_helpers.js";
 import { YawPitchDef, yawpitchToQuat } from "../yawpitch.js";
 import { TextDef } from "./ui.js";
 

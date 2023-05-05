@@ -3,7 +3,7 @@ import { CanvasDef } from "../canvas.js";
 import { ColorDef } from "../color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { dbg } from "../debugger.js";
-import { EM, EntityManager, EntityW } from "../entity-manager.js";
+import { EM, EntityManager, EntityW } from "../ecs/entity-manager.js";
 import { vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { ButtonDef, ButtonsStateDef } from "./button.js";
 import { initMeshEditor, MeshEditorDef } from "./mesh-editor.js";

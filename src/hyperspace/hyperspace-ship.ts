@@ -1,4 +1,4 @@
-import { EM, EntityManager } from "../entity-manager.js";
+import { EM, EntityManager } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import {
@@ -34,7 +34,7 @@ import {
   GameStateDef,
   startGame,
 } from "./hyperspace-gamestate.js";
-import { createRef, defineNetEntityHelper, Ref } from "../em_helpers.js";
+import { createRef, defineNetEntityHelper, Ref } from "../ecs/em_helpers.js";
 import { DetectedEventsDef, eventWizard } from "../net/events.js";
 import { MotionSmoothingDef } from "../motion-smoothing.js";
 import { DevConsoleDef } from "../console.js";

@@ -5,7 +5,7 @@ import {
 } from "../camera.js";
 import { ColorDef } from "../color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
-import { EM, EntityManager, EntityW } from "../entity-manager.js";
+import { EM, EntityManager, EntityW } from "../ecs/entity-manager.js";
 import { AssetsDef, gameMeshFromMesh } from "../assets.js";
 import { ControllableDef } from "../games/controllable.js";
 import { createGhost, GhostDef } from "../games/ghost.js";
@@ -102,7 +102,7 @@ import { BulletDef, breakBullet } from "../cannons/bullet.js";
 import { ParametricDef } from "../games/parametric-motion.js";
 import { createDock } from "./dock.js";
 import { ShipHealthDef } from "./ship-health.js";
-import { createRef } from "../em_helpers.js";
+import { createRef } from "../ecs/em_helpers.js";
 import {
   resetWoodHealth,
   resetWoodState,

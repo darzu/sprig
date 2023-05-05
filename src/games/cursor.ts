@@ -1,4 +1,9 @@
-import { ComponentDef, EM, EntityManager, EntityW } from "../entity-manager.js";
+import {
+  ComponentDef,
+  EM,
+  EntityManager,
+  EntityW,
+} from "../ecs/entity-manager.js";
 import { Mesh } from "../render/mesh.js";
 import {
   RenderableConstructDef,
@@ -19,7 +24,7 @@ import {
 } from "../physics/nonintersection.js";
 import { RayHit } from "../physics/broadphase.js";
 import { tempVec3 } from "../temp-pool.js";
-import { createRef, Ref } from "../em_helpers.js";
+import { createRef, Ref } from "../ecs/em_helpers.js";
 import { screenPosToRay } from "../utils-game.js";
 
 export const GlobalCursor3dDef = EM.defineComponent("globalCursor3d", () => {

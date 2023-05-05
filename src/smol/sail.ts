@@ -4,7 +4,7 @@ import {
   Entity,
   EntityManager,
   EntityW,
-} from "../entity-manager.js";
+} from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import {
   PhysicsParentDef,
@@ -35,7 +35,7 @@ import { InputsDef } from "../inputs.js";
 import { LocalPlayerDef, PlayerDef } from "../games/player.js";
 import { DeletedDef } from "../delete.js";
 import { clamp } from "../math.js";
-import { createRef } from "../em_helpers.js";
+import { createRef } from "../ecs/em_helpers.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import { WindDef } from "./wind.js";
 import { YawPitchDef } from "../yawpitch.js";

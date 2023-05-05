@@ -1,4 +1,4 @@
-import { Component, EM } from "../entity-manager.js";
+import { Component, EM } from "../ecs/entity-manager.js";
 import { onInit } from "../init.js";
 import { assert } from "../util.js";
 import { getBytes } from "../webget.js";

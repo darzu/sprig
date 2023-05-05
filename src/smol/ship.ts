@@ -1,6 +1,6 @@
 import { ColorDef } from "../color-ecs.js";
-import { createRef } from "../em_helpers.js";
-import { EM, EntityManager, EntityW } from "../entity-manager.js";
+import { createRef } from "../ecs/em_helpers.js";
+import { EM, EntityManager, EntityW } from "../ecs/entity-manager.js";
 import { AssetsDef } from "../assets.js";
 import { vec3, quat } from "../sprig-matrix.js";
 import { LinearVelocityDef } from "../physics/motion.js";

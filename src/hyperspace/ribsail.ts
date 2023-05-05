@@ -1,7 +1,7 @@
 import { AssetsDef } from "../assets.js";
 import { ColorDef } from "../color-ecs.js";
-import { createRef } from "../em_helpers.js";
-import { EM, EntityW } from "../entity-manager.js";
+import { createRef } from "../ecs/em_helpers.js";
+import { EM, EntityW } from "../ecs/entity-manager.js";
 import {
   PositionDef,
   ScaleDef,
@@ -16,7 +16,7 @@ import {
 } from "../render/renderer-ecs.js";
 import { quat, V, vec2, vec3 } from "../sprig-matrix.js";
 import { range } from "../util.js";
-import { defineNetEntityHelper } from "../em_helpers.js";
+import { defineNetEntityHelper } from "../ecs/em_helpers.js";
 import { MeDef } from "../net/components.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import { MeshHandle } from "../render/mesh-pool.js";

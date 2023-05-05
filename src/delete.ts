@@ -1,4 +1,4 @@
-import { EM, EntityManager } from "./entity-manager.js";
+import { EM, EntityManager } from "./ecs/entity-manager.js";
 import { SyncDef } from "./net/components.js";
 import { dbgLogOnce } from "./util.js";
 

@@ -4,7 +4,7 @@ import {
   Entity,
   EntityW,
   Component,
-} from "../entity-manager.js";
+} from "../ecs/entity-manager.js";
 import { TimeDef } from "../time.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { jitter } from "../math.js";
@@ -31,7 +31,7 @@ import { BulletDef, fireBullet } from "../cannons/bullet.js";
 import { DeletedDef, OnDeleteDef } from "../delete.js";
 import { LifetimeDef } from "../games/lifetime.js";
 import { HsShipLocalDef } from "./hyperspace-ship.js";
-import { defineNetEntityHelper } from "../em_helpers.js";
+import { defineNetEntityHelper } from "../ecs/em_helpers.js";
 import { DetectedEventsDef, eventWizard } from "../net/events.js";
 import { raiseBulletEnemyShip } from "../cannons/bullet-collision.js";
 import { GameStateDef, HyperspaceGameState } from "./hyperspace-gamestate.js";

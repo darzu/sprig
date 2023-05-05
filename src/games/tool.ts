@@ -1,6 +1,6 @@
 import { FinishedDef } from "../build.js";
 import { AABBCollider, ColliderDef } from "../physics/collider.js";
-import { Component, EM, Entity, EntityManager } from "../entity-manager.js";
+import { Component, EM, Entity, EntityManager } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
 import { AABB } from "../physics/aabb.js";

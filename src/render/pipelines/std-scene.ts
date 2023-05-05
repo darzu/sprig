@@ -1,4 +1,4 @@
-import { EM } from "../../entity-manager.js";
+import { EM } from "../../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../../sprig-matrix.js";
 import { assert, assertDbg } from "../../util.js";
 import { computeTriangleNormal } from "../../utils-3d.js";

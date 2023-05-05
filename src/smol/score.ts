@@ -1,6 +1,6 @@
 import { CanvasDef } from "../canvas.js";
-import { createRef } from "../em_helpers.js";
-import { EM } from "../entity-manager.js";
+import { createRef } from "../ecs/em_helpers.js";
+import { EM } from "../ecs/entity-manager.js";
 import { VERBOSE_LOG } from "../flags.js";
 import { PartyDef } from "../games/party.js";
 import { TextDef } from "../games/ui.js";

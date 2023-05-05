@@ -1,4 +1,4 @@
-import { FinishedDef } from "./build.js";
+import { FinishedDef } from "../build.js";
 import {
   EntityManager,
   ComponentDef,
@@ -6,10 +6,10 @@ import {
   Entity,
   EM,
 } from "./entity-manager.js";
-import { Authority, AuthorityDef, MeDef, SyncDef } from "./net/components.js";
-import { Serializer, Deserializer } from "./serialize.js";
-import { assert } from "./util.js";
-import { capitalize } from "./util.js";
+import { Authority, AuthorityDef, MeDef, SyncDef } from "../net/components.js";
+import { Serializer, Deserializer } from "../serialize.js";
+import { assert } from "../util.js";
+import { capitalize } from "../util.js";
 
 export function defineSerializableComponent<
   N extends string,

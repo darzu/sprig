@@ -1,4 +1,4 @@
-import { Component, EM } from "../entity-manager.js";
+import { Component, EM } from "../ecs/entity-manager.js";
 import { onInit } from "../init.js";
 import { assert } from "../util.js";
 import { getText } from "../webget.js";
@@ -25,7 +25,7 @@ export const ShaderPaths = [
   "std-deferred",
 ] as const;
 
-export type ShaderName = typeof ShaderPaths[number];
+export type ShaderName = (typeof ShaderPaths)[number];
 
 export interface Shader {
   code: string;

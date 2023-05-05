@@ -1,5 +1,5 @@
 import { CameraFollowDef } from "./camera.js";
-import { ComponentDef, EM, Entity, EntityW } from "./entity-manager.js";
+import { ComponentDef, EM, Entity, EntityW } from "./ecs/entity-manager.js";
 import {
   PERF_DBG_F32S,
   PERF_DBG_F32S_BLAME,

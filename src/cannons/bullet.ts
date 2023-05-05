@@ -4,7 +4,7 @@ import {
   Component,
   Entity,
   EntityW,
-} from "../entity-manager.js";
+} from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V, tV } from "../sprig-matrix.js";
 import { FinishedDef } from "../build.js";
 import { ColorDef } from "../color-ecs.js";

@@ -9,8 +9,8 @@ import {
   seqEndesga16NextIdx,
 } from "../color/palettes.js";
 import { DeadDef } from "../delete.js";
-import { createRef } from "../em_helpers.js";
-import { EM, EntityW, EntityManager } from "../entity-manager.js";
+import { createRef } from "../ecs/em_helpers.js";
+import { EM, EntityW, EntityManager } from "../ecs/entity-manager.js";
 import { createEntityPool } from "../entity-pool.js";
 import { mat4, vec3, quat, vec2, tV } from "../sprig-matrix.js";
 import { clamp, jitter, parabolaFromPoints } from "../math.js";

@@ -1,5 +1,5 @@
 import { DevConsoleDef } from "../console.js";
-import { EM } from "../entity-manager.js";
+import { EM } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { onInit } from "../init.js";
 import { InputsDef } from "../inputs.js";

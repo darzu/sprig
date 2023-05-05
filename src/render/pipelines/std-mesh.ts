@@ -1,7 +1,7 @@
 import { ColorDef, TintsDef, applyTints, AlphaDef } from "../../color-ecs.js";
 import { ENDESGA16 } from "../../color/palettes.js";
 import { DeadDef, DeletedDef } from "../../delete.js";
-import { EntityW } from "../../entity-manager.js";
+import { EntityW } from "../../ecs/entity-manager.js";
 import { onInit } from "../../init.js";
 // import { oceanJfa } from "../../game/ocean.js";
 // import { oceanJfa } from "../../game/ocean.js";

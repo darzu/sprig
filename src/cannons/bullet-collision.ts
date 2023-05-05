@@ -11,7 +11,7 @@ import {
   Entity,
   EntityManager,
   ESet,
-} from "../entity-manager.js";
+} from "../ecs/entity-manager.js";
 import { PlayerDef } from "../games/player.js";
 import { PhysicsResultsDef } from "../physics/nonintersection.js";
 import { AuthorityDef } from "../net/components.js";

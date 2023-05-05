@@ -1,4 +1,4 @@
-import { EM } from "../entity-manager.js";
+import { EM } from "../ecs/entity-manager.js";
 import { fullQuad } from "../render/gpu-helper.js";
 import {
   CyTexturePtr,

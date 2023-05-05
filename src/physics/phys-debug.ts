@@ -1,5 +1,5 @@
 import { ColliderDef } from "./collider.js";
-import { EM, EntityManager } from "../entity-manager.js";
+import { EM, EntityManager } from "../ecs/entity-manager.js";
 import { AssetsDef, LocalMeshes } from "../assets.js";
 import { ColorDef } from "../color-ecs.js";
 import { InputsDef } from "../inputs.js";

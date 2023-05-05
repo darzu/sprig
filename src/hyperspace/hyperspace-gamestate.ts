@@ -1,6 +1,6 @@
 import { CameraDef } from "../camera.js";
 import { DeletedDef } from "../delete.js";
-import { EM, EntityManager } from "../entity-manager.js";
+import { EM, EntityManager } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { AuthorityDef, HostDef, MeDef } from "../net/components.js";
 import { eventWizard } from "../net/events.js";

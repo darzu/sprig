@@ -1,5 +1,5 @@
 import { ColorDef, TintsDef, applyTints } from "../color-ecs.js";
-import { EM } from "../entity-manager.js";
+import { EM } from "../ecs/entity-manager.js";
 import { onInit } from "../init.js";
 import {
   comparisonSamplerPtr,

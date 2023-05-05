@@ -3,7 +3,7 @@ import { CameraDef } from "../camera.js";
 import { ColorDef } from "../color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { DevConsoleDef } from "../console.js";
-import { EM } from "../entity-manager.js";
+import { EM } from "../ecs/entity-manager.js";
 import { AngularVelocityDef, LinearVelocityDef } from "../physics/motion.js";
 import { PositionDef, ScaleDef } from "../physics/transform.js";
 import { PointLightDef } from "../render/lights.js";

@@ -6,7 +6,7 @@ import {
   EDef,
   ESet,
   ComponentDef,
-} from "../entity-manager.js";
+} from "../ecs/entity-manager.js";
 import { Serializer, Deserializer, OutOfRoomError } from "../serialize.js";
 import { MAX_MESSAGE_SIZE, MessageType } from "./message.js";
 import {

@@ -1,7 +1,7 @@
 import { CameraComputedDef } from "../camera.js";
 import { AlphaDef, ColorDef } from "../color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
-import { EM, EntityW } from "../entity-manager.js";
+import { EM, EntityW } from "../ecs/entity-manager.js";
 import { Assets, AssetsDef } from "../assets.js";
 import { gameplaySystems } from "../games/ghost.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";

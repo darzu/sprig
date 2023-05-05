@@ -1,7 +1,7 @@
 import { AssetsDef } from "../assets.js";
 import { ColorDef } from "../color-ecs.js";
-import { defineNetEntityHelper } from "../em_helpers.js";
-import { EM, EntityManager } from "../entity-manager.js";
+import { defineNetEntityHelper } from "../ecs/em_helpers.js";
+import { EM, EntityManager } from "../ecs/entity-manager.js";
 import { MeDef } from "../net/components.js";
 import { copyAABB, createAABB } from "../physics/aabb.js";
 import { ColliderDef } from "../physics/collider.js";

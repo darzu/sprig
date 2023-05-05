@@ -3,7 +3,7 @@ import { CameraDef, CameraComputedDef } from "../camera.js";
 import { ColorDef } from "../color-ecs.js";
 import { AllEndesga16, ENDESGA16 } from "../color/palettes.js";
 import { DevConsoleDef } from "../console.js";
-import { EM, EntityW } from "../entity-manager.js";
+import { EM, EntityW } from "../ecs/entity-manager.js";
 import { createGizmoMesh } from "../gizmos.js";
 import { jitter } from "../math.js";
 import { AngularVelocityDef, LinearVelocityDef } from "../physics/motion.js";

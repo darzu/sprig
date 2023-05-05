@@ -1,5 +1,5 @@
 import { ColorDef } from "./color-ecs.js";
-import { EM, Entity, EntityManager } from "./entity-manager.js";
+import { EM, Entity, EntityManager } from "./ecs/entity-manager.js";
 import { AllMeshSymbols, BLACK } from "./assets.js";
 import { BulletDef } from "./cannons/bullet.js";
 import { GravityDef } from "./games/gravity.js";

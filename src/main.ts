@@ -1,6 +1,6 @@
 import { test } from "./test.js";
 import { setupObjImportExporter } from "./download.js";
-import { EM } from "./entity-manager.js";
+import { EM } from "./ecs/entity-manager.js";
 import { tick } from "./time.js";
 import { InputsDef, registerInputsSystem } from "./inputs.js";
 import { MeDef, JoinDef, HostDef, PeerNameDef } from "./net/components.js";

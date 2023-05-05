@@ -9,7 +9,7 @@ import {
   registerUpdateInContactSystems,
   registerUpdateWorldAABBs,
 } from "./nonintersection.js";
-import { EntityManager } from "../entity-manager.js";
+import { EntityManager } from "../ecs/entity-manager.js";
 import { registerPhysicsDebuggerSystem } from "./phys-debug.js";
 import {
   registerPhysicsClampVelocityByContact,

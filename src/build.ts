@@ -1,3 +1,3 @@
-import { EM } from "./entity-manager.js";
+import { EM } from "./ecs/entity-manager.js";
 
 export const FinishedDef = EM.defineComponent("finished", () => true);

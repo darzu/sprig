@@ -1,4 +1,4 @@
-import { Component, EM, Entity, EntityManager } from "../entity-manager.js";
+import { Component, EM, Entity, EntityManager } from "../ecs/entity-manager.js";
 import { LocalPlayerDef, PlayerDef } from "./player.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { AuthorityDef, MeDef } from "../net/components.js";

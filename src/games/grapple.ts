@@ -1,5 +1,5 @@
-import { defineNetEntityHelper } from "../em_helpers.js";
-import { EM, EntityManager } from "../entity-manager.js";
+import { defineNetEntityHelper } from "../ecs/em_helpers.js";
+import { EM, EntityManager } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { onInit } from "../init.js";
 import { MeDef } from "../net/components.js";

@@ -1,4 +1,4 @@
-import { EntityManager } from "../entity-manager.js";
+import { EntityManager } from "../ecs/entity-manager.js";
 import { InputsDef } from "../inputs.js";
 import { registerInitTransforms } from "../physics/transform.js";
 import { LocalPlayerDef, registerPlayerSystems } from "./player.js";

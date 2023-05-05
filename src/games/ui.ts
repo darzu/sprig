@@ -1,4 +1,4 @@
-import { EM, EntityManager } from "../entity-manager.js";
+import { EM, EntityManager } from "../ecs/entity-manager.js";
 
 /*
 UI needed:

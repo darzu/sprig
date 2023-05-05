@@ -3,7 +3,7 @@
 // player controller component and system
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { InputsDef } from "../inputs.js";
-import { EM, Entity, EntityManager, EntityW } from "../entity-manager.js";
+import { EM, Entity, EntityManager, EntityW } from "../ecs/entity-manager.js";
 import { TimeDef } from "../time.js";
 import { ColorDef } from "../color-ecs.js";
 import { FinishedDef } from "../build.js";
@@ -37,7 +37,7 @@ import {
   CameraFollowDef,
   setCameraFollowPosition,
 } from "../camera.js";
-import { defineSerializableComponent } from "../em_helpers.js";
+import { defineSerializableComponent } from "../ecs/em_helpers.js";
 import { ControllableDef } from "./controllable.js";
 import { GlobalCursor3dDef } from "./cursor.js";
 import { drawLine } from "../utils-game.js";

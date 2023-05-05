@@ -1,6 +1,6 @@
 import { AnimateTo, AnimateToDef } from "../animate-to.js";
-import { createRef, Ref } from "../em_helpers.js";
-import { EM, Entity } from "../entity-manager.js";
+import { createRef, Ref } from "../ecs/em_helpers.js";
+import { EM, Entity } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { onInit } from "../init.js";
 import { AuthorityDef, MeDef } from "../net/components.js";

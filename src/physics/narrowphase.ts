@@ -1,4 +1,4 @@
-import { EntityManager, EntityW } from "../entity-manager.js";
+import { EntityManager, EntityW } from "../ecs/entity-manager.js";
 import { AssetsDef } from "../assets.js";
 import { ColorDef } from "../color-ecs.js";
 import { LocalPlayerDef } from "../games/player.js";

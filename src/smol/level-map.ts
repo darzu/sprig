@@ -1,4 +1,4 @@
-import { Component, EM, EntityManager } from "../entity-manager.js";
+import { Component, EM, EntityManager } from "../ecs/entity-manager.js";
 import { VERBOSE_LOG } from "../flags.js";
 import { TextDef } from "../games/ui.js";
 import {
