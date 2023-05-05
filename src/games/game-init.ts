@@ -51,7 +51,6 @@ import { registerUpdateLifetimes } from "../ecs/lifetime.js";
 import { registerMusicSystems } from "../audio/audio.js";
 import { registerNetDebugSystem } from "../net/net-debug.js";
 import { callInitFns } from "../init.js";
-import { registerGrappleDbgSystems } from "./grapple.js";
 import { registerTurretSystems } from "../turret/turret.js";
 import { registerUISystems } from "../gui/ui.js";
 import { registerDevSystems } from "../debug/console.js";
@@ -85,7 +84,6 @@ export function registerCommonSystems(em: EntityManager) {
   registerShipSystems(em);
   registerBuildBulletsSystem(em);
   registerCursorSystems(em);
-  registerGrappleDbgSystems(em);
   registerInitTransforms(em);
   registerEnemyShipSystems(em);
   registerControllableSystems(em);
