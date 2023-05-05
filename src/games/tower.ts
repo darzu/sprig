@@ -58,7 +58,7 @@ import {
   createWoodHealth,
   resetWoodHealth,
   resetWoodState,
-} from "../shipyard/wood.js";
+} from "../wood/wood.js";
 import { ShipDef } from "../smol/ship.js";
 import { PartyDef } from "./party.js";
 import {

@@ -49,7 +49,7 @@ import {
   createWoodHealth,
   resetWoodHealth,
   resetWoodState,
-} from "../shipyard/wood.js";
+} from "../wood/wood.js";
 import { fireBullet } from "../cannons/bullet.js";
 
 const DBG_PIRATES = false;

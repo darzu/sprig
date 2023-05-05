@@ -48,7 +48,7 @@ import {
   unshareProvokingForWood,
   WoodAssets,
   WoodAssetsDef,
-} from "./shipyard/wood.js";
+} from "./wood/wood.js";
 import { tempMat4, tempVec3 } from "./temp-pool.js";
 import {
   BOAT_MESH,

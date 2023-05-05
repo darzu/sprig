@@ -29,13 +29,9 @@ import { CameraFollowDef } from "../camera.js";
 import { createSock } from "../wind/windsock.js";
 import { BARGE_AABBS, SHIP_SMALL_AABBS } from "../primatives.js";
 import { ENDESGA16 } from "../color/palettes.js";
-import { createHomeShip, homeShipAABBs } from "../shipyard/shipyard.js";
+import { createHomeShip, homeShipAABBs } from "../wood/shipyard.js";
 import { getAABBFromMesh, transformMesh } from "../render/mesh.js";
-import {
-  createWoodHealth,
-  WoodHealthDef,
-  WoodStateDef,
-} from "../shipyard/wood.js";
+import { createWoodHealth, WoodHealthDef, WoodStateDef } from "../wood/wood.js";
 import { addGizmoChild } from "../utils-game.js";
 import { getSizeFromAABB } from "../physics/aabb.js";
 import {

@@ -6,7 +6,7 @@ import {
   dbgPathWithGizmos,
   lerpBetween,
   Path,
-} from "../shipyard/shipyard.js";
+} from "../wood/shipyard.js";
 import { getHalfsizeFromAABB } from "../physics/aabb.js";
 import { ColliderDef } from "../physics/collider.js";
 import { PositionDef } from "../physics/transform.js";
@@ -24,7 +24,7 @@ import {
   WoodHealthDef,
   WoodState,
   WoodStateDef,
-} from "../shipyard/wood.js";
+} from "../wood/wood.js";
 
 export function createDock() {
   const [mesh, wood] = createDockWood();

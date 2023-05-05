@@ -111,7 +111,7 @@ import {
   resetWoodState,
   WoodAssetsDef,
   WoodStateDef,
-} from "../shipyard/wood.js";
+} from "../wood/wood.js";
 import { MapPaths } from "../smol/map-loader.js";
 /*
 NOTES:
