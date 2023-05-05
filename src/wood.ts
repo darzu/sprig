@@ -1,7 +1,7 @@
 import { ColorDef } from "./color-ecs.js";
 import { EM, Entity, EntityManager } from "./entity-manager.js";
 import { AllMeshSymbols, BLACK } from "./assets.js";
-import { BulletDef } from "./games/bullet.js";
+import { BulletDef } from "./cannons/bullet.js";
 import { GravityDef } from "./games/gravity.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "./sprig-matrix.js";
 import { createIdxPool } from "./idx-pool.js";

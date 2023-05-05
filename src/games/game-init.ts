@@ -20,8 +20,11 @@ import {
 } from "../net/sync.js";
 import { registerPredictSystem } from "../net/predict.js";
 import { registerEventSystems } from "../net/events.js";
-import { registerBulletCollisionSystem } from "./bullet-collision.js";
-import { registerBuildBulletsSystem, registerBulletUpdate } from "./bullet.js";
+import { registerBulletCollisionSystem } from "../cannons/bullet-collision.js";
+import {
+  registerBuildBulletsSystem,
+  registerBulletUpdate,
+} from "../cannons/bullet.js";
 import { registerInitCanvasSystem } from "../canvas.js";
 import {
   registerConstructRenderablesSystem,
@@ -35,7 +38,7 @@ import {
   registerDeadEntitiesSystem,
   registerDeleteEntitiesSystem,
 } from "../delete.js";
-import { registerCannonSystems } from "./cannon.js";
+import { registerCannonSystems } from "../cannons/cannon.js";
 import { registerInteractionSystem } from "./interact.js";
 import { registerModeler } from "./modeler.js";
 import {

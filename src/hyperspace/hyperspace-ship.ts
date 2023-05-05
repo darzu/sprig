@@ -19,10 +19,10 @@ import {
 } from "../physics/collider.js";
 import { copyAABB, createAABB } from "../physics/aabb.js";
 import { PhysicsResultsDef } from "../physics/nonintersection.js";
-import { BulletDef } from "../games/bullet.js";
+import { BulletDef } from "../cannons/bullet.js";
 import { DeletedDef } from "../delete.js";
 import { clamp, min } from "../math.js";
-import { createCannon } from "../games/cannon.js";
+import { createCannon } from "../cannons/cannon.js";
 import { AudioDef } from "../audio.js";
 import { LocalPlayerDef, PlayerDef } from "../games/player.js";
 import { CameraDef } from "../camera.js";

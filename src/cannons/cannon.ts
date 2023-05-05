@@ -8,15 +8,15 @@ import { ColliderDef } from "../physics/collider.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { DetectedEventsDef, eventWizard } from "../net/events.js";
 import { fireBullet } from "./bullet.js";
-import { InRangeDef } from "./interact.js";
-import { LocalPlayerDef, PlayerDef } from "./player.js";
+import { InRangeDef } from "../games/interact.js";
+import { LocalPlayerDef, PlayerDef } from "../games/player.js";
 import { AssetsDef } from "../assets.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import { AudioDef, randChordId } from "../audio.js";
 import { InputsDef } from "../inputs.js";
 import { DeletedDef } from "../delete.js";
 import { defineNetEntityHelper } from "../em_helpers.js";
-import { constructNetTurret, TurretDef } from "./turret.js";
+import { constructNetTurret, TurretDef } from "../games/turret.js";
 import { SoundSetDef } from "../ld53/sound-loader.js";
 
 export const { CannonPropsDef, CannonLocalDef, createCannon, createCannonNow } =

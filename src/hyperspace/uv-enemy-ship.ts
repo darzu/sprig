@@ -27,13 +27,13 @@ import {
   PhysicsResultsDef,
   WorldFrameDef,
 } from "../physics/nonintersection.js";
-import { BulletDef, fireBullet } from "../games/bullet.js";
+import { BulletDef, fireBullet } from "../cannons/bullet.js";
 import { DeletedDef, OnDeleteDef } from "../delete.js";
 import { LifetimeDef } from "../games/lifetime.js";
 import { HsShipLocalDef } from "./hyperspace-ship.js";
 import { defineNetEntityHelper } from "../em_helpers.js";
 import { DetectedEventsDef, eventWizard } from "../net/events.js";
-import { raiseBulletEnemyShip } from "../games/bullet-collision.js";
+import { raiseBulletEnemyShip } from "../cannons/bullet-collision.js";
 import { GameStateDef, HyperspaceGameState } from "./hyperspace-gamestate.js";
 import { cloneMesh, scaleMesh3 } from "../render/mesh.js";
 import { UVShipDef } from "./uv-ship.js";

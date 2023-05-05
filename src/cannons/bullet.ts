@@ -29,9 +29,9 @@ import {
   LinearVelocityDef,
 } from "../physics/motion.js";
 import { MotionSmoothingDef } from "../motion-smoothing.js";
-import { LifetimeDef } from "./lifetime.js";
+import { LifetimeDef } from "../games/lifetime.js";
 import { Time, TimeDef } from "../time.js";
-import { GravityDef } from "./gravity.js";
+import { GravityDef } from "../games/gravity.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import { DeadDef } from "../delete.js";
@@ -40,7 +40,7 @@ import { randNormalVec3 } from "../utils-3d.js";
 import { SplinterParticleDef } from "../wood.js";
 import { tempVec3 } from "../temp-pool.js";
 import { assert, assertDbg } from "../util.js";
-import { ParametricDef } from "./parametric-motion.js";
+import { ParametricDef } from "../games/parametric-motion.js";
 
 // TODO(@darzu): MULTIPLAYER BULLETS might have been broken during LD51
 

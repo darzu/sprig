@@ -5,7 +5,7 @@ import { DeadDef } from "../delete.js";
 import { createRef, Ref } from "../em_helpers.js";
 import { Component, EM, Entity, EntityW } from "../entity-manager.js";
 import { createEntityPool } from "../entity-pool.js";
-import { fireBullet } from "../games/bullet.js";
+import { fireBullet } from "../cannons/bullet.js";
 import { PartyDef } from "../games/party.js";
 import { jitter } from "../math.js";
 import {

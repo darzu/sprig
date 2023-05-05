@@ -38,7 +38,7 @@ import {
   CannonLocalDef,
   createCannon,
   createCannonNow,
-} from "../games/cannon.js";
+} from "../cannons/cannon.js";
 
 export const ShipDef = EM.defineComponent("ld52ship", () => ({
   mast: createRef(0, [MastDef, RotationDef]),

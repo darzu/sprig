@@ -50,7 +50,7 @@ import {
   resetWoodHealth,
   resetWoodState,
 } from "../wood.js";
-import { fireBullet } from "./bullet.js";
+import { fireBullet } from "../cannons/bullet.js";
 
 const DBG_PIRATES = false;
 

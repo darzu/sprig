@@ -71,7 +71,7 @@ import { createRibSailNow, RibSailLocalDef } from "../hyperspace/ribsail.js";
 import { MeDef } from "../net/components.js";
 import { WindDef } from "../smol/wind.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
-import { fireBullet, simulateBullet } from "./bullet.js";
+import { fireBullet, simulateBullet } from "../cannons/bullet.js";
 import { dbgOnce } from "../util.js";
 import { drawBall } from "../utils-game.js";
 import { createGraph3DAxesMesh, createLineMesh } from "../gizmos.js";

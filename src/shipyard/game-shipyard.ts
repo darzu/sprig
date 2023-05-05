@@ -73,7 +73,7 @@ import {
   BulletConstructDef,
   BulletDef,
   fireBullet,
-} from "../games/bullet.js";
+} from "../cannons/bullet.js";
 import { ControllableDef } from "../games/controllable.js";
 import { createGhost, GhostDef } from "../games/ghost.js";
 import { GravityDef } from "../games/gravity.js";

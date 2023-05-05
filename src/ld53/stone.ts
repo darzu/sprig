@@ -6,7 +6,7 @@ import { DeadDef } from "../delete.js";
 import { createRef, Ref } from "../em_helpers.js";
 import { Component, EM, Entity, EntityW } from "../entity-manager.js";
 import { createEntityPool } from "../entity-pool.js";
-import { Bullet, BulletDef, fireBullet } from "../games/bullet.js";
+import { Bullet, BulletDef, fireBullet } from "../cannons/bullet.js";
 import { GravityDef } from "../games/gravity.js";
 import { LifetimeDef } from "../games/lifetime.js";
 import { PartyDef } from "../games/party.js";
