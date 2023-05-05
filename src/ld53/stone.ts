@@ -7,7 +7,7 @@ import { createRef, Ref } from "../ecs/em_helpers.js";
 import { Component, EM, Entity, EntityW } from "../ecs/entity-manager.js";
 import { createEntityPool } from "../ecs/entity-pool.js";
 import { Bullet, BulletDef, fireBullet } from "../cannons/bullet.js";
-import { GravityDef } from "../games/gravity.js";
+import { GravityDef } from "../motion/gravity.js";
 import { LifetimeDef } from "../ecs/lifetime.js";
 import { PartyDef } from "../games/party.js";
 import { Path } from "../wood/shipyard.js";

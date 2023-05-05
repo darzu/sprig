@@ -7,7 +7,7 @@ import { MeDef, JoinDef, HostDef, PeerNameDef } from "./net/components.js";
 import { addEventComponents } from "./net/events.js";
 import { dbg } from "./debug/debugger.js";
 import { DevConsoleDef } from "./debug/console.js";
-import { initReboundSandbox } from "./games/game-rebound.js";
+import { initReboundSandbox } from "./physics/game-rebound.js";
 // import { callClothSystems } from "./game/cloth.js";
 import { registerCommonSystems } from "./games/game-init.js";
 import { setSimulationAlpha } from "./render/renderer-ecs.js";

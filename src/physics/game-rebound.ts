@@ -5,13 +5,9 @@ import { EntityManager } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { InputsDef } from "../input/inputs.js";
 import { jitter } from "../utils/math.js";
-import { ColliderDef } from "../physics/collider.js";
+import { ColliderDef } from "./collider.js";
 import { AngularVelocityDef, LinearVelocityDef } from "../motion/velocity.js";
-import {
-  PhysicsParentDef,
-  PositionDef,
-  ScaleDef,
-} from "../physics/transform.js";
+import { PhysicsParentDef, PositionDef, ScaleDef } from "./transform.js";
 import {
   RenderableDef,
   RenderableConstructDef,

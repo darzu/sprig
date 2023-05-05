@@ -31,7 +31,7 @@ import {
 import { MotionSmoothingDef } from "../render/motion-smoothing.js";
 import { LifetimeDef } from "../ecs/lifetime.js";
 import { Time, TimeDef } from "../time/time.js";
-import { GravityDef } from "../games/gravity.js";
+import { GravityDef } from "../motion/gravity.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import { DeadDef } from "../ecs/delete.js";
