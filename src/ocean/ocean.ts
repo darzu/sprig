@@ -1,21 +1,21 @@
-import { AnimateToDef } from "../../animate-to.js";
-import { createRef, Ref } from "../../em_helpers.js";
-import { EM, EntityManager } from "../../entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../../sprig-matrix.js";
-import { InputsDef } from "../../inputs.js";
-import { clamp } from "../../math.js";
+import { AnimateToDef } from "../animate-to.js";
+import { createRef, Ref } from "../em_helpers.js";
+import { EM, EntityManager } from "../entity-manager.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
+import { InputsDef } from "../inputs.js";
+import { clamp } from "../math.js";
 import {
   PhysicsParentDef,
   PositionDef,
   RotationDef,
-} from "../../physics/transform.js";
-import { createTextureReader } from "../../render/cpu-texture.js";
-import { createJfaPipelines } from "../../render/pipelines/std-jump-flood.js";
+} from "../physics/transform.js";
+import { createTextureReader } from "../render/cpu-texture.js";
+import { createJfaPipelines } from "../render/pipelines/std-jump-flood.js";
 import {
   GerstnerWaveTS,
   oceanPoolPtr,
   RenderDataOceanDef,
-} from "../../render/pipelines/std-ocean.js";
+} from "../render/pipelines/std-ocean.js";
 import {
   unwrapPipeline,
   unwrapPipeline2,
@@ -23,26 +23,26 @@ import {
   uvToNormTex,
   uvToPosTex,
   uvToTangTex,
-} from "../../render/pipelines/xp-uv-unwrap.js";
+} from "../render/pipelines/xp-uv-unwrap.js";
 import {
   RenderableConstructDef,
   RenderableDef,
   RendererDef,
-} from "../../render/renderer-ecs.js";
-import { tempVec2, tempVec3 } from "../../temp-pool.js";
-import { TimeDef } from "../../time.js";
-import { asyncTimeout, range } from "../../util.js";
+} from "../render/renderer-ecs.js";
+import { tempVec2, tempVec3 } from "../temp-pool.js";
+import { TimeDef } from "../time.js";
+import { asyncTimeout, range } from "../util.js";
 import {
   quatDbg,
   quatFromUpForward,
   randNormalVec2,
   vec2Dbg,
   vec3Dbg,
-} from "../../utils-3d.js";
-import { AssetsDef } from "../../assets.js";
-import { ColorDef } from "../../color-ecs.js";
-import { DEFAULT_MASK, UVUNWRAP_MASK } from "../../render/pipeline-masks.js";
-import { Mesh } from "../../render/mesh.js";
+} from "../utils-3d.js";
+import { AssetsDef } from "../assets.js";
+import { ColorDef } from "../color-ecs.js";
+import { DEFAULT_MASK, UVUNWRAP_MASK } from "../render/pipeline-masks.js";
+import { Mesh } from "../render/mesh.js";
 import { compute_gerstner, createWaves } from "./gerstner.js";
 
 // TODO(@darzu): refactor this to not assume a specific ocean shape

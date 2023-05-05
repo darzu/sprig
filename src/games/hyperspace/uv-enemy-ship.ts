@@ -37,7 +37,7 @@ import { raiseBulletEnemyShip } from "../bullet-collision.js";
 import { GameStateDef, HyperspaceGameState } from "./hyperspace-gamestate.js";
 import { cloneMesh, scaleMesh3 } from "../../render/mesh.js";
 import { UVShipDef } from "./uv-ship.js";
-import { UVDirDef, UVPosDef } from "./ocean.js";
+import { UVDirDef, UVPosDef } from "../../ocean/ocean.js";
 import { ColorDef } from "../../color-ecs.js";
 import { AudioDef, Music } from "../../audio.js";
 

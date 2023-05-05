@@ -76,7 +76,7 @@ import { CanvasDef } from "../canvas.js";
 import { createJfaPipelines } from "../render/pipelines/std-jump-flood.js";
 import { createGridComposePipelines } from "../render/pipelines/std-compose.js";
 import { createTextureReader } from "../render/cpu-texture.js";
-import { initOcean, OceanDef, UVPosDef } from "../games/hyperspace/ocean.js";
+import { initOcean, OceanDef, UVPosDef } from "../ocean/ocean.js";
 import { renderOceanPipe } from "../render/pipelines/std-ocean.js";
 import { SKY_MASK } from "../render/pipeline-masks.js";
 import { skyPipeline } from "../render/pipelines/std-sky.js";

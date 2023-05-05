@@ -1,6 +1,6 @@
-import { vec3, vec2, V } from "../../sprig-matrix.js";
-import { GerstnerWaveTS } from "../../render/pipelines/std-ocean.js";
-import { DISABLE_GERSTNER } from "../../flags.js";
+import { vec3, vec2, V } from "../sprig-matrix.js";
+import { GerstnerWaveTS } from "../render/pipelines/std-ocean.js";
+import { DISABLE_GERSTNER } from "../flags.js";
 
 // NOTE: tips for getting good waves:
 //    - combine waves with the same frequency and speed to create interesting shapes,

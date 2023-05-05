@@ -22,7 +22,13 @@ import { GameStateDef } from "./hyperspace-gamestate.js";
 import { createGridComposePipelines } from "../../render/pipelines/std-compose.js";
 import { noisePipes } from "../../render/pipelines/std-noise.js";
 import { DevConsoleDef } from "../../console.js";
-import { initOcean, OceanDef, oceanJfa, UVPosDef, UVDirDef } from "./ocean.js";
+import {
+  initOcean,
+  OceanDef,
+  oceanJfa,
+  UVPosDef,
+  UVDirDef,
+} from "../../ocean/ocean.js";
 import { asyncTimeout } from "../../util.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../../sprig-matrix.js";
 import { AnimateToDef } from "../../animate-to.js";

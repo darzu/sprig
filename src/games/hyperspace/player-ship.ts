@@ -40,7 +40,7 @@ import { MotionSmoothingDef } from "../../motion-smoothing.js";
 import { DevConsoleDef } from "../../console.js";
 import { constructNetTurret, TurretDef } from "../turret.js";
 import { YawPitchDef } from "../../yawpitch.js";
-import { UVPosDef, UVDirDef } from "./ocean.js";
+import { UVPosDef, UVDirDef } from "../../ocean/ocean.js";
 import { PartyDef } from "../party.js";
 import { UVShipDef } from "./uv-ship.js";
 import {
