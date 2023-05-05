@@ -4,7 +4,7 @@ import { ENDESGA16 } from "../color/palettes.js";
 import { EM, EntityManager } from "../ecs/entity-manager.js";
 import { AssetsDef } from "../meshes/assets.js";
 import { ControllableDef } from "../input/controllable.js";
-import { createGhost, GhostDef } from "../games/ghost.js";
+import { createGhost, GhostDef } from "../debug/ghost.js";
 import { LocalPlayerDef, PlayerDef } from "../games/player.js";
 import {
   createGrassTile,
@@ -48,7 +48,7 @@ import { copyAABB, createAABB } from "../physics/aabb.js";
 import { InputsDef } from "../input/inputs.js";
 import { ScoreDef } from "../smol/score.js";
 import { raiseManTurret } from "../turret/turret.js";
-import { TextDef } from "../games/ui.js";
+import { TextDef } from "../gui/ui.js";
 import { VERBOSE_LOG } from "../flags.js";
 import { CanvasDef } from "../render/canvas.js";
 import { createJfaPipelines } from "../render/pipelines/std-jump-flood.js";

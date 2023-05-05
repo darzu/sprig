@@ -23,7 +23,7 @@ import { AuthorityDef, MeDef } from "../net/components.js";
 import { YawPitchDef } from "../turret/yawpitch.js";
 import { PartyDef } from "../games/party.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
-import { InteractableDef } from "../games/interact.js";
+import { InteractableDef } from "../input/interact.js";
 import { vec3Dbg } from "../utils/utils-3d.js";
 import { CameraFollowDef } from "../camera/camera.js";
 import { createSock } from "../wind/windsock.js";

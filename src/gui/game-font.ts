@@ -25,8 +25,8 @@ import { RendererDef, RenderableConstructDef } from "../render/renderer-ecs.js";
 import { assert } from "../utils/util.js";
 import { randNormalPosVec3 } from "../utils/utils-3d.js";
 import { AssetsDef, GameMesh, gameMeshFromMesh } from "../meshes/assets.js";
-import { createGhost, gameplaySystems } from "../games/ghost.js";
-import { TextDef } from "../games/ui.js";
+import { createGhost, gameplaySystems } from "../debug/ghost.js";
+import { TextDef } from "./ui.js";
 import { makePlaneMesh } from "../meshes/primatives.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
 

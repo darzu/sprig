@@ -30,7 +30,7 @@ import { cloneMesh, scaleMesh3 } from "../meshes/mesh.js";
 import { AssetsDef } from "../meshes/assets.js";
 import { LinearVelocityDef } from "../physics/motion.js";
 import { MotionSmoothingDef } from "../render/motion-smoothing.js";
-import { ModelerDef } from "./modeler.js";
+import { ModelerDef } from "../meshes/modeler.js";
 import { DeletedDef } from "../ecs/delete.js";
 import {
   CameraDef,

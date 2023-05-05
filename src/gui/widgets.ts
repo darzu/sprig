@@ -3,7 +3,7 @@ import { AlphaDef, ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { EM, EntityW } from "../ecs/entity-manager.js";
 import { Assets, AssetsDef } from "../meshes/assets.js";
-import { gameplaySystems } from "../games/ghost.js";
+import { gameplaySystems } from "../debug/ghost.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { MouseDragDef } from "../input/inputs.js";
 import { ColliderDef } from "../physics/collider.js";

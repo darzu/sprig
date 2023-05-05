@@ -8,7 +8,7 @@ import { ColliderDef } from "../physics/collider.js";
 import { PositionDef, PhysicsParentDef } from "../physics/transform.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { V } from "../sprig-matrix.js";
-import { InteractableDef } from "../games/interact.js";
+import { InteractableDef } from "../input/interact.js";
 
 export const { GemPropsDef, GemLocalDef, createGem } = defineNetEntityHelper(
   EM,

@@ -11,7 +11,7 @@ import {
 } from "../physics/transform.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { AssetsDef } from "../meshes/assets.js";
-import { DarkStarPropsDef } from "../hyperspace/darkstar.js";
+import { DarkStarPropsDef } from "./darkstar.js";
 import { ENDESGA16 } from "../color/palettes.js";
 
 const ORRERY_SCALE = 0.001;

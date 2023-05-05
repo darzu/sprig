@@ -75,16 +75,16 @@ import {
   fireBullet,
 } from "../cannons/bullet.js";
 import { ControllableDef } from "../input/controllable.js";
-import { createGhost, GhostDef } from "../games/ghost.js";
+import { createGhost, GhostDef } from "../debug/ghost.js";
 import { GravityDef } from "../games/gravity.js";
-import { InRangeDef, InteractableDef } from "../games/interact.js";
+import { InRangeDef, InteractableDef } from "../input/interact.js";
 import { LifetimeDef } from "../ecs/lifetime.js";
 import { createPlayer, LocalPlayerDef, PlayerDef } from "../games/player.js";
-import { TextDef } from "../games/ui.js";
+import { TextDef } from "../gui/ui.js";
 import { createIdxPool } from "../utils/idx-pool.js";
 import { randNormalPosVec3, randNormalVec3 } from "../utils/utils-3d.js";
 import { createHomeShip } from "./shipyard.js";
-import { gameplaySystems } from "../games/ghost.js";
+import { gameplaySystems } from "../debug/ghost.js";
 import { RenderDataStdDef } from "../render/pipelines/std-scene.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
 import { createEntityPool } from "../ecs/entity-pool.js";

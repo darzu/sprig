@@ -8,25 +8,25 @@ import { createGizmoMesh } from "../debug/gizmos.js";
 import { jitter } from "../utils/math.js";
 import { AngularVelocityDef, LinearVelocityDef } from "../physics/motion.js";
 import { PositionDef, ScaleDef } from "../physics/transform.js";
-import { PointLightDef } from "../render/lights.js";
+import { PointLightDef } from "./lights.js";
 import { mapMeshPositions } from "../meshes/mesh.js";
-import { createGridComposePipelines } from "../render/pipelines/std-compose.js";
-import { deferredPipeline } from "../render/pipelines/std-deferred.js";
-import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
-import { outlineRender } from "../render/pipelines/std-outline.js";
-import { postProcess } from "../render/pipelines/std-post.js";
+import { createGridComposePipelines } from "./pipelines/std-compose.js";
+import { deferredPipeline } from "./pipelines/std-deferred.js";
+import { stdRenderPipeline } from "./pipelines/std-mesh.js";
+import { outlineRender } from "./pipelines/std-outline.js";
+import { postProcess } from "./pipelines/std-post.js";
 import {
   shadowDepthTextures,
   shadowPipelines,
-} from "../render/pipelines/std-shadow.js";
-import { RenderableConstructDef, RendererDef } from "../render/renderer-ecs.js";
+} from "./pipelines/std-shadow.js";
+import { RenderableConstructDef, RendererDef } from "./renderer-ecs.js";
 import { mat4, quat, V, vec3 } from "../sprig-matrix.js";
 import {
   frustumFromBounds,
   getFrustumWorldCorners,
   positionAndTargetToOrthoViewProjMatrix,
 } from "../utils/utils-3d.js";
-import { createGhost } from "./ghost.js";
+import { createGhost } from "../debug/ghost.js";
 
 const dbgGrid = [
   //

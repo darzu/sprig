@@ -27,7 +27,7 @@ import { AudioDef } from "../audio/audio.js";
 import { LocalPlayerDef, PlayerDef } from "../games/player.js";
 import { CameraDef } from "../camera/camera.js";
 import { InputsDef } from "../input/inputs.js";
-import { InRangeDef, InteractableDef } from "../games/interact.js";
+import { InRangeDef, InteractableDef } from "../input/interact.js";
 import {
   endGame,
   HyperspaceGameState,
@@ -48,7 +48,7 @@ import {
   HypMastLocalDef,
   HypMastPropsDef,
 } from "./hypersail.js";
-import { makeOrrery, OrreryDef } from "../games/orrery.js";
+import { makeOrrery, OrreryDef } from "./orrery.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { createGem, GemPropsDef } from "./gem.js";
 import { ENDESGA16 } from "../color/palettes.js";

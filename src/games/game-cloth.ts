@@ -40,9 +40,9 @@ import { AssetsDef } from "../meshes/assets.js";
 import { ClothConstructDef, ClothLocalDef } from "./cloth.js";
 import { GlobalCursor3dDef } from "../gui/cursor.js";
 import { ENEMY_SHIP_COLOR } from "../hyperspace/uv-enemy-ship.js";
-import { createGhost } from "./ghost.js";
+import { createGhost } from "../debug/ghost.js";
 import { ForceDef } from "./spring.js";
-import { TextDef } from "./ui.js";
+import { TextDef } from "../gui/ui.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
 
 // TODO(@darzu): BROKEN. cloth sandbox isn't lit right and cloth isn't there

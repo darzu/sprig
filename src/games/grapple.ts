@@ -13,7 +13,7 @@ import {
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { AssetsDef } from "../meshes/assets.js";
 import { ColorDef } from "../color/color-ecs.js";
-import { InteractableDef } from "./interact.js";
+import { InteractableDef } from "../input/interact.js";
 
 const DBG_GRAPPLE = false;
 

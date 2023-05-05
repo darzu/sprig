@@ -39,8 +39,8 @@ import {
   registerDeleteEntitiesSystem,
 } from "../ecs/delete.js";
 import { registerCannonSystems } from "../cannons/cannon.js";
-import { registerInteractionSystem } from "./interact.js";
-import { registerModeler } from "./modeler.js";
+import { registerInteractionSystem } from "../input/interact.js";
+import { registerModeler } from "../meshes/modeler.js";
 import {
   registerMotionSmoothingRecordLocationsSystem,
   registerMotionSmoothingSystems,
@@ -53,7 +53,7 @@ import { registerNetDebugSystem } from "../net/net-debug.js";
 import { callInitFns } from "../init.js";
 import { registerGrappleDbgSystems } from "./grapple.js";
 import { registerTurretSystems } from "../turret/turret.js";
-import { registerUISystems } from "./ui.js";
+import { registerUISystems } from "../gui/ui.js";
 import { registerDevSystems } from "../debug/console.js";
 import { registerControllableSystems } from "../input/controllable.js";
 import { registerShipSystems } from "../hyperspace/hyperspace-ship.js";

@@ -1,6 +1,6 @@
 import { Component, EM, EntityManager } from "../ecs/entity-manager.js";
 import { VERBOSE_LOG } from "../flags.js";
-import { TextDef } from "../games/ui.js";
+import { TextDef } from "../gui/ui.js";
 import {
   AABB,
   AABB2,

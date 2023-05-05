@@ -8,7 +8,7 @@ import { ColliderDef } from "../physics/collider.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { DetectedEventsDef, eventWizard } from "../net/events.js";
 import { fireBullet } from "./bullet.js";
-import { InRangeDef } from "../games/interact.js";
+import { InRangeDef } from "../input/interact.js";
 import { LocalPlayerDef, PlayerDef } from "../games/player.js";
 import { AssetsDef } from "../meshes/assets.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
