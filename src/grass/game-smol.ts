@@ -37,7 +37,12 @@ import {
 } from "../render/pipelines/std-shadow.js";
 import { RenderableConstructDef, RendererDef } from "../render/renderer-ecs.js";
 import { mat3, mat4, quat, V, vec2, vec3, vec4 } from "../sprig-matrix.js";
-import { createMast, createSail, MastDef, SAIL_FURL_RATE } from "./sail.js";
+import {
+  createMast,
+  createSail,
+  MastDef,
+  SAIL_FURL_RATE,
+} from "../smol/sail.js";
 import {
   quatFromUpForward,
   randNormalPosVec3,
@@ -45,20 +50,24 @@ import {
   vec3Dbg,
 } from "../utils-3d.js";
 import { randColor } from "../utils-game.js";
-import { GrassCutTexPtr, grassPoolPtr, renderGrassPipe } from "./std-grass.js";
-import { WindDef } from "./wind.js";
+import {
+  GrassCutTexPtr,
+  grassPoolPtr,
+  renderGrassPipe,
+} from "../smol/std-grass.js";
+import { WindDef } from "../smol/wind.js";
 import { DevConsoleDef } from "../console.js";
 import { clamp, jitter, max, sum } from "../math.js";
-import { createShip, ShipDef } from "./ship.js";
+import { createShip, ShipDef } from "../smol/ship.js";
 import { CY } from "../render/gpu-registry.js";
 import { assert } from "../util.js";
 import { texTypeToBytes } from "../render/gpu-struct.js";
 import { PartyDef } from "../games/party.js";
-import { LevelMapDef, LandMapTexPtr, setMap } from "./level-map.js";
+import { LevelMapDef, LandMapTexPtr, setMap } from "../smol/level-map.js";
 import { copyAABB, createAABB, getAABBCornersTemp } from "../physics/aabb.js";
 import { rasterizeTri } from "../raster.js";
 import { InputsDef } from "../inputs.js";
-import { ScoreDef } from "./score.js";
+import { ScoreDef } from "../smol/score.js";
 import { raiseManTurret } from "../games/turret.js";
 import { TextDef } from "../games/ui.js";
 import { VERBOSE_LOG } from "../flags.js";
