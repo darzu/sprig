@@ -73,18 +73,18 @@ import {
   BulletConstructDef,
   BulletDef,
   fireBullet,
-} from "./bullet.js";
-import { ControllableDef } from "./controllable.js";
-import { createGhost, GhostDef } from "./ghost.js";
-import { GravityDef } from "./gravity.js";
-import { InRangeDef, InteractableDef } from "./interact.js";
-import { LifetimeDef } from "./lifetime.js";
-import { createPlayer, LocalPlayerDef, PlayerDef } from "./player.js";
-import { TextDef } from "./ui.js";
+} from "../games/bullet.js";
+import { ControllableDef } from "../games/controllable.js";
+import { createGhost, GhostDef } from "../games/ghost.js";
+import { GravityDef } from "../games/gravity.js";
+import { InRangeDef, InteractableDef } from "../games/interact.js";
+import { LifetimeDef } from "../games/lifetime.js";
+import { createPlayer, LocalPlayerDef, PlayerDef } from "../games/player.js";
+import { TextDef } from "../games/ui.js";
 import { createIdxPool } from "../idx-pool.js";
 import { randNormalPosVec3, randNormalVec3 } from "../utils-3d.js";
 import { createHomeShip } from "./shipyard.js";
-import { gameplaySystems } from "./ghost.js";
+import { gameplaySystems } from "../games/ghost.js";
 import { RenderDataStdDef } from "../render/pipelines/std-scene.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
 import { createEntityPool } from "../entity-pool.js";
@@ -93,8 +93,8 @@ import {
   pirateNextSpawn,
   pirateSpawnTimer,
   startPirates,
-} from "./pirate.js";
-import { ParametricDef } from "./parametric-motion.js";
+} from "../games/pirate.js";
+import { ParametricDef } from "../games/parametric-motion.js";
 import { addGizmoChild } from "../utils-game.js";
 import { createBarrelMesh } from "./barrel.js";
 

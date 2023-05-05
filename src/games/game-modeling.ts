@@ -15,7 +15,7 @@ import { shadowPipelines } from "../render/pipelines/std-shadow.js";
 import { RenderableConstructDef, RendererDef } from "../render/renderer-ecs.js";
 import { quat, V, vec3 } from "../sprig-matrix.js";
 import { createGhost } from "./ghost.js";
-import { createHomeShip } from "./shipyard.js";
+import { createHomeShip } from "../shipyard/shipyard.js";
 import { TextDef } from "./ui.js";
 
 export async function initModelingGame() {

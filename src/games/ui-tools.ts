@@ -1,6 +1,6 @@
 // NOTE: Since this file imports from many places, it is only allowed to
 //   export TYPES so that this doesn't become a many-to-many dependency nightmare
-import { ShipyardUI } from "./shipyard.js";
+import { ShipyardUI } from "../shipyard/shipyard.js";
 
 // TODO(@darzu): hmmmmmm how to impl w/ resources
 

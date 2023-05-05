@@ -14,7 +14,7 @@ import { setSimulationAlpha } from "./render/renderer-ecs.js";
 import { never } from "./util.js";
 // import { initHyperspaceGame } from "./game/game-hyperspace.js";
 import { DBG_ASSERT, ENABLE_NET, VERBOSE_LOG } from "./flags.js";
-import { initShipyardGame } from "./games/game-shipyard.js";
+import { initShipyardGame } from "./shipyard/game-shipyard.js";
 import { gameplaySystems } from "./games/ghost.js";
 import { initFontEditor } from "./games/game-font.js";
 import { initGJKSandbox } from "./games/game-gjk.js";

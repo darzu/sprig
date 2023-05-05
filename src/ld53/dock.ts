@@ -6,7 +6,7 @@ import {
   dbgPathWithGizmos,
   lerpBetween,
   Path,
-} from "../games/shipyard.js";
+} from "../shipyard/shipyard.js";
 import { getHalfsizeFromAABB } from "../physics/aabb.js";
 import { ColliderDef } from "../physics/collider.js";
 import { PositionDef } from "../physics/transform.js";
