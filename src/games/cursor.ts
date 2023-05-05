@@ -4,7 +4,7 @@ import {
   EntityManager,
   EntityW,
 } from "../ecs/entity-manager.js";
-import { Mesh } from "../render/mesh.js";
+import { Mesh } from "../meshes/mesh.js";
 import {
   RenderableConstructDef,
   RendererWorldFrameDef,
@@ -13,7 +13,7 @@ import {
   PositionDef,
   updateFrameFromPosRotScale,
 } from "../physics/transform.js";
-import { AssetsDef } from "../assets.js";
+import { AssetsDef } from "../meshes/assets.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { assert } from "../util.js";
 import { CameraComputedDef } from "../camera.js";

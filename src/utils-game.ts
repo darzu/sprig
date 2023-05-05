@@ -1,7 +1,7 @@
 import { CameraView } from "./camera.js";
 import { ColorDef } from "./color/color-ecs.js";
 import { EM, Entity, EntityW } from "./ecs/entity-manager.js";
-import { AssetsDef } from "./assets.js";
+import { AssetsDef } from "./meshes/assets.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "./sprig-matrix.js";
 import { mathMap } from "./math.js";
 import { getLineEnd, Line, Ray } from "./physics/broadphase.js";
@@ -11,7 +11,7 @@ import {
   ScaleDef,
 } from "./physics/transform.js";
 import { MeshHandle } from "./render/mesh-pool.js";
-import { Mesh } from "./render/mesh.js";
+import { Mesh } from "./meshes/mesh.js";
 import {
   Renderable,
   RenderableConstructDef,

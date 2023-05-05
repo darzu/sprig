@@ -17,7 +17,7 @@ import { PhysicsResultsDef } from "../physics/nonintersection.js";
 import { AuthorityDef } from "../net/components.js";
 import { BulletDef } from "./bullet.js";
 import { DeletedDef } from "../delete.js";
-import { AssetsDef } from "../assets.js";
+import { AssetsDef } from "../meshes/assets.js";
 import { AudioDef } from "../audio/audio.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
 import { assert, NumberTuple } from "../util.js";

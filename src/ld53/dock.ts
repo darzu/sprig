@@ -10,7 +10,7 @@ import {
 import { getHalfsizeFromAABB } from "../physics/aabb.js";
 import { ColliderDef } from "../physics/collider.js";
 import { PositionDef } from "../physics/transform.js";
-import { getAABBFromMesh, Mesh, validateMesh } from "../render/mesh.js";
+import { getAABBFromMesh, Mesh, validateMesh } from "../meshes/mesh.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { quat, V, vec3 } from "../sprig-matrix.js";
 import {

@@ -1,4 +1,4 @@
-import { AssetsDef } from "../assets.js";
+import { AssetsDef } from "../meshes/assets.js";
 import { AudioDef } from "../audio/audio.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
@@ -35,7 +35,7 @@ import {
   RotationDef,
   ScaleDef,
 } from "../physics/transform.js";
-import { Mesh } from "../render/mesh.js";
+import { Mesh } from "../meshes/mesh.js";
 import {
   RenderableConstructDef,
   RenderableDef,

@@ -8,7 +8,7 @@ import { comparisonSamplerPtr, CY, linearSamplerPtr } from "../gpu-registry.js";
 import { createCyStruct, CyToTS } from "../gpu-struct.js";
 import { pointLightsPtr } from "../lights.js";
 import { MAX_INDICES, MeshHandle } from "../mesh-pool.js";
-import { getAABBFromMesh, Mesh } from "../mesh.js";
+import { getAABBFromMesh, Mesh } from "../../meshes/mesh.js";
 import {
   RenderableDef,
   RendererDef,

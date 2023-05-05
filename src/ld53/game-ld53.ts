@@ -6,7 +6,7 @@ import {
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { EM, EntityManager, EntityW } from "../ecs/entity-manager.js";
-import { AssetsDef, gameMeshFromMesh } from "../assets.js";
+import { AssetsDef, gameMeshFromMesh } from "../meshes/assets.js";
 import { ControllableDef } from "../games/controllable.js";
 import { createGhost, GhostDef } from "../games/ghost.js";
 import { LocalPlayerDef, PlayerDef } from "../games/player.js";
@@ -32,7 +32,7 @@ import {
   mapMeshPositions,
   Mesh,
   transformMesh,
-} from "../render/mesh.js";
+} from "../meshes/mesh.js";
 import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
@@ -84,7 +84,7 @@ import {
   createFlatQuadMesh,
   makeDome,
   resetFlatQuadMesh,
-} from "../primatives.js";
+} from "../meshes/primatives.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
 import { startTowers } from "../games/tower.js";
 import {

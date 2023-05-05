@@ -15,7 +15,7 @@ import {
   ScaleDef,
 } from "../physics/transform.js";
 import { MeshHandle } from "../render/mesh-pool.js";
-import { cloneMesh, mapMeshPositions } from "../render/mesh.js";
+import { cloneMesh, mapMeshPositions } from "../meshes/mesh.js";
 import { FLAG_UNLIT, RenderDataStdDef } from "../render/pipelines/std-scene.js";
 import {
   RenderableConstructDef,
@@ -30,7 +30,7 @@ import {
   vec3Dbg,
 } from "../utils-3d.js";
 import { YawPitchDef, yawpitchToQuat } from "../yawpitch.js";
-import { AssetsDef } from "../assets.js";
+import { AssetsDef } from "../meshes/assets.js";
 import { DarkStarPropsDef, STAR1_COLOR, STAR2_COLOR } from "./darkstar.js";
 import { HyperspaceGameState, GameStateDef } from "./hyperspace-gamestate.js";
 import { HsShipLocalDef, HsShipPropsDef } from "./hyperspace-ship.js";

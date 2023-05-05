@@ -1,7 +1,7 @@
 import { align, alignDown } from "../math.js";
 import { assert, assertDbg, dbgLogOnce } from "../util.js";
 import { CyStructDesc, CyToTS } from "./gpu-struct.js";
-import { Mesh } from "./mesh.js";
+import { Mesh } from "../meshes/mesh.js";
 import {
   createCyArray,
   createCyIdxBuf,

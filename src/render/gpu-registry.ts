@@ -12,7 +12,7 @@ import {
   CyToTS,
   texTypeIsDepth,
 } from "./gpu-struct.js";
-import { Mesh } from "./mesh.js";
+import { Mesh } from "../meshes/mesh.js";
 import { ShaderName, ShaderSet } from "./shader-loader.js";
 
 // NOTE: this file is supposed to be WebGPU and WebGL agnostic.

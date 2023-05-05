@@ -1,8 +1,8 @@
 // which triangles belong to which faces
 
 import { BLACK } from "./assets.js";
-import { ENDESGA16, randEndesga16, seqEndesga16 } from "./color/palettes.js";
-import { AABB } from "./physics/aabb.js";
+import { ENDESGA16, randEndesga16, seqEndesga16 } from "../color/palettes.js";
+import { AABB } from "../physics/aabb.js";
 import {
   cloneMesh,
   mapMeshPositions,
@@ -12,12 +12,12 @@ import {
   scaleMesh,
   scaleMesh3,
   transformMesh,
-} from "./render/mesh.js";
-import { mat3, mat4, quat, V, vec2, vec3, vec4 } from "./sprig-matrix.js";
-import { assert, range } from "./util.js";
-import { orthonormalize, uintToVec3unorm, vec3Dbg } from "./utils-3d.js";
-import { drawBall } from "./utils-game.js";
-import { createTimberBuilder, createEmptyMesh } from "./wood/wood.js";
+} from "./mesh.js";
+import { mat3, mat4, quat, V, vec2, vec3, vec4 } from "../sprig-matrix.js";
+import { assert, range } from "../util.js";
+import { orthonormalize, uintToVec3unorm, vec3Dbg } from "../utils-3d.js";
+import { drawBall } from "../utils-game.js";
+import { createTimberBuilder, createEmptyMesh } from "../wood/wood.js";
 
 // TODO(@darzu): A bunch of stuff shouldn't be in here like barge and sail stuff
 

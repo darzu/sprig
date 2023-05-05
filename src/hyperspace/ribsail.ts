@@ -1,4 +1,4 @@
-import { AssetsDef } from "../assets.js";
+import { AssetsDef } from "../meshes/assets.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { createRef } from "../ecs/em_helpers.js";
 import { EM, EntityW } from "../ecs/entity-manager.js";
@@ -20,7 +20,7 @@ import { defineNetEntityHelper } from "../ecs/em_helpers.js";
 import { MeDef } from "../net/components.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import { MeshHandle } from "../render/mesh-pool.js";
-import { cloneMesh, mapMeshPositions, RawMesh } from "../render/mesh.js";
+import { cloneMesh, mapMeshPositions, RawMesh } from "../meshes/mesh.js";
 import { RenderDataStdDef, FLAG_UNLIT } from "../render/pipelines/std-scene.js";
 import { tempQuat, tempMat4 } from "../temp-pool.js";
 import {

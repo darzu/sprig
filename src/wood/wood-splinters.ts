@@ -2,14 +2,14 @@
 
 import { ColorDef } from "../color/color-ecs.js";
 import { EntityW, EntityManager, EM } from "../ecs/entity-manager.js";
-import { AssetsDef, BLACK } from "../assets.js";
+import { AssetsDef, BLACK } from "../meshes/assets.js";
 import { GravityDef } from "../games/gravity.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { jitter } from "../math.js";
 import { getLineMid } from "../physics/broadphase.js";
 import { LinearVelocityDef, AngularVelocityDef } from "../physics/motion.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
-import { normalizeMesh } from "../render/mesh.js";
+import { normalizeMesh } from "../meshes/mesh.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { randNormalVec3, vec3Reverse, vec4Reverse } from "../utils-3d.js";
 import {

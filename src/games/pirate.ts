@@ -1,4 +1,4 @@
-import { BLACK, AssetsDef } from "../assets.js";
+import { BLACK, AssetsDef } from "../meshes/assets.js";
 import { AudioDef } from "../audio/audio.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
@@ -27,7 +27,7 @@ import {
   Mesh,
   getAABBFromMesh,
   RawMesh,
-} from "../render/mesh.js";
+} from "../meshes/mesh.js";
 import {
   RendererDef,
   RenderableConstructDef,

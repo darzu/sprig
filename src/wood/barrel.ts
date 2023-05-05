@@ -1,6 +1,6 @@
 import { calculateNAndBrickWidth } from "../ld53/stone.js";
 import { getHalfsizeFromAABB } from "../physics/aabb.js";
-import { Mesh, getAABBFromMesh, validateMesh } from "../render/mesh.js";
+import { Mesh, getAABBFromMesh, validateMesh } from "../meshes/mesh.js";
 import { V, quat, vec3, mat4 } from "../sprig-matrix.js";
 import {
   WoodState,

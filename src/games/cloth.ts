@@ -5,14 +5,14 @@ import { PositionDef, RotationDef } from "../physics/transform.js";
 import { SyncDef, AuthorityDef, Me, MeDef } from "../net/components.js";
 import { Serializer, Deserializer } from "../serialize.js";
 import { FinishedDef } from "../ecs/em_helpers.js";
-import { Assets, AssetsDef } from "../assets.js";
+import { Assets, AssetsDef } from "../meshes/assets.js";
 import { SpringType, SpringGridDef, ForceDef } from "./spring.js";
 import { onInit } from "../init.js";
 import {
   Mesh,
   normalizeMesh,
   unshareProvokingVerticesWithMap,
-} from "../render/mesh.js";
+} from "../meshes/mesh.js";
 import {
   RenderableConstructDef,
   RenderableDef,

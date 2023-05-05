@@ -37,7 +37,7 @@ import {
   scaleMesh3,
   transformMesh,
   validateMesh,
-} from "../render/mesh.js";
+} from "../meshes/mesh.js";
 import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
@@ -67,7 +67,7 @@ import {
   WoodStateDef,
   _numSplinterEnds,
 } from "./wood.js";
-import { AssetsDef, BLACK } from "../assets.js";
+import { AssetsDef, BLACK } from "../meshes/assets.js";
 import {
   breakBullet,
   BulletConstructDef,

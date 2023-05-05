@@ -20,7 +20,7 @@ import {
   Mesh,
   normalizeMesh,
   unshareProvokingVerticesWithMap,
-} from "../render/mesh.js";
+} from "../meshes/mesh.js";
 import {
   RenderableConstructDef,
   RenderableDef,
@@ -28,7 +28,7 @@ import {
 import { RendererDef } from "../render/renderer-ecs.js";
 import { tempVec3 } from "../temp-pool.js";
 import { ColorDef } from "../color/color-ecs.js";
-import { AssetsDef } from "../assets.js";
+import { AssetsDef } from "../meshes/assets.js";
 import { ColliderDef } from "../physics/collider.js";
 import { constructNetTurret, TurretDef } from "../games/turret.js";
 import { InputsDef } from "../inputs.js";

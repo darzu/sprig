@@ -12,7 +12,7 @@ import {
   CY,
   linearSamplerPtr,
 } from "../render/gpu-registry.js";
-import { cloneMesh } from "../render/mesh.js";
+import { cloneMesh } from "../meshes/mesh.js";
 import { RendererDef, RenderableConstructDef } from "../render/renderer-ecs.js";
 import {
   sceneBufPtr,
@@ -22,7 +22,7 @@ import {
   canvasTexturePtr,
 } from "../render/pipelines/std-scene.js";
 import { uintToVec3unorm } from "../utils-3d.js";
-import { AssetsDef } from "../assets.js";
+import { AssetsDef } from "../meshes/assets.js";
 import { GlobalCursor3dDef } from "./cursor.js";
 import { createGhost } from "./ghost.js";
 import { PointLightDef } from "../render/lights.js";

@@ -9,7 +9,7 @@ import {
   RawMesh,
   transformMesh,
   validateMesh,
-} from "../render/mesh.js";
+} from "../meshes/mesh.js";
 import { assert, assertDbg, range } from "../util.js";
 import {
   centroid,
@@ -28,9 +28,9 @@ import {
   setSideQuadIdxs,
   setEndQuadIdxs,
 } from "./wood.js";
-import { BLACK } from "../assets.js";
-import { mkHalfEdgeQuadMesh } from "../primatives.js";
-import { HFace, meshToHalfEdgePoly } from "../half-edge.js";
+import { BLACK } from "../meshes/assets.js";
+import { mkHalfEdgeQuadMesh } from "../meshes/primatives.js";
+import { HFace, meshToHalfEdgePoly } from "../meshes/half-edge.js";
 import { createGizmoMesh } from "../debug/gizmos.js";
 import { EM } from "../ecs/entity-manager.js";
 import {

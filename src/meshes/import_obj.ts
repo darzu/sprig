@@ -5,10 +5,10 @@
 // Import .obj files into sprig format
 // https://people.cs.clemson.edu/~dhouse/courses/405/docs/brief-obj-file-format.html
 // http://paulbourke.net/dataformats/obj/
-import { vec2, vec3, vec4, quat, mat4, V } from "./sprig-matrix.js";
-import { RawMesh } from "./render/mesh.js";
-import { assert, never } from "./util.js";
-import { idPair, IdPair, isString } from "./util.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
+import { RawMesh } from "./mesh.js";
+import { assert, never } from "../util.js";
+import { idPair, IdPair, isString } from "../util.js";
 
 /*
 Notes:

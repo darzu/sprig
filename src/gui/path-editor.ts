@@ -1,6 +1,6 @@
 import { ColorDef } from "../color/color-ecs.js";
 import { EM, EntityW } from "../ecs/entity-manager.js";
-import { AssetsDef, GameMesh, gameMeshFromMesh } from "../assets.js";
+import { AssetsDef, GameMesh, gameMeshFromMesh } from "../meshes/assets.js";
 import { gameplaySystems } from "../games/ghost.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import {
@@ -9,14 +9,14 @@ import {
   HPoly,
   HVert,
   meshToHalfEdgePoly,
-} from "../half-edge.js";
+} from "../meshes/half-edge.js";
 import { createIdxPool } from "../idx-pool.js";
 import { rayVsRay } from "../physics/broadphase.js";
 import { ColliderDef } from "../physics/collider.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import { PositionDef, ScaleDef, RotationDef } from "../physics/transform.js";
 import { MeshHandle, MeshReserve } from "../render/mesh-pool.js";
-import { LineMesh, Mesh, RawMesh } from "../render/mesh.js";
+import { LineMesh, Mesh, RawMesh } from "../meshes/mesh.js";
 import {
   RenderableConstructDef,
   RendererDef,

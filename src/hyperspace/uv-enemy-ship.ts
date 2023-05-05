@@ -20,7 +20,7 @@ import {
 import { ColliderDef } from "../physics/collider.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { aabbCenter } from "../physics/aabb.js";
-import { Assets, AssetsDef, GameMesh } from "../assets.js";
+import { Assets, AssetsDef, GameMesh } from "../meshes/assets.js";
 import { AngularVelocityDef, LinearVelocityDef } from "../physics/motion.js";
 import { MotionSmoothingDef } from "../motion-smoothing.js";
 import {
@@ -35,7 +35,7 @@ import { defineNetEntityHelper } from "../ecs/em_helpers.js";
 import { DetectedEventsDef, eventWizard } from "../net/events.js";
 import { raiseBulletEnemyShip } from "../cannons/bullet-collision.js";
 import { GameStateDef, HyperspaceGameState } from "./hyperspace-gamestate.js";
-import { cloneMesh, scaleMesh3 } from "../render/mesh.js";
+import { cloneMesh, scaleMesh3 } from "../meshes/mesh.js";
 import { UVShipDef } from "./uv-ship.js";
 import { UVDirDef, UVPosDef } from "../ocean/ocean.js";
 import { ColorDef } from "../color/color-ecs.js";

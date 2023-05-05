@@ -12,7 +12,7 @@ import {
   CyRenderPipelinePtr,
   CyCompPipelinePtr,
 } from "../render/gpu-registry.js";
-import { cloneMesh } from "../render/mesh.js";
+import { cloneMesh } from "../meshes/mesh.js";
 import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
@@ -36,7 +36,7 @@ import { tempVec3 } from "../temp-pool.js";
 import { EASE_INQUAD } from "../util-ease.js";
 import { assert } from "../util.js";
 import { drawLine } from "../utils-game.js";
-import { AssetsDef } from "../assets.js";
+import { AssetsDef } from "../meshes/assets.js";
 import { ClothConstructDef, ClothLocalDef } from "./cloth.js";
 import { GlobalCursor3dDef } from "./cursor.js";
 import { ENEMY_SHIP_COLOR } from "../hyperspace/uv-enemy-ship.js";

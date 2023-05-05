@@ -1,7 +1,7 @@
 import { EM, EntityManager } from "../ecs/entity-manager.js";
 import { vec2, vec3, V, mat3 } from "../sprig-matrix.js";
 import { PositionDef, RotationDef, ScaleDef } from "../physics/transform.js";
-import { Mesh } from "../render/mesh.js";
+import { Mesh } from "../meshes/mesh.js";
 import {
   RenderableConstructDef,
   RenderableDef,

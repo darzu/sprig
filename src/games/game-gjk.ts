@@ -10,7 +10,7 @@ import { WorldFrameDef } from "../physics/nonintersection.js";
 import { PAD } from "../physics/phys.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
 import { PointLightDef } from "../render/lights.js";
-import { cloneMesh } from "../render/mesh.js";
+import { cloneMesh } from "../meshes/mesh.js";
 import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
@@ -21,7 +21,7 @@ import {
 } from "../render/renderer-ecs.js";
 import { tempVec3 } from "../temp-pool.js";
 import { farthestPointInDir } from "../utils-3d.js";
-import { AssetsDef, GameMesh } from "../assets.js";
+import { AssetsDef, GameMesh } from "../meshes/assets.js";
 import { GlobalCursor3dDef } from "./cursor.js";
 import { createGhost } from "./ghost.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";

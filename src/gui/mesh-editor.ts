@@ -1,6 +1,6 @@
 import { ColorDef } from "../color/color-ecs.js";
 import { EM, EntityW } from "../ecs/entity-manager.js";
-import { AssetsDef, GameMesh } from "../assets.js";
+import { AssetsDef, GameMesh } from "../meshes/assets.js";
 import { gameplaySystems } from "../games/ghost.js";
 import { vec2, vec3, vec4, quat, mat4, mat3, V } from "../sprig-matrix.js";
 import {
@@ -9,7 +9,7 @@ import {
   HPoly,
   HVert,
   meshToHalfEdgePoly,
-} from "../half-edge.js";
+} from "../meshes/half-edge.js";
 import { createIdxPool } from "../idx-pool.js";
 import { ColliderDef } from "../physics/collider.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";

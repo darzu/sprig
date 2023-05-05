@@ -10,7 +10,7 @@ import {
   PtrKind,
 } from "./gpu-registry.js";
 import { MeshHandle, MeshPool } from "./mesh-pool.js";
-import { Mesh } from "./mesh.js";
+import { Mesh } from "../meshes/mesh.js";
 import { Renderer } from "./renderer-ecs.js";
 import {
   CyRenderPipeline,

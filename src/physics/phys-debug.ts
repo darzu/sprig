@@ -1,10 +1,10 @@
 import { ColliderDef } from "./collider.js";
 import { EM, EntityManager } from "../ecs/entity-manager.js";
-import { AssetsDef, LocalMeshes } from "../assets.js";
+import { AssetsDef, LocalMeshes } from "../meshes/assets.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { InputsDef } from "../inputs.js";
 import { mathMap } from "../math.js";
-import { cloneMesh, mapMeshPositions, RawMesh } from "../render/mesh.js";
+import { cloneMesh, mapMeshPositions, RawMesh } from "../meshes/mesh.js";
 import { AABB } from "./aabb.js";
 import {
   PhysicsBroadCollidersDef,

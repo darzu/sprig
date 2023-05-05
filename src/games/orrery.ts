@@ -10,7 +10,7 @@ import {
   ScaleDef,
 } from "../physics/transform.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
-import { AssetsDef } from "../assets.js";
+import { AssetsDef } from "../meshes/assets.js";
 import { DarkStarPropsDef } from "../hyperspace/darkstar.js";
 import { ENDESGA16 } from "../color/palettes.js";
 

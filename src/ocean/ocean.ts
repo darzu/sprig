@@ -39,10 +39,10 @@ import {
   vec2Dbg,
   vec3Dbg,
 } from "../utils-3d.js";
-import { AssetsDef } from "../assets.js";
+import { AssetsDef } from "../meshes/assets.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { DEFAULT_MASK, UVUNWRAP_MASK } from "../render/pipeline-masks.js";
-import { Mesh } from "../render/mesh.js";
+import { Mesh } from "../meshes/mesh.js";
 import { compute_gerstner, createWaves } from "./gerstner.js";
 
 // TODO(@darzu): refactor this to not assume a specific ocean shape

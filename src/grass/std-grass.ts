@@ -9,7 +9,7 @@ import {
 import { createCyStruct, CyToTS } from "../render/gpu-struct.js";
 import { pointLightsPtr } from "../render/lights.js";
 import { MAX_INDICES, MeshHandle } from "../render/mesh-pool.js";
-import { Mesh } from "../render/mesh.js";
+import { Mesh } from "../meshes/mesh.js";
 import {
   sceneBufPtr,
   litTexturePtr,

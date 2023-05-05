@@ -1,7 +1,7 @@
 import { ColorDef } from "../color/color-ecs.js";
 import { createRef } from "../ecs/em_helpers.js";
 import { EM, EntityManager, EntityW } from "../ecs/entity-manager.js";
-import { AssetsDef } from "../assets.js";
+import { AssetsDef } from "../meshes/assets.js";
 import { vec3, quat } from "../sprig-matrix.js";
 import { LinearVelocityDef } from "../physics/motion.js";
 import {
@@ -27,10 +27,10 @@ import { InteractableDef } from "../games/interact.js";
 import { vec3Dbg } from "../utils-3d.js";
 import { CameraFollowDef } from "../camera.js";
 import { createSock } from "../wind/windsock.js";
-import { BARGE_AABBS, SHIP_SMALL_AABBS } from "../primatives.js";
+import { BARGE_AABBS, SHIP_SMALL_AABBS } from "../meshes/primatives.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { createHomeShip, homeShipAABBs } from "../wood/shipyard.js";
-import { getAABBFromMesh, transformMesh } from "../render/mesh.js";
+import { getAABBFromMesh, transformMesh } from "../meshes/mesh.js";
 import { createWoodHealth, WoodHealthDef, WoodStateDef } from "../wood/wood.js";
 import { addGizmoChild } from "../utils-game.js";
 import { getSizeFromAABB } from "../physics/aabb.js";

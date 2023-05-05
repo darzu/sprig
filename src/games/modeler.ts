@@ -15,7 +15,7 @@ import { PositionDef, ScaleDef } from "../physics/transform.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { tempVec3 } from "../temp-pool.js";
 import { vec3Dbg, vec3Dbg2 } from "../utils-3d.js";
-import { AssetsDef } from "../assets.js";
+import { AssetsDef } from "../meshes/assets.js";
 import { ColorDef, TintsDef } from "../color/color-ecs.js";
 import { drawLine, screenPosToRay } from "../utils-game.js";
 import { CameraView, CameraComputedDef } from "../camera.js";

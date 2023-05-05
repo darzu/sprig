@@ -1,11 +1,11 @@
-import { DBG_ASSERT } from "./flags.js";
+import { DBG_ASSERT } from "../flags.js";
 import { BLACK } from "./assets.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "./sprig-matrix.js";
-import { hexAvg } from "./hex.js";
-import { RawMesh } from "./render/mesh.js";
-import { tempVec3 } from "./temp-pool.js";
-import { assert, assertDbg, edges, range, TupleN } from "./util.js";
-import { randNormalPosVec3, vec3Dbg } from "./utils-3d.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
+import { hexAvg } from "../hex.js";
+import { RawMesh } from "./mesh.js";
+import { tempVec3 } from "../temp-pool.js";
+import { assert, assertDbg, edges, range, TupleN } from "../util.js";
+import { randNormalPosVec3, vec3Dbg } from "../utils-3d.js";
 
 // https://jerryyin.info/geometry-processing-algorithms/half-edge/
 

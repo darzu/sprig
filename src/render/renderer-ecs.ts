@@ -19,7 +19,7 @@ import { CyMeshPoolPtr, CyPipelinePtr } from "./gpu-registry.js";
 import { createFrame, WorldFrameDef } from "../physics/nonintersection.js";
 import { tempVec3 } from "../temp-pool.js";
 import { isMeshHandle, MeshHandle, MeshReserve } from "./mesh-pool.js";
-import { Mesh } from "./mesh.js";
+import { Mesh } from "../meshes/mesh.js";
 import { frustumFromBounds, getFrustumWorldCorners } from "../utils-3d.js";
 import { ShadersDef, ShaderSet } from "./shader-loader.js";
 import { dbgLogOnce } from "../util.js";
