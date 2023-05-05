@@ -14,8 +14,8 @@ import {
 import { ColliderDef } from "../physics/collider.js";
 import { AuthorityDef, SyncDef } from "../net/components.js";
 import { eventWizard } from "../net/events.js";
-import { InRangeDef, InteractableDef } from "./interact.js";
-import { LocalPlayerDef, PlayerDef } from "./player.js";
+import { InRangeDef, InteractableDef } from "../games/interact.js";
+import { LocalPlayerDef, PlayerDef } from "../games/player.js";
 import {
   CameraFollowDef,
   CAMERA_OFFSETS,
@@ -26,8 +26,8 @@ import { InputsDef } from "../inputs.js";
 import { clamp } from "../utils/math.js";
 import { DeletedDef } from "../ecs/delete.js";
 import { defineSerializableComponent } from "../ecs/em_helpers.js";
-import { YawPitchDef, yawpitchToQuat } from "../yawpitch.js";
-import { TextDef } from "./ui.js";
+import { YawPitchDef, yawpitchToQuat } from "./yawpitch.js";
+import { TextDef } from "../games/ui.js";
 
 export const TurretDef = EM.defineComponent("turret", () => {
   return {

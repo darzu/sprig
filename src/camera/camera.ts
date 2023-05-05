@@ -15,7 +15,7 @@ import { RendererWorldFrameDef } from "../render/renderer-ecs.js";
 import { computeNewError, reduceError } from "../smoothing.js";
 import { tempQuat, tempVec3 } from "../temp-pool.js";
 import { TimeDef } from "../time.js";
-import { yawpitchToQuat } from "../yawpitch.js";
+import { yawpitchToQuat } from "../turret/yawpitch.js";
 import { createAABB } from "../physics/aabb.js";
 import { assert, dbgDirOnce, resizeArray } from "../utils/util.js";
 

@@ -52,7 +52,7 @@ import { registerMusicSystems } from "../audio/audio.js";
 import { registerNetDebugSystem } from "../net/net-debug.js";
 import { callInitFns } from "../init.js";
 import { registerGrappleDbgSystems } from "./grapple.js";
-import { registerTurretSystems } from "./turret.js";
+import { registerTurretSystems } from "../turret/turret.js";
 import { registerUISystems } from "./ui.js";
 import { registerDevSystems } from "../debug/console.js";
 import { registerControllableSystems } from "./controllable.js";

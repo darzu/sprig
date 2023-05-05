@@ -16,7 +16,7 @@ import { AudioDef, randChordId } from "../audio/audio.js";
 import { InputsDef } from "../inputs.js";
 import { DeletedDef } from "../ecs/delete.js";
 import { defineNetEntityHelper } from "../ecs/em_helpers.js";
-import { constructNetTurret, TurretDef } from "../games/turret.js";
+import { constructNetTurret, TurretDef } from "../turret/turret.js";
 import { SoundSetDef } from "../audio/sound-loader.js";
 
 export const { CannonPropsDef, CannonLocalDef, createCannon, createCannonNow } =

@@ -30,7 +30,7 @@ import { tempVec3 } from "../temp-pool.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { AssetsDef } from "../meshes/assets.js";
 import { ColliderDef } from "../physics/collider.js";
-import { constructNetTurret, TurretDef } from "../games/turret.js";
+import { constructNetTurret, TurretDef } from "../turret/turret.js";
 import { InputsDef } from "../inputs.js";
 import { LocalPlayerDef, PlayerDef } from "../games/player.js";
 import { DeletedDef } from "../ecs/delete.js";
@@ -38,7 +38,7 @@ import { clamp } from "../utils/math.js";
 import { createRef } from "../ecs/em_helpers.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import { WindDef } from "../wind/wind.js";
-import { YawPitchDef } from "../yawpitch.js";
+import { YawPitchDef } from "../turret/yawpitch.js";
 import { assert } from "../utils/util.js";
 import { ENDESGA16 } from "../color/palettes.js";
 

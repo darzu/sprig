@@ -47,7 +47,7 @@ import { PartyDef } from "../games/party.js";
 import { copyAABB, createAABB } from "../physics/aabb.js";
 import { InputsDef } from "../inputs.js";
 import { ScoreDef } from "../smol/score.js";
-import { raiseManTurret } from "../games/turret.js";
+import { raiseManTurret } from "../turret/turret.js";
 import { TextDef } from "../games/ui.js";
 import { VERBOSE_LOG } from "../flags.js";
 import { CanvasDef } from "../render/canvas.js";

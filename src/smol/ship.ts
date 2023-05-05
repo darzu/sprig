@@ -18,9 +18,9 @@ import {
   ColliderDef,
   MultiCollider,
 } from "../physics/collider.js";
-import { constructNetTurret, TurretDef } from "../games/turret.js";
+import { constructNetTurret, TurretDef } from "../turret/turret.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
-import { YawPitchDef } from "../yawpitch.js";
+import { YawPitchDef } from "../turret/yawpitch.js";
 import { PartyDef } from "../games/party.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import { InteractableDef } from "../games/interact.js";

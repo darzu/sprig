@@ -69,7 +69,7 @@ import {
 } from "../physics/aabb.js";
 import { rasterizeTri } from "../raster.js";
 import { InputsDef } from "../inputs.js";
-import { raiseManTurret } from "../games/turret.js";
+import { raiseManTurret } from "../turret/turret.js";
 import { TextDef } from "../games/ui.js";
 import { VERBOSE_LOG } from "../flags.js";
 import { CanvasDef } from "../render/canvas.js";
