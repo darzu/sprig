@@ -26,7 +26,7 @@ export function registerToolSystems(em: EntityManager) {
     [DetectedEventsDef, LocalHsPlayerDef],
     (hats, resources) => {
       for (let { id } of hats) {
-        let player = EM.findEntity(resources.localPlayer.playerId, [
+        let player = EM.findEntity(resources.localHsPlayer.playerId, [
           HsPlayerDef,
         ])!;
         if (player.hsPlayer.tool === 0 && player.hsPlayer.interacting) {

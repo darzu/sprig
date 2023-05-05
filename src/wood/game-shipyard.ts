@@ -420,7 +420,7 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
     [LD51CannonDef, WorldFrameDef, InRangeDef],
     [InputsDef, LocalHsPlayerDef, AudioDef],
     (cannons, res) => {
-      const player = em.findEntity(res.localPlayer.playerId, [HsPlayerDef])!;
+      const player = em.findEntity(res.localHsPlayer.playerId, [HsPlayerDef])!;
       if (!player) return;
       for (let c of cannons) {
         if (
@@ -813,7 +813,9 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
       [GoodBallDef, InteractableDef, InRangeDef, PositionDef],
       [InputsDef, LocalHsPlayerDef],
       (es, res) => {
-        const player = em.findEntity(res.localPlayer.playerId, [HsPlayerDef])!;
+        const player = em.findEntity(res.localHsPlayer.playerId, [
+          HsPlayerDef,
+        ])!;
         if (!player) return;
         if (player.hsPlayer.holdingBall) return;
         // TODO(@darzu):
@@ -894,7 +896,7 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
 
     if (!DBG_PLAYER) {
       const _player = createHsPlayer(em);
-      vec3.set(-10, realFloorHeight + 6, 0, _player.playerProps.location);
+      vec3.set(-10, realFloorHeight + 6, 0, _player.hsPlayerProps.location);
       em.whenEntityHas(
         _player,
         PositionDef,
@@ -935,7 +937,7 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
       [],
       [InputsDef, TextDef, TimeDef, AudioDef],
       (es, res) => {
-        // const player = em.findEntity(res.localPlayer.playerId, [PlayerDef])!;
+        // const player = em.findEntity(res.localHsPlayer.playerId, [PlayerDef])!;
         // if (!player) return;
 
         const currentHealth = getCurrentHealth();

@@ -120,8 +120,8 @@ export const raiseManTurret = eventWizard(
       [TurretDef, CameraFollowDef, AuthorityDef],
     ] as const,
   ([player, turret]) => {
-    const localPlayer = EM.getResource(LocalHsPlayerDef);
-    if (localPlayer?.playerId === player.id) {
+    const localHsPlayer = EM.getResource(LocalHsPlayerDef);
+    if (localHsPlayer?.playerId === player.id) {
       turret.cameraFollow.priority = 2;
       turret.authority.pid = player.authority.pid;
       turret.authority.seq++;
@@ -173,7 +173,7 @@ export function registerTurretSystems(em: EntityManager) {
     [TurretDef, YawPitchDef, CameraFollowDef],
     [InputsDef, LocalHsPlayerDef],
     (turrets, res) => {
-      const player = em.findEntity(res.localPlayer.playerId, [HsPlayerDef])!;
+      const player = em.findEntity(res.localHsPlayer.playerId, [HsPlayerDef])!;
       if (!player) return;
       for (let c of turrets) {
         if (DeletedDef.isOn(c)) continue;
@@ -217,7 +217,7 @@ export function registerTurretSystems(em: EntityManager) {
     [TurretDef, InRangeDef, AuthorityDef, CameraFollowDef],
     [InputsDef, LocalHsPlayerDef, TextDef],
     (turrets, res) => {
-      const player = em.findEntity(res.localPlayer.playerId, [
+      const player = em.findEntity(res.localHsPlayer.playerId, [
         HsPlayerDef,
         AuthorityDef,
       ])!;

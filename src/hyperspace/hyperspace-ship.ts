@@ -281,7 +281,9 @@ export function registerShipSystems(em: EntityManager) {
         if (DeletedDef.isOn(gem)) continue;
         if (res.hsGameState.state !== HyperspaceGameState.LOBBY) continue;
         if (res.inputs.keyClicks["e"]) {
-          let player = EM.findEntity(res.localPlayer.playerId, [HsPlayerDef])!;
+          let player = EM.findEntity(res.localHsPlayer.playerId, [
+            HsPlayerDef,
+          ])!;
           startGame(player);
         }
       }

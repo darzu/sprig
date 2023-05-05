@@ -83,7 +83,7 @@ export const HsPlayerDef = EM.defineComponent("hsPlayer", () => {
 
 // Resource pointing at the local player
 export const LocalHsPlayerDef = EM.defineComponent(
-  "localPlayer",
+  "localHsPlayer",
   (playerId?: number) => ({
     playerId: playerId || 0,
   })
@@ -91,7 +91,7 @@ export const LocalHsPlayerDef = EM.defineComponent(
 
 export const PlayerHsPropsDef = defineSerializableComponent(
   EM,
-  "playerProps",
+  "hsPlayerProps",
   (loc?: vec3) => {
     return {
       location: loc ?? vec3.create(),
@@ -112,7 +112,7 @@ export function registerHsPlayerSystems(em: EntityManager) {
     (players, res) => {
       for (let e of players) {
         if (FinishedDef.isOn(e)) continue;
-        const props = e.playerProps;
+        const props = e.hsPlayerProps;
         if (!PositionDef.isOn(e))
           em.addComponent(e.id, PositionDef, props.location);
         if (!RotationDef.isOn(e))
@@ -181,7 +181,7 @@ export function registerHsPlayerSystems(em: EntityManager) {
         em.addComponent(e.id, FinishedDef);
       }
     },
-    "buildPlayers"
+    "buildHsPlayers"
   );
 
   em.registerSystem(
@@ -201,7 +201,7 @@ export function registerHsPlayerSystems(em: EntityManager) {
         }
       }
     },
-    "playerFacingDir"
+    "hsPlayerFacingDir"
   );
 
   em.registerSystem(
@@ -233,7 +233,7 @@ export function registerHsPlayerSystems(em: EntityManager) {
         camera,
         physicsResults: { checkRay },
       } = res;
-      // console.log("stepPlayers");
+      // console.log("stepHsPlayers");
       //console.log(`${players.length} players, ${hats.length} hats`);
 
       for (let p of players) {
@@ -419,7 +419,7 @@ export function registerHsPlayerSystems(em: EntityManager) {
         }
       }
     },
-    "stepPlayers"
+    "stepHsPlayers"
   );
 
   em.registerSystem(
@@ -495,6 +495,6 @@ export function registerHsPlayerSystems(em: EntityManager) {
         }
       }
     },
-    "playerLookingForShip"
+    "hsPlayerLookingForShip"
   );
 }

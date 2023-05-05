@@ -407,7 +407,7 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
     (es, res) => {
       const player = es[0];
       // console.log(player.world.position);
-      // const player = EM.findEntity(res.localPlayer.playerId, [WorldFrameDef]);
+      // const player = EM.findEntity(res.localHsPlayer.playerId, [WorldFrameDef]);
       if (player) for (let t of ts) t.update(player.world.position);
     },
     "updateGrass"

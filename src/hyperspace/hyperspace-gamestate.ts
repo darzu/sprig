@@ -109,7 +109,7 @@ export const restartGame = eventWizard(
     console.log("restart");
     const res = EM.getResources([GameStateDef, LocalHsPlayerDef])!;
     res.hsGameState.state = HyperspaceGameState.LOBBY;
-    const player = EM.findEntity(res.localPlayer.playerId, [HsPlayerDef])!;
+    const player = EM.findEntity(res.localHsPlayer.playerId, [HsPlayerDef])!;
     player.hsPlayer.lookingForShip = true;
     // res.score.currentScore = 0;
 

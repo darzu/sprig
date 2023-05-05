@@ -35,7 +35,7 @@ export function registerInteractionSystem(em: EntityManager) {
     [InteractableDef, WorldFrameDef],
     [LocalHsPlayerDef, MeDef, PhysicsResultsDef],
     (interactables, resources) => {
-      const player = em.findEntity(resources.localPlayer.playerId, []);
+      const player = em.findEntity(resources.localHsPlayer.playerId, []);
       if (!player) return;
 
       const interactablesMap: Map<number, Entity> = interactables.reduce(

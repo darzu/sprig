@@ -146,8 +146,10 @@ function registerRenderViewController(em: EntityManager) {
 
       // check camera mode
       if (inputs.keyClicks["4"]) {
-        const localPlayer = em.getResource(LocalHsPlayerDef);
-        const p = em.findEntity(localPlayer?.playerId ?? -1, [CameraFollowDef]);
+        const localHsPlayer = em.getResource(LocalHsPlayerDef);
+        const p = em.findEntity(localHsPlayer?.playerId ?? -1, [
+          CameraFollowDef,
+        ]);
         if (p) {
           const overShoulder = p.cameraFollow.positionOffset[0] !== 0;
           if (overShoulder) setCameraFollowPosition(p, "thirdPerson");

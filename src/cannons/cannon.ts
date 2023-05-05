@@ -154,7 +154,7 @@ export function registerCannonSystems(em: EntityManager) {
     [CannonLocalDef, TurretDef, WorldFrameDef],
     [InputsDef, LocalHsPlayerDef],
     (cannons, res) => {
-      const player = em.findEntity(res.localPlayer.playerId, [HsPlayerDef])!;
+      const player = em.findEntity(res.localHsPlayer.playerId, [HsPlayerDef])!;
       if (!player) return;
       for (let c of cannons) {
         if (DeletedDef.isOn(c)) continue;
@@ -171,7 +171,7 @@ export function registerCannonSystems(em: EntityManager) {
     [CannonLocalDef, TurretDef, InRangeDef, AuthorityDef, WorldFrameDef],
     [DetectedEventsDef, InputsDef, LocalHsPlayerDef],
     (cannons, res) => {
-      const player = em.findEntity(res.localPlayer.playerId, [
+      const player = em.findEntity(res.localHsPlayer.playerId, [
         HsPlayerDef,
         AuthorityDef,
       ])!;

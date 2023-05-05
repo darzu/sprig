@@ -273,7 +273,7 @@ export async function createMast(em: EntityManager) {
 //   [MastDef, TurretDef],
 //   [InputsDef, LocalPlayerDef],
 //   (es, res) => {
-//     const player = EM.findEntity(res.localPlayer.playerId, [PlayerDef])!;
+//     const player = EM.findEntity(res.localHsPlayer.playerId, [PlayerDef])!;
 //     if (!player) return;
 //     for (let e of es) {
 //       if (DeletedDef.isOn(e)) continue;

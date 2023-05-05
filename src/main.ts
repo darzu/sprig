@@ -45,7 +45,7 @@ const ALL_GAMES = [
   "modeling",
   "ld53",
 ] as const;
-const GAME: (typeof ALL_GAMES)[number] = "ld53";
+const GAME: (typeof ALL_GAMES)[number] = "hyperspace";
 
 // Run simulation with a fixed timestep @ 60hz
 const TIMESTEP = 1000 / 60;
@@ -98,11 +98,11 @@ function legacyRequireAllTheSystems() {
   }
   EM.requireSystem("controllableInput");
   EM.requireSystem("controllableCameraFollow");
-  EM.requireSystem("buildPlayers");
-  EM.requireSystem("playerFacingDir");
-  EM.requireSystem("stepPlayers");
+  EM.requireSystem("buildHsPlayers");
+  EM.requireSystem("hsPlayerFacingDir");
+  EM.requireSystem("stepHsPlayers");
   if (GAME === "hyperspace") {
-    EM.requireSystem("playerLookingForShip");
+    EM.requireSystem("hsPlayerLookingForShip");
   }
   if (GAME === "rebound") {
     EM.maybeRequireSystem("sandboxSpawnBoxes");
