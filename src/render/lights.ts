@@ -4,7 +4,7 @@ import { CY } from "./gpu-registry.js";
 import { createCyStruct, CyToTS } from "./gpu-struct.js";
 import { GPUBufferUsage } from "./webgpu-hacks.js";
 
-const MAX_POINT_LIGHTS = 12;
+const MAX_POINT_LIGHTS = 1;
 
 export const PointLightStruct = createCyStruct(
   {

@@ -13,7 +13,7 @@ import { DISABLE_GERSTNER } from "../../flags.js";
 // TODO(@darzu): [ ] interactively shape bigger waves using fourier-ish approach
 
 // TODO(@darzu): EXPORT THIS VAR
-const roughness = 0.1;
+const roughness = 0.5;
 // const roughness = 0.5;
 const steepness = 1.0 * roughness;
 const bigWave = 1.0 * roughness;
@@ -148,9 +148,9 @@ export function compute_gerstner(
     outDisp[2] += wave.Q * wave.A * D[1] * _cos;
     outDisp[1] -= wave.A * _sin;
 
-    outNorm[0] += -1.0 * D[0] * wave.w * wave.A * _cos;
-    outNorm[2] += -1.0 * D[1] * wave.w * wave.A * _cos;
-    outNorm[1] += wave.Q * wave.w * wave.A * _sin;
+    outNorm[0] += -1.0 * D[0] * wave.w * wave.A * _cos * wave.normalWeight;
+    outNorm[2] += -1.0 * D[1] * wave.w * wave.A * _cos * wave.normalWeight;
+    outNorm[1] += wave.Q * wave.w * wave.A * _sin * wave.normalWeight;
   }
   // TODO(@darzu): this expression seems troubling; `1.0 -` before normalizing?!
   outNorm[1] = 1.0 - outNorm[1];

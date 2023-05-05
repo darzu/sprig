@@ -83,13 +83,20 @@ export function vec2Dbg(v: vec2): string {
 export function vec3Dbg(v: vec3): string {
   return `[${v[0].toFixed(2)},${v[1].toFixed(2)},${v[2].toFixed(2)}]`;
 }
-export function vec3Dbg2(v: vec3): string {
-  return `V(${v[0].toFixed(2)},${v[1].toFixed(2)},${v[2].toFixed(2)})`;
+export function vec3Dbg2(v: vec3, precision = 2): string {
+  return `V(${v[0].toFixed(precision)},${v[1].toFixed(
+    precision
+  )},${v[2].toFixed(precision)})`;
 }
 export function vec4Dbg(v: vec4): string {
   return `[${v[0].toFixed(2)},${v[1].toFixed(2)},${v[2].toFixed(
     2
   )},${v[3].toFixed(2)}]`;
+}
+export function vec4Dbg2(v: vec4, precision = 2): string {
+  return `V(${v[0].toFixed(precision)},${v[1].toFixed(
+    precision
+  )},${v[2].toFixed(precision)},${v[3].toFixed(precision)})`;
 }
 export function quatDbg(q: quat): string {
   const axis = tempVec3();
@@ -106,7 +113,7 @@ export function mat4Dbg(v: mat4): string {
  ${ns[3]}\t|${ns[7]}\t|${ns[11]}\t|${ns[15]}`
   );
 }
-export function centroid(vs: vec3[]): vec3 {
+export function centroid(...vs: vec3[]): vec3 {
   const avgX = avg(vs.map((v) => v[0]));
   const avgY = avg(vs.map((v) => v[1]));
   const avgZ = avg(vs.map((v) => v[2]));
@@ -136,12 +143,18 @@ export function orthonormalize(forward: vec3, upish: vec3, outRight: vec3) {
 
 // quat utilities
 // assumes local up axis is [0,1,0] and forward is [0,0,1]
-export function quatFromUpForward(out: quat, up: vec3, forwardish: vec3): quat {
+const __t1 = vec3.create();
+const __t2 = vec3.create();
+export function quatFromUpForward(
+  out: quat,
+  up: vec3.InputT,
+  forwardish: vec3
+): quat {
   // https://stackoverflow.com/questions/52413464/look-at-quaternion-using-up-vector/52551983#52551983
-  const side = vec3.cross(forwardish, up);
+  const side = vec3.cross(forwardish, up, __t1);
   vec3.negate(side, side); // TODO(@darzu): is this negate right?
   vec3.normalize(side, side);
-  const backward = vec3.cross(side, up);
+  const backward = vec3.cross(side, up, __t2);
 
   const trace = side[0] + up[1] + backward[2];
   if (trace > 0.0) {

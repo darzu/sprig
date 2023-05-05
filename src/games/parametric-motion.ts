@@ -66,7 +66,7 @@ export function projectilePosition1D(
   ax: number,
   t: number
 ): number {
-  return x0 + vx * t + ax * t * t;
+  return x0 + vx * t + (ax * t * t) / 2;
 }
 
 // TODO(@darzu): determine the right angle to hit the player

@@ -31,7 +31,7 @@ export const WindDef = EM.defineComponent("wind", () => {
   return wind;
 });
 
-function setWindAngle(wind: Component<typeof WindDef>, angle: number) {
+export function setWindAngle(wind: Component<typeof WindDef>, angle: number) {
   wind.angle = angle;
   vec3.rotateY(AHEAD_DIR, ORIGIN, angle, wind.dir);
 }

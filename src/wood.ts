@@ -60,6 +60,7 @@ import {
   mergeAABBs,
   getAABBFromPositions,
 } from "./physics/aabb.js";
+import { SoundSetDef } from "./ld53/sound-loader.js";
 
 // TODO(@darzu): remove all references to pirates
 
@@ -88,6 +89,11 @@ What does compute shader gain us?
   Less CPU->GPU bandwidth used
   Less CPU work
 */
+
+// TODO(@darzu): PERF HACK. These temp vecs are used for intermediate calculations.
+//    Be very careful about their liveness / lifetime!!
+const __temp1 = vec3.create();
+const __temp2 = vec3.create();
 
 export const WoodStateDef = EM.defineComponent("woodState", (s: WoodState) => {
   return s;
@@ -143,6 +149,7 @@ onInit((em) => {
             assert(ball.collider.shape === "AABB");
             copyAABB(ballAABBWorld, ball.collider.aabb);
             transformAABB(ballAABBWorld, ball.world.transform);
+            // TODO(@darzu): PERF! We should probably translate ball into wood space not both into world space!
             // TODO(@darzu): this sphere should live elsewhere..
             const worldSphere: Sphere = {
               org: ball.world.position,
@@ -195,6 +202,15 @@ onInit((em) => {
                       Math.min(woodHealth.health, ball.bullet.health) + 0.001;
                     woodHealth.health -= dmg;
                     ball.bullet.health -= dmg;
+                    if (dmg) {
+                      EM.whenResources(AudioDef, SoundSetDef).then((res) => {
+                        res.music.playSound(
+                          "woodbreak",
+                          res.soundSet["woodbreak.mp3"],
+                          0.02
+                        );
+                      });
+                    }
 
                     // TODO(@darzu): HUGE HACK to detect hitting a pirate ship
                     if (
@@ -206,9 +222,9 @@ onInit((em) => {
                       for (let fn of _destroyPirateShipFns)
                         fn(w.physicsParent.id, w);
                     } else if (ball.bullet.team === 2) {
-                      const music = EM.getResource(AudioDef);
-                      if (music)
-                        music.playChords([2, 3], "minor", 0.2, 1.0, -2);
+                      //const music = EM.getResource(AudioDef);
+                      // if (music)
+                      //   music.playChords([2, 3], "minor", 0.2, 1.0, -2);
                     }
                   }
                 }
@@ -340,8 +356,13 @@ onInit((em: EntityManager) => {
 
               // create flying splinter (from pool)
               {
+                const qi = seg.quadSideIdxs[0];
+                const quadColor = mesh.colors[qi];
                 const splinter = pool.getNext();
+                if (RenderableDef.isOn(splinter))
+                  splinter.renderable.hidden = false;
                 vec3.copy(splinter.color, w.color);
+                vec3.add(splinter.color, quadColor, splinter.color);
                 const pos = getLineMid(vec3.create(), seg.midLine);
                 vec3.transformMat4(pos, w.world.transform, pos);
                 EM.ensureComponentOn(splinter, PositionDef);
@@ -590,6 +611,11 @@ function addSplinterEnd(
     // b.mesh.quad.forEach((_) => b.mesh.colors.push(vec3.clone(BLACK)));
     // b.mesh.tri.forEach((_) => b.mesh.colors.push(vec3.clone(BLACK)));
   }
+
+  const qi = seg.quadSideIdxs[0];
+  const color = wood.mesh.colors[qi];
+  const triColorStartIdx = wood.mesh.quad.length;
+
   // TODO(@darzu): don't alloc all this mesh stuff!!
   const splinterMesh = normalizeMesh(_tempSplinterMesh);
 
@@ -607,6 +633,7 @@ function addSplinterEnd(
     splinterMesh.tri[i][1] += vertIdx;
     splinterMesh.tri[i][2] += vertIdx;
     vec3.copy(wood.mesh.tri[triIdx + i], splinterMesh.tri[i]);
+    vec3.copy(wood.mesh.colors[triColorStartIdx + triIdx + i], color);
   }
   for (let i = 0; i < _quadsPerSplinter; i++) {
     splinterMesh.quad[i][0] += vertIdx;
@@ -614,6 +641,7 @@ function addSplinterEnd(
     splinterMesh.quad[i][2] += vertIdx;
     splinterMesh.quad[i][3] += vertIdx;
     vec4.copy(wood.mesh.quad[quadIdx + i], splinterMesh.quad[i]);
+    vec3.copy(wood.mesh.colors[quadIdx + i], color);
   }
 
   return sIdx;
@@ -780,7 +808,7 @@ export function createTimberBuilder(mesh: RawMesh) {
 
       // TODO(@darzu): HACK! This ensures that adjacent "teeth" in the splinter
       //    are properly manifold/convex/something-something
-      let cross_last_this = vec2.cross([lastX, lastY], [x, y]);
+      let cross_last_this = vec2.cross([lastX, lastY], [x, y], __temp1);
       let maxLoop = 10;
       while (cross_last_this[2] > 0 && maxLoop > 0) {
         if (x < 0) y += 0.1;
@@ -788,7 +816,8 @@ export function createTimberBuilder(mesh: RawMesh) {
         vec2.cross([lastX, lastY], [x, y], cross_last_this);
         maxLoop--;
       }
-      if (VERBOSE_LOG && cross_last_this[2] > 0) console.warn(`non-manifold!`);
+      if (VERBOSE_LOG && cross_last_this[2] > 0)
+        console.warn(`splinter non-manifold!`);
 
       // +D side
       const vtj = V(x, y, d);
@@ -804,7 +833,7 @@ export function createTimberBuilder(mesh: RawMesh) {
       mesh.tri.push(V(v_tm + 1, v_blast, vtji + 1));
 
       // D to -D quad
-      mesh.quad.push(vec4.clone([v_blast, v_tlast, vtji, vtji + 1]));
+      mesh.quad.push(V(v_blast, v_tlast, vtji, vtji + 1));
 
       v_tlast = vtji;
       v_blast = vtji + 1;
@@ -818,7 +847,7 @@ export function createTimberBuilder(mesh: RawMesh) {
     mesh.tri.push(V(v_tm + 1, v_blast, v_bbr));
 
     // D to -D quad
-    mesh.quad.push(vec4.clone([v_blast, v_tlast, v_tbr, v_bbr]));
+    mesh.quad.push(V(v_blast, v_tlast, v_tbr, v_bbr));
   }
 
   // NOTE: for provoking vertices,
@@ -1032,6 +1061,7 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
       lastLoop: vec4, // [VI, VI, VI, VI],
       isFirstLoop: boolean = false
     ): BoardSeg[] | undefined {
+      // TODO(@darzu): using too many temps!
       // start tracking this segment
       const segVis = new Set([...lastLoop]);
 
@@ -1097,8 +1127,8 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
         createAABB(),
         vertIdxs.map((vi) => m.pos[vi])
       );
-      const lastMid = centroid([...lastLoop].map((vi) => m.pos[vi]));
-      const nextMid = centroid([...nextLoop].map((vi) => m.pos[vi]));
+      const lastMid = centroid(...[...lastLoop].map((vi) => m.pos[vi]));
+      const nextMid = centroid(...[...nextLoop].map((vi) => m.pos[vi]));
       const mid = createLine(lastMid, nextMid);
       const areaNorms = segQis.map(getQiAreaNorm);
       const len1 = vec3.dist(m.pos[lastLoop[1]], m.pos[lastLoop[0]]);
@@ -1108,11 +1138,12 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
       let seg: BoardSeg;
 
       function getQiAreaNorm(qi: number) {
+        // TODO(@darzu): PERF. Using too many temps!
         // TODO(@darzu): i hate doing this vec4->number[] conversion just to get map.. wth
         const ps = [...m.quad[qi]].map((vi) => m.pos[vi]);
         // NOTE: assumes segments are parallelograms
-        const ab = vec3.sub(ps[1], ps[0]);
-        const ac = vec3.sub(ps[3], ps[0]);
+        const ab = vec3.sub(ps[1], ps[0], __temp1);
+        const ac = vec3.sub(ps[3], ps[0], __temp2);
         const areaNorm = vec3.cross(ab, ac, vec3.create());
         return areaNorm;
       }

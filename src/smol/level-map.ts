@@ -1,5 +1,6 @@
 import { Component, EM, EntityManager } from "../entity-manager.js";
 import { VERBOSE_LOG } from "../flags.js";
+import { TextDef } from "../games/ui.js";
 import {
   AABB,
   AABB2,
@@ -13,8 +14,9 @@ import { V, vec2, vec3, vec4 } from "../sprig-matrix.js";
 import { assert, assertDbg, dbgLogOnce } from "../util.js";
 import { vec4Dbg } from "../utils-3d.js";
 import { randColor } from "../utils-game.js";
-import { MapName, MapBytesSetDef, MapBytes } from "./map-loader.js";
+import { MapName, MapBytesSetDef, MapBytes, MapHelp } from "./map-loader.js";
 import { ScoreDef } from "./score.js";
+import { WindDef } from "./wind.js";
 
 const WIDTH = 1024;
 const HEIGHT = 512;
@@ -28,8 +30,10 @@ export const LandMapTexPtr = CY.createTexture("landMap", {
 export const LevelMapDef = EM.defineComponent("levelMap", () => ({
   name: "unknown",
   land: new Float32Array(),
-  towers: [] as vec2[],
+  towers: [] as [vec2, vec2][],
   startPos: V(0, 0),
+  windDir: V(0, 0),
+  endZonePos: V(0, 0),
 }));
 type LevelMap = Component<typeof LevelMapDef>;
 
@@ -43,6 +47,44 @@ interface MapBlob {
   aabb: AABB2; // NOTE: min is inclusive, max is exclusive
   area: number;
   runs: MapBlobRun[];
+}
+
+const mapCache = new Map<string, LevelMap>();
+
+function centerOfMassAndDirection(b: MapBlob): [vec2, vec2] {
+  let cx = 0;
+  let cy = 0;
+  let len = 0;
+  for (let run of b.runs) {
+    const y = run.y;
+    for (let x = run.x0; x < run.x1; x++) {
+      cx += x;
+      cy += y;
+      len++;
+    }
+  }
+  cx /= len;
+  cx = Math.floor(cx);
+  cy /= len;
+  cy = Math.floor(cy);
+  // direction of furthest point
+  let fx = cx;
+  let fy = cy;
+  let fd = 0;
+  for (let run of b.runs) {
+    const y = run.y;
+    for (let x = run.x0; x < run.x1; x++) {
+      const d = (x - cx) * (x - cx) + (y - cy) * (y - cy);
+      if (d > fd) {
+        fx = x;
+        fy = y;
+        fd = d;
+      }
+    }
+  }
+  const dir = V(fx - cx, fy - cy);
+  vec2.normalize(dir, dir);
+  return [V(cx, cy), dir];
 }
 
 // NOTE: we mutate the maps as we parse them (so we have easier bookkeeping)
@@ -174,9 +216,9 @@ export function parseAndMutateIntoMapData(
   const landData = new Float32Array(mapBytes.width * mapBytes.height);
   let totalPurple = 0;
 
-  // extract land data
+  //extract land data
   for (let blob of blobs) {
-    if (blob.color[0] > 200) {
+    if (blob.color[0] < 50 && blob.color[1] < 50 && blob.color[2] < 50) {
       for (let r of blob.runs) {
         for (let x = r.x0; x < r.x1; x++) {
           // TODO(@darzu): parameterize this transform?
@@ -186,6 +228,10 @@ export function parseAndMutateIntoMapData(
       }
     }
   }
+
+  // for (let blob of blobs) {
+  //   console.log(`Blob with color ${blob.color}`);
+  // }
 
   // extract start pos
   const startBlob = blobs.filter(
@@ -197,13 +243,52 @@ export function parseAndMutateIntoMapData(
   // extract tower locations
   const towers = blobs
     .filter((b) => b.color[0] > 200 && b.color[1] > 200 && b.color[2] < 100)
-    .map((b) => aabbCenter2(vec2.create(), b.aabb));
+    .map((b) => centerOfMassAndDirection(b));
+
+  // TODO(@darzu): game-specific stuff should probably be abstracted out
+  const towerIslandRadius = 50;
+  towers.forEach(([pos, _]) => {
+    for (let i = -towerIslandRadius; i < towerIslandRadius; i++) {
+      for (let j = -towerIslandRadius; j < towerIslandRadius; j++) {
+        if (i * i + j * j > towerIslandRadius * towerIslandRadius) continue;
+        const x = pos[0] + i;
+        const y = pos[1] + j;
+        // check to see if we're actually within an approximate circle
+        const outIdx = x + (mapBytes.height - 1 - y) * mapBytes.width;
+        if (0 <= outIdx && outIdx < landData.length) {
+          landData[outIdx] = 1.0;
+        }
+      }
+    }
+  });
+
+  const windBlobs = blobs.filter(
+    (b) => b.color[0] > 200 && b.color[1] < 150 && b.color[2] > 200
+  );
+  assert(
+    windBlobs.length === 1,
+    `expected 1 windBlob, found ${windBlobs.length}`
+  );
+  const windBlob = windBlobs[0];
+  const [_, windDir] = centerOfMassAndDirection(windBlob);
+
+  const endZoneBlobs = blobs.filter(
+    (b) => b.color[0] < 100 && b.color[1] > 200 && b.color[2] < 100
+  );
+  assert(
+    endZoneBlobs.length === 1,
+    `expected 1 end zone, found ${endZoneBlobs.length}`
+  );
+  const endZoneBlob = endZoneBlobs[0];
+  const endZonePos = aabbCenter2(vec2.create(), endZoneBlob.aabb);
 
   const levelMap: LevelMap = {
     land: landData,
     name,
     startPos,
     towers,
+    windDir,
+    endZonePos,
   };
 
   // TODO(@darzu): DBG:
@@ -217,16 +302,31 @@ export function parseAndMutateIntoMapData(
 }
 
 export async function setMap(em: EntityManager, name: MapName) {
-  const res = await em.whenResources(MapBytesSetDef, RendererDef, ScoreDef);
+  console.log(`setting map to ${name}`);
+  const res = await em.whenResources(
+    MapBytesSetDef,
+    RendererDef,
+    ScoreDef,
+    TextDef
+  );
 
   let __start = performance.now();
 
-  const mapBytes = res.mapBytesSet[name];
-
+  let levelMap;
+  // TODO(@darzu): REFACTOR. purge purple stuff
   let totalPurple = 0;
+  if (mapCache.has(name)) {
+    levelMap = mapCache.get(name)!;
+  } else {
+    const mapBytes = res.mapBytesSet[name];
 
-  const levelMap = parseAndMutateIntoMapData(mapBytes, name);
+    levelMap = parseAndMutateIntoMapData(mapBytes, name);
+    mapCache.set(name, levelMap);
+  }
 
+  res.text.helpText = MapHelp[name] || " ";
+
+  // TODO(@darzu): FIX LAND SPAWN
   const texResource = res.renderer.renderer.getCyResource(LandMapTexPtr)!;
   texResource.queueUpdate(levelMap.land);
 

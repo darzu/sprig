@@ -29,11 +29,37 @@ import { CameraFollowDef } from "../camera.js";
 import { createSock } from "./windsock.js";
 import { BARGE_AABBS, SHIP_SMALL_AABBS } from "../primatives.js";
 import { ENDESGA16 } from "../color/palettes.js";
+import { createHomeShip, homeShipAABBs } from "../games/shipyard.js";
+import { getAABBFromMesh, transformMesh } from "../render/mesh.js";
+import { createWoodHealth, WoodHealthDef, WoodStateDef } from "../wood.js";
+import { addGizmoChild } from "../utils-game.js";
+import { getSizeFromAABB } from "../physics/aabb.js";
+import {
+  CannonLocalDef,
+  createCannon,
+  createCannonNow,
+} from "../games/cannon.js";
 
 export const ShipDef = EM.defineComponent("ld52ship", () => ({
   mast: createRef(0, [MastDef, RotationDef]),
   rudder: createRef(0, [
     RudderDef,
+    YawPitchDef,
+    TurretDef,
+    // CameraFollowDef,
+    AuthorityDef,
+    PositionDef,
+  ]),
+  cannonR: createRef(0, [
+    CannonLocalDef,
+    YawPitchDef,
+    TurretDef,
+    // CameraFollowDef,
+    AuthorityDef,
+    PositionDef,
+  ]),
+  cannonL: createRef(0, [
+    CannonLocalDef,
     YawPitchDef,
     TurretDef,
     // CameraFollowDef,
@@ -50,36 +76,57 @@ const VELOCITY_DRAG = 30.0; // squared drag factor
 const SAIL_ACCEL_RATE = 0.001;
 const RUDDER_ROTATION_RATE = 0.01;
 
+export const cannonDefaultPitch = Math.PI * +0.05;
+
 export async function createShip(em: EntityManager) {
-  const res = await em.whenResources(AssetsDef);
+  const res = await em.whenResources(AssetsDef, MeDef);
   const ent = em.new();
   em.ensureComponentOn(ent, ShipDef);
+
+  const homeShip = createHomeShip();
+
   em.ensureComponentOn(
     ent,
     RenderableConstructDef,
-    res.assets.ship_small.proto
+    homeShip.timberMesh
+    // res.assets.ship_small.proto
   );
+  em.ensureComponentOn(ent, WoodStateDef, homeShip.timberState);
   // em.set(ent, ColliderDef, {
   //   shape: "AABB",
   //   solid: true,
   //   aabb: res.assets.ship.aabb,
   // });
+
+  const timberHealth = createWoodHealth(homeShip.timberState);
+  em.ensureComponentOn(ent, WoodHealthDef, timberHealth);
+
+  // const timberAABB = getAABBFromMesh(homeShip.timberMesh);
+  // console.log("ship size:");
+  // console.dir(timberAABB);
+  // console.dir(getSizeFromAABB(timberAABB));
+
   const mc: MultiCollider = {
     shape: "Multi",
     solid: true,
     // TODO(@darzu): integrate these in the assets pipeline
-    children: SHIP_SMALL_AABBS.map((aabb) => ({
+    children: homeShipAABBs.map((aabb) => ({
       shape: "AABB",
       solid: true,
       aabb,
     })),
   };
+  // em.ensureComponentOn(ent, ColliderDef, {
+  //   shape: "AABB",
+  //   solid: false,
+  //   aabb: timberAABB,
+  // });
   em.ensureComponentOn(ent, ColliderDef, mc);
-  em.ensureComponentOn(ent, PositionDef, V(0, 2, 0));
+  em.ensureComponentOn(ent, PositionDef, V(0, 0, 0));
   em.ensureComponentOn(ent, RotationDef);
   em.ensureComponentOn(ent, LinearVelocityDef);
   // em.ensureComponentOn(ent, ColorDef, V(0.5, 0.3, 0.1));
-  em.ensureComponentOn(ent, ColorDef, ENDESGA16.lightBrown);
+  em.ensureComponentOn(ent, ColorDef, V(0, 0, 0)); // painted by individual planks!
 
   const mast = await createMast(em);
   em.ensureComponentOn(mast, PhysicsParentDef, ent.id);
@@ -94,17 +141,44 @@ export async function createShip(em: EntityManager) {
   const rudder = await createRudder(em);
   em.ensureComponentOn(rudder, PhysicsParentDef, ent.id);
   // console.log("setting position");
-  vec3.set(0, 0, -12, rudder.position);
+  vec3.set(0, 4, -25, rudder.position);
+  // console.log(`rudder: ${rudder.id}`);
+
+  // addGizmoChild(rudder, 2, [0, 5, 0]);
 
   ent.ld52ship.rudder = createRef(rudder);
 
   // make debug gizmo
   // TODO(@darzu): would be nice to have as a little helper function?
-  const gizmo = EM.new();
-  EM.ensureComponentOn(gizmo, PositionDef, V(0, 20, 0));
-  EM.ensureComponentOn(gizmo, ScaleDef, V(10, 10, 10));
-  EM.ensureComponentOn(gizmo, PhysicsParentDef, ent.id);
-  EM.ensureComponentOn(gizmo, RenderableConstructDef, res.assets.gizmo.proto);
+  // const gizmo = EM.new();
+  // EM.ensureComponentOn(gizmo, PositionDef, V(0, 20, 0));
+  // EM.ensureComponentOn(gizmo, ScaleDef, V(10, 10, 10));
+  // EM.ensureComponentOn(gizmo, PhysicsParentDef, ent.id);
+  // EM.ensureComponentOn(gizmo, RenderableConstructDef, res.assets.gizmo.proto);
+
+  // addGizmoChild(ent, 10);
+
+  //  [{ min: V(-13.8, 4.0, -2.9), max: V(-5.8, 6.0, -0.9) }];
+
+  // create cannons
+  const cannonR = createCannonNow(
+    res,
+    V(-8, 4.7, -7),
+    Math.PI * 0.5,
+    cannonDefaultPitch,
+    ent.id
+  );
+  vec3.copy(cannonR.color, ENDESGA16.darkGray);
+  ent.ld52ship.cannonR = createRef(cannonR);
+  const cannonL = createCannonNow(
+    res,
+    V(8, 4.7, -7),
+    Math.PI * 1.5,
+    cannonDefaultPitch,
+    ent.id
+  );
+  vec3.copy(cannonL.color, ENDESGA16.darkGray);
+  ent.ld52ship.cannonL = createRef(cannonL);
 
   return ent;
 }
@@ -161,7 +235,11 @@ async function createRudder(em: EntityManager) {
   const res = await em.whenResources(AssetsDef, MeDef);
   const ent = em.new();
   em.ensureComponentOn(ent, RudderDef);
-  em.ensureComponentOn(ent, RenderableConstructDef, res.assets.rudder.proto);
+  em.ensureComponentOn(
+    ent,
+    RenderableConstructDef,
+    res.assets.rudderPrim.proto
+  );
   // em.ensureComponentOn(ent, ColorDef, V(0.2, 0.1, 0.05));
   em.ensureComponentOn(ent, ColorDef, ENDESGA16.midBrown);
   em.ensureComponentOn(ent, PositionDef);
@@ -184,10 +262,15 @@ async function createRudder(em: EntityManager) {
     0,
     interactBox,
     Math.PI,
-    -Math.PI / 8,
-    1.5,
-    V(0, 20, 50),
-    true
+    // -Math.PI / 8,
+    -Math.PI / 12,
+    1.6,
+    // V(0, 20, 50),
+    V(0, 10, 30),
+    true,
+    1,
+    Math.PI,
+    "W/S: unfurl/furl sail, A/D: turn, E: drop rudder"
   );
 
   ent.turret.maxPitch = 0;

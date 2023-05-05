@@ -53,6 +53,7 @@ import { tempMat4, tempVec3 } from "./temp-pool.js";
 import {
   BOAT_MESH,
   BULLET_MESH,
+  createRudderMesh,
   CUBE_MESH,
   DBG_FABRIC,
   GRID_PLANE_MESH,
@@ -155,6 +156,9 @@ const MeshTransforms: Partial<{
     [1.2, 1.2, 1.2],
     mat4.create()
   ),
+  // TODO(@darzu): FOR LD53
+  ball: mat4.fromScaling([2, 2, 2]),
+  // ball_broken: mat4.fromScaling([2, 2, 2]),
 };
 
 // TODO(@darzu): PERF. "ocean" and "ship_fangs" are expensive to load and aren't needed in all games.
@@ -425,10 +429,17 @@ export const LocalMeshes = {
     scaleMesh3(m, V(0.5, 20, 0.5));
     return m;
   },
+  ld53_cannon: () => {
+    let m = cloneMesh(CUBE_MESH);
+    m.dbgName = "ld53_cannon";
+    scaleMesh3(m, V(8, 2, 2));
+    return m;
+  },
   sail: makeSailMesh,
   // timber_rib: mkTimberRib,
   timber_splinter: mkTimberSplinterEnd,
   gizmo: () => createGizmoMesh(),
+  rudderPrim: () => createRudderMesh(),
 } as const;
 
 type LocalMeshSymbols = keyof typeof LocalMeshes;

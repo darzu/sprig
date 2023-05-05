@@ -27,6 +27,7 @@ import { clamp } from "../math.js";
 import { DeletedDef } from "../delete.js";
 import { defineSerializableComponent } from "../em_helpers.js";
 import { YawPitchDef, yawpitchToQuat } from "../yawpitch.js";
+import { TextDef } from "./ui.js";
 
 export const TurretDef = EM.defineComponent("turret", () => {
   return {
@@ -41,6 +42,7 @@ export const TurretDef = EM.defineComponent("turret", () => {
     cameraYawFactor: 0,
     keyboardControls: false,
     keyboardSpeed: 1,
+    helpText: "",
   };
 });
 
@@ -54,7 +56,9 @@ export function constructNetTurret(
   cameraYawFactor: number = 0,
   cameraFollowOffset: vec3 = CAMERA_OFFSETS.thirdPersonOverShoulder,
   keyboardControls: boolean = false,
-  keyboardSpeed: number = 1
+  keyboardSpeed: number = 1,
+  yawRange: number = Math.PI,
+  helpText: string = ""
 ): asserts e is EntityW<
   [
     typeof TurretDef,
@@ -68,13 +72,14 @@ export function constructNetTurret(
   e.yawpitch.yaw = startYaw;
   e.yawpitch.pitch = startPitch;
   EM.ensureComponentOn(e, TurretDef);
-  e.turret.minYaw += startYaw;
-  e.turret.maxYaw += startYaw;
+  e.turret.minYaw = startYaw - yawRange / 2;
+  e.turret.maxYaw = startYaw + yawRange / 2;
   e.turret.cameraYawOffset = cameraYawOffset;
   e.turret.cameraPitchOffset = cameraPitchOffset;
   e.turret.cameraYawFactor = cameraYawFactor;
   e.turret.keyboardControls = keyboardControls;
   e.turret.keyboardSpeed = keyboardSpeed;
+  e.turret.helpText = helpText;
 
   EM.ensureComponentOn(e, RotationDef);
   EM.ensureComponentOn(e, SyncDef);
@@ -210,7 +215,7 @@ export function registerTurretSystems(em: EntityManager) {
 
   em.registerSystem(
     [TurretDef, InRangeDef, AuthorityDef, CameraFollowDef],
-    [InputsDef, LocalPlayerDef],
+    [InputsDef, LocalPlayerDef, TextDef],
     (turrets, res) => {
       const player = em.findEntity(res.localPlayer.playerId, [
         PlayerDef,
@@ -221,8 +226,16 @@ export function registerTurretSystems(em: EntityManager) {
         if (DeletedDef.isOn(c)) continue;
 
         if (res.inputs.keyClicks["e"]) {
-          if (c.turret.mannedId === player.id) raiseUnmanTurret(player, c);
-          if (c.turret.mannedId === 0) raiseManTurret(player, c);
+          if (c.turret.mannedId === player.id) {
+            // TODO(@darzu): HACK. shouldn't have the non-turret help text in here
+            res.text.lowerText =
+              "W/A/S/D: move, mouse: look, E: use rudder or cannon, shift: run";
+            raiseUnmanTurret(player, c);
+          }
+          if (c.turret.mannedId === 0) {
+            res.text.lowerText = c.turret.helpText;
+            raiseManTurret(player, c);
+          }
         }
       }
     },

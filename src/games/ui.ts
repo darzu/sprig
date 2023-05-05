@@ -26,15 +26,18 @@ export const TextDef = EM.defineComponent(
   (
     upperDiv: HTMLDivElement,
     debugDiv: HTMLDivElement,
-    lowerDiv: HTMLDivElement
+    lowerDiv: HTMLDivElement,
+    helpDiv: HTMLDivElement
   ) => {
     return {
       upperText: "",
       lowerText: "",
       debugText: "",
+      helpText: "",
       upperDiv,
       debugDiv,
       lowerDiv,
+      helpDiv,
     };
   }
 );
@@ -43,8 +46,9 @@ export function registerUISystems(em: EntityManager) {
   const upperDiv = document.getElementById("title-div") as HTMLDivElement;
   const debugDiv = document.getElementById("debug-div") as HTMLDivElement;
   const lowerDiv = document.getElementById("lower-div") as HTMLDivElement;
+  const helpDiv = document.getElementById("help-div") as HTMLDivElement;
 
-  em.addResource(TextDef, upperDiv, debugDiv, lowerDiv);
+  em.addResource(TextDef, upperDiv, debugDiv, lowerDiv, helpDiv);
 
   em.registerSystem(
     null,
@@ -59,6 +63,7 @@ export function registerUISystems(em: EntityManager) {
         debugDiv.firstChild!.nodeValue = res.text.debugText;
       if (res.text.lowerText)
         lowerDiv.firstChild!.nodeValue = res.text.lowerText;
+      if (res.text.helpText) helpDiv.firstChild!.nodeValue = res.text.helpText;
     },
     "uiText"
   );

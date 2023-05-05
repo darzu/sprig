@@ -4,7 +4,7 @@ import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { InputsDef } from "../inputs.js";
 import { mathMap } from "../math.js";
 import { Ray, RayHit } from "../physics/broadphase.js";
-import { AABB } from "../physics/aabb.js";
+import { AABB, aabbListToStr } from "../physics/aabb.js";
 import { ColliderDef } from "../physics/collider.js";
 import {
   PhysicsBroadCollidersDef,
@@ -105,16 +105,6 @@ export function registerModeler(em: EntityManager) {
 
   registerObjClicker(em);
   registerAABBBuilder(em);
-}
-
-export function aabbListToStr(aabbs: AABB[]): string {
-  let resStr = "";
-  resStr += `const aabbs: AABB[] = [`;
-  for (let aabb of aabbs) {
-    resStr += `{min: ${vec3Dbg2(aabb.min)}, max: ${vec3Dbg2(aabb.max)}},`;
-  }
-  resStr += `];`;
-  return resStr;
 }
 
 function registerAABBBuilder(em: EntityManager) {

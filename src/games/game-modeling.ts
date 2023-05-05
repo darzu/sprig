@@ -15,6 +15,8 @@ import { shadowPipelines } from "../render/pipelines/std-shadow.js";
 import { RenderableConstructDef, RendererDef } from "../render/renderer-ecs.js";
 import { quat, V, vec3 } from "../sprig-matrix.js";
 import { createGhost } from "./ghost.js";
+import { createHomeShip } from "./shipyard.js";
+import { TextDef } from "./ui.js";
 
 export async function initModelingGame() {
   const { renderer } = await EM.whenResources(RendererDef);
@@ -95,8 +97,13 @@ export async function initModelingGame() {
 
   // objects
   const obj = EM.new();
-  EM.ensureComponentOn(obj, RenderableConstructDef, assets.ship_small.proto);
+  const ship = createHomeShip();
+  // EM.ensureComponentOn(obj, RenderableConstructDef, assets.ship_small.proto);
+  EM.ensureComponentOn(obj, RenderableConstructDef, ship.timberMesh);
   EM.ensureComponentOn(obj, PositionDef, V(0, 0, 0));
   EM.ensureComponentOn(obj, ColorDef, ENDESGA16.midBrown);
   // EM.ensureComponentOn(obj, AngularVelocityDef, V(0.001, 0.00013, 0.00017));
+
+  const txt = await EM.whenResources(TextDef);
+  txt.text.lowerText = `m: toggle modeler, b: new box, shift-b: export, x/y/z: move, shift-x/y/z: scale`;
 }

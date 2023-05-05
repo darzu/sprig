@@ -196,7 +196,8 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
   em.requireSystem("detectGameEnd");
 
   // start map
-  await setMap(em, "obstacles1");
+  // TODO(@darzu): BROKEN
+  // await setMap(em, "obstacles1");
 
   // once the map is loaded, we can run JFA
   res.renderer.renderer.submitPipelines([], [...mapJfa.allPipes()]);
@@ -663,7 +664,7 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
     WORLD_WIDTH === grassCutTex.size[0] && WORLD_HEIGHT === grassCutTex.size[1]
   );
 
-  score.onLevelEnd.push(() => {
+  score.onLevelEnd.push(async () => {
     worldCutData.fill(0.0);
     grassCutTex.queueUpdate(worldCutData);
     // vec3.set(0, 0, 0, ship.position);
@@ -704,7 +705,7 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
         winYi < 0 ||
         grassCutTex.size[1] <= winYi + winHi
       ) {
-        res.score.shipHealth -= 320;
+        //res.score.shipHealth -= 320;
         return;
       }
 
@@ -785,10 +786,10 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
 
       // console.log(healthChanges);
 
-      res.score.shipHealth = Math.min(
-        res.score.shipHealth + healthChanges,
-        10000
-      );
+      // res.score.shipHealth = Math.min(
+      //   res.score.shipHealth + healthChanges,
+      //   10000
+      // );
       res.score.cutPurple += cutPurple;
 
       // copy from world texture data to update window
@@ -889,7 +890,7 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
   {
     const tower3DPoses = level.levelMap.towers.map((tPos) =>
       level2DtoWorld3D(
-        tPos,
+        tPos[0],
         20, // TODO(@darzu): lookup from heightmap?
         vec3.create()
       )

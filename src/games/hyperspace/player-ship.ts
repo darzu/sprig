@@ -333,7 +333,8 @@ export function registerShipSystems(em: EntityManager) {
       const part = ship.playerShipLocal.parts[partIdx]()!;
       part.renderable.enabled = false;
       part.shipPart.damaged = true;
-      music.playChords([2, 3], "minor", 0.2, 5.0, -2);
+      // TODO(@darzu): AUDIO. unify old and new audio system
+      //music.playChords([2, 3], "minor", 0.2, 5.0, -2);
     },
     {
       legalEvent: ([ship], partIdx) => !!ship.playerShipLocal.parts[partIdx](),
