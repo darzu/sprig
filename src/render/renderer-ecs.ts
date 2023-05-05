@@ -1,5 +1,5 @@
 import { EntityManager, EM, Entity, EntityW } from "../ecs/entity-manager.js";
-import { CameraDef, CameraComputedDef } from "../camera.js";
+import { CameraDef, CameraComputedDef } from "../camera/camera.js";
 import { vec3, quat, mat4 } from "../sprig-matrix.js";
 import {
   Frame,
@@ -20,13 +20,16 @@ import { createFrame, WorldFrameDef } from "../physics/nonintersection.js";
 import { tempVec3 } from "../temp-pool.js";
 import { isMeshHandle, MeshHandle, MeshReserve } from "./mesh-pool.js";
 import { Mesh } from "../meshes/mesh.js";
-import { frustumFromBounds, getFrustumWorldCorners } from "../utils-3d.js";
+import {
+  frustumFromBounds,
+  getFrustumWorldCorners,
+} from "../utils/utils-3d.js";
 import { ShadersDef, ShaderSet } from "./shader-loader.js";
-import { dbgLogOnce } from "../util.js";
+import { dbgLogOnce } from "../utils/util.js";
 import { TimeDef } from "../time.js";
 import { PartyDef } from "../games/party.js";
 import { PointLightDef } from "./lights.js";
-import { assert } from "../util.js";
+import { assert } from "../utils/util.js";
 import {
   DONT_SMOOTH_WORLD_FRAME,
   PERF_DBG_GPU,

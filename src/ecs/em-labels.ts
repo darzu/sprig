@@ -1,6 +1,6 @@
 import { ComponentDef } from "./entity-manager.js";
-import { createDag } from "../util-dag.js";
-import { never } from "../util.js";
+import { createDag } from "../utils/util-dag.js";
+import { never } from "../utils/util.js";
 
 export type Label = string;
 

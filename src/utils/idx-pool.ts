@@ -1,4 +1,4 @@
-import { DBG_ASSERT } from "./flags.js";
+import { DBG_ASSERT } from "../flags.js";
 import { assert, assertDbg } from "./util.js";
 
 export type IdxRing = ReturnType<typeof createIdxRing>;

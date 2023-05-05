@@ -13,7 +13,7 @@ import { createRef } from "../ecs/em_helpers.js";
 import { EM, EntityW, EntityManager } from "../ecs/entity-manager.js";
 import { createEntityPool } from "../ecs/entity-pool.js";
 import { mat4, vec3, quat, vec2, tV } from "../sprig-matrix.js";
-import { clamp, jitter, parabolaFromPoints } from "../math.js";
+import { clamp, jitter, parabolaFromPoints } from "../utils/math.js";
 import {
   AABB,
   createAABB,
@@ -66,14 +66,14 @@ import {
   angleBetweenPosXZ,
   angleBetweenXZ,
   vec3Dbg,
-} from "../utils-3d.js";
+} from "../utils/utils-3d.js";
 import { createRibSailNow, RibSailLocalDef } from "../hyperspace/ribsail.js";
 import { MeDef } from "../net/components.js";
 import { WindDef } from "../wind/wind.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import { fireBullet, simulateBullet } from "../cannons/bullet.js";
-import { dbgOnce } from "../util.js";
-import { drawBall } from "../utils-game.js";
+import { dbgOnce } from "../utils/util.js";
+import { drawBall } from "../utils/utils-game.js";
 import { createGraph3DAxesMesh, createLineMesh } from "../debug/gizmos.js";
 import { createGraph3D, getDataDomain } from "../debug/utils-gizmos.js";
 import {

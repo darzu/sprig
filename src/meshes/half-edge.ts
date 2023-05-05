@@ -4,8 +4,8 @@ import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { hexAvg } from "../hex.js";
 import { RawMesh } from "./mesh.js";
 import { tempVec3 } from "../temp-pool.js";
-import { assert, assertDbg, edges, range, TupleN } from "../util.js";
-import { randNormalPosVec3, vec3Dbg } from "../utils-3d.js";
+import { assert, assertDbg, edges, range, TupleN } from "../utils/util.js";
+import { randNormalPosVec3, vec3Dbg } from "../utils/utils-3d.js";
 
 // https://jerryyin.info/geometry-processing-algorithms/half-edge/
 

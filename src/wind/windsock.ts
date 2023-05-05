@@ -10,7 +10,7 @@ import { RendererDef } from "../render/renderer-ecs.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import { WindDef } from "./wind.js";
-import { assert } from "../util.js";
+import { assert } from "../utils/util.js";
 
 export const SockDef = EM.defineComponent("sock", () => ({
   scale: 1,

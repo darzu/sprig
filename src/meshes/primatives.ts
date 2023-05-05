@@ -14,9 +14,9 @@ import {
   transformMesh,
 } from "./mesh.js";
 import { mat3, mat4, quat, V, vec2, vec3, vec4 } from "../sprig-matrix.js";
-import { assert, range } from "../util.js";
-import { orthonormalize, uintToVec3unorm, vec3Dbg } from "../utils-3d.js";
-import { drawBall } from "../utils-game.js";
+import { assert, range } from "../utils/util.js";
+import { orthonormalize, uintToVec3unorm, vec3Dbg } from "../utils/utils-3d.js";
+import { drawBall } from "../utils/utils-game.js";
 import { createTimberBuilder, createEmptyMesh } from "../wood/wood.js";
 
 // TODO(@darzu): A bunch of stuff shouldn't be in here like barge and sail stuff

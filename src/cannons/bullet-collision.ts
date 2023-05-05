@@ -20,7 +20,7 @@ import { DeletedDef } from "../ecs/delete.js";
 import { AssetsDef } from "../meshes/assets.js";
 import { AudioDef } from "../audio/audio.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
-import { assert, NumberTuple } from "../util.js";
+import { assert, NumberTuple } from "../utils/util.js";
 import {
   breakEnemyShip,
   EnemyShipLocalDef,

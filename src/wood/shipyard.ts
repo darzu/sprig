@@ -1,6 +1,6 @@
 import { DBG_ASSERT } from "../flags.js";
 import { vec2, vec3, vec4, quat, mat4, mat3, V } from "../sprig-matrix.js";
-import { jitter } from "../math.js";
+import { jitter } from "../utils/math.js";
 import {
   getAABBFromMesh,
   mapMeshPositions,
@@ -10,13 +10,13 @@ import {
   transformMesh,
   validateMesh,
 } from "../meshes/mesh.js";
-import { assert, assertDbg, range } from "../util.js";
+import { assert, assertDbg, range } from "../utils/util.js";
 import {
   centroid,
   quatFromUpForward,
   randNormalPosVec3,
   vec3Dbg,
-} from "../utils-3d.js";
+} from "../utils/utils-3d.js";
 import {
   createEmptyMesh,
   createTimberBuilder,

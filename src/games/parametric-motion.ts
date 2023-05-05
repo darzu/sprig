@@ -3,8 +3,8 @@ import { vec3, V, vec2, tV } from "../sprig-matrix.js";
 import { onInit } from "../init.js";
 import { TimeDef } from "../time.js";
 import { PositionDef } from "../physics/transform.js";
-import { assert } from "../util.js";
-import { parabolaFromPoints } from "../math.js";
+import { assert } from "../utils/util.js";
+import { parabolaFromPoints } from "../utils/math.js";
 
 export interface ParamProjectile {
   pos: vec3;

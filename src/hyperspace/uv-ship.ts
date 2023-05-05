@@ -5,7 +5,7 @@ import { onInit } from "../init.js";
 import { InputsDef } from "../inputs.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { tempVec2 } from "../temp-pool.js";
-import { vec2Dbg, vec3Dbg } from "../utils-3d.js";
+import { vec2Dbg, vec3Dbg } from "../utils/utils-3d.js";
 import { GameStateDef, HyperspaceGameState } from "./hyperspace-gamestate.js";
 import { UVPosDef, UVDirDef } from "../ocean/ocean.js";
 

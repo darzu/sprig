@@ -15,8 +15,8 @@ import {
 } from "../physics/transform.js";
 import { AssetsDef } from "../meshes/assets.js";
 import { ColorDef } from "../color/color-ecs.js";
-import { assert } from "../util.js";
-import { CameraComputedDef } from "../camera.js";
+import { assert } from "../utils/util.js";
+import { CameraComputedDef } from "../camera/camera.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import {
   PhysicsResultsDef,
@@ -25,7 +25,7 @@ import {
 import { RayHit } from "../physics/broadphase.js";
 import { tempVec3 } from "../temp-pool.js";
 import { createRef, Ref } from "../ecs/em_helpers.js";
-import { screenPosToRay } from "../utils-game.js";
+import { screenPosToRay } from "../utils/utils-game.js";
 
 export const GlobalCursor3dDef = EM.defineComponent("globalCursor3d", () => {
   return {

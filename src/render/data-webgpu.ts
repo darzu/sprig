@@ -1,6 +1,6 @@
-import { align } from "../math.js";
-import { assert, assertDbg, dbgAddBlame } from "../util.js";
-import { dbgLogOnce, isNumber } from "../util.js";
+import { align } from "../utils/math.js";
+import { assert, assertDbg, dbgAddBlame } from "../utils/util.js";
+import { dbgLogOnce, isNumber } from "../utils/util.js";
 import {
   CyStructDesc,
   CyStruct,

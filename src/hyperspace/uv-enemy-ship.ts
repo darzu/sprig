@@ -7,7 +7,7 @@ import {
 } from "../ecs/entity-manager.js";
 import { TimeDef } from "../time.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
-import { jitter } from "../math.js";
+import { jitter } from "../utils/math.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import {
   PhysicsParentDef,

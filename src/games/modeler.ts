@@ -2,7 +2,7 @@ import { CanvasDef } from "../render/canvas.js";
 import { EM, EntityManager, EntityW } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { InputsDef } from "../inputs.js";
-import { mathMap } from "../math.js";
+import { mathMap } from "../utils/math.js";
 import { Ray, RayHit } from "../physics/broadphase.js";
 import { AABB, aabbListToStr } from "../physics/aabb.js";
 import { ColliderDef } from "../physics/collider.js";
@@ -14,11 +14,11 @@ import {
 import { PositionDef, ScaleDef } from "../physics/transform.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { tempVec3 } from "../temp-pool.js";
-import { vec3Dbg, vec3Dbg2 } from "../utils-3d.js";
+import { vec3Dbg, vec3Dbg2 } from "../utils/utils-3d.js";
 import { AssetsDef } from "../meshes/assets.js";
 import { ColorDef, TintsDef } from "../color/color-ecs.js";
-import { drawLine, screenPosToRay } from "../utils-game.js";
-import { CameraView, CameraComputedDef } from "../camera.js";
+import { drawLine, screenPosToRay } from "../utils/utils-game.js";
+import { CameraView, CameraComputedDef } from "../camera/camera.js";
 
 const ENABLED = true;
 

@@ -1,5 +1,5 @@
 import { AnimateToDef } from "../animate-to.js";
-import { CameraFollowDef } from "../camera.js";
+import { CameraFollowDef } from "../camera/camera.js";
 import { CanvasDef } from "../render/canvas.js";
 import { EM, EntityManager } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";

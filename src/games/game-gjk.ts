@@ -1,4 +1,4 @@
-import { CameraDef } from "../camera.js";
+import { CameraDef } from "../camera/camera.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { EntityManager } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
@@ -20,7 +20,7 @@ import {
   RenderableDef,
 } from "../render/renderer-ecs.js";
 import { tempVec3 } from "../temp-pool.js";
-import { farthestPointInDir } from "../utils-3d.js";
+import { farthestPointInDir } from "../utils/utils-3d.js";
 import { AssetsDef, GameMesh } from "../meshes/assets.js";
 import { GlobalCursor3dDef } from "./cursor.js";
 import { createGhost } from "./ghost.js";

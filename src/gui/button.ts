@@ -8,7 +8,7 @@ import { InputsDef } from "../inputs.js";
 import { PhysicsResultsDef } from "../physics/nonintersection.js";
 import { scaleMesh } from "../meshes/mesh.js";
 import { RendererDef } from "../render/renderer-ecs.js";
-import { assert } from "../util.js";
+import { assert } from "../utils/util.js";
 import { UICursorDef } from "./game-font.js";
 
 // TODO(@darzu): this should really go in assets.ts to follow the current patern.

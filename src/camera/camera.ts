@@ -1,23 +1,23 @@
-import { CanvasDef } from "./render/canvas.js";
+import { CanvasDef } from "../render/canvas.js";
 import {
   Component,
   EM,
   EntityManager,
   EntityW,
   WithComponent,
-} from "./ecs/entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "./sprig-matrix.js";
-import { max } from "./math.js";
-import { AuthorityDef, MeDef } from "./net/components.js";
-import { WorldFrameDef } from "./physics/nonintersection.js";
-import { PositionDef, RotationDef } from "./physics/transform.js";
-import { RendererWorldFrameDef } from "./render/renderer-ecs.js";
-import { computeNewError, reduceError } from "./smoothing.js";
-import { tempQuat, tempVec3 } from "./temp-pool.js";
-import { TimeDef } from "./time.js";
-import { yawpitchToQuat } from "./yawpitch.js";
-import { createAABB } from "./physics/aabb.js";
-import { assert, dbgDirOnce, resizeArray } from "./util.js";
+} from "../ecs/entity-manager.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
+import { max } from "../utils/math.js";
+import { AuthorityDef, MeDef } from "../net/components.js";
+import { WorldFrameDef } from "../physics/nonintersection.js";
+import { PositionDef, RotationDef } from "../physics/transform.js";
+import { RendererWorldFrameDef } from "../render/renderer-ecs.js";
+import { computeNewError, reduceError } from "../smoothing.js";
+import { tempQuat, tempVec3 } from "../temp-pool.js";
+import { TimeDef } from "../time.js";
+import { yawpitchToQuat } from "../yawpitch.js";
+import { createAABB } from "../physics/aabb.js";
+import { assert, dbgDirOnce, resizeArray } from "../utils/util.js";
 
 export type PerspectiveMode = "perspective" | "ortho";
 export type CameraMode = "thirdPerson" | "thirdPersonOverShoulder";

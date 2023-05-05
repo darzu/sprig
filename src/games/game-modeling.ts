@@ -1,5 +1,5 @@
 import { AssetsDef } from "../meshes/assets.js";
-import { CameraDef } from "../camera.js";
+import { CameraDef } from "../camera/camera.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { DevConsoleDef } from "../debug/console.js";

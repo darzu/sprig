@@ -24,15 +24,15 @@ import { YawPitchDef } from "../yawpitch.js";
 import { PartyDef } from "../games/party.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import { InteractableDef } from "../games/interact.js";
-import { vec3Dbg } from "../utils-3d.js";
-import { CameraFollowDef } from "../camera.js";
+import { vec3Dbg } from "../utils/utils-3d.js";
+import { CameraFollowDef } from "../camera/camera.js";
 import { createSock } from "../wind/windsock.js";
 import { BARGE_AABBS, SHIP_SMALL_AABBS } from "../meshes/primatives.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { createHomeShip, homeShipAABBs } from "../wood/shipyard.js";
 import { getAABBFromMesh, transformMesh } from "../meshes/mesh.js";
 import { createWoodHealth, WoodHealthDef, WoodStateDef } from "../wood/wood.js";
-import { addGizmoChild } from "../utils-game.js";
+import { addGizmoChild } from "../utils/utils-game.js";
 import { getSizeFromAABB } from "../physics/aabb.js";
 import {
   CannonLocalDef,

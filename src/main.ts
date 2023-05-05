@@ -11,7 +11,7 @@ import { initReboundSandbox } from "./games/game-rebound.js";
 // import { callClothSystems } from "./game/cloth.js";
 import { registerCommonSystems } from "./games/game-init.js";
 import { setSimulationAlpha } from "./render/renderer-ecs.js";
-import { never } from "./util.js";
+import { never } from "./utils/util.js";
 // import { initHyperspaceGame } from "./game/game-hyperspace.js";
 import { DBG_ASSERT, ENABLE_NET, VERBOSE_LOG } from "./flags.js";
 import { initShipyardGame } from "./wood/game-shipyard.js";

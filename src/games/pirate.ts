@@ -7,7 +7,7 @@ import { createRef } from "../ecs/em_helpers.js";
 import { EM, EntityW, EntityManager } from "../ecs/entity-manager.js";
 import { createEntityPool } from "../ecs/entity-pool.js";
 import { mat4, vec3, quat } from "../sprig-matrix.js";
-import { jitter } from "../math.js";
+import { jitter } from "../utils/math.js";
 import {
   AABB,
   createAABB,

@@ -1,8 +1,8 @@
 import { EM } from "../../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../../sprig-matrix.js";
-import { assert, assertDbg } from "../../util.js";
-import { computeTriangleNormal } from "../../utils-3d.js";
-import { randColor } from "../../utils-game.js";
+import { assert, assertDbg } from "../../utils/util.js";
+import { computeTriangleNormal } from "../../utils/utils-3d.js";
+import { randColor } from "../../utils/utils-game.js";
 import { CY } from "../gpu-registry.js";
 import { createCyStruct, CyToTS } from "../gpu-struct.js";
 import { MAX_INDICES, MeshHandle } from "../mesh-pool.js";

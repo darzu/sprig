@@ -34,12 +34,12 @@ import { constructNetTurret, TurretDef } from "../games/turret.js";
 import { InputsDef } from "../inputs.js";
 import { LocalPlayerDef, PlayerDef } from "../games/player.js";
 import { DeletedDef } from "../ecs/delete.js";
-import { clamp } from "../math.js";
+import { clamp } from "../utils/math.js";
 import { createRef } from "../ecs/em_helpers.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import { WindDef } from "../wind/wind.js";
 import { YawPitchDef } from "../yawpitch.js";
-import { assert } from "../util.js";
+import { assert } from "../utils/util.js";
 import { ENDESGA16 } from "../color/palettes.js";
 
 const SAIL_TURN_SPEED = 5;

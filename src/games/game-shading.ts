@@ -1,11 +1,11 @@
 import { AssetsDef } from "../meshes/assets.js";
-import { CameraDef, CameraComputedDef } from "../camera.js";
+import { CameraDef, CameraComputedDef } from "../camera/camera.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { AllEndesga16, ENDESGA16 } from "../color/palettes.js";
 import { DevConsoleDef } from "../debug/console.js";
 import { EM, EntityW } from "../ecs/entity-manager.js";
 import { createGizmoMesh } from "../debug/gizmos.js";
-import { jitter } from "../math.js";
+import { jitter } from "../utils/math.js";
 import { AngularVelocityDef, LinearVelocityDef } from "../physics/motion.js";
 import { PositionDef, ScaleDef } from "../physics/transform.js";
 import { PointLightDef } from "../render/lights.js";
@@ -25,7 +25,7 @@ import {
   frustumFromBounds,
   getFrustumWorldCorners,
   positionAndTargetToOrthoViewProjMatrix,
-} from "../utils-3d.js";
+} from "../utils/utils-3d.js";
 import { createGhost } from "./ghost.js";
 
 const dbgGrid = [

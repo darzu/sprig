@@ -7,7 +7,7 @@ import { Component, EM, Entity, EntityW } from "../ecs/entity-manager.js";
 import { createEntityPool } from "../ecs/entity-pool.js";
 import { fireBullet } from "../cannons/bullet.js";
 import { PartyDef } from "../games/party.js";
-import { jitter } from "../math.js";
+import { jitter } from "../utils/math.js";
 import {
   AABB,
   createAABB,
@@ -32,8 +32,8 @@ import { LevelMapDef } from "../smol/level-map.js";
 import { ShipDef } from "../smol/ship.js";
 import { mat4, tV, V, vec3, quat, vec2 } from "../sprig-matrix.js";
 import { TimeDef } from "../time.js";
-import { assert } from "../util.js";
-import { vec3Dbg } from "../utils-3d.js";
+import { assert } from "../utils/util.js";
+import { vec3Dbg } from "../utils/utils-3d.js";
 import { WoodHealthDef } from "../wood/wood.js";
 
 const MIN_HEALTH_PERCENT = 0.7;

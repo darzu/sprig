@@ -6,7 +6,7 @@ import { vec2, vec3, vec4, quat, mat4, V } from "./sprig-matrix.js";
 import { onInit } from "./init.js";
 import { PositionDef } from "./physics/transform.js";
 import { TimeDef } from "./time.js";
-import { EaseFn, EASE_LINEAR } from "./util-ease.js";
+import { EaseFn, EASE_LINEAR } from "./utils/util-ease.js";
 
 export interface AnimateTo {
   // TODO(@darzu): support rotation, other properties?

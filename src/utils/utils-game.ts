@@ -1,27 +1,27 @@
-import { CameraView } from "./camera.js";
-import { ColorDef } from "./color/color-ecs.js";
-import { EM, Entity, EntityW } from "./ecs/entity-manager.js";
-import { AssetsDef } from "./meshes/assets.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "./sprig-matrix.js";
+import { CameraView } from "../camera/camera.js";
+import { ColorDef } from "../color/color-ecs.js";
+import { EM, Entity, EntityW } from "../ecs/entity-manager.js";
+import { AssetsDef } from "../meshes/assets.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { mathMap } from "./math.js";
-import { getLineEnd, Line, Ray } from "./physics/broadphase.js";
+import { getLineEnd, Line, Ray } from "../physics/broadphase.js";
 import {
   PhysicsParentDef,
   PositionDef,
   ScaleDef,
-} from "./physics/transform.js";
-import { MeshHandle } from "./render/mesh-pool.js";
-import { Mesh } from "./meshes/mesh.js";
+} from "../physics/transform.js";
+import { MeshHandle } from "../render/mesh-pool.js";
+import { Mesh } from "../meshes/mesh.js";
 import {
   Renderable,
   RenderableConstructDef,
   RenderableDef,
   RendererDef,
-} from "./render/renderer-ecs.js";
-import { tempVec3 } from "./temp-pool.js";
+} from "../render/renderer-ecs.js";
+import { tempVec3 } from "../temp-pool.js";
 import { randNormalPosVec3 } from "./utils-3d.js";
-import { createEntityPool } from "./ecs/entity-pool.js";
-import { DeadDef } from "./ecs/delete.js";
+import { createEntityPool } from "../ecs/entity-pool.js";
+import { DeadDef } from "../ecs/delete.js";
 
 // TODO(@darzu): move this helper elsewhere?
 // TODO(@darzu): would be dope to support thickness;

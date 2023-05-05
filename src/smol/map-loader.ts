@@ -1,6 +1,6 @@
 import { Component, EM } from "../ecs/entity-manager.js";
 import { onInit } from "../init.js";
-import { assert } from "../util.js";
+import { assert } from "../utils/util.js";
 import { getBytes } from "../webget.js";
 
 // TODO(@darzu): games should be able to specify their map path

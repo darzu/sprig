@@ -15,7 +15,7 @@ import {
   RendererDef,
 } from "../render/renderer-ecs.js";
 import { quat, V, vec2, vec3 } from "../sprig-matrix.js";
-import { range } from "../util.js";
+import { range } from "../utils/util.js";
 import { defineNetEntityHelper } from "../ecs/em_helpers.js";
 import { MeDef } from "../net/components.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
@@ -26,7 +26,7 @@ import { tempQuat, tempMat4 } from "../temp-pool.js";
 import {
   signedAreaOfTriangle,
   positionAndTargetToOrthoViewProjMatrix,
-} from "../utils-3d.js";
+} from "../utils/utils-3d.js";
 import { STAR1_COLOR, DarkStarPropsDef } from "./darkstar.js";
 import { onInit } from "../init.js";
 import { ENDESGA16 } from "../color/palettes.js";

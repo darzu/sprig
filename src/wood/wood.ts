@@ -4,9 +4,9 @@ import { AllMeshSymbols, BLACK } from "../meshes/assets.js";
 import { BulletDef } from "../cannons/bullet.js";
 import { GravityDef } from "../games/gravity.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
-import { createIdxPool } from "../idx-pool.js";
+import { createIdxPool } from "../utils/idx-pool.js";
 import { onInit } from "../init.js";
-import { jitter } from "../math.js";
+import { jitter } from "../utils/math.js";
 import { AudioDef } from "../audio/audio.js";
 import {
   copyLine,
@@ -43,14 +43,14 @@ import {
   RendererDef,
 } from "../render/renderer-ecs.js";
 import { tempVec3 } from "../temp-pool.js";
-import { assert, assertDbg, createIntervalTracker } from "../util.js";
-import { range } from "../util.js";
+import { assert, assertDbg, createIntervalTracker } from "../utils/util.js";
+import { range } from "../utils/util.js";
 import {
   centroid,
   quatFromUpForward,
   randNormalVec3,
   vec3Dbg,
-} from "../utils-3d.js";
+} from "../utils/utils-3d.js";
 import { createSplinterPool, SplinterPool } from "./wood-splinters.js";
 import { DBG_ASSERT, VERBOSE_LOG } from "../flags.js";
 import { meshPoolPtr } from "../render/pipelines/std-scene.js";

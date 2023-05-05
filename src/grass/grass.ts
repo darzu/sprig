@@ -2,7 +2,7 @@ import { ColorDef } from "../color/color-ecs.js";
 import { EM, EntityW } from "../ecs/entity-manager.js";
 import { gameMeshFromMesh } from "../meshes/assets.js";
 import { grassPoolPtr, RenderDataGrassDef } from "./std-grass.js";
-import { jitter, align } from "../math.js";
+import { jitter, align } from "../utils/math.js";
 import { PositionDef } from "../physics/transform.js";
 import { Mesh, RawMesh } from "../meshes/mesh.js";
 import {
@@ -11,8 +11,8 @@ import {
   RendererDef,
 } from "../render/renderer-ecs.js";
 import { V, vec3 } from "../sprig-matrix.js";
-import { getPositionFromTransform } from "../utils-3d.js";
-import { randColor } from "../utils-game.js";
+import { getPositionFromTransform } from "../utils/utils-3d.js";
+import { randColor } from "../utils/utils-game.js";
 
 const RENDER_GRASS = true;
 

@@ -6,7 +6,7 @@ import { AuthorityDef, MeDef } from "../net/components.js";
 import { PositionDef, ScaleDef } from "../physics/transform.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { tempVec3 } from "../temp-pool.js";
-import { vec3Dbg } from "../utils-3d.js";
+import { vec3Dbg } from "../utils/utils-3d.js";
 import { AssetsDef } from "../meshes/assets.js";
 import { PointLightDef } from "../render/lights.js";
 import { FLAG_UNLIT, RenderDataStdDef } from "../render/pipelines/std-scene.js";

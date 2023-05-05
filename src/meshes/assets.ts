@@ -22,8 +22,8 @@ import {
 } from "../physics/aabb.js";
 import { RendererDef } from "../render/renderer-ecs.js";
 import { Renderer } from "../render/renderer-ecs.js";
-import { assert } from "../util.js";
-import { objMap, range } from "../util.js";
+import { assert } from "../utils/util.js";
+import { objMap, range } from "../utils/util.js";
 import { getText } from "../webget.js";
 import { AABBCollider } from "../physics/collider.js";
 import {
@@ -35,10 +35,10 @@ import {
   uintToVec3unorm,
   vec3Reverse,
   vec4Reverse,
-} from "../utils-3d.js";
+} from "../utils/utils-3d.js";
 import { MeshHandle, MeshReserve } from "../render/mesh-pool.js";
 import { onInit } from "../init.js";
-import { jitter, mathMap, max, min } from "../math.js";
+import { jitter, mathMap, max, min } from "../utils/math.js";
 import { VERBOSE_LOG } from "../flags.js";
 import {
   createEmptyMesh,

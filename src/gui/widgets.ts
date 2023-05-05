@@ -1,4 +1,4 @@
-import { CameraComputedDef } from "../camera.js";
+import { CameraComputedDef } from "../camera/camera.js";
 import { AlphaDef, ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { EM, EntityW } from "../ecs/entity-manager.js";
@@ -12,8 +12,8 @@ import { PositionDef, ScaleDef } from "../physics/transform.js";
 import { cloneMesh } from "../meshes/mesh.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { tempVec3 } from "../temp-pool.js";
-import { assert } from "../util.js";
-import { screenPosToWorldPos } from "../utils-game.js";
+import { assert } from "../utils/util.js";
+import { screenPosToWorldPos } from "../utils/utils-game.js";
 import { UICursorDef } from "./game-font.js";
 
 // adornments are: entities that are parented to an entity's mesh parts

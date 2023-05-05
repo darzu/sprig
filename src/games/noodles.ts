@@ -12,10 +12,10 @@ import {
   RenderableConstructDef,
   RenderableDef,
 } from "../render/renderer-ecs.js";
-import { assert } from "../util.js";
+import { assert } from "../utils/util.js";
 import { RendererDef } from "../render/renderer-ecs.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
-import { vec3Dbg } from "../utils-3d.js";
+import { vec3Dbg } from "../utils/utils-3d.js";
 import { CUBE_MESH } from "../meshes/primatives.js";
 
 export interface NoodleSeg {

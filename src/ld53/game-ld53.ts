@@ -2,7 +2,7 @@ import {
   CameraDef,
   CameraFollowDef,
   setCameraFollowPosition,
-} from "../camera.js";
+} from "../camera/camera.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { EM, EntityManager, EntityW } from "../ecs/entity-manager.js";
@@ -52,12 +52,12 @@ import {
   randNormalVec3,
   vec2Dbg,
   vec3Dbg,
-} from "../utils-3d.js";
-import { drawBall, randColor } from "../utils-game.js";
+} from "../utils/utils-3d.js";
+import { drawBall, randColor } from "../utils/utils-game.js";
 import { DevConsoleDef } from "../debug/console.js";
-import { clamp, jitter, max, sum } from "../math.js";
+import { clamp, jitter, max, sum } from "../utils/math.js";
 import { CY } from "../render/gpu-registry.js";
-import { assert, dbgOnce } from "../util.js";
+import { assert, dbgOnce } from "../utils/util.js";
 import { texTypeToBytes } from "../render/gpu-struct.js";
 import { PartyDef } from "../games/party.js";
 import {

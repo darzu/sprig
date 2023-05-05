@@ -20,10 +20,10 @@ import {
   CameraFollowDef,
   CAMERA_OFFSETS,
   setCameraFollowPosition,
-} from "../camera.js";
+} from "../camera/camera.js";
 import { AABB, copyAABB, createAABB } from "../physics/aabb.js";
 import { InputsDef } from "../inputs.js";
-import { clamp } from "../math.js";
+import { clamp } from "../utils/math.js";
 import { DeletedDef } from "../ecs/delete.js";
 import { defineSerializableComponent } from "../ecs/em_helpers.js";
 import { YawPitchDef, yawpitchToQuat } from "../yawpitch.js";

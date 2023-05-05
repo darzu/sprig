@@ -1,9 +1,9 @@
-import { CameraDef } from "../camera.js";
+import { CameraDef } from "../camera/camera.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { EntityManager } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { InputsDef } from "../inputs.js";
-import { mathMapNEase } from "../math.js";
+import { mathMapNEase } from "../utils/math.js";
 import { ColliderDef } from "../physics/collider.js";
 import { AngularVelocityDef } from "../physics/motion.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
@@ -33,9 +33,9 @@ import {
   RenderableDef,
 } from "../render/renderer-ecs.js";
 import { tempVec3 } from "../temp-pool.js";
-import { EASE_INQUAD } from "../util-ease.js";
-import { assert } from "../util.js";
-import { drawLine } from "../utils-game.js";
+import { EASE_INQUAD } from "../utils/util-ease.js";
+import { assert } from "../utils/util.js";
+import { drawLine } from "../utils/utils-game.js";
 import { AssetsDef } from "../meshes/assets.js";
 import { ClothConstructDef, ClothLocalDef } from "./cloth.js";
 import { GlobalCursor3dDef } from "./cursor.js";

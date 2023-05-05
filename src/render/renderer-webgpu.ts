@@ -1,5 +1,5 @@
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
-import { assert } from "../util.js";
+import { assert } from "../utils/util.js";
 import {
   CY,
   CyMeshPoolPtr,
@@ -38,7 +38,7 @@ import {
 import { SceneStruct, SceneTS } from "./pipelines/std-scene.js";
 import { ShaderSet } from "./shader-loader.js";
 import { CyStructDesc, texTypeToBytes } from "./gpu-struct.js";
-import { align } from "../math.js";
+import { align } from "../utils/math.js";
 import { pointLightsPtr, PointLightStruct, PointLightTS } from "./lights.js";
 import {
   gerstnerWavesPtr,
@@ -52,7 +52,7 @@ import {
 } from "./pipelines/std-ocean.js";
 import { GPUBufferUsage } from "./webgpu-hacks.js";
 import { PERF_DBG_GPU, VERBOSE_LOG } from "../flags.js";
-import { dbgLogOnce } from "../util.js";
+import { dbgLogOnce } from "../utils/util.js";
 import {
   GrassVertStruct,
   GrassUniStruct,

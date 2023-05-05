@@ -7,7 +7,7 @@ import {
   CameraFollowDef,
   registerCameraSystems,
   setCameraFollowPosition,
-} from "../camera.js";
+} from "../camera/camera.js";
 import {
   registerHandleNetworkEvents,
   registerSendOutboxes,

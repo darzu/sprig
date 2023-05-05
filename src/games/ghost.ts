@@ -1,6 +1,6 @@
 // TODO(@darzu): move other common infrastructure here?
 
-import { CameraFollowDef, setCameraFollowPosition } from "../camera.js";
+import { CameraFollowDef, setCameraFollowPosition } from "../camera/camera.js";
 import { EM, Entity, EntityManager } from "../ecs/entity-manager.js";
 import { LinearVelocityDef } from "../physics/motion.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";

@@ -7,7 +7,7 @@ import {
   CyPipelinePtr,
 } from "../render/gpu-registry.js";
 import { RendererDef } from "../render/renderer-ecs.js";
-import { asyncTimeout, range } from "../util.js";
+import { asyncTimeout, range } from "../utils/util.js";
 
 // TODO(@darzu): waiting on gpu pipeline measurements for better data
 

@@ -36,15 +36,15 @@ import {
   CameraDef,
   CameraFollowDef,
   setCameraFollowPosition,
-} from "../camera.js";
+} from "../camera/camera.js";
 import { defineSerializableComponent } from "../ecs/em_helpers.js";
 import { ControllableDef } from "./controllable.js";
 import { GlobalCursor3dDef } from "./cursor.js";
-import { drawLine } from "../utils-game.js";
+import { drawLine } from "../utils/utils-game.js";
 import { DevConsoleDef } from "../debug/console.js";
-import { max } from "../math.js";
+import { max } from "../utils/math.js";
 import { AnimateToDef } from "../animate-to.js";
-import { vec3Dbg } from "../utils-3d.js";
+import { vec3Dbg } from "../utils/utils-3d.js";
 import { HsShipLocalDef } from "../hyperspace/hyperspace-ship.js";
 
 // TODO(@darzu): it'd be great if these could hook into some sort of

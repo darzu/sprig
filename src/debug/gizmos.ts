@@ -2,8 +2,8 @@ import { AABB } from "../physics/aabb.js";
 import { createFlatQuadMesh } from "../meshes/primatives.js";
 import { Mesh, mergeMeshes } from "../meshes/mesh.js";
 import { vec3, V, tV } from "../sprig-matrix.js";
-import { assert } from "../util.js";
-import { orthonormalize, vec3Dbg } from "../utils-3d.js";
+import { assert } from "../utils/util.js";
+import { orthonormalize, vec3Dbg } from "../utils/utils-3d.js";
 import { createEmptyMesh } from "../wood/wood.js";
 
 const _UP = V(0, 1, 0);

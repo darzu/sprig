@@ -10,7 +10,7 @@ import {
   HVert,
   meshToHalfEdgePoly,
 } from "../meshes/half-edge.js";
-import { createIdxPool } from "../idx-pool.js";
+import { createIdxPool } from "../utils/idx-pool.js";
 import { ColliderDef } from "../physics/collider.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import { PositionDef, ScaleDef, RotationDef } from "../physics/transform.js";
@@ -20,8 +20,8 @@ import {
   RendererDef,
   RenderableDef,
 } from "../render/renderer-ecs.js";
-import { assert } from "../util.js";
-import { randNormalPosVec3, vec3Mid } from "../utils-3d.js";
+import { assert } from "../utils/util.js";
+import { randNormalPosVec3, vec3Mid } from "../utils/utils-3d.js";
 import { ButtonsStateDef, ButtonDef } from "./button.js";
 import { WidgetDef, WidgetLayerDef } from "./widgets.js";
 import { meshPoolPtr } from "../render/pipelines/std-scene.js";

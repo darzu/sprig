@@ -1,7 +1,7 @@
 import { Collider, ColliderDef } from "./collider.js";
 import { EntityManager } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
-import { clamp } from "../math.js";
+import { clamp } from "../utils/math.js";
 import {
   AngularVelocityDef,
   LinearVelocity,

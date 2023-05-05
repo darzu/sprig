@@ -1,4 +1,4 @@
-import { CameraDef } from "../camera.js";
+import { CameraDef } from "../camera/camera.js";
 import { EntityManager, EntityW } from "../ecs/entity-manager.js";
 import { PositionDef, RotationDef, ScaleDef } from "../physics/transform.js";
 import { RendererDef, RenderableConstructDef } from "../render/renderer-ecs.js";
@@ -26,14 +26,14 @@ import {
   UVPosDef,
   UVDirDef,
 } from "../ocean/ocean.js";
-import { asyncTimeout } from "../util.js";
+import { asyncTimeout } from "../utils/util.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { AnimateToDef } from "../animate-to.js";
 import { createSpawner, SpawnerDef } from "./uv-spawner.js";
 import { tempVec3 } from "../temp-pool.js";
 import { createDarkStarNow, STAR1_COLOR, STAR2_COLOR } from "./darkstar.js";
 import { renderOceanPipe } from "../render/pipelines/std-ocean.js";
-import { EASE_INQUAD } from "../util-ease.js";
+import { EASE_INQUAD } from "../utils/util-ease.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
 
 // export let jfaMaxStep = VISUALIZE_JFA ? 0 : 999;

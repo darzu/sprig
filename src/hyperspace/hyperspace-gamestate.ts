@@ -1,4 +1,4 @@
-import { CameraDef } from "../camera.js";
+import { CameraDef } from "../camera/camera.js";
 import { DeletedDef } from "../ecs/delete.js";
 import { EM, EntityManager } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";

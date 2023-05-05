@@ -1,10 +1,10 @@
-import { CameraDef } from "../camera.js";
+import { CameraDef } from "../camera/camera.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { DeletedDef } from "../ecs/delete.js";
 import { EntityManager } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { InputsDef } from "../inputs.js";
-import { jitter } from "../math.js";
+import { jitter } from "../utils/math.js";
 import { ColliderDef } from "../physics/collider.js";
 import { AngularVelocityDef, LinearVelocityDef } from "../physics/motion.js";
 import {
@@ -17,7 +17,7 @@ import {
   RenderableConstructDef,
 } from "../render/renderer-ecs.js";
 import { RendererDef } from "../render/renderer-ecs.js";
-import { assert } from "../util.js";
+import { assert } from "../utils/util.js";
 import { TimeDef } from "../time.js";
 import { AssetsDef, GameMesh } from "../meshes/assets.js";
 // import { ENEMY_SHIP_COLOR } from "./enemy-ship.js";

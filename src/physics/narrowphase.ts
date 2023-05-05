@@ -7,10 +7,10 @@ import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { BoxCollider, Collider } from "./collider.js";
 import { PhysicsObject, WorldFrameDef } from "./nonintersection.js";
 import { PhysicsParentDef, PositionDef } from "./transform.js";
-import { centroid, SupportFn, vec3Dbg } from "../utils-3d.js";
+import { centroid, SupportFn, vec3Dbg } from "../utils/utils-3d.js";
 import { tempVec3 } from "../temp-pool.js";
 import { PAD } from "./phys.js";
-import { TupleN } from "../util.js";
+import { TupleN } from "../utils/util.js";
 
 // GJK: convex vs convex collision testing
 //  https://www.youtube.com/watch?v=ajv46BSqcK4

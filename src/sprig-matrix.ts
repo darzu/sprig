@@ -4,7 +4,7 @@ import {
   PERF_DBG_F32S_TEMP_BLAME,
 } from "./flags.js";
 import * as GLM from "./gl-matrix.js";
-import { dbgAddBlame, dbgClearBlame } from "./util.js";
+import { dbgAddBlame, dbgClearBlame } from "./utils/util.js";
 
 const EPSILON = 0.000001;
 

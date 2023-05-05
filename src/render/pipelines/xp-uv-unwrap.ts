@@ -1,4 +1,4 @@
-import { mathMap } from "../../math.js";
+import { mathMap } from "../../utils/math.js";
 import { vec4, V } from "../../sprig-matrix.js";
 import { createRenderTextureToQuad } from "../gpu-helper.js";
 import { CY } from "../gpu-registry.js";

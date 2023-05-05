@@ -1,5 +1,5 @@
-import { align, alignDown } from "../math.js";
-import { assert, assertDbg, dbgLogOnce } from "../util.js";
+import { align, alignDown } from "../utils/math.js";
+import { assert, assertDbg, dbgLogOnce } from "../utils/util.js";
 import { CyStructDesc, CyToTS } from "./gpu-struct.js";
 import { Mesh } from "../meshes/mesh.js";
 import {

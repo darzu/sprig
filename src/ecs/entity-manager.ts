@@ -1,8 +1,14 @@
 import { createLabelSolver, Label, LabelConstraint } from "./em-labels.js";
 import { DBG_ASSERT, DBG_INIT_DEPS, DBG_TRYCALLSYSTEM } from "../flags.js";
 import { Serializer, Deserializer } from "../serialize.js";
-import { createDag } from "../util-dag.js";
-import { assert, assertDbg, hashCode, Intersect, never } from "../util.js";
+import { createDag } from "../utils/util-dag.js";
+import {
+  assert,
+  assertDbg,
+  hashCode,
+  Intersect,
+  never,
+} from "../utils/util.js";
 
 // TODO(@darzu): for perf, we really need to move component data to be
 //  colocated in arrays; and maybe introduce "arch-types" for commonly grouped

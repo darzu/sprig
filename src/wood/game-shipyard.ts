@@ -1,4 +1,4 @@
-import { CameraDef, CameraFollowDef } from "../camera.js";
+import { CameraDef, CameraFollowDef } from "../camera/camera.js";
 import { CanvasDef } from "../render/canvas.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
@@ -7,7 +7,7 @@ import { createRef } from "../ecs/em_helpers.js";
 import { EM, Entity, EntityManager, EntityW } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { InputsDef } from "../inputs.js";
-import { jitter } from "../math.js";
+import { jitter } from "../utils/math.js";
 import { AudioDef, randChordId } from "../audio/audio.js";
 import {
   createAABB,
@@ -48,7 +48,7 @@ import {
   RenderableDef,
 } from "../render/renderer-ecs.js";
 import { tempMat4, tempVec3 } from "../temp-pool.js";
-import { assert } from "../util.js";
+import { assert } from "../utils/util.js";
 import { TimeDef } from "../time.js";
 import {
   createEmptyMesh,
@@ -81,8 +81,8 @@ import { InRangeDef, InteractableDef } from "../games/interact.js";
 import { LifetimeDef } from "../games/lifetime.js";
 import { createPlayer, LocalPlayerDef, PlayerDef } from "../games/player.js";
 import { TextDef } from "../games/ui.js";
-import { createIdxPool } from "../idx-pool.js";
-import { randNormalPosVec3, randNormalVec3 } from "../utils-3d.js";
+import { createIdxPool } from "../utils/idx-pool.js";
+import { randNormalPosVec3, randNormalVec3 } from "../utils/utils-3d.js";
 import { createHomeShip } from "./shipyard.js";
 import { gameplaySystems } from "../games/ghost.js";
 import { RenderDataStdDef } from "../render/pipelines/std-scene.js";
@@ -95,7 +95,7 @@ import {
   startPirates,
 } from "../games/pirate.js";
 import { ParametricDef } from "../games/parametric-motion.js";
-import { addGizmoChild } from "../utils-game.js";
+import { addGizmoChild } from "../utils/utils-game.js";
 import { createBarrelMesh } from "./barrel.js";
 
 /*

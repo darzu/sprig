@@ -2,8 +2,8 @@
 
 // BOIDS
 import { vec2, vec3, vec4, quat, mat4, V } from "../../sprig-matrix.js";
-import { jitter } from "../../math.js";
-import { range } from "../../util.js";
+import { jitter } from "../../utils/math.js";
+import { range } from "../../utils/util.js";
 import { createRenderTextureToQuad } from "../gpu-helper.js";
 import { CY, CyTexturePtr, linearSamplerPtr } from "../gpu-registry.js";
 import { createCyStruct } from "../gpu-struct.js";

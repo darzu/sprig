@@ -1,7 +1,7 @@
-import { vec2, vec3, vec4, quat, mat4, V } from "./sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { avg, mathMap } from "./math.js";
-import { AABB, createAABB, getAABBFromPositions } from "./physics/aabb.js";
-import { tempVec2, tempVec3 } from "./temp-pool.js";
+import { AABB, createAABB, getAABBFromPositions } from "../physics/aabb.js";
+import { tempVec2, tempVec3 } from "../temp-pool.js";
 import { assertDbg, range, resizeArray, TupleN } from "./util.js";
 
 // TODO(@darzu): a lot of these need to move into gl-matrix; or rather, we need

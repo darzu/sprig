@@ -1,4 +1,4 @@
-import { DBG_ASSERT, VERBOSE_LOG } from "./flags.js";
+import { DBG_ASSERT, VERBOSE_LOG } from "../flags.js";
 import { randInt } from "./math.js";
 
 export function assert(cond: any, msg?: string): asserts cond {

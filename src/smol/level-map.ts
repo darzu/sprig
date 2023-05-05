@@ -11,9 +11,9 @@ import {
 import { CY } from "../render/gpu-registry.js";
 import { RendererDef } from "../render/renderer-ecs.js";
 import { V, vec2, vec3, vec4 } from "../sprig-matrix.js";
-import { assert, assertDbg, dbgLogOnce } from "../util.js";
-import { vec4Dbg } from "../utils-3d.js";
-import { randColor } from "../utils-game.js";
+import { assert, assertDbg, dbgLogOnce } from "../utils/util.js";
+import { vec4Dbg } from "../utils/utils-3d.js";
+import { randColor } from "../utils/utils-game.js";
 import { MapName, MapBytesSetDef, MapBytes, MapHelp } from "./map-loader.js";
 import { ScoreDef } from "./score.js";
 import { WindDef } from "../wind/wind.js";

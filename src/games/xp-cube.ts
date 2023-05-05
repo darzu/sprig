@@ -1,7 +1,7 @@
-import { CameraDef } from "../camera.js";
+import { CameraDef } from "../camera/camera.js";
 import { EntityManager } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
-import { max } from "../math.js";
+import { max } from "../utils/math.js";
 import { ColliderDef } from "../physics/collider.js";
 import { AngularVelocityDef } from "../physics/motion.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
@@ -21,7 +21,7 @@ import {
   mainDepthTex,
   canvasTexturePtr,
 } from "../render/pipelines/std-scene.js";
-import { uintToVec3unorm } from "../utils-3d.js";
+import { uintToVec3unorm } from "../utils/utils-3d.js";
 import { AssetsDef } from "../meshes/assets.js";
 import { GlobalCursor3dDef } from "./cursor.js";
 import { createGhost } from "./ghost.js";

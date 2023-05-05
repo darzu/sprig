@@ -1,7 +1,7 @@
 import { PERF_DBG_GPU, VERBOSE_LOG } from "../flags.js";
 import { ControllableDef } from "../games/controllable.js";
 import { vec4, V } from "../sprig-matrix.js";
-import { assert } from "../util.js";
+import { assert } from "../utils/util.js";
 import {
   never,
   capitalize,
@@ -10,7 +10,7 @@ import {
   isString,
   isFunction,
   dbgLogOnce,
-} from "../util.js";
+} from "../utils/util.js";
 import {
   PtrKindToResourceType,
   createCyArray,

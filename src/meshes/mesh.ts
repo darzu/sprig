@@ -1,11 +1,11 @@
 import { ASSET_LOG_VERT_CHANGES, DBG_ASSERT, DBG_FANG_SHIP } from "../flags.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
-import { max, sum } from "../math.js";
+import { max, sum } from "../utils/math.js";
 import { AABB, createAABB, getAABBFromPositions } from "../physics/aabb.js";
-import { assert, range } from "../util.js";
-import { arraySortedEqual, arrayUnsortedEqual } from "../util.js";
-import { vec3Dbg, vec3Dbg2, vec3Mid, vec4Dbg2 } from "../utils-3d.js";
-import { drawBall, drawLine } from "../utils-game.js";
+import { assert, range } from "../utils/util.js";
+import { arraySortedEqual, arrayUnsortedEqual } from "../utils/util.js";
+import { vec3Dbg, vec3Dbg2, vec3Mid, vec4Dbg2 } from "../utils/utils-3d.js";
+import { drawBall, drawLine } from "../utils/utils-game.js";
 
 // TODO(@darzu): NEEDS REFACTOR. we need to rethink these whole mesh family of objects;
 //    consider meshes that do aond don't need uvs, surface ids, tangents, normals

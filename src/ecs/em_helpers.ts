@@ -7,8 +7,8 @@ import {
 } from "./entity-manager.js";
 import { Authority, AuthorityDef, MeDef, SyncDef } from "../net/components.js";
 import { Serializer, Deserializer } from "../serialize.js";
-import { assert } from "../util.js";
-import { capitalize } from "../util.js";
+import { assert } from "../utils/util.js";
+import { capitalize } from "../utils/util.js";
 
 export function defineSerializableComponent<
   N extends string,

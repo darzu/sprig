@@ -1,4 +1,4 @@
-import { CameraDef, CameraFollowDef } from "../camera.js";
+import { CameraDef, CameraFollowDef } from "../camera/camera.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { EM, EntityManager } from "../ecs/entity-manager.js";
@@ -34,14 +34,14 @@ import {
 import { RenderableConstructDef, RendererDef } from "../render/renderer-ecs.js";
 import { mat3, mat4, quat, V, vec2, vec3 } from "../sprig-matrix.js";
 import { SAIL_FURL_RATE } from "../smol/sail.js";
-import { quatFromUpForward, randNormalVec3 } from "../utils-3d.js";
-import { randColor } from "../utils-game.js";
+import { quatFromUpForward, randNormalVec3 } from "../utils/utils-3d.js";
+import { randColor } from "../utils/utils-game.js";
 import { GrassCutTexPtr, grassPoolPtr, renderGrassPipe } from "./std-grass.js";
 import { WindDef } from "../wind/wind.js";
 import { DevConsoleDef } from "../debug/console.js";
-import { clamp, jitter, max, sum } from "../math.js";
+import { clamp, jitter, max, sum } from "../utils/math.js";
 import { createShip, ShipDef } from "../smol/ship.js";
-import { assert } from "../util.js";
+import { assert } from "../utils/util.js";
 import { texTypeToBytes } from "../render/gpu-struct.js";
 import { PartyDef } from "../games/party.js";
 import { copyAABB, createAABB } from "../physics/aabb.js";

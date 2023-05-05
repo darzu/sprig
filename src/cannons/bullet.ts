@@ -36,10 +36,10 @@ import { ENDESGA16 } from "../color/palettes.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import { DeadDef } from "../ecs/delete.js";
 import { AudioDef } from "../audio/audio.js";
-import { randNormalVec3 } from "../utils-3d.js";
+import { randNormalVec3 } from "../utils/utils-3d.js";
 import { SplinterParticleDef } from "../wood/wood.js";
 import { tempVec3 } from "../temp-pool.js";
-import { assert, assertDbg } from "../util.js";
+import { assert, assertDbg } from "../utils/util.js";
 import { ParametricDef } from "../games/parametric-motion.js";
 
 // TODO(@darzu): MULTIPLAYER BULLETS might have been broken during LD51

@@ -1,5 +1,5 @@
 import { EntityManager } from "./ecs/entity-manager.js";
-import { assert } from "./util.js";
+import { assert } from "./utils/util.js";
 
 let hasInitPassed = false;
 const onInitFns: ((em: EntityManager) => void)[] = [];

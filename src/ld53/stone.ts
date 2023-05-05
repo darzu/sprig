@@ -11,7 +11,7 @@ import { GravityDef } from "../games/gravity.js";
 import { LifetimeDef } from "../games/lifetime.js";
 import { PartyDef } from "../games/party.js";
 import { Path } from "../wood/shipyard.js";
-import { jitter } from "../math.js";
+import { jitter } from "../utils/math.js";
 import {
   AABB,
   copyAABB,
@@ -43,8 +43,8 @@ import {
 } from "../render/renderer-ecs.js";
 import { mat4, tV, V, vec3, quat } from "../sprig-matrix.js";
 import { TimeDef } from "../time.js";
-import { assert } from "../util.js";
-import { vec3Dbg } from "../utils-3d.js";
+import { assert } from "../utils/util.js";
+import { vec3Dbg } from "../utils/utils-3d.js";
 import { SoundSetDef } from "../audio/sound-loader.js";
 
 const GRAVITY = 6.0 * 0.00001;
