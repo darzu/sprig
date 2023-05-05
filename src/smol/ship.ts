@@ -3,7 +3,7 @@ import { createRef } from "../ecs/em_helpers.js";
 import { EM, EntityManager, EntityW } from "../ecs/entity-manager.js";
 import { AssetsDef } from "../meshes/assets.js";
 import { vec3, quat } from "../sprig-matrix.js";
-import { LinearVelocityDef } from "../physics/motion.js";
+import { LinearVelocityDef } from "../physics/velocity.js";
 import {
   PhysicsParentDef,
   PositionDef,

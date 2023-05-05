@@ -18,7 +18,7 @@ import {
   getHalfsizeFromAABB,
 } from "../physics/aabb.js";
 import { AABBCollider, ColliderDef } from "../physics/collider.js";
-import { AngularVelocityDef, LinearVelocityDef } from "../physics/motion.js";
+import { AngularVelocityDef, LinearVelocityDef } from "../physics/velocity.js";
 import {
   PhysicsResultsDef,
   WorldFrameDef,

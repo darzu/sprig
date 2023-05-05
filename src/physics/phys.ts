@@ -14,9 +14,7 @@ import { registerPhysicsDebuggerSystem } from "./phys-debug.js";
 import {
   registerPhysicsClampVelocityByContact,
   registerPhysicsClampVelocityBySize,
-  registerPhysicsApplyLinearVelocity,
-  registerPhysicsApplyAngularVelocity,
-} from "./velocity-system.js";
+} from "./velocity-clamp.js";
 import {
   Frame,
   registerUpdateLocalFromPosRotScale,
@@ -27,6 +25,10 @@ import { AABB, aabbCenter } from "./aabb.js";
 import { registerNarrowPhaseSystems } from "./narrowphase.js";
 import { assert } from "../utils/util.js";
 import { tempVec3 } from "../temp-pool.js";
+import {
+  registerPhysicsApplyLinearVelocity,
+  registerPhysicsApplyAngularVelocity,
+} from "./velocity.js";
 
 // TODO(@darzu): PHYSICS TODO:
 // [ ] seperate rotation and motion w/ constraint checking between them

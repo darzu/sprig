@@ -4,7 +4,7 @@ import { EntityManager } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { InputsDef } from "../input/inputs.js";
 import { ColliderDef } from "./collider.js";
-import { AngularVelocityDef } from "./motion.js";
+import { AngularVelocityDef } from "./velocity.js";
 import { Shape, gjk, penetrationDepth } from "./narrowphase.js";
 import { WorldFrameDef } from "./nonintersection.js";
 import { PAD } from "./phys.js";

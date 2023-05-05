@@ -27,7 +27,7 @@ import {
   AngularVelocityDef,
   LinearVelocity,
   LinearVelocityDef,
-} from "../physics/motion.js";
+} from "../physics/velocity.js";
 import { MotionSmoothingDef } from "../render/motion-smoothing.js";
 import { LifetimeDef } from "../ecs/lifetime.js";
 import { Time, TimeDef } from "../time/time.js";

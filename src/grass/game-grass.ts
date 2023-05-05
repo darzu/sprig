@@ -14,7 +14,7 @@ import {
 } from "./grass.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { ColliderDef } from "../physics/collider.js";
-import { AngularVelocityDef, LinearVelocityDef } from "../physics/motion.js";
+import { AngularVelocityDef, LinearVelocityDef } from "../physics/velocity.js";
 import { PhysicsStateDef, WorldFrameDef } from "../physics/nonintersection.js";
 import {
   PhysicsParentDef,

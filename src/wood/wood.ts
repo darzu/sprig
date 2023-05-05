@@ -20,7 +20,7 @@ import {
   transformLine,
 } from "../physics/broadphase.js";
 import { ColliderDef } from "../physics/collider.js";
-import { AngularVelocityDef, LinearVelocityDef } from "../physics/motion.js";
+import { AngularVelocityDef, LinearVelocityDef } from "../physics/velocity.js";
 import {
   PhysicsResultsDef,
   WorldFrameDef,

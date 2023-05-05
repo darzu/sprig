@@ -6,7 +6,7 @@ import {
   AngularVelocityDef,
   LinearVelocity,
   LinearVelocityDef,
-} from "./motion.js";
+} from "./velocity.js";
 import { ContactData } from "./phys.js";
 import {
   PhysicsBroadCollidersDef,
@@ -26,10 +26,6 @@ import {
   RotationDef,
   updateFrameFromPosRotScale,
 } from "./transform.js";
-
-let linVelDelta = vec3.create();
-let normalizedVelocity = vec3.create();
-let deltaRotation = quat.create();
 
 // TODO(@darzu): implement checkAtRest (deleted in this commit)
 
@@ -104,45 +100,5 @@ export function registerPhysicsClampVelocityBySize(em: EntityManager) {
       }
     },
     "registerPhysicsClampVelocityBySize"
-  );
-}
-
-export function registerPhysicsApplyLinearVelocity(em: EntityManager) {
-  em.registerSystem(
-    [LinearVelocityDef, PositionDef],
-    [TimeDef],
-    (objs, res) => {
-      for (let o of objs) {
-        // translate position and AABB according to linear velocity
-        linVelDelta = vec3.scale(o.linearVelocity, res.time.dt, linVelDelta);
-        vec3.add(o.position, linVelDelta, o.position);
-      }
-    },
-    "registerPhysicsApplyLinearVelocity"
-  );
-}
-
-export function registerPhysicsApplyAngularVelocity(em: EntityManager) {
-  em.registerSystem(
-    [AngularVelocityDef, RotationDef],
-    [TimeDef],
-    (objs, res) => {
-      for (let o of objs) {
-        // change rotation according to angular velocity
-        // change rotation according to angular velocity
-        vec3.normalize(o.angularVelocity, normalizedVelocity);
-        let angle = vec3.length(o.angularVelocity) * res.time.dt;
-        deltaRotation = quat.setAxisAngle(
-          normalizedVelocity,
-          angle,
-          deltaRotation
-        );
-        quat.normalize(deltaRotation, deltaRotation);
-        // note--quat multiplication is not commutative, need to multiply on the left
-        // note--quat multiplication is not commutative, need to multiply on the left
-        quat.mul(deltaRotation, o.rotation, o.rotation);
-      }
-    },
-    "physicsApplyAngularVelocity"
   );
 }
