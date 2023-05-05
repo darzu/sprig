@@ -44,7 +44,6 @@ import { createShip, ShipDef } from "../smol/ship.js";
 import { assert } from "../util.js";
 import { texTypeToBytes } from "../render/gpu-struct.js";
 import { PartyDef } from "../games/party.js";
-import { LevelMapDef, LandMapTexPtr, setMap } from "../smol/level-map.js";
 import { copyAABB, createAABB } from "../physics/aabb.js";
 import { InputsDef } from "../inputs.js";
 import { ScoreDef } from "../smol/score.js";
@@ -77,7 +76,7 @@ PERF:
 [ ] reduce triangles on ocean
 */
 
-const DBG_PLAYER = true;
+const DBG_PLAYER = false;
 
 // world map is centered around 0,0
 const WORLD_WIDTH = 1024; // width runs +z
@@ -104,12 +103,10 @@ const level2DtoWorld3D = (levelPos: vec2, y: number, out: vec3) =>
     out
   );
 
-export const mapJfa = createJfaPipelines(LandMapTexPtr, "exterior");
-
 export async function initGrassGame(em: EntityManager, hosting: boolean) {
   const dbgGrid = [
     //
-    [mapJfa._inputMaskTex, mapJfa._uvMaskTex],
+    // [mapJfa._inputMaskTex, mapJfa._uvMaskTex],
     //
     // [mapJfa.voronoiTex, mapJfa.sdfTex],
     // TODO(@darzu): FIX FOR CSM & texture arrays
@@ -181,135 +178,11 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
   em.requireSystem("updateScoreDisplay");
   em.requireSystem("detectGameEnd");
 
-  // start map
-  // TODO(@darzu): BROKEN
-  await setMap(em, "tacking");
-
-  // once the map is loaded, we can run JFA
-  res.renderer.renderer.submitPipelines([], [...mapJfa.allPipes()]);
-
-  // TODO(@darzu): simplify this pattern
-  const terraTex = await res.renderer.renderer.readTexture(mapJfa.sdfTex);
-  const terraReader = createTextureReader(
-    terraTex,
-    mapJfa.sdfTex.size,
-    1,
-    mapJfa.sdfTex.format
-  );
-  function sampleTerra(worldX: number, worldZ: number) {
-    let xi = ((worldZ + WORLD_WIDTH * 0.5) / WORLD_WIDTH) * terraReader.size[0];
-    let yi =
-      ((worldX + WORLD_HEIGHT * 0.5) / WORLD_HEIGHT) * terraReader.size[1];
-    // xi = clamp(xi, 0, terraReader.size[0]);
-    // yi = clamp(yi, 0, terraReader.size[1]);
-    const height = terraReader.sample(xi, yi) / 256;
-    // console.log(`xi: ${xi}, yi: ${yi} => ${height}`);
-    return height;
-  }
-
-  // height map
-  const terraVertsPerWorldUnit = 0.25;
-  const worldUnitPerTerraVerts = 1 / terraVertsPerWorldUnit;
-  const terraZCount = Math.floor(WORLD_WIDTH * terraVertsPerWorldUnit);
-  const terraXCount = Math.floor(WORLD_HEIGHT * terraVertsPerWorldUnit);
-  const terraMesh = createFlatQuadMesh(terraZCount, terraXCount);
-  // let minY = Infinity;
-  terraMesh.pos.forEach((p, i) => {
-    // console.log("i: " + vec3Dbg(p));
-    const x = p[0] * worldUnitPerTerraVerts - WORLD_HEIGHT * 0.5;
-    const z = p[2] * worldUnitPerTerraVerts - WORLD_WIDTH * 0.5;
-    let y = sampleTerra(x, z) * 100.0;
-    // minY = Math.min(minY, y);
-
-    // TODO(@darzu): wierd hack for shorline:
-    if (y <= 1.0) y = -30;
-
-    y += Math.random() * 2.0; // TODO(@darzu): jitter for less uniform look?
-
-    p[0] = x;
-    p[1] = y;
-    p[2] = z;
-    // console.log("o: " + vec3Dbg(p));
-    // if (i > 10) throw "stop";
-  });
-  // console.log(`heightmap minY: ${minY}`);
-  const hm = em.new();
-  em.ensureComponentOn(hm, RenderableConstructDef, terraMesh);
-  em.ensureComponentOn(hm, PositionDef);
-  // TODO(@darzu): maybe do a sable-like gradient accross the terrain, based on view dist or just uv?
-  // em.ensureComponentOn(hm, ColorDef, V(0.4, 0.2, 0.2));
-  em.ensureComponentOn(hm, ColorDef, ENDESGA16.lightGray);
-  // TODO(@darzu): update terra from SDF
-
-  // // reference columns
-  // for (let i = 0; i < 50; i++) {
-  //   const refCol = em.new();
-  //   em.ensureComponentOn(
-  //     refCol,
-  //     RenderableConstructDef,
-  //     res.assets.unitCube.proto
-  //   );
-  //   em.ensureComponentOn(refCol, ScaleDef, V(1, 100, 1));
-  //   em.ensureComponentOn(refCol, PositionDef);
-  //   vec3.copy(refCol.position, SHIP_START_POS);
-  //   refCol.position[1] = -50;
-  //   refCol.position[2] += i * 2 + 30;
-  //   em.ensureComponentOn(refCol, ColorDef, V(0.1, 1, 0.1));
-  // }
-  if (!"true")
-    for (let r = 0; r < 2; r++)
-      for (let i = 0; i < 8; i++) {
-        const color = Object.values(ENDESGA16)[i + r * 8];
-        const bigCube = em.new();
-        const i2 = Math.floor(i / 2) * 2.0;
-        const even = i % 2 === 0 ? 1 : 0;
-        em.ensureComponentOn(
-          bigCube,
-          RenderableConstructDef,
-          even ? res.assets.ball.proto : res.assets.cube.proto
-        );
-        em.ensureComponentOn(bigCube, ScaleDef, V(50, 50, 50));
-        em.ensureComponentOn(
-          bigCube,
-          RotationDef,
-          quat.fromEuler(
-            Math.random() * Math.PI,
-            Math.random() * Math.PI,
-            Math.random() * Math.PI,
-            quat.create()
-          )
-        );
-        em.ensureComponentOn(
-          bigCube,
-          AngularVelocityDef,
-          vec3.scale(randNormalVec3(vec3.tmp()), 0.0005, vec3.create())
-        );
-        em.ensureComponentOn(
-          bigCube,
-          PositionDef,
-          V(
-            // i2 * 30 + even * 100 - 100 - r * 50,
-            jitter(WORLD_HEIGHT * 0.5),
-            r * 100,
-            // i2 * 30 - even * 100 - 100 + r * 50
-            jitter(WORLD_WIDTH * 0.5)
-          )
-        );
-        // em.ensureComponentOn(bigCube, ColorDef, randColor());
-        em.ensureComponentOn(bigCube, ColorDef, color);
-      }
-
-  // skybox?
-
   // sky dome?
   const SKY_HALFSIZE = 1000;
   const domeMesh = makeDome(16, 8, SKY_HALFSIZE);
   const sky = EM.new();
   em.ensureComponentOn(sky, PositionDef, V(0, -100, 0));
-  // const skyMesh = cloneMesh(res.assets.cube.mesh);
-  // skyMesh.pos.forEach((p) => vec3.scale(p, SKY_HALFSIZE, p));
-  // skyMesh.quad.forEach((f) => vec4.reverse(f, f));
-  // skyMesh.tri.forEach((f) => vec3.reverse(f, f));
   const skyMesh = domeMesh;
   em.ensureComponentOn(
     sky,
@@ -319,7 +192,6 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
     undefined,
     SKY_MASK
   );
-  // em.ensureComponentOn(sky, ColorDef, V(0.9, 0.9, 0.9));
 
   // ground
   const ground = em.new();
@@ -329,7 +201,7 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
     mat4.fromScaling(V(WORLD_HEIGHT, 1.0, WORLD_WIDTH))
   );
   em.ensureComponentOn(ground, RenderableConstructDef, groundMesh);
-  em.ensureComponentOn(ground, ColorDef, V(0.1, 0.5, 0.1));
+  em.ensureComponentOn(ground, ColorDef, ENDESGA16.darkGreen);
   // em.set(ground, ColorDef, ENDESGA16.darkGreen);
   // em.ensureComponentOn(p, ColorDef, [0.2, 0.3, 0.2]);
   em.ensureComponentOn(
@@ -424,45 +296,13 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
   em.requireSystem("smoothWind");
 
   // load level
-  const level = await EM.whenResources(LevelMapDef);
 
   const ship = await createShip(em);
+  vec3.set(0, 10, 0, ship.position);
   // move down
-  // ship.position[2] = -WORLD_SIZE * 0.5 * 0.6;
-  level2DtoWorld3D(level.levelMap.startPos, 15, ship.position);
   // vec3.copy(ship.position, SHIP_START_POS);
   em.requireSystem("sailShip");
   em.requireSystem("shipParty");
-
-  // bouyancy
-  // const bouy = em.new();
-  // em.ensureComponentOn(bouy, PositionDef);
-  // em.ensureComponentOn(bouy, ScaleDef, V(5, 5, 5));
-  // em.ensureComponentOn(bouy, RenderableConstructDef, res.assets.ball.proto);
-  // em.ensureComponentOn(bouy, ColorDef, ENDESGA16.lightGreen);
-  // em.registerSystem(
-  //   [ShipDef],
-  //   [OceanDef],
-  //   (ships, res) => {
-  //     // TODO(@darzu): unify with UV ship stuff?
-  //     if (!ships.length) return;
-  //     const [ship] = ships;
-  //     const { ocean } = res;
-
-  //     const uv = V(0.5, 0.5);
-  //     let pos = vec3.tmp();
-  //     ocean.uvToPos(pos, uv);
-  //     let disp = vec3.tmp();
-  //     let norm = vec3.tmp();
-  //     ocean.uvToGerstnerDispAndNorm(disp, norm, uv);
-  //     vec3.add(pos, disp, bouy.position);
-  //     // console.log(vec3Dbg(bouy.position));
-  //   },
-  //   "shipBouyancy"
-  // );
-  // em.requireSystem("shipBouyancy");
-
-  // dbg ghost
 
   // player
   if (!DBG_PLAYER) {
@@ -476,6 +316,7 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
     raiseManTurret(player, rudder);
   }
 
+  // ghost
   if (DBG_PLAYER) {
     const g = createGhost();
     // vec3.copy(g.position, [0, 1, -1.2]);
@@ -633,7 +474,7 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
     grassCutTex.queueUpdate(worldCutData);
     // vec3.set(0, 0, 0, ship.position);
     // vec3.copy(ship.position, SHIP_START_POS);
-    level2DtoWorld3D(level.levelMap.startPos, 2, ship.position);
+    // level2DtoWorld3D(level.levelMap.startPos, 2, ship.position);
     quat.identity(ship.rotation);
     vec3.set(0, 0, 0, ship.linearVelocity);
     const sail = ship.ld52ship.mast()!.mast.sail()!.sail;
@@ -644,7 +485,7 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
 
   EM.registerSystem(
     [ShipDef, PositionDef, WorldFrameDef, PhysicsStateDef],
-    [PartyDef, LevelMapDef, ScoreDef],
+    [PartyDef, ScoreDef],
     (es, res) => {
       if (!es.length) return;
       const ship = es[0];
@@ -709,7 +550,8 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
           if (Math.abs(zDist) < shipW * 0.5 && Math.abs(xDist) < shipH * 0.5) {
             const idx = xi + yi * WORLD_WIDTH;
 
-            const color = res.levelMap.land[idx];
+            // const color = res.levelMap.land[idx];
+            const color = 0.05; // TODO(@darzu): add back in multi-color grass?
 
             if (ship.ld52ship.cuttingEnabled) {
               if (worldCutData[idx] < 1) {
@@ -850,29 +692,6 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
     "W/S: unfurl/furl, A/D: turn, SPACE: harvest on/off, E: use/unuse rudder";
   if (DBG_PLAYER) text.lowerText = "";
 
-  // Spawn towers
-  {
-    const tower3DPoses = level.levelMap.towers.map((tPos) =>
-      level2DtoWorld3D(
-        tPos[0],
-        20, // TODO(@darzu): lookup from heightmap?
-        vec3.create()
-      )
-    );
-    await startTowers(tower3DPoses);
-    // level.levelMap.towers.forEach((tPos) => {
-    //   const ball = em.new();
-    //   em.ensureComponentOn(ball, PositionDef);
-    //   ball.position[2] = texXToWorldZ(tPos[0]);
-    //   // TODO(@darzu): parameterize these transforms! Can/should we use matrices for these maybe?
-    //   ball.position[0] = texYToWorldX(WORLD_HEIGHT - 1 - tPos[1]);
-    //   ball.position[1] = 20;
-    //   em.ensureComponentOn(ball, ScaleDef, V(5, 5, 5));
-    //   em.ensureComponentOn(ball, RenderableConstructDef, res.assets.ball.proto);
-    //   em.ensureComponentOn(ball, ColorDef, ENDESGA16.yellow);
-    // });
-  }
-
   // world gizmo
   const worldGizmo = EM.new();
   EM.ensureComponentOn(
@@ -946,83 +765,3 @@ async function createPlayer() {
   EM.ensureComponentOn(p, PhysicsParentDef);
   return p;
 }
-
-// const wCorners = getAABBCornersTemp(selfAABB);
-// wCorners.forEach((p) => vec3.transformMat4(p, ship.world.transform, p));
-// wCorners.sort((a, b) => a[1] - b[1]); // sort by y, ascending
-// const quad = wCorners.slice(0, 4);
-// // assumes quad[0] and quad[3] are opposite corners
-// const tri1 = [quad[0], quad[3], quad[1]];
-// const tri2 = [quad[0], quad[3], quad[2]];
-
-// if (
-//   texX < 0 ||
-//   grassCutTex.size[0] <= texX + w ||
-//   texY < 0 ||
-//   grassCutTex.size[1] <= texY + h
-// ) {
-//   console.warn("out of bounds grass cut");
-//   return;
-// }
-// // data.fill(1);
-
-// const write = (wx: number, wy: number) => {
-//   // const xi = clamp(wx - orgX, 0, w - 1);
-//   // const yi = clamp(wy - orgZ, 0, h - 1);
-//   const xi = wx + WORLD_WIDTH / 2;
-//   const yi = wy + WORLD_HEIGHT / 2;
-//   const idx = Math.floor(xi + yi * WORLD_WIDTH);
-//   // const idx = xi + yi * w;
-//   // assert(
-//   //   0 <= idx && idx < data.length,
-//   //   `idx out of bounds: (${xi},${yi})=>${idx}`
-//   // );
-//   // console.log(idx);
-//   worldCut[idx] = 1.0;
-
-//   numCut++;
-// };
-
-// let numCut = 0;
-// // TODO(@darzu): make sure we're not unsetting stuff that's been set to 1 from prev frames!
-// // rasterizeTri(
-// //   [tri1[0][0], tri1[0][2]],
-// //   [tri1[1][0], tri1[1][2]],
-// //   [tri1[2][0], tri1[2][2]],
-// //   write
-// // );
-// rasterizeTri(
-//   [tri2[0][0], tri2[0][2]],
-//   [tri2[1][0], tri2[1][2]],
-//   [tri2[2][0], tri2[2][2]],
-//   write
-// );
-
-// // console.log(`numCut: ${numCut}`);
-
-// // console.dir({
-// //   texX,
-// //   texY,
-// //   w,
-// //   h,
-// //   orgX,
-// //   orgZ,
-// //   WORLD_WIDTH,
-// //   tri1,
-// //   tri2,
-// // });
-// // throw `stop`;
-// // update data
-// for (let wxi = texX; wxi < texX + w; wxi++) {
-//   for (let wyi = texY; wyi < texY + h; wyi++) {
-//     const wIdx = Math.floor(wxi + wyi * WORLD_WIDTH);
-//     // console.log(wIdx);
-//     const v = worldCut[wIdx];
-//     const dIdx = Math.floor(wxi - texX + (wyi - texY) * w);
-//     // assert(0 <= dIdx && dIdx < data.length, `idx out of bounds: ${dIdx}`);
-//     // data[dIdx] = 1.0;
-//     // if (v > 0.1) console.log(dIdx);
-//     // console.log(dIdx);
-//     data[dIdx] = v;
-//   }
-// }
