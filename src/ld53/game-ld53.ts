@@ -100,11 +100,11 @@ import {
   createGraph3DDataMesh,
 } from "../debug/gizmos.js";
 import { createGraph3D } from "../debug/utils-gizmos.js";
-import { ScoreDef } from "../smol/score.js";
+import { ScoreDef } from "./score.js";
 import { LandMapTexPtr, LevelMapDef, setMap } from "../levels/level-map.js";
 import { GrassCutTexPtr, grassPoolPtr } from "../grass/std-grass.js";
 import { setWindAngle, WindDef } from "../wind/wind.js";
-import { cannonDefaultPitch, createShip, ShipDef } from "../smol/ship.js";
+import { cannonDefaultPitch, createShip, ShipDef } from "./ship.js";
 import { SAIL_FURL_RATE } from "../wind/sail.js";
 import { spawnStoneTower, StoneTowerDef, towerPool } from "../stone/stone.js";
 import { LandDef } from "./land-ship.js";

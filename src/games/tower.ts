@@ -59,7 +59,7 @@ import {
   resetWoodHealth,
   resetWoodState,
 } from "../wood/wood.js";
-import { ShipDef } from "../smol/ship.js";
+import { ShipDef } from "../ld53/ship.js";
 import { PartyDef } from "./party.js";
 import {
   angleBetween,

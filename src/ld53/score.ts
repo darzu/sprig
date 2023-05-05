@@ -4,7 +4,7 @@ import { EM } from "../ecs/entity-manager.js";
 import { VERBOSE_LOG } from "../flags.js";
 import { PartyDef } from "../games/party.js";
 import { TextDef } from "../gui/ui.js";
-import { ShipHealthDef } from "../ld53/ship-health.js";
+import { ShipHealthDef } from "./ship-health.js";
 import { createAABB, pointInAABB } from "../physics/aabb.js";
 import { PhysicsStateDef } from "../physics/nonintersection.js";
 import { PhysicsParentDef } from "../physics/transform.js";

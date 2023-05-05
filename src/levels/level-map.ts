@@ -15,7 +15,7 @@ import { assert, assertDbg, dbgLogOnce } from "../utils/util.js";
 import { vec4Dbg } from "../utils/utils-3d.js";
 import { randColor } from "../utils/utils-game.js";
 import { MapName, MapBytesSetDef, MapBytes, MapHelp } from "./map-loader.js";
-import { ScoreDef } from "../smol/score.js";
+import { ScoreDef } from "../ld53/score.js";
 import { WindDef } from "../wind/wind.js";
 
 const WIDTH = 1024;
