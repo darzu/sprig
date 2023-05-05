@@ -15,7 +15,7 @@ import {
   createGrassTileset,
   GrassTileOpts,
   GrassTilesetOpts,
-} from "../grass.js";
+} from "./grass.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { ColliderDef } from "../physics/collider.js";
 import { AngularVelocityDef, LinearVelocityDef } from "../physics/motion.js";
@@ -50,11 +50,7 @@ import {
   vec3Dbg,
 } from "../utils-3d.js";
 import { randColor } from "../utils-game.js";
-import {
-  GrassCutTexPtr,
-  grassPoolPtr,
-  renderGrassPipe,
-} from "../smol/std-grass.js";
+import { GrassCutTexPtr, grassPoolPtr, renderGrassPipe } from "./std-grass.js";
 import { WindDef } from "../smol/wind.js";
 import { DevConsoleDef } from "../console.js";
 import { clamp, jitter, max, sum } from "../math.js";
@@ -183,9 +179,9 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
         ...(res.dev.showConsole ? dbgGridCompose : []),
       ];
     },
-    "smolGameRenderPipelines"
+    "grassGameRenderPipelines"
   );
-  em.requireSystem("smolGameRenderPipelines");
+  em.requireSystem("grassGameRenderPipelines");
 
   // Sun
   const sunlight = em.new();

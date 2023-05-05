@@ -15,7 +15,7 @@ import {
   createGrassTileset,
   GrassTileOpts,
   GrassTilesetOpts,
-} from "../grass.js";
+} from "../grass/grass.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { ColliderDef } from "../physics/collider.js";
 import { AngularVelocityDef, LinearVelocityDef } from "../physics/motion.js";
@@ -91,7 +91,7 @@ import { createGraph3DAxesMesh, createGraph3DDataMesh } from "../gizmos.js";
 import { createGraph3D } from "../utils-gizmos.js";
 import { ScoreDef } from "../smol/score.js";
 import { LandMapTexPtr, LevelMapDef, setMap } from "../smol/level-map.js";
-import { GrassCutTexPtr, grassPoolPtr } from "../smol/std-grass.js";
+import { GrassCutTexPtr, grassPoolPtr } from "../grass/std-grass.js";
 import { setWindAngle, WindDef } from "../smol/wind.js";
 import { cannonDefaultPitch, createShip, ShipDef } from "../smol/ship.js";
 import { SAIL_FURL_RATE } from "../smol/sail.js";
@@ -213,9 +213,9 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
         // ...(res.dev.showConsole ? dbgGridCompose : []),
       ];
     },
-    "smolGameRenderPipelines"
+    "grassGameRenderPipelines"
   );
-  em.requireSystem("smolGameRenderPipelines");
+  em.requireSystem("grassGameRenderPipelines");
 
   // Sun
   const sunlight = em.new();

@@ -1,18 +1,18 @@
-import { ColorDef } from "./color-ecs.js";
-import { EM, EntityW } from "./ecs/entity-manager.js";
-import { gameMeshFromMesh } from "./assets.js";
-import { grassPoolPtr, RenderDataGrassDef } from "./smol/std-grass.js";
-import { jitter, align } from "./math.js";
-import { PositionDef } from "./physics/transform.js";
-import { Mesh, RawMesh } from "./render/mesh.js";
+import { ColorDef } from "../color-ecs.js";
+import { EM, EntityW } from "../ecs/entity-manager.js";
+import { gameMeshFromMesh } from "../assets.js";
+import { grassPoolPtr, RenderDataGrassDef } from "./std-grass.js";
+import { jitter, align } from "../math.js";
+import { PositionDef } from "../physics/transform.js";
+import { Mesh, RawMesh } from "../render/mesh.js";
 import {
   RenderableConstructDef,
   RenderableDef,
   RendererDef,
-} from "./render/renderer-ecs.js";
-import { V, vec3 } from "./sprig-matrix.js";
-import { getPositionFromTransform } from "./utils-3d.js";
-import { randColor } from "./utils-game.js";
+} from "../render/renderer-ecs.js";
+import { V, vec3 } from "../sprig-matrix.js";
+import { getPositionFromTransform } from "../utils-3d.js";
+import { randColor } from "../utils-game.js";
 
 const RENDER_GRASS = true;
 

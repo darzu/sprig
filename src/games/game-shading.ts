@@ -62,9 +62,9 @@ export async function initShadingGame() {
         ...(res.dev.showConsole ? dbgGridCompose : []),
       ];
     },
-    "smolGameRenderPipelines"
+    "grassGameRenderPipelines"
   );
-  EM.requireSystem("smolGameRenderPipelines");
+  EM.requireSystem("grassGameRenderPipelines");
 
   const { camera } = await EM.whenResources(CameraDef);
 
