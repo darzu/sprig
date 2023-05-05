@@ -2,8 +2,8 @@ import { EntityManager } from "./ecs/entity-manager.js";
 import { InputsDef } from "./input/inputs.js";
 import { registerInitTransforms } from "./physics/transform.js";
 import {
-  LocalPlayerDef,
-  registerPlayerSystems,
+  LocalHsPlayerDef,
+  registerHsPlayerSystems,
 } from "./hyperspace/hs-player.js";
 import {
   CameraDef,
@@ -90,7 +90,7 @@ export function registerCommonSystems(em: EntityManager) {
   registerInitTransforms(em);
   registerEnemyShipSystems(em);
   registerControllableSystems(em);
-  registerPlayerSystems(em);
+  registerHsPlayerSystems(em);
   registerBulletUpdate(em);
   // TODO(@darzu): re-enable noodles?
   registerNoodleSystem(em);
@@ -146,7 +146,7 @@ function registerRenderViewController(em: EntityManager) {
 
       // check camera mode
       if (inputs.keyClicks["4"]) {
-        const localPlayer = em.getResource(LocalPlayerDef);
+        const localPlayer = em.getResource(LocalHsPlayerDef);
         const p = em.findEntity(localPlayer?.playerId ?? -1, [CameraFollowDef]);
         if (p) {
           const overShoulder = p.cameraFollow.positionOffset[0] !== 0;

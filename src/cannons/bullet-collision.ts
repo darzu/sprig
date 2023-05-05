@@ -12,7 +12,7 @@ import {
   EntityManager,
   ESet,
 } from "../ecs/entity-manager.js";
-import { PlayerDef } from "../hyperspace/hs-player.js";
+import { HsPlayerDef } from "../hyperspace/hs-player.js";
 import { PhysicsResultsDef } from "../physics/nonintersection.js";
 import { AuthorityDef } from "../net/components.js";
 import { BulletDef } from "./bullet.js";
@@ -52,7 +52,7 @@ export function registerBulletCollisionSystem(em: EntityManager) {
 
           // find players this bullet is colliding with, other than the player who shot the bullet
           let otherPlayers = otherIds
-            .map((id) => em.findEntity(id, [PlayerDef, AuthorityDef]))
+            .map((id) => em.findEntity(id, [HsPlayerDef, AuthorityDef]))
             .filter((p) => p !== undefined);
           for (let otherPlayer of otherPlayers) {
             if (otherPlayer!.authority.pid !== o.authority.pid)
@@ -82,7 +82,7 @@ export const raiseBulletBullet = eventWizard(
 
 export const raiseBulletPlayer = eventWizard(
   "bullet-player",
-  () => [[BulletDef], [PlayerDef]] as const,
+  () => [[BulletDef], [HsPlayerDef]] as const,
   ([bullet, player]) => {
     // assert(false, `raiseBulletPlayer doesnt work on ld51`); // TODO(@darzu): ld51
     EM.ensureComponent(bullet.id, DeletedDef);

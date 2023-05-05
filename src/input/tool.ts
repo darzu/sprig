@@ -12,7 +12,7 @@ import {
   ScaleDef,
 } from "../physics/transform.js";
 import { registerEventHandler, DetectedEventsDef } from "../net/events.js";
-import { LocalPlayerDef, PlayerDef } from "../hyperspace/hs-player.js";
+import { LocalHsPlayerDef, HsPlayerDef } from "../hyperspace/hs-player.js";
 import { InteractableDef, InRangeDef } from "./interact.js";
 import { Deserializer, Serializer } from "../utils/serialize.js";
 
@@ -23,13 +23,13 @@ export const ToolDef = EM.defineComponent("tool", (type?: string) => ({
 export function registerToolSystems(em: EntityManager) {
   em.registerSystem(
     [ToolDef, InRangeDef],
-    [DetectedEventsDef, LocalPlayerDef],
+    [DetectedEventsDef, LocalHsPlayerDef],
     (hats, resources) => {
       for (let { id } of hats) {
         let player = EM.findEntity(resources.localPlayer.playerId, [
-          PlayerDef,
+          HsPlayerDef,
         ])!;
-        if (player.player.tool === 0 && player.player.interacting) {
+        if (player.hsPlayer.tool === 0 && player.hsPlayer.interacting) {
           resources.detectedEvents.raise({
             type: "tool-pickup",
             entities: [player.id, id],
@@ -42,17 +42,17 @@ export function registerToolSystems(em: EntityManager) {
   );
 
   em.registerSystem(
-    [PlayerDef, PositionDef, RotationDef],
+    [HsPlayerDef, PositionDef, RotationDef],
     [DetectedEventsDef],
     (players, { detectedEvents }) => {
-      for (let { player, id, position, rotation } of players) {
-        if (player.dropping && player.tool > 0) {
+      for (let { hsPlayer, id, position, rotation } of players) {
+        if (hsPlayer.dropping && hsPlayer.tool > 0) {
           let dropLocation = V(0, 0, -5);
           vec3.transformQuat(dropLocation, rotation, dropLocation);
           vec3.add(dropLocation, position, dropLocation);
           detectedEvents.raise({
             type: "tool-drop",
-            entities: [id, player.tool],
+            entities: [id, hsPlayer.tool],
             extra: dropLocation,
           });
         }
@@ -63,12 +63,12 @@ export function registerToolSystems(em: EntityManager) {
 
   registerEventHandler("tool-pickup", {
     entities: [
-      [PlayerDef],
+      [HsPlayerDef],
       [InteractableDef, PositionDef, PhysicsParentDef],
     ] as const,
     eventAuthorityEntity: ([playerId, toolId]) => playerId,
     legalEvent: (em, [player, tool]) => {
-      return player.player.tool === 0;
+      return player.hsPlayer.tool === 0;
     },
     runEvent: (em: EntityManager, [player, tool]) => {
       tool.physicsParent.id = player.id;
@@ -79,16 +79,16 @@ export function registerToolSystems(em: EntityManager) {
       vec3.set(0, 0, -1.5, tool.position);
       em.ensureComponentOn(tool, ScaleDef);
       vec3.copy(tool.scale, [0.5, 0.5, 0.5]);
-      player.player.tool = tool.id;
+      player.hsPlayer.tool = tool.id;
       if (ColliderDef.isOn(tool)) tool.collider.solid = false;
     },
   });
 
   registerEventHandler("tool-drop", {
-    entities: [[PlayerDef], [PositionDef, PhysicsParentDef]] as const,
+    entities: [[HsPlayerDef], [PositionDef, PhysicsParentDef]] as const,
     eventAuthorityEntity: ([playerId, toolId]) => playerId,
     legalEvent: (em, [player, tool]) => {
-      return player.player.tool === tool.id;
+      return player.hsPlayer.tool === tool.id;
     },
     runEvent: (em: EntityManager, [player, tool], location: vec3) => {
       tool.physicsParent.id = 0;
@@ -97,7 +97,7 @@ export function registerToolSystems(em: EntityManager) {
       vec3.copy(tool.position, location!);
       em.ensureComponentOn(tool, ScaleDef);
       vec3.copy(tool.scale, [1, 1, 1]);
-      player.player.tool = 0;
+      player.hsPlayer.tool = 0;
       if (ColliderDef.isOn(tool)) tool.collider.solid = true;
     },
     serializeExtra: (buf, location) => {

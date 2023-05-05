@@ -5,7 +5,7 @@ import { EM, EntityManager } from "../ecs/entity-manager.js";
 import { AssetsDef } from "../meshes/assets.js";
 import { ControllableDef } from "../input/controllable.js";
 import { createGhost, GhostDef } from "../debug/ghost.js";
-import { LocalPlayerDef, PlayerDef } from "../hyperspace/hs-player.js";
+import { LocalHsPlayerDef, HsPlayerDef } from "../hyperspace/hs-player.js";
 import {
   createGrassTile,
   createGrassTileset,
@@ -759,8 +759,8 @@ async function createPlayer() {
   p.cameraFollow.yawOffset = 0.0;
   p.cameraFollow.pitchOffset = -0.593;
 
-  EM.ensureResource(LocalPlayerDef, p.id);
-  EM.ensureComponentOn(p, PlayerDef);
+  EM.ensureResource(LocalHsPlayerDef, p.id);
+  EM.ensureComponentOn(p, HsPlayerDef);
   EM.ensureComponentOn(p, AuthorityDef, me.pid);
   EM.ensureComponentOn(p, PhysicsParentDef);
   return p;

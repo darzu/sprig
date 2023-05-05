@@ -1,5 +1,5 @@
 import { Component, EM, Entity, EntityManager } from "../ecs/entity-manager.js";
-import { LocalPlayerDef, PlayerDef } from "../hyperspace/hs-player.js";
+import { LocalHsPlayerDef, HsPlayerDef } from "../hyperspace/hs-player.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import {
@@ -33,7 +33,7 @@ const INTERACTION_TINT_NAME = "interaction";
 export function registerInteractionSystem(em: EntityManager) {
   em.registerSystem(
     [InteractableDef, WorldFrameDef],
-    [LocalPlayerDef, MeDef, PhysicsResultsDef],
+    [LocalHsPlayerDef, MeDef, PhysicsResultsDef],
     (interactables, resources) => {
       const player = em.findEntity(resources.localPlayer.playerId, []);
       if (!player) return;

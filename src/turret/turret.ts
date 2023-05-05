@@ -15,7 +15,7 @@ import { ColliderDef } from "../physics/collider.js";
 import { AuthorityDef, SyncDef } from "../net/components.js";
 import { eventWizard } from "../net/events.js";
 import { InRangeDef, InteractableDef } from "../input/interact.js";
-import { LocalPlayerDef, PlayerDef } from "../hyperspace/hs-player.js";
+import { LocalHsPlayerDef, HsPlayerDef } from "../hyperspace/hs-player.js";
 import {
   CameraFollowDef,
   CAMERA_OFFSETS,
@@ -116,18 +116,18 @@ export const raiseManTurret = eventWizard(
   "man-turret",
   () =>
     [
-      [PlayerDef, AuthorityDef],
+      [HsPlayerDef, AuthorityDef],
       [TurretDef, CameraFollowDef, AuthorityDef],
     ] as const,
   ([player, turret]) => {
-    const localPlayer = EM.getResource(LocalPlayerDef);
+    const localPlayer = EM.getResource(LocalHsPlayerDef);
     if (localPlayer?.playerId === player.id) {
       turret.cameraFollow.priority = 2;
       turret.authority.pid = player.authority.pid;
       turret.authority.seq++;
       turret.authority.updateSeq = 0;
     }
-    player.player.manning = true;
+    player.hsPlayer.manning = true;
     turret.turret.mannedId = player.id;
   },
   {
@@ -139,10 +139,10 @@ export const raiseManTurret = eventWizard(
 
 export const raiseUnmanTurret = eventWizard(
   "unman-turret",
-  () => [[PlayerDef], [TurretDef, CameraFollowDef]] as const,
+  () => [[HsPlayerDef], [TurretDef, CameraFollowDef]] as const,
   ([player, turret]) => {
     turret.cameraFollow.priority = 0;
-    player.player.manning = false;
+    player.hsPlayer.manning = false;
     turret.turret.mannedId = 0;
   },
   {
@@ -171,9 +171,9 @@ export function registerTurretSystems(em: EntityManager) {
 
   em.registerSystem(
     [TurretDef, YawPitchDef, CameraFollowDef],
-    [InputsDef, LocalPlayerDef],
+    [InputsDef, LocalHsPlayerDef],
     (turrets, res) => {
-      const player = em.findEntity(res.localPlayer.playerId, [PlayerDef])!;
+      const player = em.findEntity(res.localPlayer.playerId, [HsPlayerDef])!;
       if (!player) return;
       for (let c of turrets) {
         if (DeletedDef.isOn(c)) continue;
@@ -215,10 +215,10 @@ export function registerTurretSystems(em: EntityManager) {
 
   em.registerSystem(
     [TurretDef, InRangeDef, AuthorityDef, CameraFollowDef],
-    [InputsDef, LocalPlayerDef, TextDef],
+    [InputsDef, LocalHsPlayerDef, TextDef],
     (turrets, res) => {
       const player = em.findEntity(res.localPlayer.playerId, [
-        PlayerDef,
+        HsPlayerDef,
         AuthorityDef,
       ])!;
       if (!player) return;

@@ -50,15 +50,15 @@ import { HsShipLocalDef } from "./hyperspace-ship.js";
 // TODO(@darzu): it'd be great if these could hook into some sort of
 //    dev mode you could toggle at runtime.
 
-export function createPlayer(em: EntityManager) {
+export function createHsPlayer(em: EntityManager) {
   // console.log("create player!");
   const e = em.new();
-  em.ensureComponentOn(e, PlayerPropsDef, V(0, 100, 0));
-  em.addResource(LocalPlayerDef, e.id);
+  em.ensureComponentOn(e, PlayerHsPropsDef, V(0, 100, 0));
+  em.addResource(LocalHsPlayerDef, e.id);
   return e;
 }
 
-export const PlayerDef = EM.defineComponent("player", () => {
+export const HsPlayerDef = EM.defineComponent("hsPlayer", () => {
   return {
     // hat stuff
     // TODO(@darzu): better abstraction
@@ -82,14 +82,14 @@ export const PlayerDef = EM.defineComponent("player", () => {
 });
 
 // Resource pointing at the local player
-export const LocalPlayerDef = EM.defineComponent(
+export const LocalHsPlayerDef = EM.defineComponent(
   "localPlayer",
   (playerId?: number) => ({
     playerId: playerId || 0,
   })
 );
 
-export const PlayerPropsDef = defineSerializableComponent(
+export const PlayerHsPropsDef = defineSerializableComponent(
   EM,
   "playerProps",
   (loc?: vec3) => {
@@ -105,9 +105,9 @@ export const PlayerPropsDef = defineSerializableComponent(
   }
 );
 
-export function registerPlayerSystems(em: EntityManager) {
+export function registerHsPlayerSystems(em: EntityManager) {
   em.registerSystem(
-    [PlayerPropsDef],
+    [PlayerHsPropsDef],
     [MeDef, AssetsDef],
     (players, res) => {
       for (let e of players) {
@@ -134,8 +134,8 @@ export function registerPlayerSystems(em: EntityManager) {
           em.addComponent(e.id, RenderableConstructDef, m);
         }
         em.ensureComponentOn(e, AuthorityDef, res.me.pid);
-        if (!PlayerDef.isOn(e)) {
-          em.ensureComponentOn(e, PlayerDef);
+        if (!HsPlayerDef.isOn(e)) {
+          em.ensureComponentOn(e, HsPlayerDef);
 
           // create legs
           function makeLeg(x: number): Entity {
@@ -151,8 +151,8 @@ export function registerPlayerSystems(em: EntityManager) {
             em.ensureComponentOn(l, PhysicsParentDef, e.id);
             return l;
           }
-          e.player.leftLegId = makeLeg(-0.5).id;
-          e.player.rightLegId = makeLeg(0.5).id;
+          e.hsPlayer.leftLegId = makeLeg(-0.5).id;
+          e.hsPlayer.rightLegId = makeLeg(0.5).id;
         }
         if (!ColliderDef.isOn(e)) {
           const collider = em.addComponent(e.id, ColliderDef);
@@ -170,7 +170,7 @@ export function registerPlayerSystems(em: EntityManager) {
             // TODO(@darzu): maybe sync this via events instead
             PhysicsParentDef.id,
           ]);
-          e.sync.fullComponents = [PlayerPropsDef.id];
+          e.sync.fullComponents = [PlayerHsPropsDef.id];
         }
         em.ensureComponent(e.id, PhysicsParentDef);
 
@@ -185,11 +185,11 @@ export function registerPlayerSystems(em: EntityManager) {
   );
 
   em.registerSystem(
-    [PlayerDef, WorldFrameDef],
+    [HsPlayerDef, WorldFrameDef],
     [GlobalCursor3dDef],
     (players, res) => {
       for (let p of players) {
-        const facingDir = p.player.facingDir;
+        const facingDir = p.hsPlayer.facingDir;
         vec3.copy(facingDir, [0, 0, -1]);
         vec3.transformQuat(facingDir, p.world.rotation, facingDir);
 
@@ -206,7 +206,7 @@ export function registerPlayerSystems(em: EntityManager) {
 
   em.registerSystem(
     [
-      PlayerDef,
+      HsPlayerDef,
       PositionDef,
       RotationDef,
       LinearVelocityDef,
@@ -242,7 +242,7 @@ export function registerPlayerSystems(em: EntityManager) {
         // determine modes
         p.controllable.modes.canSprint = true;
 
-        if (p.player.manning) {
+        if (p.hsPlayer.manning) {
           p.controllable.modes.canMove = false;
           p.controllable.modes.canPitch = false;
           p.controllable.modes.canYaw = false;
@@ -281,19 +281,19 @@ export function registerPlayerSystems(em: EntityManager) {
 
         // TODO(@darzu): rework to use phsyiscs colliders
         if (inputs.keyClicks["e"]) {
-          p.player.interacting = true;
+          p.hsPlayer.interacting = true;
         } else {
-          p.player.interacting = false;
+          p.hsPlayer.interacting = false;
         }
         if (inputs.lclick) {
-          p.player.clicking = true;
+          p.hsPlayer.clicking = true;
         } else {
-          p.player.clicking = false;
+          p.hsPlayer.clicking = false;
         }
 
-        p.player.dropping = (inputs.keyClicks["q"] || 0) > 0;
+        p.hsPlayer.dropping = (inputs.keyClicks["q"] || 0) > 0;
 
-        let facingDir = p.player.facingDir;
+        let facingDir = p.hsPlayer.facingDir;
 
         // add bullet on lclick
         if (cheat && inputs.lclick) {
@@ -424,7 +424,7 @@ export function registerPlayerSystems(em: EntityManager) {
 
   em.registerSystem(
     [
-      PlayerDef,
+      HsPlayerDef,
       AuthorityDef,
       PositionDef,
       LinearVelocityDef,
@@ -437,7 +437,7 @@ export function registerPlayerSystems(em: EntityManager) {
     (players, res) => {
       for (let p of players) {
         if (p.authority.pid !== res.me.pid) continue;
-        if (!p.player.lookingForShip) continue;
+        if (!p.hsPlayer.lookingForShip) continue;
 
         const parent = em.findEntity(p.physicsParent.id, [ColliderDef]);
         if (!parent) {
@@ -450,7 +450,7 @@ export function registerPlayerSystems(em: EntityManager) {
             p.physicsParent.id = ship.id;
             // vec3.copy(p.position, [0, 10, res.me.pid * 4 - 16]);
             // console.log("found ship!");
-            p.player.lookingForShip = false;
+            p.hsPlayer.lookingForShip = false;
             const maxYFn: (c: Collider) => number = (c) =>
               c.shape === "Multi"
                 ? Math.max(...c.children.map((c2) => maxYFn(c2)))

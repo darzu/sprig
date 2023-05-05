@@ -80,9 +80,9 @@ import { GravityDef } from "../motion/gravity.js";
 import { InRangeDef, InteractableDef } from "../input/interact.js";
 import { LifetimeDef } from "../ecs/lifetime.js";
 import {
-  createPlayer,
-  LocalPlayerDef,
-  PlayerDef,
+  createHsPlayer,
+  LocalHsPlayerDef,
+  HsPlayerDef,
 } from "../hyperspace/hs-player.js";
 import { TextDef } from "../gui/ui.js";
 import { createIdxPool } from "../utils/idx-pool.js";
@@ -418,13 +418,13 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
 
   em.registerSystem(
     [LD51CannonDef, WorldFrameDef, InRangeDef],
-    [InputsDef, LocalPlayerDef, AudioDef],
+    [InputsDef, LocalHsPlayerDef, AudioDef],
     (cannons, res) => {
-      const player = em.findEntity(res.localPlayer.playerId, [PlayerDef])!;
+      const player = em.findEntity(res.localPlayer.playerId, [HsPlayerDef])!;
       if (!player) return;
       for (let c of cannons) {
         if (
-          player.player.holdingBall &&
+          player.hsPlayer.holdingBall &&
           c.inRange &&
           res.inputs.lclick /* && c.cannonLocal.fireMs <= 0*/
         ) {
@@ -459,14 +459,14 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
           );
 
           // remove player ball
-          const heldBall = EM.findEntity(player.player.holdingBall, [
+          const heldBall = EM.findEntity(player.hsPlayer.holdingBall, [
             GoodBallDef,
           ]);
           if (heldBall) {
             despawnGoodBall(heldBall);
           }
 
-          player.player.holdingBall = 0;
+          player.hsPlayer.holdingBall = 0;
 
           // c.cannonLocal.fireMs = c.cannonLocal.fireDelayMs;
 
@@ -811,17 +811,17 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
 
     em.registerSystem(
       [GoodBallDef, InteractableDef, InRangeDef, PositionDef],
-      [InputsDef, LocalPlayerDef],
+      [InputsDef, LocalHsPlayerDef],
       (es, res) => {
-        const player = em.findEntity(res.localPlayer.playerId, [PlayerDef])!;
+        const player = em.findEntity(res.localPlayer.playerId, [HsPlayerDef])!;
         if (!player) return;
-        if (player.player.holdingBall) return;
+        if (player.hsPlayer.holdingBall) return;
         // TODO(@darzu):
         if (res.inputs.lclick) {
           for (let ball of es) {
             if (PhysicsParentDef.isOn(ball)) continue;
             // pick up this ball
-            player.player.holdingBall = ball.id;
+            player.hsPlayer.holdingBall = ball.id;
             em.ensureComponentOn(ball, PhysicsParentDef, player.id);
             vec3.set(0, 0, -1, ball.position);
             em.ensureComponentOn(ball, ScaleDef);
@@ -893,7 +893,7 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
     }
 
     if (!DBG_PLAYER) {
-      const _player = createPlayer(em);
+      const _player = createHsPlayer(em);
       vec3.set(-10, realFloorHeight + 6, 0, _player.playerProps.location);
       em.whenEntityHas(
         _player,

@@ -13,7 +13,11 @@ import {
 } from "../physics/transform.js";
 import { TimeDef } from "../time/time.js";
 import { LifetimeDef } from "../ecs/lifetime.js";
-import { LocalPlayerDef, PlayerDef, PlayerPropsDef } from "./hs-player.js";
+import {
+  LocalHsPlayerDef,
+  HsPlayerDef,
+  PlayerHsPropsDef,
+} from "./hs-player.js";
 import {
   createHsShip,
   HsShipLocalDef,
@@ -35,7 +39,7 @@ export const GameStateDef = EM.defineComponent("hsGameState", () => {
 
 export const startGame = eventWizard(
   "start-game",
-  () => [[PlayerDef]] as const,
+  () => [[HsPlayerDef]] as const,
   () => {
     EM.getResource(GameStateDef)!.state = HyperspaceGameState.PLAYING;
   },
@@ -64,7 +68,7 @@ export const endGame = eventWizard(
     if (ship.hsShipProps.cannonRId)
       EM.ensureComponent(ship.hsShipProps.cannonRId, DeletedDef);
     const players = EM.filterEntities([
-      PlayerDef,
+      HsPlayerDef,
       PositionDef,
       RotationDef,
       AuthorityDef,
@@ -72,7 +76,7 @@ export const endGame = eventWizard(
       WorldFrameDef,
     ]);
     for (let p of players) {
-      p.player.manning = false;
+      p.hsPlayer.manning = false;
       if (p.authority.pid === res.me.pid) {
         p.physicsParent.id = 0;
         vec3.copy(p.position, p.world.position);
@@ -103,10 +107,10 @@ export const restartGame = eventWizard(
   () => [[HsShipPropsDef]] as const,
   ([ship]) => {
     console.log("restart");
-    const res = EM.getResources([GameStateDef, LocalPlayerDef])!;
+    const res = EM.getResources([GameStateDef, LocalHsPlayerDef])!;
     res.hsGameState.state = HyperspaceGameState.LOBBY;
-    const player = EM.findEntity(res.localPlayer.playerId, [PlayerDef])!;
-    player.player.lookingForShip = true;
+    const player = EM.findEntity(res.localPlayer.playerId, [HsPlayerDef])!;
+    player.hsPlayer.lookingForShip = true;
     // res.score.currentScore = 0;
 
     // const groundSys = EM.getResource(GroundSystemDef);
