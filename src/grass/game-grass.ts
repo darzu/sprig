@@ -1,12 +1,8 @@
-import {
-  CameraDef,
-  CameraFollowDef,
-  setCameraFollowPosition,
-} from "../camera.js";
+import { CameraDef, CameraFollowDef } from "../camera.js";
 import { ColorDef } from "../color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
-import { EM, EntityManager, EntityW } from "../ecs/entity-manager.js";
-import { AssetsDef, gameMeshFromMesh } from "../assets.js";
+import { EM, EntityManager } from "../ecs/entity-manager.js";
+import { AssetsDef } from "../assets.js";
 import { ControllableDef } from "../games/controllable.js";
 import { createGhost, GhostDef } from "../games/ghost.js";
 import { LocalPlayerDef, PlayerDef } from "../games/player.js";
@@ -27,7 +23,7 @@ import {
   ScaleDef,
 } from "../physics/transform.js";
 import { PointLightDef } from "../render/lights.js";
-import { cloneMesh, mapMeshPositions, transformMesh } from "../render/mesh.js";
+import { cloneMesh, transformMesh } from "../render/mesh.js";
 import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
@@ -36,32 +32,20 @@ import {
   shadowPipelines,
 } from "../render/pipelines/std-shadow.js";
 import { RenderableConstructDef, RendererDef } from "../render/renderer-ecs.js";
-import { mat3, mat4, quat, V, vec2, vec3, vec4 } from "../sprig-matrix.js";
-import {
-  createMast,
-  createSail,
-  MastDef,
-  SAIL_FURL_RATE,
-} from "../smol/sail.js";
-import {
-  quatFromUpForward,
-  randNormalPosVec3,
-  randNormalVec3,
-  vec3Dbg,
-} from "../utils-3d.js";
+import { mat3, mat4, quat, V, vec2, vec3 } from "../sprig-matrix.js";
+import { SAIL_FURL_RATE } from "../smol/sail.js";
+import { quatFromUpForward, randNormalVec3 } from "../utils-3d.js";
 import { randColor } from "../utils-game.js";
 import { GrassCutTexPtr, grassPoolPtr, renderGrassPipe } from "./std-grass.js";
 import { WindDef } from "../smol/wind.js";
 import { DevConsoleDef } from "../console.js";
 import { clamp, jitter, max, sum } from "../math.js";
 import { createShip, ShipDef } from "../smol/ship.js";
-import { CY } from "../render/gpu-registry.js";
 import { assert } from "../util.js";
 import { texTypeToBytes } from "../render/gpu-struct.js";
 import { PartyDef } from "../games/party.js";
 import { LevelMapDef, LandMapTexPtr, setMap } from "../smol/level-map.js";
-import { copyAABB, createAABB, getAABBCornersTemp } from "../physics/aabb.js";
-import { rasterizeTri } from "../raster.js";
+import { copyAABB, createAABB } from "../physics/aabb.js";
 import { InputsDef } from "../inputs.js";
 import { ScoreDef } from "../smol/score.js";
 import { raiseManTurret } from "../games/turret.js";
@@ -71,14 +55,11 @@ import { CanvasDef } from "../canvas.js";
 import { createJfaPipelines } from "../render/pipelines/std-jump-flood.js";
 import { createGridComposePipelines } from "../render/pipelines/std-compose.js";
 import { createTextureReader } from "../render/cpu-texture.js";
-import { initOcean, OceanDef } from "../ocean/ocean.js";
-import { renderOceanPipe } from "../render/pipelines/std-ocean.js";
 import { SKY_MASK } from "../render/pipeline-masks.js";
 import { skyPipeline } from "../render/pipelines/std-sky.js";
 import { createFlatQuadMesh, makeDome } from "../primatives.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
 import { startTowers } from "../games/tower.js";
-import { createGraph3DAxesMesh, createGraph3DDataMesh } from "../gizmos.js";
 import { createGraph3D } from "../utils-gizmos.js";
 
 /*
@@ -125,7 +106,7 @@ const level2DtoWorld3D = (levelPos: vec2, y: number, out: vec3) =>
 
 export const mapJfa = createJfaPipelines(LandMapTexPtr, "exterior");
 
-export async function initSmol(em: EntityManager, hosting: boolean) {
+export async function initGrassGame(em: EntityManager, hosting: boolean) {
   const dbgGrid = [
     //
     [mapJfa._inputMaskTex, mapJfa._uvMaskTex],
@@ -340,44 +321,22 @@ export async function initSmol(em: EntityManager, hosting: boolean) {
   );
   // em.ensureComponentOn(sky, ColorDef, V(0.9, 0.9, 0.9));
 
-  // ocean
-  const oceanVertsPerWorldUnit = 0.25;
-  const worldUnitPerOceanVerts = 1 / oceanVertsPerWorldUnit;
-  const oceanZCount = Math.floor(WORLD_WIDTH * oceanVertsPerWorldUnit);
-  const oceanXCount = Math.floor(WORLD_HEIGHT * oceanVertsPerWorldUnit);
-  const oceanMesh = createFlatQuadMesh(oceanZCount, oceanXCount);
-  const maxSurfId = max(oceanMesh.surfaceIds);
-  console.log("maxSurfId");
-  console.log(maxSurfId);
-  oceanMesh.pos.forEach((p, i) => {
-    const x = p[0] * worldUnitPerOceanVerts - WORLD_HEIGHT * 0.5;
-    const z = p[2] * worldUnitPerOceanVerts - WORLD_WIDTH * 0.5;
-    const y = 0.0;
-    p[0] = x;
-    p[1] = y;
-    p[2] = z;
-  });
-  // TODO(@darzu): I don't think the PBR-ness of this color is right
-  // initOcean(oceanMesh, V(0.1, 0.3, 0.8));
-  initOcean(oceanMesh, ENDESGA16.blue);
-  await em.whenResources(OceanDef); // TODO(@darzu): need to wait?
-
   // ground
-  // const ground = em.new();
-  // const groundMesh = cloneMesh(res.assets.unitCube.mesh);
-  // transformMesh(
-  //   groundMesh,
-  //   mat4.fromScaling(V(WORLD_HEIGHT, 1.0, WORLD_WIDTH))
-  // );
-  // em.ensureComponentOn(ground, RenderableConstructDef, groundMesh);
-  // em.ensureComponentOn(ground, ColorDef, V(0.1, 0.5, 0.1));
-  // // em.set(ground, ColorDef, ENDESGA16.darkGreen);
-  // // em.ensureComponentOn(p, ColorDef, [0.2, 0.3, 0.2]);
-  // em.ensureComponentOn(
-  //   ground,
-  //   PositionDef,
-  //   V(-WORLD_HEIGHT * 0.5, -1.1, -WORLD_WIDTH * 0.5)
-  // );
+  const ground = em.new();
+  const groundMesh = cloneMesh(res.assets.unitCube.mesh);
+  transformMesh(
+    groundMesh,
+    mat4.fromScaling(V(WORLD_HEIGHT, 1.0, WORLD_WIDTH))
+  );
+  em.ensureComponentOn(ground, RenderableConstructDef, groundMesh);
+  em.ensureComponentOn(ground, ColorDef, V(0.1, 0.5, 0.1));
+  // em.set(ground, ColorDef, ENDESGA16.darkGreen);
+  // em.ensureComponentOn(p, ColorDef, [0.2, 0.3, 0.2]);
+  em.ensureComponentOn(
+    ground,
+    PositionDef,
+    V(-WORLD_HEIGHT * 0.5, -1.1, -WORLD_WIDTH * 0.5)
+  );
   // em.ensureComponentOn(plane, PositionDef, [0, -5, 0]);
 
   // grass
