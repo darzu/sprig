@@ -41,7 +41,7 @@ import { defineSerializableComponent } from "../ecs/em_helpers.js";
 import { ControllableDef } from "./controllable.js";
 import { GlobalCursor3dDef } from "./cursor.js";
 import { drawLine } from "../utils-game.js";
-import { DevConsoleDef } from "../console.js";
+import { DevConsoleDef } from "../debug/console.js";
 import { max } from "../math.js";
 import { AnimateToDef } from "../animate-to.js";
 import { vec3Dbg } from "../utils-3d.js";

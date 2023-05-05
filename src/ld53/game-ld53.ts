@@ -54,7 +54,7 @@ import {
   vec3Dbg,
 } from "../utils-3d.js";
 import { drawBall, randColor } from "../utils-game.js";
-import { DevConsoleDef } from "../console.js";
+import { DevConsoleDef } from "../debug/console.js";
 import { clamp, jitter, max, sum } from "../math.js";
 import { CY } from "../render/gpu-registry.js";
 import { assert, dbgOnce } from "../util.js";
@@ -87,8 +87,11 @@ import {
 } from "../primatives.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
 import { startTowers } from "../games/tower.js";
-import { createGraph3DAxesMesh, createGraph3DDataMesh } from "../gizmos.js";
-import { createGraph3D } from "../utils-gizmos.js";
+import {
+  createGraph3DAxesMesh,
+  createGraph3DDataMesh,
+} from "../debug/gizmos.js";
+import { createGraph3D } from "../debug/utils-gizmos.js";
 import { ScoreDef } from "../smol/score.js";
 import { LandMapTexPtr, LevelMapDef, setMap } from "../smol/level-map.js";
 import { GrassCutTexPtr, grassPoolPtr } from "../grass/std-grass.js";

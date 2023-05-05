@@ -67,7 +67,7 @@ import {
   TETRA_MESH,
   TRI_FENCE,
 } from "./primatives.js";
-import { createGizmoMesh } from "./gizmos.js";
+import { createGizmoMesh } from "./debug/gizmos.js";
 
 // TODO: load these via streaming
 // TODO(@darzu): it's really bad that all these assets are loaded for each game

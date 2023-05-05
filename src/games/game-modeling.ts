@@ -2,7 +2,7 @@ import { AssetsDef } from "../assets.js";
 import { CameraDef } from "../camera.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
-import { DevConsoleDef } from "../console.js";
+import { DevConsoleDef } from "../debug/console.js";
 import { EM } from "../ecs/entity-manager.js";
 import { AngularVelocityDef, LinearVelocityDef } from "../physics/motion.js";
 import { PositionDef, ScaleDef } from "../physics/transform.js";

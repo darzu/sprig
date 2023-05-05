@@ -54,7 +54,7 @@ import { callInitFns } from "../init.js";
 import { registerGrappleDbgSystems } from "./grapple.js";
 import { registerTurretSystems } from "./turret.js";
 import { registerUISystems } from "./ui.js";
-import { registerDevSystems } from "../console.js";
+import { registerDevSystems } from "../debug/console.js";
 import { registerControllableSystems } from "./controllable.js";
 import { registerShipSystems } from "../hyperspace/hyperspace-ship.js";
 import { registerGameStateSystems } from "../hyperspace/hyperspace-gamestate.js";

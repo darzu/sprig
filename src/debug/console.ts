@@ -1,12 +1,15 @@
-import { EM, EntityManager } from "./ecs/entity-manager.js";
-import { PERF_DBG_F32S, PERF_DBG_GPU } from "./flags.js";
-import { TextDef } from "./games/ui.js";
-import { InputsDef } from "./inputs.js";
-import { _lastCollisionTestTimeMs, _cellChecks } from "./physics/broadphase.js";
-import { _doesOverlapAABBs, _enclosedBys } from "./physics/aabb.js";
-import { _gpuQueueBufferWriteBytes } from "./render/data-webgpu.js";
-import { RendererDef } from "./render/renderer-ecs.js";
-import { _f32sCount } from "./sprig-matrix.js";
+import { EM, EntityManager } from "../ecs/entity-manager.js";
+import { PERF_DBG_F32S, PERF_DBG_GPU } from "../flags.js";
+import { TextDef } from "../games/ui.js";
+import { InputsDef } from "../inputs.js";
+import {
+  _lastCollisionTestTimeMs,
+  _cellChecks,
+} from "../physics/broadphase.js";
+import { _doesOverlapAABBs, _enclosedBys } from "../physics/aabb.js";
+import { _gpuQueueBufferWriteBytes } from "../render/data-webgpu.js";
+import { RendererDef } from "../render/renderer-ecs.js";
+import { _f32sCount } from "../sprig-matrix.js";
 
 export const DevConsoleDef = EM.defineComponent("dev", () => {
   const stats = {

@@ -18,7 +18,7 @@ import { createHsShip } from "./hyperspace-ship.js";
 import { GameStateDef } from "./hyperspace-gamestate.js";
 import { createGridComposePipelines } from "../render/pipelines/std-compose.js";
 import { noisePipes } from "../render/pipelines/std-noise.js";
-import { DevConsoleDef } from "../console.js";
+import { DevConsoleDef } from "../debug/console.js";
 import {
   initOcean,
   OceanDef,

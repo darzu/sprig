@@ -5,8 +5,8 @@ import { tick } from "./time.js";
 import { InputsDef, registerInputsSystem } from "./inputs.js";
 import { MeDef, JoinDef, HostDef, PeerNameDef } from "./net/components.js";
 import { addEventComponents } from "./net/events.js";
-import { dbg } from "./debugger.js";
-import { DevConsoleDef } from "./console.js";
+import { dbg } from "./debug/debugger.js";
+import { DevConsoleDef } from "./debug/console.js";
 import { initReboundSandbox } from "./games/game-rebound.js";
 // import { callClothSystems } from "./game/cloth.js";
 import { registerCommonSystems } from "./games/game-init.js";
@@ -45,7 +45,7 @@ const ALL_GAMES = [
   "modeling",
   "ld53",
 ] as const;
-const GAME: (typeof ALL_GAMES)[number] = "grass";
+const GAME: (typeof ALL_GAMES)[number] = "ld53";
 
 // Run simulation with a fixed timestep @ 60hz
 const TIMESTEP = 1000 / 60;

@@ -38,7 +38,7 @@ import { quatFromUpForward, randNormalVec3 } from "../utils-3d.js";
 import { randColor } from "../utils-game.js";
 import { GrassCutTexPtr, grassPoolPtr, renderGrassPipe } from "./std-grass.js";
 import { WindDef } from "../wind/wind.js";
-import { DevConsoleDef } from "../console.js";
+import { DevConsoleDef } from "../debug/console.js";
 import { clamp, jitter, max, sum } from "../math.js";
 import { createShip, ShipDef } from "../smol/ship.js";
 import { assert } from "../util.js";
@@ -59,7 +59,7 @@ import { skyPipeline } from "../render/pipelines/std-sky.js";
 import { createFlatQuadMesh, makeDome } from "../primatives.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
 import { startTowers } from "../games/tower.js";
-import { createGraph3D } from "../utils-gizmos.js";
+import { createGraph3D } from "../debug/utils-gizmos.js";
 
 /*
 NOTES:

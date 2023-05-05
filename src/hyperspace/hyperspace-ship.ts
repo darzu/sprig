@@ -37,7 +37,7 @@ import {
 import { createRef, defineNetEntityHelper, Ref } from "../ecs/em_helpers.js";
 import { DetectedEventsDef, eventWizard } from "../net/events.js";
 import { MotionSmoothingDef } from "../motion-smoothing.js";
-import { DevConsoleDef } from "../console.js";
+import { DevConsoleDef } from "../debug/console.js";
 import { constructNetTurret, TurretDef } from "../games/turret.js";
 import { YawPitchDef } from "../yawpitch.js";
 import { UVPosDef, UVDirDef } from "../ocean/ocean.js";

@@ -1,6 +1,6 @@
-import { ColorDef } from "./color/color-ecs.js";
-import { ENDESGA16 } from "./color/palettes.js";
-import { EM } from "./ecs/entity-manager.js";
+import { ColorDef } from "../color/color-ecs.js";
+import { ENDESGA16 } from "../color/palettes.js";
+import { EM } from "../ecs/entity-manager.js";
 import {
   createGraph3DAxesMesh,
   createGraph3DDataMesh,
@@ -11,15 +11,15 @@ import {
   createAABB,
   updateAABBWithPoint,
   getSizeFromAABB,
-} from "./physics/aabb.js";
+} from "../physics/aabb.js";
 import {
   PositionDef,
   PhysicsParentDef,
   ScaleDef,
-} from "./physics/transform.js";
-import { RenderableConstructDef } from "./render/renderer-ecs.js";
-import { V, vec3 } from "./sprig-matrix.js";
-import { vec3Dbg } from "./utils-3d.js";
+} from "../physics/transform.js";
+import { RenderableConstructDef } from "../render/renderer-ecs.js";
+import { V, vec3 } from "../sprig-matrix.js";
+import { vec3Dbg } from "../utils-3d.js";
 
 export function getDataDomain(data: vec3[][]): AABB {
   const aabb = createAABB(

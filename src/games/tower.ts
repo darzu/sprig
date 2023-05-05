@@ -74,8 +74,8 @@ import { WorldFrameDef } from "../physics/nonintersection.js";
 import { fireBullet, simulateBullet } from "../cannons/bullet.js";
 import { dbgOnce } from "../util.js";
 import { drawBall } from "../utils-game.js";
-import { createGraph3DAxesMesh, createLineMesh } from "../gizmos.js";
-import { createGraph3D, getDataDomain } from "../utils-gizmos.js";
+import { createGraph3DAxesMesh, createLineMesh } from "../debug/gizmos.js";
+import { createGraph3D, getDataDomain } from "../debug/utils-gizmos.js";
 import {
   mkProjectileAngleFromRangeFn,
   projectilePosition,

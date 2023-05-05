@@ -1,15 +1,15 @@
-import { CameraFollowDef } from "./camera.js";
-import { ComponentDef, EM, Entity, EntityW } from "./ecs/entity-manager.js";
+import { CameraFollowDef } from "../camera.js";
+import { ComponentDef, EM, Entity, EntityW } from "../ecs/entity-manager.js";
 import {
   PERF_DBG_F32S,
   PERF_DBG_F32S_BLAME,
   PERF_DBG_F32S_TEMP_BLAME,
   PERF_DBG_GPU_BLAME,
-} from "./flags.js";
-import { SyncDef } from "./net/components.js";
-import { PositionDef, RotationDef } from "./physics/transform.js";
-import { assert, dbgClearBlame, dbgGetBlame } from "./util.js";
-import { quatDbg, vec3Dbg, vec4Dbg } from "./utils-3d.js";
+} from "../flags.js";
+import { SyncDef } from "../net/components.js";
+import { PositionDef, RotationDef } from "../physics/transform.js";
+import { assert, dbgClearBlame, dbgGetBlame } from "../util.js";
+import { quatDbg, vec3Dbg, vec4Dbg } from "../utils-3d.js";
 
 // TODO(@darzu): debugging helpers
 interface DbgCmp extends ComponentDef {

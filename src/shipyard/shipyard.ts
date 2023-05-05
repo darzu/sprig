@@ -31,7 +31,7 @@ import {
 import { BLACK } from "../assets.js";
 import { mkHalfEdgeQuadMesh } from "../primatives.js";
 import { HFace, meshToHalfEdgePoly } from "../half-edge.js";
-import { createGizmoMesh } from "../gizmos.js";
+import { createGizmoMesh } from "../debug/gizmos.js";
 import { EM } from "../ecs/entity-manager.js";
 import {
   PositionDef,
