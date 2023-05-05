@@ -4,7 +4,7 @@ import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
 import { SyncDef, AuthorityDef, Me, MeDef } from "../net/components.js";
 import { Serializer, Deserializer } from "../serialize.js";
-import { FinishedDef } from "../build.js";
+import { FinishedDef } from "../ecs/em_helpers.js";
 import { Assets, AssetsDef } from "../assets.js";
 import { SpringType, SpringGridDef, ForceDef } from "./spring.js";
 import { onInit } from "../init.js";

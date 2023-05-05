@@ -6,7 +6,7 @@ import { InputsDef } from "../inputs.js";
 import { EM, Entity, EntityManager, EntityW } from "../ecs/entity-manager.js";
 import { TimeDef } from "../time.js";
 import { ColorDef } from "../color-ecs.js";
-import { FinishedDef } from "../build.js";
+import { FinishedDef } from "../ecs/em_helpers.js";
 import {
   RenderableConstructDef,
   RenderableDef,

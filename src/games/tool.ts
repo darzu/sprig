@@ -1,4 +1,4 @@
-import { FinishedDef } from "../build.js";
+import { FinishedDef } from "../ecs/em_helpers.js";
 import { AABBCollider, ColliderDef } from "../physics/collider.js";
 import { Component, EM, Entity, EntityManager } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";

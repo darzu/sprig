@@ -1,4 +1,3 @@
-import { FinishedDef } from "../build.js";
 import {
   EntityManager,
   ComponentDef,
@@ -215,3 +214,5 @@ export function createRef<CS extends ComponentDef[]>(
     return thunk;
   }
 }
+
+export const FinishedDef = EM.defineComponent("finished", () => true);
