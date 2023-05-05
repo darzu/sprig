@@ -1,4 +1,4 @@
-import { CanvasDef } from "../canvas.js";
+import { CanvasDef } from "../render/canvas.js";
 import { createRef } from "../ecs/em_helpers.js";
 import { EM } from "../ecs/entity-manager.js";
 import { VERBOSE_LOG } from "../flags.js";

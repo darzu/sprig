@@ -1,4 +1,4 @@
-import { CanvasDef } from "../canvas.js";
+import { CanvasDef } from "../render/canvas.js";
 import { Component, EM, EntityManager } from "../ecs/entity-manager.js";
 import { ENABLE_AUDIO } from "../flags.js";
 import { createIdxPool, createIdxRing, IdxPool } from "../idx-pool.js";

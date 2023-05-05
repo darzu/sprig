@@ -25,7 +25,7 @@ import {
   registerBuildBulletsSystem,
   registerBulletUpdate,
 } from "../cannons/bullet.js";
-import { registerInitCanvasSystem } from "../canvas.js";
+import { registerInitCanvasSystem } from "../render/canvas.js";
 import {
   registerConstructRenderablesSystem,
   registerRenderer,

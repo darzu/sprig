@@ -1,5 +1,5 @@
-import { Component, EM, EntityManager } from "./ecs/entity-manager.js";
-import { VERBOSE_LOG } from "./flags.js";
+import { Component, EM, EntityManager } from "../ecs/entity-manager.js";
+import { VERBOSE_LOG } from "../flags.js";
 
 export const CanvasDef = EM.defineComponent(
   "htmlCanvas",

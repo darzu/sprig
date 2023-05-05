@@ -72,7 +72,7 @@ import { InputsDef } from "../inputs.js";
 import { raiseManTurret } from "../games/turret.js";
 import { TextDef } from "../games/ui.js";
 import { VERBOSE_LOG } from "../flags.js";
-import { CanvasDef } from "../canvas.js";
+import { CanvasDef } from "../render/canvas.js";
 import { createJfaPipelines } from "../render/pipelines/std-jump-flood.js";
 import { createGridComposePipelines } from "../render/pipelines/std-compose.js";
 import { createTextureReader } from "../render/cpu-texture.js";

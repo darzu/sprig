@@ -1,4 +1,4 @@
-import { CanvasDef } from "./canvas.js";
+import { CanvasDef } from "./render/canvas.js";
 import {
   Component,
   EM,
