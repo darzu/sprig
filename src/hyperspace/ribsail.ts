@@ -1,5 +1,5 @@
 import { AssetsDef } from "../assets.js";
-import { ColorDef } from "../color-ecs.js";
+import { ColorDef } from "../color/color-ecs.js";
 import { createRef } from "../ecs/em_helpers.js";
 import { EM, EntityW } from "../ecs/entity-manager.js";
 import {

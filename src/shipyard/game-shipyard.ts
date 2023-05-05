@@ -1,6 +1,6 @@
 import { CameraDef, CameraFollowDef } from "../camera.js";
 import { CanvasDef } from "../canvas.js";
-import { ColorDef } from "../color-ecs.js";
+import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { DeadDef, DeletedDef } from "../delete.js";
 import { createRef } from "../ecs/em_helpers.js";

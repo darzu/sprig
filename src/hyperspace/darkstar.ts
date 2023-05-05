@@ -10,7 +10,7 @@ import { vec3Dbg } from "../utils-3d.js";
 import { AssetsDef } from "../assets.js";
 import { PointLightDef } from "../render/lights.js";
 import { FLAG_UNLIT, RenderDataStdDef } from "../render/pipelines/std-scene.js";
-import { ColorDef } from "../color-ecs.js";
+import { ColorDef } from "../color/color-ecs.js";
 import { HyperspaceGameState, GameStateDef } from "./hyperspace-gamestate.js";
 
 const DARKSTAR_SPEED = 1;

@@ -1,6 +1,6 @@
 import { BLACK, AssetsDef } from "../assets.js";
 import { AudioDef } from "../audio/audio.js";
-import { ColorDef } from "../color-ecs.js";
+import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { DeadDef } from "../delete.js";
 import { createRef } from "../ecs/em_helpers.js";

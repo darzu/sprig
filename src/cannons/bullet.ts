@@ -7,7 +7,7 @@ import {
 } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V, tV } from "../sprig-matrix.js";
 import { FinishedDef } from "../ecs/em_helpers.js";
-import { ColorDef } from "../color-ecs.js";
+import { ColorDef } from "../color/color-ecs.js";
 import {
   RenderableConstructDef,
   RenderableDef,

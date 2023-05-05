@@ -1,6 +1,6 @@
 import { BLACK, AssetsDef } from "../assets.js";
 import { AudioDef } from "../audio/audio.js";
-import { ColorDef } from "../color-ecs.js";
+import { ColorDef } from "../color/color-ecs.js";
 import {
   AllEndesga16,
   AllEndesga16Names,

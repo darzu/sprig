@@ -12,7 +12,7 @@ import {
   PhysicsResultsDef,
   WorldFrameDef,
 } from "../physics/nonintersection.js";
-import { clearTint, setTint, TintsDef } from "../color-ecs.js";
+import { clearTint, setTint, TintsDef } from "../color/color-ecs.js";
 import { DeletedDef } from "../delete.js";
 
 export const InteractableDef = EM.defineComponent(

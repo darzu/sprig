@@ -1,6 +1,6 @@
 import { CameraDef, CameraComputedDef } from "../camera.js";
 import { CanvasDef } from "../canvas.js";
-import { ColorDef } from "../color-ecs.js";
+import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { dbg } from "../debugger.js";
 import { EM, EntityManager, EntityW } from "../ecs/entity-manager.js";

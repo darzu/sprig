@@ -1,6 +1,6 @@
 import { AssetsDef } from "../assets.js";
 import { CameraDef, CameraComputedDef } from "../camera.js";
-import { ColorDef } from "../color-ecs.js";
+import { ColorDef } from "../color/color-ecs.js";
 import { AllEndesga16, ENDESGA16 } from "../color/palettes.js";
 import { DevConsoleDef } from "../console.js";
 import { EM, EntityW } from "../ecs/entity-manager.js";

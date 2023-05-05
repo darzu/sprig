@@ -1,6 +1,6 @@
 // TODO(@darzu): hacky file split
 
-import { ColorDef } from "./color-ecs.js";
+import { ColorDef } from "./color/color-ecs.js";
 import { EntityW, EntityManager, EM } from "./ecs/entity-manager.js";
 import { AssetsDef, BLACK } from "./assets.js";
 import { GravityDef } from "./games/gravity.js";

@@ -1,4 +1,4 @@
-import { ColorDef } from "../color-ecs.js";
+import { ColorDef } from "../color/color-ecs.js";
 import { EM, EntityW } from "../ecs/entity-manager.js";
 import { AssetsDef, GameMesh, gameMeshFromMesh } from "../assets.js";
 import { gameplaySystems } from "../games/ghost.js";

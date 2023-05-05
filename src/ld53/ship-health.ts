@@ -1,5 +1,5 @@
 import { AssetsDef } from "../assets.js";
-import { ColorDef } from "../color-ecs.js";
+import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { DeadDef } from "../delete.js";
 import { createRef, Ref } from "../ecs/em_helpers.js";

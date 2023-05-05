@@ -49,7 +49,7 @@ import {
   HypMastPropsDef,
 } from "./hypersail.js";
 import { makeOrrery, OrreryDef } from "../games/orrery.js";
-import { ColorDef } from "../color-ecs.js";
+import { ColorDef } from "../color/color-ecs.js";
 import { createGem, GemPropsDef } from "./gem.js";
 import { ENDESGA16 } from "../color/palettes.js";
 

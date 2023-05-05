@@ -14,7 +14,7 @@ import {
   updateFrameFromPosRotScale,
 } from "../physics/transform.js";
 import { AssetsDef } from "../assets.js";
-import { ColorDef } from "../color-ecs.js";
+import { ColorDef } from "../color/color-ecs.js";
 import { assert } from "../util.js";
 import { CameraComputedDef } from "../camera.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";

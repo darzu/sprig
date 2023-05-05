@@ -1,7 +1,7 @@
 import { EM, EntityManager } from "../ecs/entity-manager.js";
 import { TimeDef } from "../time.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
-import { ColorDef } from "../color-ecs.js";
+import { ColorDef } from "../color/color-ecs.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { PhysicsParentDef, PositionDef } from "../physics/transform.js";
 import { ColliderDef } from "../physics/collider.js";

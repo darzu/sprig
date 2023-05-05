@@ -1,5 +1,5 @@
 import { AssetsDef } from "../assets.js";
-import { ColorDef } from "../color-ecs.js";
+import { ColorDef } from "../color/color-ecs.js";
 import { defineNetEntityHelper } from "../ecs/em_helpers.js";
 import { EM, EntityManager } from "../ecs/entity-manager.js";
 import { MeDef } from "../net/components.js";

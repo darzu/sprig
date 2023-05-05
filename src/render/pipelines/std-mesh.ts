@@ -1,4 +1,9 @@
-import { ColorDef, TintsDef, applyTints, AlphaDef } from "../../color-ecs.js";
+import {
+  ColorDef,
+  TintsDef,
+  applyTints,
+  AlphaDef,
+} from "../../color/color-ecs.js";
 import { ENDESGA16 } from "../../color/palettes.js";
 import { DeadDef, DeletedDef } from "../../delete.js";
 import { EntityW } from "../../ecs/entity-manager.js";

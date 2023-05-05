@@ -1,6 +1,6 @@
 import { EntityManager, EntityW } from "../ecs/entity-manager.js";
 import { AssetsDef } from "../assets.js";
-import { ColorDef } from "../color-ecs.js";
+import { ColorDef } from "../color/color-ecs.js";
 import { LocalPlayerDef } from "../games/player.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
