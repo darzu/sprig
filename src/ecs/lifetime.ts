@@ -1,7 +1,7 @@
-import { DeadDef } from "../ecs/delete.js";
-import { Component, EM, EntityManager } from "../ecs/entity-manager.js";
+import { DeadDef } from "./delete.js";
+import { Component, EM, EntityManager } from "./entity-manager.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
-import { TimeDef } from "../time.js";
+import { TimeDef } from "../time/time.js";
 
 export const LifetimeDef = EM.defineComponent(
   "lifetime",

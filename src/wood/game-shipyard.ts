@@ -6,7 +6,7 @@ import { DeadDef, DeletedDef } from "../ecs/delete.js";
 import { createRef } from "../ecs/em_helpers.js";
 import { EM, Entity, EntityManager, EntityW } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
-import { InputsDef } from "../inputs.js";
+import { InputsDef } from "../input/inputs.js";
 import { jitter } from "../utils/math.js";
 import { AudioDef, randChordId } from "../audio/audio.js";
 import {
@@ -49,7 +49,7 @@ import {
 } from "../render/renderer-ecs.js";
 import { tempMat4, tempVec3 } from "../temp-pool.js";
 import { assert } from "../utils/util.js";
-import { TimeDef } from "../time.js";
+import { TimeDef } from "../time/time.js";
 import {
   createEmptyMesh,
   createTimberBuilder,
@@ -78,7 +78,7 @@ import { ControllableDef } from "../games/controllable.js";
 import { createGhost, GhostDef } from "../games/ghost.js";
 import { GravityDef } from "../games/gravity.js";
 import { InRangeDef, InteractableDef } from "../games/interact.js";
-import { LifetimeDef } from "../games/lifetime.js";
+import { LifetimeDef } from "../ecs/lifetime.js";
 import { createPlayer, LocalPlayerDef, PlayerDef } from "../games/player.js";
 import { TextDef } from "../games/ui.js";
 import { createIdxPool } from "../utils/idx-pool.js";

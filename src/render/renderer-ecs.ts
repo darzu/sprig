@@ -9,7 +9,7 @@ import {
   updateFrameFromPosRotScale,
   copyFrame,
 } from "../physics/transform.js";
-import { MotionSmoothingDef } from "../motion-smoothing.js";
+import { MotionSmoothingDef } from "./motion-smoothing.js";
 import { DeadDef, DeletedDef } from "../ecs/delete.js";
 import { meshPoolPtr } from "./pipelines/std-scene.js";
 import { CanvasDef } from "./canvas.js";
@@ -26,7 +26,7 @@ import {
 } from "../utils/utils-3d.js";
 import { ShadersDef, ShaderSet } from "./shader-loader.js";
 import { dbgLogOnce } from "../utils/util.js";
-import { TimeDef } from "../time.js";
+import { TimeDef } from "../time/time.js";
 import { PartyDef } from "../games/party.js";
 import { PointLightDef } from "./lights.js";
 import { assert } from "../utils/util.js";

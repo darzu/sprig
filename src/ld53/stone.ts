@@ -8,7 +8,7 @@ import { Component, EM, Entity, EntityW } from "../ecs/entity-manager.js";
 import { createEntityPool } from "../ecs/entity-pool.js";
 import { Bullet, BulletDef, fireBullet } from "../cannons/bullet.js";
 import { GravityDef } from "../games/gravity.js";
-import { LifetimeDef } from "../games/lifetime.js";
+import { LifetimeDef } from "../ecs/lifetime.js";
 import { PartyDef } from "../games/party.js";
 import { Path } from "../wood/shipyard.js";
 import { jitter } from "../utils/math.js";
@@ -42,7 +42,7 @@ import {
   RendererDef,
 } from "../render/renderer-ecs.js";
 import { mat4, tV, V, vec3, quat } from "../sprig-matrix.js";
-import { TimeDef } from "../time.js";
+import { TimeDef } from "../time/time.js";
 import { assert } from "../utils/util.js";
 import { vec3Dbg } from "../utils/utils-3d.js";
 import { SoundSetDef } from "../audio/sound-loader.js";

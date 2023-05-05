@@ -4,7 +4,7 @@ import { GameMesh, gameMeshFromMesh } from "../meshes/assets.js";
 import { gameplaySystems } from "../games/ghost.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { importObj } from "../meshes/import_obj.js";
-import { InputsDef } from "../inputs.js";
+import { InputsDef } from "../input/inputs.js";
 import { PhysicsResultsDef } from "../physics/nonintersection.js";
 import { scaleMesh } from "../meshes/mesh.js";
 import { RendererDef } from "../render/renderer-ecs.js";

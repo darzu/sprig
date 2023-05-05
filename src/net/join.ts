@@ -21,7 +21,7 @@ import {
   send,
 } from "./components.js";
 import { MessageType, MAX_MESSAGE_SIZE } from "./message.js";
-import { TimeDef } from "../time.js";
+import { TimeDef } from "../time/time.js";
 
 const JOIN_RETRANSMIT = 100;
 

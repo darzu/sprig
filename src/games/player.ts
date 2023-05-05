@@ -2,9 +2,9 @@
 
 // player controller component and system
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
-import { InputsDef } from "../inputs.js";
+import { InputsDef } from "../input/inputs.js";
 import { EM, Entity, EntityManager, EntityW } from "../ecs/entity-manager.js";
-import { TimeDef } from "../time.js";
+import { TimeDef } from "../time/time.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { FinishedDef } from "../ecs/em_helpers.js";
 import {
@@ -29,7 +29,7 @@ import { tempVec3 } from "../temp-pool.js";
 import { cloneMesh, scaleMesh3 } from "../meshes/mesh.js";
 import { AssetsDef } from "../meshes/assets.js";
 import { LinearVelocityDef } from "../physics/motion.js";
-import { MotionSmoothingDef } from "../motion-smoothing.js";
+import { MotionSmoothingDef } from "../render/motion-smoothing.js";
 import { ModelerDef } from "./modeler.js";
 import { DeletedDef } from "../ecs/delete.js";
 import {

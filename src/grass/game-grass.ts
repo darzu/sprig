@@ -45,7 +45,7 @@ import { assert } from "../utils/util.js";
 import { texTypeToBytes } from "../render/gpu-struct.js";
 import { PartyDef } from "../games/party.js";
 import { copyAABB, createAABB } from "../physics/aabb.js";
-import { InputsDef } from "../inputs.js";
+import { InputsDef } from "../input/inputs.js";
 import { ScoreDef } from "../smol/score.js";
 import { raiseManTurret } from "../turret/turret.js";
 import { TextDef } from "../games/ui.js";

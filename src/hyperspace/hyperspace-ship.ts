@@ -26,7 +26,7 @@ import { createCannon } from "../cannons/cannon.js";
 import { AudioDef } from "../audio/audio.js";
 import { LocalPlayerDef, PlayerDef } from "../games/player.js";
 import { CameraDef } from "../camera/camera.js";
-import { InputsDef } from "../inputs.js";
+import { InputsDef } from "../input/inputs.js";
 import { InRangeDef, InteractableDef } from "../games/interact.js";
 import {
   endGame,
@@ -36,7 +36,7 @@ import {
 } from "./hyperspace-gamestate.js";
 import { createRef, defineNetEntityHelper, Ref } from "../ecs/em_helpers.js";
 import { DetectedEventsDef, eventWizard } from "../net/events.js";
-import { MotionSmoothingDef } from "../motion-smoothing.js";
+import { MotionSmoothingDef } from "../render/motion-smoothing.js";
 import { DevConsoleDef } from "../debug/console.js";
 import { constructNetTurret, TurretDef } from "../turret/turret.js";
 import { YawPitchDef } from "../turret/yawpitch.js";

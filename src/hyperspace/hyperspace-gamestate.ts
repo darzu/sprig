@@ -11,8 +11,8 @@ import {
   PositionDef,
   RotationDef,
 } from "../physics/transform.js";
-import { TimeDef } from "../time.js";
-import { LifetimeDef } from "../games/lifetime.js";
+import { TimeDef } from "../time/time.js";
+import { LifetimeDef } from "../ecs/lifetime.js";
 import { LocalPlayerDef, PlayerDef, PlayerPropsDef } from "../games/player.js";
 import {
   createHsShip,

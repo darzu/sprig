@@ -16,7 +16,7 @@ import {
   WorldFrameDef,
 } from "./nonintersection.js";
 import { tempVec3 } from "../temp-pool.js";
-import { TimeDef } from "../time.js";
+import { TimeDef } from "../time/time.js";
 import {
   Frame,
   PhysicsParent,

@@ -1,5 +1,5 @@
 import { EntityManager } from "../ecs/entity-manager.js";
-import { InputsDef } from "../inputs.js";
+import { InputsDef } from "../input/inputs.js";
 import { registerInitTransforms } from "../physics/transform.js";
 import { LocalPlayerDef, registerPlayerSystems } from "./player.js";
 import {
@@ -44,10 +44,10 @@ import { registerModeler } from "./modeler.js";
 import {
   registerMotionSmoothingRecordLocationsSystem,
   registerMotionSmoothingSystems,
-} from "../motion-smoothing.js";
+} from "../render/motion-smoothing.js";
 import { registerCursorSystems } from "./cursor.js";
 import { registerPhysicsSystems } from "../physics/phys.js";
-import { registerUpdateLifetimes } from "./lifetime.js";
+import { registerUpdateLifetimes } from "../ecs/lifetime.js";
 import { registerMusicSystems } from "../audio/audio.js";
 import { registerNetDebugSystem } from "../net/net-debug.js";
 import { callInitFns } from "../init.js";

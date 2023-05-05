@@ -2,7 +2,7 @@ import { Component, EM } from "../ecs/entity-manager.js";
 import { randInt } from "../utils/math.js";
 import { RendererDef } from "../render/renderer-ecs.js";
 import { V, vec3 } from "../sprig-matrix.js";
-import { TimeDef } from "../time.js";
+import { TimeDef } from "../time/time.js";
 import { range } from "../utils/util.js";
 
 const STEPS_ON_WIND_DIR = 6000;

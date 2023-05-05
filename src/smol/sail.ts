@@ -31,7 +31,7 @@ import { ColorDef } from "../color/color-ecs.js";
 import { AssetsDef } from "../meshes/assets.js";
 import { ColliderDef } from "../physics/collider.js";
 import { constructNetTurret, TurretDef } from "../turret/turret.js";
-import { InputsDef } from "../inputs.js";
+import { InputsDef } from "../input/inputs.js";
 import { LocalPlayerDef, PlayerDef } from "../games/player.js";
 import { DeletedDef } from "../ecs/delete.js";
 import { clamp } from "../utils/math.js";

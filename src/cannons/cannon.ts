@@ -1,5 +1,5 @@
 import { EM, EntityManager } from "../ecs/entity-manager.js";
-import { TimeDef } from "../time.js";
+import { TimeDef } from "../time/time.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
@@ -13,7 +13,7 @@ import { LocalPlayerDef, PlayerDef } from "../games/player.js";
 import { AssetsDef } from "../meshes/assets.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import { AudioDef, randChordId } from "../audio/audio.js";
-import { InputsDef } from "../inputs.js";
+import { InputsDef } from "../input/inputs.js";
 import { DeletedDef } from "../ecs/delete.js";
 import { defineNetEntityHelper } from "../ecs/em_helpers.js";
 import { constructNetTurret, TurretDef } from "../turret/turret.js";

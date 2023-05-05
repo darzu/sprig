@@ -1,5 +1,5 @@
-import { vec2, vec3, vec4, quat, mat4, V } from "./sprig-matrix.js";
-import { packI16s, TupleN } from "./utils/util.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
+import { packI16s, TupleN } from "../utils/util.js";
 
 export interface HexGrid<D> {
   _grid: Map<number, D>;

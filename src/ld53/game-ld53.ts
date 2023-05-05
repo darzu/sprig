@@ -68,7 +68,7 @@ import {
   updateAABBWithPoint,
 } from "../physics/aabb.js";
 import { rasterizeTri } from "../utils/raster.js";
-import { InputsDef } from "../inputs.js";
+import { InputsDef } from "../input/inputs.js";
 import { raiseManTurret } from "../turret/turret.js";
 import { TextDef } from "../games/ui.js";
 import { VERBOSE_LOG } from "../flags.js";

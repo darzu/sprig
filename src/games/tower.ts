@@ -45,7 +45,7 @@ import {
 } from "../render/renderer-ecs.js";
 import { V } from "../sprig-matrix.js";
 import { tempVec3 } from "../temp-pool.js";
-import { TimeDef } from "../time.js";
+import { TimeDef } from "../time/time.js";
 import {
   TimberBuilder,
   WoodHealthDef,

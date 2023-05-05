@@ -8,7 +8,7 @@ import { ShipHealthDef } from "../ld53/ship-health.js";
 import { createAABB, pointInAABB } from "../physics/aabb.js";
 import { PhysicsStateDef } from "../physics/nonintersection.js";
 import { PhysicsParentDef } from "../physics/transform.js";
-import { TimeDef } from "../time.js";
+import { TimeDef } from "../time/time.js";
 import { WoodHealthDef } from "../wood/wood.js";
 import { setMap } from "./level-map.js";
 import { MapPaths } from "./map-loader.js";

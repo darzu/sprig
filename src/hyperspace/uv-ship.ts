@@ -2,7 +2,7 @@ import { DevConsoleDef } from "../debug/console.js";
 import { EM } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { onInit } from "../init.js";
-import { InputsDef } from "../inputs.js";
+import { InputsDef } from "../input/inputs.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { tempVec2 } from "../temp-pool.js";
 import { vec2Dbg, vec3Dbg } from "../utils/utils-3d.js";

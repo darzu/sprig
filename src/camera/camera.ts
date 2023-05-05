@@ -14,7 +14,7 @@ import { PositionDef, RotationDef } from "../physics/transform.js";
 import { RendererWorldFrameDef } from "../render/renderer-ecs.js";
 import { computeNewError, reduceError } from "../utils/smoothing.js";
 import { tempQuat, tempVec3 } from "../temp-pool.js";
-import { TimeDef } from "../time.js";
+import { TimeDef } from "../time/time.js";
 import { yawpitchToQuat } from "../turret/yawpitch.js";
 import { createAABB } from "../physics/aabb.js";
 import { assert, dbgDirOnce, resizeArray } from "../utils/util.js";

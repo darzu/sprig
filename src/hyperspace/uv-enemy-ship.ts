@@ -5,7 +5,7 @@ import {
   EntityW,
   Component,
 } from "../ecs/entity-manager.js";
-import { TimeDef } from "../time.js";
+import { TimeDef } from "../time/time.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
 import { jitter } from "../utils/math.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
@@ -22,14 +22,14 @@ import { AuthorityDef, MeDef } from "../net/components.js";
 import { aabbCenter } from "../physics/aabb.js";
 import { Assets, AssetsDef, GameMesh } from "../meshes/assets.js";
 import { AngularVelocityDef, LinearVelocityDef } from "../physics/motion.js";
-import { MotionSmoothingDef } from "../motion-smoothing.js";
+import { MotionSmoothingDef } from "../render/motion-smoothing.js";
 import {
   PhysicsResultsDef,
   WorldFrameDef,
 } from "../physics/nonintersection.js";
 import { BulletDef, fireBullet } from "../cannons/bullet.js";
 import { DeletedDef, OnDeleteDef } from "../ecs/delete.js";
-import { LifetimeDef } from "../games/lifetime.js";
+import { LifetimeDef } from "../ecs/lifetime.js";
 import { HsShipLocalDef } from "./hyperspace-ship.js";
 import { defineNetEntityHelper } from "../ecs/em_helpers.js";
 import { DetectedEventsDef, eventWizard } from "../net/events.js";

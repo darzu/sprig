@@ -2,7 +2,7 @@ import { AnimateToDef } from "../animation/animate-to.js";
 import { createRef, Ref } from "../ecs/em_helpers.js";
 import { EM, EntityManager } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
-import { InputsDef } from "../inputs.js";
+import { InputsDef } from "../input/inputs.js";
 import { clamp } from "../utils/math.js";
 import {
   PhysicsParentDef,
@@ -30,7 +30,7 @@ import {
   RendererDef,
 } from "../render/renderer-ecs.js";
 import { tempVec2, tempVec3 } from "../temp-pool.js";
-import { TimeDef } from "../time.js";
+import { TimeDef } from "../time/time.js";
 import { asyncTimeout, dbgLogOnce, range } from "../utils/util.js";
 import {
   quatDbg,

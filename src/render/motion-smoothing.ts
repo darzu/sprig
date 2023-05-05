@@ -1,13 +1,13 @@
-import { EntityManager, EM, Component } from "./ecs/entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "./sprig-matrix.js";
-import { TimeDef } from "./time.js";
+import { EntityManager, EM, Component } from "../ecs/entity-manager.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
+import { TimeDef } from "../time/time.js";
 import {
   PositionDef,
   PhysicsParentDef,
   RotationDef,
-} from "./physics/transform.js";
-import { computeNewError, reduceError } from "./utils/smoothing.js";
-import { RemoteUpdatesDef } from "./net/components.js";
+} from "../physics/transform.js";
+import { computeNewError, reduceError } from "../utils/smoothing.js";
+import { RemoteUpdatesDef } from "../net/components.js";
 
 // Determined via binary search--smaller -> jerky, larger -> floaty
 const ERROR_SMOOTHING_FACTOR = 0.75 ** (60 / 1000);

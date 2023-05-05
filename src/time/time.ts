@@ -1,4 +1,4 @@
-import { Component, EM, EntityManager } from "./ecs/entity-manager.js";
+import { Component, EM, EntityManager } from "../ecs/entity-manager.js";
 
 export const TimeDef = EM.defineComponent("time", () => ({
   time: 0,

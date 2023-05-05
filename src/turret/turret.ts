@@ -22,7 +22,7 @@ import {
   setCameraFollowPosition,
 } from "../camera/camera.js";
 import { AABB, copyAABB, createAABB } from "../physics/aabb.js";
-import { InputsDef } from "../inputs.js";
+import { InputsDef } from "../input/inputs.js";
 import { clamp } from "../utils/math.js";
 import { DeletedDef } from "../ecs/delete.js";
 import { defineSerializableComponent } from "../ecs/em_helpers.js";

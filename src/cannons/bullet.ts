@@ -28,9 +28,9 @@ import {
   LinearVelocity,
   LinearVelocityDef,
 } from "../physics/motion.js";
-import { MotionSmoothingDef } from "../motion-smoothing.js";
-import { LifetimeDef } from "../games/lifetime.js";
-import { Time, TimeDef } from "../time.js";
+import { MotionSmoothingDef } from "../render/motion-smoothing.js";
+import { LifetimeDef } from "../ecs/lifetime.js";
+import { Time, TimeDef } from "../time/time.js";
 import { GravityDef } from "../games/gravity.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
