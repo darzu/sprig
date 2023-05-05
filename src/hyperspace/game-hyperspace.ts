@@ -13,7 +13,7 @@ import {
 import { initStars, renderStars } from "../render/pipelines/std-stars.js";
 import { AssetsDef } from "../meshes/assets.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
-import { createPlayer } from "../games/player.js";
+import { createPlayer } from "../games/hs-player.js";
 import { createHsShip } from "./hyperspace-ship.js";
 import { GameStateDef } from "./hyperspace-gamestate.js";
 import { createGridComposePipelines } from "../render/pipelines/std-compose.js";

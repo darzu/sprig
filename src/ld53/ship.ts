@@ -21,7 +21,7 @@ import {
 import { constructNetTurret, TurretDef } from "../turret/turret.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { YawPitchDef } from "../turret/yawpitch.js";
-import { PartyDef } from "./party.js";
+import { PartyDef } from "../camera/party.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import { InteractableDef } from "../input/interact.js";
 import { vec3Dbg } from "../utils/utils-3d.js";

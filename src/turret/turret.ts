@@ -15,7 +15,7 @@ import { ColliderDef } from "../physics/collider.js";
 import { AuthorityDef, SyncDef } from "../net/components.js";
 import { eventWizard } from "../net/events.js";
 import { InRangeDef, InteractableDef } from "../input/interact.js";
-import { LocalPlayerDef, PlayerDef } from "../games/player.js";
+import { LocalPlayerDef, PlayerDef } from "../games/hs-player.js";
 import {
   CameraFollowDef,
   CAMERA_OFFSETS,

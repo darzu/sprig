@@ -6,7 +6,7 @@ import { createRef, Ref } from "../ecs/em_helpers.js";
 import { Component, EM, Entity, EntityW } from "../ecs/entity-manager.js";
 import { createEntityPool } from "../ecs/entity-pool.js";
 import { fireBullet } from "../cannons/bullet.js";
-import { PartyDef } from "./party.js";
+import { PartyDef } from "../camera/party.js";
 import { jitter } from "../utils/math.js";
 import {
   AABB,

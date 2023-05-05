@@ -1,7 +1,7 @@
 import { EntityManager } from "./ecs/entity-manager.js";
 import { InputsDef } from "./input/inputs.js";
 import { registerInitTransforms } from "./physics/transform.js";
-import { LocalPlayerDef, registerPlayerSystems } from "./games/player.js";
+import { LocalPlayerDef, registerPlayerSystems } from "./games/hs-player.js";
 import {
   CameraDef,
   CameraFollowDef,

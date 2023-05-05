@@ -27,7 +27,7 @@ import {
 import { ShadersDef, ShaderSet } from "./shader-loader.js";
 import { dbgLogOnce } from "../utils/util.js";
 import { TimeDef } from "../time/time.js";
-import { PartyDef } from "../ld53/party.js";
+import { PartyDef } from "../camera/party.js";
 import { PointLightDef } from "./lights.js";
 import { assert } from "../utils/util.js";
 import {

@@ -9,7 +9,7 @@ import { EM, EntityManager, EntityW } from "../ecs/entity-manager.js";
 import { AssetsDef, gameMeshFromMesh } from "../meshes/assets.js";
 import { ControllableDef } from "../input/controllable.js";
 import { createGhost, GhostDef } from "../debug/ghost.js";
-import { LocalPlayerDef, PlayerDef } from "../games/player.js";
+import { LocalPlayerDef, PlayerDef } from "../games/hs-player.js";
 import {
   createGrassTile,
   createGrassTileset,
@@ -67,7 +67,7 @@ import { clamp, jitter, max, sum } from "../utils/math.js";
 import { CY } from "../render/gpu-registry.js";
 import { assert, dbgOnce } from "../utils/util.js";
 import { texTypeToBytes } from "../render/gpu-struct.js";
-import { PartyDef } from "./party.js";
+import { PartyDef } from "../camera/party.js";
 import {
   copyAABB,
   createAABB,

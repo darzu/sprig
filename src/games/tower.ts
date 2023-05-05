@@ -60,7 +60,7 @@ import {
   resetWoodState,
 } from "../wood/wood.js";
 import { ShipDef } from "../ld53/ship.js";
-import { PartyDef } from "../ld53/party.js";
+import { PartyDef } from "../camera/party.js";
 import {
   angleBetween,
   angleBetweenPosXZ,

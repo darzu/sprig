@@ -5,7 +5,7 @@ import { EM, EntityManager } from "../ecs/entity-manager.js";
 import { AssetsDef } from "../meshes/assets.js";
 import { ControllableDef } from "../input/controllable.js";
 import { createGhost, GhostDef } from "../debug/ghost.js";
-import { LocalPlayerDef, PlayerDef } from "../games/player.js";
+import { LocalPlayerDef, PlayerDef } from "../games/hs-player.js";
 import {
   createGrassTile,
   createGrassTileset,
@@ -43,7 +43,7 @@ import { clamp, jitter, max, sum } from "../utils/math.js";
 import { createShip, ShipDef } from "../ld53/ship.js";
 import { assert } from "../utils/util.js";
 import { texTypeToBytes } from "../render/gpu-struct.js";
-import { PartyDef } from "../ld53/party.js";
+import { PartyDef } from "../camera/party.js";
 import { copyAABB, createAABB } from "../physics/aabb.js";
 import { InputsDef } from "../input/inputs.js";
 import { ScoreDef } from "../ld53/score.js";
