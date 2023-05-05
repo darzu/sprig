@@ -58,7 +58,6 @@ import { SKY_MASK } from "../render/pipeline-masks.js";
 import { skyPipeline } from "../render/pipelines/std-sky.js";
 import { createFlatQuadMesh, makeDome } from "../meshes/primatives.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
-import { startTowers } from "../games/tower.js";
 import { createGraph3D } from "../debug/utils-gizmos.js";
 
 /*

@@ -5,8 +5,9 @@ import {
   EntityManager,
   EntityW,
 } from "../ecs/entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V, tV } from "../matrix/sprig-matrix.js";
 import {
+  Frame,
   PhysicsParentDef,
   PositionDef,
   RotationDef,
@@ -41,6 +42,7 @@ import { WindDef } from "./wind.js";
 import { YawPitchDef } from "../turret/yawpitch.js";
 import { assert } from "../utils/util.js";
 import { ENDESGA16 } from "../color/palettes.js";
+import { angleBetweenPosXZ, angleBetweenXZ } from "../utils/utils-3d.js";
 
 const SAIL_TURN_SPEED = 5;
 export const SAIL_FURL_RATE = 0.02;
@@ -304,3 +306,38 @@ EM.registerSystem(
 
 EM.addConstraint(["mastForce", "after", "applyWindToSail"]);
 EM.addConstraint(["mastForce", "after", "billow"]);
+
+// UNUSED:
+function useWindToTurn(
+  us: Frame,
+  targetPos: vec3,
+  windDir: vec3,
+  outSailRot: quat
+) {
+  // TODO(@darzu): expensive
+  const fwd = tV(0, 0, -1);
+  const behind = tV(0, 0, 1);
+
+  const angleToParty = angleBetweenPosXZ(
+    us.position,
+    us.rotation,
+    fwd,
+    targetPos
+  );
+  // turn the tower
+  // TODO(@darzu): DEBUGGING:
+  // const TURN_SPEED = 0.01;
+  const TURN_SPEED = 0.1;
+  if (Math.abs(angleToParty) > 0.01) {
+    const angleDelta = clamp(angleToParty, -TURN_SPEED, TURN_SPEED);
+    quat.rotateY(us.rotation, angleDelta, us.rotation);
+  }
+
+  // set the sail
+  const sailFwd = vec3.transformQuat(behind, us.rotation);
+  const angleToWind = angleBetweenXZ(sailFwd, windDir);
+  const sailAngle = angleToWind - angleToParty;
+  quat.rotateY(quat.IDENTITY, sailAngle, outSailRot);
+
+  // console.log(`turning by: ${angleBetween}`);
+}
