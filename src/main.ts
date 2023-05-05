@@ -22,7 +22,7 @@ import { initHyperspaceGame } from "./hyperspace/game-hyperspace.js";
 import { initClothSandbox } from "./games/game-cloth.js";
 import { initCubeGame } from "./games/xp-cube.js";
 import { resetTempMatrixBuffer, V } from "./sprig-matrix.js";
-import { initSmol } from "./grass/game-smol.js";
+import { initSmol } from "./grass/game-grass.js";
 import { initLD53 } from "./ld53/game-ld53.js";
 import { initShadingGame } from "./games/game-shading.js";
 import { initModelingGame } from "./games/game-modeling.js";
