@@ -346,5 +346,6 @@ export async function initFontEditor(em: EntityManager) {
 
   initMeshEditor();
 
+  // TODO(@darzu): WIP path editor
   if (false) lineStuff();
 }

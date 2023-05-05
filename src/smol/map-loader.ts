@@ -3,6 +3,7 @@ import { onInit } from "../init.js";
 import { assert } from "../util.js";
 import { getBytes } from "../webget.js";
 
+// TODO(@darzu): games should be able to specify their map path
 // const DEFAULT_MAP_PATH = "assets/ld52_maps/";
 //const DEFAULT_MAP_PATH = "assets/smol_maps/";
 const DEFAULT_MAP_PATH = "assets/ld53_maps/";
@@ -27,7 +28,7 @@ export const MapPaths = [
   // "rangetest",
 ] as const;
 
-export type MapName = typeof MapPaths[number];
+export type MapName = (typeof MapPaths)[number];
 
 export const MapHelp: Partial<Record<MapName, string>> = {
   "tutorial-attack-the-towers":

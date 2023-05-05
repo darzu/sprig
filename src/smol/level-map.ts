@@ -245,6 +245,7 @@ export function parseAndMutateIntoMapData(
     .filter((b) => b.color[0] > 200 && b.color[1] > 200 && b.color[2] < 100)
     .map((b) => centerOfMassAndDirection(b));
 
+  // TODO(@darzu): game-specific stuff should probably be abstracted out
   const towerIslandRadius = 50;
   towers.forEach(([pos, _]) => {
     for (let i = -towerIslandRadius; i < towerIslandRadius; i++) {
@@ -312,6 +313,7 @@ export async function setMap(em: EntityManager, name: MapName) {
   let __start = performance.now();
 
   let levelMap;
+  // TODO(@darzu): REFACTOR. purge purple stuff
   let totalPurple = 0;
   if (mapCache.has(name)) {
     levelMap = mapCache.get(name)!;

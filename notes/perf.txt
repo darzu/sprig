@@ -422,3 +422,7 @@ Roblox uses "Luau":
 Sometimes use "var" instead of "let"/"const":
   https://github.com/microsoft/TypeScript/issues/52924
   https://github.com/microsoft/TypeScript/pull/52832
+
+TODO: read all the asm.js material
+  https://blog.mozilla.org/luke/2013/03/21/asm-js-in-firefox-nightly/
+  https://brendaneich.com/2015/06/from-asm-js-to-webassembly/

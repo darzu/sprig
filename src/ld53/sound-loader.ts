@@ -1,5 +1,6 @@
 import { HasAudioDef } from "../audio.js";
 import { Component, EM } from "../entity-manager.js";
+import { VERBOSE_LOG } from "../flags.js";
 import { onInit } from "../init.js";
 import { assert } from "../util.js";
 import { getBytes } from "../webget.js";
@@ -13,7 +14,7 @@ export const SoundPaths = [
   "woodbreak.mp3",
 ] as const;
 
-export type SoundName = typeof SoundPaths[number];
+export type SoundName = (typeof SoundPaths)[number];
 
 export type SoundSet = { [P in SoundName]: AudioBuffer };
 
@@ -62,9 +63,9 @@ async function loadSoundsData(): Promise<SoundSet> {
 onInit(async (em) => {
   em.addResource(SoundLoaderDef);
 
-  console.log("awaiting has audio");
+  if (VERBOSE_LOG) console.log("awaiting has audio");
   await em.whenResources(HasAudioDef);
-  console.log("have audio");
+  if (VERBOSE_LOG) console.log("have audio");
   // start loading of sounds
   const { soundLoader } = await em.whenResources(SoundLoaderDef);
 

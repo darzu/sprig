@@ -139,6 +139,7 @@ export function registerCannonSystems(em: EntityManager) {
         res.music.playSound("cannonS", res.soundSet["cannonS.mp3"], 0.2);
       });
 
+      // TODO(@darzu): AUDIO. unify old and new system.
       //const chord = randChordId();
       //EM.getResource(AudioDef)!.playChords([chord], "major", 2.0, 3.0, -2);
     },

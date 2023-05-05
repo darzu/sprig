@@ -1,6 +1,7 @@
 import { CanvasDef } from "../canvas.js";
 import { createRef } from "../em_helpers.js";
 import { EM } from "../entity-manager.js";
+import { VERBOSE_LOG } from "../flags.js";
 import { PartyDef } from "../games/party.js";
 import { TextDef } from "../games/ui.js";
 import { ShipHealthDef } from "../ld53/ship-health.js";
@@ -62,7 +63,7 @@ EM.registerSystem(
     }
     if (res.score.gameEnding) {
       if (res.time.step > res.score.gameEndedAt + 300) {
-        console.log("resetting after game end");
+        if (VERBOSE_LOG) console.log("resetting after game end");
         if (res.score.victory) {
           res.score.levelNumber = 0;
           res.score.victory = false;

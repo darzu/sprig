@@ -227,6 +227,7 @@ export function registerTurretSystems(em: EntityManager) {
 
         if (res.inputs.keyClicks["e"]) {
           if (c.turret.mannedId === player.id) {
+            // TODO(@darzu): HACK. shouldn't have the non-turret help text in here
             res.text.lowerText =
               "W/A/S/D: move, mouse: look, E: use rudder or cannon, shift: run";
             raiseUnmanTurret(player, c);
