@@ -2,7 +2,7 @@
 
 import { CameraFollowDef, setCameraFollowPosition } from "../camera/camera.js";
 import { EM, Entity, EntityManager } from "../ecs/entity-manager.js";
-import { LinearVelocityDef } from "../physics/velocity.js";
+import { LinearVelocityDef } from "../motion/velocity.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
 import { ControllableDef } from "../input/controllable.js";
 

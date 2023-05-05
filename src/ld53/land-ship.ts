@@ -16,7 +16,7 @@ import {
   pointInAABB,
   updateAABBWithPoint,
 } from "../physics/aabb.js";
-import { LinearVelocityDef } from "../physics/velocity.js";
+import { LinearVelocityDef } from "../motion/velocity.js";
 import { PhysicsStateDef, WorldFrameDef } from "../physics/nonintersection.js";
 import {
   PhysicsParentDef,

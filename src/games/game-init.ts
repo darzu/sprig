@@ -60,7 +60,7 @@ import { registerShipSystems } from "../hyperspace/hyperspace-ship.js";
 import { registerGameStateSystems } from "../hyperspace/hyperspace-gamestate.js";
 import { registerEnemyShipSystems } from "../hyperspace/uv-enemy-ship.js";
 import { registerNetSystems } from "../net/net.js";
-import { registerNoodleSystem } from "./noodles.js";
+import { registerNoodleSystem } from "../animation/noodles.js";
 import { registerToolSystems } from "./tool.js";
 import { ENABLE_NET } from "../flags.js";
 

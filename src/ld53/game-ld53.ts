@@ -18,7 +18,7 @@ import {
 } from "../grass/grass.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { ColliderDef } from "../physics/collider.js";
-import { AngularVelocityDef, LinearVelocityDef } from "../physics/velocity.js";
+import { AngularVelocityDef, LinearVelocityDef } from "../motion/velocity.js";
 import { PhysicsStateDef, WorldFrameDef } from "../physics/nonintersection.js";
 import {
   PhysicsParentDef,
@@ -110,7 +110,7 @@ import { spawnStoneTower, StoneTowerDef, towerPool } from "./stone.js";
 import { LandDef } from "./land-ship.js";
 import { DeadDef } from "../ecs/delete.js";
 import { BulletDef, breakBullet } from "../cannons/bullet.js";
-import { ParametricDef } from "../games/parametric-motion.js";
+import { ParametricDef } from "../motion/parametric-motion.js";
 import { createDock } from "./dock.js";
 import { ShipHealthDef } from "./ship-health.js";
 import { createRef } from "../ecs/em_helpers.js";

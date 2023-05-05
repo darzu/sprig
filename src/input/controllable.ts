@@ -5,7 +5,7 @@ import { EM, EntityManager } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { InputsDef } from "./inputs.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
-import { LinearVelocityDef } from "../physics/velocity.js";
+import { LinearVelocityDef } from "../motion/velocity.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import { RotationDef } from "../physics/transform.js";
 import { TimeDef } from "../time/time.js";

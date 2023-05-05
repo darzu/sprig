@@ -5,7 +5,7 @@ import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { InputsDef } from "../input/inputs.js";
 import { mathMapNEase } from "../utils/math.js";
 import { ColliderDef } from "../physics/collider.js";
-import { AngularVelocityDef } from "../physics/velocity.js";
+import { AngularVelocityDef } from "../motion/velocity.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
 import {

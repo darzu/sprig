@@ -81,7 +81,7 @@ import {
   projectilePosition,
   projectileRange,
   projectileTimeOfFlight,
-} from "./parametric-motion.js";
+} from "../motion/parametric-motion.js";
 
 // TODO(@darzu): what's registerDestroyPirateHandler about?
 

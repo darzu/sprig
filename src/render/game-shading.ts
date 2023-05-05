@@ -6,7 +6,7 @@ import { DevConsoleDef } from "../debug/console.js";
 import { EM, EntityW } from "../ecs/entity-manager.js";
 import { createGizmoMesh } from "../debug/gizmos.js";
 import { jitter } from "../utils/math.js";
-import { AngularVelocityDef, LinearVelocityDef } from "../physics/velocity.js";
+import { AngularVelocityDef, LinearVelocityDef } from "../motion/velocity.js";
 import { PositionDef, ScaleDef } from "../physics/transform.js";
 import { PointLightDef } from "./lights.js";
 import { mapMeshPositions } from "../meshes/mesh.js";

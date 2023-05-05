@@ -18,7 +18,7 @@ import {
   getHalfsizeFromAABB,
 } from "../physics/aabb.js";
 import { AABBCollider, ColliderDef } from "../physics/collider.js";
-import { AngularVelocityDef, LinearVelocityDef } from "../physics/velocity.js";
+import { AngularVelocityDef, LinearVelocityDef } from "../motion/velocity.js";
 import {
   PhysicsResultsDef,
   WorldFrameDef,
@@ -94,7 +94,7 @@ import {
   pirateSpawnTimer,
   startPirates,
 } from "../games/pirate.js";
-import { ParametricDef } from "../games/parametric-motion.js";
+import { ParametricDef } from "../motion/parametric-motion.js";
 import { addGizmoChild } from "../utils/utils-game.js";
 import { createBarrelMesh } from "./barrel.js";
 

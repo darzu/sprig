@@ -1,7 +1,7 @@
 import { EM, EntityManager } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { onInit } from "../init.js";
-import { LinearVelocityDef } from "../physics/velocity.js";
+import { LinearVelocityDef } from "../motion/velocity.js";
 import { tempVec3 } from "../matrix/temp-pool.js";
 import { TimeDef } from "../time/time.js";
 

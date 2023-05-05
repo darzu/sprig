@@ -1,4 +1,4 @@
-import { Collider, ColliderDef } from "./collider.js";
+import { Collider, ColliderDef } from "../physics/collider.js";
 import { EntityManager } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { clamp } from "../utils/math.js";
@@ -7,14 +7,14 @@ import {
   LinearVelocity,
   LinearVelocityDef,
 } from "./velocity.js";
-import { ContactData } from "./phys.js";
+import { ContactData } from "../physics/phys.js";
 import {
   PhysicsBroadCollidersDef,
   PhysicsResultsDef,
   PhysicsState,
   PhysicsStateDef,
   WorldFrameDef,
-} from "./nonintersection.js";
+} from "../physics/nonintersection.js";
 import { tempVec3 } from "../matrix/temp-pool.js";
 import { TimeDef } from "../time/time.js";
 import {
@@ -25,7 +25,7 @@ import {
   PositionDef,
   RotationDef,
   updateFrameFromPosRotScale,
-} from "./transform.js";
+} from "../physics/transform.js";
 
 // TODO(@darzu): implement checkAtRest (deleted in this commit)
 

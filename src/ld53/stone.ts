@@ -24,7 +24,7 @@ import {
 } from "../physics/aabb.js";
 import { emptyLine } from "../physics/broadphase.js";
 import { ColliderDef } from "../physics/collider.js";
-import { AngularVelocityDef, LinearVelocityDef } from "../physics/velocity.js";
+import { AngularVelocityDef, LinearVelocityDef } from "../motion/velocity.js";
 import {
   PhysicsResultsDef,
   WorldFrameDef,

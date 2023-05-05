@@ -4,7 +4,7 @@ import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { DevConsoleDef } from "../debug/console.js";
 import { EM } from "../ecs/entity-manager.js";
-import { AngularVelocityDef, LinearVelocityDef } from "../physics/velocity.js";
+import { AngularVelocityDef, LinearVelocityDef } from "../motion/velocity.js";
 import { PositionDef, ScaleDef } from "../physics/transform.js";
 import { PointLightDef } from "../render/lights.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";

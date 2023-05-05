@@ -27,7 +27,7 @@ import {
   AngularVelocityDef,
   LinearVelocity,
   LinearVelocityDef,
-} from "../physics/velocity.js";
+} from "../motion/velocity.js";
 import { MotionSmoothingDef } from "../render/motion-smoothing.js";
 import { LifetimeDef } from "../ecs/lifetime.js";
 import { Time, TimeDef } from "../time/time.js";
@@ -40,7 +40,7 @@ import { randNormalVec3 } from "../utils/utils-3d.js";
 import { SplinterParticleDef } from "../wood/wood.js";
 import { tempVec3 } from "../matrix/temp-pool.js";
 import { assert, assertDbg } from "../utils/util.js";
-import { ParametricDef } from "../games/parametric-motion.js";
+import { ParametricDef } from "../motion/parametric-motion.js";
 
 // TODO(@darzu): MULTIPLAYER BULLETS might have been broken during LD51
 

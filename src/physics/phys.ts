@@ -14,7 +14,7 @@ import { registerPhysicsDebuggerSystem } from "./phys-debug.js";
 import {
   registerPhysicsClampVelocityByContact,
   registerPhysicsClampVelocityBySize,
-} from "./velocity-clamp.js";
+} from "../motion/velocity-clamp.js";
 import {
   Frame,
   registerUpdateLocalFromPosRotScale,
@@ -28,7 +28,7 @@ import { tempVec3 } from "../matrix/temp-pool.js";
 import {
   registerPhysicsApplyLinearVelocity,
   registerPhysicsApplyAngularVelocity,
-} from "./velocity.js";
+} from "../motion/velocity.js";
 
 // TODO(@darzu): PHYSICS TODO:
 // [ ] seperate rotation and motion w/ constraint checking between them

@@ -6,7 +6,7 @@ import { onInit } from "../init.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { eventWizard } from "../net/events.js";
 import { AABBCollider, ColliderDef } from "../physics/collider.js";
-import { LinearVelocityDef } from "../physics/velocity.js";
+import { LinearVelocityDef } from "../motion/velocity.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import {
   PhysicsParentDef,
