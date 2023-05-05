@@ -262,7 +262,7 @@ export function registerPlayerSystems(em: EntityManager) {
           p.controllable.modes.canFly = !p.controllable.modes.canFly;
         }
 
-        // if (res.gameState.state === GameState.GAMEOVER) {
+        // if (res.hsGameState.state === GameState.GAMEOVER) {
         //   p.controllable.modes.canFly = true;
         // }
         if (p.controllable.modes.canFly) {

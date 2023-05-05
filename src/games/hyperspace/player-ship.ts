@@ -320,7 +320,7 @@ export function registerShipSystems(em: EntityManager) {
     (gems, res) => {
       for (let gem of gems) {
         if (DeletedDef.isOn(gem)) continue;
-        if (res.gameState.state !== HyperspaceGameState.LOBBY) continue;
+        if (res.hsGameState.state !== HyperspaceGameState.LOBBY) continue;
         if (res.inputs.keyClicks["e"]) {
           let player = EM.findEntity(res.localPlayer.playerId, [PlayerDef])!;
           startGame(player);
@@ -360,7 +360,7 @@ export function registerShipSystems(em: EntityManager) {
       DetectedEventsDef,
     ],
     (ships, res) => {
-      if (res.gameState.state !== HyperspaceGameState.PLAYING) return;
+      if (res.hsGameState.state !== HyperspaceGameState.PLAYING) return;
 
       for (let ship of ships) {
         if (ship.authority.pid !== res.me.pid) continue;
@@ -411,7 +411,7 @@ export function registerShipSystems(em: EntityManager) {
     ],
     [GameStateDef, MeDef, InputsDef, DevConsoleDef],
     (ships, res) => {
-      if (res.gameState.state !== HyperspaceGameState.PLAYING) {
+      if (res.hsGameState.state !== HyperspaceGameState.PLAYING) {
         return;
       }
       for (let s of ships) {

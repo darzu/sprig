@@ -251,42 +251,43 @@ export async function initOcean(oceanMesh: Mesh, color: vec3) {
       res.time.time
     );
 
-    // TODO(@darzu): waht is this code below?
-    // const pos = uvToPos(__temp2, uv);
-    // const norm = uvToNorm(__temp3, uv);
-    // const tang = uvToTang(__temp4, uv);
-    // const perp = vec3.cross(tang, norm, __temp5);
-    // const disp = vec3.add(
-    //   vec3.scale(perp, outDisp[0], __temp6),
-    //   vec3.add(
-    //     vec3.scale(norm, outDisp[1], __temp7),
-    //     vec3.scale(tang, outDisp[2], __temp8),
-    //     __temp11
-    //   ),
-    //   __temp9
-    // );
-    // // outDisp[0] = pos[0] + disp[0] * 0.5;
-    // // outDisp[1] = pos[1] + disp[1];
-    // // outDisp[2] = pos[2] + disp[2] * 0.5;
-    // // outDisp[0] = pos[0] + disp[0] * 0.5;
-    // // outDisp[1] = pos[1] + disp[1];
-    // // outDisp[2] = pos[2] + disp[2] * 0.5;
-    // vec3.add(pos, disp, outDisp);
+    // TODO(@darzu): OCEAN. waht is this code below?
+    // TODO(@darzu): OCEAN. Something below is essential for hyperspace game:
+    const pos = uvToPos(__temp2, uv);
+    const norm = uvToNorm(__temp3, uv);
+    const tang = uvToTang(__temp4, uv);
+    const perp = vec3.cross(tang, norm, __temp5);
+    const disp = vec3.add(
+      vec3.scale(perp, outDisp[0], __temp6),
+      vec3.add(
+        vec3.scale(norm, outDisp[1], __temp7),
+        vec3.scale(tang, outDisp[2], __temp8),
+        __temp11
+      ),
+      __temp9
+    );
+    // outDisp[0] = pos[0] + disp[0] * 0.5;
+    // outDisp[1] = pos[1] + disp[1];
+    // outDisp[2] = pos[2] + disp[2] * 0.5;
+    // outDisp[0] = pos[0] + disp[0] * 0.5;
+    // outDisp[1] = pos[1] + disp[1];
+    // outDisp[2] = pos[2] + disp[2] * 0.5;
+    vec3.add(pos, disp, outDisp);
 
-    // const gNorm = vec3.add(
-    //   vec3.scale(perp, outNorm[0], __temp6),
-    //   vec3.add(
-    //     vec3.scale(norm, outNorm[1], __temp7),
-    //     vec3.scale(tang, outNorm[2], __temp8),
-    //     __temp11
-    //   ),
-    //   __temp10
-    // );
-    // vec3.copy(outNorm, gNorm);
+    const gNorm = vec3.add(
+      vec3.scale(perp, outNorm[0], __temp6),
+      vec3.add(
+        vec3.scale(norm, outNorm[1], __temp7),
+        vec3.scale(tang, outNorm[2], __temp8),
+        __temp11
+      ),
+      __temp10
+    );
+    vec3.copy(outNorm, gNorm);
 
-    // // HACK: smooth out norm?
-    // vec3.add(outNorm, vec3.scale(norm, 2.0, __temp6), outNorm);
-    // vec3.normalize(outNorm, outNorm);
+    // HACK: smooth out norm?
+    vec3.add(outNorm, vec3.scale(norm, 2.0, __temp6), outNorm);
+    vec3.normalize(outNorm, outNorm);
   };
 
   // TODO(@darzu): hacky hacky way to do this

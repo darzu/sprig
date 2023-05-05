@@ -25,7 +25,7 @@ onInit((em) => {
       DevConsoleDef,
     ],
     (ships, res) => {
-      // if (res.gameState.state !== GameState.PLAYING) return;
+      // if (res.hsGameState.state !== GameState.PLAYING) return;
       for (let s of ships) {
         // if (s.authority.pid !== res.me.pid) continue;
 

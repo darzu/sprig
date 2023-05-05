@@ -70,7 +70,7 @@ onInit((em) => {
     [DarkStarPropsDef, PositionDef, AuthorityDef],
     [MeDef, GameStateDef],
     (es, res) => {
-      if (res.gameState.state !== HyperspaceGameState.PLAYING) {
+      if (res.hsGameState.state !== HyperspaceGameState.PLAYING) {
         return;
       }
       for (let star of es) {

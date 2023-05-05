@@ -256,7 +256,7 @@ onInit((em) => {
     [PlayerShipPropsDef, UVShipDef, WorldFrameDef, AuthorityDef],
     [MeDef, GameStateDef],
     (es, res) => {
-      if (res.gameState.state !== HyperspaceGameState.PLAYING) {
+      if (res.hsGameState.state !== HyperspaceGameState.PLAYING) {
         return;
       }
       for (let ship of es) {

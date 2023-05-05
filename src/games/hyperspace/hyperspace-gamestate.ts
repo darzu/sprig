@@ -29,7 +29,7 @@ export enum HyperspaceGameState {
   GAMEOVER,
 }
 
-export const GameStateDef = EM.defineComponent("gameState", () => {
+export const GameStateDef = EM.defineComponent("hsGameState", () => {
   return { state: HyperspaceGameState.LOBBY, time: 0 };
 });
 
@@ -52,8 +52,8 @@ export const endGame = eventWizard(
     console.log("end");
     const res = EM.getResources([AudioDef, GameStateDef, MeDef])!;
     res.music.playChords([1, 2, 3, 4, 4], "minor");
-    res.gameState.state = HyperspaceGameState.GAMEOVER;
-    res.gameState.time = 0;
+    res.hsGameState.state = HyperspaceGameState.GAMEOVER;
+    res.hsGameState.time = 0;
     for (const partRef of ship.playerShipLocal.parts) {
       const part = partRef();
       if (part) EM.ensureComponentOn(part, DeletedDef);
@@ -104,7 +104,7 @@ export const restartGame = eventWizard(
   ([ship]) => {
     console.log("restart");
     const res = EM.getResources([GameStateDef, LocalPlayerDef])!;
-    res.gameState.state = HyperspaceGameState.LOBBY;
+    res.hsGameState.state = HyperspaceGameState.LOBBY;
     const player = EM.findEntity(res.localPlayer.playerId, [PlayerDef])!;
     player.player.lookingForShip = true;
     // res.score.currentScore = 0;
@@ -125,9 +125,9 @@ export function registerGameStateSystems(em: EntityManager) {
     null,
     [GameStateDef, TimeDef, HostDef],
     ([], res) => {
-      if (res.gameState.state === HyperspaceGameState.GAMEOVER) {
-        res.gameState.time += res.time.dt;
-        if (res.gameState.time > RESTART_TIME_MS) {
+      if (res.hsGameState.state === HyperspaceGameState.GAMEOVER) {
+        res.hsGameState.time += res.time.dt;
+        if (res.hsGameState.time > RESTART_TIME_MS) {
           // Do we have a ship to restart onto yet?
           const ship = EM.filterEntities([
             PlayerShipPropsDef,
