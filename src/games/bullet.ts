@@ -180,6 +180,7 @@ type BulletEnt = EntityW<[typeof BulletConstructDef]>;
 const _bulletPool: BulletEnt[] = [];
 let _nextBulletIdx = 0;
 
+// TODO(@darzu): fireBullet has become quite bloated and has wierd parameters like bulletAxis
 export async function fireBullet(
   em: EntityManager,
   team: number,
@@ -195,6 +196,7 @@ export async function fireBullet(
     const music = EM.getResource(AudioDef);
     if (music) {
       // for (let i = 0; i < 10; i++) music.playChords([3], "minor", 2.0, 5.0, 1);
+      // TODO(@darzu): AUDIO. unify old and new audio system
       //music.playChords([3], "minor", 2.0, 1.0, 1);
     }
   }

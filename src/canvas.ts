@@ -1,4 +1,5 @@
 import { Component, EM, EntityManager } from "./entity-manager.js";
+import { VERBOSE_LOG } from "./flags.js";
 
 export const CanvasDef = EM.defineComponent(
   "htmlCanvas",
@@ -49,18 +50,20 @@ export function registerInitCanvasSystem(em: EntityManager) {
 let _imgPixelatedTimeoutHandle = 0;
 // let pixelRatio = 2.0;
 // let pixelRatio = window.devicePixelRatio || 1;
-let pixelRatio = 1.0;
+let pixelRatio = 1.0; // TODO(@darzu): NEED CONFIGURABLE RESOLUTION
 // pixelRatio = 0.5;
 function init(): HTMLCanvasElement {
-  console.log(
-    `preferred device pixel ratio: ${window.devicePixelRatio} vs ours: ${pixelRatio}`
-  );
+  if (VERBOSE_LOG)
+    console.log(
+      `preferred device pixel ratio: ${window.devicePixelRatio} vs ours: ${pixelRatio}`
+    );
   console.log(
     `initial canvas size: ${window.innerWidth * pixelRatio} x ${
       window.innerHeight * pixelRatio
-    }\n${
-      (window.innerWidth * pixelRatio * window.innerHeight * pixelRatio) / 1024
-    }kpx`
+    }\n${(
+      (window.innerWidth * pixelRatio * window.innerHeight * pixelRatio) /
+      1_000_000
+    ).toFixed(1)}MP`
   );
   const canvasOpt = document.getElementById("sample-canvas");
   if (!canvasOpt) throw `can't find HTML canvas to attach to`;
