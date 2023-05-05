@@ -23,23 +23,26 @@ import { AudioDef } from "../../audio.js";
 
 const RESTART_TIME_MS = 5000;
 
-export enum GameState {
+export enum HyperspaceGameState {
   LOBBY,
   PLAYING,
   GAMEOVER,
 }
 
 export const GameStateDef = EM.defineComponent("gameState", () => {
-  return { state: GameState.LOBBY, time: 0 };
+  return { state: HyperspaceGameState.LOBBY, time: 0 };
 });
 
 export const startGame = eventWizard(
   "start-game",
   () => [[PlayerDef]] as const,
   () => {
-    EM.getResource(GameStateDef)!.state = GameState.PLAYING;
+    EM.getResource(GameStateDef)!.state = HyperspaceGameState.PLAYING;
   },
-  { legalEvent: () => EM.getResource(GameStateDef)!.state === GameState.LOBBY }
+  {
+    legalEvent: () =>
+      EM.getResource(GameStateDef)!.state === HyperspaceGameState.LOBBY,
+  }
 );
 
 export const endGame = eventWizard(
@@ -49,7 +52,7 @@ export const endGame = eventWizard(
     console.log("end");
     const res = EM.getResources([AudioDef, GameStateDef, MeDef])!;
     res.music.playChords([1, 2, 3, 4, 4], "minor");
-    res.gameState.state = GameState.GAMEOVER;
+    res.gameState.state = HyperspaceGameState.GAMEOVER;
     res.gameState.time = 0;
     for (const partRef of ship.playerShipLocal.parts) {
       const part = partRef();
@@ -90,7 +93,8 @@ export const endGame = eventWizard(
     EM.ensureComponentOn(gem, LifetimeDef, 4000);
   },
   {
-    legalEvent: () => EM.getResource(GameStateDef)!.state === GameState.PLAYING,
+    legalEvent: () =>
+      EM.getResource(GameStateDef)!.state === HyperspaceGameState.PLAYING,
   }
 );
 
@@ -100,7 +104,7 @@ export const restartGame = eventWizard(
   ([ship]) => {
     console.log("restart");
     const res = EM.getResources([GameStateDef, LocalPlayerDef])!;
-    res.gameState.state = GameState.LOBBY;
+    res.gameState.state = HyperspaceGameState.LOBBY;
     const player = EM.findEntity(res.localPlayer.playerId, [PlayerDef])!;
     player.player.lookingForShip = true;
     // res.score.currentScore = 0;
@@ -112,7 +116,7 @@ export const restartGame = eventWizard(
   },
   {
     legalEvent: () =>
-      EM.getResource(GameStateDef)!.state === GameState.GAMEOVER,
+      EM.getResource(GameStateDef)!.state === HyperspaceGameState.GAMEOVER,
   }
 );
 
@@ -121,7 +125,7 @@ export function registerGameStateSystems(em: EntityManager) {
     null,
     [GameStateDef, TimeDef, HostDef],
     ([], res) => {
-      if (res.gameState.state === GameState.GAMEOVER) {
+      if (res.gameState.state === HyperspaceGameState.GAMEOVER) {
         res.gameState.time += res.time.dt;
         if (res.gameState.time > RESTART_TIME_MS) {
           // Do we have a ship to restart onto yet?

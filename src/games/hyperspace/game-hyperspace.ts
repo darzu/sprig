@@ -18,7 +18,7 @@ import { AssetsDef } from "../../assets.js";
 import { AuthorityDef, MeDef } from "../../net/components.js";
 import { createPlayer } from "../player.js";
 import { createPlayerShip } from "./player-ship.js";
-import { GameStateDef } from "./gamestate.js";
+import { GameStateDef } from "./hyperspace-gamestate.js";
 import { createGridComposePipelines } from "../../render/pipelines/std-compose.js";
 import { noisePipes } from "../../render/pipelines/std-noise.js";
 import { DevConsoleDef } from "../../console.js";

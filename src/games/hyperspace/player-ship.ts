@@ -28,7 +28,12 @@ import { LocalPlayerDef, PlayerDef } from "../player.js";
 import { CameraDef } from "../../camera.js";
 import { InputsDef } from "../../inputs.js";
 import { InRangeDef, InteractableDef } from "../interact.js";
-import { endGame, GameState, GameStateDef, startGame } from "./gamestate.js";
+import {
+  endGame,
+  HyperspaceGameState,
+  GameStateDef,
+  startGame,
+} from "./hyperspace-gamestate.js";
 import { createRef, defineNetEntityHelper, Ref } from "../../em_helpers.js";
 import { DetectedEventsDef, eventWizard } from "../../net/events.js";
 import { MotionSmoothingDef } from "../../motion-smoothing.js";
@@ -315,7 +320,7 @@ export function registerShipSystems(em: EntityManager) {
     (gems, res) => {
       for (let gem of gems) {
         if (DeletedDef.isOn(gem)) continue;
-        if (res.gameState.state !== GameState.LOBBY) continue;
+        if (res.gameState.state !== HyperspaceGameState.LOBBY) continue;
         if (res.inputs.keyClicks["e"]) {
           let player = EM.findEntity(res.localPlayer.playerId, [PlayerDef])!;
           startGame(player);
@@ -355,7 +360,7 @@ export function registerShipSystems(em: EntityManager) {
       DetectedEventsDef,
     ],
     (ships, res) => {
-      if (res.gameState.state !== GameState.PLAYING) return;
+      if (res.gameState.state !== HyperspaceGameState.PLAYING) return;
 
       for (let ship of ships) {
         if (ship.authority.pid !== res.me.pid) continue;
@@ -406,7 +411,7 @@ export function registerShipSystems(em: EntityManager) {
     ],
     [GameStateDef, MeDef, InputsDef, DevConsoleDef],
     (ships, res) => {
-      if (res.gameState.state !== GameState.PLAYING) {
+      if (res.gameState.state !== HyperspaceGameState.PLAYING) {
         return;
       }
       for (let s of ships) {

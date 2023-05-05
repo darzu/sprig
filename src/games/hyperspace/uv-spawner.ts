@@ -13,7 +13,7 @@ import {
   PositionDef,
   RotationDef,
 } from "../../physics/transform.js";
-import { spawnEnemyShip } from "./enemy-ship.js";
+import { spawnEnemyShip } from "./uv-enemy-ship.js";
 import { UVDirDef, UVPosDef } from "./ocean.js";
 
 // TODO(@darzu): generalize for spawning non-enemy entities in the ocean

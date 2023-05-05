@@ -35,7 +35,7 @@ import {
 import { YawPitchDef, yawpitchToQuat } from "../../yawpitch.js";
 import { AssetsDef } from "../../assets.js";
 import { DarkStarPropsDef, STAR1_COLOR, STAR2_COLOR } from "./darkstar.js";
-import { GameState, GameStateDef } from "./gamestate.js";
+import { HyperspaceGameState, GameStateDef } from "./hyperspace-gamestate.js";
 import {
   BOAT_COLOR,
   PlayerShipLocalDef,
@@ -256,7 +256,7 @@ onInit((em) => {
     [PlayerShipPropsDef, UVShipDef, WorldFrameDef, AuthorityDef],
     [MeDef, GameStateDef],
     (es, res) => {
-      if (res.gameState.state !== GameState.PLAYING) {
+      if (res.gameState.state !== HyperspaceGameState.PLAYING) {
         return;
       }
       for (let ship of es) {

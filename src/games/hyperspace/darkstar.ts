@@ -14,7 +14,7 @@ import {
   RenderDataStdDef,
 } from "../../render/pipelines/std-scene.js";
 import { ColorDef } from "../../color-ecs.js";
-import { GameState, GameStateDef } from "./gamestate.js";
+import { HyperspaceGameState, GameStateDef } from "./hyperspace-gamestate.js";
 
 const DARKSTAR_SPEED = 1;
 
@@ -70,7 +70,7 @@ onInit((em) => {
     [DarkStarPropsDef, PositionDef, AuthorityDef],
     [MeDef, GameStateDef],
     (es, res) => {
-      if (res.gameState.state !== GameState.PLAYING) {
+      if (res.gameState.state !== HyperspaceGameState.PLAYING) {
         return;
       }
       for (let star of es) {

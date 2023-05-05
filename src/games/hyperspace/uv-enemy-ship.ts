@@ -34,7 +34,7 @@ import { PlayerShipLocalDef } from "./player-ship.js";
 import { defineNetEntityHelper } from "../../em_helpers.js";
 import { DetectedEventsDef, eventWizard } from "../../net/events.js";
 import { raiseBulletEnemyShip } from "../bullet-collision.js";
-import { GameStateDef, GameState } from "./gamestate.js";
+import { GameStateDef, HyperspaceGameState } from "./hyperspace-gamestate.js";
 import { cloneMesh, scaleMesh3 } from "../../render/mesh.js";
 import { UVShipDef } from "./uv-ship.js";
 import { UVDirDef, UVPosDef } from "./ocean.js";
