@@ -17,7 +17,7 @@ import { DBG_ASSERT, ENABLE_NET, VERBOSE_LOG } from "./flags.js";
 import { initShipyardGame } from "./wood/game-shipyard.js";
 import { gameplaySystems } from "./games/ghost.js";
 import { initFontEditor } from "./gui/game-font.js";
-import { initGJKSandbox } from "./games/game-gjk.js";
+import { initGJKSandbox } from "./physics/game-gjk.js";
 import { initHyperspaceGame } from "./hyperspace/game-hyperspace.js";
 import { initClothSandbox } from "./games/game-cloth.js";
 import { initCubeGame } from "./games/xp-cube.js";
@@ -25,7 +25,7 @@ import { resetTempMatrixBuffer, V } from "./sprig-matrix.js";
 import { initGrassGame } from "./grass/game-grass.js";
 import { initLD53 } from "./ld53/game-ld53.js";
 import { initShadingGame } from "./games/game-shading.js";
-import { initModelingGame } from "./games/game-modeling.js";
+import { initModelingGame } from "./meshes/game-modeling.js";
 
 export const FORCE_WEBGL = false;
 export const MAX_MESHES = 20000;

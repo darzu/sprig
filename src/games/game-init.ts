@@ -45,7 +45,7 @@ import {
   registerMotionSmoothingRecordLocationsSystem,
   registerMotionSmoothingSystems,
 } from "../render/motion-smoothing.js";
-import { registerCursorSystems } from "./cursor.js";
+import { registerCursorSystems } from "../gui/cursor.js";
 import { registerPhysicsSystems } from "../physics/phys.js";
 import { registerUpdateLifetimes } from "../ecs/lifetime.js";
 import { registerMusicSystems } from "../audio/audio.js";
@@ -55,7 +55,7 @@ import { registerGrappleDbgSystems } from "./grapple.js";
 import { registerTurretSystems } from "../turret/turret.js";
 import { registerUISystems } from "./ui.js";
 import { registerDevSystems } from "../debug/console.js";
-import { registerControllableSystems } from "./controllable.js";
+import { registerControllableSystems } from "../input/controllable.js";
 import { registerShipSystems } from "../hyperspace/hyperspace-ship.js";
 import { registerGameStateSystems } from "../hyperspace/hyperspace-gamestate.js";
 import { registerEnemyShipSystems } from "../hyperspace/uv-enemy-ship.js";

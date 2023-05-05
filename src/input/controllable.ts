@@ -3,7 +3,7 @@ import { CameraFollowDef } from "../camera/camera.js";
 import { CanvasDef } from "../render/canvas.js";
 import { EM, EntityManager } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
-import { InputsDef } from "../input/inputs.js";
+import { InputsDef } from "./inputs.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { LinearVelocityDef } from "../physics/motion.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";

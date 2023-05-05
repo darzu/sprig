@@ -7,7 +7,7 @@ import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { EM, EntityManager, EntityW } from "../ecs/entity-manager.js";
 import { AssetsDef, gameMeshFromMesh } from "../meshes/assets.js";
-import { ControllableDef } from "../games/controllable.js";
+import { ControllableDef } from "../input/controllable.js";
 import { createGhost, GhostDef } from "../games/ghost.js";
 import { LocalPlayerDef, PlayerDef } from "../games/player.js";
 import {

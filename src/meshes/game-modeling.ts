@@ -1,4 +1,4 @@
-import { AssetsDef } from "../meshes/assets.js";
+import { AssetsDef } from "./assets.js";
 import { CameraDef } from "../camera/camera.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
@@ -14,9 +14,9 @@ import { postProcess } from "../render/pipelines/std-post.js";
 import { shadowPipelines } from "../render/pipelines/std-shadow.js";
 import { RenderableConstructDef, RendererDef } from "../render/renderer-ecs.js";
 import { quat, V, vec3 } from "../sprig-matrix.js";
-import { createGhost } from "./ghost.js";
+import { createGhost } from "../games/ghost.js";
 import { createHomeShip } from "../wood/shipyard.js";
-import { TextDef } from "./ui.js";
+import { TextDef } from "../games/ui.js";
 
 export async function initModelingGame() {
   const { renderer } = await EM.whenResources(RendererDef);

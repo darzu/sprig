@@ -22,7 +22,7 @@ import { TimeDef } from "../time/time.js";
 import { AssetsDef, GameMesh } from "../meshes/assets.js";
 // import { ENEMY_SHIP_COLOR } from "./enemy-ship.js";
 // import { ClothConstructDef, ClothLocalDef } from "./cloth.js";
-import { GlobalCursor3dDef } from "./cursor.js";
+import { GlobalCursor3dDef } from "../gui/cursor.js";
 // import { ForceDef, SpringGridDef } from "./spring.js";
 import { TextDef } from "./ui.js";
 import { createGhost } from "./ghost.js";

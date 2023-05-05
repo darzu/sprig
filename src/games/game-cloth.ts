@@ -38,7 +38,7 @@ import { assert } from "../utils/util.js";
 import { drawLine } from "../utils/utils-game.js";
 import { AssetsDef } from "../meshes/assets.js";
 import { ClothConstructDef, ClothLocalDef } from "./cloth.js";
-import { GlobalCursor3dDef } from "./cursor.js";
+import { GlobalCursor3dDef } from "../gui/cursor.js";
 import { ENEMY_SHIP_COLOR } from "../hyperspace/uv-enemy-ship.js";
 import { createGhost } from "./ghost.js";
 import { ForceDef } from "./spring.js";

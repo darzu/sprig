@@ -38,8 +38,8 @@ import {
   setCameraFollowPosition,
 } from "../camera/camera.js";
 import { defineSerializableComponent } from "../ecs/em_helpers.js";
-import { ControllableDef } from "./controllable.js";
-import { GlobalCursor3dDef } from "./cursor.js";
+import { ControllableDef } from "../input/controllable.js";
+import { GlobalCursor3dDef } from "../gui/cursor.js";
 import { drawLine } from "../utils/utils-game.js";
 import { DevConsoleDef } from "../debug/console.js";
 import { max } from "../utils/math.js";

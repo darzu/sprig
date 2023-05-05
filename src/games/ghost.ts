@@ -4,7 +4,7 @@ import { CameraFollowDef, setCameraFollowPosition } from "../camera/camera.js";
 import { EM, Entity, EntityManager } from "../ecs/entity-manager.js";
 import { LinearVelocityDef } from "../physics/motion.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
-import { ControllableDef } from "./controllable.js";
+import { ControllableDef } from "../input/controllable.js";
 
 // TODO(@darzu): HACK. we need a better way to programmatically create sandbox games
 export const gameplaySystems: string[] = [];

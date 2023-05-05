@@ -74,7 +74,7 @@ import {
   BulletDef,
   fireBullet,
 } from "../cannons/bullet.js";
-import { ControllableDef } from "../games/controllable.js";
+import { ControllableDef } from "../input/controllable.js";
 import { createGhost, GhostDef } from "../games/ghost.js";
 import { GravityDef } from "../games/gravity.js";
 import { InRangeDef, InteractableDef } from "../games/interact.js";
