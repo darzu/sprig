@@ -7,7 +7,7 @@ import { copyAABB, createAABB } from "../physics/aabb.js";
 import { ColliderDef } from "../physics/collider.js";
 import { PositionDef, PhysicsParentDef } from "../physics/transform.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
-import { V } from "../sprig-matrix.js";
+import { V } from "../matrix/sprig-matrix.js";
 import { InteractableDef } from "../input/interact.js";
 
 export const { GemPropsDef, GemLocalDef, createGem } = defineNetEntityHelper(

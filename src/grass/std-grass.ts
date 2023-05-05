@@ -24,7 +24,7 @@ import {
   RendererDef,
   RendererWorldFrameDef,
 } from "../render/renderer-ecs.js";
-import { mat4, V, vec3 } from "../sprig-matrix.js";
+import { mat4, V, vec3 } from "../matrix/sprig-matrix.js";
 import { assertDbg } from "../utils/util.js";
 import { computeTriangleNormal } from "../utils/utils-3d.js";
 import { LandMapTexPtr } from "../smol/level-map.js";

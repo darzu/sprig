@@ -1,4 +1,4 @@
-import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { dbgDirOnce, __isSMI } from "../utils/util.js";
 import {
   PhysCollider,

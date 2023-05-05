@@ -27,7 +27,7 @@ import {
   UVDirDef,
 } from "../ocean/ocean.js";
 import { asyncTimeout } from "../utils/util.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { AnimateToDef } from "../animation/animate-to.js";
 import { createSpawner, SpawnerDef } from "./uv-spawner.js";
 import { tempVec3 } from "../temp-pool.js";

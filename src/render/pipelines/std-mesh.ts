@@ -10,7 +10,7 @@ import { EntityW } from "../../ecs/entity-manager.js";
 import { onInit } from "../../init.js";
 // import { oceanJfa } from "../../game/ocean.js";
 // import { oceanJfa } from "../../game/ocean.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../../matrix/sprig-matrix.js";
 import { tempVec3 } from "../../temp-pool.js";
 import { createRenderTextureToQuad } from "../gpu-helper.js";
 import { comparisonSamplerPtr, CY, linearSamplerPtr } from "../gpu-registry.js";

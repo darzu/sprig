@@ -24,7 +24,7 @@ import {
   ScaleDef,
   updateFrameFromPosRotScale,
 } from "./transform.js";
-import { vec3, V } from "../sprig-matrix.js";
+import { vec3, V } from "../matrix/sprig-matrix.js";
 
 // TODO(@darzu): re-enable all this! it requires line drawing again
 

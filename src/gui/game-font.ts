@@ -4,7 +4,7 @@ import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { dbg } from "../debug/debugger.js";
 import { EM, EntityManager, EntityW } from "../ecs/entity-manager.js";
-import { vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
+import { vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { ButtonDef, ButtonsStateDef } from "./button.js";
 import { initMeshEditor, MeshEditorDef } from "./mesh-editor.js";
 import { lineStuff } from "./path-editor.js";

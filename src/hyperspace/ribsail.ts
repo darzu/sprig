@@ -14,7 +14,7 @@ import {
   Renderer,
   RendererDef,
 } from "../render/renderer-ecs.js";
-import { quat, V, vec2, vec3 } from "../sprig-matrix.js";
+import { quat, V, vec2, vec3 } from "../matrix/sprig-matrix.js";
 import { range } from "../utils/util.js";
 import { defineNetEntityHelper } from "../ecs/em_helpers.js";
 import { MeDef } from "../net/components.js";

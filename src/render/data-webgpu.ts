@@ -21,7 +21,7 @@ import {
 } from "./gpu-registry.js";
 import { MeshPool } from "./mesh-pool.js";
 import { BLACK } from "../meshes/assets.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { GPUBufferUsage } from "./webgpu-hacks.js";
 import { PERF_DBG_GPU, PERF_DBG_GPU_BLAME } from "../flags.js";
 

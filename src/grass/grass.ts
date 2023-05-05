@@ -10,7 +10,7 @@ import {
   RenderableDef,
   RendererDef,
 } from "../render/renderer-ecs.js";
-import { V, vec3 } from "../sprig-matrix.js";
+import { V, vec3 } from "../matrix/sprig-matrix.js";
 import { getPositionFromTransform } from "../utils/utils-3d.js";
 import { randColor } from "../utils/utils-game.js";
 

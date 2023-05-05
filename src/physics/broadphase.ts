@@ -1,4 +1,12 @@
-import { vec2, vec3, vec4, quat, mat4, mat3, V } from "../sprig-matrix.js";
+import {
+  vec2,
+  vec3,
+  vec4,
+  quat,
+  mat4,
+  mat3,
+  V,
+} from "../matrix/sprig-matrix.js";
 import { clamp } from "../utils/math.js";
 import { range } from "../utils/util.js";
 import { vec3Floor } from "../utils/utils-3d.js";

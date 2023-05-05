@@ -1,6 +1,6 @@
 import { CameraDef } from "../camera/camera.js";
 import { EntityManager } from "../ecs/entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { max } from "../utils/math.js";
 import { ColliderDef } from "../physics/collider.js";
 import { AngularVelocityDef } from "../physics/velocity.js";

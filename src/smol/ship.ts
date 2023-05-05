@@ -2,7 +2,7 @@ import { ColorDef } from "../color/color-ecs.js";
 import { createRef } from "../ecs/em_helpers.js";
 import { EM, EntityManager, EntityW } from "../ecs/entity-manager.js";
 import { AssetsDef } from "../meshes/assets.js";
-import { vec3, quat } from "../sprig-matrix.js";
+import { vec3, quat } from "../matrix/sprig-matrix.js";
 import { LinearVelocityDef } from "../physics/velocity.js";
 import {
   PhysicsParentDef,
@@ -11,7 +11,7 @@ import {
   RotationDef,
 } from "../physics/transform.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
-import { V } from "../sprig-matrix.js";
+import { V } from "../matrix/sprig-matrix.js";
 import { createMast, MastDef } from "./sail.js";
 import {
   AABBCollider,

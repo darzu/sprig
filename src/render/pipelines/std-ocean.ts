@@ -1,7 +1,7 @@
 import { ColorDef, TintsDef, applyTints } from "../../color/color-ecs.js";
 import { EM, EntityW } from "../../ecs/entity-manager.js";
 import { onInit } from "../../init.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../../matrix/sprig-matrix.js";
 import { assert } from "../../utils/util.js";
 import { computeTriangleNormal } from "../../utils/utils-3d.js";
 import { comparisonSamplerPtr, CY, linearSamplerPtr } from "../gpu-registry.js";

@@ -2,7 +2,7 @@ import { CameraView } from "../camera/camera.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { EM, Entity, EntityW } from "../ecs/entity-manager.js";
 import { AssetsDef } from "../meshes/assets.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { mathMap } from "./math.js";
 import { getLineEnd, Line, Ray } from "../physics/broadphase.js";
 import {

@@ -5,7 +5,7 @@ import { ENDESGA16 } from "../color/palettes.js";
 import { DeadDef, DeletedDef } from "../ecs/delete.js";
 import { createRef } from "../ecs/em_helpers.js";
 import { EM, Entity, EntityManager, EntityW } from "../ecs/entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { InputsDef } from "../input/inputs.js";
 import { jitter } from "../utils/math.js";
 import { AudioDef, randChordId } from "../audio/audio.js";

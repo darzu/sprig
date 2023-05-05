@@ -4,7 +4,7 @@ import { ColorDef } from "../color/color-ecs.js";
 import { EntityW, EntityManager, EM } from "../ecs/entity-manager.js";
 import { AssetsDef, BLACK } from "../meshes/assets.js";
 import { GravityDef } from "../games/gravity.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { jitter } from "../utils/math.js";
 import { getLineMid } from "../physics/broadphase.js";
 import { LinearVelocityDef, AngularVelocityDef } from "../physics/velocity.js";

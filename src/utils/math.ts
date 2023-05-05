@@ -1,4 +1,4 @@
-import { mat3, vec3 } from "../sprig-matrix.js";
+import { mat3, vec3 } from "../matrix/sprig-matrix.js";
 import { EaseFn } from "./util-ease.js";
 import { assert } from "./util.js";
 import { vec3Dbg } from "./utils-3d.js";

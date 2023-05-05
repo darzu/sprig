@@ -32,7 +32,7 @@ import {
   shadowPipelines,
 } from "../render/pipelines/std-shadow.js";
 import { RenderableConstructDef, RendererDef } from "../render/renderer-ecs.js";
-import { mat3, mat4, quat, V, vec2, vec3 } from "../sprig-matrix.js";
+import { mat3, mat4, quat, V, vec2, vec3 } from "../matrix/sprig-matrix.js";
 import { SAIL_FURL_RATE } from "../smol/sail.js";
 import { quatFromUpForward, randNormalVec3 } from "../utils/utils-3d.js";
 import { randColor } from "../utils/utils-game.js";

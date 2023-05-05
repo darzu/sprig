@@ -31,7 +31,7 @@ import {
 } from "../render/renderer-ecs.js";
 import { LevelMapDef } from "../smol/level-map.js";
 import { ShipDef } from "../smol/ship.js";
-import { mat4, tV, V, vec3, quat, vec2 } from "../sprig-matrix.js";
+import { mat4, tV, V, vec3, quat, vec2 } from "../matrix/sprig-matrix.js";
 import { TimeDef } from "../time/time.js";
 import { assert } from "../utils/util.js";
 import { vec3Dbg } from "../utils/utils-3d.js";

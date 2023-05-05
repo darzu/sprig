@@ -21,7 +21,7 @@ import { initGJKSandbox } from "./physics/game-gjk.js";
 import { initHyperspaceGame } from "./hyperspace/game-hyperspace.js";
 import { initClothSandbox } from "./games/game-cloth.js";
 import { initCubeGame } from "./debug/xp-cube.js";
-import { resetTempMatrixBuffer, V } from "./sprig-matrix.js";
+import { resetTempMatrixBuffer, V } from "./matrix/sprig-matrix.js";
 import { initGrassGame } from "./grass/game-grass.js";
 import { initLD53 } from "./ld53/game-ld53.js";
 import { initShadingGame } from "./render/game-shading.js";

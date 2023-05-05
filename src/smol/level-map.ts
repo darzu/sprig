@@ -10,7 +10,7 @@ import {
 } from "../physics/aabb.js";
 import { CY } from "../render/gpu-registry.js";
 import { RendererDef } from "../render/renderer-ecs.js";
-import { V, vec2, vec3, vec4 } from "../sprig-matrix.js";
+import { V, vec2, vec3, vec4 } from "../matrix/sprig-matrix.js";
 import { assert, assertDbg, dbgLogOnce } from "../utils/util.js";
 import { vec4Dbg } from "../utils/utils-3d.js";
 import { randColor } from "../utils/utils-game.js";

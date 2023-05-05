@@ -2,7 +2,7 @@ import { ColorDef } from "../color/color-ecs.js";
 import { EM, EntityW } from "../ecs/entity-manager.js";
 import { AssetsDef, GameMesh, gameMeshFromMesh } from "../meshes/assets.js";
 import { gameplaySystems } from "../debug/ghost.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import {
   extrudeQuad,
   HEdge,

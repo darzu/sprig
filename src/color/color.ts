@@ -1,5 +1,5 @@
 import { clamp } from "../utils/math.js";
-import { vec3, V } from "../sprig-matrix.js";
+import { vec3, V } from "../matrix/sprig-matrix.js";
 import { assert } from "../utils/util.js";
 import { never, range } from "../utils/util.js";
 import {

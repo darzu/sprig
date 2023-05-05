@@ -1,4 +1,4 @@
-import { vec3, vec2, V } from "../sprig-matrix.js";
+import { vec3, vec2, V } from "../matrix/sprig-matrix.js";
 import { GerstnerWaveTS } from "../render/pipelines/std-ocean.js";
 import { DISABLE_GERSTNER } from "../flags.js";
 

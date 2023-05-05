@@ -1,4 +1,4 @@
-import { vec2, vec3, vec4, quat, mat4, V } from "../../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../../matrix/sprig-matrix.js";
 import { CY } from "../gpu-registry.js";
 import { createCyStruct, CyToTS } from "../gpu-struct.js";
 import { sceneBufPtr, litTexturePtr, mainDepthTex } from "./std-scene.js";

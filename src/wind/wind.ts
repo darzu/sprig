@@ -1,7 +1,7 @@
 import { Component, EM } from "../ecs/entity-manager.js";
 import { randInt } from "../utils/math.js";
 import { RendererDef } from "../render/renderer-ecs.js";
-import { V, vec3 } from "../sprig-matrix.js";
+import { V, vec3 } from "../matrix/sprig-matrix.js";
 import { TimeDef } from "../time/time.js";
 import { range } from "../utils/util.js";
 

@@ -20,7 +20,7 @@ import {
   shadowPipelines,
 } from "./pipelines/std-shadow.js";
 import { RenderableConstructDef, RendererDef } from "./renderer-ecs.js";
-import { mat4, quat, V, vec3 } from "../sprig-matrix.js";
+import { mat4, quat, V, vec3 } from "../matrix/sprig-matrix.js";
 import {
   frustumFromBounds,
   getFrustumWorldCorners,

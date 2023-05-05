@@ -18,7 +18,7 @@ import {
   ScaleDef,
 } from "../physics/transform.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
-import { V, vec3 } from "../sprig-matrix.js";
+import { V, vec3 } from "../matrix/sprig-matrix.js";
 import { vec3Dbg } from "../utils/utils-3d.js";
 
 export function getDataDomain(data: vec3[][]): AABB {

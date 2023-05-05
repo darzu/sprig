@@ -45,7 +45,15 @@ import {
   RenderableDef,
   RendererDef,
 } from "../render/renderer-ecs.js";
-import { mat3, mat4, quat, V, vec2, vec3, vec4 } from "../sprig-matrix.js";
+import {
+  mat3,
+  mat4,
+  quat,
+  V,
+  vec2,
+  vec3,
+  vec4,
+} from "../matrix/sprig-matrix.js";
 import {
   quatFromUpForward,
   randNormalPosVec3,
