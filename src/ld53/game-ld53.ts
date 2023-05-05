@@ -100,7 +100,7 @@ import { cannonDefaultPitch, createShip, ShipDef } from "../smol/ship.js";
 import { SAIL_FURL_RATE } from "../smol/sail.js";
 import { spawnStoneTower, StoneTowerDef, towerPool } from "./stone.js";
 import { LandDef } from "./land-ship.js";
-import { DeadDef } from "../delete.js";
+import { DeadDef } from "../ecs/delete.js";
 import { BulletDef, breakBullet } from "../cannons/bullet.js";
 import { ParametricDef } from "../games/parametric-motion.js";
 import { createDock } from "./dock.js";

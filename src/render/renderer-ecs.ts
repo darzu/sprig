@@ -10,7 +10,7 @@ import {
   copyFrame,
 } from "../physics/transform.js";
 import { MotionSmoothingDef } from "../motion-smoothing.js";
-import { DeadDef, DeletedDef } from "../delete.js";
+import { DeadDef, DeletedDef } from "../ecs/delete.js";
 import { meshPoolPtr } from "./pipelines/std-scene.js";
 import { CanvasDef } from "./canvas.js";
 import { FORCE_WEBGL } from "../main.js";

@@ -20,7 +20,7 @@ import {
 import { copyAABB, createAABB } from "../physics/aabb.js";
 import { PhysicsResultsDef } from "../physics/nonintersection.js";
 import { BulletDef } from "../cannons/bullet.js";
-import { DeletedDef } from "../delete.js";
+import { DeletedDef } from "../ecs/delete.js";
 import { clamp, min } from "../math.js";
 import { createCannon } from "../cannons/cannon.js";
 import { AudioDef } from "../audio/audio.js";

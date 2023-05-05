@@ -20,8 +20,8 @@ import {
 } from "./render/renderer-ecs.js";
 import { tempVec3 } from "./temp-pool.js";
 import { randNormalPosVec3 } from "./utils-3d.js";
-import { createEntityPool } from "./entity-pool.js";
-import { DeadDef } from "./delete.js";
+import { createEntityPool } from "./ecs/entity-pool.js";
+import { DeadDef } from "./ecs/delete.js";
 
 // TODO(@darzu): move this helper elsewhere?
 // TODO(@darzu): would be dope to support thickness;

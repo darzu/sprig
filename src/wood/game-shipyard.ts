@@ -2,7 +2,7 @@ import { CameraDef, CameraFollowDef } from "../camera.js";
 import { CanvasDef } from "../render/canvas.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
-import { DeadDef, DeletedDef } from "../delete.js";
+import { DeadDef, DeletedDef } from "../ecs/delete.js";
 import { createRef } from "../ecs/em_helpers.js";
 import { EM, Entity, EntityManager, EntityW } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
@@ -87,7 +87,7 @@ import { createHomeShip } from "./shipyard.js";
 import { gameplaySystems } from "../games/ghost.js";
 import { RenderDataStdDef } from "../render/pipelines/std-scene.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
-import { createEntityPool } from "../entity-pool.js";
+import { createEntityPool } from "../ecs/entity-pool.js";
 import {
   pirateKills,
   pirateNextSpawn,

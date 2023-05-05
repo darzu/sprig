@@ -37,7 +37,7 @@ import {
 import {
   registerDeadEntitiesSystem,
   registerDeleteEntitiesSystem,
-} from "../delete.js";
+} from "../ecs/delete.js";
 import { registerCannonSystems } from "../cannons/cannon.js";
 import { registerInteractionSystem } from "./interact.js";
 import { registerModeler } from "./modeler.js";

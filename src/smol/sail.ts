@@ -33,7 +33,7 @@ import { ColliderDef } from "../physics/collider.js";
 import { constructNetTurret, TurretDef } from "../games/turret.js";
 import { InputsDef } from "../inputs.js";
 import { LocalPlayerDef, PlayerDef } from "../games/player.js";
-import { DeletedDef } from "../delete.js";
+import { DeletedDef } from "../ecs/delete.js";
 import { clamp } from "../math.js";
 import { createRef } from "../ecs/em_helpers.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";

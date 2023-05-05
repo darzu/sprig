@@ -2,10 +2,10 @@ import { BLACK, AssetsDef } from "../meshes/assets.js";
 import { AudioDef } from "../audio/audio.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
-import { DeadDef } from "../delete.js";
+import { DeadDef } from "../ecs/delete.js";
 import { createRef } from "../ecs/em_helpers.js";
 import { EM, EntityW, EntityManager } from "../ecs/entity-manager.js";
-import { createEntityPool } from "../entity-pool.js";
+import { createEntityPool } from "../ecs/entity-pool.js";
 import { mat4, vec3, quat } from "../sprig-matrix.js";
 import { jitter } from "../math.js";
 import {

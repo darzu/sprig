@@ -31,7 +31,7 @@ import { AssetsDef } from "../meshes/assets.js";
 import { LinearVelocityDef } from "../physics/motion.js";
 import { MotionSmoothingDef } from "../motion-smoothing.js";
 import { ModelerDef } from "./modeler.js";
-import { DeletedDef } from "../delete.js";
+import { DeletedDef } from "../ecs/delete.js";
 import {
   CameraDef,
   CameraFollowDef,

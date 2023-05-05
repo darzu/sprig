@@ -24,7 +24,7 @@ import {
 import { AABB, copyAABB, createAABB } from "../physics/aabb.js";
 import { InputsDef } from "../inputs.js";
 import { clamp } from "../math.js";
-import { DeletedDef } from "../delete.js";
+import { DeletedDef } from "../ecs/delete.js";
 import { defineSerializableComponent } from "../ecs/em_helpers.js";
 import { YawPitchDef, yawpitchToQuat } from "../yawpitch.js";
 import { TextDef } from "./ui.js";

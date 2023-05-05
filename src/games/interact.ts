@@ -13,7 +13,7 @@ import {
   WorldFrameDef,
 } from "../physics/nonintersection.js";
 import { clearTint, setTint, TintsDef } from "../color/color-ecs.js";
-import { DeletedDef } from "../delete.js";
+import { DeletedDef } from "../ecs/delete.js";
 
 export const InteractableDef = EM.defineComponent(
   "interaction",

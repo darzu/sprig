@@ -34,7 +34,7 @@ import { Time, TimeDef } from "../time.js";
 import { GravityDef } from "../games/gravity.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
-import { DeadDef } from "../delete.js";
+import { DeadDef } from "../ecs/delete.js";
 import { AudioDef } from "../audio/audio.js";
 import { randNormalVec3 } from "../utils-3d.js";
 import { SplinterParticleDef } from "../wood/wood.js";

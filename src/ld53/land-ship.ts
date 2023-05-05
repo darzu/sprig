@@ -1,10 +1,10 @@
 import { AssetsDef } from "../meshes/assets.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
-import { DeadDef } from "../delete.js";
+import { DeadDef } from "../ecs/delete.js";
 import { createRef, Ref } from "../ecs/em_helpers.js";
 import { EM, Entity, EntityW } from "../ecs/entity-manager.js";
-import { createEntityPool } from "../entity-pool.js";
+import { createEntityPool } from "../ecs/entity-pool.js";
 import { fireBullet } from "../cannons/bullet.js";
 import { PartyDef } from "../games/party.js";
 import { jitter } from "../math.js";

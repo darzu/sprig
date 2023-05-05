@@ -28,7 +28,7 @@ import {
   WorldFrameDef,
 } from "../physics/nonintersection.js";
 import { BulletDef, fireBullet } from "../cannons/bullet.js";
-import { DeletedDef, OnDeleteDef } from "../delete.js";
+import { DeletedDef, OnDeleteDef } from "../ecs/delete.js";
 import { LifetimeDef } from "../games/lifetime.js";
 import { HsShipLocalDef } from "./hyperspace-ship.js";
 import { defineNetEntityHelper } from "../ecs/em_helpers.js";
