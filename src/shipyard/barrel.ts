@@ -10,7 +10,7 @@ import {
   getBoardsFromMesh,
   verifyUnsharedProvokingForWood,
   reserveSplinterSpace,
-} from "../wood.js";
+} from "./wood.js";
 import {
   lerpBetween,
   Path,

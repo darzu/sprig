@@ -24,7 +24,7 @@ import {
   WoodHealthDef,
   WoodState,
   WoodStateDef,
-} from "../wood.js";
+} from "../shipyard/wood.js";
 
 export function createDock() {
   const [mesh, wood] = createDockWood();

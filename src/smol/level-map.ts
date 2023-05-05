@@ -16,7 +16,7 @@ import { vec4Dbg } from "../utils-3d.js";
 import { randColor } from "../utils-game.js";
 import { MapName, MapBytesSetDef, MapBytes, MapHelp } from "./map-loader.js";
 import { ScoreDef } from "./score.js";
-import { WindDef } from "./wind.js";
+import { WindDef } from "../wind/wind.js";
 
 const WIDTH = 1024;
 const HEIGHT = 512;

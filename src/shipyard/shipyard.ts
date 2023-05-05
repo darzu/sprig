@@ -27,7 +27,7 @@ import {
   WoodState,
   setSideQuadIdxs,
   setEndQuadIdxs,
-} from "../wood.js";
+} from "./wood.js";
 import { BLACK } from "../assets.js";
 import { mkHalfEdgeQuadMesh } from "../primatives.js";
 import { HFace, meshToHalfEdgePoly } from "../half-edge.js";

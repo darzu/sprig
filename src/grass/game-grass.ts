@@ -37,7 +37,7 @@ import { SAIL_FURL_RATE } from "../smol/sail.js";
 import { quatFromUpForward, randNormalVec3 } from "../utils-3d.js";
 import { randColor } from "../utils-game.js";
 import { GrassCutTexPtr, grassPoolPtr, renderGrassPipe } from "./std-grass.js";
-import { WindDef } from "../smol/wind.js";
+import { WindDef } from "../wind/wind.js";
 import { DevConsoleDef } from "../console.js";
 import { clamp, jitter, max, sum } from "../math.js";
 import { createShip, ShipDef } from "../smol/ship.js";

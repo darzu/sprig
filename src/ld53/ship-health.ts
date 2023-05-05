@@ -34,7 +34,7 @@ import { mat4, tV, V, vec3, quat, vec2 } from "../sprig-matrix.js";
 import { TimeDef } from "../time.js";
 import { assert } from "../util.js";
 import { vec3Dbg } from "../utils-3d.js";
-import { WoodHealthDef } from "../wood.js";
+import { WoodHealthDef } from "../shipyard/wood.js";
 
 const MIN_HEALTH_PERCENT = 0.7;
 

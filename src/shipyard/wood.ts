@@ -1,13 +1,13 @@
-import { ColorDef } from "./color/color-ecs.js";
-import { EM, Entity, EntityManager } from "./ecs/entity-manager.js";
-import { AllMeshSymbols, BLACK } from "./assets.js";
-import { BulletDef } from "./cannons/bullet.js";
-import { GravityDef } from "./games/gravity.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "./sprig-matrix.js";
-import { createIdxPool } from "./idx-pool.js";
-import { onInit } from "./init.js";
-import { jitter } from "./math.js";
-import { AudioDef } from "./audio/audio.js";
+import { ColorDef } from "../color/color-ecs.js";
+import { EM, Entity, EntityManager } from "../ecs/entity-manager.js";
+import { AllMeshSymbols, BLACK } from "../assets.js";
+import { BulletDef } from "../cannons/bullet.js";
+import { GravityDef } from "../games/gravity.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
+import { createIdxPool } from "../idx-pool.js";
+import { onInit } from "../init.js";
+import { jitter } from "../math.js";
+import { AudioDef } from "../audio/audio.js";
 import {
   copyLine,
   createLine,
@@ -18,39 +18,42 @@ import {
   lineSphereIntersections,
   Sphere,
   transformLine,
-} from "./physics/broadphase.js";
-import { ColliderDef } from "./physics/collider.js";
-import { AngularVelocityDef, LinearVelocityDef } from "./physics/motion.js";
-import { PhysicsResultsDef, WorldFrameDef } from "./physics/nonintersection.js";
+} from "../physics/broadphase.js";
+import { ColliderDef } from "../physics/collider.js";
+import { AngularVelocityDef, LinearVelocityDef } from "../physics/motion.js";
+import {
+  PhysicsResultsDef,
+  WorldFrameDef,
+} from "../physics/nonintersection.js";
 import {
   PhysicsParentDef,
   PositionDef,
   RotationDef,
-} from "./physics/transform.js";
+} from "../physics/transform.js";
 import {
   getQuadMeshEdges,
   Mesh,
   meshStats,
   normalizeMesh,
   RawMesh,
-} from "./render/mesh.js";
+} from "../render/mesh.js";
 import {
   RenderableConstructDef,
   RenderableDef,
   RendererDef,
-} from "./render/renderer-ecs.js";
-import { tempVec3 } from "./temp-pool.js";
-import { assert, assertDbg, createIntervalTracker } from "./util.js";
-import { range } from "./util.js";
+} from "../render/renderer-ecs.js";
+import { tempVec3 } from "../temp-pool.js";
+import { assert, assertDbg, createIntervalTracker } from "../util.js";
+import { range } from "../util.js";
 import {
   centroid,
   quatFromUpForward,
   randNormalVec3,
   vec3Dbg,
-} from "./utils-3d.js";
+} from "../utils-3d.js";
 import { createSplinterPool, SplinterPool } from "./wood-splinters.js";
-import { DBG_ASSERT, VERBOSE_LOG } from "./flags.js";
-import { meshPoolPtr } from "./render/pipelines/std-scene.js";
+import { DBG_ASSERT, VERBOSE_LOG } from "../flags.js";
+import { meshPoolPtr } from "../render/pipelines/std-scene.js";
 import {
   createAABB,
   copyAABB,
@@ -59,8 +62,8 @@ import {
   AABB,
   mergeAABBs,
   getAABBFromPositions,
-} from "./physics/aabb.js";
-import { SoundSetDef } from "./audio/sound-loader.js";
+} from "../physics/aabb.js";
+import { SoundSetDef } from "../audio/sound-loader.js";
 
 // TODO(@darzu): remove all references to pirates
 

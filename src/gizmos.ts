@@ -4,7 +4,7 @@ import { Mesh, mergeMeshes } from "./render/mesh.js";
 import { vec3, V, tV } from "./sprig-matrix.js";
 import { assert } from "./util.js";
 import { orthonormalize, vec3Dbg } from "./utils-3d.js";
-import { createEmptyMesh } from "./wood.js";
+import { createEmptyMesh } from "./shipyard/wood.js";
 
 const _UP = V(0, 1, 0);
 const _t1 = vec3.create();

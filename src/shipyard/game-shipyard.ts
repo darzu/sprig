@@ -66,7 +66,7 @@ import {
   WoodHealthDef,
   WoodStateDef,
   _numSplinterEnds,
-} from "../wood.js";
+} from "./wood.js";
 import { AssetsDef, BLACK } from "../assets.js";
 import {
   breakBullet,

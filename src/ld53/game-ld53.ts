@@ -92,7 +92,7 @@ import { createGraph3D } from "../utils-gizmos.js";
 import { ScoreDef } from "../smol/score.js";
 import { LandMapTexPtr, LevelMapDef, setMap } from "../smol/level-map.js";
 import { GrassCutTexPtr, grassPoolPtr } from "../grass/std-grass.js";
-import { setWindAngle, WindDef } from "../smol/wind.js";
+import { setWindAngle, WindDef } from "../wind/wind.js";
 import { cannonDefaultPitch, createShip, ShipDef } from "../smol/ship.js";
 import { SAIL_FURL_RATE } from "../smol/sail.js";
 import { spawnStoneTower, StoneTowerDef, towerPool } from "./stone.js";
@@ -108,7 +108,7 @@ import {
   resetWoodState,
   WoodAssetsDef,
   WoodStateDef,
-} from "../wood.js";
+} from "../shipyard/wood.js";
 import { MapPaths } from "../smol/map-loader.js";
 /*
 NOTES:

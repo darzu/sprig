@@ -37,7 +37,7 @@ import { DeletedDef } from "../delete.js";
 import { clamp } from "../math.js";
 import { createRef } from "../ecs/em_helpers.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
-import { WindDef } from "./wind.js";
+import { WindDef } from "../wind/wind.js";
 import { YawPitchDef } from "../yawpitch.js";
 import { assert } from "../util.js";
 import { ENDESGA16 } from "../color/palettes.js";

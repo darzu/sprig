@@ -58,7 +58,7 @@ import {
   createWoodHealth,
   resetWoodHealth,
   resetWoodState,
-} from "../wood.js";
+} from "../shipyard/wood.js";
 import { ShipDef } from "../smol/ship.js";
 import { PartyDef } from "./party.js";
 import {
@@ -69,7 +69,7 @@ import {
 } from "../utils-3d.js";
 import { createRibSailNow, RibSailLocalDef } from "../hyperspace/ribsail.js";
 import { MeDef } from "../net/components.js";
-import { WindDef } from "../smol/wind.js";
+import { WindDef } from "../wind/wind.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import { fireBullet, simulateBullet } from "../cannons/bullet.js";
 import { dbgOnce } from "../util.js";

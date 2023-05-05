@@ -37,7 +37,7 @@ import { WorldFrameDef } from "../physics/nonintersection.js";
 import { DeadDef } from "../delete.js";
 import { AudioDef } from "../audio/audio.js";
 import { randNormalVec3 } from "../utils-3d.js";
-import { SplinterParticleDef } from "../wood.js";
+import { SplinterParticleDef } from "../shipyard/wood.js";
 import { tempVec3 } from "../temp-pool.js";
 import { assert, assertDbg } from "../util.js";
 import { ParametricDef } from "../games/parametric-motion.js";
