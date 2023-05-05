@@ -101,7 +101,7 @@ import {
 } from "../debug/gizmos.js";
 import { createGraph3D } from "../debug/utils-gizmos.js";
 import { ScoreDef } from "../smol/score.js";
-import { LandMapTexPtr, LevelMapDef, setMap } from "../smol/level-map.js";
+import { LandMapTexPtr, LevelMapDef, setMap } from "../levels/level-map.js";
 import { GrassCutTexPtr, grassPoolPtr } from "../grass/std-grass.js";
 import { setWindAngle, WindDef } from "../wind/wind.js";
 import { cannonDefaultPitch, createShip, ShipDef } from "../smol/ship.js";
@@ -120,7 +120,7 @@ import {
   WoodAssetsDef,
   WoodStateDef,
 } from "../wood/wood.js";
-import { MapPaths } from "../smol/map-loader.js";
+import { MapPaths } from "../levels/map-loader.js";
 /*
 NOTES:
 - Cut grass by updating a texture that has cut/not cut or maybe cut-height

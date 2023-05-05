@@ -28,7 +28,7 @@ import {
   RenderableConstructDef,
   RenderableDef,
 } from "../render/renderer-ecs.js";
-import { LevelMapDef } from "../smol/level-map.js";
+import { LevelMapDef } from "../levels/level-map.js";
 import { ShipDef } from "../smol/ship.js";
 import { mat4, tV, V, vec3, quat, vec2 } from "../matrix/sprig-matrix.js";
 import { TimeDef } from "../time/time.js";
