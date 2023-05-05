@@ -1,5 +1,5 @@
 import { test } from "./test.js";
-import { setupObjImportExporter } from "./download.js";
+import { setupObjImportExporter } from "./mesh-normalizer.js";
 import { EM } from "./ecs/entity-manager.js";
 import { tick } from "./time.js";
 import { InputsDef, registerInputsSystem } from "./inputs.js";
