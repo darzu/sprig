@@ -12,7 +12,7 @@ import {
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { AssetsDef } from "../assets.js";
 import { DarkStarPropsDef } from "./hyperspace/darkstar.js";
-import { BOAT_COLOR } from "./hyperspace/player-ship.js";
+import { ENDESGA16 } from "../color/palettes.js";
 
 const ORRERY_SCALE = 0.001;
 
@@ -37,7 +37,7 @@ export async function makeOrrery(em: EntityManager, parentId: number) {
     ScaleDef,
     V(ORRERY_SCALE * 40, ORRERY_SCALE * 40, ORRERY_SCALE * 40)
   );
-  em.ensureComponentOn(shipModel, ColorDef, BOAT_COLOR);
+  em.ensureComponentOn(shipModel, ColorDef, ENDESGA16.lightBrown);
 }
 
 export const OrreryDef = EM.defineComponent("orrery", () => ({

@@ -17,7 +17,7 @@ import { initStars, renderStars } from "../../render/pipelines/std-stars.js";
 import { AssetsDef } from "../../assets.js";
 import { AuthorityDef, MeDef } from "../../net/components.js";
 import { createPlayer } from "../player.js";
-import { createPlayerShip } from "./player-ship.js";
+import { createHsShip } from "./hyperspace-ship.js";
 import { GameStateDef } from "./hyperspace-gamestate.js";
 import { createGridComposePipelines } from "../../render/pipelines/std-compose.js";
 import { noisePipes } from "../../render/pipelines/std-noise.js";
@@ -158,7 +158,7 @@ export async function initHyperspaceGame(em: EntityManager) {
     em.ensureComponentOn(eShip, PositionDef);
     em.ensureComponentOn(eShip, UVPosDef, vec2.clone([0.2, 0.1]));
 
-    const ship = createPlayerShip(vec2.clone([0.1, 0.1]));
+    const ship = createHsShip(vec2.clone([0.1, 0.1]));
     const ship2 = await em.whenEntityHas(ship, UVPosDef);
 
     const NUM_ENEMY = 40;

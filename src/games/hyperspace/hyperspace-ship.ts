@@ -50,10 +50,12 @@ import {
 } from "./hypersail.js";
 import { makeOrrery, OrreryDef } from "../orrery.js";
 import { ColorDef } from "../../color-ecs.js";
+import { createGem, GemPropsDef } from "./gem.js";
+import { ENDESGA16 } from "../../color/palettes.js";
 
 // TODO(@darzu): impl. occassionaly syncable components with auto-versioning
 
-export const BOAT_COLOR: vec3 = V(0.2, 0.1, 0.05);
+// export const BOAT_COLOR: vec3 = V(0.2, 0.1, 0.05);
 
 export const ShipPartDef = EM.defineComponent(
   "shipPart",
@@ -61,50 +63,6 @@ export const ShipPartDef = EM.defineComponent(
     critical,
     damaged: false,
   })
-);
-
-export const { GemPropsDef, GemLocalDef, createGem } = defineNetEntityHelper(
-  EM,
-  {
-    name: "gem",
-    defaultProps: (shipId?: number) => ({
-      shipId: shipId ?? 0,
-    }),
-    serializeProps: (o, buf) => {
-      buf.writeUint32(o.shipId);
-    },
-    deserializeProps: (o, buf) => {
-      o.shipId = buf.readUint32();
-    },
-    defaultLocal: () => true,
-    dynamicComponents: [],
-    buildResources: [AssetsDef, MeDef],
-    build: (gem, res) => {
-      const em: EntityManager = EM;
-
-      em.ensureComponentOn(gem, PositionDef, V(0, 0, 10));
-
-      em.ensureComponentOn(
-        gem,
-        RenderableConstructDef,
-        res.assets.spacerock.proto
-      );
-      em.ensureComponentOn(gem, PhysicsParentDef, gem.gemProps.shipId);
-      em.ensureComponentOn(gem, ColorDef);
-
-      // create seperate hitbox for interacting with the gem
-      const interactBox = em.new();
-      const interactAABB = copyAABB(createAABB(), res.assets.spacerock.aabb);
-      em.ensureComponentOn(interactBox, PhysicsParentDef, gem.id);
-      em.ensureComponentOn(interactBox, PositionDef, V(0, 0, 0));
-      em.ensureComponentOn(interactBox, ColliderDef, {
-        shape: "AABB",
-        solid: false,
-        aabb: interactAABB,
-      });
-      em.ensureComponentOn(gem, InteractableDef, interactBox.id);
-    },
-  }
 );
 
 export const { RudderPropsDef, RudderLocalDef, createRudderNow } =
@@ -133,7 +91,7 @@ export const { RudderPropsDef, RudderLocalDef, createRudderNow } =
         res.assets.rudder.mesh
       );
       em.ensureComponentOn(rudder, PhysicsParentDef, rudder.rudderProps.shipId);
-      em.ensureComponentOn(rudder, ColorDef, BOAT_COLOR);
+      em.ensureComponentOn(rudder, ColorDef, ENDESGA16.lightBrown);
       vec3.scale(rudder.color, 0.5, rudder.color);
 
       // create seperate hitbox for interacting with the rudder
@@ -173,9 +131,10 @@ export const { RudderPropsDef, RudderLocalDef, createRudderNow } =
     },
   });
 
-export const { PlayerShipPropsDef, PlayerShipLocalDef, createPlayerShip } =
+// hyperspace ship
+export const { HsShipPropsDef, HsShipLocalDef, createHsShip } =
   defineNetEntityHelper(EM, {
-    name: "playerShip",
+    name: "hsShip",
     defaultProps: (uvPos?: vec2) => ({
       uvPos: uvPos ?? vec2.fromValues(0.5, 0.5),
       gemId: 0,
@@ -213,18 +172,18 @@ export const { PlayerShipPropsDef, PlayerShipLocalDef, createPlayerShip } =
       const em: EntityManager = EM;
 
       if (s.authority.pid === res.me.pid) {
-        // s.playerShipProps.loc = [0, -2, 0];
+        // s.hsShipProps.loc = [0, -2, 0];
 
         // create gem
         const gem = createGem(s.id);
-        s.playerShipProps.gemId = gem.id;
+        s.hsShipProps.gemId = gem.id;
 
         // create rudder
         const r = createRudderNow(res, s.id);
-        s.playerShipProps.rudder = createRef(r);
+        s.hsShipProps.rudder = createRef(r);
 
         const m = createHypMastNow(res, s.id);
-        s.playerShipProps.mast = createRef(m);
+        s.hsShipProps.mast = createRef(m);
 
         // create cannons
         const cannonPitch = Math.PI * +0.05;
@@ -234,17 +193,17 @@ export const { PlayerShipPropsDef, PlayerShipLocalDef, createPlayerShip } =
           cannonPitch,
           s.id
         );
-        s.playerShipProps.cannonRId = cannonR.id;
+        s.hsShipProps.cannonRId = cannonR.id;
         const cannonL = createCannon(
           V(6, 3, 5),
           Math.PI * 1.5,
           cannonPitch,
           s.id
         );
-        s.playerShipProps.cannonLId = cannonL.id;
+        s.hsShipProps.cannonLId = cannonL.id;
       }
 
-      vec2.copy(s.uvPos, s.playerShipProps.uvPos);
+      vec2.copy(s.uvPos, s.hsShipProps.uvPos);
       vec2.set(1, 0, s.uvDir);
 
       em.ensureComponentOn(s, PositionDef);
@@ -255,7 +214,7 @@ export const { PlayerShipPropsDef, PlayerShipLocalDef, createPlayerShip } =
       em.ensureComponentOn(s, UVShipDef);
 
       s.uvship.speed = 0;
-      // s.playerShipLocal.speed = 0.005 * 3; // TODO(@darzu): DEBUG SPEED
+      // s.hsShipLocal.speed = 0.005 * 3; // TODO(@darzu): DEBUG SPEED
       // em.ensureComponentOn(s, LinearVelocityDef, [0, 0, 0]);
       // em.ensureComponentOn(s, AngularVelocityDef);
 
@@ -279,7 +238,7 @@ export const { PlayerShipPropsDef, PlayerShipLocalDef, createPlayerShip } =
         const part = em.new();
         em.ensureComponentOn(part, PhysicsParentDef, s.id);
         em.ensureComponentOn(part, RenderableConstructDef, m.proto);
-        em.ensureComponentOn(part, ColorDef, BOAT_COLOR);
+        em.ensureComponentOn(part, ColorDef, ENDESGA16.lightBrown);
         em.ensureComponentOn(part, PositionDef, V(0, 0, 0));
         const isCritical = criticalPartIdxes.includes(i);
         em.ensureComponentOn(part, ShipPartDef, isCritical);
@@ -289,7 +248,7 @@ export const { PlayerShipPropsDef, PlayerShipLocalDef, createPlayerShip } =
           aabb: m.aabb,
         });
         (part.collider as AABBCollider).aabb.max[1] = shipFloor;
-        s.playerShipLocal.parts.push(
+        s.hsShipLocal.parts.push(
           createRef(part.id, [ShipPartDef, RenderableDef])
         );
       }
@@ -332,24 +291,24 @@ export function registerShipSystems(em: EntityManager) {
 
   const raiseShipHit = eventWizard(
     "ship-hit",
-    [[PlayerShipLocalDef]] as const,
+    [[HsShipLocalDef]] as const,
     ([ship], partIdx: number) => {
       const music = em.getResource(AudioDef)!;
-      const part = ship.playerShipLocal.parts[partIdx]()!;
+      const part = ship.hsShipLocal.parts[partIdx]()!;
       part.renderable.enabled = false;
       part.shipPart.damaged = true;
       // TODO(@darzu): AUDIO. unify old and new audio system
       //music.playChords([2, 3], "minor", 0.2, 5.0, -2);
     },
     {
-      legalEvent: ([ship], partIdx) => !!ship.playerShipLocal.parts[partIdx](),
+      legalEvent: ([ship], partIdx) => !!ship.hsShipLocal.parts[partIdx](),
       serializeExtra: (buf, o) => buf.writeUint8(o),
       deserializeExtra: (buf) => buf.readUint8(),
     }
   );
 
   em.registerSystem(
-    [PlayerShipPropsDef, PlayerShipLocalDef, PositionDef, AuthorityDef],
+    [HsShipPropsDef, HsShipLocalDef, PositionDef, AuthorityDef],
     [
       AudioDef,
       InputsDef,
@@ -367,8 +326,8 @@ export function registerShipSystems(em: EntityManager) {
 
         let numCriticalDamaged = 0;
         // TODO(@darzu): EVENT! Notify players of dmg
-        for (let i = 0; i < ship.playerShipLocal.parts.length; i++) {
-          const part = ship.playerShipLocal.parts[i]();
+        for (let i = 0; i < ship.hsShipLocal.parts.length; i++) {
+          const part = ship.hsShipLocal.parts[i]();
           if (part) {
             if (part.shipPart.damaged) {
               if (part.shipPart.critical) numCriticalDamaged += 1;
@@ -401,8 +360,8 @@ export function registerShipSystems(em: EntityManager) {
   em.registerSystem(
     [
       UVShipDef,
-      PlayerShipLocalDef,
-      PlayerShipPropsDef,
+      HsShipLocalDef,
+      HsShipPropsDef,
       // LinearVelocityDef,
       // AngularVelocityDef,
       AuthorityDef,
@@ -417,9 +376,9 @@ export function registerShipSystems(em: EntityManager) {
       for (let s of ships) {
         if (s.authority.pid !== res.me.pid) return;
         // TODO(@darzu): handle UV heading !!
-        // vec3.set(s.linearVelocity, 0, -0.01, s.playerShipLocal.speed);
+        // vec3.set(s.linearVelocity, 0, -0.01, s.hsShipLocal.speed);
         // vec3.transformQuat(s.linearVelocity, s.linearVelocity, s.rotation);
-        // s.angularVelocity[1] = s.playerShipProps.rudder()!.yawpitch.yaw * 0.0005;
+        // s.angularVelocity[1] = s.hsShipProps.rudder()!.yawpitch.yaw * 0.0005;
         // TODO(@darzu): dbg ship physics when turning
         // s.angularVelocity[1] = -0.0001;
 
@@ -430,7 +389,7 @@ export function registerShipSystems(em: EntityManager) {
         //s.ship.speed = Math.max(0, s.ship.speed);
 
         // STEERING
-        let yaw = s.playerShipProps.rudder()!.yawpitch.yaw;
+        let yaw = s.hsShipProps.rudder()!.yawpitch.yaw;
 
         vec2.rotate(s.uvDir, vec2.ZEROS, yaw * 0.02, s.uvDir);
       }
@@ -439,7 +398,7 @@ export function registerShipSystems(em: EntityManager) {
   );
 
   em.registerSystem(
-    [PlayerShipLocalDef, PlayerShipPropsDef, PositionDef],
+    [HsShipLocalDef, HsShipPropsDef, PositionDef],
     [PartyDef],
     (ships, res) => {
       if (ships[0]) vec3.copy(res.party.pos, ships[0].position);

@@ -36,11 +36,7 @@ import { YawPitchDef, yawpitchToQuat } from "../../yawpitch.js";
 import { AssetsDef } from "../../assets.js";
 import { DarkStarPropsDef, STAR1_COLOR, STAR2_COLOR } from "./darkstar.js";
 import { HyperspaceGameState, GameStateDef } from "./hyperspace-gamestate.js";
-import {
-  BOAT_COLOR,
-  PlayerShipLocalDef,
-  PlayerShipPropsDef,
-} from "./player-ship.js";
+import { HsShipLocalDef, HsShipPropsDef } from "./hyperspace-ship.js";
 import { UVShipDef } from "./uv-ship.js";
 import { constructNetTurret, TurretDef } from "../turret.js";
 import {
@@ -48,6 +44,7 @@ import {
   getSailMeshArea,
   sailForceAndSignedArea,
 } from "./ribsail.js";
+import { ENDESGA16 } from "../../color/palettes.js";
 
 // TODO(@darzu): refactor this so that our towers can use this
 
@@ -110,7 +107,7 @@ export const { HypMastPropsDef, HypMastLocalDef, createHypMastNow } =
 
       em.ensureComponentOn(mast, RenderableConstructDef, res.assets.mast.mesh);
       em.ensureComponentOn(mast, PhysicsParentDef, mast.hypMastProps.shipId);
-      em.ensureComponentOn(mast, ColorDef, BOAT_COLOR);
+      em.ensureComponentOn(mast, ColorDef, ENDESGA16.lightBrown);
       vec3.scale(mast.color, 0.5, mast.color);
 
       // createRib(mast.id, BOOM_HEIGHT)
@@ -253,7 +250,7 @@ onInit((em) => {
   );
 
   em.registerSystem(
-    [PlayerShipPropsDef, UVShipDef, WorldFrameDef, AuthorityDef],
+    [HsShipPropsDef, UVShipDef, WorldFrameDef, AuthorityDef],
     [MeDef, GameStateDef],
     (es, res) => {
       if (res.hsGameState.state !== HyperspaceGameState.PLAYING) {
@@ -267,8 +264,8 @@ onInit((em) => {
           ColorDef,
         ]);
         const sails = [
-          ship.playerShipProps.mast()!.hypMastLocal.sail1()!,
-          ship.playerShipProps.mast()!.hypMastLocal.sail2()!,
+          ship.hsShipProps.mast()!.hypMastLocal.sail1()!,
+          ship.hsShipProps.mast()!.hypMastLocal.sail2()!,
         ];
         for (let sail of sails) {
           const star = stars.find((s) => vec3.equals(s.color, sail.sailColor));

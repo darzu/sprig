@@ -16,7 +16,6 @@ import {
 } from "../../render/renderer-ecs.js";
 import { quat, V, vec2, vec3 } from "../../sprig-matrix.js";
 import { range } from "../../util.js";
-import { BOAT_COLOR } from "./player-ship.js";
 import { defineNetEntityHelper } from "../../em_helpers.js";
 import { MeDef } from "../../net/components.js";
 import { WorldFrameDef } from "../../physics/nonintersection.js";
@@ -33,6 +32,7 @@ import {
 } from "../../utils-3d.js";
 import { STAR1_COLOR, DarkStarPropsDef } from "./darkstar.js";
 import { onInit } from "../../init.js";
+import { ENDESGA16 } from "../../color/palettes.js";
 
 const RIB_COUNT = 6;
 export const DEFAULT_SAIL_COLOR = V(0.05, 0.05, 0.05);
@@ -101,7 +101,7 @@ export const { RibSailPropsDef, RibSailLocalDef, createRibSailNow } =
       EM.ensureComponentOn(mast, ScaleDef, V(0.5, 1.0, 0.5));
       EM.ensureComponentOn(mast, RenderableConstructDef, res.assets.mast.mesh);
       EM.ensureComponentOn(mast, PhysicsParentDef, sail.id);
-      EM.ensureComponentOn(mast, ColorDef, BOAT_COLOR);
+      EM.ensureComponentOn(mast, ColorDef, ENDESGA16.lightBrown);
       vec3.scale(mast.color, 0.5, mast.color);
 
       sail.ribSailLocal.ribs = range(RIB_COUNT).map((i) => {
@@ -116,7 +116,7 @@ export const { RibSailPropsDef, RibSailLocalDef, createRibSailNow } =
         EM.ensureComponentOn(rib, RenderableConstructDef, res.assets.mast.mesh);
         EM.ensureComponentOn(rib, ScaleDef, V(0.5 * width, 0.5, 0.5 * width));
         EM.ensureComponentOn(rib, RotationDef);
-        EM.ensureComponentOn(rib, ColorDef, BOAT_COLOR);
+        EM.ensureComponentOn(rib, ColorDef, ENDESGA16.lightBrown);
         vec3.scale(rib.color, 0.7, rib.color);
         EM.ensureComponentOn(rib, PhysicsParentDef, sail.id);
         return rib;

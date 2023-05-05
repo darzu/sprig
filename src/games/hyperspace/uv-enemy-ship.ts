@@ -30,7 +30,7 @@ import {
 import { BulletDef, fireBullet } from "../bullet.js";
 import { DeletedDef, OnDeleteDef } from "../../delete.js";
 import { LifetimeDef } from "../lifetime.js";
-import { PlayerShipLocalDef } from "./player-ship.js";
+import { HsShipLocalDef } from "./hyperspace-ship.js";
 import { defineNetEntityHelper } from "../../em_helpers.js";
 import { DetectedEventsDef, eventWizard } from "../../net/events.js";
 import { raiseBulletEnemyShip } from "../bullet-collision.js";
@@ -265,7 +265,7 @@ export function registerEnemyShipSystems(em: EntityManager) {
           o.enemyShipLocal.fireZoneId
         );
         const seesPlayer = hits?.some(
-          (h) => !!em.findEntity(h, [PlayerShipLocalDef])
+          (h) => !!em.findEntity(h, [HsShipLocalDef])
         );
         if (seesPlayer) {
           o.enemyShipLocal.fireDelay -= res.time.dt;
@@ -317,9 +317,7 @@ export function registerEnemyShipSystems(em: EntityManager) {
             raiseBulletEnemyShip(balls[0]!, enemyShip);
           }
 
-          const ships = hits.filter((h) =>
-            em.findEntity(h, [PlayerShipLocalDef])
-          );
+          const ships = hits.filter((h) => em.findEntity(h, [HsShipLocalDef]));
           if (ships.length) {
             raiseBreakEnemyShip(enemyShip);
           }

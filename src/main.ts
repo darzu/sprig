@@ -123,7 +123,7 @@ function legacyRequireAllTheSystems() {
     EM.requireSystem("gemPropsBuild");
     EM.requireSystem("rudderPropsBuild");
     EM.requireSystem("mastPropsBuild");
-    EM.requireSystem("playerShipPropsBuild");
+    EM.requireSystem("hsShipPropsBuild");
     EM.requireSystem("darkStarPropsBuild");
     EM.requireSystem("darkStarOrbit");
     EM.requireSystem("hyperspaceGame");

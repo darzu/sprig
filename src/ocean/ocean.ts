@@ -31,7 +31,7 @@ import {
 } from "../render/renderer-ecs.js";
 import { tempVec2, tempVec3 } from "../temp-pool.js";
 import { TimeDef } from "../time.js";
-import { asyncTimeout, range } from "../util.js";
+import { asyncTimeout, dbgLogOnce, range } from "../util.js";
 import {
   quatDbg,
   quatFromUpForward,
@@ -195,21 +195,21 @@ export async function initOcean(oceanMesh: Mesh, color: vec3) {
   );
 
   const uvToPos = (out: vec3, uv: vec2) => {
-    console.warn(`uvToPos is disabled! tex format issues`);
+    dbgLogOnce(`uvToPos is disabled! tex format issues`, undefined, true);
     const x = uv[0] * uvToPosReader.size[0];
     const y = uv[1] * uvToPosReader.size[1];
     // console.log(`${x},${y}`);
     return uvToPosReader.sample(x, y, out);
   };
   const uvToNorm = (out: vec3, uv: vec2) => {
-    console.warn(`uvToNorm is disabled! tex format issues`);
+    dbgLogOnce(`uvToNorm is disabled! tex format issues`, undefined, true);
     const x = uv[0] * uvToNormReader.size[0];
     const y = uv[1] * uvToNormReader.size[1];
     // console.log(`${x},${y}`);
     return uvToNormReader.sample(x, y, out);
   };
   const uvToTang = (out: vec3, uv: vec2) => {
-    console.warn(`uvToTang is disabled! tex format issues`);
+    dbgLogOnce(`uvToTang is disabled! tex format issues`, undefined, true);
     const x = uv[0] * uvToTangReader.size[0];
     const y = uv[1] * uvToTangReader.size[1];
     // console.log(`${x},${y}`);
@@ -217,7 +217,7 @@ export async function initOcean(oceanMesh: Mesh, color: vec3) {
   };
   // TODO(@darzu): re-enable
   const uvToEdgeDist = (uv: vec2) => {
-    console.warn(`uvToEdgeDist is disabled! tex format issues`);
+    dbgLogOnce(`uvToEdgeDist is disabled! tex format issues`, undefined, true);
     const x = uv[0] * uvToNormReader.size[0];
     const y = uv[1] * uvToNormReader.size[1];
     return sdfReader.sample(x, y);
