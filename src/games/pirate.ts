@@ -1,5 +1,5 @@
 import { BLACK, AssetsDef } from "../assets.js";
-import { AudioDef } from "../audio.js";
+import { AudioDef } from "../audio/audio.js";
 import { ColorDef } from "../color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { DeadDef } from "../delete.js";

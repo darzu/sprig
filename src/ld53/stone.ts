@@ -1,5 +1,5 @@
 import { AssetsDef } from "../assets.js";
-import { AudioDef } from "../audio.js";
+import { AudioDef } from "../audio/audio.js";
 import { ColorDef } from "../color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { DeadDef } from "../delete.js";
@@ -45,7 +45,7 @@ import { mat4, tV, V, vec3, quat } from "../sprig-matrix.js";
 import { TimeDef } from "../time.js";
 import { assert } from "../util.js";
 import { vec3Dbg } from "../utils-3d.js";
-import { SoundSetDef } from "./sound-loader.js";
+import { SoundSetDef } from "../audio/sound-loader.js";
 
 const GRAVITY = 6.0 * 0.00001;
 const MIN_BRICK_PERCENT = 0.6;

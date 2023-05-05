@@ -1,8 +1,8 @@
-import { CanvasDef } from "./canvas.js";
-import { Component, EM, EntityManager } from "./entity-manager.js";
-import { ENABLE_AUDIO } from "./flags.js";
-import { createIdxPool, createIdxRing, IdxPool } from "./idx-pool.js";
-import { assert, range } from "./util.js";
+import { CanvasDef } from "../canvas.js";
+import { Component, EM, EntityManager } from "../entity-manager.js";
+import { ENABLE_AUDIO } from "../flags.js";
+import { createIdxPool, createIdxRing, IdxPool } from "../idx-pool.js";
+import { assert, range } from "../util.js";
 
 // NOTE: basically this whole file just tries to implement
 //    what Andrew suggests as a good way to start making good sounding

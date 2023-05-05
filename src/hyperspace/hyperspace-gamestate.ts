@@ -19,7 +19,7 @@ import {
   HsShipLocalDef,
   HsShipPropsDef,
 } from "./hyperspace-ship.js";
-import { AudioDef } from "../audio.js";
+import { AudioDef } from "../audio/audio.js";
 
 const RESTART_TIME_MS = 5000;
 

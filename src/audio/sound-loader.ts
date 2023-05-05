@@ -1,4 +1,4 @@
-import { HasAudioDef } from "../audio.js";
+import { HasAudioDef } from "./audio.js";
 import { Component, EM } from "../entity-manager.js";
 import { VERBOSE_LOG } from "../flags.js";
 import { onInit } from "../init.js";

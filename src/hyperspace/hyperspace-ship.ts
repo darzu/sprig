@@ -23,7 +23,7 @@ import { BulletDef } from "../cannons/bullet.js";
 import { DeletedDef } from "../delete.js";
 import { clamp, min } from "../math.js";
 import { createCannon } from "../cannons/cannon.js";
-import { AudioDef } from "../audio.js";
+import { AudioDef } from "../audio/audio.js";
 import { LocalPlayerDef, PlayerDef } from "../games/player.js";
 import { CameraDef } from "../camera.js";
 import { InputsDef } from "../inputs.js";

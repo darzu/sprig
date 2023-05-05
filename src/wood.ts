@@ -7,7 +7,7 @@ import { vec2, vec3, vec4, quat, mat4, V } from "./sprig-matrix.js";
 import { createIdxPool } from "./idx-pool.js";
 import { onInit } from "./init.js";
 import { jitter } from "./math.js";
-import { AudioDef } from "./audio.js";
+import { AudioDef } from "./audio/audio.js";
 import {
   copyLine,
   createLine,
@@ -60,7 +60,7 @@ import {
   mergeAABBs,
   getAABBFromPositions,
 } from "./physics/aabb.js";
-import { SoundSetDef } from "./ld53/sound-loader.js";
+import { SoundSetDef } from "./audio/sound-loader.js";
 
 // TODO(@darzu): remove all references to pirates
 

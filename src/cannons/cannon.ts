@@ -12,12 +12,12 @@ import { InRangeDef } from "../games/interact.js";
 import { LocalPlayerDef, PlayerDef } from "../games/player.js";
 import { AssetsDef } from "../assets.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
-import { AudioDef, randChordId } from "../audio.js";
+import { AudioDef, randChordId } from "../audio/audio.js";
 import { InputsDef } from "../inputs.js";
 import { DeletedDef } from "../delete.js";
 import { defineNetEntityHelper } from "../em_helpers.js";
 import { constructNetTurret, TurretDef } from "../games/turret.js";
-import { SoundSetDef } from "../ld53/sound-loader.js";
+import { SoundSetDef } from "../audio/sound-loader.js";
 
 export const { CannonPropsDef, CannonLocalDef, createCannon, createCannonNow } =
   defineNetEntityHelper(EM, {

@@ -39,7 +39,7 @@ import { cloneMesh, scaleMesh3 } from "../render/mesh.js";
 import { UVShipDef } from "./uv-ship.js";
 import { UVDirDef, UVPosDef } from "../ocean/ocean.js";
 import { ColorDef } from "../color-ecs.js";
-import { AudioDef, Music } from "../audio.js";
+import { AudioDef, Music } from "../audio/audio.js";
 
 export const EnemyCrewDef = EM.defineComponent("enemyCrew", () => {
   return {
