@@ -1,14 +1,14 @@
-import { ColorDef, TintsDef, applyTints } from "../../color-ecs.js";
-import { EM, EntityW } from "../../entity-manager.js";
+import { ColorDef, TintsDef, applyTints } from "../../color/color-ecs.js";
+import { EM, EntityW } from "../../ecs/entity-manager.js";
 import { onInit } from "../../init.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../../sprig-matrix.js";
-import { assert } from "../../util.js";
-import { computeTriangleNormal } from "../../utils-3d.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../../matrix/sprig-matrix.js";
+import { assert } from "../../utils/util.js";
+import { computeTriangleNormal } from "../../utils/utils-3d.js";
 import { comparisonSamplerPtr, CY, linearSamplerPtr } from "../gpu-registry.js";
 import { createCyStruct, CyToTS } from "../gpu-struct.js";
 import { pointLightsPtr } from "../lights.js";
 import { MAX_INDICES, MeshHandle } from "../mesh-pool.js";
-import { getAABBFromMesh, Mesh } from "../mesh.js";
+import { getAABBFromMesh, Mesh } from "../../meshes/mesh.js";
 import {
   RenderableDef,
   RendererDef,

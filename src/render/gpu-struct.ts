@@ -1,12 +1,12 @@
-import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
-import { align, max, sum } from "../math.js";
-import { assert } from "../util.js";
-import { objMap } from "../util.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { align, max, sum } from "../utils/math.js";
+import { assert } from "../utils/util.js";
+import { objMap } from "../utils/util.js";
 
 // TABLES, CONSTS and TYPE-LEVEL HELPERS
 
 const WGSLScalars = ["bool", "i32", "u32", "f32", "f16"] as const;
-type WGSLScalar = typeof WGSLScalars[number];
+type WGSLScalar = (typeof WGSLScalars)[number];
 type WGSLVec = {
   [S in WGSLScalar]: `vec2<${S}>` | `vec3<${S}>` | `vec4<${S}>`;
 }[WGSLScalar];
@@ -21,7 +21,7 @@ const WGSLMats = [
   "mat4x2<f32>",
   "mat4x4<f32>",
 ] as const;
-type WGSLMat = typeof WGSLMats[number];
+type WGSLMat = (typeof WGSLMats)[number];
 type WGSLType = WGSLScalar | WGSLVec | WGSLMat;
 
 type WGSLTypeToTSType = {

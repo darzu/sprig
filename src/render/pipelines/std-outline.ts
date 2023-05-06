@@ -35,6 +35,6 @@ export const outlineRender = CY.createRenderPipeline("outlineRender", {
   shaderFragmentEntry: "frag_main",
   shaderVertexEntry: "vert_main",
   fragOverrides: {
-    lineWidth: 3.0,
+    lineWidth: 1.0,
   },
 });

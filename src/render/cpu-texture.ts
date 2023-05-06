@@ -1,8 +1,8 @@
-import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
-import { clamp } from "../math.js";
-import { tempVec2, tempVec3, tempVec4 } from "../temp-pool.js";
-import { assert } from "../util.js";
-import { never } from "../util.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { clamp } from "../utils/math.js";
+import { tempVec2, tempVec3, tempVec4 } from "../matrix/temp-pool.js";
+import { assert } from "../utils/util.js";
+import { never } from "../utils/util.js";
 
 type ArityToVec<N extends 1 | 2 | 3 | 4> = N extends 1
   ? number

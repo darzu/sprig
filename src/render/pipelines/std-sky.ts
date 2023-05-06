@@ -1,4 +1,4 @@
-import { V } from "../../sprig-matrix.js";
+import { V } from "../../matrix/sprig-matrix.js";
 import { CY, linearSamplerPtr } from "../gpu-registry.js";
 import { pointLightsPtr } from "../lights.js";
 import { SKY_MASK } from "../pipeline-masks.js";

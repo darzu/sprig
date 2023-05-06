@@ -1,24 +1,14 @@
-import {
-  CameraDef,
-  CameraFollowDef,
-  setCameraFollowPosition,
-} from "../camera.js";
-import { ColorDef } from "../color-ecs.js";
+import { CameraDef, CameraFollowDef } from "../camera/camera.js";
+import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
-import { EM, EntityManager, EntityW } from "../entity-manager.js";
-import { AssetsDef, gameMeshFromMesh } from "../assets.js";
-import { ControllableDef } from "../games/controllable.js";
-import { createGhost, GhostDef } from "../games/ghost.js";
-import { LocalPlayerDef, PlayerDef } from "../games/player.js";
-import {
-  createGrassTile,
-  createGrassTileset,
-  GrassTileOpts,
-  GrassTilesetOpts,
-} from "../grass.js";
+import { EM, EntityManager, EntityW } from "../ecs/entity-manager.js";
+import { AssetsDef } from "../meshes/assets.js";
+import { ControllableDef } from "../input/controllable.js";
+import { createGhost, GhostDef } from "../debug/ghost.js";
+import { LocalHsPlayerDef, HsPlayerDef } from "../hyperspace/hs-player.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { ColliderDef } from "../physics/collider.js";
-import { AngularVelocityDef, LinearVelocityDef } from "../physics/motion.js";
+import { LinearVelocityDef } from "../motion/velocity.js";
 import { PhysicsStateDef, WorldFrameDef } from "../physics/nonintersection.js";
 import {
   PhysicsParentDef,
@@ -27,12 +17,7 @@ import {
   ScaleDef,
 } from "../physics/transform.js";
 import { PointLightDef } from "../render/lights.js";
-import {
-  cloneMesh,
-  mapMeshPositions,
-  Mesh,
-  transformMesh,
-} from "../render/mesh.js";
+import { cloneMesh, Mesh } from "../meshes/mesh.js";
 import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
@@ -45,38 +30,26 @@ import {
   RenderableDef,
   RendererDef,
 } from "../render/renderer-ecs.js";
-import { mat3, mat4, quat, V, vec2, vec3, vec4 } from "../sprig-matrix.js";
-import {
-  quatFromUpForward,
-  randNormalPosVec3,
-  randNormalVec3,
-  vec2Dbg,
-  vec3Dbg,
-} from "../utils-3d.js";
-import { drawBall, randColor } from "../utils-game.js";
-import { DevConsoleDef } from "../console.js";
-import { clamp, jitter, max, sum } from "../math.js";
-import { CY } from "../render/gpu-registry.js";
-import { assert, dbgOnce } from "../util.js";
-import { texTypeToBytes } from "../render/gpu-struct.js";
-import { PartyDef } from "../games/party.js";
+import { mat3, quat, V, vec2, vec3 } from "../matrix/sprig-matrix.js";
+import { quatFromUpForward } from "../utils/utils-3d.js";
+import { DevConsoleDef } from "../debug/console.js";
+import { clamp, jitter, max } from "../utils/math.js";
+import { assert } from "../utils/util.js";
+import { PartyDef } from "../camera/party.js";
 import {
   copyAABB,
   createAABB,
-  getAABBCornersTemp,
   getSizeFromAABB,
   updateAABBWithPoint,
 } from "../physics/aabb.js";
-import { rasterizeTri } from "../raster.js";
-import { InputsDef } from "../inputs.js";
-import { raiseManTurret } from "../games/turret.js";
-import { TextDef } from "../games/ui.js";
-import { VERBOSE_LOG } from "../flags.js";
-import { CanvasDef } from "../canvas.js";
+import { InputsDef } from "../input/inputs.js";
+import { raiseManTurret } from "../turret/turret.js";
+import { TextDef } from "../gui/ui.js";
+import { CanvasDef } from "../render/canvas.js";
 import { createJfaPipelines } from "../render/pipelines/std-jump-flood.js";
 import { createGridComposePipelines } from "../render/pipelines/std-compose.js";
 import { createTextureReader } from "../render/cpu-texture.js";
-import { initOcean, OceanDef, UVPosDef } from "../games/hyperspace/ocean.js";
+import { initOcean, OceanDef, UVPosDef } from "../ocean/ocean.js";
 import { renderOceanPipe } from "../render/pipelines/std-ocean.js";
 import { SKY_MASK } from "../render/pipeline-masks.js";
 import { skyPipeline } from "../render/pipelines/std-sky.js";
@@ -84,32 +57,23 @@ import {
   createFlatQuadMesh,
   makeDome,
   resetFlatQuadMesh,
-} from "../primatives.js";
+} from "../meshes/primatives.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
-import { startTowers } from "../games/tower.js";
-import { createGraph3DAxesMesh, createGraph3DDataMesh } from "../gizmos.js";
-import { createGraph3D } from "../utils-gizmos.js";
-import { ScoreDef } from "../smol/score.js";
-import { LandMapTexPtr, LevelMapDef, setMap } from "../smol/level-map.js";
-import { GrassCutTexPtr, grassPoolPtr } from "../smol/std-grass.js";
-import { setWindAngle, WindDef } from "../smol/wind.js";
-import { cannonDefaultPitch, createShip, ShipDef } from "../smol/ship.js";
-import { SAIL_FURL_RATE } from "../smol/sail.js";
-import { spawnStoneTower, StoneTowerDef, towerPool } from "./stone.js";
+import { ScoreDef } from "./score.js";
+import { LandMapTexPtr, LevelMapDef, setMap } from "../levels/level-map.js";
+import { setWindAngle, WindDef } from "../wind/wind.js";
+import { cannonDefaultPitch, createShip } from "./ship.js";
+import { SAIL_FURL_RATE } from "../wind/sail.js";
+import { spawnStoneTower, StoneTowerDef, towerPool } from "../stone/stone.js";
 import { LandDef } from "./land-ship.js";
-import { DeadDef } from "../delete.js";
-import { BulletDef, breakBullet } from "../games/bullet.js";
-import { ParametricDef } from "../games/parametric-motion.js";
+import { DeadDef } from "../ecs/delete.js";
+import { BulletDef, breakBullet } from "../cannons/bullet.js";
+import { ParametricDef } from "../motion/parametric-motion.js";
 import { createDock } from "./dock.js";
 import { ShipHealthDef } from "./ship-health.js";
-import { createRef } from "../em_helpers.js";
-import {
-  resetWoodHealth,
-  resetWoodState,
-  WoodAssetsDef,
-  WoodStateDef,
-} from "../wood.js";
-import { MapPaths } from "../smol/map-loader.js";
+import { createRef } from "../ecs/em_helpers.js";
+import { resetWoodHealth, resetWoodState, WoodStateDef } from "../wood/wood.js";
+import { MapPaths } from "../levels/map-loader.js";
 /*
 NOTES:
 - Cut grass by updating a texture that has cut/not cut or maybe cut-height
@@ -213,9 +177,9 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
         // ...(res.dev.showConsole ? dbgGridCompose : []),
       ];
     },
-    "smolGameRenderPipelines"
+    "grassGameRenderPipelines"
   );
-  em.requireSystem("smolGameRenderPipelines");
+  em.requireSystem("grassGameRenderPipelines");
 
   // Sun
   const sunlight = em.new();
@@ -640,19 +604,21 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
   //   await startTowers(tower3DPoses);
   // }
 
-  // world gizmo
-  const worldGizmo = EM.new();
-  EM.ensureComponentOn(
-    worldGizmo,
-    PositionDef,
-    V(-WORLD_HEIGHT / 2, 0, -WORLD_WIDTH / 2)
-  );
-  EM.ensureComponentOn(worldGizmo, ScaleDef, V(100, 100, 100));
-  EM.ensureComponentOn(
-    worldGizmo,
-    RenderableConstructDef,
-    res.assets.gizmo.proto
-  );
+  if (DBG_PLAYER) {
+    // world gizmo
+    const worldGizmo = EM.new();
+    EM.ensureComponentOn(
+      worldGizmo,
+      PositionDef,
+      V(-WORLD_HEIGHT / 2, 0, -WORLD_WIDTH / 2)
+    );
+    EM.ensureComponentOn(worldGizmo, ScaleDef, V(100, 100, 100));
+    EM.ensureComponentOn(
+      worldGizmo,
+      RenderableConstructDef,
+      res.assets.gizmo.proto
+    );
+  }
 
   // // debugging createGraph3D
   // let data: vec3[][] = [];
@@ -770,8 +736,8 @@ async function createPlayer() {
   p.cameraFollow.yawOffset = 0.0;
   p.cameraFollow.pitchOffset = -0.593;
 
-  EM.ensureResource(LocalPlayerDef, p.id);
-  EM.ensureComponentOn(p, PlayerDef);
+  EM.ensureResource(LocalHsPlayerDef, p.id);
+  EM.ensureComponentOn(p, HsPlayerDef);
   EM.ensureComponentOn(p, AuthorityDef, me.pid);
   EM.ensureComponentOn(p, PhysicsParentDef);
   return p;

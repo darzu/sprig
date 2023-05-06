@@ -1,31 +1,31 @@
-import { test } from "./test.js";
-import { setupObjImportExporter } from "./download.js";
-import { EM } from "./entity-manager.js";
-import { tick } from "./time.js";
-import { InputsDef, registerInputsSystem } from "./inputs.js";
+import { test } from "./utils/test.js";
+import { setupObjImportExporter } from "./meshes/mesh-normalizer.js";
+import { EM } from "./ecs/entity-manager.js";
+import { tick } from "./time/time.js";
+import { InputsDef, registerInputsSystem } from "./input/inputs.js";
 import { MeDef, JoinDef, HostDef, PeerNameDef } from "./net/components.js";
 import { addEventComponents } from "./net/events.js";
-import { dbg } from "./debugger.js";
-import { DevConsoleDef } from "./console.js";
-import { initReboundSandbox } from "./games/game-rebound.js";
+import { dbg } from "./debug/debugger.js";
+import { DevConsoleDef } from "./debug/console.js";
+import { initReboundSandbox } from "./physics/game-rebound.js";
 // import { callClothSystems } from "./game/cloth.js";
-import { registerCommonSystems } from "./games/game-init.js";
+import { registerCommonSystems } from "./game-init.js";
 import { setSimulationAlpha } from "./render/renderer-ecs.js";
-import { never } from "./util.js";
+import { never } from "./utils/util.js";
 // import { initHyperspaceGame } from "./game/game-hyperspace.js";
 import { DBG_ASSERT, ENABLE_NET, VERBOSE_LOG } from "./flags.js";
-import { initShipyardGame } from "./games/game-shipyard.js";
-import { gameplaySystems } from "./games/ghost.js";
-import { initFontEditor } from "./games/game-font.js";
-import { initGJKSandbox } from "./games/game-gjk.js";
-import { initHyperspaceGame } from "./games/hyperspace/game-hyperspace.js";
-import { initClothSandbox } from "./games/game-cloth.js";
-import { initCubeGame } from "./games/xp-cube.js";
-import { resetTempMatrixBuffer, V } from "./sprig-matrix.js";
-import { initSmol } from "./smol/game-smol.js";
+import { initShipyardGame } from "./wood/game-shipyard.js";
+import { gameplaySystems } from "./debug/ghost.js";
+import { initFontEditor } from "./gui/game-font.js";
+import { initGJKSandbox } from "./physics/game-gjk.js";
+import { initHyperspaceGame } from "./hyperspace/game-hyperspace.js";
+import { initClothSandbox } from "./cloth/game-cloth.js";
+import { initCubeGame } from "./debug/xp-cube.js";
+import { resetTempMatrixBuffer, V } from "./matrix/sprig-matrix.js";
+import { initGrassGame } from "./grass/game-grass.js";
 import { initLD53 } from "./ld53/game-ld53.js";
-import { initShadingGame } from "./games/game-shading.js";
-import { initModelingGame } from "./games/game-modeling.js";
+import { initShadingGame } from "./render/game-shading.js";
+import { initModelingGame } from "./meshes/game-modeling.js";
 
 export const FORCE_WEBGL = false;
 export const MAX_MESHES = 20000;
@@ -36,7 +36,7 @@ const ALL_GAMES = [
   "gjk",
   "rebound", // broken-ish
   "shipyard",
-  "smol",
+  "grass",
   "font",
   "hyperspace",
   "cloth", // broken-ish
@@ -98,11 +98,11 @@ function legacyRequireAllTheSystems() {
   }
   EM.requireSystem("controllableInput");
   EM.requireSystem("controllableCameraFollow");
-  EM.requireSystem("buildPlayers");
-  EM.requireSystem("playerFacingDir");
-  EM.requireSystem("stepPlayers");
+  EM.requireSystem("buildHsPlayers");
+  EM.requireSystem("hsPlayerFacingDir");
+  EM.requireSystem("stepHsPlayers");
   if (GAME === "hyperspace") {
-    EM.requireSystem("playerLookingForShip");
+    EM.requireSystem("hsPlayerLookingForShip");
   }
   if (GAME === "rebound") {
     EM.maybeRequireSystem("sandboxSpawnBoxes");
@@ -123,7 +123,7 @@ function legacyRequireAllTheSystems() {
     EM.requireSystem("gemPropsBuild");
     EM.requireSystem("rudderPropsBuild");
     EM.requireSystem("mastPropsBuild");
-    EM.requireSystem("playerShipPropsBuild");
+    EM.requireSystem("hsShipPropsBuild");
     EM.requireSystem("darkStarPropsBuild");
     EM.requireSystem("darkStarOrbit");
     EM.requireSystem("hyperspaceGame");
@@ -274,7 +274,7 @@ async function startGame(localPeerName: string, host: string | null) {
   else if (GAME === "cube") initCubeGame(EM);
   else if (GAME === "shipyard") initShipyardGame(EM, hosting);
   else if (GAME === "font") initFontEditor(EM);
-  else if (GAME === "smol") initSmol(EM, hosting);
+  else if (GAME === "grass") initGrassGame(EM, hosting);
   else if (GAME === "ld53") initLD53(EM, hosting);
   else if (GAME === "shading") initShadingGame();
   else if (GAME === "modeling") initModelingGame();

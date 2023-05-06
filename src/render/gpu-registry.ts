@@ -1,6 +1,6 @@
-import { ComponentDef } from "../entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
-import { assert } from "../util.js";
+import { ComponentDef } from "../ecs/entity-manager.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { assert } from "../utils/util.js";
 import {
   CyCompPipeline,
   CyRenderPipeline,
@@ -12,7 +12,7 @@ import {
   CyToTS,
   texTypeIsDepth,
 } from "./gpu-struct.js";
-import { Mesh } from "./mesh.js";
+import { Mesh } from "../meshes/mesh.js";
 import { ShaderName, ShaderSet } from "./shader-loader.js";
 
 // NOTE: this file is supposed to be WebGPU and WebGL agnostic.

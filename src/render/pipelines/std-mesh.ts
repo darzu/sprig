@@ -1,12 +1,17 @@
-import { ColorDef, TintsDef, applyTints, AlphaDef } from "../../color-ecs.js";
+import {
+  ColorDef,
+  TintsDef,
+  applyTints,
+  AlphaDef,
+} from "../../color/color-ecs.js";
 import { ENDESGA16 } from "../../color/palettes.js";
-import { DeadDef, DeletedDef } from "../../delete.js";
-import { EntityW } from "../../entity-manager.js";
+import { DeadDef, DeletedDef } from "../../ecs/delete.js";
+import { EntityW } from "../../ecs/entity-manager.js";
 import { onInit } from "../../init.js";
 // import { oceanJfa } from "../../game/ocean.js";
 // import { oceanJfa } from "../../game/ocean.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../../sprig-matrix.js";
-import { tempVec3 } from "../../temp-pool.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../../matrix/sprig-matrix.js";
+import { tempVec3 } from "../../matrix/temp-pool.js";
 import { createRenderTextureToQuad } from "../gpu-helper.js";
 import { comparisonSamplerPtr, CY, linearSamplerPtr } from "../gpu-registry.js";
 import { pointLightsPtr } from "../lights.js";

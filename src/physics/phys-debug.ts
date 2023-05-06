@@ -1,10 +1,10 @@
 import { ColliderDef } from "./collider.js";
-import { EM, EntityManager } from "../entity-manager.js";
-import { AssetsDef, LocalMeshes } from "../assets.js";
-import { ColorDef } from "../color-ecs.js";
-import { InputsDef } from "../inputs.js";
-import { mathMap } from "../math.js";
-import { cloneMesh, mapMeshPositions, RawMesh } from "../render/mesh.js";
+import { EM, EntityManager } from "../ecs/entity-manager.js";
+import { AssetsDef, LocalMeshes } from "../meshes/assets.js";
+import { ColorDef } from "../color/color-ecs.js";
+import { InputsDef } from "../input/inputs.js";
+import { mathMap } from "../utils/math.js";
+import { cloneMesh, mapMeshPositions, RawMesh } from "../meshes/mesh.js";
 import { AABB } from "./aabb.js";
 import {
   PhysicsBroadCollidersDef,
@@ -24,7 +24,7 @@ import {
   ScaleDef,
   updateFrameFromPosRotScale,
 } from "./transform.js";
-import { vec3, V } from "../sprig-matrix.js";
+import { vec3, V } from "../matrix/sprig-matrix.js";
 
 // TODO(@darzu): re-enable all this! it requires line drawing again
 

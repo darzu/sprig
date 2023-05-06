@@ -1,5 +1,5 @@
-import { EntityManager } from "../entity-manager.js";
-import { Serializer, Deserializer } from "../serialize.js";
+import { EntityManager } from "../ecs/entity-manager.js";
+import { Serializer, Deserializer } from "../utils/serialize.js";
 import {
   AuthorityDef,
   Authority,

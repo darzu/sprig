@@ -1,18 +1,18 @@
-import { ColorDef } from "../color-ecs.js";
+import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
-import { EM } from "../entity-manager.js";
+import { EM } from "../ecs/entity-manager.js";
 import {
   appendBoard,
   dbgPathWithGizmos,
   lerpBetween,
   Path,
-} from "../games/shipyard.js";
+} from "../wood/shipyard.js";
 import { getHalfsizeFromAABB } from "../physics/aabb.js";
 import { ColliderDef } from "../physics/collider.js";
 import { PositionDef } from "../physics/transform.js";
-import { getAABBFromMesh, Mesh, validateMesh } from "../render/mesh.js";
+import { getAABBFromMesh, Mesh, validateMesh } from "../meshes/mesh.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
-import { quat, V, vec3 } from "../sprig-matrix.js";
+import { quat, V, vec3 } from "../matrix/sprig-matrix.js";
 import {
   createEmptyMesh,
   createTimberBuilder,
@@ -24,7 +24,7 @@ import {
   WoodHealthDef,
   WoodState,
   WoodStateDef,
-} from "../wood.js";
+} from "../wood/wood.js";
 
 export function createDock() {
   const [mesh, wood] = createDockWood();

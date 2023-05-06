@@ -1,16 +1,24 @@
-import { ColorDef } from "../color-ecs.js";
-import { EM, EntityW } from "../entity-manager.js";
-import { AssetsDef, GameMesh } from "../assets.js";
-import { gameplaySystems } from "../games/ghost.js";
-import { vec2, vec3, vec4, quat, mat4, mat3, V } from "../sprig-matrix.js";
+import { ColorDef } from "../color/color-ecs.js";
+import { EM, EntityW } from "../ecs/entity-manager.js";
+import { AssetsDef, GameMesh } from "../meshes/assets.js";
+import { gameplaySystems } from "../debug/ghost.js";
+import {
+  vec2,
+  vec3,
+  vec4,
+  quat,
+  mat4,
+  mat3,
+  V,
+} from "../matrix/sprig-matrix.js";
 import {
   extrudeQuad,
   HEdge,
   HPoly,
   HVert,
   meshToHalfEdgePoly,
-} from "../half-edge.js";
-import { createIdxPool } from "../idx-pool.js";
+} from "../meshes/half-edge.js";
+import { createIdxPool } from "../utils/idx-pool.js";
 import { ColliderDef } from "../physics/collider.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import { PositionDef, ScaleDef, RotationDef } from "../physics/transform.js";
@@ -20,8 +28,8 @@ import {
   RendererDef,
   RenderableDef,
 } from "../render/renderer-ecs.js";
-import { assert } from "../util.js";
-import { randNormalPosVec3, vec3Mid } from "../utils-3d.js";
+import { assert } from "../utils/util.js";
+import { randNormalPosVec3, vec3Mid } from "../utils/utils-3d.js";
 import { ButtonsStateDef, ButtonDef } from "./button.js";
 import { WidgetDef, WidgetLayerDef } from "./widgets.js";
 import { meshPoolPtr } from "../render/pipelines/std-scene.js";

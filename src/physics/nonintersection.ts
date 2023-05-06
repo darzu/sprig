@@ -1,6 +1,6 @@
 import { Collider, ColliderDef, DefaultLayer, Layer } from "./collider.js";
-import { Component, EM, Entity, EntityManager } from "../entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
+import { Component, EM, Entity, EntityManager } from "../ecs/entity-manager.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import {
   CollidesWith,
   computeContactData,
@@ -36,8 +36,8 @@ import {
   TransformDef,
   updateFrameFromPosRotScale,
 } from "./transform.js";
-import { IdPair, idPair } from "../util.js";
-import { tempVec3 } from "../temp-pool.js";
+import { IdPair, idPair } from "../utils/util.js";
+import { tempVec3 } from "../matrix/temp-pool.js";
 
 // TODO(@darzu): we use "object", "obj", "o" everywhere in here, we should use "entity", "ent", "e"
 

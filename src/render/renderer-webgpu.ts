@@ -1,5 +1,5 @@
-import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
-import { assert } from "../util.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { assert } from "../utils/util.js";
 import {
   CY,
   CyMeshPoolPtr,
@@ -10,7 +10,7 @@ import {
   PtrKind,
 } from "./gpu-registry.js";
 import { MeshHandle, MeshPool } from "./mesh-pool.js";
-import { Mesh } from "./mesh.js";
+import { Mesh } from "../meshes/mesh.js";
 import { Renderer } from "./renderer-ecs.js";
 import {
   CyRenderPipeline,
@@ -38,7 +38,7 @@ import {
 import { SceneStruct, SceneTS } from "./pipelines/std-scene.js";
 import { ShaderSet } from "./shader-loader.js";
 import { CyStructDesc, texTypeToBytes } from "./gpu-struct.js";
-import { align } from "../math.js";
+import { align } from "../utils/math.js";
 import { pointLightsPtr, PointLightStruct, PointLightTS } from "./lights.js";
 import {
   gerstnerWavesPtr,
@@ -52,12 +52,12 @@ import {
 } from "./pipelines/std-ocean.js";
 import { GPUBufferUsage } from "./webgpu-hacks.js";
 import { PERF_DBG_GPU, VERBOSE_LOG } from "../flags.js";
-import { dbgLogOnce } from "../util.js";
+import { dbgLogOnce } from "../utils/util.js";
 import {
   GrassVertStruct,
   GrassUniStruct,
   grassPoolPtr,
-} from "../smol/std-grass.js";
+} from "../grass/std-grass.js";
 
 // TODO(@darzu): Try using drawIndirect !!
 //    https://gpuweb.github.io/gpuweb/#dom-gpurendercommandsmixin-drawindirect

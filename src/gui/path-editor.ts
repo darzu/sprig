@@ -1,29 +1,29 @@
-import { ColorDef } from "../color-ecs.js";
-import { EM, EntityW } from "../entity-manager.js";
-import { AssetsDef, GameMesh, gameMeshFromMesh } from "../assets.js";
-import { gameplaySystems } from "../games/ghost.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
+import { ColorDef } from "../color/color-ecs.js";
+import { EM, EntityW } from "../ecs/entity-manager.js";
+import { AssetsDef, GameMesh, gameMeshFromMesh } from "../meshes/assets.js";
+import { gameplaySystems } from "../debug/ghost.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import {
   extrudeQuad,
   HEdge,
   HPoly,
   HVert,
   meshToHalfEdgePoly,
-} from "../half-edge.js";
-import { createIdxPool } from "../idx-pool.js";
+} from "../meshes/half-edge.js";
+import { createIdxPool } from "../utils/idx-pool.js";
 import { rayVsRay } from "../physics/broadphase.js";
 import { ColliderDef } from "../physics/collider.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import { PositionDef, ScaleDef, RotationDef } from "../physics/transform.js";
 import { MeshHandle, MeshReserve } from "../render/mesh-pool.js";
-import { LineMesh, Mesh, RawMesh } from "../render/mesh.js";
+import { LineMesh, Mesh, RawMesh } from "../meshes/mesh.js";
 import {
   RenderableConstructDef,
   RendererDef,
   RenderableDef,
 } from "../render/renderer-ecs.js";
-import { assert } from "../util.js";
-import { randNormalPosVec3, vec3Mid } from "../utils-3d.js";
+import { assert } from "../utils/util.js";
+import { randNormalPosVec3, vec3Mid } from "../utils/utils-3d.js";
 import { ButtonsStateDef, ButtonDef } from "./button.js";
 import { WidgetDef, WidgetLayerDef } from "./widgets.js";
 import { meshPoolPtr } from "../render/pipelines/std-scene.js";

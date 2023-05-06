@@ -1,20 +1,20 @@
-import { CameraComputedDef } from "../camera.js";
-import { AlphaDef, ColorDef } from "../color-ecs.js";
+import { CameraComputedDef } from "../camera/camera.js";
+import { AlphaDef, ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
-import { EM, EntityW } from "../entity-manager.js";
-import { Assets, AssetsDef } from "../assets.js";
-import { gameplaySystems } from "../games/ghost.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
-import { MouseDragDef } from "../inputs.js";
+import { EM, EntityW } from "../ecs/entity-manager.js";
+import { Assets, AssetsDef } from "../meshes/assets.js";
+import { gameplaySystems } from "../debug/ghost.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { MouseDragDef } from "../input/inputs.js";
 import { ColliderDef } from "../physics/collider.js";
 import { PhysicsResultsDef } from "../physics/nonintersection.js";
 import { PositionDef, ScaleDef } from "../physics/transform.js";
-import { cloneMesh } from "../render/mesh.js";
+import { cloneMesh } from "../meshes/mesh.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
-import { tempVec3 } from "../temp-pool.js";
-import { assert } from "../util.js";
-import { screenPosToWorldPos } from "../utils-game.js";
-import { UICursorDef } from "../games/game-font.js";
+import { tempVec3 } from "../matrix/temp-pool.js";
+import { assert } from "../utils/util.js";
+import { screenPosToWorldPos } from "../utils/utils-game.js";
+import { UICursorDef } from "./game-font.js";
 
 // adornments are: entities that are parented to an entity's mesh parts
 //    [ ] track changes via version number on the mesh data

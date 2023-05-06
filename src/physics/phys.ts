@@ -1,5 +1,5 @@
-import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
-import { dbgDirOnce, __isSMI } from "../util.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { dbgDirOnce, __isSMI } from "../utils/util.js";
 import {
   PhysCollider,
   PhysicsObject,
@@ -9,14 +9,12 @@ import {
   registerUpdateInContactSystems,
   registerUpdateWorldAABBs,
 } from "./nonintersection.js";
-import { EntityManager } from "../entity-manager.js";
+import { EntityManager } from "../ecs/entity-manager.js";
 import { registerPhysicsDebuggerSystem } from "./phys-debug.js";
 import {
   registerPhysicsClampVelocityByContact,
   registerPhysicsClampVelocityBySize,
-  registerPhysicsApplyLinearVelocity,
-  registerPhysicsApplyAngularVelocity,
-} from "./velocity-system.js";
+} from "../motion/velocity-clamp.js";
 import {
   Frame,
   registerUpdateLocalFromPosRotScale,
@@ -25,8 +23,12 @@ import {
 import { Collider } from "./collider.js";
 import { AABB, aabbCenter } from "./aabb.js";
 import { registerNarrowPhaseSystems } from "./narrowphase.js";
-import { assert } from "../util.js";
-import { tempVec3 } from "../temp-pool.js";
+import { assert } from "../utils/util.js";
+import { tempVec3 } from "../matrix/temp-pool.js";
+import {
+  registerPhysicsApplyLinearVelocity,
+  registerPhysicsApplyAngularVelocity,
+} from "../motion/velocity.js";
 
 // TODO(@darzu): PHYSICS TODO:
 // [ ] seperate rotation and motion w/ constraint checking between them

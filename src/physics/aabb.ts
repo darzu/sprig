@@ -1,7 +1,7 @@
-import { clamp } from "../math.js";
-import { mat4, V, vec2, vec3 } from "../sprig-matrix.js";
-import { range } from "../util.js";
-import { vec3Dbg2, vec3Mid } from "../utils-3d.js";
+import { clamp } from "../utils/math.js";
+import { mat4, V, vec2, vec3 } from "../matrix/sprig-matrix.js";
+import { range } from "../utils/util.js";
+import { vec3Dbg2, vec3Mid } from "../utils/utils-3d.js";
 
 export function __resetAABBDbgCounters() {
   _doesOverlapAABBs = 0;

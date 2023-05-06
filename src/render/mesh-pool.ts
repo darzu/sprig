@@ -1,7 +1,7 @@
-import { align, alignDown } from "../math.js";
-import { assert, assertDbg, dbgLogOnce } from "../util.js";
+import { align, alignDown } from "../utils/math.js";
+import { assert, assertDbg, dbgLogOnce } from "../utils/util.js";
 import { CyStructDesc, CyToTS } from "./gpu-struct.js";
-import { Mesh } from "./mesh.js";
+import { Mesh } from "../meshes/mesh.js";
 import {
   createCyArray,
   createCyIdxBuf,
@@ -16,9 +16,9 @@ import {
   CyIdxBufferPtr,
   CyMeshPoolPtr,
 } from "./gpu-registry.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { DEFAULT_MASK } from "./pipeline-masks.js";
-import { ComponentDef } from "../entity-manager.js";
+import { ComponentDef } from "../ecs/entity-manager.js";
 import { GPUBufferUsage } from "./webgpu-hacks.js";
 import { CyResources } from "./instantiator-webgpu.js";
 

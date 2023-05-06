@@ -1,6 +1,6 @@
-import { align } from "../math.js";
-import { assert, assertDbg, dbgAddBlame } from "../util.js";
-import { dbgLogOnce, isNumber } from "../util.js";
+import { align } from "../utils/math.js";
+import { assert, assertDbg, dbgAddBlame } from "../utils/util.js";
+import { dbgLogOnce, isNumber } from "../utils/util.js";
 import {
   CyStructDesc,
   CyStruct,
@@ -20,8 +20,8 @@ import {
   isRenderPipelinePtr,
 } from "./gpu-registry.js";
 import { MeshPool } from "./mesh-pool.js";
-import { BLACK } from "../assets.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
+import { BLACK } from "../meshes/assets.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { GPUBufferUsage } from "./webgpu-hacks.js";
 import { PERF_DBG_GPU, PERF_DBG_GPU_BLAME } from "../flags.js";
 

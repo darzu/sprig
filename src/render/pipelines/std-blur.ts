@@ -1,4 +1,4 @@
-import { range } from "../../util.js";
+import { range } from "../../utils/util.js";
 import { CY, linearSamplerPtr } from "../gpu-registry.js";
 import { createCyStruct } from "../gpu-struct.js";
 import { outlinedTexturePtr } from "./std-outline.js";

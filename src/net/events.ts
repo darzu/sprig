@@ -1,4 +1,4 @@
-import { vec2, vec3, vec4, quat, mat4, V } from "../sprig-matrix.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import {
   EntityManager,
   EM,
@@ -6,8 +6,12 @@ import {
   EDef,
   ESet,
   ComponentDef,
-} from "../entity-manager.js";
-import { Serializer, Deserializer, OutOfRoomError } from "../serialize.js";
+} from "../ecs/entity-manager.js";
+import {
+  Serializer,
+  Deserializer,
+  OutOfRoomError,
+} from "../utils/serialize.js";
 import { MAX_MESSAGE_SIZE, MessageType } from "./message.js";
 import {
   MeDef,
@@ -23,10 +27,10 @@ import {
   AuthorityDef,
   Authority,
 } from "./components.js";
-import { hashCode, NumberTuple } from "../util.js";
-import { TimeDef } from "../time.js";
+import { hashCode, NumberTuple } from "../utils/util.js";
+import { TimeDef } from "../time/time.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
-import { assert } from "../util.js";
+import { assert } from "../utils/util.js";
 import { onInit } from "../init.js";
 
 export interface Event<Extra> {

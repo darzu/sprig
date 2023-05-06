@@ -1,4 +1,4 @@
-import { range } from "../../util.js";
+import { range } from "../../utils/util.js";
 import { CY } from "../gpu-registry.js";
 import { pointLightsPtr } from "../lights.js";
 import { meshPoolPtr } from "./std-scene.js";

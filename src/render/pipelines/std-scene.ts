@@ -1,12 +1,12 @@
-import { EM } from "../../entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../../sprig-matrix.js";
-import { assert, assertDbg } from "../../util.js";
-import { computeTriangleNormal } from "../../utils-3d.js";
-import { randColor } from "../../utils-game.js";
+import { EM } from "../../ecs/entity-manager.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../../matrix/sprig-matrix.js";
+import { assert, assertDbg } from "../../utils/util.js";
+import { computeTriangleNormal } from "../../utils/utils-3d.js";
+import { randColor } from "../../utils/utils-game.js";
 import { CY } from "../gpu-registry.js";
 import { createCyStruct, CyToTS } from "../gpu-struct.js";
 import { MAX_INDICES, MeshHandle } from "../mesh-pool.js";
-import { getAABBFromMesh, Mesh } from "../mesh.js";
+import { getAABBFromMesh, Mesh } from "../../meshes/mesh.js";
 
 // TODO(@darzu): SUPPORT MULTIPLE VERT & INDEX BUFFERS PER POOL!
 export const MAX_MESHES = 20000;

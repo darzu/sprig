@@ -1,5 +1,5 @@
-import { EntityManager } from "../entity-manager.js";
-import { OutOfRoomError, Serializer } from "../serialize.js";
+import { EntityManager } from "../ecs/entity-manager.js";
+import { OutOfRoomError, Serializer } from "../utils/serialize.js";
 import {
   Authority,
   AuthorityDef,
@@ -25,7 +25,7 @@ import {
   MessageType,
   serializeEntity,
 } from "./message.js";
-import { TimeDef } from "../time.js";
+import { TimeDef } from "../time/time.js";
 
 export function registerSyncSystem(em: EntityManager) {
   em.registerSystem(
