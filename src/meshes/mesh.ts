@@ -47,13 +47,36 @@ export interface RawMesh {
   normals?: vec3[]; // optional; one tangent per vertex
   // TODO(@darzu):
   dbgName?: string;
+  rigging?: Rigging;
 }
+
+export interface Rigging {
+  // per-vertex info
+  jointIds: vec4[];
+  jointWeights: vec4[];
+  // per-joint info
+  // TODO: consider tracking pos, rot, scale (do we need scale??) separately
+  transforms: mat4[];
+  parents: number[];
+  inverseBindMatrices: mat4[];
+  // poses[a][b] get the transform for joint b in pose a
+  poses: mat4[][];
+}
+
 export interface Mesh extends RawMesh {
   // made non-optional
   surfaceIds: NonNullable<RawMesh["surfaceIds"]>;
   // flags
   usesProvoking: true;
   // verticesUnshared?: boolean;
+}
+
+export interface RiggedMesh extends Mesh {
+  rigging: NonNullable<RawMesh["rigging"]>;
+}
+
+export function isRigged(mesh: Mesh): mesh is RiggedMesh {
+  return !!mesh.rigging;
 }
 
 // TODO(@darzu): doesn't fit well with other mesh stuff.....
@@ -68,7 +91,21 @@ export function meshStats(m: RawMesh): string {
   }`;
 }
 
+// TODO: is it actually necessary to clone all these properties?
+function cloneRigging(rigging: Rigging): Rigging {
+  return {
+    ...rigging,
+    jointIds: rigging.jointIds.map((v) => vec4.clone(v)),
+    jointWeights: rigging.jointWeights.map((v) => vec4.clone(v)),
+    inverseBindMatrices: rigging.inverseBindMatrices.map((m) => mat4.clone(m)),
+    transforms: rigging.transforms.map((m) => mat4.clone(m)),
+    parents: [...rigging.parents],
+    poses: rigging.poses.map((pose) => pose.map((m) => mat4.clone(m))),
+  };
+}
+
 export function cloneMesh(m: Mesh): Mesh;
+export function cloneMesh(m: RiggedMesh): RiggedMesh;
 export function cloneMesh(m: RawMesh): RawMesh;
 export function cloneMesh(m: Mesh | RawMesh): Mesh | RawMesh {
   // TODO(@darzu): i hate having to manually update this
@@ -85,6 +122,7 @@ export function cloneMesh(m: Mesh | RawMesh): Mesh | RawMesh {
     surfaceIds: (m as Mesh).surfaceIds
       ? [...(m as Mesh).surfaceIds]
       : undefined,
+    rigging: m.rigging ? cloneRigging(m.rigging) : undefined,
   };
 }
 
@@ -199,6 +237,32 @@ export function validateMesh(m: RawMesh) {
         qi <= m.pos.length - 1,
         `invalid vert idx in tri: ${q} (vert count: ${m.pos.length})`
       );
+  if (m.rigging) {
+    const rigging = m.rigging!;
+    assert(
+      rigging.jointIds.length === vertCount,
+      `mesh ${dbgName} joint IDs count (${rigging.jointIds.length}) doesn't match vert count (${vertCount}`
+    );
+    assert(
+      rigging.jointWeights.length === vertCount,
+      `mesh ${dbgName} joint IDs count (${rigging.jointWeights.length}) doesn't match vert count (${vertCount}`
+    );
+    const numJoints = rigging.parents.length;
+    for (let ids of rigging.jointIds) {
+      for (let ji of ids) {
+        assert(
+          0 <= ji && ji < numJoints,
+          `invalid joint ID ${ji} in mesh ${dbgName}`
+        );
+      }
+    }
+    for (let p of rigging.parents) {
+      assert(
+        0 <= p && p < numJoints,
+        `invalid joint ${p} as parent in mesh ${dbgName}`
+      );
+    }
+  }
 }
 
 let _timeSpentOnNeighborIsh = 0;
@@ -215,6 +279,12 @@ export function unshareProvokingVerticesWithMap(input: RawMesh): {
     : undefined;
   const normals: vec3[] | undefined = input.normals
     ? [...input.normals]
+    : undefined;
+  const jointIds: vec4[] | undefined = input.rigging
+    ? [...input.rigging.jointIds]
+    : undefined;
+  const jointWeights: vec4[] | undefined = input.rigging
+    ? [...input.rigging.jointWeights]
     : undefined;
   const tri: vec3[] = [];
   const quad: vec4[] = [];
@@ -285,6 +355,8 @@ export function unshareProvokingVerticesWithMap(input: RawMesh): {
       if (uvs) uvs.push(input.uvs![i0]);
       if (tangents) tangents.push(input.tangents![i0]);
       if (normals) normals.push(input.normals![i0]);
+      if (jointIds) jointIds.push(input.rigging!.jointIds[i0]);
+      if (jointWeights) jointWeights.push(input.rigging!.jointWeights[i0]);
       provoking[i3] = true;
       tri.push(V(i3, i1, i2));
     }
@@ -320,6 +392,8 @@ export function unshareProvokingVerticesWithMap(input: RawMesh): {
       if (uvs) uvs.push(input.uvs![i0]);
       if (tangents) tangents.push(input.tangents![i0]);
       if (normals) normals.push(input.normals![i0]);
+      if (jointIds) jointIds.push(input.rigging!.jointIds[i0]);
+      if (jointWeights) jointWeights.push(input.rigging!.jointWeights[i0]);
       provoking[i4] = true;
       quad[qi] = vec4.clone([i4, i1, i2, i3]);
       // console.log(`duplicating: ${i0}!`);
@@ -365,6 +439,13 @@ export function unshareProvokingVerticesWithMap(input: RawMesh): {
       tri,
       quad,
       usesProvoking: true,
+      rigging: input.rigging
+        ? {
+            ...input.rigging,
+            jointIds: jointIds!,
+            jointWeights: jointWeights!,
+          }
+        : undefined,
     },
     posMap,
     provoking,
@@ -785,6 +866,7 @@ export function getMeshAsGrid(m: RawMesh): {
 }
 
 // TODO(@darzu): PERF. probably instead of doing merge meshes, we should have a MeshBuilder
+// TODO: this will delete rigging info
 export function mergeMeshes(...rs: RawMesh[]): RawMesh {
   if (rs.length === 1) return rs[0];
 
