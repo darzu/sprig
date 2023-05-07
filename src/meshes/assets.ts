@@ -24,7 +24,7 @@ import { RendererDef } from "../render/renderer-ecs.js";
 import { Renderer } from "../render/renderer-ecs.js";
 import { assert } from "../utils/util.js";
 import { objMap, range } from "../utils/util.js";
-import { getText } from "../fetch/webget.js";
+import { getBytes, getText } from "../fetch/webget.js";
 import { AABBCollider } from "../physics/collider.js";
 import {
   computeTriangleNormal,
@@ -68,6 +68,7 @@ import {
   TRI_FENCE,
 } from "./primatives.js";
 import { createGizmoMesh } from "../debug/gizmos.js";
+import { importGltf } from "./import_gltf.js";
 
 // TODO: load these via streaming
 // TODO(@darzu): it's really bad that all these assets are loaded for each game
@@ -100,6 +101,7 @@ const RemoteMeshes = {
   rudder: "rudder.sprig.obj",
   // TODO(@darzu): including hyperspace-ocean makes load time ~100ms slower :/
   ocean: "hyperspace-ocean.sprig.obj",
+  pirate: "pirate.glb",
   // ocean: "ball.sprig.obj", // TODO: FOR PERF
 } as const;
 
@@ -510,12 +512,41 @@ async function loadTxtInternal(relPath: string): Promise<string> {
 
   return txt;
 }
+
+async function loadBytesInternal(relPath: string): Promise<ArrayBuffer> {
+  // download
+  // TODO(@darzu): perf: check DEFAULT_ASSET_PATH once
+  let bytes;
+  try {
+    bytes = await getBytes(DEFAULT_ASSET_PATH + relPath);
+  } catch (_) {
+    console.warn(
+      `Asset path ${DEFAULT_ASSET_PATH + relPath} failed; trying ${
+        BACKUP_ASSET_PATH + relPath
+      }`
+    );
+    bytes = await getBytes(BACKUP_ASSET_PATH + relPath);
+  }
+
+  return bytes;
+}
+
 async function loadMeshInternal(relPath: string): Promise<RawMesh> {
   const res = await loadMeshSetInternal(relPath);
   return mergeMeshes(...res);
 }
 async function loadMeshSetInternal(relPath: string): Promise<RawMesh[]> {
   // download
+  if (relPath.endsWith(".glb")) {
+    let bytes = await loadBytesInternal(relPath);
+    const res = importGltf(bytes);
+    console.dir(res);
+    assert(
+      !!res && !isParseError(res),
+      `unable to parse asset set (${relPath}):\n${res}`
+    );
+    return [res];
+  }
   let txt = await loadTxtInternal(relPath);
 
   // parse
