@@ -1,5 +1,5 @@
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
-import { RawMesh } from "./mesh.js";
+import { RawMesh, Rigging } from "./mesh.js";
 import { assert, never } from "../utils/util.js";
 import { idPair, IdPair, isString } from "../utils/util.js";
 import { texTypeIsDepthAndStencil } from "../render/gpu-struct.js";
@@ -43,6 +43,32 @@ interface Gltf {
       };
       indices: number;
     }[];
+  }[];
+  skins?: {
+    inverseBindMatrices: number;
+    joints: number[];
+    name: string;
+  }[];
+  animations: {
+    channels: {
+      sampler: number;
+      target: {
+        node: number;
+        path: "rotation" | "translation" | "scale" | "weights";
+      };
+    }[];
+    samplers: {
+      input: number;
+      interpolation: string;
+      output: number;
+    }[];
+  }[];
+  nodes: {
+    name: string;
+    rotation?: [number, number, number, number];
+    scale?: [number, number, number];
+    translation?: [number, number, number];
+    children?: number[];
   }[];
 }
 
@@ -183,6 +209,7 @@ export function importGltf(buf: ArrayBuffer): RawMesh | ParseError {
   );
   const jsonStr = new TextDecoder("utf-8").decode(jsonBuf);
   const gltf = JSON.parse(jsonStr) as Gltf;
+  //console.dir(gltf);
 
   const buffers: ArrayBufferLike[] = [];
   let nextChunkStart = 5 * Uint32Array.BYTES_PER_ELEMENT + jsonLength;
@@ -266,8 +293,180 @@ export function importGltf(buf: ArrayBuffer): RawMesh | ParseError {
     colors = tri.map(() => V(0.1, 0.1, 0.1));
   }
 
+  let rigging: Rigging | undefined = undefined;
+  // joints
+  if (gltf.skins !== undefined && gltf.skins.length > 0) {
+    if (gltf.skins.length !== 1) {
+      return `Got ${gltf.skins.length} skins, expected 0 or 1`;
+    }
+
+    const jointIdsAccessor =
+      gltf.accessors[mesh.primitives[0].attributes.JOINTS_0];
+    if (!isAccessorFor(jointIdsAccessor, "VEC4")) {
+      return `Unexpected index type ${jointIdsAccessor.type}`;
+    }
+    const jointIds: vec4[] | ParseError = readArray(
+      gltf,
+      buffers,
+      jointIdsAccessor
+    );
+    if (isParseError(jointIds)) {
+      return jointIds;
+    }
+
+    const jointWeightsAccessor =
+      gltf.accessors[mesh.primitives[0].attributes.WEIGHTS_0];
+    if (!isAccessorFor(jointWeightsAccessor, "VEC4")) {
+      return `Unexpected index type ${jointWeightsAccessor.type}`;
+    }
+    const jointWeights: vec4[] | ParseError = readArray(
+      gltf,
+      buffers,
+      jointWeightsAccessor
+    );
+    if (isParseError(jointWeights)) {
+      return jointWeights;
+    }
+
+    const inverseBindMatricesAccessor =
+      gltf.accessors[gltf.skins[0].inverseBindMatrices];
+    if (!isAccessorFor(inverseBindMatricesAccessor, "MAT4")) {
+      return `Unexpected index type ${inverseBindMatricesAccessor.type}`;
+    }
+    const inverseBindMatrices: mat4[] | ParseError = readArray(
+      gltf,
+      buffers,
+      inverseBindMatricesAccessor
+    );
+    if (isParseError(inverseBindMatrices)) {
+      return inverseBindMatrices;
+    }
+
+    const jointPos: vec3[] = [];
+    const jointRot: quat[] = [];
+    const jointScale: vec3[] = [];
+    const parents: number[] = [];
+
+    // by default, parent every joint to itself
+    for (let i = 0; i < gltf.skins[0].joints.length; i++) {
+      parents.push(i);
+    }
+
+    const jointNodeIdxToJointIdx = new Map<number, number>();
+    gltf.skins[0].joints.forEach((jointNodeIdx, jointIdx) =>
+      jointNodeIdxToJointIdx.set(jointNodeIdx, jointIdx)
+    );
+
+    let i = 0;
+    for (let jointNodeIdx of gltf.skins[0].joints) {
+      const jointNode = gltf.nodes[jointNodeIdx];
+      jointPos.push(
+        vec3.clone(jointNode.translation ? jointNode.translation : V(0, 0, 0))
+      );
+      jointRot.push(
+        jointNode.rotation ? quat.clone(jointNode.rotation) : quat.create()
+      );
+      jointScale.push(
+        jointNode.scale ? vec3.clone(jointNode.scale) : V(1, 1, 1)
+      );
+
+      if (jointNode.children) {
+        for (let childNodeIdx of jointNode.children) {
+          if (jointNodeIdxToJointIdx.has(childNodeIdx)) {
+            parents[jointNodeIdxToJointIdx.get(childNodeIdx)!] = i;
+          }
+        }
+      }
+      i++;
+    }
+
+    // check to see that this is in topo order
+    if (parents.some((value, index) => value > index)) {
+      return `Joints expected to be in topological order`;
+    }
+
+    const poseRot: quat[][] = [];
+    // We have joints and initial values now. Now we'll find poses. We
+    // get these from a single animation, and we ignore keyframe
+    // times--we just care about the actual pose in each keyframe.
+    if (gltf.animations) {
+      if (gltf.animations.length !== 1) return `Got more than 1 animation`;
+      const animation = gltf.animations[0];
+      // for now, we want exactly one channel and sampler for each joint
+      // TODO: set default rotations or something in order to avoid this
+      if (animation.channels.length !== parents.length)
+        return `Have ${parents.length} joints but got ${animation.channels.length} animation channels`;
+      if (animation.samplers.length !== parents.length)
+        return `Have ${parents.length} joints but got ${animation.samplers.length} animation samplers`;
+
+      // also, expect every sampler to have the same "input". this
+      // defines the keyframes; we don't actually care about the times
+      // listed, just how many of them there are (bc those are our
+      // poses)
+
+      if (
+        animation.samplers.some(
+          (sampler) => sampler.input !== animation.samplers[0].input
+        )
+      )
+        return `Got samplers with two different inputs`;
+
+      // finally, we only support rotation animations for now
+      if (
+        animation.channels.some((channel) => channel.target.path !== "rotation")
+      )
+        return `Got non-rotation animation`;
+
+      const inputAccessor = gltf.accessors[animation.samplers[0].input];
+      const nPoses = inputAccessor.count;
+      // fill out poseRot with identity quats for now
+      for (let i = 0; i < nPoses; i++) {
+        poseRot.push([]);
+        for (let j = 0; j < parents.length; j++) {
+          poseRot[i].push(quat.create());
+        }
+      }
+
+      // now, get the actual rotations from the channels and samplers
+      for (let channel of animation.channels) {
+        let jointIdx = jointNodeIdxToJointIdx.get(channel.target.node);
+        if (jointIdx === undefined) {
+          return `Animation targeting non-joint node ${jointIdx}`;
+        }
+        const sampler = animation.samplers[channel.sampler];
+        const outputAccessor = gltf.accessors[sampler.output];
+        if (!isAccessorFor(outputAccessor, "VEC4")) {
+          return `Got bad accessor type for animation sampler`;
+        }
+        const rotations: vec4[] | ParseError = readArray(
+          gltf,
+          buffers,
+          outputAccessor
+        );
+        if (isParseError(rotations)) {
+          return rotations;
+        }
+        for (let pose = 0; pose < nPoses; pose++) {
+          // TODO: i have no idea why blender exports 3 quats per keyframe, or why the middle one is the one we want.
+          poseRot[pose][jointIdx] = rotations[pose * 3 + 1];
+        }
+      }
+    }
+
+    rigging = {
+      jointIds,
+      jointWeights,
+      inverseBindMatrices,
+      jointPos,
+      jointRot,
+      jointScale,
+      parents,
+      poseRot,
+    };
+  }
+
   const quad: vec4[] = [];
   const dbgName = mesh.name;
   // TODO: include normals
-  return { pos, tri, normals, quad, colors, dbgName };
+  return { pos, tri, normals, quad, colors, dbgName, rigging };
 }

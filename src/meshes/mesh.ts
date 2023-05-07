@@ -55,12 +55,15 @@ export interface Rigging {
   jointIds: vec4[];
   jointWeights: vec4[];
   // per-joint info
-  // TODO: consider tracking pos, rot, scale (do we need scale??) separately
-  transforms: mat4[];
+  jointPos: vec3[];
+  jointRot: quat[];
+  jointScale: vec3[];
   parents: number[];
   inverseBindMatrices: mat4[];
-  // poses[a][b] get the transform for joint b in pose a
-  poses: mat4[][];
+  // TODO: support poses for a subset of bones
+  // TODO: support animating properties other than rotation
+  // poseRot[a][b] is the rotation for joint b in pose a
+  poseRot: quat[][];
 }
 
 export interface Mesh extends RawMesh {
@@ -94,13 +97,14 @@ export function meshStats(m: RawMesh): string {
 // TODO: is it actually necessary to clone all these properties?
 function cloneRigging(rigging: Rigging): Rigging {
   return {
-    ...rigging,
     jointIds: rigging.jointIds.map((v) => vec4.clone(v)),
     jointWeights: rigging.jointWeights.map((v) => vec4.clone(v)),
     inverseBindMatrices: rigging.inverseBindMatrices.map((m) => mat4.clone(m)),
-    transforms: rigging.transforms.map((m) => mat4.clone(m)),
+    jointPos: rigging.jointPos.map((v) => vec3.clone(v)),
+    jointRot: rigging.jointRot.map((q) => quat.clone(q)),
+    jointScale: rigging.jointScale.map((v) => vec3.clone(v)),
     parents: [...rigging.parents],
-    poses: rigging.poses.map((pose) => pose.map((m) => mat4.clone(m))),
+    poseRot: rigging.poseRot.map((pose) => pose.map((q) => quat.clone(q))),
   };
 }
 
