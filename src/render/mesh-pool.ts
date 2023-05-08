@@ -39,7 +39,7 @@ export interface MeshReserve {
 
 export interface MeshHandle {
   // mesh id
-  pool: ReturnType<typeof createMeshPool<any, any>>;
+  readonly pool: MeshPool<any, any>;
   readonly mId: number;
 
   // geo offsets
