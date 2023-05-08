@@ -87,3 +87,6 @@ Thought about project state syncing between computers:
   Then, warn on starting an edit session for that project elsewhere until the previous session has synced
   A little tricky for after the session is synced
   Or maybe use something more multiplayer-like
+
+microservices vs monolith, Amazon Video:
+  https://adrianco.medium.com/so-many-bad-takes-what-is-there-to-learn-from-the-prime-video-microservices-to-monolith-story-4bd0970423d4

@@ -1404,3 +1404,6 @@ ffmpeg -i my-movie.mov -vcodec h264 \
 
 Bluesky's "Ecosystem Overview":
   https://gitlab.com/bluesky-community1/decentralized-ecosystem#ecosystem-overview
+
+write an OS:
+  https://pages.cs.wisc.edu/~remzi/OSTEP/
