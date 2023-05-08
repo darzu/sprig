@@ -19,7 +19,7 @@ import { CyMeshPoolPtr, CyPipelinePtr } from "./gpu-registry.js";
 import { createFrame, WorldFrameDef } from "../physics/nonintersection.js";
 import { tempVec3 } from "../matrix/temp-pool.js";
 import { isMeshHandle, MeshHandle, MeshReserve } from "./mesh-pool.js";
-import { Mesh } from "../meshes/mesh.js";
+import { isRigged, Mesh, RiggedMesh, Rigging } from "../meshes/mesh.js";
 import {
   frustumFromBounds,
   getFrustumWorldCorners,
@@ -36,6 +36,11 @@ import {
   VERBOSE_LOG,
 } from "../flags.js";
 import { clampToAABB } from "../physics/aabb.js";
+import {
+  createRiggedMeshPool,
+  RiggedMeshHandle,
+  RiggedMeshPool,
+} from "./pipelines/std-rigged.js";
 
 const BLEND_SIMULATION_FRAMES_STRATEGY: "interpolate" | "extrapolate" | "none" =
   "none";
@@ -85,6 +90,14 @@ export const RenderableConstructDef = EM.defineComponent(
     };
     return r;
   }
+);
+
+export const RiggedRenderableConstructDef = EM.defineComponent(
+  "riggedRenderableConstruct",
+  // TODO: consider including other RenderableConstruct fields here
+  (mesh: RiggedMesh) => ({
+    mesh,
+  })
 );
 
 export interface Renderable {
@@ -169,7 +182,7 @@ function updateSmoothedWorldFrame(em: EntityManager, o: Entity) {
 
 export function registerUpdateSmoothedWorldFrames(em: EntityManager) {
   em.registerSystem(
-    [RenderableConstructDef, TransformDef],
+    [RenderableDef, TransformDef],
     [],
     (objs, res) => {
       _hasRendererWorldFrame.clear();
@@ -568,6 +581,74 @@ export function registerConstructRenderablesSystem(em: EntityManager) {
       }
     },
     "constructRenderables"
+  );
+}
+
+export const RiggedRenderableDef = EM.defineComponent(
+  "riggedRenderable",
+  (meshHandle: RiggedMeshHandle, rigging: Rigging) => ({
+    meshHandle,
+    rigging,
+    jointMatrices: rigging.parents.map(() => mat4.identity(mat4.create())),
+  })
+);
+
+export function registerRiggedRenderablesSystems(em: EntityManager) {
+  let pool: RiggedMeshPool | undefined = undefined;
+  em.registerSystem(
+    [RiggedRenderableConstructDef],
+    [RendererDef],
+    (es, res) => {
+      if (!pool) {
+        pool = createRiggedMeshPool(res.renderer.renderer);
+      }
+      for (let e of es) {
+        // TODO(@darzu): this seems somewhat inefficient to look for this every frame
+        if (!RenderableDef.isOn(e)) {
+          let mesh = e.riggedRenderableConstruct.mesh;
+          assert(pool);
+          let meshHandle = pool.addRiggedMesh(mesh);
+
+          em.addComponent(e.id, RenderableDef, {
+            enabled: true,
+            hidden: false,
+            sortLayer: 0,
+            meshHandle,
+          });
+
+          em.addComponent(e.id, RiggedRenderableDef, meshHandle, mesh.rigging);
+
+          // pool.updateUniform
+          const uni = pool.ptr.computeUniData(mesh);
+          em.ensureComponentOn(e, pool.ptr.dataDef, uni);
+          // TODO(@darzu): HACK! We need some notion of required uni data maybe? Or common uni data
+          if ("id" in e[pool.ptr.dataDef.name]) {
+            // console.log(
+            //   `setting ${e.id}.${pool.ptr.dataDef.name}.id = ${meshHandle.mId}`
+            // );
+            e[pool.ptr.dataDef.name]["id"] = meshHandle.mId;
+          }
+        }
+      }
+    },
+    "constructRiggedRenderables"
+  );
+
+  em.registerSystem(
+    [RiggedRenderableDef, RenderableDef],
+    [],
+    (es, res) => {
+      if (!pool) return;
+      for (let e of es) {
+        if (e.renderable.enabled && !e.renderable.hidden) {
+          pool.updateJointMatrices(
+            e.riggedRenderable.meshHandle,
+            e.riggedRenderable.jointMatrices
+          );
+        }
+      }
+    },
+    "updateJoints"
   );
 }
 

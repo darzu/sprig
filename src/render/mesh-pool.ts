@@ -39,6 +39,7 @@ export interface MeshReserve {
 
 export interface MeshHandle {
   // mesh id
+  pool: ReturnType<typeof createMeshPool<any, any>>;
   readonly mId: number;
 
   // geo offsets
@@ -379,6 +380,7 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     const currSet = pool.sets[currSetIdx];
 
     const handle: MeshHandle = {
+      pool,
       mId: nextMeshId++,
       // enabled: true,
       triNum: _triNum,

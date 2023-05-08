@@ -7,6 +7,7 @@ const DEFAULT_SHADER_PATH = "shaders/";
 
 export const ShaderPaths = [
   "std-mesh",
+  "std-rigged",
   "std-ocean",
   "std-gerstner",
   "std-outline",
@@ -25,7 +26,7 @@ export const ShaderPaths = [
   "std-deferred",
 ] as const;
 
-export type ShaderName = (typeof ShaderPaths)[number];
+export type ShaderName = typeof ShaderPaths[number];
 
 export interface Shader {
   code: string;

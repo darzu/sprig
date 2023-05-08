@@ -169,6 +169,7 @@ function readArray(
       const res: mat4[] = [];
       for (let i = 0; i < accessor.count; i++) {
         const m = mat4.create();
+        res.push(m);
         for (let j = 0; j < m.length; j++) {
           m[j] = arr[i * m.length + j];
         }
@@ -341,7 +342,6 @@ export function importGltf(buf: ArrayBuffer): RawMesh | ParseError {
     if (isParseError(inverseBindMatrices)) {
       return inverseBindMatrices;
     }
-
     const jointPos: vec3[] = [];
     const jointRot: quat[] = [];
     const jointScale: vec3[] = [];
