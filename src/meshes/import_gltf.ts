@@ -447,8 +447,14 @@ export function importGltf(buf: ArrayBuffer): RawMesh | ParseError {
           return rotations;
         }
         for (let pose = 0; pose < nPoses; pose++) {
-          // TODO: i have no idea why blender exports 3 quats per keyframe, or why the middle one is the one we want.
-          poseRot[pose][jointIdx] = rotations[pose * 3 + 1];
+          // in the CUBICSPLINE interpolation mode we get tangent
+          // values. These always seem to be all zeroes, so we ignore
+          // them.
+          if (sampler.interpolation == "CUBICSPLINE") {
+            poseRot[pose][jointIdx] = rotations[pose * 3 + 1];
+          } else {
+            poseRot[pose][jointIdx] = rotations[pose];
+          }
         }
       }
     }
