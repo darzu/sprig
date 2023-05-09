@@ -650,6 +650,11 @@ export function registerRiggedRenderablesSystems(em: EntityManager) {
     },
     "updateJoints"
   );
+  em.addConstraint(["updateJoints", "after", "renderList"]);
+  em.addConstraint(["updateJoints", "before", "stepRenderer"]);
+  em.addConstraint(["constructRiggedRenderables", "before", "renderList"]);
+  em.requireSystem("constructRiggedRenderables");
+  em.requireSystem("updateJoints");
 }
 
 export type Renderer = ReturnType<typeof createRenderer>;
