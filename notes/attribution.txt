@@ -5,3 +5,4 @@ austin-eng
 https://github.com/ashima/webgl-noise
 https://iquilezles.org/articles/intersectors/ (sphIntersect)
 https://lospec.com/palette-list/endesga-16
+https://github.com/microsoft/TypeScript

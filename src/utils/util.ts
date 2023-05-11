@@ -1,6 +1,10 @@
 import { DBG_ASSERT, VERBOSE_LOG } from "../flags.js";
 import { randInt } from "./math.js";
 
+// TODO(@darzu): When we need a util, check here first:
+//    https://github.com/microsoft/TypeScript/blob/main/src/compiler/core.ts
+//    https://github.com/microsoft/TypeScript/blob/main/src/compiler/corePublic.ts
+
 export function assert(cond: any, msg?: string): asserts cond {
   // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-7.html#assertion-functions
   if (!cond)
@@ -211,7 +215,8 @@ export function dbgLogNextBatch() {
   __logBatch = "";
 }
 
-export function isArray(t: any): t is any[] {
+export function isArray(t: any): t is readonly unknown[] {
+  // See: https://github.com/microsoft/TypeScript/issues/17002
   return Array.isArray(t);
 }
 export function isFunction(t: any): t is (...args: any[]) => any {
