@@ -198,3 +198,16 @@ Skeletal animation:
 
 Inverse kinimatics for creatures:
   https://blog.littlepolygon.com/posts/twobone/
+
+Rigging in blender for good glTF export:
+  - build mesh however. at the end, combine everything into one object (Cmd-J)
+  - build amature and name the bones
+  - In object mode, select mesh, then armature
+  - Ctrl-P -> Empty vertex groups
+  - Add vertexes to each group by logical bone name
+    - for low-poly, manually editing vertex groups is easy
+  - when exporting, set "Animation > Always sample animations" to false
+    - we want the keyframes, and will tween them ourselves
+  - If backface culling is removing triangles, select all faces in edit mode and do "Mesh>Normals>Recalculate Outside"
+
+Architecting a #D Animation Engine: https://www.gamedeveloper.com/programming/architecting-a-3d-animation-engine
