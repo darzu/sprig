@@ -46,7 +46,7 @@
     // "paths": {},                           /* A series of entries which re-map imports to lookup locations relative to the 'baseUrl'. */
     // "rootDirs": [],                        /* List of root folders whose combined content represents the structure of the project at runtime. */
     "typeRoots": [
-      "./src/ext/global"
+      // "./src/ext/global"
       // "./ext/ts-libs"
     ] /* List of folders to include type definitions from. */,
     "types": [
@@ -65,5 +65,5 @@
     // "experimentalDecorators": true,        /* Enables experimental support for ES7 decorators. */
     // "emitDecoratorMetadata": true,         /* Enables experimental support for emitting type metadata for decorators. */
   },
-  "exclude": ["./npm-deps", "./public", "./docs", "./external/ts-libs"]
+  "exclude": ["./npm-deps", "./public", "./docs"]
 }
