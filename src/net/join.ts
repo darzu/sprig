@@ -26,7 +26,8 @@ import { TimeDef } from "../time/time.js";
 const JOIN_RETRANSMIT = 100;
 
 function registerConnectToServer(em: EntityManager) {
-  em.registerSystem(
+  em.registerSystem2(
+    "connectToServer",
     [PeerDef],
     [JoinDef, NetworkReadyDef, EventsToNetworkDef, TimeDef],
     (peers, { join, eventsToNetwork, time }) => {
@@ -67,8 +68,7 @@ function registerConnectToServer(em: EntityManager) {
             join.lastSendTime = time.time;
           }
       }
-    },
-    "connectToServer"
+    }
   );
 }
 
@@ -104,11 +104,11 @@ function registerHandleJoin(em: EntityManager) {
       }
     }
   };
-  em.registerSystem(
+  em.registerSystem2(
+    "handleJoin",
     [PeerDef, InboxDef, OutboxDef],
     [MeDef],
-    handleJoin,
-    "handleJoin"
+    handleJoin
   );
 }
 
@@ -140,11 +140,11 @@ function registerHandleJoinResponse(em: EntityManager) {
       }
     }
   };
-  em.registerSystem(
+  em.registerSystem2(
+    "handleJoinResponse",
     [PeerDef, InboxDef, OutboxDef],
     [EventsToNetworkDef],
-    handleJoinResponse,
-    "handleJoinResponse"
+    handleJoinResponse
   );
 }
 

@@ -65,7 +65,8 @@ export function registerNoodleSystem(em: EntityManager) {
     else posIdxToSegIdx.set(i, 1);
   });
 
-  em.registerSystem(
+  em.registerSystem2(
+    "updateNoodles",
     [NoodleDef, RenderableDef],
     [RendererDef],
     (es, rs) => {
@@ -88,8 +89,7 @@ export function registerNoodleSystem(em: EntityManager) {
           mesh
         );
       }
-    },
-    "updateNoodles"
+    }
   );
 }
 

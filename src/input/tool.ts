@@ -21,7 +21,8 @@ export const ToolDef = EM.defineComponent("tool", (type?: string) => ({
 }));
 
 export function registerToolSystems(em: EntityManager) {
-  em.registerSystem(
+  em.registerSystem2(
+    "toolPickup",
     [ToolDef, InRangeDef],
     [DetectedEventsDef, LocalHsPlayerDef],
     (hats, resources) => {
@@ -37,11 +38,11 @@ export function registerToolSystems(em: EntityManager) {
           });
         }
       }
-    },
-    "toolPickup"
+    }
   );
 
-  em.registerSystem(
+  em.registerSystem2(
+    "toolDrop",
     [HsPlayerDef, PositionDef, RotationDef],
     [DetectedEventsDef],
     (players, { detectedEvents }) => {
@@ -57,8 +58,7 @@ export function registerToolSystems(em: EntityManager) {
           });
         }
       }
-    },
-    "toolDrop"
+    }
   );
 
   registerEventHandler("tool-pickup", {

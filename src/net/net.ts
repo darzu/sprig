@@ -227,22 +227,22 @@ export function registerNetSystems(em: EntityManager) {
   em.addResource(NetStatsDef);
   em.addResource(EventsFromNetworkDef);
   em.addResource(EventsToNetworkDef);
-  em.registerSystem(
+  em.registerSystem2(
+    "getStatsFromNet",
     null,
     [NetStatsDef],
-    getStatsFromNet(net),
-    "getStatsFromNet"
+    getStatsFromNet(net)
   );
-  em.registerSystem(
+  em.registerSystem2(
+    "getEventsFromNet",
     null,
     [EventsFromNetworkDef],
-    getEventsFromNet(net),
-    "getEventsFromNet"
+    getEventsFromNet(net)
   );
-  em.registerSystem(
+  em.registerSystem2(
+    "sendEventsToNet",
     null,
     [EventsToNetworkDef],
-    sendEventsToNet(net),
-    "sendEventsToNet"
+    sendEventsToNet(net)
   );
 }
