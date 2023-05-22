@@ -28,7 +28,8 @@ export type MotionSmoothing = Component<typeof MotionSmoothingDef>;
 export function registerMotionSmoothingRecordLocationsSystem(
   em: EntityManager
 ) {
-  em.registerSystem(
+  em.registerSystem2(
+    "recordPreviousLocations",
     [MotionSmoothingDef],
     [],
     (es) => {
@@ -42,13 +43,13 @@ export function registerMotionSmoothingRecordLocationsSystem(
           ? e.physicsParent.id
           : 0;
       }
-    },
-    "recordPreviousLocations"
+    }
   );
 }
 
 export function registerMotionSmoothingSystems(em: EntityManager) {
-  em.registerSystem(
+  em.registerSystem2(
+    "smoothMotion",
     [MotionSmoothingDef],
     [TimeDef],
     (es, res) => {
@@ -64,11 +65,11 @@ export function registerMotionSmoothingSystems(em: EntityManager) {
           ERROR_SMOOTHING_FACTOR
         );
       }
-    },
-    "smoothMotion"
+    }
   );
 
-  em.registerSystem(
+  em.registerSystem2(
+    "updateMotionSmoothing",
     [MotionSmoothingDef],
     [],
     (es) => {
@@ -93,7 +94,6 @@ export function registerMotionSmoothingSystems(em: EntityManager) {
           }
         }
       }
-    },
-    "updateMotionSmoothing"
+    }
   );
 }

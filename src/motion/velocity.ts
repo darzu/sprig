@@ -30,7 +30,8 @@ let _normalizedVelocity = vec3.create();
 let _deltaRotation = quat.create();
 
 export function registerPhysicsApplyLinearVelocity(em: EntityManager) {
-  em.registerSystem(
+  em.registerSystem2(
+    "registerPhysicsApplyLinearVelocity",
     [LinearVelocityDef, PositionDef],
     [TimeDef],
     (objs, res) => {
@@ -39,13 +40,13 @@ export function registerPhysicsApplyLinearVelocity(em: EntityManager) {
         _linVelDelta = vec3.scale(o.linearVelocity, res.time.dt, _linVelDelta);
         vec3.add(o.position, _linVelDelta, o.position);
       }
-    },
-    "registerPhysicsApplyLinearVelocity"
+    }
   );
 }
 
 export function registerPhysicsApplyAngularVelocity(em: EntityManager) {
-  em.registerSystem(
+  em.registerSystem2(
+    "physicsApplyAngularVelocity",
     [AngularVelocityDef, RotationDef],
     [TimeDef],
     (objs, res) => {
@@ -64,7 +65,6 @@ export function registerPhysicsApplyAngularVelocity(em: EntityManager) {
         // note--quat multiplication is not commutative, need to multiply on the left
         quat.mul(_deltaRotation, o.rotation, o.rotation);
       }
-    },
-    "physicsApplyAngularVelocity"
+    }
   );
 }

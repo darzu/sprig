@@ -34,7 +34,8 @@ export const AnimateToDef = EM.defineComponent(
 onInit(() => {
   let delta = vec3.create();
 
-  EM.registerSystem(
+  EM.registerSystem2(
+    "animateTo",
     [AnimateToDef, PositionDef],
     [TimeDef],
     (cs, res) => {
@@ -72,7 +73,6 @@ onInit(() => {
       for (let id of toRemove) {
         EM.removeComponent(id, AnimateToDef);
       }
-    },
-    "animateTo"
+    }
   );
 });
