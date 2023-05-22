@@ -28,7 +28,7 @@ export const ParametricDef = EM.defineComponent(
 // TODO(@darzu): serializer pairs
 
 onInit((em: EntityManager) => {
-  em.registerSystem2(
+  em.registerSystem(
     "updateParametricMotion",
     [PositionDef, ParametricDef],
     [TimeDef],

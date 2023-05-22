@@ -251,7 +251,7 @@ export function stepSprings(g: SpringGrid, dt: number) {
 }
 
 onInit((em) => {
-  em.registerSystem2(
+  em.registerSystem(
     "spring",
     [SpringGridDef, ForceDef],
     [TimeDef],

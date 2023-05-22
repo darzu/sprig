@@ -57,7 +57,7 @@ export const ControllableDef = EM.defineComponent("controllable", () => {
 export function registerControllableSystems(em: EntityManager) {
   const steerVel = vec3.create();
 
-  em.registerSystem2(
+  em.registerSystem(
     "controllableInput",
     [ControllableDef, LinearVelocityDef, RotationDef, WorldFrameDef],
     [InputsDef, MeDef, CanvasDef, TimeDef],
@@ -117,7 +117,7 @@ export function registerControllableSystems(em: EntityManager) {
     }
   );
 
-  em.registerSystem2(
+  em.registerSystem(
     "controllableCameraFollow",
     [ControllableDef, CameraFollowDef],
     [InputsDef, MeDef, CanvasDef],

@@ -49,7 +49,7 @@ export function createSock(em: EntityManager, scale: number) {
 }
 
 let lastWinAngle = NaN;
-EM.registerSystem2(
+EM.registerSystem(
   "billowSock",
   [SockDef, RenderableDef, WorldFrameDef],
   [RendererDef, WindDef],

@@ -155,7 +155,7 @@ export function doesTouch(
 
 // PRECONDITION: assumes world frames are all up to date
 export function registerUpdateWorldAABBs(em: EntityManager, s: string = "") {
-  em.registerSystem2(
+  em.registerSystem(
     "registerUpdateWorldAABBs" + s,
     [PhysicsStateDef, WorldFrameDef, TransformDef],
     [],
@@ -186,7 +186,7 @@ export function registerUpdateWorldAABBs(em: EntityManager, s: string = "") {
 }
 
 export function registerUpdateWorldFromPosRotScale(em: EntityManager) {
-  em.registerSystem2(
+  em.registerSystem(
     "updateWorldFromPosRotScale",
     [WorldFrameDef],
     [],
@@ -237,7 +237,7 @@ export function registerPhysicsStateInit(em: EntityManager) {
 
   // init the per-object physics state
   // TODO(@darzu): split this into different concerns
-  em.registerSystem2(
+  em.registerSystem(
     "physicsInit",
     [ColliderDef, PositionDef],
     [PhysicsBroadCollidersDef],
@@ -340,7 +340,7 @@ export function registerPhysicsStateInit(em: EntityManager) {
 }
 
 export function registerUpdateInContactSystems(em: EntityManager) {
-  em.registerSystem2(
+  em.registerSystem(
     "updatePhysInContact",
     [ColliderDef, PhysicsStateDef, WorldFrameDef],
     [PhysicsBroadCollidersDef, PhysicsResultsDef],
@@ -404,7 +404,7 @@ export function registerUpdateInContactSystems(em: EntityManager) {
 
 export function registerPhysicsContactSystems(em: EntityManager) {
   // TODO(@darzu): split this system
-  em.registerSystem2(
+  em.registerSystem(
     "physicsStepContact",
     [ColliderDef, PhysicsStateDef, PositionDef, WorldFrameDef],
     [PhysicsBroadCollidersDef, PhysicsResultsDef],

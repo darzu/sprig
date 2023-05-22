@@ -166,7 +166,7 @@ export async function startPirates() {
   }
 
   pirateNextSpawn = pirateSpawnTimer;
-  em.registerSystem2(
+  em.registerSystem(
     "spawnPirates",
     [PiratePlatformDef],
     [TimeDef],
@@ -194,7 +194,7 @@ export async function startPirates() {
 
   const fireStagger = 150;
   // const tiltPeriod = 5700;
-  em.registerSystem2(
+  em.registerSystem(
     "updatePiratePlatforms",
     [PiratePlatformDef, PositionDef, RotationDef],
     [TimeDef],

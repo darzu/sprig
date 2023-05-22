@@ -63,7 +63,7 @@ export const { DarkStarPropsDef, DarkStarLocalDef, createDarkStarNow } =
 
 onInit((em) => {
   // TODO: this star will escape! must bring it closer to the orbit point sometimes
-  em.registerSystem2(
+  em.registerSystem(
     "darkStarOrbit",
     [DarkStarPropsDef, PositionDef, AuthorityDef],
     [MeDef, GameStateDef],

@@ -313,7 +313,7 @@ export async function initOcean(oceanMesh: Mesh, color: vec3) {
 
 const __temp1 = vec3.create();
 const __temp2 = vec3.create();
-EM.registerSystem2(
+EM.registerSystem(
   "oceanUVtoPos",
   [UVPosDef, PositionDef],
   [OceanDef],
@@ -348,7 +348,7 @@ EM.registerSystem2(
 
 const __temp3 = vec2.create();
 const __temp4 = vec3.create();
-EM.registerSystem2(
+EM.registerSystem(
   "oceanUVDirToRot",
   [UVPosDef, UVDirDef, PositionDef, RotationDef],
   [OceanDef],

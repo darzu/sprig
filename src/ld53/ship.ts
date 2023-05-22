@@ -185,7 +185,7 @@ export async function createShip(em: EntityManager) {
 
 const AHEAD_DIR = V(0, 0, 1);
 
-EM.registerSystem2(
+EM.registerSystem(
   "sailShip",
   [ShipDef, WorldFrameDef, RotationDef, LinearVelocityDef],
   [],
@@ -283,7 +283,7 @@ async function createRudder(em: EntityManager) {
 }
 
 // If a rudder isn't being manned, smooth it back towards straight
-EM.registerSystem2(
+EM.registerSystem(
   "easeRudderLD52",
   [RudderDef, TurretDef, YawPitchDef, AuthorityDef],
   [MeDef],
@@ -300,7 +300,7 @@ EM.registerSystem2(
 EM.addConstraint(["sailShip", "after", "mastForce"]);
 EM.addConstraint(["sailShip", "after", "easeRudderLD52"]);
 
-EM.registerSystem2(
+EM.registerSystem(
   "shipParty",
   [ShipDef, PositionDef, RotationDef],
   [PartyDef],

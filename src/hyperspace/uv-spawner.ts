@@ -57,7 +57,7 @@ export function createSpawner(
 }
 
 onInit((em) => {
-  em.registerSystem2(
+  em.registerSystem(
     "spawnOnTile",
     [SpawnerDef, UVPosDef, UVDirDef],
     [MeDef],
@@ -102,7 +102,7 @@ onInit((em) => {
   );
 
   // TODO(@darzu): can we make this more ground agnostic?
-  em.registerSystem2(
+  em.registerSystem(
     "spawnFinishAnimIn",
     [SpawnerDef, RotationDef, PositionDef],
     [MeDef],

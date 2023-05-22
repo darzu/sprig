@@ -48,7 +48,7 @@ export function registerPhysicsDebuggerSystem(em: EntityManager) {
   em.addResource(PhysicsDbgDef);
 
   // add collider meshes
-  em.registerSystem2(
+  em.registerSystem(
     "colliderMeshes",
     [PhysicsStateDef],
     [PhysicsDbgDef, AssetsDef],
@@ -91,7 +91,7 @@ export function registerPhysicsDebuggerSystem(em: EntityManager) {
   );
 
   // toggle debug meshes on and off
-  em.registerSystem2(
+  em.registerSystem(
     "debugMeshes",
     [DbgMeshDef, RenderableDef],
     [InputsDef, PhysicsDbgDef],
@@ -108,7 +108,7 @@ export function registerPhysicsDebuggerSystem(em: EntityManager) {
   );
 
   // update transform based on parent collider
-  em.registerSystem2(
+  em.registerSystem(
     "debugMeshTransform",
     [DbgMeshDef, WorldFrameDef, ...LocalFrameDefs],
     [PhysicsBroadCollidersDef],

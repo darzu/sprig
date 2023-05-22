@@ -37,7 +37,7 @@ export const ModelBoxDef = EM.defineComponent("modelBox", () => {
 
 function registerObjClicker(em: EntityManager) {
   // listen for modeler on/off
-  em.registerSystem2(
+  em.registerSystem(
     "modelerOnOff",
     null,
     [ModelerDef, InputsDef, CanvasDef],
@@ -54,7 +54,7 @@ function registerObjClicker(em: EntityManager) {
   );
 
   // look for object clicks
-  em.registerSystem2(
+  em.registerSystem(
     "modelerClicks",
     null,
     [ModelerDef, CameraComputedDef, InputsDef, PhysicsResultsDef],
@@ -108,7 +108,7 @@ export function registerModeler(em: EntityManager) {
 }
 
 function registerAABBBuilder(em: EntityManager) {
-  em.registerSystem2(
+  em.registerSystem(
     "aabbBuilder",
     null,
     [InputsDef, ModelerDef, AssetsDef],

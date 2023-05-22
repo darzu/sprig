@@ -42,7 +42,7 @@ export function registerInputsSystem(em: EntityManager): void {
   let inputsReader: (() => Inputs) | null = null;
 
   EM.addResource(InputsDef);
-  em.registerSystem2(
+  em.registerSystem(
     "inputs",
     null,
     [InputsDef, CanvasDef],
@@ -54,7 +54,7 @@ export function registerInputsSystem(em: EntityManager): void {
   );
 
   em.addResource(MouseDragDef);
-  em.registerSystem2(
+  em.registerSystem(
     "mouseDrag",
     null,
     [InputsDef, MouseDragDef],

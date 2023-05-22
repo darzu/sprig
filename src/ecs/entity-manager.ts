@@ -657,45 +657,24 @@ export class EntityManager {
     }
   }
 
-  public registerSystem2<CS extends ComponentDef[], RS extends ComponentDef[]>(
-    name: string,
-    cs: [...CS],
-    rs: [...RS],
-    callback: SystemFn<CS, RS>
-  ): void;
-  public registerSystem2<CS extends null, RS extends ComponentDef[]>(
-    name: string,
-    cs: null,
-    rs: [...RS],
-    callback: SystemFn<CS, RS>
-  ): void;
-  public registerSystem2<CS extends ComponentDef[], RS extends ComponentDef[]>(
-    name: string,
-    cs: [...CS] | null,
-    rs: [...RS],
-    callback: SystemFn<CS, RS>
-  ): void {
-    return this.registerSystem(cs as any, rs, callback, name);
-  }
-
   private _nextSystemId = 1;
   public registerSystem<CS extends ComponentDef[], RS extends ComponentDef[]>(
+    name: string,
     cs: [...CS],
     rs: [...RS],
-    callback: SystemFn<CS, RS>,
-    name: string
+    callback: SystemFn<CS, RS>
   ): void;
   public registerSystem<CS extends null, RS extends ComponentDef[]>(
+    name: string,
     cs: null,
     rs: [...RS],
-    callback: SystemFn<CS, RS>,
-    name: string
+    callback: SystemFn<CS, RS>
   ): void;
   public registerSystem<CS extends ComponentDef[], RS extends ComponentDef[]>(
+    name: string,
     cs: [...CS] | null,
     rs: [...RS],
-    callback: SystemFn<CS, RS>,
-    name: string
+    callback: SystemFn<CS, RS>
   ): void {
     name = name || callback.name;
     if (name === "") {

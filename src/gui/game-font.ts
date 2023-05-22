@@ -161,7 +161,7 @@ export async function initFontEditor(em: EntityManager) {
   // const { assets } = await EM.whenResources(AssetsDef);
 
   // TODO(@darzu): de-duplicate this with very similar code in other "games"
-  EM.registerSystem2(
+  EM.registerSystem(
     "uiCameraView",
     null,
     [CameraComputedDef, CanvasDef, CameraDef, InputsDef, UICursorDef],
@@ -315,7 +315,7 @@ export async function initFontEditor(em: EntityManager) {
   }
 
   // Edit letters
-  EM.registerSystem2(
+  EM.registerSystem(
     `letterBtnClick`,
     null,
     [ButtonsStateDef, MeshEditorDef, TextDef],

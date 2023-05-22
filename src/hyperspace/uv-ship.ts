@@ -16,7 +16,7 @@ export const UVShipDef = EM.defineComponent("uvship", () => {
 });
 
 onInit((em) => {
-  em.registerSystem2(
+  em.registerSystem(
     "shipMove",
     [UVShipDef, UVPosDef, UVDirDef, AuthorityDef],
     [

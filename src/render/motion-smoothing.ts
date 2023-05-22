@@ -28,7 +28,7 @@ export type MotionSmoothing = Component<typeof MotionSmoothingDef>;
 export function registerMotionSmoothingRecordLocationsSystem(
   em: EntityManager
 ) {
-  em.registerSystem2(
+  em.registerSystem(
     "recordPreviousLocations",
     [MotionSmoothingDef],
     [],
@@ -48,7 +48,7 @@ export function registerMotionSmoothingRecordLocationsSystem(
 }
 
 export function registerMotionSmoothingSystems(em: EntityManager) {
-  em.registerSystem2(
+  em.registerSystem(
     "smoothMotion",
     [MotionSmoothingDef],
     [TimeDef],
@@ -68,32 +68,27 @@ export function registerMotionSmoothingSystems(em: EntityManager) {
     }
   );
 
-  em.registerSystem2(
-    "updateMotionSmoothing",
-    [MotionSmoothingDef],
-    [],
-    (es) => {
-      for (let e of es) {
-        if (RemoteUpdatesDef.isOn(e) && e.motionSmoothing.havePrevious) {
-          const parentId = PhysicsParentDef.isOn(e) ? e.physicsParent.id : 0;
-          if (parentId === e.motionSmoothing.prevParentId) {
-            computeNewError(
-              e.motionSmoothing.prevPosition,
-              PositionDef.isOn(e) ? e.position : vec3.create(),
-              e.motionSmoothing.positionError
-            );
-            computeNewError(
-              e.motionSmoothing.prevRotation,
-              RotationDef.isOn(e) ? e.rotation : quat.identity(quat.create()),
-              e.motionSmoothing.rotationError
-            );
-          } else {
-            // if we change parents just snap to the new location
-            vec3.set(0, 0, 0, e.motionSmoothing.positionError);
-            quat.identity(e.motionSmoothing.rotationError);
-          }
+  em.registerSystem("updateMotionSmoothing", [MotionSmoothingDef], [], (es) => {
+    for (let e of es) {
+      if (RemoteUpdatesDef.isOn(e) && e.motionSmoothing.havePrevious) {
+        const parentId = PhysicsParentDef.isOn(e) ? e.physicsParent.id : 0;
+        if (parentId === e.motionSmoothing.prevParentId) {
+          computeNewError(
+            e.motionSmoothing.prevPosition,
+            PositionDef.isOn(e) ? e.position : vec3.create(),
+            e.motionSmoothing.positionError
+          );
+          computeNewError(
+            e.motionSmoothing.prevRotation,
+            RotationDef.isOn(e) ? e.rotation : quat.identity(quat.create()),
+            e.motionSmoothing.rotationError
+          );
+        } else {
+          // if we change parents just snap to the new location
+          vec3.set(0, 0, 0, e.motionSmoothing.positionError);
+          quat.identity(e.motionSmoothing.rotationError);
         }
       }
     }
-  );
+  });
 }

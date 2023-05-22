@@ -275,7 +275,7 @@ const EVENT_RETRANSMIT_MS = 100;
 
 export function registerEventSystems(em: EntityManager) {
   // Runs only at non-host, sends valid detected events as requests to host
-  em.registerSystem2(
+  em.registerSystem(
     "detectedEventsToHost",
     [HostDef, OutboxDef],
     [DetectedEventsDef, MeDef, TimeDef],
@@ -332,7 +332,7 @@ export function registerEventSystems(em: EntityManager) {
   );
 
   // Runs only at host, handles incoming event requests
-  em.registerSystem2(
+  em.registerSystem(
     "handleEventRequests",
     [InboxDef, OutboxDef],
     [HostDef],
@@ -380,7 +380,7 @@ export function registerEventSystems(em: EntityManager) {
   );
 
   // Runs only at non-host, handles event request acks from host
-  em.registerSystem2(
+  em.registerSystem(
     "handleEventRequestAcks",
     [InboxDef, OutgoingEventRequestsDef, HostDef],
     [],
@@ -403,7 +403,7 @@ export function registerEventSystems(em: EntityManager) {
   );
 
   // Runs only at host, converts events detected locally to event requests
-  em.registerSystem2(
+  em.registerSystem(
     "detectedEventsToRequestedEvents",
     null,
     [DetectedEventsDef, HostDef, MeDef],
@@ -424,7 +424,7 @@ export function registerEventSystems(em: EntityManager) {
   );
 
   // Runs only at host, runs legal events
-  em.registerSystem2(
+  em.registerSystem(
     "requestedEventsToEvents",
     null,
     [RequestedEventsDef, EventsDef, HostDef],
@@ -447,7 +447,7 @@ export function registerEventSystems(em: EntityManager) {
   );
 
   // runs only at host, sends events to other nodes
-  em.registerSystem2(
+  em.registerSystem(
     "sendEvents",
     [OutboxDef],
     [EventsDef, HostDef, TimeDef],
@@ -483,7 +483,7 @@ export function registerEventSystems(em: EntityManager) {
   );
 
   // Runs only at non-host, handles events from host
-  em.registerSystem2(
+  em.registerSystem(
     "handleEvents",
     [InboxDef, HostDef, OutboxDef],
     [EventsDef],
@@ -528,7 +528,7 @@ export function registerEventSystems(em: EntityManager) {
   );
 
   // Runs only at host, handles event ACKs
-  em.registerSystem2("handleEventAcks", [InboxDef], [HostDef], (inboxes) => {
+  em.registerSystem("handleEventAcks", [InboxDef], [HostDef], (inboxes) => {
     for (let { inbox, id } of inboxes) {
       const acks = inbox.get(MessageType.AckEvents) || [];
       const syncState = em.ensureComponent(id, EventSyncDef);
@@ -558,7 +558,7 @@ export function registerEventSystems(em: EntityManager) {
     }
   }
 
-  em.registerSystem2("runEvents", null, [EventsDef], runEvents);
+  em.registerSystem("runEvents", null, [EventsDef], runEvents);
 }
 
 export function addEventComponents(em: EntityManager) {

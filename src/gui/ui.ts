@@ -50,7 +50,7 @@ export function registerUISystems(em: EntityManager) {
 
   em.addResource(TextDef, upperDiv, debugDiv, lowerDiv, helpDiv);
 
-  em.registerSystem2("uiText", null, [TextDef], (_, res) => {
+  em.registerSystem("uiText", null, [TextDef], (_, res) => {
     // PERF NOTE: using ".innerText =" creates a new DOM element each frame, whereas
     //    using ".firstChild.nodeValue =" reuses the DOM element. Unfortunately this
     //    means we'll need to do more work to get line breaks.

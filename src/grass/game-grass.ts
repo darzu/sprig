@@ -139,7 +139,7 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
   // console.dir(mapJfa);
   // console.dir(dbgGridCompose);
 
-  em.registerSystem2(
+  em.registerSystem(
     "grassGameRenderPipelines",
     null,
     [RendererDef, DevConsoleDef],
@@ -372,7 +372,7 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
     // g.cameraFollow.yawOffset = 0.0;
     // g.cameraFollow.pitchOffset = -0.378;
 
-    em.registerSystem2(
+    em.registerSystem(
       "smolGhost",
       [GhostDef, WorldFrameDef, ColliderDef],
       [InputsDef, CanvasDef],
@@ -400,7 +400,7 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
   }
 
   // update grass
-  EM.registerSystem2(
+  EM.registerSystem(
     "updateGrass",
     [CameraFollowDef, WorldFrameDef],
     [],
@@ -447,7 +447,7 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
   // dev.showConsole = true;
   // player.controllable.modes.canFly = true;
 
-  EM.registerSystem2("cuttingOnOff", [], [InputsDef], (_, res) => {
+  EM.registerSystem("cuttingOnOff", [], [InputsDef], (_, res) => {
     // TODO(@darzu):
     if (res.inputs.keyClicks[" "]) {
       ship.ld52ship.cuttingEnabled = !ship.ld52ship.cuttingEnabled;
@@ -477,7 +477,7 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
     ship.ld52ship.rudder()!.yawpitch.yaw = 0;
   });
 
-  EM.registerSystem2(
+  EM.registerSystem(
     "cutGrassUnderShip",
     [ShipDef, PositionDef, WorldFrameDef, PhysicsStateDef],
     [PartyDef, ScoreDef],
@@ -625,7 +625,7 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
   EM.requireSystem("cutGrassUnderShip");
   EM.addConstraint(["detectGameEnd", "after", "cutGrassUnderShip"]);
 
-  EM.registerSystem2("furlUnfurl", [], [InputsDef], (_, res) => {
+  EM.registerSystem("furlUnfurl", [], [InputsDef], (_, res) => {
     const mast = ship.ld52ship.mast()!;
     const rudder = ship.ld52ship.rudder()!;
 
@@ -641,7 +641,7 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
 
   const shipWorld = await EM.whenEntityHas(ship, WorldFrameDef);
 
-  EM.registerSystem2("turnMast", [], [InputsDef, WindDef], (_, res) => {
+  EM.registerSystem("turnMast", [], [InputsDef, WindDef], (_, res) => {
     const mast = ship.ld52ship.mast()!;
     // const rudder = ship.ld52ship.rudder()!;
 

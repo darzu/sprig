@@ -234,7 +234,7 @@ export const raiseBreakEnemyShip = eventWizard(
 );
 
 export function registerEnemyShipSystems(em: EntityManager) {
-  em.registerSystem2(
+  em.registerSystem(
     "stepEnemyShips",
     [EnemyShipLocalDef, EnemyShipPropsDef, UVDirDef, UVShipDef, AuthorityDef],
     [TimeDef, MeDef],
@@ -253,7 +253,7 @@ export function registerEnemyShipSystems(em: EntityManager) {
     }
   );
 
-  em.registerSystem2(
+  em.registerSystem(
     "enemyShipsFire",
     [EnemyShipLocalDef, AuthorityDef],
     [TimeDef, MeDef, PhysicsResultsDef],
@@ -301,7 +301,7 @@ export function registerEnemyShipSystems(em: EntityManager) {
     }
   );
 
-  em.registerSystem2(
+  em.registerSystem(
     "breakEnemyShips",
     [EnemyShipLocalDef, PositionDef, RotationDef],
     [PhysicsResultsDef, AssetsDef, AudioDef, MeDef, DetectedEventsDef],

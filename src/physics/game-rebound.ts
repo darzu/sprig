@@ -109,7 +109,7 @@ export async function initReboundSandbox(em: EntityManager, hosting: boolean) {
 
   let nextSpawnAccu = 0;
   let paused = true;
-  em.registerSystem2(
+  em.registerSystem(
     "sandboxSpawnBoxes",
     null,
     [AssetsDef, TimeDef, InputsDef],

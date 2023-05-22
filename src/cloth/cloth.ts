@@ -125,7 +125,7 @@ function clothMesh(cloth: ClothConstruct): {
 }
 
 onInit((em: EntityManager) => {
-  em.registerSystem2(
+  em.registerSystem(
     "buildCloths",
     [ClothConstructDef],
     [MeDef, AssetsDef],
@@ -161,7 +161,7 @@ onInit((em: EntityManager) => {
     }
   );
 
-  em.registerSystem2(
+  em.registerSystem(
     "updateClothMesh",
     [ClothConstructDef, ClothLocalDef, SpringGridDef, RenderableDef],
     [RendererDef],

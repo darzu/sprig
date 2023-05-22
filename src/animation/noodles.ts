@@ -65,7 +65,7 @@ export function registerNoodleSystem(em: EntityManager) {
     else posIdxToSegIdx.set(i, 1);
   });
 
-  em.registerSystem2(
+  em.registerSystem(
     "updateNoodles",
     [NoodleDef, RenderableDef],
     [RendererDef],

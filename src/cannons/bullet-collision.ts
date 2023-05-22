@@ -30,7 +30,7 @@ const ENABLE_BULLETBULLET = false;
 
 export function registerBulletCollisionSystem(em: EntityManager) {
   // TODO(@darzu):
-  em.registerSystem2(
+  em.registerSystem(
     "bulletCollision",
     [BulletDef, AuthorityDef],
     [PhysicsResultsDef, DetectedEventsDef],

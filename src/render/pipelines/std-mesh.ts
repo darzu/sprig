@@ -125,7 +125,7 @@ onInit((em) => {
       typeof RenderDataStdDef
     ]
   >[] = [];
-  em.registerSystem2(
+  em.registerSystem(
     "stdRenderListDeadHidden",
     [RendererWorldFrameDef, RenderableDef, RenderDataStdDef, DeadDef],
     [],
@@ -136,7 +136,7 @@ onInit((em) => {
           renderObjs.push(o);
     }
   );
-  em.registerSystem2(
+  em.registerSystem(
     "stdRenderList",
     [RendererWorldFrameDef, RenderableDef, RenderDataStdDef],
     [],
@@ -145,7 +145,7 @@ onInit((em) => {
         if (o.renderable.enabled && !DeletedDef.isOn(o)) renderObjs.push(o);
     }
   );
-  em.registerSystem2(
+  em.registerSystem(
     "stdRenderableDataUpdate",
     null,
     [RendererDef],

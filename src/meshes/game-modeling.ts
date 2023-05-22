@@ -21,7 +21,7 @@ import { TextDef } from "../gui/ui.js";
 export async function initModelingGame() {
   const { renderer } = await EM.whenResources(RendererDef);
 
-  EM.registerSystem2(
+  EM.registerSystem(
     "gameRenderPipelines",
     null,
     [RendererDef, DevConsoleDef],

@@ -122,7 +122,7 @@ export function registerCommonSystems(em: EntityManager) {
 }
 
 function registerRenderViewController(em: EntityManager) {
-  em.registerSystem2(
+  em.registerSystem(
     "renderView",
     [],
     [InputsDef, RendererDef, CameraDef],

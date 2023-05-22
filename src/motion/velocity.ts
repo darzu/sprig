@@ -30,7 +30,7 @@ let _normalizedVelocity = vec3.create();
 let _deltaRotation = quat.create();
 
 export function registerPhysicsApplyLinearVelocity(em: EntityManager) {
-  em.registerSystem2(
+  em.registerSystem(
     "registerPhysicsApplyLinearVelocity",
     [LinearVelocityDef, PositionDef],
     [TimeDef],
@@ -45,7 +45,7 @@ export function registerPhysicsApplyLinearVelocity(em: EntityManager) {
 }
 
 export function registerPhysicsApplyAngularVelocity(em: EntityManager) {
-  em.registerSystem2(
+  em.registerSystem(
     "physicsApplyAngularVelocity",
     [AngularVelocityDef, RotationDef],
     [TimeDef],

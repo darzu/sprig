@@ -34,7 +34,7 @@ export const AnimateToDef = EM.defineComponent(
 onInit(() => {
   let delta = vec3.create();
 
-  EM.registerSystem2(
+  EM.registerSystem(
     "animateTo",
     [AnimateToDef, PositionDef],
     [TimeDef],

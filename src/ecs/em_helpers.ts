@@ -35,7 +35,7 @@ function registerConstructorSystem<
   rs: [...RS],
   callback: (e: EntityW<[C]>, resources: EntityW<RS>) => void
 ) {
-  em.registerSystem2(`${def.name}Build`, [def], rs, (es, res) => {
+  em.registerSystem(`${def.name}Build`, [def], rs, (es, res) => {
     for (let e of es) {
       if (FinishedDef.isOn(e)) continue;
       callback(e as EntityW<[C]>, res);

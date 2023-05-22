@@ -39,7 +39,7 @@ export function updateAvg(avg: number, curr: number): number {
 export function registerDevSystems(em: EntityManager) {
   em.addResource(DevConsoleDef);
 
-  em.registerSystem2(
+  em.registerSystem(
     "devConsoleToggle",
     null,
     [InputsDef, DevConsoleDef],
@@ -59,7 +59,7 @@ export function registerDevSystems(em: EntityManager) {
 
   let pipelineTimes: Map<string, bigint> = new Map();
 
-  em.registerSystem2(
+  em.registerSystem(
     "devConsole",
     null,
     [RendererDef, TextDef, DevConsoleDef],

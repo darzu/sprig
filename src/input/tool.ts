@@ -21,7 +21,7 @@ export const ToolDef = EM.defineComponent("tool", (type?: string) => ({
 }));
 
 export function registerToolSystems(em: EntityManager) {
-  em.registerSystem2(
+  em.registerSystem(
     "toolPickup",
     [ToolDef, InRangeDef],
     [DetectedEventsDef, LocalHsPlayerDef],
@@ -41,7 +41,7 @@ export function registerToolSystems(em: EntityManager) {
     }
   );
 
-  em.registerSystem2(
+  em.registerSystem(
     "toolDrop",
     [HsPlayerDef, PositionDef, RotationDef],
     [DetectedEventsDef],

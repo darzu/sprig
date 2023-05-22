@@ -416,7 +416,7 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
     if (ScaleDef.isOn(ball)) vec3.copy(ball.scale, vec3.ONES);
   }
 
-  em.registerSystem2(
+  em.registerSystem(
     "ld51PlayerFireCannon",
     [LD51CannonDef, WorldFrameDef, InRangeDef],
     [InputsDef, LocalHsPlayerDef, AudioDef],
@@ -488,7 +488,7 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
 
   const BUSY_WAIT = 20.0;
 
-  em.registerSystem2(
+  em.registerSystem(
     "ld51Ghost",
     [GhostDef, WorldFrameDef, ColliderDef],
     [InputsDef, CanvasDef],
@@ -551,7 +551,7 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
   if (DBG_PLAYER) EM.requireGameplaySystem("ld51Ghost");
 
   // TODO(@darzu): breakBullet
-  em.registerSystem2(
+  em.registerSystem(
     "breakBullets",
     [
       BulletDef,
@@ -700,7 +700,7 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
         (colBackWall.collider as AABBCollider).aabb
       );
 
-      em.registerSystem2(
+      em.registerSystem(
         "bulletBounce",
         [
           BulletConstructDef,
@@ -760,7 +760,7 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
     // dead bullet maintenance
     // NOTE: this must be called after any system that can create dead bullets but
     //   before the rendering systems.
-    em.registerSystem2(
+    em.registerSystem(
       "deadBullets",
       [BulletDef, PositionDef, DeadDef, RenderableDef],
       [],
@@ -791,7 +791,7 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
     //   }
     // }
 
-    em.registerSystem2(
+    em.registerSystem(
       "fallingGoodBalls",
       [GoodBallDef, PositionDef, GravityDef, LinearVelocityDef],
       [],
@@ -809,7 +809,7 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
     );
     EM.requireGameplaySystem("fallingGoodBalls");
 
-    em.registerSystem2(
+    em.registerSystem(
       "pickUpBalls",
       [GoodBallDef, InteractableDef, InRangeDef, PositionDef],
       [InputsDef, LocalHsPlayerDef],
@@ -933,7 +933,7 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
 
   const startHealth = getCurrentHealth();
   {
-    em.registerSystem2(
+    em.registerSystem(
       "progressGame",
       [],
       [InputsDef, TextDef, TimeDef, AudioDef],

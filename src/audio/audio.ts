@@ -30,7 +30,7 @@ export function registerMusicSystems(em: EntityManager) {
   em.addResource(AudioDef);
 
   let once = true;
-  em.registerSystem2("musicStart", null, [AudioDef, CanvasDef], (_, res) => {
+  em.registerSystem("musicStart", null, [AudioDef, CanvasDef], (_, res) => {
     if (once && res.htmlCanvas.hasFirstInteraction) {
       em.addResource(HasAudioDef);
       // Init our audio

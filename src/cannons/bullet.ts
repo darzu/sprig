@@ -147,7 +147,7 @@ export function createOrResetBullet(
 }
 
 export function registerBuildBulletsSystem(em: EntityManager) {
-  em.registerSystem2(
+  em.registerSystem(
     "buildBullets",
     [BulletConstructDef],
     [MeDef, AssetsDef],
@@ -163,7 +163,7 @@ export function registerBuildBulletsSystem(em: EntityManager) {
 
 export function registerBulletUpdate(em: EntityManager) {
   // TODO(@darzu): remove?
-  em.registerSystem2(
+  em.registerSystem(
     "updateBullets",
     [BulletConstructDef, BulletDef, PositionDef, LinearVelocityDef],
     [TimeDef],

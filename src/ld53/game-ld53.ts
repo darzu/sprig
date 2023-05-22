@@ -160,7 +160,7 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
   // console.dir(mapJfa);
   // console.dir(dbgGridCompose);
 
-  em.registerSystem2(
+  em.registerSystem(
     "grassGameRenderPipelines",
     null,
     [RendererDef, DevConsoleDef],
@@ -315,7 +315,7 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
     // console.dir(buoys);
     const _t1 = vec3.create();
     const _t2 = vec3.create();
-    em.registerSystem2(
+    em.registerSystem(
       "shipBouyancy",
       [bouyDef, PositionDef, UVPosDef],
       [OceanDef],
@@ -431,7 +431,7 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
     g.cameraFollow.yawOffset = 0.0;
     g.cameraFollow.pitchOffset = -0.627;
 
-    em.registerSystem2(
+    em.registerSystem(
       "smolGhost",
       [GhostDef, WorldFrameDef, ColliderDef],
       [InputsDef, CanvasDef],
@@ -522,7 +522,7 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
     }
   });
 
-  EM.registerSystem2("furlUnfurl", [], [InputsDef, PartyDef], (_, res) => {
+  EM.registerSystem("furlUnfurl", [], [InputsDef, PartyDef], (_, res) => {
     const mast = ship.ld52ship.mast()!;
     const rudder = ship.ld52ship.rudder()!;
 
@@ -549,7 +549,7 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
 
   const shipWorld = await EM.whenEntityHas(ship, WorldFrameDef);
 
-  EM.registerSystem2("turnMast", [], [InputsDef, WindDef], (_, res) => {
+  EM.registerSystem("turnMast", [], [InputsDef, WindDef], (_, res) => {
     const mast = ship.ld52ship.mast()!;
     // const rudder = ship.ld52ship.rudder()!;
 
@@ -640,7 +640,7 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
   EM.requireSystem("landShipCollision");
 
   // BULLET STUFF
-  em.registerSystem2(
+  em.registerSystem(
     "breakBullets",
     [
       BulletDef,
@@ -663,7 +663,7 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
   // dead bullet maintenance
   // NOTE: this must be called after any system that can create dead bullets but
   //   before the rendering systems.
-  em.registerSystem2(
+  em.registerSystem(
     "deadBullets",
     [BulletDef, PositionDef, DeadDef, RenderableDef],
     [],

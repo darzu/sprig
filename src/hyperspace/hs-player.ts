@@ -106,7 +106,7 @@ export const PlayerHsPropsDef = defineSerializableComponent(
 );
 
 export function registerHsPlayerSystems(em: EntityManager) {
-  em.registerSystem2(
+  em.registerSystem(
     "buildHsPlayers",
     [PlayerHsPropsDef],
     [MeDef, AssetsDef],
@@ -184,7 +184,7 @@ export function registerHsPlayerSystems(em: EntityManager) {
     }
   );
 
-  em.registerSystem2(
+  em.registerSystem(
     "hsPlayerFacingDir",
     [HsPlayerDef, WorldFrameDef],
     [GlobalCursor3dDef],
@@ -204,7 +204,7 @@ export function registerHsPlayerSystems(em: EntityManager) {
     }
   );
 
-  em.registerSystem2(
+  em.registerSystem(
     "stepHsPlayers",
     [
       HsPlayerDef,
@@ -422,7 +422,7 @@ export function registerHsPlayerSystems(em: EntityManager) {
     }
   );
 
-  em.registerSystem2(
+  em.registerSystem(
     "hsPlayerLookingForShip",
     [
       HsPlayerDef,

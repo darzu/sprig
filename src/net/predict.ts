@@ -6,7 +6,7 @@ import { PositionDef, RotationDef } from "../physics/transform.js";
 import { AngularVelocityDef, LinearVelocityDef } from "../motion/velocity.js";
 
 export function registerPredictSystem(em: EntityManager) {
-  em.registerSystem2(
+  em.registerSystem(
     "predict",
     [PredictDef, PositionDef, LinearVelocityDef],
     [],

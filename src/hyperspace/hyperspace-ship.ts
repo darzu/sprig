@@ -273,7 +273,7 @@ const START_TEXT = "";
 // const START_TEXT = "hit the gem to begin";
 
 export function registerShipSystems(em: EntityManager) {
-  em.registerSystem2(
+  em.registerSystem(
     "startGame",
     [GemPropsDef, InRangeDef],
     [GameStateDef, PhysicsResultsDef, MeDef, InputsDef, LocalHsPlayerDef],
@@ -309,7 +309,7 @@ export function registerShipSystems(em: EntityManager) {
     }
   );
 
-  em.registerSystem2(
+  em.registerSystem(
     "shipHealthCheck",
     [HsShipPropsDef, HsShipLocalDef, PositionDef, AuthorityDef],
     [
@@ -359,7 +359,7 @@ export function registerShipSystems(em: EntityManager) {
     }
   );
 
-  em.registerSystem2(
+  em.registerSystem(
     "playerShipMove",
     [
       UVShipDef,
@@ -399,7 +399,7 @@ export function registerShipSystems(em: EntityManager) {
     }
   );
 
-  em.registerSystem2(
+  em.registerSystem(
     "shipUpdateParty",
     [HsShipLocalDef, HsShipPropsDef, PositionDef],
     [PartyDef],
@@ -409,7 +409,7 @@ export function registerShipSystems(em: EntityManager) {
   );
 
   // If a rudder isn't being manned, smooth it back towards straight
-  em.registerSystem2(
+  em.registerSystem(
     "easeRudder",
     [RudderPropsDef, TurretDef, YawPitchDef, AuthorityDef],
     [MeDef],

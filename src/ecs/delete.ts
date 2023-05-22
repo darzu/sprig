@@ -17,7 +17,7 @@ EM.registerSerializerPair(
 );
 
 export function registerDeleteEntitiesSystem(em: EntityManager) {
-  em.registerSystem2("delete", [DeletedDef], [], (entities) => {
+  em.registerSystem("delete", [DeletedDef], [], (entities) => {
     for (let entity of entities) {
       if (!entity.deleted.processed) {
         // TODO: remove from renderer
@@ -52,7 +52,7 @@ export const DeadDef = EM.defineComponent("dead", () => ({
 
 // TODO(@darzu): this is entity specific...
 export function registerDeadEntitiesSystem(em: EntityManager) {
-  em.registerSystem2("deadCleanupWarning", [DeadDef], [], (entities) => {
+  em.registerSystem("deadCleanupWarning", [DeadDef], [], (entities) => {
     for (let e of entities) {
       if (!e.dead.processed) dbgLogOnce(`dead entity not processed: ${e.id}`);
     }

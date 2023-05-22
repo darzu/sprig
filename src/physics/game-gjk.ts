@@ -185,7 +185,7 @@ export async function initGJKSandbox(em: EntityManager, hosting: boolean) {
     quat.clone(b4.rotation),
   ];
 
-  em.registerSystem2("checkGJK", null, [InputsDef], (_, { inputs }) => {
+  em.registerSystem("checkGJK", null, [InputsDef], (_, { inputs }) => {
     // console.log(__frame);
     // __frame++;
     // if (!inputs.keyClicks["g"]) return;

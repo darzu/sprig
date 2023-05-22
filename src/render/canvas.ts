@@ -16,7 +16,7 @@ export const CanvasDef = EM.defineComponent(
 export type Canvas = Component<typeof CanvasDef>;
 
 export function registerInitCanvasSystem(em: EntityManager) {
-  em.registerSystem2("canvas", [], [], () => {
+  em.registerSystem("canvas", [], [], () => {
     if (!!em.getResource(CanvasDef)) return;
     const canvas = init();
 

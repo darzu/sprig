@@ -28,7 +28,7 @@ import {
 import { TimeDef } from "../time/time.js";
 
 export function registerSyncSystem(em: EntityManager) {
-  em.registerSystem2(
+  em.registerSystem(
     "netSync",
     [AuthorityDef, SyncDef],
     [TimeDef, MeDef],
@@ -98,7 +98,7 @@ export function registerSyncSystem(em: EntityManager) {
 }
 
 export function registerUpdateSystem(em: EntityManager) {
-  em.registerSystem2(
+  em.registerSystem(
     "clearRemoteUpdatesMarker",
     [RemoteUpdatesDef],
     [],
@@ -108,7 +108,7 @@ export function registerUpdateSystem(em: EntityManager) {
       }
     }
   );
-  em.registerSystem2(
+  em.registerSystem(
     "netUpdate",
     [PeerDef, InboxDef, OutboxDef],
     [TimeDef, MeDef, NetStatsDef],
@@ -165,5 +165,5 @@ export function registerAckUpdateSystem(em: EntityManager) {
       }
     }
   }
-  em.registerSystem2("netAck", [PeerDef, InboxDef], [TimeDef, MeDef], ack);
+  em.registerSystem("netAck", [PeerDef, InboxDef], [TimeDef, MeDef], ack);
 }

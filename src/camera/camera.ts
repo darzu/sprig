@@ -109,7 +109,7 @@ export function setCameraFollowPosition(
 }
 
 export function registerCameraSystems(em: EntityManager) {
-  em.registerSystem2(
+  em.registerSystem(
     "smoothCamera",
     null,
     [CameraDef, TimeDef],
@@ -120,7 +120,7 @@ export function registerCameraSystems(em: EntityManager) {
     }
   );
 
-  em.registerSystem2(
+  em.registerSystem(
     "cameraFollowTarget",
     [CameraFollowDef],
     [CameraDef],
@@ -148,7 +148,7 @@ export function registerCameraSystems(em: EntityManager) {
     }
   );
 
-  em.registerSystem2("retargetCamera", null, [CameraDef], function ([], res) {
+  em.registerSystem("retargetCamera", null, [CameraDef], function ([], res) {
     if (res.camera.prevTargetId === res.camera.targetId) {
       quat.copy(res.camera.lastRotation, res.camera.rotationOffset);
       vec3.copy(res.camera.lastPosition, res.camera.positionOffset);
@@ -188,7 +188,7 @@ export function registerCameraSystems(em: EntityManager) {
   });
 
   em.addResource(CameraComputedDef);
-  em.registerSystem2(
+  em.registerSystem(
     "updateCameraView",
     null,
     [CameraComputedDef, CameraDef, MeDef, CanvasDef],

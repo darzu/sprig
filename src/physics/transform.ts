@@ -175,7 +175,7 @@ function updateWorldFromLocalAndParent(o: Transformable) {
 export function registerInitTransforms(em: EntityManager) {
   // TODO(@darzu): WorldFrame should be optional, only needed
   //  for parented objs (which is maybe the uncommon case).
-  em.registerSystem2("ensureWorldFrame", [...LocalFrameDefs], [], (objs) => {
+  em.registerSystem("ensureWorldFrame", [...LocalFrameDefs], [], (objs) => {
     for (let o of objs) {
       if (!WorldFrameDef.isOn(o)) {
         em.ensureComponentOn(o, WorldFrameDef);
@@ -188,7 +188,7 @@ export function registerUpdateLocalFromPosRotScale(
   em: EntityManager,
   suffix: string = ""
 ) {
-  em.registerSystem2("ensureFillOutLocalFrame", null, [], (objs) => {
+  em.registerSystem("ensureFillOutLocalFrame", null, [], (objs) => {
     // TODO(@darzu): PERF. Hacky custom query! Not cached n stuff.
     for (let o of em.entities.values()) {
       if (!o.id) continue;
@@ -208,7 +208,7 @@ export function registerUpdateLocalFromPosRotScale(
   });
 
   // calculate the world transform
-  em.registerSystem2(
+  em.registerSystem(
     "updateLocalFromPosRotScale" + suffix,
     [...LocalFrameDefs],
     [],
@@ -223,7 +223,7 @@ export function registerUpdateWorldFromLocalAndParent(
   suffix: string = ""
 ) {
   // calculate the world transform
-  em.registerSystem2(
+  em.registerSystem(
     "updateWorldFromLocalAndParent" + suffix,
     [WorldFrameDef, ...LocalFrameDefs],
     [],
