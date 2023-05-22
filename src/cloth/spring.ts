@@ -251,7 +251,8 @@ export function stepSprings(g: SpringGrid, dt: number) {
 }
 
 onInit((em) => {
-  em.registerSystem(
+  em.registerSystem2(
+    "spring",
     [SpringGridDef, ForceDef],
     [TimeDef],
     (springs, res) => {
@@ -259,7 +260,6 @@ onInit((em) => {
         vec3.copy(springGrid.externalForce, force);
         stepSprings(springGrid, res.time.dt);
       }
-    },
-    "spring"
+    }
   );
 });

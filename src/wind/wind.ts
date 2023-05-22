@@ -36,7 +36,8 @@ export function setWindAngle(wind: Component<typeof WindDef>, angle: number) {
   vec3.rotateY(AHEAD_DIR, ORIGIN, angle, wind.dir);
 }
 
-EM.registerSystem(
+EM.registerSystem2(
+  "changeWind",
   [],
   [WindDef, TimeDef, RendererDef],
   (_, res) => {
@@ -50,8 +51,7 @@ EM.registerSystem(
         windDir: res.wind.dir,
       });
     }
-  },
-  "changeWind"
+  }
 );
 
 function angleBetweenRadians(a: number, b: number): number {
@@ -62,14 +62,9 @@ function angleBetweenRadians(a: number, b: number): number {
   return diff;
 }
 
-EM.registerSystem(
-  [],
-  [WindDef],
-  (_, { wind }) => {
-    if (Math.abs(wind.angle - wind.targetAngle) > EPSILON) {
-      const diff = angleBetweenRadians(wind.targetAngle, wind.oldAngle);
-      setWindAngle(wind, wind.angle + diff / WIND_CHANGE_STEPS);
-    }
-  },
-  "smoothWind"
-);
+EM.registerSystem2("smoothWind", [], [WindDef], (_, { wind }) => {
+  if (Math.abs(wind.angle - wind.targetAngle) > EPSILON) {
+    const diff = angleBetweenRadians(wind.targetAngle, wind.oldAngle);
+    setWindAngle(wind, wind.angle + diff / WIND_CHANGE_STEPS);
+  }
+});
