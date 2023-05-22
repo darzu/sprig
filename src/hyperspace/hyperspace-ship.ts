@@ -273,7 +273,8 @@ const START_TEXT = "";
 // const START_TEXT = "hit the gem to begin";
 
 export function registerShipSystems(em: EntityManager) {
-  em.registerSystem(
+  em.registerSystem2(
+    "startGame",
     [GemPropsDef, InRangeDef],
     [GameStateDef, PhysicsResultsDef, MeDef, InputsDef, LocalHsPlayerDef],
     (gems, res) => {
@@ -287,8 +288,7 @@ export function registerShipSystems(em: EntityManager) {
           startGame(player);
         }
       }
-    },
-    "startGame"
+    }
   );
 
   const raiseShipHit = eventWizard(
@@ -309,7 +309,8 @@ export function registerShipSystems(em: EntityManager) {
     }
   );
 
-  em.registerSystem(
+  em.registerSystem2(
+    "shipHealthCheck",
     [HsShipPropsDef, HsShipLocalDef, PositionDef, AuthorityDef],
     [
       AudioDef,
@@ -355,11 +356,11 @@ export function registerShipSystems(em: EntityManager) {
           endGame(ship);
         }
       }
-    },
-    "shipHealthCheck"
+    }
   );
 
-  em.registerSystem(
+  em.registerSystem2(
+    "playerShipMove",
     [
       UVShipDef,
       HsShipLocalDef,
@@ -395,21 +396,21 @@ export function registerShipSystems(em: EntityManager) {
 
         vec2.rotate(s.uvDir, vec2.ZEROS, yaw * 0.02, s.uvDir);
       }
-    },
-    "playerShipMove"
+    }
   );
 
-  em.registerSystem(
+  em.registerSystem2(
+    "shipUpdateParty",
     [HsShipLocalDef, HsShipPropsDef, PositionDef],
     [PartyDef],
     (ships, res) => {
       if (ships[0]) vec3.copy(res.party.pos, ships[0].position);
-    },
-    "shipUpdateParty"
+    }
   );
 
   // If a rudder isn't being manned, smooth it back towards straight
-  em.registerSystem(
+  em.registerSystem2(
+    "easeRudder",
     [RudderPropsDef, TurretDef, YawPitchDef, AuthorityDef],
     [MeDef],
     (rudders, res) => {
@@ -419,7 +420,6 @@ export function registerShipSystems(em: EntityManager) {
         if (Math.abs(r.yawpitch.yaw) < 0.01) r.yawpitch.yaw = 0;
         r.yawpitch.yaw *= 0.9;
       }
-    },
-    "easeRudder"
+    }
   );
 }

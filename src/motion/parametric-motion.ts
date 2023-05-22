@@ -28,7 +28,8 @@ export const ParametricDef = EM.defineComponent(
 // TODO(@darzu): serializer pairs
 
 onInit((em: EntityManager) => {
-  em.registerSystem(
+  em.registerSystem2(
+    "updateParametricMotion",
     [PositionDef, ParametricDef],
     [TimeDef],
     (es, res) => {
@@ -41,8 +42,7 @@ onInit((em: EntityManager) => {
           e.position
         );
       }
-    },
-    "updateParametricMotion"
+    }
   );
 });
 

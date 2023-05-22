@@ -175,7 +175,8 @@ export const { HypMastPropsDef, HypMastLocalDef, createHypMastNow } =
   });
 
 onInit((em) => {
-  em.registerSystem(
+  em.registerSystem2(
+    "updateMastBoom",
     [HypMastPropsDef, HypMastLocalDef, TurretDef, BoomPitchesDef],
     [InputsDef, RendererDef],
     (masts, res) => {
@@ -242,11 +243,11 @@ onInit((em) => {
         //     mast.hypMastLocal.boom2.map((b) => b()!.rotation)
         //   );
       }
-    },
-    "updateMastBoom"
+    }
   );
 
-  em.registerSystem(
+  em.registerSystem2(
+    "sail",
     [HsShipPropsDef, UVShipDef, WorldFrameDef, AuthorityDef],
     [MeDef, GameStateDef],
     (es, res) => {
@@ -309,7 +310,6 @@ onInit((em) => {
           //console.log(`Speed is ${ship.ship.speed}`);
         }
       }
-    },
-    "sail"
+    }
   );
 });

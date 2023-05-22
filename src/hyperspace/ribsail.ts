@@ -125,7 +125,8 @@ export const { RibSailPropsDef, RibSailLocalDef, createRibSailNow } =
 type RibSail = ReturnType<typeof createRibSailNow>;
 
 onInit(() => {
-  EM.registerSystem(
+  EM.registerSystem2(
+    `updateRibSail`,
     [RibSailLocalDef, RenderableDef],
     [RendererDef],
     (cs, res) => {
@@ -162,8 +163,7 @@ onInit(() => {
 
         sail.ribSailLocal._lastPitch = sail.ribSailLocal.pitch;
       }
-    },
-    `updateRibSail`
+    }
   );
   // TODO(@darzu): only require this if one exists?
   EM.requireSystem("updateRibSail");

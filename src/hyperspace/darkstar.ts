@@ -63,7 +63,8 @@ export const { DarkStarPropsDef, DarkStarLocalDef, createDarkStarNow } =
 
 onInit((em) => {
   // TODO: this star will escape! must bring it closer to the orbit point sometimes
-  em.registerSystem(
+  em.registerSystem2(
+    "darkStarOrbit",
     [DarkStarPropsDef, PositionDef, AuthorityDef],
     [MeDef, GameStateDef],
     (es, res) => {
@@ -115,7 +116,6 @@ onInit((em) => {
         //console.log(`distance ${distance}, newDistance ${newDistance}`);
         vec3.add(star.position, toCenter, star.position);
       }
-    },
-    "darkStarOrbit"
+    }
   );
 });
