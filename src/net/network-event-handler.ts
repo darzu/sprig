@@ -50,10 +50,10 @@ export function registerHandleNetworkEvents(em: EntityManager) {
     }
   }
   em.registerSystem(
+    "handleNetworkEvents",
     null,
     [EventsFromNetworkDef],
-    handleNetworkEvents,
-    "handleNetworkEvents"
+    handleNetworkEvents
   );
 }
 
@@ -77,9 +77,9 @@ export function registerSendOutboxes(em: EntityManager) {
     }
   }
   em.registerSystem(
+    "sendOutboxes",
     [OutboxDef, PeerDef],
     [EventsToNetworkDef],
-    sendOutboxes,
-    "sendOutboxes"
+    sendOutboxes
   );
 }

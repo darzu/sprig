@@ -30,41 +30,36 @@ export function registerMusicSystems(em: EntityManager) {
   em.addResource(AudioDef);
 
   let once = true;
-  em.registerSystem(
-    null,
-    [AudioDef, CanvasDef],
-    (_, res) => {
-      if (once && res.htmlCanvas.hasFirstInteraction) {
-        em.addResource(HasAudioDef);
-        // Init our audio
-        // TODO(@darzu): maybe we shouldn't even create the resource until we
-        //    have the audio context?
-        if (window.AudioContext != null && ENABLE_AUDIO) {
-          res.music.state = createAudioState();
-        }
-
-        // play opening music
-        // const THEME_LENGTH = 100;
-        // const randChordId = () => Math.floor(Math.random() * 6);
-        // const theme = range(100).map((_) => randChordId());
-        // // const theme = [0, 1, 2, 3, 4, 5];
-        // console.log("playing music");
-        // res.music.playChords(theme, "major", 2.0, 2.0, -2);
-
-        once = false;
+  em.registerSystem("musicStart", null, [AudioDef, CanvasDef], (_, res) => {
+    if (once && res.htmlCanvas.hasFirstInteraction) {
+      em.addResource(HasAudioDef);
+      // Init our audio
+      // TODO(@darzu): maybe we shouldn't even create the resource until we
+      //    have the audio context?
+      if (window.AudioContext != null && ENABLE_AUDIO) {
+        res.music.state = createAudioState();
       }
 
-      // update the string pool
-      if (res.music.state)
-        for (let i = 0; i < NUM_STRINGS; i++) {
-          const s = res.music.state._strings[i];
-          if (s.endTime < res.music.state.ctx.currentTime) {
-            res.music.state._stringPool.free(i, true);
-          }
+      // play opening music
+      // const THEME_LENGTH = 100;
+      // const randChordId = () => Math.floor(Math.random() * 6);
+      // const theme = range(100).map((_) => randChordId());
+      // // const theme = [0, 1, 2, 3, 4, 5];
+      // console.log("playing music");
+      // res.music.playChords(theme, "major", 2.0, 2.0, -2);
+
+      once = false;
+    }
+
+    // update the string pool
+    if (res.music.state)
+      for (let i = 0; i < NUM_STRINGS; i++) {
+        const s = res.music.state._strings[i];
+        if (s.endTime < res.music.state.ctx.currentTime) {
+          res.music.state._stringPool.free(i, true);
         }
-    },
-    "musicStart"
-  );
+      }
+  });
 }
 
 interface AudioString {

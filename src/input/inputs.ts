@@ -43,18 +43,19 @@ export function registerInputsSystem(em: EntityManager): void {
 
   EM.addResource(InputsDef);
   em.registerSystem(
+    "inputs",
     null,
     [InputsDef, CanvasDef],
     (_: [], { inputs, htmlCanvas }) => {
       if (!inputsReader) inputsReader = createInputsReader(htmlCanvas);
       // TODO(@darzu): handle pause and menus?
       Object.assign(inputs, inputsReader());
-    },
-    "inputs"
+    }
   );
 
   em.addResource(MouseDragDef);
   em.registerSystem(
+    "mouseDrag",
     null,
     [InputsDef, MouseDragDef],
     (_, { inputs, mousedrag }) => {
@@ -87,8 +88,7 @@ export function registerInputsSystem(em: EntityManager): void {
         );
         vec2.copy(mousedrag.dragMov, inputs.mouseMov);
       }
-    },
-    "mouseDrag"
+    }
   );
 }
 

@@ -58,6 +58,7 @@ export function registerControllableSystems(em: EntityManager) {
   const steerVel = vec3.create();
 
   em.registerSystem(
+    "controllableInput",
     [ControllableDef, LinearVelocityDef, RotationDef, WorldFrameDef],
     [InputsDef, MeDef, CanvasDef, TimeDef],
     (controllables, res) => {
@@ -113,11 +114,11 @@ export function registerControllableSystems(em: EntityManager) {
             c.rotation
           );
       }
-    },
-    "controllableInput"
+    }
   );
 
   em.registerSystem(
+    "controllableCameraFollow",
     [ControllableDef, CameraFollowDef],
     [InputsDef, MeDef, CanvasDef],
     (controllables, res) => {
@@ -137,7 +138,6 @@ export function registerControllableSystems(em: EntityManager) {
           c.cameraFollow.pitchOffset +=
             -res.inputs.mouseMov[1] * c.controllable.turnSpeed;
       }
-    },
-    "controllableCameraFollow"
+    }
   );
 }

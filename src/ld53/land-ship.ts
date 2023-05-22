@@ -61,6 +61,7 @@ const WORLD_WIDTH = 1024; // width runs +z
 const WORLD_HEIGHT = 512; // height runs +x
 
 EM.registerSystem(
+  "landShipCollision",
   [ShipDef, PositionDef, WorldFrameDef, PhysicsStateDef, LinearVelocityDef],
   [PartyDef, LandDef, LevelMapDef],
   (es, res) => {
@@ -221,6 +222,5 @@ EM.registerSystem(
     //     }
     //   }
     // }
-  },
-  "landShipCollision"
+  }
 );

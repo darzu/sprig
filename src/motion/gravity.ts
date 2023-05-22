@@ -11,6 +11,7 @@ export const GravityDef = EM.defineComponent("gravity", (gravity?: vec3) => {
 
 onInit((em: EntityManager) => {
   em.registerSystem(
+    "applyGravity",
     [GravityDef, LinearVelocityDef],
     [TimeDef],
     (objs, res) => {
@@ -19,7 +20,6 @@ onInit((em: EntityManager) => {
         vec3.scale(b.gravity, res.time.dt, t);
         vec3.add(b.linearVelocity, t, b.linearVelocity);
       }
-    },
-    "applyGravity"
+    }
   );
 });

@@ -45,6 +45,7 @@ export async function initShadingGame() {
   const { renderer } = await EM.whenResources(RendererDef);
 
   EM.registerSystem(
+    "grassGameRenderPipelines",
     null,
     [RendererDef, DevConsoleDef],
     (_, res) => {
@@ -61,8 +62,7 @@ export async function initShadingGame() {
         postProcess,
         ...(res.dev.showConsole ? dbgGridCompose : []),
       ];
-    },
-    "grassGameRenderPipelines"
+    }
   );
   EM.requireSystem("grassGameRenderPipelines");
 

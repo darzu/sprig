@@ -42,6 +42,7 @@ export function registerCursorSystems(em: EntityManager) {
   em.addResource(GlobalCursor3dDef);
 
   em.registerSystem(
+    "buildCursor",
     null,
     [GlobalCursor3dDef, AssetsDef],
     (_, res) => {
@@ -57,11 +58,11 @@ export function registerCursorSystems(em: EntityManager) {
         em.addComponent(id, ColorDef, V(0, 1, 1));
         res.globalCursor3d.cursor = createRef(id, [Cursor3dDef, WorldFrameDef]);
       }
-    },
-    "buildCursor"
+    }
   );
 
   em.registerSystem(
+    "placeCursorAtScreenCenter",
     [Cursor3dDef, PositionDef, ColorDef],
     [CameraComputedDef, PhysicsResultsDef],
     (cs, res) => {
@@ -107,7 +108,6 @@ export function registerCursorSystems(em: EntityManager) {
         vec3.copy(c.rendererWorldFrame.position, c.position);
         updateFrameFromPosRotScale(c.rendererWorldFrame);
       }
-    },
-    "placeCursorAtScreenCenter"
+    }
   );
 }

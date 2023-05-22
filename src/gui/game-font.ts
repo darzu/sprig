@@ -162,6 +162,7 @@ export async function initFontEditor(em: EntityManager) {
 
   // TODO(@darzu): de-duplicate this with very similar code in other "games"
   EM.registerSystem(
+    "uiCameraView",
     null,
     [CameraComputedDef, CanvasDef, CameraDef, InputsDef, UICursorDef],
     async (_, res) => {
@@ -246,8 +247,7 @@ export async function initFontEditor(em: EntityManager) {
       );
       cursor.position[0] = cursorWorldPos[0];
       cursor.position[2] = cursorWorldPos[2];
-    },
-    "uiCameraView"
+    }
   );
   EM.requireGameplaySystem("uiCameraView");
 
@@ -316,6 +316,7 @@ export async function initFontEditor(em: EntityManager) {
 
   // Edit letters
   EM.registerSystem(
+    `letterBtnClick`,
     null,
     [ButtonsStateDef, MeshEditorDef, TextDef],
     (_, res) => {
@@ -333,8 +334,7 @@ export async function initFontEditor(em: EntityManager) {
         console.log(`mesh '${btnIdx}'`);
         console.log(stringifyMesh(poly.proto.mesh!));
       }
-    },
-    `letterBtnClick`
+    }
   );
   EM.requireGameplaySystem(`letterBtnClick`);
 

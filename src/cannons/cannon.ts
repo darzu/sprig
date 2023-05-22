@@ -91,6 +91,7 @@ export const { CannonPropsDef, CannonLocalDef, createCannon, createCannonNow } =
 
 export function registerCannonSystems(em: EntityManager) {
   em.registerSystem(
+    "reloadCannon",
     [CannonLocalDef],
     [TimeDef],
     (cannons, res) => {
@@ -99,8 +100,7 @@ export function registerCannonSystems(em: EntityManager) {
           c.cannonLocal.fireMs -= res.time.dt;
         }
       }
-    },
-    "reloadCannon"
+    }
   );
 
   const raiseFireCannon = eventWizard(
@@ -151,6 +151,7 @@ export function registerCannonSystems(em: EntityManager) {
   );
 
   em.registerSystem(
+    "playerControlCannon",
     [CannonLocalDef, TurretDef, WorldFrameDef],
     [InputsDef, LocalHsPlayerDef],
     (cannons, res) => {
@@ -163,11 +164,11 @@ export function registerCannonSystems(em: EntityManager) {
           raiseFireCannon(player, c);
         }
       }
-    },
-    "playerControlCannon"
+    }
   );
 
   em.registerSystem(
+    "playerManCanon",
     [CannonLocalDef, TurretDef, InRangeDef, AuthorityDef, WorldFrameDef],
     [DetectedEventsDef, InputsDef, LocalHsPlayerDef],
     (cannons, res) => {
@@ -187,7 +188,6 @@ export function registerCannonSystems(em: EntityManager) {
           raiseFireCannon(player, c);
         }
       }
-    },
-    "playerManCanon"
+    }
   );
 }

@@ -364,6 +364,7 @@ export async function initMeshEditor() {
 
   // TODO(@darzu): undo-stack
   EM.registerSystem(
+    "editHPoly",
     null,
     [MeshEditorDef, RendererDef, ButtonsStateDef, WidgetLayerDef],
     (_, { meshEditor: e, renderer, buttonsState, widgets }) => {
@@ -420,8 +421,7 @@ export async function initMeshEditor() {
       if (didUpdateMesh || didEnlargeMesh) {
         renderer.renderer.stdPool.updateMeshVertices(handle, handle.mesh!);
       }
-    },
-    "editHPoly"
+    }
   );
   EM.requireGameplaySystem("editHPoly");
 

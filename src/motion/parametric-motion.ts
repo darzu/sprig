@@ -29,6 +29,7 @@ export const ParametricDef = EM.defineComponent(
 
 onInit((em: EntityManager) => {
   em.registerSystem(
+    "updateParametricMotion",
     [PositionDef, ParametricDef],
     [TimeDef],
     (es, res) => {
@@ -41,8 +42,7 @@ onInit((em: EntityManager) => {
           e.position
         );
       }
-    },
-    "updateParametricMotion"
+    }
   );
 });
 

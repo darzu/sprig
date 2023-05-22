@@ -185,101 +185,94 @@ export async function initGJKSandbox(em: EntityManager, hosting: boolean) {
     quat.clone(b4.rotation),
   ];
 
-  em.registerSystem(
-    null,
-    [InputsDef],
-    (_, { inputs }) => {
-      // console.log(__frame);
-      // __frame++;
-      // if (!inputs.keyClicks["g"]) return;
+  em.registerSystem("checkGJK", null, [InputsDef], (_, { inputs }) => {
+    // console.log(__frame);
+    // __frame++;
+    // if (!inputs.keyClicks["g"]) return;
 
-      // TODO(@darzu):
+    // TODO(@darzu):
 
-      let playerShape = createWorldShape(
-        res.assets.cube,
-        b2.position,
-        b2.rotation,
-        lastPlayerPos
+    let playerShape = createWorldShape(
+      res.assets.cube,
+      b2.position,
+      b2.rotation,
+      lastPlayerPos
+    );
+
+    const gameMeshes = [res.assets.cube, res.assets.ball, res.assets.tetra];
+    const ents = [b1, b3, b4];
+
+    let backTravelD = 0;
+
+    for (let i = 0; i < ents.length; i++) {
+      b2.color[i] = 0.1;
+      ents[i].color[i] = 0.1;
+
+      let shapeOther = createWorldShape(
+        gameMeshes[i],
+        ents[i].position,
+        ents[i].rotation,
+        lastWorldPos[i]
       );
+      let simplex = gjk(shapeOther, playerShape);
+      if (simplex) {
+        b2.color[i] = 0.3;
+        ents[i].color[i] = 0.3;
+      }
+      if (
+        simplex &&
+        (!quat.equals(lastWorldRot[i], ents[i].rotation) ||
+          !quat.equals(lastPlayerRot, g.rotation))
+      ) {
+        // rotation happened, undo it
+        quat.copy(ents[i].rotation, lastWorldRot[i]);
+        quat.copy(g.rotation, lastPlayerRot);
 
-      const gameMeshes = [res.assets.cube, res.assets.ball, res.assets.tetra];
-      const ents = [b1, b3, b4];
-
-      let backTravelD = 0;
-
-      for (let i = 0; i < ents.length; i++) {
-        b2.color[i] = 0.1;
-        ents[i].color[i] = 0.1;
-
-        let shapeOther = createWorldShape(
+        shapeOther = createWorldShape(
           gameMeshes[i],
           ents[i].position,
           ents[i].rotation,
           lastWorldPos[i]
         );
-        let simplex = gjk(shapeOther, playerShape);
-        if (simplex) {
-          b2.color[i] = 0.3;
-          ents[i].color[i] = 0.3;
-        }
-        if (
-          simplex &&
-          (!quat.equals(lastWorldRot[i], ents[i].rotation) ||
-            !quat.equals(lastPlayerRot, g.rotation))
-        ) {
-          // rotation happened, undo it
-          quat.copy(ents[i].rotation, lastWorldRot[i]);
-          quat.copy(g.rotation, lastPlayerRot);
-
-          shapeOther = createWorldShape(
-            gameMeshes[i],
-            ents[i].position,
-            ents[i].rotation,
-            lastWorldPos[i]
-          );
-          playerShape = createWorldShape(
-            res.assets.cube,
-            b2.position,
-            b2.rotation,
-            lastPlayerPos
-          );
-          simplex = gjk(shapeOther, playerShape);
-        }
-
-        if (simplex) {
-          const penD = penetrationDepth(shapeOther, playerShape, simplex);
-          const travelD = vec3.length(playerShape.travel);
-          if (penD < Infinity) {
-            backTravelD += penD;
-          }
-          if (penD > travelD + PAD) console.error(`penD > travelD`);
-          console.log(
-            `penD: ${penD.toFixed(3)}, travelD: ${travelD.toFixed(3)}`
-          );
-        }
+        playerShape = createWorldShape(
+          res.assets.cube,
+          b2.position,
+          b2.rotation,
+          lastPlayerPos
+        );
+        simplex = gjk(shapeOther, playerShape);
       }
 
-      backTravelD = Math.min(backTravelD, vec3.length(playerShape.travel));
-      const travelN = vec3.normalize(playerShape.travel);
-      const backTravel = vec3.scale(travelN, backTravelD);
+      if (simplex) {
+        const penD = penetrationDepth(shapeOther, playerShape, simplex);
+        const travelD = vec3.length(playerShape.travel);
+        if (penD < Infinity) {
+          backTravelD += penD;
+        }
+        if (penD > travelD + PAD) console.error(`penD > travelD`);
+        console.log(`penD: ${penD.toFixed(3)}, travelD: ${travelD.toFixed(3)}`);
+      }
+    }
 
-      // console.log(backTravel);
-      // console.log(backTravel);
-      vec3.sub(b2.position, backTravel, b2.position);
+    backTravelD = Math.min(backTravelD, vec3.length(playerShape.travel));
+    const travelN = vec3.normalize(playerShape.travel);
+    const backTravel = vec3.scale(travelN, backTravelD);
 
-      lastWorldPos = [
-        vec3.clone(b1.position),
-        vec3.clone(b3.position),
-        vec3.clone(b4.position),
-      ];
-      lastWorldRot = [
-        quat.clone(b1.rotation),
-        quat.clone(b3.rotation),
-        quat.clone(b4.rotation),
-      ];
-      lastPlayerPos = vec3.clone(b2.position);
-      lastPlayerRot = quat.clone(b2.rotation);
-    },
-    "checkGJK"
-  );
+    // console.log(backTravel);
+    // console.log(backTravel);
+    vec3.sub(b2.position, backTravel, b2.position);
+
+    lastWorldPos = [
+      vec3.clone(b1.position),
+      vec3.clone(b3.position),
+      vec3.clone(b4.position),
+    ];
+    lastWorldRot = [
+      quat.clone(b1.rotation),
+      quat.clone(b3.rotation),
+      quat.clone(b4.rotation),
+    ];
+    lastPlayerPos = vec3.clone(b2.position);
+    lastPlayerRot = quat.clone(b2.rotation);
+  });
 }

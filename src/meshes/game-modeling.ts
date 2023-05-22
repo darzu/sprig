@@ -22,6 +22,7 @@ export async function initModelingGame() {
   const { renderer } = await EM.whenResources(RendererDef);
 
   EM.registerSystem(
+    "gameRenderPipelines",
     null,
     [RendererDef, DevConsoleDef],
     (_, res) => {
@@ -37,8 +38,7 @@ export async function initModelingGame() {
         // skyPipeline,
         postProcess,
       ];
-    },
-    "gameRenderPipelines"
+    }
   );
   EM.requireSystem("gameRenderPipelines");
 

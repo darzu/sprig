@@ -38,6 +38,7 @@ export const ModelBoxDef = EM.defineComponent("modelBox", () => {
 function registerObjClicker(em: EntityManager) {
   // listen for modeler on/off
   em.registerSystem(
+    "modelerOnOff",
     null,
     [ModelerDef, InputsDef, CanvasDef],
     (_, res) => {
@@ -49,12 +50,12 @@ function registerObjClicker(em: EntityManager) {
           res.htmlCanvas.shouldLockMouseOnClick = true;
         }
       }
-    },
-    "modelerOnOff"
+    }
   );
 
   // look for object clicks
   em.registerSystem(
+    "modelerClicks",
     null,
     [ModelerDef, CameraComputedDef, InputsDef, PhysicsResultsDef],
     (_, res) => {
@@ -94,8 +95,7 @@ function registerObjClicker(em: EntityManager) {
         );
         drawLine(r.org, endPoint, color);
       }
-    },
-    "modelerClicks"
+    }
   );
 }
 
@@ -109,6 +109,7 @@ export function registerModeler(em: EntityManager) {
 
 function registerAABBBuilder(em: EntityManager) {
   em.registerSystem(
+    "aabbBuilder",
     null,
     [InputsDef, ModelerDef, AssetsDef],
     (_, res) => {
@@ -209,7 +210,6 @@ function registerAABBBuilder(em: EntityManager) {
           }
         }
       }
-    },
-    "aabbBuilder"
+    }
   );
 }

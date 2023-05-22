@@ -58,6 +58,7 @@ export function createSpawner(
 
 onInit((em) => {
   em.registerSystem(
+    "spawnOnTile",
     [SpawnerDef, UVPosDef, UVDirDef],
     [MeDef],
     (tiles, res) => {
@@ -84,8 +85,7 @@ onInit((em) => {
 
         t.spawner.hasSpawned = true;
       }
-    },
-    "spawnOnTile"
+    }
   );
 
   // TODO(@darzu): this seems really general
@@ -103,6 +103,7 @@ onInit((em) => {
 
   // TODO(@darzu): can we make this more ground agnostic?
   em.registerSystem(
+    "spawnFinishAnimIn",
     [SpawnerDef, RotationDef, PositionDef],
     [MeDef],
     (tiles, res) => {
@@ -147,7 +148,6 @@ onInit((em) => {
       for (let id of toRemove) {
         EM.removeComponent(id, SpawnerDef);
       }
-    },
-    "spawnFinishAnimIn"
+    }
   );
 });

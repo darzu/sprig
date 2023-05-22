@@ -40,12 +40,12 @@ export function registerDevSystems(em: EntityManager) {
   em.addResource(DevConsoleDef);
 
   em.registerSystem(
+    "devConsoleToggle",
     null,
     [InputsDef, DevConsoleDef],
     (_, res) => {
       if (res.inputs.keyClicks["`"]) res.dev.showConsole = !res.dev.showConsole;
-    },
-    "devConsoleToggle"
+    }
   );
 
   let lastGPUBytes = 0;
@@ -60,6 +60,7 @@ export function registerDevSystems(em: EntityManager) {
   let pipelineTimes: Map<string, bigint> = new Map();
 
   em.registerSystem(
+    "devConsole",
     null,
     [RendererDef, TextDef, DevConsoleDef],
     async (_, res) => {
@@ -160,7 +161,6 @@ export function registerDevSystems(em: EntityManager) {
         ``;
 
       res.text.debugText = dbgTxt;
-    },
-    "devConsole"
+    }
   );
 }

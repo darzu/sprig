@@ -170,6 +170,7 @@ export async function initClothSandbox(em: EntityManager, hosting: boolean) {
   const line = await drawLine(vec3.create(), vec3.create(), V(0, 1, 0));
 
   em.registerSystem(
+    "clothSandbox",
     [ClothConstructDef, ClothLocalDef, WorldFrameDef, ForceDef],
     [GlobalCursor3dDef, RendererDef, InputsDef, TextDef],
     (cs, res) => {
@@ -212,7 +213,6 @@ export async function initClothSandbox(em: EntityManager, hosting: boolean) {
           line.renderable.enabled = false;
         }
       }
-    },
-    "clothSandbox"
+    }
   );
 }

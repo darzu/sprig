@@ -29,6 +29,7 @@ import { TimeDef } from "../time/time.js";
 
 export function registerSyncSystem(em: EntityManager) {
   em.registerSystem(
+    "netSync",
     [AuthorityDef, SyncDef],
     [TimeDef, MeDef],
     (ents, res) => {
@@ -92,23 +93,23 @@ export function registerSyncSystem(em: EntityManager) {
           send(outbox, message.buffer);
         }
       }
-    },
-    "netSync"
+    }
   );
 }
 
 export function registerUpdateSystem(em: EntityManager) {
   em.registerSystem(
+    "clearRemoteUpdatesMarker",
     [RemoteUpdatesDef],
     [],
     (es) => {
       for (const e of es) {
         em.removeComponent(e.id, RemoteUpdatesDef);
       }
-    },
-    "clearRemoteUpdatesMarker"
+    }
   );
   em.registerSystem(
+    "netUpdate",
     [PeerDef, InboxDef, OutboxDef],
     [TimeDef, MeDef, NetStatsDef],
     (peers, res) => {
@@ -135,8 +136,7 @@ export function registerUpdateSystem(em: EntityManager) {
           send(outbox, ack.buffer);
         }
       }
-    },
-    "netUpdate"
+    }
   );
 }
 
@@ -165,5 +165,5 @@ export function registerAckUpdateSystem(em: EntityManager) {
       }
     }
   }
-  em.registerSystem([PeerDef, InboxDef], [TimeDef, MeDef], ack, "netAck");
+  em.registerSystem("netAck", [PeerDef, InboxDef], [TimeDef, MeDef], ack);
 }

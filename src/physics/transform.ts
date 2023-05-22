@@ -175,56 +175,46 @@ function updateWorldFromLocalAndParent(o: Transformable) {
 export function registerInitTransforms(em: EntityManager) {
   // TODO(@darzu): WorldFrame should be optional, only needed
   //  for parented objs (which is maybe the uncommon case).
-  em.registerSystem(
-    [...LocalFrameDefs],
-    [],
-    (objs) => {
-      for (let o of objs) {
-        if (!WorldFrameDef.isOn(o)) {
-          em.ensureComponentOn(o, WorldFrameDef);
-          copyFrame(o.world, o);
-        }
+  em.registerSystem("ensureWorldFrame", [...LocalFrameDefs], [], (objs) => {
+    for (let o of objs) {
+      if (!WorldFrameDef.isOn(o)) {
+        em.ensureComponentOn(o, WorldFrameDef);
+        copyFrame(o.world, o);
       }
-    },
-    "ensureWorldFrame"
-  );
+    }
+  });
 }
 export function registerUpdateLocalFromPosRotScale(
   em: EntityManager,
   suffix: string = ""
 ) {
-  em.registerSystem(
-    null,
-    [],
-    (objs) => {
-      // TODO(@darzu): PERF. Hacky custom query! Not cached n stuff.
-      for (let o of em.entities.values()) {
-        if (!o.id) continue;
-        // TODO(@darzu): do we really want these on every entity?
-        if (
-          PositionDef.isOn(o) ||
-          RotationDef.isOn(o) ||
-          ScaleDef.isOn(o) ||
-          TransformDef.isOn(o)
-        ) {
-          em.ensureComponentOn(o, PositionDef);
-          em.ensureComponentOn(o, RotationDef);
-          em.ensureComponentOn(o, ScaleDef);
-          em.ensureComponentOn(o, TransformDef);
-        }
+  em.registerSystem("ensureFillOutLocalFrame", null, [], (objs) => {
+    // TODO(@darzu): PERF. Hacky custom query! Not cached n stuff.
+    for (let o of em.entities.values()) {
+      if (!o.id) continue;
+      // TODO(@darzu): do we really want these on every entity?
+      if (
+        PositionDef.isOn(o) ||
+        RotationDef.isOn(o) ||
+        ScaleDef.isOn(o) ||
+        TransformDef.isOn(o)
+      ) {
+        em.ensureComponentOn(o, PositionDef);
+        em.ensureComponentOn(o, RotationDef);
+        em.ensureComponentOn(o, ScaleDef);
+        em.ensureComponentOn(o, TransformDef);
       }
-    },
-    "ensureFillOutLocalFrame"
-  );
+    }
+  });
 
   // calculate the world transform
   em.registerSystem(
+    "updateLocalFromPosRotScale" + suffix,
     [...LocalFrameDefs],
     [],
     (objs) => {
       for (let o of objs) updateFrameFromPosRotScale(o);
-    },
-    "updateLocalFromPosRotScale" + suffix
+    }
   );
 }
 
@@ -234,6 +224,7 @@ export function registerUpdateWorldFromLocalAndParent(
 ) {
   // calculate the world transform
   em.registerSystem(
+    "updateWorldFromLocalAndParent" + suffix,
     [WorldFrameDef, ...LocalFrameDefs],
     [],
     (objs) => {
@@ -247,7 +238,6 @@ export function registerUpdateWorldFromLocalAndParent(
       for (let o of objs) {
         updateWorldFromLocalAndParent(o);
       }
-    },
-    "updateWorldFromLocalAndParent" + suffix
+    }
   );
 }

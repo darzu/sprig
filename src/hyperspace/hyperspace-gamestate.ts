@@ -126,6 +126,7 @@ export const restartGame = eventWizard(
 
 export function registerGameStateSystems(em: EntityManager) {
   em.registerSystem(
+    "restartTimer",
     null,
     [GameStateDef, TimeDef, HostDef],
     ([], res) => {
@@ -141,7 +142,6 @@ export function registerGameStateSystems(em: EntityManager) {
           }
         }
       }
-    },
-    "restartTimer"
+    }
   );
 }

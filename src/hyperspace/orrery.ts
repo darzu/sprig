@@ -46,6 +46,7 @@ export const OrreryDef = EM.defineComponent("orrery", () => ({
 
 onInit((em: EntityManager) => {
   em.registerSystem(
+    "orreryMotion",
     [OrreryDef, WorldFrameDef],
     [AssetsDef],
     (es, res) => {
@@ -83,7 +84,6 @@ onInit((em: EntityManager) => {
           vec3.scale(orreryStar.position, ORRERY_SCALE, orreryStar.position);
         });
       }
-    },
-    "orreryMotion"
+    }
   );
 });

@@ -169,6 +169,7 @@ function updateSmoothedWorldFrame(em: EntityManager, o: Entity) {
 
 export function registerUpdateSmoothedWorldFrames(em: EntityManager) {
   em.registerSystem(
+    "updateSmoothedWorldFrames",
     [RenderableConstructDef, TransformDef],
     [],
     (objs, res) => {
@@ -184,8 +185,7 @@ export function registerUpdateSmoothedWorldFrames(em: EntityManager) {
 
         updateSmoothedWorldFrame(em, o);
       }
-    },
-    "updateSmoothedWorldFrames"
+    }
   );
 }
 
@@ -247,6 +247,7 @@ function extrapolateFrames(
 
 export function registerUpdateRendererWorldFrames(em: EntityManager) {
   em.registerSystem(
+    "updateRendererWorldFrames",
     [SmoothedWorldFrameDef, PrevSmoothedWorldFrameDef],
     [],
     (objs) => {
@@ -280,8 +281,7 @@ export function registerUpdateRendererWorldFrames(em: EntityManager) {
             copyFrame(o.rendererWorldFrame, o.smoothedWorldFrame);
         }
       }
-    },
-    "updateRendererWorldFrames"
+    }
   );
 }
 
@@ -319,6 +319,7 @@ export function registerRenderer(em: EntityManager) {
     [typeof RendererWorldFrameDef, typeof RenderableDef]
   >[] = [];
   em.registerSystem(
+    "renderListDeadHidden",
     [RendererWorldFrameDef, RenderableDef, DeadDef],
     [],
     (objs, _) => {
@@ -326,22 +327,22 @@ export function registerRenderer(em: EntityManager) {
       for (let o of objs)
         if (o.renderable.enabled && o.renderable.hidden && !DeletedDef.isOn(o))
           renderObjs.push(o);
-    },
-    "renderListDeadHidden"
+    }
   );
   em.registerSystem(
+    "renderList",
     [RendererWorldFrameDef, RenderableDef],
     [],
     (objs, _) => {
       for (let o of objs)
         if (o.renderable.enabled && !DeletedDef.isOn(o)) renderObjs.push(o);
-    },
-    "renderList"
+    }
   );
 
   let __frame = 1; // TODO(@darzu): DBG
 
   em.registerSystem(
+    "stepRenderer",
     null, // NOTE: see "renderList*" systems and NOTE above. We use those to construct our query.
     [CameraDef, CameraComputedDef, RendererDef, TimeDef, PartyDef],
     (_, res) => {
@@ -481,8 +482,7 @@ export function registerRenderer(em: EntityManager) {
         stats._accumUniDataQueued = 0;
         stats._accumVertDataQueued = 0;
       }
-    },
-    "stepRenderer"
+    }
   );
 
   em.requireSystem("renderListDeadHidden");
@@ -514,6 +514,7 @@ export function registerRenderer(em: EntityManager) {
 
 export function registerConstructRenderablesSystem(em: EntityManager) {
   em.registerSystem(
+    "constructRenderables",
     [RenderableConstructDef],
     [RendererDef],
     (es, res) => {
@@ -566,8 +567,7 @@ export function registerConstructRenderablesSystem(em: EntityManager) {
           }
         }
       }
-    },
-    "constructRenderables"
+    }
   );
 }
 
@@ -604,20 +604,15 @@ export const RendererDef = EM.defineComponent(
 let _rendererPromise: Promise<void> | null = null;
 
 export function registerRenderInitSystem(em: EntityManager) {
-  em.registerSystem(
-    [],
-    [CanvasDef, ShadersDef],
-    (_, res) => {
-      if (!!em.getResource(RendererDef)) return; // already init
-      if (!!_rendererPromise) return;
-      _rendererPromise = chooseAndInitRenderer(
-        em,
-        res.shaders,
-        res.htmlCanvas.canvas
-      );
-    },
-    "renderInit"
-  );
+  em.registerSystem("renderInit", [], [CanvasDef, ShadersDef], (_, res) => {
+    if (!!em.getResource(RendererDef)) return; // already init
+    if (!!_rendererPromise) return;
+    _rendererPromise = chooseAndInitRenderer(
+      em,
+      res.shaders,
+      res.htmlCanvas.canvas
+    );
+  });
 }
 
 async function chooseAndInitRenderer(

@@ -17,28 +17,23 @@ EM.registerSerializerPair(
 );
 
 export function registerDeleteEntitiesSystem(em: EntityManager) {
-  em.registerSystem(
-    [DeletedDef],
-    [],
-    (entities) => {
-      for (let entity of entities) {
-        if (!entity.deleted.processed) {
-          // TODO: remove from renderer
-          // TODO(@darzu): yuck, we just wrote a destructor. Also not sure
-          //    this is serializable or network-able
-          if (OnDeleteDef.isOn(entity)) entity.onDelete(entity.id);
+  em.registerSystem("delete", [DeletedDef], [], (entities) => {
+    for (let entity of entities) {
+      if (!entity.deleted.processed) {
+        // TODO: remove from renderer
+        // TODO(@darzu): yuck, we just wrote a destructor. Also not sure
+        //    this is serializable or network-able
+        if (OnDeleteDef.isOn(entity)) entity.onDelete(entity.id);
 
-          em.keepOnlyComponents(entity.id, [DeletedDef, SyncDef]);
-          if (SyncDef.isOn(entity)) {
-            entity.sync.dynamicComponents = [];
-            entity.sync.fullComponents = [DeletedDef.id];
-          }
-          entity.deleted.processed = true;
+        em.keepOnlyComponents(entity.id, [DeletedDef, SyncDef]);
+        if (SyncDef.isOn(entity)) {
+          entity.sync.dynamicComponents = [];
+          entity.sync.fullComponents = [DeletedDef.id];
         }
+        entity.deleted.processed = true;
       }
-    },
-    "delete"
-  );
+    }
+  });
 }
 
 // TODO(@darzu): uh oh. this seems like memory/life cycle management.
@@ -57,14 +52,9 @@ export const DeadDef = EM.defineComponent("dead", () => ({
 
 // TODO(@darzu): this is entity specific...
 export function registerDeadEntitiesSystem(em: EntityManager) {
-  em.registerSystem(
-    [DeadDef],
-    [],
-    (entities) => {
-      for (let e of entities) {
-        if (!e.dead.processed) dbgLogOnce(`dead entity not processed: ${e.id}`);
-      }
-    },
-    "deadCleanupWarning"
-  );
+  em.registerSystem("deadCleanupWarning", [DeadDef], [], (entities) => {
+    for (let e of entities) {
+      if (!e.dead.processed) dbgLogOnce(`dead entity not processed: ${e.id}`);
+    }
+  });
 }

@@ -85,6 +85,7 @@ async function initButtonGUI(res: EntityW<[typeof RendererDef]>) {
   }
 
   EM.registerSystem(
+    "buttonStateUpdate",
     [ButtonDef],
     [PhysicsResultsDef, ButtonsStateDef, InputsDef, UICursorDef],
     (es, res) => {
@@ -116,12 +117,12 @@ async function initButtonGUI(res: EntityW<[typeof RendererDef]>) {
           res.buttonsState.clickByKey[btn.button.key] = btn.button.data;
         } else res.buttonsState.click[btn.id] = false;
       }
-    },
-    "buttonStateUpdate"
+    }
   );
   EM.requireGameplaySystem("buttonStateUpdate");
 
   EM.registerSystem(
+    "buttonColors",
     [ButtonDef, ColorDef],
     [ButtonsStateDef],
     (es, res) => {
@@ -141,8 +142,7 @@ async function initButtonGUI(res: EntityW<[typeof RendererDef]>) {
         //   console.log(`click! ${btn.button.key}`);
         // }
       }
-    },
-    "buttonColors"
+    }
   );
   EM.requireGameplaySystem("buttonColors");
 }

@@ -604,6 +604,7 @@ export const flyingBrickPool = createEntityPool<
 });
 
 EM.registerSystem(
+  "despawnFlyingBricks",
   [FlyingBrickDef, DeadDef],
   [],
   (es, _) =>
@@ -612,8 +613,7 @@ EM.registerSystem(
         //console.log("despawning brick");
         flyingBrickPool.despawn(e);
       }
-    }),
-  "despawnFlyingBricks"
+    })
 );
 
 const __previousPartyPos = vec3.create();
@@ -632,6 +632,7 @@ const MISS_PROBABILITY = 0.25;
 const MAX_RANGE = 300;
 
 EM.registerSystem(
+  "stoneTowerAttack",
   [StoneTowerDef, WorldFrameDef],
   [TimeDef, PartyDef],
   (es, res) => {
@@ -833,8 +834,7 @@ EM.registerSystem(
     }
     vec3.copy(__previousPartyPos, res.party.pos);
     __prevTime = res.time.time;
-  },
-  "stoneTowerAttack"
+  }
 );
 
 function destroyTower(
@@ -870,6 +870,7 @@ function destroyTower(
 }
 
 EM.registerSystem(
+  "stoneTowerDamage",
   [StoneTowerDef, RenderableDef, WorldFrameDef],
   [PhysicsResultsDef, RendererDef],
   (es, res) => {
@@ -926,6 +927,5 @@ EM.registerSystem(
         }
       }
     }
-  },
-  "stoneTowerDamage"
+  }
 );

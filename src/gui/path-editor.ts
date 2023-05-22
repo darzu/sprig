@@ -276,6 +276,7 @@ export async function initPathEditor() {
 
   // TODO(@darzu): undo-stack
   EM.registerSystem(
+    "editHPoly",
     null,
     [PathEditorDef, RendererDef, ButtonsStateDef, WidgetLayerDef],
     (_, { pathEditor: e, renderer, buttonsState, widgets }) => {
@@ -320,8 +321,7 @@ export async function initPathEditor() {
       if (didUpdateMesh || didEnlargeMesh) {
         stdPool.updateMeshVertices(handle, handle.mesh!);
       }
-    },
-    "editHPoly"
+    }
   );
   EM.requireGameplaySystem("editHPoly");
 }

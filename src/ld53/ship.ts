@@ -186,6 +186,7 @@ export async function createShip(em: EntityManager) {
 const AHEAD_DIR = V(0, 0, 1);
 
 EM.registerSystem(
+  "sailShip",
   [ShipDef, WorldFrameDef, RotationDef, LinearVelocityDef],
   [],
   (es) => {
@@ -225,8 +226,7 @@ EM.registerSystem(
         }
       }
     }
-  },
-  "sailShip"
+  }
 );
 
 export const RudderDef = EM.defineComponent("rudder", () => true);
@@ -284,6 +284,7 @@ async function createRudder(em: EntityManager) {
 
 // If a rudder isn't being manned, smooth it back towards straight
 EM.registerSystem(
+  "easeRudderLD52",
   [RudderDef, TurretDef, YawPitchDef, AuthorityDef],
   [MeDef],
   (rudders, res) => {
@@ -293,14 +294,14 @@ EM.registerSystem(
       if (Math.abs(r.yawpitch.yaw) < 0.01) r.yawpitch.yaw = 0;
       r.yawpitch.yaw *= 0.9;
     }
-  },
-  "easeRudderLD52"
+  }
 );
 
 EM.addConstraint(["sailShip", "after", "mastForce"]);
 EM.addConstraint(["sailShip", "after", "easeRudderLD52"]);
 
 EM.registerSystem(
+  "shipParty",
   [ShipDef, PositionDef, RotationDef],
   [PartyDef],
   (es, res) => {
@@ -308,6 +309,5 @@ EM.registerSystem(
       vec3.transformQuat(AHEAD_DIR, es[0].rotation, res.party.dir);
       vec3.copy(res.party.pos, es[0].position);
     }
-  },
-  "shipParty"
+  }
 );

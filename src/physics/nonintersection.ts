@@ -156,6 +156,7 @@ export function doesTouch(
 // PRECONDITION: assumes world frames are all up to date
 export function registerUpdateWorldAABBs(em: EntityManager, s: string = "") {
   em.registerSystem(
+    "registerUpdateWorldAABBs" + s,
     [PhysicsStateDef, WorldFrameDef, TransformDef],
     [],
     (objs, res) => {
@@ -180,19 +181,18 @@ export function registerUpdateWorldAABBs(em: EntityManager, s: string = "") {
         //   sweepAABB.max[i] = Math.max(lastWorldAABB.max[i], worldAABB.max[i]);
         // }
       }
-    },
-    "registerUpdateWorldAABBs" + s
+    }
   );
 }
 
 export function registerUpdateWorldFromPosRotScale(em: EntityManager) {
   em.registerSystem(
+    "updateWorldFromPosRotScale",
     [WorldFrameDef],
     [],
     (objs) => {
       for (let o of objs) updateFrameFromPosRotScale(o.world);
-    },
-    "updateWorldFromPosRotScale"
+    }
   );
 }
 
@@ -238,6 +238,7 @@ export function registerPhysicsStateInit(em: EntityManager) {
   // init the per-object physics state
   // TODO(@darzu): split this into different concerns
   em.registerSystem(
+    "physicsInit",
     [ColliderDef, PositionDef],
     [PhysicsBroadCollidersDef],
     (objs, { _physBColliders }) => {
@@ -334,13 +335,13 @@ export function registerPhysicsStateInit(em: EntityManager) {
         _physBColliders.colliders.push(c);
         return c;
       }
-    },
-    "physicsInit"
+    }
   );
 }
 
 export function registerUpdateInContactSystems(em: EntityManager) {
   em.registerSystem(
+    "updatePhysInContact",
     [ColliderDef, PhysicsStateDef, WorldFrameDef],
     [PhysicsBroadCollidersDef, PhysicsResultsDef],
     (objs, res) => {
@@ -397,14 +398,14 @@ export function registerUpdateInContactSystems(em: EntityManager) {
         // else, this collision isn't valid any more
         contactData.delete(contactId);
       }
-    },
-    "updatePhysInContact"
+    }
   );
 }
 
 export function registerPhysicsContactSystems(em: EntityManager) {
   // TODO(@darzu): split this system
   em.registerSystem(
+    "physicsStepContact",
     [ColliderDef, PhysicsStateDef, PositionDef, WorldFrameDef],
     [PhysicsBroadCollidersDef, PhysicsResultsDef],
     (objs, res) => {
@@ -592,7 +593,6 @@ export function registerPhysicsContactSystems(em: EntityManager) {
         }
         return hits;
       };
-    },
-    "physicsStepContact"
+    }
   );
 }

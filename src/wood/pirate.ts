@@ -167,6 +167,7 @@ export async function startPirates() {
 
   pirateNextSpawn = pirateSpawnTimer;
   em.registerSystem(
+    "spawnPirates",
     [PiratePlatformDef],
     [TimeDef],
     (ps, res) => {
@@ -187,14 +188,14 @@ export async function startPirates() {
         pirateSpawnTimer *= 0.95;
         pirateSpawnTimer = Math.max(pirateSpawnTimer, minSpawnTimer);
       }
-    },
-    "spawnPirates"
+    }
   );
   EM.requireGameplaySystem("spawnPirates");
 
   const fireStagger = 150;
   // const tiltPeriod = 5700;
   em.registerSystem(
+    "updatePiratePlatforms",
     [PiratePlatformDef, PositionDef, RotationDef],
     [TimeDef],
     (ps, res) => {
@@ -250,8 +251,7 @@ export async function startPirates() {
           }
         }
       }
-    },
-    "updatePiratePlatforms"
+    }
   );
   EM.requireGameplaySystem("updatePiratePlatforms");
 }

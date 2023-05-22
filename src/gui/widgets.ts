@@ -89,6 +89,7 @@ async function initDragBox(): Promise<EntityW<[typeof PositionDef]>> {
   });
 
   EM.registerSystem(
+    "updateDragbox",
     null,
     [MouseDragDef, CameraComputedDef, WidgetLayerDef],
     (_, { mousedrag, cameraComputed, widgets }) => {
@@ -116,8 +117,7 @@ async function initDragBox(): Promise<EntityW<[typeof PositionDef]>> {
         vec3.copy(dragBox.position, min);
         vec3.copy(dragBox.scale, size);
       }
-    },
-    "updateDragbox"
+    }
   );
   // TODO(@darzu):
   // EM.requireGameplaySystem("updateDragbox");
@@ -135,6 +135,7 @@ async function initWidgets({ assets }: EntityW<[typeof AssetsDef]>) {
   // TODO(@darzu):
   // TODO(@darzu): refactor. Also have undo-stack
   EM.registerSystem(
+    "updateWidgets",
     null,
     [
       WidgetLayerDef,
@@ -240,13 +241,13 @@ async function initWidgets({ assets }: EntityW<[typeof AssetsDef]>) {
           }
         }
       }
-    },
-    "updateWidgets"
+    }
   );
   // TODO(@darzu):
   // EM.requireGameplaySystem("updateWidgets");
 
   EM.registerSystem(
+    "colorWidgets",
     [WidgetDef, ColorDef],
     [WidgetLayerDef],
     (ws, { widgets }) => {
@@ -267,8 +268,7 @@ async function initWidgets({ assets }: EntityW<[typeof AssetsDef]>) {
         const g = EM.findEntity(widgets.cursor, [ColorDef])!;
         vec3.copy(g.color, ENDESGA16.red);
       }
-    },
-    "colorWidgets"
+    }
   );
   // TODO(@darzu):
   // EM.requireGameplaySystem("colorWidgets");

@@ -35,6 +35,7 @@ onInit(() => {
   let delta = vec3.create();
 
   EM.registerSystem(
+    "animateTo",
     [AnimateToDef, PositionDef],
     [TimeDef],
     (cs, res) => {
@@ -72,7 +73,6 @@ onInit(() => {
       for (let id of toRemove) {
         EM.removeComponent(id, AnimateToDef);
       }
-    },
-    "animateTo"
+    }
   );
 });

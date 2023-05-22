@@ -32,6 +32,7 @@ const INTERACTION_TINT_NAME = "interaction";
 
 export function registerInteractionSystem(em: EntityManager) {
   em.registerSystem(
+    "interaction",
     [InteractableDef, WorldFrameDef],
     [LocalHsPlayerDef, MeDef, PhysicsResultsDef],
     (interactables, resources) => {
@@ -67,7 +68,6 @@ export function registerInteractionSystem(em: EntityManager) {
           setTint(interactable.tints, INTERACTION_TINT_NAME, INTERACTION_TINT);
         }
       }
-    },
-    "interaction"
+    }
   );
 }

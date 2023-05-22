@@ -154,6 +154,7 @@ export const raiseUnmanTurret = eventWizard(
 
 export function registerTurretSystems(em: EntityManager) {
   em.registerSystem(
+    "turretYawPitch",
     [TurretDef, RotationDef, YawPitchDef],
     [],
     (turrets, res) => {
@@ -165,11 +166,11 @@ export function registerTurretSystems(em: EntityManager) {
           });
         else yawpitchToQuat(c.rotation, c.yawpitch);
       }
-    },
-    "turretYawPitch"
+    }
   );
 
   em.registerSystem(
+    "turretAim",
     [TurretDef, YawPitchDef, CameraFollowDef],
     [InputsDef, LocalHsPlayerDef],
     (turrets, res) => {
@@ -209,11 +210,11 @@ export function registerTurretSystems(em: EntityManager) {
         c.cameraFollow.yawOffset =
           c.turret.cameraYawOffset + c.yawpitch.yaw * c.turret.cameraYawFactor;
       }
-    },
-    "turretAim"
+    }
   );
 
   em.registerSystem(
+    "turretManUnman",
     [TurretDef, InRangeDef, AuthorityDef, CameraFollowDef],
     [InputsDef, LocalHsPlayerDef, TextDef],
     (turrets, res) => {
@@ -238,7 +239,6 @@ export function registerTurretSystems(em: EntityManager) {
           }
         }
       }
-    },
-    "turretManUnman"
+    }
   );
 }

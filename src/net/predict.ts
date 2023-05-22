@@ -7,6 +7,7 @@ import { AngularVelocityDef, LinearVelocityDef } from "../motion/velocity.js";
 
 export function registerPredictSystem(em: EntityManager) {
   em.registerSystem(
+    "predict",
     [PredictDef, PositionDef, LinearVelocityDef],
     [],
     (entities) => {
@@ -28,7 +29,6 @@ export function registerPredictSystem(em: EntityManager) {
         }
         entity.predict.dt = 0;
       }
-    },
-    "predict"
+    }
   );
 }

@@ -314,6 +314,7 @@ export async function initOcean(oceanMesh: Mesh, color: vec3) {
 const __temp1 = vec3.create();
 const __temp2 = vec3.create();
 EM.registerSystem(
+  "oceanUVtoPos",
   [UVPosDef, PositionDef],
   [OceanDef],
   (es, res) => {
@@ -342,13 +343,13 @@ EM.registerSystem(
         // console.log(`moving to: ${vec3Dbg(e.position)}`);
       }
     }
-  },
-  "oceanUVtoPos"
+  }
 );
 
 const __temp3 = vec2.create();
 const __temp4 = vec3.create();
 EM.registerSystem(
+  "oceanUVDirToRot",
   [UVPosDef, UVDirDef, PositionDef, RotationDef],
   [OceanDef],
   (es, res) => {
@@ -387,8 +388,7 @@ EM.registerSystem(
         // );
       }
     }
-  },
-  "oceanUVDirToRot"
+  }
 );
 
 // TODO(@darzu): debug movement on the ocean

@@ -20,6 +20,7 @@ const AUTHORITY_TINTS: Record<number, vec3> = {
 
 export function registerNetDebugSystem(em: EntityManager) {
   em.registerSystem(
+    "netDebugSystem",
     [AuthorityDef, RenderableDef],
     [InputsDef],
     (objs, res) => {
@@ -38,7 +39,6 @@ export function registerNetDebugSystem(em: EntityManager) {
           if (TintsDef.isOn(o)) clearTint(o.tints, AUTHORITY_TINT_NAME);
         }
       }
-    },
-    "netDebugSystem"
+    }
   );
 }

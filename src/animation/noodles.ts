@@ -66,6 +66,7 @@ export function registerNoodleSystem(em: EntityManager) {
   });
 
   em.registerSystem(
+    "updateNoodles",
     [NoodleDef, RenderableDef],
     [RendererDef],
     (es, rs) => {
@@ -88,8 +89,7 @@ export function registerNoodleSystem(em: EntityManager) {
           mesh
         );
       }
-    },
-    "updateNoodles"
+    }
   );
 }
 

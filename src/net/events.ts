@@ -276,6 +276,7 @@ const EVENT_RETRANSMIT_MS = 100;
 export function registerEventSystems(em: EntityManager) {
   // Runs only at non-host, sends valid detected events as requests to host
   em.registerSystem(
+    "detectedEventsToHost",
     [HostDef, OutboxDef],
     [DetectedEventsDef, MeDef, TimeDef],
     (hosts, { detectedEvents, me, time }) => {
@@ -327,12 +328,12 @@ export function registerEventSystems(em: EntityManager) {
         send(host.outbox, message.buffer);
         outgoingEventRequests.lastSendTime = time.time;
       }
-    },
-    "detectedEventsToHost"
+    }
   );
 
   // Runs only at host, handles incoming event requests
   em.registerSystem(
+    "handleEventRequests",
     [InboxDef, OutboxDef],
     [HostDef],
     (inboxes) => {
@@ -375,12 +376,12 @@ export function registerEventSystems(em: EntityManager) {
           send(outbox, ack.buffer);
         }
       }
-    },
-    "handleEventRequests"
+    }
   );
 
   // Runs only at non-host, handles event request acks from host
   em.registerSystem(
+    "handleEventRequestAcks",
     [InboxDef, OutgoingEventRequestsDef, HostDef],
     [],
     (hosts) => {
@@ -398,12 +399,12 @@ export function registerEventSystems(em: EntityManager) {
           outgoingEventRequests.events.shift();
         }
       }
-    },
-    "handleEventRequestAcks"
+    }
   );
 
   // Runs only at host, converts events detected locally to event requests
   em.registerSystem(
+    "detectedEventsToRequestedEvents",
     null,
     [DetectedEventsDef, HostDef, MeDef],
     ([], { detectedEvents, me }) => {
@@ -419,12 +420,12 @@ export function registerEventSystems(em: EntityManager) {
           requestedEvents.push(event);
         }
       }
-    },
-    "detectedEventsToRequestedEvents"
+    }
   );
 
   // Runs only at host, runs legal events
   em.registerSystem(
+    "requestedEventsToEvents",
     null,
     [RequestedEventsDef, EventsDef, HostDef],
     ([], { requestedEvents, events }) => {
@@ -442,12 +443,12 @@ export function registerEventSystems(em: EntityManager) {
           events.newEvents = true;
         }
       }
-    },
-    "requestedEventsToEvents"
+    }
   );
 
   // runs only at host, sends events to other nodes
   em.registerSystem(
+    "sendEvents",
     [OutboxDef],
     [EventsDef, HostDef, TimeDef],
     (peers, { events, time }) => {
@@ -478,12 +479,12 @@ export function registerEventSystems(em: EntityManager) {
         }
       }
       events.newEvents = false;
-    },
-    "sendEvents"
+    }
   );
 
   // Runs only at non-host, handles events from host
   em.registerSystem(
+    "handleEvents",
     [InboxDef, HostDef, OutboxDef],
     [EventsDef],
     (hosts, { events }) => {
@@ -523,28 +524,22 @@ export function registerEventSystems(em: EntityManager) {
         message.writeUint32(events.log.length);
         send(outbox, message.buffer);
       }
-    },
-    "handleEvents"
+    }
   );
 
   // Runs only at host, handles event ACKs
-  em.registerSystem(
-    [InboxDef],
-    [HostDef],
-    (inboxes) => {
-      for (let { inbox, id } of inboxes) {
-        const acks = inbox.get(MessageType.AckEvents) || [];
-        const syncState = em.ensureComponent(id, EventSyncDef);
-        while (acks.length > 0) {
-          const message = acks.shift()!;
-          const nextSeq = message.readUint32();
-          console.log(`Acked @ ${nextSeq}`);
-          syncState.nextSeq = Math.max(syncState.nextSeq, nextSeq);
-        }
+  em.registerSystem("handleEventAcks", [InboxDef], [HostDef], (inboxes) => {
+    for (let { inbox, id } of inboxes) {
+      const acks = inbox.get(MessageType.AckEvents) || [];
+      const syncState = em.ensureComponent(id, EventSyncDef);
+      while (acks.length > 0) {
+        const message = acks.shift()!;
+        const nextSeq = message.readUint32();
+        console.log(`Acked @ ${nextSeq}`);
+        syncState.nextSeq = Math.max(syncState.nextSeq, nextSeq);
       }
-    },
-    "handleEventAcks"
-  );
+    }
+  });
 
   // TODO: this probably doesn't need to run at the host (it should always no-op there)
   function runEvents(
@@ -563,7 +558,7 @@ export function registerEventSystems(em: EntityManager) {
     }
   }
 
-  em.registerSystem(null, [EventsDef], runEvents, "runEvents");
+  em.registerSystem("runEvents", null, [EventsDef], runEvents);
 }
 
 export function addEventComponents(em: EntityManager) {

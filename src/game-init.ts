@@ -123,6 +123,7 @@ export function registerCommonSystems(em: EntityManager) {
 
 function registerRenderViewController(em: EntityManager) {
   em.registerSystem(
+    "renderView",
     [],
     [InputsDef, RendererDef, CameraDef],
     (_, { inputs, renderer, camera }) => {
@@ -156,7 +157,6 @@ function registerRenderViewController(em: EntityManager) {
           else setCameraFollowPosition(p, "thirdPersonOverShoulder");
         }
       }
-    },
-    "renderView"
+    }
   );
 }

@@ -229,6 +229,7 @@ export const renderOceanPipe = CY.createRenderPipeline("oceanRender", {
 
 onInit((em) => {
   em.registerSystem(
+    "updateOceanRenderData",
     [RenderableDef, RenderDataOceanDef, RendererWorldFrameDef],
     [RendererDef],
     (objs, res) => {
@@ -250,8 +251,7 @@ onInit((em) => {
 
         pool.updateUniform(o.renderable.meshHandle, o.renderDataOcean);
       }
-    },
-    "updateOceanRenderData"
+    }
   );
   em.requireSystem("updateOceanRenderData");
   em.addConstraint(["updateOceanRenderData", "after", "renderList"]);

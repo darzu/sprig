@@ -35,18 +35,13 @@ function registerConstructorSystem<
   rs: [...RS],
   callback: (e: EntityW<[C]>, resources: EntityW<RS>) => void
 ) {
-  em.registerSystem(
-    [def],
-    rs,
-    (es, res) => {
-      for (let e of es) {
-        if (FinishedDef.isOn(e)) continue;
-        callback(e as EntityW<[C]>, res);
-        em.ensureComponentOn(e, FinishedDef);
-      }
-    },
-    `${def.name}Build`
-  );
+  em.registerSystem(`${def.name}Build`, [def], rs, (es, res) => {
+    for (let e of es) {
+      if (FinishedDef.isOn(e)) continue;
+      callback(e as EntityW<[C]>, res);
+      em.ensureComponentOn(e, FinishedDef);
+    }
+  });
   return callback;
   // console.log(`reg ${def.name}Build`);
 }

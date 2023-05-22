@@ -69,15 +69,10 @@ export async function initHyperspaceGame(em: EntityManager) {
     createHsPlayer(em);
   });
 
-  em.registerSystem(
-    [],
-    [],
-    () => {
-      // console.log("debugLoop");
-      // em.whyIsntSystemBeingCalled("oceanGPUWork");
-    },
-    "debugLoop"
-  );
+  em.registerSystem("debugLoop", [], [], () => {
+    // console.log("debugLoop");
+    // em.whyIsntSystemBeingCalled("oceanGPUWork");
+  });
 
   // const grid = [[...shadowDepthTextures]];
   const grid = [
@@ -92,6 +87,7 @@ export async function initHyperspaceGame(em: EntityManager) {
   let gridCompose = createGridComposePipelines(grid);
 
   em.registerSystem(
+    "hyperspaceGame",
     null,
     [RendererDef, DevConsoleDef],
     (_, res) => {
@@ -106,8 +102,7 @@ export async function initHyperspaceGame(em: EntityManager) {
         postProcess,
         ...(res.dev.showConsole ? gridCompose : []),
       ];
-    },
-    "hyperspaceGame"
+    }
   );
 
   const res = await em.whenResources(AssetsDef, RendererDef, CameraDef);

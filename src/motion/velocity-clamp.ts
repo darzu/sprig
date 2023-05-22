@@ -31,6 +31,7 @@ import {
 
 export function registerPhysicsClampVelocityByContact(em: EntityManager) {
   em.registerSystem(
+    "clampVelocityByContact",
     null,
     [PhysicsResultsDef, PhysicsBroadCollidersDef],
     (objs, res) => {
@@ -77,13 +78,13 @@ export function registerPhysicsClampVelocityByContact(em: EntityManager) {
           }
         }
       }
-    },
-    "clampVelocityByContact"
+    }
   );
 }
 
 export function registerPhysicsClampVelocityBySize(em: EntityManager) {
   em.registerSystem(
+    "registerPhysicsClampVelocityBySize",
     [LinearVelocityDef, ColliderDef],
     [TimeDef],
     (objs, res) => {
@@ -98,7 +99,6 @@ export function registerPhysicsClampVelocityBySize(em: EntityManager) {
           o.linearVelocity[2] = clamp(o.linearVelocity[2], -vzMax, vzMax);
         }
       }
-    },
-    "registerPhysicsClampVelocityBySize"
+    }
   );
 }
