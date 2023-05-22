@@ -106,7 +106,8 @@ export const PlayerHsPropsDef = defineSerializableComponent(
 );
 
 export function registerHsPlayerSystems(em: EntityManager) {
-  em.registerSystem(
+  em.registerSystem2(
+    "buildHsPlayers",
     [PlayerHsPropsDef],
     [MeDef, AssetsDef],
     (players, res) => {
@@ -180,11 +181,11 @@ export function registerHsPlayerSystems(em: EntityManager) {
 
         em.addComponent(e.id, FinishedDef);
       }
-    },
-    "buildHsPlayers"
+    }
   );
 
-  em.registerSystem(
+  em.registerSystem2(
+    "hsPlayerFacingDir",
     [HsPlayerDef, WorldFrameDef],
     [GlobalCursor3dDef],
     (players, res) => {
@@ -200,11 +201,11 @@ export function registerHsPlayerSystems(em: EntityManager) {
           vec3.normalize(facingDir, facingDir);
         }
       }
-    },
-    "hsPlayerFacingDir"
+    }
   );
 
-  em.registerSystem(
+  em.registerSystem2(
+    "stepHsPlayers",
     [
       HsPlayerDef,
       PositionDef,
@@ -418,11 +419,11 @@ export function registerHsPlayerSystems(em: EntityManager) {
           drawLine(r.org, endPoint, color);
         }
       }
-    },
-    "stepHsPlayers"
+    }
   );
 
-  em.registerSystem(
+  em.registerSystem2(
+    "hsPlayerLookingForShip",
     [
       HsPlayerDef,
       AuthorityDef,
@@ -494,7 +495,6 @@ export function registerHsPlayerSystems(em: EntityManager) {
           }
         }
       }
-    },
-    "hsPlayerLookingForShip"
+    }
   );
 }

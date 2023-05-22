@@ -416,7 +416,8 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
     if (ScaleDef.isOn(ball)) vec3.copy(ball.scale, vec3.ONES);
   }
 
-  em.registerSystem(
+  em.registerSystem2(
+    "ld51PlayerFireCannon",
     [LD51CannonDef, WorldFrameDef, InRangeDef],
     [InputsDef, LocalHsPlayerDef, AudioDef],
     (cannons, res) => {
@@ -474,8 +475,7 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
           res.music.playChords([chord], "major", 2.0, 3.0, -2);
         }
       }
-    },
-    "ld51PlayerFireCannon"
+    }
   );
   EM.requireGameplaySystem("ld51PlayerFireCannon");
 
@@ -488,7 +488,8 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
 
   const BUSY_WAIT = 20.0;
 
-  em.registerSystem(
+  em.registerSystem2(
+    "ld51Ghost",
     [GhostDef, WorldFrameDef, ColliderDef],
     [InputsDef, CanvasDef],
     async (ps, { inputs, htmlCanvas }) => {
@@ -545,13 +546,13 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
           timber.woodState.mesh.quad.length
         );
       }
-    },
-    "ld51Ghost"
+    }
   );
   if (DBG_PLAYER) EM.requireGameplaySystem("ld51Ghost");
 
   // TODO(@darzu): breakBullet
-  em.registerSystem(
+  em.registerSystem2(
+    "breakBullets",
     [
       BulletDef,
       ColorDef,
@@ -566,8 +567,7 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
           breakBullet(b);
         }
       }
-    },
-    "breakBullets"
+    }
   );
   EM.requireGameplaySystem("breakBullets");
 
@@ -700,7 +700,8 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
         (colBackWall.collider as AABBCollider).aabb
       );
 
-      em.registerSystem(
+      em.registerSystem2(
+        "bulletBounce",
         [
           BulletConstructDef,
           BulletDef,
@@ -751,8 +752,7 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
               }
             }
           }
-        },
-        "bulletBounce"
+        }
       );
       EM.requireGameplaySystem("bulletBounce");
     }
@@ -760,7 +760,8 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
     // dead bullet maintenance
     // NOTE: this must be called after any system that can create dead bullets but
     //   before the rendering systems.
-    em.registerSystem(
+    em.registerSystem2(
+      "deadBullets",
       [BulletDef, PositionDef, DeadDef, RenderableDef],
       [],
       (es, _) => {
@@ -773,8 +774,7 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
 
           e.dead.processed = true;
         }
-      },
-      "deadBullets"
+      }
     );
     EM.requireGameplaySystem("deadBullets");
 
@@ -791,7 +791,8 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
     //   }
     // }
 
-    em.registerSystem(
+    em.registerSystem2(
+      "fallingGoodBalls",
       [GoodBallDef, PositionDef, GravityDef, LinearVelocityDef],
       [],
       (es, res) => {
@@ -804,12 +805,12 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
             vec3.zero(ball.gravity);
           }
         }
-      },
-      "fallingGoodBalls"
+      }
     );
     EM.requireGameplaySystem("fallingGoodBalls");
 
-    em.registerSystem(
+    em.registerSystem2(
+      "pickUpBalls",
       [GoodBallDef, InteractableDef, InRangeDef, PositionDef],
       [InputsDef, LocalHsPlayerDef],
       (es, res) => {
@@ -831,8 +832,7 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
             em.removeComponent(ball.id, InteractableDef);
           }
         }
-      },
-      "pickUpBalls"
+      }
     );
     EM.requireGameplaySystem("pickUpBalls");
 
@@ -933,7 +933,8 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
 
   const startHealth = getCurrentHealth();
   {
-    em.registerSystem(
+    em.registerSystem2(
+      "progressGame",
       [],
       [InputsDef, TextDef, TimeDef, AudioDef],
       (es, res) => {
@@ -972,8 +973,7 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
           // );
           gameplaySystems.length = 0;
         }
-      },
-      "progressGame"
+      }
     );
     EM.requireGameplaySystem("progressGame");
   }

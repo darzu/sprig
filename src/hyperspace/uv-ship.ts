@@ -16,7 +16,8 @@ export const UVShipDef = EM.defineComponent("uvship", () => {
 });
 
 onInit((em) => {
-  em.registerSystem(
+  em.registerSystem2(
+    "shipMove",
     [UVShipDef, UVPosDef, UVDirDef, AuthorityDef],
     [
       // GameStateDef,
@@ -51,7 +52,6 @@ onInit((em) => {
           vec2.add(s.uvPos, scaled, s.uvPos);
         }
       }
-    },
-    "shipMove"
+    }
   );
 });
