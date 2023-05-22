@@ -60,7 +60,8 @@ const scaledTemp2 = vec2.create();
 const WORLD_WIDTH = 1024; // width runs +z
 const WORLD_HEIGHT = 512; // height runs +x
 
-EM.registerSystem(
+EM.registerSystem2(
+  "landShipCollision",
   [ShipDef, PositionDef, WorldFrameDef, PhysicsStateDef, LinearVelocityDef],
   [PartyDef, LandDef, LevelMapDef],
   (es, res) => {
@@ -221,6 +222,5 @@ EM.registerSystem(
     //     }
     //   }
     // }
-  },
-  "landShipCollision"
+  }
 );

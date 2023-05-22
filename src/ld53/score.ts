@@ -31,7 +31,8 @@ export const ScoreDef = EM.defineComponent("score", () => ({
   skipFrame: false,
 }));
 
-EM.registerSystem(
+EM.registerSystem2(
+  "updateScoreDisplay",
   [ShipHealthDef],
   [ScoreDef, TextDef, CanvasDef],
   (es, res) => {
@@ -46,11 +47,11 @@ EM.registerSystem(
         )}`;
       }
     }
-  },
-  "updateScoreDisplay"
+  }
 );
 
-EM.registerSystem(
+EM.registerSystem2(
+  "detectGameEnd",
   [ShipHealthDef],
   [ScoreDef, TextDef, TimeDef, PartyDef],
   async (es, res) => {
@@ -123,6 +124,5 @@ EM.registerSystem(
         }
       }
     }
-  },
-  "detectGameEnd"
+  }
 );

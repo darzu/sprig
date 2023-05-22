@@ -30,7 +30,8 @@ import {
 // TODO(@darzu): implement checkAtRest (deleted in this commit)
 
 export function registerPhysicsClampVelocityByContact(em: EntityManager) {
-  em.registerSystem(
+  em.registerSystem2(
+    "clampVelocityByContact",
     null,
     [PhysicsResultsDef, PhysicsBroadCollidersDef],
     (objs, res) => {
@@ -77,13 +78,13 @@ export function registerPhysicsClampVelocityByContact(em: EntityManager) {
           }
         }
       }
-    },
-    "clampVelocityByContact"
+    }
   );
 }
 
 export function registerPhysicsClampVelocityBySize(em: EntityManager) {
-  em.registerSystem(
+  em.registerSystem2(
+    "registerPhysicsClampVelocityBySize",
     [LinearVelocityDef, ColliderDef],
     [TimeDef],
     (objs, res) => {
@@ -98,7 +99,6 @@ export function registerPhysicsClampVelocityBySize(em: EntityManager) {
           o.linearVelocity[2] = clamp(o.linearVelocity[2], -vzMax, vzMax);
         }
       }
-    },
-    "registerPhysicsClampVelocityBySize"
+    }
   );
 }

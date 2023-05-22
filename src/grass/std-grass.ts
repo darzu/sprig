@@ -232,7 +232,8 @@ export const renderGrassPipe = CY.createRenderPipeline("grassRender", {
 const _lastTilePos = new Map<number, vec3>();
 
 onInit((em) => {
-  em.registerSystem(
+  em.registerSystem2(
+    "updateGrassRenderData",
     [RenderableDef, RenderDataGrassDef, RendererWorldFrameDef],
     [RendererDef],
     (objs, res) => {
@@ -264,8 +265,7 @@ onInit((em) => {
 
         pool.updateUniform(o.renderable.meshHandle, o.renderDataGrass);
       }
-    },
-    "updateGrassRenderData"
+    }
   );
   em.requireSystem("updateGrassRenderData");
   em.addConstraint(["updateGrassRenderData", "after", "renderList"]);

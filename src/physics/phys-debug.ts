@@ -48,7 +48,8 @@ export function registerPhysicsDebuggerSystem(em: EntityManager) {
   em.addResource(PhysicsDbgDef);
 
   // add collider meshes
-  em.registerSystem(
+  em.registerSystem2(
+    "colliderMeshes",
     [PhysicsStateDef],
     [PhysicsDbgDef, AssetsDef],
     (es, res) => {
@@ -86,12 +87,12 @@ export function registerPhysicsDebuggerSystem(em: EntityManager) {
           // TODO(@darzu): handle other collider shapes
         }
       }
-    },
-    "colliderMeshes"
+    }
   );
 
   // toggle debug meshes on and off
-  em.registerSystem(
+  em.registerSystem2(
+    "debugMeshes",
     [DbgMeshDef, RenderableDef],
     [InputsDef, PhysicsDbgDef],
     (es, res) => {
@@ -103,12 +104,12 @@ export function registerPhysicsDebuggerSystem(em: EntityManager) {
           e.renderable.enabled = newState;
         }
       }
-    },
-    "debugMeshes"
+    }
   );
 
   // update transform based on parent collider
-  em.registerSystem(
+  em.registerSystem2(
+    "debugMeshTransform",
     [DbgMeshDef, WorldFrameDef, ...LocalFrameDefs],
     [PhysicsBroadCollidersDef],
     (es, res) => {
@@ -125,8 +126,7 @@ export function registerPhysicsDebuggerSystem(em: EntityManager) {
           copyFrame(e.world, e);
         }
       }
-    },
-    "debugMeshTransform"
+    }
   );
 }
 

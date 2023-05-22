@@ -109,18 +109,19 @@ export function setCameraFollowPosition(
 }
 
 export function registerCameraSystems(em: EntityManager) {
-  em.registerSystem(
+  em.registerSystem2(
+    "smoothCamera",
     null,
     [CameraDef, TimeDef],
     function (_, res) {
       reduceError(res.camera.rotationError, res.time.dt);
       reduceError(res.camera.targetPositionError, res.time.dt);
       reduceError(res.camera.cameraPositionError, res.time.dt);
-    },
-    "smoothCamera"
+    }
   );
 
-  em.registerSystem(
+  em.registerSystem2(
+    "cameraFollowTarget",
     [CameraFollowDef],
     [CameraDef],
     (cs, res) => {
@@ -144,58 +145,51 @@ export function registerCameraSystems(em: EntityManager) {
         vec3.zero(res.camera.positionOffset);
         quat.identity(res.camera.rotationOffset);
       }
-    },
-    "cameraFollowTarget"
+    }
   );
 
-  em.registerSystem(
-    null,
-    [CameraDef],
-    function ([], res) {
-      if (res.camera.prevTargetId === res.camera.targetId) {
-        quat.copy(res.camera.lastRotation, res.camera.rotationOffset);
-        vec3.copy(res.camera.lastPosition, res.camera.positionOffset);
-        return;
-      }
-      const prevTarget = em.findEntity(res.camera.prevTargetId, [
-        WorldFrameDef,
-      ]);
-      const newTarget = em.findEntity(res.camera.targetId, [WorldFrameDef])!;
-      if (prevTarget && newTarget) {
-        computeNewError(
-          prevTarget.world.position,
-          newTarget.world.position,
-          res.camera.targetPositionError
-        );
-        computeNewError(
-          res.camera.lastPosition,
-          res.camera.positionOffset,
-          res.camera.cameraPositionError
-        );
+  em.registerSystem2("retargetCamera", null, [CameraDef], function ([], res) {
+    if (res.camera.prevTargetId === res.camera.targetId) {
+      quat.copy(res.camera.lastRotation, res.camera.rotationOffset);
+      vec3.copy(res.camera.lastPosition, res.camera.positionOffset);
+      return;
+    }
+    const prevTarget = em.findEntity(res.camera.prevTargetId, [WorldFrameDef]);
+    const newTarget = em.findEntity(res.camera.targetId, [WorldFrameDef])!;
+    if (prevTarget && newTarget) {
+      computeNewError(
+        prevTarget.world.position,
+        newTarget.world.position,
+        res.camera.targetPositionError
+      );
+      computeNewError(
+        res.camera.lastPosition,
+        res.camera.positionOffset,
+        res.camera.cameraPositionError
+      );
 
-        const computedRotation = quat.mul(
-          prevTarget.world.rotation,
-          res.camera.lastRotation
-        );
-        const newComputedRotation = quat.mul(
-          newTarget.world.rotation,
-          res.camera.rotationOffset
-        );
+      const computedRotation = quat.mul(
+        prevTarget.world.rotation,
+        res.camera.lastRotation
+      );
+      const newComputedRotation = quat.mul(
+        newTarget.world.rotation,
+        res.camera.rotationOffset
+      );
 
-        computeNewError(
-          computedRotation,
-          newComputedRotation,
-          res.camera.rotationError
-        );
-      }
+      computeNewError(
+        computedRotation,
+        newComputedRotation,
+        res.camera.rotationError
+      );
+    }
 
-      res.camera.prevTargetId = res.camera.targetId;
-    },
-    "retargetCamera"
-  );
+    res.camera.prevTargetId = res.camera.targetId;
+  });
 
   em.addResource(CameraComputedDef);
-  em.registerSystem(
+  em.registerSystem2(
+    "updateCameraView",
     null,
     [CameraComputedDef, CameraDef, MeDef, CanvasDef],
     (_, resources) => {
@@ -312,7 +306,6 @@ export function registerCameraSystems(em: EntityManager) {
       //   "cameraComputed.shadowCascadeMats",
       //   cameraComputed.shadowCascadeMats
       // );
-    },
-    "updateCameraView"
+    }
   );
 }

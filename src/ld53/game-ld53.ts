@@ -160,7 +160,8 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
   // console.dir(mapJfa);
   // console.dir(dbgGridCompose);
 
-  em.registerSystem(
+  em.registerSystem2(
+    "grassGameRenderPipelines",
     null,
     [RendererDef, DevConsoleDef],
     (_, res) => {
@@ -176,8 +177,7 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
         postProcess,
         // ...(res.dev.showConsole ? dbgGridCompose : []),
       ];
-    },
-    "grassGameRenderPipelines"
+    }
   );
   em.requireSystem("grassGameRenderPipelines");
 
@@ -315,7 +315,8 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
     // console.dir(buoys);
     const _t1 = vec3.create();
     const _t2 = vec3.create();
-    em.registerSystem(
+    em.registerSystem2(
+      "shipBouyancy",
       [bouyDef, PositionDef, UVPosDef],
       [OceanDef],
       (es, res) => {
@@ -341,8 +342,7 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
 
           i++;
         }
-      },
-      "shipBouyancy"
+      }
     );
     em.requireSystem("shipBouyancy");
 
@@ -431,7 +431,8 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
     g.cameraFollow.yawOffset = 0.0;
     g.cameraFollow.pitchOffset = -0.627;
 
-    em.registerSystem(
+    em.registerSystem2(
+      "smolGhost",
       [GhostDef, WorldFrameDef, ColliderDef],
       [InputsDef, CanvasDef],
       async (ps, { inputs, htmlCanvas }) => {
@@ -440,8 +441,7 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
         const ghost = ps[0];
 
         if (!htmlCanvas.hasFirstInteraction) return;
-      },
-      "smolGhost"
+      }
     );
     EM.requireGameplaySystem("smolGhost");
   }
@@ -522,71 +522,61 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
     }
   });
 
-  EM.registerSystem(
-    [],
-    [InputsDef, PartyDef],
-    (_, res) => {
-      const mast = ship.ld52ship.mast()!;
-      const rudder = ship.ld52ship.rudder()!;
+  EM.registerSystem2("furlUnfurl", [], [InputsDef, PartyDef], (_, res) => {
+    const mast = ship.ld52ship.mast()!;
+    const rudder = ship.ld52ship.rudder()!;
 
-      // furl/unfurl
-      if (rudder.turret.mannedId) {
-        if (MOTORBOAT_MODE) {
-          console.log("here");
-          if (res.inputs.keyDowns["w"]) {
-            vec3.add(
-              ship.linearVelocity,
-              vec3.scale(res.party.dir, 0.1),
-              ship.linearVelocity
-            );
-          }
-        } else {
-          const sail = mast.mast.sail()!.sail;
-          if (res.inputs.keyDowns["w"]) sail.unfurledAmount += SAIL_FURL_RATE;
-          if (res.inputs.keyDowns["s"]) sail.unfurledAmount -= SAIL_FURL_RATE;
-          sail.unfurledAmount = clamp(sail.unfurledAmount, sail.minFurl, 1.0);
+    // furl/unfurl
+    if (rudder.turret.mannedId) {
+      if (MOTORBOAT_MODE) {
+        console.log("here");
+        if (res.inputs.keyDowns["w"]) {
+          vec3.add(
+            ship.linearVelocity,
+            vec3.scale(res.party.dir, 0.1),
+            ship.linearVelocity
+          );
         }
+      } else {
+        const sail = mast.mast.sail()!.sail;
+        if (res.inputs.keyDowns["w"]) sail.unfurledAmount += SAIL_FURL_RATE;
+        if (res.inputs.keyDowns["s"]) sail.unfurledAmount -= SAIL_FURL_RATE;
+        sail.unfurledAmount = clamp(sail.unfurledAmount, sail.minFurl, 1.0);
       }
-    },
-    "furlUnfurl"
-  );
+    }
+  });
   EM.requireSystem("furlUnfurl");
 
   const shipWorld = await EM.whenEntityHas(ship, WorldFrameDef);
 
-  EM.registerSystem(
-    [],
-    [InputsDef, WindDef],
-    (_, res) => {
-      const mast = ship.ld52ship.mast()!;
-      // const rudder = ship.ld52ship.rudder()!;
+  EM.registerSystem2("turnMast", [], [InputsDef, WindDef], (_, res) => {
+    const mast = ship.ld52ship.mast()!;
+    // const rudder = ship.ld52ship.rudder()!;
 
-      // const shipDir = vec3.transformQuat(V(0, 0, 1), shipWorld.world.rotation);
+    // const shipDir = vec3.transformQuat(V(0, 0, 1), shipWorld.world.rotation);
 
-      const invShip = mat3.invert(mat3.fromMat4(shipWorld.world.transform));
-      const windLocalDir = vec3.transformMat3(res.wind.dir, invShip);
-      const shipLocalDir = V(0, 0, 1);
+    const invShip = mat3.invert(mat3.fromMat4(shipWorld.world.transform));
+    const windLocalDir = vec3.transformMat3(res.wind.dir, invShip);
+    const shipLocalDir = V(0, 0, 1);
 
-      const optimalSailLocalDir = vec3.normalize(
-        vec3.add(windLocalDir, shipLocalDir)
-      );
+    const optimalSailLocalDir = vec3.normalize(
+      vec3.add(windLocalDir, shipLocalDir)
+    );
 
-      // console.log(`ship to wind: ${vec3.dot(windLocalDir, shipLocalDir)}`);
+    // console.log(`ship to wind: ${vec3.dot(windLocalDir, shipLocalDir)}`);
 
-      // const normal = vec3.transformQuat(AHEAD_DIR, e.world.rotation);
-      // e.sail.billowAmount = vec3.dot(normal, res.wind.dir);
-      // sail.force * vec3.dot(AHEAD_DIR, normal);
+    // const normal = vec3.transformQuat(AHEAD_DIR, e.world.rotation);
+    // e.sail.billowAmount = vec3.dot(normal, res.wind.dir);
+    // sail.force * vec3.dot(AHEAD_DIR, normal);
 
-      // const currSailForce =
+    // const currSailForce =
 
-      // need to maximize: dot(wind, sail) * dot(sail, ship)
+    // need to maximize: dot(wind, sail) * dot(sail, ship)
 
-      // TODO(@darzu): ANIMATE SAIL TOWARD WIND
-      if (vec3.dot(optimalSailLocalDir, shipLocalDir) > 0.01)
-        quatFromUpForward(mast.rotation, V(0, 1, 0), optimalSailLocalDir);
-    },
-    "turnMast"
-  );
+    // TODO(@darzu): ANIMATE SAIL TOWARD WIND
+    if (vec3.dot(optimalSailLocalDir, shipLocalDir) > 0.01)
+      quatFromUpForward(mast.rotation, V(0, 1, 0), optimalSailLocalDir);
+  });
   EM.requireSystem("turnMast");
 
   const { text } = await EM.whenResources(TextDef);
@@ -650,7 +640,8 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
   EM.requireSystem("landShipCollision");
 
   // BULLET STUFF
-  em.registerSystem(
+  em.registerSystem2(
+    "breakBullets",
     [
       BulletDef,
       ColorDef,
@@ -665,15 +656,15 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
           breakBullet(b);
         }
       }
-    },
-    "breakBullets"
+    }
   );
   EM.requireGameplaySystem("breakBullets");
 
   // dead bullet maintenance
   // NOTE: this must be called after any system that can create dead bullets but
   //   before the rendering systems.
-  em.registerSystem(
+  em.registerSystem2(
+    "deadBullets",
     [BulletDef, PositionDef, DeadDef, RenderableDef],
     [],
     (es, _) => {
@@ -686,8 +677,7 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
 
         e.dead.processed = true;
       }
-    },
-    "deadBullets"
+    }
   );
   EM.requireGameplaySystem("deadBullets");
 
