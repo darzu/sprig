@@ -112,7 +112,8 @@ export const WoodAssetsDef = EM.defineComponent(
 );
 
 onInit((em) => {
-  em.registerSystem(
+  em.registerSystem2(
+    "runWooden",
     [WoodStateDef, WoodHealthDef, WorldFrameDef, RenderableDef],
     [PhysicsResultsDef, RendererDef],
     (es, res) => {
@@ -260,8 +261,7 @@ onInit((em) => {
         //   )}ms, aabb hits: ${segAABBHits}, line hits: ${segMidHits}, aabbChecks: ${overlapChecks}`
         // );
       }
-    },
-    "runWooden"
+    }
   );
 });
 
@@ -283,7 +283,8 @@ export let _numSplinterEnds = 0;
 let _ONCE = true;
 
 onInit((em: EntityManager) => {
-  em.registerSystem(
+  em.registerSystem2(
+    "woodHealth",
     [WoodStateDef, WorldFrameDef, WoodHealthDef, RenderableDef, ColorDef],
     [RendererDef],
     async (es, res) => {
@@ -508,8 +509,7 @@ onInit((em: EntityManager) => {
             stdPool.updateMeshVertices(meshHandle, mesh, min, max - min + 1);
         }
       }
-    },
-    "woodHealth"
+    }
   );
 });
 

@@ -147,7 +147,8 @@ export function createOrResetBullet(
 }
 
 export function registerBuildBulletsSystem(em: EntityManager) {
-  em.registerSystem(
+  em.registerSystem2(
+    "buildBullets",
     [BulletConstructDef],
     [MeDef, AssetsDef],
     (bullets, res) => {
@@ -156,14 +157,14 @@ export function registerBuildBulletsSystem(em: EntityManager) {
         // createOrUpdateBullet(em, b, res.me.pid, res.assets);
         // em.ensureComponentOn(b, FinishedDef);
       }
-    },
-    "buildBullets"
+    }
   );
 }
 
 export function registerBulletUpdate(em: EntityManager) {
   // TODO(@darzu): remove?
-  em.registerSystem(
+  em.registerSystem2(
+    "updateBullets",
     [BulletConstructDef, BulletDef, PositionDef, LinearVelocityDef],
     [TimeDef],
     (bullets, res) => {
@@ -171,8 +172,7 @@ export function registerBulletUpdate(em: EntityManager) {
       //   b.linearVelocity[1] -=
       //     b.bulletConstruct.gravity * res.time.dt;
       // }
-    },
-    "updateBullets"
+    }
   );
 }
 

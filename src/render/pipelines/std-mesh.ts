@@ -125,7 +125,8 @@ onInit((em) => {
       typeof RenderDataStdDef
     ]
   >[] = [];
-  em.registerSystem(
+  em.registerSystem2(
+    "stdRenderListDeadHidden",
     [RendererWorldFrameDef, RenderableDef, RenderDataStdDef, DeadDef],
     [],
     (objs, _) => {
@@ -133,19 +134,19 @@ onInit((em) => {
       for (let o of objs)
         if (o.renderable.enabled && o.renderable.hidden && !DeletedDef.isOn(o))
           renderObjs.push(o);
-    },
-    "stdRenderListDeadHidden"
+    }
   );
-  em.registerSystem(
+  em.registerSystem2(
+    "stdRenderList",
     [RendererWorldFrameDef, RenderableDef, RenderDataStdDef],
     [],
     (objs, _) => {
       for (let o of objs)
         if (o.renderable.enabled && !DeletedDef.isOn(o)) renderObjs.push(o);
-    },
-    "stdRenderList"
+    }
   );
-  em.registerSystem(
+  em.registerSystem2(
+    "stdRenderableDataUpdate",
     null,
     [RendererDef],
     (_, res) => {
@@ -155,8 +156,7 @@ onInit((em) => {
           pool.updateUniform(o.renderable.meshHandle, o.renderDataStd);
         }
       }
-    },
-    "stdRenderableDataUpdate"
+    }
   );
   em.requireSystem("stdRenderListDeadHidden");
   em.requireSystem("stdRenderList");

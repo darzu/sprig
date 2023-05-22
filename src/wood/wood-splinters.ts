@@ -154,7 +154,8 @@ export const mkTimberSplinterFree = (
 
 onInit(() => {
   const splinterObjId = 7654;
-  EM.registerSystem(
+  EM.registerSystem2(
+    "splintersOnFloor",
     [
       SplinterParticleDef,
       LinearVelocityDef,
@@ -181,7 +182,6 @@ onInit(() => {
           // console.log("freeze!");
         }
       }
-    },
-    "splintersOnFloor"
+    }
   );
 });

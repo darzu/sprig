@@ -109,7 +109,8 @@ export async function initReboundSandbox(em: EntityManager, hosting: boolean) {
 
   let nextSpawnAccu = 0;
   let paused = true;
-  em.registerSystem(
+  em.registerSystem2(
+    "sandboxSpawnBoxes",
     null,
     [AssetsDef, TimeDef, InputsDef],
     (_, res) => {
@@ -140,7 +141,6 @@ export async function initReboundSandbox(em: EntityManager, hosting: boolean) {
         const es = em.filterEntities([cubeDef]);
         for (let e of es) em.ensureComponentOn(e, DeletedDef);
       }
-    },
-    "sandboxSpawnBoxes"
+    }
   );
 }

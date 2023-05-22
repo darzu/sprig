@@ -12,7 +12,8 @@ export const LifetimeDef = EM.defineComponent(
 export type Lifetime = Component<typeof LifetimeDef>;
 
 export function registerUpdateLifetimes(em: EntityManager) {
-  em.registerSystem(
+  em.registerSystem2(
+    "updateLifetimes",
     [LifetimeDef],
     [TimeDef, MeDef],
     (objs, res) => {
@@ -27,7 +28,6 @@ export function registerUpdateLifetimes(em: EntityManager) {
           // em.addComponent(o.id, DeletedDef);
         }
       }
-    },
-    "updateLifetimes"
+    }
   );
 }
