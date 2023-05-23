@@ -62,7 +62,7 @@ export const UICursorDef = EM.defineComponent(
 EM.registerInit({
   requireRs: [AssetsDef],
   provideRs: [UICursorDef],
-  provideLs: [],
+  // provideLs: [],
   fn: async ({ assets }) => {
     // Cursor
     const cursor = EM.new();

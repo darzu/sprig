@@ -65,7 +65,7 @@ export const ButtonsStateDef = EM.defineComponent(
 EM.registerInit({
   requireRs: [RendererDef],
   provideRs: [ButtonsStateDef],
-  provideLs: ["buttonStateUpdate", "buttonColors"],
+  // provideLs: ["buttonStateUpdate", "buttonColors"],
   fn: initButtonGUI,
 });
 

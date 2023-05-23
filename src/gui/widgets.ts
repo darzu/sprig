@@ -57,7 +57,7 @@ function createWidgetLayer(): WidgetLayer {
 EM.registerInit({
   requireRs: [AssetsDef],
   provideRs: [WidgetLayerDef],
-  provideLs: ["updateWidgets", "colorWidgets", "updateDragbox"],
+  // provideLs: ["updateWidgets", "colorWidgets", "updateDragbox"],
   // name: "initWidgets",
   fn: initWidgets,
 });

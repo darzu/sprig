@@ -5,10 +5,13 @@ import { createDag } from "../utils/util-dag.js";
 import {
   assert,
   assertDbg,
+  dbgOnce,
+  enumAsList,
   hashCode,
   Intersect,
   never,
 } from "../utils/util.js";
+import { SystemPhase } from "./sys_phase.js";
 
 // TODO(@darzu): for perf, we really need to move component data to be
 //  colocated in arrays; and maybe introduce "arch-types" for commonly grouped
@@ -70,7 +73,7 @@ type System<CS extends ComponentDef[] | null, RS extends ComponentDef[]> = {
 export interface InitFNReg<RS extends ComponentDef[]> {
   requireRs: [...RS];
   provideRs: ComponentDef[];
-  provideLs: Label[]; // system labels
+  // provideLs: Label[]; // system labels
   fn: (rs: EntityW<RS>) => Promise<void>;
 
   // TODO(@darzu): optional metadata?

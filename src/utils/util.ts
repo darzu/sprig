@@ -351,3 +351,9 @@ export function resizeArray<T, T2 extends T>(
   // if it's too big, chop off the extra (hacky JS pattern)
   if (arr.length > len) arr.length = len;
 }
+
+export function enumAsList<T extends {}>(e: T): (keyof T)[] {
+  return Object.keys(e)
+    .filter((key) => !isNaN(Number(key)))
+    .map((key) => e[key as keyof T] as keyof T);
+}

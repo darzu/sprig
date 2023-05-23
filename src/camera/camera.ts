@@ -53,7 +53,7 @@ export type CameraProps = Component<typeof CameraDef>;
 EM.registerInit({
   requireRs: [],
   provideRs: [CameraDef],
-  provideLs: [],
+  // provideLs: [],
   fn: async () => {
     EM.addResource(CameraDef);
   },
