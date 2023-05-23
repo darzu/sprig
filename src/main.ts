@@ -68,7 +68,7 @@ function legacyRequireAllTheSystems() {
     EM.requireSystem("getEventsFromNet");
     EM.requireSystem("sendEventsToNet");
   }
-  EM.requireSystem("canvas");
+  EM.requireSystem("canvasCursorLockUnlock");
   EM.requireSystem("uiText");
   EM.requireSystem("devConsoleToggle");
   EM.requireSystem("devConsole");
@@ -142,7 +142,7 @@ function legacyRequireAllTheSystems() {
     EM.requireSystem("updateNoodles");
   }
   EM.requireSystem("updateLifetimes");
-  EM.requireSystem("interaction");
+  EM.requireSystem("interactableInteract");
   EM.requireSystem("turretAim");
   EM.requireSystem("turretYawPitch");
   EM.requireSystem("turretManUnman");
@@ -181,7 +181,7 @@ function legacyRequireAllTheSystems() {
   EM.requireSystem("updatePhysInContact");
   EM.requireSystem("physicsStepContact");
   EM.requireSystem("updateWorldFromLocalAndParent2");
-  EM.requireSystem("colliderMeshes");
+  EM.requireSystem("dbgColliderMeshes");
   EM.requireSystem("debugMeshes");
   EM.requireSystem("debugMeshTransform");
   EM.requireSystem("bulletCollision");
@@ -226,7 +226,7 @@ function legacyRequireAllTheSystems() {
   EM.requireSystem("smoothCamera");
   EM.requireSystem("cameraFollowTarget");
   EM.requireSystem("retargetCamera");
-  EM.requireSystem("renderView");
+  EM.requireSystem("renderModeToggles");
   EM.requireSystem("constructRenderables");
   // TODO(@darzu): we want to make it easier to satisfy this
   if (VERBOSE_LOG) EM.requireSystem("deadCleanupWarning"); // SHOULD BE LAST(-ish); warns if cleanup is missing

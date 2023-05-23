@@ -42,6 +42,7 @@ export function registerInputsSystem(em: EntityManager): void {
   let inputsReader: (() => Inputs) | null = null;
 
   EM.addResource(InputsDef);
+  // const InputsSys =
   em.registerSystem(
     "inputs",
     null,
@@ -52,6 +53,7 @@ export function registerInputsSystem(em: EntityManager): void {
       Object.assign(inputs, inputsReader());
     }
   );
+  // em.requireSystem(InputsSys); // TODO(@darzu): IMPL this pattern
 
   em.addResource(MouseDragDef);
   em.registerSystem(

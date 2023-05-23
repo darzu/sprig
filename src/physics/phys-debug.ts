@@ -49,7 +49,7 @@ export function registerPhysicsDebuggerSystem(em: EntityManager) {
 
   // add collider meshes
   em.registerSystem(
-    "colliderMeshes",
+    "dbgColliderMeshes",
     [PhysicsStateDef],
     [PhysicsDbgDef, AssetsDef],
     (es, res) => {

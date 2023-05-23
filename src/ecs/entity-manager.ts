@@ -471,7 +471,7 @@ export class EntityManager {
       if (this._dbgLastVersion !== this.labelSolver.getVersion()) {
         this._dbgLastVersion = this.labelSolver.getVersion();
         console.log("NEW PLAN:");
-        console.log(this.labelSolver.getPlan());
+        console.log(this.labelSolver.getPlan().join("\n"));
       }
 
     const plan = this.labelSolver.getPlan();
@@ -829,9 +829,12 @@ export class EntityManager {
   dbgEntityPromises(): string {
     let res = "";
     for (let [id, prom] of this.entityPromises.entries()) {
-      res += `ent waiting: ${id} <- (${prom
+      const ent = EM.entities.get(id) || { id };
+      const unmet = prom
         .flatMap((p) => p.cs.map((c) => c.name))
-        .join(",")})\n`;
+        .filter((n) => !(n in ent));
+
+      res += `ent waiting: ${id} <- (${unmet.join(",")})\n`;
     }
     return res;
   }

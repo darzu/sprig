@@ -123,7 +123,7 @@ export function registerCommonSystems(em: EntityManager) {
 
 function registerRenderViewController(em: EntityManager) {
   em.registerSystem(
-    "renderView",
+    "renderModeToggles",
     [],
     [InputsDef, RendererDef, CameraDef],
     (_, { inputs, renderer, camera }) => {
