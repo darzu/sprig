@@ -186,7 +186,7 @@ export async function initGJKSandbox(em: EntityManager, hosting: boolean) {
     quat.clone(b4.rotation),
   ];
 
-  em.registerSystem2(
+  em.registerSystem(
     "checkGJK",
     Phase.GAME_WORLD,
     null,

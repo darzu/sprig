@@ -18,7 +18,7 @@ EM.registerSerializerPair(
 );
 
 export function registerDeleteEntitiesSystem(em: EntityManager) {
-  em.registerSystem2(
+  em.registerSystem(
     "delete",
     Phase.PRE_GAME_WORLD,
     [DeletedDef],
@@ -59,7 +59,7 @@ export const DeadDef = EM.defineComponent("dead", () => ({
 
 // TODO(@darzu): this is entity specific...
 export function registerDeadEntitiesSystem(em: EntityManager) {
-  em.registerSystem2(
+  em.registerSystem(
     "deadCleanupWarning",
     Phase.POST_GAME_WORLD,
     [DeadDef],

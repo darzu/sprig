@@ -140,7 +140,7 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
   // console.dir(mapJfa);
   // console.dir(dbgGridCompose);
 
-  em.registerSystem2(
+  em.registerSystem(
     "grassGameRenderPipelines",
     Phase.GAME_WORLD,
     null,
@@ -374,7 +374,7 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
     // g.cameraFollow.yawOffset = 0.0;
     // g.cameraFollow.pitchOffset = -0.378;
 
-    em.registerSystem2(
+    em.registerSystem(
       "smolGhost",
       Phase.GAME_WORLD,
       [GhostDef, WorldFrameDef, ColliderDef],
@@ -403,7 +403,7 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
   }
 
   // update grass
-  EM.registerSystem2(
+  EM.registerSystem(
     "updateGrass",
     Phase.GAME_WORLD,
     [CameraFollowDef, WorldFrameDef],
@@ -451,7 +451,7 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
   // dev.showConsole = true;
   // player.controllable.modes.canFly = true;
 
-  EM.registerSystem2(
+  EM.registerSystem(
     "cuttingOnOff",
     Phase.GAME_PLAYERS,
     [],
@@ -487,7 +487,7 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
     ship.ld52ship.rudder()!.yawpitch.yaw = 0;
   });
 
-  EM.registerSystem2(
+  EM.registerSystem(
     "cutGrassUnderShip",
     Phase.GAME_WORLD,
     [ShipDef, PositionDef, WorldFrameDef, PhysicsStateDef],
@@ -636,7 +636,7 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
   EM.addSystem("cutGrassUnderShip", Phase.GAME_WORLD);
   // EM.addConstraint(["detectGameEnd", "after", "cutGrassUnderShip"]);
 
-  EM.registerSystem2(
+  EM.registerSystem(
     "furlUnfurl",
     Phase.GAME_PLAYERS,
     [],
@@ -658,7 +658,7 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
 
   const shipWorld = await EM.whenEntityHas(ship, WorldFrameDef);
 
-  EM.registerSystem2(
+  EM.registerSystem(
     "turnMast",
     Phase.GAME_PLAYERS,
     [],

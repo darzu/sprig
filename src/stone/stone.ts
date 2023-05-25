@@ -604,7 +604,7 @@ export const flyingBrickPool = createEntityPool<
   },
 });
 
-EM.registerSystem2(
+EM.registerSystem(
   "despawnFlyingBricks",
   Phase.GAME_WORLD,
   [FlyingBrickDef, DeadDef],
@@ -633,7 +633,7 @@ const MISS_BY_MAX = 10;
 const MISS_PROBABILITY = 0.25;
 const MAX_RANGE = 300;
 
-EM.registerSystem2(
+EM.registerSystem(
   "stoneTowerAttack",
   Phase.GAME_WORLD,
   [StoneTowerDef, WorldFrameDef],
@@ -872,7 +872,7 @@ function destroyTower(
   );
 }
 
-EM.registerSystem2(
+EM.registerSystem(
   "stoneTowerDamage",
   Phase.GAME_WORLD,
   [StoneTowerDef, RenderableDef, WorldFrameDef],

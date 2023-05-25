@@ -50,7 +50,7 @@ export function registerHandleNetworkEvents(em: EntityManager) {
       }
     }
   }
-  em.registerSystem2(
+  em.registerSystem(
     "handleNetworkEvents",
     Phase.NETWORK,
     null,
@@ -78,7 +78,7 @@ export function registerSendOutboxes(em: EntityManager) {
       }
     }
   }
-  em.registerSystem2(
+  em.registerSystem(
     "sendOutboxes",
     Phase.NETWORK,
     [OutboxDef, PeerDef],

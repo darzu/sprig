@@ -61,7 +61,7 @@ const scaledTemp2 = vec2.create();
 const WORLD_WIDTH = 1024; // width runs +z
 const WORLD_HEIGHT = 512; // height runs +x
 
-EM.registerSystem2(
+EM.registerSystem(
   "landShipCollision",
   Phase.GAME_WORLD,
   [ShipDef, PositionDef, WorldFrameDef, PhysicsStateDef, LinearVelocityDef],

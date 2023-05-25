@@ -128,6 +128,7 @@ type RibSail = ReturnType<typeof createRibSailNow>;
 onInit(() => {
   EM.registerSystem(
     `updateRibSail`,
+    Phase.GAME_WORLD,
     [RibSailLocalDef, RenderableDef],
     [RendererDef],
     (cs, res) => {

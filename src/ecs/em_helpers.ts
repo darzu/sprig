@@ -9,6 +9,7 @@ import { Authority, AuthorityDef, MeDef, SyncDef } from "../net/components.js";
 import { Serializer, Deserializer } from "../utils/serialize.js";
 import { assert } from "../utils/util.js";
 import { capitalize } from "../utils/util.js";
+import { Phase } from "./sys_phase";
 
 export function defineSerializableComponent<
   N extends string,
@@ -35,13 +36,19 @@ function registerConstructorSystem<
   rs: [...RS],
   callback: (e: EntityW<[C]>, resources: EntityW<RS>) => void
 ) {
-  em.registerSystem(`${def.name}Build`, [def], rs, (es, res) => {
-    for (let e of es) {
-      if (FinishedDef.isOn(e)) continue;
-      callback(e as EntityW<[C]>, res);
-      em.ensureComponentOn(e, FinishedDef);
+  em.registerSystem(
+    `${def.name}Build`,
+    Phase.PRE_GAME_WORLD,
+    [def],
+    rs,
+    (es, res) => {
+      for (let e of es) {
+        if (FinishedDef.isOn(e)) continue;
+        callback(e as EntityW<[C]>, res);
+        em.ensureComponentOn(e, FinishedDef);
+      }
     }
-  });
+  );
   return callback;
   // console.log(`reg ${def.name}Build`);
 }

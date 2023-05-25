@@ -32,7 +32,7 @@ export const ScoreDef = EM.defineComponent("score", () => ({
   skipFrame: false,
 }));
 
-EM.registerSystem2(
+EM.registerSystem(
   "updateScoreDisplay",
   Phase.POST_GAME_WORLD,
   [ShipHealthDef],
@@ -52,7 +52,7 @@ EM.registerSystem2(
   }
 );
 
-EM.registerSystem2(
+EM.registerSystem(
   "detectGameEnd",
   Phase.POST_GAME_WORLD,
   [ShipHealthDef],

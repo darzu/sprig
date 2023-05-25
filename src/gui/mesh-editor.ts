@@ -364,7 +364,7 @@ export async function initMeshEditor() {
   // meshEditor.setMesh(startMesh);
 
   // TODO(@darzu): undo-stack
-  EM.registerSystem2(
+  EM.registerSystem(
     "editHPoly",
     Phase.GAME_WORLD,
     null,

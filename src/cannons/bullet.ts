@@ -148,7 +148,7 @@ export function createOrResetBullet(
 }
 
 export function registerBuildBulletsSystem(em: EntityManager) {
-  em.registerSystem2(
+  em.registerSystem(
     "buildBullets",
     Phase.GAME_WORLD,
     [BulletConstructDef],
@@ -165,7 +165,7 @@ export function registerBuildBulletsSystem(em: EntityManager) {
 
 export function registerBulletUpdate(em: EntityManager) {
   // TODO(@darzu): remove?
-  em.registerSystem2(
+  em.registerSystem(
     "updateBullets",
     Phase.GAME_WORLD,
     [BulletConstructDef, BulletDef, PositionDef, LinearVelocityDef],

@@ -31,7 +31,7 @@ export function registerMusicSystems(em: EntityManager) {
   em.addResource(AudioDef);
 
   let once = true;
-  em.registerSystem2(
+  em.registerSystem(
     "musicStart",
     Phase.AUDIO,
     null,

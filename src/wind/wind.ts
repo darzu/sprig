@@ -37,7 +37,7 @@ export function setWindAngle(wind: Component<typeof WindDef>, angle: number) {
   vec3.rotateY(AHEAD_DIR, ORIGIN, angle, wind.dir);
 }
 
-EM.registerSystem2(
+EM.registerSystem(
   "changeWind",
   Phase.GAME_WORLD,
   [],
@@ -64,7 +64,7 @@ function angleBetweenRadians(a: number, b: number): number {
   return diff;
 }
 
-EM.registerSystem2(
+EM.registerSystem(
   "smoothWind",
   Phase.GAME_WORLD,
   [],

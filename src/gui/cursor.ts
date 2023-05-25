@@ -42,7 +42,7 @@ export const Cursor3dDef = EM.defineComponent("cursor3d", () => ({
 export function registerCursorSystems(em: EntityManager) {
   em.addResource(GlobalCursor3dDef);
 
-  em.registerSystem2(
+  em.registerSystem(
     "buildCursor",
     Phase.PRE_GAME_WORLD,
     null,
@@ -63,7 +63,7 @@ export function registerCursorSystems(em: EntityManager) {
     }
   );
 
-  em.registerSystem2(
+  em.registerSystem(
     "placeCursorAtScreenCenter",
     Phase.PRE_READ_INPUT,
     [Cursor3dDef, PositionDef, ColorDef],

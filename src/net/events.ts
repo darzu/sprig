@@ -276,7 +276,7 @@ const EVENT_RETRANSMIT_MS = 100;
 
 export function registerEventSystems(em: EntityManager) {
   // Runs only at non-host, sends valid detected events as requests to host
-  em.registerSystem2(
+  em.registerSystem(
     "detectedEventsToHost",
     Phase.NETWORK,
     [HostDef, OutboxDef],
@@ -334,7 +334,7 @@ export function registerEventSystems(em: EntityManager) {
   );
 
   // Runs only at host, handles incoming event requests
-  em.registerSystem2(
+  em.registerSystem(
     "handleEventRequests",
     Phase.NETWORK,
     [InboxDef, OutboxDef],
@@ -383,7 +383,7 @@ export function registerEventSystems(em: EntityManager) {
   );
 
   // Runs only at non-host, handles event request acks from host
-  em.registerSystem2(
+  em.registerSystem(
     "handleEventRequestAcks",
     Phase.NETWORK,
     [InboxDef, OutgoingEventRequestsDef, HostDef],
@@ -407,7 +407,7 @@ export function registerEventSystems(em: EntityManager) {
   );
 
   // Runs only at host, converts events detected locally to event requests
-  em.registerSystem2(
+  em.registerSystem(
     "detectedEventsToRequestedEvents",
     Phase.NETWORK,
     null,
@@ -429,7 +429,7 @@ export function registerEventSystems(em: EntityManager) {
   );
 
   // Runs only at host, runs legal events
-  em.registerSystem2(
+  em.registerSystem(
     "requestedEventsToEvents",
     Phase.NETWORK,
     null,
@@ -453,7 +453,7 @@ export function registerEventSystems(em: EntityManager) {
   );
 
   // runs only at host, sends events to other nodes
-  em.registerSystem2(
+  em.registerSystem(
     "sendEvents",
     Phase.NETWORK,
     [OutboxDef],
@@ -490,7 +490,7 @@ export function registerEventSystems(em: EntityManager) {
   );
 
   // Runs only at non-host, handles events from host
-  em.registerSystem2(
+  em.registerSystem(
     "handleEvents",
     Phase.NETWORK,
     [InboxDef, HostDef, OutboxDef],
@@ -536,7 +536,7 @@ export function registerEventSystems(em: EntityManager) {
   );
 
   // Runs only at host, handles event ACKs
-  em.registerSystem2(
+  em.registerSystem(
     "handleEventAcks",
     Phase.NETWORK,
     [InboxDef],
@@ -572,7 +572,7 @@ export function registerEventSystems(em: EntityManager) {
     }
   }
 
-  em.registerSystem2("runEvents", Phase.NETWORK, null, [EventsDef], runEvents);
+  em.registerSystem("runEvents", Phase.NETWORK, null, [EventsDef], runEvents);
 }
 
 export function addEventComponents(em: EntityManager) {

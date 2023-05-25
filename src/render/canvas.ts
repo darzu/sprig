@@ -17,7 +17,7 @@ export const CanvasDef = EM.defineComponent(
 export type Canvas = Component<typeof CanvasDef>;
 
 export function registerInitCanvasSystem(em: EntityManager) {
-  em.registerSystem2(
+  em.registerSystem(
     "canvasCursorLockUnlock",
     Phase.GAME_PLAYERS,
     [],

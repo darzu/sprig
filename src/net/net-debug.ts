@@ -20,7 +20,7 @@ const AUTHORITY_TINTS: Record<number, vec3> = {
 };
 
 export function registerNetDebugSystem(em: EntityManager) {
-  em.registerSystem2(
+  em.registerSystem(
     "netDebugSystem",
     Phase.NETWORK,
     [AuthorityDef, RenderableDef],

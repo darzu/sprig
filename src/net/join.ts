@@ -27,7 +27,7 @@ import { Phase } from "../ecs/sys_phase";
 const JOIN_RETRANSMIT = 100;
 
 function registerConnectToServer(em: EntityManager) {
-  em.registerSystem2(
+  em.registerSystem(
     "connectToServer",
     Phase.NETWORK,
     [PeerDef],
@@ -106,7 +106,7 @@ function registerHandleJoin(em: EntityManager) {
       }
     }
   };
-  em.registerSystem2(
+  em.registerSystem(
     "handleJoin",
     Phase.NETWORK,
     [PeerDef, InboxDef, OutboxDef],
@@ -143,7 +143,7 @@ function registerHandleJoinResponse(em: EntityManager) {
       }
     }
   };
-  em.registerSystem2(
+  em.registerSystem(
     "handleJoinResponse",
     Phase.NETWORK,
     [PeerDef, InboxDef, OutboxDef],

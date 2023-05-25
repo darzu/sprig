@@ -169,7 +169,7 @@ function updateSmoothedWorldFrame(em: EntityManager, o: Entity) {
 }
 
 export function registerUpdateSmoothedWorldFrames(em: EntityManager) {
-  em.registerSystem2(
+  em.registerSystem(
     "updateSmoothedWorldFrames",
     Phase.PRE_RENDER,
     [RenderableConstructDef, TransformDef],
@@ -248,7 +248,7 @@ function extrapolateFrames(
 }
 
 export function registerUpdateRendererWorldFrames(em: EntityManager) {
-  em.registerSystem2(
+  em.registerSystem(
     "updateRendererWorldFrames",
     Phase.RENDER,
     [SmoothedWorldFrameDef, PrevSmoothedWorldFrameDef],
@@ -322,7 +322,7 @@ export function registerRenderer(em: EntityManager) {
   const renderObjs: EntityW<
     [typeof RendererWorldFrameDef, typeof RenderableDef]
   >[] = [];
-  em.registerSystem2(
+  em.registerSystem(
     "renderListDeadHidden",
     Phase.RENDER,
     [RendererWorldFrameDef, RenderableDef, DeadDef],
@@ -334,7 +334,7 @@ export function registerRenderer(em: EntityManager) {
           renderObjs.push(o);
     }
   );
-  em.registerSystem2(
+  em.registerSystem(
     "renderList",
     Phase.RENDER,
     [RendererWorldFrameDef, RenderableDef],
@@ -347,7 +347,7 @@ export function registerRenderer(em: EntityManager) {
 
   let __frame = 1; // TODO(@darzu): DBG
 
-  em.registerSystem2(
+  em.registerSystem(
     "stepRenderer",
     Phase.RENDER,
     null, // NOTE: see "renderList*" systems and NOTE above. We use those to construct our query.
@@ -520,7 +520,7 @@ export function registerRenderer(em: EntityManager) {
 // }
 
 export function registerConstructRenderablesSystem(em: EntityManager) {
-  em.registerSystem2(
+  em.registerSystem(
     "constructRenderables",
     Phase.PRE_GAME_WORLD,
     [RenderableConstructDef],
@@ -612,7 +612,7 @@ export const RendererDef = EM.defineComponent(
 let _rendererPromise: Promise<void> | null = null;
 
 export function registerRenderInitSystem(em: EntityManager) {
-  em.registerSystem2(
+  em.registerSystem(
     "renderInit",
     Phase.PRE_RENDER,
     [],

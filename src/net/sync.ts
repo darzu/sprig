@@ -29,7 +29,7 @@ import { TimeDef } from "../time/time.js";
 import { Phase } from "../ecs/sys_phase";
 
 export function registerSyncSystem(em: EntityManager) {
-  em.registerSystem2(
+  em.registerSystem(
     "netSync",
     Phase.NETWORK,
     [AuthorityDef, SyncDef],
@@ -100,7 +100,7 @@ export function registerSyncSystem(em: EntityManager) {
 }
 
 export function registerUpdateSystem(em: EntityManager) {
-  em.registerSystem2(
+  em.registerSystem(
     "clearRemoteUpdatesMarker",
     Phase.NETWORK,
     [RemoteUpdatesDef],
@@ -111,7 +111,7 @@ export function registerUpdateSystem(em: EntityManager) {
       }
     }
   );
-  em.registerSystem2(
+  em.registerSystem(
     "netUpdate",
     Phase.NETWORK,
     [PeerDef, InboxDef, OutboxDef],
@@ -169,7 +169,7 @@ export function registerAckUpdateSystem(em: EntityManager) {
       }
     }
   }
-  em.registerSystem2(
+  em.registerSystem(
     "netAck",
     Phase.NETWORK,
     [PeerDef, InboxDef],

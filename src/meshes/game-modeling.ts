@@ -22,7 +22,7 @@ import { Phase } from "../ecs/sys_phase.js";
 export async function initModelingGame() {
   const { renderer } = await EM.whenResources(RendererDef);
 
-  EM.registerSystem2(
+  EM.registerSystem(
     "gameRenderPipelines",
     Phase.GAME_WORLD,
     null,

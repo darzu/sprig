@@ -91,7 +91,7 @@ export const { CannonPropsDef, CannonLocalDef, createCannon, createCannonNow } =
   });
 
 export function registerCannonSystems(em: EntityManager) {
-  em.registerSystem2(
+  em.registerSystem(
     "reloadCannon",
     Phase.GAME_WORLD,
     [CannonLocalDef],
@@ -152,7 +152,7 @@ export function registerCannonSystems(em: EntityManager) {
     }
   );
 
-  em.registerSystem2(
+  em.registerSystem(
     "playerControlCannon",
     Phase.GAME_PLAYERS,
     [CannonLocalDef, TurretDef, WorldFrameDef],
@@ -170,7 +170,7 @@ export function registerCannonSystems(em: EntityManager) {
     }
   );
 
-  em.registerSystem2(
+  em.registerSystem(
     "playerManCanon",
     Phase.GAME_PLAYERS,
     [CannonLocalDef, TurretDef, InRangeDef, AuthorityDef, WorldFrameDef],

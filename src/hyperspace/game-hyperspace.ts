@@ -70,7 +70,7 @@ export async function initHyperspaceGame(em: EntityManager) {
     createHsPlayer(em);
   });
 
-  em.registerSystem2("debugLoop", Phase.GAME_WORLD, [], [], () => {
+  em.registerSystem("debugLoop", Phase.GAME_WORLD, [], [], () => {
     // console.log("debugLoop");
     // em.whyIsntSystemBeingCalled("oceanGPUWork");
   });
@@ -87,7 +87,7 @@ export async function initHyperspaceGame(em: EntityManager) {
 
   let gridCompose = createGridComposePipelines(grid);
 
-  em.registerSystem2(
+  em.registerSystem(
     "hyperspaceGame",
     Phase.GAME_WORLD,
     null,

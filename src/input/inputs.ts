@@ -44,7 +44,7 @@ export function registerInputsSystem(em: EntityManager): void {
 
   EM.addResource(InputsDef);
   // const InputsSys =
-  em.registerSystem2(
+  em.registerSystem(
     "inputs",
     Phase.READ_INPUTS,
     null,
@@ -58,7 +58,7 @@ export function registerInputsSystem(em: EntityManager): void {
   // em.requireSystem(InputsSys); // TODO(@darzu): IMPL this pattern
 
   em.addResource(MouseDragDef);
-  em.registerSystem2(
+  em.registerSystem(
     "mouseDrag",
     Phase.GAME_PLAYERS,
     null,

@@ -66,7 +66,7 @@ export function registerNoodleSystem(em: EntityManager) {
     else posIdxToSegIdx.set(i, 1);
   });
 
-  em.registerSystem2(
+  em.registerSystem(
     "updateNoodles",
     Phase.GAME_WORLD,
     [NoodleDef, RenderableDef],

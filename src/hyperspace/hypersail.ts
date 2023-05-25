@@ -176,7 +176,7 @@ export const { HypMastPropsDef, HypMastLocalDef, createHypMastNow } =
   });
 
 onInit((em) => {
-  em.registerSystem2(
+  em.registerSystem(
     "updateMastBoom",
     Phase.GAME_PLAYERS,
     [HypMastPropsDef, HypMastLocalDef, TurretDef, BoomPitchesDef],
@@ -248,7 +248,7 @@ onInit((em) => {
     }
   );
 
-  em.registerSystem2(
+  em.registerSystem(
     "sail",
     Phase.GAME_PLAYERS,
     [HsShipPropsDef, UVShipDef, WorldFrameDef, AuthorityDef],
