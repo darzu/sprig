@@ -46,6 +46,7 @@ import { max } from "../utils/math.js";
 import { AnimateToDef } from "../animation/animate-to.js";
 import { vec3Dbg } from "../utils/utils-3d.js";
 import { HsShipLocalDef } from "./hyperspace-ship.js";
+import { Phase } from "../ecs/sys_phase";
 
 // TODO(@darzu): it'd be great if these could hook into some sort of
 //    dev mode you could toggle at runtime.
@@ -106,8 +107,9 @@ export const PlayerHsPropsDef = defineSerializableComponent(
 );
 
 export function registerHsPlayerSystems(em: EntityManager) {
-  em.registerSystem(
+  em.registerSystem2(
     "buildHsPlayers",
+    Phase.PRE_GAME_WORLD,
     [PlayerHsPropsDef],
     [MeDef, AssetsDef],
     (players, res) => {
@@ -184,8 +186,9 @@ export function registerHsPlayerSystems(em: EntityManager) {
     }
   );
 
-  em.registerSystem(
+  em.registerSystem2(
     "hsPlayerFacingDir",
+    Phase.GAME_PLAYERS,
     [HsPlayerDef, WorldFrameDef],
     [GlobalCursor3dDef],
     (players, res) => {
@@ -204,8 +207,9 @@ export function registerHsPlayerSystems(em: EntityManager) {
     }
   );
 
-  em.registerSystem(
+  em.registerSystem2(
     "stepHsPlayers",
+    Phase.GAME_PLAYERS,
     [
       HsPlayerDef,
       PositionDef,
@@ -422,8 +426,9 @@ export function registerHsPlayerSystems(em: EntityManager) {
     }
   );
 
-  em.registerSystem(
+  em.registerSystem2(
     "hsPlayerLookingForShip",
+    Phase.GAME_WORLD,
     [
       HsPlayerDef,
       AuthorityDef,

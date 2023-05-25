@@ -162,8 +162,9 @@ export async function initFontEditor(em: EntityManager) {
   // const { assets } = await EM.whenResources(AssetsDef);
 
   // TODO(@darzu): de-duplicate this with very similar code in other "games"
-  EM.registerSystem(
+  EM.registerSystem2(
     "uiCameraView",
+    Phase.GAME_WORLD,
     null,
     [CameraComputedDef, CanvasDef, CameraDef, InputsDef, UICursorDef],
     async (_, res) => {

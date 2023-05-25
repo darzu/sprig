@@ -85,8 +85,9 @@ async function initButtonGUI(res: EntityW<[typeof RendererDef]>) {
     EM.addResource(ButtonsStateDef, btnGMesh);
   }
 
-  EM.registerSystem(
+  EM.registerSystem2(
     "buttonStateUpdate",
+    Phase.READ_INPUTS,
     [ButtonDef],
     [PhysicsResultsDef, ButtonsStateDef, InputsDef, UICursorDef],
     (es, res) => {
@@ -122,8 +123,9 @@ async function initButtonGUI(res: EntityW<[typeof RendererDef]>) {
   );
   EM.addSystem("buttonStateUpdate", Phase.READ_INPUTS);
 
-  EM.registerSystem(
+  EM.registerSystem2(
     "buttonColors",
+    Phase.GAME_WORLD,
     [ButtonDef, ColorDef],
     [ButtonsStateDef],
     (es, res) => {

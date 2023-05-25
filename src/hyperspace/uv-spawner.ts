@@ -15,6 +15,7 @@ import {
 } from "../physics/transform.js";
 import { spawnEnemyShip } from "./uv-enemy-ship.js";
 import { UVDirDef, UVPosDef } from "../ocean/ocean.js";
+import { Phase } from "../ecs/sys_phase";
 
 // TODO(@darzu): generalize for spawning non-enemy entities in the ocean
 
@@ -57,8 +58,9 @@ export function createSpawner(
 }
 
 onInit((em) => {
-  em.registerSystem(
+  em.registerSystem2(
     "spawnOnTile",
+    Phase.GAME_WORLD,
     [SpawnerDef, UVPosDef, UVDirDef],
     [MeDef],
     (tiles, res) => {
@@ -102,8 +104,9 @@ onInit((em) => {
   );
 
   // TODO(@darzu): can we make this more ground agnostic?
-  em.registerSystem(
+  em.registerSystem2(
     "spawnFinishAnimIn",
+    Phase.GAME_WORLD,
     [SpawnerDef, RotationDef, PositionDef],
     [MeDef],
     (tiles, res) => {

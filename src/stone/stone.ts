@@ -46,6 +46,7 @@ import { TimeDef } from "../time/time.js";
 import { assert } from "../utils/util.js";
 import { vec3Dbg } from "../utils/utils-3d.js";
 import { SoundSetDef } from "../audio/sound-loader.js";
+import { Phase } from "../ecs/sys_phase";
 
 const GRAVITY = 6.0 * 0.00001;
 const MIN_BRICK_PERCENT = 0.6;
@@ -603,8 +604,9 @@ export const flyingBrickPool = createEntityPool<
   },
 });
 
-EM.registerSystem(
+EM.registerSystem2(
   "despawnFlyingBricks",
+  Phase.GAME_WORLD,
   [FlyingBrickDef, DeadDef],
   [],
   (es, _) =>
@@ -631,8 +633,9 @@ const MISS_BY_MAX = 10;
 const MISS_PROBABILITY = 0.25;
 const MAX_RANGE = 300;
 
-EM.registerSystem(
+EM.registerSystem2(
   "stoneTowerAttack",
+  Phase.GAME_WORLD,
   [StoneTowerDef, WorldFrameDef],
   [TimeDef, PartyDef],
   (es, res) => {
@@ -869,8 +872,9 @@ function destroyTower(
   );
 }
 
-EM.registerSystem(
+EM.registerSystem2(
   "stoneTowerDamage",
+  Phase.GAME_WORLD,
   [StoneTowerDef, RenderableDef, WorldFrameDef],
   [PhysicsResultsDef, RendererDef],
   (es, res) => {

@@ -42,6 +42,7 @@ import {
   sailForceAndSignedArea,
 } from "./ribsail.js";
 import { ENDESGA16 } from "../color/palettes.js";
+import { Phase } from "../ecs/sys_phase";
 
 // TODO(@darzu): refactor this so that our towers can use this
 
@@ -175,8 +176,9 @@ export const { HypMastPropsDef, HypMastLocalDef, createHypMastNow } =
   });
 
 onInit((em) => {
-  em.registerSystem(
+  em.registerSystem2(
     "updateMastBoom",
+    Phase.GAME_PLAYERS,
     [HypMastPropsDef, HypMastLocalDef, TurretDef, BoomPitchesDef],
     [InputsDef, RendererDef],
     (masts, res) => {
@@ -246,8 +248,9 @@ onInit((em) => {
     }
   );
 
-  em.registerSystem(
+  em.registerSystem2(
     "sail",
+    Phase.GAME_PLAYERS,
     [HsShipPropsDef, UVShipDef, WorldFrameDef, AuthorityDef],
     [MeDef, GameStateDef],
     (es, res) => {

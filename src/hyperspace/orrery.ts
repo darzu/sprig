@@ -13,6 +13,7 @@ import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { AssetsDef } from "../meshes/assets.js";
 import { DarkStarPropsDef } from "./darkstar.js";
 import { ENDESGA16 } from "../color/palettes.js";
+import { Phase } from "../ecs/sys_phase";
 
 const ORRERY_SCALE = 0.001;
 
@@ -45,8 +46,9 @@ export const OrreryDef = EM.defineComponent("orrery", () => ({
 }));
 
 onInit((em: EntityManager) => {
-  em.registerSystem(
+  em.registerSystem2(
     "orreryMotion",
+    Phase.GAME_WORLD,
     [OrreryDef, WorldFrameDef],
     [AssetsDef],
     (es, res) => {

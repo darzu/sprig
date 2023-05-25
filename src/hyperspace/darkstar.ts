@@ -12,6 +12,7 @@ import { PointLightDef } from "../render/lights.js";
 import { FLAG_UNLIT, RenderDataStdDef } from "../render/pipelines/std-scene.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { HyperspaceGameState, GameStateDef } from "./hyperspace-gamestate.js";
+import { Phase } from "../ecs/sys_phase";
 
 const DARKSTAR_SPEED = 1;
 
@@ -63,8 +64,9 @@ export const { DarkStarPropsDef, DarkStarLocalDef, createDarkStarNow } =
 
 onInit((em) => {
   // TODO: this star will escape! must bring it closer to the orbit point sometimes
-  em.registerSystem(
+  em.registerSystem2(
     "darkStarOrbit",
+    Phase.GAME_WORLD,
     [DarkStarPropsDef, PositionDef, AuthorityDef],
     [MeDef, GameStateDef],
     (es, res) => {

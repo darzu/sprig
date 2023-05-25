@@ -35,6 +35,7 @@ import { createDarkStarNow, STAR1_COLOR, STAR2_COLOR } from "./darkstar.js";
 import { renderOceanPipe } from "../render/pipelines/std-ocean.js";
 import { EASE_INQUAD } from "../utils/util-ease.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
+import { Phase } from "../ecs/sys_phase";
 
 // export let jfaMaxStep = VISUALIZE_JFA ? 0 : 999;
 
@@ -69,7 +70,7 @@ export async function initHyperspaceGame(em: EntityManager) {
     createHsPlayer(em);
   });
 
-  em.registerSystem("debugLoop", [], [], () => {
+  em.registerSystem2("debugLoop", Phase.GAME_WORLD, [], [], () => {
     // console.log("debugLoop");
     // em.whyIsntSystemBeingCalled("oceanGPUWork");
   });
@@ -86,8 +87,9 @@ export async function initHyperspaceGame(em: EntityManager) {
 
   let gridCompose = createGridComposePipelines(grid);
 
-  em.registerSystem(
+  em.registerSystem2(
     "hyperspaceGame",
+    Phase.GAME_WORLD,
     null,
     [RendererDef, DevConsoleDef],
     (_, res) => {

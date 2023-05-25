@@ -89,8 +89,9 @@ async function initDragBox(): Promise<EntityW<[typeof PositionDef]>> {
     aabb: assets.unitCube.aabb,
   });
 
-  EM.registerSystem(
+  EM.registerSystem2(
     "updateDragbox",
+    Phase.GAME_WORLD,
     null,
     [MouseDragDef, CameraComputedDef, WidgetLayerDef],
     (_, { mousedrag, cameraComputed, widgets }) => {
@@ -134,8 +135,9 @@ async function initWidgets({ assets }: EntityW<[typeof AssetsDef]>) {
 
   // TODO(@darzu):
   // TODO(@darzu): refactor. Also have undo-stack
-  EM.registerSystem(
+  EM.registerSystem2(
     "updateWidgets",
+    Phase.GAME_WORLD,
     null,
     [
       WidgetLayerDef,
@@ -245,8 +247,9 @@ async function initWidgets({ assets }: EntityW<[typeof AssetsDef]>) {
   );
   EM.addSystem("updateWidgets", Phase.GAME_WORLD);
 
-  EM.registerSystem(
+  EM.registerSystem2(
     "colorWidgets",
+    Phase.GAME_WORLD,
     [WidgetDef, ColorDef],
     [WidgetLayerDef],
     (ws, { widgets }) => {

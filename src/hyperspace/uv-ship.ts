@@ -8,6 +8,7 @@ import { tempVec2 } from "../matrix/temp-pool.js";
 import { vec2Dbg, vec3Dbg } from "../utils/utils-3d.js";
 import { GameStateDef, HyperspaceGameState } from "./hyperspace-gamestate.js";
 import { UVPosDef, UVDirDef } from "../ocean/ocean.js";
+import { Phase } from "../ecs/sys_phase";
 
 export const UVShipDef = EM.defineComponent("uvship", () => {
   return {
@@ -16,8 +17,9 @@ export const UVShipDef = EM.defineComponent("uvship", () => {
 });
 
 onInit((em) => {
-  em.registerSystem(
+  em.registerSystem2(
     "shipMove",
+    Phase.GAME_WORLD,
     [UVShipDef, UVPosDef, UVDirDef, AuthorityDef],
     [
       // GameStateDef,

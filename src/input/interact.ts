@@ -14,6 +14,7 @@ import {
 } from "../physics/nonintersection.js";
 import { clearTint, setTint, TintsDef } from "../color/color-ecs.js";
 import { DeletedDef } from "../ecs/delete.js";
+import { Phase } from "../ecs/sys_phase";
 
 export const InteractableDef = EM.defineComponent(
   "interaction",
@@ -31,8 +32,9 @@ const INTERACTION_TINT = V(0.1, 0.2, 0.1);
 const INTERACTION_TINT_NAME = "interaction";
 
 export function registerInteractionSystem(em: EntityManager) {
-  em.registerSystem(
+  em.registerSystem2(
     "interactableInteract",
+    Phase.POST_GAME_PLAYERS,
     [InteractableDef, WorldFrameDef],
     [LocalHsPlayerDef, MeDef, PhysicsResultsDef],
     (interactables, resources) => {

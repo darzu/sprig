@@ -52,6 +52,7 @@ import { makeOrrery, OrreryDef } from "./orrery.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { createGem, GemPropsDef } from "./gem.js";
 import { ENDESGA16 } from "../color/palettes.js";
+import { Phase } from "../ecs/sys_phase";
 
 // TODO(@darzu): impl. occassionaly syncable components with auto-versioning
 
@@ -273,8 +274,9 @@ const START_TEXT = "";
 // const START_TEXT = "hit the gem to begin";
 
 export function registerShipSystems(em: EntityManager) {
-  em.registerSystem(
+  em.registerSystem2(
     "startGame",
+    Phase.GAME_WORLD,
     [GemPropsDef, InRangeDef],
     [GameStateDef, PhysicsResultsDef, MeDef, InputsDef, LocalHsPlayerDef],
     (gems, res) => {
@@ -309,8 +311,9 @@ export function registerShipSystems(em: EntityManager) {
     }
   );
 
-  em.registerSystem(
+  em.registerSystem2(
     "shipHealthCheck",
+    Phase.GAME_WORLD,
     [HsShipPropsDef, HsShipLocalDef, PositionDef, AuthorityDef],
     [
       AudioDef,
@@ -359,8 +362,9 @@ export function registerShipSystems(em: EntityManager) {
     }
   );
 
-  em.registerSystem(
+  em.registerSystem2(
     "playerShipMove",
+    Phase.GAME_PLAYERS,
     [
       UVShipDef,
       HsShipLocalDef,
@@ -399,8 +403,9 @@ export function registerShipSystems(em: EntityManager) {
     }
   );
 
-  em.registerSystem(
+  em.registerSystem2(
     "shipUpdateParty",
+    Phase.GAME_WORLD,
     [HsShipLocalDef, HsShipPropsDef, PositionDef],
     [PartyDef],
     (ships, res) => {
@@ -409,8 +414,9 @@ export function registerShipSystems(em: EntityManager) {
   );
 
   // If a rudder isn't being manned, smooth it back towards straight
-  em.registerSystem(
+  em.registerSystem2(
     "easeRudder",
+    Phase.GAME_WORLD,
     [RudderPropsDef, TurretDef, YawPitchDef, AuthorityDef],
     [MeDef],
     (rudders, res) => {

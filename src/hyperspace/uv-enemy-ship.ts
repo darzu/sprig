@@ -40,6 +40,7 @@ import { UVShipDef } from "./uv-ship.js";
 import { UVDirDef, UVPosDef } from "../ocean/ocean.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { AudioDef, Music } from "../audio/audio.js";
+import { Phase } from "../ecs/sys_phase";
 
 export const EnemyCrewDef = EM.defineComponent("enemyCrew", () => {
   return {
@@ -234,8 +235,9 @@ export const raiseBreakEnemyShip = eventWizard(
 );
 
 export function registerEnemyShipSystems(em: EntityManager) {
-  em.registerSystem(
+  em.registerSystem2(
     "stepEnemyShips",
+    Phase.GAME_WORLD,
     [EnemyShipLocalDef, EnemyShipPropsDef, UVDirDef, UVShipDef, AuthorityDef],
     [TimeDef, MeDef],
     (enemyShips, res) => {
@@ -253,8 +255,9 @@ export function registerEnemyShipSystems(em: EntityManager) {
     }
   );
 
-  em.registerSystem(
+  em.registerSystem2(
     "enemyShipsFire",
+    Phase.GAME_WORLD,
     [EnemyShipLocalDef, AuthorityDef],
     [TimeDef, MeDef, PhysicsResultsDef],
     (enemyShips, res) => {
@@ -301,8 +304,9 @@ export function registerEnemyShipSystems(em: EntityManager) {
     }
   );
 
-  em.registerSystem(
+  em.registerSystem2(
     "breakEnemyShips",
+    Phase.GAME_WORLD,
     [EnemyShipLocalDef, PositionDef, RotationDef],
     [PhysicsResultsDef, AssetsDef, AudioDef, MeDef, DetectedEventsDef],
     (objs, res) => {
