@@ -101,6 +101,7 @@ import {
 import { ParametricDef } from "../motion/parametric-motion.js";
 import { addGizmoChild } from "../utils/utils-game.js";
 import { createBarrelMesh } from "./barrel.js";
+import { Phase } from "../ecs/sys_phase.js";
 
 /*
   Game mechanics:
@@ -157,8 +158,8 @@ export const LD51CannonDef = EM.defineComponent("ld51Cannon", () => {
 });
 
 export async function initShipyardGame(em: EntityManager, hosting: boolean) {
-  EM.requireSystem("runWooden");
-  EM.requireSystem("woodHealth");
+  EM.addSystem("runWooden", Phase.GAME_WORLD);
+  EM.addSystem("woodHealth", Phase.GAME_WORLD);
 
   const res = await em.whenResources(
     AssetsDef,
@@ -477,9 +478,9 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
       }
     }
   );
-  EM.requireGameplaySystem("ld51PlayerFireCannon");
+  EM.addSystem("ld51PlayerFireCannon", Phase.GAME_WORLD);
 
-  EM.requireGameplaySystem("splintersOnFloor");
+  EM.addSystem("splintersOnFloor", Phase.GAME_WORLD);
 
   // const quadIdsNeedReset = new Set<number>();
 
@@ -548,7 +549,7 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
       }
     }
   );
-  if (DBG_PLAYER) EM.requireGameplaySystem("ld51Ghost");
+  if (DBG_PLAYER) EM.addSystem("ld51Ghost", Phase.GAME_WORLD);
 
   // TODO(@darzu): breakBullet
   em.registerSystem(
@@ -569,7 +570,7 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
       }
     }
   );
-  EM.requireGameplaySystem("breakBullets");
+  EM.addSystem("breakBullets", Phase.GAME_WORLD);
 
   // Create player
   {
@@ -754,7 +755,7 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
           }
         }
       );
-      EM.requireGameplaySystem("bulletBounce");
+      EM.addSystem("bulletBounce", Phase.GAME_WORLD);
     }
 
     // dead bullet maintenance
@@ -776,7 +777,7 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
         }
       }
     );
-    EM.requireGameplaySystem("deadBullets");
+    EM.addSystem("deadBullets", Phase.GAME_WORLD);
 
     // // starter ammo
     // {
@@ -807,7 +808,7 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
         }
       }
     );
-    EM.requireGameplaySystem("fallingGoodBalls");
+    EM.addSystem("fallingGoodBalls", Phase.GAME_WORLD);
 
     em.registerSystem(
       "pickUpBalls",
@@ -834,7 +835,7 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
         }
       }
     );
-    EM.requireGameplaySystem("pickUpBalls");
+    EM.addSystem("pickUpBalls", Phase.GAME_WORLD);
 
     if (DBG_PLAYER) {
       const g = createGhost();
@@ -975,7 +976,7 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
         }
       }
     );
-    EM.requireGameplaySystem("progressGame");
+    EM.addSystem("progressGame", Phase.GAME_WORLD);
   }
 
   function getCurrentHealth() {

@@ -27,6 +27,7 @@ import {
   positionAndTargetToOrthoViewProjMatrix,
 } from "../utils/utils-3d.js";
 import { createGhost } from "../debug/ghost.js";
+import { Phase } from "../ecs/sys_phase.js";
 
 const dbgGrid = [
   //
@@ -64,7 +65,7 @@ export async function initShadingGame() {
       ];
     }
   );
-  EM.requireSystem("grassGameRenderPipelines");
+  EM.addSystem("grassGameRenderPipelines", Phase.GAME_WORLD);
 
   const { camera } = await EM.whenResources(CameraDef);
 

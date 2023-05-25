@@ -10,6 +10,7 @@ import { scaleMesh } from "../meshes/mesh.js";
 import { RendererDef } from "../render/renderer-ecs.js";
 import { assert } from "../utils/util.js";
 import { UICursorDef } from "./game-font.js";
+import { Phase } from "../ecs/sys_phase.js";
 
 // TODO(@darzu): this should really go in assets.ts to follow the current patern.
 //    BUT I'm disatisfied with the current pattern. Subsystems should be able to
@@ -119,7 +120,7 @@ async function initButtonGUI(res: EntityW<[typeof RendererDef]>) {
       }
     }
   );
-  EM.requireGameplaySystem("buttonStateUpdate");
+  EM.addSystem("buttonStateUpdate", Phase.READ_INPUTS);
 
   EM.registerSystem(
     "buttonColors",
@@ -144,5 +145,5 @@ async function initButtonGUI(res: EntityW<[typeof RendererDef]>) {
       }
     }
   );
-  EM.requireGameplaySystem("buttonColors");
+  EM.addSystem("buttonColors", Phase.GAME_WORLD);
 }

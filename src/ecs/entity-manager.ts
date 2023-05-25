@@ -1,5 +1,10 @@
 import { createLabelSolver, LabelConstraint } from "./em-labels.js";
-import { DBG_ASSERT, DBG_INIT_DEPS, DBG_TRYCALLSYSTEM } from "../flags.js";
+import {
+  DBG_ASSERT,
+  DBG_INIT_DEPS,
+  DBG_SYSTEM_ORDER,
+  DBG_TRYCALLSYSTEM,
+} from "../flags.js";
 import { Serializer, Deserializer } from "../utils/serialize.js";
 import {
   assert,
@@ -8,7 +13,7 @@ import {
   Intersect,
   toMap,
 } from "../utils/util.js";
-import { SystemPhase, SystemPhaseValueList } from "./sys_phase.js";
+import { Phase, PhaseValueList } from "./sys_phase.js";
 
 // TODO(@darzu): for perf, we really need to move component data to be
 //  colocated in arrays; and maybe introduce "arch-types" for commonly grouped
@@ -445,33 +450,34 @@ export class EntityManager {
   // TODO(@darzu): rename these to "requireSystem" or somethingE
   // _dbgOldPlan: string[] = []; // TODO(@darzu): REMOVE
   // TODO(@darzu): this makes no sense so what should this represent?
-  public maybeRequireSystem(name: string): boolean {
-    this.addConstraint(["requires", name]);
-    // this._dbgOldPlan.push(name); // TODO(@darzu): DBG
-    return true;
-  }
-  public requireSystem(name: string) {
-    this.addConstraint(["requires", name]);
-    // this._dbgOldPlan.push(name); // TODO(@darzu): DBG
-  }
-  // TODO(@darzu): legacy thing; gotta replace with labels/phases
-  public requireGameplaySystem(name: string) {
-    this.addConstraint(["requires", name]);
-  }
-  public addConstraint(con: LabelConstraint) {
-    this.labelSolver.addConstraint(con);
-  }
+  // public maybeRequireSystem(name: string): boolean {
+  //   this.addConstraint(["requires", name]);
+  //   // this._dbgOldPlan.push(name); // TODO(@darzu): DBG
+  //   return true;
+  // }
+  // public requireSystem(name: string) {
+  //   this.addConstraint(["requires", name]);
+  //   // this._dbgOldPlan.push(name); // TODO(@darzu): DBG
+  // }
+  // // TODO(@darzu): legacy thing; gotta replace with labels/phases
+  // public requireGameplaySystem(name: string) {
+  //   this.addConstraint(["requires", name]);
+  // }
+  // public addConstraint(con: LabelConstraint) {
+  //   this.labelSolver.addConstraint(con);
+  // }
 
-  phases: Map<SystemPhase, string[]> = toMap(
-    SystemPhaseValueList,
+  phases: Map<Phase, string[]> = toMap(
+    PhaseValueList,
     (n) => n,
     (_) => [] as string[]
   );
-  public addSystem(name: string, phase: SystemPhase) {
+  public addSystem(name: string, phase: Phase) {
     this.phases.get(phase)!.push(name);
   }
 
   _dbgLastVersion = -1;
+  _dbgLastSystemLen = 0;
   public callSystems() {
     // // TODO(@darzu):
     // // console.log("OLD PLAN:");
@@ -493,7 +499,24 @@ export class EntityManager {
     // // this._dbgOldPlan.length = 0;
     // // if (this.dbgLoops > 100) throw "STOP";
 
-    for (let phase of SystemPhaseValueList) {
+    if (DBG_SYSTEM_ORDER) {
+      let newSystemLen = 0;
+      let res = "";
+      for (let phase of PhaseValueList) {
+        const phaseName = Phase[phase];
+        res += phaseName + "\n";
+        for (let s of this.phases.get(phase)!) {
+          res += "  " + s + "\n";
+          newSystemLen++;
+        }
+      }
+      if (this._dbgLastSystemLen !== newSystemLen) {
+        console.log(res);
+        this._dbgLastSystemLen = newSystemLen;
+      }
+    }
+
+    for (let phase of PhaseValueList) {
       for (let s of this.phases.get(phase)!) {
         this._tryCallSystem(s);
       }
@@ -801,9 +824,9 @@ export class EntityManager {
     return true;
   }
 
-  private _callSystem(name: string) {
-    if (!this.maybeRequireSystem(name)) throw `No system named ${name}`;
-  }
+  // private _callSystem(name: string) {
+  //   if (!this.maybeRequireSystem(name)) throw `No system named ${name}`;
+  // }
 
   // TODO(@darzu): use version numbers instead of dirty flag?
   _changedEntities = new Set<number>();

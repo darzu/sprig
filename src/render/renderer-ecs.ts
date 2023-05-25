@@ -36,6 +36,7 @@ import {
   VERBOSE_LOG,
 } from "../flags.js";
 import { clampToAABB } from "../physics/aabb.js";
+import { Phase } from "../ecs/sys_phase.js";
 
 const BLEND_SIMULATION_FRAMES_STRATEGY: "interpolate" | "extrapolate" | "none" =
   "none";
@@ -283,6 +284,7 @@ export function registerUpdateRendererWorldFrames(em: EntityManager) {
       }
     }
   );
+  EM.addSystem("updateRendererWorldFrames", Phase.RENDER);
 }
 
 // TODO(@darzu): We need to add constraints for updateRendererWorldFrames and such w/ respect to gameplay, physics, and rendering!
@@ -485,16 +487,16 @@ export function registerRenderer(em: EntityManager) {
     }
   );
 
-  em.requireSystem("renderListDeadHidden");
-  em.requireSystem("renderList");
-  em.requireSystem("stepRenderer");
-  em.addConstraint([
-    "renderListDeadHidden",
-    "after",
-    "updateRendererWorldFrames",
-  ]);
-  em.addConstraint(["renderListDeadHidden", "before", "renderList"]);
-  em.addConstraint(["renderList", "before", "stepRenderer"]);
+  em.addSystem("renderListDeadHidden", Phase.RENDER);
+  em.addSystem("renderList", Phase.RENDER);
+  em.addSystem("stepRenderer", Phase.RENDER);
+  // em.addConstraint([
+  //   "renderListDeadHidden",
+  //   "after",
+  //   "updateRendererWorldFrames",
+  // ]);
+  // em.addConstraint(["renderListDeadHidden", "before", "renderList"]);
+  // em.addConstraint(["renderList", "before", "stepRenderer"]);
 }
 
 // export function poolKindToPool(

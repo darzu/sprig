@@ -1,6 +1,6 @@
-import { enumAsList, enumNamesAsList } from "../utils/util";
+import { enumAsList, enumNamesAsList } from "../utils/util.js";
 
-export enum SystemPhase {
+export enum Phase {
   NETWORK,
   PRE_GAME_WORLD,
   GAME_WORLD,
@@ -16,7 +16,6 @@ export enum SystemPhase {
   PRE_RENDER,
   RENDER,
 }
-export type SystemPhaseName = keyof typeof SystemPhase;
-export const SystemPhaseNameList: SystemPhaseName[] =
-  enumNamesAsList(SystemPhase);
-export const SystemPhaseValueList: SystemPhase[] = enumAsList(SystemPhase);
+export type PhaseName = keyof typeof Phase;
+export const PhaseNameList: PhaseName[] = enumNamesAsList(Phase);
+export const PhaseValueList: Phase[] = enumAsList(Phase);

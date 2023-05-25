@@ -13,7 +13,12 @@ import { registerCommonSystems } from "./game-init.js";
 import { setSimulationAlpha } from "./render/renderer-ecs.js";
 import { never } from "./utils/util.js";
 // import { initHyperspaceGame } from "./game/game-hyperspace.js";
-import { DBG_ASSERT, ENABLE_NET, VERBOSE_LOG } from "./flags.js";
+import {
+  DBG_ASSERT,
+  ENABLE_NET,
+  VERBOSE_LOG,
+  WARN_DEAD_CLEANUP,
+} from "./flags.js";
 import { initShipyardGame } from "./wood/game-shipyard.js";
 import { gameplaySystems } from "./debug/ghost.js";
 import { initFontEditor } from "./gui/game-font.js";
@@ -26,6 +31,7 @@ import { initGrassGame } from "./grass/game-grass.js";
 import { initLD53 } from "./ld53/game-ld53.js";
 import { initShadingGame } from "./render/game-shading.js";
 import { initModelingGame } from "./meshes/game-modeling.js";
+import { Phase } from "./ecs/sys_phase.js";
 
 export const FORCE_WEBGL = false;
 export const MAX_MESHES = 20000;
@@ -61,175 +67,182 @@ function legacyRequireAllTheSystems() {
   // TODO(@darzu): calling systems still needs more massaging.
   //    - uncalled systems maybe should give a warning? Or at least a one-time read out.
   //    - Lets use types for this. String matching the name is brittle and unnessessary
-  EM.requireSystem("inputs");
-  EM.requireSystem("mouseDrag");
+  EM.addSystem("inputs", Phase.READ_INPUTS);
+  EM.addSystem("mouseDrag", Phase.GAME_PLAYERS);
   if (ENABLE_NET) {
-    EM.requireSystem("getStatsFromNet");
-    EM.requireSystem("getEventsFromNet");
-    EM.requireSystem("sendEventsToNet");
+    EM.addSystem("getStatsFromNet", Phase.NETWORK);
+    EM.addSystem("getEventsFromNet", Phase.NETWORK);
+    EM.addSystem("sendEventsToNet", Phase.NETWORK);
   }
-  EM.requireSystem("canvasCursorLockUnlock");
-  EM.requireSystem("uiText");
-  EM.requireSystem("devConsoleToggle");
-  EM.requireSystem("devConsole");
+  EM.addSystem("canvasCursorLockUnlock", Phase.GAME_PLAYERS);
+  EM.addSystem("uiText", Phase.RENDER);
+  EM.addSystem("devConsoleToggle", Phase.GAME_PLAYERS);
+  EM.addSystem("devConsole", Phase.RENDER);
   if (GAME === "hyperspace") {
-    EM.requireSystem("restartTimer");
+    EM.addSystem("restartTimer", Phase.GAME_WORLD);
   }
   // EM.callSystem("updateScore");
-  EM.requireSystem("renderInit");
-  EM.requireSystem("musicStart");
+  EM.addSystem("renderInit", Phase.PRE_RENDER);
+  EM.addSystem("musicStart", Phase.AUDIO);
   if (ENABLE_NET) {
-    EM.requireSystem("handleNetworkEvents");
-    EM.requireSystem("recordPreviousLocations");
-    EM.requireSystem("clearRemoteUpdatesMarker");
-    EM.requireSystem("netUpdate");
-    EM.requireSystem("predict");
-    EM.requireSystem("connectToServer");
-    EM.requireSystem("handleJoin");
-    EM.requireSystem("handleJoinResponse");
+    EM.addSystem("handleNetworkEvents", Phase.NETWORK);
+    EM.addSystem("recordPreviousLocations", Phase.NETWORK);
+    EM.addSystem("clearRemoteUpdatesMarker", Phase.NETWORK);
+    EM.addSystem("netUpdate", Phase.NETWORK);
+    EM.addSystem("predict", Phase.NETWORK);
+    EM.addSystem("connectToServer", Phase.NETWORK);
+    EM.addSystem("handleJoin", Phase.NETWORK);
+    EM.addSystem("handleJoinResponse", Phase.NETWORK);
   }
-  EM.requireSystem("buildBullets");
-  EM.requireSystem("buildCursor");
-  EM.requireSystem("placeCursorAtScreenCenter");
+  EM.addSystem("buildBullets", Phase.GAME_WORLD);
+  EM.addSystem("buildCursor", Phase.PRE_GAME_WORLD);
+  EM.addSystem("placeCursorAtScreenCenter", Phase.PRE_READ_INPUT);
   if (GAME === "hyperspace") {
-    EM.requireSystem("stepEnemyShips");
-    EM.requireSystem("enemyShipsFire");
-    EM.requireSystem("breakEnemyShips");
+    EM.addSystem("stepEnemyShips", Phase.GAME_WORLD);
+    EM.addSystem("enemyShipsFire", Phase.GAME_WORLD);
+    EM.addSystem("breakEnemyShips", Phase.GAME_WORLD);
   }
-  EM.requireSystem("controllableInput");
-  EM.requireSystem("controllableCameraFollow");
-  EM.requireSystem("buildHsPlayers");
-  EM.requireSystem("hsPlayerFacingDir");
-  EM.requireSystem("stepHsPlayers");
+  EM.addSystem("controllableInput", Phase.GAME_PLAYERS);
+  EM.addSystem("controllableCameraFollow", Phase.POST_GAME_PLAYERS);
+  EM.addSystem("buildHsPlayers", Phase.PRE_GAME_WORLD);
+  EM.addSystem("hsPlayerFacingDir", Phase.GAME_PLAYERS);
+  EM.addSystem("stepHsPlayers", Phase.GAME_PLAYERS);
   if (GAME === "hyperspace") {
-    EM.requireSystem("hsPlayerLookingForShip");
+    EM.addSystem("hsPlayerLookingForShip", Phase.GAME_WORLD);
   }
   if (GAME === "rebound") {
-    EM.maybeRequireSystem("sandboxSpawnBoxes");
+    EM.addSystem("sandboxSpawnBoxes", Phase.GAME_WORLD);
   }
   if (GAME === "cloth") {
-    EM.maybeRequireSystem("clothSandbox");
+    EM.addSystem("clothSandbox", Phase.GAME_WORLD);
   }
   if (GAME === "hyperspace") {
-    EM.requireSystem("startGame");
-    EM.requireSystem("shipHealthCheck");
-    EM.requireSystem("easeRudder");
-    EM.requireSystem("shipMove");
-    EM.requireSystem("playerShipMove");
-    EM.requireSystem("shipUpdateParty");
+    EM.addSystem("startGame", Phase.GAME_WORLD);
+    EM.addSystem("shipHealthCheck", Phase.GAME_WORLD);
+    EM.addSystem("easeRudder", Phase.GAME_WORLD);
+    EM.addSystem("shipMove", Phase.GAME_WORLD);
+    EM.addSystem("playerShipMove", Phase.GAME_PLAYERS);
+    EM.addSystem("shipUpdateParty", Phase.GAME_WORLD);
     // EM.callSystem("shipScore");
-    EM.requireSystem("enemyShipPropsBuild");
-    EM.requireSystem("cannonPropsBuild");
-    EM.requireSystem("gemPropsBuild");
-    EM.requireSystem("rudderPropsBuild");
-    EM.requireSystem("mastPropsBuild");
-    EM.requireSystem("hsShipPropsBuild");
-    EM.requireSystem("darkStarPropsBuild");
-    EM.requireSystem("darkStarOrbit");
-    EM.requireSystem("hyperspaceGame");
+    EM.addSystem("enemyShipPropsBuild", Phase.PRE_GAME_WORLD);
+    EM.addSystem("cannonPropsBuild", Phase.PRE_GAME_WORLD);
+    EM.addSystem("gemPropsBuild", Phase.PRE_GAME_WORLD);
+    EM.addSystem("rudderPropsBuild", Phase.PRE_GAME_WORLD);
+    EM.addSystem("mastPropsBuild", Phase.PRE_GAME_WORLD);
+    EM.addSystem("hsShipPropsBuild", Phase.PRE_GAME_WORLD);
+    EM.addSystem("darkStarPropsBuild", Phase.PRE_GAME_WORLD);
+    EM.addSystem("darkStarOrbit", Phase.GAME_WORLD);
+    EM.addSystem("hyperspaceGame", Phase.GAME_WORLD);
     // EM.callSystem("runOcean");
-    EM.requireSystem("oceanUVtoPos");
-    EM.requireSystem("oceanUVDirToRot");
-    EM.requireSystem("debugLoop");
+    EM.addSystem("oceanUVtoPos", Phase.GAME_WORLD);
+    EM.addSystem("oceanUVDirToRot", Phase.GAME_WORLD);
+    EM.addSystem("debugLoop", Phase.GAME_WORLD);
     // EM.callSystem("initWooden");
-    EM.requireSystem("runWooden");
+    EM.addSystem("runWooden", Phase.GAME_WORLD);
   }
-  EM.requireSystem("updateBullets");
-  EM.requireSystem("applyGravity");
-  EM.requireSystem("updateParametricMotion");
+  EM.addSystem("updateBullets", Phase.GAME_WORLD);
+  EM.addSystem("applyGravity", Phase.PRE_PHYSICS);
+  EM.addSystem("updateParametricMotion", Phase.PRE_PHYSICS);
   if (GAME === "hyperspace") {
     // TODO(@darzu): noodles broken?
-    EM.requireSystem("updateNoodles");
+    EM.addSystem("updateNoodles", Phase.GAME_WORLD);
   }
-  EM.requireSystem("updateLifetimes");
-  EM.requireSystem("interactableInteract");
-  EM.requireSystem("turretAim");
-  EM.requireSystem("turretYawPitch");
-  EM.requireSystem("turretManUnman");
+  EM.addSystem("updateLifetimes", Phase.PRE_GAME_WORLD);
+  EM.addSystem("interactableInteract", Phase.POST_GAME_PLAYERS);
+  EM.addSystem("turretAim", Phase.GAME_PLAYERS);
+  EM.addSystem("turretYawPitch", Phase.GAME_PLAYERS);
+  EM.addSystem("turretManUnman", Phase.GAME_PLAYERS);
   if (GAME === "hyperspace") {
-    EM.requireSystem("updateMastBoom");
-    EM.requireSystem("sail");
-    EM.requireSystem("orreryMotion");
+    EM.addSystem("updateMastBoom", Phase.GAME_PLAYERS);
+    EM.addSystem("sail", Phase.GAME_PLAYERS);
+    EM.addSystem("orreryMotion", Phase.GAME_WORLD);
   }
-  EM.requireSystem("reloadCannon");
-  EM.requireSystem("playerControlCannon");
-  EM.requireSystem("playerManCanon");
+  EM.addSystem("reloadCannon", Phase.GAME_WORLD);
+  EM.addSystem("playerControlCannon", Phase.GAME_PLAYERS);
+  EM.addSystem("playerManCanon", Phase.GAME_PLAYERS);
   if (GAME === "hyperspace") {
-    EM.requireSystem("spawnOnTile");
-    EM.requireSystem("spawnFinishAnimIn");
+    EM.addSystem("spawnOnTile", Phase.GAME_WORLD);
+    EM.addSystem("spawnFinishAnimIn", Phase.GAME_WORLD);
   }
-  EM.requireSystem("ensureFillOutLocalFrame");
-  EM.requireSystem("ensureWorldFrame");
+  EM.addSystem("ensureFillOutLocalFrame", Phase.PRE_PHYSICS);
+  EM.addSystem("ensureWorldFrame", Phase.PRE_PHYSICS);
   // EM.callSystem("physicsDeadStuff");
-  EM.requireSystem("physicsInit");
-  EM.requireSystem("clampVelocityByContact");
-  EM.requireSystem("registerPhysicsClampVelocityBySize");
-  EM.requireSystem("registerPhysicsApplyLinearVelocity");
-  EM.requireSystem("physicsApplyAngularVelocity");
+  EM.addSystem("physicsInit", Phase.PRE_PHYSICS);
+  EM.addSystem("clampVelocityByContact", Phase.PRE_PHYSICS);
+  EM.addSystem("registerPhysicsClampVelocityBySize", Phase.PRE_PHYSICS);
+  EM.addSystem("registerPhysicsApplyLinearVelocity", Phase.PRE_PHYSICS);
+  EM.addSystem("physicsApplyAngularVelocity", Phase.PRE_PHYSICS);
   if (GAME === "gjk") {
     // TODO(@darzu): Doug, we should talk about this. It is only registered after a one-shot
-    EM.maybeRequireSystem("checkGJK");
+    EM.addSystem("checkGJK", Phase.GAME_WORLD);
   }
 
   // TODO(@darzu): HACK. we need to think better how to let different areas, like a sandbox game, register systems
   //    to be called in a less cumbersome way than adding text and guards in here.
   // for (let sys of gameplaySystems) EM.requireSystem(sys);
 
-  EM.requireSystem("updateLocalFromPosRotScale");
-  EM.requireSystem("updateWorldFromLocalAndParent");
-  EM.requireSystem("registerUpdateWorldAABBs");
-  EM.requireSystem("updatePhysInContact");
-  EM.requireSystem("physicsStepContact");
-  EM.requireSystem("updateWorldFromLocalAndParent2");
-  EM.requireSystem("dbgColliderMeshes");
-  EM.requireSystem("debugMeshes");
-  EM.requireSystem("debugMeshTransform");
-  EM.requireSystem("bulletCollision");
+  EM.addSystem("updateLocalFromPosRotScale", Phase.PHYSICS);
+  EM.addSystem("updateWorldFromLocalAndParent", Phase.PHYSICS);
+  EM.addSystem("registerUpdateWorldAABBs", Phase.PHYSICS);
+  EM.addSystem("updatePhysInContact", Phase.PHYSICS);
+  EM.addSystem("physicsStepContact", Phase.PHYSICS);
+  EM.addSystem("updateWorldFromLocalAndParent2", Phase.PHYSICS);
 
-  EM.requireSystem("spring");
+  EM.addSystem("dbgColliderMeshes", Phase.POST_PHYSICS);
+  EM.addSystem("debugMeshes", Phase.POST_PHYSICS);
+  EM.addSystem("debugMeshTransform", Phase.POST_PHYSICS);
 
-  EM.requireSystem("buildCloths");
-  EM.requireSystem("updateClothMesh");
+  EM.addSystem("bulletCollision", Phase.GAME_WORLD);
 
-  EM.requireSystem("modelerOnOff");
-  EM.requireSystem("modelerClicks");
-  EM.requireSystem("aabbBuilder");
+  EM.addSystem("spring", Phase.PHYSICS);
+
+  EM.addSystem("buildCloths", Phase.PHYSICS);
+  EM.addSystem("updateClothMesh", Phase.PHYSICS);
+
+  EM.addSystem("modelerOnOff", Phase.GAME_PLAYERS);
+  EM.addSystem("modelerClicks", Phase.GAME_PLAYERS);
+  EM.addSystem("aabbBuilder", Phase.GAME_PLAYERS);
   if (GAME === "hyperspace") {
-    EM.requireSystem("toolPickup");
-    EM.requireSystem("toolDrop");
+    // TODO(@darzu): these r a bit wierd
+    EM.addSystem("toolPickup", Phase.POST_GAME_PLAYERS);
+    EM.addSystem("toolDrop", Phase.POST_GAME_PLAYERS);
   }
-  EM.requireSystem("animateTo");
+  EM.addSystem("animateTo", Phase.PRE_PHYSICS);
 
   if (ENABLE_NET) {
-    EM.requireSystem("netDebugSystem");
-    EM.requireSystem("netAck");
-    EM.requireSystem("netSync");
-    EM.requireSystem("sendOutboxes");
+    EM.addSystem("netDebugSystem", Phase.NETWORK);
+    EM.addSystem("netAck", Phase.NETWORK);
+    EM.addSystem("netSync", Phase.NETWORK);
+    EM.addSystem("sendOutboxes", Phase.NETWORK);
   }
 
-  EM.requireSystem("detectedEventsToHost");
-  EM.requireSystem("handleEventRequests");
-  EM.requireSystem("handleEventRequestAcks");
-  EM.requireSystem("detectedEventsToRequestedEvents");
-  EM.requireSystem("requestedEventsToEvents");
-  EM.requireSystem("sendEvents");
-  EM.requireSystem("handleEvents");
-  EM.requireSystem("handleEventAcks");
+  EM.addSystem("detectedEventsToHost", Phase.NETWORK);
+  EM.addSystem("handleEventRequests", Phase.NETWORK);
+  EM.addSystem("handleEventRequestAcks", Phase.NETWORK);
+  EM.addSystem("detectedEventsToRequestedEvents", Phase.NETWORK);
+  EM.addSystem("requestedEventsToEvents", Phase.NETWORK);
+  EM.addSystem("sendEvents", Phase.NETWORK);
+  EM.addSystem("handleEvents", Phase.NETWORK);
+  EM.addSystem("handleEventAcks", Phase.NETWORK);
 
-  EM.requireSystem("runEvents");
-  EM.requireSystem("delete");
+  EM.addSystem("runEvents", Phase.NETWORK);
 
-  EM.requireSystem("smoothMotion");
-  EM.requireSystem("updateMotionSmoothing");
-  EM.requireSystem("updateSmoothedWorldFrames");
+  EM.addSystem("delete", Phase.PRE_GAME_WORLD);
 
-  EM.requireSystem("smoothCamera");
-  EM.requireSystem("cameraFollowTarget");
-  EM.requireSystem("retargetCamera");
-  EM.requireSystem("renderModeToggles");
-  EM.requireSystem("constructRenderables");
+  EM.addSystem("smoothMotion", Phase.PRE_RENDER);
+  EM.addSystem("updateMotionSmoothing", Phase.PRE_RENDER);
+  EM.addSystem("updateSmoothedWorldFrames", Phase.PRE_RENDER);
+
+  EM.addSystem("smoothCamera", Phase.PRE_RENDER);
+
+  EM.addSystem("cameraFollowTarget", Phase.RENDER);
+  EM.addSystem("retargetCamera", Phase.RENDER);
+  EM.addSystem("renderModeToggles", Phase.GAME_PLAYERS);
+  EM.addSystem("constructRenderables", Phase.PRE_GAME_WORLD);
+
   // TODO(@darzu): we want to make it easier to satisfy this
-  if (VERBOSE_LOG) EM.requireSystem("deadCleanupWarning"); // SHOULD BE LAST(-ish); warns if cleanup is missing
+  if (WARN_DEAD_CLEANUP)
+    EM.addSystem("deadCleanupWarning", Phase.POST_GAME_WORLD); // SHOULD BE LAST(-ish); warns if cleanup is missing
 }
 
 function callFixedTimestepSystems() {
@@ -303,8 +316,8 @@ async function startGame(localPeerName: string, host: string | null) {
       loops++;
     }
     setSimulationAlpha(accumulator / TIMESTEP);
-    EM.requireSystem("updateRendererWorldFrames");
-    EM.requireSystem("updateCameraView");
+    // EM.addSystem("updateRendererWorldFrames", Phase.RENDER);
+    // EM.addSystem("updateCameraView", Phase.RENDER);
     {
       // NOTE: these 3 must stay together in this order. See NOTE above renderListDeadHidden
       // EM.requireSystem("renderListDeadHidden");

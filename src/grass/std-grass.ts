@@ -28,6 +28,7 @@ import { mat4, V, vec3 } from "../matrix/sprig-matrix.js";
 import { assertDbg } from "../utils/util.js";
 import { computeTriangleNormal } from "../utils/utils-3d.js";
 import { LandMapTexPtr } from "../levels/level-map.js";
+import { Phase } from "../ecs/sys_phase.js";
 
 const MAX_GRASS_VERTS = MAX_INDICES;
 const MAX_GRASS_MESHES = 500;
@@ -267,7 +268,7 @@ onInit((em) => {
       }
     }
   );
-  em.requireSystem("updateGrassRenderData");
-  em.addConstraint(["updateGrassRenderData", "after", "renderList"]);
-  em.addConstraint(["updateGrassRenderData", "before", "stepRenderer"]);
+  em.addSystem("updateGrassRenderData", Phase.PRE_RENDER);
+  // em.addConstraint(["updateGrassRenderData", "after", "renderList"]);
+  // em.addConstraint(["updateGrassRenderData", "before", "stepRenderer"]);
 });

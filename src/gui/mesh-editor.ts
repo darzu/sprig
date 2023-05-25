@@ -33,6 +33,7 @@ import { randNormalPosVec3, vec3Mid } from "../utils/utils-3d.js";
 import { ButtonsStateDef, ButtonDef } from "./button.js";
 import { WidgetDef, WidgetLayerDef } from "./widgets.js";
 import { meshPoolPtr } from "../render/pipelines/std-scene.js";
+import { Phase } from "../ecs/sys_phase.js";
 
 // TODO(@darzu): do we need this ptr indirection? can't we just add/remove component? how does this interact
 //  with pools?
@@ -423,8 +424,8 @@ export async function initMeshEditor() {
       }
     }
   );
-  EM.requireGameplaySystem("editHPoly");
+  EM.addSystem("editHPoly", Phase.GAME_PLAYERS);
 
   // TODO(@darzu): is this necessary?
-  EM.addConstraint(["editHPoly", "after", "updateWidgets"]);
+  // EM.addConstraint(["editHPoly", "after", "updateWidgets"]);
 }

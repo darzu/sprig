@@ -51,6 +51,7 @@ import {
   resetWoodState,
 } from "./wood.js";
 import { fireBullet } from "../cannons/bullet.js";
+import { Phase } from "../ecs/sys_phase.js";
 
 const DBG_PIRATES = false;
 
@@ -190,7 +191,7 @@ export async function startPirates() {
       }
     }
   );
-  EM.requireGameplaySystem("spawnPirates");
+  EM.addSystem("spawnPirates", Phase.GAME_WORLD);
 
   const fireStagger = 150;
   // const tiltPeriod = 5700;
@@ -253,7 +254,7 @@ export async function startPirates() {
       }
     }
   );
-  EM.requireGameplaySystem("updatePiratePlatforms");
+  EM.addSystem("updatePiratePlatforms", Phase.GAME_WORLD);
 }
 
 const piratePool = createEntityPool<

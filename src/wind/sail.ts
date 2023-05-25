@@ -43,6 +43,7 @@ import { YawPitchDef } from "../turret/yawpitch.js";
 import { assert } from "../utils/util.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { angleBetweenPosXZ, angleBetweenXZ } from "../utils/utils-3d.js";
+import { Phase } from "../ecs/sys_phase.js";
 
 const SAIL_TURN_SPEED = 5;
 export const SAIL_FURL_RATE = 0.02;
@@ -202,8 +203,9 @@ EM.registerSystem(
     _lastSailUnfurl = e.sail.unfurledAmount;
   }
 );
-
-EM.addConstraint(["billow", "after", "applyWindToSail"]);
+EM.addSystem("applyWindToSail", Phase.GAME_WORLD);
+EM.addSystem("billow", Phase.GAME_WORLD);
+// EM.addConstraint(["billow", "after", "applyWindToSail"]);
 
 export const MastDef = EM.defineComponent("mast", () => ({
   sail: createRef(0, [SailDef]),
@@ -289,7 +291,7 @@ export async function createMast(em: EntityManager) {
 //   "furlSail"
 // );
 
-EM.addConstraint(["furlSail", "before", "applyWindToSail"]);
+// EM.addConstraint(["furlSail", "before", "applyWindToSail"]);
 
 EM.registerSystem("mastForce", [MastDef, RotationDef], [], (es) => {
   for (let e of es) {
@@ -298,9 +300,10 @@ EM.registerSystem("mastForce", [MastDef, RotationDef], [], (es) => {
     e.mast.force = sail.force * vec3.dot(AHEAD_DIR, normal);
   }
 });
+EM.addSystem("mastForce", Phase.GAME_WORLD);
 
-EM.addConstraint(["mastForce", "after", "applyWindToSail"]);
-EM.addConstraint(["mastForce", "after", "billow"]);
+// EM.addConstraint(["mastForce", "after", "applyWindToSail"]);
+// EM.addConstraint(["mastForce", "after", "billow"]);
 
 // UNUSED:
 function useWindToTurn(

@@ -25,6 +25,7 @@ import {
   positionsTexturePtr,
 } from "./std-scene.js";
 import { shadowDepthTextures } from "./std-shadow.js";
+import { Phase } from "../../ecs/sys_phase.js";
 
 const MAX_OCEAN_VERTS = MAX_INDICES;
 const MAX_OCEAN_MESHES = 1;
@@ -253,7 +254,7 @@ onInit((em) => {
       }
     }
   );
-  em.requireSystem("updateOceanRenderData");
-  em.addConstraint(["updateOceanRenderData", "after", "renderList"]);
-  em.addConstraint(["updateOceanRenderData", "before", "stepRenderer"]);
+  em.addSystem("updateOceanRenderData", Phase.PRE_RENDER);
+  // em.addConstraint(["updateOceanRenderData", "after", "renderList"]);
+  // em.addConstraint(["updateOceanRenderData", "before", "stepRenderer"]);
 });

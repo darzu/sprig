@@ -39,6 +39,7 @@ import {
   createCannon,
   createCannonNow,
 } from "../cannons/cannon.js";
+import { Phase } from "../ecs/sys_phase.js";
 
 export const ShipDef = EM.defineComponent("ld52ship", () => ({
   mast: createRef(0, [MastDef, RotationDef]),
@@ -296,9 +297,10 @@ EM.registerSystem(
     }
   }
 );
+EM.addSystem("easeRudderLD52", Phase.GAME_WORLD);
 
-EM.addConstraint(["sailShip", "after", "mastForce"]);
-EM.addConstraint(["sailShip", "after", "easeRudderLD52"]);
+// EM.addConstraint(["sailShip", "after", "mastForce"]);
+// EM.addConstraint(["sailShip", "after", "easeRudderLD52"]);
 
 EM.registerSystem(
   "shipParty",

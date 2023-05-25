@@ -74,6 +74,7 @@ import { ShipHealthDef } from "./ship-health.js";
 import { createRef } from "../ecs/em_helpers.js";
 import { resetWoodHealth, resetWoodState, WoodStateDef } from "../wood/wood.js";
 import { MapPaths } from "../levels/map-loader.js";
+import { Phase } from "../ecs/sys_phase.js";
 /*
 NOTES:
 - Cut grass by updating a texture that has cut/not cut or maybe cut-height
@@ -179,7 +180,7 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
       ];
     }
   );
-  em.requireSystem("grassGameRenderPipelines");
+  em.addSystem("grassGameRenderPipelines", Phase.GAME_WORLD);
 
   // Sun
   const sunlight = em.new();
@@ -195,8 +196,8 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
 
   // score
   const score = em.addResource(ScoreDef);
-  em.requireSystem("updateScoreDisplay");
-  em.requireSystem("detectGameEnd");
+  em.addSystem("updateScoreDisplay", Phase.POST_GAME_WORLD);
+  em.addSystem("detectGameEnd", Phase.POST_GAME_WORLD);
 
   // start map
   await setMap(em, MapPaths[0]);
@@ -276,17 +277,17 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
 
   const ship = await createShip(em);
 
-  EM.requireSystem("runWooden");
-  EM.requireSystem("woodHealth");
+  EM.addSystem("runWooden", Phase.GAME_WORLD);
+  EM.addSystem("woodHealth", Phase.GAME_WORLD);
 
   EM.ensureComponentOn(ship, ShipHealthDef);
-  EM.requireSystem("updateShipHealth");
+  EM.addSystem("updateShipHealth", Phase.GAME_WORLD);
   // move down
   // ship.position[2] = -WORLD_SIZE * 0.5 * 0.6;
   level2DtoWorld3D(level.levelMap.startPos, 8, ship.position);
   //vec3.copy(ship.position, SHIP_START_POS);
-  em.requireSystem("sailShip");
-  em.requireSystem("shipParty");
+  em.addSystem("sailShip", Phase.GAME_PLAYERS);
+  em.addSystem("shipParty", Phase.GAME_WORLD);
 
   // bouyancy
   if (!"true") {
@@ -344,7 +345,7 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
         }
       }
     );
-    em.requireSystem("shipBouyancy");
+    em.addSystem("shipBouyancy", Phase.GAME_WORLD);
 
     // EM.requireSystem("oceanUVtoPos");
     // EM.requireSystem("oceanUVDirToRot");
@@ -443,7 +444,7 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
         if (!htmlCanvas.hasFirstInteraction) return;
       }
     );
-    EM.requireGameplaySystem("smolGhost");
+    EM.addSystem("smolGhost", Phase.GAME_WORLD);
   }
 
   score.onLevelEnd.push(async () => {
@@ -545,7 +546,7 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
       }
     }
   });
-  EM.requireSystem("furlUnfurl");
+  EM.addSystem("furlUnfurl", Phase.GAME_PLAYERS);
 
   const shipWorld = await EM.whenEntityHas(ship, WorldFrameDef);
 
@@ -577,7 +578,7 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
     if (vec3.dot(optimalSailLocalDir, shipLocalDir) > 0.01)
       quatFromUpForward(mast.rotation, V(0, 1, 0), optimalSailLocalDir);
   });
-  EM.requireSystem("turnMast");
+  EM.addSystem("turnMast", Phase.GAME_PLAYERS);
 
   const { text } = await EM.whenResources(TextDef);
   text.lowerText = "W/S: unfurl/furl sail, A/D: turn, E: drop rudder";
@@ -633,11 +634,11 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
     quat.setAxisAngle([0, 1, 0], angle, stoneTower.rotation);
   }
 
-  EM.requireSystem("stoneTowerAttack");
-  EM.requireSystem("stoneTowerDamage");
-  EM.requireSystem("despawnFlyingBricks");
+  EM.addSystem("stoneTowerAttack", Phase.GAME_WORLD);
+  EM.addSystem("stoneTowerDamage", Phase.GAME_WORLD);
+  EM.addSystem("despawnFlyingBricks", Phase.GAME_WORLD);
 
-  EM.requireSystem("landShipCollision");
+  EM.addSystem("landShipCollision", Phase.GAME_WORLD);
 
   // BULLET STUFF
   em.registerSystem(
@@ -658,7 +659,7 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
       }
     }
   );
-  EM.requireGameplaySystem("breakBullets");
+  EM.addSystem("breakBullets", Phase.GAME_WORLD);
 
   // dead bullet maintenance
   // NOTE: this must be called after any system that can create dead bullets but
@@ -679,9 +680,9 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
       }
     }
   );
-  EM.requireGameplaySystem("deadBullets");
+  EM.addSystem("deadBullets", Phase.GAME_WORLD);
 
-  EM.requireGameplaySystem("splintersOnFloor");
+  EM.addSystem("splintersOnFloor", Phase.GAME_WORLD);
 }
 
 async function createPlayer() {

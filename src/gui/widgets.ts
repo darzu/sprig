@@ -15,6 +15,7 @@ import { tempVec3 } from "../matrix/temp-pool.js";
 import { assert } from "../utils/util.js";
 import { screenPosToWorldPos } from "../utils/utils-game.js";
 import { UICursorDef } from "./game-font.js";
+import { Phase } from "../ecs/sys_phase.js";
 
 // adornments are: entities that are parented to an entity's mesh parts
 //    [ ] track changes via version number on the mesh data
@@ -61,14 +62,14 @@ EM.registerInit({
   // name: "initWidgets",
   fn: initWidgets,
 });
-EM.addConstraint([WidgetLayerDef, "requires", "updateWidgets"]);
-// TODO(@darzu): instead of having these explit dependencies, maybe we should use an
-//  existance dependency disjoint set w/ the assumption that all constraints create
-//  an existance dependency
-EM.addConstraint([WidgetLayerDef, "requires", "colorWidgets"]);
-EM.addConstraint([WidgetLayerDef, "requires", "updateDragbox"]);
-EM.addConstraint(["colorWidgets", "after", "updateWidgets"]);
-EM.addConstraint(["updateDragbox", "before", "updateWidgets"]);
+// EM.addConstraint([WidgetLayerDef, "requires", "updateWidgets"]);
+// // TODO(@darzu): instead of having these explit dependencies, maybe we should use an
+// //  existance dependency disjoint set w/ the assumption that all constraints create
+// //  an existance dependency
+// EM.addConstraint([WidgetLayerDef, "requires", "colorWidgets"]);
+// EM.addConstraint([WidgetLayerDef, "requires", "updateDragbox"]);
+// EM.addConstraint(["colorWidgets", "after", "updateWidgets"]);
+// EM.addConstraint(["updateDragbox", "before", "updateWidgets"]);
 
 async function initDragBox(): Promise<EntityW<[typeof PositionDef]>> {
   const { assets } = await EM.whenResources(AssetsDef);
@@ -119,8 +120,7 @@ async function initDragBox(): Promise<EntityW<[typeof PositionDef]>> {
       }
     }
   );
-  // TODO(@darzu):
-  // EM.requireGameplaySystem("updateDragbox");
+  EM.addSystem("updateDragbox", Phase.GAME_WORLD);
 
   // TODO(@darzu): store this on a resource?
   return dragBox;
@@ -243,8 +243,7 @@ async function initWidgets({ assets }: EntityW<[typeof AssetsDef]>) {
       }
     }
   );
-  // TODO(@darzu):
-  // EM.requireGameplaySystem("updateWidgets");
+  EM.addSystem("updateWidgets", Phase.GAME_WORLD);
 
   EM.registerSystem(
     "colorWidgets",
@@ -270,6 +269,5 @@ async function initWidgets({ assets }: EntityW<[typeof AssetsDef]>) {
       }
     }
   );
-  // TODO(@darzu):
-  // EM.requireGameplaySystem("colorWidgets");
+  EM.addSystem("colorWidgets", Phase.GAME_WORLD);
 }

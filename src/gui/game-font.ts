@@ -29,6 +29,7 @@ import { createGhost, gameplaySystems } from "../debug/ghost.js";
 import { TextDef } from "./ui.js";
 import { makePlaneMesh } from "../meshes/primatives.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
+import { Phase } from "../ecs/sys_phase.js";
 
 /*
 TODO(@darzu):
@@ -249,7 +250,7 @@ export async function initFontEditor(em: EntityManager) {
       cursor.position[2] = cursorWorldPos[2];
     }
   );
-  EM.requireGameplaySystem("uiCameraView");
+  EM.addSystem("uiCameraView", Phase.GAME_WORLD);
 
   // Starter mesh for each letter
   const quadMesh: Mesh = {
@@ -336,7 +337,7 @@ export async function initFontEditor(em: EntityManager) {
       }
     }
   );
-  EM.requireGameplaySystem(`letterBtnClick`);
+  EM.addSystem("letterBtnClick", Phase.GAME_WORLD);
 
   // TODO(@darzu): HACKY. Cursor or 2d gui or something needs some better
   //    abstracting

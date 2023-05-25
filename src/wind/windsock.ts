@@ -11,6 +11,7 @@ import { ColorDef } from "../color/color-ecs.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import { WindDef } from "./wind.js";
 import { assert } from "../utils/util.js";
+import { Phase } from "../ecs/sys_phase.js";
 
 export const SockDef = EM.defineComponent("sock", () => ({
   scale: 1,
@@ -71,4 +72,4 @@ EM.registerSystem(
     lastWinAngle = wind.angle;
   }
 );
-EM.requireSystem("billowSock");
+EM.addSystem("billowSock", Phase.GAME_WORLD);

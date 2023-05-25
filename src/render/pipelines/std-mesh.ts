@@ -7,6 +7,7 @@ import {
 import { ENDESGA16 } from "../../color/palettes.js";
 import { DeadDef, DeletedDef } from "../../ecs/delete.js";
 import { EntityW } from "../../ecs/entity-manager.js";
+import { Phase } from "../../ecs/sys_phase.js";
 import { onInit } from "../../init.js";
 // import { oceanJfa } from "../../game/ocean.js";
 // import { oceanJfa } from "../../game/ocean.js";
@@ -158,13 +159,13 @@ onInit((em) => {
       }
     }
   );
-  em.requireSystem("stdRenderListDeadHidden");
-  em.requireSystem("stdRenderList");
-  em.requireSystem("stdRenderableDataUpdate");
-  em.addConstraint(["stdRenderListDeadHidden", "after", "renderList"]);
-  em.addConstraint(["stdRenderListDeadHidden", "before", "stdRenderList"]);
-  em.addConstraint(["stdRenderList", "before", "stdRenderableDataUpdate"]);
-  em.addConstraint(["stdRenderableDataUpdate", "before", "stepRenderer"]);
+  em.addSystem("stdRenderListDeadHidden", Phase.PRE_RENDER);
+  em.addSystem("stdRenderList", Phase.PRE_RENDER);
+  em.addSystem("stdRenderableDataUpdate", Phase.PRE_RENDER);
+  // em.addConstraint(["stdRenderListDeadHidden", "after", "renderList"]);
+  // em.addConstraint(["stdRenderListDeadHidden", "before", "stdRenderList"]);
+  // em.addConstraint(["stdRenderList", "before", "stdRenderableDataUpdate"]);
+  // em.addConstraint(["stdRenderableDataUpdate", "before", "stepRenderer"]);
 });
 
 function updateStdRenderData(

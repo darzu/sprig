@@ -30,6 +30,7 @@ import {
 import { STAR1_COLOR, DarkStarPropsDef } from "./darkstar.js";
 import { onInit } from "../init.js";
 import { ENDESGA16 } from "../color/palettes.js";
+import { Phase } from "../ecs/sys_phase.js";
 
 const RIB_COUNT = 6;
 export const DEFAULT_SAIL_COLOR = V(0.05, 0.05, 0.05);
@@ -166,7 +167,7 @@ onInit(() => {
     }
   );
   // TODO(@darzu): only require this if one exists?
-  EM.requireSystem("updateRibSail");
+  EM.addSystem("updateRibSail", Phase.GAME_WORLD);
 });
 
 // HACK: ASSUMES MESH IS assets.sail.mesh

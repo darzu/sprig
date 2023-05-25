@@ -18,6 +18,7 @@ import { TimeDef } from "../time/time.js";
 import { yawpitchToQuat } from "../turret/yawpitch.js";
 import { createAABB } from "../physics/aabb.js";
 import { assert, dbgDirOnce, resizeArray } from "../utils/util.js";
+import { Phase } from "../ecs/sys_phase.js";
 
 export type PerspectiveMode = "perspective" | "ortho";
 export type CameraMode = "thirdPerson" | "thirdPersonOverShoulder";
@@ -308,4 +309,5 @@ export function registerCameraSystems(em: EntityManager) {
       // );
     }
   );
+  EM.addSystem("updateCameraView", Phase.RENDER);
 }
