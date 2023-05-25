@@ -229,8 +229,9 @@ export const renderOceanPipe = CY.createRenderPipeline("oceanRender", {
 // );
 
 onInit((em) => {
-  em.registerSystem(
+  em.registerSystem2(
     "updateOceanRenderData",
+    Phase.PRE_RENDER,
     [RenderableDef, RenderDataOceanDef, RendererWorldFrameDef],
     [RendererDef],
     (objs, res) => {

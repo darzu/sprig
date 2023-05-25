@@ -7,6 +7,7 @@ import { onInit } from "../init.js";
 import { PositionDef } from "../physics/transform.js";
 import { TimeDef } from "../time/time.js";
 import { EaseFn, EASE_LINEAR } from "../utils/util-ease.js";
+import { Phase } from "../ecs/sys_phase";
 
 export interface AnimateTo {
   // TODO(@darzu): support rotation, other properties?
@@ -34,8 +35,9 @@ export const AnimateToDef = EM.defineComponent(
 onInit(() => {
   let delta = vec3.create();
 
-  EM.registerSystem(
+  EM.registerSystem2(
     "animateTo",
+    Phase.PRE_PHYSICS,
     [AnimateToDef, PositionDef],
     [TimeDef],
     (cs, res) => {

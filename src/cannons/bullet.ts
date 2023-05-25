@@ -41,6 +41,7 @@ import { SplinterParticleDef } from "../wood/wood.js";
 import { tempVec3 } from "../matrix/temp-pool.js";
 import { assert, assertDbg } from "../utils/util.js";
 import { ParametricDef } from "../motion/parametric-motion.js";
+import { Phase } from "../ecs/sys_phase";
 
 // TODO(@darzu): MULTIPLAYER BULLETS might have been broken during LD51
 
@@ -147,8 +148,9 @@ export function createOrResetBullet(
 }
 
 export function registerBuildBulletsSystem(em: EntityManager) {
-  em.registerSystem(
+  em.registerSystem2(
     "buildBullets",
+    Phase.GAME_WORLD,
     [BulletConstructDef],
     [MeDef, AssetsDef],
     (bullets, res) => {
@@ -163,8 +165,9 @@ export function registerBuildBulletsSystem(em: EntityManager) {
 
 export function registerBulletUpdate(em: EntityManager) {
   // TODO(@darzu): remove?
-  em.registerSystem(
+  em.registerSystem2(
     "updateBullets",
+    Phase.GAME_WORLD,
     [BulletConstructDef, BulletDef, PositionDef, LinearVelocityDef],
     [TimeDef],
     (bullets, res) => {

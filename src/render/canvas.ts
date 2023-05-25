@@ -1,4 +1,5 @@
 import { Component, EM, EntityManager } from "../ecs/entity-manager.js";
+import { Phase } from "../ecs/sys_phase";
 import { VERBOSE_LOG } from "../flags.js";
 
 export const CanvasDef = EM.defineComponent(
@@ -16,30 +17,36 @@ export const CanvasDef = EM.defineComponent(
 export type Canvas = Component<typeof CanvasDef>;
 
 export function registerInitCanvasSystem(em: EntityManager) {
-  em.registerSystem("canvasCursorLockUnlock", [], [], () => {
-    if (!!em.getResource(CanvasDef)) return;
-    const canvas = init();
+  em.registerSystem2(
+    "canvasCursorLockUnlock",
+    Phase.GAME_PLAYERS,
+    [],
+    [],
+    () => {
+      if (!!em.getResource(CanvasDef)) return;
+      const canvas = init();
 
-    const comp = em.addResource(CanvasDef, canvas);
+      const comp = em.addResource(CanvasDef, canvas);
 
-    comp.unlockMouse = () => {
-      comp.shouldLockMouseOnClick = false;
-      document.exitPointerLock();
-    };
+      comp.unlockMouse = () => {
+        comp.shouldLockMouseOnClick = false;
+        document.exitPointerLock();
+      };
 
-    // TODO(@darzu): this should probably be managed elsewhere
-    // TODO(@darzu): re-enable
-    function tryMouseLock() {
-      comp.hasFirstInteraction = true;
-      if (
-        comp.shouldLockMouseOnClick &&
-        document.pointerLockElement !== canvas
-      ) {
-        canvas.requestPointerLock();
+      // TODO(@darzu): this should probably be managed elsewhere
+      // TODO(@darzu): re-enable
+      function tryMouseLock() {
+        comp.hasFirstInteraction = true;
+        if (
+          comp.shouldLockMouseOnClick &&
+          document.pointerLockElement !== canvas
+        ) {
+          canvas.requestPointerLock();
+        }
       }
+      canvas.addEventListener("click", tryMouseLock);
     }
-    canvas.addEventListener("click", tryMouseLock);
-  });
+  );
 }
 
 let _imgPixelatedTimeoutHandle = 0;

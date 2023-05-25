@@ -4,14 +4,16 @@ import { onInit } from "../init.js";
 import { LinearVelocityDef } from "./velocity.js";
 import { tempVec3 } from "../matrix/temp-pool.js";
 import { TimeDef } from "../time/time.js";
+import { Phase } from "../ecs/sys_phase";
 
 export const GravityDef = EM.defineComponent("gravity", (gravity?: vec3) => {
   return gravity ?? vec3.create();
 });
 
 onInit((em: EntityManager) => {
-  em.registerSystem(
+  em.registerSystem2(
     "applyGravity",
+    Phase.PRE_PHYSICS,
     [GravityDef, LinearVelocityDef],
     [TimeDef],
     (objs, res) => {

@@ -2,6 +2,7 @@ import { DeadDef } from "./delete.js";
 import { Component, EM, EntityManager } from "./entity-manager.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { TimeDef } from "../time/time.js";
+import { Phase } from "./sys_phase";
 
 export const LifetimeDef = EM.defineComponent(
   "lifetime",
@@ -12,8 +13,9 @@ export const LifetimeDef = EM.defineComponent(
 export type Lifetime = Component<typeof LifetimeDef>;
 
 export function registerUpdateLifetimes(em: EntityManager) {
-  em.registerSystem(
+  em.registerSystem2(
     "updateLifetimes",
+    Phase.PRE_GAME_WORLD,
     [LifetimeDef],
     [TimeDef, MeDef],
     (objs, res) => {

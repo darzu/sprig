@@ -10,6 +10,7 @@ import { _doesOverlapAABBs, _enclosedBys } from "../physics/aabb.js";
 import { _gpuQueueBufferWriteBytes } from "../render/data-webgpu.js";
 import { RendererDef } from "../render/renderer-ecs.js";
 import { _f32sCount } from "../matrix/sprig-matrix.js";
+import { Phase } from "../ecs/sys_phase";
 
 export const DevConsoleDef = EM.defineComponent("dev", () => {
   const stats = {
@@ -39,8 +40,9 @@ export function updateAvg(avg: number, curr: number): number {
 export function registerDevSystems(em: EntityManager) {
   em.addResource(DevConsoleDef);
 
-  em.registerSystem(
+  em.registerSystem2(
     "devConsoleToggle",
+    Phase.GAME_PLAYERS,
     null,
     [InputsDef, DevConsoleDef],
     (_, res) => {
@@ -59,8 +61,9 @@ export function registerDevSystems(em: EntityManager) {
 
   let pipelineTimes: Map<string, bigint> = new Map();
 
-  em.registerSystem(
+  em.registerSystem2(
     "devConsole",
+    Phase.RENDER,
     null,
     [RendererDef, TextDef, DevConsoleDef],
     async (_, res) => {

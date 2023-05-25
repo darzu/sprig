@@ -1,6 +1,7 @@
 import { EM, EntityManager } from "./entity-manager.js";
 import { SyncDef } from "../net/components.js";
 import { dbgLogOnce } from "../utils/util.js";
+import { Phase } from "./sys_phase";
 
 export const DeletedDef = EM.defineComponent("deleted", () => ({
   processed: false,
@@ -17,23 +18,29 @@ EM.registerSerializerPair(
 );
 
 export function registerDeleteEntitiesSystem(em: EntityManager) {
-  em.registerSystem("delete", [DeletedDef], [], (entities) => {
-    for (let entity of entities) {
-      if (!entity.deleted.processed) {
-        // TODO: remove from renderer
-        // TODO(@darzu): yuck, we just wrote a destructor. Also not sure
-        //    this is serializable or network-able
-        if (OnDeleteDef.isOn(entity)) entity.onDelete(entity.id);
+  em.registerSystem2(
+    "delete",
+    Phase.PRE_GAME_WORLD,
+    [DeletedDef],
+    [],
+    (entities) => {
+      for (let entity of entities) {
+        if (!entity.deleted.processed) {
+          // TODO: remove from renderer
+          // TODO(@darzu): yuck, we just wrote a destructor. Also not sure
+          //    this is serializable or network-able
+          if (OnDeleteDef.isOn(entity)) entity.onDelete(entity.id);
 
-        em.keepOnlyComponents(entity.id, [DeletedDef, SyncDef]);
-        if (SyncDef.isOn(entity)) {
-          entity.sync.dynamicComponents = [];
-          entity.sync.fullComponents = [DeletedDef.id];
+          em.keepOnlyComponents(entity.id, [DeletedDef, SyncDef]);
+          if (SyncDef.isOn(entity)) {
+            entity.sync.dynamicComponents = [];
+            entity.sync.fullComponents = [DeletedDef.id];
+          }
+          entity.deleted.processed = true;
         }
-        entity.deleted.processed = true;
       }
     }
-  });
+  );
 }
 
 // TODO(@darzu): uh oh. this seems like memory/life cycle management.
@@ -52,9 +59,15 @@ export const DeadDef = EM.defineComponent("dead", () => ({
 
 // TODO(@darzu): this is entity specific...
 export function registerDeadEntitiesSystem(em: EntityManager) {
-  em.registerSystem("deadCleanupWarning", [DeadDef], [], (entities) => {
-    for (let e of entities) {
-      if (!e.dead.processed) dbgLogOnce(`dead entity not processed: ${e.id}`);
+  em.registerSystem2(
+    "deadCleanupWarning",
+    Phase.POST_GAME_WORLD,
+    [DeadDef],
+    [],
+    (entities) => {
+      for (let e of entities) {
+        if (!e.dead.processed) dbgLogOnce(`dead entity not processed: ${e.id}`);
+      }
     }
-  });
+  );
 }

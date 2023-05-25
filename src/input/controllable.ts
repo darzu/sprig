@@ -9,6 +9,7 @@ import { LinearVelocityDef } from "../motion/velocity.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import { RotationDef } from "../physics/transform.js";
 import { TimeDef } from "../time/time.js";
+import { Phase } from "../ecs/sys_phase";
 
 /*
 TODO key mapping
@@ -57,8 +58,9 @@ export const ControllableDef = EM.defineComponent("controllable", () => {
 export function registerControllableSystems(em: EntityManager) {
   const steerVel = vec3.create();
 
-  em.registerSystem(
+  em.registerSystem2(
     "controllableInput",
+    Phase.GAME_PLAYERS,
     [ControllableDef, LinearVelocityDef, RotationDef, WorldFrameDef],
     [InputsDef, MeDef, CanvasDef, TimeDef],
     (controllables, res) => {
@@ -117,8 +119,9 @@ export function registerControllableSystems(em: EntityManager) {
     }
   );
 
-  em.registerSystem(
+  em.registerSystem2(
     "controllableCameraFollow",
+    Phase.POST_GAME_PLAYERS,
     [ControllableDef, CameraFollowDef],
     [InputsDef, MeDef, CanvasDef],
     (controllables, res) => {

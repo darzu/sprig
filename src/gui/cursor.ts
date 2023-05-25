@@ -26,6 +26,7 @@ import { RayHit } from "../physics/broadphase.js";
 import { tempVec3 } from "../matrix/temp-pool.js";
 import { createRef, Ref } from "../ecs/em_helpers.js";
 import { screenPosToRay } from "../utils/utils-game.js";
+import { Phase } from "../ecs/sys_phase";
 
 export const GlobalCursor3dDef = EM.defineComponent("globalCursor3d", () => {
   return {
@@ -41,8 +42,9 @@ export const Cursor3dDef = EM.defineComponent("cursor3d", () => ({
 export function registerCursorSystems(em: EntityManager) {
   em.addResource(GlobalCursor3dDef);
 
-  em.registerSystem(
+  em.registerSystem2(
     "buildCursor",
+    Phase.PRE_GAME_WORLD,
     null,
     [GlobalCursor3dDef, AssetsDef],
     (_, res) => {
@@ -61,8 +63,9 @@ export function registerCursorSystems(em: EntityManager) {
     }
   );
 
-  em.registerSystem(
+  em.registerSystem2(
     "placeCursorAtScreenCenter",
+    Phase.PRE_READ_INPUT,
     [Cursor3dDef, PositionDef, ColorDef],
     [CameraComputedDef, PhysicsResultsDef],
     (cs, res) => {

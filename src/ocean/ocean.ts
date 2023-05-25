@@ -44,6 +44,7 @@ import { ColorDef } from "../color/color-ecs.js";
 import { DEFAULT_MASK, UVUNWRAP_MASK } from "../render/pipeline-masks.js";
 import { Mesh } from "../meshes/mesh.js";
 import { compute_gerstner, createWaves } from "./gerstner.js";
+import { Phase } from "../ecs/sys_phase";
 
 // TODO(@darzu): refactor this to not assume a specific ocean shape
 
@@ -313,8 +314,9 @@ export async function initOcean(oceanMesh: Mesh, color: vec3) {
 
 const __temp1 = vec3.create();
 const __temp2 = vec3.create();
-EM.registerSystem(
+EM.registerSystem2(
   "oceanUVtoPos",
+  Phase.GAME_WORLD,
   [UVPosDef, PositionDef],
   [OceanDef],
   (es, res) => {
@@ -348,8 +350,9 @@ EM.registerSystem(
 
 const __temp3 = vec2.create();
 const __temp4 = vec3.create();
-EM.registerSystem(
+EM.registerSystem2(
   "oceanUVDirToRot",
+  Phase.GAME_WORLD,
   [UVPosDef, UVDirDef, PositionDef, RotationDef],
   [OceanDef],
   (es, res) => {

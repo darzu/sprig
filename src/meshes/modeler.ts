@@ -19,6 +19,7 @@ import { AssetsDef } from "./assets.js";
 import { ColorDef, TintsDef } from "../color/color-ecs.js";
 import { drawLine, screenPosToRay } from "../utils/utils-game.js";
 import { CameraView, CameraComputedDef } from "../camera/camera.js";
+import { Phase } from "../ecs/sys_phase";
 
 const ENABLED = true;
 
@@ -37,8 +38,9 @@ export const ModelBoxDef = EM.defineComponent("modelBox", () => {
 
 function registerObjClicker(em: EntityManager) {
   // listen for modeler on/off
-  em.registerSystem(
+  em.registerSystem2(
     "modelerOnOff",
+    Phase.GAME_PLAYERS,
     null,
     [ModelerDef, InputsDef, CanvasDef],
     (_, res) => {
@@ -54,8 +56,9 @@ function registerObjClicker(em: EntityManager) {
   );
 
   // look for object clicks
-  em.registerSystem(
+  em.registerSystem2(
     "modelerClicks",
+    Phase.GAME_PLAYERS,
     null,
     [ModelerDef, CameraComputedDef, InputsDef, PhysicsResultsDef],
     (_, res) => {
@@ -108,8 +111,9 @@ export function registerModeler(em: EntityManager) {
 }
 
 function registerAABBBuilder(em: EntityManager) {
-  em.registerSystem(
+  em.registerSystem2(
     "aabbBuilder",
+    Phase.GAME_PLAYERS,
     null,
     [InputsDef, ModelerDef, AssetsDef],
     (_, res) => {

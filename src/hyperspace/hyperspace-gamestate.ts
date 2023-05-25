@@ -24,6 +24,7 @@ import {
   HsShipPropsDef,
 } from "./hyperspace-ship.js";
 import { AudioDef } from "../audio/audio.js";
+import { Phase } from "../ecs/sys_phase";
 
 const RESTART_TIME_MS = 5000;
 
@@ -125,8 +126,9 @@ export const restartGame = eventWizard(
 );
 
 export function registerGameStateSystems(em: EntityManager) {
-  em.registerSystem(
+  em.registerSystem2(
     "restartTimer",
+    Phase.GAME_WORLD,
     null,
     [GameStateDef, TimeDef, HostDef],
     ([], res) => {

@@ -3,6 +3,7 @@ import { Component, EM, EntityManager } from "../ecs/entity-manager.js";
 import { ENABLE_AUDIO } from "../flags.js";
 import { createIdxPool, createIdxRing, IdxPool } from "../utils/idx-pool.js";
 import { assert, range } from "../utils/util.js";
+import { Phase } from "../ecs/sys_phase";
 
 // NOTE: basically this whole file just tries to implement
 //    what Andrew suggests as a good way to start making good sounding
@@ -30,36 +31,42 @@ export function registerMusicSystems(em: EntityManager) {
   em.addResource(AudioDef);
 
   let once = true;
-  em.registerSystem("musicStart", null, [AudioDef, CanvasDef], (_, res) => {
-    if (once && res.htmlCanvas.hasFirstInteraction) {
-      em.addResource(HasAudioDef);
-      // Init our audio
-      // TODO(@darzu): maybe we shouldn't even create the resource until we
-      //    have the audio context?
-      if (window.AudioContext != null && ENABLE_AUDIO) {
-        res.music.state = createAudioState();
-      }
-
-      // play opening music
-      // const THEME_LENGTH = 100;
-      // const randChordId = () => Math.floor(Math.random() * 6);
-      // const theme = range(100).map((_) => randChordId());
-      // // const theme = [0, 1, 2, 3, 4, 5];
-      // console.log("playing music");
-      // res.music.playChords(theme, "major", 2.0, 2.0, -2);
-
-      once = false;
-    }
-
-    // update the string pool
-    if (res.music.state)
-      for (let i = 0; i < NUM_STRINGS; i++) {
-        const s = res.music.state._strings[i];
-        if (s.endTime < res.music.state.ctx.currentTime) {
-          res.music.state._stringPool.free(i, true);
+  em.registerSystem2(
+    "musicStart",
+    Phase.AUDIO,
+    null,
+    [AudioDef, CanvasDef],
+    (_, res) => {
+      if (once && res.htmlCanvas.hasFirstInteraction) {
+        em.addResource(HasAudioDef);
+        // Init our audio
+        // TODO(@darzu): maybe we shouldn't even create the resource until we
+        //    have the audio context?
+        if (window.AudioContext != null && ENABLE_AUDIO) {
+          res.music.state = createAudioState();
         }
+
+        // play opening music
+        // const THEME_LENGTH = 100;
+        // const randChordId = () => Math.floor(Math.random() * 6);
+        // const theme = range(100).map((_) => randChordId());
+        // // const theme = [0, 1, 2, 3, 4, 5];
+        // console.log("playing music");
+        // res.music.playChords(theme, "major", 2.0, 2.0, -2);
+
+        once = false;
       }
-  });
+
+      // update the string pool
+      if (res.music.state)
+        for (let i = 0; i < NUM_STRINGS; i++) {
+          const s = res.music.state._strings[i];
+          if (s.endTime < res.music.state.ctx.currentTime) {
+            res.music.state._stringPool.free(i, true);
+          }
+        }
+    }
+  );
 }
 
 interface AudioString {
