@@ -185,17 +185,6 @@ export function registerUpdateWorldAABBs(em: EntityManager, s: string = "") {
   );
 }
 
-export function registerUpdateWorldFromPosRotScale(em: EntityManager) {
-  em.registerSystem(
-    "updateWorldFromPosRotScale",
-    [WorldFrameDef],
-    [],
-    (objs) => {
-      for (let o of objs) updateFrameFromPosRotScale(o.world);
-    }
-  );
-}
-
 export const PhysicsBroadCollidersDef = EM.defineComponent(
   "_physBColliders",
   () => {

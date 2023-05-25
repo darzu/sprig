@@ -54,6 +54,8 @@ import {
 } from "../physics/aabb.js";
 import { ENDESGA16 } from "../color/palettes.js";
 
+// TODO(@darzu): use arc-length parameterization to resample splines
+
 const railColor = ENDESGA16.darkBrown;
 const keelColor = ENDESGA16.darkBrown;
 const ribColor = ENDESGA16.darkBrown;
