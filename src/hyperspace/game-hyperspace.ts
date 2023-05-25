@@ -13,9 +13,12 @@ import {
 import { initStars, renderStars } from "../render/pipelines/std-stars.js";
 import { AssetsDef } from "../meshes/assets.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
-import { createHsPlayer } from "./hs-player.js";
+import { createHsPlayer, registerHsPlayerSystems } from "./hs-player.js";
 import { createHsShip } from "./hyperspace-ship.js";
-import { GameStateDef } from "./hyperspace-gamestate.js";
+import {
+  HSGameStateDef,
+  registerGameStateSystems,
+} from "./hyperspace-gamestate.js";
 import { createGridComposePipelines } from "../render/pipelines/std-compose.js";
 import { noisePipes } from "../render/pipelines/std-noise.js";
 import { DevConsoleDef } from "../debug/console.js";
@@ -36,6 +39,8 @@ import { renderOceanPipe } from "../render/pipelines/std-ocean.js";
 import { EASE_INQUAD } from "../utils/util-ease.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
 import { Phase } from "../ecs/sys_phase.js";
+import { registerEnemyShipSystems } from "./uv-enemy-ship";
+import { registerUVShipSystems } from "./uv-ship";
 
 // export let jfaMaxStep = VISUALIZE_JFA ? 0 : 999;
 
@@ -63,7 +68,12 @@ function spawnRandomDarkStar(
 }
 
 export async function initHyperspaceGame(em: EntityManager) {
-  em.addResource(GameStateDef);
+  em.addResource(HSGameStateDef);
+
+  registerGameStateSystems(em);
+  registerEnemyShipSystems(em);
+  registerHsPlayerSystems(em);
+  registerUVShipSystems();
 
   em.whenResources(OceanDef).then(async () => {
     // await awaitTimeout(1000); // TODO(@darzu): what is happening

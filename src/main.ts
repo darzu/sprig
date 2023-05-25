@@ -241,8 +241,9 @@ function legacyRequireAllTheSystems() {
   // EM.addSystem("constructRenderables", Phase.PRE_GAME_WORLD);
 
   // TODO(@darzu): we want to make it easier to satisfy this
-  if (WARN_DEAD_CLEANUP)
+  if (WARN_DEAD_CLEANUP) {
     // EM.addSystem("deadCleanupWarning", Phase.POST_GAME_WORLD); // SHOULD BE LAST(-ish); warns if cleanup is missing
+  }
 }
 
 function callFixedTimestepSystems() {

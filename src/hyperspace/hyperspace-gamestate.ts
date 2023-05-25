@@ -34,7 +34,7 @@ export enum HyperspaceGameState {
   GAMEOVER,
 }
 
-export const GameStateDef = EM.defineComponent("hsGameState", () => {
+export const HSGameStateDef = EM.defineComponent("hsGameState", () => {
   return { state: HyperspaceGameState.LOBBY, time: 0 };
 });
 
@@ -42,11 +42,11 @@ export const startGame = eventWizard(
   "start-game",
   () => [[HsPlayerDef]] as const,
   () => {
-    EM.getResource(GameStateDef)!.state = HyperspaceGameState.PLAYING;
+    EM.getResource(HSGameStateDef)!.state = HyperspaceGameState.PLAYING;
   },
   {
     legalEvent: () =>
-      EM.getResource(GameStateDef)!.state === HyperspaceGameState.LOBBY,
+      EM.getResource(HSGameStateDef)!.state === HyperspaceGameState.LOBBY,
   }
 );
 
@@ -55,7 +55,7 @@ export const endGame = eventWizard(
   () => [[HsShipPropsDef, HsShipLocalDef, PositionDef]] as const,
   ([ship]) => {
     console.log("end");
-    const res = EM.getResources([AudioDef, GameStateDef, MeDef])!;
+    const res = EM.getResources([AudioDef, HSGameStateDef, MeDef])!;
     res.music.playChords([1, 2, 3, 4, 4], "minor");
     res.hsGameState.state = HyperspaceGameState.GAMEOVER;
     res.hsGameState.time = 0;
@@ -99,7 +99,7 @@ export const endGame = eventWizard(
   },
   {
     legalEvent: () =>
-      EM.getResource(GameStateDef)!.state === HyperspaceGameState.PLAYING,
+      EM.getResource(HSGameStateDef)!.state === HyperspaceGameState.PLAYING,
   }
 );
 
@@ -108,7 +108,7 @@ export const restartGame = eventWizard(
   () => [[HsShipPropsDef]] as const,
   ([ship]) => {
     console.log("restart");
-    const res = EM.getResources([GameStateDef, LocalHsPlayerDef])!;
+    const res = EM.getResources([HSGameStateDef, LocalHsPlayerDef])!;
     res.hsGameState.state = HyperspaceGameState.LOBBY;
     const player = EM.findEntity(res.localHsPlayer.playerId, [HsPlayerDef])!;
     player.hsPlayer.lookingForShip = true;
@@ -121,7 +121,7 @@ export const restartGame = eventWizard(
   },
   {
     legalEvent: () =>
-      EM.getResource(GameStateDef)!.state === HyperspaceGameState.GAMEOVER,
+      EM.getResource(HSGameStateDef)!.state === HyperspaceGameState.GAMEOVER,
   }
 );
 
@@ -130,7 +130,7 @@ export function registerGameStateSystems(em: EntityManager) {
     "restartTimer",
     Phase.GAME_WORLD,
     null,
-    [GameStateDef, TimeDef, HostDef],
+    [HSGameStateDef, TimeDef, HostDef],
     ([], res) => {
       if (res.hsGameState.state === HyperspaceGameState.GAMEOVER) {
         res.hsGameState.time += res.time.dt;

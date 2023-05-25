@@ -75,7 +75,7 @@ export function registerCommonSystems(em: EntityManager) {
   registerInitCanvasSystem(em);
   registerUISystems(em);
   registerDevSystems(em);
-  registerGameStateSystems(em);
+  // registerGameStateSystems(em);
   registerRenderInitSystem(em);
   registerMusicSystems(em);
   registerHandleNetworkEvents(em);
@@ -89,9 +89,9 @@ export function registerCommonSystems(em: EntityManager) {
   registerBuildBulletsSystem(em);
   registerCursorSystems(em);
   registerInitTransforms(em);
-  registerEnemyShipSystems(em);
+  // registerEnemyShipSystems(em);
   registerControllableSystems(em);
-  registerHsPlayerSystems(em);
+  // registerHsPlayerSystems(em);
   registerBulletUpdate(em);
   // TODO(@darzu): re-enable noodles?
   registerNoodleSystem(em);

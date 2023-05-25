@@ -32,7 +32,7 @@ import {
 import { YawPitchDef, yawpitchToQuat } from "../turret/yawpitch.js";
 import { AssetsDef } from "../meshes/assets.js";
 import { DarkStarPropsDef, STAR1_COLOR, STAR2_COLOR } from "./darkstar.js";
-import { HyperspaceGameState, GameStateDef } from "./hyperspace-gamestate.js";
+import { HyperspaceGameState, HSGameStateDef } from "./hyperspace-gamestate.js";
 import { HsShipLocalDef, HsShipPropsDef } from "./hyperspace-ship.js";
 import { UVShipDef } from "./uv-ship.js";
 import { constructNetTurret, TurretDef } from "../turret/turret.js";
@@ -252,7 +252,7 @@ onInit((em) => {
     "sail",
     Phase.GAME_PLAYERS,
     [HsShipPropsDef, UVShipDef, WorldFrameDef, AuthorityDef],
-    [MeDef, GameStateDef],
+    [MeDef, HSGameStateDef],
     (es, res) => {
       if (res.hsGameState.state !== HyperspaceGameState.PLAYING) {
         return;

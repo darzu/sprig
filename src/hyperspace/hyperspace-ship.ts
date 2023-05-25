@@ -31,7 +31,7 @@ import { InRangeDef, InteractableDef } from "../input/interact.js";
 import {
   endGame,
   HyperspaceGameState,
-  GameStateDef,
+  HSGameStateDef,
   startGame,
 } from "./hyperspace-gamestate.js";
 import { createRef, defineNetEntityHelper, Ref } from "../ecs/em_helpers.js";
@@ -278,7 +278,7 @@ export function registerShipSystems(em: EntityManager) {
     "startGame",
     Phase.GAME_WORLD,
     [GemPropsDef, InRangeDef],
-    [GameStateDef, PhysicsResultsDef, MeDef, InputsDef, LocalHsPlayerDef],
+    [HSGameStateDef, PhysicsResultsDef, MeDef, InputsDef, LocalHsPlayerDef],
     (gems, res) => {
       for (let gem of gems) {
         if (DeletedDef.isOn(gem)) continue;
@@ -319,7 +319,7 @@ export function registerShipSystems(em: EntityManager) {
       AudioDef,
       InputsDef,
       CameraDef,
-      GameStateDef,
+      HSGameStateDef,
       MeDef,
       PhysicsResultsDef,
       DetectedEventsDef,
@@ -375,7 +375,7 @@ export function registerShipSystems(em: EntityManager) {
       // RotationDef,
       UVDirDef,
     ],
-    [GameStateDef, MeDef, InputsDef, DevConsoleDef],
+    [HSGameStateDef, MeDef, InputsDef, DevConsoleDef],
     (ships, res) => {
       if (res.hsGameState.state !== HyperspaceGameState.PLAYING) {
         return;
