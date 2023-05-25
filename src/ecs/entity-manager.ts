@@ -695,6 +695,31 @@ export class EntityManager {
     }
   }
 
+  public registerSystem2<CS extends ComponentDef[], RS extends ComponentDef[]>(
+    name: string,
+    phase: Phase,
+    cs: [...CS],
+    rs: [...RS],
+    callback: SystemFn<CS, RS>
+  ): void;
+  public registerSystem2<CS extends null, RS extends ComponentDef[]>(
+    name: string,
+    phase: Phase,
+    cs: null,
+    rs: [...RS],
+    callback: SystemFn<CS, RS>
+  ): void;
+  public registerSystem2<CS extends ComponentDef[], RS extends ComponentDef[]>(
+    name: string,
+    phase: Phase,
+    cs: [...CS] | null,
+    rs: [...RS],
+    callback: SystemFn<CS, RS>
+  ): void {
+    // TODO(@darzu):
+    assert(false, `TODO: impl`);
+  }
+
   private _nextSystemId = 1;
   public registerSystem<CS extends ComponentDef[], RS extends ComponentDef[]>(
     name: string,
