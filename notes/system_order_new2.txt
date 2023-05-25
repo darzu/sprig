@@ -1,0 +1,157 @@
+NETWORK
+  handleNetworkEvents
+  recordPreviousLocations
+  clearRemoteUpdatesMarker
+  netUpdate
+  predict
+  connectToServer
+  handleJoin
+  handleJoinResponse
+  netDebugSystem
+  netAck
+  netSync
+  sendOutboxes
+  detectedEventsToHost
+  handleEventRequests
+  handleEventRequestAcks
+  detectedEventsToRequestedEvents
+  requestedEventsToEvents
+  sendEvents
+  handleEvents
+  handleEventAcks
+  runEvents
+PRE_GAME_WORLD
+  cannonPropsBuild
+  darkStarPropsBuild
+  ribSailPropsBuild
+  hypMastPropsBuild
+  gemPropsBuild
+  rudderPropsBuild
+  hsShipPropsBuild
+  enemyShipPropsBuild
+  buildCursor
+  buildHsPlayers
+  updateLifetimes
+  delete
+  constructRenderables
+GAME_WORLD
+  oceanUVtoPos
+  oceanUVDirToRot
+  despawnFlyingBricks
+  stoneTowerAttack
+  stoneTowerDamage
+  updateShipHealth
+  changeWind
+  smoothWind
+  applyWindToSail
+  billow
+  mastForce
+  billowSock
+  easeRudderLD52
+  shipParty
+  landShipCollision
+  restartTimer
+  startGame
+  shipHealthCheck
+  shipUpdateParty
+  easeRudder
+  buildBullets
+  stepEnemyShips
+  enemyShipsFire
+  breakEnemyShips
+  hsPlayerLookingForShip
+  updateBullets
+  updateNoodles
+  reloadCannon
+  bulletCollision
+  splintersOnFloor
+  runWooden
+  woodHealth
+  shipMove
+  darkStarOrbit
+  updateRibSail
+  orreryMotion
+  spawnOnTile
+  spawnFinishAnimIn
+  grassGameRenderPipelines
+POST_GAME_WORLD
+  updateScoreDisplay
+  detectGameEnd
+  deadCleanupWarning
+AUDIO
+  musicStart
+PRE_READ_INPUT
+  placeCursorAtScreenCenter
+READ_INPUTS
+  inputs
+GAME_PLAYERS
+  sailShip
+  canvasCursorLockUnlock
+  devConsoleToggle
+  playerShipMove
+  controllableInput
+  hsPlayerFacingDir
+  stepHsPlayers
+  turretYawPitch
+  turretAim
+  turretManUnman
+  playerControlCannon
+  playerManCanon
+  modelerOnOff
+  modelerClicks
+  aabbBuilder
+  renderModeToggles
+  updateMastBoom
+  sail
+  mouseDrag
+POST_GAME_PLAYERS
+  controllableCameraFollow
+  interactableInteract
+  toolPickup
+  toolDrop
+PRE_PHYSICS
+  ensureWorldFrame
+  physicsInit
+  clampVelocityByContact
+  registerPhysicsClampVelocityBySize
+  registerPhysicsApplyLinearVelocity
+  physicsApplyAngularVelocity
+  ensureFillOutLocalFrame
+  updateLocalFromPosRotScale
+  applyGravity
+  updateParametricMotion
+  animateTo
+PHYSICS
+  updateWorldFromLocalAndParent
+  registerUpdateWorldAABBs
+  updatePhysInContact
+  physicsStepContact
+  updateWorldFromLocalAndParent2
+  spring
+  buildCloths
+  updateClothMesh
+POST_PHYSICS
+  dbgColliderMeshes
+  debugMeshes
+  debugMeshTransform
+PRE_RENDER
+  renderInit
+  smoothMotion
+  updateMotionSmoothing
+  updateSmoothedWorldFrames
+  smoothCamera
+  updateOceanRenderData
+  stdRenderListDeadHidden
+  stdRenderList
+  stdRenderableDataUpdate
+  updateGrassRenderData
+RENDER
+  uiText
+  devConsole
+  updateRendererWorldFrames
+  cameraFollowTarget
+  retargetCamera
+  updateCameraView
+  renderListDeadHidden
+  renderList
+  stepRenderer

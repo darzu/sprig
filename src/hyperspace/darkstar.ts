@@ -12,7 +12,7 @@ import { PointLightDef } from "../render/lights.js";
 import { FLAG_UNLIT, RenderDataStdDef } from "../render/pipelines/std-scene.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { HyperspaceGameState, GameStateDef } from "./hyperspace-gamestate.js";
-import { Phase } from "../ecs/sys_phase";
+import { Phase } from "../ecs/sys_phase.js";
 
 const DARKSTAR_SPEED = 1;
 

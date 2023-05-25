@@ -46,7 +46,7 @@ import { max } from "../utils/math.js";
 import { AnimateToDef } from "../animation/animate-to.js";
 import { vec3Dbg } from "../utils/utils-3d.js";
 import { HsShipLocalDef } from "./hyperspace-ship.js";
-import { Phase } from "../ecs/sys_phase";
+import { Phase } from "../ecs/sys_phase.js";
 
 // TODO(@darzu): it'd be great if these could hook into some sort of
 //    dev mode you could toggle at runtime.

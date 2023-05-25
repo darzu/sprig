@@ -22,7 +22,7 @@ import {
 } from "./components.js";
 import { MessageType, MAX_MESSAGE_SIZE } from "./message.js";
 import { TimeDef } from "../time/time.js";
-import { Phase } from "../ecs/sys_phase";
+import { Phase } from "../ecs/sys_phase.js";
 
 const JOIN_RETRANSMIT = 100;
 

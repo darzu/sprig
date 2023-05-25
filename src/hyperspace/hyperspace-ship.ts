@@ -52,7 +52,7 @@ import { makeOrrery, OrreryDef } from "./orrery.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { createGem, GemPropsDef } from "./gem.js";
 import { ENDESGA16 } from "../color/palettes.js";
-import { Phase } from "../ecs/sys_phase";
+import { Phase } from "../ecs/sys_phase.js";
 
 // TODO(@darzu): impl. occassionaly syncable components with auto-versioning
 

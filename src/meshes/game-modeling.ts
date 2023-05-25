@@ -42,7 +42,7 @@ export async function initModelingGame() {
       ];
     }
   );
-  EM.addSystem("gameRenderPipelines", Phase.GAME_WORLD);
+  // EM.addSystem("gameRenderPipelines", Phase.GAME_WORLD);
 
   const { camera } = await EM.whenResources(CameraDef);
 

@@ -25,7 +25,7 @@ import { AssetsDef, GameMesh } from "../meshes/assets.js";
 import { GlobalCursor3dDef } from "../gui/cursor.js";
 import { createGhost } from "../debug/ghost.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
-import { Phase } from "../ecs/sys_phase";
+import { Phase } from "../ecs/sys_phase.js";
 
 let __frame = 0;
 export async function initGJKSandbox(em: EntityManager, hosting: boolean) {

@@ -28,7 +28,7 @@ import { DeletedDef } from "../ecs/delete.js";
 import { defineSerializableComponent } from "../ecs/em_helpers.js";
 import { YawPitchDef, yawpitchToQuat } from "./yawpitch.js";
 import { TextDef } from "../gui/ui.js";
-import { Phase } from "../ecs/sys_phase";
+import { Phase } from "../ecs/sys_phase.js";
 
 export const TurretDef = EM.defineComponent("turret", () => {
   return {

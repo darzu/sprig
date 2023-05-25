@@ -4,7 +4,7 @@ import { InputsDef } from "../input/inputs.js";
 import { RenderableDef } from "../render/renderer-ecs.js";
 import { clearTint, setTint, TintsDef } from "../color/color-ecs.js";
 import { AuthorityDef } from "./components.js";
-import { Phase } from "../ecs/sys_phase";
+import { Phase } from "../ecs/sys_phase.js";
 
 const NetDebugStateDef = EM.defineComponent("netDebugState", () => ({
   dbgAuthority: false,

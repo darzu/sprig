@@ -18,7 +18,7 @@ import { DeletedDef } from "../ecs/delete.js";
 import { defineNetEntityHelper } from "../ecs/em_helpers.js";
 import { constructNetTurret, TurretDef } from "../turret/turret.js";
 import { SoundSetDef } from "../audio/sound-loader.js";
-import { Phase } from "../ecs/sys_phase";
+import { Phase } from "../ecs/sys_phase.js";
 
 export const { CannonPropsDef, CannonLocalDef, createCannon, createCannonNow } =
   defineNetEntityHelper(EM, {

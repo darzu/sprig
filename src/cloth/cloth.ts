@@ -20,7 +20,7 @@ import {
 import { RendererDef } from "../render/renderer-ecs.js";
 import { tempVec3 } from "../matrix/temp-pool.js";
 import { ColorDef } from "../color/color-ecs.js";
-import { Phase } from "../ecs/sys_phase";
+import { Phase } from "../ecs/sys_phase.js";
 
 export interface ClothConstruct {
   location: vec3;

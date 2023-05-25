@@ -9,7 +9,7 @@ import { Authority, AuthorityDef, MeDef, SyncDef } from "../net/components.js";
 import { Serializer, Deserializer } from "../utils/serialize.js";
 import { assert } from "../utils/util.js";
 import { capitalize } from "../utils/util.js";
-import { Phase } from "./sys_phase";
+import { Phase } from "./sys_phase.js";
 
 export function defineSerializableComponent<
   N extends string,

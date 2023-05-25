@@ -181,7 +181,7 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
       ];
     }
   );
-  em.addSystem("grassGameRenderPipelines", Phase.GAME_WORLD);
+  // em.addSystem("grassGameRenderPipelines", Phase.GAME_WORLD);
 
   // Sun
   const sunlight = em.new();
@@ -197,8 +197,8 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
 
   // score
   const score = em.addResource(ScoreDef);
-  em.addSystem("updateScoreDisplay", Phase.POST_GAME_WORLD);
-  em.addSystem("detectGameEnd", Phase.POST_GAME_WORLD);
+  // em.addSystem("updateScoreDisplay", Phase.POST_GAME_WORLD);
+  // em.addSystem("detectGameEnd", Phase.POST_GAME_WORLD);
 
   // start map
   await setMap(em, MapPaths[0]);
@@ -278,17 +278,17 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
 
   const ship = await createShip(em);
 
-  EM.addSystem("runWooden", Phase.GAME_WORLD);
-  EM.addSystem("woodHealth", Phase.GAME_WORLD);
+  // EM.addSystem("runWooden", Phase.GAME_WORLD);
+  // EM.addSystem("woodHealth", Phase.GAME_WORLD);
 
   EM.ensureComponentOn(ship, ShipHealthDef);
-  EM.addSystem("updateShipHealth", Phase.GAME_WORLD);
+  // EM.addSystem("updateShipHealth", Phase.GAME_WORLD);
   // move down
   // ship.position[2] = -WORLD_SIZE * 0.5 * 0.6;
   level2DtoWorld3D(level.levelMap.startPos, 8, ship.position);
   //vec3.copy(ship.position, SHIP_START_POS);
-  em.addSystem("sailShip", Phase.GAME_PLAYERS);
-  em.addSystem("shipParty", Phase.GAME_WORLD);
+  // em.addSystem("sailShip", Phase.GAME_PLAYERS);
+  // em.addSystem("shipParty", Phase.GAME_WORLD);
 
   // bouyancy
   if (!"true") {
@@ -347,7 +347,7 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
         }
       }
     );
-    em.addSystem("shipBouyancy", Phase.GAME_WORLD);
+    // em.addSystem("shipBouyancy", Phase.GAME_WORLD);
 
     // EM.requireSystem("oceanUVtoPos");
     // EM.requireSystem("oceanUVDirToRot");
@@ -447,7 +447,7 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
         if (!htmlCanvas.hasFirstInteraction) return;
       }
     );
-    EM.addSystem("smolGhost", Phase.GAME_WORLD);
+    // EM.addSystem("smolGhost", Phase.GAME_WORLD);
   }
 
   score.onLevelEnd.push(async () => {
@@ -555,7 +555,7 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
       }
     }
   );
-  EM.addSystem("furlUnfurl", Phase.GAME_PLAYERS);
+  // EM.addSystem("furlUnfurl", Phase.GAME_PLAYERS);
 
   const shipWorld = await EM.whenEntityHas(ship, WorldFrameDef);
 
@@ -593,7 +593,7 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
         quatFromUpForward(mast.rotation, V(0, 1, 0), optimalSailLocalDir);
     }
   );
-  EM.addSystem("turnMast", Phase.GAME_PLAYERS);
+  // EM.addSystem("turnMast", Phase.GAME_PLAYERS);
 
   const { text } = await EM.whenResources(TextDef);
   text.lowerText = "W/S: unfurl/furl sail, A/D: turn, E: drop rudder";
@@ -649,11 +649,11 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
     quat.setAxisAngle([0, 1, 0], angle, stoneTower.rotation);
   }
 
-  EM.addSystem("stoneTowerAttack", Phase.GAME_WORLD);
-  EM.addSystem("stoneTowerDamage", Phase.GAME_WORLD);
-  EM.addSystem("despawnFlyingBricks", Phase.GAME_WORLD);
+  // EM.addSystem("stoneTowerAttack", Phase.GAME_WORLD);
+  // EM.addSystem("stoneTowerDamage", Phase.GAME_WORLD);
+  // EM.addSystem("despawnFlyingBricks", Phase.GAME_WORLD);
 
-  EM.addSystem("landShipCollision", Phase.GAME_WORLD);
+  // EM.addSystem("landShipCollision", Phase.GAME_WORLD);
 
   // BULLET STUFF
   em.registerSystem(
@@ -675,7 +675,7 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
       }
     }
   );
-  EM.addSystem("breakBullets", Phase.GAME_WORLD);
+  // EM.addSystem("breakBullets", Phase.GAME_WORLD);
 
   // dead bullet maintenance
   // NOTE: this must be called after any system that can create dead bullets but
@@ -697,9 +697,9 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
       }
     }
   );
-  EM.addSystem("deadBullets", Phase.GAME_WORLD);
+  // EM.addSystem("deadBullets", Phase.GAME_WORLD);
 
-  EM.addSystem("splintersOnFloor", Phase.GAME_WORLD);
+  // EM.addSystem("splintersOnFloor", Phase.GAME_WORLD);
 }
 
 async function createPlayer() {

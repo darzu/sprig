@@ -44,7 +44,7 @@ import { ColorDef } from "../color/color-ecs.js";
 import { DEFAULT_MASK, UVUNWRAP_MASK } from "../render/pipeline-masks.js";
 import { Mesh } from "../meshes/mesh.js";
 import { compute_gerstner, createWaves } from "./gerstner.js";
-import { Phase } from "../ecs/sys_phase";
+import { Phase } from "../ecs/sys_phase.js";
 
 // TODO(@darzu): refactor this to not assume a specific ocean shape
 

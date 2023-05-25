@@ -286,7 +286,7 @@ export function registerUpdateRendererWorldFrames(em: EntityManager) {
       }
     }
   );
-  EM.addSystem("updateRendererWorldFrames", Phase.RENDER);
+  // EM.addSystem("updateRendererWorldFrames", Phase.RENDER);
 }
 
 // TODO(@darzu): We need to add constraints for updateRendererWorldFrames and such w/ respect to gameplay, physics, and rendering!
@@ -492,9 +492,9 @@ export function registerRenderer(em: EntityManager) {
     }
   );
 
-  em.addSystem("renderListDeadHidden", Phase.RENDER);
-  em.addSystem("renderList", Phase.RENDER);
-  em.addSystem("stepRenderer", Phase.RENDER);
+  // em.addSystem("renderListDeadHidden", Phase.RENDER);
+  // em.addSystem("renderList", Phase.RENDER);
+  // em.addSystem("stepRenderer", Phase.RENDER);
   // em.addConstraint([
   //   "renderListDeadHidden",
   //   "after",

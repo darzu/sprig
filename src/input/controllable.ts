@@ -9,7 +9,7 @@ import { LinearVelocityDef } from "../motion/velocity.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import { RotationDef } from "../physics/transform.js";
 import { TimeDef } from "../time/time.js";
-import { Phase } from "../ecs/sys_phase";
+import { Phase } from "../ecs/sys_phase.js";
 
 /*
 TODO key mapping

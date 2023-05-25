@@ -26,7 +26,7 @@ import { RayHit } from "../physics/broadphase.js";
 import { tempVec3 } from "../matrix/temp-pool.js";
 import { createRef, Ref } from "../ecs/em_helpers.js";
 import { screenPosToRay } from "../utils/utils-game.js";
-import { Phase } from "../ecs/sys_phase";
+import { Phase } from "../ecs/sys_phase.js";
 
 export const GlobalCursor3dDef = EM.defineComponent("globalCursor3d", () => {
   return {

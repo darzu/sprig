@@ -15,7 +15,7 @@ import {
 } from "../physics/transform.js";
 import { spawnEnemyShip } from "./uv-enemy-ship.js";
 import { UVDirDef, UVPosDef } from "../ocean/ocean.js";
-import { Phase } from "../ecs/sys_phase";
+import { Phase } from "../ecs/sys_phase.js";
 
 // TODO(@darzu): generalize for spawning non-enemy entities in the ocean
 

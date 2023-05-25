@@ -121,7 +121,7 @@ async function initButtonGUI(res: EntityW<[typeof RendererDef]>) {
       }
     }
   );
-  EM.addSystem("buttonStateUpdate", Phase.READ_INPUTS);
+  // EM.addSystem("buttonStateUpdate", Phase.READ_INPUTS);
 
   EM.registerSystem(
     "buttonColors",
@@ -147,5 +147,5 @@ async function initButtonGUI(res: EntityW<[typeof RendererDef]>) {
       }
     }
   );
-  EM.addSystem("buttonColors", Phase.GAME_WORLD);
+  // EM.addSystem("buttonColors", Phase.GAME_WORLD);
 }

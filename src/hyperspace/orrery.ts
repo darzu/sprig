@@ -13,7 +13,7 @@ import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { AssetsDef } from "../meshes/assets.js";
 import { DarkStarPropsDef } from "./darkstar.js";
 import { ENDESGA16 } from "../color/palettes.js";
-import { Phase } from "../ecs/sys_phase";
+import { Phase } from "../ecs/sys_phase.js";
 
 const ORRERY_SCALE = 0.001;
 

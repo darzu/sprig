@@ -41,7 +41,7 @@ import { SplinterParticleDef } from "../wood/wood.js";
 import { tempVec3 } from "../matrix/temp-pool.js";
 import { assert, assertDbg } from "../utils/util.js";
 import { ParametricDef } from "../motion/parametric-motion.js";
-import { Phase } from "../ecs/sys_phase";
+import { Phase } from "../ecs/sys_phase.js";
 
 // TODO(@darzu): MULTIPLAYER BULLETS might have been broken during LD51
 

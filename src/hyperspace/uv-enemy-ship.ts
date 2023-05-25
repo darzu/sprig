@@ -40,7 +40,7 @@ import { UVShipDef } from "./uv-ship.js";
 import { UVDirDef, UVPosDef } from "../ocean/ocean.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { AudioDef, Music } from "../audio/audio.js";
-import { Phase } from "../ecs/sys_phase";
+import { Phase } from "../ecs/sys_phase.js";
 
 export const EnemyCrewDef = EM.defineComponent("enemyCrew", () => {
   return {

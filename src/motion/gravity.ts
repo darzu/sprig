@@ -4,7 +4,7 @@ import { onInit } from "../init.js";
 import { LinearVelocityDef } from "./velocity.js";
 import { tempVec3 } from "../matrix/temp-pool.js";
 import { TimeDef } from "../time/time.js";
-import { Phase } from "../ecs/sys_phase";
+import { Phase } from "../ecs/sys_phase.js";
 
 export const GravityDef = EM.defineComponent("gravity", (gravity?: vec3) => {
   return gravity ?? vec3.create();

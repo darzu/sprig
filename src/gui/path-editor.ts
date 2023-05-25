@@ -325,7 +325,7 @@ export async function initPathEditor() {
       }
     }
   );
-  EM.addSystem("editHPoly", Phase.GAME_WORLD);
+  // EM.addSystem("editHPoly", Phase.GAME_WORLD);
 }
 
 // TODO(@darzu): can/should this be merged with half-edge stuff?

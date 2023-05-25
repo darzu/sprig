@@ -255,7 +255,7 @@ onInit((em) => {
       }
     }
   );
-  em.addSystem("updateOceanRenderData", Phase.PRE_RENDER);
+  // em.addSystem("updateOceanRenderData", Phase.PRE_RENDER);
   // em.addConstraint(["updateOceanRenderData", "after", "renderList"]);
   // em.addConstraint(["updateOceanRenderData", "before", "stepRenderer"]);
 });

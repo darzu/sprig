@@ -35,7 +35,7 @@ import { createDarkStarNow, STAR1_COLOR, STAR2_COLOR } from "./darkstar.js";
 import { renderOceanPipe } from "../render/pipelines/std-ocean.js";
 import { EASE_INQUAD } from "../utils/util-ease.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
-import { Phase } from "../ecs/sys_phase";
+import { Phase } from "../ecs/sys_phase.js";
 
 // export let jfaMaxStep = VISUALIZE_JFA ? 0 : 999;
 

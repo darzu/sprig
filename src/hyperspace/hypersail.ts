@@ -42,7 +42,7 @@ import {
   sailForceAndSignedArea,
 } from "./ribsail.js";
 import { ENDESGA16 } from "../color/palettes.js";
-import { Phase } from "../ecs/sys_phase";
+import { Phase } from "../ecs/sys_phase.js";
 
 // TODO(@darzu): refactor this so that our towers can use this
 

@@ -19,7 +19,7 @@ import {
 } from "./wood.js";
 import { RenderDataStdDef } from "../render/pipelines/std-scene.js";
 import { onInit } from "../init.js";
-import { Phase } from "../ecs/sys_phase";
+import { Phase } from "../ecs/sys_phase.js";
 
 // TODO(@darzu): generalize for any entity pool
 

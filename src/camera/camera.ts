@@ -320,5 +320,5 @@ export function registerCameraSystems(em: EntityManager) {
       // );
     }
   );
-  EM.addSystem("updateCameraView", Phase.RENDER);
+  // EM.addSystem("updateCameraView", Phase.RENDER);
 }

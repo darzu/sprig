@@ -35,7 +35,7 @@ import { mat4, tV, V, vec3, quat, vec2 } from "../matrix/sprig-matrix.js";
 import { TimeDef } from "../time/time.js";
 import { assert } from "../utils/util.js";
 import { vec3Dbg } from "../utils/utils-3d.js";
-import { Phase } from "../ecs/sys_phase";
+import { Phase } from "../ecs/sys_phase.js";
 
 const SAMPLES_PER_EDGE = 5;
 const NUDGE_DIST = 1.0;

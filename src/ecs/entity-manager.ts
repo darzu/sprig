@@ -472,7 +472,7 @@ export class EntityManager {
     (n) => n,
     (_) => [] as string[]
   );
-  public addSystem(name: string, phase: Phase) {
+  private addSystem(name: string, phase: Phase) {
     this.phases.get(phase)!.push(name);
   }
 

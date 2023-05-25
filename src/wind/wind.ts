@@ -4,7 +4,7 @@ import { RendererDef } from "../render/renderer-ecs.js";
 import { V, vec3 } from "../matrix/sprig-matrix.js";
 import { TimeDef } from "../time/time.js";
 import { range } from "../utils/util.js";
-import { Phase } from "../ecs/sys_phase";
+import { Phase } from "../ecs/sys_phase.js";
 
 const STEPS_ON_WIND_DIR = 6000;
 // const STEPS_ON_WIND_DIR = 400;

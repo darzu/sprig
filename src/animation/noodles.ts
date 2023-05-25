@@ -17,7 +17,7 @@ import { RendererDef } from "../render/renderer-ecs.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { vec3Dbg } from "../utils/utils-3d.js";
 import { CUBE_MESH } from "../meshes/primatives.js";
-import { Phase } from "../ecs/sys_phase";
+import { Phase } from "../ecs/sys_phase.js";
 
 export interface NoodleSeg {
   pos: vec3;
