@@ -17,6 +17,7 @@ import { RendererDef } from "../render/renderer-ecs.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { vec3Dbg } from "../utils/utils-3d.js";
 import { CUBE_MESH } from "../meshes/primatives.js";
+import { Phase } from "../ecs/sys_phase";
 
 export interface NoodleSeg {
   pos: vec3;
@@ -65,8 +66,9 @@ export function registerNoodleSystem(em: EntityManager) {
     else posIdxToSegIdx.set(i, 1);
   });
 
-  em.registerSystem(
+  em.registerSystem2(
     "updateNoodles",
+    Phase.GAME_WORLD,
     [NoodleDef, RenderableDef],
     [RendererDef],
     (es, rs) => {

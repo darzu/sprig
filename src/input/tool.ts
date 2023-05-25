@@ -15,14 +15,16 @@ import { registerEventHandler, DetectedEventsDef } from "../net/events.js";
 import { LocalHsPlayerDef, HsPlayerDef } from "../hyperspace/hs-player.js";
 import { InteractableDef, InRangeDef } from "./interact.js";
 import { Deserializer, Serializer } from "../utils/serialize.js";
+import { Phase } from "../ecs/sys_phase";
 
 export const ToolDef = EM.defineComponent("tool", (type?: string) => ({
   type,
 }));
 
 export function registerToolSystems(em: EntityManager) {
-  em.registerSystem(
+  em.registerSystem2(
     "toolPickup",
+    Phase.POST_GAME_PLAYERS,
     [ToolDef, InRangeDef],
     [DetectedEventsDef, LocalHsPlayerDef],
     (hats, resources) => {
@@ -41,8 +43,9 @@ export function registerToolSystems(em: EntityManager) {
     }
   );
 
-  em.registerSystem(
+  em.registerSystem2(
     "toolDrop",
+    Phase.POST_GAME_PLAYERS,
     [HsPlayerDef, PositionDef, RotationDef],
     [DetectedEventsDef],
     (players, { detectedEvents }) => {

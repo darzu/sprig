@@ -4,10 +4,12 @@ import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { tempVec3, tempQuat } from "../matrix/temp-pool.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
 import { AngularVelocityDef, LinearVelocityDef } from "../motion/velocity.js";
+import { Phase } from "../ecs/sys_phase";
 
 export function registerPredictSystem(em: EntityManager) {
-  em.registerSystem(
+  em.registerSystem2(
     "predict",
+    Phase.NETWORK,
     [PredictDef, PositionDef, LinearVelocityDef],
     [],
     (entities) => {

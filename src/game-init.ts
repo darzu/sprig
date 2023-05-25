@@ -65,6 +65,7 @@ import { registerNetSystems } from "./net/net.js";
 import { registerNoodleSystem } from "./animation/noodles.js";
 import { registerToolSystems } from "./input/tool.js";
 import { ENABLE_NET } from "./flags.js";
+import { Phase } from "./ecs/sys_phase";
 
 export function registerCommonSystems(em: EntityManager) {
   if (ENABLE_NET) {
@@ -122,8 +123,9 @@ export function registerCommonSystems(em: EntityManager) {
 }
 
 function registerRenderViewController(em: EntityManager) {
-  em.registerSystem(
+  em.registerSystem2(
     "renderModeToggles",
+    Phase.GAME_PLAYERS,
     [],
     [InputsDef, RendererDef, CameraDef],
     (_, { inputs, renderer, camera }) => {

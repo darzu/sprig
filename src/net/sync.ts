@@ -26,10 +26,12 @@ import {
   serializeEntity,
 } from "./message.js";
 import { TimeDef } from "../time/time.js";
+import { Phase } from "../ecs/sys_phase";
 
 export function registerSyncSystem(em: EntityManager) {
-  em.registerSystem(
+  em.registerSystem2(
     "netSync",
+    Phase.NETWORK,
     [AuthorityDef, SyncDef],
     [TimeDef, MeDef],
     (ents, res) => {
@@ -98,8 +100,9 @@ export function registerSyncSystem(em: EntityManager) {
 }
 
 export function registerUpdateSystem(em: EntityManager) {
-  em.registerSystem(
+  em.registerSystem2(
     "clearRemoteUpdatesMarker",
+    Phase.NETWORK,
     [RemoteUpdatesDef],
     [],
     (es) => {
@@ -108,8 +111,9 @@ export function registerUpdateSystem(em: EntityManager) {
       }
     }
   );
-  em.registerSystem(
+  em.registerSystem2(
     "netUpdate",
+    Phase.NETWORK,
     [PeerDef, InboxDef, OutboxDef],
     [TimeDef, MeDef, NetStatsDef],
     (peers, res) => {
@@ -165,5 +169,11 @@ export function registerAckUpdateSystem(em: EntityManager) {
       }
     }
   }
-  em.registerSystem("netAck", [PeerDef, InboxDef], [TimeDef, MeDef], ack);
+  em.registerSystem2(
+    "netAck",
+    Phase.NETWORK,
+    [PeerDef, InboxDef],
+    [TimeDef, MeDef],
+    ack
+  );
 }

@@ -22,12 +22,14 @@ import {
 } from "./components.js";
 import { MessageType, MAX_MESSAGE_SIZE } from "./message.js";
 import { TimeDef } from "../time/time.js";
+import { Phase } from "../ecs/sys_phase";
 
 const JOIN_RETRANSMIT = 100;
 
 function registerConnectToServer(em: EntityManager) {
-  em.registerSystem(
+  em.registerSystem2(
     "connectToServer",
+    Phase.NETWORK,
     [PeerDef],
     [JoinDef, NetworkReadyDef, EventsToNetworkDef, TimeDef],
     (peers, { join, eventsToNetwork, time }) => {
@@ -104,8 +106,9 @@ function registerHandleJoin(em: EntityManager) {
       }
     }
   };
-  em.registerSystem(
+  em.registerSystem2(
     "handleJoin",
+    Phase.NETWORK,
     [PeerDef, InboxDef, OutboxDef],
     [MeDef],
     handleJoin
@@ -140,8 +143,9 @@ function registerHandleJoinResponse(em: EntityManager) {
       }
     }
   };
-  em.registerSystem(
+  em.registerSystem2(
     "handleJoinResponse",
+    Phase.NETWORK,
     [PeerDef, InboxDef, OutboxDef],
     [EventsToNetworkDef],
     handleJoinResponse
