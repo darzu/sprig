@@ -1,4 +1,4 @@
-import { enumAsList } from "../utils/util";
+import { enumAsList, enumNamesAsList } from "../utils/util";
 
 export enum SystemPhase {
   NETWORK,
@@ -16,4 +16,7 @@ export enum SystemPhase {
   PRE_RENDER,
   RENDER,
 }
-export const SystemPhaseList = enumAsList(SystemPhase);
+export type SystemPhaseName = keyof typeof SystemPhase;
+export const SystemPhaseNameList: SystemPhaseName[] =
+  enumNamesAsList(SystemPhase);
+export const SystemPhaseValueList: SystemPhase[] = enumAsList(SystemPhase);

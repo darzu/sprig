@@ -1,17 +1,14 @@
-import { createLabelSolver, Label, LabelConstraint } from "./em-labels.js";
+import { createLabelSolver, LabelConstraint } from "./em-labels.js";
 import { DBG_ASSERT, DBG_INIT_DEPS, DBG_TRYCALLSYSTEM } from "../flags.js";
 import { Serializer, Deserializer } from "../utils/serialize.js";
-import { createDag } from "../utils/util-dag.js";
 import {
   assert,
   assertDbg,
-  dbgOnce,
-  enumAsList,
   hashCode,
   Intersect,
-  never,
+  toMap,
 } from "../utils/util.js";
-import { SystemPhase } from "./sys_phase.js";
+import { SystemPhase, SystemPhaseValueList } from "./sys_phase.js";
 
 // TODO(@darzu): for perf, we really need to move component data to be
 //  colocated in arrays; and maybe introduce "arch-types" for commonly grouped
@@ -465,27 +462,42 @@ export class EntityManager {
     this.labelSolver.addConstraint(con);
   }
 
+  phases: Map<SystemPhase, string[]> = toMap(
+    SystemPhaseValueList,
+    (n) => n,
+    (_) => [] as string[]
+  );
+  public addSystem(name: string, phase: SystemPhase) {
+    this.phases.get(phase)!.push(name);
+  }
+
   _dbgLastVersion = -1;
   public callSystems() {
-    // TODO(@darzu):
-    // console.log("OLD PLAN:");
-    // console.log(this._tempPlan);
-    if (DBG_INIT_DEPS)
-      if (this._dbgLastVersion !== this.labelSolver.getVersion()) {
-        this._dbgLastVersion = this.labelSolver.getVersion();
-        console.log("NEW PLAN:");
-        console.log(this.labelSolver.getPlan().join("\n"));
+    // // TODO(@darzu):
+    // // console.log("OLD PLAN:");
+    // // console.log(this._tempPlan);
+    // if (DBG_INIT_DEPS)
+    //   if (this._dbgLastVersion !== this.labelSolver.getVersion()) {
+    //     this._dbgLastVersion = this.labelSolver.getVersion();
+    //     console.log("NEW PLAN:");
+    //     console.log(this.labelSolver.getPlan().join("\n"));
+    //   }
+
+    // const plan = this.labelSolver.getPlan();
+    // // const plan = this._tempPlan;
+
+    // for (let s of plan) {
+    //   this._tryCallSystem(s);
+    // }
+
+    // // this._dbgOldPlan.length = 0;
+    // // if (this.dbgLoops > 100) throw "STOP";
+
+    for (let phase of SystemPhaseValueList) {
+      for (let s of this.phases.get(phase)!) {
+        this._tryCallSystem(s);
       }
-
-    const plan = this.labelSolver.getPlan();
-    // const plan = this._tempPlan;
-
-    for (let s of plan) {
-      this._tryCallSystem(s);
     }
-
-    // this._dbgOldPlan.length = 0;
-    // if (this.dbgLoops > 100) throw "STOP";
   }
 
   public hasEntity(id: number) {
