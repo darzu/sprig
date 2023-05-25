@@ -38,6 +38,7 @@ import {
 } from "./transform.js";
 import { IdPair, idPair } from "../utils/util.js";
 import { tempVec3 } from "../matrix/temp-pool.js";
+import { Phase } from "../ecs/sys_phase";
 
 // TODO(@darzu): we use "object", "obj", "o" everywhere in here, we should use "entity", "ent", "e"
 
@@ -226,8 +227,9 @@ export function registerPhysicsStateInit(em: EntityManager) {
 
   // init the per-object physics state
   // TODO(@darzu): split this into different concerns
-  em.registerSystem(
+  em.registerSystem2(
     "physicsInit",
+    Phase.PRE_PHYSICS,
     [ColliderDef, PositionDef],
     [PhysicsBroadCollidersDef],
     (objs, { _physBColliders }) => {
@@ -329,8 +331,9 @@ export function registerPhysicsStateInit(em: EntityManager) {
 }
 
 export function registerUpdateInContactSystems(em: EntityManager) {
-  em.registerSystem(
+  em.registerSystem2(
     "updatePhysInContact",
+    Phase.PHYSICS,
     [ColliderDef, PhysicsStateDef, WorldFrameDef],
     [PhysicsBroadCollidersDef, PhysicsResultsDef],
     (objs, res) => {
@@ -393,8 +396,9 @@ export function registerUpdateInContactSystems(em: EntityManager) {
 
 export function registerPhysicsContactSystems(em: EntityManager) {
   // TODO(@darzu): split this system
-  em.registerSystem(
+  em.registerSystem2(
     "physicsStepContact",
+    Phase.PHYSICS,
     [ColliderDef, PhysicsStateDef, PositionDef, WorldFrameDef],
     [PhysicsBroadCollidersDef, PhysicsResultsDef],
     (objs, res) => {

@@ -26,12 +26,14 @@ import {
   RotationDef,
   updateFrameFromPosRotScale,
 } from "../physics/transform.js";
+import { Phase } from "../ecs/sys_phase";
 
 // TODO(@darzu): implement checkAtRest (deleted in this commit)
 
 export function registerPhysicsClampVelocityByContact(em: EntityManager) {
-  em.registerSystem(
+  em.registerSystem2(
     "clampVelocityByContact",
+    Phase.PRE_PHYSICS,
     null,
     [PhysicsResultsDef, PhysicsBroadCollidersDef],
     (objs, res) => {
@@ -83,8 +85,9 @@ export function registerPhysicsClampVelocityByContact(em: EntityManager) {
 }
 
 export function registerPhysicsClampVelocityBySize(em: EntityManager) {
-  em.registerSystem(
+  em.registerSystem2(
     "registerPhysicsClampVelocityBySize",
+    Phase.PRE_PHYSICS,
     [LinearVelocityDef, ColliderDef],
     [TimeDef],
     (objs, res) => {

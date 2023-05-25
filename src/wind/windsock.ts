@@ -50,8 +50,9 @@ export function createSock(em: EntityManager, scale: number) {
 }
 
 let lastWinAngle = NaN;
-EM.registerSystem(
+EM.registerSystem2(
   "billowSock",
+  Phase.GAME_WORLD,
   [SockDef, RenderableDef, WorldFrameDef],
   [RendererDef, WindDef],
   (es, { renderer, wind }) => {

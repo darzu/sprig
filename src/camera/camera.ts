@@ -110,8 +110,9 @@ export function setCameraFollowPosition(
 }
 
 export function registerCameraSystems(em: EntityManager) {
-  em.registerSystem(
+  em.registerSystem2(
     "smoothCamera",
+    Phase.PRE_RENDER,
     null,
     [CameraDef, TimeDef],
     function (_, res) {
@@ -121,8 +122,9 @@ export function registerCameraSystems(em: EntityManager) {
     }
   );
 
-  em.registerSystem(
+  em.registerSystem2(
     "cameraFollowTarget",
+    Phase.RENDER,
     [CameraFollowDef],
     [CameraDef],
     (cs, res) => {
@@ -149,48 +151,57 @@ export function registerCameraSystems(em: EntityManager) {
     }
   );
 
-  em.registerSystem("retargetCamera", null, [CameraDef], function ([], res) {
-    if (res.camera.prevTargetId === res.camera.targetId) {
-      quat.copy(res.camera.lastRotation, res.camera.rotationOffset);
-      vec3.copy(res.camera.lastPosition, res.camera.positionOffset);
-      return;
+  em.registerSystem2(
+    "retargetCamera",
+    Phase.RENDER,
+    null,
+    [CameraDef],
+    function ([], res) {
+      if (res.camera.prevTargetId === res.camera.targetId) {
+        quat.copy(res.camera.lastRotation, res.camera.rotationOffset);
+        vec3.copy(res.camera.lastPosition, res.camera.positionOffset);
+        return;
+      }
+      const prevTarget = em.findEntity(res.camera.prevTargetId, [
+        WorldFrameDef,
+      ]);
+      const newTarget = em.findEntity(res.camera.targetId, [WorldFrameDef])!;
+      if (prevTarget && newTarget) {
+        computeNewError(
+          prevTarget.world.position,
+          newTarget.world.position,
+          res.camera.targetPositionError
+        );
+        computeNewError(
+          res.camera.lastPosition,
+          res.camera.positionOffset,
+          res.camera.cameraPositionError
+        );
+
+        const computedRotation = quat.mul(
+          prevTarget.world.rotation,
+          res.camera.lastRotation
+        );
+        const newComputedRotation = quat.mul(
+          newTarget.world.rotation,
+          res.camera.rotationOffset
+        );
+
+        computeNewError(
+          computedRotation,
+          newComputedRotation,
+          res.camera.rotationError
+        );
+      }
+
+      res.camera.prevTargetId = res.camera.targetId;
     }
-    const prevTarget = em.findEntity(res.camera.prevTargetId, [WorldFrameDef]);
-    const newTarget = em.findEntity(res.camera.targetId, [WorldFrameDef])!;
-    if (prevTarget && newTarget) {
-      computeNewError(
-        prevTarget.world.position,
-        newTarget.world.position,
-        res.camera.targetPositionError
-      );
-      computeNewError(
-        res.camera.lastPosition,
-        res.camera.positionOffset,
-        res.camera.cameraPositionError
-      );
-
-      const computedRotation = quat.mul(
-        prevTarget.world.rotation,
-        res.camera.lastRotation
-      );
-      const newComputedRotation = quat.mul(
-        newTarget.world.rotation,
-        res.camera.rotationOffset
-      );
-
-      computeNewError(
-        computedRotation,
-        newComputedRotation,
-        res.camera.rotationError
-      );
-    }
-
-    res.camera.prevTargetId = res.camera.targetId;
-  });
+  );
 
   em.addResource(CameraComputedDef);
-  em.registerSystem(
+  em.registerSystem2(
     "updateCameraView",
+    Phase.RENDER,
     null,
     [CameraComputedDef, CameraDef, MeDef, CanvasDef],
     (_, resources) => {

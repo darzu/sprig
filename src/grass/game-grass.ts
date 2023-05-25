@@ -140,8 +140,9 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
   // console.dir(mapJfa);
   // console.dir(dbgGridCompose);
 
-  em.registerSystem(
+  em.registerSystem2(
     "grassGameRenderPipelines",
+    Phase.GAME_WORLD,
     null,
     [RendererDef, DevConsoleDef],
     (_, res) => {
@@ -373,8 +374,9 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
     // g.cameraFollow.yawOffset = 0.0;
     // g.cameraFollow.pitchOffset = -0.378;
 
-    em.registerSystem(
+    em.registerSystem2(
       "smolGhost",
+      Phase.GAME_WORLD,
       [GhostDef, WorldFrameDef, ColliderDef],
       [InputsDef, CanvasDef],
       async (ps, { inputs, htmlCanvas }) => {
@@ -401,8 +403,9 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
   }
 
   // update grass
-  EM.registerSystem(
+  EM.registerSystem2(
     "updateGrass",
+    Phase.GAME_WORLD,
     [CameraFollowDef, WorldFrameDef],
     [],
     (es, res) => {
@@ -448,12 +451,18 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
   // dev.showConsole = true;
   // player.controllable.modes.canFly = true;
 
-  EM.registerSystem("cuttingOnOff", [], [InputsDef], (_, res) => {
-    // TODO(@darzu):
-    if (res.inputs.keyClicks[" "]) {
-      ship.ld52ship.cuttingEnabled = !ship.ld52ship.cuttingEnabled;
+  EM.registerSystem2(
+    "cuttingOnOff",
+    Phase.GAME_PLAYERS,
+    [],
+    [InputsDef],
+    (_, res) => {
+      // TODO(@darzu):
+      if (res.inputs.keyClicks[" "]) {
+        ship.ld52ship.cuttingEnabled = !ship.ld52ship.cuttingEnabled;
+      }
     }
-  });
+  );
   EM.addSystem("cuttingOnOff", Phase.GAME_PLAYERS);
 
   // TODO(@darzu): PERF. bad mem usage everywhere..
@@ -478,8 +487,9 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
     ship.ld52ship.rudder()!.yawpitch.yaw = 0;
   });
 
-  EM.registerSystem(
+  EM.registerSystem2(
     "cutGrassUnderShip",
+    Phase.GAME_WORLD,
     [ShipDef, PositionDef, WorldFrameDef, PhysicsStateDef],
     [PartyDef, ScoreDef],
     (es, res) => {
@@ -626,50 +636,62 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
   EM.addSystem("cutGrassUnderShip", Phase.GAME_WORLD);
   // EM.addConstraint(["detectGameEnd", "after", "cutGrassUnderShip"]);
 
-  EM.registerSystem("furlUnfurl", [], [InputsDef], (_, res) => {
-    const mast = ship.ld52ship.mast()!;
-    const rudder = ship.ld52ship.rudder()!;
+  EM.registerSystem2(
+    "furlUnfurl",
+    Phase.GAME_PLAYERS,
+    [],
+    [InputsDef],
+    (_, res) => {
+      const mast = ship.ld52ship.mast()!;
+      const rudder = ship.ld52ship.rudder()!;
 
-    // furl/unfurl
-    if (rudder.turret.mannedId) {
-      const sail = mast.mast.sail()!.sail;
-      if (res.inputs.keyDowns["w"]) sail.unfurledAmount += SAIL_FURL_RATE;
-      if (res.inputs.keyDowns["s"]) sail.unfurledAmount -= SAIL_FURL_RATE;
-      sail.unfurledAmount = clamp(sail.unfurledAmount, sail.minFurl, 1.0);
+      // furl/unfurl
+      if (rudder.turret.mannedId) {
+        const sail = mast.mast.sail()!.sail;
+        if (res.inputs.keyDowns["w"]) sail.unfurledAmount += SAIL_FURL_RATE;
+        if (res.inputs.keyDowns["s"]) sail.unfurledAmount -= SAIL_FURL_RATE;
+        sail.unfurledAmount = clamp(sail.unfurledAmount, sail.minFurl, 1.0);
+      }
     }
-  });
+  );
   EM.addSystem("furlUnfurl", Phase.GAME_PLAYERS);
 
   const shipWorld = await EM.whenEntityHas(ship, WorldFrameDef);
 
-  EM.registerSystem("turnMast", [], [InputsDef, WindDef], (_, res) => {
-    const mast = ship.ld52ship.mast()!;
-    // const rudder = ship.ld52ship.rudder()!;
+  EM.registerSystem2(
+    "turnMast",
+    Phase.GAME_PLAYERS,
+    [],
+    [InputsDef, WindDef],
+    (_, res) => {
+      const mast = ship.ld52ship.mast()!;
+      // const rudder = ship.ld52ship.rudder()!;
 
-    // const shipDir = vec3.transformQuat(V(0, 0, 1), shipWorld.world.rotation);
+      // const shipDir = vec3.transformQuat(V(0, 0, 1), shipWorld.world.rotation);
 
-    const invShip = mat3.invert(mat3.fromMat4(shipWorld.world.transform));
-    const windLocalDir = vec3.transformMat3(res.wind.dir, invShip);
-    const shipLocalDir = V(0, 0, 1);
+      const invShip = mat3.invert(mat3.fromMat4(shipWorld.world.transform));
+      const windLocalDir = vec3.transformMat3(res.wind.dir, invShip);
+      const shipLocalDir = V(0, 0, 1);
 
-    const optimalSailLocalDir = vec3.normalize(
-      vec3.add(windLocalDir, shipLocalDir)
-    );
+      const optimalSailLocalDir = vec3.normalize(
+        vec3.add(windLocalDir, shipLocalDir)
+      );
 
-    // console.log(`ship to wind: ${vec3.dot(windLocalDir, shipLocalDir)}`);
+      // console.log(`ship to wind: ${vec3.dot(windLocalDir, shipLocalDir)}`);
 
-    // const normal = vec3.transformQuat(AHEAD_DIR, e.world.rotation);
-    // e.sail.billowAmount = vec3.dot(normal, res.wind.dir);
-    // sail.force * vec3.dot(AHEAD_DIR, normal);
+      // const normal = vec3.transformQuat(AHEAD_DIR, e.world.rotation);
+      // e.sail.billowAmount = vec3.dot(normal, res.wind.dir);
+      // sail.force * vec3.dot(AHEAD_DIR, normal);
 
-    // const currSailForce =
+      // const currSailForce =
 
-    // need to maximize: dot(wind, sail) * dot(sail, ship)
+      // need to maximize: dot(wind, sail) * dot(sail, ship)
 
-    // TODO(@darzu): ANIMATE SAIL TOWARD WIND
-    if (vec3.dot(optimalSailLocalDir, shipLocalDir) > 0.01)
-      quatFromUpForward(mast.rotation, V(0, 1, 0), optimalSailLocalDir);
-  });
+      // TODO(@darzu): ANIMATE SAIL TOWARD WIND
+      if (vec3.dot(optimalSailLocalDir, shipLocalDir) > 0.01)
+        quatFromUpForward(mast.rotation, V(0, 1, 0), optimalSailLocalDir);
+    }
+  );
   EM.addSystem("turnMast", Phase.GAME_PLAYERS);
 
   const { text } = await EM.whenResources(TextDef);

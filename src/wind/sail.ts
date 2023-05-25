@@ -141,8 +141,9 @@ export function createSail(
 
 const AHEAD_DIR = V(0, 0, 1);
 
-EM.registerSystem(
+EM.registerSystem2(
   "applyWindToSail",
+  Phase.GAME_WORLD,
   [SailDef, WorldFrameDef],
   [WindDef],
   (es, res) => {
@@ -161,8 +162,9 @@ EM.registerSystem(
 
 let _lastSailBillow = 0;
 let _lastSailUnfurl = 0;
-EM.registerSystem(
+EM.registerSystem2(
   "billow",
+  Phase.GAME_WORLD,
   [SailDef, RenderableDef],
   [RendererDef],
   (es, { renderer }) => {
@@ -293,13 +295,19 @@ export async function createMast(em: EntityManager) {
 
 // EM.addConstraint(["furlSail", "before", "applyWindToSail"]);
 
-EM.registerSystem("mastForce", [MastDef, RotationDef], [], (es) => {
-  for (let e of es) {
-    const sail = e.mast.sail()!.sail;
-    const normal = vec3.transformQuat(AHEAD_DIR, e.rotation);
-    e.mast.force = sail.force * vec3.dot(AHEAD_DIR, normal);
+EM.registerSystem2(
+  "mastForce",
+  Phase.GAME_WORLD,
+  [MastDef, RotationDef],
+  [],
+  (es) => {
+    for (let e of es) {
+      const sail = e.mast.sail()!.sail;
+      const normal = vec3.transformQuat(AHEAD_DIR, e.rotation);
+      e.mast.force = sail.force * vec3.dot(AHEAD_DIR, normal);
+    }
   }
-});
+);
 EM.addSystem("mastForce", Phase.GAME_WORLD);
 
 // EM.addConstraint(["mastForce", "after", "applyWindToSail"]);

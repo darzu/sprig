@@ -35,6 +35,7 @@ import { TimeDef } from "../time/time.js";
 import { assert } from "../utils/util.js";
 import { vec3Dbg } from "../utils/utils-3d.js";
 import { WoodHealthDef } from "../wood/wood.js";
+import { Phase } from "../ecs/sys_phase";
 
 const MIN_HEALTH_PERCENT = 0.7;
 
@@ -54,8 +55,9 @@ function getCurrentHealth(timberHealth: Component<typeof WoodHealthDef>) {
   return health;
 }
 
-EM.registerSystem(
+EM.registerSystem2(
   "updateShipHealth",
+  Phase.GAME_WORLD,
   [ShipHealthDef, WoodHealthDef],
   [],
   (es, res) => {

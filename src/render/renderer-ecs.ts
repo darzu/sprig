@@ -169,8 +169,9 @@ function updateSmoothedWorldFrame(em: EntityManager, o: Entity) {
 }
 
 export function registerUpdateSmoothedWorldFrames(em: EntityManager) {
-  em.registerSystem(
+  em.registerSystem2(
     "updateSmoothedWorldFrames",
+    Phase.PRE_RENDER,
     [RenderableConstructDef, TransformDef],
     [],
     (objs, res) => {
@@ -247,8 +248,9 @@ function extrapolateFrames(
 }
 
 export function registerUpdateRendererWorldFrames(em: EntityManager) {
-  em.registerSystem(
+  em.registerSystem2(
     "updateRendererWorldFrames",
+    Phase.RENDER,
     [SmoothedWorldFrameDef, PrevSmoothedWorldFrameDef],
     [],
     (objs) => {
@@ -320,8 +322,9 @@ export function registerRenderer(em: EntityManager) {
   const renderObjs: EntityW<
     [typeof RendererWorldFrameDef, typeof RenderableDef]
   >[] = [];
-  em.registerSystem(
+  em.registerSystem2(
     "renderListDeadHidden",
+    Phase.RENDER,
     [RendererWorldFrameDef, RenderableDef, DeadDef],
     [],
     (objs, _) => {
@@ -331,8 +334,9 @@ export function registerRenderer(em: EntityManager) {
           renderObjs.push(o);
     }
   );
-  em.registerSystem(
+  em.registerSystem2(
     "renderList",
+    Phase.RENDER,
     [RendererWorldFrameDef, RenderableDef],
     [],
     (objs, _) => {
@@ -343,8 +347,9 @@ export function registerRenderer(em: EntityManager) {
 
   let __frame = 1; // TODO(@darzu): DBG
 
-  em.registerSystem(
+  em.registerSystem2(
     "stepRenderer",
+    Phase.RENDER,
     null, // NOTE: see "renderList*" systems and NOTE above. We use those to construct our query.
     [CameraDef, CameraComputedDef, RendererDef, TimeDef, PartyDef],
     (_, res) => {
@@ -515,8 +520,9 @@ export function registerRenderer(em: EntityManager) {
 // }
 
 export function registerConstructRenderablesSystem(em: EntityManager) {
-  em.registerSystem(
+  em.registerSystem2(
     "constructRenderables",
+    Phase.PRE_GAME_WORLD,
     [RenderableConstructDef],
     [RendererDef],
     (es, res) => {
@@ -606,15 +612,21 @@ export const RendererDef = EM.defineComponent(
 let _rendererPromise: Promise<void> | null = null;
 
 export function registerRenderInitSystem(em: EntityManager) {
-  em.registerSystem("renderInit", [], [CanvasDef, ShadersDef], (_, res) => {
-    if (!!em.getResource(RendererDef)) return; // already init
-    if (!!_rendererPromise) return;
-    _rendererPromise = chooseAndInitRenderer(
-      em,
-      res.shaders,
-      res.htmlCanvas.canvas
-    );
-  });
+  em.registerSystem2(
+    "renderInit",
+    Phase.PRE_RENDER,
+    [],
+    [CanvasDef, ShadersDef],
+    (_, res) => {
+      if (!!em.getResource(RendererDef)) return; // already init
+      if (!!_rendererPromise) return;
+      _rendererPromise = chooseAndInitRenderer(
+        em,
+        res.shaders,
+        res.htmlCanvas.canvas
+      );
+    }
+  );
 }
 
 async function chooseAndInitRenderer(

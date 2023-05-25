@@ -4,6 +4,7 @@ import { RendererDef } from "../render/renderer-ecs.js";
 import { V, vec3 } from "../matrix/sprig-matrix.js";
 import { TimeDef } from "../time/time.js";
 import { range } from "../utils/util.js";
+import { Phase } from "../ecs/sys_phase";
 
 const STEPS_ON_WIND_DIR = 6000;
 // const STEPS_ON_WIND_DIR = 400;
@@ -36,8 +37,9 @@ export function setWindAngle(wind: Component<typeof WindDef>, angle: number) {
   vec3.rotateY(AHEAD_DIR, ORIGIN, angle, wind.dir);
 }
 
-EM.registerSystem(
+EM.registerSystem2(
   "changeWind",
+  Phase.GAME_WORLD,
   [],
   [WindDef, TimeDef, RendererDef],
   (_, res) => {
@@ -62,9 +64,15 @@ function angleBetweenRadians(a: number, b: number): number {
   return diff;
 }
 
-EM.registerSystem("smoothWind", [], [WindDef], (_, { wind }) => {
-  if (Math.abs(wind.angle - wind.targetAngle) > EPSILON) {
-    const diff = angleBetweenRadians(wind.targetAngle, wind.oldAngle);
-    setWindAngle(wind, wind.angle + diff / WIND_CHANGE_STEPS);
+EM.registerSystem2(
+  "smoothWind",
+  Phase.GAME_WORLD,
+  [],
+  [WindDef],
+  (_, { wind }) => {
+    if (Math.abs(wind.angle - wind.targetAngle) > EPSILON) {
+      const diff = angleBetweenRadians(wind.targetAngle, wind.oldAngle);
+      setWindAngle(wind, wind.angle + diff / WIND_CHANGE_STEPS);
+    }
   }
-});
+);

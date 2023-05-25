@@ -20,6 +20,7 @@ import {
 import { RendererDef } from "../render/renderer-ecs.js";
 import { tempVec3 } from "../matrix/temp-pool.js";
 import { ColorDef } from "../color/color-ecs.js";
+import { Phase } from "../ecs/sys_phase";
 
 export interface ClothConstruct {
   location: vec3;
@@ -125,8 +126,9 @@ function clothMesh(cloth: ClothConstruct): {
 }
 
 onInit((em: EntityManager) => {
-  em.registerSystem(
+  em.registerSystem2(
     "buildCloths",
+    Phase.PHYSICS,
     [ClothConstructDef],
     [MeDef, AssetsDef],
     (cloths, res) => {
@@ -161,8 +163,9 @@ onInit((em: EntityManager) => {
     }
   );
 
-  em.registerSystem(
+  em.registerSystem2(
     "updateClothMesh",
+    Phase.PHYSICS,
     [ClothConstructDef, ClothLocalDef, SpringGridDef, RenderableDef],
     [RendererDef],
     (cloths, { renderer }) => {

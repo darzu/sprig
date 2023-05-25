@@ -45,8 +45,9 @@ export async function initShadingGame() {
 
   const { renderer } = await EM.whenResources(RendererDef);
 
-  EM.registerSystem(
+  EM.registerSystem2(
     "grassGameRenderPipelines",
+    Phase.GAME_WORLD,
     null,
     [RendererDef, DevConsoleDef],
     (_, res) => {

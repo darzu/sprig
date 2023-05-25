@@ -233,8 +233,9 @@ export const renderGrassPipe = CY.createRenderPipeline("grassRender", {
 const _lastTilePos = new Map<number, vec3>();
 
 onInit((em) => {
-  em.registerSystem(
+  em.registerSystem2(
     "updateGrassRenderData",
+    Phase.PRE_RENDER,
     [RenderableDef, RenderDataGrassDef, RendererWorldFrameDef],
     [RendererDef],
     (objs, res) => {

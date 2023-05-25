@@ -13,6 +13,7 @@ import { WoodHealthDef } from "../wood/wood.js";
 import { setMap } from "../levels/level-map.js";
 import { MapPaths } from "../levels/map-loader.js";
 import { ShipDef } from "./ship.js";
+import { Phase } from "../ecs/sys_phase";
 
 export const ScoreDef = EM.defineComponent("score", () => ({
   cutPurple: 0,
@@ -31,8 +32,9 @@ export const ScoreDef = EM.defineComponent("score", () => ({
   skipFrame: false,
 }));
 
-EM.registerSystem(
+EM.registerSystem2(
   "updateScoreDisplay",
+  Phase.POST_GAME_WORLD,
   [ShipHealthDef],
   [ScoreDef, TextDef, CanvasDef],
   (es, res) => {
@@ -50,8 +52,9 @@ EM.registerSystem(
   }
 );
 
-EM.registerSystem(
+EM.registerSystem2(
   "detectGameEnd",
+  Phase.POST_GAME_WORLD,
   [ShipHealthDef],
   [ScoreDef, TextDef, TimeDef, PartyDef],
   async (es, res) => {
