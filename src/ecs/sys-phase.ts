@@ -15,6 +15,8 @@ export enum Phase {
   PHYSICS,
   POST_PHYSICS,
   PRE_RENDER,
+  RENDER_WORLDFRAMES,
+  RENDER_UPLOAD,
   RENDER,
 }
 export type PhaseName = keyof typeof Phase;

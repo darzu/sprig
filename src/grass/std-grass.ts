@@ -235,7 +235,7 @@ const _lastTilePos = new Map<number, vec3>();
 onInit((em) => {
   em.registerSystem(
     "updateGrassRenderData",
-    Phase.PRE_RENDER,
+    Phase.RENDER_UPLOAD,
     [RenderableDef, RenderDataGrassDef, RendererWorldFrameDef],
     [RendererDef],
     (objs, res) => {

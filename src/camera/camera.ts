@@ -112,6 +112,7 @@ export function setCameraFollowPosition(
   vec3.copy(c.cameraFollow.positionOffset, CAMERA_OFFSETS[mode]);
 }
 
+// TODO(@darzu): move to use register init w/ provides CameraComputedDef
 export function registerCameraSystems(em: EntityManager) {
   em.registerSystem(
     "smoothCamera",
@@ -204,7 +205,7 @@ export function registerCameraSystems(em: EntityManager) {
   em.addResource(CameraComputedDef);
   em.registerSystem(
     "updateCameraView",
-    Phase.RENDER,
+    Phase.RENDER_UPLOAD,
     null,
     [CameraComputedDef, CameraDef, MeDef, CanvasDef],
     (_, resources) => {
@@ -253,6 +254,7 @@ export function registerCameraSystems(em: EntityManager) {
         camera.positionOffset,
         camera.cameraPositionError
       );
+      // const computedCameraTranslation = camera.positionOffset;
 
       mat4.translate(viewMatrix, computedCameraTranslation, viewMatrix);
       mat4.invert(viewMatrix, viewMatrix);

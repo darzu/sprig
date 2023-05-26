@@ -126,9 +126,10 @@ onInit((em) => {
       typeof RenderDataStdDef
     ]
   >[] = [];
+  // TODO(@darzu): de-dupe w/ renderList and renderListDeadHidden
   em.registerSystem(
     "stdRenderListDeadHidden",
-    Phase.PRE_RENDER,
+    Phase.RENDER_UPLOAD,
     [RendererWorldFrameDef, RenderableDef, RenderDataStdDef, DeadDef],
     [],
     (objs, _) => {
@@ -140,7 +141,7 @@ onInit((em) => {
   );
   em.registerSystem(
     "stdRenderList",
-    Phase.PRE_RENDER,
+    Phase.RENDER_UPLOAD,
     [RendererWorldFrameDef, RenderableDef, RenderDataStdDef],
     [],
     (objs, _) => {
@@ -150,7 +151,7 @@ onInit((em) => {
   );
   em.registerSystem(
     "stdRenderableDataUpdate",
-    Phase.PRE_RENDER,
+    Phase.RENDER_UPLOAD,
     null,
     [RendererDef],
     (_, res) => {

@@ -250,7 +250,7 @@ function extrapolateFrames(
 export function registerUpdateRendererWorldFrames(em: EntityManager) {
   em.registerSystem(
     "updateRendererWorldFrames",
-    Phase.RENDER,
+    Phase.RENDER_WORLDFRAMES,
     [SmoothedWorldFrameDef, PrevSmoothedWorldFrameDef],
     [],
     (objs) => {
