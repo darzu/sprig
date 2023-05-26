@@ -1,10 +1,7 @@
 import { EntityManager } from "./ecs/entity-manager.js";
 import { InputsDef } from "./input/inputs.js";
 import { registerInitTransforms } from "./physics/transform.js";
-import {
-  LocalHsPlayerDef,
-  registerHsPlayerSystems,
-} from "./hyperspace/hs-player.js";
+import { LocalHsPlayerDef } from "./hyperspace/hs-player.js";
 import {
   CameraDef,
   CameraFollowDef,
@@ -44,7 +41,6 @@ import {
   registerMotionSmoothingRecordLocationsSystem,
   registerMotionSmoothingSystems,
 } from "./render/motion-smoothing.js";
-import { registerCursorSystems } from "./gui/cursor.js";
 import { registerPhysicsSystems } from "./physics/phys.js";
 import { registerUpdateLifetimes } from "./ecs/lifetime.js";
 import { registerMusicSystems } from "./audio/audio.js";
@@ -54,12 +50,7 @@ import { registerTurretSystems } from "./turret/turret.js";
 import { registerUISystems } from "./gui/ui.js";
 import { registerDevSystems } from "./debug/console.js";
 import { registerControllableSystems } from "./input/controllable.js";
-import { registerShipSystems } from "./hyperspace/hyperspace-ship.js";
-import { registerGameStateSystems } from "./hyperspace/hyperspace-gamestate.js";
-import { registerEnemyShipSystems } from "./hyperspace/uv-enemy-ship.js";
 import { registerNetSystems } from "./net/net.js";
-import { registerNoodleSystem } from "./animation/noodles.js";
-import { registerToolSystems } from "./input/tool.js";
 import { ENABLE_NET } from "./flags.js";
 import { Phase } from "./ecs/sys-phase.js";
 import { registerGravitySystem } from "./motion/gravity.js";
@@ -86,7 +77,7 @@ export function registerCommonSystems(em: EntityManager) {
   // TODO(@darzu): game-specific registrations!
   // registerShipSystems(em);
   registerBuildBulletsSystem(em);
-  registerCursorSystems(em);
+  // registerCursorSystems(em);
   registerInitTransforms(em);
   // registerEnemyShipSystems(em);
   registerControllableSystems(em);

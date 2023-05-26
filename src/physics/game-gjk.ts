@@ -76,6 +76,9 @@ export async function initGJKSandbox(em: EntityManager, hosting: boolean) {
   g.controllable.speed *= 0.5;
   g.controllable.sprintMul = 10;
 
+  console.log(`assuming global cursor`);
+  console.dir(res.globalCursor3d);
+  console.dir(res.globalCursor3d.cursor());
   const c = res.globalCursor3d.cursor()!;
   if (RenderableDef.isOn(c)) c.renderable.enabled = false;
 

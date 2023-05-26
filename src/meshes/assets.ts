@@ -540,7 +540,7 @@ async function loadMeshSetInternal(relPath: string): Promise<RawMesh[]> {
   if (relPath.endsWith(".glb")) {
     let bytes = await loadBytesInternal(relPath);
     const res = importGltf(bytes);
-    console.dir(res);
+    // console.dir(res);
     assert(
       !!res && !isParseError(res),
       `unable to parse asset set (${relPath}):\n${res}`
