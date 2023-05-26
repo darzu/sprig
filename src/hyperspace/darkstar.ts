@@ -64,7 +64,7 @@ export const { DarkStarPropsDef, DarkStarLocalDef, createDarkStarNow } =
 
 export function registerDarkstarSystems(em: EntityManager) {
   // TODO: this star will escape! must bring it closer to the orbit point sometimes
-  em.registerSystem(
+  em.addSystem(
     "darkStarOrbit",
     Phase.GAME_WORLD,
     [DarkStarPropsDef, PositionDef, AuthorityDef],

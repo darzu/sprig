@@ -7,7 +7,7 @@ import { AngularVelocityDef, LinearVelocityDef } from "../motion/velocity.js";
 import { Phase } from "../ecs/sys-phase.js";
 
 export function registerPredictSystem(em: EntityManager) {
-  em.registerSystem(
+  em.addSystem(
     "predict",
     Phase.NETWORK,
     [PredictDef, PositionDef, LinearVelocityDef],

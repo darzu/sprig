@@ -114,7 +114,7 @@ export function setCameraFollowPosition(
 
 // TODO(@darzu): move to use register init w/ provides CameraComputedDef
 export function registerCameraSystems(em: EntityManager) {
-  em.registerSystem(
+  em.addSystem(
     "smoothCamera",
     Phase.PRE_RENDER,
     null,
@@ -126,7 +126,7 @@ export function registerCameraSystems(em: EntityManager) {
     }
   );
 
-  em.registerSystem(
+  em.addSystem(
     "cameraFollowTarget",
     Phase.PRE_RENDER,
     [CameraFollowDef],
@@ -155,7 +155,7 @@ export function registerCameraSystems(em: EntityManager) {
     }
   );
 
-  em.registerSystem(
+  em.addSystem(
     "retargetCamera",
     Phase.PRE_RENDER,
     null,
@@ -203,7 +203,7 @@ export function registerCameraSystems(em: EntityManager) {
   );
 
   em.addResource(CameraComputedDef);
-  em.registerSystem(
+  em.addSystem(
     "updateCameraView",
     Phase.RENDER_PRE_DRAW,
     null,

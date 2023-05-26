@@ -414,7 +414,7 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
     if (ScaleDef.isOn(ball)) vec3.copy(ball.scale, vec3.ONES);
   }
 
-  em.registerSystem(
+  em.addSystem(
     "ld51PlayerFireCannon",
     Phase.GAME_WORLD,
     [LD51CannonDef, WorldFrameDef, InRangeDef],
@@ -484,7 +484,7 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
 
   const BUSY_WAIT = 20.0;
 
-  em.registerSystem(
+  em.addSystem(
     "ld51Ghost",
     Phase.GAME_WORLD,
     [GhostDef, WorldFrameDef, ColliderDef],
@@ -547,7 +547,7 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
   );
   if (DBG_PLAYER)
     // TODO(@darzu): breakBullet
-    em.registerSystem(
+    em.addSystem(
       "breakBullets",
       Phase.GAME_WORLD,
       [
@@ -696,7 +696,7 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
         (colBackWall.collider as AABBCollider).aabb
       );
 
-      em.registerSystem(
+      em.addSystem(
         "bulletBounce",
         Phase.GAME_WORLD,
         [
@@ -756,7 +756,7 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
     // dead bullet maintenance
     // NOTE: this must be called after any system that can create dead bullets but
     //   before the rendering systems.
-    em.registerSystem(
+    em.addSystem(
       "deadBullets",
       Phase.GAME_WORLD,
       [BulletDef, PositionDef, DeadDef, RenderableDef],
@@ -787,7 +787,7 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
     //   }
     // }
 
-    em.registerSystem(
+    em.addSystem(
       "fallingGoodBalls",
       Phase.GAME_WORLD,
       [GoodBallDef, PositionDef, GravityDef, LinearVelocityDef],
@@ -805,7 +805,7 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
       }
     );
 
-    em.registerSystem(
+    em.addSystem(
       "pickUpBalls",
       Phase.GAME_WORLD,
       [GoodBallDef, InteractableDef, InRangeDef, PositionDef],
@@ -929,7 +929,7 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
 
   const startHealth = getCurrentHealth();
   {
-    em.registerSystem(
+    em.addSystem(
       "progressGame",
       Phase.GAME_WORLD,
       [],

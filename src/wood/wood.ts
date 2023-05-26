@@ -113,7 +113,7 @@ export const WoodAssetsDef = EM.defineComponent(
 );
 
 onInit((em) => {
-  em.registerSystem(
+  em.addSystem(
     "runWooden",
     Phase.GAME_WORLD,
     [WoodStateDef, WoodHealthDef, WorldFrameDef, RenderableDef],
@@ -285,7 +285,7 @@ export let _numSplinterEnds = 0;
 let _ONCE = true;
 
 onInit((em: EntityManager) => {
-  em.registerSystem(
+  em.addSystem(
     "woodHealth",
     Phase.GAME_WORLD,
     [WoodStateDef, WorldFrameDef, WoodHealthDef, RenderableDef, ColorDef],

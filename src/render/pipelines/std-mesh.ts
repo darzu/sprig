@@ -127,7 +127,7 @@ onInit((em) => {
     ]
   >[] = [];
   // TODO(@darzu): de-dupe w/ renderList and renderListDeadHidden
-  em.registerSystem(
+  em.addSystem(
     "stdRenderListDeadHidden",
     Phase.RENDER_PRE_DRAW,
     [RendererWorldFrameDef, RenderableDef, RenderDataStdDef, DeadDef],
@@ -139,7 +139,7 @@ onInit((em) => {
           renderObjs.push(o);
     }
   );
-  em.registerSystem(
+  em.addSystem(
     "stdRenderList",
     Phase.RENDER_PRE_DRAW,
     [RendererWorldFrameDef, RenderableDef, RenderDataStdDef],
@@ -149,7 +149,7 @@ onInit((em) => {
         if (o.renderable.enabled && !DeletedDef.isOn(o)) renderObjs.push(o);
     }
   );
-  em.registerSystem(
+  em.addSystem(
     "stdRenderableDataUpdate",
     Phase.RENDER_PRE_DRAW,
     null,

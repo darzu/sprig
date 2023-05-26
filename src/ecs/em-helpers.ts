@@ -36,7 +36,7 @@ function registerConstructorSystem<
   rs: [...RS],
   callback: (e: EntityW<[C]>, resources: EntityW<RS>) => void
 ) {
-  em.registerSystem(
+  em.addSystem(
     `${def.name}Build`,
     Phase.PRE_GAME_WORLD,
     [def],

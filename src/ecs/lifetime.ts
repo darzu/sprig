@@ -13,7 +13,7 @@ export const LifetimeDef = EM.defineComponent(
 export type Lifetime = Component<typeof LifetimeDef>;
 
 export function registerUpdateLifetimes(em: EntityManager) {
-  em.registerSystem(
+  em.addSystem(
     "updateLifetimes",
     Phase.PRE_GAME_WORLD,
     [LifetimeDef],

@@ -46,7 +46,7 @@ function angleBetweenRadians(a: number, b: number): number {
 }
 
 export function registerChangeWindSystems() {
-  EM.registerSystem(
+  EM.addSystem(
     "changeWind",
     Phase.GAME_WORLD,
     [],
@@ -65,16 +65,10 @@ export function registerChangeWindSystems() {
     }
   );
 
-  EM.registerSystem(
-    "smoothWind",
-    Phase.GAME_WORLD,
-    [],
-    [WindDef],
-    (_, { wind }) => {
-      if (Math.abs(wind.angle - wind.targetAngle) > EPSILON) {
-        const diff = angleBetweenRadians(wind.targetAngle, wind.oldAngle);
-        setWindAngle(wind, wind.angle + diff / WIND_CHANGE_STEPS);
-      }
+  EM.addSystem("smoothWind", Phase.GAME_WORLD, [], [WindDef], (_, { wind }) => {
+    if (Math.abs(wind.angle - wind.targetAngle) > EPSILON) {
+      const diff = angleBetweenRadians(wind.targetAngle, wind.oldAngle);
+      setWindAngle(wind, wind.angle + diff / WIND_CHANGE_STEPS);
     }
-  );
+  });
 }

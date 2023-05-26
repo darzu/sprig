@@ -31,7 +31,7 @@ const ENABLE_BULLETBULLET = false;
 
 export function registerBulletCollisionSystem(em: EntityManager) {
   // TODO(@darzu):
-  em.registerSystem(
+  em.addSystem(
     "bulletCollision",
     Phase.GAME_WORLD,
     [BulletDef, AuthorityDef],

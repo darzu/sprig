@@ -22,7 +22,7 @@ export const ToolDef = EM.defineComponent("tool", (type?: string) => ({
 }));
 
 export function registerToolSystems(em: EntityManager) {
-  em.registerSystem(
+  em.addSystem(
     "toolPickup",
     Phase.POST_GAME_PLAYERS,
     [ToolDef, InRangeDef],
@@ -43,7 +43,7 @@ export function registerToolSystems(em: EntityManager) {
     }
   );
 
-  em.registerSystem(
+  em.addSystem(
     "toolDrop",
     Phase.POST_GAME_PLAYERS,
     [HsPlayerDef, PositionDef, RotationDef],

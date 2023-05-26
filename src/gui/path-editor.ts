@@ -276,7 +276,7 @@ export async function initPathEditor() {
   // pathEditor.setMesh(startMesh);
 
   // TODO(@darzu): undo-stack
-  EM.registerSystem(
+  EM.addSystem(
     "editHPoly",
     Phase.GAME_WORLD,
     null,

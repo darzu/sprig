@@ -17,7 +17,7 @@ export const UVShipDef = EM.defineComponent("uvship", () => {
 });
 
 export function registerUVShipSystems() {
-  EM.registerSystem(
+  EM.addSystem(
     "shipMove",
     Phase.GAME_WORLD,
     [UVShipDef, UVPosDef, UVDirDef, AuthorityDef],

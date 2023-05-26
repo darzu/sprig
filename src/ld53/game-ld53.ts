@@ -165,7 +165,7 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
   // console.dir(mapJfa);
   // console.dir(dbgGridCompose);
 
-  em.registerSystem(
+  em.addSystem(
     "ld53GamePipelines",
     Phase.GAME_WORLD,
     null,
@@ -312,7 +312,7 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
     // console.dir(buoys);
     const _t1 = vec3.create();
     const _t2 = vec3.create();
-    em.registerSystem(
+    em.addSystem(
       "shipBouyancy",
       Phase.GAME_WORLD,
       [bouyDef, PositionDef, UVPosDef],
@@ -428,7 +428,7 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
     g.cameraFollow.yawOffset = 0.0;
     g.cameraFollow.pitchOffset = -0.627;
 
-    em.registerSystem(
+    em.addSystem(
       "smolGhost",
       Phase.GAME_WORLD,
       [GhostDef, WorldFrameDef, ColliderDef],
@@ -519,7 +519,7 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
     }
   });
 
-  EM.registerSystem(
+  EM.addSystem(
     "furlUnfurl",
     Phase.GAME_PLAYERS,
     [],
@@ -551,7 +551,7 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
 
   const shipWorld = await EM.whenEntityHas(ship, WorldFrameDef);
 
-  EM.registerSystem(
+  EM.addSystem(
     "turnMast",
     Phase.GAME_PLAYERS,
     [],
@@ -641,7 +641,7 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
   }
 
   // BULLET STUFF
-  em.registerSystem(
+  em.addSystem(
     "breakBullets",
     Phase.GAME_WORLD,
     [
@@ -664,7 +664,7 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
   // dead bullet maintenance
   // NOTE: this must be called after any system that can create dead bullets but
   //   before the rendering systems.
-  em.registerSystem(
+  em.addSystem(
     "deadBullets",
     Phase.GAME_WORLD,
     [BulletDef, PositionDef, DeadDef, RenderableDef],

@@ -116,7 +116,7 @@ export function registerCommonSystems(em: EntityManager) {
 }
 
 function registerRenderViewController(em: EntityManager) {
-  em.registerSystem(
+  em.addSystem(
     "renderModeToggles",
     Phase.GAME_PLAYERS,
     [],

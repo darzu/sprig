@@ -65,7 +65,7 @@ EM.registerInit({
       globalCursor.cursor = createRef(builtCursor);
     }
 
-    EM.registerSystem(
+    EM.addSystem(
       "placeCursorAtScreenCenter",
       Phase.PRE_READ_INPUT,
       [Cursor3dDef, PositionDef, ColorDef],

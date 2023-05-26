@@ -38,7 +38,7 @@ export const ModelBoxDef = EM.defineComponent("modelBox", () => {
 
 function registerObjClicker(em: EntityManager) {
   // listen for modeler on/off
-  em.registerSystem(
+  em.addSystem(
     "modelerOnOff",
     Phase.GAME_PLAYERS,
     null,
@@ -56,7 +56,7 @@ function registerObjClicker(em: EntityManager) {
   );
 
   // look for object clicks
-  em.registerSystem(
+  em.addSystem(
     "modelerClicks",
     Phase.GAME_PLAYERS,
     null,
@@ -111,7 +111,7 @@ export function registerModeler(em: EntityManager) {
 }
 
 function registerAABBBuilder(em: EntityManager) {
-  em.registerSystem(
+  em.addSystem(
     "aabbBuilder",
     Phase.GAME_PLAYERS,
     null,

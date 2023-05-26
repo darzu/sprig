@@ -58,7 +58,7 @@ export function createSpawner(
 }
 
 export function registerUvSpawnSystems(em: EntityManager) {
-  em.registerSystem(
+  em.addSystem(
     "spawnOnTile",
     Phase.GAME_WORLD,
     [SpawnerDef, UVPosDef, UVDirDef],
@@ -104,7 +104,7 @@ export function registerUvSpawnSystems(em: EntityManager) {
   );
 
   // TODO(@darzu): can we make this more ground agnostic?
-  em.registerSystem(
+  em.addSystem(
     "spawnFinishAnimIn",
     Phase.GAME_WORLD,
     [SpawnerDef, RotationDef, PositionDef],

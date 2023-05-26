@@ -155,7 +155,7 @@ export const mkTimberSplinterFree = (
 
 onInit(() => {
   const splinterObjId = 7654;
-  EM.registerSystem(
+  EM.addSystem(
     "splintersOnFloor",
     Phase.GAME_WORLD,
     [

@@ -31,7 +31,7 @@ import { Phase } from "../ecs/sys-phase.js";
 // TODO(@darzu): implement checkAtRest (deleted in this commit)
 
 export function registerPhysicsClampVelocityByContact(em: EntityManager) {
-  em.registerSystem(
+  em.addSystem(
     "clampVelocityByContact",
     Phase.PHYSICS_MOTION,
     null,
@@ -85,7 +85,7 @@ export function registerPhysicsClampVelocityByContact(em: EntityManager) {
 }
 
 export function registerPhysicsClampVelocityBySize(em: EntityManager) {
-  em.registerSystem(
+  em.addSystem(
     "registerPhysicsClampVelocityBySize",
     Phase.PHYSICS_MOTION,
     [LinearVelocityDef, ColliderDef],

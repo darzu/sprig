@@ -133,6 +133,11 @@ export class EntityManager {
   ent0: Entity & { id: 0 };
   systems: Map<string, System<any[] | null, any[]>> = new Map();
   systemsById: Map<number, System<any[] | null, any[]>> = new Map();
+  phases: Map<Phase, string[]> = toMap(
+    PhaseValueList,
+    (n) => n,
+    (_) => [] as string[]
+  );
   entityPromises: Map<number, EntityPromise<ComponentDef[], any>[]> = new Map();
   components: Map<number, ComponentDef<any, any>> = new Map();
   serializers: Map<
@@ -468,15 +473,6 @@ export class EntityManager {
   //   this.labelSolver.addConstraint(con);
   // }
 
-  phases: Map<Phase, string[]> = toMap(
-    PhaseValueList,
-    (n) => n,
-    (_) => [] as string[]
-  );
-  private addSystem(name: string, phase: Phase) {
-    this.phases.get(phase)!.push(name);
-  }
-
   _dbgLastVersion = -1;
   _dbgLastSystemLen = 0;
   public callSystems() {
@@ -697,21 +693,21 @@ export class EntityManager {
   }
 
   private _nextSystemId = 1;
-  public registerSystem<CS extends ComponentDef[], RS extends ComponentDef[]>(
+  public addSystem<CS extends ComponentDef[], RS extends ComponentDef[]>(
     name: string,
     phase: Phase,
     cs: [...CS],
     rs: [...RS],
     callback: SystemFn<CS, RS>
   ): void;
-  public registerSystem<CS extends null, RS extends ComponentDef[]>(
+  public addSystem<CS extends null, RS extends ComponentDef[]>(
     name: string,
     phase: Phase,
     cs: null,
     rs: [...RS],
     callback: SystemFn<CS, RS>
   ): void;
-  public registerSystem<CS extends ComponentDef[], RS extends ComponentDef[]>(
+  public addSystem<CS extends ComponentDef[], RS extends ComponentDef[]>(
     name: string,
     phase: Phase,
     cs: [...CS] | null,
@@ -769,7 +765,7 @@ export class EntityManager {
       ss.push(id);
     }
 
-    this.addSystem(name, phase);
+    this.phases.get(phase)!.push(name);
   }
 
   public whenResources<RS extends ComponentDef[]>(

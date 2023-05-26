@@ -140,7 +140,7 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
   // console.dir(mapJfa);
   // console.dir(dbgGridCompose);
 
-  em.registerSystem(
+  em.addSystem(
     "grassGameRenderPipelines",
     Phase.GAME_WORLD,
     null,
@@ -369,7 +369,7 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
     // g.cameraFollow.yawOffset = 0.0;
     // g.cameraFollow.pitchOffset = -0.378;
 
-    em.registerSystem(
+    em.addSystem(
       "smolGhost",
       Phase.GAME_WORLD,
       [GhostDef, WorldFrameDef, ColliderDef],
@@ -396,7 +396,7 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
   }
 
   // update grass
-  EM.registerSystem(
+  EM.addSystem(
     "updateGrass",
     Phase.GAME_WORLD,
     [CameraFollowDef, WorldFrameDef],
@@ -443,7 +443,7 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
   // dev.showConsole = true;
   // player.controllable.modes.canFly = true;
 
-  EM.registerSystem(
+  EM.addSystem(
     "cuttingOnOff",
     Phase.GAME_PLAYERS,
     [],
@@ -478,7 +478,7 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
     ship.ld52ship.rudder()!.yawpitch.yaw = 0;
   });
 
-  EM.registerSystem(
+  EM.addSystem(
     "cutGrassUnderShip",
     Phase.GAME_WORLD,
     [ShipDef, PositionDef, WorldFrameDef, PhysicsStateDef],
@@ -627,28 +627,22 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
 
   // EM.addConstraint(["detectGameEnd", "after", "cutGrassUnderShip"]);
 
-  EM.registerSystem(
-    "furlUnfurl",
-    Phase.GAME_PLAYERS,
-    [],
-    [InputsDef],
-    (_, res) => {
-      const mast = ship.ld52ship.mast()!;
-      const rudder = ship.ld52ship.rudder()!;
+  EM.addSystem("furlUnfurl", Phase.GAME_PLAYERS, [], [InputsDef], (_, res) => {
+    const mast = ship.ld52ship.mast()!;
+    const rudder = ship.ld52ship.rudder()!;
 
-      // furl/unfurl
-      if (rudder.turret.mannedId) {
-        const sail = mast.mast.sail()!.sail;
-        if (res.inputs.keyDowns["w"]) sail.unfurledAmount += SAIL_FURL_RATE;
-        if (res.inputs.keyDowns["s"]) sail.unfurledAmount -= SAIL_FURL_RATE;
-        sail.unfurledAmount = clamp(sail.unfurledAmount, sail.minFurl, 1.0);
-      }
+    // furl/unfurl
+    if (rudder.turret.mannedId) {
+      const sail = mast.mast.sail()!.sail;
+      if (res.inputs.keyDowns["w"]) sail.unfurledAmount += SAIL_FURL_RATE;
+      if (res.inputs.keyDowns["s"]) sail.unfurledAmount -= SAIL_FURL_RATE;
+      sail.unfurledAmount = clamp(sail.unfurledAmount, sail.minFurl, 1.0);
     }
-  );
+  });
 
   const shipWorld = await EM.whenEntityHas(ship, WorldFrameDef);
 
-  EM.registerSystem(
+  EM.addSystem(
     "turnMast",
     Phase.GAME_PLAYERS,
     [],

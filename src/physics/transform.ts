@@ -176,7 +176,7 @@ function updateWorldFromLocalAndParent(o: Transformable) {
 export function registerInitTransforms(em: EntityManager) {
   // TODO(@darzu): WorldFrame should be optional, only needed
   //  for parented objs (which is maybe the uncommon case).
-  em.registerSystem(
+  em.addSystem(
     "ensureWorldFrame",
     Phase.PRE_PHYSICS,
     [...LocalFrameDefs],
@@ -192,7 +192,7 @@ export function registerInitTransforms(em: EntityManager) {
   );
 }
 export function registerUpdateLocalFromPosRotScale(em: EntityManager) {
-  em.registerSystem(
+  em.addSystem(
     "ensureFillOutLocalFrame",
     Phase.PRE_PHYSICS,
     null,
@@ -218,7 +218,7 @@ export function registerUpdateLocalFromPosRotScale(em: EntityManager) {
   );
 
   // calculate the world transform
-  em.registerSystem(
+  em.addSystem(
     "updateLocalFromPosRotScale",
     Phase.PHYSICS_FINISH_LOCAL,
     [...LocalFrameDefs],
@@ -235,7 +235,7 @@ export function registerUpdateWorldFromLocalAndParent(
   phase: Phase
 ) {
   // calculate the world transform
-  em.registerSystem(
+  em.addSystem(
     "updateWorldFromLocalAndParent" + suffix,
     phase,
     [WorldFrameDef, ...LocalFrameDefs],

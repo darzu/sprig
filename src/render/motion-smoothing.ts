@@ -29,7 +29,7 @@ export type MotionSmoothing = Component<typeof MotionSmoothingDef>;
 export function registerMotionSmoothingRecordLocationsSystem(
   em: EntityManager
 ) {
-  em.registerSystem(
+  em.addSystem(
     "recordPreviousLocations",
     Phase.NETWORK,
     [MotionSmoothingDef],
@@ -50,7 +50,7 @@ export function registerMotionSmoothingRecordLocationsSystem(
 }
 
 export function registerMotionSmoothingSystems(em: EntityManager) {
-  em.registerSystem(
+  em.addSystem(
     "smoothMotion",
     Phase.PRE_RENDER,
     [MotionSmoothingDef],
@@ -71,7 +71,7 @@ export function registerMotionSmoothingSystems(em: EntityManager) {
     }
   );
 
-  em.registerSystem(
+  em.addSystem(
     "updateMotionSmoothing",
     Phase.PRE_RENDER,
     [MotionSmoothingDef],

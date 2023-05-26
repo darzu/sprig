@@ -126,7 +126,7 @@ export const { RibSailPropsDef, RibSailLocalDef, createRibSailNow } =
 type RibSail = ReturnType<typeof createRibSailNow>;
 
 onInit(() => {
-  EM.registerSystem(
+  EM.addSystem(
     `updateRibSail`,
     Phase.GAME_WORLD,
     [RibSailLocalDef, RenderableDef],

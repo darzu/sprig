@@ -176,7 +176,7 @@ export const { HypMastPropsDef, HypMastLocalDef, createHypMastNow } =
   });
 
 export function registerHypersailSystems(em: EntityManager) {
-  em.registerSystem(
+  em.addSystem(
     "updateMastBoom",
     Phase.GAME_PLAYERS,
     [HypMastPropsDef, HypMastLocalDef, TurretDef, BoomPitchesDef],
@@ -248,7 +248,7 @@ export function registerHypersailSystems(em: EntityManager) {
     }
   );
 
-  em.registerSystem(
+  em.addSystem(
     "sail",
     Phase.GAME_PLAYERS,
     [HsShipPropsDef, UVShipDef, WorldFrameDef, AuthorityDef],

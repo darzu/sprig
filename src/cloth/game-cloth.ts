@@ -170,7 +170,7 @@ export async function initClothSandbox(em: EntityManager, hosting: boolean) {
 
   const line = await drawLine(vec3.create(), vec3.create(), V(0, 1, 0));
 
-  em.registerSystem(
+  em.addSystem(
     "clothSandbox",
     Phase.GAME_WORLD,
     [ClothConstructDef, ClothLocalDef, WorldFrameDef, ForceDef],

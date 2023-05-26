@@ -18,29 +18,23 @@ EM.registerSerializerPair(
   }
 );
 
-EM.registerSystem(
-  "delete",
-  Phase.PRE_GAME_WORLD,
-  [DeletedDef],
-  [],
-  (entities) => {
-    for (let entity of entities) {
-      if (!entity.deleted.processed) {
-        // TODO: remove from renderer
-        // TODO(@darzu): yuck, we just wrote a destructor. Also not sure
-        //    this is serializable or network-able
-        if (OnDeleteDef.isOn(entity)) entity.onDelete(entity.id);
+EM.addSystem("delete", Phase.PRE_GAME_WORLD, [DeletedDef], [], (entities) => {
+  for (let entity of entities) {
+    if (!entity.deleted.processed) {
+      // TODO: remove from renderer
+      // TODO(@darzu): yuck, we just wrote a destructor. Also not sure
+      //    this is serializable or network-able
+      if (OnDeleteDef.isOn(entity)) entity.onDelete(entity.id);
 
-        EM.keepOnlyComponents(entity.id, [DeletedDef, SyncDef]);
-        if (SyncDef.isOn(entity)) {
-          entity.sync.dynamicComponents = [];
-          entity.sync.fullComponents = [DeletedDef.id];
-        }
-        entity.deleted.processed = true;
+      EM.keepOnlyComponents(entity.id, [DeletedDef, SyncDef]);
+      if (SyncDef.isOn(entity)) {
+        entity.sync.dynamicComponents = [];
+        entity.sync.fullComponents = [DeletedDef.id];
       }
+      entity.deleted.processed = true;
     }
   }
-);
+});
 
 // TODO(@darzu): uh oh. this seems like memory/life cycle management.
 //    currently this is needed for entities that "own" other
@@ -58,7 +52,7 @@ export const DeadDef = EM.defineComponent("dead", () => ({
 
 // TODO(@darzu): this is entity specific...
 if (WARN_DEAD_CLEANUP) {
-  EM.registerSystem(
+  EM.addSystem(
     "deadCleanupWarning",
     Phase.POST_GAME_WORLD,
     [DeadDef],

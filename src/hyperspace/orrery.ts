@@ -46,7 +46,7 @@ export const OrreryDef = EM.defineComponent("orrery", () => ({
 }));
 
 export function registerOrrerySystems(em: EntityManager) {
-  em.registerSystem(
+  em.addSystem(
     "orreryMotion",
     Phase.GAME_WORLD,
     [OrreryDef, WorldFrameDef],

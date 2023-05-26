@@ -55,7 +55,7 @@ function getCurrentHealth(timberHealth: Component<typeof WoodHealthDef>) {
   return health;
 }
 
-EM.registerSystem(
+EM.addSystem(
   "updateShipHealth",
   Phase.GAME_WORLD,
   [ShipHealthDef, WoodHealthDef],
