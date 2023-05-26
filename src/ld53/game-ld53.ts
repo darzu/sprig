@@ -5,7 +5,11 @@ import { EM, EntityManager, EntityW } from "../ecs/entity-manager.js";
 import { AssetsDef } from "../meshes/assets.js";
 import { ControllableDef } from "../input/controllable.js";
 import { createGhost, GhostDef } from "../debug/ghost.js";
-import { LocalHsPlayerDef, HsPlayerDef } from "../hyperspace/hs-player.js";
+import {
+  LocalHsPlayerDef,
+  HsPlayerDef,
+  registerHsPlayerSystems,
+} from "../hyperspace/hs-player.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { ColliderDef } from "../physics/collider.js";
 import { LinearVelocityDef } from "../motion/velocity.js";
@@ -368,6 +372,7 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
   // player
   if (!DBG_PLAYER) {
     const player = await createPlayer();
+
     player.physicsParent.id = ship.id;
     // vec3.set(0, 3, -1, player.position);
     const rudder = ship.ld52ship.rudder()!;
@@ -375,6 +380,8 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
     player.position[1] = 1.45;
     assert(CameraFollowDef.isOn(rudder));
     raiseManTurret(player, rudder);
+
+    registerHsPlayerSystems(em);
   }
 
   if (DBG_PLAYER) {
