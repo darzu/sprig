@@ -11,7 +11,10 @@ import { max } from "../utils/math.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
-import { RendererWorldFrameDef } from "../render/renderer-ecs.js";
+import {
+  RendererWorldFrameDef,
+  SmoothedWorldFrameDef,
+} from "../render/renderer-ecs.js";
 import { computeNewError, reduceError } from "../utils/smoothing.js";
 import { tempQuat, tempVec3 } from "../matrix/temp-pool.js";
 import { TimeDef } from "../time/time.js";
@@ -124,7 +127,7 @@ export function registerCameraSystems(em: EntityManager) {
 
   em.registerSystem(
     "cameraFollowTarget",
-    Phase.RENDER,
+    Phase.PRE_RENDER,
     [CameraFollowDef],
     [CameraDef],
     (cs, res) => {
@@ -153,7 +156,7 @@ export function registerCameraSystems(em: EntityManager) {
 
   em.registerSystem(
     "retargetCamera",
-    Phase.RENDER,
+    Phase.PRE_RENDER,
     null,
     [CameraDef],
     function ([], res) {

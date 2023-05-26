@@ -260,6 +260,7 @@ export function registerUpdateRendererWorldFrames(em: EntityManager) {
           if (WorldFrameDef.isOn(o)) {
             em.ensureComponentOn(o, RendererWorldFrameDef);
             copyFrame(o.rendererWorldFrame, o.world);
+            // (o as any).rendererWorldFrame = o.world;
           }
           continue;
         }

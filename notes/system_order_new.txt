@@ -26,6 +26,7 @@ PRE_GAME_WORLD
   updateLifetimes
   constructRenderables
   cannonPropsBuild
+  buildHsPlayers
 GAME_WORLD
   despawnFlyingBricks
   stoneTowerAttack
@@ -47,6 +48,7 @@ GAME_WORLD
   woodHealth
   updateRibSail
   ld53GamePipelines
+  hsPlayerLookingForShip
   breakBullets
   deadBullets
 POST_GAME_WORLD
@@ -65,6 +67,7 @@ GAME_PLAYERS
   canvasCursorLockUnlock
   devConsoleToggle
   controllableInput
+  controllableCameraFollow
   turretYawPitch
   turretAim
   turretManUnman
@@ -75,10 +78,11 @@ GAME_PLAYERS
   aabbBuilder
   renderModeToggles
   mouseDrag
+  hsPlayerFacingDir
+  stepHsPlayers
   furlUnfurl
   turnMast
 POST_GAME_PLAYERS
-  controllableCameraFollow
 PRE_PHYSICS
   ensureWorldFrame
   applyGravity
@@ -89,9 +93,9 @@ PRE_PHYSICS
   registerPhysicsClampVelocityBySize
   registerPhysicsApplyLinearVelocity
   physicsApplyAngularVelocity
+  ensureFillOutLocalFrame
   updateLocalFromPosRotScale
 PHYSICS
-  ensureFillOutLocalFrame
   updateWorldFromLocalAndParent
   registerUpdateWorldAABBs
   updatePhysInContact
@@ -110,6 +114,8 @@ PRE_RENDER
   updateMotionSmoothing
   updateSmoothedWorldFrames
   smoothCamera
+  cameraFollowTarget
+  retargetCamera
   updateOceanRenderData
   stdRenderListDeadHidden
   stdRenderList
@@ -119,8 +125,6 @@ RENDER
   uiText
   devConsole
   updateRendererWorldFrames
-  cameraFollowTarget
-  retargetCamera
   updateCameraView
   renderListDeadHidden
   renderList

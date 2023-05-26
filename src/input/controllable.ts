@@ -121,7 +121,7 @@ export function registerControllableSystems(em: EntityManager) {
 
   em.registerSystem(
     "controllableCameraFollow",
-    Phase.POST_GAME_PLAYERS,
+    Phase.GAME_PLAYERS,
     [ControllableDef, CameraFollowDef],
     [InputsDef, MeDef, CanvasDef],
     (controllables, res) => {
