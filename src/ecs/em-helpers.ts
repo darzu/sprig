@@ -160,7 +160,7 @@ export function defineNetEntityHelper<
   function ensureRegistered(reg: typeof systemRegistration): asserts reg is {
     constructFn: ReturnType<typeof lazyRegister>;
   } {
-    reg.constructFn = lazyRegister();
+    if (!reg.constructFn) reg.constructFn = lazyRegister();
   }
 
   const createNew = (...args: Pargs1) => {

@@ -21,18 +21,11 @@ NETWORK
   handleEventAcks
   runEvents
 PRE_GAME_WORLD
-  cannonPropsBuild
-  darkStarPropsBuild
-  ribSailPropsBuild
-  hypMastPropsBuild
-  gemPropsBuild
-  rudderPropsBuild
-  hsShipPropsBuild
-  enemyShipPropsBuild
   buildCursor
   updateLifetimes
   delete
   constructRenderables
+  cannonPropsBuild
 GAME_WORLD
   oceanUVtoPos
   oceanUVDirToRot
