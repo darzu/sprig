@@ -1,4 +1,4 @@
-import { createRef, defineNetEntityHelper } from "../ecs/em_helpers.js";
+import { createRef, defineNetEntityHelper } from "../ecs/em-helpers.js";
 import { EM, EntityManager, EntityW } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { onInit } from "../init.js";
@@ -11,7 +11,8 @@ import { AssetsDef } from "../meshes/assets.js";
 import { PointLightDef } from "../render/lights.js";
 import { FLAG_UNLIT, RenderDataStdDef } from "../render/pipelines/std-scene.js";
 import { ColorDef } from "../color/color-ecs.js";
-import { HyperspaceGameState, GameStateDef } from "./hyperspace-gamestate.js";
+import { HyperspaceGameState, HSGameStateDef } from "./hyperspace-gamestate.js";
+import { Phase } from "../ecs/sys-phase.js";
 
 const DARKSTAR_SPEED = 1;
 
@@ -61,12 +62,13 @@ export const { DarkStarPropsDef, DarkStarLocalDef, createDarkStarNow } =
     },
   });
 
-onInit((em) => {
+export function registerDarkstarSystems(em: EntityManager) {
   // TODO: this star will escape! must bring it closer to the orbit point sometimes
-  em.registerSystem(
+  em.addSystem(
     "darkStarOrbit",
+    Phase.GAME_WORLD,
     [DarkStarPropsDef, PositionDef, AuthorityDef],
-    [MeDef, GameStateDef],
+    [MeDef, HSGameStateDef],
     (es, res) => {
       if (res.hsGameState.state !== HyperspaceGameState.PLAYING) {
         return;
@@ -118,4 +120,4 @@ onInit((em) => {
       }
     }
   );
-});
+}

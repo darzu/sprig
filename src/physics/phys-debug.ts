@@ -25,6 +25,7 @@ import {
   updateFrameFromPosRotScale,
 } from "./transform.js";
 import { vec3, V } from "../matrix/sprig-matrix.js";
+import { Phase } from "../ecs/sys-phase.js";
 
 // TODO(@darzu): re-enable all this! it requires line drawing again
 
@@ -48,8 +49,9 @@ export function registerPhysicsDebuggerSystem(em: EntityManager) {
   em.addResource(PhysicsDbgDef);
 
   // add collider meshes
-  em.registerSystem(
-    "colliderMeshes",
+  em.addSystem(
+    "dbgColliderMeshes",
+    Phase.POST_PHYSICS,
     [PhysicsStateDef],
     [PhysicsDbgDef, AssetsDef],
     (es, res) => {
@@ -91,8 +93,9 @@ export function registerPhysicsDebuggerSystem(em: EntityManager) {
   );
 
   // toggle debug meshes on and off
-  em.registerSystem(
+  em.addSystem(
     "debugMeshes",
+    Phase.POST_PHYSICS,
     [DbgMeshDef, RenderableDef],
     [InputsDef, PhysicsDbgDef],
     (es, res) => {
@@ -108,8 +111,9 @@ export function registerPhysicsDebuggerSystem(em: EntityManager) {
   );
 
   // update transform based on parent collider
-  em.registerSystem(
+  em.addSystem(
     "debugMeshTransform",
+    Phase.POST_PHYSICS,
     [DbgMeshDef, WorldFrameDef, ...LocalFrameDefs],
     [PhysicsBroadCollidersDef],
     (es, res) => {

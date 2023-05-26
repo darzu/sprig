@@ -11,13 +11,17 @@ import { max } from "../utils/math.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
-import { RendererWorldFrameDef } from "../render/renderer-ecs.js";
+import {
+  RendererWorldFrameDef,
+  SmoothedWorldFrameDef,
+} from "../render/renderer-ecs.js";
 import { computeNewError, reduceError } from "../utils/smoothing.js";
 import { tempQuat, tempVec3 } from "../matrix/temp-pool.js";
 import { TimeDef } from "../time/time.js";
 import { yawpitchToQuat } from "../turret/yawpitch.js";
 import { createAABB } from "../physics/aabb.js";
 import { assert, dbgDirOnce, resizeArray } from "../utils/util.js";
+import { Phase } from "../ecs/sys-phase.js";
 
 export type PerspectiveMode = "perspective" | "ortho";
 export type CameraMode = "thirdPerson" | "thirdPersonOverShoulder";
@@ -53,7 +57,7 @@ export type CameraProps = Component<typeof CameraDef>;
 EM.registerInit({
   requireRs: [],
   provideRs: [CameraDef],
-  provideLs: [],
+  // provideLs: [],
   fn: async () => {
     EM.addResource(CameraDef);
   },
@@ -108,9 +112,11 @@ export function setCameraFollowPosition(
   vec3.copy(c.cameraFollow.positionOffset, CAMERA_OFFSETS[mode]);
 }
 
+// TODO(@darzu): move to use register init w/ provides CameraComputedDef
 export function registerCameraSystems(em: EntityManager) {
-  em.registerSystem(
+  em.addSystem(
     "smoothCamera",
+    Phase.PRE_RENDER,
     null,
     [CameraDef, TimeDef],
     function (_, res) {
@@ -120,8 +126,9 @@ export function registerCameraSystems(em: EntityManager) {
     }
   );
 
-  em.registerSystem(
+  em.addSystem(
     "cameraFollowTarget",
+    Phase.PRE_RENDER,
     [CameraFollowDef],
     [CameraDef],
     (cs, res) => {
@@ -148,48 +155,57 @@ export function registerCameraSystems(em: EntityManager) {
     }
   );
 
-  em.registerSystem("retargetCamera", null, [CameraDef], function ([], res) {
-    if (res.camera.prevTargetId === res.camera.targetId) {
-      quat.copy(res.camera.lastRotation, res.camera.rotationOffset);
-      vec3.copy(res.camera.lastPosition, res.camera.positionOffset);
-      return;
+  em.addSystem(
+    "retargetCamera",
+    Phase.PRE_RENDER,
+    null,
+    [CameraDef],
+    function ([], res) {
+      if (res.camera.prevTargetId === res.camera.targetId) {
+        quat.copy(res.camera.lastRotation, res.camera.rotationOffset);
+        vec3.copy(res.camera.lastPosition, res.camera.positionOffset);
+        return;
+      }
+      const prevTarget = em.findEntity(res.camera.prevTargetId, [
+        WorldFrameDef,
+      ]);
+      const newTarget = em.findEntity(res.camera.targetId, [WorldFrameDef])!;
+      if (prevTarget && newTarget) {
+        computeNewError(
+          prevTarget.world.position,
+          newTarget.world.position,
+          res.camera.targetPositionError
+        );
+        computeNewError(
+          res.camera.lastPosition,
+          res.camera.positionOffset,
+          res.camera.cameraPositionError
+        );
+
+        const computedRotation = quat.mul(
+          prevTarget.world.rotation,
+          res.camera.lastRotation
+        );
+        const newComputedRotation = quat.mul(
+          newTarget.world.rotation,
+          res.camera.rotationOffset
+        );
+
+        computeNewError(
+          computedRotation,
+          newComputedRotation,
+          res.camera.rotationError
+        );
+      }
+
+      res.camera.prevTargetId = res.camera.targetId;
     }
-    const prevTarget = em.findEntity(res.camera.prevTargetId, [WorldFrameDef]);
-    const newTarget = em.findEntity(res.camera.targetId, [WorldFrameDef])!;
-    if (prevTarget && newTarget) {
-      computeNewError(
-        prevTarget.world.position,
-        newTarget.world.position,
-        res.camera.targetPositionError
-      );
-      computeNewError(
-        res.camera.lastPosition,
-        res.camera.positionOffset,
-        res.camera.cameraPositionError
-      );
-
-      const computedRotation = quat.mul(
-        prevTarget.world.rotation,
-        res.camera.lastRotation
-      );
-      const newComputedRotation = quat.mul(
-        newTarget.world.rotation,
-        res.camera.rotationOffset
-      );
-
-      computeNewError(
-        computedRotation,
-        newComputedRotation,
-        res.camera.rotationError
-      );
-    }
-
-    res.camera.prevTargetId = res.camera.targetId;
-  });
+  );
 
   em.addResource(CameraComputedDef);
-  em.registerSystem(
+  em.addSystem(
     "updateCameraView",
+    Phase.RENDER_PRE_DRAW,
     null,
     [CameraComputedDef, CameraDef, MeDef, CanvasDef],
     (_, resources) => {
@@ -238,6 +254,7 @@ export function registerCameraSystems(em: EntityManager) {
         camera.positionOffset,
         camera.cameraPositionError
       );
+      // const computedCameraTranslation = camera.positionOffset;
 
       mat4.translate(viewMatrix, computedCameraTranslation, viewMatrix);
       mat4.invert(viewMatrix, viewMatrix);

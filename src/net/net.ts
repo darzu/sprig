@@ -16,6 +16,7 @@ import {
   EventsToNetworkDef,
   PeerNameDef,
 } from "./components.js";
+import { Phase } from "../ecs/sys-phase.js";
 
 const PING_INTERVAL = 1000;
 
@@ -227,20 +228,23 @@ export function registerNetSystems(em: EntityManager) {
   em.addResource(NetStatsDef);
   em.addResource(EventsFromNetworkDef);
   em.addResource(EventsToNetworkDef);
-  em.registerSystem(
+  em.addSystem(
     "getStatsFromNet",
+    Phase.NETWORK,
     null,
     [NetStatsDef],
     getStatsFromNet(net)
   );
-  em.registerSystem(
+  em.addSystem(
     "getEventsFromNet",
+    Phase.NETWORK,
     null,
     [EventsFromNetworkDef],
     getEventsFromNet(net)
   );
-  em.registerSystem(
+  em.addSystem(
     "sendEventsToNet",
+    Phase.NETWORK,
     null,
     [EventsToNetworkDef],
     sendEventsToNet(net)

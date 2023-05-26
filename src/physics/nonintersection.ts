@@ -38,6 +38,7 @@ import {
 } from "./transform.js";
 import { IdPair, idPair } from "../utils/util.js";
 import { tempVec3 } from "../matrix/temp-pool.js";
+import { Phase } from "../ecs/sys-phase.js";
 
 // TODO(@darzu): we use "object", "obj", "o" everywhere in here, we should use "entity", "ent", "e"
 
@@ -155,8 +156,9 @@ export function doesTouch(
 
 // PRECONDITION: assumes world frames are all up to date
 export function registerUpdateWorldAABBs(em: EntityManager, s: string = "") {
-  em.registerSystem(
-    "registerUpdateWorldAABBs" + s,
+  em.addSystem(
+    "registerUpdateWorldAABBs",
+    Phase.PHYSICS_WORLD_FROM_LOCAL,
     [PhysicsStateDef, WorldFrameDef, TransformDef],
     [],
     (objs, res) => {
@@ -181,17 +183,6 @@ export function registerUpdateWorldAABBs(em: EntityManager, s: string = "") {
         //   sweepAABB.max[i] = Math.max(lastWorldAABB.max[i], worldAABB.max[i]);
         // }
       }
-    }
-  );
-}
-
-export function registerUpdateWorldFromPosRotScale(em: EntityManager) {
-  em.registerSystem(
-    "updateWorldFromPosRotScale",
-    [WorldFrameDef],
-    [],
-    (objs) => {
-      for (let o of objs) updateFrameFromPosRotScale(o.world);
     }
   );
 }
@@ -237,8 +228,9 @@ export function registerPhysicsStateInit(em: EntityManager) {
 
   // init the per-object physics state
   // TODO(@darzu): split this into different concerns
-  em.registerSystem(
+  em.addSystem(
     "physicsInit",
+    Phase.PRE_PHYSICS,
     [ColliderDef, PositionDef],
     [PhysicsBroadCollidersDef],
     (objs, { _physBColliders }) => {
@@ -340,8 +332,9 @@ export function registerPhysicsStateInit(em: EntityManager) {
 }
 
 export function registerUpdateInContactSystems(em: EntityManager) {
-  em.registerSystem(
+  em.addSystem(
     "updatePhysInContact",
+    Phase.PHYSICS_CONTACT,
     [ColliderDef, PhysicsStateDef, WorldFrameDef],
     [PhysicsBroadCollidersDef, PhysicsResultsDef],
     (objs, res) => {
@@ -404,8 +397,9 @@ export function registerUpdateInContactSystems(em: EntityManager) {
 
 export function registerPhysicsContactSystems(em: EntityManager) {
   // TODO(@darzu): split this system
-  em.registerSystem(
+  em.addSystem(
     "physicsStepContact",
+    Phase.PHYSICS_CONTACT,
     [ColliderDef, PhysicsStateDef, PositionDef, WorldFrameDef],
     [PhysicsBroadCollidersDef, PhysicsResultsDef],
     (objs, res) => {

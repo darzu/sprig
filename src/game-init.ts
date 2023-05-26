@@ -1,10 +1,7 @@
 import { EntityManager } from "./ecs/entity-manager.js";
 import { InputsDef } from "./input/inputs.js";
 import { registerInitTransforms } from "./physics/transform.js";
-import {
-  LocalHsPlayerDef,
-  registerHsPlayerSystems,
-} from "./hyperspace/hs-player.js";
+import { LocalHsPlayerDef } from "./hyperspace/hs-player.js";
 import {
   CameraDef,
   CameraFollowDef,
@@ -37,10 +34,6 @@ import {
   registerUpdateSmoothedWorldFrames,
   RendererDef,
 } from "./render/renderer-ecs.js";
-import {
-  registerDeadEntitiesSystem,
-  registerDeleteEntitiesSystem,
-} from "./ecs/delete.js";
 import { registerCannonSystems } from "./cannons/cannon.js";
 import { registerInteractionSystem } from "./input/interact.js";
 import { registerModeler } from "./meshes/modeler.js";
@@ -48,7 +41,6 @@ import {
   registerMotionSmoothingRecordLocationsSystem,
   registerMotionSmoothingSystems,
 } from "./render/motion-smoothing.js";
-import { registerCursorSystems } from "./gui/cursor.js";
 import { registerPhysicsSystems } from "./physics/phys.js";
 import { registerUpdateLifetimes } from "./ecs/lifetime.js";
 import { registerMusicSystems } from "./audio/audio.js";
@@ -58,13 +50,12 @@ import { registerTurretSystems } from "./turret/turret.js";
 import { registerUISystems } from "./gui/ui.js";
 import { registerDevSystems } from "./debug/console.js";
 import { registerControllableSystems } from "./input/controllable.js";
-import { registerShipSystems } from "./hyperspace/hyperspace-ship.js";
-import { registerGameStateSystems } from "./hyperspace/hyperspace-gamestate.js";
-import { registerEnemyShipSystems } from "./hyperspace/uv-enemy-ship.js";
 import { registerNetSystems } from "./net/net.js";
-import { registerNoodleSystem } from "./animation/noodles.js";
-import { registerToolSystems } from "./input/tool.js";
 import { ENABLE_NET } from "./flags.js";
+import { Phase } from "./ecs/sys-phase.js";
+import { registerGravitySystem } from "./motion/gravity.js";
+import { registerParameterMotionSystems } from "./motion/parametric-motion.js";
+import { registerAnimateToSystems } from "./animation/animate-to.js";
 
 export function registerCommonSystems(em: EntityManager) {
   if (ENABLE_NET) {
@@ -74,7 +65,7 @@ export function registerCommonSystems(em: EntityManager) {
   registerInitCanvasSystem(em);
   registerUISystems(em);
   registerDevSystems(em);
-  registerGameStateSystems(em);
+  // registerGameStateSystems(em);
   registerRenderInitSystem(em);
   registerMusicSystems(em);
   registerHandleNetworkEvents(em);
@@ -84,32 +75,35 @@ export function registerCommonSystems(em: EntityManager) {
   registerJoinSystems(em);
   // registerGroundSystems(em);
   // TODO(@darzu): game-specific registrations!
-  registerShipSystems(em);
+  // registerShipSystems(em);
   registerBuildBulletsSystem(em);
-  registerCursorSystems(em);
+  // registerCursorSystems(em);
   registerInitTransforms(em);
-  registerEnemyShipSystems(em);
+  // registerEnemyShipSystems(em);
   registerControllableSystems(em);
-  registerHsPlayerSystems(em);
+  // registerHsPlayerSystems(em);
   registerBulletUpdate(em);
   // TODO(@darzu): re-enable noodles?
-  registerNoodleSystem(em);
+  // registerNoodleSystem(em);
   registerUpdateLifetimes(em);
   registerInteractionSystem(em);
   registerTurretSystems(em);
   registerCannonSystems(em);
+  registerGravitySystem(em);
+  registerAnimateToSystems();
+  registerParameterMotionSystems(em);
   registerPhysicsSystems(em);
   registerBulletCollisionSystem(em);
   registerModeler(em);
   // TODO(@darzu): re-enable tools
-  registerToolSystems(em);
+  // registerToolSystems(em);
   registerNetDebugSystem(em);
   registerAckUpdateSystem(em);
   registerSyncSystem(em);
   registerSendOutboxes(em);
   registerEventSystems(em);
-  registerDeleteEntitiesSystem(em);
-  registerDeadEntitiesSystem(em);
+  // registerDeleteEntitiesSystem(em);
+  // registerDeadEntitiesSystem(em);
   registerMotionSmoothingSystems(em);
   registerUpdateSmoothedWorldFrames(em);
   registerUpdateRendererWorldFrames(em);
@@ -122,8 +116,9 @@ export function registerCommonSystems(em: EntityManager) {
 }
 
 function registerRenderViewController(em: EntityManager) {
-  em.registerSystem(
-    "renderView",
+  em.addSystem(
+    "renderModeToggles",
+    Phase.GAME_PLAYERS,
     [],
     [InputsDef, RendererDef, CameraDef],
     (_, { inputs, renderer, camera }) => {

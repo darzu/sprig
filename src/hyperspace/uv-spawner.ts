@@ -1,6 +1,6 @@
 import { AnimateTo, AnimateToDef } from "../animation/animate-to.js";
-import { createRef, Ref } from "../ecs/em_helpers.js";
-import { EM, Entity } from "../ecs/entity-manager.js";
+import { createRef, Ref } from "../ecs/em-helpers.js";
+import { EM, Entity, EntityManager } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { onInit } from "../init.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
@@ -15,6 +15,7 @@ import {
 } from "../physics/transform.js";
 import { spawnEnemyShip } from "./uv-enemy-ship.js";
 import { UVDirDef, UVPosDef } from "../ocean/ocean.js";
+import { Phase } from "../ecs/sys-phase.js";
 
 // TODO(@darzu): generalize for spawning non-enemy entities in the ocean
 
@@ -56,9 +57,10 @@ export function createSpawner(
   return e;
 }
 
-onInit((em) => {
-  em.registerSystem(
+export function registerUvSpawnSystems(em: EntityManager) {
+  em.addSystem(
     "spawnOnTile",
+    Phase.GAME_WORLD,
     [SpawnerDef, UVPosDef, UVDirDef],
     [MeDef],
     (tiles, res) => {
@@ -102,8 +104,9 @@ onInit((em) => {
   );
 
   // TODO(@darzu): can we make this more ground agnostic?
-  em.registerSystem(
+  em.addSystem(
     "spawnFinishAnimIn",
+    Phase.GAME_WORLD,
     [SpawnerDef, RotationDef, PositionDef],
     [MeDef],
     (tiles, res) => {
@@ -150,4 +153,4 @@ onInit((em) => {
       }
     }
   );
-});
+}

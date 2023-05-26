@@ -28,6 +28,7 @@ import { mat4, V, vec3 } from "../matrix/sprig-matrix.js";
 import { assertDbg } from "../utils/util.js";
 import { computeTriangleNormal } from "../utils/utils-3d.js";
 import { LandMapTexPtr } from "../levels/level-map.js";
+import { Phase } from "../ecs/sys-phase.js";
 
 const MAX_GRASS_VERTS = MAX_INDICES;
 const MAX_GRASS_MESHES = 500;
@@ -232,8 +233,9 @@ export const renderGrassPipe = CY.createRenderPipeline("grassRender", {
 const _lastTilePos = new Map<number, vec3>();
 
 onInit((em) => {
-  em.registerSystem(
+  em.addSystem(
     "updateGrassRenderData",
+    Phase.RENDER_PRE_DRAW,
     [RenderableDef, RenderDataGrassDef, RendererWorldFrameDef],
     [RendererDef],
     (objs, res) => {
@@ -267,7 +269,7 @@ onInit((em) => {
       }
     }
   );
-  em.requireSystem("updateGrassRenderData");
-  em.addConstraint(["updateGrassRenderData", "after", "renderList"]);
-  em.addConstraint(["updateGrassRenderData", "before", "stepRenderer"]);
+
+  // em.addConstraint(["updateGrassRenderData", "after", "renderList"]);
+  // em.addConstraint(["updateGrassRenderData", "before", "stepRenderer"]);
 });

@@ -27,6 +27,7 @@ import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
 import { shadowPipelines } from "../render/pipelines/std-shadow.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
+import { Phase } from "../ecs/sys-phase.js";
 
 // TODO(@darzu): BROKEN. camera is in a wonky place?
 
@@ -109,8 +110,9 @@ export async function initReboundSandbox(em: EntityManager, hosting: boolean) {
 
   let nextSpawnAccu = 0;
   let paused = true;
-  em.registerSystem(
+  em.addSystem(
     "sandboxSpawnBoxes",
+    Phase.GAME_WORLD,
     null,
     [AssetsDef, TimeDef, InputsDef],
     (_, res) => {

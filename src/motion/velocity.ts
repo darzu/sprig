@@ -2,6 +2,7 @@ import { EM, Component, EntityManager } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { TimeDef } from "../time/time.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
+import { Phase } from "../ecs/sys-phase.js";
 
 export const LinearVelocityDef = EM.defineComponent(
   "linearVelocity",
@@ -30,8 +31,9 @@ let _normalizedVelocity = vec3.create();
 let _deltaRotation = quat.create();
 
 export function registerPhysicsApplyLinearVelocity(em: EntityManager) {
-  em.registerSystem(
+  em.addSystem(
     "registerPhysicsApplyLinearVelocity",
+    Phase.PHYSICS_MOTION,
     [LinearVelocityDef, PositionDef],
     [TimeDef],
     (objs, res) => {
@@ -45,8 +47,9 @@ export function registerPhysicsApplyLinearVelocity(em: EntityManager) {
 }
 
 export function registerPhysicsApplyAngularVelocity(em: EntityManager) {
-  em.registerSystem(
+  em.addSystem(
     "physicsApplyAngularVelocity",
+    Phase.PHYSICS_MOTION,
     [AngularVelocityDef, RotationDef],
     [TimeDef],
     (objs, res) => {

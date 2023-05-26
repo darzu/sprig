@@ -1,4 +1,4 @@
-import { FinishedDef } from "../ecs/em_helpers.js";
+import { FinishedDef } from "../ecs/em-helpers.js";
 import { AABBCollider, ColliderDef } from "../physics/collider.js";
 import { Component, EM, Entity, EntityManager } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
@@ -15,14 +15,16 @@ import { registerEventHandler, DetectedEventsDef } from "../net/events.js";
 import { LocalHsPlayerDef, HsPlayerDef } from "../hyperspace/hs-player.js";
 import { InteractableDef, InRangeDef } from "./interact.js";
 import { Deserializer, Serializer } from "../utils/serialize.js";
+import { Phase } from "../ecs/sys-phase.js";
 
 export const ToolDef = EM.defineComponent("tool", (type?: string) => ({
   type,
 }));
 
 export function registerToolSystems(em: EntityManager) {
-  em.registerSystem(
+  em.addSystem(
     "toolPickup",
+    Phase.POST_GAME_PLAYERS,
     [ToolDef, InRangeDef],
     [DetectedEventsDef, LocalHsPlayerDef],
     (hats, resources) => {
@@ -41,8 +43,9 @@ export function registerToolSystems(em: EntityManager) {
     }
   );
 
-  em.registerSystem(
+  em.addSystem(
     "toolDrop",
+    Phase.POST_GAME_PLAYERS,
     [HsPlayerDef, PositionDef, RotationDef],
     [DetectedEventsDef],
     (players, { detectedEvents }) => {

@@ -1,14 +1,19 @@
-import { createLabelSolver, Label, LabelConstraint } from "./em-labels.js";
-import { DBG_ASSERT, DBG_INIT_DEPS, DBG_TRYCALLSYSTEM } from "../flags.js";
+import { createLabelSolver, LabelConstraint } from "./em-labels.js";
+import {
+  DBG_ASSERT,
+  DBG_INIT_DEPS,
+  DBG_SYSTEM_ORDER,
+  DBG_TRYCALLSYSTEM,
+} from "../flags.js";
 import { Serializer, Deserializer } from "../utils/serialize.js";
-import { createDag } from "../utils/util-dag.js";
 import {
   assert,
   assertDbg,
   hashCode,
   Intersect,
-  never,
+  toMap,
 } from "../utils/util.js";
+import { Phase, PhaseValueList } from "./sys-phase.js";
 
 // TODO(@darzu): for perf, we really need to move component data to be
 //  colocated in arrays; and maybe introduce "arch-types" for commonly grouped
@@ -64,13 +69,14 @@ type System<CS extends ComponentDef[] | null, RS extends ComponentDef[]> = {
   rs: RS;
   callback: SystemFn<CS, RS>;
   name: string;
+  phase: Phase;
   id: number;
 };
 
 export interface InitFNReg<RS extends ComponentDef[]> {
   requireRs: [...RS];
   provideRs: ComponentDef[];
-  provideLs: Label[]; // system labels
+  // provideLs: Label[]; // system labels
   fn: (rs: EntityW<RS>) => Promise<void>;
 
   // TODO(@darzu): optional metadata?
@@ -127,6 +133,11 @@ export class EntityManager {
   ent0: Entity & { id: 0 };
   systems: Map<string, System<any[] | null, any[]>> = new Map();
   systemsById: Map<number, System<any[] | null, any[]>> = new Map();
+  phases: Map<Phase, string[]> = toMap(
+    PhaseValueList,
+    (n) => n,
+    (_) => [] as string[]
+  );
   entityPromises: Map<number, EntityPromise<ComponentDef[], any>[]> = new Map();
   components: Map<number, ComponentDef<any, any>> = new Map();
   serializers: Map<
@@ -445,44 +456,68 @@ export class EntityManager {
   // TODO(@darzu): rename these to "requireSystem" or somethingE
   // _dbgOldPlan: string[] = []; // TODO(@darzu): REMOVE
   // TODO(@darzu): this makes no sense so what should this represent?
-  public maybeRequireSystem(name: string): boolean {
-    this.addConstraint(["requires", name]);
-    // this._dbgOldPlan.push(name); // TODO(@darzu): DBG
-    return true;
-  }
-  public requireSystem(name: string) {
-    this.addConstraint(["requires", name]);
-    // this._dbgOldPlan.push(name); // TODO(@darzu): DBG
-  }
-  // TODO(@darzu): legacy thing; gotta replace with labels/phases
-  public requireGameplaySystem(name: string) {
-    this.addConstraint(["requires", name]);
-  }
-  public addConstraint(con: LabelConstraint) {
-    this.labelSolver.addConstraint(con);
-  }
+  // public maybeRequireSystem(name: string): boolean {
+  //   this.addConstraint(["requires", name]);
+  //   // this._dbgOldPlan.push(name); // TODO(@darzu): DBG
+  //   return true;
+  // }
+  // public requireSystem(name: string) {
+  //   this.addConstraint(["requires", name]);
+  //   // this._dbgOldPlan.push(name); // TODO(@darzu): DBG
+  // }
+  // // TODO(@darzu): legacy thing; gotta replace with labels/phases
+  // public requireGameplaySystem(name: string) {
+  //   this.addConstraint(["requires", name]);
+  // }
+  // public addConstraint(con: LabelConstraint) {
+  //   this.labelSolver.addConstraint(con);
+  // }
 
   _dbgLastVersion = -1;
+  _dbgLastSystemLen = 0;
   public callSystems() {
-    // TODO(@darzu):
-    // console.log("OLD PLAN:");
-    // console.log(this._tempPlan);
-    if (DBG_INIT_DEPS)
-      if (this._dbgLastVersion !== this.labelSolver.getVersion()) {
-        this._dbgLastVersion = this.labelSolver.getVersion();
-        console.log("NEW PLAN:");
-        console.log(this.labelSolver.getPlan());
+    // // TODO(@darzu):
+    // // console.log("OLD PLAN:");
+    // // console.log(this._tempPlan);
+    // if (DBG_INIT_DEPS)
+    //   if (this._dbgLastVersion !== this.labelSolver.getVersion()) {
+    //     this._dbgLastVersion = this.labelSolver.getVersion();
+    //     console.log("NEW PLAN:");
+    //     console.log(this.labelSolver.getPlan().join("\n"));
+    //   }
+
+    // const plan = this.labelSolver.getPlan();
+    // // const plan = this._tempPlan;
+
+    // for (let s of plan) {
+    //   this._tryCallSystem(s);
+    // }
+
+    // // this._dbgOldPlan.length = 0;
+    // // if (this.dbgLoops > 100) throw "STOP";
+
+    if (DBG_SYSTEM_ORDER) {
+      let newSystemLen = 0;
+      let res = "";
+      for (let phase of PhaseValueList) {
+        const phaseName = Phase[phase];
+        res += phaseName + "\n";
+        for (let s of this.phases.get(phase)!) {
+          res += "  " + s + "\n";
+          newSystemLen++;
+        }
       }
-
-    const plan = this.labelSolver.getPlan();
-    // const plan = this._tempPlan;
-
-    for (let s of plan) {
-      this._tryCallSystem(s);
+      if (this._dbgLastSystemLen !== newSystemLen) {
+        console.log(res);
+        this._dbgLastSystemLen = newSystemLen;
+      }
     }
 
-    // this._dbgOldPlan.length = 0;
-    // if (this.dbgLoops > 100) throw "STOP";
+    for (let phase of PhaseValueList) {
+      for (let s of this.phases.get(phase)!) {
+        this._tryCallSystem(s);
+      }
+    }
   }
 
   public hasEntity(id: number) {
@@ -658,20 +693,23 @@ export class EntityManager {
   }
 
   private _nextSystemId = 1;
-  public registerSystem<CS extends ComponentDef[], RS extends ComponentDef[]>(
+  public addSystem<CS extends ComponentDef[], RS extends ComponentDef[]>(
     name: string,
+    phase: Phase,
     cs: [...CS],
     rs: [...RS],
     callback: SystemFn<CS, RS>
   ): void;
-  public registerSystem<CS extends null, RS extends ComponentDef[]>(
+  public addSystem<CS extends null, RS extends ComponentDef[]>(
     name: string,
+    phase: Phase,
     cs: null,
     rs: [...RS],
     callback: SystemFn<CS, RS>
   ): void;
-  public registerSystem<CS extends ComponentDef[], RS extends ComponentDef[]>(
+  public addSystem<CS extends ComponentDef[], RS extends ComponentDef[]>(
     name: string,
+    phase: Phase,
     cs: [...CS] | null,
     rs: [...RS],
     callback: SystemFn<CS, RS>
@@ -691,6 +729,7 @@ export class EntityManager {
       rs,
       callback,
       name,
+      phase,
       id,
     };
     this.systems.set(name, sys);
@@ -725,6 +764,8 @@ export class EntityManager {
       assertDbg(ss);
       ss.push(id);
     }
+
+    this.phases.get(phase)!.push(name);
   }
 
   public whenResources<RS extends ComponentDef[]>(
@@ -770,6 +811,19 @@ export class EntityManager {
     if (rs) {
       // we have the resources
       s.callback(es, rs);
+
+      // // TODO(@darzu): DEBUG. Promote to a dbg flag? Maybe pre-post system watch predicate
+      // if (es.length && es[0].id === 10001) {
+      //   const doesHave = "rendererWorldFrame" in es[0];
+      //   const isUndefined =
+      //     doesHave && (es[0] as any)["rendererWorldFrame"] === undefined;
+      //   console.log(
+      //     `after ${s.name}: ${es[0].id} ${
+      //       doesHave ? "HAS" : "NOT"
+      //     } .rendererWorldFrame ${isUndefined ? "===" : "!=="} undefined`
+      //   );
+      // }
+
       let afterCall = performance.now();
       this.sysStats[s.name].calls++;
       const thisCallTime = afterCall - afterQuery;
@@ -786,9 +840,9 @@ export class EntityManager {
     return true;
   }
 
-  private _callSystem(name: string) {
-    if (!this.maybeRequireSystem(name)) throw `No system named ${name}`;
-  }
+  // private _callSystem(name: string) {
+  //   if (!this.maybeRequireSystem(name)) throw `No system named ${name}`;
+  // }
 
   // TODO(@darzu): use version numbers instead of dirty flag?
   _changedEntities = new Set<number>();
@@ -829,9 +883,12 @@ export class EntityManager {
   dbgEntityPromises(): string {
     let res = "";
     for (let [id, prom] of this.entityPromises.entries()) {
-      res += `ent waiting: ${id} <- (${prom
+      const ent = EM.entities.get(id) || { id };
+      const unmet = prom
         .flatMap((p) => p.cs.map((c) => c.name))
-        .join(",")})\n`;
+        .filter((n) => !(n in ent));
+
+      res += `ent waiting: ${id} <- (${unmet.join(",")})\n`;
     }
     return res;
   }

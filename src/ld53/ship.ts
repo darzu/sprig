@@ -1,5 +1,5 @@
 import { ColorDef } from "../color/color-ecs.js";
-import { createRef } from "../ecs/em_helpers.js";
+import { createRef } from "../ecs/em-helpers.js";
 import { EM, EntityManager, EntityW } from "../ecs/entity-manager.js";
 import { AssetsDef } from "../meshes/assets.js";
 import { vec3, quat } from "../matrix/sprig-matrix.js";
@@ -39,6 +39,7 @@ import {
   createCannon,
   createCannonNow,
 } from "../cannons/cannon.js";
+import { Phase } from "../ecs/sys-phase.js";
 
 export const ShipDef = EM.defineComponent("ld52ship", () => ({
   mast: createRef(0, [MastDef, RotationDef]),
@@ -185,8 +186,9 @@ export async function createShip(em: EntityManager) {
 
 const AHEAD_DIR = V(0, 0, 1);
 
-EM.registerSystem(
+EM.addSystem(
   "sailShip",
+  Phase.GAME_PLAYERS,
   [ShipDef, WorldFrameDef, RotationDef, LinearVelocityDef],
   [],
   (es) => {
@@ -283,8 +285,9 @@ async function createRudder(em: EntityManager) {
 }
 
 // If a rudder isn't being manned, smooth it back towards straight
-EM.registerSystem(
+EM.addSystem(
   "easeRudderLD52",
+  Phase.GAME_WORLD,
   [RudderDef, TurretDef, YawPitchDef, AuthorityDef],
   [MeDef],
   (rudders, res) => {
@@ -297,11 +300,12 @@ EM.registerSystem(
   }
 );
 
-EM.addConstraint(["sailShip", "after", "mastForce"]);
-EM.addConstraint(["sailShip", "after", "easeRudderLD52"]);
+// EM.addConstraint(["sailShip", "after", "mastForce"]);
+// EM.addConstraint(["sailShip", "after", "easeRudderLD52"]);
 
-EM.registerSystem(
+EM.addSystem(
   "shipParty",
+  Phase.GAME_WORLD,
   [ShipDef, PositionDef, RotationDef],
   [PartyDef],
   (es, res) => {

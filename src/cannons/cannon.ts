@@ -15,9 +15,10 @@ import { WorldFrameDef } from "../physics/nonintersection.js";
 import { AudioDef, randChordId } from "../audio/audio.js";
 import { InputsDef } from "../input/inputs.js";
 import { DeletedDef } from "../ecs/delete.js";
-import { defineNetEntityHelper } from "../ecs/em_helpers.js";
+import { defineNetEntityHelper } from "../ecs/em-helpers.js";
 import { constructNetTurret, TurretDef } from "../turret/turret.js";
 import { SoundSetDef } from "../audio/sound-loader.js";
+import { Phase } from "../ecs/sys-phase.js";
 
 export const { CannonPropsDef, CannonLocalDef, createCannon, createCannonNow } =
   defineNetEntityHelper(EM, {
@@ -90,8 +91,9 @@ export const { CannonPropsDef, CannonLocalDef, createCannon, createCannonNow } =
   });
 
 export function registerCannonSystems(em: EntityManager) {
-  em.registerSystem(
+  em.addSystem(
     "reloadCannon",
+    Phase.GAME_WORLD,
     [CannonLocalDef],
     [TimeDef],
     (cannons, res) => {
@@ -150,8 +152,9 @@ export function registerCannonSystems(em: EntityManager) {
     }
   );
 
-  em.registerSystem(
+  em.addSystem(
     "playerControlCannon",
+    Phase.GAME_PLAYERS,
     [CannonLocalDef, TurretDef, WorldFrameDef],
     [InputsDef, LocalHsPlayerDef],
     (cannons, res) => {
@@ -167,8 +170,9 @@ export function registerCannonSystems(em: EntityManager) {
     }
   );
 
-  em.registerSystem(
+  em.addSystem(
     "playerManCanon",
+    Phase.GAME_PLAYERS,
     [CannonLocalDef, TurretDef, InRangeDef, AuthorityDef, WorldFrameDef],
     [DetectedEventsDef, InputsDef, LocalHsPlayerDef],
     (cannons, res) => {

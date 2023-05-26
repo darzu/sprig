@@ -1,4 +1,5 @@
 import { EM, EntityManager } from "../ecs/entity-manager.js";
+import { Phase } from "../ecs/sys-phase.js";
 
 /*
 UI needed:
@@ -50,7 +51,7 @@ export function registerUISystems(em: EntityManager) {
 
   em.addResource(TextDef, upperDiv, debugDiv, lowerDiv, helpDiv);
 
-  em.registerSystem("uiText", null, [TextDef], (_, res) => {
+  em.addSystem("uiText", Phase.RENDER_DRAW, null, [TextDef], (_, res) => {
     // PERF NOTE: using ".innerText =" creates a new DOM element each frame, whereas
     //    using ".firstChild.nodeValue =" reuses the DOM element. Unfortunately this
     //    means we'll need to do more work to get line breaks.

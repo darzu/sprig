@@ -3,6 +3,7 @@ import { Component, EM, EntityManager } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { clamp } from "../utils/math.js";
 import { DEBUG_INPUTS } from "../flags.js";
+import { Phase } from "../ecs/sys-phase.js";
 
 // Consider: https://www.reddit.com/r/gamedev/comments/w1dau6/input_buffering_action_canceling_and_also/
 // TODO(@darzu): needs refactor to address: events, controller vs mouse+keyboard, keybindings
@@ -42,8 +43,10 @@ export function registerInputsSystem(em: EntityManager): void {
   let inputsReader: (() => Inputs) | null = null;
 
   EM.addResource(InputsDef);
-  em.registerSystem(
+  // const InputsSys =
+  em.addSystem(
     "inputs",
+    Phase.READ_INPUTS,
     null,
     [InputsDef, CanvasDef],
     (_: [], { inputs, htmlCanvas }) => {
@@ -54,8 +57,9 @@ export function registerInputsSystem(em: EntityManager): void {
   );
 
   em.addResource(MouseDragDef);
-  em.registerSystem(
+  em.addSystem(
     "mouseDrag",
+    Phase.GAME_PLAYERS,
     null,
     [InputsDef, MouseDragDef],
     (_, { inputs, mousedrag }) => {

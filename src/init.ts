@@ -1,6 +1,8 @@
 import { EntityManager } from "./ecs/entity-manager.js";
 import { assert } from "./utils/util.js";
 
+// TODO(@darzu): REMOVE onInit. Stead we should use registerInit and kin.
+
 let hasInitPassed = false;
 const onInitFns: ((em: EntityManager) => void)[] = [];
 // TODO(@darzu): convert all uses of onInit into em.registerInit ?

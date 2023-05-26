@@ -5,6 +5,7 @@ import { TimeDef } from "../time/time.js";
 import { PositionDef } from "../physics/transform.js";
 import { assert } from "../utils/util.js";
 import { parabolaFromPoints } from "../utils/math.js";
+import { Phase } from "../ecs/sys-phase.js";
 
 export interface ParamProjectile {
   pos: vec3;
@@ -27,9 +28,10 @@ export const ParametricDef = EM.defineComponent(
 );
 // TODO(@darzu): serializer pairs
 
-onInit((em: EntityManager) => {
-  em.registerSystem(
+export function registerParameterMotionSystems(em: EntityManager) {
+  em.addSystem(
     "updateParametricMotion",
+    Phase.PHYSICS_MOTION,
     [PositionDef, ParametricDef],
     [TimeDef],
     (es, res) => {
@@ -44,7 +46,7 @@ onInit((em: EntityManager) => {
       }
     }
   );
-});
+}
 
 // NOTE: assumes no air resistance
 export function projectilePosition(

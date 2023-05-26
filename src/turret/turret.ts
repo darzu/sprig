@@ -25,9 +25,10 @@ import { AABB, copyAABB, createAABB } from "../physics/aabb.js";
 import { InputsDef } from "../input/inputs.js";
 import { clamp } from "../utils/math.js";
 import { DeletedDef } from "../ecs/delete.js";
-import { defineSerializableComponent } from "../ecs/em_helpers.js";
+import { defineSerializableComponent } from "../ecs/em-helpers.js";
 import { YawPitchDef, yawpitchToQuat } from "./yawpitch.js";
 import { TextDef } from "../gui/ui.js";
+import { Phase } from "../ecs/sys-phase.js";
 
 export const TurretDef = EM.defineComponent("turret", () => {
   return {
@@ -153,8 +154,9 @@ export const raiseUnmanTurret = eventWizard(
 );
 
 export function registerTurretSystems(em: EntityManager) {
-  em.registerSystem(
+  em.addSystem(
     "turretYawPitch",
+    Phase.GAME_PLAYERS,
     [TurretDef, RotationDef, YawPitchDef],
     [],
     (turrets, res) => {
@@ -169,8 +171,9 @@ export function registerTurretSystems(em: EntityManager) {
     }
   );
 
-  em.registerSystem(
+  em.addSystem(
     "turretAim",
+    Phase.GAME_PLAYERS,
     [TurretDef, YawPitchDef, CameraFollowDef],
     [InputsDef, LocalHsPlayerDef],
     (turrets, res) => {
@@ -213,8 +216,9 @@ export function registerTurretSystems(em: EntityManager) {
     }
   );
 
-  em.registerSystem(
+  em.addSystem(
     "turretManUnman",
+    Phase.GAME_PLAYERS,
     [TurretDef, InRangeDef, AuthorityDef, CameraFollowDef],
     [InputsDef, LocalHsPlayerDef, TextDef],
     (turrets, res) => {

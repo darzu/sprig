@@ -6,8 +6,9 @@ import { InputsDef } from "../input/inputs.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { tempVec2 } from "../matrix/temp-pool.js";
 import { vec2Dbg, vec3Dbg } from "../utils/utils-3d.js";
-import { GameStateDef, HyperspaceGameState } from "./hyperspace-gamestate.js";
+import { HSGameStateDef, HyperspaceGameState } from "./hyperspace-gamestate.js";
 import { UVPosDef, UVDirDef } from "../ocean/ocean.js";
+import { Phase } from "../ecs/sys-phase.js";
 
 export const UVShipDef = EM.defineComponent("uvship", () => {
   return {
@@ -15,9 +16,10 @@ export const UVShipDef = EM.defineComponent("uvship", () => {
   };
 });
 
-onInit((em) => {
-  em.registerSystem(
+export function registerUVShipSystems() {
+  EM.addSystem(
     "shipMove",
+    Phase.GAME_WORLD,
     [UVShipDef, UVPosDef, UVDirDef, AuthorityDef],
     [
       // GameStateDef,
@@ -54,4 +56,4 @@ onInit((em) => {
       }
     }
   );
-});
+}

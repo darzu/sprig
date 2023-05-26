@@ -1,5 +1,5 @@
 import { AnimateToDef } from "../animation/animate-to.js";
-import { createRef, Ref } from "../ecs/em_helpers.js";
+import { createRef, Ref } from "../ecs/em-helpers.js";
 import { EM, EntityManager } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { InputsDef } from "../input/inputs.js";
@@ -44,6 +44,7 @@ import { ColorDef } from "../color/color-ecs.js";
 import { DEFAULT_MASK, UVUNWRAP_MASK } from "../render/pipeline-masks.js";
 import { Mesh } from "../meshes/mesh.js";
 import { compute_gerstner, createWaves } from "./gerstner.js";
+import { Phase } from "../ecs/sys-phase.js";
 
 // TODO(@darzu): refactor this to not assume a specific ocean shape
 
@@ -311,85 +312,89 @@ export async function initOcean(oceanMesh: Mesh, color: vec3) {
   // res.time.time
 }
 
-const __temp1 = vec3.create();
-const __temp2 = vec3.create();
-EM.registerSystem(
-  "oceanUVtoPos",
-  [UVPosDef, PositionDef],
-  [OceanDef],
-  (es, res) => {
-    // console.log("runOcean");
-    for (let e of es) {
-      // TODO(@darzu): need some notion of UV parenting?
-      if (PhysicsParentDef.isOn(e) && e.physicsParent.id !== 0) continue;
-      if (AnimateToDef.isOn(e)) continue;
-      // console.log(`copying: ${e.id}`);
-      const newPos = __temp1;
-      res.ocean.uvToGerstnerDispAndNorm(newPos, __temp2, e.uvPos);
-      // const newPos = res.ocean.uvToPos(tempVec3(), e.uvPos);
+export function registerOceanUVFns() {
+  const __temp1 = vec3.create();
+  const __temp2 = vec3.create();
+  EM.addSystem(
+    "oceanUVtoPos",
+    Phase.GAME_WORLD,
+    [UVPosDef, PositionDef],
+    [OceanDef],
+    (es, res) => {
+      // console.log("runOcean");
+      for (let e of es) {
+        // TODO(@darzu): need some notion of UV parenting?
+        if (PhysicsParentDef.isOn(e) && e.physicsParent.id !== 0) continue;
+        if (AnimateToDef.isOn(e)) continue;
+        // console.log(`copying: ${e.id}`);
+        const newPos = __temp1;
+        res.ocean.uvToGerstnerDispAndNorm(newPos, __temp2, e.uvPos);
+        // const newPos = res.ocean.uvToPos(tempVec3(), e.uvPos);
 
-      // if (e.id > 10001) {
-      //   // [-347.83,25.77,126.72]
-      //   // [-347.83,25.77,126.72]
-      //   console.log(
-      //     `moving: ${e.id} at uv ${vec2Dbg(e.uvPos)} from ${vec3Dbg(
-      //       e.position
-      //     )} to ${vec3Dbg(newPos)}`
-      //   );
-      // }
+        // if (e.id > 10001) {
+        //   // [-347.83,25.77,126.72]
+        //   // [-347.83,25.77,126.72]
+        //   console.log(
+        //     `moving: ${e.id} at uv ${vec2Dbg(e.uvPos)} from ${vec3Dbg(
+        //       e.position
+        //     )} to ${vec3Dbg(newPos)}`
+        //   );
+        // }
 
-      if (!vec3.exactEquals(newPos, vec3.ZEROS)) {
-        vec3.copy(e.position, newPos);
-        // console.log(`moving to: ${vec3Dbg(e.position)}`);
+        if (!vec3.exactEquals(newPos, vec3.ZEROS)) {
+          vec3.copy(e.position, newPos);
+          // console.log(`moving to: ${vec3Dbg(e.position)}`);
+        }
       }
     }
-  }
-);
+  );
 
-const __temp3 = vec2.create();
-const __temp4 = vec3.create();
-EM.registerSystem(
-  "oceanUVDirToRot",
-  [UVPosDef, UVDirDef, PositionDef, RotationDef],
-  [OceanDef],
-  (es, res) => {
-    // console.log("runOcean");
-    for (let e of es) {
-      // TODO(@darzu): need some notion of UV parenting?
-      if (PhysicsParentDef.isOn(e) && e.physicsParent.id !== 0) continue;
-      if (AnimateToDef.isOn(e)) continue;
-      // console.log(`copying: ${e.id}`);
+  const __temp3 = vec2.create();
+  const __temp4 = vec3.create();
+  EM.addSystem(
+    "oceanUVDirToRot",
+    Phase.GAME_WORLD,
+    [UVPosDef, UVDirDef, PositionDef, RotationDef],
+    [OceanDef],
+    (es, res) => {
+      // console.log("runOcean");
+      for (let e of es) {
+        // TODO(@darzu): need some notion of UV parenting?
+        if (PhysicsParentDef.isOn(e) && e.physicsParent.id !== 0) continue;
+        if (AnimateToDef.isOn(e)) continue;
+        // console.log(`copying: ${e.id}`);
 
-      // const newNorm = tempVec3();
-      // res.ocean.uvToGerstnerDispAndNorm(tempVec3(), newNorm, e.uvPos);
-      // vec3.copy(e.rotation, newNorm);
+        // const newNorm = tempVec3();
+        // res.ocean.uvToGerstnerDispAndNorm(tempVec3(), newNorm, e.uvPos);
+        // vec3.copy(e.rotation, newNorm);
 
-      // TODO(@darzu): this is horrible.
-      // console.log(`copying: ${e.id}`);
-      // const newNorm = tempVec3();
-      // res.ocean.uvToGerstnerDispAndNorm(tempVec3(), newNorm, e.uvPos);
-      // vec3.copy(e.rotation, newNorm);
-      // TODO(@darzu): this is horrible.
-      vec2.normalize(e.uvDir, e.uvDir);
-      const scaledUVDir = vec2.scale(e.uvDir, 0.0001, __temp3);
-      const aheadUV = vec2.add(e.uvPos, scaledUVDir, __temp3);
-      const aheadPos = __temp1;
-      res.ocean.uvToGerstnerDispAndNorm(aheadPos, __temp2, aheadUV);
-      // const aheadPos = res.ocean.uvToPos(tempVec3(), aheadUV);
+        // TODO(@darzu): this is horrible.
+        // console.log(`copying: ${e.id}`);
+        // const newNorm = tempVec3();
+        // res.ocean.uvToGerstnerDispAndNorm(tempVec3(), newNorm, e.uvPos);
+        // vec3.copy(e.rotation, newNorm);
+        // TODO(@darzu): this is horrible.
+        vec2.normalize(e.uvDir, e.uvDir);
+        const scaledUVDir = vec2.scale(e.uvDir, 0.0001, __temp3);
+        const aheadUV = vec2.add(e.uvPos, scaledUVDir, __temp3);
+        const aheadPos = __temp1;
+        res.ocean.uvToGerstnerDispAndNorm(aheadPos, __temp2, aheadUV);
+        // const aheadPos = res.ocean.uvToPos(tempVec3(), aheadUV);
 
-      // TODO(@darzu): want SDF-based bounds checking
-      if (!vec3.exactEquals(aheadPos, vec3.ZEROS)) {
-        const forwardish = vec3.sub(aheadPos, e.position, __temp1);
-        const newNorm = __temp2;
-        res.ocean.uvToGerstnerDispAndNorm(__temp4, newNorm, e.uvPos);
-        quatFromUpForward(e.rotation, newNorm, forwardish);
-        // console.log(
-        //   `UVDir ${[e.uvDir[0], e.uvDir[1]]} -> ${quatDbg(e.rotation)}`
-        // );
+        // TODO(@darzu): want SDF-based bounds checking
+        if (!vec3.exactEquals(aheadPos, vec3.ZEROS)) {
+          const forwardish = vec3.sub(aheadPos, e.position, __temp1);
+          const newNorm = __temp2;
+          res.ocean.uvToGerstnerDispAndNorm(__temp4, newNorm, e.uvPos);
+          quatFromUpForward(e.rotation, newNorm, forwardish);
+          // console.log(
+          //   `UVDir ${[e.uvDir[0], e.uvDir[1]]} -> ${quatDbg(e.rotation)}`
+          // );
+        }
       }
     }
-  }
-);
+  );
+}
 
 // TODO(@darzu): debug movement on the ocean
 // EM.registerSystem(

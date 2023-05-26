@@ -3,6 +3,7 @@ import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { createFrame, WorldFrameDef } from "./nonintersection.js";
 import { tempVec3, tempQuat } from "../matrix/temp-pool.js";
 import { FALSE, dbgLogOnce } from "../utils/util.js";
+import { Phase } from "../ecs/sys-phase.js";
 
 // Axis:
 //  z is positive forward
@@ -175,41 +176,51 @@ function updateWorldFromLocalAndParent(o: Transformable) {
 export function registerInitTransforms(em: EntityManager) {
   // TODO(@darzu): WorldFrame should be optional, only needed
   //  for parented objs (which is maybe the uncommon case).
-  em.registerSystem("ensureWorldFrame", [...LocalFrameDefs], [], (objs) => {
-    for (let o of objs) {
-      if (!WorldFrameDef.isOn(o)) {
-        em.ensureComponentOn(o, WorldFrameDef);
-        copyFrame(o.world, o);
+  em.addSystem(
+    "ensureWorldFrame",
+    Phase.PRE_PHYSICS,
+    [...LocalFrameDefs],
+    [],
+    (objs) => {
+      for (let o of objs) {
+        if (!WorldFrameDef.isOn(o)) {
+          em.ensureComponentOn(o, WorldFrameDef);
+          copyFrame(o.world, o);
+        }
       }
     }
-  });
+  );
 }
-export function registerUpdateLocalFromPosRotScale(
-  em: EntityManager,
-  suffix: string = ""
-) {
-  em.registerSystem("ensureFillOutLocalFrame", null, [], (objs) => {
-    // TODO(@darzu): PERF. Hacky custom query! Not cached n stuff.
-    for (let o of em.entities.values()) {
-      if (!o.id) continue;
-      // TODO(@darzu): do we really want these on every entity?
-      if (
-        PositionDef.isOn(o) ||
-        RotationDef.isOn(o) ||
-        ScaleDef.isOn(o) ||
-        TransformDef.isOn(o)
-      ) {
-        em.ensureComponentOn(o, PositionDef);
-        em.ensureComponentOn(o, RotationDef);
-        em.ensureComponentOn(o, ScaleDef);
-        em.ensureComponentOn(o, TransformDef);
+export function registerUpdateLocalFromPosRotScale(em: EntityManager) {
+  em.addSystem(
+    "ensureFillOutLocalFrame",
+    Phase.PRE_PHYSICS,
+    null,
+    [],
+    (objs) => {
+      // TODO(@darzu): PERF. Hacky custom query! Not cached n stuff.
+      for (let o of em.entities.values()) {
+        if (!o.id) continue;
+        // TODO(@darzu): do we really want these on every entity?
+        if (
+          PositionDef.isOn(o) ||
+          RotationDef.isOn(o) ||
+          ScaleDef.isOn(o) ||
+          TransformDef.isOn(o)
+        ) {
+          em.ensureComponentOn(o, PositionDef);
+          em.ensureComponentOn(o, RotationDef);
+          em.ensureComponentOn(o, ScaleDef);
+          em.ensureComponentOn(o, TransformDef);
+        }
       }
     }
-  });
+  );
 
   // calculate the world transform
-  em.registerSystem(
-    "updateLocalFromPosRotScale" + suffix,
+  em.addSystem(
+    "updateLocalFromPosRotScale",
+    Phase.PHYSICS_FINISH_LOCAL,
     [...LocalFrameDefs],
     [],
     (objs) => {
@@ -220,11 +231,13 @@ export function registerUpdateLocalFromPosRotScale(
 
 export function registerUpdateWorldFromLocalAndParent(
   em: EntityManager,
-  suffix: string = ""
+  suffix: string,
+  phase: Phase
 ) {
   // calculate the world transform
-  em.registerSystem(
+  em.addSystem(
     "updateWorldFromLocalAndParent" + suffix,
+    phase,
     [WorldFrameDef, ...LocalFrameDefs],
     [],
     (objs) => {

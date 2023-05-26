@@ -1,5 +1,5 @@
 import { CanvasDef } from "../render/canvas.js";
-import { createRef } from "../ecs/em_helpers.js";
+import { createRef } from "../ecs/em-helpers.js";
 import { EM } from "../ecs/entity-manager.js";
 import { VERBOSE_LOG } from "../flags.js";
 import { PartyDef } from "../camera/party.js";
@@ -13,6 +13,7 @@ import { WoodHealthDef } from "../wood/wood.js";
 import { setMap } from "../levels/level-map.js";
 import { MapPaths } from "../levels/map-loader.js";
 import { ShipDef } from "./ship.js";
+import { Phase } from "../ecs/sys-phase.js";
 
 export const ScoreDef = EM.defineComponent("score", () => ({
   cutPurple: 0,
@@ -31,8 +32,9 @@ export const ScoreDef = EM.defineComponent("score", () => ({
   skipFrame: false,
 }));
 
-EM.registerSystem(
+EM.addSystem(
   "updateScoreDisplay",
+  Phase.POST_GAME_WORLD,
   [ShipHealthDef],
   [ScoreDef, TextDef, CanvasDef],
   (es, res) => {
@@ -50,8 +52,9 @@ EM.registerSystem(
   }
 );
 
-EM.registerSystem(
+EM.addSystem(
   "detectGameEnd",
+  Phase.POST_GAME_WORLD,
   [ShipHealthDef],
   [ScoreDef, TextDef, TimeDef, PartyDef],
   async (es, res) => {

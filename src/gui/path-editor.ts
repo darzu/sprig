@@ -27,6 +27,7 @@ import { randNormalPosVec3, vec3Mid } from "../utils/utils-3d.js";
 import { ButtonsStateDef, ButtonDef } from "./button.js";
 import { WidgetDef, WidgetLayerDef } from "./widgets.js";
 import { meshPoolPtr } from "../render/pipelines/std-scene.js";
+import { Phase } from "../ecs/sys-phase.js";
 
 const HLineDef = EM.defineComponent("hline", (hl: HLine) => ({
   hl,
@@ -275,8 +276,9 @@ export async function initPathEditor() {
   // pathEditor.setMesh(startMesh);
 
   // TODO(@darzu): undo-stack
-  EM.registerSystem(
+  EM.addSystem(
     "editHPoly",
+    Phase.GAME_WORLD,
     null,
     [PathEditorDef, RendererDef, ButtonsStateDef, WidgetLayerDef],
     (_, { pathEditor: e, renderer, buttonsState, widgets }) => {
@@ -323,7 +325,6 @@ export async function initPathEditor() {
       }
     }
   );
-  EM.requireGameplaySystem("editHPoly");
 }
 
 // TODO(@darzu): can/should this be merged with half-edge stuff?

@@ -1,5 +1,5 @@
 import { ColorDef } from "../color/color-ecs.js";
-import { createRef, defineNetEntityHelper } from "../ecs/em_helpers.js";
+import { createRef, defineNetEntityHelper } from "../ecs/em-helpers.js";
 import { EM, EntityManager, EntityW } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { onInit } from "../init.js";
@@ -32,7 +32,7 @@ import {
 import { YawPitchDef, yawpitchToQuat } from "../turret/yawpitch.js";
 import { AssetsDef } from "../meshes/assets.js";
 import { DarkStarPropsDef, STAR1_COLOR, STAR2_COLOR } from "./darkstar.js";
-import { HyperspaceGameState, GameStateDef } from "./hyperspace-gamestate.js";
+import { HyperspaceGameState, HSGameStateDef } from "./hyperspace-gamestate.js";
 import { HsShipLocalDef, HsShipPropsDef } from "./hyperspace-ship.js";
 import { UVShipDef } from "./uv-ship.js";
 import { constructNetTurret, TurretDef } from "../turret/turret.js";
@@ -42,6 +42,7 @@ import {
   sailForceAndSignedArea,
 } from "./ribsail.js";
 import { ENDESGA16 } from "../color/palettes.js";
+import { Phase } from "../ecs/sys-phase.js";
 
 // TODO(@darzu): refactor this so that our towers can use this
 
@@ -174,9 +175,10 @@ export const { HypMastPropsDef, HypMastLocalDef, createHypMastNow } =
     },
   });
 
-onInit((em) => {
-  em.registerSystem(
+export function registerHypersailSystems(em: EntityManager) {
+  em.addSystem(
     "updateMastBoom",
+    Phase.GAME_PLAYERS,
     [HypMastPropsDef, HypMastLocalDef, TurretDef, BoomPitchesDef],
     [InputsDef, RendererDef],
     (masts, res) => {
@@ -246,10 +248,11 @@ onInit((em) => {
     }
   );
 
-  em.registerSystem(
+  em.addSystem(
     "sail",
+    Phase.GAME_PLAYERS,
     [HsShipPropsDef, UVShipDef, WorldFrameDef, AuthorityDef],
-    [MeDef, GameStateDef],
+    [MeDef, HSGameStateDef],
     (es, res) => {
       if (res.hsGameState.state !== HyperspaceGameState.PLAYING) {
         return;
@@ -312,4 +315,4 @@ onInit((em) => {
       }
     }
   );
-});
+}

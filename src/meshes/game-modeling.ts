@@ -17,12 +17,14 @@ import { quat, V, vec3 } from "../matrix/sprig-matrix.js";
 import { createGhost } from "../debug/ghost.js";
 import { createHomeShip } from "../wood/shipyard.js";
 import { TextDef } from "../gui/ui.js";
+import { Phase } from "../ecs/sys-phase.js";
 
 export async function initModelingGame() {
   const { renderer } = await EM.whenResources(RendererDef);
 
-  EM.registerSystem(
+  EM.addSystem(
     "gameRenderPipelines",
+    Phase.GAME_WORLD,
     null,
     [RendererDef, DevConsoleDef],
     (_, res) => {
@@ -40,7 +42,6 @@ export async function initModelingGame() {
       ];
     }
   );
-  EM.requireSystem("gameRenderPipelines");
 
   const { camera } = await EM.whenResources(CameraDef);
 

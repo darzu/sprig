@@ -36,6 +36,7 @@ import {
   VERBOSE_LOG,
 } from "../flags.js";
 import { clampToAABB } from "../physics/aabb.js";
+import { Phase } from "../ecs/sys-phase.js";
 
 const BLEND_SIMULATION_FRAMES_STRATEGY: "interpolate" | "extrapolate" | "none" =
   "none";
@@ -168,8 +169,9 @@ function updateSmoothedWorldFrame(em: EntityManager, o: Entity) {
 }
 
 export function registerUpdateSmoothedWorldFrames(em: EntityManager) {
-  em.registerSystem(
+  em.addSystem(
     "updateSmoothedWorldFrames",
+    Phase.PRE_RENDER,
     [RenderableConstructDef, TransformDef],
     [],
     (objs, res) => {
@@ -246,19 +248,24 @@ function extrapolateFrames(
 }
 
 export function registerUpdateRendererWorldFrames(em: EntityManager) {
-  em.registerSystem(
+  em.addSystem(
     "updateRendererWorldFrames",
+    Phase.RENDER_WORLDFRAMES,
     [SmoothedWorldFrameDef, PrevSmoothedWorldFrameDef],
     [],
     (objs) => {
       for (let o of objs) {
-        em.ensureComponentOn(o, RendererWorldFrameDef);
-
-        // TODO(@darzu): HACK!
         if (DONT_SMOOTH_WORLD_FRAME) {
-          (o as any).rendererWorldFrame = (o as any).world;
+          // TODO(@darzu): HACK!
+          if (WorldFrameDef.isOn(o)) {
+            em.ensureComponentOn(o, RendererWorldFrameDef);
+            copyFrame(o.rendererWorldFrame, o.world);
+            // (o as any).rendererWorldFrame = o.world;
+          }
           continue;
         }
+
+        em.ensureComponentOn(o, RendererWorldFrameDef);
 
         switch (BLEND_SIMULATION_FRAMES_STRATEGY) {
           case "interpolate":
@@ -318,8 +325,9 @@ export function registerRenderer(em: EntityManager) {
   const renderObjs: EntityW<
     [typeof RendererWorldFrameDef, typeof RenderableDef]
   >[] = [];
-  em.registerSystem(
+  em.addSystem(
     "renderListDeadHidden",
+    Phase.RENDER_DRAW,
     [RendererWorldFrameDef, RenderableDef, DeadDef],
     [],
     (objs, _) => {
@@ -329,8 +337,9 @@ export function registerRenderer(em: EntityManager) {
           renderObjs.push(o);
     }
   );
-  em.registerSystem(
+  em.addSystem(
     "renderList",
+    Phase.RENDER_DRAW,
     [RendererWorldFrameDef, RenderableDef],
     [],
     (objs, _) => {
@@ -341,8 +350,9 @@ export function registerRenderer(em: EntityManager) {
 
   let __frame = 1; // TODO(@darzu): DBG
 
-  em.registerSystem(
+  em.addSystem(
     "stepRenderer",
+    Phase.RENDER_DRAW,
     null, // NOTE: see "renderList*" systems and NOTE above. We use those to construct our query.
     [CameraDef, CameraComputedDef, RendererDef, TimeDef, PartyDef],
     (_, res) => {
@@ -485,16 +495,13 @@ export function registerRenderer(em: EntityManager) {
     }
   );
 
-  em.requireSystem("renderListDeadHidden");
-  em.requireSystem("renderList");
-  em.requireSystem("stepRenderer");
-  em.addConstraint([
-    "renderListDeadHidden",
-    "after",
-    "updateRendererWorldFrames",
-  ]);
-  em.addConstraint(["renderListDeadHidden", "before", "renderList"]);
-  em.addConstraint(["renderList", "before", "stepRenderer"]);
+  // em.addConstraint([
+  //   "renderListDeadHidden",
+  //   "after",
+  //   "updateRendererWorldFrames",
+  // ]);
+  // em.addConstraint(["renderListDeadHidden", "before", "renderList"]);
+  // em.addConstraint(["renderList", "before", "stepRenderer"]);
 }
 
 // export function poolKindToPool(
@@ -513,8 +520,9 @@ export function registerRenderer(em: EntityManager) {
 // }
 
 export function registerConstructRenderablesSystem(em: EntityManager) {
-  em.registerSystem(
+  em.addSystem(
     "constructRenderables",
+    Phase.PRE_GAME_WORLD,
     [RenderableConstructDef],
     [RendererDef],
     (es, res) => {
@@ -604,15 +612,21 @@ export const RendererDef = EM.defineComponent(
 let _rendererPromise: Promise<void> | null = null;
 
 export function registerRenderInitSystem(em: EntityManager) {
-  em.registerSystem("renderInit", [], [CanvasDef, ShadersDef], (_, res) => {
-    if (!!em.getResource(RendererDef)) return; // already init
-    if (!!_rendererPromise) return;
-    _rendererPromise = chooseAndInitRenderer(
-      em,
-      res.shaders,
-      res.htmlCanvas.canvas
-    );
-  });
+  em.addSystem(
+    "renderInit",
+    Phase.PRE_RENDER,
+    [],
+    [CanvasDef, ShadersDef],
+    (_, res) => {
+      if (!!em.getResource(RendererDef)) return; // already init
+      if (!!_rendererPromise) return;
+      _rendererPromise = chooseAndInitRenderer(
+        em,
+        res.shaders,
+        res.htmlCanvas.canvas
+      );
+    }
+  );
 }
 
 async function chooseAndInitRenderer(

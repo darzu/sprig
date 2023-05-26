@@ -1,6 +1,6 @@
 import { AssetsDef } from "../meshes/assets.js";
 import { ColorDef } from "../color/color-ecs.js";
-import { defineNetEntityHelper } from "../ecs/em_helpers.js";
+import { defineNetEntityHelper } from "../ecs/em-helpers.js";
 import { EM, EntityManager } from "../ecs/entity-manager.js";
 import { MeDef } from "../net/components.js";
 import { copyAABB, createAABB } from "../physics/aabb.js";

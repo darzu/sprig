@@ -44,6 +44,7 @@ import { createGhost } from "../debug/ghost.js";
 import { ForceDef } from "./spring.js";
 import { TextDef } from "../gui/ui.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
+import { Phase } from "../ecs/sys-phase.js";
 
 // TODO(@darzu): BROKEN. cloth sandbox isn't lit right and cloth isn't there
 
@@ -169,8 +170,9 @@ export async function initClothSandbox(em: EntityManager, hosting: boolean) {
 
   const line = await drawLine(vec3.create(), vec3.create(), V(0, 1, 0));
 
-  em.registerSystem(
+  em.addSystem(
     "clothSandbox",
+    Phase.GAME_WORLD,
     [ClothConstructDef, ClothLocalDef, WorldFrameDef, ForceDef],
     [GlobalCursor3dDef, RendererDef, InputsDef, TextDef],
     (cs, res) => {

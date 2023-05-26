@@ -7,6 +7,7 @@ import {
 import { ENDESGA16 } from "../../color/palettes.js";
 import { DeadDef, DeletedDef } from "../../ecs/delete.js";
 import { EntityW } from "../../ecs/entity-manager.js";
+import { Phase } from "../../ecs/sys-phase.js";
 import { onInit } from "../../init.js";
 // import { oceanJfa } from "../../game/ocean.js";
 // import { oceanJfa } from "../../game/ocean.js";
@@ -125,8 +126,10 @@ onInit((em) => {
       typeof RenderDataStdDef
     ]
   >[] = [];
-  em.registerSystem(
+  // TODO(@darzu): de-dupe w/ renderList and renderListDeadHidden
+  em.addSystem(
     "stdRenderListDeadHidden",
+    Phase.RENDER_PRE_DRAW,
     [RendererWorldFrameDef, RenderableDef, RenderDataStdDef, DeadDef],
     [],
     (objs, _) => {
@@ -136,8 +139,9 @@ onInit((em) => {
           renderObjs.push(o);
     }
   );
-  em.registerSystem(
+  em.addSystem(
     "stdRenderList",
+    Phase.RENDER_PRE_DRAW,
     [RendererWorldFrameDef, RenderableDef, RenderDataStdDef],
     [],
     (objs, _) => {
@@ -145,8 +149,9 @@ onInit((em) => {
         if (o.renderable.enabled && !DeletedDef.isOn(o)) renderObjs.push(o);
     }
   );
-  em.registerSystem(
+  em.addSystem(
     "stdRenderableDataUpdate",
+    Phase.RENDER_PRE_DRAW,
     null,
     [RendererDef],
     (_, res) => {
@@ -158,13 +163,11 @@ onInit((em) => {
       }
     }
   );
-  em.requireSystem("stdRenderListDeadHidden");
-  em.requireSystem("stdRenderList");
-  em.requireSystem("stdRenderableDataUpdate");
-  em.addConstraint(["stdRenderListDeadHidden", "after", "renderList"]);
-  em.addConstraint(["stdRenderListDeadHidden", "before", "stdRenderList"]);
-  em.addConstraint(["stdRenderList", "before", "stdRenderableDataUpdate"]);
-  em.addConstraint(["stdRenderableDataUpdate", "before", "stepRenderer"]);
+
+  // em.addConstraint(["stdRenderListDeadHidden", "after", "renderList"]);
+  // em.addConstraint(["stdRenderListDeadHidden", "before", "stdRenderList"]);
+  // em.addConstraint(["stdRenderList", "before", "stdRenderableDataUpdate"]);
+  // em.addConstraint(["stdRenderableDataUpdate", "before", "stepRenderer"]);
 });
 
 function updateStdRenderData(

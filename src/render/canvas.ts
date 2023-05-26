@@ -1,4 +1,5 @@
 import { Component, EM, EntityManager } from "../ecs/entity-manager.js";
+import { Phase } from "../ecs/sys-phase.js";
 import { VERBOSE_LOG } from "../flags.js";
 
 export const CanvasDef = EM.defineComponent(
@@ -16,7 +17,7 @@ export const CanvasDef = EM.defineComponent(
 export type Canvas = Component<typeof CanvasDef>;
 
 export function registerInitCanvasSystem(em: EntityManager) {
-  em.registerSystem("canvas", [], [], () => {
+  em.addSystem("canvasCursorLockUnlock", Phase.GAME_PLAYERS, [], [], () => {
     if (!!em.getResource(CanvasDef)) return;
     const canvas = init();
 
