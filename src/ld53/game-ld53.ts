@@ -162,7 +162,7 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
   // console.dir(dbgGridCompose);
 
   em.registerSystem(
-    "grassGameRenderPipelines",
+    "ld53GamePipelines",
     Phase.GAME_WORLD,
     null,
     [RendererDef, DevConsoleDef],
@@ -265,6 +265,7 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
   const ocean = await em.whenResources(OceanDef); // TODO(@darzu): need to wait?
 
   const wind = em.addResource(WindDef);
+  // registerChangeWindSystems();
   //em.requireSystem("changeWind");
   //em.requireSystem("smoothWind");
 

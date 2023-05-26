@@ -21,20 +21,16 @@ NETWORK
   handleEventAcks
   runEvents
 PRE_GAME_WORLD
+  delete
   buildCursor
   updateLifetimes
-  delete
   constructRenderables
   cannonPropsBuild
 GAME_WORLD
-  oceanUVtoPos
-  oceanUVDirToRot
   despawnFlyingBricks
   stoneTowerAttack
   stoneTowerDamage
   updateShipHealth
-  changeWind
-  smoothWind
   applyWindToSail
   billow
   mastForce
@@ -42,30 +38,20 @@ GAME_WORLD
   easeRudderLD52
   shipParty
   landShipCollision
-  startGame
-  shipHealthCheck
-  shipUpdateParty
-  easeRudder
   buildBullets
   updateBullets
-  updateNoodles
   reloadCannon
   bulletCollision
   splintersOnFloor
   runWooden
   woodHealth
-  darkStarOrbit
   updateRibSail
-  orreryMotion
-  spawnOnTile
-  spawnFinishAnimIn
-  grassGameRenderPipelines
+  ld53GamePipelines
   breakBullets
   deadBullets
 POST_GAME_WORLD
   updateScoreDisplay
   detectGameEnd
-  deadCleanupWarning
 AUDIO
   musicStart
 PRE_READ_INPUT
@@ -76,7 +62,6 @@ GAME_PLAYERS
   sailShip
   canvasCursorLockUnlock
   devConsoleToggle
-  playerShipMove
   controllableInput
   turretYawPitch
   turretAim
@@ -87,29 +72,25 @@ GAME_PLAYERS
   modelerClicks
   aabbBuilder
   renderModeToggles
-  updateMastBoom
-  sail
   mouseDrag
   furlUnfurl
   turnMast
 POST_GAME_PLAYERS
   controllableCameraFollow
   interactableInteract
-  toolPickup
-  toolDrop
 PRE_PHYSICS
   ensureWorldFrame
+  applyGravity
+  animateTo
+  updateParametricMotion
   physicsInit
   clampVelocityByContact
   registerPhysicsClampVelocityBySize
   registerPhysicsApplyLinearVelocity
   physicsApplyAngularVelocity
-  ensureFillOutLocalFrame
   updateLocalFromPosRotScale
-  applyGravity
-  updateParametricMotion
-  animateTo
 PHYSICS
+  ensureFillOutLocalFrame
   updateWorldFromLocalAndParent
   registerUpdateWorldAABBs
   updatePhysInContact

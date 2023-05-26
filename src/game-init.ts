@@ -37,10 +37,6 @@ import {
   registerUpdateSmoothedWorldFrames,
   RendererDef,
 } from "./render/renderer-ecs.js";
-import {
-  registerDeadEntitiesSystem,
-  registerDeleteEntitiesSystem,
-} from "./ecs/delete.js";
 import { registerCannonSystems } from "./cannons/cannon.js";
 import { registerInteractionSystem } from "./input/interact.js";
 import { registerModeler } from "./meshes/modeler.js";
@@ -66,6 +62,9 @@ import { registerNoodleSystem } from "./animation/noodles.js";
 import { registerToolSystems } from "./input/tool.js";
 import { ENABLE_NET } from "./flags.js";
 import { Phase } from "./ecs/sys-phase.js";
+import { registerGravitySystem } from "./motion/gravity.js";
+import { registerParameterMotionSystems } from "./motion/parametric-motion.js";
+import { registerAnimateToSystems } from "./animation/animate-to.js";
 
 export function registerCommonSystems(em: EntityManager) {
   if (ENABLE_NET) {
@@ -85,7 +84,7 @@ export function registerCommonSystems(em: EntityManager) {
   registerJoinSystems(em);
   // registerGroundSystems(em);
   // TODO(@darzu): game-specific registrations!
-  registerShipSystems(em);
+  // registerShipSystems(em);
   registerBuildBulletsSystem(em);
   registerCursorSystems(em);
   registerInitTransforms(em);
@@ -94,23 +93,26 @@ export function registerCommonSystems(em: EntityManager) {
   // registerHsPlayerSystems(em);
   registerBulletUpdate(em);
   // TODO(@darzu): re-enable noodles?
-  registerNoodleSystem(em);
+  // registerNoodleSystem(em);
   registerUpdateLifetimes(em);
   registerInteractionSystem(em);
   registerTurretSystems(em);
   registerCannonSystems(em);
+  registerGravitySystem(em);
+  registerAnimateToSystems();
+  registerParameterMotionSystems(em);
   registerPhysicsSystems(em);
   registerBulletCollisionSystem(em);
   registerModeler(em);
   // TODO(@darzu): re-enable tools
-  registerToolSystems(em);
+  // registerToolSystems(em);
   registerNetDebugSystem(em);
   registerAckUpdateSystem(em);
   registerSyncSystem(em);
   registerSendOutboxes(em);
   registerEventSystems(em);
-  registerDeleteEntitiesSystem(em);
-  registerDeadEntitiesSystem(em);
+  // registerDeleteEntitiesSystem(em);
+  // registerDeadEntitiesSystem(em);
   registerMotionSmoothingSystems(em);
   registerUpdateSmoothedWorldFrames(em);
   registerUpdateRendererWorldFrames(em);

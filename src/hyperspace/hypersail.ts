@@ -175,7 +175,7 @@ export const { HypMastPropsDef, HypMastLocalDef, createHypMastNow } =
     },
   });
 
-onInit((em) => {
+export function registerHypersailSystems(em: EntityManager) {
   em.registerSystem(
     "updateMastBoom",
     Phase.GAME_PLAYERS,
@@ -315,4 +315,4 @@ onInit((em) => {
       }
     }
   );
-});
+}

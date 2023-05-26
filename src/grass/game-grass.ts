@@ -37,7 +37,7 @@ import { SAIL_FURL_RATE } from "../wind/sail.js";
 import { quatFromUpForward, randNormalVec3 } from "../utils/utils-3d.js";
 import { randColor } from "../utils/utils-game.js";
 import { GrassCutTexPtr, grassPoolPtr, renderGrassPipe } from "./std-grass.js";
-import { WindDef } from "../wind/wind.js";
+import { WindDef, registerChangeWindSystems } from "../wind/wind.js";
 import { DevConsoleDef } from "../debug/console.js";
 import { clamp, jitter, max, sum } from "../utils/math.js";
 import { createShip, ShipDef } from "../ld53/ship.js";
@@ -295,6 +295,7 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
   em.addResource(WindDef);
   // em.addSystem("changeWind", Phase.GAME_WORLD);
   // em.addSystem("smoothWind", Phase.GAME_WORLD);
+  registerChangeWindSystems();
 
   // load level
 

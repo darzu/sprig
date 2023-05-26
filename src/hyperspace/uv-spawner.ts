@@ -1,6 +1,6 @@
 import { AnimateTo, AnimateToDef } from "../animation/animate-to.js";
 import { createRef, Ref } from "../ecs/em-helpers.js";
-import { EM, Entity } from "../ecs/entity-manager.js";
+import { EM, Entity, EntityManager } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { onInit } from "../init.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
@@ -57,7 +57,7 @@ export function createSpawner(
   return e;
 }
 
-onInit((em) => {
+export function registerUvSpawnSystems(em: EntityManager) {
   em.registerSystem(
     "spawnOnTile",
     Phase.GAME_WORLD,
@@ -153,4 +153,4 @@ onInit((em) => {
       }
     }
   );
-});
+}

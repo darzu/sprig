@@ -28,7 +28,7 @@ export const ParametricDef = EM.defineComponent(
 );
 // TODO(@darzu): serializer pairs
 
-onInit((em: EntityManager) => {
+export function registerParameterMotionSystems(em: EntityManager) {
   em.registerSystem(
     "updateParametricMotion",
     Phase.PRE_PHYSICS,
@@ -46,7 +46,7 @@ onInit((em: EntityManager) => {
       }
     }
   );
-});
+}
 
 // NOTE: assumes no air resistance
 export function projectilePosition(

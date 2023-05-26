@@ -14,7 +14,7 @@ import { initStars, renderStars } from "../render/pipelines/std-stars.js";
 import { AssetsDef } from "../meshes/assets.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { createHsPlayer, registerHsPlayerSystems } from "./hs-player.js";
-import { createHsShip } from "./hyperspace-ship.js";
+import { createHsShip, registerShipSystems } from "./hyperspace-ship.js";
 import {
   HSGameStateDef,
   registerGameStateSystems,
@@ -28,19 +28,31 @@ import {
   oceanJfa,
   UVPosDef,
   UVDirDef,
+  registerOceanUVFns,
 } from "../ocean/ocean.js";
 import { asyncTimeout } from "../utils/util.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { AnimateToDef } from "../animation/animate-to.js";
-import { createSpawner, SpawnerDef } from "./uv-spawner.js";
+import {
+  createSpawner,
+  registerUvSpawnSystems,
+  SpawnerDef,
+} from "./uv-spawner.js";
 import { tempVec3 } from "../matrix/temp-pool.js";
-import { createDarkStarNow, STAR1_COLOR, STAR2_COLOR } from "./darkstar.js";
+import {
+  createDarkStarNow,
+  registerDarkstarSystems,
+  STAR1_COLOR,
+  STAR2_COLOR,
+} from "./darkstar.js";
 import { renderOceanPipe } from "../render/pipelines/std-ocean.js";
 import { EASE_INQUAD } from "../utils/util-ease.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { registerEnemyShipSystems } from "./uv-enemy-ship.js";
 import { registerUVShipSystems } from "./uv-ship.js";
+import { registerOrrerySystems } from "./orrery.js";
+import { registerHypersailSystems } from "./hypersail.js";
 
 // export let jfaMaxStep = VISUALIZE_JFA ? 0 : 999;
 
@@ -74,6 +86,12 @@ export async function initHyperspaceGame(em: EntityManager) {
   registerEnemyShipSystems(em);
   registerHsPlayerSystems(em);
   registerUVShipSystems();
+  registerOceanUVFns();
+  registerShipSystems(em);
+  registerDarkstarSystems(em);
+  registerOrrerySystems(em);
+  registerUvSpawnSystems(em);
+  registerHypersailSystems(em);
 
   em.whenResources(OceanDef).then(async () => {
     // await awaitTimeout(1000); // TODO(@darzu): what is happening

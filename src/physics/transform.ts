@@ -194,7 +194,7 @@ export function registerInitTransforms(em: EntityManager) {
 export function registerUpdateLocalFromPosRotScale(em: EntityManager) {
   em.registerSystem(
     "ensureFillOutLocalFrame",
-    Phase.PRE_PHYSICS,
+    Phase.PHYSICS,
     null,
     [],
     (objs) => {

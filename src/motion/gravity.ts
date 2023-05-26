@@ -10,7 +10,7 @@ export const GravityDef = EM.defineComponent("gravity", (gravity?: vec3) => {
   return gravity ?? vec3.create();
 });
 
-onInit((em: EntityManager) => {
+export function registerGravitySystem(em: EntityManager) {
   em.registerSystem(
     "applyGravity",
     Phase.PRE_PHYSICS,
@@ -24,4 +24,4 @@ onInit((em: EntityManager) => {
       }
     }
   );
-});
+}

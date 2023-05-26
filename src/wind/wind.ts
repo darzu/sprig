@@ -37,25 +37,6 @@ export function setWindAngle(wind: Component<typeof WindDef>, angle: number) {
   vec3.rotateY(AHEAD_DIR, ORIGIN, angle, wind.dir);
 }
 
-EM.registerSystem(
-  "changeWind",
-  Phase.GAME_WORLD,
-  [],
-  [WindDef, TimeDef, RendererDef],
-  (_, res) => {
-    if (res.time.step % STEPS_ON_WIND_DIR === 0) {
-      const angle = WIND_ANGLES[randInt(0, 7)];
-      console.log(`changing wind to ${angle}`);
-      res.wind.oldAngle = res.wind.targetAngle;
-      res.wind.targetAngle = angle;
-
-      res.renderer.renderer.updateScene({
-        windDir: res.wind.dir,
-      });
-    }
-  }
-);
-
 function angleBetweenRadians(a: number, b: number): number {
   let diff = a - b;
   // lol there's definitely an analytic way to do this
@@ -64,15 +45,36 @@ function angleBetweenRadians(a: number, b: number): number {
   return diff;
 }
 
-EM.registerSystem(
-  "smoothWind",
-  Phase.GAME_WORLD,
-  [],
-  [WindDef],
-  (_, { wind }) => {
-    if (Math.abs(wind.angle - wind.targetAngle) > EPSILON) {
-      const diff = angleBetweenRadians(wind.targetAngle, wind.oldAngle);
-      setWindAngle(wind, wind.angle + diff / WIND_CHANGE_STEPS);
+export function registerChangeWindSystems() {
+  EM.registerSystem(
+    "changeWind",
+    Phase.GAME_WORLD,
+    [],
+    [WindDef, TimeDef, RendererDef],
+    (_, res) => {
+      if (res.time.step % STEPS_ON_WIND_DIR === 0) {
+        const angle = WIND_ANGLES[randInt(0, 7)];
+        console.log(`changing wind to ${angle}`);
+        res.wind.oldAngle = res.wind.targetAngle;
+        res.wind.targetAngle = angle;
+
+        res.renderer.renderer.updateScene({
+          windDir: res.wind.dir,
+        });
+      }
     }
-  }
-);
+  );
+
+  EM.registerSystem(
+    "smoothWind",
+    Phase.GAME_WORLD,
+    [],
+    [WindDef],
+    (_, { wind }) => {
+      if (Math.abs(wind.angle - wind.targetAngle) > EPSILON) {
+        const diff = angleBetweenRadians(wind.targetAngle, wind.oldAngle);
+        setWindAngle(wind, wind.angle + diff / WIND_CHANGE_STEPS);
+      }
+    }
+  );
+}

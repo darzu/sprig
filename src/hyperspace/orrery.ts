@@ -45,7 +45,7 @@ export const OrreryDef = EM.defineComponent("orrery", () => ({
   orreryStars: [] as Ref<[typeof PositionDef, typeof ColorDef]>[],
 }));
 
-onInit((em: EntityManager) => {
+export function registerOrrerySystems(em: EntityManager) {
   em.registerSystem(
     "orreryMotion",
     Phase.GAME_WORLD,
@@ -88,4 +88,4 @@ onInit((em: EntityManager) => {
       }
     }
   );
-});
+}

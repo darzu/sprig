@@ -62,7 +62,7 @@ export const { DarkStarPropsDef, DarkStarLocalDef, createDarkStarNow } =
     },
   });
 
-onInit((em) => {
+export function registerDarkstarSystems(em: EntityManager) {
   // TODO: this star will escape! must bring it closer to the orbit point sometimes
   em.registerSystem(
     "darkStarOrbit",
@@ -120,4 +120,4 @@ onInit((em) => {
       }
     }
   );
-});
+}
