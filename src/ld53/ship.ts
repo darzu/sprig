@@ -299,7 +299,6 @@ EM.registerSystem(
     }
   }
 );
-// EM.addSystem("easeRudderLD52", Phase.GAME_WORLD);
 
 // EM.addConstraint(["sailShip", "after", "mastForce"]);
 // EM.addConstraint(["sailShip", "after", "easeRudderLD52"]);

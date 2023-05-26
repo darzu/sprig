@@ -205,8 +205,7 @@ EM.registerSystem(
     _lastSailUnfurl = e.sail.unfurledAmount;
   }
 );
-// EM.addSystem("applyWindToSail", Phase.GAME_WORLD);
-// EM.addSystem("billow", Phase.GAME_WORLD);
+
 // EM.addConstraint(["billow", "after", "applyWindToSail"]);
 
 export const MastDef = EM.defineComponent("mast", () => ({
@@ -308,7 +307,6 @@ EM.registerSystem(
     }
   }
 );
-// EM.addSystem("mastForce", Phase.GAME_WORLD);
 
 // EM.addConstraint(["mastForce", "after", "applyWindToSail"]);
 // EM.addConstraint(["mastForce", "after", "billow"]);

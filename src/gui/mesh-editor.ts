@@ -425,7 +425,6 @@ export async function initMeshEditor() {
       }
     }
   );
-  // EM.addSystem("editHPoly", Phase.GAME_PLAYERS);
 
   // TODO(@darzu): is this necessary?
   // EM.addConstraint(["editHPoly", "after", "updateWidgets"]);

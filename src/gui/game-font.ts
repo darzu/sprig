@@ -251,7 +251,6 @@ export async function initFontEditor(em: EntityManager) {
       cursor.position[2] = cursorWorldPos[2];
     }
   );
-  // EM.addSystem("uiCameraView", Phase.GAME_WORLD);
 
   // Starter mesh for each letter
   const quadMesh: Mesh = {
@@ -339,7 +338,6 @@ export async function initFontEditor(em: EntityManager) {
       }
     }
   );
-  // EM.addSystem("letterBtnClick", Phase.GAME_WORLD);
 
   // TODO(@darzu): HACKY. Cursor or 2d gui or something needs some better
   //    abstracting

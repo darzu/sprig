@@ -269,7 +269,7 @@ onInit((em) => {
       }
     }
   );
-  // em.addSystem("updateGrassRenderData", Phase.PRE_RENDER);
+
   // em.addConstraint(["updateGrassRenderData", "after", "renderList"]);
   // em.addConstraint(["updateGrassRenderData", "before", "stepRenderer"]);
 });

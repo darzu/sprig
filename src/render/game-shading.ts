@@ -66,7 +66,6 @@ export async function initShadingGame() {
       ];
     }
   );
-  // EM.addSystem("grassGameRenderPipelines", Phase.GAME_WORLD);
 
   const { camera } = await EM.whenResources(CameraDef);
 

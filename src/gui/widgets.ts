@@ -121,7 +121,6 @@ async function initDragBox(): Promise<EntityW<[typeof PositionDef]>> {
       }
     }
   );
-  // EM.addSystem("updateDragbox", Phase.GAME_WORLD);
 
   // TODO(@darzu): store this on a resource?
   return dragBox;
@@ -245,7 +244,6 @@ async function initWidgets({ assets }: EntityW<[typeof AssetsDef]>) {
       }
     }
   );
-  // EM.addSystem("updateWidgets", Phase.GAME_WORLD);
 
   EM.registerSystem(
     "colorWidgets",
@@ -272,5 +270,4 @@ async function initWidgets({ assets }: EntityW<[typeof AssetsDef]>) {
       }
     }
   );
-  // EM.addSystem("colorWidgets", Phase.GAME_WORLD);
 }

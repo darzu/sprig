@@ -158,9 +158,6 @@ export const LD51CannonDef = EM.defineComponent("ld51Cannon", () => {
 });
 
 export async function initShipyardGame(em: EntityManager, hosting: boolean) {
-  // EM.addSystem("runWooden", Phase.GAME_WORLD);
-  // EM.addSystem("woodHealth", Phase.GAME_WORLD);
-
   const res = await em.whenResources(
     AssetsDef,
     // WoodAssetsDef,
@@ -479,9 +476,6 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
       }
     }
   );
-  // EM.addSystem("ld51PlayerFireCannon", Phase.GAME_WORLD);
-
-  // EM.addSystem("splintersOnFloor", Phase.GAME_WORLD);
 
   // const quadIdsNeedReset = new Set<number>();
 
@@ -552,8 +546,6 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
     }
   );
   if (DBG_PLAYER)
-    // EM.addSystem("ld51Ghost", Phase.GAME_WORLD);
-
     // TODO(@darzu): breakBullet
     em.registerSystem(
       "breakBullets",
@@ -574,7 +566,6 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
         }
       }
     );
-  // EM.addSystem("breakBullets", Phase.GAME_WORLD);
 
   // Create player
   {
@@ -760,7 +751,6 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
           }
         }
       );
-      // EM.addSystem("bulletBounce", Phase.GAME_WORLD);
     }
 
     // dead bullet maintenance
@@ -783,7 +773,6 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
         }
       }
     );
-    // EM.addSystem("deadBullets", Phase.GAME_WORLD);
 
     // // starter ammo
     // {
@@ -815,7 +804,6 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
         }
       }
     );
-    // EM.addSystem("fallingGoodBalls", Phase.GAME_WORLD);
 
     em.registerSystem(
       "pickUpBalls",
@@ -843,7 +831,6 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
         }
       }
     );
-    // EM.addSystem("pickUpBalls", Phase.GAME_WORLD);
 
     if (DBG_PLAYER) {
       const g = createGhost();
@@ -985,7 +972,6 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
         }
       }
     );
-    // EM.addSystem("progressGame", Phase.GAME_WORLD);
   }
 
   function getCurrentHealth() {

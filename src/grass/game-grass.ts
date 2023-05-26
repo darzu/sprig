@@ -160,7 +160,6 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
       ];
     }
   );
-  // em.addSystem("grassGameRenderPipelines", Phase.GAME_WORLD);
 
   // Sun
   const sunlight = em.new();
@@ -176,8 +175,6 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
 
   // score
   const score = em.addResource(ScoreDef);
-  // em.addSystem("updateScoreDisplay", Phase.POST_GAME_WORLD);
-  // em.addSystem("detectGameEnd", Phase.POST_GAME_WORLD);
 
   // sky dome?
   const SKY_HALFSIZE = 1000;
@@ -293,8 +290,7 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
   console.log(`num grass tris: ${sum(ts.map((t) => t.numTris))}`);
 
   em.addResource(WindDef);
-  // em.addSystem("changeWind", Phase.GAME_WORLD);
-  // em.addSystem("smoothWind", Phase.GAME_WORLD);
+
   registerChangeWindSystems();
 
   // load level
@@ -303,8 +299,6 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
   vec3.set(0, 10, 0, ship.position);
   // move down
   // vec3.copy(ship.position, SHIP_START_POS);
-  // em.addSystem("sailShip", Phase.GAME_PLAYERS);
-  // em.addSystem("shipParty", Phase.GAME_WORLD);
 
   // player
   if (!DBG_PLAYER) {
@@ -388,7 +382,6 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
         if (!htmlCanvas.hasFirstInteraction) return;
       }
     );
-    // EM.addSystem("smolGhost", Phase.GAME_WORLD);
 
     // em.registerSystem(
     //   [GhostDef, WorldFrameDef],
@@ -400,7 +393,6 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
     //   },
     //   "smolGhostParty"
     // );
-    // // EM.addSystem("smolGhostParty", Phase.GAME_WORLD);
   }
 
   // update grass
@@ -416,7 +408,6 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
       if (player) for (let t of ts) t.update(player.world.position);
     }
   );
-  // EM.addSystem("updateGrass", Phase.GAME_WORLD);
 
   const { renderer } = await EM.whenResources(RendererDef);
   const grassCutTex = renderer.renderer.getCyResource(GrassCutTexPtr)!;
@@ -464,7 +455,6 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
       }
     }
   );
-  // EM.addSystem("cuttingOnOff", Phase.GAME_PLAYERS);
 
   // TODO(@darzu): PERF. bad mem usage everywhere..
   let worldCutData = new Float32Array(
@@ -634,7 +624,7 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
       // rasterizeTri
     }
   );
-  // EM.addSystem("cutGrassUnderShip", Phase.GAME_WORLD);
+
   // EM.addConstraint(["detectGameEnd", "after", "cutGrassUnderShip"]);
 
   EM.registerSystem(
@@ -655,7 +645,6 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
       }
     }
   );
-  // EM.addSystem("furlUnfurl", Phase.GAME_PLAYERS);
 
   const shipWorld = await EM.whenEntityHas(ship, WorldFrameDef);
 
@@ -693,7 +682,6 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
         quatFromUpForward(mast.rotation, V(0, 1, 0), optimalSailLocalDir);
     }
   );
-  // EM.addSystem("turnMast", Phase.GAME_PLAYERS);
 
   const { text } = await EM.whenResources(TextDef);
   text.lowerText =

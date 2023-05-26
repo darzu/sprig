@@ -168,7 +168,6 @@ onInit(() => {
     }
   );
   // TODO(@darzu): only require this if one exists?
-  // EM.addSystem("updateRibSail", Phase.GAME_WORLD);
 });
 
 // HACK: ASSUMES MESH IS assets.sail.mesh

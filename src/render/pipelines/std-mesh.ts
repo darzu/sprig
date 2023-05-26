@@ -163,9 +163,7 @@ onInit((em) => {
       }
     }
   );
-  // em.addSystem("stdRenderListDeadHidden", Phase.PRE_RENDER);
-  // em.addSystem("stdRenderList", Phase.PRE_RENDER);
-  // em.addSystem("stdRenderableDataUpdate", Phase.PRE_RENDER);
+
   // em.addConstraint(["stdRenderListDeadHidden", "after", "renderList"]);
   // em.addConstraint(["stdRenderListDeadHidden", "before", "stdRenderList"]);
   // em.addConstraint(["stdRenderList", "before", "stdRenderableDataUpdate"]);

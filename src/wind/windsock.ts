@@ -73,4 +73,3 @@ EM.registerSystem(
     lastWinAngle = wind.angle;
   }
 );
-// EM.addSystem("billowSock", Phase.GAME_WORLD);

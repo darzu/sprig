@@ -192,7 +192,6 @@ export async function startPirates() {
       }
     }
   );
-  // EM.addSystem("spawnPirates", Phase.GAME_WORLD);
 
   const fireStagger = 150;
   // const tiltPeriod = 5700;
@@ -256,7 +255,6 @@ export async function startPirates() {
       }
     }
   );
-  // EM.addSystem("updatePiratePlatforms", Phase.GAME_WORLD);
 }
 
 const piratePool = createEntityPool<
