@@ -813,6 +813,19 @@ export class EntityManager {
     if (rs) {
       // we have the resources
       s.callback(es, rs);
+
+      // // TODO(@darzu): DEBUG. Promote to a dbg flag? Maybe pre-post system watch predicate
+      // if (es.length && es[0].id === 10001) {
+      //   const doesHave = "rendererWorldFrame" in es[0];
+      //   const isUndefined =
+      //     doesHave && (es[0] as any)["rendererWorldFrame"] === undefined;
+      //   console.log(
+      //     `after ${s.name}: ${es[0].id} ${
+      //       doesHave ? "HAS" : "NOT"
+      //     } .rendererWorldFrame ${isUndefined ? "===" : "!=="} undefined`
+      //   );
+      // }
+
       let afterCall = performance.now();
       this.sysStats[s.name].calls++;
       const thisCallTime = afterCall - afterQuery;

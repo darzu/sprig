@@ -30,7 +30,6 @@ PRE_GAME_WORLD
   hsShipPropsBuild
   enemyShipPropsBuild
   buildCursor
-  buildHsPlayers
   updateLifetimes
   delete
   constructRenderables
@@ -50,16 +49,11 @@ GAME_WORLD
   easeRudderLD52
   shipParty
   landShipCollision
-  restartTimer
   startGame
   shipHealthCheck
   shipUpdateParty
   easeRudder
   buildBullets
-  stepEnemyShips
-  enemyShipsFire
-  breakEnemyShips
-  hsPlayerLookingForShip
   updateBullets
   updateNoodles
   reloadCannon
@@ -67,7 +61,6 @@ GAME_WORLD
   splintersOnFloor
   runWooden
   woodHealth
-  shipMove
   darkStarOrbit
   updateRibSail
   orreryMotion
@@ -90,8 +83,6 @@ GAME_PLAYERS
   devConsoleToggle
   playerShipMove
   controllableInput
-  hsPlayerFacingDir
-  stepHsPlayers
   turretYawPitch
   turretAim
   turretManUnman
