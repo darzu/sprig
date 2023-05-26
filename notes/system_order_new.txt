@@ -116,16 +116,18 @@ PRE_RENDER
   smoothCamera
   cameraFollowTarget
   retargetCamera
+RENDER_WORLDFRAMES
+  updateRendererWorldFrames
+RENDER_PRE_DRAW
+  updateCameraView
   updateOceanRenderData
   stdRenderListDeadHidden
   stdRenderList
   stdRenderableDataUpdate
   updateGrassRenderData
-RENDER
+RENDER_DRAW
   uiText
   devConsole
-  updateRendererWorldFrames
-  updateCameraView
   renderListDeadHidden
   renderList
   stepRenderer
