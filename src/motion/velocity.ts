@@ -33,7 +33,7 @@ let _deltaRotation = quat.create();
 export function registerPhysicsApplyLinearVelocity(em: EntityManager) {
   em.registerSystem(
     "registerPhysicsApplyLinearVelocity",
-    Phase.PRE_PHYSICS,
+    Phase.PHYSICS_MOTION,
     [LinearVelocityDef, PositionDef],
     [TimeDef],
     (objs, res) => {
@@ -49,7 +49,7 @@ export function registerPhysicsApplyLinearVelocity(em: EntityManager) {
 export function registerPhysicsApplyAngularVelocity(em: EntityManager) {
   em.registerSystem(
     "physicsApplyAngularVelocity",
-    Phase.PRE_PHYSICS,
+    Phase.PHYSICS_MOTION,
     [AngularVelocityDef, RotationDef],
     [TimeDef],
     (objs, res) => {

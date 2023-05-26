@@ -158,7 +158,7 @@ export function doesTouch(
 export function registerUpdateWorldAABBs(em: EntityManager, s: string = "") {
   em.registerSystem(
     "registerUpdateWorldAABBs",
-    Phase.PHYSICS,
+    Phase.PHYSICS_WORLD_FROM_LOCAL,
     [PhysicsStateDef, WorldFrameDef, TransformDef],
     [],
     (objs, res) => {
@@ -334,7 +334,7 @@ export function registerPhysicsStateInit(em: EntityManager) {
 export function registerUpdateInContactSystems(em: EntityManager) {
   em.registerSystem(
     "updatePhysInContact",
-    Phase.PHYSICS,
+    Phase.PHYSICS_CONTACT,
     [ColliderDef, PhysicsStateDef, WorldFrameDef],
     [PhysicsBroadCollidersDef, PhysicsResultsDef],
     (objs, res) => {
@@ -399,7 +399,7 @@ export function registerPhysicsContactSystems(em: EntityManager) {
   // TODO(@darzu): split this system
   em.registerSystem(
     "physicsStepContact",
-    Phase.PHYSICS,
+    Phase.PHYSICS_CONTACT,
     [ColliderDef, PhysicsStateDef, PositionDef, WorldFrameDef],
     [PhysicsBroadCollidersDef, PhysicsResultsDef],
     (objs, res) => {

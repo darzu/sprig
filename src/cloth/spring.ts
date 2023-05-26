@@ -254,7 +254,7 @@ export function stepSprings(g: SpringGrid, dt: number) {
 onInit((em) => {
   em.registerSystem(
     "spring",
-    Phase.PHYSICS,
+    Phase.PRE_PHYSICS,
     [SpringGridDef, ForceDef],
     [TimeDef],
     (springs, res) => {

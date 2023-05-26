@@ -31,7 +31,7 @@ export const ParametricDef = EM.defineComponent(
 export function registerParameterMotionSystems(em: EntityManager) {
   em.registerSystem(
     "updateParametricMotion",
-    Phase.PRE_PHYSICS,
+    Phase.PHYSICS_MOTION,
     [PositionDef, ParametricDef],
     [TimeDef],
     (es, res) => {

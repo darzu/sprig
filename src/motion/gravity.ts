@@ -13,7 +13,7 @@ export const GravityDef = EM.defineComponent("gravity", (gravity?: vec3) => {
 export function registerGravitySystem(em: EntityManager) {
   em.registerSystem(
     "applyGravity",
-    Phase.PRE_PHYSICS,
+    Phase.PHYSICS_MOTION,
     [GravityDef, LinearVelocityDef],
     [TimeDef],
     (objs, res) => {

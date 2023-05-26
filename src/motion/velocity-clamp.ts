@@ -33,7 +33,7 @@ import { Phase } from "../ecs/sys-phase.js";
 export function registerPhysicsClampVelocityByContact(em: EntityManager) {
   em.registerSystem(
     "clampVelocityByContact",
-    Phase.PRE_PHYSICS,
+    Phase.PHYSICS_MOTION,
     null,
     [PhysicsResultsDef, PhysicsBroadCollidersDef],
     (objs, res) => {
@@ -87,7 +87,7 @@ export function registerPhysicsClampVelocityByContact(em: EntityManager) {
 export function registerPhysicsClampVelocityBySize(em: EntityManager) {
   em.registerSystem(
     "registerPhysicsClampVelocityBySize",
-    Phase.PRE_PHYSICS,
+    Phase.PHYSICS_MOTION,
     [LinearVelocityDef, ColliderDef],
     [TimeDef],
     (objs, res) => {

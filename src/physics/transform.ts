@@ -220,7 +220,7 @@ export function registerUpdateLocalFromPosRotScale(em: EntityManager) {
   // calculate the world transform
   em.registerSystem(
     "updateLocalFromPosRotScale",
-    Phase.PRE_PHYSICS,
+    Phase.PHYSICS_FINISH_LOCAL,
     [...LocalFrameDefs],
     [],
     (objs) => {
@@ -231,12 +231,13 @@ export function registerUpdateLocalFromPosRotScale(em: EntityManager) {
 
 export function registerUpdateWorldFromLocalAndParent(
   em: EntityManager,
-  suffix: string = ""
+  suffix: string,
+  phase: Phase
 ) {
   // calculate the world transform
   em.registerSystem(
     "updateWorldFromLocalAndParent" + suffix,
-    Phase.PHYSICS,
+    phase,
     [WorldFrameDef, ...LocalFrameDefs],
     [],
     (objs) => {

@@ -37,7 +37,7 @@ export function registerAnimateToSystems() {
 
   EM.registerSystem(
     "animateTo",
-    Phase.PRE_PHYSICS,
+    Phase.PHYSICS_MOTION,
     [AnimateToDef, PositionDef],
     [TimeDef],
     (cs, res) => {

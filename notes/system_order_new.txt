@@ -25,6 +25,7 @@ PRE_GAME_WORLD
   buildCursor
   updateLifetimes
   constructRenderables
+  buildCloths
   cannonPropsBuild
   buildHsPlayers
 GAME_WORLD
@@ -85,25 +86,27 @@ GAME_PLAYERS
 POST_GAME_PLAYERS
 PRE_PHYSICS
   ensureWorldFrame
+  physicsInit
+  ensureFillOutLocalFrame
+  spring
+PHYSICS_MOTION
   applyGravity
   animateTo
   updateParametricMotion
-  physicsInit
   clampVelocityByContact
   registerPhysicsClampVelocityBySize
   registerPhysicsApplyLinearVelocity
   physicsApplyAngularVelocity
-  ensureFillOutLocalFrame
+PHYSICS_FINISH_LOCAL
   updateLocalFromPosRotScale
-PHYSICS
-  updateWorldFromLocalAndParent
+PHYSICS_WORLD_FROM_LOCAL
+  updateWorldFromLocalAndParent1
   registerUpdateWorldAABBs
+PHYSICS_CONTACT
   updatePhysInContact
   physicsStepContact
+PHYSICS_FINISH_WORLD
   updateWorldFromLocalAndParent2
-  spring
-  buildCloths
-  updateClothMesh
 POST_PHYSICS
   dbgColliderMeshes
   debugMeshes
@@ -124,6 +127,7 @@ RENDER_PRE_DRAW
   stdRenderListDeadHidden
   stdRenderList
   stdRenderableDataUpdate
+  updateClothMesh
   updateGrassRenderData
 RENDER_DRAW
   uiText
