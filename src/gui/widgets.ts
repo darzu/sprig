@@ -15,7 +15,7 @@ import { tempVec3 } from "../matrix/temp-pool.js";
 import { assert } from "../utils/util.js";
 import { screenPosToWorldPos } from "../utils/utils-game.js";
 import { UICursorDef } from "./game-font.js";
-import { Phase } from "../ecs/sys-phase";
+import { Phase } from "../ecs/sys-phase.js";
 
 // adornments are: entities that are parented to an entity's mesh parts
 //    [ ] track changes via version number on the mesh data

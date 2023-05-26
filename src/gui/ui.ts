@@ -1,5 +1,5 @@
 import { EM, EntityManager } from "../ecs/entity-manager.js";
-import { Phase } from "../ecs/sys-phase";
+import { Phase } from "../ecs/sys-phase.js";
 
 /*
 UI needed:

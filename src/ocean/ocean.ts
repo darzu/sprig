@@ -1,5 +1,5 @@
 import { AnimateToDef } from "../animation/animate-to.js";
-import { createRef, Ref } from "../ecs/em-helpers";
+import { createRef, Ref } from "../ecs/em-helpers.js";
 import { EM, EntityManager } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { InputsDef } from "../input/inputs.js";
@@ -44,7 +44,7 @@ import { ColorDef } from "../color/color-ecs.js";
 import { DEFAULT_MASK, UVUNWRAP_MASK } from "../render/pipeline-masks.js";
 import { Mesh } from "../meshes/mesh.js";
 import { compute_gerstner, createWaves } from "./gerstner.js";
-import { Phase } from "../ecs/sys-phase";
+import { Phase } from "../ecs/sys-phase.js";
 
 // TODO(@darzu): refactor this to not assume a specific ocean shape
 

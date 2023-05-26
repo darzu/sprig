@@ -27,7 +27,7 @@ import {
   positionAndTargetToOrthoViewProjMatrix,
 } from "../utils/utils-3d.js";
 import { createGhost } from "../debug/ghost.js";
-import { Phase } from "../ecs/sys-phase";
+import { Phase } from "../ecs/sys-phase.js";
 
 const dbgGrid = [
   //

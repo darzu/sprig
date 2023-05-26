@@ -15,7 +15,7 @@ import {
 } from "../physics/transform.js";
 import { SyncDef, AuthorityDef, Me, MeDef } from "../net/components.js";
 import { Serializer, Deserializer } from "../utils/serialize.js";
-import { FinishedDef } from "../ecs/em-helpers";
+import { FinishedDef } from "../ecs/em-helpers.js";
 import { onInit } from "../init.js";
 import {
   Mesh,
@@ -36,14 +36,14 @@ import { InputsDef } from "../input/inputs.js";
 import { LocalHsPlayerDef, HsPlayerDef } from "../hyperspace/hs-player.js";
 import { DeletedDef } from "../ecs/delete.js";
 import { clamp } from "../utils/math.js";
-import { createRef } from "../ecs/em-helpers";
+import { createRef } from "../ecs/em-helpers.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import { WindDef } from "./wind.js";
 import { YawPitchDef } from "../turret/yawpitch.js";
 import { assert } from "../utils/util.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { angleBetweenPosXZ, angleBetweenXZ } from "../utils/utils-3d.js";
-import { Phase } from "../ecs/sys-phase";
+import { Phase } from "../ecs/sys-phase.js";
 
 const SAIL_TURN_SPEED = 5;
 export const SAIL_FURL_RATE = 0.02;

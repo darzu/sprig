@@ -26,7 +26,7 @@ import {
   RotationDef,
   updateFrameFromPosRotScale,
 } from "../physics/transform.js";
-import { Phase } from "../ecs/sys-phase";
+import { Phase } from "../ecs/sys-phase.js";
 
 // TODO(@darzu): implement checkAtRest (deleted in this commit)
 

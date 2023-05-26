@@ -1,7 +1,7 @@
 import { EM, EntityManager } from "./entity-manager.js";
 import { SyncDef } from "../net/components.js";
 import { dbgLogOnce } from "../utils/util.js";
-import { Phase } from "./sys-phase";
+import { Phase } from "./sys-phase.js";
 
 export const DeletedDef = EM.defineComponent("deleted", () => ({
   processed: false,

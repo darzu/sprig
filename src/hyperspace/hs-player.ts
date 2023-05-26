@@ -6,7 +6,7 @@ import { InputsDef } from "../input/inputs.js";
 import { EM, Entity, EntityManager, EntityW } from "../ecs/entity-manager.js";
 import { TimeDef } from "../time/time.js";
 import { ColorDef } from "../color/color-ecs.js";
-import { FinishedDef } from "../ecs/em-helpers";
+import { FinishedDef } from "../ecs/em-helpers.js";
 import {
   RenderableConstructDef,
   RenderableDef,
@@ -37,7 +37,7 @@ import {
   CameraFollowDef,
   setCameraFollowPosition,
 } from "../camera/camera.js";
-import { defineSerializableComponent } from "../ecs/em-helpers";
+import { defineSerializableComponent } from "../ecs/em-helpers.js";
 import { ControllableDef } from "../input/controllable.js";
 import { GlobalCursor3dDef } from "../gui/cursor.js";
 import { drawLine } from "../utils/utils-game.js";
@@ -46,7 +46,7 @@ import { max } from "../utils/math.js";
 import { AnimateToDef } from "../animation/animate-to.js";
 import { vec3Dbg } from "../utils/utils-3d.js";
 import { HsShipLocalDef } from "./hyperspace-ship.js";
-import { Phase } from "../ecs/sys-phase";
+import { Phase } from "../ecs/sys-phase.js";
 
 // TODO(@darzu): it'd be great if these could hook into some sort of
 //    dev mode you could toggle at runtime.

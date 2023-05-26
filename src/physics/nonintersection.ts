@@ -38,7 +38,7 @@ import {
 } from "./transform.js";
 import { IdPair, idPair } from "../utils/util.js";
 import { tempVec3 } from "../matrix/temp-pool.js";
-import { Phase } from "../ecs/sys-phase";
+import { Phase } from "../ecs/sys-phase.js";
 
 // TODO(@darzu): we use "object", "obj", "o" everywhere in here, we should use "entity", "ent", "e"
 

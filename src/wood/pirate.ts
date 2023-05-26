@@ -3,7 +3,7 @@ import { AudioDef } from "../audio/audio.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { DeadDef } from "../ecs/delete.js";
-import { createRef } from "../ecs/em-helpers";
+import { createRef } from "../ecs/em-helpers.js";
 import { EM, EntityW, EntityManager } from "../ecs/entity-manager.js";
 import { createEntityPool } from "../ecs/entity-pool.js";
 import { mat4, vec3, quat } from "../matrix/sprig-matrix.js";
@@ -51,7 +51,7 @@ import {
   resetWoodState,
 } from "./wood.js";
 import { fireBullet } from "../cannons/bullet.js";
-import { Phase } from "../ecs/sys-phase";
+import { Phase } from "../ecs/sys-phase.js";
 
 const DBG_PIRATES = false;
 

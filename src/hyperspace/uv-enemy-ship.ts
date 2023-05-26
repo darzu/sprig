@@ -31,7 +31,7 @@ import { BulletDef, fireBullet } from "../cannons/bullet.js";
 import { DeletedDef, OnDeleteDef } from "../ecs/delete.js";
 import { LifetimeDef } from "../ecs/lifetime.js";
 import { HsShipLocalDef } from "./hyperspace-ship.js";
-import { defineNetEntityHelper } from "../ecs/em-helpers";
+import { defineNetEntityHelper } from "../ecs/em-helpers.js";
 import { DetectedEventsDef, eventWizard } from "../net/events.js";
 import { raiseBulletEnemyShip } from "../cannons/bullet-collision.js";
 import { HSGameStateDef, HyperspaceGameState } from "./hyperspace-gamestate.js";
@@ -40,7 +40,7 @@ import { UVShipDef } from "./uv-ship.js";
 import { UVDirDef, UVPosDef } from "../ocean/ocean.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { AudioDef, Music } from "../audio/audio.js";
-import { Phase } from "../ecs/sys-phase";
+import { Phase } from "../ecs/sys-phase.js";
 
 export const EnemyCrewDef = EM.defineComponent("enemyCrew", () => {
   return {

@@ -31,7 +31,7 @@ import { initGrassGame } from "./grass/game-grass.js";
 import { initLD53 } from "./ld53/game-ld53.js";
 import { initShadingGame } from "./render/game-shading.js";
 import { initModelingGame } from "./meshes/game-modeling.js";
-import { Phase } from "./ecs/sys-phase";
+import { Phase } from "./ecs/sys-phase.js";
 
 export const FORCE_WEBGL = false;
 export const MAX_MESHES = 20000;

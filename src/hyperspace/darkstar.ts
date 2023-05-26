@@ -1,4 +1,4 @@
-import { createRef, defineNetEntityHelper } from "../ecs/em-helpers";
+import { createRef, defineNetEntityHelper } from "../ecs/em-helpers.js";
 import { EM, EntityManager, EntityW } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { onInit } from "../init.js";
@@ -12,7 +12,7 @@ import { PointLightDef } from "../render/lights.js";
 import { FLAG_UNLIT, RenderDataStdDef } from "../render/pipelines/std-scene.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { HyperspaceGameState, HSGameStateDef } from "./hyperspace-gamestate.js";
-import { Phase } from "../ecs/sys-phase";
+import { Phase } from "../ecs/sys-phase.js";
 
 const DARKSTAR_SPEED = 1;
 

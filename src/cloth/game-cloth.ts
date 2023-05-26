@@ -44,7 +44,7 @@ import { createGhost } from "../debug/ghost.js";
 import { ForceDef } from "./spring.js";
 import { TextDef } from "../gui/ui.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
-import { Phase } from "../ecs/sys-phase";
+import { Phase } from "../ecs/sys-phase.js";
 
 // TODO(@darzu): BROKEN. cloth sandbox isn't lit right and cloth isn't there
 

@@ -28,7 +28,7 @@ import { mat4, V, vec3 } from "../matrix/sprig-matrix.js";
 import { assertDbg } from "../utils/util.js";
 import { computeTriangleNormal } from "../utils/utils-3d.js";
 import { LandMapTexPtr } from "../levels/level-map.js";
-import { Phase } from "../ecs/sys-phase";
+import { Phase } from "../ecs/sys-phase.js";
 
 const MAX_GRASS_VERTS = MAX_INDICES;
 const MAX_GRASS_MESHES = 500;

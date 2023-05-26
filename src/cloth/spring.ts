@@ -4,7 +4,7 @@ import { EM, EntityManager } from "../ecs/entity-manager.js";
 import { TimeDef } from "../time/time.js";
 import { onInit } from "../init.js";
 import { vec3Dbg } from "../utils/utils-3d.js";
-import { Phase } from "../ecs/sys-phase";
+import { Phase } from "../ecs/sys-phase.js";
 
 const EPSILON = 0.0000000000000000001;
 const VELOCITY_CAP = 1;

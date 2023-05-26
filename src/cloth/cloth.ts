@@ -4,7 +4,7 @@ import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
 import { SyncDef, AuthorityDef, Me, MeDef } from "../net/components.js";
 import { Serializer, Deserializer } from "../utils/serialize.js";
-import { FinishedDef } from "../ecs/em-helpers";
+import { FinishedDef } from "../ecs/em-helpers.js";
 import { Assets, AssetsDef } from "../meshes/assets.js";
 import { SpringType, SpringGridDef, ForceDef } from "./spring.js";
 import { onInit } from "../init.js";
@@ -20,7 +20,7 @@ import {
 import { RendererDef } from "../render/renderer-ecs.js";
 import { tempVec3 } from "../matrix/temp-pool.js";
 import { ColorDef } from "../color/color-ecs.js";
-import { Phase } from "../ecs/sys-phase";
+import { Phase } from "../ecs/sys-phase.js";
 
 export interface ClothConstruct {
   location: vec3;

@@ -14,7 +14,7 @@ import {
 } from "../physics/nonintersection.js";
 import { clearTint, setTint, TintsDef } from "../color/color-ecs.js";
 import { DeletedDef } from "../ecs/delete.js";
-import { Phase } from "../ecs/sys-phase";
+import { Phase } from "../ecs/sys-phase.js";
 
 export const InteractableDef = EM.defineComponent(
   "interaction",

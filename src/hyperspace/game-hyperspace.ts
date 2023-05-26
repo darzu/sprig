@@ -38,7 +38,7 @@ import { createDarkStarNow, STAR1_COLOR, STAR2_COLOR } from "./darkstar.js";
 import { renderOceanPipe } from "../render/pipelines/std-ocean.js";
 import { EASE_INQUAD } from "../utils/util-ease.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
-import { Phase } from "../ecs/sys-phase";
+import { Phase } from "../ecs/sys-phase.js";
 import { registerEnemyShipSystems } from "./uv-enemy-ship.js";
 import { registerUVShipSystems } from "./uv-ship.js";
 

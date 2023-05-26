@@ -64,7 +64,7 @@ import {
   getAABBFromPositions,
 } from "../physics/aabb.js";
 import { SoundSetDef } from "../audio/sound-loader.js";
-import { Phase } from "../ecs/sys-phase";
+import { Phase } from "../ecs/sys-phase.js";
 
 // TODO(@darzu): remove all references to pirates
 

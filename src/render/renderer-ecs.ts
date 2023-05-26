@@ -36,7 +36,7 @@ import {
   VERBOSE_LOG,
 } from "../flags.js";
 import { clampToAABB } from "../physics/aabb.js";
-import { Phase } from "../ecs/sys-phase";
+import { Phase } from "../ecs/sys-phase.js";
 
 const BLEND_SIMULATION_FRAMES_STRATEGY: "interpolate" | "extrapolate" | "none" =
   "none";

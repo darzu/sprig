@@ -2,7 +2,7 @@ import { AssetsDef } from "../meshes/assets.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { DeadDef } from "../ecs/delete.js";
-import { createRef, Ref } from "../ecs/em-helpers";
+import { createRef, Ref } from "../ecs/em-helpers.js";
 import { EM, Entity, EntityW } from "../ecs/entity-manager.js";
 import { createEntityPool } from "../ecs/entity-pool.js";
 import { fireBullet } from "../cannons/bullet.js";
@@ -35,7 +35,7 @@ import { mat4, tV, V, vec3, quat, vec2 } from "../matrix/sprig-matrix.js";
 import { TimeDef } from "../time/time.js";
 import { assert } from "../utils/util.js";
 import { vec3Dbg } from "../utils/utils-3d.js";
-import { Phase } from "../ecs/sys-phase";
+import { Phase } from "../ecs/sys-phase.js";
 
 const SAMPLES_PER_EDGE = 5;
 const NUDGE_DIST = 1.0;

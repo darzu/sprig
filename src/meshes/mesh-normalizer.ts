@@ -1,5 +1,5 @@
-import { exportObj, importObj, isParseError } from "./import-obj";
-import { exportSprigMesh } from "./import-sprigmesh";
+import { exportObj, importObj, isParseError } from "./import-obj.js";
+import { exportSprigMesh } from "./import-sprigmesh.js";
 
 export function setupObjImportExporter() {
   function ondrag() {

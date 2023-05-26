@@ -15,7 +15,7 @@ import {
   EventsFromNetworkDef,
   EventsToNetworkDef,
 } from "./components.js";
-import { Phase } from "../ecs/sys-phase";
+import { Phase } from "../ecs/sys-phase.js";
 
 export function registerHandleNetworkEvents(em: EntityManager) {
   let _peerIDs: Record<string, number> = {};

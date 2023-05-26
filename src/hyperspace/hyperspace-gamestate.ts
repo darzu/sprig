@@ -24,7 +24,7 @@ import {
   HsShipPropsDef,
 } from "./hyperspace-ship.js";
 import { AudioDef } from "../audio/audio.js";
-import { Phase } from "../ecs/sys-phase";
+import { Phase } from "../ecs/sys-phase.js";
 
 const RESTART_TIME_MS = 5000;
 

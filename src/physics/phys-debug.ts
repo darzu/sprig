@@ -25,7 +25,7 @@ import {
   updateFrameFromPosRotScale,
 } from "./transform.js";
 import { vec3, V } from "../matrix/sprig-matrix.js";
-import { Phase } from "../ecs/sys-phase";
+import { Phase } from "../ecs/sys-phase.js";
 
 // TODO(@darzu): re-enable all this! it requires line drawing again
 

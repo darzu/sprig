@@ -19,7 +19,7 @@ import { AssetsDef } from "./assets.js";
 import { ColorDef, TintsDef } from "../color/color-ecs.js";
 import { drawLine, screenPosToRay } from "../utils/utils-game.js";
 import { CameraView, CameraComputedDef } from "../camera/camera.js";
-import { Phase } from "../ecs/sys-phase";
+import { Phase } from "../ecs/sys-phase.js";
 
 const ENABLED = true;
 

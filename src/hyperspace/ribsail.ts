@@ -1,6 +1,6 @@
 import { AssetsDef } from "../meshes/assets.js";
 import { ColorDef } from "../color/color-ecs.js";
-import { createRef } from "../ecs/em-helpers";
+import { createRef } from "../ecs/em-helpers.js";
 import { EM, EntityW } from "../ecs/entity-manager.js";
 import {
   PositionDef,
@@ -16,7 +16,7 @@ import {
 } from "../render/renderer-ecs.js";
 import { quat, V, vec2, vec3 } from "../matrix/sprig-matrix.js";
 import { range } from "../utils/util.js";
-import { defineNetEntityHelper } from "../ecs/em-helpers";
+import { defineNetEntityHelper } from "../ecs/em-helpers.js";
 import { MeDef } from "../net/components.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import { MeshHandle } from "../render/mesh-pool.js";
@@ -30,7 +30,7 @@ import {
 import { STAR1_COLOR, DarkStarPropsDef } from "./darkstar.js";
 import { onInit } from "../init.js";
 import { ENDESGA16 } from "../color/palettes.js";
-import { Phase } from "../ecs/sys-phase";
+import { Phase } from "../ecs/sys-phase.js";
 
 const RIB_COUNT = 6;
 export const DEFAULT_SAIL_COLOR = V(0.05, 0.05, 0.05);

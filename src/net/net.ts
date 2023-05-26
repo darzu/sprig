@@ -16,7 +16,7 @@ import {
   EventsToNetworkDef,
   PeerNameDef,
 } from "./components.js";
-import { Phase } from "../ecs/sys-phase";
+import { Phase } from "../ecs/sys-phase.js";
 
 const PING_INTERVAL = 1000;
 

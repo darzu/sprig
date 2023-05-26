@@ -1,9 +1,9 @@
-import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix";
-import { RawMesh, Rigging } from "./mesh";
-import { assert, never } from "../utils/util";
-import { idPair, IdPair, isString } from "../utils/util";
-import { texTypeIsDepthAndStencil } from "../render/gpu-struct";
-import { vec3Dbg } from "../utils/utils-3d";
+import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { RawMesh, Rigging } from "./mesh.js";
+import { assert, never } from "../utils/util.js";
+import { idPair, IdPair, isString } from "../utils/util.js";
+import { texTypeIsDepthAndStencil } from "../render/gpu-struct.js";
+import { vec3Dbg } from "../utils/utils-3d.js";
 
 export type ParseError = string; // TODO(@darzu): more sophisticated error format?
 

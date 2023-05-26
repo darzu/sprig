@@ -2,7 +2,7 @@ import { DeadDef } from "./delete.js";
 import { Component, EM, EntityManager } from "./entity-manager.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { TimeDef } from "../time/time.js";
-import { Phase } from "./sys-phase";
+import { Phase } from "./sys-phase.js";
 
 export const LifetimeDef = EM.defineComponent(
   "lifetime",

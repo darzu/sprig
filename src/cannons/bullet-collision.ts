@@ -25,7 +25,7 @@ import {
   breakEnemyShip,
   EnemyShipLocalDef,
 } from "../hyperspace/uv-enemy-ship.js";
-import { Phase } from "../ecs/sys-phase";
+import { Phase } from "../ecs/sys-phase.js";
 
 const ENABLE_BULLETBULLET = false;
 

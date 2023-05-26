@@ -65,7 +65,7 @@ import { registerNetSystems } from "./net/net.js";
 import { registerNoodleSystem } from "./animation/noodles.js";
 import { registerToolSystems } from "./input/tool.js";
 import { ENABLE_NET } from "./flags.js";
-import { Phase } from "./ecs/sys-phase";
+import { Phase } from "./ecs/sys-phase.js";
 
 export function registerCommonSystems(em: EntityManager) {
   if (ENABLE_NET) {

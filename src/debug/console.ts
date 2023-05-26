@@ -10,7 +10,7 @@ import { _doesOverlapAABBs, _enclosedBys } from "../physics/aabb.js";
 import { _gpuQueueBufferWriteBytes } from "../render/data-webgpu.js";
 import { RendererDef } from "../render/renderer-ecs.js";
 import { _f32sCount } from "../matrix/sprig-matrix.js";
-import { Phase } from "../ecs/sys-phase";
+import { Phase } from "../ecs/sys-phase.js";
 
 export const DevConsoleDef = EM.defineComponent("dev", () => {
   const stats = {
