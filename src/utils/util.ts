@@ -170,7 +170,7 @@ export function toRecord<A, V, K extends string | number = string>(
   return res as Record<K, V>;
 }
 export function toMap<A, V, K extends string | number = string>(
-  as: A[],
+  as: readonly A[],
   key: (a: A) => K,
   val: (a: A) => V
 ): Map<K, V> {

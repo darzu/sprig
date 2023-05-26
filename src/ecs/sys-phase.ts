@@ -1,4 +1,4 @@
-import { enumAsList, enumNamesAsList } from "../utils/util.js";
+import { assert, enumAsList, enumNamesAsList, toMap } from "../utils/util.js";
 
 export enum Phase {
   NETWORK,
@@ -24,5 +24,24 @@ export enum Phase {
   RENDER_DRAW,
 }
 export type PhaseName = keyof typeof Phase;
+export const PhaseFromName = (n: PhaseName) => Phase[n];
+export const NameFromPhase = (v: Phase) => Phase[v] as PhaseName;
 export const PhaseNameList: PhaseName[] = enumNamesAsList(Phase);
 export const PhaseValueList: Phase[] = enumAsList(Phase);
+export const MetaPhases = [
+  "NETWORK",
+  "GAME_WORLD",
+  "AUDIO",
+  "INPUT",
+  "GAME_PLAYERS",
+  "PHYSICS",
+  "RENDER",
+] as const; // for debugging / stats
+export const PhaseNameToMetaPhase = toMap(
+  PhaseNameList,
+  (n) => n,
+  (n) => {
+    for (let m of MetaPhases) if (n.includes(m)) return m;
+    assert(false, `Phase ${n} doesnt belong to a meta phase`);
+  }
+);

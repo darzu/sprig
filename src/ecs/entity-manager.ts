@@ -69,6 +69,7 @@ type System<CS extends ComponentDef[] | null, RS extends ComponentDef[]> = {
   rs: RS;
   callback: SystemFn<CS, RS>;
   name: string;
+  phase: Phase;
   id: number;
 };
 
@@ -732,6 +733,7 @@ export class EntityManager {
       rs,
       callback,
       name,
+      phase,
       id,
     };
     this.systems.set(name, sys);

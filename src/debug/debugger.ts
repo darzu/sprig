@@ -1,6 +1,14 @@
 import { CameraFollowDef } from "../camera/camera.js";
 import { ComponentDef, EM, Entity, EntityW } from "../ecs/entity-manager.js";
 import {
+  MetaPhases,
+  NameFromPhase,
+  Phase,
+  PhaseName,
+  PhaseNameList,
+  PhaseNameToMetaPhase,
+} from "../ecs/sys-phase.js";
+import {
   PERF_DBG_F32S,
   PERF_DBG_F32S_BLAME,
   PERF_DBG_F32S_TEMP_BLAME,
@@ -8,7 +16,7 @@ import {
 } from "../flags.js";
 import { SyncDef } from "../net/components.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
-import { assert, dbgClearBlame, dbgGetBlame } from "../utils/util.js";
+import { assert, dbgClearBlame, dbgGetBlame, toMap } from "../utils/util.js";
 import { quatDbg, vec3Dbg, vec4Dbg } from "../utils/utils-3d.js";
 
 // TODO(@darzu): debugging helpers
@@ -333,6 +341,40 @@ g.cameraFollow.pitchOffset = ${target.cameraFollow.pitchOffset.toFixed(3)};
       callTimes.push({ s, t: stats[s].callTime, m: stats[s].maxCallTime });
     }
     callTimes.push({ s: "ALL QUERIES", t: totalQueryTime, m: -1 });
+    const phaseTimes = toMap(
+      PhaseNameList,
+      (n) => n,
+      (_) => 0
+    );
+    for (let s of Object.keys(stats)) {
+      const phaseVal = EM.systems.get(s)?.phase;
+      if (phaseVal) {
+        const phase = NameFromPhase(phaseVal);
+        phaseTimes.set(
+          phase,
+          phaseTimes.get(phase)! + stats[s].callTime + stats[s].queryTime
+        );
+      }
+    }
+    for (let p of phaseTimes.keys()) {
+      callTimes.push({ s: `# ${p}`, t: phaseTimes.get(p)!, m: -1 });
+    }
+    const metaPhaseTimes = toMap(
+      MetaPhases,
+      (n) => n,
+      (_) => 0
+    );
+    for (let p of phaseTimes.keys()) {
+      const meta = PhaseNameToMetaPhase.get(p)!;
+      metaPhaseTimes.set(meta, metaPhaseTimes.get(meta)! + phaseTimes.get(p)!);
+    }
+    for (let p of metaPhaseTimes.keys()) {
+      callTimes.push({
+        s: `## ${p}`,
+        t: metaPhaseTimes.get(p)!,
+        m: -1,
+      });
+    }
     callTimes.sort((x, y) => y.t - x.t);
     let out = "";
     for (let { s, t, m } of callTimes) {
