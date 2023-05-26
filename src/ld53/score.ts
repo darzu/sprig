@@ -1,5 +1,5 @@
 import { CanvasDef } from "../render/canvas.js";
-import { createRef } from "../ecs/em_helpers.js";
+import { createRef } from "../ecs/em-helpers";
 import { EM } from "../ecs/entity-manager.js";
 import { VERBOSE_LOG } from "../flags.js";
 import { PartyDef } from "../camera/party.js";
@@ -13,7 +13,7 @@ import { WoodHealthDef } from "../wood/wood.js";
 import { setMap } from "../levels/level-map.js";
 import { MapPaths } from "../levels/map-loader.js";
 import { ShipDef } from "./ship.js";
-import { Phase } from "../ecs/sys_phase.js";
+import { Phase } from "../ecs/sys-phase";
 
 export const ScoreDef = EM.defineComponent("score", () => ({
   cutPurple: 0,

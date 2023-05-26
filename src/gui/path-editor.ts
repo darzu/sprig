@@ -27,7 +27,7 @@ import { randNormalPosVec3, vec3Mid } from "../utils/utils-3d.js";
 import { ButtonsStateDef, ButtonDef } from "./button.js";
 import { WidgetDef, WidgetLayerDef } from "./widgets.js";
 import { meshPoolPtr } from "../render/pipelines/std-scene.js";
-import { Phase } from "../ecs/sys_phase.js";
+import { Phase } from "../ecs/sys-phase";
 
 const HLineDef = EM.defineComponent("hline", (hl: HLine) => ({
   hl,

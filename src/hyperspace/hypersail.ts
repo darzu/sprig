@@ -1,5 +1,5 @@
 import { ColorDef } from "../color/color-ecs.js";
-import { createRef, defineNetEntityHelper } from "../ecs/em_helpers.js";
+import { createRef, defineNetEntityHelper } from "../ecs/em-helpers";
 import { EM, EntityManager, EntityW } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { onInit } from "../init.js";
@@ -42,7 +42,7 @@ import {
   sailForceAndSignedArea,
 } from "./ribsail.js";
 import { ENDESGA16 } from "../color/palettes.js";
-import { Phase } from "../ecs/sys_phase.js";
+import { Phase } from "../ecs/sys-phase";
 
 // TODO(@darzu): refactor this so that our towers can use this
 

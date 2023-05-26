@@ -59,7 +59,7 @@ import { skyPipeline } from "../render/pipelines/std-sky.js";
 import { createFlatQuadMesh, makeDome } from "../meshes/primatives.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
 import { createGraph3D } from "../debug/utils-gizmos.js";
-import { Phase } from "../ecs/sys_phase.js";
+import { Phase } from "../ecs/sys-phase";
 
 /*
 NOTES:

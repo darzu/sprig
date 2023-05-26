@@ -26,7 +26,7 @@ import {
   serializeEntity,
 } from "./message.js";
 import { TimeDef } from "../time/time.js";
-import { Phase } from "../ecs/sys_phase.js";
+import { Phase } from "../ecs/sys-phase";
 
 export function registerSyncSystem(em: EntityManager) {
   em.registerSystem(

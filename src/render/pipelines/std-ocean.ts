@@ -25,7 +25,7 @@ import {
   positionsTexturePtr,
 } from "./std-scene.js";
 import { shadowDepthTextures } from "./std-shadow.js";
-import { Phase } from "../../ecs/sys_phase.js";
+import { Phase } from "../../ecs/sys-phase";
 
 const MAX_OCEAN_VERTS = MAX_INDICES;
 const MAX_OCEAN_MESHES = 1;

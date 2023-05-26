@@ -67,6 +67,8 @@ GAME_WORLD
   spawnOnTile
   spawnFinishAnimIn
   grassGameRenderPipelines
+  breakBullets
+  deadBullets
 POST_GAME_WORLD
   updateScoreDisplay
   detectGameEnd
@@ -95,6 +97,8 @@ GAME_PLAYERS
   updateMastBoom
   sail
   mouseDrag
+  furlUnfurl
+  turnMast
 POST_GAME_PLAYERS
   controllableCameraFollow
   interactableInteract

@@ -13,7 +13,7 @@ import {
   Intersect,
   toMap,
 } from "../utils/util.js";
-import { Phase, PhaseValueList } from "./sys_phase.js";
+import { Phase, PhaseValueList } from "./sys-phase";
 
 // TODO(@darzu): for perf, we really need to move component data to be
 //  colocated in arrays; and maybe introduce "arch-types" for commonly grouped

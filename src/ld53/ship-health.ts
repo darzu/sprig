@@ -2,7 +2,7 @@ import { AssetsDef } from "../meshes/assets.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { DeadDef } from "../ecs/delete.js";
-import { createRef, Ref } from "../ecs/em_helpers.js";
+import { createRef, Ref } from "../ecs/em-helpers";
 import { Component, EM, Entity, EntityW } from "../ecs/entity-manager.js";
 import { createEntityPool } from "../ecs/entity-pool.js";
 import { fireBullet } from "../cannons/bullet.js";
@@ -35,7 +35,7 @@ import { TimeDef } from "../time/time.js";
 import { assert } from "../utils/util.js";
 import { vec3Dbg } from "../utils/utils-3d.js";
 import { WoodHealthDef } from "../wood/wood.js";
-import { Phase } from "../ecs/sys_phase.js";
+import { Phase } from "../ecs/sys-phase";
 
 const MIN_HEALTH_PERCENT = 0.7;
 

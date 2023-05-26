@@ -1,6 +1,6 @@
 import { Component, EM, EntityManager } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
-import { importObj, isParseError } from "./import_obj.js";
+import { importObj, isParseError } from "./import-obj";
 import {
   cloneMesh,
   getAABBFromMesh,
@@ -68,7 +68,7 @@ import {
   TRI_FENCE,
 } from "./primatives.js";
 import { createGizmoMesh } from "../debug/gizmos.js";
-import { importGltf } from "./import_gltf.js";
+import { importGltf } from "./import-gltf";
 
 // TODO: load these via streaming
 // TODO(@darzu): it's really bad that all these assets are loaded for each game

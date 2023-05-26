@@ -4,12 +4,12 @@ import {
   EntityW,
   Entity,
   EM,
-} from "./entity-manager.js";
-import { Authority, AuthorityDef, MeDef, SyncDef } from "../net/components.js";
-import { Serializer, Deserializer } from "../utils/serialize.js";
-import { assert } from "../utils/util.js";
-import { capitalize } from "../utils/util.js";
-import { Phase } from "./sys_phase.js";
+} from "./entity-manager";
+import { Authority, AuthorityDef, MeDef, SyncDef } from "../net/components";
+import { Serializer, Deserializer } from "../utils/serialize";
+import { assert } from "../utils/util";
+import { capitalize } from "../utils/util";
+import { Phase } from "./sys-phase";
 
 export function defineSerializableComponent<
   N extends string,

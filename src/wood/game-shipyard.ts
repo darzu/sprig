@@ -3,7 +3,7 @@ import { CanvasDef } from "../render/canvas.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { DeadDef, DeletedDef } from "../ecs/delete.js";
-import { createRef } from "../ecs/em_helpers.js";
+import { createRef } from "../ecs/em-helpers";
 import { EM, Entity, EntityManager, EntityW } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { InputsDef } from "../input/inputs.js";
@@ -101,7 +101,7 @@ import {
 import { ParametricDef } from "../motion/parametric-motion.js";
 import { addGizmoChild } from "../utils/utils-game.js";
 import { createBarrelMesh } from "./barrel.js";
-import { Phase } from "../ecs/sys_phase.js";
+import { Phase } from "../ecs/sys-phase";
 
 /*
   Game mechanics:

@@ -7,7 +7,7 @@ import { onInit } from "../init.js";
 import { PositionDef } from "../physics/transform.js";
 import { TimeDef } from "../time/time.js";
 import { EaseFn, EASE_LINEAR } from "../utils/util-ease.js";
-import { Phase } from "../ecs/sys_phase.js";
+import { Phase } from "../ecs/sys-phase";
 
 export interface AnimateTo {
   // TODO(@darzu): support rotation, other properties?

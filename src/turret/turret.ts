@@ -25,10 +25,10 @@ import { AABB, copyAABB, createAABB } from "../physics/aabb.js";
 import { InputsDef } from "../input/inputs.js";
 import { clamp } from "../utils/math.js";
 import { DeletedDef } from "../ecs/delete.js";
-import { defineSerializableComponent } from "../ecs/em_helpers.js";
+import { defineSerializableComponent } from "../ecs/em-helpers";
 import { YawPitchDef, yawpitchToQuat } from "./yawpitch.js";
 import { TextDef } from "../gui/ui.js";
-import { Phase } from "../ecs/sys_phase.js";
+import { Phase } from "../ecs/sys-phase";
 
 export const TurretDef = EM.defineComponent("turret", () => {
   return {

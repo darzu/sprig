@@ -1,5 +1,5 @@
 import { ColorDef } from "../color/color-ecs.js";
-import { createRef } from "../ecs/em_helpers.js";
+import { createRef } from "../ecs/em-helpers";
 import { EM, EntityManager, EntityW } from "../ecs/entity-manager.js";
 import { AssetsDef } from "../meshes/assets.js";
 import { vec3, quat } from "../matrix/sprig-matrix.js";
@@ -39,7 +39,7 @@ import {
   createCannon,
   createCannonNow,
 } from "../cannons/cannon.js";
-import { Phase } from "../ecs/sys_phase.js";
+import { Phase } from "../ecs/sys-phase";
 
 export const ShipDef = EM.defineComponent("ld52ship", () => ({
   mast: createRef(0, [MastDef, RotationDef]),

@@ -1,5 +1,5 @@
 import { ColorDef } from "../color/color-ecs.js";
-import { createRef, Ref } from "../ecs/em_helpers.js";
+import { createRef, Ref } from "../ecs/em-helpers";
 import { EM, EntityManager } from "../ecs/entity-manager.js";
 import { vec3, mat4, V } from "../matrix/sprig-matrix.js";
 import { onInit } from "../init.js";
@@ -13,7 +13,7 @@ import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { AssetsDef } from "../meshes/assets.js";
 import { DarkStarPropsDef } from "./darkstar.js";
 import { ENDESGA16 } from "../color/palettes.js";
-import { Phase } from "../ecs/sys_phase.js";
+import { Phase } from "../ecs/sys-phase";
 
 const ORRERY_SCALE = 0.001;
 

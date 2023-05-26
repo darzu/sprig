@@ -7,7 +7,7 @@ import {
 import { ENDESGA16 } from "../../color/palettes.js";
 import { DeadDef, DeletedDef } from "../../ecs/delete.js";
 import { EntityW } from "../../ecs/entity-manager.js";
-import { Phase } from "../../ecs/sys_phase.js";
+import { Phase } from "../../ecs/sys-phase";
 import { onInit } from "../../init.js";
 // import { oceanJfa } from "../../game/ocean.js";
 // import { oceanJfa } from "../../game/ocean.js";

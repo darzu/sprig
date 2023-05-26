@@ -34,7 +34,7 @@ import {
   HSGameStateDef,
   startGame,
 } from "./hyperspace-gamestate.js";
-import { createRef, defineNetEntityHelper, Ref } from "../ecs/em_helpers.js";
+import { createRef, defineNetEntityHelper, Ref } from "../ecs/em-helpers";
 import { DetectedEventsDef, eventWizard } from "../net/events.js";
 import { MotionSmoothingDef } from "../render/motion-smoothing.js";
 import { DevConsoleDef } from "../debug/console.js";
@@ -52,7 +52,7 @@ import { makeOrrery, OrreryDef } from "./orrery.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { createGem, GemPropsDef } from "./gem.js";
 import { ENDESGA16 } from "../color/palettes.js";
-import { Phase } from "../ecs/sys_phase.js";
+import { Phase } from "../ecs/sys-phase";
 
 // TODO(@darzu): impl. occassionaly syncable components with auto-versioning
 

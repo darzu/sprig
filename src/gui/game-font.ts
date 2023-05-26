@@ -8,7 +8,7 @@ import { vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { ButtonDef, ButtonsStateDef } from "./button.js";
 import { initMeshEditor, MeshEditorDef } from "./mesh-editor.js";
 import { lineStuff } from "./path-editor.js";
-import { exportObj } from "../meshes/import_obj.js";
+import { exportObj } from "../meshes/import-obj";
 import { InputsDef } from "../input/inputs.js";
 import { mathMap } from "../utils/math.js";
 import { copyAABB, createAABB } from "../physics/aabb.js";
@@ -29,7 +29,7 @@ import { createGhost, gameplaySystems } from "../debug/ghost.js";
 import { TextDef } from "./ui.js";
 import { makePlaneMesh } from "../meshes/primatives.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
-import { Phase } from "../ecs/sys_phase.js";
+import { Phase } from "../ecs/sys-phase";
 
 /*
 TODO(@darzu):

@@ -1,4 +1,4 @@
-import { enumAsList, enumNamesAsList } from "../utils/util.js";
+import { enumAsList, enumNamesAsList } from "../utils/util";
 
 export enum Phase {
   NETWORK,

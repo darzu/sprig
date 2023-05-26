@@ -5,7 +5,7 @@ import { TimeDef } from "../time/time.js";
 import { PositionDef } from "../physics/transform.js";
 import { assert } from "../utils/util.js";
 import { parabolaFromPoints } from "../utils/math.js";
-import { Phase } from "../ecs/sys_phase.js";
+import { Phase } from "../ecs/sys-phase";
 
 export interface ParamProjectile {
   pos: vec3;

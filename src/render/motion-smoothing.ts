@@ -8,7 +8,7 @@ import {
 } from "../physics/transform.js";
 import { computeNewError, reduceError } from "../utils/smoothing.js";
 import { RemoteUpdatesDef } from "../net/components.js";
-import { Phase } from "../ecs/sys_phase.js";
+import { Phase } from "../ecs/sys-phase";
 
 // Determined via binary search--smaller -> jerky, larger -> floaty
 const ERROR_SMOOTHING_FACTOR = 0.75 ** (60 / 1000);

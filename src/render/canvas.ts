@@ -1,5 +1,5 @@
 import { Component, EM, EntityManager } from "../ecs/entity-manager.js";
-import { Phase } from "../ecs/sys_phase.js";
+import { Phase } from "../ecs/sys-phase";
 import { VERBOSE_LOG } from "../flags.js";
 
 export const CanvasDef = EM.defineComponent(

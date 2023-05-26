@@ -8,7 +8,7 @@ import { tempVec2 } from "../matrix/temp-pool.js";
 import { vec2Dbg, vec3Dbg } from "../utils/utils-3d.js";
 import { HSGameStateDef, HyperspaceGameState } from "./hyperspace-gamestate.js";
 import { UVPosDef, UVDirDef } from "../ocean/ocean.js";
-import { Phase } from "../ecs/sys_phase.js";
+import { Phase } from "../ecs/sys-phase";
 
 export const UVShipDef = EM.defineComponent("uvship", () => {
   return {

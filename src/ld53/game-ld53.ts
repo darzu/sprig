@@ -71,10 +71,10 @@ import { BulletDef, breakBullet } from "../cannons/bullet.js";
 import { ParametricDef } from "../motion/parametric-motion.js";
 import { createDock } from "./dock.js";
 import { ShipHealthDef } from "./ship-health.js";
-import { createRef } from "../ecs/em_helpers.js";
+import { createRef } from "../ecs/em-helpers";
 import { resetWoodHealth, resetWoodState, WoodStateDef } from "../wood/wood.js";
 import { MapPaths } from "../levels/map-loader.js";
-import { Phase } from "../ecs/sys_phase.js";
+import { Phase } from "../ecs/sys-phase";
 /*
 NOTES:
 - Cut grass by updating a texture that has cut/not cut or maybe cut-height

@@ -3,7 +3,7 @@ import { Component, EM, EntityManager } from "../ecs/entity-manager.js";
 import { ENABLE_AUDIO } from "../flags.js";
 import { createIdxPool, createIdxRing, IdxPool } from "../utils/idx-pool.js";
 import { assert, range } from "../utils/util.js";
-import { Phase } from "../ecs/sys_phase.js";
+import { Phase } from "../ecs/sys-phase";
 
 // NOTE: basically this whole file just tries to implement
 //    what Andrew suggests as a good way to start making good sounding

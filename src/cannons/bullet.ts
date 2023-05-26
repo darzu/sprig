@@ -6,7 +6,7 @@ import {
   EntityW,
 } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V, tV } from "../matrix/sprig-matrix.js";
-import { FinishedDef } from "../ecs/em_helpers.js";
+import { FinishedDef } from "../ecs/em-helpers";
 import { ColorDef } from "../color/color-ecs.js";
 import {
   RenderableConstructDef,
@@ -41,7 +41,7 @@ import { SplinterParticleDef } from "../wood/wood.js";
 import { tempVec3 } from "../matrix/temp-pool.js";
 import { assert, assertDbg } from "../utils/util.js";
 import { ParametricDef } from "../motion/parametric-motion.js";
-import { Phase } from "../ecs/sys_phase.js";
+import { Phase } from "../ecs/sys-phase";
 
 // TODO(@darzu): MULTIPLAYER BULLETS might have been broken during LD51
 

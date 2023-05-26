@@ -1,5 +1,5 @@
 import { AnimateTo, AnimateToDef } from "../animation/animate-to.js";
-import { createRef, Ref } from "../ecs/em_helpers.js";
+import { createRef, Ref } from "../ecs/em-helpers";
 import { EM, Entity } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { onInit } from "../init.js";
@@ -15,7 +15,7 @@ import {
 } from "../physics/transform.js";
 import { spawnEnemyShip } from "./uv-enemy-ship.js";
 import { UVDirDef, UVPosDef } from "../ocean/ocean.js";
-import { Phase } from "../ecs/sys_phase.js";
+import { Phase } from "../ecs/sys-phase";
 
 // TODO(@darzu): generalize for spawning non-enemy entities in the ocean
 
