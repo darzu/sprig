@@ -34,7 +34,7 @@ const INTERACTION_TINT_NAME = "interaction";
 export function registerInteractionSystem(em: EntityManager) {
   em.registerSystem(
     "interactableInteract",
-    Phase.POST_GAME_PLAYERS,
+    Phase.PRE_GAME_PLAYERS,
     [InteractableDef, WorldFrameDef],
     [LocalHsPlayerDef, MeDef, PhysicsResultsDef],
     (interactables, resources) => {

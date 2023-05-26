@@ -1,4 +1,16 @@
 NETWORK
+  handleNetworkEvents
+  recordPreviousLocations
+  clearRemoteUpdatesMarker
+  netUpdate
+  predict
+  connectToServer
+  handleJoin
+  handleJoinResponse
+  netDebugSystem
+  netAck
+  netSync
+  sendOutboxes
   detectedEventsToHost
   handleEventRequests
   handleEventRequestAcks
@@ -9,34 +21,34 @@ NETWORK
   handleEventAcks
   runEvents
 PRE_GAME_WORLD
-  buildCursor
-  buildHsPlayers
-  updateLifetimes
   delete
+  buildCursor
+  updateLifetimes
   constructRenderables
+  cannonPropsBuild
 GAME_WORLD
+  despawnFlyingBricks
+  stoneTowerAttack
+  stoneTowerDamage
+  updateShipHealth
   applyWindToSail
   billow
   mastForce
   billowSock
   easeRudderLD52
-  updateRibSail
+  shipParty
+  landShipCollision
   buildBullets
   updateBullets
   reloadCannon
   bulletCollision
-  grassGameRenderPipelines
+  splintersOnFloor
   runWooden
   woodHealth
-  updateShipHealth
-  shipParty
-  stoneTowerAttack
-  stoneTowerDamage
-  despawnFlyingBricks
-  landShipCollision
+  updateRibSail
+  ld53GamePipelines
   breakBullets
   deadBullets
-  splintersOnFloor
 POST_GAME_WORLD
   updateScoreDisplay
   detectGameEnd
@@ -46,15 +58,15 @@ PRE_READ_INPUT
   placeCursorAtScreenCenter
 READ_INPUTS
   inputs
+PRE_GAME_PLAYERS
+  interactableInteract
 GAME_PLAYERS
-  mouseDrag
+  sailShip
   canvasCursorLockUnlock
   devConsoleToggle
   controllableInput
-  hsPlayerFacingDir
-  stepHsPlayers
-  turretAim
   turretYawPitch
+  turretAim
   turretManUnman
   playerControlCannon
   playerManCanon
@@ -62,25 +74,24 @@ GAME_PLAYERS
   modelerClicks
   aabbBuilder
   renderModeToggles
-  sailShip
+  mouseDrag
   furlUnfurl
   turnMast
 POST_GAME_PLAYERS
   controllableCameraFollow
-  interactableInteract
 PRE_PHYSICS
-  applyGravity
-  updateParametricMotion
-  ensureFillOutLocalFrame
   ensureWorldFrame
+  applyGravity
+  animateTo
+  updateParametricMotion
   physicsInit
   clampVelocityByContact
   registerPhysicsClampVelocityBySize
   registerPhysicsApplyLinearVelocity
   physicsApplyAngularVelocity
-  animateTo
-PHYSICS
   updateLocalFromPosRotScale
+PHYSICS
+  ensureFillOutLocalFrame
   updateWorldFromLocalAndParent
   registerUpdateWorldAABBs
   updatePhysInContact
@@ -94,23 +105,23 @@ POST_PHYSICS
   debugMeshes
   debugMeshTransform
 PRE_RENDER
-  updateGrassRenderData
   renderInit
   smoothMotion
   updateMotionSmoothing
   updateSmoothedWorldFrames
   smoothCamera
-RENDER
-  updateRendererWorldFrames
-  updateCameraView
-  renderListDeadHidden
-  renderList
-  stepRenderer
   updateOceanRenderData
   stdRenderListDeadHidden
   stdRenderList
   stdRenderableDataUpdate
+  updateGrassRenderData
+RENDER
   uiText
   devConsole
+  updateRendererWorldFrames
   cameraFollowTarget
   retargetCamera
+  updateCameraView
+  renderListDeadHidden
+  renderList
+  stepRenderer
