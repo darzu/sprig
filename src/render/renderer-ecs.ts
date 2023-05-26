@@ -255,13 +255,16 @@ export function registerUpdateRendererWorldFrames(em: EntityManager) {
     [],
     (objs) => {
       for (let o of objs) {
-        em.ensureComponentOn(o, RendererWorldFrameDef);
-
-        // TODO(@darzu): HACK!
         if (DONT_SMOOTH_WORLD_FRAME) {
-          (o as any).rendererWorldFrame = (o as any).world;
+          // TODO(@darzu): HACK!
+          if (WorldFrameDef.isOn(o)) {
+            em.ensureComponentOn(o, RendererWorldFrameDef);
+            copyFrame(o.rendererWorldFrame, o.world);
+          }
           continue;
         }
+
+        em.ensureComponentOn(o, RendererWorldFrameDef);
 
         switch (BLEND_SIMULATION_FRAMES_STRATEGY) {
           case "interpolate":
