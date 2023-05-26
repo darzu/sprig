@@ -63,7 +63,7 @@ export function registerDevSystems(em: EntityManager) {
 
   em.registerSystem(
     "devConsole",
-    Phase.RENDER,
+    Phase.RENDER_DRAW,
     null,
     [RendererDef, TextDef, DevConsoleDef],
     async (_, res) => {

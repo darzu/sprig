@@ -328,7 +328,7 @@ export function registerRenderer(em: EntityManager) {
   >[] = [];
   em.registerSystem(
     "renderListDeadHidden",
-    Phase.RENDER,
+    Phase.RENDER_DRAW,
     [RendererWorldFrameDef, RenderableDef, DeadDef],
     [],
     (objs, _) => {
@@ -340,7 +340,7 @@ export function registerRenderer(em: EntityManager) {
   );
   em.registerSystem(
     "renderList",
-    Phase.RENDER,
+    Phase.RENDER_DRAW,
     [RendererWorldFrameDef, RenderableDef],
     [],
     (objs, _) => {
@@ -353,7 +353,7 @@ export function registerRenderer(em: EntityManager) {
 
   em.registerSystem(
     "stepRenderer",
-    Phase.RENDER,
+    Phase.RENDER_DRAW,
     null, // NOTE: see "renderList*" systems and NOTE above. We use those to construct our query.
     [CameraDef, CameraComputedDef, RendererDef, TimeDef, PartyDef],
     (_, res) => {

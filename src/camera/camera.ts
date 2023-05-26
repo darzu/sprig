@@ -205,7 +205,7 @@ export function registerCameraSystems(em: EntityManager) {
   em.addResource(CameraComputedDef);
   em.registerSystem(
     "updateCameraView",
-    Phase.RENDER_UPLOAD,
+    Phase.RENDER_PRE_DRAW,
     null,
     [CameraComputedDef, CameraDef, MeDef, CanvasDef],
     (_, resources) => {

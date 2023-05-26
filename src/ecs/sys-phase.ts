@@ -16,8 +16,8 @@ export enum Phase {
   POST_PHYSICS,
   PRE_RENDER,
   RENDER_WORLDFRAMES,
-  RENDER_UPLOAD,
-  RENDER,
+  RENDER_PRE_DRAW,
+  RENDER_DRAW,
 }
 export type PhaseName = keyof typeof Phase;
 export const PhaseNameList: PhaseName[] = enumNamesAsList(Phase);
