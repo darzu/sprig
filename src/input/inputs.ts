@@ -55,7 +55,6 @@ export function registerInputsSystem(em: EntityManager): void {
       Object.assign(inputs, inputsReader());
     }
   );
-  // em.requireSystem(InputsSys); // TODO(@darzu): IMPL this pattern
 
   em.addResource(MouseDragDef);
   em.registerSystem(

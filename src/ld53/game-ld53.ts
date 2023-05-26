@@ -267,8 +267,6 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
 
   const wind = em.addResource(WindDef);
   // registerChangeWindSystems();
-  //em.requireSystem("changeWind");
-  //em.requireSystem("smoothWind");
 
   // load level
   const level = await EM.whenResources(LevelMapDef);
@@ -344,9 +342,6 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
         }
       }
     );
-
-    // EM.requireSystem("oceanUVtoPos");
-    // EM.requireSystem("oceanUVDirToRot");
   }
 
   // end zone
