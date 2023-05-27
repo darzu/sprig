@@ -1,9 +1,7 @@
-import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { vec3, V } from "../matrix/sprig-matrix.js";
 import { tempVec3 } from "../matrix/temp-pool.js";
-import { EM, EntityManager } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/entity-manager.js";
 import { TimeDef } from "../time/time.js";
-import { onInit } from "../init.js";
-import { vec3Dbg } from "../utils/utils-3d.js";
 import { Phase } from "../ecs/sys-phase.js";
 
 const EPSILON = 0.0000000000000000001;

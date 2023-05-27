@@ -11,7 +11,6 @@ import {
 import {
   RenderableConstructDef,
   RenderableDef,
-  Renderer,
   RendererDef,
 } from "../render/renderer-ecs.js";
 import { quat, V, vec2, vec3 } from "../matrix/sprig-matrix.js";
@@ -19,16 +18,13 @@ import { range } from "../utils/util.js";
 import { defineNetEntityHelper } from "../ecs/em-helpers.js";
 import { MeDef } from "../net/components.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
-import { MeshHandle } from "../render/mesh-pool.js";
-import { cloneMesh, mapMeshPositions, RawMesh } from "../meshes/mesh.js";
+import { cloneMesh, mapMeshPositions } from "../meshes/mesh.js";
 import { RenderDataStdDef, FLAG_UNLIT } from "../render/pipelines/std-scene.js";
 import { tempQuat, tempMat4 } from "../matrix/temp-pool.js";
 import {
   signedAreaOfTriangle,
   positionAndTargetToOrthoViewProjMatrix,
 } from "../utils/utils-3d.js";
-import { STAR1_COLOR, DarkStarPropsDef } from "./darkstar.js";
-import { onInit } from "../init.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { Phase } from "../ecs/sys-phase.js";
 

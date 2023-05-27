@@ -1,24 +1,17 @@
 import { ColorDef, TintsDef, applyTints } from "../color/color-ecs.js";
 import { EM } from "../ecs/entity-manager.js";
-import { onInit } from "../init.js";
-import {
-  comparisonSamplerPtr,
-  CY,
-  linearSamplerPtr,
-} from "../render/gpu-registry.js";
+import { CY, linearSamplerPtr } from "../render/gpu-registry.js";
 import { createCyStruct, CyToTS } from "../render/gpu-struct.js";
 import { pointLightsPtr } from "../render/lights.js";
 import { MAX_INDICES, MeshHandle } from "../render/mesh-pool.js";
 import { Mesh } from "../meshes/mesh.js";
 import {
   sceneBufPtr,
-  litTexturePtr,
   surfacesTexturePtr,
   mainDepthTex,
   worldNormsAndFresTexPtr,
   unlitTexturePtr,
 } from "../render/pipelines/std-scene.js";
-import { shadowDepthTextures } from "../render/pipelines/std-shadow.js";
 import {
   RenderableDef,
   RendererDef,

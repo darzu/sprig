@@ -1,6 +1,4 @@
 import { Component, EM } from "../ecs/entity-manager.js";
-import { onInit } from "../init.js";
-import { assert } from "../utils/util.js";
 import { getText } from "../fetch/webget.js";
 
 const DEFAULT_SHADER_PATH = "shaders/";
@@ -26,19 +24,13 @@ export const ShaderPaths = [
   "std-deferred",
 ] as const;
 
-export type ShaderName = typeof ShaderPaths[number];
+export type ShaderName = (typeof ShaderPaths)[number];
 
 export interface Shader {
   code: string;
 }
 
 export type ShaderSet = { [P in ShaderName]: Shader };
-
-const ShaderLoaderDef = EM.defineComponent("shaderLoader", () => {
-  return {
-    promise: null as Promise<ShaderSet> | null,
-  };
-});
 
 export const ShadersDef = EM.defineComponent(
   "shaders",
@@ -65,23 +57,10 @@ async function loadShaders(): Promise<ShaderSet> {
   return set as ShaderSet;
 }
 
-onInit(async (em) => {
-  em.addResource(ShaderLoaderDef);
-
-  // start loading of shaders
-  const { shaderLoader } = await em.whenResources(ShaderLoaderDef);
-
-  assert(!shaderLoader.promise, "somehow we're double loading shaders");
-
-  const shadersPromise = loadShaders();
-  shaderLoader.promise = shadersPromise;
-  shadersPromise.then(
-    (result) => {
-      em.addResource(ShadersDef, result);
-    },
-    (failureReason) => {
-      // TODO(@darzu): fail more gracefully
-      throw `Failed to load shaders: ${failureReason}`;
-    }
-  );
+EM.registerInit({
+  provideRs: [ShadersDef],
+  requireRs: [],
+  fn: async () => {
+    EM.addResource(ShadersDef, await loadShaders());
+  },
 });

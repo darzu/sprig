@@ -1,7 +1,4 @@
-import { Component, EM } from "../ecs/entity-manager.js";
-import { onInit } from "../init.js";
-import { assert } from "../utils/util.js";
-import { getBytes } from "../fetch/webget.js";
+import { EM } from "../ecs/entity-manager.js";
 
 // TODO(@darzu): games should be able to specify their map path
 // const DEFAULT_MAP_PATH = "assets/ld52_maps/";

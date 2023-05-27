@@ -874,7 +874,11 @@ export class EntityManager {
         this.whenResources(...initFn.requireRs).then(async (res) => {
           await initFn.fn(res);
           // check that the init fn fullfilled its contract
-          assert(c.isOn(this.ent0), `Init fn failed to provide: ${c.name}`);
+          for (let res of initFn.provideRs)
+            assert(
+              res.isOn(this.ent0),
+              `Init fn failed to provide: ${res.name}`
+            );
         });
       }
     }
