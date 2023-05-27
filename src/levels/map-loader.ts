@@ -48,12 +48,6 @@ export interface MapBytes {
 
 export type MapBytesSet = { [P in MapName]: MapBytes };
 
-const MapBytesLoaderDef = EM.defineComponent("mapBytesLoader", () => {
-  return {
-    promise: null as Promise<MapBytesSet> | null,
-  };
-});
-
 export const MapBytesSetDef = EM.defineComponent(
   "mapBytesSet",
   (mapBytesSet: MapBytesSet) => mapBytesSet
@@ -98,24 +92,12 @@ async function loadMapsData(): Promise<MapBytesSet> {
   return set as MapBytesSet;
 }
 
-// TODO(@darzu): use registerInit so this only runs if needed
-onInit(async (em) => {
-  em.addResource(MapBytesLoaderDef);
-
-  // start loading of maps
-  const { mapBytesLoader } = await em.whenResources(MapBytesLoaderDef);
-
-  assert(!mapBytesLoader.promise, "somehow we're double loading maps");
-
-  const mapsPromise = loadMapsData();
-  mapBytesLoader.promise = mapsPromise;
-  mapsPromise.then(
-    (result) => {
-      em.addResource(MapBytesSetDef, result);
-    },
-    (failureReason) => {
-      // TODO(@darzu): fail more gracefully
-      throw `Failed to load maps: ${failureReason}`;
-    }
-  );
+EM.registerInit({
+  requireRs: [],
+  provideRs: [MapBytesSetDef],
+  fn: async () => {
+    // start loading of maps
+    const result = await loadMapsData();
+    EM.addResource(MapBytesSetDef, result);
+  },
 });

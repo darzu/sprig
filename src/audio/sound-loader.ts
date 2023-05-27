@@ -16,12 +16,6 @@ export type SoundName = (typeof SoundPaths)[number];
 
 export type SoundSet = { [P in SoundName]: AudioBuffer };
 
-const SoundLoaderDef = EM.defineComponent("soundLoader", () => {
-  return {
-    promise: null as Promise<SoundSet> | null,
-  };
-});
-
 export const SoundSetDef = EM.defineComponent(
   "soundSet",
   (soundSet: SoundSet) => soundSet
@@ -58,19 +52,12 @@ async function loadSoundsData(): Promise<SoundSet> {
 }
 
 EM.registerInit({
-  provideRs: [SoundLoaderDef, SoundSetDef],
+  provideRs: [SoundSetDef],
   requireRs: [HasAudioDef],
   fn: async (res) => {
-    const soundLoader = EM.addResource(SoundLoaderDef);
-
     if (VERBOSE_LOG) console.log("have audio");
     // start loading of sounds
-
-    assert(!soundLoader.promise, "somehow we're double loading sounds");
-
-    const soundsPromise = loadSoundsData();
-    soundLoader.promise = soundsPromise;
-    const result = await soundsPromise;
+    const result = await loadSoundsData();
     EM.addResource(SoundSetDef, result);
   },
 });
