@@ -64,6 +64,8 @@ import { registerSkeletalAnimSystems } from "./animation/skeletal.js";
 import { registerStdMeshUpload } from "./render/pipelines/std-mesh.js";
 import { registerOceanDataUpload } from "./render/pipelines/std-ocean.js";
 import { registerRenderViewController } from "./debug/view-modes.js";
+import { registerWoodSplinterSystem } from "./wood/wood-splinters.js";
+import { registerWoodSystems } from "./wood/wood.js";
 
 export function registerCommonSystems(em: EntityManager) {
   if (ENABLE_NET) {
@@ -125,6 +127,8 @@ export function registerCommonSystems(em: EntityManager) {
   registerSkeletalAnimSystems();
   registerStdMeshUpload();
   registerOceanDataUpload();
+  registerWoodSplinterSystem();
+  registerWoodSystems();
 
   callInitFns(em);
 }

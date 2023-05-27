@@ -112,8 +112,25 @@ export const WoodAssetsDef = EM.defineComponent(
   (registry: WoodAssets = {}) => registry
 );
 
-onInit((em) => {
-  em.addSystem(
+// TODO(@darzu): SUPER HACK
+type DestroyPirateShipFn = (id: number, timber: Entity) => void;
+const _destroyPirateShipFns: DestroyPirateShipFn[] = [];
+export function registerDestroyPirateHandler(fn: DestroyPirateShipFn) {
+  _destroyPirateShipFns.push(fn);
+}
+
+export const SplinterParticleDef = EM.defineComponent("splinter", () => {
+  return {};
+});
+
+const splinterPools = new Map<string, SplinterPool>();
+
+export let _numSplinterEnds = 0;
+
+let _ONCE = true;
+
+export function registerWoodSystems() {
+  EM.addSystem(
     "runWooden",
     Phase.GAME_WORLD,
     [WoodStateDef, WoodHealthDef, WorldFrameDef, RenderableDef],
@@ -142,7 +159,7 @@ onInit((em) => {
         if (hits) {
           const balls = hits
             .map((h) =>
-              em.findEntity(h, [BulletDef, WorldFrameDef, ColliderDef])
+              EM.findEntity(h, [BulletDef, WorldFrameDef, ColliderDef])
             )
             .filter((b) => {
               // TODO(@darzu): check authority and team
@@ -265,27 +282,8 @@ onInit((em) => {
       }
     }
   );
-});
 
-// TODO(@darzu): SUPER HACK
-type DestroyPirateShipFn = (id: number, timber: Entity) => void;
-const _destroyPirateShipFns: DestroyPirateShipFn[] = [];
-export function registerDestroyPirateHandler(fn: DestroyPirateShipFn) {
-  _destroyPirateShipFns.push(fn);
-}
-
-export const SplinterParticleDef = EM.defineComponent("splinter", () => {
-  return {};
-});
-
-const splinterPools = new Map<string, SplinterPool>();
-
-export let _numSplinterEnds = 0;
-
-let _ONCE = true;
-
-onInit((em: EntityManager) => {
-  em.addSystem(
+  EM.addSystem(
     "woodHealth",
     Phase.GAME_WORLD,
     [WoodStateDef, WorldFrameDef, WoodHealthDef, RenderableDef, ColorDef],
@@ -381,12 +379,12 @@ onInit((em: EntityManager) => {
                 const spin = randNormalVec3(vec3.create());
                 const vel = vec3.clone(spin);
                 vec3.scale(spin, 0.01, spin);
-                em.ensureComponentOn(splinter, AngularVelocityDef);
+                EM.ensureComponentOn(splinter, AngularVelocityDef);
                 vec3.copy(splinter.angularVelocity, spin);
                 vec3.scale(vel, 0.01, vel);
-                em.ensureComponentOn(splinter, LinearVelocityDef);
+                EM.ensureComponentOn(splinter, LinearVelocityDef);
                 vec3.copy(splinter.linearVelocity, spin);
-                em.ensureComponentOn(splinter, GravityDef);
+                EM.ensureComponentOn(splinter, GravityDef);
                 vec3.copy(splinter.gravity, [0, -3 * 0.00001, 0]);
               }
 
@@ -514,7 +512,7 @@ onInit((em: EntityManager) => {
       }
     }
   );
-});
+}
 
 function getSegmentRotation(seg: BoardSeg, top: boolean) {
   let segNorm = vec3.create();

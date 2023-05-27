@@ -153,7 +153,7 @@ export const mkTimberSplinterFree = (
   return b.mesh;
 };
 
-onInit(() => {
+export function registerWoodSplinterSystem() {
   const splinterObjId = 7654;
   EM.addSystem(
     "splintersOnFloor",
@@ -186,4 +186,4 @@ onInit(() => {
       }
     }
   );
-});
+}
