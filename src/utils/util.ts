@@ -1,6 +1,10 @@
 import { DBG_ASSERT, VERBOSE_LOG } from "../flags.js";
 import { randInt } from "./math.js";
 
+// TODO(@darzu): When we need a util, check here first:
+//    https://github.com/microsoft/TypeScript/blob/main/src/compiler/core.ts
+//    https://github.com/microsoft/TypeScript/blob/main/src/compiler/corePublic.ts
+
 export function assert(cond: any, msg?: string): asserts cond {
   // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-7.html#assertion-functions
   if (!cond)
@@ -156,14 +160,23 @@ export function objMap<A extends {}, V1 extends A[keyof A], V2>(
   });
   return res as { [P in keyof A]: V2 };
 }
-export function toRecord<A, V>(
+export function toRecord<A, V, K extends string | number = string>(
   as: A[],
-  key: (a: A) => string,
+  key: (a: A) => K,
   val: (a: A) => V
-): { [k: string]: V } {
+): Record<K, V> {
   const res: { [k: string]: V } = {};
   as.forEach((a) => (res[key(a)] = val(a)));
-  return res;
+  return res as Record<K, V>;
+}
+export function toMap<A, V, K extends string | number = string>(
+  as: readonly A[],
+  key: (a: A) => K,
+  val: (a: A) => V
+): Map<K, V> {
+  const res = new Map();
+  as.forEach((a) => res.set(key(a), val(a)));
+  return res as Map<K, V>;
 }
 
 // TODO(@darzu): this is is a typescript hack for the fact that just using "false"
@@ -211,7 +224,8 @@ export function dbgLogNextBatch() {
   __logBatch = "";
 }
 
-export function isArray(t: any): t is any[] {
+export function isArray(t: any): t is readonly unknown[] {
+  // See: https://github.com/microsoft/TypeScript/issues/17002
   return Array.isArray(t);
 }
 export function isFunction(t: any): t is (...args: any[]) => any {
@@ -345,4 +359,17 @@ export function resizeArray<T, T2 extends T>(
   while (arr.length < len) arr.push(make());
   // if it's too big, chop off the extra (hacky JS pattern)
   if (arr.length > len) arr.length = len;
+}
+
+export function enumNamesAsList<T extends {}>(e: T): (keyof T)[] {
+  return Object.keys(e)
+    .filter((key) => !isNaN(Number(key)))
+    .map((key) => e[key as keyof T] as keyof T);
+}
+export function enumAsList<T extends {}>(e: T): T[keyof T][] {
+  const values: number[] = Object.keys(e)
+    .map((key) => Number(key))
+    .filter((key) => !isNaN(key));
+  // TODO(@darzu): sort?
+  return values as T[keyof T][];
 }

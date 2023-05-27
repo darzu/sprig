@@ -31,15 +31,16 @@ import { BulletDef, fireBullet } from "../cannons/bullet.js";
 import { DeletedDef, OnDeleteDef } from "../ecs/delete.js";
 import { LifetimeDef } from "../ecs/lifetime.js";
 import { HsShipLocalDef } from "./hyperspace-ship.js";
-import { defineNetEntityHelper } from "../ecs/em_helpers.js";
+import { defineNetEntityHelper } from "../ecs/em-helpers.js";
 import { DetectedEventsDef, eventWizard } from "../net/events.js";
 import { raiseBulletEnemyShip } from "../cannons/bullet-collision.js";
-import { GameStateDef, HyperspaceGameState } from "./hyperspace-gamestate.js";
+import { HSGameStateDef, HyperspaceGameState } from "./hyperspace-gamestate.js";
 import { cloneMesh, scaleMesh3 } from "../meshes/mesh.js";
 import { UVShipDef } from "./uv-ship.js";
 import { UVDirDef, UVPosDef } from "../ocean/ocean.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { AudioDef, Music } from "../audio/audio.js";
+import { Phase } from "../ecs/sys-phase.js";
 
 export const EnemyCrewDef = EM.defineComponent("enemyCrew", () => {
   return {
@@ -234,7 +235,9 @@ export const raiseBreakEnemyShip = eventWizard(
 );
 
 export function registerEnemyShipSystems(em: EntityManager) {
-  em.registerSystem(
+  em.addSystem(
+    "stepEnemyShips",
+    Phase.GAME_WORLD,
     [EnemyShipLocalDef, EnemyShipPropsDef, UVDirDef, UVShipDef, AuthorityDef],
     [TimeDef, MeDef],
     (enemyShips, res) => {
@@ -249,11 +252,12 @@ export function registerEnemyShipSystems(em: EntityManager) {
         // TODO(@darzu):  * 0.02
         vec2.rotate(o.uvDir, vec2.ZEROS, radYaw, o.uvDir);
       }
-    },
-    "stepEnemyShips"
+    }
   );
 
-  em.registerSystem(
+  em.addSystem(
+    "enemyShipsFire",
+    Phase.GAME_WORLD,
     [EnemyShipLocalDef, AuthorityDef],
     [TimeDef, MeDef, PhysicsResultsDef],
     (enemyShips, res) => {
@@ -297,11 +301,12 @@ export function registerEnemyShipSystems(em: EntityManager) {
           }
         }
       }
-    },
-    "enemyShipsFire"
+    }
   );
 
-  em.registerSystem(
+  em.addSystem(
+    "breakEnemyShips",
+    Phase.GAME_WORLD,
     [EnemyShipLocalDef, PositionDef, RotationDef],
     [PhysicsResultsDef, AssetsDef, AudioDef, MeDef, DetectedEventsDef],
     (objs, res) => {
@@ -323,8 +328,7 @@ export function registerEnemyShipSystems(em: EntityManager) {
           }
         }
       }
-    },
-    "breakEnemyShips"
+    }
   );
 }
 

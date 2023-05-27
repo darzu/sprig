@@ -5,7 +5,11 @@ import { EM, EntityManager, EntityW } from "../ecs/entity-manager.js";
 import { AssetsDef } from "../meshes/assets.js";
 import { ControllableDef } from "../input/controllable.js";
 import { createGhost, GhostDef } from "../debug/ghost.js";
-import { LocalHsPlayerDef, HsPlayerDef } from "../hyperspace/hs-player.js";
+import {
+  LocalHsPlayerDef,
+  HsPlayerDef,
+  registerHsPlayerSystems,
+} from "../hyperspace/hs-player.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { ColliderDef } from "../physics/collider.js";
 import { LinearVelocityDef } from "../motion/velocity.js";
@@ -72,11 +76,12 @@ import { BulletDef, breakBullet } from "../cannons/bullet.js";
 import { ParametricDef } from "../motion/parametric-motion.js";
 import { createDock } from "./dock.js";
 import { ShipHealthDef } from "./ship-health.js";
-import { createRef } from "../ecs/em_helpers.js";
+import { createRef } from "../ecs/em-helpers.js";
 import { resetWoodHealth, resetWoodState, WoodStateDef } from "../wood/wood.js";
 import { MapPaths } from "../levels/map-loader.js";
 import { stdRiggedRenderPipeline } from "../render/pipelines/std-rigged.js";
 import { PoseDef } from "../animation/skeletal.js";
+import { Phase } from "../ecs/sys-phase.js";
 /*
 NOTES:
 - Cut grass by updating a texture that has cut/not cut or maybe cut-height
@@ -163,7 +168,9 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
   // console.dir(mapJfa);
   // console.dir(dbgGridCompose);
 
-  em.registerSystem(
+  em.addSystem(
+    "ld53GamePipelines",
+    Phase.GAME_WORLD,
     null,
     [RendererDef, DevConsoleDef],
     (_, res) => {
@@ -180,10 +187,8 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
         postProcess,
         // ...(res.dev.showConsole ? dbgGridCompose : []),
       ];
-    },
-    "grassGameRenderPipelines"
+    }
   );
-  em.requireSystem("grassGameRenderPipelines");
 
   // Sun
   const sunlight = em.new();
@@ -217,8 +222,6 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
 
   // score
   const score = em.addResource(ScoreDef);
-  em.requireSystem("updateScoreDisplay");
-  em.requireSystem("detectGameEnd");
 
   // start map
   await setMap(em, MapPaths[0]);
@@ -285,8 +288,7 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
   const ocean = await em.whenResources(OceanDef); // TODO(@darzu): need to wait?
 
   const wind = em.addResource(WindDef);
-  //em.requireSystem("changeWind");
-  //em.requireSystem("smoothWind");
+  // registerChangeWindSystems();
 
   // load level
   const level = await EM.whenResources(LevelMapDef);
@@ -298,17 +300,12 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
 
   const ship = await createShip(em);
 
-  EM.requireSystem("runWooden");
-  EM.requireSystem("woodHealth");
-
   EM.ensureComponentOn(ship, ShipHealthDef);
-  EM.requireSystem("updateShipHealth");
+
   // move down
   // ship.position[2] = -WORLD_SIZE * 0.5 * 0.6;
   level2DtoWorld3D(level.levelMap.startPos, 8, ship.position);
   //vec3.copy(ship.position, SHIP_START_POS);
-  em.requireSystem("sailShip");
-  em.requireSystem("shipParty");
 
   // bouyancy
   if (!"true") {
@@ -337,7 +334,9 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
     // console.dir(buoys);
     const _t1 = vec3.create();
     const _t2 = vec3.create();
-    em.registerSystem(
+    em.addSystem(
+      "shipBouyancy",
+      Phase.GAME_WORLD,
       [bouyDef, PositionDef, UVPosDef],
       [OceanDef],
       (es, res) => {
@@ -363,13 +362,8 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
 
           i++;
         }
-      },
-      "shipBouyancy"
+      }
     );
-    em.requireSystem("shipBouyancy");
-
-    // EM.requireSystem("oceanUVtoPos");
-    // EM.requireSystem("oceanUVDirToRot");
   }
 
   // end zone
@@ -386,6 +380,7 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
   // player
   if (!DBG_PLAYER) {
     const player = await createPlayer();
+
     player.physicsParent.id = ship.id;
     // vec3.set(0, 3, -1, player.position);
     const rudder = ship.ld52ship.rudder()!;
@@ -393,6 +388,8 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
     player.position[1] = 1.45;
     assert(CameraFollowDef.isOn(rudder));
     raiseManTurret(player, rudder);
+
+    registerHsPlayerSystems(em);
   }
 
   if (DBG_PLAYER) {
@@ -453,7 +450,9 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
     g.cameraFollow.yawOffset = 0.0;
     g.cameraFollow.pitchOffset = -0.627;
 
-    em.registerSystem(
+    em.addSystem(
+      "smolGhost",
+      Phase.GAME_WORLD,
       [GhostDef, WorldFrameDef, ColliderDef],
       [InputsDef, CanvasDef],
       async (ps, { inputs, htmlCanvas }) => {
@@ -462,10 +461,8 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
         const ghost = ps[0];
 
         if (!htmlCanvas.hasFirstInteraction) return;
-      },
-      "smolGhost"
+      }
     );
-    EM.requireGameplaySystem("smolGhost");
   }
 
   score.onLevelEnd.push(async () => {
@@ -544,7 +541,9 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
     }
   });
 
-  EM.registerSystem(
+  EM.addSystem(
+    "furlUnfurl",
+    Phase.GAME_PLAYERS,
     [],
     [InputsDef, PartyDef],
     (_, res) => {
@@ -569,14 +568,14 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
           sail.unfurledAmount = clamp(sail.unfurledAmount, sail.minFurl, 1.0);
         }
       }
-    },
-    "furlUnfurl"
+    }
   );
-  EM.requireSystem("furlUnfurl");
 
   const shipWorld = await EM.whenEntityHas(ship, WorldFrameDef);
 
-  EM.registerSystem(
+  EM.addSystem(
+    "turnMast",
+    Phase.GAME_PLAYERS,
     [],
     [InputsDef, WindDef],
     (_, res) => {
@@ -606,10 +605,8 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
       // TODO(@darzu): ANIMATE SAIL TOWARD WIND
       if (vec3.dot(optimalSailLocalDir, shipLocalDir) > 0.01)
         quatFromUpForward(mast.rotation, V(0, 1, 0), optimalSailLocalDir);
-    },
-    "turnMast"
+    }
   );
-  EM.requireSystem("turnMast");
 
   const { text } = await EM.whenResources(TextDef);
   text.lowerText = "W/S: unfurl/furl sail, A/D: turn, E: drop rudder";
@@ -665,14 +662,10 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
     quat.setAxisAngle([0, 1, 0], angle, stoneTower.rotation);
   }
 
-  EM.requireSystem("stoneTowerAttack");
-  EM.requireSystem("stoneTowerDamage");
-  EM.requireSystem("despawnFlyingBricks");
-
-  EM.requireSystem("landShipCollision");
-
   // BULLET STUFF
-  em.registerSystem(
+  em.addSystem(
+    "breakBullets",
+    Phase.GAME_WORLD,
     [
       BulletDef,
       ColorDef,
@@ -687,15 +680,15 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
           breakBullet(b);
         }
       }
-    },
-    "breakBullets"
+    }
   );
-  EM.requireGameplaySystem("breakBullets");
 
   // dead bullet maintenance
   // NOTE: this must be called after any system that can create dead bullets but
   //   before the rendering systems.
-  em.registerSystem(
+  em.addSystem(
+    "deadBullets",
+    Phase.GAME_WORLD,
     [BulletDef, PositionDef, DeadDef, RenderableDef],
     [],
     (es, _) => {
@@ -708,12 +701,8 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
 
         e.dead.processed = true;
       }
-    },
-    "deadBullets"
+    }
   );
-  EM.requireGameplaySystem("deadBullets");
-
-  EM.requireGameplaySystem("splintersOnFloor");
 }
 
 async function createPlayer() {

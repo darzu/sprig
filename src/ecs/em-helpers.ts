@@ -9,6 +9,7 @@ import { Authority, AuthorityDef, MeDef, SyncDef } from "../net/components.js";
 import { Serializer, Deserializer } from "../utils/serialize.js";
 import { assert } from "../utils/util.js";
 import { capitalize } from "../utils/util.js";
+import { Phase } from "./sys-phase.js";
 
 export function defineSerializableComponent<
   N extends string,
@@ -35,7 +36,9 @@ function registerConstructorSystem<
   rs: [...RS],
   callback: (e: EntityW<[C]>, resources: EntityW<RS>) => void
 ) {
-  em.registerSystem(
+  em.addSystem(
+    `${def.name}Build`,
+    Phase.PRE_GAME_WORLD,
     [def],
     rs,
     (es, res) => {
@@ -44,8 +47,7 @@ function registerConstructorSystem<
         callback(e as EntityW<[C]>, res);
         em.ensureComponentOn(e, FinishedDef);
       }
-    },
-    `${def.name}Build`
+    }
   );
   return callback;
   // console.log(`reg ${def.name}Build`);
@@ -119,39 +121,52 @@ export function defineNetEntityHelper<
   );
   const localDef = em.defineComponent(`${opts.name}Local`, opts.defaultLocal);
 
-  const constructFn = registerConstructorSystem(
-    em,
-    propsDef,
-    [...opts.buildResources, MeDef],
-    (e, res) => {
-      // TYPE HACK
-      const me = (res as any as EntityW<[typeof MeDef]>).me;
-      em.ensureComponentOn(e, AuthorityDef, me.pid);
+  const lazyRegister = () =>
+    registerConstructorSystem(
+      em,
+      propsDef,
+      [...opts.buildResources, MeDef],
+      (e, res) => {
+        // TYPE HACK
+        const me = (res as any as EntityW<[typeof MeDef]>).me;
+        em.ensureComponentOn(e, AuthorityDef, me.pid);
 
-      em.ensureComponentOn(e, localDef);
-      em.ensureComponentOn(e, SyncDef);
-      e.sync.fullComponents = [propsDef.id];
-      e.sync.dynamicComponents = opts.dynamicComponents.map((d) => d.id);
-      for (let d of opts.dynamicComponents) em.ensureComponentOn(e, d);
+        em.ensureComponentOn(e, localDef);
+        em.ensureComponentOn(e, SyncDef);
+        e.sync.fullComponents = [propsDef.id];
+        e.sync.dynamicComponents = opts.dynamicComponents.map((d) => d.id);
+        for (let d of opts.dynamicComponents) em.ensureComponentOn(e, d);
 
-      // TYPE HACK
-      const _e = e as any as EntityW<
-        [
-          ComponentDef<`${N}Props`, P1, Pargs1>,
-          ComponentDef<`${N}Local`, P2, []>,
-          typeof AuthorityDef,
-          typeof SyncDef,
-          ...DS
-        ]
-      >;
+        // TYPE HACK
+        const _e = e as any as EntityW<
+          [
+            ComponentDef<`${N}Props`, P1, Pargs1>,
+            ComponentDef<`${N}Local`, P2, []>,
+            typeof AuthorityDef,
+            typeof SyncDef,
+            ...DS
+          ]
+        >;
 
-      opts.build(_e, res as EntityW<RS>);
-    }
-  );
+        opts.build(_e, res as EntityW<RS>);
+      }
+    );
+  // TODO(@darzu): this lazy system registration thing seems hacky and maybe there's a more general
+  //    way to do this? Like have all systems only init their caches etc once they have a non-zero set of entities
+  //    (unless they are resource-only systems).
+  const systemRegistration = {
+    constructFn: undefined as undefined | ReturnType<typeof lazyRegister>,
+  };
+  function ensureRegistered(reg: typeof systemRegistration): asserts reg is {
+    constructFn: ReturnType<typeof lazyRegister>;
+  } {
+    if (!reg.constructFn) reg.constructFn = lazyRegister();
+  }
 
   const createNew = (...args: Pargs1) => {
     const e = em.new();
     em.ensureComponentOn(e, propsDef, ...args);
+    ensureRegistered(systemRegistration);
     return e;
   };
 
@@ -160,7 +175,8 @@ export function defineNetEntityHelper<
     em.ensureComponentOn(e, propsDef, ...args);
     // TODO(@darzu): maybe we should force users to give us the MeDef? it's probably always there tho..
     // TODO(@darzu): Think about what if buid() is async...
-    constructFn(e, res as EntityW<[...RS, typeof MeDef]>);
+    ensureRegistered(systemRegistration);
+    systemRegistration.constructFn(e, res as EntityW<[...RS, typeof MeDef]>);
     em.ensureComponentOn(e, FinishedDef);
     return e;
   };

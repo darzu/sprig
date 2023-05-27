@@ -9,6 +9,7 @@ import { TimeDef } from "../time/time.js";
 import { EaseFn, EASE_LINEAR } from "../utils/util-ease.js";
 import { RiggedRenderableDef } from "../render/renderer-ecs.js";
 import { assert } from "../utils/util.js";
+import { Phase } from "../ecs/sys-phase.js";
 
 interface QueuedAnimation {
   pose: number;
@@ -23,7 +24,9 @@ export const PoseDef = EM.defineComponent("pose", (current?: number) => ({
 }));
 
 onInit(() => {
-  EM.registerSystem(
+  EM.addSystem(
+    "pose",
+    Phase.RENDER_PRE_DRAW,
     [PoseDef, RiggedRenderableDef],
     [TimeDef],
     (es, res) => {
@@ -72,8 +75,6 @@ onInit(() => {
           mat4.mul(mats[j], rigging.inverseBindMatrices[j], mats[j]);
         }
       }
-    },
-    "pose"
+    }
   );
-  EM.requireSystem("pose");
 });

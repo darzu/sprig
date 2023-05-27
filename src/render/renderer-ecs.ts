@@ -41,6 +41,7 @@ import {
   RiggedMeshHandle,
   RiggedMeshPool,
 } from "./pipelines/std-rigged.js";
+import { Phase } from "../ecs/sys-phase.js";
 
 const BLEND_SIMULATION_FRAMES_STRATEGY: "interpolate" | "extrapolate" | "none" =
   "none";
@@ -181,8 +182,10 @@ function updateSmoothedWorldFrame(em: EntityManager, o: Entity) {
 }
 
 export function registerUpdateSmoothedWorldFrames(em: EntityManager) {
-  em.registerSystem(
-    [RenderableDef, TransformDef],
+  em.addSystem(
+    "updateSmoothedWorldFrames",
+    Phase.PRE_RENDER,
+    [RenderableConstructDef, TransformDef],
     [],
     (objs, res) => {
       _hasRendererWorldFrame.clear();
@@ -197,8 +200,7 @@ export function registerUpdateSmoothedWorldFrames(em: EntityManager) {
 
         updateSmoothedWorldFrame(em, o);
       }
-    },
-    "updateSmoothedWorldFrames"
+    }
   );
 }
 
@@ -259,18 +261,24 @@ function extrapolateFrames(
 }
 
 export function registerUpdateRendererWorldFrames(em: EntityManager) {
-  em.registerSystem(
+  em.addSystem(
+    "updateRendererWorldFrames",
+    Phase.RENDER_WORLDFRAMES,
     [SmoothedWorldFrameDef, PrevSmoothedWorldFrameDef],
     [],
     (objs) => {
       for (let o of objs) {
-        em.ensureComponentOn(o, RendererWorldFrameDef);
-
-        // TODO(@darzu): HACK!
         if (DONT_SMOOTH_WORLD_FRAME) {
-          (o as any).rendererWorldFrame = (o as any).world;
+          // TODO(@darzu): HACK!
+          if (WorldFrameDef.isOn(o)) {
+            em.ensureComponentOn(o, RendererWorldFrameDef);
+            copyFrame(o.rendererWorldFrame, o.world);
+            // (o as any).rendererWorldFrame = o.world;
+          }
           continue;
         }
+
+        em.ensureComponentOn(o, RendererWorldFrameDef);
 
         switch (BLEND_SIMULATION_FRAMES_STRATEGY) {
           case "interpolate":
@@ -293,8 +301,7 @@ export function registerUpdateRendererWorldFrames(em: EntityManager) {
             copyFrame(o.rendererWorldFrame, o.smoothedWorldFrame);
         }
       }
-    },
-    "updateRendererWorldFrames"
+    }
   );
 }
 
@@ -331,7 +338,9 @@ export function registerRenderer(em: EntityManager) {
   const renderObjs: EntityW<
     [typeof RendererWorldFrameDef, typeof RenderableDef]
   >[] = [];
-  em.registerSystem(
+  em.addSystem(
+    "renderListDeadHidden",
+    Phase.RENDER_DRAW,
     [RendererWorldFrameDef, RenderableDef, DeadDef],
     [],
     (objs, _) => {
@@ -339,22 +348,24 @@ export function registerRenderer(em: EntityManager) {
       for (let o of objs)
         if (o.renderable.enabled && o.renderable.hidden && !DeletedDef.isOn(o))
           renderObjs.push(o);
-    },
-    "renderListDeadHidden"
+    }
   );
-  em.registerSystem(
+  em.addSystem(
+    "renderList",
+    Phase.RENDER_DRAW,
     [RendererWorldFrameDef, RenderableDef],
     [],
     (objs, _) => {
       for (let o of objs)
         if (o.renderable.enabled && !DeletedDef.isOn(o)) renderObjs.push(o);
-    },
-    "renderList"
+    }
   );
 
   let __frame = 1; // TODO(@darzu): DBG
 
-  em.registerSystem(
+  em.addSystem(
+    "stepRenderer",
+    Phase.RENDER_DRAW,
     null, // NOTE: see "renderList*" systems and NOTE above. We use those to construct our query.
     [CameraDef, CameraComputedDef, RendererDef, TimeDef, PartyDef],
     (_, res) => {
@@ -494,20 +505,16 @@ export function registerRenderer(em: EntityManager) {
         stats._accumUniDataQueued = 0;
         stats._accumVertDataQueued = 0;
       }
-    },
-    "stepRenderer"
+    }
   );
 
-  em.requireSystem("renderListDeadHidden");
-  em.requireSystem("renderList");
-  em.requireSystem("stepRenderer");
-  em.addConstraint([
-    "renderListDeadHidden",
-    "after",
-    "updateRendererWorldFrames",
-  ]);
-  em.addConstraint(["renderListDeadHidden", "before", "renderList"]);
-  em.addConstraint(["renderList", "before", "stepRenderer"]);
+  // em.addConstraint([
+  //   "renderListDeadHidden",
+  //   "after",
+  //   "updateRendererWorldFrames",
+  // ]);
+  // em.addConstraint(["renderListDeadHidden", "before", "renderList"]);
+  // em.addConstraint(["renderList", "before", "stepRenderer"]);
 }
 
 // export function poolKindToPool(
@@ -526,7 +533,9 @@ export function registerRenderer(em: EntityManager) {
 // }
 
 export function registerConstructRenderablesSystem(em: EntityManager) {
-  em.registerSystem(
+  em.addSystem(
+    "constructRenderables",
+    Phase.PRE_GAME_WORLD,
     [RenderableConstructDef],
     [RendererDef],
     (es, res) => {
@@ -579,8 +588,7 @@ export function registerConstructRenderablesSystem(em: EntityManager) {
           }
         }
       }
-    },
-    "constructRenderables"
+    }
   );
 }
 
@@ -595,7 +603,9 @@ export const RiggedRenderableDef = EM.defineComponent(
 
 export function registerRiggedRenderablesSystems(em: EntityManager) {
   let pool: RiggedMeshPool | undefined = undefined;
-  em.registerSystem(
+  em.addSystem(
+    "constructRiggedRenderables",
+    Phase.PRE_GAME_WORLD,
     [RiggedRenderableConstructDef],
     [RendererDef],
     (es, res) => {
@@ -630,11 +640,12 @@ export function registerRiggedRenderablesSystems(em: EntityManager) {
           }
         }
       }
-    },
-    "constructRiggedRenderables"
+    }
   );
 
-  em.registerSystem(
+  em.addSystem(
+    "updateJoints",
+    Phase.RENDER_PRE_DRAW,
     [RiggedRenderableDef, RenderableDef],
     [],
     (es, res) => {
@@ -647,14 +658,8 @@ export function registerRiggedRenderablesSystems(em: EntityManager) {
           );
         }
       }
-    },
-    "updateJoints"
+    }
   );
-  em.addConstraint(["updateJoints", "after", "renderList"]);
-  em.addConstraint(["updateJoints", "before", "stepRenderer"]);
-  em.addConstraint(["constructRiggedRenderables", "before", "renderList"]);
-  em.requireSystem("constructRiggedRenderables");
-  em.requireSystem("updateJoints");
 }
 
 export type Renderer = ReturnType<typeof createRenderer>;
@@ -690,7 +695,9 @@ export const RendererDef = EM.defineComponent(
 let _rendererPromise: Promise<void> | null = null;
 
 export function registerRenderInitSystem(em: EntityManager) {
-  em.registerSystem(
+  em.addSystem(
+    "renderInit",
+    Phase.PRE_RENDER,
     [],
     [CanvasDef, ShadersDef],
     (_, res) => {
@@ -701,8 +708,7 @@ export function registerRenderInitSystem(em: EntityManager) {
         res.shaders,
         res.htmlCanvas.canvas
       );
-    },
-    "renderInit"
+    }
   );
 }
 

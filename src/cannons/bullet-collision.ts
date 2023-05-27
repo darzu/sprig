@@ -25,12 +25,15 @@ import {
   breakEnemyShip,
   EnemyShipLocalDef,
 } from "../hyperspace/uv-enemy-ship.js";
+import { Phase } from "../ecs/sys-phase.js";
 
 const ENABLE_BULLETBULLET = false;
 
 export function registerBulletCollisionSystem(em: EntityManager) {
   // TODO(@darzu):
-  em.registerSystem(
+  em.addSystem(
+    "bulletCollision",
+    Phase.GAME_WORLD,
     [BulletDef, AuthorityDef],
     [PhysicsResultsDef, DetectedEventsDef],
     (bullets, resources) => {
@@ -60,8 +63,7 @@ export function registerBulletCollisionSystem(em: EntityManager) {
           }
         }
       }
-    },
-    "bulletCollision"
+    }
   );
 }
 

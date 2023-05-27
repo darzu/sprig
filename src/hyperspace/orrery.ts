@@ -1,5 +1,5 @@
 import { ColorDef } from "../color/color-ecs.js";
-import { createRef, Ref } from "../ecs/em_helpers.js";
+import { createRef, Ref } from "../ecs/em-helpers.js";
 import { EM, EntityManager } from "../ecs/entity-manager.js";
 import { vec3, mat4, V } from "../matrix/sprig-matrix.js";
 import { onInit } from "../init.js";
@@ -13,6 +13,7 @@ import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { AssetsDef } from "../meshes/assets.js";
 import { DarkStarPropsDef } from "./darkstar.js";
 import { ENDESGA16 } from "../color/palettes.js";
+import { Phase } from "../ecs/sys-phase.js";
 
 const ORRERY_SCALE = 0.001;
 
@@ -44,8 +45,10 @@ export const OrreryDef = EM.defineComponent("orrery", () => ({
   orreryStars: [] as Ref<[typeof PositionDef, typeof ColorDef]>[],
 }));
 
-onInit((em: EntityManager) => {
-  em.registerSystem(
+export function registerOrrerySystems(em: EntityManager) {
+  em.addSystem(
+    "orreryMotion",
+    Phase.GAME_WORLD,
     [OrreryDef, WorldFrameDef],
     [AssetsDef],
     (es, res) => {
@@ -83,7 +86,6 @@ onInit((em: EntityManager) => {
           vec3.scale(orreryStar.position, ORRERY_SCALE, orreryStar.position);
         });
       }
-    },
-    "orreryMotion"
+    }
   );
-});
+}

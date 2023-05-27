@@ -31,10 +31,10 @@ import { InRangeDef, InteractableDef } from "../input/interact.js";
 import {
   endGame,
   HyperspaceGameState,
-  GameStateDef,
+  HSGameStateDef,
   startGame,
 } from "./hyperspace-gamestate.js";
-import { createRef, defineNetEntityHelper, Ref } from "../ecs/em_helpers.js";
+import { createRef, defineNetEntityHelper, Ref } from "../ecs/em-helpers.js";
 import { DetectedEventsDef, eventWizard } from "../net/events.js";
 import { MotionSmoothingDef } from "../render/motion-smoothing.js";
 import { DevConsoleDef } from "../debug/console.js";
@@ -52,6 +52,7 @@ import { makeOrrery, OrreryDef } from "./orrery.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { createGem, GemPropsDef } from "./gem.js";
 import { ENDESGA16 } from "../color/palettes.js";
+import { Phase } from "../ecs/sys-phase.js";
 
 // TODO(@darzu): impl. occassionaly syncable components with auto-versioning
 
@@ -273,9 +274,11 @@ const START_TEXT = "";
 // const START_TEXT = "hit the gem to begin";
 
 export function registerShipSystems(em: EntityManager) {
-  em.registerSystem(
+  em.addSystem(
+    "startGame",
+    Phase.GAME_WORLD,
     [GemPropsDef, InRangeDef],
-    [GameStateDef, PhysicsResultsDef, MeDef, InputsDef, LocalHsPlayerDef],
+    [HSGameStateDef, PhysicsResultsDef, MeDef, InputsDef, LocalHsPlayerDef],
     (gems, res) => {
       for (let gem of gems) {
         if (DeletedDef.isOn(gem)) continue;
@@ -287,8 +290,7 @@ export function registerShipSystems(em: EntityManager) {
           startGame(player);
         }
       }
-    },
-    "startGame"
+    }
   );
 
   const raiseShipHit = eventWizard(
@@ -309,13 +311,15 @@ export function registerShipSystems(em: EntityManager) {
     }
   );
 
-  em.registerSystem(
+  em.addSystem(
+    "shipHealthCheck",
+    Phase.GAME_WORLD,
     [HsShipPropsDef, HsShipLocalDef, PositionDef, AuthorityDef],
     [
       AudioDef,
       InputsDef,
       CameraDef,
-      GameStateDef,
+      HSGameStateDef,
       MeDef,
       PhysicsResultsDef,
       DetectedEventsDef,
@@ -355,11 +359,12 @@ export function registerShipSystems(em: EntityManager) {
           endGame(ship);
         }
       }
-    },
-    "shipHealthCheck"
+    }
   );
 
-  em.registerSystem(
+  em.addSystem(
+    "playerShipMove",
+    Phase.GAME_PLAYERS,
     [
       UVShipDef,
       HsShipLocalDef,
@@ -370,7 +375,7 @@ export function registerShipSystems(em: EntityManager) {
       // RotationDef,
       UVDirDef,
     ],
-    [GameStateDef, MeDef, InputsDef, DevConsoleDef],
+    [HSGameStateDef, MeDef, InputsDef, DevConsoleDef],
     (ships, res) => {
       if (res.hsGameState.state !== HyperspaceGameState.PLAYING) {
         return;
@@ -395,21 +400,23 @@ export function registerShipSystems(em: EntityManager) {
 
         vec2.rotate(s.uvDir, vec2.ZEROS, yaw * 0.02, s.uvDir);
       }
-    },
-    "playerShipMove"
+    }
   );
 
-  em.registerSystem(
+  em.addSystem(
+    "shipUpdateParty",
+    Phase.GAME_WORLD,
     [HsShipLocalDef, HsShipPropsDef, PositionDef],
     [PartyDef],
     (ships, res) => {
       if (ships[0]) vec3.copy(res.party.pos, ships[0].position);
-    },
-    "shipUpdateParty"
+    }
   );
 
   // If a rudder isn't being manned, smooth it back towards straight
-  em.registerSystem(
+  em.addSystem(
+    "easeRudder",
+    Phase.GAME_WORLD,
     [RudderPropsDef, TurretDef, YawPitchDef, AuthorityDef],
     [MeDef],
     (rudders, res) => {
@@ -419,7 +426,6 @@ export function registerShipSystems(em: EntityManager) {
         if (Math.abs(r.yawpitch.yaw) < 0.01) r.yawpitch.yaw = 0;
         r.yawpitch.yaw *= 0.9;
       }
-    },
-    "easeRudder"
+    }
   );
 }

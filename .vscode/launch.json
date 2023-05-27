@@ -4,12 +4,16 @@
   // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
   "version": "0.2.0",
   "configurations": [
-      {
-          "type": "chrome",
-          "request": "launch",
-          "name": "Launch Chrome",
-          "url": "http://localhost:4321",
-          "webRoot": "${workspaceFolder}/src"
-      },
+    {
+      "type": "chrome",
+      "request": "launch",
+      "name": "Launch Chrome against localhost",
+      "url": "http://localhost:4321",
+      /*TODO: this is broken and it's impossible to dbg why. feeling angry at vscode.*/
+      "webRoot": "${workspaceFolder}/src",
+      "sourceMapPathOverrides": {
+        "../../src": "${workspaceFolder}/src"
+      }
+    }
   ]
 }

@@ -37,7 +37,7 @@ import { SAIL_FURL_RATE } from "../wind/sail.js";
 import { quatFromUpForward, randNormalVec3 } from "../utils/utils-3d.js";
 import { randColor } from "../utils/utils-game.js";
 import { GrassCutTexPtr, grassPoolPtr, renderGrassPipe } from "./std-grass.js";
-import { WindDef } from "../wind/wind.js";
+import { WindDef, registerChangeWindSystems } from "../wind/wind.js";
 import { DevConsoleDef } from "../debug/console.js";
 import { clamp, jitter, max, sum } from "../utils/math.js";
 import { createShip, ShipDef } from "../ld53/ship.js";
@@ -59,6 +59,7 @@ import { skyPipeline } from "../render/pipelines/std-sky.js";
 import { createFlatQuadMesh, makeDome } from "../meshes/primatives.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
 import { createGraph3D } from "../debug/utils-gizmos.js";
+import { Phase } from "../ecs/sys-phase.js";
 
 /*
 NOTES:
@@ -139,7 +140,9 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
   // console.dir(mapJfa);
   // console.dir(dbgGridCompose);
 
-  em.registerSystem(
+  em.addSystem(
+    "grassGameRenderPipelines",
+    Phase.GAME_WORLD,
     null,
     [RendererDef, DevConsoleDef],
     (_, res) => {
@@ -155,10 +158,8 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
         postProcess,
         ...(res.dev.showConsole ? dbgGridCompose : []),
       ];
-    },
-    "grassGameRenderPipelines"
+    }
   );
-  em.requireSystem("grassGameRenderPipelines");
 
   // Sun
   const sunlight = em.new();
@@ -174,8 +175,6 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
 
   // score
   const score = em.addResource(ScoreDef);
-  em.requireSystem("updateScoreDisplay");
-  em.requireSystem("detectGameEnd");
 
   // sky dome?
   const SKY_HALFSIZE = 1000;
@@ -291,8 +290,8 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
   console.log(`num grass tris: ${sum(ts.map((t) => t.numTris))}`);
 
   em.addResource(WindDef);
-  em.requireSystem("changeWind");
-  em.requireSystem("smoothWind");
+
+  registerChangeWindSystems();
 
   // load level
 
@@ -300,8 +299,6 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
   vec3.set(0, 10, 0, ship.position);
   // move down
   // vec3.copy(ship.position, SHIP_START_POS);
-  em.requireSystem("sailShip");
-  em.requireSystem("shipParty");
 
   // player
   if (!DBG_PLAYER) {
@@ -372,7 +369,9 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
     // g.cameraFollow.yawOffset = 0.0;
     // g.cameraFollow.pitchOffset = -0.378;
 
-    em.registerSystem(
+    em.addSystem(
+      "smolGhost",
+      Phase.GAME_WORLD,
       [GhostDef, WorldFrameDef, ColliderDef],
       [InputsDef, CanvasDef],
       async (ps, { inputs, htmlCanvas }) => {
@@ -381,10 +380,8 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
         const ghost = ps[0];
 
         if (!htmlCanvas.hasFirstInteraction) return;
-      },
-      "smolGhost"
+      }
     );
-    EM.requireGameplaySystem("smolGhost");
 
     // em.registerSystem(
     //   [GhostDef, WorldFrameDef],
@@ -396,11 +393,12 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
     //   },
     //   "smolGhostParty"
     // );
-    // EM.requireGameplaySystem("smolGhostParty");
   }
 
   // update grass
-  EM.registerSystem(
+  EM.addSystem(
+    "updateGrass",
+    Phase.GAME_WORLD,
     [CameraFollowDef, WorldFrameDef],
     [],
     (es, res) => {
@@ -408,10 +406,8 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
       // console.log(player.world.position);
       // const player = EM.findEntity(res.localHsPlayer.playerId, [WorldFrameDef]);
       if (player) for (let t of ts) t.update(player.world.position);
-    },
-    "updateGrass"
+    }
   );
-  EM.requireSystem("updateGrass");
 
   const { renderer } = await EM.whenResources(RendererDef);
   const grassCutTex = renderer.renderer.getCyResource(GrassCutTexPtr)!;
@@ -447,7 +443,9 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
   // dev.showConsole = true;
   // player.controllable.modes.canFly = true;
 
-  EM.registerSystem(
+  EM.addSystem(
+    "cuttingOnOff",
+    Phase.GAME_PLAYERS,
     [],
     [InputsDef],
     (_, res) => {
@@ -455,10 +453,8 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
       if (res.inputs.keyClicks[" "]) {
         ship.ld52ship.cuttingEnabled = !ship.ld52ship.cuttingEnabled;
       }
-    },
-    "cuttingOnOff"
+    }
   );
-  EM.requireSystem("cuttingOnOff");
 
   // TODO(@darzu): PERF. bad mem usage everywhere..
   let worldCutData = new Float32Array(
@@ -482,7 +478,9 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
     ship.ld52ship.rudder()!.yawpitch.yaw = 0;
   });
 
-  EM.registerSystem(
+  EM.addSystem(
+    "cutGrassUnderShip",
+    Phase.GAME_WORLD,
     [ShipDef, PositionDef, WorldFrameDef, PhysicsStateDef],
     [PartyDef, ScoreDef],
     (es, res) => {
@@ -624,34 +622,29 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
       // console.dir(data);
 
       // rasterizeTri
-    },
-    "cutGrassUnderShip"
+    }
   );
-  EM.requireSystem("cutGrassUnderShip");
-  EM.addConstraint(["detectGameEnd", "after", "cutGrassUnderShip"]);
 
-  EM.registerSystem(
-    [],
-    [InputsDef],
-    (_, res) => {
-      const mast = ship.ld52ship.mast()!;
-      const rudder = ship.ld52ship.rudder()!;
+  // EM.addConstraint(["detectGameEnd", "after", "cutGrassUnderShip"]);
 
-      // furl/unfurl
-      if (rudder.turret.mannedId) {
-        const sail = mast.mast.sail()!.sail;
-        if (res.inputs.keyDowns["w"]) sail.unfurledAmount += SAIL_FURL_RATE;
-        if (res.inputs.keyDowns["s"]) sail.unfurledAmount -= SAIL_FURL_RATE;
-        sail.unfurledAmount = clamp(sail.unfurledAmount, sail.minFurl, 1.0);
-      }
-    },
-    "furlUnfurl"
-  );
-  EM.requireSystem("furlUnfurl");
+  EM.addSystem("furlUnfurl", Phase.GAME_PLAYERS, [], [InputsDef], (_, res) => {
+    const mast = ship.ld52ship.mast()!;
+    const rudder = ship.ld52ship.rudder()!;
+
+    // furl/unfurl
+    if (rudder.turret.mannedId) {
+      const sail = mast.mast.sail()!.sail;
+      if (res.inputs.keyDowns["w"]) sail.unfurledAmount += SAIL_FURL_RATE;
+      if (res.inputs.keyDowns["s"]) sail.unfurledAmount -= SAIL_FURL_RATE;
+      sail.unfurledAmount = clamp(sail.unfurledAmount, sail.minFurl, 1.0);
+    }
+  });
 
   const shipWorld = await EM.whenEntityHas(ship, WorldFrameDef);
 
-  EM.registerSystem(
+  EM.addSystem(
+    "turnMast",
+    Phase.GAME_PLAYERS,
     [],
     [InputsDef, WindDef],
     (_, res) => {
@@ -681,10 +674,8 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
       // TODO(@darzu): ANIMATE SAIL TOWARD WIND
       if (vec3.dot(optimalSailLocalDir, shipLocalDir) > 0.01)
         quatFromUpForward(mast.rotation, V(0, 1, 0), optimalSailLocalDir);
-    },
-    "turnMast"
+    }
   );
-  EM.requireSystem("turnMast");
 
   const { text } = await EM.whenResources(TextDef);
   text.lowerText =

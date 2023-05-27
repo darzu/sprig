@@ -32,6 +32,7 @@ import { TimeDef } from "../time/time.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
 import { assert } from "../utils/util.js";
 import { onInit } from "../init.js";
+import { Phase } from "../ecs/sys-phase.js";
 
 export interface Event<Extra> {
   // Event type
@@ -275,7 +276,9 @@ const EVENT_RETRANSMIT_MS = 100;
 
 export function registerEventSystems(em: EntityManager) {
   // Runs only at non-host, sends valid detected events as requests to host
-  em.registerSystem(
+  em.addSystem(
+    "detectedEventsToHost",
+    Phase.NETWORK,
     [HostDef, OutboxDef],
     [DetectedEventsDef, MeDef, TimeDef],
     (hosts, { detectedEvents, me, time }) => {
@@ -327,12 +330,13 @@ export function registerEventSystems(em: EntityManager) {
         send(host.outbox, message.buffer);
         outgoingEventRequests.lastSendTime = time.time;
       }
-    },
-    "detectedEventsToHost"
+    }
   );
 
   // Runs only at host, handles incoming event requests
-  em.registerSystem(
+  em.addSystem(
+    "handleEventRequests",
+    Phase.NETWORK,
     [InboxDef, OutboxDef],
     [HostDef],
     (inboxes) => {
@@ -375,12 +379,13 @@ export function registerEventSystems(em: EntityManager) {
           send(outbox, ack.buffer);
         }
       }
-    },
-    "handleEventRequests"
+    }
   );
 
   // Runs only at non-host, handles event request acks from host
-  em.registerSystem(
+  em.addSystem(
+    "handleEventRequestAcks",
+    Phase.NETWORK,
     [InboxDef, OutgoingEventRequestsDef, HostDef],
     [],
     (hosts) => {
@@ -398,12 +403,13 @@ export function registerEventSystems(em: EntityManager) {
           outgoingEventRequests.events.shift();
         }
       }
-    },
-    "handleEventRequestAcks"
+    }
   );
 
   // Runs only at host, converts events detected locally to event requests
-  em.registerSystem(
+  em.addSystem(
+    "detectedEventsToRequestedEvents",
+    Phase.NETWORK,
     null,
     [DetectedEventsDef, HostDef, MeDef],
     ([], { detectedEvents, me }) => {
@@ -419,12 +425,13 @@ export function registerEventSystems(em: EntityManager) {
           requestedEvents.push(event);
         }
       }
-    },
-    "detectedEventsToRequestedEvents"
+    }
   );
 
   // Runs only at host, runs legal events
-  em.registerSystem(
+  em.addSystem(
+    "requestedEventsToEvents",
+    Phase.NETWORK,
     null,
     [RequestedEventsDef, EventsDef, HostDef],
     ([], { requestedEvents, events }) => {
@@ -442,12 +449,13 @@ export function registerEventSystems(em: EntityManager) {
           events.newEvents = true;
         }
       }
-    },
-    "requestedEventsToEvents"
+    }
   );
 
   // runs only at host, sends events to other nodes
-  em.registerSystem(
+  em.addSystem(
+    "sendEvents",
+    Phase.NETWORK,
     [OutboxDef],
     [EventsDef, HostDef, TimeDef],
     (peers, { events, time }) => {
@@ -478,12 +486,13 @@ export function registerEventSystems(em: EntityManager) {
         }
       }
       events.newEvents = false;
-    },
-    "sendEvents"
+    }
   );
 
   // Runs only at non-host, handles events from host
-  em.registerSystem(
+  em.addSystem(
+    "handleEvents",
+    Phase.NETWORK,
     [InboxDef, HostDef, OutboxDef],
     [EventsDef],
     (hosts, { events }) => {
@@ -523,12 +532,13 @@ export function registerEventSystems(em: EntityManager) {
         message.writeUint32(events.log.length);
         send(outbox, message.buffer);
       }
-    },
-    "handleEvents"
+    }
   );
 
   // Runs only at host, handles event ACKs
-  em.registerSystem(
+  em.addSystem(
+    "handleEventAcks",
+    Phase.NETWORK,
     [InboxDef],
     [HostDef],
     (inboxes) => {
@@ -542,8 +552,7 @@ export function registerEventSystems(em: EntityManager) {
           syncState.nextSeq = Math.max(syncState.nextSeq, nextSeq);
         }
       }
-    },
-    "handleEventAcks"
+    }
   );
 
   // TODO: this probably doesn't need to run at the host (it should always no-op there)
@@ -563,7 +572,7 @@ export function registerEventSystems(em: EntityManager) {
     }
   }
 
-  em.registerSystem(null, [EventsDef], runEvents, "runEvents");
+  em.addSystem("runEvents", Phase.NETWORK, null, [EventsDef], runEvents);
 }
 
 export function addEventComponents(em: EntityManager) {

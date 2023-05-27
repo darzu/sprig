@@ -3,13 +3,14 @@ import { EM, EntityW } from "../ecs/entity-manager.js";
 import { GameMesh, gameMeshFromMesh } from "../meshes/assets.js";
 import { gameplaySystems } from "../debug/ghost.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
-import { importObj } from "../meshes/import_obj.js";
+import { importObj } from "../meshes/import-obj.js";
 import { InputsDef } from "../input/inputs.js";
 import { PhysicsResultsDef } from "../physics/nonintersection.js";
 import { scaleMesh } from "../meshes/mesh.js";
 import { RendererDef } from "../render/renderer-ecs.js";
 import { assert } from "../utils/util.js";
 import { UICursorDef } from "./game-font.js";
+import { Phase } from "../ecs/sys-phase.js";
 
 // TODO(@darzu): this should really go in assets.ts to follow the current patern.
 //    BUT I'm disatisfied with the current pattern. Subsystems should be able to
@@ -65,7 +66,7 @@ export const ButtonsStateDef = EM.defineComponent(
 EM.registerInit({
   requireRs: [RendererDef],
   provideRs: [ButtonsStateDef],
-  provideLs: ["buttonStateUpdate", "buttonColors"],
+  // provideLs: ["buttonStateUpdate", "buttonColors"],
   fn: initButtonGUI,
 });
 
@@ -84,7 +85,9 @@ async function initButtonGUI(res: EntityW<[typeof RendererDef]>) {
     EM.addResource(ButtonsStateDef, btnGMesh);
   }
 
-  EM.registerSystem(
+  EM.addSystem(
+    "buttonStateUpdate",
+    Phase.READ_INPUTS,
     [ButtonDef],
     [PhysicsResultsDef, ButtonsStateDef, InputsDef, UICursorDef],
     (es, res) => {
@@ -116,12 +119,12 @@ async function initButtonGUI(res: EntityW<[typeof RendererDef]>) {
           res.buttonsState.clickByKey[btn.button.key] = btn.button.data;
         } else res.buttonsState.click[btn.id] = false;
       }
-    },
-    "buttonStateUpdate"
+    }
   );
-  EM.requireGameplaySystem("buttonStateUpdate");
 
-  EM.registerSystem(
+  EM.addSystem(
+    "buttonColors",
+    Phase.GAME_WORLD,
     [ButtonDef, ColorDef],
     [ButtonsStateDef],
     (es, res) => {
@@ -141,8 +144,6 @@ async function initButtonGUI(res: EntityW<[typeof RendererDef]>) {
         //   console.log(`click! ${btn.button.key}`);
         // }
       }
-    },
-    "buttonColors"
+    }
   );
-  EM.requireGameplaySystem("buttonColors");
 }

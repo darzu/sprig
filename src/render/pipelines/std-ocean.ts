@@ -25,6 +25,7 @@ import {
   positionsTexturePtr,
 } from "./std-scene.js";
 import { shadowDepthTextures } from "./std-shadow.js";
+import { Phase } from "../../ecs/sys-phase.js";
 
 const MAX_OCEAN_VERTS = MAX_INDICES;
 const MAX_OCEAN_MESHES = 1;
@@ -228,7 +229,9 @@ export const renderOceanPipe = CY.createRenderPipeline("oceanRender", {
 // );
 
 onInit((em) => {
-  em.registerSystem(
+  em.addSystem(
+    "updateOceanRenderData",
+    Phase.RENDER_PRE_DRAW,
     [RenderableDef, RenderDataOceanDef, RendererWorldFrameDef],
     [RendererDef],
     (objs, res) => {
@@ -250,10 +253,9 @@ onInit((em) => {
 
         pool.updateUniform(o.renderable.meshHandle, o.renderDataOcean);
       }
-    },
-    "updateOceanRenderData"
+    }
   );
-  em.requireSystem("updateOceanRenderData");
-  em.addConstraint(["updateOceanRenderData", "after", "renderList"]);
-  em.addConstraint(["updateOceanRenderData", "before", "stepRenderer"]);
+
+  // em.addConstraint(["updateOceanRenderData", "after", "renderList"]);
+  // em.addConstraint(["updateOceanRenderData", "before", "stepRenderer"]);
 });

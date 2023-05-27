@@ -1,4 +1,5 @@
 import { EM, EntityManager } from "../ecs/entity-manager.js";
+import { Phase } from "../ecs/sys-phase.js";
 
 /*
 UI needed:
@@ -50,21 +51,13 @@ export function registerUISystems(em: EntityManager) {
 
   em.addResource(TextDef, upperDiv, debugDiv, lowerDiv, helpDiv);
 
-  em.registerSystem(
-    null,
-    [TextDef],
-    (_, res) => {
-      // PERF NOTE: using ".innerText =" creates a new DOM element each frame, whereas
-      //    using ".firstChild.nodeValue =" reuses the DOM element. Unfortunately this
-      //    means we'll need to do more work to get line breaks.
-      if (res.text.upperText)
-        upperDiv.firstChild!.nodeValue = res.text.upperText;
-      if (res.text.debugText)
-        debugDiv.firstChild!.nodeValue = res.text.debugText;
-      if (res.text.lowerText)
-        lowerDiv.firstChild!.nodeValue = res.text.lowerText;
-      if (res.text.helpText) helpDiv.firstChild!.nodeValue = res.text.helpText;
-    },
-    "uiText"
-  );
+  em.addSystem("uiText", Phase.RENDER_DRAW, null, [TextDef], (_, res) => {
+    // PERF NOTE: using ".innerText =" creates a new DOM element each frame, whereas
+    //    using ".firstChild.nodeValue =" reuses the DOM element. Unfortunately this
+    //    means we'll need to do more work to get line breaks.
+    if (res.text.upperText) upperDiv.firstChild!.nodeValue = res.text.upperText;
+    if (res.text.debugText) debugDiv.firstChild!.nodeValue = res.text.debugText;
+    if (res.text.lowerText) lowerDiv.firstChild!.nodeValue = res.text.lowerText;
+    if (res.text.helpText) helpDiv.firstChild!.nodeValue = res.text.helpText;
+  });
 }

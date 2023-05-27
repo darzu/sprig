@@ -8,7 +8,7 @@ import { vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { ButtonDef, ButtonsStateDef } from "./button.js";
 import { initMeshEditor, MeshEditorDef } from "./mesh-editor.js";
 import { lineStuff } from "./path-editor.js";
-import { exportObj } from "../meshes/import_obj.js";
+import { exportObj } from "../meshes/import-obj.js";
 import { InputsDef } from "../input/inputs.js";
 import { mathMap } from "../utils/math.js";
 import { copyAABB, createAABB } from "../physics/aabb.js";
@@ -29,6 +29,7 @@ import { createGhost, gameplaySystems } from "../debug/ghost.js";
 import { TextDef } from "./ui.js";
 import { makePlaneMesh } from "../meshes/primatives.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
+import { Phase } from "../ecs/sys-phase.js";
 
 /*
 TODO(@darzu):
@@ -62,7 +63,7 @@ export const UICursorDef = EM.defineComponent(
 EM.registerInit({
   requireRs: [AssetsDef],
   provideRs: [UICursorDef],
-  provideLs: [],
+  // provideLs: [],
   fn: async ({ assets }) => {
     // Cursor
     const cursor = EM.new();
@@ -161,7 +162,9 @@ export async function initFontEditor(em: EntityManager) {
   // const { assets } = await EM.whenResources(AssetsDef);
 
   // TODO(@darzu): de-duplicate this with very similar code in other "games"
-  EM.registerSystem(
+  EM.addSystem(
+    "uiCameraView",
+    Phase.GAME_WORLD,
     null,
     [CameraComputedDef, CanvasDef, CameraDef, InputsDef, UICursorDef],
     async (_, res) => {
@@ -246,10 +249,8 @@ export async function initFontEditor(em: EntityManager) {
       );
       cursor.position[0] = cursorWorldPos[0];
       cursor.position[2] = cursorWorldPos[2];
-    },
-    "uiCameraView"
+    }
   );
-  EM.requireGameplaySystem("uiCameraView");
 
   // Starter mesh for each letter
   const quadMesh: Mesh = {
@@ -315,7 +316,9 @@ export async function initFontEditor(em: EntityManager) {
   }
 
   // Edit letters
-  EM.registerSystem(
+  EM.addSystem(
+    "letterBtnClick",
+    Phase.GAME_WORLD,
     null,
     [ButtonsStateDef, MeshEditorDef, TextDef],
     (_, res) => {
@@ -333,10 +336,8 @@ export async function initFontEditor(em: EntityManager) {
         console.log(`mesh '${btnIdx}'`);
         console.log(stringifyMesh(poly.proto.mesh!));
       }
-    },
-    `letterBtnClick`
+    }
   );
-  EM.requireGameplaySystem(`letterBtnClick`);
 
   // TODO(@darzu): HACKY. Cursor or 2d gui or something needs some better
   //    abstracting

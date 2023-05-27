@@ -126,3 +126,17 @@ Make a gameplay involving controlling machinery like:
 Tiny magmetic light-only timer for pomodoro
   or vscode touchbar app
   or macos topbar icon
+
+Sprigland codebase itself will eventually be a big teaching tool
+  Sprigland can be self hosted
+  No dependencies forever,
+  push as far down the stack as you can
+    (replace browser and compiler)
+    crazy: custom silicon
+  Document the code really well
+  have program-sliced versions that show one aspect
+  the promise is: hey look sprigland was built from scratch and you can build anything
+    you want yourself too.
+  all-in-one promise
+  have videos / tutorials that reenact that invention of core components like physics and cytochrome
+  

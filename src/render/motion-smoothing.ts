@@ -8,6 +8,7 @@ import {
 } from "../physics/transform.js";
 import { computeNewError, reduceError } from "../utils/smoothing.js";
 import { RemoteUpdatesDef } from "../net/components.js";
+import { Phase } from "../ecs/sys-phase.js";
 
 // Determined via binary search--smaller -> jerky, larger -> floaty
 const ERROR_SMOOTHING_FACTOR = 0.75 ** (60 / 1000);
@@ -28,7 +29,9 @@ export type MotionSmoothing = Component<typeof MotionSmoothingDef>;
 export function registerMotionSmoothingRecordLocationsSystem(
   em: EntityManager
 ) {
-  em.registerSystem(
+  em.addSystem(
+    "recordPreviousLocations",
+    Phase.NETWORK,
     [MotionSmoothingDef],
     [],
     (es) => {
@@ -42,13 +45,14 @@ export function registerMotionSmoothingRecordLocationsSystem(
           ? e.physicsParent.id
           : 0;
       }
-    },
-    "recordPreviousLocations"
+    }
   );
 }
 
 export function registerMotionSmoothingSystems(em: EntityManager) {
-  em.registerSystem(
+  em.addSystem(
+    "smoothMotion",
+    Phase.PRE_RENDER,
     [MotionSmoothingDef],
     [TimeDef],
     (es, res) => {
@@ -64,11 +68,12 @@ export function registerMotionSmoothingSystems(em: EntityManager) {
           ERROR_SMOOTHING_FACTOR
         );
       }
-    },
-    "smoothMotion"
+    }
   );
 
-  em.registerSystem(
+  em.addSystem(
+    "updateMotionSmoothing",
+    Phase.PRE_RENDER,
     [MotionSmoothingDef],
     [],
     (es) => {
@@ -93,7 +98,6 @@ export function registerMotionSmoothingSystems(em: EntityManager) {
           }
         }
       }
-    },
-    "updateMotionSmoothing"
+    }
   );
 }

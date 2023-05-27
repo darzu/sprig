@@ -1,6 +1,6 @@
 import { Component, EM, EntityManager } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
-import { importObj, isParseError } from "./import_obj.js";
+import { importObj, isParseError } from "./import-obj.js";
 import {
   cloneMesh,
   getAABBFromMesh,
@@ -68,7 +68,7 @@ import {
   TRI_FENCE,
 } from "./primatives.js";
 import { createGizmoMesh } from "../debug/gizmos.js";
-import { importGltf } from "./import_gltf.js";
+import { importGltf } from "./import-gltf.js";
 
 // TODO: load these via streaming
 // TODO(@darzu): it's really bad that all these assets are loaded for each game
@@ -540,7 +540,7 @@ async function loadMeshSetInternal(relPath: string): Promise<RawMesh[]> {
   if (relPath.endsWith(".glb")) {
     let bytes = await loadBytesInternal(relPath);
     const res = importGltf(bytes);
-    console.dir(res);
+    // console.dir(res);
     assert(
       !!res && !isParseError(res),
       `unable to parse asset set (${relPath}):\n${res}`

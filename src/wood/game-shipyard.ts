@@ -3,7 +3,7 @@ import { CanvasDef } from "../render/canvas.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { DeadDef, DeletedDef } from "../ecs/delete.js";
-import { createRef } from "../ecs/em_helpers.js";
+import { createRef } from "../ecs/em-helpers.js";
 import { EM, Entity, EntityManager, EntityW } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { InputsDef } from "../input/inputs.js";
@@ -101,6 +101,7 @@ import {
 import { ParametricDef } from "../motion/parametric-motion.js";
 import { addGizmoChild } from "../utils/utils-game.js";
 import { createBarrelMesh } from "./barrel.js";
+import { Phase } from "../ecs/sys-phase.js";
 
 /*
   Game mechanics:
@@ -157,9 +158,6 @@ export const LD51CannonDef = EM.defineComponent("ld51Cannon", () => {
 });
 
 export async function initShipyardGame(em: EntityManager, hosting: boolean) {
-  EM.requireSystem("runWooden");
-  EM.requireSystem("woodHealth");
-
   const res = await em.whenResources(
     AssetsDef,
     // WoodAssetsDef,
@@ -416,7 +414,9 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
     if (ScaleDef.isOn(ball)) vec3.copy(ball.scale, vec3.ONES);
   }
 
-  em.registerSystem(
+  em.addSystem(
+    "ld51PlayerFireCannon",
+    Phase.GAME_WORLD,
     [LD51CannonDef, WorldFrameDef, InRangeDef],
     [InputsDef, LocalHsPlayerDef, AudioDef],
     (cannons, res) => {
@@ -474,12 +474,8 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
           res.music.playChords([chord], "major", 2.0, 3.0, -2);
         }
       }
-    },
-    "ld51PlayerFireCannon"
+    }
   );
-  EM.requireGameplaySystem("ld51PlayerFireCannon");
-
-  EM.requireGameplaySystem("splintersOnFloor");
 
   // const quadIdsNeedReset = new Set<number>();
 
@@ -488,7 +484,9 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
 
   const BUSY_WAIT = 20.0;
 
-  em.registerSystem(
+  em.addSystem(
+    "ld51Ghost",
+    Phase.GAME_WORLD,
     [GhostDef, WorldFrameDef, ColliderDef],
     [InputsDef, CanvasDef],
     async (ps, { inputs, htmlCanvas }) => {
@@ -545,31 +543,29 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
           timber.woodState.mesh.quad.length
         );
       }
-    },
-    "ld51Ghost"
+    }
   );
-  if (DBG_PLAYER) EM.requireGameplaySystem("ld51Ghost");
-
-  // TODO(@darzu): breakBullet
-  em.registerSystem(
-    [
-      BulletDef,
-      ColorDef,
-      WorldFrameDef,
-      // LinearVelocityDef
-      ParametricDef,
-    ],
-    [],
-    (es, res) => {
-      for (let b of es) {
-        if (b.bullet.health <= 0) {
-          breakBullet(b);
+  if (DBG_PLAYER)
+    // TODO(@darzu): breakBullet
+    em.addSystem(
+      "breakBullets",
+      Phase.GAME_WORLD,
+      [
+        BulletDef,
+        ColorDef,
+        WorldFrameDef,
+        // LinearVelocityDef
+        ParametricDef,
+      ],
+      [],
+      (es, res) => {
+        for (let b of es) {
+          if (b.bullet.health <= 0) {
+            breakBullet(b);
+          }
         }
       }
-    },
-    "breakBullets"
-  );
-  EM.requireGameplaySystem("breakBullets");
+    );
 
   // Create player
   {
@@ -700,7 +696,9 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
         (colBackWall.collider as AABBCollider).aabb
       );
 
-      em.registerSystem(
+      em.addSystem(
+        "bulletBounce",
+        Phase.GAME_WORLD,
         [
           BulletConstructDef,
           BulletDef,
@@ -751,16 +749,16 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
               }
             }
           }
-        },
-        "bulletBounce"
+        }
       );
-      EM.requireGameplaySystem("bulletBounce");
     }
 
     // dead bullet maintenance
     // NOTE: this must be called after any system that can create dead bullets but
     //   before the rendering systems.
-    em.registerSystem(
+    em.addSystem(
+      "deadBullets",
+      Phase.GAME_WORLD,
       [BulletDef, PositionDef, DeadDef, RenderableDef],
       [],
       (es, _) => {
@@ -773,10 +771,8 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
 
           e.dead.processed = true;
         }
-      },
-      "deadBullets"
+      }
     );
-    EM.requireGameplaySystem("deadBullets");
 
     // // starter ammo
     // {
@@ -791,7 +787,9 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
     //   }
     // }
 
-    em.registerSystem(
+    em.addSystem(
+      "fallingGoodBalls",
+      Phase.GAME_WORLD,
       [GoodBallDef, PositionDef, GravityDef, LinearVelocityDef],
       [],
       (es, res) => {
@@ -804,12 +802,12 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
             vec3.zero(ball.gravity);
           }
         }
-      },
-      "fallingGoodBalls"
+      }
     );
-    EM.requireGameplaySystem("fallingGoodBalls");
 
-    em.registerSystem(
+    em.addSystem(
+      "pickUpBalls",
+      Phase.GAME_WORLD,
       [GoodBallDef, InteractableDef, InRangeDef, PositionDef],
       [InputsDef, LocalHsPlayerDef],
       (es, res) => {
@@ -831,10 +829,8 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
             em.removeComponent(ball.id, InteractableDef);
           }
         }
-      },
-      "pickUpBalls"
+      }
     );
-    EM.requireGameplaySystem("pickUpBalls");
 
     if (DBG_PLAYER) {
       const g = createGhost();
@@ -933,7 +929,9 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
 
   const startHealth = getCurrentHealth();
   {
-    em.registerSystem(
+    em.addSystem(
+      "progressGame",
+      Phase.GAME_WORLD,
       [],
       [InputsDef, TextDef, TimeDef, AudioDef],
       (es, res) => {
@@ -972,10 +970,8 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
           // );
           gameplaySystems.length = 0;
         }
-      },
-      "progressGame"
+      }
     );
-    EM.requireGameplaySystem("progressGame");
   }
 
   function getCurrentHealth() {

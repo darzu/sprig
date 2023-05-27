@@ -15,6 +15,7 @@ import {
   EventsFromNetworkDef,
   EventsToNetworkDef,
 } from "./components.js";
+import { Phase } from "../ecs/sys-phase.js";
 
 export function registerHandleNetworkEvents(em: EntityManager) {
   let _peerIDs: Record<string, number> = {};
@@ -49,11 +50,12 @@ export function registerHandleNetworkEvents(em: EntityManager) {
       }
     }
   }
-  em.registerSystem(
+  em.addSystem(
+    "handleNetworkEvents",
+    Phase.NETWORK,
     null,
     [EventsFromNetworkDef],
-    handleNetworkEvents,
-    "handleNetworkEvents"
+    handleNetworkEvents
   );
 }
 
@@ -76,10 +78,11 @@ export function registerSendOutboxes(em: EntityManager) {
       }
     }
   }
-  em.registerSystem(
+  em.addSystem(
+    "sendOutboxes",
+    Phase.NETWORK,
     [OutboxDef, PeerDef],
     [EventsToNetworkDef],
-    sendOutboxes,
-    "sendOutboxes"
+    sendOutboxes
   );
 }

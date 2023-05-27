@@ -2,7 +2,7 @@ import { AssetsDef } from "../meshes/assets.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { DeadDef } from "../ecs/delete.js";
-import { createRef, Ref } from "../ecs/em_helpers.js";
+import { createRef, Ref } from "../ecs/em-helpers.js";
 import { Component, EM, Entity, EntityW } from "../ecs/entity-manager.js";
 import { createEntityPool } from "../ecs/entity-pool.js";
 import { fireBullet } from "../cannons/bullet.js";
@@ -35,6 +35,7 @@ import { TimeDef } from "../time/time.js";
 import { assert } from "../utils/util.js";
 import { vec3Dbg } from "../utils/utils-3d.js";
 import { WoodHealthDef } from "../wood/wood.js";
+import { Phase } from "../ecs/sys-phase.js";
 
 const MIN_HEALTH_PERCENT = 0.7;
 
@@ -54,7 +55,9 @@ function getCurrentHealth(timberHealth: Component<typeof WoodHealthDef>) {
   return health;
 }
 
-EM.registerSystem(
+EM.addSystem(
+  "updateShipHealth",
+  Phase.GAME_WORLD,
   [ShipHealthDef, WoodHealthDef],
   [],
   (es, res) => {
@@ -67,6 +70,5 @@ EM.registerSystem(
       ship.shipHealth.health =
         (healthPercent - MIN_HEALTH_PERCENT) / (1 - MIN_HEALTH_PERCENT);
     }
-  },
-  "updateShipHealth"
+  }
 );

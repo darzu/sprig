@@ -38,6 +38,7 @@ import {
 } from "./transform.js";
 import { IdPair, idPair } from "../utils/util.js";
 import { tempVec3 } from "../matrix/temp-pool.js";
+import { Phase } from "../ecs/sys-phase.js";
 
 // TODO(@darzu): we use "object", "obj", "o" everywhere in here, we should use "entity", "ent", "e"
 
@@ -155,7 +156,9 @@ export function doesTouch(
 
 // PRECONDITION: assumes world frames are all up to date
 export function registerUpdateWorldAABBs(em: EntityManager, s: string = "") {
-  em.registerSystem(
+  em.addSystem(
+    "registerUpdateWorldAABBs",
+    Phase.PHYSICS_WORLD_FROM_LOCAL,
     [PhysicsStateDef, WorldFrameDef, TransformDef],
     [],
     (objs, res) => {
@@ -180,19 +183,7 @@ export function registerUpdateWorldAABBs(em: EntityManager, s: string = "") {
         //   sweepAABB.max[i] = Math.max(lastWorldAABB.max[i], worldAABB.max[i]);
         // }
       }
-    },
-    "registerUpdateWorldAABBs" + s
-  );
-}
-
-export function registerUpdateWorldFromPosRotScale(em: EntityManager) {
-  em.registerSystem(
-    [WorldFrameDef],
-    [],
-    (objs) => {
-      for (let o of objs) updateFrameFromPosRotScale(o.world);
-    },
-    "updateWorldFromPosRotScale"
+    }
   );
 }
 
@@ -237,7 +228,9 @@ export function registerPhysicsStateInit(em: EntityManager) {
 
   // init the per-object physics state
   // TODO(@darzu): split this into different concerns
-  em.registerSystem(
+  em.addSystem(
+    "physicsInit",
+    Phase.PRE_PHYSICS,
     [ColliderDef, PositionDef],
     [PhysicsBroadCollidersDef],
     (objs, { _physBColliders }) => {
@@ -334,13 +327,14 @@ export function registerPhysicsStateInit(em: EntityManager) {
         _physBColliders.colliders.push(c);
         return c;
       }
-    },
-    "physicsInit"
+    }
   );
 }
 
 export function registerUpdateInContactSystems(em: EntityManager) {
-  em.registerSystem(
+  em.addSystem(
+    "updatePhysInContact",
+    Phase.PHYSICS_CONTACT,
     [ColliderDef, PhysicsStateDef, WorldFrameDef],
     [PhysicsBroadCollidersDef, PhysicsResultsDef],
     (objs, res) => {
@@ -397,14 +391,15 @@ export function registerUpdateInContactSystems(em: EntityManager) {
         // else, this collision isn't valid any more
         contactData.delete(contactId);
       }
-    },
-    "updatePhysInContact"
+    }
   );
 }
 
 export function registerPhysicsContactSystems(em: EntityManager) {
   // TODO(@darzu): split this system
-  em.registerSystem(
+  em.addSystem(
+    "physicsStepContact",
+    Phase.PHYSICS_CONTACT,
     [ColliderDef, PhysicsStateDef, PositionDef, WorldFrameDef],
     [PhysicsBroadCollidersDef, PhysicsResultsDef],
     (objs, res) => {
@@ -592,7 +587,6 @@ export function registerPhysicsContactSystems(em: EntityManager) {
         }
         return hits;
       };
-    },
-    "physicsStepContact"
+    }
   );
 }

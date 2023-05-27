@@ -15,7 +15,7 @@ import {
 } from "../physics/transform.js";
 import { SyncDef, AuthorityDef, Me, MeDef } from "../net/components.js";
 import { Serializer, Deserializer } from "../utils/serialize.js";
-import { FinishedDef } from "../ecs/em_helpers.js";
+import { FinishedDef } from "../ecs/em-helpers.js";
 import { onInit } from "../init.js";
 import {
   Mesh,
@@ -36,13 +36,14 @@ import { InputsDef } from "../input/inputs.js";
 import { LocalHsPlayerDef, HsPlayerDef } from "../hyperspace/hs-player.js";
 import { DeletedDef } from "../ecs/delete.js";
 import { clamp } from "../utils/math.js";
-import { createRef } from "../ecs/em_helpers.js";
+import { createRef } from "../ecs/em-helpers.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import { WindDef } from "./wind.js";
 import { YawPitchDef } from "../turret/yawpitch.js";
 import { assert } from "../utils/util.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { angleBetweenPosXZ, angleBetweenXZ } from "../utils/utils-3d.js";
+import { Phase } from "../ecs/sys-phase.js";
 
 const SAIL_TURN_SPEED = 5;
 export const SAIL_FURL_RATE = 0.02;
@@ -140,7 +141,9 @@ export function createSail(
 
 const AHEAD_DIR = V(0, 0, 1);
 
-EM.registerSystem(
+EM.addSystem(
+  "applyWindToSail",
+  Phase.GAME_WORLD,
   [SailDef, WorldFrameDef],
   [WindDef],
   (es, res) => {
@@ -154,13 +157,14 @@ EM.registerSystem(
         e.sail.force = 0;
       }
     }
-  },
-  "applyWindToSail"
+  }
 );
 
 let _lastSailBillow = 0;
 let _lastSailUnfurl = 0;
-EM.registerSystem(
+EM.addSystem(
+  "billow",
+  Phase.GAME_WORLD,
   [SailDef, RenderableDef],
   [RendererDef],
   (es, { renderer }) => {
@@ -199,11 +203,10 @@ EM.registerSystem(
     renderer.renderer.stdPool.updateMeshVertices(e.renderable.meshHandle, m);
     _lastSailBillow = e.sail.billowAmount;
     _lastSailUnfurl = e.sail.unfurledAmount;
-  },
-  "billow"
+  }
 );
 
-EM.addConstraint(["billow", "after", "applyWindToSail"]);
+// EM.addConstraint(["billow", "after", "applyWindToSail"]);
 
 export const MastDef = EM.defineComponent("mast", () => ({
   sail: createRef(0, [SailDef]),
@@ -289,9 +292,11 @@ export async function createMast(em: EntityManager) {
 //   "furlSail"
 // );
 
-EM.addConstraint(["furlSail", "before", "applyWindToSail"]);
+// EM.addConstraint(["furlSail", "before", "applyWindToSail"]);
 
-EM.registerSystem(
+EM.addSystem(
+  "mastForce",
+  Phase.GAME_WORLD,
   [MastDef, RotationDef],
   [],
   (es) => {
@@ -300,12 +305,11 @@ EM.registerSystem(
       const normal = vec3.transformQuat(AHEAD_DIR, e.rotation);
       e.mast.force = sail.force * vec3.dot(AHEAD_DIR, normal);
     }
-  },
-  "mastForce"
+  }
 );
 
-EM.addConstraint(["mastForce", "after", "applyWindToSail"]);
-EM.addConstraint(["mastForce", "after", "billow"]);
+// EM.addConstraint(["mastForce", "after", "applyWindToSail"]);
+// EM.addConstraint(["mastForce", "after", "billow"]);
 
 // UNUSED:
 function useWindToTurn(

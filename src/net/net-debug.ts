@@ -4,6 +4,7 @@ import { InputsDef } from "../input/inputs.js";
 import { RenderableDef } from "../render/renderer-ecs.js";
 import { clearTint, setTint, TintsDef } from "../color/color-ecs.js";
 import { AuthorityDef } from "./components.js";
+import { Phase } from "../ecs/sys-phase.js";
 
 const NetDebugStateDef = EM.defineComponent("netDebugState", () => ({
   dbgAuthority: false,
@@ -19,7 +20,9 @@ const AUTHORITY_TINTS: Record<number, vec3> = {
 };
 
 export function registerNetDebugSystem(em: EntityManager) {
-  em.registerSystem(
+  em.addSystem(
+    "netDebugSystem",
+    Phase.NETWORK,
     [AuthorityDef, RenderableDef],
     [InputsDef],
     (objs, res) => {
@@ -38,7 +41,6 @@ export function registerNetDebugSystem(em: EntityManager) {
           if (TintsDef.isOn(o)) clearTint(o.tints, AUTHORITY_TINT_NAME);
         }
       }
-    },
-    "netDebugSystem"
+    }
   );
 }

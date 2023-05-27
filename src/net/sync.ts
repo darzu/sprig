@@ -26,9 +26,12 @@ import {
   serializeEntity,
 } from "./message.js";
 import { TimeDef } from "../time/time.js";
+import { Phase } from "../ecs/sys-phase.js";
 
 export function registerSyncSystem(em: EntityManager) {
-  em.registerSystem(
+  em.addSystem(
+    "netSync",
+    Phase.NETWORK,
     [AuthorityDef, SyncDef],
     [TimeDef, MeDef],
     (ents, res) => {
@@ -92,23 +95,25 @@ export function registerSyncSystem(em: EntityManager) {
           send(outbox, message.buffer);
         }
       }
-    },
-    "netSync"
+    }
   );
 }
 
 export function registerUpdateSystem(em: EntityManager) {
-  em.registerSystem(
+  em.addSystem(
+    "clearRemoteUpdatesMarker",
+    Phase.NETWORK,
     [RemoteUpdatesDef],
     [],
     (es) => {
       for (const e of es) {
         em.removeComponent(e.id, RemoteUpdatesDef);
       }
-    },
-    "clearRemoteUpdatesMarker"
+    }
   );
-  em.registerSystem(
+  em.addSystem(
+    "netUpdate",
+    Phase.NETWORK,
     [PeerDef, InboxDef, OutboxDef],
     [TimeDef, MeDef, NetStatsDef],
     (peers, res) => {
@@ -135,8 +140,7 @@ export function registerUpdateSystem(em: EntityManager) {
           send(outbox, ack.buffer);
         }
       }
-    },
-    "netUpdate"
+    }
   );
 }
 
@@ -165,5 +169,11 @@ export function registerAckUpdateSystem(em: EntityManager) {
       }
     }
   }
-  em.registerSystem([PeerDef, InboxDef], [TimeDef, MeDef], ack, "netAck");
+  em.addSystem(
+    "netAck",
+    Phase.NETWORK,
+    [PeerDef, InboxDef],
+    [TimeDef, MeDef],
+    ack
+  );
 }

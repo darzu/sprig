@@ -25,6 +25,7 @@ import { AssetsDef, GameMesh } from "../meshes/assets.js";
 import { GlobalCursor3dDef } from "../gui/cursor.js";
 import { createGhost } from "../debug/ghost.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
+import { Phase } from "../ecs/sys-phase.js";
 
 let __frame = 0;
 export async function initGJKSandbox(em: EntityManager, hosting: boolean) {
@@ -75,6 +76,9 @@ export async function initGJKSandbox(em: EntityManager, hosting: boolean) {
   g.controllable.speed *= 0.5;
   g.controllable.sprintMul = 10;
 
+  console.log(`assuming global cursor`);
+  console.dir(res.globalCursor3d);
+  console.dir(res.globalCursor3d.cursor());
   const c = res.globalCursor3d.cursor()!;
   if (RenderableDef.isOn(c)) c.renderable.enabled = false;
 
@@ -185,7 +189,9 @@ export async function initGJKSandbox(em: EntityManager, hosting: boolean) {
     quat.clone(b4.rotation),
   ];
 
-  em.registerSystem(
+  em.addSystem(
+    "checkGJK",
+    Phase.GAME_WORLD,
     null,
     [InputsDef],
     (_, { inputs }) => {
@@ -279,7 +285,6 @@ export async function initGJKSandbox(em: EntityManager, hosting: boolean) {
       ];
       lastPlayerPos = vec3.clone(b2.position);
       lastPlayerRot = quat.clone(b2.rotation);
-    },
-    "checkGJK"
+    }
   );
 }

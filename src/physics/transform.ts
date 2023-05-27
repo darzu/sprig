@@ -3,6 +3,7 @@ import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { createFrame, WorldFrameDef } from "./nonintersection.js";
 import { tempVec3, tempQuat } from "../matrix/temp-pool.js";
 import { FALSE, dbgLogOnce } from "../utils/util.js";
+import { Phase } from "../ecs/sys-phase.js";
 
 // Axis:
 //  z is positive forward
@@ -175,7 +176,9 @@ function updateWorldFromLocalAndParent(o: Transformable) {
 export function registerInitTransforms(em: EntityManager) {
   // TODO(@darzu): WorldFrame should be optional, only needed
   //  for parented objs (which is maybe the uncommon case).
-  em.registerSystem(
+  em.addSystem(
+    "ensureWorldFrame",
+    Phase.PRE_PHYSICS,
     [...LocalFrameDefs],
     [],
     (objs) => {
@@ -185,15 +188,13 @@ export function registerInitTransforms(em: EntityManager) {
           copyFrame(o.world, o);
         }
       }
-    },
-    "ensureWorldFrame"
+    }
   );
 }
-export function registerUpdateLocalFromPosRotScale(
-  em: EntityManager,
-  suffix: string = ""
-) {
-  em.registerSystem(
+export function registerUpdateLocalFromPosRotScale(em: EntityManager) {
+  em.addSystem(
+    "ensureFillOutLocalFrame",
+    Phase.PRE_PHYSICS,
     null,
     [],
     (objs) => {
@@ -213,27 +214,30 @@ export function registerUpdateLocalFromPosRotScale(
           em.ensureComponentOn(o, TransformDef);
         }
       }
-    },
-    "ensureFillOutLocalFrame"
+    }
   );
 
   // calculate the world transform
-  em.registerSystem(
+  em.addSystem(
+    "updateLocalFromPosRotScale",
+    Phase.PHYSICS_FINISH_LOCAL,
     [...LocalFrameDefs],
     [],
     (objs) => {
       for (let o of objs) updateFrameFromPosRotScale(o);
-    },
-    "updateLocalFromPosRotScale" + suffix
+    }
   );
 }
 
 export function registerUpdateWorldFromLocalAndParent(
   em: EntityManager,
-  suffix: string = ""
+  suffix: string,
+  phase: Phase
 ) {
   // calculate the world transform
-  em.registerSystem(
+  em.addSystem(
+    "updateWorldFromLocalAndParent" + suffix,
+    phase,
     [WorldFrameDef, ...LocalFrameDefs],
     [],
     (objs) => {
@@ -247,7 +251,6 @@ export function registerUpdateWorldFromLocalAndParent(
       for (let o of objs) {
         updateWorldFromLocalAndParent(o);
       }
-    },
-    "updateWorldFromLocalAndParent" + suffix
+    }
   );
 }

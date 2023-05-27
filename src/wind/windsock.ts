@@ -11,6 +11,7 @@ import { ColorDef } from "../color/color-ecs.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import { WindDef } from "./wind.js";
 import { assert } from "../utils/util.js";
+import { Phase } from "../ecs/sys-phase.js";
 
 export const SockDef = EM.defineComponent("sock", () => ({
   scale: 1,
@@ -49,7 +50,9 @@ export function createSock(em: EntityManager, scale: number) {
 }
 
 let lastWinAngle = NaN;
-EM.registerSystem(
+EM.addSystem(
+  "billowSock",
+  Phase.GAME_WORLD,
   [SockDef, RenderableDef, WorldFrameDef],
   [RendererDef, WindDef],
   (es, { renderer, wind }) => {
@@ -68,7 +71,5 @@ EM.registerSystem(
     // TODO: perf: detect when we actually need to update this
     renderer.renderer.stdPool.updateMeshVertices(e.renderable.meshHandle, m);
     lastWinAngle = wind.angle;
-  },
-  "billowSock"
+  }
 );
-EM.requireSystem("billowSock");

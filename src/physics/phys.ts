@@ -29,6 +29,7 @@ import {
   registerPhysicsApplyLinearVelocity,
   registerPhysicsApplyAngularVelocity,
 } from "../motion/velocity.js";
+import { Phase } from "../ecs/sys-phase.js";
 
 // TODO(@darzu): PHYSICS TODO:
 // [ ] seperate rotation and motion w/ constraint checking between them
@@ -51,14 +52,18 @@ export function registerPhysicsSystems(em: EntityManager) {
   registerPhysicsApplyLinearVelocity(em);
   registerPhysicsApplyAngularVelocity(em);
   registerUpdateLocalFromPosRotScale(em);
-  registerUpdateWorldFromLocalAndParent(em);
+  registerUpdateWorldFromLocalAndParent(
+    em,
+    "1",
+    Phase.PHYSICS_WORLD_FROM_LOCAL
+  );
   registerUpdateWorldAABBs(em);
   registerUpdateInContactSystems(em);
   registerPhysicsContactSystems(em);
   // TODO(@darzu): positioning?
   registerNarrowPhaseSystems(em);
   // TODO(@darzu): get rid of this duplicate call?
-  registerUpdateWorldFromLocalAndParent(em, "2");
+  registerUpdateWorldFromLocalAndParent(em, "2", Phase.PHYSICS_FINISH_WORLD);
 
   registerPhysicsDebuggerSystem(em);
 }
