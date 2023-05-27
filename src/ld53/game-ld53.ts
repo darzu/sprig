@@ -21,7 +21,7 @@ import {
   ScaleDef,
 } from "../physics/transform.js";
 import { PointLightDef } from "../render/lights.js";
-import { cloneMesh, Mesh } from "../meshes/mesh.js";
+import { cloneMesh, Mesh, RiggedMesh } from "../meshes/mesh.js";
 import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
@@ -33,6 +33,7 @@ import {
   RenderableConstructDef,
   RenderableDef,
   RendererDef,
+  RiggedRenderableConstructDef,
 } from "../render/renderer-ecs.js";
 import { mat3, quat, V, vec2, vec3 } from "../matrix/sprig-matrix.js";
 import { quatFromUpForward } from "../utils/utils-3d.js";
@@ -78,6 +79,8 @@ import { ShipHealthDef } from "./ship-health.js";
 import { createRef } from "../ecs/em-helpers.js";
 import { resetWoodHealth, resetWoodState, WoodStateDef } from "../wood/wood.js";
 import { MapPaths } from "../levels/map-loader.js";
+import { stdRiggedRenderPipeline } from "../render/pipelines/std-rigged.js";
+import { PoseDef } from "../animation/skeletal.js";
 import { Phase } from "../ecs/sys-phase.js";
 /*
 NOTES:
@@ -175,6 +178,7 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
       res.renderer.pipelines = [
         ...shadowPipelines,
         stdRenderPipeline, // SLOW
+        stdRiggedRenderPipeline,
         // renderGrassPipe,
         renderOceanPipe,
         outlineRender, // 2ms
@@ -197,6 +201,24 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
   vec3.copy(sunlight.pointLight.diffuse, [0.5, 0.5, 0.5]);
   em.ensureComponentOn(sunlight, PositionDef, V(50, 300, 10));
   em.ensureComponentOn(sunlight, RenderableConstructDef, res.assets.ball.proto);
+
+  // pirate test
+  const PirateDef = EM.defineComponent("pirate", () => true);
+  const pirate = em.new();
+  em.ensureComponentOn(
+    pirate,
+    RiggedRenderableConstructDef,
+    res.assets.pirate.mesh as RiggedMesh
+  );
+  em.ensureComponentOn(pirate, PositionDef, V(50, 80, 10));
+  em.ensureComponentOn(pirate, PirateDef);
+  em.ensureComponentOn(pirate, PoseDef, 0);
+  pirate.pose.repeat = [
+    { pose: 1, t: 500 },
+    { pose: 0, t: 500 },
+    { pose: 3, t: 500 },
+    { pose: 0, t: 500 },
+  ];
 
   // score
   const score = em.addResource(ScoreDef);

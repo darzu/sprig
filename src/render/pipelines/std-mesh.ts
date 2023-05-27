@@ -155,10 +155,12 @@ onInit((em) => {
     null,
     [RendererDef],
     (_, res) => {
-      let pool = res.renderer.renderer.getCyResource(meshPoolPtr)!;
       for (let o of renderObjs) {
         if (updateStdRenderData(o)) {
-          pool.updateUniform(o.renderable.meshHandle, o.renderDataStd);
+          o.renderable.meshHandle.pool.updateUniform(
+            o.renderable.meshHandle,
+            o.renderDataStd
+          );
         }
       }
     }

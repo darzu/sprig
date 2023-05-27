@@ -6,7 +6,7 @@ import { objMap } from "../utils/util.js";
 // TABLES, CONSTS and TYPE-LEVEL HELPERS
 
 const WGSLScalars = ["bool", "i32", "u32", "f32", "f16"] as const;
-type WGSLScalar = (typeof WGSLScalars)[number];
+type WGSLScalar = typeof WGSLScalars[number];
 type WGSLVec = {
   [S in WGSLScalar]: `vec2<${S}>` | `vec3<${S}>` | `vec4<${S}>`;
 }[WGSLScalar];
@@ -21,7 +21,7 @@ const WGSLMats = [
   "mat4x2<f32>",
   "mat4x4<f32>",
 ] as const;
-type WGSLMat = (typeof WGSLMats)[number];
+type WGSLMat = typeof WGSLMats[number];
 type WGSLType = WGSLScalar | WGSLVec | WGSLMat;
 
 type WGSLTypeToTSType = {
@@ -31,6 +31,7 @@ type WGSLTypeToTSType = {
   "vec2<f32>": vec2;
   "vec3<f32>": vec3;
   "vec4<f32>": vec4;
+  "vec4<u32>": vec4;
   "mat4x4<f32>": mat4;
 };
 
@@ -152,6 +153,7 @@ const wgslTypeToVertType: Partial<Record<WGSLType, GPUVertexFormat>> = {
   "vec2<f32>": "float32x2",
   "vec3<f32>": "float32x3",
   "vec4<f32>": "float32x4",
+  "vec4<u32>": "uint32x4",
   u32: "uint32",
   i32: "sint32",
 };
@@ -164,6 +166,7 @@ const wgslTypeToSize: Partial<Record<WGSLType, number>> = {
   "vec2<f32>": 8,
   "vec3<f32>": 12,
   "vec4<f32>": 16,
+  "vec4<u32>": 16,
   "mat4x4<f32>": 64,
 };
 
@@ -251,6 +254,13 @@ function wgslTypeToDummyVal<T extends WGSLType>(
         Math.random()
       );
     if (wgsl === "vec4<f32>") return randVec4();
+    if (wgsl === "vec4<u32>")
+      return vec4.fromValues(
+        Math.floor(Math.random() * Number.MAX_SAFE_INTEGER),
+        Math.floor(Math.random() * Number.MAX_SAFE_INTEGER),
+        Math.floor(Math.random() * Number.MAX_SAFE_INTEGER),
+        Math.floor(Math.random() * Number.MAX_SAFE_INTEGER)
+      );
     if (wgsl === "u32")
       return Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
     const randAngle = () => Math.random() * 2 * Math.PI;
@@ -414,6 +424,7 @@ export function createCyStruct<O extends CyStructDesc>(
       else if (t === "vec2<f32>") views.f32.set(v, o32);
       else if (t === "vec3<f32>") views.f32.set(v, o32);
       else if (t === "vec4<f32>") views.f32.set(v, o32);
+      else if (t === "vec4<u32>") views.u32.set(v, o32);
       else if (t === "mat4x4<f32>") views.f32.set(v, o32);
       else throw `Unimplemented type in serializer: ${t}`;
     });

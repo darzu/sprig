@@ -489,6 +489,7 @@ function createCyPipeline(
         label: `${p.name}_shader`,
         code: shaderStr,
       });
+
       const rndrPipelineDesc: GPURenderPipelineDescriptor = {
         label: `${p.name}_pipeDesc`,
         primitive,
