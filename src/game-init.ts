@@ -30,6 +30,7 @@ import {
   registerConstructRenderablesSystem,
   registerRenderer,
   registerRenderInitSystem,
+  registerRiggedRenderablesSystems,
   registerUpdateRendererWorldFrames,
   registerUpdateSmoothedWorldFrames,
   RendererDef,
@@ -110,6 +111,7 @@ export function registerCommonSystems(em: EntityManager) {
   registerCameraSystems(em);
   registerRenderViewController(em);
   registerConstructRenderablesSystem(em);
+  registerRiggedRenderablesSystems(em);
   registerRenderer(em);
 
   callInitFns(em);
