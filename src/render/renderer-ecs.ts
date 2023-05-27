@@ -185,7 +185,7 @@ export function registerUpdateSmoothedWorldFrames(em: EntityManager) {
   em.addSystem(
     "updateSmoothedWorldFrames",
     Phase.PRE_RENDER,
-    [RenderableConstructDef, TransformDef],
+    [RenderableDef, TransformDef],
     [],
     (objs, res) => {
       _hasRendererWorldFrame.clear();
