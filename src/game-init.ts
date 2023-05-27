@@ -25,7 +25,6 @@ import {
   registerBuildBulletsSystem,
   registerBulletUpdate,
 } from "./cannons/bullet.js";
-import { registerInitCanvasSystem } from "./render/canvas.js";
 import {
   registerConstructRenderablesSystem,
   registerRenderer,
@@ -71,7 +70,6 @@ export function registerCommonSystems(em: EntityManager) {
     registerNetSystems(em);
   }
 
-  registerInitCanvasSystem(em);
   registerUISystems(em);
   registerDevSystems(em);
   // registerGameStateSystems(em);

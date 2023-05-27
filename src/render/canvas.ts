@@ -9,6 +9,7 @@ export const CanvasDef = EM.defineComponent(
       canvas,
       shouldLockMouseOnClick: true,
       unlockMouse: () => {},
+      _hasFirstInteractionDef: false,
       hasMouseLock: () => document.pointerLockElement === canvas,
     };
   }
@@ -20,12 +21,13 @@ export const HasFirstInteractionDef = EM.defineComponent(
   () => true
 );
 
-export function registerInitCanvasSystem(em: EntityManager) {
-  em.addSystem("canvasCursorLockUnlock", Phase.GAME_PLAYERS, [], [], () => {
-    if (!!em.getResource(CanvasDef)) return;
+EM.registerInit({
+  provideRs: [CanvasDef],
+  requireRs: [],
+  fn: async () => {
     const canvas = init();
 
-    const comp = em.addResource(CanvasDef, canvas);
+    const comp = EM.addResource(CanvasDef, canvas);
 
     comp.unlockMouse = () => {
       comp.shouldLockMouseOnClick = false;
@@ -35,7 +37,10 @@ export function registerInitCanvasSystem(em: EntityManager) {
     // TODO(@darzu): this should probably be managed elsewhere
     // TODO(@darzu): re-enable
     function tryMouseLock() {
-      EM.addResource(HasFirstInteractionDef);
+      if (!comp._hasFirstInteractionDef) {
+        comp._hasFirstInteractionDef = true;
+        EM.addResource(HasFirstInteractionDef);
+      }
       if (
         comp.shouldLockMouseOnClick &&
         document.pointerLockElement !== canvas
@@ -44,8 +49,8 @@ export function registerInitCanvasSystem(em: EntityManager) {
       }
     }
     canvas.addEventListener("click", tryMouseLock);
-  });
-}
+  },
+});
 
 let _imgPixelatedTimeoutHandle = 0;
 // let pixelRatio = 2.0;
