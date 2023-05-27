@@ -36,7 +36,12 @@ import { mat3, mat4, quat, V, vec2, vec3 } from "../matrix/sprig-matrix.js";
 import { SAIL_FURL_RATE } from "../wind/sail.js";
 import { quatFromUpForward, randNormalVec3 } from "../utils/utils-3d.js";
 import { randColor } from "../utils/utils-game.js";
-import { GrassCutTexPtr, grassPoolPtr, renderGrassPipe } from "./std-grass.js";
+import {
+  GrassCutTexPtr,
+  grassPoolPtr,
+  registerUploadGrassData,
+  renderGrassPipe,
+} from "./std-grass.js";
 import { WindDef, registerChangeWindSystems } from "../wind/wind.js";
 import { DevConsoleDef } from "../debug/console.js";
 import { clamp, jitter, max, sum } from "../utils/math.js";
@@ -104,6 +109,8 @@ const level2DtoWorld3D = (levelPos: vec2, y: number, out: vec3) =>
   );
 
 export async function initGrassGame(em: EntityManager, hosting: boolean) {
+  registerUploadGrassData();
+
   const dbgGrid = [
     //
     // [mapJfa._inputMaskTex, mapJfa._uvMaskTex],

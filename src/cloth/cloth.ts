@@ -7,7 +7,6 @@ import { Serializer, Deserializer } from "../utils/serialize.js";
 import { FinishedDef } from "../ecs/em-helpers.js";
 import { Assets, AssetsDef } from "../meshes/assets.js";
 import { SpringType, SpringGridDef, ForceDef } from "./spring.js";
-import { onInit } from "../init.js";
 import {
   Mesh,
   normalizeMesh,
@@ -125,8 +124,8 @@ function clothMesh(cloth: ClothConstruct): {
   return { mesh: normalizeMesh(mesh), posMap };
 }
 
-onInit((em: EntityManager) => {
-  em.addSystem(
+export function registerClothSystems() {
+  EM.addSystem(
     "buildCloths",
     Phase.PRE_GAME_WORLD,
     [ClothConstructDef],
@@ -134,12 +133,12 @@ onInit((em: EntityManager) => {
     (cloths, res) => {
       for (let cloth of cloths) {
         if (FinishedDef.isOn(cloth)) continue;
-        em.ensureComponentOn(cloth, PositionDef, cloth.clothConstruct.location);
-        em.ensureComponentOn(cloth, ColorDef, cloth.clothConstruct.color);
+        EM.ensureComponentOn(cloth, PositionDef, cloth.clothConstruct.location);
+        EM.ensureComponentOn(cloth, ColorDef, cloth.clothConstruct.color);
         const { mesh, posMap } = clothMesh(cloth.clothConstruct);
-        em.ensureComponentOn(cloth, ClothLocalDef, posMap);
-        em.ensureComponentOn(cloth, RenderableConstructDef, mesh);
-        em.ensureComponentOn(
+        EM.ensureComponentOn(cloth, ClothLocalDef, posMap);
+        EM.ensureComponentOn(cloth, RenderableConstructDef, mesh);
+        EM.ensureComponentOn(
           cloth,
           SpringGridDef,
           SpringType.SimpleDistance,
@@ -153,17 +152,17 @@ onInit((em: EntityManager) => {
           ],
           cloth.clothConstruct.distance
         );
-        em.ensureComponentOn(cloth, ForceDef);
-        em.ensureComponentOn(cloth, AuthorityDef, res.me.pid);
-        em.ensureComponentOn(cloth, SyncDef);
+        EM.ensureComponentOn(cloth, ForceDef);
+        EM.ensureComponentOn(cloth, AuthorityDef, res.me.pid);
+        EM.ensureComponentOn(cloth, SyncDef);
         cloth.sync.dynamicComponents = [ClothConstructDef.id];
         cloth.sync.fullComponents = [PositionDef.id, ForceDef.id];
-        em.ensureComponentOn(cloth, FinishedDef);
+        EM.ensureComponentOn(cloth, FinishedDef);
       }
     }
   );
 
-  em.addSystem(
+  EM.addSystem(
     "updateClothMesh",
     Phase.RENDER_PRE_DRAW,
     [ClothConstructDef, ClothLocalDef, SpringGridDef, RenderableDef],
@@ -183,4 +182,4 @@ onInit((em: EntityManager) => {
       }
     }
   );
-});
+}

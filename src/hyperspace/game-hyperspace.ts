@@ -53,6 +53,7 @@ import { registerEnemyShipSystems } from "./uv-enemy-ship.js";
 import { registerUVShipSystems } from "./uv-ship.js";
 import { registerOrrerySystems } from "./orrery.js";
 import { registerHypersailSystems } from "./hypersail.js";
+import { registerRibSailSystems } from "./ribsail.js";
 
 // export let jfaMaxStep = VISUALIZE_JFA ? 0 : 999;
 
@@ -92,6 +93,7 @@ export async function initHyperspaceGame(em: EntityManager) {
   registerOrrerySystems(em);
   registerUvSpawnSystems(em);
   registerHypersailSystems(em);
+  registerRibSailSystems();
 
   em.whenResources(OceanDef).then(async () => {
     // await awaitTimeout(1000); // TODO(@darzu): what is happening

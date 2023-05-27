@@ -125,7 +125,7 @@ export const { RibSailPropsDef, RibSailLocalDef, createRibSailNow } =
   });
 type RibSail = ReturnType<typeof createRibSailNow>;
 
-onInit(() => {
+export function registerRibSailSystems() {
   EM.addSystem(
     `updateRibSail`,
     Phase.GAME_WORLD,
@@ -168,7 +168,7 @@ onInit(() => {
     }
   );
   // TODO(@darzu): only require this if one exists?
-});
+}
 
 // HACK: ASSUMES MESH IS assets.sail.mesh
 export function getSailMeshArea(verts: vec3[]) {

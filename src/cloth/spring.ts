@@ -251,8 +251,8 @@ export function stepSprings(g: SpringGrid, dt: number) {
   }
 }
 
-onInit((em) => {
-  em.addSystem(
+export function registerSpringSystems() {
+  EM.addSystem(
     "spring",
     Phase.PRE_PHYSICS,
     [SpringGridDef, ForceDef],
@@ -264,4 +264,4 @@ onInit((em) => {
       }
     }
   );
-});
+}

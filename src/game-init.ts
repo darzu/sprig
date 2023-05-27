@@ -57,6 +57,10 @@ import { Phase } from "./ecs/sys-phase.js";
 import { registerGravitySystem } from "./motion/gravity.js";
 import { registerParameterMotionSystems } from "./motion/parametric-motion.js";
 import { registerAnimateToSystems } from "./animation/animate-to.js";
+import { registerClothSystems } from "./cloth/cloth.js";
+import { registerSpringSystems } from "./cloth/spring.js";
+import { registerUploadGrassData } from "./grass/std-grass.js";
+import { registerSkeletalAnimSystems } from "./animation/skeletal.js";
 
 export function registerCommonSystems(em: EntityManager) {
   if (ENABLE_NET) {
@@ -113,6 +117,9 @@ export function registerCommonSystems(em: EntityManager) {
   registerConstructRenderablesSystem(em);
   registerRiggedRenderablesSystems(em);
   registerRenderer(em);
+  registerClothSystems();
+  registerSpringSystems();
+  registerSkeletalAnimSystems();
 
   callInitFns(em);
 }
