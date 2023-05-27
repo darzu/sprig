@@ -59,27 +59,20 @@ async function loadSoundsData(): Promise<SoundSet> {
   return set as SoundSet;
 }
 
-// TODO(@darzu): use registerInit so this only runs if needed
-onInit(async (em) => {
-  em.addResource(SoundLoaderDef);
+EM.registerInit({
+  provideRs: [SoundLoaderDef, SoundSetDef],
+  requireRs: [HasAudioDef],
+  fn: async (res) => {
+    const soundLoader = EM.addResource(SoundLoaderDef);
 
-  if (VERBOSE_LOG) console.log("awaiting has audio");
-  await em.whenResources(HasAudioDef);
-  if (VERBOSE_LOG) console.log("have audio");
-  // start loading of sounds
-  const { soundLoader } = await em.whenResources(SoundLoaderDef);
+    if (VERBOSE_LOG) console.log("have audio");
+    // start loading of sounds
 
-  assert(!soundLoader.promise, "somehow we're double loading sounds");
+    assert(!soundLoader.promise, "somehow we're double loading sounds");
 
-  const soundsPromise = loadSoundsData();
-  soundLoader.promise = soundsPromise;
-  soundsPromise.then(
-    (result) => {
-      em.addResource(SoundSetDef, result);
-    },
-    (failureReason) => {
-      // TODO(@darzu): fail more gracefully
-      throw `Failed to load sounds: ${failureReason}`;
-    }
-  );
+    const soundsPromise = loadSoundsData();
+    soundLoader.promise = soundsPromise;
+    const result = await soundsPromise;
+    EM.addResource(SoundSetDef, result);
+  },
 });
