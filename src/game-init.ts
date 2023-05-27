@@ -61,6 +61,9 @@ import { registerClothSystems } from "./cloth/cloth.js";
 import { registerSpringSystems } from "./cloth/spring.js";
 import { registerUploadGrassData } from "./grass/std-grass.js";
 import { registerSkeletalAnimSystems } from "./animation/skeletal.js";
+import { registerStdMeshUpload } from "./render/pipelines/std-mesh.js";
+import { registerOceanDataUpload } from "./render/pipelines/std-ocean.js";
+import { registerRenderViewController } from "./debug/view-modes.js";
 
 export function registerCommonSystems(em: EntityManager) {
   if (ENABLE_NET) {
@@ -120,47 +123,8 @@ export function registerCommonSystems(em: EntityManager) {
   registerClothSystems();
   registerSpringSystems();
   registerSkeletalAnimSystems();
+  registerStdMeshUpload();
+  registerOceanDataUpload();
 
   callInitFns(em);
-}
-
-function registerRenderViewController(em: EntityManager) {
-  em.addSystem(
-    "renderModeToggles",
-    Phase.GAME_PLAYERS,
-    [],
-    [InputsDef, RendererDef, CameraDef],
-    (_, { inputs, renderer, camera }) => {
-      // check render mode
-      if (inputs.keyClicks["1"]) {
-        // both lines and tris
-        renderer.renderer.drawLines = true;
-        renderer.renderer.drawTris = true;
-      } else if (inputs.keyClicks["2"]) {
-        // "wireframe", lines only
-        renderer.renderer.drawLines = true;
-        renderer.renderer.drawTris = false;
-      }
-
-      // check perspective mode
-      if (inputs.keyClicks["3"]) {
-        if (camera.perspectiveMode === "ortho")
-          camera.perspectiveMode = "perspective";
-        else camera.perspectiveMode = "ortho";
-      }
-
-      // check camera mode
-      if (inputs.keyClicks["4"]) {
-        const localHsPlayer = em.getResource(LocalHsPlayerDef);
-        const p = em.findEntity(localHsPlayer?.playerId ?? -1, [
-          CameraFollowDef,
-        ]);
-        if (p) {
-          const overShoulder = p.cameraFollow.positionOffset[0] !== 0;
-          if (overShoulder) setCameraFollowPosition(p, "thirdPerson");
-          else setCameraFollowPosition(p, "thirdPersonOverShoulder");
-        }
-      }
-    }
-  );
 }

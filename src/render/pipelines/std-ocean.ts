@@ -228,8 +228,8 @@ export const renderOceanPipe = CY.createRenderPipeline("oceanRender", {
 //   (r: OceanUniTS) => r
 // );
 
-onInit((em) => {
-  em.addSystem(
+export function registerOceanDataUpload() {
+  EM.addSystem(
     "updateOceanRenderData",
     Phase.RENDER_PRE_DRAW,
     [RenderableDef, RenderDataOceanDef, RendererWorldFrameDef],
@@ -258,4 +258,4 @@ onInit((em) => {
 
   // em.addConstraint(["updateOceanRenderData", "after", "renderList"]);
   // em.addConstraint(["updateOceanRenderData", "before", "stepRenderer"]);
-});
+}

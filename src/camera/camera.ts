@@ -4,23 +4,16 @@ import {
   EM,
   EntityManager,
   EntityW,
-  WithComponent,
 } from "../ecs/entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
-import { max } from "../utils/math.js";
-import { AuthorityDef, MeDef } from "../net/components.js";
+import { vec3, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { MeDef } from "../net/components.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
-import { PositionDef, RotationDef } from "../physics/transform.js";
-import {
-  RendererWorldFrameDef,
-  SmoothedWorldFrameDef,
-} from "../render/renderer-ecs.js";
+import { RendererWorldFrameDef } from "../render/renderer-ecs.js";
 import { computeNewError, reduceError } from "../utils/smoothing.js";
-import { tempQuat, tempVec3 } from "../matrix/temp-pool.js";
 import { TimeDef } from "../time/time.js";
 import { yawpitchToQuat } from "../turret/yawpitch.js";
 import { createAABB } from "../physics/aabb.js";
-import { assert, dbgDirOnce, resizeArray } from "../utils/util.js";
+import { assert, resizeArray } from "../utils/util.js";
 import { Phase } from "../ecs/sys-phase.js";
 
 export type PerspectiveMode = "perspective" | "ortho";

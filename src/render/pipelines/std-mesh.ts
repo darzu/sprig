@@ -4,17 +4,12 @@ import {
   applyTints,
   AlphaDef,
 } from "../../color/color-ecs.js";
-import { ENDESGA16 } from "../../color/palettes.js";
 import { DeadDef, DeletedDef } from "../../ecs/delete.js";
-import { EntityW } from "../../ecs/entity-manager.js";
+import { EM, EntityW } from "../../ecs/entity-manager.js";
 import { Phase } from "../../ecs/sys-phase.js";
-import { onInit } from "../../init.js";
-// import { oceanJfa } from "../../game/ocean.js";
-// import { oceanJfa } from "../../game/ocean.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../../matrix/sprig-matrix.js";
+import { vec3, vec4, mat4, V } from "../../matrix/sprig-matrix.js";
 import { tempVec3 } from "../../matrix/temp-pool.js";
-import { createRenderTextureToQuad } from "../gpu-helper.js";
-import { comparisonSamplerPtr, CY, linearSamplerPtr } from "../gpu-registry.js";
+import { CY, linearSamplerPtr } from "../gpu-registry.js";
 import { pointLightsPtr } from "../lights.js";
 import { ALPHA_MASK } from "../pipeline-masks.js";
 import {
@@ -24,7 +19,6 @@ import {
 } from "../renderer-ecs.js";
 import {
   mainDepthTex,
-  litTexturePtr,
   meshPoolPtr,
   worldNormsAndFresTexPtr,
   positionsTexturePtr,
@@ -33,7 +27,6 @@ import {
   RenderDataStdDef,
   unlitTexturePtr,
 } from "./std-scene.js";
-import { shadowDepthTextures } from "./std-shadow.js";
 
 // TODO:
 //  [x] pipeline attachements / outputs
@@ -118,7 +111,7 @@ export const stdRenderPipeline = CY.createRenderPipeline("stdMeshRender", {
 const _lastMeshHandleTransform = new Map<number, mat4>();
 const _lastMeshHandleHidden = new Map<number, boolean>();
 
-onInit((em) => {
+export function registerStdMeshUpload() {
   const renderObjs: EntityW<
     [
       typeof RendererWorldFrameDef,
@@ -127,7 +120,7 @@ onInit((em) => {
     ]
   >[] = [];
   // TODO(@darzu): de-dupe w/ renderList and renderListDeadHidden
-  em.addSystem(
+  EM.addSystem(
     "stdRenderListDeadHidden",
     Phase.RENDER_PRE_DRAW,
     [RendererWorldFrameDef, RenderableDef, RenderDataStdDef, DeadDef],
@@ -139,7 +132,7 @@ onInit((em) => {
           renderObjs.push(o);
     }
   );
-  em.addSystem(
+  EM.addSystem(
     "stdRenderList",
     Phase.RENDER_PRE_DRAW,
     [RendererWorldFrameDef, RenderableDef, RenderDataStdDef],
@@ -149,7 +142,7 @@ onInit((em) => {
         if (o.renderable.enabled && !DeletedDef.isOn(o)) renderObjs.push(o);
     }
   );
-  em.addSystem(
+  EM.addSystem(
     "stdRenderableDataUpdate",
     Phase.RENDER_PRE_DRAW,
     null,
@@ -166,11 +159,11 @@ onInit((em) => {
     }
   );
 
-  // em.addConstraint(["stdRenderListDeadHidden", "after", "renderList"]);
-  // em.addConstraint(["stdRenderListDeadHidden", "before", "stdRenderList"]);
-  // em.addConstraint(["stdRenderList", "before", "stdRenderableDataUpdate"]);
-  // em.addConstraint(["stdRenderableDataUpdate", "before", "stepRenderer"]);
-});
+  // EM.addConstraint(["stdRenderListDeadHidden", "after", "renderList"]);
+  // EM.addConstraint(["stdRenderListDeadHidden", "before", "stdRenderList"]);
+  // EM.addConstraint(["stdRenderList", "before", "stdRenderableDataUpdate"]);
+  // EM.addConstraint(["stdRenderableDataUpdate", "before", "stepRenderer"]);
+}
 
 function updateStdRenderData(
   o: EntityW<
