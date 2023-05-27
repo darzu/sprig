@@ -9,12 +9,16 @@ export const CanvasDef = EM.defineComponent(
       canvas,
       shouldLockMouseOnClick: true,
       unlockMouse: () => {},
-      hasFirstInteraction: false,
       hasMouseLock: () => document.pointerLockElement === canvas,
     };
   }
 );
 export type Canvas = Component<typeof CanvasDef>;
+
+export const HasFirstInteractionDef = EM.defineComponent(
+  "hasFirstInteraction",
+  () => true
+);
 
 export function registerInitCanvasSystem(em: EntityManager) {
   em.addSystem("canvasCursorLockUnlock", Phase.GAME_PLAYERS, [], [], () => {
@@ -31,7 +35,7 @@ export function registerInitCanvasSystem(em: EntityManager) {
     // TODO(@darzu): this should probably be managed elsewhere
     // TODO(@darzu): re-enable
     function tryMouseLock() {
-      comp.hasFirstInteraction = true;
+      EM.addResource(HasFirstInteractionDef);
       if (
         comp.shouldLockMouseOnClick &&
         document.pointerLockElement !== canvas

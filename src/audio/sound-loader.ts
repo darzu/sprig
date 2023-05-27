@@ -1,4 +1,4 @@
-import { HasAudioDef } from "./audio.js";
+import { AudioDef } from "./audio.js";
 import { EM } from "../ecs/entity-manager.js";
 import { VERBOSE_LOG } from "../flags.js";
 import { assert } from "../utils/util.js";
@@ -53,9 +53,8 @@ async function loadSoundsData(): Promise<SoundSet> {
 
 EM.registerInit({
   provideRs: [SoundSetDef],
-  requireRs: [HasAudioDef],
+  requireRs: [AudioDef],
   fn: async (res) => {
-    if (VERBOSE_LOG) console.log("have audio");
     // start loading of sounds
     const result = await loadSoundsData();
     EM.addResource(SoundSetDef, result);

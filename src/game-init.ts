@@ -44,7 +44,6 @@ import {
 } from "./render/motion-smoothing.js";
 import { registerPhysicsSystems } from "./physics/phys.js";
 import { registerUpdateLifetimes } from "./ecs/lifetime.js";
-import { registerMusicSystems } from "./audio/audio.js";
 import { registerNetDebugSystem } from "./net/net-debug.js";
 import { callInitFns } from "./init.js";
 import { registerTurretSystems } from "./turret/turret.js";
@@ -77,7 +76,6 @@ export function registerCommonSystems(em: EntityManager) {
   registerDevSystems(em);
   // registerGameStateSystems(em);
   registerRenderInitSystem(em);
-  registerMusicSystems(em);
   registerHandleNetworkEvents(em);
   registerMotionSmoothingRecordLocationsSystem(em);
   registerUpdateSystem(em);
