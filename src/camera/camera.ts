@@ -46,16 +46,6 @@ export const CameraDef = EM.defineComponent("camera", () => {
 });
 export type CameraProps = Component<typeof CameraDef>;
 
-// TODO(@darzu): maybe make a shortcut for this; "registerTrivialInit" ?
-EM.registerInit({
-  requireRs: [],
-  provideRs: [CameraDef],
-  // provideLs: [],
-  fn: async () => {
-    EM.addResource(CameraDef);
-  },
-});
-
 export type ShadowCascade = {
   near: number;
   far: number;
@@ -105,217 +95,230 @@ export function setCameraFollowPosition(
   vec3.copy(c.cameraFollow.positionOffset, CAMERA_OFFSETS[mode]);
 }
 
-// TODO(@darzu): move to use register init w/ provides CameraComputedDef
-export function registerCameraSystems(em: EntityManager) {
-  em.addSystem(
-    "smoothCamera",
-    Phase.PRE_RENDER,
-    null,
-    [CameraDef, TimeDef],
-    function (_, res) {
-      reduceError(res.camera.rotationError, res.time.dt);
-      reduceError(res.camera.targetPositionError, res.time.dt);
-      reduceError(res.camera.cameraPositionError, res.time.dt);
-    }
-  );
+// TODO(@darzu): maybe make a shortcut for this; "registerTrivialInit" ?
+EM.registerInit({
+  requireRs: [],
+  provideRs: [CameraDef],
+  // provideLs: [],
+  fn: async () => {
+    EM.addResource(CameraDef);
 
-  em.addSystem(
-    "cameraFollowTarget",
-    Phase.PRE_RENDER,
-    [CameraFollowDef],
-    [CameraDef],
-    (cs, res) => {
-      const target = cs.reduce(
-        (p, n) =>
-          !p || n.cameraFollow.priority > p.cameraFollow.priority ? n : p,
-        null as EntityW<[typeof CameraFollowDef]> | null
-      );
-      if (target) {
-        res.camera.targetId = target.id;
-        vec3.copy(
-          res.camera.positionOffset,
-          target.cameraFollow.positionOffset
-        );
-        yawpitchToQuat(res.camera.rotationOffset, {
-          yaw: target.cameraFollow.yawOffset,
-          pitch: target.cameraFollow.pitchOffset,
-        });
-      } else {
-        res.camera.targetId = 0;
-        vec3.zero(res.camera.positionOffset);
-        quat.identity(res.camera.rotationOffset);
+    EM.addSystem(
+      "smoothCamera",
+      Phase.PRE_RENDER,
+      null,
+      [CameraDef, TimeDef],
+      function (_, res) {
+        reduceError(res.camera.rotationError, res.time.dt);
+        reduceError(res.camera.targetPositionError, res.time.dt);
+        reduceError(res.camera.cameraPositionError, res.time.dt);
       }
-    }
-  );
+    );
 
-  em.addSystem(
-    "retargetCamera",
-    Phase.PRE_RENDER,
-    null,
-    [CameraDef],
-    function ([], res) {
-      if (res.camera.prevTargetId === res.camera.targetId) {
-        quat.copy(res.camera.lastRotation, res.camera.rotationOffset);
-        vec3.copy(res.camera.lastPosition, res.camera.positionOffset);
-        return;
+    EM.addSystem(
+      "cameraFollowTarget",
+      Phase.PRE_RENDER,
+      [CameraFollowDef],
+      [CameraDef],
+      (cs, res) => {
+        const target = cs.reduce(
+          (p, n) =>
+            !p || n.cameraFollow.priority > p.cameraFollow.priority ? n : p,
+          null as EntityW<[typeof CameraFollowDef]> | null
+        );
+        if (target) {
+          res.camera.targetId = target.id;
+          vec3.copy(
+            res.camera.positionOffset,
+            target.cameraFollow.positionOffset
+          );
+          yawpitchToQuat(res.camera.rotationOffset, {
+            yaw: target.cameraFollow.yawOffset,
+            pitch: target.cameraFollow.pitchOffset,
+          });
+        } else {
+          res.camera.targetId = 0;
+          vec3.zero(res.camera.positionOffset);
+          quat.identity(res.camera.rotationOffset);
+        }
       }
-      const prevTarget = em.findEntity(res.camera.prevTargetId, [
-        WorldFrameDef,
-      ]);
-      const newTarget = em.findEntity(res.camera.targetId, [WorldFrameDef])!;
-      if (prevTarget && newTarget) {
-        computeNewError(
-          prevTarget.world.position,
-          newTarget.world.position,
-          res.camera.targetPositionError
-        );
-        computeNewError(
-          res.camera.lastPosition,
-          res.camera.positionOffset,
-          res.camera.cameraPositionError
-        );
+    );
 
-        const computedRotation = quat.mul(
-          prevTarget.world.rotation,
-          res.camera.lastRotation
-        );
-        const newComputedRotation = quat.mul(
-          newTarget.world.rotation,
-          res.camera.rotationOffset
-        );
+    EM.addSystem(
+      "retargetCamera",
+      Phase.PRE_RENDER,
+      null,
+      [CameraDef],
+      function ([], res) {
+        if (res.camera.prevTargetId === res.camera.targetId) {
+          quat.copy(res.camera.lastRotation, res.camera.rotationOffset);
+          vec3.copy(res.camera.lastPosition, res.camera.positionOffset);
+          return;
+        }
+        const prevTarget = EM.findEntity(res.camera.prevTargetId, [
+          WorldFrameDef,
+        ]);
+        const newTarget = EM.findEntity(res.camera.targetId, [WorldFrameDef])!;
+        if (prevTarget && newTarget) {
+          computeNewError(
+            prevTarget.world.position,
+            newTarget.world.position,
+            res.camera.targetPositionError
+          );
+          computeNewError(
+            res.camera.lastPosition,
+            res.camera.positionOffset,
+            res.camera.cameraPositionError
+          );
 
-        computeNewError(
-          computedRotation,
-          newComputedRotation,
-          res.camera.rotationError
-        );
+          const computedRotation = quat.mul(
+            prevTarget.world.rotation,
+            res.camera.lastRotation
+          );
+          const newComputedRotation = quat.mul(
+            newTarget.world.rotation,
+            res.camera.rotationOffset
+          );
+
+          computeNewError(
+            computedRotation,
+            newComputedRotation,
+            res.camera.rotationError
+          );
+        }
+
+        res.camera.prevTargetId = res.camera.targetId;
       }
+    );
+  },
+});
 
-      res.camera.prevTargetId = res.camera.targetId;
-    }
-  );
+EM.registerInit({
+  provideRs: [CameraComputedDef],
+  requireRs: [],
+  fn: async () => {
+    EM.addResource(CameraComputedDef);
+    EM.addSystem(
+      "updateCameraView",
+      Phase.RENDER_PRE_DRAW,
+      null,
+      [CameraComputedDef, CameraDef, MeDef, CanvasDef],
+      (_, resources) => {
+        const { cameraComputed, camera, me, htmlCanvas } = resources;
 
-  em.addResource(CameraComputedDef);
-  em.addSystem(
-    "updateCameraView",
-    Phase.RENDER_PRE_DRAW,
-    null,
-    [CameraComputedDef, CameraDef, MeDef, CanvasDef],
-    (_, resources) => {
-      const { cameraComputed, camera, me, htmlCanvas } = resources;
+        let targetEnt = EM.findEntity(camera.targetId, [RendererWorldFrameDef]);
 
-      let targetEnt = em.findEntity(camera.targetId, [RendererWorldFrameDef]);
+        if (!targetEnt) return;
 
-      if (!targetEnt) return;
+        const frame = targetEnt.rendererWorldFrame;
 
-      const frame = targetEnt.rendererWorldFrame;
-
-      // update aspect ratio and size
-      cameraComputed.aspectRatio = Math.abs(
-        htmlCanvas.canvas.width / htmlCanvas.canvas.height
-      );
-      cameraComputed.width = htmlCanvas.canvas.clientWidth;
-      cameraComputed.height = htmlCanvas.canvas.clientHeight;
-
-      let viewMatrix = mat4.tmp();
-      if (targetEnt) {
-        const computedTranslation = vec3.add(
-          frame.position,
-          camera.targetPositionError
+        // update aspect ratio and size
+        cameraComputed.aspectRatio = Math.abs(
+          htmlCanvas.canvas.width / htmlCanvas.canvas.height
         );
-        mat4.fromRotationTranslationScale(
-          frame.rotation,
-          computedTranslation,
-          frame.scale,
+        cameraComputed.width = htmlCanvas.canvas.clientWidth;
+        cameraComputed.height = htmlCanvas.canvas.clientHeight;
+
+        let viewMatrix = mat4.tmp();
+        if (targetEnt) {
+          const computedTranslation = vec3.add(
+            frame.position,
+            camera.targetPositionError
+          );
+          mat4.fromRotationTranslationScale(
+            frame.rotation,
+            computedTranslation,
+            frame.scale,
+            viewMatrix
+          );
+          vec3.copy(cameraComputed.location, computedTranslation);
+        }
+
+        const computedCameraRotation = quat.mul(
+          camera.rotationOffset,
+          camera.rotationError
+        );
+
+        mat4.mul(
+          viewMatrix,
+          mat4.fromQuat(computedCameraRotation, mat4.tmp()),
           viewMatrix
         );
-        vec3.copy(cameraComputed.location, computedTranslation);
-      }
 
-      const computedCameraRotation = quat.mul(
-        camera.rotationOffset,
-        camera.rotationError
-      );
-
-      mat4.mul(
-        viewMatrix,
-        mat4.fromQuat(computedCameraRotation, mat4.tmp()),
-        viewMatrix
-      );
-
-      const computedCameraTranslation = vec3.add(
-        camera.positionOffset,
-        camera.cameraPositionError
-      );
-      // const computedCameraTranslation = camera.positionOffset;
-
-      mat4.translate(viewMatrix, computedCameraTranslation, viewMatrix);
-      mat4.invert(viewMatrix, viewMatrix);
-
-      if (camera.perspectiveMode === "ortho") {
-        const ORTHO_SIZE = 10;
-        mat4.ortho(
-          -ORTHO_SIZE,
-          ORTHO_SIZE,
-          -ORTHO_SIZE,
-          ORTHO_SIZE,
-          -400,
-          100,
-          cameraComputed.proj
+        const computedCameraTranslation = vec3.add(
+          camera.positionOffset,
+          camera.cameraPositionError
         );
-      } else {
-        mat4.perspective(
-          camera.fov,
-          cameraComputed.aspectRatio,
-          camera.nearClipDist,
-          camera.viewDist,
-          cameraComputed.proj
+        // const computedCameraTranslation = camera.positionOffset;
+
+        mat4.translate(viewMatrix, computedCameraTranslation, viewMatrix);
+        mat4.invert(viewMatrix, viewMatrix);
+
+        if (camera.perspectiveMode === "ortho") {
+          const ORTHO_SIZE = 10;
+          mat4.ortho(
+            -ORTHO_SIZE,
+            ORTHO_SIZE,
+            -ORTHO_SIZE,
+            ORTHO_SIZE,
+            -400,
+            100,
+            cameraComputed.proj
+          );
+        } else {
+          mat4.perspective(
+            camera.fov,
+            cameraComputed.aspectRatio,
+            camera.nearClipDist,
+            camera.viewDist,
+            cameraComputed.proj
+          );
+        }
+        mat4.mul(cameraComputed.proj, viewMatrix, cameraComputed.viewProj);
+        mat4.invert(cameraComputed.viewProj, cameraComputed.invViewProj);
+
+        // compute shadow cascade viewProj matrices
+        // TODO(@darzu): properly support ortho?
+        resizeArray(
+          cameraComputed.shadowCascadeMats,
+          camera.shadowCascades.length,
+          () => ({
+            near: NaN,
+            far: NaN,
+            farZ: NaN,
+            viewProj: mat4.create(),
+            invViewProj: mat4.create(),
+          })
         );
+        let shadowNearFrac = camera.nearClipDist / camera.viewDist;
+        for (let i = 0; i < camera.shadowCascades.length; i++) {
+          const shadowFarFrac = camera.shadowCascades[i];
+          assert(shadowFarFrac <= 1.0);
+          const cascade = cameraComputed.shadowCascadeMats[i];
+          cascade.near = camera.viewDist * shadowNearFrac;
+          cascade.far = camera.viewDist * shadowFarFrac;
+          cascade.farZ = vec3.transformMat4(
+            [0, 0, -cascade.far],
+            cameraComputed.proj
+          )[2];
+
+          mat4.perspective(
+            camera.fov,
+            cameraComputed.aspectRatio,
+            cascade.near,
+            cascade.far,
+            cascade.viewProj
+          );
+          mat4.mul(cascade.viewProj, viewMatrix, cascade.viewProj);
+          mat4.invert(cascade.viewProj, cascade.invViewProj);
+
+          shadowNearFrac = shadowFarFrac;
+        }
+        // dbgDirOnce(
+        //   "cameraComputed.shadowCascadeMats",
+        //   cameraComputed.shadowCascadeMats
+        // );
       }
-      mat4.mul(cameraComputed.proj, viewMatrix, cameraComputed.viewProj);
-      mat4.invert(cameraComputed.viewProj, cameraComputed.invViewProj);
-
-      // compute shadow cascade viewProj matrices
-      // TODO(@darzu): properly support ortho?
-      resizeArray(
-        cameraComputed.shadowCascadeMats,
-        camera.shadowCascades.length,
-        () => ({
-          near: NaN,
-          far: NaN,
-          farZ: NaN,
-          viewProj: mat4.create(),
-          invViewProj: mat4.create(),
-        })
-      );
-      let shadowNearFrac = camera.nearClipDist / camera.viewDist;
-      for (let i = 0; i < camera.shadowCascades.length; i++) {
-        const shadowFarFrac = camera.shadowCascades[i];
-        assert(shadowFarFrac <= 1.0);
-        const cascade = cameraComputed.shadowCascadeMats[i];
-        cascade.near = camera.viewDist * shadowNearFrac;
-        cascade.far = camera.viewDist * shadowFarFrac;
-        cascade.farZ = vec3.transformMat4(
-          [0, 0, -cascade.far],
-          cameraComputed.proj
-        )[2];
-
-        mat4.perspective(
-          camera.fov,
-          cameraComputed.aspectRatio,
-          cascade.near,
-          cascade.far,
-          cascade.viewProj
-        );
-        mat4.mul(cascade.viewProj, viewMatrix, cascade.viewProj);
-        mat4.invert(cascade.viewProj, cascade.invViewProj);
-
-        shadowNearFrac = shadowFarFrac;
-      }
-      // dbgDirOnce(
-      //   "cameraComputed.shadowCascadeMats",
-      //   cameraComputed.shadowCascadeMats
-      // );
-    }
-  );
-}
+    );
+  },
+});

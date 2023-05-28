@@ -5,7 +5,6 @@ import { LocalHsPlayerDef } from "./hyperspace/hs-player.js";
 import {
   CameraDef,
   CameraFollowDef,
-  registerCameraSystems,
   setCameraFollowPosition,
 } from "./camera/camera.js";
 import {
@@ -113,7 +112,6 @@ export function registerCommonSystems(em: EntityManager) {
   registerMotionSmoothingSystems(em);
   registerUpdateSmoothedWorldFrames(em);
   registerUpdateRendererWorldFrames(em);
-  registerCameraSystems(em);
   registerRenderViewController(em);
   registerConstructRenderablesSystem(em);
   registerRiggedRenderablesSystems(em);
