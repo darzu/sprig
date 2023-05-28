@@ -1,5 +1,11 @@
 import { CameraFollowDef } from "../camera/camera.js";
-import { ComponentDef, EM, Entity, EntityW } from "../ecs/entity-manager.js";
+import {
+  CompId,
+  ComponentDef,
+  EM,
+  Entity,
+  EntityW,
+} from "../ecs/entity-manager.js";
 import {
   MetaPhases,
   NameFromPhase,
@@ -37,13 +43,13 @@ interface DbgEnt extends Entity {
 const dbgEnts: Map<number, DbgEnt> = new Map();
 let dbgEntSingleton: DbgEnt = { id: 0, _cmps: () => [] };
 
-const dbgCmpsAllById: Map<number, DbgCmp> = new Map();
+const dbgCmpsAllById: Map<CompId, DbgCmp> = new Map();
 const dbgCmpsAllByName: Map<string, DbgCmp> = new Map();
 let dbgCmpsAllByAbv: Map<string, DbgCmp> = new Map();
 const dbgCmps: Map<string, DbgCmp> = new Map();
 const dbgCmpsSingleton: Map<string, DbgCmp> = new Map();
 
-function mkDbgCmp(id: number): DbgCmp {
+function mkDbgCmp(id: CompId): DbgCmp {
   // if (dbgCmpsAllById.has(id)) return dbgCmpsAllById.get(id)!;
   const c = EM.components.get(id);
   if (!c) throw `No component by id ${id}`;

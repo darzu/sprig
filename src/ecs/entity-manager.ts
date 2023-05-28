@@ -23,6 +23,7 @@ export interface Entity {
   readonly id: number;
 }
 
+export type CompId = number;
 export interface ComponentDef<
   N extends string = string,
   P = any,
@@ -39,7 +40,7 @@ export interface ComponentDef<
   //  objects. E.g. no naked numbers or booleans. There's some other reason i think
   //  we want this that is eluding me..
   construct: (...args: Pargs) => P;
-  readonly id: number;
+  readonly id: CompId;
   isOn: <E extends Entity>(e: E) => e is E & { [K in N]: P };
 }
 export type Component<DEF> = DEF extends ComponentDef<any, infer P> ? P : never;
@@ -141,7 +142,8 @@ export class EntityManager {
     (_) => [] as string[]
   );
   entityPromises: Map<number, EntityPromise<ComponentDef[], any>[]> = new Map();
-  components: Map<number, ComponentDef<any, any>> = new Map();
+  components: Map<CompId, ComponentDef<any, any>> = new Map();
+  seenComponents: Set<CompId> = new Set();
   serializers: Map<
     number,
     {
@@ -333,28 +335,30 @@ export class EntityManager {
     (e as any)[def.name] = c;
 
     // update query caches
-    let _before = performance.now();
-    const eSystems = this._entitiesToSystems.get(e.id)!;
-    if (this.isDeadC(def)) {
-      // remove from every current system
-      eSystems.forEach((s) => {
-        const es = this._systemsToEntities.get(s)!;
-        // TODO(@darzu): perf. sorted removal
-        const indx = es.findIndex((v) => v.id === id);
-        if (indx >= 0) es.splice(indx, 1);
-      });
-      eSystems.length = 0;
-    }
-    const systems = this._componentToSystems.get(def.name);
-    for (let sysId of systems ?? []) {
-      const allNeededCs = this._systemsToComponents.get(sysId);
-      if (allNeededCs?.every((n) => n in e)) {
-        // TODO(@darzu): perf. sorted insert
-        this._systemsToEntities.get(sysId)!.push(e);
-        eSystems.push(sysId);
+    {
+      let _beforeQueryCache = performance.now();
+      const eSystems = this._entitiesToSystems.get(e.id)!;
+      if (this.isDeadC(def)) {
+        // remove from every current system
+        eSystems.forEach((s) => {
+          const es = this._systemsToEntities.get(s)!;
+          // TODO(@darzu): perf. sorted removal
+          const indx = es.findIndex((v) => v.id === id);
+          if (indx >= 0) es.splice(indx, 1);
+        });
+        eSystems.length = 0;
       }
+      const systems = this._componentToSystems.get(def.name);
+      for (let sysId of systems ?? []) {
+        const allNeededCs = this._systemsToComponents.get(sysId);
+        if (allNeededCs?.every((n) => n in e)) {
+          // TODO(@darzu): perf. sorted insert
+          this._systemsToEntities.get(sysId)!.push(e);
+          eSystems.push(sysId);
+        }
+      }
+      this.emStats.queryTime += performance.now() - _beforeQueryCache;
     }
-    this.emStats.queryTime += performance.now() - _before;
 
     // track changes for entity promises
     // TODO(@darzu): PERF. maybe move all the system query update stuff to use this too?
