@@ -13,10 +13,9 @@ import { initNetPredictSystems } from "./net/predict.js";
 import { initNetGameEventSystems } from "./net/events.js";
 import { initBulletCollisionSystem } from "./cannons/bullet-collision.js";
 import {
-  registerConstructRenderablesSystem,
-  registerRenderer,
-  registerRiggedRenderablesSystems,
-  registerUpdateRendererWorldFrames,
+  initConstructRenderablesSystem,
+  initRenderDrawSystems,
+  initRiggedRenderablesSystems,
 } from "./render/renderer-ecs.js";
 import { initCannonSystems } from "./cannons/cannon.js";
 import { initInteractablesSystem } from "./input/interact.js";
@@ -38,14 +37,14 @@ import { ENABLE_NET } from "./flags.js";
 import { initGravitySystem } from "./motion/gravity.js";
 import { initParameterMotionSystems } from "./motion/parametric-motion.js";
 import { initAnimateToSystems } from "./animation/animate-to.js";
-import { registerClothSystems } from "./cloth/cloth.js";
-import { registerSpringSystems } from "./cloth/spring.js";
-import { registerSkeletalAnimSystems } from "./animation/skeletal.js";
-import { registerStdMeshUpload } from "./render/pipelines/std-mesh.js";
-import { registerOceanDataUpload } from "./render/pipelines/std-ocean.js";
-import { registerRenderViewController } from "./debug/view-modes.js";
-import { registerWoodSplinterSystem } from "./wood/wood-splinters.js";
-import { registerWoodSystems } from "./wood/wood.js";
+import { initClothSystems } from "./cloth/cloth.js";
+import { initSpringSystems } from "./cloth/spring.js";
+import { initSkeletalAnimSystems } from "./animation/skeletal.js";
+import { initStdMeshUpload } from "./render/pipelines/std-mesh.js";
+import { initOceanDataUpload } from "./render/pipelines/std-ocean.js";
+import { initDbgViewModes } from "./debug/view-modes.js";
+import { initWoodSplinterSystem } from "./wood/wood-splinters.js";
+import { initWoodSystems } from "./wood/wood.js";
 
 export function initCommonSystems(em: EntityManager) {
   if (ENABLE_NET) {
@@ -87,18 +86,17 @@ export function initCommonSystems(em: EntityManager) {
   initNetGameEventSystems(em);
 
   initMotionSmoothingSystems(em);
-  registerUpdateRendererWorldFrames(em);
-  registerRenderViewController(em);
-  registerConstructRenderablesSystem(em);
-  registerRiggedRenderablesSystems(em);
-  registerRenderer(em);
-  registerClothSystems();
-  registerSpringSystems();
-  registerSkeletalAnimSystems();
-  registerStdMeshUpload();
-  registerOceanDataUpload();
-  registerWoodSplinterSystem();
-  registerWoodSystems();
+  initDbgViewModes(em);
+  initConstructRenderablesSystem(em);
+  initRiggedRenderablesSystems(em);
+  initRenderDrawSystems(em);
+  initClothSystems();
+  initSpringSystems();
+  initSkeletalAnimSystems();
+  initStdMeshUpload();
+  initOceanDataUpload();
+  initWoodSplinterSystem();
+  initWoodSystems();
 
   callInitFns(em);
 }

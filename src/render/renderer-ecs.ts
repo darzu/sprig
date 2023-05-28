@@ -46,9 +46,6 @@ import {
 } from "./pipelines/std-rigged.js";
 import { Phase } from "../ecs/sys-phase.js";
 
-const BLEND_SIMULATION_FRAMES_STRATEGY: "interpolate" | "extrapolate" | "none" =
-  "none";
-
 // TODO(@darzu): we need a better way to handle arbitrary pools
 // TODO(@darzu): support height map?
 // export type PoolKind = "std" | "ocean" | "grass";
@@ -129,107 +126,6 @@ export const RendererWorldFrameDef = EM.defineComponent(
   () => createFrame()
 );
 
-let _simulationAlpha = 0.0;
-
-export function setSimulationAlpha(to: number) {
-  _simulationAlpha = to;
-}
-
-function interpolateFrames(
-  alpha: number,
-  out: Frame,
-  prev: Frame,
-  next: Frame
-) {
-  vec3.lerp(prev.position, next.position, alpha, out.position);
-  quat.slerp(prev.rotation, next.rotation, alpha, out.rotation);
-  vec3.lerp(prev.scale, next.scale, alpha, out.scale);
-  updateFrameFromPosRotScale(out);
-}
-
-function extrapolateFrames(
-  alpha: number,
-  out: Frame,
-  prev: Frame,
-  next: Frame
-) {
-  // out.position = next.position + alpha * (next.position - prev.position)
-  // out.position = next.position + alpha * (next.position - prev.position)
-  vec3.sub(next.position, prev.position, out.position);
-  vec3.scale(out.position, alpha, out.position);
-  vec3.add(out.position, next.position, out.position);
-
-  // see https://answers.unity.com/questions/168779/extrapolating-quaternion-rotation.html
-  // see https://answers.unity.com/questions/168779/extrapolating-quaternion-rotation.html
-  quat.invert(prev.rotation, out.rotation);
-  quat.mul(next.rotation, out.rotation, out.rotation);
-  const axis = tempVec3();
-  let angle = quat.getAxisAngle(out.rotation, axis);
-  // ensure we take the shortest path
-  if (angle > Math.PI) {
-    angle -= Math.PI * 2;
-  }
-  if (angle < -Math.PI) {
-    angle += Math.PI * 2;
-  }
-  angle = angle * alpha;
-  quat.setAxisAngle(axis, angle, out.rotation);
-  quat.mul(out.rotation, next.rotation, out.rotation);
-
-  // out.scale = next.scale + alpha * (next.scale - prev.scale)
-  // out.scale = next.scale + alpha * (next.scale - prev.scale)
-  vec3.sub(next.scale, prev.scale, out.scale);
-  vec3.scale(out.scale, alpha, out.scale);
-  vec3.add(out.scale, next.scale, out.scale);
-
-  updateFrameFromPosRotScale(out);
-}
-
-export function registerUpdateRendererWorldFrames(em: EntityManager) {
-  em.addSystem(
-    "updateRendererWorldFrames",
-    Phase.RENDER_WORLDFRAMES,
-    [SmoothedWorldFrameDef, PrevSmoothedWorldFrameDef],
-    [],
-    (objs) => {
-      for (let o of objs) {
-        if (DONT_SMOOTH_WORLD_FRAME) {
-          // TODO(@darzu): HACK!
-          if (WorldFrameDef.isOn(o)) {
-            em.ensureComponentOn(o, RendererWorldFrameDef);
-            copyFrame(o.rendererWorldFrame, o.world);
-            // (o as any).rendererWorldFrame = o.world;
-          }
-          continue;
-        }
-
-        em.ensureComponentOn(o, RendererWorldFrameDef);
-
-        switch (BLEND_SIMULATION_FRAMES_STRATEGY) {
-          case "interpolate":
-            interpolateFrames(
-              _simulationAlpha,
-              o.rendererWorldFrame,
-              o.prevSmoothedWorldFrame,
-              o.smoothedWorldFrame
-            );
-            break;
-          case "extrapolate":
-            extrapolateFrames(
-              _simulationAlpha,
-              o.rendererWorldFrame,
-              o.prevSmoothedWorldFrame,
-              o.smoothedWorldFrame
-            );
-            break;
-          default:
-            copyFrame(o.rendererWorldFrame, o.smoothedWorldFrame);
-        }
-      }
-    }
-  );
-}
-
 // TODO(@darzu): We need to add constraints for updateRendererWorldFrames and such w/ respect to gameplay, physics, and rendering!
 
 // export const poolKindToDataDef = {
@@ -255,7 +151,7 @@ export function registerUpdateRendererWorldFrames(em: EntityManager) {
 //   grass: updateGrassRenderData,
 // };
 
-export function registerRenderer(em: EntityManager) {
+export function initRenderDrawSystems(em: EntityManager) {
   // NOTE: we use "renderListDeadHidden" and "renderList" to construct a custom
   //  query of renderable objects that include dead, hidden objects. The reason
   //  for this is that it causes a more stable entity list when we have object
@@ -457,7 +353,7 @@ export function registerRenderer(em: EntityManager) {
 //   }
 // }
 
-export function registerConstructRenderablesSystem(em: EntityManager) {
+export function initConstructRenderablesSystem(em: EntityManager) {
   em.addSystem(
     "constructRenderables",
     Phase.PRE_GAME_WORLD,
@@ -526,7 +422,7 @@ export const RiggedRenderableDef = EM.defineComponent(
   })
 );
 
-export function registerRiggedRenderablesSystems(em: EntityManager) {
+export function initRiggedRenderablesSystems(em: EntityManager) {
   let pool: RiggedMeshPool | undefined = undefined;
   em.addSystem(
     "constructRiggedRenderables",

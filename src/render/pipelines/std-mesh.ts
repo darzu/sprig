@@ -111,7 +111,7 @@ export const stdRenderPipeline = CY.createRenderPipeline("stdMeshRender", {
 const _lastMeshHandleTransform = new Map<number, mat4>();
 const _lastMeshHandleHidden = new Map<number, boolean>();
 
-export function registerStdMeshUpload() {
+export function initStdMeshUpload() {
   const renderObjs: EntityW<
     [
       typeof RendererWorldFrameDef,

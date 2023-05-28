@@ -1,11 +1,10 @@
 import { ColorDef } from "../color/color-ecs.js";
-import { EM, Entity, EntityManager } from "../ecs/entity-manager.js";
+import { EM, Entity } from "../ecs/entity-manager.js";
 import { AllMeshSymbols, BLACK } from "../meshes/assets.js";
 import { BulletDef } from "../cannons/bullet.js";
 import { GravityDef } from "../motion/gravity.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { createIdxPool } from "../utils/idx-pool.js";
-import { onInit } from "../init.js";
 import { jitter } from "../utils/math.js";
 import { AudioDef } from "../audio/audio.js";
 import {
@@ -129,7 +128,7 @@ export let _numSplinterEnds = 0;
 
 let _ONCE = true;
 
-export function registerWoodSystems() {
+export function initWoodSystems() {
   EM.addSystem(
     "runWooden",
     Phase.GAME_WORLD,

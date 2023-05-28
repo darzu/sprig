@@ -124,7 +124,7 @@ function clothMesh(cloth: ClothConstruct): {
   return { mesh: normalizeMesh(mesh), posMap };
 }
 
-export function registerClothSystems() {
+export function initClothSystems() {
   EM.addSystem(
     "buildCloths",
     Phase.PRE_GAME_WORLD,

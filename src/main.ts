@@ -9,7 +9,6 @@ import { DevConsoleDef } from "./debug/console.js";
 import { initReboundSandbox } from "./physics/game-rebound.js";
 // import { callClothSystems } from "./game/cloth.js";
 import { initCommonSystems } from "./game-init.js";
-import { setSimulationAlpha } from "./render/renderer-ecs.js";
 import { never } from "./utils/util.js";
 // import { initHyperspaceGame } from "./game/game-hyperspace.js";
 import {
@@ -31,6 +30,7 @@ import { initLD53 } from "./ld53/game-ld53.js";
 import { initShadingGame } from "./render/game-shading.js";
 import { initModelingGame } from "./meshes/game-modeling.js";
 import { Phase } from "./ecs/sys-phase.js";
+import { setSimulationAlpha } from "./render/motion-smoothing.js";
 
 export const MAX_MESHES = 20000;
 export const MAX_VERTICES = 21844;

@@ -9,7 +9,7 @@ import { LocalHsPlayerDef } from "../hyperspace/hs-player.js";
 import { InputsDef } from "../input/inputs.js";
 import { RendererDef } from "../render/renderer-ecs.js";
 
-export function registerRenderViewController(em: EntityManager) {
+export function initDbgViewModes(em: EntityManager) {
   em.addSystem(
     "renderModeToggles",
     Phase.GAME_PLAYERS,

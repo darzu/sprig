@@ -18,7 +18,6 @@ import {
   SplinterParticleDef,
 } from "./wood.js";
 import { RenderDataStdDef } from "../render/pipelines/std-scene.js";
-import { onInit } from "../init.js";
 import { Phase } from "../ecs/sys-phase.js";
 
 // TODO(@darzu): generalize for any entity pool
@@ -153,7 +152,7 @@ export const mkTimberSplinterFree = (
   return b.mesh;
 };
 
-export function registerWoodSplinterSystem() {
+export function initWoodSplinterSystem() {
   const splinterObjId = 7654;
   EM.addSystem(
     "splintersOnFloor",
