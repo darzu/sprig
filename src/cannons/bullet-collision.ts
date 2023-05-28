@@ -29,7 +29,7 @@ import { Phase } from "../ecs/sys-phase.js";
 
 const ENABLE_BULLETBULLET = false;
 
-export function registerBulletCollisionSystem(em: EntityManager) {
+export function initBulletCollisionSystem(em: EntityManager) {
   // TODO(@darzu):
   em.addSystem(
     "bulletCollision",

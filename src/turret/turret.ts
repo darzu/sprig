@@ -153,7 +153,7 @@ export const raiseUnmanTurret = eventWizard(
   }
 );
 
-export function registerTurretSystems(em: EntityManager) {
+export function initTurretSystems(em: EntityManager) {
   em.addSystem(
     "turretYawPitch",
     Phase.GAME_PLAYERS,

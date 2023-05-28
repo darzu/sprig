@@ -274,7 +274,7 @@ function takeEventsWithKnownObjects<Extra, E extends DetectedEvent<Extra>>(
 
 const EVENT_RETRANSMIT_MS = 100;
 
-export function registerEventSystems(em: EntityManager) {
+export function initNetGameEventSystems(em: EntityManager) {
   // Runs only at non-host, sends valid detected events as requests to host
   em.addSystem(
     "detectedEventsToHost",

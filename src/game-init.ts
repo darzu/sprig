@@ -1,61 +1,45 @@
 import { EntityManager } from "./ecs/entity-manager.js";
-import { InputsDef } from "./input/inputs.js";
-import { registerInitTransforms } from "./physics/transform.js";
-import { LocalHsPlayerDef } from "./hyperspace/hs-player.js";
 import {
-  CameraDef,
-  CameraFollowDef,
-  setCameraFollowPosition,
-} from "./camera/camera.js";
-import {
-  registerHandleNetworkEvents,
-  registerSendOutboxes,
+  initNetStateEventSystems,
+  initNetSendOutboxes,
 } from "./net/network-event-handler.js";
-import { registerJoinSystems } from "./net/join.js";
+import { initNetJoinSystems } from "./net/join.js";
 import {
-  registerSyncSystem,
-  registerUpdateSystem,
-  registerAckUpdateSystem,
+  initNetSyncSystem,
+  initNetUpdateSystems,
+  initNetAckUpdateSystem,
 } from "./net/sync.js";
-import { registerPredictSystem } from "./net/predict.js";
-import { registerEventSystems } from "./net/events.js";
-import { registerBulletCollisionSystem } from "./cannons/bullet-collision.js";
-import {
-  registerBuildBulletsSystem,
-  registerBulletUpdate,
-} from "./cannons/bullet.js";
+import { initNetPredictSystems } from "./net/predict.js";
+import { initNetGameEventSystems } from "./net/events.js";
+import { initBulletCollisionSystem } from "./cannons/bullet-collision.js";
 import {
   registerConstructRenderablesSystem,
   registerRenderer,
   registerRiggedRenderablesSystems,
   registerUpdateRendererWorldFrames,
-  registerUpdateSmoothedWorldFrames,
-  RendererDef,
 } from "./render/renderer-ecs.js";
-import { registerCannonSystems } from "./cannons/cannon.js";
-import { registerInteractionSystem } from "./input/interact.js";
-import { registerModeler } from "./meshes/modeler.js";
+import { initCannonSystems } from "./cannons/cannon.js";
+import { initInteractablesSystem } from "./input/interact.js";
+import { init3DModeler } from "./meshes/modeler.js";
 import {
-  registerMotionSmoothingRecordLocationsSystem,
-  registerMotionSmoothingSystems,
+  initNetMotionRecordingSystem,
+  initMotionSmoothingSystems,
 } from "./render/motion-smoothing.js";
-import { registerPhysicsSystems } from "./physics/phys.js";
-import { registerUpdateLifetimes } from "./ecs/lifetime.js";
-import { registerNetDebugSystem } from "./net/net-debug.js";
+import { initPhysicsSystems } from "./physics/phys.js";
+import { initLifetimesSystem } from "./ecs/lifetime.js";
+import { initNetDebugSystem } from "./net/net-debug.js";
 import { callInitFns } from "./init.js";
-import { registerTurretSystems } from "./turret/turret.js";
-import { registerUISystems } from "./gui/ui.js";
-import { registerDevSystems } from "./debug/console.js";
-import { registerControllableSystems } from "./input/controllable.js";
-import { registerNetSystems } from "./net/net.js";
+import { initTurretSystems } from "./turret/turret.js";
+import { initHtmlUI } from "./gui/ui.js";
+import { initDevConsole } from "./debug/console.js";
+import { initControllablesSystems } from "./input/controllable.js";
+import { initNetSystems } from "./net/net.js";
 import { ENABLE_NET } from "./flags.js";
-import { Phase } from "./ecs/sys-phase.js";
-import { registerGravitySystem } from "./motion/gravity.js";
-import { registerParameterMotionSystems } from "./motion/parametric-motion.js";
-import { registerAnimateToSystems } from "./animation/animate-to.js";
+import { initGravitySystem } from "./motion/gravity.js";
+import { initParameterMotionSystems } from "./motion/parametric-motion.js";
+import { initAnimateToSystems } from "./animation/animate-to.js";
 import { registerClothSystems } from "./cloth/cloth.js";
 import { registerSpringSystems } from "./cloth/spring.js";
-import { registerUploadGrassData } from "./grass/std-grass.js";
 import { registerSkeletalAnimSystems } from "./animation/skeletal.js";
 import { registerStdMeshUpload } from "./render/pipelines/std-mesh.js";
 import { registerOceanDataUpload } from "./render/pipelines/std-ocean.js";
@@ -63,52 +47,46 @@ import { registerRenderViewController } from "./debug/view-modes.js";
 import { registerWoodSplinterSystem } from "./wood/wood-splinters.js";
 import { registerWoodSystems } from "./wood/wood.js";
 
-export function registerCommonSystems(em: EntityManager) {
+export function initCommonSystems(em: EntityManager) {
   if (ENABLE_NET) {
-    registerNetSystems(em);
+    initNetSystems(em);
   }
+  initNetStateEventSystems(em);
+  initNetMotionRecordingSystem(em);
+  initNetUpdateSystems(em);
+  initNetPredictSystems(em);
+  initNetJoinSystems(em);
 
-  registerUISystems(em);
-  registerDevSystems(em);
-  // registerGameStateSystems(em);
-  registerHandleNetworkEvents(em);
-  registerMotionSmoothingRecordLocationsSystem(em);
-  registerUpdateSystem(em);
-  registerPredictSystem(em);
-  registerJoinSystems(em);
-  // registerGroundSystems(em);
-  // TODO(@darzu): game-specific registrations!
-  // registerShipSystems(em);
-  registerBuildBulletsSystem(em);
-  // registerCursorSystems(em);
-  registerInitTransforms(em);
-  // registerEnemyShipSystems(em);
-  registerControllableSystems(em);
-  // registerHsPlayerSystems(em);
-  registerBulletUpdate(em);
-  // TODO(@darzu): re-enable noodles?
-  // registerNoodleSystem(em);
-  registerUpdateLifetimes(em);
-  registerInteractionSystem(em);
-  registerTurretSystems(em);
-  registerCannonSystems(em);
-  registerGravitySystem(em);
-  registerAnimateToSystems();
-  registerParameterMotionSystems(em);
-  registerPhysicsSystems(em);
-  registerBulletCollisionSystem(em);
-  registerModeler(em);
-  // TODO(@darzu): re-enable tools
-  // registerToolSystems(em);
-  registerNetDebugSystem(em);
-  registerAckUpdateSystem(em);
-  registerSyncSystem(em);
-  registerSendOutboxes(em);
-  registerEventSystems(em);
-  // registerDeleteEntitiesSystem(em);
-  // registerDeadEntitiesSystem(em);
-  registerMotionSmoothingSystems(em);
-  registerUpdateSmoothedWorldFrames(em);
+  initHtmlUI(em);
+  initDevConsole(em);
+
+  initControllablesSystems(em);
+
+  initLifetimesSystem(em);
+
+  initInteractablesSystem(em);
+
+  initTurretSystems(em);
+  initCannonSystems(em);
+
+  initGravitySystem(em);
+  initAnimateToSystems();
+  initParameterMotionSystems(em);
+
+  initPhysicsSystems(em);
+
+  // TODO(@darzu): too game-specific
+  initBulletCollisionSystem(em);
+
+  init3DModeler(em);
+
+  initNetDebugSystem(em);
+  initNetAckUpdateSystem(em);
+  initNetSyncSystem(em);
+  initNetSendOutboxes(em);
+  initNetGameEventSystems(em);
+
+  initMotionSmoothingSystems(em);
   registerUpdateRendererWorldFrames(em);
   registerRenderViewController(em);
   registerConstructRenderablesSystem(em);

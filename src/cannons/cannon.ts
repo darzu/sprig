@@ -90,7 +90,7 @@ export const { CannonPropsDef, CannonLocalDef, createCannon, createCannonNow } =
     },
   });
 
-export function registerCannonSystems(em: EntityManager) {
+export function initCannonSystems(em: EntityManager) {
   em.addSystem(
     "reloadCannon",
     Phase.GAME_WORLD,

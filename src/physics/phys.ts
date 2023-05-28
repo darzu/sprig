@@ -17,6 +17,7 @@ import {
 } from "../motion/velocity-clamp.js";
 import {
   Frame,
+  registerInitTransforms,
   registerUpdateLocalFromPosRotScale,
   registerUpdateWorldFromLocalAndParent,
 } from "./transform.js";
@@ -45,7 +46,9 @@ import { DBG_PHYSICS_AABBS } from "../flags.js";
 // [ ] specify which objects may non-intersect; then do non-intersection heirarchachly
 // [ ] PERF: matrix inversion should be done once per parent
 
-export function registerPhysicsSystems(em: EntityManager) {
+export function initPhysicsSystems(em: EntityManager) {
+  registerInitTransforms(em);
+
   registerPhysicsStateInit(em);
 
   registerPhysicsClampVelocityByContact(em);

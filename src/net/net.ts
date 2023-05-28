@@ -218,7 +218,7 @@ function sendEventsToNet(net: Net) {
 
 // from https://gist.github.com/jed/982883#gistcomment-2403369
 
-export function registerNetSystems(em: EntityManager) {
+export function initNetSystems(em: EntityManager) {
   const peerName = em.getResource(PeerNameDef)?.name;
   if (!peerName) {
     throw "Peer name not set before net initialized";

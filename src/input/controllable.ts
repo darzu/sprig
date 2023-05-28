@@ -55,7 +55,7 @@ export const ControllableDef = EM.defineComponent("controllable", () => {
   };
 });
 
-export function registerControllableSystems(em: EntityManager) {
+export function initControllablesSystems(em: EntityManager) {
   const steerVel = vec3.create();
 
   em.addSystem(

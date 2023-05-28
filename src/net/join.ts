@@ -152,7 +152,7 @@ function registerHandleJoinResponse(em: EntityManager) {
   );
 }
 
-export function registerJoinSystems(em: EntityManager) {
+export function initNetJoinSystems(em: EntityManager) {
   registerConnectToServer(em);
   registerHandleJoin(em);
   registerHandleJoinResponse(em);

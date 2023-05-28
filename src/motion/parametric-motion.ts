@@ -27,7 +27,7 @@ export const ParametricDef = EM.defineComponent(
 );
 // TODO(@darzu): serializer pairs
 
-export function registerParameterMotionSystems(em: EntityManager) {
+export function initParameterMotionSystems(em: EntityManager) {
   em.addSystem(
     "updateParametricMotion",
     Phase.PHYSICS_MOTION,

@@ -9,7 +9,11 @@ import {
   updateFrameFromPosRotScale,
   copyFrame,
 } from "../physics/transform.js";
-import { MotionSmoothingDef } from "./motion-smoothing.js";
+import {
+  MotionSmoothingDef,
+  PrevSmoothedWorldFrameDef,
+  SmoothedWorldFrameDef,
+} from "./motion-smoothing.js";
 import { DeadDef, DeletedDef } from "../ecs/delete.js";
 import { meshPoolPtr } from "./pipelines/std-scene.js";
 import { CanvasDef } from "./canvas.js";
@@ -120,88 +124,10 @@ export const RenderableDef = EM.defineComponent(
 //   (r: MeshUniformTS) => r
 // );
 
-const _hasRendererWorldFrame = new Set();
-
-export const SmoothedWorldFrameDef = EM.defineComponent(
-  "smoothedWorldFrame",
-  () => createFrame()
-);
-
-const PrevSmoothedWorldFrameDef = EM.defineComponent(
-  "prevSmoothedWorldFrame",
-  () => createFrame()
-);
-
 export const RendererWorldFrameDef = EM.defineComponent(
   "rendererWorldFrame",
   () => createFrame()
 );
-
-function updateSmoothedWorldFrame(em: EntityManager, o: Entity) {
-  if (DeletedDef.isOn(o)) return;
-  if (!TransformDef.isOn(o)) return;
-  let parent = null;
-  if (PhysicsParentDef.isOn(o) && o.physicsParent.id) {
-    if (!_hasRendererWorldFrame.has(o.physicsParent.id)) {
-      updateSmoothedWorldFrame(em, em.findEntity(o.physicsParent.id, [])!);
-    }
-    parent = em.findEntity(o.physicsParent.id, [SmoothedWorldFrameDef]);
-    if (!parent) return;
-  }
-  let firstFrame = false;
-  if (!SmoothedWorldFrameDef.isOn(o)) firstFrame = true;
-  em.ensureComponentOn(o, SmoothedWorldFrameDef);
-  em.ensureComponentOn(o, PrevSmoothedWorldFrameDef);
-  copyFrame(o.prevSmoothedWorldFrame, o.smoothedWorldFrame);
-  mat4.copy(o.smoothedWorldFrame.transform, o.transform);
-  updateFrameFromTransform(o.smoothedWorldFrame);
-  if (MotionSmoothingDef.isOn(o)) {
-    vec3.add(
-      o.smoothedWorldFrame.position,
-      o.motionSmoothing.positionError,
-      o.smoothedWorldFrame.position
-    );
-    quat.mul(
-      o.smoothedWorldFrame.rotation,
-      o.motionSmoothing.rotationError,
-      o.smoothedWorldFrame.rotation
-    );
-    updateFrameFromPosRotScale(o.smoothedWorldFrame);
-  }
-  if (parent) {
-    mat4.mul(
-      parent.smoothedWorldFrame.transform,
-      o.smoothedWorldFrame.transform,
-      o.smoothedWorldFrame.transform
-    );
-    updateFrameFromTransform(o.smoothedWorldFrame);
-  }
-  if (firstFrame) copyFrame(o.prevSmoothedWorldFrame, o.smoothedWorldFrame);
-  _hasRendererWorldFrame.add(o.id);
-}
-
-export function registerUpdateSmoothedWorldFrames(em: EntityManager) {
-  em.addSystem(
-    "updateSmoothedWorldFrames",
-    Phase.PRE_RENDER,
-    [RenderableDef, TransformDef],
-    [],
-    (objs, res) => {
-      _hasRendererWorldFrame.clear();
-
-      for (const o of objs) {
-        // TODO(@darzu): PERF HACK!
-        if (DONT_SMOOTH_WORLD_FRAME) {
-          em.ensureComponentOn(o, SmoothedWorldFrameDef);
-          em.ensureComponentOn(o, PrevSmoothedWorldFrameDef);
-          continue;
-        }
-
-        updateSmoothedWorldFrame(em, o);
-      }
-    }
-  );
-}
 
 let _simulationAlpha = 0.0;
 

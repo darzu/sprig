@@ -31,7 +31,7 @@ export const InRangeDef = EM.defineComponent("inRange", () => true);
 const INTERACTION_TINT = V(0.1, 0.2, 0.1);
 const INTERACTION_TINT_NAME = "interaction";
 
-export function registerInteractionSystem(em: EntityManager) {
+export function initInteractablesSystem(em: EntityManager) {
   em.addSystem(
     "interactableInteract",
     Phase.PRE_GAME_PLAYERS,

@@ -37,7 +37,7 @@ export function updateAvg(avg: number, curr: number): number {
   return avg ? (1 - avgWeight) * avg + avgWeight * curr : curr;
 }
 
-export function registerDevSystems(em: EntityManager) {
+export function initDevConsole(em: EntityManager) {
   em.addResource(DevConsoleDef);
 
   em.addSystem(
