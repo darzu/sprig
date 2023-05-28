@@ -22,7 +22,7 @@ export const PoseDef = EM.defineComponent("pose", (current?: number) => ({
 
 export function initSkeletalAnimSystems() {
   EM.addSystem(
-    "pose",
+    "skeletalPose",
     Phase.RENDER_PRE_DRAW,
     [PoseDef, RiggedRenderableDef],
     [TimeDef],

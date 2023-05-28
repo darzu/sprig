@@ -157,7 +157,7 @@ export function doesTouch(
 // PRECONDITION: assumes world frames are all up to date
 export function registerUpdateWorldAABBs(em: EntityManager, s: string = "") {
   em.addSystem(
-    "registerUpdateWorldAABBs",
+    "updateWorldAABBs",
     Phase.PHYSICS_WORLD_FROM_LOCAL,
     [PhysicsStateDef, WorldFrameDef, TransformDef],
     [],

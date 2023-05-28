@@ -8,7 +8,7 @@ import { Phase } from "../ecs/sys-phase.js";
 
 export function initNetPredictSystems(em: EntityManager) {
   em.addSystem(
-    "predict",
+    "netPredict",
     Phase.NETWORK,
     [PredictDef, PositionDef, LinearVelocityDef],
     [],

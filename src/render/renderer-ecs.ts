@@ -185,7 +185,7 @@ export function initRenderDrawSystems(em: EntityManager) {
   let __frame = 1; // TODO(@darzu): DBG
 
   em.addSystem(
-    "stepRenderer",
+    "renderDrawSubmitToGPU",
     Phase.RENDER_DRAW,
     null, // NOTE: see "renderList*" systems and NOTE above. We use those to construct our query.
     [CameraDef, CameraComputedDef, RendererDef, TimeDef, PartyDef],
