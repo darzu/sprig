@@ -2,7 +2,6 @@ import { test } from "./utils/test.js";
 import { setupObjImportExporter } from "./meshes/mesh-normalizer.js";
 import { EM } from "./ecs/entity-manager.js";
 import { tick } from "./time/time.js";
-import { InputsDef, registerInputsSystem } from "./input/inputs.js";
 import { MeDef, JoinDef, HostDef, PeerNameDef } from "./net/components.js";
 import { addEventComponents } from "./net/events.js";
 import { dbg } from "./debug/debugger.js";
@@ -95,8 +94,6 @@ async function startGame(localPeerName: string, host: string | null) {
   registerCommonSystems(EM);
 
   addEventComponents(EM);
-
-  registerInputsSystem(EM);
 
   if (GAME === "gjk") initGJKSandbox(EM, hosting);
   else if (GAME === "rebound") initReboundSandbox(EM, hosting);
