@@ -329,9 +329,7 @@ g.cameraFollow.pitchOffset = ${target.cameraFollow.pitchOffset.toFixed(3)};
   },
   summarizeStats: () => {
     let stats = EM.sysStats;
-    let totalQueryTime = Object.values(stats)
-      .map((s) => s.queryTime)
-      .reduce((x, y) => x + y);
+    let totalQueryTime = EM.emStats.queryTime;
     let totalCallTime = Object.values(stats)
       .map((s) => s.callTime)
       .reduce((x, y) => x + y);
@@ -350,10 +348,7 @@ g.cameraFollow.pitchOffset = ${target.cameraFollow.pitchOffset.toFixed(3)};
       const phaseVal = EM.systems.get(s)?.phase;
       if (phaseVal) {
         const phase = NameFromPhase(phaseVal);
-        phaseTimes.set(
-          phase,
-          phaseTimes.get(phase)! + stats[s].callTime + stats[s].queryTime
-        );
+        phaseTimes.set(phase, phaseTimes.get(phase)! + stats[s].callTime);
       }
     }
     for (let p of phaseTimes.keys()) {

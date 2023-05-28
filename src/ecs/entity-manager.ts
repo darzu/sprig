@@ -116,11 +116,13 @@ function nameToId(name: string): number {
 }
 
 interface SystemStats {
-  queryTime: number;
   callTime: number;
   maxCallTime: number;
   queries: number;
   calls: number;
+}
+interface EMStats {
+  queryTime: number;
 }
 
 // TODO(@darzu): Instead of having one big EM class,
@@ -151,6 +153,9 @@ export class EntityManager {
   ranges: Record<string, { nextId: number; maxId: number }> = {};
   defaultRange: string = "";
   sysStats: Record<string, SystemStats> = {};
+  emStats: EMStats = {
+    queryTime: 0,
+  };
   globalStats = {
     // time spent maintaining the query caches
     queryCacheTime: 0, // TODO(@darzu): IMPL
@@ -328,7 +333,7 @@ export class EntityManager {
     (e as any)[def.name] = c;
 
     // update query caches
-    // TODO(@darzu): PERF. need to measure time spent maintaining these caches.
+    let _before = performance.now();
     const eSystems = this._entitiesToSystems.get(e.id)!;
     if (this.isDeadC(def)) {
       // remove from every current system
@@ -349,6 +354,7 @@ export class EntityManager {
         eSystems.push(sysId);
       }
     }
+    this.emStats.queryTime += performance.now() - _before;
 
     // track changes for entity promises
     // TODO(@darzu): PERF. maybe move all the system query update stuff to use this too?
@@ -739,7 +745,6 @@ export class EntityManager {
       queries: 0,
       callTime: 0,
       maxCallTime: 0,
-      queryTime: 0,
     };
 
     // update query cache:
@@ -807,7 +812,7 @@ export class EntityManager {
     const rs = this.getResources(s.rs); // TODO(@darzu): remove allocs here
     let afterQuery = performance.now();
     this.sysStats[s.name].queries++;
-    this.sysStats[s.name].queryTime += afterQuery - start;
+    this.emStats.queryTime += afterQuery - start;
     if (rs) {
       // we have the resources
       s.callback(es, rs);
@@ -934,7 +939,7 @@ export class EntityManager {
         const afterOneShotQuery = performance.now();
         const stats = this.sysStats["__oneShots"];
         stats.queries += 1;
-        stats.queryTime += afterOneShotQuery - beforeOneShots;
+        this.emStats.queryTime += afterOneShotQuery - beforeOneShots;
 
         promises.splice(idx, 1);
         // TODO(@darzu): how to handle async callbacks and their timing?
