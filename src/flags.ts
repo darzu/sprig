@@ -21,3 +21,4 @@ export const PERF_DBG_F32S_BLAME = false;
 export const PERF_DBG_F32S_TEMP_BLAME = false;
 export const WARN_DEAD_CLEANUP = false;
 export const DBG_SYSTEM_ORDER = false;
+export const DBG_PHYSICS_AABBS = false;

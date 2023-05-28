@@ -30,6 +30,7 @@ import {
   registerPhysicsApplyAngularVelocity,
 } from "../motion/velocity.js";
 import { Phase } from "../ecs/sys-phase.js";
+import { DBG_PHYSICS_AABBS } from "../flags";
 
 // TODO(@darzu): PHYSICS TODO:
 // [ ] seperate rotation and motion w/ constraint checking between them
@@ -65,7 +66,9 @@ export function registerPhysicsSystems(em: EntityManager) {
   // TODO(@darzu): get rid of this duplicate call?
   registerUpdateWorldFromLocalAndParent(em, "2", Phase.PHYSICS_FINISH_WORLD);
 
-  registerPhysicsDebuggerSystem(em);
+  if (DBG_PHYSICS_AABBS) {
+    registerPhysicsDebuggerSystem(em);
+  }
 }
 
 export type CollidesWith = Map<number, number[]>;
