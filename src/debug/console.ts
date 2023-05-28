@@ -88,8 +88,6 @@ export function registerDevSystems(em: EntityManager) {
         return;
       }
 
-      const usingWebGPU = res.renderer.usingWebGPU;
-
       const controlsStr = `[WASD space 1 2 3 4 5 r t]`;
 
       // TODO(@darzu): can net stats be re-enabled?

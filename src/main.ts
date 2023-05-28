@@ -32,7 +32,6 @@ import { initShadingGame } from "./render/game-shading.js";
 import { initModelingGame } from "./meshes/game-modeling.js";
 import { Phase } from "./ecs/sys-phase.js";
 
-export const FORCE_WEBGL = false;
 export const MAX_MESHES = 20000;
 export const MAX_VERTICES = 21844;
 const AUTOSTART = true;

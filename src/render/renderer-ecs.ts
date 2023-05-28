@@ -13,7 +13,6 @@ import { MotionSmoothingDef } from "./motion-smoothing.js";
 import { DeadDef, DeletedDef } from "../ecs/delete.js";
 import { meshPoolPtr } from "./pipelines/std-scene.js";
 import { CanvasDef } from "./canvas.js";
-import { FORCE_WEBGL } from "../main.js";
 import { createRenderer } from "./renderer-webgpu.js";
 import { CyMeshPoolPtr, CyPipelinePtr } from "./gpu-registry.js";
 import { createFrame, WorldFrameDef } from "../physics/nonintersection.js";
@@ -683,86 +682,56 @@ export type Renderer = ReturnType<typeof createRenderer>;
 // TODO(@darzu): the double "Renderer" naming is confusing. Maybe one should be GPUManager or something?
 export const RendererDef = EM.defineComponent(
   "renderer",
-  (renderer: Renderer, usingWebGPU: boolean, pipelines: CyPipelinePtr[]) => {
+  (renderer: Renderer, pipelines: CyPipelinePtr[]) => {
     return {
       renderer,
-      usingWebGPU,
       pipelines,
     };
   }
 );
 
-let _rendererPromise: Promise<void> | null = null;
+EM.registerInit({
+  requireRs: [CanvasDef, ShadersDef],
+  provideRs: [RendererDef],
+  fn: async ({ htmlCanvas, shaders }) => {
+    let renderer: Renderer | undefined = undefined;
 
-export function registerRenderInitSystem(em: EntityManager) {
-  em.addSystem(
-    "renderInit",
-    Phase.PRE_RENDER,
-    [],
-    [CanvasDef, ShadersDef],
-    (_, res) => {
-      if (!!em.getResource(RendererDef)) return; // already init
-      if (!!_rendererPromise) return;
-      _rendererPromise = chooseAndInitRenderer(
-        em,
-        res.shaders,
-        res.htmlCanvas.canvas
-      );
-    }
-  );
-}
-
-async function chooseAndInitRenderer(
-  em: EntityManager,
-  shaders: ShaderSet,
-  canvas: HTMLCanvasElement
-): Promise<void> {
-  let renderer: Renderer | undefined = undefined;
-  let usingWebGPU = false;
-  if (!FORCE_WEBGL) {
-    // try webgpu first
     const adapter = await navigator.gpu?.requestAdapter();
-    if (!adapter) console.error("navigator.gpu?.requestAdapter() failed");
-    if (adapter) {
-      const supportsTimestamp = adapter.features.has("timestamp-query");
-      if (!supportsTimestamp && VERBOSE_LOG)
-        console.log(
-          "GPU profiling disabled: device does not support timestamp queries"
-        );
-      const device = await adapter.requestDevice({
-        label: `sprigDevice`,
-        requiredFeatures: supportsTimestamp ? ["timestamp-query"] : [],
-      });
-      // TODO(@darzu): uses cast while waiting for webgpu-types.d.ts to be updated
-      const context = canvas.getContext("webgpu");
-      // console.log("webgpu context:");
-      // console.dir(context);
-      if (context) {
-        renderer = createRenderer(canvas, device, context, shaders);
-        if (renderer) usingWebGPU = true;
-      }
+    if (!adapter) {
+      console.error("navigator.gpu?.requestAdapter() failed");
+      displayWebGPUError();
+      throw new Error("Unable to get gpu adapter");
     }
-  }
-  // TODO(@darzu): re-enable WebGL
-  // if (!rendererInit)
-  //   rendererInit = attachToCanvasWebgl(canvas, MAX_MESHES, MAX_VERTICES);
-  if (!renderer) {
-    displayWebGPUError();
-    throw new Error("Unable to create webgl or webgpu renderer");
-  }
-  if (VERBOSE_LOG) console.log(`Renderer: ${usingWebGPU ? "webGPU" : "webGL"}`);
 
-  // add to ECS
-  // TODO(@darzu): this is a little wierd to do this in an async callback
-  em.addResource(RendererDef, renderer, usingWebGPU, []);
-}
+    const supportsTimestamp = adapter.features.has("timestamp-query");
+    if (!supportsTimestamp && VERBOSE_LOG)
+      console.log(
+        "GPU profiling disabled: device does not support timestamp queries"
+      );
 
-export function displayWebGPUError() {
+    const device = await adapter.requestDevice({
+      label: `sprigDevice`,
+      requiredFeatures: supportsTimestamp ? ["timestamp-query"] : [],
+    });
+
+    const context = htmlCanvas.canvas.getContext("webgpu");
+    if (!context) {
+      displayWebGPUError();
+      throw new Error("Unable to get webgpu context");
+    }
+
+    renderer = createRenderer(htmlCanvas.canvas, device, context, shaders);
+
+    EM.addResource(RendererDef, renderer, []);
+  },
+});
+
+function displayWebGPUError() {
   const style = `font-size: 48px;
       color: green;
       margin: 24px;
       max-width: 600px;`;
   document.getElementsByTagName(
     "body"
-  )[0].innerHTML = `<div style="${style}">This page requires WebGPU which isn't yet supported in your browser!<br>Or something else went wrong that was my fault.<br><br>U can try Chrome >106.<br><br>🙂</div>`;
+  )[0].innerHTML = `<div style="${style}">This page requires WebGPU which isn't yet supported in your browser!<br>Or something else went wrong that was my fault.<br><br>U can try Chrome >113.<br><br>🙂</div>`;
 }

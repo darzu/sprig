@@ -30,7 +30,7 @@ import {
   registerPhysicsApplyAngularVelocity,
 } from "../motion/velocity.js";
 import { Phase } from "../ecs/sys-phase.js";
-import { DBG_PHYSICS_AABBS } from "../flags";
+import { DBG_PHYSICS_AABBS } from "../flags.js";
 
 // TODO(@darzu): PHYSICS TODO:
 // [ ] seperate rotation and motion w/ constraint checking between them

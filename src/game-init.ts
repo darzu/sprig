@@ -27,7 +27,6 @@ import {
 import {
   registerConstructRenderablesSystem,
   registerRenderer,
-  registerRenderInitSystem,
   registerRiggedRenderablesSystems,
   registerUpdateRendererWorldFrames,
   registerUpdateSmoothedWorldFrames,
@@ -72,7 +71,6 @@ export function registerCommonSystems(em: EntityManager) {
   registerUISystems(em);
   registerDevSystems(em);
   // registerGameStateSystems(em);
-  registerRenderInitSystem(em);
   registerHandleNetworkEvents(em);
   registerMotionSmoothingRecordLocationsSystem(em);
   registerUpdateSystem(em);
