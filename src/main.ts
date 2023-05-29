@@ -62,9 +62,7 @@ const MAX_SIM_LOOPS = 1;
 export let gameStarted = false;
 
 function callFixedTimestepSystems() {
-  EM.callSystems();
-  EM.checkEntityPromises();
-  EM.dbgLoops++;
+  EM.update();
 }
 
 async function startGame(localPeerName: string, host: string | null) {

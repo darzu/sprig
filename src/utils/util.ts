@@ -373,3 +373,7 @@ export function enumAsList<T extends {}>(e: T): T[keyof T][] {
   // TODO(@darzu): sort?
   return values as T[keyof T][];
 }
+
+export function isPromise(p: unknown): p is Promise<unknown> {
+  return p instanceof Promise;
+}
