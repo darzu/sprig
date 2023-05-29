@@ -81,6 +81,10 @@ interface SystemReg {
 
 export type InitFnId = number;
 
+export type InitFn<RS extends ComponentDef[] = ComponentDef[]> =
+  | ((rs: EntityW<RS>) => Promise<void>)
+  | ((rs: EntityW<RS>) => void);
+
 export interface InitFnReg<RS extends ComponentDef[] = ComponentDef[]> {
   // TODO(@darzu): debug name
   // name: string;
@@ -88,9 +92,7 @@ export interface InitFnReg<RS extends ComponentDef[] = ComponentDef[]> {
   requireCompSet?: ComponentDef[];
   provideRs: ComponentDef[];
   eager?: boolean; // TODO(@darzu): flop this to lazy? more clear. make required?
-  fn:
-    | ((rs: EntityW<RS>) => Promise<void>) //
-    | ((rs: EntityW<RS>) => void);
+  fn: InitFn<RS>;
   id: InitFnId;
 }
 
@@ -715,8 +717,24 @@ export class EntityManager {
       id: this._nextInitFnId++,
     };
 
-    if (!reg.eager) this.addLazyInit(regWId);
-    else this.addEagerInit(regWId);
+    if (!reg.eager) this._addLazyInit(regWId);
+    else this._addEagerInit(regWId);
+  }
+
+  public addLazyInit<RS extends ComponentDef[]>(
+    requireRs: RS,
+    provideRs: ComponentDef[],
+    callback: InitFn
+  ): void {
+    const id = this._nextInitFnId++;
+    const reg: InitFnReg<RS> = {
+      requireRs,
+      provideRs,
+      fn: callback,
+      eager: false,
+      id,
+    };
+    this._addLazyInit(reg);
   }
 
   private _nextSystemId = 1;
@@ -1110,7 +1128,7 @@ export class EntityManager {
     });
   }
   // TODO(@darzu): make public
-  addLazyInit(reg: InitFnReg) {
+  _addLazyInit(reg: InitFnReg) {
     assert(!reg.eager, `Invalid non-lazy reg: ${initFnToString(reg)}`);
     for (let p of reg.provideRs) {
       assert(
@@ -1122,7 +1140,7 @@ export class EntityManager {
 
     if (DBG_INIT) console.log(`new lazy: ${initFnToString(reg)}`);
   }
-  addEagerInit(reg: InitFnReg) {
+  _addEagerInit(reg: InitFnReg) {
     assert(
       !!reg.eager,
       `Invalid non-eager reg: ${initFnToString(
