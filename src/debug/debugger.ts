@@ -351,7 +351,7 @@ g.cameraFollow.pitchOffset = ${target.cameraFollow.pitchOffset.toFixed(3)};
       (_) => 0
     );
     for (let s of Object.keys(stats)) {
-      const phaseVal = EM.systems.get(s)?.phase;
+      const phaseVal = EM.allSystemsByName.get(s)?.phase;
       if (phaseVal) {
         const phase = NameFromPhase(phaseVal);
         phaseTimes.set(phase, phaseTimes.get(phase)! + stats[s].callTime);
