@@ -24,6 +24,7 @@ export interface Entity {
 }
 
 export type CompId = number;
+export type ResId = CompId;
 export interface ComponentDef<
   N extends string = string,
   P = any,
@@ -74,8 +75,9 @@ type System<CS extends ComponentDef[] | null, RS extends ComponentDef[]> = {
   id: number;
 };
 
-export interface InitFNReg<RS extends ComponentDef[]> {
+export interface InitFNReg<RS extends ComponentDef[] = ComponentDef[]> {
   requireRs: [...RS];
+  requireCompSet?: ComponentDef[];
   provideRs: ComponentDef[];
   // provideLs: Label[]; // system labels
   fn: (rs: EntityW<RS>) => Promise<void>;
@@ -143,7 +145,89 @@ export class EntityManager {
   );
   entityPromises: Map<number, EntityPromise<ComponentDef[], any>[]> = new Map();
   components: Map<CompId, ComponentDef<any, any>> = new Map();
-  seenComponents: Set<CompId> = new Set();
+
+  // Init system
+  seenComponents = new Set<CompId>(); // TODO(@darzu): IMPL
+  seenResources = new Set<ResId>(); // TODO(@darzu): IMPL
+  lazyInitsByProvides = new Map<ResId, InitFNReg>(); // TODO(@darzu): IMPL
+  eagerInits: InitFNReg[] = []; // TODO(@darzu): IMPL
+  checkInitFns() {
+    this.eagerInits.forEach((e, i) => {
+      let hasAll = true;
+
+      // has resources? (force lazy providers)
+      for (let r of e.requireRs) {
+        if (!this.seenResources.has(r.id)) {
+          const lazy = this.lazyInitsByProvides.get(r.id);
+          if (lazy) {
+            // lazy -> eager
+            this.eagerInits.push(lazy);
+            this.lazyInitsByProvides.delete(lazy.id);
+          }
+          hasAll = false;
+        }
+      }
+
+      // has component set?
+      // TODO(@darzu): more precise component set tracking:
+      //               not just one of each component, but some entity that has all
+      if (e.requireCompSet)
+        for (let c of e.requireCompSet)
+          hasAll &&= this.seenComponents.has(c.id);
+
+      // run?
+      if (hasAll) {
+        // eager -> run
+        this.runInitFn(e);
+        this.eagerInits.splice(i, 1);
+      }
+    });
+  }
+  runInitFn(init: InitFNReg) {
+    //
+  }
+
+  // TODO(@darzu): INIT STUFF!
+  /*
+  who's waiting on what
+  systems need: (optionally) there exists an entity w/ each component
+  systems need: all resource
+  init fns: need all resources
+  init fns: (optionally) there exists an entity w/ each component
+  who pushes for what
+  systems that need resources, try to init them
+  init fns that need resources, try to init them
+
+  onInit: 
+    lazy: provides needed / only when needed, go
+      provides is required
+    eager: requires met / as soon as legal, go
+      provides is optional
+
+  seenComps: Set<CompId>
+  seenCompSet: Set<CompIdSetHash>
+  seenRes: Set<ResId>
+
+  wantedResources: Set<ResId> // eager inits
+
+  resToInit: Map<ResId, InitFn> // lazy inits
+
+  addPending(w) {
+    pending.push(w)
+
+  }
+  checkPending() {
+    for (w of pending) {
+      let hasEnts = !w.comps || seenCompSet.has(w.comps)
+      let hasRes = w.res.map(r => seenRes.has(r))
+      if (hasEnts && hasRes) {
+        start(w)
+      }
+    }
+  }
+  
+  */
+
   serializers: Map<
     number,
     {
@@ -337,6 +421,7 @@ export class EntityManager {
     // update query caches
     {
       let _beforeQueryCache = performance.now();
+      this.seenComponents.add(def.id);
       const eSystems = this._entitiesToSystems.get(e.id)!;
       if (this.isDeadC(def)) {
         // remove from every current system
@@ -843,7 +928,7 @@ export class EntityManager {
       );
     } else {
       // we don't yet have the resources, check if we can init any
-      this.startInitFnsFor(s.rs);
+      this.startInitFnsForResources(s.rs);
     }
 
     return true;
@@ -869,7 +954,7 @@ export class EntityManager {
   //   return res;
   // }
 
-  startInitFnsFor(cs: ComponentDef[]) {
+  startInitFnsForResources(cs: ComponentDef[]) {
     for (let c of cs) {
       if (!c.isOn(this.ent0) && this.initFnsByResource.has(c.name)) {
         // bookkeeping
@@ -918,7 +1003,7 @@ export class EntityManager {
     // TODO(@darzu): also check and call init functions for systems!!
     const resourcePromises = this.entityPromises.get(0);
     if (resourcePromises) {
-      for (let p of resourcePromises) this.startInitFnsFor(p.cs);
+      for (let p of resourcePromises) this.startInitFnsForResources(p.cs);
     }
 
     let finishedEntities: Set<number> = new Set();

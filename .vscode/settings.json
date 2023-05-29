@@ -6,8 +6,9 @@
     // "editorInlayHint.parameterForeground": "#6b9955b5",
     // "editorInlayHint.typeBackground": "#00000000",
     // "editorInlayHint.typeForeground": "#6b9955b5",
-    "activityBar.background": "#181818",
-    "activityBar.foreground": "#6bcd4b"
+    "activityBar.background": "#001d2e",
+    "activityBar.foreground": "#cb4c92",
+    "activityBar.inactiveForeground": "#aa7592"
     // "activityBar.background": "#d6d6d6",
     // "activityBar.foreground": "#88008f"
   },
