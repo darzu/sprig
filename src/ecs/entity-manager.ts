@@ -504,6 +504,7 @@ export class EntityManager {
 
   _dbgLastVersion = -1;
   _dbgLastSystemLen = 0;
+  _dbgLastActiveSystemLen = 0;
   private callSystems() {
     // // TODO(@darzu):
     // // console.log("OLD PLAN:");
@@ -526,19 +527,30 @@ export class EntityManager {
     // // if (this.dbgLoops > 100) throw "STOP";
 
     if (DBG_SYSTEM_ORDER) {
-      let newSystemLen = 0;
+      let newTotalSystemLen = 0;
+      let newActiveSystemLen = 0;
       let res = "";
       for (let phase of PhaseValueList) {
         const phaseName = Phase[phase];
         res += phaseName + "\n";
-        for (let s of this.phases.get(phase)!) {
-          res += "  " + s + "\n";
-          newSystemLen++;
+        for (let sysName of this.phases.get(phase)!) {
+          let sys = this.allSystemsByName.get(sysName)!;
+          if (this.activeSystemsById.has(sys.id)) {
+            res += "  " + sysName + "\n";
+            newActiveSystemLen++;
+          } else {
+            res += "  (" + sysName + ")\n";
+          }
+          newTotalSystemLen++;
         }
       }
-      if (this._dbgLastSystemLen !== newSystemLen) {
+      if (
+        this._dbgLastSystemLen !== newTotalSystemLen ||
+        this._dbgLastActiveSystemLen !== newActiveSystemLen
+      ) {
         console.log(res);
-        this._dbgLastSystemLen = newSystemLen;
+        this._dbgLastSystemLen = newTotalSystemLen;
+        this._dbgLastActiveSystemLen = newActiveSystemLen;
       }
     }
 

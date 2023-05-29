@@ -1,35 +1,35 @@
 NETWORK
-  handleNetworkEvents
-  recordPreviousLocations
-  clearRemoteUpdatesMarker
-  netUpdate
-  predict
-  connectToServer
-  handleJoin
-  handleJoinResponse
+  (handleNetworkEvents)
+  (recordPreviousLocations)
+  (clearRemoteUpdatesMarker)
+  (netUpdate)
+  (netPredict)
+  (connectToServer)
+  (handleJoin)
+  (handleJoinResponse)
   netDebugSystem
-  netAck
+  (netAck)
   netSync
-  sendOutboxes
-  detectedEventsToHost
-  handleEventRequests
-  handleEventRequestAcks
+  (sendOutboxes)
+  (detectedEventsToHost)
+  (handleEventRequests)
+  (handleEventRequestAcks)
   detectedEventsToRequestedEvents
   requestedEventsToEvents
-  sendEvents
-  handleEvents
-  handleEventAcks
+  (sendEvents)
+  (handleEvents)
+  (handleEventAcks)
   runEvents
 PRE_GAME_WORLD
-  delete
-  buildCursor
-  updateLifetimes
+  (delete)
+  (updateLifetimes)
   constructRenderables
-  buildCloths
+  constructRiggedRenderables
+  (buildCloths)
   cannonPropsBuild
-  buildHsPlayers
+  (buildHsPlayers)
 GAME_WORLD
-  despawnFlyingBricks
+  (despawnFlyingBricks)
   stoneTowerAttack
   stoneTowerDamage
   updateShipHealth
@@ -40,23 +40,19 @@ GAME_WORLD
   easeRudderLD52
   shipParty
   landShipCollision
-  buildBullets
-  updateBullets
   reloadCannon
-  bulletCollision
-  splintersOnFloor
+  (bulletCollision)
+  (splintersOnFloor)
   runWooden
   woodHealth
-  updateRibSail
   ld53GamePipelines
   hsPlayerLookingForShip
-  breakBullets
-  deadBullets
+  (breakBullets)
+  (deadBullets)
 POST_GAME_WORLD
   updateScoreDisplay
   detectGameEnd
 AUDIO
-  musicStart
 PRE_READ_INPUT
   placeCursorAtScreenCenter
 READ_INPUTS
@@ -65,7 +61,6 @@ PRE_GAME_PLAYERS
   interactableInteract
 GAME_PLAYERS
   sailShip
-  canvasCursorLockUnlock
   devConsoleToggle
   controllableInput
   controllableCameraFollow
@@ -88,33 +83,29 @@ PRE_PHYSICS
   ensureWorldFrame
   physicsInit
   ensureFillOutLocalFrame
-  spring
+  (spring)
 PHYSICS_MOTION
-  applyGravity
-  animateTo
-  updateParametricMotion
+  (applyGravity)
+  (animateTo)
+  (updateParametricMotion)
   clampVelocityByContact
   registerPhysicsClampVelocityBySize
   registerPhysicsApplyLinearVelocity
-  physicsApplyAngularVelocity
+  (physicsApplyAngularVelocity)
 PHYSICS_FINISH_LOCAL
   updateLocalFromPosRotScale
 PHYSICS_WORLD_FROM_LOCAL
   updateWorldFromLocalAndParent1
-  registerUpdateWorldAABBs
+  updateWorldAABBs
 PHYSICS_CONTACT
   updatePhysInContact
   physicsStepContact
 PHYSICS_FINISH_WORLD
   updateWorldFromLocalAndParent2
 POST_PHYSICS
-  dbgColliderMeshes
-  debugMeshes
-  debugMeshTransform
 PRE_RENDER
-  renderInit
-  smoothMotion
-  updateMotionSmoothing
+  (smoothMotion)
+  (updateMotionSmoothing)
   updateSmoothedWorldFrames
   smoothCamera
   cameraFollowTarget
@@ -122,16 +113,17 @@ PRE_RENDER
 RENDER_WORLDFRAMES
   updateRendererWorldFrames
 RENDER_PRE_DRAW
-  updateCameraView
-  updateOceanRenderData
-  stdRenderListDeadHidden
+  updateJoints
+  (updateClothMesh)
+  skeletalPose
+  (stdRenderListDeadHidden)
   stdRenderList
   stdRenderableDataUpdate
-  updateClothMesh
-  updateGrassRenderData
+  updateOceanRenderData
+  updateCameraView
 RENDER_DRAW
   uiText
   devConsole
-  renderListDeadHidden
+  (renderListDeadHidden)
   renderList
-  stepRenderer
+  renderDrawSubmitToGPU
