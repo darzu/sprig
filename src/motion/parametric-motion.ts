@@ -27,8 +27,8 @@ export const ParametricDef = EM.defineComponent(
 );
 // TODO(@darzu): serializer pairs
 
-export function initParameterMotionSystems(em: EntityManager) {
-  em.addSystem(
+EM.addEagerInit([ParametricDef], [], [], () => {
+  EM.addSystem(
     "updateParametricMotion",
     Phase.PHYSICS_MOTION,
     [PositionDef, ParametricDef],
@@ -45,7 +45,7 @@ export function initParameterMotionSystems(em: EntityManager) {
       }
     }
   );
-}
+});
 
 // NOTE: assumes no air resistance
 export function projectilePosition(

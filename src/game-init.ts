@@ -11,7 +11,6 @@ import {
 } from "./net/sync.js";
 import { initNetPredictSystems } from "./net/predict.js";
 import { initNetGameEventSystems } from "./net/events.js";
-import { initBulletCollisionSystem } from "./cannons/bullet-collision.js";
 import {
   initConstructRenderablesSystem,
   initRenderDrawSystems,
@@ -29,7 +28,6 @@ import { initHtmlUI } from "./gui/ui.js";
 import { initDevConsole } from "./debug/console.js";
 import { initNetSystems } from "./net/net.js";
 import { ENABLE_NET } from "./flags.js";
-import { initParameterMotionSystems } from "./motion/parametric-motion.js";
 import { initClothSystems } from "./cloth/cloth.js";
 import { initSpringSystems } from "./cloth/spring.js";
 import { initSkeletalAnimSystems } from "./animation/skeletal.js";
@@ -52,12 +50,7 @@ export function initCommonSystems(em: EntityManager) {
   initHtmlUI(em);
   initDevConsole(em);
 
-  initParameterMotionSystems(em);
-
   initPhysicsSystems(em);
-
-  // TODO(@darzu): too game-specific
-  initBulletCollisionSystem(em);
 
   init3DModeler(em);
 
