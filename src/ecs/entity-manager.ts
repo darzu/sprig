@@ -26,6 +26,8 @@ export interface Entity {
 
 export type CompId = number;
 export type ResId = CompId;
+
+// TODO(@darzu): we should seperate component vs resource def
 export interface ComponentDef<
   N extends string = string,
   P = any,
@@ -717,8 +719,7 @@ export class EntityManager {
       id: this._nextInitFnId++,
     };
 
-    if (!reg.eager) this._addLazyInit(regWId);
-    else this._addEagerInit(regWId);
+    this.addInit(regWId);
   }
 
   public addLazyInit<RS extends ComponentDef[]>(
@@ -734,7 +735,24 @@ export class EntityManager {
       eager: false,
       id,
     };
-    this._addLazyInit(reg);
+    this.addInit(reg);
+  }
+  public addEagerInit<RS extends ComponentDef[]>(
+    requireCompSet: ComponentDef[],
+    requireRs: [...RS],
+    provideRs: ComponentDef[],
+    callback: InitFn<RS>
+  ): void {
+    const id = this._nextInitFnId++;
+    const reg: InitFnReg<RS> = {
+      requireCompSet,
+      requireRs,
+      provideRs,
+      fn: callback,
+      eager: true,
+      id,
+    };
+    this.addInit(reg);
   }
 
   private _nextSystemId = 1;
@@ -793,14 +811,8 @@ export class EntityManager {
       // NOTE: we delay activating the system b/c each active system incurs
       //  a cost to maintain its query accelerators on each entity and component
       //  added/removed
-      this.registerInit({
-        requireRs: sys.rs,
-        requireCompSet: sys.cs ?? undefined,
-        provideRs: [],
-        eager: true,
-        fn: () => {
-          this.activateSystem(sys);
-        },
+      this.addEagerInit(sys.cs ?? [], sys.rs, [], () => {
+        this.activateSystem(sys);
       });
     }
   }
@@ -1127,29 +1139,22 @@ export class EntityManager {
       }
     });
   }
-  // TODO(@darzu): make public
-  _addLazyInit(reg: InitFnReg) {
-    assert(!reg.eager, `Invalid non-lazy reg: ${initFnToString(reg)}`);
-    for (let p of reg.provideRs) {
-      assert(
-        !this.pendingLazyInitsByProvides.has(p.id),
-        `Resource: '${p.name}' already has an init fn!`
-      );
-      this.pendingLazyInitsByProvides.set(p.id, reg);
-    }
+  private addInit(reg: InitFnReg) {
+    if (reg.eager) {
+      this.pendingEagerInits.push(reg);
+    } else {
+      for (let p of reg.provideRs) {
+        assert(
+          !this.pendingLazyInitsByProvides.has(p.id),
+          `Resource: '${p.name}' already has an init fn!`
+        );
+        this.pendingLazyInitsByProvides.set(p.id, reg);
+      }
 
-    if (DBG_INIT) console.log(`new lazy: ${initFnToString(reg)}`);
+      if (DBG_INIT) console.log(`new lazy: ${initFnToString(reg)}`);
+    }
   }
-  _addEagerInit(reg: InitFnReg) {
-    assert(
-      !!reg.eager,
-      `Invalid non-eager reg: ${initFnToString(
-        reg
-      )}; Use tryForceResourceInit to promote a lazy init to an eager one`
-    );
-    this.pendingEagerInits.push(reg);
-  }
-  tryForceResourceInit(r: ComponentDef) {
+  private tryForceResourceInit(r: ComponentDef) {
     const lazy = this.pendingLazyInitsByProvides.get(r.id);
     if (!lazy) return;
 
@@ -1160,7 +1165,8 @@ export class EntityManager {
 
     if (DBG_INIT) console.log(`lazy => eager: ${initFnToString(lazy)}`);
   }
-  async runInitFn(init: InitFnReg) {
+  private async runInitFn(init: InitFnReg) {
+    // TODO(@darzu): verify that it doesn't add any resources not mentioned in provides
     const promise = init.fn(this.ent0);
     this.startedInits.set(init.id, promise);
 
