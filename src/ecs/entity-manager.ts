@@ -1,4 +1,3 @@
-import { createLabelSolver, LabelConstraint } from "./em-labels.js";
 import {
   DBG_ASSERT,
   DBG_INIT,
@@ -195,8 +194,6 @@ export class EntityManager {
   private _entitiesToSystems: Map<number, number[]> = new Map();
   private _systemsToComponents: Map<number, string[]> = new Map();
   private _componentToSystems: Map<string, number[]> = new Map();
-
-  labelSolver = createLabelSolver();
 
   constructor() {
     const ent0 = Object.create(null); // no prototype
@@ -439,7 +436,6 @@ export class EntityManager {
       throw `double defining singleton component ${def.name} on ${e.id}!`;
     (e as any)[def.name] = c;
     this._changedEntities.add(0); // TODO(@darzu): seperate Resources from Entities
-    this.labelSolver.addResource(def);
     this.seenResources.add(def.id);
     return c;
   }
@@ -1082,7 +1078,6 @@ export class EntityManager {
   }
 
   // INIT SYSTEM
-  // TODO(@darzu): [ ] add active vs pending addSystem / eager vs lazy init & component sets
   // TODO(@darzu): [ ] split entity-manager ?
   // TODO(@darzu): [ ] remove em-labels ?
   // TODO(@darzu): [ ] consolidate entity promises into init system?

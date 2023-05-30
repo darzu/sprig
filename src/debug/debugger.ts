@@ -272,9 +272,6 @@ g.cameraFollow.pitchOffset = ${target.cameraFollow.pitchOffset.toFixed(3)};
   cmp: (name: string) => {
     return cmpByName(name);
   },
-  deps: () => {
-    console.log(EM.labelSolver.dbgInfo() + `\n` + EM.dbgEntityPromises());
-  },
   f32sBlameClear: () => {
     assert(PERF_DBG_F32S_BLAME);
     dbgClearBlame("f32s");
