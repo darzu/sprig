@@ -17,7 +17,6 @@ import {
   initRenderDrawSystems,
   initRiggedRenderablesSystems,
 } from "./render/renderer-ecs.js";
-import { initCannonSystems } from "./cannons/cannon.js";
 import { init3DModeler } from "./meshes/modeler.js";
 import {
   initNetMotionRecordingSystem,
@@ -30,9 +29,7 @@ import { initHtmlUI } from "./gui/ui.js";
 import { initDevConsole } from "./debug/console.js";
 import { initNetSystems } from "./net/net.js";
 import { ENABLE_NET } from "./flags.js";
-import { initGravitySystem } from "./motion/gravity.js";
 import { initParameterMotionSystems } from "./motion/parametric-motion.js";
-import { initAnimateToSystems } from "./animation/animate-to.js";
 import { initClothSystems } from "./cloth/cloth.js";
 import { initSpringSystems } from "./cloth/spring.js";
 import { initSkeletalAnimSystems } from "./animation/skeletal.js";
@@ -55,10 +52,6 @@ export function initCommonSystems(em: EntityManager) {
   initHtmlUI(em);
   initDevConsole(em);
 
-  initCannonSystems(em);
-
-  initGravitySystem(em);
-  initAnimateToSystems();
   initParameterMotionSystems(em);
 
   initPhysicsSystems(em);

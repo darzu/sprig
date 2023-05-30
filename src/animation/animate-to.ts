@@ -31,7 +31,7 @@ export const AnimateToDef = EM.defineComponent(
   }
 );
 
-export function initAnimateToSystems() {
+EM.addEagerInit([AnimateToDef], [], [], () => {
   let delta = vec3.create();
 
   EM.addSystem(
@@ -76,4 +76,4 @@ export function initAnimateToSystems() {
       }
     }
   );
-}
+});
