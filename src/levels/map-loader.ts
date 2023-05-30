@@ -89,12 +89,8 @@ async function loadMapsData(): Promise<MapBytesSet> {
   return set as MapBytesSet;
 }
 
-EM.registerInit({
-  requireRs: [],
-  provideRs: [MapBytesSetDef],
-  fn: async () => {
-    // start loading of maps
-    const result = await loadMapsData();
-    EM.addResource(MapBytesSetDef, result);
-  },
+EM.addLazyInit([], [MapBytesSetDef], async () => {
+  // start loading of maps
+  const result = await loadMapsData();
+  EM.addResource(MapBytesSetDef, result);
 });

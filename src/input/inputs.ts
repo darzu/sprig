@@ -39,65 +39,61 @@ export const MouseDragDef = EM.defineComponent("mousedrag", () => ({
   dragLastEnd: vec2.create(),
 }));
 
-EM.registerInit({
-  requireRs: [],
-  provideRs: [InputsDef, MouseDragDef],
-  fn: async () => {
-    let inputsReader: (() => Inputs) | null = null;
+EM.addLazyInit([], [InputsDef, MouseDragDef], async () => {
+  let inputsReader: (() => Inputs) | null = null;
 
-    EM.addResource(InputsDef);
-    // const InputsSys =
-    EM.addSystem(
-      "inputs",
-      Phase.READ_INPUTS,
-      null,
-      [InputsDef, CanvasDef],
-      (_: [], { inputs, htmlCanvas }) => {
-        if (!inputsReader) inputsReader = createInputsReader(htmlCanvas);
-        // TODO(@darzu): handle pause and menus?
-        Object.assign(inputs, inputsReader());
+  EM.addResource(InputsDef);
+  // const InputsSys =
+  EM.addSystem(
+    "inputs",
+    Phase.READ_INPUTS,
+    null,
+    [InputsDef, CanvasDef],
+    (_: [], { inputs, htmlCanvas }) => {
+      if (!inputsReader) inputsReader = createInputsReader(htmlCanvas);
+      // TODO(@darzu): handle pause and menus?
+      Object.assign(inputs, inputsReader());
+    }
+  );
+
+  EM.addResource(MouseDragDef);
+  EM.addSystem(
+    "mouseDrag",
+    Phase.GAME_PLAYERS,
+    null,
+    [InputsDef, MouseDragDef],
+    (_, { inputs, mousedrag }) => {
+      // check drag state
+      mousedrag.isDragEnd = false;
+      if (inputs.ldown && !mousedrag.isDragging) {
+        // drag start
+        mousedrag.isDragging = true;
+        vec2.copy(mousedrag.dragStart, inputs.mousePos);
+        vec2.copy(mousedrag.dragEnd, inputs.mousePos);
+      } else if (!inputs.ldown && mousedrag.isDragging) {
+        // drag stop
+        mousedrag.isDragging = false;
+        mousedrag.isDragEnd = true;
       }
-    );
 
-    EM.addResource(MouseDragDef);
-    EM.addSystem(
-      "mouseDrag",
-      Phase.GAME_PLAYERS,
-      null,
-      [InputsDef, MouseDragDef],
-      (_, { inputs, mousedrag }) => {
-        // check drag state
-        mousedrag.isDragEnd = false;
-        if (inputs.ldown && !mousedrag.isDragging) {
-          // drag start
-          mousedrag.isDragging = true;
-          vec2.copy(mousedrag.dragStart, inputs.mousePos);
-          vec2.copy(mousedrag.dragEnd, inputs.mousePos);
-        } else if (!inputs.ldown && mousedrag.isDragging) {
-          // drag stop
-          mousedrag.isDragging = false;
-          mousedrag.isDragEnd = true;
-        }
-
-        // update min/max
-        if (mousedrag.isDragging) {
-          vec2.copy(mousedrag.dragLastEnd, mousedrag.dragEnd);
-          vec2.copy(mousedrag.dragEnd, inputs.mousePos);
-          vec2.set(
-            Math.min(mousedrag.dragStart[0], mousedrag.dragEnd[0]),
-            Math.min(mousedrag.dragStart[1], mousedrag.dragEnd[1]),
-            mousedrag.dragMin
-          );
-          vec2.set(
-            Math.max(mousedrag.dragStart[0], mousedrag.dragEnd[0]),
-            Math.max(mousedrag.dragStart[1], mousedrag.dragEnd[1]),
-            mousedrag.dragMax
-          );
-          vec2.copy(mousedrag.dragMov, inputs.mouseMov);
-        }
+      // update min/max
+      if (mousedrag.isDragging) {
+        vec2.copy(mousedrag.dragLastEnd, mousedrag.dragEnd);
+        vec2.copy(mousedrag.dragEnd, inputs.mousePos);
+        vec2.set(
+          Math.min(mousedrag.dragStart[0], mousedrag.dragEnd[0]),
+          Math.min(mousedrag.dragStart[1], mousedrag.dragEnd[1]),
+          mousedrag.dragMin
+        );
+        vec2.set(
+          Math.max(mousedrag.dragStart[0], mousedrag.dragEnd[0]),
+          Math.max(mousedrag.dragStart[1], mousedrag.dragEnd[1]),
+          mousedrag.dragMax
+        );
+        vec2.copy(mousedrag.dragMov, inputs.mouseMov);
       }
-    );
-  },
+    }
+  );
 });
 
 function createInputsReader(canvas: Canvas): () => Inputs {

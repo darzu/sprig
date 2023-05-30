@@ -57,10 +57,6 @@ async function loadShaders(): Promise<ShaderSet> {
   return set as ShaderSet;
 }
 
-EM.registerInit({
-  provideRs: [ShadersDef],
-  requireRs: [],
-  fn: async () => {
-    EM.addResource(ShadersDef, await loadShaders());
-  },
+EM.addLazyInit([], [ShadersDef], async () => {
+  EM.addResource(ShadersDef, await loadShaders());
 });

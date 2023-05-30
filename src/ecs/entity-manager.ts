@@ -722,9 +722,9 @@ export class EntityManager {
   }
 
   public addLazyInit<RS extends ComponentDef[]>(
-    requireRs: RS,
+    requireRs: [...RS],
     provideRs: ComponentDef[],
-    callback: InitFn
+    callback: InitFn<RS>
   ): void {
     const id = this._nextInitFnId++;
     const reg: InitFnReg<RS> = {

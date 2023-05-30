@@ -457,13 +457,9 @@ export const AssetsDef = EM.defineComponent("assets", (meshes: GameMeshes) => {
 });
 export type Assets = Component<typeof AssetsDef>;
 
-EM.registerInit({
-  requireRs: [RendererDef],
-  provideRs: [AssetsDef],
-  fn: async ({ renderer }) => {
-    const assets = await loadAssets(renderer.renderer);
-    EM.addResource(AssetsDef, assets);
-  },
+EM.addLazyInit([RendererDef], [AssetsDef], async ({ renderer }) => {
+  const assets = await loadAssets(renderer.renderer);
+  EM.addResource(AssetsDef, assets);
 });
 
 async function loadTxtInternal(relPath: string): Promise<string> {

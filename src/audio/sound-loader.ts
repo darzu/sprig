@@ -51,12 +51,8 @@ async function loadSoundsData(): Promise<SoundSet> {
   return set as SoundSet;
 }
 
-EM.registerInit({
-  provideRs: [SoundSetDef],
-  requireRs: [AudioDef],
-  fn: async (res) => {
-    // start loading of sounds
-    const result = await loadSoundsData();
-    EM.addResource(SoundSetDef, result);
-  },
+EM.addLazyInit([AudioDef], [SoundSetDef], async (res) => {
+  // start loading of sounds
+  const result = await loadSoundsData();
+  EM.addResource(SoundSetDef, result);
 });

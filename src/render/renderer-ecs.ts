@@ -512,10 +512,10 @@ export const RendererDef = EM.defineComponent(
   }
 );
 
-EM.registerInit({
-  requireRs: [CanvasDef, ShadersDef],
-  provideRs: [RendererDef],
-  fn: async ({ htmlCanvas, shaders }) => {
+EM.addLazyInit(
+  [CanvasDef, ShadersDef],
+  [RendererDef],
+  async ({ htmlCanvas, shaders }) => {
     let renderer: Renderer | undefined = undefined;
 
     const adapter = await navigator.gpu?.requestAdapter();
@@ -545,8 +545,8 @@ EM.registerInit({
     renderer = createRenderer(htmlCanvas.canvas, device, context, shaders);
 
     EM.addResource(RendererDef, renderer, []);
-  },
-});
+  }
+);
 
 function displayWebGPUError() {
   const style = `font-size: 48px;
