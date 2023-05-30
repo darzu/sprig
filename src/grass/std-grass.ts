@@ -263,6 +263,6 @@ export function registerUploadGrassData() {
     }
   );
 
-  // em.addConstraint(["updateGrassRenderData", "after", "renderList"]);
-  // em.addConstraint(["updateGrassRenderData", "before", "stepRenderer"]);
+  // EM.addConstraint(["updateGrassRenderData", "after", "renderList"]);
+  // EM.addConstraint(["updateGrassRenderData", "before", "stepRenderer"]);
 }

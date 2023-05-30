@@ -1,9 +1,4 @@
-import {
-  Component,
-  EM,
-  EntityManager,
-  EntityW,
-} from "../ecs/entity-manager.js";
+import { Component, EM, EntityW } from "../ecs/entity-manager.js";
 import { vec2, vec3, quat, V, tV } from "../matrix/sprig-matrix.js";
 import {
   Frame,
@@ -108,24 +103,23 @@ function sailMesh(sail: Component<typeof SailDef>): Mesh {
 }
 
 export function createSail(
-  em: EntityManager,
   width: number,
   height: number,
   scale: number
 ): EntityW<
   [typeof SailDef, typeof PositionDef, typeof RotationDef, typeof ScaleDef]
 > {
-  const ent = em.new();
-  em.ensureComponentOn(ent, SailDef);
+  const ent = EM.new();
+  EM.ensureComponentOn(ent, SailDef);
   ent.sail.width = width;
   ent.sail.height = height;
   const mesh = sailMesh(ent.sail);
-  em.ensureComponentOn(ent, RenderableConstructDef, mesh);
-  em.ensureComponentOn(ent, ScaleDef, V(scale, scale, scale));
-  em.ensureComponentOn(ent, PositionDef);
-  em.ensureComponentOn(ent, RotationDef);
-  // em.ensureComponentOn(ent, ColorDef, V(0.9, 0.9, 0.9));
-  em.ensureComponentOn(ent, ColorDef, ENDESGA16.red);
+  EM.ensureComponentOn(ent, RenderableConstructDef, mesh);
+  EM.ensureComponentOn(ent, ScaleDef, V(scale, scale, scale));
+  EM.ensureComponentOn(ent, PositionDef);
+  EM.ensureComponentOn(ent, RotationDef);
+  // EM.ensureComponentOn(ent, ColorDef, V(0.9, 0.9, 0.9));
+  EM.ensureComponentOn(ent, ColorDef, ENDESGA16.red);
   return ent;
 }
 
@@ -203,28 +197,28 @@ export const MastDef = EM.defineComponent("mast", () => ({
   force: 0.0,
 }));
 
-export async function createMast(em: EntityManager) {
-  const res = await em.whenResources(AssetsDef, MeDef);
-  let ent = em.new();
-  em.ensureComponentOn(ent, MastDef);
-  em.ensureComponentOn(ent, RenderableConstructDef, res.assets.mast.proto);
-  em.ensureComponentOn(ent, ColliderDef, {
+export async function createMast() {
+  const res = await EM.whenResources(AssetsDef, MeDef);
+  let ent = EM.new();
+  EM.ensureComponentOn(ent, MastDef);
+  EM.ensureComponentOn(ent, RenderableConstructDef, res.assets.mast.proto);
+  EM.ensureComponentOn(ent, ColliderDef, {
     shape: "AABB",
     solid: false,
     aabb: res.assets.mast.aabb,
   });
-  em.ensureComponentOn(ent, PositionDef);
-  em.ensureComponentOn(ent, RotationDef);
-  // em.ensureComponentOn(ent, ColorDef, V(0.8, 0.7, 0.3));
-  em.ensureComponentOn(ent, ColorDef, ENDESGA16.darkBrown);
-  em.ensureComponentOn(ent, AuthorityDef, res.me.pid);
+  EM.ensureComponentOn(ent, PositionDef);
+  EM.ensureComponentOn(ent, RotationDef);
+  // EM.ensureComponentOn(ent, ColorDef, V(0.8, 0.7, 0.3));
+  EM.ensureComponentOn(ent, ColorDef, ENDESGA16.darkBrown);
+  EM.ensureComponentOn(ent, AuthorityDef, res.me.pid);
 
   // EM.set(ent, YawPitchDef);
 
-  // const interactBox = em.new();
-  // em.set(interactBox, PhysicsParentDef, ent.id);
-  // em.set(interactBox, PositionDef, V(0, 0, 0));
-  // em.set(interactBox, ColliderDef, {
+  // const interactBox = EM.new();
+  // EM.set(interactBox, PhysicsParentDef, ent.id);
+  // EM.set(interactBox, PositionDef, V(0, 0, 0));
+  // EM.set(interactBox, ColliderDef, {
   //   shape: "AABB",
   //   solid: false,
   //   aabb: {
@@ -255,8 +249,8 @@ export async function createMast(em: EntityManager) {
   // ent.turret.minYaw = -Math.PI / 2;
 
   const sailWidth = 14;
-  const sail = createSail(em, sailWidth, 8, 2);
-  em.ensureComponentOn(sail, PhysicsParentDef, ent.id);
+  const sail = createSail(sailWidth, 8, 2);
+  EM.ensureComponentOn(sail, PhysicsParentDef, ent.id);
   sail.position[0] = -sailWidth;
   sail.position[1] = 38;
   sail.position[2] = 0.51;

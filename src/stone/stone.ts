@@ -814,7 +814,6 @@ EM.addSystem(
       );
 
       const b = fireBullet(
-        EM,
         2,
         tower.stoneTower.cannon()!.world.position,
         worldRot,

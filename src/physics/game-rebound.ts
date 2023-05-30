@@ -1,7 +1,7 @@
 import { CameraDef } from "../camera/camera.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { DeletedDef } from "../ecs/delete.js";
-import { EntityManager } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { InputsDef } from "../input/inputs.js";
 import { jitter } from "../utils/math.js";
@@ -31,10 +31,10 @@ import { Phase } from "../ecs/sys-phase.js";
 
 // TODO(@darzu): BROKEN. camera is in a wonky place?
 
-export async function initReboundSandbox(em: EntityManager, hosting: boolean) {
+export async function initReboundSandbox(hosting: boolean) {
   let tableId = -1;
 
-  const res = await em.whenResources(
+  const res = await EM.whenResources(
     AssetsDef,
     GlobalCursor3dDef,
     RendererDef,
@@ -63,22 +63,22 @@ export async function initReboundSandbox(em: EntityManager, hosting: boolean) {
   assert(RenderableDef.isOn(c));
   c.renderable.enabled = false;
 
-  const p = em.new();
-  em.ensureComponentOn(p, RenderableConstructDef, res.assets.plane.proto);
-  em.ensureComponentOn(p, ColorDef, V(0.2, 0.3, 0.2));
-  em.ensureComponentOn(p, PositionDef, V(0, -10, 0));
-  em.ensureComponentOn(p, ColliderDef, {
+  const p = EM.new();
+  EM.ensureComponentOn(p, RenderableConstructDef, res.assets.plane.proto);
+  EM.ensureComponentOn(p, ColorDef, V(0.2, 0.3, 0.2));
+  EM.ensureComponentOn(p, PositionDef, V(0, -10, 0));
+  EM.ensureComponentOn(p, ColliderDef, {
     shape: "AABB",
     solid: false,
     aabb: res.assets.plane.aabb,
   });
 
-  const t = em.new();
-  em.ensureComponentOn(t, RenderableConstructDef, res.assets.gridPlane.proto);
-  em.ensureComponentOn(t, ColorDef, V(0.2, 0.2, 0.9));
-  em.ensureComponentOn(t, PositionDef, V(0, 0, 0));
-  em.ensureComponentOn(t, AngularVelocityDef, V(0, 0.0002, 0.0002));
-  em.ensureComponentOn(t, ColliderDef, {
+  const t = EM.new();
+  EM.ensureComponentOn(t, RenderableConstructDef, res.assets.gridPlane.proto);
+  EM.ensureComponentOn(t, ColorDef, V(0.2, 0.2, 0.9));
+  EM.ensureComponentOn(t, PositionDef, V(0, 0, 0));
+  EM.ensureComponentOn(t, AngularVelocityDef, V(0, 0.0002, 0.0002));
+  EM.ensureComponentOn(t, ColliderDef, {
     shape: "AABB",
     solid: true,
     aabb: res.assets.gridPlane.aabb,
@@ -87,30 +87,30 @@ export async function initReboundSandbox(em: EntityManager, hosting: boolean) {
 
   res.text.lowerText = `spawner (p) stack (l) clear (backspace)`;
 
-  const cubeDef = em.defineComponent("cube", () => true);
+  const cubeDef = EM.defineComponent("cube", () => true);
 
   function spawn(m: GameMesh, pos: vec3) {
-    const e = em.new();
-    em.ensureComponentOn(e, RenderableConstructDef, m.proto);
+    const e = EM.new();
+    EM.ensureComponentOn(e, RenderableConstructDef, m.proto);
     const [r, g, b] = [jitter(0.1) + 0.2, jitter(0.1) + 0.2, jitter(0.1) + 0.2];
-    em.ensureComponentOn(e, ColorDef, V(r, g, b));
-    em.ensureComponentOn(e, PositionDef, pos);
-    em.ensureComponentOn(e, ScaleDef, V(0.5, 0.5, 0.5));
-    // em.ensureComponentOn(b, RotationDef);
-    // em.ensureComponentOn(b, AngularVelocityDef, [0, 0.001, 0.001]);
-    em.ensureComponentOn(e, LinearVelocityDef, V(0, -0.02, 0));
-    em.ensureComponentOn(e, PhysicsParentDef, tableId);
-    em.ensureComponentOn(e, ColliderDef, {
+    EM.ensureComponentOn(e, ColorDef, V(r, g, b));
+    EM.ensureComponentOn(e, PositionDef, pos);
+    EM.ensureComponentOn(e, ScaleDef, V(0.5, 0.5, 0.5));
+    // EM.ensureComponentOn(b, RotationDef);
+    // EM.ensureComponentOn(b, AngularVelocityDef, [0, 0.001, 0.001]);
+    EM.ensureComponentOn(e, LinearVelocityDef, V(0, -0.02, 0));
+    EM.ensureComponentOn(e, PhysicsParentDef, tableId);
+    EM.ensureComponentOn(e, ColliderDef, {
       shape: "AABB",
       solid: true,
       aabb: m.aabb,
     });
-    em.ensureComponentOn(e, cubeDef);
+    EM.ensureComponentOn(e, cubeDef);
   }
 
   let nextSpawnAccu = 0;
   let paused = true;
-  em.addSystem(
+  EM.addSystem(
     "sandboxSpawnBoxes",
     Phase.GAME_WORLD,
     null,
@@ -140,8 +140,8 @@ export async function initReboundSandbox(em: EntityManager, hosting: boolean) {
       }
 
       if (res.inputs.keyClicks["backspace"]) {
-        const es = em.filterEntities([cubeDef]);
-        for (let e of es) em.ensureComponentOn(e, DeletedDef);
+        const es = EM.filterEntities([cubeDef]);
+        for (let e of es) EM.ensureComponentOn(e, DeletedDef);
       }
     }
   );

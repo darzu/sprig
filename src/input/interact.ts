@@ -1,4 +1,4 @@
-import { Component, EM, Entity, EntityManager } from "../ecs/entity-manager.js";
+import { Component, EM, Entity } from "../ecs/entity-manager.js";
 import { LocalHsPlayerDef, HsPlayerDef } from "../hyperspace/hs-player.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { AuthorityDef, MeDef } from "../net/components.js";

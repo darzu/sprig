@@ -1,5 +1,5 @@
 import { defineNetEntityHelper } from "../ecs/em-helpers.js";
-import { EM, EntityManager } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/entity-manager.js";
 import { vec3, V } from "../matrix/sprig-matrix.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { PositionDef, ScaleDef } from "../physics/transform.js";
@@ -17,7 +17,7 @@ export const STAR1_COLOR = V(0.8, 0.3, 0.3);
 export const STAR2_COLOR = V(0.3, 0.8, 0.6);
 
 export const { DarkStarPropsDef, DarkStarLocalDef, createDarkStarNow } =
-  defineNetEntityHelper(EM, {
+  defineNetEntityHelper({
     name: "darkStar",
     defaultProps: (
       pos?: vec3,
@@ -42,26 +42,25 @@ export const { DarkStarPropsDef, DarkStarLocalDef, createDarkStarNow } =
     dynamicComponents: [PositionDef],
     buildResources: [AssetsDef],
     build: (star, res) => {
-      const em: EntityManager = EM;
       vec3.copy(star.position, star.darkStarProps.pos);
-      em.ensureComponentOn(star, RenderableConstructDef, res.assets.ball.proto);
-      em.ensureComponentOn(star, ScaleDef, V(100, 100, 100));
-      em.ensureComponentOn(star, ColorDef, star.darkStarProps.color);
-      em.ensureComponentOn(star, PointLightDef);
+      EM.ensureComponentOn(star, RenderableConstructDef, res.assets.ball.proto);
+      EM.ensureComponentOn(star, ScaleDef, V(100, 100, 100));
+      EM.ensureComponentOn(star, ColorDef, star.darkStarProps.color);
+      EM.ensureComponentOn(star, PointLightDef);
       star.pointLight.constant = 1.0;
       vec3.copy(star.pointLight.ambient, star.color);
       vec3.scale(star.pointLight.ambient, 0.2, star.pointLight.ambient);
       vec3.copy(star.pointLight.diffuse, star.color);
-      em.whenEntityHas(star, RenderDataStdDef).then((star1) => {
+      EM.whenEntityHas(star, RenderDataStdDef).then((star1) => {
         star1.renderDataStd.flags |= FLAG_UNLIT;
       });
       return star;
     },
   });
 
-export function registerDarkstarSystems(em: EntityManager) {
+export function registerDarkstarSystems() {
   // TODO: this star will escape! must bring it closer to the orbit point sometimes
-  em.addSystem(
+  EM.addSystem(
     "darkStarOrbit",
     Phase.GAME_WORLD,
     [DarkStarPropsDef, PositionDef, AuthorityDef],

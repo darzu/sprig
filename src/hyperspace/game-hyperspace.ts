@@ -1,5 +1,5 @@
 import { CameraDef } from "../camera/camera.js";
-import { EntityManager, EntityW } from "../ecs/entity-manager.js";
+import { EM, EntityW } from "../ecs/entity-manager.js";
 import { PositionDef, RotationDef, ScaleDef } from "../physics/transform.js";
 import { RendererDef, RenderableConstructDef } from "../render/renderer-ecs.js";
 import { blurPipelines } from "../render/pipelines/std-blur.js";
@@ -80,29 +80,29 @@ function spawnRandomDarkStar(
   return createDarkStarNow(res, starPosition, color, V(0, 0, 0), orbitalAxis);
 }
 
-export async function initHyperspaceGame(em: EntityManager) {
-  em.addResource(HSGameStateDef);
+export async function initHyperspaceGame() {
+  EM.addResource(HSGameStateDef);
 
-  registerGameStateSystems(em);
-  registerEnemyShipSystems(em);
-  registerHsPlayerSystems(em);
+  registerGameStateSystems();
+  registerEnemyShipSystems();
+  registerHsPlayerSystems();
   registerUVShipSystems();
   registerOceanUVFns();
-  registerShipSystems(em);
-  registerDarkstarSystems(em);
-  registerOrrerySystems(em);
-  registerUvSpawnSystems(em);
-  registerHypersailSystems(em);
+  registerShipSystems();
+  registerDarkstarSystems();
+  registerOrrerySystems();
+  registerUvSpawnSystems();
+  registerHypersailSystems();
   registerRibSailSystems();
 
-  em.whenResources(OceanDef).then(async () => {
+  EM.whenResources(OceanDef).then(async () => {
     // await awaitTimeout(1000); // TODO(@darzu): what is happening
-    createHsPlayer(em);
+    createHsPlayer();
   });
 
-  em.addSystem("debugLoop", Phase.GAME_WORLD, [], [], () => {
+  EM.addSystem("debugLoop", Phase.GAME_WORLD, [], [], () => {
     // console.log("debugLoop");
-    // em.whyIsntSystemBeingCalled("oceanGPUWork");
+    // EM.whyIsntSystemBeingCalled("oceanGPUWork");
   });
 
   // const grid = [[...shadowDepthTextures]];
@@ -117,7 +117,7 @@ export async function initHyperspaceGame(em: EntityManager) {
 
   let gridCompose = createGridComposePipelines(grid);
 
-  em.addSystem(
+  EM.addSystem(
     "hyperspaceGame",
     Phase.GAME_WORLD,
     null,
@@ -137,12 +137,12 @@ export async function initHyperspaceGame(em: EntityManager) {
     }
   );
 
-  const res = await em.whenResources(AssetsDef, RendererDef, CameraDef);
+  const res = await EM.whenResources(AssetsDef, RendererDef, CameraDef);
 
   res.camera.fov = Math.PI * 0.5;
 
-  // const ghost = createGhost(em);
-  // em.ensureComponentOn(ghost, RenderableConstructDef, res.assets.cube.proto);
+  // const ghost = createGhost();
+  // EM.ensureComponentOn(ghost, RenderableConstructDef, res.assets.cube.proto);
   // ghost.controllable.speed *= 3;
   // ghost.controllable.sprintMul *= 3;
 
@@ -169,21 +169,21 @@ export async function initHyperspaceGame(em: EntityManager) {
   // TODO(@darzu): dbg
   //await asyncTimeout(2000);
 
-  const { me, ocean } = await em.whenResources(OceanDef, MeDef);
+  const { me, ocean } = await EM.whenResources(OceanDef, MeDef);
 
   if (me.host) {
     // experimental ship:
-    const eShip = em.new();
-    em.ensureComponentOn(
+    const eShip = EM.new();
+    EM.ensureComponentOn(
       eShip,
       RenderableConstructDef,
       res.assets.ship_fangs.proto
     );
-    em.ensureComponentOn(eShip, PositionDef);
-    em.ensureComponentOn(eShip, UVPosDef, vec2.clone([0.2, 0.1]));
+    EM.ensureComponentOn(eShip, PositionDef);
+    EM.ensureComponentOn(eShip, UVPosDef, vec2.clone([0.2, 0.1]));
 
     const ship = createHsShip(vec2.clone([0.1, 0.1]));
-    const ship2 = await em.whenEntityHas(ship, UVPosDef);
+    const ship2 = await EM.whenEntityHas(ship, UVPosDef);
 
     const NUM_ENEMY = 40;
 

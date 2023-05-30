@@ -1,4 +1,4 @@
-import { EntityManager } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/entity-manager.js";
 import {
   FromNetworkEvent,
   ToNetworkEvent,
@@ -17,7 +17,7 @@ import {
 } from "./components.js";
 import { Phase } from "../ecs/sys-phase.js";
 
-export function initNetStateEventSystems(em: EntityManager) {
+export function initNetStateEventSystems() {
   let _peerIDs: Record<string, number> = {};
   function handleNetworkEvents(
     [],
@@ -28,21 +28,21 @@ export function initNetStateEventSystems(em: EntityManager) {
       switch (event.type) {
         case NetworkEventType.Ready:
           console.log(`localhost:4321/?server=${event.address}&user=2`);
-          em.addResource(NetworkReadyDef);
+          EM.addResource(NetworkReadyDef);
           break;
         case NetworkEventType.NewConnection: {
           console.log("new connection");
-          let { id } = em.new();
-          let peer = em.addComponent(id, PeerDef);
+          let { id } = EM.new();
+          let peer = EM.addComponent(id, PeerDef);
           peer.address = event.address;
-          em.addComponent(id, InboxDef);
-          em.addComponent(id, OutboxDef);
+          EM.addComponent(id, InboxDef);
+          EM.addComponent(id, OutboxDef);
           _peerIDs[peer.address] = id;
           break;
         }
         case NetworkEventType.MessageRecv: {
           let id = _peerIDs[event.from];
-          let { inbox } = em.findEntity(id, [InboxDef])!;
+          let { inbox } = EM.findEntity(id, [InboxDef])!;
           let message = event.message;
           if (!inbox.has(message.type)) inbox.set(message.type, []);
           inbox.get(message.type)!.push(message.deserializer);
@@ -50,7 +50,7 @@ export function initNetStateEventSystems(em: EntityManager) {
       }
     }
   }
-  em.addSystem(
+  EM.addSystem(
     "handleNetworkEvents",
     Phase.NETWORK,
     null,
@@ -59,7 +59,7 @@ export function initNetStateEventSystems(em: EntityManager) {
   );
 }
 
-export function initNetSendOutboxes(em: EntityManager) {
+export function initNetSendOutboxes() {
   function sendOutboxes(
     peers: readonly { peer: Peer; outbox: Outbox }[],
     { eventsToNetwork }: { eventsToNetwork: ToNetworkEvent[] }
@@ -78,7 +78,7 @@ export function initNetSendOutboxes(em: EntityManager) {
       }
     }
   }
-  em.addSystem(
+  EM.addSystem(
     "sendOutboxes",
     Phase.NETWORK,
     [OutboxDef, PeerDef],

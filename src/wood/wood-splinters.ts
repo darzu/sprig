@@ -1,7 +1,7 @@
 // TODO(@darzu): hacky file split
 
 import { ColorDef } from "../color/color-ecs.js";
-import { EntityW, EntityManager, EM } from "../ecs/entity-manager.js";
+import { EntityW, EM } from "../ecs/entity-manager.js";
 import { AssetsDef, BLACK } from "../meshes/assets.js";
 import { GravityDef } from "../motion/gravity.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
@@ -55,8 +55,6 @@ function createSplinterPool(
   length: number,
   numInPool: number
 ) {
-  const em: EntityManager = EM;
-
   const pool: SplinterPart[] = [];
   let nextIdx = 0;
 
@@ -64,7 +62,7 @@ function createSplinterPool(
     if (nextIdx >= pool.length) nextIdx = 0;
     return pool[nextIdx++];
   }
-  // const { assets } = await em.whenResources(AssetsDef);
+  // const { assets } = await EM.whenResources(AssetsDef);
 
   for (let i = 0; i < numInPool; i++) {
     // create flying splinter
@@ -80,8 +78,8 @@ function createSplinterPool(
       depth
     );
     const splinterMesh = normalizeMesh(_splinterMesh);
-    const splinter = em.new();
-    em.ensureComponentOn(
+    const splinter = EM.new();
+    EM.ensureComponentOn(
       splinter,
       RenderableConstructDef,
       splinterMesh,
@@ -91,13 +89,13 @@ function createSplinterPool(
       undefined,
       true // hidden
     );
-    em.ensureComponentOn(splinter, ColorDef);
-    em.ensureComponentOn(splinter, PositionDef);
-    em.ensureComponentOn(splinter, RotationDef);
-    em.ensureComponentOn(splinter, AngularVelocityDef);
-    em.ensureComponentOn(splinter, LinearVelocityDef);
-    em.ensureComponentOn(splinter, GravityDef);
-    em.ensureComponentOn(splinter, SplinterParticleDef);
+    EM.ensureComponentOn(splinter, ColorDef);
+    EM.ensureComponentOn(splinter, PositionDef);
+    EM.ensureComponentOn(splinter, RotationDef);
+    EM.ensureComponentOn(splinter, AngularVelocityDef);
+    EM.ensureComponentOn(splinter, LinearVelocityDef);
+    EM.ensureComponentOn(splinter, GravityDef);
+    EM.ensureComponentOn(splinter, SplinterParticleDef);
     pool.push(splinter);
   }
 

@@ -1,4 +1,4 @@
-import { EntityManager } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/entity-manager.js";
 import { PredictDef } from "./components.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { tempVec3, tempQuat } from "../matrix/temp-pool.js";
@@ -6,8 +6,8 @@ import { PositionDef, RotationDef } from "../physics/transform.js";
 import { AngularVelocityDef, LinearVelocityDef } from "../motion/velocity.js";
 import { Phase } from "../ecs/sys-phase.js";
 
-export function initNetPredictSystems(em: EntityManager) {
-  em.addSystem(
+export function initNetPredictSystems() {
+  EM.addSystem(
     "netPredict",
     Phase.NETWORK,
     [PredictDef, PositionDef, LinearVelocityDef],

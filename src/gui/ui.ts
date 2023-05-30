@@ -1,4 +1,4 @@
-import { EM, EntityManager } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/entity-manager.js";
 import { Phase } from "../ecs/sys-phase.js";
 
 /*
@@ -43,15 +43,15 @@ export const TextDef = EM.defineComponent(
   }
 );
 
-export function initHtmlUI(em: EntityManager) {
+export function initHtmlUI() {
   const upperDiv = document.getElementById("title-div") as HTMLDivElement;
   const debugDiv = document.getElementById("debug-div") as HTMLDivElement;
   const lowerDiv = document.getElementById("lower-div") as HTMLDivElement;
   const helpDiv = document.getElementById("help-div") as HTMLDivElement;
 
-  em.addResource(TextDef, upperDiv, debugDiv, lowerDiv, helpDiv);
+  EM.addResource(TextDef, upperDiv, debugDiv, lowerDiv, helpDiv);
 
-  em.addSystem("uiText", Phase.RENDER_DRAW, null, [TextDef], (_, res) => {
+  EM.addSystem("uiText", Phase.RENDER_DRAW, null, [TextDef], (_, res) => {
     // PERF NOTE: using ".innerText =" creates a new DOM element each frame, whereas
     //    using ".firstChild.nodeValue =" reuses the DOM element. Unfortunately this
     //    means we'll need to do more work to get line breaks.

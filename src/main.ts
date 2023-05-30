@@ -88,19 +88,19 @@ async function startGame(localPeerName: string, host: string | null) {
     EM.addResource(JoinDef, host!);
   }
 
-  initCommonSystems(EM);
+  initCommonSystems();
 
-  addEventComponents(EM);
+  addEventComponents();
 
-  if (GAME === "gjk") initGJKSandbox(EM, hosting);
-  else if (GAME === "rebound") initReboundSandbox(EM, hosting);
-  else if (GAME === "cloth") initClothSandbox(EM, hosting);
-  else if (GAME === "hyperspace") initHyperspaceGame(EM);
-  else if (GAME === "cube") initCubeGame(EM);
-  else if (GAME === "shipyard") initShipyardGame(EM, hosting);
-  else if (GAME === "font") initFontEditor(EM);
-  else if (GAME === "grass") initGrassGame(EM, hosting);
-  else if (GAME === "ld53") initLD53(EM, hosting);
+  if (GAME === "gjk") initGJKSandbox(hosting);
+  else if (GAME === "rebound") initReboundSandbox(hosting);
+  else if (GAME === "cloth") initClothSandbox(hosting);
+  else if (GAME === "hyperspace") initHyperspaceGame();
+  else if (GAME === "cube") initCubeGame();
+  else if (GAME === "shipyard") initShipyardGame(hosting);
+  else if (GAME === "font") initFontEditor();
+  else if (GAME === "grass") initGrassGame(hosting);
+  else if (GAME === "ld53") initLD53(hosting);
   else if (GAME === "shading") initShadingGame();
   else if (GAME === "modeling") initModelingGame();
   else never(GAME, "TODO game");
@@ -120,7 +120,7 @@ async function startGame(localPeerName: string, host: string | null) {
         break;
       }
       accumulator -= TIMESTEP;
-      tick(EM, TIMESTEP);
+      tick(TIMESTEP);
       resetTempMatrixBuffer();
       callFixedTimestepSystems();
       loops++;

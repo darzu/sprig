@@ -36,7 +36,7 @@ const BOOM_LENGTH = 20;
 // const BOOM_HEIGHT = MAST_LENGTH - BOOM_LENGTH - 2;
 
 export const { RibSailPropsDef, RibSailLocalDef, createRibSailNow } =
-  defineNetEntityHelper(EM, {
+  defineNetEntityHelper({
     name: "ribSail",
     defaultProps: () => ({
       // pitch: Math.PI / 2,

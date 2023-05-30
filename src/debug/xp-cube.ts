@@ -1,5 +1,5 @@
 import { CameraDef } from "../camera/camera.js";
-import { EntityManager } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { max } from "../utils/math.js";
 import { ColliderDef } from "../physics/collider.js";
@@ -27,8 +27,8 @@ import { GlobalCursor3dDef } from "../gui/cursor.js";
 import { createGhost } from "./ghost.js";
 import { PointLightDef } from "../render/lights.js";
 
-export async function initCubeGame(em: EntityManager) {
-  const res = await em.whenResources(
+export async function initCubeGame() {
+  const res = await EM.whenResources(
     AssetsDef,
     // GlobalCursor3dDef,
     RendererDef,
@@ -52,7 +52,7 @@ export async function initCubeGame(em: EntityManager) {
 
   // TODO(@darzu): this shouldn't be necessary
   const m2 = cloneMesh(res.assets.cube.mesh);
-  em.ensureComponentOn(e, RenderableConstructDef, m2);
+  EM.ensureComponentOn(e, RenderableConstructDef, m2);
 
   {
     // auto-gen; use dbg.saveCamera() to update
@@ -63,19 +63,19 @@ export async function initCubeGame(em: EntityManager) {
     e.cameraFollow.pitchOffset = -0.267;
   }
 
-  const box = em.new();
+  const box = EM.new();
   const boxM = cloneMesh(res.assets.cube.mesh);
   const sIdMax = max(boxM.surfaceIds);
   boxM.colors = boxM.surfaceIds.map((_, i) => uintToVec3unorm(i, sIdMax));
   // boxM.colors = boxM.surfaceIds.map((_, i) => [0.1, i / 12, 0.1]);
   // console.dir(boxM.colors);
-  em.ensureComponentOn(box, RenderableConstructDef, boxM);
-  // em.ensureComponentOn(box, ColorDef, [0.1, 0.4, 0.1]);
-  em.ensureComponentOn(box, PositionDef, V(0, 0, 3));
-  em.ensureComponentOn(box, RotationDef);
-  em.ensureComponentOn(box, AngularVelocityDef, V(0, 0.001, 0.001));
-  em.ensureComponentOn(box, WorldFrameDef);
-  em.ensureComponentOn(box, ColliderDef, {
+  EM.ensureComponentOn(box, RenderableConstructDef, boxM);
+  // EM.ensureComponentOn(box, ColorDef, [0.1, 0.4, 0.1]);
+  EM.ensureComponentOn(box, PositionDef, V(0, 0, 3));
+  EM.ensureComponentOn(box, RotationDef);
+  EM.ensureComponentOn(box, AngularVelocityDef, V(0, 0.001, 0.001));
+  EM.ensureComponentOn(box, WorldFrameDef);
+  EM.ensureComponentOn(box, ColliderDef, {
     shape: "AABB",
     solid: false,
     aabb: res.assets.cube.aabb,

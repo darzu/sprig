@@ -3,7 +3,7 @@
 // player controller component and system
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { InputsDef } from "../input/inputs.js";
-import { EM, Entity, EntityManager, EntityW } from "../ecs/entity-manager.js";
+import { EM, Entity, EntityW } from "../ecs/entity-manager.js";
 import { TimeDef } from "../time/time.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { FinishedDef } from "../ecs/em-helpers.js";
@@ -51,11 +51,11 @@ import { Phase } from "../ecs/sys-phase.js";
 // TODO(@darzu): it'd be great if these could hook into some sort of
 //    dev mode you could toggle at runtime.
 
-export function createHsPlayer(em: EntityManager) {
+export function createHsPlayer() {
   // console.log("create player!");
-  const e = em.new();
-  em.ensureComponentOn(e, PlayerHsPropsDef, V(0, 100, 0));
-  em.addResource(LocalHsPlayerDef, e.id);
+  const e = EM.new();
+  EM.ensureComponentOn(e, PlayerHsPropsDef, V(0, 100, 0));
+  EM.addResource(LocalHsPlayerDef, e.id);
   return e;
 }
 
@@ -91,7 +91,6 @@ export const LocalHsPlayerDef = EM.defineComponent(
 );
 
 export const PlayerHsPropsDef = defineSerializableComponent(
-  EM,
   "hsPlayerProps",
   (loc?: vec3) => {
     return {
@@ -106,8 +105,8 @@ export const PlayerHsPropsDef = defineSerializableComponent(
   }
 );
 
-export function registerHsPlayerSystems(em: EntityManager) {
-  em.addSystem(
+export function registerHsPlayerSystems() {
+  EM.addSystem(
     "buildHsPlayers",
     Phase.PRE_GAME_WORLD,
     [PlayerHsPropsDef],
@@ -117,48 +116,48 @@ export function registerHsPlayerSystems(em: EntityManager) {
         if (FinishedDef.isOn(e)) continue;
         const props = e.hsPlayerProps;
         if (!PositionDef.isOn(e))
-          em.addComponent(e.id, PositionDef, props.location);
+          EM.addComponent(e.id, PositionDef, props.location);
         if (!RotationDef.isOn(e))
-          em.addComponent(
+          EM.addComponent(
             e.id,
             RotationDef,
             quat.rotateY(quat.IDENTITY, Math.PI, quat.create())
           );
         if (!LinearVelocityDef.isOn(e))
-          em.addComponent(e.id, LinearVelocityDef);
+          EM.addComponent(e.id, LinearVelocityDef);
         // console.log("making player!");
-        if (!ColorDef.isOn(e)) em.addComponent(e.id, ColorDef, V(0, 0.2, 0));
+        if (!ColorDef.isOn(e)) EM.addComponent(e.id, ColorDef, V(0, 0.2, 0));
         if (!MotionSmoothingDef.isOn(e))
-          em.addComponent(e.id, MotionSmoothingDef);
+          EM.addComponent(e.id, MotionSmoothingDef);
         if (!RenderableConstructDef.isOn(e)) {
           // console.log("creating rend");
           const m = cloneMesh(res.assets.cube.mesh);
           scaleMesh3(m, V(0.75, 0.75, 0.4));
-          em.addComponent(e.id, RenderableConstructDef, m);
+          EM.addComponent(e.id, RenderableConstructDef, m);
         }
-        em.ensureComponentOn(e, AuthorityDef, res.me.pid);
+        EM.ensureComponentOn(e, AuthorityDef, res.me.pid);
         if (!HsPlayerDef.isOn(e)) {
-          em.ensureComponentOn(e, HsPlayerDef);
+          EM.ensureComponentOn(e, HsPlayerDef);
 
           // create legs
           function makeLeg(x: number): Entity {
-            const l = em.new();
-            em.ensureComponentOn(l, PositionDef, V(x, -1.5, 0));
-            em.ensureComponentOn(
+            const l = EM.new();
+            EM.ensureComponentOn(l, PositionDef, V(x, -1.5, 0));
+            EM.ensureComponentOn(
               l,
               RenderableConstructDef,
               res.assets.cube.proto
             );
-            em.ensureComponentOn(l, ScaleDef, V(0.15, 0.75, 0.15));
-            em.ensureComponentOn(l, ColorDef, V(0.05, 0.05, 0.05));
-            em.ensureComponentOn(l, PhysicsParentDef, e.id);
+            EM.ensureComponentOn(l, ScaleDef, V(0.15, 0.75, 0.15));
+            EM.ensureComponentOn(l, ColorDef, V(0.05, 0.05, 0.05));
+            EM.ensureComponentOn(l, PhysicsParentDef, e.id);
             return l;
           }
           e.hsPlayer.leftLegId = makeLeg(-0.5).id;
           e.hsPlayer.rightLegId = makeLeg(0.5).id;
         }
         if (!ColliderDef.isOn(e)) {
-          const collider = em.addComponent(e.id, ColliderDef);
+          const collider = EM.addComponent(e.id, ColliderDef);
           collider.shape = "AABB";
           // collider.solid = false;
           collider.solid = true;
@@ -167,7 +166,7 @@ export function registerHsPlayerSystems(em: EntityManager) {
           (collider as AABBCollider).aabb = playerAABB;
         }
         if (!SyncDef.isOn(e)) {
-          em.ensureComponentOn(e, SyncDef, [
+          EM.ensureComponentOn(e, SyncDef, [
             PositionDef.id,
             RotationDef.id,
             // TODO(@darzu): maybe sync this via events instead
@@ -175,18 +174,18 @@ export function registerHsPlayerSystems(em: EntityManager) {
           ]);
           e.sync.fullComponents = [PlayerHsPropsDef.id];
         }
-        em.ensureComponent(e.id, PhysicsParentDef);
+        EM.ensureComponent(e.id, PhysicsParentDef);
 
-        em.ensureComponentOn(e, ControllableDef);
-        em.ensureComponentOn(e, CameraFollowDef, 1);
+        EM.ensureComponentOn(e, ControllableDef);
+        EM.ensureComponentOn(e, CameraFollowDef, 1);
         setCameraFollowPosition(e, "thirdPersonOverShoulder");
 
-        em.addComponent(e.id, FinishedDef);
+        EM.addComponent(e.id, FinishedDef);
       }
     }
   );
 
-  em.addSystem(
+  EM.addSystem(
     "hsPlayerFacingDir",
     Phase.GAME_PLAYERS,
     [HsPlayerDef, WorldFrameDef],
@@ -207,7 +206,7 @@ export function registerHsPlayerSystems(em: EntityManager) {
     }
   );
 
-  em.addSystem(
+  EM.addSystem(
     "stepHsPlayers",
     Phase.GAME_PLAYERS,
     [
@@ -222,7 +221,7 @@ export function registerHsPlayerSystems(em: EntityManager) {
     ],
     [TimeDef, CameraDef, InputsDef, MeDef, PhysicsResultsDef],
     (players, res) => {
-      const cheat = !!em.getResource(DevConsoleDef)?.showConsole;
+      const cheat = !!EM.getResource(DevConsoleDef)?.showConsole;
       const {
         time: { dt },
         inputs,
@@ -339,7 +338,7 @@ export function registerHsPlayerSystems(em: EntityManager) {
                 0.01,
                 vec3.create()
               );
-              // spawnBullet(EM, position, linearVelocity, angularVelocity);
+              // spawnBullet( position, linearVelocity, angularVelocity);
             }
           }
         }
@@ -360,11 +359,11 @@ export function registerHsPlayerSystems(em: EntityManager) {
 
         // change physics parent
         if (cheat && inputs.keyClicks["t"]) {
-          const targetId = em.getResource(GlobalCursor3dDef)?.cursor()
-            ?.cursor3d.hitId;
+          const targetId =
+            EM.getResource(GlobalCursor3dDef)?.cursor()?.cursor3d.hitId;
           if (targetId) {
             p.physicsParent.id = targetId;
-            const targetEnt = em.findEntity(targetId, [ColliderDef]);
+            const targetEnt = EM.findEntity(targetId, [ColliderDef]);
             if (targetEnt) {
               vec3.copy(p.position, [0, 0, 0]);
               if (targetEnt.collider.shape === "AABB") {
@@ -381,9 +380,9 @@ export function registerHsPlayerSystems(em: EntityManager) {
 
         // delete object
         if (cheat && res.inputs.keyClicks["backspace"]) {
-          const targetId = em.getResource(GlobalCursor3dDef)?.cursor()
-            ?.cursor3d.hitId;
-          if (targetId) em.ensureComponent(targetId, DeletedDef);
+          const targetId =
+            EM.getResource(GlobalCursor3dDef)?.cursor()?.cursor3d.hitId;
+          if (targetId) EM.ensureComponent(targetId, DeletedDef);
         }
 
         function playerShootRay(r: Ray) {
@@ -417,7 +416,7 @@ export function registerHsPlayerSystems(em: EntityManager) {
     }
   );
 
-  em.addSystem(
+  EM.addSystem(
     "hsPlayerLookingForShip",
     Phase.GAME_WORLD,
     [
@@ -436,9 +435,9 @@ export function registerHsPlayerSystems(em: EntityManager) {
         if (p.authority.pid !== res.me.pid) continue;
         if (!p.hsPlayer.lookingForShip) continue;
 
-        const parent = em.findEntity(p.physicsParent.id, [ColliderDef]);
+        const parent = EM.findEntity(p.physicsParent.id, [ColliderDef]);
         if (!parent) {
-          const ship = em.filterEntities([
+          const ship = EM.filterEntities([
             ColliderDef,
             HsShipLocalDef,
             PositionDef,
@@ -481,7 +480,7 @@ export function registerHsPlayerSystems(em: EntityManager) {
             vec3.zero(p.linearVelocity);
 
             // TODO(@darzu): uncomment to animate player entry
-            // em.ensureComponentOn(p, AnimateToDef, {
+            // EM.ensureComponentOn(p, AnimateToDef, {
             //   startPos,
             //   endPos,
             //   durationMs: 2000,

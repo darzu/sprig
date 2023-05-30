@@ -1,13 +1,5 @@
-import { EntityManager, EntityW } from "../ecs/entity-manager.js";
-import { AssetsDef } from "../meshes/assets.js";
-import { ColorDef } from "../color/color-ecs.js";
-import { LocalHsPlayerDef } from "../hyperspace/hs-player.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
-import { RenderableConstructDef } from "../render/renderer-ecs.js";
-import { BoxCollider, Collider } from "./collider.js";
-import { PhysicsObject, WorldFrameDef } from "./nonintersection.js";
-import { PhysicsParentDef, PositionDef } from "./transform.js";
-import { centroid, SupportFn, vec3Dbg } from "../utils/utils-3d.js";
+import { vec3, V } from "../matrix/sprig-matrix.js";
+import { centroid, SupportFn } from "../utils/utils-3d.js";
 import { tempVec3 } from "../matrix/temp-pool.js";
 import { PAD } from "./phys.js";
 import { TupleN } from "../utils/util.js";
@@ -68,7 +60,7 @@ EPA-ish:
 
 */
 
-export function registerNarrowPhaseSystems(em: EntityManager) {
+export function registerNarrowPhaseSystems() {
   // TODO(@darzu):
 }
 

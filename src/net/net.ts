@@ -1,6 +1,6 @@
 import { Serializer, Deserializer } from "../utils/serialize.js";
 import { Peer } from "./peer.js";
-import { EntityManager } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/entity-manager.js";
 import { never } from "../utils/util.js";
 
 import { MessageType } from "./message.js";
@@ -218,31 +218,31 @@ function sendEventsToNet(net: Net) {
 
 // from https://gist.github.com/jed/982883#gistcomment-2403369
 
-export function initNetSystems(em: EntityManager) {
-  const peerName = em.getResource(PeerNameDef)?.name;
+export function initNetSystems() {
+  const peerName = EM.getResource(PeerNameDef)?.name;
   if (!peerName) {
     throw "Peer name not set before net initialized";
   }
   const net = new Net(peerName);
   // TODO: startup system to set up components
-  em.addResource(NetStatsDef);
-  em.addResource(EventsFromNetworkDef);
-  em.addResource(EventsToNetworkDef);
-  em.addSystem(
+  EM.addResource(NetStatsDef);
+  EM.addResource(EventsFromNetworkDef);
+  EM.addResource(EventsToNetworkDef);
+  EM.addSystem(
     "getStatsFromNet",
     Phase.NETWORK,
     null,
     [NetStatsDef],
     getStatsFromNet(net)
   );
-  em.addSystem(
+  EM.addSystem(
     "getEventsFromNet",
     Phase.NETWORK,
     null,
     [EventsFromNetworkDef],
     getEventsFromNet(net)
   );
-  em.addSystem(
+  EM.addSystem(
     "sendEventsToNet",
     Phase.NETWORK,
     null,

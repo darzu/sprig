@@ -1,4 +1,4 @@
-import { Component, EM, EntityManager } from "../ecs/entity-manager.js";
+import { Component, EM } from "../ecs/entity-manager.js";
 import {
   cloneMesh,
   mapMeshPositions,
@@ -33,9 +33,9 @@ export const NoodleDef = EM.defineComponent(
 export type Noodle = Component<typeof NoodleDef>;
 
 // TODO(@darzu): DEBUGGING
-export function debugCreateNoodles(em: EntityManager) {
-  const e = em.new();
-  em.ensureComponentOn(e, NoodleDef, [
+export function debugCreateNoodles() {
+  const e = EM.new();
+  EM.ensureComponentOn(e, NoodleDef, [
     {
       pos: V(0, 0, 0),
       dir: V(0, -1, 0),
@@ -46,27 +46,27 @@ export function debugCreateNoodles(em: EntityManager) {
     },
   ]);
   const m = createNoodleMesh(0.1, V(0.2, 0.05, 0.05));
-  em.ensureComponentOn(e, RenderableConstructDef, m);
-  em.ensureComponentOn(e, PositionDef, V(5, -5, 0));
+  EM.ensureComponentOn(e, RenderableConstructDef, m);
+  EM.ensureComponentOn(e, PositionDef, V(5, -5, 0));
 
   // TODO(@darzu): test cube faces (update: they are correct)
-  // const cube = em.newEntity();
-  // em.ensureComponentOn(cube, PositionDef, [0, -2, 0]);
+  // const cube = EM.newEntity();
+  // EM.ensureComponentOn(cube, PositionDef, [0, -2, 0]);
   // const cubeM = cloneMesh(CUBE_MESH);
   // for (let triIdx of CUBE_FACES.bottom) {
   //   cubeM.colors[triIdx] = [0, 0, 0.5];
   // }
-  // em.ensureComponentOn(cube, RenderableConstructDef, cubeM);
+  // EM.ensureComponentOn(cube, RenderableConstructDef, cubeM);
 }
 
-export function registerNoodleSystem(em: EntityManager) {
+export function registerNoodleSystem() {
   const posIdxToSegIdx: Map<number, number> = new Map();
   CUBE_MESH.pos.forEach((p, i) => {
     if (p[1] > 0) posIdxToSegIdx.set(i, 0);
     else posIdxToSegIdx.set(i, 1);
   });
 
-  em.addSystem(
+  EM.addSystem(
     "updateNoodles",
     Phase.GAME_WORLD,
     [NoodleDef, RenderableDef],

@@ -1,6 +1,6 @@
 import { ColorDef } from "../color/color-ecs.js";
 import { createRef } from "../ecs/em-helpers.js";
-import { EM, EntityManager, EntityW } from "../ecs/entity-manager.js";
+import { EM, EntityW } from "../ecs/entity-manager.js";
 import { AssetsDef } from "../meshes/assets.js";
 import { vec3, quat } from "../matrix/sprig-matrix.js";
 import { LinearVelocityDef } from "../motion/velocity.js";
@@ -79,28 +79,28 @@ const RUDDER_ROTATION_RATE = 0.01;
 
 export const cannonDefaultPitch = Math.PI * +0.05;
 
-export async function createShip(em: EntityManager) {
-  const res = await em.whenResources(AssetsDef, MeDef);
-  const ent = em.new();
-  em.ensureComponentOn(ent, ShipDef);
+export async function createShip() {
+  const res = await EM.whenResources(AssetsDef, MeDef);
+  const ent = EM.new();
+  EM.ensureComponentOn(ent, ShipDef);
 
   const homeShip = createHomeShip();
 
-  em.ensureComponentOn(
+  EM.ensureComponentOn(
     ent,
     RenderableConstructDef,
     homeShip.timberMesh
     // res.assets.ship_small.proto
   );
-  em.ensureComponentOn(ent, WoodStateDef, homeShip.timberState);
-  // em.set(ent, ColliderDef, {
+  EM.ensureComponentOn(ent, WoodStateDef, homeShip.timberState);
+  // EM.set(ent, ColliderDef, {
   //   shape: "AABB",
   //   solid: true,
   //   aabb: res.assets.ship.aabb,
   // });
 
   const timberHealth = createWoodHealth(homeShip.timberState);
-  em.ensureComponentOn(ent, WoodHealthDef, timberHealth);
+  EM.ensureComponentOn(ent, WoodHealthDef, timberHealth);
 
   // const timberAABB = getAABBFromMesh(homeShip.timberMesh);
   // console.log("ship size:");
@@ -117,30 +117,30 @@ export async function createShip(em: EntityManager) {
       aabb,
     })),
   };
-  // em.ensureComponentOn(ent, ColliderDef, {
+  // EM.ensureComponentOn(ent, ColliderDef, {
   //   shape: "AABB",
   //   solid: false,
   //   aabb: timberAABB,
   // });
-  em.ensureComponentOn(ent, ColliderDef, mc);
-  em.ensureComponentOn(ent, PositionDef, V(0, 0, 0));
-  em.ensureComponentOn(ent, RotationDef);
-  em.ensureComponentOn(ent, LinearVelocityDef);
-  // em.ensureComponentOn(ent, ColorDef, V(0.5, 0.3, 0.1));
-  em.ensureComponentOn(ent, ColorDef, V(0, 0, 0)); // painted by individual planks!
+  EM.ensureComponentOn(ent, ColliderDef, mc);
+  EM.ensureComponentOn(ent, PositionDef, V(0, 0, 0));
+  EM.ensureComponentOn(ent, RotationDef);
+  EM.ensureComponentOn(ent, LinearVelocityDef);
+  // EM.ensureComponentOn(ent, ColorDef, V(0.5, 0.3, 0.1));
+  EM.ensureComponentOn(ent, ColorDef, V(0, 0, 0)); // painted by individual planks!
 
-  const mast = await createMast(em);
-  em.ensureComponentOn(mast, PhysicsParentDef, ent.id);
+  const mast = await createMast();
+  EM.ensureComponentOn(mast, PhysicsParentDef, ent.id);
 
-  const sock = createSock(em, 2.0);
-  em.ensureComponentOn(sock, PhysicsParentDef, ent.id);
+  const sock = createSock(2.0);
+  EM.ensureComponentOn(sock, PhysicsParentDef, ent.id);
   sock.position[1] =
     mast.position[1] + (mast.collider as AABBCollider).aabb.max[1];
 
   ent.ld52ship.mast = createRef(mast);
 
-  const rudder = await createRudder(em);
-  em.ensureComponentOn(rudder, PhysicsParentDef, ent.id);
+  const rudder = await createRudder();
+  EM.ensureComponentOn(rudder, PhysicsParentDef, ent.id);
   // console.log("setting position");
   vec3.set(0, 4, -25, rudder.position);
   // console.log(`rudder: ${rudder.id}`);
@@ -233,24 +233,24 @@ EM.addSystem(
 
 export const RudderDef = EM.defineComponent("rudder", () => true);
 
-async function createRudder(em: EntityManager) {
-  const res = await em.whenResources(AssetsDef, MeDef);
-  const ent = em.new();
-  em.ensureComponentOn(ent, RudderDef);
-  em.ensureComponentOn(
+async function createRudder() {
+  const res = await EM.whenResources(AssetsDef, MeDef);
+  const ent = EM.new();
+  EM.ensureComponentOn(ent, RudderDef);
+  EM.ensureComponentOn(
     ent,
     RenderableConstructDef,
     res.assets.rudderPrim.proto
   );
-  // em.ensureComponentOn(ent, ColorDef, V(0.2, 0.1, 0.05));
-  em.ensureComponentOn(ent, ColorDef, ENDESGA16.midBrown);
-  em.ensureComponentOn(ent, PositionDef);
-  em.ensureComponentOn(ent, RotationDef);
-  em.ensureComponentOn(ent, AuthorityDef, res.me.pid);
-  const interactBox = em.new();
-  em.ensureComponentOn(interactBox, PhysicsParentDef, ent.id);
-  em.ensureComponentOn(interactBox, PositionDef);
-  em.ensureComponentOn(interactBox, ColliderDef, {
+  // EM.ensureComponentOn(ent, ColorDef, V(0.2, 0.1, 0.05));
+  EM.ensureComponentOn(ent, ColorDef, ENDESGA16.midBrown);
+  EM.ensureComponentOn(ent, PositionDef);
+  EM.ensureComponentOn(ent, RotationDef);
+  EM.ensureComponentOn(ent, AuthorityDef, res.me.pid);
+  const interactBox = EM.new();
+  EM.ensureComponentOn(interactBox, PhysicsParentDef, ent.id);
+  EM.ensureComponentOn(interactBox, PositionDef);
+  EM.ensureComponentOn(interactBox, ColliderDef, {
     shape: "AABB",
     solid: false,
     aabb: {

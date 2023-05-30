@@ -1,4 +1,4 @@
-import { EM, EntityManager } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/entity-manager.js";
 import { PERF_DBG_F32S, PERF_DBG_GPU } from "../flags.js";
 import { TextDef } from "../gui/ui.js";
 import { InputsDef } from "../input/inputs.js";
@@ -37,10 +37,10 @@ export function updateAvg(avg: number, curr: number): number {
   return avg ? (1 - avgWeight) * avg + avgWeight * curr : curr;
 }
 
-export function initDevConsole(em: EntityManager) {
-  em.addResource(DevConsoleDef);
+export function initDevConsole() {
+  EM.addResource(DevConsoleDef);
 
-  em.addSystem(
+  EM.addSystem(
     "devConsoleToggle",
     Phase.GAME_PLAYERS,
     null,
@@ -61,7 +61,7 @@ export function initDevConsole(em: EntityManager) {
 
   let pipelineTimes: Map<string, bigint> = new Map();
 
-  em.addSystem(
+  EM.addSystem(
     "devConsole",
     Phase.RENDER_DRAW,
     null,

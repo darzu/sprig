@@ -4,14 +4,7 @@ import {
   DetectedEventsDef,
   eventWizard,
 } from "../net/events.js";
-import {
-  ComponentDef,
-  EDef,
-  EM,
-  Entity,
-  EntityManager,
-  ESet,
-} from "../ecs/entity-manager.js";
+import { ComponentDef, EDef, EM, Entity, ESet } from "../ecs/entity-manager.js";
 import { HsPlayerDef } from "../hyperspace/hs-player.js";
 import { PhysicsResultsDef } from "../physics/nonintersection.js";
 import { AuthorityDef } from "../net/components.js";
@@ -97,6 +90,6 @@ export const raiseBulletEnemyShip = eventWizard(
     // assert(false, `raiseBulletEnemyShip doesnt work on ld51`); // TODO(@darzu): ld51
     EM.ensureComponentOn(bullet, DeletedDef);
     const res = EM.getResources([AssetsDef, AudioDef])!;
-    breakEnemyShip(EM, enemyShip, res.assets.boat_broken, res.music);
+    breakEnemyShip(enemyShip, res.assets.boat_broken, res.music);
   }
 );

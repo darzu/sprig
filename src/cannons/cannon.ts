@@ -1,4 +1,4 @@
-import { EM, EntityManager } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/entity-manager.js";
 import { TimeDef } from "../time/time.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { ColorDef } from "../color/color-ecs.js";
@@ -21,7 +21,7 @@ import { SoundSetDef } from "../audio/sound-loader.js";
 import { Phase } from "../ecs/sys-phase.js";
 
 export const { CannonPropsDef, CannonLocalDef, createCannon, createCannonNow } =
-  defineNetEntityHelper(EM, {
+  defineNetEntityHelper({
     name: "cannon",
     defaultProps: (
       loc?: vec3,
@@ -57,7 +57,6 @@ export const { CannonPropsDef, CannonLocalDef, createCannon, createCannonNow } =
     dynamicComponents: [],
     buildResources: [AssetsDef, MeDef],
     build: (e, res) => {
-      const em: EntityManager = EM;
       const props = e.cannonProps;
       EM.ensureComponentOn(e, PositionDef, props.location);
       constructNetTurret(
@@ -122,7 +121,6 @@ EM.addEagerInit([CannonPropsDef], [], [], () => {
         const v = 0.18;
         const g = 6.0 * 0.00001;
         const b = fireBullet(
-          EM,
           2,
           firePos,
           fireDir,

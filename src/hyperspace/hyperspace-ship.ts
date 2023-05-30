@@ -1,4 +1,4 @@
-import { EM, EntityManager } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import {
@@ -67,7 +67,7 @@ export const ShipPartDef = EM.defineComponent(
 );
 
 export const { RudderPropsDef, RudderLocalDef, createRudderNow } =
-  defineNetEntityHelper(EM, {
+  defineNetEntityHelper({
     name: "rudder",
     defaultProps: (shipId?: number) => ({
       shipId: shipId ?? 0,
@@ -82,28 +82,26 @@ export const { RudderPropsDef, RudderLocalDef, createRudderNow } =
     dynamicComponents: [RotationDef],
     buildResources: [AssetsDef, MeDef],
     build: (rudder, res) => {
-      const em: EntityManager = EM;
+      EM.ensureComponentOn(rudder, PositionDef, V(0, 0.5, -15));
 
-      em.ensureComponentOn(rudder, PositionDef, V(0, 0.5, -15));
-
-      em.ensureComponentOn(
+      EM.ensureComponentOn(
         rudder,
         RenderableConstructDef,
         res.assets.rudder.mesh
       );
-      em.ensureComponentOn(rudder, PhysicsParentDef, rudder.rudderProps.shipId);
-      em.ensureComponentOn(rudder, ColorDef, ENDESGA16.lightBrown);
+      EM.ensureComponentOn(rudder, PhysicsParentDef, rudder.rudderProps.shipId);
+      EM.ensureComponentOn(rudder, ColorDef, ENDESGA16.lightBrown);
       vec3.scale(rudder.color, 0.5, rudder.color);
 
       // create seperate hitbox for interacting with the rudder
-      const interactBox = em.new();
-      em.ensureComponentOn(
+      const interactBox = EM.new();
+      EM.ensureComponentOn(
         interactBox,
         PhysicsParentDef,
         rudder.rudderProps.shipId
       );
-      em.ensureComponentOn(interactBox, PositionDef, V(0, 0, -12));
-      em.ensureComponentOn(interactBox, ColliderDef, {
+      EM.ensureComponentOn(interactBox, PositionDef, V(0, 0, -12));
+      EM.ensureComponentOn(interactBox, ColliderDef, {
         shape: "AABB",
         solid: false,
         aabb: {
@@ -134,7 +132,7 @@ export const { RudderPropsDef, RudderLocalDef, createRudderNow } =
 
 // hyperspace ship
 export const { HsShipPropsDef, HsShipLocalDef, createHsShip } =
-  defineNetEntityHelper(EM, {
+  defineNetEntityHelper({
     name: "hsShip",
     defaultProps: (uvPos?: vec2) => ({
       uvPos: uvPos ?? vec2.fromValues(0.5, 0.5),
@@ -170,8 +168,6 @@ export const { HsShipPropsDef, HsShipLocalDef, createHsShip } =
     ],
     buildResources: [MeDef, AssetsDef],
     build: async (s, res) => {
-      const em: EntityManager = EM;
-
       if (s.authority.pid === res.me.pid) {
         // s.hsShipProps.loc = [0, -2, 0];
 
@@ -207,17 +203,17 @@ export const { HsShipPropsDef, HsShipLocalDef, createHsShip } =
       vec2.copy(s.uvPos, s.hsShipProps.uvPos);
       vec2.set(1, 0, s.uvDir);
 
-      em.ensureComponentOn(s, PositionDef);
-      em.ensureComponentOn(s, RotationDef);
+      EM.ensureComponentOn(s, PositionDef);
+      EM.ensureComponentOn(s, RotationDef);
 
-      em.ensureComponentOn(s, MotionSmoothingDef);
+      EM.ensureComponentOn(s, MotionSmoothingDef);
 
-      em.ensureComponentOn(s, UVShipDef);
+      EM.ensureComponentOn(s, UVShipDef);
 
       s.uvship.speed = 0;
       // s.hsShipLocal.speed = 0.005 * 3; // TODO(@darzu): DEBUG SPEED
-      // em.ensureComponentOn(s, LinearVelocityDef, [0, 0, 0]);
-      // em.ensureComponentOn(s, AngularVelocityDef);
+      // EM.ensureComponentOn(s, LinearVelocityDef, [0, 0, 0]);
+      // EM.ensureComponentOn(s, AngularVelocityDef);
 
       const mc: MultiCollider = {
         shape: "Multi",
@@ -229,21 +225,21 @@ export const { HsShipPropsDef, HsShipLocalDef, createHsShip } =
           aabb,
         })),
       };
-      em.ensureComponentOn(s, ColliderDef, mc);
+      EM.ensureComponentOn(s, ColliderDef, mc);
 
       // NOTE: since their is no network important state on the parts themselves
       //    they can be created locally
       const shipFloor = min(BARGE_AABBS.map((c) => c.max[1]));
       for (let i = 0; i < res.assets.ship_broken.length; i++) {
         const m = res.assets.ship_broken[i];
-        const part = em.new();
-        em.ensureComponentOn(part, PhysicsParentDef, s.id);
-        em.ensureComponentOn(part, RenderableConstructDef, m.proto);
-        em.ensureComponentOn(part, ColorDef, ENDESGA16.lightBrown);
-        em.ensureComponentOn(part, PositionDef, V(0, 0, 0));
+        const part = EM.new();
+        EM.ensureComponentOn(part, PhysicsParentDef, s.id);
+        EM.ensureComponentOn(part, RenderableConstructDef, m.proto);
+        EM.ensureComponentOn(part, ColorDef, ENDESGA16.lightBrown);
+        EM.ensureComponentOn(part, PositionDef, V(0, 0, 0));
         const isCritical = criticalPartIdxes.includes(i);
-        em.ensureComponentOn(part, ShipPartDef, isCritical);
-        em.ensureComponentOn(part, ColliderDef, {
+        EM.ensureComponentOn(part, ShipPartDef, isCritical);
+        EM.ensureComponentOn(part, ColliderDef, {
           shape: "AABB",
           solid: false,
           aabb: m.aabb,
@@ -254,27 +250,27 @@ export const { HsShipPropsDef, HsShipLocalDef, createHsShip } =
         );
       }
 
-      makeOrrery(em, s.id);
-      // em.addComponent(em.newEntity().id, AmmunitionConstructDef, [-40, -11, -2], 3);
-      // em.addComponent(em.newEntity().id, LinstockConstructDef, [-40, -11, 2]);
+      makeOrrery(s.id);
+      // EM.addComponent(EM.newEntity().id, AmmunitionConstructDef, [-40, -11, -2], 3);
+      // EM.addComponent(EM.newEntity().id, LinstockConstructDef, [-40, -11, 2]);
     },
   });
 
 const criticalPartIdxes = [0, 3, 5, 6];
 
-// export function createNewShip(em: EntityManager) {
-//   em.registerOneShotSystem(null, [AssetsDef], (_, res) => {
+// export function createNewShip() {
+//   EM.registerOneShotSystem(null, [AssetsDef], (_, res) => {
 //     // create ship
-//     const s = em.newEntity();
-//     em.ensureComponentOn(s, ShipConstructDef);
+//     const s = EM.newEntity();
+//     EM.ensureComponentOn(s, ShipConstructDef);
 //   });
 // }
 
 const START_TEXT = "";
 // const START_TEXT = "hit the gem to begin";
 
-export function registerShipSystems(em: EntityManager) {
-  em.addSystem(
+export function registerShipSystems() {
+  EM.addSystem(
     "startGame",
     Phase.GAME_WORLD,
     [GemPropsDef, InRangeDef],
@@ -297,7 +293,7 @@ export function registerShipSystems(em: EntityManager) {
     "ship-hit",
     [[HsShipLocalDef]] as const,
     ([ship], partIdx: number) => {
-      const music = em.getResource(AudioDef)!;
+      const music = EM.getResource(AudioDef)!;
       const part = ship.hsShipLocal.parts[partIdx]()!;
       part.renderable.enabled = false;
       part.shipPart.damaged = true;
@@ -311,7 +307,7 @@ export function registerShipSystems(em: EntityManager) {
     }
   );
 
-  em.addSystem(
+  EM.addSystem(
     "shipHealthCheck",
     Phase.GAME_WORLD,
     [HsShipPropsDef, HsShipLocalDef, PositionDef, AuthorityDef],
@@ -341,11 +337,11 @@ export function registerShipSystems(em: EntityManager) {
             }
             const bullets = res.physicsResults.collidesWith
               .get(part.id)
-              ?.map((h) => em.findEntity(h, [BulletDef]))
+              ?.map((h) => EM.findEntity(h, [BulletDef]))
               .filter((h) => h && h.bullet.team === 2);
             if (bullets && bullets.length) {
               for (let b of bullets)
-                if (b) em.ensureComponent(b.id, DeletedDef);
+                if (b) EM.ensureComponent(b.id, DeletedDef);
 
               raiseShipHit(ship, i);
             }
@@ -362,7 +358,7 @@ export function registerShipSystems(em: EntityManager) {
     }
   );
 
-  em.addSystem(
+  EM.addSystem(
     "playerShipMove",
     Phase.GAME_PLAYERS,
     [
@@ -403,7 +399,7 @@ export function registerShipSystems(em: EntityManager) {
     }
   );
 
-  em.addSystem(
+  EM.addSystem(
     "shipUpdateParty",
     Phase.GAME_WORLD,
     [HsShipLocalDef, HsShipPropsDef, PositionDef],
@@ -414,7 +410,7 @@ export function registerShipSystems(em: EntityManager) {
   );
 
   // If a rudder isn't being manned, smooth it back towards straight
-  em.addSystem(
+  EM.addSystem(
     "easeRudder",
     Phase.GAME_WORLD,
     [RudderPropsDef, TurretDef, YawPitchDef, AuthorityDef],

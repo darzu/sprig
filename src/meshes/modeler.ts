@@ -1,5 +1,5 @@
 import { CanvasDef } from "../render/canvas.js";
-import { EM, EntityManager, EntityW } from "../ecs/entity-manager.js";
+import { EM, EntityW } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { InputsDef } from "../input/inputs.js";
 import { mathMap } from "../utils/math.js";
@@ -36,9 +36,9 @@ export const ModelBoxDef = EM.defineComponent("modelBox", () => {
   return true;
 });
 
-function registerObjClicker(em: EntityManager) {
+function registerObjClicker() {
   // listen for modeler on/off
-  em.addSystem(
+  EM.addSystem(
     "modelerOnOff",
     Phase.GAME_PLAYERS,
     null,
@@ -56,7 +56,7 @@ function registerObjClicker(em: EntityManager) {
   );
 
   // look for object clicks
-  em.addSystem(
+  EM.addSystem(
     "modelerClicks",
     Phase.GAME_PLAYERS,
     null,
@@ -102,16 +102,16 @@ function registerObjClicker(em: EntityManager) {
   );
 }
 
-export function init3DModeler(em: EntityManager) {
+export function init3DModeler() {
   // create our modeler
-  em.addResource(ModelerDef);
+  EM.addResource(ModelerDef);
 
-  registerObjClicker(em);
-  registerAABBBuilder(em);
+  registerObjClicker();
+  registerAABBBuilder();
 }
 
-function registerAABBBuilder(em: EntityManager) {
-  em.addSystem(
+function registerAABBBuilder() {
+  EM.addSystem(
     "aabbBuilder",
     Phase.GAME_PLAYERS,
     null,
@@ -122,7 +122,7 @@ function registerAABBBuilder(em: EntityManager) {
         if (res.inputs.keyDowns["shift"]) {
           // export
           const bs = res.modeler.currentBoxes.map((id) => {
-            const b = em.findEntity(id, [
+            const b = EM.findEntity(id, [
               PhysicsStateDef,
               ColliderDef,
               ColorDef,
@@ -138,35 +138,35 @@ function registerAABBBuilder(em: EntityManager) {
           }
         } else {
           // create new box
-          const b = em.new();
-          const lastB = em.findEntity(res.modeler.latestBoxId, [
+          const b = EM.new();
+          const lastB = EM.findEntity(res.modeler.latestBoxId, [
             PositionDef,
             ScaleDef,
           ]);
 
-          em.ensureComponentOn(b, ModelBoxDef);
+          EM.ensureComponentOn(b, ModelBoxDef);
           if (lastB) {
-            em.ensureComponentOn(
+            EM.ensureComponentOn(
               b,
               ScaleDef,
               vec3.copy(vec3.create(), lastB.scale)
             );
-            em.ensureComponentOn(
+            EM.ensureComponentOn(
               b,
               PositionDef,
               vec3.copy(vec3.create(), lastB.position)
             );
           } else {
-            em.ensureComponentOn(b, ScaleDef, V(2, 1, 1));
-            em.ensureComponentOn(b, PositionDef, V(0, 0, 0));
+            EM.ensureComponentOn(b, ScaleDef, V(2, 1, 1));
+            EM.ensureComponentOn(b, PositionDef, V(0, 0, 0));
           }
-          em.ensureComponentOn(b, ColorDef, V(0.1, 0.3, 0.2));
-          em.ensureComponentOn(
+          EM.ensureComponentOn(b, ColorDef, V(0.1, 0.3, 0.2));
+          EM.ensureComponentOn(
             b,
             RenderableConstructDef,
             res.assets.cube.proto
           );
-          em.ensureComponentOn(b, ColliderDef, {
+          EM.ensureComponentOn(b, ColliderDef, {
             shape: "AABB",
             solid: false,
             aabb: res.assets.cube.aabb,
@@ -197,7 +197,7 @@ function registerAABBBuilder(em: EntityManager) {
 
         // do move
         if (res.modeler.mode === "move") {
-          const b = em.findEntity(res.modeler.latestBoxId, [PositionDef]);
+          const b = EM.findEntity(res.modeler.latestBoxId, [PositionDef]);
           if (b) {
             b.position[dim] += delta * 0.1;
           }
@@ -205,7 +205,7 @@ function registerAABBBuilder(em: EntityManager) {
 
         // do scale
         if (res.modeler.mode === "scale") {
-          const b = em.findEntity(res.modeler.latestBoxId, [ScaleDef]);
+          const b = EM.findEntity(res.modeler.latestBoxId, [ScaleDef]);
           if (b) {
             const currentSize = b.scale[dim] * 2;
             const newSize = currentSize + delta * 0.1;

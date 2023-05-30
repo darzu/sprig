@@ -1,5 +1,5 @@
 import { DeadDef } from "./delete.js";
-import { Component, EM, EntityManager } from "./entity-manager.js";
+import { Component, EM } from "./entity-manager.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { TimeDef } from "../time/time.js";
 import { Phase } from "./sys-phase.js";
@@ -26,7 +26,7 @@ EM.addSystem(
         // TODO(@darzu): dead or deleted?
         EM.addComponent(o.id, DeadDef);
         // TODO(@darzu): note needed?
-        // em.addComponent(o.id, DeletedDef);
+        // EM.addComponent(o.id, DeletedDef);
       }
     }
   }

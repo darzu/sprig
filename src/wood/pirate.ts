@@ -4,7 +4,7 @@ import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { DeadDef } from "../ecs/delete.js";
 import { createRef } from "../ecs/em-helpers.js";
-import { EM, EntityW, EntityManager } from "../ecs/entity-manager.js";
+import { EM, EntityW } from "../ecs/entity-manager.js";
 import { createEntityPool } from "../ecs/entity-pool.js";
 import { mat4, vec3, quat } from "../matrix/sprig-matrix.js";
 import { jitter } from "../utils/math.js";
@@ -157,8 +157,6 @@ function rotatePiratePlatform(
 }
 
 export async function startPirates() {
-  const em: EntityManager = EM;
-
   // TODO(@darzu): HACK!
   registerDestroyPirateHandler(destroyPirateShip);
 
@@ -167,7 +165,7 @@ export async function startPirates() {
   }
 
   pirateNextSpawn = pirateSpawnTimer;
-  em.addSystem(
+  EM.addSystem(
     "spawnPirates",
     Phase.GAME_WORLD,
     [PiratePlatformDef],
@@ -195,7 +193,7 @@ export async function startPirates() {
 
   const fireStagger = 150;
   // const tiltPeriod = 5700;
-  em.addSystem(
+  EM.addSystem(
     "updatePiratePlatforms",
     Phase.GAME_WORLD,
     [PiratePlatformDef, PositionDef, RotationDef],
@@ -240,7 +238,6 @@ export async function startPirates() {
             // const ballHealth = 20.0;
             const ballHealth = 2.0;
             fireBullet(
-              em,
               2,
               c.world.position,
               c.world.rotation,

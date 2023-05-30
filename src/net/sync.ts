@@ -1,4 +1,4 @@
-import { EntityManager } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/entity-manager.js";
 import { OutOfRoomError, Serializer } from "../utils/serialize.js";
 import {
   Authority,
@@ -28,8 +28,8 @@ import {
 import { TimeDef } from "../time/time.js";
 import { Phase } from "../ecs/sys-phase.js";
 
-export function initNetSyncSystem(em: EntityManager) {
-  em.addSystem(
+export function initNetSyncSystem() {
+  EM.addSystem(
     "netSync",
     Phase.NETWORK,
     [AuthorityDef, SyncDef],
@@ -37,7 +37,7 @@ export function initNetSyncSystem(em: EntityManager) {
     (ents, res) => {
       // TODO: think about other ways of doing this
       if (res.time.step % 3 === 0) {
-        const peers = em.filterEntities([PeerDef, OutboxDef]);
+        const peers = EM.filterEntities([PeerDef, OutboxDef]);
         for (let { peer, outbox } of peers) {
           if (res.me.host && !peer.joined) continue;
           const entities = ents.filter(
@@ -77,7 +77,7 @@ export function initNetSyncSystem(em: EntityManager) {
                   : ent.sync.fullComponents.concat(ent.sync.dynamicComponents);
               // don't write anything at all if no components need to be synced
               if (components.length > 0) {
-                serializeEntity(em, ent, message, type, components);
+                serializeEntity(ent, message, type, components);
                 if (type === EntityUpdateType.Full) {
                   if (!peer.entitiesInUpdate.has(seq)) {
                     peer.entitiesInUpdate.set(seq, new Set());
@@ -99,19 +99,19 @@ export function initNetSyncSystem(em: EntityManager) {
   );
 }
 
-export function initNetUpdateSystems(em: EntityManager) {
-  em.addSystem(
+export function initNetUpdateSystems() {
+  EM.addSystem(
     "clearRemoteUpdatesMarker",
     Phase.NETWORK,
     [RemoteUpdatesDef],
     [],
     (es) => {
       for (const e of es) {
-        em.removeComponent(e.id, RemoteUpdatesDef);
+        EM.removeComponent(e.id, RemoteUpdatesDef);
       }
     }
   );
-  em.addSystem(
+  EM.addSystem(
     "netUpdate",
     Phase.NETWORK,
     [PeerDef, InboxDef, OutboxDef],
@@ -132,7 +132,7 @@ export function initNetUpdateSystems(em: EntityManager) {
             res.time.lastTime - (ts - res.netStats.skewEstimate[address]);
           let numEntities = message.readUint8();
           for (let i = 0; i < numEntities; i++) {
-            deserializeEntity(em, seq, message, dt);
+            deserializeEntity(seq, message, dt);
             // reset message.dummy
             message.dummy = false;
           }
@@ -144,7 +144,7 @@ export function initNetUpdateSystems(em: EntityManager) {
   );
 }
 
-export function initNetAckUpdateSystem(em: EntityManager) {
+export function initNetAckUpdateSystem() {
   function ack(
     peers: readonly { peer: Peer; inbox: Inbox }[],
     {
@@ -169,7 +169,7 @@ export function initNetAckUpdateSystem(em: EntityManager) {
       }
     }
   }
-  em.addSystem(
+  EM.addSystem(
     "netAck",
     Phase.NETWORK,
     [PeerDef, InboxDef],

@@ -9,7 +9,6 @@ import {
   registerUpdateInContactSystems,
   registerUpdateWorldAABBs,
 } from "./nonintersection.js";
-import { EntityManager } from "../ecs/entity-manager.js";
 import { registerPhysicsDebuggerSystem } from "./phys-debug.js";
 import {
   registerPhysicsClampVelocityByContact,
@@ -46,31 +45,27 @@ import { DBG_PHYSICS_AABBS } from "../flags.js";
 // [ ] specify which objects may non-intersect; then do non-intersection heirarchachly
 // [ ] PERF: matrix inversion should be done once per parent
 
-export function initPhysicsSystems(em: EntityManager) {
-  registerInitTransforms(em);
+export function initPhysicsSystems() {
+  registerInitTransforms();
 
-  registerPhysicsStateInit(em);
+  registerPhysicsStateInit();
 
-  registerPhysicsClampVelocityByContact(em);
-  registerPhysicsClampVelocityBySize(em);
-  registerPhysicsApplyLinearVelocity(em);
-  registerPhysicsApplyAngularVelocity(em);
-  registerUpdateLocalFromPosRotScale(em);
-  registerUpdateWorldFromLocalAndParent(
-    em,
-    "1",
-    Phase.PHYSICS_WORLD_FROM_LOCAL
-  );
-  registerUpdateWorldAABBs(em);
-  registerUpdateInContactSystems(em);
-  registerPhysicsContactSystems(em);
+  registerPhysicsClampVelocityByContact();
+  registerPhysicsClampVelocityBySize();
+  registerPhysicsApplyLinearVelocity();
+  registerPhysicsApplyAngularVelocity();
+  registerUpdateLocalFromPosRotScale();
+  registerUpdateWorldFromLocalAndParent("1", Phase.PHYSICS_WORLD_FROM_LOCAL);
+  registerUpdateWorldAABBs();
+  registerUpdateInContactSystems();
+  registerPhysicsContactSystems();
   // TODO(@darzu): positioning?
-  registerNarrowPhaseSystems(em);
+  registerNarrowPhaseSystems();
   // TODO(@darzu): get rid of this duplicate call?
-  registerUpdateWorldFromLocalAndParent(em, "2", Phase.PHYSICS_FINISH_WORLD);
+  registerUpdateWorldFromLocalAndParent("2", Phase.PHYSICS_FINISH_WORLD);
 
   if (DBG_PHYSICS_AABBS) {
-    registerPhysicsDebuggerSystem(em);
+    registerPhysicsDebuggerSystem();
   }
 }
 

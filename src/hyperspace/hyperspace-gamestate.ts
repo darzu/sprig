@@ -1,6 +1,6 @@
 import { CameraDef } from "../camera/camera.js";
 import { DeletedDef } from "../ecs/delete.js";
-import { EM, EntityManager } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { AuthorityDef, HostDef, MeDef } from "../net/components.js";
 import { eventWizard } from "../net/events.js";
@@ -125,8 +125,8 @@ export const restartGame = eventWizard(
   }
 );
 
-export function registerGameStateSystems(em: EntityManager) {
-  em.addSystem(
+export function registerGameStateSystems() {
+  EM.addSystem(
     "restartTimer",
     Phase.GAME_WORLD,
     null,

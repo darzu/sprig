@@ -4,7 +4,7 @@ import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { DeadDef, DeletedDef } from "../ecs/delete.js";
 import { createRef } from "../ecs/em-helpers.js";
-import { EM, Entity, EntityManager, EntityW } from "../ecs/entity-manager.js";
+import { EM, Entity, EntityW } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { InputsDef } from "../input/inputs.js";
 import { jitter } from "../utils/math.js";
@@ -156,8 +156,8 @@ export const LD51CannonDef = EM.defineComponent("ld51Cannon", () => {
   return {};
 });
 
-export async function initShipyardGame(em: EntityManager, hosting: boolean) {
-  const res = await em.whenResources(
+export async function initShipyardGame(hosting: boolean) {
+  const res = await EM.whenResources(
     AssetsDef,
     // WoodAssetsDef,
     // GlobalCursor3dDef,
@@ -175,46 +175,46 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
     postProcess,
   ];
 
-  const sunlight = em.new();
-  em.ensureComponentOn(sunlight, PointLightDef);
+  const sunlight = EM.new();
+  EM.ensureComponentOn(sunlight, PointLightDef);
   // sunlight.pointLight.constant = 1.0;
   sunlight.pointLight.constant = 1.0;
   vec3.copy(sunlight.pointLight.ambient, [0.4, 0.4, 0.4]);
   // vec3.scale(sunlight.pointLight.ambient, sunlight.pointLight.ambient, 0.2);
   vec3.copy(sunlight.pointLight.diffuse, [0.5, 0.5, 0.5]);
-  em.ensureComponentOn(sunlight, PositionDef, V(50, 100, 10));
-  em.ensureComponentOn(sunlight, RenderableConstructDef, res.assets.ball.proto);
+  EM.ensureComponentOn(sunlight, PositionDef, V(50, 100, 10));
+  EM.ensureComponentOn(sunlight, RenderableConstructDef, res.assets.ball.proto);
 
   // const c = res.globalCursor3d.cursor()!;
   // if (RenderableDef.isOn(c)) c.renderable.enabled = false;
 
-  const ground = em.new();
+  const ground = EM.new();
   const groundMesh = cloneMesh(res.assets.hex.mesh);
   transformMesh(
     groundMesh,
     mat4.fromRotationTranslationScale(quat.IDENTITY, [0, -4, 0], [20, 2, 20])
   );
-  em.ensureComponentOn(ground, RenderableConstructDef, groundMesh);
-  em.ensureComponentOn(ground, ColorDef, ENDESGA16.blue);
-  // em.ensureComponentOn(p, ColorDef, [0.2, 0.3, 0.2]);
-  em.ensureComponentOn(ground, PositionDef, V(0, 0, 0));
-  // em.ensureComponentOn(plane, PositionDef, [0, -5, 0]);
+  EM.ensureComponentOn(ground, RenderableConstructDef, groundMesh);
+  EM.ensureComponentOn(ground, ColorDef, ENDESGA16.blue);
+  // EM.ensureComponentOn(p, ColorDef, [0.2, 0.3, 0.2]);
+  EM.ensureComponentOn(ground, PositionDef, V(0, 0, 0));
+  // EM.ensureComponentOn(plane, PositionDef, [0, -5, 0]);
 
-  // const cube = em.newEntity();
+  // const cube = EM.newEntity();
   // const cubeMesh = cloneMesh(res.assets.cube.mesh);
-  // em.ensureComponentOn(cube, RenderableConstructDef, cubeMesh);
-  // em.ensureComponentOn(cube, ColorDef, [0.1, 0.1, 0.1]);
-  // em.ensureComponentOn(cube, PositionDef, [0, 0, 3]);
-  // em.ensureComponentOn(cube, RotationDef);
-  // em.ensureComponentOn(cube, AngularVelocityDef, [0, 0.001, 0.001]);
-  // em.ensureComponentOn(cube, WorldFrameDef);
-  // em.ensureComponentOn(cube, ColliderDef, {
+  // EM.ensureComponentOn(cube, RenderableConstructDef, cubeMesh);
+  // EM.ensureComponentOn(cube, ColorDef, [0.1, 0.1, 0.1]);
+  // EM.ensureComponentOn(cube, PositionDef, [0, 0, 3]);
+  // EM.ensureComponentOn(cube, RotationDef);
+  // EM.ensureComponentOn(cube, AngularVelocityDef, [0, 0.001, 0.001]);
+  // EM.ensureComponentOn(cube, WorldFrameDef);
+  // EM.ensureComponentOn(cube, ColliderDef, {
   //   shape: "AABB",
   //   solid: false,
   //   aabb: res.assets.cube.aabb,
   // });
 
-  // em.ensureComponentOn(b1, ColliderDef, {
+  // EM.ensureComponentOn(b1, ColliderDef, {
   //   shape: "Box",
   //   solid: false,
   //   center: res.assets.cube.center,
@@ -224,20 +224,20 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
   // TODO(@darzu): timber system here!
   // const sphereMesh = cloneMesh(res.assets.ball.mesh);
   // const visible = false;
-  // em.ensureComponentOn(_player, RenderableConstructDef, sphereMesh, visible);
-  // em.ensureComponentOn(_player, ColorDef, [0.1, 0.1, 0.1]);
-  // em.ensureComponentOn(_player, PositionDef, [0, 0, 0]);
-  // // em.ensureComponentOn(b2, PositionDef, [0, 0, -1.2]);
-  // em.ensureComponentOn(_player, WorldFrameDef);
-  // // em.ensureComponentOn(b2, PhysicsParentDef, g.id);
-  // em.ensureComponentOn(_player, ColliderDef, {
+  // EM.ensureComponentOn(_player, RenderableConstructDef, sphereMesh, visible);
+  // EM.ensureComponentOn(_player, ColorDef, [0.1, 0.1, 0.1]);
+  // EM.ensureComponentOn(_player, PositionDef, [0, 0, 0]);
+  // // EM.ensureComponentOn(b2, PositionDef, [0, 0, -1.2]);
+  // EM.ensureComponentOn(_player, WorldFrameDef);
+  // // EM.ensureComponentOn(b2, PhysicsParentDef, g.id);
+  // EM.ensureComponentOn(_player, ColliderDef, {
   //   shape: "AABB",
   //   solid: false,
   //   aabb: res.assets.ball.aabb,
   // });
   // randomizeMeshColors(b2);
 
-  // em.ensureComponentOn(b2, ColliderDef, {
+  // EM.ensureComponentOn(b2, ColliderDef, {
   //   shape: "Box",
   //   solid: false,
   //   center: res.assets.cube.center,
@@ -245,7 +245,7 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
   // });
 
   // TIMBER
-  const timber = em.new();
+  const timber = EM.new();
 
   // const {
   //   timberState,
@@ -270,10 +270,10 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
 
   const [timberMesh, timberState] = createBarrelMesh();
 
-  em.ensureComponentOn(timber, RenderableConstructDef, timberMesh);
-  em.ensureComponentOn(timber, WoodStateDef, timberState);
-  em.ensureComponentOn(timber, ColorDef, ENDESGA16.darkBrown);
-  // em.ensureComponentOn(timber, ColorDef, [0.1, 0.1, 0.1]);
+  EM.ensureComponentOn(timber, RenderableConstructDef, timberMesh);
+  EM.ensureComponentOn(timber, WoodStateDef, timberState);
+  EM.ensureComponentOn(timber, ColorDef, ENDESGA16.darkBrown);
+  // EM.ensureComponentOn(timber, ColorDef, [0.1, 0.1, 0.1]);
   // const scale = 1 * Math.pow(0.8, ti);
   const scale = 1;
   const timberAABB = getAABBFromMesh(timberMesh);
@@ -286,18 +286,18 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
   // timberPos[1] += 1;
   // timberPos[0] -= ribCount * 0.5 * ribSpace;
   // timberPos[2] -= floorPlankCount * 0.5 * floorSpace;
-  em.ensureComponentOn(timber, PositionDef, timberPos);
-  // em.ensureComponentOn(timber, PositionDef, [0, 0, -4]);
-  em.ensureComponentOn(timber, RotationDef);
-  em.ensureComponentOn(timber, ScaleDef, V(scale, scale, scale));
-  em.ensureComponentOn(timber, WorldFrameDef);
-  em.ensureComponentOn(timber, ColliderDef, {
+  EM.ensureComponentOn(timber, PositionDef, timberPos);
+  // EM.ensureComponentOn(timber, PositionDef, [0, 0, -4]);
+  EM.ensureComponentOn(timber, RotationDef);
+  EM.ensureComponentOn(timber, ScaleDef, V(scale, scale, scale));
+  EM.ensureComponentOn(timber, WorldFrameDef);
+  EM.ensureComponentOn(timber, ColliderDef, {
     shape: "AABB",
     solid: false,
     aabb: timberAABB,
   });
   const timberHealth = createWoodHealth(timberState);
-  em.ensureComponentOn(timber, WoodHealthDef, timberHealth);
+  EM.ensureComponentOn(timber, WoodHealthDef, timberHealth);
 
   addGizmoChild(timber, 10);
 
@@ -306,23 +306,23 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
   const realFloorHeight = timberPos[1] + floorHeight;
   // for (let i = 0; i < 2; i++) {
   //   const isLeft = i === 0 ? 1 : -1;
-  //   const cannon = em.new();
-  //   em.ensureComponentOn(
+  //   const cannon = EM.new();
+  //   EM.ensureComponentOn(
   //     cannon,
   //     RenderableConstructDef,
   //     res.assets.ld51_cannon.proto
   //   );
-  //   em.ensureComponentOn(
+  //   EM.ensureComponentOn(
   //     cannon,
   //     PositionDef,
   //     V(-7.5, realFloorHeight + 2, -4 * isLeft)
   //   );
-  //   em.ensureComponentOn(cannon, RotationDef);
+  //   EM.ensureComponentOn(cannon, RotationDef);
   //   quat.rotateX(cannon.rotation, Math.PI * 0.01 * isLeft, cannon.rotation);
   //   if (isLeft !== 1) {
   //     quat.rotateY(cannon.rotation, Math.PI, cannon.rotation);
   //   }
-  //   em.ensureComponentOn(cannon, ColorDef, ENDESGA16.darkGreen);
+  //   EM.ensureComponentOn(cannon, ColorDef, ENDESGA16.darkGreen);
   //   // TODO(@darzu): USE PALETTE PROPERLY
   //   // TODO(@darzu): USE PALETTE PROPERLY
   //   vec3.scale(cannon.color, 0.5, cannon.color);
@@ -338,9 +338,9 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
   //       solid: false,
   //       aabb: interactAABB,
   //     });
-  //     em.ensureComponentOn(cannon, InteractableDef, interactBox.id);
+  //     EM.ensureComponentOn(cannon, InteractableDef, interactBox.id);
   //   }
-  //   em.ensureComponentOn(cannon, LD51CannonDef);
+  //   EM.ensureComponentOn(cannon, LD51CannonDef);
   // }
 
   // TODO(@darzu): use a pool for goodballs
@@ -361,7 +361,7 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
   >[] = [];
   const _goodBallPool = createIdxPool(MAX_GOODBALLS);
   function despawnGoodBall(e: EntityW<[typeof GoodBallDef]>) {
-    em.ensureComponentOn(e, DeadDef);
+    EM.ensureComponentOn(e, DeadDef);
     if (RenderableDef.isOn(e)) e.renderable.hidden = true;
     _goodBallPool.free(e.goodBall.idx);
     e.dead.processed = true;
@@ -373,16 +373,16 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
     let ball = _goodBalls[idx];
 
     if (!ball) {
-      const newBall = em.new();
-      em.ensureComponentOn(
+      const newBall = EM.new();
+      EM.ensureComponentOn(
         newBall,
         RenderableConstructDef,
         res.assets.ball.proto
       );
-      em.ensureComponentOn(newBall, ColorDef, ENDESGA16.orange);
-      em.ensureComponentOn(newBall, PositionDef);
-      em.ensureComponentOn(newBall, LinearVelocityDef);
-      em.ensureComponentOn(newBall, GravityDef);
+      EM.ensureComponentOn(newBall, ColorDef, ENDESGA16.orange);
+      EM.ensureComponentOn(newBall, PositionDef);
+      EM.ensureComponentOn(newBall, LinearVelocityDef);
+      EM.ensureComponentOn(newBall, GravityDef);
       const interactBox = EM.new();
       const interactAABB = copyAABB(createAABB(), res.assets.ball.aabb);
       vec3.scale(interactAABB.min, 2, interactAABB.min);
@@ -394,17 +394,17 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
         solid: false,
         aabb: interactAABB,
       });
-      em.ensureComponentOn(newBall, InteractableDef, interactBox.id);
-      // em.ensureComponentOn(ball, WorldFrameDef);
-      em.ensureComponentOn(newBall, GoodBallDef, idx, interactBox.id);
+      EM.ensureComponentOn(newBall, InteractableDef, interactBox.id);
+      // EM.ensureComponentOn(ball, WorldFrameDef);
+      EM.ensureComponentOn(newBall, GoodBallDef, idx, interactBox.id);
 
       ball = newBall;
       _goodBalls[idx] = newBall;
     } else {
       if (RenderableDef.isOn(ball)) ball.renderable.hidden = false;
-      em.tryRemoveComponent(ball.id, DeadDef);
-      em.tryRemoveComponent(ball.id, PhysicsParentDef);
-      em.ensureComponentOn(ball, InteractableDef, ball.goodBall.interactBoxId);
+      EM.tryRemoveComponent(ball.id, DeadDef);
+      EM.tryRemoveComponent(ball.id, PhysicsParentDef);
+      EM.ensureComponentOn(ball, InteractableDef, ball.goodBall.interactBoxId);
     }
 
     vec3.copy(ball.position, pos);
@@ -413,13 +413,13 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
     if (ScaleDef.isOn(ball)) vec3.copy(ball.scale, vec3.ONES);
   }
 
-  em.addSystem(
+  EM.addSystem(
     "ld51PlayerFireCannon",
     Phase.GAME_WORLD,
     [LD51CannonDef, WorldFrameDef, InRangeDef],
     [InputsDef, LocalHsPlayerDef, AudioDef],
     (cannons, res) => {
-      const player = em.findEntity(res.localHsPlayer.playerId, [HsPlayerDef])!;
+      const player = EM.findEntity(res.localHsPlayer.playerId, [HsPlayerDef])!;
       if (!player) return;
       for (let c of cannons) {
         if (
@@ -443,7 +443,6 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
           // );
 
           fireBullet(
-            em,
             1,
             bulletPos,
             // bulletRot,
@@ -483,7 +482,7 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
 
   const BUSY_WAIT = 20.0;
 
-  em.addSystem(
+  EM.addSystem(
     "ld51Ghost",
     Phase.GAME_WORLD,
     [GhostDef, WorldFrameDef, ColliderDef],
@@ -517,7 +516,6 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
         quat.copy(fireDir, ghost.world.rotation);
         const ballHealth = 2.0;
         fireBullet(
-          em,
           1,
           firePos,
           fireDir,
@@ -530,7 +528,7 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
       }
 
       if (inputs.keyClicks["r"]) {
-        const timber2 = await em.whenEntityHas(timber, RenderableDef);
+        const timber2 = await EM.whenEntityHas(timber, RenderableDef);
         resetWoodHealth(timber.woodHealth);
         resetWoodState(timber.woodState);
         res.renderer.renderer.stdPool.updateMeshQuads(
@@ -544,7 +542,7 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
   );
   if (DBG_PLAYER)
     // TODO(@darzu): breakBullet
-    em.addSystem(
+    EM.addSystem(
       "breakBullets",
       Phase.GAME_WORLD,
       [
@@ -566,11 +564,11 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
 
   // Create player
   {
-    const ColWallDef = em.defineComponent("ColWall", () => ({}));
+    const ColWallDef = EM.defineComponent("ColWall", () => ({}));
 
     // create ship bounds
     // TODO(@darzu): move into shipyard?
-    const colFloor = em.new();
+    const colFloor = EM.new();
     const flAABB: AABB = {
       // prettier-ignore
       min: vec3.clone([
@@ -584,16 +582,16 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
         +floorWidth * 0.5,
       ]),
     };
-    em.ensureComponentOn(colFloor, ColliderDef, {
+    EM.ensureComponentOn(colFloor, ColliderDef, {
       shape: "AABB",
       solid: true,
       aabb: flAABB,
     });
-    em.ensureComponentOn(colFloor, PositionDef);
-    em.ensureComponentOn(colFloor, ColWallDef);
+    EM.ensureComponentOn(colFloor, PositionDef);
+    EM.ensureComponentOn(colFloor, ColWallDef);
 
-    const colLeftWall = em.new();
-    em.ensureComponentOn(colLeftWall, ColliderDef, {
+    const colLeftWall = EM.new();
+    EM.ensureComponentOn(colLeftWall, ColliderDef, {
       shape: "AABB",
       solid: true,
       aabb: {
@@ -605,11 +603,11 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
         max: V(flAABB.max[0], realCeilHeight, flAABB.min[2]),
       },
     });
-    em.ensureComponentOn(colLeftWall, PositionDef);
-    em.ensureComponentOn(colLeftWall, ColWallDef);
+    EM.ensureComponentOn(colLeftWall, PositionDef);
+    EM.ensureComponentOn(colLeftWall, ColWallDef);
 
-    const colRightWall = em.new();
-    em.ensureComponentOn(colRightWall, ColliderDef, {
+    const colRightWall = EM.new();
+    EM.ensureComponentOn(colRightWall, ColliderDef, {
       shape: "AABB",
       solid: true,
       aabb: {
@@ -617,11 +615,11 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
         max: V(flAABB.max[0], realCeilHeight, flAABB.max[2] + 2),
       },
     });
-    em.ensureComponentOn(colRightWall, PositionDef);
-    em.ensureComponentOn(colRightWall, ColWallDef);
+    EM.ensureComponentOn(colRightWall, PositionDef);
+    EM.ensureComponentOn(colRightWall, ColWallDef);
 
-    const colFrontWall = em.new();
-    em.ensureComponentOn(colFrontWall, ColliderDef, {
+    const colFrontWall = EM.new();
+    EM.ensureComponentOn(colFrontWall, ColliderDef, {
       shape: "AABB",
       solid: true,
       aabb: {
@@ -637,11 +635,11 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
         ]),
       },
     });
-    em.ensureComponentOn(colFrontWall, PositionDef);
-    em.ensureComponentOn(colFrontWall, ColWallDef);
+    EM.ensureComponentOn(colFrontWall, PositionDef);
+    EM.ensureComponentOn(colFrontWall, ColWallDef);
 
-    const colBackWall = em.new();
-    em.ensureComponentOn(colBackWall, ColliderDef, {
+    const colBackWall = EM.new();
+    EM.ensureComponentOn(colBackWall, ColliderDef, {
       shape: "AABB",
       solid: true,
       aabb: {
@@ -653,8 +651,8 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
         max: V(flAABB.min[0], realCeilHeight, flAABB.max[2] - 0.5),
       },
     });
-    em.ensureComponentOn(colBackWall, PositionDef);
-    em.ensureComponentOn(colBackWall, ColWallDef);
+    EM.ensureComponentOn(colBackWall, PositionDef);
+    EM.ensureComponentOn(colBackWall, ColWallDef);
 
     // debugVizAABB(colFloor);
     // debugVizAABB(colLeftWall);
@@ -670,8 +668,8 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
       const center = aabbCenter(tempVec3(), aabbEnt.collider.aabb);
       scaleMesh3(mesh, size);
       transformMesh(mesh, mat4.fromTranslation(center));
-      em.ensureComponentOn(aabbEnt, RenderableConstructDef, mesh);
-      em.ensureComponentOn(aabbEnt, ColorDef, ENDESGA16.orange);
+      EM.ensureComponentOn(aabbEnt, RenderableConstructDef, mesh);
+      EM.ensureComponentOn(aabbEnt, ColorDef, ENDESGA16.orange);
     }
 
     // BULLET VS COLLIDERS
@@ -693,7 +691,7 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
         (colBackWall.collider as AABBCollider).aabb
       );
 
-      em.addSystem(
+      EM.addSystem(
         "bulletBounce",
         Phase.GAME_WORLD,
         [
@@ -712,7 +710,7 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
             const hits = res.physicsResults.collidesWith.get(b.id);
             if (hits) {
               const walls = hits
-                .map((h) => em.findEntity(h, [ColWallDef, WorldFrameDef]))
+                .map((h) => EM.findEntity(h, [ColWallDef, WorldFrameDef]))
                 .filter((b) => {
                   return b;
                 });
@@ -735,8 +733,8 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
                     // vec3.zero(b.linearVelocity);
                     // vec3.zero(b.gravity);
                     if (_goodBallPool.numFree() > 0) {
-                      // em.ensureComponentOn(b, DeletedDef);
-                      em.ensureComponentOn(b, DeadDef);
+                      // EM.ensureComponentOn(b, DeletedDef);
+                      EM.ensureComponentOn(b, DeadDef);
                       spawnGoodBall(b.world.position);
                     } else {
                       breakBullet(b);
@@ -753,7 +751,7 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
     // dead bullet maintenance
     // NOTE: this must be called after any system that can create dead bullets but
     //   before the rendering systems.
-    em.addSystem(
+    EM.addSystem(
       "deadBullets",
       Phase.GAME_WORLD,
       [BulletDef, PositionDef, DeadDef, RenderableDef],
@@ -784,7 +782,7 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
     //   }
     // }
 
-    em.addSystem(
+    EM.addSystem(
       "fallingGoodBalls",
       Phase.GAME_WORLD,
       [GoodBallDef, PositionDef, GravityDef, LinearVelocityDef],
@@ -802,13 +800,13 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
       }
     );
 
-    em.addSystem(
+    EM.addSystem(
       "pickUpBalls",
       Phase.GAME_WORLD,
       [GoodBallDef, InteractableDef, InRangeDef, PositionDef],
       [InputsDef, LocalHsPlayerDef],
       (es, res) => {
-        const player = em.findEntity(res.localHsPlayer.playerId, [
+        const player = EM.findEntity(res.localHsPlayer.playerId, [
           HsPlayerDef,
         ])!;
         if (!player) return;
@@ -819,11 +817,11 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
             if (PhysicsParentDef.isOn(ball)) continue;
             // pick up this ball
             player.hsPlayer.holdingBall = ball.id;
-            em.ensureComponentOn(ball, PhysicsParentDef, player.id);
+            EM.ensureComponentOn(ball, PhysicsParentDef, player.id);
             vec3.set(0, 0, -1, ball.position);
-            em.ensureComponentOn(ball, ScaleDef);
+            EM.ensureComponentOn(ball, ScaleDef);
             vec3.copy(ball.scale, [0.8, 0.8, 0.8]);
-            em.removeComponent(ball.id, InteractableDef);
+            EM.removeComponent(ball.id, InteractableDef);
           }
         }
       }
@@ -838,13 +836,13 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
       g.controllable.sprintMul = 10;
       const sphereMesh = cloneMesh(res.assets.ball.mesh);
       const visible = false;
-      em.ensureComponentOn(g, RenderableConstructDef, sphereMesh, visible);
-      em.ensureComponentOn(g, ColorDef, V(0.1, 0.1, 0.1));
-      em.ensureComponentOn(g, PositionDef, V(0, 0, 0));
-      // em.ensureComponentOn(b2, PositionDef, [0, 0, -1.2]);
-      em.ensureComponentOn(g, WorldFrameDef);
-      // em.ensureComponentOn(b2, PhysicsParentDef, g.id);
-      em.ensureComponentOn(g, ColliderDef, {
+      EM.ensureComponentOn(g, RenderableConstructDef, sphereMesh, visible);
+      EM.ensureComponentOn(g, ColorDef, V(0.1, 0.1, 0.1));
+      EM.ensureComponentOn(g, PositionDef, V(0, 0, 0));
+      // EM.ensureComponentOn(b2, PositionDef, [0, 0, -1.2]);
+      EM.ensureComponentOn(g, WorldFrameDef);
+      // EM.ensureComponentOn(b2, PhysicsParentDef, g.id);
+      EM.ensureComponentOn(g, ColliderDef, {
         shape: "AABB",
         solid: false,
         aabb: res.assets.ball.aabb,
@@ -888,9 +886,9 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
     }
 
     if (!DBG_PLAYER) {
-      const _player = createHsPlayer(em);
+      const _player = createHsPlayer();
       vec3.set(-10, realFloorHeight + 6, 0, _player.hsPlayerProps.location);
-      em.whenEntityHas(
+      EM.whenEntityHas(
         _player,
         PositionDef,
         RotationDef,
@@ -926,13 +924,13 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
 
   const startHealth = getCurrentHealth();
   {
-    em.addSystem(
+    EM.addSystem(
       "progressGame",
       Phase.GAME_WORLD,
       [],
       [InputsDef, TextDef, TimeDef, AudioDef],
       (es, res) => {
-        // const player = em.findEntity(res.localHsPlayer.playerId, [PlayerDef])!;
+        // const player = EM.findEntity(res.localHsPlayer.playerId, [PlayerDef])!;
         // if (!player) return;
 
         const currentHealth = getCurrentHealth();

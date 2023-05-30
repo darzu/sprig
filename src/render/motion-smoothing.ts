@@ -1,4 +1,4 @@
-import { EntityManager, EM, Component, Entity } from "../ecs/entity-manager.js";
+import { EM, Component, Entity } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { TimeDef } from "../time/time.js";
 import {
@@ -45,8 +45,8 @@ export const MotionSmoothingDef = EM.defineComponent("motionSmoothing", () => {
 });
 export type MotionSmoothing = Component<typeof MotionSmoothingDef>;
 
-export function initNetMotionRecordingSystem(em: EntityManager) {
-  em.addSystem(
+export function initNetMotionRecordingSystem() {
+  EM.addSystem(
     "recordPreviousLocations",
     Phase.NETWORK,
     [MotionSmoothingDef],
@@ -78,21 +78,21 @@ export const PrevSmoothedWorldFrameDef = EM.defineComponent(
   () => createFrame()
 );
 
-function updateSmoothedWorldFrame(em: EntityManager, o: Entity) {
+function updateSmoothedWorldFrame(o: Entity) {
   if (DeletedDef.isOn(o)) return;
   if (!TransformDef.isOn(o)) return;
   let parent = null;
   if (PhysicsParentDef.isOn(o) && o.physicsParent.id) {
     if (!_hasRendererWorldFrame.has(o.physicsParent.id)) {
-      updateSmoothedWorldFrame(em, em.findEntity(o.physicsParent.id, [])!);
+      updateSmoothedWorldFrame(EM.findEntity(o.physicsParent.id, [])!);
     }
-    parent = em.findEntity(o.physicsParent.id, [SmoothedWorldFrameDef]);
+    parent = EM.findEntity(o.physicsParent.id, [SmoothedWorldFrameDef]);
     if (!parent) return;
   }
   let firstFrame = false;
   if (!SmoothedWorldFrameDef.isOn(o)) firstFrame = true;
-  em.ensureComponentOn(o, SmoothedWorldFrameDef);
-  em.ensureComponentOn(o, PrevSmoothedWorldFrameDef);
+  EM.ensureComponentOn(o, SmoothedWorldFrameDef);
+  EM.ensureComponentOn(o, PrevSmoothedWorldFrameDef);
   copyFrame(o.prevSmoothedWorldFrame, o.smoothedWorldFrame);
   mat4.copy(o.smoothedWorldFrame.transform, o.transform);
   updateFrameFromTransform(o.smoothedWorldFrame);
@@ -121,8 +121,8 @@ function updateSmoothedWorldFrame(em: EntityManager, o: Entity) {
   _hasRendererWorldFrame.add(o.id);
 }
 
-export function initMotionSmoothingSystems(em: EntityManager) {
-  em.addSystem(
+export function initMotionSmoothingSystems() {
+  EM.addSystem(
     "smoothMotion",
     Phase.PRE_RENDER,
     [MotionSmoothingDef],
@@ -143,7 +143,7 @@ export function initMotionSmoothingSystems(em: EntityManager) {
     }
   );
 
-  em.addSystem(
+  EM.addSystem(
     "updateMotionSmoothing",
     Phase.PRE_RENDER,
     [MotionSmoothingDef],
@@ -173,7 +173,7 @@ export function initMotionSmoothingSystems(em: EntityManager) {
     }
   );
 
-  em.addSystem(
+  EM.addSystem(
     "updateSmoothedWorldFrames",
     Phase.PRE_RENDER,
     [RenderableDef, TransformDef],
@@ -184,17 +184,17 @@ export function initMotionSmoothingSystems(em: EntityManager) {
       for (const o of objs) {
         // TODO(@darzu): PERF HACK!
         if (DONT_SMOOTH_WORLD_FRAME) {
-          em.ensureComponentOn(o, SmoothedWorldFrameDef);
-          em.ensureComponentOn(o, PrevSmoothedWorldFrameDef);
+          EM.ensureComponentOn(o, SmoothedWorldFrameDef);
+          EM.ensureComponentOn(o, PrevSmoothedWorldFrameDef);
           continue;
         }
 
-        updateSmoothedWorldFrame(em, o);
+        updateSmoothedWorldFrame(o);
       }
     }
   );
 
-  em.addSystem(
+  EM.addSystem(
     "updateRendererWorldFrames",
     Phase.RENDER_WORLDFRAMES,
     [SmoothedWorldFrameDef, PrevSmoothedWorldFrameDef],
@@ -204,14 +204,14 @@ export function initMotionSmoothingSystems(em: EntityManager) {
         if (DONT_SMOOTH_WORLD_FRAME) {
           // TODO(@darzu): HACK!
           if (WorldFrameDef.isOn(o)) {
-            em.ensureComponentOn(o, RendererWorldFrameDef);
+            EM.ensureComponentOn(o, RendererWorldFrameDef);
             copyFrame(o.rendererWorldFrame, o.world);
             // (o as any).rendererWorldFrame = o.world;
           }
           continue;
         }
 
-        em.ensureComponentOn(o, RendererWorldFrameDef);
+        EM.ensureComponentOn(o, RendererWorldFrameDef);
 
         switch (BLEND_SIMULATION_FRAMES_STRATEGY) {
           case "interpolate":

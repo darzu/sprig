@@ -3,14 +3,14 @@ import {
   CameraFollowDef,
   setCameraFollowPosition,
 } from "../camera/camera.js";
-import { EntityManager } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/entity-manager.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { LocalHsPlayerDef } from "../hyperspace/hs-player.js";
 import { InputsDef } from "../input/inputs.js";
 import { RendererDef } from "../render/renderer-ecs.js";
 
-export function initDbgViewModes(em: EntityManager) {
-  em.addSystem(
+export function initDbgViewModes() {
+  EM.addSystem(
     "renderModeToggles",
     Phase.GAME_PLAYERS,
     [],
@@ -36,8 +36,8 @@ export function initDbgViewModes(em: EntityManager) {
 
       // check camera mode
       if (inputs.keyClicks["4"]) {
-        const localHsPlayer = em.getResource(LocalHsPlayerDef);
-        const p = em.findEntity(localHsPlayer?.playerId ?? -1, [
+        const localHsPlayer = EM.getResource(LocalHsPlayerDef);
+        const p = EM.findEntity(localHsPlayer?.playerId ?? -1, [
           CameraFollowDef,
         ]);
         if (p) {

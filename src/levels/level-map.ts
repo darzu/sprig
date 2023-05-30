@@ -1,4 +1,4 @@
-import { Component, EM, EntityManager } from "../ecs/entity-manager.js";
+import { Component, EM } from "../ecs/entity-manager.js";
 import { VERBOSE_LOG } from "../flags.js";
 import { TextDef } from "../gui/ui.js";
 import {
@@ -301,9 +301,9 @@ export function parseAndMutateIntoMapData(
   return levelMap;
 }
 
-export async function setMap(em: EntityManager, name: MapName) {
+export async function setMap(name: MapName) {
   console.log(`setting map to ${name}`);
-  const res = await em.whenResources(
+  const res = await EM.whenResources(
     MapBytesSetDef,
     RendererDef,
     ScoreDef,
@@ -331,7 +331,7 @@ export async function setMap(em: EntityManager, name: MapName) {
   texResource.queueUpdate(levelMap.land);
 
   // TODO(@darzu): hacky. i wish there was a way to do "createOrSet" instead of just "ensure"
-  const resLandMap = em.ensureResource(LevelMapDef);
+  const resLandMap = EM.ensureResource(LevelMapDef);
   Object.assign(resLandMap, levelMap);
 
   res.score.totalPurple = totalPurple;
