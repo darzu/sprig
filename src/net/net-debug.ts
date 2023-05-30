@@ -19,7 +19,7 @@ const AUTHORITY_TINTS: Record<number, vec3> = {
   3: V(0, 0, 0.1),
 };
 
-export function registerNetDebugSystem(em: EntityManager) {
+export function initNetDebugSystem(em: EntityManager) {
   em.addSystem(
     "netDebugSystem",
     Phase.NETWORK,

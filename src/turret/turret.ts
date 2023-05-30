@@ -153,8 +153,8 @@ export const raiseUnmanTurret = eventWizard(
   }
 );
 
-export function registerTurretSystems(em: EntityManager) {
-  em.addSystem(
+EM.addEagerInit([TurretDef], [], [], () => {
+  EM.addSystem(
     "turretYawPitch",
     Phase.GAME_PLAYERS,
     [TurretDef, RotationDef, YawPitchDef],
@@ -171,13 +171,13 @@ export function registerTurretSystems(em: EntityManager) {
     }
   );
 
-  em.addSystem(
+  EM.addSystem(
     "turretAim",
     Phase.GAME_PLAYERS,
     [TurretDef, YawPitchDef, CameraFollowDef],
     [InputsDef, LocalHsPlayerDef],
     (turrets, res) => {
-      const player = em.findEntity(res.localHsPlayer.playerId, [HsPlayerDef])!;
+      const player = EM.findEntity(res.localHsPlayer.playerId, [HsPlayerDef])!;
       if (!player) return;
       for (let c of turrets) {
         if (DeletedDef.isOn(c)) continue;
@@ -216,13 +216,13 @@ export function registerTurretSystems(em: EntityManager) {
     }
   );
 
-  em.addSystem(
+  EM.addSystem(
     "turretManUnman",
     Phase.GAME_PLAYERS,
     [TurretDef, InRangeDef, AuthorityDef, CameraFollowDef],
     [InputsDef, LocalHsPlayerDef, TextDef],
     (turrets, res) => {
-      const player = em.findEntity(res.localHsPlayer.playerId, [
+      const player = EM.findEntity(res.localHsPlayer.playerId, [
         HsPlayerDef,
         AuthorityDef,
       ])!;
@@ -245,4 +245,4 @@ export function registerTurretSystems(em: EntityManager) {
       }
     }
   );
-}
+});

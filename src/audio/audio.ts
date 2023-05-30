@@ -1,4 +1,4 @@
-import { CanvasDef } from "../render/canvas.js";
+import { CanvasDef, HasFirstInteractionDef } from "../render/canvas.js";
 import { Component, EM, EntityManager } from "../ecs/entity-manager.js";
 import { ENABLE_AUDIO } from "../flags.js";
 import { createIdxPool, createIdxRing, IdxPool } from "../utils/idx-pool.js";
@@ -24,39 +24,32 @@ const NUM_STRINGS = 300;
 
 // TODO(@darzu): rename to .audio
 export const AudioDef = EM.defineComponent("music", createAudioResource);
-export const HasAudioDef = EM.defineComponent("hasAudio", () => true);
 export type Music = Component<typeof AudioDef>;
 
-export function registerMusicSystems(em: EntityManager) {
-  em.addResource(AudioDef);
+EM.addLazyInit([HasFirstInteractionDef], [AudioDef], () => {
+  const music = EM.addResource(AudioDef);
 
-  let once = true;
-  em.addSystem(
+  // Init our audio
+  // TODO(@darzu): maybe we shouldn't even create the resource until we
+  //    have the audio context?
+  if (window.AudioContext != null && ENABLE_AUDIO) {
+    music.state = createAudioState();
+  }
+
+  // play opening music
+  // const THEME_LENGTH = 100;
+  // const randChordId = () => Math.floor(Math.random() * 6);
+  // const theme = range(100).map((_) => randChordId());
+  // // const theme = [0, 1, 2, 3, 4, 5];
+  // console.log("playing music");
+  // res.music.playChords(theme, "major", 2.0, 2.0, -2);
+
+  EM.addSystem(
     "musicStart",
     Phase.AUDIO,
     null,
     [AudioDef, CanvasDef],
     (_, res) => {
-      if (once && res.htmlCanvas.hasFirstInteraction) {
-        em.addResource(HasAudioDef);
-        // Init our audio
-        // TODO(@darzu): maybe we shouldn't even create the resource until we
-        //    have the audio context?
-        if (window.AudioContext != null && ENABLE_AUDIO) {
-          res.music.state = createAudioState();
-        }
-
-        // play opening music
-        // const THEME_LENGTH = 100;
-        // const randChordId = () => Math.floor(Math.random() * 6);
-        // const theme = range(100).map((_) => randChordId());
-        // // const theme = [0, 1, 2, 3, 4, 5];
-        // console.log("playing music");
-        // res.music.playChords(theme, "major", 2.0, 2.0, -2);
-
-        once = false;
-      }
-
       // update the string pool
       if (res.music.state)
         for (let i = 0; i < NUM_STRINGS; i++) {
@@ -67,7 +60,7 @@ export function registerMusicSystems(em: EntityManager) {
         }
     }
   );
-}
+});
 
 interface AudioString {
   osci: OscillatorNode;

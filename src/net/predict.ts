@@ -6,9 +6,9 @@ import { PositionDef, RotationDef } from "../physics/transform.js";
 import { AngularVelocityDef, LinearVelocityDef } from "../motion/velocity.js";
 import { Phase } from "../ecs/sys-phase.js";
 
-export function registerPredictSystem(em: EntityManager) {
+export function initNetPredictSystems(em: EntityManager) {
   em.addSystem(
-    "predict",
+    "netPredict",
     Phase.NETWORK,
     [PredictDef, PositionDef, LinearVelocityDef],
     [],

@@ -28,7 +28,7 @@ import {
 import { TimeDef } from "../time/time.js";
 import { Phase } from "../ecs/sys-phase.js";
 
-export function registerSyncSystem(em: EntityManager) {
+export function initNetSyncSystem(em: EntityManager) {
   em.addSystem(
     "netSync",
     Phase.NETWORK,
@@ -99,7 +99,7 @@ export function registerSyncSystem(em: EntityManager) {
   );
 }
 
-export function registerUpdateSystem(em: EntityManager) {
+export function initNetUpdateSystems(em: EntityManager) {
   em.addSystem(
     "clearRemoteUpdatesMarker",
     Phase.NETWORK,
@@ -144,7 +144,7 @@ export function registerUpdateSystem(em: EntityManager) {
   );
 }
 
-export function registerAckUpdateSystem(em: EntityManager) {
+export function initNetAckUpdateSystem(em: EntityManager) {
   function ack(
     peers: readonly { peer: Peer; inbox: Inbox }[],
     {

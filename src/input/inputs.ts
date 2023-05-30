@@ -39,12 +39,12 @@ export const MouseDragDef = EM.defineComponent("mousedrag", () => ({
   dragLastEnd: vec2.create(),
 }));
 
-export function registerInputsSystem(em: EntityManager): void {
+EM.addLazyInit([], [InputsDef, MouseDragDef], () => {
   let inputsReader: (() => Inputs) | null = null;
 
   EM.addResource(InputsDef);
   // const InputsSys =
-  em.addSystem(
+  EM.addSystem(
     "inputs",
     Phase.READ_INPUTS,
     null,
@@ -56,8 +56,8 @@ export function registerInputsSystem(em: EntityManager): void {
     }
   );
 
-  em.addResource(MouseDragDef);
-  em.addSystem(
+  EM.addResource(MouseDragDef);
+  EM.addSystem(
     "mouseDrag",
     Phase.GAME_PLAYERS,
     null,
@@ -94,7 +94,7 @@ export function registerInputsSystem(em: EntityManager): void {
       }
     }
   );
-}
+});
 
 function createInputsReader(canvas: Canvas): () => Inputs {
   // track which keys are pressed for use in the game loop

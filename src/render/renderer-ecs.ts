@@ -9,11 +9,14 @@ import {
   updateFrameFromPosRotScale,
   copyFrame,
 } from "../physics/transform.js";
-import { MotionSmoothingDef } from "./motion-smoothing.js";
+import {
+  MotionSmoothingDef,
+  PrevSmoothedWorldFrameDef,
+  SmoothedWorldFrameDef,
+} from "./motion-smoothing.js";
 import { DeadDef, DeletedDef } from "../ecs/delete.js";
 import { meshPoolPtr } from "./pipelines/std-scene.js";
 import { CanvasDef } from "./canvas.js";
-import { FORCE_WEBGL } from "../main.js";
 import { createRenderer } from "./renderer-webgpu.js";
 import { CyMeshPoolPtr, CyPipelinePtr } from "./gpu-registry.js";
 import { createFrame, WorldFrameDef } from "../physics/nonintersection.js";
@@ -43,8 +46,16 @@ import {
 } from "./pipelines/std-rigged.js";
 import { Phase } from "../ecs/sys-phase.js";
 
-const BLEND_SIMULATION_FRAMES_STRATEGY: "interpolate" | "extrapolate" | "none" =
-  "none";
+// TODO(@darzu): the double "Renderer" naming is confusing. Maybe one should be GPUManager or something?
+export const RendererDef = EM.defineComponent(
+  "renderer",
+  (renderer: Renderer, pipelines: CyPipelinePtr[]) => {
+    return {
+      renderer,
+      pipelines,
+    };
+  }
+);
 
 // TODO(@darzu): we need a better way to handle arbitrary pools
 // TODO(@darzu): support height map?
@@ -121,189 +132,10 @@ export const RenderableDef = EM.defineComponent(
 //   (r: MeshUniformTS) => r
 // );
 
-const _hasRendererWorldFrame = new Set();
-
-export const SmoothedWorldFrameDef = EM.defineComponent(
-  "smoothedWorldFrame",
-  () => createFrame()
-);
-
-const PrevSmoothedWorldFrameDef = EM.defineComponent(
-  "prevSmoothedWorldFrame",
-  () => createFrame()
-);
-
 export const RendererWorldFrameDef = EM.defineComponent(
   "rendererWorldFrame",
   () => createFrame()
 );
-
-function updateSmoothedWorldFrame(em: EntityManager, o: Entity) {
-  if (DeletedDef.isOn(o)) return;
-  if (!TransformDef.isOn(o)) return;
-  let parent = null;
-  if (PhysicsParentDef.isOn(o) && o.physicsParent.id) {
-    if (!_hasRendererWorldFrame.has(o.physicsParent.id)) {
-      updateSmoothedWorldFrame(em, em.findEntity(o.physicsParent.id, [])!);
-    }
-    parent = em.findEntity(o.physicsParent.id, [SmoothedWorldFrameDef]);
-    if (!parent) return;
-  }
-  let firstFrame = false;
-  if (!SmoothedWorldFrameDef.isOn(o)) firstFrame = true;
-  em.ensureComponentOn(o, SmoothedWorldFrameDef);
-  em.ensureComponentOn(o, PrevSmoothedWorldFrameDef);
-  copyFrame(o.prevSmoothedWorldFrame, o.smoothedWorldFrame);
-  mat4.copy(o.smoothedWorldFrame.transform, o.transform);
-  updateFrameFromTransform(o.smoothedWorldFrame);
-  if (MotionSmoothingDef.isOn(o)) {
-    vec3.add(
-      o.smoothedWorldFrame.position,
-      o.motionSmoothing.positionError,
-      o.smoothedWorldFrame.position
-    );
-    quat.mul(
-      o.smoothedWorldFrame.rotation,
-      o.motionSmoothing.rotationError,
-      o.smoothedWorldFrame.rotation
-    );
-    updateFrameFromPosRotScale(o.smoothedWorldFrame);
-  }
-  if (parent) {
-    mat4.mul(
-      parent.smoothedWorldFrame.transform,
-      o.smoothedWorldFrame.transform,
-      o.smoothedWorldFrame.transform
-    );
-    updateFrameFromTransform(o.smoothedWorldFrame);
-  }
-  if (firstFrame) copyFrame(o.prevSmoothedWorldFrame, o.smoothedWorldFrame);
-  _hasRendererWorldFrame.add(o.id);
-}
-
-export function registerUpdateSmoothedWorldFrames(em: EntityManager) {
-  em.addSystem(
-    "updateSmoothedWorldFrames",
-    Phase.PRE_RENDER,
-    [RenderableDef, TransformDef],
-    [],
-    (objs, res) => {
-      _hasRendererWorldFrame.clear();
-
-      for (const o of objs) {
-        // TODO(@darzu): PERF HACK!
-        if (DONT_SMOOTH_WORLD_FRAME) {
-          em.ensureComponentOn(o, SmoothedWorldFrameDef);
-          em.ensureComponentOn(o, PrevSmoothedWorldFrameDef);
-          continue;
-        }
-
-        updateSmoothedWorldFrame(em, o);
-      }
-    }
-  );
-}
-
-let _simulationAlpha = 0.0;
-
-export function setSimulationAlpha(to: number) {
-  _simulationAlpha = to;
-}
-
-function interpolateFrames(
-  alpha: number,
-  out: Frame,
-  prev: Frame,
-  next: Frame
-) {
-  vec3.lerp(prev.position, next.position, alpha, out.position);
-  quat.slerp(prev.rotation, next.rotation, alpha, out.rotation);
-  vec3.lerp(prev.scale, next.scale, alpha, out.scale);
-  updateFrameFromPosRotScale(out);
-}
-
-function extrapolateFrames(
-  alpha: number,
-  out: Frame,
-  prev: Frame,
-  next: Frame
-) {
-  // out.position = next.position + alpha * (next.position - prev.position)
-  // out.position = next.position + alpha * (next.position - prev.position)
-  vec3.sub(next.position, prev.position, out.position);
-  vec3.scale(out.position, alpha, out.position);
-  vec3.add(out.position, next.position, out.position);
-
-  // see https://answers.unity.com/questions/168779/extrapolating-quaternion-rotation.html
-  // see https://answers.unity.com/questions/168779/extrapolating-quaternion-rotation.html
-  quat.invert(prev.rotation, out.rotation);
-  quat.mul(next.rotation, out.rotation, out.rotation);
-  const axis = tempVec3();
-  let angle = quat.getAxisAngle(out.rotation, axis);
-  // ensure we take the shortest path
-  if (angle > Math.PI) {
-    angle -= Math.PI * 2;
-  }
-  if (angle < -Math.PI) {
-    angle += Math.PI * 2;
-  }
-  angle = angle * alpha;
-  quat.setAxisAngle(axis, angle, out.rotation);
-  quat.mul(out.rotation, next.rotation, out.rotation);
-
-  // out.scale = next.scale + alpha * (next.scale - prev.scale)
-  // out.scale = next.scale + alpha * (next.scale - prev.scale)
-  vec3.sub(next.scale, prev.scale, out.scale);
-  vec3.scale(out.scale, alpha, out.scale);
-  vec3.add(out.scale, next.scale, out.scale);
-
-  updateFrameFromPosRotScale(out);
-}
-
-export function registerUpdateRendererWorldFrames(em: EntityManager) {
-  em.addSystem(
-    "updateRendererWorldFrames",
-    Phase.RENDER_WORLDFRAMES,
-    [SmoothedWorldFrameDef, PrevSmoothedWorldFrameDef],
-    [],
-    (objs) => {
-      for (let o of objs) {
-        if (DONT_SMOOTH_WORLD_FRAME) {
-          // TODO(@darzu): HACK!
-          if (WorldFrameDef.isOn(o)) {
-            em.ensureComponentOn(o, RendererWorldFrameDef);
-            copyFrame(o.rendererWorldFrame, o.world);
-            // (o as any).rendererWorldFrame = o.world;
-          }
-          continue;
-        }
-
-        em.ensureComponentOn(o, RendererWorldFrameDef);
-
-        switch (BLEND_SIMULATION_FRAMES_STRATEGY) {
-          case "interpolate":
-            interpolateFrames(
-              _simulationAlpha,
-              o.rendererWorldFrame,
-              o.prevSmoothedWorldFrame,
-              o.smoothedWorldFrame
-            );
-            break;
-          case "extrapolate":
-            extrapolateFrames(
-              _simulationAlpha,
-              o.rendererWorldFrame,
-              o.prevSmoothedWorldFrame,
-              o.smoothedWorldFrame
-            );
-            break;
-          default:
-            copyFrame(o.rendererWorldFrame, o.smoothedWorldFrame);
-        }
-      }
-    }
-  );
-}
 
 // TODO(@darzu): We need to add constraints for updateRendererWorldFrames and such w/ respect to gameplay, physics, and rendering!
 
@@ -330,7 +162,65 @@ export function registerUpdateRendererWorldFrames(em: EntityManager) {
 //   grass: updateGrassRenderData,
 // };
 
-export function registerRenderer(em: EntityManager) {
+EM.addEagerInit([RenderableConstructDef], [RendererDef], [], () => {
+  EM.addSystem(
+    "constructRenderables",
+    Phase.PRE_GAME_WORLD,
+    [RenderableConstructDef],
+    [RendererDef],
+    (es, res) => {
+      for (let e of es) {
+        // TODO(@darzu): this seems somewhat inefficient to look for this every frame
+        if (!RenderableDef.isOn(e)) {
+          let meshHandle: MeshHandle;
+          let mesh: Mesh;
+          const pool = res.renderer.renderer.getCyResource(
+            e.renderableConstruct.pool
+          );
+          assert(pool);
+          if (isMeshHandle(e.renderableConstruct.meshOrProto)) {
+            // TODO(@darzu): renderableConstruct is getting to large and wierd
+            assert(
+              !e.renderableConstruct.reserve,
+              `cannot have a reserve when adding an instance`
+            );
+            meshHandle = pool.addMeshInstance(
+              e.renderableConstruct.meshOrProto
+            );
+            mesh = meshHandle.mesh!;
+          } else {
+            meshHandle = pool.addMesh(
+              e.renderableConstruct.meshOrProto,
+              e.renderableConstruct.reserve
+            );
+            mesh = e.renderableConstruct.meshOrProto;
+          }
+          if (e.renderableConstruct.mask) {
+            meshHandle.mask = e.renderableConstruct.mask;
+          }
+
+          EM.addComponent(e.id, RenderableDef, {
+            enabled: e.renderableConstruct.enabled,
+            hidden: false,
+            sortLayer: e.renderableConstruct.sortLayer,
+            meshHandle,
+          });
+
+          // pool.updateUniform
+          const uni = pool.ptr.computeUniData(mesh);
+          EM.ensureComponentOn(e, pool.ptr.dataDef, uni);
+          // TODO(@darzu): HACK! We need some notion of required uni data maybe? Or common uni data
+          if ("id" in e[pool.ptr.dataDef.name]) {
+            // console.log(
+            //   `setting ${e.id}.${pool.ptr.dataDef.name}.id = ${meshHandle.mId}`
+            // );
+            e[pool.ptr.dataDef.name]["id"] = meshHandle.mId;
+          }
+        }
+      }
+    }
+  );
+
   // NOTE: we use "renderListDeadHidden" and "renderList" to construct a custom
   //  query of renderable objects that include dead, hidden objects. The reason
   //  for this is that it causes a more stable entity list when we have object
@@ -338,7 +228,7 @@ export function registerRenderer(em: EntityManager) {
   const renderObjs: EntityW<
     [typeof RendererWorldFrameDef, typeof RenderableDef]
   >[] = [];
-  em.addSystem(
+  EM.addSystem(
     "renderListDeadHidden",
     Phase.RENDER_DRAW,
     [RendererWorldFrameDef, RenderableDef, DeadDef],
@@ -350,7 +240,7 @@ export function registerRenderer(em: EntityManager) {
           renderObjs.push(o);
     }
   );
-  em.addSystem(
+  EM.addSystem(
     "renderList",
     Phase.RENDER_DRAW,
     [RendererWorldFrameDef, RenderableDef],
@@ -363,8 +253,8 @@ export function registerRenderer(em: EntityManager) {
 
   let __frame = 1; // TODO(@darzu): DBG
 
-  em.addSystem(
-    "stepRenderer",
+  EM.addSystem(
+    "renderDrawSubmitToGPU",
     Phase.RENDER_DRAW,
     null, // NOTE: see "renderList*" systems and NOTE above. We use those to construct our query.
     [CameraDef, CameraComputedDef, RendererDef, TimeDef, PartyDef],
@@ -387,12 +277,12 @@ export function registerRenderer(em: EntityManager) {
       // console.log(`mId 24: ${!!m24.length}, e10003: ${!!e10003.length}`);
 
       // update position
-      const pointLights = em
-        .filterEntities([PointLightDef, WorldFrameDef])
-        .map((e) => {
+      const pointLights = EM.filterEntities([PointLightDef, WorldFrameDef]).map(
+        (e) => {
           vec3.copy(e.pointLight.position, e.world.position);
           return e.pointLight;
-        });
+        }
+      );
 
       const NUM_CASCADES = 2;
       // TODO(@darzu): move point light and casading shadow map code to its own system
@@ -508,14 +398,14 @@ export function registerRenderer(em: EntityManager) {
     }
   );
 
-  // em.addConstraint([
+  // EM.addConstraint([
   //   "renderListDeadHidden",
   //   "after",
   //   "updateRendererWorldFrames",
   // ]);
-  // em.addConstraint(["renderListDeadHidden", "before", "renderList"]);
-  // em.addConstraint(["renderList", "before", "stepRenderer"]);
-}
+  // EM.addConstraint(["renderListDeadHidden", "before", "renderList"]);
+  // EM.addConstraint(["renderList", "before", "stepRenderer"]);
+});
 
 // export function poolKindToPool(
 //   renderer: Renderer,
@@ -532,66 +422,6 @@ export function registerRenderer(em: EntityManager) {
 //   }
 // }
 
-export function registerConstructRenderablesSystem(em: EntityManager) {
-  em.addSystem(
-    "constructRenderables",
-    Phase.PRE_GAME_WORLD,
-    [RenderableConstructDef],
-    [RendererDef],
-    (es, res) => {
-      for (let e of es) {
-        // TODO(@darzu): this seems somewhat inefficient to look for this every frame
-        if (!RenderableDef.isOn(e)) {
-          let meshHandle: MeshHandle;
-          let mesh: Mesh;
-          const pool = res.renderer.renderer.getCyResource(
-            e.renderableConstruct.pool
-          );
-          assert(pool);
-          if (isMeshHandle(e.renderableConstruct.meshOrProto)) {
-            // TODO(@darzu): renderableConstruct is getting to large and wierd
-            assert(
-              !e.renderableConstruct.reserve,
-              `cannot have a reserve when adding an instance`
-            );
-            meshHandle = pool.addMeshInstance(
-              e.renderableConstruct.meshOrProto
-            );
-            mesh = meshHandle.mesh!;
-          } else {
-            meshHandle = pool.addMesh(
-              e.renderableConstruct.meshOrProto,
-              e.renderableConstruct.reserve
-            );
-            mesh = e.renderableConstruct.meshOrProto;
-          }
-          if (e.renderableConstruct.mask) {
-            meshHandle.mask = e.renderableConstruct.mask;
-          }
-
-          em.addComponent(e.id, RenderableDef, {
-            enabled: e.renderableConstruct.enabled,
-            hidden: false,
-            sortLayer: e.renderableConstruct.sortLayer,
-            meshHandle,
-          });
-
-          // pool.updateUniform
-          const uni = pool.ptr.computeUniData(mesh);
-          em.ensureComponentOn(e, pool.ptr.dataDef, uni);
-          // TODO(@darzu): HACK! We need some notion of required uni data maybe? Or common uni data
-          if ("id" in e[pool.ptr.dataDef.name]) {
-            // console.log(
-            //   `setting ${e.id}.${pool.ptr.dataDef.name}.id = ${meshHandle.mId}`
-            // );
-            e[pool.ptr.dataDef.name]["id"] = meshHandle.mId;
-          }
-        }
-      }
-    }
-  );
-}
-
 export const RiggedRenderableDef = EM.defineComponent(
   "riggedRenderable",
   (meshHandle: RiggedMeshHandle, rigging: Rigging) => ({
@@ -601,17 +431,15 @@ export const RiggedRenderableDef = EM.defineComponent(
   })
 );
 
-export function registerRiggedRenderablesSystems(em: EntityManager) {
-  let pool: RiggedMeshPool | undefined = undefined;
-  em.addSystem(
+EM.addEagerInit([RiggedRenderableConstructDef], [RendererDef], [], (res) => {
+  const pool = createRiggedMeshPool(res.renderer.renderer);
+
+  EM.addSystem(
     "constructRiggedRenderables",
     Phase.PRE_GAME_WORLD,
     [RiggedRenderableConstructDef],
-    [RendererDef],
+    [],
     (es, res) => {
-      if (!pool) {
-        pool = createRiggedMeshPool(res.renderer.renderer);
-      }
       for (let e of es) {
         // TODO(@darzu): this seems somewhat inefficient to look for this every frame
         if (!RenderableDef.isOn(e)) {
@@ -619,18 +447,18 @@ export function registerRiggedRenderablesSystems(em: EntityManager) {
           assert(pool);
           let meshHandle = pool.addRiggedMesh(mesh);
 
-          em.addComponent(e.id, RenderableDef, {
+          EM.addComponent(e.id, RenderableDef, {
             enabled: true,
             hidden: false,
             sortLayer: 0,
             meshHandle,
           });
 
-          em.addComponent(e.id, RiggedRenderableDef, meshHandle, mesh.rigging);
+          EM.addComponent(e.id, RiggedRenderableDef, meshHandle, mesh.rigging);
 
           // pool.updateUniform
           const uni = pool.ptr.computeUniData(mesh);
-          em.ensureComponentOn(e, pool.ptr.dataDef, uni);
+          EM.ensureComponentOn(e, pool.ptr.dataDef, uni);
           // TODO(@darzu): HACK! We need some notion of required uni data maybe? Or common uni data
           if ("id" in e[pool.ptr.dataDef.name]) {
             // console.log(
@@ -643,13 +471,12 @@ export function registerRiggedRenderablesSystems(em: EntityManager) {
     }
   );
 
-  em.addSystem(
+  EM.addSystem(
     "updateJoints",
     Phase.RENDER_PRE_DRAW,
     [RiggedRenderableDef, RenderableDef],
     [],
     (es, res) => {
-      if (!pool) return;
       for (let e of es) {
         if (e.renderable.enabled && !e.renderable.hidden) {
           pool.updateJointMatrices(
@@ -660,7 +487,7 @@ export function registerRiggedRenderablesSystems(em: EntityManager) {
       }
     }
   );
-}
+});
 
 export type Renderer = ReturnType<typeof createRenderer>;
 // export interface Renderer {
@@ -680,89 +507,48 @@ export type Renderer = ReturnType<typeof createRenderer>;
 //   stats(): Promise<Map<string, bigint>>;
 // }
 
-// TODO(@darzu): the double "Renderer" naming is confusing. Maybe one should be GPUManager or something?
-export const RendererDef = EM.defineComponent(
-  "renderer",
-  (renderer: Renderer, usingWebGPU: boolean, pipelines: CyPipelinePtr[]) => {
-    return {
-      renderer,
-      usingWebGPU,
-      pipelines,
-    };
+EM.addLazyInit(
+  [CanvasDef, ShadersDef],
+  [RendererDef],
+  async ({ htmlCanvas, shaders }) => {
+    let renderer: Renderer | undefined = undefined;
+
+    const adapter = await navigator.gpu?.requestAdapter();
+    if (!adapter) {
+      console.error("navigator.gpu?.requestAdapter() failed");
+      displayWebGPUError();
+      throw new Error("Unable to get gpu adapter");
+    }
+
+    const supportsTimestamp = adapter.features.has("timestamp-query");
+    if (!supportsTimestamp && VERBOSE_LOG)
+      console.log(
+        "GPU profiling disabled: device does not support timestamp queries"
+      );
+
+    const device = await adapter.requestDevice({
+      label: `sprigDevice`,
+      requiredFeatures: supportsTimestamp ? ["timestamp-query"] : [],
+    });
+
+    const context = htmlCanvas.canvas.getContext("webgpu");
+    if (!context) {
+      displayWebGPUError();
+      throw new Error("Unable to get webgpu context");
+    }
+
+    renderer = createRenderer(htmlCanvas.canvas, device, context, shaders);
+
+    EM.addResource(RendererDef, renderer, []);
   }
 );
 
-let _rendererPromise: Promise<void> | null = null;
-
-export function registerRenderInitSystem(em: EntityManager) {
-  em.addSystem(
-    "renderInit",
-    Phase.PRE_RENDER,
-    [],
-    [CanvasDef, ShadersDef],
-    (_, res) => {
-      if (!!em.getResource(RendererDef)) return; // already init
-      if (!!_rendererPromise) return;
-      _rendererPromise = chooseAndInitRenderer(
-        em,
-        res.shaders,
-        res.htmlCanvas.canvas
-      );
-    }
-  );
-}
-
-async function chooseAndInitRenderer(
-  em: EntityManager,
-  shaders: ShaderSet,
-  canvas: HTMLCanvasElement
-): Promise<void> {
-  let renderer: Renderer | undefined = undefined;
-  let usingWebGPU = false;
-  if (!FORCE_WEBGL) {
-    // try webgpu first
-    const adapter = await navigator.gpu?.requestAdapter();
-    if (!adapter) console.error("navigator.gpu?.requestAdapter() failed");
-    if (adapter) {
-      const supportsTimestamp = adapter.features.has("timestamp-query");
-      if (!supportsTimestamp && VERBOSE_LOG)
-        console.log(
-          "GPU profiling disabled: device does not support timestamp queries"
-        );
-      const device = await adapter.requestDevice({
-        label: `sprigDevice`,
-        requiredFeatures: supportsTimestamp ? ["timestamp-query"] : [],
-      });
-      // TODO(@darzu): uses cast while waiting for webgpu-types.d.ts to be updated
-      const context = canvas.getContext("webgpu");
-      // console.log("webgpu context:");
-      // console.dir(context);
-      if (context) {
-        renderer = createRenderer(canvas, device, context, shaders);
-        if (renderer) usingWebGPU = true;
-      }
-    }
-  }
-  // TODO(@darzu): re-enable WebGL
-  // if (!rendererInit)
-  //   rendererInit = attachToCanvasWebgl(canvas, MAX_MESHES, MAX_VERTICES);
-  if (!renderer) {
-    displayWebGPUError();
-    throw new Error("Unable to create webgl or webgpu renderer");
-  }
-  if (VERBOSE_LOG) console.log(`Renderer: ${usingWebGPU ? "webGPU" : "webGL"}`);
-
-  // add to ECS
-  // TODO(@darzu): this is a little wierd to do this in an async callback
-  em.addResource(RendererDef, renderer, usingWebGPU, []);
-}
-
-export function displayWebGPUError() {
+function displayWebGPUError() {
   const style = `font-size: 48px;
       color: green;
       margin: 24px;
       max-width: 600px;`;
   document.getElementsByTagName(
     "body"
-  )[0].innerHTML = `<div style="${style}">This page requires WebGPU which isn't yet supported in your browser!<br>Or something else went wrong that was my fault.<br><br>U can try Chrome >106.<br><br>🙂</div>`;
+  )[0].innerHTML = `<div style="${style}">This page requires WebGPU which isn't yet supported in your browser!<br>Or something else went wrong that was my fault.<br><br>U can try Chrome >113.<br><br>🙂</div>`;
 }

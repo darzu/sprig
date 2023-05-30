@@ -12,14 +12,10 @@ import { PositionDef, RotationDef } from "../physics/transform.js";
 import { normalizeMesh } from "../meshes/mesh.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { randNormalVec3, vec3Reverse, vec4Reverse } from "../utils/utils-3d.js";
-import {
-  createEmptyMesh,
-  createTimberBuilder,
-  SplinterParticleDef,
-} from "./wood.js";
+import { BoardSeg, createEmptyMesh, createTimberBuilder } from "./wood.js";
 import { RenderDataStdDef } from "../render/pipelines/std-scene.js";
-import { onInit } from "../init.js";
 import { Phase } from "../ecs/sys-phase.js";
+import { VERBOSE_LOG } from "../flags.js";
 
 // TODO(@darzu): generalize for any entity pool
 
@@ -27,11 +23,36 @@ export type SplinterPart = EntityW<[typeof PositionDef, typeof ColorDef]>;
 
 export type SplinterPool = ReturnType<typeof createSplinterPool>;
 
-export function createSplinterPool(
+export const SplinterParticleDef = EM.defineComponent("splinter", () => {
+  return {};
+});
+
+export const SplinterPoolsDef = EM.defineComponent("splinterPools", () => {
+  const _pools = new Map<string, SplinterPool>();
+
+  function getOrCreatePool(seg: BoardSeg) {
+    const poolKey: string = `w${seg.width.toFixed(1)}_d${seg.depth.toFixed(
+      1
+    )}}`;
+    let pool = _pools.get(poolKey);
+    if (!pool) {
+      if (VERBOSE_LOG) console.log(`new splinter pool!: ${poolKey}`);
+      pool = createSplinterPool(seg.width, seg.depth, 1, 40);
+      _pools.set(poolKey, pool);
+    }
+    return pool;
+  }
+
+  return {
+    getOrCreatePool,
+    _pools,
+  };
+});
+
+function createSplinterPool(
   width: number,
   depth: number,
   length: number,
-  color: vec3,
   numInPool: number
 ) {
   const em: EntityManager = EM;
@@ -70,7 +91,7 @@ export function createSplinterPool(
       undefined,
       true // hidden
     );
-    em.ensureComponentOn(splinter, ColorDef, color);
+    em.ensureComponentOn(splinter, ColorDef);
     em.ensureComponentOn(splinter, PositionDef);
     em.ensureComponentOn(splinter, RotationDef);
     em.ensureComponentOn(splinter, AngularVelocityDef);
@@ -84,7 +105,6 @@ export function createSplinterPool(
     width,
     depth,
     length,
-    color,
     numInPool,
     getNext,
   };
@@ -153,7 +173,11 @@ export const mkTimberSplinterFree = (
   return b.mesh;
 };
 
-onInit(() => {
+EM.addLazyInit([], [SplinterPoolsDef], () => {
+  EM.addResource(SplinterPoolsDef);
+});
+
+EM.addEagerInit([SplinterParticleDef], [], [], () => {
   const splinterObjId = 7654;
   EM.addSystem(
     "splintersOnFloor",

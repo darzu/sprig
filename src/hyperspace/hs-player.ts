@@ -220,16 +220,7 @@ export function registerHsPlayerSystems(em: EntityManager) {
       WorldFrameDef,
       ControllableDef,
     ],
-    [
-      TimeDef,
-      CameraDef,
-      InputsDef,
-      MeDef,
-      PhysicsResultsDef,
-      ModelerDef,
-      GlobalCursor3dDef,
-      // GameStateDef,
-    ],
+    [TimeDef, CameraDef, InputsDef, MeDef, PhysicsResultsDef],
     (players, res) => {
       const cheat = !!em.getResource(DevConsoleDef)?.showConsole;
       const {

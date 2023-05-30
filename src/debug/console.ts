@@ -37,7 +37,7 @@ export function updateAvg(avg: number, curr: number): number {
   return avg ? (1 - avgWeight) * avg + avgWeight * curr : curr;
 }
 
-export function registerDevSystems(em: EntityManager) {
+export function initDevConsole(em: EntityManager) {
   em.addResource(DevConsoleDef);
 
   em.addSystem(
@@ -87,8 +87,6 @@ export function registerDevSystems(em: EntityManager) {
         res.text.debugText = " ";
         return;
       }
-
-      const usingWebGPU = res.renderer.usingWebGPU;
 
       const controlsStr = `[WASD space 1 2 3 4 5 r t]`;
 

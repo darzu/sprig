@@ -102,7 +102,7 @@ function registerObjClicker(em: EntityManager) {
   );
 }
 
-export function registerModeler(em: EntityManager) {
+export function init3DModeler(em: EntityManager) {
   // create our modeler
   em.addResource(ModelerDef);
 

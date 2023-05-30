@@ -1,6 +1,5 @@
 import { ColorDef, TintsDef, applyTints } from "../../color/color-ecs.js";
 import { EM, EntityW } from "../../ecs/entity-manager.js";
-import { onInit } from "../../init.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../../matrix/sprig-matrix.js";
 import { assert } from "../../utils/util.js";
 import { computeTriangleNormal } from "../../utils/utils-3d.js";
@@ -228,8 +227,8 @@ export const renderOceanPipe = CY.createRenderPipeline("oceanRender", {
 //   (r: OceanUniTS) => r
 // );
 
-onInit((em) => {
-  em.addSystem(
+EM.addEagerInit([RenderDataOceanDef], [], [], () => {
+  EM.addSystem(
     "updateOceanRenderData",
     Phase.RENDER_PRE_DRAW,
     [RenderableDef, RenderDataOceanDef, RendererWorldFrameDef],

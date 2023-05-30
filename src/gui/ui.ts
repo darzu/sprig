@@ -43,7 +43,7 @@ export const TextDef = EM.defineComponent(
   }
 );
 
-export function registerUISystems(em: EntityManager) {
+export function initHtmlUI(em: EntityManager) {
   const upperDiv = document.getElementById("title-div") as HTMLDivElement;
   const debugDiv = document.getElementById("debug-div") as HTMLDivElement;
   const lowerDiv = document.getElementById("lower-div") as HTMLDivElement;

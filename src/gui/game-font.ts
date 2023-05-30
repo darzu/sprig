@@ -60,27 +60,22 @@ export const UICursorDef = EM.defineComponent(
   })
 );
 
-EM.registerInit({
-  requireRs: [AssetsDef],
-  provideRs: [UICursorDef],
-  // provideLs: [],
-  fn: async ({ assets }) => {
-    // Cursor
-    const cursor = EM.new();
-    EM.ensureComponentOn(cursor, ColorDef, V(0.1, 0.1, 0.1));
-    EM.ensureComponentOn(cursor, PositionDef, V(0, 1.0, 0));
-    EM.ensureComponentOn(cursor, RenderableConstructDef, assets.he_octo.proto);
-    const cursorLocalAABB = copyAABB(createAABB(), assets.he_octo.aabb);
-    cursorLocalAABB.min[1] = -1;
-    cursorLocalAABB.max[1] = 1;
-    EM.ensureComponentOn(cursor, ColliderDef, {
-      shape: "AABB",
-      solid: false,
-      aabb: cursorLocalAABB,
-    });
+EM.addLazyInit([AssetsDef], [UICursorDef], ({ assets }) => {
+  // Cursor
+  const cursor = EM.new();
+  EM.ensureComponentOn(cursor, ColorDef, V(0.1, 0.1, 0.1));
+  EM.ensureComponentOn(cursor, PositionDef, V(0, 1.0, 0));
+  EM.ensureComponentOn(cursor, RenderableConstructDef, assets.he_octo.proto);
+  const cursorLocalAABB = copyAABB(createAABB(), assets.he_octo.aabb);
+  cursorLocalAABB.min[1] = -1;
+  cursorLocalAABB.max[1] = 1;
+  EM.ensureComponentOn(cursor, ColliderDef, {
+    shape: "AABB",
+    solid: false,
+    aabb: cursorLocalAABB,
+  });
 
-    EM.addResource(UICursorDef, cursor);
-  },
+  EM.addResource(UICursorDef, cursor);
 });
 
 export async function initFontEditor(em: EntityManager) {

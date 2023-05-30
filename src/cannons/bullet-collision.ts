@@ -29,9 +29,8 @@ import { Phase } from "../ecs/sys-phase.js";
 
 const ENABLE_BULLETBULLET = false;
 
-export function registerBulletCollisionSystem(em: EntityManager) {
-  // TODO(@darzu):
-  em.addSystem(
+EM.addEagerInit([BulletDef], [DetectedEventsDef], [], () => {
+  EM.addSystem(
     "bulletCollision",
     Phase.GAME_WORLD,
     [BulletDef, AuthorityDef],
@@ -44,7 +43,7 @@ export function registerBulletCollisionSystem(em: EntityManager) {
           let otherIds = collidesWith.get(o.id)!;
           // find other bullets this bullet is colliding with. only want to find each collision once
           let otherBullets = otherIds.map(
-            (id) => id > o.id && em.findEntity(id, [BulletDef])
+            (id) => id > o.id && EM.findEntity(id, [BulletDef])
           );
           for (let otherBullet of otherBullets) {
             if (otherBullet) {
@@ -55,7 +54,7 @@ export function registerBulletCollisionSystem(em: EntityManager) {
 
           // find players this bullet is colliding with, other than the player who shot the bullet
           let otherPlayers = otherIds
-            .map((id) => em.findEntity(id, [HsPlayerDef, AuthorityDef]))
+            .map((id) => EM.findEntity(id, [HsPlayerDef, AuthorityDef]))
             .filter((p) => p !== undefined);
           for (let otherPlayer of otherPlayers) {
             if (otherPlayer!.authority.pid !== o.authority.pid)
@@ -65,7 +64,7 @@ export function registerBulletCollisionSystem(em: EntityManager) {
       }
     }
   );
-}
+});
 
 export const raiseBulletBullet = eventWizard(
   "bullet-bullet",

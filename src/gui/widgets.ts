@@ -55,13 +55,7 @@ function createWidgetLayer(): WidgetLayer {
 //    then other code can require a certain resource / system, then it calls the right init function
 
 // TODO(@darzu): IMPL
-EM.registerInit({
-  requireRs: [AssetsDef],
-  provideRs: [WidgetLayerDef],
-  // provideLs: ["updateWidgets", "colorWidgets", "updateDragbox"],
-  // name: "initWidgets",
-  fn: initWidgets,
-});
+EM.addLazyInit([AssetsDef], [WidgetLayerDef], initWidgets);
 // EM.addConstraint([WidgetLayerDef, "requires", "updateWidgets"]);
 // // TODO(@darzu): instead of having these explit dependencies, maybe we should use an
 // //  existance dependency disjoint set w/ the assumption that all constraints create

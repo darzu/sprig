@@ -36,7 +36,12 @@ import { mat3, mat4, quat, V, vec2, vec3 } from "../matrix/sprig-matrix.js";
 import { SAIL_FURL_RATE } from "../wind/sail.js";
 import { quatFromUpForward, randNormalVec3 } from "../utils/utils-3d.js";
 import { randColor } from "../utils/utils-game.js";
-import { GrassCutTexPtr, grassPoolPtr, renderGrassPipe } from "./std-grass.js";
+import {
+  GrassCutTexPtr,
+  grassPoolPtr,
+  registerUploadGrassData,
+  renderGrassPipe,
+} from "./std-grass.js";
 import { WindDef, registerChangeWindSystems } from "../wind/wind.js";
 import { DevConsoleDef } from "../debug/console.js";
 import { clamp, jitter, max, sum } from "../utils/math.js";
@@ -50,7 +55,7 @@ import { ScoreDef } from "../ld53/score.js";
 import { raiseManTurret } from "../turret/turret.js";
 import { TextDef } from "../gui/ui.js";
 import { VERBOSE_LOG } from "../flags.js";
-import { CanvasDef } from "../render/canvas.js";
+import { CanvasDef, HasFirstInteractionDef } from "../render/canvas.js";
 import { createJfaPipelines } from "../render/pipelines/std-jump-flood.js";
 import { createGridComposePipelines } from "../render/pipelines/std-compose.js";
 import { createTextureReader } from "../render/cpu-texture.js";
@@ -104,6 +109,8 @@ const level2DtoWorld3D = (levelPos: vec2, y: number, out: vec3) =>
   );
 
 export async function initGrassGame(em: EntityManager, hosting: boolean) {
+  registerUploadGrassData();
+
   const dbgGrid = [
     //
     // [mapJfa._inputMaskTex, mapJfa._uvMaskTex],
@@ -373,13 +380,11 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
       "smolGhost",
       Phase.GAME_WORLD,
       [GhostDef, WorldFrameDef, ColliderDef],
-      [InputsDef, CanvasDef],
-      async (ps, { inputs, htmlCanvas }) => {
+      [InputsDef, HasFirstInteractionDef],
+      async (ps, { inputs }) => {
         if (!ps.length) return;
 
         const ghost = ps[0];
-
-        if (!htmlCanvas.hasFirstInteraction) return;
       }
     );
 

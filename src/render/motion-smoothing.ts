@@ -1,17 +1,36 @@
-import { EntityManager, EM, Component } from "../ecs/entity-manager.js";
+import { EntityManager, EM, Component, Entity } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { TimeDef } from "../time/time.js";
 import {
   PositionDef,
   PhysicsParentDef,
   RotationDef,
+  TransformDef,
+  copyFrame,
+  updateFrameFromPosRotScale,
+  updateFrameFromTransform,
+  Frame,
 } from "../physics/transform.js";
 import { computeNewError, reduceError } from "../utils/smoothing.js";
 import { RemoteUpdatesDef } from "../net/components.js";
 import { Phase } from "../ecs/sys-phase.js";
+import { RenderableDef, RendererWorldFrameDef } from "./renderer-ecs.js";
+import { DONT_SMOOTH_WORLD_FRAME } from "../flags.js";
+import { DeletedDef } from "../ecs/delete.js";
+import { WorldFrameDef, createFrame } from "../physics/nonintersection.js";
+import { tempVec3 } from "../matrix/temp-pool.js";
 
 // Determined via binary search--smaller -> jerky, larger -> floaty
 const ERROR_SMOOTHING_FACTOR = 0.75 ** (60 / 1000);
+
+const BLEND_SIMULATION_FRAMES_STRATEGY: "interpolate" | "extrapolate" | "none" =
+  "none";
+
+let _simulationAlpha = 0.0;
+
+export function setSimulationAlpha(to: number) {
+  _simulationAlpha = to;
+}
 
 export const MotionSmoothingDef = EM.defineComponent("motionSmoothing", () => {
   return {
@@ -26,9 +45,7 @@ export const MotionSmoothingDef = EM.defineComponent("motionSmoothing", () => {
 });
 export type MotionSmoothing = Component<typeof MotionSmoothingDef>;
 
-export function registerMotionSmoothingRecordLocationsSystem(
-  em: EntityManager
-) {
+export function initNetMotionRecordingSystem(em: EntityManager) {
   em.addSystem(
     "recordPreviousLocations",
     Phase.NETWORK,
@@ -49,7 +66,62 @@ export function registerMotionSmoothingRecordLocationsSystem(
   );
 }
 
-export function registerMotionSmoothingSystems(em: EntityManager) {
+const _hasRendererWorldFrame = new Set();
+
+export const SmoothedWorldFrameDef = EM.defineComponent(
+  "smoothedWorldFrame",
+  () => createFrame()
+);
+
+export const PrevSmoothedWorldFrameDef = EM.defineComponent(
+  "prevSmoothedWorldFrame",
+  () => createFrame()
+);
+
+function updateSmoothedWorldFrame(em: EntityManager, o: Entity) {
+  if (DeletedDef.isOn(o)) return;
+  if (!TransformDef.isOn(o)) return;
+  let parent = null;
+  if (PhysicsParentDef.isOn(o) && o.physicsParent.id) {
+    if (!_hasRendererWorldFrame.has(o.physicsParent.id)) {
+      updateSmoothedWorldFrame(em, em.findEntity(o.physicsParent.id, [])!);
+    }
+    parent = em.findEntity(o.physicsParent.id, [SmoothedWorldFrameDef]);
+    if (!parent) return;
+  }
+  let firstFrame = false;
+  if (!SmoothedWorldFrameDef.isOn(o)) firstFrame = true;
+  em.ensureComponentOn(o, SmoothedWorldFrameDef);
+  em.ensureComponentOn(o, PrevSmoothedWorldFrameDef);
+  copyFrame(o.prevSmoothedWorldFrame, o.smoothedWorldFrame);
+  mat4.copy(o.smoothedWorldFrame.transform, o.transform);
+  updateFrameFromTransform(o.smoothedWorldFrame);
+  if (MotionSmoothingDef.isOn(o)) {
+    vec3.add(
+      o.smoothedWorldFrame.position,
+      o.motionSmoothing.positionError,
+      o.smoothedWorldFrame.position
+    );
+    quat.mul(
+      o.smoothedWorldFrame.rotation,
+      o.motionSmoothing.rotationError,
+      o.smoothedWorldFrame.rotation
+    );
+    updateFrameFromPosRotScale(o.smoothedWorldFrame);
+  }
+  if (parent) {
+    mat4.mul(
+      parent.smoothedWorldFrame.transform,
+      o.smoothedWorldFrame.transform,
+      o.smoothedWorldFrame.transform
+    );
+    updateFrameFromTransform(o.smoothedWorldFrame);
+  }
+  if (firstFrame) copyFrame(o.prevSmoothedWorldFrame, o.smoothedWorldFrame);
+  _hasRendererWorldFrame.add(o.id);
+}
+
+export function initMotionSmoothingSystems(em: EntityManager) {
   em.addSystem(
     "smoothMotion",
     Phase.PRE_RENDER,
@@ -100,4 +172,118 @@ export function registerMotionSmoothingSystems(em: EntityManager) {
       }
     }
   );
+
+  em.addSystem(
+    "updateSmoothedWorldFrames",
+    Phase.PRE_RENDER,
+    [RenderableDef, TransformDef],
+    [],
+    (objs, res) => {
+      _hasRendererWorldFrame.clear();
+
+      for (const o of objs) {
+        // TODO(@darzu): PERF HACK!
+        if (DONT_SMOOTH_WORLD_FRAME) {
+          em.ensureComponentOn(o, SmoothedWorldFrameDef);
+          em.ensureComponentOn(o, PrevSmoothedWorldFrameDef);
+          continue;
+        }
+
+        updateSmoothedWorldFrame(em, o);
+      }
+    }
+  );
+
+  em.addSystem(
+    "updateRendererWorldFrames",
+    Phase.RENDER_WORLDFRAMES,
+    [SmoothedWorldFrameDef, PrevSmoothedWorldFrameDef],
+    [],
+    (objs) => {
+      for (let o of objs) {
+        if (DONT_SMOOTH_WORLD_FRAME) {
+          // TODO(@darzu): HACK!
+          if (WorldFrameDef.isOn(o)) {
+            em.ensureComponentOn(o, RendererWorldFrameDef);
+            copyFrame(o.rendererWorldFrame, o.world);
+            // (o as any).rendererWorldFrame = o.world;
+          }
+          continue;
+        }
+
+        em.ensureComponentOn(o, RendererWorldFrameDef);
+
+        switch (BLEND_SIMULATION_FRAMES_STRATEGY) {
+          case "interpolate":
+            interpolateFrames(
+              _simulationAlpha,
+              o.rendererWorldFrame,
+              o.prevSmoothedWorldFrame,
+              o.smoothedWorldFrame
+            );
+            break;
+          case "extrapolate":
+            extrapolateFrames(
+              _simulationAlpha,
+              o.rendererWorldFrame,
+              o.prevSmoothedWorldFrame,
+              o.smoothedWorldFrame
+            );
+            break;
+          default:
+            copyFrame(o.rendererWorldFrame, o.smoothedWorldFrame);
+        }
+      }
+    }
+  );
+}
+
+function interpolateFrames(
+  alpha: number,
+  out: Frame,
+  prev: Frame,
+  next: Frame
+) {
+  vec3.lerp(prev.position, next.position, alpha, out.position);
+  quat.slerp(prev.rotation, next.rotation, alpha, out.rotation);
+  vec3.lerp(prev.scale, next.scale, alpha, out.scale);
+  updateFrameFromPosRotScale(out);
+}
+
+function extrapolateFrames(
+  alpha: number,
+  out: Frame,
+  prev: Frame,
+  next: Frame
+) {
+  // out.position = next.position + alpha * (next.position - prev.position)
+  // out.position = next.position + alpha * (next.position - prev.position)
+  vec3.sub(next.position, prev.position, out.position);
+  vec3.scale(out.position, alpha, out.position);
+  vec3.add(out.position, next.position, out.position);
+
+  // see https://answers.unity.com/questions/168779/extrapolating-quaternion-rotation.html
+  // see https://answers.unity.com/questions/168779/extrapolating-quaternion-rotation.html
+  quat.invert(prev.rotation, out.rotation);
+  quat.mul(next.rotation, out.rotation, out.rotation);
+  const axis = tempVec3();
+  let angle = quat.getAxisAngle(out.rotation, axis);
+  // ensure we take the shortest path
+  if (angle > Math.PI) {
+    angle -= Math.PI * 2;
+  }
+  if (angle < -Math.PI) {
+    angle += Math.PI * 2;
+  }
+  angle = angle * alpha;
+  quat.setAxisAngle(axis, angle, out.rotation);
+  quat.mul(out.rotation, next.rotation, out.rotation);
+
+  // out.scale = next.scale + alpha * (next.scale - prev.scale)
+  // out.scale = next.scale + alpha * (next.scale - prev.scale)
+  vec3.sub(next.scale, prev.scale, out.scale);
+  vec3.scale(out.scale, alpha, out.scale);
+  vec3.add(out.scale, next.scale, out.scale);
+
+  updateFrameFromPosRotScale(out);
 }

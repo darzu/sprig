@@ -1,5 +1,5 @@
 import { CameraDef, CameraFollowDef } from "../camera/camera.js";
-import { CanvasDef } from "../render/canvas.js";
+import { CanvasDef, HasFirstInteractionDef } from "../render/canvas.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { DeadDef, DeletedDef } from "../ecs/delete.js";
@@ -59,13 +59,12 @@ import {
   reserveSplinterSpace,
   resetWoodHealth,
   resetWoodState,
-  SplinterParticleDef,
   TimberBuilder,
   unshareProvokingForWood,
   verifyUnsharedProvokingForWood,
   WoodHealthDef,
   WoodStateDef,
-  _numSplinterEnds,
+  _dbgNumSplinterEnds,
 } from "./wood.js";
 import { AssetsDef, BLACK } from "../meshes/assets.js";
 import {
@@ -488,13 +487,11 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
     "ld51Ghost",
     Phase.GAME_WORLD,
     [GhostDef, WorldFrameDef, ColliderDef],
-    [InputsDef, CanvasDef],
-    async (ps, { inputs, htmlCanvas }) => {
+    [InputsDef, HasFirstInteractionDef],
+    async (ps, { inputs }) => {
       if (!ps.length) return;
 
       const ghost = ps[0];
-
-      if (!htmlCanvas.hasFirstInteraction) return;
 
       // if (BUSY_WAIT) {
       //   let before = performance.now();

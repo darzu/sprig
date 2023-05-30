@@ -1,11 +1,10 @@
 import { ColorDef } from "../color/color-ecs.js";
-import { EM, Entity, EntityManager } from "../ecs/entity-manager.js";
+import { EM, Entity } from "../ecs/entity-manager.js";
 import { AllMeshSymbols, BLACK } from "../meshes/assets.js";
 import { BulletDef } from "../cannons/bullet.js";
 import { GravityDef } from "../motion/gravity.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { createIdxPool } from "../utils/idx-pool.js";
-import { onInit } from "../init.js";
 import { jitter } from "../utils/math.js";
 import { AudioDef } from "../audio/audio.js";
 import {
@@ -43,7 +42,12 @@ import {
   RendererDef,
 } from "../render/renderer-ecs.js";
 import { tempVec3 } from "../matrix/temp-pool.js";
-import { assert, assertDbg, createIntervalTracker } from "../utils/util.js";
+import {
+  assert,
+  assertDbg,
+  createIntervalTracker,
+  dbgOnce,
+} from "../utils/util.js";
 import { range } from "../utils/util.js";
 import {
   centroid,
@@ -51,7 +55,7 @@ import {
   randNormalVec3,
   vec3Dbg,
 } from "../utils/utils-3d.js";
-import { createSplinterPool, SplinterPool } from "./wood-splinters.js";
+import { SplinterPool, SplinterPoolsDef } from "./wood-splinters.js";
 import { DBG_ASSERT, VERBOSE_LOG } from "../flags.js";
 import { meshPoolPtr } from "../render/pipelines/std-scene.js";
 import {
@@ -112,8 +116,17 @@ export const WoodAssetsDef = EM.defineComponent(
   (registry: WoodAssets = {}) => registry
 );
 
-onInit((em) => {
-  em.addSystem(
+// TODO(@darzu): SUPER HACK
+type DestroyPirateShipFn = (id: number, timber: Entity) => void;
+const _destroyPirateShipFns: DestroyPirateShipFn[] = [];
+export function registerDestroyPirateHandler(fn: DestroyPirateShipFn) {
+  _destroyPirateShipFns.push(fn);
+}
+
+export let _dbgNumSplinterEnds = 0;
+
+EM.addEagerInit([WoodStateDef], [], [], () => {
+  EM.addSystem(
     "runWooden",
     Phase.GAME_WORLD,
     [WoodStateDef, WoodHealthDef, WorldFrameDef, RenderableDef],
@@ -142,7 +155,7 @@ onInit((em) => {
         if (hits) {
           const balls = hits
             .map((h) =>
-              em.findEntity(h, [BulletDef, WorldFrameDef, ColliderDef])
+              EM.findEntity(h, [BulletDef, WorldFrameDef, ColliderDef])
             )
             .filter((b) => {
               // TODO(@darzu): check authority and team
@@ -265,31 +278,12 @@ onInit((em) => {
       }
     }
   );
-});
 
-// TODO(@darzu): SUPER HACK
-type DestroyPirateShipFn = (id: number, timber: Entity) => void;
-const _destroyPirateShipFns: DestroyPirateShipFn[] = [];
-export function registerDestroyPirateHandler(fn: DestroyPirateShipFn) {
-  _destroyPirateShipFns.push(fn);
-}
-
-export const SplinterParticleDef = EM.defineComponent("splinter", () => {
-  return {};
-});
-
-const splinterPools = new Map<string, SplinterPool>();
-
-export let _numSplinterEnds = 0;
-
-let _ONCE = true;
-
-onInit((em: EntityManager) => {
-  em.addSystem(
+  EM.addSystem(
     "woodHealth",
     Phase.GAME_WORLD,
     [WoodStateDef, WorldFrameDef, WoodHealthDef, RenderableDef, ColorDef],
-    [RendererDef],
+    [RendererDef, SplinterPoolsDef],
     async (es, res) => {
       const stdPool = res.renderer.renderer.getCyResource(meshPoolPtr)!;
       // TODO(@darzu):
@@ -301,7 +295,11 @@ onInit((em: EntityManager) => {
         const meshHandle = w.renderable.meshHandle;
         const mesh = meshHandle.mesh!;
 
-        if (VERBOSE_LOG && _ONCE && mesh.dbgName?.includes("home")) {
+        if (
+          VERBOSE_LOG &&
+          dbgOnce("homeWoodMesh") &&
+          mesh.dbgName?.includes("home")
+        ) {
           // console.log(`mesh: ${meshStats(mesh)}`);
           // console.log(`woodMesh: ${meshStats(w.woodState.mesh)}`);
           // if (meshHandle.triNum !== mesh.tri.length) {
@@ -312,7 +310,6 @@ onInit((em: EntityManager) => {
           console.dir(meshHandle);
           console.dir(mesh);
           console.log(meshStats(mesh));
-          _ONCE = false;
         }
 
         w.woodState.boards.forEach((board, bIdx) => {
@@ -342,26 +339,11 @@ onInit((em: EntityManager) => {
 
               // get the board's pool
               if (!pool) {
-                const poolKey: string = `w${seg.width.toFixed(
-                  1
-                )}_d${seg.depth.toFixed(1)}_c${vec3Dbg(w.color)}`;
-                if (!splinterPools.has(poolKey)) {
-                  if (VERBOSE_LOG)
-                    console.log(`new splinter pool!: ${poolKey}`);
-                  pool = createSplinterPool(
-                    seg.width,
-                    seg.depth,
-                    1,
-                    vec3.clone(w.color),
-                    40
-                  );
-                  splinterPools.set(poolKey, pool);
-                } else {
-                  pool = splinterPools.get(poolKey)!;
-                }
+                pool = res.splinterPools.getOrCreatePool(seg);
               }
 
               // create flying splinter (from pool)
+              // TODO(@darzu): MOVE into wood-splinters.ts ?
               {
                 const qi = seg.quadSideIdxs[0];
                 const quadColor = mesh.colors[qi];
@@ -381,12 +363,12 @@ onInit((em: EntityManager) => {
                 const spin = randNormalVec3(vec3.create());
                 const vel = vec3.clone(spin);
                 vec3.scale(spin, 0.01, spin);
-                em.ensureComponentOn(splinter, AngularVelocityDef);
+                EM.ensureComponentOn(splinter, AngularVelocityDef);
                 vec3.copy(splinter.angularVelocity, spin);
                 vec3.scale(vel, 0.01, vel);
-                em.ensureComponentOn(splinter, LinearVelocityDef);
+                EM.ensureComponentOn(splinter, LinearVelocityDef);
                 vec3.copy(splinter.linearVelocity, spin);
-                em.ensureComponentOn(splinter, GravityDef);
+                EM.ensureComponentOn(splinter, GravityDef);
                 vec3.copy(splinter.gravity, [0, -3 * 0.00001, 0]);
               }
 
@@ -398,7 +380,7 @@ onInit((em: EntityManager) => {
                 if (splinterIdx !== undefined) {
                   h.splinterBotIdx = splinterIdx;
                   // h.splinterBotGeneration = splinterGen;
-                  _numSplinterEnds++;
+                  _dbgNumSplinterEnds++;
                   splinterIndUpdated.push(splinterIdx);
                 }
               }
@@ -410,7 +392,7 @@ onInit((em: EntityManager) => {
                 if (splinterIdx !== undefined) {
                   h.splinterTopIdx = splinterIdx;
                   // h.splinterTopGeneration = splinterGen;
-                  _numSplinterEnds++;
+                  _dbgNumSplinterEnds++;
                   splinterIndUpdated.push(splinterIdx);
                 }
               }
@@ -439,7 +421,7 @@ onInit((em: EntityManager) => {
                 );
                 h.next.splinterBotIdx = undefined;
                 // h.next.splinterBotGeneration = undefined;
-                _numSplinterEnds--;
+                _dbgNumSplinterEnds--;
               }
 
               if (
@@ -464,7 +446,7 @@ onInit((em: EntityManager) => {
                 );
                 h.prev.splinterTopIdx = undefined;
                 // h.prev.splinterTopGeneration = undefined;
-                _numSplinterEnds--;
+                _dbgNumSplinterEnds--;
               }
             }
           });
@@ -901,7 +883,7 @@ interface OBB {
 type VI = number; // vertex index
 type QI = number; // quad index
 // each board has an AABB, OBB,
-interface BoardSeg {
+export interface BoardSeg {
   localAABB: AABB;
   midLine: Line;
   areaNorms: vec3[]; // TODO(@darzu): fixed size

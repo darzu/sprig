@@ -50,7 +50,7 @@ import {
 import { InputsDef } from "../input/inputs.js";
 import { raiseManTurret } from "../turret/turret.js";
 import { TextDef } from "../gui/ui.js";
-import { CanvasDef } from "../render/canvas.js";
+import { CanvasDef, HasFirstInteractionDef } from "../render/canvas.js";
 import { createJfaPipelines } from "../render/pipelines/std-jump-flood.js";
 import { createGridComposePipelines } from "../render/pipelines/std-compose.js";
 import { createTextureReader } from "../render/cpu-texture.js";
@@ -454,13 +454,11 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
       "smolGhost",
       Phase.GAME_WORLD,
       [GhostDef, WorldFrameDef, ColliderDef],
-      [InputsDef, CanvasDef],
-      async (ps, { inputs, htmlCanvas }) => {
+      [InputsDef, HasFirstInteractionDef],
+      async (ps, { inputs }) => {
         if (!ps.length) return;
 
         const ghost = ps[0];
-
-        if (!htmlCanvas.hasFirstInteraction) return;
       }
     );
   }

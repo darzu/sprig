@@ -2,15 +2,13 @@ import { test } from "./utils/test.js";
 import { setupObjImportExporter } from "./meshes/mesh-normalizer.js";
 import { EM } from "./ecs/entity-manager.js";
 import { tick } from "./time/time.js";
-import { InputsDef, registerInputsSystem } from "./input/inputs.js";
 import { MeDef, JoinDef, HostDef, PeerNameDef } from "./net/components.js";
 import { addEventComponents } from "./net/events.js";
 import { dbg } from "./debug/debugger.js";
 import { DevConsoleDef } from "./debug/console.js";
 import { initReboundSandbox } from "./physics/game-rebound.js";
 // import { callClothSystems } from "./game/cloth.js";
-import { registerCommonSystems } from "./game-init.js";
-import { setSimulationAlpha } from "./render/renderer-ecs.js";
+import { initCommonSystems } from "./game-init.js";
 import { never } from "./utils/util.js";
 // import { initHyperspaceGame } from "./game/game-hyperspace.js";
 import {
@@ -32,8 +30,8 @@ import { initLD53 } from "./ld53/game-ld53.js";
 import { initShadingGame } from "./render/game-shading.js";
 import { initModelingGame } from "./meshes/game-modeling.js";
 import { Phase } from "./ecs/sys-phase.js";
+import { setSimulationAlpha } from "./render/motion-smoothing.js";
 
-export const FORCE_WEBGL = false;
 export const MAX_MESHES = 20000;
 export const MAX_VERTICES = 21844;
 const AUTOSTART = true;
@@ -64,9 +62,7 @@ const MAX_SIM_LOOPS = 1;
 export let gameStarted = false;
 
 function callFixedTimestepSystems() {
-  EM.callSystems();
-  EM.checkEntityPromises();
-  EM.dbgLoops++;
+  EM.update();
 }
 
 async function startGame(localPeerName: string, host: string | null) {
@@ -92,11 +88,9 @@ async function startGame(localPeerName: string, host: string | null) {
     EM.addResource(JoinDef, host!);
   }
 
-  registerCommonSystems(EM);
+  initCommonSystems(EM);
 
   addEventComponents(EM);
-
-  registerInputsSystem(EM);
 
   if (GAME === "gjk") initGJKSandbox(EM, hosting);
   else if (GAME === "rebound") initReboundSandbox(EM, hosting);

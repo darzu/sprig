@@ -1,5 +1,11 @@
 import { CameraFollowDef } from "../camera/camera.js";
-import { ComponentDef, EM, Entity, EntityW } from "../ecs/entity-manager.js";
+import {
+  CompId,
+  ComponentDef,
+  EM,
+  Entity,
+  EntityW,
+} from "../ecs/entity-manager.js";
 import {
   MetaPhases,
   NameFromPhase,
@@ -37,13 +43,13 @@ interface DbgEnt extends Entity {
 const dbgEnts: Map<number, DbgEnt> = new Map();
 let dbgEntSingleton: DbgEnt = { id: 0, _cmps: () => [] };
 
-const dbgCmpsAllById: Map<number, DbgCmp> = new Map();
+const dbgCmpsAllById: Map<CompId, DbgCmp> = new Map();
 const dbgCmpsAllByName: Map<string, DbgCmp> = new Map();
 let dbgCmpsAllByAbv: Map<string, DbgCmp> = new Map();
 const dbgCmps: Map<string, DbgCmp> = new Map();
 const dbgCmpsSingleton: Map<string, DbgCmp> = new Map();
 
-function mkDbgCmp(id: number): DbgCmp {
+function mkDbgCmp(id: CompId): DbgCmp {
   // if (dbgCmpsAllById.has(id)) return dbgCmpsAllById.get(id)!;
   const c = EM.components.get(id);
   if (!c) throw `No component by id ${id}`;
@@ -266,9 +272,6 @@ g.cameraFollow.pitchOffset = ${target.cameraFollow.pitchOffset.toFixed(3)};
   cmp: (name: string) => {
     return cmpByName(name);
   },
-  deps: () => {
-    console.log(EM.labelSolver.dbgInfo() + `\n` + EM.dbgEntityPromises());
-  },
   f32sBlameClear: () => {
     assert(PERF_DBG_F32S_BLAME);
     dbgClearBlame("f32s");
@@ -329,9 +332,7 @@ g.cameraFollow.pitchOffset = ${target.cameraFollow.pitchOffset.toFixed(3)};
   },
   summarizeStats: () => {
     let stats = EM.sysStats;
-    let totalQueryTime = Object.values(stats)
-      .map((s) => s.queryTime)
-      .reduce((x, y) => x + y);
+    let totalQueryTime = EM.emStats.queryTime;
     let totalCallTime = Object.values(stats)
       .map((s) => s.callTime)
       .reduce((x, y) => x + y);
@@ -347,13 +348,10 @@ g.cameraFollow.pitchOffset = ${target.cameraFollow.pitchOffset.toFixed(3)};
       (_) => 0
     );
     for (let s of Object.keys(stats)) {
-      const phaseVal = EM.systems.get(s)?.phase;
+      const phaseVal = EM.allSystemsByName.get(s)?.phase;
       if (phaseVal) {
         const phase = NameFromPhase(phaseVal);
-        phaseTimes.set(
-          phase,
-          phaseTimes.get(phase)! + stats[s].callTime + stats[s].queryTime
-        );
+        phaseTimes.set(phase, phaseTimes.get(phase)! + stats[s].callTime);
       }
     }
     for (let p of phaseTimes.keys()) {

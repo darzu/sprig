@@ -1,35 +1,34 @@
 NETWORK
-  handleNetworkEvents
+  (handleNetworkEvents)
   recordPreviousLocations
-  clearRemoteUpdatesMarker
-  netUpdate
-  predict
-  connectToServer
-  handleJoin
-  handleJoinResponse
+  (clearRemoteUpdatesMarker)
+  (netUpdate)
+  netPredict
+  (connectToServer)
+  (handleJoin)
+  (handleJoinResponse)
   netDebugSystem
-  netAck
+  (netAck)
   netSync
-  sendOutboxes
-  detectedEventsToHost
-  handleEventRequests
-  handleEventRequestAcks
+  (sendOutboxes)
+  (detectedEventsToHost)
+  (handleEventRequests)
+  (handleEventRequestAcks)
   detectedEventsToRequestedEvents
   requestedEventsToEvents
-  sendEvents
-  handleEvents
-  handleEventAcks
+  (sendEvents)
+  (handleEvents)
+  (handleEventAcks)
   runEvents
 PRE_GAME_WORLD
-  delete
-  buildCursor
+  (delete)
   updateLifetimes
   constructRenderables
-  buildCloths
+  constructRiggedRenderables
   cannonPropsBuild
-  buildHsPlayers
+  (buildHsPlayers)
 GAME_WORLD
-  despawnFlyingBricks
+  (despawnFlyingBricks)
   stoneTowerAttack
   stoneTowerDamage
   updateShipHealth
@@ -40,18 +39,15 @@ GAME_WORLD
   easeRudderLD52
   shipParty
   landShipCollision
-  buildBullets
-  updateBullets
-  reloadCannon
-  bulletCollision
-  splintersOnFloor
-  runWooden
-  woodHealth
-  updateRibSail
   ld53GamePipelines
   hsPlayerLookingForShip
+  runWooden
+  woodHealth
+  reloadCannon
   breakBullets
   deadBullets
+  bulletCollision
+  splintersOnFloor
 POST_GAME_WORLD
   updateScoreDisplay
   detectGameEnd
@@ -65,8 +61,12 @@ PRE_GAME_PLAYERS
   interactableInteract
 GAME_PLAYERS
   sailShip
-  canvasCursorLockUnlock
   devConsoleToggle
+  renderModeToggles
+  mouseDrag
+  hsPlayerFacingDir
+  stepHsPlayers
+  furlUnfurl
   controllableInput
   controllableCameraFollow
   turretYawPitch
@@ -74,45 +74,31 @@ GAME_PLAYERS
   turretManUnman
   playerControlCannon
   playerManCanon
-  modelerOnOff
-  modelerClicks
-  aabbBuilder
-  renderModeToggles
-  mouseDrag
-  hsPlayerFacingDir
-  stepHsPlayers
-  furlUnfurl
   turnMast
 POST_GAME_PLAYERS
 PRE_PHYSICS
   ensureWorldFrame
   physicsInit
   ensureFillOutLocalFrame
-  spring
 PHYSICS_MOTION
   applyGravity
-  animateTo
-  updateParametricMotion
   clampVelocityByContact
   registerPhysicsClampVelocityBySize
   registerPhysicsApplyLinearVelocity
   physicsApplyAngularVelocity
+  updateParametricMotion
 PHYSICS_FINISH_LOCAL
   updateLocalFromPosRotScale
 PHYSICS_WORLD_FROM_LOCAL
   updateWorldFromLocalAndParent1
-  registerUpdateWorldAABBs
+  updateWorldAABBs
 PHYSICS_CONTACT
   updatePhysInContact
   physicsStepContact
 PHYSICS_FINISH_WORLD
   updateWorldFromLocalAndParent2
 POST_PHYSICS
-  dbgColliderMeshes
-  debugMeshes
-  debugMeshTransform
 PRE_RENDER
-  renderInit
   smoothMotion
   updateMotionSmoothing
   updateSmoothedWorldFrames
@@ -122,16 +108,16 @@ PRE_RENDER
 RENDER_WORLDFRAMES
   updateRendererWorldFrames
 RENDER_PRE_DRAW
-  updateCameraView
-  updateOceanRenderData
+  skeletalPose
+  updateJoints
   stdRenderListDeadHidden
   stdRenderList
   stdRenderableDataUpdate
-  updateClothMesh
-  updateGrassRenderData
+  updateCameraView
+  updateOceanRenderData
 RENDER_DRAW
   uiText
   devConsole
   renderListDeadHidden
   renderList
-  stepRenderer
+  renderDrawSubmitToGPU

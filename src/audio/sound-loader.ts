@@ -1,9 +1,7 @@
-import { HasAudioDef } from "./audio.js";
-import { Component, EM } from "../ecs/entity-manager.js";
+import { AudioDef } from "./audio.js";
+import { EM } from "../ecs/entity-manager.js";
 import { VERBOSE_LOG } from "../flags.js";
-import { onInit } from "../init.js";
 import { assert } from "../utils/util.js";
-import { getBytes } from "../fetch/webget.js";
 
 const DEFAULT_SOUND_PATH = "assets/sounds/";
 
@@ -17,12 +15,6 @@ export const SoundPaths = [
 export type SoundName = (typeof SoundPaths)[number];
 
 export type SoundSet = { [P in SoundName]: AudioBuffer };
-
-const SoundLoaderDef = EM.defineComponent("soundLoader", () => {
-  return {
-    promise: null as Promise<SoundSet> | null,
-  };
-});
 
 export const SoundSetDef = EM.defineComponent(
   "soundSet",
@@ -59,20 +51,8 @@ async function loadSoundsData(): Promise<SoundSet> {
   return set as SoundSet;
 }
 
-EM.registerInit({
-  provideRs: [SoundLoaderDef, SoundSetDef],
-  requireRs: [HasAudioDef],
-  fn: async (res) => {
-    const soundLoader = EM.addResource(SoundLoaderDef);
-
-    if (VERBOSE_LOG) console.log("have audio");
-    // start loading of sounds
-
-    assert(!soundLoader.promise, "somehow we're double loading sounds");
-
-    const soundsPromise = loadSoundsData();
-    soundLoader.promise = soundsPromise;
-    const result = await soundsPromise;
-    EM.addResource(SoundSetDef, result);
-  },
+EM.addLazyInit([AudioDef], [SoundSetDef], async (res) => {
+  // start loading of sounds
+  const result = await loadSoundsData();
+  EM.addResource(SoundSetDef, result);
 });

@@ -9,39 +9,41 @@ export const CanvasDef = EM.defineComponent(
       canvas,
       shouldLockMouseOnClick: true,
       unlockMouse: () => {},
-      hasFirstInteraction: false,
+      _hasFirstInteractionDef: false,
       hasMouseLock: () => document.pointerLockElement === canvas,
     };
   }
 );
 export type Canvas = Component<typeof CanvasDef>;
 
-export function registerInitCanvasSystem(em: EntityManager) {
-  em.addSystem("canvasCursorLockUnlock", Phase.GAME_PLAYERS, [], [], () => {
-    if (!!em.getResource(CanvasDef)) return;
-    const canvas = init();
+export const HasFirstInteractionDef = EM.defineComponent(
+  "hasFirstInteraction",
+  () => true
+);
 
-    const comp = em.addResource(CanvasDef, canvas);
+EM.addLazyInit([], [CanvasDef], () => {
+  const canvas = init();
 
-    comp.unlockMouse = () => {
-      comp.shouldLockMouseOnClick = false;
-      document.exitPointerLock();
-    };
+  const comp = EM.addResource(CanvasDef, canvas);
 
-    // TODO(@darzu): this should probably be managed elsewhere
-    // TODO(@darzu): re-enable
-    function tryMouseLock() {
-      comp.hasFirstInteraction = true;
-      if (
-        comp.shouldLockMouseOnClick &&
-        document.pointerLockElement !== canvas
-      ) {
-        canvas.requestPointerLock();
-      }
+  comp.unlockMouse = () => {
+    comp.shouldLockMouseOnClick = false;
+    document.exitPointerLock();
+  };
+
+  // TODO(@darzu): this should probably be managed elsewhere
+  // TODO(@darzu): re-enable
+  function tryMouseLock() {
+    if (!comp._hasFirstInteractionDef) {
+      comp._hasFirstInteractionDef = true;
+      EM.addResource(HasFirstInteractionDef);
     }
-    canvas.addEventListener("click", tryMouseLock);
-  });
-}
+    if (comp.shouldLockMouseOnClick && document.pointerLockElement !== canvas) {
+      canvas.requestPointerLock();
+    }
+  }
+  canvas.addEventListener("click", tryMouseLock);
+});
 
 let _imgPixelatedTimeoutHandle = 0;
 // let pixelRatio = 2.0;

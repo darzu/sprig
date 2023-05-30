@@ -63,14 +63,9 @@ export const ButtonsStateDef = EM.defineComponent(
   })
 );
 
-EM.registerInit({
-  requireRs: [RendererDef],
-  provideRs: [ButtonsStateDef],
-  // provideLs: ["buttonStateUpdate", "buttonColors"],
-  fn: initButtonGUI,
-});
+EM.addLazyInit([RendererDef], [ButtonsStateDef], initButtonGUI);
 
-async function initButtonGUI(res: EntityW<[typeof RendererDef]>) {
+function initButtonGUI(res: EntityW<[typeof RendererDef]>) {
   // init ButtonsStateDef
   {
     const btnMesh_ = importObj(BTN_OBJ);

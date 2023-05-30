@@ -59,7 +59,7 @@ export const { CannonPropsDef, CannonLocalDef, createCannon, createCannonNow } =
     build: (e, res) => {
       const em: EntityManager = EM;
       const props = e.cannonProps;
-      em.ensureComponentOn(e, PositionDef, props.location);
+      EM.ensureComponentOn(e, PositionDef, props.location);
       constructNetTurret(
         e,
         props.yaw,
@@ -74,24 +74,24 @@ export const { CannonPropsDef, CannonLocalDef, createCannon, createCannonNow } =
         Math.PI / 4,
         "W/S: pitch, A/D: turn, left click: fire, E: drop cannon"
       );
-      em.ensureComponentOn(e, ColorDef, V(0, 0, 0));
-      em.ensureComponentOn(
+      EM.ensureComponentOn(e, ColorDef, V(0, 0, 0));
+      EM.ensureComponentOn(
         e,
         RenderableConstructDef,
         res.assets.ld51_cannon.mesh
       );
-      em.ensureComponentOn(e, ColliderDef, {
+      EM.ensureComponentOn(e, ColliderDef, {
         shape: "AABB",
         solid: true,
         aabb: res.assets.cannon.aabb,
       });
-      em.ensureComponentOn(e, PhysicsParentDef, props.parentId);
+      EM.ensureComponentOn(e, PhysicsParentDef, props.parentId);
       return e;
     },
   });
 
-export function registerCannonSystems(em: EntityManager) {
-  em.addSystem(
+EM.addEagerInit([CannonPropsDef], [], [], () => {
+  EM.addSystem(
     "reloadCannon",
     Phase.GAME_WORLD,
     [CannonLocalDef],
@@ -152,13 +152,13 @@ export function registerCannonSystems(em: EntityManager) {
     }
   );
 
-  em.addSystem(
+  EM.addSystem(
     "playerControlCannon",
     Phase.GAME_PLAYERS,
     [CannonLocalDef, TurretDef, WorldFrameDef],
     [InputsDef, LocalHsPlayerDef],
     (cannons, res) => {
-      const player = em.findEntity(res.localHsPlayer.playerId, [HsPlayerDef])!;
+      const player = EM.findEntity(res.localHsPlayer.playerId, [HsPlayerDef])!;
       if (!player) return;
       for (let c of cannons) {
         if (DeletedDef.isOn(c)) continue;
@@ -170,13 +170,13 @@ export function registerCannonSystems(em: EntityManager) {
     }
   );
 
-  em.addSystem(
+  EM.addSystem(
     "playerManCanon",
     Phase.GAME_PLAYERS,
     [CannonLocalDef, TurretDef, InRangeDef, AuthorityDef, WorldFrameDef],
     [DetectedEventsDef, InputsDef, LocalHsPlayerDef],
     (cannons, res) => {
-      const player = em.findEntity(res.localHsPlayer.playerId, [
+      const player = EM.findEntity(res.localHsPlayer.playerId, [
         HsPlayerDef,
         AuthorityDef,
       ])!;
@@ -194,4 +194,4 @@ export function registerCannonSystems(em: EntityManager) {
       }
     }
   );
-}
+});

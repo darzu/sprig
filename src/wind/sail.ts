@@ -1,11 +1,10 @@
 import {
   Component,
   EM,
-  Entity,
   EntityManager,
   EntityW,
 } from "../ecs/entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4, V, tV } from "../matrix/sprig-matrix.js";
+import { vec2, vec3, quat, V, tV } from "../matrix/sprig-matrix.js";
 import {
   Frame,
   PhysicsParentDef,
@@ -13,10 +12,7 @@ import {
   RotationDef,
   ScaleDef,
 } from "../physics/transform.js";
-import { SyncDef, AuthorityDef, Me, MeDef } from "../net/components.js";
-import { Serializer, Deserializer } from "../utils/serialize.js";
-import { FinishedDef } from "../ecs/em-helpers.js";
-import { onInit } from "../init.js";
+import { AuthorityDef, MeDef } from "../net/components.js";
 import {
   Mesh,
   normalizeMesh,
@@ -27,19 +23,13 @@ import {
   RenderableDef,
 } from "../render/renderer-ecs.js";
 import { RendererDef } from "../render/renderer-ecs.js";
-import { tempVec3 } from "../matrix/temp-pool.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { AssetsDef } from "../meshes/assets.js";
 import { ColliderDef } from "../physics/collider.js";
-import { constructNetTurret, TurretDef } from "../turret/turret.js";
-import { InputsDef } from "../input/inputs.js";
-import { LocalHsPlayerDef, HsPlayerDef } from "../hyperspace/hs-player.js";
-import { DeletedDef } from "../ecs/delete.js";
 import { clamp } from "../utils/math.js";
 import { createRef } from "../ecs/em-helpers.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import { WindDef } from "./wind.js";
-import { YawPitchDef } from "../turret/yawpitch.js";
 import { assert } from "../utils/util.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { angleBetweenPosXZ, angleBetweenXZ } from "../utils/utils-3d.js";

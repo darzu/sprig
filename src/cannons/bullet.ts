@@ -37,11 +37,11 @@ import { WorldFrameDef } from "../physics/nonintersection.js";
 import { DeadDef } from "../ecs/delete.js";
 import { AudioDef } from "../audio/audio.js";
 import { randNormalVec3 } from "../utils/utils-3d.js";
-import { SplinterParticleDef } from "../wood/wood.js";
 import { tempVec3 } from "../matrix/temp-pool.js";
 import { assert, assertDbg } from "../utils/util.js";
 import { ParametricDef } from "../motion/parametric-motion.js";
 import { Phase } from "../ecs/sys-phase.js";
+import { SplinterParticleDef } from "../wood/wood-splinters.js";
 
 // TODO(@darzu): MULTIPLAYER BULLETS might have been broken during LD51
 

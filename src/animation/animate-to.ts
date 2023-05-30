@@ -3,7 +3,6 @@
 
 import { EM } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
-import { onInit } from "../init.js";
 import { PositionDef } from "../physics/transform.js";
 import { TimeDef } from "../time/time.js";
 import { EaseFn, EASE_LINEAR } from "../utils/util-ease.js";
@@ -32,7 +31,7 @@ export const AnimateToDef = EM.defineComponent(
   }
 );
 
-export function registerAnimateToSystems() {
+EM.addEagerInit([AnimateToDef], [], [], () => {
   let delta = vec3.create();
 
   EM.addSystem(
@@ -77,4 +76,4 @@ export function registerAnimateToSystems() {
       }
     }
   );
-}
+});

@@ -17,7 +17,7 @@ import {
 } from "./components.js";
 import { Phase } from "../ecs/sys-phase.js";
 
-export function registerHandleNetworkEvents(em: EntityManager) {
+export function initNetStateEventSystems(em: EntityManager) {
   let _peerIDs: Record<string, number> = {};
   function handleNetworkEvents(
     [],
@@ -59,7 +59,7 @@ export function registerHandleNetworkEvents(em: EntityManager) {
   );
 }
 
-export function registerSendOutboxes(em: EntityManager) {
+export function initNetSendOutboxes(em: EntityManager) {
   function sendOutboxes(
     peers: readonly { peer: Peer; outbox: Outbox }[],
     { eventsToNetwork }: { eventsToNetwork: ToNetworkEvent[] }

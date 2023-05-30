@@ -1,12 +1,9 @@
-import { createRef, defineNetEntityHelper } from "../ecs/em-helpers.js";
-import { EM, EntityManager, EntityW } from "../ecs/entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
-import { onInit } from "../init.js";
+import { defineNetEntityHelper } from "../ecs/em-helpers.js";
+import { EM, EntityManager } from "../ecs/entity-manager.js";
+import { vec3, V } from "../matrix/sprig-matrix.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { PositionDef, ScaleDef } from "../physics/transform.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
-import { tempVec3 } from "../matrix/temp-pool.js";
-import { vec3Dbg } from "../utils/utils-3d.js";
 import { AssetsDef } from "../meshes/assets.js";
 import { PointLightDef } from "../render/lights.js";
 import { FLAG_UNLIT, RenderDataStdDef } from "../render/pipelines/std-scene.js";

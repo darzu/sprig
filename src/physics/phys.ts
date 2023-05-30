@@ -17,6 +17,7 @@ import {
 } from "../motion/velocity-clamp.js";
 import {
   Frame,
+  registerInitTransforms,
   registerUpdateLocalFromPosRotScale,
   registerUpdateWorldFromLocalAndParent,
 } from "./transform.js";
@@ -30,6 +31,7 @@ import {
   registerPhysicsApplyAngularVelocity,
 } from "../motion/velocity.js";
 import { Phase } from "../ecs/sys-phase.js";
+import { DBG_PHYSICS_AABBS } from "../flags.js";
 
 // TODO(@darzu): PHYSICS TODO:
 // [ ] seperate rotation and motion w/ constraint checking between them
@@ -44,7 +46,9 @@ import { Phase } from "../ecs/sys-phase.js";
 // [ ] specify which objects may non-intersect; then do non-intersection heirarchachly
 // [ ] PERF: matrix inversion should be done once per parent
 
-export function registerPhysicsSystems(em: EntityManager) {
+export function initPhysicsSystems(em: EntityManager) {
+  registerInitTransforms(em);
+
   registerPhysicsStateInit(em);
 
   registerPhysicsClampVelocityByContact(em);
@@ -65,7 +69,9 @@ export function registerPhysicsSystems(em: EntityManager) {
   // TODO(@darzu): get rid of this duplicate call?
   registerUpdateWorldFromLocalAndParent(em, "2", Phase.PHYSICS_FINISH_WORLD);
 
-  registerPhysicsDebuggerSystem(em);
+  if (DBG_PHYSICS_AABBS) {
+    registerPhysicsDebuggerSystem(em);
+  }
 }
 
 export type CollidesWith = Map<number, number[]>;

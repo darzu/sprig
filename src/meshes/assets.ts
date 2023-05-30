@@ -1,4 +1,4 @@
-import { Component, EM, EntityManager } from "../ecs/entity-manager.js";
+import { Component, EM } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { importObj, isParseError } from "./import-obj.js";
 import {
@@ -23,33 +23,23 @@ import {
 import { RendererDef } from "../render/renderer-ecs.js";
 import { Renderer } from "../render/renderer-ecs.js";
 import { assert } from "../utils/util.js";
-import { objMap, range } from "../utils/util.js";
+import { objMap } from "../utils/util.js";
 import { getBytes, getText } from "../fetch/webget.js";
 import { AABBCollider } from "../physics/collider.js";
 import {
   computeTriangleNormal,
   farthestPointInDir,
   normalizeVec2s,
-  randNormalPosVec3,
   SupportFn,
-  uintToVec3unorm,
-  vec3Reverse,
-  vec4Reverse,
 } from "../utils/utils-3d.js";
 import { MeshHandle, MeshReserve } from "../render/mesh-pool.js";
-import { onInit } from "../init.js";
-import { jitter, mathMap, max, min } from "../utils/math.js";
 import { VERBOSE_LOG } from "../flags.js";
 import {
-  createEmptyMesh,
-  createTimberBuilder,
-  debugBoardSystem,
   getBoardsFromMesh,
   unshareProvokingForWood,
   WoodAssets,
   WoodAssetsDef,
 } from "../wood/wood.js";
-import { tempMat4, tempVec3 } from "../matrix/temp-pool.js";
 import {
   BOAT_MESH,
   BULLET_MESH,
@@ -462,37 +452,14 @@ type GameMeshes = { [P in RemoteMeshSymbols | LocalMeshSymbols]: GameMesh } & {
   [P in RemoteMeshSetSymbols]: GameMesh[];
 };
 
-const AssetLoaderDef = EM.defineComponent("assetLoader", () => {
-  return {
-    promise: null as Promise<GameMeshes> | null,
-  };
-});
-
 export const AssetsDef = EM.defineComponent("assets", (meshes: GameMeshes) => {
   return meshes;
 });
 export type Assets = Component<typeof AssetsDef>;
 
-onInit(async (em) => {
-  em.addResource(AssetLoaderDef);
-
-  // start loading of assets
-  const { assetLoader, renderer } = await em.whenResources(
-    AssetLoaderDef,
-    RendererDef
-  );
-  assert(!assetLoader.promise, "somehow we're double loading assets");
-
-  const assetsPromise = loadAssets(renderer.renderer);
-  assetLoader.promise = assetsPromise;
-  // TODO(@darzu): do we want this try-catch here? It just obscures errors.
-  // try {
-  const result = await assetsPromise;
-  em.addResource(AssetsDef, result);
-  // } catch (failureReason) {
-  //   // TODO(@darzu): fail more gracefully
-  //   throw `Failed to load assets: ${failureReason}`;
-  // }
+EM.addLazyInit([RendererDef], [AssetsDef], async ({ renderer }) => {
+  const assets = await loadAssets(renderer.renderer);
+  EM.addResource(AssetsDef, assets);
 });
 
 async function loadTxtInternal(relPath: string): Promise<string> {

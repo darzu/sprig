@@ -1,7 +1,6 @@
-import { createLabelSolver, LabelConstraint } from "./em-labels.js";
 import {
   DBG_ASSERT,
-  DBG_INIT_DEPS,
+  DBG_INIT,
   DBG_SYSTEM_ORDER,
   DBG_TRYCALLSYSTEM,
 } from "../flags.js";
@@ -11,6 +10,7 @@ import {
   assertDbg,
   hashCode,
   Intersect,
+  isPromise,
   toMap,
 } from "../utils/util.js";
 import { Phase, PhaseValueList } from "./sys-phase.js";
@@ -23,6 +23,10 @@ export interface Entity {
   readonly id: number;
 }
 
+export type CompId = number;
+export type ResId = CompId;
+
+// TODO(@darzu): we should seperate component vs resource def
 export interface ComponentDef<
   N extends string = string,
   P = any,
@@ -39,10 +43,13 @@ export interface ComponentDef<
   //  objects. E.g. no naked numbers or booleans. There's some other reason i think
   //  we want this that is eluding me..
   construct: (...args: Pargs) => P;
-  readonly id: number;
+  readonly id: CompId;
   isOn: <E extends Entity>(e: E) => e is E & { [K in N]: P };
 }
 export type Component<DEF> = DEF extends ComponentDef<any, infer P> ? P : never;
+
+export const componentsToString = (cs: ComponentDef[]) =>
+  `(${cs.map((c) => c.name).join(", ")})`;
 
 export type WithComponent<D> = D extends ComponentDef<infer N, infer P>
   ? { readonly [k in N]: P }
@@ -57,32 +64,45 @@ export type Entities<CS extends ComponentDef[]> = EntityW<CS>[];
 export type ReadonlyEntities<CS extends ComponentDef[]> =
   readonly EntityW<CS>[];
 export type SystemFn<
-  CS extends ComponentDef[] | null,
-  RS extends ComponentDef[]
+  CS extends ComponentDef[] | null = ComponentDef[] | null,
+  RS extends ComponentDef[] = ComponentDef[]
 > = (
   es: CS extends ComponentDef[] ? ReadonlyEntities<CS> : [],
   resources: EntityW<RS>
 ) => void;
 
-type System<CS extends ComponentDef[] | null, RS extends ComponentDef[]> = {
-  cs: CS;
-  rs: RS;
-  callback: SystemFn<CS, RS>;
+interface SystemReg {
+  cs: ComponentDef[] | null;
+  rs: ComponentDef[];
+  callback: SystemFn;
   name: string;
   phase: Phase;
   id: number;
-};
-
-export interface InitFNReg<RS extends ComponentDef[]> {
-  requireRs: [...RS];
-  provideRs: ComponentDef[];
-  // provideLs: Label[]; // system labels
-  fn: (rs: EntityW<RS>) => Promise<void>;
-
-  // TODO(@darzu): optional metadata?
-  // name: string;
-  id: number;
 }
+
+export type InitFnId = number;
+
+export type InitFn<RS extends ComponentDef[] = ComponentDef[]> =
+  | ((rs: EntityW<RS>) => Promise<void>)
+  | ((rs: EntityW<RS>) => void);
+
+export interface InitFnReg<RS extends ComponentDef[] = ComponentDef[]> {
+  // TODO(@darzu): debug name
+  // name: string;
+  requireRs: [...RS];
+  requireCompSet?: ComponentDef[];
+  provideRs: ComponentDef[];
+  eager?: boolean; // TODO(@darzu): flop this to lazy? more clear. make required?
+  fn: InitFn<RS>;
+  id: InitFnId;
+}
+
+export function initFnToString(init: InitFnReg) {
+  return `${componentsToString(init.requireRs)} -> ${componentsToString(
+    init.provideRs
+  )}`;
+}
+
 // type _InitFNReg = InitFNReg & {
 //   id: number;
 // }
@@ -116,7 +136,6 @@ function nameToId(name: string): number {
 }
 
 interface SystemStats {
-  queryTime: number;
   callTime: number;
   maxCallTime: number;
   queries: number;
@@ -131,15 +150,16 @@ interface SystemStats {
 export class EntityManager {
   entities: Map<number, Entity> = new Map();
   ent0: Entity & { id: 0 };
-  systems: Map<string, System<any[] | null, any[]>> = new Map();
-  systemsById: Map<number, System<any[] | null, any[]>> = new Map();
+  allSystemsByName: Map<string, SystemReg> = new Map();
+  activeSystemsById: Map<number, SystemReg> = new Map();
   phases: Map<Phase, string[]> = toMap(
     PhaseValueList,
     (n) => n,
     (_) => [] as string[]
   );
   entityPromises: Map<number, EntityPromise<ComponentDef[], any>[]> = new Map();
-  components: Map<number, ComponentDef<any, any>> = new Map();
+  components: Map<CompId, ComponentDef<any, any>> = new Map();
+
   serializers: Map<
     number,
     {
@@ -151,14 +171,14 @@ export class EntityManager {
   ranges: Record<string, { nextId: number; maxId: number }> = {};
   defaultRange: string = "";
   sysStats: Record<string, SystemStats> = {};
-  globalStats = {
-    // time spent maintaining the query caches
-    queryCacheTime: 0, // TODO(@darzu): IMPL
+  emStats = {
+    queryTime: 0,
   };
 
   // TODO(@darzu): move elsewhere
   dbgLoops: number = 0;
 
+  // QUERY SYSTEM
   // TODO(@darzu): PERF. maybe the entities list should be maintained sorted. That
   //    would make certain scan operations (like updating them on component add/remove)
   //    cheaper. And perhaps better gameplay code too.
@@ -167,8 +187,6 @@ export class EntityManager {
   private _entitiesToSystems: Map<number, number[]> = new Map();
   private _systemsToComponents: Map<number, string[]> = new Map();
   private _componentToSystems: Map<string, number[]> = new Map();
-
-  labelSolver = createLabelSolver();
 
   constructor() {
     const ent0 = Object.create(null); // no prototype
@@ -328,26 +346,30 @@ export class EntityManager {
     (e as any)[def.name] = c;
 
     // update query caches
-    // TODO(@darzu): PERF. need to measure time spent maintaining these caches.
-    const eSystems = this._entitiesToSystems.get(e.id)!;
-    if (this.isDeadC(def)) {
-      // remove from every current system
-      eSystems.forEach((s) => {
-        const es = this._systemsToEntities.get(s)!;
-        // TODO(@darzu): perf. sorted removal
-        const indx = es.findIndex((v) => v.id === id);
-        if (indx >= 0) es.splice(indx, 1);
-      });
-      eSystems.length = 0;
-    }
-    const systems = this._componentToSystems.get(def.name);
-    for (let sysId of systems ?? []) {
-      const allNeededCs = this._systemsToComponents.get(sysId);
-      if (allNeededCs?.every((n) => n in e)) {
-        // TODO(@darzu): perf. sorted insert
-        this._systemsToEntities.get(sysId)!.push(e);
-        eSystems.push(sysId);
+    {
+      let _beforeQueryCache = performance.now();
+      this.seenComponents.add(def.id);
+      const eSystems = this._entitiesToSystems.get(e.id)!;
+      if (this.isDeadC(def)) {
+        // remove from every current system
+        eSystems.forEach((s) => {
+          const es = this._systemsToEntities.get(s)!;
+          // TODO(@darzu): perf. sorted removal
+          const indx = es.findIndex((v) => v.id === id);
+          if (indx >= 0) es.splice(indx, 1);
+        });
+        eSystems.length = 0;
       }
+      const systems = this._componentToSystems.get(def.name);
+      for (let sysId of systems ?? []) {
+        const allNeededCs = this._systemsToComponents.get(sysId);
+        if (allNeededCs?.every((n) => n in e)) {
+          // TODO(@darzu): perf. sorted insert
+          this._systemsToEntities.get(sysId)!.push(e);
+          eSystems.push(sysId);
+        }
+      }
+      this.emStats.queryTime += performance.now() - _beforeQueryCache;
     }
 
     // track changes for entity promises
@@ -407,7 +429,7 @@ export class EntityManager {
       throw `double defining singleton component ${def.name} on ${e.id}!`;
     (e as any)[def.name] = c;
     this._changedEntities.add(0); // TODO(@darzu): seperate Resources from Entities
-    this.labelSolver.addResource(def);
+    this.seenResources.add(def.id);
     return c;
   }
 
@@ -453,69 +475,40 @@ export class EntityManager {
     return undefined;
   }
 
-  // TODO(@darzu): rename these to "requireSystem" or somethingE
-  // _dbgOldPlan: string[] = []; // TODO(@darzu): REMOVE
-  // TODO(@darzu): this makes no sense so what should this represent?
-  // public maybeRequireSystem(name: string): boolean {
-  //   this.addConstraint(["requires", name]);
-  //   // this._dbgOldPlan.push(name); // TODO(@darzu): DBG
-  //   return true;
-  // }
-  // public requireSystem(name: string) {
-  //   this.addConstraint(["requires", name]);
-  //   // this._dbgOldPlan.push(name); // TODO(@darzu): DBG
-  // }
-  // // TODO(@darzu): legacy thing; gotta replace with labels/phases
-  // public requireGameplaySystem(name: string) {
-  //   this.addConstraint(["requires", name]);
-  // }
-  // public addConstraint(con: LabelConstraint) {
-  //   this.labelSolver.addConstraint(con);
-  // }
-
-  _dbgLastVersion = -1;
   _dbgLastSystemLen = 0;
-  public callSystems() {
-    // // TODO(@darzu):
-    // // console.log("OLD PLAN:");
-    // // console.log(this._tempPlan);
-    // if (DBG_INIT_DEPS)
-    //   if (this._dbgLastVersion !== this.labelSolver.getVersion()) {
-    //     this._dbgLastVersion = this.labelSolver.getVersion();
-    //     console.log("NEW PLAN:");
-    //     console.log(this.labelSolver.getPlan().join("\n"));
-    //   }
-
-    // const plan = this.labelSolver.getPlan();
-    // // const plan = this._tempPlan;
-
-    // for (let s of plan) {
-    //   this._tryCallSystem(s);
-    // }
-
-    // // this._dbgOldPlan.length = 0;
-    // // if (this.dbgLoops > 100) throw "STOP";
-
+  _dbgLastActiveSystemLen = 0;
+  private callSystems() {
     if (DBG_SYSTEM_ORDER) {
-      let newSystemLen = 0;
+      let newTotalSystemLen = 0;
+      let newActiveSystemLen = 0;
       let res = "";
       for (let phase of PhaseValueList) {
         const phaseName = Phase[phase];
         res += phaseName + "\n";
-        for (let s of this.phases.get(phase)!) {
-          res += "  " + s + "\n";
-          newSystemLen++;
+        for (let sysName of this.phases.get(phase)!) {
+          let sys = this.allSystemsByName.get(sysName)!;
+          if (this.activeSystemsById.has(sys.id)) {
+            res += "  " + sysName + "\n";
+            newActiveSystemLen++;
+          } else {
+            res += "  (" + sysName + ")\n";
+          }
+          newTotalSystemLen++;
         }
       }
-      if (this._dbgLastSystemLen !== newSystemLen) {
+      if (
+        this._dbgLastSystemLen !== newTotalSystemLen ||
+        this._dbgLastActiveSystemLen !== newActiveSystemLen
+      ) {
         console.log(res);
-        this._dbgLastSystemLen = newSystemLen;
+        this._dbgLastSystemLen = newTotalSystemLen;
+        this._dbgLastActiveSystemLen = newActiveSystemLen;
       }
     }
 
     for (let phase of PhaseValueList) {
       for (let s of this.phases.get(phase)!) {
-        this._tryCallSystem(s);
+        this.tryCallSystem(s);
       }
     }
   }
@@ -555,7 +548,7 @@ export class EntityManager {
     if (this.isDeadC(def)) {
       const eSystems = this._entitiesToSystems.get(id)!;
       eSystems.length = 0;
-      for (let sysId of this.systemsById.keys()) {
+      for (let sysId of this.activeSystemsById.keys()) {
         const allNeededCs = this._systemsToComponents.get(sysId);
         if (allNeededCs?.every((n) => n in e)) {
           // TODO(@darzu): perf. sorted insert
@@ -658,38 +651,39 @@ export class EntityManager {
     return res;
   }
 
-  // initFns: InitFNReg<any>[] = [];
-  initFnsByResource: Map<string, InitFNReg<ComponentDef[]>> = new Map();
-  initFnHasStarted: Set<number> = new Set();
-  // TODO(@darzu): IMPL?
-  // pendingResources: Map<string, Promise<ComponentDef<any>>> = new Map();
   _nextInitFnId = 1;
 
-  // TODO(@darzu): instead of "name", system should havel "labelConstraints"
-  public registerInit<RS extends ComponentDef[]>(
-    reg: Omit<InitFNReg<RS>, "id">
+  public addLazyInit<RS extends ComponentDef[]>(
+    requireRs: [...RS],
+    provideRs: ComponentDef[],
+    callback: InitFn<RS>
   ): void {
-    // TODO(@darzu):
-    // throw "TODO";
-    if (DBG_INIT_DEPS)
-      console.log(
-        `registerInit: ${reg.provideRs.map((p) => p.name).join(",")}`
-      );
-    // console.dir(opts);
-
-    const regWId: InitFNReg<RS> = {
-      ...reg,
-      id: this._nextInitFnId++,
+    const id = this._nextInitFnId++;
+    const reg: InitFnReg<RS> = {
+      requireRs,
+      provideRs,
+      fn: callback,
+      eager: false,
+      id,
     };
-
-    // this.initFns.push(reg);
-    for (let p of reg.provideRs) {
-      assert(
-        !this.initFnsByResource.has(p.name),
-        `Resource: '${p.name}' already has an init fn!`
-      );
-      this.initFnsByResource.set(p.name, regWId);
-    }
+    this.addInit(reg);
+  }
+  public addEagerInit<RS extends ComponentDef[]>(
+    requireCompSet: ComponentDef[],
+    requireRs: [...RS],
+    provideRs: ComponentDef[],
+    callback: InitFn<RS>
+  ): void {
+    const id = this._nextInitFnId++;
+    const reg: InitFnReg<RS> = {
+      requireCompSet,
+      requireRs,
+      provideRs,
+      fn: callback,
+      eager: true,
+      id,
+    };
+    this.addInit(reg);
   }
 
   private _nextSystemId = 1;
@@ -720,11 +714,11 @@ export class EntityManager {
         `To define a system with an anonymous function, pass an explicit name`
       );
     }
-    if (this.systems.has(name))
+    if (this.allSystemsByName.has(name))
       throw `System named ${name} already defined. Try explicitly passing a name`;
     const id = this._nextSystemId;
     this._nextSystemId += 1;
-    const sys: System<any, RS> = {
+    const sys: SystemReg = {
       cs,
       rs,
       callback,
@@ -732,14 +726,37 @@ export class EntityManager {
       phase,
       id,
     };
-    this.systems.set(name, sys);
-    this.systemsById.set(id, sys);
+    this.allSystemsByName.set(name, sys);
+
+    // NOTE: even though we might not active the system right away, we want to respect the
+    //  order in which it was added to the phase.
+    this.phases.get(phase)!.push(name);
+
+    const seenAllCmps = (sys.cs ?? []).every((c) =>
+      this.seenComponents.has(c.id)
+    );
+    const seenAllRes = sys.rs.every((c) => this.seenResources.has(c.id));
+    if (seenAllCmps && seenAllRes) {
+      this.activateSystem(sys);
+    } else {
+      // NOTE: we delay activating the system b/c each active system incurs
+      //  a cost to maintain its query accelerators on each entity and component
+      //  added/removed
+      this.addEagerInit(sys.cs ?? [], sys.rs, [], () => {
+        this.activateSystem(sys);
+      });
+    }
+  }
+
+  private activateSystem(sys: SystemReg) {
+    const { cs, id, name, phase } = sys;
+
+    this.activeSystemsById.set(id, sys);
     this.sysStats[name] = {
       calls: 0,
       queries: 0,
       callTime: 0,
       maxCallTime: 0,
-      queryTime: 0,
     };
 
     // update query cache:
@@ -764,8 +781,6 @@ export class EntityManager {
       assertDbg(ss);
       ss.push(id);
     }
-
-    this.phases.get(phase)!.push(name);
   }
 
   public whenResources<RS extends ComponentDef[]>(
@@ -775,20 +790,25 @@ export class EntityManager {
   }
 
   hasSystem(name: string) {
-    return this.systems.has(name);
+    return this.allSystemsByName.has(name);
   }
 
-  private _tryCallSystem(name: string): boolean {
+  private tryCallSystem(name: string): boolean {
     // TODO(@darzu):
     // if (name.endsWith("Build")) console.log(`calling ${name}`);
     // if (name == "groundPropsBuild") console.log("calling groundPropsBuild");
 
-    const s = this.systems.get(name);
+    const s = this.allSystemsByName.get(name);
     if (!s) {
       if (DBG_TRYCALLSYSTEM)
         console.warn(`Can't (yet) find system with name: ${name}`);
       return false;
     }
+
+    if (!this.activeSystemsById.has(s.id)) {
+      return false;
+    }
+
     let start = performance.now();
     // try looking up in the query cache
     let es: Entities<any[]>;
@@ -807,35 +827,36 @@ export class EntityManager {
     const rs = this.getResources(s.rs); // TODO(@darzu): remove allocs here
     let afterQuery = performance.now();
     this.sysStats[s.name].queries++;
-    this.sysStats[s.name].queryTime += afterQuery - start;
-    if (rs) {
-      // we have the resources
-      s.callback(es, rs);
-
-      // // TODO(@darzu): DEBUG. Promote to a dbg flag? Maybe pre-post system watch predicate
-      // if (es.length && es[0].id === 10001) {
-      //   const doesHave = "rendererWorldFrame" in es[0];
-      //   const isUndefined =
-      //     doesHave && (es[0] as any)["rendererWorldFrame"] === undefined;
-      //   console.log(
-      //     `after ${s.name}: ${es[0].id} ${
-      //       doesHave ? "HAS" : "NOT"
-      //     } .rendererWorldFrame ${isUndefined ? "===" : "!=="} undefined`
-      //   );
-      // }
-
-      let afterCall = performance.now();
-      this.sysStats[s.name].calls++;
-      const thisCallTime = afterCall - afterQuery;
-      this.sysStats[s.name].callTime += thisCallTime;
-      this.sysStats[s.name].maxCallTime = Math.max(
-        this.sysStats[s.name].maxCallTime,
-        thisCallTime
-      );
-    } else {
+    this.emStats.queryTime += afterQuery - start;
+    if (!rs) {
       // we don't yet have the resources, check if we can init any
-      this.startInitFnsFor(s.rs);
+      s.rs.forEach((r) => this.tryForceResourceInit(r));
+      return true;
     }
+
+    // we have the resources
+    s.callback(es, rs);
+
+    // // TODO(@darzu): DEBUG. Promote to a dbg flag? Maybe pre-post system watch predicate
+    // if (es.length && es[0].id === 10001) {
+    //   const doesHave = "rendererWorldFrame" in es[0];
+    //   const isUndefined =
+    //     doesHave && (es[0] as any)["rendererWorldFrame"] === undefined;
+    //   console.log(
+    //     `after ${s.name}: ${es[0].id} ${
+    //       doesHave ? "HAS" : "NOT"
+    //     } .rendererWorldFrame ${isUndefined ? "===" : "!=="} undefined`
+    //   );
+    // }
+
+    let afterCall = performance.now();
+    this.sysStats[s.name].calls++;
+    const thisCallTime = afterCall - afterQuery;
+    this.sysStats[s.name].callTime += thisCallTime;
+    this.sysStats[s.name].maxCallTime = Math.max(
+      this.sysStats[s.name].maxCallTime,
+      thisCallTime
+    );
 
     return true;
   }
@@ -860,26 +881,6 @@ export class EntityManager {
   //   return res;
   // }
 
-  startInitFnsFor(cs: ComponentDef[]) {
-    for (let c of cs) {
-      if (!c.isOn(this.ent0) && this.initFnsByResource.has(c.name)) {
-        // bookkeeping
-        const initFn = this.initFnsByResource.get(c.name)!;
-        this.initFnsByResource.delete(c.name);
-        if (this.initFnHasStarted.has(initFn.id)) continue;
-        this.initFnHasStarted.add(initFn.id);
-
-        // enqueue init fn
-        if (DBG_INIT_DEPS) console.log(`enqueuing init fn for: ${c.name}`);
-        this.whenResources(...initFn.requireRs).then(async (res) => {
-          await initFn.fn(res);
-          // check that the init fn fullfilled its contract
-          assert(c.isOn(this.ent0), `Init fn failed to provide: ${c.name}`);
-        });
-      }
-    }
-  }
-
   dbgEntityPromises(): string {
     let res = "";
     for (let [id, prom] of this.entityPromises.entries()) {
@@ -893,7 +894,8 @@ export class EntityManager {
     return res;
   }
 
-  checkEntityPromises() {
+  // TODO(@darzu): can this consolidate with the InitFn system?
+  private checkEntityPromises() {
     // console.dir(this.entityPromises);
     // console.log(this.dbgStrEntityPromises());
     // this._dbgFirstXFrames--;
@@ -904,9 +906,9 @@ export class EntityManager {
     // for resources, check init fns
     // TODO(@darzu): also check and call init functions for systems!!
     const resourcePromises = this.entityPromises.get(0);
-    if (resourcePromises) {
-      for (let p of resourcePromises) this.startInitFnsFor(p.cs);
-    }
+    resourcePromises?.forEach((p) =>
+      p.cs.forEach((r) => this.tryForceResourceInit(r))
+    );
 
     let finishedEntities: Set<number> = new Set();
     this.entityPromises.forEach((promises, id) => {
@@ -930,7 +932,7 @@ export class EntityManager {
         const afterOneShotQuery = performance.now();
         const stats = this.sysStats["__oneShots"];
         stats.queries += 1;
-        stats.queryTime += afterOneShotQuery - beforeOneShots;
+        this.emStats.queryTime += afterOneShotQuery - beforeOneShots;
 
         promises.splice(idx, 1);
         // TODO(@darzu): how to handle async callbacks and their timing?
@@ -956,9 +958,10 @@ export class EntityManager {
 
   // TODO(@darzu): good or terrible name?
   // TODO(@darzu): another version for checking entity promises?
+  // TODO(@darzu): update with new init system
   whyIsntSystemBeingCalled(name: string): void {
     // TODO(@darzu): more features like check against a specific set of entities
-    const sys = this.systems.get(name);
+    const sys = this.allSystemsByName.get(name);
     if (!sys) {
       console.warn(`No systems found with name: '${name}'`);
       return;
@@ -1019,6 +1022,101 @@ export class EntityManager {
         this.entityPromises.get(e.id)!.push(sys);
       else this.entityPromises.set(e.id, [sys]);
     });
+  }
+
+  // INIT SYSTEM
+  // TODO(@darzu): [ ] split entity-manager ?
+  // TODO(@darzu): [ ] consolidate entity promises into init system?
+  // TODO(@darzu): [ ] addLazyInit, addEagerInit require debug name
+  seenComponents = new Set<CompId>();
+  seenResources = new Set<ResId>();
+
+  pendingLazyInitsByProvides = new Map<ResId, InitFnReg>();
+  pendingEagerInits: InitFnReg[] = [];
+  startedInits = new Map<InitFnId, Promise<void> | void>();
+  allInits = new Map<InitFnId, InitFnReg>();
+
+  private progressInitFns() {
+    this.pendingEagerInits.forEach((e, i) => {
+      let hasAll = true;
+
+      // has resources?
+      for (let r of e.requireRs) {
+        if (!this.seenResources.has(r.id)) {
+          // lazy -> eager
+          this.tryForceResourceInit(r);
+          hasAll = false;
+        }
+      }
+
+      // has component set?
+      // TODO(@darzu): more precise component set tracking:
+      //               not just one of each component, but some entity that has all
+      if (e.requireCompSet)
+        for (let c of e.requireCompSet)
+          hasAll &&= this.seenComponents.has(c.id);
+
+      // run?
+      if (hasAll) {
+        // TODO(@darzu): BUG. this won't work if a resource is added then removed e.g. flags
+        // eager -> run
+        this.runInitFn(e);
+        this.pendingEagerInits.splice(i, 1);
+      }
+    });
+  }
+  private addInit(reg: InitFnReg) {
+    if (reg.eager) {
+      this.pendingEagerInits.push(reg);
+    } else {
+      assert(
+        reg.provideRs.length > 0,
+        `addLazyInit must specify at least 1 provideRs`
+      );
+      for (let p of reg.provideRs) {
+        assert(
+          !this.pendingLazyInitsByProvides.has(p.id),
+          `Resource: '${p.name}' already has an init fn!`
+        );
+        this.pendingLazyInitsByProvides.set(p.id, reg);
+      }
+
+      if (DBG_INIT) console.log(`new lazy: ${initFnToString(reg)}`);
+    }
+  }
+  private tryForceResourceInit(r: ComponentDef) {
+    const lazy = this.pendingLazyInitsByProvides.get(r.id);
+    if (!lazy) return;
+
+    // remove from all lazy
+    for (let r of lazy.provideRs) this.pendingLazyInitsByProvides.delete(r.id);
+    // add to eager
+    this.pendingEagerInits.push(lazy);
+
+    if (DBG_INIT) console.log(`lazy => eager: ${initFnToString(lazy)}`);
+  }
+  private async runInitFn(init: InitFnReg) {
+    // TODO(@darzu): verify that it doesn't add any resources not mentioned in provides
+    const promise = init.fn(this.ent0);
+    this.startedInits.set(init.id, promise);
+
+    if (DBG_INIT) console.log(`eager => started: ${initFnToString(init)}`);
+
+    if (isPromise(promise)) await promise;
+
+    // assert resources were added
+    for (let res of init.provideRs)
+      assert(res.isOn(this.ent0), `Init fn failed to provide: ${res.name}`);
+
+    if (DBG_INIT) console.log(`finished: ${initFnToString(init)}`);
+  }
+
+  public update() {
+    // TODO(@darzu): can EM.update() be a system?
+    this.progressInitFns();
+    this.checkEntityPromises();
+    this.callSystems();
+    this.dbgLoops++;
   }
 }
 
