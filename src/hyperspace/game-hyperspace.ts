@@ -1,5 +1,5 @@
 import { CameraDef } from "../camera/camera.js";
-import { EM, EntityManager, EntityW } from "../ecs/entity-manager.js";
+import { EM, EntityW } from "../ecs/entity-manager.js";
 import { PositionDef, RotationDef, ScaleDef } from "../physics/transform.js";
 import { RendererDef, RenderableConstructDef } from "../render/renderer-ecs.js";
 import { blurPipelines } from "../render/pipelines/std-blur.js";

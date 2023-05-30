@@ -3,7 +3,7 @@
 // player controller component and system
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { InputsDef } from "../input/inputs.js";
-import { EM, Entity, EntityManager, EntityW } from "../ecs/entity-manager.js";
+import { EM, Entity, EntityW } from "../ecs/entity-manager.js";
 import { TimeDef } from "../time/time.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { FinishedDef } from "../ecs/em-helpers.js";

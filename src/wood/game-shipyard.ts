@@ -4,7 +4,7 @@ import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { DeadDef, DeletedDef } from "../ecs/delete.js";
 import { createRef } from "../ecs/em-helpers.js";
-import { EM, Entity, EntityManager, EntityW } from "../ecs/entity-manager.js";
+import { EM, Entity, EntityW } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { InputsDef } from "../input/inputs.js";
 import { jitter } from "../utils/math.js";

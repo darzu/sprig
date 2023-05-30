@@ -1,4 +1,3 @@
-import { EntityManager } from "./ecs/entity-manager.js";
 import {
   initNetStateEventSystems,
   initNetSendOutboxes,
