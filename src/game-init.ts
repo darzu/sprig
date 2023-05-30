@@ -22,13 +22,12 @@ import { initHtmlUI } from "./gui/ui.js";
 import { initDevConsole } from "./debug/console.js";
 import { initNetSystems } from "./net/net.js";
 import { ENABLE_NET } from "./flags.js";
-import { initStdMeshUpload } from "./render/pipelines/std-mesh.js";
-import { initOceanDataUpload } from "./render/pipelines/std-ocean.js";
 import { initDbgViewModes } from "./debug/view-modes.js";
 import { initWoodSplinterSystem } from "./wood/wood-splinters.js";
 import { initWoodSystems } from "./wood/wood.js";
 
 export function initCommonSystems(em: EntityManager) {
+  // TODO(@darzu): consolidate, rename, clean up net init
   if (ENABLE_NET) {
     initNetSystems(em);
   }
@@ -50,9 +49,9 @@ export function initCommonSystems(em: EntityManager) {
   initPhysicsSystems(em);
 
   initMotionSmoothingSystems(em);
+
   initDbgViewModes(em);
-  initStdMeshUpload();
-  initOceanDataUpload();
+
   initWoodSplinterSystem();
   initWoodSystems();
 

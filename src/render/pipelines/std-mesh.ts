@@ -111,7 +111,7 @@ export const stdRenderPipeline = CY.createRenderPipeline("stdMeshRender", {
 const _lastMeshHandleTransform = new Map<number, mat4>();
 const _lastMeshHandleHidden = new Map<number, boolean>();
 
-export function initStdMeshUpload() {
+EM.addEagerInit([RenderDataStdDef], [], [], () => {
   const renderObjs: EntityW<
     [
       typeof RendererWorldFrameDef,
@@ -163,7 +163,7 @@ export function initStdMeshUpload() {
   // EM.addConstraint(["stdRenderListDeadHidden", "before", "stdRenderList"]);
   // EM.addConstraint(["stdRenderList", "before", "stdRenderableDataUpdate"]);
   // EM.addConstraint(["stdRenderableDataUpdate", "before", "stepRenderer"]);
-}
+});
 
 function updateStdRenderData(
   o: EntityW<
