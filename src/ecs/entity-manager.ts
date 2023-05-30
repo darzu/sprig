@@ -141,9 +141,6 @@ interface SystemStats {
   queries: number;
   calls: number;
 }
-interface EMStats {
-  queryTime: number;
-}
 
 // TODO(@darzu): Instead of having one big EM class,
 //    we should seperate out all seperable concerns,
@@ -174,12 +171,8 @@ export class EntityManager {
   ranges: Record<string, { nextId: number; maxId: number }> = {};
   defaultRange: string = "";
   sysStats: Record<string, SystemStats> = {};
-  emStats: EMStats = {
+  emStats = {
     queryTime: 0,
-  };
-  globalStats = {
-    // time spent maintaining the query caches
-    queryCacheTime: 0, // TODO(@darzu): IMPL
   };
 
   // TODO(@darzu): move elsewhere
@@ -658,11 +651,6 @@ export class EntityManager {
     return res;
   }
 
-  // initFns: InitFNReg<any>[] = [];
-  // initFnsByResource: Map<string, InitFNReg<ComponentDef[]>> = new Map();
-  // initFnHasStarted: Set<number> = new Set();
-  // TODO(@darzu): IMPL?
-  // pendingResources: Map<string, Promise<ComponentDef<any>>> = new Map();
   _nextInitFnId = 1;
 
   public addLazyInit<RS extends ComponentDef[]>(
@@ -1039,17 +1027,14 @@ export class EntityManager {
   // INIT SYSTEM
   // TODO(@darzu): [ ] split entity-manager ?
   // TODO(@darzu): [ ] consolidate entity promises into init system?
-  // TODO(@darzu): [ ] remove unnecessary async on inits
-  // TODO(@darzu): [ ] flop InitFnReg eager -> lazy
-  // TODO(@darzu): [ ] InitFnReg debug name
-  // TODO(@darzu): [ ] addLazyInit, addEagerInit
-  seenComponents = new Set<CompId>(); // TODO(@darzu): IMPL
-  seenResources = new Set<ResId>(); // TODO(@darzu): IMPL
+  // TODO(@darzu): [ ] addLazyInit, addEagerInit require debug name
+  seenComponents = new Set<CompId>();
+  seenResources = new Set<ResId>();
 
-  pendingLazyInitsByProvides = new Map<ResId, InitFnReg>(); // TODO(@darzu): IMPL
-  pendingEagerInits: InitFnReg[] = []; // TODO(@darzu): IMPL
+  pendingLazyInitsByProvides = new Map<ResId, InitFnReg>();
+  pendingEagerInits: InitFnReg[] = [];
   startedInits = new Map<InitFnId, Promise<void> | void>();
-  allInits = new Map<InitFnId, InitFnReg>(); // TODO(@darzu): IMPL
+  allInits = new Map<InitFnId, InitFnReg>();
 
   private progressInitFns() {
     this.pendingEagerInits.forEach((e, i) => {
