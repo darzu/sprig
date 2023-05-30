@@ -18,7 +18,7 @@ import { createGhost } from "../debug/ghost.js";
 import { createHomeShip } from "../wood/shipyard.js";
 import { TextDef } from "../gui/ui.js";
 import { Phase } from "../ecs/sys-phase.js";
-import { init3DModeler } from "./modeler";
+import { init3DModeler } from "./modeler.js";
 
 export async function initModelingGame() {
   const { renderer } = await EM.whenResources(RendererDef);

@@ -11,10 +11,7 @@ import {
 } from "./net/sync.js";
 import { initNetPredictSystems } from "./net/predict.js";
 import { initNetGameEventSystems } from "./net/events.js";
-import {
-  initRenderDrawSystems,
-  initRiggedRenderablesSystems,
-} from "./render/renderer-ecs.js";
+import { initRiggedRenderablesSystems } from "./render/renderer-ecs.js";
 import { init3DModeler } from "./meshes/modeler.js";
 import {
   initNetMotionRecordingSystem,
@@ -60,7 +57,6 @@ export function initCommonSystems(em: EntityManager) {
   initMotionSmoothingSystems(em);
   initDbgViewModes(em);
   initRiggedRenderablesSystems(em);
-  initRenderDrawSystems(em);
   initClothSystems();
   initSpringSystems();
   initSkeletalAnimSystems();

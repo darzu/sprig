@@ -162,7 +162,65 @@ export const RendererWorldFrameDef = EM.defineComponent(
 //   grass: updateGrassRenderData,
 // };
 
-export function initRenderDrawSystems(em: EntityManager) {
+EM.addEagerInit([RenderableConstructDef], [RendererDef], [], () => {
+  EM.addSystem(
+    "constructRenderables",
+    Phase.PRE_GAME_WORLD,
+    [RenderableConstructDef],
+    [RendererDef],
+    (es, res) => {
+      for (let e of es) {
+        // TODO(@darzu): this seems somewhat inefficient to look for this every frame
+        if (!RenderableDef.isOn(e)) {
+          let meshHandle: MeshHandle;
+          let mesh: Mesh;
+          const pool = res.renderer.renderer.getCyResource(
+            e.renderableConstruct.pool
+          );
+          assert(pool);
+          if (isMeshHandle(e.renderableConstruct.meshOrProto)) {
+            // TODO(@darzu): renderableConstruct is getting to large and wierd
+            assert(
+              !e.renderableConstruct.reserve,
+              `cannot have a reserve when adding an instance`
+            );
+            meshHandle = pool.addMeshInstance(
+              e.renderableConstruct.meshOrProto
+            );
+            mesh = meshHandle.mesh!;
+          } else {
+            meshHandle = pool.addMesh(
+              e.renderableConstruct.meshOrProto,
+              e.renderableConstruct.reserve
+            );
+            mesh = e.renderableConstruct.meshOrProto;
+          }
+          if (e.renderableConstruct.mask) {
+            meshHandle.mask = e.renderableConstruct.mask;
+          }
+
+          EM.addComponent(e.id, RenderableDef, {
+            enabled: e.renderableConstruct.enabled,
+            hidden: false,
+            sortLayer: e.renderableConstruct.sortLayer,
+            meshHandle,
+          });
+
+          // pool.updateUniform
+          const uni = pool.ptr.computeUniData(mesh);
+          EM.ensureComponentOn(e, pool.ptr.dataDef, uni);
+          // TODO(@darzu): HACK! We need some notion of required uni data maybe? Or common uni data
+          if ("id" in e[pool.ptr.dataDef.name]) {
+            // console.log(
+            //   `setting ${e.id}.${pool.ptr.dataDef.name}.id = ${meshHandle.mId}`
+            // );
+            e[pool.ptr.dataDef.name]["id"] = meshHandle.mId;
+          }
+        }
+      }
+    }
+  );
+
   // NOTE: we use "renderListDeadHidden" and "renderList" to construct a custom
   //  query of renderable objects that include dead, hidden objects. The reason
   //  for this is that it causes a more stable entity list when we have object
@@ -182,7 +240,7 @@ export function initRenderDrawSystems(em: EntityManager) {
           renderObjs.push(o);
     }
   );
-  em.addSystem(
+  EM.addSystem(
     "renderList",
     Phase.RENDER_DRAW,
     [RendererWorldFrameDef, RenderableDef],
@@ -195,7 +253,7 @@ export function initRenderDrawSystems(em: EntityManager) {
 
   let __frame = 1; // TODO(@darzu): DBG
 
-  em.addSystem(
+  EM.addSystem(
     "renderDrawSubmitToGPU",
     Phase.RENDER_DRAW,
     null, // NOTE: see "renderList*" systems and NOTE above. We use those to construct our query.
@@ -219,12 +277,12 @@ export function initRenderDrawSystems(em: EntityManager) {
       // console.log(`mId 24: ${!!m24.length}, e10003: ${!!e10003.length}`);
 
       // update position
-      const pointLights = em
-        .filterEntities([PointLightDef, WorldFrameDef])
-        .map((e) => {
+      const pointLights = EM.filterEntities([PointLightDef, WorldFrameDef]).map(
+        (e) => {
           vec3.copy(e.pointLight.position, e.world.position);
           return e.pointLight;
-        });
+        }
+      );
 
       const NUM_CASCADES = 2;
       // TODO(@darzu): move point light and casading shadow map code to its own system
@@ -340,14 +398,14 @@ export function initRenderDrawSystems(em: EntityManager) {
     }
   );
 
-  // em.addConstraint([
+  // EM.addConstraint([
   //   "renderListDeadHidden",
   //   "after",
   //   "updateRendererWorldFrames",
   // ]);
-  // em.addConstraint(["renderListDeadHidden", "before", "renderList"]);
-  // em.addConstraint(["renderList", "before", "stepRenderer"]);
-}
+  // EM.addConstraint(["renderListDeadHidden", "before", "renderList"]);
+  // EM.addConstraint(["renderList", "before", "stepRenderer"]);
+});
 
 // export function poolKindToPool(
 //   renderer: Renderer,
@@ -363,62 +421,6 @@ export function initRenderDrawSystems(em: EntityManager) {
 //     never(kind);
 //   }
 // }
-
-EM.addSystem(
-  "constructRenderables",
-  Phase.PRE_GAME_WORLD,
-  [RenderableConstructDef],
-  [RendererDef],
-  (es, res) => {
-    for (let e of es) {
-      // TODO(@darzu): this seems somewhat inefficient to look for this every frame
-      if (!RenderableDef.isOn(e)) {
-        let meshHandle: MeshHandle;
-        let mesh: Mesh;
-        const pool = res.renderer.renderer.getCyResource(
-          e.renderableConstruct.pool
-        );
-        assert(pool);
-        if (isMeshHandle(e.renderableConstruct.meshOrProto)) {
-          // TODO(@darzu): renderableConstruct is getting to large and wierd
-          assert(
-            !e.renderableConstruct.reserve,
-            `cannot have a reserve when adding an instance`
-          );
-          meshHandle = pool.addMeshInstance(e.renderableConstruct.meshOrProto);
-          mesh = meshHandle.mesh!;
-        } else {
-          meshHandle = pool.addMesh(
-            e.renderableConstruct.meshOrProto,
-            e.renderableConstruct.reserve
-          );
-          mesh = e.renderableConstruct.meshOrProto;
-        }
-        if (e.renderableConstruct.mask) {
-          meshHandle.mask = e.renderableConstruct.mask;
-        }
-
-        EM.addComponent(e.id, RenderableDef, {
-          enabled: e.renderableConstruct.enabled,
-          hidden: false,
-          sortLayer: e.renderableConstruct.sortLayer,
-          meshHandle,
-        });
-
-        // pool.updateUniform
-        const uni = pool.ptr.computeUniData(mesh);
-        EM.ensureComponentOn(e, pool.ptr.dataDef, uni);
-        // TODO(@darzu): HACK! We need some notion of required uni data maybe? Or common uni data
-        if ("id" in e[pool.ptr.dataDef.name]) {
-          // console.log(
-          //   `setting ${e.id}.${pool.ptr.dataDef.name}.id = ${meshHandle.mId}`
-          // );
-          e[pool.ptr.dataDef.name]["id"] = meshHandle.mId;
-        }
-      }
-    }
-  }
-);
 
 export const RiggedRenderableDef = EM.defineComponent(
   "riggedRenderable",

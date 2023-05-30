@@ -14,5 +14,6 @@
   },
   // "editor.inlayHints.fontSize": 8
   // "editor.inlayHints.fontFamily": "Menlo, Monaco, 'Courier New', monospace"
-  "javascript.preferences.importModuleSpecifierEnding": "js"
+  "javascript.preferences.importModuleSpecifierEnding": "js",
+  "typescript.preferences.importModuleSpecifierEnding": "js"
 }
