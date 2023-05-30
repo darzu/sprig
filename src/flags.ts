@@ -26,7 +26,6 @@ export const ENABLE_AUDIO = true;
 export const DBG_FANG_SHIP = false;
 
 // ECS
-export const DBG_TRYCALLSYSTEM = true;
 export const DBG_INIT = false;
 export const WARN_DEAD_CLEANUP = false;
 export const DBG_SYSTEM_ORDER = false;

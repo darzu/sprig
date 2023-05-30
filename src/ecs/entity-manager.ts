@@ -1,9 +1,4 @@
-import {
-  DBG_ASSERT,
-  DBG_INIT,
-  DBG_SYSTEM_ORDER,
-  DBG_TRYCALLSYSTEM,
-} from "../flags.js";
+import { DBG_ASSERT, DBG_INIT, DBG_SYSTEM_ORDER } from "../flags.js";
 import { Serializer, Deserializer } from "../utils/serialize.js";
 import {
   assert,
@@ -799,11 +794,7 @@ export class EntityManager {
     // if (name == "groundPropsBuild") console.log("calling groundPropsBuild");
 
     const s = this.allSystemsByName.get(name);
-    if (!s) {
-      if (DBG_TRYCALLSYSTEM)
-        console.warn(`Can't (yet) find system with name: ${name}`);
-      return false;
-    }
+    assert(s, `Can't find system with name: ${name}`);
 
     if (!this.activeSystemsById.has(s.id)) {
       return false;

@@ -234,7 +234,6 @@ EM.addEagerInit([RenderableConstructDef], [RendererDef], [], () => {
     [RendererWorldFrameDef, RenderableDef, DeadDef],
     [],
     (objs, _) => {
-      renderObjs.length = 0;
       for (let o of objs)
         if (o.renderable.enabled && o.renderable.hidden && !DeletedDef.isOn(o))
           renderObjs.push(o);
@@ -375,6 +374,8 @@ EM.addEagerInit([RenderableConstructDef], [RendererDef], [], () => {
           `Rendering first frame at: ${performance.now().toFixed(2)}ms`
         );
       }
+
+      renderObjs.length = 0;
 
       // Performance logging
       if (PERF_DBG_GPU) {

@@ -126,7 +126,6 @@ EM.addEagerInit([RenderDataStdDef], [], [], () => {
     [RendererWorldFrameDef, RenderableDef, RenderDataStdDef, DeadDef],
     [],
     (objs, _) => {
-      renderObjs.length = 0;
       for (let o of objs)
         if (o.renderable.enabled && o.renderable.hidden && !DeletedDef.isOn(o))
           renderObjs.push(o);
@@ -156,6 +155,7 @@ EM.addEagerInit([RenderDataStdDef], [], [], () => {
           );
         }
       }
+      renderObjs.length = 0;
     }
   );
 
