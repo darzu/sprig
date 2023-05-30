@@ -21,8 +21,6 @@ import { Phase } from "../ecs/sys-phase.js";
 import { init3DModeler } from "./modeler.js";
 
 export async function initModelingGame() {
-  const { renderer } = await EM.whenResources(RendererDef);
-
   init3DModeler(EM);
 
   EM.addSystem(

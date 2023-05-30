@@ -29,7 +29,7 @@ export const DBG_FANG_SHIP = false;
 export const DBG_TRYCALLSYSTEM = true;
 export const DBG_INIT = false;
 export const WARN_DEAD_CLEANUP = false;
-export const DBG_SYSTEM_ORDER = true;
+export const DBG_SYSTEM_ORDER = false;
 
 // Input
 export const DEBUG_INPUTS = false;

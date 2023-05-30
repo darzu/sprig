@@ -1,9 +1,9 @@
 NETWORK
   (handleNetworkEvents)
-  (recordPreviousLocations)
+  recordPreviousLocations
   (clearRemoteUpdatesMarker)
   (netUpdate)
-  (netPredict)
+  netPredict
   (connectToServer)
   (handleJoin)
   (handleJoinResponse)
@@ -22,10 +22,9 @@ NETWORK
   runEvents
 PRE_GAME_WORLD
   (delete)
-  (updateLifetimes)
+  updateLifetimes
   constructRenderables
   constructRiggedRenderables
-  (buildCloths)
   cannonPropsBuild
   (buildHsPlayers)
 GAME_WORLD
@@ -40,19 +39,20 @@ GAME_WORLD
   easeRudderLD52
   shipParty
   landShipCollision
-  reloadCannon
-  (bulletCollision)
-  (splintersOnFloor)
-  runWooden
-  woodHealth
   ld53GamePipelines
   hsPlayerLookingForShip
-  (breakBullets)
-  (deadBullets)
+  runWooden
+  woodHealth
+  reloadCannon
+  breakBullets
+  deadBullets
+  bulletCollision
+  splintersOnFloor
 POST_GAME_WORLD
   updateScoreDisplay
   detectGameEnd
 AUDIO
+  musicStart
 PRE_READ_INPUT
   placeCursorAtScreenCenter
 READ_INPUTS
@@ -62,6 +62,11 @@ PRE_GAME_PLAYERS
 GAME_PLAYERS
   sailShip
   devConsoleToggle
+  renderModeToggles
+  mouseDrag
+  hsPlayerFacingDir
+  stepHsPlayers
+  furlUnfurl
   controllableInput
   controllableCameraFollow
   turretYawPitch
@@ -69,29 +74,19 @@ GAME_PLAYERS
   turretManUnman
   playerControlCannon
   playerManCanon
-  modelerOnOff
-  modelerClicks
-  aabbBuilder
-  renderModeToggles
-  mouseDrag
-  hsPlayerFacingDir
-  stepHsPlayers
-  furlUnfurl
   turnMast
 POST_GAME_PLAYERS
 PRE_PHYSICS
   ensureWorldFrame
   physicsInit
   ensureFillOutLocalFrame
-  (spring)
 PHYSICS_MOTION
-  (applyGravity)
-  (animateTo)
-  (updateParametricMotion)
+  applyGravity
   clampVelocityByContact
   registerPhysicsClampVelocityBySize
   registerPhysicsApplyLinearVelocity
-  (physicsApplyAngularVelocity)
+  physicsApplyAngularVelocity
+  updateParametricMotion
 PHYSICS_FINISH_LOCAL
   updateLocalFromPosRotScale
 PHYSICS_WORLD_FROM_LOCAL
@@ -104,8 +99,8 @@ PHYSICS_FINISH_WORLD
   updateWorldFromLocalAndParent2
 POST_PHYSICS
 PRE_RENDER
-  (smoothMotion)
-  (updateMotionSmoothing)
+  smoothMotion
+  updateMotionSmoothing
   updateSmoothedWorldFrames
   smoothCamera
   cameraFollowTarget
@@ -113,17 +108,16 @@ PRE_RENDER
 RENDER_WORLDFRAMES
   updateRendererWorldFrames
 RENDER_PRE_DRAW
-  updateJoints
-  (updateClothMesh)
   skeletalPose
-  (stdRenderListDeadHidden)
+  updateJoints
+  stdRenderListDeadHidden
   stdRenderList
   stdRenderableDataUpdate
-  updateOceanRenderData
   updateCameraView
+  updateOceanRenderData
 RENDER_DRAW
   uiText
   devConsole
-  (renderListDeadHidden)
+  renderListDeadHidden
   renderList
   renderDrawSubmitToGPU
