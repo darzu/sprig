@@ -31,14 +31,14 @@ export const InRangeDef = EM.defineComponent("inRange", () => true);
 const INTERACTION_TINT = V(0.1, 0.2, 0.1);
 const INTERACTION_TINT_NAME = "interaction";
 
-export function initInteractablesSystem(em: EntityManager) {
-  em.addSystem(
+EM.addEagerInit([InteractableDef], [], [], () => {
+  EM.addSystem(
     "interactableInteract",
     Phase.PRE_GAME_PLAYERS,
     [InteractableDef, WorldFrameDef],
     [LocalHsPlayerDef, MeDef, PhysicsResultsDef],
     (interactables, resources) => {
-      const player = em.findEntity(resources.localHsPlayer.playerId, []);
+      const player = EM.findEntity(resources.localHsPlayer.playerId, []);
       if (!player) return;
 
       const interactablesMap: Map<number, Entity> = interactables.reduce(
@@ -53,9 +53,9 @@ export function initInteractablesSystem(em: EntityManager) {
           // TODO(@darzu): HACK this shouldn't be needed
           continue;
         if (InRangeDef.isOn(interactable)) {
-          em.removeComponent(interactable.id, InRangeDef);
+          EM.removeComponent(interactable.id, InRangeDef);
         }
-        em.ensureComponentOn(interactable, TintsDef);
+        EM.ensureComponentOn(interactable, TintsDef);
         clearTint(interactable.tints, INTERACTION_TINT_NAME);
       }
       // find an interactable within range of the player
@@ -65,11 +65,11 @@ export function initInteractablesSystem(em: EntityManager) {
       if (interactableColliderId) {
         const interactable = interactablesMap.get(interactableColliderId)!;
         if (!DeletedDef.isOn(interactable)) {
-          em.ensureComponentOn(interactable, InRangeDef);
-          em.ensureComponentOn(interactable, TintsDef);
+          EM.ensureComponentOn(interactable, InRangeDef);
+          EM.ensureComponentOn(interactable, TintsDef);
           setTint(interactable.tints, INTERACTION_TINT_NAME, INTERACTION_TINT);
         }
       }
     }
   );
-}
+});

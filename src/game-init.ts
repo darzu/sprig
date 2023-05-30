@@ -18,17 +18,14 @@ import {
   initRiggedRenderablesSystems,
 } from "./render/renderer-ecs.js";
 import { initCannonSystems } from "./cannons/cannon.js";
-import { initInteractablesSystem } from "./input/interact.js";
 import { init3DModeler } from "./meshes/modeler.js";
 import {
   initNetMotionRecordingSystem,
   initMotionSmoothingSystems,
 } from "./render/motion-smoothing.js";
 import { initPhysicsSystems } from "./physics/phys.js";
-import { initLifetimesSystem } from "./ecs/lifetime.js";
 import { initNetDebugSystem } from "./net/net-debug.js";
 import { callInitFns } from "./init.js";
-import { initTurretSystems } from "./turret/turret.js";
 import { initHtmlUI } from "./gui/ui.js";
 import { initDevConsole } from "./debug/console.js";
 import { initNetSystems } from "./net/net.js";
@@ -58,11 +55,6 @@ export function initCommonSystems(em: EntityManager) {
   initHtmlUI(em);
   initDevConsole(em);
 
-  initLifetimesSystem(em);
-
-  initInteractablesSystem(em);
-
-  initTurretSystems(em);
   initCannonSystems(em);
 
   initGravitySystem(em);

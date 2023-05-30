@@ -12,24 +12,22 @@ export const LifetimeDef = EM.defineComponent(
 );
 export type Lifetime = Component<typeof LifetimeDef>;
 
-export function initLifetimesSystem(em: EntityManager) {
-  em.addSystem(
-    "updateLifetimes",
-    Phase.PRE_GAME_WORLD,
-    [LifetimeDef],
-    [TimeDef, MeDef],
-    (objs, res) => {
-      for (let o of objs) {
-        if (em.hasComponents(o, [AuthorityDef]))
-          if (o.authority.pid !== res.me.pid) continue;
-        o.lifetime.ms -= res.time.dt;
-        if (o.lifetime.ms < 0) {
-          // TODO(@darzu): dead or deleted?
-          em.addComponent(o.id, DeadDef);
-          // TODO(@darzu): note needed?
-          // em.addComponent(o.id, DeletedDef);
-        }
+EM.addSystem(
+  "updateLifetimes",
+  Phase.PRE_GAME_WORLD,
+  [LifetimeDef],
+  [TimeDef, MeDef],
+  (objs, res) => {
+    for (let o of objs) {
+      if (EM.hasComponents(o, [AuthorityDef]))
+        if (o.authority.pid !== res.me.pid) continue;
+      o.lifetime.ms -= res.time.dt;
+      if (o.lifetime.ms < 0) {
+        // TODO(@darzu): dead or deleted?
+        EM.addComponent(o.id, DeadDef);
+        // TODO(@darzu): note needed?
+        // em.addComponent(o.id, DeletedDef);
       }
     }
-  );
-}
+  }
+);
