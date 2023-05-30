@@ -431,17 +431,15 @@ export const RiggedRenderableDef = EM.defineComponent(
   })
 );
 
-export function initRiggedRenderablesSystems(em: EntityManager) {
-  let pool: RiggedMeshPool | undefined = undefined;
+EM.addEagerInit([RiggedRenderableConstructDef], [RendererDef], [], (res) => {
+  const pool = createRiggedMeshPool(res.renderer.renderer);
+
   EM.addSystem(
     "constructRiggedRenderables",
     Phase.PRE_GAME_WORLD,
     [RiggedRenderableConstructDef],
-    [RendererDef],
+    [],
     (es, res) => {
-      if (!pool) {
-        pool = createRiggedMeshPool(res.renderer.renderer);
-      }
       for (let e of es) {
         // TODO(@darzu): this seems somewhat inefficient to look for this every frame
         if (!RenderableDef.isOn(e)) {
@@ -479,7 +477,6 @@ export function initRiggedRenderablesSystems(em: EntityManager) {
     [RiggedRenderableDef, RenderableDef],
     [],
     (es, res) => {
-      if (!pool) return;
       for (let e of es) {
         if (e.renderable.enabled && !e.renderable.hidden) {
           pool.updateJointMatrices(
@@ -490,7 +487,7 @@ export function initRiggedRenderablesSystems(em: EntityManager) {
       }
     }
   );
-}
+});
 
 export type Renderer = ReturnType<typeof createRenderer>;
 // export interface Renderer {
