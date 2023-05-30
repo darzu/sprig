@@ -35,6 +35,11 @@ export function initNetSyncSystem() {
     [AuthorityDef, SyncDef],
     [TimeDef, MeDef],
     (ents, res) => {
+      // TODO(@darzu): this is a complex system that depends on [PeerDef, OutboxDef]
+      //   and [AuthorityDef, SyncDef] entities. It possibly does work even if the query
+      //   ents is empty which is very unusual for a system. Might need to rethink this
+      //   b/c i'd i think we'd like to not call a system that has zero entities matching
+      //   its query.
       // TODO: think about other ways of doing this
       if (res.time.step % 3 === 0) {
         const peers = EM.filterEntities([PeerDef, OutboxDef]);

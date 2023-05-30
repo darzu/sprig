@@ -171,6 +171,9 @@ export async function startPirates() {
     [PiratePlatformDef],
     [TimeDef],
     (ps, res) => {
+      // TODO(@darzu): NOTE this is a good example of a system that needs to be
+      //   called even if no entities match its query. In fact, it should probably
+      //   be forced active even if no pirates exist.
       const pirateCount = ps.length;
       if (res.time.time > pirateNextSpawn) {
         pirateNextSpawn += pirateSpawnTimer;

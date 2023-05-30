@@ -542,7 +542,7 @@ export async function initLD53(hosting: boolean) {
   EM.addSystem(
     "furlUnfurl",
     Phase.GAME_PLAYERS,
-    [],
+    null,
     [InputsDef, PartyDef],
     (_, res) => {
       const mast = ship.ld52ship.mast()!;
@@ -574,7 +574,7 @@ export async function initLD53(hosting: boolean) {
   EM.addSystem(
     "turnMast",
     Phase.GAME_PLAYERS,
-    [],
+    null,
     [InputsDef, WindDef],
     (_, res) => {
       const mast = ship.ld52ship.mast()!;

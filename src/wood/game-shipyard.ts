@@ -806,23 +806,21 @@ export async function initShipyardGame(hosting: boolean) {
       [GoodBallDef, InteractableDef, InRangeDef, PositionDef],
       [InputsDef, LocalHsPlayerDef],
       (es, res) => {
+        if (!res.inputs.lclick) return;
         const player = EM.findEntity(res.localHsPlayer.playerId, [
           HsPlayerDef,
         ])!;
         if (!player) return;
         if (player.hsPlayer.holdingBall) return;
-        // TODO(@darzu):
-        if (res.inputs.lclick) {
-          for (let ball of es) {
-            if (PhysicsParentDef.isOn(ball)) continue;
-            // pick up this ball
-            player.hsPlayer.holdingBall = ball.id;
-            EM.ensureComponentOn(ball, PhysicsParentDef, player.id);
-            vec3.set(0, 0, -1, ball.position);
-            EM.ensureComponentOn(ball, ScaleDef);
-            vec3.copy(ball.scale, [0.8, 0.8, 0.8]);
-            EM.removeComponent(ball.id, InteractableDef);
-          }
+        for (let ball of es) {
+          if (PhysicsParentDef.isOn(ball)) continue;
+          // pick up this ball
+          player.hsPlayer.holdingBall = ball.id;
+          EM.ensureComponentOn(ball, PhysicsParentDef, player.id);
+          vec3.set(0, 0, -1, ball.position);
+          EM.ensureComponentOn(ball, ScaleDef);
+          vec3.copy(ball.scale, [0.8, 0.8, 0.8]);
+          EM.removeComponent(ball.id, InteractableDef);
         }
       }
     );
@@ -927,7 +925,7 @@ export async function initShipyardGame(hosting: boolean) {
     EM.addSystem(
       "progressGame",
       Phase.GAME_WORLD,
-      [],
+      null,
       [InputsDef, TextDef, TimeDef, AudioDef],
       (es, res) => {
         // const player = EM.findEntity(res.localHsPlayer.playerId, [PlayerDef])!;

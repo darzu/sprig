@@ -30,9 +30,9 @@ function registerConnectToServer() {
   EM.addSystem(
     "connectToServer",
     Phase.NETWORK,
-    [PeerDef],
+    null,
     [JoinDef, NetworkReadyDef, EventsToNetworkDef, TimeDef],
-    (peers, { join, eventsToNetwork, time }) => {
+    (_, { join, eventsToNetwork, time }) => {
       switch (join.state) {
         case "start":
           eventsToNetwork.push({
@@ -42,6 +42,7 @@ function registerConnectToServer() {
           join.state = "connecting";
           break;
         case "connecting":
+          const peers = EM.filterEntities([PeerDef]);
           // TODO: this is a hacky way to tell if we're connected.
           if (peers.length > 0) {
             EM.addComponent(peers[0].id, HostDef);

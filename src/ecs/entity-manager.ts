@@ -97,6 +97,13 @@ export function initFnToString(init: InitFnReg) {
     init.provideRs
   )}`;
 }
+export function initFnToKey(init: InitFnReg) {
+  return `${init.eager ? "E" : "L"}:${init.requireRs
+    .map((c) => c.name)
+    .join("+")}&${
+    init.requireCompSet?.map((c) => c.name).join("+") ?? ""
+  }->${init.provideRs.map((c) => c.name).join("+")}`;
+}
 
 // type _InitFNReg = InitFNReg & {
 //   id: number;
@@ -166,6 +173,7 @@ export class EntityManager {
   ranges: Record<string, { nextId: number; maxId: number }> = {};
   defaultRange: string = "";
   sysStats: Record<string, SystemStats> = {};
+  initStats = new Map<string, number>();
   emStats = {
     queryTime: 0,
   };
@@ -1087,6 +1095,8 @@ export class EntityManager {
     if (DBG_INIT) console.log(`lazy => eager: ${initFnToString(lazy)}`);
   }
   private async runInitFn(init: InitFnReg) {
+    // TODO(@darzu): attribute time spent to specific init functions
+
     // TODO(@darzu): verify that it doesn't add any resources not mentioned in provides
     const promise = init.fn(this.ent0);
     this.startedInits.set(init.id, promise);
