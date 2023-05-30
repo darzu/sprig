@@ -710,18 +710,6 @@ export class EntityManager {
   // pendingResources: Map<string, Promise<ComponentDef<any>>> = new Map();
   _nextInitFnId = 1;
 
-  // TODO(@darzu): instead of "name", system should havel "labelConstraints"
-  public registerInit<RS extends ComponentDef[]>(
-    reg: Omit<InitFnReg<RS>, "id">
-  ): void {
-    const regWId: InitFnReg<RS> = {
-      ...reg,
-      id: this._nextInitFnId++,
-    };
-
-    this.addInit(regWId);
-  }
-
   public addLazyInit<RS extends ComponentDef[]>(
     requireRs: [...RS],
     provideRs: ComponentDef[],
