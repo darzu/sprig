@@ -17,7 +17,6 @@ import {
 } from "./render/motion-smoothing.js";
 import { initPhysicsSystems } from "./physics/phys.js";
 import { initNetDebugSystem } from "./net/net-debug.js";
-import { callInitFns } from "./init.js";
 import { initHtmlUI } from "./gui/ui.js";
 import { initDevConsole } from "./debug/console.js";
 import { initNetSystems } from "./net/net.js";
@@ -54,6 +53,4 @@ export function initCommonSystems(em: EntityManager) {
 
   initWoodSplinterSystem();
   initWoodSystems();
-
-  callInitFns(em);
 }

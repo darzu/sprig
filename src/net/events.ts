@@ -31,7 +31,6 @@ import { hashCode, NumberTuple } from "../utils/util.js";
 import { TimeDef } from "../time/time.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
 import { assert } from "../utils/util.js";
-import { onInit } from "../init.js";
 import { Phase } from "../ecs/sys-phase.js";
 
 export interface Event<Extra> {
@@ -611,8 +610,9 @@ export function eventWizard<ES extends EDef<any>[], Extra>(
     });
   };
 
-  if (delayInit) onInit(initThunk);
-  else initThunk();
+  if (delayInit) {
+    setTimeout(initThunk, 0);
+  } else initThunk();
 
   const raiseEvent = (...args: [...ESet<ES>, Extra?]) => {
     const query = delayInit ? entities() : entities;
