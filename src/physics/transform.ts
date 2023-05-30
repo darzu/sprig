@@ -1,4 +1,4 @@
-import { Component, EM, EntityManager } from "../ecs/entity-manager.js";
+import { Component, EM } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { createFrame, WorldFrameDef } from "./nonintersection.js";
 import { tempVec3, tempQuat } from "../matrix/temp-pool.js";
@@ -173,7 +173,7 @@ function updateWorldFromLocalAndParent(o: Transformable) {
   _hasTransformed.add(o.id);
 }
 
-export function registerInitTransforms(em: EntityManager) {
+export function registerInitTransforms() {
   // TODO(@darzu): WorldFrame should be optional, only needed
   //  for parented objs (which is maybe the uncommon case).
   EM.addSystem(
@@ -191,7 +191,7 @@ export function registerInitTransforms(em: EntityManager) {
     }
   );
 }
-export function registerUpdateLocalFromPosRotScale(em: EntityManager) {
+export function registerUpdateLocalFromPosRotScale() {
   EM.addSystem(
     "ensureFillOutLocalFrame",
     Phase.PRE_PHYSICS,
@@ -230,7 +230,6 @@ export function registerUpdateLocalFromPosRotScale(em: EntityManager) {
 }
 
 export function registerUpdateWorldFromLocalAndParent(
-  em: EntityManager,
   suffix: string,
   phase: Phase
 ) {

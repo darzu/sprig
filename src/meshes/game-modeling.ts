@@ -21,7 +21,7 @@ import { Phase } from "../ecs/sys-phase.js";
 import { init3DModeler } from "./modeler.js";
 
 export async function initModelingGame() {
-  init3DModeler(EM);
+  init3DModeler();
 
   EM.addSystem(
     "gameRenderPipelines",

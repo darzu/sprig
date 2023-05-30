@@ -78,7 +78,7 @@ EM.addLazyInit([AssetsDef], [UICursorDef], ({ assets }) => {
   EM.addResource(UICursorDef, cursor);
 });
 
-export async function initFontEditor(em: EntityManager) {
+export async function initFontEditor() {
   // console.log(`panel ${PANEL_W}x${PANEL_H}`);
 
   const res = await EM.whenResources(AssetsDef, RendererDef, ButtonsStateDef);

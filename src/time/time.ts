@@ -1,4 +1,4 @@
-import { Component, EM, EntityManager } from "../ecs/entity-manager.js";
+import { Component, EM } from "../ecs/entity-manager.js";
 
 export const TimeDef = EM.defineComponent("time", () => ({
   time: 0,
@@ -8,7 +8,7 @@ export const TimeDef = EM.defineComponent("time", () => ({
 }));
 export type Time = Component<typeof TimeDef>;
 
-export function tick(em: EntityManager, dt: number) {
+export function tick(dt: number) {
   const time = EM.ensureResource(TimeDef);
   time.lastTime = time.time;
   time.time += dt;

@@ -1,5 +1,5 @@
 import { Collider, ColliderDef, DefaultLayer, Layer } from "./collider.js";
-import { Component, EM, Entity, EntityManager } from "../ecs/entity-manager.js";
+import { Component, EM, Entity } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import {
   CollidesWith,
@@ -155,7 +155,7 @@ export function doesTouch(
 }
 
 // PRECONDITION: assumes world frames are all up to date
-export function registerUpdateWorldAABBs(em: EntityManager, s: string = "") {
+export function registerUpdateWorldAABBs(s: string = "") {
   EM.addSystem(
     "updateWorldAABBs",
     Phase.PHYSICS_WORLD_FROM_LOCAL,
@@ -201,7 +201,7 @@ export const PhysicsBroadCollidersDef = EM.defineComponent(
 );
 export type PhysicsBroadColliders = Component<typeof PhysicsBroadCollidersDef>;
 
-export function registerPhysicsStateInit(em: EntityManager) {
+export function registerPhysicsStateInit() {
   EM.addResource(PhysicsResultsDef);
   EM.addResource(PhysicsBroadCollidersDef);
 
@@ -331,7 +331,7 @@ export function registerPhysicsStateInit(em: EntityManager) {
   );
 }
 
-export function registerUpdateInContactSystems(em: EntityManager) {
+export function registerUpdateInContactSystems() {
   EM.addSystem(
     "updatePhysInContact",
     Phase.PHYSICS_CONTACT,
@@ -395,7 +395,7 @@ export function registerUpdateInContactSystems(em: EntityManager) {
   );
 }
 
-export function registerPhysicsContactSystems(em: EntityManager) {
+export function registerPhysicsContactSystems() {
   // TODO(@darzu): split this system
   EM.addSystem(
     "physicsStepContact",

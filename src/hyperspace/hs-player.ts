@@ -51,7 +51,7 @@ import { Phase } from "../ecs/sys-phase.js";
 // TODO(@darzu): it'd be great if these could hook into some sort of
 //    dev mode you could toggle at runtime.
 
-export function createHsPlayer(em: EntityManager) {
+export function createHsPlayer() {
   // console.log("create player!");
   const e = EM.new();
   EM.ensureComponentOn(e, PlayerHsPropsDef, V(0, 100, 0));
@@ -91,7 +91,6 @@ export const LocalHsPlayerDef = EM.defineComponent(
 );
 
 export const PlayerHsPropsDef = defineSerializableComponent(
-  EM,
   "hsPlayerProps",
   (loc?: vec3) => {
     return {
@@ -106,7 +105,7 @@ export const PlayerHsPropsDef = defineSerializableComponent(
   }
 );
 
-export function registerHsPlayerSystems(em: EntityManager) {
+export function registerHsPlayerSystems() {
   EM.addSystem(
     "buildHsPlayers",
     Phase.PRE_GAME_WORLD,
@@ -339,7 +338,7 @@ export function registerHsPlayerSystems(em: EntityManager) {
                 0.01,
                 vec3.create()
               );
-              // spawnBullet(EM, position, linearVelocity, angularVelocity);
+              // spawnBullet( position, linearVelocity, angularVelocity);
             }
           }
         }

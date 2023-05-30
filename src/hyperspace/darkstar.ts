@@ -1,5 +1,5 @@
 import { defineNetEntityHelper } from "../ecs/em-helpers.js";
-import { EM, EntityManager } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/entity-manager.js";
 import { vec3, V } from "../matrix/sprig-matrix.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { PositionDef, ScaleDef } from "../physics/transform.js";
@@ -17,7 +17,7 @@ export const STAR1_COLOR = V(0.8, 0.3, 0.3);
 export const STAR2_COLOR = V(0.3, 0.8, 0.6);
 
 export const { DarkStarPropsDef, DarkStarLocalDef, createDarkStarNow } =
-  defineNetEntityHelper(EM, {
+  defineNetEntityHelper({
     name: "darkStar",
     defaultProps: (
       pos?: vec3,
@@ -42,7 +42,6 @@ export const { DarkStarPropsDef, DarkStarLocalDef, createDarkStarNow } =
     dynamicComponents: [PositionDef],
     buildResources: [AssetsDef],
     build: (star, res) => {
-      const em: EntityManager = EM;
       vec3.copy(star.position, star.darkStarProps.pos);
       EM.ensureComponentOn(star, RenderableConstructDef, res.assets.ball.proto);
       EM.ensureComponentOn(star, ScaleDef, V(100, 100, 100));
@@ -59,7 +58,7 @@ export const { DarkStarPropsDef, DarkStarLocalDef, createDarkStarNow } =
     },
   });
 
-export function registerDarkstarSystems(em: EntityManager) {
+export function registerDarkstarSystems() {
   // TODO: this star will escape! must bring it closer to the orbit point sometimes
   EM.addSystem(
     "darkStarOrbit",

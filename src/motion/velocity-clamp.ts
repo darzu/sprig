@@ -1,5 +1,5 @@
 import { Collider, ColliderDef } from "../physics/collider.js";
-import { EM, EntityManager } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { clamp } from "../utils/math.js";
 import {
@@ -30,7 +30,7 @@ import { Phase } from "../ecs/sys-phase.js";
 
 // TODO(@darzu): implement checkAtRest (deleted in this commit)
 
-export function registerPhysicsClampVelocityByContact(em: EntityManager) {
+export function registerPhysicsClampVelocityByContact() {
   EM.addSystem(
     "clampVelocityByContact",
     Phase.PHYSICS_MOTION,
@@ -84,7 +84,7 @@ export function registerPhysicsClampVelocityByContact(em: EntityManager) {
   );
 }
 
-export function registerPhysicsClampVelocityBySize(em: EntityManager) {
+export function registerPhysicsClampVelocityBySize() {
   EM.addSystem(
     "registerPhysicsClampVelocityBySize",
     Phase.PHYSICS_MOTION,

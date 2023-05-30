@@ -1,4 +1,4 @@
-import { EM, EntityManager } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import {
@@ -67,7 +67,7 @@ export const ShipPartDef = EM.defineComponent(
 );
 
 export const { RudderPropsDef, RudderLocalDef, createRudderNow } =
-  defineNetEntityHelper(EM, {
+  defineNetEntityHelper({
     name: "rudder",
     defaultProps: (shipId?: number) => ({
       shipId: shipId ?? 0,
@@ -82,8 +82,6 @@ export const { RudderPropsDef, RudderLocalDef, createRudderNow } =
     dynamicComponents: [RotationDef],
     buildResources: [AssetsDef, MeDef],
     build: (rudder, res) => {
-      const em: EntityManager = EM;
-
       EM.ensureComponentOn(rudder, PositionDef, V(0, 0.5, -15));
 
       EM.ensureComponentOn(
@@ -134,7 +132,7 @@ export const { RudderPropsDef, RudderLocalDef, createRudderNow } =
 
 // hyperspace ship
 export const { HsShipPropsDef, HsShipLocalDef, createHsShip } =
-  defineNetEntityHelper(EM, {
+  defineNetEntityHelper({
     name: "hsShip",
     defaultProps: (uvPos?: vec2) => ({
       uvPos: uvPos ?? vec2.fromValues(0.5, 0.5),
@@ -170,8 +168,6 @@ export const { HsShipPropsDef, HsShipLocalDef, createHsShip } =
     ],
     buildResources: [MeDef, AssetsDef],
     build: async (s, res) => {
-      const em: EntityManager = EM;
-
       if (s.authority.pid === res.me.pid) {
         // s.hsShipProps.loc = [0, -2, 0];
 
@@ -254,7 +250,7 @@ export const { HsShipPropsDef, HsShipLocalDef, createHsShip } =
         );
       }
 
-      makeOrrery(em, s.id);
+      makeOrrery(s.id);
       // EM.addComponent(EM.newEntity().id, AmmunitionConstructDef, [-40, -11, -2], 3);
       // EM.addComponent(EM.newEntity().id, LinstockConstructDef, [-40, -11, 2]);
     },
@@ -262,7 +258,7 @@ export const { HsShipPropsDef, HsShipLocalDef, createHsShip } =
 
 const criticalPartIdxes = [0, 3, 5, 6];
 
-// export function createNewShip(em: EntityManager) {
+// export function createNewShip() {
 //   EM.registerOneShotSystem(null, [AssetsDef], (_, res) => {
 //     // create ship
 //     const s = EM.newEntity();
@@ -273,7 +269,7 @@ const criticalPartIdxes = [0, 3, 5, 6];
 const START_TEXT = "";
 // const START_TEXT = "hit the gem to begin";
 
-export function registerShipSystems(em: EntityManager) {
+export function registerShipSystems() {
   EM.addSystem(
     "startGame",
     Phase.GAME_WORLD,

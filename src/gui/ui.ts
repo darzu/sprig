@@ -1,4 +1,4 @@
-import { EM, EntityManager } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/entity-manager.js";
 import { Phase } from "../ecs/sys-phase.js";
 
 /*
@@ -43,7 +43,7 @@ export const TextDef = EM.defineComponent(
   }
 );
 
-export function initHtmlUI(em: EntityManager) {
+export function initHtmlUI() {
   const upperDiv = document.getElementById("title-div") as HTMLDivElement;
   const debugDiv = document.getElementById("debug-div") as HTMLDivElement;
   const lowerDiv = document.getElementById("lower-div") as HTMLDivElement;

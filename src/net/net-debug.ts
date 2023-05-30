@@ -1,4 +1,4 @@
-import { Component, EM, EntityManager } from "../ecs/entity-manager.js";
+import { Component, EM } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { InputsDef } from "../input/inputs.js";
 import { RenderableDef } from "../render/renderer-ecs.js";
@@ -19,7 +19,7 @@ const AUTHORITY_TINTS: Record<number, vec3> = {
   3: V(0, 0, 0.1),
 };
 
-export function initNetDebugSystem(em: EntityManager) {
+export function initNetDebugSystem() {
   EM.addSystem(
     "netDebugSystem",
     Phase.NETWORK,

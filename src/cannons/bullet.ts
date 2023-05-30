@@ -1,10 +1,4 @@
-import {
-  EM,
-  EntityManager,
-  Component,
-  Entity,
-  EntityW,
-} from "../ecs/entity-manager.js";
+import { EM, Component, Entity, EntityW } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V, tV } from "../matrix/sprig-matrix.js";
 import { FinishedDef } from "../ecs/em-helpers.js";
 import { ColorDef } from "../color/color-ecs.js";
@@ -97,7 +91,6 @@ EM.registerSerializerPair(
 );
 
 export function createOrResetBullet(
-  em: EntityManager,
   e: Entity & { bulletConstruct: BulletConstruct },
   res: { me: Me; assets: Assets; time: Time }
 ) {
@@ -147,7 +140,7 @@ export function createOrResetBullet(
   return e;
 }
 
-export function registerBuildBulletsSystem(em: EntityManager) {
+export function registerBuildBulletsSystem() {
   EM.addSystem(
     "buildBullets",
     Phase.GAME_WORLD,
@@ -156,14 +149,14 @@ export function registerBuildBulletsSystem(em: EntityManager) {
     (bullets, res) => {
       for (let b of bullets) {
         // if (FinishedDef.isOn(b)) continue;
-        // createOrUpdateBullet(em, b, res.me.pid, res.assets);
+        // createOrUpdateBullet( b, res.me.pid, res.assets);
         // EM.ensureComponentOn(b, FinishedDef);
       }
     }
   );
 }
 
-export function registerBulletUpdate(em: EntityManager) {
+export function registerBulletUpdate() {
   // TODO(@darzu): remove?
   EM.addSystem(
     "updateBullets",
@@ -185,7 +178,6 @@ let _nextBulletIdx = 0;
 
 // TODO(@darzu): fireBullet has become quite bloated and has wierd parameters like bulletAxis
 export async function fireBullet(
-  em: EntityManager,
   team: number,
   location: vec3,
   rotation: quat,
@@ -238,7 +230,7 @@ export async function fireBullet(
   // TODO(@darzu): This breaks multiplayer maybe!
   // TODO(@darzu): MULTIPLAYER. need to think how multiplayer and entity pools interact.
   const res = await EM.whenResources(MeDef, TimeDef, AssetsDef);
-  return createOrResetBullet(em, e, res);
+  return createOrResetBullet(e, res);
 }
 
 type BulletPart = EntityW<[typeof PositionDef, typeof ColorDef]>;
@@ -260,7 +252,7 @@ function getNextBulletPartSet(): BulletPart[] {
 async function initBulletPartPool() {
   if (_bulletPartPoolIsInit) return;
   _bulletPartPoolIsInit = true;
-  const em: EntityManager = EM;
+
   const { assets } = await EM.whenResources(AssetsDef);
 
   const numSetsInPool = 20;
@@ -296,8 +288,6 @@ export async function breakBullet(
     ]
   >
 ) {
-  const em: EntityManager = EM;
-
   if (DeadDef.isOn(bullet)) return;
   if (!WorldFrameDef.isOn(bullet)) return; // TODO(@darzu): BUG. Why does this happen sometimes?
 

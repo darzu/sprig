@@ -45,7 +45,7 @@ export const MotionSmoothingDef = EM.defineComponent("motionSmoothing", () => {
 });
 export type MotionSmoothing = Component<typeof MotionSmoothingDef>;
 
-export function initNetMotionRecordingSystem(em: EntityManager) {
+export function initNetMotionRecordingSystem() {
   EM.addSystem(
     "recordPreviousLocations",
     Phase.NETWORK,
@@ -78,13 +78,13 @@ export const PrevSmoothedWorldFrameDef = EM.defineComponent(
   () => createFrame()
 );
 
-function updateSmoothedWorldFrame(em: EntityManager, o: Entity) {
+function updateSmoothedWorldFrame(o: Entity) {
   if (DeletedDef.isOn(o)) return;
   if (!TransformDef.isOn(o)) return;
   let parent = null;
   if (PhysicsParentDef.isOn(o) && o.physicsParent.id) {
     if (!_hasRendererWorldFrame.has(o.physicsParent.id)) {
-      updateSmoothedWorldFrame(em, EM.findEntity(o.physicsParent.id, [])!);
+      updateSmoothedWorldFrame(EM.findEntity(o.physicsParent.id, [])!);
     }
     parent = EM.findEntity(o.physicsParent.id, [SmoothedWorldFrameDef]);
     if (!parent) return;
@@ -121,7 +121,7 @@ function updateSmoothedWorldFrame(em: EntityManager, o: Entity) {
   _hasRendererWorldFrame.add(o.id);
 }
 
-export function initMotionSmoothingSystems(em: EntityManager) {
+export function initMotionSmoothingSystems() {
   EM.addSystem(
     "smoothMotion",
     Phase.PRE_RENDER,
@@ -189,7 +189,7 @@ export function initMotionSmoothingSystems(em: EntityManager) {
           continue;
         }
 
-        updateSmoothedWorldFrame(em, o);
+        updateSmoothedWorldFrame(o);
       }
     }
   );

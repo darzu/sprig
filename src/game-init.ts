@@ -23,29 +23,29 @@ import { initNetSystems } from "./net/net.js";
 import { ENABLE_NET } from "./flags.js";
 import { initDbgViewModes } from "./debug/view-modes.js";
 
-export function initCommonSystems(em: EntityManager) {
+export function initCommonSystems() {
   // TODO(@darzu): consolidate, rename, clean up net init
   if (ENABLE_NET) {
-    initNetSystems(em);
+    initNetSystems();
   }
-  initNetStateEventSystems(em);
-  initNetMotionRecordingSystem(em);
-  initNetUpdateSystems(em);
-  initNetPredictSystems(em);
-  initNetJoinSystems(em);
+  initNetStateEventSystems();
+  initNetMotionRecordingSystem();
+  initNetUpdateSystems();
+  initNetPredictSystems();
+  initNetJoinSystems();
 
-  initNetDebugSystem(em);
-  initNetAckUpdateSystem(em);
-  initNetSyncSystem(em);
-  initNetSendOutboxes(em);
-  initNetGameEventSystems(em);
+  initNetDebugSystem();
+  initNetAckUpdateSystem();
+  initNetSyncSystem();
+  initNetSendOutboxes();
+  initNetGameEventSystems();
 
-  initHtmlUI(em);
-  initDevConsole(em);
+  initHtmlUI();
+  initDevConsole();
 
-  initPhysicsSystems(em);
+  initPhysicsSystems();
 
-  initMotionSmoothingSystems(em);
+  initMotionSmoothingSystems();
 
-  initDbgViewModes(em);
+  initDbgViewModes();
 }

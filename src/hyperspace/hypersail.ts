@@ -1,6 +1,6 @@
 import { ColorDef } from "../color/color-ecs.js";
 import { createRef, defineNetEntityHelper } from "../ecs/em-helpers.js";
-import { EM, EntityManager } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/entity-manager.js";
 import { vec3, V } from "../matrix/sprig-matrix.js";
 import { InputsDef } from "../input/inputs.js";
 import { clamp } from "../utils/math.js";
@@ -57,7 +57,7 @@ const SailColorDef = EM.defineComponent(
 
 // TODO: we need warnings if you forget to call the buildProps system!
 export const { HypMastPropsDef, HypMastLocalDef, createHypMastNow } =
-  defineNetEntityHelper(EM, {
+  defineNetEntityHelper({
     name: "hypMast",
     defaultProps: (shipId?: number) => ({
       shipId: shipId ?? 0,
@@ -87,8 +87,6 @@ export const { HypMastPropsDef, HypMastLocalDef, createHypMastNow } =
     dynamicComponents: [RotationDef, BoomPitchesDef],
     buildResources: [AssetsDef, MeDef],
     build: (mast, res) => {
-      const em: EntityManager = EM;
-
       EM.ensureComponentOn(mast, PositionDef, V(0, 0, 0));
 
       EM.ensureComponentOn(mast, RenderableConstructDef, res.assets.mast.mesh);
@@ -163,7 +161,7 @@ export const { HypMastPropsDef, HypMastLocalDef, createHypMastNow } =
     },
   });
 
-export function registerHypersailSystems(em: EntityManager) {
+export function registerHypersailSystems() {
   EM.addSystem(
     "updateMastBoom",
     Phase.GAME_PLAYERS,

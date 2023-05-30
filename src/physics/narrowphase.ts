@@ -68,7 +68,7 @@ EPA-ish:
 
 */
 
-export function registerNarrowPhaseSystems(em: EntityManager) {
+export function registerNarrowPhaseSystems() {
   // TODO(@darzu):
 }
 

@@ -3,13 +3,13 @@ import {
   CameraFollowDef,
   setCameraFollowPosition,
 } from "../camera/camera.js";
-import { EM, EntityManager } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/entity-manager.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { LocalHsPlayerDef } from "../hyperspace/hs-player.js";
 import { InputsDef } from "../input/inputs.js";
 import { RendererDef } from "../render/renderer-ecs.js";
 
-export function initDbgViewModes(em: EntityManager) {
+export function initDbgViewModes() {
   EM.addSystem(
     "renderModeToggles",
     Phase.GAME_PLAYERS,

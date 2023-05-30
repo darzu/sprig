@@ -16,7 +16,6 @@ export function defineSerializableComponent<
   P,
   Pargs extends any[]
 >(
-  em: EntityManager,
   name: N,
   construct: (...args: Pargs) => P,
   serialize: (obj: P, buf: Serializer) => void,
@@ -31,7 +30,6 @@ function registerConstructorSystem<
   C extends ComponentDef,
   RS extends ComponentDef[]
 >(
-  em: EntityManager,
   def: C,
   rs: [...RS],
   callback: (e: EntityW<[C]>, resources: EntityW<RS>) => void
@@ -86,34 +84,30 @@ export function defineNetEntityHelper<
   DS extends ComponentDef[],
   RS extends ComponentDef[],
   INITED
->(
-  em: EntityManager,
-  opts: {
-    name: N;
-    defaultProps: (...args: Pargs1) => P1;
-    serializeProps: (obj: P1, buf: Serializer) => void;
-    deserializeProps: (obj: P1, buf: Deserializer) => void;
-    defaultLocal: () => P2;
-    dynamicComponents: [...DS];
-    // TODO(@darzu): probably get rid of this in favor of "whenResources", then
-    //    maybe bring it back if we need the perf.
-    buildResources: [...RS];
-    build: (
-      e: EntityW<
-        [
-          ComponentDef<`${N}Props`, P1, Pargs1>,
-          ComponentDef<`${N}Local`, P2, []>,
-          typeof AuthorityDef,
-          typeof SyncDef,
-          ...DS
-        ]
-      >,
-      resources: EntityW<RS>
-    ) => INITED;
-  }
-): NetEntityDefs<N, P1, Pargs1, P2, RS, INITED> {
+>(opts: {
+  name: N;
+  defaultProps: (...args: Pargs1) => P1;
+  serializeProps: (obj: P1, buf: Serializer) => void;
+  deserializeProps: (obj: P1, buf: Deserializer) => void;
+  defaultLocal: () => P2;
+  dynamicComponents: [...DS];
+  // TODO(@darzu): probably get rid of this in favor of "whenResources", then
+  //    maybe bring it back if we need the perf.
+  buildResources: [...RS];
+  build: (
+    e: EntityW<
+      [
+        ComponentDef<`${N}Props`, P1, Pargs1>,
+        ComponentDef<`${N}Local`, P2, []>,
+        typeof AuthorityDef,
+        typeof SyncDef,
+        ...DS
+      ]
+    >,
+    resources: EntityW<RS>
+  ) => INITED;
+}): NetEntityDefs<N, P1, Pargs1, P2, RS, INITED> {
   const propsDef = defineSerializableComponent(
-    em,
     `${opts.name}Props`,
     opts.defaultProps,
     opts.serializeProps,
@@ -123,7 +117,6 @@ export function defineNetEntityHelper<
 
   const lazyRegister = () =>
     registerConstructorSystem(
-      em,
       propsDef,
       [...opts.buildResources, MeDef],
       (e, res) => {

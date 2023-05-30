@@ -1,4 +1,4 @@
-import { EM, EntityManager } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/entity-manager.js";
 import { vec3, V, vec2, tV } from "../matrix/sprig-matrix.js";
 import { TimeDef } from "../time/time.js";
 import { PositionDef } from "../physics/transform.js";

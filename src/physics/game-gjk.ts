@@ -1,6 +1,6 @@
 import { CameraDef } from "../camera/camera.js";
 import { ColorDef } from "../color/color-ecs.js";
-import { EM, EntityManager } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { InputsDef } from "../input/inputs.js";
 import { ColliderDef } from "./collider.js";
@@ -28,7 +28,7 @@ import { deferredPipeline } from "../render/pipelines/std-deferred.js";
 import { Phase } from "../ecs/sys-phase.js";
 
 let __frame = 0;
-export async function initGJKSandbox(em: EntityManager, hosting: boolean) {
+export async function initGJKSandbox(hosting: boolean) {
   const res = await EM.whenResources(
     AssetsDef,
     GlobalCursor3dDef,
@@ -56,7 +56,7 @@ export async function initGJKSandbox(em: EntityManager, hosting: boolean) {
 
   const g = createGhost();
   // EM.ensureComponentOn(g, RenderableConstructDef, res.assets.cube.proto);
-  // createPlayer(em);
+  // createPlayer();
 
   // vec3.copy(e.position, [-16.6, 5, -5.1]);
   // quat.copy(e.rotation, [0, -0.77, 0, 0.636]);

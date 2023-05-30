@@ -1,5 +1,5 @@
 import { CameraDef } from "../camera/camera.js";
-import { EntityManager, EntityW } from "../ecs/entity-manager.js";
+import { EM, EntityManager, EntityW } from "../ecs/entity-manager.js";
 import { PositionDef, RotationDef, ScaleDef } from "../physics/transform.js";
 import { RendererDef, RenderableConstructDef } from "../render/renderer-ecs.js";
 import { blurPipelines } from "../render/pipelines/std-blur.js";
@@ -80,24 +80,24 @@ function spawnRandomDarkStar(
   return createDarkStarNow(res, starPosition, color, V(0, 0, 0), orbitalAxis);
 }
 
-export async function initHyperspaceGame(em: EntityManager) {
+export async function initHyperspaceGame() {
   EM.addResource(HSGameStateDef);
 
-  registerGameStateSystems(em);
-  registerEnemyShipSystems(em);
-  registerHsPlayerSystems(em);
+  registerGameStateSystems();
+  registerEnemyShipSystems();
+  registerHsPlayerSystems();
   registerUVShipSystems();
   registerOceanUVFns();
-  registerShipSystems(em);
-  registerDarkstarSystems(em);
-  registerOrrerySystems(em);
-  registerUvSpawnSystems(em);
-  registerHypersailSystems(em);
+  registerShipSystems();
+  registerDarkstarSystems();
+  registerOrrerySystems();
+  registerUvSpawnSystems();
+  registerHypersailSystems();
   registerRibSailSystems();
 
   EM.whenResources(OceanDef).then(async () => {
     // await awaitTimeout(1000); // TODO(@darzu): what is happening
-    createHsPlayer(em);
+    createHsPlayer();
   });
 
   EM.addSystem("debugLoop", Phase.GAME_WORLD, [], [], () => {
@@ -141,7 +141,7 @@ export async function initHyperspaceGame(em: EntityManager) {
 
   res.camera.fov = Math.PI * 0.5;
 
-  // const ghost = createGhost(em);
+  // const ghost = createGhost();
   // EM.ensureComponentOn(ghost, RenderableConstructDef, res.assets.cube.proto);
   // ghost.controllable.speed *= 3;
   // ghost.controllable.sprintMul *= 3;

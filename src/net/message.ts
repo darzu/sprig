@@ -1,4 +1,4 @@
-import { EM, EntityManager } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/entity-manager.js";
 import { Serializer, Deserializer } from "../utils/serialize.js";
 import {
   AuthorityDef,
@@ -38,7 +38,6 @@ export enum EntityUpdateType {
 export const MAX_MESSAGE_SIZE = 1024;
 
 export function serializeEntity(
-  em: EntityManager,
   ent: { id: number; authority: Authority; sync: Sync },
   message: Serializer,
   type: EntityUpdateType,
@@ -57,7 +56,6 @@ export function serializeEntity(
 }
 
 export function deserializeEntity(
-  em: EntityManager,
   updateSeq: number,
   message: Deserializer,
   dt: number

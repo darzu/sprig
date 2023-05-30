@@ -156,7 +156,7 @@ export const LD51CannonDef = EM.defineComponent("ld51Cannon", () => {
   return {};
 });
 
-export async function initShipyardGame(em: EntityManager, hosting: boolean) {
+export async function initShipyardGame(hosting: boolean) {
   const res = await EM.whenResources(
     AssetsDef,
     // WoodAssetsDef,
@@ -443,7 +443,6 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
           // );
 
           fireBullet(
-            em,
             1,
             bulletPos,
             // bulletRot,
@@ -517,7 +516,6 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
         quat.copy(fireDir, ghost.world.rotation);
         const ballHealth = 2.0;
         fireBullet(
-          em,
           1,
           firePos,
           fireDir,
@@ -888,7 +886,7 @@ export async function initShipyardGame(em: EntityManager, hosting: boolean) {
     }
 
     if (!DBG_PLAYER) {
-      const _player = createHsPlayer(em);
+      const _player = createHsPlayer();
       vec3.set(-10, realFloorHeight + 6, 0, _player.hsPlayerProps.location);
       EM.whenEntityHas(
         _player,

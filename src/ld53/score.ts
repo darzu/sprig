@@ -72,7 +72,7 @@ EM.addSystem(
           res.score.levelNumber = 0;
           res.score.victory = false;
         }
-        await setMap(EM, MapPaths[res.score.levelNumber]);
+        await setMap(MapPaths[res.score.levelNumber]);
         //res.score.shipHealth = 10000;
         for (let f of res.score.onLevelEnd) {
           await f();
@@ -87,7 +87,7 @@ EM.addSystem(
       if (res.time.step > res.score.levelEndedAt + 300) {
         res.score.completedLevels++;
         res.score.levelNumber++;
-        await setMap(EM, MapPaths[res.score.levelNumber]);
+        await setMap(MapPaths[res.score.levelNumber]);
         //res.score.shipHealth = 10000;
         for (let f of res.score.onLevelEnd) {
           await f();

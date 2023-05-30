@@ -1,9 +1,4 @@
-import {
-  Component,
-  EM,
-  EntityManager,
-  EntityW,
-} from "../ecs/entity-manager.js";
+import { Component, EM, EntityW } from "../ecs/entity-manager.js";
 import { vec2, vec3, quat, V, tV } from "../matrix/sprig-matrix.js";
 import {
   Frame,
@@ -108,7 +103,6 @@ function sailMesh(sail: Component<typeof SailDef>): Mesh {
 }
 
 export function createSail(
-  em: EntityManager,
   width: number,
   height: number,
   scale: number
@@ -203,7 +197,7 @@ export const MastDef = EM.defineComponent("mast", () => ({
   force: 0.0,
 }));
 
-export async function createMast(em: EntityManager) {
+export async function createMast() {
   const res = await EM.whenResources(AssetsDef, MeDef);
   let ent = EM.new();
   EM.ensureComponentOn(ent, MastDef);
@@ -255,7 +249,7 @@ export async function createMast(em: EntityManager) {
   // ent.turret.minYaw = -Math.PI / 2;
 
   const sailWidth = 14;
-  const sail = createSail(em, sailWidth, 8, 2);
+  const sail = createSail(sailWidth, 8, 2);
   EM.ensureComponentOn(sail, PhysicsParentDef, ent.id);
   sail.position[0] = -sailWidth;
   sail.position[1] = 38;

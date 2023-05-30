@@ -79,7 +79,7 @@ const RUDDER_ROTATION_RATE = 0.01;
 
 export const cannonDefaultPitch = Math.PI * +0.05;
 
-export async function createShip(em: EntityManager) {
+export async function createShip() {
   const res = await EM.whenResources(AssetsDef, MeDef);
   const ent = EM.new();
   EM.ensureComponentOn(ent, ShipDef);
@@ -129,17 +129,17 @@ export async function createShip(em: EntityManager) {
   // EM.ensureComponentOn(ent, ColorDef, V(0.5, 0.3, 0.1));
   EM.ensureComponentOn(ent, ColorDef, V(0, 0, 0)); // painted by individual planks!
 
-  const mast = await createMast(em);
+  const mast = await createMast();
   EM.ensureComponentOn(mast, PhysicsParentDef, ent.id);
 
-  const sock = createSock(em, 2.0);
+  const sock = createSock(2.0);
   EM.ensureComponentOn(sock, PhysicsParentDef, ent.id);
   sock.position[1] =
     mast.position[1] + (mast.collider as AABBCollider).aabb.max[1];
 
   ent.ld52ship.mast = createRef(mast);
 
-  const rudder = await createRudder(em);
+  const rudder = await createRudder();
   EM.ensureComponentOn(rudder, PhysicsParentDef, ent.id);
   // console.log("setting position");
   vec3.set(0, 4, -25, rudder.position);
@@ -233,7 +233,7 @@ EM.addSystem(
 
 export const RudderDef = EM.defineComponent("rudder", () => true);
 
-async function createRudder(em: EntityManager) {
+async function createRudder() {
   const res = await EM.whenResources(AssetsDef, MeDef);
   const ent = EM.new();
   EM.ensureComponentOn(ent, RudderDef);

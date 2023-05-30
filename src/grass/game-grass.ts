@@ -1,7 +1,7 @@
 import { CameraDef, CameraFollowDef } from "../camera/camera.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
-import { EM, EntityManager } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/entity-manager.js";
 import { AssetsDef } from "../meshes/assets.js";
 import { ControllableDef } from "../input/controllable.js";
 import { createGhost, GhostDef } from "../debug/ghost.js";
@@ -108,7 +108,7 @@ const level2DtoWorld3D = (levelPos: vec2, y: number, out: vec3) =>
     out
   );
 
-export async function initGrassGame(em: EntityManager, hosting: boolean) {
+export async function initGrassGame(hosting: boolean) {
   registerUploadGrassData();
 
   const dbgGrid = [
@@ -302,7 +302,7 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
 
   // load level
 
-  const ship = await createShip(em);
+  const ship = await createShip();
   vec3.set(0, 10, 0, ship.position);
   // move down
   // vec3.copy(ship.position, SHIP_START_POS);

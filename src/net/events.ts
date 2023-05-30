@@ -51,8 +51,8 @@ type ExtraSerializers<Extra> = {
 type EventHandler<ES extends EDef<any>[], Extra> = {
   entities: readonly [...ES];
   eventAuthorityEntity: (entities: NumberTuple<ES>) => number;
-  legalEvent: (em: EntityManager, entities: ESet<ES>, extra: Extra) => boolean;
-  runEvent: (em: EntityManager, entities: ESet<ES>, extra: Extra) => void;
+  legalEvent: (entities: ESet<ES>, extra: Extra) => boolean;
+  runEvent: (entities: ESet<ES>, extra: Extra) => void;
 } & ({} | ExtraSerializers<Extra>);
 
 const EVENT_TYPES: Map<number, string> = new Map();
@@ -160,7 +160,7 @@ function eventAuthorityEntity(type: string, entities: number[]): number {
 
 function legalEvent<Extra>(
   type: string,
-  em: EntityManager,
+
   event: DetectedEvent<Extra>
 ) {
   if (!EVENT_HANDLERS.has(type))
@@ -170,10 +170,10 @@ function legalEvent<Extra>(
     EM.findEntity(id, handler.entities[idx])
   );
   if (entities.some((e) => !e)) return false;
-  return handler.legalEvent(em, entities as any, event.extra);
+  return handler.legalEvent(entities as any, event.extra);
 }
 
-function runEvent<Extra>(type: string, em: EntityManager, event: Event<Extra>) {
+function runEvent<Extra>(type: string, event: Event<Extra>) {
   if (!EVENT_HANDLERS.has(type))
     throw `No event handler registered for event type ${type}`;
   const handler = EVENT_HANDLERS.get(type)!;
@@ -184,7 +184,7 @@ function runEvent<Extra>(type: string, em: EntityManager, event: Event<Extra>) {
     }
     return entity;
   });
-  return handler.runEvent(em, entities as any, event.extra);
+  return handler.runEvent(entities as any, event.extra);
 }
 
 const CHECK_EVENT_RAISE_ARGS = true;
@@ -252,7 +252,6 @@ const EventsDef = EM.defineComponent("events", () => ({
 
 // TODO: this function is bad and we should find a way to do without it
 function takeEventsWithKnownObjects<Extra, E extends DetectedEvent<Extra>>(
-  em: EntityManager,
   events: E[]
 ): E[] {
   const result = [];
@@ -273,7 +272,7 @@ function takeEventsWithKnownObjects<Extra, E extends DetectedEvent<Extra>>(
 
 const EVENT_RETRANSMIT_MS = 100;
 
-export function initNetGameEventSystems(em: EntityManager) {
+export function initNetGameEventSystems() {
   // Runs only at non-host, sends valid detected events as requests to host
   EM.addSystem(
     "detectedEventsToHost",
@@ -294,7 +293,7 @@ export function initNetGameEventSystems(em: EntityManager) {
         const { authority } = EM.findEntity(authorityId, [AuthorityDef])!;
         if (authority.pid == me.pid) {
           // Gameplay code is responsible for ensuring events legal when generated
-          if (!legalEvent(event.type, em, event))
+          if (!legalEvent(event.type, event))
             throw `illegal event ${event.type}`;
           newEvents = true;
           outgoingEventRequests.events.push({
@@ -362,7 +361,7 @@ export function initNetGameEventSystems(em: EntityManager) {
             ) {
               const detectedEvent = deserializeDetectedEvent(message);
               if (currentId >= eventRequestState.nextId) {
-                if (legalEvent(detectedEvent.type, em, detectedEvent)) {
+                if (legalEvent(detectedEvent.type, detectedEvent)) {
                   requestedEvents.push(detectedEvent);
                 }
               }
@@ -419,7 +418,7 @@ export function initNetGameEventSystems(em: EntityManager) {
         const { authority } = EM.findEntity(authorityId, [AuthorityDef])!;
         if (authority.pid == me.pid) {
           // Gameplay code is responsible for ensuring events legal when generated
-          if (!legalEvent(event.type, em, event))
+          if (!legalEvent(event.type, event))
             throw `illegal event ${event.type}`;
           requestedEvents.push(event);
         }
@@ -434,16 +433,13 @@ export function initNetGameEventSystems(em: EntityManager) {
     null,
     [RequestedEventsDef, EventsDef, HostDef],
     ([], { requestedEvents, events }) => {
-      for (let detectedEvent of takeEventsWithKnownObjects(
-        em,
-        requestedEvents
-      )) {
-        if (legalEvent(detectedEvent.type, em, detectedEvent)) {
+      for (let detectedEvent of takeEventsWithKnownObjects(requestedEvents)) {
+        if (legalEvent(detectedEvent.type, detectedEvent)) {
           let event = detectedEvent as Event<any>;
           event.seq = events.log.length;
           events.log.push(event);
           // run event immediately. TODO: is there a cleaner way to separate this out?
-          runEvent(event.type, em, event);
+          runEvent(event.type, event);
           events.last = event.seq;
           events.newEvents = true;
         }
@@ -565,7 +561,7 @@ export function initNetGameEventSystems(em: EntityManager) {
         // If we don't know about all of these objects, we're not ready to run
         // this event (or subsequent events)
         if (!event.entities.every((id) => EM.hasEntity(id))) break;
-        runEvent(event.type, em, event);
+        runEvent(event.type, event);
         events.last = event.seq;
       }
     }
@@ -574,7 +570,7 @@ export function initNetGameEventSystems(em: EntityManager) {
   EM.addSystem("runEvents", Phase.NETWORK, null, [EventsDef], runEvents);
 }
 
-export function addEventComponents(em: EntityManager) {
+export function addEventComponents() {
   EM.addResource(DetectedEventsDef);
   EM.addResource(EventsDef);
 }
@@ -596,11 +592,11 @@ export function eventWizard<ES extends EDef<any>[], Extra>(
         if (opts?.eventAuthorityEntity) return opts.eventAuthorityEntity(es);
         else return es[0];
       },
-      legalEvent: (em, es, extra) => {
+      legalEvent: (es, extra) => {
         if (opts?.legalEvent) return opts.legalEvent(es, extra);
         return true;
       },
-      runEvent: (em, es, extra) => {
+      runEvent: (es, extra) => {
         runEvent(es, extra);
       },
       ...(opts?.serializeExtra ? { serializeExtra: opts.serializeExtra } : {}),

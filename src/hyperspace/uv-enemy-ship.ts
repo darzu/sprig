@@ -1,10 +1,4 @@
-import {
-  EM,
-  EntityManager,
-  Entity,
-  EntityW,
-  Component,
-} from "../ecs/entity-manager.js";
+import { EM, Entity, EntityW, Component } from "../ecs/entity-manager.js";
 import { TimeDef } from "../time/time.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { jitter } from "../utils/math.js";
@@ -52,7 +46,6 @@ export const EnemyCrewDef = EM.defineComponent("enemyCrew", () => {
 export type EnemyCrew = Component<typeof EnemyCrewDef>;
 
 export function createEnemyCrew(
-  em: EntityManager,
   assets: Assets,
   parent: number,
   pos: vec3
@@ -82,7 +75,7 @@ export function createEnemyCrew(
 }
 
 export const { EnemyShipPropsDef, EnemyShipLocalDef, createEnemyShip } =
-  defineNetEntityHelper(EM, {
+  defineNetEntityHelper({
     name: "enemyShip",
     defaultProps: (
       uvLoc?: vec2,
@@ -128,8 +121,6 @@ export const { EnemyShipPropsDef, EnemyShipLocalDef, createEnemyShip } =
     dynamicComponents: [PositionDef, RotationDef],
     buildResources: [AssetsDef, MeDef],
     build: (e, res) => {
-      const em: EntityManager = EM;
-
       EM.ensureComponentOn(e, UVShipDef);
       e.uvship.speed = e.enemyShipProps.speed;
 
@@ -214,7 +205,7 @@ export const { EnemyShipPropsDef, EnemyShipLocalDef, createEnemyShip } =
       e.enemyShipLocal.childCannonId = cannon.id;
 
       // child enemy
-      const en = createEnemyCrew(em, res.assets, e.id, V(2, 3, 0));
+      const en = createEnemyCrew(res.assets, e.id, V(2, 3, 0));
       e.enemyShipLocal.childEnemyId = en.id;
       if (e.authority.pid === res.me.pid) {
         // destroy after 1 minute
@@ -230,11 +221,11 @@ export const raiseBreakEnemyShip = eventWizard(
   [[EnemyShipLocalDef, PositionDef, RotationDef]] as const,
   ([enemyShip]) => {
     const res = EM.getResources([AssetsDef, AudioDef])!;
-    breakEnemyShip(EM, enemyShip, res.assets.boat_broken, res.music);
+    breakEnemyShip(enemyShip, res.assets.boat_broken, res.music);
   }
 );
 
-export function registerEnemyShipSystems(em: EntityManager) {
+export function registerEnemyShipSystems() {
   EM.addSystem(
     "stepEnemyShips",
     Phase.GAME_WORLD,
@@ -287,7 +278,6 @@ export function registerEnemyShipSystems(em: EntityManager) {
             // quat.rotateY(rot, cannon.world.rotation, Math.PI * 0.5);
             const bulletSpeed = jitter(0.025) + 0.075;
             fireBullet(
-              em,
               2,
               cannon.world.position,
               cannon.world.rotation,
@@ -333,7 +323,6 @@ export function registerEnemyShipSystems(em: EntityManager) {
 }
 
 export function breakEnemyShip(
-  em: EntityManager,
   enemyShip: Entity & { position: Position; rotation: Rotation },
   enemyShipParts: GameMesh[],
   music: Music

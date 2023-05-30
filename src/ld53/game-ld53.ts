@@ -131,7 +131,7 @@ export const mapJfa = createJfaPipelines(LandMapTexPtr, "exterior");
 
 const STONE_TOWER_HEIGHT = 10;
 
-export async function initLD53(em: EntityManager, hosting: boolean) {
+export async function initLD53(hosting: boolean) {
   const dbgGrid = [
     //
     [mapJfa._inputMaskTex, mapJfa._uvMaskTex],
@@ -224,7 +224,7 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
   const score = EM.addResource(ScoreDef);
 
   // start map
-  await setMap(em, MapPaths[0]);
+  await setMap(MapPaths[0]);
 
   resetLand();
 
@@ -298,7 +298,7 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
       Math.PI / 2
   );
 
-  const ship = await createShip(em);
+  const ship = await createShip();
 
   EM.ensureComponentOn(ship, ShipHealthDef);
 
@@ -389,7 +389,7 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
     assert(CameraFollowDef.isOn(rudder));
     raiseManTurret(player, rudder);
 
-    registerHsPlayerSystems(em);
+    registerHsPlayerSystems();
   }
 
   if (DBG_PLAYER) {

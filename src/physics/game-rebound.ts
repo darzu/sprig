@@ -1,7 +1,7 @@
 import { CameraDef } from "../camera/camera.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { DeletedDef } from "../ecs/delete.js";
-import { EM, EntityManager } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { InputsDef } from "../input/inputs.js";
 import { jitter } from "../utils/math.js";
@@ -31,7 +31,7 @@ import { Phase } from "../ecs/sys-phase.js";
 
 // TODO(@darzu): BROKEN. camera is in a wonky place?
 
-export async function initReboundSandbox(em: EntityManager, hosting: boolean) {
+export async function initReboundSandbox(hosting: boolean) {
   let tableId = -1;
 
   const res = await EM.whenResources(

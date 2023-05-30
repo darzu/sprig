@@ -1,4 +1,4 @@
-import { EM, EntityManager } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/entity-manager.js";
 import { Serializer, Deserializer } from "../utils/serialize.js";
 import {
   FromNetworkEvent,
@@ -26,7 +26,7 @@ import { Phase } from "../ecs/sys-phase.js";
 
 const JOIN_RETRANSMIT = 100;
 
-function registerConnectToServer(em: EntityManager) {
+function registerConnectToServer() {
   EM.addSystem(
     "connectToServer",
     Phase.NETWORK,
@@ -74,7 +74,7 @@ function registerConnectToServer(em: EntityManager) {
   );
 }
 
-function registerHandleJoin(em: EntityManager) {
+function registerHandleJoin() {
   let handleJoin = (
     peers: readonly { peer: Peer; inbox: Inbox; outbox: Outbox }[],
     { me }: { me: { pid: number; host: boolean } }
@@ -115,7 +115,7 @@ function registerHandleJoin(em: EntityManager) {
   );
 }
 
-function registerHandleJoinResponse(em: EntityManager) {
+function registerHandleJoinResponse() {
   let handleJoinResponse = (
     peers: readonly { peer: Peer; inbox: Inbox; outbox: Outbox }[],
     { eventsToNetwork }: { eventsToNetwork: ToNetworkEvent[] }
@@ -152,8 +152,8 @@ function registerHandleJoinResponse(em: EntityManager) {
   );
 }
 
-export function initNetJoinSystems(em: EntityManager) {
-  registerConnectToServer(em);
-  registerHandleJoin(em);
-  registerHandleJoinResponse(em);
+export function initNetJoinSystems() {
+  registerConnectToServer();
+  registerHandleJoin();
+  registerHandleJoinResponse();
 }

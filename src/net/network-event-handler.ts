@@ -1,4 +1,4 @@
-import { EntityManager } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/entity-manager.js";
 import {
   FromNetworkEvent,
   ToNetworkEvent,
@@ -17,7 +17,7 @@ import {
 } from "./components.js";
 import { Phase } from "../ecs/sys-phase.js";
 
-export function initNetStateEventSystems(em: EntityManager) {
+export function initNetStateEventSystems() {
   let _peerIDs: Record<string, number> = {};
   function handleNetworkEvents(
     [],
@@ -59,7 +59,7 @@ export function initNetStateEventSystems(em: EntityManager) {
   );
 }
 
-export function initNetSendOutboxes(em: EntityManager) {
+export function initNetSendOutboxes() {
   function sendOutboxes(
     peers: readonly { peer: Peer; outbox: Outbox }[],
     { eventsToNetwork }: { eventsToNetwork: ToNetworkEvent[] }

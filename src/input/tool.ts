@@ -1,6 +1,6 @@
 import { FinishedDef } from "../ecs/em-helpers.js";
 import { AABBCollider, ColliderDef } from "../physics/collider.js";
-import { Component, EM, Entity, EntityManager } from "../ecs/entity-manager.js";
+import { Component, EM, Entity } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
 import { AABB } from "../physics/aabb.js";
@@ -21,7 +21,7 @@ export const ToolDef = EM.defineComponent("tool", (type?: string) => ({
   type,
 }));
 
-export function registerToolSystems(em: EntityManager) {
+export function registerToolSystems() {
   EM.addSystem(
     "toolPickup",
     Phase.POST_GAME_PLAYERS,
@@ -70,10 +70,10 @@ export function registerToolSystems(em: EntityManager) {
       [InteractableDef, PositionDef, PhysicsParentDef],
     ] as const,
     eventAuthorityEntity: ([playerId, toolId]) => playerId,
-    legalEvent: (em, [player, tool]) => {
+    legalEvent: ([player, tool]) => {
       return player.hsPlayer.tool === 0;
     },
-    runEvent: (em: EntityManager, [player, tool]) => {
+    runEvent: ([player, tool]) => {
       tool.physicsParent.id = player.id;
       // TODO(@darzu): add interact box
       // EM.removeComponent(tool.id, InteractableDef);
@@ -90,10 +90,10 @@ export function registerToolSystems(em: EntityManager) {
   registerEventHandler("tool-drop", {
     entities: [[HsPlayerDef], [PositionDef, PhysicsParentDef]] as const,
     eventAuthorityEntity: ([playerId, toolId]) => playerId,
-    legalEvent: (em, [player, tool]) => {
+    legalEvent: ([player, tool]) => {
       return player.hsPlayer.tool === tool.id;
     },
-    runEvent: (em: EntityManager, [player, tool], location: vec3) => {
+    runEvent: ([player, tool], location: vec3) => {
       tool.physicsParent.id = 0;
       // TODO(@darzu): add interact box
       // EM.addComponent(tool.id, InteractableDef);

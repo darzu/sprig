@@ -1,6 +1,6 @@
 import { ColorDef } from "../color/color-ecs.js";
 import { createRef, Ref } from "../ecs/em-helpers.js";
-import { EM, EntityManager } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/entity-manager.js";
 import { vec3, mat4, V } from "../matrix/sprig-matrix.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import {
@@ -16,7 +16,7 @@ import { Phase } from "../ecs/sys-phase.js";
 
 const ORRERY_SCALE = 0.001;
 
-export async function makeOrrery(em: EntityManager, parentId: number) {
+export async function makeOrrery(parentId: number) {
   const res = await EM.whenResources(AssetsDef);
   const orrery = EM.new();
   EM.ensureComponentOn(orrery, OrreryDef);
@@ -44,7 +44,7 @@ export const OrreryDef = EM.defineComponent("orrery", () => ({
   orreryStars: [] as Ref<[typeof PositionDef, typeof ColorDef]>[],
 }));
 
-export function registerOrrerySystems(em: EntityManager) {
+export function registerOrrerySystems() {
   EM.addSystem(
     "orreryMotion",
     Phase.GAME_WORLD,

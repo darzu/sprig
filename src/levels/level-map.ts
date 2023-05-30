@@ -1,4 +1,4 @@
-import { Component, EM, EntityManager } from "../ecs/entity-manager.js";
+import { Component, EM } from "../ecs/entity-manager.js";
 import { VERBOSE_LOG } from "../flags.js";
 import { TextDef } from "../gui/ui.js";
 import {
@@ -301,7 +301,7 @@ export function parseAndMutateIntoMapData(
   return levelMap;
 }
 
-export async function setMap(em: EntityManager, name: MapName) {
+export async function setMap(name: MapName) {
   console.log(`setting map to ${name}`);
   const res = await EM.whenResources(
     MapBytesSetDef,

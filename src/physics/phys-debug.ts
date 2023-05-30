@@ -1,5 +1,5 @@
 import { ColliderDef } from "./collider.js";
-import { EM, EntityManager } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/entity-manager.js";
 import { AssetsDef, LocalMeshes } from "../meshes/assets.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { InputsDef } from "../input/inputs.js";
@@ -45,7 +45,7 @@ export const DbgMeshDef = EM.defineComponent(
   }
 );
 
-export function registerPhysicsDebuggerSystem(em: EntityManager) {
+export function registerPhysicsDebuggerSystem() {
   EM.addResource(PhysicsDbgDef);
 
   // add collider meshes

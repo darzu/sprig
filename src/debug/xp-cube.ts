@@ -1,5 +1,5 @@
 import { CameraDef } from "../camera/camera.js";
-import { EM, EntityManager } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { max } from "../utils/math.js";
 import { ColliderDef } from "../physics/collider.js";
@@ -27,7 +27,7 @@ import { GlobalCursor3dDef } from "../gui/cursor.js";
 import { createGhost } from "./ghost.js";
 import { PointLightDef } from "../render/lights.js";
 
-export async function initCubeGame(em: EntityManager) {
+export async function initCubeGame() {
   const res = await EM.whenResources(
     AssetsDef,
     // GlobalCursor3dDef,

@@ -55,8 +55,6 @@ function createSplinterPool(
   length: number,
   numInPool: number
 ) {
-  const em: EntityManager = EM;
-
   const pool: SplinterPart[] = [];
   let nextIdx = 0;
 

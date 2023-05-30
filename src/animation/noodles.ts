@@ -1,4 +1,4 @@
-import { Component, EM, EntityManager } from "../ecs/entity-manager.js";
+import { Component, EM } from "../ecs/entity-manager.js";
 import {
   cloneMesh,
   mapMeshPositions,
@@ -33,7 +33,7 @@ export const NoodleDef = EM.defineComponent(
 export type Noodle = Component<typeof NoodleDef>;
 
 // TODO(@darzu): DEBUGGING
-export function debugCreateNoodles(em: EntityManager) {
+export function debugCreateNoodles() {
   const e = EM.new();
   EM.ensureComponentOn(e, NoodleDef, [
     {
@@ -59,7 +59,7 @@ export function debugCreateNoodles(em: EntityManager) {
   // EM.ensureComponentOn(cube, RenderableConstructDef, cubeM);
 }
 
-export function registerNoodleSystem(em: EntityManager) {
+export function registerNoodleSystem() {
   const posIdxToSegIdx: Map<number, number> = new Map();
   CUBE_MESH.pos.forEach((p, i) => {
     if (p[1] > 0) posIdxToSegIdx.set(i, 0);

@@ -1,6 +1,6 @@
 import { CameraDef } from "../camera/camera.js";
 import { ColorDef } from "../color/color-ecs.js";
-import { EM, EntityManager } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { InputsDef } from "../input/inputs.js";
 import { mathMapNEase } from "../utils/math.js";
@@ -48,7 +48,7 @@ import { Phase } from "../ecs/sys-phase.js";
 
 // TODO(@darzu): BROKEN. cloth sandbox isn't lit right and cloth isn't there
 
-export async function initClothSandbox(em: EntityManager, hosting: boolean) {
+export async function initClothSandbox(hosting: boolean) {
   const res = await EM.whenResources(
     AssetsDef,
     GlobalCursor3dDef,
