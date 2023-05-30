@@ -167,7 +167,7 @@ function legalEvent<Extra>(
     throw `No event handler registered for event type ${type}`;
   const handler = EVENT_HANDLERS.get(type)!;
   const entities = event.entities.map((id, idx) =>
-    em.findEntity(id, handler.entities[idx])
+    EM.findEntity(id, handler.entities[idx])
   );
   if (entities.some((e) => !e)) return false;
   return handler.legalEvent(em, entities as any, event.extra);
@@ -178,9 +178,9 @@ function runEvent<Extra>(type: string, em: EntityManager, event: Event<Extra>) {
     throw `No event handler registered for event type ${type}`;
   const handler = EVENT_HANDLERS.get(type)!;
   const entities = event.entities.map((id, idx) => {
-    const entity = em.findEntity(id, [])!;
+    const entity = EM.findEntity(id, [])!;
     for (const cdef of handler.entities[idx] as ComponentDef[]) {
-      em.ensureComponentOn(entity, cdef);
+      EM.ensureComponentOn(entity, cdef);
     }
     return entity;
   });
@@ -259,7 +259,7 @@ function takeEventsWithKnownObjects<Extra, E extends DetectedEvent<Extra>>(
   const remainingEvents = [];
   while (events.length > 0) {
     let event = events.shift()!;
-    if (event.entities.every((id) => em.hasEntity(id))) {
+    if (event.entities.every((id) => EM.hasEntity(id))) {
       result.push(event);
     } else {
       remainingEvents.push(event);
@@ -275,7 +275,7 @@ const EVENT_RETRANSMIT_MS = 100;
 
 export function initNetGameEventSystems(em: EntityManager) {
   // Runs only at non-host, sends valid detected events as requests to host
-  em.addSystem(
+  EM.addSystem(
     "detectedEventsToHost",
     Phase.NETWORK,
     [HostDef, OutboxDef],
@@ -283,7 +283,7 @@ export function initNetGameEventSystems(em: EntityManager) {
     (hosts, { detectedEvents, me, time }) => {
       if (hosts.length == 0) return;
       const host = hosts[0];
-      const outgoingEventRequests = em.ensureComponent(
+      const outgoingEventRequests = EM.ensureComponent(
         host.id,
         OutgoingEventRequestsDef
       );
@@ -291,7 +291,7 @@ export function initNetGameEventSystems(em: EntityManager) {
       while (detectedEvents.events.length > 0) {
         const event = detectedEvents.events.shift()!;
         const authorityId = eventAuthorityEntity(event.type, event.entities);
-        const { authority } = em.findEntity(authorityId, [AuthorityDef])!;
+        const { authority } = EM.findEntity(authorityId, [AuthorityDef])!;
         if (authority.pid == me.pid) {
           // Gameplay code is responsible for ensuring events legal when generated
           if (!legalEvent(event.type, em, event))
@@ -333,15 +333,15 @@ export function initNetGameEventSystems(em: EntityManager) {
   );
 
   // Runs only at host, handles incoming event requests
-  em.addSystem(
+  EM.addSystem(
     "handleEventRequests",
     Phase.NETWORK,
     [InboxDef, OutboxDef],
     [HostDef],
     (inboxes) => {
       for (let { id, inbox, outbox } of inboxes) {
-        let requestedEvents = em.ensureResource(RequestedEventsDef);
-        const eventRequestState = em.ensureComponent(id, EventSyncDef);
+        let requestedEvents = EM.ensureResource(RequestedEventsDef);
+        const eventRequestState = EM.ensureComponent(id, EventSyncDef);
         const eventRequests = inbox.get(MessageType.EventRequests) || [];
         let shouldSendAck = false;
         while (eventRequests.length > 0) {
@@ -382,7 +382,7 @@ export function initNetGameEventSystems(em: EntityManager) {
   );
 
   // Runs only at non-host, handles event request acks from host
-  em.addSystem(
+  EM.addSystem(
     "handleEventRequestAcks",
     Phase.NETWORK,
     [InboxDef, OutgoingEventRequestsDef, HostDef],
@@ -406,17 +406,17 @@ export function initNetGameEventSystems(em: EntityManager) {
   );
 
   // Runs only at host, converts events detected locally to event requests
-  em.addSystem(
+  EM.addSystem(
     "detectedEventsToRequestedEvents",
     Phase.NETWORK,
     null,
     [DetectedEventsDef, HostDef, MeDef],
     ([], { detectedEvents, me }) => {
-      const requestedEvents = em.ensureResource(RequestedEventsDef);
+      const requestedEvents = EM.ensureResource(RequestedEventsDef);
       while (detectedEvents.events.length > 0) {
         const event = detectedEvents.events.shift()!;
         const authorityId = eventAuthorityEntity(event.type, event.entities);
-        const { authority } = em.findEntity(authorityId, [AuthorityDef])!;
+        const { authority } = EM.findEntity(authorityId, [AuthorityDef])!;
         if (authority.pid == me.pid) {
           // Gameplay code is responsible for ensuring events legal when generated
           if (!legalEvent(event.type, em, event))
@@ -428,7 +428,7 @@ export function initNetGameEventSystems(em: EntityManager) {
   );
 
   // Runs only at host, runs legal events
-  em.addSystem(
+  EM.addSystem(
     "requestedEventsToEvents",
     Phase.NETWORK,
     null,
@@ -452,14 +452,14 @@ export function initNetGameEventSystems(em: EntityManager) {
   );
 
   // runs only at host, sends events to other nodes
-  em.addSystem(
+  EM.addSystem(
     "sendEvents",
     Phase.NETWORK,
     [OutboxDef],
     [EventsDef, HostDef, TimeDef],
     (peers, { events, time }) => {
       for (const { outbox, id } of peers) {
-        let syncState = em.ensureComponent(id, EventSyncDef);
+        let syncState = EM.ensureComponent(id, EventSyncDef);
         if (
           syncState.nextSeq <= events.last &&
           (events.newEvents ||
@@ -489,7 +489,7 @@ export function initNetGameEventSystems(em: EntityManager) {
   );
 
   // Runs only at non-host, handles events from host
-  em.addSystem(
+  EM.addSystem(
     "handleEvents",
     Phase.NETWORK,
     [InboxDef, HostDef, OutboxDef],
@@ -535,7 +535,7 @@ export function initNetGameEventSystems(em: EntityManager) {
   );
 
   // Runs only at host, handles event ACKs
-  em.addSystem(
+  EM.addSystem(
     "handleEventAcks",
     Phase.NETWORK,
     [InboxDef],
@@ -543,7 +543,7 @@ export function initNetGameEventSystems(em: EntityManager) {
     (inboxes) => {
       for (let { inbox, id } of inboxes) {
         const acks = inbox.get(MessageType.AckEvents) || [];
-        const syncState = em.ensureComponent(id, EventSyncDef);
+        const syncState = EM.ensureComponent(id, EventSyncDef);
         while (acks.length > 0) {
           const message = acks.shift()!;
           const nextSeq = message.readUint32();
@@ -564,19 +564,19 @@ export function initNetGameEventSystems(em: EntityManager) {
       for (let event of newEvents) {
         // If we don't know about all of these objects, we're not ready to run
         // this event (or subsequent events)
-        if (!event.entities.every((id) => em.hasEntity(id))) break;
+        if (!event.entities.every((id) => EM.hasEntity(id))) break;
         runEvent(event.type, em, event);
         events.last = event.seq;
       }
     }
   }
 
-  em.addSystem("runEvents", Phase.NETWORK, null, [EventsDef], runEvents);
+  EM.addSystem("runEvents", Phase.NETWORK, null, [EventsDef], runEvents);
 }
 
 export function addEventComponents(em: EntityManager) {
-  em.addResource(DetectedEventsDef);
-  em.addResource(EventsDef);
+  EM.addResource(DetectedEventsDef);
+  EM.addResource(EventsDef);
 }
 
 export function eventWizard<ES extends EDef<any>[], Extra>(

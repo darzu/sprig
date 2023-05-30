@@ -36,16 +36,16 @@ function sockMesh(): Mesh {
 }
 
 export function createSock(em: EntityManager, scale: number) {
-  const ent = em.new();
-  em.ensureComponentOn(ent, SockDef);
+  const ent = EM.new();
+  EM.ensureComponentOn(ent, SockDef);
   ent.sock.scale = scale;
   const mesh = sockMesh();
   // scaleMesh(mesh, scale);
-  em.ensureComponentOn(ent, ScaleDef, V(scale, scale, scale));
-  em.ensureComponentOn(ent, RenderableConstructDef, mesh);
-  em.ensureComponentOn(ent, PositionDef);
-  em.ensureComponentOn(ent, RotationDef);
-  em.ensureComponentOn(ent, ColorDef, V(0.9, 0.9, 0.9));
+  EM.ensureComponentOn(ent, ScaleDef, V(scale, scale, scale));
+  EM.ensureComponentOn(ent, RenderableConstructDef, mesh);
+  EM.ensureComponentOn(ent, PositionDef);
+  EM.ensureComponentOn(ent, RotationDef);
+  EM.ensureComponentOn(ent, ColorDef, V(0.9, 0.9, 0.9));
   return ent;
 }
 

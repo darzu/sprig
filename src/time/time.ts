@@ -9,7 +9,7 @@ export const TimeDef = EM.defineComponent("time", () => ({
 export type Time = Component<typeof TimeDef>;
 
 export function tick(em: EntityManager, dt: number) {
-  const time = em.ensureResource(TimeDef);
+  const time = EM.ensureResource(TimeDef);
   time.lastTime = time.time;
   time.time += dt;
   time.step += 1;

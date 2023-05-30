@@ -1,4 +1,4 @@
-import { EntityManager } from "../ecs/entity-manager.js";
+import { EM, EntityManager } from "../ecs/entity-manager.js";
 import { Serializer, Deserializer } from "../utils/serialize.js";
 import {
   AuthorityDef,
@@ -52,7 +52,7 @@ export function serializeEntity(
   message.writeUint8(components.length);
   for (let componentId of components) {
     message.writeUint32(componentId);
-    em.serialize(ent.id, componentId, message);
+    EM.serialize(ent.id, componentId, message);
   }
 }
 
@@ -66,19 +66,19 @@ export function deserializeEntity(
   let id = message.readUint32();
   let authorityPid = message.readUint8();
   let authoritySeq = message.readUint32();
-  let haveEnt = em.hasEntity(id);
+  let haveEnt = EM.hasEntity(id);
   if (!haveEnt && type === EntityUpdateType.Dynamic) {
     throw `Got non-full update for unknown entity ${id}`;
   }
   let authority;
   if (!haveEnt) {
-    em.registerEntity(id);
+    EM.registerEntity(id);
     // TODO(@darzu): dbg
     // console.log(`registering ${id}`);
-    authority = em.addComponent(id, AuthorityDef, authorityPid);
+    authority = EM.addComponent(id, AuthorityDef, authorityPid);
     authority.seq = authoritySeq;
   } else {
-    authority = em.findEntity(id, [AuthorityDef])?.authority;
+    authority = EM.findEntity(id, [AuthorityDef])?.authority;
   }
   // We want to set message.dummy if either:
   //
@@ -97,14 +97,14 @@ export function deserializeEntity(
   let numComponents = message.readUint8();
   for (let i = 0; i < numComponents; i++) {
     let componentId = message.readUint32();
-    em.deserialize(id, componentId, message);
+    EM.deserialize(id, componentId, message);
   }
   if (!message.dummy) {
-    let predict = em.findEntity(id, [PredictDef])?.predict;
+    let predict = EM.findEntity(id, [PredictDef])?.predict;
     if (predict) {
       predict.dt += dt;
     }
-    em.ensureComponent(id, RemoteUpdatesDef);
+    EM.ensureComponent(id, RemoteUpdatesDef);
   }
 }
 

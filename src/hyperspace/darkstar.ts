@@ -44,15 +44,15 @@ export const { DarkStarPropsDef, DarkStarLocalDef, createDarkStarNow } =
     build: (star, res) => {
       const em: EntityManager = EM;
       vec3.copy(star.position, star.darkStarProps.pos);
-      em.ensureComponentOn(star, RenderableConstructDef, res.assets.ball.proto);
-      em.ensureComponentOn(star, ScaleDef, V(100, 100, 100));
-      em.ensureComponentOn(star, ColorDef, star.darkStarProps.color);
-      em.ensureComponentOn(star, PointLightDef);
+      EM.ensureComponentOn(star, RenderableConstructDef, res.assets.ball.proto);
+      EM.ensureComponentOn(star, ScaleDef, V(100, 100, 100));
+      EM.ensureComponentOn(star, ColorDef, star.darkStarProps.color);
+      EM.ensureComponentOn(star, PointLightDef);
       star.pointLight.constant = 1.0;
       vec3.copy(star.pointLight.ambient, star.color);
       vec3.scale(star.pointLight.ambient, 0.2, star.pointLight.ambient);
       vec3.copy(star.pointLight.diffuse, star.color);
-      em.whenEntityHas(star, RenderDataStdDef).then((star1) => {
+      EM.whenEntityHas(star, RenderDataStdDef).then((star1) => {
         star1.renderDataStd.flags |= FLAG_UNLIT;
       });
       return star;
@@ -61,7 +61,7 @@ export const { DarkStarPropsDef, DarkStarLocalDef, createDarkStarNow } =
 
 export function registerDarkstarSystems(em: EntityManager) {
   // TODO: this star will escape! must bring it closer to the orbit point sometimes
-  em.addSystem(
+  EM.addSystem(
     "darkStarOrbit",
     Phase.GAME_WORLD,
     [DarkStarPropsDef, PositionDef, AuthorityDef],

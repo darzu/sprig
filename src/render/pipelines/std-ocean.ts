@@ -255,6 +255,6 @@ EM.addEagerInit([RenderDataOceanDef], [], [], () => {
     }
   );
 
-  // em.addConstraint(["updateOceanRenderData", "after", "renderList"]);
-  // em.addConstraint(["updateOceanRenderData", "before", "stepRenderer"]);
+  // EM.addConstraint(["updateOceanRenderData", "after", "renderList"]);
+  // EM.addConstraint(["updateOceanRenderData", "before", "stepRenderer"]);
 });

@@ -1,6 +1,6 @@
 import { CameraDef } from "../camera/camera.js";
 import { ColorDef } from "../color/color-ecs.js";
-import { EntityManager } from "../ecs/entity-manager.js";
+import { EM, EntityManager } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { InputsDef } from "../input/inputs.js";
 import { ColliderDef } from "./collider.js";
@@ -29,7 +29,7 @@ import { Phase } from "../ecs/sys-phase.js";
 
 let __frame = 0;
 export async function initGJKSandbox(em: EntityManager, hosting: boolean) {
-  const res = await em.whenResources(
+  const res = await EM.whenResources(
     AssetsDef,
     GlobalCursor3dDef,
     RendererDef,
@@ -45,17 +45,17 @@ export async function initGJKSandbox(em: EntityManager, hosting: boolean) {
     postProcess,
   ];
 
-  const sunlight = em.new();
-  em.ensureComponentOn(sunlight, PointLightDef);
+  const sunlight = EM.new();
+  EM.ensureComponentOn(sunlight, PointLightDef);
   sunlight.pointLight.constant = 1.0;
   vec3.copy(sunlight.pointLight.ambient, [0.8, 0.8, 0.8]);
   // vec3.scale(sunlight.pointLight.ambient, sunlight.pointLight.ambient, 0.2);
   // vec3.copy(sunlight.pointLight.diffuse, [0.5, 0.5, 0.5]);
-  em.ensureComponentOn(sunlight, PositionDef, V(10, 100, 10));
-  em.ensureComponentOn(sunlight, RenderableConstructDef, res.assets.ball.proto);
+  EM.ensureComponentOn(sunlight, PositionDef, V(10, 100, 10));
+  EM.ensureComponentOn(sunlight, RenderableConstructDef, res.assets.ball.proto);
 
   const g = createGhost();
-  // em.ensureComponentOn(g, RenderableConstructDef, res.assets.cube.proto);
+  // EM.ensureComponentOn(g, RenderableConstructDef, res.assets.cube.proto);
   // createPlayer(em);
 
   // vec3.copy(e.position, [-16.6, 5, -5.1]);
@@ -82,25 +82,25 @@ export async function initGJKSandbox(em: EntityManager, hosting: boolean) {
   const c = res.globalCursor3d.cursor()!;
   if (RenderableDef.isOn(c)) c.renderable.enabled = false;
 
-  const p = em.new();
-  em.ensureComponentOn(p, RenderableConstructDef, res.assets.plane.proto);
-  em.ensureComponentOn(p, ColorDef, V(0.2, 0.3, 0.2));
-  em.ensureComponentOn(p, PositionDef, V(0, -5, 0));
+  const p = EM.new();
+  EM.ensureComponentOn(p, RenderableConstructDef, res.assets.plane.proto);
+  EM.ensureComponentOn(p, ColorDef, V(0.2, 0.3, 0.2));
+  EM.ensureComponentOn(p, PositionDef, V(0, -5, 0));
 
-  const b1 = em.new();
+  const b1 = EM.new();
   const m1 = cloneMesh(res.assets.cube.mesh);
-  em.ensureComponentOn(b1, RenderableConstructDef, m1);
-  em.ensureComponentOn(b1, ColorDef, V(0.1, 0.1, 0.1));
-  em.ensureComponentOn(b1, PositionDef, V(0, 0, 3));
-  em.ensureComponentOn(b1, RotationDef);
-  em.ensureComponentOn(b1, AngularVelocityDef, V(0, 0.001, 0.001));
-  em.ensureComponentOn(b1, WorldFrameDef);
-  em.ensureComponentOn(b1, ColliderDef, {
+  EM.ensureComponentOn(b1, RenderableConstructDef, m1);
+  EM.ensureComponentOn(b1, ColorDef, V(0.1, 0.1, 0.1));
+  EM.ensureComponentOn(b1, PositionDef, V(0, 0, 3));
+  EM.ensureComponentOn(b1, RotationDef);
+  EM.ensureComponentOn(b1, AngularVelocityDef, V(0, 0.001, 0.001));
+  EM.ensureComponentOn(b1, WorldFrameDef);
+  EM.ensureComponentOn(b1, ColliderDef, {
     shape: "AABB",
     solid: false,
     aabb: res.assets.cube.aabb,
   });
-  // em.ensureComponentOn(b1, ColliderDef, {
+  // EM.ensureComponentOn(b1, ColliderDef, {
   //   shape: "Box",
   //   solid: false,
   //   center: res.assets.cube.center,
@@ -109,45 +109,45 @@ export async function initGJKSandbox(em: EntityManager, hosting: boolean) {
 
   const b2 = g;
   const m2 = cloneMesh(res.assets.cube.mesh);
-  em.ensureComponentOn(b2, RenderableConstructDef, m2);
-  em.ensureComponentOn(b2, ColorDef, V(0.1, 0.1, 0.1));
-  em.ensureComponentOn(b2, PositionDef, V(0, 0, 0));
-  // em.ensureComponentOn(b2, PositionDef, [0, 0, -1.2]);
-  em.ensureComponentOn(b2, WorldFrameDef);
-  // em.ensureComponentOn(b2, PhysicsParentDef, g.id);
-  em.ensureComponentOn(b2, ColliderDef, {
+  EM.ensureComponentOn(b2, RenderableConstructDef, m2);
+  EM.ensureComponentOn(b2, ColorDef, V(0.1, 0.1, 0.1));
+  EM.ensureComponentOn(b2, PositionDef, V(0, 0, 0));
+  // EM.ensureComponentOn(b2, PositionDef, [0, 0, -1.2]);
+  EM.ensureComponentOn(b2, WorldFrameDef);
+  // EM.ensureComponentOn(b2, PhysicsParentDef, g.id);
+  EM.ensureComponentOn(b2, ColliderDef, {
     shape: "AABB",
     solid: false,
     aabb: res.assets.cube.aabb,
   });
-  // em.ensureComponentOn(b2, ColliderDef, {
+  // EM.ensureComponentOn(b2, ColliderDef, {
   //   shape: "Box",
   //   solid: false,
   //   center: res.assets.cube.center,
   //   halfsize: res.assets.cube.halfsize,
   // });
 
-  const b3 = em.new();
+  const b3 = EM.new();
   const m3 = cloneMesh(res.assets.ball.mesh);
-  em.ensureComponentOn(b3, RenderableConstructDef, m3);
-  em.ensureComponentOn(b3, ColorDef, V(0.1, 0.1, 0.1));
-  em.ensureComponentOn(b3, PositionDef, V(0, 0, -4));
-  em.ensureComponentOn(b3, RotationDef);
-  em.ensureComponentOn(b3, WorldFrameDef);
-  em.ensureComponentOn(b3, ColliderDef, {
+  EM.ensureComponentOn(b3, RenderableConstructDef, m3);
+  EM.ensureComponentOn(b3, ColorDef, V(0.1, 0.1, 0.1));
+  EM.ensureComponentOn(b3, PositionDef, V(0, 0, -4));
+  EM.ensureComponentOn(b3, RotationDef);
+  EM.ensureComponentOn(b3, WorldFrameDef);
+  EM.ensureComponentOn(b3, ColliderDef, {
     shape: "AABB",
     solid: false,
     aabb: res.assets.ball.aabb,
   });
 
-  const b4 = em.new();
+  const b4 = EM.new();
   const m4 = cloneMesh(res.assets.tetra.mesh);
-  em.ensureComponentOn(b4, RenderableConstructDef, m4);
-  em.ensureComponentOn(b4, ColorDef, V(0.1, 0.1, 0.1));
-  em.ensureComponentOn(b4, PositionDef, V(0, -3, 0));
-  em.ensureComponentOn(b4, RotationDef);
-  em.ensureComponentOn(b4, WorldFrameDef);
-  em.ensureComponentOn(b4, ColliderDef, {
+  EM.ensureComponentOn(b4, RenderableConstructDef, m4);
+  EM.ensureComponentOn(b4, ColorDef, V(0.1, 0.1, 0.1));
+  EM.ensureComponentOn(b4, PositionDef, V(0, -3, 0));
+  EM.ensureComponentOn(b4, RotationDef);
+  EM.ensureComponentOn(b4, WorldFrameDef);
+  EM.ensureComponentOn(b4, ColliderDef, {
     shape: "AABB",
     solid: false,
     aabb: res.assets.tetra.aabb,
@@ -189,7 +189,7 @@ export async function initGJKSandbox(em: EntityManager, hosting: boolean) {
     quat.clone(b4.rotation),
   ];
 
-  em.addSystem(
+  EM.addSystem(
     "checkGJK",
     Phase.GAME_WORLD,
     null,

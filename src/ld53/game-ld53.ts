@@ -148,7 +148,7 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
   // TODO(@darzu): HACK. these have to be set before the CY instantiator runs.
   outlineRender.fragOverrides!.lineWidth = 1.0;
 
-  const res = await em.whenResources(
+  const res = await EM.whenResources(
     AssetsDef,
     // WoodAssetsDef,
     // GlobalCursor3dDef,
@@ -168,7 +168,7 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
   // console.dir(mapJfa);
   // console.dir(dbgGridCompose);
 
-  em.addSystem(
+  EM.addSystem(
     "ld53GamePipelines",
     Phase.GAME_WORLD,
     null,
@@ -191,28 +191,28 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
   );
 
   // Sun
-  const sunlight = em.new();
-  em.ensureComponentOn(sunlight, PointLightDef);
+  const sunlight = EM.new();
+  EM.ensureComponentOn(sunlight, PointLightDef);
   // sunlight.pointLight.constant = 1.0;
   sunlight.pointLight.constant = 1.0;
   sunlight.pointLight.linear = 0.0;
   sunlight.pointLight.quadratic = 0.0;
   vec3.copy(sunlight.pointLight.ambient, [0.2, 0.2, 0.2]);
   vec3.copy(sunlight.pointLight.diffuse, [0.5, 0.5, 0.5]);
-  em.ensureComponentOn(sunlight, PositionDef, V(50, 300, 10));
-  em.ensureComponentOn(sunlight, RenderableConstructDef, res.assets.ball.proto);
+  EM.ensureComponentOn(sunlight, PositionDef, V(50, 300, 10));
+  EM.ensureComponentOn(sunlight, RenderableConstructDef, res.assets.ball.proto);
 
   // pirate test
   const PirateDef = EM.defineComponent("pirate", () => true);
-  const pirate = em.new();
-  em.ensureComponentOn(
+  const pirate = EM.new();
+  EM.ensureComponentOn(
     pirate,
     RiggedRenderableConstructDef,
     res.assets.pirate.mesh as RiggedMesh
   );
-  em.ensureComponentOn(pirate, PositionDef, V(50, 80, 10));
-  em.ensureComponentOn(pirate, PirateDef);
-  em.ensureComponentOn(pirate, PoseDef, 0);
+  EM.ensureComponentOn(pirate, PositionDef, V(50, 80, 10));
+  EM.ensureComponentOn(pirate, PirateDef);
+  EM.ensureComponentOn(pirate, PoseDef, 0);
   pirate.pose.repeat = [
     { pose: 1, t: 500 },
     { pose: 0, t: 500 },
@@ -221,7 +221,7 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
   ];
 
   // score
-  const score = em.addResource(ScoreDef);
+  const score = EM.addResource(ScoreDef);
 
   // start map
   await setMap(em, MapPaths[0]);
@@ -232,13 +232,13 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
   const SKY_HALFSIZE = 1000;
   const domeMesh = makeDome(16, 8, SKY_HALFSIZE);
   const sky = EM.new();
-  em.ensureComponentOn(sky, PositionDef, V(0, -100, 0));
+  EM.ensureComponentOn(sky, PositionDef, V(0, -100, 0));
   // const skyMesh = cloneMesh(res.assets.cube.mesh);
   // skyMesh.pos.forEach((p) => vec3.scale(p, SKY_HALFSIZE, p));
   // skyMesh.quad.forEach((f) => vec4.reverse(f, f));
   // skyMesh.tri.forEach((f) => vec3.reverse(f, f));
   const skyMesh = domeMesh;
-  em.ensureComponentOn(
+  EM.ensureComponentOn(
     sky,
     RenderableConstructDef,
     skyMesh,
@@ -246,7 +246,7 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
     undefined,
     SKY_MASK
   );
-  // em.ensureComponentOn(sky, ColorDef, V(0.9, 0.9, 0.9));
+  // EM.ensureComponentOn(sky, ColorDef, V(0.9, 0.9, 0.9));
 
   // ocean
   // const oceanVertsPerWorldUnit = 0.02;
@@ -285,9 +285,9 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
   // TODO(@darzu): I don't think the PBR-ness of this color is right
   // initOcean(oceanMesh, V(0.1, 0.3, 0.8));
   initOcean(oceanMesh, ENDESGA16.blue);
-  const ocean = await em.whenResources(OceanDef); // TODO(@darzu): need to wait?
+  const ocean = await EM.whenResources(OceanDef); // TODO(@darzu): need to wait?
 
-  const wind = em.addResource(WindDef);
+  const wind = EM.addResource(WindDef);
   // registerChangeWindSystems();
 
   // load level
@@ -313,28 +313,28 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
     const buoys: EntityW<[typeof PositionDef]>[] = [];
     for (let u = 0.4; u <= 0.6; u += 0.02) {
       for (let v = 0.4; v <= 0.6; v += 0.02) {
-        const bouy = em.new();
-        em.ensureComponentOn(bouy, PositionDef, V(0, 0, 0));
-        em.ensureComponentOn(
+        const bouy = EM.new();
+        EM.ensureComponentOn(bouy, PositionDef, V(0, 0, 0));
+        EM.ensureComponentOn(
           bouy,
           UVPosDef,
           V(u + jitter(0.01), v + jitter(0.01))
         );
-        // em.ensureComponentOn(bouy, ScaleDef, V(5, 5, 5));
-        em.ensureComponentOn(bouy, bouyDef);
-        em.ensureComponentOn(
+        // EM.ensureComponentOn(bouy, ScaleDef, V(5, 5, 5));
+        EM.ensureComponentOn(bouy, bouyDef);
+        EM.ensureComponentOn(
           bouy,
           RenderableConstructDef,
           res.assets.ball.proto
         );
-        em.ensureComponentOn(bouy, ColorDef, ENDESGA16.lightGreen);
+        EM.ensureComponentOn(bouy, ColorDef, ENDESGA16.lightGreen);
         buoys.push(bouy);
       }
     }
     // console.dir(buoys);
     const _t1 = vec3.create();
     const _t2 = vec3.create();
-    em.addSystem(
+    EM.addSystem(
       "shipBouyancy",
       Phase.GAME_WORLD,
       [bouyDef, PositionDef, UVPosDef],
@@ -373,7 +373,7 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
 
   // drawBall(endZonePos, 4, ENDESGA16.deepGreen);
 
-  em.whenEntityHas(dock, PhysicsStateDef).then(
+  EM.whenEntityHas(dock, PhysicsStateDef).then(
     (dock) => (score.endZone = createRef(dock))
   );
 
@@ -401,13 +401,13 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
     g.controllable.sprintMul = 15;
     const sphereMesh = cloneMesh(res.assets.ball.mesh);
     const visible = false;
-    em.ensureComponentOn(g, RenderableConstructDef, sphereMesh, visible);
-    em.ensureComponentOn(g, ColorDef, V(0.1, 0.1, 0.1));
-    // em.ensureComponentOn(g, PositionDef, V(0, 0, 0));
-    // em.ensureComponentOn(b2, PositionDef, [0, 0, -1.2]);
-    em.ensureComponentOn(g, WorldFrameDef);
-    // em.ensureComponentOn(b2, PhysicsParentDef, g.id);
-    em.ensureComponentOn(g, ColliderDef, {
+    EM.ensureComponentOn(g, RenderableConstructDef, sphereMesh, visible);
+    EM.ensureComponentOn(g, ColorDef, V(0.1, 0.1, 0.1));
+    // EM.ensureComponentOn(g, PositionDef, V(0, 0, 0));
+    // EM.ensureComponentOn(b2, PositionDef, [0, 0, -1.2]);
+    EM.ensureComponentOn(g, WorldFrameDef);
+    // EM.ensureComponentOn(b2, PhysicsParentDef, g.id);
+    EM.ensureComponentOn(g, ColliderDef, {
       shape: "AABB",
       solid: false,
       aabb: res.assets.ball.aabb,
@@ -450,7 +450,7 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
     g.cameraFollow.yawOffset = 0.0;
     g.cameraFollow.pitchOffset = -0.627;
 
-    em.addSystem(
+    EM.addSystem(
       "smolGhost",
       Phase.GAME_WORLD,
       [GhostDef, WorldFrameDef, ColliderDef],
@@ -470,7 +470,7 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
     // grassCutTex.queueUpdate(worldCutData);
     // vec3.set(0, 0, 0, ship.position);
     // vec3.copy(ship.position, SHIP_START_POS);
-    const level = await em.whenResources(LevelMapDef);
+    const level = await EM.whenResources(LevelMapDef);
     level2DtoWorld3D(level.levelMap.startPos, 8, ship.position);
     quat.identity(ship.rotation);
     vec3.set(0, 0, 0, ship.linearVelocity);
@@ -492,7 +492,7 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
     resetWoodHealth(ship.woodHealth);
     ship.shipHealth.health = 1;
     resetWoodState(ship.woodState);
-    em.whenEntityHas(ship, RenderableDef, WoodStateDef).then((ship) =>
+    EM.whenEntityHas(ship, RenderableDef, WoodStateDef).then((ship) =>
       res.renderer.renderer.stdPool.updateMeshQuads(
         ship.renderable.meshHandle,
         ship.woodState.mesh as Mesh,
@@ -510,7 +510,7 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
     vec3.copy(dock.position, endZonePos);
     resetWoodHealth(dock.woodHealth);
     resetWoodState(dock.woodState);
-    em.whenEntityHas(dock, RenderableDef, WoodStateDef).then((dock) =>
+    EM.whenEntityHas(dock, RenderableDef, WoodStateDef).then((dock) =>
       res.renderer.renderer.stdPool.updateMeshQuads(
         dock.renderable.meshHandle,
         dock.woodState.mesh as Mesh,
@@ -661,7 +661,7 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
   }
 
   // BULLET STUFF
-  em.addSystem(
+  EM.addSystem(
     "breakBullets",
     Phase.GAME_WORLD,
     [
@@ -684,7 +684,7 @@ export async function initLD53(em: EntityManager, hosting: boolean) {
   // dead bullet maintenance
   // NOTE: this must be called after any system that can create dead bullets but
   //   before the rendering systems.
-  em.addSystem(
+  EM.addSystem(
     "deadBullets",
     Phase.GAME_WORLD,
     [BulletDef, PositionDef, DeadDef, RenderableDef],
@@ -730,9 +730,9 @@ async function createPlayer() {
   EM.ensureComponentOn(p, RenderableConstructDef, sphereMesh, visible);
   EM.ensureComponentOn(p, ColorDef, V(0.1, 0.1, 0.1));
   EM.ensureComponentOn(p, PositionDef, V(0, 0, 0));
-  // em.ensureComponentOn(b2, PositionDef, [0, 0, -1.2]);
+  // EM.ensureComponentOn(b2, PositionDef, [0, 0, -1.2]);
   EM.ensureComponentOn(p, WorldFrameDef);
-  // em.ensureComponentOn(b2, PhysicsParentDef, g.id);
+  // EM.ensureComponentOn(b2, PhysicsParentDef, g.id);
   EM.ensureComponentOn(p, ColliderDef, {
     shape: "AABB",
     solid: true,

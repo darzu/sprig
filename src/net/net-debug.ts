@@ -20,18 +20,18 @@ const AUTHORITY_TINTS: Record<number, vec3> = {
 };
 
 export function initNetDebugSystem(em: EntityManager) {
-  em.addSystem(
+  EM.addSystem(
     "netDebugSystem",
     Phase.NETWORK,
     [AuthorityDef, RenderableDef],
     [InputsDef],
     (objs, res) => {
-      const netDebugState = em.ensureResource(NetDebugStateDef);
+      const netDebugState = EM.ensureResource(NetDebugStateDef);
       if (res.inputs.keyClicks["6"])
         netDebugState.dbgAuthority = !netDebugState.dbgAuthority;
       for (const o of objs) {
         if (netDebugState.dbgAuthority) {
-          em.ensureComponentOn(o, TintsDef);
+          EM.ensureComponentOn(o, TintsDef);
           setTint(
             o.tints,
             AUTHORITY_TINT_NAME,

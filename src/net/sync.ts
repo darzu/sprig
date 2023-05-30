@@ -1,4 +1,4 @@
-import { EntityManager } from "../ecs/entity-manager.js";
+import { EM, EntityManager } from "../ecs/entity-manager.js";
 import { OutOfRoomError, Serializer } from "../utils/serialize.js";
 import {
   Authority,
@@ -29,7 +29,7 @@ import { TimeDef } from "../time/time.js";
 import { Phase } from "../ecs/sys-phase.js";
 
 export function initNetSyncSystem(em: EntityManager) {
-  em.addSystem(
+  EM.addSystem(
     "netSync",
     Phase.NETWORK,
     [AuthorityDef, SyncDef],
@@ -37,7 +37,7 @@ export function initNetSyncSystem(em: EntityManager) {
     (ents, res) => {
       // TODO: think about other ways of doing this
       if (res.time.step % 3 === 0) {
-        const peers = em.filterEntities([PeerDef, OutboxDef]);
+        const peers = EM.filterEntities([PeerDef, OutboxDef]);
         for (let { peer, outbox } of peers) {
           if (res.me.host && !peer.joined) continue;
           const entities = ents.filter(
@@ -100,18 +100,18 @@ export function initNetSyncSystem(em: EntityManager) {
 }
 
 export function initNetUpdateSystems(em: EntityManager) {
-  em.addSystem(
+  EM.addSystem(
     "clearRemoteUpdatesMarker",
     Phase.NETWORK,
     [RemoteUpdatesDef],
     [],
     (es) => {
       for (const e of es) {
-        em.removeComponent(e.id, RemoteUpdatesDef);
+        EM.removeComponent(e.id, RemoteUpdatesDef);
       }
     }
   );
-  em.addSystem(
+  EM.addSystem(
     "netUpdate",
     Phase.NETWORK,
     [PeerDef, InboxDef, OutboxDef],
@@ -169,7 +169,7 @@ export function initNetAckUpdateSystem(em: EntityManager) {
       }
     }
   }
-  em.addSystem(
+  EM.addSystem(
     "netAck",
     Phase.NETWORK,
     [PeerDef, InboxDef],

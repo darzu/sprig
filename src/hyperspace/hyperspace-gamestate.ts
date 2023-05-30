@@ -126,7 +126,7 @@ export const restartGame = eventWizard(
 );
 
 export function registerGameStateSystems(em: EntityManager) {
-  em.addSystem(
+  EM.addSystem(
     "restartTimer",
     Phase.GAME_WORLD,
     null,

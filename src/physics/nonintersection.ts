@@ -156,7 +156,7 @@ export function doesTouch(
 
 // PRECONDITION: assumes world frames are all up to date
 export function registerUpdateWorldAABBs(em: EntityManager, s: string = "") {
-  em.addSystem(
+  EM.addSystem(
     "updateWorldAABBs",
     Phase.PHYSICS_WORLD_FROM_LOCAL,
     [PhysicsStateDef, WorldFrameDef, TransformDef],
@@ -202,13 +202,13 @@ export const PhysicsBroadCollidersDef = EM.defineComponent(
 export type PhysicsBroadColliders = Component<typeof PhysicsBroadCollidersDef>;
 
 export function registerPhysicsStateInit(em: EntityManager) {
-  em.addResource(PhysicsResultsDef);
-  em.addResource(PhysicsBroadCollidersDef);
+  EM.addResource(PhysicsResultsDef);
+  EM.addResource(PhysicsBroadCollidersDef);
 
   // TODO(@darzu): actually, this doesn't seem needed? delete?
   // // rectify dead objects with the physics system.
   // // TODO(@darzu): idk about this DeadDef thing
-  // em.registerSystem(
+  // EM.registerSystem(
   //   [ColliderDef, PositionDef, DeadDef],
   //   [PhysicsBroadCollidersDef],
   //   (objs, { _physBColliders }) => {
@@ -228,7 +228,7 @@ export function registerPhysicsStateInit(em: EntityManager) {
 
   // init the per-object physics state
   // TODO(@darzu): split this into different concerns
-  em.addSystem(
+  EM.addSystem(
     "physicsInit",
     Phase.PRE_PHYSICS,
     [ColliderDef, PositionDef],
@@ -252,7 +252,7 @@ export function registerPhysicsStateInit(em: EntityManager) {
           continue;
         }
         const parentId = PhysicsParentDef.isOn(o) ? o.physicsParent.id : 0;
-        const _phys = em.addComponent(o.id, PhysicsStateDef);
+        const _phys = EM.addComponent(o.id, PhysicsStateDef);
 
         // AABBs (collider derived)
         // TODO(@darzu): handle scale
@@ -332,7 +332,7 @@ export function registerPhysicsStateInit(em: EntityManager) {
 }
 
 export function registerUpdateInContactSystems(em: EntityManager) {
-  em.addSystem(
+  EM.addSystem(
     "updatePhysInContact",
     Phase.PHYSICS_CONTACT,
     [ColliderDef, PhysicsStateDef, WorldFrameDef],
@@ -397,7 +397,7 @@ export function registerUpdateInContactSystems(em: EntityManager) {
 
 export function registerPhysicsContactSystems(em: EntityManager) {
   // TODO(@darzu): split this system
-  em.addSystem(
+  EM.addSystem(
     "physicsStepContact",
     Phase.PHYSICS_CONTACT,
     [ColliderDef, PhysicsStateDef, PositionDef, WorldFrameDef],

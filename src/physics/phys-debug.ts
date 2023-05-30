@@ -46,10 +46,10 @@ export const DbgMeshDef = EM.defineComponent(
 );
 
 export function registerPhysicsDebuggerSystem(em: EntityManager) {
-  em.addResource(PhysicsDbgDef);
+  EM.addResource(PhysicsDbgDef);
 
   // add collider meshes
-  em.addSystem(
+  EM.addSystem(
     "dbgColliderMeshes",
     Phase.POST_PHYSICS,
     [PhysicsStateDef],
@@ -59,11 +59,11 @@ export function registerPhysicsDebuggerSystem(em: EntityManager) {
         if (!res._physDbgState.colliderMeshes.has(e.id)) {
           for (let c of e._phys.colliders) {
             // create debug entity
-            const dbgE = em.new();
+            const dbgE = EM.new();
 
             // with a wireframe mesh
             // TODO(@darzu): doesn't work w/o our line renderer
-            em.addComponent(
+            EM.addComponent(
               dbgE.id,
               RenderableConstructDef,
               res.assets.wireCube.proto,
@@ -72,16 +72,16 @@ export function registerPhysicsDebuggerSystem(em: EntityManager) {
             );
 
             // colored
-            em.addComponent(dbgE.id, ColorDef, V(0, 1, 0));
+            EM.addComponent(dbgE.id, ColorDef, V(0, 1, 0));
 
             // positioned and scaled
-            em.ensureComponentOn(dbgE, PositionDef);
-            em.ensureComponentOn(dbgE, ScaleDef);
+            EM.ensureComponentOn(dbgE, PositionDef);
+            EM.ensureComponentOn(dbgE, ScaleDef);
 
             // NOTE: we don't use the normal parent transform mechanism b/c
             //  colliders especially AABBs are only translated, not full matrix
             //  transform'ed
-            em.addComponent(dbgE.id, DbgMeshDef, c.id);
+            EM.addComponent(dbgE.id, DbgMeshDef, c.id);
 
             // remember
             res._physDbgState.colliderMeshes.set(e.id, dbgE.id);
@@ -93,7 +93,7 @@ export function registerPhysicsDebuggerSystem(em: EntityManager) {
   );
 
   // toggle debug meshes on and off
-  em.addSystem(
+  EM.addSystem(
     "debugMeshes",
     Phase.POST_PHYSICS,
     [DbgMeshDef, RenderableDef],
@@ -111,7 +111,7 @@ export function registerPhysicsDebuggerSystem(em: EntityManager) {
   );
 
   // update transform based on parent collider
-  em.addSystem(
+  EM.addSystem(
     "debugMeshTransform",
     Phase.POST_PHYSICS,
     [DbgMeshDef, WorldFrameDef, ...LocalFrameDefs],

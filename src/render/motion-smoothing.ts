@@ -46,7 +46,7 @@ export const MotionSmoothingDef = EM.defineComponent("motionSmoothing", () => {
 export type MotionSmoothing = Component<typeof MotionSmoothingDef>;
 
 export function initNetMotionRecordingSystem(em: EntityManager) {
-  em.addSystem(
+  EM.addSystem(
     "recordPreviousLocations",
     Phase.NETWORK,
     [MotionSmoothingDef],
@@ -84,15 +84,15 @@ function updateSmoothedWorldFrame(em: EntityManager, o: Entity) {
   let parent = null;
   if (PhysicsParentDef.isOn(o) && o.physicsParent.id) {
     if (!_hasRendererWorldFrame.has(o.physicsParent.id)) {
-      updateSmoothedWorldFrame(em, em.findEntity(o.physicsParent.id, [])!);
+      updateSmoothedWorldFrame(em, EM.findEntity(o.physicsParent.id, [])!);
     }
-    parent = em.findEntity(o.physicsParent.id, [SmoothedWorldFrameDef]);
+    parent = EM.findEntity(o.physicsParent.id, [SmoothedWorldFrameDef]);
     if (!parent) return;
   }
   let firstFrame = false;
   if (!SmoothedWorldFrameDef.isOn(o)) firstFrame = true;
-  em.ensureComponentOn(o, SmoothedWorldFrameDef);
-  em.ensureComponentOn(o, PrevSmoothedWorldFrameDef);
+  EM.ensureComponentOn(o, SmoothedWorldFrameDef);
+  EM.ensureComponentOn(o, PrevSmoothedWorldFrameDef);
   copyFrame(o.prevSmoothedWorldFrame, o.smoothedWorldFrame);
   mat4.copy(o.smoothedWorldFrame.transform, o.transform);
   updateFrameFromTransform(o.smoothedWorldFrame);
@@ -122,7 +122,7 @@ function updateSmoothedWorldFrame(em: EntityManager, o: Entity) {
 }
 
 export function initMotionSmoothingSystems(em: EntityManager) {
-  em.addSystem(
+  EM.addSystem(
     "smoothMotion",
     Phase.PRE_RENDER,
     [MotionSmoothingDef],
@@ -143,7 +143,7 @@ export function initMotionSmoothingSystems(em: EntityManager) {
     }
   );
 
-  em.addSystem(
+  EM.addSystem(
     "updateMotionSmoothing",
     Phase.PRE_RENDER,
     [MotionSmoothingDef],
@@ -173,7 +173,7 @@ export function initMotionSmoothingSystems(em: EntityManager) {
     }
   );
 
-  em.addSystem(
+  EM.addSystem(
     "updateSmoothedWorldFrames",
     Phase.PRE_RENDER,
     [RenderableDef, TransformDef],
@@ -184,8 +184,8 @@ export function initMotionSmoothingSystems(em: EntityManager) {
       for (const o of objs) {
         // TODO(@darzu): PERF HACK!
         if (DONT_SMOOTH_WORLD_FRAME) {
-          em.ensureComponentOn(o, SmoothedWorldFrameDef);
-          em.ensureComponentOn(o, PrevSmoothedWorldFrameDef);
+          EM.ensureComponentOn(o, SmoothedWorldFrameDef);
+          EM.ensureComponentOn(o, PrevSmoothedWorldFrameDef);
           continue;
         }
 
@@ -194,7 +194,7 @@ export function initMotionSmoothingSystems(em: EntityManager) {
     }
   );
 
-  em.addSystem(
+  EM.addSystem(
     "updateRendererWorldFrames",
     Phase.RENDER_WORLDFRAMES,
     [SmoothedWorldFrameDef, PrevSmoothedWorldFrameDef],
@@ -204,14 +204,14 @@ export function initMotionSmoothingSystems(em: EntityManager) {
         if (DONT_SMOOTH_WORLD_FRAME) {
           // TODO(@darzu): HACK!
           if (WorldFrameDef.isOn(o)) {
-            em.ensureComponentOn(o, RendererWorldFrameDef);
+            EM.ensureComponentOn(o, RendererWorldFrameDef);
             copyFrame(o.rendererWorldFrame, o.world);
             // (o as any).rendererWorldFrame = o.world;
           }
           continue;
         }
 
-        em.ensureComponentOn(o, RendererWorldFrameDef);
+        EM.ensureComponentOn(o, RendererWorldFrameDef);
 
         switch (BLEND_SIMULATION_FRAMES_STRATEGY) {
           case "interpolate":

@@ -81,7 +81,7 @@ EM.addLazyInit([AssetsDef], [UICursorDef], ({ assets }) => {
 export async function initFontEditor(em: EntityManager) {
   // console.log(`panel ${PANEL_W}x${PANEL_H}`);
 
-  const res = await em.whenResources(AssetsDef, RendererDef, ButtonsStateDef);
+  const res = await EM.whenResources(AssetsDef, RendererDef, ButtonsStateDef);
 
   // res.renderer.pipelines = [
   //   // ...shadowPipelines,
@@ -99,20 +99,20 @@ export async function initFontEditor(em: EntityManager) {
     postProcess,
   ];
 
-  const sunlight = em.new();
-  em.ensureComponentOn(sunlight, PointLightDef);
+  const sunlight = EM.new();
+  EM.ensureComponentOn(sunlight, PointLightDef);
   sunlight.pointLight.constant = 1.0;
   vec3.copy(sunlight.pointLight.ambient, [0.8, 0.8, 0.8]);
-  em.ensureComponentOn(sunlight, PositionDef, V(10, 100, 10));
+  EM.ensureComponentOn(sunlight, PositionDef, V(10, 100, 10));
   // TODO(@darzu): weird, why does renderable need to be on here?
-  em.ensureComponentOn(
+  EM.ensureComponentOn(
     sunlight,
     RenderableConstructDef,
     res.assets.ball.proto,
     false
   );
 
-  const panel = em.new();
+  const panel = EM.new();
   const panelMesh = makePlaneMesh(
     -PANEL_W * 0.5,
     PANEL_W * 0.5,
@@ -122,13 +122,13 @@ export async function initFontEditor(em: EntityManager) {
   // panelMesh.colors[0] = [0.1, 0.3, 0.1];
   // panelMesh.colors[1] = [0.1, 0.1, 0.3];
   panelMesh.colors[0] = V(0.4, 0.4, 0.4);
-  em.ensureComponentOn(panel, RenderableConstructDef, panelMesh);
-  // em.ensureComponentOn(panel, ColorDef, [0.2, 0.3, 0.2]);
-  em.ensureComponentOn(panel, PositionDef, V(0, 0, 0));
+  EM.ensureComponentOn(panel, RenderableConstructDef, panelMesh);
+  // EM.ensureComponentOn(panel, ColorDef, [0.2, 0.3, 0.2]);
+  EM.ensureComponentOn(panel, PositionDef, V(0, 0, 0));
 
   if (DBG_3D) {
     const g = createGhost();
-    em.ensureComponentOn(g, RenderableConstructDef, res.assets.ball.proto);
+    EM.ensureComponentOn(g, RenderableConstructDef, res.assets.ball.proto);
 
     // vec3.copy(g.position, [4.36,30.83,-1.53]);
     // quat.copy(g.rotation, [0.00,0.71,0.00,0.70]);

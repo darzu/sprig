@@ -22,7 +22,7 @@ export const ToolDef = EM.defineComponent("tool", (type?: string) => ({
 }));
 
 export function registerToolSystems(em: EntityManager) {
-  em.addSystem(
+  EM.addSystem(
     "toolPickup",
     Phase.POST_GAME_PLAYERS,
     [ToolDef, InRangeDef],
@@ -43,7 +43,7 @@ export function registerToolSystems(em: EntityManager) {
     }
   );
 
-  em.addSystem(
+  EM.addSystem(
     "toolDrop",
     Phase.POST_GAME_PLAYERS,
     [HsPlayerDef, PositionDef, RotationDef],
@@ -76,11 +76,11 @@ export function registerToolSystems(em: EntityManager) {
     runEvent: (em: EntityManager, [player, tool]) => {
       tool.physicsParent.id = player.id;
       // TODO(@darzu): add interact box
-      // em.removeComponent(tool.id, InteractableDef);
+      // EM.removeComponent(tool.id, InteractableDef);
       // TODO(@darzu): add interact box
-      // em.removeComponent(tool.id, InteractableDef);
+      // EM.removeComponent(tool.id, InteractableDef);
       vec3.set(0, 0, -1.5, tool.position);
-      em.ensureComponentOn(tool, ScaleDef);
+      EM.ensureComponentOn(tool, ScaleDef);
       vec3.copy(tool.scale, [0.5, 0.5, 0.5]);
       player.hsPlayer.tool = tool.id;
       if (ColliderDef.isOn(tool)) tool.collider.solid = false;
@@ -96,9 +96,9 @@ export function registerToolSystems(em: EntityManager) {
     runEvent: (em: EntityManager, [player, tool], location: vec3) => {
       tool.physicsParent.id = 0;
       // TODO(@darzu): add interact box
-      // em.addComponent(tool.id, InteractableDef);
+      // EM.addComponent(tool.id, InteractableDef);
       vec3.copy(tool.position, location!);
-      em.ensureComponentOn(tool, ScaleDef);
+      EM.ensureComponentOn(tool, ScaleDef);
       vec3.copy(tool.scale, [1, 1, 1]);
       player.hsPlayer.tool = 0;
       if (ColliderDef.isOn(tool)) tool.collider.solid = true;

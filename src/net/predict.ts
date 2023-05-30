@@ -7,7 +7,7 @@ import { AngularVelocityDef, LinearVelocityDef } from "../motion/velocity.js";
 import { Phase } from "../ecs/sys-phase.js";
 
 export function initNetPredictSystems(em: EntityManager) {
-  em.addSystem(
+  EM.addSystem(
     "netPredict",
     Phase.NETWORK,
     [PredictDef, PositionDef, LinearVelocityDef],

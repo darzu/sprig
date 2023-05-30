@@ -1,5 +1,5 @@
 import { Collider, ColliderDef } from "../physics/collider.js";
-import { EntityManager } from "../ecs/entity-manager.js";
+import { EM, EntityManager } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { clamp } from "../utils/math.js";
 import {
@@ -31,7 +31,7 @@ import { Phase } from "../ecs/sys-phase.js";
 // TODO(@darzu): implement checkAtRest (deleted in this commit)
 
 export function registerPhysicsClampVelocityByContact(em: EntityManager) {
-  em.addSystem(
+  EM.addSystem(
     "clampVelocityByContact",
     Phase.PHYSICS_MOTION,
     null,
@@ -44,8 +44,8 @@ export function registerPhysicsClampVelocityByContact(em: EntityManager) {
       for (let [_, data] of lastContactData) {
         const ac = res._physBColliders.colliders[data.aCId];
         const bc = res._physBColliders.colliders[data.bCId];
-        const a = em.findEntity(ac.oId, [ColliderDef]);
-        const b = em.findEntity(bc.oId, [ColliderDef]);
+        const a = EM.findEntity(ac.oId, [ColliderDef]);
+        const b = EM.findEntity(bc.oId, [ColliderDef]);
         // both objects must still exist and have colliders
         if (!a || !b) continue;
         // both objects must be solid
@@ -85,7 +85,7 @@ export function registerPhysicsClampVelocityByContact(em: EntityManager) {
 }
 
 export function registerPhysicsClampVelocityBySize(em: EntityManager) {
-  em.addSystem(
+  EM.addSystem(
     "registerPhysicsClampVelocityBySize",
     Phase.PHYSICS_MOTION,
     [LinearVelocityDef, ColliderDef],

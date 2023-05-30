@@ -13,20 +13,20 @@ export const GhostDef = EM.defineComponent("ghost", () => ({}));
 
 export function createGhost() {
   const em: EntityManager = EM;
-  const g = em.new();
-  em.ensureComponentOn(g, GhostDef);
-  em.ensureComponentOn(g, ControllableDef);
+  const g = EM.new();
+  EM.ensureComponentOn(g, GhostDef);
+  EM.ensureComponentOn(g, ControllableDef);
   g.controllable.modes.canFall = false;
   g.controllable.modes.canJump = false;
   // g.controllable.modes.canYaw = true;
   // g.controllable.modes.canPitch = true;
-  em.ensureComponentOn(g, CameraFollowDef, 1);
+  EM.ensureComponentOn(g, CameraFollowDef, 1);
   setCameraFollowPosition(g, "firstPerson");
-  em.ensureComponentOn(g, PositionDef);
-  em.ensureComponentOn(g, RotationDef);
+  EM.ensureComponentOn(g, PositionDef);
+  EM.ensureComponentOn(g, RotationDef);
   // quat.rotateY(g.rotation, quat.IDENTITY, (-5 * Math.PI) / 8);
   // quat.rotateX(g.cameraFollow.rotationOffset, quat.IDENTITY, -Math.PI / 8);
-  em.ensureComponentOn(g, LinearVelocityDef);
+  EM.ensureComponentOn(g, LinearVelocityDef);
 
   return g;
 }

@@ -176,7 +176,7 @@ function updateWorldFromLocalAndParent(o: Transformable) {
 export function registerInitTransforms(em: EntityManager) {
   // TODO(@darzu): WorldFrame should be optional, only needed
   //  for parented objs (which is maybe the uncommon case).
-  em.addSystem(
+  EM.addSystem(
     "ensureWorldFrame",
     Phase.PRE_PHYSICS,
     [...LocalFrameDefs],
@@ -184,7 +184,7 @@ export function registerInitTransforms(em: EntityManager) {
     (objs) => {
       for (let o of objs) {
         if (!WorldFrameDef.isOn(o)) {
-          em.ensureComponentOn(o, WorldFrameDef);
+          EM.ensureComponentOn(o, WorldFrameDef);
           copyFrame(o.world, o);
         }
       }
@@ -192,14 +192,14 @@ export function registerInitTransforms(em: EntityManager) {
   );
 }
 export function registerUpdateLocalFromPosRotScale(em: EntityManager) {
-  em.addSystem(
+  EM.addSystem(
     "ensureFillOutLocalFrame",
     Phase.PRE_PHYSICS,
     null,
     [],
     (objs) => {
       // TODO(@darzu): PERF. Hacky custom query! Not cached n stuff.
-      for (let o of em.entities.values()) {
+      for (let o of EM.entities.values()) {
         if (!o.id) continue;
         // TODO(@darzu): do we really want these on every entity?
         if (
@@ -208,17 +208,17 @@ export function registerUpdateLocalFromPosRotScale(em: EntityManager) {
           ScaleDef.isOn(o) ||
           TransformDef.isOn(o)
         ) {
-          em.ensureComponentOn(o, PositionDef);
-          em.ensureComponentOn(o, RotationDef);
-          em.ensureComponentOn(o, ScaleDef);
-          em.ensureComponentOn(o, TransformDef);
+          EM.ensureComponentOn(o, PositionDef);
+          EM.ensureComponentOn(o, RotationDef);
+          EM.ensureComponentOn(o, ScaleDef);
+          EM.ensureComponentOn(o, TransformDef);
         }
       }
     }
   );
 
   // calculate the world transform
-  em.addSystem(
+  EM.addSystem(
     "updateLocalFromPosRotScale",
     Phase.PHYSICS_FINISH_LOCAL,
     [...LocalFrameDefs],
@@ -235,7 +235,7 @@ export function registerUpdateWorldFromLocalAndParent(
   phase: Phase
 ) {
   // calculate the world transform
-  em.addSystem(
+  EM.addSystem(
     "updateWorldFromLocalAndParent" + suffix,
     phase,
     [WorldFrameDef, ...LocalFrameDefs],

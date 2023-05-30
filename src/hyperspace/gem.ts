@@ -29,27 +29,27 @@ export const { GemPropsDef, GemLocalDef, createGem } = defineNetEntityHelper(
     build: (gem, res) => {
       const em: EntityManager = EM;
 
-      em.ensureComponentOn(gem, PositionDef, V(0, 0, 10));
+      EM.ensureComponentOn(gem, PositionDef, V(0, 0, 10));
 
-      em.ensureComponentOn(
+      EM.ensureComponentOn(
         gem,
         RenderableConstructDef,
         res.assets.spacerock.proto
       );
-      em.ensureComponentOn(gem, PhysicsParentDef, gem.gemProps.shipId);
-      em.ensureComponentOn(gem, ColorDef);
+      EM.ensureComponentOn(gem, PhysicsParentDef, gem.gemProps.shipId);
+      EM.ensureComponentOn(gem, ColorDef);
 
       // create seperate hitbox for interacting with the gem
-      const interactBox = em.new();
+      const interactBox = EM.new();
       const interactAABB = copyAABB(createAABB(), res.assets.spacerock.aabb);
-      em.ensureComponentOn(interactBox, PhysicsParentDef, gem.id);
-      em.ensureComponentOn(interactBox, PositionDef, V(0, 0, 0));
-      em.ensureComponentOn(interactBox, ColliderDef, {
+      EM.ensureComponentOn(interactBox, PhysicsParentDef, gem.id);
+      EM.ensureComponentOn(interactBox, PositionDef, V(0, 0, 0));
+      EM.ensureComponentOn(interactBox, ColliderDef, {
         shape: "AABB",
         solid: false,
         aabb: interactAABB,
       });
-      em.ensureComponentOn(gem, InteractableDef, interactBox.id);
+      EM.ensureComponentOn(gem, InteractableDef, interactBox.id);
     },
   }
 );

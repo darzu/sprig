@@ -103,14 +103,14 @@ export function createOrResetBullet(
 ) {
   const props = e.bulletConstruct;
   assertDbg(props);
-  em.ensureComponentOn(e, PositionDef);
+  EM.ensureComponentOn(e, PositionDef);
   vec3.copy(e.position, props.location);
-  em.ensureComponentOn(e, RotationDef);
-  // em.ensureComponentOn(e, LinearVelocityDef);
+  EM.ensureComponentOn(e, RotationDef);
+  // EM.ensureComponentOn(e, LinearVelocityDef);
   // vec3.copy(e.linearVelocity, props.linearVelocity);
-  em.ensureComponentOn(e, AngularVelocityDef);
+  EM.ensureComponentOn(e, AngularVelocityDef);
   vec3.copy(e.angularVelocity, props.angularVelocity);
-  em.ensureComponentOn(e, ColorDef);
+  EM.ensureComponentOn(e, ColorDef);
   if (props.team === 1) {
     vec3.copy(e.color, ENDESGA16.deepGreen);
   } else if (props.team === 2) {
@@ -118,28 +118,28 @@ export function createOrResetBullet(
   } else {
     vec3.copy(e.color, ENDESGA16.orange);
   }
-  em.ensureComponentOn(e, MotionSmoothingDef);
-  em.ensureComponentOn(e, RenderableConstructDef, res.assets.ball.proto);
-  em.ensureComponentOn(e, AuthorityDef, res.me.pid);
-  em.ensureComponentOn(e, BulletDef);
+  EM.ensureComponentOn(e, MotionSmoothingDef);
+  EM.ensureComponentOn(e, RenderableConstructDef, res.assets.ball.proto);
+  EM.ensureComponentOn(e, AuthorityDef, res.me.pid);
+  EM.ensureComponentOn(e, BulletDef);
   e.bullet.team = props.team;
   e.bullet.health = props.health;
-  em.ensureComponentOn(e, ColliderDef, {
+  EM.ensureComponentOn(e, ColliderDef, {
     shape: "AABB",
     solid: false,
     aabb: res.assets.ball.aabb,
   });
-  em.ensureComponentOn(e, LifetimeDef);
+  EM.ensureComponentOn(e, LifetimeDef);
   e.lifetime.ms = 8000;
-  em.ensureComponentOn(e, SyncDef);
+  EM.ensureComponentOn(e, SyncDef);
   e.sync.dynamicComponents = [PositionDef.id];
   e.sync.fullComponents = [BulletConstructDef.id];
-  em.ensureComponentOn(e, PredictDef);
-  // em.ensureComponentOn(e, GravityDef);
+  EM.ensureComponentOn(e, PredictDef);
+  // EM.ensureComponentOn(e, GravityDef);
   // e.gravity[1] = -props.gravity;
 
   // TODO(@darzu): MULTIPLAYER: fix sync & predict to work with parametric motion
-  em.ensureComponentOn(e, ParametricDef);
+  EM.ensureComponentOn(e, ParametricDef);
   vec3.copy(e.parametric.init.pos, props.location);
   vec3.copy(e.parametric.init.vel, props.linearVelocity);
   vec3.copy(e.parametric.init.accel, [0, -props.gravity, 0]);
@@ -148,7 +148,7 @@ export function createOrResetBullet(
 }
 
 export function registerBuildBulletsSystem(em: EntityManager) {
-  em.addSystem(
+  EM.addSystem(
     "buildBullets",
     Phase.GAME_WORLD,
     [BulletConstructDef],
@@ -157,7 +157,7 @@ export function registerBuildBulletsSystem(em: EntityManager) {
       for (let b of bullets) {
         // if (FinishedDef.isOn(b)) continue;
         // createOrUpdateBullet(em, b, res.me.pid, res.assets);
-        // em.ensureComponentOn(b, FinishedDef);
+        // EM.ensureComponentOn(b, FinishedDef);
       }
     }
   );
@@ -165,7 +165,7 @@ export function registerBuildBulletsSystem(em: EntityManager) {
 
 export function registerBulletUpdate(em: EntityManager) {
   // TODO(@darzu): remove?
-  em.addSystem(
+  EM.addSystem(
     "updateBullets",
     Phase.GAME_WORLD,
     [BulletConstructDef, BulletDef, PositionDef, LinearVelocityDef],
@@ -206,15 +206,15 @@ export async function fireBullet(
 
   let e: BulletEnt;
   if (_bulletPool.length < _maxBullets) {
-    let e_ = em.new();
-    em.ensureComponentOn(e_, BulletConstructDef);
+    let e_ = EM.new();
+    EM.ensureComponentOn(e_, BulletConstructDef);
     e = e_;
     _bulletPool.push(e);
   } else {
     e = _bulletPool[_nextBulletIdx];
 
     // reconstitute
-    em.tryRemoveComponent(e.id, DeadDef);
+    EM.tryRemoveComponent(e.id, DeadDef);
     if (RenderableDef.isOn(e)) e.renderable.hidden = false;
 
     _nextBulletIdx += 1;
@@ -237,7 +237,7 @@ export async function fireBullet(
 
   // TODO(@darzu): This breaks multiplayer maybe!
   // TODO(@darzu): MULTIPLAYER. need to think how multiplayer and entity pools interact.
-  const res = await em.whenResources(MeDef, TimeDef, AssetsDef);
+  const res = await EM.whenResources(MeDef, TimeDef, AssetsDef);
   return createOrResetBullet(em, e, res);
 }
 
@@ -261,23 +261,23 @@ async function initBulletPartPool() {
   if (_bulletPartPoolIsInit) return;
   _bulletPartPoolIsInit = true;
   const em: EntityManager = EM;
-  const { assets } = await em.whenResources(AssetsDef);
+  const { assets } = await EM.whenResources(AssetsDef);
 
   const numSetsInPool = 20;
 
   for (let i = 0; i < numSetsInPool; i++) {
     let bset: BulletPart[] = [];
     for (let part of assets.ball_broken) {
-      const pe = em.new();
-      em.ensureComponentOn(pe, RenderableConstructDef, part.proto);
-      em.ensureComponentOn(pe, ColorDef);
-      em.ensureComponentOn(pe, RotationDef);
-      em.ensureComponentOn(pe, PositionDef);
-      em.ensureComponentOn(pe, LinearVelocityDef);
-      em.ensureComponentOn(pe, AngularVelocityDef);
-      // em.ensureComponentOn(pe, LifetimeDef, 2000);
-      em.ensureComponentOn(pe, GravityDef, V(0, -4 * 0.00001, 0));
-      em.ensureComponentOn(pe, SplinterParticleDef);
+      const pe = EM.new();
+      EM.ensureComponentOn(pe, RenderableConstructDef, part.proto);
+      EM.ensureComponentOn(pe, ColorDef);
+      EM.ensureComponentOn(pe, RotationDef);
+      EM.ensureComponentOn(pe, PositionDef);
+      EM.ensureComponentOn(pe, LinearVelocityDef);
+      EM.ensureComponentOn(pe, AngularVelocityDef);
+      // EM.ensureComponentOn(pe, LifetimeDef, 2000);
+      EM.ensureComponentOn(pe, GravityDef, V(0, -4 * 0.00001, 0));
+      EM.ensureComponentOn(pe, SplinterParticleDef);
       bset.push(pe);
     }
     bulletPartPool.push(bset);
@@ -303,7 +303,7 @@ export async function breakBullet(
 
   if (!_bulletPartPoolIsInit) await initBulletPartPool();
 
-  // const { music, assets } = await em.whenResources(MusicDef, AssetsDef);
+  // const { music, assets } = await EM.whenResources(MusicDef, AssetsDef);
 
   const parts = getNextBulletPartSet();
   for (let pe of parts) {
@@ -320,16 +320,16 @@ export async function breakBullet(
     vec3.add(vel, [0, +1, 0], vel);
     vec3.normalize(vel, vel);
     vec3.scale(vel, 0.02, vel);
-    em.ensureComponentOn(pe, LinearVelocityDef);
+    EM.ensureComponentOn(pe, LinearVelocityDef);
     vec3.copy(pe.linearVelocity, vel);
-    em.ensureComponentOn(pe, AngularVelocityDef);
+    EM.ensureComponentOn(pe, AngularVelocityDef);
     vec3.copy(pe.angularVelocity, vel);
-    // em.ensureComponentOn(pe, LifetimeDef, 2000);
-    em.ensureComponentOn(pe, GravityDef);
+    // EM.ensureComponentOn(pe, LifetimeDef, 2000);
+    EM.ensureComponentOn(pe, GravityDef);
     vec3.copy(pe.gravity, [0, -4 * 0.00001, 0]);
   }
 
-  em.ensureComponentOn(bullet, DeadDef);
+  EM.ensureComponentOn(bullet, DeadDef);
 }
 
 // TODO(@darzu): simulateBullet shouldn't be needed any more since we use

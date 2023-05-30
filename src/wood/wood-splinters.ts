@@ -64,7 +64,7 @@ function createSplinterPool(
     if (nextIdx >= pool.length) nextIdx = 0;
     return pool[nextIdx++];
   }
-  // const { assets } = await em.whenResources(AssetsDef);
+  // const { assets } = await EM.whenResources(AssetsDef);
 
   for (let i = 0; i < numInPool; i++) {
     // create flying splinter
@@ -80,8 +80,8 @@ function createSplinterPool(
       depth
     );
     const splinterMesh = normalizeMesh(_splinterMesh);
-    const splinter = em.new();
-    em.ensureComponentOn(
+    const splinter = EM.new();
+    EM.ensureComponentOn(
       splinter,
       RenderableConstructDef,
       splinterMesh,
@@ -91,13 +91,13 @@ function createSplinterPool(
       undefined,
       true // hidden
     );
-    em.ensureComponentOn(splinter, ColorDef);
-    em.ensureComponentOn(splinter, PositionDef);
-    em.ensureComponentOn(splinter, RotationDef);
-    em.ensureComponentOn(splinter, AngularVelocityDef);
-    em.ensureComponentOn(splinter, LinearVelocityDef);
-    em.ensureComponentOn(splinter, GravityDef);
-    em.ensureComponentOn(splinter, SplinterParticleDef);
+    EM.ensureComponentOn(splinter, ColorDef);
+    EM.ensureComponentOn(splinter, PositionDef);
+    EM.ensureComponentOn(splinter, RotationDef);
+    EM.ensureComponentOn(splinter, AngularVelocityDef);
+    EM.ensureComponentOn(splinter, LinearVelocityDef);
+    EM.ensureComponentOn(splinter, GravityDef);
+    EM.ensureComponentOn(splinter, SplinterParticleDef);
     pool.push(splinter);
   }
 

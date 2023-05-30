@@ -1,4 +1,4 @@
-import { EntityManager } from "../ecs/entity-manager.js";
+import { EM, EntityManager } from "../ecs/entity-manager.js";
 import { Serializer, Deserializer } from "../utils/serialize.js";
 import {
   FromNetworkEvent,
@@ -27,7 +27,7 @@ import { Phase } from "../ecs/sys-phase.js";
 const JOIN_RETRANSMIT = 100;
 
 function registerConnectToServer(em: EntityManager) {
-  em.addSystem(
+  EM.addSystem(
     "connectToServer",
     Phase.NETWORK,
     [PeerDef],
@@ -44,7 +44,7 @@ function registerConnectToServer(em: EntityManager) {
         case "connecting":
           // TODO: this is a hacky way to tell if we're connected.
           if (peers.length > 0) {
-            em.addComponent(peers[0].id, HostDef);
+            EM.addComponent(peers[0].id, HostDef);
             // TODO: consider putting this message into the outbox rather than directly on the event queue
             let message = new Serializer(8);
             message.writeUint8(MessageType.Join);
@@ -106,7 +106,7 @@ function registerHandleJoin(em: EntityManager) {
       }
     }
   };
-  em.addSystem(
+  EM.addSystem(
     "handleJoin",
     Phase.NETWORK,
     [PeerDef, InboxDef, OutboxDef],
@@ -124,26 +124,26 @@ function registerHandleJoinResponse(em: EntityManager) {
       while ((inbox.get(MessageType.JoinResponse) || []).length > 0) {
         console.log("received join response");
         let message = inbox.get(MessageType.JoinResponse)!.shift()!;
-        let join = em.getResource(JoinDef);
+        let join = EM.getResource(JoinDef);
         // TODO: add player object
         // TODO: this is a hack, need to actually have some system for reserving
         // object ids at each node
         if (join) {
           let pid = message.readUint8();
-          em.setDefaultRange("net");
-          em.setIdRange("net", pid * 10000, (pid + 1) * 10000);
+          EM.setDefaultRange("net");
+          EM.setIdRange("net", pid * 10000, (pid + 1) * 10000);
           let npeers = message.readUint8();
           for (let i = 0; i < npeers; i++) {
             let address = message.readString();
             eventsToNetwork.push({ type: NetworkEventType.Connect, address });
           }
-          em.addResource(MeDef, pid, false);
-          em.removeResource(JoinDef);
+          EM.addResource(MeDef, pid, false);
+          EM.removeResource(JoinDef);
         }
       }
     }
   };
-  em.addSystem(
+  EM.addSystem(
     "handleJoinResponse",
     Phase.NETWORK,
     [PeerDef, InboxDef, OutboxDef],

@@ -89,11 +89,11 @@ export const { HypMastPropsDef, HypMastLocalDef, createHypMastNow } =
     build: (mast, res) => {
       const em: EntityManager = EM;
 
-      em.ensureComponentOn(mast, PositionDef, V(0, 0, 0));
+      EM.ensureComponentOn(mast, PositionDef, V(0, 0, 0));
 
-      em.ensureComponentOn(mast, RenderableConstructDef, res.assets.mast.mesh);
-      em.ensureComponentOn(mast, PhysicsParentDef, mast.hypMastProps.shipId);
-      em.ensureComponentOn(mast, ColorDef, ENDESGA16.lightBrown);
+      EM.ensureComponentOn(mast, RenderableConstructDef, res.assets.mast.mesh);
+      EM.ensureComponentOn(mast, PhysicsParentDef, mast.hypMastProps.shipId);
+      EM.ensureComponentOn(mast, ColorDef, ENDESGA16.lightBrown);
       vec3.scale(mast.color, 0.5, mast.color);
 
       // createRib(mast.id, BOOM_HEIGHT)
@@ -102,19 +102,19 @@ export const { HypMastPropsDef, HypMastLocalDef, createHypMastNow } =
 
       // const sail1 = TODO; // TODO(@darzu):
 
-      // const sail2 = em.new();
-      // em.ensureComponentOn(sail2, PositionDef, V(0, BOOM_HEIGHT, 0));
-      // em.ensureComponentOn(
+      // const sail2 = EM.new();
+      // EM.ensureComponentOn(sail2, PositionDef, V(0, BOOM_HEIGHT, 0));
+      // EM.ensureComponentOn(
       //   sail2,
       //   RenderableConstructDef,
       //   cloneMesh(res.assets.sail.mesh)
       // );
-      // //em.ensureComponentOn(sail2, ScaleDef, [12, 12, 12]);
-      // em.ensureComponentOn(sail2, RotationDef);
-      // em.ensureComponentOn(sail2, SailColorDef, STAR2_COLOR);
-      // em.ensureComponentOn(sail2, ColorDef, DEFAULT_SAIL_COLOR);
-      // em.ensureComponentOn(sail2, PhysicsParentDef, mast.id);
-      // em.whenEntityHas(
+      // //EM.ensureComponentOn(sail2, ScaleDef, [12, 12, 12]);
+      // EM.ensureComponentOn(sail2, RotationDef);
+      // EM.ensureComponentOn(sail2, SailColorDef, STAR2_COLOR);
+      // EM.ensureComponentOn(sail2, ColorDef, DEFAULT_SAIL_COLOR);
+      // EM.ensureComponentOn(sail2, PhysicsParentDef, mast.id);
+      // EM.whenEntityHas(
       //   sail2,
       //   RenderDataStdDef,
       //   RenderableDef,
@@ -127,14 +127,14 @@ export const { HypMastPropsDef, HypMastLocalDef, createHypMastNow } =
       // });
 
       // create seperate hitbox for interacting with the mast
-      const interactBox = em.new();
-      em.ensureComponentOn(
+      const interactBox = EM.new();
+      EM.ensureComponentOn(
         interactBox,
         PhysicsParentDef,
         mast.hypMastProps.shipId
       );
-      em.ensureComponentOn(interactBox, PositionDef, V(0, 0, 0));
-      em.ensureComponentOn(interactBox, ColliderDef, {
+      EM.ensureComponentOn(interactBox, PositionDef, V(0, 0, 0));
+      EM.ensureComponentOn(interactBox, ColliderDef, {
         shape: "AABB",
         solid: false,
         aabb: {
@@ -164,7 +164,7 @@ export const { HypMastPropsDef, HypMastLocalDef, createHypMastNow } =
   });
 
 export function registerHypersailSystems(em: EntityManager) {
-  em.addSystem(
+  EM.addSystem(
     "updateMastBoom",
     Phase.GAME_PLAYERS,
     [HypMastPropsDef, HypMastLocalDef, TurretDef, BoomPitchesDef],
@@ -236,7 +236,7 @@ export function registerHypersailSystems(em: EntityManager) {
     }
   );
 
-  em.addSystem(
+  EM.addSystem(
     "sail",
     Phase.GAME_PLAYERS,
     [HsShipPropsDef, UVShipDef, WorldFrameDef, AuthorityDef],
@@ -247,7 +247,7 @@ export function registerHypersailSystems(em: EntityManager) {
       }
       for (let ship of es) {
         if (ship.authority.pid !== res.me.pid) continue;
-        const stars = em.filterEntities([
+        const stars = EM.filterEntities([
           DarkStarPropsDef,
           WorldFrameDef,
           ColorDef,

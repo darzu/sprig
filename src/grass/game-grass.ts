@@ -127,7 +127,7 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
   // TODO(@darzu): HACK. these have to be set before the CY instantiator runs.
   // outlineRender.fragOverrides!.lineWidth = 3.0;
 
-  const res = await em.whenResources(
+  const res = await EM.whenResources(
     AssetsDef,
     // WoodAssetsDef,
     // GlobalCursor3dDef,
@@ -147,7 +147,7 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
   // console.dir(mapJfa);
   // console.dir(dbgGridCompose);
 
-  em.addSystem(
+  EM.addSystem(
     "grassGameRenderPipelines",
     Phase.GAME_WORLD,
     null,
@@ -169,27 +169,27 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
   );
 
   // Sun
-  const sunlight = em.new();
-  em.ensureComponentOn(sunlight, PointLightDef);
+  const sunlight = EM.new();
+  EM.ensureComponentOn(sunlight, PointLightDef);
   // sunlight.pointLight.constant = 1.0;
   sunlight.pointLight.constant = 1.0;
   sunlight.pointLight.linear = 0.0;
   sunlight.pointLight.quadratic = 0.0;
   vec3.copy(sunlight.pointLight.ambient, [0.2, 0.2, 0.2]);
   vec3.copy(sunlight.pointLight.diffuse, [0.5, 0.5, 0.5]);
-  em.ensureComponentOn(sunlight, PositionDef, V(50, 300, 10));
-  em.ensureComponentOn(sunlight, RenderableConstructDef, res.assets.ball.proto);
+  EM.ensureComponentOn(sunlight, PositionDef, V(50, 300, 10));
+  EM.ensureComponentOn(sunlight, RenderableConstructDef, res.assets.ball.proto);
 
   // score
-  const score = em.addResource(ScoreDef);
+  const score = EM.addResource(ScoreDef);
 
   // sky dome?
   const SKY_HALFSIZE = 1000;
   const domeMesh = makeDome(16, 8, SKY_HALFSIZE);
   const sky = EM.new();
-  em.ensureComponentOn(sky, PositionDef, V(0, -100, 0));
+  EM.ensureComponentOn(sky, PositionDef, V(0, -100, 0));
   const skyMesh = domeMesh;
-  em.ensureComponentOn(
+  EM.ensureComponentOn(
     sky,
     RenderableConstructDef,
     skyMesh,
@@ -199,22 +199,22 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
   );
 
   // ground
-  const ground = em.new();
+  const ground = EM.new();
   const groundMesh = cloneMesh(res.assets.unitCube.mesh);
   transformMesh(
     groundMesh,
     mat4.fromScaling(V(WORLD_HEIGHT, 1.0, WORLD_WIDTH))
   );
-  em.ensureComponentOn(ground, RenderableConstructDef, groundMesh);
-  em.ensureComponentOn(ground, ColorDef, ENDESGA16.darkGreen);
-  // em.set(ground, ColorDef, ENDESGA16.darkGreen);
-  // em.ensureComponentOn(p, ColorDef, [0.2, 0.3, 0.2]);
-  em.ensureComponentOn(
+  EM.ensureComponentOn(ground, RenderableConstructDef, groundMesh);
+  EM.ensureComponentOn(ground, ColorDef, ENDESGA16.darkGreen);
+  // EM.set(ground, ColorDef, ENDESGA16.darkGreen);
+  // EM.ensureComponentOn(p, ColorDef, [0.2, 0.3, 0.2]);
+  EM.ensureComponentOn(
     ground,
     PositionDef,
     V(-WORLD_HEIGHT * 0.5, -1.1, -WORLD_WIDTH * 0.5)
   );
-  // em.ensureComponentOn(plane, PositionDef, [0, -5, 0]);
+  // EM.ensureComponentOn(plane, PositionDef, [0, -5, 0]);
 
   // grass
   const lod1: GrassTilesetOpts = {
@@ -270,8 +270,8 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
     maxBladeDraw,
   };
   const grMesh = createGrassTile(tileOpts);
-  const gr = em.new();
-  em.ensureComponentOn(
+  const gr = EM.new();
+  EM.ensureComponentOn(
     gr,
     RenderableConstructDef,
     grMesh,
@@ -282,8 +282,8 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
     grassPoolPtr
     // true
   );
-  em.ensureComponentOn(gr, ColorDef, randColor());
-  em.ensureComponentOn(gr, PositionDef);
+  EM.ensureComponentOn(gr, ColorDef, randColor());
+  EM.ensureComponentOn(gr, PositionDef);
 
   // set
   const ts = await Promise.all([
@@ -296,7 +296,7 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
 
   console.log(`num grass tris: ${sum(ts.map((t) => t.numTris))}`);
 
-  em.addResource(WindDef);
+  EM.addResource(WindDef);
 
   registerChangeWindSystems();
 
@@ -329,13 +329,13 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
     g.controllable.sprintMul = 15;
     const sphereMesh = cloneMesh(res.assets.ball.mesh);
     const visible = false;
-    em.ensureComponentOn(g, RenderableConstructDef, sphereMesh, visible);
-    em.ensureComponentOn(g, ColorDef, V(0.1, 0.1, 0.1));
-    // em.ensureComponentOn(g, PositionDef, V(0, 0, 0));
-    // em.ensureComponentOn(b2, PositionDef, [0, 0, -1.2]);
-    em.ensureComponentOn(g, WorldFrameDef);
-    // em.ensureComponentOn(b2, PhysicsParentDef, g.id);
-    em.ensureComponentOn(g, ColliderDef, {
+    EM.ensureComponentOn(g, RenderableConstructDef, sphereMesh, visible);
+    EM.ensureComponentOn(g, ColorDef, V(0.1, 0.1, 0.1));
+    // EM.ensureComponentOn(g, PositionDef, V(0, 0, 0));
+    // EM.ensureComponentOn(b2, PositionDef, [0, 0, -1.2]);
+    EM.ensureComponentOn(g, WorldFrameDef);
+    // EM.ensureComponentOn(b2, PhysicsParentDef, g.id);
+    EM.ensureComponentOn(g, ColliderDef, {
       shape: "AABB",
       solid: false,
       aabb: res.assets.ball.aabb,
@@ -376,7 +376,7 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
     // g.cameraFollow.yawOffset = 0.0;
     // g.cameraFollow.pitchOffset = -0.378;
 
-    em.addSystem(
+    EM.addSystem(
       "smolGhost",
       Phase.GAME_WORLD,
       [GhostDef, WorldFrameDef, ColliderDef],
@@ -388,7 +388,7 @@ export async function initGrassGame(em: EntityManager, hosting: boolean) {
       }
     );
 
-    // em.registerSystem(
+    // EM.registerSystem(
     //   [GhostDef, WorldFrameDef],
     //   [PartyDef],
     //   async (ps, res) => {
@@ -739,9 +739,9 @@ async function createPlayer() {
   EM.ensureComponentOn(p, RenderableConstructDef, sphereMesh, visible);
   EM.ensureComponentOn(p, ColorDef, V(0.1, 0.1, 0.1));
   EM.ensureComponentOn(p, PositionDef, V(0, 0, 0));
-  // em.ensureComponentOn(b2, PositionDef, [0, 0, -1.2]);
+  // EM.ensureComponentOn(b2, PositionDef, [0, 0, -1.2]);
   EM.ensureComponentOn(p, WorldFrameDef);
-  // em.ensureComponentOn(b2, PhysicsParentDef, g.id);
+  // EM.ensureComponentOn(b2, PhysicsParentDef, g.id);
   EM.ensureComponentOn(p, ColliderDef, {
     shape: "AABB",
     solid: true,

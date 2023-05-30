@@ -81,7 +81,7 @@ function spawnRandomDarkStar(
 }
 
 export async function initHyperspaceGame(em: EntityManager) {
-  em.addResource(HSGameStateDef);
+  EM.addResource(HSGameStateDef);
 
   registerGameStateSystems(em);
   registerEnemyShipSystems(em);
@@ -95,14 +95,14 @@ export async function initHyperspaceGame(em: EntityManager) {
   registerHypersailSystems(em);
   registerRibSailSystems();
 
-  em.whenResources(OceanDef).then(async () => {
+  EM.whenResources(OceanDef).then(async () => {
     // await awaitTimeout(1000); // TODO(@darzu): what is happening
     createHsPlayer(em);
   });
 
-  em.addSystem("debugLoop", Phase.GAME_WORLD, [], [], () => {
+  EM.addSystem("debugLoop", Phase.GAME_WORLD, [], [], () => {
     // console.log("debugLoop");
-    // em.whyIsntSystemBeingCalled("oceanGPUWork");
+    // EM.whyIsntSystemBeingCalled("oceanGPUWork");
   });
 
   // const grid = [[...shadowDepthTextures]];
@@ -117,7 +117,7 @@ export async function initHyperspaceGame(em: EntityManager) {
 
   let gridCompose = createGridComposePipelines(grid);
 
-  em.addSystem(
+  EM.addSystem(
     "hyperspaceGame",
     Phase.GAME_WORLD,
     null,
@@ -137,12 +137,12 @@ export async function initHyperspaceGame(em: EntityManager) {
     }
   );
 
-  const res = await em.whenResources(AssetsDef, RendererDef, CameraDef);
+  const res = await EM.whenResources(AssetsDef, RendererDef, CameraDef);
 
   res.camera.fov = Math.PI * 0.5;
 
   // const ghost = createGhost(em);
-  // em.ensureComponentOn(ghost, RenderableConstructDef, res.assets.cube.proto);
+  // EM.ensureComponentOn(ghost, RenderableConstructDef, res.assets.cube.proto);
   // ghost.controllable.speed *= 3;
   // ghost.controllable.sprintMul *= 3;
 
@@ -169,21 +169,21 @@ export async function initHyperspaceGame(em: EntityManager) {
   // TODO(@darzu): dbg
   //await asyncTimeout(2000);
 
-  const { me, ocean } = await em.whenResources(OceanDef, MeDef);
+  const { me, ocean } = await EM.whenResources(OceanDef, MeDef);
 
   if (me.host) {
     // experimental ship:
-    const eShip = em.new();
-    em.ensureComponentOn(
+    const eShip = EM.new();
+    EM.ensureComponentOn(
       eShip,
       RenderableConstructDef,
       res.assets.ship_fangs.proto
     );
-    em.ensureComponentOn(eShip, PositionDef);
-    em.ensureComponentOn(eShip, UVPosDef, vec2.clone([0.2, 0.1]));
+    EM.ensureComponentOn(eShip, PositionDef);
+    EM.ensureComponentOn(eShip, UVPosDef, vec2.clone([0.2, 0.1]));
 
     const ship = createHsShip(vec2.clone([0.1, 0.1]));
-    const ship2 = await em.whenEntityHas(ship, UVPosDef);
+    const ship2 = await EM.whenEntityHas(ship, UVPosDef);
 
     const NUM_ENEMY = 40;
 

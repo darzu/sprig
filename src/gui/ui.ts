@@ -49,9 +49,9 @@ export function initHtmlUI(em: EntityManager) {
   const lowerDiv = document.getElementById("lower-div") as HTMLDivElement;
   const helpDiv = document.getElementById("help-div") as HTMLDivElement;
 
-  em.addResource(TextDef, upperDiv, debugDiv, lowerDiv, helpDiv);
+  EM.addResource(TextDef, upperDiv, debugDiv, lowerDiv, helpDiv);
 
-  em.addSystem("uiText", Phase.RENDER_DRAW, null, [TextDef], (_, res) => {
+  EM.addSystem("uiText", Phase.RENDER_DRAW, null, [TextDef], (_, res) => {
     // PERF NOTE: using ".innerText =" creates a new DOM element each frame, whereas
     //    using ".firstChild.nodeValue =" reuses the DOM element. Unfortunately this
     //    means we'll need to do more work to get line breaks.

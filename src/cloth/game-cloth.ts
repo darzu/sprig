@@ -1,6 +1,6 @@
 import { CameraDef } from "../camera/camera.js";
 import { ColorDef } from "../color/color-ecs.js";
-import { EntityManager } from "../ecs/entity-manager.js";
+import { EM, EntityManager } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { InputsDef } from "../input/inputs.js";
 import { mathMapNEase } from "../utils/math.js";
@@ -49,7 +49,7 @@ import { Phase } from "../ecs/sys-phase.js";
 // TODO(@darzu): BROKEN. cloth sandbox isn't lit right and cloth isn't there
 
 export async function initClothSandbox(em: EntityManager, hosting: boolean) {
-  const res = await em.whenResources(
+  const res = await EM.whenResources(
     AssetsDef,
     GlobalCursor3dDef,
     RendererDef,
@@ -87,7 +87,7 @@ export async function initClothSandbox(em: EntityManager, hosting: boolean) {
 
   // TODO(@darzu): this shouldn't be necessary
   const m2 = cloneMesh(res.assets.cube.mesh);
-  em.ensureComponentOn(g, RenderableConstructDef, m2);
+  EM.ensureComponentOn(g, RenderableConstructDef, m2);
 
   {
     // vec3.copy(e.position, [-16.85, 7.11, -4.33]);
@@ -108,57 +108,57 @@ export async function initClothSandbox(em: EntityManager, hosting: boolean) {
   c.renderable.enabled = true;
   c.cursor3d.maxDistance = 10;
 
-  const plane = em.new();
-  em.ensureComponentOn(plane, RenderableConstructDef, res.assets.plane.proto);
-  em.ensureComponentOn(plane, ColorDef, V(0.2, 0.3, 0.2));
-  em.ensureComponentOn(plane, PositionDef, V(0, -5, 0));
+  const plane = EM.new();
+  EM.ensureComponentOn(plane, RenderableConstructDef, res.assets.plane.proto);
+  EM.ensureComponentOn(plane, ColorDef, V(0.2, 0.3, 0.2));
+  EM.ensureComponentOn(plane, PositionDef, V(0, -5, 0));
 
-  const ship = em.new();
-  em.ensureComponentOn(ship, RenderableConstructDef, res.assets.ship.proto);
-  em.ensureComponentOn(ship, ColorDef, ENEMY_SHIP_COLOR);
-  em.ensureComponentOn(ship, PositionDef, V(20, -2, 0));
-  em.ensureComponentOn(
+  const ship = EM.new();
+  EM.ensureComponentOn(ship, RenderableConstructDef, res.assets.ship.proto);
+  EM.ensureComponentOn(ship, ColorDef, ENEMY_SHIP_COLOR);
+  EM.ensureComponentOn(ship, PositionDef, V(20, -2, 0));
+  EM.ensureComponentOn(
     ship,
     RotationDef,
     quat.fromEuler(0, Math.PI * 0.1, 0, quat.create())
   );
 
-  // const ocean = em.newEntity();
-  // em.ensureComponentOn(
+  // const ocean = EM.newEntity();
+  // EM.ensureComponentOn(
   //   ocean,
   //   EM.defineComponent("ocean", () => true)
   // );
-  // em.ensureComponentOn(
+  // EM.ensureComponentOn(
   //   ocean,
   //   RenderableConstructDef,
   //   res.assets.ocean.proto
   // );
-  // em.ensureComponentOn(ocean, ColorDef, [0.0, 0.0, 0.4]);
-  // em.ensureComponentOn(ocean, PositionDef, [12000, 180, 0]);
+  // EM.ensureComponentOn(ocean, ColorDef, [0.0, 0.0, 0.4]);
+  // EM.ensureComponentOn(ocean, PositionDef, [12000, 180, 0]);
   // // vec3.scale(ocean.position, ocean.position, scale);
   // const scale = 100.0;
-  // em.ensureComponentOn(ocean, ScaleDef, [scale, scale, scale]);
-  // em.ensureComponentOn(
+  // EM.ensureComponentOn(ocean, ScaleDef, [scale, scale, scale]);
+  // EM.ensureComponentOn(
   //   ocean,
   //   RotationDef,
   //   quat.fromEuler(quat.create(), 0, Math.PI * 0.1, 0)
   // );
 
-  const box = em.new();
-  em.ensureComponentOn(box, RenderableConstructDef, res.assets.cube.proto);
-  em.ensureComponentOn(box, ColorDef, V(0.1, 0.1, 0.1));
-  em.ensureComponentOn(box, PositionDef, V(0, 0, 3));
-  em.ensureComponentOn(box, RotationDef);
-  em.ensureComponentOn(box, AngularVelocityDef, V(0, 0.001, 0.001));
-  em.ensureComponentOn(box, WorldFrameDef);
-  em.ensureComponentOn(box, ColliderDef, {
+  const box = EM.new();
+  EM.ensureComponentOn(box, RenderableConstructDef, res.assets.cube.proto);
+  EM.ensureComponentOn(box, ColorDef, V(0.1, 0.1, 0.1));
+  EM.ensureComponentOn(box, PositionDef, V(0, 0, 3));
+  EM.ensureComponentOn(box, RotationDef);
+  EM.ensureComponentOn(box, AngularVelocityDef, V(0, 0.001, 0.001));
+  EM.ensureComponentOn(box, WorldFrameDef);
+  EM.ensureComponentOn(box, ColliderDef, {
     shape: "AABB",
     solid: false,
     aabb: res.assets.cube.aabb,
   });
 
-  const cloth = em.new();
-  em.ensureComponentOn(cloth, ClothConstructDef, {
+  const cloth = EM.new();
+  EM.ensureComponentOn(cloth, ClothConstructDef, {
     location: V(0, 0, 0),
     color: V(0.9, 0.9, 0.8),
     rows: 5,
@@ -166,11 +166,11 @@ export async function initClothSandbox(em: EntityManager, hosting: boolean) {
     distance: 2,
   });
   const F = 100.0;
-  em.ensureComponentOn(cloth, ForceDef, V(F, F, F));
+  EM.ensureComponentOn(cloth, ForceDef, V(F, F, F));
 
   const line = await drawLine(vec3.create(), vec3.create(), V(0, 1, 0));
 
-  em.addSystem(
+  EM.addSystem(
     "clothSandbox",
     Phase.GAME_WORLD,
     [ClothConstructDef, ClothLocalDef, WorldFrameDef, ForceDef],

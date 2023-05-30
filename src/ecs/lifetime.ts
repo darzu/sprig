@@ -26,7 +26,7 @@ EM.addSystem(
         // TODO(@darzu): dead or deleted?
         EM.addComponent(o.id, DeadDef);
         // TODO(@darzu): note needed?
-        // em.addComponent(o.id, DeletedDef);
+        // EM.addComponent(o.id, DeletedDef);
       }
     }
   }
