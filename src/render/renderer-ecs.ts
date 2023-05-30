@@ -46,6 +46,17 @@ import {
 } from "./pipelines/std-rigged.js";
 import { Phase } from "../ecs/sys-phase.js";
 
+// TODO(@darzu): the double "Renderer" naming is confusing. Maybe one should be GPUManager or something?
+export const RendererDef = EM.defineComponent(
+  "renderer",
+  (renderer: Renderer, pipelines: CyPipelinePtr[]) => {
+    return {
+      renderer,
+      pipelines,
+    };
+  }
+);
+
 // TODO(@darzu): we need a better way to handle arbitrary pools
 // TODO(@darzu): support height map?
 // export type PoolKind = "std" | "ocean" | "grass";
@@ -159,7 +170,7 @@ export function initRenderDrawSystems(em: EntityManager) {
   const renderObjs: EntityW<
     [typeof RendererWorldFrameDef, typeof RenderableDef]
   >[] = [];
-  em.addSystem(
+  EM.addSystem(
     "renderListDeadHidden",
     Phase.RENDER_DRAW,
     [RendererWorldFrameDef, RenderableDef, DeadDef],
@@ -353,65 +364,61 @@ export function initRenderDrawSystems(em: EntityManager) {
 //   }
 // }
 
-export function initConstructRenderablesSystem(em: EntityManager) {
-  em.addSystem(
-    "constructRenderables",
-    Phase.PRE_GAME_WORLD,
-    [RenderableConstructDef],
-    [RendererDef],
-    (es, res) => {
-      for (let e of es) {
-        // TODO(@darzu): this seems somewhat inefficient to look for this every frame
-        if (!RenderableDef.isOn(e)) {
-          let meshHandle: MeshHandle;
-          let mesh: Mesh;
-          const pool = res.renderer.renderer.getCyResource(
-            e.renderableConstruct.pool
+EM.addSystem(
+  "constructRenderables",
+  Phase.PRE_GAME_WORLD,
+  [RenderableConstructDef],
+  [RendererDef],
+  (es, res) => {
+    for (let e of es) {
+      // TODO(@darzu): this seems somewhat inefficient to look for this every frame
+      if (!RenderableDef.isOn(e)) {
+        let meshHandle: MeshHandle;
+        let mesh: Mesh;
+        const pool = res.renderer.renderer.getCyResource(
+          e.renderableConstruct.pool
+        );
+        assert(pool);
+        if (isMeshHandle(e.renderableConstruct.meshOrProto)) {
+          // TODO(@darzu): renderableConstruct is getting to large and wierd
+          assert(
+            !e.renderableConstruct.reserve,
+            `cannot have a reserve when adding an instance`
           );
-          assert(pool);
-          if (isMeshHandle(e.renderableConstruct.meshOrProto)) {
-            // TODO(@darzu): renderableConstruct is getting to large and wierd
-            assert(
-              !e.renderableConstruct.reserve,
-              `cannot have a reserve when adding an instance`
-            );
-            meshHandle = pool.addMeshInstance(
-              e.renderableConstruct.meshOrProto
-            );
-            mesh = meshHandle.mesh!;
-          } else {
-            meshHandle = pool.addMesh(
-              e.renderableConstruct.meshOrProto,
-              e.renderableConstruct.reserve
-            );
-            mesh = e.renderableConstruct.meshOrProto;
-          }
-          if (e.renderableConstruct.mask) {
-            meshHandle.mask = e.renderableConstruct.mask;
-          }
+          meshHandle = pool.addMeshInstance(e.renderableConstruct.meshOrProto);
+          mesh = meshHandle.mesh!;
+        } else {
+          meshHandle = pool.addMesh(
+            e.renderableConstruct.meshOrProto,
+            e.renderableConstruct.reserve
+          );
+          mesh = e.renderableConstruct.meshOrProto;
+        }
+        if (e.renderableConstruct.mask) {
+          meshHandle.mask = e.renderableConstruct.mask;
+        }
 
-          em.addComponent(e.id, RenderableDef, {
-            enabled: e.renderableConstruct.enabled,
-            hidden: false,
-            sortLayer: e.renderableConstruct.sortLayer,
-            meshHandle,
-          });
+        EM.addComponent(e.id, RenderableDef, {
+          enabled: e.renderableConstruct.enabled,
+          hidden: false,
+          sortLayer: e.renderableConstruct.sortLayer,
+          meshHandle,
+        });
 
-          // pool.updateUniform
-          const uni = pool.ptr.computeUniData(mesh);
-          em.ensureComponentOn(e, pool.ptr.dataDef, uni);
-          // TODO(@darzu): HACK! We need some notion of required uni data maybe? Or common uni data
-          if ("id" in e[pool.ptr.dataDef.name]) {
-            // console.log(
-            //   `setting ${e.id}.${pool.ptr.dataDef.name}.id = ${meshHandle.mId}`
-            // );
-            e[pool.ptr.dataDef.name]["id"] = meshHandle.mId;
-          }
+        // pool.updateUniform
+        const uni = pool.ptr.computeUniData(mesh);
+        EM.ensureComponentOn(e, pool.ptr.dataDef, uni);
+        // TODO(@darzu): HACK! We need some notion of required uni data maybe? Or common uni data
+        if ("id" in e[pool.ptr.dataDef.name]) {
+          // console.log(
+          //   `setting ${e.id}.${pool.ptr.dataDef.name}.id = ${meshHandle.mId}`
+          // );
+          e[pool.ptr.dataDef.name]["id"] = meshHandle.mId;
         }
       }
     }
-  );
-}
+  }
+);
 
 export const RiggedRenderableDef = EM.defineComponent(
   "riggedRenderable",
@@ -424,7 +431,7 @@ export const RiggedRenderableDef = EM.defineComponent(
 
 export function initRiggedRenderablesSystems(em: EntityManager) {
   let pool: RiggedMeshPool | undefined = undefined;
-  em.addSystem(
+  EM.addSystem(
     "constructRiggedRenderables",
     Phase.PRE_GAME_WORLD,
     [RiggedRenderableConstructDef],
@@ -440,18 +447,18 @@ export function initRiggedRenderablesSystems(em: EntityManager) {
           assert(pool);
           let meshHandle = pool.addRiggedMesh(mesh);
 
-          em.addComponent(e.id, RenderableDef, {
+          EM.addComponent(e.id, RenderableDef, {
             enabled: true,
             hidden: false,
             sortLayer: 0,
             meshHandle,
           });
 
-          em.addComponent(e.id, RiggedRenderableDef, meshHandle, mesh.rigging);
+          EM.addComponent(e.id, RiggedRenderableDef, meshHandle, mesh.rigging);
 
           // pool.updateUniform
           const uni = pool.ptr.computeUniData(mesh);
-          em.ensureComponentOn(e, pool.ptr.dataDef, uni);
+          EM.ensureComponentOn(e, pool.ptr.dataDef, uni);
           // TODO(@darzu): HACK! We need some notion of required uni data maybe? Or common uni data
           if ("id" in e[pool.ptr.dataDef.name]) {
             // console.log(
@@ -464,7 +471,7 @@ export function initRiggedRenderablesSystems(em: EntityManager) {
     }
   );
 
-  em.addSystem(
+  EM.addSystem(
     "updateJoints",
     Phase.RENDER_PRE_DRAW,
     [RiggedRenderableDef, RenderableDef],
@@ -500,17 +507,6 @@ export type Renderer = ReturnType<typeof createRenderer>;
 //   readTexture(tex: CyTexturePtr): Promise<ArrayBuffer>;
 //   stats(): Promise<Map<string, bigint>>;
 // }
-
-// TODO(@darzu): the double "Renderer" naming is confusing. Maybe one should be GPUManager or something?
-export const RendererDef = EM.defineComponent(
-  "renderer",
-  (renderer: Renderer, pipelines: CyPipelinePtr[]) => {
-    return {
-      renderer,
-      pipelines,
-    };
-  }
-);
 
 EM.addLazyInit(
   [CanvasDef, ShadersDef],

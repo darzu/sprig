@@ -12,7 +12,6 @@ import {
 import { initNetPredictSystems } from "./net/predict.js";
 import { initNetGameEventSystems } from "./net/events.js";
 import {
-  initConstructRenderablesSystem,
   initRenderDrawSystems,
   initRiggedRenderablesSystems,
 } from "./render/renderer-ecs.js";
@@ -47,22 +46,19 @@ export function initCommonSystems(em: EntityManager) {
   initNetPredictSystems(em);
   initNetJoinSystems(em);
 
-  initHtmlUI(em);
-  initDevConsole(em);
-
-  initPhysicsSystems(em);
-
-  init3DModeler(em);
-
   initNetDebugSystem(em);
   initNetAckUpdateSystem(em);
   initNetSyncSystem(em);
   initNetSendOutboxes(em);
   initNetGameEventSystems(em);
 
+  initHtmlUI(em);
+  initDevConsole(em);
+
+  initPhysicsSystems(em);
+
   initMotionSmoothingSystems(em);
   initDbgViewModes(em);
-  initConstructRenderablesSystem(em);
   initRiggedRenderablesSystems(em);
   initRenderDrawSystems(em);
   initClothSystems();
