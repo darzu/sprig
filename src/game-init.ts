@@ -31,7 +31,6 @@ import { callInitFns } from "./init.js";
 import { initTurretSystems } from "./turret/turret.js";
 import { initHtmlUI } from "./gui/ui.js";
 import { initDevConsole } from "./debug/console.js";
-import { initControllablesSystems } from "./input/controllable.js";
 import { initNetSystems } from "./net/net.js";
 import { ENABLE_NET } from "./flags.js";
 import { initGravitySystem } from "./motion/gravity.js";
@@ -58,8 +57,6 @@ export function initCommonSystems(em: EntityManager) {
 
   initHtmlUI(em);
   initDevConsole(em);
-
-  initControllablesSystems(em);
 
   initLifetimesSystem(em);
 

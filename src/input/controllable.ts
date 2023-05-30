@@ -55,10 +55,10 @@ export const ControllableDef = EM.defineComponent("controllable", () => {
   };
 });
 
-export function initControllablesSystems(em: EntityManager) {
+EM.addEagerInit([ControllableDef], [], [], () => {
   const steerVel = vec3.create();
 
-  em.addSystem(
+  EM.addSystem(
     "controllableInput",
     Phase.GAME_PLAYERS,
     [ControllableDef, LinearVelocityDef, RotationDef, WorldFrameDef],
@@ -119,7 +119,7 @@ export function initControllablesSystems(em: EntityManager) {
     }
   );
 
-  em.addSystem(
+  EM.addSystem(
     "controllableCameraFollow",
     Phase.GAME_PLAYERS,
     [ControllableDef, CameraFollowDef],
@@ -143,4 +143,4 @@ export function initControllablesSystems(em: EntityManager) {
       }
     }
   );
-}
+});
