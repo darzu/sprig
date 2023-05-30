@@ -20,7 +20,7 @@ export const PoseDef = EM.defineComponent("pose", (current?: number) => ({
   repeat: [] as QueuedAnimation[],
 }));
 
-export function initSkeletalAnimSystems() {
+EM.addEagerInit([PoseDef], [], [], () => {
   EM.addSystem(
     "skeletalPose",
     Phase.RENDER_PRE_DRAW,
@@ -74,4 +74,4 @@ export function initSkeletalAnimSystems() {
       }
     }
   );
-}
+});

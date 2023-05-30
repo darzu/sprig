@@ -22,9 +22,6 @@ import { initHtmlUI } from "./gui/ui.js";
 import { initDevConsole } from "./debug/console.js";
 import { initNetSystems } from "./net/net.js";
 import { ENABLE_NET } from "./flags.js";
-import { initClothSystems } from "./cloth/cloth.js";
-import { initSpringSystems } from "./cloth/spring.js";
-import { initSkeletalAnimSystems } from "./animation/skeletal.js";
 import { initStdMeshUpload } from "./render/pipelines/std-mesh.js";
 import { initOceanDataUpload } from "./render/pipelines/std-ocean.js";
 import { initDbgViewModes } from "./debug/view-modes.js";
@@ -54,9 +51,6 @@ export function initCommonSystems(em: EntityManager) {
 
   initMotionSmoothingSystems(em);
   initDbgViewModes(em);
-  initClothSystems();
-  initSpringSystems();
-  initSkeletalAnimSystems();
   initStdMeshUpload();
   initOceanDataUpload();
   initWoodSplinterSystem();

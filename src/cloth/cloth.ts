@@ -124,7 +124,7 @@ function clothMesh(cloth: ClothConstruct): {
   return { mesh: normalizeMesh(mesh), posMap };
 }
 
-export function initClothSystems() {
+EM.addEagerInit([ClothConstructDef], [], [], () => {
   EM.addSystem(
     "buildCloths",
     Phase.PRE_GAME_WORLD,
@@ -182,4 +182,4 @@ export function initClothSystems() {
       }
     }
   );
-}
+});

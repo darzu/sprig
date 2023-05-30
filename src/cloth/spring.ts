@@ -249,7 +249,7 @@ export function stepSprings(g: SpringGrid, dt: number) {
   }
 }
 
-export function initSpringSystems() {
+EM.addEagerInit([SpringGridDef], [], [], () => {
   EM.addSystem(
     "spring",
     Phase.PRE_PHYSICS,
@@ -262,4 +262,4 @@ export function initSpringSystems() {
       }
     }
   );
-}
+});
