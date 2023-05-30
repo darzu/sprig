@@ -482,50 +482,9 @@ export class EntityManager {
     return undefined;
   }
 
-  // TODO(@darzu): rename these to "requireSystem" or somethingE
-  // _dbgOldPlan: string[] = []; // TODO(@darzu): REMOVE
-  // TODO(@darzu): this makes no sense so what should this represent?
-  // public maybeRequireSystem(name: string): boolean {
-  //   this.addConstraint(["requires", name]);
-  //   // this._dbgOldPlan.push(name); // TODO(@darzu): DBG
-  //   return true;
-  // }
-  // public requireSystem(name: string) {
-  //   this.addConstraint(["requires", name]);
-  //   // this._dbgOldPlan.push(name); // TODO(@darzu): DBG
-  // }
-  // // TODO(@darzu): legacy thing; gotta replace with labels/phases
-  // public requireGameplaySystem(name: string) {
-  //   this.addConstraint(["requires", name]);
-  // }
-  // public addConstraint(con: LabelConstraint) {
-  //   this.labelSolver.addConstraint(con);
-  // }
-
-  _dbgLastVersion = -1;
   _dbgLastSystemLen = 0;
   _dbgLastActiveSystemLen = 0;
   private callSystems() {
-    // // TODO(@darzu):
-    // // console.log("OLD PLAN:");
-    // // console.log(this._tempPlan);
-    // if (DBG_INIT_DEPS)
-    //   if (this._dbgLastVersion !== this.labelSolver.getVersion()) {
-    //     this._dbgLastVersion = this.labelSolver.getVersion();
-    //     console.log("NEW PLAN:");
-    //     console.log(this.labelSolver.getPlan().join("\n"));
-    //   }
-
-    // const plan = this.labelSolver.getPlan();
-    // // const plan = this._tempPlan;
-
-    // for (let s of plan) {
-    //   this._tryCallSystem(s);
-    // }
-
-    // // this._dbgOldPlan.length = 0;
-    // // if (this.dbgLoops > 100) throw "STOP";
-
     if (DBG_SYSTEM_ORDER) {
       let newTotalSystemLen = 0;
       let newActiveSystemLen = 0;
@@ -1079,7 +1038,6 @@ export class EntityManager {
 
   // INIT SYSTEM
   // TODO(@darzu): [ ] split entity-manager ?
-  // TODO(@darzu): [ ] remove em-labels ?
   // TODO(@darzu): [ ] consolidate entity promises into init system?
   // TODO(@darzu): [ ] remove unnecessary async on inits
   // TODO(@darzu): [ ] flop InitFnReg eager -> lazy

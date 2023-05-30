@@ -6,6 +6,6 @@ export const PartyDef = EM.defineComponent("party", () => ({
   dir: vec3.create(),
 }));
 
-EM.addLazyInit([], [PartyDef], async () => {
+EM.addLazyInit([], [PartyDef], () => {
   EM.addResource(PartyDef);
 });

@@ -96,7 +96,7 @@ export function setCameraFollowPosition(
 }
 
 // TODO(@darzu): maybe make a shortcut for this; "registerTrivialInit" ?
-EM.addLazyInit([], [CameraDef], async () => {
+EM.addLazyInit([], [CameraDef], () => {
   EM.addResource(CameraDef);
 
   EM.addSystem(
@@ -188,7 +188,7 @@ EM.addLazyInit([], [CameraDef], async () => {
   );
 });
 
-EM.addLazyInit([], [CameraComputedDef], async () => {
+EM.addLazyInit([], [CameraComputedDef], () => {
   EM.addResource(CameraComputedDef);
   EM.addSystem(
     "updateCameraView",

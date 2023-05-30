@@ -60,7 +60,7 @@ export const UICursorDef = EM.defineComponent(
   })
 );
 
-EM.addLazyInit([AssetsDef], [UICursorDef], async ({ assets }) => {
+EM.addLazyInit([AssetsDef], [UICursorDef], ({ assets }) => {
   // Cursor
   const cursor = EM.new();
   EM.ensureComponentOn(cursor, ColorDef, V(0.1, 0.1, 0.1));

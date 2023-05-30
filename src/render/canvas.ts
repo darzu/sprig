@@ -21,7 +21,7 @@ export const HasFirstInteractionDef = EM.defineComponent(
   () => true
 );
 
-EM.addLazyInit([], [CanvasDef], async () => {
+EM.addLazyInit([], [CanvasDef], () => {
   const canvas = init();
 
   const comp = EM.addResource(CanvasDef, canvas);

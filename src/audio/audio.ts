@@ -26,7 +26,7 @@ const NUM_STRINGS = 300;
 export const AudioDef = EM.defineComponent("music", createAudioResource);
 export type Music = Component<typeof AudioDef>;
 
-EM.addLazyInit([HasFirstInteractionDef], [AudioDef], async () => {
+EM.addLazyInit([HasFirstInteractionDef], [AudioDef], () => {
   const music = EM.addResource(AudioDef);
 
   // Init our audio

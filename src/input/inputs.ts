@@ -39,7 +39,7 @@ export const MouseDragDef = EM.defineComponent("mousedrag", () => ({
   dragLastEnd: vec2.create(),
 }));
 
-EM.addLazyInit([], [InputsDef, MouseDragDef], async () => {
+EM.addLazyInit([], [InputsDef, MouseDragDef], () => {
   let inputsReader: (() => Inputs) | null = null;
 
   EM.addResource(InputsDef);

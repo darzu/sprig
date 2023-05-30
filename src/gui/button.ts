@@ -65,7 +65,7 @@ export const ButtonsStateDef = EM.defineComponent(
 
 EM.addLazyInit([RendererDef], [ButtonsStateDef], initButtonGUI);
 
-async function initButtonGUI(res: EntityW<[typeof RendererDef]>) {
+function initButtonGUI(res: EntityW<[typeof RendererDef]>) {
   // init ButtonsStateDef
   {
     const btnMesh_ = importObj(BTN_OBJ);
