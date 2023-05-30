@@ -42,7 +42,12 @@ import {
   RendererDef,
 } from "../render/renderer-ecs.js";
 import { tempVec3 } from "../matrix/temp-pool.js";
-import { assert, assertDbg, createIntervalTracker } from "../utils/util.js";
+import {
+  assert,
+  assertDbg,
+  createIntervalTracker,
+  dbgOnce,
+} from "../utils/util.js";
 import { range } from "../utils/util.js";
 import {
   centroid,
@@ -50,7 +55,7 @@ import {
   randNormalVec3,
   vec3Dbg,
 } from "../utils/utils-3d.js";
-import { createSplinterPool, SplinterPool } from "./wood-splinters.js";
+import { SplinterPool, SplinterPoolsDef } from "./wood-splinters.js";
 import { DBG_ASSERT, VERBOSE_LOG } from "../flags.js";
 import { meshPoolPtr } from "../render/pipelines/std-scene.js";
 import {
@@ -118,17 +123,9 @@ export function registerDestroyPirateHandler(fn: DestroyPirateShipFn) {
   _destroyPirateShipFns.push(fn);
 }
 
-export const SplinterParticleDef = EM.defineComponent("splinter", () => {
-  return {};
-});
+export let _dbgNumSplinterEnds = 0;
 
-const splinterPools = new Map<string, SplinterPool>();
-
-export let _numSplinterEnds = 0;
-
-let _ONCE = true;
-
-export function initWoodSystems() {
+EM.addEagerInit([WoodStateDef], [], [], () => {
   EM.addSystem(
     "runWooden",
     Phase.GAME_WORLD,
@@ -286,7 +283,7 @@ export function initWoodSystems() {
     "woodHealth",
     Phase.GAME_WORLD,
     [WoodStateDef, WorldFrameDef, WoodHealthDef, RenderableDef, ColorDef],
-    [RendererDef],
+    [RendererDef, SplinterPoolsDef],
     async (es, res) => {
       const stdPool = res.renderer.renderer.getCyResource(meshPoolPtr)!;
       // TODO(@darzu):
@@ -298,7 +295,11 @@ export function initWoodSystems() {
         const meshHandle = w.renderable.meshHandle;
         const mesh = meshHandle.mesh!;
 
-        if (VERBOSE_LOG && _ONCE && mesh.dbgName?.includes("home")) {
+        if (
+          VERBOSE_LOG &&
+          dbgOnce("homeWoodMesh") &&
+          mesh.dbgName?.includes("home")
+        ) {
           // console.log(`mesh: ${meshStats(mesh)}`);
           // console.log(`woodMesh: ${meshStats(w.woodState.mesh)}`);
           // if (meshHandle.triNum !== mesh.tri.length) {
@@ -309,7 +310,6 @@ export function initWoodSystems() {
           console.dir(meshHandle);
           console.dir(mesh);
           console.log(meshStats(mesh));
-          _ONCE = false;
         }
 
         w.woodState.boards.forEach((board, bIdx) => {
@@ -339,26 +339,11 @@ export function initWoodSystems() {
 
               // get the board's pool
               if (!pool) {
-                const poolKey: string = `w${seg.width.toFixed(
-                  1
-                )}_d${seg.depth.toFixed(1)}_c${vec3Dbg(w.color)}`;
-                if (!splinterPools.has(poolKey)) {
-                  if (VERBOSE_LOG)
-                    console.log(`new splinter pool!: ${poolKey}`);
-                  pool = createSplinterPool(
-                    seg.width,
-                    seg.depth,
-                    1,
-                    vec3.clone(w.color),
-                    40
-                  );
-                  splinterPools.set(poolKey, pool);
-                } else {
-                  pool = splinterPools.get(poolKey)!;
-                }
+                pool = res.splinterPools.getOrCreatePool(seg);
               }
 
               // create flying splinter (from pool)
+              // TODO(@darzu): MOVE into wood-splinters.ts ?
               {
                 const qi = seg.quadSideIdxs[0];
                 const quadColor = mesh.colors[qi];
@@ -395,7 +380,7 @@ export function initWoodSystems() {
                 if (splinterIdx !== undefined) {
                   h.splinterBotIdx = splinterIdx;
                   // h.splinterBotGeneration = splinterGen;
-                  _numSplinterEnds++;
+                  _dbgNumSplinterEnds++;
                   splinterIndUpdated.push(splinterIdx);
                 }
               }
@@ -407,7 +392,7 @@ export function initWoodSystems() {
                 if (splinterIdx !== undefined) {
                   h.splinterTopIdx = splinterIdx;
                   // h.splinterTopGeneration = splinterGen;
-                  _numSplinterEnds++;
+                  _dbgNumSplinterEnds++;
                   splinterIndUpdated.push(splinterIdx);
                 }
               }
@@ -436,7 +421,7 @@ export function initWoodSystems() {
                 );
                 h.next.splinterBotIdx = undefined;
                 // h.next.splinterBotGeneration = undefined;
-                _numSplinterEnds--;
+                _dbgNumSplinterEnds--;
               }
 
               if (
@@ -461,7 +446,7 @@ export function initWoodSystems() {
                 );
                 h.prev.splinterTopIdx = undefined;
                 // h.prev.splinterTopGeneration = undefined;
-                _numSplinterEnds--;
+                _dbgNumSplinterEnds--;
               }
             }
           });
@@ -511,7 +496,7 @@ export function initWoodSystems() {
       }
     }
   );
-}
+});
 
 function getSegmentRotation(seg: BoardSeg, top: boolean) {
   let segNorm = vec3.create();
@@ -898,7 +883,7 @@ interface OBB {
 type VI = number; // vertex index
 type QI = number; // quad index
 // each board has an AABB, OBB,
-interface BoardSeg {
+export interface BoardSeg {
   localAABB: AABB;
   midLine: Line;
   areaNorms: vec3[]; // TODO(@darzu): fixed size

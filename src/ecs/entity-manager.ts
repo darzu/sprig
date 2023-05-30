@@ -1131,6 +1131,10 @@ export class EntityManager {
     if (reg.eager) {
       this.pendingEagerInits.push(reg);
     } else {
+      assert(
+        reg.provideRs.length > 0,
+        `addLazyInit must specify at least 1 provideRs`
+      );
       for (let p of reg.provideRs) {
         assert(
           !this.pendingLazyInitsByProvides.has(p.id),

@@ -59,13 +59,12 @@ import {
   reserveSplinterSpace,
   resetWoodHealth,
   resetWoodState,
-  SplinterParticleDef,
   TimberBuilder,
   unshareProvokingForWood,
   verifyUnsharedProvokingForWood,
   WoodHealthDef,
   WoodStateDef,
-  _numSplinterEnds,
+  _dbgNumSplinterEnds,
 } from "./wood.js";
 import { AssetsDef, BLACK } from "../meshes/assets.js";
 import {

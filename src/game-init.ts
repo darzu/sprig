@@ -22,8 +22,6 @@ import { initDevConsole } from "./debug/console.js";
 import { initNetSystems } from "./net/net.js";
 import { ENABLE_NET } from "./flags.js";
 import { initDbgViewModes } from "./debug/view-modes.js";
-import { initWoodSplinterSystem } from "./wood/wood-splinters.js";
-import { initWoodSystems } from "./wood/wood.js";
 
 export function initCommonSystems(em: EntityManager) {
   // TODO(@darzu): consolidate, rename, clean up net init
@@ -50,7 +48,4 @@ export function initCommonSystems(em: EntityManager) {
   initMotionSmoothingSystems(em);
 
   initDbgViewModes(em);
-
-  initWoodSplinterSystem();
-  initWoodSystems();
 }
