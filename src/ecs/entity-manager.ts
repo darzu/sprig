@@ -988,7 +988,7 @@ export class EntityManager {
     // eCS extends ComponentDef[],
     CS extends ComponentDef[],
     ID extends number
-  >(e: EntityW<any[], ID>, ...cs: CS): Promise<EntityW<CS, ID>> {
+  >(e: EntityW<ComponentDef[], ID>, ...cs: CS): Promise<EntityW<CS, ID>> {
     // short circuit if we already have the components
     if (cs.every((c) => c.name in e))
       return Promise.resolve(e as EntityW<CS, ID>);
@@ -1140,6 +1140,9 @@ export class EntityManager {
     {
       const after = performance.now();
       let popped = this._runningInitStack.pop();
+      // TODO(@darzu): WAIT. why should the below be true? U should be able to have
+      //   A-start, B-start, A-end, B-end
+      // if A and B are unrelated
       assert(popped && popped.id === init.id, `Daryl doesnt understand stacks`);
       assert(this._lastInitTimestamp >= 0);
       const elapsed = after - this._lastInitTimestamp;
