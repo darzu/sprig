@@ -1407,3 +1407,12 @@ Bluesky's "Ecosystem Overview":
 
 write an OS:
   https://pages.cs.wisc.edu/~remzi/OSTEP/
+
+Staged programming:
+  lisp-y is gold standard?
+  lota scala staged work
+  some get the ast some don't
+  writing procedural macros is tedious
+  max says: have an interpreter and 
+  miri, rust interpreter, check unsafe rules
+    https://github.com/rust-lang/miri

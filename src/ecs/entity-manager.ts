@@ -97,13 +97,13 @@ export function initFnToString(init: InitFnReg) {
     init.provideRs
   )}`;
 }
-export function initFnToKey(init: InitFnReg) {
-  return `${init.eager ? "E" : "L"}:${init.requireRs
-    .map((c) => c.name)
-    .join("+")}&${
-    init.requireCompSet?.map((c) => c.name).join("+") ?? ""
-  }->${init.provideRs.map((c) => c.name).join("+")}`;
-}
+// export function initFnToKey(init: InitFnReg) {
+//   return `${init.eager ? "E" : "L"}:${init.requireRs
+//     .map((c) => c.name)
+//     .join("+")}&${
+//     init.requireCompSet?.map((c) => c.name).join("+") ?? ""
+//   }->${init.provideRs.map((c) => c.name).join("+")}`;
+// }
 
 // type _InitFNReg = InitFNReg & {
 //   id: number;
@@ -173,7 +173,7 @@ export class EntityManager {
   ranges: Record<string, { nextId: number; maxId: number }> = {};
   defaultRange: string = "";
   sysStats: Record<string, SystemStats> = {};
-  initStats = new Map<string, number>();
+  initFnMsStats = new Map<InitFnId, number>();
   emStats = {
     queryTime: 0,
   };
@@ -1065,6 +1065,11 @@ export class EntityManager {
     });
   }
   private addInit(reg: InitFnReg) {
+    assert(
+      !this.allInits.has(reg.id),
+      `Double registering init: ${reg.id}, ${initFnToString(reg)}`
+    );
+    this.allInits.set(reg.id, reg);
     if (reg.eager) {
       this.pendingEagerInits.push(reg);
     } else {
@@ -1094,8 +1099,30 @@ export class EntityManager {
 
     if (DBG_INIT) console.log(`lazy => eager: ${initFnToString(lazy)}`);
   }
+
+  _runningInitStack: InitFnReg[] = [];
+  _lastInitTimestamp: number = -1;
   private async runInitFn(init: InitFnReg) {
     // TODO(@darzu): attribute time spent to specific init functions
+
+    // update init fn stats before
+    {
+      assert(!this.initFnMsStats.has(init.id));
+      this.initFnMsStats.set(init.id, 0);
+      const before = performance.now();
+      if (this._runningInitStack.length) {
+        assert(this._lastInitTimestamp >= 0);
+        let elapsed = before - this._lastInitTimestamp;
+        let prev = this._runningInitStack.at(-1)!;
+        assert(this.initFnMsStats.has(prev.id));
+        this.initFnMsStats.set(
+          prev.id,
+          this.initFnMsStats.get(prev.id)! + elapsed
+        );
+      }
+      this._lastInitTimestamp = before;
+      this._runningInitStack.push(init);
+    }
 
     // TODO(@darzu): verify that it doesn't add any resources not mentioned in provides
     const promise = init.fn(this.ent0);
@@ -1108,6 +1135,21 @@ export class EntityManager {
     // assert resources were added
     for (let res of init.provideRs)
       assert(res.isOn(this.ent0), `Init fn failed to provide: ${res.name}`);
+
+    // update init fn stats after
+    {
+      const after = performance.now();
+      let popped = this._runningInitStack.pop();
+      assert(popped && popped.id === init.id, `Daryl doesnt understand stacks`);
+      assert(this._lastInitTimestamp >= 0);
+      const elapsed = after - this._lastInitTimestamp;
+      this.initFnMsStats.set(
+        popped.id,
+        this.initFnMsStats.get(popped.id)! + elapsed
+      );
+      if (this._runningInitStack.length) this._lastInitTimestamp = after;
+      else this._lastInitTimestamp = -1;
+    }
 
     if (DBG_INIT) console.log(`finished: ${initFnToString(init)}`);
   }
