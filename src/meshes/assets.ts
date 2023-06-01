@@ -39,6 +39,7 @@ import {
   unshareProvokingForWood,
   WoodAssets,
   WoodAssetsDef,
+  WoodStateDef,
 } from "../wood/wood.js";
 import {
   BOAT_MESH,
@@ -60,8 +61,20 @@ import {
 import { createGizmoMesh } from "../debug/gizmos.js";
 import { importGltf } from "./import-gltf.js";
 
+export const AssetsDef = EM.defineComponent("assets", (meshes: GameMeshes) => {
+  return meshes;
+});
+export type Assets = Component<typeof AssetsDef>;
+
 // TODO: load these via streaming
 // TODO(@darzu): it's really bad that all these assets are loaded for each game
+
+// TODO(@darzu): perhaps the way to handle individualized asset loading is to
+//   have a concept of "AssetSet"s that a game can define and await. So u can
+//   either await each asset individually or u can declare an asset set custom
+//   to ur game and then await that whole set (and probably stick it in a resource)
+//   and once the whole thing is loaded u can then access the assets synchronously.
+//   This is basically how it works now except that all assets are in one big set.
 
 export const BLACK = V(0, 0, 0);
 export const DARK_GRAY = V(0.02, 0.02, 0.02);
@@ -162,6 +175,8 @@ const blackoutColor: (m: RawMesh) => RawMesh = (m: RawMesh) => {
   return m;
 };
 
+EM.addLazyInit([AssetsDef], [WoodStateDef], ({ assets }) => {});
+
 const MeshModify: Partial<{
   [P in AllMeshSymbols]: (m: RawMesh) => RawMesh;
 }> = {
@@ -177,6 +192,8 @@ const MeshModify: Partial<{
     // `);
 
     // m = debugBoardSystem(m);
+
+    // TODO(@darzu): yikes this is a lot of work on import.
 
     // TODO(@darzu): call getBoardsFromMesh,
     //    then move this data into some resource to be accessed later in an entities lifecycle
@@ -451,11 +468,6 @@ export type GameMesh = {
 type GameMeshes = { [P in RemoteMeshSymbols | LocalMeshSymbols]: GameMesh } & {
   [P in RemoteMeshSetSymbols]: GameMesh[];
 };
-
-export const AssetsDef = EM.defineComponent("assets", (meshes: GameMeshes) => {
-  return meshes;
-});
-export type Assets = Component<typeof AssetsDef>;
 
 EM.addLazyInit([RendererDef], [AssetsDef], async ({ renderer }) => {
   const assets = await loadAssets(renderer.renderer);

@@ -5,7 +5,7 @@ import { testImporters } from "../meshes/import-obj.js";
 import { Serializer, Deserializer } from "./serialize.js";
 import { assert, testPackUnpackI16 } from "./util.js";
 
-function testBasics() {
+function testSerializeDeserialzers() {
   let s = new Serializer(100);
   s.writeUint32(42);
   let second = s.writeUint32(56);
@@ -26,7 +26,7 @@ export function test() {
   const start = performance.now();
   console.log(`>>> STARTING TESTS`);
 
-  testBasics();
+  testSerializeDeserialzers();
   testImporters();
   testPackUnpackI16();
 

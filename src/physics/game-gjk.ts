@@ -28,8 +28,36 @@ import { deferredPipeline } from "../render/pipelines/std-deferred.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { dbgLogMilestone } from "../utils/util.js";
 
+/*
+Init perf work:
+25.00ms: until start of index.html
+294.90ms: until start of main.ts
+  looks like up to 200ms could be saved if we bundled and minified our JS
+543.8ms: from start of main.ts to end of waiting on resources
+
+w/ cache
+  GJK start init at: 684.60
+w/o cache
+  GJK start init at: 875.50
+
+Chrome lighthouse estimates:
+  0.48s w/ compression
+  0.16s w/ minified js
+
+  scripts are 1.5mb,
+    gl-matrix.js is largest at 216kb
+
+"Errors":
+  - Does not have a <meta name="viewport"> tag with width or initial-scaleNo `<meta name="viewport">` tag found
+    - prevents a 300 millisecond delay to user input (?)
+  - "<html> element does not have a [lang] attribute"
+  
+
+*/
+
 let __frame = 0;
 export async function initGJKSandbox(hosting: boolean) {
+  dbgLogMilestone("GJK waiting for resources");
   const res = await EM.whenResources(
     AssetsDef,
     GlobalCursor3dDef,
@@ -37,6 +65,8 @@ export async function initGJKSandbox(hosting: boolean) {
     CameraDef
   );
   res.camera.fov = Math.PI * 0.5;
+
+  dbgLogMilestone("GJK start init");
 
   res.renderer.pipelines = [
     // ...shadowPipelines,
