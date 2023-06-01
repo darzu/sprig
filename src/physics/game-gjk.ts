@@ -8,7 +8,7 @@ import { AngularVelocityDef } from "../motion/velocity.js";
 import { Shape, gjk, penetrationDepth } from "./narrowphase.js";
 import { WorldFrameDef } from "./nonintersection.js";
 import { PAD } from "./phys.js";
-import { PositionDef, RotationDef } from "./transform.js";
+import { PositionDef, RotationDef, ScaleDef } from "./transform.js";
 import { PointLightDef } from "../render/lights.js";
 import { cloneMesh } from "../meshes/mesh.js";
 import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
@@ -26,7 +26,7 @@ import { GlobalCursor3dDef } from "../gui/cursor.js";
 import { createGhost } from "../debug/ghost.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
 import { Phase } from "../ecs/sys-phase.js";
-import { dbgLogMilestone } from "../utils/util";
+import { dbgLogMilestone } from "../utils/util.js";
 
 let __frame = 0;
 export async function initGJKSandbox(hosting: boolean) {
@@ -46,6 +46,7 @@ export async function initGJKSandbox(hosting: boolean) {
     postProcess,
   ];
 
+  // sun
   const sunlight = EM.new();
   EM.ensureComponentOn(sunlight, PointLightDef);
   sunlight.pointLight.constant = 1.0;
@@ -55,6 +56,7 @@ export async function initGJKSandbox(hosting: boolean) {
   EM.ensureComponentOn(sunlight, PositionDef, V(10, 100, 10));
   EM.ensureComponentOn(sunlight, RenderableConstructDef, res.assets.ball.proto);
 
+  // ghost
   const g = createGhost();
   // EM.ensureComponentOn(g, RenderableConstructDef, res.assets.cube.proto);
   // createPlayer();
@@ -67,7 +69,7 @@ export async function initGJKSandbox(hosting: boolean) {
   // quat.setAxisAngle(g.rotation, [0.0, -1.0, 0.0], 1.62);
   // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
   // quat.copy(g.cameraFollow.rotationOffset, [-0.18, 0.0, 0.0, 0.98]);
-  vec3.copy(g.position, [0, 1, -1.2]);
+  vec3.copy(g.position, [0, 1, 0]);
   quat.setAxisAngle([0.0, -1.0, 0.0], 1.62, g.rotation);
   // setCameraFollowPosition(g, "thirdPerson");
   g.cameraFollow.positionOffset = V(0, 0, 5);
@@ -83,10 +85,21 @@ export async function initGJKSandbox(hosting: boolean) {
   const c = res.globalCursor3d.cursor()!;
   if (RenderableDef.isOn(c)) c.renderable.enabled = false;
 
-  const p = EM.new();
-  EM.ensureComponentOn(p, RenderableConstructDef, res.assets.plane.proto);
-  EM.ensureComponentOn(p, ColorDef, V(0.2, 0.3, 0.2));
-  EM.ensureComponentOn(p, PositionDef, V(0, -5, 0));
+  // ground
+  const ground = EM.new();
+  EM.ensureComponentOn(ground, RenderableConstructDef, res.assets.plane.proto);
+  EM.ensureComponentOn(ground, ColorDef, V(0.2, 0.3, 0.2));
+  EM.ensureComponentOn(ground, PositionDef, V(0, -5, 0));
+
+  // world gizmo
+  const worldGizmo = EM.new();
+  EM.ensureComponentOn(worldGizmo, PositionDef, V(-10, -5, -10));
+  EM.ensureComponentOn(worldGizmo, ScaleDef, V(10, 10, 10));
+  EM.ensureComponentOn(
+    worldGizmo,
+    RenderableConstructDef,
+    res.assets.gizmo.proto
+  );
 
   const b1 = EM.new();
   const m1 = cloneMesh(res.assets.cube.mesh);
@@ -260,9 +273,9 @@ export async function initGJKSandbox(hosting: boolean) {
             backTravelD += penD;
           }
           if (penD > travelD + PAD) console.error(`penD > travelD`);
-          console.log(
-            `penD: ${penD.toFixed(3)}, travelD: ${travelD.toFixed(3)}`
-          );
+          // console.log(
+          //   `penD: ${penD.toFixed(3)}, travelD: ${travelD.toFixed(3)}`
+          // );
         }
       }
 
