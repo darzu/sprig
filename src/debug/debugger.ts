@@ -351,7 +351,7 @@ g.cameraFollow.pitchOffset = ${target.cameraFollow.pitchOffset.toFixed(3)};
       .map((s) => s.callTime)
       .reduce((x, y) => x + y);
     let totalTime = totalQueryTime + totalCallTime;
-    let callTimes = [];
+    let callTimes: { s: string; t: number; m: number }[] = [];
     for (let s of Object.keys(stats)) {
       callTimes.push({ s, t: stats[s].callTime, m: stats[s].maxCallTime });
     }
@@ -390,17 +390,11 @@ g.cameraFollow.pitchOffset = ${target.cameraFollow.pitchOffset.toFixed(3)};
     callTimes.sort((x, y) => y.t - x.t);
     let out = "";
     for (let { s, t, m } of callTimes) {
-      out +=
-        s +
-        ": " +
-        ((t * 100) / totalTime).toFixed(1) +
-        "%" +
-        " (" +
-        (t / EM.dbgLoops).toFixed(2) +
-        "ms, max:" +
-        m.toFixed(1) +
-        "ms)" +
-        "\n";
+      const percent = ((t * 100) / totalTime).toFixed(1);
+      const avgTime = (t / EM.dbgLoops).toFixed(2);
+      const maxTime = m.toFixed(1);
+      const sysTotalTime = t.toFixed(1);
+      out += `${s}: ${percent}% (${avgTime}ms, max: ${maxTime}ms, total: ${sysTotalTime}ms)\n`;
     }
 
     out += "\n";

@@ -893,7 +893,35 @@ export class EntityManager {
     return res;
   }
 
+  // TODO(@darzu): PERF TRACKING. Thinking:
+  /*
+  goal: understand what's happening between 0 and first-playable
+
+  could use "milestone" event trackers
+
+  perhaps we have frame phases:
+  executing systems,
+  executing inits,
+  waiting for next draw
+
+  attribute system time to systems
+    are systems every async?
+
+  perhaps entity promises could check to see if they're being created in System, Init, or Other
+    What would "Other" be?
+  And then they'd resume themselves in the appropriate system's scheduled time?
+
+  How do we track time on vanilla init functions?
+
+  I could always resume entity promises in the same phase as what requested them so
+  either init time or GAME_WORLD etc
+
+    if we did that i think we could accurately measure self-time for systems
+    but that might not capture other time like file downloading
+  */
+
   // TODO(@darzu): can this consolidate with the InitFn system?
+  // TODO(@darzu): PERF TRACKING. Need to rethink how this interacts with system and init fn perf tracking
   private checkEntityPromises() {
     // console.dir(this.entityPromises);
     // console.log(this.dbgStrEntityPromises());
@@ -1058,6 +1086,8 @@ export class EntityManager {
       // run?
       if (hasAll) {
         // TODO(@darzu): BUG. this won't work if a resource is added then removed e.g. flags
+        //    need to think if we really want to allow resource removal. should we
+        //    have a seperate concept for flags?
         // eager -> run
         this.runInitFn(e);
         this.pendingEagerInits.splice(i, 1);

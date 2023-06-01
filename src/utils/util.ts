@@ -224,6 +224,11 @@ export function dbgLogNextBatch() {
   __logBatch = "";
 }
 
+// TODO(@darzu): do more sophisticated perf milestone tracking
+export function dbgLogMilestone(msg: string) {
+  if (dbgOnce(msg)) console.log(`${msg} at: ${performance.now().toFixed(2)}`);
+}
+
 export function isArray(t: any): t is readonly unknown[] {
   // See: https://github.com/microsoft/TypeScript/issues/17002
   return Array.isArray(t);
