@@ -484,6 +484,84 @@ export const BallBrokenMesh = registerMeshGroup({
   data: "ball_broken6.sprig.obj",
 });
 
+export const CubeMesh = registerMesh({
+  name: "cube",
+  data: () => CUBE_MESH,
+});
+
+export const PlaneMesh = registerMesh({
+  name: "plane",
+  data: () => makePlaneMesh(-10, 10, -10, 10),
+});
+export const TetraMesh = registerMesh({
+  name: "tetra",
+  data: () => TETRA_MESH,
+});
+export const HeOctoMesh = registerMesh({
+  name: "he_octo",
+  data: mkOctogonMesh,
+});
+export const HeQuadMesh = registerMesh({
+  name: "he_quad",
+  data: mkHalfEdgeQuadMesh,
+});
+export const HexMesh = registerMesh({ name: "hex", data: HEX_MESH });
+export const EnemyShipMesh = registerMesh({
+  name: "enemyShip",
+  data: () => BOAT_MESH,
+});
+export const BulletMesh = registerMesh({
+  name: "bullet",
+  data: () => BULLET_MESH,
+});
+export const GridPlaneMesh = registerMesh({
+  name: "gridPlane",
+  data: () => GRID_PLANE_MESH,
+});
+export const FabricMesh = registerMesh({
+  name: "fabric",
+  data: () => DBG_FABRIC,
+});
+export const TriFenceMesh = registerMesh({ name: "triFence", data: TRI_FENCE });
+
+// TODO(@darzu): wire cube is kinda broken; needs line renderer
+export const WireCubeMesh = registerMesh({
+  name: "wireCube",
+  data: () =>
+    ({ ...CUBE_MESH, tri: [], colors: [], dbgName: "wireCube" } as RawMesh),
+});
+export const MastMesh = registerMesh({
+  name: "mast",
+  data: () => {
+    let m = cloneMesh(CUBE_MESH);
+    m.dbgName = "mast";
+    mapMeshPositions(m, (p) => V(p[0], p[1] + 1, p[2]));
+    scaleMesh3(m, V(0.5, 20, 0.5));
+    return m;
+  },
+});
+export const LD53CannonMesh = registerMesh({
+  name: "ld53_cannon",
+  data: () => {
+    let m = cloneMesh(CUBE_MESH);
+    m.dbgName = "ld53_cannon";
+    scaleMesh3(m, V(8, 2, 2));
+    return m;
+  },
+});
+export const SailMesh = registerMesh({ name: "sail", data: makeSailMesh });
+// timber_rib: mkTimberRib,
+export const TimberSplinterMesh = registerMesh({
+  name: "timber_splinter",
+  data: mkTimberSplinterEnd,
+});
+export const RudderPrimMesh = registerMesh({
+  name: "rudderPrim",
+  data: () => createRudderMesh(),
+});
+
+export const LocalMeshes = {} as const;
+
 const MeshModify: Partial<{
   [P in AllMeshSymbols]: (m: RawMesh) => RawMesh;
 }> = {
@@ -581,40 +659,6 @@ const blackoutColor: (m: RawMesh) => RawMesh = (m: RawMesh) => {
 
 // TODO(@darzu): IMPL for WoodStateDef
 // EM.addLazyInit([AssetsDef], [WoodStateDef], ({ allMeshes}) => {});
-
-export const LocalMeshes = {
-  cube: () => CUBE_MESH,
-  plane: () => makePlaneMesh(-10, 10, -10, 10),
-  tetra: () => TETRA_MESH,
-  he_octo: mkOctogonMesh,
-  he_quad: mkHalfEdgeQuadMesh,
-  hex: HEX_MESH,
-  enemyShip: () => BOAT_MESH,
-  bullet: () => BULLET_MESH,
-  gridPlane: () => GRID_PLANE_MESH,
-  fabric: () => DBG_FABRIC,
-  triFence: TRI_FENCE,
-  // TODO(@darzu): wire cube is kinda broken; needs line renderer
-  wireCube: () =>
-    ({ ...CUBE_MESH, tri: [], colors: [], dbgName: "wireCube" } as RawMesh),
-  mast: () => {
-    let m = cloneMesh(CUBE_MESH);
-    m.dbgName = "mast";
-    mapMeshPositions(m, (p) => V(p[0], p[1] + 1, p[2]));
-    scaleMesh3(m, V(0.5, 20, 0.5));
-    return m;
-  },
-  ld53_cannon: () => {
-    let m = cloneMesh(CUBE_MESH);
-    m.dbgName = "ld53_cannon";
-    scaleMesh3(m, V(8, 2, 2));
-    return m;
-  },
-  sail: makeSailMesh,
-  // timber_rib: mkTimberRib,
-  timber_splinter: mkTimberSplinterEnd,
-  rudderPrim: () => createRudderMesh(),
-} as const;
 
 type LocalMeshSymbols = keyof typeof LocalMeshes;
 
