@@ -96,6 +96,7 @@ export interface MeshDesc<N extends string> {
   name: N;
   data: string | (() => RawMesh);
   transform?: mat4;
+  modify?: (m: RawMesh) => RawMesh;
 }
 
 export const BallMesh = registerMesh({
@@ -168,206 +169,29 @@ export function defineMeshSetResource<
 export const ShipMesh = registerMesh({
   name: "ship",
   data: "barge.sprig.obj",
+  modify: (m) => {
+    m.lines = [];
+    scaleMesh(m, 3);
+    return m;
+  },
 });
 export const ShipSmallMesh = registerMesh({
   name: "ship_small",
   data: "player_ship_small.sprig.obj",
-});
-export const ShipFangsMesh = registerMesh({
-  name: "ship_fangs",
-  data: "enemy_ship_fangs.sprig.obj",
-});
-export const PickMesh = registerMesh({
-  name: "pick",
-  data: "pick.sprig.obj",
-});
-export const SpaceOreMesh = registerMesh({
-  name: "spaceore",
-  data: "spaceore.sprig.obj",
-});
-export const SpaceRockMesh = registerMesh({
-  name: "spacerock",
-  data: "spacerock.sprig.obj",
-});
-export const AmmunitionBoxMesh = registerMesh({
-  name: "ammunition_box",
-  data: "ammunition_box.sprig.obj",
-});
-export const LinstockMesh = registerMesh({
-  name: "linstock",
-  data: "linstock.sprig.obj",
-});
-export const CannonMesh = registerMesh({
-  name: "cannon",
-  data: "cannon_simple.sprig.obj",
-});
-export const CannonLD51Mesh = registerMesh({
-  name: "ld51_cannon",
-  data: "ld51_cannon.sprig.obj",
-});
-export const GrappleHookMesh = registerMesh({
-  name: "grappleHook",
-  data: "grapple-hook.sprig.obj",
-});
-export const GrappleGunMesh = registerMesh({
-  name: "grappleGun",
-  data: "grapple-gun.sprig.obj",
-});
-export const GrappleGunUnloadedMesh = registerMesh({
-  name: "grappleGunUnloaded",
-  data: "grapple-gun-unloaded.sprig.obj",
-});
-export const RudderMesh = registerMesh({
-  name: "rudder",
-  data: "rudder.sprig.obj",
-});
-export const OceanMesh = registerMesh({
-  name: "ocean",
-  data: "hyperspace-ocean.sprig.obj",
-});
-export const PirateMesh = registerMesh({
-  name: "pirate",
-  data: "pirate.glb",
-});
-export const BoatBrokenMesh = registerMeshGroup({
-  name: "boat_broken",
-  data: "boat_broken.sprig.obj",
-});
-export const ShipBrokenMesh = registerMeshGroup({
-  name: "ship_broken",
-  data: "barge1_broken.sprig.obj",
-});
-export const BallBrokenMesh = registerMeshGroup({
-  name: "ball_broken",
-  data: "ball_broken6.sprig.obj",
-});
-
-// TODO(@darzu): WIP!
-const wipAllMeshesList = [
-  ShipMesh,
-  BallMesh,
-  ShipSmallMesh,
-  ShipFangsMesh,
-  PickMesh,
-  SpaceOreMesh,
-  SpaceRockMesh,
-  AmmunitionBoxMesh,
-  LinstockMesh,
-  CannonMesh,
-  CannonLD51Mesh,
-  GrappleHookMesh,
-  GrappleGunMesh,
-  GrappleGunUnloadedMesh,
-  RudderMesh,
-  OceanMesh,
-  PirateMesh,
-  BoatBrokenMesh,
-  ShipBrokenMesh,
-  BallBrokenMesh,
-] as const;
-const wipAllMeshesDef = defineMeshSetResource(
-  "wipAllMeshes",
-  ...wipAllMeshesList
-);
-const { wipAllMeshes } = await EM.whenResources(wipAllMeshesDef);
-const wip0: GameMesh = wipAllMeshes.ball;
-const wip1: GameMesh[] = wipAllMeshes.boat_broken;
-
-// TODO(@darzu): replace with mesh set
-// prettier-ignore
-const RemoteMeshes = {
-  [ShipMesh.desc.name]: ShipMesh.desc.data as string,
-  [BallMesh.desc.name]: BallMesh.desc.data as string,
-  [ShipSmallMesh.desc.name]: ShipSmallMesh.desc.data as string,
-  [ShipFangsMesh.desc.name]: ShipFangsMesh.desc.data as string,
-  [PickMesh.desc.name]: PickMesh.desc.data as string,
-  [SpaceOreMesh.desc.name]: SpaceOreMesh.desc.data as string,
-  [SpaceRockMesh.desc.name]: SpaceRockMesh.desc.data as string,
-  [AmmunitionBoxMesh.desc.name]: AmmunitionBoxMesh.desc.data as string,
-  [LinstockMesh.desc.name]: LinstockMesh.desc.data as string,
-  [CannonMesh.desc.name]: CannonMesh.desc.data as string,
-  [CannonLD51Mesh.desc.name]: CannonLD51Mesh.desc.data as string,
-  [GrappleHookMesh.desc.name]: GrappleHookMesh.desc.data as string,
-  [GrappleGunMesh.desc.name]: GrappleGunMesh.desc.data as string,
-  [GrappleGunUnloadedMesh.desc.name]: GrappleGunUnloadedMesh.desc.data as string,
-  [RudderMesh.desc.name]: RudderMesh.desc.data as string,
-  [OceanMesh.desc.name]: OceanMesh.desc.data as string,
-  [PirateMesh.desc.name]: PirateMesh.desc.data as string,
-} as const;
-
-type RemoteMeshSymbols = keyof typeof RemoteMeshes;
-
-const RemoteMesheSets = {
-  // TODO(@darzu): both of these are doing "cell fracture" in Blender
-  //    than exporting into here. It'd be great if sprigland could
-  //    natively do cell fracture b/c there
-  //    is a lot of translate/scale alignment issues when we have
-  //    a base model and a fractured model. Very hard to make changes.
-  // TODO(@darzu): enemy broken parts doesn't seem to work rn. probably rename related
-  [BoatBrokenMesh.desc.name]: BoatBrokenMesh.desc.data as string,
-  [ShipBrokenMesh.desc.name]: ShipBrokenMesh.desc.data as string,
-  [BallBrokenMesh.desc.name]: BallBrokenMesh.desc.data as string,
-} as const;
-
-type RemoteMeshSetSymbols = keyof typeof RemoteMesheSets;
-
-export type AllMeshSymbols =
-  | RemoteMeshSymbols
-  | RemoteMeshSetSymbols
-  | LocalMeshSymbols;
-
-const MeshTransforms: Partial<{
-  [P in AllMeshSymbols]: mat4;
-}> = {
-  cannon: mat4.fromYRotation(-Math.PI / 2, mat4.create()),
-  linstock: mat4.fromScaling([0.1, 0.1, 0.1], mat4.create()),
-  // ship: mat4.fromScaling(mat4.create(), [3, 3, 3]),
-  // ship_broken: mat4.fromScaling(mat4.create(), [3, 3, 3]),
-  spacerock: mat4.fromScaling([1.5, 1.5, 1.5], mat4.create()),
-  grappleGun: mat4.fromScaling([0.5, 0.5, 0.5], mat4.create()),
-  grappleGunUnloaded: mat4.fromScaling([0.5, 0.5, 0.5], mat4.create()),
-  grappleHook: mat4.fromScaling([0.5, 0.5, 0.5], mat4.create()),
-  rudder: mat4.translate(
-    mat4.fromYRotation(-Math.PI * 0.5, mat4.create()),
-    V(-5, 0, 0),
-    mat4.create()
-  ),
-  ocean: mat4.fromScaling([2, 2, 2], mat4.create()),
-  ship_fangs: mat4.fromScaling([3, 3, 3], mat4.create()),
-  ship_small: mat4.fromRotationTranslationScaleOrigin(
+  transform: mat4.fromRotationTranslationScaleOrigin(
     quat.IDENTITY,
     [0, 0, 0],
     [6, 6, 6],
     [0, 0, 0],
     mat4.create()
   ),
-  ld51_cannon: mat4.fromRotationTranslationScale(
-    quat.rotateX(quat.IDENTITY, Math.PI * -0.5, quat.create()),
-    [0, 0, 0],
-    // [0.8, 0.8, 0.8], // LD51 size
-    [1.2, 1.2, 1.2],
-    mat4.create()
-  ),
-  ball: BallMesh.desc.transform,
-  // ball_broken: mat4.fromScaling([2, 2, 2]),
-};
+});
 
-// TODO(@darzu): PERF. "ocean" and "ship_fangs" are expensive to load and aren't needed in all games.
-
-// TODO(@darzu): these sort of hacky offsets are a pain to deal with. It'd be
-//    nice to have some asset import helper tooling
-const blackoutColor: (m: RawMesh) => RawMesh = (m: RawMesh) => {
-  m.colors.map((c) => vec3.zero(c));
-  return m;
-};
-
-// TODO(@darzu): IMPL for WoodStateDef
-// EM.addLazyInit([AssetsDef], [WoodStateDef], ({ allMeshes}) => {});
-
-const MeshModify: Partial<{
-  [P in AllMeshSymbols]: (m: RawMesh) => RawMesh;
-}> = {
-  ship_fangs: (m) => {
+export const ShipFangsMesh = registerMesh({
+  name: "ship_fangs",
+  data: "enemy_ship_fangs.sprig.obj",
+  transform: mat4.fromScaling([3, 3, 3], mat4.create()),
+  modify: (m) => {
     // if ("true") return m; // TODO(@darzu): FOR PERF
 
     // m.colors = m.colors.map((c) => [0.2, 0.2, 0.2]);
@@ -395,48 +219,87 @@ const MeshModify: Partial<{
 
     return m;
   },
-  // timber_rib: (m) => {
-  //   // TODO(@darzu): de-duplicate w/ fang ship above
-  //   m.surfaceIds = m.colors.map((_, i) => i);
+});
 
-  //   const woodState = getBoardsFromMesh(m);
-
-  //   unshareProvokingForWood(m, woodState);
-
-  //   const woodAssets: WoodAssets =
-  //     EM.getResource(WoodAssetsDef) ?? EM.addResource(WoodAssetsDef);
-
-  //   woodAssets["timber_rib"] = woodState;
-
-  //   return m;
-  // },
-  cannon: (m) => {
-    m.colors = m.colors.map((c) => V(0.2, 0.2, 0.2));
-    return m;
-  },
-  spacerock: (m) => {
+export const PickMesh = registerMesh({
+  name: "pick",
+  data: "pick.sprig.obj",
+});
+export const SpaceOreMesh = registerMesh({
+  name: "spaceore",
+  data: "spaceore.sprig.obj",
+});
+export const SpaceRockMesh = registerMesh({
+  name: "spacerock",
+  data: "spacerock.sprig.obj",
+  transform: mat4.fromScaling([1.5, 1.5, 1.5], mat4.create()),
+  modify: (m) => {
     m.colors = m.colors.map((c) => V(0.05, 0.15, 0.2));
     const t = mat4.fromYRotation(Math.PI * 0.2, mat4.create());
     transformMesh(m, t);
     m.lines = [];
     return m;
   },
-  // cube: blackoutColor,
-  // ship: blackoutColor,
-  // ball: blackoutColor,
-  // enemyShip_broken: blackoutColor,
-  ship: (m) => {
-    m.lines = [];
-    scaleMesh(m, 3);
+});
+export const AmmunitionBoxMesh = registerMesh({
+  name: "ammunition_box",
+  data: "ammunition_box.sprig.obj",
+});
+export const LinstockMesh = registerMesh({
+  name: "linstock",
+  data: "linstock.sprig.obj",
+  transform: mat4.fromScaling([0.1, 0.1, 0.1], mat4.create()),
+});
+export const CannonMesh = registerMesh({
+  name: "cannon",
+  data: "cannon_simple.sprig.obj",
+  transform: mat4.fromYRotation(-Math.PI / 2, mat4.create()),
+  modify: (m) => {
+    m.colors = m.colors.map((c) => V(0.2, 0.2, 0.2));
     return m;
   },
-  ship_broken: (m) => {
-    m.lines = [];
-    m.pos = m.pos.map((p) => vec3.sub(p, SHIP_OFFSET, vec3.create()));
-    scaleMesh(m, 3);
-    return m;
-  },
-  ocean: (m) => {
+});
+export const CannonLD51Mesh = registerMesh({
+  name: "ld51_cannon",
+  data: "ld51_cannon.sprig.obj",
+  transform: mat4.fromRotationTranslationScale(
+    quat.rotateX(quat.IDENTITY, Math.PI * -0.5, quat.create()),
+    [0, 0, 0],
+    // [0.8, 0.8, 0.8], // LD51 size
+    [1.2, 1.2, 1.2],
+    mat4.create()
+  ),
+});
+export const GrappleHookMesh = registerMesh({
+  name: "grappleHook",
+  data: "grapple-hook.sprig.obj",
+  transform: mat4.fromScaling([0.5, 0.5, 0.5], mat4.create()),
+});
+export const GrappleGunMesh = registerMesh({
+  name: "grappleGun",
+  data: "grapple-gun.sprig.obj",
+  transform: mat4.fromScaling([0.5, 0.5, 0.5], mat4.create()),
+});
+export const GrappleGunUnloadedMesh = registerMesh({
+  name: "grappleGunUnloaded",
+  data: "grapple-gun-unloaded.sprig.obj",
+  transform: mat4.fromScaling([0.5, 0.5, 0.5], mat4.create()),
+});
+export const RudderMesh = registerMesh({
+  name: "rudder",
+  data: "rudder.sprig.obj",
+  transform: mat4.translate(
+    mat4.fromYRotation(-Math.PI * 0.5, mat4.create()),
+    V(-5, 0, 0),
+    mat4.create()
+  ),
+});
+
+export const OceanMesh = registerMesh({
+  name: "ocean",
+  data: "hyperspace-ocean.sprig.obj",
+  transform: mat4.fromScaling([2, 2, 2], mat4.create()),
+  modify: (m) => {
     // if ("true") return m; // TODO(@darzu): FOR PERF
     // TODO(@darzu): extract out all this setUV stuff.
     // reduce duplicate positions
@@ -590,7 +453,134 @@ const MeshModify: Partial<{
     // console.dir({ minX, maxX, minZ, maxZ });
     return m;
   },
+});
+export const PirateMesh = registerMesh({
+  name: "pirate",
+  data: "pirate.glb",
+});
+
+// TODO(@darzu): both of these are doing "cell fracture" in Blender
+//    than exporting into here. It'd be great if sprigland could
+//    natively do cell fracture b/c there
+//    is a lot of translate/scale alignment issues when we have
+//    a base model and a fractured model. Very hard to make changes.
+// TODO(@darzu): enemy broken parts doesn't seem to work rn. probably rename related
+export const BoatBrokenMesh = registerMeshGroup({
+  name: "boat_broken",
+  data: "boat_broken.sprig.obj",
+});
+export const ShipBrokenMesh = registerMeshGroup({
+  name: "ship_broken",
+  data: "barge1_broken.sprig.obj",
+  modify: (m) => {
+    m.lines = [];
+    m.pos = m.pos.map((p) => vec3.sub(p, SHIP_OFFSET, vec3.create()));
+    scaleMesh(m, 3);
+    return m;
+  },
+});
+export const BallBrokenMesh = registerMeshGroup({
+  name: "ball_broken",
+  data: "ball_broken6.sprig.obj",
+});
+
+const MeshModify: Partial<{
+  [P in AllMeshSymbols]: (m: RawMesh) => RawMesh;
+}> = {
+  // cube: blackoutColor,
+  // ship: blackoutColor,
+  // ball: blackoutColor,
+  // enemyShip_broken: blackoutColor,
 };
+
+const MeshTransforms: Partial<{
+  [P in AllMeshSymbols]: mat4;
+}> = {
+  // ship: mat4.fromScaling(mat4.create(), [3, 3, 3]),
+  // ship_broken: mat4.fromScaling(mat4.create(), [3, 3, 3]),
+  ball: BallMesh.desc.transform,
+  // ball_broken: mat4.fromScaling([2, 2, 2]),
+};
+
+// TODO(@darzu): WIP!
+const wipAllMeshesList = [
+  ShipMesh,
+  BallMesh,
+  ShipSmallMesh,
+  ShipFangsMesh,
+  PickMesh,
+  SpaceOreMesh,
+  SpaceRockMesh,
+  AmmunitionBoxMesh,
+  LinstockMesh,
+  CannonMesh,
+  CannonLD51Mesh,
+  GrappleHookMesh,
+  GrappleGunMesh,
+  GrappleGunUnloadedMesh,
+  RudderMesh,
+  OceanMesh,
+  PirateMesh,
+  BoatBrokenMesh,
+  ShipBrokenMesh,
+  BallBrokenMesh,
+] as const;
+const wipAllMeshesDef = defineMeshSetResource(
+  "wipAllMeshes",
+  ...wipAllMeshesList
+);
+const { wipAllMeshes } = await EM.whenResources(wipAllMeshesDef);
+const wip0: GameMesh = wipAllMeshes.ball;
+const wip1: GameMesh[] = wipAllMeshes.boat_broken;
+
+// TODO(@darzu): replace with mesh set
+// prettier-ignore
+const RemoteMeshes = {
+  [ShipMesh.desc.name]: ShipMesh.desc.data as string,
+  [BallMesh.desc.name]: BallMesh.desc.data as string,
+  [ShipSmallMesh.desc.name]: ShipSmallMesh.desc.data as string,
+  [ShipFangsMesh.desc.name]: ShipFangsMesh.desc.data as string,
+  [PickMesh.desc.name]: PickMesh.desc.data as string,
+  [SpaceOreMesh.desc.name]: SpaceOreMesh.desc.data as string,
+  [SpaceRockMesh.desc.name]: SpaceRockMesh.desc.data as string,
+  [AmmunitionBoxMesh.desc.name]: AmmunitionBoxMesh.desc.data as string,
+  [LinstockMesh.desc.name]: LinstockMesh.desc.data as string,
+  [CannonMesh.desc.name]: CannonMesh.desc.data as string,
+  [CannonLD51Mesh.desc.name]: CannonLD51Mesh.desc.data as string,
+  [GrappleHookMesh.desc.name]: GrappleHookMesh.desc.data as string,
+  [GrappleGunMesh.desc.name]: GrappleGunMesh.desc.data as string,
+  [GrappleGunUnloadedMesh.desc.name]: GrappleGunUnloadedMesh.desc.data as string,
+  [RudderMesh.desc.name]: RudderMesh.desc.data as string,
+  [OceanMesh.desc.name]: OceanMesh.desc.data as string,
+  [PirateMesh.desc.name]: PirateMesh.desc.data as string,
+} as const;
+
+type RemoteMeshSymbols = keyof typeof RemoteMeshes;
+
+const RemoteMesheSets = {
+  [BoatBrokenMesh.desc.name]: BoatBrokenMesh.desc.data as string,
+  [ShipBrokenMesh.desc.name]: ShipBrokenMesh.desc.data as string,
+  [BallBrokenMesh.desc.name]: BallBrokenMesh.desc.data as string,
+} as const;
+
+type RemoteMeshSetSymbols = keyof typeof RemoteMesheSets;
+
+export type AllMeshSymbols =
+  | RemoteMeshSymbols
+  | RemoteMeshSetSymbols
+  | LocalMeshSymbols;
+
+// TODO(@darzu): PERF. "ocean" and "ship_fangs" are expensive to load and aren't needed in all games.
+
+// TODO(@darzu): these sort of hacky offsets are a pain to deal with. It'd be
+//    nice to have some asset import helper tooling
+const blackoutColor: (m: RawMesh) => RawMesh = (m: RawMesh) => {
+  m.colors.map((c) => vec3.zero(c));
+  return m;
+};
+
+// TODO(@darzu): IMPL for WoodStateDef
+// EM.addLazyInit([AssetsDef], [WoodStateDef], ({ allMeshes}) => {});
 
 export const LocalMeshes = {
   cube: () => CUBE_MESH,
