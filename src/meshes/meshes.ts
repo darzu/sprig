@@ -134,11 +134,11 @@ export function registerMesh<N extends string>(desc: MeshDesc<N>): MeshReg<N> {
   throw `TODO: impl`;
 }
 
-export type WithMesh<D> = D extends MeshReg<infer N>
-  ? { readonly [k in N]: GameMesh }
-  : never;
-type MeshSet<MR extends MeshReg[]> = Intersect<{
-  [P in keyof MR]: WithMesh<MR[P]>;
+// TODO(@darzu): is there a simpler way to type this?
+export type MeshSet<MR extends MeshReg[]> = Intersect<{
+  [i in keyof MR]: MR[i] extends MeshReg<infer N>
+    ? { readonly [_ in N]: GameMesh }
+    : never;
 }>;
 
 export type MeshSetDef<N extends string, MR extends MeshReg[]> = ComponentDef<
@@ -160,7 +160,7 @@ const grassGameMeshesDef = defineMeshSetResource(
   GizmoMesh
 );
 const { gg_meshes } = await EM.whenResources(grassGameMeshesDef);
-// gg_meshes.
+const foo: GameMesh = gg_meshes.gizmo;
 
 const RemoteMeshes = {
   ship: "barge.sprig.obj",
