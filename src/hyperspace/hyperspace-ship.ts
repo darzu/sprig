@@ -10,7 +10,7 @@ import {
   PositionDef,
   RotationDef,
 } from "../physics/transform.js";
-import { AssetsDef } from "../meshes/assets.js";
+import { AllMeshesDef } from "../meshes/assets.js";
 import { BARGE_AABBS } from "../meshes/primatives.js";
 import {
   AABBCollider,
@@ -80,7 +80,7 @@ export const { RudderPropsDef, RudderLocalDef, createRudderNow } =
     },
     defaultLocal: () => true,
     dynamicComponents: [RotationDef],
-    buildResources: [AssetsDef, MeDef],
+    buildResources: [AllMeshesDef, MeDef],
     build: (rudder, res) => {
       EM.ensureComponentOn(rudder, PositionDef, V(0, 0.5, -15));
 
@@ -166,7 +166,7 @@ export const { HsShipPropsDef, HsShipLocalDef, createHsShip } =
       // LinearVelocityDef,
       // AngularVelocityDef,
     ],
-    buildResources: [MeDef, AssetsDef],
+    buildResources: [MeDef, AllMeshesDef],
     build: async (s, res) => {
       if (s.authority.pid === res.me.pid) {
         // s.hsShipProps.loc = [0, -2, 0];

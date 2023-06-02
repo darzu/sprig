@@ -1,6 +1,6 @@
 import { ColorDef } from "../color/color-ecs.js";
 import { EM, EntityW } from "../ecs/entity-manager.js";
-import { AssetsDef, GameMesh } from "../meshes/assets.js";
+import { AllMeshesDef, GameMesh } from "../meshes/assets.js";
 import { gameplaySystems } from "../debug/ghost.js";
 import {
   vec2,
@@ -104,7 +104,10 @@ async function createMeshEditor() {
     extrudeHEdge,
   };
 
-  const { renderer, assets } = await EM.whenResources(RendererDef, AssetsDef);
+  const { renderer, assets } = await EM.whenResources(
+    RendererDef,
+    AllMeshesDef
+  );
 
   return res;
 

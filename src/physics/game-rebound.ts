@@ -15,7 +15,7 @@ import {
 import { RendererDef } from "../render/renderer-ecs.js";
 import { assert } from "../utils/util.js";
 import { TimeDef } from "../time/time.js";
-import { AssetsDef, GameMesh } from "../meshes/assets.js";
+import { AllMeshesDef, GameMesh } from "../meshes/assets.js";
 // import { ENEMY_SHIP_COLOR } from "./enemy-ship.js";
 // import { ClothConstructDef, ClothLocalDef } from "./cloth.js";
 import { GlobalCursor3dDef } from "../gui/cursor.js";
@@ -35,7 +35,7 @@ export async function initReboundSandbox(hosting: boolean) {
   let tableId = -1;
 
   const res = await EM.whenResources(
-    AssetsDef,
+    AllMeshesDef,
     GlobalCursor3dDef,
     RendererDef,
     TextDef,
@@ -114,7 +114,7 @@ export async function initReboundSandbox(hosting: boolean) {
     "sandboxSpawnBoxes",
     Phase.GAME_WORLD,
     null,
-    [AssetsDef, TimeDef, InputsDef],
+    [AllMeshesDef, TimeDef, InputsDef],
     (_, res) => {
       // pause/unpause
       if (res.inputs.keyClicks["p"]) paused = !paused;

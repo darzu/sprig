@@ -24,7 +24,7 @@ import { alphaRenderPipeline } from "../render/pipelines/xp-alpha.js";
 import { RendererDef, RenderableConstructDef } from "../render/renderer-ecs.js";
 import { assert } from "../utils/util.js";
 import { randNormalPosVec3 } from "../utils/utils-3d.js";
-import { AssetsDef, GameMesh, gameMeshFromMesh } from "../meshes/assets.js";
+import { AllMeshesDef, GameMesh, gameMeshFromMesh } from "../meshes/assets.js";
 import { createGhost, gameplaySystems } from "../debug/ghost.js";
 import { TextDef } from "./ui.js";
 import { makePlaneMesh } from "../meshes/primatives.js";
@@ -60,7 +60,7 @@ export const UICursorDef = EM.defineComponent(
   })
 );
 
-EM.addLazyInit([AssetsDef], [UICursorDef], ({ assets }) => {
+EM.addLazyInit([AllMeshesDef], [UICursorDef], ({ assets }) => {
   // Cursor
   const cursor = EM.new();
   EM.ensureComponentOn(cursor, ColorDef, V(0.1, 0.1, 0.1));
@@ -81,7 +81,11 @@ EM.addLazyInit([AssetsDef], [UICursorDef], ({ assets }) => {
 export async function initFontEditor() {
   // console.log(`panel ${PANEL_W}x${PANEL_H}`);
 
-  const res = await EM.whenResources(AssetsDef, RendererDef, ButtonsStateDef);
+  const res = await EM.whenResources(
+    AllMeshesDef,
+    RendererDef,
+    ButtonsStateDef
+  );
 
   // res.renderer.pipelines = [
   //   // ...shadowPipelines,

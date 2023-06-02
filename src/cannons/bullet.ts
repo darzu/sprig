@@ -15,7 +15,7 @@ import {
   PredictDef,
   Me,
 } from "../net/components.js";
-import { Assets, AssetsDef } from "../meshes/assets.js";
+import { Assets, AllMeshesDef } from "../meshes/assets.js";
 import {
   AngularVelocity,
   AngularVelocityDef,
@@ -145,7 +145,7 @@ export function registerBuildBulletsSystem() {
     "buildBullets",
     Phase.GAME_WORLD,
     [BulletConstructDef],
-    [MeDef, AssetsDef],
+    [MeDef, AllMeshesDef],
     (bullets, res) => {
       for (let b of bullets) {
         // if (FinishedDef.isOn(b)) continue;
@@ -229,7 +229,7 @@ export async function fireBullet(
 
   // TODO(@darzu): This breaks multiplayer maybe!
   // TODO(@darzu): MULTIPLAYER. need to think how multiplayer and entity pools interact.
-  const res = await EM.whenResources(MeDef, TimeDef, AssetsDef);
+  const res = await EM.whenResources(MeDef, TimeDef, AllMeshesDef);
   return createOrResetBullet(e, res);
 }
 
@@ -253,7 +253,7 @@ async function initBulletPartPool() {
   if (_bulletPartPoolIsInit) return;
   _bulletPartPoolIsInit = true;
 
-  const { assets } = await EM.whenResources(AssetsDef);
+  const { assets } = await EM.whenResources(AllMeshesDef);
 
   const numSetsInPool = 20;
 

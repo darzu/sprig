@@ -15,7 +15,7 @@ import { PositionDef, ScaleDef } from "../physics/transform.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { tempVec3 } from "../matrix/temp-pool.js";
 import { vec3Dbg, vec3Dbg2 } from "../utils/utils-3d.js";
-import { AssetsDef } from "./assets.js";
+import { AllMeshesDef } from "./assets.js";
 import { ColorDef, TintsDef } from "../color/color-ecs.js";
 import { drawLine, screenPosToRay } from "../utils/utils-game.js";
 import { CameraView, CameraComputedDef } from "../camera/camera.js";
@@ -115,7 +115,7 @@ function registerAABBBuilder() {
     "aabbBuilder",
     Phase.GAME_PLAYERS,
     null,
-    [InputsDef, ModelerDef, AssetsDef],
+    [InputsDef, ModelerDef, AllMeshesDef],
     (_, res) => {
       // create a new box
       if (res.inputs.keyClicks["b"]) {

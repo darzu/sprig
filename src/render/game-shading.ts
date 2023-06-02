@@ -1,4 +1,4 @@
-import { AssetsDef } from "../meshes/assets.js";
+import { AllMeshesDef } from "../meshes/assets.js";
 import { CameraDef, CameraComputedDef } from "../camera/camera.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { AllEndesga16, ENDESGA16 } from "../color/palettes.js";
@@ -76,7 +76,7 @@ export async function initShadingGame() {
   vec3.set(+20, +20, +20, camera.maxWorldAABB.max);
   // camera.perspectiveMode = "ortho";
 
-  const { assets } = await EM.whenResources(AssetsDef);
+  const { assets } = await EM.whenResources(AllMeshesDef);
 
   // light
   const sun = EM.new();

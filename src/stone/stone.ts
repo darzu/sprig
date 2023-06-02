@@ -1,4 +1,4 @@
-import { AssetsDef } from "../meshes/assets.js";
+import { AllMeshesDef } from "../meshes/assets.js";
 import { AudioDef } from "../audio/audio.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
@@ -328,7 +328,7 @@ export const towerPool = createEntityPool<
   max: maxStoneTowers,
   maxBehavior: "crash",
   create: async () => {
-    const res = await EM.whenResources(AssetsDef);
+    const res = await EM.whenResources(AllMeshesDef);
     const tower = EM.new();
     const cannon = EM.new();
     EM.ensureComponentOn(
@@ -550,7 +550,7 @@ export const flyingBrickPool = createEntityPool<
   max: maxFlyingBricks,
   maxBehavior: "rand-despawn",
   create: async () => {
-    const res = await EM.whenResources(AssetsDef);
+    const res = await EM.whenResources(AllMeshesDef);
     const brick = EM.new();
     EM.ensureComponentOn(brick, FlyingBrickDef);
     EM.ensureComponentOn(brick, PositionDef);

@@ -1,4 +1,4 @@
-import { AssetsDef } from "../meshes/assets.js";
+import { AllMeshesDef } from "../meshes/assets.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { createRef } from "../ecs/em-helpers.js";
 import { EM, EntityW } from "../ecs/entity-manager.js";
@@ -61,7 +61,7 @@ export const { RibSailPropsDef, RibSailLocalDef, createRibSailNow } =
       // ]),
     }),
     dynamicComponents: [RotationDef /*, BoomPitchesDef*/],
-    buildResources: [AssetsDef, MeDef],
+    buildResources: [AllMeshesDef, MeDef],
     build: (sail, res) => {
       // const sail = EM.new();
 

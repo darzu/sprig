@@ -1,4 +1,4 @@
-import { AssetsDef } from "../meshes/assets.js";
+import { AllMeshesDef } from "../meshes/assets.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { defineNetEntityHelper } from "../ecs/em-helpers.js";
 import { EM } from "../ecs/entity-manager.js";
@@ -23,7 +23,7 @@ export const { GemPropsDef, GemLocalDef, createGem } = defineNetEntityHelper({
   },
   defaultLocal: () => true,
   dynamicComponents: [],
-  buildResources: [AssetsDef, MeDef],
+  buildResources: [AllMeshesDef, MeDef],
   build: (gem, res) => {
     EM.ensureComponentOn(gem, PositionDef, V(0, 0, 10));
 

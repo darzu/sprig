@@ -1,7 +1,7 @@
 import { ColorDef } from "../color/color-ecs.js";
 import { createRef } from "../ecs/em-helpers.js";
 import { EM, EntityW } from "../ecs/entity-manager.js";
-import { AssetsDef } from "../meshes/assets.js";
+import { AllMeshesDef } from "../meshes/assets.js";
 import { vec3, quat } from "../matrix/sprig-matrix.js";
 import { LinearVelocityDef } from "../motion/velocity.js";
 import {
@@ -80,7 +80,7 @@ const RUDDER_ROTATION_RATE = 0.01;
 export const cannonDefaultPitch = Math.PI * +0.05;
 
 export async function createShip() {
-  const res = await EM.whenResources(AssetsDef, MeDef);
+  const res = await EM.whenResources(AllMeshesDef, MeDef);
   const ent = EM.new();
   EM.ensureComponentOn(ent, ShipDef);
 
@@ -234,7 +234,7 @@ EM.addSystem(
 export const RudderDef = EM.defineComponent("rudder", () => true);
 
 async function createRudder() {
-  const res = await EM.whenResources(AssetsDef, MeDef);
+  const res = await EM.whenResources(AllMeshesDef, MeDef);
   const ent = EM.new();
   EM.ensureComponentOn(ent, RudderDef);
   EM.ensureComponentOn(

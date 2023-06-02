@@ -66,7 +66,7 @@ import {
   WoodStateDef,
   _dbgNumSplinterEnds,
 } from "./wood.js";
-import { AssetsDef, BLACK } from "../meshes/assets.js";
+import { AllMeshesDef, BLACK } from "../meshes/assets.js";
 import {
   breakBullet,
   BulletConstructDef,
@@ -158,7 +158,7 @@ export const LD51CannonDef = EM.defineComponent("ld51Cannon", () => {
 
 export async function initShipyardGame(hosting: boolean) {
   const res = await EM.whenResources(
-    AssetsDef,
+    AllMeshesDef,
     // WoodAssetsDef,
     // GlobalCursor3dDef,
     RendererDef,

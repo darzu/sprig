@@ -14,7 +14,7 @@ import {
 import { ColliderDef } from "../physics/collider.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { aabbCenter } from "../physics/aabb.js";
-import { Assets, AssetsDef, GameMesh } from "../meshes/assets.js";
+import { Assets, AllMeshesDef, GameMesh } from "../meshes/assets.js";
 import { AngularVelocityDef, LinearVelocityDef } from "../motion/velocity.js";
 import { MotionSmoothingDef } from "../render/motion-smoothing.js";
 import {
@@ -119,7 +119,7 @@ export const { EnemyShipPropsDef, EnemyShipLocalDef, createEnemyShip } =
     },
     // TODO(@darzu): probably sync UV pos/dir
     dynamicComponents: [PositionDef, RotationDef],
-    buildResources: [AssetsDef, MeDef],
+    buildResources: [AllMeshesDef, MeDef],
     build: (e, res) => {
       EM.ensureComponentOn(e, UVShipDef);
       e.uvship.speed = e.enemyShipProps.speed;
@@ -220,7 +220,7 @@ export const raiseBreakEnemyShip = eventWizard(
   "break-enemyShip",
   [[EnemyShipLocalDef, PositionDef, RotationDef]] as const,
   ([enemyShip]) => {
-    const res = EM.getResources([AssetsDef, AudioDef])!;
+    const res = EM.getResources([AllMeshesDef, AudioDef])!;
     breakEnemyShip(enemyShip, res.assets.boat_broken, res.music);
   }
 );
@@ -298,7 +298,7 @@ export function registerEnemyShipSystems() {
     "breakEnemyShips",
     Phase.GAME_WORLD,
     [EnemyShipLocalDef, PositionDef, RotationDef],
-    [PhysicsResultsDef, AssetsDef, AudioDef, MeDef, DetectedEventsDef],
+    [PhysicsResultsDef, AllMeshesDef, AudioDef, MeDef, DetectedEventsDef],
     (objs, res) => {
       for (let enemyShip of objs) {
         const hits = res.physicsResults.collidesWith.get(enemyShip.id);

@@ -11,7 +11,7 @@ import {
   shadowPipelines,
 } from "../render/pipelines/std-shadow.js";
 import { initStars, renderStars } from "../render/pipelines/std-stars.js";
-import { AssetsDef } from "../meshes/assets.js";
+import { AllMeshesDef } from "../meshes/assets.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { createHsPlayer, registerHsPlayerSystems } from "./hs-player.js";
 import { createHsShip, registerShipSystems } from "./hyperspace-ship.js";
@@ -58,7 +58,7 @@ import { registerRibSailSystems } from "./ribsail.js";
 // export let jfaMaxStep = VISUALIZE_JFA ? 0 : 999;
 
 function spawnRandomDarkStar(
-  res: EntityW<[typeof AssetsDef]>,
+  res: EntityW<[typeof AllMeshesDef]>,
   approxPosition: vec3,
   color: vec3
 ) {
@@ -137,7 +137,7 @@ export async function initHyperspaceGame() {
     }
   );
 
-  const res = await EM.whenResources(AssetsDef, RendererDef, CameraDef);
+  const res = await EM.whenResources(AllMeshesDef, RendererDef, CameraDef);
 
   res.camera.fov = Math.PI * 0.5;
 

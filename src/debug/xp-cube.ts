@@ -22,14 +22,14 @@ import {
   canvasTexturePtr,
 } from "../render/pipelines/std-scene.js";
 import { uintToVec3unorm } from "../utils/utils-3d.js";
-import { AssetsDef } from "../meshes/assets.js";
+import { AllMeshesDef } from "../meshes/assets.js";
 import { GlobalCursor3dDef } from "../gui/cursor.js";
 import { createGhost } from "./ghost.js";
 import { PointLightDef } from "../render/lights.js";
 
 export async function initCubeGame() {
   const res = await EM.whenResources(
-    AssetsDef,
+    AllMeshesDef,
     // GlobalCursor3dDef,
     RendererDef,
     CameraDef

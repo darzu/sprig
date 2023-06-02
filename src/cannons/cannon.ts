@@ -10,7 +10,7 @@ import { DetectedEventsDef, eventWizard } from "../net/events.js";
 import { fireBullet } from "./bullet.js";
 import { InRangeDef } from "../input/interact.js";
 import { LocalHsPlayerDef, HsPlayerDef } from "../hyperspace/hs-player.js";
-import { AssetsDef } from "../meshes/assets.js";
+import { AllMeshesDef } from "../meshes/assets.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import { AudioDef, randChordId } from "../audio/audio.js";
 import { InputsDef } from "../input/inputs.js";
@@ -55,7 +55,7 @@ export const { CannonPropsDef, CannonLocalDef, createCannon, createCannonNow } =
       };
     },
     dynamicComponents: [],
-    buildResources: [AssetsDef, MeDef],
+    buildResources: [AllMeshesDef, MeDef],
     build: (e, res) => {
       const props = e.cannonProps;
       EM.ensureComponentOn(e, PositionDef, props.location);

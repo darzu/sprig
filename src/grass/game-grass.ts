@@ -2,7 +2,7 @@ import { CameraDef, CameraFollowDef } from "../camera/camera.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { EM } from "../ecs/entity-manager.js";
-import { AssetsDef } from "../meshes/assets.js";
+import { AllMeshesDef } from "../meshes/assets.js";
 import { ControllableDef } from "../input/controllable.js";
 import { createGhost, GhostDef } from "../debug/ghost.js";
 import { LocalHsPlayerDef, HsPlayerDef } from "../hyperspace/hs-player.js";
@@ -128,7 +128,7 @@ export async function initGrassGame(hosting: boolean) {
   // outlineRender.fragOverrides!.lineWidth = 3.0;
 
   const res = await EM.whenResources(
-    AssetsDef,
+    AllMeshesDef,
     // WoodAssetsDef,
     // GlobalCursor3dDef,
     RendererDef,
@@ -719,7 +719,7 @@ export async function initGrassGame(hosting: boolean) {
 }
 
 async function createPlayer() {
-  const { assets, me } = await EM.whenResources(AssetsDef, MeDef);
+  const { assets, me } = await EM.whenResources(AllMeshesDef, MeDef);
   const p = EM.new();
   EM.ensureComponentOn(p, ControllableDef);
   p.controllable.modes.canFall = false;

@@ -27,7 +27,7 @@ import { Ray } from "../physics/broadphase.js";
 import { copyAABB, createAABB } from "../physics/aabb.js";
 import { tempVec3 } from "../matrix/temp-pool.js";
 import { cloneMesh, scaleMesh3 } from "../meshes/mesh.js";
-import { AssetsDef } from "../meshes/assets.js";
+import { AllMeshesDef } from "../meshes/assets.js";
 import { LinearVelocityDef } from "../motion/velocity.js";
 import { MotionSmoothingDef } from "../render/motion-smoothing.js";
 import { ModelerDef } from "../meshes/modeler.js";
@@ -110,7 +110,7 @@ export function registerHsPlayerSystems() {
     "buildHsPlayers",
     Phase.PRE_GAME_WORLD,
     [PlayerHsPropsDef],
-    [MeDef, AssetsDef],
+    [MeDef, AllMeshesDef],
     (players, res) => {
       for (let e of players) {
         if (FinishedDef.isOn(e)) continue;

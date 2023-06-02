@@ -9,7 +9,7 @@ import {
   PositionDef,
   updateFrameFromPosRotScale,
 } from "../physics/transform.js";
-import { AssetsDef } from "../meshes/assets.js";
+import { AllMeshesDef } from "../meshes/assets.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { assert } from "../utils/util.js";
 import { CameraComputedDef } from "../camera/camera.js";
@@ -35,7 +35,7 @@ export const Cursor3dDef = EM.defineComponent("cursor3d", () => ({
   maxDistance: 100,
 }));
 
-EM.addLazyInit([AssetsDef], [GlobalCursor3dDef], async (res) => {
+EM.addLazyInit([AllMeshesDef], [GlobalCursor3dDef], async (res) => {
   {
     console.log(`init global cursor`);
     const cursor = EM.new();

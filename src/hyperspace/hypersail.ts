@@ -18,7 +18,7 @@ import {
   RendererDef,
 } from "../render/renderer-ecs.js";
 import { vec3Dbg } from "../utils/utils-3d.js";
-import { AssetsDef } from "../meshes/assets.js";
+import { AllMeshesDef } from "../meshes/assets.js";
 import { DarkStarPropsDef } from "./darkstar.js";
 import { HyperspaceGameState, HSGameStateDef } from "./hyperspace-gamestate.js";
 import { HsShipPropsDef } from "./hyperspace-ship.js";
@@ -85,7 +85,7 @@ export const { HypMastPropsDef, HypMastLocalDef, createHypMastNow } =
       ]),
     }),
     dynamicComponents: [RotationDef, BoomPitchesDef],
-    buildResources: [AssetsDef, MeDef],
+    buildResources: [AllMeshesDef, MeDef],
     build: (mast, res) => {
       EM.ensureComponentOn(mast, PositionDef, V(0, 0, 0));
 

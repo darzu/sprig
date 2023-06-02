@@ -1,4 +1,4 @@
-import { BLACK, AssetsDef } from "../meshes/assets.js";
+import { BLACK, AllMeshesDef } from "../meshes/assets.js";
 import { AudioDef } from "../audio/audio.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
@@ -263,7 +263,7 @@ const piratePool = createEntityPool<
   max: maxPirates,
   maxBehavior: "crash",
   create: async () => {
-    const res = await EM.whenResources(AssetsDef, RendererDef, TimeDef);
+    const res = await EM.whenResources(AllMeshesDef, RendererDef, TimeDef);
     // make platform
     const platform = EM.new();
     EM.ensureComponentOn(platform, ColorDef);
@@ -329,7 +329,7 @@ const piratePool = createEntityPool<
   },
   onSpawn: async (p) => {
     const initialPitch = Math.PI * 0.06;
-    const res = await EM.whenResources(AssetsDef, RendererDef, TimeDef);
+    const res = await EM.whenResources(AllMeshesDef, RendererDef, TimeDef);
 
     // set/reset platform, cannon, and wood properties
     const platform = p;

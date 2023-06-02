@@ -1,6 +1,6 @@
 import { ColorDef } from "../color/color-ecs.js";
 import { EM, EntityW } from "../ecs/entity-manager.js";
-import { AssetsDef, GameMesh, gameMeshFromMesh } from "../meshes/assets.js";
+import { AllMeshesDef, GameMesh, gameMeshFromMesh } from "../meshes/assets.js";
 import { gameplaySystems } from "../debug/ghost.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import {
@@ -89,7 +89,10 @@ async function createPathEditor() {
     positionVert,
   };
 
-  const { renderer, assets } = await EM.whenResources(RendererDef, AssetsDef);
+  const { renderer, assets } = await EM.whenResources(
+    RendererDef,
+    AllMeshesDef
+  );
   const stdPool = renderer.renderer.getCyResource(meshPoolPtr)!;
 
   return res;
@@ -407,7 +410,10 @@ export async function lineStuff() {
     extMesh.colors.push(randNormalPosVec3(vec3.create()));
   }
 
-  const { renderer, assets } = await EM.whenResources(RendererDef, AssetsDef);
+  const { renderer, assets } = await EM.whenResources(
+    RendererDef,
+    AllMeshesDef
+  );
 
   const gmesh = gameMeshFromMesh(extMesh, renderer.renderer);
 

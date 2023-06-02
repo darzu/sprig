@@ -61,10 +61,13 @@ import {
 import { createGizmoMesh } from "../debug/gizmos.js";
 import { importGltf } from "./import-gltf.js";
 
-export const AssetsDef = EM.defineComponent("assets", (meshes: GameMeshes) => {
-  return meshes;
-});
-export type Assets = Component<typeof AssetsDef>;
+export const AllMeshesDef = EM.defineComponent(
+  "assets",
+  (meshes: GameMeshes) => {
+    return meshes;
+  }
+);
+export type Assets = Component<typeof AllMeshesDef>;
 
 // TODO: load these via streaming
 // TODO(@darzu): it's really bad that all these assets are loaded for each game
@@ -474,9 +477,9 @@ type GameMeshes = { [P in RemoteMeshSymbols | LocalMeshSymbols]: GameMesh } & {
   [P in RemoteMeshSetSymbols]: GameMesh[];
 };
 
-EM.addLazyInit([RendererDef], [AssetsDef], async ({ renderer }) => {
+EM.addLazyInit([RendererDef], [AllMeshesDef], async ({ renderer }) => {
   const assets = await loadAssets(renderer.renderer);
-  EM.addResource(AssetsDef, assets);
+  EM.addResource(AllMeshesDef, assets);
 });
 
 async function loadTxtInternal(relPath: string): Promise<string> {

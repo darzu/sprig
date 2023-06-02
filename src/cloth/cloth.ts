@@ -5,7 +5,7 @@ import { PositionDef, RotationDef } from "../physics/transform.js";
 import { SyncDef, AuthorityDef, Me, MeDef } from "../net/components.js";
 import { Serializer, Deserializer } from "../utils/serialize.js";
 import { FinishedDef } from "../ecs/em-helpers.js";
-import { Assets, AssetsDef } from "../meshes/assets.js";
+import { Assets, AllMeshesDef } from "../meshes/assets.js";
 import { SpringType, SpringGridDef, ForceDef } from "./spring.js";
 import {
   Mesh,
@@ -129,7 +129,7 @@ EM.addEagerInit([ClothConstructDef], [], [], () => {
     "buildCloths",
     Phase.PRE_GAME_WORLD,
     [ClothConstructDef],
-    [MeDef, AssetsDef],
+    [MeDef, AllMeshesDef],
     (cloths, res) => {
       for (let cloth of cloths) {
         if (FinishedDef.isOn(cloth)) continue;

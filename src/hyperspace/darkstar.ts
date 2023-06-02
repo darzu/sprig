@@ -4,7 +4,7 @@ import { vec3, V } from "../matrix/sprig-matrix.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { PositionDef, ScaleDef } from "../physics/transform.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
-import { AssetsDef } from "../meshes/assets.js";
+import { AllMeshesDef } from "../meshes/assets.js";
 import { PointLightDef } from "../render/lights.js";
 import { FLAG_UNLIT, RenderDataStdDef } from "../render/pipelines/std-scene.js";
 import { ColorDef } from "../color/color-ecs.js";
@@ -40,7 +40,7 @@ export const { DarkStarPropsDef, DarkStarLocalDef, createDarkStarNow } =
     },
     defaultLocal: () => ({}),
     dynamicComponents: [PositionDef],
-    buildResources: [AssetsDef],
+    buildResources: [AllMeshesDef],
     build: (star, res) => {
       vec3.copy(star.position, star.darkStarProps.pos);
       EM.ensureComponentOn(star, RenderableConstructDef, res.assets.ball.proto);

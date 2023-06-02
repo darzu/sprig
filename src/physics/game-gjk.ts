@@ -21,7 +21,7 @@ import {
 } from "../render/renderer-ecs.js";
 import { tempVec3 } from "../matrix/temp-pool.js";
 import { farthestPointInDir } from "../utils/utils-3d.js";
-import { AssetsDef, GameMesh } from "../meshes/assets.js";
+import { AllMeshesDef, GameMesh } from "../meshes/assets.js";
 import { GlobalCursor3dDef } from "../gui/cursor.js";
 import { createGhost } from "../debug/ghost.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
@@ -59,7 +59,7 @@ let __frame = 0;
 export async function initGJKSandbox(hosting: boolean) {
   dbgLogMilestone("GJK waiting for resources");
   const res = await EM.whenResources(
-    AssetsDef,
+    AllMeshesDef,
     GlobalCursor3dDef,
     RendererDef,
     CameraDef

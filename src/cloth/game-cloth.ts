@@ -36,7 +36,7 @@ import { tempVec3 } from "../matrix/temp-pool.js";
 import { EASE_INQUAD } from "../utils/util-ease.js";
 import { assert } from "../utils/util.js";
 import { drawLine } from "../utils/utils-game.js";
-import { AssetsDef } from "../meshes/assets.js";
+import { AllMeshesDef } from "../meshes/assets.js";
 import { ClothConstructDef, ClothLocalDef } from "./cloth.js";
 import { GlobalCursor3dDef } from "../gui/cursor.js";
 import { ENEMY_SHIP_COLOR } from "../hyperspace/uv-enemy-ship.js";
@@ -50,7 +50,7 @@ import { Phase } from "../ecs/sys-phase.js";
 
 export async function initClothSandbox(hosting: boolean) {
   const res = await EM.whenResources(
-    AssetsDef,
+    AllMeshesDef,
     GlobalCursor3dDef,
     RendererDef,
     CameraDef

@@ -2,7 +2,7 @@ import { CameraComputedDef } from "../camera/camera.js";
 import { AlphaDef, ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { EM, EntityW } from "../ecs/entity-manager.js";
-import { Assets, AssetsDef } from "../meshes/assets.js";
+import { Assets, AllMeshesDef } from "../meshes/assets.js";
 import { gameplaySystems } from "../debug/ghost.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { MouseDragDef } from "../input/inputs.js";
@@ -55,7 +55,7 @@ function createWidgetLayer(): WidgetLayer {
 //    then other code can require a certain resource / system, then it calls the right init function
 
 // TODO(@darzu): IMPL
-EM.addLazyInit([AssetsDef], [WidgetLayerDef], initWidgets);
+EM.addLazyInit([AllMeshesDef], [WidgetLayerDef], initWidgets);
 // EM.addConstraint([WidgetLayerDef, "requires", "updateWidgets"]);
 // // TODO(@darzu): instead of having these explit dependencies, maybe we should use an
 // //  existance dependency disjoint set w/ the assumption that all constraints create
@@ -66,7 +66,7 @@ EM.addLazyInit([AssetsDef], [WidgetLayerDef], initWidgets);
 // EM.addConstraint(["updateDragbox", "before", "updateWidgets"]);
 
 async function initDragBox(): Promise<EntityW<[typeof PositionDef]>> {
-  const { assets } = await EM.whenResources(AssetsDef);
+  const { assets } = await EM.whenResources(AllMeshesDef);
 
   // create dragbox
   // TODO(@darzu): dragbox should be part of some 2d gui abstraction thing
@@ -120,7 +120,7 @@ async function initDragBox(): Promise<EntityW<[typeof PositionDef]>> {
   return dragBox;
 }
 
-async function initWidgets({ assets }: EntityW<[typeof AssetsDef]>) {
+async function initWidgets({ assets }: EntityW<[typeof AllMeshesDef]>) {
   EM.addResource(WidgetLayerDef);
 
   // TODO(@darzu): move to resource?
