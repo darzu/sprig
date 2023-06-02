@@ -98,11 +98,11 @@ export interface MeshDesc<N extends string> {
   transform?: mat4;
 }
 
-// export const BallMesh = registerMesh({
-//   name: "ball",
-//   data: "ball.sprig.obj",
-//   transform: mat4.fromScaling([2, 2, 2]),
-// });
+export const BallMesh = registerMesh({
+  name: "ball",
+  data: "ball.sprig.obj",
+  transform: mat4.fromScaling([2, 2, 2]),
+});
 
 export const UnitCubeMesh = registerMesh({
   name: "unitCube",
@@ -154,20 +154,13 @@ export function defineMeshSetResource<N extends string, MR extends MeshReg[]>(
   throw `TODO: impl`;
 }
 
-const grassGameMeshesDef = defineMeshSetResource(
-  "gg_meshes",
-  UnitCubeMesh,
-  GizmoMesh
-);
-const { gg_meshes } = await EM.whenResources(grassGameMeshesDef);
-const foo: GameMesh = gg_meshes.gizmo;
-
+// TODO(@darzu): replace with mesh set
 const RemoteMeshes = {
   ship: "barge.sprig.obj",
   ship_small: "player_ship_small.sprig.obj",
   ship_fangs: "enemy_ship_fangs.sprig.obj",
   // ship_fangs: "ball.sprig.obj", // TODO: FOR PERF
-  ball: "ball.sprig.obj",
+  ball: BallMesh.desc.data as string,
   pick: "pick.sprig.obj",
   spaceore: "spaceore.sprig.obj",
   spacerock: "spacerock.sprig.obj",
@@ -238,8 +231,7 @@ const MeshTransforms: Partial<{
     [1.2, 1.2, 1.2],
     mat4.create()
   ),
-  // TODO(@darzu): FOR LD53
-  ball: mat4.fromScaling([2, 2, 2]),
+  ball: BallMesh.desc.transform,
   // ball_broken: mat4.fromScaling([2, 2, 2]),
 };
 
