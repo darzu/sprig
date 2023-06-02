@@ -119,6 +119,11 @@ export const UnitCubeMesh = registerMesh({
   },
 });
 
+export const GizmoMesh = registerMesh({
+  name: "gizmo",
+  data: () => createGizmoMesh(),
+});
+
 export interface MeshReg {
   desc: MeshDesc;
   gameMesh: () => Promise<GameMesh>;
@@ -481,7 +486,6 @@ export const LocalMeshes = {
   sail: makeSailMesh,
   // timber_rib: mkTimberRib,
   timber_splinter: mkTimberSplinterEnd,
-  gizmo: () => createGizmoMesh(),
   rudderPrim: () => createRudderMesh(),
 } as const;
 

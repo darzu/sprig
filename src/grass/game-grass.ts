@@ -2,7 +2,7 @@ import { CameraDef, CameraFollowDef } from "../camera/camera.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { EM } from "../ecs/entity-manager.js";
-import { AllMeshesDef, UnitCubeMesh } from "../meshes/meshes.js";
+import { AllMeshesDef, GizmoMesh, UnitCubeMesh } from "../meshes/meshes.js";
 import { ControllableDef } from "../input/controllable.js";
 import { createGhost, GhostDef } from "../debug/ghost.js";
 import { LocalHsPlayerDef, HsPlayerDef } from "../hyperspace/hs-player.js";
@@ -698,6 +698,7 @@ export async function initGrassGame(hosting: boolean) {
   if (DBG_PLAYER) text.lowerText = "";
 
   // world gizmo
+  const gizmoMesh = await GizmoMesh.gameMesh();
   const worldGizmo = EM.new();
   EM.ensureComponentOn(
     worldGizmo,
@@ -705,11 +706,7 @@ export async function initGrassGame(hosting: boolean) {
     V(-WORLD_HEIGHT / 2, 0, -WORLD_WIDTH / 2)
   );
   EM.ensureComponentOn(worldGizmo, ScaleDef, V(100, 100, 100));
-  EM.ensureComponentOn(
-    worldGizmo,
-    RenderableConstructDef,
-    res.allMeshes.gizmo.proto
-  );
+  EM.ensureComponentOn(worldGizmo, RenderableConstructDef, gizmoMesh.proto);
 
   // debugging createGraph3D
   let data: vec3[][] = [];
