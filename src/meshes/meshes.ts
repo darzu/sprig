@@ -129,28 +129,39 @@ export interface MeshReg<N extends string = string> {
   gameMesh: () => Promise<GameMesh>;
   gameMeshNow: GameMesh | undefined;
 }
+export interface MeshGroupReg<N extends string = string> {
+  desc: MeshDesc<N>;
+  gameMeshes: () => Promise<GameMesh[]>;
+  gameMeshesNow: GameMesh[] | undefined;
+}
 
 export function registerMesh<N extends string>(desc: MeshDesc<N>): MeshReg<N> {
   throw `TODO: impl`;
 }
+export function registerMeshGroup<N extends string>(
+  desc: MeshDesc<N>
+): MeshGroupReg<N> {
+  throw `TODO: impl`;
+}
 
 // TODO(@darzu): is there a simpler way to type this?
-export type MeshSet<MR extends MeshReg[]> = Intersect<{
+export type MeshSet<MR extends (MeshReg | MeshGroupReg)[]> = Intersect<{
   [i in keyof MR]: MR[i] extends MeshReg<infer N>
     ? { readonly [_ in N]: GameMesh }
+    : MR[i] extends MeshGroupReg<infer N>
+    ? { readonly [_ in N]: GameMesh[] }
     : never;
 }>;
 
-export type MeshSetDef<N extends string, MR extends MeshReg[]> = ComponentDef<
-  N,
-  MeshSet<MR>,
-  undefined[]
->;
+export type MeshSetDef<
+  N extends string,
+  MR extends (MeshReg | MeshGroupReg)[]
+> = ComponentDef<N, MeshSet<MR>, undefined[]>;
 
-export function defineMeshSetResource<N extends string, MR extends MeshReg[]>(
-  name: N,
-  ...meshes: MR
-): MeshSetDef<N, MR> {
+export function defineMeshSetResource<
+  N extends string,
+  MR extends (MeshReg | MeshGroupReg)[]
+>(name: N, ...meshes: MR): MeshSetDef<N, MR> {
   throw `TODO: impl`;
 }
 
@@ -218,8 +229,21 @@ export const PirateMesh = registerMesh({
   name: "pirate",
   data: "pirate.glb",
 });
+export const BoatBrokenMesh = registerMeshGroup({
+  name: "boat_broken",
+  data: "boat_broken.sprig.obj",
+});
+export const ShipBrokenMesh = registerMeshGroup({
+  name: "ship_broken",
+  data: "barge1_broken.sprig.obj",
+});
+export const BallBrokenMesh = registerMeshGroup({
+  name: "ball_broken",
+  data: "ball_broken6.sprig.obj",
+});
 
-const wipAllMeshes = [
+// TODO(@darzu): WIP!
+const wipAllMeshesList = [
   ShipMesh,
   BallMesh,
   ShipSmallMesh,
@@ -237,7 +261,17 @@ const wipAllMeshes = [
   RudderMesh,
   OceanMesh,
   PirateMesh,
+  BoatBrokenMesh,
+  ShipBrokenMesh,
+  BallBrokenMesh,
 ] as const;
+const wipAllMeshesDef = defineMeshSetResource(
+  "wipAllMeshes",
+  ...wipAllMeshesList
+);
+const { wipAllMeshes } = await EM.whenResources(wipAllMeshesDef);
+const wip0: GameMesh = wipAllMeshes.ball;
+const wip1: GameMesh[] = wipAllMeshes.boat_broken;
 
 // TODO(@darzu): replace with mesh set
 // prettier-ignore
@@ -270,9 +304,9 @@ const RemoteMesheSets = {
   //    is a lot of translate/scale alignment issues when we have
   //    a base model and a fractured model. Very hard to make changes.
   // TODO(@darzu): enemy broken parts doesn't seem to work rn. probably rename related
-  boat_broken: "boat_broken.sprig.obj",
-  ship_broken: "barge1_broken.sprig.obj",
-  ball_broken: "ball_broken6.sprig.obj",
+  [BoatBrokenMesh.desc.name]: BoatBrokenMesh.desc.data as string,
+  [ShipBrokenMesh.desc.name]: ShipBrokenMesh.desc.data as string,
+  [BallBrokenMesh.desc.name]: BallBrokenMesh.desc.data as string,
 } as const;
 
 type RemoteMeshSetSymbols = keyof typeof RemoteMesheSets;
