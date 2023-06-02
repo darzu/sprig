@@ -24,7 +24,7 @@ import { alphaRenderPipeline } from "../render/pipelines/xp-alpha.js";
 import { RendererDef, RenderableConstructDef } from "../render/renderer-ecs.js";
 import { assert } from "../utils/util.js";
 import { randNormalPosVec3 } from "../utils/utils-3d.js";
-import { AllMeshesDef, GameMesh, gameMeshFromMesh } from "../meshes/meshes";
+import { AllMeshesDef, GameMesh, gameMeshFromMesh } from "../meshes/meshes.js";
 import { createGhost, gameplaySystems } from "../debug/ghost.js";
 import { TextDef } from "./ui.js";
 import { makePlaneMesh } from "../meshes/primatives.js";
@@ -60,13 +60,13 @@ export const UICursorDef = EM.defineComponent(
   })
 );
 
-EM.addLazyInit([AllMeshesDef], [UICursorDef], ({ assets }) => {
+EM.addLazyInit([AllMeshesDef], [UICursorDef], ({ allMeshes }) => {
   // Cursor
   const cursor = EM.new();
   EM.ensureComponentOn(cursor, ColorDef, V(0.1, 0.1, 0.1));
   EM.ensureComponentOn(cursor, PositionDef, V(0, 1.0, 0));
-  EM.ensureComponentOn(cursor, RenderableConstructDef, assets.he_octo.proto);
-  const cursorLocalAABB = copyAABB(createAABB(), assets.he_octo.aabb);
+  EM.ensureComponentOn(cursor, RenderableConstructDef, allMeshes.he_octo.proto);
+  const cursorLocalAABB = copyAABB(createAABB(), allMeshes.he_octo.aabb);
   cursorLocalAABB.min[1] = -1;
   cursorLocalAABB.max[1] = 1;
   EM.ensureComponentOn(cursor, ColliderDef, {
@@ -112,7 +112,7 @@ export async function initFontEditor() {
   EM.ensureComponentOn(
     sunlight,
     RenderableConstructDef,
-    res.assets.ball.proto,
+    res.allMeshes.ball.proto,
     false
   );
 
@@ -132,7 +132,7 @@ export async function initFontEditor() {
 
   if (DBG_3D) {
     const g = createGhost();
-    EM.ensureComponentOn(g, RenderableConstructDef, res.assets.ball.proto);
+    EM.ensureComponentOn(g, RenderableConstructDef, res.allMeshes.ball.proto);
 
     // vec3.copy(g.position, [4.36,30.83,-1.53]);
     // quat.copy(g.rotation, [0.00,0.71,0.00,0.70]);
@@ -158,7 +158,7 @@ export async function initFontEditor() {
       canvas.htmlCanvas.unlockMouse()
     );
 
-  // const { assets } = await EM.whenResources(AssetsDef);
+  // const { allMeshes} = await EM.whenResources(AssetsDef);
 
   // TODO(@darzu): de-duplicate this with very similar code in other "games"
   EM.addSystem(

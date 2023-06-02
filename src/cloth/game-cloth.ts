@@ -36,7 +36,7 @@ import { tempVec3 } from "../matrix/temp-pool.js";
 import { EASE_INQUAD } from "../utils/util-ease.js";
 import { assert } from "../utils/util.js";
 import { drawLine } from "../utils/utils-game.js";
-import { AllMeshesDef } from "../meshes/meshes";
+import { AllMeshesDef } from "../meshes/meshes.js";
 import { ClothConstructDef, ClothLocalDef } from "./cloth.js";
 import { GlobalCursor3dDef } from "../gui/cursor.js";
 import { ENEMY_SHIP_COLOR } from "../hyperspace/uv-enemy-ship.js";
@@ -86,7 +86,7 @@ export async function initClothSandbox(hosting: boolean) {
   g.controllable.sprintMul = 3;
 
   // TODO(@darzu): this shouldn't be necessary
-  const m2 = cloneMesh(res.assets.cube.mesh);
+  const m2 = cloneMesh(res.allMeshes.cube.mesh);
   EM.ensureComponentOn(g, RenderableConstructDef, m2);
 
   {
@@ -109,12 +109,16 @@ export async function initClothSandbox(hosting: boolean) {
   c.cursor3d.maxDistance = 10;
 
   const plane = EM.new();
-  EM.ensureComponentOn(plane, RenderableConstructDef, res.assets.plane.proto);
+  EM.ensureComponentOn(
+    plane,
+    RenderableConstructDef,
+    res.allMeshes.plane.proto
+  );
   EM.ensureComponentOn(plane, ColorDef, V(0.2, 0.3, 0.2));
   EM.ensureComponentOn(plane, PositionDef, V(0, -5, 0));
 
   const ship = EM.new();
-  EM.ensureComponentOn(ship, RenderableConstructDef, res.assets.ship.proto);
+  EM.ensureComponentOn(ship, RenderableConstructDef, res.allMeshes.ship.proto);
   EM.ensureComponentOn(ship, ColorDef, ENEMY_SHIP_COLOR);
   EM.ensureComponentOn(ship, PositionDef, V(20, -2, 0));
   EM.ensureComponentOn(
@@ -131,7 +135,7 @@ export async function initClothSandbox(hosting: boolean) {
   // EM.ensureComponentOn(
   //   ocean,
   //   RenderableConstructDef,
-  //   res.assets.ocean.proto
+  //   res.allMeshes.ocean.proto
   // );
   // EM.ensureComponentOn(ocean, ColorDef, [0.0, 0.0, 0.4]);
   // EM.ensureComponentOn(ocean, PositionDef, [12000, 180, 0]);
@@ -145,7 +149,7 @@ export async function initClothSandbox(hosting: boolean) {
   // );
 
   const box = EM.new();
-  EM.ensureComponentOn(box, RenderableConstructDef, res.assets.cube.proto);
+  EM.ensureComponentOn(box, RenderableConstructDef, res.allMeshes.cube.proto);
   EM.ensureComponentOn(box, ColorDef, V(0.1, 0.1, 0.1));
   EM.ensureComponentOn(box, PositionDef, V(0, 0, 3));
   EM.ensureComponentOn(box, RotationDef);
@@ -154,7 +158,7 @@ export async function initClothSandbox(hosting: boolean) {
   EM.ensureComponentOn(box, ColliderDef, {
     shape: "AABB",
     solid: false,
-    aabb: res.assets.cube.aabb,
+    aabb: res.allMeshes.cube.aabb,
   });
 
   const cloth = EM.new();

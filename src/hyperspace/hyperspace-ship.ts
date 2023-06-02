@@ -10,7 +10,7 @@ import {
   PositionDef,
   RotationDef,
 } from "../physics/transform.js";
-import { AllMeshesDef } from "../meshes/meshes";
+import { AllMeshesDef } from "../meshes/meshes.js";
 import { BARGE_AABBS } from "../meshes/primatives.js";
 import {
   AABBCollider,
@@ -87,7 +87,7 @@ export const { RudderPropsDef, RudderLocalDef, createRudderNow } =
       EM.ensureComponentOn(
         rudder,
         RenderableConstructDef,
-        res.assets.rudder.mesh
+        res.allMeshes.rudder.mesh
       );
       EM.ensureComponentOn(rudder, PhysicsParentDef, rudder.rudderProps.shipId);
       EM.ensureComponentOn(rudder, ColorDef, ENDESGA16.lightBrown);
@@ -230,8 +230,8 @@ export const { HsShipPropsDef, HsShipLocalDef, createHsShip } =
       // NOTE: since their is no network important state on the parts themselves
       //    they can be created locally
       const shipFloor = min(BARGE_AABBS.map((c) => c.max[1]));
-      for (let i = 0; i < res.assets.ship_broken.length; i++) {
-        const m = res.assets.ship_broken[i];
+      for (let i = 0; i < res.allMeshes.ship_broken.length; i++) {
+        const m = res.allMeshes.ship_broken[i];
         const part = EM.new();
         EM.ensureComponentOn(part, PhysicsParentDef, s.id);
         EM.ensureComponentOn(part, RenderableConstructDef, m.proto);

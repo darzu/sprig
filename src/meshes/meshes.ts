@@ -58,7 +58,7 @@ import { createGizmoMesh } from "../debug/gizmos";
 import { importGltf } from "./import-gltf";
 
 export const AllMeshesDef = EM.defineComponent(
-  "assets",
+  "allMeshes",
   (meshes: AllGameMeshes) => {
     return meshes;
   }
@@ -76,7 +76,7 @@ export type AllMeshes = Component<typeof AllMeshesDef>;
 //   This is basically how it works now except that all assets are in one big set.
 // TODO(@darzu): plan:
 //    [ ] rename AssetsDef -> EverySingleAssetDef, implying shame
-//    [ ] need a cache for all assets. So individual loads or overlapping sets dont duplicate work
+//    [ ] need a cache for all allMeshes. So individual loads or overlapping sets dont duplicate work
 //    [ ] restructure it so each mesh has its path and transforms together
 
 export const BLACK = V(0, 0, 0);
@@ -179,7 +179,7 @@ const blackoutColor: (m: RawMesh) => RawMesh = (m: RawMesh) => {
 };
 
 // TODO(@darzu): IMPL for WoodStateDef
-// EM.addLazyInit([AssetsDef], [WoodStateDef], ({ assets }) => {});
+// EM.addLazyInit([AssetsDef], [WoodStateDef], ({ allMeshes}) => {});
 
 const MeshModify: Partial<{
   [P in AllMeshSymbols]: (m: RawMesh) => RawMesh;
@@ -476,8 +476,8 @@ type AllGameMeshes = {
 };
 
 EM.addLazyInit([RendererDef], [AllMeshesDef], async ({ renderer }) => {
-  const assets = await loadAssets(renderer.renderer);
-  EM.addResource(AllMeshesDef, assets);
+  const allMeshes = await loadAssets(renderer.renderer);
+  EM.addResource(AllMeshesDef, allMeshes);
 });
 
 async function loadTxtInternal(relPath: string): Promise<string> {
@@ -601,7 +601,8 @@ async function loadAssets(renderer: Renderer): Promise<AllGameMeshes> {
 
   // perf tracking
   const elapsed = performance.now() - start;
-  if (VERBOSE_LOG) console.log(`took ${elapsed.toFixed(1)}ms to load assets.`);
+  if (VERBOSE_LOG)
+    console.log(`took ${elapsed.toFixed(1)}ms to load allMeshes.`);
 
   return result;
 }

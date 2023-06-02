@@ -15,7 +15,7 @@ import {
   PredictDef,
   Me,
 } from "../net/components.js";
-import { AllMeshes, AllMeshesDef } from "../meshes/meshes";
+import { AllMeshes, AllMeshesDef } from "../meshes/meshes.js";
 import {
   AngularVelocity,
   AngularVelocityDef,
@@ -92,7 +92,7 @@ EM.registerSerializerPair(
 
 export function createOrResetBullet(
   e: Entity & { bulletConstruct: BulletConstruct },
-  res: { me: Me; assets: AllMeshes; time: Time }
+  res: { me: Me; allMeshes: AllMeshes; time: Time }
 ) {
   const props = e.bulletConstruct;
   assertDbg(props);
@@ -112,7 +112,7 @@ export function createOrResetBullet(
     vec3.copy(e.color, ENDESGA16.orange);
   }
   EM.ensureComponentOn(e, MotionSmoothingDef);
-  EM.ensureComponentOn(e, RenderableConstructDef, res.assets.ball.proto);
+  EM.ensureComponentOn(e, RenderableConstructDef, res.allMeshes.ball.proto);
   EM.ensureComponentOn(e, AuthorityDef, res.me.pid);
   EM.ensureComponentOn(e, BulletDef);
   e.bullet.team = props.team;
@@ -120,7 +120,7 @@ export function createOrResetBullet(
   EM.ensureComponentOn(e, ColliderDef, {
     shape: "AABB",
     solid: false,
-    aabb: res.assets.ball.aabb,
+    aabb: res.allMeshes.ball.aabb,
   });
   EM.ensureComponentOn(e, LifetimeDef);
   e.lifetime.ms = 8000;
@@ -149,7 +149,7 @@ export function registerBuildBulletsSystem() {
     (bullets, res) => {
       for (let b of bullets) {
         // if (FinishedDef.isOn(b)) continue;
-        // createOrUpdateBullet( b, res.me.pid, res.assets);
+        // createOrUpdateBullet( b, res.me.pid, res.allMeshes);
         // EM.ensureComponentOn(b, FinishedDef);
       }
     }
@@ -253,13 +253,13 @@ async function initBulletPartPool() {
   if (_bulletPartPoolIsInit) return;
   _bulletPartPoolIsInit = true;
 
-  const { assets } = await EM.whenResources(AllMeshesDef);
+  const { allMeshes } = await EM.whenResources(AllMeshesDef);
 
   const numSetsInPool = 20;
 
   for (let i = 0; i < numSetsInPool; i++) {
     let bset: BulletPart[] = [];
-    for (let part of assets.ball_broken) {
+    for (let part of allMeshes.ball_broken) {
       const pe = EM.new();
       EM.ensureComponentOn(pe, RenderableConstructDef, part.proto);
       EM.ensureComponentOn(pe, ColorDef);
@@ -293,7 +293,7 @@ export async function breakBullet(
 
   if (!_bulletPartPoolIsInit) await initBulletPartPool();
 
-  // const { music, assets } = await EM.whenResources(MusicDef, AssetsDef);
+  // const { music, allMeshes } = await EM.whenResources(MusicDef, AssetsDef);
 
   const parts = getNextBulletPartSet();
   for (let pe of parts) {

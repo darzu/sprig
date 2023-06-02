@@ -1,6 +1,6 @@
 import { ColliderDef } from "./collider.js";
 import { EM } from "../ecs/entity-manager.js";
-import { AllMeshesDef, LocalMeshes } from "../meshes/meshes";
+import { AllMeshesDef, LocalMeshes } from "../meshes/meshes.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { InputsDef } from "../input/inputs.js";
 import { mathMap } from "../utils/math.js";
@@ -66,7 +66,7 @@ export function registerPhysicsDebuggerSystem() {
             EM.addComponent(
               dbgE.id,
               RenderableConstructDef,
-              res.assets.wireCube.proto,
+              res.allMeshes.wireCube.proto,
               res._physDbgState.showAABBs,
               1
             );

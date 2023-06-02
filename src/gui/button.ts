@@ -1,6 +1,6 @@
 import { ColorDef } from "../color/color-ecs.js";
 import { EM, EntityW } from "../ecs/entity-manager.js";
-import { GameMesh, gameMeshFromMesh } from "../meshes/meshes";
+import { GameMesh, gameMeshFromMesh } from "../meshes/meshes.js";
 import { gameplaySystems } from "../debug/ghost.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { importObj } from "../meshes/import-obj.js";
@@ -12,9 +12,9 @@ import { assert } from "../utils/util.js";
 import { UICursorDef } from "./game-font.js";
 import { Phase } from "../ecs/sys-phase.js";
 
-// TODO(@darzu): this should really go in assets.ts to follow the current patern.
+// TODO(@darzu): this should really go in allMeshes.ts to follow the current patern.
 //    BUT I'm disatisfied with the current pattern. Subsystems should be able to
-//    own their own asset stuff. TODO: decentralize assets.ts?
+//    own their own asset stuff. TODO: decentralize allMeshes.ts?
 const BTN_OBJ = `
 # sprigland exported mesh (8 verts, 0 faces)
 v 0.85 0.00 -4.00

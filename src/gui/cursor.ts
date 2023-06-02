@@ -9,7 +9,7 @@ import {
   PositionDef,
   updateFrameFromPosRotScale,
 } from "../physics/transform.js";
-import { AllMeshesDef } from "../meshes/meshes";
+import { AllMeshesDef } from "../meshes/meshes.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { assert } from "../utils/util.js";
 import { CameraComputedDef } from "../camera/camera.js";
@@ -43,8 +43,8 @@ EM.addLazyInit([AllMeshesDef], [GlobalCursor3dDef], async (res) => {
     EM.addComponent(id, Cursor3dDef);
     EM.addComponent(id, PositionDef);
     // TODO(@darzu): support wireframe
-    // const wireframe: Mesh = { ...res.assets.ball.mesh, tri: [] };
-    const wireframe: Mesh = res.assets.ball.mesh;
+    // const wireframe: Mesh = { ...res.allMeshes.ball.mesh, tri: [] };
+    const wireframe: Mesh = res.allMeshes.ball.mesh;
     EM.addComponent(id, RenderableConstructDef, wireframe, false);
     EM.addComponent(id, ColorDef, V(0, 1, 1));
     const builtCursor = await EM.whenEntityHas(

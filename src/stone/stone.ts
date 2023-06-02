@@ -1,4 +1,4 @@
-import { AllMeshesDef } from "../meshes/meshes";
+import { AllMeshesDef } from "../meshes/meshes.js";
 import { AudioDef } from "../audio/audio.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
@@ -334,7 +334,7 @@ export const towerPool = createEntityPool<
     EM.ensureComponentOn(
       cannon,
       RenderableConstructDef,
-      res.assets.ld53_cannon.proto
+      res.allMeshes.ld53_cannon.proto
     );
     EM.ensureComponentOn(cannon, PositionDef);
     EM.ensureComponentOn(cannon, ColorDef, V(0.05, 0.05, 0.05));
@@ -559,7 +559,11 @@ export const flyingBrickPool = createEntityPool<
     EM.ensureComponentOn(brick, AngularVelocityDef);
     EM.ensureComponentOn(brick, ColorDef);
     EM.ensureComponentOn(brick, LifetimeDef);
-    EM.ensureComponentOn(brick, RenderableConstructDef, res.assets.cube.proto);
+    EM.ensureComponentOn(
+      brick,
+      RenderableConstructDef,
+      res.allMeshes.cube.proto
+    );
     EM.ensureComponentOn(brick, GravityDef, V(0, -GRAVITY, 0));
     EM.ensureComponentOn(
       brick,

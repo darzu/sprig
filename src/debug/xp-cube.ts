@@ -22,7 +22,7 @@ import {
   canvasTexturePtr,
 } from "../render/pipelines/std-scene.js";
 import { uintToVec3unorm } from "../utils/utils-3d.js";
-import { AllMeshesDef } from "../meshes/meshes";
+import { AllMeshesDef } from "../meshes/meshes.js";
 import { GlobalCursor3dDef } from "../gui/cursor.js";
 import { createGhost } from "./ghost.js";
 import { PointLightDef } from "../render/lights.js";
@@ -51,7 +51,7 @@ export async function initCubeGame() {
   e.controllable.sprintMul = 3;
 
   // TODO(@darzu): this shouldn't be necessary
-  const m2 = cloneMesh(res.assets.cube.mesh);
+  const m2 = cloneMesh(res.allMeshes.cube.mesh);
   EM.ensureComponentOn(e, RenderableConstructDef, m2);
 
   {
@@ -64,7 +64,7 @@ export async function initCubeGame() {
   }
 
   const box = EM.new();
-  const boxM = cloneMesh(res.assets.cube.mesh);
+  const boxM = cloneMesh(res.allMeshes.cube.mesh);
   const sIdMax = max(boxM.surfaceIds);
   boxM.colors = boxM.surfaceIds.map((_, i) => uintToVec3unorm(i, sIdMax));
   // boxM.colors = boxM.surfaceIds.map((_, i) => [0.1, i / 12, 0.1]);
@@ -78,7 +78,7 @@ export async function initCubeGame() {
   EM.ensureComponentOn(box, ColliderDef, {
     shape: "AABB",
     solid: false,
-    aabb: res.assets.cube.aabb,
+    aabb: res.allMeshes.cube.aabb,
   });
 }
 

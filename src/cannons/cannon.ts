@@ -10,7 +10,7 @@ import { DetectedEventsDef, eventWizard } from "../net/events.js";
 import { fireBullet } from "./bullet.js";
 import { InRangeDef } from "../input/interact.js";
 import { LocalHsPlayerDef, HsPlayerDef } from "../hyperspace/hs-player.js";
-import { AllMeshesDef } from "../meshes/meshes";
+import { AllMeshesDef } from "../meshes/meshes.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import { AudioDef, randChordId } from "../audio/audio.js";
 import { InputsDef } from "../input/inputs.js";
@@ -63,7 +63,7 @@ export const { CannonPropsDef, CannonLocalDef, createCannon, createCannonNow } =
         e,
         props.yaw,
         props.pitch,
-        res.assets.ld51_cannon.aabb,
+        res.allMeshes.ld51_cannon.aabb,
         0,
         undefined,
         undefined,
@@ -77,12 +77,12 @@ export const { CannonPropsDef, CannonLocalDef, createCannon, createCannonNow } =
       EM.ensureComponentOn(
         e,
         RenderableConstructDef,
-        res.assets.ld51_cannon.mesh
+        res.allMeshes.ld51_cannon.mesh
       );
       EM.ensureComponentOn(e, ColliderDef, {
         shape: "AABB",
         solid: true,
-        aabb: res.assets.cannon.aabb,
+        aabb: res.allMeshes.cannon.aabb,
       });
       EM.ensureComponentOn(e, PhysicsParentDef, props.parentId);
       return e;

@@ -1,6 +1,6 @@
 import { ColorDef } from "../color/color-ecs.js";
 import { EM, EntityW } from "../ecs/entity-manager.js";
-import { AllMeshesDef, GameMesh, gameMeshFromMesh } from "../meshes/meshes";
+import { AllMeshesDef, GameMesh, gameMeshFromMesh } from "../meshes/meshes.js";
 import { gameplaySystems } from "../debug/ghost.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import {
@@ -89,7 +89,7 @@ async function createPathEditor() {
     positionVert,
   };
 
-  const { renderer, assets } = await EM.whenResources(
+  const { renderer, allMeshes } = await EM.whenResources(
     RendererDef,
     AllMeshesDef
   );
@@ -209,7 +209,7 @@ async function createPathEditor() {
     assert(idx !== undefined, `out of glyphs`);
     if (!glyphPool[idx]) {
       // create if missing
-      const glyph_ = _createGlyph(assets.he_octo);
+      const glyph_ = _createGlyph(allMeshes.he_octo);
       EM.ensureComponentOn(glyph_, HLineDef, hl);
       EM.ensureComponentOn(glyph_, ButtonDef, "glyph-vert");
       const glyph = await EM.whenEntityHas(
@@ -410,7 +410,7 @@ export async function lineStuff() {
     extMesh.colors.push(randNormalPosVec3(vec3.create()));
   }
 
-  const { renderer, assets } = await EM.whenResources(
+  const { renderer, allMeshes } = await EM.whenResources(
     RendererDef,
     AllMeshesDef
   );
@@ -423,7 +423,11 @@ export async function lineStuff() {
 
   for (let ln of lns) {
     const vertGlyph = EM.new();
-    EM.ensureComponentOn(vertGlyph, RenderableConstructDef, assets.cube.proto);
+    EM.ensureComponentOn(
+      vertGlyph,
+      RenderableConstructDef,
+      allMeshes.cube.proto
+    );
     EM.ensureComponentOn(vertGlyph, PositionDef, vec3.clone(lnMesh.pos[ln.vi]));
     EM.ensureComponentOn(vertGlyph, ColorDef, V(0.1, 0.2 + ln.vi * 0.1, 0.1));
     EM.ensureComponentOn(vertGlyph, ScaleDef, V(0.2, 0.2, 0.2));

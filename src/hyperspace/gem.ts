@@ -1,4 +1,4 @@
-import { AllMeshesDef } from "../meshes/meshes";
+import { AllMeshesDef } from "../meshes/meshes.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { defineNetEntityHelper } from "../ecs/em-helpers.js";
 import { EM } from "../ecs/entity-manager.js";
@@ -30,14 +30,14 @@ export const { GemPropsDef, GemLocalDef, createGem } = defineNetEntityHelper({
     EM.ensureComponentOn(
       gem,
       RenderableConstructDef,
-      res.assets.spacerock.proto
+      res.allMeshes.spacerock.proto
     );
     EM.ensureComponentOn(gem, PhysicsParentDef, gem.gemProps.shipId);
     EM.ensureComponentOn(gem, ColorDef);
 
     // create seperate hitbox for interacting with the gem
     const interactBox = EM.new();
-    const interactAABB = copyAABB(createAABB(), res.assets.spacerock.aabb);
+    const interactAABB = copyAABB(createAABB(), res.allMeshes.spacerock.aabb);
     EM.ensureComponentOn(interactBox, PhysicsParentDef, gem.id);
     EM.ensureComponentOn(interactBox, PositionDef, V(0, 0, 0));
     EM.ensureComponentOn(interactBox, ColliderDef, {

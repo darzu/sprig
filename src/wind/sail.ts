@@ -19,7 +19,7 @@ import {
 } from "../render/renderer-ecs.js";
 import { RendererDef } from "../render/renderer-ecs.js";
 import { ColorDef } from "../color/color-ecs.js";
-import { AllMeshesDef } from "../meshes/meshes";
+import { AllMeshesDef } from "../meshes/meshes.js";
 import { ColliderDef } from "../physics/collider.js";
 import { clamp } from "../utils/math.js";
 import { createRef } from "../ecs/em-helpers.js";
@@ -201,11 +201,11 @@ export async function createMast() {
   const res = await EM.whenResources(AllMeshesDef, MeDef);
   let ent = EM.new();
   EM.ensureComponentOn(ent, MastDef);
-  EM.ensureComponentOn(ent, RenderableConstructDef, res.assets.mast.proto);
+  EM.ensureComponentOn(ent, RenderableConstructDef, res.allMeshes.mast.proto);
   EM.ensureComponentOn(ent, ColliderDef, {
     shape: "AABB",
     solid: false,
-    aabb: res.assets.mast.aabb,
+    aabb: res.allMeshes.mast.aabb,
   });
   EM.ensureComponentOn(ent, PositionDef);
   EM.ensureComponentOn(ent, RotationDef);

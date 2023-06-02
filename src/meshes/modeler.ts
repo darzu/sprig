@@ -15,7 +15,7 @@ import { PositionDef, ScaleDef } from "../physics/transform.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { tempVec3 } from "../matrix/temp-pool.js";
 import { vec3Dbg, vec3Dbg2 } from "../utils/utils-3d.js";
-import { AllMeshesDef } from "./meshes";
+import { AllMeshesDef } from "./meshes.js";
 import { ColorDef, TintsDef } from "../color/color-ecs.js";
 import { drawLine, screenPosToRay } from "../utils/utils-game.js";
 import { CameraView, CameraComputedDef } from "../camera/camera.js";
@@ -164,12 +164,12 @@ function registerAABBBuilder() {
           EM.ensureComponentOn(
             b,
             RenderableConstructDef,
-            res.assets.cube.proto
+            res.allMeshes.cube.proto
           );
           EM.ensureComponentOn(b, ColliderDef, {
             shape: "AABB",
             solid: false,
-            aabb: res.assets.cube.aabb,
+            aabb: res.allMeshes.cube.aabb,
           });
 
           res.modeler.latestBoxId = b.id;

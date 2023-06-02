@@ -18,7 +18,7 @@ import {
   RendererDef,
 } from "../render/renderer-ecs.js";
 import { vec3Dbg } from "../utils/utils-3d.js";
-import { AllMeshesDef } from "../meshes/meshes";
+import { AllMeshesDef } from "../meshes/meshes.js";
 import { DarkStarPropsDef } from "./darkstar.js";
 import { HyperspaceGameState, HSGameStateDef } from "./hyperspace-gamestate.js";
 import { HsShipPropsDef } from "./hyperspace-ship.js";
@@ -89,7 +89,11 @@ export const { HypMastPropsDef, HypMastLocalDef, createHypMastNow } =
     build: (mast, res) => {
       EM.ensureComponentOn(mast, PositionDef, V(0, 0, 0));
 
-      EM.ensureComponentOn(mast, RenderableConstructDef, res.assets.mast.mesh);
+      EM.ensureComponentOn(
+        mast,
+        RenderableConstructDef,
+        res.allMeshes.mast.mesh
+      );
       EM.ensureComponentOn(mast, PhysicsParentDef, mast.hypMastProps.shipId);
       EM.ensureComponentOn(mast, ColorDef, ENDESGA16.lightBrown);
       vec3.scale(mast.color, 0.5, mast.color);
@@ -105,7 +109,7 @@ export const { HypMastPropsDef, HypMastLocalDef, createHypMastNow } =
       // EM.ensureComponentOn(
       //   sail2,
       //   RenderableConstructDef,
-      //   cloneMesh(res.assets.sail.mesh)
+      //   cloneMesh(res.allMeshes.sail.mesh)
       // );
       // //EM.ensureComponentOn(sail2, ScaleDef, [12, 12, 12]);
       // EM.ensureComponentOn(sail2, RotationDef);

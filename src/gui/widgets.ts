@@ -2,7 +2,7 @@ import { CameraComputedDef } from "../camera/camera.js";
 import { AlphaDef, ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { EM, EntityW } from "../ecs/entity-manager.js";
-import { AllMeshes, AllMeshesDef } from "../meshes/meshes";
+import { AllMeshes, AllMeshesDef } from "../meshes/meshes.js";
 import { gameplaySystems } from "../debug/ghost.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { MouseDragDef } from "../input/inputs.js";
@@ -66,12 +66,12 @@ EM.addLazyInit([AllMeshesDef], [WidgetLayerDef], initWidgets);
 // EM.addConstraint(["updateDragbox", "before", "updateWidgets"]);
 
 async function initDragBox(): Promise<EntityW<[typeof PositionDef]>> {
-  const { assets } = await EM.whenResources(AllMeshesDef);
+  const { allMeshes } = await EM.whenResources(AllMeshesDef);
 
   // create dragbox
   // TODO(@darzu): dragbox should be part of some 2d gui abstraction thing
   const dragBox = EM.new();
-  const dragBoxMesh = cloneMesh(assets.unitCube.mesh);
+  const dragBoxMesh = cloneMesh(allMeshes.unitCube.mesh);
   EM.ensureComponentOn(dragBox, AlphaDef, 0.2);
   EM.ensureComponentOn(dragBox, RenderableConstructDef, dragBoxMesh);
   EM.ensureComponentOn(dragBox, PositionDef, V(0, 0.2, 0));
@@ -80,7 +80,7 @@ async function initDragBox(): Promise<EntityW<[typeof PositionDef]>> {
   EM.ensureComponentOn(dragBox, ColliderDef, {
     shape: "AABB",
     solid: false,
-    aabb: assets.unitCube.aabb,
+    aabb: allMeshes.unitCube.aabb,
   });
 
   EM.addSystem(
@@ -120,7 +120,7 @@ async function initDragBox(): Promise<EntityW<[typeof PositionDef]>> {
   return dragBox;
 }
 
-async function initWidgets({ assets }: EntityW<[typeof AllMeshesDef]>) {
+async function initWidgets({ allMeshes }: EntityW<[typeof AllMeshesDef]>) {
   EM.addResource(WidgetLayerDef);
 
   // TODO(@darzu): move to resource?

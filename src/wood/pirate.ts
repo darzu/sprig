@@ -1,4 +1,4 @@
-import { BLACK, AllMeshesDef } from "../meshes/meshes";
+import { BLACK, AllMeshesDef } from "../meshes/meshes.js";
 import { AudioDef } from "../audio/audio.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
@@ -270,7 +270,7 @@ const piratePool = createEntityPool<
     vec3.copy(platform.color, ENDESGA16.deepBrown);
     EM.ensureComponentOn(platform, PositionDef);
     EM.ensureComponentOn(platform, RotationDef);
-    const groundMesh = cloneMesh(res.assets.hex.mesh);
+    const groundMesh = cloneMesh(res.allMeshes.hex.mesh);
     transformMesh(
       groundMesh,
       mat4.fromRotationTranslationScale(quat.IDENTITY, [0, -1, 0], [4, 1, 4])
@@ -282,7 +282,7 @@ const piratePool = createEntityPool<
     EM.ensureComponentOn(
       cannon,
       RenderableConstructDef,
-      res.assets.ld51_cannon.proto
+      res.allMeshes.ld51_cannon.proto
     );
     EM.ensureComponentOn(cannon, PositionDef);
     EM.ensureComponentOn(cannon, PhysicsParentDef, platform.id);

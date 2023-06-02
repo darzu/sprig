@@ -10,7 +10,7 @@ import { PhysicsResultsDef } from "../physics/nonintersection.js";
 import { AuthorityDef } from "../net/components.js";
 import { BulletDef } from "./bullet.js";
 import { DeletedDef } from "../ecs/delete.js";
-import { AllMeshesDef } from "../meshes/meshes";
+import { AllMeshesDef } from "../meshes/meshes.js";
 import { AudioDef } from "../audio/audio.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
 import { assert, NumberTuple } from "../utils/util.js";
@@ -90,6 +90,6 @@ export const raiseBulletEnemyShip = eventWizard(
     // assert(false, `raiseBulletEnemyShip doesnt work on ld51`); // TODO(@darzu): ld51
     EM.ensureComponentOn(bullet, DeletedDef);
     const res = EM.getResources([AllMeshesDef, AudioDef])!;
-    breakEnemyShip(enemyShip, res.assets.boat_broken, res.music);
+    breakEnemyShip(enemyShip, res.allMeshes.boat_broken, res.music);
   }
 );
