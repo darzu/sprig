@@ -1,4 +1,4 @@
-import { Component, EM } from "../ecs/entity-manager.js";
+import { Component, ComponentDef, EM } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { importObj, isParseError } from "./import-obj.js";
 import {
@@ -22,7 +22,7 @@ import {
 } from "../physics/aabb.js";
 import { RendererDef } from "../render/renderer-ecs.js";
 import { Renderer } from "../render/renderer-ecs.js";
-import { assert } from "../utils/util.js";
+import { Intersect, assert } from "../utils/util.js";
 import { objMap } from "../utils/util.js";
 import { getBytes, getText } from "../fetch/webget.js";
 import { AABBCollider } from "../physics/collider.js";
@@ -92,8 +92,8 @@ export const LIGHT_BLUE = V(0.05, 0.05, 0.2);
 const DEFAULT_ASSET_PATH = "assets/";
 const BACKUP_ASSET_PATH = "https://sprig.land/assets/";
 
-export interface MeshDesc {
-  name: string;
+export interface MeshDesc<N extends string> {
+  name: N;
   data: string | (() => RawMesh);
   transform?: mat4;
 }
@@ -124,15 +124,43 @@ export const GizmoMesh = registerMesh({
   data: () => createGizmoMesh(),
 });
 
-export interface MeshReg {
-  desc: MeshDesc;
+export interface MeshReg<N extends string = string> {
+  desc: MeshDesc<N>;
   gameMesh: () => Promise<GameMesh>;
   gameMeshNow: GameMesh | undefined;
 }
 
-export function registerMesh(desc: MeshDesc): MeshReg {
+export function registerMesh<N extends string>(desc: MeshDesc<N>): MeshReg<N> {
   throw `TODO: impl`;
 }
+
+export type WithMesh<D> = D extends MeshReg<infer N>
+  ? { readonly [k in N]: GameMesh }
+  : never;
+type MeshSet<MR extends MeshReg[]> = Intersect<{
+  [P in keyof MR]: WithMesh<MR[P]>;
+}>;
+
+export type MeshSetDef<N extends string, MR extends MeshReg[]> = ComponentDef<
+  N,
+  MeshSet<MR>,
+  undefined[]
+>;
+
+export function defineMeshSetResource<N extends string, MR extends MeshReg[]>(
+  name: N,
+  ...meshes: MR
+): MeshSetDef<N, MR> {
+  throw `TODO: impl`;
+}
+
+const grassGameMeshesDef = defineMeshSetResource(
+  "gg_meshes",
+  UnitCubeMesh,
+  GizmoMesh
+);
+const { gg_meshes } = await EM.whenResources(grassGameMeshesDef);
+// gg_meshes.
 
 const RemoteMeshes = {
   ship: "barge.sprig.obj",
