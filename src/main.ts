@@ -32,7 +32,7 @@ import { initModelingGame } from "./meshes/game-modeling.js";
 import { Phase } from "./ecs/sys-phase.js";
 import { setSimulationAlpha } from "./render/motion-smoothing.js";
 
-dbgLogMilestone("start of main.ts");
+// dbgLogMilestone("start of main.ts");
 
 export const MAX_MESHES = 20000;
 export const MAX_VERTICES = 21844;
@@ -68,7 +68,7 @@ function callFixedTimestepSystems() {
 }
 
 async function startGame(localPeerName: string, host: string | null) {
-  dbgLogMilestone("startGame()");
+  // dbgLogMilestone("startGame()");
 
   if (gameStarted) return;
   gameStarted = true;
@@ -159,7 +159,7 @@ function getPeerName(queryString: { [k: string]: string }): string {
 }
 
 async function main() {
-  dbgLogMilestone("main()");
+  // dbgLogMilestone("main()");
   const queryString = Object.fromEntries(
     new URLSearchParams(window.location.search).entries()
   );
@@ -211,4 +211,4 @@ window.onload = () => {
 (window as any).dbg = dbg;
 (window as any).EM = EM;
 
-dbgLogMilestone("end of main.ts");
+// dbgLogMilestone("end of main.ts");

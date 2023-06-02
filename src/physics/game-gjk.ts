@@ -66,7 +66,7 @@ export async function initGJKSandbox(hosting: boolean) {
   );
   res.camera.fov = Math.PI * 0.5;
 
-  dbgLogMilestone("GJK start init");
+  dbgLogMilestone("GJK init has resources");
 
   res.renderer.pipelines = [
     // ...shadowPipelines,

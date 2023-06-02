@@ -179,6 +179,7 @@ const blackoutColor: (m: RawMesh) => RawMesh = (m: RawMesh) => {
   return m;
 };
 
+// TODO(@darzu): IMPL for WoodStateDef
 // EM.addLazyInit([AssetsDef], [WoodStateDef], ({ assets }) => {});
 
 const MeshModify: Partial<{

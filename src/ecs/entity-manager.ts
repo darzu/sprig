@@ -1173,12 +1173,13 @@ export class EntityManager {
       // TODO(@darzu): WAIT. why should the below be true? U should be able to have
       //   A-start, B-start, A-end, B-end
       // if A and B are unrelated
-      assert(popped && popped.id === init.id, `Daryl doesnt understand stacks`);
+      // assert(popped && popped.id === init.id, `Daryl doesnt understand stacks`);
+      // TODO(@darzu): all this init tracking might be lying.
       assert(this._lastInitTimestamp >= 0);
       const elapsed = after - this._lastInitTimestamp;
       this.initFnMsStats.set(
-        popped.id,
-        this.initFnMsStats.get(popped.id)! + elapsed
+        init.id,
+        this.initFnMsStats.get(init.id)! + elapsed
       );
       if (this._runningInitStack.length) this._lastInitTimestamp = after;
       else this._lastInitTimestamp = -1;
