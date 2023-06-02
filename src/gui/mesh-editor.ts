@@ -1,6 +1,6 @@
 import { ColorDef } from "../color/color-ecs.js";
 import { EM, EntityW } from "../ecs/entity-manager.js";
-import { AssetsDef, GameMesh } from "../meshes/assets.js";
+import { AllMeshesDef, GameMesh } from "../meshes/meshes.js";
 import { gameplaySystems } from "../debug/ghost.js";
 import {
   vec2,
@@ -104,7 +104,10 @@ async function createMeshEditor() {
     extrudeHEdge,
   };
 
-  const { renderer, assets } = await EM.whenResources(RendererDef, AssetsDef);
+  const { renderer, allMeshes } = await EM.whenResources(
+    RendererDef,
+    AllMeshesDef
+  );
 
   return res;
 
@@ -221,7 +224,7 @@ async function createMeshEditor() {
     assert(idx !== undefined, `out of glyphs`);
     if (!vertGlyphPool[idx]) {
       // create if missing
-      const glyph_ = _createGlyph(assets.he_octo);
+      const glyph_ = _createGlyph(allMeshes.he_octo);
       EM.ensureComponentOn(glyph_, HVertDef, hv);
       EM.ensureComponentOn(glyph_, ButtonDef, "glyph-vert");
       const glyph = await EM.whenEntityHas(
@@ -263,7 +266,7 @@ async function createMeshEditor() {
     assert(idx !== undefined, `out of glyphs`);
     if (!hedgeGlyphPool[idx]) {
       // create if missing
-      const glyph_ = _createGlyph(assets.he_quad);
+      const glyph_ = _createGlyph(allMeshes.he_quad);
       EM.ensureComponentOn(glyph_, HEdgeDef, he);
       EM.ensureComponentOn(glyph_, ButtonDef, "glyph-hedge");
       const glyph = await EM.whenEntityHas(

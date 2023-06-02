@@ -9,7 +9,7 @@ import {
   ScaleDef,
 } from "../physics/transform.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
-import { AssetsDef } from "../meshes/assets.js";
+import { AllMeshesDef } from "../meshes/meshes.js";
 import { DarkStarPropsDef } from "./darkstar.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { Phase } from "../ecs/sys-phase.js";
@@ -17,7 +17,7 @@ import { Phase } from "../ecs/sys-phase.js";
 const ORRERY_SCALE = 0.001;
 
 export async function makeOrrery(parentId: number) {
-  const res = await EM.whenResources(AssetsDef);
+  const res = await EM.whenResources(AllMeshesDef);
   const orrery = EM.new();
   EM.ensureComponentOn(orrery, OrreryDef);
   EM.ensureComponentOn(orrery, PhysicsParentDef, parentId);
@@ -30,7 +30,7 @@ export async function makeOrrery(parentId: number) {
   EM.ensureComponentOn(
     shipModel,
     RenderableConstructDef,
-    res.assets.ship.proto
+    res.allMeshes.ship.proto
   );
   EM.ensureComponentOn(
     shipModel,
@@ -49,7 +49,7 @@ export function registerOrrerySystems() {
     "orreryMotion",
     Phase.GAME_WORLD,
     [OrreryDef, WorldFrameDef],
-    [AssetsDef],
+    [AllMeshesDef],
     (es, res) => {
       const stars = EM.filterEntities([
         DarkStarPropsDef,
@@ -67,7 +67,7 @@ export function registerOrrerySystems() {
           EM.ensureComponentOn(
             orreryStar,
             RenderableConstructDef,
-            res.assets.ball.proto
+            res.allMeshes.ball.proto
           );
           EM.ensureComponentOn(orreryStar, ScaleDef, V(0.25, 0.25, 0.25));
           orrery.orrery.orreryStars.push(createRef(orreryStar));

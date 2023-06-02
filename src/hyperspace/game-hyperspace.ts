@@ -11,7 +11,7 @@ import {
   shadowPipelines,
 } from "../render/pipelines/std-shadow.js";
 import { initStars, renderStars } from "../render/pipelines/std-stars.js";
-import { AssetsDef } from "../meshes/assets.js";
+import { AllMeshesDef } from "../meshes/meshes.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { createHsPlayer, registerHsPlayerSystems } from "./hs-player.js";
 import { createHsShip, registerShipSystems } from "./hyperspace-ship.js";
@@ -58,7 +58,7 @@ import { registerRibSailSystems } from "./ribsail.js";
 // export let jfaMaxStep = VISUALIZE_JFA ? 0 : 999;
 
 function spawnRandomDarkStar(
-  res: EntityW<[typeof AssetsDef]>,
+  res: EntityW<[typeof AllMeshesDef]>,
   approxPosition: vec3,
   color: vec3
 ) {
@@ -137,12 +137,12 @@ export async function initHyperspaceGame() {
     }
   );
 
-  const res = await EM.whenResources(AssetsDef, RendererDef, CameraDef);
+  const res = await EM.whenResources(AllMeshesDef, RendererDef, CameraDef);
 
   res.camera.fov = Math.PI * 0.5;
 
   // const ghost = createGhost();
-  // EM.ensureComponentOn(ghost, RenderableConstructDef, res.assets.cube.proto);
+  // EM.ensureComponentOn(ghost, RenderableConstructDef, res.allMeshes.cube.proto);
   // ghost.controllable.speed *= 3;
   // ghost.controllable.sprintMul *= 3;
 
@@ -164,7 +164,7 @@ export async function initHyperspaceGame() {
   // one-time GPU jobs
   res.renderer.renderer.submitPipelines([], [...noisePipes, initStars]);
 
-  initOcean(res.assets.ocean.mesh, V(0.1, 0.3, 0.8));
+  initOcean(res.allMeshes.ocean.mesh, V(0.1, 0.3, 0.8));
 
   // TODO(@darzu): dbg
   //await asyncTimeout(2000);
@@ -177,7 +177,7 @@ export async function initHyperspaceGame() {
     EM.ensureComponentOn(
       eShip,
       RenderableConstructDef,
-      res.assets.ship_fangs.proto
+      res.allMeshes.ship_fangs.proto
     );
     EM.ensureComponentOn(eShip, PositionDef);
     EM.ensureComponentOn(eShip, UVPosDef, vec2.clone([0.2, 0.1]));

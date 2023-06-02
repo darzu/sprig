@@ -2,7 +2,7 @@
 
 import { ColorDef } from "../color/color-ecs.js";
 import { EntityW, EM } from "../ecs/entity-manager.js";
-import { AssetsDef, BLACK } from "../meshes/assets.js";
+import { AllMeshesDef, BLACK } from "../meshes/meshes.js";
 import { GravityDef } from "../motion/gravity.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { jitter } from "../utils/math.js";
@@ -62,7 +62,7 @@ function createSplinterPool(
     if (nextIdx >= pool.length) nextIdx = 0;
     return pool[nextIdx++];
   }
-  // const { assets } = await EM.whenResources(AssetsDef);
+  // const { allMeshes} = await EM.whenResources(AssetsDef);
 
   for (let i = 0; i < numInPool; i++) {
     // create flying splinter

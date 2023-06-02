@@ -66,7 +66,7 @@ import {
   WoodStateDef,
   _dbgNumSplinterEnds,
 } from "./wood.js";
-import { AssetsDef, BLACK } from "../meshes/assets.js";
+import { AllMeshesDef, BLACK } from "../meshes/meshes.js";
 import {
   breakBullet,
   BulletConstructDef,
@@ -158,7 +158,7 @@ export const LD51CannonDef = EM.defineComponent("ld51Cannon", () => {
 
 export async function initShipyardGame(hosting: boolean) {
   const res = await EM.whenResources(
-    AssetsDef,
+    AllMeshesDef,
     // WoodAssetsDef,
     // GlobalCursor3dDef,
     RendererDef,
@@ -183,13 +183,17 @@ export async function initShipyardGame(hosting: boolean) {
   // vec3.scale(sunlight.pointLight.ambient, sunlight.pointLight.ambient, 0.2);
   vec3.copy(sunlight.pointLight.diffuse, [0.5, 0.5, 0.5]);
   EM.ensureComponentOn(sunlight, PositionDef, V(50, 100, 10));
-  EM.ensureComponentOn(sunlight, RenderableConstructDef, res.assets.ball.proto);
+  EM.ensureComponentOn(
+    sunlight,
+    RenderableConstructDef,
+    res.allMeshes.ball.proto
+  );
 
   // const c = res.globalCursor3d.cursor()!;
   // if (RenderableDef.isOn(c)) c.renderable.enabled = false;
 
   const ground = EM.new();
-  const groundMesh = cloneMesh(res.assets.hex.mesh);
+  const groundMesh = cloneMesh(res.allMeshes.hex.mesh);
   transformMesh(
     groundMesh,
     mat4.fromRotationTranslationScale(quat.IDENTITY, [0, -4, 0], [20, 2, 20])
@@ -201,7 +205,7 @@ export async function initShipyardGame(hosting: boolean) {
   // EM.ensureComponentOn(plane, PositionDef, [0, -5, 0]);
 
   // const cube = EM.newEntity();
-  // const cubeMesh = cloneMesh(res.assets.cube.mesh);
+  // const cubeMesh = cloneMesh(res.allMeshes.cube.mesh);
   // EM.ensureComponentOn(cube, RenderableConstructDef, cubeMesh);
   // EM.ensureComponentOn(cube, ColorDef, [0.1, 0.1, 0.1]);
   // EM.ensureComponentOn(cube, PositionDef, [0, 0, 3]);
@@ -211,18 +215,18 @@ export async function initShipyardGame(hosting: boolean) {
   // EM.ensureComponentOn(cube, ColliderDef, {
   //   shape: "AABB",
   //   solid: false,
-  //   aabb: res.assets.cube.aabb,
+  //   aabb: res.allMeshes.cube.aabb,
   // });
 
   // EM.ensureComponentOn(b1, ColliderDef, {
   //   shape: "Box",
   //   solid: false,
-  //   center: res.assets.cube.center,
-  //   halfsize: res.assets.cube.halfsize,
+  //   center: res.allMeshes.cube.center,
+  //   halfsize: res.allMeshes.cube.halfsize,
   // });
 
   // TODO(@darzu): timber system here!
-  // const sphereMesh = cloneMesh(res.assets.ball.mesh);
+  // const sphereMesh = cloneMesh(res.allMeshes.ball.mesh);
   // const visible = false;
   // EM.ensureComponentOn(_player, RenderableConstructDef, sphereMesh, visible);
   // EM.ensureComponentOn(_player, ColorDef, [0.1, 0.1, 0.1]);
@@ -233,15 +237,15 @@ export async function initShipyardGame(hosting: boolean) {
   // EM.ensureComponentOn(_player, ColliderDef, {
   //   shape: "AABB",
   //   solid: false,
-  //   aabb: res.assets.ball.aabb,
+  //   aabb: res.allMeshes.ball.aabb,
   // });
   // randomizeMeshColors(b2);
 
   // EM.ensureComponentOn(b2, ColliderDef, {
   //   shape: "Box",
   //   solid: false,
-  //   center: res.assets.cube.center,
-  //   halfsize: res.assets.cube.halfsize,
+  //   center: res.allMeshes.cube.center,
+  //   halfsize: res.allMeshes.cube.halfsize,
   // });
 
   // TIMBER
@@ -280,7 +284,7 @@ export async function initShipyardGame(hosting: boolean) {
   // const timberPos = getCenterFromAABB(timberAABB);
   const timberPos = vec3.create();
   // timberPos[1] += 5;
-  // const timberPos = vec3.clone(res.assets.timber_rib.center);
+  // const timberPos = vec3.clone(res.allMeshes.timber_rib.center);
   // vec3.negate(timberPos, timberPos);
   // vec3.scale(timberPos, timberPos, scale);
   // timberPos[1] += 1;
@@ -310,7 +314,7 @@ export async function initShipyardGame(hosting: boolean) {
   //   EM.ensureComponentOn(
   //     cannon,
   //     RenderableConstructDef,
-  //     res.assets.ld51_cannon.proto
+  //     res.allMeshes.ld51_cannon.proto
   //   );
   //   EM.ensureComponentOn(
   //     cannon,
@@ -328,7 +332,7 @@ export async function initShipyardGame(hosting: boolean) {
   //   vec3.scale(cannon.color, 0.5, cannon.color);
   //   {
   //     const interactBox = EM.new();
-  //     const interactAABB = copyAABB(createAABB(), res.assets.ld51_cannon.aabb);
+  //     const interactAABB = copyAABB(createAABB(), res.allMeshes.ld51_cannon.aabb);
   //     vec3.scale(interactAABB.min, 2, interactAABB.min);
   //     vec3.scale(interactAABB.max, 2, interactAABB.max);
   //     EM.ensureComponentOn(interactBox, PhysicsParentDef, cannon.id);
@@ -377,14 +381,14 @@ export async function initShipyardGame(hosting: boolean) {
       EM.ensureComponentOn(
         newBall,
         RenderableConstructDef,
-        res.assets.ball.proto
+        res.allMeshes.ball.proto
       );
       EM.ensureComponentOn(newBall, ColorDef, ENDESGA16.orange);
       EM.ensureComponentOn(newBall, PositionDef);
       EM.ensureComponentOn(newBall, LinearVelocityDef);
       EM.ensureComponentOn(newBall, GravityDef);
       const interactBox = EM.new();
-      const interactAABB = copyAABB(createAABB(), res.assets.ball.aabb);
+      const interactAABB = copyAABB(createAABB(), res.allMeshes.ball.aabb);
       vec3.scale(interactAABB.min, 2, interactAABB.min);
       vec3.scale(interactAABB.max, 2, interactAABB.max);
       EM.ensureComponentOn(interactBox, PhysicsParentDef, newBall.id);
@@ -662,7 +666,7 @@ export async function initShipyardGame(hosting: boolean) {
 
     function debugVizAABB(aabbEnt: EntityW<[typeof ColliderDef]>) {
       // debug render floor
-      const mesh = cloneMesh(res.assets.cube.mesh);
+      const mesh = cloneMesh(res.allMeshes.cube.mesh);
       assert(aabbEnt.collider.shape === "AABB");
       const size = getHalfsizeFromAABB(aabbEnt.collider.aabb, vec3.create());
       const center = aabbCenter(tempVec3(), aabbEnt.collider.aabb);
@@ -832,7 +836,7 @@ export async function initShipyardGame(hosting: boolean) {
       g.cameraFollow.positionOffset = V(0, 0, 5);
       g.controllable.speed *= 0.5;
       g.controllable.sprintMul = 10;
-      const sphereMesh = cloneMesh(res.assets.ball.mesh);
+      const sphereMesh = cloneMesh(res.allMeshes.ball.mesh);
       const visible = false;
       EM.ensureComponentOn(g, RenderableConstructDef, sphereMesh, visible);
       EM.ensureComponentOn(g, ColorDef, V(0.1, 0.1, 0.1));
@@ -843,7 +847,7 @@ export async function initShipyardGame(hosting: boolean) {
       EM.ensureComponentOn(g, ColliderDef, {
         shape: "AABB",
         solid: false,
-        aabb: res.assets.ball.aabb,
+        aabb: res.allMeshes.ball.aabb,
       });
 
       // vec3.copy(g.position, [-28.11, 26.0, -28.39]);

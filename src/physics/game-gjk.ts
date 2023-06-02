@@ -21,7 +21,7 @@ import {
 } from "../render/renderer-ecs.js";
 import { tempVec3 } from "../matrix/temp-pool.js";
 import { farthestPointInDir } from "../utils/utils-3d.js";
-import { AssetsDef, GameMesh } from "../meshes/assets.js";
+import { AllMeshesDef, GameMesh } from "../meshes/meshes.js";
 import { GlobalCursor3dDef } from "../gui/cursor.js";
 import { createGhost } from "../debug/ghost.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
@@ -59,7 +59,7 @@ let __frame = 0;
 export async function initGJKSandbox(hosting: boolean) {
   dbgLogMilestone("GJK waiting for resources");
   const res = await EM.whenResources(
-    AssetsDef,
+    AllMeshesDef,
     GlobalCursor3dDef,
     RendererDef,
     CameraDef
@@ -84,11 +84,15 @@ export async function initGJKSandbox(hosting: boolean) {
   // vec3.scale(sunlight.pointLight.ambient, sunlight.pointLight.ambient, 0.2);
   // vec3.copy(sunlight.pointLight.diffuse, [0.5, 0.5, 0.5]);
   EM.ensureComponentOn(sunlight, PositionDef, V(10, 100, 10));
-  EM.ensureComponentOn(sunlight, RenderableConstructDef, res.assets.ball.proto);
+  EM.ensureComponentOn(
+    sunlight,
+    RenderableConstructDef,
+    res.allMeshes.ball.proto
+  );
 
   // ghost
   const g = createGhost();
-  // EM.ensureComponentOn(g, RenderableConstructDef, res.assets.cube.proto);
+  // EM.ensureComponentOn(g, RenderableConstructDef, res.allMeshes.cube.proto);
   // createPlayer();
 
   // vec3.copy(e.position, [-16.6, 5, -5.1]);
@@ -117,7 +121,11 @@ export async function initGJKSandbox(hosting: boolean) {
 
   // ground
   const ground = EM.new();
-  EM.ensureComponentOn(ground, RenderableConstructDef, res.assets.plane.proto);
+  EM.ensureComponentOn(
+    ground,
+    RenderableConstructDef,
+    res.allMeshes.plane.proto
+  );
   EM.ensureComponentOn(ground, ColorDef, V(0.2, 0.3, 0.2));
   EM.ensureComponentOn(ground, PositionDef, V(0, -5, 0));
 
@@ -128,11 +136,11 @@ export async function initGJKSandbox(hosting: boolean) {
   EM.ensureComponentOn(
     worldGizmo,
     RenderableConstructDef,
-    res.assets.gizmo.proto
+    res.allMeshes.gizmo.proto
   );
 
   const b1 = EM.new();
-  const m1 = cloneMesh(res.assets.cube.mesh);
+  const m1 = cloneMesh(res.allMeshes.cube.mesh);
   EM.ensureComponentOn(b1, RenderableConstructDef, m1);
   EM.ensureComponentOn(b1, ColorDef, V(0.1, 0.1, 0.1));
   EM.ensureComponentOn(b1, PositionDef, V(0, 0, 3));
@@ -142,17 +150,17 @@ export async function initGJKSandbox(hosting: boolean) {
   EM.ensureComponentOn(b1, ColliderDef, {
     shape: "AABB",
     solid: false,
-    aabb: res.assets.cube.aabb,
+    aabb: res.allMeshes.cube.aabb,
   });
   // EM.ensureComponentOn(b1, ColliderDef, {
   //   shape: "Box",
   //   solid: false,
-  //   center: res.assets.cube.center,
-  //   halfsize: res.assets.cube.halfsize,
+  //   center: res.allMeshes.cube.center,
+  //   halfsize: res.allMeshes.cube.halfsize,
   // });
 
   const b2 = g;
-  const m2 = cloneMesh(res.assets.cube.mesh);
+  const m2 = cloneMesh(res.allMeshes.cube.mesh);
   EM.ensureComponentOn(b2, RenderableConstructDef, m2);
   EM.ensureComponentOn(b2, ColorDef, V(0.1, 0.1, 0.1));
   EM.ensureComponentOn(b2, PositionDef, V(0, 0, 0));
@@ -162,17 +170,17 @@ export async function initGJKSandbox(hosting: boolean) {
   EM.ensureComponentOn(b2, ColliderDef, {
     shape: "AABB",
     solid: false,
-    aabb: res.assets.cube.aabb,
+    aabb: res.allMeshes.cube.aabb,
   });
   // EM.ensureComponentOn(b2, ColliderDef, {
   //   shape: "Box",
   //   solid: false,
-  //   center: res.assets.cube.center,
-  //   halfsize: res.assets.cube.halfsize,
+  //   center: res.allMeshes.cube.center,
+  //   halfsize: res.allMeshes.cube.halfsize,
   // });
 
   const b3 = EM.new();
-  const m3 = cloneMesh(res.assets.ball.mesh);
+  const m3 = cloneMesh(res.allMeshes.ball.mesh);
   EM.ensureComponentOn(b3, RenderableConstructDef, m3);
   EM.ensureComponentOn(b3, ColorDef, V(0.1, 0.1, 0.1));
   EM.ensureComponentOn(b3, PositionDef, V(0, 0, -4));
@@ -181,11 +189,11 @@ export async function initGJKSandbox(hosting: boolean) {
   EM.ensureComponentOn(b3, ColliderDef, {
     shape: "AABB",
     solid: false,
-    aabb: res.assets.ball.aabb,
+    aabb: res.allMeshes.ball.aabb,
   });
 
   const b4 = EM.new();
-  const m4 = cloneMesh(res.assets.tetra.mesh);
+  const m4 = cloneMesh(res.allMeshes.tetra.mesh);
   EM.ensureComponentOn(b4, RenderableConstructDef, m4);
   EM.ensureComponentOn(b4, ColorDef, V(0.1, 0.1, 0.1));
   EM.ensureComponentOn(b4, PositionDef, V(0, -3, 0));
@@ -194,7 +202,7 @@ export async function initGJKSandbox(hosting: boolean) {
   EM.ensureComponentOn(b4, ColliderDef, {
     shape: "AABB",
     solid: false,
-    aabb: res.assets.tetra.aabb,
+    aabb: res.allMeshes.tetra.aabb,
   });
 
   // NOTE: this uses temp vectors, it must not live long
@@ -246,13 +254,17 @@ export async function initGJKSandbox(hosting: boolean) {
       // TODO(@darzu):
 
       let playerShape = createWorldShape(
-        res.assets.cube,
+        res.allMeshes.cube,
         b2.position,
         b2.rotation,
         lastPlayerPos
       );
 
-      const gameMeshes = [res.assets.cube, res.assets.ball, res.assets.tetra];
+      const gameMeshes = [
+        res.allMeshes.cube,
+        res.allMeshes.ball,
+        res.allMeshes.tetra,
+      ];
       const ents = [b1, b3, b4];
 
       let backTravelD = 0;
@@ -288,7 +300,7 @@ export async function initGJKSandbox(hosting: boolean) {
             lastWorldPos[i]
           );
           playerShape = createWorldShape(
-            res.assets.cube,
+            res.allMeshes.cube,
             b2.position,
             b2.rotation,
             lastPlayerPos

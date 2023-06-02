@@ -27,7 +27,7 @@ import { Ray } from "../physics/broadphase.js";
 import { copyAABB, createAABB } from "../physics/aabb.js";
 import { tempVec3 } from "../matrix/temp-pool.js";
 import { cloneMesh, scaleMesh3 } from "../meshes/mesh.js";
-import { AssetsDef } from "../meshes/assets.js";
+import { AllMeshesDef } from "../meshes/meshes.js";
 import { LinearVelocityDef } from "../motion/velocity.js";
 import { MotionSmoothingDef } from "../render/motion-smoothing.js";
 import { ModelerDef } from "../meshes/modeler.js";
@@ -110,7 +110,7 @@ export function registerHsPlayerSystems() {
     "buildHsPlayers",
     Phase.PRE_GAME_WORLD,
     [PlayerHsPropsDef],
-    [MeDef, AssetsDef],
+    [MeDef, AllMeshesDef],
     (players, res) => {
       for (let e of players) {
         if (FinishedDef.isOn(e)) continue;
@@ -131,7 +131,7 @@ export function registerHsPlayerSystems() {
           EM.addComponent(e.id, MotionSmoothingDef);
         if (!RenderableConstructDef.isOn(e)) {
           // console.log("creating rend");
-          const m = cloneMesh(res.assets.cube.mesh);
+          const m = cloneMesh(res.allMeshes.cube.mesh);
           scaleMesh3(m, V(0.75, 0.75, 0.4));
           EM.addComponent(e.id, RenderableConstructDef, m);
         }
@@ -146,7 +146,7 @@ export function registerHsPlayerSystems() {
             EM.ensureComponentOn(
               l,
               RenderableConstructDef,
-              res.assets.cube.proto
+              res.allMeshes.cube.proto
             );
             EM.ensureComponentOn(l, ScaleDef, V(0.15, 0.75, 0.15));
             EM.ensureComponentOn(l, ColorDef, V(0.05, 0.05, 0.05));
@@ -161,7 +161,7 @@ export function registerHsPlayerSystems() {
           collider.shape = "AABB";
           // collider.solid = false;
           collider.solid = true;
-          const playerAABB = copyAABB(createAABB(), res.assets.cube.aabb);
+          const playerAABB = copyAABB(createAABB(), res.allMeshes.cube.aabb);
           vec3.add(playerAABB.min, [0, -1, 0], playerAABB.min);
           (collider as AABBCollider).aabb = playerAABB;
         }

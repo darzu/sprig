@@ -15,7 +15,7 @@ import {
 import { RendererDef } from "../render/renderer-ecs.js";
 import { assert } from "../utils/util.js";
 import { TimeDef } from "../time/time.js";
-import { AssetsDef, GameMesh } from "../meshes/assets.js";
+import { AllMeshesDef, GameMesh } from "../meshes/meshes.js";
 // import { ENEMY_SHIP_COLOR } from "./enemy-ship.js";
 // import { ClothConstructDef, ClothLocalDef } from "./cloth.js";
 import { GlobalCursor3dDef } from "../gui/cursor.js";
@@ -35,7 +35,7 @@ export async function initReboundSandbox(hosting: boolean) {
   let tableId = -1;
 
   const res = await EM.whenResources(
-    AssetsDef,
+    AllMeshesDef,
     GlobalCursor3dDef,
     RendererDef,
     TextDef,
@@ -64,24 +64,28 @@ export async function initReboundSandbox(hosting: boolean) {
   c.renderable.enabled = false;
 
   const p = EM.new();
-  EM.ensureComponentOn(p, RenderableConstructDef, res.assets.plane.proto);
+  EM.ensureComponentOn(p, RenderableConstructDef, res.allMeshes.plane.proto);
   EM.ensureComponentOn(p, ColorDef, V(0.2, 0.3, 0.2));
   EM.ensureComponentOn(p, PositionDef, V(0, -10, 0));
   EM.ensureComponentOn(p, ColliderDef, {
     shape: "AABB",
     solid: false,
-    aabb: res.assets.plane.aabb,
+    aabb: res.allMeshes.plane.aabb,
   });
 
   const t = EM.new();
-  EM.ensureComponentOn(t, RenderableConstructDef, res.assets.gridPlane.proto);
+  EM.ensureComponentOn(
+    t,
+    RenderableConstructDef,
+    res.allMeshes.gridPlane.proto
+  );
   EM.ensureComponentOn(t, ColorDef, V(0.2, 0.2, 0.9));
   EM.ensureComponentOn(t, PositionDef, V(0, 0, 0));
   EM.ensureComponentOn(t, AngularVelocityDef, V(0, 0.0002, 0.0002));
   EM.ensureComponentOn(t, ColliderDef, {
     shape: "AABB",
     solid: true,
-    aabb: res.assets.gridPlane.aabb,
+    aabb: res.allMeshes.gridPlane.aabb,
   });
   tableId = t.id;
 
@@ -114,7 +118,7 @@ export async function initReboundSandbox(hosting: boolean) {
     "sandboxSpawnBoxes",
     Phase.GAME_WORLD,
     null,
-    [AssetsDef, TimeDef, InputsDef],
+    [AllMeshesDef, TimeDef, InputsDef],
     (_, res) => {
       // pause/unpause
       if (res.inputs.keyClicks["p"]) paused = !paused;
@@ -127,7 +131,7 @@ export async function initReboundSandbox(hosting: boolean) {
 
           const x = jitter(5);
           const z = jitter(5);
-          spawn(res.assets.cube, V(x, 20, z));
+          spawn(res.allMeshes.cube, V(x, 20, z));
         }
       }
 
@@ -136,7 +140,7 @@ export async function initReboundSandbox(hosting: boolean) {
         const NUM = 1;
         const SPC = 2;
         for (let i = 0; i < NUM; i++)
-          spawn(res.assets.cube, V(0, 10 + i * SPC, 0));
+          spawn(res.allMeshes.cube, V(0, 10 + i * SPC, 0));
       }
 
       if (res.inputs.keyClicks["backspace"]) {

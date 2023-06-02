@@ -1,7 +1,7 @@
 import { ColorDef } from "../color/color-ecs.js";
 import { createRef } from "../ecs/em-helpers.js";
 import { EM, EntityW } from "../ecs/entity-manager.js";
-import { AssetsDef } from "../meshes/assets.js";
+import { AllMeshesDef } from "../meshes/meshes.js";
 import { vec3, quat } from "../matrix/sprig-matrix.js";
 import { LinearVelocityDef } from "../motion/velocity.js";
 import {
@@ -80,7 +80,7 @@ const RUDDER_ROTATION_RATE = 0.01;
 export const cannonDefaultPitch = Math.PI * +0.05;
 
 export async function createShip() {
-  const res = await EM.whenResources(AssetsDef, MeDef);
+  const res = await EM.whenResources(AllMeshesDef, MeDef);
   const ent = EM.new();
   EM.ensureComponentOn(ent, ShipDef);
 
@@ -90,13 +90,13 @@ export async function createShip() {
     ent,
     RenderableConstructDef,
     homeShip.timberMesh
-    // res.assets.ship_small.proto
+    // res.allMeshes.ship_small.proto
   );
   EM.ensureComponentOn(ent, WoodStateDef, homeShip.timberState);
   // EM.set(ent, ColliderDef, {
   //   shape: "AABB",
   //   solid: true,
-  //   aabb: res.assets.ship.aabb,
+  //   aabb: res.allMeshes.ship.aabb,
   // });
 
   const timberHealth = createWoodHealth(homeShip.timberState);
@@ -155,7 +155,7 @@ export async function createShip() {
   // EM.ensureComponentOn(gizmo, PositionDef, V(0, 20, 0));
   // EM.ensureComponentOn(gizmo, ScaleDef, V(10, 10, 10));
   // EM.ensureComponentOn(gizmo, PhysicsParentDef, ent.id);
-  // EM.ensureComponentOn(gizmo, RenderableConstructDef, res.assets.gizmo.proto);
+  // EM.ensureComponentOn(gizmo, RenderableConstructDef, res.allMeshes.gizmo.proto);
 
   // addGizmoChild(ent, 10);
 
@@ -234,13 +234,13 @@ EM.addSystem(
 export const RudderDef = EM.defineComponent("rudder", () => true);
 
 async function createRudder() {
-  const res = await EM.whenResources(AssetsDef, MeDef);
+  const res = await EM.whenResources(AllMeshesDef, MeDef);
   const ent = EM.new();
   EM.ensureComponentOn(ent, RudderDef);
   EM.ensureComponentOn(
     ent,
     RenderableConstructDef,
-    res.assets.rudderPrim.proto
+    res.allMeshes.rudderPrim.proto
   );
   // EM.ensureComponentOn(ent, ColorDef, V(0.2, 0.1, 0.05));
   EM.ensureComponentOn(ent, ColorDef, ENDESGA16.midBrown);

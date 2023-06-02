@@ -2,7 +2,7 @@ import { CameraDef, CameraFollowDef } from "../camera/camera.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { EM, EntityW } from "../ecs/entity-manager.js";
-import { AssetsDef } from "../meshes/assets.js";
+import { AllMeshesDef } from "../meshes/meshes.js";
 import { ControllableDef } from "../input/controllable.js";
 import { createGhost, GhostDef } from "../debug/ghost.js";
 import {
@@ -149,7 +149,7 @@ export async function initLD53(hosting: boolean) {
   outlineRender.fragOverrides!.lineWidth = 1.0;
 
   const res = await EM.whenResources(
-    AssetsDef,
+    AllMeshesDef,
     // WoodAssetsDef,
     // GlobalCursor3dDef,
     RendererDef,
@@ -202,7 +202,11 @@ export async function initLD53(hosting: boolean) {
   vec3.copy(sunlight.pointLight.ambient, [0.2, 0.2, 0.2]);
   vec3.copy(sunlight.pointLight.diffuse, [0.5, 0.5, 0.5]);
   EM.ensureComponentOn(sunlight, PositionDef, V(50, 300, 10));
-  EM.ensureComponentOn(sunlight, RenderableConstructDef, res.assets.ball.proto);
+  EM.ensureComponentOn(
+    sunlight,
+    RenderableConstructDef,
+    res.allMeshes.ball.proto
+  );
 
   // pirate test
   const PirateDef = EM.defineComponent("pirate", () => true);
@@ -210,7 +214,7 @@ export async function initLD53(hosting: boolean) {
   EM.ensureComponentOn(
     pirate,
     RiggedRenderableConstructDef,
-    res.assets.pirate.mesh as RiggedMesh
+    res.allMeshes.pirate.mesh as RiggedMesh
   );
   EM.ensureComponentOn(pirate, PositionDef, V(50, 80, 10));
   EM.ensureComponentOn(pirate, PirateDef);
@@ -235,7 +239,7 @@ export async function initLD53(hosting: boolean) {
   const domeMesh = makeDome(16, 8, SKY_HALFSIZE);
   const sky = EM.new();
   EM.ensureComponentOn(sky, PositionDef, V(0, -100, 0));
-  // const skyMesh = cloneMesh(res.assets.cube.mesh);
+  // const skyMesh = cloneMesh(res.allMeshes.cube.mesh);
   // skyMesh.pos.forEach((p) => vec3.scale(p, SKY_HALFSIZE, p));
   // skyMesh.quad.forEach((f) => vec4.reverse(f, f));
   // skyMesh.tri.forEach((f) => vec3.reverse(f, f));
@@ -327,7 +331,7 @@ export async function initLD53(hosting: boolean) {
         EM.ensureComponentOn(
           bouy,
           RenderableConstructDef,
-          res.assets.ball.proto
+          res.allMeshes.ball.proto
         );
         EM.ensureComponentOn(bouy, ColorDef, ENDESGA16.lightGreen);
         buoys.push(bouy);
@@ -401,7 +405,7 @@ export async function initLD53(hosting: boolean) {
     // g.cameraFollow.positionOffset = V(0, 0, 5);
     g.controllable.speed *= 2.0;
     g.controllable.sprintMul = 15;
-    const sphereMesh = cloneMesh(res.assets.ball.mesh);
+    const sphereMesh = cloneMesh(res.allMeshes.ball.mesh);
     const visible = false;
     EM.ensureComponentOn(g, RenderableConstructDef, sphereMesh, visible);
     EM.ensureComponentOn(g, ColorDef, V(0.1, 0.1, 0.1));
@@ -412,7 +416,7 @@ export async function initLD53(hosting: boolean) {
     EM.ensureComponentOn(g, ColliderDef, {
       shape: "AABB",
       solid: false,
-      aabb: res.assets.ball.aabb,
+      aabb: res.allMeshes.ball.aabb,
     });
 
     // high up:
@@ -635,7 +639,7 @@ export async function initLD53(hosting: boolean) {
     EM.ensureComponentOn(
       worldGizmo,
       RenderableConstructDef,
-      res.assets.gizmo.proto
+      res.allMeshes.gizmo.proto
     );
   }
 
@@ -710,7 +714,7 @@ export async function initLD53(hosting: boolean) {
 }
 
 async function createPlayer() {
-  const { assets, me } = await EM.whenResources(AssetsDef, MeDef);
+  const { allMeshes, me } = await EM.whenResources(AllMeshesDef, MeDef);
   const p = EM.new();
   EM.ensureComponentOn(p, ControllableDef);
   p.controllable.modes.canFall = false;
@@ -731,7 +735,7 @@ async function createPlayer() {
   p.cameraFollow.positionOffset = V(0, 0, 5);
   p.controllable.speed *= 0.5;
   p.controllable.sprintMul = 10;
-  const sphereMesh = cloneMesh(assets.ball.mesh);
+  const sphereMesh = cloneMesh(allMeshes.ball.mesh);
   const visible = true;
   EM.ensureComponentOn(p, RenderableConstructDef, sphereMesh, visible);
   EM.ensureComponentOn(p, ColorDef, V(0.1, 0.1, 0.1));
@@ -742,7 +746,7 @@ async function createPlayer() {
   EM.ensureComponentOn(p, ColliderDef, {
     shape: "AABB",
     solid: true,
-    aabb: assets.ball.aabb,
+    aabb: allMeshes.ball.aabb,
   });
 
   vec3.copy(p.position, [-28.11, 26.0, -28.39]);

@@ -1,7 +1,7 @@
 import { CameraView } from "../camera/camera.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { EM, Entity, EntityW } from "../ecs/entity-manager.js";
-import { AssetsDef } from "../meshes/assets.js";
+import { AllMeshesDef } from "../meshes/meshes.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { mathMap } from "./math.js";
 import { getLineEnd, Line, Ray } from "../physics/broadphase.js";
@@ -99,10 +99,10 @@ const _ballPool = createEntityPool<
   max: 100,
   maxBehavior: "rand-despawn",
   create: async () => {
-    let res = await EM.whenResources(AssetsDef);
+    let res = await EM.whenResources(AllMeshesDef);
     const e = EM.new();
     EM.ensureComponentOn(e, ColorDef);
-    EM.ensureComponentOn(e, RenderableConstructDef, res.assets.ball.proto);
+    EM.ensureComponentOn(e, RenderableConstructDef, res.allMeshes.ball.proto);
     EM.ensureComponentOn(e, PositionDef);
     EM.ensureComponentOn(e, ScaleDef);
     return e;
@@ -190,7 +190,7 @@ export async function addGizmoChild(
   EM.ensureComponentOn(gizmo, PositionDef, vec3.clone(offset));
   EM.ensureComponentOn(gizmo, ScaleDef, V(scale, scale, scale));
   EM.ensureComponentOn(gizmo, PhysicsParentDef, parent.id);
-  const { assets } = await EM.whenResources(AssetsDef);
-  EM.ensureComponentOn(gizmo, RenderableConstructDef, assets.gizmo.proto);
+  const { allMeshes } = await EM.whenResources(AllMeshesDef);
+  EM.ensureComponentOn(gizmo, RenderableConstructDef, allMeshes.gizmo.proto);
   return gizmo;
 }

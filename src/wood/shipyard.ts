@@ -36,7 +36,7 @@ import {
   setSideQuadIdxs,
   setEndQuadIdxs,
 } from "./wood.js";
-import { BLACK } from "../meshes/assets.js";
+import { BLACK } from "../meshes/meshes.js";
 import { mkHalfEdgeQuadMesh } from "../meshes/primatives.js";
 import { HFace, meshToHalfEdgePoly } from "../meshes/half-edge.js";
 import { createGizmoMesh } from "../debug/gizmos.js";

@@ -14,7 +14,7 @@ import {
 import { ColliderDef } from "../physics/collider.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { aabbCenter } from "../physics/aabb.js";
-import { Assets, AssetsDef, GameMesh } from "../meshes/assets.js";
+import { AllMeshes, AllMeshesDef, GameMesh } from "../meshes/meshes.js";
 import { AngularVelocityDef, LinearVelocityDef } from "../motion/velocity.js";
 import { MotionSmoothingDef } from "../render/motion-smoothing.js";
 import {
@@ -46,7 +46,7 @@ export const EnemyCrewDef = EM.defineComponent("enemyCrew", () => {
 export type EnemyCrew = Component<typeof EnemyCrewDef>;
 
 export function createEnemyCrew(
-  assets: Assets,
+  allMeshes: AllMeshes,
   parent: number,
   pos: vec3
 ): EntityW<[typeof EnemyCrewDef]> {
@@ -54,7 +54,7 @@ export function createEnemyCrew(
   EM.ensureComponentOn(e, EnemyCrewDef);
   EM.ensureComponentOn(e, PositionDef, pos);
   EM.ensureComponentOn(e, RotationDef, quat.create());
-  const torso = cloneMesh(assets.cube.mesh);
+  const torso = cloneMesh(allMeshes.cube.mesh);
   scaleMesh3(torso, V(0.75, 0.75, 0.4));
   EM.ensureComponentOn(e, RenderableConstructDef, torso);
   EM.ensureComponentOn(e, ColorDef, V(0.2, 0.0, 0));
@@ -63,7 +63,7 @@ export function createEnemyCrew(
   function makeLeg(x: number): Entity {
     const l = EM.new();
     EM.ensureComponentOn(l, PositionDef, V(x, -1.75, 0));
-    EM.ensureComponentOn(l, RenderableConstructDef, assets.cube.proto);
+    EM.ensureComponentOn(l, RenderableConstructDef, allMeshes.cube.proto);
     EM.ensureComponentOn(l, ScaleDef, V(0.1, 1.0, 0.1));
     EM.ensureComponentOn(l, ColorDef, V(0.05, 0.05, 0.05));
     EM.ensureComponentOn(l, PhysicsParentDef, e.id);
@@ -119,7 +119,7 @@ export const { EnemyShipPropsDef, EnemyShipLocalDef, createEnemyShip } =
     },
     // TODO(@darzu): probably sync UV pos/dir
     dynamicComponents: [PositionDef, RotationDef],
-    buildResources: [AssetsDef, MeDef],
+    buildResources: [AllMeshesDef, MeDef],
     build: (e, res) => {
       EM.ensureComponentOn(e, UVShipDef);
       e.uvship.speed = e.enemyShipProps.speed;
@@ -129,7 +129,7 @@ export const { EnemyShipPropsDef, EnemyShipLocalDef, createEnemyShip } =
       EM.ensureComponentOn(
         e,
         RenderableConstructDef,
-        res.assets.enemyShip.mesh
+        res.allMeshes.enemyShip.mesh
       );
 
       EM.ensureComponentOn(e, UVPosDef);
@@ -184,14 +184,14 @@ export const { EnemyShipPropsDef, EnemyShipLocalDef, createEnemyShip } =
         // TODO(@darzu):
         solid: false,
         // solid: true,
-        aabb: res.assets.enemyShip.aabb,
+        aabb: res.allMeshes.enemyShip.aabb,
       });
 
       const cannon = EM.new();
       EM.ensureComponentOn(
         cannon,
         RenderableConstructDef,
-        res.assets.cannon.proto
+        res.allMeshes.cannon.proto
       );
       EM.ensureComponentOn(cannon, PhysicsParentDef, e.id);
       EM.ensureComponentOn(cannon, PositionDef, V(0, 2, 0));
@@ -205,7 +205,7 @@ export const { EnemyShipPropsDef, EnemyShipLocalDef, createEnemyShip } =
       e.enemyShipLocal.childCannonId = cannon.id;
 
       // child enemy
-      const en = createEnemyCrew(res.assets, e.id, V(2, 3, 0));
+      const en = createEnemyCrew(res.allMeshes, e.id, V(2, 3, 0));
       e.enemyShipLocal.childEnemyId = en.id;
       if (e.authority.pid === res.me.pid) {
         // destroy after 1 minute
@@ -220,8 +220,8 @@ export const raiseBreakEnemyShip = eventWizard(
   "break-enemyShip",
   [[EnemyShipLocalDef, PositionDef, RotationDef]] as const,
   ([enemyShip]) => {
-    const res = EM.getResources([AssetsDef, AudioDef])!;
-    breakEnemyShip(enemyShip, res.assets.boat_broken, res.music);
+    const res = EM.getResources([AllMeshesDef, AudioDef])!;
+    breakEnemyShip(enemyShip, res.allMeshes.boat_broken, res.music);
   }
 );
 
@@ -298,7 +298,7 @@ export function registerEnemyShipSystems() {
     "breakEnemyShips",
     Phase.GAME_WORLD,
     [EnemyShipLocalDef, PositionDef, RotationDef],
-    [PhysicsResultsDef, AssetsDef, AudioDef, MeDef, DetectedEventsDef],
+    [PhysicsResultsDef, AllMeshesDef, AudioDef, MeDef, DetectedEventsDef],
     (objs, res) => {
       for (let enemyShip of objs) {
         const hits = res.physicsResults.collidesWith.get(enemyShip.id);

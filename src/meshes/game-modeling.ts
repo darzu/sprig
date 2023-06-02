@@ -1,4 +1,4 @@
-import { AssetsDef } from "./assets.js";
+import { AllMeshesDef } from "./meshes.js";
 import { CameraDef } from "../camera/camera.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
@@ -53,7 +53,7 @@ export async function initModelingGame() {
   vec3.set(+20, +20, +20, camera.maxWorldAABB.max);
   // camera.perspectiveMode = "ortho";
 
-  const { assets } = await EM.whenResources(AssetsDef);
+  const { allMeshes } = await EM.whenResources(AllMeshesDef);
 
   // light
   const sun = EM.new();
@@ -63,7 +63,7 @@ export async function initModelingGame() {
   // EM.ensureComponentOn(sun, PositionDef, V(-10, 10, 10));
   EM.ensureComponentOn(sun, PositionDef, V(100, 100, 100));
   EM.ensureComponentOn(sun, LinearVelocityDef, V(0.001, 0.001, 0.0));
-  EM.ensureComponentOn(sun, RenderableConstructDef, assets.cube.proto);
+  EM.ensureComponentOn(sun, RenderableConstructDef, allMeshes.cube.proto);
   sun.pointLight.constant = 1.0;
   sun.pointLight.linear = 0.0;
   sun.pointLight.quadratic = 0.0;
@@ -73,7 +73,7 @@ export async function initModelingGame() {
 
   // ground
   const ground = EM.new();
-  EM.ensureComponentOn(ground, RenderableConstructDef, assets.hex.proto);
+  EM.ensureComponentOn(ground, RenderableConstructDef, allMeshes.hex.proto);
   EM.ensureComponentOn(ground, ColorDef, ENDESGA16.blue);
   EM.ensureComponentOn(ground, PositionDef, V(0, -10, 0));
   EM.ensureComponentOn(ground, ScaleDef, V(10, 10, 10));
@@ -81,7 +81,7 @@ export async function initModelingGame() {
   // avatar
   const g = createGhost();
   g.position[1] = 5;
-  EM.ensureComponentOn(g, RenderableConstructDef, assets.ball.proto);
+  EM.ensureComponentOn(g, RenderableConstructDef, allMeshes.ball.proto);
   // vec3.copy(g.position, [2.44, 6.81, 0.96]);
   // quat.copy(g.rotation, [0.0, 0.61, 0.0, 0.79]);
   // g.cameraFollow.pitchOffset = -0.553;
@@ -93,14 +93,14 @@ export async function initModelingGame() {
 
   // origin
   const origin = EM.new();
-  EM.ensureComponentOn(origin, RenderableConstructDef, assets.ball.proto);
+  EM.ensureComponentOn(origin, RenderableConstructDef, allMeshes.ball.proto);
   EM.ensureComponentOn(origin, PositionDef, V(0, 0, 0));
   EM.ensureComponentOn(origin, ColorDef, ENDESGA16.lightGreen);
 
   // objects
   const obj = EM.new();
   const ship = createHomeShip();
-  // EM.ensureComponentOn(obj, RenderableConstructDef, assets.ship_small.proto);
+  // EM.ensureComponentOn(obj, RenderableConstructDef, allMeshes.ship_small.proto);
   EM.ensureComponentOn(obj, RenderableConstructDef, ship.timberMesh);
   EM.ensureComponentOn(obj, PositionDef, V(0, 0, 0));
   EM.ensureComponentOn(obj, ColorDef, ENDESGA16.midBrown);

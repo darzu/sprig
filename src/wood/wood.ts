@@ -1,6 +1,6 @@
 import { ColorDef } from "../color/color-ecs.js";
 import { EM, Entity } from "../ecs/entity-manager.js";
-import { AllMeshSymbols, BLACK } from "../meshes/assets.js";
+import { AllMeshSymbols, BLACK } from "../meshes/meshes.js";
 import { BulletDef } from "../cannons/bullet.js";
 import { GravityDef } from "../motion/gravity.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";

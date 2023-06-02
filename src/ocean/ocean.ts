@@ -39,7 +39,7 @@ import {
   vec2Dbg,
   vec3Dbg,
 } from "../utils/utils-3d.js";
-import { AssetsDef } from "../meshes/assets.js";
+import { AllMeshesDef } from "../meshes/meshes.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { DEFAULT_MASK, UVUNWRAP_MASK } from "../render/pipeline-masks.js";
 import { Mesh } from "../meshes/mesh.js";

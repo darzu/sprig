@@ -1,4 +1,4 @@
-import { AssetsDef } from "../meshes/assets.js";
+import { AllMeshesDef } from "../meshes/meshes.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { createRef } from "../ecs/em-helpers.js";
 import { EM, EntityW } from "../ecs/entity-manager.js";
@@ -61,7 +61,7 @@ export const { RibSailPropsDef, RibSailLocalDef, createRibSailNow } =
       // ]),
     }),
     dynamicComponents: [RotationDef /*, BoomPitchesDef*/],
-    buildResources: [AssetsDef, MeDef],
+    buildResources: [AllMeshesDef, MeDef],
     build: (sail, res) => {
       // const sail = EM.new();
 
@@ -70,7 +70,7 @@ export const { RibSailPropsDef, RibSailLocalDef, createRibSailNow } =
       EM.ensureComponentOn(
         sail,
         RenderableConstructDef,
-        cloneMesh(res.assets.sail.mesh)
+        cloneMesh(res.allMeshes.sail.mesh)
       );
       //EM.ensureComponentOn(sail1, ScaleDef, [12, 12, 12]);
       EM.ensureComponentOn(sail, RotationDef);
@@ -93,7 +93,11 @@ export const { RibSailPropsDef, RibSailLocalDef, createRibSailNow } =
 
       EM.ensureComponentOn(mast, PositionDef, V(0, -20, 0));
       EM.ensureComponentOn(mast, ScaleDef, V(0.5, 1.0, 0.5));
-      EM.ensureComponentOn(mast, RenderableConstructDef, res.assets.mast.mesh);
+      EM.ensureComponentOn(
+        mast,
+        RenderableConstructDef,
+        res.allMeshes.mast.mesh
+      );
       EM.ensureComponentOn(mast, PhysicsParentDef, sail.id);
       EM.ensureComponentOn(mast, ColorDef, ENDESGA16.lightBrown);
       vec3.scale(mast.color, 0.5, mast.color);
@@ -107,7 +111,11 @@ export const { RibSailPropsDef, RibSailLocalDef, createRibSailNow } =
       function createRib(width: number) {
         const rib = EM.new();
         EM.ensureComponentOn(rib, PositionDef);
-        EM.ensureComponentOn(rib, RenderableConstructDef, res.assets.mast.mesh);
+        EM.ensureComponentOn(
+          rib,
+          RenderableConstructDef,
+          res.allMeshes.mast.mesh
+        );
         EM.ensureComponentOn(rib, ScaleDef, V(0.5 * width, 0.5, 0.5 * width));
         EM.ensureComponentOn(rib, RotationDef);
         EM.ensureComponentOn(rib, ColorDef, ENDESGA16.lightBrown);
@@ -166,7 +174,7 @@ export function registerRibSailSystems() {
   // TODO(@darzu): only require this if one exists?
 }
 
-// HACK: ASSUMES MESH IS assets.sail.mesh
+// HACK: ASSUMES MESH IS allMeshes.sail.mesh
 export function getSailMeshArea(verts: vec3[]) {
   // TODO(@darzu): generalize this for different mesh? Or create the mesh and type it?
   return (
