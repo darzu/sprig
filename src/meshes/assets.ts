@@ -63,11 +63,11 @@ import { importGltf } from "./import-gltf.js";
 
 export const AllMeshesDef = EM.defineComponent(
   "assets",
-  (meshes: GameMeshes) => {
+  (meshes: AllGameMeshes) => {
     return meshes;
   }
 );
-export type Assets = Component<typeof AllMeshesDef>;
+export type AllMeshes = Component<typeof AllMeshesDef>;
 
 // TODO: load these via streaming
 // TODO(@darzu): it's really bad that all these assets are loaded for each game
@@ -473,7 +473,9 @@ export type GameMesh = {
   mkAabbCollider: (solid: boolean) => AABBCollider;
 };
 
-type GameMeshes = { [P in RemoteMeshSymbols | LocalMeshSymbols]: GameMesh } & {
+type AllGameMeshes = {
+  [P in RemoteMeshSymbols | LocalMeshSymbols]: GameMesh;
+} & {
   [P in RemoteMeshSetSymbols]: GameMesh[];
 };
 
@@ -549,7 +551,7 @@ async function loadMeshSetInternal(relPath: string): Promise<RawMesh[]> {
   return opt;
 }
 
-async function loadAssets(renderer: Renderer): Promise<GameMeshes> {
+async function loadAssets(renderer: Renderer): Promise<AllGameMeshes> {
   const start = performance.now();
 
   const singlePromises = objMap(RemoteMeshes, (p) => loadMeshInternal(p));

@@ -14,7 +14,7 @@ import {
 import { ColliderDef } from "../physics/collider.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { aabbCenter } from "../physics/aabb.js";
-import { Assets, AllMeshesDef, GameMesh } from "../meshes/assets.js";
+import { AllMeshes, AllMeshesDef, GameMesh } from "../meshes/assets.js";
 import { AngularVelocityDef, LinearVelocityDef } from "../motion/velocity.js";
 import { MotionSmoothingDef } from "../render/motion-smoothing.js";
 import {
@@ -46,7 +46,7 @@ export const EnemyCrewDef = EM.defineComponent("enemyCrew", () => {
 export type EnemyCrew = Component<typeof EnemyCrewDef>;
 
 export function createEnemyCrew(
-  assets: Assets,
+  assets: AllMeshes,
   parent: number,
   pos: vec3
 ): EntityW<[typeof EnemyCrewDef]> {

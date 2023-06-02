@@ -15,7 +15,7 @@ import {
   PredictDef,
   Me,
 } from "../net/components.js";
-import { Assets, AllMeshesDef } from "../meshes/assets.js";
+import { AllMeshes, AllMeshesDef } from "../meshes/assets.js";
 import {
   AngularVelocity,
   AngularVelocityDef,
@@ -92,7 +92,7 @@ EM.registerSerializerPair(
 
 export function createOrResetBullet(
   e: Entity & { bulletConstruct: BulletConstruct },
-  res: { me: Me; assets: Assets; time: Time }
+  res: { me: Me; assets: AllMeshes; time: Time }
 ) {
   const props = e.bulletConstruct;
   assertDbg(props);
