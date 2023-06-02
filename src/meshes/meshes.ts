@@ -1,6 +1,6 @@
-import { Component, EM } from "../ecs/entity-manager";
-import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix";
-import { importObj, isParseError } from "./import-obj";
+import { Component, EM } from "../ecs/entity-manager.js";
+import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { importObj, isParseError } from "./import-obj.js";
 import {
   cloneMesh,
   getAABBFromMesh,
@@ -14,29 +14,29 @@ import {
   scaleMesh3,
   transformMesh,
   validateMesh,
-} from "./mesh";
-import { AABB, getCenterFromAABB, getHalfsizeFromAABB } from "../physics/aabb";
-import { RendererDef } from "../render/renderer-ecs";
-import { Renderer } from "../render/renderer-ecs";
-import { assert } from "../utils/util";
-import { objMap } from "../utils/util";
-import { getBytes, getText } from "../fetch/webget";
-import { AABBCollider } from "../physics/collider";
+} from "./mesh.js";
+import { AABB, getCenterFromAABB, getHalfsizeFromAABB } from "../physics/aabb.js";
+import { RendererDef } from "../render/renderer-ecs.js";
+import { Renderer } from "../render/renderer-ecs.js";
+import { assert } from "../utils/util.js";
+import { objMap } from "../utils/util.js";
+import { getBytes, getText } from "../fetch/webget.js";
+import { AABBCollider } from "../physics/collider.js";
 import {
   computeTriangleNormal,
   farthestPointInDir,
   normalizeVec2s,
   SupportFn,
-} from "../utils/utils-3d";
-import { MeshHandle, MeshReserve } from "../render/mesh-pool";
-import { VERBOSE_LOG } from "../flags";
+} from "../utils/utils-3d.js";
+import { MeshHandle, MeshReserve } from "../render/mesh-pool.js";
+import { VERBOSE_LOG } from "../flags.js";
 import {
   getBoardsFromMesh,
   unshareProvokingForWood,
   WoodAssets,
   WoodAssetsDef,
   WoodStateDef,
-} from "../wood/wood";
+} from "../wood/wood.js";
 import {
   BOAT_MESH,
   BULLET_MESH,
@@ -53,9 +53,9 @@ import {
   SHIP_OFFSET,
   TETRA_MESH,
   TRI_FENCE,
-} from "./primatives";
-import { createGizmoMesh } from "../debug/gizmos";
-import { importGltf } from "./import-gltf";
+} from "./primatives.js";
+import { createGizmoMesh } from "../debug/gizmos.js";
+import { importGltf } from "./import-gltf.js";
 
 export const AllMeshesDef = EM.defineComponent(
   "allMeshes",
