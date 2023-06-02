@@ -1,6 +1,6 @@
 import { ColliderDef } from "./collider.js";
 import { EM } from "../ecs/entity-manager.js";
-import { AllMeshesDef, LocalMeshes } from "../meshes/assets.js";
+import { AllMeshesDef, LocalMeshes } from "../meshes/meshes";
 import { ColorDef } from "../color/color-ecs.js";
 import { InputsDef } from "../input/inputs.js";
 import { mathMap } from "../utils/math.js";

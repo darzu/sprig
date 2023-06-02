@@ -19,7 +19,7 @@ import {
 } from "../render/renderer-ecs.js";
 import { RendererDef } from "../render/renderer-ecs.js";
 import { ColorDef } from "../color/color-ecs.js";
-import { AllMeshesDef } from "../meshes/assets.js";
+import { AllMeshesDef } from "../meshes/meshes";
 import { ColliderDef } from "../physics/collider.js";
 import { clamp } from "../utils/math.js";
 import { createRef } from "../ecs/em-helpers.js";

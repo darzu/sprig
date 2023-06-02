@@ -14,7 +14,7 @@ import {
 import { ColliderDef } from "../physics/collider.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { aabbCenter } from "../physics/aabb.js";
-import { AllMeshes, AllMeshesDef, GameMesh } from "../meshes/assets.js";
+import { AllMeshes, AllMeshesDef, GameMesh } from "../meshes/meshes";
 import { AngularVelocityDef, LinearVelocityDef } from "../motion/velocity.js";
 import { MotionSmoothingDef } from "../render/motion-smoothing.js";
 import {

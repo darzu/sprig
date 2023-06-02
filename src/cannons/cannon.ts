@@ -10,7 +10,7 @@ import { DetectedEventsDef, eventWizard } from "../net/events.js";
 import { fireBullet } from "./bullet.js";
 import { InRangeDef } from "../input/interact.js";
 import { LocalHsPlayerDef, HsPlayerDef } from "../hyperspace/hs-player.js";
-import { AllMeshesDef } from "../meshes/assets.js";
+import { AllMeshesDef } from "../meshes/meshes";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import { AudioDef, randChordId } from "../audio/audio.js";
 import { InputsDef } from "../input/inputs.js";

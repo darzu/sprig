@@ -21,7 +21,7 @@ import {
 } from "../render/renderer-ecs.js";
 import { tempVec3 } from "../matrix/temp-pool.js";
 import { farthestPointInDir } from "../utils/utils-3d.js";
-import { AllMeshesDef, GameMesh } from "../meshes/assets.js";
+import { AllMeshesDef, GameMesh } from "../meshes/meshes";
 import { GlobalCursor3dDef } from "../gui/cursor.js";
 import { createGhost } from "../debug/ghost.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";

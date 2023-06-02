@@ -2,7 +2,7 @@ import { CameraComputedDef } from "../camera/camera.js";
 import { AlphaDef, ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { EM, EntityW } from "../ecs/entity-manager.js";
-import { AllMeshes, AllMeshesDef } from "../meshes/assets.js";
+import { AllMeshes, AllMeshesDef } from "../meshes/meshes";
 import { gameplaySystems } from "../debug/ghost.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { MouseDragDef } from "../input/inputs.js";

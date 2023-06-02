@@ -15,7 +15,7 @@ import {
 import { RendererDef } from "../render/renderer-ecs.js";
 import { assert } from "../utils/util.js";
 import { TimeDef } from "../time/time.js";
-import { AllMeshesDef, GameMesh } from "../meshes/assets.js";
+import { AllMeshesDef, GameMesh } from "../meshes/meshes";
 // import { ENEMY_SHIP_COLOR } from "./enemy-ship.js";
 // import { ClothConstructDef, ClothLocalDef } from "./cloth.js";
 import { GlobalCursor3dDef } from "../gui/cursor.js";

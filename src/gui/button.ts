@@ -1,6 +1,6 @@
 import { ColorDef } from "../color/color-ecs.js";
 import { EM, EntityW } from "../ecs/entity-manager.js";
-import { GameMesh, gameMeshFromMesh } from "../meshes/assets.js";
+import { GameMesh, gameMeshFromMesh } from "../meshes/meshes";
 import { gameplaySystems } from "../debug/ghost.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { importObj } from "../meshes/import-obj.js";

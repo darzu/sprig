@@ -1,4 +1,4 @@
-import { AllMeshesDef } from "./assets.js";
+import { AllMeshesDef } from "./meshes";
 import { CameraDef } from "../camera/camera.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";

@@ -1,4 +1,4 @@
-import { AllMeshesDef } from "../meshes/assets.js";
+import { AllMeshesDef } from "../meshes/meshes";
 import { ColorDef } from "../color/color-ecs.js";
 import { defineNetEntityHelper } from "../ecs/em-helpers.js";
 import { EM } from "../ecs/entity-manager.js";

@@ -24,7 +24,7 @@ import { alphaRenderPipeline } from "../render/pipelines/xp-alpha.js";
 import { RendererDef, RenderableConstructDef } from "../render/renderer-ecs.js";
 import { assert } from "../utils/util.js";
 import { randNormalPosVec3 } from "../utils/utils-3d.js";
-import { AllMeshesDef, GameMesh, gameMeshFromMesh } from "../meshes/assets.js";
+import { AllMeshesDef, GameMesh, gameMeshFromMesh } from "../meshes/meshes";
 import { createGhost, gameplaySystems } from "../debug/ghost.js";
 import { TextDef } from "./ui.js";
 import { makePlaneMesh } from "../meshes/primatives.js";
