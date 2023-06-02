@@ -2,7 +2,7 @@ import { CameraDef, CameraFollowDef } from "../camera/camera.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { EM } from "../ecs/entity-manager.js";
-import { AllMeshesDef } from "../meshes/meshes.js";
+import { AllMeshesDef, UnitCubeMesh } from "../meshes/meshes.js";
 import { ControllableDef } from "../input/controllable.js";
 import { createGhost, GhostDef } from "../debug/ghost.js";
 import { LocalHsPlayerDef, HsPlayerDef } from "../hyperspace/hs-player.js";
@@ -204,7 +204,7 @@ export async function initGrassGame(hosting: boolean) {
 
   // ground
   const ground = EM.new();
-  const groundMesh = cloneMesh(res.allMeshes.unitCube.mesh);
+  const groundMesh = cloneMesh((await UnitCubeMesh.gameMesh()).mesh);
   transformMesh(
     groundMesh,
     mat4.fromScaling(V(WORLD_HEIGHT, 1.0, WORLD_WIDTH))

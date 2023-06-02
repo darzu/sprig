@@ -15,7 +15,11 @@ import {
   transformMesh,
   validateMesh,
 } from "./mesh.js";
-import { AABB, getCenterFromAABB, getHalfsizeFromAABB } from "../physics/aabb.js";
+import {
+  AABB,
+  getCenterFromAABB,
+  getHalfsizeFromAABB,
+} from "../physics/aabb.js";
 import { RendererDef } from "../render/renderer-ecs.js";
 import { Renderer } from "../render/renderer-ecs.js";
 import { assert } from "../utils/util.js";
@@ -87,6 +91,43 @@ export const LIGHT_BLUE = V(0.05, 0.05, 0.2);
 
 const DEFAULT_ASSET_PATH = "assets/";
 const BACKUP_ASSET_PATH = "https://sprig.land/assets/";
+
+export interface MeshDesc {
+  name: string;
+  data: string | (() => RawMesh);
+  transform?: mat4;
+}
+
+// export const BallMesh = registerMesh({
+//   name: "ball",
+//   data: "ball.sprig.obj",
+//   transform: mat4.fromScaling([2, 2, 2]),
+// });
+
+export const UnitCubeMesh = registerMesh({
+  name: "unitCube",
+  data: () => {
+    const unitCube = cloneMesh(CUBE_MESH);
+    unitCube.dbgName = "unitCube";
+    // normalize this cube to have min at 0,0,0 and max at 1,1,1
+    unitCube.pos.forEach((p) => {
+      p[0] = p[0] < 0 ? 0 : 1;
+      p[1] = p[1] < 0 ? 0 : 1;
+      p[2] = p[2] < 0 ? 0 : 1;
+    });
+    return unitCube;
+  },
+});
+
+export interface MeshReg {
+  desc: MeshDesc;
+  gameMesh: () => Promise<GameMesh>;
+  gameMeshNow: GameMesh | undefined;
+}
+
+export function registerMesh(desc: MeshDesc): MeshReg {
+  throw `TODO: impl`;
+}
 
 const RemoteMeshes = {
   ship: "barge.sprig.obj",
@@ -411,17 +452,6 @@ const MeshModify: Partial<{
 
 export const LocalMeshes = {
   cube: () => CUBE_MESH,
-  unitCube: () => {
-    const unitCube = cloneMesh(CUBE_MESH);
-    unitCube.dbgName = "unitCube";
-    // normalize this cube to have min at 0,0,0 and max at 1,1,1
-    unitCube.pos.forEach((p) => {
-      p[0] = p[0] < 0 ? 0 : 1;
-      p[1] = p[1] < 0 ? 0 : 1;
-      p[2] = p[2] < 0 ? 0 : 1;
-    });
-    return unitCube;
-  },
   plane: () => makePlaneMesh(-10, 10, -10, 10),
   tetra: () => TETRA_MESH,
   he_octo: mkOctogonMesh,
