@@ -61,14 +61,6 @@ import {
 import { createGizmoMesh } from "../debug/gizmos.js";
 import { importGltf } from "./import-gltf.js";
 
-export const AllMeshesDef = EM.defineComponent(
-  "allMeshes",
-  (meshes: AllGameMeshes) => {
-    return meshes;
-  }
-);
-export type AllMeshes = Component<typeof AllMeshesDef>;
-
 // TODO: load these via streaming
 // TODO(@darzu): it's really bad that all these assets are loaded for each game
 
@@ -157,7 +149,7 @@ export type MeshSet<MR extends (MeshReg | MeshGroupReg)[]> = Intersect<{
 export type MeshSetDef<
   N extends string,
   MR extends (MeshReg | MeshGroupReg)[]
-> = ComponentDef<N, MeshSet<MR>, undefined[]>;
+> = ComponentDef<N, MeshSet<MR>, [MeshSet<MR>]>;
 
 export function defineMeshSetResource<
   N extends string,
@@ -560,28 +552,9 @@ export const RudderPrimMesh = registerMesh({
   data: () => createRudderMesh(),
 });
 
-export const LocalMeshes = {} as const;
-
-const MeshModify: Partial<{
-  [P in AllMeshSymbols]: (m: RawMesh) => RawMesh;
-}> = {
-  // cube: blackoutColor,
-  // ship: blackoutColor,
-  // ball: blackoutColor,
-  // enemyShip_broken: blackoutColor,
-};
-
-const MeshTransforms: Partial<{
-  [P in AllMeshSymbols]: mat4;
-}> = {
-  // ship: mat4.fromScaling(mat4.create(), [3, 3, 3]),
-  // ship_broken: mat4.fromScaling(mat4.create(), [3, 3, 3]),
-  ball: BallMesh.desc.transform,
-  // ball_broken: mat4.fromScaling([2, 2, 2]),
-};
-
 // TODO(@darzu): WIP!
 const wipAllMeshesList = [
+  // file
   ShipMesh,
   BallMesh,
   ShipSmallMesh,
@@ -599,54 +572,40 @@ const wipAllMeshesList = [
   RudderMesh,
   OceanMesh,
   PirateMesh,
+  // file, groups
   BoatBrokenMesh,
   ShipBrokenMesh,
   BallBrokenMesh,
+  // local
+  CubeMesh,
+  PlaneMesh,
+  TetraMesh,
+  HeOctoMesh,
+  HeQuadMesh,
+  HexMesh,
+  EnemyShipMesh,
+  BulletMesh,
+  GridPlaneMesh,
+  FabricMesh,
+  TriFenceMesh,
+  WireCubeMesh,
+  MastMesh,
+  SailMesh,
+  LD53CannonMesh,
+  TimberSplinterMesh,
+  RudderPrimMesh,
 ] as const;
-const wipAllMeshesDef = defineMeshSetResource(
-  "wipAllMeshes",
+
+export const AllMeshesDef = defineMeshSetResource(
+  "allMeshes",
   ...wipAllMeshesList
 );
-const { wipAllMeshes } = await EM.whenResources(wipAllMeshesDef);
-const wip0: GameMesh = wipAllMeshes.ball;
-const wip1: GameMesh[] = wipAllMeshes.boat_broken;
+const { allMeshes } = await EM.whenResources(AllMeshesDef);
+const wip0: GameMesh = allMeshes.ball;
+const wip1: GameMesh[] = allMeshes.boat_broken;
 
-// TODO(@darzu): replace with mesh set
-// prettier-ignore
-const RemoteMeshes = {
-  [ShipMesh.desc.name]: ShipMesh.desc.data as string,
-  [BallMesh.desc.name]: BallMesh.desc.data as string,
-  [ShipSmallMesh.desc.name]: ShipSmallMesh.desc.data as string,
-  [ShipFangsMesh.desc.name]: ShipFangsMesh.desc.data as string,
-  [PickMesh.desc.name]: PickMesh.desc.data as string,
-  [SpaceOreMesh.desc.name]: SpaceOreMesh.desc.data as string,
-  [SpaceRockMesh.desc.name]: SpaceRockMesh.desc.data as string,
-  [AmmunitionBoxMesh.desc.name]: AmmunitionBoxMesh.desc.data as string,
-  [LinstockMesh.desc.name]: LinstockMesh.desc.data as string,
-  [CannonMesh.desc.name]: CannonMesh.desc.data as string,
-  [CannonLD51Mesh.desc.name]: CannonLD51Mesh.desc.data as string,
-  [GrappleHookMesh.desc.name]: GrappleHookMesh.desc.data as string,
-  [GrappleGunMesh.desc.name]: GrappleGunMesh.desc.data as string,
-  [GrappleGunUnloadedMesh.desc.name]: GrappleGunUnloadedMesh.desc.data as string,
-  [RudderMesh.desc.name]: RudderMesh.desc.data as string,
-  [OceanMesh.desc.name]: OceanMesh.desc.data as string,
-  [PirateMesh.desc.name]: PirateMesh.desc.data as string,
-} as const;
-
-type RemoteMeshSymbols = keyof typeof RemoteMeshes;
-
-const RemoteMesheSets = {
-  [BoatBrokenMesh.desc.name]: BoatBrokenMesh.desc.data as string,
-  [ShipBrokenMesh.desc.name]: ShipBrokenMesh.desc.data as string,
-  [BallBrokenMesh.desc.name]: BallBrokenMesh.desc.data as string,
-} as const;
-
-type RemoteMeshSetSymbols = keyof typeof RemoteMesheSets;
-
-export type AllMeshSymbols =
-  | RemoteMeshSymbols
-  | RemoteMeshSetSymbols
-  | LocalMeshSymbols;
+export type AllMeshes = Component<typeof AllMeshesDef>;
+export type AllMeshSymbols = keyof AllMeshes;
 
 // TODO(@darzu): PERF. "ocean" and "ship_fangs" are expensive to load and aren't needed in all games.
 
@@ -660,8 +619,6 @@ const blackoutColor: (m: RawMesh) => RawMesh = (m: RawMesh) => {
 // TODO(@darzu): IMPL for WoodStateDef
 // EM.addLazyInit([AssetsDef], [WoodStateDef], ({ allMeshes}) => {});
 
-type LocalMeshSymbols = keyof typeof LocalMeshes;
-
 export type GameMesh = {
   mesh: Mesh;
   aabb: AABB;
@@ -672,12 +629,6 @@ export type GameMesh = {
   uniqueVerts: vec3[];
   support: SupportFn;
   mkAabbCollider: (solid: boolean) => AABBCollider;
-};
-
-type AllGameMeshes = {
-  [P in RemoteMeshSymbols | LocalMeshSymbols]: GameMesh;
-} & {
-  [P in RemoteMeshSetSymbols]: GameMesh[];
 };
 
 EM.addLazyInit([RendererDef], [AllMeshesDef], async ({ renderer }) => {
@@ -752,64 +703,66 @@ async function loadMeshSetInternal(relPath: string): Promise<RawMesh[]> {
   return opt;
 }
 
-async function loadAssets(renderer: Renderer): Promise<AllGameMeshes> {
-  const start = performance.now();
+async function loadAssets(renderer: Renderer): Promise<AllMeshes> {
+  throw "TODO";
 
-  const singlePromises = objMap(RemoteMeshes, (p) => loadMeshInternal(p));
-  const setPromises = objMap(RemoteMesheSets, (p) => loadMeshSetInternal(p));
-  const singlesList = Object.entries(singlePromises);
-  const singlesMeshList = await Promise.all(singlesList.map(([_, p]) => p));
+  // const start = performance.now();
 
-  // TODO(@darzu): We need clearer asset processing stages. "processMesh", "meshModify", "gameMeshFromMesh", "normalizeMesh"
-  const singleMeshes = objMap(singlePromises, (_, n) => {
-    const idx = singlesList.findIndex(([n2, _]) => n === n2);
-    let m = singlesMeshList[idx];
-    return processMesh(n, m);
-  });
+  // const singlePromises = objMap(RemoteMeshes, (p) => loadMeshInternal(p));
+  // const setPromises = objMap(RemoteMesheSets, (p) => loadMeshSetInternal(p));
+  // const singlesList = Object.entries(singlePromises);
+  // const singlesMeshList = await Promise.all(singlesList.map(([_, p]) => p));
 
-  const localMeshes = objMap(LocalMeshes, (m, n) => {
-    return processMesh(n, m());
-  });
+  // // TODO(@darzu): We need clearer asset processing stages. "processMesh", "meshModify", "gameMeshFromMesh", "normalizeMesh"
+  // const singleMeshes = objMap(singlePromises, (_, n) => {
+  //   const idx = singlesList.findIndex(([n2, _]) => n === n2);
+  //   let m = singlesMeshList[idx];
+  //   return processMesh(n, m);
+  // });
 
-  const setsList = Object.entries(setPromises);
-  const setsMeshList = await Promise.all(setsList.map(([_, p]) => p));
-  const setMeshes = objMap(setPromises, (_, n) => {
-    const idx = setsList.findIndex(([n2, _]) => n === n2);
-    let ms = setsMeshList[idx];
-    return ms.map((m) => processMesh(n, m));
-  });
+  // const localMeshes = objMap(LocalMeshes, (m, n) => {
+  //   return processMesh(n, m());
+  // });
 
-  function processMesh(n: AllMeshSymbols, m: RawMesh): RawMesh {
-    const t1 = MeshTransforms[n];
-    if (t1) transformMesh(m, t1);
-    const t2 = MeshModify[n];
-    if (t2) m = t2(m);
-    if (!m.dbgName) m.dbgName = n;
-    return m;
-  }
+  // const setsList = Object.entries(setPromises);
+  // const setsMeshList = await Promise.all(setsList.map(([_, p]) => p));
+  // const setMeshes = objMap(setPromises, (_, n) => {
+  //   const idx = setsList.findIndex(([n2, _]) => n === n2);
+  //   let ms = setsMeshList[idx];
+  //   return ms.map((m) => processMesh(n, m));
+  // });
 
-  const allSingleMeshes = { ...singleMeshes, ...localMeshes };
+  // function processMesh(n: AllMeshSymbols, m: RawMesh): RawMesh {
+  //   const t1 = MeshTransforms[n];
+  //   if (t1) transformMesh(m, t1);
+  //   const t2 = MeshModify[n];
+  //   if (t2) m = t2(m);
+  //   if (!m.dbgName) m.dbgName = n;
+  //   return m;
+  // }
 
-  // TODO(@darzu): this shouldn't directly add to a mesh pool, we don't know which pool it should
-  //  go to
-  const allSingleAssets = objMap(allSingleMeshes, (m) =>
-    gameMeshFromMesh(m, renderer)
-  );
-  const allSetAssets = objMap(setMeshes, (ms, n) =>
-    ms.map((m) => gameMeshFromMesh(m, renderer))
-  );
+  // const allSingleMeshes = { ...singleMeshes, ...localMeshes };
 
-  // console.log("allSingleAssets.ocean.mesh");
-  // console.dir(allSingleAssets.ocean.mesh);
+  // // TODO(@darzu): this shouldn't directly add to a mesh pool, we don't know which pool it should
+  // //  go to
+  // const allSingleAssets = objMap(allSingleMeshes, (m) =>
+  //   gameMeshFromMesh(m, renderer)
+  // );
+  // const allSetAssets = objMap(setMeshes, (ms, n) =>
+  //   ms.map((m) => gameMeshFromMesh(m, renderer))
+  // );
 
-  const result = { ...allSingleAssets, ...allSetAssets };
+  // // console.log("allSingleAssets.ocean.mesh");
+  // // console.dir(allSingleAssets.ocean.mesh);
 
-  // perf tracking
-  const elapsed = performance.now() - start;
-  if (VERBOSE_LOG)
-    console.log(`took ${elapsed.toFixed(1)}ms to load allMeshes.`);
+  // const result = { ...allSingleAssets, ...allSetAssets };
 
-  return result;
+  // // perf tracking
+  // const elapsed = performance.now() - start;
+  // if (VERBOSE_LOG)
+  //   console.log(`took ${elapsed.toFixed(1)}ms to load allMeshes.`);
+
+  // return result;
 }
 
 export function gameMeshFromMesh(
