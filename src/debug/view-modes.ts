@@ -13,7 +13,7 @@ export function initDbgViewModes() {
   EM.addSystem(
     "renderModeToggles",
     Phase.GAME_PLAYERS,
-    [],
+    null,
     [InputsDef, RendererDef, CameraDef],
     (_, { inputs, renderer, camera }) => {
       // check render mode

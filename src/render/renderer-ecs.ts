@@ -28,7 +28,7 @@ import {
   getFrustumWorldCorners,
 } from "../utils/utils-3d.js";
 import { ShadersDef, ShaderSet } from "./shader-loader.js";
-import { dbgLogOnce } from "../utils/util.js";
+import { dbgLogMilestone, dbgLogOnce, dbgOnce } from "../utils/util.js";
 import { TimeDef } from "../time/time.js";
 import { PartyDef } from "../camera/party.js";
 import { PointLightDef } from "./lights.js";
@@ -369,10 +369,7 @@ EM.addEagerInit([RenderableConstructDef], [RendererDef], [], () => {
       );
 
       if (objs.length && res.renderer.pipelines.length) {
-        dbgLogOnce(
-          "first-frame",
-          `Rendering first frame at: ${performance.now().toFixed(2)}ms`
-        );
+        dbgLogMilestone("Rendering first frame");
       }
 
       renderObjs.length = 0;

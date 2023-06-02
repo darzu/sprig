@@ -97,6 +97,13 @@ export function initFnToString(init: InitFnReg) {
     init.provideRs
   )}`;
 }
+// export function initFnToKey(init: InitFnReg) {
+//   return `${init.eager ? "E" : "L"}:${init.requireRs
+//     .map((c) => c.name)
+//     .join("+")}&${
+//     init.requireCompSet?.map((c) => c.name).join("+") ?? ""
+//   }->${init.provideRs.map((c) => c.name).join("+")}`;
+// }
 
 // type _InitFNReg = InitFNReg & {
 //   id: number;
@@ -166,6 +173,7 @@ export class EntityManager {
   ranges: Record<string, { nextId: number; maxId: number }> = {};
   defaultRange: string = "";
   sysStats: Record<string, SystemStats> = {};
+  initFnMsStats = new Map<InitFnId, number>();
   emStats = {
     queryTime: 0,
   };
@@ -885,7 +893,35 @@ export class EntityManager {
     return res;
   }
 
+  // TODO(@darzu): PERF TRACKING. Thinking:
+  /*
+  goal: understand what's happening between 0 and first-playable
+
+  could use "milestone" event trackers
+
+  perhaps we have frame phases:
+  executing systems,
+  executing inits,
+  waiting for next draw
+
+  attribute system time to systems
+    are systems every async?
+
+  perhaps entity promises could check to see if they're being created in System, Init, or Other
+    What would "Other" be?
+  And then they'd resume themselves in the appropriate system's scheduled time?
+
+  How do we track time on vanilla init functions?
+
+  I could always resume entity promises in the same phase as what requested them so
+  either init time or GAME_WORLD etc
+
+    if we did that i think we could accurately measure self-time for systems
+    but that might not capture other time like file downloading
+  */
+
   // TODO(@darzu): can this consolidate with the InitFn system?
+  // TODO(@darzu): PERF TRACKING. Need to rethink how this interacts with system and init fn perf tracking
   private checkEntityPromises() {
     // console.dir(this.entityPromises);
     // console.log(this.dbgStrEntityPromises());
@@ -980,7 +1016,7 @@ export class EntityManager {
     // eCS extends ComponentDef[],
     CS extends ComponentDef[],
     ID extends number
-  >(e: EntityW<any[], ID>, ...cs: CS): Promise<EntityW<CS, ID>> {
+  >(e: EntityW<ComponentDef[], ID>, ...cs: CS): Promise<EntityW<CS, ID>> {
     // short circuit if we already have the components
     if (cs.every((c) => c.name in e))
       return Promise.resolve(e as EntityW<CS, ID>);
@@ -1050,6 +1086,8 @@ export class EntityManager {
       // run?
       if (hasAll) {
         // TODO(@darzu): BUG. this won't work if a resource is added then removed e.g. flags
+        //    need to think if we really want to allow resource removal. should we
+        //    have a seperate concept for flags?
         // eager -> run
         this.runInitFn(e);
         this.pendingEagerInits.splice(i, 1);
@@ -1057,6 +1095,11 @@ export class EntityManager {
     });
   }
   private addInit(reg: InitFnReg) {
+    assert(
+      !this.allInits.has(reg.id),
+      `Double registering init: ${reg.id}, ${initFnToString(reg)}`
+    );
+    this.allInits.set(reg.id, reg);
     if (reg.eager) {
       this.pendingEagerInits.push(reg);
     } else {
@@ -1086,7 +1129,31 @@ export class EntityManager {
 
     if (DBG_INIT) console.log(`lazy => eager: ${initFnToString(lazy)}`);
   }
+
+  _runningInitStack: InitFnReg[] = [];
+  _lastInitTimestamp: number = -1;
   private async runInitFn(init: InitFnReg) {
+    // TODO(@darzu): attribute time spent to specific init functions
+
+    // update init fn stats before
+    {
+      assert(!this.initFnMsStats.has(init.id));
+      this.initFnMsStats.set(init.id, 0);
+      const before = performance.now();
+      if (this._runningInitStack.length) {
+        assert(this._lastInitTimestamp >= 0);
+        let elapsed = before - this._lastInitTimestamp;
+        let prev = this._runningInitStack.at(-1)!;
+        assert(this.initFnMsStats.has(prev.id));
+        this.initFnMsStats.set(
+          prev.id,
+          this.initFnMsStats.get(prev.id)! + elapsed
+        );
+      }
+      this._lastInitTimestamp = before;
+      this._runningInitStack.push(init);
+    }
+
     // TODO(@darzu): verify that it doesn't add any resources not mentioned in provides
     const promise = init.fn(this.ent0);
     this.startedInits.set(init.id, promise);
@@ -1098,6 +1165,25 @@ export class EntityManager {
     // assert resources were added
     for (let res of init.provideRs)
       assert(res.isOn(this.ent0), `Init fn failed to provide: ${res.name}`);
+
+    // update init fn stats after
+    {
+      const after = performance.now();
+      let popped = this._runningInitStack.pop();
+      // TODO(@darzu): WAIT. why should the below be true? U should be able to have
+      //   A-start, B-start, A-end, B-end
+      // if A and B are unrelated
+      // assert(popped && popped.id === init.id, `Daryl doesnt understand stacks`);
+      // TODO(@darzu): all this init tracking might be lying.
+      assert(this._lastInitTimestamp >= 0);
+      const elapsed = after - this._lastInitTimestamp;
+      this.initFnMsStats.set(
+        init.id,
+        this.initFnMsStats.get(init.id)! + elapsed
+      );
+      if (this._runningInitStack.length) this._lastInitTimestamp = after;
+      else this._lastInitTimestamp = -1;
+    }
 
     if (DBG_INIT) console.log(`finished: ${initFnToString(init)}`);
   }

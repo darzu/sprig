@@ -49,7 +49,7 @@ export function registerChangeWindSystems() {
   EM.addSystem(
     "changeWind",
     Phase.GAME_WORLD,
-    [],
+    null,
     [WindDef, TimeDef, RendererDef],
     (_, res) => {
       if (res.time.step % STEPS_ON_WIND_DIR === 0) {
@@ -65,10 +65,16 @@ export function registerChangeWindSystems() {
     }
   );
 
-  EM.addSystem("smoothWind", Phase.GAME_WORLD, [], [WindDef], (_, { wind }) => {
-    if (Math.abs(wind.angle - wind.targetAngle) > EPSILON) {
-      const diff = angleBetweenRadians(wind.targetAngle, wind.oldAngle);
-      setWindAngle(wind, wind.angle + diff / WIND_CHANGE_STEPS);
+  EM.addSystem(
+    "smoothWind",
+    Phase.GAME_WORLD,
+    null,
+    [WindDef],
+    (_, { wind }) => {
+      if (Math.abs(wind.angle - wind.targetAngle) > EPSILON) {
+        const diff = angleBetweenRadians(wind.targetAngle, wind.oldAngle);
+        setWindAngle(wind, wind.angle + diff / WIND_CHANGE_STEPS);
+      }
     }
-  });
+  );
 }

@@ -405,7 +405,7 @@ export async function initGrassGame(hosting: boolean) {
     "updateGrass",
     Phase.GAME_WORLD,
     [CameraFollowDef, WorldFrameDef],
-    [],
+    [HsPlayerDef],
     (es, res) => {
       const player = es[0];
       // console.log(player.world.position);
@@ -451,7 +451,7 @@ export async function initGrassGame(hosting: boolean) {
   EM.addSystem(
     "cuttingOnOff",
     Phase.GAME_PLAYERS,
-    [],
+    null,
     [InputsDef],
     (_, res) => {
       // TODO(@darzu):
@@ -632,25 +632,31 @@ export async function initGrassGame(hosting: boolean) {
 
   // EM.addConstraint(["detectGameEnd", "after", "cutGrassUnderShip"]);
 
-  EM.addSystem("furlUnfurl", Phase.GAME_PLAYERS, [], [InputsDef], (_, res) => {
-    const mast = ship.ld52ship.mast()!;
-    const rudder = ship.ld52ship.rudder()!;
+  EM.addSystem(
+    "furlUnfurl",
+    Phase.GAME_PLAYERS,
+    null,
+    [InputsDef],
+    (_, res) => {
+      const mast = ship.ld52ship.mast()!;
+      const rudder = ship.ld52ship.rudder()!;
 
-    // furl/unfurl
-    if (rudder.turret.mannedId) {
-      const sail = mast.mast.sail()!.sail;
-      if (res.inputs.keyDowns["w"]) sail.unfurledAmount += SAIL_FURL_RATE;
-      if (res.inputs.keyDowns["s"]) sail.unfurledAmount -= SAIL_FURL_RATE;
-      sail.unfurledAmount = clamp(sail.unfurledAmount, sail.minFurl, 1.0);
+      // furl/unfurl
+      if (rudder.turret.mannedId) {
+        const sail = mast.mast.sail()!.sail;
+        if (res.inputs.keyDowns["w"]) sail.unfurledAmount += SAIL_FURL_RATE;
+        if (res.inputs.keyDowns["s"]) sail.unfurledAmount -= SAIL_FURL_RATE;
+        sail.unfurledAmount = clamp(sail.unfurledAmount, sail.minFurl, 1.0);
+      }
     }
-  });
+  );
 
   const shipWorld = await EM.whenEntityHas(ship, WorldFrameDef);
 
   EM.addSystem(
     "turnMast",
     Phase.GAME_PLAYERS,
-    [],
+    null,
     [InputsDef, WindDef],
     (_, res) => {
       const mast = ship.ld52ship.mast()!;

@@ -338,12 +338,12 @@ export function penetrationDepth(
   const F = mSupport(s1, s2, minPerp);
   const Fs = vec3.sub(F, newOffset);
   if (vec3.dot(Fs, minPerp) <= 0) {
-    console.log(
-      `done!` +
-        (vec3.length(offset) > 0
-          ? `${vec3.length(offset).toFixed(3)} + ${minD.toFixed(3)}`
-          : ``)
-    );
+    // console.log(
+    //   `done!` +
+    //     (vec3.length(offset) > 0
+    //       ? `${vec3.length(offset).toFixed(3)} + ${minD.toFixed(3)}`
+    //       : ``)
+    // );
     return vec3.length(newOffset);
   }
 

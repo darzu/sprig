@@ -9,7 +9,7 @@ import { DevConsoleDef } from "./debug/console.js";
 import { initReboundSandbox } from "./physics/game-rebound.js";
 // import { callClothSystems } from "./game/cloth.js";
 import { initCommonSystems } from "./game-init.js";
-import { never } from "./utils/util.js";
+import { dbgLogMilestone, never } from "./utils/util.js";
 // import { initHyperspaceGame } from "./game/game-hyperspace.js";
 import {
   DBG_ASSERT,
@@ -32,6 +32,8 @@ import { initModelingGame } from "./meshes/game-modeling.js";
 import { Phase } from "./ecs/sys-phase.js";
 import { setSimulationAlpha } from "./render/motion-smoothing.js";
 
+// dbgLogMilestone("start of main.ts");
+
 export const MAX_MESHES = 20000;
 export const MAX_VERTICES = 21844;
 const AUTOSTART = true;
@@ -49,7 +51,7 @@ const ALL_GAMES = [
   "modeling",
   "ld53",
 ] as const;
-const GAME: (typeof ALL_GAMES)[number] = "ld53";
+const GAME: (typeof ALL_GAMES)[number] = "gjk";
 
 // Run simulation with a fixed timestep @ 60hz
 const TIMESTEP = 1000 / 60;
@@ -66,6 +68,8 @@ function callFixedTimestepSystems() {
 }
 
 async function startGame(localPeerName: string, host: string | null) {
+  // dbgLogMilestone("startGame()");
+
   if (gameStarted) return;
   gameStarted = true;
 
@@ -155,6 +159,7 @@ function getPeerName(queryString: { [k: string]: string }): string {
 }
 
 async function main() {
+  // dbgLogMilestone("main()");
   const queryString = Object.fromEntries(
     new URLSearchParams(window.location.search).entries()
   );
@@ -184,9 +189,11 @@ async function main() {
   }
 }
 
+// TODO(@darzu): move elsewhere
 test();
 
 // dom dependant stuff
+// TODO(@darzu): move to resource
 window.onload = () => {
   setupObjImportExporter();
 };
@@ -203,3 +210,5 @@ window.onload = () => {
 // for debugging
 (window as any).dbg = dbg;
 (window as any).EM = EM;
+
+// dbgLogMilestone("end of main.ts");

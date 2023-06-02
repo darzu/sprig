@@ -39,7 +39,7 @@ import { mat3, quat, V, vec2, vec3 } from "../matrix/sprig-matrix.js";
 import { quatFromUpForward } from "../utils/utils-3d.js";
 import { DevConsoleDef } from "../debug/console.js";
 import { clamp, jitter, max } from "../utils/math.js";
-import { assert } from "../utils/util.js";
+import { assert, dbgLogMilestone } from "../utils/util.js";
 import { PartyDef } from "../camera/party.js";
 import {
   copyAABB,
@@ -153,7 +153,8 @@ export async function initLD53(hosting: boolean) {
     // WoodAssetsDef,
     // GlobalCursor3dDef,
     RendererDef,
-    CameraDef
+    CameraDef,
+    DevConsoleDef
   );
 
   res.camera.fov = Math.PI * 0.5;
@@ -168,13 +169,14 @@ export async function initLD53(hosting: boolean) {
   // console.dir(mapJfa);
   // console.dir(dbgGridCompose);
 
+  // renderer
+  // EM.addEagerInit([], [RendererDef, DevConsoleDef], [], (res) => {
   EM.addSystem(
     "ld53GamePipelines",
     Phase.GAME_WORLD,
     null,
     [RendererDef, DevConsoleDef],
     (_, res) => {
-      // renderer
       res.renderer.pipelines = [
         ...shadowPipelines,
         stdRenderPipeline, // SLOW
@@ -185,7 +187,7 @@ export async function initLD53(hosting: boolean) {
         deferredPipeline, // 10ms
         skyPipeline,
         postProcess,
-        // ...(res.dev.showConsole ? dbgGridCompose : []),
+        ...(res.dev.showConsole ? dbgGridCompose : []),
       ];
     }
   );
@@ -226,7 +228,7 @@ export async function initLD53(hosting: boolean) {
   // start map
   await setMap(MapPaths[0]);
 
-  resetLand();
+  const landPromise = resetLand();
 
   // sky dome?
   const SKY_HALFSIZE = 1000;
@@ -542,7 +544,7 @@ export async function initLD53(hosting: boolean) {
   EM.addSystem(
     "furlUnfurl",
     Phase.GAME_PLAYERS,
-    [],
+    null,
     [InputsDef, PartyDef],
     (_, res) => {
       const mast = ship.ld52ship.mast()!;
@@ -574,7 +576,7 @@ export async function initLD53(hosting: boolean) {
   EM.addSystem(
     "turnMast",
     Phase.GAME_PLAYERS,
-    [],
+    null,
     [InputsDef, WindDef],
     (_, res) => {
       const mast = ship.ld52ship.mast()!;
@@ -701,6 +703,10 @@ export async function initLD53(hosting: boolean) {
       }
     }
   );
+
+  await landPromise;
+
+  dbgLogMilestone("Game playable");
 }
 
 async function createPlayer() {

@@ -109,51 +109,38 @@ export function defineNetEntityHelper<
   );
   const localDef = EM.defineComponent(`${opts.name}Local`, opts.defaultLocal);
 
-  const lazyRegister = () =>
-    registerConstructorSystem(
-      propsDef,
-      [...opts.buildResources, MeDef],
-      (e, res) => {
-        // TYPE HACK
-        const me = (res as any as EntityW<[typeof MeDef]>).me;
-        EM.ensureComponentOn(e, AuthorityDef, me.pid);
+  const constructFn = registerConstructorSystem(
+    propsDef,
+    [...opts.buildResources, MeDef],
+    (e, res) => {
+      // TYPE HACK
+      const me = (res as any as EntityW<[typeof MeDef]>).me;
+      EM.ensureComponentOn(e, AuthorityDef, me.pid);
 
-        EM.ensureComponentOn(e, localDef);
-        EM.ensureComponentOn(e, SyncDef);
-        e.sync.fullComponents = [propsDef.id];
-        e.sync.dynamicComponents = opts.dynamicComponents.map((d) => d.id);
-        for (let d of opts.dynamicComponents) EM.ensureComponentOn(e, d);
+      EM.ensureComponentOn(e, localDef);
+      EM.ensureComponentOn(e, SyncDef);
+      e.sync.fullComponents = [propsDef.id];
+      e.sync.dynamicComponents = opts.dynamicComponents.map((d) => d.id);
+      for (let d of opts.dynamicComponents) EM.ensureComponentOn(e, d);
 
-        // TYPE HACK
-        const _e = e as any as EntityW<
-          [
-            ComponentDef<`${N}Props`, P1, Pargs1>,
-            ComponentDef<`${N}Local`, P2, []>,
-            typeof AuthorityDef,
-            typeof SyncDef,
-            ...DS
-          ]
-        >;
+      // TYPE HACK
+      const _e = e as any as EntityW<
+        [
+          ComponentDef<`${N}Props`, P1, Pargs1>,
+          ComponentDef<`${N}Local`, P2, []>,
+          typeof AuthorityDef,
+          typeof SyncDef,
+          ...DS
+        ]
+      >;
 
-        opts.build(_e, res as EntityW<RS>);
-      }
-    );
-  // TODO(@darzu): this lazy system registration thing seems hacky and maybe there's a more general
-  //    way to do this? Like have all systems only init their caches etc once they have a non-zero set of entities
-  //    (unless they are resource-only systems).
-  const systemRegistration = {
-    constructFn: undefined as undefined | ReturnType<typeof lazyRegister>,
-  };
-  function ensureRegistered(reg: typeof systemRegistration): asserts reg is {
-    constructFn: ReturnType<typeof lazyRegister>;
-  } {
-    if (!reg.constructFn) reg.constructFn = lazyRegister();
-  }
+      opts.build(_e, res as EntityW<RS>);
+    }
+  );
 
   const createNew = (...args: Pargs1) => {
     const e = EM.new();
     EM.ensureComponentOn(e, propsDef, ...args);
-    ensureRegistered(systemRegistration);
     return e;
   };
 
@@ -162,8 +149,7 @@ export function defineNetEntityHelper<
     EM.ensureComponentOn(e, propsDef, ...args);
     // TODO(@darzu): maybe we should force users to give us the MeDef? it's probably always there tho..
     // TODO(@darzu): Think about what if buid() is async...
-    ensureRegistered(systemRegistration);
-    systemRegistration.constructFn(e, res as EntityW<[...RS, typeof MeDef]>);
+    constructFn(e, res as EntityW<[...RS, typeof MeDef]>);
     EM.ensureComponentOn(e, FinishedDef);
     return e;
   };
