@@ -154,28 +154,111 @@ export function defineMeshSetResource<N extends string, MR extends MeshReg[]>(
   throw `TODO: impl`;
 }
 
+export const ShipMesh = registerMesh({
+  name: "ship",
+  data: "barge.sprig.obj",
+});
+export const ShipSmallMesh = registerMesh({
+  name: "ship_small",
+  data: "player_ship_small.sprig.obj",
+});
+export const ShipFangsMesh = registerMesh({
+  name: "ship_fangs",
+  data: "enemy_ship_fangs.sprig.obj",
+});
+export const PickMesh = registerMesh({
+  name: "pick",
+  data: "pick.sprig.obj",
+});
+export const SpaceOreMesh = registerMesh({
+  name: "spaceore",
+  data: "spaceore.sprig.obj",
+});
+export const SpaceRockMesh = registerMesh({
+  name: "spacerock",
+  data: "spacerock.sprig.obj",
+});
+export const AmmunitionBoxMesh = registerMesh({
+  name: "ammunition_box",
+  data: "ammunition_box.sprig.obj",
+});
+export const LinstockMesh = registerMesh({
+  name: "linstock",
+  data: "linstock.sprig.obj",
+});
+export const CannonMesh = registerMesh({
+  name: "cannon",
+  data: "cannon_simple.sprig.obj",
+});
+export const CannonLD51Mesh = registerMesh({
+  name: "ld51_cannon",
+  data: "ld51_cannon.sprig.obj",
+});
+export const GrappleHookMesh = registerMesh({
+  name: "grappleHook",
+  data: "grapple-hook.sprig.obj",
+});
+export const GrappleGunMesh = registerMesh({
+  name: "grappleGun",
+  data: "grapple-gun.sprig.obj",
+});
+export const GrappleGunUnloadedMesh = registerMesh({
+  name: "grappleGunUnloaded",
+  data: "grapple-gun-unloaded.sprig.obj",
+});
+export const RudderMesh = registerMesh({
+  name: "rudder",
+  data: "rudder.sprig.obj",
+});
+export const OceanMesh = registerMesh({
+  name: "ocean",
+  data: "hyperspace-ocean.sprig.obj",
+});
+export const PirateMesh = registerMesh({
+  name: "pirate",
+  data: "pirate.glb",
+});
+
+const wipAllMeshes = [
+  ShipMesh,
+  BallMesh,
+  ShipSmallMesh,
+  ShipFangsMesh,
+  PickMesh,
+  SpaceOreMesh,
+  SpaceRockMesh,
+  AmmunitionBoxMesh,
+  LinstockMesh,
+  CannonMesh,
+  CannonLD51Mesh,
+  GrappleHookMesh,
+  GrappleGunMesh,
+  GrappleGunUnloadedMesh,
+  RudderMesh,
+  OceanMesh,
+  PirateMesh,
+] as const;
+
 // TODO(@darzu): replace with mesh set
+// prettier-ignore
 const RemoteMeshes = {
-  ship: "barge.sprig.obj",
-  ship_small: "player_ship_small.sprig.obj",
-  ship_fangs: "enemy_ship_fangs.sprig.obj",
-  // ship_fangs: "ball.sprig.obj", // TODO: FOR PERF
-  ball: BallMesh.desc.data as string,
-  pick: "pick.sprig.obj",
-  spaceore: "spaceore.sprig.obj",
-  spacerock: "spacerock.sprig.obj",
-  ammunitionBox: "ammunition_box.sprig.obj",
-  linstock: "linstock.sprig.obj",
-  cannon: "cannon_simple.sprig.obj",
-  ld51_cannon: "ld51_cannon.sprig.obj",
-  grappleHook: "grapple-hook.sprig.obj",
-  grappleGun: "grapple-gun.sprig.obj",
-  grappleGunUnloaded: "grapple-gun-unloaded.sprig.obj",
-  rudder: "rudder.sprig.obj",
-  // TODO(@darzu): including hyperspace-ocean makes load time ~100ms slower :/
-  ocean: "hyperspace-ocean.sprig.obj",
-  pirate: "pirate.glb",
-  // ocean: "ball.sprig.obj", // TODO: FOR PERF
+  [ShipMesh.desc.name]: ShipMesh.desc.data as string,
+  [BallMesh.desc.name]: BallMesh.desc.data as string,
+  [ShipSmallMesh.desc.name]: ShipSmallMesh.desc.data as string,
+  [ShipFangsMesh.desc.name]: ShipFangsMesh.desc.data as string,
+  [PickMesh.desc.name]: PickMesh.desc.data as string,
+  [SpaceOreMesh.desc.name]: SpaceOreMesh.desc.data as string,
+  [SpaceRockMesh.desc.name]: SpaceRockMesh.desc.data as string,
+  [AmmunitionBoxMesh.desc.name]: AmmunitionBoxMesh.desc.data as string,
+  [LinstockMesh.desc.name]: LinstockMesh.desc.data as string,
+  [CannonMesh.desc.name]: CannonMesh.desc.data as string,
+  [CannonLD51Mesh.desc.name]: CannonLD51Mesh.desc.data as string,
+  [GrappleHookMesh.desc.name]: GrappleHookMesh.desc.data as string,
+  [GrappleGunMesh.desc.name]: GrappleGunMesh.desc.data as string,
+  [GrappleGunUnloadedMesh.desc.name]: GrappleGunUnloadedMesh.desc.data as string,
+  [RudderMesh.desc.name]: RudderMesh.desc.data as string,
+  [OceanMesh.desc.name]: OceanMesh.desc.data as string,
+  [PirateMesh.desc.name]: PirateMesh.desc.data as string,
 } as const;
 
 type RemoteMeshSymbols = keyof typeof RemoteMeshes;
