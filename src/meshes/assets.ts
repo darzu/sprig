@@ -75,6 +75,10 @@ export type Assets = Component<typeof AssetsDef>;
 //   to ur game and then await that whole set (and probably stick it in a resource)
 //   and once the whole thing is loaded u can then access the assets synchronously.
 //   This is basically how it works now except that all assets are in one big set.
+// TODO(@darzu): plan:
+//    [ ] rename AssetsDef -> EverySingleAssetDef, implying shame
+//    [ ] need a cache for all assets. So individual loads or overlapping sets dont duplicate work
+//    [ ] restructure it so each mesh has its path and transforms together
 
 export const BLACK = V(0, 0, 0);
 export const DARK_GRAY = V(0.02, 0.02, 0.02);
@@ -175,7 +179,7 @@ const blackoutColor: (m: RawMesh) => RawMesh = (m: RawMesh) => {
   return m;
 };
 
-EM.addLazyInit([AssetsDef], [WoodStateDef], ({ assets }) => {});
+// EM.addLazyInit([AssetsDef], [WoodStateDef], ({ assets }) => {});
 
 const MeshModify: Partial<{
   [P in AllMeshSymbols]: (m: RawMesh) => RawMesh;
