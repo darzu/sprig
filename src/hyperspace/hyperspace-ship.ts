@@ -10,7 +10,7 @@ import {
   PositionDef,
   RotationDef,
 } from "../physics/transform.js";
-import { AllMeshesDef } from "../meshes/meshes.js";
+import { AllMeshesDef } from "../meshes/mesh-list.js";
 import { BARGE_AABBS } from "../meshes/primatives.js";
 import {
   AABBCollider,

@@ -66,7 +66,7 @@ import {
   WoodStateDef,
   _dbgNumSplinterEnds,
 } from "./wood.js";
-import { AllMeshesDef, BLACK } from "../meshes/meshes.js";
+import { AllMeshesDef, BLACK } from "../meshes/mesh-list.js";
 import {
   breakBullet,
   BulletConstructDef,

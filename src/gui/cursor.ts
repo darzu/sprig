@@ -9,7 +9,7 @@ import {
   PositionDef,
   updateFrameFromPosRotScale,
 } from "../physics/transform.js";
-import { AllMeshesDef } from "../meshes/meshes.js";
+import { AllMeshesDef } from "../meshes/mesh-list.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { assert } from "../utils/util.js";
 import { CameraComputedDef } from "../camera/camera.js";

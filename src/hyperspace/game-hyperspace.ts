@@ -11,7 +11,7 @@ import {
   shadowPipelines,
 } from "../render/pipelines/std-shadow.js";
 import { initStars, renderStars } from "../render/pipelines/std-stars.js";
-import { AllMeshesDef } from "../meshes/meshes.js";
+import { AllMeshesDef } from "../meshes/mesh-list.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { createHsPlayer, registerHsPlayerSystems } from "./hs-player.js";
 import { createHsShip, registerShipSystems } from "./hyperspace-ship.js";

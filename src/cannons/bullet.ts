@@ -15,7 +15,7 @@ import {
   PredictDef,
   Me,
 } from "../net/components.js";
-import { AllMeshes, AllMeshesDef } from "../meshes/meshes.js";
+import { AllMeshes, AllMeshesDef } from "../meshes/mesh-list.js";
 import {
   AngularVelocity,
   AngularVelocityDef,

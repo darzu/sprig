@@ -4,7 +4,7 @@ import { vec3, V } from "../matrix/sprig-matrix.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { PositionDef, ScaleDef } from "../physics/transform.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
-import { AllMeshesDef } from "../meshes/meshes.js";
+import { AllMeshesDef } from "../meshes/mesh-list.js";
 import { PointLightDef } from "../render/lights.js";
 import { FLAG_UNLIT, RenderDataStdDef } from "../render/pipelines/std-scene.js";
 import { ColorDef } from "../color/color-ecs.js";

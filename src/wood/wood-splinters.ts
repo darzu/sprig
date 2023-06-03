@@ -2,7 +2,7 @@
 
 import { ColorDef } from "../color/color-ecs.js";
 import { EntityW, EM } from "../ecs/entity-manager.js";
-import { AllMeshesDef, BLACK } from "../meshes/meshes.js";
+import { AllMeshesDef, BLACK } from "../meshes/mesh-list.js";
 import { GravityDef } from "../motion/gravity.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { jitter } from "../utils/math.js";
