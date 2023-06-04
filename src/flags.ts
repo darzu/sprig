@@ -24,6 +24,7 @@ export const ENABLE_AUDIO = true;
 
 // Asset
 export const DBG_FANG_SHIP = false;
+export const DBG_CHECK_FOR_TMPS_IN_XY = false;
 
 // ECS
 export const DBG_INIT = false;

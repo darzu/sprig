@@ -117,19 +117,36 @@ export function isTmpVec(v: Float32Array): boolean {
 }
 
 // TODO(@darzu): generalize and put in util.ts?
-export function hasAnyTmpVec(obj: any, maxDepth = 100): boolean {
-  if (!obj) {
-    return false;
+export function findAnyTmpVec(
+  obj: any,
+  maxDepth = 100,
+  path = ""
+): string | null {
+  if (maxDepth <= 0) {
+    return null;
+  } else if (!obj) {
+    return null;
   } else if (obj instanceof Float32Array) {
-    return isTmpVec(obj);
+    return isTmpVec(obj) ? path : null;
   } else if (obj instanceof Array) {
-    return obj.some((e) => hasAnyTmpVec(e, maxDepth - 1));
+    return obj.reduce(
+      (p: string | null, n, i) =>
+        p ? p : findAnyTmpVec(n, maxDepth - 1, `${path}[${i}]`),
+      null
+    );
   } else if (obj instanceof Map) {
-    for (let v of obj.values()) if (hasAnyTmpVec(v, maxDepth - 1)) return true;
-    return false;
+    for (let [k, v] of obj.entries()) {
+      const found = findAnyTmpVec(v, maxDepth - 1, `${path}.get(${k})`);
+      if (found) return found;
+    }
+    return null;
   }
   // NOTE: primatives (string, bool, number) and functions all return empty list for Object.keys
-  return Object.keys(obj).some((k) => hasAnyTmpVec(obj[k], maxDepth - 1));
+  return Object.keys(obj).reduce(
+    (p: string | null, n, i) =>
+      p ? p : findAnyTmpVec(obj[n], maxDepth - 1, `${path}.${n}`),
+    null
+  );
 }
 
 export module vec2 {

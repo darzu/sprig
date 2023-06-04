@@ -48,8 +48,7 @@ export const LIGHT_BLUE = V(0.05, 0.05, 0.2);
 export const BallMesh = XY.registerMesh({
   name: "ball",
   data: "ball.sprig.obj",
-  // TODO(@darzu): BUG! This is storing a temp vec as the transform.
-  transform: mat4.fromScaling([2, 2, 2]),
+  transform: mat4.fromScaling([2, 2, 2], mat4.create()),
 });
 
 export const UnitCubeMesh = XY.registerMesh({

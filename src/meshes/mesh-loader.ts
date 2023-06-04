@@ -1,5 +1,5 @@
 import { ComponentDef, EM } from "../ecs/entity-manager.js";
-import { vec3, mat4, V } from "../matrix/sprig-matrix.js";
+import { vec3, mat4, V, findAnyTmpVec } from "../matrix/sprig-matrix.js";
 import { importObj, isParseError } from "./import-obj.js";
 import {
   getAABBFromMesh,
@@ -24,6 +24,7 @@ import { farthestPointInDir, SupportFn } from "../utils/utils-3d.js";
 import { MeshHandle, MeshReserve } from "../render/mesh-pool.js";
 import { createGizmoMesh } from "../debug/gizmos.js";
 import { importGltf } from "./import-gltf.js";
+import { DBG_CHECK_FOR_TMPS_IN_XY } from "../flags.js";
 
 // TODO: load these via streaming
 // TODO(@darzu): it's really bad that all these assets are loaded for each game
@@ -164,6 +165,17 @@ function createXylemRegistry() {
     meshes: MR,
     renderer: Renderer
   ): Promise<MeshSet<MR>> {
+    if (DBG_CHECK_FOR_TMPS_IN_XY) {
+      let found = findAnyTmpVec(meshes);
+      if (found) {
+        console.error(
+          `Found temp vec(s) in mesh registrations! Path:\nmeshes${found}`
+        );
+        console.log("meshes:");
+        console.dir(meshes);
+      }
+    }
+
     let promises = meshes.map((m) => {
       return cachedLoadMeshDesc(m.desc, renderer);
     });
