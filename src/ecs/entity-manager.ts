@@ -1270,7 +1270,7 @@ export class EntityManager {
     // check entity promises
     this.entityPromises.get(0)?.forEach((p) =>
       p.cs.filter(willBeForced).forEach((r) => {
-        const line = this._dbgInitBlameLn.get(p.id)!;
+        const line = this._dbgEntityPromiseCallsites.get(p.id)!;
         console.log(`'${r.name}' force by promise from: ${line}`);
       })
     );

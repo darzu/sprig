@@ -1,9 +1,9 @@
+// TODO @darzu: use Fetch (https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API)
 function getFileInternal(
   url: string,
   respType: XMLHttpRequestResponseType | undefined,
   callback: (status: number | null, r: XMLHttpRequest) => void
 ) {
-  // TODO @darzu: use Fetch (https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API)
   var xhr = new XMLHttpRequest();
   xhr.open("GET", url, true);
   if (respType) xhr.responseType = respType;

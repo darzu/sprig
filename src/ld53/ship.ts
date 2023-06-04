@@ -1,7 +1,11 @@
 import { ColorDef } from "../color/color-ecs.js";
 import { createRef } from "../ecs/em-helpers.js";
 import { EM, EntityW } from "../ecs/entity-manager.js";
-import { AllMeshesDef, CannonLD51Mesh } from "../meshes/mesh-list.js";
+import {
+  AllMeshesDef,
+  CannonLD51Mesh,
+  RudderPrimMesh,
+} from "../meshes/mesh-list.js";
 import { vec3, quat } from "../matrix/sprig-matrix.js";
 import { LinearVelocityDef } from "../motion/velocity.js";
 import {
@@ -234,14 +238,11 @@ EM.addSystem(
 export const RudderDef = EM.defineComponent("rudder", () => true);
 
 async function createRudder() {
-  const res = await EM.whenResources(AllMeshesDef, MeDef);
+  const res = await EM.whenResources(MeDef);
+  const rudderMesh = await RudderPrimMesh.gameMesh();
   const ent = EM.new();
   EM.ensureComponentOn(ent, RudderDef);
-  EM.ensureComponentOn(
-    ent,
-    RenderableConstructDef,
-    res.allMeshes.rudderPrim.proto
-  );
+  EM.ensureComponentOn(ent, RenderableConstructDef, rudderMesh.proto);
   // EM.ensureComponentOn(ent, ColorDef, V(0.2, 0.1, 0.05));
   EM.ensureComponentOn(ent, ColorDef, ENDESGA16.midBrown);
   EM.ensureComponentOn(ent, PositionDef);
