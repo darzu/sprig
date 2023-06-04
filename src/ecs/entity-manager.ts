@@ -102,9 +102,9 @@ export interface InitFnReg<RS extends ComponentDef[] = ComponentDef[]> {
 }
 
 export function initFnToString(init: InitFnReg) {
-  return `${componentsToString(init.requireRs)} -> ${componentsToString(
-    init.provideRs
-  )}`;
+  return `#${init.id}:${componentsToString(
+    init.requireRs
+  )} -> ${componentsToString(init.provideRs)}`;
 }
 // export function initFnToKey(init: InitFnReg) {
 //   return `${init.eager ? "E" : "L"}:${init.requireRs
@@ -670,7 +670,7 @@ export class EntityManager {
     requireRs: [...RS],
     provideRs: ComponentDef[],
     callback: InitFn<RS>
-  ): void {
+  ): InitFnReg<RS> {
     const id = this._nextInitFnId++;
     const reg: InitFnReg<RS> = {
       requireRs,
@@ -680,13 +680,14 @@ export class EntityManager {
       id,
     };
     this.addInit(reg);
+    return reg;
   }
   public addEagerInit<RS extends ComponentDef[]>(
     requireCompSet: ComponentDef[],
     requireRs: [...RS],
     provideRs: ComponentDef[],
     callback: InitFn<RS>
-  ): void {
+  ): InitFnReg<RS> {
     const id = this._nextInitFnId++;
     const reg: InitFnReg<RS> = {
       requireCompSet,
@@ -697,6 +698,7 @@ export class EntityManager {
       id,
     };
     this.addInit(reg);
+    return reg;
   }
 
   private _nextSystemId = 1;
@@ -839,7 +841,12 @@ export class EntityManager {
     this.emStats.queryTime += afterQuery - start;
     if (!rs) {
       // we don't yet have the resources, check if we can init any
-      s.rs.forEach((r) => this.tryForceResourceInit(r));
+      s.rs.forEach((r) => {
+        const forced = this.tryForceResourceInit(r);
+        if (DBG_INIT_CAUSATION && forced) {
+          console.log(`'${r.name}' force by system ${s.name}`);
+        }
+      });
       return true;
     }
 
@@ -944,7 +951,13 @@ export class EntityManager {
     // TODO(@darzu): also check and call init functions for systems!!
     const resourcePromises = this.entityPromises.get(0);
     resourcePromises?.forEach((p) =>
-      p.cs.forEach((r) => this.tryForceResourceInit(r))
+      p.cs.forEach((r) => {
+        const forced = this.tryForceResourceInit(r);
+        if (DBG_INIT_CAUSATION && forced) {
+          const line = this._dbgEntityPromiseCallsites.get(p.id)!;
+          console.log(`'${r.name}' force by promise #${p.id} from: ${line}`);
+        }
+      })
     );
 
     let finishedEntities: Set<number> = new Set();
@@ -1115,7 +1128,11 @@ export class EntityManager {
             //    this is (probably) the behavior we want when there's a system that is
             //    waiting on some components to exist.
             // lazy -> eager
-            this.tryForceResourceInit(r);
+            const forced = this.tryForceResourceInit(r);
+            if (DBG_INIT_CAUSATION && forced) {
+              const line = this._dbgInitBlameLn.get(e.id)!;
+              console.log(`'${r.name}' force by init #${e.id} from: ${line}`);
+            }
           }
           hasAll = false;
         }
@@ -1148,12 +1165,12 @@ export class EntityManager {
       //   line = line.slice(hostIdx + window.location.host.length);
 
       if (DBG_INIT_CALLSITES)
-        console.log(`init #${reg.id}: ${initFnToString(reg)} from: ${line}`);
+        console.log(`init ${initFnToString(reg)} from: ${line}`);
       this._dbgInitBlameLn.set(reg.id, line);
     }
     assert(
       !this.allInits.has(reg.id),
-      `Double registering init: ${reg.id}, ${initFnToString(reg)}`
+      `Double registering ${initFnToString(reg)}`
     );
     this.allInits.set(reg.id, reg);
     if (reg.eager) {
@@ -1174,9 +1191,9 @@ export class EntityManager {
       if (DBG_INIT_SEQ_VERBOSE) console.log(`new lazy: ${initFnToString(reg)}`);
     }
   }
-  private tryForceResourceInit(r: ComponentDef) {
+  private tryForceResourceInit(r: ComponentDef): boolean {
     const lazy = this.pendingLazyInitsByProvides.get(r.id);
-    if (!lazy) return;
+    if (!lazy) return false;
 
     // remove from all lazy
     for (let r of lazy.provideRs) this.pendingLazyInitsByProvides.delete(r.id);
@@ -1185,6 +1202,8 @@ export class EntityManager {
 
     if (DBG_INIT_SEQ_VERBOSE)
       console.log(`lazy => eager: ${initFnToString(lazy)}`);
+
+    return true; // was forced
   }
 
   _runningInitStack: InitFnReg[] = [];
@@ -1246,52 +1265,7 @@ export class EntityManager {
     if (DBG_INIT_SEQ_VERBOSE) console.log(`finished: ${initFnToString(init)}`);
   }
 
-  public dbgInitCausation() {
-    // TODO(@darzu): HACK. I don't like how this fn duplicates logic w/ the rest of
-    //  entity manager. There's a good chance this will drift and disagree at some
-    //  point.
-    const willBeForced = (r: ComponentDef) =>
-      !this.seenResources.has(r.id) &&
-      this.pendingLazyInitsByProvides.has(r.id);
-
-    // check init fns
-    this.pendingEagerInits
-      .filter(
-        (e) =>
-          !e.requireCompSet ||
-          e.requireCompSet.every((c) => this.seenComponents.has(c.id))
-      )
-      .forEach((e) =>
-        e.requireRs.filter(willBeForced).forEach((r) => {
-          const line = this._dbgInitBlameLn.get(e.id)!;
-          console.log(`'${r.name}' force by init from: ${line}`);
-        })
-      );
-    // check entity promises
-    this.entityPromises.get(0)?.forEach((p) =>
-      p.cs.filter(willBeForced).forEach((r) => {
-        const line = this._dbgEntityPromiseCallsites.get(p.id)!;
-        console.log(`'${r.name}' force by promise from: ${line}`);
-      })
-    );
-    // check systems
-    PhaseValueList.forEach((phase) =>
-      this.phases
-        .get(phase)!
-        .map((s) => this.allSystemsByName.get(s)!)
-        .filter((s) => this.activeSystemsById.has(s.id))
-        .forEach((s) =>
-          s.rs
-            .filter(willBeForced)
-            .forEach((r) =>
-              console.log(`'${r.name}' force by system ${s.name}`)
-            )
-        )
-    );
-  }
-
   public update() {
-    if (DBG_INIT_CAUSATION) this.dbgInitCausation();
     // TODO(@darzu): can EM.update() be a system?
     this.progressInitFns();
     this.checkEntityPromises();

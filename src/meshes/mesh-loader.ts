@@ -207,7 +207,7 @@ function createXylemRegistry() {
   >(name: N, ...meshes: MR): MeshSetDef<N, MR> {
     const def = EM.defineComponent(name, (mr: MeshSet<MR>) => mr);
 
-    EM.addLazyInit([RendererDef], [def], async ({ renderer }) => {
+    let initReg = EM.addLazyInit([RendererDef], [def], async ({ renderer }) => {
       const before = performance.now();
       const gameMeshes = await loadMeshSet(meshes, renderer.renderer);
       EM.addResource(def, gameMeshes);
@@ -217,6 +217,10 @@ function createXylemRegistry() {
         ).toFixed(2)}ms`
       );
     });
+    // TODO(@darzu): DBG
+    if (def.name === "allMeshes") {
+      console.log(`allMeshes init: #${initReg.id}`);
+    }
 
     return def;
   }
