@@ -1,7 +1,7 @@
 import { ColorDef } from "../color/color-ecs.js";
 import { createRef } from "../ecs/em-helpers.js";
 import { EM, EntityW } from "../ecs/entity-manager.js";
-import { AllMeshesDef } from "../meshes/mesh-list.js";
+import { AllMeshesDef, CannonLD51Mesh } from "../meshes/mesh-list.js";
 import { vec3, quat } from "../matrix/sprig-matrix.js";
 import { LinearVelocityDef } from "../motion/velocity.js";
 import {
@@ -80,7 +80,7 @@ const RUDDER_ROTATION_RATE = 0.01;
 export const cannonDefaultPitch = Math.PI * +0.05;
 
 export async function createShip() {
-  const res = await EM.whenResources(AllMeshesDef, MeDef);
+  const res = await EM.whenResources(CannonLD51Mesh.def, MeDef);
   const ent = EM.new();
   EM.ensureComponentOn(ent, ShipDef);
 

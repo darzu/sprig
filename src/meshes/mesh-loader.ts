@@ -92,9 +92,6 @@ const blackoutColor: (m: RawMesh) => RawMesh = (m: RawMesh) => {
   return m;
 };
 
-// TODO(@darzu): IMPL for WoodStateDef
-// EM.addLazyInit([AssetsDef], [WoodStateDef], ({ allMeshes}) => {});
-
 export type GameMesh = {
   mesh: Mesh;
   aabb: AABB;

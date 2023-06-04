@@ -87,7 +87,7 @@ import { MapPaths } from "../levels/map-loader.js";
 import { stdRiggedRenderPipeline } from "../render/pipelines/std-rigged.js";
 import { PoseDef } from "../animation/skeletal.js";
 import { Phase } from "../ecs/sys-phase.js";
-import { XY } from "../meshes/mesh-loader";
+import { XY } from "../meshes/mesh-loader.js";
 /*
 NOTES:
 - Cut grass by updating a texture that has cut/not cut or maybe cut-height

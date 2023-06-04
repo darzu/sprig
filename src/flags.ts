@@ -27,7 +27,8 @@ export const DBG_FANG_SHIP = false;
 export const DBG_CHECK_FOR_TMPS_IN_XY = false;
 
 // ECS
-export const DBG_INIT = false;
+export const DBG_INIT_SEQ_VERBOSE = false;
+export const DBG_INIT_CAUSATION = true;
 export const WARN_DEAD_CLEANUP = false;
 export const DBG_SYSTEM_ORDER = false;
 

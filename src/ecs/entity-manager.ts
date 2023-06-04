@@ -1,4 +1,9 @@
-import { DBG_ASSERT, DBG_INIT, DBG_SYSTEM_ORDER } from "../flags.js";
+import {
+  DBG_ASSERT,
+  DBG_INIT_CAUSATION,
+  DBG_INIT_SEQ_VERBOSE,
+  DBG_SYSTEM_ORDER,
+} from "../flags.js";
 import { Serializer, Deserializer } from "../utils/serialize.js";
 import {
   assert,
@@ -1115,7 +1120,7 @@ export class EntityManager {
         this.pendingLazyInitsByProvides.set(p.id, reg);
       }
 
-      if (DBG_INIT) console.log(`new lazy: ${initFnToString(reg)}`);
+      if (DBG_INIT_SEQ_VERBOSE) console.log(`new lazy: ${initFnToString(reg)}`);
     }
   }
   private tryForceResourceInit(r: ComponentDef) {
@@ -1127,7 +1132,8 @@ export class EntityManager {
     // add to eager
     this.pendingEagerInits.push(lazy);
 
-    if (DBG_INIT) console.log(`lazy => eager: ${initFnToString(lazy)}`);
+    if (DBG_INIT_SEQ_VERBOSE)
+      console.log(`lazy => eager: ${initFnToString(lazy)}`);
   }
 
   _runningInitStack: InitFnReg[] = [];
@@ -1158,7 +1164,8 @@ export class EntityManager {
     const promise = init.fn(this.ent0);
     this.startedInits.set(init.id, promise);
 
-    if (DBG_INIT) console.log(`eager => started: ${initFnToString(init)}`);
+    if (DBG_INIT_SEQ_VERBOSE)
+      console.log(`eager => started: ${initFnToString(init)}`);
 
     if (isPromise(promise)) await promise;
 
@@ -1185,10 +1192,47 @@ export class EntityManager {
       else this._lastInitTimestamp = -1;
     }
 
-    if (DBG_INIT) console.log(`finished: ${initFnToString(init)}`);
+    if (DBG_INIT_SEQ_VERBOSE) console.log(`finished: ${initFnToString(init)}`);
+  }
+
+  public dbgInitCausation() {
+    const willBeForced = (r: ComponentDef) =>
+      !this.seenResources.has(r.id) &&
+      this.pendingLazyInitsByProvides.has(r.id);
+
+    // check init fns
+    this.pendingEagerInits.forEach((e) =>
+      e.requireRs
+        .filter(willBeForced)
+        .forEach((r) =>
+          console.log(`${r.name} force by init #${e.id}:${initFnToString(e)}`)
+        )
+    );
+    // check entity promises
+    this.entityPromises
+      .get(0)
+      ?.forEach((p) =>
+        p.cs
+          .filter(willBeForced)
+          .forEach((r) => console.log(`${r.name} force by entity promise`))
+      );
+    // check systems
+    PhaseValueList.forEach((phase) =>
+      this.phases
+        .get(phase)!
+        .map((s) => this.allSystemsByName.get(s)!)
+        .filter((s) => this.activeSystemsById.has(s.id))
+        .forEach((s) =>
+          s.rs
+            .filter(willBeForced)
+            .forEach((r) => console.log(`${r.name} force by system ${s.name}`))
+        )
+    );
   }
 
   public update() {
+    if (DBG_INIT_CAUSATION) this.dbgInitCausation();
+
     // TODO(@darzu): can EM.update() be a system?
     this.progressInitFns();
     this.checkEntityPromises();
