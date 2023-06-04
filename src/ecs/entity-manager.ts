@@ -1,5 +1,6 @@
 import {
   DBG_ASSERT,
+  DBG_ENTITY_PROMISE_CALLSITES,
   DBG_INIT_CALLSITES,
   DBG_INIT_CAUSATION,
   DBG_INIT_SEQ_VERBOSE,
@@ -123,6 +124,7 @@ type EntityPromise<
   CS extends ComponentDef[],
   ID extends number
 > = {
+  id: number;
   e: EntityW<any[], ID>;
   cs: CS;
   callback: (e: EntityW<[...CS], ID>) => void;
@@ -1017,6 +1019,9 @@ export class EntityManager {
     );
   }
 
+  _nextEntityPromiseId: number = 0;
+  _dbgEntityPromiseCallsites = new Map<number, string>();
+
   // TODO(@darzu): Rethink naming here
   // NOTE: if you're gonna change the types, change registerSystem first and just copy
   //  them down to here
@@ -1045,8 +1050,26 @@ export class EntityManager {
       queryTime: 0,
     };
 
+    const promiseId = this._nextEntityPromiseId++;
+
+    if (DBG_ENTITY_PROMISE_CALLSITES || DBG_INIT_CAUSATION) {
+      // if (dbgOnce("getCallStack")) console.dir(getCallStack());
+      let line = getCallStack().find(
+        (s) =>
+          !s.includes("entity-manager") && //
+          !s.includes("em-helpers")
+      )!;
+
+      if (DBG_ENTITY_PROMISE_CALLSITES)
+        console.log(
+          `promise #${promiseId}: ${componentsToString(cs)} from: ${line}`
+        );
+      this._dbgEntityPromiseCallsites.set(promiseId, line);
+    }
+
     return new Promise<EntityW<CS, ID>>((resolve, reject) => {
       const sys: EntityPromise<CS, ID> = {
+        id: promiseId,
         e,
         cs,
         callback: resolve,
@@ -1125,7 +1148,7 @@ export class EntityManager {
       //   line = line.slice(hostIdx + window.location.host.length);
 
       if (DBG_INIT_CALLSITES)
-        console.log(`#${reg.id}: ${initFnToString(reg)} from: ${line}`);
+        console.log(`init #${reg.id}: ${initFnToString(reg)} from: ${line}`);
       this._dbgInitBlameLn.set(reg.id, line);
     }
     assert(
@@ -1245,13 +1268,12 @@ export class EntityManager {
         })
       );
     // check entity promises
-    this.entityPromises
-      .get(0)
-      ?.forEach((p) =>
-        p.cs
-          .filter(willBeForced)
-          .forEach((r) => console.log(`'${r.name}' force by entity promise`))
-      );
+    this.entityPromises.get(0)?.forEach((p) =>
+      p.cs.filter(willBeForced).forEach((r) => {
+        const line = this._dbgInitBlameLn.get(p.id)!;
+        console.log(`'${r.name}' force by promise from: ${line}`);
+      })
+    );
     // check systems
     PhaseValueList.forEach((phase) =>
       this.phases
