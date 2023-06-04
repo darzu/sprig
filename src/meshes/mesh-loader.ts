@@ -198,9 +198,14 @@ function createXylemRegistry() {
     const def = EM.defineComponent(name, (mr: MeshSet<MR>) => mr);
 
     EM.addLazyInit([RendererDef], [def], async ({ renderer }) => {
-      console.log(`lazy init mesh set: ${def.name}`);
+      const before = performance.now();
       const gameMeshes = await loadMeshSet(meshes, renderer.renderer);
       EM.addResource(def, gameMeshes);
+      console.log(
+        `loading mesh set '${def.name}' took ${(
+          performance.now() - before
+        ).toFixed(2)}ms`
+      );
     });
 
     return def;
