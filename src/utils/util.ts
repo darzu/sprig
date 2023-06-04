@@ -331,6 +331,13 @@ export function boxInBox(
   else return boundH * childAR;
 }
 
+export function getCallStack(): string[] {
+  return new Error()
+    .stack!.split("\n")
+    .map((ln) => ln.trim())
+    .filter((ln) => ln !== "Error" && !ln.includes("getCallStack"));
+}
+
 let blameMaps = new Map<string, Map<string, number>>();
 export function dbgAddBlame(kind: string, amount: number) {
   let map = blameMaps.get(kind);
@@ -338,12 +345,9 @@ export function dbgAddBlame(kind: string, amount: number) {
     map = new Map<string, number>();
     blameMaps.set(kind, map);
   }
-  new Error()
-    .stack!.split("\n")
-    .map((ln) => ln.trim())
-    .forEach((ln) => {
-      map!.set(ln, (map!.get(ln) ?? 0) + amount);
-    });
+  getCallStack().forEach((ln) => {
+    map!.set(ln, (map!.get(ln) ?? 0) + amount);
+  });
 }
 export function dbgGetBlame(kind: string) {
   return blameMaps.get(kind);

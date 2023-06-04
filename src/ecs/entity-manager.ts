@@ -1,5 +1,6 @@
 import {
   DBG_ASSERT,
+  DBG_INIT_CALLSITES,
   DBG_INIT_CAUSATION,
   DBG_INIT_SEQ_VERBOSE,
   DBG_SYSTEM_ORDER,
@@ -8,6 +9,8 @@ import { Serializer, Deserializer } from "../utils/serialize.js";
 import {
   assert,
   assertDbg,
+  dbgOnce,
+  getCallStack,
   hashCode,
   Intersect,
   isPromise,
@@ -1072,21 +1075,28 @@ export class EntityManager {
     this.pendingEagerInits.forEach((e, i) => {
       let hasAll = true;
 
-      // has resources?
-      for (let r of e.requireRs) {
-        if (!this.seenResources.has(r.id)) {
-          // lazy -> eager
-          this.tryForceResourceInit(r);
-          hasAll = false;
-        }
-      }
-
       // has component set?
       // TODO(@darzu): more precise component set tracking:
       //               not just one of each component, but some entity that has all
+      let hasCompSet = true;
       if (e.requireCompSet)
         for (let c of e.requireCompSet)
-          hasAll &&= this.seenComponents.has(c.id);
+          hasCompSet &&= this.seenComponents.has(c.id);
+      hasAll &&= hasCompSet;
+
+      // has resources?
+      for (let r of e.requireRs) {
+        if (!this.seenResources.has(r.id)) {
+          if (hasCompSet) {
+            // NOTE: we don't force resources into existance until the components are met
+            //    this is (probably) the behavior we want when there's a system that is
+            //    waiting on some components to exist.
+            // lazy -> eager
+            this.tryForceResourceInit(r);
+          }
+          hasAll = false;
+        }
+      }
 
       // run?
       if (hasAll) {
@@ -1099,7 +1109,25 @@ export class EntityManager {
       }
     });
   }
+  _dbgInitBlameLn = new Map<InitFnId, string>();
   private addInit(reg: InitFnReg) {
+    if (DBG_INIT_CALLSITES || DBG_INIT_CAUSATION) {
+      // if (dbgOnce("getCallStack")) console.dir(getCallStack());
+      let line = getCallStack().find(
+        (s) =>
+          !s.includes("entity-manager") && //
+          !s.includes("em-helpers")
+      )!;
+
+      // trim "http://localhost:4321/"
+      // const hostIdx = line.indexOf(window.location.host);
+      // if (hostIdx >= 0)
+      //   line = line.slice(hostIdx + window.location.host.length);
+
+      if (DBG_INIT_CALLSITES)
+        console.log(`#${reg.id}: ${initFnToString(reg)} from: ${line}`);
+      this._dbgInitBlameLn.set(reg.id, line);
+    }
     assert(
       !this.allInits.has(reg.id),
       `Double registering init: ${reg.id}, ${initFnToString(reg)}`
@@ -1196,25 +1224,33 @@ export class EntityManager {
   }
 
   public dbgInitCausation() {
+    // TODO(@darzu): HACK. I don't like how this fn duplicates logic w/ the rest of
+    //  entity manager. There's a good chance this will drift and disagree at some
+    //  point.
     const willBeForced = (r: ComponentDef) =>
       !this.seenResources.has(r.id) &&
       this.pendingLazyInitsByProvides.has(r.id);
 
     // check init fns
-    this.pendingEagerInits.forEach((e) =>
-      e.requireRs
-        .filter(willBeForced)
-        .forEach((r) =>
-          console.log(`${r.name} force by init #${e.id}:${initFnToString(e)}`)
-        )
-    );
+    this.pendingEagerInits
+      .filter(
+        (e) =>
+          !e.requireCompSet ||
+          e.requireCompSet.every((c) => this.seenComponents.has(c.id))
+      )
+      .forEach((e) =>
+        e.requireRs.filter(willBeForced).forEach((r) => {
+          const line = this._dbgInitBlameLn.get(e.id)!;
+          console.log(`'${r.name}' force by init from: ${line}`);
+        })
+      );
     // check entity promises
     this.entityPromises
       .get(0)
       ?.forEach((p) =>
         p.cs
           .filter(willBeForced)
-          .forEach((r) => console.log(`${r.name} force by entity promise`))
+          .forEach((r) => console.log(`'${r.name}' force by entity promise`))
       );
     // check systems
     PhaseValueList.forEach((phase) =>
@@ -1225,14 +1261,15 @@ export class EntityManager {
         .forEach((s) =>
           s.rs
             .filter(willBeForced)
-            .forEach((r) => console.log(`${r.name} force by system ${s.name}`))
+            .forEach((r) =>
+              console.log(`'${r.name}' force by system ${s.name}`)
+            )
         )
     );
   }
 
   public update() {
     if (DBG_INIT_CAUSATION) this.dbgInitCausation();
-
     // TODO(@darzu): can EM.update() be a system?
     this.progressInitFns();
     this.checkEntityPromises();
