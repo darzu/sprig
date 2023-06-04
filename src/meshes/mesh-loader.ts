@@ -87,6 +87,7 @@ export function defineMeshSetResource<
   const def = EM.defineComponent(name, (mr: MeshSet<MR>) => mr);
 
   EM.addLazyInit([RendererDef], [def], async ({ renderer }) => {
+    console.log(`lazy init mesh set: ${def.name}`);
     const gameMeshes = await loadMeshSet(meshes, renderer.renderer);
     EM.addResource(def, gameMeshes);
   });
@@ -147,18 +148,23 @@ export function registerMesh<N extends string, B extends boolean>(
 
 // TODO(@darzu): move into a resource or singleton registry like CY and EM
 let loadedMeshes = new Map<string, GameMesh | GameMesh[]>();
+let loadingMeshes = new Map<string, Promise<GameMesh | GameMesh[]>>();
 async function cachedLoadMeshDesc(
   desc: MeshDesc,
   renderer?: Renderer
 ): Promise<GameMesh | GameMesh[]> {
-  let result = loadedMeshes.get(desc.name);
+  let result = loadingMeshes.get(desc.name);
   if (result) return result;
-  if (!renderer) {
-    // TODO(@darzu): track these? Better to load stuff through mesh sets?
-    renderer = (await EM.whenResources(RendererDef)).renderer.renderer;
-  }
-  result = await internalLoadMeshDesc(desc, renderer);
-  loadedMeshes.set(desc.name, result);
+  result = new Promise(async (resolve) => {
+    if (!renderer) {
+      // TODO(@darzu): track these? Better to load stuff through mesh sets?
+      renderer = (await EM.whenResources(RendererDef)).renderer.renderer;
+    }
+    const done = await internalLoadMeshDesc(desc, renderer);
+    loadedMeshes.set(desc.name, done);
+    resolve(done);
+  });
+  loadingMeshes.set(desc.name, result);
   return result;
 }
 async function internalLoadMeshDesc(
@@ -185,7 +191,7 @@ async function internalLoadMeshDesc(
 }
 
 function processMesh(desc: MeshDesc, m: RawMesh): RawMesh {
-  if (desc.transform) transformMesh(m, desc.transform);
+  if (desc.transform) m = transformMesh(m, desc.transform);
   if (desc.modify) m = desc.modify(m);
   if (!m.dbgName) m.dbgName = desc.name;
   return m;
