@@ -1416,3 +1416,6 @@ Staged programming:
   max says: have an interpreter and 
   miri, rust interpreter, check unsafe rules
     https://github.com/rust-lang/miri
+
+Should look at:
+  https://handmadehero.org

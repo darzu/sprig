@@ -7,6 +7,7 @@ import {
   Mesh,
   normalizeMesh,
   RawMesh,
+  transformMesh,
   validateMesh,
 } from "./mesh.js";
 import {
@@ -16,14 +17,13 @@ import {
 } from "../physics/aabb.js";
 import { RendererDef } from "../render/renderer-ecs.js";
 import { Renderer } from "../render/renderer-ecs.js";
-import { Intersect, assert } from "../utils/util.js";
+import { Intersect, assert, isString, never, toRecord } from "../utils/util.js";
 import { getBytes, getText } from "../fetch/webget.js";
 import { AABBCollider } from "../physics/collider.js";
 import { farthestPointInDir, SupportFn } from "../utils/utils-3d.js";
 import { MeshHandle, MeshReserve } from "../render/mesh-pool.js";
 import { createGizmoMesh } from "../debug/gizmos.js";
 import { importGltf } from "./import-gltf.js";
-import { AllMeshesDef, AllMeshes } from "./mesh-list.js";
 
 // TODO: load these via streaming
 // TODO(@darzu): it's really bad that all these assets are loaded for each game
@@ -42,31 +42,28 @@ import { AllMeshesDef, AllMeshes } from "./mesh-list.js";
 const DEFAULT_ASSET_PATH = "assets/";
 const BACKUP_ASSET_PATH = "https://sprig.land/assets/";
 
-export interface MeshDesc<N extends string> {
+export type MeshDesc<N extends string = string, B extends boolean = false> = {
   name: N;
   data: string | (() => RawMesh);
   transform?: mat4;
   modify?: (m: RawMesh) => RawMesh;
+} & (B extends true ? { multi: true } : {});
+
+function isMultiMeshDesc<N extends string, B extends boolean>(
+  desc: MeshDesc<N, B>
+): desc is MeshDesc<N, true> {
+  return (desc as MeshDesc<N, true>).multi;
 }
 
 export interface MeshReg<N extends string = string> {
-  desc: MeshDesc<N>;
+  desc: MeshDesc<N, false>;
   gameMesh: () => Promise<GameMesh>;
-  gameMeshNow: GameMesh | undefined;
+  gameMeshNow: () => GameMesh | undefined;
 }
 export interface MeshGroupReg<N extends string = string> {
-  desc: MeshDesc<N>;
+  desc: MeshDesc<N, true>;
   gameMeshes: () => Promise<GameMesh[]>;
-  gameMeshesNow: GameMesh[] | undefined;
-}
-
-export function registerMesh<N extends string>(desc: MeshDesc<N>): MeshReg<N> {
-  throw `TODO: impl`;
-}
-export function registerMeshGroup<N extends string>(
-  desc: MeshDesc<N>
-): MeshGroupReg<N> {
-  throw `TODO: impl`;
+  gameMeshesNow: () => GameMesh[] | undefined;
 }
 
 // TODO(@darzu): is there a simpler way to type this?
@@ -87,7 +84,14 @@ export function defineMeshSetResource<
   N extends string,
   MR extends (MeshReg | MeshGroupReg)[]
 >(name: N, ...meshes: MR): MeshSetDef<N, MR> {
-  throw `TODO: impl`;
+  const def = EM.defineComponent(name, (mr: MeshSet<MR>) => mr);
+
+  EM.addLazyInit([RendererDef], [def], async ({ renderer }) => {
+    const gameMeshes = await loadMeshSet(meshes, renderer.renderer);
+    EM.addResource(def, gameMeshes);
+  });
+
+  return def;
 }
 
 // TODO(@darzu): PERF. "ocean" and "ship_fangs" are expensive to load and aren't needed in all games.
@@ -114,10 +118,78 @@ export type GameMesh = {
   mkAabbCollider: (solid: boolean) => AABBCollider;
 };
 
-EM.addLazyInit([RendererDef], [AllMeshesDef], async ({ renderer }) => {
-  const allMeshes = await loadAssets(renderer.renderer);
-  EM.addResource(AllMeshesDef, allMeshes);
-});
+export function registerMesh<N extends string, B extends true>(
+  desc: MeshDesc<N, B>
+): MeshGroupReg<N>;
+export function registerMesh<N extends string, B extends false>(
+  desc: MeshDesc<N, B>
+): MeshReg<N>;
+export function registerMesh<N extends string, B extends boolean>(
+  desc: MeshDesc<N, B>
+): MeshGroupReg<N> | MeshReg<N> {
+  if (isMultiMeshDesc(desc)) {
+    let reg: MeshGroupReg<N> = {
+      desc,
+      gameMeshes: () => cachedLoadMeshDesc(desc) as Promise<GameMesh[]>,
+      gameMeshesNow: () =>
+        loadedMeshes.get(desc.name) as GameMesh[] | undefined,
+    };
+    return reg;
+  } else {
+    let reg: MeshReg<N> = {
+      desc,
+      gameMesh: () => cachedLoadMeshDesc(desc) as Promise<GameMesh>,
+      gameMeshNow: () => loadedMeshes.get(desc.name) as GameMesh | undefined,
+    };
+    return reg;
+  }
+}
+
+// TODO(@darzu): move into a resource or singleton registry like CY and EM
+let loadedMeshes = new Map<string, GameMesh | GameMesh[]>();
+async function cachedLoadMeshDesc(
+  desc: MeshDesc,
+  renderer?: Renderer
+): Promise<GameMesh | GameMesh[]> {
+  let result = loadedMeshes.get(desc.name);
+  if (result) return result;
+  if (!renderer) {
+    // TODO(@darzu): track these? Better to load stuff through mesh sets?
+    renderer = (await EM.whenResources(RendererDef)).renderer.renderer;
+  }
+  result = await internalLoadMeshDesc(desc, renderer);
+  loadedMeshes.set(desc.name, result);
+  return result;
+}
+async function internalLoadMeshDesc(
+  desc: MeshDesc,
+  renderer: Renderer
+): Promise<GameMesh | GameMesh[]> {
+  if (isMultiMeshDesc(desc)) {
+    assert(isString(desc.data), `TODO: support local multi-meshes`);
+    const raw = await loadMeshSetInternal(desc.data);
+    const processed = raw.map((m) => processMesh(desc, m));
+    const game = processed.map((m) => gameMeshFromMesh(m, renderer!));
+    return game;
+  } else {
+    let raw: RawMesh;
+    if (isString(desc.data)) {
+      raw = await loadMeshInternal(desc.data);
+    } else {
+      raw = desc.data();
+    }
+    const processed = processMesh(desc, raw);
+    const game = gameMeshFromMesh(processed, renderer!);
+    return game;
+  }
+}
+
+function processMesh(desc: MeshDesc, m: RawMesh): RawMesh {
+  if (desc.transform) transformMesh(m, desc.transform);
+  if (desc.modify) m = desc.modify(m);
+  if (!m.dbgName) m.dbgName = desc.name;
+  return m;
+}
 
 async function loadTxtInternal(relPath: string): Promise<string> {
   // download
@@ -186,66 +258,23 @@ async function loadMeshSetInternal(relPath: string): Promise<RawMesh[]> {
   return opt;
 }
 
-async function loadAssets(renderer: Renderer): Promise<AllMeshes> {
-  throw "TODO";
+async function loadMeshSet<MR extends (MeshReg | MeshGroupReg)[]>(
+  meshes: MR,
+  renderer: Renderer
+): Promise<MeshSet<MR>> {
+  let promises = meshes.map((m) => {
+    return cachedLoadMeshDesc(m.desc, renderer);
+  });
 
-  // const start = performance.now();
+  const done = await Promise.all(promises);
 
-  // const singlePromises = objMap(RemoteMeshes, (p) => loadMeshInternal(p));
-  // const setPromises = objMap(RemoteMesheSets, (p) => loadMeshSetInternal(p));
-  // const singlesList = Object.entries(singlePromises);
-  // const singlesMeshList = await Promise.all(singlesList.map(([_, p]) => p));
+  const result = toRecord(
+    meshes,
+    (m) => m.desc.name,
+    (_, i) => done[i]
+  );
 
-  // // TODO(@darzu): We need clearer asset processing stages. "processMesh", "meshModify", "gameMeshFromMesh", "normalizeMesh"
-  // const singleMeshes = objMap(singlePromises, (_, n) => {
-  //   const idx = singlesList.findIndex(([n2, _]) => n === n2);
-  //   let m = singlesMeshList[idx];
-  //   return processMesh(n, m);
-  // });
-
-  // const localMeshes = objMap(LocalMeshes, (m, n) => {
-  //   return processMesh(n, m());
-  // });
-
-  // const setsList = Object.entries(setPromises);
-  // const setsMeshList = await Promise.all(setsList.map(([_, p]) => p));
-  // const setMeshes = objMap(setPromises, (_, n) => {
-  //   const idx = setsList.findIndex(([n2, _]) => n === n2);
-  //   let ms = setsMeshList[idx];
-  //   return ms.map((m) => processMesh(n, m));
-  // });
-
-  // function processMesh(n: AllMeshSymbols, m: RawMesh): RawMesh {
-  //   const t1 = MeshTransforms[n];
-  //   if (t1) transformMesh(m, t1);
-  //   const t2 = MeshModify[n];
-  //   if (t2) m = t2(m);
-  //   if (!m.dbgName) m.dbgName = n;
-  //   return m;
-  // }
-
-  // const allSingleMeshes = { ...singleMeshes, ...localMeshes };
-
-  // // TODO(@darzu): this shouldn't directly add to a mesh pool, we don't know which pool it should
-  // //  go to
-  // const allSingleAssets = objMap(allSingleMeshes, (m) =>
-  //   gameMeshFromMesh(m, renderer)
-  // );
-  // const allSetAssets = objMap(setMeshes, (ms, n) =>
-  //   ms.map((m) => gameMeshFromMesh(m, renderer))
-  // );
-
-  // // console.log("allSingleAssets.ocean.mesh");
-  // // console.dir(allSingleAssets.ocean.mesh);
-
-  // const result = { ...allSingleAssets, ...allSetAssets };
-
-  // // perf tracking
-  // const elapsed = performance.now() - start;
-  // if (VERBOSE_LOG)
-  //   console.log(`took ${elapsed.toFixed(1)}ms to load allMeshes.`);
-
-  // return result;
+  return result as MeshSet<MR>;
 }
 
 export function gameMeshFromMesh(

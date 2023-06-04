@@ -18,11 +18,7 @@ import {
   mapMeshPositions,
   scaleMesh3,
 } from "./mesh.js";
-import {
-  registerMesh,
-  registerMeshGroup,
-  defineMeshSetResource,
-} from "./mesh-loader.js";
+import { registerMesh, defineMeshSetResource } from "./mesh-loader.js";
 import {
   CUBE_MESH,
   SHIP_OFFSET,
@@ -374,12 +370,14 @@ export const PirateMesh = registerMesh({
 //    is a lot of translate/scale alignment issues when we have
 //    a base model and a fractured model. Very hard to make changes.
 // TODO(@darzu): enemy broken parts doesn't seem to work rn. probably rename related
-export const BoatBrokenMesh = registerMeshGroup({
+export const BoatBrokenMesh = registerMesh({
   name: "boat_broken",
+  multi: true,
   data: "boat_broken.sprig.obj",
 });
-export const ShipBrokenMesh = registerMeshGroup({
+export const ShipBrokenMesh = registerMesh({
   name: "ship_broken",
+  multi: true,
   data: "barge1_broken.sprig.obj",
   modify: (m) => {
     m.lines = [];
@@ -388,8 +386,9 @@ export const ShipBrokenMesh = registerMeshGroup({
     return m;
   },
 });
-export const BallBrokenMesh = registerMeshGroup({
+export const BallBrokenMesh = registerMesh({
   name: "ball_broken",
+  multi: true,
   data: "ball_broken6.sprig.obj",
 });
 
@@ -517,6 +516,7 @@ export const AllMeshesDef = defineMeshSetResource(
   "allMeshes",
   ...allMeshesList
 );
+
 // const { allMeshes } = await EM.whenResources(AllMeshesDef);
 // const wip0: GameMesh = allMeshes.ball;
 // const wip1: GameMesh[] = allMeshes.boat_broken;
