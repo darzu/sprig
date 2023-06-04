@@ -1,6 +1,6 @@
 import { ColliderDef } from "./collider.js";
 import { EM } from "../ecs/entity-manager.js";
-import { AllMeshesDef, LocalMeshes } from "../meshes/meshes.js";
+import { AllMeshesDef } from "../meshes/mesh-list.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { InputsDef } from "../input/inputs.js";
 import { mathMap } from "../utils/math.js";
@@ -26,6 +26,7 @@ import {
 } from "./transform.js";
 import { vec3, V } from "../matrix/sprig-matrix.js";
 import { Phase } from "../ecs/sys-phase.js";
+import { CUBE_MESH } from "../meshes/primatives.js";
 
 // TODO(@darzu): re-enable all this! it requires line drawing again
 
@@ -146,7 +147,7 @@ export function setCubePosScaleToAABB(
 // TODO(@darzu): use instancing
 function meshFromAABB(aabb: AABB): RawMesh {
   // resize
-  const m = cloneMesh(LocalMeshes.cube());
+  const m = cloneMesh(CUBE_MESH);
   mapMeshPositions(m, (p) =>
     vec3.clone([
       mathMap(p[0], -1, 1, 0, aabb.max[0] - aabb.min[0]),

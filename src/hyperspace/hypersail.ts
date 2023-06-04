@@ -18,7 +18,7 @@ import {
   RendererDef,
 } from "../render/renderer-ecs.js";
 import { vec3Dbg } from "../utils/utils-3d.js";
-import { AllMeshesDef } from "../meshes/meshes.js";
+import { AllMeshesDef } from "../meshes/mesh-list.js";
 import { DarkStarPropsDef } from "./darkstar.js";
 import { HyperspaceGameState, HSGameStateDef } from "./hyperspace-gamestate.js";
 import { HsShipPropsDef } from "./hyperspace-ship.js";

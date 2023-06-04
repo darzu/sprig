@@ -1,7 +1,7 @@
 import { CameraView } from "../camera/camera.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { EM, Entity, EntityW } from "../ecs/entity-manager.js";
-import { AllMeshesDef } from "../meshes/meshes.js";
+import { AllMeshesDef, GizmoMesh } from "../meshes/mesh-list.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { mathMap } from "./math.js";
 import { getLineEnd, Line, Ray } from "../physics/broadphase.js";
@@ -186,11 +186,11 @@ export async function addGizmoChild(
   offset: vec3.InputT = [0, 0, 0]
 ): Promise<Entity> {
   // make debug gizmo
+  const gizmoMesh = await GizmoMesh.gameMesh();
   const gizmo = EM.new();
   EM.ensureComponentOn(gizmo, PositionDef, vec3.clone(offset));
   EM.ensureComponentOn(gizmo, ScaleDef, V(scale, scale, scale));
   EM.ensureComponentOn(gizmo, PhysicsParentDef, parent.id);
-  const { allMeshes } = await EM.whenResources(AllMeshesDef);
-  EM.ensureComponentOn(gizmo, RenderableConstructDef, allMeshes.gizmo.proto);
+  EM.ensureComponentOn(gizmo, RenderableConstructDef, gizmoMesh.proto);
   return gizmo;
 }

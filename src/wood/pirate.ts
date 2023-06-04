@@ -1,4 +1,4 @@
-import { BLACK, AllMeshesDef } from "../meshes/meshes.js";
+import { BLACK, AllMeshesDef } from "../meshes/mesh-list.js";
 import { AudioDef } from "../audio/audio.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";

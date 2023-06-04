@@ -21,7 +21,8 @@ import {
 } from "../render/renderer-ecs.js";
 import { tempVec3 } from "../matrix/temp-pool.js";
 import { farthestPointInDir } from "../utils/utils-3d.js";
-import { AllMeshesDef, GameMesh } from "../meshes/meshes.js";
+import { AllMeshesDef, GizmoMesh } from "../meshes/mesh-list.js";
+import { GameMesh } from "../meshes/mesh-loader.js";
 import { GlobalCursor3dDef } from "../gui/cursor.js";
 import { createGhost } from "../debug/ghost.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
@@ -130,14 +131,11 @@ export async function initGJKSandbox(hosting: boolean) {
   EM.ensureComponentOn(ground, PositionDef, V(0, -5, 0));
 
   // world gizmo
+  const gizmoMesh = await GizmoMesh.gameMesh();
   const worldGizmo = EM.new();
   EM.ensureComponentOn(worldGizmo, PositionDef, V(-10, -5, -10));
   EM.ensureComponentOn(worldGizmo, ScaleDef, V(10, 10, 10));
-  EM.ensureComponentOn(
-    worldGizmo,
-    RenderableConstructDef,
-    res.allMeshes.gizmo.proto
-  );
+  EM.ensureComponentOn(worldGizmo, RenderableConstructDef, gizmoMesh.proto);
 
   const b1 = EM.new();
   const m1 = cloneMesh(res.allMeshes.cube.mesh);

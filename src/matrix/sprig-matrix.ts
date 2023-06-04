@@ -112,6 +112,43 @@ export function resetTempMatrixBuffer() {
   }
 }
 
+export function isTmpVec(v: Float32Array): boolean {
+  return v.buffer === buffer;
+}
+
+// TODO(@darzu): generalize and put in util.ts?
+export function findAnyTmpVec(
+  obj: any,
+  maxDepth = 100,
+  path = ""
+): string | null {
+  if (maxDepth <= 0) {
+    return null;
+  } else if (!obj) {
+    return null;
+  } else if (obj instanceof Float32Array) {
+    return isTmpVec(obj) ? path : null;
+  } else if (obj instanceof Array) {
+    return obj.reduce(
+      (p: string | null, n, i) =>
+        p ? p : findAnyTmpVec(n, maxDepth - 1, `${path}[${i}]`),
+      null
+    );
+  } else if (obj instanceof Map) {
+    for (let [k, v] of obj.entries()) {
+      const found = findAnyTmpVec(v, maxDepth - 1, `${path}.get(${k})`);
+      if (found) return found;
+    }
+    return null;
+  }
+  // NOTE: primatives (string, bool, number) and functions all return empty list for Object.keys
+  return Object.keys(obj).reduce(
+    (p: string | null, n, i) =>
+      p ? p : findAnyTmpVec(obj[n], maxDepth - 1, `${path}.${n}`),
+    null
+  );
+}
+
 export module vec2 {
   export type T = vec2;
   export type InputT = T | readonly [number, number];

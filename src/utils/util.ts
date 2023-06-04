@@ -162,11 +162,11 @@ export function objMap<A extends {}, V1 extends A[keyof A], V2>(
 }
 export function toRecord<A, V, K extends string | number = string>(
   as: A[],
-  key: (a: A) => K,
-  val: (a: A) => V
+  key: (a: A, i: number) => K,
+  val: (a: A, i: number) => V
 ): Record<K, V> {
   const res: { [k: string]: V } = {};
-  as.forEach((a) => (res[key(a)] = val(a)));
+  as.forEach((a, i) => (res[key(a, i)] = val(a, i)));
   return res as Record<K, V>;
 }
 export function toMap<A, V, K extends string | number = string>(

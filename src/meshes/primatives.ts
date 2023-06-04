@@ -1,6 +1,6 @@
 // which triangles belong to which faces
 
-import { BLACK } from "./meshes.js";
+import { BLACK } from "./mesh-list.js";
 import { ENDESGA16, randEndesga16, seqEndesga16 } from "../color/palettes.js";
 import { AABB } from "../physics/aabb.js";
 import {

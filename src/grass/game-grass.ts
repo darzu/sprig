@@ -2,7 +2,8 @@ import { CameraDef, CameraFollowDef } from "../camera/camera.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { EM } from "../ecs/entity-manager.js";
-import { AllMeshesDef } from "../meshes/meshes.js";
+import { BallMesh, GizmoMesh, UnitCubeMesh } from "../meshes/mesh-list.js";
+import { XY } from "../meshes/mesh-loader.js";
 import { ControllableDef } from "../input/controllable.js";
 import { createGhost, GhostDef } from "../debug/ghost.js";
 import { LocalHsPlayerDef, HsPlayerDef } from "../hyperspace/hs-player.js";
@@ -83,6 +84,13 @@ PERF:
 
 const DBG_PLAYER = false;
 
+const grassGameMeshesDef = XY.defineMeshSetResource(
+  "gg_meshes",
+  UnitCubeMesh,
+  GizmoMesh,
+  BallMesh
+);
+
 // world map is centered around 0,0
 const WORLD_WIDTH = 1024; // width runs +z
 const WORLD_HEIGHT = 512; // height runs +x
@@ -128,7 +136,7 @@ export async function initGrassGame(hosting: boolean) {
   // outlineRender.fragOverrides!.lineWidth = 3.0;
 
   const res = await EM.whenResources(
-    AllMeshesDef,
+    grassGameMeshesDef,
     // WoodAssetsDef,
     // GlobalCursor3dDef,
     RendererDef,
@@ -181,7 +189,7 @@ export async function initGrassGame(hosting: boolean) {
   EM.ensureComponentOn(
     sunlight,
     RenderableConstructDef,
-    res.allMeshes.ball.proto
+    res.gg_meshes.ball.proto
   );
 
   // score
@@ -204,7 +212,7 @@ export async function initGrassGame(hosting: boolean) {
 
   // ground
   const ground = EM.new();
-  const groundMesh = cloneMesh(res.allMeshes.unitCube.mesh);
+  const groundMesh = cloneMesh((await UnitCubeMesh.gameMesh()).mesh);
   transformMesh(
     groundMesh,
     mat4.fromScaling(V(WORLD_HEIGHT, 1.0, WORLD_WIDTH))
@@ -331,7 +339,7 @@ export async function initGrassGame(hosting: boolean) {
     // g.cameraFollow.positionOffset = V(0, 0, 5);
     g.controllable.speed *= 2.0;
     g.controllable.sprintMul = 15;
-    const sphereMesh = cloneMesh(res.allMeshes.ball.mesh);
+    const sphereMesh = cloneMesh(res.gg_meshes.ball.mesh);
     const visible = false;
     EM.ensureComponentOn(g, RenderableConstructDef, sphereMesh, visible);
     EM.ensureComponentOn(g, ColorDef, V(0.1, 0.1, 0.1));
@@ -342,7 +350,7 @@ export async function initGrassGame(hosting: boolean) {
     EM.ensureComponentOn(g, ColliderDef, {
       shape: "AABB",
       solid: false,
-      aabb: res.allMeshes.ball.aabb,
+      aabb: res.gg_meshes.ball.aabb,
     });
 
     // tower close up:
@@ -698,6 +706,7 @@ export async function initGrassGame(hosting: boolean) {
   if (DBG_PLAYER) text.lowerText = "";
 
   // world gizmo
+  const gizmoMesh = await GizmoMesh.gameMesh();
   const worldGizmo = EM.new();
   EM.ensureComponentOn(
     worldGizmo,
@@ -705,11 +714,7 @@ export async function initGrassGame(hosting: boolean) {
     V(-WORLD_HEIGHT / 2, 0, -WORLD_WIDTH / 2)
   );
   EM.ensureComponentOn(worldGizmo, ScaleDef, V(100, 100, 100));
-  EM.ensureComponentOn(
-    worldGizmo,
-    RenderableConstructDef,
-    res.allMeshes.gizmo.proto
-  );
+  EM.ensureComponentOn(worldGizmo, RenderableConstructDef, gizmoMesh.proto);
 
   // debugging createGraph3D
   let data: vec3[][] = [];
@@ -723,7 +728,7 @@ export async function initGrassGame(hosting: boolean) {
 }
 
 async function createPlayer() {
-  const { allMeshes, me } = await EM.whenResources(AllMeshesDef, MeDef);
+  const { gg_meshes, me } = await EM.whenResources(grassGameMeshesDef, MeDef);
   const p = EM.new();
   EM.ensureComponentOn(p, ControllableDef);
   p.controllable.modes.canFall = false;
@@ -744,7 +749,7 @@ async function createPlayer() {
   p.cameraFollow.positionOffset = V(0, 0, 5);
   p.controllable.speed *= 0.5;
   p.controllable.sprintMul = 10;
-  const sphereMesh = cloneMesh(allMeshes.ball.mesh);
+  const sphereMesh = cloneMesh(gg_meshes.ball.mesh);
   const visible = true;
   EM.ensureComponentOn(p, RenderableConstructDef, sphereMesh, visible);
   EM.ensureComponentOn(p, ColorDef, V(0.1, 0.1, 0.1));
@@ -755,7 +760,7 @@ async function createPlayer() {
   EM.ensureComponentOn(p, ColliderDef, {
     shape: "AABB",
     solid: true,
-    aabb: allMeshes.ball.aabb,
+    aabb: gg_meshes.ball.aabb,
   });
 
   vec3.copy(p.position, [-28.11, 26.0, -28.39]);
