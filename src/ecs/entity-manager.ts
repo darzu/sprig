@@ -844,7 +844,11 @@ export class EntityManager {
       s.rs.forEach((r) => {
         const forced = this.tryForceResourceInit(r);
         if (DBG_INIT_CAUSATION && forced) {
-          console.log(`'${r.name}' force by system ${s.name}`);
+          console.log(
+            `${performance.now().toFixed(0)}ms: '${r.name}' force by system ${
+              s.name
+            }`
+          );
         }
       });
       return true;
@@ -955,7 +959,11 @@ export class EntityManager {
         const forced = this.tryForceResourceInit(r);
         if (DBG_INIT_CAUSATION && forced) {
           const line = this._dbgEntityPromiseCallsites.get(p.id)!;
-          console.log(`'${r.name}' force by promise #${p.id} from: ${line}`);
+          console.log(
+            `${performance.now().toFixed(0)}ms: '${r.name}' force by promise #${
+              p.id
+            } from: ${line}`
+          );
         }
       })
     );
@@ -1131,7 +1139,11 @@ export class EntityManager {
             const forced = this.tryForceResourceInit(r);
             if (DBG_INIT_CAUSATION && forced) {
               const line = this._dbgInitBlameLn.get(e.id)!;
-              console.log(`'${r.name}' force by init #${e.id} from: ${line}`);
+              console.log(
+                `${performance.now().toFixed(0)}ms: '${
+                  r.name
+                }' force by init #${e.id} from: ${line}`
+              );
             }
           }
           hasAll = false;

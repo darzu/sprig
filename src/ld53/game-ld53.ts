@@ -145,6 +145,15 @@ export const LD53MeshesDef = XY.defineMeshSetResource(
 );
 
 export async function initLD53(hosting: boolean) {
+  const res = await EM.whenResources(
+    LD53MeshesDef,
+    // WoodAssetsDef,
+    // GlobalCursor3dDef,
+    RendererDef,
+    CameraDef,
+    DevConsoleDef
+  );
+
   const dbgGrid = [
     //
     [mapJfa._inputMaskTex, mapJfa._uvMaskTex],
@@ -160,15 +169,6 @@ export async function initLD53(hosting: boolean) {
 
   // TODO(@darzu): HACK. these have to be set before the CY instantiator runs.
   outlineRender.fragOverrides!.lineWidth = 1.0;
-
-  const res = await EM.whenResources(
-    LD53MeshesDef,
-    // WoodAssetsDef,
-    // GlobalCursor3dDef,
-    RendererDef,
-    CameraDef,
-    DevConsoleDef
-  );
 
   res.camera.fov = Math.PI * 0.5;
   copyAABB(
