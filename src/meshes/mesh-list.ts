@@ -18,7 +18,7 @@ import {
   mapMeshPositions,
   scaleMesh3,
 } from "./mesh.js";
-import { registerMesh, defineMeshSetResource } from "./mesh-loader.js";
+import { XY } from "./mesh-loader.js";
 import {
   CUBE_MESH,
   SHIP_OFFSET,
@@ -45,13 +45,14 @@ export const LIGHT_GRAY = V(0.2, 0.2, 0.2);
 export const DARK_BLUE = V(0.03, 0.03, 0.2);
 export const LIGHT_BLUE = V(0.05, 0.05, 0.2);
 
-export const BallMesh = registerMesh({
+export const BallMesh = XY.registerMesh({
   name: "ball",
   data: "ball.sprig.obj",
+  // TODO(@darzu): BUG! This is storing a temp vec as the transform.
   transform: mat4.fromScaling([2, 2, 2]),
 });
 
-export const UnitCubeMesh = registerMesh({
+export const UnitCubeMesh = XY.registerMesh({
   name: "unitCube",
   data: () => {
     const unitCube = cloneMesh(CUBE_MESH);
@@ -66,12 +67,12 @@ export const UnitCubeMesh = registerMesh({
   },
 });
 
-export const GizmoMesh = registerMesh({
+export const GizmoMesh = XY.registerMesh({
   name: "gizmo",
   data: () => createGizmoMesh(),
 });
 
-export const ShipMesh = registerMesh({
+export const ShipMesh = XY.registerMesh({
   name: "ship",
   data: "barge.sprig.obj",
   modify: (m) => {
@@ -80,7 +81,7 @@ export const ShipMesh = registerMesh({
     return m;
   },
 });
-export const ShipSmallMesh = registerMesh({
+export const ShipSmallMesh = XY.registerMesh({
   name: "ship_small",
   data: "player_ship_small.sprig.obj",
   transform: mat4.fromRotationTranslationScaleOrigin(
@@ -92,7 +93,7 @@ export const ShipSmallMesh = registerMesh({
   ),
 });
 
-export const ShipFangsMesh = registerMesh({
+export const ShipFangsMesh = XY.registerMesh({
   name: "ship_fangs",
   data: "enemy_ship_fangs.sprig.obj",
   transform: mat4.fromScaling([3, 3, 3], mat4.create()),
@@ -126,15 +127,15 @@ export const ShipFangsMesh = registerMesh({
   },
 });
 
-export const PickMesh = registerMesh({
+export const PickMesh = XY.registerMesh({
   name: "pick",
   data: "pick.sprig.obj",
 });
-export const SpaceOreMesh = registerMesh({
+export const SpaceOreMesh = XY.registerMesh({
   name: "spaceore",
   data: "spaceore.sprig.obj",
 });
-export const SpaceRockMesh = registerMesh({
+export const SpaceRockMesh = XY.registerMesh({
   name: "spacerock",
   data: "spacerock.sprig.obj",
   transform: mat4.fromScaling([1.5, 1.5, 1.5], mat4.create()),
@@ -146,16 +147,16 @@ export const SpaceRockMesh = registerMesh({
     return m;
   },
 });
-export const AmmunitionBoxMesh = registerMesh({
+export const AmmunitionBoxMesh = XY.registerMesh({
   name: "ammunition_box",
   data: "ammunition_box.sprig.obj",
 });
-export const LinstockMesh = registerMesh({
+export const LinstockMesh = XY.registerMesh({
   name: "linstock",
   data: "linstock.sprig.obj",
   transform: mat4.fromScaling([0.1, 0.1, 0.1], mat4.create()),
 });
-export const CannonMesh = registerMesh({
+export const CannonMesh = XY.registerMesh({
   name: "cannon",
   data: "cannon_simple.sprig.obj",
   transform: mat4.fromYRotation(-Math.PI / 2, mat4.create()),
@@ -164,7 +165,7 @@ export const CannonMesh = registerMesh({
     return m;
   },
 });
-export const CannonLD51Mesh = registerMesh({
+export const CannonLD51Mesh = XY.registerMesh({
   name: "ld51_cannon",
   data: "ld51_cannon.sprig.obj",
   transform: mat4.fromRotationTranslationScale(
@@ -175,22 +176,22 @@ export const CannonLD51Mesh = registerMesh({
     mat4.create()
   ),
 });
-export const GrappleHookMesh = registerMesh({
+export const GrappleHookMesh = XY.registerMesh({
   name: "grappleHook",
   data: "grapple-hook.sprig.obj",
   transform: mat4.fromScaling([0.5, 0.5, 0.5], mat4.create()),
 });
-export const GrappleGunMesh = registerMesh({
+export const GrappleGunMesh = XY.registerMesh({
   name: "grappleGun",
   data: "grapple-gun.sprig.obj",
   transform: mat4.fromScaling([0.5, 0.5, 0.5], mat4.create()),
 });
-export const GrappleGunUnloadedMesh = registerMesh({
+export const GrappleGunUnloadedMesh = XY.registerMesh({
   name: "grappleGunUnloaded",
   data: "grapple-gun-unloaded.sprig.obj",
   transform: mat4.fromScaling([0.5, 0.5, 0.5], mat4.create()),
 });
-export const RudderMesh = registerMesh({
+export const RudderMesh = XY.registerMesh({
   name: "rudder",
   data: "rudder.sprig.obj",
   transform: mat4.translate(
@@ -200,7 +201,7 @@ export const RudderMesh = registerMesh({
   ),
 });
 
-export const OceanMesh = registerMesh({
+export const OceanMesh = XY.registerMesh({
   name: "ocean",
   data: "hyperspace-ocean.sprig.obj",
   transform: mat4.fromScaling([2, 2, 2], mat4.create()),
@@ -359,7 +360,7 @@ export const OceanMesh = registerMesh({
     return m;
   },
 });
-export const PirateMesh = registerMesh({
+export const PirateMesh = XY.registerMesh({
   name: "pirate",
   data: "pirate.glb",
 });
@@ -370,12 +371,12 @@ export const PirateMesh = registerMesh({
 //    is a lot of translate/scale alignment issues when we have
 //    a base model and a fractured model. Very hard to make changes.
 // TODO(@darzu): enemy broken parts doesn't seem to work rn. probably rename related
-export const BoatBrokenMesh = registerMesh({
+export const BoatBrokenMesh = XY.registerMesh({
   name: "boat_broken",
   multi: true,
   data: "boat_broken.sprig.obj",
 });
-export const ShipBrokenMesh = registerMesh({
+export const ShipBrokenMesh = XY.registerMesh({
   name: "ship_broken",
   multi: true,
   data: "barge1_broken.sprig.obj",
@@ -386,59 +387,62 @@ export const ShipBrokenMesh = registerMesh({
     return m;
   },
 });
-export const BallBrokenMesh = registerMesh({
+export const BallBrokenMesh = XY.registerMesh({
   name: "ball_broken",
   multi: true,
   data: "ball_broken6.sprig.obj",
 });
 
-export const CubeMesh = registerMesh({
+export const CubeMesh = XY.registerMesh({
   name: "cube",
   data: () => CUBE_MESH,
 });
 
-export const PlaneMesh = registerMesh({
+export const PlaneMesh = XY.registerMesh({
   name: "plane",
   data: () => makePlaneMesh(-10, 10, -10, 10),
 });
-export const TetraMesh = registerMesh({
+export const TetraMesh = XY.registerMesh({
   name: "tetra",
   data: () => TETRA_MESH,
 });
-export const HeOctoMesh = registerMesh({
+export const HeOctoMesh = XY.registerMesh({
   name: "he_octo",
   data: mkOctogonMesh,
 });
-export const HeQuadMesh = registerMesh({
+export const HeQuadMesh = XY.registerMesh({
   name: "he_quad",
   data: mkHalfEdgeQuadMesh,
 });
-export const HexMesh = registerMesh({ name: "hex", data: HEX_MESH });
-export const EnemyShipMesh = registerMesh({
+export const HexMesh = XY.registerMesh({ name: "hex", data: HEX_MESH });
+export const EnemyShipMesh = XY.registerMesh({
   name: "enemyShip",
   data: () => BOAT_MESH,
 });
-export const BulletMesh = registerMesh({
+export const BulletMesh = XY.registerMesh({
   name: "bullet",
   data: () => BULLET_MESH,
 });
-export const GridPlaneMesh = registerMesh({
+export const GridPlaneMesh = XY.registerMesh({
   name: "gridPlane",
   data: () => GRID_PLANE_MESH,
 });
-export const FabricMesh = registerMesh({
+export const FabricMesh = XY.registerMesh({
   name: "fabric",
   data: () => DBG_FABRIC,
 });
-export const TriFenceMesh = registerMesh({ name: "triFence", data: TRI_FENCE });
+export const TriFenceMesh = XY.registerMesh({
+  name: "triFence",
+  data: TRI_FENCE,
+});
 
 // TODO(@darzu): wire cube is kinda broken; needs line renderer
-export const WireCubeMesh = registerMesh({
+export const WireCubeMesh = XY.registerMesh({
   name: "wireCube",
   data: () =>
     ({ ...CUBE_MESH, tri: [], colors: [], dbgName: "wireCube" } as RawMesh),
 });
-export const MastMesh = registerMesh({
+export const MastMesh = XY.registerMesh({
   name: "mast",
   data: () => {
     let m = cloneMesh(CUBE_MESH);
@@ -448,7 +452,7 @@ export const MastMesh = registerMesh({
     return m;
   },
 });
-export const LD53CannonMesh = registerMesh({
+export const LD53CannonMesh = XY.registerMesh({
   name: "ld53_cannon",
   data: () => {
     let m = cloneMesh(CUBE_MESH);
@@ -457,13 +461,13 @@ export const LD53CannonMesh = registerMesh({
     return m;
   },
 });
-export const SailMesh = registerMesh({ name: "sail", data: makeSailMesh });
+export const SailMesh = XY.registerMesh({ name: "sail", data: makeSailMesh });
 // timber_rib: mkTimberRib,
-export const TimberSplinterMesh = registerMesh({
+export const TimberSplinterMesh = XY.registerMesh({
   name: "timber_splinter",
   data: mkTimberSplinterEnd,
 });
-export const RudderPrimMesh = registerMesh({
+export const RudderPrimMesh = XY.registerMesh({
   name: "rudderPrim",
   data: () => createRudderMesh(),
 });
@@ -512,7 +516,7 @@ const allMeshesList = [
   RudderPrimMesh,
 ] as const;
 
-export const AllMeshesDef = defineMeshSetResource(
+export const AllMeshesDef = XY.defineMeshSetResource(
   "allMeshes",
   ...allMeshesList
 );

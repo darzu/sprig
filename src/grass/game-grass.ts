@@ -3,7 +3,7 @@ import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { EM } from "../ecs/entity-manager.js";
 import { BallMesh, GizmoMesh, UnitCubeMesh } from "../meshes/mesh-list.js";
-import { defineMeshSetResource } from "../meshes/mesh-loader.js";
+import { XY } from "../meshes/mesh-loader.js";
 import { ControllableDef } from "../input/controllable.js";
 import { createGhost, GhostDef } from "../debug/ghost.js";
 import { LocalHsPlayerDef, HsPlayerDef } from "../hyperspace/hs-player.js";
@@ -84,7 +84,7 @@ PERF:
 
 const DBG_PLAYER = false;
 
-const grassGameMeshesDef = defineMeshSetResource(
+const grassGameMeshesDef = XY.defineMeshSetResource(
   "gg_meshes",
   UnitCubeMesh,
   GizmoMesh,

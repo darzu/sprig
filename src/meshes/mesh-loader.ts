@@ -80,21 +80,6 @@ export type MeshSetDef<
   MR extends (MeshReg | MeshGroupReg)[]
 > = ComponentDef<N, MeshSet<MR>, [MeshSet<MR>]>;
 
-export function defineMeshSetResource<
-  N extends string,
-  MR extends (MeshReg | MeshGroupReg)[]
->(name: N, ...meshes: MR): MeshSetDef<N, MR> {
-  const def = EM.defineComponent(name, (mr: MeshSet<MR>) => mr);
-
-  EM.addLazyInit([RendererDef], [def], async ({ renderer }) => {
-    console.log(`lazy init mesh set: ${def.name}`);
-    const gameMeshes = await loadMeshSet(meshes, renderer.renderer);
-    EM.addResource(def, gameMeshes);
-  });
-
-  return def;
-}
-
 // TODO(@darzu): PERF. "ocean" and "ship_fangs" are expensive to load and aren't needed in all games.
 
 // TODO(@darzu): these sort of hacky offsets are a pain to deal with. It'd be
@@ -119,54 +104,102 @@ export type GameMesh = {
   mkAabbCollider: (solid: boolean) => AABBCollider;
 };
 
-export function registerMesh<N extends string, B extends true>(
-  desc: MeshDesc<N, B>
-): MeshGroupReg<N>;
-export function registerMesh<N extends string, B extends false>(
-  desc: MeshDesc<N, B>
-): MeshReg<N>;
-export function registerMesh<N extends string, B extends boolean>(
-  desc: MeshDesc<N, B>
-): MeshGroupReg<N> | MeshReg<N> {
-  if (isMultiMeshDesc(desc)) {
-    let reg: MeshGroupReg<N> = {
-      desc,
-      gameMeshes: () => cachedLoadMeshDesc(desc) as Promise<GameMesh[]>,
-      gameMeshesNow: () =>
-        loadedMeshes.get(desc.name) as GameMesh[] | undefined,
-    };
-    return reg;
-  } else {
-    let reg: MeshReg<N> = {
-      desc,
-      gameMesh: () => cachedLoadMeshDesc(desc) as Promise<GameMesh>,
-      gameMeshNow: () => loadedMeshes.get(desc.name) as GameMesh | undefined,
-    };
-    return reg;
+// Xylem is our art asset management system
+// "Xylem moves water and mineral ions in the plant" - wikipedia
+// TODO(@darzu): Generalize for other asset types (sound, shaders?, )
+export type XyRegistry = ReturnType<typeof createXylemRegistry>;
+export const XY: XyRegistry = createXylemRegistry();
+(globalThis as any).XY = XY; // for debugging only
+function createXylemRegistry() {
+  const loadedMeshes = new Map<string, GameMesh | GameMesh[]>();
+  const loadingMeshes = new Map<string, Promise<GameMesh | GameMesh[]>>();
+
+  async function cachedLoadMeshDesc(
+    desc: MeshDesc,
+    renderer?: Renderer
+  ): Promise<GameMesh | GameMesh[]> {
+    let result = loadingMeshes.get(desc.name);
+    if (result) return result;
+    result = new Promise(async (resolve) => {
+      if (!renderer) {
+        // TODO(@darzu): track these? Better to load stuff through mesh sets?
+        renderer = (await EM.whenResources(RendererDef)).renderer.renderer;
+      }
+      const done = await internalLoadMeshDesc(desc, renderer);
+      loadedMeshes.set(desc.name, done);
+      resolve(done);
+    });
+    loadingMeshes.set(desc.name, result);
+    return result;
   }
+
+  function registerMesh<N extends string, B extends true>(
+    desc: MeshDesc<N, B>
+  ): MeshGroupReg<N>;
+  function registerMesh<N extends string, B extends false>(
+    desc: MeshDesc<N, B>
+  ): MeshReg<N>;
+  function registerMesh<N extends string, B extends boolean>(
+    desc: MeshDesc<N, B>
+  ): MeshGroupReg<N> | MeshReg<N> {
+    if (isMultiMeshDesc(desc)) {
+      let reg: MeshGroupReg<N> = {
+        desc,
+        gameMeshes: () => cachedLoadMeshDesc(desc) as Promise<GameMesh[]>,
+        gameMeshesNow: () =>
+          loadedMeshes.get(desc.name) as GameMesh[] | undefined,
+      };
+      return reg;
+    } else {
+      let reg: MeshReg<N> = {
+        desc,
+        gameMesh: () => cachedLoadMeshDesc(desc) as Promise<GameMesh>,
+        gameMeshNow: () => loadedMeshes.get(desc.name) as GameMesh | undefined,
+      };
+      return reg;
+    }
+  }
+
+  async function loadMeshSet<MR extends (MeshReg | MeshGroupReg)[]>(
+    meshes: MR,
+    renderer: Renderer
+  ): Promise<MeshSet<MR>> {
+    let promises = meshes.map((m) => {
+      return cachedLoadMeshDesc(m.desc, renderer);
+    });
+
+    const done = await Promise.all(promises);
+
+    const result = toRecord(
+      meshes,
+      (m) => m.desc.name,
+      (_, i) => done[i]
+    );
+
+    return result as MeshSet<MR>;
+  }
+
+  function defineMeshSetResource<
+    N extends string,
+    MR extends (MeshReg | MeshGroupReg)[]
+  >(name: N, ...meshes: MR): MeshSetDef<N, MR> {
+    const def = EM.defineComponent(name, (mr: MeshSet<MR>) => mr);
+
+    EM.addLazyInit([RendererDef], [def], async ({ renderer }) => {
+      console.log(`lazy init mesh set: ${def.name}`);
+      const gameMeshes = await loadMeshSet(meshes, renderer.renderer);
+      EM.addResource(def, gameMeshes);
+    });
+
+    return def;
+  }
+
+  return {
+    registerMesh,
+    defineMeshSetResource,
+  };
 }
 
-// TODO(@darzu): move into a resource or singleton registry like CY and EM
-let loadedMeshes = new Map<string, GameMesh | GameMesh[]>();
-let loadingMeshes = new Map<string, Promise<GameMesh | GameMesh[]>>();
-async function cachedLoadMeshDesc(
-  desc: MeshDesc,
-  renderer?: Renderer
-): Promise<GameMesh | GameMesh[]> {
-  let result = loadingMeshes.get(desc.name);
-  if (result) return result;
-  result = new Promise(async (resolve) => {
-    if (!renderer) {
-      // TODO(@darzu): track these? Better to load stuff through mesh sets?
-      renderer = (await EM.whenResources(RendererDef)).renderer.renderer;
-    }
-    const done = await internalLoadMeshDesc(desc, renderer);
-    loadedMeshes.set(desc.name, done);
-    resolve(done);
-  });
-  loadingMeshes.set(desc.name, result);
-  return result;
-}
 async function internalLoadMeshDesc(
   desc: MeshDesc,
   renderer: Renderer
@@ -262,25 +295,6 @@ async function loadMeshSetInternal(relPath: string): Promise<RawMesh[]> {
   );
 
   return opt;
-}
-
-async function loadMeshSet<MR extends (MeshReg | MeshGroupReg)[]>(
-  meshes: MR,
-  renderer: Renderer
-): Promise<MeshSet<MR>> {
-  let promises = meshes.map((m) => {
-    return cachedLoadMeshDesc(m.desc, renderer);
-  });
-
-  const done = await Promise.all(promises);
-
-  const result = toRecord(
-    meshes,
-    (m) => m.desc.name,
-    (_, i) => done[i]
-  );
-
-  return result as MeshSet<MR>;
 }
 
 export function gameMeshFromMesh(

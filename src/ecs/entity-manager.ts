@@ -212,7 +212,7 @@ export class EntityManager {
       construct,
       id,
       isOn: <E extends Entity>(e: E): e is E & { [K in N]: P } =>
-        // (e as Object).hasOwnProperty(name),
+        // (e as Object).hasOwn(name),
         name in e,
     };
     this.components.set(id, component);

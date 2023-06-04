@@ -266,9 +266,9 @@ export type PtrType = PtrKindToPtrType[PtrKind];
 
 type Omit_kind_name<T> = Omit<Omit<T, "kind">, "name">;
 
-export type CyRegistry = ReturnType<typeof createCyRegistry>;
-
-export const CY: CyRegistry = createCyRegistry();
+export type CyRegistry = ReturnType<typeof createCytochromeRegistry>;
+export const CY: CyRegistry = createCytochromeRegistry();
+(globalThis as any).CY = CY; // for debugging only
 
 // TODO(@darzu): kinda hacky?
 CY.kindToPtrs.sampler.push(linearSamplerPtr);
@@ -291,7 +291,9 @@ function emptyCyKindToPtrSet(): CyKindToPtrSet {
   };
 }
 
-export function createCyRegistry() {
+// GPU resource manager named "Cytochrome"
+//    Cytochrome in plants contribute to their color
+export function createCytochromeRegistry() {
   let nameToPtr: { [name: string]: CyResourcePtr } = {};
 
   // TODO(@darzu): impl multi-flight registry & instantiation; see createCyResources comments
