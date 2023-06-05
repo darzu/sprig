@@ -27,10 +27,10 @@ export const DBG_FANG_SHIP = false;
 export const DBG_CHECK_FOR_TMPS_IN_XY = false;
 
 // ECS
-export const DBG_INIT_SEQ_VERBOSE = false;
 export const DBG_INIT_CAUSATION = true;
-export const DBG_ENTITY_PROMISE_CALLSITES = false;
-export const DBG_INIT_CALLSITES = false;
+export const DBG_VERBOSE_INIT_SEQ = false;
+export const DBG_VERBOSE_ENTITY_PROMISE_CALLSITES = false;
+export const DBG_VERBOSE_INIT_CALLSITES = false;
 export const WARN_DEAD_CLEANUP = false;
 export const DBG_SYSTEM_ORDER = false;
 

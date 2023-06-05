@@ -1,9 +1,9 @@
 import {
   DBG_ASSERT,
-  DBG_ENTITY_PROMISE_CALLSITES,
-  DBG_INIT_CALLSITES,
+  DBG_VERBOSE_ENTITY_PROMISE_CALLSITES,
+  DBG_VERBOSE_INIT_CALLSITES,
   DBG_INIT_CAUSATION,
-  DBG_INIT_SEQ_VERBOSE,
+  DBG_VERBOSE_INIT_SEQ,
   DBG_SYSTEM_ORDER,
 } from "../flags.js";
 import { Serializer, Deserializer } from "../utils/serialize.js";
@@ -1073,7 +1073,7 @@ export class EntityManager {
 
     const promiseId = this._nextEntityPromiseId++;
 
-    if (DBG_ENTITY_PROMISE_CALLSITES || DBG_INIT_CAUSATION) {
+    if (DBG_VERBOSE_ENTITY_PROMISE_CALLSITES || DBG_INIT_CAUSATION) {
       // if (dbgOnce("getCallStack")) console.dir(getCallStack());
       let line = getCallStack().find(
         (s) =>
@@ -1081,7 +1081,7 @@ export class EntityManager {
           !s.includes("em-helpers")
       )!;
 
-      if (DBG_ENTITY_PROMISE_CALLSITES)
+      if (DBG_VERBOSE_ENTITY_PROMISE_CALLSITES)
         console.log(
           `promise #${promiseId}: ${componentsToString(cs)} from: ${line}`
         );
@@ -1114,6 +1114,8 @@ export class EntityManager {
   pendingEagerInits: InitFnReg[] = [];
   startedInits = new Map<InitFnId, Promise<void> | void>();
   allInits = new Map<InitFnId, InitFnReg>();
+
+  // TODO(@darzu): how can i tell if the event loop is running dry?
 
   private progressInitFns() {
     this.pendingEagerInits.forEach((e, i) => {
@@ -1163,7 +1165,7 @@ export class EntityManager {
   }
   _dbgInitBlameLn = new Map<InitFnId, string>();
   private addInit(reg: InitFnReg) {
-    if (DBG_INIT_CALLSITES || DBG_INIT_CAUSATION) {
+    if (DBG_VERBOSE_INIT_CALLSITES || DBG_INIT_CAUSATION) {
       // if (dbgOnce("getCallStack")) console.dir(getCallStack());
       let line = getCallStack().find(
         (s) =>
@@ -1176,7 +1178,7 @@ export class EntityManager {
       // if (hostIdx >= 0)
       //   line = line.slice(hostIdx + window.location.host.length);
 
-      if (DBG_INIT_CALLSITES)
+      if (DBG_VERBOSE_INIT_CALLSITES)
         console.log(`init ${initFnToString(reg)} from: ${line}`);
       this._dbgInitBlameLn.set(reg.id, line);
     }
@@ -1200,7 +1202,7 @@ export class EntityManager {
         this.pendingLazyInitsByProvides.set(p.id, reg);
       }
 
-      if (DBG_INIT_SEQ_VERBOSE) console.log(`new lazy: ${initFnToString(reg)}`);
+      if (DBG_VERBOSE_INIT_SEQ) console.log(`new lazy: ${initFnToString(reg)}`);
     }
   }
   private tryForceResourceInit(r: ComponentDef): boolean {
@@ -1212,7 +1214,7 @@ export class EntityManager {
     // add to eager
     this.pendingEagerInits.push(lazy);
 
-    if (DBG_INIT_SEQ_VERBOSE)
+    if (DBG_VERBOSE_INIT_SEQ)
       console.log(`lazy => eager: ${initFnToString(lazy)}`);
 
     return true; // was forced
@@ -1246,7 +1248,7 @@ export class EntityManager {
     const promise = init.fn(this.ent0);
     this.startedInits.set(init.id, promise);
 
-    if (DBG_INIT_SEQ_VERBOSE)
+    if (DBG_VERBOSE_INIT_SEQ)
       console.log(`eager => started: ${initFnToString(init)}`);
 
     if (isPromise(promise)) await promise;
@@ -1274,7 +1276,7 @@ export class EntityManager {
       else this._lastInitTimestamp = -1;
     }
 
-    if (DBG_INIT_SEQ_VERBOSE) console.log(`finished: ${initFnToString(init)}`);
+    if (DBG_VERBOSE_INIT_SEQ) console.log(`finished: ${initFnToString(init)}`);
   }
 
   public update() {
