@@ -5,7 +5,11 @@ import {
   GrappleGunMesh,
   HexMesh,
 } from "../meshes/mesh-list.js";
-import { CameraDef, CameraComputedDef } from "../camera/camera.js";
+import {
+  CameraDef,
+  CameraComputedDef,
+  CameraFollowDef,
+} from "../camera/camera.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { AllEndesga16, ENDESGA16 } from "../color/palettes.js";
 import { DevConsoleDef } from "../debug/console.js";
@@ -13,19 +17,29 @@ import { EM, EntityW } from "../ecs/entity-manager.js";
 import { createGizmoMesh } from "../debug/gizmos.js";
 import { jitter } from "../utils/math.js";
 import { AngularVelocityDef, LinearVelocityDef } from "../motion/velocity.js";
-import { PositionDef, ScaleDef } from "../physics/transform.js";
+import {
+  PhysicsParentDef,
+  PositionDef,
+  RotationDef,
+  ScaleDef,
+} from "../physics/transform.js";
 import { mat4, quat, V, vec3 } from "../matrix/sprig-matrix.js";
 import { createGhost } from "../debug/ghost.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { XY } from "../meshes/mesh-loader.js";
 import { RenderableConstructDef, RendererDef } from "../render/renderer-ecs.js";
-import { mapMeshPositions } from "../meshes/mesh.js";
+import { cloneMesh, mapMeshPositions } from "../meshes/mesh.js";
 import { PointLightDef } from "../render/lights.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
 import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
 import { shadowPipelines } from "../render/pipelines/std-shadow.js";
+import { LocalHsPlayerDef, HsPlayerDef } from "../hyperspace/hs-player";
+import { ControllableDef } from "../input/controllable.js";
+import { ColliderDef } from "../physics/collider.js";
+import { WorldFrameDef } from "../physics/nonintersection.js";
+import { MeDef, AuthorityDef } from "./components.js";
 
 const mpMeshes = XY.defineMeshSetResource(
   "mp_meshes",
@@ -69,7 +83,12 @@ export async function initMPGame() {
   // EM.ensureComponentOn(sun, PositionDef, V(-10, 10, 10));
   EM.ensureComponentOn(sun, PositionDef, V(100, 100, 100));
   EM.ensureComponentOn(sun, LinearVelocityDef, V(0.001, 0.001, 0.0));
-  EM.ensureComponentOn(sun, RenderableConstructDef, mp_meshes.cube.proto);
+  EM.ensureComponentOn(
+    sun,
+    RenderableConstructDef,
+    mp_meshes.ball.proto,
+    false
+  );
   sun.pointLight.constant = 1.0;
   sun.pointLight.linear = 0.0;
   sun.pointLight.quadratic = 0.0;
@@ -83,6 +102,11 @@ export async function initMPGame() {
   EM.ensureComponentOn(ground, ColorDef, ENDESGA16.blue);
   EM.ensureComponentOn(ground, PositionDef, V(0, -10, 0));
   EM.ensureComponentOn(ground, ScaleDef, V(10, 10, 10));
+  EM.ensureComponentOn(ground, ColliderDef, {
+    shape: "AABB",
+    solid: true,
+    aabb: mp_meshes.hex.aabb,
+  });
 
   // gizmo
   const gizmoMesh = createGizmoMesh();
@@ -90,16 +114,40 @@ export async function initMPGame() {
   EM.ensureComponentOn(gizmo, RenderableConstructDef, gizmoMesh);
   EM.ensureComponentOn(gizmo, PositionDef, V(0, 1, 0));
 
-  // avatar
-  const g = createGhost();
-  g.position[1] = 5;
-  EM.ensureComponentOn(g, RenderableConstructDef, mp_meshes.ball.proto);
-  // vec3.copy(g.position, [2.44, 6.81, 0.96]);
-  // quat.copy(g.rotation, [0.0, 0.61, 0.0, 0.79]);
-  // g.cameraFollow.pitchOffset = -0.553;
-  vec3.copy(g.position, [-0.5, 10.7, 15.56]);
-  quat.copy(g.rotation, [0.0, -0.09, 0.0, 0.99]);
-  // vec3.copy(g.cameraFollow.positionOffset, [0.00,0.00,0.00]);
-  // g.cameraFollow.yawOffset = 0.0;
-  g.cameraFollow.pitchOffset = -0.32;
+  // player
+  createPlayer();
+}
+
+async function createPlayer() {
+  const { mesh_cube, me } = await EM.whenResources(CubeMesh.def, MeDef);
+
+  const p = EM.new();
+  EM.ensureComponentOn(p, ControllableDef);
+  p.controllable.modes.canFall = true;
+  p.controllable.modes.canJump = false;
+  p.controllable.modes.canFly = false;
+  EM.ensureComponentOn(p, CameraFollowDef, 1);
+  EM.ensureComponentOn(p, PositionDef, V(0, 2, 0));
+  EM.ensureComponentOn(p, RotationDef);
+  EM.ensureComponentOn(p, LinearVelocityDef);
+
+  quat.setAxisAngle([0.0, -1.0, 0.0], 1.62, p.rotation);
+  p.controllable.speed *= 2;
+  p.controllable.sprintMul = 1;
+
+  EM.ensureComponentOn(p, RenderableConstructDef, mesh_cube.proto, true);
+  EM.ensureComponentOn(p, ColorDef, V(0.1, 0.1, 0.1));
+  EM.ensureComponentOn(p, ColliderDef, {
+    shape: "AABB",
+    solid: true,
+    aabb: mesh_cube.aabb,
+  });
+
+  vec3.copy(p.cameraFollow.positionOffset, [0.0, 4.0, 10.0]);
+  p.cameraFollow.yawOffset = 0.0;
+  p.cameraFollow.pitchOffset = -0.593;
+
+  EM.ensureComponentOn(p, AuthorityDef, me.pid);
+
+  return p;
 }
