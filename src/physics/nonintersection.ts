@@ -439,6 +439,7 @@ export function registerPhysicsContactSystems() {
       const nextObjMovFracs: { [id: number]: number } = {};
 
       // our loop condition
+      // TODO(@darzu): I'd be great to have some sort of dbg flag that let us know when objects were moved during game init
       let anyMovement = true;
       let itr = 0;
 
