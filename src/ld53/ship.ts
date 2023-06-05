@@ -1,7 +1,11 @@
 import { ColorDef } from "../color/color-ecs.js";
 import { createRef } from "../ecs/em-helpers.js";
 import { EM, EntityW } from "../ecs/entity-manager.js";
-import { AllMeshesDef } from "../meshes/mesh-list.js";
+import {
+  AllMeshesDef,
+  CannonLD51Mesh,
+  RudderPrimMesh,
+} from "../meshes/mesh-list.js";
 import { vec3, quat } from "../matrix/sprig-matrix.js";
 import { LinearVelocityDef } from "../motion/velocity.js";
 import {
@@ -80,9 +84,8 @@ const RUDDER_ROTATION_RATE = 0.01;
 export const cannonDefaultPitch = Math.PI * +0.05;
 
 export async function createShip() {
-  const res = await EM.whenResources(AllMeshesDef, MeDef);
+  const res = await EM.whenResources(CannonLD51Mesh.def, MeDef);
   const ent = EM.new();
-  EM.ensureComponentOn(ent, ShipDef);
 
   const homeShip = createHomeShip();
 
@@ -137,8 +140,6 @@ export async function createShip() {
   sock.position[1] =
     mast.position[1] + (mast.collider as AABBCollider).aabb.max[1];
 
-  ent.ld52ship.mast = createRef(mast);
-
   const rudder = await createRudder();
   EM.ensureComponentOn(rudder, PhysicsParentDef, ent.id);
   // console.log("setting position");
@@ -146,8 +147,6 @@ export async function createShip() {
   // console.log(`rudder: ${rudder.id}`);
 
   // addGizmoChild(rudder, 2, [0, 5, 0]);
-
-  ent.ld52ship.rudder = createRef(rudder);
 
   // make debug gizmo
   // TODO(@darzu): would be nice to have as a little helper function?
@@ -170,7 +169,6 @@ export async function createShip() {
     ent.id
   );
   vec3.copy(cannonR.color, ENDESGA16.darkGray);
-  ent.ld52ship.cannonR = createRef(cannonR);
   const cannonL = createCannonNow(
     res,
     V(8, 4.7, -7),
@@ -179,6 +177,12 @@ export async function createShip() {
     ent.id
   );
   vec3.copy(cannonL.color, ENDESGA16.darkGray);
+
+  // NOTE: we need to build the ship all at once so we don't have dangling references
+  EM.ensureComponentOn(ent, ShipDef);
+  ent.ld52ship.mast = createRef(mast);
+  ent.ld52ship.rudder = createRef(rudder);
+  ent.ld52ship.cannonR = createRef(cannonR);
   ent.ld52ship.cannonL = createRef(cannonL);
 
   return ent;
@@ -234,14 +238,11 @@ EM.addSystem(
 export const RudderDef = EM.defineComponent("rudder", () => true);
 
 async function createRudder() {
-  const res = await EM.whenResources(AllMeshesDef, MeDef);
+  const res = await EM.whenResources(MeDef);
+  const rudderMesh = await RudderPrimMesh.gameMesh();
   const ent = EM.new();
   EM.ensureComponentOn(ent, RudderDef);
-  EM.ensureComponentOn(
-    ent,
-    RenderableConstructDef,
-    res.allMeshes.rudderPrim.proto
-  );
+  EM.ensureComponentOn(ent, RenderableConstructDef, rudderMesh.proto);
   // EM.ensureComponentOn(ent, ColorDef, V(0.2, 0.1, 0.05));
   EM.ensureComponentOn(ent, ColorDef, ENDESGA16.midBrown);
   EM.ensureComponentOn(ent, PositionDef);

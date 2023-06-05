@@ -1,4 +1,4 @@
-import { AllMeshesDef } from "../meshes/mesh-list.js";
+import { CubeMesh, LD53CannonMesh } from "../meshes/mesh-list.js";
 import { AudioDef } from "../audio/audio.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
@@ -47,6 +47,7 @@ import { assert } from "../utils/util.js";
 import { vec3Dbg } from "../utils/utils-3d.js";
 import { SoundSetDef } from "../audio/sound-loader.js";
 import { Phase } from "../ecs/sys-phase.js";
+import { XY } from "../meshes/mesh-loader.js";
 
 const GRAVITY = 6.0 * 0.00001;
 const MIN_BRICK_PERCENT = 0.6;
@@ -322,19 +323,25 @@ export function calculateNAndBrickWidth(
 
 const baseColor = ENDESGA16.lightGray;
 
+const TowerMeshes = XY.defineMeshSetResource(
+  "towerMeshes",
+  LD53CannonMesh,
+  CubeMesh
+);
+
 export const towerPool = createEntityPool<
   [typeof StoneTowerDef, typeof PositionDef, typeof RotationDef]
 >({
   max: maxStoneTowers,
   maxBehavior: "crash",
   create: async () => {
-    const res = await EM.whenResources(AllMeshesDef);
+    const res = await EM.whenResources(TowerMeshes);
     const tower = EM.new();
     const cannon = EM.new();
     EM.ensureComponentOn(
       cannon,
       RenderableConstructDef,
-      res.allMeshes.ld53_cannon.proto
+      res.towerMeshes.ld53_cannon.proto
     );
     EM.ensureComponentOn(cannon, PositionDef);
     EM.ensureComponentOn(cannon, ColorDef, V(0.05, 0.05, 0.05));
@@ -550,7 +557,7 @@ export const flyingBrickPool = createEntityPool<
   max: maxFlyingBricks,
   maxBehavior: "rand-despawn",
   create: async () => {
-    const res = await EM.whenResources(AllMeshesDef);
+    const res = await EM.whenResources(TowerMeshes);
     const brick = EM.new();
     EM.ensureComponentOn(brick, FlyingBrickDef);
     EM.ensureComponentOn(brick, PositionDef);
@@ -562,7 +569,7 @@ export const flyingBrickPool = createEntityPool<
     EM.ensureComponentOn(
       brick,
       RenderableConstructDef,
-      res.allMeshes.cube.proto
+      res.towerMeshes.cube.proto
     );
     EM.ensureComponentOn(brick, GravityDef, V(0, -GRAVITY, 0));
     EM.ensureComponentOn(

@@ -1,8 +1,17 @@
-import { DBG_ASSERT, DBG_INIT, DBG_SYSTEM_ORDER } from "../flags.js";
+import {
+  DBG_ASSERT,
+  DBG_VERBOSE_ENTITY_PROMISE_CALLSITES,
+  DBG_VERBOSE_INIT_CALLSITES,
+  DBG_INIT_CAUSATION,
+  DBG_VERBOSE_INIT_SEQ,
+  DBG_SYSTEM_ORDER,
+} from "../flags.js";
 import { Serializer, Deserializer } from "../utils/serialize.js";
 import {
   assert,
   assertDbg,
+  dbgOnce,
+  getCallStack,
   hashCode,
   Intersect,
   isPromise,
@@ -93,9 +102,9 @@ export interface InitFnReg<RS extends ComponentDef[] = ComponentDef[]> {
 }
 
 export function initFnToString(init: InitFnReg) {
-  return `${componentsToString(init.requireRs)} -> ${componentsToString(
-    init.provideRs
-  )}`;
+  return `#${init.id}:${componentsToString(
+    init.requireRs
+  )} -> ${componentsToString(init.provideRs)}`;
 }
 // export function initFnToKey(init: InitFnReg) {
 //   return `${init.eager ? "E" : "L"}:${init.requireRs
@@ -115,6 +124,7 @@ type EntityPromise<
   CS extends ComponentDef[],
   ID extends number
 > = {
+  id: number;
   e: EntityW<any[], ID>;
   cs: CS;
   callback: (e: EntityW<[...CS], ID>) => void;
@@ -660,7 +670,7 @@ export class EntityManager {
     requireRs: [...RS],
     provideRs: ComponentDef[],
     callback: InitFn<RS>
-  ): void {
+  ): InitFnReg<RS> {
     const id = this._nextInitFnId++;
     const reg: InitFnReg<RS> = {
       requireRs,
@@ -670,13 +680,14 @@ export class EntityManager {
       id,
     };
     this.addInit(reg);
+    return reg;
   }
   public addEagerInit<RS extends ComponentDef[]>(
     requireCompSet: ComponentDef[],
     requireRs: [...RS],
     provideRs: ComponentDef[],
     callback: InitFn<RS>
-  ): void {
+  ): InitFnReg<RS> {
     const id = this._nextInitFnId++;
     const reg: InitFnReg<RS> = {
       requireCompSet,
@@ -687,6 +698,7 @@ export class EntityManager {
       id,
     };
     this.addInit(reg);
+    return reg;
   }
 
   private _nextSystemId = 1;
@@ -829,7 +841,16 @@ export class EntityManager {
     this.emStats.queryTime += afterQuery - start;
     if (!rs) {
       // we don't yet have the resources, check if we can init any
-      s.rs.forEach((r) => this.tryForceResourceInit(r));
+      s.rs.forEach((r) => {
+        const forced = this.tryForceResourceInit(r);
+        if (DBG_INIT_CAUSATION && forced) {
+          console.log(
+            `${performance.now().toFixed(0)}ms: '${r.name}' force by system ${
+              s.name
+            }`
+          );
+        }
+      });
       return true;
     }
 
@@ -922,7 +943,9 @@ export class EntityManager {
 
   // TODO(@darzu): can this consolidate with the InitFn system?
   // TODO(@darzu): PERF TRACKING. Need to rethink how this interacts with system and init fn perf tracking
-  private checkEntityPromises() {
+  // TODO(@darzu): EXPERIMENT: returns madeProgress
+  private checkEntityPromises(): boolean {
+    let madeProgress = false;
     // console.dir(this.entityPromises);
     // console.log(this.dbgStrEntityPromises());
     // this._dbgFirstXFrames--;
@@ -934,7 +957,18 @@ export class EntityManager {
     // TODO(@darzu): also check and call init functions for systems!!
     const resourcePromises = this.entityPromises.get(0);
     resourcePromises?.forEach((p) =>
-      p.cs.forEach((r) => this.tryForceResourceInit(r))
+      p.cs.forEach((r) => {
+        const forced = this.tryForceResourceInit(r);
+        madeProgress ||= forced;
+        if (DBG_INIT_CAUSATION && forced) {
+          const line = this._dbgEntityPromiseCallsites.get(p.id)!;
+          console.log(
+            `${performance.now().toFixed(0)}ms: '${r.name}' force by promise #${
+              p.id
+            } from: ${line}`
+          );
+        }
+      })
     );
 
     let finishedEntities: Set<number> = new Set();
@@ -963,7 +997,10 @@ export class EntityManager {
 
         promises.splice(idx, 1);
         // TODO(@darzu): how to handle async callbacks and their timing?
+        // TODO(@darzu): one idea: only call the callback in the same phase or system
+        //    timing location that originally asked for the promise
         s.callback(s.e);
+        madeProgress = true;
 
         const afterOneShotCall = performance.now();
         stats.calls += 1;
@@ -981,6 +1018,8 @@ export class EntityManager {
       this.entityPromises.delete(id);
     }
     this._changedEntities.clear();
+
+    return madeProgress;
   }
 
   // TODO(@darzu): good or terrible name?
@@ -1008,6 +1047,9 @@ export class EntityManager {
       `System '${name}' matches ${es.length} entities and has all resources: ${haveAllResources}.`
     );
   }
+
+  _nextEntityPromiseId: number = 0;
+  _dbgEntityPromiseCallsites = new Map<number, string>();
 
   // TODO(@darzu): Rethink naming here
   // NOTE: if you're gonna change the types, change registerSystem first and just copy
@@ -1037,8 +1079,26 @@ export class EntityManager {
       queryTime: 0,
     };
 
+    const promiseId = this._nextEntityPromiseId++;
+
+    if (DBG_VERBOSE_ENTITY_PROMISE_CALLSITES || DBG_INIT_CAUSATION) {
+      // if (dbgOnce("getCallStack")) console.dir(getCallStack());
+      let line = getCallStack().find(
+        (s) =>
+          !s.includes("entity-manager") && //
+          !s.includes("em-helpers")
+      )!;
+
+      if (DBG_VERBOSE_ENTITY_PROMISE_CALLSITES)
+        console.log(
+          `promise #${promiseId}: ${componentsToString(cs)} from: ${line}`
+        );
+      this._dbgEntityPromiseCallsites.set(promiseId, line);
+    }
+
     return new Promise<EntityW<CS, ID>>((resolve, reject) => {
       const sys: EntityPromise<CS, ID> = {
+        id: promiseId,
         e,
         cs,
         callback: resolve,
@@ -1063,25 +1123,45 @@ export class EntityManager {
   startedInits = new Map<InitFnId, Promise<void> | void>();
   allInits = new Map<InitFnId, InitFnReg>();
 
-  private progressInitFns() {
+  // TODO(@darzu): how can i tell if the event loop is running dry?
+
+  // TODO(@darzu): EXPERIMENT: returns madeProgress
+  private progressInitFns(): boolean {
+    let madeProgress = false;
     this.pendingEagerInits.forEach((e, i) => {
       let hasAll = true;
-
-      // has resources?
-      for (let r of e.requireRs) {
-        if (!this.seenResources.has(r.id)) {
-          // lazy -> eager
-          this.tryForceResourceInit(r);
-          hasAll = false;
-        }
-      }
 
       // has component set?
       // TODO(@darzu): more precise component set tracking:
       //               not just one of each component, but some entity that has all
+      let hasCompSet = true;
       if (e.requireCompSet)
         for (let c of e.requireCompSet)
-          hasAll &&= this.seenComponents.has(c.id);
+          hasCompSet &&= this.seenComponents.has(c.id);
+      hasAll &&= hasCompSet;
+
+      // has resources?
+      for (let r of e.requireRs) {
+        if (!this.seenResources.has(r.id)) {
+          if (hasCompSet) {
+            // NOTE: we don't force resources into existance until the components are met
+            //    this is (probably) the behavior we want when there's a system that is
+            //    waiting on some components to exist.
+            // lazy -> eager
+            const forced = this.tryForceResourceInit(r);
+            madeProgress ||= forced;
+            if (DBG_INIT_CAUSATION && forced) {
+              const line = this._dbgInitBlameLn.get(e.id)!;
+              console.log(
+                `${performance.now().toFixed(0)}ms: '${
+                  r.name
+                }' force by init #${e.id} from: ${line}`
+              );
+            }
+          }
+          hasAll = false;
+        }
+      }
 
       // run?
       if (hasAll) {
@@ -1091,13 +1171,33 @@ export class EntityManager {
         // eager -> run
         this.runInitFn(e);
         this.pendingEagerInits.splice(i, 1);
+        madeProgress = true;
       }
     });
+    return madeProgress;
   }
+  _dbgInitBlameLn = new Map<InitFnId, string>();
   private addInit(reg: InitFnReg) {
+    if (DBG_VERBOSE_INIT_CALLSITES || DBG_INIT_CAUSATION) {
+      // if (dbgOnce("getCallStack")) console.dir(getCallStack());
+      let line = getCallStack().find(
+        (s) =>
+          !s.includes("entity-manager") && //
+          !s.includes("em-helpers")
+      )!;
+
+      // trim "http://localhost:4321/"
+      // const hostIdx = line.indexOf(window.location.host);
+      // if (hostIdx >= 0)
+      //   line = line.slice(hostIdx + window.location.host.length);
+
+      if (DBG_VERBOSE_INIT_CALLSITES)
+        console.log(`init ${initFnToString(reg)} from: ${line}`);
+      this._dbgInitBlameLn.set(reg.id, line);
+    }
     assert(
       !this.allInits.has(reg.id),
-      `Double registering init: ${reg.id}, ${initFnToString(reg)}`
+      `Double registering ${initFnToString(reg)}`
     );
     this.allInits.set(reg.id, reg);
     if (reg.eager) {
@@ -1115,19 +1215,22 @@ export class EntityManager {
         this.pendingLazyInitsByProvides.set(p.id, reg);
       }
 
-      if (DBG_INIT) console.log(`new lazy: ${initFnToString(reg)}`);
+      if (DBG_VERBOSE_INIT_SEQ) console.log(`new lazy: ${initFnToString(reg)}`);
     }
   }
-  private tryForceResourceInit(r: ComponentDef) {
+  private tryForceResourceInit(r: ComponentDef): boolean {
     const lazy = this.pendingLazyInitsByProvides.get(r.id);
-    if (!lazy) return;
+    if (!lazy) return false;
 
     // remove from all lazy
     for (let r of lazy.provideRs) this.pendingLazyInitsByProvides.delete(r.id);
     // add to eager
     this.pendingEagerInits.push(lazy);
 
-    if (DBG_INIT) console.log(`lazy => eager: ${initFnToString(lazy)}`);
+    if (DBG_VERBOSE_INIT_SEQ)
+      console.log(`lazy => eager: ${initFnToString(lazy)}`);
+
+    return true; // was forced
   }
 
   _runningInitStack: InitFnReg[] = [];
@@ -1158,7 +1261,8 @@ export class EntityManager {
     const promise = init.fn(this.ent0);
     this.startedInits.set(init.id, promise);
 
-    if (DBG_INIT) console.log(`eager => started: ${initFnToString(init)}`);
+    if (DBG_VERBOSE_INIT_SEQ)
+      console.log(`eager => started: ${initFnToString(init)}`);
 
     if (isPromise(promise)) await promise;
 
@@ -1185,13 +1289,18 @@ export class EntityManager {
       else this._lastInitTimestamp = -1;
     }
 
-    if (DBG_INIT) console.log(`finished: ${initFnToString(init)}`);
+    if (DBG_VERBOSE_INIT_SEQ) console.log(`finished: ${initFnToString(init)}`);
   }
 
   public update() {
     // TODO(@darzu): can EM.update() be a system?
-    this.progressInitFns();
-    this.checkEntityPromises();
+    let madeProgress: boolean;
+    do {
+      madeProgress = false;
+      madeProgress ||= this.progressInitFns();
+      madeProgress ||= this.checkEntityPromises();
+    } while (madeProgress);
+
     this.callSystems();
     this.dbgLoops++;
   }

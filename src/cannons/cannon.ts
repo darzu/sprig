@@ -10,7 +10,7 @@ import { DetectedEventsDef, eventWizard } from "../net/events.js";
 import { fireBullet } from "./bullet.js";
 import { InRangeDef } from "../input/interact.js";
 import { LocalHsPlayerDef, HsPlayerDef } from "../hyperspace/hs-player.js";
-import { AllMeshesDef } from "../meshes/mesh-list.js";
+import { CannonLD51Mesh } from "../meshes/mesh-list.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import { AudioDef, randChordId } from "../audio/audio.js";
 import { InputsDef } from "../input/inputs.js";
@@ -19,6 +19,7 @@ import { defineNetEntityHelper } from "../ecs/em-helpers.js";
 import { constructNetTurret, TurretDef } from "../turret/turret.js";
 import { SoundSetDef } from "../audio/sound-loader.js";
 import { Phase } from "../ecs/sys-phase.js";
+import { vec3Dbg } from "../utils/utils-3d.js";
 
 export const { CannonPropsDef, CannonLocalDef, createCannon, createCannonNow } =
   defineNetEntityHelper({
@@ -55,7 +56,7 @@ export const { CannonPropsDef, CannonLocalDef, createCannon, createCannonNow } =
       };
     },
     dynamicComponents: [],
-    buildResources: [AllMeshesDef, MeDef],
+    buildResources: [CannonLD51Mesh.def, MeDef],
     build: (e, res) => {
       const props = e.cannonProps;
       EM.ensureComponentOn(e, PositionDef, props.location);
@@ -63,7 +64,7 @@ export const { CannonPropsDef, CannonLocalDef, createCannon, createCannonNow } =
         e,
         props.yaw,
         props.pitch,
-        res.allMeshes.ld51_cannon.aabb,
+        res.mesh_ld51_cannon.aabb,
         0,
         undefined,
         undefined,
@@ -77,12 +78,12 @@ export const { CannonPropsDef, CannonLocalDef, createCannon, createCannonNow } =
       EM.ensureComponentOn(
         e,
         RenderableConstructDef,
-        res.allMeshes.ld51_cannon.mesh
+        res.mesh_ld51_cannon.mesh // TODO(@darzu): PERF: use .proto?
       );
       EM.ensureComponentOn(e, ColliderDef, {
         shape: "AABB",
-        solid: true,
-        aabb: res.allMeshes.cannon.aabb,
+        solid: false,
+        aabb: res.mesh_ld51_cannon.aabb,
       });
       EM.ensureComponentOn(e, PhysicsParentDef, props.parentId);
       return e;

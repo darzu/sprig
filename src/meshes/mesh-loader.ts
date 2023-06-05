@@ -58,11 +58,13 @@ function isMultiMeshDesc<N extends string, B extends boolean>(
 
 export interface MeshReg<N extends string = string> {
   desc: MeshDesc<N, false>;
+  def: ComponentDef<`mesh_${N}`, GameMesh, [GameMesh]>;
   gameMesh: () => Promise<GameMesh>;
   gameMeshNow: () => GameMesh | undefined;
 }
 export interface MeshGroupReg<N extends string = string> {
   desc: MeshDesc<N, true>;
+  def: ComponentDef<`mesh_${N}`, GameMesh[], [GameMesh[]]>;
   gameMeshes: () => Promise<GameMesh[]>;
   gameMeshesNow: () => GameMesh[] | undefined;
 }
@@ -89,9 +91,6 @@ const blackoutColor: (m: RawMesh) => RawMesh = (m: RawMesh) => {
   m.colors.map((c) => vec3.zero(c));
   return m;
 };
-
-// TODO(@darzu): IMPL for WoodStateDef
-// EM.addLazyInit([AssetsDef], [WoodStateDef], ({ allMeshes}) => {});
 
 export type GameMesh = {
   mesh: Mesh;
@@ -143,9 +142,19 @@ function createXylemRegistry() {
   function registerMesh<N extends string, B extends boolean>(
     desc: MeshDesc<N, B>
   ): MeshGroupReg<N> | MeshReg<N> {
+    const def = EM.defineComponent(
+      `mesh_${desc.name}`,
+      (gm: GameMesh | GameMesh[]) => gm
+    );
+    EM.addLazyInit([RendererDef], [def], async ({ renderer }) => {
+      const gm = await cachedLoadMeshDesc(desc, renderer.renderer);
+      EM.addResource(def, gm);
+    });
+
     if (isMultiMeshDesc(desc)) {
       let reg: MeshGroupReg<N> = {
         desc,
+        def: def as ComponentDef<`mesh_${N}`, GameMesh[], [GameMesh[]]>,
         gameMeshes: () => cachedLoadMeshDesc(desc) as Promise<GameMesh[]>,
         gameMeshesNow: () =>
           loadedMeshes.get(desc.name) as GameMesh[] | undefined,
@@ -154,6 +163,7 @@ function createXylemRegistry() {
     } else {
       let reg: MeshReg<N> = {
         desc,
+        def: def as ComponentDef<`mesh_${N}`, GameMesh, [GameMesh]>,
         gameMesh: () => cachedLoadMeshDesc(desc) as Promise<GameMesh>,
         gameMeshNow: () => loadedMeshes.get(desc.name) as GameMesh | undefined,
       };
@@ -197,7 +207,7 @@ function createXylemRegistry() {
   >(name: N, ...meshes: MR): MeshSetDef<N, MR> {
     const def = EM.defineComponent(name, (mr: MeshSet<MR>) => mr);
 
-    EM.addLazyInit([RendererDef], [def], async ({ renderer }) => {
+    let initReg = EM.addLazyInit([RendererDef], [def], async ({ renderer }) => {
       const before = performance.now();
       const gameMeshes = await loadMeshSet(meshes, renderer.renderer);
       EM.addResource(def, gameMeshes);
@@ -207,6 +217,10 @@ function createXylemRegistry() {
         ).toFixed(2)}ms`
       );
     });
+    // TODO(@darzu): DBG
+    if (def.name === "allMeshes") {
+      console.log(`allMeshes init: #${initReg.id}`);
+    }
 
     return def;
   }

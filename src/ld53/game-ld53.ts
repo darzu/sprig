@@ -2,7 +2,12 @@ import { CameraDef, CameraFollowDef } from "../camera/camera.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { EM, EntityW } from "../ecs/entity-manager.js";
-import { AllMeshesDef, GizmoMesh } from "../meshes/mesh-list.js";
+import {
+  BallMesh,
+  CubeMesh,
+  GizmoMesh,
+  PirateMesh,
+} from "../meshes/mesh-list.js";
 import { ControllableDef } from "../input/controllable.js";
 import { createGhost, GhostDef } from "../debug/ghost.js";
 import {
@@ -82,6 +87,7 @@ import { MapPaths } from "../levels/map-loader.js";
 import { stdRiggedRenderPipeline } from "../render/pipelines/std-rigged.js";
 import { PoseDef } from "../animation/skeletal.js";
 import { Phase } from "../ecs/sys-phase.js";
+import { XY } from "../meshes/mesh-loader.js";
 /*
 NOTES:
 - Cut grass by updating a texture that has cut/not cut or maybe cut-height
@@ -131,7 +137,23 @@ export const mapJfa = createJfaPipelines(LandMapTexPtr, "exterior");
 
 const STONE_TOWER_HEIGHT = 10;
 
+export const LD53MeshesDef = XY.defineMeshSetResource(
+  "ld53Meshes",
+  BallMesh,
+  PirateMesh,
+  CubeMesh
+);
+
 export async function initLD53(hosting: boolean) {
+  const res = await EM.whenResources(
+    LD53MeshesDef,
+    // WoodAssetsDef,
+    // GlobalCursor3dDef,
+    RendererDef,
+    CameraDef,
+    DevConsoleDef
+  );
+
   const dbgGrid = [
     //
     [mapJfa._inputMaskTex, mapJfa._uvMaskTex],
@@ -147,15 +169,6 @@ export async function initLD53(hosting: boolean) {
 
   // TODO(@darzu): HACK. these have to be set before the CY instantiator runs.
   outlineRender.fragOverrides!.lineWidth = 1.0;
-
-  const res = await EM.whenResources(
-    AllMeshesDef,
-    // WoodAssetsDef,
-    // GlobalCursor3dDef,
-    RendererDef,
-    CameraDef,
-    DevConsoleDef
-  );
 
   res.camera.fov = Math.PI * 0.5;
   copyAABB(
@@ -205,7 +218,7 @@ export async function initLD53(hosting: boolean) {
   EM.ensureComponentOn(
     sunlight,
     RenderableConstructDef,
-    res.allMeshes.ball.proto
+    res.ld53Meshes.ball.proto
   );
 
   // pirate test
@@ -214,7 +227,7 @@ export async function initLD53(hosting: boolean) {
   EM.ensureComponentOn(
     pirate,
     RiggedRenderableConstructDef,
-    res.allMeshes.pirate.mesh as RiggedMesh
+    res.ld53Meshes.pirate.mesh as RiggedMesh
   );
   EM.ensureComponentOn(pirate, PositionDef, V(50, 80, 10));
   EM.ensureComponentOn(pirate, PirateDef);
@@ -331,7 +344,7 @@ export async function initLD53(hosting: boolean) {
         EM.ensureComponentOn(
           bouy,
           RenderableConstructDef,
-          res.allMeshes.ball.proto
+          res.ld53Meshes.ball.proto
         );
         EM.ensureComponentOn(bouy, ColorDef, ENDESGA16.lightGreen);
         buoys.push(bouy);
@@ -405,7 +418,7 @@ export async function initLD53(hosting: boolean) {
     // g.cameraFollow.positionOffset = V(0, 0, 5);
     g.controllable.speed *= 2.0;
     g.controllable.sprintMul = 15;
-    const sphereMesh = cloneMesh(res.allMeshes.ball.mesh);
+    const sphereMesh = cloneMesh(res.ld53Meshes.ball.mesh);
     const visible = false;
     EM.ensureComponentOn(g, RenderableConstructDef, sphereMesh, visible);
     EM.ensureComponentOn(g, ColorDef, V(0.1, 0.1, 0.1));
@@ -416,7 +429,7 @@ export async function initLD53(hosting: boolean) {
     EM.ensureComponentOn(g, ColliderDef, {
       shape: "AABB",
       solid: false,
-      aabb: res.allMeshes.ball.aabb,
+      aabb: res.ld53Meshes.ball.aabb,
     });
 
     // high up:
@@ -711,7 +724,7 @@ export async function initLD53(hosting: boolean) {
 }
 
 async function createPlayer() {
-  const { allMeshes, me } = await EM.whenResources(AllMeshesDef, MeDef);
+  const { ld53Meshes, me } = await EM.whenResources(LD53MeshesDef, MeDef);
   const p = EM.new();
   EM.ensureComponentOn(p, ControllableDef);
   p.controllable.modes.canFall = false;
@@ -732,7 +745,7 @@ async function createPlayer() {
   p.cameraFollow.positionOffset = V(0, 0, 5);
   p.controllable.speed *= 0.5;
   p.controllable.sprintMul = 10;
-  const sphereMesh = cloneMesh(allMeshes.ball.mesh);
+  const sphereMesh = cloneMesh(ld53Meshes.ball.mesh);
   const visible = true;
   EM.ensureComponentOn(p, RenderableConstructDef, sphereMesh, visible);
   EM.ensureComponentOn(p, ColorDef, V(0.1, 0.1, 0.1));
@@ -743,7 +756,7 @@ async function createPlayer() {
   EM.ensureComponentOn(p, ColliderDef, {
     shape: "AABB",
     solid: true,
-    aabb: allMeshes.ball.aabb,
+    aabb: ld53Meshes.ball.aabb,
   });
 
   vec3.copy(p.position, [-28.11, 26.0, -28.39]);
