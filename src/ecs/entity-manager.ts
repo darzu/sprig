@@ -943,7 +943,9 @@ export class EntityManager {
 
   // TODO(@darzu): can this consolidate with the InitFn system?
   // TODO(@darzu): PERF TRACKING. Need to rethink how this interacts with system and init fn perf tracking
-  private checkEntityPromises() {
+  // TODO(@darzu): EXPERIMENT: returns madeProgress
+  private checkEntityPromises(): boolean {
+    let madeProgress = false;
     // console.dir(this.entityPromises);
     // console.log(this.dbgStrEntityPromises());
     // this._dbgFirstXFrames--;
@@ -957,6 +959,7 @@ export class EntityManager {
     resourcePromises?.forEach((p) =>
       p.cs.forEach((r) => {
         const forced = this.tryForceResourceInit(r);
+        madeProgress ||= forced;
         if (DBG_INIT_CAUSATION && forced) {
           const line = this._dbgEntityPromiseCallsites.get(p.id)!;
           console.log(
@@ -994,7 +997,10 @@ export class EntityManager {
 
         promises.splice(idx, 1);
         // TODO(@darzu): how to handle async callbacks and their timing?
+        // TODO(@darzu): one idea: only call the callback in the same phase or system
+        //    timing location that originally asked for the promise
         s.callback(s.e);
+        madeProgress = true;
 
         const afterOneShotCall = performance.now();
         stats.calls += 1;
@@ -1012,6 +1018,8 @@ export class EntityManager {
       this.entityPromises.delete(id);
     }
     this._changedEntities.clear();
+
+    return madeProgress;
   }
 
   // TODO(@darzu): good or terrible name?
@@ -1117,7 +1125,9 @@ export class EntityManager {
 
   // TODO(@darzu): how can i tell if the event loop is running dry?
 
-  private progressInitFns() {
+  // TODO(@darzu): EXPERIMENT: returns madeProgress
+  private progressInitFns(): boolean {
+    let madeProgress = false;
     this.pendingEagerInits.forEach((e, i) => {
       let hasAll = true;
 
@@ -1139,6 +1149,7 @@ export class EntityManager {
             //    waiting on some components to exist.
             // lazy -> eager
             const forced = this.tryForceResourceInit(r);
+            madeProgress ||= forced;
             if (DBG_INIT_CAUSATION && forced) {
               const line = this._dbgInitBlameLn.get(e.id)!;
               console.log(
@@ -1160,8 +1171,10 @@ export class EntityManager {
         // eager -> run
         this.runInitFn(e);
         this.pendingEagerInits.splice(i, 1);
+        madeProgress = true;
       }
     });
+    return madeProgress;
   }
   _dbgInitBlameLn = new Map<InitFnId, string>();
   private addInit(reg: InitFnReg) {
@@ -1281,8 +1294,13 @@ export class EntityManager {
 
   public update() {
     // TODO(@darzu): can EM.update() be a system?
-    this.progressInitFns();
-    this.checkEntityPromises();
+    let madeProgress: boolean;
+    do {
+      madeProgress = false;
+      madeProgress ||= this.progressInitFns();
+      madeProgress ||= this.checkEntityPromises();
+    } while (madeProgress);
+
     this.callSystems();
     this.dbgLoops++;
   }
