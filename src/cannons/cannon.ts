@@ -19,6 +19,7 @@ import { defineNetEntityHelper } from "../ecs/em-helpers.js";
 import { constructNetTurret, TurretDef } from "../turret/turret.js";
 import { SoundSetDef } from "../audio/sound-loader.js";
 import { Phase } from "../ecs/sys-phase.js";
+import { vec3Dbg } from "../utils/utils-3d.js";
 
 export const { CannonPropsDef, CannonLocalDef, createCannon, createCannonNow } =
   defineNetEntityHelper({
@@ -81,7 +82,7 @@ export const { CannonPropsDef, CannonLocalDef, createCannon, createCannonNow } =
       );
       EM.ensureComponentOn(e, ColliderDef, {
         shape: "AABB",
-        solid: true,
+        solid: false,
         aabb: res.mesh_ld51_cannon.aabb,
       });
       EM.ensureComponentOn(e, PhysicsParentDef, props.parentId);
