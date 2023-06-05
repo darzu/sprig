@@ -1,4 +1,10 @@
-import { AllMeshesDef } from "../meshes/mesh-list.js";
+import {
+  AllMeshesDef,
+  BallMesh,
+  CubeMesh,
+  GrappleGunMesh,
+  HexMesh,
+} from "../meshes/mesh-list.js";
 import { CameraDef, CameraComputedDef } from "../camera/camera.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { AllEndesga16, ENDESGA16 } from "../color/palettes.js";
@@ -28,6 +34,7 @@ import {
 } from "../utils/utils-3d.js";
 import { createGhost } from "../debug/ghost.js";
 import { Phase } from "../ecs/sys-phase.js";
+import { XY } from "../meshes/mesh-loader.js";
 
 const dbgGrid = [
   //
@@ -39,11 +46,17 @@ const dbgGrid = [
 ];
 let dbgGridCompose = createGridComposePipelines(dbgGrid);
 
+const shadingGameMeshesDef = XY.defineMeshSetResource(
+  "sg_meshes",
+  GrappleGunMesh,
+  CubeMesh,
+  HexMesh,
+  BallMesh
+);
+
 export async function initShadingGame() {
   // TODO(@darzu): HACK. these have to be set before the CY instantiator runs.
   // outlineRender.fragOverrides!.lineWidth = 1.0;
-
-  const { renderer } = await EM.whenResources(RendererDef);
 
   EM.addSystem(
     "grassGameRenderPipelines",
@@ -76,7 +89,7 @@ export async function initShadingGame() {
   vec3.set(+20, +20, +20, camera.maxWorldAABB.max);
   // camera.perspectiveMode = "ortho";
 
-  const { allMeshes } = await EM.whenResources(AllMeshesDef);
+  const { sg_meshes } = await EM.whenResources(shadingGameMeshesDef);
 
   // light
   const sun = EM.new();
@@ -86,7 +99,7 @@ export async function initShadingGame() {
   // EM.ensureComponentOn(sun, PositionDef, V(-10, 10, 10));
   EM.ensureComponentOn(sun, PositionDef, V(100, 100, 100));
   EM.ensureComponentOn(sun, LinearVelocityDef, V(0.001, 0.001, 0.0));
-  EM.ensureComponentOn(sun, RenderableConstructDef, allMeshes.cube.proto);
+  EM.ensureComponentOn(sun, RenderableConstructDef, sg_meshes.cube.proto);
   sun.pointLight.constant = 1.0;
   sun.pointLight.linear = 0.0;
   sun.pointLight.quadratic = 0.0;
@@ -96,7 +109,7 @@ export async function initShadingGame() {
 
   // ground
   const ground = EM.new();
-  EM.ensureComponentOn(ground, RenderableConstructDef, allMeshes.hex.proto);
+  EM.ensureComponentOn(ground, RenderableConstructDef, sg_meshes.hex.proto);
   EM.ensureComponentOn(ground, ColorDef, ENDESGA16.blue);
   EM.ensureComponentOn(ground, PositionDef, V(0, -10, 0));
   EM.ensureComponentOn(ground, ScaleDef, V(10, 10, 10));
@@ -110,7 +123,7 @@ export async function initShadingGame() {
   // avatar
   const g = createGhost();
   g.position[1] = 5;
-  EM.ensureComponentOn(g, RenderableConstructDef, allMeshes.ball.proto);
+  EM.ensureComponentOn(g, RenderableConstructDef, sg_meshes.ball.proto);
   // vec3.copy(g.position, [2.44, 6.81, 0.96]);
   // quat.copy(g.rotation, [0.0, 0.61, 0.0, 0.79]);
   // g.cameraFollow.pitchOffset = -0.553;
@@ -122,7 +135,7 @@ export async function initShadingGame() {
 
   // objects
   const obj = EM.new();
-  EM.ensureComponentOn(obj, RenderableConstructDef, allMeshes.grappleGun.proto);
+  EM.ensureComponentOn(obj, RenderableConstructDef, sg_meshes.grappleGun.proto);
   EM.ensureComponentOn(obj, PositionDef, V(0, 4, 0));
   EM.ensureComponentOn(obj, ColorDef, ENDESGA16.midBrown);
   EM.ensureComponentOn(obj, AngularVelocityDef, V(0.001, 0.00013, 0.00017));
@@ -135,7 +148,7 @@ export async function initShadingGame() {
       const pos = V(jitter(W), jitter(W) + W, jitter(W));
       worldCorners.push(pos);
       const p = EM.new();
-      EM.ensureComponentOn(p, RenderableConstructDef, allMeshes.ball.proto);
+      EM.ensureComponentOn(p, RenderableConstructDef, sg_meshes.ball.proto);
       EM.ensureComponentOn(p, PositionDef, pos);
       EM.ensureComponentOn(p, ColorDef, V(0, 1, 0));
     }
@@ -150,7 +163,7 @@ export async function initShadingGame() {
     const frustCorners = getFrustumWorldCorners(invFrust);
     for (let i = 0; i < frustCorners.length; i++) {
       const p = EM.new();
-      EM.ensureComponentOn(p, RenderableConstructDef, allMeshes.ball.proto);
+      EM.ensureComponentOn(p, RenderableConstructDef, sg_meshes.ball.proto);
       EM.ensureComponentOn(p, PositionDef, vec3.clone(frustCorners[i]));
       EM.ensureComponentOn(p, ColorDef, V(1, 0, 0));
     }
@@ -173,7 +186,7 @@ export async function initShadingGame() {
   // const myViewCorners: EntityW<[typeof PositionDef]>[] = [];
   // for (let i = 0; i < 8; i++) {
   //   const p = EM.new();
-  //   EM.ensureComponentOn(p, RenderableConstructDef, allMeshes.ball.proto);
+  //   EM.ensureComponentOn(p, RenderableConstructDef, sg_meshes.ball.proto);
   //   EM.ensureComponentOn(p, PositionDef);
   //   EM.ensureComponentOn(p, ColorDef, V(0, 1, 1));
   //   myViewCorners.push(p);
