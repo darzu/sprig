@@ -15,6 +15,7 @@ import {
   DBG_ASSERT,
   ENABLE_NET,
   VERBOSE_LOG,
+  VERBOSE_NET_LOG,
   WARN_DEAD_CLEANUP,
 } from "./flags.js";
 import { initShipyardGame } from "./wood/game-shipyard.js";
@@ -168,7 +169,7 @@ async function main() {
   );
   const urlServerId = queryString["server"] ?? null;
 
-  // const peerName = getPeerName(queryString);
+  // const peerName2 = getPeerName(queryString);
   const peerName = "myPeerName";
 
   let controls = document.getElementById("server-controls") as HTMLDivElement;

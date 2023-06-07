@@ -7,7 +7,8 @@ export const DBG_ASSERT = true;
 
 // Network
 export const DONT_SMOOTH_WORLD_FRAME = true; // TODO(@darzu): PERF HACK for single player
-export const ENABLE_NET = false; // TODO(@darzu): was for LD52
+export const ENABLE_NET = true;
+export const VERBOSE_NET_LOG = true;
 
 // Ocean
 export const DISABLE_GERSTNER = false;

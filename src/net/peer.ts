@@ -1,4 +1,4 @@
-import { VERBOSE_LOG } from "../flags.js";
+import { VERBOSE_LOG, VERBOSE_NET_LOG } from "../flags.js";
 
 /*
   A drastically simplified PeerJS, with code copied liberally from PeerJS
@@ -53,14 +53,15 @@ export class Peer {
 
   constructor(id: string) {
     this.id = "sprig-" + id;
+    if (VERBOSE_NET_LOG) console.log(`new Peer: ${this.id}`);
     this.connectToServer();
   }
 
   private connectToServer() {
     // TODO: if this fails, make it possible to get a different valid id
-    let sock = new WebSocket(
-      serverUrl(this.id, Math.random().toString(36).substr(2))
-    );
+    const url = serverUrl(this.id, Math.random().toString(36).slice(2));
+    if (VERBOSE_NET_LOG) console.log(`WebSocket url: ${url}`);
+    let sock = new WebSocket(url);
     sock.onmessage = (event) => {
       //console.log(event.data);
       this.handleServerMessage(JSON.parse(event.data));
@@ -68,7 +69,7 @@ export class Peer {
 
     let heartbeatHandle = 0;
     sock.onopen = () => {
-      //console.log("Socket opened");
+      if (VERBOSE_NET_LOG) console.log(`Socket opened`);
       // PeerJS sends a heartbeat to the server every 5 seconds--I assume the
       // server will eventually close the connection otherwise
       heartbeatHandle = setInterval(() => {
