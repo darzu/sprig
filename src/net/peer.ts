@@ -94,7 +94,7 @@ export class Peer {
   }
 
   private async handleServerMessage(msg: ServerMessage) {
-    if (VERBOSE_LOG)
+    if (VERBOSE_NET_LOG)
       console.log(`Received server message of type: ${msg.type}`);
     let payload = msg.payload;
     let remotePeerId = msg.src;
@@ -103,6 +103,10 @@ export class Peer {
         let peerConnection = new RTCPeerConnection(DEFAULT_CONFIG);
         let connectionId = msg.payload.connectionId;
         this.connections[connectionId] = peerConnection;
+        if (VERBOSE_NET_LOG)
+          console.log(
+            `connectionId: ${connectionId}, remotePeerId: ${remotePeerId}`
+          );
         this.setupPeerConnection(peerConnection, remotePeerId, connectionId);
         // listen for ice candidates
 
@@ -149,6 +153,7 @@ export class Peer {
         break;
       }
       case ServerMessageType.Answer: {
+        if (VERBOSE_NET_LOG) console.log(`ServerMessageType.Answer`);
         let peerConnection = this.connections[msg.payload.connectionId];
         if (!peerConnection) {
           throw `ICE candidate for unknown connection ${msg.payload.connectionId}`;
@@ -208,6 +213,7 @@ export class Peer {
   }
 
   async connect(peerId: string, reliable: boolean): Promise<RTCDataChannel> {
+    if (VERBOSE_NET_LOG) console.log(`new connet(${peerId}, ${reliable})`);
     const peerConnection = new RTCPeerConnection(DEFAULT_CONFIG);
     if (!peerId.startsWith("sprig-"))
       throw `Connecting to non-sprig peer ${peerId}`;

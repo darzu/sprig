@@ -240,6 +240,7 @@ function sendEventsToNet(net: Net) {
 export function initNetSystems() {
   if (VERBOSE_NET_LOG)
     console.log(`${performance.now().toFixed()}ms: initNetSystems()`);
+
   const peerName = EM.getResource(PeerNameDef)?.name;
   if (!peerName) {
     throw "Peer name not set before net initialized";

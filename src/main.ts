@@ -78,6 +78,8 @@ async function startGame(localPeerName: string, host: string | null) {
 
   let hosting = host === null;
 
+  if (VERBOSE_NET_LOG) console.log(`hosting: ${hosting}`);
+
   let start_of_time = performance.now();
 
   EM.setDefaultRange("local");
@@ -170,7 +172,8 @@ async function main() {
   const urlServerId = queryString["server"] ?? null;
 
   // const peerName2 = getPeerName(queryString);
-  const peerName = "myPeerName";
+  // const peerName = "myPeerName";
+  const peerName = !!urlServerId ? "mySprigClient" : "mySprigHost";
 
   let controls = document.getElementById("server-controls") as HTMLDivElement;
   let serverStartButton = document.getElementById(
