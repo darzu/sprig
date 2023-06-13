@@ -76,7 +76,7 @@ async function startGame(localPeerName: string, host: string | null) {
   if (gameStarted) return;
   gameStarted = true;
 
-  let hosting = host === null;
+  const hosting = !host;
 
   if (VERBOSE_NET_LOG) console.log(`hosting: ${hosting}`);
 
@@ -94,7 +94,7 @@ async function startGame(localPeerName: string, host: string | null) {
     EM.addResource(MeDef, 0, true);
     EM.addResource(HostDef);
   } else {
-    EM.addResource(JoinDef, host!);
+    EM.addResource(JoinDef, host);
   }
 
   initCommonSystems();

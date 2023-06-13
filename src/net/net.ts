@@ -110,8 +110,6 @@ class Net {
     //console.log("A MESSAGE");
     let message = new Deserializer(buf);
     let type = message.readUint8();
-    if (VERBOSE_NET_LOG)
-      console.log(`msg from ${address}, type: ${MessageType[type]}`);
     switch (type) {
       case MessageType.Ping: {
         let seq = message.readUint32();
@@ -145,6 +143,10 @@ class Net {
         break;
       }
       default:
+        if (VERBOSE_NET_LOG)
+          console.log(
+            `non-ping/pong msg from ${address}, type: ${MessageType[type]}`
+          );
         this.outgoingEvents.push({
           type: NetworkEventType.MessageRecv,
           from: address,

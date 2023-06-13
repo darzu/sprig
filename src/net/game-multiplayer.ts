@@ -14,6 +14,7 @@ import { ColorDef } from "../color/color-ecs.js";
 import { AllEndesga16, ENDESGA16 } from "../color/palettes.js";
 import { DevConsoleDef } from "../debug/console.js";
 import { EM, EntityW } from "../ecs/entity-manager.js";
+import { defineNetEntityHelper } from "../ecs/em-helpers.js";
 import { createGizmoMesh } from "../debug/gizmos.js";
 import { jitter } from "../utils/math.js";
 import { AngularVelocityDef, LinearVelocityDef } from "../motion/velocity.js";
@@ -40,6 +41,7 @@ import { ControllableDef } from "../input/controllable.js";
 import { ColliderDef } from "../physics/collider.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import { MeDef, AuthorityDef } from "./components.js";
+import { vec3Dbg } from "../utils/utils-3d.js";
 
 const mpMeshes = XY.defineMeshSetResource(
   "mp_meshes",
@@ -47,6 +49,85 @@ const mpMeshes = XY.defineMeshSetResource(
   HexMesh,
   BallMesh
 );
+
+export const {
+  MpPlayerLocalDef,
+  MpPlayerPropsDef,
+  createMpPlayer,
+  createMpPlayerNow,
+} = defineNetEntityHelper({
+  name: "mpPlayer",
+  defaultProps: (location?: vec3, color?: vec3) => {
+    console.log(
+      `creating mpPlayerProps w/ ${location ? vec3Dbg(location) : "NULL"} ${
+        color ? vec3Dbg(color) : "NULL"
+      }`
+    );
+    return {
+      location: location ?? V(0, 0, 0),
+      color: color ?? V(0, 0, 0),
+    };
+  },
+  serializeProps: (c, buf) => {
+    buf.writeVec3(c.location);
+    buf.writeVec3(c.color);
+    console.log(
+      `serialized mpPlayerProps w/ ${
+        c.location ? vec3Dbg(c.location) : "NULL"
+      } ${c.color ? vec3Dbg(c.color) : "NULL"}`
+    );
+  },
+  deserializeProps: (c, buf) => {
+    buf.readVec3(c.location);
+    buf.readVec3(c.color);
+    console.log(
+      `deserialized mpPlayerProps w/ ${
+        c.location ? vec3Dbg(c.location) : "NULL"
+      } ${c.color ? vec3Dbg(c.color) : "NULL"}`
+    );
+  },
+  defaultLocal: () => {
+    return {};
+  },
+  dynamicComponents: [PositionDef, RotationDef],
+  buildResources: [CubeMesh.def, MeDef],
+  build: (e, res) => {
+    console.log(
+      `creating player (${e.id}) auth.pid:${e.authority.pid} me.pid:${res.me.pid}`
+    );
+
+    const props = e.mpPlayerProps;
+
+    // TODO(@darzu): BUG. props.color is undefined
+    EM.ensureComponentOn(e, ColorDef, props.color);
+    EM.ensureComponentOn(e, RenderableConstructDef, res.mesh_cube.proto);
+    EM.ensureComponentOn(e, ColliderDef, {
+      shape: "AABB",
+      solid: true,
+      aabb: res.mesh_cube.aabb,
+    });
+
+    if (e.authority.pid === res.me.pid) {
+      vec3.copy(e.position, props.location); // TODO(@darzu): should be fine to have this outside loop
+
+      EM.ensureComponentOn(e, ControllableDef);
+      e.controllable.modes.canFall = true;
+      e.controllable.modes.canJump = false;
+      e.controllable.modes.canFly = false;
+      EM.ensureComponentOn(e, CameraFollowDef, 1);
+      quat.setAxisAngle([0.0, -1.0, 0.0], 1.62, e.rotation);
+      e.controllable.speed *= 2;
+      e.controllable.sprintMul = 1;
+      vec3.copy(e.cameraFollow.positionOffset, [0.0, 4.0, 10.0]);
+      e.cameraFollow.yawOffset = 0.0;
+      e.cameraFollow.pitchOffset = -0.593;
+
+      console.log(`player has .controllable`);
+    }
+
+    return e;
+  },
+});
 
 export async function initMPGame() {
   EM.addEagerInit([], [RendererDef], [], (res) => {
@@ -64,7 +145,7 @@ export async function initMPGame() {
     ];
   });
 
-  const { camera } = await EM.whenResources(CameraDef);
+  const { camera, me } = await EM.whenResources(CameraDef, MeDef);
 
   // camera
   camera.fov = Math.PI * 0.5;
@@ -115,39 +196,6 @@ export async function initMPGame() {
   EM.ensureComponentOn(gizmo, PositionDef, V(0, 1, 0));
 
   // player
-  createPlayer();
-}
-
-async function createPlayer() {
-  const { mesh_cube, me } = await EM.whenResources(CubeMesh.def, MeDef);
-
-  const p = EM.new();
-  EM.ensureComponentOn(p, ControllableDef);
-  p.controllable.modes.canFall = true;
-  p.controllable.modes.canJump = false;
-  p.controllable.modes.canFly = false;
-  EM.ensureComponentOn(p, CameraFollowDef, 1);
-  EM.ensureComponentOn(p, PositionDef, V(0, 2, 0));
-  EM.ensureComponentOn(p, RotationDef);
-  EM.ensureComponentOn(p, LinearVelocityDef);
-
-  quat.setAxisAngle([0.0, -1.0, 0.0], 1.62, p.rotation);
-  p.controllable.speed *= 2;
-  p.controllable.sprintMul = 1;
-
-  EM.ensureComponentOn(p, RenderableConstructDef, mesh_cube.proto, true);
-  EM.ensureComponentOn(p, ColorDef, V(0.1, 0.1, 0.1));
-  EM.ensureComponentOn(p, ColliderDef, {
-    shape: "AABB",
-    solid: true,
-    aabb: mesh_cube.aabb,
-  });
-
-  vec3.copy(p.cameraFollow.positionOffset, [0.0, 4.0, 10.0]);
-  p.cameraFollow.yawOffset = 0.0;
-  p.cameraFollow.pitchOffset = -0.593;
-
-  EM.ensureComponentOn(p, AuthorityDef, me.pid);
-
-  return p;
+  const color = AllEndesga16[me.pid];
+  createMpPlayer(V(0, 10, 0), color);
 }
