@@ -46,6 +46,19 @@ export interface ComponentDef<
   // TODO(@darzu): while we're at it, we might require that components are always
   //  objects. E.g. no naked numbers or booleans. There's some other reason i think
   //  we want this that is eluding me..
+  /* 
+  TODO(@darzu):
+    ? require a copy fn and a () => P constructor
+    no way to have EM.set(ent, V(0,0,0)) w/o copy fn b/c it may exist
+    EM.add: for must-not-exist-yet add a component
+    EM.set: add or set, requires copy fn
+    EM.update: must exist already, requires copy fn
+    could be all components are objects
+      default copy fn is just object.assign
+    if we have term-level field info, we could have a default serializer/deserializer
+      but we like to either write those by hand or rely on a compile pass which can use type info
+    
+  */
   construct: (...args: Pargs) => P;
   readonly id: CompId;
   isOn: <E extends Entity>(e: E) => e is E & { [K in N]: P };
@@ -257,6 +270,12 @@ export class EntityManager {
     const serializerPair = this.serializers.get(componentId);
     if (!serializerPair)
       throw `No serializer for component ${def.name} (for entity ${id})`;
+
+    // TODO(@darzu): DBG
+    // if (componentId === 1867295084) {
+    //   console.log(`serializing 1867295084`);
+    // }
+
     serializerPair.serialize(entity[def.name], buf);
   }
 
@@ -280,6 +299,12 @@ export class EntityManager {
     const serializerPair = this.serializers.get(componentId);
     if (!serializerPair)
       throw `No deserializer for component ${def.name} (for entity ${id})`;
+
+    // TODO(@darzu): DBG
+    // if (componentId === 1867295084) {
+    //   console.log(`deserializing 1867295084, dummy: ${buf.dummy}`);
+    // }
+
     serializerPair.deserialize(component, buf);
   }
 

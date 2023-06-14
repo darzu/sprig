@@ -144,26 +144,20 @@ export class Deserializer {
     return this.dataView.getFloat32(at, LITTLE_ENDIAN);
   }
 
-  readVec2(into: vec2 | null = null): vec2 | null {
+  readVec2(into: vec2): vec2 {
     let at = this.cursor;
     this.cursor += 8;
     if (!this.dummy) {
-      if (into === null) {
-        into = vec2.create();
-      }
       into[0] = this.dataView.getFloat32(at, LITTLE_ENDIAN);
       into[1] = this.dataView.getFloat32(at + 4, LITTLE_ENDIAN);
     }
     return into;
   }
 
-  readVec3(into: vec3 | null = null): vec3 | null {
+  readVec3(into: vec3): vec3 {
     let at = this.cursor;
     this.cursor += 12;
     if (!this.dummy) {
-      if (into === null) {
-        into = vec3.create();
-      }
       into[0] = this.dataView.getFloat32(at, LITTLE_ENDIAN);
       into[1] = this.dataView.getFloat32(at + 4, LITTLE_ENDIAN);
       into[2] = this.dataView.getFloat32(at + 8, LITTLE_ENDIAN);
@@ -171,13 +165,10 @@ export class Deserializer {
     return into;
   }
 
-  readQuat(into: quat | null = null): quat | null {
+  readQuat(into: quat): quat {
     let at = this.cursor;
     this.cursor += 16;
     if (!this.dummy) {
-      if (!into) {
-        into = quat.create();
-      }
       into[0] = this.dataView.getFloat32(at, LITTLE_ENDIAN);
       into[1] = this.dataView.getFloat32(at + 4, LITTLE_ENDIAN);
       into[2] = this.dataView.getFloat32(at + 8, LITTLE_ENDIAN);
@@ -186,13 +177,10 @@ export class Deserializer {
     return into;
   }
 
-  readMat4(into: mat4 | null = null): mat4 | null {
+  readMat4(into: mat4): mat4 {
     let at = this.cursor;
     this.cursor += 16 * 4;
     if (!this.dummy) {
-      if (!into) {
-        into = mat4.create();
-      }
       for (let i = 0; i < 16; i++)
         into[i] = this.dataView.getFloat32(at + i * 4, LITTLE_ENDIAN);
     }

@@ -59,15 +59,23 @@ export const {
   name: "mpPlayer",
   defaultProps: (location?: vec3, color?: vec3) => {
     console.log(
-      `creating mpPlayerProps w/ ${location ? vec3Dbg(location) : "NULL"} ${
-        color ? vec3Dbg(color) : "NULL"
-      }`
+      `creating mpPlayerProps w/ ${vec3Dbg(location)} ${vec3Dbg(color)}`
     );
     return {
       location: location ?? V(0, 0, 0),
       color: color ?? V(0, 0, 0),
     };
   },
+  // TODO(@darzu): can't do this b/c constructors must create a valid shape even when given no params
+  // defaultProps: (location: vec3, color: vec3) => {
+  //   console.log(
+  //     `creating mpPlayerProps w/ ${vec3Dbg(location)} ${vec3Dbg(color)}`
+  //   );
+  //   return {
+  //     location: location,
+  //     color: color,
+  //   };
+  // },
   serializeProps: (c, buf) => {
     buf.writeVec3(c.location);
     buf.writeVec3(c.color);
@@ -128,6 +136,8 @@ export const {
     return e;
   },
 });
+
+// console.log(`MpPlayerPropsDef: ${MpPlayerPropsDef.id}`); // 1867295084
 
 export async function initMPGame() {
   EM.addEagerInit([], [RendererDef], [], (res) => {

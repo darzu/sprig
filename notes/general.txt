@@ -1419,3 +1419,6 @@ Staged programming:
 
 Should look at:
   https://handmadehero.org
+
+Lots of great links here (minionsart):
+  https://minionsart.github.io/tutorials/

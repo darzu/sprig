@@ -97,7 +97,7 @@ export function registerToolSystems() {
       tool.physicsParent.id = 0;
       // TODO(@darzu): add interact box
       // EM.addComponent(tool.id, InteractableDef);
-      vec3.copy(tool.position, location!);
+      vec3.copy(tool.position, location);
       EM.ensureComponentOn(tool, ScaleDef);
       vec3.copy(tool.scale, [1, 1, 1]);
       player.hsPlayer.tool = 0;
@@ -107,7 +107,7 @@ export function registerToolSystems() {
       buf.writeVec3(location);
     },
     deserializeExtra: (buf) => {
-      return buf.readVec3()!;
+      return buf.readVec3(vec3.create());
     },
   });
 }

@@ -268,3 +268,22 @@ Programming is several skills:
   Defining boundries/abstractions
 
 There is no universal advice (including this advice)
+
+"speed-matters", http://jsomers.net/blog/speed-matters:
+  "systems which eat items quickly are fed more items. Slow systems starve."
+  lots of good insights here that touch on many of my hypothesis
+
+"More people should write":
+  http://jsomers.net/blog/more-people-should-write
+
+Keep your own internet:
+  Eric Lippert's C# blog is down: https://devblogs.microsoft.com/ericlippert/constraints-are-not-part-of-the-signature.aspx
+  and I can't find it on archive.org
+  Or any copies elsewhere including at https://ericlippert.com
+  There's always risk of YouTube videos going down too.
+  Perhapse one should have a private cached copy of your internet.
+    Synced to cloud storage?
+  It might be important to keep it personal and not publicly hosted so that
+    it is fair use. Or just so you avoid scrutiny
+  A limited set of types. All text is markdown? Media has to explicitly be opted in?
+    Maybe take advantage of reader mode in browsers?

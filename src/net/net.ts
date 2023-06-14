@@ -143,10 +143,10 @@ class Net {
         break;
       }
       default:
-        if (VERBOSE_NET_LOG)
-          console.log(
-            `non-ping/pong msg from ${address}, type: ${MessageType[type]}`
-          );
+        // if (VERBOSE_NET_LOG)
+        //   // console.log(
+        //   //   `non-ping/pong msg from ${address}, type: ${MessageType[type]}`
+        //   // );
         this.outgoingEvents.push({
           type: NetworkEventType.MessageRecv,
           from: address,

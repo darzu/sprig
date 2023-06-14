@@ -386,3 +386,13 @@ export function enumAsList<T extends {}>(e: T): T[keyof T][] {
 export function isPromise(p: unknown): p is Promise<unknown> {
   return p instanceof Promise;
 }
+
+export type NonNull = string | number | boolean | symbol | object;
+
+export type TAssert<A extends true> = A;
+
+// export type TEquals<X, Y> =
+//     (<T>() => T extends X ? 1 : 2) extends
+//     (<T>() => T extends Y ? 1 : 2) ? true : false;
+
+export type IsOptional<T> = T | undefined extends T ? true : false;
