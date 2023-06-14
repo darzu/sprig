@@ -57,7 +57,16 @@ export interface ComponentDef<
       default copy fn is just object.assign
     if we have term-level field info, we could have a default serializer/deserializer
       but we like to either write those by hand or rely on a compile pass which can use type info
-    
+    how important is taking in ...args as opposed to a P?
+    could have constructor fn `() => P` and update fn `(p: P, ...args: Pargs) => void`
+    better to put more burden at component def time than EM.set time
+    how do these interact with deserialize?
+    copy is just one type of update
+    construct + update
+    that would solve my bug, b/c u must provide ()=>P
+    deserialization is just one kind of update
+    for entity pools, since the components would exist, the update would be natural?
+      could skip seperating the create & onSpawn? nah. well maybe optionally.
   */
   construct: (...args: Pargs) => P;
   readonly id: CompId;
@@ -451,6 +460,7 @@ export class EntityManager {
     ...args: Pargs
   ): asserts e is EntityW<[ComponentDef<N, P, Pargs>]> {
     const alreadyHas = def.name in e;
+    // assert(!alreadyHas, `${e.id} already has ${def.name}`);
     if (!alreadyHas) {
       this.addComponent(e.id, def, ...args);
     }
