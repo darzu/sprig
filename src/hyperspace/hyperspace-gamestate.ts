@@ -34,7 +34,7 @@ export enum HyperspaceGameState {
   GAMEOVER,
 }
 
-export const HSGameStateDef = EM.defineComponent("hsGameState", () => {
+export const HSGameStateDef = EM.defineResource("hsGameState", () => {
   return { state: HyperspaceGameState.LOBBY, time: 0 };
 });
 

@@ -47,7 +47,7 @@ type HLineEnt = EntityW<
   ]
 >;
 
-export const PathEditorDef = EM.defineComponent(
+export const PathEditorDef = EM.defineResource(
   "pathEditor",
   (pe: PathEditor) => pe
 );

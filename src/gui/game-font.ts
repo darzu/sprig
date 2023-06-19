@@ -54,7 +54,7 @@ const DBG_3D = false; // TODO(@darzu): add in-game smooth transition!
 const PANEL_W = 4 * 12;
 const PANEL_H = 3 * 12;
 
-export const UICursorDef = EM.defineComponent(
+export const UICursorDef = EM.defineResource(
   "uiCursor",
   (cursor: EntityW<[typeof PositionDef]>) => ({
     cursor,

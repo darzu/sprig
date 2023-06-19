@@ -1422,3 +1422,21 @@ Should look at:
 
 Lots of great links here (minionsart):
   https://minionsart.github.io/tutorials/
+
+Is OOP sometimes okay?
+  https://seanmiddleditch.github.io/oop-is-fine-in-moderation/
+    OOP is orthogonal to language
+    OOP doesn't require inheritence
+      e.g. rust polymorphism w/ traits, no inheritence
+    OOP is just objects w/ properties and methods
+    Taxonomies are a common and bad example 
+      humans care about categorizing,
+      software cares about computation and communication
+    Objects should be built around how they interact, not how they represent
+    "focus on what the software seeks to accomplish first before deciding how to structure OOP interfaces"
+      true for all abstraction IMO
+    "OOP composes on behavioral boundaries"
+
+Write Games, Not Engines
+  classic
+  https://geometrian.com/programming/tutorials/write-games-not-engines/index.php

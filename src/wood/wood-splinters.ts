@@ -27,7 +27,7 @@ export const SplinterParticleDef = EM.defineComponent("splinter", () => {
   return {};
 });
 
-export const SplinterPoolsDef = EM.defineComponent("splinterPools", () => {
+export const SplinterPoolsDef = EM.defineResource("splinterPools", () => {
   const _pools = new Map<string, SplinterPool>();
 
   function getOrCreatePool(seg: BoardSeg) {

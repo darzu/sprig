@@ -1,5 +1,5 @@
 import { Canvas, CanvasDef } from "../render/canvas.js";
-import { Component, EM } from "../ecs/entity-manager.js";
+import { Component, EM, Resource } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { clamp } from "../utils/math.js";
 import { DEBUG_INPUTS } from "../flags.js";
@@ -10,7 +10,7 @@ import { Phase } from "../ecs/sys-phase.js";
 
 const _seenKeyCodes: Set<string> = new Set();
 
-export const InputsDef = EM.defineComponent("inputs", () => {
+export const InputsDef = EM.defineResource("inputs", () => {
   return {
     mouseMov: vec2.create(),
     mousePos: vec2.create(),
@@ -25,10 +25,10 @@ export const InputsDef = EM.defineComponent("inputs", () => {
   };
 });
 
-export type Inputs = Component<typeof InputsDef>;
+export type Inputs = Resource<typeof InputsDef>;
 
 // TODO(@darzu): generalize to other input types e.g. controller, gyro
-export const MouseDragDef = EM.defineComponent("mousedrag", () => ({
+export const MouseDragDef = EM.defineResource("mousedrag", () => ({
   isDragging: false,
   isDragEnd: false,
   dragStart: vec2.create(),

@@ -1,8 +1,8 @@
-import { Component, EM } from "../ecs/entity-manager.js";
+import { Component, EM, Resource } from "../ecs/entity-manager.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { VERBOSE_LOG } from "../flags.js";
 
-export const CanvasDef = EM.defineComponent(
+export const CanvasDef = EM.defineResource(
   "htmlCanvas",
   (canvas: HTMLCanvasElement) => {
     return {
@@ -14,9 +14,9 @@ export const CanvasDef = EM.defineComponent(
     };
   }
 );
-export type Canvas = Component<typeof CanvasDef>;
+export type Canvas = Resource<typeof CanvasDef>;
 
-export const HasFirstInteractionDef = EM.defineComponent(
+export const HasFirstInteractionDef = EM.defineResource(
   "hasFirstInteraction",
   () => true
 );

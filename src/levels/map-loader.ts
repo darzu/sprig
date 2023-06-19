@@ -45,7 +45,7 @@ export interface MapBytes {
 
 export type MapBytesSet = { [P in MapName]: MapBytes };
 
-export const MapBytesSetDef = EM.defineComponent(
+export const MapBytesSetDef = EM.defineResource(
   "mapBytesSet",
   (mapBytesSet: MapBytesSet) => mapBytesSet
 );

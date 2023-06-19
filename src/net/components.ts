@@ -1,4 +1,4 @@
-import { EM, Component } from "../ecs/entity-manager.js";
+import { EM, Component, Resource } from "../ecs/entity-manager.js";
 import { Deserializer } from "../utils/serialize.js";
 import { MessageType } from "./message.js";
 import { FromNetworkEvent, ToNetworkEvent } from "./network-events.js";
@@ -26,7 +26,9 @@ export const PeerDef = EM.defineComponent("peer", () => ({
 
 export type Peer = Component<typeof PeerDef>;
 
-export const HostDef = EM.defineComponent("host", () => true);
+// TODO(@darzu): BUG!! We have two versions of host, resource and component!
+export const HostDef = EM.defineResource("host", () => true);
+export const HostCompDef = EM.defineComponent("host", () => true);
 
 export const AuthorityDef = EM.defineComponent("authority", (pid?: number) => ({
   pid: pid || 0,
@@ -57,13 +59,13 @@ export function claimAuthority(
   return false;
 }
 
-export const PeerNameDef = EM.defineComponent("peerName", (name?: string) => ({
+export const PeerNameDef = EM.defineResource("peerName", (name?: string) => ({
   name: name || "",
 }));
 
-export type PeerName = Component<typeof PeerNameDef>;
+export type PeerName = Resource<typeof PeerNameDef>;
 
-export const MeDef = EM.defineComponent(
+export const MeDef = EM.defineResource(
   "me",
   (pid?: number, host?: boolean) => ({
     pid: pid || 1,
@@ -71,7 +73,7 @@ export const MeDef = EM.defineComponent(
   })
 );
 
-export type Me = Component<typeof MeDef>;
+export type Me = Resource<typeof MeDef>;
 
 export const InboxDef = EM.defineComponent(
   "inbox",
@@ -88,29 +90,29 @@ export function send(outbox: Outbox, buffer: DataView) {
   outbox.push(buffer);
 }
 
-export const NetStatsDef = EM.defineComponent("netStats", () => ({
+export const NetStatsDef = EM.defineResource("netStats", () => ({
   skewEstimate: {} as Record<string, number>,
   pingEstimate: {} as Record<string, number>,
 }));
 
 export type NetStats = Component<typeof NetStatsDef>;
 
-export const EventsFromNetworkDef = EM.defineComponent(
+export const EventsFromNetworkDef = EM.defineResource(
   "eventsFromNetwork",
   () => [] as FromNetworkEvent[]
 );
 
 export type EventsFromNetwork = Component<typeof EventsFromNetworkDef>;
 
-export const EventsToNetworkDef = EM.defineComponent(
+export const EventsToNetworkDef = EM.defineResource(
   "eventsToNetwork",
   () => [] as ToNetworkEvent[]
 );
 
 export type EventsToNetwork = Component<typeof EventsToNetworkDef>;
 
-export const NetworkReadyDef = EM.defineComponent("networkReady", () => true);
-export const JoinDef = EM.defineComponent("join", (address: string) => ({
+export const NetworkReadyDef = EM.defineResource("networkReady", () => true);
+export const JoinDef = EM.defineResource("join", (address: string) => ({
   address,
   state: "start" as "start" | "connecting" | "joining",
   lastSendTime: 0,

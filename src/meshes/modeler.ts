@@ -23,7 +23,7 @@ import { Phase } from "../ecs/sys-phase.js";
 
 const ENABLED = true;
 
-export const ModelerDef = EM.defineComponent("modeler", () => {
+export const ModelerDef = EM.defineResource("modeler", () => {
   return {
     clickerEnabled: false,
     currentBoxes: [] as number[],

@@ -1,5 +1,5 @@
 import { CanvasDef } from "../render/canvas.js";
-import { Component, EM, EntityW } from "../ecs/entity-manager.js";
+import { Component, EM, EntityW, Resource } from "../ecs/entity-manager.js";
 import { vec3, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { MeDef } from "../net/components.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
@@ -14,7 +14,7 @@ import { Phase } from "../ecs/sys-phase.js";
 export type PerspectiveMode = "perspective" | "ortho";
 export type CameraMode = "thirdPerson" | "thirdPersonOverShoulder";
 
-export const CameraDef = EM.defineComponent("camera", () => {
+export const CameraDef = EM.defineResource("camera", () => {
   return {
     perspectiveMode: "perspective" as PerspectiveMode,
     fov: (2 * Math.PI) / 5,
@@ -52,7 +52,7 @@ export type ShadowCascade = {
 
 // NOTE: cameraComputed should only have derived values based on properties in camera
 // TODO(@darzu): CameraDef also has computed stuff..
-export const CameraComputedDef = EM.defineComponent("cameraComputed", () => {
+export const CameraComputedDef = EM.defineResource("cameraComputed", () => {
   return {
     aspectRatio: 1,
     width: 100,
@@ -64,7 +64,7 @@ export const CameraComputedDef = EM.defineComponent("cameraComputed", () => {
     shadowCascadeMats: [] as ShadowCascade[],
   };
 });
-export type CameraView = Component<typeof CameraComputedDef>;
+export type CameraView = Resource<typeof CameraComputedDef>;
 
 export const CameraFollowDef = EM.defineComponent(
   "cameraFollow",

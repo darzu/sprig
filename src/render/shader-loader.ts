@@ -32,7 +32,7 @@ export interface Shader {
 
 export type ShaderSet = { [P in ShaderName]: Shader };
 
-export const ShadersDef = EM.defineComponent(
+export const ShadersDef = EM.defineResource(
   "shaders",
   (shaders: ShaderSet) => shaders
 );

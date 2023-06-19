@@ -1,12 +1,12 @@
-import { Component, EM } from "../ecs/entity-manager.js";
+import { Component, EM, Resource } from "../ecs/entity-manager.js";
 
-export const TimeDef = EM.defineComponent("time", () => ({
+export const TimeDef = EM.defineResource("time", () => ({
   time: 0,
   lastTime: 0,
   step: 0,
   dt: 0,
 }));
-export type Time = Component<typeof TimeDef>;
+export type Time = Resource<typeof TimeDef>;
 
 export function tick(dt: number) {
   const time = EM.ensureResource(TimeDef);

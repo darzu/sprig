@@ -19,6 +19,9 @@ import {
 } from "../utils/util.js";
 import { Phase, PhaseValueList } from "./sys-phase.js";
 
+// TODO(@darzu): re-check all uses of "any" and prefer "unknown"
+//    see: https://github.com/Microsoft/TypeScript/pull/24439
+
 // TODO(@darzu): for perf, we really need to move component data to be
 //  colocated in arrays; and maybe introduce "arch-types" for commonly grouped
 //  components and "worlds" to section off entities.
@@ -27,15 +30,27 @@ export interface Entity {
   readonly id: number;
 }
 
-export type CompId = number;
-export type ResId = CompId;
+export type ResId = number;
 
+export interface ResourceDef<
+  N extends string = string,
+  P = any,
+  Pargs extends any[] = any[]
+> {
+  _brand: "resourceDef"; // TODO(@darzu): remove once ResourceDef & ComponentDef are incompatible
+  readonly id: ResId;
+  readonly name: N;
+  construct: (...args: Pargs) => P;
+}
+
+export type CompId = number;
 // TODO(@darzu): we should seperate component vs resource def
 export interface ComponentDef<
   N extends string = string,
   P = any,
   Pargs extends any[] = any[]
 > {
+  _brand: "componentDef"; // TODO(@darzu): remove once ResourceDef & ComponentDef are incompatible
   readonly name: N;
   // TODO(@darzu): Instead of a constructor, we should require a copy fn that can
   //  both initialize a new obj or copy new properties into an existing one. This
@@ -69,37 +84,53 @@ export interface ComponentDef<
       could skip seperating the create & onSpawn? nah. well maybe optionally.
   */
   construct: (...args: Pargs) => P;
+  // make: () => P;
+  // update: (p: P, ...args: Pargs) => P;
   readonly id: CompId;
   isOn: <E extends Entity>(e: E) => e is E & { [K in N]: P };
 }
 export type Component<DEF> = DEF extends ComponentDef<any, infer P> ? P : never;
 
-export const componentsToString = (cs: ComponentDef[]) =>
+export type Resource<DEF> = DEF extends ResourceDef<any, infer P> ? P : never;
+
+export const componentsToString = (cs: (ComponentDef | ResourceDef)[]) =>
   `(${cs.map((c) => c.name).join(", ")})`;
 
 export type WithComponent<D> = D extends ComponentDef<infer N, infer P>
   ? { readonly [k in N]: P }
   : never;
+export type EntityW1<N extends string, P> = {
+  readonly id: number;
+} & { [k in N]: P };
 export type EntityW<
   CS extends readonly ComponentDef[],
   ID extends number = number
 > = {
   readonly id: ID;
 } & Intersect<{ [P in keyof CS]: WithComponent<CS[P]> }>;
+
+export type WithResource<D> = D extends ResourceDef<infer N, infer P>
+  ? { readonly [k in N]: P }
+  : never;
+export type Resources<RS extends readonly ResourceDef[]> = Intersect<{
+  [P in keyof RS]: WithResource<RS[P]>;
+}>;
+
 export type Entities<CS extends ComponentDef[]> = EntityW<CS>[];
 export type ReadonlyEntities<CS extends ComponentDef[]> =
   readonly EntityW<CS>[];
+
 export type SystemFn<
   CS extends ComponentDef[] | null = ComponentDef[] | null,
-  RS extends ComponentDef[] = ComponentDef[]
+  RS extends ResourceDef[] = ResourceDef[]
 > = (
   es: CS extends ComponentDef[] ? ReadonlyEntities<CS> : [],
-  resources: EntityW<RS>
+  resources: Resources<RS>
 ) => void;
 
 interface SystemReg {
   cs: ComponentDef[] | null;
-  rs: ComponentDef[];
+  rs: ResourceDef[];
   callback: SystemFn;
   name: string;
   phase: Phase;
@@ -108,23 +139,22 @@ interface SystemReg {
 
 export type InitFnId = number;
 
-export type InitFn<RS extends ComponentDef[] = ComponentDef[]> =
-  | ((rs: EntityW<RS>) => Promise<void>)
-  | ((rs: EntityW<RS>) => void);
+export type InitFn<RS extends ResourceDef[] = ResourceDef[]> =
+  | ((rs: Resources<RS>) => Promise<void>)
+  | ((rs: Resources<RS>) => void);
 
-export interface InitFnReg<RS extends ComponentDef[] = ComponentDef[]> {
-  // TODO(@darzu): debug name
-  // name: string;
+export interface InitFnReg<RS extends ResourceDef[] = ResourceDef[]> {
   requireRs: [...RS];
   requireCompSet?: ComponentDef[];
-  provideRs: ComponentDef[];
+  provideRs: ResourceDef[];
   eager?: boolean; // TODO(@darzu): flop this to lazy? more clear. make required?
   fn: InitFn<RS>;
   id: InitFnId;
+  name?: string; // TODO(@darzu): make required?
 }
 
 export function initFnToString(init: InitFnReg) {
-  return `#${init.id}:${componentsToString(
+  return `${init.name ?? `#${init.id}`}:${componentsToString(
     init.requireRs
   )} -> ${componentsToString(init.provideRs)}`;
 }
@@ -153,6 +183,13 @@ type EntityPromise<
   // name: string;
 };
 
+type ResourcesPromise<RS extends ResourceDef[]> = {
+  id: number;
+  rs: RS;
+  callback: (e: Resources<RS>) => void;
+};
+
+// TODO(@darzu): remove? i think these r unused
 type EDefId<ID extends number, CS extends ComponentDef[]> = [ID, ...CS];
 type ESetId<DS extends EDefId<number, any>[]> = {
   [K in keyof DS]: DS[K] extends EDefId<infer ID, infer CS>
@@ -183,7 +220,6 @@ interface SystemStats {
 
 export class EntityManager {
   entities: Map<number, Entity> = new Map();
-  ent0: Entity & { id: 0 };
   allSystemsByName: Map<string, SystemReg> = new Map();
   activeSystemsById: Map<number, SystemReg> = new Map();
   phases: Map<Phase, string[]> = toMap(
@@ -192,7 +228,10 @@ export class EntityManager {
     (_) => [] as string[]
   );
   entityPromises: Map<number, EntityPromise<ComponentDef[], any>[]> = new Map();
-  components: Map<CompId, ComponentDef<any, any>> = new Map();
+  resourcePromises: ResourcesPromise<ResourceDef[]>[] = [];
+  components: Map<CompId, ComponentDef> = new Map(); // TODO(@darzu): rename to componentDefs ?
+  resourceDefs: Map<ResId, ResourceDef> = new Map();
+  resources: Record<string, unknown> = {};
 
   serializers: Map<
     number,
@@ -224,29 +263,54 @@ export class EntityManager {
   private _componentToSystems: Map<string, number[]> = new Map();
 
   constructor() {
+    // dummy ent 0
     const ent0 = Object.create(null); // no prototype
     ent0.id = 0;
-    this.ent0 = ent0 as Entity & { id: 0 };
-    this.entities.set(0, this.ent0);
+    this.entities.set(0, ent0);
     // TODO(@darzu): maintain _entitiesToSystems for ent 0?
+  }
+
+  public defineResource<N extends string, P, Pargs extends any[]>(
+    name: N,
+    construct: (...args: Pargs) => P
+  ): ResourceDef<N, P, Pargs> {
+    const id = nameToId(name);
+    if (this.resourceDefs.has(id)) {
+      throw `Resource with name ${name} already defined--hash collision?`;
+    }
+    const def: ResourceDef<N, P, Pargs> = {
+      _brand: "resourceDef", // TODO(@darzu): remove?
+      name,
+      construct,
+      id,
+    };
+    this.resourceDefs.set(id, def);
+    return def;
   }
 
   public defineComponent<N extends string, P, Pargs extends any[]>(
     name: N,
     construct: (...args: Pargs) => P
+    // make: () => P,
+    // update: (p: P, ...args: Pargs) => P
   ): ComponentDef<N, P, Pargs> {
     const id = nameToId(name);
     if (this.components.has(id)) {
       throw `Component with name ${name} already defined--hash collision?`;
     }
-    const component = {
+    const component: ComponentDef<N, P, Pargs> = {
+      _brand: "componentDef", // TODO(@darzu): remove?
       name,
       construct,
+      // make,
+      // update,
       id,
       isOn: <E extends Entity>(e: E): e is E & { [K in N]: P } =>
         // (e as Object).hasOwn(name),
         name in e,
     };
+    // // TODO(@darzu): I don't love this cast. feels like it should be possible without..
+    // this.components.set(id, component as unknown as ComponentDef);
     this.components.set(id, component);
     return component;
   }
@@ -380,7 +444,6 @@ export class EntityManager {
   ): P {
     this.checkComponent(def);
     if (id === 0) throw `hey, use addResource!`;
-    const c = def.construct(...args);
     const e = this.entities.get(id)!;
     // TODO: this is hacky--EM shouldn't know about "deleted"
     if (DBG_ASSERT && this.isDeletedE(e)) {
@@ -390,6 +453,9 @@ export class EntityManager {
     }
     if (def.name in e)
       throw `double defining component ${def.name} on ${e.id}!`;
+    const c = def.construct(...args);
+    // let c = def.make();
+    // c = def.update(c, ...args);
     (e as any)[def.name] = c;
 
     // update query caches
@@ -454,7 +520,7 @@ export class EntityManager {
   // TODO(@darzu): do we want to make this the standard way we do ensureComponent and addComponent ?
   // TODO(@darzu): rename to "set" and have "maybeSet" w/ a thunk as a way to short circuit unnecessary init?
   //      and maybe "strictSet" as the version that throws if it exists (renamed from "addComponent")
-  public ensureComponentOn<N extends string, P, Pargs extends any[] = any[]>(
+  public ensureComponentOn<N extends string, P, Pargs extends any[] = []>(
     e: Entity,
     def: ComponentDef<N, P, Pargs>,
     ...args: Pargs
@@ -467,59 +533,64 @@ export class EntityManager {
   }
 
   public addResource<N extends string, P, Pargs extends any[] = any[]>(
-    def: ComponentDef<N, P, Pargs>,
+    def: ResourceDef<N, P, Pargs>,
     ...args: Pargs
   ): P {
-    this.checkComponent(def);
+    assert(
+      this.resourceDefs.has(def.id),
+      `Resource ${def.name} (id ${def.id}) not found`
+    );
+    assert(
+      this.resourceDefs.get(def.id)!.name === def.name,
+      `Resource id ${def.id} has name ${
+        this.resourceDefs.get(def.id)!.name
+      }, not ${def.name}`
+    );
+    assert(
+      !(def.name in this.resources),
+      `double defining resource ${def.name}!`
+    );
+
     const c = def.construct(...args);
-    const e = this.ent0;
-    if (def.name in e)
-      throw `double defining singleton component ${def.name} on ${e.id}!`;
-    (e as any)[def.name] = c;
+    this.resources[def.name] = c;
     this._changedEntities.add(0); // TODO(@darzu): seperate Resources from Entities
     this.seenResources.add(def.id);
     return c;
   }
 
   public ensureResource<N extends string, P, Pargs extends any[] = any[]>(
-    def: ComponentDef<N, P, Pargs>,
+    def: ResourceDef<N, P, Pargs>,
     ...args: Pargs
   ): P {
-    this.checkComponent(def);
-    const e = this.ent0;
-    const alreadyHas = def.name in e;
+    const alreadyHas = def.name in this.resources;
     if (!alreadyHas) {
       return this.addResource(def, ...args);
     } else {
-      return (e as any)[def.name];
+      return this.resources[def.name] as P;
     }
   }
 
-  public removeResource<C extends ComponentDef>(def: C) {
-    const e = this.ent0 as any;
-    if (def.name in e) {
-      delete e[def.name];
+  public removeResource<C extends ResourceDef>(def: C) {
+    if (def.name in this.resources) {
+      delete this.resources[def.name];
     } else {
-      throw `Tried to remove absent singleton component ${def.name}`;
+      throw `Tried to remove absent resource ${def.name}`;
     }
   }
 
   // TODO(@darzu): should this be public??
   // TODO(@darzu): rename to findResource
-  public getResource<C extends ComponentDef>(
+  public getResource<C extends ResourceDef>(
     c: C
-  ): (C extends ComponentDef<any, infer P> ? P : never) | undefined {
-    const e = this.ent0;
-    if (c.name in e) {
-      return (e as any)[c.name];
-    }
-    return undefined;
+  ): (C extends ResourceDef<any, infer P> ? P : never) | undefined {
+    return this.resources[c.name] as any;
   }
-  public getResources<RS extends ComponentDef[]>(
+  // TODO(@darzu): remove? we should probably be using "whenResources"
+  public getResources<RS extends ResourceDef[]>(
     rs: [...RS]
-  ): EntityW<RS, 0> | undefined {
-    const e = this.ent0;
-    if (rs.every((r) => r.name in e)) return e as any;
+  ): Resources<RS> | undefined {
+    if (rs.every((r) => r.name in this.resources))
+      return this.resources as Resources<RS>;
     return undefined;
   }
 
@@ -640,6 +711,7 @@ export class EntityManager {
     return e as EntityW<CS, ID>;
   }
 
+  // TODO(@darzu): remove? i think this is unused
   public findEntitySet<ES extends EDefId<number, any>[]>(
     es: [...ES]
   ): ESetId<ES> {
@@ -701,10 +773,11 @@ export class EntityManager {
 
   _nextInitFnId = 1;
 
-  public addLazyInit<RS extends ComponentDef[]>(
+  public addLazyInit<RS extends ResourceDef[]>(
     requireRs: [...RS],
-    provideRs: ComponentDef[],
-    callback: InitFn<RS>
+    provideRs: ResourceDef[],
+    callback: InitFn<RS>,
+    name?: string // TODO(@darzu): make required?
   ): InitFnReg<RS> {
     const id = this._nextInitFnId++;
     const reg: InitFnReg<RS> = {
@@ -713,15 +786,17 @@ export class EntityManager {
       fn: callback,
       eager: false,
       id,
+      name,
     };
     this.addInit(reg);
     return reg;
   }
-  public addEagerInit<RS extends ComponentDef[]>(
+  public addEagerInit<RS extends ResourceDef[]>(
     requireCompSet: ComponentDef[],
     requireRs: [...RS],
-    provideRs: ComponentDef[],
-    callback: InitFn<RS>
+    provideRs: ResourceDef[],
+    callback: InitFn<RS>,
+    name?: string // TODO(@darzu): make required?
   ): InitFnReg<RS> {
     const id = this._nextInitFnId++;
     const reg: InitFnReg<RS> = {
@@ -731,27 +806,28 @@ export class EntityManager {
       fn: callback,
       eager: true,
       id,
+      name,
     };
     this.addInit(reg);
     return reg;
   }
 
   private _nextSystemId = 1;
-  public addSystem<CS extends ComponentDef[], RS extends ComponentDef[]>(
+  public addSystem<CS extends ComponentDef[], RS extends ResourceDef[]>(
     name: string,
     phase: Phase,
     cs: [...CS],
     rs: [...RS],
     callback: SystemFn<CS, RS>
   ): void;
-  public addSystem<CS extends null, RS extends ComponentDef[]>(
+  public addSystem<CS extends null, RS extends ResourceDef[]>(
     name: string,
     phase: Phase,
     cs: null,
     rs: [...RS],
     callback: SystemFn<CS, RS>
   ): void;
-  public addSystem<CS extends ComponentDef[], RS extends ComponentDef[]>(
+  public addSystem<CS extends ComponentDef[], RS extends ResourceDef[]>(
     name: string,
     phase: Phase,
     cs: [...CS] | null,
@@ -792,9 +868,15 @@ export class EntityManager {
       // NOTE: we delay activating the system b/c each active system incurs
       //  a cost to maintain its query accelerators on each entity and component
       //  added/removed
-      this.addEagerInit(sys.cs ?? [], sys.rs, [], () => {
-        this.activateSystem(sys);
-      });
+      this.addEagerInit(
+        sys.cs ?? [],
+        sys.rs,
+        [],
+        () => {
+          this.activateSystem(sys);
+        },
+        `sysinit_${sys.name}`
+      );
     }
   }
 
@@ -833,10 +915,39 @@ export class EntityManager {
     }
   }
 
-  public whenResources<RS extends ComponentDef[]>(
+  public whenResources<RS extends ResourceDef[]>(
     ...rs: RS
-  ): Promise<EntityW<RS, 0>> {
-    return this.whenEntityHas(this.ent0, ...rs);
+  ): Promise<Resources<RS>> {
+    // short circuit if we already have the components
+    if (rs.every((c) => c.name in this.resources))
+      return Promise.resolve(this.resources as Resources<RS>);
+
+    const promiseId = this._nextEntityPromiseId++;
+
+    if (DBG_VERBOSE_ENTITY_PROMISE_CALLSITES || DBG_INIT_CAUSATION) {
+      // if (dbgOnce("getCallStack")) console.dir(getCallStack());
+      let line = getCallStack().find(
+        (s) =>
+          !s.includes("entity-manager") && //
+          !s.includes("em-helpers")
+      )!;
+
+      if (DBG_VERBOSE_ENTITY_PROMISE_CALLSITES)
+        console.log(
+          `promise #${promiseId}: ${componentsToString(rs)} from: ${line}`
+        );
+      this._dbgEntityPromiseCallsites.set(promiseId, line);
+    }
+
+    return new Promise<Resources<RS>>((resolve, reject) => {
+      const sys: ResourcesPromise<RS> = {
+        id: promiseId,
+        rs,
+        callback: resolve,
+      };
+
+      this.resourcePromises.push(sys);
+    });
   }
 
   hasSystem(name: string) {
@@ -946,6 +1057,10 @@ export class EntityManager {
 
       res += `ent waiting: ${id} <- (${unmet.join(",")})\n`;
     }
+    for (let prom of this.resourcePromises) {
+      // if (prom.rs.some((r) => !(r.name in this.resources)))
+      res += `resources waiting: (${prom.rs.map((r) => r.name).join(",")})\n`;
+    }
     return res;
   }
 
@@ -988,11 +1103,26 @@ export class EntityManager {
 
     const beforeOneShots = performance.now();
 
-    // for resources, check init fns
+    // check resource promises
     // TODO(@darzu): also check and call init functions for systems!!
-    const resourcePromises = this.entityPromises.get(0);
-    resourcePromises?.forEach((p) =>
-      p.cs.forEach((r) => {
+    for (
+      // run backwards so we can remove as we go
+      let idx = this.resourcePromises.length - 1;
+      idx >= 0;
+      idx--
+    ) {
+      const p = this.resourcePromises[idx];
+      let finished = p.rs.every((r) => r.name in this.resources);
+      if (finished) {
+        this.resourcePromises.splice(idx, 1);
+        // TODO(@darzu): record time?
+        // TODO(@darzu): how to handle async callbacks and their timing?
+        p.callback(this.resources);
+        madeProgress = true;
+        continue;
+      }
+      // if it's not ready to run, try to push the required resources along
+      p.rs.forEach((r) => {
         const forced = this.tryForceResourceInit(r);
         madeProgress ||= forced;
         if (DBG_INIT_CAUSATION && forced) {
@@ -1003,9 +1133,10 @@ export class EntityManager {
             } from: ${line}`
           );
         }
-      })
-    );
+      });
+    }
 
+    // check entity promises
     let finishedEntities: Set<number> = new Set();
     this.entityPromises.forEach((promises, id) => {
       // no change
@@ -1070,7 +1201,7 @@ export class EntityManager {
 
     let haveAllResources = true;
     for (let _r of sys.rs) {
-      let r = _r as ComponentDef;
+      let r = _r as ResourceDef;
       if (!this.getResource(r)) {
         console.warn(`System '${name}' missing resource: ${r.name}`);
         haveAllResources = false;
@@ -1237,6 +1368,9 @@ export class EntityManager {
     this.allInits.set(reg.id, reg);
     if (reg.eager) {
       this.pendingEagerInits.push(reg);
+
+      if (DBG_VERBOSE_INIT_SEQ)
+        console.log(`new eager: ${initFnToString(reg)}`);
     } else {
       assert(
         reg.provideRs.length > 0,
@@ -1253,7 +1387,7 @@ export class EntityManager {
       if (DBG_VERBOSE_INIT_SEQ) console.log(`new lazy: ${initFnToString(reg)}`);
     }
   }
-  private tryForceResourceInit(r: ComponentDef): boolean {
+  private tryForceResourceInit(r: ResourceDef): boolean {
     const lazy = this.pendingLazyInitsByProvides.get(r.id);
     if (!lazy) return false;
 
@@ -1292,8 +1426,7 @@ export class EntityManager {
       this._runningInitStack.push(init);
     }
 
-    // TODO(@darzu): verify that it doesn't add any resources not mentioned in provides
-    const promise = init.fn(this.ent0);
+    const promise = init.fn(this.resources);
     this.startedInits.set(init.id, promise);
 
     if (DBG_VERBOSE_INIT_SEQ)
@@ -1302,8 +1435,12 @@ export class EntityManager {
     if (isPromise(promise)) await promise;
 
     // assert resources were added
+    // TODO(@darzu): verify that init fn doesn't add any resources not mentioned in provides
     for (let res of init.provideRs)
-      assert(res.isOn(this.ent0), `Init fn failed to provide: ${res.name}`);
+      assert(
+        res.name in this.resources,
+        `Init fn failed to provide: ${res.name}`
+      );
 
     // update init fn stats after
     {

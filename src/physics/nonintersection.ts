@@ -44,7 +44,7 @@ import { Phase } from "../ecs/sys-phase.js";
 
 // TODO(@darzu): break up PhysicsResults
 // TODO(@darzu): rename "BroadphaseResults" ?
-export const PhysicsResultsDef = EM.defineComponent("physicsResults", () => {
+export const PhysicsResultsDef = EM.defineResource("physicsResults", () => {
   return {
     collidesWith: new Map<number, number[]>() as CollidesWith,
     reboundData: new Map<IdPair, ReboundData>(),
@@ -187,7 +187,7 @@ export function registerUpdateWorldAABBs(s: string = "") {
   );
 }
 
-export const PhysicsBroadCollidersDef = EM.defineComponent(
+export const PhysicsBroadCollidersDef = EM.defineResource(
   "_physBColliders",
   () => {
     return {

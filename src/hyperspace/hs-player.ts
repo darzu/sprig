@@ -83,7 +83,7 @@ export const HsPlayerDef = EM.defineComponent("hsPlayer", () => {
 });
 
 // Resource pointing at the local player
-export const LocalHsPlayerDef = EM.defineComponent(
+export const LocalHsPlayerDef = EM.defineResource(
   "localHsPlayer",
   (playerId?: number) => ({
     playerId: playerId || 0,

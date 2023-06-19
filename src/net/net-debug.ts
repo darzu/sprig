@@ -6,7 +6,7 @@ import { clearTint, setTint, TintsDef } from "../color/color-ecs.js";
 import { AuthorityDef } from "./components.js";
 import { Phase } from "../ecs/sys-phase.js";
 
-const NetDebugStateDef = EM.defineComponent("netDebugState", () => ({
+const NetDebugStateDef = EM.defineResource("netDebugState", () => ({
   dbgAuthority: false,
 }));
 
