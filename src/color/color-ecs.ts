@@ -1,9 +1,10 @@
 import { Component, EM } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 
-export const ColorDef = EM.defineComponent("color", (c?: vec3.InputT) =>
-  // TODO(@darzu): we need a better copy-in vs ref convention
-  vec3.clone(c ?? vec3.ZEROS)
+export const ColorDef = EM.defineComponent2(
+  "color",
+  () => V(0, 0, 0),
+  (p, c?: vec3.InputT) => (c ? vec3.copy(p, c) : p)
 );
 export type Color = Component<typeof ColorDef>;
 
@@ -17,9 +18,10 @@ EM.registerSerializerPair(
   }
 );
 
-export const TintsDef = EM.defineComponent(
+export const TintsDef = EM.defineComponent2(
   "tints",
-  () => new Map() as Map<string, vec3>
+  () => new Map() as Map<string, vec3>,
+  (p) => p
 );
 
 export type Tints = Component<typeof TintsDef>;
@@ -44,5 +46,9 @@ export function clearTint(tints: Tints, name: string) {
   }
 }
 
-export const AlphaDef = EM.defineComponent("alpha", (c?: number) => c ?? 1.0);
+export const AlphaDef = EM.defineComponent2(
+  "alpha",
+  () => 1.0,
+  (p, c?: number) => c ?? p
+);
 export type Alpha = Component<typeof AlphaDef>;

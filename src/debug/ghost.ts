@@ -9,7 +9,11 @@ import { ControllableDef } from "../input/controllable.js";
 // TODO(@darzu): HACK. we need a better way to programmatically create sandbox games
 export const gameplaySystems: string[] = [];
 
-export const GhostDef = EM.defineComponent("ghost", () => ({}));
+export const GhostDef = EM.defineComponent2(
+  "ghost",
+  () => ({}),
+  (p) => p
+);
 
 export function createGhost() {
   const g = EM.new();
