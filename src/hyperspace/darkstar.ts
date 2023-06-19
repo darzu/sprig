@@ -19,17 +19,25 @@ export const STAR2_COLOR = V(0.3, 0.8, 0.6);
 export const { DarkStarPropsDef, DarkStarLocalDef, createDarkStarNow } =
   defineNetEntityHelper({
     name: "darkStar",
-    defaultProps: (
+    defaultProps: () => ({
+      pos: vec3.create(),
+      color: vec3.create(),
+      orbiting: vec3.create(),
+      orbitalAxis: V(1, 0, 0),
+    }),
+    updateProps: (
+      p,
       pos?: vec3,
       color?: vec3,
       orbiting?: vec3,
       orbitalAxis?: vec3
-    ) => ({
-      pos: pos ?? vec3.create(),
-      color: color ?? vec3.create(),
-      orbiting: orbiting ?? vec3.create(),
-      orbitalAxis: orbitalAxis ?? V(1, 0, 0),
-    }),
+    ) =>
+      Object.assign(p, {
+        pos: pos ?? vec3.create(),
+        color: color ?? vec3.create(),
+        orbiting: orbiting ?? vec3.create(),
+        orbitalAxis: orbitalAxis ?? V(1, 0, 0),
+      }),
     serializeProps: (o, buf) => {
       buf.writeVec3(o.pos);
       buf.writeVec3(o.color);

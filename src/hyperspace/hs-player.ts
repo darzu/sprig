@@ -92,10 +92,10 @@ export const LocalHsPlayerDef = EM.defineResource(
 
 export const PlayerHsPropsDef = defineSerializableComponent(
   "hsPlayerProps",
-  (loc?: vec3) => {
-    return {
-      location: loc ?? vec3.create(),
-    };
+  () => ({ location: vec3.create() }),
+  (p, loc?: vec3) => {
+    if (loc) vec3.copy(p.location, loc);
+    return p;
   },
   (c, writer) => {
     writer.writeVec3(c.location);

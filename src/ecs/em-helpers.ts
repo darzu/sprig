@@ -18,11 +18,14 @@ export function defineSerializableComponent<
   Pargs extends any[]
 >(
   name: N,
-  construct: (...args: Pargs) => P,
+  // TODO(@darzu): change to use update/make
+  // construct: (...args: Pargs) => P,
+  make: () => P,
+  update: (p: P, ...args: Pargs) => P,
   serialize: (obj: P, buf: Serializer) => void,
   deserialize: (obj: P, buf: Deserializer) => void
 ): ComponentDef<N, P, Pargs> {
-  const def = EM.defineComponent(name, construct);
+  const def = EM.defineComponent2(name, make, update);
   EM.registerSerializerPair(def, serialize, deserialize);
   return def;
 }
@@ -87,7 +90,8 @@ export function defineNetEntityHelper<
   INITED
 >(opts: {
   name: N;
-  defaultProps: (...args: Pargs1) => P1;
+  defaultProps: () => P1;
+  updateProps: (p: P1, ...args: Pargs1) => P1;
   serializeProps: (obj: P1, buf: Serializer) => void;
   deserializeProps: (obj: P1, buf: Deserializer) => void;
   defaultLocal: () => P2;
@@ -111,6 +115,7 @@ export function defineNetEntityHelper<
   const propsDef = defineSerializableComponent(
     `${opts.name}Props`,
     opts.defaultProps,
+    opts.updateProps,
     opts.serializeProps,
     opts.deserializeProps
   );

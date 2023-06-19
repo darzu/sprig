@@ -59,9 +59,13 @@ const SailColorDef = EM.defineComponent(
 export const { HypMastPropsDef, HypMastLocalDef, createHypMastNow } =
   defineNetEntityHelper({
     name: "hypMast",
-    defaultProps: (shipId?: number) => ({
-      shipId: shipId ?? 0,
+    defaultProps: () => ({
+      shipId: 0,
     }),
+    updateProps: (p, shipId?: number) =>
+      Object.assign(p, {
+        shipId: shipId ?? 0,
+      }),
     serializeProps: (o, buf) => {
       buf.writeUint32(o.shipId);
     },
