@@ -264,10 +264,9 @@ export class EntityManager {
 
   constructor() {
     // dummy ent 0
-    const ent0 = Object.create(null); // no prototype
-    ent0.id = 0;
-    this.entities.set(0, ent0);
-    // TODO(@darzu): maintain _entitiesToSystems for ent 0?
+    // const ent0 = Object.create(null); // no prototype
+    // ent0.id = 0;
+    // this.entities.set(0, ent0);
   }
 
   public defineResource<N extends string, P, Pargs extends any[]>(
@@ -286,6 +285,22 @@ export class EntityManager {
     };
     this.resourceDefs.set(id, def);
     return def;
+  }
+
+  // TODO(@darzu): REFACTOR! Consolidate w/ defineComponent below
+  public defineComponent2<N extends string, P, Pargs extends any[]>(
+    name: N,
+    // construct: (...args: Pargs) => P
+    make: () => P,
+    update: (p: P, ...args: Pargs) => P
+  ): ComponentDef<N, P, Pargs> {
+    // TODO(@darzu): Remove!
+    const construct = (...args: Pargs) => {
+      const p = make();
+      update(p, ...args);
+      return p;
+    };
+    return this.defineComponent(name, construct);
   }
 
   public defineComponent<N extends string, P, Pargs extends any[]>(
