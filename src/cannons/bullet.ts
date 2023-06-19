@@ -57,9 +57,20 @@ export const BulletDef = EM.defineComponent2(
 );
 export type Bullet = Component<typeof BulletDef>;
 
-export const BulletConstructDef = EM.defineComponent(
+export const BulletConstructDef = EM.defineComponent2(
   "bulletConstruct",
+  () => {
+    return {
+      location: V(0, 0, 0),
+      linearVelocity: V(0, 1, 0),
+      angularVelocity: V(0, 0, 0),
+      team: 0,
+      gravity: 0,
+      health: 0,
+    };
+  },
   (
+    p,
     loc?: vec3,
     vel?: vec3,
     angVel?: vec3,
@@ -67,14 +78,13 @@ export const BulletConstructDef = EM.defineComponent(
     gravity?: number,
     health?: number
   ) => {
-    return {
-      location: loc ?? V(0, 0, 0),
-      linearVelocity: vel ?? V(0, 1, 0),
-      angularVelocity: angVel ?? V(0, 0, 0),
-      team: team ?? 0,
-      gravity: gravity ?? 0,
-      health: health ?? 0,
-    };
+    if (loc) vec3.copy(p.location, loc);
+    if (vel) vec3.copy(p.linearVelocity, vel);
+    if (angVel) vec3.copy(p.angularVelocity, angVel);
+    if (team) p.team = team;
+    if (gravity) p.gravity = gravity;
+    if (health) p.health = health;
+    return p;
   }
 );
 export type BulletConstruct = Component<typeof BulletConstructDef>;

@@ -28,22 +28,29 @@ export interface ClothConstruct {
   columns: number;
   distance: number;
 }
-export const ClothConstructDef = EM.defineComponent(
+export const ClothConstructDef = EM.defineComponent2(
   "clothConstruct",
-  (c: Partial<ClothConstruct>) => ({
-    location: c.location ?? V(0, 0, 0),
-    color: c.color ?? V(0, 0, 0),
-    rows: c.rows ?? 2,
-    columns: c.columns ?? 2,
-    distance: c.distance ?? 1,
-  })
+  () => ({
+    location: V(0, 0, 0),
+    color: V(0, 0, 0),
+    rows: 2,
+    columns: 2,
+    distance: 1,
+  }),
+  (p, c: Partial<ClothConstruct>) => {
+    return Object.assign(p, c);
+  }
 );
 
-export const ClothLocalDef = EM.defineComponent(
+export const ClothLocalDef = EM.defineComponent2(
   "clothLocal",
-  (posMap?: Map<number, number>) => ({
-    posMap: posMap ?? new Map(),
-  })
+  () => ({
+    posMap: new Map(),
+  }),
+  (p, posMap?: Map<number, number>) => {
+    if (posMap) p.posMap = posMap;
+    return p;
+  }
 );
 
 EM.registerSerializerPair(
