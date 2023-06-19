@@ -15,6 +15,7 @@ import {
   DBG_ASSERT,
   ENABLE_NET,
   VERBOSE_LOG,
+  VERBOSE_NET_LOG,
   WARN_DEAD_CLEANUP,
 } from "./flags.js";
 import { initShipyardGame } from "./wood/game-shipyard.js";
@@ -31,6 +32,7 @@ import { initShadingGame } from "./render/game-shading.js";
 import { initModelingGame } from "./meshes/game-modeling.js";
 import { Phase } from "./ecs/sys-phase.js";
 import { setSimulationAlpha } from "./render/motion-smoothing.js";
+import { initMPGame } from "./net/game-multiplayer.js";
 
 // dbgLogMilestone("start of main.ts");
 
@@ -50,6 +52,7 @@ const ALL_GAMES = [
   "shading",
   "modeling",
   "ld53",
+  "mp",
 ] as const;
 const GAME: (typeof ALL_GAMES)[number] = "ld53";
 
@@ -73,7 +76,9 @@ async function startGame(localPeerName: string, host: string | null) {
   if (gameStarted) return;
   gameStarted = true;
 
-  let hosting = host === null;
+  const hosting = !host;
+
+  if (VERBOSE_NET_LOG) console.log(`hosting: ${hosting}`);
 
   let start_of_time = performance.now();
 
@@ -89,7 +94,7 @@ async function startGame(localPeerName: string, host: string | null) {
     EM.addResource(MeDef, 0, true);
     EM.addResource(HostDef);
   } else {
-    EM.addResource(JoinDef, host!);
+    EM.addResource(JoinDef, host);
   }
 
   initCommonSystems();
@@ -107,6 +112,7 @@ async function startGame(localPeerName: string, host: string | null) {
   else if (GAME === "ld53") initLD53(hosting);
   else if (GAME === "shading") initShadingGame();
   else if (GAME === "modeling") initModelingGame();
+  else if (GAME === "mp") initMPGame();
   else never(GAME, "TODO game");
 
   let previous_frame_time = start_of_time;
@@ -165,8 +171,9 @@ async function main() {
   );
   const urlServerId = queryString["server"] ?? null;
 
-  // const peerName = getPeerName(queryString);
-  const peerName = "myPeerName";
+  // const peerName2 = getPeerName(queryString);
+  // const peerName = "myPeerName";
+  const peerName = !!urlServerId ? "mySprigClient" : "mySprigHost";
 
   let controls = document.getElementById("server-controls") as HTMLDivElement;
   let serverStartButton = document.getElementById(

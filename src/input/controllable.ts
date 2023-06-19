@@ -10,6 +10,7 @@ import { WorldFrameDef } from "../physics/nonintersection.js";
 import { RotationDef } from "../physics/transform.js";
 import { TimeDef } from "../time/time.js";
 import { Phase } from "../ecs/sys-phase.js";
+import { dbgLogOnce } from "../utils/util.js";
 
 /*
 TODO key mapping
@@ -58,10 +59,12 @@ export const ControllableDef = EM.defineComponent("controllable", () => {
 EM.addEagerInit([ControllableDef], [], [], () => {
   const steerVel = vec3.create();
 
+  // dbgLogOnce(`adding controllableInput`);
+
   EM.addSystem(
     "controllableInput",
     Phase.GAME_PLAYERS,
-    [ControllableDef, LinearVelocityDef, RotationDef, WorldFrameDef],
+    [ControllableDef, RotationDef, WorldFrameDef],
     [InputsDef, MeDef, CanvasDef, TimeDef],
     (controllables, res) => {
       for (let c of controllables) {
@@ -72,8 +75,12 @@ EM.addEagerInit([ControllableDef], [], [], () => {
           !res.htmlCanvas.hasMouseLock()
         )
           continue;
+
+        // TODO(@darzu): need a far more general way to handle things like this
         // don't control things that are animating
         if (AnimateToDef.isOn(c)) continue;
+
+        // dbgLogOnce(`Controlling ${c.id}`);
 
         vec3.zero(steerVel);
         const modes = c.controllable.modes;
@@ -94,6 +101,8 @@ EM.addEagerInit([ControllableDef], [], [], () => {
             if (res.inputs.keyDowns["c"]) steerVel[1] -= speed;
           }
         }
+
+        EM.ensureComponentOn(c, LinearVelocityDef);
 
         if (modes.canFall)
           c.linearVelocity[1] -= c.controllable.gravity * res.time.dt;

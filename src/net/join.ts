@@ -23,6 +23,7 @@ import {
 import { MessageType, MAX_MESSAGE_SIZE } from "./message.js";
 import { TimeDef } from "../time/time.js";
 import { Phase } from "../ecs/sys-phase.js";
+import { VERBOSE_NET_LOG } from "../flags.js";
 
 const JOIN_RETRANSMIT = 100;
 
@@ -140,6 +141,7 @@ function registerHandleJoinResponse() {
           }
           EM.addResource(MeDef, pid, false);
           EM.removeResource(JoinDef);
+          if (VERBOSE_NET_LOG) console.log(`me: ${pid}`);
         }
       }
     }

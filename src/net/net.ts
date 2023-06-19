@@ -17,6 +17,15 @@ import {
   PeerNameDef,
 } from "./components.js";
 import { Phase } from "../ecs/sys-phase.js";
+import { VERBOSE_NET_LOG } from "../flags.js";
+
+/*
+TODO(@darzu): SPLIT SCREEN
+for split screen, we need:
+[ ] replace "Me" usage everywhere? Or multiple EMs?
+[ ] stub out making connections
+[ ] stub out data pipe
+*/
 
 const PING_INTERVAL = 1000;
 
@@ -51,8 +60,10 @@ class Net {
   }
 
   constructor(peerName: string) {
+    if (VERBOSE_NET_LOG) console.log(`new Net, peerName: ${peerName}`);
     this.peer = new Peer(peerName);
     this.peer.onopen = (address: string) => {
+      if (VERBOSE_NET_LOG) console.log(`peer onopen, address: ${address}`);
       this.outgoingEvents.push({ type: NetworkEventType.Ready, address });
       this.awaitConnections();
       setInterval(() => this.ping(), PING_INTERVAL);
@@ -132,6 +143,10 @@ class Net {
         break;
       }
       default:
+        // if (VERBOSE_NET_LOG)
+        //   // console.log(
+        //   //   `non-ping/pong msg from ${address}, type: ${MessageType[type]}`
+        //   // );
         this.outgoingEvents.push({
           type: NetworkEventType.MessageRecv,
           from: address,
@@ -140,6 +155,7 @@ class Net {
     }
   }
   private peerConnected(address: string, chan: RTCDataChannel) {
+    if (VERBOSE_NET_LOG) console.log(`NewConnection w/ ${address}`);
     this.peers.push(address);
     this.outgoingEvents.push({ type: NetworkEventType.NewConnection, address });
     chan.onmessage = async (ev) => {
@@ -153,12 +169,17 @@ class Net {
   // listen for incoming connections
   private awaitConnections() {
     this.peer.onconnection = (address, channel) => {
+      if (VERBOSE_NET_LOG)
+        console.log(
+          `incoming connnection, address:${address}, channel.id:${channel.id}`
+        );
       this.channels[address] = channel;
       this.peerConnected(address, channel);
     };
   }
 
   private connect(address: string) {
+    if (VERBOSE_NET_LOG) console.log(`trying to connect to ${address}`);
     //console.log(`connecting to ${address}`);
     this.peer.connect(address, false).then((channel) => {
       this.channels[address] = channel;
@@ -219,6 +240,9 @@ function sendEventsToNet(net: Net) {
 // from https://gist.github.com/jed/982883#gistcomment-2403369
 
 export function initNetSystems() {
+  if (VERBOSE_NET_LOG)
+    console.log(`${performance.now().toFixed()}ms: initNetSystems()`);
+
   const peerName = EM.getResource(PeerNameDef)?.name;
   if (!peerName) {
     throw "Peer name not set before net initialized";
@@ -226,8 +250,11 @@ export function initNetSystems() {
   const net = new Net(peerName);
   // TODO: startup system to set up components
   EM.addResource(NetStatsDef);
+  if (VERBOSE_NET_LOG) console.log(`added NetStatsDef`);
   EM.addResource(EventsFromNetworkDef);
+  if (VERBOSE_NET_LOG) console.log(`added EventsFromNetworkDef`);
   EM.addResource(EventsToNetworkDef);
+  if (VERBOSE_NET_LOG) console.log(`added EventsToNetworkDef`);
   EM.addSystem(
     "getStatsFromNet",
     Phase.NETWORK,

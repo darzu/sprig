@@ -1,4 +1,4 @@
-import { VERBOSE_LOG } from "../flags.js";
+import { VERBOSE_LOG, VERBOSE_NET_LOG } from "../flags.js";
 
 /*
   A drastically simplified PeerJS, with code copied liberally from PeerJS
@@ -53,14 +53,15 @@ export class Peer {
 
   constructor(id: string) {
     this.id = "sprig-" + id;
+    if (VERBOSE_NET_LOG) console.log(`new Peer: ${this.id}`);
     this.connectToServer();
   }
 
   private connectToServer() {
     // TODO: if this fails, make it possible to get a different valid id
-    let sock = new WebSocket(
-      serverUrl(this.id, Math.random().toString(36).substr(2))
-    );
+    const url = serverUrl(this.id, Math.random().toString(36).slice(2));
+    if (VERBOSE_NET_LOG) console.log(`WebSocket url: ${url}`);
+    let sock = new WebSocket(url);
     sock.onmessage = (event) => {
       //console.log(event.data);
       this.handleServerMessage(JSON.parse(event.data));
@@ -68,7 +69,7 @@ export class Peer {
 
     let heartbeatHandle = 0;
     sock.onopen = () => {
-      //console.log("Socket opened");
+      if (VERBOSE_NET_LOG) console.log(`Socket opened`);
       // PeerJS sends a heartbeat to the server every 5 seconds--I assume the
       // server will eventually close the connection otherwise
       heartbeatHandle = setInterval(() => {
@@ -93,7 +94,7 @@ export class Peer {
   }
 
   private async handleServerMessage(msg: ServerMessage) {
-    if (VERBOSE_LOG)
+    if (VERBOSE_NET_LOG)
       console.log(`Received server message of type: ${msg.type}`);
     let payload = msg.payload;
     let remotePeerId = msg.src;
@@ -102,6 +103,10 @@ export class Peer {
         let peerConnection = new RTCPeerConnection(DEFAULT_CONFIG);
         let connectionId = msg.payload.connectionId;
         this.connections[connectionId] = peerConnection;
+        if (VERBOSE_NET_LOG)
+          console.log(
+            `connectionId: ${connectionId}, remotePeerId: ${remotePeerId}`
+          );
         this.setupPeerConnection(peerConnection, remotePeerId, connectionId);
         // listen for ice candidates
 
@@ -148,6 +153,7 @@ export class Peer {
         break;
       }
       case ServerMessageType.Answer: {
+        if (VERBOSE_NET_LOG) console.log(`ServerMessageType.Answer`);
         let peerConnection = this.connections[msg.payload.connectionId];
         if (!peerConnection) {
           throw `ICE candidate for unknown connection ${msg.payload.connectionId}`;
@@ -207,6 +213,7 @@ export class Peer {
   }
 
   async connect(peerId: string, reliable: boolean): Promise<RTCDataChannel> {
+    if (VERBOSE_NET_LOG) console.log(`new connet(${peerId}, ${reliable})`);
     const peerConnection = new RTCPeerConnection(DEFAULT_CONFIG);
     if (!peerId.startsWith("sprig-"))
       throw `Connecting to non-sprig peer ${peerId}`;

@@ -31,6 +31,7 @@ import { TimeDef } from "../time/time.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
 import { assert } from "../utils/util.js";
 import { Phase } from "../ecs/sys-phase.js";
+import { VERBOSE_NET_LOG } from "../flags.js";
 
 export interface Event<Extra> {
   // Event type
@@ -75,6 +76,7 @@ function hasSerializers<ES extends EDef<any>[], Extra>(
 }
 
 function serializeEvent<Extra>(event: Event<Extra>, buf: Serializer) {
+  if (VERBOSE_NET_LOG) console.log(`serializeEvent`); // TODO(@darzu):
   const handler = EVENT_HANDLERS.get(event.type);
   if (!handler)
     throw `Tried to serialize unrecognized event type ${event.type}`;
@@ -88,6 +90,7 @@ function serializeEvent<Extra>(event: Event<Extra>, buf: Serializer) {
 }
 
 function deserializeEvent<Extra>(buf: Deserializer): Event<Extra> {
+  if (VERBOSE_NET_LOG) console.log(`deserializeEvent`); // TODO(@darzu):
   let typeCode = buf.readUint32();
   if (!EVENT_TYPES.has(typeCode)) {
     throw `Tried to deserialize unrecognized event type ${typeCode}`;
