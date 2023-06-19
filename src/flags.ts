@@ -7,8 +7,8 @@ export const DBG_ASSERT = true;
 
 // Network
 export const DONT_SMOOTH_WORLD_FRAME = true; // TODO(@darzu): PERF HACK for single player
-export const ENABLE_NET = true;
-export const VERBOSE_NET_LOG = true;
+export const ENABLE_NET = false;
+export const VERBOSE_NET_LOG = false;
 
 // Ocean
 export const DISABLE_GERSTNER = false;
@@ -28,11 +28,19 @@ export const DBG_FANG_SHIP = false;
 export const DBG_CHECK_FOR_TMPS_IN_XY = false;
 
 // ECS
+// prints when a lazy init fn is forced to run and the cause (resource promise,
+//  other init fn, or system)
 export const DBG_INIT_CAUSATION = false;
+// prints each time an init fn progresses from lazy->eager->started->finished
 export const DBG_VERBOSE_INIT_SEQ = false;
+// prints the callsites of entity / resource promises.
 export const DBG_VERBOSE_ENTITY_PROMISE_CALLSITES = false;
+// prints the callsites of init functions
 export const DBG_VERBOSE_INIT_CALLSITES = false;
+// prints a warning if an entity with Dead isn't 'processed' by POST_GAME_WORLD phase
 export const WARN_DEAD_CLEANUP = false;
+// prints out all systems in order in their phases, whether they are active/deactive
+//    and reprints that every time new systems are added.
 export const DBG_SYSTEM_ORDER = false;
 
 // Input

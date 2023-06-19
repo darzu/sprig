@@ -19,6 +19,7 @@ import {
   EventsToNetworkDef,
   HostDef,
   send,
+  HostCompDef,
 } from "./components.js";
 import { MessageType, MAX_MESSAGE_SIZE } from "./message.js";
 import { TimeDef } from "../time/time.js";
@@ -46,7 +47,7 @@ function registerConnectToServer() {
           const peers = EM.filterEntities([PeerDef]);
           // TODO: this is a hacky way to tell if we're connected.
           if (peers.length > 0) {
-            EM.addComponent(peers[0].id, HostDef);
+            EM.addComponent(peers[0].id, HostCompDef);
             // TODO: consider putting this message into the outbox rather than directly on the event queue
             let message = new Serializer(8);
             message.writeUint8(MessageType.Join);

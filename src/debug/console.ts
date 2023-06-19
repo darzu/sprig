@@ -12,7 +12,7 @@ import { RendererDef } from "../render/renderer-ecs.js";
 import { _f32sCount } from "../matrix/sprig-matrix.js";
 import { Phase } from "../ecs/sys-phase.js";
 
-export const DevConsoleDef = EM.defineComponent("dev", () => {
+export const DevConsoleDef = EM.defineResource("dev", () => {
   const stats = {
     avgJsTime: 0,
     avgFrameTime: 0,

@@ -68,7 +68,7 @@ type HVertWEnt = EntityW<
   ]
 >;
 
-export const MeshEditorDef = EM.defineComponent(
+export const MeshEditorDef = EM.defineResource(
   "meshEditor",
   (me: MeshEditor) => me
 );

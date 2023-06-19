@@ -111,7 +111,7 @@ export type WoodAssets = Partial<{
   [P in AllMeshSymbols]: WoodState;
 }>;
 
-export const WoodAssetsDef = EM.defineComponent(
+export const WoodAssetsDef = EM.defineResource(
   "woodAssets",
   (registry: WoodAssets = {}) => registry
 );

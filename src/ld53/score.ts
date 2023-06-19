@@ -15,7 +15,7 @@ import { MapPaths } from "../levels/map-loader.js";
 import { ShipDef } from "./ship.js";
 import { Phase } from "../ecs/sys-phase.js";
 
-export const ScoreDef = EM.defineComponent("score", () => ({
+export const ScoreDef = EM.defineResource("score", () => ({
   cutPurple: 0,
   totalPurple: 0,
   completedLevels: 0,

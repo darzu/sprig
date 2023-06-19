@@ -25,6 +25,7 @@ import {
   InboxDef,
   AuthorityDef,
   Authority,
+  HostCompDef,
 } from "./components.js";
 import { hashCode, NumberTuple } from "../utils/util.js";
 import { TimeDef } from "../time/time.js";
@@ -191,7 +192,7 @@ function runEvent<Extra>(type: string, event: Event<Extra>) {
 
 const CHECK_EVENT_RAISE_ARGS = true;
 
-export const DetectedEventsDef = EM.defineComponent("detectedEvents", () => {
+export const DetectedEventsDef = EM.defineResource("detectedEvents", () => {
   const events = [] as DetectedEvent<any>[];
   return {
     events,
@@ -231,7 +232,7 @@ export const OutgoingEventRequestsDef = EM.defineComponent(
 
 // Exists only at the host. This is a list of all events requested
 // either by us or by another node
-const RequestedEventsDef = EM.defineComponent(
+const RequestedEventsDef = EM.defineResource(
   "requestedEvents",
   () => [] as DetectedEvent<any>[]
 );
@@ -246,7 +247,7 @@ const EventSyncDef = EM.defineComponent("eventSync", () => ({
   lastSendTime: 0,
 }));
 
-const EventsDef = EM.defineComponent("events", () => ({
+const EventsDef = EM.defineResource("events", () => ({
   log: [] as Event<any>[],
   last: -1,
   newEvents: false,
@@ -279,7 +280,7 @@ export function initNetGameEventSystems() {
   EM.addSystem(
     "detectedEventsToHost",
     Phase.NETWORK,
-    [HostDef, OutboxDef],
+    [HostCompDef, OutboxDef], // TODO(@darzu): BUG! HostDef was in the components?
     [DetectedEventsDef, MeDef, TimeDef],
     (hosts, { detectedEvents, me, time }) => {
       if (hosts.length == 0) return;
@@ -386,7 +387,7 @@ export function initNetGameEventSystems() {
   EM.addSystem(
     "handleEventRequestAcks",
     Phase.NETWORK,
-    [InboxDef, OutgoingEventRequestsDef, HostDef],
+    [InboxDef, OutgoingEventRequestsDef, HostCompDef], // TODO(@darzu): BUG!! This had HostDef as a component?!
     [],
     (hosts) => {
       if (hosts.length == 0) return;
@@ -490,7 +491,7 @@ export function initNetGameEventSystems() {
   EM.addSystem(
     "handleEvents",
     Phase.NETWORK,
-    [InboxDef, HostDef, OutboxDef],
+    [InboxDef, HostCompDef, OutboxDef], // TODO(@darzu): BUG!! This had HostDef as a component?!
     [EventsDef],
     (hosts, { events }) => {
       if (hosts.length === 0) return;

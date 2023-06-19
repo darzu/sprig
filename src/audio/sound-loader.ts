@@ -16,7 +16,7 @@ export type SoundName = (typeof SoundPaths)[number];
 
 export type SoundSet = { [P in SoundName]: AudioBuffer };
 
-export const SoundSetDef = EM.defineComponent(
+export const SoundSetDef = EM.defineResource(
   "soundSet",
   (soundSet: SoundSet) => soundSet
 );

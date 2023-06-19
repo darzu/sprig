@@ -1,5 +1,5 @@
 import { ColorDef } from "../color/color-ecs.js";
-import { EM, EntityW } from "../ecs/entity-manager.js";
+import { EM, EntityW, Resources } from "../ecs/entity-manager.js";
 import { GameMesh, gameMeshFromMesh } from "../meshes/mesh-loader.js";
 import { gameplaySystems } from "../debug/ghost.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
@@ -48,7 +48,7 @@ export const ButtonDef = EM.defineComponent(
 );
 
 // TODO(@darzu): GUIStateDef ?
-export const ButtonsStateDef = EM.defineComponent(
+export const ButtonsStateDef = EM.defineResource(
   "buttonsState",
   (gmesh: GameMesh) => ({
     // the number is the LAST data
@@ -65,7 +65,7 @@ export const ButtonsStateDef = EM.defineComponent(
 
 EM.addLazyInit([RendererDef], [ButtonsStateDef], initButtonGUI);
 
-function initButtonGUI(res: EntityW<[typeof RendererDef]>) {
+function initButtonGUI(res: Resources<[typeof RendererDef]>) {
   // init ButtonsStateDef
   {
     const btnMesh_ = importObj(BTN_OBJ);

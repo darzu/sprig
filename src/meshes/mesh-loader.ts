@@ -1,4 +1,4 @@
-import { ComponentDef, EM } from "../ecs/entity-manager.js";
+import { ComponentDef, EM, ResourceDef } from "../ecs/entity-manager.js";
 import { vec3, mat4, V, findAnyTmpVec } from "../matrix/sprig-matrix.js";
 import { importObj, isParseError } from "./import-obj.js";
 import {
@@ -58,13 +58,13 @@ function isMultiMeshDesc<N extends string, B extends boolean>(
 
 export interface MeshReg<N extends string = string> {
   desc: MeshDesc<N, false>;
-  def: ComponentDef<`mesh_${N}`, GameMesh, [GameMesh]>;
+  def: ResourceDef<`mesh_${N}`, GameMesh, [GameMesh]>;
   gameMesh: () => Promise<GameMesh>;
   gameMeshNow: () => GameMesh | undefined;
 }
 export interface MeshGroupReg<N extends string = string> {
   desc: MeshDesc<N, true>;
-  def: ComponentDef<`mesh_${N}`, GameMesh[], [GameMesh[]]>;
+  def: ResourceDef<`mesh_${N}`, GameMesh[], [GameMesh[]]>;
   gameMeshes: () => Promise<GameMesh[]>;
   gameMeshesNow: () => GameMesh[] | undefined;
 }
@@ -81,7 +81,7 @@ export type MeshSet<MR extends (MeshReg | MeshGroupReg)[]> = Intersect<{
 export type MeshSetDef<
   N extends string,
   MR extends (MeshReg | MeshGroupReg)[]
-> = ComponentDef<N, MeshSet<MR>, [MeshSet<MR>]>;
+> = ResourceDef<N, MeshSet<MR>, [MeshSet<MR>]>;
 
 // TODO(@darzu): PERF. "ocean" and "ship_fangs" are expensive to load and aren't needed in all games.
 
@@ -142,7 +142,7 @@ function createXylemRegistry() {
   function registerMesh<N extends string, B extends boolean>(
     desc: MeshDesc<N, B>
   ): MeshGroupReg<N> | MeshReg<N> {
-    const def = EM.defineComponent(
+    const def = EM.defineResource(
       `mesh_${desc.name}`,
       (gm: GameMesh | GameMesh[]) => gm
     );
@@ -154,7 +154,7 @@ function createXylemRegistry() {
     if (isMultiMeshDesc(desc)) {
       let reg: MeshGroupReg<N> = {
         desc,
-        def: def as ComponentDef<`mesh_${N}`, GameMesh[], [GameMesh[]]>,
+        def: def as ResourceDef<`mesh_${N}`, GameMesh[], [GameMesh[]]>,
         gameMeshes: () => cachedLoadMeshDesc(desc) as Promise<GameMesh[]>,
         gameMeshesNow: () =>
           loadedMeshes.get(desc.name) as GameMesh[] | undefined,
@@ -163,7 +163,7 @@ function createXylemRegistry() {
     } else {
       let reg: MeshReg<N> = {
         desc,
-        def: def as ComponentDef<`mesh_${N}`, GameMesh, [GameMesh]>,
+        def: def as ResourceDef<`mesh_${N}`, GameMesh, [GameMesh]>,
         gameMesh: () => cachedLoadMeshDesc(desc) as Promise<GameMesh>,
         gameMeshNow: () => loadedMeshes.get(desc.name) as GameMesh | undefined,
       };
@@ -205,7 +205,7 @@ function createXylemRegistry() {
     N extends string,
     MR extends (MeshReg | MeshGroupReg)[]
   >(name: N, ...meshes: MR): MeshSetDef<N, MR> {
-    const def = EM.defineComponent(name, (mr: MeshSet<MR>) => mr);
+    const def = EM.defineResource(name, (mr: MeshSet<MR>) => mr);
 
     let initReg = EM.addLazyInit([RendererDef], [def], async ({ renderer }) => {
       const before = performance.now();

@@ -22,7 +22,7 @@ In-engine text rendering:
 [ ] font editor: html reference fonts overlay
 */
 
-export const TextDef = EM.defineComponent(
+export const TextDef = EM.defineResource(
   "text",
   (
     upperDiv: HTMLDivElement,

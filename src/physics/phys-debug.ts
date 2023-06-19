@@ -30,7 +30,7 @@ import { CUBE_MESH } from "../meshes/primatives.js";
 
 // TODO(@darzu): re-enable all this! it requires line drawing again
 
-export const PhysicsDbgDef = EM.defineComponent("_physDbgState", () => {
+export const PhysicsDbgDef = EM.defineResource("_physDbgState", () => {
   return {
     showAABBs: false,
     colliderMeshes: new Map() as Map<number, number>,

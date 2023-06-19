@@ -24,7 +24,7 @@ import { createRef, Ref } from "../ecs/em-helpers.js";
 import { screenPosToRay } from "../utils/utils-game.js";
 import { Phase } from "../ecs/sys-phase.js";
 
-export const GlobalCursor3dDef = EM.defineComponent("globalCursor3d", () => {
+export const GlobalCursor3dDef = EM.defineResource("globalCursor3d", () => {
   return {
     cursor: createRef(0, [Cursor3dDef, WorldFrameDef, RenderableDef]),
   };

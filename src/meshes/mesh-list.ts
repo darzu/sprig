@@ -1,4 +1,4 @@
-import { EM, Component } from "../ecs/entity-manager.js";
+import { EM, Component, Resource } from "../ecs/entity-manager.js";
 import { mat4, quat, vec4, vec2, vec3 } from "../matrix/sprig-matrix.js";
 import { V } from "../matrix/sprig-matrix.js";
 import { assert } from "../utils/util.js";
@@ -524,5 +524,5 @@ export const AllMeshesDef = XY.defineMeshSetResource(
 // const wip0: GameMesh = allMeshes.ball;
 // const wip1: GameMesh[] = allMeshes.boat_broken;
 
-export type AllMeshes = Component<typeof AllMeshesDef>;
+export type AllMeshes = Resource<typeof AllMeshesDef>;
 export type AllMeshSymbols = keyof AllMeshes;

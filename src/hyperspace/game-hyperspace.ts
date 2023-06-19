@@ -1,5 +1,5 @@
 import { CameraDef } from "../camera/camera.js";
-import { EM, EntityW } from "../ecs/entity-manager.js";
+import { EM, EntityW, Resources } from "../ecs/entity-manager.js";
 import { PositionDef, RotationDef, ScaleDef } from "../physics/transform.js";
 import { RendererDef, RenderableConstructDef } from "../render/renderer-ecs.js";
 import { blurPipelines } from "../render/pipelines/std-blur.js";
@@ -58,7 +58,7 @@ import { registerRibSailSystems } from "./ribsail.js";
 // export let jfaMaxStep = VISUALIZE_JFA ? 0 : 999;
 
 function spawnRandomDarkStar(
-  res: EntityW<[typeof AllMeshesDef]>,
+  res: Resources<[typeof AllMeshesDef]>,
   approxPosition: vec3,
   color: vec3
 ) {

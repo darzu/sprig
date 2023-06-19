@@ -41,7 +41,7 @@ const SAMPLES_PER_EDGE = 5;
 const NUDGE_DIST = 1.0;
 const NUDGE_SPEED = 0.1;
 
-export const LandDef = EM.defineComponent("land", () => ({
+export const LandDef = EM.defineResource("land", () => ({
   sample: (x: number, y: number) => 0 as number,
 }));
 

@@ -73,7 +73,7 @@ export interface UVSurface {
 }
 
 // TODO(@darzu): rename "ocean" to "uvsurface" or similar
-export const OceanDef = EM.defineComponent("ocean", (o: UVSurface) => {
+export const OceanDef = EM.defineResource("ocean", (o: UVSurface) => {
   return o;
 });
 

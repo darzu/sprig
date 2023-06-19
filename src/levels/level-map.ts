@@ -1,4 +1,4 @@
-import { Component, EM } from "../ecs/entity-manager.js";
+import { Component, EM, Resource } from "../ecs/entity-manager.js";
 import { VERBOSE_LOG } from "../flags.js";
 import { TextDef } from "../gui/ui.js";
 import {
@@ -27,7 +27,7 @@ export const LandMapTexPtr = CY.createTexture("landMap", {
 });
 
 // TODO(@darzu): should this thing be game-aware?
-export const LevelMapDef = EM.defineComponent("levelMap", () => ({
+export const LevelMapDef = EM.defineResource("levelMap", () => ({
   name: "unknown",
   land: new Float32Array(),
   towers: [] as [vec2, vec2][],
@@ -35,7 +35,7 @@ export const LevelMapDef = EM.defineComponent("levelMap", () => ({
   windDir: V(0, 0),
   endZonePos: V(0, 0),
 }));
-type LevelMap = Component<typeof LevelMapDef>;
+type LevelMap = Resource<typeof LevelMapDef>;
 
 type MapBlobRun = {
   y: number;

@@ -1,4 +1,11 @@
-import { ComponentDef, EntityW, Entity, EM } from "./entity-manager.js";
+import {
+  ComponentDef,
+  EntityW,
+  Entity,
+  EM,
+  ResourceDef,
+  Resources,
+} from "./entity-manager.js";
 import { Authority, AuthorityDef, MeDef, SyncDef } from "../net/components.js";
 import { Serializer, Deserializer } from "../utils/serialize.js";
 import { assert } from "../utils/util.js";
@@ -22,11 +29,11 @@ export function defineSerializableComponent<
 
 function registerConstructorSystem<
   C extends ComponentDef,
-  RS extends ComponentDef[]
+  RS extends ResourceDef[]
 >(
   def: C,
   rs: [...RS],
-  callback: (e: EntityW<[C]>, resources: EntityW<RS>) => void
+  callback: (e: EntityW<[C]>, resources: Resources<RS>) => void
 ) {
   EM.addSystem(
     `${def.name}Build`,
@@ -50,7 +57,7 @@ export type NetEntityDefs<
   P1,
   Pargs1 extends any[],
   P2,
-  RS extends ComponentDef[],
+  RS extends ResourceDef[],
   INITED
 > = {
   [_ in `${Capitalize<N>}PropsDef`]: ComponentDef<`${N}Props`, P1, Pargs1>;
@@ -62,7 +69,7 @@ export type NetEntityDefs<
   ) => EntityW<[ComponentDef<`${N}Props`, P1, Pargs1>]>;
 } & {
   [_ in `create${Capitalize<N>}Now`]: (
-    res: EntityW<RS>,
+    res: Resources<RS>,
     ...args: Pargs1
   ) => INITED;
 };
@@ -76,7 +83,7 @@ export function defineNetEntityHelper<
   Pargs1 extends any[],
   P2,
   DS extends ComponentDef[],
-  RS extends ComponentDef[],
+  RS extends ResourceDef[],
   INITED
 >(opts: {
   name: N;
@@ -98,7 +105,7 @@ export function defineNetEntityHelper<
         ...DS
       ]
     >,
-    resources: EntityW<RS>
+    resources: Resources<RS>
   ) => INITED;
 }): NetEntityDefs<N, P1, Pargs1, P2, RS, INITED> {
   const propsDef = defineSerializableComponent(
@@ -114,7 +121,7 @@ export function defineNetEntityHelper<
     [...opts.buildResources, MeDef],
     (e, res) => {
       // TYPE HACK
-      const me = (res as any as EntityW<[typeof MeDef]>).me;
+      const me = (res as any as Resources<[typeof MeDef]>).me;
       EM.ensureComponentOn(e, AuthorityDef, me.pid);
 
       EM.ensureComponentOn(e, localDef);
@@ -134,7 +141,7 @@ export function defineNetEntityHelper<
         ]
       >;
 
-      opts.build(_e, res as EntityW<RS>);
+      opts.build(_e, res as Resources<RS>);
     }
   );
 
@@ -144,12 +151,12 @@ export function defineNetEntityHelper<
     return e;
   };
 
-  const createNewNow = (res: EntityW<RS>, ...args: Pargs1) => {
+  const createNewNow = (res: Resources<RS>, ...args: Pargs1) => {
     const e = EM.new();
     EM.ensureComponentOn(e, propsDef, ...args);
     // TODO(@darzu): maybe we should force users to give us the MeDef? it's probably always there tho..
     // TODO(@darzu): Think about what if buid() is async...
-    constructFn(e, res as EntityW<[...RS, typeof MeDef]>);
+    constructFn(e, res as Resources<[...RS, typeof MeDef]>);
     EM.ensureComponentOn(e, FinishedDef);
     return e;
   };

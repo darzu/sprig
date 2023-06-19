@@ -1,5 +1,5 @@
 import { CanvasDef, HasFirstInteractionDef } from "../render/canvas.js";
-import { Component, EM } from "../ecs/entity-manager.js";
+import { Component, EM, Resource } from "../ecs/entity-manager.js";
 import { ENABLE_AUDIO } from "../flags.js";
 import { createIdxPool, createIdxRing, IdxPool } from "../utils/idx-pool.js";
 import { assert, range } from "../utils/util.js";
@@ -23,8 +23,8 @@ const NUM_STRINGS = 300;
 // create web audio api context
 
 // TODO(@darzu): rename to .audio
-export const AudioDef = EM.defineComponent("music", createAudioResource);
-export type Music = Component<typeof AudioDef>;
+export const AudioDef = EM.defineResource("music", createAudioResource);
+export type Music = Resource<typeof AudioDef>;
 
 EM.addLazyInit([HasFirstInteractionDef], [AudioDef], () => {
   const music = EM.addResource(AudioDef);

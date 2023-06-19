@@ -1,4 +1,4 @@
-import { Component, EM } from "../ecs/entity-manager.js";
+import { Component, EM, Resource } from "../ecs/entity-manager.js";
 import { randInt } from "../utils/math.js";
 import { RendererDef } from "../render/renderer-ecs.js";
 import { V, vec3 } from "../matrix/sprig-matrix.js";
@@ -21,7 +21,7 @@ const WIND_ANGLES = range(8).map((i) => {
 
 // For now, the wind is just a single vector. It could instead be a vector
 // field.
-export const WindDef = EM.defineComponent("wind", () => {
+export const WindDef = EM.defineResource("wind", () => {
   const wind = {
     angle: WIND_ANGLES[0],
     dir: V(0, 0, 1),
@@ -32,7 +32,7 @@ export const WindDef = EM.defineComponent("wind", () => {
   return wind;
 });
 
-export function setWindAngle(wind: Component<typeof WindDef>, angle: number) {
+export function setWindAngle(wind: Resource<typeof WindDef>, angle: number) {
   wind.angle = angle;
   vec3.rotateY(AHEAD_DIR, ORIGIN, angle, wind.dir);
 }

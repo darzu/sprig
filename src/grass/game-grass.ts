@@ -416,8 +416,8 @@ export async function initGrassGame(hosting: boolean) {
   EM.addSystem(
     "updateGrass",
     Phase.GAME_WORLD,
-    [CameraFollowDef, WorldFrameDef],
-    [HsPlayerDef],
+    [HsPlayerDef, CameraFollowDef, WorldFrameDef],
+    [],
     (es, res) => {
       const player = es[0];
       // console.log(player.world.position);

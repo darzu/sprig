@@ -226,7 +226,7 @@ export function dbgLogNextBatch() {
 
 // TODO(@darzu): do more sophisticated perf milestone tracking
 export function dbgLogMilestone(msg: string) {
-  if (dbgOnce(msg)) console.log(`${msg} at: ${performance.now().toFixed(2)}`);
+  if (dbgOnce(msg)) console.log(`${performance.now().toFixed(2)}ms: ${msg}`);
 }
 
 export function isArray(t: any): t is readonly unknown[] {

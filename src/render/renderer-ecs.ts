@@ -47,7 +47,7 @@ import {
 import { Phase } from "../ecs/sys-phase.js";
 
 // TODO(@darzu): the double "Renderer" naming is confusing. Maybe one should be GPUManager or something?
-export const RendererDef = EM.defineComponent(
+export const RendererDef = EM.defineResource(
   "renderer",
   (renderer: Renderer, pipelines: CyPipelinePtr[]) => {
     return {

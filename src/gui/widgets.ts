@@ -1,7 +1,7 @@
 import { CameraComputedDef } from "../camera/camera.js";
 import { AlphaDef, ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
-import { EM, EntityW } from "../ecs/entity-manager.js";
+import { EM, EntityW, Resources } from "../ecs/entity-manager.js";
 import { AllMeshes, AllMeshesDef, UnitCubeMesh } from "../meshes/mesh-list.js";
 import { gameplaySystems } from "../debug/ghost.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
@@ -39,7 +39,7 @@ export interface WidgetLayer {
   moved: Set<number>;
 }
 
-export const WidgetLayerDef = EM.defineComponent("widgets", createWidgetLayer);
+export const WidgetLayerDef = EM.defineResource("widgets", createWidgetLayer);
 
 function createWidgetLayer(): WidgetLayer {
   return {
@@ -121,7 +121,7 @@ async function initDragBox(): Promise<EntityW<[typeof PositionDef]>> {
   return dragBox;
 }
 
-async function initWidgets({ allMeshes }: EntityW<[typeof AllMeshesDef]>) {
+async function initWidgets({ allMeshes }: Resources<[typeof AllMeshesDef]>) {
   EM.addResource(WidgetLayerDef);
 
   // TODO(@darzu): move to resource?
