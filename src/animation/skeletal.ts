@@ -13,12 +13,19 @@ interface QueuedAnimation {
   t: number;
 }
 
-export const PoseDef = EM.defineComponent("pose", (current?: number) => ({
-  t: 0,
-  current: current || 0,
-  queue: [] as QueuedAnimation[],
-  repeat: [] as QueuedAnimation[],
-}));
+export const PoseDef = EM.defineComponent2(
+  "pose",
+  () => ({
+    t: 0,
+    current: 0,
+    queue: [] as QueuedAnimation[],
+    repeat: [] as QueuedAnimation[],
+  }),
+  (p, current?: number) => {
+    p.current = current ?? 0;
+    return p;
+  }
+);
 
 EM.addEagerInit([PoseDef], [], [], () => {
   EM.addSystem(

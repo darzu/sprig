@@ -66,14 +66,18 @@ export const CameraComputedDef = EM.defineResource("cameraComputed", () => {
 });
 export type CameraView = Resource<typeof CameraComputedDef>;
 
-export const CameraFollowDef = EM.defineComponent(
+export const CameraFollowDef = EM.defineComponent2(
   "cameraFollow",
-  (priority = 0) => ({
+  () => ({
     positionOffset: vec3.create(),
     yawOffset: 0,
     pitchOffset: 0,
-    priority,
-  })
+    priority: 0,
+  }),
+  (p, priority = 0) => {
+    p.priority = priority;
+    return p;
+  }
 );
 
 export const CAMERA_OFFSETS = {

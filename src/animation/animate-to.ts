@@ -18,16 +18,19 @@ export interface AnimateTo {
   // TODO(@darzu): pathFn
 }
 
-export const AnimateToDef = EM.defineComponent(
+export const AnimateToDef = EM.defineComponent2(
   "animateTo",
-  function (a?: Partial<AnimateTo>): AnimateTo {
+  function (): AnimateTo {
     return {
-      startPos: a?.startPos ?? vec3.create(),
-      endPos: a?.endPos ?? vec3.create(),
-      easeFn: a?.easeFn ?? EASE_LINEAR,
-      durationMs: a?.durationMs ?? 1000,
-      progressMs: a?.progressMs ?? 0,
+      startPos: vec3.create(),
+      endPos: vec3.create(),
+      easeFn: EASE_LINEAR,
+      durationMs: 1000,
+      progressMs: 0,
     };
+  },
+  function (p, a?: Partial<AnimateTo>): AnimateTo {
+    return a ? Object.assign(p, a) : p;
   }
 );
 
