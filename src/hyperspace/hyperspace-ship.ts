@@ -138,14 +138,23 @@ export const { RudderPropsDef, RudderLocalDef, createRudderNow } =
 export const { HsShipPropsDef, HsShipLocalDef, createHsShip } =
   defineNetEntityHelper({
     name: "hsShip",
-    defaultProps: (uvPos?: vec2) => ({
-      uvPos: uvPos ?? vec2.fromValues(0.5, 0.5),
+    defaultProps: () => ({
+      uvPos: vec2.fromValues(0.5, 0.5),
       gemId: 0,
       cannonLId: 0,
       cannonRId: 0,
       rudder: createRef(0, [RudderPropsDef, YawPitchDef]),
       mast: createRef(0, [HypMastPropsDef, HypMastLocalDef]),
     }),
+    updateProps: (p, uvPos?: vec2) =>
+      Object.assign(p, {
+        uvPos: uvPos ?? vec2.fromValues(0.5, 0.5),
+        gemId: 0,
+        cannonLId: 0,
+        cannonRId: 0,
+        rudder: createRef(0, [RudderPropsDef, YawPitchDef]),
+        mast: createRef(0, [HypMastPropsDef, HypMastLocalDef]),
+      }),
     serializeProps: (c, buf) => {
       buf.writeVec2(c.uvPos);
       buf.writeUint32(c.gemId);

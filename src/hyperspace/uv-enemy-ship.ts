@@ -78,20 +78,30 @@ export function createEnemyCrew(
 export const { EnemyShipPropsDef, EnemyShipLocalDef, createEnemyShip } =
   defineNetEntityHelper({
     name: "enemyShip",
-    defaultProps: (
+    defaultProps: () => {
+      return {
+        uvLoc: vec2.fromValues(0, 0),
+        speed: 0.0,
+        wheelSpeed: 0.0,
+        uvDir: vec2.fromValues(1, 0),
+        parent: 0,
+      };
+    },
+    updateProps: (
+      p,
       uvLoc?: vec2,
       speed?: number,
       wheelSpeed?: number,
       uvDir?: vec2,
       parent?: number
     ) => {
-      return {
+      return Object.assign(p, {
         uvLoc: uvLoc ?? vec2.fromValues(0, 0),
         speed: speed ?? 0.0,
         wheelSpeed: wheelSpeed ?? 0.0,
         uvDir: uvDir ?? vec2.fromValues(1, 0),
         parent: parent ?? 0,
-      };
+      });
     },
     serializeProps: (c, buf) => {
       buf.writeVec2(c.uvLoc);

@@ -24,27 +24,37 @@ import { vec3Dbg } from "../utils/utils-3d.js";
 export const { CannonPropsDef, CannonLocalDef, createCannon, createCannonNow } =
   defineNetEntityHelper({
     name: "cannon",
-    defaultProps: (
-      loc?: vec3,
+    defaultProps: () => {
+      return {
+        location: V(0, 0, 0),
+        yaw: 0,
+        pitch: 0,
+        parentId: 0,
+      };
+    },
+    updateProps: (
+      p,
+      location?: vec3,
       yaw?: number,
       pitch?: number,
       parentId?: number
     ) => {
-      return {
-        location: loc ?? V(0, 0, 0),
-        yaw: yaw ?? 0,
-        pitch: pitch ?? 0,
-        parentId: parentId ?? 0,
-      };
+      if (location) vec3.copy(p.location, location);
+      if (yaw) p.yaw = yaw;
+      if (pitch) p.pitch = pitch;
+      if (parentId) p.parentId = parentId;
+      return p;
     },
     serializeProps: (c, buf) => {
       buf.writeVec3(c.location);
       buf.writeFloat32(c.yaw);
+      buf.writeFloat32(c.pitch);
       buf.writeUint32(c.parentId);
     },
     deserializeProps: (c, buf) => {
       buf.readVec3(c.location);
       c.yaw = buf.readFloat32();
+      c.pitch = buf.readFloat32();
       c.parentId = buf.readUint32();
     },
     defaultLocal: () => {

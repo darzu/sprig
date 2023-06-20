@@ -57,14 +57,19 @@ export const {
   createMpPlayerNow,
 } = defineNetEntityHelper({
   name: "mpPlayer",
-  defaultProps: (location?: vec3, color?: vec3) => {
-    console.log(
-      `creating mpPlayerProps w/ ${vec3Dbg(location)} ${vec3Dbg(color)}`
-    );
+  defaultProps: () => {
     return {
-      location: location ?? V(0, 0, 0),
-      color: color ?? V(0, 0, 0),
+      location: V(0, 0, 0),
+      color: V(0, 0, 0),
     };
+  },
+  updateProps: (p, location?: vec3, color?: vec3) => {
+    console.log(
+      `updating mpPlayerProps w/ ${vec3Dbg(location)} ${vec3Dbg(color)}`
+    );
+    if (location) vec3.copy(p.location, location);
+    if (color) vec3.copy(p.color, color);
+    return p;
   },
   // TODO(@darzu): can't do this b/c constructors must create a valid shape even when given no params
   // defaultProps: (location: vec3, color: vec3) => {

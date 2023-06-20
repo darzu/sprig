@@ -41,6 +41,7 @@ export const { RibSailPropsDef, RibSailLocalDef, createRibSailNow } =
     defaultProps: () => ({
       // pitch: Math.PI / 2,
     }),
+    updateProps: (p) => p,
     serializeProps: (o, buf) => {
       // buf.writeFloat32(o.pitch);
     },

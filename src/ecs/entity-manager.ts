@@ -296,9 +296,7 @@ export class EntityManager {
   ): ComponentDef<N, P, Pargs> {
     // TODO(@darzu): Remove!
     const construct = (...args: Pargs) => {
-      const p = make();
-      update(p, ...args);
-      return p;
+      return update(make(), ...args);
     };
     return this.defineComponent(name, construct);
   }
