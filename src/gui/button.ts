@@ -37,14 +37,20 @@ export interface ButtonColors {
   down: vec3;
 }
 
-export const ButtonDef = EM.defineComponent(
+export const ButtonDef = EM.defineComponent2(
   "button",
-  (key: string, data?: number, colors?: ButtonColors) => ({
-    key,
-    // TODO(@darzu): better way to do this? Maybe typed "known" buttons ala assets
-    data,
-    colors,
-  })
+  () => ({
+    key: "",
+    data: undefined as number | undefined,
+    colors: undefined as ButtonColors | undefined,
+  }),
+  (p, key: string, data?: number, colors?: ButtonColors) =>
+    Object.assign(p, {
+      key,
+      // TODO(@darzu): better way to do this? Maybe typed "known" buttons ala assets
+      data,
+      colors,
+    })
 );
 
 // TODO(@darzu): GUIStateDef ?

@@ -59,28 +59,32 @@ export function createHsPlayer() {
   return e;
 }
 
-export const HsPlayerDef = EM.defineComponent("hsPlayer", () => {
-  return {
-    // hat stuff
-    // TODO(@darzu): better abstraction
-    hat: 0,
-    tool: 0,
-    interacting: false,
-    clicking: false,
-    manning: false,
-    dropping: false,
-    leftLegId: 0,
-    rightLegId: 0,
-    facingDir: vec3.create(),
-    // TODO(@darzu): HACK. hyperspace game specific
-    lookingForShip: true,
-    // TODO(@darzu): HACK. LD51 game specific
-    holdingBall: 0,
-    // disabled noodle limbs
-    // leftFootWorldPos: [0, 0, 0] as vec3,
-    // rightFootWorldPos: [0, 0, 0] as vec3,
-  };
-});
+export const HsPlayerDef = EM.defineComponent2(
+  "hsPlayer",
+  () => {
+    return {
+      // hat stuff
+      // TODO(@darzu): better abstraction
+      hat: 0,
+      tool: 0,
+      interacting: false,
+      clicking: false,
+      manning: false,
+      dropping: false,
+      leftLegId: 0,
+      rightLegId: 0,
+      facingDir: vec3.create(),
+      // TODO(@darzu): HACK. hyperspace game specific
+      lookingForShip: true,
+      // TODO(@darzu): HACK. LD51 game specific
+      holdingBall: 0,
+      // disabled noodle limbs
+      // leftFootWorldPos: [0, 0, 0] as vec3,
+      // rightFootWorldPos: [0, 0, 0] as vec3,
+    };
+  },
+  (p) => p
+);
 
 // Resource pointing at the local player
 export const LocalHsPlayerDef = EM.defineResource(
