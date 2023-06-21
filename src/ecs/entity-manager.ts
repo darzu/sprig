@@ -45,50 +45,40 @@ export interface ResourceDef<
 
 export type CompId = number;
 // TODO(@darzu): we should seperate component vs resource def
-export interface ComponentDef<
+export interface BaseComponentDef<
   N extends string = string,
   P = any,
   Pargs extends any[] = any[]
 > {
-  _brand: "componentDef"; // TODO(@darzu): remove once ResourceDef & ComponentDef are incompatible
+  _brand: "componentDef";
   readonly name: N;
-  // TODO(@darzu): Instead of a constructor, we should require a copy fn that can
-  //  both initialize a new obj or copy new properties into an existing one. This
-  //  is really important for entity pools where entities are re-used and we need
-  //  to either "create new component with properties or stamp these properties
-  //  into existing component". Than method doesnt exist yet b/c we lack a standard
-  //  copy/construct fn.
-  // TODO(@darzu): while we're at it, we might require that components are always
-  //  objects. E.g. no naked numbers or booleans. There's some other reason i think
-  //  we want this that is eluding me..
-  /* 
-  TODO(@darzu):
-    ? require a copy fn and a () => P constructor
-    no way to have EM.set(ent, V(0,0,0)) w/o copy fn b/c it may exist
-    EM.add: for must-not-exist-yet add a component
-    EM.set: add or set, requires copy fn
-    EM.update: must exist already, requires copy fn
-    could be all components are objects
-      default copy fn is just object.assign
-    if we have term-level field info, we could have a default serializer/deserializer
-      but we like to either write those by hand or rely on a compile pass which can use type info
-    how important is taking in ...args as opposed to a P?
-    could have constructor fn `() => P` and update fn `(p: P, ...args: Pargs) => void`
-    better to put more burden at component def time than EM.set time
-    how do these interact with deserialize?
-    copy is just one type of update
-    construct + update
-    that would solve my bug, b/c u must provide ()=>P
-    deserialization is just one kind of update
-    for entity pools, since the components would exist, the update would be natural?
-      could skip seperating the create & onSpawn? nah. well maybe optionally.
-  */
-  construct: (...args: Pargs) => P;
-  // make: () => P;
-  // update: (p: P, ...args: Pargs) => P;
   readonly id: CompId;
   isOn: <E extends Entity>(e: E) => e is E & { [K in N]: P };
 }
+export interface NonUpdatableComponentDef<
+  N extends string = string,
+  P = any,
+  Pargs extends any[] = any[]
+> extends BaseComponentDef<N, P, Pargs> {
+  updatable: false;
+  construct: (...args: Pargs) => P;
+}
+export interface UpdatableComponentDef<
+  N extends string = string,
+  P = any,
+  Pargs extends any[] = any[]
+> extends BaseComponentDef<N, P, Pargs> {
+  updatable: true;
+  make: () => P;
+  update: (p: P, ...args: Pargs) => P;
+}
+
+export type ComponentDef<
+  N extends string = string,
+  P = any,
+  Pargs extends any[] = any[]
+> = NonUpdatableComponentDef<N, P, Pargs> | UpdatableComponentDef<N, P, Pargs>;
+
 export type Component<DEF> = DEF extends ComponentDef<any, infer P> ? P : never;
 
 export type Resource<DEF> = DEF extends ResourceDef<any, infer P> ? P : never;
@@ -96,14 +86,14 @@ export type Resource<DEF> = DEF extends ResourceDef<any, infer P> ? P : never;
 export const componentsToString = (cs: (ComponentDef | ResourceDef)[]) =>
   `(${cs.map((c) => c.name).join(", ")})`;
 
-export type WithComponent<D> = D extends ComponentDef<infer N, infer P>
+export type WithComponent<D> = D extends BaseComponentDef<infer N, infer P>
   ? { readonly [k in N]: P }
   : never;
 export type EntityW1<N extends string, P> = {
   readonly id: number;
 } & { [k in N]: P };
 export type EntityW<
-  CS extends readonly ComponentDef[],
+  CS extends readonly BaseComponentDef[],
   ID extends number = number
 > = {
   readonly id: ID;
@@ -290,42 +280,59 @@ export class EntityManager {
   // TODO(@darzu): REFACTOR! Consolidate w/ defineComponent below
   public defineComponent2<N extends string, P, Pargs extends any[]>(
     name: N,
-    // construct: (...args: Pargs) => P
     make: () => P,
     update: (p: P, ...args: Pargs) => P
-  ): ComponentDef<N, P, Pargs> {
+  ): UpdatableComponentDef<N, P, Pargs> {
     // TODO(@darzu): Remove!
-    const construct = (...args: Pargs) => {
-      return update(make(), ...args);
+    // const construct = (...args: Pargs) => {
+    //   return update(make(), ...args);
+    // };
+    const id = nameToId(name);
+    assert(
+      !this.components.has(id),
+      `Component with name ${name} already defined--hash collision?`
+    );
+    const component: UpdatableComponentDef<N, P, Pargs> = {
+      _brand: "componentDef",
+      name,
+      updatable: true,
+      make,
+      update,
+      id,
+      isOn: <E extends Entity>(e: E): e is E & { [K in N]: P } => name in e,
     };
-    return this.defineComponent(name, construct);
+    // TODO(@darzu): Why this type hack?
+    this.components.set(id, component as unknown as ComponentDef);
+    return component;
   }
 
+  public defineNonUpdatableComponent<N extends string, P, Pargs extends any[]>(
+    name: N,
+    construct: (...args: Pargs) => P
+  ): NonUpdatableComponentDef<N, P, Pargs> {
+    const id = nameToId(name);
+    assert(
+      !this.components.has(id),
+      `Component with name ${name} already defined--hash collision?`
+    );
+    const component: NonUpdatableComponentDef<N, P, Pargs> = {
+      _brand: "componentDef",
+      name,
+      updatable: false,
+      construct,
+      id,
+      isOn: <E extends Entity>(e: E): e is E & { [K in N]: P } => name in e,
+    };
+    this.components.set(id, component);
+    return component;
+  }
+
+  // TODO(@darzu): remove
   public defineComponent<N extends string, P, Pargs extends any[]>(
     name: N,
     construct: (...args: Pargs) => P
-    // make: () => P,
-    // update: (p: P, ...args: Pargs) => P
   ): ComponentDef<N, P, Pargs> {
-    const id = nameToId(name);
-    if (this.components.has(id)) {
-      throw `Component with name ${name} already defined--hash collision?`;
-    }
-    const component: ComponentDef<N, P, Pargs> = {
-      _brand: "componentDef", // TODO(@darzu): remove?
-      name,
-      construct,
-      // make,
-      // update,
-      id,
-      isOn: <E extends Entity>(e: E): e is E & { [K in N]: P } =>
-        // (e as Object).hasOwn(name),
-        name in e,
-    };
-    // // TODO(@darzu): I don't love this cast. feels like it should be possible without..
-    // this.components.set(id, component as unknown as ComponentDef);
-    this.components.set(id, component);
-    return component;
+    return this.defineNonUpdatableComponent(name, construct);
   }
 
   private checkComponent<N extends string, P, Pargs extends any[]>(
@@ -450,6 +457,7 @@ export class EntityManager {
     return "dead" === e.name;
   }
 
+  // TODO(@darzu): REFACTOR: remove standalone addComponent, use "set"
   public addComponent<N extends string, P, Pargs extends any[] = any[]>(
     id: number,
     def: ComponentDef<N, P, Pargs>,
@@ -466,9 +474,9 @@ export class EntityManager {
     }
     if (def.name in e)
       throw `double defining component ${def.name} on ${e.id}!`;
-    const c = def.construct(...args);
-    // let c = def.make();
-    // c = def.update(c, ...args);
+    const c = def.updatable
+      ? def.update(def.make(), ...args)
+      : def.construct(...args);
     (e as any)[def.name] = c;
 
     // update query caches
@@ -516,11 +524,13 @@ export class EntityManager {
     return this.addComponent(id, component, ...args);
   }
 
+  // TODO(@darzu): REFACTOR: REMOVE!
   public ensureComponent<N extends string, P, Pargs extends any[] = any[]>(
     id: number,
     def: ComponentDef<N, P, Pargs>,
     ...args: Pargs
   ): P {
+    console.warn(`TODO: remove ensureComponent calls`);
     this.checkComponent(def);
     const e = this.entities.get(id)!;
     const alreadyHas = def.name in e;
@@ -530,9 +540,8 @@ export class EntityManager {
       return (e as any)[def.name];
     }
   }
-  // TODO(@darzu): do we want to make this the standard way we do ensureComponent and addComponent ?
-  // TODO(@darzu): rename to "set" and have "maybeSet" w/ a thunk as a way to short circuit unnecessary init?
-  //      and maybe "strictSet" as the version that throws if it exists (renamed from "addComponent")
+
+  // TODO(@darzu): REFACTOR: Rename to "set"
   public ensureComponentOn<N extends string, P, Pargs extends any[] = []>(
     e: Entity,
     def: ComponentDef<N, P, Pargs>,
@@ -541,7 +550,14 @@ export class EntityManager {
     const alreadyHas = def.name in e;
     // assert(!alreadyHas, `${e.id} already has ${def.name}`);
     if (!alreadyHas) {
+      // TODO(@darzu): REFACTOR: collapse addComponent into here
       this.addComponent(e.id, def, ...args);
+    } else {
+      assert(
+        def.updatable,
+        `Cannon update non-updatable component: ${def.name}`
+      );
+      (e as any)[def.name] = def.update((e as any)[def.name], ...args);
     }
   }
 
