@@ -83,13 +83,13 @@ export const FLAG_UNLIT = 1;
 
 export type MeshUniformTS = CyToTS<typeof MeshUniformStruct.desc>;
 
-export const RenderDataStdDef = EM.defineComponent(
+export const RenderDataStdDef = EM.defineComponent2(
   "renderDataStd",
-  (r: MeshUniformTS) => r
+  createUniData,
+  updateUniData
 );
 export const meshPoolPtr = CY.createMeshPool("meshPool", {
   computeVertsData,
-  computeUniData,
   vertsStruct: VertexStruct,
   unisStruct: MeshUniformStruct,
   maxMeshes: MAX_MESHES,
@@ -103,8 +103,7 @@ export const meshPoolPtr = CY.createMeshPool("meshPool", {
 });
 
 // TODO: does this need to be passed into the mesh pool anymore?
-export function computeUniData(m: Mesh): MeshUniformTS {
-  const { min, max } = getAABBFromMesh(m);
+export function createUniData(): MeshUniformTS {
   const uni: MeshUniformTS = {
     transform: mat4.create(),
     // TODO(@darzu): option for aabbs?
@@ -116,6 +115,10 @@ export function computeUniData(m: Mesh): MeshUniformTS {
     flags: 0,
   };
   return uni;
+}
+export function updateUniData(u: MeshUniformTS, m: Mesh): MeshUniformTS {
+  // const { min, max } = getAABBFromMesh(m);
+  return u;
 }
 
 // TODO(@darzu): Allow updates directly to serialized data

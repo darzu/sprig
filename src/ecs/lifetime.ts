@@ -4,10 +4,15 @@ import { AuthorityDef, MeDef } from "../net/components.js";
 import { TimeDef } from "../time/time.js";
 import { Phase } from "./sys-phase.js";
 
-export const LifetimeDef = EM.defineComponent(
+export const LifetimeDef = EM.defineComponent2(
   "lifetime",
-  (ms: number = 1000) => {
-    return { startMs: ms, ms: ms };
+  () => {
+    return { startMs: 1000, ms: 1000 };
+  },
+  (p, ms: number = 1000) => {
+    p.startMs = ms;
+    p.ms = ms;
+    return p;
   }
 );
 export type Lifetime = Component<typeof LifetimeDef>;

@@ -142,28 +142,30 @@ function computeOceanVertsData(
   return vertsData;
 }
 
-export function computeOceanUniData(m: Mesh): OceanUniTS {
-  // TODO(@darzu): change
-  const { min, max } = getAABBFromMesh(m);
+export function createOceanUniData(): OceanUniTS {
   const uni: OceanUniTS = {
     transform: mat4.create(),
-    aabbMin: min,
-    aabbMax: max,
+    aabbMin: V(Infinity, Infinity, Infinity),
+    aabbMax: V(-Infinity, -Infinity, -Infinity),
     tint: vec3.create(),
     id: 0,
   };
   return uni;
 }
+export function updateOceanUniData(u: OceanUniTS, m: Mesh): OceanUniTS {
+  const { min, max } = getAABBFromMesh(m);
+  vec3.copy(u.aabbMin, min);
+  vec3.copy(u.aabbMax, max);
+  return u;
+}
 
-export const RenderDataOceanDef = EM.defineComponent(
+export const RenderDataOceanDef = EM.defineComponent2(
   "renderDataOcean",
-  (r: OceanUniTS) => r
+  createOceanUniData,
+  updateOceanUniData
 );
 export const oceanPoolPtr = CY.createMeshPool("oceanPool", {
   computeVertsData: computeOceanVertsData,
-  // TODO(@darzu): per-mesh unis should maybe be optional? I don't think
-  //     the ocean needs them
-  computeUniData: computeOceanUniData,
   unisStruct: OceanUniStruct,
   vertsStruct: OceanVertStruct,
   maxMeshes: MAX_OCEAN_MESHES,

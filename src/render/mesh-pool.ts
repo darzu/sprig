@@ -408,7 +408,9 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     if (m.quad.length) updateMeshQuads(handle, m);
     if (m.tri.length) updateMeshTriangles(handle, m);
     if (m.pos.length) updateMeshVertices(handle, m);
-    const uni = ptr.computeUniData(m);
+    // TODO(@darzu): this is duplicating the uniform that will also (probably) be stored
+    //  in the data component.
+    const uni = ptr.dataDef.construct(m); // TODO(@darzu): hacky to use ECS fns here
     updateUniform(handle, uni);
 
     return handle;

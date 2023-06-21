@@ -117,7 +117,6 @@ export interface CyMeshPoolPtr<
   kind: "meshPool";
   // TODO(@darzu): remove id and name, this doesn't need to be inited directly
   computeVertsData: ComputeVertsDataFn<V>;
-  computeUniData: (m: Mesh) => CyToTS<U>;
   vertsStruct: CyStruct<V>;
   unisStruct: CyStruct<U>;
   // TODO(@darzu): do we need these max's? maybe we make them optional
@@ -127,7 +126,7 @@ export interface CyMeshPoolPtr<
   setMaxLines: number;
   setMaxVerts: number;
   // TODO(@darzu): really unsure how I feel about having an EM component here in CY
-  dataDef: ComponentDef<string, CyToTS<U>, [CyToTS<U>]>;
+  dataDef: ComponentDef<string, CyToTS<U>, [Mesh]>;
 }
 
 // PIPELINES

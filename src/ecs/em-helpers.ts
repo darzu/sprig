@@ -119,7 +119,11 @@ export function defineNetEntityHelper<
     opts.serializeProps,
     opts.deserializeProps
   );
-  const localDef = EM.defineComponent(`${opts.name}Local`, opts.defaultLocal);
+  const localDef = EM.defineComponent2(
+    `${opts.name}Local`,
+    opts.defaultLocal,
+    (p) => p
+  );
 
   const constructFn = registerConstructorSystem(
     propsDef,
@@ -216,4 +220,8 @@ export function createRef<CS extends ComponentDef[]>(
   }
 }
 
-export const FinishedDef = EM.defineComponent("finished", () => true);
+export const FinishedDef = EM.defineComponent2(
+  "finished",
+  () => true,
+  (p) => p
+);
