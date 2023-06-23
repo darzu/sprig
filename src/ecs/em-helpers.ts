@@ -15,16 +15,16 @@ import { Phase } from "./sys-phase.js";
 export function defineSerializableComponent<
   N extends string,
   P,
-  Pargs extends any[]
+  UArgs extends any[]
 >(
   name: N,
   // TODO(@darzu): change to use update/make
   // construct: (...args: Pargs) => P,
   make: () => P,
-  update: (p: P, ...args: Pargs) => P,
+  update: (p: P, ...args: UArgs) => P,
   serialize: (obj: P, buf: Serializer) => void,
   deserialize: (obj: P, buf: Deserializer) => void
-): ComponentDef<N, P, Pargs> {
+): ComponentDef<N, P, [], UArgs> {
   const def = EM.defineComponent2(name, make, update);
   EM.registerSerializerPair(def, serialize, deserialize);
   return def;
@@ -63,9 +63,9 @@ export type NetEntityDefs<
   RS extends ResourceDef[],
   INITED
 > = {
-  [_ in `${Capitalize<N>}PropsDef`]: ComponentDef<`${N}Props`, P1, Pargs1>;
+  [_ in `${Capitalize<N>}PropsDef`]: ComponentDef<`${N}Props`, P1, [], Pargs1>;
 } & {
-  [_ in `${Capitalize<N>}LocalDef`]: ComponentDef<`${N}Local`, P2, []>;
+  [_ in `${Capitalize<N>}LocalDef`]: ComponentDef<`${N}Local`, P2, [], []>;
 } & {
   [_ in `create${Capitalize<N>}`]: (
     ...args: Pargs1
@@ -90,6 +90,9 @@ export function defineNetEntityHelper<
   INITED
 >(opts: {
   name: N;
+  // TODO(@darzu): Hmmm. Actually, on the owner we'll only call "construct" w/ args + serialize, on remote
+  //    we'll call "construct" w/o args and then deserialize. We could potentially simplify this
+  //    by having "localConstruct" and "emptyConstruct" or something.
   defaultProps: () => P1;
   updateProps: (p: P1, ...args: Pargs1) => P1;
   serializeProps: (obj: P1, buf: Serializer) => void;
@@ -102,8 +105,8 @@ export function defineNetEntityHelper<
   build: (
     e: EntityW<
       [
-        ComponentDef<`${N}Props`, P1, Pargs1>,
-        ComponentDef<`${N}Local`, P2, []>,
+        ComponentDef<`${N}Props`, P1, [], Pargs1>,
+        ComponentDef<`${N}Local`, P2, [], []>,
         typeof AuthorityDef,
         typeof SyncDef,
         ...DS
@@ -142,8 +145,8 @@ export function defineNetEntityHelper<
       // TYPE HACK
       const _e = e as any as EntityW<
         [
-          ComponentDef<`${N}Props`, P1, Pargs1>,
-          ComponentDef<`${N}Local`, P2, []>,
+          ComponentDef<`${N}Props`, P1, [], Pargs1>,
+          ComponentDef<`${N}Local`, P2, [], []>,
           typeof AuthorityDef,
           typeof SyncDef,
           ...DS

@@ -126,7 +126,8 @@ export interface CyMeshPoolPtr<
   setMaxLines: number;
   setMaxVerts: number;
   // TODO(@darzu): really unsure how I feel about having an EM component here in CY
-  dataDef: ComponentDef<string, CyToTS<U>, [Mesh]>;
+  // TODO(@darzu): REFACTOR FIX! Should have CArgs, not UArgs
+  dataDef: ComponentDef<string, CyToTS<U>, [], [Mesh]>;
 }
 
 // PIPELINES
