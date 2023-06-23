@@ -44,7 +44,12 @@ export interface ResourceDef<
 }
 
 export type CompId = number;
-// TODO(@darzu): we should seperate component vs resource def
+
+// TODO(@darzu): Consider having a "NonsyncableComponentDef" or "NonupdatableComponentDef" that
+//  can take constructor args but can't be synced and throws an error if u use EM.set twice since
+//  it can't update. See "NonUpdatableComponentDef" branch for one attempt, but i ran into type
+//  issues i couldn't fix.
+
 export interface ComponentDef<
   N extends string = string,
   P = any,

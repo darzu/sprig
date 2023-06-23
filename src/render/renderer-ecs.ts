@@ -118,12 +118,18 @@ export const RenderableConstructDef = EM.defineComponent2(
   }
 );
 
-export const RiggedRenderableConstructDef = EM.defineComponent(
+export const RiggedRenderableConstructDef = EM.defineComponent2(
   "riggedRenderableConstruct",
   // TODO: consider including other RenderableConstruct fields here
-  (mesh: RiggedMesh) => ({
-    mesh,
-  })
+  () => ({
+    // TODO(@darzu): Wish we didn't have to do this hack here. We need a "NonsyncableComponentDef" that is allowed
+    //    to take constructor arguments. See comment on ComponentDef
+    mesh: undefined as any as RiggedMesh,
+  }),
+  (p, mesh: RiggedMesh) => {
+    p.mesh = mesh;
+    return p;
+  }
 );
 
 export interface Renderable {
@@ -134,9 +140,11 @@ export interface Renderable {
   meshHandle: MeshHandle;
 }
 
-export const RenderableDef = EM.defineComponent(
+export const RenderableDef = EM.defineComponent2(
   "renderable",
-  (r: Renderable) => r
+  // TODO(@darzu): HACK. Need NonsyncableComponentDef
+  () => undefined as any as Renderable,
+  (p, r: Renderable) => r
 );
 
 // TODO: standardize names more
@@ -146,9 +154,10 @@ export const RenderableDef = EM.defineComponent(
 //   (r: MeshUniformTS) => r
 // );
 
-export const RendererWorldFrameDef = EM.defineComponent(
+export const RendererWorldFrameDef = EM.defineComponent2(
   "rendererWorldFrame",
-  () => createFrame()
+  () => createFrame(),
+  (p) => p
 );
 
 // TODO(@darzu): We need to add constraints for updateRendererWorldFrames and such w/ respect to gameplay, physics, and rendering!
