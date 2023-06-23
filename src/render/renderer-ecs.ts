@@ -61,47 +61,60 @@ export const RendererDef = EM.defineResource(
 // TODO(@darzu): we need a better way to handle arbitrary pools
 // TODO(@darzu): support height map?
 // export type PoolKind = "std" | "ocean" | "grass";
-export interface RenderableConstruct {
-  readonly enabled: boolean;
-  readonly sortLayer: number;
+interface _RenderableConstruct {
+  enabled: boolean;
+  sortLayer: number;
   // TODO(@darzu): mask is inconsitently placed; here it is in the component,
   //  later it is in the mesh handle.
-  readonly mask?: number;
-  readonly pool: CyMeshPoolPtr<any, any>;
+  mask?: number;
+  pool: CyMeshPoolPtr<any, any>;
   // TODO(@darzu): little hacky: hidden vs enabled?
   // NOTE:
   //   "enabled" objects are debundled and not sent to the GPU.
   //   "hidden" objects are sent to the GPU w/ scale 0 (so they don't appear).
   //   hidden objects might be more efficient in object pools b/c it causes
   //   less rebundling, but this needs measurement.
-  readonly hidden: boolean;
+  hidden: boolean;
   meshOrProto: Mesh | MeshHandle;
-  readonly reserve?: MeshReserve;
+  reserve?: MeshReserve;
 }
+export type RenderableConstruct = Readonly<_RenderableConstruct>;
 
-export const RenderableConstructDef = EM.defineComponent(
+export const RenderableConstructDef = EM.defineComponent2(
   "renderableConstruct",
-  (
-    // TODO(@darzu): this constructor is too messy, we should use a params obj instead
-    meshOrProto: Mesh | MeshHandle,
-    enabled: boolean = true,
-    // TODO(@darzu): do we need sort layers? Do we use them?
-    sortLayer: number = 0,
-    mask?: number,
-    pool?: CyMeshPoolPtr<any, any>,
-    hidden: boolean = false,
-    reserve?: MeshReserve
-  ) => {
+  () => {
     const r: RenderableConstruct = {
-      enabled,
-      sortLayer: sortLayer,
-      meshOrProto,
-      mask,
-      pool: pool ?? meshPoolPtr,
-      hidden,
-      reserve,
+      enabled: true,
+      sortLayer: 0,
+      meshOrProto: undefined as any as Mesh | MeshHandle,
+      mask: undefined,
+      pool: meshPoolPtr,
+      hidden: false,
+      reserve: undefined,
     };
     return r;
+  },
+  (
+    p,
+    // TODO(@darzu): this constructor is too messy, we should use a params obj instead
+    meshOrProto: Mesh | MeshHandle,
+    enabled?: boolean,
+    // TODO(@darzu): do we need sort layers? Do we use them?
+    sortLayer?: number,
+    mask?: number,
+    pool?: CyMeshPoolPtr<any, any>,
+    hidden?: boolean,
+    reserve?: MeshReserve
+  ) => {
+    const _p = p as _RenderableConstruct;
+    _p.meshOrProto = meshOrProto;
+    if (enabled !== undefined) _p.enabled = enabled;
+    if (sortLayer !== undefined) _p.sortLayer = sortLayer;
+    if (mask !== undefined) _p.mask = mask;
+    if (pool !== undefined) _p.pool = pool;
+    if (hidden !== undefined) _p.hidden = hidden;
+    if (reserve !== undefined) _p.reserve = reserve;
+    return p;
   }
 );
 
