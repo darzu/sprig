@@ -44,7 +44,7 @@ const ALL_GAMES = [
   "gjk",
   "rebound", // broken-ish
   "shipyard",
-  "grass",
+  "grass", // broken-ish
   "font",
   "hyperspace",
   "cloth", // broken-ish
@@ -54,7 +54,7 @@ const ALL_GAMES = [
   "ld53",
   "mp",
 ] as const;
-const GAME: (typeof ALL_GAMES)[number] = "mp";
+const GAME: (typeof ALL_GAMES)[number] = "ld53";
 
 // Run simulation with a fixed timestep @ 60hz
 const TIMESTEP = 1000 / 60;
