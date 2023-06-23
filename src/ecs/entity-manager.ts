@@ -68,6 +68,22 @@ export interface ComponentDef<
 }
 export type Component<DEF> = DEF extends ComponentDef<any, infer P> ? P : never;
 
+// TODO(@darzu): Not entirely sure this "Nonupdatable" split is worth the extra complexity
+export type NonupdatableComponentDef<
+  N extends string,
+  P,
+  CArgs extends any[]
+> = ComponentDef<N, P, CArgs, []>;
+export type UpdatableComponentDef<
+  N extends string,
+  P,
+  UArgs extends any[]
+> = ComponentDef<N, P, [], UArgs>;
+
+export type _ComponentDef<N extends string, P, PArgs extends any[]> =
+  | NonupdatableComponentDef<N, P, PArgs>
+  | UpdatableComponentDef<N, P, PArgs>;
+
 export type Resource<DEF> = DEF extends ResourceDef<any, infer P> ? P : never;
 
 export const componentsToString = (cs: (ComponentDef | ResourceDef)[]) =>
@@ -270,12 +286,12 @@ export class EntityManager {
     // construct: (...args: Pargs) => P
     make: () => P,
     update: (p: P, ...args: UArgs) => P
-  ): ComponentDef<N, P, [], UArgs> {
+  ): UpdatableComponentDef<N, P, UArgs> {
     const id = nameToId(name);
     if (this.components.has(id)) {
       throw `Component with name ${name} already defined--hash collision?`;
     }
-    const component: ComponentDef<N, P, [], UArgs> = {
+    const component: UpdatableComponentDef<N, P, UArgs> = {
       _brand: "componentDef", // TODO(@darzu): remove?
       updatable: true,
       name,
@@ -299,12 +315,12 @@ export class EntityManager {
     construct: (...args: CArgs) => P
     // make: () => P,
     // update: (p: P, ...args: Pargs) => P
-  ): ComponentDef<N, P, CArgs, []> {
+  ): NonupdatableComponentDef<N, P, CArgs> {
     const id = nameToId(name);
     if (this.components.has(id)) {
       throw `Component with name ${name} already defined--hash collision?`;
     }
-    const component: ComponentDef<N, P, CArgs, []> = {
+    const component: NonupdatableComponentDef<N, P, CArgs> = {
       _brand: "componentDef", // TODO(@darzu): remove?
       updatable: false,
       name,
@@ -443,15 +459,10 @@ export class EntityManager {
     return "dead" === e.name;
   }
 
-  public addComponent<
-    N extends string,
-    P,
-    CArgs extends any[],
-    UArgs extends any[]
-  >(
+  public addComponent<N extends string, P, PArgs extends any[]>(
     id: number,
-    def: ComponentDef<N, P, CArgs, UArgs>,
-    ...args: [...CArgs, ...UArgs] // TODO(@darzu): REFACTOR. Types aren't right yet
+    def: _ComponentDef<N, P, PArgs>,
+    ...args: PArgs // TODO(@darzu): REFACTOR. Types aren't right yet
   ): P {
     this.checkComponent(def);
     if (id === 0) throw `hey, use addResource!`;
@@ -466,8 +477,13 @@ export class EntityManager {
       throw `double defining component ${def.name} on ${e.id}!`;
     // TODO(@darzu): REFACTOR:
     // TODO(@darzu): HACK. Types aren't right..
-    let c = def.construct(...(args as unknown as CArgs));
-    c = def.update(c, ...(args as unknown as UArgs));
+    let c: P;
+    if (def.updatable) {
+      c = def.construct();
+      c = def.update(c, ...args);
+    } else {
+      c = def.construct(...args);
+    }
 
     // let c = def.make();
     // c = def.update(c, ...args);
@@ -518,15 +534,10 @@ export class EntityManager {
     return this.addComponent(id, component, ...args);
   }
 
-  public ensureComponent<
-    N extends string,
-    P,
-    CArgs extends any[],
-    UArgs extends any[]
-  >(
+  public ensureComponent<N extends string, P, PArgs extends any[]>(
     id: number,
-    def: ComponentDef<N, P, CArgs, UArgs>,
-    ...args: [...CArgs, ...UArgs]
+    def: _ComponentDef<N, P, PArgs>,
+    ...args: PArgs
   ): P {
     this.checkComponent(def);
     const e = this.entities.get(id)!;
@@ -540,16 +551,21 @@ export class EntityManager {
   // TODO(@darzu): do we want to make this the standard way we do ensureComponent and addComponent ?
   // TODO(@darzu): rename to "set" and have "maybeSet" w/ a thunk as a way to short circuit unnecessary init?
   //      and maybe "strictSet" as the version that throws if it exists (renamed from "addComponent")
-  public ensureComponentOn<
-    N extends string,
-    P,
-    CArgs extends any[] = [],
-    UArgs extends any[] = []
-  >(
+  public ensureComponentOn<N extends string, P, PArgs extends any[]>(
     e: Entity,
-    def: ComponentDef<N, P, CArgs, UArgs>,
-    ...args: [...CArgs, ...UArgs]
-  ): asserts e is EntityW<[ComponentDef<N, P, CArgs, UArgs>]> {
+    def: UpdatableComponentDef<N, P, PArgs>,
+    ...args: PArgs
+  ): asserts e is EntityW<[UpdatableComponentDef<N, P, PArgs>]>;
+  public ensureComponentOn<N extends string, P, PArgs extends any[]>(
+    e: Entity,
+    def: NonupdatableComponentDef<N, P, PArgs>,
+    ...args: PArgs
+  ): asserts e is EntityW<[NonupdatableComponentDef<N, P, PArgs>]>;
+  public ensureComponentOn<N extends string, P, PArgs extends any[]>(
+    e: Entity,
+    def: _ComponentDef<N, P, PArgs>,
+    ...args: PArgs
+  ): asserts e is EntityW<[_ComponentDef<N, P, PArgs>]> {
     const alreadyHas = def.name in e;
     // assert(!alreadyHas, `${e.id} already has ${def.name}`);
     if (!alreadyHas) {
