@@ -58,12 +58,16 @@ import { Phase } from "../ecs/sys-phase.js";
 
 // export const BOAT_COLOR: vec3 = V(0.2, 0.1, 0.05);
 
-export const ShipPartDef = EM.defineComponent(
+export const ShipPartDef = EM.defineComponent2(
   "shipPart",
-  (critical: boolean) => ({
-    critical,
+  () => ({
+    critical: false,
     damaged: false,
-  })
+  }),
+  (p, critical: boolean) => {
+    p.critical = critical;
+    return p;
+  }
 );
 
 export const { RudderPropsDef, RudderLocalDef, createRudderNow } =

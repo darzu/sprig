@@ -6,11 +6,15 @@ import { AuthorityDef, MeDef } from "../net/components.js";
 import { UVPosDef, UVDirDef } from "../ocean/ocean.js";
 import { Phase } from "../ecs/sys-phase.js";
 
-export const UVShipDef = EM.defineComponent("uvship", () => {
-  return {
-    speed: 0,
-  };
-});
+export const UVShipDef = EM.defineComponent2(
+  "uvship",
+  () => {
+    return {
+      speed: 0,
+    };
+  },
+  (p) => p
+);
 
 export function registerUVShipSystems() {
   EM.addSystem(

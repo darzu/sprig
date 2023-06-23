@@ -27,15 +27,15 @@ export interface Spawner {
   hasSpawned: boolean;
   childrenToRelease: Ref<[...typeof ChildCS]>[];
 }
-export const SpawnerDef = EM.defineComponent(
+export const SpawnerDef = EM.defineComponent2(
   "spawner",
-  function (s?: Partial<Spawner>): Spawner {
+  function (): Spawner {
     return {
       childrenToRelease: [],
       hasSpawned: false,
-      ...s,
     };
-  }
+  },
+  (p, s?: Partial<Spawner>) => Object.assign(p, s)
 );
 
 export function createSpawner(

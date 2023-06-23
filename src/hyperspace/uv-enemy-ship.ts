@@ -37,12 +37,16 @@ import { ColorDef } from "../color/color-ecs.js";
 import { AudioDef, Music } from "../audio/audio.js";
 import { Phase } from "../ecs/sys-phase.js";
 
-export const EnemyCrewDef = EM.defineComponent("enemyCrew", () => {
-  return {
-    leftLegId: 0,
-    rightLegId: 0,
-  };
-});
+export const EnemyCrewDef = EM.defineComponent2(
+  "enemyCrew",
+  () => {
+    return {
+      leftLegId: 0,
+      rightLegId: 0,
+    };
+  },
+  (p) => p
+);
 
 export type EnemyCrew = Component<typeof EnemyCrewDef>;
 
@@ -379,7 +383,11 @@ export function breakEnemyShip(
   }
 }
 
-export const FireZoneDef = EM.defineComponent("firezone", () => {});
+export const FireZoneDef = EM.defineComponent2(
+  "firezone",
+  () => {},
+  (p) => p
+);
 
 export function spawnEnemyShip(
   loc: vec2,
