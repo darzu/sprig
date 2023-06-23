@@ -115,68 +115,56 @@ export function registerHsPlayerSystems() {
       for (let e of players) {
         if (FinishedDef.isOn(e)) continue;
         const props = e.hsPlayerProps;
-        if (!PositionDef.isOn(e))
-          EM.addComponent(e.id, PositionDef, props.location);
-        if (!RotationDef.isOn(e))
-          EM.addComponent(
-            e.id,
-            RotationDef,
-            quat.rotateY(quat.IDENTITY, Math.PI, quat.create())
-          );
-        if (!LinearVelocityDef.isOn(e))
-          EM.addComponent(e.id, LinearVelocityDef);
+        EM.set(e, PositionDef, props.location);
+        EM.set(
+          e,
+          RotationDef,
+          quat.rotateY(quat.IDENTITY, Math.PI, quat.create())
+        );
+        EM.set(e, LinearVelocityDef);
         // console.log("making player!");
-        if (!ColorDef.isOn(e)) EM.addComponent(e.id, ColorDef, V(0, 0.2, 0));
-        if (!MotionSmoothingDef.isOn(e))
-          EM.addComponent(e.id, MotionSmoothingDef);
-        if (!RenderableConstructDef.isOn(e)) {
-          // console.log("creating rend");
-          const m = cloneMesh(res.allMeshes.cube.mesh);
-          scaleMesh3(m, V(0.75, 0.75, 0.4));
-          EM.addComponent(e.id, RenderableConstructDef, m);
-        }
+        EM.set(e, ColorDef, V(0, 0.2, 0));
+        EM.set(e, MotionSmoothingDef);
+        // console.log("creating rend");
+        const m = cloneMesh(res.allMeshes.cube.mesh);
+        scaleMesh3(m, V(0.75, 0.75, 0.4));
+        EM.set(e, RenderableConstructDef, m);
         EM.set(e, AuthorityDef, res.me.pid);
-        if (!HsPlayerDef.isOn(e)) {
-          EM.set(e, HsPlayerDef);
+        EM.set(e, HsPlayerDef);
 
-          // create legs
-          function makeLeg(x: number): Entity {
-            const l = EM.new();
-            EM.set(l, PositionDef, V(x, -1.5, 0));
-            EM.set(l, RenderableConstructDef, res.allMeshes.cube.proto);
-            EM.set(l, ScaleDef, V(0.15, 0.75, 0.15));
-            EM.set(l, ColorDef, V(0.05, 0.05, 0.05));
-            EM.set(l, PhysicsParentDef, e.id);
-            return l;
-          }
-          e.hsPlayer.leftLegId = makeLeg(-0.5).id;
-          e.hsPlayer.rightLegId = makeLeg(0.5).id;
+        // create legs
+        function makeLeg(x: number): Entity {
+          const l = EM.new();
+          EM.set(l, PositionDef, V(x, -1.5, 0));
+          EM.set(l, RenderableConstructDef, res.allMeshes.cube.proto);
+          EM.set(l, ScaleDef, V(0.15, 0.75, 0.15));
+          EM.set(l, ColorDef, V(0.05, 0.05, 0.05));
+          EM.set(l, PhysicsParentDef, e.id);
+          return l;
         }
-        if (!ColliderDef.isOn(e)) {
-          const collider = EM.addComponent(e.id, ColliderDef);
-          collider.shape = "AABB";
-          // collider.solid = false;
-          collider.solid = true;
-          const playerAABB = copyAABB(createAABB(), res.allMeshes.cube.aabb);
-          vec3.add(playerAABB.min, [0, -1, 0], playerAABB.min);
-          (collider as AABBCollider).aabb = playerAABB;
-        }
-        if (!SyncDef.isOn(e)) {
-          EM.set(e, SyncDef, [
-            PositionDef.id,
-            RotationDef.id,
-            // TODO(@darzu): maybe sync this via events instead
-            PhysicsParentDef.id,
-          ]);
-          e.sync.fullComponents = [PlayerHsPropsDef.id];
-        }
+        e.hsPlayer.leftLegId = makeLeg(-0.5).id;
+        e.hsPlayer.rightLegId = makeLeg(0.5).id;
+        const aabb = copyAABB(createAABB(), res.allMeshes.cube.aabb);
+        vec3.add(aabb.min, [0, -1, 0], aabb.min);
+        EM.set(e, ColliderDef, {
+          shape: "AABB",
+          solid: true,
+          aabb,
+        });
+        EM.set(e, SyncDef, [
+          PositionDef.id,
+          RotationDef.id,
+          // TODO(@darzu): maybe sync this via events instead
+          PhysicsParentDef.id,
+        ]);
+        e.sync.fullComponents = [PlayerHsPropsDef.id];
         EM.set(e, PhysicsParentDef);
 
         EM.set(e, ControllableDef);
         EM.set(e, CameraFollowDef, 1);
         setCameraFollowPosition(e, "thirdPersonOverShoulder");
 
-        EM.addComponent(e.id, FinishedDef);
+        EM.set(e, FinishedDef);
       }
     }
   );

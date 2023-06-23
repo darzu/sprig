@@ -244,7 +244,8 @@ export function registerPhysicsStateInit() {
           continue;
         }
         const parentId = PhysicsParentDef.isOn(o) ? o.physicsParent.id : 0;
-        const _phys = EM.addComponent(o.id, PhysicsStateDef);
+        EM.set(o, PhysicsStateDef);
+        const _phys = o._phys;
 
         // AABBs (collider derived)
         // TODO(@darzu): handle scale

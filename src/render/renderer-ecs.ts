@@ -200,7 +200,7 @@ EM.addEagerInit([RenderableConstructDef], [RendererDef], [], () => {
             meshHandle.mask = e.renderableConstruct.mask;
           }
 
-          EM.addComponent(e.id, RenderableDef, {
+          EM.set(e, RenderableDef, {
             enabled: e.renderableConstruct.enabled,
             hidden: false,
             sortLayer: e.renderableConstruct.sortLayer,
@@ -446,14 +446,14 @@ EM.addEagerInit([RiggedRenderableConstructDef], [RendererDef], [], (res) => {
           assert(pool);
           let meshHandle = pool.addRiggedMesh(mesh);
 
-          EM.addComponent(e.id, RenderableDef, {
+          EM.set(e, RenderableDef, {
             enabled: true,
             hidden: false,
             sortLayer: 0,
             meshHandle,
           });
 
-          EM.addComponent(e.id, RiggedRenderableDef, meshHandle, mesh.rigging);
+          EM.set(e, RiggedRenderableDef, meshHandle, mesh.rigging);
 
           // TODO(@darzu): de-duplicate with constructRenderables
           // pool.updateUniform
