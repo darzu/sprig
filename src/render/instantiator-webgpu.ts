@@ -224,6 +224,9 @@ export function createCyResources(
 ): CyResources {
   const start = performance.now();
 
+  // TODO(@darzu): HACK. we want to support multiple instantiation times
+  cy._hasBeenInstantiated = true;
+
   const bufferUsages = collectBufferUsages(cy);
   const textureUsages = collectTextureUsages(cy);
 

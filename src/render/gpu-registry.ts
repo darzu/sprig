@@ -321,6 +321,8 @@ export function createCytochromeRegistry() {
 
   // TODO(@darzu): rename all "createX" to "mkX" for brevity?
   return {
+    // TODO(@darzu): HACK. We want to support multiple instantiation points!
+    _hasBeenInstantiated: false,
     nameToPtr,
     kindToPtrs: nextFlightPtrs,
     createSingleton: <O extends CyStructDesc>(

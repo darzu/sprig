@@ -144,6 +144,19 @@ export const LD53MeshesDef = XY.defineMeshSetResource(
   CubeMesh
 );
 
+const dbgGrid = [
+  //
+  [mapJfa._inputMaskTex, mapJfa._uvMaskTex],
+  //
+  // [mapJfa.voronoiTex, mapJfa.sdfTex],
+  // TODO(@darzu): FIX FOR CSM & texture arrays
+  [
+    { ptr: shadowDepthTextures, idx: 0 },
+    { ptr: shadowDepthTextures, idx: 1 },
+  ],
+];
+let dbgGridCompose = createGridComposePipelines(dbgGrid);
+
 export async function initLD53(hosting: boolean) {
   const res = await EM.whenResources(
     LD53MeshesDef,
@@ -153,19 +166,6 @@ export async function initLD53(hosting: boolean) {
     CameraDef,
     DevConsoleDef
   );
-
-  const dbgGrid = [
-    //
-    [mapJfa._inputMaskTex, mapJfa._uvMaskTex],
-    //
-    // [mapJfa.voronoiTex, mapJfa.sdfTex],
-    // TODO(@darzu): FIX FOR CSM & texture arrays
-    [
-      { ptr: shadowDepthTextures, idx: 0 },
-      { ptr: shadowDepthTextures, idx: 1 },
-    ],
-  ];
-  let dbgGridCompose = createGridComposePipelines(dbgGrid);
 
   // TODO(@darzu): HACK. these have to be set before the CY instantiator runs.
   outlineRender.fragOverrides!.lineWidth = 1.0;
