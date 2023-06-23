@@ -556,7 +556,6 @@ export class EntityManager {
   ): asserts e is EntityW<[_ComponentDef<N, P, PArgs>]> {
     const alreadyHas = def.name in e;
     if (!alreadyHas) {
-      // TODO(@darzu): REFACTOR. types aren't right yet
       this.addComponent(e.id, def, ...args);
     } else {
       assert(
