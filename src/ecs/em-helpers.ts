@@ -47,7 +47,7 @@ function registerConstructorSystem<
       for (let e of es) {
         if (FinishedDef.isOn(e)) continue;
         callback(e as EntityW<[C]>, res);
-        EM.ensureComponentOn(e, FinishedDef);
+        EM.set(e, FinishedDef);
       }
     }
   );
@@ -134,13 +134,13 @@ export function defineNetEntityHelper<
     (e, res) => {
       // TYPE HACK
       const me = (res as any as Resources<[typeof MeDef]>).me;
-      EM.ensureComponentOn(e, AuthorityDef, me.pid);
+      EM.set(e, AuthorityDef, me.pid);
 
-      EM.ensureComponentOn(e, localDef);
-      EM.ensureComponentOn(e, SyncDef);
+      EM.set(e, localDef);
+      EM.set(e, SyncDef);
       e.sync.fullComponents = [propsDef.id];
       e.sync.dynamicComponents = opts.dynamicComponents.map((d) => d.id);
-      for (let d of opts.dynamicComponents) EM.ensureComponentOn(e, d);
+      for (let d of opts.dynamicComponents) EM.set(e, d);
 
       // TYPE HACK
       const _e = e as any as EntityW<
@@ -159,17 +159,17 @@ export function defineNetEntityHelper<
 
   const createNew = (...args: Pargs1) => {
     const e = EM.new();
-    EM.ensureComponentOn(e, propsDef, ...args);
+    EM.set(e, propsDef, ...args);
     return e;
   };
 
   const createNewNow = (res: Resources<RS>, ...args: Pargs1) => {
     const e = EM.new();
-    EM.ensureComponentOn(e, propsDef, ...args);
+    EM.set(e, propsDef, ...args);
     // TODO(@darzu): maybe we should force users to give us the MeDef? it's probably always there tho..
     // TODO(@darzu): Think about what if buid() is async...
     constructFn(e, res as Resources<[...RS, typeof MeDef]>);
-    EM.ensureComponentOn(e, FinishedDef);
+    EM.set(e, FinishedDef);
     return e;
   };
 

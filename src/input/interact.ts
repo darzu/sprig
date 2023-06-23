@@ -55,7 +55,7 @@ EM.addEagerInit([InteractableDef], [], [], () => {
         if (InRangeDef.isOn(interactable)) {
           EM.removeComponent(interactable.id, InRangeDef);
         }
-        EM.ensureComponentOn(interactable, TintsDef);
+        EM.set(interactable, TintsDef);
         clearTint(interactable.tints, INTERACTION_TINT_NAME);
       }
       // find an interactable within range of the player
@@ -65,8 +65,8 @@ EM.addEagerInit([InteractableDef], [], [], () => {
       if (interactableColliderId) {
         const interactable = interactablesMap.get(interactableColliderId)!;
         if (!DeletedDef.isOn(interactable)) {
-          EM.ensureComponentOn(interactable, InRangeDef);
-          EM.ensureComponentOn(interactable, TintsDef);
+          EM.set(interactable, InRangeDef);
+          EM.set(interactable, TintsDef);
           setTint(interactable.tints, INTERACTION_TINT_NAME, INTERACTION_TINT);
         }
       }

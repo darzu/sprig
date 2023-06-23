@@ -209,7 +209,7 @@ EM.addEagerInit([RenderableConstructDef], [RendererDef], [], () => {
 
           // pool.updateUniform
           const uni = pool.ptr.computeUniData(mesh);
-          EM.ensureComponentOn(e, pool.ptr.dataDef, uni);
+          EM.set(e, pool.ptr.dataDef, uni);
           // TODO(@darzu): HACK! We need some notion of required uni data maybe? Or common uni data
           if ("id" in e[pool.ptr.dataDef.name]) {
             // console.log(
@@ -458,7 +458,7 @@ EM.addEagerInit([RiggedRenderableConstructDef], [RendererDef], [], (res) => {
           // TODO(@darzu): de-duplicate with constructRenderables
           // pool.updateUniform
           const uni = pool.ptr.computeUniData(mesh);
-          EM.ensureComponentOn(e, pool.ptr.dataDef, uni);
+          EM.set(e, pool.ptr.dataDef, uni);
           // TODO(@darzu): HACK! We need some notion of required uni data maybe? Or common uni data
           if ("id" in e[pool.ptr.dataDef.name]) {
             // console.log(

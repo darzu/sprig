@@ -79,7 +79,7 @@ function createSplinterPool(
     );
     const splinterMesh = normalizeMesh(_splinterMesh);
     const splinter = EM.new();
-    EM.ensureComponentOn(
+    EM.set(
       splinter,
       RenderableConstructDef,
       splinterMesh,
@@ -89,13 +89,13 @@ function createSplinterPool(
       undefined,
       true // hidden
     );
-    EM.ensureComponentOn(splinter, ColorDef);
-    EM.ensureComponentOn(splinter, PositionDef);
-    EM.ensureComponentOn(splinter, RotationDef);
-    EM.ensureComponentOn(splinter, AngularVelocityDef);
-    EM.ensureComponentOn(splinter, LinearVelocityDef);
-    EM.ensureComponentOn(splinter, GravityDef);
-    EM.ensureComponentOn(splinter, SplinterParticleDef);
+    EM.set(splinter, ColorDef);
+    EM.set(splinter, PositionDef);
+    EM.set(splinter, RotationDef);
+    EM.set(splinter, AngularVelocityDef);
+    EM.set(splinter, LinearVelocityDef);
+    EM.set(splinter, GravityDef);
+    EM.set(splinter, SplinterParticleDef);
     pool.push(splinter);
   }
 

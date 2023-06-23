@@ -93,37 +93,37 @@ export async function initShadingGame() {
 
   // light
   const sun = EM.new();
-  EM.ensureComponentOn(sun, PointLightDef);
-  EM.ensureComponentOn(sun, ColorDef, V(1, 1, 1));
+  EM.set(sun, PointLightDef);
+  EM.set(sun, ColorDef, V(1, 1, 1));
   // EM.ensureComponentOn(sun, PositionDef, V(100, 100, 0));
   // EM.ensureComponentOn(sun, PositionDef, V(-10, 10, 10));
-  EM.ensureComponentOn(sun, PositionDef, V(100, 100, 100));
-  EM.ensureComponentOn(sun, LinearVelocityDef, V(0.001, 0.001, 0.0));
-  EM.ensureComponentOn(sun, RenderableConstructDef, sg_meshes.cube.proto);
+  EM.set(sun, PositionDef, V(100, 100, 100));
+  EM.set(sun, LinearVelocityDef, V(0.001, 0.001, 0.0));
+  EM.set(sun, RenderableConstructDef, sg_meshes.cube.proto);
   sun.pointLight.constant = 1.0;
   sun.pointLight.linear = 0.0;
   sun.pointLight.quadratic = 0.0;
   vec3.copy(sun.pointLight.ambient, [0.2, 0.2, 0.2]);
   vec3.copy(sun.pointLight.diffuse, [0.5, 0.5, 0.5]);
-  EM.ensureComponentOn(sun, PositionDef, V(50, 300, 10));
+  EM.set(sun, PositionDef, V(50, 300, 10));
 
   // ground
   const ground = EM.new();
-  EM.ensureComponentOn(ground, RenderableConstructDef, sg_meshes.hex.proto);
-  EM.ensureComponentOn(ground, ColorDef, ENDESGA16.blue);
-  EM.ensureComponentOn(ground, PositionDef, V(0, -10, 0));
-  EM.ensureComponentOn(ground, ScaleDef, V(10, 10, 10));
+  EM.set(ground, RenderableConstructDef, sg_meshes.hex.proto);
+  EM.set(ground, ColorDef, ENDESGA16.blue);
+  EM.set(ground, PositionDef, V(0, -10, 0));
+  EM.set(ground, ScaleDef, V(10, 10, 10));
 
   // gizmo
   const gizmoMesh = createGizmoMesh();
   const gizmo = EM.new();
-  EM.ensureComponentOn(gizmo, RenderableConstructDef, gizmoMesh);
-  EM.ensureComponentOn(gizmo, PositionDef, V(0, 1, 0));
+  EM.set(gizmo, RenderableConstructDef, gizmoMesh);
+  EM.set(gizmo, PositionDef, V(0, 1, 0));
 
   // avatar
   const g = createGhost();
   g.position[1] = 5;
-  EM.ensureComponentOn(g, RenderableConstructDef, sg_meshes.ball.proto);
+  EM.set(g, RenderableConstructDef, sg_meshes.ball.proto);
   // vec3.copy(g.position, [2.44, 6.81, 0.96]);
   // quat.copy(g.rotation, [0.0, 0.61, 0.0, 0.79]);
   // g.cameraFollow.pitchOffset = -0.553;
@@ -135,10 +135,10 @@ export async function initShadingGame() {
 
   // objects
   const obj = EM.new();
-  EM.ensureComponentOn(obj, RenderableConstructDef, sg_meshes.grappleGun.proto);
-  EM.ensureComponentOn(obj, PositionDef, V(0, 4, 0));
-  EM.ensureComponentOn(obj, ColorDef, ENDESGA16.midBrown);
-  EM.ensureComponentOn(obj, AngularVelocityDef, V(0.001, 0.00013, 0.00017));
+  EM.set(obj, RenderableConstructDef, sg_meshes.grappleGun.proto);
+  EM.set(obj, PositionDef, V(0, 4, 0));
+  EM.set(obj, ColorDef, ENDESGA16.midBrown);
+  EM.set(obj, AngularVelocityDef, V(0.001, 0.00013, 0.00017));
 
   // frustum debugging
   {
@@ -148,9 +148,9 @@ export async function initShadingGame() {
       const pos = V(jitter(W), jitter(W) + W, jitter(W));
       worldCorners.push(pos);
       const p = EM.new();
-      EM.ensureComponentOn(p, RenderableConstructDef, sg_meshes.ball.proto);
-      EM.ensureComponentOn(p, PositionDef, pos);
-      EM.ensureComponentOn(p, ColorDef, V(0, 1, 0));
+      EM.set(p, RenderableConstructDef, sg_meshes.ball.proto);
+      EM.set(p, PositionDef, pos);
+      EM.set(p, ColorDef, V(0, 1, 0));
     }
 
     // TODO(@darzu): IMPORTANT. figure out mat4.perspective's clip-space!
@@ -163,15 +163,15 @@ export async function initShadingGame() {
     const frustCorners = getFrustumWorldCorners(invFrust);
     for (let i = 0; i < frustCorners.length; i++) {
       const p = EM.new();
-      EM.ensureComponentOn(p, RenderableConstructDef, sg_meshes.ball.proto);
-      EM.ensureComponentOn(p, PositionDef, vec3.clone(frustCorners[i]));
-      EM.ensureComponentOn(p, ColorDef, V(1, 0, 0));
+      EM.set(p, RenderableConstructDef, sg_meshes.ball.proto);
+      EM.set(p, PositionDef, vec3.clone(frustCorners[i]));
+      EM.set(p, ColorDef, V(1, 0, 0));
     }
     const frustGizMesh = createGizmoMesh();
     mapMeshPositions(frustGizMesh, (p) => vec3.transformMat4(p, invFrust, p));
     const frustGiz = EM.new();
-    EM.ensureComponentOn(frustGiz, RenderableConstructDef, frustGizMesh);
-    EM.ensureComponentOn(frustGiz, PositionDef, V(0, 0, 0));
+    EM.set(frustGiz, RenderableConstructDef, frustGizMesh);
+    EM.set(frustGiz, PositionDef, V(0, 0, 0));
 
     // const frust2 = mat4.create();
     // positionAndTargetToOrthoViewProjMatrix(frust2, sun.position, V(0, 0, 0));

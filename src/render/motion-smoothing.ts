@@ -92,8 +92,8 @@ function updateSmoothedWorldFrame(o: Entity) {
   }
   let firstFrame = false;
   if (!SmoothedWorldFrameDef.isOn(o)) firstFrame = true;
-  EM.ensureComponentOn(o, SmoothedWorldFrameDef);
-  EM.ensureComponentOn(o, PrevSmoothedWorldFrameDef);
+  EM.set(o, SmoothedWorldFrameDef);
+  EM.set(o, PrevSmoothedWorldFrameDef);
   copyFrame(o.prevSmoothedWorldFrame, o.smoothedWorldFrame);
   mat4.copy(o.smoothedWorldFrame.transform, o.transform);
   updateFrameFromTransform(o.smoothedWorldFrame);
@@ -185,8 +185,8 @@ export function initMotionSmoothingSystems() {
       for (const o of objs) {
         // TODO(@darzu): PERF HACK!
         if (DONT_SMOOTH_WORLD_FRAME) {
-          EM.ensureComponentOn(o, SmoothedWorldFrameDef);
-          EM.ensureComponentOn(o, PrevSmoothedWorldFrameDef);
+          EM.set(o, SmoothedWorldFrameDef);
+          EM.set(o, PrevSmoothedWorldFrameDef);
           continue;
         }
 
@@ -205,14 +205,14 @@ export function initMotionSmoothingSystems() {
         if (DONT_SMOOTH_WORLD_FRAME) {
           // TODO(@darzu): HACK!
           if (WorldFrameDef.isOn(o)) {
-            EM.ensureComponentOn(o, RendererWorldFrameDef);
+            EM.set(o, RendererWorldFrameDef);
             copyFrame(o.rendererWorldFrame, o.world);
             // (o as any).rendererWorldFrame = o.world;
           }
           continue;
         }
 
-        EM.ensureComponentOn(o, RendererWorldFrameDef);
+        EM.set(o, RendererWorldFrameDef);
 
         switch (BLEND_SIMULATION_FRAMES_STRATEGY) {
           case "interpolate":

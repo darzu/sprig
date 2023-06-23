@@ -29,7 +29,7 @@ EM.addSystem(
       o.lifetime.ms -= res.time.dt;
       if (o.lifetime.ms < 0) {
         // TODO(@darzu): dead or deleted?
-        EM.addComponent(o.id, DeadDef);
+        EM.set(o, DeadDef);
         // TODO(@darzu): note needed?
         // EM.addComponent(o.id, DeletedDef);
       }

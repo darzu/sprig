@@ -87,7 +87,7 @@ export async function initClothSandbox(hosting: boolean) {
 
   // TODO(@darzu): this shouldn't be necessary
   const m2 = cloneMesh(res.allMeshes.cube.mesh);
-  EM.ensureComponentOn(g, RenderableConstructDef, m2);
+  EM.set(g, RenderableConstructDef, m2);
 
   {
     // vec3.copy(e.position, [-16.85, 7.11, -4.33]);
@@ -109,23 +109,15 @@ export async function initClothSandbox(hosting: boolean) {
   c.cursor3d.maxDistance = 10;
 
   const plane = EM.new();
-  EM.ensureComponentOn(
-    plane,
-    RenderableConstructDef,
-    res.allMeshes.plane.proto
-  );
-  EM.ensureComponentOn(plane, ColorDef, V(0.2, 0.3, 0.2));
-  EM.ensureComponentOn(plane, PositionDef, V(0, -5, 0));
+  EM.set(plane, RenderableConstructDef, res.allMeshes.plane.proto);
+  EM.set(plane, ColorDef, V(0.2, 0.3, 0.2));
+  EM.set(plane, PositionDef, V(0, -5, 0));
 
   const ship = EM.new();
-  EM.ensureComponentOn(ship, RenderableConstructDef, res.allMeshes.ship.proto);
-  EM.ensureComponentOn(ship, ColorDef, ENEMY_SHIP_COLOR);
-  EM.ensureComponentOn(ship, PositionDef, V(20, -2, 0));
-  EM.ensureComponentOn(
-    ship,
-    RotationDef,
-    quat.fromEuler(0, Math.PI * 0.1, 0, quat.create())
-  );
+  EM.set(ship, RenderableConstructDef, res.allMeshes.ship.proto);
+  EM.set(ship, ColorDef, ENEMY_SHIP_COLOR);
+  EM.set(ship, PositionDef, V(20, -2, 0));
+  EM.set(ship, RotationDef, quat.fromEuler(0, Math.PI * 0.1, 0, quat.create()));
 
   // const ocean = EM.newEntity();
   // EM.ensureComponentOn(
@@ -149,20 +141,20 @@ export async function initClothSandbox(hosting: boolean) {
   // );
 
   const box = EM.new();
-  EM.ensureComponentOn(box, RenderableConstructDef, res.allMeshes.cube.proto);
-  EM.ensureComponentOn(box, ColorDef, V(0.1, 0.1, 0.1));
-  EM.ensureComponentOn(box, PositionDef, V(0, 0, 3));
-  EM.ensureComponentOn(box, RotationDef);
-  EM.ensureComponentOn(box, AngularVelocityDef, V(0, 0.001, 0.001));
-  EM.ensureComponentOn(box, WorldFrameDef);
-  EM.ensureComponentOn(box, ColliderDef, {
+  EM.set(box, RenderableConstructDef, res.allMeshes.cube.proto);
+  EM.set(box, ColorDef, V(0.1, 0.1, 0.1));
+  EM.set(box, PositionDef, V(0, 0, 3));
+  EM.set(box, RotationDef);
+  EM.set(box, AngularVelocityDef, V(0, 0.001, 0.001));
+  EM.set(box, WorldFrameDef);
+  EM.set(box, ColliderDef, {
     shape: "AABB",
     solid: false,
     aabb: res.allMeshes.cube.aabb,
   });
 
   const cloth = EM.new();
-  EM.ensureComponentOn(cloth, ClothConstructDef, {
+  EM.set(cloth, ClothConstructDef, {
     location: V(0, 0, 0),
     color: V(0.9, 0.9, 0.8),
     rows: 5,
@@ -170,7 +162,7 @@ export async function initClothSandbox(hosting: boolean) {
     distance: 2,
   });
   const F = 100.0;
-  EM.ensureComponentOn(cloth, ForceDef, V(F, F, F));
+  EM.set(cloth, ForceDef, V(F, F, F));
 
   const line = await drawLine(vec3.create(), vec3.create(), V(0, 1, 0));
 

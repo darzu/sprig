@@ -110,16 +110,16 @@ export function createSail(
   [typeof SailDef, typeof PositionDef, typeof RotationDef, typeof ScaleDef]
 > {
   const ent = EM.new();
-  EM.ensureComponentOn(ent, SailDef);
+  EM.set(ent, SailDef);
   ent.sail.width = width;
   ent.sail.height = height;
   const mesh = sailMesh(ent.sail);
-  EM.ensureComponentOn(ent, RenderableConstructDef, mesh);
-  EM.ensureComponentOn(ent, ScaleDef, V(scale, scale, scale));
-  EM.ensureComponentOn(ent, PositionDef);
-  EM.ensureComponentOn(ent, RotationDef);
+  EM.set(ent, RenderableConstructDef, mesh);
+  EM.set(ent, ScaleDef, V(scale, scale, scale));
+  EM.set(ent, PositionDef);
+  EM.set(ent, RotationDef);
   // EM.ensureComponentOn(ent, ColorDef, V(0.9, 0.9, 0.9));
-  EM.ensureComponentOn(ent, ColorDef, ENDESGA16.red);
+  EM.set(ent, ColorDef, ENDESGA16.red);
   return ent;
 }
 
@@ -201,18 +201,18 @@ export async function createMast() {
   const res = await EM.whenResources(MeDef);
   const mesh = await MastMesh.gameMesh();
   let ent = EM.new();
-  EM.ensureComponentOn(ent, MastDef);
-  EM.ensureComponentOn(ent, RenderableConstructDef, mesh.proto);
-  EM.ensureComponentOn(ent, ColliderDef, {
+  EM.set(ent, MastDef);
+  EM.set(ent, RenderableConstructDef, mesh.proto);
+  EM.set(ent, ColliderDef, {
     shape: "AABB",
     solid: false,
     aabb: mesh.aabb,
   });
-  EM.ensureComponentOn(ent, PositionDef);
-  EM.ensureComponentOn(ent, RotationDef);
+  EM.set(ent, PositionDef);
+  EM.set(ent, RotationDef);
   // EM.ensureComponentOn(ent, ColorDef, V(0.8, 0.7, 0.3));
-  EM.ensureComponentOn(ent, ColorDef, ENDESGA16.darkBrown);
-  EM.ensureComponentOn(ent, AuthorityDef, res.me.pid);
+  EM.set(ent, ColorDef, ENDESGA16.darkBrown);
+  EM.set(ent, AuthorityDef, res.me.pid);
 
   // EM.set(ent, YawPitchDef);
 
@@ -251,7 +251,7 @@ export async function createMast() {
 
   const sailWidth = 14;
   const sail = createSail(sailWidth, 8, 2);
-  EM.ensureComponentOn(sail, PhysicsParentDef, ent.id);
+  EM.set(sail, PhysicsParentDef, ent.id);
   sail.position[0] = -sailWidth;
   sail.position[1] = 38;
   sail.position[2] = 0.51;

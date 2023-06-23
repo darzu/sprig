@@ -65,25 +65,21 @@ export async function initReboundSandbox(hosting: boolean) {
   c.renderable.enabled = false;
 
   const p = EM.new();
-  EM.ensureComponentOn(p, RenderableConstructDef, res.allMeshes.plane.proto);
-  EM.ensureComponentOn(p, ColorDef, V(0.2, 0.3, 0.2));
-  EM.ensureComponentOn(p, PositionDef, V(0, -10, 0));
-  EM.ensureComponentOn(p, ColliderDef, {
+  EM.set(p, RenderableConstructDef, res.allMeshes.plane.proto);
+  EM.set(p, ColorDef, V(0.2, 0.3, 0.2));
+  EM.set(p, PositionDef, V(0, -10, 0));
+  EM.set(p, ColliderDef, {
     shape: "AABB",
     solid: false,
     aabb: res.allMeshes.plane.aabb,
   });
 
   const t = EM.new();
-  EM.ensureComponentOn(
-    t,
-    RenderableConstructDef,
-    res.allMeshes.gridPlane.proto
-  );
-  EM.ensureComponentOn(t, ColorDef, V(0.2, 0.2, 0.9));
-  EM.ensureComponentOn(t, PositionDef, V(0, 0, 0));
-  EM.ensureComponentOn(t, AngularVelocityDef, V(0, 0.0002, 0.0002));
-  EM.ensureComponentOn(t, ColliderDef, {
+  EM.set(t, RenderableConstructDef, res.allMeshes.gridPlane.proto);
+  EM.set(t, ColorDef, V(0.2, 0.2, 0.9));
+  EM.set(t, PositionDef, V(0, 0, 0));
+  EM.set(t, AngularVelocityDef, V(0, 0.0002, 0.0002));
+  EM.set(t, ColliderDef, {
     shape: "AABB",
     solid: true,
     aabb: res.allMeshes.gridPlane.aabb,
@@ -96,21 +92,21 @@ export async function initReboundSandbox(hosting: boolean) {
 
   function spawn(m: GameMesh, pos: vec3) {
     const e = EM.new();
-    EM.ensureComponentOn(e, RenderableConstructDef, m.proto);
+    EM.set(e, RenderableConstructDef, m.proto);
     const [r, g, b] = [jitter(0.1) + 0.2, jitter(0.1) + 0.2, jitter(0.1) + 0.2];
-    EM.ensureComponentOn(e, ColorDef, V(r, g, b));
-    EM.ensureComponentOn(e, PositionDef, pos);
-    EM.ensureComponentOn(e, ScaleDef, V(0.5, 0.5, 0.5));
+    EM.set(e, ColorDef, V(r, g, b));
+    EM.set(e, PositionDef, pos);
+    EM.set(e, ScaleDef, V(0.5, 0.5, 0.5));
     // EM.ensureComponentOn(b, RotationDef);
     // EM.ensureComponentOn(b, AngularVelocityDef, [0, 0.001, 0.001]);
-    EM.ensureComponentOn(e, LinearVelocityDef, V(0, -0.02, 0));
-    EM.ensureComponentOn(e, PhysicsParentDef, tableId);
-    EM.ensureComponentOn(e, ColliderDef, {
+    EM.set(e, LinearVelocityDef, V(0, -0.02, 0));
+    EM.set(e, PhysicsParentDef, tableId);
+    EM.set(e, ColliderDef, {
       shape: "AABB",
       solid: true,
       aabb: m.aabb,
     });
-    EM.ensureComponentOn(e, cubeDef);
+    EM.set(e, cubeDef);
   }
 
   let nextSpawnAccu = 0;
@@ -146,7 +142,7 @@ export async function initReboundSandbox(hosting: boolean) {
 
       if (res.inputs.keyClicks["backspace"]) {
         const es = EM.filterEntities([cubeDef]);
-        for (let e of es) EM.ensureComponentOn(e, DeletedDef);
+        for (let e of es) EM.set(e, DeletedDef);
       }
     }
   );

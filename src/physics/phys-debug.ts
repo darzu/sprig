@@ -76,8 +76,8 @@ export function registerPhysicsDebuggerSystem() {
             EM.addComponent(dbgE.id, ColorDef, V(0, 1, 0));
 
             // positioned and scaled
-            EM.ensureComponentOn(dbgE, PositionDef);
-            EM.ensureComponentOn(dbgE, ScaleDef);
+            EM.set(dbgE, PositionDef);
+            EM.set(dbgE, ScaleDef);
 
             // NOTE: we don't use the normal parent transform mechanism b/c
             //  colliders especially AABBs are only translated, not full matrix

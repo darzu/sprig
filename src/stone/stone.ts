@@ -338,21 +338,17 @@ export const towerPool = createEntityPool<
     const res = await EM.whenResources(TowerMeshes);
     const tower = EM.new();
     const cannon = EM.new();
-    EM.ensureComponentOn(
-      cannon,
-      RenderableConstructDef,
-      res.towerMeshes.ld53_cannon.proto
-    );
-    EM.ensureComponentOn(cannon, PositionDef);
-    EM.ensureComponentOn(cannon, ColorDef, V(0.05, 0.05, 0.05));
-    EM.ensureComponentOn(cannon, RotationDef);
-    EM.ensureComponentOn(cannon, PhysicsParentDef, tower.id);
-    EM.ensureComponentOn(cannon, WorldFrameDef);
+    EM.set(cannon, RenderableConstructDef, res.towerMeshes.ld53_cannon.proto);
+    EM.set(cannon, PositionDef);
+    EM.set(cannon, ColorDef, V(0.05, 0.05, 0.05));
+    EM.set(cannon, RotationDef);
+    EM.set(cannon, PhysicsParentDef, tower.id);
+    EM.set(cannon, WorldFrameDef);
     vec3.set(baseRadius - 2, height * 0.7, 0, cannon.position);
 
-    EM.ensureComponentOn(tower, StoneTowerDef, cannon);
-    EM.ensureComponentOn(tower, PositionDef);
-    EM.ensureComponentOn(tower, RotationDef);
+    EM.set(tower, StoneTowerDef, cannon);
+    EM.set(tower, PositionDef);
+    EM.set(tower, RotationDef);
     const mesh = tower.stoneTower.mesh;
 
     const rows = Math.floor(height / approxBrickHeight);
@@ -480,13 +476,13 @@ export const towerPool = createEntityPool<
       ),
     };
     knockOutBricks(tower.stoneTower, windowAABB, true);
-    EM.ensureComponentOn(tower, ColliderDef, {
+    EM.set(tower, ColliderDef, {
       shape: "AABB",
       solid: false,
       aabb: towerAABB,
     });
 
-    EM.ensureComponentOn(tower, RenderableConstructDef, mesh);
+    EM.set(tower, RenderableConstructDef, mesh);
     tower.stoneTower.totalBricks = totalBricks;
     tower.stoneTower.currentBricks = totalBricks;
     return tower;
@@ -519,14 +515,14 @@ export const towerPool = createEntityPool<
     // tower
     if (!DeadDef.isOn(e)) {
       // dead platform
-      EM.ensureComponentOn(e, DeadDef);
+      EM.set(e, DeadDef);
       if (RenderableDef.isOn(e)) e.renderable.hidden = true;
       e.dead.processed = true;
 
       // dead cannon
       if (e.stoneTower.cannon()) {
         const c = e.stoneTower.cannon()!;
-        EM.ensureComponentOn(c, DeadDef);
+        EM.set(c, DeadDef);
         if (RenderableDef.isOn(c)) c.renderable.hidden = true;
         c.dead.processed = true;
       }
@@ -559,25 +555,21 @@ export const flyingBrickPool = createEntityPool<
   create: async () => {
     const res = await EM.whenResources(TowerMeshes);
     const brick = EM.new();
-    EM.ensureComponentOn(brick, FlyingBrickDef);
-    EM.ensureComponentOn(brick, PositionDef);
-    EM.ensureComponentOn(brick, RotationDef);
-    EM.ensureComponentOn(brick, LinearVelocityDef);
-    EM.ensureComponentOn(brick, AngularVelocityDef);
-    EM.ensureComponentOn(brick, ColorDef);
-    EM.ensureComponentOn(brick, LifetimeDef);
-    EM.ensureComponentOn(
-      brick,
-      RenderableConstructDef,
-      res.towerMeshes.cube.proto
-    );
-    EM.ensureComponentOn(brick, GravityDef, V(0, -GRAVITY, 0));
-    EM.ensureComponentOn(
+    EM.set(brick, FlyingBrickDef);
+    EM.set(brick, PositionDef);
+    EM.set(brick, RotationDef);
+    EM.set(brick, LinearVelocityDef);
+    EM.set(brick, AngularVelocityDef);
+    EM.set(brick, ColorDef);
+    EM.set(brick, LifetimeDef);
+    EM.set(brick, RenderableConstructDef, res.towerMeshes.cube.proto);
+    EM.set(brick, GravityDef, V(0, -GRAVITY, 0));
+    EM.set(
       brick,
       ScaleDef,
       V(approxBrickWidth / 2, approxBrickHeight / 2, brickDepth / 2)
     );
-    EM.ensureComponentOn(brick, PhysicsParentDef);
+    EM.set(brick, PhysicsParentDef);
     return brick;
   },
   onSpawn: async (e) => {
@@ -609,7 +601,7 @@ export const flyingBrickPool = createEntityPool<
     e.lifetime.ms = e.lifetime.startMs;
   },
   onDespawn: (e) => {
-    EM.ensureComponentOn(e, DeadDef);
+    EM.set(e, DeadDef);
     if (RenderableDef.isOn(e)) e.renderable.hidden = true;
     e.dead.processed = true;
   },

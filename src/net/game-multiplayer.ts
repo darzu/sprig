@@ -112,9 +112,9 @@ export const {
     const props = e.mpPlayerProps;
 
     // TODO(@darzu): BUG. props.color is undefined
-    EM.ensureComponentOn(e, ColorDef, props.color);
-    EM.ensureComponentOn(e, RenderableConstructDef, res.mesh_cube.proto);
-    EM.ensureComponentOn(e, ColliderDef, {
+    EM.set(e, ColorDef, props.color);
+    EM.set(e, RenderableConstructDef, res.mesh_cube.proto);
+    EM.set(e, ColliderDef, {
       shape: "AABB",
       solid: true,
       aabb: res.mesh_cube.aabb,
@@ -123,11 +123,11 @@ export const {
     if (e.authority.pid === res.me.pid) {
       vec3.copy(e.position, props.location); // TODO(@darzu): should be fine to have this outside loop
 
-      EM.ensureComponentOn(e, ControllableDef);
+      EM.set(e, ControllableDef);
       e.controllable.modes.canFall = true;
       e.controllable.modes.canJump = false;
       e.controllable.modes.canFly = false;
-      EM.ensureComponentOn(e, CameraFollowDef, 1);
+      EM.set(e, CameraFollowDef, 1);
       quat.setAxisAngle([0.0, -1.0, 0.0], 1.62, e.rotation);
       e.controllable.speed *= 2;
       e.controllable.sprintMul = 1;
@@ -173,32 +173,27 @@ export async function initMPGame() {
 
   // light
   const sun = EM.new();
-  EM.ensureComponentOn(sun, PointLightDef);
-  EM.ensureComponentOn(sun, ColorDef, V(1, 1, 1));
+  EM.set(sun, PointLightDef);
+  EM.set(sun, ColorDef, V(1, 1, 1));
   // EM.ensureComponentOn(sun, PositionDef, V(100, 100, 0));
   // EM.ensureComponentOn(sun, PositionDef, V(-10, 10, 10));
-  EM.ensureComponentOn(sun, PositionDef, V(100, 100, 100));
-  EM.ensureComponentOn(sun, LinearVelocityDef, V(0.001, 0.001, 0.0));
-  EM.ensureComponentOn(
-    sun,
-    RenderableConstructDef,
-    mp_meshes.ball.proto,
-    false
-  );
+  EM.set(sun, PositionDef, V(100, 100, 100));
+  EM.set(sun, LinearVelocityDef, V(0.001, 0.001, 0.0));
+  EM.set(sun, RenderableConstructDef, mp_meshes.ball.proto, false);
   sun.pointLight.constant = 1.0;
   sun.pointLight.linear = 0.0;
   sun.pointLight.quadratic = 0.0;
   vec3.copy(sun.pointLight.ambient, [0.2, 0.2, 0.2]);
   vec3.copy(sun.pointLight.diffuse, [0.5, 0.5, 0.5]);
-  EM.ensureComponentOn(sun, PositionDef, V(50, 300, 10));
+  EM.set(sun, PositionDef, V(50, 300, 10));
 
   // ground
   const ground = EM.new();
-  EM.ensureComponentOn(ground, RenderableConstructDef, mp_meshes.hex.proto);
-  EM.ensureComponentOn(ground, ColorDef, ENDESGA16.blue);
-  EM.ensureComponentOn(ground, PositionDef, V(0, -10, 0));
-  EM.ensureComponentOn(ground, ScaleDef, V(10, 10, 10));
-  EM.ensureComponentOn(ground, ColliderDef, {
+  EM.set(ground, RenderableConstructDef, mp_meshes.hex.proto);
+  EM.set(ground, ColorDef, ENDESGA16.blue);
+  EM.set(ground, PositionDef, V(0, -10, 0));
+  EM.set(ground, ScaleDef, V(10, 10, 10));
+  EM.set(ground, ColliderDef, {
     shape: "AABB",
     solid: true,
     aabb: mp_meshes.hex.aabb,
@@ -207,8 +202,8 @@ export async function initMPGame() {
   // gizmo
   const gizmoMesh = createGizmoMesh();
   const gizmo = EM.new();
-  EM.ensureComponentOn(gizmo, RenderableConstructDef, gizmoMesh);
-  EM.ensureComponentOn(gizmo, PositionDef, V(0, 1, 0));
+  EM.set(gizmo, RenderableConstructDef, gizmoMesh);
+  EM.set(gizmo, PositionDef, V(0, 1, 0));
 
   // player
   const color = AllEndesga16[me.pid];

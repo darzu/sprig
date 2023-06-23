@@ -115,7 +115,7 @@ export async function initOcean(oceanMesh: Mesh, color: vec3) {
 
   const ocean = EM.new();
   let oceanEntId = ocean.id; // hacky?
-  EM.ensureComponentOn(
+  EM.set(
     ocean,
     RenderableConstructDef,
     // TODO(@darzu): SEPERATE THIS DEPENDENCY! Need ocean w/o mesh
@@ -127,9 +127,9 @@ export async function initOcean(oceanMesh: Mesh, color: vec3) {
     oceanPoolPtr
     // meshPoolPtr
   );
-  EM.ensureComponentOn(ocean, ColorDef, color);
+  EM.set(ocean, ColorDef, color);
   //EM.ensureComponentOn(ocean, PositionDef, [12000, 180, 0]);
-  EM.ensureComponentOn(ocean, PositionDef);
+  EM.set(ocean, PositionDef);
 
   let ocean2 = await EM.whenEntityHas(ocean, RenderableDef, RenderDataOceanDef);
   // let ocean2 = await EM.whenEntityHas(ocean, RenderableDef, RenderDataStdDef);

@@ -201,7 +201,7 @@ export function registerInitTransforms() {
     (objs) => {
       for (let o of objs) {
         if (!WorldFrameDef.isOn(o)) {
-          EM.ensureComponentOn(o, WorldFrameDef);
+          EM.set(o, WorldFrameDef);
           copyFrame(o.world, o);
         }
       }
@@ -225,10 +225,10 @@ export function registerUpdateLocalFromPosRotScale() {
           ScaleDef.isOn(o) ||
           TransformDef.isOn(o)
         ) {
-          EM.ensureComponentOn(o, PositionDef);
-          EM.ensureComponentOn(o, RotationDef);
-          EM.ensureComponentOn(o, ScaleDef);
-          EM.ensureComponentOn(o, TransformDef);
+          EM.set(o, PositionDef);
+          EM.set(o, RotationDef);
+          EM.set(o, ScaleDef);
+          EM.set(o, TransformDef);
         }
       }
     }

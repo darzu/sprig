@@ -136,12 +136,12 @@ EM.addEagerInit([ClothConstructDef], [], [], () => {
     (cloths, res) => {
       for (let cloth of cloths) {
         if (FinishedDef.isOn(cloth)) continue;
-        EM.ensureComponentOn(cloth, PositionDef, cloth.clothConstruct.location);
-        EM.ensureComponentOn(cloth, ColorDef, cloth.clothConstruct.color);
+        EM.set(cloth, PositionDef, cloth.clothConstruct.location);
+        EM.set(cloth, ColorDef, cloth.clothConstruct.color);
         const { mesh, posMap } = clothMesh(cloth.clothConstruct);
-        EM.ensureComponentOn(cloth, ClothLocalDef, posMap);
-        EM.ensureComponentOn(cloth, RenderableConstructDef, mesh);
-        EM.ensureComponentOn(
+        EM.set(cloth, ClothLocalDef, posMap);
+        EM.set(cloth, RenderableConstructDef, mesh);
+        EM.set(
           cloth,
           SpringGridDef,
           SpringType.SimpleDistance,
@@ -155,12 +155,12 @@ EM.addEagerInit([ClothConstructDef], [], [], () => {
           ],
           cloth.clothConstruct.distance
         );
-        EM.ensureComponentOn(cloth, ForceDef);
-        EM.ensureComponentOn(cloth, AuthorityDef, res.me.pid);
-        EM.ensureComponentOn(cloth, SyncDef);
+        EM.set(cloth, ForceDef);
+        EM.set(cloth, AuthorityDef, res.me.pid);
+        EM.set(cloth, SyncDef);
         cloth.sync.dynamicComponents = [ClothConstructDef.id];
         cloth.sync.fullComponents = [PositionDef.id, ForceDef.id];
-        EM.ensureComponentOn(cloth, FinishedDef);
+        EM.set(cloth, FinishedDef);
       }
     }
   );

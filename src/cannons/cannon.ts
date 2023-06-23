@@ -69,7 +69,7 @@ export const { CannonPropsDef, CannonLocalDef, createCannon, createCannonNow } =
     buildResources: [CannonLD51Mesh.def, MeDef],
     build: (e, res) => {
       const props = e.cannonProps;
-      EM.ensureComponentOn(e, PositionDef, props.location);
+      EM.set(e, PositionDef, props.location);
       constructNetTurret(
         e,
         props.yaw,
@@ -84,18 +84,18 @@ export const { CannonPropsDef, CannonLocalDef, createCannon, createCannonNow } =
         Math.PI / 4,
         "W/S: pitch, A/D: turn, left click: fire, E: drop cannon"
       );
-      EM.ensureComponentOn(e, ColorDef, V(0, 0, 0));
-      EM.ensureComponentOn(
+      EM.set(e, ColorDef, V(0, 0, 0));
+      EM.set(
         e,
         RenderableConstructDef,
         res.mesh_ld51_cannon.mesh // TODO(@darzu): PERF: use .proto?
       );
-      EM.ensureComponentOn(e, ColliderDef, {
+      EM.set(e, ColliderDef, {
         shape: "AABB",
         solid: false,
         aabb: res.mesh_ld51_cannon.aabb,
       });
-      EM.ensureComponentOn(e, PhysicsParentDef, props.parentId);
+      EM.set(e, PhysicsParentDef, props.parentId);
       return e;
     },
   });

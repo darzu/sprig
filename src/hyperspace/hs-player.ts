@@ -54,7 +54,7 @@ import { Phase } from "../ecs/sys-phase.js";
 export function createHsPlayer() {
   // console.log("create player!");
   const e = EM.new();
-  EM.ensureComponentOn(e, PlayerHsPropsDef, V(0, 100, 0));
+  EM.set(e, PlayerHsPropsDef, V(0, 100, 0));
   EM.addResource(LocalHsPlayerDef, e.id);
   return e;
 }
@@ -135,22 +135,18 @@ export function registerHsPlayerSystems() {
           scaleMesh3(m, V(0.75, 0.75, 0.4));
           EM.addComponent(e.id, RenderableConstructDef, m);
         }
-        EM.ensureComponentOn(e, AuthorityDef, res.me.pid);
+        EM.set(e, AuthorityDef, res.me.pid);
         if (!HsPlayerDef.isOn(e)) {
-          EM.ensureComponentOn(e, HsPlayerDef);
+          EM.set(e, HsPlayerDef);
 
           // create legs
           function makeLeg(x: number): Entity {
             const l = EM.new();
-            EM.ensureComponentOn(l, PositionDef, V(x, -1.5, 0));
-            EM.ensureComponentOn(
-              l,
-              RenderableConstructDef,
-              res.allMeshes.cube.proto
-            );
-            EM.ensureComponentOn(l, ScaleDef, V(0.15, 0.75, 0.15));
-            EM.ensureComponentOn(l, ColorDef, V(0.05, 0.05, 0.05));
-            EM.ensureComponentOn(l, PhysicsParentDef, e.id);
+            EM.set(l, PositionDef, V(x, -1.5, 0));
+            EM.set(l, RenderableConstructDef, res.allMeshes.cube.proto);
+            EM.set(l, ScaleDef, V(0.15, 0.75, 0.15));
+            EM.set(l, ColorDef, V(0.05, 0.05, 0.05));
+            EM.set(l, PhysicsParentDef, e.id);
             return l;
           }
           e.hsPlayer.leftLegId = makeLeg(-0.5).id;
@@ -166,7 +162,7 @@ export function registerHsPlayerSystems() {
           (collider as AABBCollider).aabb = playerAABB;
         }
         if (!SyncDef.isOn(e)) {
-          EM.ensureComponentOn(e, SyncDef, [
+          EM.set(e, SyncDef, [
             PositionDef.id,
             RotationDef.id,
             // TODO(@darzu): maybe sync this via events instead
@@ -174,10 +170,10 @@ export function registerHsPlayerSystems() {
           ]);
           e.sync.fullComponents = [PlayerHsPropsDef.id];
         }
-        EM.ensureComponent(e.id, PhysicsParentDef);
+        EM.set(e, PhysicsParentDef);
 
-        EM.ensureComponentOn(e, ControllableDef);
-        EM.ensureComponentOn(e, CameraFollowDef, 1);
+        EM.set(e, ControllableDef);
+        EM.set(e, CameraFollowDef, 1);
         setCameraFollowPosition(e, "thirdPersonOverShoulder");
 
         EM.addComponent(e.id, FinishedDef);

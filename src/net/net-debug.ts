@@ -39,7 +39,7 @@ export function initNetDebugSystem() {
     (objs, res) => {
       for (const o of objs) {
         if (res.netDebugState.dbgAuthority) {
-          EM.ensureComponentOn(o, TintsDef);
+          EM.set(o, TintsDef);
           setTint(
             o.tints,
             AUTHORITY_TINT_NAME,

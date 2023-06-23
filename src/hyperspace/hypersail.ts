@@ -92,15 +92,11 @@ export const { HypMastPropsDef, HypMastLocalDef, createHypMastNow } =
     dynamicComponents: [RotationDef, BoomPitchesDef],
     buildResources: [AllMeshesDef, MeDef],
     build: (mast, res) => {
-      EM.ensureComponentOn(mast, PositionDef, V(0, 0, 0));
+      EM.set(mast, PositionDef, V(0, 0, 0));
 
-      EM.ensureComponentOn(
-        mast,
-        RenderableConstructDef,
-        res.allMeshes.mast.mesh
-      );
-      EM.ensureComponentOn(mast, PhysicsParentDef, mast.hypMastProps.shipId);
-      EM.ensureComponentOn(mast, ColorDef, ENDESGA16.lightBrown);
+      EM.set(mast, RenderableConstructDef, res.allMeshes.mast.mesh);
+      EM.set(mast, PhysicsParentDef, mast.hypMastProps.shipId);
+      EM.set(mast, ColorDef, ENDESGA16.lightBrown);
       vec3.scale(mast.color, 0.5, mast.color);
 
       // createRib(mast.id, BOOM_HEIGHT)
@@ -135,13 +131,9 @@ export const { HypMastPropsDef, HypMastLocalDef, createHypMastNow } =
 
       // create seperate hitbox for interacting with the mast
       const interactBox = EM.new();
-      EM.ensureComponentOn(
-        interactBox,
-        PhysicsParentDef,
-        mast.hypMastProps.shipId
-      );
-      EM.ensureComponentOn(interactBox, PositionDef, V(0, 0, 0));
-      EM.ensureComponentOn(interactBox, ColliderDef, {
+      EM.set(interactBox, PhysicsParentDef, mast.hypMastProps.shipId);
+      EM.set(interactBox, PositionDef, V(0, 0, 0));
+      EM.set(interactBox, ColliderDef, {
         shape: "AABB",
         solid: false,
         aabb: {

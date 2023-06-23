@@ -51,14 +51,10 @@ export const { DarkStarPropsDef, DarkStarLocalDef, createDarkStarNow } =
     buildResources: [AllMeshesDef],
     build: (star, res) => {
       vec3.copy(star.position, star.darkStarProps.pos);
-      EM.ensureComponentOn(
-        star,
-        RenderableConstructDef,
-        res.allMeshes.ball.proto
-      );
-      EM.ensureComponentOn(star, ScaleDef, V(100, 100, 100));
-      EM.ensureComponentOn(star, ColorDef, star.darkStarProps.color);
-      EM.ensureComponentOn(star, PointLightDef);
+      EM.set(star, RenderableConstructDef, res.allMeshes.ball.proto);
+      EM.set(star, ScaleDef, V(100, 100, 100));
+      EM.set(star, ColorDef, star.darkStarProps.color);
+      EM.set(star, PointLightDef);
       star.pointLight.constant = 1.0;
       vec3.copy(star.pointLight.ambient, star.color);
       vec3.scale(star.pointLight.ambient, 0.2, star.pointLight.ambient);

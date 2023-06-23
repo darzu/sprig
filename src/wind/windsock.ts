@@ -37,15 +37,15 @@ function sockMesh(): Mesh {
 
 export function createSock(scale: number) {
   const ent = EM.new();
-  EM.ensureComponentOn(ent, SockDef);
+  EM.set(ent, SockDef);
   ent.sock.scale = scale;
   const mesh = sockMesh();
   // scaleMesh(mesh, scale);
-  EM.ensureComponentOn(ent, ScaleDef, V(scale, scale, scale));
-  EM.ensureComponentOn(ent, RenderableConstructDef, mesh);
-  EM.ensureComponentOn(ent, PositionDef);
-  EM.ensureComponentOn(ent, RotationDef);
-  EM.ensureComponentOn(ent, ColorDef, V(0.9, 0.9, 0.9));
+  EM.set(ent, ScaleDef, V(scale, scale, scale));
+  EM.set(ent, RenderableConstructDef, mesh);
+  EM.set(ent, PositionDef);
+  EM.set(ent, RotationDef);
+  EM.set(ent, ColorDef, V(0.9, 0.9, 0.9));
   return ent;
 }
 
