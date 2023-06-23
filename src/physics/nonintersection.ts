@@ -34,6 +34,7 @@ import {
   PositionDef,
   ReadonlyFrame,
   TransformDef,
+  createFrame,
   updateFrameFromPosRotScale,
 } from "./transform.js";
 import { IdPair, idPair } from "../utils/util.js";
@@ -54,16 +55,11 @@ export const PhysicsResultsDef = EM.defineResource("physicsResults", () => {
 });
 export type PhysicsResults = Component<typeof PhysicsResultsDef>;
 
-export function createFrame(): Frame {
-  return {
-    position: vec3.create(),
-    rotation: quat.create(),
-    scale: V(1, 1, 1),
-    transform: mat4.create(),
-  };
-}
-
-export const WorldFrameDef = EM.defineComponent("world", () => createFrame());
+export const WorldFrameDef = EM.defineComponent2(
+  "world",
+  () => createFrame(),
+  (p) => p
+);
 
 export interface PhysCollider {
   // NOTE: we use "id" and "aabb" here b/c broadphase looks for a struct with those

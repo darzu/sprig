@@ -1,6 +1,6 @@
 import { Component, EM } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
-import { createFrame, WorldFrameDef } from "./nonintersection.js";
+import { WorldFrameDef } from "./nonintersection.js";
 import { tempVec3, tempQuat } from "../matrix/temp-pool.js";
 import { FALSE, dbgLogOnce } from "../utils/util.js";
 import { Phase } from "../ecs/sys-phase.js";
@@ -57,6 +57,14 @@ export function updateFrameFromPosRotScale(f: Frame) {
     f.scale,
     f.transform
   );
+}
+export function createFrame(): Frame {
+  return {
+    position: vec3.create(),
+    rotation: quat.create(),
+    scale: V(1, 1, 1),
+    transform: mat4.create(),
+  };
 }
 
 export function copyFrame(out: Frame, frame: Frame) {

@@ -10,6 +10,7 @@ import {
   updateFrameFromPosRotScale,
   updateFrameFromTransform,
   Frame,
+  createFrame,
 } from "../physics/transform.js";
 import { computeNewError, reduceError } from "../utils/smoothing.js";
 import { RemoteUpdatesDef } from "../net/components.js";
@@ -17,7 +18,7 @@ import { Phase } from "../ecs/sys-phase.js";
 import { RenderableDef, RendererWorldFrameDef } from "./renderer-ecs.js";
 import { DONT_SMOOTH_WORLD_FRAME } from "../flags.js";
 import { DeletedDef } from "../ecs/delete.js";
-import { WorldFrameDef, createFrame } from "../physics/nonintersection.js";
+import { WorldFrameDef } from "../physics/nonintersection.js";
 import { tempVec3 } from "../matrix/temp-pool.js";
 
 // Determined via binary search--smaller -> jerky, larger -> floaty

@@ -8,6 +8,7 @@ import {
   updateFrameFromTransform,
   updateFrameFromPosRotScale,
   copyFrame,
+  createFrame,
 } from "../physics/transform.js";
 import {
   MotionSmoothingDef,
@@ -19,7 +20,7 @@ import { meshPoolPtr } from "./pipelines/std-scene.js";
 import { CanvasDef } from "./canvas.js";
 import { createRenderer } from "./renderer-webgpu.js";
 import { CyMeshPoolPtr, CyPipelinePtr } from "./gpu-registry.js";
-import { createFrame, WorldFrameDef } from "../physics/nonintersection.js";
+import { WorldFrameDef } from "../physics/nonintersection.js";
 import { tempVec3 } from "../matrix/temp-pool.js";
 import { isMeshHandle, MeshHandle, MeshReserve } from "./mesh-pool.js";
 import { isRigged, Mesh, RiggedMesh, Rigging } from "../meshes/mesh.js";
