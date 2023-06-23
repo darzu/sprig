@@ -357,22 +357,17 @@ EM.addEagerInit([WoodStateDef], [], [], () => {
                 vec3.add(splinter.color, quadColor, splinter.color);
                 const pos = getLineMid(vec3.create(), seg.midLine);
                 vec3.transformMat4(pos, w.world.transform, pos);
-                EM.set(splinter, PositionDef);
-                vec3.copy(splinter.position, pos);
+                EM.set(splinter, PositionDef, pos);
                 const rot = getSegmentRotation(seg, false);
                 quat.mul(rot, w.world.rotation, rot); // TODO(@darzu): !VERIFY! this works
-                EM.set(splinter, RotationDef);
-                quat.copy(splinter.rotation, rot);
+                EM.set(splinter, RotationDef, rot);
                 const spin = randNormalVec3(vec3.create());
                 const vel = vec3.clone(spin);
                 vec3.scale(spin, 0.01, spin);
-                EM.set(splinter, AngularVelocityDef);
-                vec3.copy(splinter.angularVelocity, spin);
+                EM.set(splinter, AngularVelocityDef, spin);
                 vec3.scale(vel, 0.01, vel);
-                EM.set(splinter, LinearVelocityDef);
-                vec3.copy(splinter.linearVelocity, spin);
-                EM.set(splinter, GravityDef);
-                vec3.copy(splinter.gravity, [0, -3 * 0.00001, 0]);
+                EM.set(splinter, LinearVelocityDef, spin);
+                EM.set(splinter, GravityDef, [0, -3 * 0.00001, 0]);
               }
 
               if (h.prev && !h.prev.broken) {
