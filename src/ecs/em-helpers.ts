@@ -133,16 +133,16 @@ export function defineNetEntityHelper<
     [...opts.buildResources, MeDef],
     (e, res) => {
       const me = (res as any as Resources<[typeof MeDef]>).me; // TYPE HACK
-      if (!AuthorityDef.isOn(e)) EM.set(e, AuthorityDef, me.pid);
+      EM.setOnce(e, AuthorityDef, me.pid);
       // console.log(
       //   `making ent ${e.id} w/ pid ${me.pid}; actual: ${e.authority.pid}`
       // );
 
-      EM.set(e, localDef);
-      EM.set(e, SyncDef);
+      EM.setOnce(e, localDef);
+      EM.setOnce(e, SyncDef);
       e.sync.fullComponents = [propsDef.id];
       e.sync.dynamicComponents = opts.dynamicComponents.map((d) => d.id);
-      for (let d of opts.dynamicComponents) EM.set(e, d);
+      for (let d of opts.dynamicComponents) EM.setOnce(e, d); // TODO(@darzu): this makes me nervous, calling .set without parameters
 
       // TYPE HACK
       const _e = e as any as EntityW<
