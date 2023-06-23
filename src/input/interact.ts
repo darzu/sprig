@@ -16,17 +16,25 @@ import { clearTint, setTint, TintsDef } from "../color/color-ecs.js";
 import { DeletedDef } from "../ecs/delete.js";
 import { Phase } from "../ecs/sys-phase.js";
 
-export const InteractableDef = EM.defineComponent(
+export const InteractableDef = EM.defineComponent2(
   "interaction",
-  (colliderId?: number) => ({
+  () => ({
     // TODO(@darzu): components having pointers to entities should be
     //  handled better
     // TODO(@darzu): use Ref system
-    colliderId: colliderId || 0,
-  })
+    colliderId: 0,
+  }),
+  (p, colliderId?: number) => {
+    p.colliderId = colliderId ?? 0;
+    return p;
+  }
 );
 
-export const InRangeDef = EM.defineComponent("inRange", () => true);
+export const InRangeDef = EM.defineComponent2(
+  "inRange",
+  () => true,
+  (p) => p
+);
 
 const INTERACTION_TINT = V(0.1, 0.2, 0.1);
 const INTERACTION_TINT_NAME = "interaction";

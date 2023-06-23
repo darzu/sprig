@@ -4,9 +4,10 @@ import { TimeDef } from "../time/time.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
 import { Phase } from "../ecs/sys-phase.js";
 
-export const LinearVelocityDef = EM.defineComponent(
+export const LinearVelocityDef = EM.defineComponent2(
   "linearVelocity",
-  (v?: vec3) => v || V(0, 0, 0)
+  () => V(0, 0, 0),
+  (p, v?: vec3) => (v ? vec3.copy(p, v) : p)
 );
 export type LinearVelocity = Component<typeof LinearVelocityDef>;
 EM.registerSerializerPair(
@@ -15,9 +16,10 @@ EM.registerSerializerPair(
   (o, buf) => buf.readVec3(o)
 );
 
-export const AngularVelocityDef = EM.defineComponent(
+export const AngularVelocityDef = EM.defineComponent2(
   "angularVelocity",
-  (v?: vec3) => v || V(0, 0, 0)
+  () => V(0, 0, 0),
+  (p, v?: vec3) => (v ? vec3.copy(p, v) : p)
 );
 export type AngularVelocity = Component<typeof AngularVelocityDef>;
 EM.registerSerializerPair(

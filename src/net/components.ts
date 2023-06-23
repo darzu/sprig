@@ -3,38 +3,60 @@ import { Deserializer } from "../utils/serialize.js";
 import { MessageType } from "./message.js";
 import { FromNetworkEvent, ToNetworkEvent } from "./network-events.js";
 
-export const SyncDef = EM.defineComponent("sync", (dynamic?: number[]) => ({
-  priorityIncrementFull: 1000,
-  priorityIncrementDynamic: 10,
-  fullComponents: [] as number[],
-  dynamicComponents: dynamic ?? [],
-}));
+export const SyncDef = EM.defineComponent2(
+  "sync",
+  () => ({
+    priorityIncrementFull: 1000,
+    priorityIncrementDynamic: 10,
+    fullComponents: [] as number[],
+    dynamicComponents: [] as number[],
+  }),
+  (p, dynamic?: number[]) => {
+    if (dynamic) p.dynamicComponents = dynamic;
+    return p;
+  }
+);
 
 export type Sync = Component<typeof SyncDef>;
 
-export const PeerDef = EM.defineComponent("peer", () => ({
-  address: "",
+export const PeerDef = EM.defineComponent2(
+  "peer",
+  () => ({
+    address: "",
 
-  // TODO: consider moving this state to another component
-  joined: false,
-  pid: 0,
-  updateSeq: 0,
-  entityPriorities: new Map<number, number>(),
-  entitiesKnown: new Set<number>(),
-  entitiesInUpdate: new Map<number, Set<number>>(),
-}));
+    // TODO: consider moving this state to another component
+    joined: false,
+    pid: 0,
+    updateSeq: 0,
+    entityPriorities: new Map<number, number>(),
+    entitiesKnown: new Set<number>(),
+    entitiesInUpdate: new Map<number, Set<number>>(),
+  }),
+  (p) => p
+);
 
 export type Peer = Component<typeof PeerDef>;
 
 // TODO(@darzu): BUG!! We have two versions of host, resource and component!
 export const HostDef = EM.defineResource("host", () => true);
-export const HostCompDef = EM.defineComponent("host", () => true);
+export const HostCompDef = EM.defineComponent2(
+  "host",
+  () => true,
+  (p) => p
+);
 
-export const AuthorityDef = EM.defineComponent("authority", (pid?: number) => ({
-  pid: pid || 0,
-  seq: 0,
-  updateSeq: 0,
-}));
+export const AuthorityDef = EM.defineComponent2(
+  "authority",
+  () => ({
+    pid: 0,
+    seq: 0,
+    updateSeq: 0,
+  }),
+  (p, pid?: number) => {
+    if (pid) p.pid = pid;
+    return p;
+  }
+);
 
 export type Authority = Component<typeof AuthorityDef>;
 
