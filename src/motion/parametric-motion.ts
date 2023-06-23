@@ -14,15 +14,32 @@ export interface ParamProjectile {
 
 export const ParametricDef = EM.defineComponent(
   "parametric",
-  (init?: ParamProjectile, startMs?: number) => {
+  () => {
     return {
-      init: init ?? {
+      init: {
         pos: V(0, 0, 0),
         vel: V(0, 1, 0),
         accel: V(0, 0, 0),
       },
-      startMs: startMs ?? 0,
+      startMs: 0,
     };
+  },
+  (
+    p,
+    init?: {
+      pos: vec3.InputT;
+      vel: vec3.InputT;
+      accel: vec3.InputT;
+    },
+    startMs?: number
+  ) => {
+    if (init) {
+      vec3.copy(p.init.pos, init.pos);
+      vec3.copy(p.init.vel, init.vel);
+      vec3.copy(p.init.accel, init.accel);
+    }
+    p.startMs = startMs ?? 0;
+    return p;
   }
 );
 // TODO(@darzu): serializer pairs

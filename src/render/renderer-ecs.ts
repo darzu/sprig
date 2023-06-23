@@ -8,6 +8,7 @@ import {
   updateFrameFromTransform,
   updateFrameFromPosRotScale,
   copyFrame,
+  createFrame,
 } from "../physics/transform.js";
 import {
   MotionSmoothingDef,
@@ -19,7 +20,7 @@ import { meshPoolPtr } from "./pipelines/std-scene.js";
 import { CanvasDef } from "./canvas.js";
 import { createRenderer } from "./renderer-webgpu.js";
 import { CyMeshPoolPtr, CyPipelinePtr } from "./gpu-registry.js";
-import { createFrame, WorldFrameDef } from "../physics/nonintersection.js";
+import { WorldFrameDef } from "../physics/nonintersection.js";
 import { tempVec3 } from "../matrix/temp-pool.js";
 import { isMeshHandle, MeshHandle, MeshReserve } from "./mesh-pool.js";
 import { isRigged, Mesh, RiggedMesh, Rigging } from "../meshes/mesh.js";
@@ -78,7 +79,7 @@ export interface RenderableConstruct {
   readonly reserve?: MeshReserve;
 }
 
-export const RenderableConstructDef = EM.defineComponent(
+export const RenderableConstructDef = EM.defineNonupdatableComponent(
   "renderableConstruct",
   (
     // TODO(@darzu): this constructor is too messy, we should use a params obj instead
@@ -104,7 +105,7 @@ export const RenderableConstructDef = EM.defineComponent(
   }
 );
 
-export const RiggedRenderableConstructDef = EM.defineComponent(
+export const RiggedRenderableConstructDef = EM.defineNonupdatableComponent(
   "riggedRenderableConstruct",
   // TODO: consider including other RenderableConstruct fields here
   (mesh: RiggedMesh) => ({
@@ -120,7 +121,7 @@ export interface Renderable {
   meshHandle: MeshHandle;
 }
 
-export const RenderableDef = EM.defineComponent(
+export const RenderableDef = EM.defineNonupdatableComponent(
   "renderable",
   (r: Renderable) => r
 );
@@ -199,7 +200,7 @@ EM.addEagerInit([RenderableConstructDef], [RendererDef], [], () => {
             meshHandle.mask = e.renderableConstruct.mask;
           }
 
-          EM.addComponent(e.id, RenderableDef, {
+          EM.set(e, RenderableDef, {
             enabled: e.renderableConstruct.enabled,
             hidden: false,
             sortLayer: e.renderableConstruct.sortLayer,
@@ -208,7 +209,7 @@ EM.addEagerInit([RenderableConstructDef], [RendererDef], [], () => {
 
           // pool.updateUniform
           const uni = pool.ptr.computeUniData(mesh);
-          EM.ensureComponentOn(e, pool.ptr.dataDef, uni);
+          EM.set(e, pool.ptr.dataDef, uni);
           // TODO(@darzu): HACK! We need some notion of required uni data maybe? Or common uni data
           if ("id" in e[pool.ptr.dataDef.name]) {
             // console.log(
@@ -420,7 +421,7 @@ EM.addEagerInit([RenderableConstructDef], [RendererDef], [], () => {
 //   }
 // }
 
-export const RiggedRenderableDef = EM.defineComponent(
+export const RiggedRenderableDef = EM.defineNonupdatableComponent(
   "riggedRenderable",
   (meshHandle: RiggedMeshHandle, rigging: Rigging) => ({
     meshHandle,
@@ -445,18 +446,19 @@ EM.addEagerInit([RiggedRenderableConstructDef], [RendererDef], [], (res) => {
           assert(pool);
           let meshHandle = pool.addRiggedMesh(mesh);
 
-          EM.addComponent(e.id, RenderableDef, {
+          EM.set(e, RenderableDef, {
             enabled: true,
             hidden: false,
             sortLayer: 0,
             meshHandle,
           });
 
-          EM.addComponent(e.id, RiggedRenderableDef, meshHandle, mesh.rigging);
+          EM.set(e, RiggedRenderableDef, meshHandle, mesh.rigging);
 
+          // TODO(@darzu): de-duplicate with constructRenderables
           // pool.updateUniform
           const uni = pool.ptr.computeUniData(mesh);
-          EM.ensureComponentOn(e, pool.ptr.dataDef, uni);
+          EM.set(e, pool.ptr.dataDef, uni);
           // TODO(@darzu): HACK! We need some notion of required uni data maybe? Or common uni data
           if ("id" in e[pool.ptr.dataDef.name]) {
             // console.log(

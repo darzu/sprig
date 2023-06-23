@@ -18,7 +18,7 @@ export interface AnimateTo {
   // TODO(@darzu): pathFn
 }
 
-export const AnimateToDef = EM.defineComponent(
+export const AnimateToDef = EM.defineNonupdatableComponent(
   "animateTo",
   function (a?: Partial<AnimateTo>): AnimateTo {
     return {

@@ -39,7 +39,7 @@ EM.addSystem("delete", Phase.PRE_GAME_WORLD, [DeletedDef], [], (entities) => {
 // TODO(@darzu): uh oh. this seems like memory/life cycle management.
 //    currently this is needed for entities that "own" other
 //    entities but might be deleted in several ways
-export const OnDeleteDef = EM.defineComponent(
+export const OnDeleteDef = EM.defineNonupdatableComponent(
   "onDelete",
   (onDelete: (deletedId: number) => void) => onDelete
 );

@@ -3,12 +3,19 @@ import { Deserializer } from "../utils/serialize.js";
 import { MessageType } from "./message.js";
 import { FromNetworkEvent, ToNetworkEvent } from "./network-events.js";
 
-export const SyncDef = EM.defineComponent("sync", (dynamic?: number[]) => ({
-  priorityIncrementFull: 1000,
-  priorityIncrementDynamic: 10,
-  fullComponents: [] as number[],
-  dynamicComponents: dynamic ?? [],
-}));
+export const SyncDef = EM.defineComponent(
+  "sync",
+  () => ({
+    priorityIncrementFull: 1000,
+    priorityIncrementDynamic: 10,
+    fullComponents: [] as number[],
+    dynamicComponents: [] as number[],
+  }),
+  (p, dynamic?: number[]) => {
+    if (dynamic) p.dynamicComponents = dynamic;
+    return p;
+  }
+);
 
 export type Sync = Component<typeof SyncDef>;
 
@@ -30,11 +37,18 @@ export type Peer = Component<typeof PeerDef>;
 export const HostDef = EM.defineResource("host", () => true);
 export const HostCompDef = EM.defineComponent("host", () => true);
 
-export const AuthorityDef = EM.defineComponent("authority", (pid?: number) => ({
-  pid: pid || 0,
-  seq: 0,
-  updateSeq: 0,
-}));
+export const AuthorityDef = EM.defineComponent(
+  "authority",
+  () => ({
+    pid: 0,
+    seq: 0,
+    updateSeq: 0,
+  }),
+  (p, pid?: number) => {
+    if (pid !== undefined) p.pid = pid;
+    return p;
+  }
+);
 
 export type Authority = Component<typeof AuthorityDef>;
 

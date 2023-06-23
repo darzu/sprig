@@ -183,7 +183,13 @@ function runEvent<Extra>(type: string, event: Event<Extra>) {
   const entities = event.entities.map((id, idx) => {
     const entity = EM.findEntity(id, [])!;
     for (const cdef of handler.entities[idx] as ComponentDef[]) {
-      EM.ensureComponentOn(entity, cdef);
+      // TODO(@darzu): I'm a little nervous about this. We should only be calling
+      // the constructor(), not the update(), and we need to assert that all the components
+      // are updatable?
+      if (!cdef.isOn(entity)) {
+        // console.log(`runEvent setting ${cdef.name} on ${entity.id}`);
+        EM.setOnce(entity, cdef);
+      }
     }
     return entity;
   });
@@ -221,7 +227,7 @@ export type DetectedEvents = Component<typeof DetectedEventsDef>;
 
 // Outgoing event requests queue. Should be attached to the host
 // peer, shouldn't exist at the host itself
-export const OutgoingEventRequestsDef = EM.defineComponent(
+export const OutgoingEventRequestsDef = EM.defineNonupdatableComponent(
   "outgoingEventRequests",
   (nextId?: number) => ({
     lastSendTime: 0,
@@ -285,10 +291,7 @@ export function initNetGameEventSystems() {
     (hosts, { detectedEvents, me, time }) => {
       if (hosts.length == 0) return;
       const host = hosts[0];
-      const outgoingEventRequests = EM.ensureComponent(
-        host.id,
-        OutgoingEventRequestsDef
-      );
+      EM.setOnce(host, OutgoingEventRequestsDef);
       let newEvents = false;
       while (detectedEvents.events.length > 0) {
         const event = detectedEvents.events.shift()!;
@@ -299,28 +302,29 @@ export function initNetGameEventSystems() {
           if (!legalEvent(event.type, event))
             throw `illegal event ${event.type}`;
           newEvents = true;
-          outgoingEventRequests.events.push({
-            id: outgoingEventRequests.nextId++,
+          host.outgoingEventRequests.events.push({
+            id: host.outgoingEventRequests.nextId++,
             event,
           });
         }
       }
       // We should send a message if we have new events to send or it's time to retransmit old events
       if (
-        outgoingEventRequests.events.length > 0 &&
+        host.outgoingEventRequests.events.length > 0 &&
         (newEvents ||
-          outgoingEventRequests.lastSendTime + EVENT_RETRANSMIT_MS < time.time)
+          host.outgoingEventRequests.lastSendTime + EVENT_RETRANSMIT_MS <
+            time.time)
       ) {
         console.log(
-          `Sending ${outgoingEventRequests.events.length} event requests (newEvents=${newEvents}, lastSendTime=${outgoingEventRequests.lastSendTime}, time=${time.time}`
+          `Sending ${host.outgoingEventRequests.events.length} event requests (newEvents=${newEvents}, lastSendTime=${host.outgoingEventRequests.lastSendTime}, time=${time.time}`
         );
         let message = new Serializer(MAX_MESSAGE_SIZE);
         message.writeUint8(MessageType.EventRequests);
-        message.writeUint32(outgoingEventRequests.events[0].id);
+        message.writeUint32(host.outgoingEventRequests.events[0].id);
         let numEvents = 0;
         let numEventsIndex = message.writeUint8(numEvents);
         try {
-          for (let { event } of outgoingEventRequests.events) {
+          for (let { event } of host.outgoingEventRequests.events) {
             serializeDetectedEvent(event, message);
             numEvents++;
           }
@@ -329,7 +333,7 @@ export function initNetGameEventSystems() {
         }
         message.writeUint8(numEvents, numEventsIndex);
         send(host.outbox, message.buffer);
-        outgoingEventRequests.lastSendTime = time.time;
+        host.outgoingEventRequests.lastSendTime = time.time;
       }
     }
   );

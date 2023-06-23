@@ -58,7 +58,7 @@ import { Phase } from "../ecs/sys-phase.js";
 
 // export const BOAT_COLOR: vec3 = V(0.2, 0.1, 0.05);
 
-export const ShipPartDef = EM.defineComponent(
+export const ShipPartDef = EM.defineNonupdatableComponent(
   "shipPart",
   (critical: boolean) => ({
     critical,
@@ -69,9 +69,13 @@ export const ShipPartDef = EM.defineComponent(
 export const { RudderPropsDef, RudderLocalDef, createRudderNow } =
   defineNetEntityHelper({
     name: "rudder",
-    defaultProps: (shipId?: number) => ({
-      shipId: shipId ?? 0,
+    defaultProps: () => ({
+      shipId: 0,
     }),
+    updateProps: (p, shipId?: number) =>
+      Object.assign(p, {
+        shipId: shipId ?? 0,
+      }),
     serializeProps: (o, buf) => {
       buf.writeUint32(o.shipId);
     },
@@ -82,26 +86,18 @@ export const { RudderPropsDef, RudderLocalDef, createRudderNow } =
     dynamicComponents: [RotationDef],
     buildResources: [AllMeshesDef, MeDef],
     build: (rudder, res) => {
-      EM.ensureComponentOn(rudder, PositionDef, V(0, 0.5, -15));
+      EM.set(rudder, PositionDef, V(0, 0.5, -15));
 
-      EM.ensureComponentOn(
-        rudder,
-        RenderableConstructDef,
-        res.allMeshes.rudder.mesh
-      );
-      EM.ensureComponentOn(rudder, PhysicsParentDef, rudder.rudderProps.shipId);
-      EM.ensureComponentOn(rudder, ColorDef, ENDESGA16.lightBrown);
+      EM.set(rudder, RenderableConstructDef, res.allMeshes.rudder.mesh);
+      EM.set(rudder, PhysicsParentDef, rudder.rudderProps.shipId);
+      EM.set(rudder, ColorDef, ENDESGA16.lightBrown);
       vec3.scale(rudder.color, 0.5, rudder.color);
 
       // create seperate hitbox for interacting with the rudder
       const interactBox = EM.new();
-      EM.ensureComponentOn(
-        interactBox,
-        PhysicsParentDef,
-        rudder.rudderProps.shipId
-      );
-      EM.ensureComponentOn(interactBox, PositionDef, V(0, 0, -12));
-      EM.ensureComponentOn(interactBox, ColliderDef, {
+      EM.set(interactBox, PhysicsParentDef, rudder.rudderProps.shipId);
+      EM.set(interactBox, PositionDef, V(0, 0, -12));
+      EM.set(interactBox, ColliderDef, {
         shape: "AABB",
         solid: false,
         aabb: {
@@ -134,14 +130,18 @@ export const { RudderPropsDef, RudderLocalDef, createRudderNow } =
 export const { HsShipPropsDef, HsShipLocalDef, createHsShip } =
   defineNetEntityHelper({
     name: "hsShip",
-    defaultProps: (uvPos?: vec2) => ({
-      uvPos: uvPos ?? vec2.fromValues(0.5, 0.5),
+    defaultProps: () => ({
+      uvPos: vec2.fromValues(0.5, 0.5),
       gemId: 0,
-      cannonLId: 0,
+      cannonLId: 0, // TODO(@darzu): use refs?
       cannonRId: 0,
       rudder: createRef(0, [RudderPropsDef, YawPitchDef]),
       mast: createRef(0, [HypMastPropsDef, HypMastLocalDef]),
     }),
+    updateProps: (p, uvPos?: vec2.InputT) => {
+      if (uvPos) vec2.copy(p.uvPos, uvPos);
+      return p;
+    },
     serializeProps: (c, buf) => {
       buf.writeVec2(c.uvPos);
       buf.writeUint32(c.gemId);
@@ -203,17 +203,17 @@ export const { HsShipPropsDef, HsShipLocalDef, createHsShip } =
       vec2.copy(s.uvPos, s.hsShipProps.uvPos);
       vec2.set(1, 0, s.uvDir);
 
-      EM.ensureComponentOn(s, PositionDef);
-      EM.ensureComponentOn(s, RotationDef);
+      EM.set(s, PositionDef);
+      EM.set(s, RotationDef);
 
-      EM.ensureComponentOn(s, MotionSmoothingDef);
+      EM.set(s, MotionSmoothingDef);
 
-      EM.ensureComponentOn(s, UVShipDef);
+      EM.set(s, UVShipDef);
 
       s.uvship.speed = 0;
       // s.hsShipLocal.speed = 0.005 * 3; // TODO(@darzu): DEBUG SPEED
-      // EM.ensureComponentOn(s, LinearVelocityDef, [0, 0, 0]);
-      // EM.ensureComponentOn(s, AngularVelocityDef);
+      // EM.set(s, LinearVelocityDef, [0, 0, 0]);
+      // EM.set(s, AngularVelocityDef);
 
       const mc: MultiCollider = {
         shape: "Multi",
@@ -225,7 +225,7 @@ export const { HsShipPropsDef, HsShipLocalDef, createHsShip } =
           aabb,
         })),
       };
-      EM.ensureComponentOn(s, ColliderDef, mc);
+      EM.set(s, ColliderDef, mc);
 
       // NOTE: since their is no network important state on the parts themselves
       //    they can be created locally
@@ -233,13 +233,13 @@ export const { HsShipPropsDef, HsShipLocalDef, createHsShip } =
       for (let i = 0; i < res.allMeshes.ship_broken.length; i++) {
         const m = res.allMeshes.ship_broken[i];
         const part = EM.new();
-        EM.ensureComponentOn(part, PhysicsParentDef, s.id);
-        EM.ensureComponentOn(part, RenderableConstructDef, m.proto);
-        EM.ensureComponentOn(part, ColorDef, ENDESGA16.lightBrown);
-        EM.ensureComponentOn(part, PositionDef, V(0, 0, 0));
+        EM.set(part, PhysicsParentDef, s.id);
+        EM.set(part, RenderableConstructDef, m.proto);
+        EM.set(part, ColorDef, ENDESGA16.lightBrown);
+        EM.set(part, PositionDef, V(0, 0, 0));
         const isCritical = criticalPartIdxes.includes(i);
-        EM.ensureComponentOn(part, ShipPartDef, isCritical);
-        EM.ensureComponentOn(part, ColliderDef, {
+        EM.set(part, ShipPartDef, isCritical);
+        EM.set(part, ColliderDef, {
           shape: "AABB",
           solid: false,
           aabb: m.aabb,
@@ -262,7 +262,7 @@ const criticalPartIdxes = [0, 3, 5, 6];
 //   EM.registerOneShotSystem(null, [AssetsDef], (_, res) => {
 //     // create ship
 //     const s = EM.newEntity();
-//     EM.ensureComponentOn(s, ShipConstructDef);
+//     EM.set(s, ShipConstructDef);
 //   });
 // }
 
@@ -340,8 +340,7 @@ export function registerShipSystems() {
               ?.map((h) => EM.findEntity(h, [BulletDef]))
               .filter((h) => h && h.bullet.team === 2);
             if (bullets && bullets.length) {
-              for (let b of bullets)
-                if (b) EM.ensureComponent(b.id, DeletedDef);
+              for (let b of bullets) if (b) EM.set(b, DeletedDef);
 
               raiseShipHit(ship, i);
             }

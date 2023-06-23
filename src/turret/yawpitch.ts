@@ -4,11 +4,16 @@ import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 
 export const YawPitchDef = defineSerializableComponent(
   "yawpitch",
-  (yaw?: number, pitch?: number) => {
+  () => {
     return {
-      yaw: yaw ?? 0,
-      pitch: pitch ?? 0,
+      yaw: 0,
+      pitch: 0,
     };
+  },
+  (p, yaw?: number, pitch?: number) => {
+    if (yaw !== undefined) p.yaw = yaw;
+    if (pitch !== undefined) p.pitch = pitch;
+    return p;
   },
   (o, buf) => {
     buf.writeFloat32(o.yaw);

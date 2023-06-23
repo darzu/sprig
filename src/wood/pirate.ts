@@ -129,7 +129,7 @@ export function appendPirateShip(b: TimberBuilder): RawMesh {
 const startDelay = 0;
 // const startDelay = 1000;
 
-export const PiratePlatformDef = EM.defineComponent(
+export const PiratePlatformDef = EM.defineNonupdatableComponent(
   "piratePlatform",
   (
     cannon: EntityW<[typeof PositionDef, typeof RotationDef]>,
@@ -266,28 +266,24 @@ const piratePool = createEntityPool<
     const res = await EM.whenResources(AllMeshesDef, RendererDef, TimeDef);
     // make platform
     const platform = EM.new();
-    EM.ensureComponentOn(platform, ColorDef);
+    EM.set(platform, ColorDef);
     vec3.copy(platform.color, ENDESGA16.deepBrown);
-    EM.ensureComponentOn(platform, PositionDef);
-    EM.ensureComponentOn(platform, RotationDef);
+    EM.set(platform, PositionDef);
+    EM.set(platform, RotationDef);
     const groundMesh = cloneMesh(res.allMeshes.hex.mesh);
     transformMesh(
       groundMesh,
       mat4.fromRotationTranslationScale(quat.IDENTITY, [0, -1, 0], [4, 1, 4])
     );
-    EM.ensureComponentOn(platform, RenderableConstructDef, groundMesh);
+    EM.set(platform, RenderableConstructDef, groundMesh);
 
     // make cannon
     const cannon = EM.new();
-    EM.ensureComponentOn(
-      cannon,
-      RenderableConstructDef,
-      res.allMeshes.ld51_cannon.proto
-    );
-    EM.ensureComponentOn(cannon, PositionDef);
-    EM.ensureComponentOn(cannon, PhysicsParentDef, platform.id);
-    EM.ensureComponentOn(cannon, ColorDef, ENDESGA16.darkGray);
-    EM.ensureComponentOn(cannon, RotationDef);
+    EM.set(cannon, RenderableConstructDef, res.allMeshes.ld51_cannon.proto);
+    EM.set(cannon, PositionDef);
+    EM.set(cannon, PhysicsParentDef, platform.id);
+    EM.set(cannon, ColorDef, ENDESGA16.darkGray);
+    EM.set(cannon, RotationDef);
     vec3.copy(cannon.position, [0, 2, 0]);
 
     // make timber
@@ -307,23 +303,23 @@ const piratePool = createEntityPool<
     const timberMesh = _timberMesh as Mesh;
     timberMesh.usesProvoking = true;
     reserveSplinterSpace(timberState, 10);
-    EM.ensureComponentOn(timber, RenderableConstructDef, timberMesh);
-    EM.ensureComponentOn(timber, WoodStateDef, timberState);
-    EM.ensureComponentOn(timber, ColorDef, ENDESGA16.red);
+    EM.set(timber, RenderableConstructDef, timberMesh);
+    EM.set(timber, WoodStateDef, timberState);
+    EM.set(timber, ColorDef, ENDESGA16.red);
     const timberAABB = getAABBFromMesh(timberMesh);
-    EM.ensureComponentOn(timber, PositionDef, V(0, builder.width, 0));
-    EM.ensureComponentOn(timber, RotationDef);
-    EM.ensureComponentOn(timber, ColliderDef, {
+    EM.set(timber, PositionDef, V(0, builder.width, 0));
+    EM.set(timber, RotationDef);
+    EM.set(timber, ColliderDef, {
       shape: "AABB",
       solid: false,
       aabb: timberAABB,
     });
     const timberHealth = createWoodHealth(timberState);
-    EM.ensureComponentOn(timber, WoodHealthDef, timberHealth);
-    EM.ensureComponentOn(timber, PhysicsParentDef, platform.id);
+    EM.set(timber, WoodHealthDef, timberHealth);
+    EM.set(timber, PhysicsParentDef, platform.id);
 
     // make joint entity
-    EM.ensureComponentOn(platform, PiratePlatformDef, cannon, timber);
+    EM.set(platform, PiratePlatformDef, cannon, timber);
 
     return platform;
   },
@@ -385,14 +381,14 @@ const piratePool = createEntityPool<
     // pirateShip
     if (!DeadDef.isOn(e)) {
       // dead platform
-      EM.ensureComponentOn(e, DeadDef);
+      EM.set(e, DeadDef);
       if (RenderableDef.isOn(e)) e.renderable.hidden = true;
       e.dead.processed = true;
 
       // dead cannon
       if (e.piratePlatform.cannon()) {
         const c = e.piratePlatform.cannon()!;
-        EM.ensureComponentOn(c, DeadDef);
+        EM.set(c, DeadDef);
         if (RenderableDef.isOn(c)) c.renderable.hidden = true;
         c.dead.processed = true;
       }
@@ -408,7 +404,7 @@ const piratePool = createEntityPool<
       if (WoodHealthDef.isOn(timber) && PhysicsParentDef.isOn(timber)) {
         // TODO(@darzu): necessary?
         // timber.physicsParent.id = 0;
-        // EM.ensureComponentOn(timber, LifetimeDef, 1000);
+        // EM.set(timber, LifetimeDef, 1000);
         for (let b of timber.woodHealth.boards) {
           for (let s of b) {
             s.health = 0;

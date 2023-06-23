@@ -1,5 +1,7 @@
+import { assert } from "../../utils/util.js";
 import { createRenderTextureToQuad } from "../gpu-helper.js";
 import {
+  CY,
   CyDepthAttachment,
   CyDepthTexturePtr,
   CyRenderPipelinePtr,
@@ -15,6 +17,10 @@ let __nextGridId = 1;
 export function createGridComposePipelines(
   grid: (CyTexturePtr | CyDepthAttachment)[][]
 ): CyRenderPipelinePtr[] {
+  assert(
+    !CY._hasBeenInstantiated,
+    `CY already instantiated; TODO: support multiple instantiations`
+  );
   const width = grid[0].length;
   const height = grid.length;
   const uvWidth = (2.0 - padding * (width + 1)) / width;

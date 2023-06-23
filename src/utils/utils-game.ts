@@ -75,7 +75,7 @@ export function createLine(start: vec3, end: vec3, color: vec3) {
   const pos = [start, start2, end2, end];
 
   const e = EM.new();
-  EM.ensureComponentOn(e, ColorDef, color);
+  EM.set(e, ColorDef, color);
   const m: Mesh = {
     pos,
     tri: [],
@@ -87,8 +87,8 @@ export function createLine(start: vec3, end: vec3, color: vec3) {
     surfaceIds: [1, 2],
     usesProvoking: true,
   };
-  EM.ensureComponentOn(e, RenderableConstructDef, m);
-  EM.ensureComponentOn(e, PositionDef);
+  EM.set(e, RenderableConstructDef, m);
+  EM.set(e, PositionDef);
 
   return e;
 }
@@ -101,17 +101,17 @@ const _ballPool = createEntityPool<
   create: async () => {
     let res = await EM.whenResources(AllMeshesDef);
     const e = EM.new();
-    EM.ensureComponentOn(e, ColorDef);
-    EM.ensureComponentOn(e, RenderableConstructDef, res.allMeshes.ball.proto);
-    EM.ensureComponentOn(e, PositionDef);
-    EM.ensureComponentOn(e, ScaleDef);
+    EM.set(e, ColorDef);
+    EM.set(e, RenderableConstructDef, res.allMeshes.ball.proto);
+    EM.set(e, PositionDef);
+    EM.set(e, ScaleDef);
     return e;
   },
   onSpawn: async (e) => {
     EM.tryRemoveComponent(e.id, DeadDef);
   },
   onDespawn: (e) => {
-    EM.ensureComponentOn(e, DeadDef);
+    EM.set(e, DeadDef);
     e.dead.processed = true;
   },
 });
@@ -188,9 +188,9 @@ export async function addGizmoChild(
   // make debug gizmo
   const gizmoMesh = await GizmoMesh.gameMesh();
   const gizmo = EM.new();
-  EM.ensureComponentOn(gizmo, PositionDef, vec3.clone(offset));
-  EM.ensureComponentOn(gizmo, ScaleDef, V(scale, scale, scale));
-  EM.ensureComponentOn(gizmo, PhysicsParentDef, parent.id);
-  EM.ensureComponentOn(gizmo, RenderableConstructDef, gizmoMesh.proto);
+  EM.set(gizmo, PositionDef, vec3.clone(offset));
+  EM.set(gizmo, ScaleDef, V(scale, scale, scale));
+  EM.set(gizmo, PhysicsParentDef, parent.id);
+  EM.set(gizmo, RenderableConstructDef, gizmoMesh.proto);
   return gizmo;
 }

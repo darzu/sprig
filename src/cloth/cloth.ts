@@ -30,19 +30,22 @@ export interface ClothConstruct {
 }
 export const ClothConstructDef = EM.defineComponent(
   "clothConstruct",
-  (c: Partial<ClothConstruct>) => ({
-    location: c.location ?? V(0, 0, 0),
-    color: c.color ?? V(0, 0, 0),
-    rows: c.rows ?? 2,
-    columns: c.columns ?? 2,
-    distance: c.distance ?? 1,
-  })
+  () => ({
+    location: V(0, 0, 0),
+    color: V(0, 0, 0),
+    rows: 2,
+    columns: 2,
+    distance: 1,
+  }),
+  (p, c: Partial<ClothConstruct>) => {
+    return Object.assign(p, c);
+  }
 );
 
-export const ClothLocalDef = EM.defineComponent(
+export const ClothLocalDef = EM.defineNonupdatableComponent(
   "clothLocal",
-  (posMap?: Map<number, number>) => ({
-    posMap: posMap ?? new Map(),
+  (posMap: Map<number, number>) => ({
+    posMap: posMap,
   })
 );
 
@@ -133,12 +136,12 @@ EM.addEagerInit([ClothConstructDef], [], [], () => {
     (cloths, res) => {
       for (let cloth of cloths) {
         if (FinishedDef.isOn(cloth)) continue;
-        EM.ensureComponentOn(cloth, PositionDef, cloth.clothConstruct.location);
-        EM.ensureComponentOn(cloth, ColorDef, cloth.clothConstruct.color);
+        EM.set(cloth, PositionDef, cloth.clothConstruct.location);
+        EM.set(cloth, ColorDef, cloth.clothConstruct.color);
         const { mesh, posMap } = clothMesh(cloth.clothConstruct);
-        EM.ensureComponentOn(cloth, ClothLocalDef, posMap);
-        EM.ensureComponentOn(cloth, RenderableConstructDef, mesh);
-        EM.ensureComponentOn(
+        EM.set(cloth, ClothLocalDef, posMap);
+        EM.set(cloth, RenderableConstructDef, mesh);
+        EM.set(
           cloth,
           SpringGridDef,
           SpringType.SimpleDistance,
@@ -152,12 +155,12 @@ EM.addEagerInit([ClothConstructDef], [], [], () => {
           ],
           cloth.clothConstruct.distance
         );
-        EM.ensureComponentOn(cloth, ForceDef);
-        EM.ensureComponentOn(cloth, AuthorityDef, res.me.pid);
-        EM.ensureComponentOn(cloth, SyncDef);
+        EM.set(cloth, ForceDef);
+        EM.set(cloth, AuthorityDef, res.me.pid);
+        EM.set(cloth, SyncDef);
         cloth.sync.dynamicComponents = [ClothConstructDef.id];
         cloth.sync.fullComponents = [PositionDef.id, ForceDef.id];
-        EM.ensureComponentOn(cloth, FinishedDef);
+        EM.set(cloth, FinishedDef);
       }
     }
   );

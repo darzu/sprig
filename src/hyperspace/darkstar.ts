@@ -19,17 +19,25 @@ export const STAR2_COLOR = V(0.3, 0.8, 0.6);
 export const { DarkStarPropsDef, DarkStarLocalDef, createDarkStarNow } =
   defineNetEntityHelper({
     name: "darkStar",
-    defaultProps: (
-      pos?: vec3,
-      color?: vec3,
-      orbiting?: vec3,
-      orbitalAxis?: vec3
-    ) => ({
-      pos: pos ?? vec3.create(),
-      color: color ?? vec3.create(),
-      orbiting: orbiting ?? vec3.create(),
-      orbitalAxis: orbitalAxis ?? V(1, 0, 0),
+    defaultProps: () => ({
+      pos: V(0, 0, 0),
+      color: V(0, 0, 0),
+      orbiting: V(0, 0, 0),
+      orbitalAxis: V(1, 0, 0),
     }),
+    updateProps: (
+      p,
+      pos?: vec3.InputT,
+      color?: vec3.InputT,
+      orbiting?: vec3.InputT,
+      orbitalAxis?: vec3.InputT
+    ) => {
+      if (pos) vec3.copy(p.pos, pos);
+      if (color) vec3.copy(p.color, color);
+      if (orbiting) vec3.copy(p.orbiting, orbiting);
+      if (orbitalAxis) vec3.copy(p.orbitalAxis, orbitalAxis);
+      return p;
+    },
     serializeProps: (o, buf) => {
       buf.writeVec3(o.pos);
       buf.writeVec3(o.color);
@@ -43,14 +51,10 @@ export const { DarkStarPropsDef, DarkStarLocalDef, createDarkStarNow } =
     buildResources: [AllMeshesDef],
     build: (star, res) => {
       vec3.copy(star.position, star.darkStarProps.pos);
-      EM.ensureComponentOn(
-        star,
-        RenderableConstructDef,
-        res.allMeshes.ball.proto
-      );
-      EM.ensureComponentOn(star, ScaleDef, V(100, 100, 100));
-      EM.ensureComponentOn(star, ColorDef, star.darkStarProps.color);
-      EM.ensureComponentOn(star, PointLightDef);
+      EM.set(star, RenderableConstructDef, res.allMeshes.ball.proto);
+      EM.set(star, ScaleDef, V(100, 100, 100));
+      EM.set(star, ColorDef, star.darkStarProps.color);
+      EM.set(star, PointLightDef);
       star.pointLight.constant = 1.0;
       vec3.copy(star.pointLight.ambient, star.color);
       vec3.scale(star.pointLight.ambient, 0.2, star.pointLight.ambient);

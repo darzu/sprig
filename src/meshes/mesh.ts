@@ -502,6 +502,17 @@ export function normalizeMesh(inM: RawMesh): Mesh {
   };
 }
 
+export function createEmptyMesh(dbgName: string) {
+  let mesh: RawMesh = {
+    dbgName,
+    pos: [],
+    tri: [],
+    quad: [],
+    colors: [],
+  };
+  return mesh;
+}
+
 export function getAABBFromMesh(m: RawMesh): AABB {
   return getAABBFromPositions(createAABB(), m.pos);
 }

@@ -219,8 +219,8 @@ export async function dbgPathWithGizmos(path: Path) {
   const mesh = createPathGizmos(path);
 
   const e = EM.new();
-  EM.ensureComponentOn(e, PositionDef);
-  EM.ensureComponentOn(e, RenderableConstructDef, mesh);
+  EM.set(e, PositionDef);
+  EM.set(e, RenderableConstructDef, mesh);
 }
 
 function snapXToPath(path: Path, x: number, out: vec3) {

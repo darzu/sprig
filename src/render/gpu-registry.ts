@@ -127,7 +127,7 @@ export interface CyMeshPoolPtr<
   setMaxLines: number;
   setMaxVerts: number;
   // TODO(@darzu): really unsure how I feel about having an EM component here in CY
-  dataDef: ComponentDef<string, CyToTS<U>, [CyToTS<U>]>;
+  dataDef: ComponentDef<string, CyToTS<U>, [CyToTS<U>], []>;
 }
 
 // PIPELINES
@@ -321,6 +321,8 @@ export function createCytochromeRegistry() {
 
   // TODO(@darzu): rename all "createX" to "mkX" for brevity?
   return {
+    // TODO(@darzu): HACK. We want to support multiple instantiation points!
+    _hasBeenInstantiated: false,
     nameToPtr,
     kindToPtrs: nextFlightPtrs,
     createSingleton: <O extends CyStructDesc>(

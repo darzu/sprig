@@ -64,13 +64,13 @@ export const UICursorDef = EM.defineResource(
 EM.addLazyInit([AllMeshesDef], [UICursorDef], ({ allMeshes }) => {
   // Cursor
   const cursor = EM.new();
-  EM.ensureComponentOn(cursor, ColorDef, V(0.1, 0.1, 0.1));
-  EM.ensureComponentOn(cursor, PositionDef, V(0, 1.0, 0));
-  EM.ensureComponentOn(cursor, RenderableConstructDef, allMeshes.he_octo.proto);
+  EM.set(cursor, ColorDef, V(0.1, 0.1, 0.1));
+  EM.set(cursor, PositionDef, V(0, 1.0, 0));
+  EM.set(cursor, RenderableConstructDef, allMeshes.he_octo.proto);
   const cursorLocalAABB = copyAABB(createAABB(), allMeshes.he_octo.aabb);
   cursorLocalAABB.min[1] = -1;
   cursorLocalAABB.max[1] = 1;
-  EM.ensureComponentOn(cursor, ColliderDef, {
+  EM.set(cursor, ColliderDef, {
     shape: "AABB",
     solid: false,
     aabb: cursorLocalAABB,
@@ -105,17 +105,12 @@ export async function initFontEditor() {
   ];
 
   const sunlight = EM.new();
-  EM.ensureComponentOn(sunlight, PointLightDef);
+  EM.set(sunlight, PointLightDef);
   sunlight.pointLight.constant = 1.0;
   vec3.copy(sunlight.pointLight.ambient, [0.8, 0.8, 0.8]);
-  EM.ensureComponentOn(sunlight, PositionDef, V(10, 100, 10));
+  EM.set(sunlight, PositionDef, V(10, 100, 10));
   // TODO(@darzu): weird, why does renderable need to be on here?
-  EM.ensureComponentOn(
-    sunlight,
-    RenderableConstructDef,
-    res.allMeshes.ball.proto,
-    false
-  );
+  EM.set(sunlight, RenderableConstructDef, res.allMeshes.ball.proto, false);
 
   const panel = EM.new();
   const panelMesh = makePlaneMesh(
@@ -127,13 +122,13 @@ export async function initFontEditor() {
   // panelMesh.colors[0] = [0.1, 0.3, 0.1];
   // panelMesh.colors[1] = [0.1, 0.1, 0.3];
   panelMesh.colors[0] = V(0.4, 0.4, 0.4);
-  EM.ensureComponentOn(panel, RenderableConstructDef, panelMesh);
-  // EM.ensureComponentOn(panel, ColorDef, [0.2, 0.3, 0.2]);
-  EM.ensureComponentOn(panel, PositionDef, V(0, 0, 0));
+  EM.set(panel, RenderableConstructDef, panelMesh);
+  // EM.set(panel, ColorDef, [0.2, 0.3, 0.2]);
+  EM.set(panel, PositionDef, V(0, 0, 0));
 
   if (DBG_3D) {
     const g = createGhost();
-    EM.ensureComponentOn(g, RenderableConstructDef, res.allMeshes.ball.proto);
+    EM.set(g, RenderableConstructDef, res.allMeshes.ball.proto);
 
     // vec3.copy(g.position, [4.36,30.83,-1.53]);
     // quat.copy(g.rotation, [0.00,0.71,0.00,0.70]);
@@ -298,15 +293,15 @@ export async function initFontEditor() {
     polyBank.set(i, gmesh);
 
     const btn = EM.new();
-    EM.ensureComponentOn(btn, RenderableConstructDef, gmesh.proto);
-    EM.ensureComponentOn(btn, PositionDef, V(-24 + i * 2, 0.1, 12));
-    EM.ensureComponentOn(btn, ButtonDef, btnKey, i, {
+    EM.set(btn, RenderableConstructDef, gmesh.proto);
+    EM.set(btn, PositionDef, V(-24 + i * 2, 0.1, 12));
+    EM.set(btn, ButtonDef, btnKey, i, {
       default: ENDESGA16.lightGray,
       hover: ENDESGA16.darkGray,
       down: ENDESGA16.orange,
     });
-    EM.ensureComponentOn(btn, ColorDef);
-    EM.ensureComponentOn(btn, ColliderDef, {
+    EM.set(btn, ColorDef);
+    EM.set(btn, ColliderDef, {
       shape: "AABB",
       solid: false,
       aabb: gmesh.aabb,

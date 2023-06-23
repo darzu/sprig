@@ -155,14 +155,12 @@ export function computeOceanUniData(m: Mesh): OceanUniTS {
   return uni;
 }
 
-export const RenderDataOceanDef = EM.defineComponent(
+export const RenderDataOceanDef = EM.defineNonupdatableComponent(
   "renderDataOcean",
   (r: OceanUniTS) => r
 );
 export const oceanPoolPtr = CY.createMeshPool("oceanPool", {
   computeVertsData: computeOceanVertsData,
-  // TODO(@darzu): per-mesh unis should maybe be optional? I don't think
-  //     the ocean needs them
   computeUniData: computeOceanUniData,
   unisStruct: OceanUniStruct,
   vertsStruct: OceanVertStruct,

@@ -34,6 +34,7 @@ import {
   PositionDef,
   ReadonlyFrame,
   TransformDef,
+  createFrame,
   updateFrameFromPosRotScale,
 } from "./transform.js";
 import { IdPair, idPair } from "../utils/util.js";
@@ -53,15 +54,6 @@ export const PhysicsResultsDef = EM.defineResource("physicsResults", () => {
   };
 });
 export type PhysicsResults = Component<typeof PhysicsResultsDef>;
-
-export function createFrame(): Frame {
-  return {
-    position: vec3.create(),
-    rotation: quat.create(),
-    scale: V(1, 1, 1),
-    transform: mat4.create(),
-  };
-}
 
 export const WorldFrameDef = EM.defineComponent("world", () => createFrame());
 
@@ -252,7 +244,8 @@ export function registerPhysicsStateInit() {
           continue;
         }
         const parentId = PhysicsParentDef.isOn(o) ? o.physicsParent.id : 0;
-        const _phys = EM.addComponent(o.id, PhysicsStateDef);
+        EM.set(o, PhysicsStateDef);
+        const _phys = o._phys;
 
         // AABBs (collider derived)
         // TODO(@darzu): handle scale

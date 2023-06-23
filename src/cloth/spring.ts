@@ -41,7 +41,7 @@ export interface SpringGrid {
   springType: SpringType;
 }
 
-export const SpringGridDef = EM.defineComponent(
+export const SpringGridDef = EM.defineNonupdatableComponent(
   "springGrid",
   (
     springType?: SpringType,
@@ -90,7 +90,8 @@ export const SpringGridDef = EM.defineComponent(
 
 export const ForceDef = EM.defineComponent(
   "force",
-  (v?: vec3) => v ?? vec3.create()
+  () => V(0, 0, 0),
+  (p, v?: vec3.InputT) => (v ? vec3.copy(p, v) : p)
 );
 
 EM.registerSerializerPair(

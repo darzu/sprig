@@ -47,7 +47,7 @@ function registerConnectToServer() {
           const peers = EM.filterEntities([PeerDef]);
           // TODO: this is a hacky way to tell if we're connected.
           if (peers.length > 0) {
-            EM.addComponent(peers[0].id, HostCompDef);
+            EM.set(peers[0], HostCompDef);
             // TODO: consider putting this message into the outbox rather than directly on the event queue
             let message = new Serializer(8);
             message.writeUint8(MessageType.Join);

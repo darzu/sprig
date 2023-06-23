@@ -70,15 +70,18 @@ export type Collider =
   | MultiCollider;
 
 // TODO(@darzu): ensure we support swapping colliders?
-export const ColliderDef = EM.defineComponent("collider", (c?: Collider) => {
-  return (
-    c ??
-    ({
-      shape: "Empty",
-      solid: false,
-    } as Collider)
-  );
-});
+export const ColliderDef = EM.defineNonupdatableComponent(
+  "collider",
+  (c?: Collider) => {
+    return (
+      c ??
+      ({
+        shape: "Empty",
+        solid: false,
+      } as Collider)
+    );
+  }
+);
 const __COLLIDER_ASSERT: Component<typeof ColliderDef> extends Collider
   ? true
   : false = true;

@@ -178,19 +178,15 @@ export async function initGrassGame(hosting: boolean) {
 
   // Sun
   const sunlight = EM.new();
-  EM.ensureComponentOn(sunlight, PointLightDef);
+  EM.set(sunlight, PointLightDef);
   // sunlight.pointLight.constant = 1.0;
   sunlight.pointLight.constant = 1.0;
   sunlight.pointLight.linear = 0.0;
   sunlight.pointLight.quadratic = 0.0;
   vec3.copy(sunlight.pointLight.ambient, [0.2, 0.2, 0.2]);
   vec3.copy(sunlight.pointLight.diffuse, [0.5, 0.5, 0.5]);
-  EM.ensureComponentOn(sunlight, PositionDef, V(50, 300, 10));
-  EM.ensureComponentOn(
-    sunlight,
-    RenderableConstructDef,
-    res.gg_meshes.ball.proto
-  );
+  EM.set(sunlight, PositionDef, V(50, 300, 10));
+  EM.set(sunlight, RenderableConstructDef, res.gg_meshes.ball.proto);
 
   // score
   const score = EM.addResource(ScoreDef);
@@ -199,16 +195,9 @@ export async function initGrassGame(hosting: boolean) {
   const SKY_HALFSIZE = 1000;
   const domeMesh = makeDome(16, 8, SKY_HALFSIZE);
   const sky = EM.new();
-  EM.ensureComponentOn(sky, PositionDef, V(0, -100, 0));
+  EM.set(sky, PositionDef, V(0, -100, 0));
   const skyMesh = domeMesh;
-  EM.ensureComponentOn(
-    sky,
-    RenderableConstructDef,
-    skyMesh,
-    undefined,
-    undefined,
-    SKY_MASK
-  );
+  EM.set(sky, RenderableConstructDef, skyMesh, undefined, undefined, SKY_MASK);
 
   // ground
   const ground = EM.new();
@@ -217,16 +206,12 @@ export async function initGrassGame(hosting: boolean) {
     groundMesh,
     mat4.fromScaling(V(WORLD_HEIGHT, 1.0, WORLD_WIDTH))
   );
-  EM.ensureComponentOn(ground, RenderableConstructDef, groundMesh);
-  EM.ensureComponentOn(ground, ColorDef, ENDESGA16.darkGreen);
+  EM.set(ground, RenderableConstructDef, groundMesh);
+  EM.set(ground, ColorDef, ENDESGA16.darkGreen);
   // EM.set(ground, ColorDef, ENDESGA16.darkGreen);
-  // EM.ensureComponentOn(p, ColorDef, [0.2, 0.3, 0.2]);
-  EM.ensureComponentOn(
-    ground,
-    PositionDef,
-    V(-WORLD_HEIGHT * 0.5, -1.1, -WORLD_WIDTH * 0.5)
-  );
-  // EM.ensureComponentOn(plane, PositionDef, [0, -5, 0]);
+  // EM.set(p, ColorDef, [0.2, 0.3, 0.2]);
+  EM.set(ground, PositionDef, V(-WORLD_HEIGHT * 0.5, -1.1, -WORLD_WIDTH * 0.5));
+  // EM.set(plane, PositionDef, [0, -5, 0]);
 
   // grass
   const lod1: GrassTilesetOpts = {
@@ -283,7 +268,7 @@ export async function initGrassGame(hosting: boolean) {
   };
   const grMesh = createGrassTile(tileOpts);
   const gr = EM.new();
-  EM.ensureComponentOn(
+  EM.set(
     gr,
     RenderableConstructDef,
     grMesh,
@@ -294,8 +279,8 @@ export async function initGrassGame(hosting: boolean) {
     grassPoolPtr
     // true
   );
-  EM.ensureComponentOn(gr, ColorDef, randColor());
-  EM.ensureComponentOn(gr, PositionDef);
+  EM.set(gr, ColorDef, randColor());
+  EM.set(gr, PositionDef);
 
   // set
   const ts = await Promise.all([
@@ -341,13 +326,13 @@ export async function initGrassGame(hosting: boolean) {
     g.controllable.sprintMul = 15;
     const sphereMesh = cloneMesh(res.gg_meshes.ball.mesh);
     const visible = false;
-    EM.ensureComponentOn(g, RenderableConstructDef, sphereMesh, visible);
-    EM.ensureComponentOn(g, ColorDef, V(0.1, 0.1, 0.1));
-    // EM.ensureComponentOn(g, PositionDef, V(0, 0, 0));
-    // EM.ensureComponentOn(b2, PositionDef, [0, 0, -1.2]);
-    EM.ensureComponentOn(g, WorldFrameDef);
-    // EM.ensureComponentOn(b2, PhysicsParentDef, g.id);
-    EM.ensureComponentOn(g, ColliderDef, {
+    EM.set(g, RenderableConstructDef, sphereMesh, visible);
+    EM.set(g, ColorDef, V(0.1, 0.1, 0.1));
+    // EM.set(g, PositionDef, V(0, 0, 0));
+    // EM.set(b2, PositionDef, [0, 0, -1.2]);
+    EM.set(g, WorldFrameDef);
+    // EM.set(b2, PhysicsParentDef, g.id);
+    EM.set(g, ColliderDef, {
       shape: "AABB",
       solid: false,
       aabb: res.gg_meshes.ball.aabb,
@@ -708,13 +693,9 @@ export async function initGrassGame(hosting: boolean) {
   // world gizmo
   const gizmoMesh = await GizmoMesh.gameMesh();
   const worldGizmo = EM.new();
-  EM.ensureComponentOn(
-    worldGizmo,
-    PositionDef,
-    V(-WORLD_HEIGHT / 2, 0, -WORLD_WIDTH / 2)
-  );
-  EM.ensureComponentOn(worldGizmo, ScaleDef, V(100, 100, 100));
-  EM.ensureComponentOn(worldGizmo, RenderableConstructDef, gizmoMesh.proto);
+  EM.set(worldGizmo, PositionDef, V(-WORLD_HEIGHT / 2, 0, -WORLD_WIDTH / 2));
+  EM.set(worldGizmo, ScaleDef, V(100, 100, 100));
+  EM.set(worldGizmo, RenderableConstructDef, gizmoMesh.proto);
 
   // debugging createGraph3D
   let data: vec3[][] = [];
@@ -730,19 +711,19 @@ export async function initGrassGame(hosting: boolean) {
 async function createPlayer() {
   const { gg_meshes, me } = await EM.whenResources(grassGameMeshesDef, MeDef);
   const p = EM.new();
-  EM.ensureComponentOn(p, ControllableDef);
+  EM.set(p, ControllableDef);
   p.controllable.modes.canFall = false;
   p.controllable.modes.canJump = false;
   // g.controllable.modes.canYaw = true;
   // g.controllable.modes.canPitch = true;
-  EM.ensureComponentOn(p, CameraFollowDef, 1);
+  EM.set(p, CameraFollowDef, 1);
   // setCameraFollowPosition(p, "firstPerson");
   // setCameraFollowPosition(p, "thirdPerson");
-  EM.ensureComponentOn(p, PositionDef);
-  EM.ensureComponentOn(p, RotationDef);
+  EM.set(p, PositionDef);
+  EM.set(p, RotationDef);
   // quat.rotateY(g.rotation, quat.IDENTITY, (-5 * Math.PI) / 8);
   // quat.rotateX(g.cameraFollow.rotationOffset, quat.IDENTITY, -Math.PI / 8);
-  EM.ensureComponentOn(p, LinearVelocityDef);
+  EM.set(p, LinearVelocityDef);
 
   vec3.copy(p.position, [0, 1, -1.2]);
   quat.setAxisAngle([0.0, -1.0, 0.0], 1.62, p.rotation);
@@ -751,13 +732,13 @@ async function createPlayer() {
   p.controllable.sprintMul = 10;
   const sphereMesh = cloneMesh(gg_meshes.ball.mesh);
   const visible = true;
-  EM.ensureComponentOn(p, RenderableConstructDef, sphereMesh, visible);
-  EM.ensureComponentOn(p, ColorDef, V(0.1, 0.1, 0.1));
-  EM.ensureComponentOn(p, PositionDef, V(0, 0, 0));
-  // EM.ensureComponentOn(b2, PositionDef, [0, 0, -1.2]);
-  EM.ensureComponentOn(p, WorldFrameDef);
-  // EM.ensureComponentOn(b2, PhysicsParentDef, g.id);
-  EM.ensureComponentOn(p, ColliderDef, {
+  EM.set(p, RenderableConstructDef, sphereMesh, visible);
+  EM.set(p, ColorDef, V(0.1, 0.1, 0.1));
+  EM.set(p, PositionDef, V(0, 0, 0));
+  // EM.set(b2, PositionDef, [0, 0, -1.2]);
+  EM.set(p, WorldFrameDef);
+  // EM.set(b2, PhysicsParentDef, g.id);
+  EM.set(p, ColliderDef, {
     shape: "AABB",
     solid: true,
     aabb: gg_meshes.ball.aabb,
@@ -770,8 +751,8 @@ async function createPlayer() {
   p.cameraFollow.pitchOffset = -0.593;
 
   EM.ensureResource(LocalHsPlayerDef, p.id);
-  EM.ensureComponentOn(p, HsPlayerDef);
-  EM.ensureComponentOn(p, AuthorityDef, me.pid);
-  EM.ensureComponentOn(p, PhysicsParentDef);
+  EM.set(p, HsPlayerDef);
+  EM.set(p, AuthorityDef, me.pid);
+  EM.set(p, PhysicsParentDef);
   return p;
 }

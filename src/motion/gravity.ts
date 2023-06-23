@@ -4,9 +4,11 @@ import { LinearVelocityDef } from "./velocity.js";
 import { TimeDef } from "../time/time.js";
 import { Phase } from "../ecs/sys-phase.js";
 
-export const GravityDef = EM.defineComponent("gravity", (gravity?: vec3) => {
-  return gravity ?? vec3.create();
-});
+export const GravityDef = EM.defineComponent(
+  "gravity",
+  () => vec3.create(),
+  (p, gravity?: vec3.InputT) => (gravity ? vec3.copy(p, gravity) : p)
+);
 
 EM.addSystem(
   "applyGravity",

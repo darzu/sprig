@@ -6,8 +6,13 @@ import { Phase } from "./sys-phase.js";
 
 export const LifetimeDef = EM.defineComponent(
   "lifetime",
-  (ms: number = 1000) => {
-    return { startMs: ms, ms: ms };
+  () => {
+    return { startMs: 1000, ms: 1000 };
+  },
+  (p, ms: number = 1000) => {
+    p.startMs = ms;
+    p.ms = ms;
+    return p;
   }
 );
 export type Lifetime = Component<typeof LifetimeDef>;
@@ -24,7 +29,7 @@ EM.addSystem(
       o.lifetime.ms -= res.time.dt;
       if (o.lifetime.ms < 0) {
         // TODO(@darzu): dead or deleted?
-        EM.addComponent(o.id, DeadDef);
+        EM.set(o, DeadDef);
         // TODO(@darzu): note needed?
         // EM.addComponent(o.id, DeletedDef);
       }

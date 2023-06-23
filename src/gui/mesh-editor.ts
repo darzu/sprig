@@ -38,10 +38,10 @@ import { GameMesh } from "../meshes/mesh-loader.js";
 
 // TODO(@darzu): do we need this ptr indirection? can't we just add/remove component? how does this interact
 //  with pools?
-const HEdgeDef = EM.defineComponent("hedge", (he: HEdge) => ({
+const HEdgeDef = EM.defineNonupdatableComponent("hedge", (he: HEdge) => ({
   he,
 }));
-const HVertDef = EM.defineComponent("hvert", (hv: HVert) => ({
+const HVertDef = EM.defineNonupdatableComponent("hvert", (hv: HVert) => ({
   hv,
 }));
 
@@ -157,7 +157,7 @@ async function createMeshEditor() {
       );
     } else {
       const hpEnt_ = EM.new();
-      EM.ensureComponentOn(
+      EM.set(
         hpEnt_,
         RenderableConstructDef,
         handle,
@@ -167,9 +167,9 @@ async function createMeshEditor() {
         meshPoolPtr,
         false
       );
-      EM.ensureComponentOn(hpEnt_, PositionDef, V(0, 0.1, 0));
+      EM.set(hpEnt_, PositionDef, V(0, 0.1, 0));
       // TODO(@darzu): make scale configurable
-      EM.ensureComponentOn(hpEnt_, ScaleDef, V(5, 5, 5));
+      EM.set(hpEnt_, ScaleDef, V(5, 5, 5));
       const hpEnt = await EM.whenEntityHas(
         hpEnt_,
         RenderableDef,
@@ -206,12 +206,12 @@ async function createMeshEditor() {
 
   function _createGlyph(gm: GameMesh) {
     const glyph_ = EM.new();
-    EM.ensureComponentOn(glyph_, RenderableConstructDef, gm.proto, false);
-    EM.ensureComponentOn(glyph_, ColorDef);
-    EM.ensureComponentOn(glyph_, PositionDef);
-    EM.ensureComponentOn(glyph_, RotationDef, quat.create());
-    EM.ensureComponentOn(glyph_, WidgetDef);
-    EM.ensureComponentOn(glyph_, ColliderDef, {
+    EM.set(glyph_, RenderableConstructDef, gm.proto, false);
+    EM.set(glyph_, ColorDef);
+    EM.set(glyph_, PositionDef);
+    EM.set(glyph_, RotationDef, quat.create());
+    EM.set(glyph_, WidgetDef);
+    EM.set(glyph_, ColliderDef, {
       shape: "AABB",
       solid: false,
       aabb: gm.aabb,
@@ -226,8 +226,8 @@ async function createMeshEditor() {
     if (!vertGlyphPool[idx]) {
       // create if missing
       const glyph_ = _createGlyph(allMeshes.he_octo);
-      EM.ensureComponentOn(glyph_, HVertDef, hv);
-      EM.ensureComponentOn(glyph_, ButtonDef, "glyph-vert");
+      EM.set(glyph_, HVertDef, hv);
+      EM.set(glyph_, ButtonDef, "glyph-vert");
       const glyph = await EM.whenEntityHas(
         glyph_,
         HVertDef,
@@ -268,8 +268,8 @@ async function createMeshEditor() {
     if (!hedgeGlyphPool[idx]) {
       // create if missing
       const glyph_ = _createGlyph(allMeshes.he_quad);
-      EM.ensureComponentOn(glyph_, HEdgeDef, he);
-      EM.ensureComponentOn(glyph_, ButtonDef, "glyph-hedge");
+      EM.set(glyph_, HEdgeDef, he);
+      EM.set(glyph_, ButtonDef, "glyph-hedge");
       const glyph = await EM.whenEntityHas(
         glyph_,
         WidgetDef,

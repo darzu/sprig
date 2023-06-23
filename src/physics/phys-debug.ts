@@ -37,7 +37,7 @@ export const PhysicsDbgDef = EM.defineResource("_physDbgState", () => {
   };
 });
 
-export const DbgMeshDef = EM.defineComponent(
+export const DbgMeshDef = EM.defineNonupdatableComponent(
   "_physDbgMesh",
   (colliderId?: number) => {
     return {
@@ -64,8 +64,8 @@ export function registerPhysicsDebuggerSystem() {
 
             // with a wireframe mesh
             // TODO(@darzu): doesn't work w/o our line renderer
-            EM.addComponent(
-              dbgE.id,
+            EM.set(
+              dbgE,
               RenderableConstructDef,
               res.allMeshes.wireCube.proto,
               res._physDbgState.showAABBs,
@@ -73,16 +73,16 @@ export function registerPhysicsDebuggerSystem() {
             );
 
             // colored
-            EM.addComponent(dbgE.id, ColorDef, V(0, 1, 0));
+            EM.set(dbgE, ColorDef, V(0, 1, 0));
 
             // positioned and scaled
-            EM.ensureComponentOn(dbgE, PositionDef);
-            EM.ensureComponentOn(dbgE, ScaleDef);
+            EM.set(dbgE, PositionDef);
+            EM.set(dbgE, ScaleDef);
 
             // NOTE: we don't use the normal parent transform mechanism b/c
             //  colliders especially AABBs are only translated, not full matrix
             //  transform'ed
-            EM.addComponent(dbgE.id, DbgMeshDef, c.id);
+            EM.set(dbgE, DbgMeshDef, c.id);
 
             // remember
             res._physDbgState.colliderMeshes.set(e.id, dbgE.id);

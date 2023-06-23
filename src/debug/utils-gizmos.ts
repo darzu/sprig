@@ -65,24 +65,24 @@ export function createGraph3D(
   // TODO(@darzu): maybe everything should be created with a scale
   const graphMesh = createGraph3DAxesMesh(opts);
   const graph = EM.new();
-  EM.ensureComponentOn(graph, RenderableConstructDef, graphMesh);
-  EM.ensureComponentOn(graph, PositionDef, pos);
+  EM.set(graph, RenderableConstructDef, graphMesh);
+  EM.set(graph, PositionDef, pos);
 
   const surfScale = vec3.div(worldSize, domainSize, vec3.create());
   // console.log(`surfScale: ${vec3Dbg(surfScale)}`);
 
   const graphSurf = EM.new();
   const graphSurfMesh = createGraph3DDataMesh(data);
-  EM.ensureComponentOn(graphSurf, RenderableConstructDef, graphSurfMesh);
-  EM.ensureComponentOn(
+  EM.set(graphSurf, RenderableConstructDef, graphSurfMesh);
+  EM.set(
     graphSurf,
     PositionDef,
     vec3.mul(vec3.negate(domain.min), surfScale, vec3.create())
     // vec3.add(worldGizmo.position, [50, 10, 50], V(0, 0, 0))
   );
-  EM.ensureComponentOn(graphSurf, PhysicsParentDef, graph.id);
-  EM.ensureComponentOn(graphSurf, ColorDef, color);
-  EM.ensureComponentOn(graphSurf, ScaleDef, surfScale);
+  EM.set(graphSurf, PhysicsParentDef, graph.id);
+  EM.set(graphSurf, ColorDef, color);
+  EM.set(graphSurf, ScaleDef, surfScale);
 
   return graph;
 }

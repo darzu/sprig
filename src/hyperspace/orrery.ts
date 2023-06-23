@@ -19,25 +19,21 @@ const ORRERY_SCALE = 0.001;
 export async function makeOrrery(parentId: number) {
   const res = await EM.whenResources(AllMeshesDef);
   const orrery = EM.new();
-  EM.ensureComponentOn(orrery, OrreryDef);
-  EM.ensureComponentOn(orrery, PhysicsParentDef, parentId);
-  EM.ensureComponentOn(orrery, PositionDef, V(0, 4, 4));
+  EM.set(orrery, OrreryDef);
+  EM.set(orrery, PhysicsParentDef, parentId);
+  EM.set(orrery, PositionDef, V(0, 4, 4));
 
   // put a ship model at the center of it
   const shipModel = EM.new();
-  EM.ensureComponentOn(shipModel, PhysicsParentDef, orrery.id);
-  EM.ensureComponentOn(shipModel, PositionDef, V(0, 0, 0));
-  EM.ensureComponentOn(
-    shipModel,
-    RenderableConstructDef,
-    res.allMeshes.ship.proto
-  );
-  EM.ensureComponentOn(
+  EM.set(shipModel, PhysicsParentDef, orrery.id);
+  EM.set(shipModel, PositionDef, V(0, 0, 0));
+  EM.set(shipModel, RenderableConstructDef, res.allMeshes.ship.proto);
+  EM.set(
     shipModel,
     ScaleDef,
     V(ORRERY_SCALE * 40, ORRERY_SCALE * 40, ORRERY_SCALE * 40)
   );
-  EM.ensureComponentOn(shipModel, ColorDef, ENDESGA16.lightBrown);
+  EM.set(shipModel, ColorDef, ENDESGA16.lightBrown);
 }
 
 export const OrreryDef = EM.defineComponent("orrery", () => ({
@@ -61,15 +57,11 @@ export function registerOrrerySystems() {
         // TODO(@darzu): use resizeArray?
         while (orrery.orrery.orreryStars.length < stars.length) {
           const orreryStar = EM.new();
-          EM.ensureComponentOn(orreryStar, PositionDef);
-          EM.ensureComponentOn(orreryStar, PhysicsParentDef, orrery.id);
-          EM.ensureComponentOn(orreryStar, ColorDef);
-          EM.ensureComponentOn(
-            orreryStar,
-            RenderableConstructDef,
-            res.allMeshes.ball.proto
-          );
-          EM.ensureComponentOn(orreryStar, ScaleDef, V(0.25, 0.25, 0.25));
+          EM.set(orreryStar, PositionDef);
+          EM.set(orreryStar, PhysicsParentDef, orrery.id);
+          EM.set(orreryStar, ColorDef);
+          EM.set(orreryStar, RenderableConstructDef, res.allMeshes.ball.proto);
+          EM.set(orreryStar, ScaleDef, V(0.25, 0.25, 0.25));
           orrery.orrery.orreryStars.push(createRef(orreryStar));
         }
         const intoOrrerySpace = mat4.invert(orrery.world.transform);

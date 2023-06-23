@@ -52,16 +52,21 @@ EM.registerSerializerPair(
 
 const SailColorDef = EM.defineComponent(
   "sailColor",
-  (color?: vec3) => color ?? vec3.create()
+  () => vec3.create(),
+  (p, color?: vec3) => (color ? vec3.copy(p, color) : p)
 );
 
 // TODO: we need warnings if you forget to call the buildProps system!
 export const { HypMastPropsDef, HypMastLocalDef, createHypMastNow } =
   defineNetEntityHelper({
     name: "hypMast",
-    defaultProps: (shipId?: number) => ({
-      shipId: shipId ?? 0,
+    defaultProps: () => ({
+      shipId: 0,
     }),
+    updateProps: (p, shipId?: number) =>
+      Object.assign(p, {
+        shipId: shipId ?? 0,
+      }),
     serializeProps: (o, buf) => {
       buf.writeUint32(o.shipId);
     },
@@ -87,15 +92,11 @@ export const { HypMastPropsDef, HypMastLocalDef, createHypMastNow } =
     dynamicComponents: [RotationDef, BoomPitchesDef],
     buildResources: [AllMeshesDef, MeDef],
     build: (mast, res) => {
-      EM.ensureComponentOn(mast, PositionDef, V(0, 0, 0));
+      EM.set(mast, PositionDef, V(0, 0, 0));
 
-      EM.ensureComponentOn(
-        mast,
-        RenderableConstructDef,
-        res.allMeshes.mast.mesh
-      );
-      EM.ensureComponentOn(mast, PhysicsParentDef, mast.hypMastProps.shipId);
-      EM.ensureComponentOn(mast, ColorDef, ENDESGA16.lightBrown);
+      EM.set(mast, RenderableConstructDef, res.allMeshes.mast.mesh);
+      EM.set(mast, PhysicsParentDef, mast.hypMastProps.shipId);
+      EM.set(mast, ColorDef, ENDESGA16.lightBrown);
       vec3.scale(mast.color, 0.5, mast.color);
 
       // createRib(mast.id, BOOM_HEIGHT)
@@ -105,17 +106,17 @@ export const { HypMastPropsDef, HypMastLocalDef, createHypMastNow } =
       // const sail1 = TODO; // TODO(@darzu):
 
       // const sail2 = EM.new();
-      // EM.ensureComponentOn(sail2, PositionDef, V(0, BOOM_HEIGHT, 0));
-      // EM.ensureComponentOn(
+      // EM.set(sail2, PositionDef, V(0, BOOM_HEIGHT, 0));
+      // EM.set(
       //   sail2,
       //   RenderableConstructDef,
       //   cloneMesh(res.allMeshes.sail.mesh)
       // );
-      // //EM.ensureComponentOn(sail2, ScaleDef, [12, 12, 12]);
-      // EM.ensureComponentOn(sail2, RotationDef);
-      // EM.ensureComponentOn(sail2, SailColorDef, STAR2_COLOR);
-      // EM.ensureComponentOn(sail2, ColorDef, DEFAULT_SAIL_COLOR);
-      // EM.ensureComponentOn(sail2, PhysicsParentDef, mast.id);
+      // //EM.set(sail2, ScaleDef, [12, 12, 12]);
+      // EM.set(sail2, RotationDef);
+      // EM.set(sail2, SailColorDef, STAR2_COLOR);
+      // EM.set(sail2, ColorDef, DEFAULT_SAIL_COLOR);
+      // EM.set(sail2, PhysicsParentDef, mast.id);
       // EM.whenEntityHas(
       //   sail2,
       //   RenderDataStdDef,
@@ -130,13 +131,9 @@ export const { HypMastPropsDef, HypMastLocalDef, createHypMastNow } =
 
       // create seperate hitbox for interacting with the mast
       const interactBox = EM.new();
-      EM.ensureComponentOn(
-        interactBox,
-        PhysicsParentDef,
-        mast.hypMastProps.shipId
-      );
-      EM.ensureComponentOn(interactBox, PositionDef, V(0, 0, 0));
-      EM.ensureComponentOn(interactBox, ColliderDef, {
+      EM.set(interactBox, PhysicsParentDef, mast.hypMastProps.shipId);
+      EM.set(interactBox, PositionDef, V(0, 0, 0));
+      EM.set(interactBox, ColliderDef, {
         shape: "AABB",
         solid: false,
         aabb: {

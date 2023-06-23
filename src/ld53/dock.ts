@@ -31,21 +31,21 @@ export function createDock() {
 
   const dock = EM.new();
 
-  EM.ensureComponentOn(dock, PositionDef, V(0, 0, 0));
+  EM.set(dock, PositionDef, V(0, 0, 0));
 
-  EM.ensureComponentOn(dock, RenderableConstructDef, mesh);
-  EM.ensureComponentOn(dock, WoodStateDef, wood);
+  EM.set(dock, RenderableConstructDef, mesh);
+  EM.set(dock, WoodStateDef, wood);
   const timberHealth = createWoodHealth(wood);
-  EM.ensureComponentOn(dock, WoodHealthDef, timberHealth);
+  EM.set(dock, WoodHealthDef, timberHealth);
   const timberAABB = getAABBFromMesh(mesh);
   timberAABB.min[1] = -100;
   timberAABB.max[1] = 100;
-  EM.ensureComponentOn(dock, ColliderDef, {
+  EM.set(dock, ColliderDef, {
     shape: "AABB",
     solid: false,
     aabb: timberAABB,
   });
-  EM.ensureComponentOn(dock, ColorDef, ENDESGA16.lightGreen);
+  EM.set(dock, ColorDef, ENDESGA16.lightGreen);
 
   return dock;
 }

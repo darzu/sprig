@@ -17,9 +17,12 @@ import { InteractableDef, InRangeDef } from "./interact.js";
 import { Deserializer, Serializer } from "../utils/serialize.js";
 import { Phase } from "../ecs/sys-phase.js";
 
-export const ToolDef = EM.defineComponent("tool", (type?: string) => ({
-  type,
-}));
+export const ToolDef = EM.defineNonupdatableComponent(
+  "tool",
+  (type?: string) => ({
+    type,
+  })
+);
 
 export function registerToolSystems() {
   EM.addSystem(
@@ -80,7 +83,7 @@ export function registerToolSystems() {
       // TODO(@darzu): add interact box
       // EM.removeComponent(tool.id, InteractableDef);
       vec3.set(0, 0, -1.5, tool.position);
-      EM.ensureComponentOn(tool, ScaleDef);
+      EM.set(tool, ScaleDef);
       vec3.copy(tool.scale, [0.5, 0.5, 0.5]);
       player.hsPlayer.tool = tool.id;
       if (ColliderDef.isOn(tool)) tool.collider.solid = false;
@@ -98,7 +101,7 @@ export function registerToolSystems() {
       // TODO(@darzu): add interact box
       // EM.addComponent(tool.id, InteractableDef);
       vec3.copy(tool.position, location);
-      EM.ensureComponentOn(tool, ScaleDef);
+      EM.set(tool, ScaleDef);
       vec3.copy(tool.scale, [1, 1, 1]);
       player.hsPlayer.tool = 0;
       if (ColliderDef.isOn(tool)) tool.collider.solid = true;

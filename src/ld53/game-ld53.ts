@@ -144,6 +144,19 @@ export const LD53MeshesDef = XY.defineMeshSetResource(
   CubeMesh
 );
 
+const dbgGrid = [
+  //
+  [mapJfa._inputMaskTex, mapJfa._uvMaskTex],
+  //
+  // [mapJfa.voronoiTex, mapJfa.sdfTex],
+  // TODO(@darzu): FIX FOR CSM & texture arrays
+  [
+    { ptr: shadowDepthTextures, idx: 0 },
+    { ptr: shadowDepthTextures, idx: 1 },
+  ],
+];
+let dbgGridCompose = createGridComposePipelines(dbgGrid);
+
 export async function initLD53(hosting: boolean) {
   const res = await EM.whenResources(
     LD53MeshesDef,
@@ -153,19 +166,6 @@ export async function initLD53(hosting: boolean) {
     CameraDef,
     DevConsoleDef
   );
-
-  const dbgGrid = [
-    //
-    [mapJfa._inputMaskTex, mapJfa._uvMaskTex],
-    //
-    // [mapJfa.voronoiTex, mapJfa.sdfTex],
-    // TODO(@darzu): FIX FOR CSM & texture arrays
-    [
-      { ptr: shadowDepthTextures, idx: 0 },
-      { ptr: shadowDepthTextures, idx: 1 },
-    ],
-  ];
-  let dbgGridCompose = createGridComposePipelines(dbgGrid);
 
   // TODO(@darzu): HACK. these have to be set before the CY instantiator runs.
   outlineRender.fragOverrides!.lineWidth = 1.0;
@@ -207,31 +207,27 @@ export async function initLD53(hosting: boolean) {
 
   // Sun
   const sunlight = EM.new();
-  EM.ensureComponentOn(sunlight, PointLightDef);
+  EM.set(sunlight, PointLightDef);
   // sunlight.pointLight.constant = 1.0;
   sunlight.pointLight.constant = 1.0;
   sunlight.pointLight.linear = 0.0;
   sunlight.pointLight.quadratic = 0.0;
   vec3.copy(sunlight.pointLight.ambient, [0.2, 0.2, 0.2]);
   vec3.copy(sunlight.pointLight.diffuse, [0.5, 0.5, 0.5]);
-  EM.ensureComponentOn(sunlight, PositionDef, V(50, 300, 10));
-  EM.ensureComponentOn(
-    sunlight,
-    RenderableConstructDef,
-    res.ld53Meshes.ball.proto
-  );
+  EM.set(sunlight, PositionDef, V(50, 300, 10));
+  EM.set(sunlight, RenderableConstructDef, res.ld53Meshes.ball.proto);
 
   // pirate test
   const PirateDef = EM.defineComponent("pirate", () => true);
   const pirate = EM.new();
-  EM.ensureComponentOn(
+  EM.set(
     pirate,
     RiggedRenderableConstructDef,
     res.ld53Meshes.pirate.mesh as RiggedMesh
   );
-  EM.ensureComponentOn(pirate, PositionDef, V(50, 80, 10));
-  EM.ensureComponentOn(pirate, PirateDef);
-  EM.ensureComponentOn(pirate, PoseDef, 0);
+  EM.set(pirate, PositionDef, V(50, 80, 10));
+  EM.set(pirate, PirateDef);
+  EM.set(pirate, PoseDef, 0);
   pirate.pose.repeat = [
     { pose: 1, t: 500 },
     { pose: 0, t: 500 },
@@ -251,21 +247,14 @@ export async function initLD53(hosting: boolean) {
   const SKY_HALFSIZE = 1000;
   const domeMesh = makeDome(16, 8, SKY_HALFSIZE);
   const sky = EM.new();
-  EM.ensureComponentOn(sky, PositionDef, V(0, -100, 0));
+  EM.set(sky, PositionDef, V(0, -100, 0));
   // const skyMesh = cloneMesh(res.allMeshes.cube.mesh);
   // skyMesh.pos.forEach((p) => vec3.scale(p, SKY_HALFSIZE, p));
   // skyMesh.quad.forEach((f) => vec4.reverse(f, f));
   // skyMesh.tri.forEach((f) => vec3.reverse(f, f));
   const skyMesh = domeMesh;
-  EM.ensureComponentOn(
-    sky,
-    RenderableConstructDef,
-    skyMesh,
-    undefined,
-    undefined,
-    SKY_MASK
-  );
-  // EM.ensureComponentOn(sky, ColorDef, V(0.9, 0.9, 0.9));
+  EM.set(sky, RenderableConstructDef, skyMesh, undefined, undefined, SKY_MASK);
+  // EM.set(sky, ColorDef, V(0.9, 0.9, 0.9));
 
   // ocean
   // const oceanVertsPerWorldUnit = 0.02;
@@ -319,7 +308,7 @@ export async function initLD53(hosting: boolean) {
 
   const ship = await createShip();
 
-  EM.ensureComponentOn(ship, ShipHealthDef);
+  EM.set(ship, ShipHealthDef);
 
   // move down
   // ship.position[2] = -WORLD_SIZE * 0.5 * 0.6;
@@ -333,20 +322,12 @@ export async function initLD53(hosting: boolean) {
     for (let u = 0.4; u <= 0.6; u += 0.02) {
       for (let v = 0.4; v <= 0.6; v += 0.02) {
         const bouy = EM.new();
-        EM.ensureComponentOn(bouy, PositionDef, V(0, 0, 0));
-        EM.ensureComponentOn(
-          bouy,
-          UVPosDef,
-          V(u + jitter(0.01), v + jitter(0.01))
-        );
-        // EM.ensureComponentOn(bouy, ScaleDef, V(5, 5, 5));
-        EM.ensureComponentOn(bouy, bouyDef);
-        EM.ensureComponentOn(
-          bouy,
-          RenderableConstructDef,
-          res.ld53Meshes.ball.proto
-        );
-        EM.ensureComponentOn(bouy, ColorDef, ENDESGA16.lightGreen);
+        EM.set(bouy, PositionDef, V(0, 0, 0));
+        EM.set(bouy, UVPosDef, V(u + jitter(0.01), v + jitter(0.01)));
+        // EM.set(bouy, ScaleDef, V(5, 5, 5));
+        EM.set(bouy, bouyDef);
+        EM.set(bouy, RenderableConstructDef, res.ld53Meshes.ball.proto);
+        EM.set(bouy, ColorDef, ENDESGA16.lightGreen);
         buoys.push(bouy);
       }
     }
@@ -420,13 +401,13 @@ export async function initLD53(hosting: boolean) {
     g.controllable.sprintMul = 15;
     const sphereMesh = cloneMesh(res.ld53Meshes.ball.mesh);
     const visible = false;
-    EM.ensureComponentOn(g, RenderableConstructDef, sphereMesh, visible);
-    EM.ensureComponentOn(g, ColorDef, V(0.1, 0.1, 0.1));
-    // EM.ensureComponentOn(g, PositionDef, V(0, 0, 0));
-    // EM.ensureComponentOn(b2, PositionDef, [0, 0, -1.2]);
-    EM.ensureComponentOn(g, WorldFrameDef);
-    // EM.ensureComponentOn(b2, PhysicsParentDef, g.id);
-    EM.ensureComponentOn(g, ColliderDef, {
+    EM.set(g, RenderableConstructDef, sphereMesh, visible);
+    EM.set(g, ColorDef, V(0.1, 0.1, 0.1));
+    // EM.set(g, PositionDef, V(0, 0, 0));
+    // EM.set(b2, PositionDef, [0, 0, -1.2]);
+    EM.set(g, WorldFrameDef);
+    // EM.set(b2, PhysicsParentDef, g.id);
+    EM.set(g, ColliderDef, {
       shape: "AABB",
       solid: false,
       aabb: res.ld53Meshes.ball.aabb,
@@ -644,13 +625,9 @@ export async function initLD53(hosting: boolean) {
     // world gizmo
     const gizmoMesh = await GizmoMesh.gameMesh();
     const worldGizmo = EM.new();
-    EM.ensureComponentOn(
-      worldGizmo,
-      PositionDef,
-      V(-WORLD_HEIGHT / 2, 0, -WORLD_WIDTH / 2)
-    );
-    EM.ensureComponentOn(worldGizmo, ScaleDef, V(100, 100, 100));
-    EM.ensureComponentOn(worldGizmo, RenderableConstructDef, gizmoMesh.proto);
+    EM.set(worldGizmo, PositionDef, V(-WORLD_HEIGHT / 2, 0, -WORLD_WIDTH / 2));
+    EM.set(worldGizmo, ScaleDef, V(100, 100, 100));
+    EM.set(worldGizmo, RenderableConstructDef, gizmoMesh.proto);
   }
 
   // // debugging createGraph3D
@@ -726,19 +703,19 @@ export async function initLD53(hosting: boolean) {
 async function createPlayer() {
   const { ld53Meshes, me } = await EM.whenResources(LD53MeshesDef, MeDef);
   const p = EM.new();
-  EM.ensureComponentOn(p, ControllableDef);
+  EM.set(p, ControllableDef);
   p.controllable.modes.canFall = false;
   p.controllable.modes.canJump = false;
   // g.controllable.modes.canYaw = true;
   // g.controllable.modes.canPitch = true;
-  EM.ensureComponentOn(p, CameraFollowDef, 1);
+  EM.set(p, CameraFollowDef, 1);
   // setCameraFollowPosition(p, "firstPerson");
   // setCameraFollowPosition(p, "thirdPerson");
-  EM.ensureComponentOn(p, PositionDef);
-  EM.ensureComponentOn(p, RotationDef);
+  EM.set(p, PositionDef);
+  EM.set(p, RotationDef);
   // quat.rotateY(g.rotation, quat.IDENTITY, (-5 * Math.PI) / 8);
   // quat.rotateX(g.cameraFollow.rotationOffset, quat.IDENTITY, -Math.PI / 8);
-  EM.ensureComponentOn(p, LinearVelocityDef);
+  EM.set(p, LinearVelocityDef);
 
   vec3.copy(p.position, [0, 1, -1.2]);
   quat.setAxisAngle([0.0, -1.0, 0.0], 1.62, p.rotation);
@@ -747,13 +724,13 @@ async function createPlayer() {
   p.controllable.sprintMul = 10;
   const sphereMesh = cloneMesh(ld53Meshes.ball.mesh);
   const visible = true;
-  EM.ensureComponentOn(p, RenderableConstructDef, sphereMesh, visible);
-  EM.ensureComponentOn(p, ColorDef, V(0.1, 0.1, 0.1));
-  EM.ensureComponentOn(p, PositionDef, V(0, 0, 0));
-  // EM.ensureComponentOn(b2, PositionDef, [0, 0, -1.2]);
-  EM.ensureComponentOn(p, WorldFrameDef);
-  // EM.ensureComponentOn(b2, PhysicsParentDef, g.id);
-  EM.ensureComponentOn(p, ColliderDef, {
+  EM.set(p, RenderableConstructDef, sphereMesh, visible);
+  EM.set(p, ColorDef, V(0.1, 0.1, 0.1));
+  EM.set(p, PositionDef, V(0, 0, 0));
+  // EM.set(b2, PositionDef, [0, 0, -1.2]);
+  EM.set(p, WorldFrameDef);
+  // EM.set(b2, PhysicsParentDef, g.id);
+  EM.set(p, ColliderDef, {
     shape: "AABB",
     solid: true,
     aabb: ld53Meshes.ball.aabb,
@@ -766,9 +743,9 @@ async function createPlayer() {
   p.cameraFollow.pitchOffset = -0.593;
 
   EM.ensureResource(LocalHsPlayerDef, p.id);
-  EM.ensureComponentOn(p, HsPlayerDef);
-  EM.ensureComponentOn(p, AuthorityDef, me.pid);
-  EM.ensureComponentOn(p, PhysicsParentDef);
+  EM.set(p, HsPlayerDef);
+  EM.set(p, AuthorityDef, me.pid);
+  EM.set(p, PhysicsParentDef);
   return p;
 }
 
@@ -812,11 +789,11 @@ async function resetLand() {
 
     // console.log(`heightmap minY: ${minY}`);
     const hm = EM.new();
-    EM.ensureComponentOn(hm, RenderableConstructDef, terraMesh);
-    EM.ensureComponentOn(hm, PositionDef);
+    EM.set(hm, RenderableConstructDef, terraMesh);
+    EM.set(hm, PositionDef);
     // TODO(@darzu): maybe do a sable-like gradient accross the terrain, based on view dist or just uv?
-    // EM.ensureComponentOn(hm, ColorDef, V(0.4, 0.2, 0.2));
-    EM.ensureComponentOn(hm, ColorDef, ENDESGA16.lightGray);
+    // EM.set(hm, ColorDef, V(0.4, 0.2, 0.2));
+    EM.set(hm, ColorDef, ENDESGA16.lightGray);
     const hm2 = await EM.whenEntityHas(hm, RenderableDef);
     terraEnt = hm2;
   } else {

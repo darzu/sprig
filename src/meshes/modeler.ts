@@ -82,7 +82,7 @@ function registerObjClicker() {
           // increase green
           const e = EM.findEntity(firstHit.id, [ColorDef]);
           if (e) {
-            EM.ensureComponentOn(e, TintsDef);
+            EM.set(e, TintsDef);
             e.tints.set("select", V(0, 0.2, 0));
             // e.color[1] += 0.1;
           }
@@ -144,29 +144,17 @@ function registerAABBBuilder() {
             ScaleDef,
           ]);
 
-          EM.ensureComponentOn(b, ModelBoxDef);
+          EM.set(b, ModelBoxDef);
           if (lastB) {
-            EM.ensureComponentOn(
-              b,
-              ScaleDef,
-              vec3.copy(vec3.create(), lastB.scale)
-            );
-            EM.ensureComponentOn(
-              b,
-              PositionDef,
-              vec3.copy(vec3.create(), lastB.position)
-            );
+            EM.set(b, ScaleDef, vec3.copy(vec3.create(), lastB.scale));
+            EM.set(b, PositionDef, vec3.copy(vec3.create(), lastB.position));
           } else {
-            EM.ensureComponentOn(b, ScaleDef, V(2, 1, 1));
-            EM.ensureComponentOn(b, PositionDef, V(0, 0, 0));
+            EM.set(b, ScaleDef, V(2, 1, 1));
+            EM.set(b, PositionDef, V(0, 0, 0));
           }
-          EM.ensureComponentOn(b, ColorDef, V(0.1, 0.3, 0.2));
-          EM.ensureComponentOn(
-            b,
-            RenderableConstructDef,
-            res.allMeshes.cube.proto
-          );
-          EM.ensureComponentOn(b, ColliderDef, {
+          EM.set(b, ColorDef, V(0.1, 0.3, 0.2));
+          EM.set(b, RenderableConstructDef, res.allMeshes.cube.proto);
+          EM.set(b, ColliderDef, {
             shape: "AABB",
             solid: false,
             aabb: res.allMeshes.cube.aabb,

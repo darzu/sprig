@@ -24,27 +24,37 @@ import { vec3Dbg } from "../utils/utils-3d.js";
 export const { CannonPropsDef, CannonLocalDef, createCannon, createCannonNow } =
   defineNetEntityHelper({
     name: "cannon",
-    defaultProps: (
-      loc?: vec3,
+    defaultProps: () => {
+      return {
+        location: V(0, 0, 0),
+        yaw: 0,
+        pitch: 0,
+        parentId: 0,
+      };
+    },
+    updateProps: (
+      p,
+      location?: vec3,
       yaw?: number,
       pitch?: number,
       parentId?: number
     ) => {
-      return {
-        location: loc ?? V(0, 0, 0),
-        yaw: yaw ?? 0,
-        pitch: pitch ?? 0,
-        parentId: parentId ?? 0,
-      };
+      if (location) vec3.copy(p.location, location);
+      if (yaw !== undefined) p.yaw = yaw;
+      if (pitch !== undefined) p.pitch = pitch;
+      if (parentId !== undefined) p.parentId = parentId;
+      return p;
     },
     serializeProps: (c, buf) => {
       buf.writeVec3(c.location);
       buf.writeFloat32(c.yaw);
+      buf.writeFloat32(c.pitch);
       buf.writeUint32(c.parentId);
     },
     deserializeProps: (c, buf) => {
       buf.readVec3(c.location);
       c.yaw = buf.readFloat32();
+      c.pitch = buf.readFloat32();
       c.parentId = buf.readUint32();
     },
     defaultLocal: () => {
@@ -59,7 +69,7 @@ export const { CannonPropsDef, CannonLocalDef, createCannon, createCannonNow } =
     buildResources: [CannonLD51Mesh.def, MeDef],
     build: (e, res) => {
       const props = e.cannonProps;
-      EM.ensureComponentOn(e, PositionDef, props.location);
+      EM.set(e, PositionDef, props.location);
       constructNetTurret(
         e,
         props.yaw,
@@ -74,18 +84,18 @@ export const { CannonPropsDef, CannonLocalDef, createCannon, createCannonNow } =
         Math.PI / 4,
         "W/S: pitch, A/D: turn, left click: fire, E: drop cannon"
       );
-      EM.ensureComponentOn(e, ColorDef, V(0, 0, 0));
-      EM.ensureComponentOn(
+      EM.set(e, ColorDef, V(0, 0, 0));
+      EM.set(
         e,
         RenderableConstructDef,
         res.mesh_ld51_cannon.mesh // TODO(@darzu): PERF: use .proto?
       );
-      EM.ensureComponentOn(e, ColliderDef, {
+      EM.set(e, ColliderDef, {
         shape: "AABB",
         solid: false,
         aabb: res.mesh_ld51_cannon.aabb,
       });
-      EM.ensureComponentOn(e, PhysicsParentDef, props.parentId);
+      EM.set(e, PhysicsParentDef, props.parentId);
       return e;
     },
   });

@@ -43,18 +43,34 @@ const _maxBullets = 100;
 
 export const BulletDef = EM.defineComponent(
   "bullet",
-  (team: number = 0, health: number = 10) => {
+  () => {
     return {
-      team,
-      health,
+      team: 0,
+      health: 10,
     };
+  },
+  (p, team: number = 0, health: number = 10) => {
+    p.team = team;
+    p.health = health;
+    return p;
   }
 );
 export type Bullet = Component<typeof BulletDef>;
 
 export const BulletConstructDef = EM.defineComponent(
   "bulletConstruct",
+  () => {
+    return {
+      location: V(0, 0, 0),
+      linearVelocity: V(0, 1, 0),
+      angularVelocity: V(0, 0, 0),
+      team: 0,
+      gravity: 0,
+      health: 0,
+    };
+  },
   (
+    p,
     loc?: vec3,
     vel?: vec3,
     angVel?: vec3,
@@ -62,14 +78,13 @@ export const BulletConstructDef = EM.defineComponent(
     gravity?: number,
     health?: number
   ) => {
-    return {
-      location: loc ?? V(0, 0, 0),
-      linearVelocity: vel ?? V(0, 1, 0),
-      angularVelocity: angVel ?? V(0, 0, 0),
-      team: team ?? 0,
-      gravity: gravity ?? 0,
-      health: health ?? 0,
-    };
+    if (loc) vec3.copy(p.location, loc);
+    if (vel) vec3.copy(p.linearVelocity, vel);
+    if (angVel) vec3.copy(p.angularVelocity, angVel);
+    if (team !== undefined) p.team = team;
+    if (gravity !== undefined) p.gravity = gravity;
+    if (health !== undefined) p.health = health;
+    return p;
   }
 );
 export type BulletConstruct = Component<typeof BulletConstructDef>;
@@ -96,47 +111,45 @@ export function createOrResetBullet(
 ) {
   const props = e.bulletConstruct;
   assertDbg(props);
-  EM.ensureComponentOn(e, PositionDef);
-  vec3.copy(e.position, props.location);
-  EM.ensureComponentOn(e, RotationDef);
-  // EM.ensureComponentOn(e, LinearVelocityDef);
+  EM.set(e, PositionDef, props.location);
+  EM.set(e, RotationDef);
+  // EM.set(e, LinearVelocityDef);
   // vec3.copy(e.linearVelocity, props.linearVelocity);
-  EM.ensureComponentOn(e, AngularVelocityDef);
-  vec3.copy(e.angularVelocity, props.angularVelocity);
-  EM.ensureComponentOn(e, ColorDef);
+  EM.set(e, AngularVelocityDef, props.angularVelocity);
   if (props.team === 1) {
-    vec3.copy(e.color, ENDESGA16.deepGreen);
+    EM.set(e, ColorDef, ENDESGA16.deepGreen);
   } else if (props.team === 2) {
-    vec3.copy(e.color, ENDESGA16.deepBrown);
+    EM.set(e, ColorDef, ENDESGA16.deepBrown);
   } else {
-    vec3.copy(e.color, ENDESGA16.orange);
+    EM.set(e, ColorDef, ENDESGA16.orange);
   }
-  EM.ensureComponentOn(e, MotionSmoothingDef);
-  EM.ensureComponentOn(e, RenderableConstructDef, res.allMeshes.ball.proto);
-  EM.ensureComponentOn(e, AuthorityDef, res.me.pid);
-  EM.ensureComponentOn(e, BulletDef);
-  e.bullet.team = props.team;
-  e.bullet.health = props.health;
-  EM.ensureComponentOn(e, ColliderDef, {
+  EM.set(e, MotionSmoothingDef);
+  EM.set(e, RenderableConstructDef, res.allMeshes.ball.proto);
+  EM.set(e, AuthorityDef, res.me.pid);
+  EM.set(e, BulletDef, props.team, props.health);
+  EM.set(e, ColliderDef, {
     shape: "AABB",
     solid: false,
     aabb: res.allMeshes.ball.aabb,
   });
-  EM.ensureComponentOn(e, LifetimeDef);
-  e.lifetime.ms = 8000;
-  EM.ensureComponentOn(e, SyncDef);
-  e.sync.dynamicComponents = [PositionDef.id];
+  EM.set(e, LifetimeDef, 8000);
+  EM.set(e, SyncDef, [PositionDef.id]);
   e.sync.fullComponents = [BulletConstructDef.id];
-  EM.ensureComponentOn(e, PredictDef);
-  // EM.ensureComponentOn(e, GravityDef);
+  EM.set(e, PredictDef);
+  // EM.set(e, GravityDef);
   // e.gravity[1] = -props.gravity;
 
   // TODO(@darzu): MULTIPLAYER: fix sync & predict to work with parametric motion
-  EM.ensureComponentOn(e, ParametricDef);
-  vec3.copy(e.parametric.init.pos, props.location);
-  vec3.copy(e.parametric.init.vel, props.linearVelocity);
-  vec3.copy(e.parametric.init.accel, [0, -props.gravity, 0]);
-  e.parametric.startMs = res.time.time;
+  EM.set(
+    e,
+    ParametricDef,
+    {
+      pos: props.location,
+      vel: props.linearVelocity,
+      accel: [0, -props.gravity, 0],
+    },
+    res.time.time
+  );
   return e;
 }
 
@@ -150,7 +163,7 @@ export function registerBuildBulletsSystem() {
       for (let b of bullets) {
         // if (FinishedDef.isOn(b)) continue;
         // createOrUpdateBullet( b, res.me.pid, res.allMeshes);
-        // EM.ensureComponentOn(b, FinishedDef);
+        // EM.set(b, FinishedDef);
       }
     }
   );
@@ -199,7 +212,7 @@ export async function fireBullet(
   let e: BulletEnt;
   if (_bulletPool.length < _maxBullets) {
     let e_ = EM.new();
-    EM.ensureComponentOn(e_, BulletConstructDef);
+    EM.set(e_, BulletConstructDef);
     e = e_;
     _bulletPool.push(e);
   } else {
@@ -261,15 +274,15 @@ async function initBulletPartPool() {
     let bset: BulletPart[] = [];
     for (let part of allMeshes.ball_broken) {
       const pe = EM.new();
-      EM.ensureComponentOn(pe, RenderableConstructDef, part.proto);
-      EM.ensureComponentOn(pe, ColorDef);
-      EM.ensureComponentOn(pe, RotationDef);
-      EM.ensureComponentOn(pe, PositionDef);
-      EM.ensureComponentOn(pe, LinearVelocityDef);
-      EM.ensureComponentOn(pe, AngularVelocityDef);
-      // EM.ensureComponentOn(pe, LifetimeDef, 2000);
-      EM.ensureComponentOn(pe, GravityDef, V(0, -4 * 0.00001, 0));
-      EM.ensureComponentOn(pe, SplinterParticleDef);
+      EM.set(pe, RenderableConstructDef, part.proto);
+      EM.set(pe, ColorDef);
+      EM.set(pe, RotationDef);
+      EM.set(pe, PositionDef);
+      EM.set(pe, LinearVelocityDef);
+      EM.set(pe, AngularVelocityDef);
+      // EM.set(pe, LifetimeDef, 2000);
+      EM.set(pe, GravityDef, V(0, -4 * 0.00001, 0));
+      EM.set(pe, SplinterParticleDef);
       bset.push(pe);
     }
     bulletPartPool.push(bset);
@@ -310,16 +323,16 @@ export async function breakBullet(
     vec3.add(vel, [0, +1, 0], vel);
     vec3.normalize(vel, vel);
     vec3.scale(vel, 0.02, vel);
-    EM.ensureComponentOn(pe, LinearVelocityDef);
+    EM.set(pe, LinearVelocityDef);
     vec3.copy(pe.linearVelocity, vel);
-    EM.ensureComponentOn(pe, AngularVelocityDef);
+    EM.set(pe, AngularVelocityDef);
     vec3.copy(pe.angularVelocity, vel);
-    // EM.ensureComponentOn(pe, LifetimeDef, 2000);
-    EM.ensureComponentOn(pe, GravityDef);
+    // EM.set(pe, LifetimeDef, 2000);
+    EM.set(pe, GravityDef);
     vec3.copy(pe.gravity, [0, -4 * 0.00001, 0]);
   }
 
-  EM.ensureComponentOn(bullet, DeadDef);
+  EM.set(bullet, DeadDef);
 }
 
 // TODO(@darzu): simulateBullet shouldn't be needed any more since we use

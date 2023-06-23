@@ -89,13 +89,13 @@ export async function createShip() {
 
   const homeShip = createHomeShip();
 
-  EM.ensureComponentOn(
+  EM.set(
     ent,
     RenderableConstructDef,
     homeShip.timberMesh
     // res.allMeshes.ship_small.proto
   );
-  EM.ensureComponentOn(ent, WoodStateDef, homeShip.timberState);
+  EM.set(ent, WoodStateDef, homeShip.timberState);
   // EM.set(ent, ColliderDef, {
   //   shape: "AABB",
   //   solid: true,
@@ -103,7 +103,7 @@ export async function createShip() {
   // });
 
   const timberHealth = createWoodHealth(homeShip.timberState);
-  EM.ensureComponentOn(ent, WoodHealthDef, timberHealth);
+  EM.set(ent, WoodHealthDef, timberHealth);
 
   // const timberAABB = getAABBFromMesh(homeShip.timberMesh);
   // console.log("ship size:");
@@ -120,28 +120,28 @@ export async function createShip() {
       aabb,
     })),
   };
-  // EM.ensureComponentOn(ent, ColliderDef, {
+  // EM.set(ent, ColliderDef, {
   //   shape: "AABB",
   //   solid: false,
   //   aabb: timberAABB,
   // });
-  EM.ensureComponentOn(ent, ColliderDef, mc);
-  EM.ensureComponentOn(ent, PositionDef, V(0, 0, 0));
-  EM.ensureComponentOn(ent, RotationDef);
-  EM.ensureComponentOn(ent, LinearVelocityDef);
-  // EM.ensureComponentOn(ent, ColorDef, V(0.5, 0.3, 0.1));
-  EM.ensureComponentOn(ent, ColorDef, V(0, 0, 0)); // painted by individual planks!
+  EM.set(ent, ColliderDef, mc);
+  EM.set(ent, PositionDef, V(0, 0, 0));
+  EM.set(ent, RotationDef);
+  EM.set(ent, LinearVelocityDef);
+  // EM.set(ent, ColorDef, V(0.5, 0.3, 0.1));
+  EM.set(ent, ColorDef, V(0, 0, 0)); // painted by individual planks!
 
   const mast = await createMast();
-  EM.ensureComponentOn(mast, PhysicsParentDef, ent.id);
+  EM.set(mast, PhysicsParentDef, ent.id);
 
   const sock = createSock(2.0);
-  EM.ensureComponentOn(sock, PhysicsParentDef, ent.id);
+  EM.set(sock, PhysicsParentDef, ent.id);
   sock.position[1] =
     mast.position[1] + (mast.collider as AABBCollider).aabb.max[1];
 
   const rudder = await createRudder();
-  EM.ensureComponentOn(rudder, PhysicsParentDef, ent.id);
+  EM.set(rudder, PhysicsParentDef, ent.id);
   // console.log("setting position");
   vec3.set(0, 4, -25, rudder.position);
   // console.log(`rudder: ${rudder.id}`);
@@ -151,10 +151,10 @@ export async function createShip() {
   // make debug gizmo
   // TODO(@darzu): would be nice to have as a little helper function?
   // const gizmo = EM.new();
-  // EM.ensureComponentOn(gizmo, PositionDef, V(0, 20, 0));
-  // EM.ensureComponentOn(gizmo, ScaleDef, V(10, 10, 10));
-  // EM.ensureComponentOn(gizmo, PhysicsParentDef, ent.id);
-  // EM.ensureComponentOn(gizmo, RenderableConstructDef, res.allMeshes.gizmo.proto);
+  // EM.set(gizmo, PositionDef, V(0, 20, 0));
+  // EM.set(gizmo, ScaleDef, V(10, 10, 10));
+  // EM.set(gizmo, PhysicsParentDef, ent.id);
+  // EM.set(gizmo, RenderableConstructDef, res.allMeshes.gizmo.proto);
 
   // addGizmoChild(ent, 10);
 
@@ -179,7 +179,7 @@ export async function createShip() {
   vec3.copy(cannonL.color, ENDESGA16.darkGray);
 
   // NOTE: we need to build the ship all at once so we don't have dangling references
-  EM.ensureComponentOn(ent, ShipDef);
+  EM.set(ent, ShipDef);
   ent.ld52ship.mast = createRef(mast);
   ent.ld52ship.rudder = createRef(rudder);
   ent.ld52ship.cannonR = createRef(cannonR);
@@ -241,17 +241,17 @@ async function createRudder() {
   const res = await EM.whenResources(MeDef);
   const rudderMesh = await RudderPrimMesh.gameMesh();
   const ent = EM.new();
-  EM.ensureComponentOn(ent, RudderDef);
-  EM.ensureComponentOn(ent, RenderableConstructDef, rudderMesh.proto);
-  // EM.ensureComponentOn(ent, ColorDef, V(0.2, 0.1, 0.05));
-  EM.ensureComponentOn(ent, ColorDef, ENDESGA16.midBrown);
-  EM.ensureComponentOn(ent, PositionDef);
-  EM.ensureComponentOn(ent, RotationDef);
-  EM.ensureComponentOn(ent, AuthorityDef, res.me.pid);
+  EM.set(ent, RudderDef);
+  EM.set(ent, RenderableConstructDef, rudderMesh.proto);
+  // EM.set(ent, ColorDef, V(0.2, 0.1, 0.05));
+  EM.set(ent, ColorDef, ENDESGA16.midBrown);
+  EM.set(ent, PositionDef);
+  EM.set(ent, RotationDef);
+  EM.set(ent, AuthorityDef, res.me.pid);
   const interactBox = EM.new();
-  EM.ensureComponentOn(interactBox, PhysicsParentDef, ent.id);
-  EM.ensureComponentOn(interactBox, PositionDef);
-  EM.ensureComponentOn(interactBox, ColliderDef, {
+  EM.set(interactBox, PhysicsParentDef, ent.id);
+  EM.set(interactBox, PositionDef);
+  EM.set(interactBox, ColliderDef, {
     shape: "AABB",
     solid: false,
     aabb: {

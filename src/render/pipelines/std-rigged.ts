@@ -13,6 +13,7 @@ import {
   RiggedMesh,
 } from "../../meshes/mesh.js";
 import {
+  computeUniData,
   mainDepthTex,
   MeshUniformStruct,
   MeshUniformTS,
@@ -121,22 +122,6 @@ const poolPtr = CY.createMeshPool("riggedMeshPool", {
   // TODO(@darzu): this dataDef is v weird
   dataDef: RenderDataStdDef,
 });
-
-// TODO: does this need to be passed into the mesh pool anymore?
-function computeUniData(m: Mesh): MeshUniformTS {
-  const { min, max } = getAABBFromMesh(m);
-  const uni: MeshUniformTS = {
-    transform: mat4.create(),
-    // TODO(@darzu): option for aabbs?
-    // aabbMin: min,
-    // aabbMax: max,
-    tint: vec3.create(),
-    alpha: 1.0,
-    id: 0,
-    flags: 0,
-  };
-  return uni;
-}
 
 // TODO: avoid duplicating std-scene
 // TODO(@darzu): Allow updates directly to serialized data

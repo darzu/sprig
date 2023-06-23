@@ -103,9 +103,12 @@ What does compute shader gain us?
 const __temp1 = vec3.create();
 const __temp2 = vec3.create();
 
-export const WoodStateDef = EM.defineComponent("woodState", (s: WoodState) => {
-  return s;
-});
+export const WoodStateDef = EM.defineNonupdatableComponent(
+  "woodState",
+  (s: WoodState) => {
+    return s;
+  }
+);
 
 export type WoodAssets = Partial<{
   [P in AllMeshSymbols]: WoodState;
@@ -354,22 +357,17 @@ EM.addEagerInit([WoodStateDef], [], [], () => {
                 vec3.add(splinter.color, quadColor, splinter.color);
                 const pos = getLineMid(vec3.create(), seg.midLine);
                 vec3.transformMat4(pos, w.world.transform, pos);
-                EM.ensureComponentOn(splinter, PositionDef);
-                vec3.copy(splinter.position, pos);
+                EM.set(splinter, PositionDef, pos);
                 const rot = getSegmentRotation(seg, false);
                 quat.mul(rot, w.world.rotation, rot); // TODO(@darzu): !VERIFY! this works
-                EM.ensureComponentOn(splinter, RotationDef);
-                quat.copy(splinter.rotation, rot);
+                EM.set(splinter, RotationDef, rot);
                 const spin = randNormalVec3(vec3.create());
                 const vel = vec3.clone(spin);
                 vec3.scale(spin, 0.01, spin);
-                EM.ensureComponentOn(splinter, AngularVelocityDef);
-                vec3.copy(splinter.angularVelocity, spin);
+                EM.set(splinter, AngularVelocityDef, spin);
                 vec3.scale(vel, 0.01, vel);
-                EM.ensureComponentOn(splinter, LinearVelocityDef);
-                vec3.copy(splinter.linearVelocity, spin);
-                EM.ensureComponentOn(splinter, GravityDef);
-                vec3.copy(splinter.gravity, [0, -3 * 0.00001, 0]);
+                EM.set(splinter, LinearVelocityDef, spin);
+                EM.set(splinter, GravityDef, [0, -3 * 0.00001, 0]);
               }
 
               if (h.prev && !h.prev.broken) {
@@ -685,15 +683,11 @@ function createSplinterEnd(
     b.mesh.tri.forEach((_) => b.mesh.colors.push(vec3.clone(BLACK)));
   }
   const splinterMesh = normalizeMesh(_splinterMesh);
-  EM.ensureComponentOn(splinter, RenderableConstructDef, splinterMesh);
-  EM.ensureComponentOn(
-    splinter,
-    ColorDef,
-    V(Math.random(), Math.random(), Math.random())
-  );
-  EM.ensureComponentOn(splinter, PositionDef);
-  EM.ensureComponentOn(splinter, RotationDef);
-  EM.ensureComponentOn(splinter, WorldFrameDef);
+  EM.set(splinter, RenderableConstructDef, splinterMesh);
+  EM.set(splinter, ColorDef, V(Math.random(), Math.random(), Math.random()));
+  EM.set(splinter, PositionDef);
+  EM.set(splinter, RotationDef);
+  EM.set(splinter, WorldFrameDef);
   return splinter;
 }
 
@@ -1388,7 +1382,7 @@ export function unshareProvokingForWood(m: RawMesh, woodState: WoodState) {
   }
 }
 
-export const WoodHealthDef = EM.defineComponent(
+export const WoodHealthDef = EM.defineNonupdatableComponent(
   "woodHealth",
   (s: WoodHealth) => {
     return s;

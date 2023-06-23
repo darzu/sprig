@@ -24,7 +24,7 @@ export interface NoodleSeg {
   dir: vec3;
 }
 
-export const NoodleDef = EM.defineComponent(
+export const NoodleDef = EM.defineNonupdatableComponent(
   "noodle",
   (segments: NoodleSeg[]) => ({
     segments,
@@ -35,7 +35,7 @@ export type Noodle = Component<typeof NoodleDef>;
 // TODO(@darzu): DEBUGGING
 export function debugCreateNoodles() {
   const e = EM.new();
-  EM.ensureComponentOn(e, NoodleDef, [
+  EM.set(e, NoodleDef, [
     {
       pos: V(0, 0, 0),
       dir: V(0, -1, 0),
@@ -46,17 +46,17 @@ export function debugCreateNoodles() {
     },
   ]);
   const m = createNoodleMesh(0.1, V(0.2, 0.05, 0.05));
-  EM.ensureComponentOn(e, RenderableConstructDef, m);
-  EM.ensureComponentOn(e, PositionDef, V(5, -5, 0));
+  EM.set(e, RenderableConstructDef, m);
+  EM.set(e, PositionDef, V(5, -5, 0));
 
   // TODO(@darzu): test cube faces (update: they are correct)
   // const cube = EM.newEntity();
-  // EM.ensureComponentOn(cube, PositionDef, [0, -2, 0]);
+  // EM.set(cube, PositionDef, [0, -2, 0]);
   // const cubeM = cloneMesh(CUBE_MESH);
   // for (let triIdx of CUBE_FACES.bottom) {
   //   cubeM.colors[triIdx] = [0, 0, 0.5];
   // }
-  // EM.ensureComponentOn(cube, RenderableConstructDef, cubeM);
+  // EM.set(cube, RenderableConstructDef, cubeM);
 }
 
 export function registerNoodleSystem() {

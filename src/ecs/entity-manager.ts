@@ -10,6 +10,7 @@ import { Serializer, Deserializer } from "../utils/serialize.js";
 import {
   assert,
   assertDbg,
+  dbgLogOnce,
   dbgOnce,
   getCallStack,
   hashCode,
@@ -37,59 +38,45 @@ export interface ResourceDef<
   P = any,
   Pargs extends any[] = any[]
 > {
-  _brand: "resourceDef"; // TODO(@darzu): remove once ResourceDef & ComponentDef are incompatible
+  _brand: "resourceDef";
   readonly id: ResId;
   readonly name: N;
   construct: (...args: Pargs) => P;
 }
 
 export type CompId = number;
-// TODO(@darzu): we should seperate component vs resource def
+
 export interface ComponentDef<
   N extends string = string,
   P = any,
-  Pargs extends any[] = any[]
+  CArgs extends any[] = any,
+  UArgs extends any[] = any
 > {
-  _brand: "componentDef"; // TODO(@darzu): remove once ResourceDef & ComponentDef are incompatible
+  _brand: "componentDef";
+  updatable: boolean;
   readonly name: N;
-  // TODO(@darzu): Instead of a constructor, we should require a copy fn that can
-  //  both initialize a new obj or copy new properties into an existing one. This
-  //  is really important for entity pools where entities are re-used and we need
-  //  to either "create new component with properties or stamp these properties
-  //  into existing component". Than method doesnt exist yet b/c we lack a standard
-  //  copy/construct fn.
-  // TODO(@darzu): while we're at it, we might require that components are always
-  //  objects. E.g. no naked numbers or booleans. There's some other reason i think
-  //  we want this that is eluding me..
-  /* 
-  TODO(@darzu):
-    ? require a copy fn and a () => P constructor
-    no way to have EM.set(ent, V(0,0,0)) w/o copy fn b/c it may exist
-    EM.add: for must-not-exist-yet add a component
-    EM.set: add or set, requires copy fn
-    EM.update: must exist already, requires copy fn
-    could be all components are objects
-      default copy fn is just object.assign
-    if we have term-level field info, we could have a default serializer/deserializer
-      but we like to either write those by hand or rely on a compile pass which can use type info
-    how important is taking in ...args as opposed to a P?
-    could have constructor fn `() => P` and update fn `(p: P, ...args: Pargs) => void`
-    better to put more burden at component def time than EM.set time
-    how do these interact with deserialize?
-    copy is just one type of update
-    construct + update
-    that would solve my bug, b/c u must provide ()=>P
-    deserialization is just one kind of update
-    for entity pools, since the components would exist, the update would be natural?
-      could skip seperating the create & onSpawn? nah. well maybe optionally.
-  */
-  construct: (...args: Pargs) => P;
-  // make: () => P;
-  // update: (p: P, ...args: Pargs) => P;
+  construct: (...args: CArgs) => P;
+  update: (p: P, ...args: UArgs) => P;
   readonly id: CompId;
   isOn: <E extends Entity>(e: E) => e is E & { [K in N]: P };
 }
 export type Component<DEF> = DEF extends ComponentDef<any, infer P> ? P : never;
+
+// TODO(@darzu): Not entirely sure this "Nonupdatable" split is worth the extra complexity
+export type NonupdatableComponentDef<
+  N extends string,
+  P,
+  CArgs extends any[]
+> = ComponentDef<N, P, CArgs, []>;
+export type UpdatableComponentDef<
+  N extends string,
+  P,
+  UArgs extends any[]
+> = ComponentDef<N, P, [], UArgs>;
+
+export type _ComponentDef<N extends string, P, PArgs extends any[]> =
+  | NonupdatableComponentDef<N, P, PArgs>
+  | UpdatableComponentDef<N, P, PArgs>;
 
 export type Resource<DEF> = DEF extends ResourceDef<any, infer P> ? P : never;
 
@@ -197,6 +184,7 @@ type ESetId<DS extends EDefId<number, any>[]> = {
     : never;
 };
 
+// TODO(@darzu): don't love these...
 export type EDef<CS extends ComponentDef[]> = readonly [...CS];
 export type ESet<DS extends EDef<any>[]> = {
   [K in keyof DS]: DS[K] extends EDef<infer CS> ? EntityW<CS, number> : never;
@@ -264,10 +252,9 @@ export class EntityManager {
 
   constructor() {
     // dummy ent 0
-    const ent0 = Object.create(null); // no prototype
-    ent0.id = 0;
-    this.entities.set(0, ent0);
-    // TODO(@darzu): maintain _entitiesToSystems for ent 0?
+    // const ent0 = Object.create(null); // no prototype
+    // ent0.id = 0;
+    // this.entities.set(0, ent0);
   }
 
   public defineResource<N extends string, P, Pargs extends any[]>(
@@ -288,20 +275,45 @@ export class EntityManager {
     return def;
   }
 
-  public defineComponent<N extends string, P, Pargs extends any[]>(
+  public defineComponent<N extends string, P, UArgs extends any[] = []>(
     name: N,
-    construct: (...args: Pargs) => P
-    // make: () => P,
-    // update: (p: P, ...args: Pargs) => P
-  ): ComponentDef<N, P, Pargs> {
+    construct: () => P,
+    update: (p: P, ...args: UArgs) => P = (p, ..._) => p
+  ): UpdatableComponentDef<N, P, UArgs> {
     const id = nameToId(name);
     if (this.components.has(id)) {
       throw `Component with name ${name} already defined--hash collision?`;
     }
-    const component: ComponentDef<N, P, Pargs> = {
+    const component: UpdatableComponentDef<N, P, UArgs> = {
       _brand: "componentDef", // TODO(@darzu): remove?
+      updatable: true,
       name,
       construct,
+      update,
+      id,
+      isOn: <E extends Entity>(e: E): e is E & { [K in N]: P } =>
+        // (e as Object).hasOwn(name),
+        name in e,
+    };
+    // TODO(@darzu): I don't love this cast. feels like it should be possible without..
+    this.components.set(id, component as unknown as ComponentDef);
+    return component;
+  }
+
+  public defineNonupdatableComponent<N extends string, P, CArgs extends any[]>(
+    name: N,
+    construct: (...args: CArgs) => P
+  ): NonupdatableComponentDef<N, P, CArgs> {
+    const id = nameToId(name);
+    if (this.components.has(id)) {
+      throw `Component with name ${name} already defined--hash collision?`;
+    }
+    const component: NonupdatableComponentDef<N, P, CArgs> = {
+      _brand: "componentDef", // TODO(@darzu): remove?
+      updatable: false,
+      name,
+      construct,
+      update: (p) => p,
       // make,
       // update,
       id,
@@ -309,15 +321,11 @@ export class EntityManager {
         // (e as Object).hasOwn(name),
         name in e,
     };
-    // // TODO(@darzu): I don't love this cast. feels like it should be possible without..
-    // this.components.set(id, component as unknown as ComponentDef);
     this.components.set(id, component);
     return component;
   }
 
-  private checkComponent<N extends string, P, Pargs extends any[]>(
-    def: ComponentDef<N, P, Pargs>
-  ) {
+  private checkComponent(def: ComponentDef) {
     if (!this.components.has(def.id))
       throw `Component ${def.name} (id ${def.id}) not found`;
     if (this.components.get(def.id)!.name !== def.name)
@@ -326,11 +334,15 @@ export class EntityManager {
       }, not ${def.name}`;
   }
 
-  public registerSerializerPair<N extends string, P, Pargs extends any[]>(
-    def: ComponentDef<N, P, Pargs>,
+  public registerSerializerPair<N extends string, P, UArgs extends any[]>(
+    def: ComponentDef<N, P, [], UArgs>,
     serialize: (obj: P, buf: Serializer) => void,
     deserialize: (obj: P, buf: Deserializer) => void
   ) {
+    assert(
+      def.updatable,
+      `Can't attach serializers to non-updatable component '${def.name}'`
+    );
     this.serializers.set(def.id, { serialize, deserialize });
   }
 
@@ -365,6 +377,10 @@ export class EntityManager {
     if (buf.dummy) {
       component = {} as any;
     } else if (!entity) {
+      assert(
+        def.updatable,
+        `Trying to deserialize into non-updatable component '${def.name}'!`
+      );
       component = this.addComponent(id, def);
     } else {
       component = entity[def.name];
@@ -433,14 +449,14 @@ export class EntityManager {
   private isDeadE(e: Entity) {
     return "dead" in e;
   }
-  private isDeadC(e: ComponentDef<any, any, any>) {
+  private isDeadC(e: ComponentDef) {
     return "dead" === e.name;
   }
 
-  public addComponent<N extends string, P, Pargs extends any[] = any[]>(
+  public addComponent<N extends string, P, PArgs extends any[]>(
     id: number,
-    def: ComponentDef<N, P, Pargs>,
-    ...args: Pargs
+    def: _ComponentDef<N, P, PArgs>,
+    ...args: PArgs
   ): P {
     this.checkComponent(def);
     if (id === 0) throw `hey, use addResource!`;
@@ -453,9 +469,14 @@ export class EntityManager {
     }
     if (def.name in e)
       throw `double defining component ${def.name} on ${e.id}!`;
-    const c = def.construct(...args);
-    // let c = def.make();
-    // c = def.update(c, ...args);
+    let c: P;
+    if (def.updatable) {
+      c = def.construct();
+      c = def.update(c, ...args);
+    } else {
+      c = def.construct(...args);
+    }
+
     (e as any)[def.name] = c;
 
     // update query caches
@@ -503,10 +524,10 @@ export class EntityManager {
     return this.addComponent(id, component, ...args);
   }
 
-  public ensureComponent<N extends string, P, Pargs extends any[] = any[]>(
+  public ensureComponent<N extends string, P, PArgs extends any[]>(
     id: number,
-    def: ComponentDef<N, P, Pargs>,
-    ...args: Pargs
+    def: _ComponentDef<N, P, PArgs>,
+    ...args: PArgs
   ): P {
     this.checkComponent(def);
     const e = this.entities.get(id)!;
@@ -517,16 +538,51 @@ export class EntityManager {
       return (e as any)[def.name];
     }
   }
-  // TODO(@darzu): do we want to make this the standard way we do ensureComponent and addComponent ?
-  // TODO(@darzu): rename to "set" and have "maybeSet" w/ a thunk as a way to short circuit unnecessary init?
-  //      and maybe "strictSet" as the version that throws if it exists (renamed from "addComponent")
-  public ensureComponentOn<N extends string, P, Pargs extends any[] = []>(
+  public set<N extends string, P, PArgs extends any[]>(
     e: Entity,
-    def: ComponentDef<N, P, Pargs>,
-    ...args: Pargs
-  ): asserts e is EntityW<[ComponentDef<N, P, Pargs>]> {
+    def: UpdatableComponentDef<N, P, PArgs>,
+    ...args: PArgs
+  ): asserts e is EntityW<[UpdatableComponentDef<N, P, PArgs>]>;
+  public set<N extends string, P, PArgs extends any[]>(
+    e: Entity,
+    def: NonupdatableComponentDef<N, P, PArgs>,
+    ...args: PArgs
+  ): asserts e is EntityW<[NonupdatableComponentDef<N, P, PArgs>]>;
+  public set<N extends string, P, PArgs extends any[]>(
+    e: Entity,
+    def: _ComponentDef<N, P, PArgs>,
+    ...args: PArgs
+  ): asserts e is EntityW<[_ComponentDef<N, P, PArgs>]> {
     const alreadyHas = def.name in e;
-    // assert(!alreadyHas, `${e.id} already has ${def.name}`);
+    if (!alreadyHas) {
+      this.addComponent(e.id, def, ...args);
+    } else {
+      assert(
+        def.updatable,
+        `Trying to double set non-updatable component '${def.name}' on '${e.id}'`
+      );
+      // if (def.name === "authority") throw new Error(`double-set authority`);
+      // dbgLogOnce(`double-set: ${e.id}.${def.name}`);
+      (e as any)[def.name] = def.update((e as any)[def.name], ...args);
+    }
+  }
+
+  public setOnce<N extends string, P, PArgs extends any[]>(
+    e: Entity,
+    def: UpdatableComponentDef<N, P, PArgs>,
+    ...args: PArgs
+  ): asserts e is EntityW<[UpdatableComponentDef<N, P, PArgs>]>;
+  public setOnce<N extends string, P, PArgs extends any[]>(
+    e: Entity,
+    def: NonupdatableComponentDef<N, P, PArgs>,
+    ...args: PArgs
+  ): asserts e is EntityW<[NonupdatableComponentDef<N, P, PArgs>]>;
+  public setOnce<N extends string, P, PArgs extends any[]>(
+    e: Entity,
+    def: _ComponentDef<N, P, PArgs>,
+    ...args: PArgs
+  ): asserts e is EntityW<[_ComponentDef<N, P, PArgs>]> {
+    const alreadyHas = def.name in e;
     if (!alreadyHas) {
       this.addComponent(e.id, def, ...args);
     }

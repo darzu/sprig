@@ -1,6 +1,6 @@
 import { Component, EM } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
-import { createFrame, WorldFrameDef } from "./nonintersection.js";
+import { WorldFrameDef } from "./nonintersection.js";
 import { tempVec3, tempQuat } from "../matrix/temp-pool.js";
 import { FALSE, dbgLogOnce } from "../utils/util.js";
 import { Phase } from "../ecs/sys-phase.js";
@@ -58,6 +58,14 @@ export function updateFrameFromPosRotScale(f: Frame) {
     f.transform
   );
 }
+export function createFrame(): Frame {
+  return {
+    position: vec3.create(),
+    rotation: quat.create(),
+    scale: V(1, 1, 1),
+    transform: mat4.create(),
+  };
+}
 
 export function copyFrame(out: Frame, frame: Frame) {
   vec3.copy(out.position, frame.position);
@@ -74,15 +82,18 @@ export function identityFrame(out: Frame) {
 }
 
 // TRANSFORM
-export const TransformDef = EM.defineComponent("transform", (t?: mat4) => {
-  return t ?? mat4.create();
-});
+export const TransformDef = EM.defineComponent(
+  "transform",
+  () => mat4.create(),
+  (p, t?: mat4.InputT) => (t ? mat4.copy(p, t) : p)
+);
 export type Transform = mat4;
 
 // POSITION
 export const PositionDef = EM.defineComponent(
   "position",
-  (p?: vec3) => p || V(0, 0, 0)
+  () => V(0, 0, 0),
+  (p, v?: vec3.InputT) => (v ? vec3.copy(p, v) : p)
 );
 export type Position = Component<typeof PositionDef>;
 EM.registerSerializerPair(
@@ -94,7 +105,8 @@ EM.registerSerializerPair(
 // ROTATION
 export const RotationDef = EM.defineComponent(
   "rotation",
-  (r?: quat) => r || quat.create()
+  () => quat.create(),
+  (p, r?: quat.InputT) => (r ? quat.copy(p, r) : p)
 );
 export type Rotation = Component<typeof RotationDef>;
 EM.registerSerializerPair(
@@ -106,7 +118,8 @@ EM.registerSerializerPair(
 // SCALE
 export const ScaleDef = EM.defineComponent(
   "scale",
-  (by?: vec3) => by || V(1, 1, 1)
+  () => V(1, 1, 1),
+  (p, by?: vec3.InputT) => (by ? vec3.copy(p, by) : p)
 );
 export type Scale = Component<typeof ScaleDef>;
 EM.registerSerializerPair(
@@ -126,8 +139,12 @@ export const LocalFrameDefs = [
 // PARENT
 export const PhysicsParentDef = EM.defineComponent(
   "physicsParent",
-  (p?: number) => {
-    return { id: p || 0 };
+  () => {
+    return { id: 0 };
+  },
+  (p, parentId?: number) => {
+    if (parentId) p.id = parentId;
+    return p;
   }
 );
 export type PhysicsParent = Component<typeof PhysicsParentDef>;
@@ -184,7 +201,7 @@ export function registerInitTransforms() {
     (objs) => {
       for (let o of objs) {
         if (!WorldFrameDef.isOn(o)) {
-          EM.ensureComponentOn(o, WorldFrameDef);
+          EM.set(o, WorldFrameDef);
           copyFrame(o.world, o);
         }
       }
@@ -208,10 +225,10 @@ export function registerUpdateLocalFromPosRotScale() {
           ScaleDef.isOn(o) ||
           TransformDef.isOn(o)
         ) {
-          EM.ensureComponentOn(o, PositionDef);
-          EM.ensureComponentOn(o, RotationDef);
-          EM.ensureComponentOn(o, ScaleDef);
-          EM.ensureComponentOn(o, TransformDef);
+          EM.set(o, PositionDef);
+          EM.set(o, RotationDef);
+          EM.set(o, ScaleDef);
+          EM.set(o, TransformDef);
         }
       }
     }

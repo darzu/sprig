@@ -39,14 +39,13 @@ EM.addLazyInit([BallMesh.def], [GlobalCursor3dDef], async (res) => {
   {
     console.log(`init global cursor`);
     const cursor = EM.new();
-    const id = cursor.id;
-    EM.addComponent(id, Cursor3dDef);
-    EM.addComponent(id, PositionDef);
+    EM.set(cursor, Cursor3dDef);
+    EM.set(cursor, PositionDef);
     // TODO(@darzu): support wireframe
     // const wireframe: Mesh = { ...res.allMeshes.ball.mesh, tri: [] };
     const wireframe: Mesh = res.mesh_ball.mesh;
-    EM.addComponent(id, RenderableConstructDef, wireframe, false);
-    EM.addComponent(id, ColorDef, V(0, 1, 1));
+    EM.set(cursor, RenderableConstructDef, wireframe, false);
+    EM.set(cursor, ColorDef, V(0, 1, 1));
     const builtCursor = await EM.whenEntityHas(
       cursor,
       Cursor3dDef,

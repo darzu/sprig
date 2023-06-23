@@ -79,7 +79,8 @@ export const OceanDef = EM.defineResource("ocean", (o: UVSurface) => {
 
 export const UVPosDef = EM.defineComponent(
   "uvPos",
-  (uv?: vec2) => uv ?? vec2.create()
+  () => vec2.create(),
+  (p, uv?: vec2.InputT) => (uv ? vec2.copy(p, uv) : p)
 );
 EM.registerSerializerPair(
   UVPosDef,
@@ -89,7 +90,8 @@ EM.registerSerializerPair(
 
 export const UVDirDef = EM.defineComponent(
   "uvDir",
-  (dir?: vec2) => dir ?? vec2.fromValues(0, 1)
+  () => V(0, 1),
+  (p, dir?: vec2.InputT) => (dir ? vec2.copy(p, dir) : p)
 );
 EM.registerSerializerPair(
   UVDirDef,
@@ -113,7 +115,7 @@ export async function initOcean(oceanMesh: Mesh, color: vec3) {
 
   const ocean = EM.new();
   let oceanEntId = ocean.id; // hacky?
-  EM.ensureComponentOn(
+  EM.set(
     ocean,
     RenderableConstructDef,
     // TODO(@darzu): SEPERATE THIS DEPENDENCY! Need ocean w/o mesh
@@ -125,9 +127,9 @@ export async function initOcean(oceanMesh: Mesh, color: vec3) {
     oceanPoolPtr
     // meshPoolPtr
   );
-  EM.ensureComponentOn(ocean, ColorDef, color);
-  //EM.ensureComponentOn(ocean, PositionDef, [12000, 180, 0]);
-  EM.ensureComponentOn(ocean, PositionDef);
+  EM.set(ocean, ColorDef, color);
+  //EM.set(ocean, PositionDef, [12000, 180, 0]);
+  EM.set(ocean, PositionDef);
 
   let ocean2 = await EM.whenEntityHas(ocean, RenderableDef, RenderDataOceanDef);
   // let ocean2 = await EM.whenEntityHas(ocean, RenderableDef, RenderDataStdDef);

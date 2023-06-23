@@ -83,7 +83,7 @@ export const FLAG_UNLIT = 1;
 
 export type MeshUniformTS = CyToTS<typeof MeshUniformStruct.desc>;
 
-export const RenderDataStdDef = EM.defineComponent(
+export const RenderDataStdDef = EM.defineNonupdatableComponent(
   "renderDataStd",
   (r: MeshUniformTS) => r
 );
@@ -104,7 +104,7 @@ export const meshPoolPtr = CY.createMeshPool("meshPool", {
 
 // TODO: does this need to be passed into the mesh pool anymore?
 export function computeUniData(m: Mesh): MeshUniformTS {
-  const { min, max } = getAABBFromMesh(m);
+  // const { min, max } = getAABBFromMesh(m);
   const uni: MeshUniformTS = {
     transform: mat4.create(),
     // TODO(@darzu): option for aabbs?

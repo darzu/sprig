@@ -6,7 +6,8 @@ import { Phase } from "../ecs/sys-phase.js";
 
 export const LinearVelocityDef = EM.defineComponent(
   "linearVelocity",
-  (v?: vec3) => v || V(0, 0, 0)
+  () => V(0, 0, 0),
+  (p, v?: vec3.InputT) => (v ? vec3.copy(p, v) : p)
 );
 export type LinearVelocity = Component<typeof LinearVelocityDef>;
 EM.registerSerializerPair(
@@ -17,7 +18,8 @@ EM.registerSerializerPair(
 
 export const AngularVelocityDef = EM.defineComponent(
   "angularVelocity",
-  (v?: vec3) => v || V(0, 0, 0)
+  () => V(0, 0, 0),
+  (p, v?: vec3.InputT) => (v ? vec3.copy(p, v) : p)
 );
 export type AngularVelocity = Component<typeof AngularVelocityDef>;
 EM.registerSerializerPair(

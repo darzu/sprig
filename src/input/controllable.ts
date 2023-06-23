@@ -102,7 +102,7 @@ EM.addEagerInit([ControllableDef], [], [], () => {
           }
         }
 
-        EM.ensureComponentOn(c, LinearVelocityDef);
+        EM.set(c, LinearVelocityDef);
 
         if (modes.canFall)
           c.linearVelocity[1] -= c.controllable.gravity * res.time.dt;

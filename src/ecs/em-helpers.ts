@@ -15,14 +15,17 @@ import { Phase } from "./sys-phase.js";
 export function defineSerializableComponent<
   N extends string,
   P,
-  Pargs extends any[]
+  UArgs extends any[]
 >(
   name: N,
-  construct: (...args: Pargs) => P,
+  // TODO(@darzu): change to use update/make
+  // construct: (...args: Pargs) => P,
+  make: () => P,
+  update: (p: P, ...args: UArgs) => P,
   serialize: (obj: P, buf: Serializer) => void,
   deserialize: (obj: P, buf: Deserializer) => void
-): ComponentDef<N, P, Pargs> {
-  const def = EM.defineComponent(name, construct);
+): ComponentDef<N, P, [], UArgs> {
+  const def = EM.defineComponent(name, make, update);
   EM.registerSerializerPair(def, serialize, deserialize);
   return def;
 }
@@ -44,7 +47,7 @@ function registerConstructorSystem<
       for (let e of es) {
         if (FinishedDef.isOn(e)) continue;
         callback(e as EntityW<[C]>, res);
-        EM.ensureComponentOn(e, FinishedDef);
+        EM.set(e, FinishedDef);
       }
     }
   );
@@ -60,9 +63,9 @@ export type NetEntityDefs<
   RS extends ResourceDef[],
   INITED
 > = {
-  [_ in `${Capitalize<N>}PropsDef`]: ComponentDef<`${N}Props`, P1, Pargs1>;
+  [_ in `${Capitalize<N>}PropsDef`]: ComponentDef<`${N}Props`, P1, [], Pargs1>;
 } & {
-  [_ in `${Capitalize<N>}LocalDef`]: ComponentDef<`${N}Local`, P2, []>;
+  [_ in `${Capitalize<N>}LocalDef`]: ComponentDef<`${N}Local`, P2, [], []>;
 } & {
   [_ in `create${Capitalize<N>}`]: (
     ...args: Pargs1
@@ -87,7 +90,11 @@ export function defineNetEntityHelper<
   INITED
 >(opts: {
   name: N;
-  defaultProps: (...args: Pargs1) => P1;
+  // TODO(@darzu): Hmmm. Actually, on the owner we'll only call "construct" w/ args + serialize, on remote
+  //    we'll call "construct" w/o args and then deserialize. We could potentially simplify this
+  //    by having "localConstruct" and "emptyConstruct" or something.
+  defaultProps: () => P1;
+  updateProps: (p: P1, ...args: Pargs1) => P1;
   serializeProps: (obj: P1, buf: Serializer) => void;
   deserializeProps: (obj: P1, buf: Deserializer) => void;
   defaultLocal: () => P2;
@@ -98,8 +105,8 @@ export function defineNetEntityHelper<
   build: (
     e: EntityW<
       [
-        ComponentDef<`${N}Props`, P1, Pargs1>,
-        ComponentDef<`${N}Local`, P2, []>,
+        ComponentDef<`${N}Props`, P1, [], Pargs1>,
+        ComponentDef<`${N}Local`, P2, [], []>,
         typeof AuthorityDef,
         typeof SyncDef,
         ...DS
@@ -111,30 +118,37 @@ export function defineNetEntityHelper<
   const propsDef = defineSerializableComponent(
     `${opts.name}Props`,
     opts.defaultProps,
+    opts.updateProps,
     opts.serializeProps,
     opts.deserializeProps
   );
-  const localDef = EM.defineComponent(`${opts.name}Local`, opts.defaultLocal);
+  const localDef = EM.defineComponent(
+    `${opts.name}Local`,
+    opts.defaultLocal,
+    (p) => p
+  );
 
   const constructFn = registerConstructorSystem(
     propsDef,
     [...opts.buildResources, MeDef],
     (e, res) => {
-      // TYPE HACK
-      const me = (res as any as Resources<[typeof MeDef]>).me;
-      EM.ensureComponentOn(e, AuthorityDef, me.pid);
+      const me = (res as any as Resources<[typeof MeDef]>).me; // TYPE HACK
+      EM.setOnce(e, AuthorityDef, me.pid);
+      // console.log(
+      //   `making ent ${e.id} w/ pid ${me.pid}; actual: ${e.authority.pid}`
+      // );
 
-      EM.ensureComponentOn(e, localDef);
-      EM.ensureComponentOn(e, SyncDef);
+      EM.setOnce(e, localDef);
+      EM.setOnce(e, SyncDef);
       e.sync.fullComponents = [propsDef.id];
       e.sync.dynamicComponents = opts.dynamicComponents.map((d) => d.id);
-      for (let d of opts.dynamicComponents) EM.ensureComponentOn(e, d);
+      for (let d of opts.dynamicComponents) EM.setOnce(e, d); // TODO(@darzu): this makes me nervous, calling .set without parameters
 
       // TYPE HACK
       const _e = e as any as EntityW<
         [
-          ComponentDef<`${N}Props`, P1, Pargs1>,
-          ComponentDef<`${N}Local`, P2, []>,
+          ComponentDef<`${N}Props`, P1, [], Pargs1>,
+          ComponentDef<`${N}Local`, P2, [], []>,
           typeof AuthorityDef,
           typeof SyncDef,
           ...DS
@@ -147,17 +161,17 @@ export function defineNetEntityHelper<
 
   const createNew = (...args: Pargs1) => {
     const e = EM.new();
-    EM.ensureComponentOn(e, propsDef, ...args);
+    EM.set(e, propsDef, ...args);
     return e;
   };
 
   const createNewNow = (res: Resources<RS>, ...args: Pargs1) => {
     const e = EM.new();
-    EM.ensureComponentOn(e, propsDef, ...args);
+    EM.set(e, propsDef, ...args);
     // TODO(@darzu): maybe we should force users to give us the MeDef? it's probably always there tho..
     // TODO(@darzu): Think about what if buid() is async...
     constructFn(e, res as Resources<[...RS, typeof MeDef]>);
-    EM.ensureComponentOn(e, FinishedDef);
+    EM.set(e, FinishedDef);
     return e;
   };
 
@@ -211,4 +225,8 @@ export function createRef<CS extends ComponentDef[]>(
   }
 }
 
-export const FinishedDef = EM.defineComponent("finished", () => true);
+export const FinishedDef = EM.defineComponent(
+  "finished",
+  () => true,
+  (p) => p
+);

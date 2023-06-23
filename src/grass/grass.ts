@@ -192,8 +192,8 @@ export async function createGrassTileset(
       // console.log(`(${xi}, ${zi})`);
       // TODO(@darzu): USE INSTANCING
       const tile = EM.new();
-      EM.ensureComponentOn(tile, PositionDef, V(x, 0, z));
-      EM.ensureComponentOn(
+      EM.set(tile, PositionDef, V(x, 0, z));
+      EM.set(
         tile,
         RenderableConstructDef,
         tileProto,
@@ -203,7 +203,7 @@ export async function createGrassTileset(
         undefined,
         grassPoolPtr
       );
-      EM.ensureComponentOn(tile, ColorDef, randColor());
+      EM.set(tile, ColorDef, randColor());
       // mat4.translate(tile.transform, tile.transform, [x, 0, z]);
       // builder.updateUniform(tile);
 

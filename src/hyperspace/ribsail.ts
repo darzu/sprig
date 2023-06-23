@@ -41,6 +41,7 @@ export const { RibSailPropsDef, RibSailLocalDef, createRibSailNow } =
     defaultProps: () => ({
       // pitch: Math.PI / 2,
     }),
+    updateProps: (p) => p,
     serializeProps: (o, buf) => {
       // buf.writeFloat32(o.pitch);
     },
@@ -65,18 +66,14 @@ export const { RibSailPropsDef, RibSailLocalDef, createRibSailNow } =
     build: (sail, res) => {
       // const sail = EM.new();
 
-      EM.ensureComponentOn(sail, PositionDef, V(0, 0, 0));
-      // EM.ensureComponentOn(sail, PositionDef, V(0, 0, 0));
-      EM.ensureComponentOn(
-        sail,
-        RenderableConstructDef,
-        cloneMesh(res.allMeshes.sail.mesh)
-      );
-      //EM.ensureComponentOn(sail1, ScaleDef, [12, 12, 12]);
-      EM.ensureComponentOn(sail, RotationDef);
-      // EM.ensureComponentOn(sail, SailColorDef, STAR1_COLOR);
-      EM.ensureComponentOn(sail, ColorDef, DEFAULT_SAIL_COLOR);
-      // EM.ensureComponentOn(sail, PhysicsParentDef, mast.id);
+      EM.set(sail, PositionDef, V(0, 0, 0));
+      // EM.set(sail, PositionDef, V(0, 0, 0));
+      EM.set(sail, RenderableConstructDef, cloneMesh(res.allMeshes.sail.mesh));
+      //EM.set(sail1, ScaleDef, [12, 12, 12]);
+      EM.set(sail, RotationDef);
+      // EM.set(sail, SailColorDef, STAR1_COLOR);
+      EM.set(sail, ColorDef, DEFAULT_SAIL_COLOR);
+      // EM.set(sail, PhysicsParentDef, mast.id);
       EM.whenEntityHas(
         sail,
         RenderDataStdDef
@@ -91,15 +88,11 @@ export const { RibSailPropsDef, RibSailLocalDef, createRibSailNow } =
 
       const mast = EM.new();
 
-      EM.ensureComponentOn(mast, PositionDef, V(0, -20, 0));
-      EM.ensureComponentOn(mast, ScaleDef, V(0.5, 1.0, 0.5));
-      EM.ensureComponentOn(
-        mast,
-        RenderableConstructDef,
-        res.allMeshes.mast.mesh
-      );
-      EM.ensureComponentOn(mast, PhysicsParentDef, sail.id);
-      EM.ensureComponentOn(mast, ColorDef, ENDESGA16.lightBrown);
+      EM.set(mast, PositionDef, V(0, -20, 0));
+      EM.set(mast, ScaleDef, V(0.5, 1.0, 0.5));
+      EM.set(mast, RenderableConstructDef, res.allMeshes.mast.mesh);
+      EM.set(mast, PhysicsParentDef, sail.id);
+      EM.set(mast, ColorDef, ENDESGA16.lightBrown);
       vec3.scale(mast.color, 0.5, mast.color);
 
       sail.ribSailLocal.ribs = range(RIB_COUNT).map((i) => {
@@ -110,17 +103,13 @@ export const { RibSailPropsDef, RibSailLocalDef, createRibSailNow } =
 
       function createRib(width: number) {
         const rib = EM.new();
-        EM.ensureComponentOn(rib, PositionDef);
-        EM.ensureComponentOn(
-          rib,
-          RenderableConstructDef,
-          res.allMeshes.mast.mesh
-        );
-        EM.ensureComponentOn(rib, ScaleDef, V(0.5 * width, 0.5, 0.5 * width));
-        EM.ensureComponentOn(rib, RotationDef);
-        EM.ensureComponentOn(rib, ColorDef, ENDESGA16.lightBrown);
+        EM.set(rib, PositionDef);
+        EM.set(rib, RenderableConstructDef, res.allMeshes.mast.mesh);
+        EM.set(rib, ScaleDef, V(0.5 * width, 0.5, 0.5 * width));
+        EM.set(rib, RotationDef);
+        EM.set(rib, ColorDef, ENDESGA16.lightBrown);
         vec3.scale(rib.color, 0.7, rib.color);
-        EM.ensureComponentOn(rib, PhysicsParentDef, sail.id);
+        EM.set(rib, PhysicsParentDef, sail.id);
         return rib;
       }
 

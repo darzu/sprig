@@ -37,7 +37,7 @@ export interface ButtonColors {
   down: vec3;
 }
 
-export const ButtonDef = EM.defineComponent(
+export const ButtonDef = EM.defineNonupdatableComponent(
   "button",
   (key: string, data?: number, colors?: ButtonColors) => ({
     key,

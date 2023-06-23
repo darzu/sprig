@@ -79,21 +79,17 @@ export async function initGJKSandbox(hosting: boolean) {
 
   // sun
   const sunlight = EM.new();
-  EM.ensureComponentOn(sunlight, PointLightDef);
+  EM.set(sunlight, PointLightDef);
   sunlight.pointLight.constant = 1.0;
   vec3.copy(sunlight.pointLight.ambient, [0.8, 0.8, 0.8]);
   // vec3.scale(sunlight.pointLight.ambient, sunlight.pointLight.ambient, 0.2);
   // vec3.copy(sunlight.pointLight.diffuse, [0.5, 0.5, 0.5]);
-  EM.ensureComponentOn(sunlight, PositionDef, V(10, 100, 10));
-  EM.ensureComponentOn(
-    sunlight,
-    RenderableConstructDef,
-    res.allMeshes.ball.proto
-  );
+  EM.set(sunlight, PositionDef, V(10, 100, 10));
+  EM.set(sunlight, RenderableConstructDef, res.allMeshes.ball.proto);
 
   // ghost
   const g = createGhost();
-  // EM.ensureComponentOn(g, RenderableConstructDef, res.allMeshes.cube.proto);
+  // EM.set(g, RenderableConstructDef, res.allMeshes.cube.proto);
   // createPlayer();
 
   // vec3.copy(e.position, [-16.6, 5, -5.1]);
@@ -122,35 +118,31 @@ export async function initGJKSandbox(hosting: boolean) {
 
   // ground
   const ground = EM.new();
-  EM.ensureComponentOn(
-    ground,
-    RenderableConstructDef,
-    res.allMeshes.plane.proto
-  );
-  EM.ensureComponentOn(ground, ColorDef, V(0.2, 0.3, 0.2));
-  EM.ensureComponentOn(ground, PositionDef, V(0, -5, 0));
+  EM.set(ground, RenderableConstructDef, res.allMeshes.plane.proto);
+  EM.set(ground, ColorDef, V(0.2, 0.3, 0.2));
+  EM.set(ground, PositionDef, V(0, -5, 0));
 
   // world gizmo
   const gizmoMesh = await GizmoMesh.gameMesh();
   const worldGizmo = EM.new();
-  EM.ensureComponentOn(worldGizmo, PositionDef, V(-10, -5, -10));
-  EM.ensureComponentOn(worldGizmo, ScaleDef, V(10, 10, 10));
-  EM.ensureComponentOn(worldGizmo, RenderableConstructDef, gizmoMesh.proto);
+  EM.set(worldGizmo, PositionDef, V(-10, -5, -10));
+  EM.set(worldGizmo, ScaleDef, V(10, 10, 10));
+  EM.set(worldGizmo, RenderableConstructDef, gizmoMesh.proto);
 
   const b1 = EM.new();
   const m1 = cloneMesh(res.allMeshes.cube.mesh);
-  EM.ensureComponentOn(b1, RenderableConstructDef, m1);
-  EM.ensureComponentOn(b1, ColorDef, V(0.1, 0.1, 0.1));
-  EM.ensureComponentOn(b1, PositionDef, V(0, 0, 3));
-  EM.ensureComponentOn(b1, RotationDef);
-  EM.ensureComponentOn(b1, AngularVelocityDef, V(0, 0.001, 0.001));
-  EM.ensureComponentOn(b1, WorldFrameDef);
-  EM.ensureComponentOn(b1, ColliderDef, {
+  EM.set(b1, RenderableConstructDef, m1);
+  EM.set(b1, ColorDef, V(0.1, 0.1, 0.1));
+  EM.set(b1, PositionDef, V(0, 0, 3));
+  EM.set(b1, RotationDef);
+  EM.set(b1, AngularVelocityDef, V(0, 0.001, 0.001));
+  EM.set(b1, WorldFrameDef);
+  EM.set(b1, ColliderDef, {
     shape: "AABB",
     solid: false,
     aabb: res.allMeshes.cube.aabb,
   });
-  // EM.ensureComponentOn(b1, ColliderDef, {
+  // EM.set(b1, ColliderDef, {
   //   shape: "Box",
   //   solid: false,
   //   center: res.allMeshes.cube.center,
@@ -159,18 +151,18 @@ export async function initGJKSandbox(hosting: boolean) {
 
   const b2 = g;
   const m2 = cloneMesh(res.allMeshes.cube.mesh);
-  EM.ensureComponentOn(b2, RenderableConstructDef, m2);
-  EM.ensureComponentOn(b2, ColorDef, V(0.1, 0.1, 0.1));
-  EM.ensureComponentOn(b2, PositionDef, V(0, 0, 0));
-  // EM.ensureComponentOn(b2, PositionDef, [0, 0, -1.2]);
-  EM.ensureComponentOn(b2, WorldFrameDef);
-  // EM.ensureComponentOn(b2, PhysicsParentDef, g.id);
-  EM.ensureComponentOn(b2, ColliderDef, {
+  EM.set(b2, RenderableConstructDef, m2);
+  EM.set(b2, ColorDef, V(0.1, 0.1, 0.1));
+  EM.set(b2, PositionDef, V(0, 0, 0));
+  // EM.set(b2, PositionDef, [0, 0, -1.2]);
+  EM.set(b2, WorldFrameDef);
+  // EM.set(b2, PhysicsParentDef, g.id);
+  EM.set(b2, ColliderDef, {
     shape: "AABB",
     solid: false,
     aabb: res.allMeshes.cube.aabb,
   });
-  // EM.ensureComponentOn(b2, ColliderDef, {
+  // EM.set(b2, ColliderDef, {
   //   shape: "Box",
   //   solid: false,
   //   center: res.allMeshes.cube.center,
@@ -179,12 +171,12 @@ export async function initGJKSandbox(hosting: boolean) {
 
   const b3 = EM.new();
   const m3 = cloneMesh(res.allMeshes.ball.mesh);
-  EM.ensureComponentOn(b3, RenderableConstructDef, m3);
-  EM.ensureComponentOn(b3, ColorDef, V(0.1, 0.1, 0.1));
-  EM.ensureComponentOn(b3, PositionDef, V(0, 0, -4));
-  EM.ensureComponentOn(b3, RotationDef);
-  EM.ensureComponentOn(b3, WorldFrameDef);
-  EM.ensureComponentOn(b3, ColliderDef, {
+  EM.set(b3, RenderableConstructDef, m3);
+  EM.set(b3, ColorDef, V(0.1, 0.1, 0.1));
+  EM.set(b3, PositionDef, V(0, 0, -4));
+  EM.set(b3, RotationDef);
+  EM.set(b3, WorldFrameDef);
+  EM.set(b3, ColliderDef, {
     shape: "AABB",
     solid: false,
     aabb: res.allMeshes.ball.aabb,
@@ -192,12 +184,12 @@ export async function initGJKSandbox(hosting: boolean) {
 
   const b4 = EM.new();
   const m4 = cloneMesh(res.allMeshes.tetra.mesh);
-  EM.ensureComponentOn(b4, RenderableConstructDef, m4);
-  EM.ensureComponentOn(b4, ColorDef, V(0.1, 0.1, 0.1));
-  EM.ensureComponentOn(b4, PositionDef, V(0, -3, 0));
-  EM.ensureComponentOn(b4, RotationDef);
-  EM.ensureComponentOn(b4, WorldFrameDef);
-  EM.ensureComponentOn(b4, ColliderDef, {
+  EM.set(b4, RenderableConstructDef, m4);
+  EM.set(b4, ColorDef, V(0.1, 0.1, 0.1));
+  EM.set(b4, PositionDef, V(0, -3, 0));
+  EM.set(b4, RotationDef);
+  EM.set(b4, WorldFrameDef);
+  EM.set(b4, ColliderDef, {
     shape: "AABB",
     solid: false,
     aabb: res.allMeshes.tetra.aabb,

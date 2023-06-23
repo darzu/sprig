@@ -156,7 +156,7 @@ export function computeGrassUniData(m: Mesh): GrassUniTS {
   return uni;
 }
 
-export const RenderDataGrassDef = EM.defineComponent(
+export const RenderDataGrassDef = EM.defineNonupdatableComponent(
   "renderDataGrass",
   (r: GrassUniTS) => r
 );
