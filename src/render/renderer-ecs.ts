@@ -441,10 +441,16 @@ EM.addEagerInit([RenderableConstructDef], [RendererDef], [], () => {
 //     never(kind);
 //   }
 // }
+interface RiggedRenderable {
+  meshHandle: RiggedMeshHandle;
+  rigging: Rigging;
+  jointMatrices: mat4[];
+}
 
-export const RiggedRenderableDef = EM.defineComponent(
+export const RiggedRenderableDef = EM.defineComponent2(
   "riggedRenderable",
-  (meshHandle: RiggedMeshHandle, rigging: Rigging) => ({
+  () => ({} as unknown as RiggedRenderable), // TODO(@darzu): HACK. Need NonupdatableComponentDef
+  (p, meshHandle: RiggedMeshHandle, rigging: Rigging) => ({
     meshHandle,
     rigging,
     jointMatrices: rigging.parents.map(() => mat4.identity(mat4.create())),
