@@ -273,11 +273,9 @@ export class EntityManager {
     return def;
   }
 
-  // TODO(@darzu): REFACTOR! Consolidate w/ defineComponent below
   public defineComponent<N extends string, P, UArgs extends any[] = []>(
     name: N,
-    // construct: (...args: Pargs) => P
-    make: () => P,
+    construct: () => P,
     update: (p: P, ...args: UArgs) => P = (p, ..._) => p
   ): UpdatableComponentDef<N, P, UArgs> {
     const id = nameToId(name);
@@ -288,10 +286,8 @@ export class EntityManager {
       _brand: "componentDef", // TODO(@darzu): remove?
       updatable: true,
       name,
-      construct: make,
+      construct,
       update,
-      // make,
-      // update,
       id,
       isOn: <E extends Entity>(e: E): e is E & { [K in N]: P } =>
         // (e as Object).hasOwn(name),
@@ -302,12 +298,9 @@ export class EntityManager {
     return component;
   }
 
-  // TODO(@darzu): REFACTOR: return a different component type?
   public defineNonupdatableComponent<N extends string, P, CArgs extends any[]>(
     name: N,
     construct: (...args: CArgs) => P
-    // make: () => P,
-    // update: (p: P, ...args: Pargs) => P
   ): NonupdatableComponentDef<N, P, CArgs> {
     const id = nameToId(name);
     if (this.components.has(id)) {
@@ -326,8 +319,6 @@ export class EntityManager {
         // (e as Object).hasOwn(name),
         name in e,
     };
-    // // TODO(@darzu): I don't love this cast. feels like it should be possible without..
-    // this.components.set(id, component as unknown as ComponentDef);
     this.components.set(id, component);
     return component;
   }
