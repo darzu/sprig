@@ -11,8 +11,8 @@ export const YawPitchDef = defineSerializableComponent(
     };
   },
   (p, yaw?: number, pitch?: number) => {
-    if (yaw) p.yaw = yaw;
-    if (pitch) p.pitch = pitch;
+    if (yaw !== undefined) p.yaw = yaw;
+    if (pitch !== undefined) p.pitch = pitch;
     return p;
   },
   (o, buf) => {

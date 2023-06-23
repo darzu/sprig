@@ -45,7 +45,7 @@ export const AuthorityDef = EM.defineComponent(
     updateSeq: 0,
   }),
   (p, pid?: number) => {
-    if (pid) p.pid = pid;
+    if (pid !== undefined) p.pid = pid;
     return p;
   }
 );

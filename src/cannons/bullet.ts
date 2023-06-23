@@ -81,9 +81,9 @@ export const BulletConstructDef = EM.defineComponent(
     if (loc) vec3.copy(p.location, loc);
     if (vel) vec3.copy(p.linearVelocity, vel);
     if (angVel) vec3.copy(p.angularVelocity, angVel);
-    if (team) p.team = team;
-    if (gravity) p.gravity = gravity;
-    if (health) p.health = health;
+    if (team !== undefined) p.team = team;
+    if (gravity !== undefined) p.gravity = gravity;
+    if (health !== undefined) p.health = health;
     return p;
   }
 );

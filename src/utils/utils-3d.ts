@@ -67,7 +67,7 @@ export function getPositionFromTransform(t: mat4): vec3 {
   return pos;
 }
 // vec utilities
-export function vec3Floor(out: vec3, v: vec3): vec3 {
+export function vec3Floor(out: vec3, v: vec3.InputT): vec3 {
   out[0] = Math.floor(v[0]);
   out[1] = Math.floor(v[1]);
   out[2] = Math.floor(v[2]);
@@ -77,15 +77,15 @@ export function vec3Floor(out: vec3, v: vec3): vec3 {
 export function aabbDbg(v: AABB): string {
   return `min:${vec3Dbg(v.min)},max:${vec3Dbg(v.max)}`;
 }
-export function vec2Dbg(v: vec2): string {
+export function vec2Dbg(v: vec2.InputT): string {
   return `[${v[0].toFixed(2)},${v[1].toFixed(2)}]`;
 }
-export function vec3Dbg(v?: vec3): string {
+export function vec3Dbg(v?: vec3.InputT): string {
   return v
     ? `[${v[0].toFixed(2)},${v[1].toFixed(2)},${v[2].toFixed(2)}]`
     : "NIL";
 }
-export function vec3Dbg2(v: vec3, precision = 2): string {
+export function vec3Dbg2(v: vec3.InputT, precision = 2): string {
   return `V(${v[0].toFixed(precision)},${v[1].toFixed(
     precision
   )},${v[2].toFixed(precision)})`;

@@ -63,7 +63,7 @@ export const {
       color: V(0, 0, 0),
     };
   },
-  updateProps: (p, location?: vec3, color?: vec3) => {
+  updateProps: (p, location?: vec3.InputT, color?: vec3.InputT) => {
     console.log(
       `updating mpPlayerProps w/ ${vec3Dbg(location)} ${vec3Dbg(color)}`
     );
@@ -71,32 +71,18 @@ export const {
     if (color) vec3.copy(p.color, color);
     return p;
   },
-  // TODO(@darzu): can't do this b/c constructors must create a valid shape even when given no params
-  // defaultProps: (location: vec3, color: vec3) => {
-  //   console.log(
-  //     `creating mpPlayerProps w/ ${vec3Dbg(location)} ${vec3Dbg(color)}`
-  //   );
-  //   return {
-  //     location: location,
-  //     color: color,
-  //   };
-  // },
   serializeProps: (c, buf) => {
     buf.writeVec3(c.location);
     buf.writeVec3(c.color);
     console.log(
-      `serialized mpPlayerProps w/ ${
-        c.location ? vec3Dbg(c.location) : "NULL"
-      } ${c.color ? vec3Dbg(c.color) : "NULL"}`
+      `serialized mpPlayerProps w/ ${vec3Dbg(c.location)} ${vec3Dbg(c.color)}`
     );
   },
   deserializeProps: (c, buf) => {
     buf.readVec3(c.location);
     buf.readVec3(c.color);
     console.log(
-      `deserialized mpPlayerProps w/ ${
-        c.location ? vec3Dbg(c.location) : "NULL"
-      } ${c.color ? vec3Dbg(c.color) : "NULL"}`
+      `deserialized mpPlayerProps w/ ${vec3Dbg(c.location)} ${vec3Dbg(c.color)}`
     );
   },
   defaultLocal: () => {

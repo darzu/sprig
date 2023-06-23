@@ -536,9 +536,6 @@ export class EntityManager {
       return (e as any)[def.name];
     }
   }
-  // TODO(@darzu): do we want to make this the standard way we do ensureComponent and addComponent ?
-  // TODO(@darzu): rename to "set" and have "maybeSet" w/ a thunk as a way to short circuit unnecessary init?
-  //      and maybe "strictSet" as the version that throws if it exists (renamed from "addComponent")
   public set<N extends string, P, PArgs extends any[]>(
     e: Entity,
     def: UpdatableComponentDef<N, P, PArgs>,
@@ -563,6 +560,17 @@ export class EntityManager {
         `Trying to double set non-updatable component '${def.name}' on '${e.id}'`
       );
       (e as any)[def.name] = def.update((e as any)[def.name], ...args);
+    }
+  }
+
+  public setOnce<N extends string, P, PArgs extends any[]>(
+    e: Entity,
+    def: NonupdatableComponentDef<N, P, PArgs>,
+    ...args: PArgs
+  ): asserts e is EntityW<[NonupdatableComponentDef<N, P, PArgs>]> {
+    const alreadyHas = def.name in e;
+    if (!alreadyHas) {
+      this.addComponent(e.id, def, ...args);
     }
   }
 

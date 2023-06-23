@@ -40,9 +40,9 @@ export const { CannonPropsDef, CannonLocalDef, createCannon, createCannonNow } =
       parentId?: number
     ) => {
       if (location) vec3.copy(p.location, location);
-      if (yaw) p.yaw = yaw;
-      if (pitch) p.pitch = pitch;
-      if (parentId) p.parentId = parentId;
+      if (yaw !== undefined) p.yaw = yaw;
+      if (pitch !== undefined) p.pitch = pitch;
+      if (parentId !== undefined) p.parentId = parentId;
       return p;
     },
     serializeProps: (c, buf) => {

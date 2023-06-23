@@ -285,7 +285,7 @@ export function initNetGameEventSystems() {
     (hosts, { detectedEvents, me, time }) => {
       if (hosts.length == 0) return;
       const host = hosts[0];
-      EM.set(host, OutgoingEventRequestsDef);
+      EM.setOnce(host, OutgoingEventRequestsDef);
       let newEvents = false;
       while (detectedEvents.events.length > 0) {
         const event = detectedEvents.events.shift()!;
