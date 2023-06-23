@@ -82,15 +82,18 @@ export function identityFrame(out: Frame) {
 }
 
 // TRANSFORM
-export const TransformDef = EM.defineComponent("transform", (t?: mat4) => {
-  return t ?? mat4.create();
-});
+export const TransformDef = EM.defineComponent2(
+  "transform",
+  () => mat4.create(),
+  (p, t?: mat4.InputT) => (t ? mat4.copy(p, t) : p)
+);
 export type Transform = mat4;
 
 // POSITION
-export const PositionDef = EM.defineComponent(
+export const PositionDef = EM.defineComponent2(
   "position",
-  (p?: vec3) => p || V(0, 0, 0)
+  () => V(0, 0, 0),
+  (p, v?: vec3.InputT) => (v ? vec3.copy(p, v) : p)
 );
 export type Position = Component<typeof PositionDef>;
 EM.registerSerializerPair(
@@ -100,9 +103,10 @@ EM.registerSerializerPair(
 );
 
 // ROTATION
-export const RotationDef = EM.defineComponent(
+export const RotationDef = EM.defineComponent2(
   "rotation",
-  (r?: quat) => r || quat.create()
+  () => quat.create(),
+  (p, r?: quat.InputT) => (r ? quat.copy(p, r) : p)
 );
 export type Rotation = Component<typeof RotationDef>;
 EM.registerSerializerPair(
@@ -112,9 +116,10 @@ EM.registerSerializerPair(
 );
 
 // SCALE
-export const ScaleDef = EM.defineComponent(
+export const ScaleDef = EM.defineComponent2(
   "scale",
-  (by?: vec3) => by || V(1, 1, 1)
+  () => V(1, 1, 1),
+  (p, by?: vec3.InputT) => (by ? vec3.copy(p, by) : p)
 );
 export type Scale = Component<typeof ScaleDef>;
 EM.registerSerializerPair(
@@ -132,10 +137,14 @@ export const LocalFrameDefs = [
 ] as const;
 
 // PARENT
-export const PhysicsParentDef = EM.defineComponent(
+export const PhysicsParentDef = EM.defineComponent2(
   "physicsParent",
-  (p?: number) => {
-    return { id: p || 0 };
+  () => {
+    return { id: 0 };
+  },
+  (p, parentId?: number) => {
+    if (parentId) p.id = parentId;
+    return p;
   }
 );
 export type PhysicsParent = Component<typeof PhysicsParentDef>;
