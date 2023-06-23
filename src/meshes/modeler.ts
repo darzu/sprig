@@ -32,13 +32,9 @@ export const ModelerDef = EM.defineResource("modeler", () => {
   };
 });
 
-export const ModelBoxDef = EM.defineComponent(
-  "modelBox",
-  () => {
-    return true;
-  },
-  (p) => p
-);
+export const ModelBoxDef = EM.defineComponent("modelBox", () => {
+  return true;
+});
 
 function registerObjClicker() {
   // listen for modeler on/off

@@ -51,8 +51,7 @@ function createDefaultPointLight(): PointLightTS {
 
 export const PointLightDef = EM.defineComponent(
   "pointLight",
-  createDefaultPointLight,
-  (p) => p
+  createDefaultPointLight
 );
 
 export const pointLightsPtr = CY.createArray("pointLight", {

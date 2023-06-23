@@ -33,21 +33,17 @@ export function setSimulationAlpha(to: number) {
   _simulationAlpha = to;
 }
 
-export const MotionSmoothingDef = EM.defineComponent(
-  "motionSmoothing",
-  () => {
-    return {
-      havePrevious: false,
-      prevParentId: 0,
-      prevPosition: vec3.create(),
-      prevRotation: quat.create(),
+export const MotionSmoothingDef = EM.defineComponent("motionSmoothing", () => {
+  return {
+    havePrevious: false,
+    prevParentId: 0,
+    prevPosition: vec3.create(),
+    prevRotation: quat.create(),
 
-      positionError: vec3.create(),
-      rotationError: quat.create(),
-    };
-  },
-  (p) => p
-);
+    positionError: vec3.create(),
+    rotationError: quat.create(),
+  };
+});
 export type MotionSmoothing = Component<typeof MotionSmoothingDef>;
 
 export function initNetMotionRecordingSystem() {
@@ -75,14 +71,12 @@ const _hasRendererWorldFrame = new Set();
 
 export const SmoothedWorldFrameDef = EM.defineComponent(
   "smoothedWorldFrame",
-  () => createFrame(),
-  (p) => p
+  () => createFrame()
 );
 
 export const PrevSmoothedWorldFrameDef = EM.defineComponent(
   "prevSmoothedWorldFrame",
-  () => createFrame(),
-  (p) => p
+  () => createFrame()
 );
 
 function updateSmoothedWorldFrame(o: Entity) {

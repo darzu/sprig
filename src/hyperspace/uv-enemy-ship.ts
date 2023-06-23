@@ -37,16 +37,12 @@ import { ColorDef } from "../color/color-ecs.js";
 import { AudioDef, Music } from "../audio/audio.js";
 import { Phase } from "../ecs/sys-phase.js";
 
-export const EnemyCrewDef = EM.defineComponent(
-  "enemyCrew",
-  () => {
-    return {
-      leftLegId: 0,
-      rightLegId: 0,
-    };
-  },
-  (p) => p
-);
+export const EnemyCrewDef = EM.defineComponent("enemyCrew", () => {
+  return {
+    leftLegId: 0,
+    rightLegId: 0,
+  };
+});
 
 export type EnemyCrew = Component<typeof EnemyCrewDef>;
 
@@ -93,19 +89,18 @@ export const { EnemyShipPropsDef, EnemyShipLocalDef, createEnemyShip } =
     },
     updateProps: (
       p,
-      uvLoc?: vec2,
+      uvLoc?: vec2.InputT,
       speed?: number,
       wheelSpeed?: number,
-      uvDir?: vec2,
+      uvDir?: vec2.InputT,
       parent?: number
     ) => {
-      return Object.assign(p, {
-        uvLoc: uvLoc ?? vec2.fromValues(0, 0),
-        speed: speed ?? 0.0,
-        wheelSpeed: wheelSpeed ?? 0.0,
-        uvDir: uvDir ?? vec2.fromValues(1, 0),
-        parent: parent ?? 0,
-      });
+      if (uvLoc) vec2.copy(p.uvLoc, uvLoc);
+      if (speed !== undefined) p.speed = speed;
+      if (wheelSpeed !== undefined) p.wheelSpeed = wheelSpeed;
+      if (uvDir) vec2.copy(p.uvDir, uvDir);
+      if (parent !== undefined) p.parent = parent;
+      return p;
     },
     serializeProps: (c, buf) => {
       buf.writeVec2(c.uvLoc);
@@ -383,11 +378,7 @@ export function breakEnemyShip(
   }
 }
 
-export const FireZoneDef = EM.defineComponent(
-  "firezone",
-  () => {},
-  (p) => p
-);
+export const FireZoneDef = EM.defineComponent("firezone", () => {});
 
 export function spawnEnemyShip(
   loc: vec2,

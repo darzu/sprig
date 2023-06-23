@@ -18,6 +18,7 @@ import {
 } from "./gpu-registry.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { DEFAULT_MASK } from "./pipeline-masks.js";
+import { ComponentDef } from "../ecs/entity-manager.js";
 import { GPUBufferUsage } from "./webgpu-hacks.js";
 import { CyResources } from "./instantiator-webgpu.js";
 
@@ -407,11 +408,9 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     if (m.quad.length) updateMeshQuads(handle, m);
     if (m.tri.length) updateMeshTriangles(handle, m);
     if (m.pos.length) updateMeshVertices(handle, m);
-    // TODO(@darzu): this is duplicating the uniform that will also (probably) be stored
+    // TODO(@darzu): PERF. this is duplicating the uniform that will also (probably) be stored
     //  in the data component.
-    // TODO(@darzu): REFACTOR. Shouldn't use update here. hsould be non-updatable
-    let uni = ptr.dataDef.construct();
-    ptr.dataDef.update(uni, m); // TODO(@darzu): hacky to use ECS fns here
+    const uni = ptr.computeUniData(m);
     updateUniform(handle, uni);
 
     return handle;

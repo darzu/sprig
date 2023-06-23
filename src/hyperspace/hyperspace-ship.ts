@@ -58,16 +58,12 @@ import { Phase } from "../ecs/sys-phase.js";
 
 // export const BOAT_COLOR: vec3 = V(0.2, 0.1, 0.05);
 
-export const ShipPartDef = EM.defineComponent(
+export const ShipPartDef = EM.defineNonupdatableComponent(
   "shipPart",
-  () => ({
-    critical: false,
+  (critical: boolean) => ({
+    critical,
     damaged: false,
-  }),
-  (p, critical: boolean) => {
-    p.critical = critical;
-    return p;
-  }
+  })
 );
 
 export const { RudderPropsDef, RudderLocalDef, createRudderNow } =
@@ -150,15 +146,10 @@ export const { HsShipPropsDef, HsShipLocalDef, createHsShip } =
       rudder: createRef(0, [RudderPropsDef, YawPitchDef]),
       mast: createRef(0, [HypMastPropsDef, HypMastLocalDef]),
     }),
-    updateProps: (p, uvPos?: vec2) =>
-      Object.assign(p, {
-        uvPos: uvPos ?? vec2.fromValues(0.5, 0.5),
-        gemId: 0,
-        cannonLId: 0,
-        cannonRId: 0,
-        rudder: createRef(0, [RudderPropsDef, YawPitchDef]),
-        mast: createRef(0, [HypMastPropsDef, HypMastLocalDef]),
-      }),
+    updateProps: (p, uvPos?: vec2.InputT) => {
+      if (uvPos) vec2.copy(p.uvPos, uvPos);
+      return p;
+    },
     serializeProps: (c, buf) => {
       buf.writeVec2(c.uvPos);
       buf.writeUint32(c.gemId);

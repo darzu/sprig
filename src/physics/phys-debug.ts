@@ -37,16 +37,12 @@ export const PhysicsDbgDef = EM.defineResource("_physDbgState", () => {
   };
 });
 
-export const DbgMeshDef = EM.defineComponent(
+export const DbgMeshDef = EM.defineNonupdatableComponent(
   "_physDbgMesh",
-  () => {
+  (colliderId?: number) => {
     return {
-      colliderId: -1,
+      colliderId: colliderId || -1,
     };
-  },
-  (p, colliderId?: number) => {
-    if (colliderId) p.colliderId = colliderId;
-    return p;
   }
 );
 

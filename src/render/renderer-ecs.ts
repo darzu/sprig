@@ -61,75 +61,56 @@ export const RendererDef = EM.defineResource(
 // TODO(@darzu): we need a better way to handle arbitrary pools
 // TODO(@darzu): support height map?
 // export type PoolKind = "std" | "ocean" | "grass";
-interface _RenderableConstruct {
-  enabled: boolean;
-  sortLayer: number;
+export interface RenderableConstruct {
+  readonly enabled: boolean;
+  readonly sortLayer: number;
   // TODO(@darzu): mask is inconsitently placed; here it is in the component,
   //  later it is in the mesh handle.
-  mask?: number;
-  pool: CyMeshPoolPtr<any, any>;
+  readonly mask?: number;
+  readonly pool: CyMeshPoolPtr<any, any>;
   // TODO(@darzu): little hacky: hidden vs enabled?
   // NOTE:
   //   "enabled" objects are debundled and not sent to the GPU.
   //   "hidden" objects are sent to the GPU w/ scale 0 (so they don't appear).
   //   hidden objects might be more efficient in object pools b/c it causes
   //   less rebundling, but this needs measurement.
-  hidden: boolean;
+  readonly hidden: boolean;
   meshOrProto: Mesh | MeshHandle;
-  reserve?: MeshReserve;
+  readonly reserve?: MeshReserve;
 }
-export type RenderableConstruct = Readonly<_RenderableConstruct>;
 
-export const RenderableConstructDef = EM.defineComponent(
+export const RenderableConstructDef = EM.defineNonupdatableComponent(
   "renderableConstruct",
-  () => {
-    const r: RenderableConstruct = {
-      enabled: true,
-      sortLayer: 0,
-      meshOrProto: undefined as any as Mesh | MeshHandle,
-      mask: undefined,
-      pool: meshPoolPtr,
-      hidden: false,
-      reserve: undefined,
-    };
-    return r;
-  },
   (
-    p,
     // TODO(@darzu): this constructor is too messy, we should use a params obj instead
     meshOrProto: Mesh | MeshHandle,
-    enabled?: boolean,
+    enabled: boolean = true,
     // TODO(@darzu): do we need sort layers? Do we use them?
-    sortLayer?: number,
+    sortLayer: number = 0,
     mask?: number,
     pool?: CyMeshPoolPtr<any, any>,
-    hidden?: boolean,
+    hidden: boolean = false,
     reserve?: MeshReserve
   ) => {
-    const _p = p as _RenderableConstruct;
-    _p.meshOrProto = meshOrProto;
-    if (enabled !== undefined) _p.enabled = enabled;
-    if (sortLayer !== undefined) _p.sortLayer = sortLayer;
-    if (mask !== undefined) _p.mask = mask;
-    if (pool !== undefined) _p.pool = pool;
-    if (hidden !== undefined) _p.hidden = hidden;
-    if (reserve !== undefined) _p.reserve = reserve;
-    return p;
+    const r: RenderableConstruct = {
+      enabled,
+      sortLayer: sortLayer,
+      meshOrProto,
+      mask,
+      pool: pool ?? meshPoolPtr,
+      hidden,
+      reserve,
+    };
+    return r;
   }
 );
 
-export const RiggedRenderableConstructDef = EM.defineComponent(
+export const RiggedRenderableConstructDef = EM.defineNonupdatableComponent(
   "riggedRenderableConstruct",
   // TODO: consider including other RenderableConstruct fields here
-  () => ({
-    // TODO(@darzu): Wish we didn't have to do this hack here. We need a "NonsyncableComponentDef" that is allowed
-    //    to take constructor arguments. See comment on ComponentDef
-    mesh: undefined as any as RiggedMesh,
-  }),
-  (p, mesh: RiggedMesh) => {
-    p.mesh = mesh;
-    return p;
-  }
+  (mesh: RiggedMesh) => ({
+    mesh,
+  })
 );
 
 export interface Renderable {
@@ -140,11 +121,9 @@ export interface Renderable {
   meshHandle: MeshHandle;
 }
 
-export const RenderableDef = EM.defineComponent(
+export const RenderableDef = EM.defineNonupdatableComponent(
   "renderable",
-  // TODO(@darzu): HACK. Need NonsyncableComponentDef
-  () => undefined as any as Renderable,
-  (p, r: Renderable) => r
+  (r: Renderable) => r
 );
 
 // TODO: standardize names more
@@ -156,8 +135,7 @@ export const RenderableDef = EM.defineComponent(
 
 export const RendererWorldFrameDef = EM.defineComponent(
   "rendererWorldFrame",
-  () => createFrame(),
-  (p) => p
+  () => createFrame()
 );
 
 // TODO(@darzu): We need to add constraints for updateRendererWorldFrames and such w/ respect to gameplay, physics, and rendering!
@@ -230,7 +208,8 @@ EM.addEagerInit([RenderableConstructDef], [RendererDef], [], () => {
           });
 
           // pool.updateUniform
-          EM.ensureComponentOn(e, pool.ptr.dataDef, mesh);
+          const uni = pool.ptr.computeUniData(mesh);
+          EM.ensureComponentOn(e, pool.ptr.dataDef, uni);
           // TODO(@darzu): HACK! We need some notion of required uni data maybe? Or common uni data
           if ("id" in e[pool.ptr.dataDef.name]) {
             // console.log(
@@ -441,16 +420,10 @@ EM.addEagerInit([RenderableConstructDef], [RendererDef], [], () => {
 //     never(kind);
 //   }
 // }
-interface RiggedRenderable {
-  meshHandle: RiggedMeshHandle;
-  rigging: Rigging;
-  jointMatrices: mat4[];
-}
 
-export const RiggedRenderableDef = EM.defineComponent(
+export const RiggedRenderableDef = EM.defineNonupdatableComponent(
   "riggedRenderable",
-  () => ({} as unknown as RiggedRenderable), // TODO(@darzu): HACK. Need NonupdatableComponentDef
-  (p, meshHandle: RiggedMeshHandle, rigging: Rigging) => ({
+  (meshHandle: RiggedMeshHandle, rigging: Rigging) => ({
     meshHandle,
     rigging,
     jointMatrices: rigging.parents.map(() => mat4.identity(mat4.create())),
@@ -484,7 +457,8 @@ EM.addEagerInit([RiggedRenderableConstructDef], [RendererDef], [], (res) => {
 
           // TODO(@darzu): de-duplicate with constructRenderables
           // pool.updateUniform
-          EM.ensureComponentOn(e, pool.ptr.dataDef, mesh);
+          const uni = pool.ptr.computeUniData(mesh);
+          EM.ensureComponentOn(e, pool.ptr.dataDef, uni);
           // TODO(@darzu): HACK! We need some notion of required uni data maybe? Or common uni data
           if ("id" in e[pool.ptr.dataDef.name]) {
             // console.log(

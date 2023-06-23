@@ -30,16 +30,9 @@ import { WidgetDef, WidgetLayerDef } from "./widgets.js";
 import { meshPoolPtr } from "../render/pipelines/std-scene.js";
 import { Phase } from "../ecs/sys-phase.js";
 
-const HLineDef = EM.defineComponent(
-  "hline",
-  () => ({
-    hl: undefined as any as HLine,
-  }),
-  (p, hl: HLine) =>
-    Object.assign(p, {
-      hl,
-    })
-);
+const HLineDef = EM.defineNonupdatableComponent("hline", (hl: HLine) => ({
+  hl,
+}));
 
 // TODO(@darzu): terrible name
 type HLineEnt = EntityW<

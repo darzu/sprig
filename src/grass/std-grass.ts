@@ -142,7 +142,9 @@ function computeGrassVertsData(
   return tempVertsData;
 }
 
-function createEmptyGrassUniTS(): GrassUniTS {
+export function computeGrassUniData(m: Mesh): GrassUniTS {
+  // TODO(@darzu): change
+  // const { min, max } = getAABBFromMesh(m);
   const uni: GrassUniTS = {
     transform: mat4.create(),
     // aabbMin: min,
@@ -154,19 +156,15 @@ function createEmptyGrassUniTS(): GrassUniTS {
   return uni;
 }
 
-export function updateGrassUniData(u: GrassUniTS, m: Mesh): GrassUniTS {
-  // TODO(@darzu): change
-  // const { min, max } = getAABBFromMesh(m);
-  return u;
-}
-
-export const RenderDataGrassDef = EM.defineComponent(
+export const RenderDataGrassDef = EM.defineNonupdatableComponent(
   "renderDataGrass",
-  createEmptyGrassUniTS,
-  updateGrassUniData
+  (r: GrassUniTS) => r
 );
 export const grassPoolPtr = CY.createMeshPool("grassPool", {
   computeVertsData: computeGrassVertsData,
+  // TODO(@darzu): per-mesh unis should maybe be optional? I don't think
+  //     the grass needs them
+  computeUniData: computeGrassUniData,
   vertsStruct: GrassVertStruct,
   unisStruct: GrassUniStruct,
   maxMeshes: MAX_GRASS_MESHES,

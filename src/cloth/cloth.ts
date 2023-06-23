@@ -42,15 +42,11 @@ export const ClothConstructDef = EM.defineComponent(
   }
 );
 
-export const ClothLocalDef = EM.defineComponent(
+export const ClothLocalDef = EM.defineNonupdatableComponent(
   "clothLocal",
-  () => ({
-    posMap: new Map(),
-  }),
-  (p, posMap?: Map<number, number>) => {
-    if (posMap) p.posMap = posMap;
-    return p;
-  }
+  (posMap: Map<number, number>) => ({
+    posMap: posMap,
+  })
 );
 
 EM.registerSerializerPair(

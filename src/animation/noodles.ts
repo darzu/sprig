@@ -24,15 +24,11 @@ export interface NoodleSeg {
   dir: vec3;
 }
 
-export const NoodleDef = EM.defineComponent(
+export const NoodleDef = EM.defineNonupdatableComponent(
   "noodle",
-  () => ({
-    segments: [] as NoodleSeg[],
-  }),
-  (p, segments: NoodleSeg[]) => {
-    p.segments.push(...segments);
-    return p;
-  }
+  (segments: NoodleSeg[]) => ({
+    segments,
+  })
 );
 export type Noodle = Component<typeof NoodleDef>;
 

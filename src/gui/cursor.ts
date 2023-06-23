@@ -30,14 +30,10 @@ export const GlobalCursor3dDef = EM.defineResource("globalCursor3d", () => {
   };
 });
 
-export const Cursor3dDef = EM.defineComponent(
-  "cursor3d",
-  () => ({
-    hitId: 0,
-    maxDistance: 100,
-  }),
-  (p) => p
-);
+export const Cursor3dDef = EM.defineComponent("cursor3d", () => ({
+  hitId: 0,
+  maxDistance: 100,
+}));
 
 EM.addLazyInit([BallMesh.def], [GlobalCursor3dDef], async (res) => {
   {

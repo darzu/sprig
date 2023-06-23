@@ -20,11 +20,7 @@ import { Phase } from "../ecs/sys-phase.js";
 // adornments are: entities that are parented to an entity's mesh parts
 //    [ ] track changes via version number on the mesh data
 
-export const WidgetDef = EM.defineComponent(
-  "widget",
-  () => true,
-  (p) => p
-);
+export const WidgetDef = EM.defineComponent("widget", () => true);
 
 /*
 What's my data?

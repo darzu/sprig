@@ -3,7 +3,6 @@ import { tempVec3 } from "../matrix/temp-pool.js";
 import { EM } from "../ecs/entity-manager.js";
 import { TimeDef } from "../time/time.js";
 import { Phase } from "../ecs/sys-phase.js";
-import { assert } from "../utils/util.js";
 
 const EPSILON = 0.0000000000000000001;
 const VELOCITY_CAP = 1;
@@ -42,25 +41,9 @@ export interface SpringGrid {
   springType: SpringType;
 }
 
-export const SpringGridDef = EM.defineComponent(
+export const SpringGridDef = EM.defineNonupdatableComponent(
   "springGrid",
-  () => {
-    return {
-      rows: 0,
-      columns: 0,
-      positions: [] as vec3[],
-      prevPositions: [] as vec3[],
-      nextPositions: [] as vec3[],
-      fixed: new Set<number>(),
-      distance: 1,
-      kOnAxis: 5000,
-      kOffAxis: 5000,
-      externalForce: vec3.create(),
-      springType: SpringType.SimpleDistance,
-    };
-  },
   (
-    p,
     springType?: SpringType,
     rows?: number,
     columns?: number,
@@ -69,23 +52,39 @@ export const SpringGridDef = EM.defineComponent(
     kOnAxis?: number,
     kOffAxis?: number
   ) => {
-    assert(p.rows === 0 && p.columns === 0);
-    if (springType) p.springType = springType;
-    if (rows) p.rows = rows;
-    if (columns) p.columns = columns;
-    if (fixed) p.fixed = new Set(fixed);
-    if (distance) p.distance = distance;
-    if (kOnAxis) p.kOnAxis = kOnAxis;
-    if (kOffAxis) p.kOffAxis = kOffAxis;
-    for (let y = 0; y < p.rows; y++) {
-      for (let x = 0; x < p.columns; x++) {
-        let pos = V(x * p.distance, y * p.distance, 0);
-        p.positions.push(pos);
-        p.prevPositions.push(vec3.clone(pos));
-        p.nextPositions.push(vec3.create());
+    springType = springType || SpringType.SimpleDistance;
+    rows = rows || 0;
+    columns = columns || 0;
+    fixed = fixed || [];
+    distance = distance || 1;
+    kOnAxis = kOnAxis || 5000;
+    kOffAxis = kOffAxis || kOnAxis;
+    const positions: vec3[] = [];
+    const prevPositions: vec3[] = [];
+    const nextPositions: vec3[] = [];
+    for (let y = 0; y < rows; y++) {
+      for (let x = 0; x < columns; x++) {
+        let pos = V(x * distance, y * distance, 0);
+        positions.push(pos);
+        prevPositions.push(vec3.clone(pos));
+        nextPositions.push(vec3.create());
       }
     }
-    return p;
+    const externalForce = vec3.create();
+    const fixedSet = new Set(fixed);
+    return {
+      rows,
+      columns,
+      positions,
+      prevPositions,
+      nextPositions,
+      fixed: fixedSet,
+      distance,
+      kOnAxis,
+      kOffAxis,
+      externalForce,
+      springType,
+    };
   }
 );
 

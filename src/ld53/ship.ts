@@ -45,38 +45,34 @@ import {
 } from "../cannons/cannon.js";
 import { Phase } from "../ecs/sys-phase.js";
 
-export const ShipDef = EM.defineComponent(
-  "ld52ship",
-  () => ({
-    mast: createRef(0, [MastDef, RotationDef]),
-    rudder: createRef(0, [
-      RudderDef,
-      YawPitchDef,
-      TurretDef,
-      // CameraFollowDef,
-      AuthorityDef,
-      PositionDef,
-    ]),
-    cannonR: createRef(0, [
-      CannonLocalDef,
-      YawPitchDef,
-      TurretDef,
-      // CameraFollowDef,
-      AuthorityDef,
-      PositionDef,
-    ]),
-    cannonL: createRef(0, [
-      CannonLocalDef,
-      YawPitchDef,
-      TurretDef,
-      // CameraFollowDef,
-      AuthorityDef,
-      PositionDef,
-    ]),
-    cuttingEnabled: true,
-  }),
-  (p) => p
-);
+export const ShipDef = EM.defineComponent("ld52ship", () => ({
+  mast: createRef(0, [MastDef, RotationDef]),
+  rudder: createRef(0, [
+    RudderDef,
+    YawPitchDef,
+    TurretDef,
+    // CameraFollowDef,
+    AuthorityDef,
+    PositionDef,
+  ]),
+  cannonR: createRef(0, [
+    CannonLocalDef,
+    YawPitchDef,
+    TurretDef,
+    // CameraFollowDef,
+    AuthorityDef,
+    PositionDef,
+  ]),
+  cannonL: createRef(0, [
+    CannonLocalDef,
+    YawPitchDef,
+    TurretDef,
+    // CameraFollowDef,
+    AuthorityDef,
+    PositionDef,
+  ]),
+  cuttingEnabled: true,
+}));
 
 const MIN_SPEED = 0.0001;
 const MAX_SPEED = 10.0;
@@ -239,11 +235,7 @@ EM.addSystem(
   }
 );
 
-export const RudderDef = EM.defineComponent(
-  "rudder",
-  () => true,
-  (p) => p
-);
+export const RudderDef = EM.defineComponent("rudder", () => true);
 
 async function createRudder() {
   const res = await EM.whenResources(MeDef);

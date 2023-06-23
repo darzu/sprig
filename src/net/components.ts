@@ -19,31 +19,23 @@ export const SyncDef = EM.defineComponent(
 
 export type Sync = Component<typeof SyncDef>;
 
-export const PeerDef = EM.defineComponent(
-  "peer",
-  () => ({
-    address: "",
+export const PeerDef = EM.defineComponent("peer", () => ({
+  address: "",
 
-    // TODO: consider moving this state to another component
-    joined: false,
-    pid: 0,
-    updateSeq: 0,
-    entityPriorities: new Map<number, number>(),
-    entitiesKnown: new Set<number>(),
-    entitiesInUpdate: new Map<number, Set<number>>(),
-  }),
-  (p) => p
-);
+  // TODO: consider moving this state to another component
+  joined: false,
+  pid: 0,
+  updateSeq: 0,
+  entityPriorities: new Map<number, number>(),
+  entitiesKnown: new Set<number>(),
+  entitiesInUpdate: new Map<number, Set<number>>(),
+}));
 
 export type Peer = Component<typeof PeerDef>;
 
 // TODO(@darzu): BUG!! We have two versions of host, resource and component!
 export const HostDef = EM.defineResource("host", () => true);
-export const HostCompDef = EM.defineComponent(
-  "host",
-  () => true,
-  (p) => p
-);
+export const HostCompDef = EM.defineComponent("host", () => true);
 
 export const AuthorityDef = EM.defineComponent(
   "authority",
@@ -99,17 +91,12 @@ export type Me = Resource<typeof MeDef>;
 
 export const InboxDef = EM.defineComponent(
   "inbox",
-  () => new Map<MessageType, Deserializer[]>(),
-  (p) => p
+  () => new Map<MessageType, Deserializer[]>()
 );
 
 export type Inbox = Component<typeof InboxDef>;
 
-export const OutboxDef = EM.defineComponent(
-  "outbox",
-  () => [] as DataView[],
-  (p) => p
-);
+export const OutboxDef = EM.defineComponent("outbox", () => [] as DataView[]);
 
 export type Outbox = Component<typeof OutboxDef>;
 
@@ -148,19 +135,11 @@ export type Join = Component<typeof JoinDef>;
 
 // This component should be present on entities that want to participate in the
 // prediction system
-export const PredictDef = EM.defineComponent(
-  "predict",
-  () => ({
-    dt: 0,
-  }),
-  (p) => p
-);
+export const PredictDef = EM.defineComponent("predict", () => ({
+  dt: 0,
+}));
 
 export type Predict = Component<typeof PredictDef>;
 
 // Marker component for entities that have just been updated by the sync system
-export const RemoteUpdatesDef = EM.defineComponent(
-  "remoteUpdates",
-  () => true,
-  (p) => p
-);
+export const RemoteUpdatesDef = EM.defineComponent("remoteUpdates", () => true);

@@ -34,14 +34,10 @@ import { Phase } from "../ecs/sys-phase.js";
 
 // TODO(@darzu): refactor this so that our towers can use this
 
-const BoomPitchesDef = EM.defineComponent(
-  "boomPitches",
-  () => ({
-    boom1: Math.PI / 4,
-    boom2: Math.PI / 4,
-  }),
-  (p) => p
-);
+const BoomPitchesDef = EM.defineComponent("boomPitches", () => ({
+  boom1: Math.PI / 4,
+  boom2: Math.PI / 4,
+}));
 EM.registerSerializerPair(
   BoomPitchesDef,
   (c, writer) => {

@@ -4,7 +4,7 @@ import {
   DetectedEventsDef,
   eventWizard,
 } from "../net/events.js";
-import { EDef, EM, Entity, ESet } from "../ecs/entity-manager.js";
+import { ComponentDef, EDef, EM, Entity, ESet } from "../ecs/entity-manager.js";
 import { HsPlayerDef } from "../hyperspace/hs-player.js";
 import { PhysicsResultsDef } from "../physics/nonintersection.js";
 import { AuthorityDef } from "../net/components.js";

@@ -34,31 +34,27 @@ controllable:
   backspace -> delete obj
 */
 
-export const ControllableDef = EM.defineComponent(
-  "controllable",
-  () => {
-    return {
-      speed: 0.0005,
-      sprintMul: 3,
-      gravity: 0.1 / 1000,
-      jumpSpeed: 0.003,
-      turnSpeed: 0.001,
-      requiresPointerLock: true,
-      modes: {
-        canFall: true,
-        canFly: true,
-        canSprint: true,
-        canJump: true,
-        canPitch: true,
-        canYaw: true,
-        // TODO(@darzu): this isn't clean...
-        canCameraYaw: false,
-        canMove: true,
-      },
-    };
-  },
-  (p) => p
-);
+export const ControllableDef = EM.defineComponent("controllable", () => {
+  return {
+    speed: 0.0005,
+    sprintMul: 3,
+    gravity: 0.1 / 1000,
+    jumpSpeed: 0.003,
+    turnSpeed: 0.001,
+    requiresPointerLock: true,
+    modes: {
+      canFall: true,
+      canFly: true,
+      canSprint: true,
+      canJump: true,
+      canPitch: true,
+      canYaw: true,
+      // TODO(@darzu): this isn't clean...
+      canCameraYaw: false,
+      canMove: true,
+    },
+  };
+});
 
 EM.addEagerInit([ControllableDef], [], [], () => {
   const steerVel = vec3.create();

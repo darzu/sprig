@@ -20,8 +20,7 @@ EM.registerSerializerPair(
 
 export const TintsDef = EM.defineComponent(
   "tints",
-  () => new Map() as Map<string, vec3>,
-  (p) => p
+  () => new Map() as Map<string, vec3>
 );
 
 export type Tints = Component<typeof TintsDef>;

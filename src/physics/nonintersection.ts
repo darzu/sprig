@@ -55,11 +55,7 @@ export const PhysicsResultsDef = EM.defineResource("physicsResults", () => {
 });
 export type PhysicsResults = Component<typeof PhysicsResultsDef>;
 
-export const WorldFrameDef = EM.defineComponent(
-  "world",
-  () => createFrame(),
-  (p) => p
-);
+export const WorldFrameDef = EM.defineComponent("world", () => createFrame());
 
 export interface PhysCollider {
   // NOTE: we use "id" and "aabb" here b/c broadphase looks for a struct with those
@@ -92,20 +88,16 @@ const DUMMY_COLLIDER: PhysCollider = {
 };
 
 // TODO(@darzu): break this up into the specific use cases
-export const PhysicsStateDef = EM.defineComponent(
-  "_phys",
-  () => {
-    return {
-      // track last stats so we can diff
-      lastLocalPos: PositionDef.construct(),
-      // Colliders
-      // NOTE: these can be many-to-one colliders-to-entities, hence the arrays
-      colliders: [] as PhysCollider[],
-      // TODO(@darzu): use sweepAABBs again?
-    };
-  },
-  (p) => p
-);
+export const PhysicsStateDef = EM.defineComponent("_phys", () => {
+  return {
+    // track last stats so we can diff
+    lastLocalPos: PositionDef.construct(),
+    // Colliders
+    // NOTE: these can be many-to-one colliders-to-entities, hence the arrays
+    colliders: [] as PhysCollider[],
+    // TODO(@darzu): use sweepAABBs again?
+  };
+});
 export type PhysicsState = Component<typeof PhysicsStateDef>;
 
 export interface PhysicsObject {

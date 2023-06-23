@@ -17,15 +17,11 @@ import { InteractableDef, InRangeDef } from "./interact.js";
 import { Deserializer, Serializer } from "../utils/serialize.js";
 import { Phase } from "../ecs/sys-phase.js";
 
-export const ToolDef = EM.defineComponent(
+export const ToolDef = EM.defineNonupdatableComponent(
   "tool",
-  () => ({
-    type: undefined as string | undefined,
-  }),
-  (p, type?: string) => {
-    p.type = type;
-    return p;
-  }
+  (type?: string) => ({
+    type,
+  })
 );
 
 export function registerToolSystems() {

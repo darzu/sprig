@@ -222,11 +222,7 @@ export async function initLD53(hosting: boolean) {
   );
 
   // pirate test
-  const PirateDef = EM.defineComponent(
-    "pirate",
-    () => true,
-    (p) => p
-  );
+  const PirateDef = EM.defineComponent("pirate", () => true);
   const pirate = EM.new();
   EM.ensureComponentOn(
     pirate,
@@ -332,11 +328,7 @@ export async function initLD53(hosting: boolean) {
 
   // bouyancy
   if (!"true") {
-    const bouyDef = EM.defineComponent(
-      "bouy",
-      () => true,
-      (p) => p
-    );
+    const bouyDef = EM.defineComponent("bouy", () => true);
     const buoys: EntityW<[typeof PositionDef]>[] = [];
     for (let u = 0.4; u <= 0.6; u += 0.02) {
       for (let v = 0.4; v <= 0.6; v += 0.02) {

@@ -39,15 +39,11 @@ import { Phase } from "../ecs/sys-phase.js";
 
 const MIN_HEALTH_PERCENT = 0.7;
 
-export const ShipHealthDef = EM.defineComponent(
-  "shipHealth",
-  () => ({
-    needsUpdate: false,
-    health: 1,
-    startingTimberHealth: 0,
-  }),
-  (p) => p
-);
+export const ShipHealthDef = EM.defineComponent("shipHealth", () => ({
+  needsUpdate: false,
+  health: 1,
+  startingTimberHealth: 0,
+}));
 
 function getCurrentHealth(timberHealth: Component<typeof WoodHealthDef>) {
   let health = 0;
