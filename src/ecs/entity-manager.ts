@@ -353,6 +353,10 @@ export class EntityManager {
     serialize: (obj: P, buf: Serializer) => void,
     deserialize: (obj: P, buf: Deserializer) => void
   ) {
+    assert(
+      def.updatable,
+      `Can't attach serializers to non-updatable component '${def.name}'`
+    );
     this.serializers.set(def.id, { serialize, deserialize });
   }
 
@@ -387,6 +391,10 @@ export class EntityManager {
     if (buf.dummy) {
       component = {} as any;
     } else if (!entity) {
+      assert(
+        def.updatable,
+        `Trying to deserialize into non-updatable component '${def.name}'!`
+      );
       component = this.addComponent(id, def);
     } else {
       component = entity[def.name];
