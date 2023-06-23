@@ -42,7 +42,7 @@ export interface SpringGrid {
   springType: SpringType;
 }
 
-export const SpringGridDef = EM.defineComponent2(
+export const SpringGridDef = EM.defineComponent(
   "springGrid",
   () => {
     return {
@@ -89,7 +89,7 @@ export const SpringGridDef = EM.defineComponent2(
   }
 );
 
-export const ForceDef = EM.defineComponent2(
+export const ForceDef = EM.defineComponent(
   "force",
   () => V(0, 0, 0),
   (p, v?: vec3.InputT) => (v ? vec3.copy(p, v) : p)

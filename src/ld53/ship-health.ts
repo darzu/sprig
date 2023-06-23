@@ -39,7 +39,7 @@ import { Phase } from "../ecs/sys-phase.js";
 
 const MIN_HEALTH_PERCENT = 0.7;
 
-export const ShipHealthDef = EM.defineComponent2(
+export const ShipHealthDef = EM.defineComponent(
   "shipHealth",
   () => ({
     needsUpdate: false,

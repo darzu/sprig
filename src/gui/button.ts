@@ -37,7 +37,7 @@ export interface ButtonColors {
   down: vec3;
 }
 
-export const ButtonDef = EM.defineComponent2(
+export const ButtonDef = EM.defineComponent(
   "button",
   () => ({
     key: "",

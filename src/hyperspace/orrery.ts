@@ -40,7 +40,7 @@ export async function makeOrrery(parentId: number) {
   EM.ensureComponentOn(shipModel, ColorDef, ENDESGA16.lightBrown);
 }
 
-export const OrreryDef = EM.defineComponent2(
+export const OrreryDef = EM.defineComponent(
   "orrery",
   () => ({
     orreryStars: [] as Ref<[typeof PositionDef, typeof ColorDef]>[],

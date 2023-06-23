@@ -80,7 +80,7 @@ interface _RenderableConstruct {
 }
 export type RenderableConstruct = Readonly<_RenderableConstruct>;
 
-export const RenderableConstructDef = EM.defineComponent2(
+export const RenderableConstructDef = EM.defineComponent(
   "renderableConstruct",
   () => {
     const r: RenderableConstruct = {
@@ -118,7 +118,7 @@ export const RenderableConstructDef = EM.defineComponent2(
   }
 );
 
-export const RiggedRenderableConstructDef = EM.defineComponent2(
+export const RiggedRenderableConstructDef = EM.defineComponent(
   "riggedRenderableConstruct",
   // TODO: consider including other RenderableConstruct fields here
   () => ({
@@ -140,7 +140,7 @@ export interface Renderable {
   meshHandle: MeshHandle;
 }
 
-export const RenderableDef = EM.defineComponent2(
+export const RenderableDef = EM.defineComponent(
   "renderable",
   // TODO(@darzu): HACK. Need NonsyncableComponentDef
   () => undefined as any as Renderable,
@@ -154,7 +154,7 @@ export const RenderableDef = EM.defineComponent2(
 //   (r: MeshUniformTS) => r
 // );
 
-export const RendererWorldFrameDef = EM.defineComponent2(
+export const RendererWorldFrameDef = EM.defineComponent(
   "rendererWorldFrame",
   () => createFrame(),
   (p) => p
@@ -447,7 +447,7 @@ interface RiggedRenderable {
   jointMatrices: mat4[];
 }
 
-export const RiggedRenderableDef = EM.defineComponent2(
+export const RiggedRenderableDef = EM.defineComponent(
   "riggedRenderable",
   () => ({} as unknown as RiggedRenderable), // TODO(@darzu): HACK. Need NonupdatableComponentDef
   (p, meshHandle: RiggedMeshHandle, rigging: Rigging) => ({

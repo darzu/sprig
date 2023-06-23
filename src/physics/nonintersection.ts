@@ -55,7 +55,7 @@ export const PhysicsResultsDef = EM.defineResource("physicsResults", () => {
 });
 export type PhysicsResults = Component<typeof PhysicsResultsDef>;
 
-export const WorldFrameDef = EM.defineComponent2(
+export const WorldFrameDef = EM.defineComponent(
   "world",
   () => createFrame(),
   (p) => p
@@ -92,7 +92,7 @@ const DUMMY_COLLIDER: PhysCollider = {
 };
 
 // TODO(@darzu): break this up into the specific use cases
-export const PhysicsStateDef = EM.defineComponent2(
+export const PhysicsStateDef = EM.defineComponent(
   "_phys",
   () => {
     return {

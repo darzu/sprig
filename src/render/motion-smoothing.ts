@@ -33,7 +33,7 @@ export function setSimulationAlpha(to: number) {
   _simulationAlpha = to;
 }
 
-export const MotionSmoothingDef = EM.defineComponent2(
+export const MotionSmoothingDef = EM.defineComponent(
   "motionSmoothing",
   () => {
     return {
@@ -73,13 +73,13 @@ export function initNetMotionRecordingSystem() {
 
 const _hasRendererWorldFrame = new Set();
 
-export const SmoothedWorldFrameDef = EM.defineComponent2(
+export const SmoothedWorldFrameDef = EM.defineComponent(
   "smoothedWorldFrame",
   () => createFrame(),
   (p) => p
 );
 
-export const PrevSmoothedWorldFrameDef = EM.defineComponent2(
+export const PrevSmoothedWorldFrameDef = EM.defineComponent(
   "prevSmoothedWorldFrame",
   () => createFrame(),
   (p) => p

@@ -129,7 +129,7 @@ export function appendPirateShip(b: TimberBuilder): RawMesh {
 const startDelay = 0;
 // const startDelay = 1000;
 
-export const PiratePlatformDef = EM.defineComponent(
+export const PiratePlatformDef = EM.defineNonupdatableComponent(
   "piratePlatform",
   (
     cannon: EntityW<[typeof PositionDef, typeof RotationDef]>,

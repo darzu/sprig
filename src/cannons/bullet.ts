@@ -41,7 +41,7 @@ import { SplinterParticleDef } from "../wood/wood-splinters.js";
 
 const _maxBullets = 100;
 
-export const BulletDef = EM.defineComponent2(
+export const BulletDef = EM.defineComponent(
   "bullet",
   () => {
     return {
@@ -57,7 +57,7 @@ export const BulletDef = EM.defineComponent2(
 );
 export type Bullet = Component<typeof BulletDef>;
 
-export const BulletConstructDef = EM.defineComponent2(
+export const BulletConstructDef = EM.defineComponent(
   "bulletConstruct",
   () => {
     return {

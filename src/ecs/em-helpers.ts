@@ -25,7 +25,7 @@ export function defineSerializableComponent<
   serialize: (obj: P, buf: Serializer) => void,
   deserialize: (obj: P, buf: Deserializer) => void
 ): ComponentDef<N, P, [], UArgs> {
-  const def = EM.defineComponent2(name, make, update);
+  const def = EM.defineComponent(name, make, update);
   EM.registerSerializerPair(def, serialize, deserialize);
   return def;
 }
@@ -122,7 +122,7 @@ export function defineNetEntityHelper<
     opts.serializeProps,
     opts.deserializeProps
   );
-  const localDef = EM.defineComponent2(
+  const localDef = EM.defineComponent(
     `${opts.name}Local`,
     opts.defaultLocal,
     (p) => p
@@ -223,7 +223,7 @@ export function createRef<CS extends ComponentDef[]>(
   }
 }
 
-export const FinishedDef = EM.defineComponent2(
+export const FinishedDef = EM.defineComponent(
   "finished",
   () => true,
   (p) => p

@@ -27,7 +27,7 @@ export interface Spawner {
   hasSpawned: boolean;
   childrenToRelease: Ref<[...typeof ChildCS]>[];
 }
-export const SpawnerDef = EM.defineComponent2(
+export const SpawnerDef = EM.defineComponent(
   "spawner",
   function (): Spawner {
     return {

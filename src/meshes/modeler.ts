@@ -32,7 +32,7 @@ export const ModelerDef = EM.defineResource("modeler", () => {
   };
 });
 
-export const ModelBoxDef = EM.defineComponent2(
+export const ModelBoxDef = EM.defineComponent(
   "modelBox",
   () => {
     return true;

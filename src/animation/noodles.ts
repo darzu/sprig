@@ -24,7 +24,7 @@ export interface NoodleSeg {
   dir: vec3;
 }
 
-export const NoodleDef = EM.defineComponent2(
+export const NoodleDef = EM.defineComponent(
   "noodle",
   () => ({
     segments: [] as NoodleSeg[],

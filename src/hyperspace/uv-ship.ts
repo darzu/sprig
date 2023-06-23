@@ -6,7 +6,7 @@ import { AuthorityDef, MeDef } from "../net/components.js";
 import { UVPosDef, UVDirDef } from "../ocean/ocean.js";
 import { Phase } from "../ecs/sys-phase.js";
 
-export const UVShipDef = EM.defineComponent2(
+export const UVShipDef = EM.defineComponent(
   "uvship",
   () => {
     return {

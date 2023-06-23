@@ -222,7 +222,7 @@ export async function initLD53(hosting: boolean) {
   );
 
   // pirate test
-  const PirateDef = EM.defineComponent2(
+  const PirateDef = EM.defineComponent(
     "pirate",
     () => true,
     (p) => p
@@ -332,7 +332,7 @@ export async function initLD53(hosting: boolean) {
 
   // bouyancy
   if (!"true") {
-    const bouyDef = EM.defineComponent2(
+    const bouyDef = EM.defineComponent(
       "bouy",
       () => true,
       (p) => p

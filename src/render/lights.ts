@@ -49,7 +49,7 @@ function createDefaultPointLight(): PointLightTS {
   };
 }
 
-export const PointLightDef = EM.defineComponent2(
+export const PointLightDef = EM.defineComponent(
   "pointLight",
   createDefaultPointLight,
   (p) => p

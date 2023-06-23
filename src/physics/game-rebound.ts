@@ -92,7 +92,7 @@ export async function initReboundSandbox(hosting: boolean) {
 
   res.text.lowerText = `spawner (p) stack (l) clear (backspace)`;
 
-  const cubeDef = EM.defineComponent2(
+  const cubeDef = EM.defineComponent(
     "cube",
     () => true,
     (p) => p

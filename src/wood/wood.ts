@@ -103,9 +103,12 @@ What does compute shader gain us?
 const __temp1 = vec3.create();
 const __temp2 = vec3.create();
 
-export const WoodStateDef = EM.defineComponent("woodState", (s: WoodState) => {
-  return s;
-});
+export const WoodStateDef = EM.defineNonupdatableComponent(
+  "woodState",
+  (s: WoodState) => {
+    return s;
+  }
+);
 
 export type WoodAssets = Partial<{
   [P in AllMeshSymbols]: WoodState;
@@ -1388,7 +1391,7 @@ export function unshareProvokingForWood(m: RawMesh, woodState: WoodState) {
   }
 }
 
-export const WoodHealthDef = EM.defineComponent(
+export const WoodHealthDef = EM.defineNonupdatableComponent(
   "woodHealth",
   (s: WoodHealth) => {
     return s;

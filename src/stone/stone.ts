@@ -84,7 +84,7 @@ interface Tower {
   alive: boolean;
 }
 
-export const StoneTowerDef = EM.defineComponent(
+export const StoneTowerDef = EM.defineNonupdatableComponent(
   "stoneTower",
   (
     cannon: EntityW<
@@ -538,7 +538,10 @@ export async function spawnStoneTower() {
   return towerPool.spawn();
 }
 
-export const FlyingBrickDef = EM.defineComponent("flyingBrick", () => true);
+export const FlyingBrickDef = EM.defineNonupdatableComponent(
+  "flyingBrick",
+  () => true
+);
 
 const maxFlyingBricks = 50;
 

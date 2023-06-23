@@ -13,7 +13,7 @@ interface QueuedAnimation {
   t: number;
 }
 
-export const PoseDef = EM.defineComponent2(
+export const PoseDef = EM.defineComponent(
   "pose",
   () => ({
     t: 0,

@@ -59,7 +59,7 @@ export function createHsPlayer() {
   return e;
 }
 
-export const HsPlayerDef = EM.defineComponent2(
+export const HsPlayerDef = EM.defineComponent(
   "hsPlayer",
   () => {
     return {

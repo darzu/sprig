@@ -18,7 +18,7 @@ export interface AnimateTo {
   // TODO(@darzu): pathFn
 }
 
-export const AnimateToDef = EM.defineComponent2(
+export const AnimateToDef = EM.defineComponent(
   "animateTo",
   function (): AnimateTo {
     return {

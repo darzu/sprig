@@ -3,7 +3,7 @@ import { Deserializer } from "../utils/serialize.js";
 import { MessageType } from "./message.js";
 import { FromNetworkEvent, ToNetworkEvent } from "./network-events.js";
 
-export const SyncDef = EM.defineComponent2(
+export const SyncDef = EM.defineComponent(
   "sync",
   () => ({
     priorityIncrementFull: 1000,
@@ -19,7 +19,7 @@ export const SyncDef = EM.defineComponent2(
 
 export type Sync = Component<typeof SyncDef>;
 
-export const PeerDef = EM.defineComponent2(
+export const PeerDef = EM.defineComponent(
   "peer",
   () => ({
     address: "",
@@ -39,13 +39,13 @@ export type Peer = Component<typeof PeerDef>;
 
 // TODO(@darzu): BUG!! We have two versions of host, resource and component!
 export const HostDef = EM.defineResource("host", () => true);
-export const HostCompDef = EM.defineComponent2(
+export const HostCompDef = EM.defineComponent(
   "host",
   () => true,
   (p) => p
 );
 
-export const AuthorityDef = EM.defineComponent2(
+export const AuthorityDef = EM.defineComponent(
   "authority",
   () => ({
     pid: 0,
@@ -97,7 +97,7 @@ export const MeDef = EM.defineResource(
 
 export type Me = Resource<typeof MeDef>;
 
-export const InboxDef = EM.defineComponent2(
+export const InboxDef = EM.defineComponent(
   "inbox",
   () => new Map<MessageType, Deserializer[]>(),
   (p) => p
@@ -105,7 +105,7 @@ export const InboxDef = EM.defineComponent2(
 
 export type Inbox = Component<typeof InboxDef>;
 
-export const OutboxDef = EM.defineComponent2(
+export const OutboxDef = EM.defineComponent(
   "outbox",
   () => [] as DataView[],
   (p) => p
@@ -148,7 +148,7 @@ export type Join = Component<typeof JoinDef>;
 
 // This component should be present on entities that want to participate in the
 // prediction system
-export const PredictDef = EM.defineComponent2(
+export const PredictDef = EM.defineComponent(
   "predict",
   () => ({
     dt: 0,
@@ -159,7 +159,7 @@ export const PredictDef = EM.defineComponent2(
 export type Predict = Component<typeof PredictDef>;
 
 // Marker component for entities that have just been updated by the sync system
-export const RemoteUpdatesDef = EM.defineComponent2(
+export const RemoteUpdatesDef = EM.defineComponent(
   "remoteUpdates",
   () => true,
   (p) => p

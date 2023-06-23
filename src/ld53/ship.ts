@@ -45,7 +45,7 @@ import {
 } from "../cannons/cannon.js";
 import { Phase } from "../ecs/sys-phase.js";
 
-export const ShipDef = EM.defineComponent2(
+export const ShipDef = EM.defineComponent(
   "ld52ship",
   () => ({
     mast: createRef(0, [MastDef, RotationDef]),
@@ -239,7 +239,7 @@ EM.addSystem(
   }
 );
 
-export const RudderDef = EM.defineComponent2(
+export const RudderDef = EM.defineComponent(
   "rudder",
   () => true,
   (p) => p

@@ -37,7 +37,7 @@ export const PhysicsDbgDef = EM.defineResource("_physDbgState", () => {
   };
 });
 
-export const DbgMeshDef = EM.defineComponent2(
+export const DbgMeshDef = EM.defineComponent(
   "_physDbgMesh",
   () => {
     return {

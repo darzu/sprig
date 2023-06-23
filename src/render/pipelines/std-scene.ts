@@ -83,7 +83,7 @@ export const FLAG_UNLIT = 1;
 
 export type MeshUniformTS = CyToTS<typeof MeshUniformStruct.desc>;
 
-export const RenderDataStdDef = EM.defineComponent2(
+export const RenderDataStdDef = EM.defineComponent(
   "renderDataStd",
   createUniData,
   updateUniData

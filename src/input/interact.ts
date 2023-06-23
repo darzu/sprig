@@ -16,7 +16,7 @@ import { clearTint, setTint, TintsDef } from "../color/color-ecs.js";
 import { DeletedDef } from "../ecs/delete.js";
 import { Phase } from "../ecs/sys-phase.js";
 
-export const InteractableDef = EM.defineComponent2(
+export const InteractableDef = EM.defineComponent(
   "interaction",
   () => ({
     // TODO(@darzu): components having pointers to entities should be
@@ -30,7 +30,7 @@ export const InteractableDef = EM.defineComponent2(
   }
 );
 
-export const InRangeDef = EM.defineComponent2(
+export const InRangeDef = EM.defineComponent(
   "inRange",
   () => true,
   (p) => p

@@ -38,14 +38,14 @@ import { GameMesh } from "../meshes/mesh-loader.js";
 
 // TODO(@darzu): do we need this ptr indirection? can't we just add/remove component? how does this interact
 //  with pools?
-const HEdgeDef = EM.defineComponent2(
+const HEdgeDef = EM.defineComponent(
   "hedge",
   () => ({
     he: undefined as any as HEdge,
   }),
   (p, he: HEdge) => Object.assign(p, { he })
 );
-const HVertDef = EM.defineComponent2(
+const HVertDef = EM.defineComponent(
   "hvert",
   () => ({
     hv: undefined as any as HVert,

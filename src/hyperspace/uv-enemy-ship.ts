@@ -37,7 +37,7 @@ import { ColorDef } from "../color/color-ecs.js";
 import { AudioDef, Music } from "../audio/audio.js";
 import { Phase } from "../ecs/sys-phase.js";
 
-export const EnemyCrewDef = EM.defineComponent2(
+export const EnemyCrewDef = EM.defineComponent(
   "enemyCrew",
   () => {
     return {
@@ -383,7 +383,7 @@ export function breakEnemyShip(
   }
 }
 
-export const FireZoneDef = EM.defineComponent2(
+export const FireZoneDef = EM.defineComponent(
   "firezone",
   () => {},
   (p) => p

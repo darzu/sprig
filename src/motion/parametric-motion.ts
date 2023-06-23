@@ -12,7 +12,7 @@ export interface ParamProjectile {
   accel: vec3;
 }
 
-export const ParametricDef = EM.defineComponent2(
+export const ParametricDef = EM.defineComponent(
   "parametric",
   () => {
     return {

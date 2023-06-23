@@ -30,7 +30,7 @@ export const GlobalCursor3dDef = EM.defineResource("globalCursor3d", () => {
   };
 });
 
-export const Cursor3dDef = EM.defineComponent2(
+export const Cursor3dDef = EM.defineComponent(
   "cursor3d",
   () => ({
     hitId: 0,

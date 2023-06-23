@@ -1,7 +1,7 @@
 import { Component, EM } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 
-export const ColorDef = EM.defineComponent2(
+export const ColorDef = EM.defineComponent(
   "color",
   () => V(0, 0, 0),
   (p, c?: vec3.InputT) => (c ? vec3.copy(p, c) : p)
@@ -18,7 +18,7 @@ EM.registerSerializerPair(
   }
 );
 
-export const TintsDef = EM.defineComponent2(
+export const TintsDef = EM.defineComponent(
   "tints",
   () => new Map() as Map<string, vec3>,
   (p) => p
@@ -46,7 +46,7 @@ export function clearTint(tints: Tints, name: string) {
   }
 }
 
-export const AlphaDef = EM.defineComponent2(
+export const AlphaDef = EM.defineComponent(
   "alpha",
   () => 1.0,
   (p, c?: number) => c ?? p

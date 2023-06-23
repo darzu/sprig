@@ -159,7 +159,7 @@ export function updateOceanUniData(u: OceanUniTS, m: Mesh): OceanUniTS {
   return u;
 }
 
-export const RenderDataOceanDef = EM.defineComponent2(
+export const RenderDataOceanDef = EM.defineComponent(
   "renderDataOcean",
   createOceanUniData,
   updateOceanUniData

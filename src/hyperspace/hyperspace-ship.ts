@@ -58,7 +58,7 @@ import { Phase } from "../ecs/sys-phase.js";
 
 // export const BOAT_COLOR: vec3 = V(0.2, 0.1, 0.05);
 
-export const ShipPartDef = EM.defineComponent2(
+export const ShipPartDef = EM.defineComponent(
   "shipPart",
   () => ({
     critical: false,

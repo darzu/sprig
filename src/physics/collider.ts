@@ -75,7 +75,7 @@ const NonCollider: EmptyCollider = {
 };
 
 // TODO(@darzu): ensure we support swapping colliders?
-export const ColliderDef = EM.defineComponent2(
+export const ColliderDef = EM.defineComponent(
   "collider",
   () => {
     return {

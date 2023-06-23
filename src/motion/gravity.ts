@@ -4,7 +4,7 @@ import { LinearVelocityDef } from "./velocity.js";
 import { TimeDef } from "../time/time.js";
 import { Phase } from "../ecs/sys-phase.js";
 
-export const GravityDef = EM.defineComponent2(
+export const GravityDef = EM.defineComponent(
   "gravity",
   () => vec3.create(),
   (p, gravity?: vec3.InputT) => (gravity ? vec3.copy(p, gravity) : p)

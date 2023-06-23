@@ -30,7 +30,7 @@ import { WidgetDef, WidgetLayerDef } from "./widgets.js";
 import { meshPoolPtr } from "../render/pipelines/std-scene.js";
 import { Phase } from "../ecs/sys-phase.js";
 
-const HLineDef = EM.defineComponent2(
+const HLineDef = EM.defineComponent(
   "hline",
   () => ({
     hl: undefined as any as HLine,

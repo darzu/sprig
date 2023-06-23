@@ -160,7 +160,7 @@ export function updateGrassUniData(u: GrassUniTS, m: Mesh): GrassUniTS {
   return u;
 }
 
-export const RenderDataGrassDef = EM.defineComponent2(
+export const RenderDataGrassDef = EM.defineComponent(
   "renderDataGrass",
   createEmptyGrassUniTS,
   updateGrassUniData

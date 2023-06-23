@@ -24,7 +24,7 @@ import { YawPitchDef, yawpitchToQuat } from "./yawpitch.js";
 import { TextDef } from "../gui/ui.js";
 import { Phase } from "../ecs/sys-phase.js";
 
-export const TurretDef = EM.defineComponent("turret", () => {
+export const TurretDef = EM.defineNonupdatableComponent("turret", () => {
   return {
     mannedId: 0,
     minYaw: -Math.PI * 0.5,

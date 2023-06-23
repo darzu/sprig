@@ -34,7 +34,7 @@ controllable:
   backspace -> delete obj
 */
 
-export const ControllableDef = EM.defineComponent2(
+export const ControllableDef = EM.defineComponent(
   "controllable",
   () => {
     return {

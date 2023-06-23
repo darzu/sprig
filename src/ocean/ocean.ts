@@ -77,7 +77,7 @@ export const OceanDef = EM.defineResource("ocean", (o: UVSurface) => {
   return o;
 });
 
-export const UVPosDef = EM.defineComponent2(
+export const UVPosDef = EM.defineComponent(
   "uvPos",
   () => vec2.create(),
   (p, uv?: vec2.InputT) => (uv ? vec2.copy(p, uv) : p)
@@ -88,7 +88,7 @@ EM.registerSerializerPair(
   (o, buf) => buf.readVec2(o)
 );
 
-export const UVDirDef = EM.defineComponent2(
+export const UVDirDef = EM.defineComponent(
   "uvDir",
   () => V(0, 1),
   (p, dir?: vec2.InputT) => (dir ? vec2.copy(p, dir) : p)

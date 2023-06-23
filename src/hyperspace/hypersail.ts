@@ -34,7 +34,7 @@ import { Phase } from "../ecs/sys-phase.js";
 
 // TODO(@darzu): refactor this so that our towers can use this
 
-const BoomPitchesDef = EM.defineComponent2(
+const BoomPitchesDef = EM.defineComponent(
   "boomPitches",
   () => ({
     boom1: Math.PI / 4,
@@ -54,7 +54,7 @@ EM.registerSerializerPair(
   }
 );
 
-const SailColorDef = EM.defineComponent2(
+const SailColorDef = EM.defineComponent(
   "sailColor",
   () => vec3.create(),
   (p, color?: vec3) => (color ? vec3.copy(p, color) : p)

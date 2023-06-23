@@ -23,9 +23,12 @@ export type SplinterPart = EntityW<[typeof PositionDef, typeof ColorDef]>;
 
 export type SplinterPool = ReturnType<typeof createSplinterPool>;
 
-export const SplinterParticleDef = EM.defineComponent("splinter", () => {
-  return {};
-});
+export const SplinterParticleDef = EM.defineNonupdatableComponent(
+  "splinter",
+  () => {
+    return {};
+  }
+);
 
 export const SplinterPoolsDef = EM.defineResource("splinterPools", () => {
   const _pools = new Map<string, SplinterPool>();

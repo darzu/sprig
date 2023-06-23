@@ -221,7 +221,7 @@ export type DetectedEvents = Component<typeof DetectedEventsDef>;
 
 // Outgoing event requests queue. Should be attached to the host
 // peer, shouldn't exist at the host itself
-export const OutgoingEventRequestsDef = EM.defineComponent2(
+export const OutgoingEventRequestsDef = EM.defineComponent(
   "outgoingEventRequests",
   () => ({
     lastSendTime: 0,
@@ -243,7 +243,7 @@ const RequestedEventsDef = EM.defineResource(
 
 // TODO: find a better name for this
 // Attached to each peer by the event system at the host
-const EventSyncDef = EM.defineComponent2(
+const EventSyncDef = EM.defineComponent(
   "eventSync",
   () => ({
     // The next unacked event ID from this peer

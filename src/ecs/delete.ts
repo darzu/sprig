@@ -4,7 +4,7 @@ import { dbgLogOnce } from "../utils/util.js";
 import { Phase } from "./sys-phase.js";
 import { WARN_DEAD_CLEANUP } from "../flags.js";
 
-export const DeletedDef = EM.defineComponent2(
+export const DeletedDef = EM.defineComponent(
   "deleted",
   () => ({
     processed: false,
@@ -43,7 +43,7 @@ EM.addSystem("delete", Phase.PRE_GAME_WORLD, [DeletedDef], [], (entities) => {
 // TODO(@darzu): uh oh. this seems like memory/life cycle management.
 //    currently this is needed for entities that "own" other
 //    entities but might be deleted in several ways
-export const OnDeleteDef = EM.defineComponent2(
+export const OnDeleteDef = EM.defineComponent(
   "onDelete",
   () => (deletedId: number) => {},
   (p, onDelete: (deletedId: number) => void) => onDelete
@@ -51,7 +51,7 @@ export const OnDeleteDef = EM.defineComponent2(
 
 // Idea: needed for entity pools. EM wont call a system w/ a Dead entity unless
 //    that system explicitly asks for Dead.
-export const DeadDef = EM.defineComponent2(
+export const DeadDef = EM.defineComponent(
   "dead",
   () => ({
     processed: false,

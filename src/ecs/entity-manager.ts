@@ -265,7 +265,7 @@ export class EntityManager {
   }
 
   // TODO(@darzu): REFACTOR! Consolidate w/ defineComponent below
-  public defineComponent2<N extends string, P, UArgs extends any[]>(
+  public defineComponent<N extends string, P, UArgs extends any[]>(
     name: N,
     // construct: (...args: Pargs) => P
     make: () => P,
@@ -294,7 +294,7 @@ export class EntityManager {
   }
 
   // TODO(@darzu): REFACTOR: return a different component type?
-  public defineComponent<N extends string, P, CArgs extends any[]>(
+  public defineNonupdatableComponent<N extends string, P, CArgs extends any[]>(
     name: N,
     construct: (...args: CArgs) => P
     // make: () => P,

@@ -28,7 +28,7 @@ export interface ClothConstruct {
   columns: number;
   distance: number;
 }
-export const ClothConstructDef = EM.defineComponent2(
+export const ClothConstructDef = EM.defineComponent(
   "clothConstruct",
   () => ({
     location: V(0, 0, 0),
@@ -42,7 +42,7 @@ export const ClothConstructDef = EM.defineComponent2(
   }
 );
 
-export const ClothLocalDef = EM.defineComponent2(
+export const ClothLocalDef = EM.defineComponent(
   "clothLocal",
   () => ({
     posMap: new Map(),

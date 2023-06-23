@@ -4,7 +4,7 @@ import { AuthorityDef, MeDef } from "../net/components.js";
 import { TimeDef } from "../time/time.js";
 import { Phase } from "./sys-phase.js";
 
-export const LifetimeDef = EM.defineComponent2(
+export const LifetimeDef = EM.defineComponent(
   "lifetime",
   () => {
     return { startMs: 1000, ms: 1000 };

@@ -82,7 +82,7 @@ export function identityFrame(out: Frame) {
 }
 
 // TRANSFORM
-export const TransformDef = EM.defineComponent2(
+export const TransformDef = EM.defineComponent(
   "transform",
   () => mat4.create(),
   (p, t?: mat4.InputT) => (t ? mat4.copy(p, t) : p)
@@ -90,7 +90,7 @@ export const TransformDef = EM.defineComponent2(
 export type Transform = mat4;
 
 // POSITION
-export const PositionDef = EM.defineComponent2(
+export const PositionDef = EM.defineComponent(
   "position",
   () => V(0, 0, 0),
   (p, v?: vec3.InputT) => (v ? vec3.copy(p, v) : p)
@@ -103,7 +103,7 @@ EM.registerSerializerPair(
 );
 
 // ROTATION
-export const RotationDef = EM.defineComponent2(
+export const RotationDef = EM.defineComponent(
   "rotation",
   () => quat.create(),
   (p, r?: quat.InputT) => (r ? quat.copy(p, r) : p)
@@ -116,7 +116,7 @@ EM.registerSerializerPair(
 );
 
 // SCALE
-export const ScaleDef = EM.defineComponent2(
+export const ScaleDef = EM.defineComponent(
   "scale",
   () => V(1, 1, 1),
   (p, by?: vec3.InputT) => (by ? vec3.copy(p, by) : p)
@@ -137,7 +137,7 @@ export const LocalFrameDefs = [
 ] as const;
 
 // PARENT
-export const PhysicsParentDef = EM.defineComponent2(
+export const PhysicsParentDef = EM.defineComponent(
   "physicsParent",
   () => {
     return { id: 0 };
