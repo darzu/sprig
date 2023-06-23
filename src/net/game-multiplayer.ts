@@ -175,8 +175,8 @@ export async function initMPGame() {
   const sun = EM.new();
   EM.set(sun, PointLightDef);
   EM.set(sun, ColorDef, V(1, 1, 1));
-  // EM.ensureComponentOn(sun, PositionDef, V(100, 100, 0));
-  // EM.ensureComponentOn(sun, PositionDef, V(-10, 10, 10));
+  // EM.set(sun, PositionDef, V(100, 100, 0));
+  // EM.set(sun, PositionDef, V(-10, 10, 10));
   EM.set(sun, PositionDef, V(100, 100, 100));
   EM.set(sun, LinearVelocityDef, V(0.001, 0.001, 0.0));
   EM.set(sun, RenderableConstructDef, mp_meshes.ball.proto, false);

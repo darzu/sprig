@@ -123,7 +123,7 @@ export async function initFontEditor() {
   // panelMesh.colors[1] = [0.1, 0.1, 0.3];
   panelMesh.colors[0] = V(0.4, 0.4, 0.4);
   EM.set(panel, RenderableConstructDef, panelMesh);
-  // EM.ensureComponentOn(panel, ColorDef, [0.2, 0.3, 0.2]);
+  // EM.set(panel, ColorDef, [0.2, 0.3, 0.2]);
   EM.set(panel, PositionDef, V(0, 0, 0));
 
   if (DBG_3D) {

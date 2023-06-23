@@ -120,21 +120,21 @@ export async function initClothSandbox(hosting: boolean) {
   EM.set(ship, RotationDef, quat.fromEuler(0, Math.PI * 0.1, 0, quat.create()));
 
   // const ocean = EM.newEntity();
-  // EM.ensureComponentOn(
+  // EM.set(
   //   ocean,
   //   EM.defineComponent("ocean", () => true)
   // );
-  // EM.ensureComponentOn(
+  // EM.set(
   //   ocean,
   //   RenderableConstructDef,
   //   res.allMeshes.ocean.proto
   // );
-  // EM.ensureComponentOn(ocean, ColorDef, [0.0, 0.0, 0.4]);
-  // EM.ensureComponentOn(ocean, PositionDef, [12000, 180, 0]);
+  // EM.set(ocean, ColorDef, [0.0, 0.0, 0.4]);
+  // EM.set(ocean, PositionDef, [12000, 180, 0]);
   // // vec3.scale(ocean.position, ocean.position, scale);
   // const scale = 100.0;
-  // EM.ensureComponentOn(ocean, ScaleDef, [scale, scale, scale]);
-  // EM.ensureComponentOn(
+  // EM.set(ocean, ScaleDef, [scale, scale, scale]);
+  // EM.set(
   //   ocean,
   //   RotationDef,
   //   quat.fromEuler(quat.create(), 0, Math.PI * 0.1, 0)

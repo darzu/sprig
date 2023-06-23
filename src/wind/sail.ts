@@ -118,7 +118,7 @@ export function createSail(
   EM.set(ent, ScaleDef, V(scale, scale, scale));
   EM.set(ent, PositionDef);
   EM.set(ent, RotationDef);
-  // EM.ensureComponentOn(ent, ColorDef, V(0.9, 0.9, 0.9));
+  // EM.set(ent, ColorDef, V(0.9, 0.9, 0.9));
   EM.set(ent, ColorDef, ENDESGA16.red);
   return ent;
 }
@@ -210,7 +210,7 @@ export async function createMast() {
   });
   EM.set(ent, PositionDef);
   EM.set(ent, RotationDef);
-  // EM.ensureComponentOn(ent, ColorDef, V(0.8, 0.7, 0.3));
+  // EM.set(ent, ColorDef, V(0.8, 0.7, 0.3));
   EM.set(ent, ColorDef, ENDESGA16.darkBrown);
   EM.set(ent, AuthorityDef, res.me.pid);
 

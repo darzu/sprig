@@ -70,7 +70,7 @@ export async function initCubeGame() {
   // boxM.colors = boxM.surfaceIds.map((_, i) => [0.1, i / 12, 0.1]);
   // console.dir(boxM.colors);
   EM.set(box, RenderableConstructDef, boxM);
-  // EM.ensureComponentOn(box, ColorDef, [0.1, 0.4, 0.1]);
+  // EM.set(box, ColorDef, [0.1, 0.4, 0.1]);
   EM.set(box, PositionDef, V(0, 0, 3));
   EM.set(box, RotationDef);
   EM.set(box, AngularVelocityDef, V(0, 0.001, 0.001));

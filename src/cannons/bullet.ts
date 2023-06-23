@@ -111,47 +111,45 @@ export function createOrResetBullet(
 ) {
   const props = e.bulletConstruct;
   assertDbg(props);
-  EM.set(e, PositionDef);
-  vec3.copy(e.position, props.location);
+  EM.set(e, PositionDef, props.location);
   EM.set(e, RotationDef);
-  // EM.ensureComponentOn(e, LinearVelocityDef);
+  // EM.set(e, LinearVelocityDef);
   // vec3.copy(e.linearVelocity, props.linearVelocity);
-  EM.set(e, AngularVelocityDef);
-  vec3.copy(e.angularVelocity, props.angularVelocity);
-  EM.set(e, ColorDef);
+  EM.set(e, AngularVelocityDef, props.angularVelocity);
   if (props.team === 1) {
-    vec3.copy(e.color, ENDESGA16.deepGreen);
+    EM.set(e, ColorDef, ENDESGA16.deepGreen);
   } else if (props.team === 2) {
-    vec3.copy(e.color, ENDESGA16.deepBrown);
+    EM.set(e, ColorDef, ENDESGA16.deepBrown);
   } else {
-    vec3.copy(e.color, ENDESGA16.orange);
+    EM.set(e, ColorDef, ENDESGA16.orange);
   }
   EM.set(e, MotionSmoothingDef);
   EM.set(e, RenderableConstructDef, res.allMeshes.ball.proto);
   EM.set(e, AuthorityDef, res.me.pid);
-  EM.set(e, BulletDef);
-  e.bullet.team = props.team;
-  e.bullet.health = props.health;
+  EM.set(e, BulletDef, props.team, props.health);
   EM.set(e, ColliderDef, {
     shape: "AABB",
     solid: false,
     aabb: res.allMeshes.ball.aabb,
   });
-  EM.set(e, LifetimeDef);
-  e.lifetime.ms = 8000;
-  EM.set(e, SyncDef);
-  e.sync.dynamicComponents = [PositionDef.id];
+  EM.set(e, LifetimeDef, 8000);
+  EM.set(e, SyncDef, [PositionDef.id]);
   e.sync.fullComponents = [BulletConstructDef.id];
   EM.set(e, PredictDef);
-  // EM.ensureComponentOn(e, GravityDef);
+  // EM.set(e, GravityDef);
   // e.gravity[1] = -props.gravity;
 
   // TODO(@darzu): MULTIPLAYER: fix sync & predict to work with parametric motion
-  EM.set(e, ParametricDef);
-  vec3.copy(e.parametric.init.pos, props.location);
-  vec3.copy(e.parametric.init.vel, props.linearVelocity);
-  vec3.copy(e.parametric.init.accel, [0, -props.gravity, 0]);
-  e.parametric.startMs = res.time.time;
+  EM.set(
+    e,
+    ParametricDef,
+    {
+      pos: props.location,
+      vel: props.linearVelocity,
+      accel: [0, -props.gravity, 0],
+    },
+    res.time.time
+  );
   return e;
 }
 
@@ -165,7 +163,7 @@ export function registerBuildBulletsSystem() {
       for (let b of bullets) {
         // if (FinishedDef.isOn(b)) continue;
         // createOrUpdateBullet( b, res.me.pid, res.allMeshes);
-        // EM.ensureComponentOn(b, FinishedDef);
+        // EM.set(b, FinishedDef);
       }
     }
   );
@@ -282,7 +280,7 @@ async function initBulletPartPool() {
       EM.set(pe, PositionDef);
       EM.set(pe, LinearVelocityDef);
       EM.set(pe, AngularVelocityDef);
-      // EM.ensureComponentOn(pe, LifetimeDef, 2000);
+      // EM.set(pe, LifetimeDef, 2000);
       EM.set(pe, GravityDef, V(0, -4 * 0.00001, 0));
       EM.set(pe, SplinterParticleDef);
       bset.push(pe);
@@ -329,7 +327,7 @@ export async function breakBullet(
     vec3.copy(pe.linearVelocity, vel);
     EM.set(pe, AngularVelocityDef);
     vec3.copy(pe.angularVelocity, vel);
-    // EM.ensureComponentOn(pe, LifetimeDef, 2000);
+    // EM.set(pe, LifetimeDef, 2000);
     EM.set(pe, GravityDef);
     vec3.copy(pe.gravity, [0, -4 * 0.00001, 0]);
   }

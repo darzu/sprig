@@ -142,7 +142,7 @@ export async function initHyperspaceGame() {
   res.camera.fov = Math.PI * 0.5;
 
   // const ghost = createGhost();
-  // EM.ensureComponentOn(ghost, RenderableConstructDef, res.allMeshes.cube.proto);
+  // EM.set(ghost, RenderableConstructDef, res.allMeshes.cube.proto);
   // ghost.controllable.speed *= 3;
   // ghost.controllable.sprintMul *= 3;
 

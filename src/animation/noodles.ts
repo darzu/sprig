@@ -51,12 +51,12 @@ export function debugCreateNoodles() {
 
   // TODO(@darzu): test cube faces (update: they are correct)
   // const cube = EM.newEntity();
-  // EM.ensureComponentOn(cube, PositionDef, [0, -2, 0]);
+  // EM.set(cube, PositionDef, [0, -2, 0]);
   // const cubeM = cloneMesh(CUBE_MESH);
   // for (let triIdx of CUBE_FACES.bottom) {
   //   cubeM.colors[triIdx] = [0, 0, 0.5];
   // }
-  // EM.ensureComponentOn(cube, RenderableConstructDef, cubeM);
+  // EM.set(cube, RenderableConstructDef, cubeM);
 }
 
 export function registerNoodleSystem() {

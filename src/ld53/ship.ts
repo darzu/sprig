@@ -120,7 +120,7 @@ export async function createShip() {
       aabb,
     })),
   };
-  // EM.ensureComponentOn(ent, ColliderDef, {
+  // EM.set(ent, ColliderDef, {
   //   shape: "AABB",
   //   solid: false,
   //   aabb: timberAABB,
@@ -129,7 +129,7 @@ export async function createShip() {
   EM.set(ent, PositionDef, V(0, 0, 0));
   EM.set(ent, RotationDef);
   EM.set(ent, LinearVelocityDef);
-  // EM.ensureComponentOn(ent, ColorDef, V(0.5, 0.3, 0.1));
+  // EM.set(ent, ColorDef, V(0.5, 0.3, 0.1));
   EM.set(ent, ColorDef, V(0, 0, 0)); // painted by individual planks!
 
   const mast = await createMast();
@@ -151,10 +151,10 @@ export async function createShip() {
   // make debug gizmo
   // TODO(@darzu): would be nice to have as a little helper function?
   // const gizmo = EM.new();
-  // EM.ensureComponentOn(gizmo, PositionDef, V(0, 20, 0));
-  // EM.ensureComponentOn(gizmo, ScaleDef, V(10, 10, 10));
-  // EM.ensureComponentOn(gizmo, PhysicsParentDef, ent.id);
-  // EM.ensureComponentOn(gizmo, RenderableConstructDef, res.allMeshes.gizmo.proto);
+  // EM.set(gizmo, PositionDef, V(0, 20, 0));
+  // EM.set(gizmo, ScaleDef, V(10, 10, 10));
+  // EM.set(gizmo, PhysicsParentDef, ent.id);
+  // EM.set(gizmo, RenderableConstructDef, res.allMeshes.gizmo.proto);
 
   // addGizmoChild(ent, 10);
 
@@ -243,7 +243,7 @@ async function createRudder() {
   const ent = EM.new();
   EM.set(ent, RudderDef);
   EM.set(ent, RenderableConstructDef, rudderMesh.proto);
-  // EM.ensureComponentOn(ent, ColorDef, V(0.2, 0.1, 0.05));
+  // EM.set(ent, ColorDef, V(0.2, 0.1, 0.05));
   EM.set(ent, ColorDef, ENDESGA16.midBrown);
   EM.set(ent, PositionDef);
   EM.set(ent, RotationDef);

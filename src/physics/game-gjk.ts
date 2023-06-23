@@ -89,7 +89,7 @@ export async function initGJKSandbox(hosting: boolean) {
 
   // ghost
   const g = createGhost();
-  // EM.ensureComponentOn(g, RenderableConstructDef, res.allMeshes.cube.proto);
+  // EM.set(g, RenderableConstructDef, res.allMeshes.cube.proto);
   // createPlayer();
 
   // vec3.copy(e.position, [-16.6, 5, -5.1]);
@@ -142,7 +142,7 @@ export async function initGJKSandbox(hosting: boolean) {
     solid: false,
     aabb: res.allMeshes.cube.aabb,
   });
-  // EM.ensureComponentOn(b1, ColliderDef, {
+  // EM.set(b1, ColliderDef, {
   //   shape: "Box",
   //   solid: false,
   //   center: res.allMeshes.cube.center,
@@ -154,15 +154,15 @@ export async function initGJKSandbox(hosting: boolean) {
   EM.set(b2, RenderableConstructDef, m2);
   EM.set(b2, ColorDef, V(0.1, 0.1, 0.1));
   EM.set(b2, PositionDef, V(0, 0, 0));
-  // EM.ensureComponentOn(b2, PositionDef, [0, 0, -1.2]);
+  // EM.set(b2, PositionDef, [0, 0, -1.2]);
   EM.set(b2, WorldFrameDef);
-  // EM.ensureComponentOn(b2, PhysicsParentDef, g.id);
+  // EM.set(b2, PhysicsParentDef, g.id);
   EM.set(b2, ColliderDef, {
     shape: "AABB",
     solid: false,
     aabb: res.allMeshes.cube.aabb,
   });
-  // EM.ensureComponentOn(b2, ColliderDef, {
+  // EM.set(b2, ColliderDef, {
   //   shape: "Box",
   //   solid: false,
   //   center: res.allMeshes.cube.center,

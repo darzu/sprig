@@ -404,7 +404,7 @@ const piratePool = createEntityPool<
       if (WoodHealthDef.isOn(timber) && PhysicsParentDef.isOn(timber)) {
         // TODO(@darzu): necessary?
         // timber.physicsParent.id = 0;
-        // EM.ensureComponentOn(timber, LifetimeDef, 1000);
+        // EM.set(timber, LifetimeDef, 1000);
         for (let b of timber.woodHealth.boards) {
           for (let s of b) {
             s.health = 0;

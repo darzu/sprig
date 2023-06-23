@@ -97,8 +97,8 @@ export async function initReboundSandbox(hosting: boolean) {
     EM.set(e, ColorDef, V(r, g, b));
     EM.set(e, PositionDef, pos);
     EM.set(e, ScaleDef, V(0.5, 0.5, 0.5));
-    // EM.ensureComponentOn(b, RotationDef);
-    // EM.ensureComponentOn(b, AngularVelocityDef, [0, 0.001, 0.001]);
+    // EM.set(b, RotationDef);
+    // EM.set(b, AngularVelocityDef, [0, 0.001, 0.001]);
     EM.set(e, LinearVelocityDef, V(0, -0.02, 0));
     EM.set(e, PhysicsParentDef, tableId);
     EM.set(e, ColliderDef, {

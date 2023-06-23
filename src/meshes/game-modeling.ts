@@ -59,8 +59,8 @@ export async function initModelingGame() {
   const sun = EM.new();
   EM.set(sun, PointLightDef);
   EM.set(sun, ColorDef, V(1, 1, 1));
-  // EM.ensureComponentOn(sun, PositionDef, V(100, 100, 0));
-  // EM.ensureComponentOn(sun, PositionDef, V(-10, 10, 10));
+  // EM.set(sun, PositionDef, V(100, 100, 0));
+  // EM.set(sun, PositionDef, V(-10, 10, 10));
   EM.set(sun, PositionDef, V(100, 100, 100));
   EM.set(sun, LinearVelocityDef, V(0.001, 0.001, 0.0));
   EM.set(sun, RenderableConstructDef, allMeshes.cube.proto);
@@ -100,11 +100,11 @@ export async function initModelingGame() {
   // objects
   const obj = EM.new();
   const ship = createHomeShip();
-  // EM.ensureComponentOn(obj, RenderableConstructDef, allMeshes.ship_small.proto);
+  // EM.set(obj, RenderableConstructDef, allMeshes.ship_small.proto);
   EM.set(obj, RenderableConstructDef, ship.timberMesh);
   EM.set(obj, PositionDef, V(0, 0, 0));
   EM.set(obj, ColorDef, ENDESGA16.midBrown);
-  // EM.ensureComponentOn(obj, AngularVelocityDef, V(0.001, 0.00013, 0.00017));
+  // EM.set(obj, AngularVelocityDef, V(0.001, 0.00013, 0.00017));
 
   const txt = await EM.whenResources(TextDef);
   txt.text.lowerText = `m: toggle modeler, b: new box, shift-b: export, x/y/z: move, shift-x/y/z: scale`;

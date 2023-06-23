@@ -212,8 +212,8 @@ export const { HsShipPropsDef, HsShipLocalDef, createHsShip } =
 
       s.uvship.speed = 0;
       // s.hsShipLocal.speed = 0.005 * 3; // TODO(@darzu): DEBUG SPEED
-      // EM.ensureComponentOn(s, LinearVelocityDef, [0, 0, 0]);
-      // EM.ensureComponentOn(s, AngularVelocityDef);
+      // EM.set(s, LinearVelocityDef, [0, 0, 0]);
+      // EM.set(s, AngularVelocityDef);
 
       const mc: MultiCollider = {
         shape: "Multi",
@@ -262,7 +262,7 @@ const criticalPartIdxes = [0, 3, 5, 6];
 //   EM.registerOneShotSystem(null, [AssetsDef], (_, res) => {
 //     // create ship
 //     const s = EM.newEntity();
-//     EM.ensureComponentOn(s, ShipConstructDef);
+//     EM.set(s, ShipConstructDef);
 //   });
 // }
 

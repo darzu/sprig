@@ -106,17 +106,17 @@ export const { HypMastPropsDef, HypMastLocalDef, createHypMastNow } =
       // const sail1 = TODO; // TODO(@darzu):
 
       // const sail2 = EM.new();
-      // EM.ensureComponentOn(sail2, PositionDef, V(0, BOOM_HEIGHT, 0));
-      // EM.ensureComponentOn(
+      // EM.set(sail2, PositionDef, V(0, BOOM_HEIGHT, 0));
+      // EM.set(
       //   sail2,
       //   RenderableConstructDef,
       //   cloneMesh(res.allMeshes.sail.mesh)
       // );
-      // //EM.ensureComponentOn(sail2, ScaleDef, [12, 12, 12]);
-      // EM.ensureComponentOn(sail2, RotationDef);
-      // EM.ensureComponentOn(sail2, SailColorDef, STAR2_COLOR);
-      // EM.ensureComponentOn(sail2, ColorDef, DEFAULT_SAIL_COLOR);
-      // EM.ensureComponentOn(sail2, PhysicsParentDef, mast.id);
+      // //EM.set(sail2, ScaleDef, [12, 12, 12]);
+      // EM.set(sail2, RotationDef);
+      // EM.set(sail2, SailColorDef, STAR2_COLOR);
+      // EM.set(sail2, ColorDef, DEFAULT_SAIL_COLOR);
+      // EM.set(sail2, PhysicsParentDef, mast.id);
       // EM.whenEntityHas(
       //   sail2,
       //   RenderDataStdDef,

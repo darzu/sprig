@@ -128,7 +128,7 @@ export async function initOcean(oceanMesh: Mesh, color: vec3) {
     // meshPoolPtr
   );
   EM.set(ocean, ColorDef, color);
-  //EM.ensureComponentOn(ocean, PositionDef, [12000, 180, 0]);
+  //EM.set(ocean, PositionDef, [12000, 180, 0]);
   EM.set(ocean, PositionDef);
 
   let ocean2 = await EM.whenEntityHas(ocean, RenderableDef, RenderDataOceanDef);

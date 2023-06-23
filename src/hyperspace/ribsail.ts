@@ -67,13 +67,13 @@ export const { RibSailPropsDef, RibSailLocalDef, createRibSailNow } =
       // const sail = EM.new();
 
       EM.set(sail, PositionDef, V(0, 0, 0));
-      // EM.ensureComponentOn(sail, PositionDef, V(0, 0, 0));
+      // EM.set(sail, PositionDef, V(0, 0, 0));
       EM.set(sail, RenderableConstructDef, cloneMesh(res.allMeshes.sail.mesh));
-      //EM.ensureComponentOn(sail1, ScaleDef, [12, 12, 12]);
+      //EM.set(sail1, ScaleDef, [12, 12, 12]);
       EM.set(sail, RotationDef);
-      // EM.ensureComponentOn(sail, SailColorDef, STAR1_COLOR);
+      // EM.set(sail, SailColorDef, STAR1_COLOR);
       EM.set(sail, ColorDef, DEFAULT_SAIL_COLOR);
-      // EM.ensureComponentOn(sail, PhysicsParentDef, mast.id);
+      // EM.set(sail, PhysicsParentDef, mast.id);
       EM.whenEntityHas(
         sail,
         RenderDataStdDef

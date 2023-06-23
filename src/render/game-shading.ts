@@ -95,8 +95,8 @@ export async function initShadingGame() {
   const sun = EM.new();
   EM.set(sun, PointLightDef);
   EM.set(sun, ColorDef, V(1, 1, 1));
-  // EM.ensureComponentOn(sun, PositionDef, V(100, 100, 0));
-  // EM.ensureComponentOn(sun, PositionDef, V(-10, 10, 10));
+  // EM.set(sun, PositionDef, V(100, 100, 0));
+  // EM.set(sun, PositionDef, V(-10, 10, 10));
   EM.set(sun, PositionDef, V(100, 100, 100));
   EM.set(sun, LinearVelocityDef, V(0.001, 0.001, 0.0));
   EM.set(sun, RenderableConstructDef, sg_meshes.cube.proto);
@@ -179,16 +179,16 @@ export async function initShadingGame() {
     // const frustGiz2Mesh = createGizmoMesh();
     // mapMeshPositions(frustGiz2Mesh, (p) => vec3.transformMat4(p, invFrust2, p));
     // const frustGiz2 = EM.new();
-    // EM.ensureComponentOn(frustGiz2, RenderableConstructDef, frustGiz2Mesh);
-    // EM.ensureComponentOn(frustGiz2, PositionDef, V(0, 0, 0));
+    // EM.set(frustGiz2, RenderableConstructDef, frustGiz2Mesh);
+    // EM.set(frustGiz2, PositionDef, V(0, 0, 0));
   }
 
   // const myViewCorners: EntityW<[typeof PositionDef]>[] = [];
   // for (let i = 0; i < 8; i++) {
   //   const p = EM.new();
-  //   EM.ensureComponentOn(p, RenderableConstructDef, sg_meshes.ball.proto);
-  //   EM.ensureComponentOn(p, PositionDef);
-  //   EM.ensureComponentOn(p, ColorDef, V(0, 1, 1));
+  //   EM.set(p, RenderableConstructDef, sg_meshes.ball.proto);
+  //   EM.set(p, PositionDef);
+  //   EM.set(p, ColorDef, V(0, 1, 1));
   //   myViewCorners.push(p);
   // }
   // EM.registerSystem(

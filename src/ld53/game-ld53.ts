@@ -254,7 +254,7 @@ export async function initLD53(hosting: boolean) {
   // skyMesh.tri.forEach((f) => vec3.reverse(f, f));
   const skyMesh = domeMesh;
   EM.set(sky, RenderableConstructDef, skyMesh, undefined, undefined, SKY_MASK);
-  // EM.ensureComponentOn(sky, ColorDef, V(0.9, 0.9, 0.9));
+  // EM.set(sky, ColorDef, V(0.9, 0.9, 0.9));
 
   // ocean
   // const oceanVertsPerWorldUnit = 0.02;
@@ -324,7 +324,7 @@ export async function initLD53(hosting: boolean) {
         const bouy = EM.new();
         EM.set(bouy, PositionDef, V(0, 0, 0));
         EM.set(bouy, UVPosDef, V(u + jitter(0.01), v + jitter(0.01)));
-        // EM.ensureComponentOn(bouy, ScaleDef, V(5, 5, 5));
+        // EM.set(bouy, ScaleDef, V(5, 5, 5));
         EM.set(bouy, bouyDef);
         EM.set(bouy, RenderableConstructDef, res.ld53Meshes.ball.proto);
         EM.set(bouy, ColorDef, ENDESGA16.lightGreen);
@@ -403,10 +403,10 @@ export async function initLD53(hosting: boolean) {
     const visible = false;
     EM.set(g, RenderableConstructDef, sphereMesh, visible);
     EM.set(g, ColorDef, V(0.1, 0.1, 0.1));
-    // EM.ensureComponentOn(g, PositionDef, V(0, 0, 0));
-    // EM.ensureComponentOn(b2, PositionDef, [0, 0, -1.2]);
+    // EM.set(g, PositionDef, V(0, 0, 0));
+    // EM.set(b2, PositionDef, [0, 0, -1.2]);
     EM.set(g, WorldFrameDef);
-    // EM.ensureComponentOn(b2, PhysicsParentDef, g.id);
+    // EM.set(b2, PhysicsParentDef, g.id);
     EM.set(g, ColliderDef, {
       shape: "AABB",
       solid: false,
@@ -727,9 +727,9 @@ async function createPlayer() {
   EM.set(p, RenderableConstructDef, sphereMesh, visible);
   EM.set(p, ColorDef, V(0.1, 0.1, 0.1));
   EM.set(p, PositionDef, V(0, 0, 0));
-  // EM.ensureComponentOn(b2, PositionDef, [0, 0, -1.2]);
+  // EM.set(b2, PositionDef, [0, 0, -1.2]);
   EM.set(p, WorldFrameDef);
-  // EM.ensureComponentOn(b2, PhysicsParentDef, g.id);
+  // EM.set(b2, PhysicsParentDef, g.id);
   EM.set(p, ColliderDef, {
     shape: "AABB",
     solid: true,
@@ -792,7 +792,7 @@ async function resetLand() {
     EM.set(hm, RenderableConstructDef, terraMesh);
     EM.set(hm, PositionDef);
     // TODO(@darzu): maybe do a sable-like gradient accross the terrain, based on view dist or just uv?
-    // EM.ensureComponentOn(hm, ColorDef, V(0.4, 0.2, 0.2));
+    // EM.set(hm, ColorDef, V(0.4, 0.2, 0.2));
     EM.set(hm, ColorDef, ENDESGA16.lightGray);
     const hm2 = await EM.whenEntityHas(hm, RenderableDef);
     terraEnt = hm2;

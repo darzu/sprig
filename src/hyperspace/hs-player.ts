@@ -464,7 +464,7 @@ export function registerHsPlayerSystems() {
             vec3.zero(p.linearVelocity);
 
             // TODO(@darzu): uncomment to animate player entry
-            // EM.ensureComponentOn(p, AnimateToDef, {
+            // EM.set(p, AnimateToDef, {
             //   startPos,
             //   endPos,
             //   durationMs: 2000,

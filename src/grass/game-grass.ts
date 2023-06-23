@@ -209,9 +209,9 @@ export async function initGrassGame(hosting: boolean) {
   EM.set(ground, RenderableConstructDef, groundMesh);
   EM.set(ground, ColorDef, ENDESGA16.darkGreen);
   // EM.set(ground, ColorDef, ENDESGA16.darkGreen);
-  // EM.ensureComponentOn(p, ColorDef, [0.2, 0.3, 0.2]);
+  // EM.set(p, ColorDef, [0.2, 0.3, 0.2]);
   EM.set(ground, PositionDef, V(-WORLD_HEIGHT * 0.5, -1.1, -WORLD_WIDTH * 0.5));
-  // EM.ensureComponentOn(plane, PositionDef, [0, -5, 0]);
+  // EM.set(plane, PositionDef, [0, -5, 0]);
 
   // grass
   const lod1: GrassTilesetOpts = {
@@ -328,10 +328,10 @@ export async function initGrassGame(hosting: boolean) {
     const visible = false;
     EM.set(g, RenderableConstructDef, sphereMesh, visible);
     EM.set(g, ColorDef, V(0.1, 0.1, 0.1));
-    // EM.ensureComponentOn(g, PositionDef, V(0, 0, 0));
-    // EM.ensureComponentOn(b2, PositionDef, [0, 0, -1.2]);
+    // EM.set(g, PositionDef, V(0, 0, 0));
+    // EM.set(b2, PositionDef, [0, 0, -1.2]);
     EM.set(g, WorldFrameDef);
-    // EM.ensureComponentOn(b2, PhysicsParentDef, g.id);
+    // EM.set(b2, PhysicsParentDef, g.id);
     EM.set(g, ColliderDef, {
       shape: "AABB",
       solid: false,
@@ -735,9 +735,9 @@ async function createPlayer() {
   EM.set(p, RenderableConstructDef, sphereMesh, visible);
   EM.set(p, ColorDef, V(0.1, 0.1, 0.1));
   EM.set(p, PositionDef, V(0, 0, 0));
-  // EM.ensureComponentOn(b2, PositionDef, [0, 0, -1.2]);
+  // EM.set(b2, PositionDef, [0, 0, -1.2]);
   EM.set(p, WorldFrameDef);
-  // EM.ensureComponentOn(b2, PhysicsParentDef, g.id);
+  // EM.set(b2, PhysicsParentDef, g.id);
   EM.set(p, ColliderDef, {
     shape: "AABB",
     solid: true,

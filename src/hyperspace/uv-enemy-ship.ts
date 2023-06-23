@@ -342,7 +342,7 @@ export function breakEnemyShip(
     EM.set(pe, ColorDef, ENEMY_SHIP_COLOR);
     EM.set(pe, RotationDef, quat.clone(enemyShip.rotation));
     EM.set(pe, PositionDef, vec3.clone(enemyShip.position));
-    // EM.ensureComponentOn(pe, ColliderDef, {
+    // EM.set(pe, ColliderDef, {
     //   shape: "AABB",
     //   solid: false,
     //   aabb: part.aabb,

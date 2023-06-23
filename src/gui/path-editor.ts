@@ -146,7 +146,7 @@ async function createPathEditor() {
       );
       EM.set(hpEnt_, PositionDef, V(0, 0.1, 0));
       // TODO(@darzu): make scale configurable
-      // EM.ensureComponentOn(hpEnt_, ScaleDef, [5, 5, 5]);
+      // EM.set(hpEnt_, ScaleDef, [5, 5, 5]);
       const hpEnt = await EM.whenEntityHas(
         hpEnt_,
         RenderableDef,
