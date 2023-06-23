@@ -69,16 +69,27 @@ export type Collider =
   | CapsuleCollider
   | MultiCollider;
 
+const NonCollider: EmptyCollider = {
+  shape: "Empty",
+  solid: false,
+};
+
 // TODO(@darzu): ensure we support swapping colliders?
-export const ColliderDef = EM.defineComponent("collider", (c?: Collider) => {
-  return (
-    c ??
-    ({
+export const ColliderDef = EM.defineComponent2(
+  "collider",
+  () => {
+    return {
       shape: "Empty",
       solid: false,
-    } as Collider)
-  );
-});
+    } as Collider;
+  },
+  (p, c?: Collider) => {
+    // TODO(@darzu): PERF. In most cases this is creating an empty collider and immediately throwing that away
+    if (c) return c;
+    return p;
+  }
+);
+
 const __COLLIDER_ASSERT: Component<typeof ColliderDef> extends Collider
   ? true
   : false = true;

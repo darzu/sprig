@@ -7,7 +7,7 @@ import { Phase } from "../ecs/sys-phase.js";
 export const GravityDef = EM.defineComponent2(
   "gravity",
   () => vec3.create(),
-  (p, gravity?: vec3) => (gravity ? vec3.copy(p, gravity) : p)
+  (p, gravity?: vec3.InputT) => (gravity ? vec3.copy(p, gravity) : p)
 );
 
 EM.addSystem(

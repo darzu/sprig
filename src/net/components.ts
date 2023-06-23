@@ -97,14 +97,19 @@ export const MeDef = EM.defineResource(
 
 export type Me = Resource<typeof MeDef>;
 
-export const InboxDef = EM.defineComponent(
+export const InboxDef = EM.defineComponent2(
   "inbox",
-  () => new Map<MessageType, Deserializer[]>()
+  () => new Map<MessageType, Deserializer[]>(),
+  (p) => p
 );
 
 export type Inbox = Component<typeof InboxDef>;
 
-export const OutboxDef = EM.defineComponent("outbox", () => [] as DataView[]);
+export const OutboxDef = EM.defineComponent2(
+  "outbox",
+  () => [] as DataView[],
+  (p) => p
+);
 
 export type Outbox = Component<typeof OutboxDef>;
 
@@ -143,11 +148,19 @@ export type Join = Component<typeof JoinDef>;
 
 // This component should be present on entities that want to participate in the
 // prediction system
-export const PredictDef = EM.defineComponent("predict", () => ({
-  dt: 0,
-}));
+export const PredictDef = EM.defineComponent2(
+  "predict",
+  () => ({
+    dt: 0,
+  }),
+  (p) => p
+);
 
 export type Predict = Component<typeof PredictDef>;
 
 // Marker component for entities that have just been updated by the sync system
-export const RemoteUpdatesDef = EM.defineComponent("remoteUpdates", () => true);
+export const RemoteUpdatesDef = EM.defineComponent2(
+  "remoteUpdates",
+  () => true,
+  (p) => p
+);

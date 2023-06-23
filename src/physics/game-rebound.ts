@@ -92,7 +92,11 @@ export async function initReboundSandbox(hosting: boolean) {
 
   res.text.lowerText = `spawner (p) stack (l) clear (backspace)`;
 
-  const cubeDef = EM.defineComponent("cube", () => true);
+  const cubeDef = EM.defineComponent2(
+    "cube",
+    () => true,
+    (p) => p
+  );
 
   function spawn(m: GameMesh, pos: vec3) {
     const e = EM.new();

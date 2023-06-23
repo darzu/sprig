@@ -221,13 +221,17 @@ export type DetectedEvents = Component<typeof DetectedEventsDef>;
 
 // Outgoing event requests queue. Should be attached to the host
 // peer, shouldn't exist at the host itself
-export const OutgoingEventRequestsDef = EM.defineComponent(
+export const OutgoingEventRequestsDef = EM.defineComponent2(
   "outgoingEventRequests",
-  (nextId?: number) => ({
+  () => ({
     lastSendTime: 0,
-    nextId: nextId || 0,
+    nextId: 0,
     events: [] as { id: number; event: DetectedEvent<any> }[],
-  })
+  }),
+  (p, nextId?: number) => {
+    if (nextId) p.nextId = nextId;
+    return p;
+  }
 );
 
 // Exists only at the host. This is a list of all events requested
@@ -239,13 +243,17 @@ const RequestedEventsDef = EM.defineResource(
 
 // TODO: find a better name for this
 // Attached to each peer by the event system at the host
-const EventSyncDef = EM.defineComponent("eventSync", () => ({
-  // The next unacked event ID from this peer
-  nextId: 0,
-  // The next event sequence number this peer should see
-  nextSeq: 0,
-  lastSendTime: 0,
-}));
+const EventSyncDef = EM.defineComponent2(
+  "eventSync",
+  () => ({
+    // The next unacked event ID from this peer
+    nextId: 0,
+    // The next event sequence number this peer should see
+    nextSeq: 0,
+    lastSendTime: 0,
+  }),
+  (p) => p
+);
 
 const EventsDef = EM.defineResource("events", () => ({
   log: [] as Event<any>[],
