@@ -37,7 +37,7 @@ export interface ResourceDef<
   P = any,
   Pargs extends any[] = any[]
 > {
-  _brand: "resourceDef"; // TODO(@darzu): remove once ResourceDef & ComponentDef are incompatible
+  _brand: "resourceDef";
   readonly id: ResId;
   readonly name: N;
   construct: (...args: Pargs) => P;
@@ -45,24 +45,17 @@ export interface ResourceDef<
 
 export type CompId = number;
 
-// TODO(@darzu): Consider having a "NonsyncableComponentDef" or "NonupdatableComponentDef" that
-//  can take constructor args but can't be synced and throws an error if u use EM.set twice since
-//  it can't update. See "NonUpdatableComponentDef" branch for one attempt, but i ran into type
-//  issues i couldn't fix.
-
 export interface ComponentDef<
   N extends string = string,
   P = any,
   CArgs extends any[] = any,
   UArgs extends any[] = any
 > {
-  _brand: "componentDef"; // TODO(@darzu): remove once ResourceDef & ComponentDef are incompatible
+  _brand: "componentDef";
   updatable: boolean;
   readonly name: N;
   construct: (...args: CArgs) => P;
   update: (p: P, ...args: UArgs) => P;
-  // make: () => P;
-  // update: (p: P, ...args: Pargs) => P;
   readonly id: CompId;
   isOn: <E extends Entity>(e: E) => e is E & { [K in N]: P };
 }
