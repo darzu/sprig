@@ -462,7 +462,7 @@ export class EntityManager {
   public addComponent<N extends string, P, PArgs extends any[]>(
     id: number,
     def: _ComponentDef<N, P, PArgs>,
-    ...args: PArgs // TODO(@darzu): REFACTOR. Types aren't right yet
+    ...args: PArgs
   ): P {
     this.checkComponent(def);
     if (id === 0) throw `hey, use addResource!`;
@@ -475,8 +475,6 @@ export class EntityManager {
     }
     if (def.name in e)
       throw `double defining component ${def.name} on ${e.id}!`;
-    // TODO(@darzu): REFACTOR:
-    // TODO(@darzu): HACK. Types aren't right..
     let c: P;
     if (def.updatable) {
       c = def.construct();
@@ -485,8 +483,6 @@ export class EntityManager {
       c = def.construct(...args);
     }
 
-    // let c = def.make();
-    // c = def.update(c, ...args);
     (e as any)[def.name] = c;
 
     // update query caches
@@ -567,14 +563,15 @@ export class EntityManager {
     ...args: PArgs
   ): asserts e is EntityW<[_ComponentDef<N, P, PArgs>]> {
     const alreadyHas = def.name in e;
-    // assert(!alreadyHas, `${e.id} already has ${def.name}`);
     if (!alreadyHas) {
       // TODO(@darzu): REFACTOR. types aren't right yet
       this.addComponent(e.id, def, ...args);
     } else {
-      // TODO(@darzu): REFACTOR:
-      // assert(def.updatable, `Cannot `
-      // def.update
+      assert(
+        def.updatable,
+        `Trying to double set non-updatable component '${def.name}' on '${e.id}'`
+      );
+      (e as any)[def.name] = def.update((e as any)[def.name], ...args);
     }
   }
 
