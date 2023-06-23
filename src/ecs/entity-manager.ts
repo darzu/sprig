@@ -183,6 +183,7 @@ type ESetId<DS extends EDefId<number, any>[]> = {
     : never;
 };
 
+// TODO(@darzu): don't love these...
 export type EDef<CS extends ComponentDef[]> = readonly [...CS];
 export type ESet<DS extends EDef<any>[]> = {
   [K in keyof DS]: DS[K] extends EDef<infer CS> ? EntityW<CS, number> : never;
@@ -565,9 +566,19 @@ export class EntityManager {
 
   public setOnce<N extends string, P, PArgs extends any[]>(
     e: Entity,
+    def: UpdatableComponentDef<N, P, PArgs>,
+    ...args: PArgs
+  ): asserts e is EntityW<[UpdatableComponentDef<N, P, PArgs>]>;
+  public setOnce<N extends string, P, PArgs extends any[]>(
+    e: Entity,
     def: NonupdatableComponentDef<N, P, PArgs>,
     ...args: PArgs
-  ): asserts e is EntityW<[NonupdatableComponentDef<N, P, PArgs>]> {
+  ): asserts e is EntityW<[NonupdatableComponentDef<N, P, PArgs>]>;
+  public setOnce<N extends string, P, PArgs extends any[]>(
+    e: Entity,
+    def: _ComponentDef<N, P, PArgs>,
+    ...args: PArgs
+  ): asserts e is EntityW<[_ComponentDef<N, P, PArgs>]> {
     const alreadyHas = def.name in e;
     if (!alreadyHas) {
       this.addComponent(e.id, def, ...args);

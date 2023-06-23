@@ -183,7 +183,13 @@ function runEvent<Extra>(type: string, event: Event<Extra>) {
   const entities = event.entities.map((id, idx) => {
     const entity = EM.findEntity(id, [])!;
     for (const cdef of handler.entities[idx] as ComponentDef[]) {
-      EM.set(entity, cdef);
+      // TODO(@darzu): I'm a little nervous about this. We should only be calling
+      // the constructor(), not the update(), and we need to assert that all the components
+      // are updatable?
+      if (!cdef.isOn(entity)) {
+        // console.log(`runEvent setting ${cdef.name} on ${entity.id}`);
+        EM.setOnce(entity, cdef);
+      }
     }
     return entity;
   });
