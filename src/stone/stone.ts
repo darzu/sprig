@@ -538,10 +538,7 @@ export async function spawnStoneTower() {
   return towerPool.spawn();
 }
 
-export const FlyingBrickDef = EM.defineNonupdatableComponent(
-  "flyingBrick",
-  () => true
-);
+export const FlyingBrickDef = EM.defineComponent("flyingBrick", () => true);
 
 const maxFlyingBricks = 50;
 

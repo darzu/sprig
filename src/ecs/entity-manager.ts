@@ -285,7 +285,7 @@ export class EntityManager {
     name: N,
     // construct: (...args: Pargs) => P
     make: () => P,
-    update: (p: P, ...args: UArgs) => P
+    update: (p: P, ...args: UArgs) => P = (p, ..._) => p
   ): UpdatableComponentDef<N, P, UArgs> {
     const id = nameToId(name);
     if (this.components.has(id)) {

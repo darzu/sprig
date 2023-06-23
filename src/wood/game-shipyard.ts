@@ -152,12 +152,9 @@ let healthPercent = 100;
 
 const MAX_GOODBALLS = 10;
 
-export const LD51CannonDef = EM.defineNonupdatableComponent(
-  "ld51Cannon",
-  () => {
-    return {};
-  }
-);
+export const LD51CannonDef = EM.defineComponent("ld51Cannon", () => {
+  return {};
+});
 
 export async function initShipyardGame(hosting: boolean) {
   const res = await EM.whenResources(
@@ -571,7 +568,7 @@ export async function initShipyardGame(hosting: boolean) {
 
   // Create player
   {
-    const ColWallDef = EM.defineNonupdatableComponent("ColWall", () => ({}));
+    const ColWallDef = EM.defineComponent("ColWall", () => ({}));
 
     // create ship bounds
     // TODO(@darzu): move into shipyard?

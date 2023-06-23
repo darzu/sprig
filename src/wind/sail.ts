@@ -34,7 +34,7 @@ const SAIL_TURN_SPEED = 5;
 export const SAIL_FURL_RATE = 0.02;
 const BILLOW_FACTOR = 0.2;
 
-export const SailDef = EM.defineNonupdatableComponent("sail", () => ({
+export const SailDef = EM.defineComponent("sail", () => ({
   width: 1,
   height: 1,
   unfurledAmount: 0.1,
@@ -192,7 +192,7 @@ EM.addSystem(
 
 // EM.addConstraint(["billow", "after", "applyWindToSail"]);
 
-export const MastDef = EM.defineNonupdatableComponent("mast", () => ({
+export const MastDef = EM.defineComponent("mast", () => ({
   sail: createRef(0, [SailDef]),
   force: 0.0,
 }));

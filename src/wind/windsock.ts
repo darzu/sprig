@@ -13,7 +13,7 @@ import { WindDef } from "./wind.js";
 import { assert } from "../utils/util.js";
 import { Phase } from "../ecs/sys-phase.js";
 
-export const SockDef = EM.defineNonupdatableComponent("sock", () => ({
+export const SockDef = EM.defineComponent("sock", () => ({
   scale: 1,
 }));
 
