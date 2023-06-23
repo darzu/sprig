@@ -10,6 +10,7 @@ import { Serializer, Deserializer } from "../utils/serialize.js";
 import {
   assert,
   assertDbg,
+  dbgLogOnce,
   dbgOnce,
   getCallStack,
   hashCode,
@@ -560,6 +561,8 @@ export class EntityManager {
         def.updatable,
         `Trying to double set non-updatable component '${def.name}' on '${e.id}'`
       );
+      // if (def.name === "authority") throw new Error(`double-set authority`);
+      // dbgLogOnce(`double-set: ${e.id}.${def.name}`);
       (e as any)[def.name] = def.update((e as any)[def.name], ...args);
     }
   }

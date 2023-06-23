@@ -132,12 +132,11 @@ export function defineNetEntityHelper<
     propsDef,
     [...opts.buildResources, MeDef],
     (e, res) => {
-      // TYPE HACK
-      const me = (res as any as Resources<[typeof MeDef]>).me;
-      EM.set(e, AuthorityDef, me.pid);
-      console.log(
-        `making ent ${e.id} w/ pid ${me.pid}; actual: ${e.authority.pid}`
-      );
+      const me = (res as any as Resources<[typeof MeDef]>).me; // TYPE HACK
+      if (!AuthorityDef.isOn(e)) EM.set(e, AuthorityDef, me.pid);
+      // console.log(
+      //   `making ent ${e.id} w/ pid ${me.pid}; actual: ${e.authority.pid}`
+      // );
 
       EM.set(e, localDef);
       EM.set(e, SyncDef);
