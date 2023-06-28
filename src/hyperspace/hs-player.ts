@@ -106,7 +106,7 @@ export const PlayerHsPropsDef = defineSerializableComponent(
   }
 );
 
-export function registerHsPlayerSystems() {
+EM.addEagerInit([PlayerHsPropsDef], [], [], () => {
   EM.addSystem(
     "buildHsPlayers",
     Phase.PRE_GAME_WORLD,
@@ -478,4 +478,4 @@ export function registerHsPlayerSystems() {
       }
     }
   );
-}
+});

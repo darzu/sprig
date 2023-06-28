@@ -13,7 +13,7 @@ import {
 import { initStars, renderStars } from "../render/pipelines/std-stars.js";
 import { AllMeshesDef } from "../meshes/mesh-list.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
-import { createHsPlayer, registerHsPlayerSystems } from "./hs-player.js";
+import { createHsPlayer } from "./hs-player.js";
 import { createHsShip, registerShipSystems } from "./hyperspace-ship.js";
 import {
   HSGameStateDef,
@@ -85,7 +85,6 @@ export async function initHyperspaceGame() {
 
   registerGameStateSystems();
   registerEnemyShipSystems();
-  registerHsPlayerSystems();
   registerUVShipSystems();
   registerOceanUVFns();
   registerShipSystems();

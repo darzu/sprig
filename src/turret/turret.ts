@@ -9,7 +9,7 @@ import { ColliderDef } from "../physics/collider.js";
 import { AuthorityDef, SyncDef } from "../net/components.js";
 import { eventWizard } from "../net/events.js";
 import { InRangeDef, InteractableDef } from "../input/interact.js";
-import { LocalPlayerEntityDef, HsPlayerDef } from "../hyperspace/hs-player.js";
+import { LocalPlayerEntityDef } from "../hyperspace/hs-player.js";
 import {
   CameraFollowDef,
   CAMERA_OFFSETS,
@@ -175,7 +175,7 @@ EM.addEagerInit([TurretDef], [], [], () => {
     [TurretDef, YawPitchDef, CameraFollowDef],
     [InputsDef, LocalPlayerEntityDef],
     (turrets, res) => {
-      const player = EM.findEntity(res.localPlayerEnt.playerId, [HsPlayerDef])!;
+      const player = EM.findEntity(res.localPlayerEnt.playerId, [CanManDef])!;
       if (!player) return;
       for (let c of turrets) {
         if (DeletedDef.isOn(c)) continue;

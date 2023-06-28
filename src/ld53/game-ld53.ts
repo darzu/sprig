@@ -10,11 +10,7 @@ import {
 } from "../meshes/mesh-list.js";
 import { ControllableDef } from "../input/controllable.js";
 import { createGhost, GhostDef } from "../debug/ghost.js";
-import {
-  LocalPlayerEntityDef,
-  HsPlayerDef,
-  registerHsPlayerSystems,
-} from "../hyperspace/hs-player.js";
+import { LocalPlayerEntityDef } from "../hyperspace/hs-player.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { ColliderDef } from "../physics/collider.js";
 import { LinearVelocityDef } from "../motion/velocity.js";
@@ -387,9 +383,6 @@ export async function initLD53(hosting: boolean) {
     player.position[1] = 1.45;
     assert(CameraFollowDef.isOn(rudder));
     raiseManTurret(player, rudder);
-
-    // TODO(@darzu): Don't use HS players here!!
-    registerHsPlayerSystems();
   }
 
   if (DBG_PLAYER) {
@@ -735,8 +728,8 @@ const { Ld53PlayerPropsDef, Ld53PlayerLocalDef, createLd53PlayerAsync } =
 
         EM.ensureResource(LocalPlayerEntityDef, p.id);
 
-        // TODO(@darzu): dont use HsPlayerDef?
-        EM.set(p, HsPlayerDef);
+        // TODO(@darzu): REFACTOR. dont use HsPlayerDef?
+        // EM.set(p, HsPlayerDef);
       }
 
       // quat.rotateY(g.rotation, quat.IDENTITY, (-5 * Math.PI) / 8);
