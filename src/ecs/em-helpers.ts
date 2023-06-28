@@ -75,6 +75,8 @@ export type NetEntityDefs<
     res: Resources<RS>,
     ...args: Pargs1
   ) => INITED;
+} & {
+  [_ in `create${Capitalize<N>}Async`]: (...args: Pargs1) => Promise<INITED>;
 };
 
 // TODO(@darzu): what happens if build() is async???!
@@ -175,6 +177,12 @@ export function defineNetEntityHelper<
     return e;
   };
 
+  const createNewAsync = async (...args: Pargs1) => {
+    const e = createNew(...args);
+    await EM.whenEntityHas(e, FinishedDef);
+    return e as INITED;
+  };
+
   const capitalizedN = capitalize(opts.name);
 
   const result = {
@@ -182,9 +190,11 @@ export function defineNetEntityHelper<
     [`${capitalizedN}LocalDef`]: localDef,
     [`create${capitalizedN}`]: createNew,
     [`create${capitalizedN}Now`]: createNewNow,
+    [`create${capitalizedN}Async`]: createNewAsync,
   } as const;
 
   // TYPE HACK: idk how to make Typscript accept this...
+  // TODO(@darzu): would be nice to have proper type checking on these fns
   return result as any;
 }
 
