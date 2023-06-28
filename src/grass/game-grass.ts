@@ -53,7 +53,7 @@ import { PartyDef } from "../camera/party.js";
 import { copyAABB, createAABB } from "../physics/aabb.js";
 import { InputsDef } from "../input/inputs.js";
 import { ScoreDef } from "../ld53/score.js";
-import { raiseManTurret } from "../turret/turret.js";
+import { CanManDef, raiseManTurret } from "../turret/turret.js";
 import { TextDef } from "../gui/ui.js";
 import { VERBOSE_LOG } from "../flags.js";
 import { CanvasDef, HasFirstInteractionDef } from "../render/canvas.js";
@@ -752,6 +752,7 @@ async function createPlayer() {
 
   EM.ensureResource(LocalPlayerEntityDef, p.id);
   EM.set(p, HsPlayerDef);
+  EM.set(p, CanManDef);
   EM.set(p, AuthorityDef, me.pid);
   EM.set(p, PhysicsParentDef);
   return p;

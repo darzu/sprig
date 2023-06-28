@@ -107,11 +107,15 @@ export function constructNetTurret(
   e.interaction.colliderId = interactBox.id;
 }
 
+export const CanManDef = EM.defineComponent("canMan", () => ({
+  manning: false,
+}));
+
 export const raiseManTurret = eventWizard(
   "man-turret",
   () =>
     [
-      [HsPlayerDef, AuthorityDef],
+      [CanManDef, AuthorityDef],
       [TurretDef, CameraFollowDef, AuthorityDef],
     ] as const,
   ([player, turret]) => {
@@ -122,7 +126,7 @@ export const raiseManTurret = eventWizard(
       turret.authority.seq++;
       turret.authority.updateSeq = 0;
     }
-    player.hsPlayer.manning = true;
+    player.canMan.manning = true;
     turret.turret.mannedId = player.id;
   },
   {
@@ -134,10 +138,10 @@ export const raiseManTurret = eventWizard(
 
 export const raiseUnmanTurret = eventWizard(
   "unman-turret",
-  () => [[HsPlayerDef], [TurretDef, CameraFollowDef]] as const,
+  () => [[CanManDef], [TurretDef, CameraFollowDef]] as const,
   ([player, turret]) => {
     turret.cameraFollow.priority = 0;
-    player.hsPlayer.manning = false;
+    player.canMan.manning = false;
     turret.turret.mannedId = 0;
   },
   {
@@ -217,7 +221,7 @@ EM.addEagerInit([TurretDef], [], [], () => {
     [InputsDef, LocalPlayerEntityDef, TextDef],
     (turrets, res) => {
       const player = EM.findEntity(res.localPlayerEnt.playerId, [
-        HsPlayerDef,
+        CanManDef,
         AuthorityDef,
       ])!;
       if (!player) return;

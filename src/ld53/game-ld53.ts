@@ -53,7 +53,7 @@ import {
   updateAABBWithPoint,
 } from "../physics/aabb.js";
 import { InputsDef } from "../input/inputs.js";
-import { raiseManTurret } from "../turret/turret.js";
+import { CanManDef, raiseManTurret } from "../turret/turret.js";
 import { TextDef } from "../gui/ui.js";
 import { CanvasDef, HasFirstInteractionDef } from "../render/canvas.js";
 import { createJfaPipelines } from "../render/pipelines/std-jump-flood.js";
@@ -386,8 +386,7 @@ export async function initLD53(hosting: boolean) {
     vec3.copy(player.position, rudder.position);
     player.position[1] = 1.45;
     assert(CameraFollowDef.isOn(rudder));
-    // TODO(@darzu): REFACTOR: re-enable
-    // raiseManTurret(player, rudder);
+    raiseManTurret(player, rudder);
 
     // TODO(@darzu): Don't use HS players here!!
     registerHsPlayerSystems();
@@ -759,6 +758,8 @@ const { Ld53PlayerPropsDef, Ld53PlayerLocalDef, createLd53PlayerAsync } =
       });
 
       EM.set(p, PhysicsParentDef);
+
+      EM.set(p, CanManDef);
 
       return p;
     },

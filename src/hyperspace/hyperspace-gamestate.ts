@@ -25,6 +25,7 @@ import {
 } from "./hyperspace-ship.js";
 import { AudioDef } from "../audio/audio.js";
 import { Phase } from "../ecs/sys-phase.js";
+import { CanManDef } from "../turret/turret.js";
 
 const RESTART_TIME_MS = 5000;
 
@@ -70,6 +71,7 @@ export const endGame = eventWizard(
       EM.ensureComponent(ship.hsShipProps.cannonRId, DeletedDef);
     const players = EM.filterEntities([
       HsPlayerDef,
+      CanManDef,
       PositionDef,
       RotationDef,
       AuthorityDef,
@@ -77,7 +79,7 @@ export const endGame = eventWizard(
       WorldFrameDef,
     ]);
     for (let p of players) {
-      p.hsPlayer.manning = false;
+      p.canMan.manning = false;
       if (p.authority.pid === res.me.pid) {
         p.physicsParent.id = 0;
         vec3.copy(p.position, p.world.position);
