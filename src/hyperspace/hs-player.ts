@@ -55,7 +55,7 @@ export function createHsPlayer() {
   // console.log("create player!");
   const e = EM.new();
   EM.set(e, PlayerHsPropsDef, V(0, 100, 0));
-  EM.addResource(LocalHsPlayerDef, e.id);
+  EM.addResource(LocalPlayerEntityDef, e.id);
   return e;
 }
 
@@ -83,8 +83,8 @@ export const HsPlayerDef = EM.defineComponent("hsPlayer", () => {
 });
 
 // Resource pointing at the local player
-export const LocalHsPlayerDef = EM.defineResource(
-  "localHsPlayer",
+export const LocalPlayerEntityDef = EM.defineResource(
+  "localPlayerEnt",
   (playerId?: number) => ({
     playerId: playerId || 0,
   })

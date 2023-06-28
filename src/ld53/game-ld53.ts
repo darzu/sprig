@@ -11,7 +11,7 @@ import {
 import { ControllableDef } from "../input/controllable.js";
 import { createGhost, GhostDef } from "../debug/ghost.js";
 import {
-  LocalHsPlayerDef,
+  LocalPlayerEntityDef,
   HsPlayerDef,
   registerHsPlayerSystems,
 } from "../hyperspace/hs-player.js";
@@ -734,7 +734,7 @@ const { Ld53PlayerPropsDef, Ld53PlayerLocalDef, createLd53PlayerAsync } =
         p.cameraFollow.yawOffset = 0.0;
         p.cameraFollow.pitchOffset = -0.593;
 
-        EM.ensureResource(LocalHsPlayerDef, p.id);
+        EM.ensureResource(LocalPlayerEntityDef, p.id);
 
         // TODO(@darzu): dont use HsPlayerDef?
         EM.set(p, HsPlayerDef);

@@ -1,5 +1,5 @@
 import { Component, EM, Entity } from "../ecs/entity-manager.js";
-import { LocalHsPlayerDef, HsPlayerDef } from "../hyperspace/hs-player.js";
+import { LocalPlayerEntityDef, HsPlayerDef } from "../hyperspace/hs-player.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import {
@@ -36,9 +36,9 @@ EM.addEagerInit([InteractableDef], [], [], () => {
     "interactableInteract",
     Phase.PRE_GAME_PLAYERS,
     [InteractableDef, WorldFrameDef],
-    [LocalHsPlayerDef, MeDef, PhysicsResultsDef],
+    [LocalPlayerEntityDef, MeDef, PhysicsResultsDef],
     (interactables, resources) => {
-      const player = EM.findEntity(resources.localHsPlayer.playerId, []);
+      const player = EM.findEntity(resources.localPlayerEnt.playerId, []);
       if (!player) return;
 
       const interactablesMap: Map<number, Entity> = interactables.reduce(

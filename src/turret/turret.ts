@@ -9,7 +9,7 @@ import { ColliderDef } from "../physics/collider.js";
 import { AuthorityDef, SyncDef } from "../net/components.js";
 import { eventWizard } from "../net/events.js";
 import { InRangeDef, InteractableDef } from "../input/interact.js";
-import { LocalHsPlayerDef, HsPlayerDef } from "../hyperspace/hs-player.js";
+import { LocalPlayerEntityDef, HsPlayerDef } from "../hyperspace/hs-player.js";
 import {
   CameraFollowDef,
   CAMERA_OFFSETS,
@@ -115,8 +115,8 @@ export const raiseManTurret = eventWizard(
       [TurretDef, CameraFollowDef, AuthorityDef],
     ] as const,
   ([player, turret]) => {
-    const localHsPlayer = EM.getResource(LocalHsPlayerDef);
-    if (localHsPlayer?.playerId === player.id) {
+    const localPlayerEnt = EM.getResource(LocalPlayerEntityDef);
+    if (localPlayerEnt?.playerId === player.id) {
       turret.cameraFollow.priority = 2;
       turret.authority.pid = player.authority.pid;
       turret.authority.seq++;
@@ -169,9 +169,9 @@ EM.addEagerInit([TurretDef], [], [], () => {
     "turretAim",
     Phase.GAME_PLAYERS,
     [TurretDef, YawPitchDef, CameraFollowDef],
-    [InputsDef, LocalHsPlayerDef],
+    [InputsDef, LocalPlayerEntityDef],
     (turrets, res) => {
-      const player = EM.findEntity(res.localHsPlayer.playerId, [HsPlayerDef])!;
+      const player = EM.findEntity(res.localPlayerEnt.playerId, [HsPlayerDef])!;
       if (!player) return;
       for (let c of turrets) {
         if (DeletedDef.isOn(c)) continue;
@@ -214,9 +214,9 @@ EM.addEagerInit([TurretDef], [], [], () => {
     "turretManUnman",
     Phase.GAME_PLAYERS,
     [TurretDef, InRangeDef, AuthorityDef, CameraFollowDef],
-    [InputsDef, LocalHsPlayerDef, TextDef],
+    [InputsDef, LocalPlayerEntityDef, TextDef],
     (turrets, res) => {
-      const player = EM.findEntity(res.localHsPlayer.playerId, [
+      const player = EM.findEntity(res.localPlayerEnt.playerId, [
         HsPlayerDef,
         AuthorityDef,
       ])!;

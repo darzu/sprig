@@ -12,7 +12,7 @@ import {
   ScaleDef,
 } from "../physics/transform.js";
 import { registerEventHandler, DetectedEventsDef } from "../net/events.js";
-import { LocalHsPlayerDef, HsPlayerDef } from "../hyperspace/hs-player.js";
+import { LocalPlayerEntityDef, HsPlayerDef } from "../hyperspace/hs-player.js";
 import { InteractableDef, InRangeDef } from "./interact.js";
 import { Deserializer, Serializer } from "../utils/serialize.js";
 import { Phase } from "../ecs/sys-phase.js";
@@ -29,10 +29,10 @@ export function registerToolSystems() {
     "toolPickup",
     Phase.POST_GAME_PLAYERS,
     [ToolDef, InRangeDef],
-    [DetectedEventsDef, LocalHsPlayerDef],
+    [DetectedEventsDef, LocalPlayerEntityDef],
     (hats, resources) => {
       for (let { id } of hats) {
-        let player = EM.findEntity(resources.localHsPlayer.playerId, [
+        let player = EM.findEntity(resources.localPlayerEnt.playerId, [
           HsPlayerDef,
         ])!;
         if (player.hsPlayer.tool === 0 && player.hsPlayer.interacting) {

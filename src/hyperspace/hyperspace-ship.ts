@@ -24,7 +24,7 @@ import { DeletedDef } from "../ecs/delete.js";
 import { clamp, min } from "../utils/math.js";
 import { createCannon } from "../cannons/cannon.js";
 import { AudioDef } from "../audio/audio.js";
-import { LocalHsPlayerDef, HsPlayerDef } from "./hs-player.js";
+import { LocalPlayerEntityDef, HsPlayerDef } from "./hs-player.js";
 import { CameraDef } from "../camera/camera.js";
 import { InputsDef } from "../input/inputs.js";
 import { InRangeDef, InteractableDef } from "../input/interact.js";
@@ -274,13 +274,13 @@ export function registerShipSystems() {
     "startGame",
     Phase.GAME_WORLD,
     [GemPropsDef, InRangeDef],
-    [HSGameStateDef, PhysicsResultsDef, MeDef, InputsDef, LocalHsPlayerDef],
+    [HSGameStateDef, PhysicsResultsDef, MeDef, InputsDef, LocalPlayerEntityDef],
     (gems, res) => {
       for (let gem of gems) {
         if (DeletedDef.isOn(gem)) continue;
         if (res.hsGameState.state !== HyperspaceGameState.LOBBY) continue;
         if (res.inputs.keyClicks["e"]) {
-          let player = EM.findEntity(res.localHsPlayer.playerId, [
+          let player = EM.findEntity(res.localPlayerEnt.playerId, [
             HsPlayerDef,
           ])!;
           startGame(player);

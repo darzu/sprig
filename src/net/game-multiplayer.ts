@@ -36,7 +36,7 @@ import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
 import { shadowPipelines } from "../render/pipelines/std-shadow.js";
-import { LocalHsPlayerDef, HsPlayerDef } from "../hyperspace/hs-player";
+import { LocalPlayerEntityDef, HsPlayerDef } from "../hyperspace/hs-player";
 import { ControllableDef } from "../input/controllable.js";
 import { ColliderDef } from "../physics/collider.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";

@@ -80,7 +80,7 @@ import { InRangeDef, InteractableDef } from "../input/interact.js";
 import { LifetimeDef } from "../ecs/lifetime.js";
 import {
   createHsPlayer,
-  LocalHsPlayerDef,
+  LocalPlayerEntityDef,
   HsPlayerDef,
 } from "../hyperspace/hs-player.js";
 import { TextDef } from "../gui/ui.js";
@@ -413,9 +413,9 @@ export async function initShipyardGame(hosting: boolean) {
     "ld51PlayerFireCannon",
     Phase.GAME_WORLD,
     [LD51CannonDef, WorldFrameDef, InRangeDef],
-    [InputsDef, LocalHsPlayerDef, AudioDef],
+    [InputsDef, LocalPlayerEntityDef, AudioDef],
     (cannons, res) => {
-      const player = EM.findEntity(res.localHsPlayer.playerId, [HsPlayerDef])!;
+      const player = EM.findEntity(res.localPlayerEnt.playerId, [HsPlayerDef])!;
       if (!player) return;
       for (let c of cannons) {
         if (
@@ -800,10 +800,10 @@ export async function initShipyardGame(hosting: boolean) {
       "pickUpBalls",
       Phase.GAME_WORLD,
       [GoodBallDef, InteractableDef, InRangeDef, PositionDef],
-      [InputsDef, LocalHsPlayerDef],
+      [InputsDef, LocalPlayerEntityDef],
       (es, res) => {
         if (!res.inputs.lclick) return;
-        const player = EM.findEntity(res.localHsPlayer.playerId, [
+        const player = EM.findEntity(res.localPlayerEnt.playerId, [
           HsPlayerDef,
         ])!;
         if (!player) return;
@@ -924,7 +924,7 @@ export async function initShipyardGame(hosting: boolean) {
       null,
       [InputsDef, TextDef, TimeDef, AudioDef],
       (es, res) => {
-        // const player = EM.findEntity(res.localHsPlayer.playerId, [PlayerDef])!;
+        // const player = EM.findEntity(res.localPlayerEnt.playerId, [PlayerDef])!;
         // if (!player) return;
 
         const currentHealth = getCurrentHealth();

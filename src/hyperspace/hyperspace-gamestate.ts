@@ -14,7 +14,7 @@ import {
 import { TimeDef } from "../time/time.js";
 import { LifetimeDef } from "../ecs/lifetime.js";
 import {
-  LocalHsPlayerDef,
+  LocalPlayerEntityDef,
   HsPlayerDef,
   PlayerHsPropsDef,
 } from "./hs-player.js";
@@ -108,9 +108,9 @@ export const restartGame = eventWizard(
   () => [[HsShipPropsDef]] as const,
   ([ship]) => {
     console.log("restart");
-    const res = EM.getResources([HSGameStateDef, LocalHsPlayerDef])!;
+    const res = EM.getResources([HSGameStateDef, LocalPlayerEntityDef])!;
     res.hsGameState.state = HyperspaceGameState.LOBBY;
-    const player = EM.findEntity(res.localHsPlayer.playerId, [HsPlayerDef])!;
+    const player = EM.findEntity(res.localPlayerEnt.playerId, [HsPlayerDef])!;
     player.hsPlayer.lookingForShip = true;
     // res.score.currentScore = 0;
 

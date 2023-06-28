@@ -9,7 +9,7 @@ import { AuthorityDef, MeDef } from "../net/components.js";
 import { DetectedEventsDef, eventWizard } from "../net/events.js";
 import { fireBullet } from "./bullet.js";
 import { InRangeDef } from "../input/interact.js";
-import { LocalHsPlayerDef, HsPlayerDef } from "../hyperspace/hs-player.js";
+import { LocalPlayerEntityDef, HsPlayerDef } from "../hyperspace/hs-player.js";
 import { CannonLD51Mesh } from "../meshes/mesh-list.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import { AudioDef, randChordId } from "../audio/audio.js";
@@ -120,7 +120,7 @@ EM.addEagerInit([CannonPropsDef], [], [], () => {
     [[HsPlayerDef], [CannonLocalDef, WorldFrameDef]] as const,
     ([player, cannon]) => {
       // only the firing player creates a bullet
-      if (player.id === EM.getResource(LocalHsPlayerDef)?.playerId) {
+      if (player.id === EM.getResource(LocalPlayerEntityDef)?.playerId) {
         const fireDir = cannon.world.rotation;
         // const fireDir = quat.create();
         // quat.rotateY(fireDir, cannon.world.rotation, Math.PI * 0.5);
@@ -165,9 +165,9 @@ EM.addEagerInit([CannonPropsDef], [], [], () => {
     "playerControlCannon",
     Phase.GAME_PLAYERS,
     [CannonLocalDef, TurretDef, WorldFrameDef],
-    [InputsDef, LocalHsPlayerDef],
+    [InputsDef, LocalPlayerEntityDef],
     (cannons, res) => {
-      const player = EM.findEntity(res.localHsPlayer.playerId, [HsPlayerDef])!;
+      const player = EM.findEntity(res.localPlayerEnt.playerId, [HsPlayerDef])!;
       if (!player) return;
       for (let c of cannons) {
         if (DeletedDef.isOn(c)) continue;
@@ -183,9 +183,9 @@ EM.addEagerInit([CannonPropsDef], [], [], () => {
     "playerManCanon",
     Phase.GAME_PLAYERS,
     [CannonLocalDef, TurretDef, InRangeDef, AuthorityDef, WorldFrameDef],
-    [DetectedEventsDef, InputsDef, LocalHsPlayerDef],
+    [DetectedEventsDef, InputsDef, LocalPlayerEntityDef],
     (cannons, res) => {
-      const player = EM.findEntity(res.localHsPlayer.playerId, [
+      const player = EM.findEntity(res.localPlayerEnt.playerId, [
         HsPlayerDef,
         AuthorityDef,
       ])!;

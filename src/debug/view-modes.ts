@@ -5,7 +5,7 @@ import {
 } from "../camera/camera.js";
 import { EM } from "../ecs/entity-manager.js";
 import { Phase } from "../ecs/sys-phase.js";
-import { LocalHsPlayerDef } from "../hyperspace/hs-player.js";
+import { LocalPlayerEntityDef } from "../hyperspace/hs-player.js";
 import { InputsDef } from "../input/inputs.js";
 import { RendererDef } from "../render/renderer-ecs.js";
 
@@ -36,8 +36,8 @@ export function initDbgViewModes() {
 
       // check camera mode
       if (inputs.keyClicks["4"]) {
-        const localHsPlayer = EM.getResource(LocalHsPlayerDef);
-        const p = EM.findEntity(localHsPlayer?.playerId ?? -1, [
+        const localPlayerEnt = EM.getResource(LocalPlayerEntityDef);
+        const p = EM.findEntity(localPlayerEnt?.playerId ?? -1, [
           CameraFollowDef,
         ]);
         if (p) {

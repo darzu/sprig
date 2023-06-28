@@ -6,7 +6,7 @@ import { BallMesh, GizmoMesh, UnitCubeMesh } from "../meshes/mesh-list.js";
 import { XY } from "../meshes/mesh-loader.js";
 import { ControllableDef } from "../input/controllable.js";
 import { createGhost, GhostDef } from "../debug/ghost.js";
-import { LocalHsPlayerDef, HsPlayerDef } from "../hyperspace/hs-player.js";
+import { LocalPlayerEntityDef, HsPlayerDef } from "../hyperspace/hs-player.js";
 import {
   createGrassTile,
   createGrassTileset,
@@ -406,7 +406,7 @@ export async function initGrassGame(hosting: boolean) {
     (es, res) => {
       const player = es[0];
       // console.log(player.world.position);
-      // const player = EM.findEntity(res.localHsPlayer.playerId, [WorldFrameDef]);
+      // const player = EM.findEntity(res.localPlayerEnt.playerId, [WorldFrameDef]);
       if (player) for (let t of ts) t.update(player.world.position);
     }
   );
@@ -750,7 +750,7 @@ async function createPlayer() {
   p.cameraFollow.yawOffset = 0.0;
   p.cameraFollow.pitchOffset = -0.593;
 
-  EM.ensureResource(LocalHsPlayerDef, p.id);
+  EM.ensureResource(LocalPlayerEntityDef, p.id);
   EM.set(p, HsPlayerDef);
   EM.set(p, AuthorityDef, me.pid);
   EM.set(p, PhysicsParentDef);
