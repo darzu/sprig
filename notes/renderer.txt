@@ -782,6 +782,9 @@ Outlines / edge detection:
   its depth (distance from camera), surface normal and colour
   colors stored in B channel as index into pallette
 
+  distant structures:
+    https://twitter.com/ianmaclarty/status/1528884118703861761
+
   https://twitter.com/GravitonPunch/status/1528921394251038720
     "For the most part, the light edges are convex and the dark edges are concave, based on the 
     normals of nearby pixels. However, I also look for large differences in depth and unlit 
@@ -1862,3 +1865,6 @@ Render Pipeline Shaders SDK:
   https://gpuopen.com/learn/rps_1_0/
   https://gpuopen.com/amd-at-gdc-2022/
   Activision is considering using this
+
+Line rendering deep dive:
+  https://panthavma.com/articles/lines/deep-overview-extraction/
