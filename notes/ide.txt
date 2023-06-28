@@ -101,3 +101,24 @@ Might be good to be very opinionated and support my one workflow style
 
 My twitter thread re: editor undo + subject undo:
   https://twitter.com/sprigland/status/1638636277334675456
+
+For every added component, system, resource, library, big chunk of code:
+  "What does this provide for me?"
+  "What will this cost?"
+  perf cost, code size, init cost, api surface area size,
+  e.g. add "BulletProjectile" component
+    What will this do for me?
+      Runs three new systems that do X, Y, and Z respectfully
+    How many do you expect to have? 1, 10, 100, 1000, 10000
+      Here's how that's expected to impact performance,
+      Here's where in the critical path that computation will sit
+  Motivation:
+    Say we add "Multiplayer Sync" component to some object
+      What will that entail? What new things will that bring in?
+      Special assumptions the author wants you to know?
+      How can this be inlined?
+  Should always be able to "inline one layer"
+    So you can see the first layer of code that is added by something and make tweaks yourself
+  It's both very useful to have a minimal annotation burden, 
+    and also very frusterating if that ends up pulling in a ton of "magic" code that is hard to inspect
+  Yet again program slicing will be very useful here.

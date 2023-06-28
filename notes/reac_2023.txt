@@ -1,0 +1,31 @@
+other conferences:
+  "pixels"
+    "equations"
+    Siggraph, Eurographics, GDC, Digital Dragons, I3D, HPG, SCA, EGSR
+    I3D: https://www.youtube.com/@I3DSymposium/videos
+  "drawcalls"
+    "algorithms"
+    ie "how to commandeer our GPUs to do the work we want to do in an efficient fashion"
+  why another?
+    shiny pixels and fast draw calls are features of an engine
+    what's harder to change is engine architecture
+    architecture: design choices and trade offs + the product/people "why" behind them
+
+hype-hype (hype!)
+  Research
+    first get dump of what hardware is being used: hardware manufactureres, etc
+    minspec is the most important
+      vulkan 1 + android 9 (32 bit + 64 bit)
+        ARM: Mali-G series (bifrost)
+        Qualcomm: Adreno 500 series
+        PowerVR: 8000 series (Rogue)
+      iphone 6s
+        64-bit CPU, A9 / A8X
+    cutting bottom 5% is okay, since new bottom 50% get much better experience and better user retention for all
+    contacted hardware vendors, presenting early design
+      ARM (Mali), Qualcomm (Adreno), PowerVR, Apple
+      Present early design, get feedback
+      read best practice guides
+      
+  Design
+  Implementation

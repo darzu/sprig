@@ -211,3 +211,17 @@ Gamedev documentry?
 Tim Hunkin:
   https://www.timhunkin.com
   https://www.youtube.com/@timhunkin1
+
+Lobster:
+  https://www.youtube.com/watch?v=TOnhqoUxLy0
+  https://strlen.com/lobster/
+  development time: jit mode (using libtcc)
+  ship time: optimizing compiler to C++ (estimated 3x faster)
+  This split makes a ton of sense since a dev machine can be >3x better than min-spec device
+  "member_frame" ?
+    Lets u see past frame data, handled by the language
+  Principles: early, unique, specific
+    do things as early as possible (compile time vs runtime)
+      early things are easier for later things to depend on but not vice versa
+  "The minecraft generation will easily give up 10x in geometric detail just to gain a small amount of agency over the world"
+    "dynamic modifications of anything should never cause a longer frame"

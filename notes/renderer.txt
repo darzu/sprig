@@ -1846,3 +1846,19 @@ Who is "Timothy Lottes"?
 
 Kvark (rust wgpu guy):
   spri-v problems: http://kvark.github.io/spirv/2021/05/01/spirv-horrors.html
+
+Text:
+  https://faultlore.com/blah/text-hates-you/
+  https://lord.io/text-editing-hates-you-too/
+
+For "real" text, should probably use FreeType:
+  https://freetype.org
+
+Perf: batch upload all per-frame data!
+  https://www.youtube.com/watch?v=m3bW8d4Brec&list=PLAOytOz0HZbJzO8xwDTCQA4cubNzzc2mH&index=5
+
+Render Pipeline Shaders SDK:
+  https://www.youtube.com/watch?v=PXMRUjs6SK8
+  https://gpuopen.com/learn/rps_1_0/
+  https://gpuopen.com/amd-at-gdc-2022/
+  Activision is considering using this
