@@ -44,6 +44,7 @@ import {
   createCannonNow,
 } from "../cannons/cannon.js";
 import { Phase } from "../ecs/sys-phase.js";
+import { ShipHealthDef } from "./ship-health.js";
 
 export const ShipDef = EM.defineComponent("ld52ship", () => ({
   mast: createRef(0, [MastDef, RotationDef]),
@@ -82,6 +83,8 @@ const SAIL_ACCEL_RATE = 0.001;
 const RUDDER_ROTATION_RATE = 0.01;
 
 export const cannonDefaultPitch = Math.PI * +0.05;
+
+// TODO(@darzu): make ship networked
 
 export async function createShip() {
   const res = await EM.whenResources(CannonLD51Mesh.def, MeDef);
@@ -184,6 +187,8 @@ export async function createShip() {
   ent.ld52ship.rudder = createRef(rudder);
   ent.ld52ship.cannonR = createRef(cannonR);
   ent.ld52ship.cannonL = createRef(cannonL);
+
+  EM.set(ent, ShipHealthDef);
 
   return ent;
 }

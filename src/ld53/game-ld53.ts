@@ -81,7 +81,7 @@ import { BulletDef, breakBullet } from "../cannons/bullet.js";
 import { ParametricDef } from "../motion/parametric-motion.js";
 import { createDock } from "./dock.js";
 import { ShipHealthDef } from "./ship-health.js";
-import { createRef } from "../ecs/em-helpers.js";
+import { createRef, defineNetEntityHelper } from "../ecs/em-helpers.js";
 import { resetWoodHealth, resetWoodState, WoodStateDef } from "../wood/wood.js";
 import { MapPaths } from "../levels/map-loader.js";
 import { stdRiggedRenderPipeline } from "../render/pipelines/std-rigged.js";
@@ -308,8 +308,6 @@ export async function initLD53(hosting: boolean) {
 
   const ship = await createShip();
 
-  EM.set(ship, ShipHealthDef);
-
   // move down
   // ship.position[2] = -WORLD_SIZE * 0.5 * 0.6;
   level2DtoWorld3D(level.levelMap.startPos, 8, ship.position);
@@ -379,16 +377,19 @@ export async function initLD53(hosting: boolean) {
 
   // player
   if (!DBG_PLAYER) {
-    const player = await createPlayer();
+    const player = await createLd53PlayerAsync();
 
     player.physicsParent.id = ship.id;
+
     // vec3.set(0, 3, -1, player.position);
     const rudder = ship.ld52ship.rudder()!;
     vec3.copy(player.position, rudder.position);
     player.position[1] = 1.45;
     assert(CameraFollowDef.isOn(rudder));
-    raiseManTurret(player, rudder);
+    // TODO(@darzu): REFACTOR: re-enable
+    // raiseManTurret(player, rudder);
 
+    // TODO(@darzu): Don't use HS players here!!
     registerHsPlayerSystems();
   }
 
@@ -700,53 +701,72 @@ export async function initLD53(hosting: boolean) {
   dbgLogMilestone("Game playable");
 }
 
+const { Ld53PlayerPropsDef, Ld53PlayerLocalDef, createLd53PlayerAsync } =
+  defineNetEntityHelper({
+    name: "ld53Player",
+    defaultProps: () => {},
+    updateProps: (p) => p,
+    serializeProps: (o, buf) => {},
+    deserializeProps: (o, buf) => {},
+    defaultLocal: () => {},
+    dynamicComponents: [PositionDef, RotationDef],
+    buildResources: [LD53MeshesDef, MeDef],
+    build: (p, res) => {
+      if (p.authority.pid === res.me.pid) {
+        EM.set(p, ControllableDef);
+        p.controllable.modes.canFall = false;
+        p.controllable.modes.canJump = false;
+        // g.controllable.modes.canYaw = true;
+        // g.controllable.modes.canPitch = true;
+        EM.set(p, CameraFollowDef, 1);
+        // setCameraFollowPosition(p, "firstPerson");
+        // setCameraFollowPosition(p, "thirdPerson");
+
+        p.cameraFollow.positionOffset = V(0, 0, 5);
+        p.controllable.speed *= 0.5;
+        p.controllable.sprintMul = 10;
+
+        vec3.copy(p.position, [0, 1, -1.2]);
+
+        vec3.copy(p.position, [-28.11, 26.0, -28.39]);
+        quat.copy(p.rotation, [0.0, -0.94, 0.0, 0.34]);
+        vec3.copy(p.cameraFollow.positionOffset, [0.0, 2.0, 5.0]);
+        p.cameraFollow.yawOffset = 0.0;
+        p.cameraFollow.pitchOffset = -0.593;
+
+        EM.ensureResource(LocalHsPlayerDef, p.id);
+
+        // TODO(@darzu): dont use HsPlayerDef?
+        EM.set(p, HsPlayerDef);
+      }
+
+      // quat.rotateY(g.rotation, quat.IDENTITY, (-5 * Math.PI) / 8);
+      // quat.rotateX(g.cameraFollow.rotationOffset, quat.IDENTITY, -Math.PI / 8);
+      EM.set(p, LinearVelocityDef);
+
+      quat.setAxisAngle([0.0, -1.0, 0.0], 1.62, p.rotation);
+      const sphereMesh = cloneMesh(res.ld53Meshes.ball.mesh);
+      const visible = true;
+      EM.set(p, RenderableConstructDef, sphereMesh, visible);
+      EM.set(p, ColorDef, V(0.1, 0.1, 0.1));
+      // EM.set(b2, PositionDef, [0, 0, -1.2]);
+      EM.set(p, WorldFrameDef);
+      // EM.set(b2, PhysicsParentDef, g.id);
+      EM.set(p, ColliderDef, {
+        shape: "AABB",
+        solid: true,
+        aabb: res.ld53Meshes.ball.aabb,
+      });
+
+      EM.set(p, PhysicsParentDef);
+
+      return p;
+    },
+  });
+
 async function createPlayer() {
   const { ld53Meshes, me } = await EM.whenResources(LD53MeshesDef, MeDef);
   const p = EM.new();
-  EM.set(p, ControllableDef);
-  p.controllable.modes.canFall = false;
-  p.controllable.modes.canJump = false;
-  // g.controllable.modes.canYaw = true;
-  // g.controllable.modes.canPitch = true;
-  EM.set(p, CameraFollowDef, 1);
-  // setCameraFollowPosition(p, "firstPerson");
-  // setCameraFollowPosition(p, "thirdPerson");
-  EM.set(p, PositionDef);
-  EM.set(p, RotationDef);
-  // quat.rotateY(g.rotation, quat.IDENTITY, (-5 * Math.PI) / 8);
-  // quat.rotateX(g.cameraFollow.rotationOffset, quat.IDENTITY, -Math.PI / 8);
-  EM.set(p, LinearVelocityDef);
-
-  vec3.copy(p.position, [0, 1, -1.2]);
-  quat.setAxisAngle([0.0, -1.0, 0.0], 1.62, p.rotation);
-  p.cameraFollow.positionOffset = V(0, 0, 5);
-  p.controllable.speed *= 0.5;
-  p.controllable.sprintMul = 10;
-  const sphereMesh = cloneMesh(ld53Meshes.ball.mesh);
-  const visible = true;
-  EM.set(p, RenderableConstructDef, sphereMesh, visible);
-  EM.set(p, ColorDef, V(0.1, 0.1, 0.1));
-  EM.set(p, PositionDef, V(0, 0, 0));
-  // EM.set(b2, PositionDef, [0, 0, -1.2]);
-  EM.set(p, WorldFrameDef);
-  // EM.set(b2, PhysicsParentDef, g.id);
-  EM.set(p, ColliderDef, {
-    shape: "AABB",
-    solid: true,
-    aabb: ld53Meshes.ball.aabb,
-  });
-
-  vec3.copy(p.position, [-28.11, 26.0, -28.39]);
-  quat.copy(p.rotation, [0.0, -0.94, 0.0, 0.34]);
-  vec3.copy(p.cameraFollow.positionOffset, [0.0, 2.0, 5.0]);
-  p.cameraFollow.yawOffset = 0.0;
-  p.cameraFollow.pitchOffset = -0.593;
-
-  EM.ensureResource(LocalHsPlayerDef, p.id);
-  EM.set(p, HsPlayerDef);
-  EM.set(p, AuthorityDef, me.pid);
-  EM.set(p, PhysicsParentDef);
-  return p;
 }
 
 const terraVertsPerWorldUnit = 0.25;
