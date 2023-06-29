@@ -84,6 +84,7 @@ import { stdRiggedRenderPipeline } from "../render/pipelines/std-rigged.js";
 import { PoseDef } from "../animation/skeletal.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { XY } from "../meshes/mesh-loader.js";
+import { MotionSmoothingDef } from "../render/motion-smoothing.js";
 /*
 NOTES:
 - Cut grass by updating a texture that has cut/not cut or maybe cut-height
@@ -732,6 +733,8 @@ const { Ld53PlayerPropsDef, Ld53PlayerLocalDef, createLd53PlayerAsync } =
         // EM.set(p, HsPlayerDef);
       }
 
+      EM.set(p, MotionSmoothingDef);
+
       // quat.rotateY(g.rotation, quat.IDENTITY, (-5 * Math.PI) / 8);
       // quat.rotateX(g.cameraFollow.rotationOffset, quat.IDENTITY, -Math.PI / 8);
       EM.set(p, LinearVelocityDef);
@@ -758,10 +761,49 @@ const { Ld53PlayerPropsDef, Ld53PlayerLocalDef, createLd53PlayerAsync } =
     },
   });
 
-async function createPlayer() {
-  const { ld53Meshes, me } = await EM.whenResources(LD53MeshesDef, MeDef);
-  const p = EM.new();
-}
+EM.addEagerInit([Ld53PlayerPropsDef], [], [], () => {
+  EM.addSystem(
+    "ld53PlayerControl",
+    Phase.GAME_PLAYERS,
+    [ControllableDef],
+    [InputsDef],
+    (players, { inputs }) => {
+      const cheat = !!EM.getResource(DevConsoleDef)?.showConsole;
+      for (let p of players) {
+        // determine modes
+        p.controllable.modes.canSprint = true;
+
+        if (CanManDef.isOn(p) && p.canMan.manning) {
+          p.controllable.modes.canMove = false;
+          p.controllable.modes.canPitch = false;
+          p.controllable.modes.canYaw = false;
+        } else {
+          p.controllable.modes.canMove = true;
+          p.controllable.modes.canPitch = true;
+          p.controllable.modes.canYaw = true;
+        }
+
+        if (!cheat) {
+          p.controllable.modes.canFall = true;
+          p.controllable.modes.canFly = false;
+          p.controllable.modes.canJump = false;
+        }
+
+        if (cheat && inputs.keyClicks["f"]) {
+          p.controllable.modes.canFly = !p.controllable.modes.canFly;
+        }
+
+        if (p.controllable.modes.canFly) {
+          p.controllable.modes.canFall = false;
+          p.controllable.modes.canJump = false;
+        } else if (cheat) {
+          p.controllable.modes.canFall = true;
+          p.controllable.modes.canJump = true;
+        }
+      }
+    }
+  );
+});
 
 const terraVertsPerWorldUnit = 0.25;
 const worldUnitPerTerraVerts = 1 / terraVertsPerWorldUnit;

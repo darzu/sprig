@@ -9,14 +9,14 @@ import { AuthorityDef, MeDef } from "../net/components.js";
 import { DetectedEventsDef, eventWizard } from "../net/events.js";
 import { fireBullet } from "./bullet.js";
 import { InRangeDef } from "../input/interact.js";
-import { LocalPlayerEntityDef, HsPlayerDef } from "../hyperspace/hs-player.js";
+import { LocalPlayerEntityDef } from "../hyperspace/hs-player.js";
 import { CannonLD51Mesh } from "../meshes/mesh-list.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import { AudioDef, randChordId } from "../audio/audio.js";
 import { InputsDef } from "../input/inputs.js";
 import { DeletedDef } from "../ecs/delete.js";
 import { defineNetEntityHelper } from "../ecs/em-helpers.js";
-import { constructNetTurret, TurretDef } from "../turret/turret.js";
+import { CanManDef, constructNetTurret, TurretDef } from "../turret/turret.js";
 import { SoundSetDef } from "../audio/sound-loader.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { vec3Dbg } from "../utils/utils-3d.js";
@@ -117,7 +117,7 @@ EM.addEagerInit([CannonPropsDef], [], [], () => {
 
   const raiseFireCannon = eventWizard(
     "fire-cannon",
-    [[HsPlayerDef], [CannonLocalDef, WorldFrameDef]] as const,
+    [[CanManDef], [CannonLocalDef, WorldFrameDef]] as const,
     ([player, cannon]) => {
       // only the firing player creates a bullet
       if (player.id === EM.getResource(LocalPlayerEntityDef)?.playerId) {
@@ -167,7 +167,7 @@ EM.addEagerInit([CannonPropsDef], [], [], () => {
     [CannonLocalDef, TurretDef, WorldFrameDef],
     [InputsDef, LocalPlayerEntityDef],
     (cannons, res) => {
-      const player = EM.findEntity(res.localPlayerEnt.playerId, [HsPlayerDef])!;
+      const player = EM.findEntity(res.localPlayerEnt.playerId, [CanManDef])!;
       if (!player) return;
       for (let c of cannons) {
         if (DeletedDef.isOn(c)) continue;
@@ -186,7 +186,7 @@ EM.addEagerInit([CannonPropsDef], [], [], () => {
     [DetectedEventsDef, InputsDef, LocalPlayerEntityDef],
     (cannons, res) => {
       const player = EM.findEntity(res.localPlayerEnt.playerId, [
-        HsPlayerDef,
+        CanManDef,
         AuthorityDef,
       ])!;
       if (!player) return;
