@@ -46,7 +46,7 @@ import {
 import { WindDef, registerChangeWindSystems } from "../wind/wind.js";
 import { DevConsoleDef } from "../debug/console.js";
 import { clamp, jitter, max, sum } from "../utils/math.js";
-import { createShip, ShipDef } from "../ld53/ship.js";
+import { ShipDef, createLd53ShipAsync } from "../ld53/ship.js";
 import { assert } from "../utils/util.js";
 import { texTypeToBytes } from "../render/gpu-struct.js";
 import { PartyDef } from "../camera/party.js";
@@ -299,7 +299,7 @@ export async function initGrassGame(hosting: boolean) {
 
   // load level
 
-  const ship = await createShip();
+  const ship = await createLd53ShipAsync();
   vec3.set(0, 10, 0, ship.position);
   // move down
   // vec3.copy(ship.position, SHIP_START_POS);

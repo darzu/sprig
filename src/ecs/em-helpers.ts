@@ -79,10 +79,25 @@ export type NetEntityDefs<
   [_ in `create${Capitalize<N>}Async`]: (...args: Pargs1) => Promise<INITED>;
 };
 
-// TODO(@darzu): what happens if build() is async???!
-// TODO(@darzu): I think i'd prefer this to be a struct, not a function call
-//                also this might need to be merged with entity pool helper?
-export function defineNetEntityHelper<
+/*
+SAMPLE:
+
+const { createLd53ShipAsync } = defineNetEntityHelper({
+  name: "ld53Ship",
+  defaultProps: () => {},
+  updateProps: (p) => p,
+  serializeProps: (o, buf) => {},
+  deserializeProps: (o, buf) => {},
+  defaultLocal: () => {},
+  dynamicComponents: [PositionDef, RotationDef],
+  buildResources: [LD53MeshesDef, MeDef],
+  build: (p, res) => {
+    // TODO(@darzu):
+  },
+});
+*/
+
+export interface NetEntityOpts<
   N extends string,
   P1,
   Pargs1 extends any[],
@@ -90,11 +105,13 @@ export function defineNetEntityHelper<
   DS extends ComponentDef[],
   RS extends ResourceDef[],
   INITED
->(opts: {
+> {
   name: N;
   // TODO(@darzu): Hmmm. Actually, on the owner we'll only call "construct" w/ args + serialize, on remote
   //    we'll call "construct" w/o args and then deserialize. We could potentially simplify this
   //    by having "localConstruct" and "emptyConstruct" or something.
+  // TODO(@darzu): Maybe we should have a updatable & serialzable component type and then
+  //    just take in two component defs
   defaultProps: () => P1;
   updateProps: (p: P1, ...args: Pargs1) => P1;
   serializeProps: (obj: P1, buf: Serializer) => void;
@@ -116,7 +133,22 @@ export function defineNetEntityHelper<
     >,
     resources: Resources<RS>
   ) => INITED;
-}): NetEntityDefs<N, P1, Pargs1, P2, RS, INITED> {
+}
+
+// TODO(@darzu): what happens if build() is async???!
+// TODO(@darzu): I think i'd prefer this to be a struct, not a function call
+//                also this might need to be merged with entity pool helper?
+export function defineNetEntityHelper<
+  N extends string,
+  P1,
+  Pargs1 extends any[],
+  P2,
+  DS extends ComponentDef[],
+  RS extends ResourceDef[],
+  INITED
+>(
+  opts: NetEntityOpts<N, P1, Pargs1, P2, DS, RS, INITED>
+): NetEntityDefs<N, P1, Pargs1, P2, RS, INITED> {
   const propsDef = defineSerializableComponent(
     `${opts.name}Props`,
     opts.defaultProps,

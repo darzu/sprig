@@ -68,7 +68,12 @@ import { deferredPipeline } from "../render/pipelines/std-deferred.js";
 import { ScoreDef } from "./score.js";
 import { LandMapTexPtr, LevelMapDef, setMap } from "../levels/level-map.js";
 import { setWindAngle, WindDef } from "../wind/wind.js";
-import { cannonDefaultPitch, createShip } from "./ship.js";
+import {
+  Ld53ShipPropsDef,
+  ShipDef,
+  cannonDefaultPitch,
+  createLd53ShipAsync,
+} from "./ship.js";
 import { SAIL_FURL_RATE } from "../wind/sail.js";
 import { spawnStoneTower, StoneTowerDef, towerPool } from "../stone/stone.js";
 import { LandDef } from "./land-ship.js";
@@ -77,7 +82,11 @@ import { BulletDef, breakBullet } from "../cannons/bullet.js";
 import { ParametricDef } from "../motion/parametric-motion.js";
 import { createDock } from "./dock.js";
 import { ShipHealthDef } from "./ship-health.js";
-import { createRef, defineNetEntityHelper } from "../ecs/em-helpers.js";
+import {
+  FinishedDef,
+  createRef,
+  defineNetEntityHelper,
+} from "../ecs/em-helpers.js";
 import { resetWoodHealth, resetWoodState, WoodStateDef } from "../wood/wood.js";
 import { MapPaths } from "../levels/map-loader.js";
 import { stdRiggedRenderPipeline } from "../render/pipelines/std-rigged.js";
@@ -161,7 +170,8 @@ export async function initLD53(hosting: boolean) {
     // GlobalCursor3dDef,
     RendererDef,
     CameraDef,
-    DevConsoleDef
+    DevConsoleDef,
+    MeDef
   );
 
   // TODO(@darzu): HACK. these have to be set before the CY instantiator runs.
@@ -303,12 +313,172 @@ export async function initLD53(hosting: boolean) {
       Math.PI / 2
   );
 
-  const ship = await createShip();
+  if (res.me.host) {
+    const ship = await createLd53ShipAsync();
 
-  // move down
-  // ship.position[2] = -WORLD_SIZE * 0.5 * 0.6;
-  level2DtoWorld3D(level.levelMap.startPos, 8, ship.position);
-  //vec3.copy(ship.position, SHIP_START_POS);
+    // move down
+    // ship.position[2] = -WORLD_SIZE * 0.5 * 0.6;
+    level2DtoWorld3D(level.levelMap.startPos, 8, ship.position);
+    //vec3.copy(ship.position, SHIP_START_POS);
+
+    score.onLevelEnd.push(async () => {
+      resetLand();
+
+      // worldCutData.fill(0.0);
+      // grassCutTex.queueUpdate(worldCutData);
+      // vec3.set(0, 0, 0, ship.position);
+      // vec3.copy(ship.position, SHIP_START_POS);
+      const level = await EM.whenResources(LevelMapDef);
+      level2DtoWorld3D(level.levelMap.startPos, 8, ship.position);
+      quat.identity(ship.rotation);
+      vec3.set(0, 0, 0, ship.linearVelocity);
+      const sail = ship.ld52ship.mast()!.mast.sail()!.sail;
+      sail.unfurledAmount = sail.minFurl;
+      ship.ld52ship.cuttingEnabled = true;
+      ship.ld52ship.rudder()!.yawpitch.yaw = 0;
+      setWindAngle(
+        wind,
+        Math.atan2(-level.levelMap.windDir[0], -level.levelMap.windDir[1]) +
+          Math.PI / 2
+      );
+
+      ship.ld52ship.cannonR()!.yawpitch.pitch = cannonDefaultPitch;
+      ship.ld52ship.cannonR()!.yawpitch.yaw = Math.PI * 0.5;
+      ship.ld52ship.cannonL()!.yawpitch.pitch = cannonDefaultPitch;
+      ship.ld52ship.cannonL()!.yawpitch.yaw = Math.PI * 1.5;
+
+      resetWoodHealth(ship.woodHealth);
+      ship.shipHealth.health = 1;
+      resetWoodState(ship.woodState);
+      EM.whenEntityHas(ship, RenderableDef, WoodStateDef).then((ship) =>
+        res.renderer.renderer.stdPool.updateMeshQuads(
+          ship.renderable.meshHandle,
+          ship.woodState.mesh as Mesh,
+          0,
+          ship.woodState.mesh.quad.length
+        )
+      );
+
+      console.log("resetting dock position");
+      const endZonePos = level2DtoWorld3D(
+        level.levelMap.endZonePos,
+        5,
+        vec3.tmp()
+      );
+      vec3.copy(dock.position, endZonePos);
+      resetWoodHealth(dock.woodHealth);
+      resetWoodState(dock.woodState);
+      EM.whenEntityHas(dock, RenderableDef, WoodStateDef).then((dock) =>
+        res.renderer.renderer.stdPool.updateMeshQuads(
+          dock.renderable.meshHandle,
+          dock.woodState.mesh as Mesh,
+          0,
+          dock.woodState.mesh.quad.length
+        )
+      );
+
+      const towers = EM.filterEntities([StoneTowerDef]);
+      for (let tower of towers) {
+        towerPool.despawn(tower);
+      }
+
+      // spawn towers
+      const tower3dPosesAndDirs: [vec3, number][] = level.levelMap.towers.map(
+        ([tPos, tDir]) => [
+          level2DtoWorld3D(tPos, STONE_TOWER_HEIGHT, vec3.create()),
+          Math.atan2(-tDir[0], -tDir[1]),
+        ]
+      );
+
+      for (let [pos, angle] of tower3dPosesAndDirs) {
+        const stoneTower = await spawnStoneTower();
+        vec3.copy(stoneTower.position, pos);
+        quat.setAxisAngle([0, 1, 0], angle, stoneTower.rotation);
+      }
+    });
+
+    EM.addSystem(
+      "furlUnfurl",
+      Phase.GAME_PLAYERS,
+      null,
+      [InputsDef, PartyDef],
+      (_, res) => {
+        const mast = ship.ld52ship.mast()!;
+        const rudder = ship.ld52ship.rudder()!;
+
+        // furl/unfurl
+        if (rudder.turret.mannedId) {
+          if (MOTORBOAT_MODE) {
+            console.log("here");
+            if (res.inputs.keyDowns["w"]) {
+              vec3.add(
+                ship.linearVelocity,
+                vec3.scale(res.party.dir, 0.1),
+                ship.linearVelocity
+              );
+            }
+          } else {
+            const sail = mast.mast.sail()!.sail;
+            if (res.inputs.keyDowns["w"]) sail.unfurledAmount += SAIL_FURL_RATE;
+            if (res.inputs.keyDowns["s"]) sail.unfurledAmount -= SAIL_FURL_RATE;
+            sail.unfurledAmount = clamp(sail.unfurledAmount, sail.minFurl, 1.0);
+          }
+        }
+      }
+    );
+
+    const shipWorld = await EM.whenEntityHas(ship, WorldFrameDef);
+
+    EM.addSystem(
+      "turnMast",
+      Phase.GAME_PLAYERS,
+      null,
+      [InputsDef, WindDef],
+      (_, res) => {
+        const mast = ship.ld52ship.mast()!;
+        // const rudder = ship.ld52ship.rudder()!;
+
+        // const shipDir = vec3.transformQuat(V(0, 0, 1), shipWorld.world.rotation);
+
+        const invShip = mat3.invert(mat3.fromMat4(shipWorld.world.transform));
+        const windLocalDir = vec3.transformMat3(res.wind.dir, invShip);
+        const shipLocalDir = V(0, 0, 1);
+
+        const optimalSailLocalDir = vec3.normalize(
+          vec3.add(windLocalDir, shipLocalDir)
+        );
+
+        // console.log(`ship to wind: ${vec3.dot(windLocalDir, shipLocalDir)}`);
+
+        // const normal = vec3.transformQuat(AHEAD_DIR, e.world.rotation);
+        // e.sail.billowAmount = vec3.dot(normal, res.wind.dir);
+        // sail.force * vec3.dot(AHEAD_DIR, normal);
+
+        // const currSailForce =
+
+        // need to maximize: dot(wind, sail) * dot(sail, ship)
+
+        // TODO(@darzu): ANIMATE SAIL TOWARD WIND
+        if (vec3.dot(optimalSailLocalDir, shipLocalDir) > 0.01)
+          quatFromUpForward(mast.rotation, V(0, 1, 0), optimalSailLocalDir);
+      }
+    );
+
+    // end zone
+    const dock = createDock();
+    const endZonePos = level2DtoWorld3D(
+      level.levelMap.endZonePos,
+      5,
+      vec3.tmp()
+    );
+    vec3.copy(dock.position, endZonePos);
+
+    // drawBall(endZonePos, 4, ENDESGA16.deepGreen);
+
+    EM.whenEntityHas(dock, PhysicsStateDef).then(
+      (dock) => (score.endZone = createRef(dock))
+    );
+  }
 
   // bouyancy
   if (!"true") {
@@ -361,30 +531,27 @@ export async function initLD53(hosting: boolean) {
     );
   }
 
-  // end zone
-  const dock = createDock();
-  const endZonePos = level2DtoWorld3D(level.levelMap.endZonePos, 5, vec3.tmp());
-  vec3.copy(dock.position, endZonePos);
+  // wait for the ship either locally or from the network
+  EM.whenSingleEntity(ShipDef, FinishedDef).then(async (ship) => {
+    // player
+    if (!DBG_PLAYER) {
+      const player = await createLd53PlayerAsync();
 
-  // drawBall(endZonePos, 4, ENDESGA16.deepGreen);
+      player.physicsParent.id = ship.id;
 
-  EM.whenEntityHas(dock, PhysicsStateDef).then(
-    (dock) => (score.endZone = createRef(dock))
-  );
+      const rudder = ship.ld52ship.rudder()!;
+      vec3.copy(player.position, rudder.position);
+      player.position[1] = 1.45;
 
-  // player
-  if (!DBG_PLAYER) {
-    const player = await createLd53PlayerAsync();
-
-    player.physicsParent.id = ship.id;
-
-    // vec3.set(0, 3, -1, player.position);
-    const rudder = ship.ld52ship.rudder()!;
-    vec3.copy(player.position, rudder.position);
-    player.position[1] = 1.45;
-    assert(CameraFollowDef.isOn(rudder));
-    raiseManTurret(player, rudder);
-  }
+      if (res.me.host) {
+        // vec3.set(0, 3, -1, player.position);
+        assert(CameraFollowDef.isOn(rudder));
+        raiseManTurret(player, rudder);
+      } else {
+        player.position[2] += 5;
+      }
+    }
+  });
 
   if (DBG_PLAYER) {
     const g = createGhost();
@@ -457,149 +624,6 @@ export async function initLD53(hosting: boolean) {
     );
   }
 
-  score.onLevelEnd.push(async () => {
-    resetLand();
-
-    // worldCutData.fill(0.0);
-    // grassCutTex.queueUpdate(worldCutData);
-    // vec3.set(0, 0, 0, ship.position);
-    // vec3.copy(ship.position, SHIP_START_POS);
-    const level = await EM.whenResources(LevelMapDef);
-    level2DtoWorld3D(level.levelMap.startPos, 8, ship.position);
-    quat.identity(ship.rotation);
-    vec3.set(0, 0, 0, ship.linearVelocity);
-    const sail = ship.ld52ship.mast()!.mast.sail()!.sail;
-    sail.unfurledAmount = sail.minFurl;
-    ship.ld52ship.cuttingEnabled = true;
-    ship.ld52ship.rudder()!.yawpitch.yaw = 0;
-    setWindAngle(
-      wind,
-      Math.atan2(-level.levelMap.windDir[0], -level.levelMap.windDir[1]) +
-        Math.PI / 2
-    );
-
-    ship.ld52ship.cannonR()!.yawpitch.pitch = cannonDefaultPitch;
-    ship.ld52ship.cannonR()!.yawpitch.yaw = Math.PI * 0.5;
-    ship.ld52ship.cannonL()!.yawpitch.pitch = cannonDefaultPitch;
-    ship.ld52ship.cannonL()!.yawpitch.yaw = Math.PI * 1.5;
-
-    resetWoodHealth(ship.woodHealth);
-    ship.shipHealth.health = 1;
-    resetWoodState(ship.woodState);
-    EM.whenEntityHas(ship, RenderableDef, WoodStateDef).then((ship) =>
-      res.renderer.renderer.stdPool.updateMeshQuads(
-        ship.renderable.meshHandle,
-        ship.woodState.mesh as Mesh,
-        0,
-        ship.woodState.mesh.quad.length
-      )
-    );
-
-    console.log("resetting dock position");
-    const endZonePos = level2DtoWorld3D(
-      level.levelMap.endZonePos,
-      5,
-      vec3.tmp()
-    );
-    vec3.copy(dock.position, endZonePos);
-    resetWoodHealth(dock.woodHealth);
-    resetWoodState(dock.woodState);
-    EM.whenEntityHas(dock, RenderableDef, WoodStateDef).then((dock) =>
-      res.renderer.renderer.stdPool.updateMeshQuads(
-        dock.renderable.meshHandle,
-        dock.woodState.mesh as Mesh,
-        0,
-        dock.woodState.mesh.quad.length
-      )
-    );
-
-    const towers = EM.filterEntities([StoneTowerDef]);
-    for (let tower of towers) {
-      towerPool.despawn(tower);
-    }
-
-    // spawn towers
-    const tower3dPosesAndDirs: [vec3, number][] = level.levelMap.towers.map(
-      ([tPos, tDir]) => [
-        level2DtoWorld3D(tPos, STONE_TOWER_HEIGHT, vec3.create()),
-        Math.atan2(-tDir[0], -tDir[1]),
-      ]
-    );
-
-    for (let [pos, angle] of tower3dPosesAndDirs) {
-      const stoneTower = await spawnStoneTower();
-      vec3.copy(stoneTower.position, pos);
-      quat.setAxisAngle([0, 1, 0], angle, stoneTower.rotation);
-    }
-  });
-
-  EM.addSystem(
-    "furlUnfurl",
-    Phase.GAME_PLAYERS,
-    null,
-    [InputsDef, PartyDef],
-    (_, res) => {
-      const mast = ship.ld52ship.mast()!;
-      const rudder = ship.ld52ship.rudder()!;
-
-      // furl/unfurl
-      if (rudder.turret.mannedId) {
-        if (MOTORBOAT_MODE) {
-          console.log("here");
-          if (res.inputs.keyDowns["w"]) {
-            vec3.add(
-              ship.linearVelocity,
-              vec3.scale(res.party.dir, 0.1),
-              ship.linearVelocity
-            );
-          }
-        } else {
-          const sail = mast.mast.sail()!.sail;
-          if (res.inputs.keyDowns["w"]) sail.unfurledAmount += SAIL_FURL_RATE;
-          if (res.inputs.keyDowns["s"]) sail.unfurledAmount -= SAIL_FURL_RATE;
-          sail.unfurledAmount = clamp(sail.unfurledAmount, sail.minFurl, 1.0);
-        }
-      }
-    }
-  );
-
-  const shipWorld = await EM.whenEntityHas(ship, WorldFrameDef);
-
-  EM.addSystem(
-    "turnMast",
-    Phase.GAME_PLAYERS,
-    null,
-    [InputsDef, WindDef],
-    (_, res) => {
-      const mast = ship.ld52ship.mast()!;
-      // const rudder = ship.ld52ship.rudder()!;
-
-      // const shipDir = vec3.transformQuat(V(0, 0, 1), shipWorld.world.rotation);
-
-      const invShip = mat3.invert(mat3.fromMat4(shipWorld.world.transform));
-      const windLocalDir = vec3.transformMat3(res.wind.dir, invShip);
-      const shipLocalDir = V(0, 0, 1);
-
-      const optimalSailLocalDir = vec3.normalize(
-        vec3.add(windLocalDir, shipLocalDir)
-      );
-
-      // console.log(`ship to wind: ${vec3.dot(windLocalDir, shipLocalDir)}`);
-
-      // const normal = vec3.transformQuat(AHEAD_DIR, e.world.rotation);
-      // e.sail.billowAmount = vec3.dot(normal, res.wind.dir);
-      // sail.force * vec3.dot(AHEAD_DIR, normal);
-
-      // const currSailForce =
-
-      // need to maximize: dot(wind, sail) * dot(sail, ship)
-
-      // TODO(@darzu): ANIMATE SAIL TOWARD WIND
-      if (vec3.dot(optimalSailLocalDir, shipLocalDir) > 0.01)
-        quatFromUpForward(mast.rotation, V(0, 1, 0), optimalSailLocalDir);
-    }
-  );
-
   const { text } = await EM.whenResources(TextDef);
   text.lowerText = "W/S: unfurl/furl sail, A/D: turn, E: drop rudder";
   if (DBG_PLAYER) text.lowerText = "";
@@ -641,6 +665,7 @@ export async function initLD53(hosting: boolean) {
     ]
   );
 
+  // TODO(@darzu): REFACTOR make towers networked
   for (let [pos, angle] of tower3dPosesAndDirs) {
     const stoneTower = await spawnStoneTower();
     vec3.copy(stoneTower.position, pos);
@@ -743,7 +768,8 @@ const { Ld53PlayerPropsDef, Ld53PlayerLocalDef, createLd53PlayerAsync } =
       const sphereMesh = cloneMesh(res.ld53Meshes.ball.mesh);
       const visible = true;
       EM.set(p, RenderableConstructDef, sphereMesh, visible);
-      EM.set(p, ColorDef, V(0.1, 0.1, 0.1));
+      if (res.me.host) EM.set(p, ColorDef, V(0.1, 0.1, 0.1));
+      else EM.set(p, ColorDef, ENDESGA16.darkBrown);
       // EM.set(b2, PositionDef, [0, 0, -1.2]);
       EM.set(p, WorldFrameDef);
       // EM.set(b2, PhysicsParentDef, g.id);

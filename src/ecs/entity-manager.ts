@@ -1333,6 +1333,23 @@ export class EntityManager {
     });
   }
 
+  // TODO(@darzu): feels a bit hacky; lets track usages and see if we can make this
+  //  feel natural.
+  public whenSingleEntity<CS extends ComponentDef[]>(
+    ...cs: [...CS]
+  ): Promise<EntityW<CS>> {
+    return new Promise((resolve) => {
+      EM.addEagerInit(cs, [], [], () => {
+        const ents = EM.filterEntities(cs);
+        assert(
+          ents && ents.length === 1,
+          `Invalid 'whenSingleEntity' call; found ${ents.length} matching entities`
+        );
+        resolve(ents[0]);
+      });
+    });
+  }
+
   // INIT SYSTEM
   // TODO(@darzu): [ ] split entity-manager ?
   // TODO(@darzu): [ ] consolidate entity promises into init system?
