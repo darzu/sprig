@@ -447,3 +447,12 @@ Projectile physics:
 
   const theta = (R: number) => (1 / 2) * Math.asin((g * R) / v ** 2);
   const R = (speed ** 2 * Math.sin(2 * theta)) / g;
+
+Bevy xpbd:
+  "Extended Position Based Dynamics"
+    unconditionally stable, time step independent, and physically accurate simulations
+  https://johanhelsing.studio/posts/bevy-xpbd
+  https://www.youtube.com/watch?v=F0QwAhUnpr4
+  https://joonaa.dev/blog/02/bevy-xpbd-0-1-0
+  https://news.ycombinator.com/item?id=36642867
+  wrote the paper: https://www.youtube.com/c/TenMinutePhysics/videos
