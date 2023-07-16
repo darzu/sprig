@@ -37,7 +37,7 @@ import {
   RiggedRenderableConstructDef,
 } from "../render/renderer-ecs.js";
 import { mat3, quat, V, vec2, vec3 } from "../matrix/sprig-matrix.js";
-import { quatFromUpForward } from "../utils/utils-3d.js";
+import { quatFromUpForward, vec3Dbg } from "../utils/utils-3d.js";
 import { DevConsoleDef } from "../debug/console.js";
 import { clamp, jitter, max } from "../utils/math.js";
 import { assert, dbgLogMilestone } from "../utils/util.js";
@@ -788,6 +788,20 @@ const { Ld53PlayerPropsDef, Ld53PlayerLocalDef, createLd53PlayerAsync } =
   });
 
 EM.addEagerInit([Ld53PlayerPropsDef], [], [], () => {
+  EM.addSystem(
+    "playerDbg",
+    Phase.GAME_PLAYERS,
+    [Ld53PlayerPropsDef, WorldFrameDef],
+    [],
+    (players) => {
+      for (let p of players) {
+        // TODO(@darzu): DEBUGGING!
+        if (WorldFrameDef.isOn(p)) {
+          console.log(`player ${p.id} at: ${vec3Dbg(p.world.position)}`);
+        }
+      }
+    }
+  );
   EM.addSystem(
     "ld53PlayerControl",
     Phase.GAME_PLAYERS,

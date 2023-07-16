@@ -217,7 +217,7 @@ export class EntityManager {
   );
   entityPromises: Map<number, EntityPromise<ComponentDef[], any>[]> = new Map();
   resourcePromises: ResourcesPromise<ResourceDef[]>[] = [];
-  components: Map<CompId, ComponentDef> = new Map(); // TODO(@darzu): rename to componentDefs ?
+  componentDefs: Map<CompId, ComponentDef> = new Map(); // TODO(@darzu): rename to componentDefs ?
   resourceDefs: Map<ResId, ResourceDef> = new Map();
   resources: Record<string, unknown> = {};
 
@@ -281,7 +281,7 @@ export class EntityManager {
     update: (p: P, ...args: UArgs) => P = (p, ..._) => p
   ): UpdatableComponentDef<N, P, UArgs> {
     const id = nameToId(name);
-    if (this.components.has(id)) {
+    if (this.componentDefs.has(id)) {
       throw `Component with name ${name} already defined--hash collision?`;
     }
     const component: UpdatableComponentDef<N, P, UArgs> = {
@@ -296,7 +296,7 @@ export class EntityManager {
         name in e,
     };
     // TODO(@darzu): I don't love this cast. feels like it should be possible without..
-    this.components.set(id, component as unknown as ComponentDef);
+    this.componentDefs.set(id, component as unknown as ComponentDef);
     return component;
   }
 
@@ -305,7 +305,7 @@ export class EntityManager {
     construct: (...args: CArgs) => P
   ): NonupdatableComponentDef<N, P, CArgs> {
     const id = nameToId(name);
-    if (this.components.has(id)) {
+    if (this.componentDefs.has(id)) {
       throw `Component with name ${name} already defined--hash collision?`;
     }
     const component: NonupdatableComponentDef<N, P, CArgs> = {
@@ -321,16 +321,16 @@ export class EntityManager {
         // (e as Object).hasOwn(name),
         name in e,
     };
-    this.components.set(id, component);
+    this.componentDefs.set(id, component);
     return component;
   }
 
   private checkComponent(def: ComponentDef) {
-    if (!this.components.has(def.id))
+    if (!this.componentDefs.has(def.id))
       throw `Component ${def.name} (id ${def.id}) not found`;
-    if (this.components.get(def.id)!.name !== def.name)
+    if (this.componentDefs.get(def.id)!.name !== def.name)
       throw `Component id ${def.id} has name ${
-        this.components.get(def.id)!.name
+        this.componentDefs.get(def.id)!.name
       }, not ${def.name}`;
   }
 
@@ -347,7 +347,7 @@ export class EntityManager {
   }
 
   public serialize(id: number, componentId: number, buf: Serializer) {
-    const def = this.components.get(componentId);
+    const def = this.componentDefs.get(componentId);
     if (!def) throw `Trying to serialize unknown component id ${componentId}`;
     const entity = this.findEntity(id, [def]);
     if (!entity)
@@ -365,7 +365,7 @@ export class EntityManager {
   }
 
   public deserialize(id: number, componentId: number, buf: Deserializer) {
-    const def = this.components.get(componentId);
+    const def = this.componentDefs.get(componentId);
     if (!def) throw `Trying to deserialize unknown component id ${componentId}`;
     if (!this.hasEntity(id)) {
       throw `Trying to deserialize component ${def.name} of unknown entity ${id}`;
@@ -517,7 +517,7 @@ export class EntityManager {
     console.log(
       "addComponentByName called, should only be called for debugging"
     );
-    let component = this.components.get(nameToId(name));
+    let component = this.componentDefs.get(nameToId(name));
     if (!component) {
       throw `no component named ${name}`;
     }
@@ -742,7 +742,7 @@ export class EntityManager {
   ) {
     let ent = this.entities.get(id) as any;
     if (!ent) throw `Tried to delete non-existent entity ${id}`;
-    for (let component of this.components.values()) {
+    for (let component of this.componentDefs.values()) {
       if (!cs.includes(component) && ent[component.name]) {
         this.removeComponent(id, component);
       }

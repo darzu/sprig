@@ -2,6 +2,7 @@ import { CameraFollowDef } from "../camera/camera.js";
 import {
   CompId,
   ComponentDef,
+  ResourceDef,
   EM,
   Entity,
   EntityW,
@@ -42,17 +43,17 @@ interface DbgEnt extends Entity {
 // groundConstruct,shipConstruct,hatConstruct,color,hat
 
 const dbgEnts: Map<number, DbgEnt> = new Map();
-let dbgEntSingleton: DbgEnt = { id: 0, _cmps: () => [] };
+// let dbgEntSingleton: DbgEnt = { id: 0, _cmps: () => [] };
 
 const dbgCmpsAllById: Map<CompId, DbgCmp> = new Map();
 const dbgCmpsAllByName: Map<string, DbgCmp> = new Map();
 let dbgCmpsAllByAbv: Map<string, DbgCmp> = new Map();
 const dbgCmps: Map<string, DbgCmp> = new Map();
-const dbgCmpsSingleton: Map<string, DbgCmp> = new Map();
+// const dbgCmpsSingleton: Map<string, DbgCmp> = new Map();
 
 function mkDbgCmp(id: CompId): DbgCmp {
   // if (dbgCmpsAllById.has(id)) return dbgCmpsAllById.get(id)!;
-  const c = EM.components.get(id);
+  const c = EM.componentDefs.get(id);
   if (!c) throw `No component by id ${id}`;
   const dc: DbgCmp = Object.assign(c, { abv: c.name });
   // dbgCmpsAllById.set(id, dc);
@@ -60,13 +61,14 @@ function mkDbgCmp(id: CompId): DbgCmp {
   return dc;
 }
 function mkDbgEnt(id: number): DbgEnt {
+  if (id === 0) throw `Invalid entity id '0', use resources!`;
   // if (dbgEnts.has(id)) return dbgEnts.get(id)!;
   const e = EM.entities.get(id);
   if (!e) throw `No entity by id ${id}`;
   const _cmps = () => {
     const res: DbgCmp[] = [];
     for (let p of Object.keys(e)) {
-      const c = (id === 0 ? dbgCmpsSingleton : dbgCmps).get(p);
+      const c = dbgCmps.get(p);
       if (c) res.push(c);
     }
     return res;
@@ -168,20 +170,22 @@ function createAbvs<N extends Named>(named: N[]): Map<Abv, N> {
   }
 }
 function updateCmps() {
-  dbgEntSingleton = mkDbgEnt(0);
+  // TODO(@darzu): resources r broken
+  // dbgEntSingleton = mkDbgEnt(0);
 
-  if (EM.components.size !== dbgCmpsAllById.size) {
+  if (EM.componentDefs.size !== dbgCmpsAllById.size) {
     dbgCmpsAllById.clear();
     dbgCmps.clear();
-    dbgCmpsSingleton.clear();
+    // dbgCmpsSingleton.clear();
 
-    for (let id of EM.components.keys()) {
+    for (let id of EM.componentDefs.keys()) {
       const dc = mkDbgCmp(id);
       dbgCmpsAllById.set(id, dc);
       dbgCmpsAllByName.set(dc.name, dc);
 
-      if (dc.name in dbgEntSingleton) dbgCmpsSingleton.set(dc.name, dc);
-      else dbgCmps.set(dc.name, dc);
+      // if (dc.name in dbgEntSingleton) dbgCmpsSingleton.set(dc.name, dc);
+      // else
+      dbgCmps.set(dc.name, dc);
     }
 
     dbgCmpsAllByAbv = createAbvs([...dbgCmpsAllById.values()]);
@@ -189,7 +193,8 @@ function updateCmps() {
   }
 }
 function updateEnts() {
-  dbgEntSingleton = mkDbgEnt(0);
+  // TODO(@darzu): resources r broken
+  // dbgEntSingleton = mkDbgEnt(0);
 
   if (dbgEnts.size + 1 !== EM.entities.size) {
     dbgEnts.clear();
@@ -239,7 +244,8 @@ g.cameraFollow.pitchOffset = ${target.cameraFollow.pitchOffset.toFixed(3)};
   },
   listCmps: () => {
     updateCmps();
-    const cmps = [...dbgCmps.values(), ...dbgCmpsSingleton.values()];
+    const cmps = [...dbgCmps.values()];
+    //...dbgCmpsSingleton.values()
     sortByName(cmps, "name");
     const cStr = cmps.map((c) => `${c.name}\t(${c.abv}, ${c.id})`).join("\n");
     console.table(cStr);
@@ -263,10 +269,10 @@ g.cameraFollow.pitchOffset = ${target.cameraFollow.pitchOffset.toFixed(3)};
     console.table(eTable);
     return es;
   },
-  ent0: () => {
-    updateEnts();
-    return dbgEntSingleton;
-  },
+  // ent0: () => {
+  //   updateEnts();
+  //   return dbgEntSingleton;
+  // },
   ent: (id: number) => {
     return mkDbgEnt(id);
   },

@@ -1440,3 +1440,6 @@ Is OOP sometimes okay?
 Write Games, Not Engines
   classic
   https://geometrian.com/programming/tutorials/write-games-not-engines/index.php
+
+Hundred rabbits
+  https://100r.co/site/home.html
