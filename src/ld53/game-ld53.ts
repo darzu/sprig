@@ -40,7 +40,7 @@ import { mat3, quat, V, vec2, vec3 } from "../matrix/sprig-matrix.js";
 import { quatFromUpForward, vec3Dbg } from "../utils/utils-3d.js";
 import { DevConsoleDef } from "../debug/console.js";
 import { clamp, jitter, max } from "../utils/math.js";
-import { assert, dbgLogMilestone } from "../utils/util.js";
+import { assert, dbgLogMilestone, dbgOnce } from "../utils/util.js";
 import { PartyDef } from "../camera/party.js";
 import {
   copyAABB,
@@ -110,6 +110,8 @@ PERF:
 */
 
 const DBG_PLAYER = false;
+const SHOW_LAND = false;
+
 // const SHIP_START_POS = V(100, 0, -100);
 
 // world map is centered around 0,0
@@ -535,9 +537,9 @@ export async function initLD53(hosting: boolean) {
   EM.whenSingleEntity(ShipDef, FinishedDef).then(async (ship) => {
     // player
     if (!DBG_PLAYER) {
-      const player = await createLd53PlayerAsync();
+      const player = await createLd53PlayerAsync(ship.id);
 
-      player.physicsParent.id = ship.id;
+      // player.physicsParent.id = ship.id;
 
       const rudder = ship.ld52ship.rudder()!;
       vec3.copy(player.position, rudder.position);
@@ -722,10 +724,17 @@ export async function initLD53(hosting: boolean) {
 const { Ld53PlayerPropsDef, Ld53PlayerLocalDef, createLd53PlayerAsync } =
   defineNetEntityHelper({
     name: "ld53Player",
-    defaultProps: () => {},
-    updateProps: (p) => p,
-    serializeProps: (o, buf) => {},
-    deserializeProps: (o, buf) => {},
+    defaultProps: () => ({ parentId: 0 }),
+    updateProps: (p, parentId: number) => {
+      p.parentId = parentId;
+      return p;
+    },
+    serializeProps: (o, buf) => {
+      buf.writeUint32(o.parentId);
+    },
+    deserializeProps: (o, buf) => {
+      o.parentId = buf.readUint32();
+    },
     defaultLocal: () => {},
     dynamicComponents: [PositionDef, RotationDef],
     buildResources: [LD53MeshesDef, MeDef],
@@ -779,7 +788,7 @@ const { Ld53PlayerPropsDef, Ld53PlayerLocalDef, createLd53PlayerAsync } =
         aabb: res.ld53Meshes.ball.aabb,
       });
 
-      EM.set(p, PhysicsParentDef);
+      EM.set(p, PhysicsParentDef, p.ld53PlayerProps.parentId);
 
       EM.set(p, CanManDef);
 
@@ -791,13 +800,14 @@ EM.addEagerInit([Ld53PlayerPropsDef], [], [], () => {
   EM.addSystem(
     "playerDbg",
     Phase.GAME_PLAYERS,
-    [Ld53PlayerPropsDef, WorldFrameDef],
+    [Ld53PlayerPropsDef, WorldFrameDef, PhysicsParentDef],
     [],
     (players) => {
       for (let p of players) {
         // TODO(@darzu): DEBUGGING!
-        if (WorldFrameDef.isOn(p)) {
+        if (dbgOnce(`playerDbg${p.id}-parent${p.physicsParent.id}`)) {
           console.log(`player ${p.id} at: ${vec3Dbg(p.world.position)}`);
+          console.log(`player ${p.id} parent: ${p.physicsParent.id}`);
         }
       }
     }
@@ -885,7 +895,7 @@ async function resetLand() {
 
     // console.log(`heightmap minY: ${minY}`);
     const hm = EM.new();
-    EM.set(hm, RenderableConstructDef, terraMesh);
+    EM.set(hm, RenderableConstructDef, terraMesh, SHOW_LAND);
     EM.set(hm, PositionDef);
     // TODO(@darzu): maybe do a sable-like gradient accross the terrain, based on view dist or just uv?
     // EM.set(hm, ColorDef, V(0.4, 0.2, 0.2));
