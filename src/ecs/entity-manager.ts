@@ -371,30 +371,33 @@ export class EntityManager {
       throw `Trying to deserialize component ${def.name} of unknown entity ${id}`;
     }
     let entity = this.findEntity(id, [def]);
-    let component;
+
+    const serializerPair = this.serializers.get(componentId);
+    if (!serializerPair)
+      throw `No deserializer for component ${def.name} (for entity ${id})`;
+    const deserialize = (p: any) => {
+      serializerPair.deserialize(p, buf);
+      return p;
+    };
+
     // TODO: because of this usage of dummy, deserializers don't
     // actually need to read buf.dummy
     if (buf.dummy) {
-      component = {} as any;
+      deserialize({});
     } else if (!entity) {
       assert(
         def.updatable,
         `Trying to deserialize into non-updatable component '${def.name}'!`
       );
-      component = this.addComponent(id, def);
+      this.addComponentInternal(id, def, deserialize, ...[]);
     } else {
-      component = entity[def.name];
+      deserialize(entity[def.name]);
     }
-    const serializerPair = this.serializers.get(componentId);
-    if (!serializerPair)
-      throw `No deserializer for component ${def.name} (for entity ${id})`;
 
     // TODO(@darzu): DBG
     // if (componentId === 1867295084) {
     //   console.log(`deserializing 1867295084, dummy: ${buf.dummy}`);
     // }
-
-    serializerPair.deserialize(component, buf);
   }
 
   public setDefaultRange(rangeName: string) {
@@ -458,6 +461,15 @@ export class EntityManager {
     def: _ComponentDef<N, P, PArgs>,
     ...args: PArgs
   ): P {
+    return this.addComponentInternal(id, def, undefined, ...args);
+  }
+
+  private addComponentInternal<N extends string, P, PArgs extends any[]>(
+    id: number,
+    def: _ComponentDef<N, P, PArgs>,
+    customUpdate: undefined | ((p: P, ...args: PArgs) => P),
+    ...args: PArgs
+  ): P {
     this.checkComponent(def);
     if (id === 0) throw `hey, use addResource!`;
     const e = this.entities.get(id)!;
@@ -472,7 +484,7 @@ export class EntityManager {
     let c: P;
     if (def.updatable) {
       c = def.construct();
-      c = def.update(c, ...args);
+      c = customUpdate ? customUpdate(c, ...args) : def.update(c, ...args);
     } else {
       c = def.construct(...args);
     }

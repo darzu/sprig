@@ -113,7 +113,10 @@ export interface NetEntityOpts<
   // TODO(@darzu): Maybe we should have a updatable & serialzable component type and then
   //    just take in two component defs
   defaultProps: () => P1;
+  // TODO(@darzu): maybe make updateProps optional and have default impl:
+  //   updateProps: (p, p2: Partial<typeof p>): typeof p => Object.assign(p, p2)
   updateProps: (p: P1, ...args: Pargs1) => P1;
+  // TODO(@darzu): it'd be nice if we could enforce that data in probs is serialized/deserialzed; easy to forget a new field
   serializeProps: (obj: P1, buf: Serializer) => void;
   deserializeProps: (obj: P1, buf: Deserializer) => void;
   defaultLocal: () => P2;
@@ -210,7 +213,8 @@ export function defineNetEntityHelper<
   };
 
   const createNewAsync = async (...args: Pargs1) => {
-    const e = createNew(...args);
+    const e = EM.new();
+    EM.set(e, propsDef, ...args);
     await EM.whenEntityHas(e, FinishedDef);
     return e as INITED;
   };

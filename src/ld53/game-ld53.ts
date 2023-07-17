@@ -36,7 +36,7 @@ import {
   RendererDef,
   RiggedRenderableConstructDef,
 } from "../render/renderer-ecs.js";
-import { mat3, quat, V, vec2, vec3 } from "../matrix/sprig-matrix.js";
+import { mat3, quat, tV, V, vec2, vec3 } from "../matrix/sprig-matrix.js";
 import { quatFromUpForward, vec3Dbg } from "../utils/utils-3d.js";
 import { DevConsoleDef } from "../debug/console.js";
 import { clamp, jitter, max } from "../utils/math.js";
@@ -537,7 +537,9 @@ export async function initLD53(hosting: boolean) {
   EM.whenSingleEntity(ShipDef, FinishedDef).then(async (ship) => {
     // player
     if (!DBG_PLAYER) {
-      const player = await createLd53PlayerAsync(ship.id);
+      const color = res.me.host ? tV(0.1, 0.1, 0.1) : ENDESGA16.darkBrown;
+
+      const player = await createLd53PlayerAsync(ship.id, color);
 
       // player.physicsParent.id = ship.id;
 
@@ -724,16 +726,19 @@ export async function initLD53(hosting: boolean) {
 const { Ld53PlayerPropsDef, Ld53PlayerLocalDef, createLd53PlayerAsync } =
   defineNetEntityHelper({
     name: "ld53Player",
-    defaultProps: () => ({ parentId: 0 }),
-    updateProps: (p, parentId: number) => {
+    defaultProps: () => ({ parentId: 0, color: V(0, 0, 0) }),
+    updateProps: (p, parentId: number, color: vec3.InputT) => {
       p.parentId = parentId;
+      vec3.copy(p.color, color);
       return p;
     },
     serializeProps: (o, buf) => {
       buf.writeUint32(o.parentId);
+      buf.writeVec3(o.color);
     },
     deserializeProps: (o, buf) => {
       o.parentId = buf.readUint32();
+      buf.readVec3(o.color);
     },
     defaultLocal: () => {},
     dynamicComponents: [PositionDef, RotationDef],
@@ -777,8 +782,7 @@ const { Ld53PlayerPropsDef, Ld53PlayerLocalDef, createLd53PlayerAsync } =
       const sphereMesh = cloneMesh(res.ld53Meshes.ball.mesh);
       const visible = true;
       EM.set(p, RenderableConstructDef, sphereMesh, visible);
-      if (res.me.host) EM.set(p, ColorDef, V(0.1, 0.1, 0.1));
-      else EM.set(p, ColorDef, ENDESGA16.darkBrown);
+      EM.set(p, ColorDef, p.ld53PlayerProps.color);
       // EM.set(b2, PositionDef, [0, 0, -1.2]);
       EM.set(p, WorldFrameDef);
       // EM.set(b2, PhysicsParentDef, g.id);
