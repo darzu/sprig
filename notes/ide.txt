@@ -122,3 +122,8 @@ For every added component, system, resource, library, big chunk of code:
   It's both very useful to have a minimal annotation burden, 
     and also very frusterating if that ends up pulling in a ton of "magic" code that is hard to inspect
   Yet again program slicing will be very useful here.
+
+"Find all references" enhancements
+  Producers vs consumers of a symbol
+  trace a symbol back through git commits and renames
+  when a symbol rename happens, remember that for later history

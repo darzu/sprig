@@ -169,10 +169,10 @@ export const { createLd53ShipAsync, Ld53ShipPropsDef } = defineNetEntityHelper({
     // const gizmo = EM.new();
     // EM.set(gizmo, PositionDef, V(0, 20, 0));
     // EM.set(gizmo, ScaleDef, V(10, 10, 10));
-    // EM.set(gizmo, PhysicsParentDef, ent.id);
+    // EM.set(gizmo, PhysicsParentDef, ship.id);
     // EM.set(gizmo, RenderableConstructDef, res.allMeshes.gizmo.proto);
 
-    // addGizmoChild(ent, 10);
+    addGizmoChild(ship, 10);
 
     //  [{ min: V(-13.8, 4.0, -2.9), max: V(-5.8, 6.0, -0.9) }];
 

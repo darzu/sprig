@@ -94,6 +94,7 @@ import { PoseDef } from "../animation/skeletal.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { XY } from "../meshes/mesh-loader.js";
 import { MotionSmoothingDef } from "../render/motion-smoothing.js";
+import { TeleportDef } from "../physics/teleport.js";
 /*
 NOTES:
 - Cut grass by updating a texture that has cut/not cut or maybe cut-height
@@ -543,9 +544,14 @@ export async function initLD53(hosting: boolean) {
 
       // player.physicsParent.id = ship.id;
 
+      // teleporting player to rudder
       const rudder = ship.ld52ship.rudder()!;
       vec3.copy(player.position, rudder.position);
       player.position[1] = 1.45;
+      if (!res.me.host) {
+        player.position[2] += 4 * res.me.pid;
+      }
+      EM.set(player, TeleportDef);
 
       if (res.me.host) {
         // vec3.set(0, 3, -1, player.position);
@@ -801,21 +807,21 @@ const { Ld53PlayerPropsDef, Ld53PlayerLocalDef, createLd53PlayerAsync } =
   });
 
 EM.addEagerInit([Ld53PlayerPropsDef], [], [], () => {
-  EM.addSystem(
-    "playerDbg",
-    Phase.GAME_PLAYERS,
-    [Ld53PlayerPropsDef, WorldFrameDef, PhysicsParentDef],
-    [],
-    (players) => {
-      for (let p of players) {
-        // TODO(@darzu): DEBUGGING!
-        if (dbgOnce(`playerDbg${p.id}-parent${p.physicsParent.id}`)) {
-          console.log(`player ${p.id} at: ${vec3Dbg(p.world.position)}`);
-          console.log(`player ${p.id} parent: ${p.physicsParent.id}`);
-        }
-      }
-    }
-  );
+  // EM.addSystem(
+  //   "playerDbg",
+  //   Phase.GAME_PLAYERS,
+  //   [Ld53PlayerPropsDef, WorldFrameDef, PhysicsParentDef],
+  //   [],
+  //   (players) => {
+  //     for (let p of players) {
+  //       // TODO(@darzu): DEBUGGING!
+  //       if (dbgOnce(`playerDbg${p.id}-parent${p.physicsParent.id}`)) {
+  //         console.log(`player ${p.id} at: ${vec3Dbg(p.world.position)}`);
+  //         console.log(`player ${p.id} parent: ${p.physicsParent.id}`);
+  //       }
+  //     }
+  //   }
+  // );
   EM.addSystem(
     "ld53PlayerControl",
     Phase.GAME_PLAYERS,
