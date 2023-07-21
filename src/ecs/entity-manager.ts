@@ -5,7 +5,9 @@ import {
   DBG_INIT_CAUSATION,
   DBG_VERBOSE_INIT_SEQ,
   DBG_SYSTEM_ORDER,
+  DBG_ENITITY_10017_POSITION_CHANGES,
 } from "../flags.js";
+import { vec3 } from "../matrix/sprig-matrix.js";
 import { Serializer, Deserializer } from "../utils/serialize.js";
 import {
   assert,
@@ -18,6 +20,7 @@ import {
   isPromise,
   toMap,
 } from "../utils/util.js";
+import { vec3Dbg } from "../utils/utils-3d.js";
 import { Phase, PhaseValueList } from "./sys-phase.js";
 
 // TODO(@darzu): re-check all uses of "any" and prefer "unknown"
@@ -696,9 +699,27 @@ export class EntityManager {
     for (let phase of PhaseValueList) {
       for (let s of this.phases.get(phase)!) {
         this.tryCallSystem(s);
+
+        if (DBG_ENITITY_10017_POSITION_CHANGES) {
+          // TODO(@darzu): GENERALIZE THIS
+          const player = this.entities.get(10017);
+          if (player && "position" in player) {
+            const pos = vec3Dbg(player.position as vec3);
+            if (dbgOnce(`${this._dbgChangesToEnt}-${pos}`)) {
+              console.log(
+                `10017 pos ${pos} after ${s} on loop ${this.dbgLoops}`
+              );
+              this._dbgChangesToEnt += 1;
+              dbgOnce(`${this._dbgChangesToEnt}-${pos}`);
+            }
+          }
+        }
       }
     }
   }
+
+  // see DBG_ENITITY_10017_POSITION_CHANGES
+  public _dbgChangesToEnt = 0;
 
   public hasEntity(id: number) {
     return this.entities.has(id);
@@ -1253,6 +1274,21 @@ export class EntityManager {
     }
     this._changedEntities.clear();
 
+    if (DBG_ENITITY_10017_POSITION_CHANGES) {
+      // TODO(@darzu): GENERALIZE THIS
+      const player = this.entities.get(10017);
+      if (player && "position" in player) {
+        const pos = vec3Dbg(player.position as vec3);
+        if (dbgOnce(`${this._dbgChangesToEnt}-${pos}`)) {
+          console.log(
+            `10017 pos ${pos} after 'entity promises' on loop ${this.dbgLoops}`
+          );
+          this._dbgChangesToEnt += 1;
+          dbgOnce(`${this._dbgChangesToEnt}-${pos}`);
+        }
+      }
+    }
+
     return madeProgress;
   }
 
@@ -1425,6 +1461,22 @@ export class EntityManager {
         madeProgress = true;
       }
     });
+
+    if (DBG_ENITITY_10017_POSITION_CHANGES) {
+      // TODO(@darzu): GENERALIZE THIS
+      const player = this.entities.get(10017);
+      if (player && "position" in player) {
+        const pos = vec3Dbg(player.position as vec3);
+        if (dbgOnce(`${this._dbgChangesToEnt}-${pos}`)) {
+          console.log(
+            `10017 pos ${pos} after 'init fns' on loop ${this.dbgLoops}`
+          );
+          this._dbgChangesToEnt += 1;
+          dbgOnce(`${this._dbgChangesToEnt}-${pos}`);
+        }
+      }
+    }
+
     return madeProgress;
   }
   _dbgInitBlameLn = new Map<InitFnId, string>();
