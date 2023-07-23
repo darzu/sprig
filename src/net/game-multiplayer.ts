@@ -2,6 +2,7 @@ import {
   AllMeshesDef,
   BallMesh,
   CubeMesh,
+  CubeRaftMesh,
   GrappleGunMesh,
   HexMesh,
 } from "../meshes/mesh-list.js";
@@ -41,12 +42,14 @@ import { ColliderDef } from "../physics/collider.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import { MeDef, AuthorityDef } from "./components.js";
 import { vec3Dbg } from "../utils/utils-3d.js";
+import { TimeDef } from "../time/time.js";
 
 const mpMeshes = XY.defineMeshSetResource(
   "mp_meshes",
   CubeMesh,
   HexMesh,
-  BallMesh
+  BallMesh,
+  CubeRaftMesh
 );
 
 export const {
@@ -60,29 +63,38 @@ export const {
     return {
       location: V(0, 0, 0),
       color: V(0, 0, 0),
+      parentId: 0,
     };
   },
-  updateProps: (p, location?: vec3.InputT, color?: vec3.InputT) => {
-    console.log(
-      `updating mpPlayerProps w/ ${vec3Dbg(location)} ${vec3Dbg(color)}`
-    );
-    if (location) vec3.copy(p.location, location);
-    if (color) vec3.copy(p.color, color);
+  updateProps: (
+    p,
+    location: vec3.InputT,
+    color: vec3.InputT,
+    parentId: number
+  ) => {
+    // console.log(
+    //   `updating mpPlayerProps w/ ${vec3Dbg(location)} ${vec3Dbg(color)}`
+    // );
+    vec3.copy(p.location, location);
+    vec3.copy(p.color, color);
+    p.parentId = parentId;
     return p;
   },
   serializeProps: (c, buf) => {
     buf.writeVec3(c.location);
     buf.writeVec3(c.color);
-    console.log(
-      `serialized mpPlayerProps w/ ${vec3Dbg(c.location)} ${vec3Dbg(c.color)}`
-    );
+    buf.writeUint32(c.parentId);
+    // console.log(
+    //   `serialized mpPlayerProps w/ ${vec3Dbg(c.location)} ${vec3Dbg(c.color)}`
+    // );
   },
   deserializeProps: (c, buf) => {
     buf.readVec3(c.location);
     buf.readVec3(c.color);
-    console.log(
-      `deserialized mpPlayerProps w/ ${vec3Dbg(c.location)} ${vec3Dbg(c.color)}`
-    );
+    c.parentId = buf.readUint32();
+    // console.log(
+    //   `deserialized mpPlayerProps w/ ${vec3Dbg(c.location)} ${vec3Dbg(c.color)}`
+    // );
   },
   defaultLocal: () => {
     return {};
@@ -104,13 +116,14 @@ export const {
       solid: true,
       aabb: res.mesh_cube.aabb,
     });
+    EM.set(e, PhysicsParentDef, props.parentId);
 
     if (e.authority.pid === res.me.pid) {
       vec3.copy(e.position, props.location); // TODO(@darzu): should be fine to have this outside loop
 
       EM.set(e, ControllableDef);
       e.controllable.modes.canFall = true;
-      e.controllable.modes.canJump = false;
+      e.controllable.modes.canJump = true;
       e.controllable.modes.canFly = false;
       EM.set(e, CameraFollowDef, 1);
       quat.setAxisAngle([0.0, -1.0, 0.0], 1.62, e.rotation);
@@ -189,8 +202,41 @@ export async function initMPGame() {
   const gizmo = EM.new();
   EM.set(gizmo, RenderableConstructDef, gizmoMesh);
   EM.set(gizmo, PositionDef, V(0, 1, 0));
+  EM.set(gizmo, ScaleDef, V(2, 2, 2));
+
+  let platformId = 0;
+  if (me.host) {
+    // TODO(@darzu): switch to net entity helper!!
+    // platform
+    const platform = EM.new();
+    EM.set(platform, RenderableConstructDef, mp_meshes.cubeRaft.proto);
+    EM.set(platform, ColorDef, ENDESGA16.darkGreen);
+    EM.set(platform, PositionDef, V(0, 5, 0));
+    EM.set(platform, ColliderDef, {
+      shape: "AABB",
+      solid: true,
+      aabb: mp_meshes.cubeRaft.aabb,
+    });
+    EM.set(platform, RotationDef);
+    EM.addSystem(
+      "movePlatform",
+      Phase.GAME_WORLD,
+      null,
+      [TimeDef],
+      (_, res) => {
+        const t = res.time.time * 0.001;
+        const r = 20;
+        const x = Math.cos(t) * r;
+        const y = Math.sin(t) * r;
+        platform.position[0] = y;
+        platform.position[2] = x;
+        quat.fromEuler(0, t, 0, platform.rotation);
+      }
+    );
+    platformId = platform.id;
+  }
 
   // player
   const color = AllEndesga16[me.pid];
-  createMpPlayer(V(0, 10, 0), color);
+  createMpPlayer(V(0, 10, 0), color, platformId);
 }

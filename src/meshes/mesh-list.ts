@@ -27,7 +27,7 @@ import {
   mkOctogonMesh,
   mkHalfEdgeQuadMesh,
   HEX_MESH,
-  BOAT_MESH,
+  RAFT_MESH,
   BULLET_MESH,
   GRID_PLANE_MESH,
   DBG_FABRIC,
@@ -414,9 +414,9 @@ export const HeQuadMesh = XY.registerMesh({
   data: mkHalfEdgeQuadMesh,
 });
 export const HexMesh = XY.registerMesh({ name: "hex", data: HEX_MESH });
-export const EnemyShipMesh = XY.registerMesh({
-  name: "enemyShip",
-  data: () => BOAT_MESH,
+export const CubeRaftMesh = XY.registerMesh({
+  name: "cubeRaft",
+  data: () => RAFT_MESH,
 });
 export const BulletMesh = XY.registerMesh({
   name: "bullet",
@@ -502,7 +502,7 @@ const allMeshesList = [
   HeOctoMesh,
   HeQuadMesh,
   HexMesh,
-  EnemyShipMesh,
+  CubeRaftMesh,
   BulletMesh,
   GridPlaneMesh,
   FabricMesh,

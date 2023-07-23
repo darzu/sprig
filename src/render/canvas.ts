@@ -1,6 +1,7 @@
 import { Component, EM, Resource } from "../ecs/entity-manager.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { VERBOSE_LOG } from "../flags.js";
+import { InputsDef } from "../input/inputs.js";
 
 export const CanvasDef = EM.defineResource(
   "htmlCanvas",
@@ -43,6 +44,19 @@ EM.addLazyInit([], [CanvasDef], () => {
     }
   }
   canvas.addEventListener("click", tryMouseLock);
+
+  // TODO(@darzu): if we need to unlock manually, do this:
+  // EM.addSystem(
+  //   "unlockMouseOnEsc",
+  //   Phase.POST_READ_INPUT,
+  //   null,
+  //   [CanvasDef, InputsDef],
+  //   (_, res) => {
+  //     if (res.inputs.keyClicks["the escape key" /*not real*/]) {
+  //       res.htmlCanvas.unlockMouse();
+  //     }
+  //   }
+  // );
 });
 
 let _imgPixelatedTimeoutHandle = 0;
