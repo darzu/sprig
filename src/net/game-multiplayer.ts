@@ -146,6 +146,17 @@ const { MpRaftPropsDef, createMpRaft } = defineNetEntityHelper({
       solid: true,
       aabb: res.mp_meshes.cubeRaft.aabb,
     });
+
+    const obstacle = EM.new();
+    EM.set(obstacle, PositionDef, V(0, 1, 0));
+    EM.set(obstacle, RenderableConstructDef, res.mp_meshes.hex.proto);
+    EM.set(obstacle, ColorDef, ENDESGA16.white);
+    EM.set(obstacle, ColliderDef, {
+      shape: "AABB",
+      solid: true,
+      aabb: res.mp_meshes.hex.aabb,
+    });
+    EM.set(obstacle, PhysicsParentDef, platform.id);
   },
 });
 
@@ -216,6 +227,7 @@ export async function initMPGame() {
   // raft
   if (me.host) {
     createMpRaft();
+
     EM.addSystem(
       "movePlatform",
       Phase.GAME_WORLD,
