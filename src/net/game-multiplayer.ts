@@ -1,36 +1,26 @@
 import {
-  AllMeshesDef,
   BallMesh,
   CubeMesh,
   CubeRaftMesh,
-  GrappleGunMesh,
   HexMesh,
 } from "../meshes/mesh-list.js";
-import {
-  CameraDef,
-  CameraComputedDef,
-  CameraFollowDef,
-} from "../camera/camera.js";
+import { CameraDef, CameraFollowDef } from "../camera/camera.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { AllEndesga16, ENDESGA16 } from "../color/palettes.js";
-import { DevConsoleDef } from "../debug/console.js";
-import { EM, EntityW } from "../ecs/entity-manager.js";
-import { defineNetEntityHelper } from "../ecs/em-helpers.js";
+import { EM } from "../ecs/entity-manager.js";
+import { FinishedDef, defineNetEntityHelper } from "../ecs/em-helpers.js";
 import { createGizmoMesh } from "../debug/gizmos.js";
-import { jitter } from "../utils/math.js";
-import { AngularVelocityDef, LinearVelocityDef } from "../motion/velocity.js";
+import { LinearVelocityDef } from "../motion/velocity.js";
 import {
   PhysicsParentDef,
   PositionDef,
   RotationDef,
   ScaleDef,
 } from "../physics/transform.js";
-import { mat4, quat, V, vec3 } from "../matrix/sprig-matrix.js";
-import { createGhost } from "../debug/ghost.js";
+import { quat, V, vec3 } from "../matrix/sprig-matrix.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { XY } from "../meshes/mesh-loader.js";
 import { RenderableConstructDef, RendererDef } from "../render/renderer-ecs.js";
-import { cloneMesh, mapMeshPositions } from "../meshes/mesh.js";
 import { PointLightDef } from "../render/lights.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
 import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
@@ -39,9 +29,7 @@ import { postProcess } from "../render/pipelines/std-post.js";
 import { shadowPipelines } from "../render/pipelines/std-shadow.js";
 import { ControllableDef } from "../input/controllable.js";
 import { ColliderDef } from "../physics/collider.js";
-import { WorldFrameDef } from "../physics/nonintersection.js";
-import { MeDef, AuthorityDef } from "./components.js";
-import { vec3Dbg } from "../utils/utils-3d.js";
+import { MeDef } from "./components.js";
 import { TimeDef } from "../time/time.js";
 
 const mpMeshes = XY.defineMeshSetResource(
@@ -52,7 +40,7 @@ const mpMeshes = XY.defineMeshSetResource(
   CubeRaftMesh
 );
 
-export const {
+const {
   MpPlayerLocalDef,
   MpPlayerPropsDef,
   createMpPlayer,
@@ -140,6 +128,27 @@ export const {
   },
 });
 
+const { MpRaftPropsDef, createMpRaft } = defineNetEntityHelper({
+  name: "mpRaft",
+  defaultProps: () => ({}),
+  updateProps: (p) => p,
+  serializeProps: (obj, buf) => {},
+  deserializeProps: (obj, buf) => {},
+  defaultLocal: () => {},
+  dynamicComponents: [PositionDef, RotationDef],
+  buildResources: [mpMeshes],
+  build: (platform, res) => {
+    EM.set(platform, RenderableConstructDef, res.mp_meshes.cubeRaft.proto);
+    EM.set(platform, ColorDef, ENDESGA16.darkGreen);
+    EM.set(platform, PositionDef, V(0, 5, 0));
+    EM.set(platform, ColliderDef, {
+      shape: "AABB",
+      solid: true,
+      aabb: res.mp_meshes.cubeRaft.aabb,
+    });
+  },
+});
+
 // console.log(`MpPlayerPropsDef: ${MpPlayerPropsDef.id}`); // 1867295084
 
 export async function initMPGame() {
@@ -204,26 +213,18 @@ export async function initMPGame() {
   EM.set(gizmo, PositionDef, V(0, 1, 0));
   EM.set(gizmo, ScaleDef, V(2, 2, 2));
 
-  let platformId = 0;
+  // raft
   if (me.host) {
-    // TODO(@darzu): switch to net entity helper!!
-    // platform
-    const platform = EM.new();
-    EM.set(platform, RenderableConstructDef, mp_meshes.cubeRaft.proto);
-    EM.set(platform, ColorDef, ENDESGA16.darkGreen);
-    EM.set(platform, PositionDef, V(0, 5, 0));
-    EM.set(platform, ColliderDef, {
-      shape: "AABB",
-      solid: true,
-      aabb: mp_meshes.cubeRaft.aabb,
-    });
-    EM.set(platform, RotationDef);
+    createMpRaft();
     EM.addSystem(
       "movePlatform",
       Phase.GAME_WORLD,
-      null,
+      [MpRaftPropsDef, PositionDef, RotationDef],
       [TimeDef],
-      (_, res) => {
+      (es, res) => {
+        if (es.length !== 1) return;
+        const platform = es[0];
+
         const t = res.time.time * 0.001;
         const r = 20;
         const x = Math.cos(t) * r;
@@ -233,10 +234,11 @@ export async function initMPGame() {
         quat.fromEuler(0, t, 0, platform.rotation);
       }
     );
-    platformId = platform.id;
   }
 
+  const raft = await EM.whenSingleEntity(MpRaftPropsDef, FinishedDef);
+
   // player
-  const color = AllEndesga16[me.pid];
-  createMpPlayer(V(0, 10, 0), color, platformId);
+  const color = AllEndesga16[me.pid + 4 /*skip browns*/];
+  createMpPlayer(V(0, 10, 0), color, raft.id);
 }
