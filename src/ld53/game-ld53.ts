@@ -76,7 +76,7 @@ import {
 } from "./ship.js";
 import { SAIL_FURL_RATE } from "../wind/sail.js";
 import { spawnStoneTower, StoneTowerDef, towerPool } from "../stone/stone.js";
-import { LandDef } from "./land-ship.js";
+import { LandDef } from "./land-collision.js";
 import { DeadDef } from "../ecs/delete.js";
 import { BulletDef, breakBullet } from "../cannons/bullet.js";
 import { ParametricDef } from "../motion/parametric-motion.js";
@@ -349,6 +349,8 @@ export async function initLD53(hosting: boolean) {
       ship.ld52ship.cannonR()!.yawpitch.yaw = Math.PI * 0.5;
       ship.ld52ship.cannonL()!.yawpitch.pitch = cannonDefaultPitch;
       ship.ld52ship.cannonL()!.yawpitch.yaw = Math.PI * 1.5;
+
+      // TODO(@darzu): synchronize ship wooden health!
 
       resetWoodHealth(ship.woodHealth);
       ship.shipHealth.health = 1;

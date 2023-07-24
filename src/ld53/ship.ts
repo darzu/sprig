@@ -89,8 +89,6 @@ const RUDDER_ROTATION_RATE = 0.01;
 
 export const cannonDefaultPitch = Math.PI * +0.05;
 
-// TODO(@darzu): REFACTOR. remove ld52Ship
-
 export const { createLd53ShipAsync, Ld53ShipPropsDef } = defineNetEntityHelper({
   name: "ld53Ship",
   defaultProps: () => {},
