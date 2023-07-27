@@ -69,6 +69,7 @@ import {
 } from "../physics/aabb.js";
 import { SoundSetDef } from "../audio/sound-loader.js";
 import { Phase } from "../ecs/sys-phase.js";
+import { eventWizard } from "../net/events.js";
 
 // TODO(@darzu): remove all references to pirates
 
@@ -98,6 +99,9 @@ What does compute shader gain us?
   Less CPU work
 */
 
+// Flag for serialization dbg. determine the max number of boards and segments; useful for sizing (u8 vs u16) for serializing
+const TRACK_MAX_BOARD_SEG_IDX = false;
+
 // TODO(@darzu): PERF HACK. These temp vecs are used for intermediate calculations.
 //    Be very careful about their liveness / lifetime!!
 const __temp1 = vec3.create();
@@ -119,6 +123,13 @@ export const WoodAssetsDef = EM.defineResource(
   (registry: WoodAssets = {}) => registry
 );
 
+export const WoodHealthDef = EM.defineNonupdatableComponent(
+  "woodHealth",
+  (s: WoodHealth) => {
+    return s;
+  }
+);
+
 // TODO(@darzu): SUPER HACK
 type DestroyPirateShipFn = (id: number, timber: Entity) => void;
 const _destroyPirateShipFns: DestroyPirateShipFn[] = [];
@@ -127,6 +138,66 @@ export function registerDestroyPirateHandler(fn: DestroyPirateShipFn) {
 }
 
 export let _dbgNumSplinterEnds = 0;
+
+interface BoardSegHit {
+  boardIdx: number;
+  segIdx: number;
+  dmg: number;
+}
+
+const raiseDmgWood = eventWizard(
+  "dmg-wood",
+  [[WoodHealthDef]] as const,
+  ([wood], hits: BoardSegHit[]) => {
+    for (let { boardIdx, segIdx, dmg } of hits) {
+      wood.woodHealth.boards[boardIdx][segIdx].health -= dmg;
+
+      EM.whenResources(AudioDef, SoundSetDef).then((res) => {
+        res.music.playSound("woodbreak", res.soundSet["woodbreak.mp3"], 0.02);
+      });
+
+      // // TODO(@darzu): HUGE HACK to detect hitting a pirate ship
+      // if (dmg > 0 && mesh.dbgName === "pirateShip" && ball.bullet.team === 1) {
+      //   assert(PhysicsParentDef.isOn(w));
+      //   for (let fn of _destroyPirateShipFns) fn(w.physicsParent.id, w);
+      // } else if (ball.bullet.team === 2) {
+      //   //const music = EM.getResource(AudioDef);
+      //   // if (music)
+      //   //   music.playChords([2, 3], "minor", 0.2, 1.0, -2);
+      // }
+    }
+  },
+  {
+    legalEvent: ([wood], hits: BoardSegHit[]) => {
+      assert(hits.length < 0xff /*uint 8*/);
+      assert(wood.woodHealth.boards.length < 0xff /*uint 8*/);
+      // NOTE: doesn't thoroughly enforce anything but segments need to fit in uint8 too
+      assert(wood.woodHealth.boards[0].length < 0xff /*uint 8*/);
+      return true;
+    },
+    serializeExtra: (buf, hits: BoardSegHit[]) => {
+      buf.writeUint8(hits.length);
+      for (let { boardIdx, segIdx, dmg } of hits) {
+        buf.writeUint8(boardIdx);
+        buf.writeUint8(segIdx);
+        const dmgAsU8 = dmg * 0xff;
+        buf.writeUint8(dmgAsU8); // TODO(@darzu): have a unorm serialze type?
+      }
+    },
+    deserializeExtra: (buf) => {
+      const len = buf.readUint8();
+      const hits: BoardSegHit[] = [];
+      for (let i = 0; i < len; i++) {
+        const boardIdx = buf.readUint8();
+        const segIdx = buf.readUint8();
+        const dmgAsU8 = buf.readUint8();
+        const dmg = dmgAsU8 / 0xff;
+        hits.push({ boardIdx, segIdx, dmg });
+      }
+      return hits;
+    },
+  }
+);
 
 EM.addEagerInit([WoodStateDef], [], [], () => {
   EM.addSystem(
@@ -156,6 +227,7 @@ EM.addEagerInit([WoodStateDef], [], [], () => {
         const mesh = meshHandle.mesh!; // TODO(@darzu): again, shouldn't be modifying "readonlyXXXX"
         const hits = collidesWith.get(w.id);
         if (hits) {
+          let boardSegHits: BoardSegHit[] = []; // TODO(@darzu): PERF. reuse for better memory?
           const balls = hits
             .map((h) =>
               EM.findEntity(h, [BulletDef, WorldFrameDef, ColliderDef])
@@ -219,39 +291,25 @@ EM.addEagerInit([WoodStateDef], [], [], () => {
                     //     mesh.colors[qi] = [0, 1, 0];
                     //   }
                     // TODO(@darzu): cannon ball health stuff!
+
+                    // determine dmg
                     const woodHealth = w.woodHealth.boards[boardIdx][segIdx];
                     const dmg =
                       Math.min(woodHealth.health, ball.bullet.health) + 0.001;
-                    woodHealth.health -= dmg;
-                    ball.bullet.health -= dmg;
-                    if (dmg) {
-                      EM.whenResources(AudioDef, SoundSetDef).then((res) => {
-                        res.music.playSound(
-                          "woodbreak",
-                          res.soundSet["woodbreak.mp3"],
-                          0.02
-                        );
-                      });
-                    }
 
-                    // TODO(@darzu): HUGE HACK to detect hitting a pirate ship
-                    if (
-                      dmg > 0 &&
-                      mesh.dbgName === "pirateShip" &&
-                      ball.bullet.team === 1
-                    ) {
-                      assert(PhysicsParentDef.isOn(w));
-                      for (let fn of _destroyPirateShipFns)
-                        fn(w.physicsParent.id, w);
-                    } else if (ball.bullet.team === 2) {
-                      //const music = EM.getResource(AudioDef);
-                      // if (music)
-                      //   music.playChords([2, 3], "minor", 0.2, 1.0, -2);
-                    }
+                    // dmg the ball
+                    ball.bullet.health -= dmg;
+
+                    // dmg the wood
+                    boardSegHits.push({ boardIdx, segIdx, dmg });
                   }
                 }
               });
             });
+          }
+
+          if (boardSegHits.length) {
+            raiseDmgWood(w, boardSegHits);
           }
         }
         if (DBG_COLOR && (segAABBHits > 0 || segMidHits > 0)) {
@@ -1382,13 +1440,6 @@ export function unshareProvokingForWood(m: RawMesh, woodState: WoodState) {
   }
 }
 
-export const WoodHealthDef = EM.defineNonupdatableComponent(
-  "woodHealth",
-  (s: WoodHealth) => {
-    return s;
-  }
-);
-
 interface SegHealth {
   prev?: SegHealth;
   next?: SegHealth;
@@ -1405,7 +1456,16 @@ interface WoodHealth {
 }
 
 export function createWoodHealth(w: WoodState) {
-  // TODO(@darzu):
+  if (TRACK_MAX_BOARD_SEG_IDX) {
+    const maxBoardIdx = w.boards.length;
+    let maxSegIdx = -1;
+    for (let b of w.boards) {
+      maxSegIdx = Math.max(maxSegIdx, b.segments.length);
+    }
+    console.log(`maxBoardIdx: ${maxBoardIdx}`);
+    console.log(`maxSegIdx: ${maxSegIdx}`);
+  }
+
   return {
     boards: w.boards.map((b) => {
       let lastSeg = b.segments.reduce((p, n) => {

@@ -382,23 +382,27 @@ export async function initLD53(hosting: boolean) {
         )
       );
 
-      const towers = EM.filterEntities([StoneTowerDef]);
-      for (let tower of towers) {
-        towerPool.despawn(tower);
-      }
+      // TODO(@darzu): multiplayer towers!
 
-      // spawn towers
-      const tower3dPosesAndDirs: [vec3, number][] = level.levelMap.towers.map(
-        ([tPos, tDir]) => [
-          level2DtoWorld3D(tPos, STONE_TOWER_HEIGHT, vec3.create()),
-          Math.atan2(-tDir[0], -tDir[1]),
-        ]
-      );
+      if (res.me.host) {
+        const towers = EM.filterEntities([StoneTowerDef]);
+        for (let tower of towers) {
+          towerPool.despawn(tower);
+        }
 
-      for (let [pos, angle] of tower3dPosesAndDirs) {
-        const stoneTower = await spawnStoneTower();
-        vec3.copy(stoneTower.position, pos);
-        quat.setAxisAngle([0, 1, 0], angle, stoneTower.rotation);
+        // spawn towers
+        const tower3dPosesAndDirs: [vec3, number][] = level.levelMap.towers.map(
+          ([tPos, tDir]) => [
+            level2DtoWorld3D(tPos, STONE_TOWER_HEIGHT, vec3.create()),
+            Math.atan2(-tDir[0], -tDir[1]),
+          ]
+        );
+
+        for (let [pos, angle] of tower3dPosesAndDirs) {
+          const stoneTower = await spawnStoneTower();
+          vec3.copy(stoneTower.position, pos);
+          quat.setAxisAngle([0, 1, 0], angle, stoneTower.rotation);
+        }
       }
     });
 
@@ -670,18 +674,20 @@ export async function initLD53(hosting: boolean) {
   // }
   // createGraph3D(vec3.add(worldGizmo.position, [50, 10, 50], V(0, 0, 0)), data);
 
-  const tower3dPosesAndDirs: [vec3, number][] = level.levelMap.towers.map(
-    ([tPos, tDir]) => [
-      level2DtoWorld3D(tPos, STONE_TOWER_HEIGHT, vec3.create()),
-      Math.atan2(-tDir[0], -tDir[1]),
-    ]
-  );
-
   // TODO(@darzu): REFACTOR make towers networked
-  for (let [pos, angle] of tower3dPosesAndDirs) {
-    const stoneTower = await spawnStoneTower();
-    vec3.copy(stoneTower.position, pos);
-    quat.setAxisAngle([0, 1, 0], angle, stoneTower.rotation);
+  if (res.me.host) {
+    const tower3dPosesAndDirs: [vec3, number][] = level.levelMap.towers.map(
+      ([tPos, tDir]) => [
+        level2DtoWorld3D(tPos, STONE_TOWER_HEIGHT, vec3.create()),
+        Math.atan2(-tDir[0], -tDir[1]),
+      ]
+    );
+
+    for (let [pos, angle] of tower3dPosesAndDirs) {
+      const stoneTower = await spawnStoneTower();
+      vec3.copy(stoneTower.position, pos);
+      quat.setAxisAngle([0, 1, 0], angle, stoneTower.rotation);
+    }
   }
 
   // BULLET STUFF

@@ -51,6 +51,7 @@ import {
 import { Phase } from "../ecs/sys-phase.js";
 import { ShipHealthDef } from "./ship-health.js";
 
+// TODO(@darzu): remove / rework "ld52ship"
 export const ShipDef = EM.defineComponent("ld52ship", () => ({
   mast: createRef(0, [MastDef, RotationDef]),
   rudder: createRef(0, [

@@ -1,4 +1,3 @@
-import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import {
   EM,
   Component,
@@ -14,22 +13,16 @@ import {
 import { MAX_MESSAGE_SIZE, MessageType } from "./message.js";
 import {
   MeDef,
-  Me,
-  Outbox,
   OutboxDef,
   send,
-  Peer,
-  PeerDef,
   HostDef,
-  Inbox,
   InboxDef,
   AuthorityDef,
-  Authority,
   HostCompDef,
 } from "./components.js";
 import { hashCode, NumberTuple } from "../utils/util.js";
 import { TimeDef } from "../time/time.js";
-import { PositionDef, RotationDef } from "../physics/transform.js";
+// import { PositionDef, RotationDef } from "../physics/transform.js";
 import { assert } from "../utils/util.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { VERBOSE_NET_LOG } from "../flags.js";
@@ -146,14 +139,14 @@ function deserializeDetectedEvent<Extra>(
   return { type, entities, extra };
 }
 
-registerEventHandler("test", {
-  entities: [[PositionDef], [RotationDef]],
-  eventAuthorityEntity: ([posId, rotId]) => posId,
-  legalEvent: () => true,
-  runEvent: () => {
-    console.log("event running");
-  },
-});
+// registerEventHandler("test", {
+//   entities: [[PositionDef], [RotationDef]],
+//   eventAuthorityEntity: ([posId, rotId]) => posId,
+//   legalEvent: () => true,
+//   runEvent: () => {
+//     console.log("event running");
+//   },
+// });
 
 function eventAuthorityEntity(type: string, entities: number[]): number {
   if (!EVENT_HANDLERS.has(type))
