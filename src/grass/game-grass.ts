@@ -595,7 +595,8 @@ export async function initGrassGame(hosting: boolean) {
       //   res.score.shipHealth + healthChanges,
       //   10000
       // );
-      res.score.cutPurple += cutPurple;
+      // TODO(@darzu): re-impl ?
+      // res.score.cutPurple += cutPurple;
 
       // copy from world texture data to update window
       // NOTE: we shrink the window to only include what has changed

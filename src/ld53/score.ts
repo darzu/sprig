@@ -16,8 +16,6 @@ import { ShipDef } from "./ship.js";
 import { Phase } from "../ecs/sys-phase.js";
 
 export const ScoreDef = EM.defineResource("score", () => ({
-  cutPurple: 0,
-  totalPurple: 0,
   completedLevels: 0,
   levelNumber: 0,
   gameEnding: false,
