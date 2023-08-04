@@ -6,6 +6,8 @@ import { assert } from "../utils/util.js";
 import { parabolaFromPoints } from "../utils/math.js";
 import { Phase } from "../ecs/sys-phase.js";
 
+// TODO(@darzu): reconcile with stone tower prediction code!!
+
 export interface ParamProjectile {
   pos: vec3;
   vel: vec3;

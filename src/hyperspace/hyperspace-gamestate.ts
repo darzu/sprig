@@ -29,6 +29,12 @@ import { CanManDef } from "../turret/turret.js";
 
 const RESTART_TIME_MS = 5000;
 
+// TODO(@darzu): MULTIPLAYER. Generalized version:
+//  n game states (enum generic?)
+//  onXGameState
+//  setGameState
+//  maybe a generalized state machine?
+
 export enum HyperspaceGameState {
   LOBBY,
   PLAYING,

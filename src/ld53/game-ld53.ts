@@ -316,6 +316,20 @@ export async function initLD53(hosting: boolean) {
       Math.PI / 2
   );
 
+  /*
+  MULTIPLAYER LEVEL SYNCING
+  state machine that is synchronized, someone has authority
+    could be via events
+  aside: maybe all events should describe their log strategy: play all, play last "N", play last
+    Doug thinks we should view this as log compaction. I agree.
+  */
+
+  // TODO(@darzu): IMPL!
+  async function setLevel(levelIdx: number) {
+    await setMap(MapPaths[levelIdx]);
+    await resetLand();
+  }
+
   if (res.me.host) {
     const ship = await createLd53ShipAsync();
 
@@ -324,6 +338,7 @@ export async function initLD53(hosting: boolean) {
     level2DtoWorld3D(level.levelMap.startPos, 8, ship.position);
     //vec3.copy(ship.position, SHIP_START_POS);
 
+    // TODO(@darzu): MULTIPLAYER: sync level
     score.onLevelEnd.push(async () => {
       resetLand();
 
@@ -349,8 +364,6 @@ export async function initLD53(hosting: boolean) {
       ship.ld52ship.cannonR()!.yawpitch.yaw = Math.PI * 0.5;
       ship.ld52ship.cannonL()!.yawpitch.pitch = cannonDefaultPitch;
       ship.ld52ship.cannonL()!.yawpitch.yaw = Math.PI * 1.5;
-
-      // TODO(@darzu): synchronize ship wooden health!
 
       resetWoodHealth(ship.woodHealth);
       ship.shipHealth.health = 1;
@@ -882,7 +895,6 @@ let terraEnt: EntityW<[typeof RenderableDef]> | undefined = undefined;
 async function resetLand() {
   const res = await EM.whenResources(RendererDef);
 
-  // TODO(@darzu): IMPL
   // once the map is loaded, we can run JFA
   res.renderer.renderer.submitPipelines([], [...mapJfa.allPipes()]);
 
