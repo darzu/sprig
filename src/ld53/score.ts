@@ -10,10 +10,10 @@ import { PhysicsStateDef } from "../physics/nonintersection.js";
 import { PhysicsParentDef } from "../physics/transform.js";
 import { TimeDef } from "../time/time.js";
 import { WoodHealthDef } from "../wood/wood.js";
-import { setMap } from "../levels/level-map.js";
 import { MapPaths } from "../levels/map-loader.js";
 import { ShipDef } from "./ship.js";
 import { Phase } from "../ecs/sys-phase.js";
+import { HostDef } from "../net/components.js";
 
 export const ScoreDef = EM.defineResource("score", () => ({
   completedLevels: 0,
@@ -30,6 +30,7 @@ export const ScoreDef = EM.defineResource("score", () => ({
   skipFrame: false,
 }));
 
+// TODO(@darzu): MULTIPLAYER: make this client/server agnostic
 EM.addSystem(
   "updateScoreDisplay",
   Phase.POST_GAME_WORLD,
@@ -54,7 +55,7 @@ EM.addSystem(
   "detectGameEnd",
   Phase.POST_GAME_WORLD,
   [ShipHealthDef],
-  [ScoreDef, TextDef, TimeDef, PartyDef],
+  [ScoreDef, TextDef, TimeDef, PartyDef, HostDef],
   async (es, res) => {
     const ship = es[0];
     if (!ship) return;
@@ -70,7 +71,6 @@ EM.addSystem(
           res.score.levelNumber = 0;
           res.score.victory = false;
         }
-        await setMap(MapPaths[res.score.levelNumber]);
         //res.score.shipHealth = 10000;
         for (let f of res.score.onLevelEnd) {
           await f();
@@ -85,7 +85,6 @@ EM.addSystem(
       if (res.time.step > res.score.levelEndedAt + 300) {
         res.score.completedLevels++;
         res.score.levelNumber++;
-        await setMap(MapPaths[res.score.levelNumber]);
         //res.score.shipHealth = 10000;
         for (let f of res.score.onLevelEnd) {
           await f();
@@ -98,10 +97,11 @@ EM.addSystem(
       console.log("ending game");
       res.score.gameEnding = true;
       res.score.gameEndedAt = res.time.step;
-      res.text.upperText = "LEVEL FAILED";
+      res.text.upperText = "LEVEL FAILED"; // TODO(@darzu): MULTIPLAYER. send to clients
     } else if (
       pointInAABB(res.score.endZone()!._phys.colliders[0].aabb, res.party.pos)
     ) {
+      // LEVEL END
       console.log("res.score.levelNumber: " + res.score.levelNumber);
       console.log("MapPaths.length: " + MapPaths.length);
       if (res.score.levelNumber + 1 >= MapPaths.length) {
@@ -113,16 +113,6 @@ EM.addSystem(
         res.score.levelEnding = true;
         res.score.levelEndedAt = res.time.step;
         res.text.upperText = "LEVEL COMPLETE";
-      }
-
-      // splinter the dock
-      const dock = res.score.endZone()!;
-      if (WoodHealthDef.isOn(dock)) {
-        for (let b of dock.woodHealth.boards) {
-          for (let s of b) {
-            s.health = 0;
-          }
-        }
       }
     }
   }

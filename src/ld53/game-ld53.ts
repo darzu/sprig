@@ -87,7 +87,12 @@ import {
   createRef,
   defineNetEntityHelper,
 } from "../ecs/em-helpers.js";
-import { resetWoodHealth, resetWoodState, WoodStateDef } from "../wood/wood.js";
+import {
+  resetWoodHealth,
+  resetWoodState,
+  WoodHealthDef,
+  WoodStateDef,
+} from "../wood/wood.js";
 import { MapPaths } from "../levels/map-loader.js";
 import { stdRiggedRenderPipeline } from "../render/pipelines/std-rigged.js";
 import { PoseDef } from "../animation/skeletal.js";
@@ -165,6 +170,25 @@ const dbgGrid = [
   ],
 ];
 let dbgGridCompose = createGridComposePipelines(dbgGrid);
+
+// TODO(@darzu): MULTIPLAYER. Move to event
+async function setLevel(
+  levelIdx: number,
+  dock?: EntityW<[typeof WoodHealthDef]>
+) {
+  console.log(`SET LEVEL: ${levelIdx}`);
+  await setMap(MapPaths[levelIdx]);
+  await resetLand();
+
+  if (dock) {
+    // splinter the dock
+    for (let b of dock.woodHealth.boards) {
+      for (let s of b) {
+        s.health = 0;
+      }
+    }
+  }
+}
 
 export async function initLD53(hosting: boolean) {
   const res = await EM.whenResources(
@@ -249,9 +273,11 @@ export async function initLD53(hosting: boolean) {
   const score = EM.addResource(ScoreDef);
 
   // start map
-  await setMap(MapPaths[0]);
+  // TODO(@darzu): MULTIPLAYER:
+  const landPromise = setLevel(0);
+  // await setMap(MapPaths[0]);
 
-  const landPromise = resetLand();
+  // const landPromise = resetLand();
 
   // sky dome?
   const SKY_HALFSIZE = 1000;
@@ -324,12 +350,6 @@ export async function initLD53(hosting: boolean) {
     Doug thinks we should view this as log compaction. I agree.
   */
 
-  // TODO(@darzu): IMPL!
-  async function setLevel(levelIdx: number) {
-    await setMap(MapPaths[levelIdx]);
-    await resetLand();
-  }
-
   if (res.me.host) {
     const ship = await createLd53ShipAsync();
 
@@ -340,8 +360,9 @@ export async function initLD53(hosting: boolean) {
 
     // TODO(@darzu): MULTIPLAYER: sync level
     score.onLevelEnd.push(async () => {
-      resetLand();
+      await setLevel(score.levelNumber, dock);
 
+      // TODO(@darzu): MULTIPLAYER: which are needed on client?
       // worldCutData.fill(0.0);
       // grassCutTex.queueUpdate(worldCutData);
       // vec3.set(0, 0, 0, ship.position);

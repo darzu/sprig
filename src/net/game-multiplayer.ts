@@ -160,6 +160,8 @@ const { MpRaftPropsDef, createMpRaft } = defineNetEntityHelper({
   },
 });
 
+// TODO(@darzu): Add example event!
+
 // console.log(`MpPlayerPropsDef: ${MpPlayerPropsDef.id}`); // 1867295084
 
 export async function initMPGame() {
