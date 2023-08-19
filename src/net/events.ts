@@ -32,8 +32,13 @@ export interface Event<Extra> {
   type: string;
   // Sequence number in the global log of events
   seq: number;
+  // originator PID
+  // TODO(@darzu): Is this really needed? I/darzu added this b/c I wanted events
+  //  w/o any entities so in that case the origPid is used as the authority pid
+  origPid: number;
   // ID set at the generating node for dedup-ing
   entities: number[];
+  // arbitrary non-entities payload
   extra: Extra;
 }
 
@@ -56,11 +61,6 @@ export function registerEventHandler<ES extends EDef<any>[], Extra>(
   type: string,
   handler: EventHandler<ES, Extra>
 ): void {
-  // TODO(@darzu): can this requirement be lifted?
-  assert(
-    handler.entities.length,
-    `invalid event handler: ${type}. At least one entity is required for an event!`
-  );
   EVENT_TYPES.set(hashCode(type), type);
   EVENT_HANDLERS.set(type, handler as any);
 }
@@ -81,6 +81,8 @@ function serializeEvent<Extra>(event: Event<Extra>, buf: Serializer) {
     throw `Tried to serialize unrecognized event type ${event.type}`;
   buf.writeUint32(hashCode(event.type));
   buf.writeUint32(event.seq);
+  assert(event.origPid <= 256, `Pid too big: ${event.origPid}`);
+  buf.writeUint8(event.origPid);
   buf.writeUint8(event.entities.length);
   for (const id of event.entities) buf.writeUint32(id);
   if (hasSerializers(handler)) handler.serializeExtra(buf, event.extra);
@@ -98,17 +100,18 @@ function deserializeEvent<Extra>(buf: Deserializer): Event<Extra> {
   const handler = EVENT_HANDLERS.get(type);
   if (!handler) throw `Tried to deserialize unrecognized event type ${type}`;
   const seq = buf.readUint32();
+  const origPid = buf.readUint8();
   const entities = [];
   const numEntities = buf.readUint8();
   for (let i = 0; i < numEntities; i++) entities.push(buf.readUint32());
   let extra;
   if ("serializeExtra" in handler) extra = handler.deserializeExtra(buf);
-  return { type, seq, entities, extra };
+  return { type, seq, origPid, entities, extra };
 }
 
 export type DetectedEvent<Extra> = Pick<
   Event<Extra>,
-  "type" | "entities" | "extra"
+  "type" | "entities" | "extra" | "origPid"
 >;
 
 function serializeDetectedEvent<Extra>(
@@ -119,6 +122,7 @@ function serializeDetectedEvent<Extra>(
   if (!handler)
     throw `Tried to serialize unrecognized event type ${event.type}`;
   buf.writeUint32(hashCode(event.type));
+  buf.writeUint8(event.origPid);
   buf.writeUint8(event.entities.length);
   for (const id of event.entities) buf.writeUint32(id);
   if ("serializeExtra" in handler) handler.serializeExtra(buf, event.extra);
@@ -134,6 +138,7 @@ function deserializeDetectedEvent<Extra>(
     throw `Tried to deserialize unrecognized event type ${typeCode}`;
   }
   const type = EVENT_TYPES.get(typeCode)!;
+  const origPid = buf.readUint8();
   const handler = EVENT_HANDLERS.get(type);
   if (!handler) throw `Tried to deserialize unrecognized event type ${type}`;
   const entities = [];
@@ -141,7 +146,7 @@ function deserializeDetectedEvent<Extra>(
   for (let i = 0; i < numEntities; i++) entities.push(buf.readUint32());
   let extra;
   if ("serializeExtra" in handler) extra = handler.deserializeExtra(buf);
-  return { type, entities, extra };
+  return { type, origPid, entities, extra };
 }
 
 // registerEventHandler("test", {
@@ -153,11 +158,22 @@ function deserializeDetectedEvent<Extra>(
 //   },
 // });
 
-function eventAuthorityEntity(type: string, entities: number[]): number {
-  assert(entities.length, `Missing any entities!`);
-  if (!EVENT_HANDLERS.has(type))
-    throw `No event handler registered for event type ${type}`;
-  return EVENT_HANDLERS.get(type)!.eventAuthorityEntity(entities as any);
+function getEventAuthorityPid(event: DetectedEvent<unknown>): number {
+  if (event.entities.length) {
+    assert(
+      EVENT_HANDLERS.has(event.type),
+      `No event handler registered for event type ${event.type}`
+    );
+    const entId = EVENT_HANDLERS.get(event.type)!.eventAuthorityEntity(
+      event.entities as any
+    );
+    const ent = EM.findEntity(entId, [AuthorityDef]);
+    assert(ent && ent.authority, `missing .authority on event target ${entId}`);
+    const { authority } = ent;
+    return authority.pid;
+  } else {
+    return event.origPid;
+  }
 }
 
 function legalEvent<Extra>(
@@ -294,12 +310,10 @@ export function initNetGameEventSystems() {
       let newEvents = false;
       while (detectedEvents.events.length > 0) {
         const event = detectedEvents.events.shift()!;
-        const authorityId = eventAuthorityEntity(event.type, event.entities);
-        const { authority } = EM.findEntity(authorityId, [AuthorityDef])!;
-        if (authority.pid == me.pid) {
+        const authorityPid = getEventAuthorityPid(event);
+        if (authorityPid == me.pid) {
           // Gameplay code is responsible for ensuring events legal when generated
-          if (!legalEvent(event.type, event))
-            throw `illegal event ${event.type}`;
+          assert(legalEvent(event.type, event), `illegal event ${event.type}`);
           newEvents = true;
           host.outgoingEventRequests.events.push({
             id: host.outgoingEventRequests.nextId++,
@@ -420,15 +434,8 @@ export function initNetGameEventSystems() {
       const requestedEvents = EM.ensureResource(RequestedEventsDef);
       while (detectedEvents.events.length > 0) {
         const event = detectedEvents.events.shift()!;
-        const authorityId = eventAuthorityEntity(event.type, event.entities);
-
-        const ent = EM.findEntity(authorityId, [AuthorityDef]);
-        assert(
-          ent && ent.authority,
-          `missing .authority on event target ${authorityId}`
-        );
-        const { authority } = ent;
-        if (authority.pid == me.pid) {
+        const authorityPid = getEventAuthorityPid(event);
+        if (authorityPid == me.pid) {
           // Gameplay code is responsible for ensuring events legal when generated
           if (!legalEvent(event.type, event))
             throw `illegal event ${event.type}`;
@@ -632,8 +639,10 @@ export function eventWizard<ES extends EDef<any>[], Extra>(
       extra = args[args.length - 1] as Extra;
     }
     const de = EM.getResource(DetectedEventsDef)!;
+    const me = EM.getResource(MeDef)!;
     de.raise({
       type: name,
+      origPid: me.pid,
       entities: es.map((e) => e.id),
       extra,
     });
