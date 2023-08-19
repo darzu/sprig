@@ -80,7 +80,7 @@ import { LandDef } from "./land-collision.js";
 import { DeadDef } from "../ecs/delete.js";
 import { BulletDef, breakBullet } from "../cannons/bullet.js";
 import { ParametricDef } from "../motion/parametric-motion.js";
-import { createDock } from "./dock.js";
+import { DockDef, createDock } from "./dock.js";
 import { ShipHealthDef } from "./ship-health.js";
 import {
   FinishedDef,
@@ -100,6 +100,7 @@ import { Phase } from "../ecs/sys-phase.js";
 import { XY } from "../meshes/mesh-loader.js";
 import { MotionSmoothingDef } from "../render/motion-smoothing.js";
 import { TeleportDef } from "../physics/teleport.js";
+import { eventWizard } from "../net/events.js";
 /*
 NOTES:
 - Cut grass by updating a texture that has cut/not cut or maybe cut-height
@@ -171,23 +172,142 @@ const dbgGrid = [
 ];
 let dbgGridCompose = createGridComposePipelines(dbgGrid);
 
-// TODO(@darzu): MULTIPLAYER. Move to event
-async function setLevel(
-  levelIdx: number,
-  dock?: EntityW<[typeof WoodHealthDef]>
-) {
+const raiseSetLevel = eventWizard(
+  "ld53-set-level",
+  [] as const,
+  async (_, levelIdx: number) => setLevelLocal(levelIdx),
+  {
+    legalEvent: (_, levelIdx: number) => {
+      assert(0 <= levelIdx && levelIdx <= 3, `invalid level: ${levelIdx}`);
+      return true;
+    },
+    serializeExtra: (buf, levelIdx: number) => {
+      buf.writeUint8(levelIdx);
+    },
+    deserializeExtra: (buf) => {
+      const levelIdx = buf.readUint8();
+      return levelIdx;
+    },
+  }
+);
+
+async function hostResetLevel(levelIdx: number) {
+  raiseSetLevel(levelIdx);
+
+  const ship = await EM.whenSingleEntity(
+    Ld53PlayerPropsDef,
+    PositionDef,
+    RotationDef,
+    ShipDef,
+    LinearVelocityDef,
+    ShipHealthDef,
+    WoodHealthDef,
+    WoodStateDef
+  );
+
+  // TODO(@darzu): MULTIPLAYER: which are needed on client?
+  // worldCutData.fill(0.0);
+  // grassCutTex.queueUpdate(worldCutData);
+  // vec3.set(0, 0, 0, ship.position);
+  // vec3.copy(ship.position, SHIP_START_POS);
+  const { levelMap, wind, renderer } = await EM.whenResources(
+    LevelMapDef,
+    WindDef,
+    RendererDef
+  );
+
+  level2DtoWorld3D(levelMap.startPos, 8, ship.position);
+  quat.identity(ship.rotation);
+  vec3.set(0, 0, 0, ship.linearVelocity);
+  const sail = ship.ld52ship.mast()!.mast.sail()!.sail;
+  sail.unfurledAmount = sail.minFurl;
+  ship.ld52ship.cuttingEnabled = true;
+  ship.ld52ship.rudder()!.yawpitch.yaw = 0;
+  setWindAngle(
+    wind,
+    Math.atan2(-levelMap.windDir[0], -levelMap.windDir[1]) + Math.PI / 2
+  );
+
+  ship.ld52ship.cannonR()!.yawpitch.pitch = cannonDefaultPitch;
+  ship.ld52ship.cannonR()!.yawpitch.yaw = Math.PI * 0.5;
+  ship.ld52ship.cannonL()!.yawpitch.pitch = cannonDefaultPitch;
+  ship.ld52ship.cannonL()!.yawpitch.yaw = Math.PI * 1.5;
+
+  resetWoodHealth(ship.woodHealth);
+  ship.shipHealth.health = 1;
+  resetWoodState(ship.woodState);
+  EM.whenEntityHas(ship, RenderableDef, WoodStateDef).then((ship) =>
+    renderer.renderer.stdPool.updateMeshQuads(
+      ship.renderable.meshHandle,
+      ship.woodState.mesh as Mesh,
+      0,
+      ship.woodState.mesh.quad.length
+    )
+  );
+
+  console.log("resetting dock position");
+  // TODO(@darzu): MULTIPLAYER: dock health
+  const dock = await EM.whenSingleEntity(
+    DockDef,
+    PositionDef,
+    WoodHealthDef,
+    WoodStateDef
+  );
+  const endZonePos = level2DtoWorld3D(levelMap.endZonePos, 5, vec3.tmp());
+  vec3.copy(dock.position, endZonePos);
+  resetWoodHealth(dock.woodHealth);
+  resetWoodState(dock.woodState);
+  EM.whenEntityHas(dock, RenderableDef, WoodStateDef).then((dock) =>
+    renderer.renderer.stdPool.updateMeshQuads(
+      dock.renderable.meshHandle,
+      dock.woodState.mesh as Mesh,
+      0,
+      dock.woodState.mesh.quad.length
+    )
+  );
+}
+
+async function setLevelLocal(levelIdx: number) {
+  // TODO(@darzu): MULTIPLAYER: dock
+  // if (dock) {
+  //   // TODO(@darzu): this isn't right.. where do we repair the dock?
+  //   // splinter the dock
+  //   for (let b of dock.woodHealth.boards) {
+  //     for (let s of b) {
+  //       s.health = 0;
+  //     }
+  //   }
+  // }
+
   console.log(`SET LEVEL: ${levelIdx}`);
   await setMap(MapPaths[levelIdx]);
   await resetLand();
 
-  if (dock) {
-    // splinter the dock
-    for (let b of dock.woodHealth.boards) {
-      for (let s of b) {
-        s.health = 0;
-      }
-    }
+  const { levelMap } = await EM.whenResources(LevelMapDef);
+
+  // TODO(@darzu): multiplayer towers!
+  const towers = EM.filterEntities([StoneTowerDef]);
+  for (let tower of towers) {
+    towerPool.despawn(tower);
   }
+
+  // spawn towers
+  const tower3dPosesAndDirs: [vec3, number][] = levelMap.towers.map(
+    ([tPos, tDir]) => [
+      level2DtoWorld3D(tPos, STONE_TOWER_HEIGHT, vec3.create()),
+      Math.atan2(-tDir[0], -tDir[1]),
+    ]
+  );
+
+  for (let [pos, angle] of tower3dPosesAndDirs) {
+    const stoneTower = await spawnStoneTower();
+    vec3.copy(stoneTower.position, pos);
+    quat.setAxisAngle([0, 1, 0], angle, stoneTower.rotation);
+  }
+
+  dbgLogMilestone("Game playable");
+
+  // const { me } = await EM.whenResources(MeDef);
 }
 
 export async function initLD53(hosting: boolean) {
@@ -274,7 +394,10 @@ export async function initLD53(hosting: boolean) {
 
   // start map
   // TODO(@darzu): MULTIPLAYER:
-  const landPromise = setLevel(0);
+  if (res.me.host) {
+    raiseSetLevel(0);
+  }
+  // const landPromise = setLevelLocal(0);
   // await setMap(MapPaths[0]);
 
   // const landPromise = resetLand();
@@ -360,84 +483,9 @@ export async function initLD53(hosting: boolean) {
 
     // TODO(@darzu): MULTIPLAYER: sync level
     score.onLevelEnd.push(async () => {
-      await setLevel(score.levelNumber, dock);
-
-      // TODO(@darzu): MULTIPLAYER: which are needed on client?
-      // worldCutData.fill(0.0);
-      // grassCutTex.queueUpdate(worldCutData);
-      // vec3.set(0, 0, 0, ship.position);
-      // vec3.copy(ship.position, SHIP_START_POS);
-      const level = await EM.whenResources(LevelMapDef);
-      level2DtoWorld3D(level.levelMap.startPos, 8, ship.position);
-      quat.identity(ship.rotation);
-      vec3.set(0, 0, 0, ship.linearVelocity);
-      const sail = ship.ld52ship.mast()!.mast.sail()!.sail;
-      sail.unfurledAmount = sail.minFurl;
-      ship.ld52ship.cuttingEnabled = true;
-      ship.ld52ship.rudder()!.yawpitch.yaw = 0;
-      setWindAngle(
-        wind,
-        Math.atan2(-level.levelMap.windDir[0], -level.levelMap.windDir[1]) +
-          Math.PI / 2
-      );
-
-      ship.ld52ship.cannonR()!.yawpitch.pitch = cannonDefaultPitch;
-      ship.ld52ship.cannonR()!.yawpitch.yaw = Math.PI * 0.5;
-      ship.ld52ship.cannonL()!.yawpitch.pitch = cannonDefaultPitch;
-      ship.ld52ship.cannonL()!.yawpitch.yaw = Math.PI * 1.5;
-
-      resetWoodHealth(ship.woodHealth);
-      ship.shipHealth.health = 1;
-      resetWoodState(ship.woodState);
-      EM.whenEntityHas(ship, RenderableDef, WoodStateDef).then((ship) =>
-        res.renderer.renderer.stdPool.updateMeshQuads(
-          ship.renderable.meshHandle,
-          ship.woodState.mesh as Mesh,
-          0,
-          ship.woodState.mesh.quad.length
-        )
-      );
-
-      console.log("resetting dock position");
-      const endZonePos = level2DtoWorld3D(
-        level.levelMap.endZonePos,
-        5,
-        vec3.tmp()
-      );
-      vec3.copy(dock.position, endZonePos);
-      resetWoodHealth(dock.woodHealth);
-      resetWoodState(dock.woodState);
-      EM.whenEntityHas(dock, RenderableDef, WoodStateDef).then((dock) =>
-        res.renderer.renderer.stdPool.updateMeshQuads(
-          dock.renderable.meshHandle,
-          dock.woodState.mesh as Mesh,
-          0,
-          dock.woodState.mesh.quad.length
-        )
-      );
-
-      // TODO(@darzu): multiplayer towers!
-
-      if (res.me.host) {
-        const towers = EM.filterEntities([StoneTowerDef]);
-        for (let tower of towers) {
-          towerPool.despawn(tower);
-        }
-
-        // spawn towers
-        const tower3dPosesAndDirs: [vec3, number][] = level.levelMap.towers.map(
-          ([tPos, tDir]) => [
-            level2DtoWorld3D(tPos, STONE_TOWER_HEIGHT, vec3.create()),
-            Math.atan2(-tDir[0], -tDir[1]),
-          ]
-        );
-
-        for (let [pos, angle] of tower3dPosesAndDirs) {
-          const stoneTower = await spawnStoneTower();
-          vec3.copy(stoneTower.position, pos);
-          quat.setAxisAngle([0, 1, 0], angle, stoneTower.rotation);
-        }
-      }
+      // TODO(@darzu): MULTIPLAYER: dock
+      // await setLevelLocal(score.levelNumber, dock);
+      await hostResetLevel(score.levelNumber);
     });
 
     EM.addSystem(
@@ -766,9 +814,9 @@ export async function initLD53(hosting: boolean) {
     }
   );
 
-  await landPromise;
+  // await landPromise;
 
-  dbgLogMilestone("Game playable");
+  // dbgLogMilestone("Game playable");
 }
 
 const { Ld53PlayerPropsDef, Ld53PlayerLocalDef, createLd53PlayerAsync } =

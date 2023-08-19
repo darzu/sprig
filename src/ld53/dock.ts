@@ -26,10 +26,14 @@ import {
   WoodStateDef,
 } from "../wood/wood.js";
 
+export const DockDef = EM.defineComponent("dock", () => true);
+
 export function createDock() {
   const [mesh, wood] = createDockWood();
 
   const dock = EM.new();
+
+  EM.set(dock, DockDef);
 
   EM.set(dock, PositionDef, V(0, 0, 0));
 

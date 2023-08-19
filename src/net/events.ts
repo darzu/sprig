@@ -40,6 +40,9 @@ export interface Event<Extra> {
   entities: number[];
   // arbitrary non-entities payload
   extra: Extra;
+  // TODO(@darzu): possible feature:
+  // // resolved when the event is run localy; only useful when raising an event locally
+  // localPromise: Promise<void> | undefined;
 }
 
 type ExtraSerializers<Extra> = {
@@ -168,7 +171,10 @@ function getEventAuthorityPid(event: DetectedEvent<unknown>): number {
       event.entities as any
     );
     const ent = EM.findEntity(entId, [AuthorityDef]);
-    assert(ent && ent.authority, `missing .authority on event target ${entId}`);
+    assert(
+      ent && ent.authority,
+      `missing .authority on "${event.type}" event target ${entId}`
+    );
     const { authority } = ent;
     return authority.pid;
   } else {
@@ -208,7 +214,8 @@ function runEvent<Extra>(type: string, event: Event<Extra>) {
     }
     return entity;
   });
-  return handler.runEvent(entities as any, event.extra);
+  // run handler
+  handler.runEvent(entities as any, event.extra);
 }
 
 const CHECK_EVENT_RAISE_ARGS = true;
@@ -217,7 +224,7 @@ export const DetectedEventsDef = EM.defineResource("detectedEvents", () => {
   const events = [] as DetectedEvent<any>[];
   return {
     events,
-    raise: (e: DetectedEvent<any>) => {
+    raise: (e: DetectedEvent<any>): void => {
       if (CHECK_EVENT_RAISE_ARGS) {
         assert(EVENT_HANDLERS.has(e.type), "raising event with no handlers");
         const handler = EVENT_HANDLERS.get(e.type)!;

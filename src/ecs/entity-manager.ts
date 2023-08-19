@@ -1383,6 +1383,7 @@ export class EntityManager {
 
   // TODO(@darzu): feels a bit hacky; lets track usages and see if we can make this
   //  feel natural.
+  // TODO(@darzu): PERF. resolve this instantly w/o init if entity exists?
   public whenSingleEntity<CS extends ComponentDef[]>(
     ...cs: [...CS]
   ): Promise<EntityW<CS>> {
