@@ -31,6 +31,8 @@ import { ControllableDef } from "../input/controllable.js";
 import { ColliderDef } from "../physics/collider.js";
 import { MeDef } from "./components.js";
 import { TimeDef } from "../time/time.js";
+import { eventWizard } from "./events.js";
+import { assert } from "../utils/util.js";
 
 const mpMeshes = XY.defineMeshSetResource(
   "mp_meshes",
@@ -160,9 +162,45 @@ const { MpRaftPropsDef, createMpRaft } = defineNetEntityHelper({
   },
 });
 
-// TODO(@darzu): Add example event!
-
 // console.log(`MpPlayerPropsDef: ${MpPlayerPropsDef.id}`); // 1867295084
+
+// TODO(@darzu): EXAMPLE: event w/ entity & variable length serialization
+
+const raiseSetLevel = eventWizard(
+  "mp-set-level",
+  [] as const,
+  (_, levelIdx: number) => setLevelLocal(levelIdx),
+  {
+    legalEvent: (_, levelIdx: number) => {
+      assert(0 <= levelIdx && levelIdx <= 3);
+      return true;
+    },
+    serializeExtra: (buf, levelIdx: number) => {
+      buf.writeUint8(levelIdx);
+    },
+    deserializeExtra: (buf) => {
+      const levelIdx = buf.readUint8();
+      return levelIdx;
+    },
+  }
+);
+
+async function setLevelLocal(levelIdx: number) {
+  const { mp_meshes } = await EM.whenResources(mpMeshes);
+
+  // TODO(@darzu): differentiate level based on idx
+  // ground
+  const ground = EM.new();
+  EM.set(ground, RenderableConstructDef, mp_meshes.hex.proto);
+  EM.set(ground, ColorDef, ENDESGA16.blue);
+  EM.set(ground, PositionDef, V(0, -10, 0));
+  EM.set(ground, ScaleDef, V(10, 10, 10));
+  EM.set(ground, ColliderDef, {
+    shape: "AABB",
+    solid: true,
+    aabb: mp_meshes.hex.aabb,
+  });
+}
 
 export async function initMPGame() {
   EM.addEagerInit([], [RendererDef], [], (res) => {
@@ -181,6 +219,11 @@ export async function initMPGame() {
   });
 
   const { camera, me } = await EM.whenResources(CameraDef, MeDef);
+
+  // start level
+  if (me.host) {
+    raiseSetLevel(0);
+  }
 
   // camera
   camera.fov = Math.PI * 0.5;
@@ -206,18 +249,6 @@ export async function initMPGame() {
   vec3.copy(sun.pointLight.ambient, [0.2, 0.2, 0.2]);
   vec3.copy(sun.pointLight.diffuse, [0.5, 0.5, 0.5]);
   EM.set(sun, PositionDef, V(50, 300, 10));
-
-  // ground
-  const ground = EM.new();
-  EM.set(ground, RenderableConstructDef, mp_meshes.hex.proto);
-  EM.set(ground, ColorDef, ENDESGA16.blue);
-  EM.set(ground, PositionDef, V(0, -10, 0));
-  EM.set(ground, ScaleDef, V(10, 10, 10));
-  EM.set(ground, ColliderDef, {
-    shape: "AABB",
-    solid: true,
-    aabb: mp_meshes.hex.aabb,
-  });
 
   // gizmo
   const gizmoMesh = createGizmoMesh();

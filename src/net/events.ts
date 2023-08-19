@@ -25,7 +25,7 @@ import { TimeDef } from "../time/time.js";
 // import { PositionDef, RotationDef } from "../physics/transform.js";
 import { assert } from "../utils/util.js";
 import { Phase } from "../ecs/sys-phase.js";
-import { VERBOSE_NET_LOG } from "../flags.js";
+import { ASSET_LOG_VERT_CHANGES, VERBOSE_NET_LOG } from "../flags.js";
 
 export interface Event<Extra> {
   // Event type
@@ -56,6 +56,11 @@ export function registerEventHandler<ES extends EDef<any>[], Extra>(
   type: string,
   handler: EventHandler<ES, Extra>
 ): void {
+  // TODO(@darzu): can this requirement be lifted?
+  assert(
+    handler.entities.length,
+    `invalid event handler: ${type}. At least one entity is required for an event!`
+  );
   EVENT_TYPES.set(hashCode(type), type);
   EVENT_HANDLERS.set(type, handler as any);
 }
@@ -149,6 +154,7 @@ function deserializeDetectedEvent<Extra>(
 // });
 
 function eventAuthorityEntity(type: string, entities: number[]): number {
+  assert(entities.length, `Missing any entities!`);
   if (!EVENT_HANDLERS.has(type))
     throw `No event handler registered for event type ${type}`;
   return EVENT_HANDLERS.get(type)!.eventAuthorityEntity(entities as any);
@@ -415,7 +421,13 @@ export function initNetGameEventSystems() {
       while (detectedEvents.events.length > 0) {
         const event = detectedEvents.events.shift()!;
         const authorityId = eventAuthorityEntity(event.type, event.entities);
-        const { authority } = EM.findEntity(authorityId, [AuthorityDef])!;
+
+        const ent = EM.findEntity(authorityId, [AuthorityDef]);
+        assert(
+          ent && ent.authority,
+          `missing .authority on event target ${authorityId}`
+        );
+        const { authority } = ent;
         if (authority.pid == me.pid) {
           // Gameplay code is responsible for ensuring events legal when generated
           if (!legalEvent(event.type, event))
