@@ -267,6 +267,20 @@ async function hostResetLevel(levelIdx: number) {
   );
 }
 
+/*
+TODO(@darzu): error?
+util.ts:11 Uncaught (in promise) Error: Invalid 'whenSingleEntity' call; found 0 matching entities
+    at assert (util.ts:11:11)
+    at Object.fn (entity-manager.ts:1393:9)
+    at EntityManager.runInitFn (entity-manager.ts:1567:26)
+    at entity-manager.ts:1460:14
+    at Array.forEach (<anonymous>)
+    at EntityManager.progressInitFns (entity-manager.ts:1419:28)
+    at EntityManager.update (entity-manager.ts:1610:29)
+    at callFixedTimestepSystems (main.ts:70:6)
+    at frame (main.ts:135:7)
+*/
+
 async function setLevelLocal(levelIdx: number) {
   // TODO(@darzu): MULTIPLAYER: dock
   // if (dock) {

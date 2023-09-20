@@ -705,12 +705,12 @@ export class EntityManager {
           const player = this.entities.get(10017);
           if (player && "position" in player) {
             const pos = vec3Dbg(player.position as vec3);
-            if (dbgOnce(`${this._dbgChangesToEnt}-${pos}`)) {
+            if (dbgOnce(`${this._dbgChangesToEnt10017}-${pos}`)) {
               console.log(
                 `10017 pos ${pos} after ${s} on loop ${this.dbgLoops}`
               );
-              this._dbgChangesToEnt += 1;
-              dbgOnce(`${this._dbgChangesToEnt}-${pos}`);
+              this._dbgChangesToEnt10017 += 1;
+              dbgOnce(`${this._dbgChangesToEnt10017}-${pos}`);
             }
           }
         }
@@ -719,7 +719,7 @@ export class EntityManager {
   }
 
   // see DBG_ENITITY_10017_POSITION_CHANGES
-  public _dbgChangesToEnt = 0;
+  public _dbgChangesToEnt10017 = 0;
 
   public hasEntity(id: number) {
     return this.entities.has(id);
@@ -1279,12 +1279,12 @@ export class EntityManager {
       const player = this.entities.get(10017);
       if (player && "position" in player) {
         const pos = vec3Dbg(player.position as vec3);
-        if (dbgOnce(`${this._dbgChangesToEnt}-${pos}`)) {
+        if (dbgOnce(`${this._dbgChangesToEnt10017}-${pos}`)) {
           console.log(
             `10017 pos ${pos} after 'entity promises' on loop ${this.dbgLoops}`
           );
-          this._dbgChangesToEnt += 1;
-          dbgOnce(`${this._dbgChangesToEnt}-${pos}`);
+          this._dbgChangesToEnt10017 += 1;
+          dbgOnce(`${this._dbgChangesToEnt10017}-${pos}`);
         }
       }
     }
@@ -1468,12 +1468,12 @@ export class EntityManager {
       const player = this.entities.get(10017);
       if (player && "position" in player) {
         const pos = vec3Dbg(player.position as vec3);
-        if (dbgOnce(`${this._dbgChangesToEnt}-${pos}`)) {
+        if (dbgOnce(`${this._dbgChangesToEnt10017}-${pos}`)) {
           console.log(
             `10017 pos ${pos} after 'init fns' on loop ${this.dbgLoops}`
           );
-          this._dbgChangesToEnt += 1;
-          dbgOnce(`${this._dbgChangesToEnt}-${pos}`);
+          this._dbgChangesToEnt10017 += 1;
+          dbgOnce(`${this._dbgChangesToEnt10017}-${pos}`);
         }
       }
     }

@@ -8,7 +8,6 @@ export enum Phase {
   AUDIO,
   PRE_READ_INPUT,
   READ_INPUTS,
-  // POST_READ_INPUT, // unused
   PRE_GAME_PLAYERS,
   GAME_PLAYERS,
   POST_GAME_PLAYERS,

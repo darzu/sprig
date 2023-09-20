@@ -43,6 +43,7 @@ interface DbgEnt extends Entity {
 // groundConstruct,shipConstruct,hatConstruct,color,hat
 
 const dbgEnts: Map<number, DbgEnt> = new Map();
+// TODO(@darzu): remove
 // let dbgEntSingleton: DbgEnt = { id: 0, _cmps: () => [] };
 
 const dbgCmpsAllById: Map<CompId, DbgCmp> = new Map();
