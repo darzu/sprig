@@ -172,6 +172,7 @@ const dbgGrid = [
 ];
 let dbgGridCompose = createGridComposePipelines(dbgGrid);
 
+// TODO(@darzu): MULTIPLAYER. Fully test this..
 const raiseSetLevel = eventWizard(
   "ld53-set-level",
   [] as const,
@@ -191,6 +192,7 @@ const raiseSetLevel = eventWizard(
   }
 );
 
+// TODO(@darzu): MULTIPLAYER. Fully test this..
 async function hostResetLevel(levelIdx: number) {
   raiseSetLevel(levelIdx);
 
@@ -770,7 +772,7 @@ export async function initLD53(hosting: boolean) {
   // }
   // createGraph3D(vec3.add(worldGizmo.position, [50, 10, 50], V(0, 0, 0)), data);
 
-  // TODO(@darzu): REFACTOR make towers networked
+  // TODO(@darzu): MULTIPLAYER. make towers networked
   if (res.me.host) {
     const tower3dPosesAndDirs: [vec3, number][] = level.levelMap.towers.map(
       ([tPos, tDir]) => [
@@ -830,6 +832,7 @@ export async function initLD53(hosting: boolean) {
 
   // await landPromise;
 
+  // TODO(@darzu): MULTIPLAYER. add this milestone back in.
   // dbgLogMilestone("Game playable");
 }
 
