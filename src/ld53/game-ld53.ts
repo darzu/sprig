@@ -117,7 +117,7 @@ PERF:
 */
 
 const DBG_PLAYER = false;
-const SHOW_LAND = false;
+const DBG_HIDE_LAND = false;
 
 // const SHIP_START_POS = V(100, 0, -100);
 
@@ -1008,7 +1008,7 @@ async function resetLand() {
 
     // console.log(`heightmap minY: ${minY}`);
     const hm = EM.new();
-    EM.set(hm, RenderableConstructDef, terraMesh, SHOW_LAND);
+    EM.set(hm, RenderableConstructDef, terraMesh, !DBG_HIDE_LAND);
     EM.set(hm, PositionDef);
     // TODO(@darzu): maybe do a sable-like gradient accross the terrain, based on view dist or just uv?
     // EM.set(hm, ColorDef, V(0.4, 0.2, 0.2));
