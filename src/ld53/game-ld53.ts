@@ -301,7 +301,7 @@ async function setLevelLocal(levelIdx: number) {
 
   const { levelMap } = await EM.whenResources(LevelMapDef);
 
-  // TODO(@darzu): multiplayer towers!
+  // TODO(@darzu): MULTIPLAYER towers!
   const towers = EM.filterEntities([StoneTowerDef]);
   for (let tower of towers) {
     towerPool.despawn(tower);
@@ -771,22 +771,6 @@ export async function initLD53(hosting: boolean) {
   //   }
   // }
   // createGraph3D(vec3.add(worldGizmo.position, [50, 10, 50], V(0, 0, 0)), data);
-
-  // TODO(@darzu): MULTIPLAYER. make towers networked
-  if (res.me.host) {
-    const tower3dPosesAndDirs: [vec3, number][] = level.levelMap.towers.map(
-      ([tPos, tDir]) => [
-        level2DtoWorld3D(tPos, STONE_TOWER_HEIGHT, vec3.create()),
-        Math.atan2(-tDir[0], -tDir[1]),
-      ]
-    );
-
-    for (let [pos, angle] of tower3dPosesAndDirs) {
-      const stoneTower = await spawnStoneTower();
-      vec3.copy(stoneTower.position, pos);
-      quat.setAxisAngle([0, 1, 0], angle, stoneTower.rotation);
-    }
-  }
 
   // BULLET STUFF
   EM.addSystem(
