@@ -196,8 +196,8 @@ const raiseSetLevel = eventWizard(
 async function hostResetLevel(levelIdx: number) {
   raiseSetLevel(levelIdx);
 
+  // TODO(@darzu): this is erroring out
   const ship = await EM.whenSingleEntity(
-    Ld53PlayerPropsDef,
     PositionDef,
     RotationDef,
     ShipDef,
@@ -218,23 +218,30 @@ async function hostResetLevel(levelIdx: number) {
     RendererDef
   );
 
+  // move ship to map start pos
   level2DtoWorld3D(levelMap.startPos, 8, ship.position);
   quat.identity(ship.rotation);
   vec3.set(0, 0, 0, ship.linearVelocity);
+
+  // reset ship sails and rudder
   const sail = ship.ld52ship.mast()!.mast.sail()!.sail;
   sail.unfurledAmount = sail.minFurl;
   ship.ld52ship.cuttingEnabled = true;
   ship.ld52ship.rudder()!.yawpitch.yaw = 0;
+
+  // set map wind angle
   setWindAngle(
     wind,
     Math.atan2(-levelMap.windDir[0], -levelMap.windDir[1]) + Math.PI / 2
   );
 
+  // reset cannon orientations
   ship.ld52ship.cannonR()!.yawpitch.pitch = cannonDefaultPitch;
   ship.ld52ship.cannonR()!.yawpitch.yaw = Math.PI * 0.5;
   ship.ld52ship.cannonL()!.yawpitch.pitch = cannonDefaultPitch;
   ship.ld52ship.cannonL()!.yawpitch.yaw = Math.PI * 1.5;
 
+  // reset ship health
   resetWoodHealth(ship.woodHealth);
   ship.shipHealth.health = 1;
   resetWoodState(ship.woodState);
@@ -247,7 +254,8 @@ async function hostResetLevel(levelIdx: number) {
     )
   );
 
-  console.log("resetting dock position");
+  // reset dock
+  // console.log("resetting dock position");
   // TODO(@darzu): MULTIPLAYER: dock health
   const dock = await EM.whenSingleEntity(
     DockDef,
@@ -271,6 +279,11 @@ async function hostResetLevel(levelIdx: number) {
 
 /*
 TODO(@darzu): error?
+SET LEVEL: 1
+level-map.ts:297 setting map to tutorial-attack-the-towers
+level-map.ts:291 setMap elapsed: 42.3ms
+level-map.ts:342 setMap elapsed: 42.5ms
+
 util.ts:11 Uncaught (in promise) Error: Invalid 'whenSingleEntity' call; found 0 matching entities
     at assert (util.ts:11:11)
     at Object.fn (entity-manager.ts:1393:9)

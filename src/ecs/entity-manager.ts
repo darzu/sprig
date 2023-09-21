@@ -1390,10 +1390,13 @@ export class EntityManager {
     return new Promise((resolve) => {
       EM.addEagerInit(cs, [], [], () => {
         const ents = EM.filterEntities(cs);
-        assert(
-          ents && ents.length === 1,
-          `Invalid 'whenSingleEntity' call; found ${ents.length} matching entities`
-        );
+        if (!ents || ents.length !== 1)
+          assert(
+            false,
+            `Invalid 'whenSingleEntity' call; found ${
+              ents.length
+            } matching entities for '${cs.map((c) => c.name).join(",")}'`
+          );
         resolve(ents[0]);
       });
     });
