@@ -586,6 +586,7 @@ export async function initLD53(hosting: boolean) {
 
     // end zone
     const dock = createDock();
+    EM.set(dock, AuthorityDef, res.me.pid);
     const endZonePos = level2DtoWorld3D(
       level.levelMap.endZonePos,
       5,

@@ -28,15 +28,13 @@ import {
 
 export const DockDef = EM.defineComponent("dock", () => true);
 
+// TODO(@darzu): MULTIPLAYER. Use netEntityHelper
 export function createDock() {
   const [mesh, wood] = createDockWood();
 
   const dock = EM.new();
-
   EM.set(dock, DockDef);
-
   EM.set(dock, PositionDef, V(0, 0, 0));
-
   EM.set(dock, RenderableConstructDef, mesh);
   EM.set(dock, WoodStateDef, wood);
   const timberHealth = createWoodHealth(wood);

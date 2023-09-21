@@ -4,6 +4,7 @@ import {
   EDef,
   ESet,
   ComponentDef,
+  Entity,
 } from "../ecs/entity-manager.js";
 import {
   Serializer,
@@ -25,7 +26,11 @@ import { TimeDef } from "../time/time.js";
 // import { PositionDef, RotationDef } from "../physics/transform.js";
 import { assert } from "../utils/util.js";
 import { Phase } from "../ecs/sys-phase.js";
-import { ASSET_LOG_VERT_CHANGES, VERBOSE_NET_LOG } from "../flags.js";
+import {
+  ASSET_LOG_VERT_CHANGES,
+  DBG_ASSERT,
+  VERBOSE_NET_LOG,
+} from "../flags.js";
 
 export interface Event<Extra> {
   // Event type
@@ -173,7 +178,7 @@ function getEventAuthorityPid(event: DetectedEvent<unknown>): number {
     const ent = EM.findEntity(entId, [AuthorityDef]);
     assert(
       ent && ent.authority,
-      `missing .authority on "${event.type}" event target ${entId}`
+      `missing entity or .authority on "${event.type}" event target ${entId}`
     );
     const { authority } = ent;
     return authority.pid;
@@ -645,6 +650,14 @@ export function eventWizard<ES extends EDef<any>[], Extra>(
       es = args.slice(0, args.length - 1) as any;
       extra = args[args.length - 1] as Extra;
     }
+    if (DBG_ASSERT)
+      assert(
+        es.every((e: Entity) => AuthorityDef.isOn(e)),
+        `Missing .authority on event target(s): ${es
+          .filter((e) => !AuthorityDef.isOn(e))
+          .map((e: Entity) => e.id)
+          .join(",")}`
+      );
     const de = EM.getResource(DetectedEventsDef)!;
     const me = EM.getResource(MeDef)!;
     de.raise({
