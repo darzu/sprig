@@ -653,8 +653,8 @@ export const SHIP_SMALL_AABBS: AABB[] = [
 // const shipMaxX = min(SHIP_AABBS.map((a) => a.max[0]));
 // console.log(`${(shipMaxX + shipMinX) / 2}`);
 
-export const BOAT_MESH = cloneMesh(CUBE_MESH);
-scaleMesh3(BOAT_MESH, V(10, 0.6, 5));
+export const RAFT_MESH = cloneMesh(CUBE_MESH);
+scaleMesh3(RAFT_MESH, V(10, 0.6, 5));
 
 export const BULLET_MESH = cloneMesh(CUBE_MESH);
 scaleMesh(BULLET_MESH, 0.3);

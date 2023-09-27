@@ -136,7 +136,7 @@ export const { EnemyShipPropsDef, EnemyShipLocalDef, createEnemyShip } =
 
       EM.set(e, ColorDef, ENEMY_SHIP_COLOR);
       EM.set(e, MotionSmoothingDef);
-      EM.set(e, RenderableConstructDef, res.allMeshes.enemyShip.mesh);
+      EM.set(e, RenderableConstructDef, res.allMeshes.cubeRaft.mesh);
 
       EM.set(e, UVPosDef);
       vec2.copy(e.uvPos, e.enemyShipProps.uvLoc);
@@ -190,7 +190,7 @@ export const { EnemyShipPropsDef, EnemyShipLocalDef, createEnemyShip } =
         // TODO(@darzu):
         solid: false,
         // solid: true,
-        aabb: res.allMeshes.enemyShip.aabb,
+        aabb: res.allMeshes.cubeRaft.aabb,
       });
 
       const cannon = EM.new();

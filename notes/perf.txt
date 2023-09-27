@@ -243,7 +243,21 @@ Memory Caches, CPU:
         so precalculate when the rare event will be needed and queue that for the future
     (?) bools mean lots of last minute decision making
 
+  "Data-Oriented Design Principles":
+    https://data-oriented.design
+    The purpose of all programs, and all parts of those programs, is to transform data from one form to another.
+    If you don’t understand the data you don’t understand the problem.
+    Conversely, understand the problem by understanding the data.
+    Different problems require different solutions.
+    If you have different data, you have a different problem.
+    If you don’t understand the cost of solving the problem, you don’t understand the problem.
+    If you don’t understand the hardware, you can’t reason about the cost of solving the problem.
+    Everything is a data problem. Including usability, maintenance, debug-ability, etc. Everything.
+    Solving problems you probably don’t have creates more problems you definitely do.
+    Latency and throughput are only the same in sequential systems.
+
   https://agner.org/optimize/
+
 
 Unity DOTs:
   https://www.youtube.com/watch?v=u8B3j8rqYMw

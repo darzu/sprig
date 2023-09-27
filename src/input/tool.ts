@@ -12,7 +12,7 @@ import {
   ScaleDef,
 } from "../physics/transform.js";
 import { registerEventHandler, DetectedEventsDef } from "../net/events.js";
-import { LocalHsPlayerDef, HsPlayerDef } from "../hyperspace/hs-player.js";
+import { LocalPlayerEntityDef, HsPlayerDef } from "../hyperspace/hs-player.js";
 import { InteractableDef, InRangeDef } from "./interact.js";
 import { Deserializer, Serializer } from "../utils/serialize.js";
 import { Phase } from "../ecs/sys-phase.js";
@@ -29,15 +29,16 @@ export function registerToolSystems() {
     "toolPickup",
     Phase.POST_GAME_PLAYERS,
     [ToolDef, InRangeDef],
-    [DetectedEventsDef, LocalHsPlayerDef],
+    [DetectedEventsDef, LocalPlayerEntityDef, MeDef],
     (hats, resources) => {
       for (let { id } of hats) {
-        let player = EM.findEntity(resources.localHsPlayer.playerId, [
+        let player = EM.findEntity(resources.localPlayerEnt.playerId, [
           HsPlayerDef,
         ])!;
         if (player.hsPlayer.tool === 0 && player.hsPlayer.interacting) {
           resources.detectedEvents.raise({
             type: "tool-pickup",
+            origPid: resources.me.pid,
             entities: [player.id, id],
             extra: null,
           });
@@ -50,8 +51,8 @@ export function registerToolSystems() {
     "toolDrop",
     Phase.POST_GAME_PLAYERS,
     [HsPlayerDef, PositionDef, RotationDef],
-    [DetectedEventsDef],
-    (players, { detectedEvents }) => {
+    [DetectedEventsDef, MeDef],
+    (players, { detectedEvents, me }) => {
       for (let { hsPlayer, id, position, rotation } of players) {
         if (hsPlayer.dropping && hsPlayer.tool > 0) {
           let dropLocation = V(0, 0, -5);
@@ -59,6 +60,7 @@ export function registerToolSystems() {
           vec3.add(dropLocation, position, dropLocation);
           detectedEvents.raise({
             type: "tool-drop",
+            origPid: me.pid,
             entities: [id, hsPlayer.tool],
             extra: dropLocation,
           });

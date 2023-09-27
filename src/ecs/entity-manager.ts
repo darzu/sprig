@@ -5,7 +5,9 @@ import {
   DBG_INIT_CAUSATION,
   DBG_VERBOSE_INIT_SEQ,
   DBG_SYSTEM_ORDER,
+  DBG_ENITITY_10017_POSITION_CHANGES,
 } from "../flags.js";
+import { vec3 } from "../matrix/sprig-matrix.js";
 import { Serializer, Deserializer } from "../utils/serialize.js";
 import {
   assert,
@@ -18,6 +20,7 @@ import {
   isPromise,
   toMap,
 } from "../utils/util.js";
+import { vec3Dbg } from "../utils/utils-3d.js";
 import { Phase, PhaseValueList } from "./sys-phase.js";
 
 // TODO(@darzu): re-check all uses of "any" and prefer "unknown"
@@ -217,7 +220,7 @@ export class EntityManager {
   );
   entityPromises: Map<number, EntityPromise<ComponentDef[], any>[]> = new Map();
   resourcePromises: ResourcesPromise<ResourceDef[]>[] = [];
-  components: Map<CompId, ComponentDef> = new Map(); // TODO(@darzu): rename to componentDefs ?
+  componentDefs: Map<CompId, ComponentDef> = new Map(); // TODO(@darzu): rename to componentDefs ?
   resourceDefs: Map<ResId, ResourceDef> = new Map();
   resources: Record<string, unknown> = {};
 
@@ -281,7 +284,7 @@ export class EntityManager {
     update: (p: P, ...args: UArgs) => P = (p, ..._) => p
   ): UpdatableComponentDef<N, P, UArgs> {
     const id = nameToId(name);
-    if (this.components.has(id)) {
+    if (this.componentDefs.has(id)) {
       throw `Component with name ${name} already defined--hash collision?`;
     }
     const component: UpdatableComponentDef<N, P, UArgs> = {
@@ -296,7 +299,7 @@ export class EntityManager {
         name in e,
     };
     // TODO(@darzu): I don't love this cast. feels like it should be possible without..
-    this.components.set(id, component as unknown as ComponentDef);
+    this.componentDefs.set(id, component as unknown as ComponentDef);
     return component;
   }
 
@@ -305,7 +308,7 @@ export class EntityManager {
     construct: (...args: CArgs) => P
   ): NonupdatableComponentDef<N, P, CArgs> {
     const id = nameToId(name);
-    if (this.components.has(id)) {
+    if (this.componentDefs.has(id)) {
       throw `Component with name ${name} already defined--hash collision?`;
     }
     const component: NonupdatableComponentDef<N, P, CArgs> = {
@@ -321,16 +324,16 @@ export class EntityManager {
         // (e as Object).hasOwn(name),
         name in e,
     };
-    this.components.set(id, component);
+    this.componentDefs.set(id, component);
     return component;
   }
 
   private checkComponent(def: ComponentDef) {
-    if (!this.components.has(def.id))
+    if (!this.componentDefs.has(def.id))
       throw `Component ${def.name} (id ${def.id}) not found`;
-    if (this.components.get(def.id)!.name !== def.name)
+    if (this.componentDefs.get(def.id)!.name !== def.name)
       throw `Component id ${def.id} has name ${
-        this.components.get(def.id)!.name
+        this.componentDefs.get(def.id)!.name
       }, not ${def.name}`;
   }
 
@@ -347,7 +350,7 @@ export class EntityManager {
   }
 
   public serialize(id: number, componentId: number, buf: Serializer) {
-    const def = this.components.get(componentId);
+    const def = this.componentDefs.get(componentId);
     if (!def) throw `Trying to serialize unknown component id ${componentId}`;
     const entity = this.findEntity(id, [def]);
     if (!entity)
@@ -365,36 +368,39 @@ export class EntityManager {
   }
 
   public deserialize(id: number, componentId: number, buf: Deserializer) {
-    const def = this.components.get(componentId);
+    const def = this.componentDefs.get(componentId);
     if (!def) throw `Trying to deserialize unknown component id ${componentId}`;
     if (!this.hasEntity(id)) {
       throw `Trying to deserialize component ${def.name} of unknown entity ${id}`;
     }
     let entity = this.findEntity(id, [def]);
-    let component;
+
+    const serializerPair = this.serializers.get(componentId);
+    if (!serializerPair)
+      throw `No deserializer for component ${def.name} (for entity ${id})`;
+    const deserialize = (p: any) => {
+      serializerPair.deserialize(p, buf);
+      return p;
+    };
+
     // TODO: because of this usage of dummy, deserializers don't
     // actually need to read buf.dummy
     if (buf.dummy) {
-      component = {} as any;
+      deserialize({});
     } else if (!entity) {
       assert(
         def.updatable,
         `Trying to deserialize into non-updatable component '${def.name}'!`
       );
-      component = this.addComponent(id, def);
+      this.addComponentInternal(id, def, deserialize, ...[]);
     } else {
-      component = entity[def.name];
+      deserialize(entity[def.name]);
     }
-    const serializerPair = this.serializers.get(componentId);
-    if (!serializerPair)
-      throw `No deserializer for component ${def.name} (for entity ${id})`;
 
     // TODO(@darzu): DBG
     // if (componentId === 1867295084) {
     //   console.log(`deserializing 1867295084, dummy: ${buf.dummy}`);
     // }
-
-    serializerPair.deserialize(component, buf);
   }
 
   public setDefaultRange(rangeName: string) {
@@ -458,6 +464,15 @@ export class EntityManager {
     def: _ComponentDef<N, P, PArgs>,
     ...args: PArgs
   ): P {
+    return this.addComponentInternal(id, def, undefined, ...args);
+  }
+
+  private addComponentInternal<N extends string, P, PArgs extends any[]>(
+    id: number,
+    def: _ComponentDef<N, P, PArgs>,
+    customUpdate: undefined | ((p: P, ...args: PArgs) => P),
+    ...args: PArgs
+  ): P {
     this.checkComponent(def);
     if (id === 0) throw `hey, use addResource!`;
     const e = this.entities.get(id)!;
@@ -472,7 +487,7 @@ export class EntityManager {
     let c: P;
     if (def.updatable) {
       c = def.construct();
-      c = def.update(c, ...args);
+      c = customUpdate ? customUpdate(c, ...args) : def.update(c, ...args);
     } else {
       c = def.construct(...args);
     }
@@ -517,7 +532,7 @@ export class EntityManager {
     console.log(
       "addComponentByName called, should only be called for debugging"
     );
-    let component = this.components.get(nameToId(name));
+    let component = this.componentDefs.get(nameToId(name));
     if (!component) {
       throw `no component named ${name}`;
     }
@@ -684,9 +699,27 @@ export class EntityManager {
     for (let phase of PhaseValueList) {
       for (let s of this.phases.get(phase)!) {
         this.tryCallSystem(s);
+
+        if (DBG_ENITITY_10017_POSITION_CHANGES) {
+          // TODO(@darzu): GENERALIZE THIS
+          const player = this.entities.get(10017);
+          if (player && "position" in player) {
+            const pos = vec3Dbg(player.position as vec3);
+            if (dbgOnce(`${this._dbgChangesToEnt10017}-${pos}`)) {
+              console.log(
+                `10017 pos ${pos} after ${s} on loop ${this.dbgLoops}`
+              );
+              this._dbgChangesToEnt10017 += 1;
+              dbgOnce(`${this._dbgChangesToEnt10017}-${pos}`);
+            }
+          }
+        }
       }
     }
   }
+
+  // see DBG_ENITITY_10017_POSITION_CHANGES
+  public _dbgChangesToEnt10017 = 0;
 
   public hasEntity(id: number) {
     return this.entities.has(id);
@@ -742,7 +775,7 @@ export class EntityManager {
   ) {
     let ent = this.entities.get(id) as any;
     if (!ent) throw `Tried to delete non-existent entity ${id}`;
-    for (let component of this.components.values()) {
+    for (let component of this.componentDefs.values()) {
       if (!cs.includes(component) && ent[component.name]) {
         this.removeComponent(id, component);
       }
@@ -1241,6 +1274,21 @@ export class EntityManager {
     }
     this._changedEntities.clear();
 
+    if (DBG_ENITITY_10017_POSITION_CHANGES) {
+      // TODO(@darzu): GENERALIZE THIS
+      const player = this.entities.get(10017);
+      if (player && "position" in player) {
+        const pos = vec3Dbg(player.position as vec3);
+        if (dbgOnce(`${this._dbgChangesToEnt10017}-${pos}`)) {
+          console.log(
+            `10017 pos ${pos} after 'entity promises' on loop ${this.dbgLoops}`
+          );
+          this._dbgChangesToEnt10017 += 1;
+          dbgOnce(`${this._dbgChangesToEnt10017}-${pos}`);
+        }
+      }
+    }
+
     return madeProgress;
   }
 
@@ -1333,6 +1381,27 @@ export class EntityManager {
     });
   }
 
+  // TODO(@darzu): feels a bit hacky; lets track usages and see if we can make this
+  //  feel natural.
+  // TODO(@darzu): PERF. resolve this instantly w/o init if entity exists?
+  public whenSingleEntity<CS extends ComponentDef[]>(
+    ...cs: [...CS]
+  ): Promise<EntityW<CS>> {
+    return new Promise((resolve) => {
+      EM.addEagerInit(cs, [], [], () => {
+        const ents = EM.filterEntities(cs);
+        if (!ents || ents.length !== 1)
+          assert(
+            false,
+            `Invalid 'whenSingleEntity' call; found ${
+              ents.length
+            } matching entities for '${cs.map((c) => c.name).join(",")}'`
+          );
+        resolve(ents[0]);
+      });
+    });
+  }
+
   // INIT SYSTEM
   // TODO(@darzu): [ ] split entity-manager ?
   // TODO(@darzu): [ ] consolidate entity promises into init system?
@@ -1396,6 +1465,22 @@ export class EntityManager {
         madeProgress = true;
       }
     });
+
+    if (DBG_ENITITY_10017_POSITION_CHANGES) {
+      // TODO(@darzu): GENERALIZE THIS
+      const player = this.entities.get(10017);
+      if (player && "position" in player) {
+        const pos = vec3Dbg(player.position as vec3);
+        if (dbgOnce(`${this._dbgChangesToEnt10017}-${pos}`)) {
+          console.log(
+            `10017 pos ${pos} after 'init fns' on loop ${this.dbgLoops}`
+          );
+          this._dbgChangesToEnt10017 += 1;
+          dbgOnce(`${this._dbgChangesToEnt10017}-${pos}`);
+        }
+      }
+    }
+
     return madeProgress;
   }
   _dbgInitBlameLn = new Map<InitFnId, string>();

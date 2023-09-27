@@ -47,6 +47,7 @@ import { AnimateToDef } from "../animation/animate-to.js";
 import { vec3Dbg } from "../utils/utils-3d.js";
 import { HsShipLocalDef } from "./hyperspace-ship.js";
 import { Phase } from "../ecs/sys-phase.js";
+import { CanManDef } from "../turret/turret.js";
 
 // TODO(@darzu): it'd be great if these could hook into some sort of
 //    dev mode you could toggle at runtime.
@@ -55,7 +56,7 @@ export function createHsPlayer() {
   // console.log("create player!");
   const e = EM.new();
   EM.set(e, PlayerHsPropsDef, V(0, 100, 0));
-  EM.addResource(LocalHsPlayerDef, e.id);
+  EM.addResource(LocalPlayerEntityDef, e.id);
   return e;
 }
 
@@ -67,7 +68,7 @@ export const HsPlayerDef = EM.defineComponent("hsPlayer", () => {
     tool: 0,
     interacting: false,
     clicking: false,
-    manning: false,
+    // manning: false,
     dropping: false,
     leftLegId: 0,
     rightLegId: 0,
@@ -83,8 +84,8 @@ export const HsPlayerDef = EM.defineComponent("hsPlayer", () => {
 });
 
 // Resource pointing at the local player
-export const LocalHsPlayerDef = EM.defineResource(
-  "localHsPlayer",
+export const LocalPlayerEntityDef = EM.defineResource(
+  "localPlayerEnt",
   (playerId?: number) => ({
     playerId: playerId || 0,
   })
@@ -105,7 +106,7 @@ export const PlayerHsPropsDef = defineSerializableComponent(
   }
 );
 
-export function registerHsPlayerSystems() {
+EM.addEagerInit([PlayerHsPropsDef], [], [], () => {
   EM.addSystem(
     "buildHsPlayers",
     Phase.PRE_GAME_WORLD,
@@ -202,6 +203,7 @@ export function registerHsPlayerSystems() {
       PhysicsParentDef,
       WorldFrameDef,
       ControllableDef,
+      CanManDef,
     ],
     [TimeDef, CameraDef, InputsDef, MeDef, PhysicsResultsDef],
     (players, res) => {
@@ -221,7 +223,7 @@ export function registerHsPlayerSystems() {
         // determine modes
         p.controllable.modes.canSprint = true;
 
-        if (p.hsPlayer.manning) {
+        if (p.canMan.manning) {
           p.controllable.modes.canMove = false;
           p.controllable.modes.canPitch = false;
           p.controllable.modes.canYaw = false;
@@ -476,4 +478,4 @@ export function registerHsPlayerSystems() {
       }
     }
   );
-}
+});

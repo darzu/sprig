@@ -1,9 +1,14 @@
 import { ColorDef } from "../color/color-ecs.js";
-import { createRef } from "../ecs/em-helpers.js";
-import { EM, EntityW } from "../ecs/entity-manager.js";
+import {
+  NetEntityOpts,
+  createRef,
+  defineNetEntityHelper,
+} from "../ecs/em-helpers.js";
+import { EM, EntityW, Resources } from "../ecs/entity-manager.js";
 import {
   AllMeshesDef,
   CannonLD51Mesh,
+  MastMesh,
   RudderPrimMesh,
 } from "../meshes/mesh-list.js";
 import { vec3, quat } from "../matrix/sprig-matrix.js";
@@ -44,7 +49,9 @@ import {
   createCannonNow,
 } from "../cannons/cannon.js";
 import { Phase } from "../ecs/sys-phase.js";
+import { ShipHealthDef } from "./ship-health.js";
 
+// TODO(@darzu): remove / rework "ld52ship"
 export const ShipDef = EM.defineComponent("ld52ship", () => ({
   mast: createRef(0, [MastDef, RotationDef]),
   rudder: createRef(0, [
@@ -83,110 +90,121 @@ const RUDDER_ROTATION_RATE = 0.01;
 
 export const cannonDefaultPitch = Math.PI * +0.05;
 
-export async function createShip() {
-  const res = await EM.whenResources(CannonLD51Mesh.def, MeDef);
-  const ent = EM.new();
+export const { createLd53ShipAsync, Ld53ShipPropsDef } = defineNetEntityHelper({
+  name: "ld53Ship",
+  defaultProps: () => {},
+  updateProps: (p) => p,
+  serializeProps: (o, buf) => {},
+  deserializeProps: (o, buf) => {},
+  defaultLocal: () => {},
+  dynamicComponents: [PositionDef, RotationDef],
+  buildResources: [CannonLD51Mesh.def, MastMesh.def, RudderPrimMesh.def, MeDef],
+  build: (ship, res) => {
+    // TODO(@darzu):
 
-  const homeShip = createHomeShip();
+    const homeShip = createHomeShip();
 
-  EM.set(
-    ent,
-    RenderableConstructDef,
-    homeShip.timberMesh
-    // res.allMeshes.ship_small.proto
-  );
-  EM.set(ent, WoodStateDef, homeShip.timberState);
-  // EM.set(ent, ColliderDef, {
-  //   shape: "AABB",
-  //   solid: true,
-  //   aabb: res.allMeshes.ship.aabb,
-  // });
+    EM.set(
+      ship,
+      RenderableConstructDef,
+      homeShip.timberMesh
+      // res.allMeshes.ship_small.proto
+    );
+    EM.set(ship, WoodStateDef, homeShip.timberState);
+    // EM.set(ent, ColliderDef, {
+    //   shape: "AABB",
+    //   solid: true,
+    //   aabb: res.allMeshes.ship.aabb,
+    // });
 
-  const timberHealth = createWoodHealth(homeShip.timberState);
-  EM.set(ent, WoodHealthDef, timberHealth);
+    const timberHealth = createWoodHealth(homeShip.timberState);
+    EM.set(ship, WoodHealthDef, timberHealth);
 
-  // const timberAABB = getAABBFromMesh(homeShip.timberMesh);
-  // console.log("ship size:");
-  // console.dir(timberAABB);
-  // console.dir(getSizeFromAABB(timberAABB));
+    // const timberAABB = getAABBFromMesh(homeShip.timberMesh);
+    // console.log("ship size:");
+    // console.dir(timberAABB);
+    // console.dir(getSizeFromAABB(timberAABB));
 
-  const mc: MultiCollider = {
-    shape: "Multi",
-    solid: true,
-    // TODO(@darzu): integrate these in the assets pipeline
-    children: homeShipAABBs.map((aabb) => ({
-      shape: "AABB",
+    const mc: MultiCollider = {
+      shape: "Multi",
       solid: true,
-      aabb,
-    })),
-  };
-  // EM.set(ent, ColliderDef, {
-  //   shape: "AABB",
-  //   solid: false,
-  //   aabb: timberAABB,
-  // });
-  EM.set(ent, ColliderDef, mc);
-  EM.set(ent, PositionDef, V(0, 0, 0));
-  EM.set(ent, RotationDef);
-  EM.set(ent, LinearVelocityDef);
-  // EM.set(ent, ColorDef, V(0.5, 0.3, 0.1));
-  EM.set(ent, ColorDef, V(0, 0, 0)); // painted by individual planks!
+      // TODO(@darzu): integrate these in the assets pipeline
+      children: homeShipAABBs.map((aabb) => ({
+        shape: "AABB",
+        solid: true,
+        aabb,
+      })),
+    };
+    // EM.set(ent, ColliderDef, {
+    //   shape: "AABB",
+    //   solid: false,
+    //   aabb: timberAABB,
+    // });
+    EM.set(ship, ColliderDef, mc);
+    EM.set(ship, PositionDef, V(0, 0, 0));
+    EM.set(ship, RotationDef);
+    EM.set(ship, LinearVelocityDef);
+    // EM.set(ent, ColorDef, V(0.5, 0.3, 0.1));
+    EM.set(ship, ColorDef, V(0, 0, 0)); // painted by individual planks!
 
-  const mast = await createMast();
-  EM.set(mast, PhysicsParentDef, ent.id);
+    const mast = createMast(res);
+    EM.set(mast, PhysicsParentDef, ship.id);
 
-  const sock = createSock(2.0);
-  EM.set(sock, PhysicsParentDef, ent.id);
-  sock.position[1] =
-    mast.position[1] + (mast.collider as AABBCollider).aabb.max[1];
+    const sock = createSock(2.0);
+    EM.set(sock, PhysicsParentDef, ship.id);
+    sock.position[1] =
+      mast.position[1] + (mast.collider as AABBCollider).aabb.max[1];
 
-  const rudder = await createRudder();
-  EM.set(rudder, PhysicsParentDef, ent.id);
-  // console.log("setting position");
-  vec3.set(0, 4, -25, rudder.position);
-  // console.log(`rudder: ${rudder.id}`);
+    const rudder = createRudder(res);
+    EM.set(rudder, PhysicsParentDef, ship.id);
+    // console.log("setting position");
+    vec3.set(0, 4, -25, rudder.position);
+    // console.log(`rudder: ${rudder.id}`);
 
-  // addGizmoChild(rudder, 2, [0, 5, 0]);
+    // addGizmoChild(rudder, 2, [0, 5, 0]);
 
-  // make debug gizmo
-  // TODO(@darzu): would be nice to have as a little helper function?
-  // const gizmo = EM.new();
-  // EM.set(gizmo, PositionDef, V(0, 20, 0));
-  // EM.set(gizmo, ScaleDef, V(10, 10, 10));
-  // EM.set(gizmo, PhysicsParentDef, ent.id);
-  // EM.set(gizmo, RenderableConstructDef, res.allMeshes.gizmo.proto);
+    // make debug gizmo
+    // TODO(@darzu): would be nice to have as a little helper function?
+    // const gizmo = EM.new();
+    // EM.set(gizmo, PositionDef, V(0, 20, 0));
+    // EM.set(gizmo, ScaleDef, V(10, 10, 10));
+    // EM.set(gizmo, PhysicsParentDef, ship.id);
+    // EM.set(gizmo, RenderableConstructDef, res.allMeshes.gizmo.proto);
 
-  // addGizmoChild(ent, 10);
+    addGizmoChild(ship, 10);
 
-  //  [{ min: V(-13.8, 4.0, -2.9), max: V(-5.8, 6.0, -0.9) }];
+    //  [{ min: V(-13.8, 4.0, -2.9), max: V(-5.8, 6.0, -0.9) }];
 
-  // create cannons
-  const cannonR = createCannonNow(
-    res,
-    V(-8, 4.7, -7),
-    Math.PI * 0.5,
-    cannonDefaultPitch,
-    ent.id
-  );
-  vec3.copy(cannonR.color, ENDESGA16.darkGray);
-  const cannonL = createCannonNow(
-    res,
-    V(8, 4.7, -7),
-    Math.PI * 1.5,
-    cannonDefaultPitch,
-    ent.id
-  );
-  vec3.copy(cannonL.color, ENDESGA16.darkGray);
+    // create cannons
+    const cannonR = createCannonNow(
+      res,
+      V(-8, 4.7, -7),
+      Math.PI * 0.5,
+      cannonDefaultPitch,
+      ship.id
+    );
+    vec3.copy(cannonR.color, ENDESGA16.darkGray);
+    const cannonL = createCannonNow(
+      res,
+      V(8, 4.7, -7),
+      Math.PI * 1.5,
+      cannonDefaultPitch,
+      ship.id
+    );
+    vec3.copy(cannonL.color, ENDESGA16.darkGray);
 
-  // NOTE: we need to build the ship all at once so we don't have dangling references
-  EM.set(ent, ShipDef);
-  ent.ld52ship.mast = createRef(mast);
-  ent.ld52ship.rudder = createRef(rudder);
-  ent.ld52ship.cannonR = createRef(cannonR);
-  ent.ld52ship.cannonL = createRef(cannonL);
+    // NOTE: we need to build the ship all at once so we don't have dangling references
+    EM.set(ship, ShipDef);
+    ship.ld52ship.mast = createRef(mast);
+    ship.ld52ship.rudder = createRef(rudder);
+    ship.ld52ship.cannonR = createRef(cannonR);
+    ship.ld52ship.cannonL = createRef(cannonL);
 
-  return ent;
-}
+    EM.set(ship, ShipHealthDef);
+
+    return ship;
+  },
+});
 
 const AHEAD_DIR = V(0, 0, 1);
 
@@ -237,9 +255,10 @@ EM.addSystem(
 
 export const RudderDef = EM.defineComponent("rudder", () => true);
 
-async function createRudder() {
-  const res = await EM.whenResources(MeDef);
-  const rudderMesh = await RudderPrimMesh.gameMesh();
+function createRudder(
+  res: Resources<[typeof MeDef, typeof RudderPrimMesh.def]>
+) {
+  const rudderMesh = res.mesh_rudderPrim;
   const ent = EM.new();
   EM.set(ent, RudderDef);
   EM.set(ent, RenderableConstructDef, rudderMesh.proto);

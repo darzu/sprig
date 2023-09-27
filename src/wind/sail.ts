@@ -1,4 +1,4 @@
-import { Component, EM, EntityW } from "../ecs/entity-manager.js";
+import { Component, EM, EntityW, Resources } from "../ecs/entity-manager.js";
 import { vec2, vec3, quat, V, tV } from "../matrix/sprig-matrix.js";
 import {
   Frame,
@@ -197,9 +197,10 @@ export const MastDef = EM.defineComponent("mast", () => ({
   force: 0.0,
 }));
 
-export async function createMast() {
-  const res = await EM.whenResources(MeDef);
-  const mesh = await MastMesh.gameMesh();
+export function createMast(
+  res: Resources<[typeof MeDef, typeof MastMesh.def]>
+) {
+  const mesh = res.mesh_mast;
   let ent = EM.new();
   EM.set(ent, MastDef);
   EM.set(ent, RenderableConstructDef, mesh.proto);
@@ -263,7 +264,7 @@ export async function createMast() {
 //   [MastDef, TurretDef],
 //   [InputsDef, LocalPlayerDef],
 //   (es, res) => {
-//     const player = EM.findEntity(res.localHsPlayer.playerId, [PlayerDef])!;
+//     const player = EM.findEntity(res.localPlayerEnt.playerId, [PlayerDef])!;
 //     if (!player) return;
 //     for (let e of es) {
 //       if (DeletedDef.isOn(e)) continue;

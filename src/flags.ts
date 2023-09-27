@@ -7,7 +7,7 @@ export const DBG_ASSERT = true;
 
 // Network
 export const DONT_SMOOTH_WORLD_FRAME = true; // TODO(@darzu): PERF HACK for single player
-export const ENABLE_NET = false;
+export const ENABLE_NET = true;
 export const VERBOSE_NET_LOG = false;
 
 // Ocean
@@ -42,6 +42,9 @@ export const WARN_DEAD_CLEANUP = false;
 // prints out all systems in order in their phases, whether they are active/deactive
 //    and reprints that every time new systems are added.
 export const DBG_SYSTEM_ORDER = false;
+// prints when 'PositionDef' on '10017' changes after a system call, init fn, or entity promise
+// TODO(@darzu): GENERALIZE THIS! for other entities and components. this is one-off.
+export const DBG_ENITITY_10017_POSITION_CHANGES = false;
 
 // Input
 export const DEBUG_INPUTS = false;

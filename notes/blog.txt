@@ -287,3 +287,13 @@ Keep your own internet:
     it is fair use. Or just so you avoid scrutiny
   A limited set of types. All text is markdown? Media has to explicitly be opted in?
     Maybe take advantage of reader mode in browsers?
+  I'd love to have a private collection of my favorite youtube channels (not hosted, just LAN)
+
+Performance holistically considered
+  A game can run at 120hz, responding to complex input, presenting complex output
+  A website can take many seconds to show text after a button click, even assuming network is instant
+  When we trade away performance
+    general purpose chips vs asics
+    general reusable patterns vs custom solutions
+    often its the rational thing
+  Consideration of a users' compute resources

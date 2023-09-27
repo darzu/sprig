@@ -1,22 +1,14 @@
-import { Component, EM, Resource } from "../ecs/entity-manager.js";
+import { EM, Resource } from "../ecs/entity-manager.js";
 import { VERBOSE_LOG } from "../flags.js";
 import { TextDef } from "../gui/ui.js";
-import {
-  AABB,
-  AABB2,
-  aabbCenter2,
-  updateAABBWithPoint2,
-  updateAABBWithPoint2_,
-} from "../physics/aabb.js";
+import { AABB2, aabbCenter2, updateAABBWithPoint2_ } from "../physics/aabb.js";
 import { CY } from "../render/gpu-registry.js";
 import { RendererDef } from "../render/renderer-ecs.js";
-import { V, vec2, vec3, vec4 } from "../matrix/sprig-matrix.js";
-import { assert, assertDbg, dbgLogOnce } from "../utils/util.js";
+import { V, vec2, vec4 } from "../matrix/sprig-matrix.js";
+import { assert, assertDbg } from "../utils/util.js";
 import { vec4Dbg } from "../utils/utils-3d.js";
-import { randColor } from "../utils/utils-game.js";
 import { MapName, MapBytesSetDef, MapBytes, MapHelp } from "./map-loader.js";
 import { ScoreDef } from "../ld53/score.js";
-import { WindDef } from "../wind/wind.js";
 
 const WIDTH = 1024;
 const HEIGHT = 512;
@@ -314,7 +306,6 @@ export async function setMap(name: MapName) {
 
   let levelMap;
   // TODO(@darzu): REFACTOR. purge purple stuff
-  let totalPurple = 0;
   if (mapCache.has(name)) {
     levelMap = mapCache.get(name)!;
   } else {
@@ -334,20 +325,17 @@ export async function setMap(name: MapName) {
   const resLandMap = EM.ensureResource(LevelMapDef);
   Object.assign(resLandMap, levelMap);
 
-  res.score.totalPurple = totalPurple;
-  res.score.cutPurple = 0;
-
   // set random secondary/teriary colors
-  const purpleness = (c: vec3) => c[0] * c[2];
-  let secColor = randColor();
-  while (purpleness(secColor) > 0.05) secColor = randColor();
-  let terColor = randColor();
-  while (purpleness(terColor) > 0.05) terColor = randColor();
-  // secColor = V(1, 1, 1);
-  res.renderer.renderer.updateScene({
-    secColor,
-    terColor,
-  });
+  // const purpleness = (c: vec3) => c[0] * c[2];
+  // let secColor = randColor();
+  // while (purpleness(secColor) > 0.05) secColor = randColor();
+  // let terColor = randColor();
+  // while (purpleness(terColor) > 0.05) terColor = randColor();
+  // // secColor = V(1, 1, 1);
+  // res.renderer.renderer.updateScene({
+  //   secColor,
+  //   terColor,
+  // });
 
   // TODO(@darzu): dbg:
   const __elapsed = performance.now() - __start;

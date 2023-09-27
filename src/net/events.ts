@@ -1,10 +1,10 @@
-import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import {
   EM,
   Component,
   EDef,
   ESet,
   ComponentDef,
+  Entity,
 } from "../ecs/entity-manager.js";
 import {
   Serializer,
@@ -14,34 +14,40 @@ import {
 import { MAX_MESSAGE_SIZE, MessageType } from "./message.js";
 import {
   MeDef,
-  Me,
-  Outbox,
   OutboxDef,
   send,
-  Peer,
-  PeerDef,
   HostDef,
-  Inbox,
   InboxDef,
   AuthorityDef,
-  Authority,
   HostCompDef,
 } from "./components.js";
 import { hashCode, NumberTuple } from "../utils/util.js";
 import { TimeDef } from "../time/time.js";
-import { PositionDef, RotationDef } from "../physics/transform.js";
+// import { PositionDef, RotationDef } from "../physics/transform.js";
 import { assert } from "../utils/util.js";
 import { Phase } from "../ecs/sys-phase.js";
-import { VERBOSE_NET_LOG } from "../flags.js";
+import {
+  ASSET_LOG_VERT_CHANGES,
+  DBG_ASSERT,
+  VERBOSE_NET_LOG,
+} from "../flags.js";
 
 export interface Event<Extra> {
   // Event type
   type: string;
   // Sequence number in the global log of events
   seq: number;
+  // originator PID
+  // TODO(@darzu): Is this really needed? I/darzu added this b/c I wanted events
+  //  w/o any entities so in that case the origPid is used as the authority pid
+  origPid: number;
   // ID set at the generating node for dedup-ing
   entities: number[];
+  // arbitrary non-entities payload
   extra: Extra;
+  // TODO(@darzu): possible feature:
+  // // resolved when the event is run localy; only useful when raising an event locally
+  // localPromise: Promise<void> | undefined;
 }
 
 type ExtraSerializers<Extra> = {
@@ -83,6 +89,8 @@ function serializeEvent<Extra>(event: Event<Extra>, buf: Serializer) {
     throw `Tried to serialize unrecognized event type ${event.type}`;
   buf.writeUint32(hashCode(event.type));
   buf.writeUint32(event.seq);
+  assert(event.origPid <= 256, `Pid too big: ${event.origPid}`);
+  buf.writeUint8(event.origPid);
   buf.writeUint8(event.entities.length);
   for (const id of event.entities) buf.writeUint32(id);
   if (hasSerializers(handler)) handler.serializeExtra(buf, event.extra);
@@ -100,17 +108,18 @@ function deserializeEvent<Extra>(buf: Deserializer): Event<Extra> {
   const handler = EVENT_HANDLERS.get(type);
   if (!handler) throw `Tried to deserialize unrecognized event type ${type}`;
   const seq = buf.readUint32();
+  const origPid = buf.readUint8();
   const entities = [];
   const numEntities = buf.readUint8();
   for (let i = 0; i < numEntities; i++) entities.push(buf.readUint32());
   let extra;
   if ("serializeExtra" in handler) extra = handler.deserializeExtra(buf);
-  return { type, seq, entities, extra };
+  return { type, seq, origPid, entities, extra };
 }
 
 export type DetectedEvent<Extra> = Pick<
   Event<Extra>,
-  "type" | "entities" | "extra"
+  "type" | "entities" | "extra" | "origPid"
 >;
 
 function serializeDetectedEvent<Extra>(
@@ -121,6 +130,7 @@ function serializeDetectedEvent<Extra>(
   if (!handler)
     throw `Tried to serialize unrecognized event type ${event.type}`;
   buf.writeUint32(hashCode(event.type));
+  buf.writeUint8(event.origPid);
   buf.writeUint8(event.entities.length);
   for (const id of event.entities) buf.writeUint32(id);
   if ("serializeExtra" in handler) handler.serializeExtra(buf, event.extra);
@@ -136,6 +146,7 @@ function deserializeDetectedEvent<Extra>(
     throw `Tried to deserialize unrecognized event type ${typeCode}`;
   }
   const type = EVENT_TYPES.get(typeCode)!;
+  const origPid = buf.readUint8();
   const handler = EVENT_HANDLERS.get(type);
   if (!handler) throw `Tried to deserialize unrecognized event type ${type}`;
   const entities = [];
@@ -143,22 +154,37 @@ function deserializeDetectedEvent<Extra>(
   for (let i = 0; i < numEntities; i++) entities.push(buf.readUint32());
   let extra;
   if ("serializeExtra" in handler) extra = handler.deserializeExtra(buf);
-  return { type, entities, extra };
+  return { type, origPid, entities, extra };
 }
 
-registerEventHandler("test", {
-  entities: [[PositionDef], [RotationDef]],
-  eventAuthorityEntity: ([posId, rotId]) => posId,
-  legalEvent: () => true,
-  runEvent: () => {
-    console.log("event running");
-  },
-});
+// registerEventHandler("test", {
+//   entities: [[PositionDef], [RotationDef]],
+//   eventAuthorityEntity: ([posId, rotId]) => posId,
+//   legalEvent: () => true,
+//   runEvent: () => {
+//     console.log("event running");
+//   },
+// });
 
-function eventAuthorityEntity(type: string, entities: number[]): number {
-  if (!EVENT_HANDLERS.has(type))
-    throw `No event handler registered for event type ${type}`;
-  return EVENT_HANDLERS.get(type)!.eventAuthorityEntity(entities as any);
+function getEventAuthorityPid(event: DetectedEvent<unknown>): number {
+  if (event.entities.length) {
+    assert(
+      EVENT_HANDLERS.has(event.type),
+      `No event handler registered for event type ${event.type}`
+    );
+    const entId = EVENT_HANDLERS.get(event.type)!.eventAuthorityEntity(
+      event.entities as any
+    );
+    const ent = EM.findEntity(entId, [AuthorityDef]);
+    assert(
+      ent && ent.authority,
+      `missing entity or .authority on "${event.type}" event target ${entId}`
+    );
+    const { authority } = ent;
+    return authority.pid;
+  } else {
+    return event.origPid;
+  }
 }
 
 function legalEvent<Extra>(
@@ -193,7 +219,8 @@ function runEvent<Extra>(type: string, event: Event<Extra>) {
     }
     return entity;
   });
-  return handler.runEvent(entities as any, event.extra);
+  // run handler
+  handler.runEvent(entities as any, event.extra);
 }
 
 const CHECK_EVENT_RAISE_ARGS = true;
@@ -202,7 +229,7 @@ export const DetectedEventsDef = EM.defineResource("detectedEvents", () => {
   const events = [] as DetectedEvent<any>[];
   return {
     events,
-    raise: (e: DetectedEvent<any>) => {
+    raise: (e: DetectedEvent<any>): void => {
       if (CHECK_EVENT_RAISE_ARGS) {
         assert(EVENT_HANDLERS.has(e.type), "raising event with no handlers");
         const handler = EVENT_HANDLERS.get(e.type)!;
@@ -295,12 +322,10 @@ export function initNetGameEventSystems() {
       let newEvents = false;
       while (detectedEvents.events.length > 0) {
         const event = detectedEvents.events.shift()!;
-        const authorityId = eventAuthorityEntity(event.type, event.entities);
-        const { authority } = EM.findEntity(authorityId, [AuthorityDef])!;
-        if (authority.pid == me.pid) {
+        const authorityPid = getEventAuthorityPid(event);
+        if (authorityPid == me.pid) {
           // Gameplay code is responsible for ensuring events legal when generated
-          if (!legalEvent(event.type, event))
-            throw `illegal event ${event.type}`;
+          assert(legalEvent(event.type, event), `illegal event ${event.type}`);
           newEvents = true;
           host.outgoingEventRequests.events.push({
             id: host.outgoingEventRequests.nextId++,
@@ -421,9 +446,8 @@ export function initNetGameEventSystems() {
       const requestedEvents = EM.ensureResource(RequestedEventsDef);
       while (detectedEvents.events.length > 0) {
         const event = detectedEvents.events.shift()!;
-        const authorityId = eventAuthorityEntity(event.type, event.entities);
-        const { authority } = EM.findEntity(authorityId, [AuthorityDef])!;
-        if (authority.pid == me.pid) {
+        const authorityPid = getEventAuthorityPid(event);
+        if (authorityPid == me.pid) {
           // Gameplay code is responsible for ensuring events legal when generated
           if (!legalEvent(event.type, event))
             throw `illegal event ${event.type}`;
@@ -626,9 +650,19 @@ export function eventWizard<ES extends EDef<any>[], Extra>(
       es = args.slice(0, args.length - 1) as any;
       extra = args[args.length - 1] as Extra;
     }
+    if (DBG_ASSERT)
+      assert(
+        es.every((e: Entity) => AuthorityDef.isOn(e)),
+        `Missing .authority on event target(s): ${es
+          .filter((e) => !AuthorityDef.isOn(e))
+          .map((e: Entity) => e.id)
+          .join(",")}`
+      );
     const de = EM.getResource(DetectedEventsDef)!;
+    const me = EM.getResource(MeDef)!;
     de.raise({
       type: name,
+      origPid: me.pid,
       entities: es.map((e) => e.id),
       extra,
     });

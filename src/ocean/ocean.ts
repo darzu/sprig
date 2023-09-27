@@ -46,6 +46,8 @@ import { Mesh } from "../meshes/mesh.js";
 import { compute_gerstner, createWaves } from "./gerstner.js";
 import { Phase } from "../ecs/sys-phase.js";
 
+const DBG_HIDE_OCEAN = false; // TODO(@darzu): DEBUGGING
+
 // TODO(@darzu): refactor this to not assume a specific ocean shape
 
 // TODO(@darzu): what is an ocean
@@ -120,8 +122,7 @@ export async function initOcean(oceanMesh: Mesh, color: vec3) {
     RenderableConstructDef,
     // TODO(@darzu): SEPERATE THIS DEPENDENCY! Need ocean w/o mesh
     oceanMesh,
-    // TODO(@darzu): needed?
-    true,
+    !DBG_HIDE_OCEAN,
     0,
     UVUNWRAP_MASK | DEFAULT_MASK,
     oceanPoolPtr

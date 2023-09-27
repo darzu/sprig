@@ -6,7 +6,7 @@ import { BallMesh, GizmoMesh, UnitCubeMesh } from "../meshes/mesh-list.js";
 import { XY } from "../meshes/mesh-loader.js";
 import { ControllableDef } from "../input/controllable.js";
 import { createGhost, GhostDef } from "../debug/ghost.js";
-import { LocalHsPlayerDef, HsPlayerDef } from "../hyperspace/hs-player.js";
+import { LocalPlayerEntityDef, HsPlayerDef } from "../hyperspace/hs-player.js";
 import {
   createGrassTile,
   createGrassTileset,
@@ -46,14 +46,14 @@ import {
 import { WindDef, registerChangeWindSystems } from "../wind/wind.js";
 import { DevConsoleDef } from "../debug/console.js";
 import { clamp, jitter, max, sum } from "../utils/math.js";
-import { createShip, ShipDef } from "../ld53/ship.js";
+import { ShipDef, createLd53ShipAsync } from "../ld53/ship.js";
 import { assert } from "../utils/util.js";
 import { texTypeToBytes } from "../render/gpu-struct.js";
 import { PartyDef } from "../camera/party.js";
 import { copyAABB, createAABB } from "../physics/aabb.js";
 import { InputsDef } from "../input/inputs.js";
 import { ScoreDef } from "../ld53/score.js";
-import { raiseManTurret } from "../turret/turret.js";
+import { CanManDef, raiseManTurret } from "../turret/turret.js";
 import { TextDef } from "../gui/ui.js";
 import { VERBOSE_LOG } from "../flags.js";
 import { CanvasDef, HasFirstInteractionDef } from "../render/canvas.js";
@@ -299,7 +299,7 @@ export async function initGrassGame(hosting: boolean) {
 
   // load level
 
-  const ship = await createShip();
+  const ship = await createLd53ShipAsync();
   vec3.set(0, 10, 0, ship.position);
   // move down
   // vec3.copy(ship.position, SHIP_START_POS);
@@ -406,7 +406,7 @@ export async function initGrassGame(hosting: boolean) {
     (es, res) => {
       const player = es[0];
       // console.log(player.world.position);
-      // const player = EM.findEntity(res.localHsPlayer.playerId, [WorldFrameDef]);
+      // const player = EM.findEntity(res.localPlayerEnt.playerId, [WorldFrameDef]);
       if (player) for (let t of ts) t.update(player.world.position);
     }
   );
@@ -595,7 +595,8 @@ export async function initGrassGame(hosting: boolean) {
       //   res.score.shipHealth + healthChanges,
       //   10000
       // );
-      res.score.cutPurple += cutPurple;
+      // TODO(@darzu): re-impl ?
+      // res.score.cutPurple += cutPurple;
 
       // copy from world texture data to update window
       // NOTE: we shrink the window to only include what has changed
@@ -750,8 +751,9 @@ async function createPlayer() {
   p.cameraFollow.yawOffset = 0.0;
   p.cameraFollow.pitchOffset = -0.593;
 
-  EM.ensureResource(LocalHsPlayerDef, p.id);
+  EM.ensureResource(LocalPlayerEntityDef, p.id);
   EM.set(p, HsPlayerDef);
+  EM.set(p, CanManDef);
   EM.set(p, AuthorityDef, me.pid);
   EM.set(p, PhysicsParentDef);
   return p;

@@ -14,7 +14,7 @@ import {
 import { TimeDef } from "../time/time.js";
 import { LifetimeDef } from "../ecs/lifetime.js";
 import {
-  LocalHsPlayerDef,
+  LocalPlayerEntityDef,
   HsPlayerDef,
   PlayerHsPropsDef,
 } from "./hs-player.js";
@@ -25,8 +25,15 @@ import {
 } from "./hyperspace-ship.js";
 import { AudioDef } from "../audio/audio.js";
 import { Phase } from "../ecs/sys-phase.js";
+import { CanManDef } from "../turret/turret.js";
 
 const RESTART_TIME_MS = 5000;
+
+// TODO(@darzu): MULTIPLAYER. Generalized version:
+//  n game states (enum generic?)
+//  onXGameState
+//  setGameState
+//  maybe a generalized state machine?
 
 export enum HyperspaceGameState {
   LOBBY,
@@ -70,6 +77,7 @@ export const endGame = eventWizard(
       EM.ensureComponent(ship.hsShipProps.cannonRId, DeletedDef);
     const players = EM.filterEntities([
       HsPlayerDef,
+      CanManDef,
       PositionDef,
       RotationDef,
       AuthorityDef,
@@ -77,7 +85,7 @@ export const endGame = eventWizard(
       WorldFrameDef,
     ]);
     for (let p of players) {
-      p.hsPlayer.manning = false;
+      p.canMan.manning = false;
       if (p.authority.pid === res.me.pid) {
         p.physicsParent.id = 0;
         vec3.copy(p.position, p.world.position);
@@ -108,9 +116,9 @@ export const restartGame = eventWizard(
   () => [[HsShipPropsDef]] as const,
   ([ship]) => {
     console.log("restart");
-    const res = EM.getResources([HSGameStateDef, LocalHsPlayerDef])!;
+    const res = EM.getResources([HSGameStateDef, LocalPlayerEntityDef])!;
     res.hsGameState.state = HyperspaceGameState.LOBBY;
-    const player = EM.findEntity(res.localHsPlayer.playerId, [HsPlayerDef])!;
+    const player = EM.findEntity(res.localPlayerEnt.playerId, [HsPlayerDef])!;
     player.hsPlayer.lookingForShip = true;
     // res.score.currentScore = 0;
 
