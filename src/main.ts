@@ -54,7 +54,7 @@ const ALL_GAMES = [
   "ld53",
   "mp",
 ] as const;
-const GAME: (typeof ALL_GAMES)[number] = "ld53";
+const GAME: (typeof ALL_GAMES)[number] = "font";
 
 // Run simulation with a fixed timestep @ 60hz
 const TIMESTEP = 1000 / 60;
@@ -152,6 +152,7 @@ async function startGame(localPeerName: string, host: string | null) {
   requestAnimationFrame(frame);
 }
 
+// TODO(@darzu): unused?
 function getPeerName(queryString: { [k: string]: string }): string {
   const user = queryString["user"] || "default";
   let peerName = localStorage.getItem("peerName-" + user);

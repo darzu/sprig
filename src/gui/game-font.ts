@@ -49,6 +49,8 @@ TODO(@darzu):
  [ ] render arbitrary-ish text
 */
 
+const EXPERIMENTAL_LINE_STUFF = true;
+
 const DBG_3D = false; // TODO(@darzu): add in-game smooth transition!
 
 const PANEL_W = 4 * 12;
@@ -343,5 +345,5 @@ export async function initFontEditor() {
   initMeshEditor();
 
   // TODO(@darzu): WIP path editor
-  if (false) lineStuff();
+  if (EXPERIMENTAL_LINE_STUFF) lineStuff();
 }
