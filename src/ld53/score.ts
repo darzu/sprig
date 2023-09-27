@@ -16,18 +16,16 @@ import { Phase } from "../ecs/sys-phase.js";
 import { HostDef } from "../net/components.js";
 
 export const ScoreDef = EM.defineResource("score", () => ({
-  completedLevels: 0,
+  completedLevels: new Set<number>(),
   levelNumber: 0,
-  gameEnding: false,
-  gameEndedAt: 0,
-  levelEnding: false,
-  levelEndedAt: 0,
+  pendingTransition: false,
+  timestampForGameOver: 0,
+  timestampForNextLevel: 0,
   victory: false,
   endZone: createRef<[typeof PhysicsStateDef]>(0, [PhysicsStateDef]),
   // TODO: this is very hacky
   onLevelEnd: [] as (() => Promise<void>)[],
   onGameEnd: [] as (() => Promise<void>)[],
-  skipFrame: false,
 }));
 
 // TODO(@darzu): MULTIPLAYER: make this client/server agnostic
@@ -39,7 +37,7 @@ EM.addSystem(
   (es, res) => {
     const ship = es[0];
     if (!ship) return;
-    if (!res.score.gameEnding && !res.score.levelEnding) {
+    if (!res.score.timestampForGameOver && !res.score.timestampForNextLevel) {
       if (!res.htmlCanvas.hasMouseLock()) {
         res.text.upperText = `CLICK TO START`;
       } else {
@@ -60,60 +58,85 @@ EM.addSystem(
     const ship = es[0];
     if (!ship) return;
     if (!res.score.endZone()) return;
-    if (res.score.skipFrame) {
-      res.score.skipFrame = false;
-      return;
-    }
-    if (res.score.gameEnding) {
-      if (res.time.step > res.score.gameEndedAt + 300) {
+
+    if (res.score.timestampForGameOver) {
+      // waiting for game over
+      if (res.score.timestampForGameOver < res.time.time) {
+        res.score.timestampForGameOver = 0;
+        // game over
         if (VERBOSE_LOG) console.log("resetting after game end");
         if (res.score.victory) {
+          // game won
           res.score.levelNumber = 0;
+          res.score.completedLevels.clear();
           res.score.victory = false;
         }
-        //res.score.shipHealth = 10000;
         for (let f of res.score.onLevelEnd) {
           await f();
         }
         for (let f of res.score.onGameEnd) {
           await f();
         }
-        res.score.gameEnding = false;
-        res.score.skipFrame = true;
+        res.score.pendingTransition = false; // wait until all event handlers are done
       }
-    } else if (res.score.levelEnding) {
-      if (res.time.step > res.score.levelEndedAt + 300) {
-        res.score.completedLevels++;
-        res.score.levelNumber++;
-        //res.score.shipHealth = 10000;
+      return;
+    }
+
+    if (res.score.timestampForNextLevel) {
+      // waiting for next level
+      if (res.score.timestampForNextLevel < res.time.time) {
+        res.score.timestampForNextLevel = 0;
+        // next level
+        res.score.levelNumber += 1;
         for (let f of res.score.onLevelEnd) {
           await f();
         }
-        res.score.levelEnding = false;
-        res.score.skipFrame = true;
+        res.score.pendingTransition = false; // wait until all event handlers are done
       }
-    } else if (ship.shipHealth.health <= 0) {
-      // END GAME
-      console.log("ending game");
-      res.score.gameEnding = true;
-      res.score.gameEndedAt = res.time.step;
+      return;
+    }
+
+    // wait for any transition to finish
+    if (res.score.pendingTransition) return;
+
+    // relevant facts
+    const shipDead = ship.shipHealth.health <= 0;
+    const shipInEndZone = pointInAABB(
+      res.score.endZone()!._phys.colliders[0].aabb,
+      res.party.pos
+    );
+    const alreadyCompletedLevel = res.score.completedLevels.has(
+      res.score.levelNumber
+    );
+
+    // game lost
+    if (shipDead) {
+      res.score.pendingTransition = true;
+      res.score.timestampForGameOver = res.time.time + 3000;
       res.text.upperText = "LEVEL FAILED"; // TODO(@darzu): MULTIPLAYER. send to clients
-    } else if (
-      pointInAABB(res.score.endZone()!._phys.colliders[0].aabb, res.party.pos)
-    ) {
-      // LEVEL END
-      console.log("res.score.levelNumber: " + res.score.levelNumber);
-      console.log("MapPaths.length: " + MapPaths.length);
+      return;
+    }
+
+    // next level
+    if (shipInEndZone && !alreadyCompletedLevel) {
+      res.score.completedLevels.add(res.score.levelNumber);
+
+      // console.log("res.score.levelNumber: " + res.score.levelNumber);
+      // console.log("MapPaths.length: " + MapPaths.length);
+
       if (res.score.levelNumber + 1 >= MapPaths.length) {
-        res.score.gameEnding = true;
-        res.score.gameEndedAt = res.time.step;
+        // game won
+        res.score.pendingTransition = true;
+        res.score.timestampForGameOver = res.time.time + 3000;
         res.score.victory = true;
         res.text.upperText = "YOU WIN";
       } else {
-        res.score.levelEnding = true;
-        res.score.levelEndedAt = res.time.step;
+        // next level
+        res.score.pendingTransition = true;
+        res.score.timestampForNextLevel = res.time.time + 3000;
         res.text.upperText = "LEVEL COMPLETE";
       }
+      return;
     }
   }
 );

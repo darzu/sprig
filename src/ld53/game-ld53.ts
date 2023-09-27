@@ -277,25 +277,6 @@ async function hostResetLevel(levelIdx: number) {
   );
 }
 
-/*
-TODO(@darzu): error?
-SET LEVEL: 1
-level-map.ts:297 setting map to tutorial-attack-the-towers
-level-map.ts:291 setMap elapsed: 42.3ms
-level-map.ts:342 setMap elapsed: 42.5ms
-
-util.ts:11 Uncaught (in promise) Error: Invalid 'whenSingleEntity' call; found 0 matching entities
-    at assert (util.ts:11:11)
-    at Object.fn (entity-manager.ts:1393:9)
-    at EntityManager.runInitFn (entity-manager.ts:1567:26)
-    at entity-manager.ts:1460:14
-    at Array.forEach (<anonymous>)
-    at EntityManager.progressInitFns (entity-manager.ts:1419:28)
-    at EntityManager.update (entity-manager.ts:1610:29)
-    at callFixedTimestepSystems (main.ts:70:6)
-    at frame (main.ts:135:7)
-*/
-
 async function setLevelLocal(levelIdx: number) {
   // TODO(@darzu): MULTIPLAYER: dock
   // if (dock) {
@@ -308,7 +289,7 @@ async function setLevelLocal(levelIdx: number) {
   //   }
   // }
 
-  console.log(`SET LEVEL: ${levelIdx}`);
+  // console.log(`SET LEVEL: ${levelIdx}`);
   await setMap(MapPaths[levelIdx]);
   await resetLand();
 
@@ -452,8 +433,8 @@ export async function initLD53(hosting: boolean) {
   const oceanXCount = Math.floor(WORLD_HEIGHT * oceanVertsPerWorldUnit);
   const oceanMesh = createFlatQuadMesh(oceanZCount, oceanXCount);
   const maxSurfId = max(oceanMesh.surfaceIds);
-  console.log("maxSurfId");
-  console.log(maxSurfId);
+  // console.log("maxSurfId");
+  // console.log(maxSurfId);
   const oceanAABB = createAABB();
   oceanMesh.pos.forEach((p, i) => {
     const x = p[0] * worldUnitPerOceanVerts - WORLD_HEIGHT * 0.5;
@@ -512,6 +493,7 @@ export async function initLD53(hosting: boolean) {
 
     // TODO(@darzu): MULTIPLAYER: sync level
     score.onLevelEnd.push(async () => {
+      // console.log("score.onLevelEnd");
       // TODO(@darzu): MULTIPLAYER: dock
       // await setLevelLocal(score.levelNumber, dock);
       await hostResetLevel(score.levelNumber);
@@ -529,7 +511,7 @@ export async function initLD53(hosting: boolean) {
         // furl/unfurl
         if (rudder.turret.mannedId) {
           if (MOTORBOAT_MODE) {
-            console.log("here");
+            // console.log("here");
             if (res.inputs.keyDowns["w"]) {
               vec3.add(
                 ship.linearVelocity,
