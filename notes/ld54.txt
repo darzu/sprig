@@ -1,0 +1,46 @@
+shelter
+  Z: build one
+  W: build a shelter out of wood n stone
+Break the cycle
+  Z: break a big wooden ring
+  W: demolish a structure that resets every n seconds,
+Underground
+  W: dig, underground
+  Z: dig underground build mine tunnel
+Strange machines
+  Z: big lumberpunk machines that you repair
+  W: big lumberpunk machines
+Paths
+  W: sailing paths
+  Z: walk through woods, choose paths based on limited info
+Signal
+  Z: sneak and place signals of where to attack
+  W: signal flags, signal book, puzzle game, switch to your own flags
+Folklore
+Overgrown
+  Z: gpu vines on stone walls, "cozy game"
+  W: 
+Sanctuary
+  Z: build a shelter
+  W: build a shelter
+Salvage
+  Z: break through sunken boats for stuff
+  W: steal wood from other boats
+Reflect
+  Z: bounce cannon balls back at the enemy ship with a magic shield
+  W: duel water zone thing,
+Locks and keys
+  Z: ship locks and florida keys, just journey and see water level change
+  W: operate the lock
+Keep the light on
+  Z: maintain lumberpunk machines so that the light stays powered
+  W: dark sailing, harvest fuel to keep the latern on
+Tiny Creatures
+  Z: boid swarm of birds attacks boats
+  W: plankton
+Limited space
+  Z: small room, u decorate it
+  w: 
+Absorb
+  Z: your ship absorbs the planks of smaller ships
+  W: 

@@ -42,3 +42,11 @@ Structured editting Done Right is a big opportunity
 "Civet: The Modern Way to Write TypeScript":
   https://civet.dev
   a set of potentially interesting ideas for simplifying ts
+
+In the language, maybe everything should be pipelines / verticalized?
+  e.g. https://github.com/tc39/proposal-pipeline-operator
+    https://gist.github.com/tabatkins/1261b108b9e6cdab5ad5df4b8021bcb5
+  or tacit / point-free style:
+    https://en.wikipedia.org/wiki/Tacit_programming
+
+
