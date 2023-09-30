@@ -471,6 +471,13 @@ export const RudderPrimMesh = XY.registerMesh({
   data: () => createRudderMesh(),
 });
 
+// LD54
+
+export const LD54AstronautMesh = XY.registerMesh({
+  name: "ld54_astronaut",
+  data: "ld54-astronaut.glb",
+});
+
 // TODO(@darzu): remove eventually?
 const allMeshesList = [
   // file

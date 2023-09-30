@@ -3,6 +3,7 @@ import {
   CubeMesh,
   CubeRaftMesh,
   HexMesh,
+  LD54AstronautMesh,
 } from "../meshes/mesh-list.js";
 import { CameraDef, CameraFollowDef } from "../camera/camera.js";
 import { ColorDef } from "../color/color-ecs.js";
@@ -20,7 +21,11 @@ import {
 import { quat, V, vec3 } from "../matrix/sprig-matrix.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { XY } from "../meshes/mesh-loader.js";
-import { RenderableConstructDef, RendererDef } from "../render/renderer-ecs.js";
+import {
+  RenderableConstructDef,
+  RenderableDef,
+  RendererDef,
+} from "../render/renderer-ecs.js";
 import { PointLightDef } from "../render/lights.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
 import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
@@ -37,13 +42,15 @@ import { initStars, renderStars } from "../render/pipelines/std-stars.js";
 import { noisePipes } from "../render/pipelines/std-noise.js";
 import { blurPipelines } from "../render/pipelines/std-blur.js";
 import { SpaceSuitDef } from "./space-suit-controller.js";
+import { PlayerRenderDef } from "./player-render.js";
 
 const ld54Meshes = XY.defineMeshSetResource(
   "ld54_meshes",
   CubeMesh,
   HexMesh,
   BallMesh,
-  CubeRaftMesh
+  CubeRaftMesh,
+  LD54AstronautMesh
 );
 
 const { PlayerLocalDef, PlayerPropsDef, createPlayer, createPlayerNow } =
@@ -90,7 +97,7 @@ const { PlayerLocalDef, PlayerPropsDef, createPlayer, createPlayerNow } =
       return {};
     },
     dynamicComponents: [PositionDef, RotationDef],
-    buildResources: [CubeMesh.def, MeDef],
+    buildResources: [ld54Meshes, MeDef],
     build: (e, res) => {
       console.log(
         `creating player (${e.id}) auth.pid:${e.authority.pid} me.pid:${res.me.pid}`
@@ -100,11 +107,11 @@ const { PlayerLocalDef, PlayerPropsDef, createPlayer, createPlayerNow } =
 
       // TODO(@darzu): BUG. props.color is undefined
       EM.set(e, ColorDef, props.color);
-      EM.set(e, RenderableConstructDef, res.mesh_cube.proto);
+      EM.set(e, RenderableConstructDef, res.ld54_meshes.cube.proto);
       EM.set(e, ColliderDef, {
         shape: "AABB",
         solid: true,
-        aabb: res.mesh_cube.aabb,
+        aabb: res.ld54_meshes.cube.aabb,
       });
       // EM.set(e, PhysicsParentDef, props.parentId);
 
@@ -126,6 +133,16 @@ const { PlayerLocalDef, PlayerPropsDef, createPlayer, createPlayerNow } =
         vec3.copy(e.cameraFollow.positionOffset, [0.0, 0.0, 10.0]);
         // e.cameraFollow.yawOffset = 0.0;
         // e.cameraFollow.pitchOffset = -0.593;
+
+        const playerRender = EM.new();
+        EM.set(
+          playerRender,
+          RenderableConstructDef,
+          res.ld54_meshes.ld54_astronaut.mesh
+        );
+        EM.set(playerRender, PositionDef);
+        EM.set(playerRender, RotationDef);
+        EM.set(playerRender, PlayerRenderDef, e);
 
         console.log(`player has .controllable`);
       }
