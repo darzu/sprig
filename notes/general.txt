@@ -1402,6 +1402,12 @@ ffmpeg -i my-movie.mov -vcodec h264 \
   -acodec aac -filter:v "crop=in_w-278:in_h,scale=720:720" \
   my-movie.mp4
 
+# e.g.
+cd /Users/darzu/screenshots/
+ffmpeg -i black-stars.mov -vcodec h264 \
+  -acodec aac -filter:v "crop=in_w-278:in_h,scale=720:720" \
+  black-stars.mp4
+
 Bluesky's "Ecosystem Overview":
   https://gitlab.com/bluesky-community1/decentralized-ecosystem#ecosystem-overview
 

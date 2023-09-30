@@ -1868,3 +1868,9 @@ Render Pipeline Shaders SDK:
 
 Line rendering deep dive:
   https://panthavma.com/articles/lines/deep-overview-extraction/
+
+Gaussian splatting
+  https://repo-sam.inria.fr/fungraph/3d-gaussian-splatting/
+  https://poly.cam/gaussian-splatting
+  https://huggingface.co/blog/gaussian-splatting
+  https://aras-p.info/blog/2023/09/05/Gaussian-Splatting-is-pretty-cool/

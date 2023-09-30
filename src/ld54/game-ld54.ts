@@ -33,6 +33,9 @@ import { TimeDef } from "../time/time.js";
 import { assert } from "../utils/util.js";
 import { MeDef } from "../net/components.js";
 import { eventWizard } from "../net/events.js";
+import { initStars, renderStars } from "../render/pipelines/std-stars.js";
+import { noisePipes } from "../render/pipelines/std-noise.js";
+import { blurPipelines } from "../render/pipelines/std-blur.js";
 
 const ld54Meshes = XY.defineMeshSetResource(
   "ld54_meshes",
@@ -200,6 +203,9 @@ async function setLevelLocal(levelIdx: number) {
 
 export async function initLD54() {
   EM.addEagerInit([], [RendererDef], [], (res) => {
+    // init stars
+    res.renderer.renderer.submitPipelines([], [...noisePipes, initStars]);
+
     // renderer
     res.renderer.pipelines = [
       ...shadowPipelines,
@@ -209,6 +215,8 @@ export async function initLD54() {
       // renderOceanPipe,
       outlineRender,
       deferredPipeline,
+      renderStars,
+      // ...blurPipelines,
       // skyPipeline,
       postProcess,
     ];

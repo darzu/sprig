@@ -1,7 +1,7 @@
 import { CY } from "../gpu-registry.js";
 import { createCyStruct, CyToTS } from "../gpu-struct.js";
 import { outlinedTexturePtr } from "./std-outline.js";
-import { mainDepthTex, sceneBufPtr } from "./std-scene.js";
+import { litTexturePtr, mainDepthTex, sceneBufPtr } from "./std-scene.js";
 
 // TODO(@darzu): generalize for other billboard usage?
 
@@ -27,8 +27,8 @@ export const emissionTexturePtr = CY.createTexture("emissionTexture", {
   format: "rgba16float",
 });
 
-// const STAR_BOX_SIZE = 100.0;
-const STAR_BOX_SIZE = 1000.0;
+const STAR_BOX_SIZE = 100.0;
+// const STAR_BOX_SIZE = 1000.0;
 
 export const initStars = CY.createComputePipeline("initStars", {
   globals: [starData],
@@ -68,5 +68,9 @@ export const renderStars = CY.createRenderPipeline("renderStars", {
     stepMode: "single-draw",
   },
   depthStencil: mainDepthTex,
-  output: [emissionTexturePtr, outlinedTexturePtr],
+  output: [
+    emissionTexturePtr,
+    // outlinedTexturePtr
+    litTexturePtr,
+  ],
 });
