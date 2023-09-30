@@ -10,7 +10,7 @@ export const SpaceSuitDef = EM.defineComponent("spaceSuit", () => ({
   // TODO(@darzu): data
   speed: 0.00003,
   turnSpeed: 0.001,
-  rollSpeed: 0.03,
+  rollSpeed: 0.01,
   doDampen: true,
 }));
 
