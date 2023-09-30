@@ -37,6 +37,7 @@ import { initStars, renderStars } from "../render/pipelines/std-stars.js";
 import { noisePipes } from "../render/pipelines/std-noise.js";
 import { blurPipelines } from "../render/pipelines/std-blur.js";
 import { SpaceSuitDef } from "./space-suit-controller.js";
+import { initSpacePath } from "./space-path.js";
 
 const ld54Meshes = XY.defineMeshSetResource(
   "ld54_meshes",
@@ -265,6 +266,9 @@ export async function initLD54() {
   EM.set(gizmo, RenderableConstructDef, gizmoMesh);
   EM.set(gizmo, PositionDef, V(0, 1, 0));
   EM.set(gizmo, ScaleDef, V(2, 2, 2));
+
+  // space path
+  initSpacePath();
 
   // raft
   if (me.host) {
