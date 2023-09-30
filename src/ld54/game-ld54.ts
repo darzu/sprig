@@ -44,6 +44,8 @@ import { blurPipelines } from "../render/pipelines/std-blur.js";
 import { SpaceSuitDef } from "./space-suit-controller.js";
 import { PlayerRenderDef } from "./player-render.js";
 
+const RENDER_TRUTH_CUBE = false;
+
 const ld54Meshes = XY.defineMeshSetResource(
   "ld54_meshes",
   CubeMesh,
@@ -107,7 +109,13 @@ const { PlayerLocalDef, PlayerPropsDef, createPlayer, createPlayerNow } =
 
       // TODO(@darzu): BUG. props.color is undefined
       EM.set(e, ColorDef, props.color);
-      EM.set(e, RenderableConstructDef, res.ld54_meshes.cube.proto);
+      // don't render the truth cube by default
+      EM.set(
+        e,
+        RenderableConstructDef,
+        res.ld54_meshes.cube.proto,
+        RENDER_TRUTH_CUBE
+      );
       EM.set(e, ColliderDef, {
         shape: "AABB",
         solid: true,
