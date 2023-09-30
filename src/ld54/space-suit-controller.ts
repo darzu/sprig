@@ -8,7 +8,7 @@ import { TimeDef } from "../time/time.js";
 
 export const SpaceSuitDef = EM.defineComponent("spaceSuit", () => ({
   // TODO(@darzu): data
-  speed: 0.0005,
+  speed: 0.00003,
   turnSpeed: 0.001,
   rollSpeed: 0.03,
 }));
@@ -21,24 +21,26 @@ EM.addEagerInit([SpaceSuitDef], [], [], () => {
   const speed = EM.addSystem(
     "controlSpaceSuit",
     Phase.GAME_PLAYERS,
-    [SpaceSuitDef, RotationDef],
+    [SpaceSuitDef, RotationDef, LinearVelocityDef],
     [InputsDef, TimeDef],
     (suits, res) => {
       for (let e of suits) {
         let speed = e.spaceSuit.speed * res.time.dt;
 
         // 6-DOF translation
-        const localVel = vec3.zero();
-        if (res.inputs.keyDowns["a"]) localVel[0] -= speed;
-        if (res.inputs.keyDowns["d"]) localVel[0] += speed;
-        if (res.inputs.keyDowns["w"]) localVel[2] -= speed;
-        if (res.inputs.keyDowns["s"]) localVel[2] += speed;
-        if (res.inputs.keyDowns[" "]) localVel[1] += speed;
-        if (res.inputs.keyDowns["c"]) localVel[1] -= speed;
+        const localAccel = vec3.zero();
+        if (res.inputs.keyDowns["a"]) localAccel[0] -= speed;
+        if (res.inputs.keyDowns["d"]) localAccel[0] += speed;
+        if (res.inputs.keyDowns["w"]) localAccel[2] -= speed;
+        if (res.inputs.keyDowns["s"]) localAccel[2] += speed;
+        if (res.inputs.keyDowns[" "]) localAccel[1] += speed;
+        if (res.inputs.keyDowns["c"]) localAccel[1] -= speed;
 
-        const parentVel = vec3.transformQuat(localVel, e.rotation);
+        const rotatedAccel = vec3.transformQuat(localAccel, e.rotation);
 
-        EM.set(e, LinearVelocityDef, parentVel);
+        vec3.add(e.linearVelocity, rotatedAccel, e.linearVelocity);
+
+        // EM.set(e, LinearVelocityDef, parentVel);
 
         // camera rotation
         quat.rotateY(

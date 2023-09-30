@@ -53,27 +53,27 @@ const { PlayerLocalDef, PlayerPropsDef, createPlayer, createPlayerNow } =
       return {
         location: V(0, 0, 0),
         color: V(0, 0, 0),
-        parentId: 0,
+        // parentId: 0,
       };
     },
     updateProps: (
       p,
       location: vec3.InputT,
-      color: vec3.InputT,
-      parentId: number
+      color: vec3.InputT
+      // parentId: number
     ) => {
       // console.log(
       //   `updating mpPlayerProps w/ ${vec3Dbg(location)} ${vec3Dbg(color)}`
       // );
       vec3.copy(p.location, location);
       vec3.copy(p.color, color);
-      p.parentId = parentId;
+      // p.parentId = parentId;
       return p;
     },
     serializeProps: (c, buf) => {
       buf.writeVec3(c.location);
       buf.writeVec3(c.color);
-      buf.writeUint32(c.parentId);
+      // buf.writeUint32(c.parentId);
       // console.log(
       //   `serialized mpPlayerProps w/ ${vec3Dbg(c.location)} ${vec3Dbg(c.color)}`
       // );
@@ -81,7 +81,7 @@ const { PlayerLocalDef, PlayerPropsDef, createPlayer, createPlayerNow } =
     deserializeProps: (c, buf) => {
       buf.readVec3(c.location);
       buf.readVec3(c.color);
-      c.parentId = buf.readUint32();
+      // c.parentId = buf.readUint32();
       // console.log(
       //   `deserialized mpPlayerProps w/ ${vec3Dbg(c.location)} ${vec3Dbg(c.color)}`
       // );
@@ -106,10 +106,12 @@ const { PlayerLocalDef, PlayerPropsDef, createPlayer, createPlayerNow } =
         solid: true,
         aabb: res.mesh_cube.aabb,
       });
-      EM.set(e, PhysicsParentDef, props.parentId);
+      // EM.set(e, PhysicsParentDef, props.parentId);
 
       if (e.authority.pid === res.me.pid) {
         vec3.copy(e.position, props.location); // TODO(@darzu): should be fine to have this outside loop
+
+        EM.set(e, LinearVelocityDef);
 
         EM.set(e, SpaceSuitDef);
         // e.controllable.modes.canFall = true;
@@ -291,5 +293,6 @@ export async function initLD54() {
 
   // player
   const color = AllEndesga16[me.pid + 4 /*skip browns*/];
-  createPlayer(V(0, 10, 0), color, raft.id);
+  // TODO(@darzu): parent to raft.id ?
+  createPlayer(V(0, 10, 0), color);
 }
