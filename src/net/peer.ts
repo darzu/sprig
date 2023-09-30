@@ -87,7 +87,8 @@ export class Peer {
       }
       // Close all connections if connection to server goes down
       Object.values(this.connections).forEach((conn) => conn.close());
-      setTimeout(() => this.connectToServer(), RECONNECT_TIME);
+      // TODO: actually implement reconnect
+      //setTimeout(() => this.connectToServer(), RECONNECT_TIME);
     };
     sock.onclose = onclose;
     this.sock = sock;
