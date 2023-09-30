@@ -5,6 +5,16 @@ import { mergeMeshes, Mesh } from "../meshes/mesh.js";
 import { PositionDef, ScaleDef } from "../physics/transform.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
 
+/* spline stuff:
+n-degree bezier curve: 
+  no local control (ea point affects whole curve)
+  doesn't pass through points
+  expensive to calc many points
+bezier spline:
+  control points r just some distance along tangent
+  made of cube bezier curves
+*/
+
 export function initSpacePath() {
   const pathNodes: vec3[] = [
     V(30, -16, 0),

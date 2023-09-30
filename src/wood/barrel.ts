@@ -13,11 +13,11 @@ import {
 } from "./wood.js";
 import {
   lerpBetween,
-  Path,
   appendBoard,
   dbgPathWithGizmos,
   pathNodeFromMat4,
 } from "./shipyard.js";
+import { Path } from "../utils/spline.js";
 
 const __tempCursor = mat4.create();
 export function createRingPath(

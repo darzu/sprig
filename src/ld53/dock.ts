@@ -5,7 +5,6 @@ import {
   appendBoard,
   dbgPathWithGizmos,
   lerpBetween,
-  Path,
 } from "../wood/shipyard.js";
 import { getHalfsizeFromAABB } from "../physics/aabb.js";
 import { ColliderDef } from "../physics/collider.js";
@@ -25,6 +24,7 @@ import {
   WoodState,
   WoodStateDef,
 } from "../wood/wood.js";
+import { Path } from "../utils/spline.js";
 
 export const DockDef = EM.defineComponent("dock", () => true);
 
