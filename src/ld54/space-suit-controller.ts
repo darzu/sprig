@@ -11,6 +11,7 @@ export const SpaceSuitDef = EM.defineComponent("spaceSuit", () => ({
   speed: 0.00003,
   turnSpeed: 0.001,
   rollSpeed: 0.03,
+  doDampen: true,
 }));
 
 EM.addEagerInit([SpaceSuitDef], [], [], () => {
@@ -27,8 +28,9 @@ EM.addEagerInit([SpaceSuitDef], [], [], () => {
       for (let e of suits) {
         let speed = e.spaceSuit.speed * res.time.dt;
 
-        // 6-DOF translation
         const localAccel = vec3.zero();
+
+        // 6-DOF translation
         if (res.inputs.keyDowns["a"]) localAccel[0] -= speed;
         if (res.inputs.keyDowns["d"]) localAccel[0] += speed;
         if (res.inputs.keyDowns["w"]) localAccel[2] -= speed;
@@ -38,9 +40,23 @@ EM.addEagerInit([SpaceSuitDef], [], [], () => {
 
         const rotatedAccel = vec3.transformQuat(localAccel, e.rotation);
 
-        vec3.add(e.linearVelocity, rotatedAccel, e.linearVelocity);
+        // change dampen?
+        if (res.inputs.keyClicks["z"])
+          e.spaceSuit.doDampen = !e.spaceSuit.doDampen;
 
-        // EM.set(e, LinearVelocityDef, parentVel);
+        // dampener
+        if (e.spaceSuit.doDampen && vec3.sqrLen(rotatedAccel) === 0) {
+          const dampDir = vec3.normalize(vec3.negate(e.linearVelocity));
+          vec3.scale(dampDir, speed, rotatedAccel);
+
+          // halt if at small delta
+          if (vec3.sqrLen(e.linearVelocity) < vec3.sqrLen(rotatedAccel)) {
+            vec3.zero(rotatedAccel);
+            vec3.zero(e.linearVelocity);
+          }
+        }
+
+        vec3.add(e.linearVelocity, rotatedAccel, e.linearVelocity);
 
         // camera rotation
         quat.rotateY(
