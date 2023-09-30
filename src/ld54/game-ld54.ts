@@ -119,10 +119,10 @@ const { PlayerLocalDef, PlayerPropsDef, createPlayer, createPlayerNow } =
         // e.controllable.sprintMul = 1;
 
         EM.set(e, CameraFollowDef, 1);
-        quat.setAxisAngle([0.0, -1.0, 0.0], 1.62, e.rotation);
+        // quat.setAxisAngle([0.0, -1.0, 0.0], 1.62, e.rotation);
         vec3.copy(e.cameraFollow.positionOffset, [0.0, 4.0, 10.0]);
-        e.cameraFollow.yawOffset = 0.0;
-        e.cameraFollow.pitchOffset = -0.593;
+        // e.cameraFollow.yawOffset = 0.0;
+        // e.cameraFollow.pitchOffset = -0.593;
 
         console.log(`player has .controllable`);
       }
