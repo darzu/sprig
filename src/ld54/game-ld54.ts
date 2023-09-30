@@ -27,7 +27,7 @@ import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
 import { shadowPipelines } from "../render/pipelines/std-shadow.js";
-import { ControllableDef } from "../input/controllable.js";
+// import { ControllableDef } from "../input/controllable.js";
 import { ColliderDef } from "../physics/collider.js";
 import { TimeDef } from "../time/time.js";
 import { assert } from "../utils/util.js";
@@ -36,6 +36,7 @@ import { eventWizard } from "../net/events.js";
 import { initStars, renderStars } from "../render/pipelines/std-stars.js";
 import { noisePipes } from "../render/pipelines/std-noise.js";
 import { blurPipelines } from "../render/pipelines/std-blur.js";
+import { SpaceSuitDef } from "./space-suit-controller.js";
 
 const ld54Meshes = XY.defineMeshSetResource(
   "ld54_meshes",
@@ -110,14 +111,15 @@ const { PlayerLocalDef, PlayerPropsDef, createPlayer, createPlayerNow } =
       if (e.authority.pid === res.me.pid) {
         vec3.copy(e.position, props.location); // TODO(@darzu): should be fine to have this outside loop
 
-        EM.set(e, ControllableDef);
-        e.controllable.modes.canFall = true;
-        e.controllable.modes.canJump = true;
-        e.controllable.modes.canFly = false;
+        EM.set(e, SpaceSuitDef);
+        // e.controllable.modes.canFall = true;
+        // e.controllable.modes.canJump = true;
+        // e.controllable.modes.canFly = false;
+        // e.controllable.speed *= 2;
+        // e.controllable.sprintMul = 1;
+
         EM.set(e, CameraFollowDef, 1);
         quat.setAxisAngle([0.0, -1.0, 0.0], 1.62, e.rotation);
-        e.controllable.speed *= 2;
-        e.controllable.sprintMul = 1;
         vec3.copy(e.cameraFollow.positionOffset, [0.0, 4.0, 10.0]);
         e.cameraFollow.yawOffset = 0.0;
         e.cameraFollow.pitchOffset = -0.593;
