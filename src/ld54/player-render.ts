@@ -39,7 +39,6 @@ EM.addEagerInit([PlayerRenderDef], [], [], () => {
           const maxRotationAngle =
             e.playerRender.maxRotationAnglePerMs * res.time.dt;
           const slerpAmount = Math.min(1.0, maxRotationAngle / angle);
-          console.log("slerpAmount", slerpAmount);
           quat.slerp(e.rotation, player.rotation, slerpAmount, e.rotation);
         }
       }
