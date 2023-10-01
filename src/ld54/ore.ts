@@ -97,47 +97,94 @@ function createOxygenOreMesh(mkBallMesh: () => Mesh): Mesh {
   return result;
 }
 
-export function createFuelOre(pos: vec3) {
-  const ore = EM.new();
-  const mesh = createFuelOreMesh();
-  EM.set(ore, RenderableConstructDef, mesh);
-  EM.set(ore, PositionDef, pos);
-  EM.set(ore, AngularVelocityDef);
-  randNormalVec3(ore.angularVelocity);
-  vec3.scale(ore.angularVelocity, 0.0005, ore.angularVelocity);
-
-  return ore;
-}
-
-export function createOxygenOre(mkBallMesh: () => Mesh, pos: vec3) {
-  const ore = EM.new();
-  const mesh = createOxygenOreMesh(mkBallMesh);
-  EM.set(ore, RenderableConstructDef, mesh);
-  EM.set(ore, PositionDef, pos);
-  EM.set(ore, AngularVelocityDef);
-  randNormalVec3(ore.angularVelocity);
-  vec3.scale(ore.angularVelocity, 0.0005, ore.angularVelocity);
-
-  return ore;
-}
-
 export async function initOre(spacePath: Path) {
   const ballGameMesh = await EM.whenResources(BallMesh.def);
   const mkBallMesh = () => cloneMesh(ballGameMesh.mesh_ball.mesh);
 
-  for (let x = 0; x < 3; x++) {
-    for (let y = 0; y < 3; y++) {
-      for (let z = 0; z < 3; z++) {
-        createFuelOre(V(x * 16 - 50, y * 16, z * 16));
-      }
+  // ore parameters
+  const oxyOreTravelDist = 120;
+  const fuelOreTravelDist = 200;
+
+  const pathDistances: number[] = []; // cumulative distance
+  {
+    // path distances
+    let prevPos = spacePath[0].pos;
+    let lastDist = 0;
+    for (let i = 0; i < spacePath.length; i++) {
+      const newTravel = vec3.dist(spacePath[i].pos, prevPos);
+      const dist = lastDist + newTravel;
+      prevPos = spacePath[i].pos;
+      lastDist = dist;
+      pathDistances.push(dist);
+    }
+  }
+  const totalDistance = pathDistances.at(-1)!;
+
+  // place fuel
+  {
+    let totalFuelTravel = fuelOreTravelDist;
+    while (totalFuelTravel < totalDistance) {
+      const nextOreStop = totalFuelTravel - fuelOreTravelDist * 0.2;
+      const segIdx = pathDistances.findIndex((d) => d > nextOreStop);
+      const seg = spacePath[segIdx];
+
+      const randDistFromTrack = randFloat(20, 100);
+      const pos = vec3.scale(
+        randNormalVec3(),
+        randDistFromTrack,
+        vec3.create()
+      );
+      pos[2] = seg.pos[2];
+
+      createFuelOre(pos);
+
+      totalFuelTravel = nextOreStop + fuelOreTravelDist;
     }
   }
 
-  for (let x = 0; x < 3; x++) {
-    for (let y = 0; y < 3; y++) {
-      for (let z = 0; z < 3; z++) {
-        createOxygenOre(mkBallMesh, V(x * 16 + 50, y * 16, z * 16));
-      }
+  // place oxygen
+  {
+    let totalOxygenTravel = oxyOreTravelDist;
+    while (totalOxygenTravel < totalDistance) {
+      const nextOreStop = totalOxygenTravel - oxyOreTravelDist * 0.2;
+      const segIdx = pathDistances.findIndex((d) => d > nextOreStop);
+      const seg = spacePath[segIdx];
+
+      const randDistFromTrack = randFloat(20, 100);
+      const pos = vec3.scale(
+        randNormalVec3(),
+        randDistFromTrack,
+        vec3.create()
+      );
+      pos[2] = seg.pos[2];
+
+      createOxygenOre(pos);
+
+      totalOxygenTravel = nextOreStop + oxyOreTravelDist;
     }
+  }
+
+  function createOxygenOre(pos: vec3) {
+    const ore = EM.new();
+    const mesh = createOxygenOreMesh(mkBallMesh);
+    EM.set(ore, RenderableConstructDef, mesh);
+    EM.set(ore, PositionDef, pos);
+    EM.set(ore, AngularVelocityDef);
+    randNormalVec3(ore.angularVelocity);
+    vec3.scale(ore.angularVelocity, 0.0005, ore.angularVelocity);
+
+    return ore;
+  }
+
+  function createFuelOre(pos: vec3) {
+    const ore = EM.new();
+    const mesh = createFuelOreMesh();
+    EM.set(ore, RenderableConstructDef, mesh);
+    EM.set(ore, PositionDef, pos);
+    EM.set(ore, AngularVelocityDef);
+    randNormalVec3(ore.angularVelocity);
+    vec3.scale(ore.angularVelocity, 0.0005, ore.angularVelocity);
+
+    return ore;
   }
 }
