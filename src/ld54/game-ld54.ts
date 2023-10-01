@@ -62,104 +62,108 @@ const ld54Meshes = XY.defineMeshSetResource(
   LD54AstronautMesh
 );
 
-const { PlayerLocalDef, PlayerPropsDef, createPlayer, createPlayerNow } =
-  defineNetEntityHelper({
-    name: "player",
-    defaultProps: () => {
-      return {
-        location: V(0, 0, 0),
-        color: V(0, 0, 0),
-        // parentId: 0,
-      };
-    },
-    updateProps: (
-      p,
-      location: vec3.InputT,
-      color: vec3.InputT
-      // parentId: number
-    ) => {
-      // console.log(
-      //   `updating mpPlayerProps w/ ${vec3Dbg(location)} ${vec3Dbg(color)}`
-      // );
-      vec3.copy(p.location, location);
-      vec3.copy(p.color, color);
-      // p.parentId = parentId;
-      return p;
-    },
-    serializeProps: (c, buf) => {
-      buf.writeVec3(c.location);
-      buf.writeVec3(c.color);
-      // buf.writeUint32(c.parentId);
-      // console.log(
-      //   `serialized mpPlayerProps w/ ${vec3Dbg(c.location)} ${vec3Dbg(c.color)}`
-      // );
-    },
-    deserializeProps: (c, buf) => {
-      buf.readVec3(c.location);
-      buf.readVec3(c.color);
-      // c.parentId = buf.readUint32();
-      // console.log(
-      //   `deserialized mpPlayerProps w/ ${vec3Dbg(c.location)} ${vec3Dbg(c.color)}`
-      // );
-    },
-    defaultLocal: () => {
-      return {};
-    },
-    dynamicComponents: [PositionDef, RotationDef],
-    buildResources: [ld54Meshes, MeDef],
-    build: (e, res) => {
-      console.log(
-        `creating player (${e.id}) auth.pid:${e.authority.pid} me.pid:${res.me.pid}`
-      );
+const {
+  PlayerLocalDef,
+  PlayerPropsDef,
+  createPlayer,
+  createPlayerNow,
+  createPlayerAsync,
+} = defineNetEntityHelper({
+  name: "player",
+  defaultProps: () => {
+    return {
+      location: V(0, 0, 0),
+      color: V(0, 0, 0),
+      // parentId: 0,
+    };
+  },
+  updateProps: (
+    p,
+    location: vec3.InputT,
+    color: vec3.InputT
+    // parentId: number
+  ) => {
+    // console.log(
+    //   `updating mpPlayerProps w/ ${vec3Dbg(location)} ${vec3Dbg(color)}`
+    // );
+    vec3.copy(p.location, location);
+    vec3.copy(p.color, color);
+    // p.parentId = parentId;
+    return p;
+  },
+  serializeProps: (c, buf) => {
+    buf.writeVec3(c.location);
+    buf.writeVec3(c.color);
+    // buf.writeUint32(c.parentId);
+    // console.log(
+    //   `serialized mpPlayerProps w/ ${vec3Dbg(c.location)} ${vec3Dbg(c.color)}`
+    // );
+  },
+  deserializeProps: (c, buf) => {
+    buf.readVec3(c.location);
+    buf.readVec3(c.color);
+    // c.parentId = buf.readUint32();
+    // console.log(
+    //   `deserialized mpPlayerProps w/ ${vec3Dbg(c.location)} ${vec3Dbg(c.color)}`
+    // );
+  },
+  defaultLocal: () => {
+    return {};
+  },
+  dynamicComponents: [PositionDef, RotationDef],
+  buildResources: [ld54Meshes, MeDef],
+  build: (e, res) => {
+    console.log(
+      `creating player (${e.id}) auth.pid:${e.authority.pid} me.pid:${res.me.pid}`
+    );
 
-      const props = e.playerProps;
+    const props = e.playerProps;
 
-      // TODO(@darzu): BUG. props.color is undefined
-      EM.set(e, ColorDef, props.color);
-      // don't render the truth cube by default
-      EM.set(
-        e,
-        RenderableConstructDef,
-        res.ld54_meshes.cube.proto,
-        RENDER_TRUTH_CUBE
-      );
-      EM.set(e, ColliderDef, {
-        shape: "AABB",
-        solid: true,
-        aabb: res.ld54_meshes.cube.aabb,
-      });
-      // EM.set(e, PhysicsParentDef, props.parentId);
+    // TODO(@darzu): BUG. props.color is undefined
+    EM.set(e, ColorDef, props.color);
+    // don't render the truth cube by default
+    EM.set(
+      e,
+      RenderableConstructDef,
+      res.ld54_meshes.cube.proto,
+      RENDER_TRUTH_CUBE
+    );
+    EM.set(e, ColliderDef, {
+      shape: "AABB",
+      solid: true,
+      aabb: res.ld54_meshes.cube.aabb,
+    });
+    // EM.set(e, PhysicsParentDef, props.parentId);
 
-      if (e.authority.pid === res.me.pid) {
-        vec3.copy(e.position, props.location); // TODO(@darzu): should be fine to have this outside loop
+    if (e.authority.pid === res.me.pid) {
+      vec3.copy(e.position, props.location); // TODO(@darzu): should be fine to have this outside loop
 
-        EM.set(e, LinearVelocityDef);
+      EM.set(e, LinearVelocityDef);
 
-        EM.set(e, SpaceSuitDef);
-        // e.controllable.modes.canFall = true;
-        // e.controllable.modes.canJump = true;
-        // e.controllable.modes.canFly = false;
-        // e.controllable.speed *= 2;
-        // e.controllable.sprintMul = 1;
+      EM.set(e, SpaceSuitDef);
+      // e.controllable.modes.canFall = true;
+      // e.controllable.modes.canJump = true;
+      // e.controllable.modes.canFly = false;
+      // e.controllable.speed *= 2;
+      // e.controllable.sprintMul = 1;
 
-        EM.set(e, CameraFollowDef, 1);
-        // quat.setAxisAngle([0.0, -1.0, 0.0], 1.62, e.rotation);
-        // vec3.copy(e.cameraFollow.positionOffset, [0.0, 4.0, 10.0]);
-        vec3.copy(e.cameraFollow.positionOffset, [0.0, 0.0, 10.0]);
-        // e.cameraFollow.yawOffset = 0.0;
-        // e.cameraFollow.pitchOffset = -0.593;
+      EM.set(e, CameraFollowDef, 1);
+      // quat.setAxisAngle([0.0, -1.0, 0.0], 1.62, e.rotation);
+      // vec3.copy(e.cameraFollow.positionOffset, [0.0, 4.0, 10.0]);
+      vec3.copy(e.cameraFollow.positionOffset, [0.0, 0.0, 10.0]);
+      // e.cameraFollow.yawOffset = 0.0;
+      // e.cameraFollow.pitchOffset = -0.593;
 
-        const playerRender = EM.new();
-        const riggedAstronaut = res.ld54_meshes.ld54_astronaut
-          .mesh as RiggedMesh;
-        EM.set(playerRender, RiggedRenderableConstructDef, riggedAstronaut);
-        EM.set(playerRender, PositionDef);
-        EM.set(playerRender, RotationDef);
-        EM.set(playerRender, PlayerRenderDef, e);
-        EM.set(playerRender, PoseDef, riggedAstronaut.rigging);
-        repeatPoses(playerRender, [0, 2000], [0, 1000], [1, 2000], [1, 1000]);
-        // demo mode?
-        /*
+      const playerRender = EM.new();
+      const riggedAstronaut = res.ld54_meshes.ld54_astronaut.mesh as RiggedMesh;
+      EM.set(playerRender, RiggedRenderableConstructDef, riggedAstronaut);
+      EM.set(playerRender, PositionDef);
+      EM.set(playerRender, RotationDef);
+      EM.set(playerRender, PlayerRenderDef, e);
+      EM.set(playerRender, PoseDef, riggedAstronaut.rigging);
+      repeatPoses(playerRender, [0, 2000], [0, 1000], [1, 2000], [1, 1000]);
+      // demo mode?
+      /*
         playerRender.pose.repeat = [
           { pose: 0, t: 1000 },
           { pose: 1, t: 1000 },
@@ -170,12 +174,12 @@ const { PlayerLocalDef, PlayerPropsDef, createPlayer, createPlayerNow } =
           { pose: 6, t: 1000 },
           ];
           */
-        console.log(`player has .controllable`);
-      }
+      console.log(`player has .controllable`);
+    }
 
-      return e;
-    },
-  });
+    return e;
+  },
+});
 
 const { RaftPropsDef, createRaft } = defineNetEntityHelper({
   name: "raft",
@@ -358,5 +362,9 @@ export async function initLD54() {
   // player
   const color = AllEndesga16[me.pid + 4 /*skip browns*/];
   // TODO(@darzu): parent to raft.id ?
-  createPlayer(V(0, 10, 0), color);
+  const player = createPlayerNow({ ld54_meshes, me }, V(0, 10, 0), color);
+
+  // start pos?
+  vec3.copy(player.position, [12.15, 22.03, -14.57]);
+  quat.copy(player.rotation, [0.01, -0.96, -0.21, 0.16]);
 }
