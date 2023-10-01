@@ -60,8 +60,6 @@ EM.addEagerInit([PlayerRenderDef], [], [], () => {
           const slerpAmount = Math.min(1.0, maxRotationAngle / angle);
           quat.slerp(e.rotation, player.rotation, slerpAmount, e.rotation);
         }
-        // moving forward?
-        console.log(vec3Dbg(player.spaceSuit.localAccel));
         // want to trigger the relaxation to bind pose just once
         if (vec3.sqrLen(player.spaceSuit.localAccel) === 0) {
           if (e.playerRender.wasJustAccelerating) {
