@@ -1,5 +1,5 @@
 import { DBG_ASSERT } from "../flags.js";
-import { vec3, quat, mat3, vec3tmp } from "../matrix/sprig-matrix.js";
+import { vec3, quat, mat3, vec3tmp, V } from "../matrix/sprig-matrix.js";
 import { assert, range } from "./util.js";
 import { quatFromUpForward } from "./utils-3d.js";
 
@@ -332,4 +332,23 @@ export function getPathPosRot(
   const end = path[segIdx + 1];
   vec3.lerp(start.pos, end.pos, segT, outPos);
   quat.slerp(start.rot, end.rot, segT, outRot);
+}
+
+export function getRandomCylindricalPoints(
+  radius: number,
+  stepDistance: number,
+  numSteps: number
+) {
+  const points: vec3[] = [];
+
+  for (let i = 0; i < numSteps; i++) {
+    const radian = Math.random() * Math.PI * 2;
+    const x = Math.cos(radian) * radius;
+    const y = Math.sin(radian) * radius;
+    const z = i * stepDistance;
+    const pos = V(x, y, z);
+    points.push(pos);
+  }
+
+  return points;
 }

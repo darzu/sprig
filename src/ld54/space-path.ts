@@ -15,6 +15,7 @@ import {
   Path,
   bezierSplineFromPoints,
   createEvenPathFromBezierSpline,
+  getRandomCylindricalPoints,
 } from "../utils/spline.js";
 import { appendBoard } from "../wood/shipyard.js";
 
@@ -26,17 +27,19 @@ export const SpacePathDef = EM.defineNonupdatableComponent(
 );
 
 export function createSpacePath() {
-  const points: vec3[] = [
-    V(0, -24, -30),
-    V(30, -16, 0),
-    V(0, -8, 30),
-    V(-30, 0, 0),
-    V(0, 8, -30),
-    V(30, 16, 0),
-    V(0, 24, 30),
-    V(-30, 32, 0),
-    // TODO(@darzu):
-  ];
+  // const points: vec3[] = [
+  //   V(0, -24, -30),
+  //   V(30, -16, 0),
+  //   V(0, -8, 30),
+  //   V(-30, 0, 0),
+  //   V(0, 8, -30),
+  //   V(30, 16, 0),
+  //   V(0, 24, 30),
+  //   V(-30, 32, 0),
+  //   // TODO(@darzu):
+  // ];
+
+  const points = getRandomCylindricalPoints(50, 50, 16);
 
   // let numSeg = 20;
   const meshes: Mesh[] = [];
@@ -51,7 +54,7 @@ export function createSpacePath() {
     meshes.push(seg);
   }
 
-  const spline = bezierSplineFromPoints(points, 10);
+  const spline = bezierSplineFromPoints(points, 20);
   const path = createEvenPathFromBezierSpline(spline, 5, [0, 1, 0]);
 
   // const pathMesh = createEmptyMesh("pathMesh") as Mesh;

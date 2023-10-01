@@ -279,7 +279,7 @@ export async function initLD54() {
 
   // camera
   camera.fov = Math.PI * 0.5;
-  camera.viewDist = 100;
+  camera.viewDist = 1000;
   vec3.set(-20, -20, -20, camera.maxWorldAABB.min);
   vec3.set(+20, +20, +20, camera.maxWorldAABB.max);
   // camera.perspectiveMode = "ortho";
