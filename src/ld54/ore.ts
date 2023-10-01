@@ -11,6 +11,7 @@ import {
   transformMesh,
 } from "../meshes/mesh.js";
 import { HEX_MESH, TETRA_MESH, mkCubeMesh } from "../meshes/primatives.js";
+import { AngularVelocityDef } from "../motion/velocity.js";
 import { PositionDef } from "../physics/transform.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { randFloat, randInt } from "../utils/math.js";
@@ -101,6 +102,10 @@ export function createFuelOre(pos: vec3) {
   const mesh = createFuelOreMesh();
   EM.set(ore, RenderableConstructDef, mesh);
   EM.set(ore, PositionDef, pos);
+  EM.set(ore, AngularVelocityDef);
+  randNormalVec3(ore.angularVelocity);
+  vec3.scale(ore.angularVelocity, 0.0005, ore.angularVelocity);
+
   return ore;
 }
 
@@ -109,6 +114,10 @@ export function createOxygenOre(mkBallMesh: () => Mesh, pos: vec3) {
   const mesh = createOxygenOreMesh(mkBallMesh);
   EM.set(ore, RenderableConstructDef, mesh);
   EM.set(ore, PositionDef, pos);
+  EM.set(ore, AngularVelocityDef);
+  randNormalVec3(ore.angularVelocity);
+  vec3.scale(ore.angularVelocity, 0.0005, ore.angularVelocity);
+
   return ore;
 }
 
