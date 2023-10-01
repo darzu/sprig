@@ -46,6 +46,7 @@ import { SpaceSuitDef } from "./space-suit-controller.js";
 import { PlayerRenderDef } from "./player-render.js";
 import { RiggedMesh } from "../meshes/mesh.js";
 import { stdRiggedRenderPipeline } from "../render/pipelines/std-rigged.js";
+import { PoseDef } from "../animation/skeletal.js";
 
 const RENDER_TRUTH_CUBE = false;
 
@@ -154,6 +155,11 @@ const { PlayerLocalDef, PlayerPropsDef, createPlayer, createPlayerNow } =
         EM.set(playerRender, PositionDef);
         EM.set(playerRender, RotationDef);
         EM.set(playerRender, PlayerRenderDef, e);
+        EM.set(playerRender, PoseDef, 0);
+        playerRender.pose.repeat = [
+          { pose: 0, t: 500 },
+          { pose: 1, t: 500 },
+        ];
 
         console.log(`player has .controllable`);
       }

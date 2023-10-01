@@ -14,7 +14,7 @@ export const PlayerRenderDef = EM.defineNonupdatableComponent(
       ? createRef(follow)
       : createRef(0, [PositionDef, RotationDef]),
     // radians per millisecond we're willing to rotate
-    maxRotationAnglePerMs: Math.PI / 1000,
+    maxRotationAnglePerMs: 0, // Math.PI / 1000,
   })
 );
 
