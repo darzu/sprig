@@ -46,7 +46,7 @@ import { SpaceSuitDef } from "./space-suit-controller.js";
 import { PlayerRenderDef } from "./player-render.js";
 import { RiggedMesh } from "../meshes/mesh.js";
 import { stdRiggedRenderPipeline } from "../render/pipelines/std-rigged.js";
-import { PoseDef } from "../animation/skeletal.js";
+import { PoseDef, repeatPoses } from "../animation/skeletal.js";
 
 const RENDER_TRUTH_CUBE = false;
 
@@ -147,20 +147,26 @@ const { PlayerLocalDef, PlayerPropsDef, createPlayer, createPlayerNow } =
         // e.cameraFollow.pitchOffset = -0.593;
 
         const playerRender = EM.new();
-        EM.set(
-          playerRender,
-          RiggedRenderableConstructDef,
-          res.ld54_meshes.ld54_astronaut.mesh as RiggedMesh
-        );
+        const riggedAstronaut = res.ld54_meshes.ld54_astronaut
+          .mesh as RiggedMesh;
+        EM.set(playerRender, RiggedRenderableConstructDef, riggedAstronaut);
         EM.set(playerRender, PositionDef);
         EM.set(playerRender, RotationDef);
         EM.set(playerRender, PlayerRenderDef, e);
-        EM.set(playerRender, PoseDef, 0);
+        EM.set(playerRender, PoseDef, riggedAstronaut.rigging);
+        repeatPoses(playerRender, [0, 2000], [0, 1000], [1, 2000], [1, 1000]);
+        // demo mode?
+        /*
         playerRender.pose.repeat = [
-          { pose: 0, t: 500 },
-          { pose: 1, t: 500 },
-        ];
-
+          { pose: 0, t: 1000 },
+          { pose: 1, t: 1000 },
+          { pose: 2, t: 1000 },
+          { pose: 3, t: 1000 },
+          { pose: 4, t: 1000 },
+          { pose: 5, t: 1000 },
+          { pose: 6, t: 1000 },
+          ];
+          */
         console.log(`player has .controllable`);
       }
 
