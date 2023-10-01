@@ -25,6 +25,7 @@ import {
   RenderableConstructDef,
   RenderableDef,
   RendererDef,
+  RiggedRenderableConstructDef,
 } from "../render/renderer-ecs.js";
 import { PointLightDef } from "../render/lights.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
@@ -43,6 +44,8 @@ import { noisePipes } from "../render/pipelines/std-noise.js";
 import { blurPipelines } from "../render/pipelines/std-blur.js";
 import { SpaceSuitDef } from "./space-suit-controller.js";
 import { PlayerRenderDef } from "./player-render.js";
+import { RiggedMesh } from "../meshes/mesh.js";
+import { stdRiggedRenderPipeline } from "../render/pipelines/std-rigged.js";
 
 const RENDER_TRUTH_CUBE = false;
 
@@ -145,8 +148,8 @@ const { PlayerLocalDef, PlayerPropsDef, createPlayer, createPlayerNow } =
         const playerRender = EM.new();
         EM.set(
           playerRender,
-          RenderableConstructDef,
-          res.ld54_meshes.ld54_astronaut.mesh
+          RiggedRenderableConstructDef,
+          res.ld54_meshes.ld54_astronaut.mesh as RiggedMesh
         );
         EM.set(playerRender, PositionDef);
         EM.set(playerRender, RotationDef);
@@ -241,6 +244,7 @@ export async function initLD54() {
       ...shadowPipelines,
       // skyPipeline,
       stdRenderPipeline,
+      stdRiggedRenderPipeline,
       // renderGrassPipe,
       // renderOceanPipe,
       outlineRender,

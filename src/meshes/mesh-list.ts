@@ -475,7 +475,7 @@ export const RudderPrimMesh = XY.registerMesh({
 
 export const LD54AstronautMesh = XY.registerMesh({
   name: "ld54_astronaut",
-  data: "ld54-astronaut.glb",
+  data: "ld54-space-knight.glb",
 });
 
 // TODO(@darzu): remove eventually?
