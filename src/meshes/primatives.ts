@@ -38,7 +38,7 @@ export const CUBE_FACES = {
   bottom: [8, 9],
   back: [10, 11],
 };
-export const CUBE_MESH: RawMesh = {
+export const mkCubeMesh: () => RawMesh = () => ({
   dbgName: "cube",
   pos: [
     V(+1.0, +1.0, +1.0),
@@ -75,29 +75,20 @@ export const CUBE_MESH: RawMesh = {
   quad: [],
   lines: [
     // top
-    vec2.clone(
-      // top
-      [0, 1]
-    ),
-    vec2.clone([1, 2]),
-    vec2.clone([2, 3]),
-    vec2.clone([3, 0]),
+    V(0, 1),
+    V(1, 2),
+    V(2, 3),
+    V(3, 0),
     // bottom
-    vec2.clone(
-      // bottom
-      [4, 5]
-    ),
-    vec2.clone([5, 6]),
-    vec2.clone([6, 7]),
-    vec2.clone([7, 4]),
+    V(4, 5),
+    V(5, 6),
+    V(6, 7),
+    V(7, 4),
     // connectors
-    vec2.clone(
-      // connectors
-      [0, 4]
-    ),
-    vec2.clone([1, 5]),
-    vec2.clone([2, 6]),
-    vec2.clone([3, 7]),
+    V(0, 4),
+    V(1, 5),
+    V(2, 6),
+    V(3, 7),
   ],
   colors: [
     V(0, 0, 0),
@@ -113,7 +104,7 @@ export const CUBE_MESH: RawMesh = {
     V(0, 0, 0),
     V(0, 0, 0),
   ],
-};
+});
 
 export const TETRA_MESH: RawMesh = {
   pos: [V(0, 1, 0), V(-1, 0, -1), V(1, 0, -1), V(0, 0, 1)],
@@ -653,10 +644,10 @@ export const SHIP_SMALL_AABBS: AABB[] = [
 // const shipMaxX = min(SHIP_AABBS.map((a) => a.max[0]));
 // console.log(`${(shipMaxX + shipMinX) / 2}`);
 
-export const RAFT_MESH = cloneMesh(CUBE_MESH);
+export const RAFT_MESH = mkCubeMesh();
 scaleMesh3(RAFT_MESH, V(10, 0.6, 5));
 
-export const BULLET_MESH = cloneMesh(CUBE_MESH);
+export const BULLET_MESH = mkCubeMesh();
 scaleMesh(BULLET_MESH, 0.3);
 
 export function makeDome(numLon: number, numLat: number, r: number): Mesh {

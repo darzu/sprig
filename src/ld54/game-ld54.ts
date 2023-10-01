@@ -50,6 +50,7 @@ import { PoseDef, repeatPoses } from "../animation/skeletal.js";
 import { createSpacePath } from "./space-path.js";
 import { getPathPosRot } from "../utils/spline.js";
 import { PartyDef } from "../camera/party.js";
+import { initOre } from "./ore.js";
 
 const RENDER_TRUTH_CUBE = false;
 
@@ -317,6 +318,9 @@ export async function initLD54() {
   // space path
   const spacePath = createSpacePath();
   const numPathSeg = spacePath.spacePath.path.length - 1;
+
+  // ore
+  initOre(spacePath.spacePath.path);
 
   // raft
   if (me.host) {

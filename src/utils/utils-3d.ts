@@ -22,10 +22,15 @@ export function computeTriangleNormal(
   return n;
 }
 
-export function randNormalVec3(out: vec3) {
-  vec3.set(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5, out);
-  vec3.normalize(out, out);
-  return out;
+export function randNormalVec3(out?: vec3) {
+  const res = vec3.set(
+    Math.random() - 0.5,
+    Math.random() - 0.5,
+    Math.random() - 0.5,
+    out ?? vec3.tmp()
+  );
+  vec3.normalize(res, res);
+  return res;
 }
 
 export function randNormalPosVec3(out?: vec3) {
@@ -39,6 +44,15 @@ export function randNormalVec2(out: vec2) {
   vec2.set(Math.random() - 0.5, Math.random() - 0.5, out);
   vec2.normalize(out, out);
   return out;
+}
+
+export function randQuat(out?: quat): quat {
+  return quat.fromEuler(
+    Math.random() * Math.PI * 2,
+    Math.random() * Math.PI * 2,
+    Math.random() * Math.PI * 2,
+    out ?? quat.tmp()
+  );
 }
 
 // matrix utilities
