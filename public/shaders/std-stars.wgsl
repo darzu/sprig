@@ -34,14 +34,17 @@ struct VertexOutput {
       scene.cameraViewProjMatrix[2][1]
     ));
 
-    // TODO(@darzu): use starBoxSize
-    // TODO(@darzu): use scene.partyPos
-    // let hyperspeedFactor = 10.0; // 1.0 = none, 2.0 = ea 1.0 ship forward stars go backward 1.0
     let hyperspeedFactor = 1.0; 
     var wrappedPos = (
-      fract(star.pos - scene.partyPos * hyperspeedFactor / starBoxSize)
+      fract(star.pos - scene.cameraPos * hyperspeedFactor / starBoxSize)
       - 0.5 
-      ) * starBoxSize + scene.partyPos;
+      ) * starBoxSize + scene.cameraPos;
+
+    // let hyperspeedFactor = 10.0; // 1.0 = none, 2.0 = ea 1.0 ship forward stars go backward 1.0
+    // var wrappedPos = (
+    //   fract(star.pos - scene.partyPos * hyperspeedFactor / starBoxSize)
+    //   - 0.5 
+    //   ) * starBoxSize + scene.partyPos;
 
     let worldPos = wrappedPos
       + right * corner.x
