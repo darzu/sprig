@@ -12,12 +12,20 @@ import { PositionDef, ScaleDef } from "../physics/transform.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import {
   BezierCubic,
+  Path,
   bezierSplineFromPoints,
   createEvenPathFromBezierSpline,
 } from "../utils/spline.js";
 import { appendBoard } from "../wood/shipyard.js";
 
-export function initSpacePath() {
+export const SpacePathDef = EM.defineNonupdatableComponent(
+  "spacePath",
+  (path: Path) => ({
+    path,
+  })
+);
+
+export function createSpacePath() {
   const points: vec3[] = [
     V(0, -24, -30),
     V(30, -16, 0),
@@ -80,4 +88,7 @@ export function initSpacePath() {
   const ent = EM.new();
   EM.set(ent, RenderableConstructDef, pathMesh);
   EM.set(ent, PositionDef);
+  EM.set(ent, SpacePathDef, path);
+
+  return ent;
 }

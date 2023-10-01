@@ -1,5 +1,5 @@
 import { DBG_ASSERT } from "../flags.js";
-import { vec3, quat, mat3 } from "../matrix/sprig-matrix.js";
+import { vec3, quat, mat3, vec3tmp } from "../matrix/sprig-matrix.js";
 import { assert, range } from "./util.js";
 import { quatFromUpForward } from "./utils-3d.js";
 
@@ -316,4 +316,15 @@ export function createEvenPathFromBezierSpline(
   const path = paths.reduce((p, n) => [...p, ...n], [] as Path);
 
   return path;
+}
+
+// assumes each segment is 1 integer of t
+export function positionOnPath(path: Path, t: number): vec3tmp {
+  const segIdx = Math.floor(t);
+  const segT = t % 1;
+  assert(segIdx < path.length - 1);
+  const start = path[segIdx];
+  const end = path[segIdx + 1];
+  const pos = vec3.lerp(start.pos, end.pos, segT);
+  return pos;
 }

@@ -47,9 +47,10 @@ import { PlayerRenderDef } from "./player-render.js";
 import { RiggedMesh } from "../meshes/mesh.js";
 import { stdRiggedRenderPipeline } from "../render/pipelines/std-rigged.js";
 import { PoseDef, repeatPoses } from "../animation/skeletal.js";
+import { createSpacePath } from "./space-path.js";
+import { positionOnPath } from "../utils/spline.js";
 
 const RENDER_TRUTH_CUBE = false;
-import { initSpacePath } from "./space-path.js";
 
 const ld54Meshes = XY.defineMeshSetResource(
   "ld54_meshes",
@@ -309,7 +310,8 @@ export async function initLD54() {
   EM.set(gizmo, ScaleDef, V(2, 2, 2));
 
   // space path
-  initSpacePath();
+  const spacePath = createSpacePath();
+  const numPathSeg = spacePath.spacePath.path.length - 1;
 
   // raft
   if (me.host) {
@@ -322,15 +324,22 @@ export async function initLD54() {
       [TimeDef],
       (es, res) => {
         if (es.length !== 1) return;
-        const platform = es[0];
+        const raft = es[0];
 
-        const t = res.time.time * 0.001;
-        const r = 20;
-        const x = Math.cos(t) * r;
-        const y = Math.sin(t) * r;
-        platform.position[0] = y;
-        platform.position[2] = x;
-        quat.fromEuler(0, t, 0, platform.rotation);
+        const seconds = res.time.time * 0.001;
+        const t = seconds % numPathSeg;
+
+        const pos = positionOnPath(spacePath.spacePath.path, t);
+
+        vec3.copy(raft.position, pos);
+
+        // const t = res.time.time * 0.001;
+        // const r = 20;
+        // const x = Math.cos(t) * r;
+        // const y = Math.sin(t) * r;
+        // raft.position[0] = y;
+        // raft.position[2] = x;
+        // quat.fromEuler(0, t, 0, raft.rotation);
       }
     );
   }
