@@ -140,13 +140,15 @@ const __tempSamples = range(_numSamples).map((i) => vec3.create());
 export function createEvenPathFromBezierCurve(
   b: BezierCubic,
   spacing: number,
-  up: vec3.InputT
+  up: vec3.InputT,
+  lead?: number,
+  passRemainder?: { remainder: number } // TODO(@darzu): HACK. using a box for an out param.... shame.
 ): Path {
   const path: Path = [];
   const samples = range(_numSamples).map((i) =>
     bezierPosition(b, i / (_numSamples - 1), __tempSamples[i])
   );
-  const distances: number[] = [];
+  const distances: number[] = []; // cumulative distance between samples
   let prevPos = samples[0];
   let lastDist = 0;
   for (let i = 0; i < samples.length; i++) {
@@ -156,12 +158,28 @@ export function createEvenPathFromBezierCurve(
     lastDist = dist;
     distances.push(dist);
   }
+
+  if (lead && lead > 0) {
+    const newStartIdx = distances.findIndex((d) => d > lead);
+    const removeDist = distances[newStartIdx];
+    const numRemove = newStartIdx + 1 /*make it a length*/ - 1; /*one before*/
+    assert(numRemove > 0);
+    distances.splice(0, numRemove);
+    distances.forEach((_, i) => {
+      distances[i] -= removeDist;
+    });
+    assert(distances[0] === 0);
+  }
+
   // console.log("distances");
   // console.dir(distances);
   let totalDistance = distances[distances.length - 1];
   // TODO(@darzu): instead of floor, maybe ceil
   // let numSeg = Math.floor(totalDistance / spacing);
-  let numSeg = Math.ceil(totalDistance / spacing);
+  let numSeg: number;
+  if (passRemainder) numSeg = Math.floor(totalDistance / spacing);
+  else numSeg = Math.ceil(totalDistance / spacing);
+
   let prevJ = 0;
   for (let i = 0; i < numSeg; i++) {
     const toTravel = i * spacing;
@@ -193,18 +211,24 @@ export function createEvenPathFromBezierCurve(
       prevPrevDist = prevDist;
       prevDist = nextDist;
     }
+    // TODO(@darzu): make last-add optional
     if (!didAdd) {
-      const span = prevDist - prevPrevDist;
+      // console.log(`!didAdd`);
       const extra = toTravel - prevDist;
-      const extraSteps = extra / span;
-      const lastSample = samples[samples.length - 1];
-      const lastSample2 = samples[samples.length - 2];
-      const dir = vec3.sub(lastSample, lastSample2, vec3.create());
-      vec3.normalize(dir, dir);
-      vec3.scale(dir, extraSteps, dir);
-      const pos = vec3.add(lastSample, dir, dir);
-      const rot = quat.clone(path[path.length - 1].rot);
-      path.push({ pos, rot });
+      if (passRemainder) {
+        passRemainder.remainder = extra;
+      } else {
+        const span = prevDist - prevPrevDist;
+        const extraSteps = extra / span;
+        const lastSample = samples[samples.length - 1];
+        const lastSample2 = samples[samples.length - 2];
+        const dir = vec3.sub(lastSample, lastSample2, vec3.create());
+        vec3.normalize(dir, dir);
+        vec3.scale(dir, extraSteps, dir);
+        const pos = vec3.add(lastSample, dir, dir);
+        const rot = quat.clone(path[path.length - 1].rot);
+        path.push({ pos, rot });
+      }
     }
   }
   //  = samples.reduce((p, n, i) =>
@@ -271,9 +295,23 @@ export function createEvenPathFromBezierSpline(
   spacing: number,
   up: vec3.InputT
 ): Path {
-  const paths = spline.curves.map((c) =>
-    createEvenPathFromBezierCurve(c, spacing, up)
-  );
+  const paths: Path[] = [];
+  let prevRemainder = 0;
+  spline.curves.forEach((c, i) => {
+    const nextRemainder = { remainder: 0 };
+    const newPath = createEvenPathFromBezierCurve(
+      c,
+      spacing,
+      up,
+      prevRemainder,
+      nextRemainder
+    );
+    // console.log(
+    //   `prev remainder: ${prevRemainder}, next: ${nextRemainder.remainder}`
+    // );
+    prevRemainder = nextRemainder.remainder;
+    paths.push(newPath);
+  });
 
   const path = paths.reduce((p, n) => [...p, ...n], [] as Path);
 
