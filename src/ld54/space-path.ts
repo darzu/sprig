@@ -26,6 +26,8 @@ export const SpacePathDef = EM.defineNonupdatableComponent(
   })
 );
 
+const DEBUG_PATH_POINTS = false;
+
 export function createSpacePath() {
   // const points: vec3[] = [
   //   V(0, -24, -30),
@@ -44,14 +46,16 @@ export function createSpacePath() {
   // let numSeg = 20;
   const meshes: Mesh[] = [];
 
-  for (let i = 1; i < points.length; i++) {
-    const prevPoint = points[i - 1];
-    const thisPoint = points[i];
-    const seg = createLineMesh(0.1, prevPoint, thisPoint);
-    seg.colors.forEach((c) => {
-      c[0] = 1;
-    });
-    meshes.push(seg);
+  if (DEBUG_PATH_POINTS) {
+    for (let i = 1; i < points.length; i++) {
+      const prevPoint = points[i - 1];
+      const thisPoint = points[i];
+      const seg = createLineMesh(0.1, prevPoint, thisPoint);
+      seg.colors.forEach((c) => {
+        c[0] = 1;
+      });
+      meshes.push(seg);
+    }
   }
 
   const spline = bezierSplineFromPoints(points, 20);
@@ -71,11 +75,14 @@ export function createSpacePath() {
   // );
 
   for (let i = 1; i < path.length; i++) {
+    if (i % 2 !== 0) continue;
+
     const prevPoint = path[i - 1].pos;
     const thisPoint = path[i].pos;
     const seg = createLineMesh(1.0, prevPoint, thisPoint);
     seg.colors.forEach((c) => {
-      vec3.copy(c, AllEndesga16[i % AllEndesga16.length]);
+      // vec3.copy(c, AllEndesga16[i % AllEndesga16.length]);
+      vec3.copy(c, ENDESGA16.yellow);
     });
     meshes.push(seg);
   }
