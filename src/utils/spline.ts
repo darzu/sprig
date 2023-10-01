@@ -238,13 +238,17 @@ export function bezierSplineFromPoints(
     const start = points[i + 0];
     const end = points[i + 1];
     const next = points[i + 2];
-    const fromPrev = vec3.normalize(vec3.sub(start, prev));
+
+    // const fromPrev = vec3.normalize(vec3.sub(start, prev));
+    const fromPrev = vec3.normalize(vec3.sub(end, prev));
     const startCont = vec3.add(
       start,
       vec3.scale(fromPrev, smoothness),
       vec3.create()
     );
-    const toNext = vec3.normalize(vec3.sub(end, next));
+
+    // const toNext = vec3.normalize(vec3.sub(end, next));
+    const toNext = vec3.normalize(vec3.sub(start, next));
     const endCont = vec3.add(
       end,
       vec3.scale(toNext, smoothness),
