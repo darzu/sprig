@@ -49,6 +49,7 @@ import { stdRiggedRenderPipeline } from "../render/pipelines/std-rigged.js";
 import { PoseDef, repeatPoses } from "../animation/skeletal.js";
 import { createSpacePath } from "./space-path.js";
 import { getPathPosRot } from "../utils/spline.js";
+import { PartyDef } from "../camera/party.js";
 
 const RENDER_TRUTH_CUBE = false;
 
@@ -317,17 +318,19 @@ export async function initLD54() {
   if (me.host) {
     createRaft();
 
+    const raftSpeed_segPerSecond = 1;
+
     EM.addSystem(
       "movePlatform",
       Phase.GAME_WORLD,
       [RaftPropsDef, PositionDef, RotationDef],
-      [TimeDef],
+      [TimeDef, PartyDef],
       (es, res) => {
         if (es.length !== 1) return;
         const raft = es[0];
 
         const seconds = res.time.time * 0.001;
-        const t = seconds % numPathSeg;
+        const t = (seconds * raftSpeed_segPerSecond) % numPathSeg;
 
         getPathPosRot(
           spacePath.spacePath.path,
@@ -344,6 +347,8 @@ export async function initLD54() {
         // raft.position[0] = y;
         // raft.position[2] = x;
         // quat.fromEuler(0, t, 0, raft.rotation);
+
+        vec3.copy(res.party.pos, raft.position);
       }
     );
   }
