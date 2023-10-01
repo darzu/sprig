@@ -10,7 +10,6 @@ import { Bullet, BulletDef, fireBullet } from "../cannons/bullet.js";
 import { GravityDef } from "../motion/gravity.js";
 import { LifetimeDef } from "../ecs/lifetime.js";
 import { PartyDef } from "../camera/party.js";
-import { Path } from "../wood/shipyard.js";
 import { jitter } from "../utils/math.js";
 import {
   AABB,

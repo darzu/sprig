@@ -49,6 +49,7 @@ import { stdRiggedRenderPipeline } from "../render/pipelines/std-rigged.js";
 import { PoseDef, repeatPoses } from "../animation/skeletal.js";
 
 const RENDER_TRUTH_CUBE = false;
+import { initSpacePath } from "./space-path.js";
 
 const ld54Meshes = XY.defineMeshSetResource(
   "ld54_meshes",
@@ -306,6 +307,9 @@ export async function initLD54() {
   EM.set(gizmo, RenderableConstructDef, gizmoMesh);
   EM.set(gizmo, PositionDef, V(0, 1, 0));
   EM.set(gizmo, ScaleDef, V(2, 2, 2));
+
+  // space path
+  initSpacePath();
 
   // raft
   if (me.host) {
