@@ -30,6 +30,8 @@ import { WidgetDef, WidgetLayerDef } from "./widgets.js";
 import { meshPoolPtr } from "../render/pipelines/std-scene.js";
 import { Phase } from "../ecs/sys-phase.js";
 
+// TODO(@darzu): consolidate with spline.ts
+
 const HLineDef = EM.defineNonupdatableComponent("hline", (hl: HLine) => ({
   hl,
 }));

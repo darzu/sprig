@@ -58,7 +58,7 @@ import {
   Path,
   PathNode,
   clonePath,
-  createEvenPathFromBezier,
+  createEvenPathFromBezierCurve,
   createPathFromBezier,
   mirrorPath,
   reverseBezier,
@@ -517,7 +517,7 @@ export function createHomeShip(): HomeShip {
     let ribIdx = 0;
     for (let curve of ribCurves) {
       let topToBottomCurve = reverseBezier(curve);
-      const even = createEvenPathFromBezier(
+      const even = createEvenPathFromBezierCurve(
         topToBottomCurve,
         plankWidth * 2.0, // * 0.95,
         [1, 0, 0]

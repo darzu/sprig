@@ -137,7 +137,7 @@ export function createPathFromBezier(
 }
 const _numSamples = 100;
 const __tempSamples = range(_numSamples).map((i) => vec3.create());
-export function createEvenPathFromBezier(
+export function createEvenPathFromBezierCurve(
   b: BezierCubic,
   spacing: number,
   up: vec3.InputT
@@ -209,6 +209,69 @@ export function createEvenPathFromBezier(
   }
   //  = samples.reduce((p, n, i) =>
   // while (true) {}
+
+  return path;
+}
+
+/* spline stuff:
+n-degree bezier curve: 
+  no local control (ea point affects whole curve)
+  doesn't pass through points
+  expensive to calc many points
+bezier spline:
+  control points r just some distance along tangent
+  made of cube bezier curves
+*/
+
+export interface BezierSpline {
+  curves: BezierCubic[];
+}
+
+export function bezierSplineFromPoints(
+  points: vec3[],
+  smoothness: number
+): BezierSpline {
+  const curves: BezierCubic[] = [];
+
+  for (let i = 1; i < points.length - 2; i++) {
+    const prev = points[i - 1];
+    const start = points[i + 0];
+    const end = points[i + 1];
+    const next = points[i + 2];
+    const fromPrev = vec3.normalize(vec3.sub(start, prev));
+    const startCont = vec3.add(
+      start,
+      vec3.scale(fromPrev, smoothness),
+      vec3.create()
+    );
+    const toNext = vec3.normalize(vec3.sub(end, next));
+    const endCont = vec3.add(
+      end,
+      vec3.scale(toNext, smoothness),
+      vec3.create()
+    );
+    // TODO(@darzu): Ideally the control points would be mirrored for c1 continuity
+    curves.push({
+      p0: start,
+      p1: startCont,
+      p2: endCont,
+      p3: end,
+    });
+  }
+
+  return { curves };
+}
+
+export function createEvenPathFromBezierSpline(
+  spline: BezierSpline,
+  spacing: number,
+  up: vec3.InputT
+): Path {
+  const paths = spline.curves.map((c) =>
+    createEvenPathFromBezierCurve(c, spacing, up)
+  );
+
+  const path = paths.reduce((p, n) => [...p, ...n], [] as Path);
 
   return path;
 }
