@@ -20,6 +20,7 @@ struct VertexOutput {
 
 struct FragOut {
   @location(0) color : vec4<f32>,
+  @location(1) emissive : vec4<f32>,
 }
 
 @fragment fn frag_main(input : VertexOutput) ->FragOut {
@@ -39,7 +40,8 @@ struct FragOut {
   let fresnelIntensity = f0 + (1.0 - f0) * pow(1.0 - cameraAng, 7.0);
 
   // ENDESGA16 light blue
-  let color = vec3<f32>(0.021, 0.081, 0.908);
+  let color = vec3<f32>(0.02, 0.81, 0.91);
   out.color = vec4<f32>(color * noise, fresnelIntensity * 0.7);
+  out.emissive = vec4<f32>(color * noise, fresnelIntensity * 0.7);
   return out;
 }

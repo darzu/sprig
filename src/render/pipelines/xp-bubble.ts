@@ -11,6 +11,7 @@ import {
   mainDepthTex,
   unlitTexturePtr,
 } from "./std-scene.js";
+import { emissionTexturePtr } from "./std-stars.js";
 
 export const bubblePipeline = CY.createRenderPipeline("bubblePipeline", {
   globals: [
@@ -32,6 +33,23 @@ export const bubblePipeline = CY.createRenderPipeline("bubblePipeline", {
       ptr: unlitTexturePtr,
       // TODO(@darzu): clear never? since we should be writting to the whole tex?
       clear: "never",
+      blend: {
+        color: {
+          srcFactor: "src-alpha",
+          dstFactor: "one-minus-src-alpha",
+          operation: "add",
+        },
+        alpha: {
+          srcFactor: "constant",
+          dstFactor: "zero",
+          operation: "add",
+        },
+      },
+    },
+    {
+      ptr: emissionTexturePtr,
+      // TODO(@darzu): clear never? since we should be writting to the whole tex?
+      clear: "once",
       blend: {
         color: {
           srcFactor: "src-alpha",
