@@ -12,7 +12,7 @@ export const SpaceSuitDef = EM.defineComponent("spaceSuit", () => ({
   turnSpeed: 0.001,
   rollSpeed: 0.01,
   doDampen: true,
-  localAccel: vec3.zero(),
+  localAccel: vec3.create(),
 }));
 
 EM.addEagerInit([SpaceSuitDef], [], [], () => {
