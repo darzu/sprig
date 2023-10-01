@@ -319,12 +319,17 @@ export function createEvenPathFromBezierSpline(
 }
 
 // assumes each segment is 1 integer of t
-export function positionOnPath(path: Path, t: number): vec3tmp {
+export function getPathPosRot(
+  path: Path,
+  t: number,
+  outPos: vec3,
+  outRot: quat
+) {
   const segIdx = Math.floor(t);
   const segT = t % 1;
   assert(segIdx < path.length - 1);
   const start = path[segIdx];
   const end = path[segIdx + 1];
-  const pos = vec3.lerp(start.pos, end.pos, segT);
-  return pos;
+  vec3.lerp(start.pos, end.pos, segT, outPos);
+  quat.slerp(start.rot, end.rot, segT, outRot);
 }

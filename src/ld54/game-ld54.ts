@@ -48,7 +48,7 @@ import { RiggedMesh } from "../meshes/mesh.js";
 import { stdRiggedRenderPipeline } from "../render/pipelines/std-rigged.js";
 import { PoseDef, repeatPoses } from "../animation/skeletal.js";
 import { createSpacePath } from "./space-path.js";
-import { positionOnPath } from "../utils/spline.js";
+import { getPathPosRot } from "../utils/spline.js";
 
 const RENDER_TRUTH_CUBE = false;
 
@@ -264,7 +264,7 @@ export async function initLD54() {
       outlineRender,
       deferredPipeline,
       renderStars,
-      // ...blurPipelines,
+      ...blurPipelines,
       // skyPipeline,
       postProcess,
     ];
@@ -329,9 +329,13 @@ export async function initLD54() {
         const seconds = res.time.time * 0.001;
         const t = seconds % numPathSeg;
 
-        const pos = positionOnPath(spacePath.spacePath.path, t);
-
-        vec3.copy(raft.position, pos);
+        getPathPosRot(
+          spacePath.spacePath.path,
+          t,
+          raft.position,
+          raft.rotation
+        );
+        quat.rotateY(raft.rotation, Math.PI / 2, raft.rotation);
 
         // const t = res.time.time * 0.001;
         // const r = 20;
