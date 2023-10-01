@@ -39,7 +39,7 @@ interface Gltf {
         NORMAL: number;
         JOINTS_0: number;
         WEIGHTS_0: number;
-        COLOR?: number;
+        COLOR_0?: number;
       };
       indices: number;
     }[];
@@ -245,7 +245,6 @@ export function importGltf(buf: ArrayBuffer): RawMesh | ParseError {
   if (mesh.primitives.length !== 1) {
     return `Found ${mesh.primitives.length} primitives in gltf mesh, expected 1`;
   }
-
   const posAccessor = gltf.accessors[mesh.primitives[0].attributes.POSITION];
   if (!isAccessorFor(posAccessor, "VEC3")) {
     return `Unexpected position type ${posAccessor.type}`;
@@ -279,18 +278,28 @@ export function importGltf(buf: ArrayBuffer): RawMesh | ParseError {
   }
 
   let colors: vec3[];
-  if (mesh.primitives[0].attributes.COLOR !== undefined) {
-    const colorAccessor = gltf.accessors[mesh.primitives[0].indices];
+  if (mesh.primitives[0].attributes.COLOR_0 !== undefined) {
+    //console.log("loading colors");
+    const colorAccessor = gltf.accessors[mesh.primitives[0].attributes.COLOR_0];
     // hack--we actually want vec3s even though these are listed as scalars
-    if (!isAccessorFor(colorAccessor, "VEC3")) {
+    if (!isAccessorFor(colorAccessor, "VEC4")) {
       return `Unexpected color type ${colorAccessor.type}`;
     }
     const maybeColors = readArray(gltf, buffers, colorAccessor);
     if (isParseError(maybeColors)) {
       return maybeColors;
     }
-    colors = maybeColors;
+    // console.log(
+    //   `got ${maybeColors.length} colors for ${tri.length} triangles and ${pos.length} pos`
+    // );
+    colors = [];
+    for (let i = 0; i < tri.length; i++) {
+      // just grab the color for the 0th vertex
+      const color = maybeColors[tri[i][0]];
+      colors.push(V(color[0] / 65535, color[1] / 65535, color[2] / 65535));
+    }
   } else {
+    //console.log("setting colors to default");
     colors = tri.map(() => V(0.1, 0.1, 0.1));
   }
 
