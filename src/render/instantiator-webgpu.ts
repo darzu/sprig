@@ -407,7 +407,6 @@ function createCyPipeline(
         `${vertexInputStruct}\n` +
         `${instanceInputStruct}\n` +
         `${shaderCore}\n`;
-
       // render pipeline
       const shader = device.createShaderModule({
         label: `${p.name}_shader`,
@@ -486,7 +485,6 @@ function createCyPipeline(
         `${uniVar}\n` +
         `${vertexInputStruct}\n` +
         `${shaderCore}\n`;
-
       // render pipeline
       const shader = device.createShaderModule({
         label: `${p.name}_shader`,
@@ -583,7 +581,6 @@ function createCyPipeline(
       `${shaderResStructs.join("\n")}\n` +
       `${shaderResVars.join("\n")}\n` +
       `${shaderCore}\n`;
-
     let compPipeline = device.createComputePipeline({
       label: `${p.name}_computePipeline`,
       layout: device.createPipelineLayout({

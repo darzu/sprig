@@ -22,9 +22,10 @@ export const ShaderPaths = [
   "std-grass",
   "std-sky",
   "std-deferred",
+  "xp-bubble",
 ] as const;
 
-export type ShaderName = (typeof ShaderPaths)[number];
+export type ShaderName = typeof ShaderPaths[number];
 
 export interface Shader {
   code: string;

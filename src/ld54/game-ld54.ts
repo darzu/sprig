@@ -50,6 +50,9 @@ import { PoseDef, repeatPoses } from "../animation/skeletal.js";
 import { createSpacePath } from "./space-path.js";
 import { getPathPosRot } from "../utils/spline.js";
 import { PartyDef } from "../camera/party.js";
+import { makeDome, makeSphere } from "../meshes/primatives.js";
+import { BUBBLE_MASK } from "../render/pipeline-masks.js";
+import { bubblePipeline } from "../render/pipelines/xp-bubble.js";
 
 const RENDER_TRUTH_CUBE = false;
 
@@ -264,6 +267,7 @@ export async function initLD54() {
       // skyPipeline,
       stdRenderPipeline,
       stdRiggedRenderPipeline,
+      bubblePipeline,
       // renderGrassPipe,
       // renderOceanPipe,
       outlineRender,
@@ -318,6 +322,21 @@ export async function initLD54() {
   const spacePath = createSpacePath();
   const numPathSeg = spacePath.spacePath.path.length - 1;
 
+  // bubble
+  const BUBBLE_HALFSIZE = 50;
+  const bubbleMesh = makeSphere(16, 8, BUBBLE_HALFSIZE);
+  console.log("bubbleMesh", bubbleMesh);
+  const bubble = EM.new();
+  EM.set(bubble, PositionDef, V(0, 10, 0));
+  EM.set(
+    bubble,
+    RenderableConstructDef,
+    bubbleMesh,
+    undefined,
+    undefined,
+    BUBBLE_MASK
+  );
+
   // raft
   if (me.host) {
     createRaft();
@@ -356,7 +375,6 @@ export async function initLD54() {
       }
     );
   }
-
   const raft = await EM.whenSingleEntity(RaftPropsDef, FinishedDef);
 
   // player
