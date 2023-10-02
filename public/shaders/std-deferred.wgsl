@@ -39,6 +39,10 @@ fn sampleShadowTexture(pos: vec2<f32>, depth: f32, index: u32) -> f32 {
 }
 
 fn getShadowVis(shadowPos: vec3<f32>, normal: vec3<f32>, lightDir: vec3<f32>, index: u32) -> f32 {
+  if (scene.highGraphics == 0u) {
+    return 1.0;
+  }
+
   // See: https://learnopengl.com/Advanced-Lighting/Shadows/Shadow-Mapping
   // Note: a better bias would look something like "max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);"
   let shadowBias = 0.0002;

@@ -373,6 +373,7 @@ export async function initLD54() {
           bubblePipeline,
           outlineRender,
           deferredPipeline,
+          renderStars,
           postProcess,
         ];
       }
