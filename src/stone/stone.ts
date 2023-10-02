@@ -51,7 +51,7 @@ import { XY } from "../meshes/mesh-loader.js";
 const GRAVITY = 6.0 * 0.00001;
 const MIN_BRICK_PERCENT = 0.6;
 
-interface Brick {
+export interface Brick {
   aabb: AABB;
   // index of first pos in the mesh
   index: number;
@@ -62,22 +62,12 @@ interface Brick {
   color: vec3;
 }
 
-interface TowerRow {
+export interface TowerRow {
   aabb: AABB;
   bricks: Array<Brick>;
   // excludes "shrunk" bricks--hacky
   totalBricks: number;
   bricksKnockedOut: number;
-}
-
-interface Tower {
-  cannon: Ref<[typeof PositionDef, typeof RotationDef, typeof WorldFrameDef]>;
-  lastFired: number;
-  fireRate: number;
-  projectileSpeed: number;
-  firingRadius: number;
-  alive: boolean;
-  stone: StoneState;
 }
 
 export interface StoneState {
@@ -96,6 +86,16 @@ function createEmptyStoneState(): StoneState {
     currentBricks: 0,
     aabb: createAABB(),
   };
+}
+
+interface Tower {
+  cannon: Ref<[typeof PositionDef, typeof RotationDef, typeof WorldFrameDef]>;
+  lastFired: number;
+  fireRate: number;
+  projectileSpeed: number;
+  firingRadius: number;
+  alive: boolean;
+  stone: StoneState;
 }
 
 export const StoneTowerDef = EM.defineNonupdatableComponent(
