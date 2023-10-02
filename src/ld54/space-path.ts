@@ -8,8 +8,11 @@ import {
   Mesh,
   validateMesh,
 } from "../meshes/mesh.js";
-import { PositionDef, ScaleDef } from "../physics/transform.js";
-import { RenderableConstructDef } from "../render/renderer-ecs.js";
+import { PositionDef, RotationDef, ScaleDef } from "../physics/transform.js";
+import {
+  RenderableConstructDef,
+  RenderableDef,
+} from "../render/renderer-ecs.js";
 import {
   BezierCubic,
   Path,
@@ -25,6 +28,11 @@ export const SpacePathDef = EM.defineNonupdatableComponent(
   (path: Path) => ({
     path,
   })
+);
+
+export const SpacePathSegmentDef = EM.defineNonupdatableComponent(
+  "spacePathSegment",
+  (n: number) => ({ n })
 );
 
 const DEBUG_PATH_POINTS = false;
@@ -116,17 +124,31 @@ export function createSpacePath() {
     meshes.push(seg);
   }
 
+  meshes.forEach((mesh, i) => {
+    mesh.usesProvoking = true;
+    mesh.surfaceIds = mesh.colors.map((_, i) => i);
+    validateMesh(mesh);
+    const ent = EM.new();
+    console.log("hidden");
+    EM.set(ent, RenderableConstructDef, mesh);
+    EM.whenEntityHas(ent, RenderableDef).then(
+      (e) => (e.renderable.hidden = true)
+    );
+    EM.set(ent, PositionDef);
+    EM.set(ent, SpacePathSegmentDef, i);
+  });
+  /*
   const pathMesh = mergeMeshes(...meshes) as Mesh;
   pathMesh.usesProvoking = true;
 
   pathMesh.surfaceIds = pathMesh.colors.map((_, i) => i);
   validateMesh(pathMesh);
-
+*/
   // TODO(@darzu): foo
 
   const ent = EM.new();
-  EM.set(ent, RenderableConstructDef, pathMesh);
-  EM.set(ent, PositionDef);
+  //EM.set(ent, RenderableConstructDef, pathMesh);
+  //EM.set(ent, PositionDef);
   EM.set(ent, SpacePathDef, path);
 
   return ent;

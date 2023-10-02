@@ -53,7 +53,7 @@ import {
 } from "../meshes/mesh.js";
 import { stdRiggedRenderPipeline } from "../render/pipelines/std-rigged.js";
 import { PoseDef, repeatPoses } from "../animation/skeletal.js";
-import { createSpacePath } from "./space-path.js";
+import { createSpacePath, SpacePathSegmentDef } from "./space-path.js";
 import { getPathPosRot } from "../utils/spline.js";
 import { PartyDef } from "../camera/party.js";
 import { makeDome, makeSphere } from "../meshes/primatives.js";
@@ -446,7 +446,15 @@ export async function initLD54() {
         const seconds = raft.raftLocal.t * 0.001;
         const raftSpeed_segPerSecond = SHIP_SPEED / (5 / 1000);
         const t = (seconds * raftSpeed_segPerSecond) % numPathSeg;
-
+        const pathSegs = EM.filterEntities([
+          SpacePathSegmentDef,
+          RenderableDef,
+        ]);
+        for (let pathSeg of pathSegs) {
+          if (pathSeg.spacePathSegment.n < t / 2 + 10) {
+            pathSeg.renderable.hidden = false;
+          }
+        }
         getPathPosRot(
           spacePath.spacePath.path,
           t,
