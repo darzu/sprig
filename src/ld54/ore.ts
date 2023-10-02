@@ -118,7 +118,8 @@ export const OreCarrierDef = EM.defineComponent("oreCarrier", () => ({
 }));
 
 export const OreStoreDef = EM.defineComponent("oreStore", () => ({
-  ores: [] as OreEnt[],
+  fuelOres: [] as OreEnt[],
+  oxygenOres: [] as OreEnt[],
 }));
 
 export async function initOre(spacePath: Path) {
@@ -188,6 +189,38 @@ export async function initOre(spacePath: Path) {
     }
   }
 
+  const spc = 8;
+
+  const fuelSlots = [
+    V(0, 5, -16),
+    V(spc, 5, -16),
+    V(-spc, 5, -16),
+    V(0, 5, -16 - spc),
+    V(spc, 5, -16 - spc),
+    V(-spc, 5, -16 - spc),
+    V(0, 5 + spc, -16),
+    V(spc, 5 + spc, -16),
+    V(-spc, 5 + spc, -16),
+    V(0, 5 + spc, -16 - spc),
+    V(spc, 5 + spc, -16 - spc),
+    V(-spc, 5 + spc, -16 - spc),
+  ];
+
+  const oxygenSlots = [
+    V(0, 5, 10),
+    V(spc, 5, 10),
+    V(-spc, 5, 10),
+    V(0, 5, 10 + spc),
+    V(spc, 5, 10 + spc),
+    V(-spc, 5, 10 + spc),
+    V(0, 5, 10),
+    V(spc, 5 + spc, 10),
+    V(-spc, 5 + spc, 10),
+    V(0, 5 + spc, 10 + spc),
+    V(spc, 5 + spc, 10 + spc),
+    V(-spc, 5 + spc, 10 + spc),
+  ];
+
   EM.addSystem(
     "interactWithOre",
     Phase.GAME_PLAYERS,
@@ -215,13 +248,20 @@ export async function initOre(spacePath: Path) {
         const ore = carrier.oreCarrier.carrying;
         ore.ore.carried = true;
         carrier.oreCarrier.carrying = undefined;
-        store.oreStore.ores.push(ore);
-        EM.set(ore, PhysicsParentDef, store.id);
+
         if (ore.ore.type === "fuel") {
-          vec3.set(0, 5, -16, ore.position);
+          const idx = store.oreStore.fuelOres.length;
+          store.oreStore.fuelOres.push(ore);
+          const pos = fuelSlots[idx % fuelSlots.length];
+          vec3.copy(ore.position, pos);
         } else {
-          vec3.set(0, 5, 10, ore.position);
+          const idx = store.oreStore.oxygenOres.length;
+          store.oreStore.oxygenOres.push(ore);
+          const pos = oxygenSlots[idx % oxygenSlots.length];
+          vec3.copy(ore.position, pos);
         }
+
+        EM.set(ore, PhysicsParentDef, store.id);
 
         // update game state
         switch (ore.ore.type) {
