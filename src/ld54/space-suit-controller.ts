@@ -92,7 +92,7 @@ EM.addEagerInit([SpaceSuitDef], [], [], () => {
             e.spaceSuit.swingingSword = false;
           }
         }
-        if (res.inputs.lclick) {
+        if (res.inputs.lclick && !e.spaceSuit.swingingSword) {
           e.spaceSuit.swingingSword = true;
           e.spaceSuit.swordSwingT = 0;
           EM.whenResources(AudioDef, SoundSetDef).then((res) => {
