@@ -60,6 +60,7 @@ import {
 } from "./gamestate.js";
 import { OreCarrierDef, OreStoreDef, initOre } from "./ore.js";
 import { createSpaceBarge } from "./barge.js";
+import { TextDef } from "../gui/ui.js";
 
 const RENDER_TRUTH_CUBE = false;
 
@@ -412,4 +413,7 @@ export async function initLD54() {
   vec3.copy(player.position, [12.15, 22.03, -14.57]);
   quat.copy(player.rotation, [0.01, -0.96, -0.21, 0.16]);
   EM.set(player, BreathingPlayerDef);
+
+  const res = await EM.whenResources(TextDef);
+  res.text.lowerText = `controls: wasd, q/e rotate, space/c up/down, mouse camera`;
 }
