@@ -879,11 +879,17 @@ export async function initShipyardGame(hosting: boolean) {
       // g.cameraFollow.yawOffset = 0.0;
       // g.cameraFollow.pitchOffset = -0.336;
 
-      vec3.copy(g.position, [-11.36, 27.53, -3.66]);
-      quat.copy(g.rotation, [0.0, -0.93, 0.0, 0.39]);
+      // vec3.copy(g.position, [-11.36, 27.53, -3.66]);
+      // quat.copy(g.rotation, [0.0, -0.93, 0.0, 0.39]);
+      // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
+      // g.cameraFollow.yawOffset = 0.0;
+      // g.cameraFollow.pitchOffset = -1.233;
+
+      vec3.copy(g.position, [-33.85, 17.11, -17.28]);
+      quat.copy(g.rotation, [0.0, -0.86, 0.0, 0.53]);
       vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
       g.cameraFollow.yawOffset = 0.0;
-      g.cameraFollow.pitchOffset = -1.233;
+      g.cameraFollow.pitchOffset = -0.243;
     }
 
     if (!DBG_PLAYER) {

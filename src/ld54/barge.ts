@@ -61,41 +61,98 @@ const strip2EndIdx = 8;
 const FALSE = ("this" as string) === "that";
 
 // Note: Made w/ game-font !
+// const keelTemplate: Mesh = {
+//   pos: [
+//     V(-2.25, 0.0, -1.08),
+//     V(-3.68, 0.0, -1.44),
+//     V(-4.07, 0.0, -1.14),
+//     V(-2.25, 0.0, -0.69),
+//     V(0.06, 0.0, -0.57),
+//     V(0.03, 0.0, -0.92),
+//     V(2.36, 0.0, -0.57),
+//     V(2.18, 0.0, -0.9),
+//     V(3.56, 0.0, -1.44),
+//     V(3.27, 0.0, -1.63),
+//     V(3.92, 0.0, -2.88),
+//     V(3.53, 0.0, -2.83),
+//     V(-3.96, 0.0, -2.6),
+//     V(-4.43, 0.0, -2.53),
+//   ],
+//   tri: [],
+//   quad: [
+//     V(0, 1, 2, 3),
+//     V(4, 5, 0, 3),
+//     V(6, 7, 5, 4),
+//     V(8, 9, 7, 6),
+//     V(10, 11, 9, 8),
+//     V(12, 13, 2, 1),
+//   ],
+//   colors: [
+//     V(0.42, 0.49, 0.76),
+//     V(0.53, 0.6, 0.6),
+//     V(0.44, 0.83, 0.34),
+//     V(0.37, 0.79, 0.49),
+//     V(0.44, 0.68, 0.59),
+//     V(0.97, 0.11, 0.21),
+//   ],
+//   surfaceIds: [1, 2, 3, 4, 5, 6],
+//   usesProvoking: true,
+// };
 const keelTemplate: Mesh = {
   pos: [
-    V(-2.25, 0.0, -1.08),
-    V(-3.68, 0.0, -1.44),
-    V(-4.07, 0.0, -1.14),
-    V(-2.25, 0.0, -0.69),
-    V(0.06, 0.0, -0.57),
-    V(0.03, 0.0, -0.92),
-    V(2.36, 0.0, -0.57),
-    V(2.18, 0.0, -0.9),
-    V(3.56, 0.0, -1.44),
-    V(3.27, 0.0, -1.63),
-    V(3.92, 0.0, -2.88),
-    V(3.53, 0.0, -2.83),
-    V(-3.96, 0.0, -2.6),
-    V(-4.43, 0.0, -2.53),
+    V(0.58, 0.0, 1.49),
+    V(-1.4, 0.0, 1.52),
+    V(-1.38, 0.0, 1.74),
+    V(0.59, 0.0, 1.71),
+    V(-3.73, 0.0, 1.47),
+    V(-3.72, 0.0, 1.68),
+    V(-4.4, 0.0, 1.22),
+    V(-4.64, 0.0, 1.41),
+    V(-4.76, 0.0, 0.24),
+    V(-5.03, 0.0, 0.3),
+    V(-4.81, 0.0, -0.08),
+    V(-5.13, 0.0, -0.04),
+    V(-5.05, 0.0, -1.12),
+    V(-5.38, 0.0, -1.09),
+    V(2.36, 0.0, 1.46),
+    V(2.28, 0.0, 1.26),
+    V(3.63, 0.0, 1.07),
+    V(3.5, 0.0, 0.89),
+    V(4.51, 0.0, 0.49),
+    V(4.32, 0.0, 0.37),
+    V(5.15, 0.0, -0.4),
+    V(4.93, 0.0, -0.44),
+    V(5.29, 0.0, -1.46),
+    V(5.06, 0.0, -1.46),
   ],
   tri: [],
   quad: [
     V(0, 1, 2, 3),
-    V(4, 5, 0, 3),
+    V(4, 5, 2, 1),
     V(6, 7, 5, 4),
     V(8, 9, 7, 6),
     V(10, 11, 9, 8),
-    V(12, 13, 2, 1),
+    V(12, 13, 11, 10),
+    V(14, 15, 0, 3),
+    V(16, 17, 15, 14),
+    V(18, 19, 17, 16),
+    V(20, 21, 19, 18),
+    V(22, 23, 21, 20),
   ],
   colors: [
-    V(0.42, 0.49, 0.76),
-    V(0.53, 0.6, 0.6),
-    V(0.44, 0.83, 0.34),
-    V(0.37, 0.79, 0.49),
-    V(0.44, 0.68, 0.59),
-    V(0.97, 0.11, 0.21),
+    V(0.49, 0.16, 0.86),
+    V(0.48, 0.03, 0.88),
+    V(0.47, 0.19, 0.86),
+    V(0.53, 0.5, 0.68),
+    V(0.34, 0.74, 0.58),
+    V(0.62, 0.36, 0.69),
+    V(0.93, 0.32, 0.19),
+    V(0.57, 0.18, 0.8),
+    V(0.67, 0.18, 0.72),
+    V(0.19, 0.92, 0.34),
+    V(0.42, 0.81, 0.42),
   ],
-  surfaceIds: [1, 2, 3, 4, 5, 6],
+  surfaceIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
   usesProvoking: true,
 };
 
@@ -120,13 +177,17 @@ export function createSpaceBarge(): SpaceBarge {
 
   // KEEL
   // TODO(@darzu): IMPL keel!
-  const keelWidth = 0.7;
+  const keelWidth = 1.4;
   const keelDepth = 1.2;
   builder.width = keelWidth;
   builder.depth = keelDepth;
 
   let keelPath: Path;
   {
+    keelTemplate.pos.forEach((p) => {
+      vec3.mul(p, [1, 1, 0.5], p);
+    });
+
     // const keelTempAABB = getAABBFromMesh(keelTemplate);
     // console.dir(keelTempAABB);
     let keelTemplate2 = transformMesh(
@@ -135,6 +196,7 @@ export function createSpaceBarge(): SpaceBarge {
         quat.rotateX(quat.identity(), Math.PI / 2),
         [0, 0, 0],
         // vec3.scale(vec3.negate(keelTempAABB.min), 6),
+        // [5, 5, 5]
         [5, 5, 5]
       )
     ) as Mesh;
@@ -167,22 +229,22 @@ export function createSpaceBarge(): SpaceBarge {
   );
 
   // RIBS
-  const ribWidth = 0.5;
+  const ribWidth = 0.3;
   const ribDepth = 0.4;
   builder.width = ribWidth;
   builder.depth = ribDepth;
-  const ribCount = 12;
+  const ribCount = 16;
   // const ribSpace = 3;
 
   const keelLength = keelSize[0];
 
   const railHeight = keelAABB.max[1] - 1;
-  const prowOverhang = 0.5;
+  const prowOverhang = 1.0;
   const prow = V(keelAABB.max[0] + prowOverhang, railHeight, 0);
   const sternOverhang = 1;
   const sternpost = V(keelAABB.min[0] - sternOverhang, railHeight, 0);
   // const transomWidth = 12;
-  const transomWidth = 6;
+  const transomWidth = 12;
   const railLength = keelLength + prowOverhang + sternOverhang;
 
   const ribSpace = railLength / (ribCount + 1);
@@ -194,7 +256,7 @@ export function createSpaceBarge(): SpaceBarge {
     const sternAngle = (3 * Math.PI) / 16;
     const sternInfluence = 24;
     const prowAngle = (4 * Math.PI) / 16;
-    const prowInfluence = 12;
+    const prowInfluence = 24;
     const p0 = vec3.add(sternpost, [0, 0, transomWidth * 0.5], vec3.create());
     const p1 = vec3.add(
       p0,
@@ -307,7 +369,7 @@ export function createSpaceBarge(): SpaceBarge {
 
   // RAIL
   let mirrorRailPath: Path = []; // set later
-  if (FALSE) {
+  if (FALSE || true) {
     // fix rail spacing to match ribs
     for (let i = 0; i < ribCount; i++) {
       const railIdx = i + 1;
@@ -351,7 +413,7 @@ export function createSpaceBarge(): SpaceBarge {
   // RIBS W/ SLOTS
   const evenRibs: Path[] = [];
   let plankCount = 0;
-  if (FALSE) {
+  if (FALSE || true) {
     let longestRibIdx = 0;
     {
       let ribIdx = 0;
@@ -384,7 +446,7 @@ export function createSpaceBarge(): SpaceBarge {
   const plankPaths: Path[] = [];
   const plankPathsMirrored: Path[] = [];
   let transomPlankNum = 2;
-  if (FALSE) {
+  if (FALSE || true) {
     // const centerRibP = ribPaths[longestRibIdx];
     // const centerRibC = ribCurves[longestRibIdx];
     // dbgPathWithGizmos(centerRibP);
@@ -467,7 +529,7 @@ export function createSpaceBarge(): SpaceBarge {
   }
 
   // TRANSOM
-  if (FALSE) {
+  if (FALSE || true) {
     for (let i = 0; i < transomPlankNum; i++) {
       const start = plankPaths[i][0];
       const end = plankPathsMirrored[i][0];
@@ -507,7 +569,7 @@ export function createSpaceBarge(): SpaceBarge {
   }
 
   // REAR RAIL
-  if (FALSE) {
+  if (FALSE || true) {
     const start = railPath[0];
     const end = mirrorRailPath[0];
     const midPos = vec3.lerp(start.pos, end.pos, 0.5, vec3.create());
