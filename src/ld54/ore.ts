@@ -26,7 +26,12 @@ import {
   RenderableConstructDef,
   RenderableDef,
 } from "../render/renderer-ecs.js";
-import { randFloat, randInt } from "../utils/math.js";
+import {
+  randFloat,
+  randInt,
+  sphereRadiusFromVolume,
+  sphereVolumeFromRadius,
+} from "../utils/math.js";
 import { Path } from "../utils/spline.js";
 import { assert } from "../utils/util.js";
 import { randNormalVec3, randQuat } from "../utils/utils-3d.js";
@@ -341,6 +346,10 @@ export async function initOre(spacePath: Path) {
     }
   );
 
+  const oreFullVolume = sphereVolumeFromRadius(1);
+  // const oreFullRadius = sphereRadiusFromVolume(oreFullVolume);
+  // console.log(`oreFullVolume: ${oreFullVolume}, rad: ${oreFullRadius}`);
+
   EM.addSystem(
     "manageOreSlots",
     Phase.GAME_PLAYERS,
@@ -360,9 +369,29 @@ export async function initOre(spacePath: Path) {
         deadOre.renderable.hidden = true;
       }
       const fuelFrac = (res.ld54GameState.fuel % FUEL_PER_ORE) / FUEL_PER_ORE;
+      const fuelRad = sphereRadiusFromVolume(fuelFrac * oreFullVolume);
+
       store.oreStore.fuelOres.forEach((o, i) => {
         if (i === store.oreStore.fuelOres.length - 1)
-          EM.set(o, ScaleDef, [fuelFrac, fuelFrac, fuelFrac]);
+          EM.set(o, ScaleDef, [fuelRad, fuelRad, fuelRad]);
+        else EM.set(o, ScaleDef, [1, 1, 1]);
+      });
+
+      // adjust ore oxygen in slots based on oxygen left
+      const numOxygenShouldHave = Math.ceil(
+        res.ld54GameState.oxygen / OXYGEN_PER_ORE
+      );
+      if (numOxygenShouldHave < store.oreStore.oxygenOres.length) {
+        const deadOre = store.oreStore.oxygenOres.pop()!;
+        deadOre.renderable.hidden = true;
+      }
+      const oxygenFrac =
+        (res.ld54GameState.oxygen % OXYGEN_PER_ORE) / OXYGEN_PER_ORE;
+      const oxygenRad = sphereRadiusFromVolume(oxygenFrac * oreFullVolume);
+
+      store.oreStore.oxygenOres.forEach((o, i) => {
+        if (i === store.oreStore.oxygenOres.length - 1)
+          EM.set(o, ScaleDef, [oxygenRad, oxygenRad, oxygenRad]);
         else EM.set(o, ScaleDef, [1, 1, 1]);
       });
     }
