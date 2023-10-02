@@ -517,5 +517,5 @@ export async function initLD54() {
   EM.set(player, BreathingPlayerDef);
 
   const res = await EM.whenResources(TextDef);
-  res.text.lowerText = `controls: wasd, q/e rotate, space/c up/down, mouse camera`;
+  res.text.lowerText = `controls: wasd, q/e rotate, space/c up/down, click to pickup`;
 }
