@@ -50,7 +50,7 @@ import { PoseDef, repeatPoses } from "../animation/skeletal.js";
 import { createSpacePath } from "./space-path.js";
 import { getPathPosRot } from "../utils/spline.js";
 import { PartyDef } from "../camera/party.js";
-import { initOre } from "./ore.js";
+import { OreCarrierDef, OreStoreDef, initOre } from "./ore.js";
 
 const RENDER_TRUTH_CUBE = false;
 
@@ -155,6 +155,8 @@ const {
       // e.cameraFollow.yawOffset = 0.0;
       // e.cameraFollow.pitchOffset = -0.593;
 
+      EM.set(e, OreCarrierDef);
+
       const playerRender = EM.new();
       const riggedAstronaut = res.ld54_meshes.ld54_astronaut.mesh as RiggedMesh;
       EM.set(playerRender, RiggedRenderableConstructDef, riggedAstronaut);
@@ -175,7 +177,6 @@ const {
           { pose: 6, t: 1000 },
           ];
           */
-      console.log(`player has .controllable`);
     }
 
     return e;
@@ -191,26 +192,28 @@ const { RaftPropsDef, createRaft } = defineNetEntityHelper({
   defaultLocal: () => {},
   dynamicComponents: [PositionDef, RotationDef],
   buildResources: [ld54Meshes],
-  build: (platform, res) => {
-    EM.set(platform, RenderableConstructDef, res.ld54_meshes.cubeRaft.proto);
-    EM.set(platform, ColorDef, ENDESGA16.darkGreen);
-    EM.set(platform, PositionDef, V(0, 5, 0));
-    EM.set(platform, ColliderDef, {
+  build: (raft, res) => {
+    EM.set(raft, RenderableConstructDef, res.ld54_meshes.cubeRaft.proto);
+    EM.set(raft, ColorDef, ENDESGA16.darkGreen);
+    EM.set(raft, PositionDef, V(0, 5, 0));
+    EM.set(raft, ColliderDef, {
       shape: "AABB",
       solid: true,
       aabb: res.ld54_meshes.cubeRaft.aabb,
     });
 
-    const obstacle = EM.new();
-    EM.set(obstacle, PositionDef, V(0, 1, 0));
-    EM.set(obstacle, RenderableConstructDef, res.ld54_meshes.hex.proto);
-    EM.set(obstacle, ColorDef, ENDESGA16.white);
-    EM.set(obstacle, ColliderDef, {
+    const pedestal = EM.new();
+    EM.set(pedestal, PositionDef, V(0, 1, 0));
+    EM.set(pedestal, RenderableConstructDef, res.ld54_meshes.hex.proto);
+    EM.set(pedestal, ColorDef, ENDESGA16.white);
+    EM.set(pedestal, ColliderDef, {
       shape: "AABB",
       solid: true,
       aabb: res.ld54_meshes.hex.aabb,
     });
-    EM.set(obstacle, PhysicsParentDef, platform.id);
+    EM.set(pedestal, PhysicsParentDef, raft.id);
+
+    EM.set(raft, OreStoreDef);
   },
 });
 
