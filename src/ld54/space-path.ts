@@ -3,7 +3,7 @@ import { createLineMesh } from "../debug/gizmos.js";
 import { EM } from "../ecs/entity-manager.js";
 import { V, quat, tV, vec3 } from "../matrix/sprig-matrix.js";
 import {
-  createEmptyMesh,
+  createEmptyRawMesh,
   mergeMeshes,
   Mesh,
   validateMesh,

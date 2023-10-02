@@ -502,13 +502,25 @@ export function normalizeMesh(inM: RawMesh): Mesh {
   };
 }
 
-export function createEmptyMesh(dbgName: string) {
+export function createEmptyRawMesh(dbgName: string) {
   let mesh: RawMesh = {
     dbgName,
     pos: [],
     tri: [],
     quad: [],
     colors: [],
+  };
+  return mesh;
+}
+export function createEmptyMesh(dbgName: string) {
+  let mesh: Mesh = {
+    dbgName,
+    pos: [],
+    tri: [],
+    quad: [],
+    colors: [],
+    surfaceIds: [],
+    usesProvoking: true,
   };
   return mesh;
 }
