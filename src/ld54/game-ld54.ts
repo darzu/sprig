@@ -211,8 +211,10 @@ const { RaftPropsDef, createRaft, RaftLocalDef } = defineNetEntityHelper({
     EM.set(raft, RenderableConstructDef, barge.timberMesh);
 
     const aabb = getAABBFromMesh(barge.timberMesh);
+    aabb.min[2] = aabb.min[0];
+    aabb.max[2] = aabb.max[0];
 
-    // // DBG AABB
+    // DBG AABB
     // const aabbMesh = createGizmoForAABB(aabb, 1);
     // const aabbEnt = EM.new();
     // EM.set(aabbEnt, RenderableConstructDef, aabbMesh);
