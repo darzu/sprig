@@ -44,7 +44,9 @@ import {
   OXYGEN_CONSUMPTION_RATE,
   STARTING_FUEL,
   STARTING_OXYGEN,
+  SWORD_SWING_DURATION,
 } from "./gamestate.js";
+import { SpaceSuitDef } from "./space-suit-controller.js";
 
 let _t1 = vec3.create();
 let _t2 = quat.create();
@@ -133,9 +135,13 @@ export const OreDef = EM.defineComponent("ore", () => ({
 type OreEnt = EntityW<
   [typeof OreDef, typeof PositionDef, typeof RenderableDef]
 >;
-export const OreCarrierDef = EM.defineComponent("oreCarrier", () => ({
-  carrying: undefined as OreEnt | undefined,
-}));
+export const OreCarrierDef = EM.defineNonupdatableComponent(
+  "oreCarrier",
+  (colliderId?: number) => ({
+    carrying: undefined as OreEnt | undefined,
+    colliderId: colliderId ?? 0,
+  })
+);
 
 export const OreStoreDef = EM.defineComponent("oreStore", () => ({
   fuelOres: [] as OreEnt[],
@@ -273,7 +279,7 @@ export async function initOre(spacePath: Path) {
   EM.addSystem(
     "interactWithOre",
     Phase.GAME_PLAYERS,
-    [OreCarrierDef, PositionDef],
+    [OreCarrierDef, PositionDef, SpaceSuitDef],
     [PhysicsResultsDef, LD54GameStateDef],
     (es, res) => {
       if (!es.length) return;
@@ -281,7 +287,9 @@ export async function initOre(spacePath: Path) {
       const carrier = es[0];
 
       // collisions?
-      const otherIds = res.physicsResults.collidesWith.get(carrier.id);
+      const otherIds = res.physicsResults.collidesWith.get(
+        carrier.oreCarrier.colliderId
+      );
       if (!otherIds) return;
 
       if (carrier.oreCarrier.carrying) {
@@ -334,14 +342,19 @@ export async function initOre(spacePath: Path) {
           )
           .filter((e) => e !== undefined && !e.ore.carried);
         if (!ores.length) return; // didn't reach any new ore
-
-        // transfer to carrier
-        const ore = ores[0]!;
-        carrier.oreCarrier.carrying = ore;
-        ore.ore.carried = true;
-        vec3.zero(ore.angularVelocity); // stop spinning
-        EM.set(ore, PhysicsParentDef, carrier.id);
-        vec3.set(0, 0, -5, ore.position);
+        // only collect if we are swingin
+        if (
+          carrier.spaceSuit.swingingSword &&
+          carrier.spaceSuit.swordSwingT > 0.7 * SWORD_SWING_DURATION
+        ) {
+          // transfer to carrier
+          const ore = ores[0]!;
+          carrier.oreCarrier.carrying = ore;
+          ore.ore.carried = true;
+          vec3.zero(ore.angularVelocity); // stop spinning
+          EM.set(ore, PhysicsParentDef, carrier.id);
+          vec3.set(0, 0, -5, ore.position);
+        }
       }
     }
   );

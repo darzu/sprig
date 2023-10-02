@@ -1,4 +1,9 @@
-import { PoseDef, tweenToPose } from "../animation/skeletal.js";
+import {
+  clearAnimationQueue,
+  PoseDef,
+  tweenToPose,
+  queuePose,
+} from "../animation/skeletal.js";
 import { createRef } from "../ecs/em-helpers.js";
 import { EM, EntityW } from "../ecs/entity-manager.js";
 import { Phase } from "../ecs/sys-phase.js";
@@ -8,6 +13,7 @@ import { LinearVelocityDef } from "../motion/velocity.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
 import { TimeDef } from "../time/time.js";
 import { vec3Dbg } from "../utils/utils-3d.js";
+import { SWORD_SWING_DURATION } from "./gamestate.js";
 import { SpaceSuitDef } from "./space-suit-controller.js";
 
 export const PlayerRenderDef = EM.defineNonupdatableComponent(
@@ -34,9 +40,15 @@ enum Poses {
   Down,
   Forward,
   Back,
+  Sword0,
+  Sword1,
+  Sword2,
+  Sword3,
 }
 
 const TWEENING_TIME = 500;
+
+const SWORD_SWING_TIMINGS = [0.35, 0.35, 0.15, 0.15];
 
 EM.addEagerInit([PlayerRenderDef], [], [], () => {
   EM.addSystem(
@@ -60,6 +72,37 @@ EM.addEagerInit([PlayerRenderDef], [], [], () => {
           const slerpAmount = Math.min(1.0, maxRotationAngle / angle);
           quat.slerp(e.rotation, player.rotation, slerpAmount, e.rotation);
         }
+
+        // sword animations
+        if (player.spaceSuit.swingingSword) {
+          // did we just start swinging?
+          if (player.spaceSuit.swordSwingT === 0) {
+            clearAnimationQueue(e);
+            tweenToPose(
+              e,
+              Poses.Sword0,
+              SWORD_SWING_TIMINGS[0] * SWORD_SWING_DURATION
+            );
+            queuePose(
+              e,
+              Poses.Sword1,
+              SWORD_SWING_TIMINGS[1] * SWORD_SWING_DURATION
+            );
+            queuePose(
+              e,
+              Poses.Sword2,
+              SWORD_SWING_TIMINGS[2] * SWORD_SWING_DURATION
+            );
+            queuePose(
+              e,
+              Poses.Sword3,
+              SWORD_SWING_TIMINGS[3] * SWORD_SWING_DURATION
+            );
+          }
+          // don't run other animations
+          break;
+        }
+
         // want to trigger the relaxation to bind pose just once
         if (vec3.sqrLen(player.spaceSuit.localAccel) === 0) {
           if (e.playerRender.wasJustAccelerating) {
