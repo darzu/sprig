@@ -10,7 +10,7 @@ import { ColorDef } from "../color/color-ecs.js";
 import { AllEndesga16, ENDESGA16 } from "../color/palettes.js";
 import { EM } from "../ecs/entity-manager.js";
 import { FinishedDef, defineNetEntityHelper } from "../ecs/em-helpers.js";
-import { createGizmoMesh } from "../debug/gizmos.js";
+import { createGizmoForAABB, createGizmoMesh } from "../debug/gizmos.js";
 import { LinearVelocityDef } from "../motion/velocity.js";
 import {
   PhysicsParentDef,
@@ -44,7 +44,7 @@ import { noisePipes } from "../render/pipelines/std-noise.js";
 import { blurPipelines } from "../render/pipelines/std-blur.js";
 import { SpaceSuitDef } from "./space-suit-controller.js";
 import { PlayerRenderDef } from "./player-render.js";
-import { RiggedMesh } from "../meshes/mesh.js";
+import { RiggedMesh, getAABBFromMesh } from "../meshes/mesh.js";
 import { stdRiggedRenderPipeline } from "../render/pipelines/std-rigged.js";
 import { PoseDef, repeatPoses } from "../animation/skeletal.js";
 import { createSpacePath } from "./space-path.js";
@@ -209,6 +209,15 @@ const { RaftPropsDef, createRaft, RaftLocalDef } = defineNetEntityHelper({
 
     EM.set(raft, RenderableConstructDef, barge.timberMesh);
 
+    const aabb = getAABBFromMesh(barge.timberMesh);
+
+    // // DBG AABB
+    // const aabbMesh = createGizmoForAABB(aabb, 1);
+    // const aabbEnt = EM.new();
+    // EM.set(aabbEnt, RenderableConstructDef, aabbMesh);
+    // EM.set(aabbEnt, PositionDef);
+    // EM.set(aabbEnt, PhysicsParentDef, raft.id);
+
     // EM.set(raft, RenderableConstructDef, res.ld54_meshes.cubeRaft.proto);
 
     // EM.set(raft, ColorDef, ENDESGA16.darkGreen);
@@ -216,7 +225,7 @@ const { RaftPropsDef, createRaft, RaftLocalDef } = defineNetEntityHelper({
     EM.set(raft, ColliderDef, {
       shape: "AABB",
       solid: true,
-      aabb: res.ld54_meshes.cubeRaft.aabb,
+      aabb,
     });
 
     // const pedestal = EM.new();

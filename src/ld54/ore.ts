@@ -292,6 +292,17 @@ export async function initOre(spacePath: Path) {
     }
   );
 
+  EM.addSystem(
+    "manageOreSlots",
+    Phase.GAME_PLAYERS,
+    [OreStoreDef, PositionDef],
+    [PhysicsResultsDef, LD54GameStateDef],
+    (es, res) => {
+      // TODO(@darzu): IMPL TMRW OCT 2ND
+      // SLOTS;
+    }
+  );
+
   function createOxygenOre(pos: vec3) {
     const ore = EM.new();
 
