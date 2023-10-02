@@ -73,7 +73,6 @@ export function repeatPoses(
 // clear out any queued animations, including repeats
 export function clearAnimationQueue(e: EntityW<[typeof PoseDef]>) {
   e.pose.queue = [];
-  e.pose.repeat = [];
 }
 
 // add a pose to the queue, to be executed after any current

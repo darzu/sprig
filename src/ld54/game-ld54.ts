@@ -8,7 +8,7 @@ import {
 import { CameraDef, CameraFollowDef } from "../camera/camera.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { AllEndesga16, ENDESGA16 } from "../color/palettes.js";
-import { EM } from "../ecs/entity-manager.js";
+import { EM, EntityW } from "../ecs/entity-manager.js";
 import { FinishedDef, defineNetEntityHelper } from "../ecs/em-helpers.js";
 import { createGizmoForAABB, createGizmoMesh } from "../debug/gizmos.js";
 import { LinearVelocityDef } from "../motion/velocity.js";
@@ -18,7 +18,7 @@ import {
   RotationDef,
   ScaleDef,
 } from "../physics/transform.js";
-import { quat, V, vec3 } from "../matrix/sprig-matrix.js";
+import { quat, V, vec3, mat4 } from "../matrix/sprig-matrix.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { XY } from "../meshes/mesh-loader.js";
 import {
@@ -44,7 +44,13 @@ import { noisePipes } from "../render/pipelines/std-noise.js";
 import { blurPipelines } from "../render/pipelines/std-blur.js";
 import { SpaceSuitDef } from "./space-suit-controller.js";
 import { PlayerRenderDef } from "./player-render.js";
-import { RiggedMesh, getAABBFromMesh } from "../meshes/mesh.js";
+import {
+  cloneMesh,
+  RiggedMesh,
+  scaleMesh3,
+  transformMesh,
+  getAABBFromMesh,
+} from "../meshes/mesh.js";
 import { stdRiggedRenderPipeline } from "../render/pipelines/std-rigged.js";
 import { PoseDef, repeatPoses } from "../animation/skeletal.js";
 import { createSpacePath } from "./space-path.js";
@@ -62,6 +68,11 @@ import {
 import { OreCarrierDef, OreStoreDef, initOre } from "./ore.js";
 import { createSpaceBarge } from "./barge.js";
 import { TextDef } from "../gui/ui.js";
+import {
+  aabbCenter,
+  createAABB,
+  getHalfsizeFromAABB,
+} from "../physics/aabb.js";
 
 const RENDER_TRUTH_CUBE = false;
 
@@ -166,7 +177,32 @@ const {
       // e.cameraFollow.yawOffset = 0.0;
       // e.cameraFollow.pitchOffset = -0.593;
 
-      EM.set(e, OreCarrierDef);
+      // sword hitbox
+      const hitbox = EM.new();
+      const S = 3;
+      EM.set(hitbox, PositionDef, V(0, 0, -S));
+      EM.set(hitbox, ColliderDef, {
+        shape: "AABB",
+        solid: false,
+        aabb: createAABB(V(-S, -2 * S, -S), V(S, 2 * S, S)),
+      });
+
+      function debugVizAABB(aabbEnt: EntityW<[typeof ColliderDef]>) {
+        // debug render floor
+        const mesh = cloneMesh(res.ld54_meshes.cube.mesh);
+        assert(aabbEnt.collider.shape === "AABB");
+        const size = getHalfsizeFromAABB(aabbEnt.collider.aabb, vec3.create());
+        const center = aabbCenter(vec3.tmp(), aabbEnt.collider.aabb);
+        scaleMesh3(mesh, size);
+        transformMesh(mesh, mat4.fromTranslation(center));
+        EM.set(aabbEnt, RenderableConstructDef, mesh);
+        EM.set(aabbEnt, ColorDef, ENDESGA16.orange);
+      }
+      //debugVizAABB(hitbox);
+
+      EM.set(hitbox, PhysicsParentDef, e.id);
+
+      EM.set(e, OreCarrierDef, hitbox.id);
 
       const playerRender = EM.new();
       const riggedAstronaut = res.ld54_meshes.ld54_astronaut.mesh as RiggedMesh;
