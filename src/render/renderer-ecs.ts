@@ -346,6 +346,9 @@ EM.addEagerInit([RenderableConstructDef], [RendererDef], [], () => {
       // TODO(@darzu): DBG
       // maxSurfaceId = 12;
       // console.log(`maxSurfaceId: ${maxSurfaceId}`);
+      // console.log(
+      //   `res.renderer.renderer.highGraphics: ${res.renderer.renderer.highGraphics}`
+      // );
 
       renderer.updateScene({
         cameraViewProjMatrix: cameraComputed.viewProj,

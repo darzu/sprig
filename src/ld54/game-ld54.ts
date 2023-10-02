@@ -310,16 +310,16 @@ async function setLevelLocal(levelIdx: number) {
 
   // TODO(@darzu): differentiate level based on idx
   // ground
-  const ground = EM.new();
-  EM.set(ground, RenderableConstructDef, ld54_meshes.hex.proto);
-  EM.set(ground, ColorDef, ENDESGA16.blue);
-  EM.set(ground, PositionDef, V(0, -10, 0));
-  EM.set(ground, ScaleDef, V(10, 10, 10));
-  EM.set(ground, ColliderDef, {
-    shape: "AABB",
-    solid: true,
-    aabb: ld54_meshes.hex.aabb,
-  });
+  // const ground = EM.new();
+  // EM.set(ground, RenderableConstructDef, ld54_meshes.hex.proto);
+  // EM.set(ground, ColorDef, ENDESGA16.blue);
+  // EM.set(ground, PositionDef, V(0, -10, 0));
+  // EM.set(ground, ScaleDef, V(10, 10, 10));
+  // EM.set(ground, ColliderDef, {
+  //   shape: "AABB",
+  //   solid: true,
+  //   aabb: ld54_meshes.hex.aabb,
+  // });
 }
 
 export async function initLD54() {
@@ -336,6 +336,7 @@ export async function initLD54() {
       if (localStorage.getItem("useHighGraphics")) {
         useHighGraphics = true;
         graphicsCheckbox.checked = true;
+        res.renderer.renderer.highGraphics = true;
       }
 
       graphicsCheckbox.onchange = (e) => {
@@ -412,12 +413,12 @@ export async function initLD54() {
   vec3.copy(sun.pointLight.diffuse, [0.5, 0.5, 0.5]);
   EM.set(sun, PositionDef, V(50, 300, 10));
 
-  // gizmo
-  const gizmoMesh = createGizmoMesh();
-  const gizmo = EM.new();
-  EM.set(gizmo, RenderableConstructDef, gizmoMesh);
-  EM.set(gizmo, PositionDef, V(0, 1, 0));
-  EM.set(gizmo, ScaleDef, V(2, 2, 2));
+  // // gizmo
+  // const gizmoMesh = createGizmoMesh();
+  // const gizmo = EM.new();
+  // EM.set(gizmo, RenderableConstructDef, gizmoMesh);
+  // EM.set(gizmo, PositionDef, V(0, 1, 0));
+  // EM.set(gizmo, ScaleDef, V(2, 2, 2));
 
   // space path
   const spacePath = createSpacePath();
