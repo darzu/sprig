@@ -10,9 +10,10 @@ export const SoundPaths = [
   "cannonL.mp3",
   "stonebreak.wav",
   "woodbreak.mp3",
+  "sword.mp3",
 ] as const;
 
-export type SoundName = (typeof SoundPaths)[number];
+export type SoundName = typeof SoundPaths[number];
 
 export type SoundSet = { [P in SoundName]: AudioBuffer };
 
