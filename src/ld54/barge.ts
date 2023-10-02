@@ -46,7 +46,7 @@ import {
 
 const railColor = ENDESGA16.darkBrown;
 const keelColor = ENDESGA16.darkBrown;
-const ribColor = ENDESGA16.midBrown;
+const ribColor = ENDESGA16.darkBrown;
 const plankColor = ENDESGA16.lightBrown;
 const transomColor = ENDESGA16.lightBrown;
 const floorColor = ENDESGA16.lightBrown;
