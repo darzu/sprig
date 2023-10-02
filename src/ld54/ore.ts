@@ -26,6 +26,7 @@ import { randFloat, randInt } from "../utils/math.js";
 import { Path } from "../utils/spline.js";
 import { assert } from "../utils/util.js";
 import { randNormalVec3, randQuat } from "../utils/utils-3d.js";
+import { LD54GameStateDef, FUEL_PER_ORE, OXYGEN_PER_ORE } from "./gamestate.js";
 
 let _t1 = vec3.create();
 let _t2 = quat.create();
@@ -108,6 +109,7 @@ function createOxygenOreMesh(mkBallMesh: () => Mesh): Mesh {
 
 export const OreDef = EM.defineComponent("ore", () => ({
   carried: false,
+  type: "fuel" as "fuel" | "oxygen",
 }));
 
 type OreEnt = EntityW<[typeof OreDef, typeof PositionDef]>;
@@ -190,7 +192,7 @@ export async function initOre(spacePath: Path) {
     "interactWithOre",
     Phase.GAME_PLAYERS,
     [OreCarrierDef, PositionDef],
-    [PhysicsResultsDef],
+    [PhysicsResultsDef, LD54GameStateDef],
     (es, res) => {
       if (!es.length) return;
       assert(es.length === 1);
@@ -216,6 +218,14 @@ export async function initOre(spacePath: Path) {
         store.oreStore.ores.push(ore);
         EM.set(ore, PhysicsParentDef, store.id);
         vec3.set(0, 10, 0, ore.position);
+        switch (ore.ore.type) {
+          case "fuel":
+            res.ld54GameState.fuel += FUEL_PER_ORE;
+            break;
+          case "oxygen":
+            res.ld54GameState.oxygen += OXYGEN_PER_ORE;
+            break;
+        }
       } else {
         // we're not carying ore
         const ores = otherIds
@@ -240,6 +250,7 @@ export async function initOre(spacePath: Path) {
     const ore = EM.new();
 
     EM.set(ore, OreDef);
+    ore.ore.type = "oxygen";
 
     // mesh
     const mesh = createOxygenOreMesh(mkBallMesh);
@@ -268,6 +279,7 @@ export async function initOre(spacePath: Path) {
     const ore = EM.new();
 
     EM.set(ore, OreDef);
+    ore.ore.type = "fuel";
 
     // mesh
     const mesh = createFuelOreMesh();

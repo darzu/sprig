@@ -53,7 +53,11 @@ import { PartyDef } from "../camera/party.js";
 import { makeDome, makeSphere } from "../meshes/primatives.js";
 import { BUBBLE_MASK } from "../render/pipeline-masks.js";
 import { bubblePipeline } from "../render/pipelines/xp-bubble.js";
-import { BubbleDef, OxygenDef } from "./oxygen.js";
+import {
+  BubbleDef,
+  LD54GameStateDef,
+  BreathingPlayerDef,
+} from "./gamestate.js";
 import { OreCarrierDef, OreStoreDef, initOre } from "./ore.js";
 import { createSpaceBarge } from "./barge.js";
 
@@ -188,13 +192,15 @@ const {
   },
 });
 
-const { RaftPropsDef, createRaft } = defineNetEntityHelper({
+const { RaftPropsDef, createRaft, RaftLocalDef } = defineNetEntityHelper({
   name: "raft",
   defaultProps: () => ({}),
   updateProps: (p) => p,
   serializeProps: (obj, buf) => {},
   deserializeProps: (obj, buf) => {},
-  defaultLocal: () => {},
+  defaultLocal: () => ({
+    t: 0,
+  }),
   dynamicComponents: [PositionDef, RotationDef],
   buildResources: [ld54Meshes],
   build: (raft, res) => {
@@ -345,13 +351,16 @@ export async function initLD54() {
     EM.addSystem(
       "movePlatform",
       Phase.GAME_WORLD,
-      [RaftPropsDef, PositionDef, RotationDef],
-      [TimeDef, PartyDef],
+      [RaftPropsDef, RaftLocalDef, PositionDef, RotationDef],
+      [TimeDef, PartyDef, LD54GameStateDef],
       (es, res) => {
         if (es.length !== 1) return;
         const raft = es[0];
+        if (res.ld54GameState.fuel > 0) {
+          raft.raftLocal.t += res.time.dt;
+        }
 
-        const seconds = res.time.time * 0.001;
+        const seconds = raft.raftLocal.t * 0.001;
         const t = (seconds * raftSpeed_segPerSecond) % numPathSeg;
 
         getPathPosRot(
@@ -392,7 +401,7 @@ export async function initLD54() {
   EM.set(bubble, BubbleDef);
   EM.set(bubble, PhysicsParentDef, raft.id);
 
-  EM.addResource(OxygenDef, 100);
+  EM.addResource(LD54GameStateDef);
 
   // player
   const color = AllEndesga16[me.pid + 4 /*skip browns*/];
@@ -402,4 +411,5 @@ export async function initLD54() {
   // start pos?
   vec3.copy(player.position, [12.15, 22.03, -14.57]);
   quat.copy(player.rotation, [0.01, -0.96, -0.21, 0.16]);
+  EM.set(player, BreathingPlayerDef);
 }

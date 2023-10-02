@@ -27,7 +27,7 @@ struct FragOut {
   var out : FragOut;
   let dims : vec2<i32> = vec2<i32>(textureDimensions(noiseTex));
   let dimsF = vec2<f32>(dims);
-  let time = ((scene.time % 5000) / 5000) * 2 * 3.141;
+  let time = ((scene.time % 60000) / 60000) * 2 * 3.141;
   let u = input.uv.x * (0.8 + ((cos(time) + 1) / 2) / 5);
   let v = input.uv.y * (0.8 + ((sin(time) + 1) / 2) / 5);
   let coord = vec2<f32>(u, v) * dimsF;
