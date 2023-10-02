@@ -1,3 +1,5 @@
+import { AudioDef } from "../audio/audio.js";
+import { SoundSetDef } from "../audio/sound-loader.js";
 import { EM, EntityW } from "../ecs/entity-manager.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { InputsDef } from "../input/inputs.js";
@@ -93,6 +95,9 @@ EM.addEagerInit([SpaceSuitDef], [], [], () => {
         if (res.inputs.lclick) {
           e.spaceSuit.swingingSword = true;
           e.spaceSuit.swordSwingT = 0;
+          EM.whenResources(AudioDef, SoundSetDef).then((res) => {
+            res.music.playSound("sword", res.soundSet["sword.mp3"], 0.2);
+          });
         }
       }
     }
