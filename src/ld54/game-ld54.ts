@@ -57,6 +57,7 @@ import {
   BubbleDef,
   LD54GameStateDef,
   BreathingPlayerDef,
+  SHIP_SPEED,
 } from "./gamestate.js";
 import { OreCarrierDef, OreStoreDef, initOre } from "./ore.js";
 import { createSpaceBarge } from "./barge.js";
@@ -347,8 +348,6 @@ export async function initLD54() {
   if (me.host) {
     createRaft();
 
-    const raftSpeed_segPerSecond = 1;
-
     EM.addSystem(
       "movePlatform",
       Phase.GAME_WORLD,
@@ -362,6 +361,7 @@ export async function initLD54() {
         }
 
         const seconds = raft.raftLocal.t * 0.001;
+        const raftSpeed_segPerSecond = SHIP_SPEED / (5 / 1000);
         const t = (seconds * raftSpeed_segPerSecond) % numPathSeg;
 
         getPathPosRot(

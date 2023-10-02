@@ -29,15 +29,18 @@ const STARTING_FUEL = 100;
 const OXYGEN_DENSITY = 0.001;
 
 // oxygen consumed per ms
-const OXYGEN_CONSUMPTION_RATE = 1 / 1000;
+export const OXYGEN_CONSUMPTION_RATE = 1 / 1000;
 
-const FUEL_CONSUMPTION_RATE = 1 / 300;
+export const FUEL_CONSUMPTION_RATE = 1 / 300;
 
 export const OXYGEN_PER_ORE = 50;
 
 export const FUEL_PER_ORE = 60;
 
 const STARTING_PLAYER_OXYGEN = 20;
+
+// per ms
+export const SHIP_SPEED = 5 / 1000;
 
 enum GameStatus {
   Playing,
