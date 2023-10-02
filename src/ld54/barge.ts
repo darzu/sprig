@@ -2,7 +2,7 @@ import { ENDESGA16 } from "../color/palettes.js";
 import { mat4, quat, vec3 } from "../matrix/sprig-matrix.js";
 import { V } from "../matrix/sprig-matrix.js";
 import {
-  createEmptyMesh,
+  createEmptyRawMesh,
   transformMesh,
   Mesh,
   validateMesh,
@@ -179,7 +179,7 @@ export interface SpaceBarge {
 
 export function createSpaceBarge(): SpaceBarge {
   const _start = performance.now();
-  const _timberMesh = createEmptyMesh("homeShip");
+  const _timberMesh = createEmptyRawMesh("homeShip");
 
   const builder: TimberBuilder = createTimberBuilder(_timberMesh);
 
