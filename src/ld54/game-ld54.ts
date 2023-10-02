@@ -375,7 +375,6 @@ export async function initLD54() {
   const bubbleMesh = makeSphere(16, 8, BUBBLE_HALFSIZE);
   console.log("bubbleMesh", bubbleMesh);
   const bubble = EM.new();
-  EM.set(bubble, PositionDef, V(0, 10, 0));
   EM.set(
     bubble,
     RenderableConstructDef,
