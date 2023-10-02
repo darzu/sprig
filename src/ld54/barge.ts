@@ -46,17 +46,19 @@ import {
 
 const railColor = ENDESGA16.darkBrown;
 const keelColor = ENDESGA16.darkBrown;
-const ribColor = ENDESGA16.darkBrown;
-const plankColor = ENDESGA16.lightBrown;
-const transomColor = ENDESGA16.lightBrown;
-const floorColor = ENDESGA16.lightBrown;
+const ribColor = ENDESGA16.midBrown;
+const plankColor = ENDESGA16.lightGray;
+const transomColor = ENDESGA16.lightGray;
+const floorColor = ENDESGA16.lightGray;
 const topPlankColor = ENDESGA16.darkBrown;
-const plankStripeColor = ENDESGA16.blue;
-const stripStartIdx = 4;
-const stripEndIdx = 6;
-const plankStripe2Color = ENDESGA16.white;
-const strip2StartIdx = 7;
-const strip2EndIdx = 8;
+// const plankStripeColor = ENDESGA16.darkGreen;
+const plankStripeColor = ENDESGA16.orange;
+const stripStartIdx = 1;
+const stripEndIdx = 5;
+// const plankStripe2Color = ENDESGA16.lightGreen;
+const plankStripe2Color = ENDESGA16.yellow;
+const strip2StartIdx = 6;
+const strip2EndIdx = 20;
 
 const FALSE = ("this" as string) === "that";
 
