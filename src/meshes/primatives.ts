@@ -819,6 +819,7 @@ export function makeSphere(numLon: number, numLat: number, r: number): Mesh {
     dbgName: `sphere${numLat}x${numLon}x${r}`,
     normals,
   };
+  console.log(mesh);
   return mesh;
 }
 

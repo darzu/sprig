@@ -53,6 +53,7 @@ import { PartyDef } from "../camera/party.js";
 import { makeDome, makeSphere } from "../meshes/primatives.js";
 import { BUBBLE_MASK } from "../render/pipeline-masks.js";
 import { bubblePipeline } from "../render/pipelines/xp-bubble.js";
+import { BubbleDef, OxygenDef } from "./oxygen.js";
 
 const RENDER_TRUTH_CUBE = false;
 
@@ -323,7 +324,7 @@ export async function initLD54() {
   const numPathSeg = spacePath.spacePath.path.length - 1;
 
   // bubble
-  const BUBBLE_HALFSIZE = 50;
+  const BUBBLE_HALFSIZE = 1;
   const bubbleMesh = makeSphere(16, 8, BUBBLE_HALFSIZE);
   console.log("bubbleMesh", bubbleMesh);
   const bubble = EM.new();
@@ -336,6 +337,9 @@ export async function initLD54() {
     undefined,
     BUBBLE_MASK
   );
+  EM.set(bubble, BubbleDef);
+
+  EM.addResource(OxygenDef, 100);
 
   // raft
   if (me.host) {

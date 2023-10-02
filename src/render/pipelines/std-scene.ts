@@ -210,6 +210,7 @@ export const SceneStruct = createCyStruct(
     maxSurfaceId: "u32",
     numPointLights: "u32",
     numGerstnerWaves: "u32",
+    bubbleRadius: "f32",
   },
   {
     isUniform: true,
@@ -230,6 +231,7 @@ export const SceneStruct = createCyStruct(
       views.u32[offsets_32[9]] = data.maxSurfaceId;
       views.u32[offsets_32[10]] = data.numPointLights;
       views.u32[offsets_32[11]] = data.numGerstnerWaves;
+      views.f32[offsets_32[12]] = data.bubbleRadius;
     },
   }
 );
@@ -272,6 +274,7 @@ export function setupScene(): SceneTS {
     maxSurfaceId: 1, // updated later
     numPointLights: 0, // updated later
     numGerstnerWaves: 0, // updated later
+    bubbleRadius: 0,
   };
 }
 

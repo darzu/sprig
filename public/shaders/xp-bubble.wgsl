@@ -34,7 +34,7 @@ struct FragOut {
   let noise = textureLoad(noiseTex, vec2<i32>(coord), 0).r * (0.8 + ((sin(time) + 1) / 2) / 5);
 
   let toCamera = scene.cameraPos - input.worldPos.xyz;
-  let cameraAng = clamp(abs(dot(normalize(toCamera), input.normal)), 0.0, 1.0);
+  let cameraAng = clamp(abs(dot(normalize(toCamera), normalize(input.normal))), 0.0, 1.0);
   const f0 = 0.002;
 
   let fresnelIntensity = f0 + (1.0 - f0) * pow(1.0 - cameraAng, 7.0);
