@@ -36,6 +36,9 @@ export function randInt(min: number, max: number) {
   max = Math.floor(max);
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
+export function randFloat(min: number, max: number) {
+  return Math.random() * (max - min) + min;
+}
 
 export function align(x: number, size: number): number {
   return Math.ceil(x / size) * size;

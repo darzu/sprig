@@ -16,7 +16,7 @@ import { assert } from "../utils/util.js";
 import { RendererDef } from "../render/renderer-ecs.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { vec3Dbg } from "../utils/utils-3d.js";
-import { CUBE_MESH } from "../meshes/primatives.js";
+import { mkCubeMesh } from "../meshes/primatives.js";
 import { Phase } from "../ecs/sys-phase.js";
 
 export interface NoodleSeg {
@@ -61,7 +61,7 @@ export function debugCreateNoodles() {
 
 export function registerNoodleSystem() {
   const posIdxToSegIdx: Map<number, number> = new Map();
-  CUBE_MESH.pos.forEach((p, i) => {
+  mkCubeMesh().pos.forEach((p, i) => {
     if (p[1] > 0) posIdxToSegIdx.set(i, 0);
     else posIdxToSegIdx.set(i, 1);
   });
@@ -96,7 +96,7 @@ export function registerNoodleSystem() {
 }
 
 export function createNoodleMesh(thickness: number, color: vec3): Mesh {
-  const m = cloneMesh(CUBE_MESH);
+  const m = mkCubeMesh();
   m.colors.forEach((c) => vec3.copy(c, color));
   scaleMesh3(m, V(thickness, 0.0, thickness));
   return normalizeMesh(m);

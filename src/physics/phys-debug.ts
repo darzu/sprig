@@ -26,7 +26,7 @@ import {
 } from "./transform.js";
 import { vec3, V } from "../matrix/sprig-matrix.js";
 import { Phase } from "../ecs/sys-phase.js";
-import { CUBE_MESH } from "../meshes/primatives.js";
+import { mkCubeMesh } from "../meshes/primatives.js";
 
 // TODO(@darzu): re-enable all this! it requires line drawing again
 
@@ -147,7 +147,7 @@ export function setCubePosScaleToAABB(
 // TODO(@darzu): use instancing
 function meshFromAABB(aabb: AABB): RawMesh {
   // resize
-  const m = cloneMesh(CUBE_MESH);
+  const m = mkCubeMesh();
   mapMeshPositions(m, (p) =>
     vec3.clone([
       mathMap(p[0], -1, 1, 0, aabb.max[0] - aabb.min[0]),
