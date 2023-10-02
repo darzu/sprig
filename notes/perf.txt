@@ -440,3 +440,6 @@ Sometimes use "var" instead of "let"/"const":
 TODO: read all the asm.js material
   https://blog.mozilla.org/luke/2013/03/21/asm-js-in-firefox-nightly/
   https://brendaneich.com/2015/06/from-asm-js-to-webassembly/
+
+Chrome:
+  open -a Google\ Chrome\ Canary --args --disable-dawn-features=disallow_unsafe_apis
