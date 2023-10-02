@@ -62,7 +62,7 @@ export interface Brick {
   color: vec3;
 }
 
-export interface TowerRow {
+export interface BrickRow {
   aabb: AABB;
   bricks: Array<Brick>;
   // excludes "shrunk" bricks--hacky
@@ -72,7 +72,7 @@ export interface TowerRow {
 
 export interface StoneState {
   mesh: Mesh;
-  rows: TowerRow[];
+  rows: BrickRow[];
   totalBricks: number;
   currentBricks: number;
   aabb: AABB;
@@ -410,7 +410,7 @@ function createTowerState(): StoneState {
   let towerAABB = createAABB();
   let totalBricks = 0;
   for (let r = 0; r < rows; r++) {
-    const row: TowerRow = {
+    const row: BrickRow = {
       aabb: createAABB(),
       bricks: [],
       totalBricks: 0,
