@@ -36,7 +36,7 @@ import { shadowPipelines } from "../render/pipelines/std-shadow.js";
 // import { ControllableDef } from "../input/controllable.js";
 import { ColliderDef } from "../physics/collider.js";
 import { TimeDef } from "../time/time.js";
-import { assert } from "../utils/util.js";
+import { assert, dbgLogOnce, dbgOnce } from "../utils/util.js";
 import { MeDef } from "../net/components.js";
 import { eventWizard } from "../net/events.js";
 import { initStars, renderStars } from "../render/pipelines/std-stars.js";
@@ -443,9 +443,19 @@ export async function initLD54() {
           raft.raftLocal.t += res.time.dt;
         }
 
+        const SEG_LEN = 5;
         const seconds = raft.raftLocal.t * 0.001;
-        const raftSpeed_segPerSecond = SHIP_SPEED / (5 / 1000);
+        const raftSpeed_segPerSecond = SHIP_SPEED / (SEG_LEN / 1000);
         const t = (seconds * raftSpeed_segPerSecond) % numPathSeg;
+
+        if (res.ld54GameState.fuel <= 0) {
+          // TODO(@darzu): DBG. out of fuel at 30 w/ starting fuel 100.
+          // TODO(@darzu): DBG. out of fuel at 18 w/ starting fuel 60.
+          dbgLogOnce(
+            `travel-${t}`,
+            `OUT OF FUEL AT: ${t}, dist: ${t * SEG_LEN}`
+          );
+        }
 
         getPathPosRot(
           spacePath.spacePath.path,
