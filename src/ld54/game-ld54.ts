@@ -323,24 +323,6 @@ export async function initLD54() {
   const spacePath = createSpacePath();
   const numPathSeg = spacePath.spacePath.path.length - 1;
 
-  // bubble
-  const BUBBLE_HALFSIZE = 1;
-  const bubbleMesh = makeSphere(16, 8, BUBBLE_HALFSIZE);
-  console.log("bubbleMesh", bubbleMesh);
-  const bubble = EM.new();
-  EM.set(bubble, PositionDef, V(0, 10, 0));
-  EM.set(
-    bubble,
-    RenderableConstructDef,
-    bubbleMesh,
-    undefined,
-    undefined,
-    BUBBLE_MASK
-  );
-  EM.set(bubble, BubbleDef);
-
-  EM.addResource(OxygenDef, 100);
-
   // raft
   if (me.host) {
     createRaft();
@@ -380,6 +362,25 @@ export async function initLD54() {
     );
   }
   const raft = await EM.whenSingleEntity(RaftPropsDef, FinishedDef);
+
+  // bubble
+  const BUBBLE_HALFSIZE = 1;
+  const bubbleMesh = makeSphere(16, 8, BUBBLE_HALFSIZE);
+  console.log("bubbleMesh", bubbleMesh);
+  const bubble = EM.new();
+  EM.set(bubble, PositionDef, V(0, 10, 0));
+  EM.set(
+    bubble,
+    RenderableConstructDef,
+    bubbleMesh,
+    undefined,
+    undefined,
+    BUBBLE_MASK
+  );
+  EM.set(bubble, BubbleDef);
+  EM.set(bubble, PhysicsParentDef, raft.id);
+
+  EM.addResource(OxygenDef, 100);
 
   // player
   const color = AllEndesga16[me.pid + 4 /*skip browns*/];

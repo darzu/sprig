@@ -42,6 +42,6 @@ struct FragOut {
   // ENDESGA16 light blue
   let color = vec3<f32>(0.02, 0.81, 0.91);
   out.color = vec4<f32>(color * noise, fresnelIntensity * 0.7);
-  out.emissive = vec4<f32>(color * noise, fresnelIntensity * 0.7);
+  out.emissive = vec4<f32>(color * noise, clamp(fresnelIntensity * 0.7, 0.05, 0.7));
   return out;
 }

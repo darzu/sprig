@@ -154,15 +154,22 @@ fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
   // HACK: disables fresnel
   fresnelIntensity *= hasFresnel;
 
+
   // cel shading:
   // TODO(@darzu): kinda hacky to have seperate bands for these?
   // lightingIntensity = ceil(lightingIntensity * 10.0) / 10.0;
   // fresnelIntensity = ceil(fresnelIntensity * 5.0) / 5.0;
 
-  let litColor = mix(
+  var litColor = mix(
     color * lightingIntensity, 
     fresnelColor, 
   fresnelIntensity * 0.3); // * 0.5;
 
+  let distanceToParty = length(scene.partyPos - scene.cameraPos);
+  let inBubble = f32(distanceToParty < scene.bubbleRadius);
+  const bubbleColor = vec3<f32>(0.02, 0.81, 0.91);
+  litColor = mix(litColor, bubbleColor, inBubble * 0.1);
+  
+  
   return vec4(litColor, alpha);
 }
