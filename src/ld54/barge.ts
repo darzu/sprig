@@ -1,72 +1,47 @@
-import { DBG_ASSERT } from "../flags.js";
-import {
-  vec2,
-  vec3,
-  vec4,
-  quat,
-  mat4,
-  mat3,
-  V,
-} from "../matrix/sprig-matrix.js";
-import { jitter } from "../utils/math.js";
-import {
-  getAABBFromMesh,
-  mapMeshPositions,
-  mergeMeshes,
-  Mesh,
-  RawMesh,
-  transformMesh,
-  validateMesh,
-} from "../meshes/mesh.js";
-import { assert, assertDbg, range } from "../utils/util.js";
-import {
-  centroid,
-  quatFromUpForward,
-  randNormalPosVec3,
-  vec3Dbg,
-} from "../utils/utils-3d.js";
+import { ENDESGA16 } from "../color/palettes.js";
+import { mat4, quat, vec3 } from "../matrix/sprig-matrix.js";
+import { V } from "../matrix/sprig-matrix.js";
 import {
   createEmptyMesh,
+  transformMesh,
+  Mesh,
+  validateMesh,
+} from "../meshes/mesh.js";
+import {
+  createAABB,
+  updateAABBWithPoint,
+  getSizeFromAABB,
+} from "../physics/aabb.js";
+import {
+  Path,
+  translatePath,
+  BezierCubic,
+  createPathFromBezier,
+  mirrorPath,
+  clonePath,
+  reverseBezier,
+  createEvenPathFromBezierCurve,
+  translatePathAlongNormal,
+  PathNode,
+} from "../utils/spline.js";
+import { assert } from "../utils/util.js";
+import {
+  HomeShip,
+  fixPathBasis,
+  appendBoard,
+  snapToPath,
+  lerpBetween,
+  getPathFrom2DQuadMesh,
+  snapXToPath,
+} from "../wood/shipyard.js";
+import {
+  TimberBuilder,
   createTimberBuilder,
   getBoardsFromMesh,
   verifyUnsharedProvokingForWood,
   reserveSplinterSpace,
-  TimberBuilder,
   WoodState,
-  setSideQuadIdxs,
-  setEndQuadIdxs,
-} from "./wood.js";
-import { BLACK } from "../meshes/mesh-list.js";
-import { mkHalfEdgeQuadMesh } from "../meshes/primatives.js";
-import { HFace, meshToHalfEdgePoly } from "../meshes/half-edge.js";
-import { createGizmoMesh } from "../debug/gizmos.js";
-import { EM } from "../ecs/entity-manager.js";
-import {
-  PositionDef,
-  updateFrameFromPosRotScale,
-} from "../physics/transform.js";
-import { RenderableConstructDef } from "../render/renderer-ecs.js";
-import {
-  AABB,
-  createAABB,
-  getSizeFromAABB,
-  updateAABBWithPoint,
-} from "../physics/aabb.js";
-import { ENDESGA16 } from "../color/palettes.js";
-import {
-  BezierCubic,
-  Path,
-  PathNode,
-  clonePath,
-  createEvenPathFromBezierCurve,
-  createPathFromBezier,
-  mirrorPath,
-  reverseBezier,
-  translatePath,
-  translatePathAlongNormal,
-} from "../utils/spline.js";
-
-// TODO(@darzu): use arc-length parameterization to resample splines
+} from "../wood/wood.js";
 
 const railColor = ENDESGA16.darkBrown;
 const keelColor = ENDESGA16.darkBrown;
@@ -81,25 +56,6 @@ const stripEndIdx = 6;
 const plankStripe2Color = ENDESGA16.white;
 const strip2StartIdx = 7;
 const strip2EndIdx = 8;
-
-export interface HomeShip {
-  timberState: WoodState;
-  timberMesh: Mesh;
-  // TODO(@darzu): how to pass this?
-  ribCount: number;
-  ribSpace: number;
-  ribWidth: number;
-  ceilHeight: number;
-  floorHeight: number;
-  floorLength: number;
-  floorWidth: number;
-}
-
-export interface ShipyardUI {
-  kind: "shipyard";
-  ribCount: number;
-  // TODO(@darzu): other params
-}
 
 // Note: Made w/ game-font !
 const keelTemplate: Mesh = {
@@ -159,126 +115,21 @@ const keelTemplate: Mesh = {
   surfaceIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
   usesProvoking: true,
 };
-const __temp1 = vec3.create();
-export function getPathFrom2DQuadMesh(m: Mesh, up: vec3.InputT): Path {
-  const hpoly = meshToHalfEdgePoly(m);
 
-  // find the end face
-  let endFaces = hpoly.faces.filter(isEndFace);
-  // console.dir(endFaces);
-  assert(endFaces.length === 2);
-  const endFace =
-    endFaces[0].edg.orig.vi < endFaces[1].edg.orig.vi
-      ? endFaces[0]
-      : endFaces[1];
-
-  // find the end edge
-  let endEdge = endFace.edg;
-  while (!endEdge.twin.face) endEdge = endEdge.next;
-  endEdge = endEdge.next.next;
-  // console.log("endEdge");
-  // console.dir(endEdge);
-
-  // build the path
-  const path: Path = [];
-  let e = endEdge;
-  while (true) {
-    let v0 = m.pos[e.orig.vi];
-    let v1 = m.pos[e.next.orig.vi];
-    let pos = centroid(v0, v1);
-    let dir = vec3.cross(vec3.sub(v0, v1, __temp1), up, __temp1);
-    const rot = quatFromUpForward(quat.create(), up, dir);
-    path.push({ pos, rot });
-
-    if (!e.face) break;
-
-    e = e.next.next.twin;
-  }
-
-  // console.log("path");
-  // console.dir(path);
-
-  return path;
-
-  function isEndFace(f: HFace): boolean {
-    let neighbor: HFace | undefined = undefined;
-    let e = f.edg;
-    for (let i = 0; i < 4; i++) {
-      if (e.twin.face)
-        if (!neighbor) neighbor = e.twin.face;
-        else if (e.twin.face !== neighbor) return false;
-      e = e.next;
-    }
-    return true;
-  }
+export interface SpaceBarge {
+  timberState: WoodState;
+  timberMesh: Mesh;
+  // TODO(@darzu): how to pass this?
+  ribCount: number;
+  ribSpace: number;
+  ribWidth: number;
+  ceilHeight: number;
+  floorHeight: number;
+  floorLength: number;
+  floorWidth: number;
 }
 
-function createPathGizmos(path: Path): Mesh {
-  let gizmos: Mesh[] = [];
-  path.forEach((p) => {
-    const g = createGizmoMesh();
-    g.pos.forEach((v) => {
-      vec3.transformQuat(v, p.rot, v);
-      vec3.add(v, p.pos, v);
-    });
-    gizmos.push(g);
-  });
-  const res = mergeMeshes(...gizmos) as Mesh;
-  res.usesProvoking = true;
-  return res;
-}
-export async function dbgPathWithGizmos(path: Path) {
-  const mesh = createPathGizmos(path);
-
-  const e = EM.new();
-  EM.set(e, PositionDef);
-  EM.set(e, RenderableConstructDef, mesh);
-}
-
-export function snapXToPath(path: Path, x: number, out: vec3) {
-  return snapToPath(path, x, 0, out);
-}
-const __temp2 = vec3.create();
-export function snapToPath(path: Path, w: number, dim: 0 | 1 | 2, out: vec3) {
-  for (let i = 0; i < path.length; i++) {
-    let pos = path[i].pos;
-    // are we ahead of w
-    if (w < pos[dim]) {
-      if (i === 0) {
-        // w is before the whole path
-        vec3.copy(out, path[i].pos);
-        return out;
-      }
-      let prev = path[i - 1].pos;
-      assert(
-        prev[dim] <= w,
-        `TODO: we assume path is in assending [x,y,z][${dim}] order`
-      );
-
-      let diff = vec3.sub(pos, prev, __temp2);
-      let percent = (w - prev[dim]) / diff[dim];
-      vec3.add(prev, vec3.scale(diff, percent, out), out);
-      return out;
-    }
-  }
-  // the whole path is behind x
-  vec3.copy(out, path[path.length - 1].pos);
-  return out;
-}
-
-export const homeShipAABBs: AABB[] = [
-  { min: V(-10.6, -2.65, -22.1), max: V(-6.6, 3.65, 18.1) },
-  { min: V(7.0, -2.65, -22.1), max: V(11.0, 3.65, 18.1) },
-  { min: V(-6.8, -2.65, -30.45), max: V(6.4, 3.65, -25.95) },
-  { min: V(5.45, -2.65, -26.15), max: V(7.95, 3.65, -21.65) },
-  { min: V(-8.05, -2.65, -26.15), max: V(-5.55, 3.65, -21.65) },
-  { min: V(-8.05, -2.65, 17.95), max: V(-4.35, 3.65, 22.45) },
-  { min: V(4.25, -2.65, 17.95), max: V(7.95, 3.65, 22.45) },
-  { min: V(-6.15, -2.65, 22.25), max: V(5.55, 3.65, 26.15) },
-  { min: V(-6.8, -5.95, -26.1), max: V(7.2, 0.35, 22.5) },
-];
-
-export function createHomeShip(): HomeShip {
+export function createSpaceBarge(): SpaceBarge {
   const _start = performance.now();
   const _timberMesh = createEmptyMesh("homeShip");
 
@@ -801,128 +652,4 @@ export function createHomeShip(): HomeShip {
     floorLength,
     floorWidth,
   };
-}
-
-// TODO(@darzu): BAD: wood.ts has an "interface Board" too
-interface Board {
-  path: Path;
-
-  width: number;
-  depth: number;
-}
-
-export function pathNodeFromMat4(cursor: mat4): PathNode {
-  const rot = mat4.getRotation(cursor, quat.create());
-  const pos = mat4.getTranslation(cursor, vec3.create());
-  return {
-    pos,
-    rot,
-  };
-}
-
-export function lerpBetween(start: vec3, end: vec3, numNewMid: number): vec3[] {
-  const positions: vec3[] = [];
-  positions.push(start);
-  for (let i = 0; i < numNewMid; i++) {
-    const t = (i + 1) / (numNewMid + 2 - 1);
-    const pos = vec3.lerp(start, end, t, vec3.create());
-    positions.push(pos);
-  }
-  positions.push(end);
-  return positions;
-}
-
-function cloneBoard(board: Board): Board {
-  return {
-    ...board,
-    path: clonePath(board.path),
-  };
-}
-
-export function appendBoard(mesh: RawMesh, board: Board, color = BLACK) {
-  // TODO(@darzu): build up wood state along with the mesh!
-
-  assert(board.path.length >= 2, `invalid board path!`);
-  // TODO(@darzu): de-duplicate with TimberBuilder
-  const firstQuadIdx = mesh.quad.length;
-  // const mesh = b.mesh;
-
-  board.path.forEach((p, i) => {
-    addLoopVerts(p);
-    if (i === 0) addEndQuad(true);
-    else addSideQuads();
-  });
-  addEndQuad(false);
-
-  // TODO(@darzu): streamline
-  for (let qi = firstQuadIdx; qi < mesh.quad.length; qi++)
-    mesh.colors.push(vec3.clone(color));
-
-  // NOTE: for provoking vertices,
-  //  indexes 0, 1 of a loop are for stuff behind (end cap, previous sides)
-  //  indexes 2, 3 of a loop are for stuff ahead (next sides, end cap)
-
-  function addSideQuads() {
-    const loop2Idx = mesh.pos.length - 4;
-    const loop1Idx = mesh.pos.length - 4 - 4;
-
-    const q0 = vec4.create();
-    const q1 = vec4.create();
-    const q2 = vec4.create();
-    const q3 = vec4.create();
-
-    setSideQuadIdxs(loop1Idx, loop2Idx, q0, q1, q2, q3);
-
-    mesh.quad.push(q0, q1, q2, q3);
-  }
-
-  function addEndQuad(facingDown: boolean) {
-    const lastLoopIdx = mesh.pos.length - 4;
-    const q = vec4.create();
-    setEndQuadIdxs(lastLoopIdx, q, facingDown);
-    mesh.quad.push(q);
-  }
-
-  function addLoopVerts(n: PathNode) {
-    // width/depth
-    const v0 = V(board.width, 0, board.depth);
-    const v1 = V(board.width, 0, -board.depth);
-    const v2 = V(-board.width, 0, -board.depth);
-    const v3 = V(-board.width, 0, board.depth);
-    // rotate
-    vec3.transformQuat(v0, n.rot, v0);
-    vec3.transformQuat(v1, n.rot, v1);
-    vec3.transformQuat(v2, n.rot, v2);
-    vec3.transformQuat(v3, n.rot, v3);
-    // translate
-    vec3.add(v0, n.pos, v0);
-    vec3.add(v1, n.pos, v1);
-    vec3.add(v2, n.pos, v2);
-    vec3.add(v3, n.pos, v3);
-    // append
-    mesh.pos.push(v0, v1, v2, v3);
-  }
-}
-
-export function fixPathBasis(
-  path: Path,
-  newX: vec3.InputT,
-  newY: vec3.InputT,
-  newZ: vec3.InputT
-) {
-  // TODO(@darzu): PERF. Must be a better way to do this...
-  const fixRot = quat.fromMat3(
-    mat3.fromValues(
-      newX[0],
-      newX[1],
-      newX[2],
-      newY[0],
-      newY[1],
-      newY[2],
-      newZ[0],
-      newZ[1],
-      newZ[2]
-    )
-  );
-  path.forEach((p) => quat.mul(p.rot, fixRot, p.rot));
 }

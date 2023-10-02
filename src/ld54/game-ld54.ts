@@ -55,6 +55,7 @@ import { BUBBLE_MASK } from "../render/pipeline-masks.js";
 import { bubblePipeline } from "../render/pipelines/xp-bubble.js";
 import { BubbleDef, OxygenDef } from "./oxygen.js";
 import { OreCarrierDef, OreStoreDef, initOre } from "./ore.js";
+import { createSpaceBarge } from "./barge.js";
 
 const RENDER_TRUTH_CUBE = false;
 
@@ -197,7 +198,12 @@ const { RaftPropsDef, createRaft } = defineNetEntityHelper({
   dynamicComponents: [PositionDef, RotationDef],
   buildResources: [ld54Meshes],
   build: (raft, res) => {
-    EM.set(raft, RenderableConstructDef, res.ld54_meshes.cubeRaft.proto);
+    const barge = createSpaceBarge();
+
+    EM.set(raft, RenderableConstructDef, barge.timberMesh);
+
+    // EM.set(raft, RenderableConstructDef, res.ld54_meshes.cubeRaft.proto);
+
     EM.set(raft, ColorDef, ENDESGA16.darkGreen);
     EM.set(raft, PositionDef, V(0, 5, 0));
     EM.set(raft, ColliderDef, {
