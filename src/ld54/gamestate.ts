@@ -61,7 +61,7 @@ EM.addEagerInit([], [LD54GameStateDef], [], () => {
     "updateLD54GameState",
     Phase.PRE_GAME_WORLD,
     [BreathingPlayerDef, PositionDef],
-    [LD54GameStateDef, PartyDef, TimeDef, TextDef],
+    [LD54GameStateDef, PartyDef, TimeDef, TextDef, RendererDef],
     (es, res) => {
       if (res.ld54GameState.status === GameStatus.Victory) {
         res.text.upperText = "YOU WON!";
@@ -99,6 +99,10 @@ EM.addEagerInit([], [LD54GameStateDef], [], () => {
             res.ld54GameState.status = GameStatus.Defeat;
           }
         }
+        res.renderer.renderer.updateScene({
+          vignetteIntensity:
+            1 - res.ld54GameState.playerOxygen / STARTING_PLAYER_OXYGEN,
+        });
       }
 
       // have we reached the end of the path and won?
