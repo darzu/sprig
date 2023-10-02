@@ -29,15 +29,18 @@ const STARTING_FUEL = 100;
 const OXYGEN_DENSITY = 0.001;
 
 // oxygen consumed per ms
-const OXYGEN_CONSUMPTION_RATE = 1 / 1000;
+export const OXYGEN_CONSUMPTION_RATE = 1 / 1000;
 
-const FUEL_CONSUMPTION_RATE = 1 / 300;
+export const FUEL_CONSUMPTION_RATE = 1 / 300;
 
 export const OXYGEN_PER_ORE = 50;
 
 export const FUEL_PER_ORE = 60;
 
 const STARTING_PLAYER_OXYGEN = 20;
+
+// per ms
+export const SHIP_SPEED = 5 / 1000;
 
 enum GameStatus {
   Playing,
@@ -58,7 +61,7 @@ EM.addEagerInit([], [LD54GameStateDef], [], () => {
     "updateLD54GameState",
     Phase.PRE_GAME_WORLD,
     [BreathingPlayerDef, PositionDef],
-    [LD54GameStateDef, PartyDef, TimeDef, TextDef],
+    [LD54GameStateDef, PartyDef, TimeDef, TextDef, RendererDef],
     (es, res) => {
       if (res.ld54GameState.status === GameStatus.Victory) {
         res.text.upperText = "YOU WON!";
@@ -96,6 +99,10 @@ EM.addEagerInit([], [LD54GameStateDef], [], () => {
             res.ld54GameState.status = GameStatus.Defeat;
           }
         }
+        res.renderer.renderer.updateScene({
+          vignetteIntensity:
+            1 - res.ld54GameState.playerOxygen / STARTING_PLAYER_OXYGEN,
+        });
       }
 
       // have we reached the end of the path and won?

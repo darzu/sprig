@@ -26,7 +26,14 @@ import { randFloat, randInt } from "../utils/math.js";
 import { Path } from "../utils/spline.js";
 import { assert } from "../utils/util.js";
 import { randNormalVec3, randQuat } from "../utils/utils-3d.js";
-import { LD54GameStateDef, FUEL_PER_ORE, OXYGEN_PER_ORE } from "./gamestate.js";
+import {
+  LD54GameStateDef,
+  FUEL_PER_ORE,
+  OXYGEN_PER_ORE,
+  FUEL_CONSUMPTION_RATE,
+  SHIP_SPEED,
+  OXYGEN_CONSUMPTION_RATE,
+} from "./gamestate.js";
 
 let _t1 = vec3.create();
 let _t2 = quat.create();
@@ -127,8 +134,9 @@ export async function initOre(spacePath: Path) {
   const mkBallMesh = () => cloneMesh(ballGameMesh.mesh_ball.mesh);
 
   // ore parameters
-  const oxyOreTravelDist = 120;
-  const fuelOreTravelDist = 200;
+  const oxyOreTravelDist =
+    (OXYGEN_PER_ORE * SHIP_SPEED) / OXYGEN_CONSUMPTION_RATE;
+  const fuelOreTravelDist = (FUEL_PER_ORE * SHIP_SPEED) / FUEL_CONSUMPTION_RATE;
 
   const pathDistances: number[] = []; // cumulative distance
   {
