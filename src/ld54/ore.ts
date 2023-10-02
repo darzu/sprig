@@ -217,7 +217,13 @@ export async function initOre(spacePath: Path) {
         carrier.oreCarrier.carrying = undefined;
         store.oreStore.ores.push(ore);
         EM.set(ore, PhysicsParentDef, store.id);
-        vec3.set(0, 10, 0, ore.position);
+        if (ore.ore.type === "fuel") {
+          vec3.set(0, 5, -16, ore.position);
+        } else {
+          vec3.set(0, 5, 10, ore.position);
+        }
+
+        // update game state
         switch (ore.ore.type) {
           case "fuel":
             res.ld54GameState.fuel += FUEL_PER_ORE;

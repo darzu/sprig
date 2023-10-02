@@ -218,16 +218,16 @@ const { RaftPropsDef, createRaft, RaftLocalDef } = defineNetEntityHelper({
       aabb: res.ld54_meshes.cubeRaft.aabb,
     });
 
-    const pedestal = EM.new();
-    EM.set(pedestal, PositionDef, V(0, 1, 0));
-    EM.set(pedestal, RenderableConstructDef, res.ld54_meshes.hex.proto);
-    EM.set(pedestal, ColorDef, ENDESGA16.white);
-    EM.set(pedestal, ColliderDef, {
-      shape: "AABB",
-      solid: true,
-      aabb: res.ld54_meshes.hex.aabb,
-    });
-    EM.set(pedestal, PhysicsParentDef, raft.id);
+    // const pedestal = EM.new();
+    // EM.set(pedestal, PositionDef, V(0, 1, 0));
+    // EM.set(pedestal, RenderableConstructDef, res.ld54_meshes.hex.proto);
+    // EM.set(pedestal, ColorDef, ENDESGA16.white);
+    // EM.set(pedestal, ColliderDef, {
+    //   shape: "AABB",
+    //   solid: true,
+    //   aabb: res.ld54_meshes.hex.aabb,
+    // });
+    // EM.set(pedestal, PhysicsParentDef, raft.id);
 
     EM.set(raft, OreStoreDef);
   },
