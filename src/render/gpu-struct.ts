@@ -6,7 +6,7 @@ import { objMap } from "../utils/util.js";
 // TABLES, CONSTS and TYPE-LEVEL HELPERS
 
 const WGSLScalars = ["bool", "i32", "u32", "f32", "f16"] as const;
-type WGSLScalar = typeof WGSLScalars[number];
+type WGSLScalar = (typeof WGSLScalars)[number];
 type WGSLVec = {
   [S in WGSLScalar]: `vec2<${S}>` | `vec3<${S}>` | `vec4<${S}>`;
 }[WGSLScalar];
@@ -21,12 +21,13 @@ const WGSLMats = [
   "mat4x2<f32>",
   "mat4x4<f32>",
 ] as const;
-type WGSLMat = typeof WGSLMats[number];
+type WGSLMat = (typeof WGSLMats)[number];
 type WGSLType = WGSLScalar | WGSLVec | WGSLMat;
 
 type WGSLTypeToTSType = {
   f32: number;
   u32: number;
+  bool: boolean;
   "vec2<u32>": vec2;
   "vec2<f32>": vec2;
   "vec3<f32>": vec3;

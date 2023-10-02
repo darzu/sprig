@@ -291,22 +291,49 @@ export async function initLD54() {
     // init stars
     res.renderer.renderer.submitPipelines([], [...noisePipes, initStars]);
 
-    // renderer
-    res.renderer.pipelines = [
-      ...shadowPipelines,
-      // skyPipeline,
-      stdRenderPipeline,
-      stdRiggedRenderPipeline,
-      bubblePipeline,
-      // renderGrassPipe,
-      // renderOceanPipe,
-      outlineRender,
-      deferredPipeline,
-      renderStars,
-      ...blurPipelines,
-      // skyPipeline,
-      postProcess,
-    ];
+    // graphics settings
+    let useHighGraphics = false;
+    const graphicsCheckbox = document.getElementById(
+      "graphics-check"
+    ) as HTMLInputElement;
+    if (graphicsCheckbox) {
+      graphicsCheckbox.onchange = (e) => {
+        // console.log(graphicsCheckbox.checked);
+        // console.dir(e);
+        useHighGraphics = graphicsCheckbox.checked;
+        setRenderPipelines(useHighGraphics);
+        res.renderer.renderer.highGraphics = useHighGraphics;
+      };
+    } else {
+      console.error("No graphics checkbox!");
+    }
+
+    setRenderPipelines(useHighGraphics);
+
+    function setRenderPipelines(high: boolean) {
+      if (high) {
+        res.renderer.pipelines = [
+          ...shadowPipelines,
+          stdRenderPipeline,
+          stdRiggedRenderPipeline,
+          bubblePipeline,
+          outlineRender,
+          deferredPipeline,
+          renderStars,
+          ...blurPipelines,
+          postProcess,
+        ];
+      } else {
+        res.renderer.pipelines = [
+          stdRenderPipeline,
+          stdRiggedRenderPipeline,
+          bubblePipeline,
+          outlineRender,
+          deferredPipeline,
+          postProcess,
+        ];
+      }
+    }
   });
 
   const { camera, me } = await EM.whenResources(CameraDef, MeDef);

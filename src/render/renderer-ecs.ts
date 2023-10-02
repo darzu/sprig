@@ -357,6 +357,7 @@ EM.addEagerInit([RenderableConstructDef], [RendererDef], [], () => {
         partyDir: res.party.dir,
         cameraPos: cameraComputed.location,
         numPointLights: pointLights.length,
+        highGraphics: res.renderer.renderer.highGraphics ? 1 : 0,
       });
       // console.log(`pointLights.length: ${pointLights.length}`);
 
