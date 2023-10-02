@@ -56,7 +56,7 @@ const ALL_GAMES = [
   "ld54",
   "mp",
 ] as const;
-const GAME: (typeof ALL_GAMES)[number] = "ld54";
+const GAME: (typeof ALL_GAMES)[number] = "shipyard";
 
 // Run simulation with a fixed timestep @ 60hz
 const TIMESTEP = 1000 / 60;

@@ -57,62 +57,44 @@ const plankStripe2Color = ENDESGA16.white;
 const strip2StartIdx = 7;
 const strip2EndIdx = 8;
 
+const FALSE = ("this" as string) === "that";
+
 // Note: Made w/ game-font !
 const keelTemplate: Mesh = {
   pos: [
-    V(0.58, 0.0, 1.49),
-    V(-1.4, 0.0, 1.52),
-    V(-1.38, 0.0, 1.74),
-    V(0.59, 0.0, 1.71),
-    V(-3.73, 0.0, 1.47),
-    V(-3.72, 0.0, 1.68),
-    V(-4.4, 0.0, 1.22),
-    V(-4.64, 0.0, 1.41),
-    V(-4.76, 0.0, 0.24),
-    V(-5.03, 0.0, 0.3),
-    V(-4.81, 0.0, -0.08),
-    V(-5.13, 0.0, -0.04),
-    V(-5.05, 0.0, -1.12),
-    V(-5.38, 0.0, -1.09),
-    V(2.36, 0.0, 1.46),
-    V(2.28, 0.0, 1.26),
-    V(3.63, 0.0, 1.07),
-    V(3.5, 0.0, 0.89),
-    V(4.51, 0.0, 0.49),
-    V(4.32, 0.0, 0.37),
-    V(5.15, 0.0, -0.4),
-    V(4.93, 0.0, -0.44),
-    V(5.29, 0.0, -1.46),
-    V(5.06, 0.0, -1.46),
+    V(-2.25, 0.0, -1.08),
+    V(-3.68, 0.0, -1.44),
+    V(-4.07, 0.0, -1.14),
+    V(-2.25, 0.0, -0.69),
+    V(0.06, 0.0, -0.57),
+    V(0.03, 0.0, -0.92),
+    V(2.36, 0.0, -0.57),
+    V(2.18, 0.0, -0.9),
+    V(3.56, 0.0, -1.44),
+    V(3.27, 0.0, -1.63),
+    V(3.92, 0.0, -2.88),
+    V(3.53, 0.0, -2.83),
+    V(-3.96, 0.0, -2.6),
+    V(-4.43, 0.0, -2.53),
   ],
   tri: [],
   quad: [
     V(0, 1, 2, 3),
-    V(4, 5, 2, 1),
+    V(4, 5, 0, 3),
     V(6, 7, 5, 4),
     V(8, 9, 7, 6),
     V(10, 11, 9, 8),
-    V(12, 13, 11, 10),
-    V(14, 15, 0, 3),
-    V(16, 17, 15, 14),
-    V(18, 19, 17, 16),
-    V(20, 21, 19, 18),
-    V(22, 23, 21, 20),
+    V(12, 13, 2, 1),
   ],
   colors: [
-    V(0.49, 0.16, 0.86),
-    V(0.48, 0.03, 0.88),
-    V(0.47, 0.19, 0.86),
-    V(0.53, 0.5, 0.68),
-    V(0.34, 0.74, 0.58),
-    V(0.62, 0.36, 0.69),
-    V(0.93, 0.32, 0.19),
-    V(0.57, 0.18, 0.8),
-    V(0.67, 0.18, 0.72),
-    V(0.19, 0.92, 0.34),
-    V(0.42, 0.81, 0.42),
+    V(0.42, 0.49, 0.76),
+    V(0.53, 0.6, 0.6),
+    V(0.44, 0.83, 0.34),
+    V(0.37, 0.79, 0.49),
+    V(0.44, 0.68, 0.59),
+    V(0.97, 0.11, 0.21),
   ],
-  surfaceIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+  surfaceIds: [1, 2, 3, 4, 5, 6],
   usesProvoking: true,
 };
 
@@ -363,155 +345,163 @@ export function createSpaceBarge(): SpaceBarge {
   // RIBS W/ SLOTS
   const evenRibs: Path[] = [];
   let plankCount = 0;
-  let longestRibIdx = 0;
-  {
-    let ribIdx = 0;
-    for (let curve of ribCurves) {
-      let topToBottomCurve = reverseBezier(curve);
-      const even = createEvenPathFromBezierCurve(
-        topToBottomCurve,
-        plankWidth * 2.0, // * 0.95,
-        [1, 0, 0]
-      );
-      // even.reverse();
-      // translatePath(even, [0, 0, 10]);
-      fixPathBasis(even, [0, 0, 1], [0, 1, 0], [-1, 0, 0]);
-      translatePathAlongNormal(even, ribDepth); // + 0.3);
-      // fixPathBasis(even, [0, 1, 0], [1, 0, 0], [0, 0, -1]);
-      // dbgPathWithGizmos(even);
-      // dbgPathWithGizmos([even[0]]);
-      evenRibs.push(even);
-      if (even.length > plankCount) {
-        plankCount = even.length;
-        longestRibIdx = ribIdx;
+  if (FALSE) {
+    let longestRibIdx = 0;
+    {
+      let ribIdx = 0;
+      for (let curve of ribCurves) {
+        let topToBottomCurve = reverseBezier(curve);
+        const even = createEvenPathFromBezierCurve(
+          topToBottomCurve,
+          plankWidth * 2.0, // * 0.95,
+          [1, 0, 0]
+        );
+        // even.reverse();
+        // translatePath(even, [0, 0, 10]);
+        fixPathBasis(even, [0, 0, 1], [0, 1, 0], [-1, 0, 0]);
+        translatePathAlongNormal(even, ribDepth); // + 0.3);
+        // fixPathBasis(even, [0, 1, 0], [1, 0, 0], [0, 0, -1]);
+        // dbgPathWithGizmos(even);
+        // dbgPathWithGizmos([even[0]]);
+        evenRibs.push(even);
+        if (even.length > plankCount) {
+          plankCount = even.length;
+          longestRibIdx = ribIdx;
+        }
+        ribIdx++;
       }
-      ribIdx++;
     }
+    // console.log(`plankCount: ${plankCount}`);
   }
-  // console.log(`plankCount: ${plankCount}`);
 
   // PLANKS (take 2)
-  // const centerRibP = ribPaths[longestRibIdx];
-  // const centerRibC = ribCurves[longestRibIdx];
-  // dbgPathWithGizmos(centerRibP);
-
-  const sternKeelPath = keelPath.reduce(
-    (p, n, i) => (i < 4 ? [...p, n] : p),
-    [] as Path
-  );
-  const bowKeelPath = keelPath.reduce(
-    (p, n, i) => (i >= keelPath.length - 4 ? [...p, n] : p),
-    [] as Path
-  );
-
-  let transomPlankNum = evenRibs[0].length;
-
   const plankPaths: Path[] = [];
   const plankPathsMirrored: Path[] = [];
-  const _temp4 = vec3.create();
-  for (let i = 0; i < plankCount; i++) {
-    const nodes: Path = evenRibs
-      .filter((rib) => rib.length > i)
-      .map((rib) => rib[i]);
-    if (nodes.length < 2) continue;
+  let transomPlankNum = 2;
+  if (FALSE) {
+    // const centerRibP = ribPaths[longestRibIdx];
+    // const centerRibC = ribCurves[longestRibIdx];
+    // dbgPathWithGizmos(centerRibP);
 
-    // one extra board to connect to the keel up front
-    if (i < 20) {
-      const secondToLast = nodes[nodes.length - 1];
-      const last: PathNode = {
-        pos: vec3.clone(secondToLast.pos),
-        rot: quat.clone(secondToLast.rot),
-      };
-      const snapped = snapToPath(bowKeelPath, last.pos[1], 1, _temp4);
-      last.pos[0] = snapped[0] + 1;
-      last.pos[2] = snapped[2];
-      nodes.push(last);
-    }
-
-    // extend boards backward for the transom
-    if (i < transomPlankNum) {
-      const second = nodes[0];
-      const third = nodes[1];
-      const first: PathNode = {
-        pos: vec3.clone(second.pos),
-        rot: quat.clone(second.rot),
-      };
-      const diff = vec3.sub(second.pos, third.pos, first.pos);
-      const scale = (transomPlankNum - 1 - i) / (transomPlankNum - 1) + 0.4;
-      // console.log("scale: " + scale);
-      vec3.scale(diff, scale, diff);
-      vec3.add(second.pos, diff, first.pos);
-      nodes.unshift(first);
-    }
-    plankPaths.push(nodes);
-
-    let mirroredPath = mirrorPath(clonePath(nodes), [0, 0, 1]);
-    plankPathsMirrored.push(mirroredPath);
-
-    let color = plankColor;
-    if (i === 0) color = topPlankColor;
-    if (stripStartIdx <= i && i <= stripEndIdx) color = plankStripeColor;
-    if (strip2StartIdx <= i && i <= strip2EndIdx) color = plankStripe2Color;
-
-    appendBoard(
-      builder.mesh,
-      {
-        path: nodes,
-        width: plankWidth,
-        depth: plankDepth,
-      },
-      color
+    const sternKeelPath = keelPath.reduce(
+      (p, n, i) => (i < 4 ? [...p, n] : p),
+      [] as Path
     );
-    appendBoard(
-      builder.mesh,
-      {
-        path: mirroredPath,
-        width: plankWidth,
-        depth: plankDepth,
-      },
-      color
+    const bowKeelPath = keelPath.reduce(
+      (p, n, i) => (i >= keelPath.length - 4 ? [...p, n] : p),
+      [] as Path
     );
+
+    transomPlankNum = evenRibs[0].length;
+
+    const _temp4 = vec3.create();
+    for (let i = 0; i < plankCount; i++) {
+      const nodes: Path = evenRibs
+        .filter((rib) => rib.length > i)
+        .map((rib) => rib[i]);
+      if (nodes.length < 2) continue;
+
+      // one extra board to connect to the keel up front
+      if (i < 20) {
+        const secondToLast = nodes[nodes.length - 1];
+        const last: PathNode = {
+          pos: vec3.clone(secondToLast.pos),
+          rot: quat.clone(secondToLast.rot),
+        };
+        const snapped = snapToPath(bowKeelPath, last.pos[1], 1, _temp4);
+        last.pos[0] = snapped[0] + 1;
+        last.pos[2] = snapped[2];
+        nodes.push(last);
+      }
+
+      // extend boards backward for the transom
+      if (i < transomPlankNum) {
+        const second = nodes[0];
+        const third = nodes[1];
+        const first: PathNode = {
+          pos: vec3.clone(second.pos),
+          rot: quat.clone(second.rot),
+        };
+        const diff = vec3.sub(second.pos, third.pos, first.pos);
+        const scale = (transomPlankNum - 1 - i) / (transomPlankNum - 1) + 0.4;
+        // console.log("scale: " + scale);
+        vec3.scale(diff, scale, diff);
+        vec3.add(second.pos, diff, first.pos);
+        nodes.unshift(first);
+      }
+      plankPaths.push(nodes);
+
+      let mirroredPath = mirrorPath(clonePath(nodes), [0, 0, 1]);
+      plankPathsMirrored.push(mirroredPath);
+
+      let color = plankColor;
+      if (i === 0) color = topPlankColor;
+      if (stripStartIdx <= i && i <= stripEndIdx) color = plankStripeColor;
+      if (strip2StartIdx <= i && i <= strip2EndIdx) color = plankStripe2Color;
+
+      appendBoard(
+        builder.mesh,
+        {
+          path: nodes,
+          width: plankWidth,
+          depth: plankDepth,
+        },
+        color
+      );
+      appendBoard(
+        builder.mesh,
+        {
+          path: mirroredPath,
+          width: plankWidth,
+          depth: plankDepth,
+        },
+        color
+      );
+    }
   }
 
   // TRANSOM
-  for (let i = 0; i < transomPlankNum; i++) {
-    const start = plankPaths[i][0];
-    const end = plankPathsMirrored[i][0];
-    const length = vec3.dist(start.pos, end.pos);
-    const transomSegLen = 3.0;
-    const numDesired = Math.max(Math.ceil(length / transomSegLen), 2);
+  if (FALSE) {
+    for (let i = 0; i < transomPlankNum; i++) {
+      const start = plankPaths[i][0];
+      const end = plankPathsMirrored[i][0];
+      const length = vec3.dist(start.pos, end.pos);
+      const transomSegLen = 3.0;
+      const numDesired = Math.max(Math.ceil(length / transomSegLen), 2);
 
-    let positions = lerpBetween(start.pos, end.pos, numDesired - 2);
-    // console.log(numDesired);
-    // console.log(positions.length);
-    assert(positions.length === numDesired);
-    let path: Path = positions.map((pos) => ({
-      pos,
-      rot: quat.clone(start.rot),
-    }));
+      let positions = lerpBetween(start.pos, end.pos, numDesired - 2);
+      // console.log(numDesired);
+      // console.log(positions.length);
+      assert(positions.length === numDesired);
+      let path: Path = positions.map((pos) => ({
+        pos,
+        rot: quat.clone(start.rot),
+      }));
 
-    // if (i == 2)
-    // dbgPathWithGizmos(path);
-    for (let n of path) {
-      quat.fromEuler(-Math.PI / 2, 0, Math.PI / 2, n.rot);
-      quat.rotateY(n.rot, -Math.PI / 16, n.rot);
+      // if (i == 2)
+      // dbgPathWithGizmos(path);
+      for (let n of path) {
+        quat.fromEuler(-Math.PI / 2, 0, Math.PI / 2, n.rot);
+        quat.rotateY(n.rot, -Math.PI / 16, n.rot);
+      }
+      let color = transomColor;
+      if (i === 0) color = topPlankColor;
+      if (stripStartIdx <= i && i <= stripEndIdx) color = plankStripeColor;
+      if (strip2StartIdx <= i && i <= strip2EndIdx) color = plankStripe2Color;
+      appendBoard(
+        builder.mesh,
+        {
+          path: path,
+          width: plankWidth,
+          depth: plankDepth,
+        },
+        color
+      );
     }
-    let color = transomColor;
-    if (i === 0) color = topPlankColor;
-    if (stripStartIdx <= i && i <= stripEndIdx) color = plankStripeColor;
-    if (strip2StartIdx <= i && i <= strip2EndIdx) color = plankStripe2Color;
-    appendBoard(
-      builder.mesh,
-      {
-        path: path,
-        width: plankWidth,
-        depth: plankDepth,
-      },
-      color
-    );
   }
+
   // REAR RAIL
-  {
+  if (FALSE) {
     const start = railPath[0];
     const end = mirrorRailPath[0];
     const midPos = vec3.lerp(start.pos, end.pos, 0.5, vec3.create());
@@ -536,80 +526,84 @@ export function createSpaceBarge(): SpaceBarge {
     );
   }
 
-  // FLOOR
   let floorPlankIdx = 4;
-  const floorBound1 = plankPaths[floorPlankIdx];
-  const floorBound2 = plankPathsMirrored[floorPlankIdx];
-  let floorHeight = floorBound1[0].pos[1];
+  let floorHeight = 0; // set later
   let floorWidth = 0;
-  let midIdx = 0;
-  for (let i = 0; i < floorBound1.length; i++) {
-    const dist = vec3.dist(floorBound1[i].pos, floorBound2[i].pos);
-    if (dist > floorWidth) {
-      floorWidth = dist;
-      midIdx = i;
-    }
-  }
   let floorLength = -1;
-  {
-    const boundFore = floorBound1.reduce(
-      (p, n, i) => (i >= midIdx ? [...p, n] : p),
-      [] as Path
-    );
-    boundFore.reverse();
-    const boundAft = floorBound1.reduce(
-      (p, n, i) => (i < midIdx ? [...p, n] : p),
-      [] as Path
-    );
-    // console.log("fore and aft:");
-    // console.dir(boundFore);
-    // console.dir(boundAft);
-    const floorBoardWidth = 1.2;
-    const floorBoardGap = 0.05;
-    // console.log(`ribSpace: ${ribSpace}`);
-    const floorSegLength = 4.0;
-    const halfNumFloorBoards = Math.floor(floorWidth / floorBoardWidth / 2);
-    const __t1 = vec3.create();
-    for (let i = 0; i < halfNumFloorBoards; i++) {
-      const z = i * floorBoardWidth + floorBoardWidth * 0.5;
-      const fore = V(0, floorHeight, z);
-      const foreSnap = snapToPath(boundFore, fore[2], 2, __t1);
-      // console.log(`foreSnap: ${vec3Dbg(foreSnap)}`);
-      fore[0] = foreSnap[0] - 1.0;
-      const aft = V(0, floorHeight, z);
-      const aftSnap = snapToPath(boundAft, aft[2], 2, __t1);
-      aft[0] = aftSnap[0] + 1.0;
-      // const positions = [aft, fore];
-      const length = fore[0] - aft[0];
-      if (i === 0) floorLength = length;
-      const numDesired = Math.ceil(length / floorSegLength);
-      const positions = lerpBetween(aft, fore, numDesired - 2);
-      // TODO(@darzu): LERP!
-      const path: Path = positions.map((pos) => ({
-        pos,
-        rot: quat.fromEuler(0, -Math.PI / 2, -Math.PI / 2),
-      }));
-      // dbgPathWithGizmos(path);
-      let mirroredPath = mirrorPath(clonePath(path), [0, 0, 1]);
-      appendBoard(
-        builder.mesh,
-        {
-          path: path,
-          width: floorBoardWidth / 2 - floorBoardGap,
-          depth: plankDepth,
-        },
-        floorColor
+  if (FALSE) {
+    // FLOOR
+    const floorBound1 = plankPaths[floorPlankIdx];
+    const floorBound2 = plankPathsMirrored[floorPlankIdx];
+    floorHeight = floorBound1[0].pos[1];
+
+    let midIdx = 0;
+    for (let i = 0; i < floorBound1.length; i++) {
+      const dist = vec3.dist(floorBound1[i].pos, floorBound2[i].pos);
+      if (dist > floorWidth) {
+        floorWidth = dist;
+        midIdx = i;
+      }
+    }
+    {
+      const boundFore = floorBound1.reduce(
+        (p, n, i) => (i >= midIdx ? [...p, n] : p),
+        [] as Path
       );
-      appendBoard(
-        builder.mesh,
-        {
-          path: mirroredPath,
-          width: floorBoardWidth / 2 - floorBoardGap,
-          depth: plankDepth,
-        },
-        floorColor
+      boundFore.reverse();
+      const boundAft = floorBound1.reduce(
+        (p, n, i) => (i < midIdx ? [...p, n] : p),
+        [] as Path
       );
-      // break; // TODO(@darzu):
+      // console.log("fore and aft:");
+      // console.dir(boundFore);
+      // console.dir(boundAft);
+      const floorBoardWidth = 1.2;
+      const floorBoardGap = 0.05;
+      // console.log(`ribSpace: ${ribSpace}`);
+      const floorSegLength = 4.0;
+      const halfNumFloorBoards = Math.floor(floorWidth / floorBoardWidth / 2);
+      const __t1 = vec3.create();
+      for (let i = 0; i < halfNumFloorBoards; i++) {
+        const z = i * floorBoardWidth + floorBoardWidth * 0.5;
+        const fore = V(0, floorHeight, z);
+        const foreSnap = snapToPath(boundFore, fore[2], 2, __t1);
+        // console.log(`foreSnap: ${vec3Dbg(foreSnap)}`);
+        fore[0] = foreSnap[0] - 1.0;
+        const aft = V(0, floorHeight, z);
+        const aftSnap = snapToPath(boundAft, aft[2], 2, __t1);
+        aft[0] = aftSnap[0] + 1.0;
+        // const positions = [aft, fore];
+        const length = fore[0] - aft[0];
+        if (i === 0) floorLength = length;
+        const numDesired = Math.ceil(length / floorSegLength);
+        const positions = lerpBetween(aft, fore, numDesired - 2);
+        // TODO(@darzu): LERP!
+        const path: Path = positions.map((pos) => ({
+          pos,
+          rot: quat.fromEuler(0, -Math.PI / 2, -Math.PI / 2),
+        }));
+        // dbgPathWithGizmos(path);
+        let mirroredPath = mirrorPath(clonePath(path), [0, 0, 1]);
+        appendBoard(
+          builder.mesh,
+          {
+            path: path,
+            width: floorBoardWidth / 2 - floorBoardGap,
+            depth: plankDepth,
+          },
+          floorColor
+        );
+        appendBoard(
+          builder.mesh,
+          {
+            path: mirroredPath,
+            width: floorBoardWidth / 2 - floorBoardGap,
+            depth: plankDepth,
+          },
+          floorColor
+        );
+        // break; // TODO(@darzu):
+      }
     }
   }
 
@@ -639,7 +633,7 @@ export function createSpaceBarge(): SpaceBarge {
   validateMesh(timberState.mesh);
 
   const _end = performance.now();
-  console.log(`createHomeShip took: ${(_end - _start).toFixed(1)}ms`);
+  console.log(`createSpaceBarge took: ${(_end - _start).toFixed(1)}ms`);
 
   return {
     timberState,

@@ -39,9 +39,9 @@ EM.addEagerInit([], [OxygenDef], [], () => {
         res.bubbleOxygenRemaining.oxygen / OXYGEN_DENSITY,
         1 / 3
       );
-      console.log(
-        `oxygen remaining ${res.bubbleOxygenRemaining.oxygen}, radius ${bubbleRadius}`
-      );
+      // console.log(
+      //   `oxygen remaining ${res.bubbleOxygenRemaining.oxygen}, radius ${bubbleRadius}`
+      // );
 
       res.renderer.renderer.updateScene({
         bubbleRadius,

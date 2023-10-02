@@ -204,7 +204,7 @@ const { RaftPropsDef, createRaft } = defineNetEntityHelper({
 
     // EM.set(raft, RenderableConstructDef, res.ld54_meshes.cubeRaft.proto);
 
-    EM.set(raft, ColorDef, ENDESGA16.darkGreen);
+    // EM.set(raft, ColorDef, ENDESGA16.darkGreen);
     EM.set(raft, PositionDef, V(0, 5, 0));
     EM.set(raft, ColliderDef, {
       shape: "AABB",
