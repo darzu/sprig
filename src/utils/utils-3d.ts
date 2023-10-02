@@ -166,7 +166,7 @@ const __t2 = vec3.create();
 export function quatFromUpForward(
   out: quat,
   up: vec3.InputT,
-  forwardish: vec3
+  forwardish: vec3.InputT
 ): quat {
   // https://stackoverflow.com/questions/52413464/look-at-quaternion-using-up-vector/52551983#52551983
   const side = vec3.cross(forwardish, up, __t1);

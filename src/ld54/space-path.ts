@@ -1,7 +1,7 @@
 import { AllEndesga16, ENDESGA16 } from "../color/palettes.js";
 import { createLineMesh } from "../debug/gizmos.js";
 import { EM } from "../ecs/entity-manager.js";
-import { V, vec3 } from "../matrix/sprig-matrix.js";
+import { V, quat, vec3 } from "../matrix/sprig-matrix.js";
 import {
   createEmptyMesh,
   mergeMeshes,
@@ -17,6 +17,7 @@ import {
   createEvenPathFromBezierSpline,
   getRandomCylindricalPoints,
 } from "../utils/spline.js";
+import { quatFromUpForward } from "../utils/utils-3d.js";
 import { appendBoard } from "../wood/shipyard.js";
 
 export const SpacePathDef = EM.defineNonupdatableComponent(
@@ -60,6 +61,16 @@ export function createSpacePath() {
 
   const spline = bezierSplineFromPoints(points, 20);
   const path = createEvenPathFromBezierSpline(spline, 5, [0, 1, 0]);
+
+  // TODO(@darzu): HACK: fix path rotations
+  for (let i = 0; i < path.length - 1; i++) {
+    const node = path[i];
+    const next = path[i + 1];
+    const forwardish = vec3.sub(node.pos, next.pos);
+    quatFromUpForward(node.rot, [0, 1, 0], forwardish);
+    quat.rotateY(node.rot, Math.PI * 1.0, node.rot);
+    // quat.rotateZ(node.rot, Math.PI * 0.25, node.rot);
+  }
 
   // const pathMesh = createEmptyMesh("pathMesh") as Mesh;
   // pathMesh.usesProvoking = true;

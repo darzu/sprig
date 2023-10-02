@@ -360,7 +360,7 @@ export async function initLD54() {
           raft.position,
           raft.rotation
         );
-        quat.rotateY(raft.rotation, Math.PI / 2, raft.rotation);
+        // quat.rotateY(raft.rotation, Math.PI / 2, raft.rotation);
 
         // const t = res.time.time * 0.001;
         // const r = 20;
