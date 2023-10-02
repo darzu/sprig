@@ -67,7 +67,7 @@ export const bubblePipeline = CY.createRenderPipeline("bubblePipeline", {
   depthReadonly: true,
   depthStencil: mainDepthTex,
   shader: (shaderSet) => {
-    console.log(shaderSet["xp-bubble"].code);
+    // console.log(shaderSet["xp-bubble"].code);
     return `
   ${shaderSet["std-rand"].code}
   ${shaderSet["xp-bubble"].code}

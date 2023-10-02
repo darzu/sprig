@@ -20,8 +20,12 @@ import {
   PhysicsParentDef,
   Position,
   PositionDef,
+  ScaleDef,
 } from "../physics/transform.js";
-import { RenderableConstructDef } from "../render/renderer-ecs.js";
+import {
+  RenderableConstructDef,
+  RenderableDef,
+} from "../render/renderer-ecs.js";
 import { randFloat, randInt } from "../utils/math.js";
 import { Path } from "../utils/spline.js";
 import { assert } from "../utils/util.js";
@@ -33,6 +37,8 @@ import {
   FUEL_CONSUMPTION_RATE,
   SHIP_SPEED,
   OXYGEN_CONSUMPTION_RATE,
+  STARTING_FUEL,
+  STARTING_OXYGEN,
 } from "./gamestate.js";
 
 let _t1 = vec3.create();
@@ -119,7 +125,9 @@ export const OreDef = EM.defineComponent("ore", () => ({
   type: "fuel" as "fuel" | "oxygen",
 }));
 
-type OreEnt = EntityW<[typeof OreDef, typeof PositionDef]>;
+type OreEnt = EntityW<
+  [typeof OreDef, typeof PositionDef, typeof RenderableDef]
+>;
 export const OreCarrierDef = EM.defineComponent("oreCarrier", () => ({
   carrying: undefined as OreEnt | undefined,
 }));
@@ -133,70 +141,9 @@ export async function initOre(spacePath: Path) {
   const ballGameMesh = await EM.whenResources(BallMesh.def);
   const mkBallMesh = () => cloneMesh(ballGameMesh.mesh_ball.mesh);
 
-  // ore parameters
-  const oxyOreTravelDist =
-    (OXYGEN_PER_ORE * SHIP_SPEED) / OXYGEN_CONSUMPTION_RATE;
-  const fuelOreTravelDist = (FUEL_PER_ORE * SHIP_SPEED) / FUEL_CONSUMPTION_RATE;
+  const store = await EM.whenSingleEntity(OreStoreDef);
 
-  const pathDistances: number[] = []; // cumulative distance
-  {
-    // path distances
-    let prevPos = spacePath[0].pos;
-    let lastDist = 0;
-    for (let i = 0; i < spacePath.length; i++) {
-      const newTravel = vec3.dist(spacePath[i].pos, prevPos);
-      const dist = lastDist + newTravel;
-      prevPos = spacePath[i].pos;
-      lastDist = dist;
-      pathDistances.push(dist);
-    }
-  }
-  const totalDistance = pathDistances.at(-1)!;
-
-  // place fuel
-  {
-    let totalFuelTravel = fuelOreTravelDist;
-    while (totalFuelTravel < totalDistance) {
-      const nextOreStop = totalFuelTravel - fuelOreTravelDist * 0.2;
-      const segIdx = pathDistances.findIndex((d) => d > nextOreStop);
-      const seg = spacePath[segIdx];
-
-      const randDistFromTrack = randFloat(20, 100);
-      const pos = vec3.scale(
-        randNormalVec3(),
-        randDistFromTrack,
-        vec3.create()
-      );
-      pos[2] = seg.pos[2];
-
-      createFuelOre(pos);
-
-      totalFuelTravel = nextOreStop + fuelOreTravelDist;
-    }
-  }
-
-  // place oxygen
-  {
-    let totalOxygenTravel = oxyOreTravelDist;
-    while (totalOxygenTravel < totalDistance) {
-      const nextOreStop = totalOxygenTravel - oxyOreTravelDist * 0.2;
-      const segIdx = pathDistances.findIndex((d) => d > nextOreStop);
-      const seg = spacePath[segIdx];
-
-      const randDistFromTrack = randFloat(20, 100);
-      const pos = vec3.scale(
-        randNormalVec3(),
-        randDistFromTrack,
-        vec3.create()
-      );
-      pos[2] = seg.pos[2];
-
-      createOxygenOre(pos);
-
-      totalOxygenTravel = nextOreStop + oxyOreTravelDist;
-    }
-  }
-
+  // fuel slot locations
   const spc = 8;
 
   const fuelSlots = [
@@ -228,6 +175,95 @@ export async function initOre(spacePath: Path) {
     V(spc, 5 + spc, 10 + spc),
     V(-spc, 5 + spc, 10 + spc),
   ];
+
+  // ore parameters
+  const oxyOreTravelDist =
+    (OXYGEN_PER_ORE * SHIP_SPEED) / OXYGEN_CONSUMPTION_RATE;
+  const fuelOreTravelDist = (FUEL_PER_ORE * SHIP_SPEED) / FUEL_CONSUMPTION_RATE;
+
+  const pathDistances: number[] = []; // cumulative distance
+  {
+    // path distances
+    let prevPos = spacePath[0].pos;
+    let lastDist = 0;
+    for (let i = 0; i < spacePath.length; i++) {
+      const newTravel = vec3.dist(spacePath[i].pos, prevPos);
+      const dist = lastDist + newTravel;
+      prevPos = spacePath[i].pos;
+      lastDist = dist;
+      pathDistances.push(dist);
+    }
+  }
+  const totalDistance = pathDistances.at(-1)!;
+
+  // place fuel
+  {
+    let totalFuelTravel = STARTING_FUEL;
+    while (totalFuelTravel < totalDistance) {
+      const nextOreStop = totalFuelTravel - fuelOreTravelDist * 0.2;
+      const segIdx = pathDistances.findIndex((d) => d > nextOreStop);
+      const seg = spacePath[segIdx];
+
+      const randDistFromTrack = randFloat(20, 100);
+      const pos = vec3.scale(
+        randNormalVec3(),
+        randDistFromTrack,
+        vec3.create()
+      );
+      pos[2] = seg.pos[2];
+
+      createFuelOre(pos);
+
+      totalFuelTravel = nextOreStop + fuelOreTravelDist;
+    }
+
+    // place starter fuel onboard
+    const numStarterFuel = Math.ceil(STARTING_FUEL / FUEL_PER_ORE);
+    // console.log(`CREATING ${numStarterFuel} starter fuel`);
+    for (let i = 0; i < numStarterFuel; i++) {
+      const ore = createFuelOre(vec3.clone(fuelSlots[i]));
+      ore.ore.carried = true;
+      vec3.zero(ore.angularVelocity);
+      EM.set(ore, PhysicsParentDef, store.id);
+      EM.whenEntityHas(ore, OreDef, PositionDef, RenderableDef).then((ore) => {
+        store.oreStore.fuelOres.push(ore);
+      });
+    }
+  }
+
+  // place oxygen
+  {
+    let totalOxygenTravel = STARTING_OXYGEN;
+    while (totalOxygenTravel < totalDistance) {
+      const nextOreStop = totalOxygenTravel - oxyOreTravelDist * 0.2;
+      const segIdx = pathDistances.findIndex((d) => d > nextOreStop);
+      const seg = spacePath[segIdx];
+
+      const randDistFromTrack = randFloat(20, 100);
+      const pos = vec3.scale(
+        randNormalVec3(),
+        randDistFromTrack,
+        vec3.create()
+      );
+      pos[2] = seg.pos[2];
+
+      createOxygenOre(pos);
+
+      totalOxygenTravel = nextOreStop + oxyOreTravelDist;
+    }
+
+    // place starter oxygen onboard
+    const numStarterOxygen = Math.ceil(STARTING_OXYGEN / OXYGEN_PER_ORE);
+    for (let i = 0; i < numStarterOxygen; i++) {
+      const ore = createOxygenOre(vec3.clone(oxygenSlots[i]));
+      ore.ore.carried = true;
+      vec3.zero(ore.angularVelocity);
+      EM.set(ore, PhysicsParentDef, store.id);
+      EM.whenEntityHas(ore, OreDef, PositionDef, RenderableDef).then((ore) => {
+        store.oreStore.oxygenOres.push(ore);
+      });
+    }
+  }
 
   EM.addSystem(
     "interactWithOre",
@@ -284,7 +320,12 @@ export async function initOre(spacePath: Path) {
         // we're not carying ore
         const ores = otherIds
           .map((id) =>
-            EM.findEntity(id, [OreDef, PositionDef, AngularVelocityDef])
+            EM.findEntity(id, [
+              OreDef,
+              PositionDef,
+              AngularVelocityDef,
+              RenderableDef,
+            ])
           )
           .filter((e) => e !== undefined && !e.ore.carried);
         if (!ores.length) return; // didn't reach any new ore
@@ -306,8 +347,24 @@ export async function initOre(spacePath: Path) {
     [OreStoreDef, PositionDef],
     [PhysicsResultsDef, LD54GameStateDef],
     (es, res) => {
-      // TODO(@darzu): IMPL TMRW OCT 2ND
-      // SLOTS;
+      if (!es.length) return;
+      assert(es.length === 1);
+      const store = es[0];
+
+      // adjust ore fuel in slots based on fuel left
+      const numFuelShouldHave = Math.ceil(
+        res.ld54GameState.fuel / FUEL_PER_ORE
+      );
+      if (numFuelShouldHave < store.oreStore.fuelOres.length) {
+        const deadOre = store.oreStore.fuelOres.pop()!;
+        deadOre.renderable.hidden = true;
+      }
+      const fuelFrac = (res.ld54GameState.fuel % FUEL_PER_ORE) / FUEL_PER_ORE;
+      store.oreStore.fuelOres.forEach((o, i) => {
+        if (i === store.oreStore.fuelOres.length - 1)
+          EM.set(o, ScaleDef, [fuelFrac, fuelFrac, fuelFrac]);
+        else EM.set(o, ScaleDef, [1, 1, 1]);
+      });
     }
   );
 

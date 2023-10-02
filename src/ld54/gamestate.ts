@@ -23,8 +23,8 @@ export const BreathingPlayerDef = EM.defineNonupdatableComponent(
   () => true
 );
 
-const STARTING_OXYGEN = 100;
-const STARTING_FUEL = 100;
+export const STARTING_OXYGEN = 100;
+export const STARTING_FUEL = 100;
 // amount of oxygen / cubic meter
 const OXYGEN_DENSITY = 0.001;
 
