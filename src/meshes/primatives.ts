@@ -38,7 +38,7 @@ export const CUBE_FACES = {
   bottom: [8, 9],
   back: [10, 11],
 };
-export const CUBE_MESH: RawMesh = {
+export const mkCubeMesh: () => RawMesh = () => ({
   dbgName: "cube",
   pos: [
     V(+1.0, +1.0, +1.0),
@@ -75,29 +75,20 @@ export const CUBE_MESH: RawMesh = {
   quad: [],
   lines: [
     // top
-    vec2.clone(
-      // top
-      [0, 1]
-    ),
-    vec2.clone([1, 2]),
-    vec2.clone([2, 3]),
-    vec2.clone([3, 0]),
+    V(0, 1),
+    V(1, 2),
+    V(2, 3),
+    V(3, 0),
     // bottom
-    vec2.clone(
-      // bottom
-      [4, 5]
-    ),
-    vec2.clone([5, 6]),
-    vec2.clone([6, 7]),
-    vec2.clone([7, 4]),
+    V(4, 5),
+    V(5, 6),
+    V(6, 7),
+    V(7, 4),
     // connectors
-    vec2.clone(
-      // connectors
-      [0, 4]
-    ),
-    vec2.clone([1, 5]),
-    vec2.clone([2, 6]),
-    vec2.clone([3, 7]),
+    V(0, 4),
+    V(1, 5),
+    V(2, 6),
+    V(3, 7),
   ],
   colors: [
     V(0, 0, 0),
@@ -113,7 +104,7 @@ export const CUBE_MESH: RawMesh = {
     V(0, 0, 0),
     V(0, 0, 0),
   ],
-};
+});
 
 export const TETRA_MESH: RawMesh = {
   pos: [V(0, 1, 0), V(-1, 0, -1), V(1, 0, -1), V(0, 0, 1)],
@@ -653,10 +644,10 @@ export const SHIP_SMALL_AABBS: AABB[] = [
 // const shipMaxX = min(SHIP_AABBS.map((a) => a.max[0]));
 // console.log(`${(shipMaxX + shipMinX) / 2}`);
 
-export const RAFT_MESH = cloneMesh(CUBE_MESH);
+export const RAFT_MESH = mkCubeMesh();
 scaleMesh3(RAFT_MESH, V(10, 0.6, 5));
 
-export const BULLET_MESH = cloneMesh(CUBE_MESH);
+export const BULLET_MESH = mkCubeMesh();
 scaleMesh(BULLET_MESH, 0.3);
 
 export function makeDome(numLon: number, numLat: number, r: number): Mesh {
@@ -736,6 +727,90 @@ export function makeDome(numLon: number, numLat: number, r: number): Mesh {
     usesProvoking: true,
     dbgName: `dome${numLat}x${numLon}x${r}`,
   };
+  return mesh;
+}
+
+export function makeSphere(numLon: number, numLat: number, r: number): Mesh {
+  assert(numLon % 1 === 0 && numLon > 0);
+  assert(numLat % 1 === 0 && numLat > 0);
+  const uvs: vec2[] = [];
+  const pos: vec3[] = [];
+  const tri: vec3[] = [];
+  const quad: vec4[] = [];
+  const normals: vec3[] = [];
+  // TODO(@darzu): polar coordinates from these long and lats
+  // HACK: just do 2 * numLat to make a sphere
+  for (let lat = 0; lat <= numLat + 1; lat++) {
+    const inc = Math.PI * (lat / (numLat + 1));
+    for (let lon = 0; lon < numLon; lon++) {
+      const azi = Math.PI * 2 * (lon / numLon);
+      const x = r * Math.sin(inc) * Math.cos(azi);
+      const z = r * Math.sin(inc) * Math.sin(azi);
+      const y = r * Math.cos(inc);
+      if (lat !== numLat) {
+        pos.push(V(x, y, z));
+        normals.push(vec3.normalize(pos[pos.length - 1], vec3.create()));
+        const u = lon / numLon;
+        const v = lat / (numLat + 1);
+        uvs.push(V(u, v));
+      }
+      // drawBall(V(x, y, z), 1, seqEndesga16());
+      if (lat === 0 || lat === numLat + 1) break; // at the tip-top, we only need one pos
+      if (lat === 1) {
+        // top triangles
+        let i3 = pos.length - 2;
+        if (i3 == 0) i3 += numLon;
+        const t = V(pos.length - 1, 0, i3);
+        // console.log(t);
+        tri.push(t);
+      } else if (lat === numLat) {
+        // bottom triangles
+        let i0 = pos.length + lon - numLon;
+        let i1 = pos.length + lon - numLon + 1;
+        let i2 = (numLat - 1) * numLon + 1;
+        if (i1 == i2) i1 = pos.length - numLon;
+        const t = V(i1, i0, i2);
+        // console.log(t);
+        tri.push(t);
+      } else {
+        const i0 = pos.length - 1;
+        const i1 = pos.length - 1 - numLon;
+        let i2 = pos.length - 2 - numLon;
+        let i3 = pos.length - 2;
+        if (lon === 0) {
+          i2 += numLon;
+          i3 += numLon;
+        }
+        // console.log({ i0, i1, i2, i3 });
+        quad.push(V(i0, i1, i2, i3));
+      }
+      // if (lat === numLat) {
+      //   const i0 = pos.length - 1;
+      //   let i1 = pos.length - 2;
+      //   if (lon === 0) {
+      //     i1 += numLon;
+      //   }
+      //   let i2 = pos.length;
+      // }
+    }
+  }
+
+  const faceNum = tri.length + quad.length;
+
+  // console.log(`dome: ${pos.length} verts, ${faceNum} faces`);
+
+  const mesh: Mesh = {
+    pos,
+    tri,
+    quad,
+    uvs,
+    surfaceIds: range(faceNum).map((i) => i + 1),
+    colors: range(faceNum).map((_) => seqEndesga16()),
+    usesProvoking: true,
+    dbgName: `sphere${numLat}x${numLon}x${r}`,
+    normals,
+  };
+  console.log(mesh);
   return mesh;
 }
 

@@ -20,7 +20,7 @@ import {
 } from "./mesh.js";
 import { XY } from "./mesh-loader.js";
 import {
-  CUBE_MESH,
+  mkCubeMesh,
   SHIP_OFFSET,
   makePlaneMesh,
   TETRA_MESH,
@@ -54,7 +54,7 @@ export const BallMesh = XY.registerMesh({
 export const UnitCubeMesh = XY.registerMesh({
   name: "unitCube",
   data: () => {
-    const unitCube = cloneMesh(CUBE_MESH);
+    const unitCube = mkCubeMesh();
     unitCube.dbgName = "unitCube";
     // normalize this cube to have min at 0,0,0 and max at 1,1,1
     unitCube.pos.forEach((p) => {
@@ -394,7 +394,7 @@ export const BallBrokenMesh = XY.registerMesh({
 
 export const CubeMesh = XY.registerMesh({
   name: "cube",
-  data: () => CUBE_MESH,
+  data: mkCubeMesh,
 });
 
 export const PlaneMesh = XY.registerMesh({
@@ -439,12 +439,12 @@ export const TriFenceMesh = XY.registerMesh({
 export const WireCubeMesh = XY.registerMesh({
   name: "wireCube",
   data: () =>
-    ({ ...CUBE_MESH, tri: [], colors: [], dbgName: "wireCube" } as RawMesh),
+    ({ ...mkCubeMesh(), tri: [], colors: [], dbgName: "wireCube" } as RawMesh),
 });
 export const MastMesh = XY.registerMesh({
   name: "mast",
   data: () => {
-    let m = cloneMesh(CUBE_MESH);
+    let m = mkCubeMesh();
     m.dbgName = "mast";
     mapMeshPositions(m, (p) => V(p[0], p[1] + 1, p[2]));
     scaleMesh3(m, V(0.5, 20, 0.5));
@@ -454,7 +454,7 @@ export const MastMesh = XY.registerMesh({
 export const LD53CannonMesh = XY.registerMesh({
   name: "ld53_cannon",
   data: () => {
-    let m = cloneMesh(CUBE_MESH);
+    let m = mkCubeMesh();
     m.dbgName = "ld53_cannon";
     scaleMesh3(m, V(8, 2, 2));
     return m;

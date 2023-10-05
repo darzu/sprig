@@ -273,6 +273,7 @@ export const perlinNoisePipe = CY.createRenderPipeline("perlinNoisePipe", {
 export const noisePipes = [
   ...whiteNoisePipes,
   ...vecNoisePipes,
+  perlinNoisePipe,
   octavesPipe1,
   octavesPipe2,
   octavesPipe3,

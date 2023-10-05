@@ -43,16 +43,22 @@ fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
     color = mix(color, vec3(0.2, 0.2, 0.5), pow(depth, 300.0));
   }
 
-  // // color += pow(bloom, vec3(2.0));
-  // // color = max(color, bloom);
-  // color += bloom; // * 10.0;
-  // // color = bloom;
-
+  // bloom
+  if (scene.highGraphics == 1u) {
+    // color += pow(bloom, vec3(2.0));
+    // color = max(color, bloom);
+    color += bloom; // * 10.0;
+    // color = bloom;
+  }
 
   // vignette
   let vigUV = uv * (1.0 - uv.yx);
-  var vig = vigUV.x*vigUV.y * 3.0; // multiply with sth for intensity
-  vig = pow(vig, 0.15); // change pow for modifying the extend of the  vignette
+  var vig = vigUV.x * vigUV.y * 1.0 *
+            (1.0 / (scene.vignetteIntensity +
+                    0.001)); // multiply with sth for intensity
+  vig = pow(vig, 2.5 * pow(scene.vignetteIntensity,
+                           5.0)); // change pow for modifying
+                                  // the extend of the vignette
   color *= vig;
 
   // TESTING RAND

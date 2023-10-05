@@ -1,4 +1,4 @@
-import { AABB } from "../physics/aabb.js";
+import { AABB, getAABBCornersTemp } from "../physics/aabb.js";
 import { createFlatQuadMesh } from "../meshes/primatives.js";
 import { Mesh, mergeMeshes } from "../meshes/mesh.js";
 import { vec3, V, tV } from "../matrix/sprig-matrix.js";
@@ -143,4 +143,34 @@ export function createGraph3DDataMesh(data: vec3[][]): Mesh {
     }
   }
   return mesh;
+}
+
+export function createGizmoForAABB(aabb: AABB, width: number): Mesh {
+  // TODO(@darzu): this doesn't look right yet..
+  const lns: Mesh[] = [];
+  const corners = getAABBCornersTemp(aabb);
+  for (let i = 0; i < corners.length - 1; i++) {
+    for (let j = i + 1; j < corners.length; j++) {
+      const u = corners[i];
+      const v = corners[j];
+      const numSame =
+        (u[0] === v[0] ? 1 : 0) +
+        (u[1] === v[1] ? 1 : 0) +
+        (u[2] === v[2] ? 1 : 0);
+      if (numSame === 2) {
+        const ln = createLineMesh(width, u, v);
+        const r = u[0] > 0 && v[0] > 0 ? 1 : 0;
+        const g = u[1] > 0 && v[1] > 0 ? 1 : 0;
+        const b = u[2] > 0 && v[2] > 0 ? 1 : 0;
+        ln.colors.forEach((c) => {
+          vec3.set(r, g, b, c);
+        });
+        lns.push(ln);
+      }
+    }
+  }
+
+  const result = mergeMeshes(...lns) as Mesh;
+  result.usesProvoking = true;
+  return result;
 }

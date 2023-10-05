@@ -1,10 +1,13 @@
-import { EM } from "../ecs/entity-manager.js";
+import { AudioDef } from "../audio/audio.js";
+import { SoundSetDef } from "../audio/sound-loader.js";
+import { EM, EntityW } from "../ecs/entity-manager.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { InputsDef } from "../input/inputs.js";
 import { quat, vec3 } from "../matrix/sprig-matrix.js";
 import { LinearVelocityDef } from "../motion/velocity.js";
 import { RotationDef } from "../physics/transform.js";
 import { TimeDef } from "../time/time.js";
+import { SWORD_SWING_DURATION } from "./gamestate.js";
 
 export const SpaceSuitDef = EM.defineComponent("spaceSuit", () => ({
   // TODO(@darzu): data
@@ -12,6 +15,9 @@ export const SpaceSuitDef = EM.defineComponent("spaceSuit", () => ({
   turnSpeed: 0.001,
   rollSpeed: 0.01,
   doDampen: true,
+  localAccel: vec3.create(),
+  swingingSword: false,
+  swordSwingT: 0,
 }));
 
 EM.addEagerInit([SpaceSuitDef], [], [], () => {
@@ -28,17 +34,19 @@ EM.addEagerInit([SpaceSuitDef], [], [], () => {
       for (let e of suits) {
         let speed = e.spaceSuit.speed * res.time.dt;
 
-        const localAccel = vec3.zero();
-
+        vec3.zero(e.spaceSuit.localAccel);
         // 6-DOF translation
-        if (res.inputs.keyDowns["a"]) localAccel[0] -= speed;
-        if (res.inputs.keyDowns["d"]) localAccel[0] += speed;
-        if (res.inputs.keyDowns["w"]) localAccel[2] -= speed;
-        if (res.inputs.keyDowns["s"]) localAccel[2] += speed;
-        if (res.inputs.keyDowns[" "]) localAccel[1] += speed;
-        if (res.inputs.keyDowns["c"]) localAccel[1] -= speed;
+        if (res.inputs.keyDowns["a"]) e.spaceSuit.localAccel[0] -= speed;
+        if (res.inputs.keyDowns["d"]) e.spaceSuit.localAccel[0] += speed;
+        if (res.inputs.keyDowns["w"]) e.spaceSuit.localAccel[2] -= speed;
+        if (res.inputs.keyDowns["s"]) e.spaceSuit.localAccel[2] += speed;
+        if (res.inputs.keyDowns[" "]) e.spaceSuit.localAccel[1] += speed;
+        if (res.inputs.keyDowns["c"]) e.spaceSuit.localAccel[1] -= speed;
 
-        const rotatedAccel = vec3.transformQuat(localAccel, e.rotation);
+        const rotatedAccel = vec3.transformQuat(
+          e.spaceSuit.localAccel,
+          e.rotation
+        );
 
         // change dampen?
         if (res.inputs.keyClicks["z"])
@@ -76,6 +84,21 @@ EM.addEagerInit([SpaceSuitDef], [], [], () => {
         if (res.inputs.keyDowns["e"]) rollSpeed = -1;
 
         quat.rotateZ(e.rotation, rollSpeed * e.spaceSuit.rollSpeed, e.rotation);
+
+        // sword
+        if (e.spaceSuit.swingingSword) {
+          e.spaceSuit.swordSwingT += res.time.dt;
+          if (e.spaceSuit.swordSwingT >= SWORD_SWING_DURATION) {
+            e.spaceSuit.swingingSword = false;
+          }
+        }
+        if (res.inputs.lclick && !e.spaceSuit.swingingSword) {
+          e.spaceSuit.swingingSword = true;
+          e.spaceSuit.swordSwingT = 0;
+          EM.whenResources(AudioDef, SoundSetDef).then((res) => {
+            res.music.playSound("sword", res.soundSet["sword.mp3"], 0.2);
+          });
+        }
       }
     }
   );

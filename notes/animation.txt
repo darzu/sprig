@@ -209,5 +209,6 @@ Rigging in blender for good glTF export:
   - when exporting, set "Animation > Always sample animations" to false
     - we want the keyframes, and will tween them ourselves
   - If backface culling is removing triangles, select all faces in edit mode and do "Mesh>Normals>Recalculate Outside"
+  - When in doubt, always apply all transforms (Command-A, All transforms) to both the object and the armature!
 
 Architecting a #D Animation Engine: https://www.gamedeveloper.com/programming/architecting-a-3d-animation-engine

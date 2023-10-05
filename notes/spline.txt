@@ -1,0 +1,5 @@
+self repelling curves
+  https://www.cs.cmu.edu/~kmcrane/Projects/RepulsiveCurves/index.html
+  https://www.cs.cmu.edu/~kmcrane/Projects/RepulsiveSurfaces/index.html
+  https://www.youtube.com/watch?v=dtYGiCpzzbA
+

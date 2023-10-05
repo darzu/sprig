@@ -210,7 +210,7 @@ export function importGltf(buf: ArrayBuffer): RawMesh | ParseError {
   );
   const jsonStr = new TextDecoder("utf-8").decode(jsonBuf);
   const gltf = JSON.parse(jsonStr) as Gltf;
-  //console.dir(gltf);
+  console.dir(gltf);
 
   const buffers: ArrayBufferLike[] = [];
   let nextChunkStart = 5 * Uint32Array.BYTES_PER_ELEMENT + jsonLength;
@@ -478,6 +478,7 @@ export function importGltf(buf: ArrayBuffer): RawMesh | ParseError {
       parents,
       poseRot,
     };
+    console.log(rigging);
   }
 
   const quad: vec4[] = [];

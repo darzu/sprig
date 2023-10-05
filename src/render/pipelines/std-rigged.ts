@@ -132,6 +132,7 @@ function computeVertsData(
   startIdx: number,
   count: number
 ): VertexTS[] {
+  console.log("computeVertsData called");
   assertDbg(0 <= startIdx && startIdx + count <= m.pos.length);
   if (!isRiggedMeshWithJointIdx(m)) {
     throw `Got mesh without jointIdx`;

@@ -17,6 +17,8 @@ export type vec2 = Float32ArrayOfLength<2>;
 
 export type vec3 = Float32ArrayOfLength<3>;
 
+export type vec3tmp = vec3; // TODO(@darzu): ENFORCE THIS! Right now it's just a description thing.
+
 export type vec4 = Float32ArrayOfLength<4>;
 
 export type quat = Float32ArrayOfLength<4>;

@@ -210,6 +210,10 @@ export const SceneStruct = createCyStruct(
     maxSurfaceId: "u32",
     numPointLights: "u32",
     numGerstnerWaves: "u32",
+    // LD54 state
+    bubbleRadius: "f32",
+    vignetteIntensity: "f32",
+    highGraphics: "u32",
   },
   {
     isUniform: true,
@@ -230,6 +234,9 @@ export const SceneStruct = createCyStruct(
       views.u32[offsets_32[9]] = data.maxSurfaceId;
       views.u32[offsets_32[10]] = data.numPointLights;
       views.u32[offsets_32[11]] = data.numGerstnerWaves;
+      views.f32[offsets_32[12]] = data.bubbleRadius;
+      views.f32[offsets_32[13]] = data.vignetteIntensity;
+      views.u32[offsets_32[14]] = data.highGraphics;
     },
   }
 );
@@ -272,6 +279,9 @@ export function setupScene(): SceneTS {
     maxSurfaceId: 1, // updated later
     numPointLights: 0, // updated later
     numGerstnerWaves: 0, // updated later
+    bubbleRadius: 0,
+    vignetteIntensity: 0,
+    highGraphics: 0,
   };
 }
 

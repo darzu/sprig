@@ -101,6 +101,8 @@ import { ParametricDef } from "../motion/parametric-motion.js";
 import { addGizmoChild } from "../utils/utils-game.js";
 import { createBarrelMesh } from "./barrel.js";
 import { Phase } from "../ecs/sys-phase.js";
+import { AuthorityDef, MeDef } from "../net/components.js";
+import { createSpaceBarge } from "../ld54/barge.js";
 
 /*
   Game mechanics:
@@ -162,7 +164,8 @@ export async function initShipyardGame(hosting: boolean) {
     // WoodAssetsDef,
     // GlobalCursor3dDef,
     RendererDef,
-    CameraDef
+    CameraDef,
+    MeDef
   );
 
   res.camera.fov = Math.PI * 0.5;
@@ -175,15 +178,17 @@ export async function initShipyardGame(hosting: boolean) {
     postProcess,
   ];
 
-  const sunlight = EM.new();
-  EM.set(sunlight, PointLightDef);
-  // sunlight.pointLight.constant = 1.0;
-  sunlight.pointLight.constant = 1.0;
-  vec3.copy(sunlight.pointLight.ambient, [0.4, 0.4, 0.4]);
-  // vec3.scale(sunlight.pointLight.ambient, sunlight.pointLight.ambient, 0.2);
-  vec3.copy(sunlight.pointLight.diffuse, [0.5, 0.5, 0.5]);
-  EM.set(sunlight, PositionDef, V(50, 100, 10));
-  EM.set(sunlight, RenderableConstructDef, res.allMeshes.ball.proto);
+  const sun = EM.new();
+  EM.set(sun, PointLightDef);
+  EM.set(sun, ColorDef, V(1, 1, 1));
+  EM.set(sun, LinearVelocityDef, V(0.001, 0.001, 0.0));
+  EM.set(sun, RenderableConstructDef, res.allMeshes.ball.proto, false);
+  sun.pointLight.constant = 1.0;
+  sun.pointLight.linear = 0.0;
+  sun.pointLight.quadratic = 0.0;
+  vec3.copy(sun.pointLight.ambient, [0.2, 0.2, 0.2]);
+  vec3.copy(sun.pointLight.diffuse, [0.5, 0.5, 0.5]);
+  EM.set(sun, PositionDef, V(50, 300, 10));
 
   // const c = res.globalCursor3d.cursor()!;
   // if (RenderableDef.isOn(c)) c.renderable.enabled = false;
@@ -247,32 +252,34 @@ export async function initShipyardGame(hosting: boolean) {
   // TIMBER
   const timber = EM.new();
 
-  // const {
-  //   timberState,
-  //   timberMesh,
-  //   ribCount,
-  //   ribSpace,
-  //   ribWidth,
-  //   ceilHeight,
-  //   floorHeight,
-  //   floorLength,
-  //   floorWidth,
+  const {
+    timberState,
+    timberMesh,
+    ribCount,
+    ribSpace,
+    ribWidth,
+    ceilHeight,
+    floorHeight,
+    floorLength,
+    floorWidth,
+  } = createSpaceBarge();
   // } = createHomeShip();
 
   // TODO(@darzu): remove
-  const ribCount = 10;
-  const ribSpace = 3;
-  const ribWidth = 1;
-  const ceilHeight = 20;
-  const floorHeight = 10;
-  const floorLength = 20;
-  const floorWidth = 10;
+  // const ribCount = 10;
+  // const ribSpace = 3;
+  // const ribWidth = 1;
+  // const ceilHeight = 20;
+  // const floorHeight = 10;
+  // const floorLength = 20;
+  // const floorWidth = 10;
 
-  const [timberMesh, timberState] = createBarrelMesh();
+  // const [timberMesh, timberState] = createBarrelMesh();
 
   EM.set(timber, RenderableConstructDef, timberMesh);
   EM.set(timber, WoodStateDef, timberState);
-  EM.set(timber, ColorDef, ENDESGA16.darkBrown);
+  EM.set(timber, AuthorityDef, res.me.pid);
+  // EM.set(timber, ColorDef, ENDESGA16.darkBrown);
   // EM.set(timber, ColorDef, [0.1, 0.1, 0.1]);
   // const scale = 1 * Math.pow(0.8, ti);
   const scale = 1;
@@ -872,11 +879,17 @@ export async function initShipyardGame(hosting: boolean) {
       // g.cameraFollow.yawOffset = 0.0;
       // g.cameraFollow.pitchOffset = -0.336;
 
-      vec3.copy(g.position, [-11.36, 27.53, -3.66]);
-      quat.copy(g.rotation, [0.0, -0.93, 0.0, 0.39]);
+      // vec3.copy(g.position, [-11.36, 27.53, -3.66]);
+      // quat.copy(g.rotation, [0.0, -0.93, 0.0, 0.39]);
+      // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
+      // g.cameraFollow.yawOffset = 0.0;
+      // g.cameraFollow.pitchOffset = -1.233;
+
+      vec3.copy(g.position, [-33.85, 17.11, -17.28]);
+      quat.copy(g.rotation, [0.0, -0.86, 0.0, 0.53]);
       vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
       g.cameraFollow.yawOffset = 0.0;
-      g.cameraFollow.pitchOffset = -1.233;
+      g.cameraFollow.pitchOffset = -0.243;
     }
 
     if (!DBG_PLAYER) {

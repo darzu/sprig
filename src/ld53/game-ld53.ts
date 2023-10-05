@@ -381,23 +381,23 @@ export async function initLD53(hosting: boolean) {
   EM.set(sunlight, PositionDef, V(50, 300, 10));
   EM.set(sunlight, RenderableConstructDef, res.ld53Meshes.ball.proto);
 
-  // pirate test
-  const PirateDef = EM.defineComponent("pirate", () => true);
-  const pirate = EM.new();
-  EM.set(
-    pirate,
-    RiggedRenderableConstructDef,
-    res.ld53Meshes.pirate.mesh as RiggedMesh
-  );
-  EM.set(pirate, PositionDef, V(50, 80, 10));
-  EM.set(pirate, PirateDef);
-  EM.set(pirate, PoseDef, 0);
-  pirate.pose.repeat = [
-    { pose: 1, t: 500 },
-    { pose: 0, t: 500 },
-    { pose: 3, t: 500 },
-    { pose: 0, t: 500 },
-  ];
+  // // pirate test
+  // const PirateDef = EM.defineComponent("pirate", () => true);
+  // const pirate = EM.new();
+  // EM.set(
+  //   pirate,
+  //   RiggedRenderableConstructDef,
+  //   res.ld53Meshes.pirate.mesh as RiggedMesh
+  // );
+  // EM.set(pirate, PositionDef, V(50, 80, 10));
+  // EM.set(pirate, PirateDef);
+  // EM.set(pirate, PoseDef, 0);
+  // pirate.pose.repeat = [
+  //   { pose: 1, t: 500 },
+  //   { pose: 0, t: 500 },
+  //   { pose: 3, t: 500 },
+  //   { pose: 0, t: 500 },
+  // ];
 
   // score
   const score = EM.addResource(ScoreDef);

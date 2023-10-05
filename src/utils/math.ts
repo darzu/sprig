@@ -36,6 +36,9 @@ export function randInt(min: number, max: number) {
   max = Math.floor(max);
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
+export function randFloat(min: number, max: number) {
+  return Math.random() * (max - min) + min;
+}
 
 export function align(x: number, size: number): number {
   return Math.ceil(x / size) * size;
@@ -115,4 +118,11 @@ export function parabolaFromPoints(
   // console.log(
   //   vec3Dbg(parabolaFromPoints(1, 2.5, -0.48, 3.056, 3, 10.1))
   // );
+}
+
+export function sphereRadiusFromVolume(v: number) {
+  return Math.pow(((3 / 4) * v) / Math.PI, 1 / 3);
+}
+export function sphereVolumeFromRadius(r: number) {
+  return (4 / 3) * Math.PI * Math.pow(r, 3);
 }
