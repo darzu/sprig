@@ -94,3 +94,8 @@ C++ imgui:
   used by tons of AAA games
   https://github.com/ocornut/imgui/wiki/Software-using-dear-imgui
   not meant to be user facing
+
+Text buffer data structure:
+  ropes vs gap-buffer
+  https://news.ycombinator.com/item?id=37820532
+    "In a modern OS, you can combine the gap and the piece table approaches using the MMU to eliminate most copying in the common cases."

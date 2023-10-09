@@ -1,5 +1,31 @@
+import { CameraDef } from "../camera/camera.js";
+import { ColorDef } from "../color/color-ecs.js";
+import { ENDESGA16 } from "../color/palettes.js";
+import { createGhost } from "../debug/ghost.js";
+import { createGizmoMesh } from "../debug/gizmos.js";
+import { EM } from "../ecs/entity-manager.js";
+import { V, quat, vec3 } from "../matrix/sprig-matrix.js";
+import {
+  CubeMesh,
+  HexMesh,
+  BallMesh,
+  CubeRaftMesh,
+} from "../meshes/mesh-list.js";
+import { XY } from "../meshes/mesh-loader.js";
+import { LinearVelocityDef } from "../motion/velocity.js";
+import { MeDef } from "../net/components.js";
+import { ColliderDef } from "../physics/collider.js";
+import { PositionDef, ScaleDef } from "../physics/transform.js";
+import { PointLightDef } from "../render/lights.js";
+import { deferredPipeline } from "../render/pipelines/std-deferred.js";
+import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
+import { outlineRender } from "../render/pipelines/std-outline.js";
+import { postProcess } from "../render/pipelines/std-post.js";
+import { shadowPipelines } from "../render/pipelines/std-shadow.js";
+import { RendererDef, RenderableConstructDef } from "../render/renderer-ecs.js";
+
 /*
-# of Sessions: 2
+# of Sessions: 4
 
 SKETCH:
 
@@ -47,7 +73,6 @@ gameplay:
     movement is based on target radius from player
       aims toward nearest unobstructed point on circle and moves toward
     flees at Z% health
-
     
 
 PSEUDO CODE:
@@ -62,6 +87,7 @@ init:
 initEnvironment:
   createWalls
   createDocks
+  createNavGraph
   spawnEnemies
 
 initShip:
@@ -97,9 +123,91 @@ initShipVsShip:
 initDocks:
   for each dock pos:
     createDock
-
-  
-
-
     
 */
+
+export async function initGrayboxSunless() {
+  EM.addEagerInit([], [RendererDef], [], (res) => {
+    // renderer
+    res.renderer.pipelines = [
+      ...shadowPipelines,
+      stdRenderPipeline,
+      outlineRender,
+      deferredPipeline,
+      postProcess,
+    ];
+  });
+
+  const { camera, me } = await EM.whenResources(CameraDef, MeDef);
+
+  // camera
+  camera.fov = Math.PI * 0.5;
+  camera.viewDist = 100;
+  vec3.set(-20, -20, -20, camera.maxWorldAABB.min);
+  vec3.set(+20, +20, +20, camera.maxWorldAABB.max);
+  // camera.perspectiveMode = "ortho";
+
+  const { mesh_cube, mesh_hex } = await EM.whenResources(
+    CubeMesh.def,
+    HexMesh.def
+  );
+
+  // dbg ghost
+  const g = createGhost();
+  g.position[1] = 5;
+  EM.set(g, RenderableConstructDef, mesh_cube.proto);
+  vec3.copy(g.position, [-0.5, 10.7, 15.56]);
+  quat.copy(g.rotation, [0.0, -0.09, 0.0, 0.99]);
+  g.cameraFollow.pitchOffset = -0.32;
+
+  // ground
+  const ground = EM.new();
+  EM.set(ground, RenderableConstructDef, mesh_hex.proto);
+  EM.set(ground, ColorDef, ENDESGA16.blue);
+  EM.set(ground, PositionDef, V(0, -10, 0));
+  EM.set(ground, ScaleDef, V(10, 10, 10));
+  EM.set(ground, ColliderDef, {
+    shape: "AABB",
+    solid: true,
+    aabb: mesh_hex.aabb,
+  });
+
+  // light
+  const sun = EM.new();
+  EM.set(sun, PointLightDef);
+  EM.set(sun, ColorDef, V(1, 1, 1));
+  EM.set(sun, PositionDef, V(100, 100, 100));
+  EM.set(sun, RenderableConstructDef, mesh_cube.proto, false);
+  sun.pointLight.constant = 1.0;
+  sun.pointLight.linear = 0.0;
+  sun.pointLight.quadratic = 0.0;
+  vec3.copy(sun.pointLight.ambient, [0.2, 0.2, 0.2]);
+  vec3.copy(sun.pointLight.diffuse, [0.5, 0.5, 0.5]);
+  EM.set(sun, PositionDef, V(50, 300, 10));
+
+  // gizmo
+  const gizmoMesh = createGizmoMesh();
+  const gizmo = EM.new();
+  EM.set(gizmo, RenderableConstructDef, gizmoMesh);
+  EM.set(gizmo, PositionDef, V(0, 1, 0));
+  EM.set(gizmo, ScaleDef, V(2, 2, 2));
+
+  createWorld();
+}
+
+function createWorld() {
+  const gridWidth = 5;
+  const horiEdges = [
+    [1, 1, 1, 1],
+    [1, 1, 1, 0],
+    [1, 1, 0, 0],
+    [1, 1, 0, 0],
+    [1, 1, 1, 1],
+  ];
+  const vertEdges = [
+    [1, 0, 1, 0, 1],
+    [1, 0, 1, 1, 1],
+    [0, 1, 0, 1, 1],
+    [1, 0, 1, 1, 1],
+  ];
+}

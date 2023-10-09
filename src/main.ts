@@ -34,6 +34,7 @@ import { Phase } from "./ecs/sys-phase.js";
 import { setSimulationAlpha } from "./render/motion-smoothing.js";
 import { initMPGame } from "./net/game-multiplayer.js";
 import { initLD54 } from "./ld54/game-ld54.js";
+import { initGrayboxSunless } from "./graybox/graybox-sunless-skies.js";
 
 // dbgLogMilestone("start of main.ts");
 
@@ -55,8 +56,9 @@ const ALL_GAMES = [
   "ld53",
   "ld54",
   "mp",
+  "graybox-sunless",
 ] as const;
-const GAME: (typeof ALL_GAMES)[number] = "ld54";
+const GAME: (typeof ALL_GAMES)[number] = "graybox-sunless";
 
 // Run simulation with a fixed timestep @ 60hz
 const TIMESTEP = 1000 / 60;
@@ -116,6 +118,7 @@ async function startGame(localPeerName: string, host: string | null) {
   else if (GAME === "shading") initShadingGame();
   else if (GAME === "modeling") initModelingGame();
   else if (GAME === "mp") initMPGame();
+  else if (GAME === "graybox-sunless") initGrayboxSunless();
   else never(GAME, "TODO game");
 
   let previous_frame_time = start_of_time;
