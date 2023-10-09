@@ -88,3 +88,9 @@ Art grants:
   Epic developer grant
   Canadian media fund? (like Outward)
   https://www.artscouncil.org.uk/our-open-funds
+
+To avoid:
+  Enshittification
+    https://pluralistic.net/2023/01/21/potemkin-ai/#hey-guys
+    https://www.eff.org/deeplinks/2023/04/platforms-decay-lets-put-users-first
+    https://www.wired.com/story/tiktok-platforms-cory-doctorow/
