@@ -25,7 +25,7 @@ import { shadowPipelines } from "../render/pipelines/std-shadow.js";
 import { RendererDef, RenderableConstructDef } from "../render/renderer-ecs.js";
 
 /*
-# of Sessions: 5
+# of Sessions: 6
 
 SKETCH:
 
@@ -215,6 +215,7 @@ async function createWorld() {
 
   const gridScale = 5;
   const gridHalfScale = gridScale * 0.5;
+  const wallWidth = 0.8;
 
   for (let zi = 0; zi < gridWidth; zi++) {
     for (let xi = 0; xi < gridWidth; xi++) {
@@ -234,7 +235,7 @@ async function createWorld() {
         const wall = EM.new();
         EM.set(wall, PositionDef, pos);
         EM.set(wall, RenderableConstructDef, mesh_cube.proto);
-        EM.set(wall, ScaleDef, V(0.8, 1, gridHalfScale));
+        EM.set(wall, ScaleDef, V(wallWidth, wallWidth, gridHalfScale));
         EM.set(wall, ColorDef, ENDESGA16.darkGray);
       } else {
         const path = EM.new();
@@ -254,7 +255,7 @@ async function createWorld() {
         const wall = EM.new();
         EM.set(wall, PositionDef, pos);
         EM.set(wall, RenderableConstructDef, mesh_cube.proto);
-        EM.set(wall, ScaleDef, V(gridHalfScale, 1, 0.8));
+        EM.set(wall, ScaleDef, V(gridHalfScale, wallWidth, wallWidth));
         EM.set(wall, ColorDef, ENDESGA16.darkGray);
       } else {
         const path = EM.new();
@@ -278,9 +279,9 @@ async function createWorld() {
       wall,
       ScaleDef,
       V(
-        pos[0] % 1 ? gridScale * gridWidth * 0.5 : 0.8,
-        0.8,
-        pos[2] % 1 ? gridScale * gridWidth * 0.5 : 0.8
+        pos[0] % 1 ? gridScale * gridWidth * 0.5 : wallWidth,
+        wallWidth,
+        pos[2] % 1 ? gridScale * gridWidth * 0.5 : wallWidth
       )
     );
     vec3.add(pos, [-gridHalfScale, 0, -gridHalfScale], pos);
