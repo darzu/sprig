@@ -10,6 +10,7 @@ import {
   HexMesh,
   BallMesh,
   CubeRaftMesh,
+  UnitCubeMesh,
 } from "../meshes/mesh-list.js";
 import { XY } from "../meshes/mesh-loader.js";
 import { LinearVelocityDef } from "../motion/velocity.js";
@@ -161,16 +162,16 @@ export async function initGrayboxSunless() {
   g.cameraFollow.pitchOffset = -0.32;
 
   // ground
-  const ground = EM.new();
-  EM.set(ground, RenderableConstructDef, mesh_hex.proto);
-  EM.set(ground, ColorDef, ENDESGA16.blue);
-  EM.set(ground, PositionDef, V(0, -10, 0));
-  EM.set(ground, ScaleDef, V(10, 10, 10));
-  EM.set(ground, ColliderDef, {
-    shape: "AABB",
-    solid: true,
-    aabb: mesh_hex.aabb,
-  });
+  // const ground = EM.new();
+  // EM.set(ground, RenderableConstructDef, mesh_hex.proto);
+  // EM.set(ground, ColorDef, ENDESGA16.blue);
+  // EM.set(ground, PositionDef, V(0, -10, 0));
+  // EM.set(ground, ScaleDef, V(10, 10, 10));
+  // EM.set(ground, ColliderDef, {
+  //   shape: "AABB",
+  //   solid: true,
+  //   aabb: mesh_hex.aabb,
+  // });
 
   // light
   const sun = EM.new();
@@ -189,14 +190,17 @@ export async function initGrayboxSunless() {
   const gizmoMesh = createGizmoMesh();
   const gizmo = EM.new();
   EM.set(gizmo, RenderableConstructDef, gizmoMesh);
-  EM.set(gizmo, PositionDef, V(0, 1, 0));
-  EM.set(gizmo, ScaleDef, V(2, 2, 2));
+  EM.set(gizmo, PositionDef, V(0, 0, 0));
+  EM.set(gizmo, ScaleDef, V(5, 5, 5));
 
   createWorld();
 }
 
 async function createWorld() {
-  const { mesh_cube } = await EM.whenResources(CubeMesh.def);
+  const { mesh_cube, mesh_unitCube } = await EM.whenResources(
+    CubeMesh.def,
+    UnitCubeMesh.def
+  );
 
   const gridWidth = 5;
   const horiEdges = [
@@ -211,6 +215,12 @@ async function createWorld() {
     [1, 0, 1, 1, 1],
     [0, 1, 0, 1, 1],
     [1, 0, 1, 1, 1],
+  ];
+  const docks: [number, number, "S" | "E" | "N" | "W"][] = [
+    [1, 0, "S"],
+    [3, 2, "W"],
+    [1, 4, "N"],
+    [4, 3, "W"],
   ];
 
   const gridScale = 5;
@@ -289,4 +299,41 @@ async function createWorld() {
     EM.set(wall, RenderableConstructDef, mesh_cube.proto);
     EM.set(wall, ColorDef, ENDESGA16.darkGray);
   });
+
+  // floor
+  {
+    const wall = EM.new();
+    EM.set(
+      wall,
+      ScaleDef,
+      V(gridScale * gridWidth, wallWidth, gridScale * gridWidth)
+    );
+    EM.set(wall, PositionDef, V(-gridHalfScale, -wallWidth, -gridHalfScale));
+    EM.set(wall, RenderableConstructDef, mesh_unitCube.proto);
+    EM.set(wall, ColorDef, ENDESGA16.blue);
+  }
+
+  // docks
+  const dockWidth = 0.5;
+  const dockLen = 1.0;
+  const dockOffset = 2.0;
+  const dirToDockOffset = {
+    S: V(0, 0, dockOffset),
+    N: V(0, 0, -dockOffset),
+    E: V(dockOffset, 0, 0),
+    W: V(-dockOffset, 0, 0),
+  };
+  for (let [xi, zi, dir] of docks) {
+    const vert = dir === "N" || dir === "S";
+    const node = EM.new();
+    EM.set(node, RenderableConstructDef, mesh_cube.proto);
+    EM.set(
+      node,
+      ScaleDef,
+      V(vert ? dockWidth : dockLen, 0.2, vert ? dockLen : dockWidth)
+    );
+    EM.set(node, PositionDef, V(xi * gridScale, 0, zi * gridScale));
+    vec3.add(node.position, dirToDockOffset[dir], node.position);
+    EM.set(node, ColorDef, ENDESGA16.orange);
+  }
 }
