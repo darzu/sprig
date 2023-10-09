@@ -1,9 +1,11 @@
-import { CameraDef } from "../camera/camera.js";
+import { CameraDef, CameraFollowDef } from "../camera/camera.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { createGhost } from "../debug/ghost.js";
 import { createGizmoMesh } from "../debug/gizmos.js";
 import { EM } from "../ecs/entity-manager.js";
+import { Phase } from "../ecs/sys-phase.js";
+import { InputsDef } from "../input/inputs.js";
 import { V, quat, vec3 } from "../matrix/sprig-matrix.js";
 import {
   CubeMesh,
@@ -17,7 +19,7 @@ import { cloneMesh, scaleMesh3 } from "../meshes/mesh.js";
 import { LinearVelocityDef } from "../motion/velocity.js";
 import { MeDef } from "../net/components.js";
 import { ColliderDef } from "../physics/collider.js";
-import { PositionDef, ScaleDef } from "../physics/transform.js";
+import { PositionDef, RotationDef, ScaleDef } from "../physics/transform.js";
 import { PointLightDef } from "../render/lights.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
 import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
@@ -25,6 +27,7 @@ import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
 import { shadowPipelines } from "../render/pipelines/std-shadow.js";
 import { RendererDef, RenderableConstructDef } from "../render/renderer-ecs.js";
+import { TimeDef } from "../time/time.js";
 
 /*
 # of Sessions: 6
@@ -130,6 +133,7 @@ initDocks:
 
 const DBG_GRID = false;
 const DBG_GIZMO = false;
+const DBG_GHOST = false;
 
 export async function initGrayboxSunless() {
   EM.addEagerInit([], [RendererDef], [], (res) => {
@@ -147,7 +151,7 @@ export async function initGrayboxSunless() {
 
   // camera
   camera.fov = Math.PI * 0.5;
-  camera.viewDist = 100;
+  camera.viewDist = 1000;
   vec3.set(-20, -20, -20, camera.maxWorldAABB.min);
   vec3.set(+20, +20, +20, camera.maxWorldAABB.max);
   // camera.perspectiveMode = "ortho";
@@ -158,12 +162,14 @@ export async function initGrayboxSunless() {
   );
 
   // dbg ghost
-  const g = createGhost();
-  g.position[1] = 5;
-  EM.set(g, RenderableConstructDef, mesh_cube.proto);
-  vec3.copy(g.position, [-0.5, 10.7, 15.56]);
-  quat.copy(g.rotation, [0.0, -0.09, 0.0, 0.99]);
-  g.cameraFollow.pitchOffset = -0.32;
+  if (DBG_GHOST) {
+    const g = createGhost();
+    g.position[1] = 5;
+    EM.set(g, RenderableConstructDef, mesh_cube.proto);
+    vec3.copy(g.position, [-0.5, 10.7, 15.56]);
+    quat.copy(g.rotation, [0.0, -0.09, 0.0, 0.99]);
+    g.cameraFollow.pitchOffset = -0.32;
+  }
 
   // ground
   // const ground = EM.new();
@@ -231,9 +237,9 @@ async function createWorld() {
     [4, 3, "W"],
   ];
 
-  const gridScale = 5;
+  const gridScale = 50;
   const gridHalfScale = gridScale * 0.5;
-  const wallWidth = 0.8;
+  const wallWidth = 8;
 
   if (DBG_GRID)
     for (let zi = 0; zi < gridWidth; zi++) {
@@ -241,7 +247,7 @@ async function createWorld() {
         const node = EM.new();
         EM.set(node, PositionDef, V(xi * gridScale, 0, zi * gridScale));
         EM.set(node, RenderableConstructDef, mesh_cube.proto);
-        EM.set(node, ScaleDef, V(0.5, 0.5, 0.5));
+        // EM.set(node, ScaleDef, V(0.5, 0.5, 0.5));
         EM.set(node, ColorDef, ENDESGA16.darkRed);
       }
     }
@@ -260,7 +266,7 @@ async function createWorld() {
         const path = EM.new();
         EM.set(path, PositionDef, pos);
         EM.set(path, RenderableConstructDef, mesh_cube.proto);
-        EM.set(path, ScaleDef, V(gridHalfScale, 0.2, 0.2));
+        // EM.set(path, ScaleDef, V(gridHalfScale, 0.2, 0.2));
         EM.set(path, ColorDef, ENDESGA16.darkRed);
       }
     }
@@ -280,7 +286,7 @@ async function createWorld() {
         const path = EM.new();
         EM.set(path, PositionDef, pos);
         EM.set(path, RenderableConstructDef, mesh_cube.proto);
-        EM.set(path, ScaleDef, V(0.2, 0.2, gridHalfScale));
+        // EM.set(path, ScaleDef, V(0.2, 0.2, gridHalfScale));
         EM.set(path, ColorDef, ENDESGA16.darkRed);
       }
     }
@@ -292,15 +298,16 @@ async function createWorld() {
     V(gridScale * gridWidth * 0.5, 0, 0),
     V(gridScale * gridWidth * 0.5, 0, gridScale * gridWidth),
     V(gridScale * gridWidth, 0, gridScale * gridWidth * 0.5),
-  ].forEach((pos) => {
+  ].forEach((pos, i) => {
     const wall = EM.new();
+    const isVertical = i === 0 || i === 3;
     EM.set(
       wall,
       ScaleDef,
       V(
-        pos[0] % 1 ? gridScale * gridWidth * 0.5 : wallWidth,
+        !isVertical ? gridScale * gridWidth * 0.5 : wallWidth,
         wallWidth,
-        pos[2] % 1 ? gridScale * gridWidth * 0.5 : wallWidth
+        isVertical ? gridScale * gridWidth * 0.5 : wallWidth
       )
     );
     vec3.add(pos, [-gridHalfScale, 0, -gridHalfScale], pos);
@@ -323,9 +330,10 @@ async function createWorld() {
   }
 
   // docks
-  const dockWidth = 0.5;
-  const dockLen = 1.0;
-  const dockOffset = 2.0;
+  const dockWidth = 5;
+  const dockLen = 10.0;
+  const dockOffset = 20.0;
+  const dockHeight = 2;
   const dirToDockOffset = {
     S: V(0, 0, dockOffset),
     N: V(0, 0, -dockOffset),
@@ -339,7 +347,7 @@ async function createWorld() {
     EM.set(
       node,
       ScaleDef,
-      V(vert ? dockWidth : dockLen, 0.2, vert ? dockLen : dockWidth)
+      V(vert ? dockWidth : dockLen, dockHeight, vert ? dockLen : dockWidth)
     );
     EM.set(node, PositionDef, V(xi * gridScale, 0, zi * gridScale));
     vec3.add(node.position, dirToDockOffset[dir], node.position);
@@ -347,14 +355,110 @@ async function createWorld() {
   }
 }
 
+export const SunlessShipDef = EM.defineComponent("sunlessShip", () => ({
+  speed: 0.00003,
+  turnSpeed: 0.001,
+  rollSpeed: 0.01,
+  doDampen: true,
+  localAccel: vec3.create(),
+}));
+
+EM.addEagerInit([SunlessShipDef], [], [], () => {
+  EM.addSystem(
+    "controlSpaceSuit",
+    Phase.GAME_PLAYERS,
+    [SunlessShipDef, RotationDef, LinearVelocityDef],
+    [InputsDef, TimeDef],
+    (suits, res) => {
+      for (let e of suits) {
+        let speed = e.sunlessShip.speed * res.time.dt;
+
+        vec3.zero(e.sunlessShip.localAccel);
+        // 4-DOF translation
+        if (res.inputs.keyDowns["q"]) e.sunlessShip.localAccel[0] -= speed;
+        if (res.inputs.keyDowns["e"]) e.sunlessShip.localAccel[0] += speed;
+        if (res.inputs.keyDowns["w"]) e.sunlessShip.localAccel[2] -= speed;
+        if (res.inputs.keyDowns["s"]) e.sunlessShip.localAccel[2] += speed;
+
+        const rotatedAccel = vec3.transformQuat(
+          e.sunlessShip.localAccel,
+          e.rotation
+        );
+
+        let rollSpeed = 0;
+        if (res.inputs.keyDowns["a"]) rollSpeed = 1;
+        if (res.inputs.keyDowns["d"]) rollSpeed = -1;
+
+        quat.rotateY(
+          e.rotation,
+          rollSpeed * e.sunlessShip.rollSpeed,
+          e.rotation
+        );
+
+        // change dampen?
+        if (res.inputs.keyClicks["z"])
+          e.sunlessShip.doDampen = !e.sunlessShip.doDampen;
+
+        // dampener
+        if (e.sunlessShip.doDampen && vec3.sqrLen(rotatedAccel) === 0) {
+          const dampDir = vec3.normalize(vec3.negate(e.linearVelocity));
+          vec3.scale(dampDir, speed, rotatedAccel);
+
+          // halt if at small delta
+          if (vec3.sqrLen(e.linearVelocity) < vec3.sqrLen(rotatedAccel)) {
+            vec3.zero(rotatedAccel);
+            vec3.zero(e.linearVelocity);
+          }
+        }
+
+        vec3.add(e.linearVelocity, rotatedAccel, e.linearVelocity);
+
+        // // camera rotation
+        // quat.rotateY(
+        //   e.rotation,
+        //   -res.inputs.mouseMov[0] * e.sunlessShip.turnSpeed,
+        //   e.rotation
+        // );
+
+        // quat.rotateX(
+        //   e.rotation,
+        //   -res.inputs.mouseMov[1] * e.sunlessShip.turnSpeed,
+        //   e.rotation
+        // );
+      }
+    }
+  );
+});
+
 async function createPlayerShip() {
   const { mesh_cube } = await EM.whenResources(CubeMesh.def);
 
-  // TODO(@darzu):
   const ship = EM.new();
-  EM.set(ship, PositionDef, V(0.2, 0, 0.2));
+  EM.set(ship, PositionDef, V(0, 0, 0));
+  EM.set(ship, RotationDef);
+  EM.set(ship, LinearVelocityDef);
   const mesh = cloneMesh(mesh_cube.mesh);
-  scaleMesh3(mesh, [0.1, 0.1, 0.2]);
+  scaleMesh3(mesh, [1, 1, 2]);
   EM.set(ship, RenderableConstructDef, mesh);
   EM.set(ship, ColorDef, ENDESGA16.lightGreen);
+  EM.set(ship, CameraFollowDef);
+  vec3.copy(ship.cameraFollow.positionOffset, [0.0, 0.0, 50.0]);
+  ship.cameraFollow.pitchOffset = -Math.PI * 0.5;
+
+  // EM.addSystem(
+  //   "dbgSunlessCamera",
+  //   Phase.GAME_PLAYERS,
+  //   [],
+  //   [InputsDef],
+  //   (_, res) => {
+  //     if (res.inputs.keyDowns["w"]) ship.cameraFollow.pitchOffset += 0.01;
+  //     if (res.inputs.keyDowns["s"]) ship.cameraFollow.pitchOffset -= 0.01;
+
+  //     console.log(
+  //       `ship.cameraFollow.pitchOffset: ${ship.cameraFollow.pitchOffset}`
+  //     );
+  //   }
+  // );
+
+  EM.set(ship, SunlessShipDef);
 }
