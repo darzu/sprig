@@ -25,7 +25,7 @@ import { shadowPipelines } from "../render/pipelines/std-shadow.js";
 import { RendererDef, RenderableConstructDef } from "../render/renderer-ecs.js";
 
 /*
-# of Sessions: 4
+# of Sessions: 5
 
 SKETCH:
 
@@ -195,7 +195,9 @@ export async function initGrayboxSunless() {
   createWorld();
 }
 
-function createWorld() {
+async function createWorld() {
+  const { mesh_cube } = await EM.whenResources(CubeMesh.def);
+
   const gridWidth = 5;
   const horiEdges = [
     [1, 1, 1, 1],
@@ -210,4 +212,80 @@ function createWorld() {
     [0, 1, 0, 1, 1],
     [1, 0, 1, 1, 1],
   ];
+
+  const gridScale = 5;
+  const gridHalfScale = gridScale * 0.5;
+
+  for (let zi = 0; zi < gridWidth; zi++) {
+    for (let xi = 0; xi < gridWidth; xi++) {
+      const node = EM.new();
+      EM.set(node, PositionDef, V(xi * gridScale, 0, zi * gridScale));
+      EM.set(node, RenderableConstructDef, mesh_cube.proto);
+      EM.set(node, ScaleDef, V(0.5, 0.5, 0.5));
+      EM.set(node, ColorDef, ENDESGA16.darkRed);
+    }
+  }
+
+  for (let zi = 0; zi < gridWidth; zi++) {
+    for (let xi = 0; xi < gridWidth - 1; xi++) {
+      const hasEdge = !!horiEdges[zi][xi];
+      const pos = V((xi + 0.5) * gridScale, 0, zi * gridScale);
+      if (!hasEdge) {
+        const wall = EM.new();
+        EM.set(wall, PositionDef, pos);
+        EM.set(wall, RenderableConstructDef, mesh_cube.proto);
+        EM.set(wall, ScaleDef, V(0.8, 1, gridHalfScale));
+        EM.set(wall, ColorDef, ENDESGA16.darkGray);
+      } else {
+        const path = EM.new();
+        EM.set(path, PositionDef, pos);
+        EM.set(path, RenderableConstructDef, mesh_cube.proto);
+        EM.set(path, ScaleDef, V(gridHalfScale, 0.2, 0.2));
+        EM.set(path, ColorDef, ENDESGA16.darkRed);
+      }
+    }
+  }
+
+  for (let zi = 0; zi < gridWidth - 1; zi++) {
+    for (let xi = 0; xi < gridWidth; xi++) {
+      const hasEdge = !!vertEdges[zi][xi];
+      const pos = V(xi * gridScale, 0, (zi + 0.5) * gridScale);
+      if (!hasEdge) {
+        const wall = EM.new();
+        EM.set(wall, PositionDef, pos);
+        EM.set(wall, RenderableConstructDef, mesh_cube.proto);
+        EM.set(wall, ScaleDef, V(gridHalfScale, 1, 0.8));
+        EM.set(wall, ColorDef, ENDESGA16.darkGray);
+      } else {
+        const path = EM.new();
+        EM.set(path, PositionDef, pos);
+        EM.set(path, RenderableConstructDef, mesh_cube.proto);
+        EM.set(path, ScaleDef, V(0.2, 0.2, gridHalfScale));
+        EM.set(path, ColorDef, ENDESGA16.darkRed);
+      }
+    }
+  }
+
+  // outer walls
+  [
+    V(0, 0, gridScale * gridWidth * 0.5),
+    V(gridScale * gridWidth * 0.5, 0, 0),
+    V(gridScale * gridWidth * 0.5, 0, gridScale * gridWidth),
+    V(gridScale * gridWidth, 0, gridScale * gridWidth * 0.5),
+  ].forEach((pos) => {
+    const wall = EM.new();
+    EM.set(
+      wall,
+      ScaleDef,
+      V(
+        pos[0] % 1 ? gridScale * gridWidth * 0.5 : 0.8,
+        0.8,
+        pos[2] % 1 ? gridScale * gridWidth * 0.5 : 0.8
+      )
+    );
+    vec3.add(pos, [-gridHalfScale, 0, -gridHalfScale], pos);
+    EM.set(wall, PositionDef, pos);
+    EM.set(wall, RenderableConstructDef, mesh_cube.proto);
+    EM.set(wall, ColorDef, ENDESGA16.darkGray);
+  });
 }
