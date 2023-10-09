@@ -13,6 +13,7 @@ import {
   UnitCubeMesh,
 } from "../meshes/mesh-list.js";
 import { XY } from "../meshes/mesh-loader.js";
+import { cloneMesh, scaleMesh3 } from "../meshes/mesh.js";
 import { LinearVelocityDef } from "../motion/velocity.js";
 import { MeDef } from "../net/components.js";
 import { ColliderDef } from "../physics/collider.js";
@@ -127,6 +128,9 @@ initDocks:
     
 */
 
+const DBG_GRID = false;
+const DBG_GIZMO = false;
+
 export async function initGrayboxSunless() {
   EM.addEagerInit([], [RendererDef], [], (res) => {
     // renderer
@@ -187,13 +191,17 @@ export async function initGrayboxSunless() {
   EM.set(sun, PositionDef, V(50, 300, 10));
 
   // gizmo
-  const gizmoMesh = createGizmoMesh();
-  const gizmo = EM.new();
-  EM.set(gizmo, RenderableConstructDef, gizmoMesh);
-  EM.set(gizmo, PositionDef, V(0, 0, 0));
-  EM.set(gizmo, ScaleDef, V(5, 5, 5));
+  if (DBG_GIZMO) {
+    const gizmoMesh = createGizmoMesh();
+    const gizmo = EM.new();
+    EM.set(gizmo, RenderableConstructDef, gizmoMesh);
+    EM.set(gizmo, PositionDef, V(0, 0, 0));
+    EM.set(gizmo, ScaleDef, V(5, 5, 5));
+  }
 
   createWorld();
+
+  createPlayerShip();
 }
 
 async function createWorld() {
@@ -227,15 +235,16 @@ async function createWorld() {
   const gridHalfScale = gridScale * 0.5;
   const wallWidth = 0.8;
 
-  for (let zi = 0; zi < gridWidth; zi++) {
-    for (let xi = 0; xi < gridWidth; xi++) {
-      const node = EM.new();
-      EM.set(node, PositionDef, V(xi * gridScale, 0, zi * gridScale));
-      EM.set(node, RenderableConstructDef, mesh_cube.proto);
-      EM.set(node, ScaleDef, V(0.5, 0.5, 0.5));
-      EM.set(node, ColorDef, ENDESGA16.darkRed);
+  if (DBG_GRID)
+    for (let zi = 0; zi < gridWidth; zi++) {
+      for (let xi = 0; xi < gridWidth; xi++) {
+        const node = EM.new();
+        EM.set(node, PositionDef, V(xi * gridScale, 0, zi * gridScale));
+        EM.set(node, RenderableConstructDef, mesh_cube.proto);
+        EM.set(node, ScaleDef, V(0.5, 0.5, 0.5));
+        EM.set(node, ColorDef, ENDESGA16.darkRed);
+      }
     }
-  }
 
   for (let zi = 0; zi < gridWidth; zi++) {
     for (let xi = 0; xi < gridWidth - 1; xi++) {
@@ -247,7 +256,7 @@ async function createWorld() {
         EM.set(wall, RenderableConstructDef, mesh_cube.proto);
         EM.set(wall, ScaleDef, V(wallWidth, wallWidth, gridHalfScale));
         EM.set(wall, ColorDef, ENDESGA16.darkGray);
-      } else {
+      } else if (DBG_GRID) {
         const path = EM.new();
         EM.set(path, PositionDef, pos);
         EM.set(path, RenderableConstructDef, mesh_cube.proto);
@@ -267,7 +276,7 @@ async function createWorld() {
         EM.set(wall, RenderableConstructDef, mesh_cube.proto);
         EM.set(wall, ScaleDef, V(gridHalfScale, wallWidth, wallWidth));
         EM.set(wall, ColorDef, ENDESGA16.darkGray);
-      } else {
+      } else if (DBG_GRID) {
         const path = EM.new();
         EM.set(path, PositionDef, pos);
         EM.set(path, RenderableConstructDef, mesh_cube.proto);
@@ -336,4 +345,16 @@ async function createWorld() {
     vec3.add(node.position, dirToDockOffset[dir], node.position);
     EM.set(node, ColorDef, ENDESGA16.orange);
   }
+}
+
+async function createPlayerShip() {
+  const { mesh_cube } = await EM.whenResources(CubeMesh.def);
+
+  // TODO(@darzu):
+  const ship = EM.new();
+  EM.set(ship, PositionDef, V(0.2, 0, 0.2));
+  const mesh = cloneMesh(mesh_cube.mesh);
+  scaleMesh3(mesh, [0.1, 0.1, 0.2]);
+  EM.set(ship, RenderableConstructDef, mesh);
+  EM.set(ship, ColorDef, ENDESGA16.lightGreen);
 }

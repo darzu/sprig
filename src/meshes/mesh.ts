@@ -537,10 +537,10 @@ export function mapMeshPositions(
   m.pos = m.pos.map(map);
 }
 export function scaleMesh(m: RawMesh, by: number) {
-  mapMeshPositions(m, (p) => vec3.scale(p, by, vec3.create()));
+  mapMeshPositions(m, (p) => vec3.scale(p, by, p));
 }
-export function scaleMesh3(m: RawMesh, by: vec3) {
-  mapMeshPositions(m, (p) => vec3.mul(p, by, vec3.create()));
+export function scaleMesh3(m: RawMesh, by: vec3.InputT) {
+  mapMeshPositions(m, (p) => vec3.mul(p, by, p));
 }
 // TODO(@darzu): need a version that preserves Mesh vs RawMesh
 export function transformMesh(m: RawMesh, t: mat4) {
