@@ -275,11 +275,9 @@ async function createWorld() {
       shape: "AABB",
       solid: true,
       aabb: mesh_cube.aabb,
-      // TODO(@darzu): put back
-      // myLayer: WALL_LAYER,
-      // targetLayer: SHIPS_LAYER,
+      myLayer: WALL_LAYER,
+      targetLayer: SHIPS_LAYER,
     });
-    // EM.set(wall, TeleportDef); // TODO(@darzu): HACK.
   }
 
   function createDbgPath(pos: vec3, horizontal: boolean) {
