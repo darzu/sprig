@@ -40,6 +40,10 @@ export function randFloat(min: number, max: number) {
   return Math.random() * (max - min) + min;
 }
 
+export function randRadian(min = 0, max = Math.PI * 2.0) {
+  return Math.random() * (max - min) + min;
+}
+
 export function align(x: number, size: number): number {
   return Math.ceil(x / size) * size;
 }

@@ -29,6 +29,7 @@ import { postProcess } from "../render/pipelines/std-post.js";
 import { shadowPipelines } from "../render/pipelines/std-shadow.js";
 import { RendererDef, RenderableConstructDef } from "../render/renderer-ecs.js";
 import { TimeDef } from "../time/time.js";
+import { randInt, randRadian } from "../utils/math.js";
 import { assert } from "../utils/util.js";
 import { randNormalVec3 } from "../utils/utils-3d.js";
 
@@ -219,6 +220,8 @@ export async function initGrayboxSunless() {
   createWorld();
 
   if (!DBG_GHOST) createPlayerShip();
+
+  createEnemies();
 }
 
 async function createWorld() {
@@ -261,7 +264,7 @@ async function createWorld() {
         EM.set(node, PositionDef, V(xi * gridScale, 0, zi * gridScale));
         EM.set(node, RenderableConstructDef, mesh_cube.proto);
         // EM.set(node, ScaleDef, V(0.5, 0.5, 0.5));
-        EM.set(node, ColorDef, ENDESGA16.darkRed);
+        EM.set(node, ColorDef, ENDESGA16.lightBlue);
       }
     }
   }
@@ -293,7 +296,7 @@ async function createWorld() {
     EM.set(path, RenderableConstructDef, mesh_cube.proto);
     if (horizontal) EM.set(path, ScaleDef, V(gridHalfScale, 0.2, 0.2));
     else EM.set(path, ScaleDef, V(0.2, 0.2, gridHalfScale));
-    EM.set(path, ColorDef, ENDESGA16.darkRed);
+    EM.set(path, ColorDef, ENDESGA16.lightBlue);
   }
 
   for (let zi = 0; zi < gridWidth; zi++) {
@@ -487,7 +490,7 @@ async function createPlayerShip() {
     solid: true,
     aabb: getAABBFromMesh(mesh),
     myLayer: SHIPS_LAYER,
-    targetLayer: WALL_LAYER,
+    targetLayer: WALL_LAYER | SHIPS_LAYER,
   });
 
   // EM.addSystem(
@@ -506,4 +509,25 @@ async function createPlayerShip() {
   // );
 
   EM.set(ship, SunlessShipDef);
+}
+
+async function createEnemies() {
+  const { mesh_cube } = await EM.whenResources(CubeMesh.def);
+
+  const ship = EM.new();
+  EM.set(ship, PositionDef, V(15, 0, 17));
+  EM.set(ship, RotationDef);
+  quat.rotateY(ship.rotation, randRadian(), ship.rotation);
+  EM.set(ship, LinearVelocityDef);
+  const mesh = cloneMesh(mesh_cube.mesh);
+  scaleMesh3(mesh, [1, 1, 2]);
+  EM.set(ship, RenderableConstructDef, mesh);
+  EM.set(ship, ColorDef, ENDESGA16.red);
+  EM.set(ship, ColliderDef, {
+    shape: "AABB",
+    solid: true,
+    aabb: getAABBFromMesh(mesh),
+    myLayer: SHIPS_LAYER,
+    targetLayer: WALL_LAYER | SHIPS_LAYER,
+  });
 }

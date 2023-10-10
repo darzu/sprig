@@ -443,6 +443,9 @@ export class EntityManager {
       );
     this.entities.set(e.id, e);
     this._entitiesToSystems.set(e.id, []);
+
+    // if (e.id === 10052) throw new Error("Created here!");
+
     return e;
   }
 
