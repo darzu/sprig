@@ -19,6 +19,7 @@ import { cloneMesh, getAABBFromMesh, scaleMesh3 } from "../meshes/mesh.js";
 import { LinearVelocityDef } from "../motion/velocity.js";
 import { MeDef } from "../net/components.js";
 import { ColliderDef } from "../physics/collider.js";
+import { TeleportDef } from "../physics/teleport.js";
 import { PositionDef, RotationDef, ScaleDef } from "../physics/transform.js";
 import { PointLightDef } from "../render/lights.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
@@ -133,7 +134,7 @@ initDocks:
 
 const DBG_GRID = true;
 const DBG_GIZMO = false;
-const DBG_GHOST = false;
+const DBG_GHOST = true;
 
 export async function initGrayboxSunless() {
   EM.addEagerInit([], [RendererDef], [], (res) => {
@@ -166,9 +167,12 @@ export async function initGrayboxSunless() {
     const g = createGhost();
     g.position[1] = 5;
     EM.set(g, RenderableConstructDef, mesh_cube.proto);
-    vec3.copy(g.position, [-0.5, 10.7, 15.56]);
-    quat.copy(g.rotation, [0.0, -0.09, 0.0, 0.99]);
-    g.cameraFollow.pitchOffset = -0.32;
+
+    vec3.copy(g.position, [102.41, 142.23, 154.95]);
+    quat.copy(g.rotation, [0.0, 0.0, 0.0, 0.99]);
+    vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
+    g.cameraFollow.yawOffset = 0.0;
+    g.cameraFollow.pitchOffset = -1.388;
   }
 
   // ground
@@ -207,7 +211,7 @@ export async function initGrayboxSunless() {
 
   createWorld();
 
-  createPlayerShip();
+  if (!DBG_GHOST) createPlayerShip();
 }
 
 async function createWorld() {
@@ -255,11 +259,11 @@ async function createWorld() {
     }
   }
 
-  function createWall(pos: vec3, horizontal: boolean, length: number) {
+  function createWall(pos: vec3, vertical: boolean, length: number) {
     const wall = EM.new();
     EM.set(wall, PositionDef, pos);
     EM.set(wall, RenderableConstructDef, mesh_cube.proto);
-    if (horizontal) EM.set(wall, ScaleDef, V(wallWidth, wallHeight, length));
+    if (vertical) EM.set(wall, ScaleDef, V(wallWidth, wallHeight, length));
     else EM.set(wall, ScaleDef, V(length, wallHeight, wallWidth));
     EM.set(wall, ColorDef, ENDESGA16.darkGray);
     EM.set(wall, ColliderDef, {
@@ -267,6 +271,7 @@ async function createWorld() {
       solid: true,
       aabb: mesh_cube.aabb,
     });
+    EM.set(wall, TeleportDef); // TODO(@darzu): HACK.
   }
 
   function createDbgPath(pos: vec3, horizontal: boolean) {
@@ -305,9 +310,9 @@ async function createWorld() {
     V(gridScale * gridWidth * 0.5, 0, gridScale * gridWidth),
     V(gridScale * gridWidth, 0, gridScale * gridWidth * 0.5),
   ].forEach((pos, i) => {
-    const isHorizontal = i === 0 || i === 3;
+    const isVertical = i === 0 || i === 3;
     vec3.add(pos, [-gridHalfScale, 0, -gridHalfScale], pos);
-    createWall(pos, isHorizontal, gridScale * gridWidth * 0.5);
+    createWall(pos, isVertical, gridScale * gridWidth * 0.5);
   });
 
   // floor
