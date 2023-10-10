@@ -118,6 +118,16 @@ export type SystemFn<
   resources: Resources<RS>
 ) => void;
 
+export interface SystemFlags {
+  allowQueryEdit?: boolean;
+}
+export interface PublicSystemReg {
+  readonly id: number;
+  readonly name: string;
+  readonly phase: Phase;
+  flags: SystemFlags;
+}
+
 interface SystemReg {
   cs: ComponentDef[] | null;
   rs: ResourceDef[];
@@ -125,6 +135,7 @@ interface SystemReg {
   name: string;
   phase: Phase;
   id: number;
+  flags: SystemFlags;
 }
 
 export type InitFnId = number;
@@ -665,6 +676,7 @@ export class EntityManager {
     return undefined;
   }
 
+  _currentRunningSystem: SystemReg | undefined = undefined;
   _dbgLastSystemLen = 0;
   _dbgLastActiveSystemLen = 0;
   private callSystems() {
@@ -697,8 +709,15 @@ export class EntityManager {
     }
 
     for (let phase of PhaseValueList) {
-      for (let s of this.phases.get(phase)!) {
+      for (let sName of this.phases.get(phase)!) {
+        // look up
+        const s = this.allSystemsByName.get(sName);
+        assert(s, `Can't find system with name: ${sName}`);
+
+        // run
+        this._currentRunningSystem = s;
         this.tryCallSystem(s);
+        this._currentRunningSystem = undefined;
 
         if (DBG_ENITITY_10017_POSITION_CHANGES) {
           // TODO(@darzu): GENERALIZE THIS
@@ -743,8 +762,17 @@ export class EntityManager {
 
     // update query cache
     const systems = this._componentToSystems.get(def.name);
-    for (let name of systems ?? []) {
-      const es = this._systemsToEntities.get(name);
+    for (let sysId of systems ?? []) {
+      if (
+        sysId === this._currentRunningSystem?.id &&
+        !this._currentRunningSystem.flags.allowQueryEdit
+      )
+        console.warn(
+          `Removing component '${def.name}' while running system '${this._currentRunningSystem.name}'` +
+            ` which queries it. Set the "allowQueryEdit" flag on the system if intentional` +
+            ` (and probably loop over the query backwards.`
+        );
+      const es = this._systemsToEntities.get(sysId);
       if (es) {
         // TODO(@darzu): perf. sorted removal
         const indx = es.findIndex((v) => v.id === id);
@@ -908,21 +936,21 @@ export class EntityManager {
     cs: [...CS],
     rs: [...RS],
     callback: SystemFn<CS, RS>
-  ): void;
+  ): PublicSystemReg;
   public addSystem<CS extends null, RS extends ResourceDef[]>(
     name: string,
     phase: Phase,
     cs: null,
     rs: [...RS],
     callback: SystemFn<CS, RS>
-  ): void;
+  ): PublicSystemReg;
   public addSystem<CS extends ComponentDef[], RS extends ResourceDef[]>(
     name: string,
     phase: Phase,
     cs: [...CS] | null,
     rs: [...RS],
     callback: SystemFn<CS, RS>
-  ): void {
+  ): PublicSystemReg {
     name = name || callback.name;
     if (name === "") {
       throw new Error(
@@ -940,6 +968,7 @@ export class EntityManager {
       name,
       phase,
       id,
+      flags: {},
     };
     this.allSystemsByName.set(name, sys);
 
@@ -967,6 +996,8 @@ export class EntityManager {
         `sysinit_${sys.name}`
       );
     }
+
+    return sys;
   }
 
   private activateSystem(sys: SystemReg) {
@@ -1043,13 +1074,10 @@ export class EntityManager {
     return this.allSystemsByName.has(name);
   }
 
-  private tryCallSystem(name: string): boolean {
+  private tryCallSystem(s: SystemReg): boolean {
     // TODO(@darzu):
     // if (name.endsWith("Build")) console.log(`calling ${name}`);
     // if (name == "groundPropsBuild") console.log("calling groundPropsBuild");
-
-    const s = this.allSystemsByName.get(name);
-    assert(s, `Can't find system with name: ${name}`);
 
     if (!this.activeSystemsById.has(s.id)) {
       return false;

@@ -31,7 +31,7 @@ import { RendererDef, RenderableConstructDef } from "../render/renderer-ecs.js";
 import { TimeDef } from "../time/time.js";
 
 /*
-# of Sessions: 7
+# of Sessions: 8
 
 SKETCH:
 
@@ -134,7 +134,7 @@ initDocks:
 
 const DBG_GRID = true;
 const DBG_GIZMO = false;
-const DBG_GHOST = true;
+const DBG_GHOST = false;
 
 export async function initGrayboxSunless() {
   EM.addEagerInit([], [RendererDef], [], (res) => {
@@ -420,8 +420,9 @@ async function createPlayerShip() {
   const { mesh_cube } = await EM.whenResources(CubeMesh.def);
 
   const ship = EM.new();
-  EM.set(ship, PositionDef, V(0, 0, 0));
+  EM.set(ship, PositionDef, V(9, 0, 8));
   EM.set(ship, RotationDef);
+  quat.rotateY(ship.rotation, -Math.PI * 0.4, ship.rotation);
   EM.set(ship, LinearVelocityDef);
   const mesh = cloneMesh(mesh_cube.mesh);
   scaleMesh3(mesh, [1, 1, 2]);
