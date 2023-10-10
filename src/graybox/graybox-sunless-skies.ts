@@ -15,7 +15,7 @@ import {
   UnitCubeMesh,
 } from "../meshes/mesh-list.js";
 import { XY } from "../meshes/mesh-loader.js";
-import { cloneMesh, scaleMesh3 } from "../meshes/mesh.js";
+import { cloneMesh, getAABBFromMesh, scaleMesh3 } from "../meshes/mesh.js";
 import { LinearVelocityDef } from "../motion/velocity.js";
 import { MeDef } from "../net/components.js";
 import { ColliderDef } from "../physics/collider.js";
@@ -262,6 +262,11 @@ async function createWorld() {
     if (horizontal) EM.set(wall, ScaleDef, V(wallWidth, wallHeight, length));
     else EM.set(wall, ScaleDef, V(length, wallHeight, wallWidth));
     EM.set(wall, ColorDef, ENDESGA16.darkGray);
+    EM.set(wall, ColliderDef, {
+      shape: "AABB",
+      solid: true,
+      aabb: mesh_cube.aabb,
+    });
   }
 
   function createDbgPath(pos: vec3, horizontal: boolean) {
@@ -273,7 +278,6 @@ async function createWorld() {
     EM.set(path, ColorDef, ENDESGA16.darkRed);
   }
 
-  // horiEdges.forEach((row, zi(
   for (let zi = 0; zi < gridWidth; zi++) {
     for (let xi = 0; xi < gridWidth - 1; xi++) {
       const hasEdge = !!horiEdges[zi][xi];
@@ -301,7 +305,6 @@ async function createWorld() {
     V(gridScale * gridWidth * 0.5, 0, gridScale * gridWidth),
     V(gridScale * gridWidth, 0, gridScale * gridWidth * 0.5),
   ].forEach((pos, i) => {
-    const wall = EM.new();
     const isHorizontal = i === 0 || i === 3;
     vec3.add(pos, [-gridHalfScale, 0, -gridHalfScale], pos);
     createWall(pos, isHorizontal, gridScale * gridWidth * 0.5);
@@ -315,7 +318,7 @@ async function createWorld() {
       ScaleDef,
       V(gridScale * gridWidth, wallHeight, gridScale * gridWidth)
     );
-    EM.set(floor, PositionDef, V(-gridHalfScale, -wallWidth, -gridHalfScale));
+    EM.set(floor, PositionDef, V(-gridHalfScale, -wallHeight, -gridHalfScale));
     EM.set(floor, RenderableConstructDef, mesh_unitCube.proto);
     EM.set(floor, ColorDef, ENDESGA16.blue);
   }
@@ -403,19 +406,6 @@ EM.addEagerInit([SunlessShipDef], [], [], () => {
         }
 
         vec3.add(e.linearVelocity, rotatedAccel, e.linearVelocity);
-
-        // // camera rotation
-        // quat.rotateY(
-        //   e.rotation,
-        //   -res.inputs.mouseMov[0] * e.sunlessShip.turnSpeed,
-        //   e.rotation
-        // );
-
-        // quat.rotateX(
-        //   e.rotation,
-        //   -res.inputs.mouseMov[1] * e.sunlessShip.turnSpeed,
-        //   e.rotation
-        // );
       }
     }
   );
@@ -435,6 +425,11 @@ async function createPlayerShip() {
   EM.set(ship, CameraFollowDef);
   vec3.copy(ship.cameraFollow.positionOffset, [0.0, 0.0, 50.0]);
   ship.cameraFollow.pitchOffset = -Math.PI * 0.5;
+  EM.set(ship, ColliderDef, {
+    shape: "AABB",
+    solid: true,
+    aabb: getAABBFromMesh(mesh),
+  });
 
   // EM.addSystem(
   //   "dbgSunlessCamera",
