@@ -83,8 +83,8 @@ const DUMMY_COLLIDER: PhysCollider = {
   parentOId: 0,
   localPos: V(0, 0, 0),
   lastLocalPos: V(0, 0, 0),
-  myLayers: 0b1,
-  targetLayers: 0xffff,
+  myLayers: DefaultLayer,
+  targetLayers: DefaultLayer,
 };
 
 // TODO(@darzu): break this up into the specific use cases
@@ -255,8 +255,8 @@ export function registerPhysicsStateInit() {
               o.collider.aabb,
               o.id,
               parentId,
-              o.collider.myLayers,
-              o.collider.targetLayers
+              o.collider.myLayer,
+              o.collider.targetLayer
             )
           );
         } else if (o.collider.shape === "Multi") {
@@ -268,8 +268,8 @@ export function registerPhysicsStateInit() {
                 c.aabb,
                 o.id,
                 parentId,
-                o.collider.myLayers,
-                o.collider.targetLayers
+                o.collider.myLayer,
+                o.collider.targetLayer
               )
             );
           }
@@ -286,8 +286,8 @@ export function registerPhysicsStateInit() {
         selfAABB: AABB,
         oId: number,
         parentOId: number,
-        myLayers?: Layer[],
-        targetLayers?: Layer[]
+        myLayer?: Layer,
+        targetLayer?: Layer
       ): PhysCollider {
         const cId = _physBColliders.nextId;
         _physBColliders.nextId += 1;
@@ -295,10 +295,8 @@ export function registerPhysicsStateInit() {
           console.warn(`Halfway through collider IDs!`);
 
         // figure out layers
-        let my = myLayers ? 0 : 0b1 << DefaultLayer;
-        if (myLayers) for (let l of myLayers) my |= 0b1 << l;
-        let target = targetLayers ? 0 : 0xffff;
-        if (targetLayers) for (let l of targetLayers) target |= 0b1 << l;
+        const my = myLayer ?? DefaultLayer;
+        const target = targetLayer ?? DefaultLayer;
 
         // TODO(@darzu): debugging layers
         // console.log(
@@ -457,7 +455,7 @@ export function registerPhysicsContactSystems() {
           // are these objects interested in each other?
           // TODO(@darzu): check this in the broad phase as well
           if (
-            (ac.myLayers & bc.targetLayers) === 0 &&
+            (ac.myLayers & bc.targetLayers) === 0 ||
             (bc.myLayers & ac.targetLayers) === 0
           )
             continue;

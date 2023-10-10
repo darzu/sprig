@@ -5,6 +5,7 @@ import { ColliderDef } from "./collider.js";
 // TODO(@darzu): is this a good component? There's probably a more preformant way to do this
 // directly with physicsStepContact
 // TODO(@darzu): Another "flag" component. We maybe should special case these
+// TODO(@darzu): MOST of the time when you're reaching for Teleport, you should use collider Layer instead!
 export const TeleportDef = EM.defineComponent(
   "teleport",
   () => true,

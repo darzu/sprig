@@ -18,7 +18,7 @@ import { XY } from "../meshes/mesh-loader.js";
 import { cloneMesh, getAABBFromMesh, scaleMesh3 } from "../meshes/mesh.js";
 import { LinearVelocityDef } from "../motion/velocity.js";
 import { MeDef } from "../net/components.js";
-import { ColliderDef } from "../physics/collider.js";
+import { ColliderDef, DefaultLayer } from "../physics/collider.js";
 import { TeleportDef } from "../physics/teleport.js";
 import { PositionDef, RotationDef, ScaleDef } from "../physics/transform.js";
 import { PointLightDef } from "../render/lights.js";
@@ -31,7 +31,7 @@ import { RendererDef, RenderableConstructDef } from "../render/renderer-ecs.js";
 import { TimeDef } from "../time/time.js";
 
 /*
-# of Sessions: 8
+# of Sessions: 9
 
 SKETCH:
 
@@ -135,6 +135,11 @@ initDocks:
 const DBG_GRID = true;
 const DBG_GIZMO = false;
 const DBG_GHOST = false;
+
+// TODO(@darzu): ADD WARNING THAT OBJ INIT PLACED IN CONTACT
+
+const WALL_LAYER = 0b0000000000000010;
+const SHIPS_LAYER = DefaultLayer;
 
 export async function initGrayboxSunless() {
   EM.addEagerInit([], [RendererDef], [], (res) => {
@@ -270,8 +275,10 @@ async function createWorld() {
       shape: "AABB",
       solid: true,
       aabb: mesh_cube.aabb,
+      myLayer: WALL_LAYER,
+      targetLayer: SHIPS_LAYER,
     });
-    EM.set(wall, TeleportDef); // TODO(@darzu): HACK.
+    // EM.set(wall, TeleportDef); // TODO(@darzu): HACK.
   }
 
   function createDbgPath(pos: vec3, horizontal: boolean) {
@@ -435,6 +442,8 @@ async function createPlayerShip() {
     shape: "AABB",
     solid: true,
     aabb: getAABBFromMesh(mesh),
+    myLayer: SHIPS_LAYER,
+    targetLayer: WALL_LAYER,
   });
 
   // EM.addSystem(

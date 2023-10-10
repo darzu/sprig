@@ -119,6 +119,7 @@ export type SystemFn<
 ) => void;
 
 export interface SystemFlags {
+  // If set, won't warn you if you remove component during a system that queries that component
   allowQueryEdit?: boolean;
 }
 export interface PublicSystemReg {
