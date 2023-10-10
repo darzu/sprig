@@ -30,7 +30,7 @@ import { RendererDef, RenderableConstructDef } from "../render/renderer-ecs.js";
 import { TimeDef } from "../time/time.js";
 
 /*
-# of Sessions: 6
+# of Sessions: 7
 
 SKETCH:
 
@@ -131,7 +131,7 @@ initDocks:
     
 */
 
-const DBG_GRID = false;
+const DBG_GRID = true;
 const DBG_GIZMO = false;
 const DBG_GHOST = false;
 
@@ -216,6 +216,7 @@ async function createWorld() {
     UnitCubeMesh.def
   );
 
+  // TODO(@darzu): procedural generate this
   const gridWidth = 5;
   const horiEdges = [
     [1, 1, 1, 1],
@@ -240,8 +241,9 @@ async function createWorld() {
   const gridScale = 50;
   const gridHalfScale = gridScale * 0.5;
   const wallWidth = 8;
+  const wallHeight = 4;
 
-  if (DBG_GRID)
+  if (DBG_GRID) {
     for (let zi = 0; zi < gridWidth; zi++) {
       for (let xi = 0; xi < gridWidth; xi++) {
         const node = EM.new();
@@ -251,24 +253,34 @@ async function createWorld() {
         EM.set(node, ColorDef, ENDESGA16.darkRed);
       }
     }
+  }
 
+  function createWall(pos: vec3, horizontal: boolean, length: number) {
+    const wall = EM.new();
+    EM.set(wall, PositionDef, pos);
+    EM.set(wall, RenderableConstructDef, mesh_cube.proto);
+    if (horizontal) EM.set(wall, ScaleDef, V(wallWidth, wallHeight, length));
+    else EM.set(wall, ScaleDef, V(length, wallHeight, wallWidth));
+    EM.set(wall, ColorDef, ENDESGA16.darkGray);
+  }
+
+  function createDbgPath(pos: vec3, horizontal: boolean) {
+    const path = EM.new();
+    EM.set(path, PositionDef, pos);
+    EM.set(path, RenderableConstructDef, mesh_cube.proto);
+    if (horizontal) EM.set(path, ScaleDef, V(gridHalfScale, 0.2, 0.2));
+    else EM.set(path, ScaleDef, V(0.2, 0.2, gridHalfScale));
+    EM.set(path, ColorDef, ENDESGA16.darkRed);
+  }
+
+  // horiEdges.forEach((row, zi(
   for (let zi = 0; zi < gridWidth; zi++) {
     for (let xi = 0; xi < gridWidth - 1; xi++) {
       const hasEdge = !!horiEdges[zi][xi];
       const pos = V((xi + 0.5) * gridScale, 0, zi * gridScale);
-      if (!hasEdge) {
-        const wall = EM.new();
-        EM.set(wall, PositionDef, pos);
-        EM.set(wall, RenderableConstructDef, mesh_cube.proto);
-        EM.set(wall, ScaleDef, V(wallWidth, wallWidth, gridHalfScale));
-        EM.set(wall, ColorDef, ENDESGA16.darkGray);
-      } else if (DBG_GRID) {
-        const path = EM.new();
-        EM.set(path, PositionDef, pos);
-        EM.set(path, RenderableConstructDef, mesh_cube.proto);
-        // EM.set(path, ScaleDef, V(gridHalfScale, 0.2, 0.2));
-        EM.set(path, ColorDef, ENDESGA16.darkRed);
-      }
+      if (!hasEdge) createWall(pos, true, gridHalfScale);
+
+      if (DBG_GRID && hasEdge) createDbgPath(pos, true);
     }
   }
 
@@ -276,19 +288,9 @@ async function createWorld() {
     for (let xi = 0; xi < gridWidth; xi++) {
       const hasEdge = !!vertEdges[zi][xi];
       const pos = V(xi * gridScale, 0, (zi + 0.5) * gridScale);
-      if (!hasEdge) {
-        const wall = EM.new();
-        EM.set(wall, PositionDef, pos);
-        EM.set(wall, RenderableConstructDef, mesh_cube.proto);
-        EM.set(wall, ScaleDef, V(gridHalfScale, wallWidth, wallWidth));
-        EM.set(wall, ColorDef, ENDESGA16.darkGray);
-      } else if (DBG_GRID) {
-        const path = EM.new();
-        EM.set(path, PositionDef, pos);
-        EM.set(path, RenderableConstructDef, mesh_cube.proto);
-        // EM.set(path, ScaleDef, V(0.2, 0.2, gridHalfScale));
-        EM.set(path, ColorDef, ENDESGA16.darkRed);
-      }
+      if (!hasEdge) createWall(pos, false, gridHalfScale);
+
+      if (DBG_GRID && hasEdge) createDbgPath(pos, false);
     }
   }
 
@@ -300,33 +302,22 @@ async function createWorld() {
     V(gridScale * gridWidth, 0, gridScale * gridWidth * 0.5),
   ].forEach((pos, i) => {
     const wall = EM.new();
-    const isVertical = i === 0 || i === 3;
-    EM.set(
-      wall,
-      ScaleDef,
-      V(
-        !isVertical ? gridScale * gridWidth * 0.5 : wallWidth,
-        wallWidth,
-        isVertical ? gridScale * gridWidth * 0.5 : wallWidth
-      )
-    );
+    const isHorizontal = i === 0 || i === 3;
     vec3.add(pos, [-gridHalfScale, 0, -gridHalfScale], pos);
-    EM.set(wall, PositionDef, pos);
-    EM.set(wall, RenderableConstructDef, mesh_cube.proto);
-    EM.set(wall, ColorDef, ENDESGA16.darkGray);
+    createWall(pos, isHorizontal, gridScale * gridWidth * 0.5);
   });
 
   // floor
   {
-    const wall = EM.new();
+    const floor = EM.new();
     EM.set(
-      wall,
+      floor,
       ScaleDef,
-      V(gridScale * gridWidth, wallWidth, gridScale * gridWidth)
+      V(gridScale * gridWidth, wallHeight, gridScale * gridWidth)
     );
-    EM.set(wall, PositionDef, V(-gridHalfScale, -wallWidth, -gridHalfScale));
-    EM.set(wall, RenderableConstructDef, mesh_unitCube.proto);
-    EM.set(wall, ColorDef, ENDESGA16.blue);
+    EM.set(floor, PositionDef, V(-gridHalfScale, -wallWidth, -gridHalfScale));
+    EM.set(floor, RenderableConstructDef, mesh_unitCube.proto);
+    EM.set(floor, ColorDef, ENDESGA16.blue);
   }
 
   // docks
