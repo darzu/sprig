@@ -40,6 +40,9 @@ import {
 import { IdPair, idPair } from "../utils/util.js";
 import { tempVec3 } from "../matrix/temp-pool.js";
 import { Phase } from "../ecs/sys-phase.js";
+import { vec3Dbg } from "../utils/utils-3d.js";
+
+const DBG_FIRST_FRAME_MOV = true;
 
 // TODO(@darzu): we use "object", "obj", "o" everywhere in here, we should use "entity", "ent", "e"
 
@@ -96,6 +99,8 @@ export const PhysicsStateDef = EM.defineComponent("_phys", () => {
     // NOTE: these can be many-to-one colliders-to-entities, hence the arrays
     colliders: [] as PhysCollider[],
     // TODO(@darzu): use sweepAABBs again?
+    // for debugging when objects start w/ intersecting each other
+    dbgFirstFrame: true,
   };
 });
 export type PhysicsState = Component<typeof PhysicsStateDef>;
@@ -529,7 +534,8 @@ export function registerPhysicsContactSystems() {
         anyMovement = false;
         for (let o of objs) {
           let movFrac = nextObjMovFracs[o.id];
-          if (movFrac) {
+          const objDoesMov = !!movFrac;
+          if (objDoesMov) {
             // TODO(@darzu): PARENT. this needs to rebound in the parent frame, not world frame
             const refl = tempVec3();
             vec3.sub(o._phys.lastLocalPos, o.position, refl);
@@ -539,7 +545,6 @@ export function registerPhysicsContactSystems() {
             // translate non-sweep AABBs
             for (let c of o._phys.colliders) {
               // TODO(@darzu): PARENT. translate world AABBs?
-              // TODO(@darzu): PARENT. translate world AABBs?
               vec3.add(c.localAABB.min, refl, c.localAABB.min);
               vec3.add(c.localAABB.max, refl, c.localAABB.max);
               vec3.add(c.localPos, refl, c.localPos);
@@ -547,11 +552,19 @@ export function registerPhysicsContactSystems() {
 
             // track that some movement occured
             anyMovement = true;
+
+            if (DBG_FIRST_FRAME_MOV && o._phys.dbgFirstFrame)
+              console.warn(
+                `Object '${o.id}' is being moved ${vec3Dbg(
+                  refl
+                )} by contact constraints on its first frame.` +
+                  ` Consider using ColliderBase.myLayer/.targetLayer or TeleportDef.`
+              );
           }
 
           // record which objects moved from this iteration,
           // reset movement fractions for next iteration
-          lastObjMovs[o.id] = !!nextObjMovFracs[o.id];
+          lastObjMovs[o.id] = objDoesMov;
           nextObjMovFracs[o.id] = 0;
         }
 
@@ -565,7 +578,7 @@ export function registerPhysicsContactSystems() {
         vec3.copy(o._phys.lastLocalPos, o.position);
       }
 
-      // update out checkRay function
+      // update output checkRay function
       res.physicsResults.checkRay = (r: Ray) => {
         const motHits = collidersCheckRay(r);
         const hits: RayHit[] = [];
@@ -579,6 +592,9 @@ export function registerPhysicsContactSystems() {
         }
         return hits;
       };
+
+      if (DBG_FIRST_FRAME_MOV)
+        for (let o of objs) o._phys.dbgFirstFrame = false;
     }
   );
 }

@@ -134,7 +134,7 @@ initDocks:
 
 const DBG_GRID = true;
 const DBG_GIZMO = false;
-const DBG_GHOST = false;
+const DBG_GHOST = true;
 
 // TODO(@darzu): ADD WARNING THAT OBJ INIT PLACED IN CONTACT
 
@@ -275,8 +275,9 @@ async function createWorld() {
       shape: "AABB",
       solid: true,
       aabb: mesh_cube.aabb,
-      myLayer: WALL_LAYER,
-      targetLayer: SHIPS_LAYER,
+      // TODO(@darzu): put back
+      // myLayer: WALL_LAYER,
+      // targetLayer: SHIPS_LAYER,
     });
     // EM.set(wall, TeleportDef); // TODO(@darzu): HACK.
   }

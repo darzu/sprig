@@ -925,6 +925,11 @@ Doom 3 glow:
   Pixel - Squares
   These combine with extra effects like chroma shift, glitch, invert, low res, and paper color.
 
+dithering types:
+  https://tannerhelland.com/2012/12/28/dithering-eleven-algorithms-source-code.html
+  https://ieeexplore.ieee.org/document/3288
+
+
 "Next Generation Geometry" / shader culling:
   https://timur.hu/blog/2022/what-is-ngg
   mesh shaders are dope
