@@ -29,9 +29,10 @@ import { postProcess } from "../render/pipelines/std-post.js";
 import { shadowPipelines } from "../render/pipelines/std-shadow.js";
 import { RendererDef, RenderableConstructDef } from "../render/renderer-ecs.js";
 import { TimeDef } from "../time/time.js";
+import { assert } from "../utils/util.js";
 
 /*
-# of Sessions: 9
+# of Sessions: 10
 
 SKETCH:
 
@@ -134,7 +135,7 @@ initDocks:
 
 const DBG_GRID = true;
 const DBG_GIZMO = false;
-const DBG_GHOST = true;
+const DBG_GHOST = false;
 
 // TODO(@darzu): ADD WARNING THAT OBJ INIT PLACED IN CONTACT
 
@@ -368,55 +369,93 @@ export const SunlessShipDef = EM.defineComponent("sunlessShip", () => ({
   localAccel: vec3.create(),
 }));
 
-EM.addEagerInit([SunlessShipDef], [], [], () => {
+EM.addEagerInit([SunlessShipDef], [CubeMesh.def], [], ({ mesh_cube }) => {
   EM.addSystem(
-    "controlSpaceSuit",
+    "moveSunlessShip",
     Phase.GAME_PLAYERS,
     [SunlessShipDef, RotationDef, LinearVelocityDef],
     [InputsDef, TimeDef],
-    (suits, res) => {
-      for (let e of suits) {
-        let speed = e.sunlessShip.speed * res.time.dt;
+    (ships, res) => {
+      if (!ships.length) return;
+      assert(ships.length === 1);
+      const e = ships[0];
 
-        vec3.zero(e.sunlessShip.localAccel);
-        // 4-DOF translation
-        if (res.inputs.keyDowns["q"]) e.sunlessShip.localAccel[0] -= speed;
-        if (res.inputs.keyDowns["e"]) e.sunlessShip.localAccel[0] += speed;
-        if (res.inputs.keyDowns["w"]) e.sunlessShip.localAccel[2] -= speed;
-        if (res.inputs.keyDowns["s"]) e.sunlessShip.localAccel[2] += speed;
+      let speed = e.sunlessShip.speed * res.time.dt;
 
-        const rotatedAccel = vec3.transformQuat(
-          e.sunlessShip.localAccel,
-          e.rotation
-        );
+      vec3.zero(e.sunlessShip.localAccel);
+      // 4-DOF translation
+      if (res.inputs.keyDowns["q"]) e.sunlessShip.localAccel[0] -= speed;
+      if (res.inputs.keyDowns["e"]) e.sunlessShip.localAccel[0] += speed;
+      if (res.inputs.keyDowns["w"]) e.sunlessShip.localAccel[2] -= speed;
+      if (res.inputs.keyDowns["s"]) e.sunlessShip.localAccel[2] += speed;
 
-        let rollSpeed = 0;
-        if (res.inputs.keyDowns["a"]) rollSpeed = 1;
-        if (res.inputs.keyDowns["d"]) rollSpeed = -1;
+      const rotatedAccel = vec3.transformQuat(
+        e.sunlessShip.localAccel,
+        e.rotation
+      );
 
-        quat.rotateY(
-          e.rotation,
-          rollSpeed * e.sunlessShip.rollSpeed,
-          e.rotation
-        );
+      let rollSpeed = 0;
+      if (res.inputs.keyDowns["a"]) rollSpeed = 1;
+      if (res.inputs.keyDowns["d"]) rollSpeed = -1;
 
-        // change dampen?
-        if (res.inputs.keyClicks["z"])
-          e.sunlessShip.doDampen = !e.sunlessShip.doDampen;
+      quat.rotateY(e.rotation, rollSpeed * e.sunlessShip.rollSpeed, e.rotation);
 
-        // dampener
-        if (e.sunlessShip.doDampen && vec3.sqrLen(rotatedAccel) === 0) {
-          const dampDir = vec3.normalize(vec3.negate(e.linearVelocity));
-          vec3.scale(dampDir, speed, rotatedAccel);
+      // change dampen?
+      if (res.inputs.keyClicks["z"])
+        e.sunlessShip.doDampen = !e.sunlessShip.doDampen;
 
-          // halt if at small delta
-          if (vec3.sqrLen(e.linearVelocity) < vec3.sqrLen(rotatedAccel)) {
-            vec3.zero(rotatedAccel);
-            vec3.zero(e.linearVelocity);
-          }
+      // dampener
+      if (e.sunlessShip.doDampen && vec3.sqrLen(rotatedAccel) === 0) {
+        const dampDir = vec3.normalize(vec3.negate(e.linearVelocity));
+        vec3.scale(dampDir, speed, rotatedAccel);
+
+        // halt if at small delta
+        if (vec3.sqrLen(e.linearVelocity) < vec3.sqrLen(rotatedAccel)) {
+          vec3.zero(rotatedAccel);
+          vec3.zero(e.linearVelocity);
         }
+      }
 
-        vec3.add(e.linearVelocity, rotatedAccel, e.linearVelocity);
+      vec3.add(e.linearVelocity, rotatedAccel, e.linearVelocity);
+    }
+  );
+
+  const bulletVel = V(0, 0, -0.1);
+  EM.addSystem(
+    "controlSunlessShip",
+    Phase.GAME_PLAYERS,
+    [SunlessShipDef, RotationDef, LinearVelocityDef, PositionDef],
+    [InputsDef, TimeDef],
+    (ships, res) => {
+      if (!ships.length) return;
+      assert(ships.length === 1);
+      const ship = ships[0];
+
+      if (res.inputs.keyClicks[" "]) {
+        const bullet = EM.new();
+        EM.set(bullet, PositionDef, vec3.clone(ship.position));
+        EM.set(bullet, RenderableConstructDef, mesh_cube.proto);
+        EM.set(bullet, ColorDef, ENDESGA16.darkGreen);
+        EM.set(bullet, ScaleDef, V(0.5, 0.5, 1));
+
+        // orientation & velocity
+        EM.set(bullet, LinearVelocityDef, vec3.clone(bulletVel));
+        EM.set(bullet, RotationDef, quat.clone(ship.rotation));
+        vec3.transformQuat(
+          bullet.linearVelocity,
+          bullet.rotation,
+          bullet.linearVelocity
+        );
+        vec3.add(
+          ship.linearVelocity,
+          bullet.linearVelocity,
+          bullet.linearVelocity
+        );
+
+        // kickback
+        const kickback = vec3.negate(bullet.linearVelocity);
+        vec3.scale(kickback, 0.2, kickback);
+        vec3.add(ship.linearVelocity, kickback, ship.linearVelocity);
       }
     }
   );
