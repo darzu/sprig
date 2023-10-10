@@ -30,6 +30,7 @@ import { shadowPipelines } from "../render/pipelines/std-shadow.js";
 import { RendererDef, RenderableConstructDef } from "../render/renderer-ecs.js";
 import { TimeDef } from "../time/time.js";
 import { assert } from "../utils/util.js";
+import { randNormalVec3 } from "../utils/utils-3d.js";
 
 /*
 # of Sessions: 10
@@ -271,6 +272,11 @@ async function createWorld() {
     EM.set(wall, RenderableConstructDef, mesh_cube.proto);
     if (vertical) EM.set(wall, ScaleDef, V(wallWidth, wallHeight, length));
     else EM.set(wall, ScaleDef, V(length, wallHeight, wallWidth));
+    vec3.add(
+      wall.scale,
+      vec3.scale(randNormalVec3(), wallWidth * 0.1),
+      wall.scale
+    ); // jitter it
     EM.set(wall, ColorDef, ENDESGA16.darkGray);
     EM.set(wall, ColliderDef, {
       shape: "AABB",
