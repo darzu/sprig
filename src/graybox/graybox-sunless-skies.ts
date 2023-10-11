@@ -3,6 +3,7 @@ import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { createGhost } from "../debug/ghost.js";
 import { createGizmoMesh } from "../debug/gizmos.js";
+import { DeletedDef } from "../ecs/delete.js";
 import { EM } from "../ecs/entity-manager.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { InputsDef } from "../input/inputs.js";
@@ -18,8 +19,9 @@ import { XY } from "../meshes/mesh-loader.js";
 import { cloneMesh, getAABBFromMesh, scaleMesh3 } from "../meshes/mesh.js";
 import { LinearVelocityDef } from "../motion/velocity.js";
 import { MeDef } from "../net/components.js";
-import { ColliderDef, DefaultLayer } from "../physics/collider.js";
+import { ColliderDef, DefaultLayer, NoLayer } from "../physics/collider.js";
 import { PhysicsResultsDef } from "../physics/nonintersection.js";
+import { onCollides } from "../physics/phys-helpers.js";
 import { PositionDef, RotationDef, ScaleDef } from "../physics/transform.js";
 import { PointLightDef } from "../render/lights.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
@@ -142,7 +144,8 @@ const DBG_GHOST = false;
 // TODO(@darzu): ADD WARNING THAT OBJ INIT PLACED IN CONTACT
 
 const WALL_LAYER = 0b0000000000000010;
-const SHIPS_LAYER = DefaultLayer;
+const ALLY_LAYER = 0b0000000000000001;
+const ENEMY_LAYER = 0b0000000000000100;
 
 export async function initGrayboxSunless() {
   EM.addEagerInit([], [RendererDef], [], (res) => {
@@ -224,6 +227,8 @@ export async function initGrayboxSunless() {
   createEnemies();
 }
 
+const WallDef = EM.defineComponent("sunlessWall", () => true);
+
 async function createWorld() {
   const { mesh_cube, mesh_unitCube } = await EM.whenResources(
     CubeMesh.def,
@@ -286,8 +291,9 @@ async function createWorld() {
       solid: true,
       aabb: mesh_cube.aabb,
       myLayer: WALL_LAYER,
-      targetLayer: SHIPS_LAYER,
+      targetLayer: ALLY_LAYER,
     });
+    EM.set(wall, WallDef);
   }
 
   function createDbgPath(pos: vec3, horizontal: boolean) {
@@ -370,7 +376,7 @@ async function createWorld() {
   }
 }
 
-const SunlessShipDef = EM.defineComponent("sunlessShip", () => ({
+const SunlessPlayerDef = EM.defineComponent("sunlessPlayer", () => ({
   speed: 0.00003,
   turnSpeed: 0.001,
   rollSpeed: 0.01,
@@ -380,28 +386,28 @@ const SunlessShipDef = EM.defineComponent("sunlessShip", () => ({
 
 const BulletDef = EM.defineComponent("sunlessBullet", () => ({}));
 
-EM.addEagerInit([SunlessShipDef], [CubeMesh.def], [], ({ mesh_cube }) => {
+EM.addEagerInit([SunlessPlayerDef], [CubeMesh.def], [], ({ mesh_cube }) => {
   EM.addSystem(
     "moveSunlessShip",
     Phase.GAME_PLAYERS,
-    [SunlessShipDef, RotationDef, LinearVelocityDef],
+    [SunlessPlayerDef, RotationDef, LinearVelocityDef],
     [InputsDef, TimeDef],
     (ships, res) => {
       if (!ships.length) return;
       assert(ships.length === 1);
       const e = ships[0];
 
-      let speed = e.sunlessShip.speed * res.time.dt;
+      let speed = e.sunlessPlayer.speed * res.time.dt;
 
-      vec3.zero(e.sunlessShip.localAccel);
+      vec3.zero(e.sunlessPlayer.localAccel);
       // 4-DOF translation
-      if (res.inputs.keyDowns["q"]) e.sunlessShip.localAccel[0] -= speed;
-      if (res.inputs.keyDowns["e"]) e.sunlessShip.localAccel[0] += speed;
-      if (res.inputs.keyDowns["w"]) e.sunlessShip.localAccel[2] -= speed;
-      if (res.inputs.keyDowns["s"]) e.sunlessShip.localAccel[2] += speed;
+      if (res.inputs.keyDowns["q"]) e.sunlessPlayer.localAccel[0] -= speed;
+      if (res.inputs.keyDowns["e"]) e.sunlessPlayer.localAccel[0] += speed;
+      if (res.inputs.keyDowns["w"]) e.sunlessPlayer.localAccel[2] -= speed;
+      if (res.inputs.keyDowns["s"]) e.sunlessPlayer.localAccel[2] += speed;
 
       const rotatedAccel = vec3.transformQuat(
-        e.sunlessShip.localAccel,
+        e.sunlessPlayer.localAccel,
         e.rotation
       );
 
@@ -409,14 +415,18 @@ EM.addEagerInit([SunlessShipDef], [CubeMesh.def], [], ({ mesh_cube }) => {
       if (res.inputs.keyDowns["a"]) rollSpeed = 1;
       if (res.inputs.keyDowns["d"]) rollSpeed = -1;
 
-      quat.rotateY(e.rotation, rollSpeed * e.sunlessShip.rollSpeed, e.rotation);
+      quat.rotateY(
+        e.rotation,
+        rollSpeed * e.sunlessPlayer.rollSpeed,
+        e.rotation
+      );
 
       // change dampen?
       if (res.inputs.keyClicks["z"])
-        e.sunlessShip.doDampen = !e.sunlessShip.doDampen;
+        e.sunlessPlayer.doDampen = !e.sunlessPlayer.doDampen;
 
       // dampener
-      if (e.sunlessShip.doDampen && vec3.sqrLen(rotatedAccel) === 0) {
+      if (e.sunlessPlayer.doDampen && vec3.sqrLen(rotatedAccel) === 0) {
         const dampDir = vec3.normalize(vec3.negate(e.linearVelocity));
         vec3.scale(dampDir, speed, rotatedAccel);
 
@@ -435,7 +445,7 @@ EM.addEagerInit([SunlessShipDef], [CubeMesh.def], [], ({ mesh_cube }) => {
   EM.addSystem(
     "controlSunlessShip",
     Phase.GAME_PLAYERS,
-    [SunlessShipDef, RotationDef, LinearVelocityDef, PositionDef],
+    [SunlessPlayerDef, RotationDef, LinearVelocityDef, PositionDef],
     [InputsDef, TimeDef],
     (ships, res) => {
       if (!ships.length) return;
@@ -449,6 +459,13 @@ EM.addEagerInit([SunlessShipDef], [CubeMesh.def], [], ({ mesh_cube }) => {
         EM.set(bullet, ColorDef, ENDESGA16.darkGreen);
         EM.set(bullet, ScaleDef, V(0.5, 0.5, 1));
         EM.set(bullet, BulletDef);
+        EM.set(bullet, ColliderDef, {
+          shape: "AABB",
+          solid: false,
+          aabb: mesh_cube.aabb,
+          myLayer: NoLayer,
+          targetLayer: WALL_LAYER | ENEMY_LAYER,
+        });
 
         // orientation & velocity
         EM.set(bullet, LinearVelocityDef, vec3.clone(bulletVel));
@@ -472,11 +489,19 @@ EM.addEagerInit([SunlessShipDef], [CubeMesh.def], [], ({ mesh_cube }) => {
     }
   );
 
-  // TODO(@darzu): IMPL
-  // onOverlap([BulletDef], [SunlessShipDef], (a, b) => {
-  //   // TODO(@darzu):
-  // });
+  onCollides([BulletDef], [EnemyDef], [], (a, b) => {
+    // console.log("HIT SHIP!");
+    // TODO(@darzu): IMPL dmg enemy logic
+    EM.set(a, DeletedDef);
+  });
+
+  onCollides([BulletDef], [WallDef], [], (a, b) => {
+    // console.log("HIT WALL!");
+    EM.set(a, DeletedDef);
+  });
 });
+
+const SunlessShipDef = EM.defineComponent("sunlessShip", () => ({}));
 
 async function createPlayerShip() {
   const { mesh_cube } = await EM.whenResources(CubeMesh.def);
@@ -497,9 +522,11 @@ async function createPlayerShip() {
     shape: "AABB",
     solid: true,
     aabb: getAABBFromMesh(mesh),
-    myLayer: SHIPS_LAYER,
-    targetLayer: WALL_LAYER | SHIPS_LAYER,
+    myLayer: ALLY_LAYER,
+    targetLayer: WALL_LAYER | ENEMY_LAYER,
   });
+  EM.set(ship, SunlessPlayerDef);
+  EM.set(ship, SunlessShipDef);
 
   // EM.addSystem(
   //   "dbgSunlessCamera",
@@ -516,10 +543,10 @@ async function createPlayerShip() {
   //   }
   // );
 
-  EM.set(ship, SunlessShipDef);
+  EM.set(ship, SunlessPlayerDef);
 }
 
-const EnemyDef = EM.defineComponent("sunless.enemy", () => ({
+const EnemyDef = EM.defineComponent("sunlessEnemy", () => ({
   // TODO(@darzu):
 }));
 
@@ -539,7 +566,9 @@ async function createEnemies() {
     shape: "AABB",
     solid: true,
     aabb: getAABBFromMesh(mesh),
-    myLayer: SHIPS_LAYER,
-    targetLayer: WALL_LAYER | SHIPS_LAYER,
+    myLayer: ENEMY_LAYER,
+    targetLayer: WALL_LAYER | ALLY_LAYER | ENEMY_LAYER,
   });
+  EM.set(ship, EnemyDef);
+  EM.set(ship, SunlessShipDef);
 }

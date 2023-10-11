@@ -73,8 +73,8 @@ export interface PhysCollider {
   localPos: vec3;
   lastLocalPos: vec3;
   // each of these is a 16 bit mask
-  myLayers: number;
-  targetLayers: number;
+  myLayer: number;
+  targetLayer: number;
 }
 
 const DUMMY_COLLIDER: PhysCollider = {
@@ -86,8 +86,8 @@ const DUMMY_COLLIDER: PhysCollider = {
   parentOId: 0,
   localPos: V(0, 0, 0),
   lastLocalPos: V(0, 0, 0),
-  myLayers: DefaultLayer,
-  targetLayers: DefaultLayer,
+  myLayer: DefaultLayer,
+  targetLayer: DefaultLayer,
 };
 
 // TODO(@darzu): break this up into the specific use cases
@@ -317,8 +317,8 @@ export function registerPhysicsStateInit() {
           selfAABB: copyAABB(createAABB(), selfAABB),
           localPos: aabbCenter(vec3.create(), selfAABB),
           lastLocalPos: aabbCenter(vec3.create(), selfAABB),
-          myLayers: my,
-          targetLayers: target,
+          myLayer: my,
+          targetLayer: target,
         };
         _physBColliders.colliders.push(c);
         return c;
@@ -439,7 +439,7 @@ export function registerPhysicsContactSystems() {
       let anyMovement = true;
       let itr = 0;
 
-      while (anyMovement && itr < COLLISION_MAX_ITRS) {
+      while (anyMovement /*or first itr*/ && itr < COLLISION_MAX_ITRS) {
         // enumerate the possible collisions, looking for objects that need to pushed apart
         for (let [aCId, bCId] of colliderPairs) {
           if (bCId < aCId) throw `a,b id pair in wrong order ${bCId} < ${aCId}`;
@@ -454,21 +454,20 @@ export function registerPhysicsContactSystems() {
           // self collision, ignore
           if (aOId === bOId) continue;
 
-          // did one of these objects move?
+          // did one of these objects move (or is it the first iteration)?
           if (!lastObjMovs[aOId] && !lastObjMovs[bOId]) continue;
 
           // are these objects interested in each other?
-          // TODO(@darzu): check this in the broad phase as well
-          if (
-            (ac.myLayers & bc.targetLayers) === 0 ||
-            (bc.myLayers & ac.targetLayers) === 0
-          )
-            continue;
+          const aTargetsB = (ac.targetLayer & bc.myLayer) !== 0b0;
+          const bTargetsA = (bc.targetLayer & ac.myLayer) !== 0b0;
+          if (!aTargetsB && !bTargetsA) continue;
 
           if (!doesOverlap(ac, bc)) {
             // a miss
             continue;
           }
+
+          // IT IS A COLLISION!
 
           const a = _objDict.get(aOId)!;
           const b = _objDict.get(bOId)!;

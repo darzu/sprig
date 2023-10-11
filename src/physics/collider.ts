@@ -20,6 +20,7 @@ interface ColliderBase {
   shape: ColliderShape;
   // TODO(@darzu): rename "solid" to "non-intersection?" or move this to physics systems options somewhere
   solid: boolean;
+  // TODO(@darzu): future easy of use: potentially my & target layers could be deduced from collision handler code
   myLayer?: Layer;
   targetLayer?: Layer;
 }

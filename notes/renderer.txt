@@ -1882,3 +1882,6 @@ Gaussian splatting
 
 GPU driven rendering at anki3d:
   https://anki3d.org/gpu-driven-rendering-in-anki-a-high-level-overview/
+
+"Linear Light, Gamma, and ACES" from a film vfx perspective:
+  https://prolost.com/?tag=Tutorials#show-archive
