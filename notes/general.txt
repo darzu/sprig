@@ -1467,3 +1467,6 @@ The things that have gotten worse:
 Regarding Float Point from Mike Acton:
   https://www.altdevarts.com/p/onboarding-floating-point?r=yknp0&utm_campaign=post&utm_medium=web
   https://float.exposed/0x44bf9400
+
+How To Ask Questions The Smart Way:
+  http://www.catb.org/~esr/faqs/smart-questions.html

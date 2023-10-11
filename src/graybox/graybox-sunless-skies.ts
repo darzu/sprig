@@ -19,7 +19,7 @@ import { cloneMesh, getAABBFromMesh, scaleMesh3 } from "../meshes/mesh.js";
 import { LinearVelocityDef } from "../motion/velocity.js";
 import { MeDef } from "../net/components.js";
 import { ColliderDef, DefaultLayer } from "../physics/collider.js";
-import { TeleportDef } from "../physics/teleport.js";
+import { PhysicsResultsDef } from "../physics/nonintersection.js";
 import { PositionDef, RotationDef, ScaleDef } from "../physics/transform.js";
 import { PointLightDef } from "../render/lights.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
@@ -34,7 +34,7 @@ import { assert } from "../utils/util.js";
 import { randNormalVec3 } from "../utils/utils-3d.js";
 
 /*
-# of Sessions: 10
+# of Sessions: 11
 
 SKETCH:
 
@@ -370,13 +370,15 @@ async function createWorld() {
   }
 }
 
-export const SunlessShipDef = EM.defineComponent("sunlessShip", () => ({
+const SunlessShipDef = EM.defineComponent("sunlessShip", () => ({
   speed: 0.00003,
   turnSpeed: 0.001,
   rollSpeed: 0.01,
   doDampen: true,
   localAccel: vec3.create(),
 }));
+
+const BulletDef = EM.defineComponent("sunlessBullet", () => ({}));
 
 EM.addEagerInit([SunlessShipDef], [CubeMesh.def], [], ({ mesh_cube }) => {
   EM.addSystem(
@@ -446,6 +448,7 @@ EM.addEagerInit([SunlessShipDef], [CubeMesh.def], [], ({ mesh_cube }) => {
         EM.set(bullet, RenderableConstructDef, mesh_cube.proto);
         EM.set(bullet, ColorDef, ENDESGA16.darkGreen);
         EM.set(bullet, ScaleDef, V(0.5, 0.5, 1));
+        EM.set(bullet, BulletDef);
 
         // orientation & velocity
         EM.set(bullet, LinearVelocityDef, vec3.clone(bulletVel));
@@ -468,6 +471,11 @@ EM.addEagerInit([SunlessShipDef], [CubeMesh.def], [], ({ mesh_cube }) => {
       }
     }
   );
+
+  // TODO(@darzu): IMPL
+  // onOverlap([BulletDef], [SunlessShipDef], (a, b) => {
+  //   // TODO(@darzu):
+  // });
 });
 
 async function createPlayerShip() {
@@ -510,6 +518,10 @@ async function createPlayerShip() {
 
   EM.set(ship, SunlessShipDef);
 }
+
+const EnemyDef = EM.defineComponent("sunless.enemy", () => ({
+  // TODO(@darzu):
+}));
 
 async function createEnemies() {
   const { mesh_cube } = await EM.whenResources(CubeMesh.def);

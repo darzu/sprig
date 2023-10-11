@@ -1879,3 +1879,6 @@ Gaussian splatting
   https://poly.cam/gaussian-splatting
   https://huggingface.co/blog/gaussian-splatting
   https://aras-p.info/blog/2023/09/05/Gaussian-Splatting-is-pretty-cool/
+
+GPU driven rendering at anki3d:
+  https://anki3d.org/gpu-driven-rendering-in-anki-a-high-level-overview/
