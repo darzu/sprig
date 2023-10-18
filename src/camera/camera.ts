@@ -20,6 +20,7 @@ export const CameraDef = EM.defineResource("camera", () => {
     fov: (2 * Math.PI) / 5,
     nearClipDist: 1,
     viewDist: 1000,
+    orthoSize: 10,
     // TODO(@darzu): what r good cascade numbers here?
     // shadowCascades: [1 / 2, 1],
     shadowCascades: [1 / 24, 1],
@@ -246,14 +247,13 @@ EM.addLazyInit([], [CameraComputedDef], () => {
       mat4.invert(viewMatrix, viewMatrix);
 
       if (camera.perspectiveMode === "ortho") {
-        const ORTHO_SIZE = 10;
         mat4.ortho(
-          -ORTHO_SIZE,
-          ORTHO_SIZE,
-          -ORTHO_SIZE,
-          ORTHO_SIZE,
-          -400,
-          100,
+          -camera.orthoSize * cameraComputed.aspectRatio,
+          camera.orthoSize * cameraComputed.aspectRatio,
+          -camera.orthoSize,
+          camera.orthoSize,
+          camera.nearClipDist,
+          camera.viewDist,
           cameraComputed.proj
         );
       } else {
