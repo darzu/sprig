@@ -293,13 +293,26 @@ EM.addLazyInit([], [CameraComputedDef], () => {
           cameraComputed.proj
         )[2];
 
-        mat4.perspective(
-          camera.fov,
-          cameraComputed.aspectRatio,
-          cascade.near,
-          cascade.far,
-          cascade.viewProj
-        );
+        if (camera.perspectiveMode === "ortho") {
+          mat4.ortho(
+            -camera.orthoSize * cameraComputed.aspectRatio,
+            camera.orthoSize * cameraComputed.aspectRatio,
+            -camera.orthoSize,
+            camera.orthoSize,
+            cascade.near,
+            cascade.far,
+            cascade.viewProj
+          );
+        } else {
+          mat4.perspective(
+            camera.fov,
+            cameraComputed.aspectRatio,
+            cascade.near,
+            cascade.far,
+            cascade.viewProj
+          );
+        }
+
         mat4.mul(cascade.viewProj, viewMatrix, cascade.viewProj);
         mat4.invert(cascade.viewProj, cascade.invViewProj);
 
