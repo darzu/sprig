@@ -1470,3 +1470,7 @@ Regarding Float Point from Mike Acton:
 
 How To Ask Questions The Smart Way:
   http://www.catb.org/~esr/faqs/smart-questions.html
+
+TS + WebGL game on 6 platforms:
+  https://ruoyusun.com/2023/10/12/one-game-six-platforms.html
+  https://github.com/ValveSoftware/steam-runtime/issues/579

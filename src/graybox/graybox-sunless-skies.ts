@@ -7,7 +7,7 @@ import { DeletedDef } from "../ecs/delete.js";
 import { EM } from "../ecs/entity-manager.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { InputsDef } from "../input/inputs.js";
-import { V, quat, vec3 } from "../matrix/sprig-matrix.js";
+import { V, mat4, quat, vec3 } from "../matrix/sprig-matrix.js";
 import {
   CubeMesh,
   HexMesh,
@@ -16,27 +16,49 @@ import {
   UnitCubeMesh,
 } from "../meshes/mesh-list.js";
 import { XY } from "../meshes/mesh-loader.js";
-import { cloneMesh, getAABBFromMesh, scaleMesh3 } from "../meshes/mesh.js";
+import {
+  cloneMesh,
+  createEmptyMesh,
+  getAABBFromMesh,
+  scaleMesh3,
+} from "../meshes/mesh.js";
+import { createMultiBarMesh } from "../meshes/primatives.js";
 import { LinearVelocityDef } from "../motion/velocity.js";
 import { MeDef } from "../net/components.js";
 import { ColliderDef, DefaultLayer, NoLayer } from "../physics/collider.js";
 import { PhysicsResultsDef } from "../physics/nonintersection.js";
 import { onCollides } from "../physics/phys-helpers.js";
-import { PositionDef, RotationDef, ScaleDef } from "../physics/transform.js";
+import {
+  PhysicsParentDef,
+  PositionDef,
+  RotationDef,
+  ScaleDef,
+} from "../physics/transform.js";
 import { PointLightDef } from "../render/lights.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
 import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
 import { shadowPipelines } from "../render/pipelines/std-shadow.js";
-import { RendererDef, RenderableConstructDef } from "../render/renderer-ecs.js";
+import {
+  RendererDef,
+  RenderableConstructDef,
+  RenderableDef,
+} from "../render/renderer-ecs.js";
 import { TimeDef } from "../time/time.js";
-import { randInt, randRadian } from "../utils/math.js";
-import { assert } from "../utils/util.js";
-import { randNormalVec3 } from "../utils/utils-3d.js";
+import { jitter, lerp, randInt, randRadian } from "../utils/math.js";
+import { assert, dbgOnce } from "../utils/util.js";
+import {
+  quatFromUpForward,
+  randNormalVec3,
+  vec3Dbg,
+} from "../utils/utils-3d.js";
+import { drawLine } from "../utils/utils-game.js";
+import { appendBoard, lerpBetween } from "../wood/shipyard.js";
+import { createTimberBuilder } from "../wood/wood.js";
 
 /*
-# of Sessions: 11
+# of Sessions: 12
 
 SKETCH:
 
@@ -139,7 +161,7 @@ initDocks:
 
 const DBG_GRID = true;
 const DBG_GIZMO = false;
-const DBG_GHOST = false;
+const DBG_GHOST = true;
 
 // TODO(@darzu): ADD WARNING THAT OBJ INIT PLACED IN CONTACT
 
@@ -179,11 +201,19 @@ export async function initGrayboxSunless() {
     g.position[1] = 5;
     EM.set(g, RenderableConstructDef, mesh_cube.proto);
 
-    vec3.copy(g.position, [102.41, 142.23, 154.95]);
-    quat.copy(g.rotation, [0.0, 0.0, 0.0, 0.99]);
+    // overview
+    // vec3.copy(g.position, [102.41, 142.23, 154.95]);
+    // quat.copy(g.rotation, [0.0, 0.0, 0.0, 0.99]);
+    // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
+    // g.cameraFollow.yawOffset = 0.0;
+    // g.cameraFollow.pitchOffset = -1.388;
+
+    // close up of corner
+    vec3.copy(g.position, [6.5, 11.81, 9.94]);
+    quat.copy(g.rotation, [0.0, -0.86, 0.0, 0.49]);
     vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
     g.cameraFollow.yawOffset = 0.0;
-    g.cameraFollow.pitchOffset = -1.388;
+    g.cameraFollow.pitchOffset = -0.871;
   }
 
   // ground
@@ -225,6 +255,8 @@ export async function initGrayboxSunless() {
   if (!DBG_GHOST) createPlayerShip();
 
   createEnemies();
+
+  initHealthBars();
 }
 
 const WallDef = EM.defineComponent("sunlessWall", () => true);
@@ -386,6 +418,12 @@ const SunlessPlayerDef = EM.defineComponent("sunlessPlayer", () => ({
 
 const BulletDef = EM.defineComponent("sunlessBullet", () => ({}));
 
+const HealthDef = EM.defineComponent(
+  "health",
+  () => 100,
+  (p, max: number) => max
+);
+
 EM.addEagerInit([SunlessPlayerDef], [CubeMesh.def], [], ({ mesh_cube }) => {
   EM.addSystem(
     "moveSunlessShip",
@@ -527,6 +565,7 @@ async function createPlayerShip() {
   });
   EM.set(ship, SunlessPlayerDef);
   EM.set(ship, SunlessShipDef);
+  EM.set(ship, HealthDef, 100);
 
   // EM.addSystem(
   //   "dbgSunlessCamera",
@@ -560,6 +599,13 @@ async function createEnemies() {
   EM.set(ship, LinearVelocityDef);
   const mesh = cloneMesh(mesh_cube.mesh);
   scaleMesh3(mesh, [1, 1, 2]);
+  mesh.pos.forEach((p) => {
+    if (p[2] < 0) {
+      // in -Z, squash X and Y
+      p[0] *= 0.8;
+      p[1] *= 0.8;
+    }
+  });
   EM.set(ship, RenderableConstructDef, mesh);
   EM.set(ship, ColorDef, ENDESGA16.red);
   EM.set(ship, ColliderDef, {
@@ -571,4 +617,96 @@ async function createEnemies() {
   });
   EM.set(ship, EnemyDef);
   EM.set(ship, SunlessShipDef);
+  EM.set(ship, HealthDef, 50);
+}
+
+const HealthBarDef = EM.defineComponent("healthBar", () => true);
+
+async function initHealthBars() {
+  const { mesh_cube } = await EM.whenResources(CubeMesh.def);
+  const hasBar = new Set<number>();
+
+  const offset = V(2, 0, 0);
+
+  // TODO(@darzu): IMPL!
+  // const barMesh =
+
+  const barMesh = createMultiBarMesh({
+    width: 0.2,
+    length: 3.0,
+    centered: true,
+    fullColor: ENDESGA16.red,
+    missingColor: ENDESGA16.darkGreen,
+  });
+
+  EM.addSystem(
+    "addRemoveHealthBars",
+    Phase.GAME_WORLD,
+    [HealthDef],
+    [],
+    (hs, res) => {
+      // TODO(@darzu): FOO
+      for (let h of hs) {
+        if (!hasBar.has(h.id)) {
+          // TODO(@darzu): create bar
+          const bar = EM.new();
+          const mesh = cloneMesh(barMesh);
+          EM.set(bar, RenderableConstructDef, mesh);
+          EM.set(bar, PositionDef, vec3.clone(offset));
+          EM.set(bar, PhysicsParentDef, h.id);
+          EM.set(bar, HealthBarDef);
+
+          hasBar.add(h.id);
+        }
+      }
+    }
+  );
+
+  EM.addSystem(
+    "renderHealthBars",
+    Phase.GAME_WORLD,
+    [HealthBarDef, RenderableDef],
+    [RendererDef],
+    (hs, res) => {
+      const startPosIdx = 4;
+      const lastPosIdx = startPosIdx + 3;
+      // TODO(@darzu): FOO
+      if (dbgOnce("renderHealth"))
+        for (let h of hs) {
+          const handle = h.renderable.meshHandle;
+          assert(handle.mesh);
+          const mesh = handle.mesh;
+          const min = mesh.pos.at(0)![2]; // first Z;
+          const max = mesh.pos.at(-1)![2]; // last Z;
+          const percent = 0.8; // TODO(@darzu): update from stat
+          const lerped = lerp(min, max, percent);
+          mesh.pos.forEach((p, i) => {
+            console.log(`${i}: ${vec3Dbg(p)}`);
+            if (startPosIdx <= i && i <= lastPosIdx) {
+              console.log(`before ${i}[2] = ${p[2]}`);
+              // console.log(`${p[2]} -> ${lerped}`);
+              // p[2] = lerped;
+              // p[2] -= 0.002;
+              p[2] -= 0.3;
+              // p[2] += 0.6;
+              // p[2] = -0.8;
+              // p[2] = 0.8999999761581421;
+              console.log(`after ${i}[2] = ${p[2]}`);
+              // p[2] = -1;
+              // p[2] = -2.2;
+              // p[2] = -0.9 + jitter(0.1);
+              // p[2] = -0;
+            }
+          });
+          console.log(`min: ${min}, max: ${max}, lerped: ${lerped}`);
+          console.dir(mesh);
+          res.renderer.renderer.stdPool.updateMeshVertices(
+            handle,
+            mesh,
+            startPosIdx,
+            4
+          );
+        }
+    }
+  );
 }

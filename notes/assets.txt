@@ -243,3 +243,5 @@ Tool & Die Maker:
   https://en.wikipedia.org/wiki/Progressive_stamping
   progressive stamping
   "Continuous-feed laser cutting"
+
+USD, "Universal Scene Description", for scenes and prefabs?

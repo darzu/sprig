@@ -1885,3 +1885,7 @@ GPU driven rendering at anki3d:
 
 "Linear Light, Gamma, and ACES" from a film vfx perspective:
   https://prolost.com/?tag=Tutorials#show-archive
+
+Upscaling: nearest-neighbor, linear, cubic, bilinear, bicubic:
+  https://medium.com/@amanrao032/image-upscaling-using-bicubic-interpolation-ddb37295df0
+  https://en.wikipedia.org/wiki/Bicubic_interpolation
