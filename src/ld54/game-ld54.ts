@@ -73,6 +73,7 @@ import {
   createAABB,
   getHalfsizeFromAABB,
 } from "../physics/aabb.js";
+import { GraphicsSettingsDef } from "../render/graphics-settings.js";
 
 const RENDER_TRUTH_CUBE = false;
 
@@ -323,36 +324,15 @@ async function setLevelLocal(levelIdx: number) {
 }
 
 export async function initLD54() {
-  EM.addEagerInit([], [RendererDef], [], (res) => {
+  EM.addEagerInit([], [RendererDef, GraphicsSettingsDef], [], (res) => {
     // init stars
     res.renderer.renderer.submitPipelines([], [...noisePipes, initStars]);
 
-    // graphics settings
-    let useHighGraphics = false;
-    const graphicsCheckbox = document.getElementById(
-      "graphics-check"
-    ) as HTMLInputElement;
-    if (graphicsCheckbox) {
-      if (localStorage.getItem("useHighGraphics")) {
-        useHighGraphics = true;
-        graphicsCheckbox.checked = true;
-        res.renderer.renderer.highGraphics = true;
-      }
+    res.graphicsSettings.onGraphicsChange.push((useHighGraphics) =>
+      setRenderPipelines(useHighGraphics)
+    );
 
-      graphicsCheckbox.onchange = (e) => {
-        // console.log(graphicsCheckbox.checked);
-        // console.dir(e);
-        useHighGraphics = graphicsCheckbox.checked;
-        setRenderPipelines(useHighGraphics);
-        res.renderer.renderer.highGraphics = useHighGraphics;
-        if (useHighGraphics) localStorage.setItem("useHighGraphics", "true");
-        else localStorage.removeItem("useHighGraphics");
-      };
-    } else {
-      console.error("No graphics checkbox!");
-    }
-
-    setRenderPipelines(useHighGraphics);
+    setRenderPipelines(res.graphicsSettings.useHighGraphics);
 
     function setRenderPipelines(high: boolean) {
       if (high) {

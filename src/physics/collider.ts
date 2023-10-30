@@ -2,14 +2,11 @@ import { Component, EM } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { AABB } from "./aabb.js";
 
-export type Layer = number;
+export type Layer = number; // a bit mask
 
-export const DefaultLayer = 0;
-let _nextLayer = 1;
-export function DefineLayer(): Layer {
-  if (_nextLayer >= 16) throw `Can't define another layer; already 16!`;
-  return _nextLayer++;
-}
+export const DefaultLayer: Layer = 0b0000000000000001;
+export const AllLayer: Layer = 0b1111111111111111;
+export const NoLayer: Layer = 0b0000000000000000;
 
 export type ColliderShape =
   | "Empty"
@@ -23,8 +20,9 @@ interface ColliderBase {
   shape: ColliderShape;
   // TODO(@darzu): rename "solid" to "non-intersection?" or move this to physics systems options somewhere
   solid: boolean;
-  myLayers?: Layer[];
-  targetLayers?: Layer[];
+  // TODO(@darzu): future easy of use: potentially my & target layers could be deduced from collision handler code
+  myLayer?: Layer;
+  targetLayer?: Layer;
 }
 
 export interface EmptyCollider extends ColliderBase {

@@ -925,6 +925,11 @@ Doom 3 glow:
   Pixel - Squares
   These combine with extra effects like chroma shift, glitch, invert, low res, and paper color.
 
+dithering types:
+  https://tannerhelland.com/2012/12/28/dithering-eleven-algorithms-source-code.html
+  https://ieeexplore.ieee.org/document/3288
+
+
 "Next Generation Geometry" / shader culling:
   https://timur.hu/blog/2022/what-is-ngg
   mesh shaders are dope
@@ -1874,3 +1879,13 @@ Gaussian splatting
   https://poly.cam/gaussian-splatting
   https://huggingface.co/blog/gaussian-splatting
   https://aras-p.info/blog/2023/09/05/Gaussian-Splatting-is-pretty-cool/
+
+GPU driven rendering at anki3d:
+  https://anki3d.org/gpu-driven-rendering-in-anki-a-high-level-overview/
+
+"Linear Light, Gamma, and ACES" from a film vfx perspective:
+  https://prolost.com/?tag=Tutorials#show-archive
+
+Upscaling: nearest-neighbor, linear, cubic, bilinear, bicubic:
+  https://medium.com/@amanrao032/image-upscaling-using-bicubic-interpolation-ddb37295df0
+  https://en.wikipedia.org/wiki/Bicubic_interpolation

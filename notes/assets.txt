@@ -191,6 +191,10 @@ Mesh data structures:
   https://graphics.stanford.edu/courses/cs468-10-fall/LectureSlides/02_Mesh_Data_Structures.pdf
   "Shared Vertex" is just the start vert buffer + index buffer approach
 
+BMesh:
+  https://wiki.blender.org/wiki/Source/Modeling/BMesh/Design
+  some notes from Freya: https://twitter.com/FreyaHolmer/status/1711400984344183232
+
 I think game dev art assets often use Perforce:
   https://www.perforce.com/blog/vcs/version-control-for-binary-files
   https://www.perforce.com/indie-studio-pack
@@ -232,3 +236,12 @@ psych odyssey amnesia kiln clay making:
 Hat tutorials:
   https://www.youtube.com/watch?v=Co5DyOAkVz0
   https://www.youtube.com/watch?v=RCweK-jnyGs
+
+Tool & Die Maker:
+  https://en.wikipedia.org/wiki/Tool_and_die_maker
+  https://en.wikipedia.org/wiki/Die_(manufacturing)
+  https://en.wikipedia.org/wiki/Progressive_stamping
+  progressive stamping
+  "Continuous-feed laser cutting"
+
+USD, "Universal Scene Description", for scenes and prefabs?

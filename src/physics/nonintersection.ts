@@ -40,6 +40,9 @@ import {
 import { IdPair, idPair } from "../utils/util.js";
 import { tempVec3 } from "../matrix/temp-pool.js";
 import { Phase } from "../ecs/sys-phase.js";
+import { vec3Dbg } from "../utils/utils-3d.js";
+
+const DBG_FIRST_FRAME_MOV = true;
 
 // TODO(@darzu): we use "object", "obj", "o" everywhere in here, we should use "entity", "ent", "e"
 
@@ -70,8 +73,8 @@ export interface PhysCollider {
   localPos: vec3;
   lastLocalPos: vec3;
   // each of these is a 16 bit mask
-  myLayers: number;
-  targetLayers: number;
+  myLayer: number;
+  targetLayer: number;
 }
 
 const DUMMY_COLLIDER: PhysCollider = {
@@ -83,8 +86,8 @@ const DUMMY_COLLIDER: PhysCollider = {
   parentOId: 0,
   localPos: V(0, 0, 0),
   lastLocalPos: V(0, 0, 0),
-  myLayers: 0b1,
-  targetLayers: 0xffff,
+  myLayer: DefaultLayer,
+  targetLayer: DefaultLayer,
 };
 
 // TODO(@darzu): break this up into the specific use cases
@@ -96,6 +99,8 @@ export const PhysicsStateDef = EM.defineComponent("_phys", () => {
     // NOTE: these can be many-to-one colliders-to-entities, hence the arrays
     colliders: [] as PhysCollider[],
     // TODO(@darzu): use sweepAABBs again?
+    // for debugging when objects start w/ intersecting each other
+    dbgFirstFrame: true,
   };
 });
 export type PhysicsState = Component<typeof PhysicsStateDef>;
@@ -255,8 +260,8 @@ export function registerPhysicsStateInit() {
               o.collider.aabb,
               o.id,
               parentId,
-              o.collider.myLayers,
-              o.collider.targetLayers
+              o.collider.myLayer,
+              o.collider.targetLayer
             )
           );
         } else if (o.collider.shape === "Multi") {
@@ -268,8 +273,8 @@ export function registerPhysicsStateInit() {
                 c.aabb,
                 o.id,
                 parentId,
-                o.collider.myLayers,
-                o.collider.targetLayers
+                o.collider.myLayer,
+                o.collider.targetLayer
               )
             );
           }
@@ -286,8 +291,8 @@ export function registerPhysicsStateInit() {
         selfAABB: AABB,
         oId: number,
         parentOId: number,
-        myLayers?: Layer[],
-        targetLayers?: Layer[]
+        myLayer?: Layer,
+        targetLayer?: Layer
       ): PhysCollider {
         const cId = _physBColliders.nextId;
         _physBColliders.nextId += 1;
@@ -295,10 +300,8 @@ export function registerPhysicsStateInit() {
           console.warn(`Halfway through collider IDs!`);
 
         // figure out layers
-        let my = myLayers ? 0 : 0b1 << DefaultLayer;
-        if (myLayers) for (let l of myLayers) my |= 0b1 << l;
-        let target = targetLayers ? 0 : 0xffff;
-        if (targetLayers) for (let l of targetLayers) target |= 0b1 << l;
+        const my = myLayer ?? DefaultLayer;
+        const target = targetLayer ?? DefaultLayer;
 
         // TODO(@darzu): debugging layers
         // console.log(
@@ -314,8 +317,8 @@ export function registerPhysicsStateInit() {
           selfAABB: copyAABB(createAABB(), selfAABB),
           localPos: aabbCenter(vec3.create(), selfAABB),
           lastLocalPos: aabbCenter(vec3.create(), selfAABB),
-          myLayers: my,
-          targetLayers: target,
+          myLayer: my,
+          targetLayer: target,
         };
         _physBColliders.colliders.push(c);
         return c;
@@ -436,7 +439,7 @@ export function registerPhysicsContactSystems() {
       let anyMovement = true;
       let itr = 0;
 
-      while (anyMovement && itr < COLLISION_MAX_ITRS) {
+      while (anyMovement /*or first itr*/ && itr < COLLISION_MAX_ITRS) {
         // enumerate the possible collisions, looking for objects that need to pushed apart
         for (let [aCId, bCId] of colliderPairs) {
           if (bCId < aCId) throw `a,b id pair in wrong order ${bCId} < ${aCId}`;
@@ -451,21 +454,20 @@ export function registerPhysicsContactSystems() {
           // self collision, ignore
           if (aOId === bOId) continue;
 
-          // did one of these objects move?
+          // did one of these objects move (or is it the first iteration)?
           if (!lastObjMovs[aOId] && !lastObjMovs[bOId]) continue;
 
           // are these objects interested in each other?
-          // TODO(@darzu): check this in the broad phase as well
-          if (
-            (ac.myLayers & bc.targetLayers) === 0 &&
-            (bc.myLayers & ac.targetLayers) === 0
-          )
-            continue;
+          const aTargetsB = (ac.targetLayer & bc.myLayer) !== 0b0;
+          const bTargetsA = (bc.targetLayer & ac.myLayer) !== 0b0;
+          if (!aTargetsB && !bTargetsA) continue;
 
           if (!doesOverlap(ac, bc)) {
             // a miss
             continue;
           }
+
+          // IT IS A COLLISION!
 
           const a = _objDict.get(aOId)!;
           const b = _objDict.get(bOId)!;
@@ -531,7 +533,8 @@ export function registerPhysicsContactSystems() {
         anyMovement = false;
         for (let o of objs) {
           let movFrac = nextObjMovFracs[o.id];
-          if (movFrac) {
+          const objDoesMov = !!movFrac;
+          if (objDoesMov) {
             // TODO(@darzu): PARENT. this needs to rebound in the parent frame, not world frame
             const refl = tempVec3();
             vec3.sub(o._phys.lastLocalPos, o.position, refl);
@@ -541,7 +544,6 @@ export function registerPhysicsContactSystems() {
             // translate non-sweep AABBs
             for (let c of o._phys.colliders) {
               // TODO(@darzu): PARENT. translate world AABBs?
-              // TODO(@darzu): PARENT. translate world AABBs?
               vec3.add(c.localAABB.min, refl, c.localAABB.min);
               vec3.add(c.localAABB.max, refl, c.localAABB.max);
               vec3.add(c.localPos, refl, c.localPos);
@@ -549,11 +551,19 @@ export function registerPhysicsContactSystems() {
 
             // track that some movement occured
             anyMovement = true;
+
+            if (DBG_FIRST_FRAME_MOV && o._phys.dbgFirstFrame)
+              console.warn(
+                `Object '${o.id}' is being moved ${vec3Dbg(
+                  refl
+                )} by contact constraints on its first frame.` +
+                  ` Consider using ColliderBase.myLayer/.targetLayer or TeleportDef.`
+              );
           }
 
           // record which objects moved from this iteration,
           // reset movement fractions for next iteration
-          lastObjMovs[o.id] = !!nextObjMovFracs[o.id];
+          lastObjMovs[o.id] = objDoesMov;
           nextObjMovFracs[o.id] = 0;
         }
 
@@ -567,7 +577,7 @@ export function registerPhysicsContactSystems() {
         vec3.copy(o._phys.lastLocalPos, o.position);
       }
 
-      // update out checkRay function
+      // update output checkRay function
       res.physicsResults.checkRay = (r: Ray) => {
         const motHits = collidersCheckRay(r);
         const hits: RayHit[] = [];
@@ -581,6 +591,9 @@ export function registerPhysicsContactSystems() {
         }
         return hits;
       };
+
+      if (DBG_FIRST_FRAME_MOV)
+        for (let o of objs) o._phys.dbgFirstFrame = false;
     }
   );
 }

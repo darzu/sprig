@@ -456,3 +456,8 @@ Bevy xpbd:
   https://joonaa.dev/blog/02/bevy-xpbd-0-1-0
   https://news.ycombinator.com/item?id=36642867
   wrote the paper: https://www.youtube.com/c/TenMinutePhysics/videos
+
+GPU fluid particle sim:
+  https://www.youtube.com/watch?v=rSKMYc1CQHE
+    includes gpu-friendly spacial hash, gpu parallel sort
+  note to self: makes a bunch of sense to implement all Sebastian Lague videos since he spent a ton of time researching and simplifying some complex topics

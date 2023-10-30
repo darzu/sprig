@@ -1453,3 +1453,24 @@ Write Games, Not Engines
 
 Hundred rabbits
   https://100r.co/site/home.html
+
+The things that have gotten worse:
+  Google prompts for: sign in, location, use Chrome
+  YouTube: removed downvotes, engagement-based algorithim (clickbait),
+  Unity: de-invest in engine, merge w/ ad companies, retroactive fee changes,
+  Flash: sold to Adobe, languish into extinction
+  Notion: requires login to view
+  Patreon: remove payment bundling
+
+  Wikipedia is still good!
+
+Regarding Float Point from Mike Acton:
+  https://www.altdevarts.com/p/onboarding-floating-point?r=yknp0&utm_campaign=post&utm_medium=web
+  https://float.exposed/0x44bf9400
+
+How To Ask Questions The Smart Way:
+  http://www.catb.org/~esr/faqs/smart-questions.html
+
+TS + WebGL game on 6 platforms:
+  https://ruoyusun.com/2023/10/12/one-game-six-platforms.html
+  https://github.com/ValveSoftware/steam-runtime/issues/579

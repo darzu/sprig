@@ -16,6 +16,7 @@ import { AngularVelocityDef } from "../motion/velocity.js";
 import { createAABB } from "../physics/aabb.js";
 import { ColliderDef } from "../physics/collider.js";
 import { PhysicsResultsDef } from "../physics/nonintersection.js";
+import { onCollides } from "../physics/phys-helpers.js";
 import {
   PhysicsParentDef,
   Position,
@@ -301,85 +302,64 @@ export async function initOre(spacePath: Path) {
     }
   }
 
-  EM.addSystem(
-    "interactWithOre",
-    Phase.GAME_PLAYERS,
-    [OreCarrierDef, PositionDef, SpaceSuitDef],
-    [PhysicsResultsDef, LD54GameStateDef],
-    (es, res) => {
-      if (!es.length) return;
-      assert(es.length === 1);
-      const carrier = es[0];
+  onCollides(
+    [OreCarrierDef],
+    [OreStoreDef],
+    [LD54GameStateDef],
+    (carrier, store, res) => {
+      // must be carrying
+      if (!carrier.oreCarrier.carrying) return;
 
-      // collisions?
-      const otherIds = res.physicsResults.collidesWith.get(
-        carrier.oreCarrier.colliderId
-      );
-      if (!otherIds) return;
+      // transfer to store
+      const ore = carrier.oreCarrier.carrying;
+      ore.ore.carried = true;
+      carrier.oreCarrier.carrying = undefined;
 
-      if (carrier.oreCarrier.carrying) {
-        // we're carying ore
-        const stores = otherIds
-          .map((id) => EM.findEntity(id, [OreStoreDef, PositionDef]))
-          .filter((e) => e !== undefined);
-        if (!stores.length) return; // didn't reach the store
-        assert(stores.length === 1);
-        const store = stores[0]!;
-
-        // transfer to store
-        const ore = carrier.oreCarrier.carrying;
-        ore.ore.carried = true;
-        carrier.oreCarrier.carrying = undefined;
-
-        if (ore.ore.type === "fuel") {
-          const idx = store.oreStore.fuelOres.length;
-          store.oreStore.fuelOres.push(ore);
-          const pos = fuelSlots[idx % fuelSlots.length];
-          vec3.copy(ore.position, pos);
-        } else {
-          const idx = store.oreStore.oxygenOres.length;
-          store.oreStore.oxygenOres.push(ore);
-          const pos = oxygenSlots[idx % oxygenSlots.length];
-          vec3.copy(ore.position, pos);
-        }
-
-        EM.set(ore, PhysicsParentDef, store.id);
-
-        // update game state
-        switch (ore.ore.type) {
-          case "fuel":
-            res.ld54GameState.fuel += FUEL_PER_ORE;
-            break;
-          case "oxygen":
-            res.ld54GameState.oxygen += OXYGEN_PER_ORE;
-            break;
-        }
+      if (ore.ore.type === "fuel") {
+        const idx = store.oreStore.fuelOres.length;
+        store.oreStore.fuelOres.push(ore);
+        const pos = fuelSlots[idx % fuelSlots.length];
+        vec3.copy(ore.position, pos);
       } else {
-        // we're not carying ore
-        const ores = otherIds
-          .map((id) =>
-            EM.findEntity(id, [
-              OreDef,
-              PositionDef,
-              AngularVelocityDef,
-              RenderableDef,
-            ])
-          )
-          .filter((e) => e !== undefined && !e.ore.carried);
-        if (!ores.length) return; // didn't reach any new ore
-        // only collect if we are swingin
-        if (
-          carrier.spaceSuit.swingingSword &&
-          carrier.spaceSuit.swordSwingT > 0.7 * SWORD_SWING_DURATION
-        ) {
-          // transfer to carrier
-          const ore = ores[0]!;
-          carrier.oreCarrier.carrying = ore;
-          ore.ore.carried = true;
-          vec3.zero(ore.angularVelocity); // stop spinning
-          EM.set(ore, PhysicsParentDef, carrier.id);
-          vec3.set(0, 0, -5, ore.position);
-        }
+        const idx = store.oreStore.oxygenOres.length;
+        store.oreStore.oxygenOres.push(ore);
+        const pos = oxygenSlots[idx % oxygenSlots.length];
+        vec3.copy(ore.position, pos);
+      }
+
+      EM.set(ore, PhysicsParentDef, store.id);
+
+      // update game state
+      switch (ore.ore.type) {
+        case "fuel":
+          res.ld54GameState.fuel += FUEL_PER_ORE;
+          break;
+        case "oxygen":
+          res.ld54GameState.oxygen += OXYGEN_PER_ORE;
+          break;
+      }
+    }
+  );
+
+  onCollides(
+    [OreCarrierDef, SpaceSuitDef],
+    [OreDef, PositionDef, RenderableDef, AngularVelocityDef],
+    [],
+    (carrier, ore) => {
+      // must not be carrying
+      if (carrier.oreCarrier.carrying) return;
+
+      // only collect if we are swingin
+      if (
+        carrier.spaceSuit.swingingSword &&
+        carrier.spaceSuit.swordSwingT > 0.7 * SWORD_SWING_DURATION
+      ) {
+        // transfer to carrier
+        carrier.oreCarrier.carrying = ore;
+        ore.ore.carried = true;
+        vec3.zero(ore.angularVelocity); // stop spinning
+        EM.set(ore, PhysicsParentDef, carrier.id);
+        vec3.set(0, 0, -5, ore.position);
       }
     }
   );

@@ -794,9 +794,10 @@ export function createTimberBuilder(mesh: RawMesh) {
 
   const cursor: mat4 = mat4.create();
 
+  // NOTE: Assumes +y is forward by default
   const b = {
-    width: 0.2,
-    depth: 0.2,
+    width: 0.2, // x-axis
+    depth: 0.2, // z-axis
     mesh,
     cursor,
     addSplinteredEnd,

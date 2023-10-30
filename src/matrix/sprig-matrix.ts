@@ -724,6 +724,7 @@ export module mat4 {
     return GL.getScaling(out ?? vec3.tmp(), m) as vec3;
   }
 
+  // NOTE: rotates CCW
   export function rotateX(v1: InputT, n: number, out?: T) {
     return GL.rotateX(out ?? tmp(), v1, n) as T;
   }
