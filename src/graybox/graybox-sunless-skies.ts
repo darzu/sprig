@@ -1,3 +1,4 @@
+import { createMultiBarMesh } from "../adornments/status-bar.js";
 import { CameraDef, CameraFollowDef } from "../camera/camera.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
@@ -22,7 +23,6 @@ import {
   getAABBFromMesh,
   scaleMesh3,
 } from "../meshes/mesh.js";
-import { createMultiBarMesh } from "../meshes/primatives.js";
 import { LinearVelocityDef } from "../motion/velocity.js";
 import { MeDef } from "../net/components.js";
 import { ColliderDef, DefaultLayer, NoLayer } from "../physics/collider.js";

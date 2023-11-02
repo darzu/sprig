@@ -58,7 +58,7 @@ const ALL_GAMES = [
   "mp",
   "graybox-sunless",
 ] as const;
-const GAME: (typeof ALL_GAMES)[number] = "ld54";
+const GAME: (typeof ALL_GAMES)[number] = "graybox-sunless";
 
 // Run simulation with a fixed timestep @ 60hz
 const TIMESTEP = 1000 / 60;
