@@ -46,7 +46,14 @@ import {
   RenderableDef,
 } from "../render/renderer-ecs.js";
 import { TimeDef } from "../time/time.js";
-import { jitter, lerp, randInt, randRadian, unlerp } from "../utils/math.js";
+import {
+  clamp,
+  jitter,
+  lerp,
+  randInt,
+  randRadian,
+  unlerp,
+} from "../utils/math.js";
 import { FALSE, assert, dbgOnce } from "../utils/util.js";
 import {
   quatFromUpForward,
@@ -711,10 +718,10 @@ EM.addEagerInit([HealthDef], [], [], () => {
         if (h.healthBar._lastRenderedValue === h.healthBar.value) continue; // nothing to do
         h.healthBar._lastRenderedValue = h.healthBar.value;
 
-        const percent = unlerp(
-          h.healthBar.min,
-          h.healthBar.max,
-          h.healthBar.value
+        const percent = clamp(
+          unlerp(h.healthBar.min, h.healthBar.max, h.healthBar.value),
+          0,
+          1
         );
 
         const handle = h.renderable.meshHandle;

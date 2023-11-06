@@ -14,9 +14,7 @@ export function avg(ns: number[]): number {
   return sum(ns) / ns.length;
 }
 export function clamp(n: number, min: number, max: number): number {
-  if (n < min) return min;
-  else if (n > max) return max;
-  return n;
+  return Math.max(Math.min(n, max), min);
 }
 export function min(ns: number[]): number {
   return ns.reduce((p, n) => (p < n ? p : n), Infinity);
