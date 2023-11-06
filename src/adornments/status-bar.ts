@@ -48,8 +48,8 @@ export function createMultiBarMesh({
 
   mesh.quad.forEach((_, i) => {
     const c = vec3.create();
-    if (i <= part1Qidx) vec3.copy(c, missingColor);
-    else vec3.copy(c, fullColor);
+    if (i <= part1Qidx) vec3.copy(c, fullColor);
+    else vec3.copy(c, missingColor);
     mesh.colors.push(c);
   });
   mesh.surfaceIds = mesh.colors.map((_, i) => i + 1);

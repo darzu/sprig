@@ -131,6 +131,9 @@ export function sphereVolumeFromRadius(r: number) {
   return (4 / 3) * Math.PI * Math.pow(r, 3);
 }
 
-export function lerp(a: number, b: number, t: number) {
+export function lerp(a: number, b: number, t: number): number {
   return (1.0 - t) * a + t * b;
+}
+export function unlerp(min: number, max: number, val: number): number {
+  return (val - min) / (max - min);
 }

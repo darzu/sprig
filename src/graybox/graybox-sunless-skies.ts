@@ -46,7 +46,7 @@ import {
   RenderableDef,
 } from "../render/renderer-ecs.js";
 import { TimeDef } from "../time/time.js";
-import { jitter, lerp, randInt, randRadian } from "../utils/math.js";
+import { jitter, lerp, randInt, randRadian, unlerp } from "../utils/math.js";
 import { FALSE, assert, dbgOnce } from "../utils/util.js";
 import {
   quatFromUpForward,
@@ -255,8 +255,6 @@ export async function initGrayboxSunless() {
   if (!DBG_GHOST) createPlayerShip();
 
   createEnemies();
-
-  initHealthBars();
 }
 
 const WallDef = EM.defineComponent("sunlessWall", () => true);
@@ -420,8 +418,17 @@ const BulletDef = EM.defineComponent("sunlessBullet", () => ({}));
 
 const HealthDef = EM.defineComponent(
   "health",
-  () => 100,
-  (p, max: number) => max
+  () => ({
+    min: 0,
+    max: 100,
+    value: 80,
+  }),
+  (p, min: number, max: number, value: number) => {
+    p.min = min;
+    p.max = max;
+    p.value = value;
+    return p;
+  }
 );
 
 EM.addEagerInit([SunlessPlayerDef], [CubeMesh.def], [], ({ mesh_cube }) => {
@@ -565,7 +572,7 @@ async function createPlayerShip() {
   });
   EM.set(ship, SunlessPlayerDef);
   EM.set(ship, SunlessShipDef);
-  EM.set(ship, HealthDef, 100);
+  EM.set(ship, HealthDef, 0, 100, 90);
 
   // EM.addSystem(
   //   "dbgSunlessCamera",
@@ -617,12 +624,27 @@ async function createEnemies() {
   });
   EM.set(ship, EnemyDef);
   EM.set(ship, SunlessShipDef);
-  EM.set(ship, HealthDef, 50);
+  EM.set(ship, HealthDef, 0, 100, 90);
 }
 
-const HealthBarDef = EM.defineComponent("healthBar", () => true);
+const HealthBarDef = EM.defineComponent(
+  "healthBar",
+  () => ({
+    value: 50,
+    min: 0,
+    max: 100,
+    _lastRenderedValue: -1,
+  }),
+  (p, min: number, max: number, value: number) => {
+    p.min = min;
+    p.max = max;
+    p.value = value;
+    p._lastRenderedValue = -1;
+    return p;
+  }
+);
 
-async function initHealthBars() {
+EM.addEagerInit([HealthDef], [], [], () => {
   // const { mesh_cube } = await EM.whenResources(CubeMesh.def);
 
   const offset = V(2, 0, 0);
@@ -636,11 +658,11 @@ async function initHealthBars() {
     length: 3.0,
     centered: true,
     fullColor: ENDESGA16.red,
-    missingColor: ENDESGA16.darkGreen,
+    missingColor: ENDESGA16.darkRed,
   });
 
   EM.addSystem(
-    "addRemoveHealthBars",
+    "createHealthBars",
     Phase.GAME_WORLD,
     [HealthDef],
     [],
@@ -653,10 +675,26 @@ async function initHealthBars() {
           EM.set(bar, RenderableConstructDef, mesh);
           EM.set(bar, PositionDef, vec3.clone(offset));
           EM.set(bar, PhysicsParentDef, h.id);
-          EM.set(bar, HealthBarDef);
+          EM.set(bar, HealthBarDef, 0, 100, 50);
 
           hasBar.add(h.id);
         }
+      }
+    }
+  );
+
+  EM.addSystem(
+    "syncHealthBars",
+    Phase.GAME_WORLD,
+    [HealthBarDef, PhysicsParentDef],
+    [],
+    (es, res) => {
+      for (let e of es) {
+        const parent = EM.findEntity(e.id, [HealthBarDef]);
+        if (!parent) continue;
+        e.healthBar.min = parent.healthBar.min;
+        e.healthBar.max = parent.healthBar.max;
+        e.healthBar.value = parent.healthBar.value;
       }
     }
   );
@@ -669,43 +707,40 @@ async function initHealthBars() {
     (hs, res) => {
       const startPosIdx = 4;
       const lastPosIdx = startPosIdx + 3;
-      // TODO(@darzu): FOO
-      if (dbgOnce("renderHealth") && true)
-        for (let h of hs) {
-          const handle = h.renderable.meshHandle;
-          assert(handle.mesh);
-          const mesh = handle.mesh;
-          const min = mesh.pos.at(0)![2]; // first Z;
-          const max = mesh.pos.at(-1)![2]; // last Z;
-          const percent = 0.4; // TODO(@darzu): update from stat
-          const lerped = lerp(min, max, percent);
-          mesh.pos.forEach((p, i) => {
-            console.log(`${i}: ${vec3Dbg(p)}`);
-            if (startPosIdx <= i && i <= lastPosIdx) {
-              console.log(`before ${i}[2] = ${p[2]}`);
-              // console.log(`${p[2]} -> ${lerped}`);
-              p[2] = lerped;
-              // p[2] -= 0.002;
-              // p[2] -= 0.3;
-              // p[2] += 0.6;
-              // p[2] = -0.8;
-              // p[2] = 0.8999999761581421;
-              console.log(`after ${i}[2] = ${p[2]}`);
-              // p[2] = -1;
-              // p[2] = -2.2;
-              // p[2] = -0.9 + jitter(0.1);
-              // p[2] = -0;
-            }
-          });
-          console.log(`min: ${min}, max: ${max}, lerped: ${lerped}`);
-          console.dir(mesh);
-          res.renderer.renderer.stdPool.updateMeshVertices(
-            handle,
-            mesh,
-            startPosIdx,
-            4
-          );
-        }
+      for (let h of hs) {
+        if (h.healthBar._lastRenderedValue === h.healthBar.value) continue; // nothing to do
+        h.healthBar._lastRenderedValue = h.healthBar.value;
+
+        const percent = unlerp(
+          h.healthBar.min,
+          h.healthBar.max,
+          h.healthBar.value
+        );
+
+        const handle = h.renderable.meshHandle;
+        assert(handle.mesh);
+        const mesh = handle.mesh;
+        const min = mesh.pos.at(0)![2]; // first Z;
+        const max = mesh.pos.at(-1)![2]; // last Z;
+        const lerped = lerp(min, max, percent);
+        mesh.pos.forEach((p, i) => {
+          // console.log(`${i}: ${vec3Dbg(p)}`);
+          if (startPosIdx <= i && i <= lastPosIdx) {
+            // console.log(`before ${i}[2] = ${p[2]}`);
+            // console.log(`${p[2]} -> ${lerped}`);
+            p[2] = lerped;
+            // console.log(`after ${i}[2] = ${p[2]}`);
+          }
+        });
+        // console.log(`min: ${min}, max: ${max}, lerped: ${lerped}`);
+        // console.dir(mesh);
+        res.renderer.renderer.stdPool.updateMeshVertices(
+          handle,
+          mesh,
+          startPosIdx,
+          4
+        );
+      }
     }
   );
-}
+});
