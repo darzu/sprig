@@ -47,7 +47,7 @@ import {
 } from "../render/renderer-ecs.js";
 import { TimeDef } from "../time/time.js";
 import { jitter, lerp, randInt, randRadian } from "../utils/math.js";
-import { assert, dbgOnce } from "../utils/util.js";
+import { FALSE, assert, dbgOnce } from "../utils/util.js";
 import {
   quatFromUpForward,
   randNormalVec3,
@@ -623,10 +623,10 @@ async function createEnemies() {
 const HealthBarDef = EM.defineComponent("healthBar", () => true);
 
 async function initHealthBars() {
-  const { mesh_cube } = await EM.whenResources(CubeMesh.def);
-  const hasBar = new Set<number>();
+  // const { mesh_cube } = await EM.whenResources(CubeMesh.def);
 
   const offset = V(2, 0, 0);
+  const hasBar = new Set<number>();
 
   // TODO(@darzu): IMPL!
   // const barMesh =
@@ -645,7 +645,6 @@ async function initHealthBars() {
     [HealthDef],
     [],
     (hs, res) => {
-      // TODO(@darzu): FOO
       for (let h of hs) {
         if (!hasBar.has(h.id)) {
           // TODO(@darzu): create bar
@@ -671,23 +670,23 @@ async function initHealthBars() {
       const startPosIdx = 4;
       const lastPosIdx = startPosIdx + 3;
       // TODO(@darzu): FOO
-      if (dbgOnce("renderHealth"))
+      if (dbgOnce("renderHealth") && true)
         for (let h of hs) {
           const handle = h.renderable.meshHandle;
           assert(handle.mesh);
           const mesh = handle.mesh;
           const min = mesh.pos.at(0)![2]; // first Z;
           const max = mesh.pos.at(-1)![2]; // last Z;
-          const percent = 0.8; // TODO(@darzu): update from stat
+          const percent = 0.4; // TODO(@darzu): update from stat
           const lerped = lerp(min, max, percent);
           mesh.pos.forEach((p, i) => {
             console.log(`${i}: ${vec3Dbg(p)}`);
             if (startPosIdx <= i && i <= lastPosIdx) {
               console.log(`before ${i}[2] = ${p[2]}`);
               // console.log(`${p[2]} -> ${lerped}`);
-              // p[2] = lerped;
+              p[2] = lerped;
               // p[2] -= 0.002;
-              p[2] -= 0.3;
+              // p[2] -= 0.3;
               // p[2] += 0.6;
               // p[2] = -0.8;
               // p[2] = 0.8999999761581421;

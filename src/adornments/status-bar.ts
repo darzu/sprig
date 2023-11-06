@@ -39,23 +39,23 @@ export function createMultiBarMesh({
   mat4.translate(builder.cursor, [0, halflen, 0], builder.cursor);
   builder.addLoopVerts();
   builder.addSideQuads();
-  const part1Qidx = mesh.quad.length;
+  const part1Qidx = mesh.quad.length - 1;
   mat4.translate(builder.cursor, [0, halflen, 0], builder.cursor);
   builder.addLoopVerts();
   builder.addSideQuads();
   builder.addEndQuad(false);
   // const part2Qidx = mesh.quad.length;
 
-  const _mesh = unshareProvokingVertices(mesh) as Mesh;
-
-  _mesh.quad.forEach((_, i) => {
+  mesh.quad.forEach((_, i) => {
     const c = vec3.create();
     if (i <= part1Qidx) vec3.copy(c, missingColor);
     else vec3.copy(c, fullColor);
-    _mesh.colors.push(c);
+    mesh.colors.push(c);
   });
+  mesh.surfaceIds = mesh.colors.map((_, i) => i + 1);
 
-  _mesh.surfaceIds = _mesh.colors.map((_, i) => i + 1);
+  const _mesh = unshareProvokingVertices(mesh, true) as Mesh;
+  // const _mesh = mesh as Mesh;
 
   // const _mesh = mesh as Mesh;
   // _mesh.usesProvoking = true;

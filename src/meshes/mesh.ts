@@ -271,7 +271,11 @@ export function validateMesh(m: RawMesh) {
 
 let _timeSpentOnNeighborIsh = 0;
 
-export function unshareProvokingVerticesWithMap(input: RawMesh): {
+// TODO(@darzu): have an in-place updating version of this
+export function unshareProvokingVerticesWithMap(
+  input: RawMesh,
+  strictNoAdd = false
+): {
   mesh: RawMesh & { usesProvoking: true };
   posMap: Map<number, number>;
   provoking: { [key: number]: boolean };
@@ -353,6 +357,10 @@ export function unshareProvokingVerticesWithMap(input: RawMesh): {
       tri.push(V(i2, i0, i1));
     } else {
       // All vertices are taken, so create a new one
+      if (strictNoAdd)
+        throw new Error(
+          `Cannot unshare provoking for '${input.dbgName}' mesh w/o adding vertex for triangle.`
+        );
       const i3 = pos.length;
       pos.push(input.pos[i0]);
       posMap.set(i3, i0);
@@ -389,6 +397,10 @@ export function unshareProvokingVerticesWithMap(input: RawMesh): {
       quad[qi] = vec4.clone([i3, i0, i1, i2]);
     } else {
       // All vertices are taken, so create a new one
+      if (strictNoAdd)
+        throw new Error(
+          `Cannot unshare provoking for '${input.dbgName}' mesh w/o adding vertex for triangle.`
+        );
       const i4 = pos.length;
       pos.push(input.pos[i0]);
       posMap.set(i4, i0);
@@ -402,10 +414,10 @@ export function unshareProvokingVerticesWithMap(input: RawMesh): {
       quad[qi] = vec4.clone([i4, i1, i2, i3]);
       // console.log(`duplicating: ${i0}!`);
 
-      // TODO(@darzu): DBG
-      if (DBG_FANG_SHIP && input.dbgName?.includes("fang")) {
-        console.log("new vert for fang ship");
-      }
+      // // TODO(@darzu): DBG
+      // if (DBG_FANG_SHIP && input.dbgName?.includes("fang")) {
+      //   console.log("new vert for fang ship");
+      // }
     }
   };
   // input.quad.forEach((q, qi) => {
@@ -456,9 +468,13 @@ export function unshareProvokingVerticesWithMap(input: RawMesh): {
   };
 }
 export function unshareProvokingVertices(
-  input: RawMesh
+  input: RawMesh,
+  strictNoAdd = false
 ): RawMesh & { usesProvoking: true } {
-  const { mesh, posMap, provoking } = unshareProvokingVerticesWithMap(input);
+  const { mesh, posMap, provoking } = unshareProvokingVerticesWithMap(
+    input,
+    strictNoAdd
+  );
   return mesh;
 }
 
