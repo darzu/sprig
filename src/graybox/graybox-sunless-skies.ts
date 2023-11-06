@@ -161,7 +161,7 @@ initDocks:
 
 const DBG_GRID = true;
 const DBG_GIZMO = false;
-const DBG_GHOST = true;
+const DBG_GHOST = false;
 
 // TODO(@darzu): ADD WARNING THAT OBJ INIT PLACED IN CONTACT
 
@@ -534,9 +534,9 @@ EM.addEagerInit([SunlessPlayerDef], [CubeMesh.def], [], ({ mesh_cube }) => {
     }
   );
 
-  onCollides([BulletDef], [EnemyDef], [], (a, b) => {
+  onCollides([BulletDef], [EnemyDef, HealthDef], [], (a, b) => {
     // console.log("HIT SHIP!");
-    // TODO(@darzu): IMPL dmg enemy logic
+    b.health.value -= 10;
     EM.set(a, DeletedDef);
   });
 
@@ -690,11 +690,11 @@ EM.addEagerInit([HealthDef], [], [], () => {
     [],
     (es, res) => {
       for (let e of es) {
-        const parent = EM.findEntity(e.id, [HealthBarDef]);
+        const parent = EM.findEntity(e.physicsParent.id, [HealthDef]);
         if (!parent) continue;
-        e.healthBar.min = parent.healthBar.min;
-        e.healthBar.max = parent.healthBar.max;
-        e.healthBar.value = parent.healthBar.value;
+        e.healthBar.min = parent.health.min;
+        e.healthBar.max = parent.health.max;
+        e.healthBar.value = parent.health.value;
       }
     }
   );
