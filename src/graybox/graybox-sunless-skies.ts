@@ -1,4 +1,4 @@
-import { createMultiBarMesh } from "../adornments/status-bar.js";
+import { HealthDef, createMultiBarMesh } from "../adornments/status-bar.js";
 import { CameraDef, CameraFollowDef } from "../camera/camera.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
@@ -423,21 +423,6 @@ const SunlessPlayerDef = EM.defineComponent("sunlessPlayer", () => ({
 
 const BulletDef = EM.defineComponent("sunlessBullet", () => ({}));
 
-const HealthDef = EM.defineComponent(
-  "health",
-  () => ({
-    min: 0,
-    max: 100,
-    value: 80,
-  }),
-  (p, min: number, max: number, value: number) => {
-    p.min = min;
-    p.max = max;
-    p.value = value;
-    return p;
-  }
-);
-
 EM.addEagerInit([SunlessPlayerDef], [CubeMesh.def], [], ({ mesh_cube }) => {
   EM.addSystem(
     "moveSunlessShip",
@@ -633,121 +618,3 @@ async function createEnemies() {
   EM.set(ship, SunlessShipDef);
   EM.set(ship, HealthDef, 0, 100, 90);
 }
-
-const HealthBarDef = EM.defineComponent(
-  "healthBar",
-  () => ({
-    value: 50,
-    min: 0,
-    max: 100,
-    _lastRenderedValue: -1,
-  }),
-  (p, min: number, max: number, value: number) => {
-    p.min = min;
-    p.max = max;
-    p.value = value;
-    p._lastRenderedValue = -1;
-    return p;
-  }
-);
-
-EM.addEagerInit([HealthDef], [], [], () => {
-  // const { mesh_cube } = await EM.whenResources(CubeMesh.def);
-
-  const offset = V(2, 0, 0);
-  const hasBar = new Set<number>();
-
-  // TODO(@darzu): IMPL!
-  // const barMesh =
-
-  const barMesh = createMultiBarMesh({
-    width: 0.2,
-    length: 3.0,
-    centered: true,
-    fullColor: ENDESGA16.red,
-    missingColor: ENDESGA16.darkRed,
-  });
-
-  EM.addSystem(
-    "createHealthBars",
-    Phase.GAME_WORLD,
-    [HealthDef],
-    [],
-    (hs, res) => {
-      for (let h of hs) {
-        if (!hasBar.has(h.id)) {
-          // TODO(@darzu): create bar
-          const bar = EM.new();
-          const mesh = cloneMesh(barMesh);
-          EM.set(bar, RenderableConstructDef, mesh);
-          EM.set(bar, PositionDef, vec3.clone(offset));
-          EM.set(bar, PhysicsParentDef, h.id);
-          EM.set(bar, HealthBarDef, 0, 100, 50);
-
-          hasBar.add(h.id);
-        }
-      }
-    }
-  );
-
-  EM.addSystem(
-    "syncHealthBars",
-    Phase.GAME_WORLD,
-    [HealthBarDef, PhysicsParentDef],
-    [],
-    (es, res) => {
-      for (let e of es) {
-        const parent = EM.findEntity(e.physicsParent.id, [HealthDef]);
-        if (!parent) continue;
-        e.healthBar.min = parent.health.min;
-        e.healthBar.max = parent.health.max;
-        e.healthBar.value = parent.health.value;
-      }
-    }
-  );
-
-  EM.addSystem(
-    "renderHealthBars",
-    Phase.GAME_WORLD,
-    [HealthBarDef, RenderableDef],
-    [RendererDef],
-    (hs, res) => {
-      const startPosIdx = 4;
-      const lastPosIdx = startPosIdx + 3;
-      for (let h of hs) {
-        if (h.healthBar._lastRenderedValue === h.healthBar.value) continue; // nothing to do
-        h.healthBar._lastRenderedValue = h.healthBar.value;
-
-        const percent = clamp(
-          unlerp(h.healthBar.min, h.healthBar.max, h.healthBar.value),
-          0,
-          1
-        );
-
-        const handle = h.renderable.meshHandle;
-        assert(handle.mesh);
-        const mesh = handle.mesh;
-        const min = mesh.pos.at(0)![2]; // first Z;
-        const max = mesh.pos.at(-1)![2]; // last Z;
-        const lerped = lerp(min, max, percent);
-        mesh.pos.forEach((p, i) => {
-          // console.log(`${i}: ${vec3Dbg(p)}`);
-          if (startPosIdx <= i && i <= lastPosIdx) {
-            // console.log(`before ${i}[2] = ${p[2]}`);
-            // console.log(`${p[2]} -> ${lerped}`);
-            p[2] = lerped;
-            // console.log(`after ${i}[2] = ${p[2]}`);
-          }
-        });
-        // console.log(`min: ${min}, max: ${max}, lerped: ${lerped}`);
-        // console.dir(mesh);
-        res.renderer.renderer.stdPool.updateMeshVertices(
-          handle,
-          mesh,
-          startPosIdx,
-          4
-        );
-      }
-    }
-  );
-});
