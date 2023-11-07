@@ -413,68 +413,91 @@ async function createWorld() {
   }
 }
 
-const SunlessPlayerDef = EM.defineComponent("sunlessPlayer", () => ({
-  speed: 0.00003,
-  turnSpeed: 0.001,
-  rollSpeed: 0.01,
-  doDampen: true,
-  localAccel: vec3.create(),
-}));
+const SunlessPlayerDef = EM.defineComponent("sunlessPlayer", () => ({}));
 
 const BulletDef = EM.defineComponent("sunlessBullet", () => ({}));
 
-EM.addEagerInit([SunlessPlayerDef], [CubeMesh.def], [], ({ mesh_cube }) => {
+const SunlessShipDef = EM.defineComponent("sunlessShip", () => ({
+  speed: 0.00003,
+  rollSpeed: 0.01,
+  doDampen: true,
+  localAccel: vec3.create(),
+  localRoll: 0,
+}));
+
+EM.addEagerInit([SunlessShipDef], [], [], (_) => {
   EM.addSystem(
     "moveSunlessShip",
+    Phase.POST_GAME_PLAYERS,
+    [SunlessShipDef, RotationDef, LinearVelocityDef],
+    [TimeDef],
+    (ships, res) => {
+      for (let e of ships) {
+        // acceleration
+        const speed = e.sunlessShip.speed * res.time.dt;
+        const rotatedAccel = vec3.transformQuat(
+          e.sunlessShip.localAccel,
+          e.rotation
+        );
+
+        // turn
+        quat.rotateY(
+          e.rotation,
+          e.sunlessShip.localRoll * e.sunlessShip.rollSpeed,
+          e.rotation
+        );
+
+        // reset turn
+        e.sunlessShip.localRoll = 0;
+
+        // dampen
+        if (e.sunlessShip.doDampen && vec3.sqrLen(rotatedAccel) === 0) {
+          const dampDir = vec3.normalize(vec3.negate(e.linearVelocity));
+          vec3.scale(dampDir, speed, rotatedAccel);
+
+          // halt if at small delta
+          if (vec3.sqrLen(e.linearVelocity) < vec3.sqrLen(rotatedAccel)) {
+            vec3.zero(rotatedAccel);
+            vec3.zero(e.linearVelocity);
+          }
+        }
+
+        // move ship
+        vec3.add(e.linearVelocity, rotatedAccel, e.linearVelocity);
+
+        // reset acceleration
+        vec3.zero(e.sunlessShip.localAccel);
+      }
+    }
+  );
+});
+
+EM.addEagerInit([SunlessPlayerDef], [CubeMesh.def], [], ({ mesh_cube }) => {
+  EM.addSystem(
+    "moveSunlessPlayerShip",
     Phase.GAME_PLAYERS,
-    [SunlessPlayerDef, RotationDef, LinearVelocityDef],
+    [SunlessPlayerDef, SunlessShipDef],
     [InputsDef, TimeDef],
     (ships, res) => {
       if (!ships.length) return;
       assert(ships.length === 1);
       const e = ships[0];
 
-      let speed = e.sunlessPlayer.speed * res.time.dt;
+      let speed = e.sunlessShip.speed * res.time.dt;
 
-      vec3.zero(e.sunlessPlayer.localAccel);
       // 4-DOF translation
-      if (res.inputs.keyDowns["q"]) e.sunlessPlayer.localAccel[0] -= speed;
-      if (res.inputs.keyDowns["e"]) e.sunlessPlayer.localAccel[0] += speed;
-      if (res.inputs.keyDowns["w"]) e.sunlessPlayer.localAccel[2] -= speed;
-      if (res.inputs.keyDowns["s"]) e.sunlessPlayer.localAccel[2] += speed;
+      if (res.inputs.keyDowns["q"]) e.sunlessShip.localAccel[0] -= speed;
+      if (res.inputs.keyDowns["e"]) e.sunlessShip.localAccel[0] += speed;
+      if (res.inputs.keyDowns["w"]) e.sunlessShip.localAccel[2] -= speed;
+      if (res.inputs.keyDowns["s"]) e.sunlessShip.localAccel[2] += speed;
 
-      const rotatedAccel = vec3.transformQuat(
-        e.sunlessPlayer.localAccel,
-        e.rotation
-      );
-
-      let rollSpeed = 0;
-      if (res.inputs.keyDowns["a"]) rollSpeed = 1;
-      if (res.inputs.keyDowns["d"]) rollSpeed = -1;
-
-      quat.rotateY(
-        e.rotation,
-        rollSpeed * e.sunlessPlayer.rollSpeed,
-        e.rotation
-      );
+      // turning
+      if (res.inputs.keyDowns["a"]) e.sunlessShip.localRoll = 1;
+      if (res.inputs.keyDowns["d"]) e.sunlessShip.localRoll = -1;
 
       // change dampen?
       if (res.inputs.keyClicks["z"])
-        e.sunlessPlayer.doDampen = !e.sunlessPlayer.doDampen;
-
-      // dampener
-      if (e.sunlessPlayer.doDampen && vec3.sqrLen(rotatedAccel) === 0) {
-        const dampDir = vec3.normalize(vec3.negate(e.linearVelocity));
-        vec3.scale(dampDir, speed, rotatedAccel);
-
-        // halt if at small delta
-        if (vec3.sqrLen(e.linearVelocity) < vec3.sqrLen(rotatedAccel)) {
-          vec3.zero(rotatedAccel);
-          vec3.zero(e.linearVelocity);
-        }
-      }
-
-      vec3.add(e.linearVelocity, rotatedAccel, e.linearVelocity);
+        e.sunlessShip.doDampen = !e.sunlessShip.doDampen;
     }
   );
 
@@ -520,25 +543,34 @@ EM.addEagerInit([SunlessPlayerDef], [CubeMesh.def], [], ({ mesh_cube }) => {
 
         // kickback
         const kickback = vec3.negate(bullet.linearVelocity);
-        vec3.scale(kickback, 0.2, kickback);
+        vec3.scale(kickback, 0.1, kickback);
         vec3.add(ship.linearVelocity, kickback, ship.linearVelocity);
       }
     }
   );
 
-  onCollides([BulletDef], [EnemyDef, HealthDef], [], (a, b) => {
-    // console.log("HIT SHIP!");
-    b.health.value -= 10;
-    EM.set(a, DeletedDef);
-  });
+  onCollides(
+    [BulletDef, LinearVelocityDef],
+    [EnemyDef, HealthDef, LinearVelocityDef],
+    [],
+    (bullet, enemy) => {
+      // hurt ship
+      enemy.health.value -= 10;
+
+      // knockback ship
+      const knockback = vec3.scale(bullet.linearVelocity, 0.1);
+      vec3.add(enemy.linearVelocity, knockback, enemy.linearVelocity);
+
+      // delete the bullet
+      EM.set(bullet, DeletedDef);
+    }
+  );
 
   onCollides([BulletDef], [WallDef], [], (a, b) => {
     // console.log("HIT WALL!");
     EM.set(a, DeletedDef);
   });
 });
-
-const SunlessShipDef = EM.defineComponent("sunlessShip", () => ({}));
 
 async function createPlayerShip() {
   const { mesh_cube } = await EM.whenResources(CubeMesh.def);
@@ -584,9 +616,7 @@ async function createPlayerShip() {
   EM.set(ship, SunlessPlayerDef);
 }
 
-const EnemyDef = EM.defineComponent("sunlessEnemy", () => ({
-  // TODO(@darzu):
-}));
+const EnemyDef = EM.defineComponent("sunlessEnemy", () => ({}));
 
 async function createEnemies() {
   const { mesh_cube } = await EM.whenResources(CubeMesh.def);
