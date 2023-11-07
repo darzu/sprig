@@ -14,9 +14,7 @@ export function avg(ns: number[]): number {
   return sum(ns) / ns.length;
 }
 export function clamp(n: number, min: number, max: number): number {
-  if (n < min) return min;
-  else if (n > max) return max;
-  return n;
+  return Math.max(Math.min(n, max), min);
 }
 export function min(ns: number[]): number {
   return ns.reduce((p, n) => (p < n ? p : n), Infinity);
@@ -131,6 +129,9 @@ export function sphereVolumeFromRadius(r: number) {
   return (4 / 3) * Math.PI * Math.pow(r, 3);
 }
 
-export function lerp(a: number, b: number, t: number) {
+export function lerp(a: number, b: number, t: number): number {
   return (1.0 - t) * a + t * b;
+}
+export function unlerp(min: number, max: number, val: number): number {
+  return (val - min) / (max - min);
 }
