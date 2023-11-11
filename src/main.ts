@@ -35,6 +35,8 @@ import { setSimulationAlpha } from "./render/motion-smoothing.js";
 import { initMPGame } from "./net/game-multiplayer.js";
 import { initLD54 } from "./ld54/game-ld54.js";
 import { initGrayboxSunless } from "./graybox/graybox-sunless-skies.js";
+import { initGrayboxShipArena } from "./graybox/graybox-ship-arena.js";
+import { initGrayboxStarter } from "./graybox/graybox-starter.js";
 
 // dbgLogMilestone("start of main.ts");
 
@@ -46,7 +48,7 @@ const ALL_GAMES = [
   "gjk",
   "rebound", // broken-ish
   "shipyard",
-  "grass", // broken-ish
+  "grass", // broken-ish; too many temp f32s
   "font",
   "hyperspace",
   "cloth", // broken-ish
@@ -56,9 +58,11 @@ const ALL_GAMES = [
   "ld53",
   "ld54",
   "mp",
+  "graybox-starter",
   "graybox-sunless",
+  "graybox-ship-arena",
 ] as const;
-const GAME: (typeof ALL_GAMES)[number] = "graybox-sunless";
+const GAME: (typeof ALL_GAMES)[number] = "graybox-ship-arena";
 
 // Run simulation with a fixed timestep @ 60hz
 const TIMESTEP = 1000 / 60;
@@ -118,7 +122,9 @@ async function startGame(localPeerName: string, host: string | null) {
   else if (GAME === "shading") initShadingGame();
   else if (GAME === "modeling") initModelingGame();
   else if (GAME === "mp") initMPGame();
+  else if (GAME === "graybox-starter") initGrayboxStarter();
   else if (GAME === "graybox-sunless") initGrayboxSunless();
+  else if (GAME === "graybox-ship-arena") initGrayboxShipArena();
   else never(GAME, "TODO game");
 
   let previous_frame_time = start_of_time;

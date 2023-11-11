@@ -499,3 +499,6 @@ TODO: add "versioning" of objects.
 
   For both of these, should use typescript's getters and setters to make sure
   everything gets updated in the right place.
+
+"Fast-Paced Multiplayer":
+  https://www.gabrielgambetta.com/client-server-game-architecture.html

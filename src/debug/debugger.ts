@@ -285,7 +285,7 @@ g.cameraFollow.pitchOffset = ${target.cameraFollow.pitchOffset.toFixed(3)};
     dbgClearBlame("f32s");
   },
   f32sBlame: () => {
-    assert(PERF_DBG_F32S_BLAME);
+    assert(PERF_DBG_F32S_BLAME, `enable PERF_DBG_F32S_BLAME!`);
     const ents = [...dbgGetBlame("f32s")!.entries()].filter(
       (e) =>
         e[0] !== "Error" &&
