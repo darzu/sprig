@@ -1,7 +1,12 @@
 // which triangles belong to which faces
 
 import { BLACK } from "./mesh-list.js";
-import { ENDESGA16, randEndesga16, seqEndesga16 } from "../color/palettes.js";
+import {
+  AllEndesga16,
+  ENDESGA16,
+  randEndesga16,
+  seqEndesga16,
+} from "../color/palettes.js";
 import { AABB } from "../physics/aabb.js";
 import {
   cloneMesh,
@@ -30,16 +35,7 @@ import { createTimberBuilder, createEmptyMesh } from "../wood/wood.js";
 
 // TODO(@darzu): A bunch of stuff shouldn't be in here like barge and sail stuff
 
-// TODO(@darzu): should these be standardized for all meshes?
-export const CUBE_FACES = {
-  front: [0, 1],
-  top: [2, 3],
-  right: [4, 5],
-  left: [6, 7],
-  bottom: [8, 9],
-  back: [10, 11],
-};
-export const mkCubeMesh: () => RawMesh = () => ({
+export const mkCubeMesh: () => Mesh = () => ({
   dbgName: "cube",
   pos: [
     V(+1.0, +1.0, +1.0),
@@ -52,28 +48,21 @@ export const mkCubeMesh: () => RawMesh = () => ({
     V(-1.0, -1.0, -1.0),
     V(+1.0, -1.0, -1.0),
   ],
-  // TODO(@darzu): use quads
-  tri: [
-    V(0, 1, 2),
-    V(0, 2, 3),
-    // front
-    V(4, 5, 1),
-    V(4, 1, 0),
-    // top
-    V(3, 4, 0),
-    V(3, 7, 4),
-    // right
-    V(2, 1, 5),
-    V(2, 5, 6),
-    // left
-    V(6, 3, 2),
-    V(6, 7, 3),
-    // bottom
-    V(5, 4, 7),
-    V(5, 7, 6),
-    // back
+  tri: [],
+  quad: [
+    // +Z
+    V(0, 1, 2, 3),
+    // +Y
+    V(4, 5, 1, 0),
+    // +X
+    V(3, 7, 4, 0),
+    // -X
+    V(2, 1, 5, 6),
+    // -Y
+    V(6, 7, 3, 2),
+    // -Z
+    V(5, 4, 7, 6),
   ],
-  quad: [],
   lines: [
     // top
     V(0, 1),
@@ -98,13 +87,15 @@ export const mkCubeMesh: () => RawMesh = () => ({
     V(0, 0, 0),
     V(0, 0, 0),
     V(0, 0, 0),
-    V(0, 0, 0),
-    V(0, 0, 0),
-    V(0, 0, 0),
-    V(0, 0, 0),
-    V(0, 0, 0),
-    V(0, 0, 0),
+    // ENDESGA16.lightBlue,
+    // ENDESGA16.lightGreen,
+    // ENDESGA16.red,
+    // ENDESGA16.darkRed,
+    // ENDESGA16.darkGreen,
+    // ENDESGA16.blue,
   ],
+  surfaceIds: [1, 2, 3, 4, 5, 6],
+  usesProvoking: true,
 });
 
 export const TETRA_MESH: RawMesh = {
