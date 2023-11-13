@@ -438,8 +438,14 @@ export const TriFenceMesh = XY.registerMesh({
 // TODO(@darzu): wire cube is kinda broken; needs line renderer
 export const WireCubeMesh = XY.registerMesh({
   name: "wireCube",
-  data: () =>
-    ({ ...mkCubeMesh(), tri: [], colors: [], dbgName: "wireCube" } as RawMesh),
+  data: () => ({
+    ...mkCubeMesh(),
+    tri: [],
+    quad: [],
+    colors: [],
+    surfaceIds: [],
+    dbgName: "wireCube",
+  }),
 });
 export const MastMesh = XY.registerMesh({
   name: "mast",
