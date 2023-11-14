@@ -31,7 +31,7 @@ export function yawpitchToQuat(
   yp: { yaw: number; pitch: number }
 ): quat {
   quat.copy(out, quat.IDENTITY);
-  quat.rotateY(out, yp.yaw, out);
+  quat.rotateZ(out, yp.yaw, out);
   quat.rotateX(out, yp.pitch, out);
   return out;
 }

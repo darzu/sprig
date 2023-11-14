@@ -71,7 +71,7 @@ export function createSpacePath() {
   const path = createEvenPathFromBezierSpline(spline, 5, [0, 1, 0]);
 
   // TODO(@darzu): HACK: fix path rotations
-  const up = tV(0, 1, 0);
+  const up = tV(0, 1, 0); // TODO(@darzu): Z_UP
   const _t1 = vec3.tmp();
   const _t2 = vec3.tmp();
   for (let i = 0; i < path.length - 1; i++) {

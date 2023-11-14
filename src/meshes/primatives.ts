@@ -33,6 +33,8 @@ import { orthonormalize, uintToVec3unorm, vec3Dbg } from "../utils/utils-3d.js";
 import { drawBall } from "../utils/utils-game.js";
 import { createTimberBuilder, createEmptyMesh } from "../wood/wood.js";
 
+// TODO(@darzu): Z_UP, this whole file..
+
 // TODO(@darzu): A bunch of stuff shouldn't be in here like barge and sail stuff
 
 export const mkCubeMesh: () => Mesh = () => ({
@@ -290,11 +292,11 @@ export function resetFlatQuadMesh(
   // NOTE: z:width, x:height
   {
     let i = 0;
-    for (let x = 0; x < height; x++) {
-      for (let z = 0; z < width; z++) {
-        vec3.set(x, 0, z, mesh.pos[i]);
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        vec3.set(x, y, 0, mesh.pos[i]);
         // NOTE: world_z:tex_x, world_x:tex_y
-        vec2.set(z / width, x / height, mesh.uvs![i]);
+        vec2.set(x / width, y / height, mesh.uvs![i]);
         i++;
       }
     }
@@ -303,23 +305,23 @@ export function resetFlatQuadMesh(
   // create each quad
   {
     let i = 0;
-    for (let x = 0; x < height - 1; x++) {
-      for (let z = 0; z < width - 1; z++) {
+    for (let y = 0; y < height - 1; y++) {
+      for (let x = 0; x < width - 1; x++) {
         vec4.set(
-          idx(x, z + 1), //
-          idx(x + 1, z + 1),
-          idx(x + 1, z),
-          idx(x, z),
+          idx(x + 1, y), //
+          idx(x + 1, y + 1),
+          idx(x, y + 1),
+          idx(x, y),
           mesh.quad[i]
         );
         i++;
 
         if (doubleSided) {
           vec4.set(
-            idx(x, z), //
-            idx(x + 1, z),
-            idx(x + 1, z + 1),
-            idx(x, z + 1),
+            idx(x, y), //
+            idx(x, y + 1),
+            idx(x + 1, y + 1),
+            idx(x + 1, y),
             mesh.quad[i]
           );
           i++;
@@ -330,11 +332,11 @@ export function resetFlatQuadMesh(
   }
 
   // TODO(@darzu): PERF. this is soo much wasted memory
-  mesh.normals!.forEach((n) => vec3.set(0, 1, 0, n));
+  mesh.normals!.forEach((n) => vec3.set(0, 0, 1, n));
   mesh.tangents!.forEach((n) => vec3.set(-1, 0, 0, n));
 
-  function idx(x: number, z: number): number {
-    return z + x * width;
+  function idx(x: number, y: number): number {
+    return x + y * width;
   }
   // TODO(@darzu): return
 }
@@ -359,13 +361,6 @@ export function createFlatQuadMesh(
     surfaceIds: range(quadNum).map((_, i) => i + 1),
     usesProvoking: true,
   };
-
-  assert(width > 1 && height > 1);
-  assert(mesh.uvs);
-  assert(mesh.pos.length === height * width);
-  assert(mesh.quad.length === height * width * (doubleSided ? 2 : 1));
-  assert(mesh.normals!.length === mesh.pos.length);
-  assert(mesh.tangents!.length === mesh.pos.length);
 
   resetFlatQuadMesh(width, height, mesh, doubleSided);
 
@@ -643,6 +638,7 @@ export const BULLET_MESH = mkCubeMesh();
 scaleMesh(BULLET_MESH, 0.3);
 
 export function makeDome(numLon: number, numLat: number, r: number): Mesh {
+  // TODO(@darzu): Z_UP
   assert(numLon % 1 === 0 && numLon > 0);
   assert(numLat % 1 === 0 && numLat > 0);
   const uvs: vec2[] = [];

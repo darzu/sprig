@@ -116,13 +116,14 @@ PERF:
 [ ] reduce triangles on ocean
 */
 
-const DBG_PLAYER = false;
+const DBG_PLAYER = true;
 const DBG_HIDE_LAND = false;
 
 // const SHIP_START_POS = V(100, 0, -100);
 
 // world map is centered around 0,0
-const WORLD_WIDTH = 1024; // width runs +z
+// TODO(@darzu): Z_UP: swap width and height?
+const WORLD_WIDTH = 1024; // width runs +y
 const WORLD_HEIGHT = 512; // height runs +x
 
 const MOTORBOAT_MODE = false;
@@ -135,16 +136,17 @@ const MOTORBOAT_MODE = false;
 
 // const WORLD_HEIGHT = 1024;
 
+// TODO(@darzu): Z_UP: fix x/y inversion
 const worldXToTexY = (x: number) => Math.floor(x + WORLD_HEIGHT / 2);
-const worldZToTexX = (z: number) => Math.floor(z + WORLD_WIDTH / 2);
-const texXToWorldZ = (x: number) => x - WORLD_WIDTH / 2 + 0.5;
+const worldYToTexX = (y: number) => Math.floor(y + WORLD_WIDTH / 2);
+const texXToWorldY = (x: number) => x - WORLD_WIDTH / 2 + 0.5;
 const texYToWorldX = (y: number) => y - WORLD_HEIGHT / 2 + 0.5;
 
-const level2DtoWorld3D = (levelPos: vec2, y: number, out: vec3) =>
+const level2DtoWorld3D = (levelPos: vec2, z: number, out: vec3) =>
   vec3.set(
     texYToWorldX(WORLD_HEIGHT - 1 - levelPos[1]),
-    y,
-    texXToWorldZ(levelPos[0]),
+    texXToWorldY(levelPos[0]),
+    z,
     out
   );
 
@@ -305,14 +307,14 @@ async function setLevelLocal(levelIdx: number) {
   const tower3dPosesAndDirs: [vec3, number][] = levelMap.towers.map(
     ([tPos, tDir]) => [
       level2DtoWorld3D(tPos, STONE_TOWER_HEIGHT, vec3.create()),
-      Math.atan2(-tDir[0], -tDir[1]),
+      Math.atan2(-tDir[0], -tDir[1]), // TODO(@darzu): Z_UP, this dir?
     ]
   );
 
   for (let [pos, angle] of tower3dPosesAndDirs) {
     const stoneTower = await spawnStoneTower();
     vec3.copy(stoneTower.position, pos);
-    quat.setAxisAngle([0, 1, 0], angle, stoneTower.rotation);
+    quat.setAxisAngle([0, 0, 1], angle, stoneTower.rotation);
   }
 
   dbgLogMilestone("Game playable");
@@ -338,8 +340,8 @@ export async function initLD53(hosting: boolean) {
   copyAABB(
     res.camera.maxWorldAABB,
     createAABB(
-      V(-WORLD_HEIGHT * 1.1, -100, -WORLD_WIDTH * 1.1),
-      V(WORLD_HEIGHT * 1.1, 100, WORLD_WIDTH * 1.1)
+      V(-WORLD_HEIGHT * 1.1, -WORLD_WIDTH * 1.1, -100),
+      V(WORLD_HEIGHT * 1.1, WORLD_WIDTH * 1.1, 100)
     )
   );
 
@@ -378,7 +380,7 @@ export async function initLD53(hosting: boolean) {
   sunlight.pointLight.quadratic = 0.0;
   vec3.copy(sunlight.pointLight.ambient, [0.2, 0.2, 0.2]);
   vec3.copy(sunlight.pointLight.diffuse, [0.5, 0.5, 0.5]);
-  EM.set(sunlight, PositionDef, V(50, 300, 10));
+  EM.set(sunlight, PositionDef, V(50, 10, 300));
   EM.set(sunlight, RenderableConstructDef, res.ld53Meshes.ball.proto);
 
   // // pirate test
@@ -416,7 +418,7 @@ export async function initLD53(hosting: boolean) {
   const SKY_HALFSIZE = 1000;
   const domeMesh = makeDome(16, 8, SKY_HALFSIZE);
   const sky = EM.new();
-  EM.set(sky, PositionDef, V(0, -100, 0));
+  EM.set(sky, PositionDef, V(0, 0, -100));
   // const skyMesh = cloneMesh(res.allMeshes.cube.mesh);
   // skyMesh.pos.forEach((p) => vec3.scale(p, SKY_HALFSIZE, p));
   // skyMesh.quad.forEach((f) => vec4.reverse(f, f));
@@ -429,17 +431,18 @@ export async function initLD53(hosting: boolean) {
   // const oceanVertsPerWorldUnit = 0.02;
   const oceanVertsPerWorldUnit = 0.25;
   const worldUnitPerOceanVerts = 1 / oceanVertsPerWorldUnit;
-  const oceanZCount = Math.floor(WORLD_WIDTH * oceanVertsPerWorldUnit);
+  const oceanYCount = Math.floor(WORLD_WIDTH * oceanVertsPerWorldUnit);
   const oceanXCount = Math.floor(WORLD_HEIGHT * oceanVertsPerWorldUnit);
-  const oceanMesh = createFlatQuadMesh(oceanZCount, oceanXCount);
+  // TODO(@darzu): Z_UP, fix y/x swap
+  const oceanMesh = createFlatQuadMesh(oceanYCount, oceanXCount);
   const maxSurfId = max(oceanMesh.surfaceIds);
   // console.log("maxSurfId");
   // console.log(maxSurfId);
   const oceanAABB = createAABB();
   oceanMesh.pos.forEach((p, i) => {
     const x = p[0] * worldUnitPerOceanVerts - WORLD_HEIGHT * 0.5;
-    const z = p[2] * worldUnitPerOceanVerts - WORLD_WIDTH * 0.5;
-    const y = 0.0;
+    const y = p[1] * worldUnitPerOceanVerts - WORLD_WIDTH * 0.5;
+    const z = 0.0;
     p[0] = x;
     p[1] = y;
     p[2] = z;
@@ -448,9 +451,10 @@ export async function initLD53(hosting: boolean) {
   const oceanSize = getSizeFromAABB(oceanAABB, vec3.create());
   function uvToPos([u, v]: vec2, out: vec3): vec3 {
     // console.log(u + " " + v);
+    // TODO(@darzu): Z_UP, swap uv ?
     out[0] = v * oceanSize[0] + oceanAABB.min[0];
-    out[1] = 0;
-    out[2] = u * oceanSize[2] + oceanAABB.min[2];
+    out[1] = u * oceanSize[1] + oceanAABB.min[1];
+    out[2] = 0;
     // if (dbgOnce("uvToPos")) {
     //   console.log("uvToPos");
     //   console.dir(oceanSize);
@@ -469,6 +473,7 @@ export async function initLD53(hosting: boolean) {
 
   // load level
   const level = await EM.whenResources(LevelMapDef);
+  // TODO(@darzu): Z_UP on wind angle?
   setWindAngle(
     wind,
     Math.atan2(-level.levelMap.windDir[0], -level.levelMap.windDir[1]) +
@@ -544,7 +549,7 @@ export async function initLD53(hosting: boolean) {
 
         const invShip = mat3.invert(mat3.fromMat4(shipWorld.world.transform));
         const windLocalDir = vec3.transformMat3(res.wind.dir, invShip);
-        const shipLocalDir = V(0, 0, 1);
+        const shipLocalDir = V(0, 1, 0); // TODO(@darzu): Z_UP?
 
         const optimalSailLocalDir = vec3.normalize(
           vec3.add(windLocalDir, shipLocalDir)
@@ -562,7 +567,7 @@ export async function initLD53(hosting: boolean) {
 
         // TODO(@darzu): ANIMATE SAIL TOWARD WIND
         if (vec3.dot(optimalSailLocalDir, shipLocalDir) > 0.01)
-          quatFromUpForward(mast.rotation, V(0, 1, 0), optimalSailLocalDir);
+          quatFromUpForward(mast.rotation, V(0, 0, 1), optimalSailLocalDir);
       }
     );
 
@@ -647,9 +652,9 @@ export async function initLD53(hosting: boolean) {
       // teleporting player to rudder
       const rudder = ship.ld52ship.rudder()!;
       vec3.copy(player.position, rudder.position);
-      player.position[1] = 1.45;
+      player.position[2] = 1.45;
       if (!res.me.host) {
-        player.position[2] += 4 * res.me.pid;
+        player.position[1] += 4 * res.me.pid;
       }
       EM.set(player, TeleportDef);
 
@@ -658,7 +663,7 @@ export async function initLD53(hosting: boolean) {
         assert(CameraFollowDef.isOn(rudder));
         raiseManTurret(player, rudder);
       } else {
-        player.position[2] += 5;
+        player.position[1] += 5;
       }
     }
   });
@@ -684,42 +689,11 @@ export async function initLD53(hosting: boolean) {
       aabb: res.ld53Meshes.ball.aabb,
     });
 
-    // high up:
-    // vec3.copy(g.position, [-140.25, 226.5, -366.78]);
-    // quat.copy(g.rotation, [0.0, -0.99, 0.0, 0.15]);
-    // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
-    // g.cameraFollow.yawOffset = 0.0;
-    // g.cameraFollow.pitchOffset = -1.009;
-
-    // vec3.copy(g.position, [2.47, 46.5, -22.78]);
-    // quat.copy(g.rotation, [0.0, -0.98, 0.0, -0.21]);
-    // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
-    // g.cameraFollow.yawOffset = 0.0;
-    // g.cameraFollow.pitchOffset = -0.623;
-
-    // vec3.copy(g.position, [77.68, 62.5, -370.74]);
-    // quat.copy(g.rotation, [0.0, 0.01, 0.0, -1.0]);
-    // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
-    // g.cameraFollow.yawOffset = 0.0;
-    // g.cameraFollow.pitchOffset = -1.001;
-
-    // vec3.copy(g.position, [63.61, 22.83, -503.91]);
-    // quat.copy(g.rotation, [0.0, 0.89, 0.0, -0.45]);
-    // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
-    // g.cameraFollow.yawOffset = 0.0;
-    // g.cameraFollow.pitchOffset = -0.615;
-
-    // vec3.copy(g.position, [63.88, 42.83, -53.13]);
-    // quat.copy(g.rotation, [0.0, 0.83, 0.0, 0.56]);
-    // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
-    // g.cameraFollow.yawOffset = 0.0;
-    // g.cameraFollow.pitchOffset = -0.738;
-
-    vec3.copy(g.position, [57.26, 21.33, -499.14]);
-    quat.copy(g.rotation, [0.0, -0.92, 0.0, 0.4]);
-    vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
+    vec3.copy(g.position, [-418.98, -350.23, 264.86]);
+    quat.copy(g.rotation, [0.0, 0.0, 0.58, -0.81]);
+    vec3.copy(g.cameraFollow.positionOffset, [0.0, 5.0, 0.0]);
     g.cameraFollow.yawOffset = 0.0;
-    g.cameraFollow.pitchOffset = -0.627;
+    g.cameraFollow.pitchOffset = -5.186;
 
     EM.addSystem(
       "smolGhost",
@@ -753,7 +727,7 @@ export async function initLD53(hosting: boolean) {
     // world gizmo
     const gizmoMesh = await GizmoMesh.gameMesh();
     const worldGizmo = EM.new();
-    EM.set(worldGizmo, PositionDef, V(-WORLD_HEIGHT / 2, 0, -WORLD_WIDTH / 2));
+    EM.set(worldGizmo, PositionDef, V(-WORLD_HEIGHT / 2, -WORLD_WIDTH / 2, 0));
     EM.set(worldGizmo, ScaleDef, V(100, 100, 100));
     EM.set(worldGizmo, RenderableConstructDef, gizmoMesh.proto);
   }
@@ -802,7 +776,7 @@ export async function initLD53(hosting: boolean) {
         if (e.dead.processed) continue;
 
         e.bullet.health = 10;
-        vec3.set(0, -100, 0, e.position);
+        vec3.set(0, 0, -100, e.position);
         e.renderable.hidden = true;
 
         e.dead.processed = true;
@@ -847,15 +821,15 @@ const { Ld53PlayerPropsDef, Ld53PlayerLocalDef, createLd53PlayerAsync } =
         // setCameraFollowPosition(p, "firstPerson");
         // setCameraFollowPosition(p, "thirdPerson");
 
-        p.cameraFollow.positionOffset = V(0, 0, 5);
+        p.cameraFollow.positionOffset = V(0, 5, 0);
         p.controllable.speed *= 0.5;
         p.controllable.sprintMul = 10;
 
-        vec3.copy(p.position, [0, 1, -1.2]);
+        vec3.copy(p.position, [0, -1.2, 1]);
 
-        vec3.copy(p.position, [-28.11, 26.0, -28.39]);
+        vec3.copy(p.position, [-28.11, -28.39, 26.0]);
         quat.copy(p.rotation, [0.0, -0.94, 0.0, 0.34]);
-        vec3.copy(p.cameraFollow.positionOffset, [0.0, 2.0, 5.0]);
+        vec3.copy(p.cameraFollow.positionOffset, [0.0, 5.0, 2.0]);
         p.cameraFollow.yawOffset = 0.0;
         p.cameraFollow.pitchOffset = -0.593;
 
@@ -871,7 +845,8 @@ const { Ld53PlayerPropsDef, Ld53PlayerLocalDef, createLd53PlayerAsync } =
       // quat.rotateX(g.cameraFollow.rotationOffset, quat.IDENTITY, -Math.PI / 8);
       EM.set(p, LinearVelocityDef);
 
-      quat.setAxisAngle([0.0, -1.0, 0.0], 1.62, p.rotation);
+      // TODO(@darzu): Z_UP
+      // quat.setAxisAngle([0.0, -1.0, 0.0], 1.62, p.rotation);
       const sphereMesh = cloneMesh(res.ld53Meshes.ball.mesh);
       const visible = true;
       EM.set(p, RenderableConstructDef, sphereMesh, visible);
@@ -954,7 +929,7 @@ EM.addEagerInit([Ld53PlayerPropsDef], [], [], () => {
 
 const terraVertsPerWorldUnit = 0.25;
 const worldUnitPerTerraVerts = 1 / terraVertsPerWorldUnit;
-const terraZCount = Math.floor(WORLD_WIDTH * terraVertsPerWorldUnit);
+const terraYCount = Math.floor(WORLD_WIDTH * terraVertsPerWorldUnit);
 const terraXCount = Math.floor(WORLD_HEIGHT * terraVertsPerWorldUnit);
 let terraMesh: Mesh | undefined = undefined;
 let terraEnt: EntityW<[typeof RenderableDef]> | undefined = undefined;
@@ -972,8 +947,8 @@ async function resetLand() {
     1,
     mapJfa.sdfTex.format
   );
-  function sampleTerra(worldX: number, worldZ: number) {
-    let xi = ((worldZ + WORLD_WIDTH * 0.5) / WORLD_WIDTH) * terraReader.size[0];
+  function sampleTerra(worldX: number, worldY: number) {
+    let xi = ((worldY + WORLD_WIDTH * 0.5) / WORLD_WIDTH) * terraReader.size[0];
     let yi =
       ((worldX + WORLD_HEIGHT * 0.5) / WORLD_HEIGHT) * terraReader.size[1];
     // xi = clamp(xi, 0, terraReader.size[0]);
@@ -985,7 +960,8 @@ async function resetLand() {
 
   // height map
   if (!terraMesh) {
-    terraMesh = createFlatQuadMesh(terraZCount, terraXCount);
+    // TODO(@darzu): Z_UP
+    terraMesh = createFlatQuadMesh(terraYCount, terraXCount);
 
     // TODO(@darzu): seperate chunks of land
 
@@ -999,7 +975,7 @@ async function resetLand() {
     const hm2 = await EM.whenEntityHas(hm, RenderableDef);
     terraEnt = hm2;
   } else {
-    resetFlatQuadMesh(terraZCount, terraXCount, terraMesh);
+    resetFlatQuadMesh(terraYCount, terraXCount, terraMesh);
   }
 
   // let minY = Infinity;
@@ -1007,15 +983,15 @@ async function resetLand() {
     // console.log("i: " + vec3Dbg(p));
     // vec3.zero(p);
     // TODO(@darzu): very weird to read from mesh x/z here
-    const x = p[0] * worldUnitPerTerraVerts - WORLD_HEIGHT * 0.5;
-    const z = p[2] * worldUnitPerTerraVerts - WORLD_WIDTH * 0.5;
-    let y = sampleTerra(x, z) * 100.0;
+    const x = p[0] * worldUnitPerTerraVerts - WORLD_HEIGHT * 0.5; // TODO(@darzu): Z_UP: swap world height and width?
+    const y = p[1] * worldUnitPerTerraVerts - WORLD_WIDTH * 0.5;
+    let z = sampleTerra(x, y) * 100.0;
     // minY = Math.min(minY, y);
 
     // TODO(@darzu): wierd hack for shorline:
-    if (y <= 1.0) y = -30;
+    if (z <= 1.0) z = -30;
 
-    y += Math.random() * 2.0; // TODO(@darzu): jitter for less uniform look?
+    z += Math.random() * 2.0; // TODO(@darzu): jitter for less uniform look?
 
     p[0] = x;
     p[1] = y;

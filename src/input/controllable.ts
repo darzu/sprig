@@ -92,33 +92,32 @@ EM.addEagerInit([ControllableDef], [], [], () => {
         if (modes.canMove) {
           if (res.inputs.keyDowns["a"]) steerVel[0] -= speed;
           if (res.inputs.keyDowns["d"]) steerVel[0] += speed;
-          if (res.inputs.keyDowns["w"]) steerVel[2] -= speed;
-          if (res.inputs.keyDowns["s"]) steerVel[2] += speed;
+          if (res.inputs.keyDowns["w"]) steerVel[1] += speed;
+          if (res.inputs.keyDowns["s"]) steerVel[1] -= speed;
 
           if (modes.canFly) {
-            if (res.inputs.keyDowns[" "]) steerVel[1] += speed;
-            if (res.inputs.keyDowns["c"]) steerVel[1] -= speed;
+            if (res.inputs.keyDowns[" "]) steerVel[2] += speed;
+            if (res.inputs.keyDowns["c"]) steerVel[2] -= speed;
           }
         }
 
         EM.set(c, LinearVelocityDef);
 
         if (modes.canFall)
-          c.linearVelocity[1] -= c.controllable.gravity * res.time.dt;
+          c.linearVelocity[2] -= c.controllable.gravity * res.time.dt;
 
         if (modes.canJump)
           if (res.inputs.keyClicks[" "])
-            c.linearVelocity[1] = c.controllable.jumpSpeed * res.time.dt;
+            c.linearVelocity[2] = c.controllable.jumpSpeed * res.time.dt;
 
-        // apply our steering velocity
         // apply our steering velocity
         vec3.transformQuat(steerVel, c.rotation, steerVel);
         c.linearVelocity[0] = steerVel[0];
-        c.linearVelocity[2] = steerVel[2];
-        if (modes.canFly) c.linearVelocity[1] = steerVel[1];
+        c.linearVelocity[1] = steerVel[1];
+        if (modes.canFly) c.linearVelocity[2] = steerVel[2];
 
         if (modes.canYaw)
-          quat.rotateY(
+          quat.rotateZ(
             c.rotation,
             -res.inputs.mouseMov[0] * c.controllable.turnSpeed,
             c.rotation

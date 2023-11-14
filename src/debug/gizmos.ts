@@ -6,7 +6,7 @@ import { assert } from "../utils/util.js";
 import { orthonormalize, vec3Dbg } from "../utils/utils-3d.js";
 import { createEmptyMesh } from "../wood/wood.js";
 
-const _UP = V(0, 1, 0);
+const _UP = V(0, 0, 1);
 const _t1 = vec3.create();
 const _t2 = vec3.create();
 const _t3 = vec3.create();
@@ -73,8 +73,8 @@ export function createLineMesh(
 export function createGizmoMesh(): Mesh {
   const mesh = mergeMeshes(
     createLineMesh(0.1, [0.05, 0, 0], [1, 0, 0]),
-    createLineMesh(0.1, [0, 0.05, 0], [0, 1, 0], [1, 0, 0]),
-    createLineMesh(0.1, [0, 0, 0.05], [0, 0, 1])
+    createLineMesh(0.1, [0, 0.05, 0], [0, 1, 0]),
+    createLineMesh(0.1, [0, 0, 0.05], [0, 0, 1], [1, 0, 0])
   ) as Mesh;
   // const mesh = createLineMesh(1, V(0, 0, 0), V(10, 0, 0));
   mesh.colors.forEach((c, i) => {

@@ -385,7 +385,11 @@ export function createHomeShip(): HomeShip {
     railCurve = { p0, p1, p2, p3 };
   }
   const railNodes = ribCount + 2;
-  const railPath = createPathFromBezier(railCurve, railNodes, [0, 1, 0]);
+  const railPath = createPathFromBezier(
+    railCurve,
+    railNodes,
+    [0, 1, 0] // TODO(@darzu): Z_UP
+  );
   fixPathBasis(railPath, [0, 1, 0], [0, 0, 1], [1, 0, 0]);
 
   // let ribEnds: vec3[] = [];

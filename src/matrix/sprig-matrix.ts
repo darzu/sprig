@@ -754,6 +754,7 @@ export module mat4 {
   Smooshes left/right/top/bottom/near/far 
   from y-up, right-handed into [-1,-1,0]x[1,1,1], y-up, left-handed (WebGPU NDC clip-space)
   */
+  // TODO(@darzu): Z_UP?
   export function ortho(
     left: number,
     right: number,
@@ -801,6 +802,7 @@ export module mat4 {
   @param {mat4} out mat4 frustum matrix will be written into
   @returns {mat4} out
   */
+  // TODO(@darzu): Z_UP?
   export function perspective(
     fovy: number,
     aspect: number,
