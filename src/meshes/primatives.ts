@@ -112,31 +112,25 @@ scaleMesh(TETRA_MESH, 2);
 // a = cos PI/3
 // b = sin PI/3
 export const HEX_MESH: () => RawMesh = () => {
-  const A = Math.cos(Math.PI / 3);
-  const B = Math.sin(Math.PI / 3);
-  const topTri = [
-    [4, 2, 1],
-    [1, 5, 4],
-    [0, 5, 1],
-    [4, 3, 2],
-  ];
+  const A = Math.sin(Math.PI / 3);
+  const B = Math.cos(Math.PI / 3);
   const sideTri: (i: number) => vec3[] = (i) => {
     const i2 = (i + 1) % 6;
     return [V(i + 6, i, i2), V(i + 6, i2, i2 + 6)];
   };
   const pos: vec3[] = [
-    V(+1, 1, +0),
-    V(+A, 1, +B),
-    V(-A, 1, +B),
-    V(-1, 1, +0),
-    V(-A, 1, -B),
-    V(+A, 1, -B),
-    V(+1, 0, +0),
-    V(+A, 0, +B),
-    V(-A, 0, +B),
-    V(-1, 0, +0),
-    V(-A, 0, -B),
-    V(+A, 0, -B),
+    V(+0, +1, 1),
+    V(+A, +B, 1),
+    V(+A, -B, 1),
+    V(+0, -1, 1),
+    V(-A, -B, 1),
+    V(-A, +B, 1),
+    V(+0, +1, 0),
+    V(+A, +B, 0),
+    V(+A, -B, 0),
+    V(+0, -1, 0),
+    V(-A, -B, 0),
+    V(-A, +B, 0),
   ];
   const tri: vec3[] = [
     // top 4

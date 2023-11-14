@@ -98,45 +98,43 @@ export async function initShadingGame() {
   // EM.set(sun, PositionDef, V(100, 100, 0));
   // EM.set(sun, PositionDef, V(-10, 10, 10));
   EM.set(sun, PositionDef, V(100, 100, 100));
-  EM.set(sun, LinearVelocityDef, V(0.001, 0.001, 0.0));
+  EM.set(sun, LinearVelocityDef, V(0.001, 0, 0.001));
   EM.set(sun, RenderableConstructDef, sg_meshes.cube.proto);
   sun.pointLight.constant = 1.0;
   sun.pointLight.linear = 0.0;
   sun.pointLight.quadratic = 0.0;
   vec3.copy(sun.pointLight.ambient, [0.2, 0.2, 0.2]);
   vec3.copy(sun.pointLight.diffuse, [0.5, 0.5, 0.5]);
-  EM.set(sun, PositionDef, V(50, 300, 10));
+  EM.set(sun, PositionDef, V(50, 10, 300));
 
   // ground
   const ground = EM.new();
   EM.set(ground, RenderableConstructDef, sg_meshes.hex.proto);
   EM.set(ground, ColorDef, ENDESGA16.blue);
-  EM.set(ground, PositionDef, V(0, -10, 0));
+  EM.set(ground, PositionDef, V(0, 0, -10));
   EM.set(ground, ScaleDef, V(10, 10, 10));
 
   // gizmo
   const gizmoMesh = createGizmoMesh();
   const gizmo = EM.new();
   EM.set(gizmo, RenderableConstructDef, gizmoMesh);
-  EM.set(gizmo, PositionDef, V(0, 1, 0));
+  EM.set(gizmo, PositionDef, V(0, 0, 0));
 
   // avatar
   const g = createGhost();
   g.position[1] = 5;
   EM.set(g, RenderableConstructDef, sg_meshes.ball.proto);
-  // vec3.copy(g.position, [2.44, 6.81, 0.96]);
-  // quat.copy(g.rotation, [0.0, 0.61, 0.0, 0.79]);
-  // g.cameraFollow.pitchOffset = -0.553;
-  vec3.copy(g.position, [-0.5, 10.7, 15.56]);
-  quat.copy(g.rotation, [0.0, -0.09, 0.0, 0.99]);
-  // vec3.copy(g.cameraFollow.positionOffset, [0.00,0.00,0.00]);
-  // g.cameraFollow.yawOffset = 0.0;
-  g.cameraFollow.pitchOffset = -0.32;
+
+  vec3.copy(g.position, [-13.21, -12.08, 10.7]);
+  quat.copy(g.rotation, [0.0, 0.0, -0.46, 0.89]);
+  vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
+  g.cameraFollow.yawOffset = 0.0;
+  g.cameraFollow.pitchOffset = 1.182;
 
   // objects
   const obj = EM.new();
   EM.set(obj, RenderableConstructDef, sg_meshes.grappleGun.proto);
-  EM.set(obj, PositionDef, V(0, 4, 0));
+  EM.set(obj, PositionDef, V(0, 0, 4));
   EM.set(obj, ColorDef, ENDESGA16.midBrown);
   EM.set(obj, AngularVelocityDef, V(0.001, 0.00013, 0.00017));
 
@@ -145,7 +143,7 @@ export async function initShadingGame() {
     const W = 5;
     let worldCorners: vec3[] = [];
     for (let i = 0; i < 4; i++) {
-      const pos = V(jitter(W), jitter(W) + W, jitter(W));
+      const pos = V(jitter(W), jitter(W), jitter(W) + W);
       worldCorners.push(pos);
       const p = EM.new();
       EM.set(p, RenderableConstructDef, sg_meshes.ball.proto);
