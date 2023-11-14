@@ -638,7 +638,6 @@ export const BULLET_MESH = mkCubeMesh();
 scaleMesh(BULLET_MESH, 0.3);
 
 export function makeDome(numLon: number, numLat: number, r: number): Mesh {
-  // TODO(@darzu): Z_UP
   assert(numLon % 1 === 0 && numLon > 0);
   assert(numLat % 1 === 0 && numLat > 0);
   const uvs: vec2[] = [];
@@ -651,8 +650,8 @@ export function makeDome(numLon: number, numLat: number, r: number): Mesh {
     for (let lon = 0; lon < numLon; lon++) {
       const azi = Math.PI * 2 * (lon / numLon);
       const x = r * Math.sin(inc) * Math.cos(azi);
-      const z = r * Math.sin(inc) * Math.sin(azi);
-      const y = r * Math.cos(inc);
+      const y = r * Math.sin(inc) * Math.sin(azi);
+      const z = r * Math.cos(inc);
       pos.push(V(x, y, z));
       const u = azi / (Math.PI * 2.0);
       const v = 1 - inc / (Math.PI * 0.5);
