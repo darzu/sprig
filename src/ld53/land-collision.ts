@@ -101,13 +101,13 @@ EM.addSystem(
     );
     //console.log(corners);
 
-    function isLand(x: number, z: number) {
+    function isLand(x: number, y: number) {
       return (
-        x < -WORLD_HEIGHT / 2 ||
-        x > WORLD_HEIGHT / 2 ||
-        z < -WORLD_WIDTH / 2 ||
-        z > WORLD_WIDTH / 2 ||
-        res.land.sample(x, z) * 100.0 > 1.0
+        x < -WORLD_WIDTH / 2 ||
+        x > WORLD_WIDTH / 2 ||
+        y < -WORLD_HEIGHT / 2 ||
+        y > WORLD_HEIGHT / 2 ||
+        res.land.sample(x, y) * 100.0 > 1.0
       );
     }
 
@@ -121,7 +121,7 @@ EM.addSystem(
       // first, see if the corner itself is making contact
       if (isLand(corner[0], corner[1])) {
         // nudge directly away from corner
-        const nudge = tV(-cornersFromCenter[i][0], 0, -cornersFromCenter[i][1]);
+        const nudge = tV(-cornersFromCenter[i][0], -cornersFromCenter[i][1], 0);
         console.log(`nudge is ${vec3Dbg(nudge)}`);
         vec3.normalize(nudge, nudge);
         vec3.scale(nudge, NUDGE_DIST, nudge);
@@ -148,8 +148,8 @@ EM.addSystem(
           //console.log(`touching land at face ${i}`);
           const dist = vec2.sub(neighbor, corner, pointTemp);
           const nudge = vec3.cross(
-            [0, 1, 0],
-            vec3.set(dist[0], 0, dist[1], nudgeTemp),
+            [0, 0, 1],
+            vec3.set(dist[0], dist[1], 0, nudgeTemp),
             nudgeTemp
           );
           vec3.normalize(nudge, nudge);

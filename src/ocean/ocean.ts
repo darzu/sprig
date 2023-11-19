@@ -112,6 +112,7 @@ EM.registerSerializerPair(
 export const oceanJfa = createJfaPipelines(uvMaskTex, "exterior");
 
 export async function initOcean(oceanMesh: Mesh, color: vec3) {
+  // TODO(@darzu): Z_UP fix ocean
   // console.log("initOcean");
   const res = await EM.whenResources(RendererDef, TimeDef);
 

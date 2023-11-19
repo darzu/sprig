@@ -122,9 +122,8 @@ const DBG_HIDE_LAND = false;
 // const SHIP_START_POS = V(100, 0, -100);
 
 // world map is centered around 0,0
-// TODO(@darzu): Z_UP: swap width and height?
-const WORLD_WIDTH = 1024; // width runs +y
-const WORLD_HEIGHT = 512; // height runs +x
+const WORLD_WIDTH = 1024; // width runs +x
+const WORLD_HEIGHT = 512; // height runs +y
 
 const MOTORBOAT_MODE = false;
 
@@ -137,18 +136,13 @@ const MOTORBOAT_MODE = false;
 // const WORLD_HEIGHT = 1024;
 
 // TODO(@darzu): Z_UP: fix x/y inversion
-const worldXToTexY = (x: number) => Math.floor(x + WORLD_HEIGHT / 2);
-const worldYToTexX = (y: number) => Math.floor(y + WORLD_WIDTH / 2);
-const texXToWorldY = (x: number) => x - WORLD_WIDTH / 2 + 0.5;
-const texYToWorldX = (y: number) => y - WORLD_HEIGHT / 2 + 0.5;
+const worldXToTexX = (x: number) => Math.floor(x + WORLD_WIDTH / 2);
+const worldYToTexY = (y: number) => Math.floor(y + WORLD_HEIGHT / 2);
+const texXToWorldX = (x: number) => x + 0.5 - WORLD_WIDTH / 2;
+const texYToWorldY = (y: number) => y + 0.5 - WORLD_HEIGHT / 2;
 
 const level2DtoWorld3D = (levelPos: vec2, z: number, out: vec3) =>
-  vec3.set(
-    texYToWorldX(WORLD_HEIGHT - 1 - levelPos[1]),
-    texXToWorldY(levelPos[0]),
-    z,
-    out
-  );
+  vec3.set(texXToWorldX(levelPos[0]), texYToWorldY(levelPos[1]), z, out);
 
 export const mapJfa = createJfaPipelines(LandMapTexPtr, "exterior");
 
@@ -232,6 +226,7 @@ async function hostResetLevel(levelIdx: number) {
   ship.ld52ship.rudder()!.yawpitch.yaw = 0;
 
   // set map wind angle
+  // TODO(@darzu): Z_UP: verify wind direction matches expectations
   setWindAngle(
     wind,
     Math.atan2(-levelMap.windDir[0], -levelMap.windDir[1]) + Math.PI / 2
@@ -307,11 +302,13 @@ async function setLevelLocal(levelIdx: number) {
   const tower3dPosesAndDirs: [vec3, number][] = levelMap.towers.map(
     ([tPos, tDir]) => [
       level2DtoWorld3D(tPos, STONE_TOWER_HEIGHT, vec3.create()),
-      Math.atan2(-tDir[0], -tDir[1]), // TODO(@darzu): Z_UP, this dir?
+      // TODO(@darzu): Z_UP: verify tower dir
+      Math.atan2(-tDir[0], -tDir[1]),
     ]
   );
 
   for (let [pos, angle] of tower3dPosesAndDirs) {
+    // TODO(@darzu): Z_UP stone towers
     const stoneTower = await spawnStoneTower();
     vec3.copy(stoneTower.position, pos);
     quat.setAxisAngle([0, 0, 1], angle, stoneTower.rotation);
@@ -340,8 +337,8 @@ export async function initLD53(hosting: boolean) {
   copyAABB(
     res.camera.maxWorldAABB,
     createAABB(
-      V(-WORLD_HEIGHT * 1.1, -WORLD_WIDTH * 1.1, -100),
-      V(WORLD_HEIGHT * 1.1, WORLD_WIDTH * 1.1, 100)
+      V(-WORLD_WIDTH * 1.1, -WORLD_HEIGHT * 1.1, -100),
+      V(WORLD_WIDTH * 1.1, WORLD_HEIGHT * 1.1, 100)
     )
   );
 
@@ -431,17 +428,17 @@ export async function initLD53(hosting: boolean) {
   // const oceanVertsPerWorldUnit = 0.02;
   const oceanVertsPerWorldUnit = 0.25;
   const worldUnitPerOceanVerts = 1 / oceanVertsPerWorldUnit;
-  const oceanYCount = Math.floor(WORLD_WIDTH * oceanVertsPerWorldUnit);
-  const oceanXCount = Math.floor(WORLD_HEIGHT * oceanVertsPerWorldUnit);
+  const oceanXCount = Math.floor(WORLD_WIDTH * oceanVertsPerWorldUnit);
+  const oceanYCount = Math.floor(WORLD_HEIGHT * oceanVertsPerWorldUnit);
   // TODO(@darzu): Z_UP, fix y/x swap
-  const oceanMesh = createFlatQuadMesh(oceanYCount, oceanXCount);
+  const oceanMesh = createFlatQuadMesh(oceanXCount, oceanYCount);
   const maxSurfId = max(oceanMesh.surfaceIds);
   // console.log("maxSurfId");
   // console.log(maxSurfId);
   const oceanAABB = createAABB();
   oceanMesh.pos.forEach((p, i) => {
-    const x = p[0] * worldUnitPerOceanVerts - WORLD_HEIGHT * 0.5;
-    const y = p[1] * worldUnitPerOceanVerts - WORLD_WIDTH * 0.5;
+    const x = p[0] * worldUnitPerOceanVerts - WORLD_WIDTH * 0.5;
+    const y = p[1] * worldUnitPerOceanVerts - WORLD_HEIGHT * 0.5;
     const z = 0.0;
     p[0] = x;
     p[1] = y;
@@ -451,9 +448,8 @@ export async function initLD53(hosting: boolean) {
   const oceanSize = getSizeFromAABB(oceanAABB, vec3.create());
   function uvToPos([u, v]: vec2, out: vec3): vec3 {
     // console.log(u + " " + v);
-    // TODO(@darzu): Z_UP, swap uv ?
-    out[0] = v * oceanSize[0] + oceanAABB.min[0];
-    out[1] = u * oceanSize[1] + oceanAABB.min[1];
+    out[0] = u * oceanSize[0] + oceanAABB.min[0];
+    out[1] = v * oceanSize[1] + oceanAABB.min[1];
     out[2] = 0;
     // if (dbgOnce("uvToPos")) {
     //   console.log("uvToPos");
@@ -473,7 +469,7 @@ export async function initLD53(hosting: boolean) {
 
   // load level
   const level = await EM.whenResources(LevelMapDef);
-  // TODO(@darzu): Z_UP on wind angle?
+  // TODO(@darzu): Z_UP, verify wind angle
   setWindAngle(
     wind,
     Math.atan2(-level.levelMap.windDir[0], -level.levelMap.windDir[1]) +
@@ -590,6 +586,7 @@ export async function initLD53(hosting: boolean) {
 
   // bouyancy
   if (!"true") {
+    // TODO(@darzu): Z_UP for bouyancy
     const bouyDef = EM.defineComponent("bouy", () => true);
     const buoys: EntityW<[typeof PositionDef]>[] = [];
     for (let u = 0.4; u <= 0.6; u += 0.02) {
@@ -691,7 +688,7 @@ export async function initLD53(hosting: boolean) {
 
     vec3.copy(g.position, [-418.98, -350.23, 264.86]);
     quat.copy(g.rotation, [0.0, 0.0, 0.58, -0.81]);
-    vec3.copy(g.cameraFollow.positionOffset, [0.0, 5.0, 0.0]);
+    vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
     g.cameraFollow.yawOffset = 0.0;
     g.cameraFollow.pitchOffset = -5.186;
 
@@ -727,7 +724,7 @@ export async function initLD53(hosting: boolean) {
     // world gizmo
     const gizmoMesh = await GizmoMesh.gameMesh();
     const worldGizmo = EM.new();
-    EM.set(worldGizmo, PositionDef, V(-WORLD_HEIGHT / 2, -WORLD_WIDTH / 2, 0));
+    EM.set(worldGizmo, PositionDef, V(-WORLD_WIDTH / 2, -WORLD_HEIGHT / 2, 0));
     EM.set(worldGizmo, ScaleDef, V(100, 100, 100));
     EM.set(worldGizmo, RenderableConstructDef, gizmoMesh.proto);
   }
@@ -929,8 +926,8 @@ EM.addEagerInit([Ld53PlayerPropsDef], [], [], () => {
 
 const terraVertsPerWorldUnit = 0.25;
 const worldUnitPerTerraVerts = 1 / terraVertsPerWorldUnit;
-const terraYCount = Math.floor(WORLD_WIDTH * terraVertsPerWorldUnit);
-const terraXCount = Math.floor(WORLD_HEIGHT * terraVertsPerWorldUnit);
+const terraXCount = Math.floor(WORLD_WIDTH * terraVertsPerWorldUnit);
+const terraYCount = Math.floor(WORLD_HEIGHT * terraVertsPerWorldUnit);
 let terraMesh: Mesh | undefined = undefined;
 let terraEnt: EntityW<[typeof RenderableDef]> | undefined = undefined;
 async function resetLand() {
@@ -948,9 +945,9 @@ async function resetLand() {
     mapJfa.sdfTex.format
   );
   function sampleTerra(worldX: number, worldY: number) {
-    let xi = ((worldY + WORLD_WIDTH * 0.5) / WORLD_WIDTH) * terraReader.size[0];
+    let xi = ((worldX + WORLD_WIDTH * 0.5) / WORLD_WIDTH) * terraReader.size[0];
     let yi =
-      ((worldX + WORLD_HEIGHT * 0.5) / WORLD_HEIGHT) * terraReader.size[1];
+      ((worldY + WORLD_HEIGHT * 0.5) / WORLD_HEIGHT) * terraReader.size[1];
     // xi = clamp(xi, 0, terraReader.size[0]);
     // yi = clamp(yi, 0, terraReader.size[1]);
     const height = terraReader.sample(xi, yi) / 256;
@@ -961,7 +958,7 @@ async function resetLand() {
   // height map
   if (!terraMesh) {
     // TODO(@darzu): Z_UP
-    terraMesh = createFlatQuadMesh(terraYCount, terraXCount);
+    terraMesh = createFlatQuadMesh(terraXCount, terraYCount);
 
     // TODO(@darzu): seperate chunks of land
 
@@ -975,7 +972,7 @@ async function resetLand() {
     const hm2 = await EM.whenEntityHas(hm, RenderableDef);
     terraEnt = hm2;
   } else {
-    resetFlatQuadMesh(terraYCount, terraXCount, terraMesh);
+    resetFlatQuadMesh(terraXCount, terraYCount, terraMesh);
   }
 
   // let minY = Infinity;
@@ -983,8 +980,8 @@ async function resetLand() {
     // console.log("i: " + vec3Dbg(p));
     // vec3.zero(p);
     // TODO(@darzu): very weird to read from mesh x/z here
-    const x = p[0] * worldUnitPerTerraVerts - WORLD_HEIGHT * 0.5; // TODO(@darzu): Z_UP: swap world height and width?
-    const y = p[1] * worldUnitPerTerraVerts - WORLD_WIDTH * 0.5;
+    const x = p[0] * worldUnitPerTerraVerts - WORLD_WIDTH * 0.5;
+    const y = p[1] * worldUnitPerTerraVerts - WORLD_HEIGHT * 0.5;
     let z = sampleTerra(x, y) * 100.0;
     // minY = Math.min(minY, y);
 
