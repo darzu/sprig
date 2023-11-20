@@ -437,15 +437,13 @@ export async function initLD53(hosting: boolean) {
   // console.log(maxSurfId);
   const oceanAABB = createAABB();
   oceanMesh.pos.forEach((p, i) => {
-    const x = p[0] * worldUnitPerOceanVerts - WORLD_WIDTH * 0.5;
-    const y = p[1] * worldUnitPerOceanVerts - WORLD_HEIGHT * 0.5;
-    const z = 0.0;
-    p[0] = x;
-    p[1] = y;
-    p[2] = z;
+    p[0] = p[0] * worldUnitPerOceanVerts - WORLD_WIDTH * 0.5;
+    p[1] = p[1] * worldUnitPerOceanVerts - WORLD_HEIGHT * 0.5;
+    p[2] = 0.0;
     updateAABBWithPoint(oceanAABB, p);
   });
   const oceanSize = getSizeFromAABB(oceanAABB, vec3.create());
+  // TODO(@darzu): how does this uvToPos match with the ocean's gpu-uv-unwrapped thingy?
   function uvToPos([u, v]: vec2, out: vec3): vec3 {
     // console.log(u + " " + v);
     out[0] = u * oceanSize[0] + oceanAABB.min[0];

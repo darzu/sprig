@@ -335,6 +335,8 @@ export function resetFlatQuadMesh(
   // TODO(@darzu): return
 }
 
+// Creates a flat mesh on the XY plane with grid
+//  spacing of 1 and width * height number of positions
 export function createFlatQuadMesh(
   width: number,
   height: number,

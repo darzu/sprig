@@ -71,12 +71,12 @@ fn vert_main(input: VertexInput) -> VertexOutput {
     let tangent = input.tangent;
     let perp = cross(tangent, normal);
 
-    let flattenedPos = vec3<f32>(uv.x - 1.0, 0, uv.y) * 1000;
+    // let flattenedPos = vec3<f32>(uv.x - 1.0, 0, uv.y) * 1000;
     // TODO(@darzu): we're not totally sure about x,y,z vs normal,tangent,perp
     let surfBasis = mat3x3<f32>(perp, normal, tangent);
     // TODO(@darzu): PERF. don't transform twice..
     let oldWorldPos = meshUni.transform * vec4<f32>(position, 1.0);
-    let gerst = gerstner(oldWorldPos.zx, scene.time);
+    let gerst = gerstner(oldWorldPos.xy, scene.time);
     // let gerst = gerstner(uv * 1000, scene.time * .001);
 
     // let displacedPos = position;

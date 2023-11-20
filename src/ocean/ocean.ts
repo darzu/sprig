@@ -136,13 +136,15 @@ export async function initOcean(oceanMesh: Mesh, color: vec3) {
   let ocean2 = await EM.whenEntityHas(ocean, RenderableDef, RenderDataOceanDef);
   // let ocean2 = await EM.whenEntityHas(ocean, RenderableDef, RenderDataStdDef);
 
-  // TODO(@darzu):
+  // TODO(@darzu): dbging ?
   const preOceanGPU = performance.now();
 
   res.renderer.renderer
     .getCyResource(oceanPoolPtr)!
     .updateUniform(ocean2.renderable.meshHandle, ocean2.renderDataOcean);
 
+  // TODO(@darzu): seperate and compose uv unwrapping as its own feature with a more sane
+  //  integration w/ the ocean stuff
   res.renderer.renderer.submitPipelines(
     [ocean2.renderable.meshHandle],
     // [unwrapPipeline, unwrapPipeline2]
@@ -199,6 +201,7 @@ export async function initOcean(oceanMesh: Mesh, color: vec3) {
     oceanJfa.sdfTex.format
   );
 
+  // TODO(@darzu): re-enable all these texture reader things
   const uvToPos = (out: vec3, uv: vec2) => {
     dbgLogOnce(`uvToPos is disabled! tex format issues`, undefined, true);
     const x = uv[0] * uvToPosReader.size[0];
