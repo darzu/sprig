@@ -152,7 +152,8 @@ export function initDevConsole() {
         `entities:${EM.entities.size} ` +
         `skew: ${skew.join(",")} ` +
         `ping: ${ping.join(",")} ` +
-        `WebGPU pipelines: ${pipelineTimesTxts.join(",")} ` +
+        // TODO(@darzu): confirm ms units. I think these are ms?
+        `WebGPU pipelines (ms): ${pipelineTimesTxts.join(",")} ` +
         (PERF_DBG_F32S
           ? `f32s: ${(
               (newF32s * Float32Array.BYTES_PER_ELEMENT) /

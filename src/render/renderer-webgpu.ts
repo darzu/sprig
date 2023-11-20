@@ -435,6 +435,7 @@ export function createRenderer(
     mappedAtCreation: false, // mapped post texture copy
   });
   async function stats(): Promise<Map<string, bigint>> {
+    // TODO(@darzu): what units are these stats in?
     if (!timestampQuerySet) return new Map();
 
     // console.log("getting stats!");
