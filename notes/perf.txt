@@ -443,3 +443,7 @@ TODO: read all the asm.js material
 
 Chrome on mac:
   open -a "Google Chrome Canary" --args --enable-dawn-features=allow_unsafe_apis
+
+gl-matrix perf boost?
+  "Regarding the current performance in modern web browsers, calling glMatrix.setMatrixArrayType(Array) to use normal arrays instead of Float32Arrays can greatly increase the performance."
+  https://github.com/toji/gl-matrix

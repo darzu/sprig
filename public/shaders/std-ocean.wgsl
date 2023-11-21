@@ -69,11 +69,13 @@ fn vert_main(input: VertexInput) -> VertexOutput {
     let color = input.color;
     let normal = input.normal;
     let tangent = input.tangent;
+    // let normal = vec3<f32>(0.0, 0.0, 1.0);
+    // let tangent = vec3<f32>(1.0, 0.0, 0.0);
     let perp = cross(tangent, normal);
 
     // let flattenedPos = vec3<f32>(uv.x - 1.0, 0, uv.y) * 1000;
     // TODO(@darzu): we're not totally sure about x,y,z vs normal,tangent,perp
-    let surfBasis = mat3x3<f32>(perp, normal, tangent);
+    let surfBasis = mat3x3<f32>(tangent/*+x*/, perp/*+y*/, normal/*+z*/);
     // TODO(@darzu): PERF. don't transform twice..
     let oldWorldPos = meshUni.transform * vec4<f32>(position, 1.0);
     let gerst = gerstner(oldWorldPos.xy, scene.time);

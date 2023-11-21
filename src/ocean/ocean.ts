@@ -265,6 +265,7 @@ export async function initOcean(oceanMesh: Mesh, color: vec3) {
     const norm = uvToNorm(__temp3, uv);
     const tang = uvToTang(__temp4, uv);
     const perp = vec3.cross(tang, norm, __temp5);
+    // TODO(@darzu): Z_UP: i think we want to scale disp.x by tangent, .y by perp, .z by norm
     const disp = vec3.add(
       vec3.scale(perp, outDisp[0], __temp6),
       vec3.add(

@@ -327,7 +327,7 @@ export function resetFlatQuadMesh(
 
   // TODO(@darzu): PERF. this is soo much wasted memory
   mesh.normals!.forEach((n) => vec3.set(0, 0, 1, n));
-  mesh.tangents!.forEach((n) => vec3.set(-1, 0, 0, n));
+  mesh.tangents!.forEach((n) => vec3.set(1, 0, 0, n));
 
   function idx(x: number, y: number): number {
     return x + y * width;
