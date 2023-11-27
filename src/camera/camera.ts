@@ -14,6 +14,18 @@ import { Phase } from "../ecs/sys-phase.js";
 export type PerspectiveMode = "perspective" | "ortho";
 export type CameraMode = "thirdPerson" | "thirdPersonOverShoulder";
 
+// e.g. <3,4,5> (5 units up, 4 units forward) becomes <3,5,-4>
+const zUpRH_to_yUpRH = new Float32Array([
+  // column 1, x-basis
+  1, 0, 0, 0,
+  // column 2, y-basis, Z goes to Y
+  0, 0, 1, 0,
+  // column 3, z-basis, Y goes to -Z
+  0, -1, 0, 0,
+  // column 4, translation
+  0, 0, 0, 1,
+]) as mat4;
+
 export const CameraDef = EM.defineResource("camera", () => {
   return {
     perspectiveMode: "perspective" as PerspectiveMode,
@@ -81,7 +93,7 @@ export const CameraFollowDef = EM.defineComponent(
 );
 
 export const CAMERA_OFFSETS = {
-  thirdPerson: V(0, 0, 10),
+  thirdPerson: V(0, 10, 0),
   // thirdPersonOverShoulder: [1, 3, 2],
   thirdPersonOverShoulder: V(2, 4, 2),
   firstPerson: V(0, 0, 0),
@@ -210,6 +222,7 @@ EM.addLazyInit([], [CameraComputedDef], () => {
       cameraComputed.width = htmlCanvas.canvas.clientWidth;
       cameraComputed.height = htmlCanvas.canvas.clientHeight;
 
+      // compute the view matrix
       let viewMatrix = mat4.tmp();
       if (targetEnt) {
         const computedTranslation = vec3.add(
@@ -224,26 +237,26 @@ EM.addLazyInit([], [CameraComputedDef], () => {
         );
         vec3.copy(cameraComputed.location, computedTranslation);
       }
-
       const computedCameraRotation = quat.mul(
         camera.rotationOffset,
         camera.rotationError
       );
-
       mat4.mul(
         viewMatrix,
         mat4.fromQuat(computedCameraRotation, mat4.tmp()),
         viewMatrix
       );
-
       const computedCameraTranslation = vec3.add(
         camera.positionOffset,
         camera.cameraPositionError
       );
       // const computedCameraTranslation = camera.positionOffset;
-
       mat4.translate(viewMatrix, computedCameraTranslation, viewMatrix);
       mat4.invert(viewMatrix, viewMatrix);
+
+      // view matrix is in Z-up right-handed, we need
+      // to convert to Y-up right-handed for WebGPU's NDC
+      mat4.mul(zUpRH_to_yUpRH, viewMatrix, viewMatrix);
 
       if (camera.perspectiveMode === "ortho") {
         const ORTHO_SIZE = 10;
@@ -283,6 +296,7 @@ EM.addLazyInit([], [CameraComputedDef], () => {
       );
       let shadowNearFrac = camera.nearClipDist / camera.viewDist;
       for (let i = 0; i < camera.shadowCascades.length; i++) {
+        // TODO(@darzu): Z_UP: transformations based on the projection?
         const shadowFarFrac = camera.shadowCascades[i];
         assert(shadowFarFrac <= 1.0);
         const cascade = cameraComputed.shadowCascadeMats[i];
