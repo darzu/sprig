@@ -245,3 +245,19 @@ Tool & Die Maker:
   "Continuous-feed laser cutting"
 
 USD, "Universal Scene Description", for scenes and prefabs?
+
+"Physically Based Modeling":
+  Board paths
+    wood panels
+  metal bar & pipe paths
+  lathe paths
+    clay, wood, metal
+  glass panes (flat polygons)
+    stainable and joinable w/ wire
+  carved/chisled/sculpted:
+    just regular meshes?
+    wood has: grain direction
+    [ ] can we exploit the subtractive nature? or the additive nature?
+    [ ] track each carve?
+  [ ] forged iron: what structure can we exploit?
+    is it just a path of varying thickness and rotations?

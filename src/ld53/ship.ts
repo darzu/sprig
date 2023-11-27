@@ -38,7 +38,7 @@ import { CameraFollowDef } from "../camera/camera.js";
 import { createSock } from "../wind/windsock.js";
 import { BARGE_AABBS, SHIP_SMALL_AABBS } from "../meshes/primatives.js";
 import { ENDESGA16 } from "../color/palettes.js";
-import { createHomeShip, homeShipAABBs } from "../wood/shipyard.js";
+import { createLD53Ship, ld53ShipAABBs } from "../wood/shipyard.js";
 import { getAABBFromMesh, transformMesh } from "../meshes/mesh.js";
 import { createWoodHealth, WoodHealthDef, WoodStateDef } from "../wood/wood.js";
 import { addGizmoChild } from "../utils/utils-game.js";
@@ -102,7 +102,7 @@ export const { createLd53ShipAsync, Ld53ShipPropsDef } = defineNetEntityHelper({
   build: (ship, res) => {
     // TODO(@darzu):
 
-    const homeShip = createHomeShip();
+    const homeShip = createLD53Ship();
 
     EM.set(
       ship,
@@ -129,7 +129,7 @@ export const { createLd53ShipAsync, Ld53ShipPropsDef } = defineNetEntityHelper({
       shape: "Multi",
       solid: true,
       // TODO(@darzu): integrate these in the assets pipeline
-      children: homeShipAABBs.map((aabb) => ({
+      children: ld53ShipAABBs.map((aabb) => ({
         shape: "AABB",
         solid: true,
         aabb,

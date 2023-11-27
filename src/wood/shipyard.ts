@@ -266,7 +266,8 @@ export function snapToPath(path: Path, w: number, dim: 0 | 1 | 2, out: vec3) {
   return out;
 }
 
-export const homeShipAABBs: AABB[] = [
+// Note: these were manually placed via the modeler
+export const ld53ShipAABBs: AABB[] = [
   { min: V(-10.6, -2.65, -22.1), max: V(-6.6, 3.65, 18.1) },
   { min: V(7.0, -2.65, -22.1), max: V(11.0, 3.65, 18.1) },
   { min: V(-6.8, -2.65, -30.45), max: V(6.4, 3.65, -25.95) },
@@ -278,7 +279,7 @@ export const homeShipAABBs: AABB[] = [
   { min: V(-6.8, -5.95, -26.1), max: V(7.2, 0.35, 22.5) },
 ];
 
-export function createHomeShip(): HomeShip {
+export function createLD53Ship(): HomeShip {
   const _start = performance.now();
   const _timberMesh = createEmptyMesh("homeShip");
 

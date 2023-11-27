@@ -425,7 +425,7 @@ EM.addEagerInit([WoodStateDef], [], [], () => {
                 EM.set(splinter, AngularVelocityDef, spin);
                 vec3.scale(vel, 0.01, vel);
                 EM.set(splinter, LinearVelocityDef, spin);
-                EM.set(splinter, GravityDef, [0, -3 * 0.00001, 0]);
+                EM.set(splinter, GravityDef, [0, 0, -3 * 0.00001]);
               }
 
               if (h.prev && !h.prev.broken) {

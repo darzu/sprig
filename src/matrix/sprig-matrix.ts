@@ -6,8 +6,21 @@ import {
 import * as GLM from "./gl-matrix.js";
 import { dbgAddBlame, dbgClearBlame } from "../utils/util.js";
 
+/*
+Note on notation:
+[1, 0, 0, 0,
+ 0, 1, 0, 0,
+ 0, 0, 1, 0,
+ tx, ty, tz, 0]
+ tx,ty,tz = translate x,y,z
+*/
+
 const EPSILON = 0.000001;
 
+// TODO(@darzu): PERF!! https://github.com/toji/gl-matrix claims:
+//  "Regarding the current performance in modern web browsers, calling
+//   glMatrix.setMatrixArrayType(Array) to use normal arrays instead of
+//   Float32Arrays can greatly increase the performance."
 interface Float32ArrayOfLength<N extends number> extends Float32Array {
   length: N;
 }

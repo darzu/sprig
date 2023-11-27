@@ -578,7 +578,7 @@ export const flyingBrickPool = createEntityPool<
     EM.set(brick, ColorDef);
     EM.set(brick, LifetimeDef);
     EM.set(brick, RenderableConstructDef, res.towerMeshes.cube.proto);
-    EM.set(brick, GravityDef, V(0, -GRAVITY, 0));
+    EM.set(brick, GravityDef, V(0, 0, -GRAVITY));
     EM.set(
       brick,
       ScaleDef,
@@ -840,6 +840,7 @@ EM.addSystem(
         g,
         // 2.0,
         20.0,
+        // TODO(@darzu): Z_UP: fix cannon fire axis?
         [1, 0, 0]
       );
       EM.whenResources(AudioDef, SoundSetDef).then((res) => {

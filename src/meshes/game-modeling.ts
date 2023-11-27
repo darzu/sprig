@@ -15,7 +15,7 @@ import { shadowPipelines } from "../render/pipelines/std-shadow.js";
 import { RenderableConstructDef, RendererDef } from "../render/renderer-ecs.js";
 import { quat, V, vec3 } from "../matrix/sprig-matrix.js";
 import { createGhost } from "../debug/ghost.js";
-import { createHomeShip } from "../wood/shipyard.js";
+import { createLD53Ship } from "../wood/shipyard.js";
 import { TextDef } from "../gui/ui.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { init3DModeler } from "./modeler.js";
@@ -99,7 +99,7 @@ export async function initModelingGame() {
 
   // objects
   const obj = EM.new();
-  const ship = createHomeShip();
+  const ship = createLD53Ship();
   // EM.set(obj, RenderableConstructDef, allMeshes.ship_small.proto);
   EM.set(obj, RenderableConstructDef, ship.timberMesh);
   EM.set(obj, PositionDef, V(0, 0, 0));

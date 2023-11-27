@@ -288,7 +288,7 @@ export function registerEnemyShipSystems() {
               0.02,
               6 * 0.00001,
               10,
-              [0, 0, -1]
+              [0, 1, 0]
             );
           }
         }
