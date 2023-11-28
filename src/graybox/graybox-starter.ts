@@ -61,7 +61,7 @@ export async function initGrayboxStarter() {
   // dbg ghost
   if (DBG_GHOST) {
     const g = createGhost();
-    g.position[1] = 5;
+    g.position[2] = 5;
     EM.set(g, RenderableConstructDef, mesh_cube.proto);
 
     // hover near origin

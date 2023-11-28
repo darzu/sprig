@@ -122,7 +122,7 @@ export async function initShadingGame() {
 
   // avatar
   const g = createGhost();
-  g.position[1] = 5;
+  g.position[2] = 5;
   EM.set(g, RenderableConstructDef, sg_meshes.ball.proto);
 
   vec3.copy(g.position, [-13.21, -12.08, 10.7]);

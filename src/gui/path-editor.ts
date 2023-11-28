@@ -426,6 +426,7 @@ export async function lineStuff() {
     EM.set(vertGlyph, PositionDef, vec3.clone(lnMesh.pos[ln.vi]));
     EM.set(vertGlyph, ColorDef, V(0.1, 0.2 + ln.vi * 0.1, 0.1));
     EM.set(vertGlyph, ScaleDef, V(0.2, 0.2, 0.2));
+    // TODO(@darzu): Z_UP?
     vertGlyph.position[1] = 0.5;
   }
 

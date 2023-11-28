@@ -152,8 +152,8 @@ export const { createLd53ShipAsync, Ld53ShipPropsDef } = defineNetEntityHelper({
 
     const sock = createSock(2.0);
     EM.set(sock, PhysicsParentDef, ship.id);
-    sock.position[1] =
-      mast.position[1] + (mast.collider as AABBCollider).aabb.max[1];
+    sock.position[2] =
+      mast.position[2] + (mast.collider as AABBCollider).aabb.max[2];
 
     const rudder = createRudder(res);
     EM.set(rudder, PhysicsParentDef, ship.id);

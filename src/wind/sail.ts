@@ -254,8 +254,8 @@ export function createMast(
   const sail = createSail(sailWidth, 8, 2);
   EM.set(sail, PhysicsParentDef, ent.id);
   sail.position[0] = -sailWidth;
-  sail.position[1] = 38;
-  sail.position[2] = 0.51;
+  sail.position[1] = 0.51;
+  sail.position[2] = 38;
   ent.mast.sail = createRef(sail);
   return ent;
 }

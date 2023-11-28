@@ -80,7 +80,7 @@ export async function initModelingGame() {
 
   // avatar
   const g = createGhost();
-  g.position[1] = 5;
+  g.position[2] = 5;
   EM.set(g, RenderableConstructDef, allMeshes.ball.proto);
   // vec3.copy(g.position, [2.44, 6.81, 0.96]);
   // quat.copy(g.rotation, [0.0, 0.61, 0.0, 0.79]);

@@ -311,7 +311,7 @@ export async function initGrassGame(hosting: boolean) {
     // vec3.set(0, 3, -1, player.position);
     const rudder = ship.ld52ship.rudder()!;
     vec3.copy(player.position, rudder.position);
-    player.position[1] = 1.45;
+    player.position[2] = 1.45;
     assert(CameraFollowDef.isOn(rudder));
     raiseManTurret(player, rudder);
   }

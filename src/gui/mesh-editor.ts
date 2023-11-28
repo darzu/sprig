@@ -330,6 +330,7 @@ async function createMeshEditor() {
       const theta = Math.atan2(diff[0], diff[2]) + Math.PI * 0.5;
       quat.fromEuler(0, theta, 0, glyph.rotation);
       vec3Mid(glyph.position, pos0, pos1);
+      // TODO(@darzu): Z_UP?
       glyph.position[1] = 0.2;
     }
   }

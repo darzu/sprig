@@ -167,6 +167,8 @@ export const HEX_MESH: () => RawMesh = () => {
   // ],
   return { pos, tri, quad: [], lines, colors: tri.map((_) => V(0, 0, 0)) };
 };
+
+// TODO(@darzu): Z_UP
 export function makePlaneMesh(
   x1: number,
   x2: number,
