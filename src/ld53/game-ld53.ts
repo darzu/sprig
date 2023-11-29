@@ -684,11 +684,11 @@ export async function initLD53(hosting: boolean) {
       aabb: res.ld53Meshes.ball.aabb,
     });
 
-    vec3.copy(g.position, [-418.98, -350.23, 264.86]);
-    quat.copy(g.rotation, [0.0, 0.0, 0.58, -0.81]);
+    vec3.copy(g.position, [-399.61, -333.9, 113.58]);
+    quat.copy(g.rotation, [0.0, 0.0, 0.01, 1.0]);
     vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
     g.cameraFollow.yawOffset = 0.0;
-    g.cameraFollow.pitchOffset = -5.186;
+    g.cameraFollow.pitchOffset = 2.937;
 
     EM.addSystem(
       "smolGhost",

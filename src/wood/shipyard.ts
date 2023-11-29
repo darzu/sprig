@@ -65,6 +65,7 @@ import {
   translatePath,
   translatePathAlongNormal,
 } from "../utils/spline.js";
+import { convertYUpToZUp, convertYUpToZUpAABB } from "../camera/basis.js";
 
 // TODO(@darzu): use arc-length parameterization to resample splines
 
@@ -277,7 +278,7 @@ export const ld53ShipAABBs: AABB[] = [
   { min: V(4.25, -2.65, 17.95), max: V(7.95, 3.65, 22.45) },
   { min: V(-6.15, -2.65, 22.25), max: V(5.55, 3.65, 26.15) },
   { min: V(-6.8, -5.95, -26.1), max: V(7.2, 0.35, 22.5) },
-];
+].map(convertYUpToZUpAABB);
 
 export function createLD53Ship(): HomeShip {
   const _start = performance.now();
@@ -777,6 +778,10 @@ export function createLD53Ship(): HomeShip {
       vec3.add(v, [0, -floorHeight, 0], v);
     });
   }
+
+  // Rotate whole thing for Z-up (double-yikes!)
+  // TODO(@darzu): Z-up: unroll this into the code above
+  _timberMesh.pos.forEach((v) => convertYUpToZUp(v));
 
   // console.dir(_timberMesh.colors);
   _timberMesh.surfaceIds = _timberMesh.colors.map((_, i) => i);

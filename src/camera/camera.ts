@@ -10,21 +10,10 @@ import { yawpitchToQuat } from "../turret/yawpitch.js";
 import { createAABB } from "../physics/aabb.js";
 import { assert, resizeArray } from "../utils/util.js";
 import { Phase } from "../ecs/sys-phase.js";
+import { zUpRH_to_yUpRH } from "./basis.js";
 
 export type PerspectiveMode = "perspective" | "ortho";
 export type CameraMode = "thirdPerson" | "thirdPersonOverShoulder";
-
-// e.g. <3,4,5> (5 units up, 4 units forward) becomes <3,5,-4>
-const zUpRH_to_yUpRH = new Float32Array([
-  // column 1, x-basis
-  1, 0, 0, 0,
-  // column 2, y-basis, Z goes to Y
-  0, 0, 1, 0,
-  // column 3, z-basis, Y goes to -Z
-  0, -1, 0, 0,
-  // column 4, translation
-  0, 0, 0, 1,
-]) as mat4;
 
 export const CameraDef = EM.defineResource("camera", () => {
   return {
