@@ -10,9 +10,9 @@ fn gerstner(uv: vec2<f32>, t: f32) -> mat2x3<f32> {
          let _sin = sin(dot_w_d_uv_phi_t);
          displacement.x += wave.Q * wave.A * D.x * _cos;
          displacement.y += wave.Q * wave.A * D.y * _cos;
-        // TODO(@darzu): what's the right way to handle this?
-        //  displacement.z += wave.A * _sin;
-         displacement.z -= wave.A * _sin;
+        // TODO(@darzu): HACKY. Pre-Z-up had .y -= instead of += . Why?
+         displacement.z += wave.A * _sin;
+        //  displacement.z -= wave.A * _sin;
          normal.x += -1.0 * D.x * wave.w * wave.A * _cos * wave.normalWeight;
          normal.y += -1.0 * D.y * wave.w * wave.A * _cos * wave.normalWeight;
          normal.z += wave.Q * wave.w * wave.A * _sin * wave.normalWeight;

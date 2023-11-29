@@ -146,7 +146,8 @@ export function compute_gerstner(
     const _sin = Math.sin(dot_w_d_uv_phi_t);
     outDisp[0] += wave.Q * wave.A * D[0] * _cos;
     outDisp[1] += wave.Q * wave.A * D[1] * _cos;
-    outDisp[2] -= wave.A * _sin;
+    // outDisp[2] -= wave.A * _sin;
+    outDisp[2] += wave.A * _sin;
 
     outNorm[0] += -1.0 * D[0] * wave.w * wave.A * _cos * wave.normalWeight;
     outNorm[1] += -1.0 * D[1] * wave.w * wave.A * _cos * wave.normalWeight;
