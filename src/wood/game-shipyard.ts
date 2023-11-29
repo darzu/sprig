@@ -48,7 +48,7 @@ import {
   RenderableDef,
 } from "../render/renderer-ecs.js";
 import { tempMat4, tempVec3 } from "../matrix/temp-pool.js";
-import { assert } from "../utils/util.js";
+import { assert, dbgDirOnce } from "../utils/util.js";
 import { TimeDef } from "../time/time.js";
 import {
   createEmptyMesh,
@@ -103,6 +103,7 @@ import { createBarrelMesh } from "./barrel.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { createSpaceBarge } from "../ld54/barge.js";
+import { createGizmoMesh } from "../debug/gizmos.js";
 
 /*
   Game mechanics:
@@ -421,7 +422,7 @@ export async function initShipyardGame(hosting: boolean) {
       g.controllable.speed *= 5;
       g.controllable.sprintMul = 0.2;
       const sphereMesh = cloneMesh(res.allMeshes.ball.mesh);
-      const visible = true;
+      const visible = false;
       EM.set(g, RenderableConstructDef, sphereMesh, visible);
       EM.set(g, ColorDef, ENDESGA16.darkGreen);
       EM.set(g, PositionDef, V(0, 0, 0));
@@ -437,7 +438,8 @@ export async function initShipyardGame(hosting: boolean) {
 
       vec3.copy(g.position, [-21.17, 35.39, 10.27]);
       quat.copy(g.rotation, [0.0, 0.0, -0.94, 0.32]);
-      vec3.copy(g.cameraFollow.positionOffset, [0.0, 30.0, 0.0]);
+      // vec3.copy(g.cameraFollow.positionOffset, [0.0, 30.0, 0.0]);
+      vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
       g.cameraFollow.yawOffset = 0.0;
       g.cameraFollow.pitchOffset = 2.974;
     }

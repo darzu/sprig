@@ -83,6 +83,8 @@ const plankStripe2Color = ENDESGA16.white;
 const strip2StartIdx = 7;
 const strip2EndIdx = 8;
 
+// TODO(@darzu): Bad abstraction. It's annoying to provide all these properties ribCount etc and also
+//  not all wood projects will need/have these
 export interface HomeShip {
   timberState: WoodState;
   timberMesh: Mesh;
@@ -103,6 +105,7 @@ export interface ShipyardUI {
 }
 
 // Note: Made w/ game-font !
+// TODO(@darzu): Z_UP: transform these?
 const keelTemplate: Mesh = {
   pos: [
     V(0.58, 0.0, 1.49),
@@ -161,7 +164,7 @@ const keelTemplate: Mesh = {
   usesProvoking: true,
 };
 const __temp1 = vec3.create();
-export function getPathFrom2DQuadMesh(m: Mesh, up: vec3.InputT): Path {
+export function getPathFrom2DQuadMesh(m: Mesh, perp: vec3.InputT): Path {
   const hpoly = meshToHalfEdgePoly(m);
 
   // find the end face
@@ -187,8 +190,8 @@ export function getPathFrom2DQuadMesh(m: Mesh, up: vec3.InputT): Path {
     let v0 = m.pos[e.orig.vi];
     let v1 = m.pos[e.next.orig.vi];
     let pos = centroid(v0, v1);
-    let dir = vec3.cross(vec3.sub(v0, v1, __temp1), up, __temp1);
-    const rot = quatFromUpForward(quat.create(), up, dir);
+    let dir = vec3.cross(vec3.sub(v0, v1, __temp1), perp, __temp1);
+    const rot = quatFromUpForward(quat.create(), perp, dir);
     path.push({ pos, rot });
 
     if (!e.face) break;
@@ -268,6 +271,7 @@ export function snapToPath(path: Path, w: number, dim: 0 | 1 | 2, out: vec3) {
 }
 
 // Note: these were manually placed via the modeler
+// TODO(@darzu): Z_UP: visualize these to make sure they're right
 export const ld53ShipAABBs: AABB[] = [
   { min: V(-10.6, -2.65, -22.1), max: V(-6.6, 3.65, 18.1) },
   { min: V(7.0, -2.65, -22.1), max: V(11.0, 3.65, 18.1) },
@@ -281,6 +285,12 @@ export const ld53ShipAABBs: AABB[] = [
 ].map(convertYUpToZUpAABB);
 
 export function createLD53Ship(): HomeShip {
+  const KEEL = true;
+  const RIBS = true;
+  const PLANKS = true;
+  const RAIL = true;
+  const TRANSOM = true;
+
   const _start = performance.now();
   const _timberMesh = createEmptyMesh("homeShip");
 
@@ -295,6 +305,7 @@ export function createLD53Ship(): HomeShip {
 
   let keelPath: Path;
   {
+    // TODO(@darzu): Clean up ship's construction (too many transforms, basis changes, etc)
     // const keelTempAABB = getAABBFromMesh(keelTemplate);
     // console.dir(keelTempAABB);
     let keelTemplate2 = transformMesh(
@@ -306,8 +317,10 @@ export function createLD53Ship(): HomeShip {
         [5, 5, 5]
       )
     ) as Mesh;
+    // const keelTemplate2 = keelTemplate;
 
     keelPath = getPathFrom2DQuadMesh(keelTemplate2, [0, 0, 1]);
+    // keelPath = getPathFrom2DQuadMesh(keelTemplate2, [0, 1, 0]);
 
     // fix keel orientation
     // r->g, g->b, b->r
@@ -324,15 +337,16 @@ export function createLD53Ship(): HomeShip {
   keelPath.forEach((p) => updateAABBWithPoint(keelAABB, p.pos));
   const keelSize = getSizeFromAABB(keelAABB, vec3.create());
 
-  appendBoard(
-    builder.mesh,
-    {
-      path: keelPath,
-      width: keelWidth,
-      depth: keelDepth,
-    },
-    keelColor
-  );
+  if (KEEL)
+    appendBoard(
+      builder.mesh,
+      {
+        path: keelPath,
+        width: keelWidth,
+        depth: keelDepth,
+      },
+      keelColor
+    );
 
   // RIBS
   const ribWidth = 0.5;
@@ -454,25 +468,27 @@ export function createLD53Ship(): HomeShip {
     // }
     // if (i === 1) dbgPathWithGizmos(weirdP);
 
-    appendBoard(
-      builder.mesh,
-      {
-        path: bPath,
-        width: ribWidth,
-        depth: ribDepth,
-      },
-      ribColor
-    );
+    if (RIBS)
+      appendBoard(
+        builder.mesh,
+        {
+          path: bPath,
+          width: ribWidth,
+          depth: ribDepth,
+        },
+        ribColor
+      );
 
-    appendBoard(
-      builder.mesh,
-      {
-        path: mirrorPath(clonePath(bPath), V(0, 0, 1)),
-        width: ribWidth,
-        depth: ribDepth,
-      },
-      ribColor
-    );
+    if (RIBS)
+      appendBoard(
+        builder.mesh,
+        {
+          path: mirrorPath(clonePath(bPath), V(0, 0, 1)),
+          width: ribWidth,
+          depth: ribDepth,
+        },
+        ribColor
+      );
   }
 
   // RAIL
@@ -488,24 +504,26 @@ export function createLD53Ship(): HomeShip {
   }
   // rail board:
   const mirrorRailPath = mirrorPath(clonePath(railPath), V(0, 0, 1));
-  appendBoard(
-    builder.mesh,
-    {
-      path: railPath,
-      width: ribWidth,
-      depth: ribDepth,
-    },
-    railColor
-  );
-  appendBoard(
-    builder.mesh,
-    {
-      path: mirrorRailPath,
-      width: ribWidth,
-      depth: ribDepth,
-    },
-    railColor
-  );
+  if (RAIL)
+    appendBoard(
+      builder.mesh,
+      {
+        path: railPath,
+        width: ribWidth,
+        depth: ribDepth,
+      },
+      railColor
+    );
+  if (RAIL)
+    appendBoard(
+      builder.mesh,
+      {
+        path: mirrorRailPath,
+        width: ribWidth,
+        depth: ribDepth,
+      },
+      railColor
+    );
 
   // translatePath(railPath, [0, 0, 8]);
   // dbgPathWithGizmos(railPath);
@@ -608,24 +626,26 @@ export function createLD53Ship(): HomeShip {
     if (stripStartIdx <= i && i <= stripEndIdx) color = plankStripeColor;
     if (strip2StartIdx <= i && i <= strip2EndIdx) color = plankStripe2Color;
 
-    appendBoard(
-      builder.mesh,
-      {
-        path: nodes,
-        width: plankWidth,
-        depth: plankDepth,
-      },
-      color
-    );
-    appendBoard(
-      builder.mesh,
-      {
-        path: mirroredPath,
-        width: plankWidth,
-        depth: plankDepth,
-      },
-      color
-    );
+    if (PLANKS)
+      appendBoard(
+        builder.mesh,
+        {
+          path: nodes,
+          width: plankWidth,
+          depth: plankDepth,
+        },
+        color
+      );
+    if (PLANKS)
+      appendBoard(
+        builder.mesh,
+        {
+          path: mirroredPath,
+          width: plankWidth,
+          depth: plankDepth,
+        },
+        color
+      );
   }
 
   // TRANSOM
@@ -655,15 +675,16 @@ export function createLD53Ship(): HomeShip {
     if (i === 0) color = topPlankColor;
     if (stripStartIdx <= i && i <= stripEndIdx) color = plankStripeColor;
     if (strip2StartIdx <= i && i <= strip2EndIdx) color = plankStripe2Color;
-    appendBoard(
-      builder.mesh,
-      {
-        path: path,
-        width: plankWidth,
-        depth: plankDepth,
-      },
-      color
-    );
+    if (TRANSOM)
+      appendBoard(
+        builder.mesh,
+        {
+          path: path,
+          width: plankWidth,
+          depth: plankDepth,
+        },
+        color
+      );
   }
   // REAR RAIL
   {
@@ -680,15 +701,16 @@ export function createLD53Ship(): HomeShip {
     for (let n of path) {
       quat.fromEuler(-Math.PI / 2, 0, Math.PI / 2, n.rot);
     }
-    appendBoard(
-      builder.mesh,
-      {
-        path: path,
-        width: ribWidth,
-        depth: ribDepth,
-      },
-      railColor
-    );
+    if (RAIL)
+      appendBoard(
+        builder.mesh,
+        {
+          path: path,
+          width: ribWidth,
+          depth: ribDepth,
+        },
+        railColor
+      );
   }
 
   // FLOOR
@@ -746,24 +768,26 @@ export function createLD53Ship(): HomeShip {
       }));
       // dbgPathWithGizmos(path);
       let mirroredPath = mirrorPath(clonePath(path), [0, 0, 1]);
-      appendBoard(
-        builder.mesh,
-        {
-          path: path,
-          width: floorBoardWidth / 2 - floorBoardGap,
-          depth: plankDepth,
-        },
-        floorColor
-      );
-      appendBoard(
-        builder.mesh,
-        {
-          path: mirroredPath,
-          width: floorBoardWidth / 2 - floorBoardGap,
-          depth: plankDepth,
-        },
-        floorColor
-      );
+      if (PLANKS)
+        appendBoard(
+          builder.mesh,
+          {
+            path: path,
+            width: floorBoardWidth / 2 - floorBoardGap,
+            depth: plankDepth,
+          },
+          floorColor
+        );
+      if (PLANKS)
+        appendBoard(
+          builder.mesh,
+          {
+            path: mirroredPath,
+            width: floorBoardWidth / 2 - floorBoardGap,
+            depth: plankDepth,
+          },
+          floorColor
+        );
       // break; // TODO(@darzu):
     }
   }
@@ -771,17 +795,20 @@ export function createLD53Ship(): HomeShip {
   const ceilHeight = floorHeight + 15; // TODO(@darzu): OLD
 
   // ROTATE WHOLE THING (YIKES)
+  // TODO(@darzu): fix up ship construction
   {
-    const rotate = quat.fromEuler(0, -Math.PI / 2, 0);
+    const rotate = quat.fromEuler(Math.PI / 2, 0, 0);
     _timberMesh.pos.forEach((v) => {
       vec3.transformQuat(v, rotate, v);
-      vec3.add(v, [0, -floorHeight, 0], v);
     });
   }
 
-  // Rotate whole thing for Z-up (double-yikes!)
-  // TODO(@darzu): Z-up: unroll this into the code above
-  _timberMesh.pos.forEach((v) => convertYUpToZUp(v));
+  // lower the whole ship so it's main deck is at 0 height
+  const DECK_AT_ZERO = true;
+  if (DECK_AT_ZERO)
+    _timberMesh.pos.forEach((v) => {
+      vec3.add(v, [0, 0, -floorHeight], v);
+    });
 
   // console.dir(_timberMesh.colors);
   _timberMesh.surfaceIds = _timberMesh.colors.map((_, i) => i);

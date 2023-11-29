@@ -2,7 +2,7 @@ import { AABB, getAABBCornersTemp } from "../physics/aabb.js";
 import { createFlatQuadMesh } from "../meshes/primatives.js";
 import { Mesh, mergeMeshes } from "../meshes/mesh.js";
 import { vec3, V, tV } from "../matrix/sprig-matrix.js";
-import { assert } from "../utils/util.js";
+import { assert, dbgDirOnce } from "../utils/util.js";
 import { orthonormalize, vec3Dbg } from "../utils/utils-3d.js";
 import { createEmptyMesh } from "../wood/wood.js";
 
@@ -84,6 +84,7 @@ export function createGizmoMesh(): Mesh {
   });
   (mesh as Mesh).usesProvoking = true;
   // console.dir(mesh);
+
   return mesh;
 }
 

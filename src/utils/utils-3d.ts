@@ -160,6 +160,7 @@ export function orthonormalize(forward: vec3, upish: vec3, outRight: vec3) {
 }
 
 // quat utilities
+// TODO(@darzu): Z_UP ??
 // assumes local up axis is [0,1,0] and forward is [0,0,1]
 const __t1 = vec3.create();
 const __t2 = vec3.create();
