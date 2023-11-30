@@ -558,6 +558,7 @@ export function createSpaceBarge(): SpaceBarge {
       // dbgPathWithGizmos(path);
       for (let n of path) {
         quat.fromEuler(-Math.PI / 2, 0, Math.PI / 2, n.rot);
+        // TODO(@darzu): Z_UP rotateY
         quat.rotateY(n.rot, -Math.PI / 16, n.rot);
       }
       let color = transomColor;

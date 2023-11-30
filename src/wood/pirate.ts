@@ -152,6 +152,7 @@ function rotatePiratePlatform(
   p: EntityW<[typeof PositionDef, typeof RotationDef]>,
   rad: number
 ) {
+  // TODO(@darzu): Z_UP: use yaw/pitch/roll
   vec3.rotateY(p.position, vec3.ZEROS, rad, p.position);
   quat.rotateY(p.rotation, rad, p.rotation);
 }

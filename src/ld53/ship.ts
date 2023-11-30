@@ -52,7 +52,7 @@ import { Phase } from "../ecs/sys-phase.js";
 import { ShipHealthDef } from "./ship-health.js";
 
 // TODO(@darzu): remove / rework "ld52ship"
-export const ShipDef = EM.defineComponent("ld52ship", () => ({
+export const LD52ShipDef = EM.defineComponent("ld52ship", () => ({
   mast: createRef(0, [MastDef, RotationDef]),
   rudder: createRef(0, [
     RudderDef,
@@ -158,7 +158,7 @@ export const { createLd53ShipAsync, Ld53ShipPropsDef } = defineNetEntityHelper({
     const rudder = createRudder(res);
     EM.set(rudder, PhysicsParentDef, ship.id);
     // console.log("setting position");
-    vec3.set(0, 4, -25, rudder.position);
+    vec3.set(-25, 0, 4, rudder.position);
     // console.log(`rudder: ${rudder.id}`);
 
     // addGizmoChild(rudder, 2, [0, 5, 0]);
@@ -178,7 +178,7 @@ export const { createLd53ShipAsync, Ld53ShipPropsDef } = defineNetEntityHelper({
     // create cannons
     const cannonR = createCannonNow(
       res,
-      V(-8, 4.7, -7),
+      V(-8, -7, 4.7),
       Math.PI * 0.5,
       cannonDefaultPitch,
       ship.id
@@ -186,7 +186,7 @@ export const { createLd53ShipAsync, Ld53ShipPropsDef } = defineNetEntityHelper({
     vec3.copy(cannonR.color, ENDESGA16.darkGray);
     const cannonL = createCannonNow(
       res,
-      V(8, 4.7, -7),
+      V(8, -7, 4.7),
       Math.PI * 1.5,
       cannonDefaultPitch,
       ship.id
@@ -194,7 +194,7 @@ export const { createLd53ShipAsync, Ld53ShipPropsDef } = defineNetEntityHelper({
     vec3.copy(cannonL.color, ENDESGA16.darkGray);
 
     // NOTE: we need to build the ship all at once so we don't have dangling references
-    EM.set(ship, ShipDef);
+    EM.set(ship, LD52ShipDef);
     ship.ld52ship.mast = createRef(mast);
     ship.ld52ship.rudder = createRef(rudder);
     ship.ld52ship.cannonR = createRef(cannonR);
@@ -206,18 +206,18 @@ export const { createLd53ShipAsync, Ld53ShipPropsDef } = defineNetEntityHelper({
   },
 });
 
-const AHEAD_DIR = V(0, 0, 1);
+const AHEAD_DIR = V(0, 1, 0);
 
 EM.addSystem(
   "sailShip",
   Phase.GAME_PLAYERS,
-  [ShipDef, WorldFrameDef, RotationDef, LinearVelocityDef],
+  [LD52ShipDef, WorldFrameDef, RotationDef, LinearVelocityDef],
   [],
   (es) => {
     for (let e of es) {
-      // rudderc
+      // rudder
       let yaw = e.ld52ship.rudder()!.yawpitch.yaw;
-      quat.rotateY(e.rotation, yaw * RUDDER_ROTATION_RATE, e.rotation);
+      quat.rotateZ(e.rotation, yaw * RUDDER_ROTATION_RATE, e.rotation);
 
       // acceleration
       const direction = vec3.transformQuat(AHEAD_DIR, e.world.rotation);
@@ -259,49 +259,53 @@ function createRudder(
   res: Resources<[typeof MeDef, typeof RudderPrimMesh.def]>
 ) {
   const rudderMesh = res.mesh_rudderPrim;
-  const ent = EM.new();
-  EM.set(ent, RudderDef);
-  EM.set(ent, RenderableConstructDef, rudderMesh.proto);
+  const rudder = EM.new();
+  EM.set(rudder, RudderDef);
+  EM.set(rudder, RenderableConstructDef, rudderMesh.proto);
   // EM.set(ent, ColorDef, V(0.2, 0.1, 0.05));
-  EM.set(ent, ColorDef, ENDESGA16.midBrown);
-  EM.set(ent, PositionDef);
-  EM.set(ent, RotationDef);
-  EM.set(ent, AuthorityDef, res.me.pid);
+  EM.set(rudder, ColorDef, ENDESGA16.midBrown);
+  EM.set(rudder, PositionDef);
+  EM.set(rudder, RotationDef);
+  EM.set(rudder, AuthorityDef, res.me.pid);
+
+  addGizmoChild(rudder, 4);
+
   const interactBox = EM.new();
-  EM.set(interactBox, PhysicsParentDef, ent.id);
+  EM.set(interactBox, PhysicsParentDef, rudder.id);
   EM.set(interactBox, PositionDef);
   EM.set(interactBox, ColliderDef, {
     shape: "AABB",
     solid: false,
     aabb: {
       min: V(-1, -2, -2),
-      max: V(1, 2, 2.5),
+      max: V(1, 2.5, 2.5),
     },
   });
   constructNetTurret(
-    ent,
+    rudder,
     0,
     0,
     interactBox,
+    // TODO(@darzu): Z_UP: fix yaw and pitch here
     Math.PI,
     // -Math.PI / 8,
     -Math.PI / 12,
     1.6,
     // V(0, 20, 50),
-    V(0, 10, 30),
+    V(0, 30, 10), // camera offset
     true,
     1,
     Math.PI,
     "W/S: unfurl/furl sail, A/D: turn, E: drop rudder"
   );
 
-  ent.turret.maxPitch = 0;
-  ent.turret.minPitch = 0;
-  ent.turret.maxYaw = Math.PI / 6;
-  ent.turret.minYaw = -Math.PI / 6;
-  ent.turret.invertYaw = true;
+  rudder.turret.maxPitch = 0;
+  rudder.turret.minPitch = 0;
+  rudder.turret.maxYaw = Math.PI / 6;
+  rudder.turret.minYaw = -Math.PI / 6;
+  rudder.turret.invertYaw = true;
 
-  return ent;
+  return rudder;
 }
 
 // If a rudder isn't being manned, smooth it back towards straight
@@ -326,7 +330,7 @@ EM.addSystem(
 EM.addSystem(
   "shipParty",
   Phase.GAME_WORLD,
-  [ShipDef, PositionDef, RotationDef],
+  [LD52ShipDef, PositionDef, RotationDef],
   [PartyDef],
   (es, res) => {
     if (es[0]) {

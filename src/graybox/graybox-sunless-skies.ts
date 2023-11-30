@@ -441,6 +441,7 @@ EM.addEagerInit([SunlessShipDef], [], [], (_) => {
         );
 
         // turn
+        // TODO(@darzu): Z_UP rotateY
         quat.rotateY(
           e.rotation,
           e.sunlessShip.localRoll * e.sunlessShip.rollSpeed,
@@ -578,6 +579,7 @@ async function createPlayerShip() {
   const ship = EM.new();
   EM.set(ship, PositionDef, V(9, 0, 8));
   EM.set(ship, RotationDef);
+  // TODO(@darzu): Z_UP rotateY
   quat.rotateY(ship.rotation, -Math.PI * 0.4, ship.rotation);
   EM.set(ship, LinearVelocityDef);
   const mesh = cloneMesh(mesh_cube.mesh);
@@ -624,6 +626,7 @@ async function createEnemies() {
   const ship = EM.new();
   EM.set(ship, PositionDef, V(15, 0, 17));
   EM.set(ship, RotationDef);
+  // TODO(@darzu): Z_UP rotateY
   quat.rotateY(ship.rotation, randRadian(), ship.rotation);
   EM.set(ship, LinearVelocityDef);
   const mesh = cloneMesh(mesh_cube.mesh);

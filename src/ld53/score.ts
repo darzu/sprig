@@ -11,7 +11,7 @@ import { PhysicsParentDef } from "../physics/transform.js";
 import { TimeDef } from "../time/time.js";
 import { WoodHealthDef } from "../wood/wood.js";
 import { MapPaths } from "../levels/map-loader.js";
-import { ShipDef } from "./ship.js";
+import { LD52ShipDef } from "./ship.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { HostDef } from "../net/components.js";
 

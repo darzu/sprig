@@ -120,6 +120,7 @@ EM.addEagerInit([PlayerHsPropsDef], [], [], () => {
         EM.set(
           e,
           RotationDef,
+          // TODO(@darzu): Z_UP rotateY
           quat.rotateY(quat.IDENTITY, Math.PI, quat.create())
         );
         EM.set(e, LinearVelocityDef);

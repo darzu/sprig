@@ -56,10 +56,12 @@ export function randQuat(out?: quat): quat {
 }
 
 // matrix utilities
+// TODO(@darzu): Z_UP: check pitch, yaw, roll usages!
 export function pitch(m: mat4, rad: number) {
   return mat4.rotateX(m, rad, m);
 }
 export function yaw(m: mat4, rad: number) {
+  // TODO(@darzu): Z_UP rotateY
   return mat4.rotateY(m, rad, m);
 }
 export function roll(m: mat4, rad: number) {

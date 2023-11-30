@@ -67,6 +67,7 @@ EM.addEagerInit([SpaceSuitDef], [], [], () => {
         vec3.add(e.linearVelocity, rotatedAccel, e.linearVelocity);
 
         // camera rotation
+        // TODO(@darzu): Z_UP rotateY
         quat.rotateY(
           e.rotation,
           -res.inputs.mouseMov[0] * e.spaceSuit.turnSpeed,

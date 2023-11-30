@@ -70,7 +70,7 @@ import { LandMapTexPtr, LevelMapDef, setMap } from "../levels/level-map.js";
 import { setWindAngle, WindDef } from "../wind/wind.js";
 import {
   Ld53ShipPropsDef,
-  ShipDef,
+  LD52ShipDef,
   cannonDefaultPitch,
   createLd53ShipAsync,
 } from "./ship.js";
@@ -196,7 +196,7 @@ async function hostResetLevel(levelIdx: number) {
   const ship = await EM.whenSingleEntity(
     PositionDef,
     RotationDef,
-    ShipDef,
+    LD52ShipDef,
     LinearVelocityDef,
     ShipHealthDef,
     WoodHealthDef,
@@ -635,7 +635,7 @@ export async function initLD53(hosting: boolean) {
   }
 
   // wait for the ship either locally or from the network
-  EM.whenSingleEntity(ShipDef, FinishedDef).then(async (ship) => {
+  EM.whenSingleEntity(LD52ShipDef, FinishedDef).then(async (ship) => {
     // player
     if (!DBG_PLAYER) {
       const color = res.me.host ? tV(0.1, 0.1, 0.1) : ENDESGA16.darkBrown;
@@ -684,11 +684,17 @@ export async function initLD53(hosting: boolean) {
       aabb: res.ld53Meshes.ball.aabb,
     });
 
-    vec3.copy(g.position, [-399.61, -333.9, 113.58]);
-    quat.copy(g.rotation, [0.0, 0.0, 0.01, 1.0]);
+    // vec3.copy(g.position, [-399.61, -333.9, 113.58]);
+    // quat.copy(g.rotation, [0.0, 0.0, 0.01, 1.0]);
+    // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
+    // g.cameraFollow.yawOffset = 0.0;
+    // g.cameraFollow.pitchOffset = 2.937;
+
+    vec3.copy(g.position, [-369.29, -22.97, 28.91]);
+    quat.copy(g.rotation, [0.0, 0.0, -0.47, 0.88]);
     vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
     g.cameraFollow.yawOffset = 0.0;
-    g.cameraFollow.pitchOffset = 2.937;
+    g.cameraFollow.pitchOffset = 2.631;
 
     EM.addSystem(
       "smolGhost",
