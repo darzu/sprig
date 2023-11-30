@@ -1889,3 +1889,14 @@ GPU driven rendering at anki3d:
 Upscaling: nearest-neighbor, linear, cubic, bilinear, bicubic:
   https://medium.com/@amanrao032/image-upscaling-using-bicubic-interpolation-ddb37295df0
   https://en.wikipedia.org/wiki/Bicubic_interpolation
+
+Reflections via "sparse voxel approach" ?
+  "I am also starting to lean towards a sparse voxel approach over the SDF approach we used in Claybook. But let's see how it goes..."
+  "voxel stuff via HDDA."
+  https://twitter.com/SebAaltonen/status/1730293106178683322
+  "Sponza, running Godot HDDA high quality real-time, open world, full Global Illumination (with full ambient and rough reflections) at over 1080p, 30fps on.. A Radeon R7 240.. which  is almost _100 times slower_ than a 4090."
+  https://twitter.com/reduzio/status/1730277740371206434
+  Hierarchial Digital Differential Analyzer, 
+  https://www.museth.org/Ken/Publications_files/Museth_SIG14.pdf
+  https://www.youtube.com/watch?v=lvV79JQB_6M
+  https://gist.github.com/reduz/10c3e5a4ee85474b7213b15fe563bc43
