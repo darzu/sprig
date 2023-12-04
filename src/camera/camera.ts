@@ -248,7 +248,9 @@ EM.addLazyInit([], [CameraComputedDef], () => {
 
       // view matrix is in Z-up right-handed, we need
       // to convert to Y-up right-handed for WebGPU's NDC
-      // TODO(@darzu): Z_UP: wait, which one?
+      // TODO(@darzu): [ ] move Z to where Y is
+      // TODO(@darzu): [ ] first or last?
+
       mat4.mul(ZUpYFwdXRight_YUpNZFwdXRight, viewMatrix, viewMatrix);
       // mat4.mul(ZUpXFwdYLeft_to_YUpZFwdXLeft, viewMatrix, viewMatrix);
 

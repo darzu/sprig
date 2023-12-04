@@ -422,7 +422,7 @@ export async function initShipyardGame(hosting: boolean) {
       g.controllable.speed *= 5;
       g.controllable.sprintMul = 0.2;
       const sphereMesh = cloneMesh(res.allMeshes.ball.mesh);
-      const visible = false;
+      const visible = true;
       EM.set(g, RenderableConstructDef, sphereMesh, visible);
       EM.set(g, ColorDef, ENDESGA16.darkGreen);
       EM.set(g, PositionDef, V(0, 0, 0));
@@ -438,8 +438,8 @@ export async function initShipyardGame(hosting: boolean) {
 
       vec3.copy(g.position, [-21.17, 35.39, 10.27]);
       quat.copy(g.rotation, [0.0, 0.0, -0.94, 0.32]);
-      // vec3.copy(g.cameraFollow.positionOffset, [0.0, 30.0, 0.0]);
-      vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
+      vec3.copy(g.cameraFollow.positionOffset, [0.0, 30.0, 0.0]);
+      // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
       g.cameraFollow.yawOffset = 0.0;
       g.cameraFollow.pitchOffset = 2.974;
     }
