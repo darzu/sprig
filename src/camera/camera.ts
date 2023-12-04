@@ -10,7 +10,10 @@ import { yawpitchToQuat } from "../turret/yawpitch.js";
 import { createAABB } from "../physics/aabb.js";
 import { assert, resizeArray } from "../utils/util.js";
 import { Phase } from "../ecs/sys-phase.js";
-import { zUpRH_to_yUpRH } from "./basis.js";
+import {
+  ZUpXFwdYLeft_to_YUpZFwdXLeft,
+  ZUpYFwdXRight_YUpNZFwdXRight,
+} from "./basis.js";
 
 export type PerspectiveMode = "perspective" | "ortho";
 export type CameraMode = "thirdPerson" | "thirdPersonOverShoulder";
@@ -245,7 +248,9 @@ EM.addLazyInit([], [CameraComputedDef], () => {
 
       // view matrix is in Z-up right-handed, we need
       // to convert to Y-up right-handed for WebGPU's NDC
-      mat4.mul(zUpRH_to_yUpRH, viewMatrix, viewMatrix);
+      // TODO(@darzu): Z_UP: wait, which one?
+      mat4.mul(ZUpYFwdXRight_YUpNZFwdXRight, viewMatrix, viewMatrix);
+      // mat4.mul(ZUpXFwdYLeft_to_YUpZFwdXLeft, viewMatrix, viewMatrix);
 
       if (camera.perspectiveMode === "ortho") {
         const ORTHO_SIZE = 10;

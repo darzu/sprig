@@ -65,7 +65,10 @@ import {
   translatePath,
   translatePathAlongNormal,
 } from "../utils/spline.js";
-import { convertYUpToZUp, convertYUpToZUpAABB } from "../camera/basis.js";
+import {
+  convert_ZUpYFwdXRight_YUpNZFwdXRight,
+  convert_ZUpYFwdXRight_YUpNZFwdXRight_AABB,
+} from "../camera/basis.js";
 
 // TODO(@darzu): use arc-length parameterization to resample splines
 
@@ -282,7 +285,7 @@ export const ld53ShipAABBs: AABB[] = [
   { min: V(4.25, -2.65, 17.95), max: V(7.95, 3.65, 22.45) },
   { min: V(-6.15, -2.65, 22.25), max: V(5.55, 3.65, 26.15) },
   { min: V(-6.8, -5.95, -26.1), max: V(7.2, 0.35, 22.5) },
-].map(convertYUpToZUpAABB);
+].map(convert_ZUpYFwdXRight_YUpNZFwdXRight_AABB);
 
 export function createLD53Ship(): HomeShip {
   const KEEL = true;
@@ -797,10 +800,12 @@ export function createLD53Ship(): HomeShip {
   // ROTATE WHOLE THING (YIKES)
   // TODO(@darzu): fix up ship construction
   {
-    const rotate = quat.fromEuler(Math.PI / 2, 0, 0);
-    _timberMesh.pos.forEach((v) => {
-      vec3.transformQuat(v, rotate, v);
-    });
+    // const rotate = quat.fromEuler(Math.PI / 2, 0, 0);
+    // _timberMesh.pos.forEach((v) => {
+    //   vec3.transformQuat(v, rotate, v);
+    // });
+
+    _timberMesh.pos.forEach(convert_ZUpYFwdXRight_YUpNZFwdXRight);
   }
 
   // lower the whole ship so it's main deck is at 0 height
