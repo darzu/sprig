@@ -135,7 +135,6 @@ const MOTORBOAT_MODE = false;
 
 // const WORLD_HEIGHT = 1024;
 
-// TODO(@darzu): Z_UP: fix x/y inversion
 const worldXToTexX = (x: number) => Math.floor(x + WORLD_WIDTH / 2);
 const worldYToTexY = (y: number) => Math.floor(y + WORLD_HEIGHT / 2);
 const texXToWorldX = (x: number) => x + 0.5 - WORLD_WIDTH / 2;
@@ -430,7 +429,6 @@ export async function initLD53(hosting: boolean) {
   const worldUnitPerOceanVerts = 1 / oceanVertsPerWorldUnit;
   const oceanXCount = Math.floor(WORLD_WIDTH * oceanVertsPerWorldUnit);
   const oceanYCount = Math.floor(WORLD_HEIGHT * oceanVertsPerWorldUnit);
-  // TODO(@darzu): Z_UP, fix y/x swap
   const oceanMesh = createFlatQuadMesh(oceanXCount, oceanYCount);
   const maxSurfId = max(oceanMesh.surfaceIds);
   // console.log("maxSurfId");

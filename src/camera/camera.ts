@@ -250,9 +250,7 @@ EM.addLazyInit([], [CameraComputedDef], () => {
       // to convert to Y-up right-handed for WebGPU's NDC
       // TODO(@darzu): [ ] move Z to where Y is
       // TODO(@darzu): [ ] first or last?
-
       mat4.mul(ZUpYFwdXRight_YUpNZFwdXRight, viewMatrix, viewMatrix);
-      // mat4.mul(ZUpXFwdYLeft_to_YUpZFwdXLeft, viewMatrix, viewMatrix);
 
       if (camera.perspectiveMode === "ortho") {
         const ORTHO_SIZE = 10;

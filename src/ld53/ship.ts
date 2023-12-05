@@ -178,7 +178,7 @@ export const { createLd53ShipAsync, Ld53ShipPropsDef } = defineNetEntityHelper({
     // create cannons
     const cannonR = createCannonNow(
       res,
-      V(-8, -7, 4.7),
+      V(-7, -8, 4.7),
       Math.PI * 0.5,
       cannonDefaultPitch,
       ship.id
@@ -186,7 +186,7 @@ export const { createLd53ShipAsync, Ld53ShipPropsDef } = defineNetEntityHelper({
     vec3.copy(cannonR.color, ENDESGA16.darkGray);
     const cannonL = createCannonNow(
       res,
-      V(8, -7, 4.7),
+      V(-7, 8, 4.7),
       Math.PI * 1.5,
       cannonDefaultPitch,
       ship.id
