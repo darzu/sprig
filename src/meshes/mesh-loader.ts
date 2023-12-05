@@ -68,6 +68,9 @@ export interface MeshGroupReg<N extends string = string> {
   gameMeshes: () => Promise<GameMesh[]>;
   gameMeshesNow: () => GameMesh[] | undefined;
 }
+export type MeshOrGroupReg<N extends string = string> =
+  | MeshReg<N>
+  | MeshGroupReg<N>;
 
 // TODO(@darzu): is there a simpler way to type this?
 export type MeshSet<MR extends (MeshReg | MeshGroupReg)[]> = Intersect<{
@@ -114,6 +117,8 @@ function createXylemRegistry() {
   const loadedMeshes = new Map<string, GameMesh | GameMesh[]>();
   const loadingMeshes = new Map<string, Promise<GameMesh | GameMesh[]>>();
 
+  const allMeshRegistrations: MeshOrGroupReg[] = [];
+
   async function cachedLoadMeshDesc(
     desc: MeshDesc,
     renderer?: Renderer
@@ -159,6 +164,7 @@ function createXylemRegistry() {
         gameMeshesNow: () =>
           loadedMeshes.get(desc.name) as GameMesh[] | undefined,
       };
+      allMeshRegistrations.push(reg);
       return reg;
     } else {
       let reg: MeshReg<N> = {
@@ -167,6 +173,7 @@ function createXylemRegistry() {
         gameMesh: () => cachedLoadMeshDesc(desc) as Promise<GameMesh>,
         gameMeshNow: () => loadedMeshes.get(desc.name) as GameMesh | undefined,
       };
+      allMeshRegistrations.push(reg);
       return reg;
     }
   }
@@ -201,10 +208,10 @@ function createXylemRegistry() {
     return result as MeshSet<MR>;
   }
 
-  function defineMeshSetResource<
-    N extends string,
-    MR extends (MeshReg | MeshGroupReg)[]
-  >(name: N, ...meshes: MR): MeshSetDef<N, MR> {
+  function defineMeshSetResource<N extends string, MR extends MeshOrGroupReg[]>(
+    name: N,
+    ...meshes: MR
+  ): MeshSetDef<N, MR> {
     const def = EM.defineResource(name, (mr: MeshSet<MR>) => mr);
 
     let initReg = EM.addLazyInit([RendererDef], [def], async ({ renderer }) => {
@@ -228,6 +235,11 @@ function createXylemRegistry() {
   return {
     registerMesh,
     defineMeshSetResource,
+
+    // TODO(@darzu): Abstraction. I'm not sure we want to expose these:
+    _allMeshRegistrations: allMeshRegistrations,
+    _loadMeshSet: loadMeshSet,
+    _loadedMeshes: loadedMeshes,
   };
 }
 

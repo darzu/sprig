@@ -31,10 +31,12 @@ import {
   frustumFromBounds,
   getFrustumWorldCorners,
   positionAndTargetToOrthoViewProjMatrix,
+  vec3Dbg,
 } from "../utils/utils-3d.js";
 import { createGhost } from "../debug/ghost.js";
 import { Phase } from "../ecs/sys-phase.js";
-import { XY } from "../meshes/mesh-loader.js";
+import { GameMesh, XY } from "../meshes/mesh-loader.js";
+import { addGizmoChild } from "../utils/utils-game.js";
 
 const dbgGrid = [
   //
@@ -201,4 +203,63 @@ export async function initShadingGame() {
   //   "dbgViewProj"
   // );
   // EM.requireSystem("dbgViewProj");
+
+  createGallery();
+}
+
+async function createGallery() {
+  // TODO(@darzu): present a mesh set on a single pedestal.
+  const objMargin = 8;
+  let lastX = 10;
+  function presentGameMesh(m: GameMesh) {
+    const halfsize = Math.max(m.halfsize[0], m.halfsize[1]);
+
+    // console.log(`halfsize: ${halfsize}`);
+
+    let x = lastX + objMargin + halfsize;
+
+    let ground = EM.new();
+    EM.set(ground, RenderableConstructDef, sg_meshes.hex.mesh);
+    const groundSize = halfsize / sg_meshes.hex.halfsize[0];
+    EM.set(ground, ScaleDef, [groundSize, groundSize, 1]);
+    EM.set(ground, PositionDef, V(x, 0, -sg_meshes.hex.aabb.max[2]));
+    EM.set(ground, ColorDef, ENDESGA16.blue);
+
+    let obj = EM.new();
+    EM.set(obj, RenderableConstructDef, m.mesh);
+    EM.set(obj, PositionDef, V(x - m.center[0], -m.center[1], -m.aabb.min[2]));
+
+    addGizmoChild(obj, halfsize * 1.1);
+
+    const anyColor = m.mesh.colors.some((c) => !vec3.equals(c, [0, 0, 0]));
+    if (!anyColor) EM.set(obj, ColorDef, ENDESGA16.lightGray);
+
+    lastX = x + halfsize;
+  }
+
+  const { renderer, sg_meshes } = await EM.whenResources(
+    RendererDef,
+    shadingGameMeshesDef
+  );
+  // console.log("XY._allMeshRegistrations");
+  // console.dir(XY._allMeshRegistrations);
+  // let i = 0;
+  await XY._loadMeshSet(XY._allMeshRegistrations, renderer.renderer);
+  for (let meshOrList of XY._loadedMeshes.values()) {
+    // console.log("meshOrList");
+    // console.dir(meshOrList);
+
+    if (Array.isArray(meshOrList)) {
+      const meshes = meshOrList;
+      meshes.forEach(presentGameMesh);
+    } else {
+      const mesh = meshOrList;
+      if (mesh.halfsize[0] > 100) continue;
+      presentGameMesh(mesh);
+    }
+
+    // TODO(@darzu): dbging
+    // i++;
+    // if (i > 10) break;
+  }
 }
