@@ -219,30 +219,39 @@ async function createGallery() {
   // TODO(@darzu): present a mesh set on a single pedestal.
   const objMargin = 8;
   let lastX = 10;
+  const maxHalfsize = 20;
   function presentGameMesh(m: GameMesh) {
     const halfsize = Math.max(m.halfsize[0], m.halfsize[1]);
 
+    const hasScale = halfsize > maxHalfsize;
+    const scale = hasScale ? maxHalfsize / halfsize : 1.0;
+
     // console.log(`halfsize: ${halfsize}`);
 
-    let x = lastX + objMargin + halfsize;
+    let x = lastX + objMargin + halfsize * scale;
 
     let ground = EM.new();
     EM.set(ground, RenderableConstructDef, sg_meshes.hex.mesh);
-    const groundSize = halfsize / sg_meshes.hex.halfsize[0];
+    const groundSize = (halfsize * scale) / sg_meshes.hex.halfsize[0];
     EM.set(ground, ScaleDef, [groundSize, groundSize, 1]);
     EM.set(ground, PositionDef, V(x, 0, -sg_meshes.hex.aabb.max[2]));
-    EM.set(ground, ColorDef, ENDESGA16.blue);
+    EM.set(ground, ColorDef, hasScale ? ENDESGA16.lightBlue : ENDESGA16.blue);
 
     let obj = EM.new();
     EM.set(obj, RenderableConstructDef, m.mesh);
-    EM.set(obj, PositionDef, V(x - m.center[0], -m.center[1], -m.aabb.min[2]));
+    EM.set(
+      obj,
+      PositionDef,
+      V(x - m.center[0] * scale, -m.center[1] * scale, -m.aabb.min[2] * scale)
+    );
+    if (hasScale) EM.set(obj, ScaleDef, V(scale, scale, scale));
 
-    addGizmoChild(obj, halfsize * 1.1);
+    addGizmoChild(obj, halfsize * scale * 1.1);
 
     const anyColor = m.mesh.colors.some((c) => !vec3.equals(c, [0, 0, 0]));
     if (!anyColor) EM.set(obj, ColorDef, ENDESGA16.lightGray);
 
-    lastX = x + halfsize;
+    lastX = x + halfsize * scale;
   }
 
   const { renderer, sg_meshes } = await EM.whenResources(
@@ -262,7 +271,6 @@ async function createGallery() {
       meshes.forEach(presentGameMesh);
     } else {
       const mesh = meshOrList;
-      if (mesh.halfsize[0] > 100) continue;
       presentGameMesh(mesh);
     }
 
