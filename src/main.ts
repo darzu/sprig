@@ -28,7 +28,7 @@ import { initCubeGame } from "./debug/xp-cube.js";
 import { resetTempMatrixBuffer, V } from "./matrix/sprig-matrix.js";
 import { initGrassGame } from "./grass/game-grass.js";
 import { initLD53 } from "./ld53/game-ld53.js";
-import { initShadingGame } from "./render/game-shading.js";
+import { initGalleryGame } from "./render/game-gallery.js";
 import { initModelingGame } from "./meshes/game-modeling.js";
 import { Phase } from "./ecs/sys-phase.js";
 import { setSimulationAlpha } from "./render/motion-smoothing.js";
@@ -53,7 +53,7 @@ const ALL_GAMES = [
   "hyperspace",
   "cloth", // broken-ish
   "cube",
-  "shading",
+  "gallery",
   "modeling",
   "ld53",
   "ld54",
@@ -62,7 +62,7 @@ const ALL_GAMES = [
   "graybox-sunless",
   "graybox-ship-arena",
 ] as const;
-const GAME: (typeof ALL_GAMES)[number] = "shading";
+const GAME: (typeof ALL_GAMES)[number] = "gallery";
 
 // Run simulation with a fixed timestep @ 60hz
 const TIMESTEP = 1000 / 60;
@@ -119,7 +119,7 @@ async function startGame(localPeerName: string, host: string | null) {
   else if (GAME === "grass") initGrassGame(hosting);
   else if (GAME === "ld53") initLD53(hosting);
   else if (GAME === "ld54") initLD54();
-  else if (GAME === "shading") initShadingGame();
+  else if (GAME === "gallery") initGalleryGame();
   else if (GAME === "modeling") initModelingGame();
   else if (GAME === "mp") initMPGame();
   else if (GAME === "graybox-starter") initGrayboxStarter();

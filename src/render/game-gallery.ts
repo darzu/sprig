@@ -56,12 +56,12 @@ const shadingGameMeshesDef = XY.defineMeshSetResource(
   BallMesh
 );
 
-export async function initShadingGame() {
+export async function initGalleryGame() {
   // TODO(@darzu): HACK. these have to be set before the CY instantiator runs.
   // outlineRender.fragOverrides!.lineWidth = 1.0;
 
   EM.addSystem(
-    "grassGameRenderPipelines",
+    "galleryGamePipelines",
     Phase.GAME_WORLD,
     null,
     [RendererDef, DevConsoleDef],
