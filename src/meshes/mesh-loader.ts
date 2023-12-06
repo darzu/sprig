@@ -47,6 +47,7 @@ export type MeshDesc<N extends string = string, B extends boolean = false> = {
   name: N;
   data: string | (() => RawMesh);
   transform?: mat4;
+  transformBasis?: mat4; // TODO(@darzu): remove? deprecate somehow? save back out to assets?
   modify?: (m: RawMesh) => RawMesh;
 } & (B extends true ? { multi: true } : {});
 
@@ -267,8 +268,15 @@ async function internalLoadMeshDesc(
 }
 
 function processMesh(desc: MeshDesc, m: RawMesh): RawMesh {
-  if (desc.transform) m = transformMesh(m, desc.transform);
+  // TODO(@darzu): UP_Z: try doing in-place update after everything else works.
+  // TODO(@darzu): PERF! This should probably in-place update the mesh.
+  if (desc.transform || desc.transformBasis)
+    m.pos = m.pos.map((v) => vec3.clone(v));
+  if (desc.transform)
+    m.pos.forEach((v) => vec3.transformMat4(v, desc.transform!, v));
   if (desc.modify) m = desc.modify(m);
+  if (desc.transformBasis)
+    m.pos.forEach((v) => vec3.transformMat4(v, desc.transformBasis!, v));
   if (!m.dbgName) m.dbgName = desc.name;
   return m;
 }

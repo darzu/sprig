@@ -126,12 +126,20 @@ export async function initShadingGame() {
   const g = createGhost();
   g.position[2] = 5;
   EM.set(g, RenderableConstructDef, sg_meshes.ball.proto);
+  g.controllable.speed *= 10;
+  g.controllable.sprintMul = 0.1;
 
-  vec3.copy(g.position, [-13.21, -12.08, 10.7]);
-  quat.copy(g.rotation, [0.0, 0.0, -0.46, 0.89]);
+  // vec3.copy(g.position, [-13.21, -12.08, 10.7]);
+  // quat.copy(g.rotation, [0.0, 0.0, -0.46, 0.89]);
+  // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
+  // g.cameraFollow.yawOffset = 0.0;
+  // g.cameraFollow.pitchOffset = 1.182;
+
+  vec3.copy(g.position, [452.74, -46.39, 34.87]);
+  quat.copy(g.rotation, [0.0, 0.0, -0.4, 0.92]);
   vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
   g.cameraFollow.yawOffset = 0.0;
-  g.cameraFollow.pitchOffset = 1.182;
+  g.cameraFollow.pitchOffset = 2.801;
 
   // objects
   const obj = EM.new();
