@@ -46,6 +46,8 @@ import {
   RiggedMeshPool,
 } from "./pipelines/std-rigged.js";
 import { Phase } from "../ecs/sys-phase.js";
+// TODO(@darzu): is it okay for renderer to depend on XY ? XY depends on Renderer
+import { MeshReg, XY, isMeshReg } from "../meshes/mesh-loader.js";
 
 // TODO(@darzu): the double "Renderer" naming is confusing. Maybe one should be GPUManager or something?
 export const RendererDef = EM.defineResource(
@@ -75,7 +77,7 @@ export interface RenderableConstruct {
   //   hidden objects might be more efficient in object pools b/c it causes
   //   less rebundling, but this needs measurement.
   readonly hidden: boolean;
-  meshOrProto: Mesh | MeshHandle;
+  meshOrProto: Mesh | MeshHandle | MeshReg;
   readonly reserve?: MeshReserve;
 }
 
@@ -83,7 +85,7 @@ export const RenderableConstructDef = EM.defineNonupdatableComponent(
   "renderableConstruct",
   (
     // TODO(@darzu): this constructor is too messy, we should use a params obj instead
-    meshOrProto: Mesh | MeshHandle,
+    meshOrProto: Mesh | MeshHandle | MeshReg,
     enabled: boolean = true,
     // TODO(@darzu): do we need sort layers? Do we use them?
     sortLayer: number = 0,
@@ -179,22 +181,33 @@ EM.addEagerInit([RenderableConstructDef], [RendererDef], [], () => {
             e.renderableConstruct.pool
           );
           assert(pool);
-          if (isMeshHandle(e.renderableConstruct.meshOrProto)) {
+          const meshOrProto = e.renderableConstruct.meshOrProto;
+          if (isMeshHandle(meshOrProto)) {
             // TODO(@darzu): renderableConstruct is getting to large and wierd
             assert(
               !e.renderableConstruct.reserve,
               `cannot have a reserve when adding an instance`
             );
-            meshHandle = pool.addMeshInstance(
-              e.renderableConstruct.meshOrProto
+            meshHandle = pool.addMeshInstance(meshOrProto);
+            mesh = meshHandle.mesh!;
+          } else if (isMeshReg(meshOrProto)) {
+            const gameMesh = meshOrProto.gameMeshNow();
+            if (!gameMesh) {
+              XY._ensureLoadingMesh(meshOrProto.desc);
+              continue; // TODO(@darzu): PERF. Okay to delay like this? Shouldn't cost anything when it is loaded.
+            }
+            assert(
+              !e.renderableConstruct.reserve,
+              `cannot have a reserve when adding an instance`
             );
+            meshHandle = pool.addMeshInstance(gameMesh.proto);
             mesh = meshHandle.mesh!;
           } else {
             meshHandle = pool.addMesh(
-              e.renderableConstruct.meshOrProto,
+              meshOrProto,
               e.renderableConstruct.reserve
             );
-            mesh = e.renderableConstruct.meshOrProto;
+            mesh = meshOrProto;
           }
           if (e.renderableConstruct.mask) {
             meshHandle.mask = e.renderableConstruct.mask;

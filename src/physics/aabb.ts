@@ -127,9 +127,11 @@ export function getAABBCornersTemp(aabb: AABB): vec3[] {
 // }
 
 export function transformAABB(out: AABB, t: mat4) {
+  // TODO(@darzu): is there a more performant way to do this?
   const wCorners = getAABBCornersTemp(out);
   wCorners.forEach((p) => vec3.transformMat4(p, t, p));
   getAABBFromPositions(out, wCorners);
+  return out;
 }
 
 export function aabbCenter(out: vec3, a: AABB): vec3 {
@@ -231,4 +233,24 @@ export function aabbListToStr(aabbs: AABB[]): string {
   }
   resStr += `];`;
   return resStr;
+}
+
+export function isValidVec3(v: vec3) {
+  return (
+    !isNaN(v[0]) &&
+    isFinite(v[0]) &&
+    !isNaN(v[1]) &&
+    isFinite(v[1]) &&
+    !isNaN(v[2]) &&
+    isFinite(v[2])
+  );
+}
+
+export function isValidAABB(aabb: AABB) {
+  const validBounds =
+    aabb.min[0] <= aabb.max[0] &&
+    aabb.min[1] <= aabb.max[1] &&
+    aabb.min[2] <= aabb.max[2];
+  const validNums = isValidVec3(aabb.min) && isValidVec3(aabb.max);
+  return validBounds && validNums;
 }

@@ -57,6 +57,10 @@ function isMultiMeshDesc<N extends string, B extends boolean>(
   return (desc as MeshDesc<N, true>).multi;
 }
 
+export function isMeshReg(r: any): r is MeshReg {
+  return !!(r as MeshReg).desc && typeof (r as MeshReg).desc.name === "string";
+}
+
 export interface MeshReg<N extends string = string> {
   desc: MeshDesc<N, false>;
   def: ResourceDef<`mesh_${N}`, GameMesh, [GameMesh]>;
@@ -233,6 +237,10 @@ function createXylemRegistry() {
     return def;
   }
 
+  function _ensureLoadingMesh(desc: MeshDesc) {
+    return cachedLoadMeshDesc(desc);
+  }
+
   return {
     registerMesh,
     defineMeshSetResource,
@@ -241,6 +249,7 @@ function createXylemRegistry() {
     _allMeshRegistrations: allMeshRegistrations,
     _loadMeshSet: loadMeshSet,
     _loadedMeshes: loadedMeshes,
+    _ensureLoadingMesh,
   };
 }
 

@@ -41,7 +41,7 @@ import { ENDESGA16 } from "../color/palettes.js";
 import { createLD53Ship, ld53ShipAABBs } from "../wood/shipyard.js";
 import { getAABBFromMesh, transformMesh } from "../meshes/mesh.js";
 import { createWoodHealth, WoodHealthDef, WoodStateDef } from "../wood/wood.js";
-import { addGizmoChild } from "../utils/utils-game.js";
+import { addGizmoChild, addColliderDbgVis } from "../utils/utils-game.js";
 import { getSizeFromAABB } from "../physics/aabb.js";
 import {
   CannonLocalDef,
@@ -141,6 +141,9 @@ export const { createLd53ShipAsync, Ld53ShipPropsDef } = defineNetEntityHelper({
     //   aabb: timberAABB,
     // });
     EM.set(ship, ColliderDef, mc);
+
+    addColliderDbgVis(ship);
+
     EM.set(ship, PositionDef, V(0, 0, 0));
     EM.set(ship, RotationDef);
     EM.set(ship, LinearVelocityDef);
@@ -179,7 +182,7 @@ export const { createLd53ShipAsync, Ld53ShipPropsDef } = defineNetEntityHelper({
     const cannonR = createCannonNow(
       res,
       V(-7, -8, 4.7),
-      Math.PI * 0.5,
+      1 * Math.PI,
       cannonDefaultPitch,
       ship.id
     );
@@ -187,7 +190,7 @@ export const { createLd53ShipAsync, Ld53ShipPropsDef } = defineNetEntityHelper({
     const cannonL = createCannonNow(
       res,
       V(-7, 8, 4.7),
-      Math.PI * 1.5,
+      0 * Math.PI,
       cannonDefaultPitch,
       ship.id
     );
@@ -287,7 +290,7 @@ function createRudder(
     0,
     interactBox,
     // TODO(@darzu): Z_UP: fix yaw and pitch here
-    Math.PI,
+    0.0 * Math.PI,
     // -Math.PI / 8,
     -Math.PI / 12,
     1.6,

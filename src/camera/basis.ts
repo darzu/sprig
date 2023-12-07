@@ -1,5 +1,5 @@
 import { mat3, mat4, vec3 } from "../matrix/sprig-matrix.js";
-import { AABB } from "../physics/aabb.js";
+import { AABB, transformAABB } from "../physics/aabb.js";
 
 // USAGE NOTE: When a model was designed originally for e.g. YUpZFwdXLeft, then
 //  to use it in ZUpXFwdYLeft, you need to use convert_ZUpXFwdYLeft_to_YUpZFwdXLeft,
@@ -66,9 +66,4 @@ export const ZUpYFwdXRight_YUpNZFwdXRight = mat4.invert(
 
 export function convert_ZUpYFwdXRight_YUpNZFwdXRight(v: vec3): vec3 {
   return vec3.transformMat4(v, ZUpYFwdXRight_YUpNZFwdXRight, v);
-}
-export function convert_ZUpYFwdXRight_YUpNZFwdXRight_AABB(aabb: AABB): AABB {
-  vec3.transformMat4(aabb.min, ZUpYFwdXRight_YUpNZFwdXRight, aabb.min);
-  vec3.transformMat4(aabb.max, ZUpYFwdXRight_YUpNZFwdXRight, aabb.max);
-  return aabb;
 }

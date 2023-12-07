@@ -1905,3 +1905,6 @@ Reflections via "sparse voxel approach" ?
 openvdb:
   C++ library for volumetric rendering stuff used by... everyone?
   https://www.openvdb.org
+
+Shaders For People Who Don't Know How To Shader, a tutorial series for beginners!:
+  https://github.com/Xibanya/ShaderTutorials

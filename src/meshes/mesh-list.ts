@@ -18,7 +18,7 @@ import {
   mapMeshPositions,
   scaleMesh3,
 } from "./mesh.js";
-import { XY } from "./mesh-loader.js";
+import { XY, isMeshReg } from "./mesh-loader.js";
 import {
   mkCubeMesh,
   SHIP_OFFSET,
@@ -69,6 +69,8 @@ export const UnitCubeMesh = XY.registerMesh({
     return unitCube;
   },
 });
+
+assert(isMeshReg(UnitCubeMesh)); // sanity check on isMeshReg()
 
 export const GizmoMesh = XY.registerMesh({
   name: "gizmo",

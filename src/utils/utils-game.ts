@@ -1,7 +1,7 @@
 import { CameraView } from "../camera/camera.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { EM, Entity, EntityW } from "../ecs/entity-manager.js";
-import { AllMeshesDef, GizmoMesh } from "../meshes/mesh-list.js";
+import { AllMeshesDef, GizmoMesh, UnitCubeMesh } from "../meshes/mesh-list.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { mathMap } from "./math.js";
 import { getLineEnd, Line, Ray } from "../physics/broadphase.js";
@@ -19,9 +19,12 @@ import {
   RendererDef,
 } from "../render/renderer-ecs.js";
 import { tempVec3 } from "../matrix/temp-pool.js";
-import { randNormalPosVec3 } from "./utils-3d.js";
+import { aabbDbg, randNormalPosVec3, vec3Dbg } from "./utils-3d.js";
 import { createEntityPool } from "../ecs/entity-pool.js";
 import { DeadDef } from "../ecs/delete.js";
+import { Collider, ColliderDef } from "../physics/collider.js";
+import { ENDESGA16 } from "../color/palettes.js";
+import { AABB, getSizeFromAABB, isValidAABB } from "../physics/aabb.js";
 
 // TODO(@darzu): move this helper elsewhere?
 // TODO(@darzu): would be dope to support thickness;
@@ -180,17 +183,53 @@ export function randColor(v?: vec3): vec3 {
   return randNormalPosVec3(v);
 }
 
-export async function addGizmoChild(
+export function addGizmoChild(
   parent: Entity,
   scale: number = 1,
   offset: vec3.InputT = [0, 0, 0]
-): Promise<Entity> {
+): Entity {
+  // TODO(@darzu): Doesn't need to be async!
   // make debug gizmo
-  const gizmoMesh = await GizmoMesh.gameMesh();
   const gizmo = EM.new();
   EM.set(gizmo, PositionDef, vec3.clone(offset));
   EM.set(gizmo, ScaleDef, V(scale, scale, scale));
   EM.set(gizmo, PhysicsParentDef, parent.id);
-  EM.set(gizmo, RenderableConstructDef, gizmoMesh.proto);
+  EM.set(gizmo, RenderableConstructDef, GizmoMesh);
   return gizmo;
+}
+
+export function createBoxForAABB(
+  aabb: AABB
+): EntityW<
+  [typeof PositionDef, typeof ScaleDef, typeof RenderableConstructDef]
+> {
+  const scale = getSizeFromAABB(aabb, vec3.create());
+  const offset = vec3.clone(aabb.min);
+
+  const box = EM.new();
+  EM.set(box, PositionDef, offset);
+  EM.set(box, ScaleDef, scale);
+  console.log(`createBoxForAABB scale ${vec3Dbg(scale)}`);
+  EM.set(box, RenderableConstructDef, UnitCubeMesh);
+  return box;
+}
+
+export function addColliderDbgVis(ent: EntityW<[typeof ColliderDef]>): void {
+  addColliderDbgVisForCollider(ent.collider);
+
+  function addColliderDbgVisForCollider(c: Collider) {
+    if (c.shape === "AABB") {
+      if (!isValidAABB(c.aabb))
+        console.warn(`invalid aabb: ${aabbDbg(c.aabb)}`);
+
+      const box = createBoxForAABB(c.aabb);
+      EM.set(box, PhysicsParentDef, ent.id);
+      const color = c.solid ? ENDESGA16.darkGray : ENDESGA16.lightGray;
+      EM.set(box, ColorDef, color); // TODO(@darzu): use transparency?
+    } else if (c.shape === "Multi") {
+      c.children.forEach(addColliderDbgVisForCollider);
+    } else {
+      console.error(`TODO: impl addColliderDbgVis for ${c.shape}`);
+    }
+  }
 }
