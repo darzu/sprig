@@ -37,6 +37,11 @@ import { createGhost } from "../debug/ghost.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { GameMesh, XY } from "../meshes/mesh-loader.js";
 import { addGizmoChild } from "../utils/utils-game.js";
+import { makeDome } from "../meshes/primatives.js";
+import { SKY_MASK } from "./pipeline-masks.js";
+
+const SHOW_GALLERY = false;
+const SHOW_SKYDOME = true;
 
 const dbgGrid = [
   //
@@ -86,7 +91,7 @@ export async function initGalleryGame() {
 
   // camera
   camera.fov = Math.PI * 0.5;
-  camera.viewDist = 100;
+  camera.viewDist = 200;
   vec3.set(-20, -20, -20, camera.maxWorldAABB.min);
   vec3.set(+20, +20, +20, camera.maxWorldAABB.max);
   // camera.perspectiveMode = "ortho";
@@ -129,17 +134,35 @@ export async function initGalleryGame() {
   g.controllable.speed *= 10;
   g.controllable.sprintMul = 0.1;
 
-  // vec3.copy(g.position, [-13.21, -12.08, 10.7]);
-  // quat.copy(g.rotation, [0.0, 0.0, -0.46, 0.89]);
-  // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
-  // g.cameraFollow.yawOffset = 0.0;
-  // g.cameraFollow.pitchOffset = 1.182;
+  if (!SHOW_GALLERY) {
+    vec3.copy(g.position, [-10, -10, 10]);
+    quat.fromEuler(0, 0, 0, g.rotation);
+    vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
+    g.cameraFollow.yawOffset = 0.0 * Math.PI;
+    g.cameraFollow.pitchOffset = (3 / 4) * Math.PI;
+  }
 
-  vec3.copy(g.position, [452.74, -46.39, 34.87]);
-  quat.copy(g.rotation, [0.0, 0.0, -0.4, 0.92]);
-  vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
-  g.cameraFollow.yawOffset = 0.0;
-  g.cameraFollow.pitchOffset = 2.801;
+  // sky dome?
+  if (SHOW_SKYDOME) {
+    const SKY_HALFSIZE = 100;
+    const domeMesh = makeDome(16, 8, SKY_HALFSIZE);
+    const sky = EM.new();
+    EM.set(sky, PositionDef, V(0, 0, -10));
+    // const skyMesh = cloneMesh(res.allMeshes.cube.mesh);
+    // skyMesh.pos.forEach((p) => vec3.scale(p, SKY_HALFSIZE, p));
+    // skyMesh.quad.forEach((f) => vec4.reverse(f, f));
+    // skyMesh.tri.forEach((f) => vec3.reverse(f, f));
+    const skyMesh = domeMesh;
+    EM.set(
+      sky,
+      RenderableConstructDef,
+      skyMesh
+      // undefined,
+      // undefined,
+      // SKY_MASK
+    );
+    // EM.set(sky, ColorDef, V(0.9, 0.9, 0.9));
+  }
 
   // objects
   const obj = EM.new();
@@ -212,7 +235,15 @@ export async function initGalleryGame() {
   // );
   // EM.requireSystem("dbgViewProj");
 
-  createGallery();
+  if (SHOW_GALLERY) {
+    vec3.copy(g.position, [452.74, -46.39, 34.87]);
+    quat.copy(g.rotation, [0.0, 0.0, -0.4, 0.92]);
+    vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
+    g.cameraFollow.yawOffset = 0.0;
+    g.cameraFollow.pitchOffset = 2.801;
+
+    createGallery();
+  }
 }
 
 async function createGallery() {

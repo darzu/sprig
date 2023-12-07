@@ -648,8 +648,8 @@ export function makeDome(numLon: number, numLat: number, r: number): Mesh {
     const inc = Math.PI * 0.5 * (lat / numLat);
     for (let lon = 0; lon < numLon; lon++) {
       const azi = Math.PI * 2 * (lon / numLon);
-      const x = r * Math.sin(inc) * Math.cos(azi);
-      const y = r * Math.sin(inc) * Math.sin(azi);
+      const x = r * Math.sin(inc) * Math.sin(azi);
+      const y = r * Math.sin(inc) * Math.cos(azi);
       const z = r * Math.cos(inc);
       pos.push(V(x, y, z));
       const u = azi / (Math.PI * 2.0);

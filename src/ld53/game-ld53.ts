@@ -22,7 +22,12 @@ import {
   ScaleDef,
 } from "../physics/transform.js";
 import { PointLightDef } from "../render/lights.js";
-import { cloneMesh, Mesh, RiggedMesh } from "../meshes/mesh.js";
+import {
+  cloneMesh,
+  getAABBFromMesh,
+  Mesh,
+  RiggedMesh,
+} from "../meshes/mesh.js";
 import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
@@ -692,7 +697,8 @@ export async function initLD53(hosting: boolean) {
     quat.copy(g.rotation, [0.0, 0.0, -0.47, 0.88]);
     vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
     g.cameraFollow.yawOffset = 0.0;
-    g.cameraFollow.pitchOffset = 2.631;
+    // g.cameraFollow.pitchOffset = 2.631;
+    g.cameraFollow.pitchOffset = 0.0;
 
     EM.addSystem(
       "smolGhost",
@@ -820,17 +826,14 @@ const { Ld53PlayerPropsDef, Ld53PlayerLocalDef, createLd53PlayerAsync } =
         // setCameraFollowPosition(p, "firstPerson");
         // setCameraFollowPosition(p, "thirdPerson");
 
-        p.cameraFollow.positionOffset = V(0, 5, 0);
         p.controllable.speed *= 0.5;
         p.controllable.sprintMul = 10;
 
-        vec3.copy(p.position, [0, -1.2, 1]);
-
-        vec3.copy(p.position, [-28.11, -28.39, 26.0]);
-        quat.copy(p.rotation, [0.0, -0.94, 0.0, 0.34]);
+        // vec3.copy(p.position, [-28.11, -28.39, 26.0]);
+        // quat.copy(p.rotation, [0.0, -0.94, 0.0, 0.34]);
         vec3.copy(p.cameraFollow.positionOffset, [0.0, 5.0, 2.0]);
         p.cameraFollow.yawOffset = 0.0;
-        p.cameraFollow.pitchOffset = -0.593;
+        p.cameraFollow.pitchOffset = 0.0; // -0.593;
 
         EM.ensureResource(LocalPlayerEntityDef, p.id);
 
