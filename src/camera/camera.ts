@@ -8,12 +8,15 @@ import { computeNewError, reduceError } from "../utils/smoothing.js";
 import { TimeDef } from "../time/time.js";
 import { yawpitchToQuat } from "../turret/yawpitch.js";
 import { createAABB } from "../physics/aabb.js";
-import { assert, resizeArray } from "../utils/util.js";
+import { assert, dbgLogOnce, resizeArray } from "../utils/util.js";
 import { Phase } from "../ecs/sys-phase.js";
 import {
   ZUpXFwdYLeft_to_YUpZFwdXLeft,
   ZUpYFwdXRight_YUpNZFwdXRight,
 } from "./basis.js";
+import { mat4Dbg, quatDbg, vec3Dbg } from "../utils/utils-3d.js";
+
+const VERBOSE_CAMERA = true;
 
 export type PerspectiveMode = "perspective" | "ortho";
 export type CameraMode = "thirdPerson" | "thirdPersonOverShoulder";
@@ -102,6 +105,11 @@ export function setCameraFollowPosition(
 EM.addLazyInit([], [CameraDef], () => {
   EM.addResource(CameraDef);
 
+  if (VERBOSE_CAMERA) {
+    console.log("ZUpYFwdXRight_YUpNZFwdXRight");
+    console.log(mat4Dbg(ZUpYFwdXRight_YUpNZFwdXRight));
+  }
+
   EM.addSystem(
     "smoothCamera",
     Phase.PRE_RENDER,
@@ -154,11 +162,13 @@ EM.addLazyInit([], [CameraDef], () => {
         vec3.copy(res.camera.lastPosition, res.camera.positionOffset);
         return;
       }
+      if (VERBOSE_CAMERA) console.log(`new camera target`);
       const prevTarget = EM.findEntity(res.camera.prevTargetId, [
         WorldFrameDef,
       ]);
       const newTarget = EM.findEntity(res.camera.targetId, [WorldFrameDef])!;
       if (prevTarget && newTarget) {
+        if (VERBOSE_CAMERA) console.log(`retargetting camera`);
         computeNewError(
           prevTarget.world.position,
           newTarget.world.position,
@@ -246,11 +256,42 @@ EM.addLazyInit([], [CameraComputedDef], () => {
       mat4.translate(viewMatrix, computedCameraTranslation, viewMatrix);
       mat4.invert(viewMatrix, viewMatrix);
 
+      if (VERBOSE_CAMERA) {
+        dbgLogOnce(
+          `computedCameraTranslation: ${vec3Dbg(computedCameraTranslation)}`
+        );
+        dbgLogOnce(
+          `computedCameraRotation: ${quatDbg(computedCameraRotation)}`
+        );
+      }
+
       // view matrix is in Z-up right-handed, we need
       // to convert to Y-up right-handed for WebGPU's NDC
       // TODO(@darzu): [ ] move Z to where Y is
       // TODO(@darzu): [ ] first or last?
-      mat4.mul(ZUpYFwdXRight_YUpNZFwdXRight, viewMatrix, viewMatrix);
+      // const cameraBasisRot = quat.create();
+      // quat.rotateX(cameraBasisRot, Math.PI / 2, cameraBasisRot);
+      // quat.rotateZ(cameraBasisRot, Math.PI, cameraBasisRot);
+      // const cameraBasis = mat4.fromRotationTranslation(
+      //   cameraBasisRot,
+      //   vec3.ZEROS
+      // );
+      const cameraBasis = new Float32Array([
+        // column 1, x-basis
+        1, 0, 0, 0,
+        // column 2, y-basis,
+        0, 0, -1, 0,
+        // column 3, z-basis,
+        0, 1, 0, 0,
+        // column 4, translation
+        0, 0, 0, 1,
+      ]) as mat4;
+      // const cameraBasis = ZUpYFwdXRight_YUpNZFwdXRight;
+      // const cameraBasis = mat4.IDENTITY;
+      mat4.mul(cameraBasis, viewMatrix, viewMatrix);
+      if (VERBOSE_CAMERA) {
+        dbgLogOnce(mat4Dbg(viewMatrix));
+      }
 
       if (camera.perspectiveMode === "ortho") {
         const ORTHO_SIZE = 10;

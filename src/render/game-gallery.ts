@@ -126,6 +126,7 @@ export async function initGalleryGame() {
   const gizmo = EM.new();
   EM.set(gizmo, RenderableConstructDef, gizmoMesh);
   EM.set(gizmo, PositionDef, V(0, 0, 0));
+  EM.set(gizmo, ScaleDef, V(8, 8, 8));
 
   // avatar
   const g = createGhost();
@@ -135,11 +136,17 @@ export async function initGalleryGame() {
   g.controllable.sprintMul = 0.1;
 
   if (!SHOW_GALLERY) {
-    vec3.copy(g.position, [-10, -10, 10]);
+    // vec3.copy(g.position, [-10, -10, 10]);
+    // quat.fromEuler(0, 0, 0, g.rotation);
+    // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
+    // g.cameraFollow.yawOffset = 0.0 * Math.PI;
+    // g.cameraFollow.pitchOffset = 0; // (3 / 4) * Math.PI;
+
+    vec3.copy(g.position, [0, 0, 0]);
     quat.fromEuler(0, 0, 0, g.rotation);
     vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
     g.cameraFollow.yawOffset = 0.0 * Math.PI;
-    g.cameraFollow.pitchOffset = (3 / 4) * Math.PI;
+    g.cameraFollow.pitchOffset = 0.0 * Math.PI;
   }
 
   // sky dome?
