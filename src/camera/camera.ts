@@ -10,10 +10,7 @@ import { yawpitchToQuat } from "../turret/yawpitch.js";
 import { createAABB } from "../physics/aabb.js";
 import { assert, dbgLogOnce, resizeArray } from "../utils/util.js";
 import { Phase } from "../ecs/sys-phase.js";
-import {
-  ZUpXFwdYLeft_to_YUpZFwdXLeft,
-  ZUpYFwdXRight_YUpNZFwdXRight,
-} from "./basis.js";
+import { ZUpYFwdXRight_YUpNZFwdXRight } from "./basis.js";
 import { mat4Dbg, quatDbg, vec3Dbg } from "../utils/utils-3d.js";
 
 const VERBOSE_CAMERA = false;

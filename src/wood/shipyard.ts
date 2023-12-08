@@ -66,10 +66,7 @@ import {
   translatePath,
   translatePathAlongNormal,
 } from "../utils/spline.js";
-import {
-  ZUpYFwdXRight_YUpNZFwdXRight,
-  convert_ZUpYFwdXRight_YUpNZFwdXRight,
-} from "../camera/basis.js";
+import { ZUpYFwdXRight_YUpNZFwdXRight } from "../camera/basis.js";
 
 // TODO(@darzu): use arc-length parameterization to resample splines
 
@@ -289,7 +286,8 @@ export const ld53ShipAABBs: AABB[] = [
 ].map((aabb) =>
   transformAABB(
     aabb,
-    mat4.mul(mat4.fromZRotation(Math.PI * 0.5), ZUpYFwdXRight_YUpNZFwdXRight)
+    // mat4.mul(mat4.fromZRotation(Math.PI * 0.5), ZUpYFwdXRight_YUpNZFwdXRight)
+    ZUpYFwdXRight_YUpNZFwdXRight
   )
 );
 
@@ -806,12 +804,17 @@ export function createLD53Ship(): HomeShip {
   // ROTATE WHOLE THING (YIKES)
   // TODO(@darzu): fix up ship construction
   {
-    // const rotate = quat.fromEuler(Math.PI / 2, 0, 0);
-    // _timberMesh.pos.forEach((v) => {
-    //   vec3.transformQuat(v, rotate, v);
-    // });
+    const rotate = quat.fromEuler(0, -Math.PI / 2, 0);
+    _timberMesh.pos.forEach((v) => {
+      vec3.transformQuat(v, rotate, v);
+    });
 
-    _timberMesh.pos.forEach(convert_ZUpYFwdXRight_YUpNZFwdXRight);
+    // TODO(@darzu): Z_UP: basis change. inline this above?
+    _timberMesh.pos.forEach((v) =>
+      vec3.transformMat4(v, ZUpYFwdXRight_YUpNZFwdXRight, v)
+    );
+
+    // TODO(@darzu): CLEAN UP: currently the result is the ship fwd is y-; We should fix everything to have y+ is fwd
   }
 
   // lower the whole ship so it's main deck is at 0 height

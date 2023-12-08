@@ -17,7 +17,11 @@ import {
   aabbCenter,
   getHalfsizeFromAABB,
 } from "../physics/aabb.js";
-import { AABBCollider, ColliderDef } from "../physics/collider.js";
+import {
+  AABBCollider,
+  ColliderDef,
+  MultiCollider,
+} from "../physics/collider.js";
 import { AngularVelocityDef, LinearVelocityDef } from "../motion/velocity.js";
 import {
   PhysicsResultsDef,
@@ -86,7 +90,7 @@ import {
 import { TextDef } from "../gui/ui.js";
 import { createIdxPool } from "../utils/idx-pool.js";
 import { randNormalPosVec3, randNormalVec3 } from "../utils/utils-3d.js";
-import { createLD53Ship } from "./shipyard.js";
+import { createLD53Ship, ld53ShipAABBs } from "./shipyard.js";
 import { gameplaySystems } from "../debug/ghost.js";
 import { RenderDataStdDef } from "../render/pipelines/std-scene.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
@@ -98,7 +102,7 @@ import {
   startPirates,
 } from "./pirate.js";
 import { ParametricDef } from "../motion/parametric-motion.js";
-import { addGizmoChild } from "../utils/utils-game.js";
+import { addColliderDbgVis, addGizmoChild } from "../utils/utils-game.js";
 import { createBarrelMesh } from "./barrel.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
@@ -299,13 +303,26 @@ export async function initShipyardGame(hosting: boolean) {
   EM.set(timber, RotationDef);
   EM.set(timber, ScaleDef, V(scale, scale, scale));
   EM.set(timber, WorldFrameDef);
-  EM.set(timber, ColliderDef, {
-    shape: "AABB",
-    solid: false,
-    aabb: timberAABB,
-  });
+  // EM.set(timber, ColliderDef, {
+  //   shape: "AABB",
+  //   solid: false,
+  //   aabb: timberAABB,
+  // });
+  const mc: MultiCollider = {
+    shape: "Multi",
+    solid: true,
+    // TODO(@darzu): integrate these in the assets pipeline
+    children: ld53ShipAABBs.map((aabb) => ({
+      shape: "AABB",
+      solid: true,
+      aabb,
+    })),
+  };
+  EM.set(timber, ColliderDef, mc);
   const timberHealth = createWoodHealth(timberState);
   EM.set(timber, WoodHealthDef, timberHealth);
+
+  addColliderDbgVis(timber);
 
   addGizmoChild(timber, 10);
 
@@ -436,12 +453,13 @@ export async function initShipyardGame(hosting: boolean) {
 
       addGizmoChild(g, 3);
 
-      vec3.copy(g.position, [-21.17, 35.39, 10.27]);
-      quat.copy(g.rotation, [0.0, 0.0, -0.94, 0.32]);
-      vec3.copy(g.cameraFollow.positionOffset, [0.0, 30.0, 0.0]);
-      // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
-      g.cameraFollow.yawOffset = 0.0;
-      g.cameraFollow.pitchOffset = 2.974;
+      // vec3.copy(g.position, [-21.17, 35.39, 10.27]);
+      // quat.copy(g.rotation, [0.0, 0.0, -0.94, 0.32]);
+      // vec3.copy(g.cameraFollow.positionOffset, [0.0, 30.0, 0.0]);
+      // // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
+      // g.cameraFollow.yawOffset = 0.0;
+      // g.cameraFollow.pitchOffset = 2.974;
+      vec3.copy(g.cameraFollow.positionOffset, [0.0, -30.0, 0.0]);
     }
   }
 

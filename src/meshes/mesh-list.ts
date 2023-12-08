@@ -37,10 +37,7 @@ import {
   createRudderMesh,
 } from "./primatives.js";
 import { createGizmoMesh } from "../debug/gizmos.js";
-import {
-  ZUpXFwdYLeft_to_YUpZFwdXLeft,
-  ZUpYFwdXRight_YUpNZFwdXRight,
-} from "../camera/basis.js";
+import { ZUpYFwdXRight_YUpNZFwdXRight } from "../camera/basis.js";
 
 // TODO(@darzu): move elsewhere?
 export const BLACK = V(0, 0, 0);
