@@ -26,12 +26,12 @@ export const YawPitchDef = defineSerializableComponent(
 );
 export type YawPitch = Component<typeof YawPitchDef>;
 
-export function yawpitchToQuat(
-  out: quat,
-  yp: { yaw: number; pitch: number }
-): quat {
-  quat.copy(out, quat.IDENTITY);
-  quat.rotateZ(out, yp.yaw, out);
-  quat.rotateX(out, yp.pitch, out);
-  return out;
+export function yawpitchToQuat(out: quat, { yaw, pitch }: YawPitch): quat {
+  // quat.copy(out, quat.IDENTITY);
+  // quat.rotateZ(out, yp.yaw, out);
+  // quat.rotateX(out, yp.pitch, out);
+  // return out;
+  return quat.fromYawPitchRoll(yaw, pitch, 0, out);
 }
+
+// TODO(@darzu): IMPL quatToYawPitchRoll

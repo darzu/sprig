@@ -56,17 +56,8 @@ export function randQuat(out?: quat): quat {
 }
 
 // matrix utilities
-// TODO(@darzu): Z_UP: check pitch, yaw, roll usages!
-// NOTE: these assume Y is forward, Z is up
-export function pitch(m: mat4, rad: number) {
-  return mat4.rotateX(m, rad, m);
-}
-export function yaw(m: mat4, rad: number) {
-  return mat4.rotateZ(m, rad, m);
-}
-export function roll(m: mat4, rad: number) {
-  return mat4.rotateY(m, rad, m);
-}
+// TODO(@darzu): most of these should move to sprig-matrix
+
 export function moveX(m: mat4, n: number) {
   return mat4.translate(m, [n, 0, 0], m);
 }

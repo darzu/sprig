@@ -13,7 +13,7 @@ import { EM, EntityW } from "../ecs/entity-manager.js";
 import { createGizmoMesh } from "../debug/gizmos.js";
 import { jitter } from "../utils/math.js";
 import { AngularVelocityDef, LinearVelocityDef } from "../motion/velocity.js";
-import { PositionDef, ScaleDef } from "../physics/transform.js";
+import { PositionDef, RotationDef, ScaleDef } from "../physics/transform.js";
 import { PointLightDef } from "./lights.js";
 import { mapMeshPositions } from "../meshes/mesh.js";
 import { createGridComposePipelines } from "./pipelines/std-compose.js";
@@ -40,8 +40,8 @@ import { addGizmoChild } from "../utils/utils-game.js";
 import { makeDome } from "../meshes/primatives.js";
 import { SKY_MASK } from "./pipeline-masks.js";
 
-const SHOW_GALLERY = false;
-const SHOW_SKYDOME = true;
+const SHOW_GALLERY = true;
+const SHOW_SKYDOME = false;
 
 const dbgGrid = [
   //
@@ -131,20 +131,21 @@ export async function initGalleryGame() {
   // avatar
   const g = createGhost();
   g.position[2] = 5;
-  EM.set(g, RenderableConstructDef, sg_meshes.ball.proto);
+  EM.set(g, RenderableConstructDef, sg_meshes.ball.proto, false);
   g.controllable.speed *= 10;
   g.controllable.sprintMul = 0.1;
 
   if (!SHOW_GALLERY) {
     // vec3.copy(g.position, [-10, -10, 10]);
-    // quat.fromEuler(0, 0, 0, g.rotation);
-    // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
-    // g.cameraFollow.yawOffset = 0.0 * Math.PI;
-    // g.cameraFollow.pitchOffset = 0; // (3 / 4) * Math.PI;
-
     vec3.copy(g.position, [0, 0, 0]);
-    quat.fromEuler(0, 0, 0, g.rotation);
+    quat.fromYawPitchRoll(
+      0.0 * Math.PI,
+      0.0 * Math.PI,
+      0.0 * Math.PI,
+      g.rotation
+    );
     vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
+    // vec3.copy(g.cameraFollow.positionOffset, [0.0, -10.0, 3.0]);
     g.cameraFollow.yawOffset = 0.0 * Math.PI;
     g.cameraFollow.pitchOffset = 0.0 * Math.PI;
   }
@@ -244,16 +245,19 @@ export async function initGalleryGame() {
 
   if (SHOW_GALLERY) {
     vec3.copy(g.position, [452.74, -46.39, 34.87]);
-    quat.copy(g.rotation, [0.0, 0.0, -0.4, 0.92]);
+    quat.identity(g.rotation);
+    // quat.copy(g.rotation, [0.0, 0.0, -0.4, 0.92]);
     vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
     g.cameraFollow.yawOffset = 0.0;
-    g.cameraFollow.pitchOffset = 2.801;
+    g.cameraFollow.pitchOffset = 0.0;
 
     createGallery();
   }
 }
 
 async function createGallery() {
+  // TODO(@darzu): Z_UP: verify yaw,pitch,roll work as expected!!
+
   // TODO(@darzu): present a mesh set on a single pedestal.
   const objMargin = 8;
   let lastX = 10;
@@ -283,6 +287,9 @@ async function createGallery() {
       V(x - m.center[0] * scale, -m.center[1] * scale, -m.aabb.min[2] * scale)
     );
     if (hasScale) EM.set(obj, ScaleDef, V(scale, scale, scale));
+
+    // TODO(@darzu): DBGing yaw,pitch,roll
+    EM.set(obj, RotationDef, quat.fromYawPitchRoll(0.0, 0.0, 0.0));
 
     addGizmoChild(obj, halfsize * scale * 1.1);
 

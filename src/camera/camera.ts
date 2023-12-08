@@ -16,7 +16,7 @@ import {
 } from "./basis.js";
 import { mat4Dbg, quatDbg, vec3Dbg } from "../utils/utils-3d.js";
 
-const VERBOSE_CAMERA = true;
+const VERBOSE_CAMERA = false;
 
 export type PerspectiveMode = "perspective" | "ortho";
 export type CameraMode = "thirdPerson" | "thirdPersonOverShoulder";

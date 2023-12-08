@@ -616,6 +616,25 @@ export module quat {
   export function fromMat3(m: mat3, out?: T): T {
     return GL.fromMat3(out ?? tmp(), m) as T;
   }
+
+  // NOTE: the yaw/pitch/roll functions ASSUME Z-up, Y-fwd, X-right
+  export function yaw(v1: InputT, n: number, out?: T) {
+    return GL.rotateZ(out ?? tmp(), v1, -n) as T;
+  }
+  export function pitch(v1: InputT, n: number, out?: T) {
+    return GL.rotateX(out ?? tmp(), v1, n) as T;
+  }
+  export function roll(v1: InputT, n: number, out?: T) {
+    return GL.rotateY(out ?? tmp(), v1, n) as T;
+  }
+  export function fromYawPitchRoll(
+    yaw: number,
+    pitch: number,
+    roll: number,
+    out?: T
+  ): T {
+    return GL.fromEuler(out ?? tmp(), pitch, roll, -yaw) as T;
+  }
 }
 
 export module mat4 {
@@ -737,7 +756,8 @@ export module mat4 {
     return GL.getScaling(out ?? vec3.tmp(), m) as vec3;
   }
 
-  // NOTE: rotates CCW
+  // TODO(@darzu): wait what, these should all rotate clockwise?
+  //  comment was: "NOTE: rotates CCW"
   export function rotateX(v1: InputT, n: number, out?: T) {
     return GL.rotateX(out ?? tmp(), v1, n) as T;
   }
@@ -746,6 +766,17 @@ export module mat4 {
   }
   export function rotateZ(v1: InputT, n: number, out?: T) {
     return GL.rotateZ(out ?? tmp(), v1, n) as T;
+  }
+
+  // NOTE: the yaw/pitch/roll functions ASSUME Z-up, Y-fwd, X-right
+  export function yaw(v1: InputT, n: number, out?: T) {
+    return GL.rotateZ(out ?? tmp(), v1, -n) as T;
+  }
+  export function pitch(v1: InputT, n: number, out?: T) {
+    return GL.rotateX(out ?? tmp(), v1, n) as T;
+  }
+  export function roll(v1: InputT, n: number, out?: T) {
+    return GL.rotateY(out ?? tmp(), v1, n) as T;
   }
 
   export function frustum(
