@@ -10,7 +10,10 @@ import { yawpitchToQuat } from "../turret/yawpitch.js";
 import { createAABB } from "../physics/aabb.js";
 import { assert, dbgLogOnce, resizeArray } from "../utils/util.js";
 import { Phase } from "../ecs/sys-phase.js";
-import { ZUpYFwdXRight_YUpNZFwdXRight } from "./basis.js";
+import {
+  transformCameraViewForWebGPUsNDC,
+  transformModelIntoZUp,
+} from "./basis.js";
 import { mat4Dbg, quatDbg, vec3Dbg } from "../utils/utils-3d.js";
 
 const VERBOSE_CAMERA = false;
@@ -103,8 +106,10 @@ EM.addLazyInit([], [CameraDef], () => {
   EM.addResource(CameraDef);
 
   if (VERBOSE_CAMERA) {
-    console.log("ZUpYFwdXRight_YUpNZFwdXRight");
-    console.log(mat4Dbg(ZUpYFwdXRight_YUpNZFwdXRight));
+    console.log("transformModelIntoZUp mat4:");
+    console.log(mat4Dbg(transformModelIntoZUp));
+    console.log("transformCameraViewForWebGPUsNDC mat4:");
+    console.log(mat4Dbg(transformCameraViewForWebGPUsNDC));
   }
 
   EM.addSystem(
@@ -264,28 +269,7 @@ EM.addLazyInit([], [CameraComputedDef], () => {
 
       // view matrix is in Z-up right-handed, we need
       // to convert to Y-up right-handed for WebGPU's NDC
-      // TODO(@darzu): [ ] move Z to where Y is
-      // TODO(@darzu): [ ] first or last?
-      // const cameraBasisRot = quat.create();
-      // quat.rotateX(cameraBasisRot, Math.PI / 2, cameraBasisRot);
-      // quat.rotateZ(cameraBasisRot, Math.PI, cameraBasisRot);
-      // const cameraBasis = mat4.fromRotationTranslation(
-      //   cameraBasisRot,
-      //   vec3.ZEROS
-      // );
-      const cameraBasis = new Float32Array([
-        // column 1, x-basis
-        1, 0, 0, 0,
-        // column 2, y-basis,
-        0, 0, -1, 0,
-        // column 3, z-basis,
-        0, 1, 0, 0,
-        // column 4, translation
-        0, 0, 0, 1,
-      ]) as mat4;
-      // const cameraBasis = ZUpYFwdXRight_YUpNZFwdXRight;
-      // const cameraBasis = mat4.IDENTITY;
-      mat4.mul(cameraBasis, viewMatrix, viewMatrix);
+      mat4.mul(transformCameraViewForWebGPUsNDC, viewMatrix, viewMatrix);
       if (VERBOSE_CAMERA) {
         dbgLogOnce(mat4Dbg(viewMatrix));
       }

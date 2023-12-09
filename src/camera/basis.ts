@@ -1,69 +1,31 @@
-import { mat3, mat4, vec3 } from "../matrix/sprig-matrix.js";
-import { AABB, transformAABB } from "../physics/aabb.js";
-
-// USAGE NOTE: When a model was designed originally for e.g. YUpZFwdXLeft, then
-//  to use it in ZUpXFwdYLeft, you need to use convert_ZUpXFwdYLeft_to_YUpZFwdXLeft,
-//  so backwards from how you might intuit. I don't have a pithy explanation why..
+import { mat4 } from "../matrix/sprig-matrix.js";
 
 // TODO(@darzu): PERF. If we end up using these a lot, we could speed up the matrix multiply
 //  and vec transform by inlining these since they're just 1s and 0s
 
-// y->z, x->y, z->x
-const YUpZFwdXLeft_to_ZUpXFwdYLeft = new Float32Array([
+// USAGE: apply this to a model that was designed for the old Y-up, X-right, Z-backward, this
+//  transforms it into Z-up, X-right, Y-forward
+export const transformModelIntoZUp = new Float32Array([
   // column 1, x-basis
+  1, 0, 0, 0,
+  // column 2, y-basis
   0, 0, 1, 0,
-  // column 2, y-basis
-  1, 0, 0, 0,
   // column 3, z-basis
-  0, 1, 0, 0,
+  0, -1, 0, 0,
   // column 4, translation
   0, 0, 0, 1,
 ]) as mat4;
-// export function convert_YUpZFwdXLeft_to_ZUpXFwdYLeft(v: vec3): vec3 {
-//   return vec3.transformMat4(v, YUpZFwdXLeft_to_ZUpXFwdYLeft, v);
-// }
-const YUpZFwdXLeft_to_ZUpXFwdYLeft_mat3 = new Float32Array([
-  // column 1, x-basis
-  0, 0, 1,
-  // column 2, y-basis
-  1, 0, 0,
-  // column 3, z-basis
-  0, 1, 0,
-]) as mat3;
-function convert_YUpZFwdXLeft_to_ZUpXFwdYLeft(v: vec3): vec3 {
-  return vec3.transformMat3(v, YUpZFwdXLeft_to_ZUpXFwdYLeft_mat3, v);
-}
 
-const ZUpXFwdYLeft_to_YUpZFwdXLeft = mat4.invert(
-  YUpZFwdXLeft_to_ZUpXFwdYLeft,
-  mat4.create()
-);
-
-function convert_ZUpXFwdYLeft_to_YUpZFwdXLeft(v: vec3): vec3 {
-  return vec3.transformMat4(v, ZUpXFwdYLeft_to_YUpZFwdXLeft, v);
-}
-
-// y->z, x->x, z->-y
-// e.g. <3,4,5> (4 units up, -5 units forward) becomes <3,-5,4> (or just invert zUpRH_to_yUpRH)
-const YUpNZFwdXRight_to_ZUpYFwdXRight = new Float32Array([
+// USAGE: apply this as the last step in the view transformation before the perspective
+//  transformation to translate our Z-up world into Y-up for WebGPU's NDC which has
+//  Y-up and bottom-left corner at (-1.0, -1.0, z).
+export const transformCameraViewForWebGPUsNDC = new Float32Array([
   // column 1, x-basis
   1, 0, 0, 0,
-  // column 2, y-basis, -Z goes to Y
+  // column 2, y-basis,
   0, 0, -1, 0,
-  // column 3, z-basis, Y goes to Z
+  // column 3, z-basis,
   0, 1, 0, 0,
   // column 4, translation
   0, 0, 0, 1,
 ]) as mat4;
-
-function convert_YUpNZFwdXRight_to_ZUpYFwdXRight(v: vec3): vec3 {
-  return vec3.transformMat4(v, YUpNZFwdXRight_to_ZUpYFwdXRight, v);
-}
-export const ZUpYFwdXRight_YUpNZFwdXRight = mat4.invert(
-  YUpNZFwdXRight_to_ZUpYFwdXRight,
-  mat4.create()
-);
-
-function convert_ZUpYFwdXRight_YUpNZFwdXRight(v: vec3): vec3 {
-  return vec3.transformMat4(v, ZUpYFwdXRight_YUpNZFwdXRight, v);
-}

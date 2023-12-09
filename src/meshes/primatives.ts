@@ -32,7 +32,7 @@ import { assert, range } from "../utils/util.js";
 import { orthonormalize, uintToVec3unorm, vec3Dbg } from "../utils/utils-3d.js";
 import { drawBall } from "../utils/utils-game.js";
 import { createTimberBuilder, createEmptyMesh } from "../wood/wood.js";
-import { ZUpYFwdXRight_YUpNZFwdXRight } from "../camera/basis.js";
+import { transformModelIntoZUp } from "../camera/basis.js";
 
 // TODO(@darzu): Z_UP, this whole file..
 
@@ -854,7 +854,7 @@ export function createRudderMesh(): Mesh {
 
   // TODO(@darzu): inline this transformation
   // m.pos.map((v) => vec3.transformMat4(v, ZUpXFwdYLeft_to_YUpZFwdXLeft, v));
-  m.pos.map((v) => vec3.transformMat4(v, ZUpYFwdXRight_YUpNZFwdXRight, v));
+  m.pos.map((v) => vec3.transformMat4(v, transformModelIntoZUp, v));
 
   m.surfaceIds = m.quad.map((_, i) => i + 1);
   (m as Mesh).usesProvoking = true;

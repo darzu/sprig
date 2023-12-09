@@ -66,7 +66,7 @@ import {
   translatePath,
   translatePathAlongNormal,
 } from "../utils/spline.js";
-import { ZUpYFwdXRight_YUpNZFwdXRight } from "../camera/basis.js";
+import { transformModelIntoZUp } from "../camera/basis.js";
 
 // TODO(@darzu): use arc-length parameterization to resample splines
 
@@ -287,7 +287,7 @@ export const ld53ShipAABBs: AABB[] = [
   transformAABB(
     aabb,
     // mat4.mul(mat4.fromZRotation(Math.PI * 0.5), ZUpYFwdXRight_YUpNZFwdXRight)
-    ZUpYFwdXRight_YUpNZFwdXRight
+    transformModelIntoZUp
   )
 );
 
@@ -811,7 +811,7 @@ export function createLD53Ship(): HomeShip {
 
     // TODO(@darzu): Z_UP: basis change. inline this above?
     _timberMesh.pos.forEach((v) =>
-      vec3.transformMat4(v, ZUpYFwdXRight_YUpNZFwdXRight, v)
+      vec3.transformMat4(v, transformModelIntoZUp, v)
     );
 
     // TODO(@darzu): CLEAN UP: currently the result is the ship fwd is y-; We should fix everything to have y+ is fwd

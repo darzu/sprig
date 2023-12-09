@@ -37,7 +37,7 @@ import {
   createRudderMesh,
 } from "./primatives.js";
 import { createGizmoMesh } from "../debug/gizmos.js";
-import { ZUpYFwdXRight_YUpNZFwdXRight } from "../camera/basis.js";
+import { transformModelIntoZUp } from "../camera/basis.js";
 
 // TODO(@darzu): move elsewhere?
 export const BLACK = V(0, 0, 0);
@@ -82,12 +82,12 @@ export const ShipMesh = XY.registerMesh({
     scaleMesh(m, 3);
     return m;
   },
-  transformBasis: ZUpYFwdXRight_YUpNZFwdXRight,
+  transformBasis: transformModelIntoZUp,
 });
 export const ShipSmallMesh = XY.registerMesh({
   name: "ship_small",
   data: "player_ship_small.sprig.obj",
-  transformBasis: ZUpYFwdXRight_YUpNZFwdXRight,
+  transformBasis: transformModelIntoZUp,
   transform: mat4.fromRotationTranslationScaleOrigin(
     quat.IDENTITY,
     [0, 0, 0],
@@ -100,7 +100,7 @@ export const ShipSmallMesh = XY.registerMesh({
 export const ShipFangsMesh = XY.registerMesh({
   name: "ship_fangs",
   data: "enemy_ship_fangs.sprig.obj",
-  transformBasis: ZUpYFwdXRight_YUpNZFwdXRight,
+  transformBasis: transformModelIntoZUp,
   transform: mat4.fromScaling([3, 3, 3], mat4.create()),
   modify: (m) => {
     // if ("true") return m; // TODO(@darzu): FOR PERF
@@ -135,17 +135,17 @@ export const ShipFangsMesh = XY.registerMesh({
 export const PickMesh = XY.registerMesh({
   name: "pick",
   data: "pick.sprig.obj",
-  transformBasis: ZUpYFwdXRight_YUpNZFwdXRight,
+  transformBasis: transformModelIntoZUp,
 });
 export const SpaceOreMesh = XY.registerMesh({
   name: "spaceore",
   data: "spaceore.sprig.obj",
-  transformBasis: ZUpYFwdXRight_YUpNZFwdXRight,
+  transformBasis: transformModelIntoZUp,
 });
 export const SpaceRockMesh = XY.registerMesh({
   name: "spacerock",
   data: "spacerock.sprig.obj",
-  transformBasis: ZUpYFwdXRight_YUpNZFwdXRight,
+  transformBasis: transformModelIntoZUp,
   transform: mat4.fromScaling([1.5, 1.5, 1.5], mat4.create()),
   modify: (m) => {
     m.colors = m.colors.map((c) => V(0.05, 0.15, 0.2));
@@ -158,18 +158,18 @@ export const SpaceRockMesh = XY.registerMesh({
 export const AmmunitionBoxMesh = XY.registerMesh({
   name: "ammunition_box",
   data: "ammunition_box.sprig.obj",
-  transformBasis: ZUpYFwdXRight_YUpNZFwdXRight,
+  transformBasis: transformModelIntoZUp,
 });
 export const LinstockMesh = XY.registerMesh({
   name: "linstock",
   data: "linstock.sprig.obj",
-  transformBasis: ZUpYFwdXRight_YUpNZFwdXRight,
+  transformBasis: transformModelIntoZUp,
   transform: mat4.fromScaling([0.1, 0.1, 0.1], mat4.create()),
 });
 export const CannonMesh = XY.registerMesh({
   name: "cannon",
   data: "cannon_simple.sprig.obj",
-  transformBasis: ZUpYFwdXRight_YUpNZFwdXRight,
+  transformBasis: transformModelIntoZUp,
   transform: mat4.fromYRotation(-Math.PI / 2, mat4.create()),
   modify: (m) => {
     m.colors = m.colors.map((c) => V(0.2, 0.2, 0.2));
@@ -179,7 +179,7 @@ export const CannonMesh = XY.registerMesh({
 export const CannonLD51Mesh = XY.registerMesh({
   name: "ld51_cannon",
   data: "ld51_cannon.sprig.obj",
-  transformBasis: ZUpYFwdXRight_YUpNZFwdXRight,
+  transformBasis: transformModelIntoZUp,
   transform: mat4.fromRotationTranslationScale(
     quat.rotateX(quat.IDENTITY, Math.PI * -0.5, quat.create()),
     [0, 0, 0],
@@ -191,25 +191,25 @@ export const CannonLD51Mesh = XY.registerMesh({
 export const GrappleHookMesh = XY.registerMesh({
   name: "grappleHook",
   data: "grapple-hook.sprig.obj",
-  transformBasis: ZUpYFwdXRight_YUpNZFwdXRight,
+  transformBasis: transformModelIntoZUp,
   transform: mat4.fromScaling([0.5, 0.5, 0.5], mat4.create()),
 });
 export const GrappleGunMesh = XY.registerMesh({
   name: "grappleGun",
   data: "grapple-gun.sprig.obj",
-  transformBasis: ZUpYFwdXRight_YUpNZFwdXRight,
+  transformBasis: transformModelIntoZUp,
   transform: mat4.fromScaling([0.5, 0.5, 0.5], mat4.create()),
 });
 export const GrappleGunUnloadedMesh = XY.registerMesh({
   name: "grappleGunUnloaded",
   data: "grapple-gun-unloaded.sprig.obj",
-  transformBasis: ZUpYFwdXRight_YUpNZFwdXRight,
+  transformBasis: transformModelIntoZUp,
   transform: mat4.fromScaling([0.5, 0.5, 0.5], mat4.create()),
 });
 export const RudderMesh = XY.registerMesh({
   name: "rudder",
   data: "rudder.sprig.obj",
-  transformBasis: ZUpYFwdXRight_YUpNZFwdXRight,
+  transformBasis: transformModelIntoZUp,
   transform: mat4.translate(
     mat4.fromYRotation(-Math.PI * 0.5, mat4.create()),
     V(-5, 0, 0),
@@ -221,7 +221,7 @@ export const RudderMesh = XY.registerMesh({
 export const OceanMesh = XY.registerMesh({
   name: "ocean",
   data: "hyperspace-ocean.sprig.obj",
-  transformBasis: ZUpYFwdXRight_YUpNZFwdXRight,
+  transformBasis: transformModelIntoZUp,
   transform: mat4.fromScaling([2, 2, 2], mat4.create()),
   modify: (m) => {
     // if ("true") return m; // TODO(@darzu): FOR PERF
@@ -381,7 +381,7 @@ export const OceanMesh = XY.registerMesh({
 export const PirateMesh = XY.registerMesh({
   name: "pirate",
   data: "pirate.glb",
-  transformBasis: ZUpYFwdXRight_YUpNZFwdXRight,
+  transformBasis: transformModelIntoZUp,
 });
 
 // TODO(@darzu): both of these are doing "cell fracture" in Blender
@@ -394,13 +394,13 @@ export const BoatBrokenMesh = XY.registerMesh({
   name: "boat_broken",
   multi: true,
   data: "boat_broken.sprig.obj",
-  transformBasis: ZUpYFwdXRight_YUpNZFwdXRight,
+  transformBasis: transformModelIntoZUp,
 });
 export const ShipBrokenMesh = XY.registerMesh({
   name: "ship_broken",
   multi: true,
   data: "barge1_broken.sprig.obj",
-  transformBasis: ZUpYFwdXRight_YUpNZFwdXRight,
+  transformBasis: transformModelIntoZUp,
   modify: (m) => {
     m.lines = [];
     m.pos = m.pos.map((p) => vec3.sub(p, SHIP_OFFSET, vec3.create()));
@@ -412,7 +412,7 @@ export const BallBrokenMesh = XY.registerMesh({
   name: "ball_broken",
   multi: true,
   data: "ball_broken6.sprig.obj",
-  transformBasis: ZUpYFwdXRight_YUpNZFwdXRight,
+  transformBasis: transformModelIntoZUp,
 });
 
 export const CubeMesh = XY.registerMesh({
@@ -505,7 +505,7 @@ export const RudderPrimMesh = XY.registerMesh({
 export const LD54AstronautMesh = XY.registerMesh({
   name: "ld54_astronaut",
   data: "ld54-space-knight.glb",
-  transformBasis: ZUpYFwdXRight_YUpNZFwdXRight,
+  transformBasis: transformModelIntoZUp,
 });
 
 // TODO(@darzu): remove eventually?
