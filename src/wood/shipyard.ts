@@ -21,7 +21,7 @@ import {
 import { assert, assertDbg, range } from "../utils/util.js";
 import {
   centroid,
-  quatFromUpForward,
+  quatFromUpForward_OLD,
   randNormalPosVec3,
   vec3Dbg,
 } from "../utils/utils-3d.js";
@@ -192,7 +192,7 @@ export function getPathFrom2DQuadMesh(m: Mesh, perp: vec3.InputT): Path {
     let v1 = m.pos[e.next.orig.vi];
     let pos = centroid(v0, v1);
     let dir = vec3.cross(vec3.sub(v0, v1, __temp1), perp, __temp1);
-    const rot = quatFromUpForward(quat.create(), perp, dir);
+    const rot = quatFromUpForward_OLD(quat.create(), perp, dir);
     path.push({ pos, rot });
 
     if (!e.face) break;

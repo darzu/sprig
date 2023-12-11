@@ -51,7 +51,7 @@ import {
 import { range } from "../utils/util.js";
 import {
   centroid,
-  quatFromUpForward,
+  quatFromUpForward_OLD,
   randNormalVec3,
   vec3Dbg,
 } from "../utils/utils-3d.js";
@@ -579,7 +579,7 @@ function getSegmentRotation(seg: BoardSeg, top: boolean) {
   }
 
   const rot = quat.create();
-  quatFromUpForward(rot, endNorm, segNorm);
+  quatFromUpForward_OLD(rot, endNorm, segNorm);
   return rot;
 }
 

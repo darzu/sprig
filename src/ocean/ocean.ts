@@ -34,7 +34,7 @@ import { TimeDef } from "../time/time.js";
 import { asyncTimeout, dbgLogOnce, range } from "../utils/util.js";
 import {
   quatDbg,
-  quatFromUpForward,
+  quatFromUpForward_OLD,
   randNormalVec2,
   vec2Dbg,
   vec3Dbg,
@@ -394,7 +394,7 @@ export function registerOceanUVFns() {
           const forwardish = vec3.sub(aheadPos, e.position, __temp1);
           const newNorm = __temp2;
           res.ocean.uvToGerstnerDispAndNorm(__temp4, newNorm, e.uvPos);
-          quatFromUpForward(e.rotation, newNorm, forwardish);
+          quatFromUpForward_OLD(e.rotation, newNorm, forwardish);
           // console.log(
           //   `UVDir ${[e.uvDir[0], e.uvDir[1]]} -> ${quatDbg(e.rotation)}`
           // );

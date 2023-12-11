@@ -35,7 +35,7 @@ import {
 import { RenderableConstructDef, RendererDef } from "../render/renderer-ecs.js";
 import { mat3, mat4, quat, V, vec2, vec3 } from "../matrix/sprig-matrix.js";
 import { SAIL_FURL_RATE } from "../wind/sail.js";
-import { quatFromUpForward, randNormalVec3 } from "../utils/utils-3d.js";
+import { quatFromUpForward_OLD, randNormalVec3 } from "../utils/utils-3d.js";
 import { randColor } from "../utils/utils-game.js";
 import {
   GrassCutTexPtr,
@@ -682,7 +682,7 @@ export async function initGrassGame(hosting: boolean) {
 
       // TODO(@darzu): ANIMATE SAIL TOWARD WIND
       if (vec3.dot(optimalSailLocalDir, shipLocalDir) > 0.01)
-        quatFromUpForward(mast.rotation, V(0, 1, 0), optimalSailLocalDir);
+        quatFromUpForward_OLD(mast.rotation, V(0, 1, 0), optimalSailLocalDir);
     }
   );
 

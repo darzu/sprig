@@ -20,7 +20,7 @@ import {
   createEvenPathFromBezierSpline,
   getRandomCylindricalPoints,
 } from "../utils/spline.js";
-import { orthonormalize, quatFromUpForward } from "../utils/utils-3d.js";
+import { orthonormalize, quatFromUpForward_OLD } from "../utils/utils-3d.js";
 import { appendBoard } from "../wood/shipyard.js";
 
 export const SpacePathDef = EM.defineNonupdatableComponent(
@@ -92,7 +92,7 @@ export function createSpacePath() {
     // const down = vec3.negate(up);
 
     // const forwardish = vec3.sub(node.pos, next.pos);
-    quatFromUpForward(path[i].rot, up, fwd);
+    quatFromUpForward_OLD(path[i].rot, up, fwd);
     // quat.rotateY(node.rot, Math.PI * 1.0, node.rot);
 
     // quat.rotateZ(node.rot, Math.PI * 0.25, node.rot);

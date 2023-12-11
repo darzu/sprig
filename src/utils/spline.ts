@@ -1,7 +1,7 @@
 import { DBG_ASSERT } from "../flags.js";
 import { vec3, quat, mat3, vec3tmp, V } from "../matrix/sprig-matrix.js";
 import { assert, range } from "./util.js";
-import { quatFromUpForward } from "./utils-3d.js";
+import { quatFromUpForward_OLD } from "./utils-3d.js";
 
 export interface PathNode {
   // TODO(@darzu): different path formats? e.g. bezier, mat4s, relative pos/rot,
@@ -130,7 +130,7 @@ export function createPathFromBezier(
     const pos = bezierPosition(b, t, vec3.create());
     const tan = bezierTangent(b, t, vec3.tmp());
     vec3.normalize(tan, tan);
-    const rot = quatFromUpForward(quat.create(), up, tan);
+    const rot = quatFromUpForward_OLD(quat.create(), up, tan);
     path.push({ pos, rot });
   }
   return path;
@@ -202,7 +202,7 @@ export function createEvenPathFromBezierCurve(
         const pos = bezierPosition(b, t, vec3.create());
         const tan = bezierTangent(b, t, vec3.tmp());
         vec3.normalize(tan, tan);
-        const rot = quatFromUpForward(quat.create(), up, tan);
+        const rot = quatFromUpForward_OLD(quat.create(), up, tan);
         path.push({ pos, rot });
         didAdd = true;
         // console.log(`adding: ${t} -> ${vec3Dbg(pos)}`);

@@ -56,7 +56,7 @@ import {
 } from "../utils/math.js";
 import { FALSE, assert, dbgOnce } from "../utils/util.js";
 import {
-  quatFromUpForward,
+  quatFromUpForward_OLD,
   randNormalVec3,
   vec3Dbg,
 } from "../utils/utils-3d.js";
