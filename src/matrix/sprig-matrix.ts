@@ -3,8 +3,8 @@ import {
   PERF_DBG_F32S_BLAME,
   PERF_DBG_F32S_TEMP_BLAME,
 } from "../flags.js";
+import { dbgAddBlame, dbgClearBlame } from "../utils/util-no-import.js";
 import * as GLM from "./gl-matrix.js";
-import { dbgAddBlame, dbgClearBlame } from "../utils/util.js";
 
 /*
 Note on notation:

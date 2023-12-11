@@ -9,12 +9,12 @@ import {
 } from "../flags.js";
 import { vec3 } from "../matrix/sprig-matrix.js";
 import { Serializer, Deserializer } from "../utils/serialize.js";
+import { getCallStack } from "../utils/util-no-import.js";
 import {
   assert,
   assertDbg,
   dbgLogOnce,
   dbgOnce,
-  getCallStack,
   hashCode,
   Intersect,
   isPromise,
