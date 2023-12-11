@@ -42,7 +42,6 @@ import {
   RiggedRenderableConstructDef,
 } from "../render/renderer-ecs.js";
 import { mat3, quat, tV, V, vec2, vec3 } from "../matrix/sprig-matrix.js";
-import { quatDbg, quatFromUpForward_OLD, vec3Dbg } from "../utils/utils-3d.js";
 import { DevConsoleDef } from "../debug/console.js";
 import { clamp, jitter, max } from "../utils/math.js";
 import { assert, dbgLogMilestone, dbgOnce } from "../utils/util.js";
@@ -549,7 +548,7 @@ export async function initLD53(hosting: boolean) {
 
         const invShip = mat3.invert(mat3.fromMat4(shipWorld.world.transform));
         const windLocalDir = vec3.transformMat3(res.wind.dir, invShip);
-        const shipLocalDir = V(0, 1, 0); // TODO(@darzu): Z_UP?
+        const shipLocalDir = tV(0, 1, 0); // TODO(@darzu): Z_UP?
 
         const optimalSailLocalDir = vec3.normalize(
           vec3.add(windLocalDir, shipLocalDir)
@@ -569,7 +568,11 @@ export async function initLD53(hosting: boolean) {
         if (vec3.dot(optimalSailLocalDir, shipLocalDir) > 0.01) {
           // TODO(@darzu): Z_UP !!!!
           // vec3.set(0, 1, 0, optimalSailLocalDir); // TODO(@darzu): UP_Z dbging
-          quatFromUpForward_OLD(mast.rotation, V(0, 0, 1), optimalSailLocalDir);
+          quat.fromForwardAndUpish(
+            optimalSailLocalDir,
+            [0, 0, 1],
+            mast.rotation
+          );
         }
       }
     );

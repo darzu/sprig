@@ -139,15 +139,17 @@ export function unlerp(min: number, max: number, val: number): number {
 // enable w/ RUN_UNIT_TESTS
 export function testMath() {
   const fwd = V(0, 1, 0);
-  const upish = V(0.1, 1.0, 0.1);
-  const right = V(0, 0, 0);
-  console.log("orthonormalize:");
-  console.log(`fwd: ${vec3Dbg(fwd)}`);
-  console.log(`up: ${vec3Dbg(upish)}`);
-  console.log(`right: ${vec3Dbg(right)}`);
-  console.log("->");
+  const upish = V(0.2, 0.2, 1.0);
+  // const right = V(0, 0, 0);
+  const right = new Float32Array([0, 0, 0]) as vec3;
+  // console.log("orthonormalize:");
+  // console.log(`fwd: ${vec3Dbg(fwd)}`);
+  // console.log(`up: ${vec3Dbg(upish)}`);
+  // console.log(`right: ${vec3Dbg(right)}`);
+  // console.log("->");
   orthonormalize(fwd, upish, right);
-  console.log(`fwd: ${vec3Dbg(fwd)}`);
-  console.log(`up: ${vec3Dbg(upish)}`);
-  console.log(`right: ${vec3Dbg(right)}`);
+  // console.log(`fwd: ${vec3Dbg(fwd)}`);
+  // console.log(`up: ${vec3Dbg(upish)}`);
+  // console.log(`right: ${vec3Dbg(right)}`);
+  assert(vec3.dist(right, [1, 0, 0]) < 0.3, "orthonormalize test");
 }

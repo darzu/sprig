@@ -353,7 +353,6 @@ export function frustumFromBounds(
   mat4.mul(projTmp, viewTmp, outFrust);
 }
 
-export const UP = V(0, 1, 0); // TODO(@darzu): formalize coordinate system somewhere?
 const __angleBetweenXZTmp0 = vec3.create();
 const __angleBetweenXZTmp1 = vec3.create();
 const __angleBetweenXZTmp2 = vec3.create();

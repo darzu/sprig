@@ -670,6 +670,7 @@ export module quat {
     newZish: vec3.InputT,
     out?: T
   ): T {
+    // TODO(@darzu): PERF. this could be sped up by inline a lot of this and simplifying
     const x = _t1;
     const y = vec3.copy(_t2, newY);
     const z = vec3.copy(_t3, newZish);
