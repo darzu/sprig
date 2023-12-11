@@ -636,6 +636,33 @@ export module quat {
     return GL.fromEuler(out ?? tmp(), pitch, roll, -yaw) as T;
   }
 
+  // TODO(@darzu): IMPL toYawPitchRoll
+  /*
+  https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
+  // this implementation assumes normalized quaternion
+  // converts to Euler angles in 3-2-1 sequence
+  EulerAngles ToEulerAngles(Quaternion q) {
+      EulerAngles angles;
+
+      // roll (x-axis rotation)
+      double sinr_cosp = 2 * (q.w * q.x + q.y * q.z);
+      double cosr_cosp = 1 - 2 * (q.x * q.x + q.y * q.y);
+      angles.roll = std::atan2(sinr_cosp, cosr_cosp);
+
+      // pitch (y-axis rotation)
+      double sinp = std::sqrt(1 + 2 * (q.w * q.y - q.x * q.z));
+      double cosp = std::sqrt(1 - 2 * (q.w * q.y - q.x * q.z));
+      angles.pitch = 2 * std::atan2(sinp, cosp) - M_PI / 2;
+
+      // yaw (z-axis rotation)
+      double siny_cosp = 2 * (q.w * q.z + q.x * q.y);
+      double cosy_cosp = 1 - 2 * (q.y * q.y + q.z * q.z);
+      angles.yaw = std::atan2(siny_cosp, cosy_cosp);
+
+      return angles;
+  }
+  */
+
   // NOTE: assumes these are orthonormalized
   export function fromXYZ(
     x: vec3.InputT,
@@ -686,7 +713,47 @@ export module quat {
   ): T {
     return fromYAndZish(forward, upish, out);
   }
+
+  // Creates a rotation that will move <0,1,0> to point towards forward; no guarantees are made
+  //  about its other axis orientations!
+  const _t4 = vec3.create();
+  export function fromForward(forward: vec3.InputT, out?: T): T {
+    // console.log(`fromForward, fwd:${vec3Dbg(forward)}`);
+
+    const y = vec3.copy(_t4, forward);
+    vec3.normalize(y, y);
+
+    // console.log(`normalized y: ${vec3Dbg(y)}`);
+
+    // find an up-ish vector
+    const upish = tV(0, 0, 1);
+    if (Math.abs(vec3.dot(y, upish)) > 0.9) vec3.set(0, 1, 0, upish);
+
+    // console.log(`upish: ${vec3Dbg(upish)}`);
+
+    // orthonormalize
+    const x = vec3.tmp();
+    vec3.cross(y, upish, x);
+    vec3.normalize(x, x);
+
+    // console.log(`x: ${vec3Dbg(x)}`);
+
+    vec3.cross(x, y, upish);
+
+    // console.log(`new upish: ${vec3Dbg(upish)}`);
+
+    // console.log(`x: ${vec3Dbg(x)}, y: ${vec3Dbg(y)}, z: ${vec3Dbg(upish)}`);
+
+    return fromXYZ(x, y, upish, out);
+  }
 }
+
+// TODO(@darzu): HACK FOR DEBUGGING
+// function vec3Dbg(v?: vec3.InputT): string {
+//   return v
+//     ? `[${v[0].toFixed(2)},${v[1].toFixed(2)},${v[2].toFixed(2)}]`
+//     : "NIL";
+// }
 
 export module mat4 {
   export type T = mat4;
