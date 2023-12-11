@@ -1,4 +1,4 @@
-import { mat3, vec3 } from "../matrix/sprig-matrix.js";
+import { V, mat3, orthonormalize, vec3 } from "../matrix/sprig-matrix.js";
 import { EaseFn } from "./util-ease.js";
 import { assert } from "./util.js";
 import { vec3Dbg } from "./utils-3d.js";
@@ -134,4 +134,20 @@ export function lerp(a: number, b: number, t: number): number {
 }
 export function unlerp(min: number, max: number, val: number): number {
   return (val - min) / (max - min);
+}
+
+// enable w/ RUN_UNIT_TESTS
+export function testMath() {
+  const fwd = V(0, 1, 0);
+  const upish = V(0.1, 1.0, 0.1);
+  const right = V(0, 0, 0);
+  console.log("orthonormalize:");
+  console.log(`fwd: ${vec3Dbg(fwd)}`);
+  console.log(`up: ${vec3Dbg(upish)}`);
+  console.log(`right: ${vec3Dbg(right)}`);
+  console.log("->");
+  orthonormalize(fwd, upish, right);
+  console.log(`fwd: ${vec3Dbg(fwd)}`);
+  console.log(`up: ${vec3Dbg(upish)}`);
+  console.log(`right: ${vec3Dbg(right)}`);
 }

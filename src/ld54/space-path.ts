@@ -1,7 +1,7 @@
 import { AllEndesga16, ENDESGA16 } from "../color/palettes.js";
 import { createLineMesh } from "../debug/gizmos.js";
 import { EM } from "../ecs/entity-manager.js";
-import { V, quat, tV, vec3 } from "../matrix/sprig-matrix.js";
+import { V, orthonormalize, quat, tV, vec3 } from "../matrix/sprig-matrix.js";
 import {
   createEmptyRawMesh,
   mergeMeshes,
@@ -20,7 +20,7 @@ import {
   createEvenPathFromBezierSpline,
   getRandomCylindricalPoints,
 } from "../utils/spline.js";
-import { orthonormalize, quatFromUpForward_OLD } from "../utils/utils-3d.js";
+import { quatFromUpForward_OLD } from "../utils/utils-3d.js";
 import { appendBoard } from "../wood/shipyard.js";
 
 export const SpacePathDef = EM.defineNonupdatableComponent(

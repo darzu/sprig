@@ -142,16 +142,19 @@ export const { createLd53ShipAsync, Ld53ShipPropsDef } = defineNetEntityHelper({
     // });
     EM.set(ship, ColliderDef, mc);
 
-    addColliderDbgVis(ship);
+    // addColliderDbgVis(ship);
 
     EM.set(ship, PositionDef, V(0, 0, 0));
-    EM.set(ship, RotationDef);
+    EM.set(ship, RotationDef, quat.fromYawPitchRoll(Math.PI / 2, 0, 0));
     EM.set(ship, LinearVelocityDef);
     // EM.set(ent, ColorDef, V(0.5, 0.3, 0.1));
     EM.set(ship, ColorDef, V(0, 0, 0)); // painted by individual planks!
 
     const mast = createMast(res);
     EM.set(mast, PhysicsParentDef, ship.id);
+
+    addGizmoChild(mast, 20, [0, 0, 0]);
+    addColliderDbgVis(mast);
 
     const sock = createSock(2.0);
     EM.set(sock, PhysicsParentDef, ship.id);
@@ -161,7 +164,7 @@ export const { createLd53ShipAsync, Ld53ShipPropsDef } = defineNetEntityHelper({
     const rudder = createRudder(res);
     EM.set(rudder, PhysicsParentDef, ship.id);
     // console.log("setting position");
-    vec3.set(-25, 0, 4, rudder.position);
+    vec3.set(0, -25, 4, rudder.position);
     // console.log(`rudder: ${rudder.id}`);
 
     // addGizmoChild(rudder, 2, [0, 5, 0]);
@@ -181,20 +184,23 @@ export const { createLd53ShipAsync, Ld53ShipPropsDef } = defineNetEntityHelper({
     // create cannons
     const cannonR = createCannonNow(
       res,
-      V(-7, -8, 4.7),
-      1 * Math.PI,
+      V(8, -7, 4.7),
+      0.5 * Math.PI,
       cannonDefaultPitch,
       ship.id
     );
     vec3.copy(cannonR.color, ENDESGA16.darkGray);
     const cannonL = createCannonNow(
       res,
-      V(-7, 8, 4.7),
-      0 * Math.PI,
+      V(-8, -7, 4.7),
+      -0.5 * Math.PI,
       cannonDefaultPitch,
       ship.id
     );
     vec3.copy(cannonL.color, ENDESGA16.darkGray);
+
+    addGizmoChild(cannonR, 3);
+    addGizmoChild(cannonL, 3);
 
     // NOTE: we need to build the ship all at once so we don't have dangling references
     EM.set(ship, LD52ShipDef);

@@ -284,11 +284,7 @@ export const ld53ShipAABBs: AABB[] = [
   { min: V(-6.15, -2.65, 22.25), max: V(5.55, 3.65, 26.15) },
   { min: V(-6.8, -5.95, -26.1), max: V(7.2, 0.35, 22.5) },
 ].map((aabb) =>
-  transformAABB(
-    aabb,
-    // mat4.mul(mat4.fromZRotation(Math.PI * 0.5), ZUpYFwdXRight_YUpNZFwdXRight)
-    transformModelIntoZUp
-  )
+  transformAABB(aabb, mat4.mul(mat4.fromYaw(Math.PI), transformModelIntoZUp))
 );
 
 export function createLD53Ship(): HomeShip {
@@ -804,15 +800,16 @@ export function createLD53Ship(): HomeShip {
   // ROTATE WHOLE THING (YIKES)
   // TODO(@darzu): fix up ship construction
   {
-    const rotate = quat.fromEuler(0, -Math.PI / 2, 0);
-    _timberMesh.pos.forEach((v) => {
-      vec3.transformQuat(v, rotate, v);
-    });
-
     // TODO(@darzu): Z_UP: basis change. inline this above?
     _timberMesh.pos.forEach((v) =>
       vec3.transformMat4(v, transformModelIntoZUp, v)
     );
+
+    // change so ship faces +y
+    const rotate = quat.fromYawPitchRoll(-Math.PI / 2, 0, 0);
+    _timberMesh.pos.forEach((v) => {
+      vec3.transformQuat(v, rotate, v);
+    });
 
     // TODO(@darzu): CLEAN UP: currently the result is the ship fwd is y-; We should fix everything to have y+ is fwd
   }

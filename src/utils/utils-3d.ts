@@ -138,22 +138,9 @@ export function vec3Mid(out: vec3, a: vec3, b: vec3): vec3 {
   return out;
 }
 
-// mutates forward and upish and outputs to outRight such that all three are
-//  orthogonal to eachother.
-export function orthonormalize(forward: vec3, upish: vec3, outRight: vec3) {
-  // TODO(@darzu): there's a pattern somewhat similar in many places:
-  //    orthonormalizing, Gram–Schmidt
-  //    quatFromUpForward, getControlPoints, tripleProd?
-  //    targetTo, lookAt ?
-  // Also this can be more efficient by inlining
-  vec3.normalize(forward, forward);
-  vec3.cross(forward, upish, outRight);
-  vec3.normalize(outRight, outRight);
-  vec3.cross(outRight, forward, upish);
-}
-
 // quat utilities
-// TODO(@darzu): Z_UP ??
+// TODO(@darzu): replace all usages with the new, better version in sprig-matrix
+// TODO(@darzu): This impl assumes +y is up, +z is fwd
 // assumes local up axis is [0,1,0] and forward is [0,0,1]
 const __t1 = vec3.create();
 const __t2 = vec3.create();

@@ -250,6 +250,7 @@ export function createMast(
   // ent.turret.maxYaw = Math.PI / 2;
   // ent.turret.minYaw = -Math.PI / 2;
 
+  // TODO(@darzu): Z_UP
   const sailWidth = 14;
   const sail = createSail(sailWidth, 8, 2);
   EM.set(sail, PhysicsParentDef, ent.id);

@@ -613,7 +613,7 @@ export module quat {
   export function fromEuler(x: number, y: number, z: number, out?: T): T {
     return GL.fromEuler(out ?? tmp(), x, y, z) as T;
   }
-  export function fromMat3(m: mat3, out?: T): T {
+  export function fromMat3(m: mat3.InputT, out?: T): T {
     return GL.fromMat3(out ?? tmp(), m) as T;
   }
 
@@ -634,6 +634,56 @@ export module quat {
     out?: T
   ): T {
     return GL.fromEuler(out ?? tmp(), pitch, roll, -yaw) as T;
+  }
+
+  // NOTE: assumes these are orthonormalized
+  export function fromXYZ(
+    x: vec3.InputT,
+    y: vec3.InputT,
+    z: vec3.InputT,
+    out?: T
+  ): T {
+    return quat.fromMat3(
+      [
+        // colum 1
+        x[0],
+        x[1],
+        x[2],
+        // colum 2
+        y[0],
+        y[1],
+        y[2],
+        // colum 3
+        z[0],
+        z[1],
+        z[2],
+      ],
+      out
+    );
+  }
+
+  const _t1 = vec3.create();
+  const _t2 = vec3.create();
+  const _t3 = vec3.create();
+  export function fromYAndZish(
+    newY: vec3.InputT,
+    newZish: vec3.InputT,
+    out?: T
+  ): T {
+    const x = _t1;
+    const y = vec3.copy(_t2, newY);
+    const z = vec3.copy(_t3, newZish);
+    orthonormalize(y, z, x);
+    return fromXYZ(x, y, z, out);
+  }
+
+  // NOTE: assumes identity rotation corrisponds to Y+ being forward and Z+ being up
+  export function fromForwardAndUpish(
+    forward: vec3.InputT,
+    upish: vec3.InputT,
+    out?: T
+  ): T {
+    return fromYAndZish(forward, upish, out);
   }
 }
 
@@ -777,6 +827,15 @@ export module mat4 {
   }
   export function roll(v1: InputT, n: number, out?: T) {
     return GL.rotateY(out ?? tmp(), v1, n) as T;
+  }
+  export function fromYaw(rad: number, out?: T): T {
+    return GL.fromZRotation(out ?? tmp(), -rad) as T;
+  }
+  export function fromPitch(rad: number, out?: T): T {
+    return GL.fromXRotation(out ?? tmp(), rad) as T;
+  }
+  export function fromRoll(rad: number, out?: T): T {
+    return GL.fromYRotation(out ?? tmp(), rad) as T;
   }
 
   export function frustum(
@@ -1099,4 +1158,21 @@ export module mat3 {
   export function fromMat4(q: mat4, out?: T): T {
     return GL.fromMat4(out ?? tmp(), q) as T;
   }
+}
+
+// Other utils:
+
+// mutates forward and upish and outputs to outRight such that all three are
+//  orthogonal to eachother.
+// TODO(@darzu): change this to use x,y,z ?
+export function orthonormalize(forward: vec3, upish: vec3, outRight: vec3) {
+  // TODO(@darzu): there's a pattern somewhat similar in many places:
+  //    orthonormalizing, Gram–Schmidt
+  //    quatFromUpForward, getControlPoints, tripleProd?
+  //    targetTo, lookAt ?
+  // Also this can be more efficient by inlining
+  vec3.normalize(forward, forward);
+  vec3.cross(forward, upish, outRight);
+  vec3.normalize(outRight, outRight);
+  vec3.cross(outRight, forward, upish);
 }

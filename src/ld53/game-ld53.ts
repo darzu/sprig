@@ -42,7 +42,7 @@ import {
   RiggedRenderableConstructDef,
 } from "../render/renderer-ecs.js";
 import { mat3, quat, tV, V, vec2, vec3 } from "../matrix/sprig-matrix.js";
-import { quatFromUpForward_OLD, vec3Dbg } from "../utils/utils-3d.js";
+import { quatDbg, quatFromUpForward_OLD, vec3Dbg } from "../utils/utils-3d.js";
 import { DevConsoleDef } from "../debug/console.js";
 import { clamp, jitter, max } from "../utils/math.js";
 import { assert, dbgLogMilestone, dbgOnce } from "../utils/util.js";
@@ -540,6 +540,9 @@ export async function initLD53(hosting: boolean) {
       [InputsDef, WindDef],
       (_, res) => {
         const mast = ship.ld52ship.mast()!;
+
+        // console.log(`MAST: ${quatDbg(mast.rotation)}`);
+
         // const rudder = ship.ld52ship.rudder()!;
 
         // const shipDir = vec3.transformQuat(V(0, 0, 1), shipWorld.world.rotation);
@@ -563,8 +566,11 @@ export async function initLD53(hosting: boolean) {
         // need to maximize: dot(wind, sail) * dot(sail, ship)
 
         // TODO(@darzu): ANIMATE SAIL TOWARD WIND
-        if (vec3.dot(optimalSailLocalDir, shipLocalDir) > 0.01)
+        if (vec3.dot(optimalSailLocalDir, shipLocalDir) > 0.01) {
+          // TODO(@darzu): Z_UP !!!!
+          // vec3.set(0, 1, 0, optimalSailLocalDir); // TODO(@darzu): UP_Z dbging
           quatFromUpForward_OLD(mast.rotation, V(0, 0, 1), optimalSailLocalDir);
+        }
       }
     );
 
