@@ -546,6 +546,7 @@ export function getAABBFromMesh(m: RawMesh): AABB {
 }
 // TODO(@darzu): PERF. this is pretty inefficient. We're mutating the mesh,
 //   so we should be re-using the vecs
+// TODO(@darzu): rename to "mutateMeshPositions" ?
 export function mapMeshPositions(
   m: RawMesh,
   map: (p: vec3, i: number) => vec3

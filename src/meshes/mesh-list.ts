@@ -481,8 +481,7 @@ export const MastMesh = XY.registerMesh({
   data: () => {
     let m = mkCubeMesh();
     m.dbgName = "mast";
-    mapMeshPositions(m, (p) => V(p[0], p[1] + 1, p[2]));
-    scaleMesh3(m, V(0.5, 20, 0.5));
+    mapMeshPositions(m, (p) => V(p[0] * 0.5, p[1] * 0.5, (p[2] + 1) * 20));
     return m;
   },
 });
