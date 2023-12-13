@@ -122,7 +122,7 @@ PERF:
 [ ] reduce triangles on ocean
 */
 
-const DBG_PLAYER = true;
+const DBG_PLAYER = false;
 const DBG_HIDE_LAND = false;
 
 // const SHIP_START_POS = V(100, 0, -100);
@@ -472,12 +472,13 @@ export async function initLD53(hosting: boolean) {
   // load level
   const level = await EM.whenResources(LevelMapDef);
   // TODO(@darzu): Z_UP, verify wind angle
-  console.log(`level.levelMap.windDir: ${vec2Dbg(level.levelMap.windDir)}`);
+  // console.log(`level.levelMap.windDir: ${vec2Dbg(level.levelMap.windDir)}`);
+  // vec2.set(0, 1, level.levelMap.windDir))
   const wingAngle = Math.atan2(
     level.levelMap.windDir[1],
     level.levelMap.windDir[0]
   );
-  console.log(`wingAngle: ${wingAngle}`);
+  // console.log(`wingAngle: ${wingAngle}`);
   setWindAngle(wind, wingAngle);
 
   /*

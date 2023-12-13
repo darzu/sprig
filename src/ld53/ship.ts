@@ -226,7 +226,9 @@ EM.addSystem(
     for (let e of es) {
       // rudder
       let yaw = e.ld52ship.rudder()!.yawpitch.yaw;
-      quat.rotateZ(e.rotation, yaw * RUDDER_ROTATION_RATE, e.rotation);
+      // TODO(@darzu): Z_UP: check rotateZ/Y locations to see if they should use .yaw
+      // quat.rotateZ(e.rotation, yaw * RUDDER_ROTATION_RATE, e.rotation);
+      quat.yaw(e.rotation, yaw * RUDDER_ROTATION_RATE, e.rotation);
 
       // acceleration
       const direction = vec3.transformQuat(AHEAD_DIR, e.world.rotation);
@@ -301,7 +303,7 @@ function createRudder(
     -Math.PI / 12,
     1.6,
     // V(0, 20, 50),
-    V(0, 30, 10), // camera offset
+    V(0, -30, 10), // camera offset
     true,
     1,
     Math.PI,
@@ -325,6 +327,7 @@ EM.addSystem(
   [MeDef],
   (rudders, res) => {
     for (let r of rudders) {
+      // TODO(@darzu): Z_UP: verify yaw
       if (r.authority.pid !== res.me.pid) return;
       if (r.turret.mannedId !== 0) return;
       if (Math.abs(r.yawpitch.yaw) < 0.01) r.yawpitch.yaw = 0;

@@ -18,7 +18,7 @@ export const SockDef = EM.defineComponent("sock", () => ({
 }));
 
 function sockMesh(): Mesh {
-  const pos: vec3[] = [V(0, 0, 0), V(0, 2, 0), V(0, 1, 2)];
+  const pos: vec3[] = [V(0, 0, 0), V(0, 0, 2), V(0, 2, 1)];
   const tri: vec3[] = [V(0, 1, 2), V(2, 1, 0)];
   const colors: vec3[] = tri.map((_) => V(0, 0, 0));
   const lines: vec2[] = [];
@@ -66,7 +66,7 @@ EM.addSystem(
     // NOTE: this cast is only safe so long as we're sure this mesh isn't being shared
     const m = e.renderable.meshHandle.mesh! as Mesh;
     m.pos[2][0] = windLocalDir[0] * 4.0 * e.sock.scale;
-    m.pos[2][2] = windLocalDir[2] * 4.0 * e.sock.scale;
+    m.pos[2][1] = windLocalDir[1] * 4.0 * e.sock.scale;
     // console.log("billow sock: " + vec3Dbg(m.pos[2]));
     // TODO: perf: detect when we actually need to update this
     renderer.renderer.stdPool.updateMeshVertices(e.renderable.meshHandle, m);
