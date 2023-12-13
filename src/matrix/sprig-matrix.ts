@@ -398,6 +398,14 @@ export module vec3 {
     return GL.zero(out ?? tmp()) as T;
   }
 
+  export function rotateX(
+    point: InputT,
+    origin: InputT,
+    rad: number,
+    out?: T
+  ): T {
+    return GL.rotateX(out ?? tmp(), point, origin, rad) as T;
+  }
   export function rotateY(
     point: InputT,
     origin: InputT,
@@ -406,6 +414,16 @@ export module vec3 {
   ): T {
     return GL.rotateY(out ?? tmp(), point, origin, rad) as T;
   }
+  export function rotateZ(
+    point: InputT,
+    origin: InputT,
+    rad: number,
+    out?: T
+  ): T {
+    return GL.rotateZ(out ?? tmp(), point, origin, rad) as T;
+  }
+
+  // TODO(@darzu): add yaw/pitch/roll fns
 
   export function reverse(v: InputT, out?: T): T {
     return set(v[2], v[1], v[0], out);

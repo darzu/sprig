@@ -5,6 +5,7 @@ import { V, vec3 } from "../matrix/sprig-matrix.js";
 import { TimeDef } from "../time/time.js";
 import { range } from "../utils/util.js";
 import { Phase } from "../ecs/sys-phase.js";
+import { vec3Dbg } from "../utils/utils-3d.js";
 
 const STEPS_ON_WIND_DIR = 6000;
 // const STEPS_ON_WIND_DIR = 400;
@@ -13,7 +14,7 @@ const WIND_CHANGE_STEPS = 300;
 const EPSILON = 0.001;
 
 const ORIGIN = V(0, 0, 0);
-const AHEAD_DIR = V(0, 0, 1);
+const WIND_X_DIR = V(1, 0, 0);
 
 const WIND_ANGLES = range(8).map((i) => {
   return (Math.PI * i) / 4 - 0.2;
@@ -24,19 +25,24 @@ const WIND_ANGLES = range(8).map((i) => {
 export const WindDef = EM.defineResource("wind", () => {
   const wind = {
     angle: WIND_ANGLES[0],
-    dir: V(0, 0, 1),
+    dir: vec3.copy(vec3.create(), WIND_X_DIR),
     targetAngle: WIND_ANGLES[0],
     oldAngle: WIND_ANGLES[0],
   };
   // TODO(@darzu): Z_UP: use yaw/pitch/roll
-  vec3.rotateY(AHEAD_DIR, ORIGIN, wind.angle, wind.dir);
+  vec3.rotateZ(WIND_X_DIR, ORIGIN, wind.angle, wind.dir);
   return wind;
 });
 
 export function setWindAngle(wind: Resource<typeof WindDef>, angle: number) {
   wind.angle = angle;
   // TODO(@darzu): Z_UP: use yaw/pitch/roll
-  vec3.rotateY(AHEAD_DIR, ORIGIN, angle, wind.dir);
+  vec3.rotateZ(WIND_X_DIR, ORIGIN, angle, wind.dir);
+  // console.log(
+  //   `WIND_X_DIR: ${vec3Dbg(WIND_X_DIR)} ORIGIN:${vec3Dbg(
+  //     ORIGIN
+  //   )} angle: ${angle}, setWindAngle: ${angle}, wind.dir: ${vec3Dbg(wind.dir)}`
+  // );
 }
 
 function angleBetweenRadians(a: number, b: number): number {

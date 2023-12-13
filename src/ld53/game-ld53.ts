@@ -105,6 +105,8 @@ import { XY } from "../meshes/mesh-loader.js";
 import { MotionSmoothingDef } from "../render/motion-smoothing.js";
 import { TeleportDef } from "../physics/teleport.js";
 import { eventWizard } from "../net/events.js";
+import { addVecUpdatingDbgVis } from "../utils/util-vec-dbg.js";
+import { vec2Dbg, vec3Dbg } from "../utils/utils-3d.js";
 /*
 NOTES:
 - Cut grass by updating a texture that has cut/not cut or maybe cut-height
@@ -470,11 +472,13 @@ export async function initLD53(hosting: boolean) {
   // load level
   const level = await EM.whenResources(LevelMapDef);
   // TODO(@darzu): Z_UP, verify wind angle
-  setWindAngle(
-    wind,
-    Math.atan2(-level.levelMap.windDir[0], -level.levelMap.windDir[1]) +
-      Math.PI / 2
+  console.log(`level.levelMap.windDir: ${vec2Dbg(level.levelMap.windDir)}`);
+  const wingAngle = Math.atan2(
+    level.levelMap.windDir[1],
+    level.levelMap.windDir[0]
   );
+  console.log(`wingAngle: ${wingAngle}`);
+  setWindAngle(wind, wingAngle);
 
   /*
   MULTIPLAYER LEVEL SYNCING
@@ -539,6 +543,26 @@ export async function initLD53(hosting: boolean) {
       [InputsDef, WindDef],
       (_, res) => {
         const mast = ship.ld52ship.mast()!;
+
+        // TODO(@darzu): Debugging
+        if (dbgOnce("windOnMast")) {
+          assert(WorldFrameDef.isOn(mast));
+          addVecUpdatingDbgVis(res.wind.dir, {
+            origin: vec3.add(mast.world.position, V(0, 0, 30)),
+            scale: 20,
+            // parentId: mast.id,
+            color: ENDESGA16.yellow,
+          });
+
+          // addVecUpdatingDbgVis(V(0, 1, 0), {
+          //   origin: V(0, 0, 0),
+          //   scale: 20,
+          //   parentId: mast.id,
+          // });
+        }
+
+        // TODO(@darzu): DBGING
+        // console.log(`wind.dir: ${vec3Dbg(res.wind.dir)}`);
 
         // console.log(`MAST: ${quatDbg(mast.rotation)}`);
 
