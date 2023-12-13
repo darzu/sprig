@@ -35,6 +35,7 @@ import {
   makeSailMesh,
   mkTimberSplinterEnd,
   createRudderMesh,
+  mkArrowMesh,
 } from "./primatives.js";
 import { createGizmoMesh } from "../debug/gizmos.js";
 import { transformModelIntoZUp } from "../camera/basis.js";
@@ -418,6 +419,11 @@ export const BallBrokenMesh = XY.registerMesh({
 export const CubeMesh = XY.registerMesh({
   name: "cube",
   data: mkCubeMesh,
+});
+
+export const ArrowMesh = XY.registerMesh({
+  name: "arrow",
+  data: mkArrowMesh,
 });
 
 export const PlaneMesh = XY.registerMesh({

@@ -111,3 +111,6 @@ Library code "stats" panel:
 UI principles resources:
   https://www.refactoringui.com
   https://developer.apple.com/design/human-interface-guidelines
+
+Modern iOS Navigation Patterns:
+  https://frankrausch.com/ios-navigation

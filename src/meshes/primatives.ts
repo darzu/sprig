@@ -101,6 +101,76 @@ export const mkCubeMesh: () => Mesh = () => ({
   usesProvoking: true,
 });
 
+// points from y=0 to y=1; for debug visualization
+// TODO(@darzu): enhance this with an arrow head?
+export const mkArrowMesh: () => Mesh = () => {
+  const A = 0.2;
+  const B = 0.05;
+
+  return {
+    dbgName: "arrow",
+    pos: [
+      V(+B, 1.0, +B),
+      V(-B, 1.0, +B),
+      V(-A, 0.0, +A),
+      V(+A, 0.0, +A),
+
+      V(+B, 1.0, -B),
+      V(-B, 1.0, -B),
+      V(-A, 0.0, -A),
+      V(+A, 0.0, -A),
+    ],
+    tri: [],
+    quad: [
+      // +Z
+      V(0, 1, 2, 3),
+      // +Y
+      V(4, 5, 1, 0),
+      // +X
+      V(3, 7, 4, 0),
+      // -X
+      V(2, 1, 5, 6),
+      // -Y
+      V(6, 7, 3, 2),
+      // -Z
+      V(5, 4, 7, 6),
+    ],
+    lines: [
+      // top
+      V(0, 1),
+      V(1, 2),
+      V(2, 3),
+      V(3, 0),
+      // bottom
+      V(4, 5),
+      V(5, 6),
+      V(6, 7),
+      V(7, 4),
+      // connectors
+      V(0, 4),
+      V(1, 5),
+      V(2, 6),
+      V(3, 7),
+    ],
+    colors: [
+      V(0, 0, 0),
+      V(0, 0, 0),
+      V(0, 0, 0),
+      V(0, 0, 0),
+      V(0, 0, 0),
+      V(0, 0, 0),
+      // ENDESGA16.lightBlue,
+      // ENDESGA16.lightGreen,
+      // ENDESGA16.red,
+      // ENDESGA16.darkRed,
+      // ENDESGA16.darkGreen,
+      // ENDESGA16.blue,
+    ],
+    surfaceIds: [1, 2, 3, 4, 5, 6],
+    usesProvoking: true,
+  };
+};
+
 export const TETRA_MESH: RawMesh = {
   pos: [V(0, 1, 0), V(-1, 0, -1), V(1, 0, -1), V(0, 0, 1)],
   tri: [V(2, 1, 0), V(3, 2, 0), V(1, 3, 0), V(2, 3, 1)],

@@ -1,7 +1,7 @@
-import { V, mat3, orthonormalize, vec3 } from "../matrix/sprig-matrix.js";
+import { V, mat3, orthonormalize, quat, vec3 } from "../matrix/sprig-matrix.js";
 import { EaseFn } from "./util-ease.js";
 import { assert } from "./util.js";
-import { vec3Dbg } from "./utils-3d.js";
+import { quatDbg, vec3Dbg } from "./utils-3d.js";
 
 // functions
 export function sum(ns: number[]): number {
@@ -152,4 +152,27 @@ export function testMath() {
   // console.log(`up: ${vec3Dbg(upish)}`);
   // console.log(`right: ${vec3Dbg(right)}`);
   assert(vec3.dist(right, [1, 0, 0]) < 0.3, "orthonormalize test");
+
+  // test quat.fromForward
+  {
+    const vs = [
+      V(0, 3, 0),
+      V(3, 3, 0),
+      V(0, 3, 3),
+      V(0, 0, 3),
+      V(3, 3, 3),
+      V(0, 0, -3),
+      V(-3, -3, 3),
+      V(0, -3, 0),
+      V(0, 0.3, 0),
+      V(0.3, 0, 0),
+    ];
+    console.log("test quat.fromForward");
+    const fwd = V(0, 1, 0);
+    for (let v of vs) {
+      const rot = quat.fromForward(v);
+      const v2 = vec3.transformQuat(fwd, rot, vec3.create());
+      console.log(`${vec3Dbg(v)} ==${quatDbg(rot)}==> ${vec3Dbg(v2)}`);
+    }
+  }
 }

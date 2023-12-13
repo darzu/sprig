@@ -1,4 +1,5 @@
-// NOTE: No imports! This is included at everywhere
+// NOTE: No imports in this file! This file is included at top-level stuff like sprig-matrix
+// TODO(@darzu): It's annoying to have to work around dependency issues with things like this.
 
 export function getCallStack(): string[] {
   return new Error()

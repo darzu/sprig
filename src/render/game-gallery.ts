@@ -39,6 +39,7 @@ import { GameMesh, XY } from "../meshes/mesh-loader.js";
 import { addGizmoChild } from "../utils/utils-game.js";
 import { makeDome } from "../meshes/primatives.js";
 import { SKY_MASK } from "./pipeline-masks.js";
+import { addVecDbgVis } from "../utils/util-vec-dbg.js";
 
 const SHOW_GALLERY = true;
 const SHOW_SKYDOME = false;
@@ -128,6 +129,11 @@ export async function initGalleryGame() {
   EM.set(gizmo, PositionDef, V(0, 0, 0));
   EM.set(gizmo, ScaleDef, V(8, 8, 8));
 
+  // arrows
+  addVecDbgVis(V(1, 1, 0), { scale: 10, color: ENDESGA16.red });
+  addVecDbgVis(V(0, 1, 1), { scale: 10 });
+  addVecDbgVis(V(1, 0, 1), { scale: 10 });
+
   // avatar
   const g = createGhost();
   g.position[2] = 5;
@@ -135,20 +141,11 @@ export async function initGalleryGame() {
   g.controllable.speed *= 10;
   g.controllable.sprintMul = 0.1;
 
-  if (!SHOW_GALLERY) {
-    // vec3.copy(g.position, [-10, -10, 10]);
-    vec3.copy(g.position, [0, 0, 0]);
-    quat.fromYawPitchRoll(
-      0.0 * Math.PI,
-      0.0 * Math.PI,
-      0.0 * Math.PI,
-      g.rotation
-    );
-    vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
-    // vec3.copy(g.cameraFollow.positionOffset, [0.0, -10.0, 3.0]);
-    g.cameraFollow.yawOffset = 0.0 * Math.PI;
-    g.cameraFollow.pitchOffset = 0.0 * Math.PI;
-  }
+  vec3.copy(g.position, [9.65, -12.47, 15.43]);
+  quat.copy(g.rotation, [0.0, 0.0, 0.11, 0.99]);
+  vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
+  g.cameraFollow.yawOffset = 0.0;
+  g.cameraFollow.pitchOffset = -0.49;
 
   // sky dome?
   if (SHOW_SKYDOME) {
@@ -244,13 +241,6 @@ export async function initGalleryGame() {
   // EM.requireSystem("dbgViewProj");
 
   if (SHOW_GALLERY) {
-    vec3.copy(g.position, [452.74, -46.39, 34.87]);
-    quat.identity(g.rotation);
-    // quat.copy(g.rotation, [0.0, 0.0, -0.4, 0.92]);
-    vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
-    g.cameraFollow.yawOffset = 0.0;
-    g.cameraFollow.pitchOffset = 0.0;
-
     createGallery();
   }
 }
