@@ -868,6 +868,7 @@ export function pathNodeFromMat4(cursor: mat4): PathNode {
   };
 }
 
+// TODO(@darzu): PERF. creates a lot of vecs
 export function lerpBetween(start: vec3, end: vec3, numNewMid: number): vec3[] {
   const positions: vec3[] = [];
   positions.push(start);

@@ -154,7 +154,7 @@ export const { createLd53ShipAsync, Ld53ShipPropsDef } = defineNetEntityHelper({
     EM.set(mast, PhysicsParentDef, ship.id);
 
     addGizmoChild(mast, 20, [0, 0, 0]);
-    addColliderDbgVis(mast);
+    // addColliderDbgVis(mast);
 
     const sock = createSock(2.0);
     EM.set(sock, PhysicsParentDef, ship.id);

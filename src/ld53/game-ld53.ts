@@ -122,7 +122,7 @@ PERF:
 [ ] reduce triangles on ocean
 */
 
-const DBG_PLAYER = false;
+const DBG_PLAYER = true;
 const DBG_HIDE_LAND = false;
 
 // const SHIP_START_POS = V(100, 0, -100);

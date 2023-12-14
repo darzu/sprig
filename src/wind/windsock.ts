@@ -58,7 +58,7 @@ EM.addSystem(
   [SockDef, RenderableDef, WorldFrameDef],
   [RendererDef, WindDef],
   (es, { renderer, wind }) => {
-    // TODO(@darzu): PERF. this is crazy, we should just rotate the sock..
+    // TODO(@darzu): PERF. this is crazy, we should just rotate the sock, not update the verts
     assert(es.length <= 1);
     const e = es[0];
     if (!e) return;
