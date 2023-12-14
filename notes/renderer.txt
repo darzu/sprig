@@ -1908,3 +1908,8 @@ openvdb:
 
 Shaders For People Who Don't Know How To Shader, a tutorial series for beginners!:
   https://github.com/Xibanya/ShaderTutorials
+
+Great graphics vids:
+  https://www.youtube.com/@simondev758
+  https://store.steampowered.com/app/1270580/Mind_Over_Magic/
+  https://github.com/simondevyoutube/Quick_Grass

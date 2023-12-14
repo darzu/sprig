@@ -49,4 +49,6 @@ In the language, maybe everything should be pipelines / verticalized?
   or tacit / point-free style:
     https://en.wikipedia.org/wiki/Tacit_programming
 
+Dion:
+  AST representation stuff: https://dion.systems/blog_0001_hms2020.html
 

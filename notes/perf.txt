@@ -447,3 +447,6 @@ Chrome on mac:
 gl-matrix perf boost?
   "Regarding the current performance in modern web browsers, calling glMatrix.setMatrixArrayType(Array) to use normal arrays instead of Float32Arrays can greatly increase the performance."
   https://github.com/toji/gl-matrix
+
+JS garbage collection perf:
+  https://www.youtube.com/watch?v=easvMCCBFkQ

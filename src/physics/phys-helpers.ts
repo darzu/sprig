@@ -8,6 +8,7 @@ import {
 import { Phase } from "../ecs/sys-phase.js";
 import { PhysicsResultsDef } from "./nonintersection.js";
 
+// TODO(@darzu): make this friendly with multiplayer event system?
 export function onCollides<
   AS extends ComponentDef[],
   BS extends ComponentDef[],

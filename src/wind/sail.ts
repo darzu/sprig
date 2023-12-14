@@ -45,6 +45,7 @@ export const SailDef = EM.defineComponent("sail", () => ({
 }));
 
 function sailMesh(sail: Component<typeof SailDef>): Mesh {
+  // TODO(@darzu): Z_UP: make it X and Z
   let x = 0;
   let y = 0;
   let i = 0;
