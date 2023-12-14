@@ -5,7 +5,7 @@ import { mat4 } from "../matrix/sprig-matrix.js";
 
 // USAGE: apply this to a model that was designed for the old Y-up, X-right, Z-backward, this
 //  transforms it into Z-up, X-right, Y-forward
-export const transformModelIntoZUp = new Float32Array([
+export const transformYUpModelIntoZUp = new Float32Array([
   // column 1, x-basis
   1, 0, 0, 0,
   // column 2, y-basis

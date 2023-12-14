@@ -66,7 +66,7 @@ import {
   translatePath,
   translatePathAlongNormal,
 } from "../utils/spline.js";
-import { transformModelIntoZUp } from "../camera/basis.js";
+import { transformYUpModelIntoZUp } from "../camera/basis.js";
 
 // TODO(@darzu): use arc-length parameterization to resample splines
 
@@ -284,7 +284,7 @@ export const ld53ShipAABBs: AABB[] = [
   { min: V(-6.15, -2.65, 22.25), max: V(5.55, 3.65, 26.15) },
   { min: V(-6.8, -5.95, -26.1), max: V(7.2, 0.35, 22.5) },
 ].map((aabb) =>
-  transformAABB(aabb, mat4.mul(mat4.fromYaw(Math.PI), transformModelIntoZUp))
+  transformAABB(aabb, mat4.mul(mat4.fromYaw(Math.PI), transformYUpModelIntoZUp))
 );
 
 export function createLD53Ship(): HomeShip {
@@ -802,7 +802,7 @@ export function createLD53Ship(): HomeShip {
   {
     // TODO(@darzu): Z_UP: basis change. inline this above?
     _timberMesh.pos.forEach((v) =>
-      vec3.transformMat4(v, transformModelIntoZUp, v)
+      vec3.transformMat4(v, transformYUpModelIntoZUp, v)
     );
 
     // change so ship faces +y

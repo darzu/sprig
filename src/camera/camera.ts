@@ -12,7 +12,7 @@ import { assert, dbgLogOnce, resizeArray } from "../utils/util.js";
 import { Phase } from "../ecs/sys-phase.js";
 import {
   transformCameraViewForWebGPUsNDC,
-  transformModelIntoZUp,
+  transformYUpModelIntoZUp,
 } from "./basis.js";
 import { mat4Dbg, quatDbg, vec3Dbg } from "../utils/utils-3d.js";
 
@@ -107,7 +107,7 @@ EM.addLazyInit([], [CameraDef], () => {
 
   if (VERBOSE_CAMERA) {
     console.log("transformModelIntoZUp mat4:");
-    console.log(mat4Dbg(transformModelIntoZUp));
+    console.log(mat4Dbg(transformYUpModelIntoZUp));
     console.log("transformCameraViewForWebGPUsNDC mat4:");
     console.log(mat4Dbg(transformCameraViewForWebGPUsNDC));
   }
