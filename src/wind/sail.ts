@@ -47,23 +47,23 @@ export const SailDef = EM.defineComponent("sail", () => ({
 function sailMesh(sail: Component<typeof SailDef>): Mesh {
   // TODO(@darzu): Z_UP: make it X and Z
   let x = 0;
-  let y = 0;
+  let z = 0;
   let i = 0;
   const pos: vec3[] = [];
   const tri: vec3[] = [];
   const colors: vec3[] = [];
   const lines: vec2[] = [];
   const uvs: vec2[] = [];
-  while (y <= sail.height) {
+  while (z <= sail.height) {
     if (x > sail.width) {
       x = 0;
-      y = y + 1;
+      z = z + 1;
       continue;
     }
-    pos.push(V(x, -y, 0));
-    uvs.push(V(x / sail.width, y / sail.height));
+    pos.push(V(x, 0, -z));
+    uvs.push(V(x / sail.width, z / sail.height));
     // add triangles
-    if (y > 0) {
+    if (z > 0) {
       if (x > 0) {
         // front
         tri.push(V(i, i - 1, i - sail.width - 1));
@@ -85,7 +85,7 @@ function sailMesh(sail: Component<typeof SailDef>): Mesh {
     if (x > 0) {
       lines.push(vec2.clone([i - 1, i]));
     }
-    if (y > 0) {
+    if (z > 0) {
       lines.push(vec2.clone([i - sail.width - 1, i]));
     }
     x = x + 1;
@@ -124,7 +124,7 @@ export function createSail(
   return ent;
 }
 
-const AHEAD_DIR = V(0, 0, 1);
+const AHEAD_DIR = V(0, 1, 0);
 
 EM.addSystem(
   "applyWindToSail",
@@ -166,24 +166,24 @@ EM.addSystem(
     const m = e.renderable.meshHandle.mesh! as Mesh;
     m.pos.forEach((p, i) => {
       const originalIndex = e.sail.posMap.get(i)!;
-      let y = Math.floor(originalIndex / (e.sail.width + 1));
-      let parabY;
+      let z = Math.floor(originalIndex / (e.sail.width + 1));
+      let parabZ;
       if (e.sail.height % 2 == 0) {
-        parabY = y - e.sail.height / 2;
+        parabZ = z - e.sail.height / 2;
       } else {
-        if (y < e.sail.height / 2) {
-          parabY = y - Math.ceil(e.sail.height / 2);
+        if (z < e.sail.height / 2) {
+          parabZ = z - Math.ceil(e.sail.height / 2);
         } else {
-          parabY = y - Math.floor(e.sail.height / 2);
+          parabZ = z - Math.floor(e.sail.height / 2);
         }
       }
-      p[2] = -(
+      p[1] = -(
         e.sail.billowAmount *
         BILLOW_FACTOR *
         e.sail.unfurledAmount *
-        (parabY ** 2 - Math.ceil(e.sail.height / 2) ** 2)
+        (parabZ ** 2 - Math.ceil(e.sail.height / 2) ** 2)
       );
-      p[1] = -y * e.sail.unfurledAmount;
+      p[2] = -z * e.sail.unfurledAmount;
     });
     renderer.renderer.stdPool.updateMeshVertices(e.renderable.meshHandle, m);
     _lastSailBillow = e.sail.billowAmount;
