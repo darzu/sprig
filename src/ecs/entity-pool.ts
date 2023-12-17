@@ -10,6 +10,7 @@ export interface EntityPoolParams<CS extends readonly ComponentDef[]> {
   max: number;
   maxBehavior: "crash" | "rand-despawn"; // | "ring-buffer",
   // TODO(@darzu): specify max behavior: ring buffer, "random free", crash?
+  // TODO(@darzu): it'd be nice if create, onSpawn, and onDespawn could use resources
   create: () => Promise<EntityW<CS>>;
   onSpawn: (e: EntityW<CS>) => Promise<void>;
   onDespawn: (e: EntityW<CS>) => void;

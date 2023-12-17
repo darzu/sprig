@@ -79,7 +79,6 @@ import {
   createLd53ShipAsync,
 } from "./ship.js";
 import { SAIL_FURL_RATE } from "../wind/sail.js";
-import { spawnStoneTower, StoneTowerDef, towerPool } from "../stone/stone.js";
 import { LandDef } from "./land-collision.js";
 import { DeadDef } from "../ecs/delete.js";
 import { BulletDef, breakBullet } from "../cannons/bullet.js";
@@ -107,6 +106,7 @@ import { TeleportDef } from "../physics/teleport.js";
 import { eventWizard } from "../net/events.js";
 import { addVecUpdatingDbgVis } from "../utils/util-vec-dbg.js";
 import { vec2Dbg, vec3Dbg } from "../utils/utils-3d.js";
+import { StoneTowerDef, towerPool, spawnStoneTower } from "../stone/tower.js";
 /*
 NOTES:
 - Cut grass by updating a texture that has cut/not cut or maybe cut-height
@@ -122,7 +122,7 @@ PERF:
 [ ] reduce triangles on ocean
 */
 
-const DBG_PLAYER = true;
+const DBG_PLAYER = false;
 const DBG_HIDE_LAND = false;
 
 // const SHIP_START_POS = V(100, 0, -100);
