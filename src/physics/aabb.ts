@@ -13,7 +13,6 @@ export function doesOverlapAABB(a: AABB, b: AABB) {
   _doesOverlapAABBs++; // TODO(@darzu): debugging
   // TODO(@darzu): less then or less then and equal?
   return (
-    true &&
     b.min[0] < a.max[0] &&
     b.min[1] < a.max[1] &&
     b.min[2] < a.max[2] &&
@@ -26,7 +25,6 @@ export let _enclosedBys = 0;
 export function enclosedBy(inner: AABB, outer: AABB) {
   _enclosedBys++; // TODO(@darzu): debugging
   return (
-    true &&
     inner.max[0] < outer.max[0] &&
     inner.max[1] < outer.max[1] &&
     inner.max[2] < outer.max[2] &&
@@ -38,7 +36,6 @@ export function enclosedBy(inner: AABB, outer: AABB) {
 export function doesTouchAABB(a: AABB, b: AABB, threshold: number) {
   _doesOverlapAABBs++; // TODO(@darzu): debugging
   return (
-    true &&
     b.min[0] < a.max[0] + threshold &&
     b.min[1] < a.max[1] + threshold &&
     b.min[2] < a.max[2] + threshold &&
@@ -73,7 +70,6 @@ export function clampToAABB(v: vec3, aabb: AABB, out?: vec3): vec3 {
 
 export function pointInAABB(aabb: AABB, p: vec3) {
   return (
-    true &&
     aabb.min[0] < p[0] &&
     aabb.min[1] < p[1] &&
     aabb.min[2] < p[2] &&

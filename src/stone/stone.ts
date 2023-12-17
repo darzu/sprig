@@ -51,6 +51,8 @@ import { XY } from "../meshes/mesh-loader.js";
 const GRAVITY = 6.0 * 0.00001;
 const MIN_BRICK_PERCENT = 0.6;
 
+// TODO(@darzu): Z_UP
+
 export interface Brick {
   aabb: AABB;
   // index of first pos in the mesh
@@ -166,7 +168,7 @@ function shrinkBrickAtIndex(
     let attractor = stone.mesh.pos[baseIndex + index];
     let attracted = stone.mesh.pos[baseIndex + attractedIndex];
     if (pointInAABB(aabb, attractor)) {
-      console.log("should never happen");
+      console.error("should never happen");
     }
     if (pointInAABB(aabb, attracted)) {
       let towardsAttractor = vec3.sub(
@@ -333,6 +335,7 @@ const TowerMeshes = XY.defineMeshSetResource(
   CubeMesh
 );
 
+// TODO(@darzu): Z_UP: this fn
 function createTowerState(): StoneState {
   const state = createEmptyStoneState();
   const mesh = state.mesh;
