@@ -47,6 +47,7 @@ import { vec3Dbg } from "../utils/utils-3d.js";
 import { SoundSetDef } from "../audio/sound-loader.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { XY } from "../meshes/mesh-loader.js";
+import { transformYUpModelIntoZUp } from "../camera/basis.js";
 
 const GRAVITY = 6.0 * 0.00001;
 const MIN_BRICK_PERCENT = 0.6;
@@ -346,6 +347,8 @@ function createTowerState(): StoneState {
   const cursor = mat4.create();
   function applyCursor(v: vec3, distort: boolean = false): vec3 {
     vec3.transformMat4(v, cursor, v);
+    // X is width, Y is height, Z is depth
+    // TODO(@darzu): Z_UP: change basis: to X is width, Y is depth, Z is height
     if (distort)
       vec3.add(
         v,
@@ -359,6 +362,8 @@ function createTowerState(): StoneState {
     return v;
   }
   function appendBrick(brickWidth: number, brickDepth: number): Brick {
+    // X is width, Y is height, Z is depth
+    // TODO(@darzu): Z_UP: change basis: to X is width, Y is depth, Z is height
     const index = mesh.pos.length;
     const aabb = createAABB();
     // base
@@ -469,6 +474,14 @@ function createTowerState(): StoneState {
   state.totalBricks = totalBricks;
   state.currentBricks = totalBricks;
   state.aabb = towerAABB;
+
+  {
+    // TODO(@darzu): Z_UP: inline this above
+    state.mesh.pos.forEach((v) =>
+      vec3.transformMat4(v, transformYUpModelIntoZUp, v)
+    );
+    transformAABB(state.aabb, transformYUpModelIntoZUp);
+  }
 
   return state;
 }
