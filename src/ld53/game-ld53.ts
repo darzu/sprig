@@ -231,11 +231,8 @@ async function hostResetLevel(levelIdx: number) {
   ship.ld52ship.rudder()!.yawpitch.yaw = 0;
 
   // set map wind angle
-  // TODO(@darzu): Z_UP: verify wind direction matches expectations
-  setWindAngle(
-    wind,
-    Math.atan2(-levelMap.windDir[0], -levelMap.windDir[1]) + Math.PI / 2
-  );
+  const wingAngle = Math.atan2(levelMap.windDir[1], levelMap.windDir[0]);
+  setWindAngle(wind, wingAngle);
 
   // reset cannon orientations
   ship.ld52ship.cannonR()!.yawpitch.pitch = cannonDefaultPitch;
@@ -307,8 +304,7 @@ async function setLevelLocal(levelIdx: number) {
   const tower3dPosesAndDirs: [vec3, number][] = levelMap.towers.map(
     ([tPos, tDir]) => [
       level2DtoWorld3D(tPos, STONE_TOWER_HEIGHT, vec3.create()),
-      // TODO(@darzu): Z_UP: verify tower dir
-      Math.atan2(-tDir[0], -tDir[1]),
+      Math.atan2(tDir[1], tDir[0]),
     ]
   );
 
@@ -526,7 +522,6 @@ export async function initLD53(hosting: boolean) {
 
   // load level
   const level = await EM.whenResources(LevelMapDef);
-  // TODO(@darzu): Z_UP, verify wind angle
   // console.log(`level.levelMap.windDir: ${vec2Dbg(level.levelMap.windDir)}`);
   // vec2.set(0, 1, level.levelMap.windDir))
   const wingAngle = Math.atan2(
@@ -603,12 +598,13 @@ export async function initLD53(hosting: boolean) {
         // TODO(@darzu): Debugging
         if (dbgOnce("windOnMast")) {
           assert(WorldFrameDef.isOn(mast));
-          addVecUpdatingDbgVis(res.wind.dir, {
-            origin: vec3.add(mast.world.position, V(0, 0, 30)),
-            scale: 20,
-            // parentId: mast.id,
-            color: ENDESGA16.yellow,
-          });
+          if (DBG_PLAYER)
+            addVecUpdatingDbgVis(res.wind.dir, {
+              origin: vec3.add(mast.world.position, V(0, 0, 30)),
+              scale: 20,
+              // parentId: mast.id,
+              color: ENDESGA16.yellow,
+            });
 
           // addVecUpdatingDbgVis(V(0, 1, 0), {
           //   origin: V(0, 0, 0),

@@ -501,7 +501,7 @@ export const towerPool = createEntityPool<
     EM.set(cannon, RotationDef);
     EM.set(cannon, PhysicsParentDef, tower.id);
     EM.set(cannon, WorldFrameDef);
-    vec3.set(baseRadius - 2, height * 0.7, 0, cannon.position);
+    vec3.set(baseRadius - 2, 0, height * 0.7, cannon.position);
 
     const stone = createTowerState();
 
