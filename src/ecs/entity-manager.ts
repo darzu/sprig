@@ -767,15 +767,16 @@ export class EntityManager {
     // update query cache
     const systems = this._componentToSystems.get(def.name);
     for (let sysId of systems ?? []) {
-      if (
-        sysId === this._currentRunningSystem?.id &&
-        !this._currentRunningSystem.flags.allowQueryEdit
-      )
-        console.warn(
-          `Removing component '${def.name}' while running system '${this._currentRunningSystem.name}'` +
-            ` which queries it. Set the "allowQueryEdit" flag on the system if intentional` +
-            ` (and probably loop over the query backwards.`
-        );
+      // TODO(@darzu): re-enable this warning before merge!
+      // if (
+      //   sysId === this._currentRunningSystem?.id &&
+      //   !this._currentRunningSystem.flags.allowQueryEdit
+      // )
+      //   console.warn(
+      //     `Removing component '${def.name}' while running system '${this._currentRunningSystem.name}'` +
+      //       ` which queries it. Set the "allowQueryEdit" flag on the system if intentional` +
+      //       ` (and probably loop over the query backwards.`
+      //   );
       const es = this._systemsToEntities.get(sysId);
       if (es) {
         // TODO(@darzu): perf. sorted removal
