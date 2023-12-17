@@ -335,6 +335,61 @@ export async function initLD53(hosting: boolean) {
     MeDef
   );
 
+  if (DBG_PLAYER) {
+    const g = createGhost();
+    // vec3.copy(g.position, [0, 1, -1.2]);
+    // quat.setAxisAngle([0.0, -1.0, 0.0], 1.62, g.rotation);
+    // g.cameraFollow.positionOffset = V(0, 0, 5);
+    g.controllable.speed *= 2.0;
+    g.controllable.sprintMul = 15;
+    const sphereMesh = cloneMesh(res.ld53Meshes.ball.mesh);
+    const visible = false;
+    EM.set(g, RenderableConstructDef, sphereMesh, visible);
+    EM.set(g, ColorDef, V(0.1, 0.1, 0.1));
+    // EM.set(g, PositionDef, V(0, 0, 0));
+    // EM.set(b2, PositionDef, [0, 0, -1.2]);
+    EM.set(g, WorldFrameDef);
+    // EM.set(b2, PhysicsParentDef, g.id);
+    EM.set(g, ColliderDef, {
+      shape: "AABB",
+      solid: false,
+      aabb: res.ld53Meshes.ball.aabb,
+    });
+
+    // vec3.copy(g.position, [-399.61, -333.9, 113.58]);
+    // quat.copy(g.rotation, [0.0, 0.0, 0.01, 1.0]);
+    // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
+    // g.cameraFollow.yawOffset = 0.0;
+    // g.cameraFollow.pitchOffset = 2.937;
+
+    // hover above ship:
+    // vec3.copy(g.position, [-369.29, -22.97, 28.91]);
+    // quat.copy(g.rotation, [0.0, 0.0, -0.47, 0.88]);
+    // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
+    // g.cameraFollow.yawOffset = 0.0;
+    // // g.cameraFollow.pitchOffset = 2.631;
+    // g.cameraFollow.pitchOffset = 0.0;
+
+    // stone tower:
+    vec3.copy(g.position, [-25.81, 115.83, 72.91]);
+    quat.copy(g.rotation, [0.0, 0.0, -0.49, 0.87]);
+    vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
+    g.cameraFollow.yawOffset = 0.0;
+    g.cameraFollow.pitchOffset = -0.522;
+
+    EM.addSystem(
+      "smolGhost",
+      Phase.GAME_WORLD,
+      [GhostDef, WorldFrameDef, ColliderDef],
+      [InputsDef, HasFirstInteractionDef],
+      async (ps, { inputs }) => {
+        if (!ps.length) return;
+
+        const ghost = ps[0];
+      }
+    );
+  }
+
   // TODO(@darzu): HACK. these have to be set before the CY instantiator runs.
   outlineRender.fragOverrides!.lineWidth = 1.0;
 
@@ -700,53 +755,6 @@ export async function initLD53(hosting: boolean) {
     }
   });
 
-  if (DBG_PLAYER) {
-    const g = createGhost();
-    // vec3.copy(g.position, [0, 1, -1.2]);
-    // quat.setAxisAngle([0.0, -1.0, 0.0], 1.62, g.rotation);
-    // g.cameraFollow.positionOffset = V(0, 0, 5);
-    g.controllable.speed *= 2.0;
-    g.controllable.sprintMul = 15;
-    const sphereMesh = cloneMesh(res.ld53Meshes.ball.mesh);
-    const visible = false;
-    EM.set(g, RenderableConstructDef, sphereMesh, visible);
-    EM.set(g, ColorDef, V(0.1, 0.1, 0.1));
-    // EM.set(g, PositionDef, V(0, 0, 0));
-    // EM.set(b2, PositionDef, [0, 0, -1.2]);
-    EM.set(g, WorldFrameDef);
-    // EM.set(b2, PhysicsParentDef, g.id);
-    EM.set(g, ColliderDef, {
-      shape: "AABB",
-      solid: false,
-      aabb: res.ld53Meshes.ball.aabb,
-    });
-
-    // vec3.copy(g.position, [-399.61, -333.9, 113.58]);
-    // quat.copy(g.rotation, [0.0, 0.0, 0.01, 1.0]);
-    // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
-    // g.cameraFollow.yawOffset = 0.0;
-    // g.cameraFollow.pitchOffset = 2.937;
-
-    vec3.copy(g.position, [-369.29, -22.97, 28.91]);
-    quat.copy(g.rotation, [0.0, 0.0, -0.47, 0.88]);
-    vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
-    g.cameraFollow.yawOffset = 0.0;
-    // g.cameraFollow.pitchOffset = 2.631;
-    g.cameraFollow.pitchOffset = 0.0;
-
-    EM.addSystem(
-      "smolGhost",
-      Phase.GAME_WORLD,
-      [GhostDef, WorldFrameDef, ColliderDef],
-      [InputsDef, HasFirstInteractionDef],
-      async (ps, { inputs }) => {
-        if (!ps.length) return;
-
-        const ghost = ps[0];
-      }
-    );
-  }
-
   const { text } = await EM.whenResources(TextDef);
   text.lowerText = "W/S: unfurl/furl sail, A/D: turn, E: drop rudder";
   if (DBG_PLAYER) text.lowerText = "";
@@ -854,14 +862,16 @@ const { Ld53PlayerPropsDef, Ld53PlayerLocalDef, createLd53PlayerAsync } =
         EM.set(p, ControllableDef);
         p.controllable.modes.canFall = false;
         p.controllable.modes.canJump = false;
+
+        p.controllable.speed *= 3.0;
+        p.controllable.sprintMul = 0.2;
+
         // g.controllable.modes.canYaw = true;
         // g.controllable.modes.canPitch = true;
+
         EM.set(p, CameraFollowDef, 1);
         // setCameraFollowPosition(p, "firstPerson");
         // setCameraFollowPosition(p, "thirdPerson");
-
-        p.controllable.speed *= 0.5;
-        p.controllable.sprintMul = 10;
 
         // vec3.copy(p.position, [-28.11, -28.39, 26.0]);
         // quat.copy(p.rotation, [0.0, -0.94, 0.0, 0.34]);
