@@ -71,6 +71,9 @@ import { SoundSetDef } from "../audio/sound-loader.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { eventWizard } from "../net/events.js";
 
+// Flag for serialization dbg. determine the max number of boards and segments; useful for sizing (u8 vs u16) for serializing
+const TRACK_MAX_BOARD_SEG_IDX = false;
+
 // TODO(@darzu): remove all references to pirates
 
 /* TODO(@darzu):
@@ -98,9 +101,6 @@ What does compute shader gain us?
   Less CPU->GPU bandwidth used
   Less CPU work
 */
-
-// Flag for serialization dbg. determine the max number of boards and segments; useful for sizing (u8 vs u16) for serializing
-const TRACK_MAX_BOARD_SEG_IDX = false;
 
 // TODO(@darzu): PERF HACK. These temp vecs are used for intermediate calculations.
 //    Be very careful about their liveness / lifetime!!
