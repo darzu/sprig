@@ -660,6 +660,8 @@ function getTargetMissOrHitPosition(
   missed: boolean,
   out?: vec3
 ): vec3 {
+  // return vec3.copy(out ?? vec3.tmp(), targetPos);
+
   const UP: vec3.InputT = [0, 1, 0];
   let tFwd = vec3.copy(vec3.tmp(), targetDir);
   let tRight = vec3.cross(targetDir, UP);
@@ -707,30 +709,40 @@ function getTargetMissOrHitPosition(
 
 // TODO(@darzu): refactor!
 function getFireDirection(
-  sourceTransform: mat4,
-  targetPos: vec3,
-  targetVel: vec3,
+  sourcePos: vec3.InputT,
+  sourceRot: quat.InputT,
+  targetPos: vec3.InputT,
+  targetVel: vec3.InputT,
   projectileSpeed: number,
-  cannonPos: vec3,
-  cannonRot: quat,
   maxRadius: number
 ): quat | undefined {
-  const invertedTransform = mat4.invert(sourceTransform);
+  const invRot = quat.invert(sourceRot);
+  const invPos = vec3.negate(sourcePos);
 
-  //target[1] *= 0.75;
-  //console.log(`adjusted target is ${vec3Dbg(target)}`);
-  const towerSpaceTarget = vec3.transformMat4(
-    targetPos,
-    invertedTransform,
-    targetPos
-  );
+  // const transform = (v: vec3.InputT, out?: vec3) => {
+  //   out = vec3.copy(out ?? vec3.tmp(), v);
+  //   vec3.transformQuat(out, sourceRot, out);
+  //   vec3.add(out, sourcePos, out);
+  //   return out;
+  // };
+  const invTransform = (v: vec3.InputT, out?: vec3) => {
+    // valid so long as there is no scale, skew or origin change
+    out = vec3.copy(out ?? vec3.tmp(), v);
+    vec3.add(out, invPos, out);
+    vec3.transformQuat(out, invRot, out);
+    return out;
+  };
+
+  const towerSpaceTarget = invTransform(targetPos);
+
+  // console.log(`towerSpaceTarget: ${vec3Dbg(towerSpaceTarget)}`);
+
+  let x = towerSpaceTarget[0];
+  let y = towerSpaceTarget[1];
+  let z = towerSpaceTarget[2];
 
   const v = projectileSpeed;
   const g = GRAVITY;
-
-  let x = towerSpaceTarget[0] - cannonPos[0];
-  const y = towerSpaceTarget[1] - cannonPos[1];
-  let z = towerSpaceTarget[2];
 
   // try to lead the target a bit using an approximation of flight
   // time. this will not be exact.
@@ -741,16 +753,19 @@ function getFireDirection(
   x = x + targetVel[0] * flightTime * 0.5;
   if (x < 0) {
     // target is behind us, don't worry about it
+    // console.log("behind");
     return undefined;
   }
   if (x > MAX_RANGE) {
     // target is too far away, don't worry about it
+    // console.log("out of range");
     return undefined;
   }
 
   let phi = -Math.atan(z / x);
 
   if (Math.abs(phi) > maxRadius) {
+    // console.log("max radius?");
     return undefined;
   }
 
@@ -779,23 +794,14 @@ function getFireDirection(
   }
   if (isNaN(theta) || theta > MAX_THETA || theta < MIN_THETA) {
     // no firing solution--target is too far or too close
+    // console.log("no solution?");
     return undefined;
   }
-  // console.log(
-  //   `Firing solution found, theta1 is ${theta1} theta2 is ${theta2} x=${x} y=${y} v=${v} sqrt is ${Math.sqrt(
-  //     v * v * v * v - g * (g * x * x + 2 * y * v * v)
-  //   )}`
-  // );
   // ok, we have a firing solution. rotate to the right angle
 
-  // fire if we are within a couple of frames
-  /*
-      console.log(`flightTime=${flightTime} timeToZZero=${timeToZZero}`);
-      if (Math.abs(flightTime - timeToZZero) > 32) {
-        continue;
-      }*/
-  const rot = cannonRot;
-  quat.identity(rot);
+  // const rot = cannonRot;
+  // quat.identity(rot);
+  const rot = quat.create();
   quat.rotateZ(rot, theta, rot);
   quat.rotateY(rot, phi, rot);
 
@@ -803,7 +809,10 @@ function getFireDirection(
   quat.rotateZ(rot, jitter(THETA_JITTER), rot);
   quat.rotateZ(rot, jitter(PHI_JITTER), rot);
   const worldRot = quat.create();
-  mat4.getRotation(mat4.mul(sourceTransform, mat4.fromQuat(rot)), worldRot);
+  // mat4.getRotation(mat4.mul(sourceTransform, mat4.fromQuat(rot)), worldRot);
+  quat.mul(sourceRot, rot, worldRot);
+
+  // TODO(@darzu): Rotate cannon towards target
 
   return worldRot;
 }
@@ -859,17 +868,35 @@ EM.addSystem(
           missed ? ENDESGA16.darkRed : ENDESGA16.darkGreen
         );
 
+      const cannon = tower.stoneTower.cannon()!;
+
+      // let x = towerSpaceTarget[0] - cannonPos[0];
+      // const y = towerSpaceTarget[1] - cannonPos[1];
+      // let z = towerSpaceTarget[2];
+
+      // const cannonPos = .position;
+
+      // const sourcePos = tower.world.position;
+      // sourcePos[0] -= cannonPos[0];
+      // sourcePos[1] -= cannonPos[1];
+
+      const sourcePos = cannon.world.position;
+      // const sourcePos = tower.world.position;
+
+      const sourceRot = tower.world.rotation;
+
       const worldRot = getFireDirection(
-        tower.world.transform,
+        sourcePos,
+        sourceRot,
         aimPos,
         targetVelocity,
         tower.stoneTower.projectileSpeed,
-        tower.stoneTower.cannon()!.position,
-        tower.stoneTower.cannon()!.rotation,
         tower.stoneTower.firingRadius
       );
 
       if (!worldRot) continue;
+
+      // TODO(@darzu): aim tower.stoneTower.cannon()!.rotation toward boat
 
       const v = tower.stoneTower.projectileSpeed;
       const g = GRAVITY;
