@@ -734,6 +734,7 @@ function getFireDirection(
 
   // try to lead the target a bit using an approximation of flight
   // time. this will not be exact.
+  // TODO(@darzu): sub with exact flight time?
 
   const flightTime = x / (v * Math.cos(Math.PI / 4));
   z = z + targetVel[2] * flightTime * 0.5;
