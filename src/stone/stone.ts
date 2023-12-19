@@ -47,6 +47,7 @@ import { vec3Dbg } from "../utils/utils-3d.js";
 import { SoundSetDef } from "../audio/sound-loader.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { XY } from "../meshes/mesh-loader.js";
+import { drawBall } from "../utils/utils-game.js";
 
 export const DBG_MISS = true;
 
@@ -653,22 +654,16 @@ const MISS_BY_MAX = 10;
 const MISS_PROBABILITY = 0.25;
 const MAX_RANGE = 300;
 
-// TODO(@darzu): refactor!
-function getFireDirection(
-  sourceTransform: mat4,
+function getTargetMissOrHitPosition(
   targetPos: vec3,
   targetDir: vec3,
-  targetVelocity: vec3,
-  projectileSpeed: number,
-  cannonPos: vec3,
   missed: boolean,
-  maxRadius: number,
-  cannonRotation: quat
-): quat | undefined {
-  const invertedTransform = mat4.invert(sourceTransform);
+  out?: vec3
+): vec3 {
+  const UP: vec3.InputT = [0, 1, 0];
+  let tFwd = vec3.copy(vec3.tmp(), targetDir);
+  let tRight = vec3.cross(targetDir, UP);
 
-  let zBasis = vec3.copy(vec3.tmp(), targetDir);
-  let xBasis = vec3.cross(targetDir, [0, 1, 0]);
   // pick an actual target to aim for on the ship
   if (missed) {
     let xMul = 0;
@@ -684,51 +679,51 @@ function getFireDirection(
       xMul *= -1;
       zMul *= -1;
     }
+
     vec3.scale(
-      zBasis,
+      tFwd,
       zMul * (Math.random() * MISS_BY_MAX + 0.5 * MISS_TARGET_LENGTH),
-      zBasis
+      tFwd
     );
     vec3.scale(
-      xBasis,
+      tRight,
       xMul * (Math.random() * MISS_BY_MAX + 0.5 * MISS_TARGET_WIDTH),
-      xBasis
+      tRight
     );
-    xBasis[1] += 5;
+    tRight[1] += 5;
   } else {
-    vec3.scale(zBasis, (Math.random() - 0.5) * TARGET_LENGTH, zBasis);
-    vec3.scale(xBasis, (Math.random() - 0.5) * TARGET_WIDTH, xBasis);
+    vec3.scale(tFwd, (Math.random() - 0.5) * TARGET_LENGTH, tFwd);
+    vec3.scale(tRight, (Math.random() - 0.5) * TARGET_WIDTH, tRight);
   }
 
-  const target = vec3.add(targetPos, vec3.add(zBasis, xBasis, xBasis));
+  const target = vec3.add(
+    targetPos,
+    vec3.add(tFwd, tRight, tRight),
+    out ?? vec3.tmp()
+  );
+
+  return target;
+}
+
+// TODO(@darzu): refactor!
+function getFireDirection(
+  sourceTransform: mat4,
+  targetPos: vec3,
+  targetVel: vec3,
+  projectileSpeed: number,
+  cannonPos: vec3,
+  cannonRot: quat,
+  maxRadius: number
+): quat | undefined {
+  const invertedTransform = mat4.invert(sourceTransform);
+
   //target[1] *= 0.75;
   //console.log(`adjusted target is ${vec3Dbg(target)}`);
   const towerSpaceTarget = vec3.transformMat4(
-    target,
+    targetPos,
     invertedTransform,
-    target
+    targetPos
   );
-  /*
-      const zvelocity = targetVelocity[2];
-
-      const timeToZZero = -(towerSpaceTarget[2] / zvelocity);
-      if (timeToZZero < 0) {
-        // it's moving away, don't worry about it
-        continue;
-      }
-
-      // what will the x position be, relative to the cannon, when z = 0?
-      const x =
-        towerSpaceTarget[0] +
-        targetVelocity[0] * timeToZZero -
-        tower.stoneTower.cannon()!.position[0];
-      // y is probably constant, but calculate it just for fun
-      const y =
-        towerSpaceTarget[1] +
-        targetVelocity[1] * timeToZZero -
-        tower.stoneTower.cannon()!.position[1];
-      console.log(`timeToZZero=${timeToZZero}`);
-      */
 
   const v = projectileSpeed;
   const g = GRAVITY;
@@ -741,8 +736,8 @@ function getFireDirection(
   // time. this will not be exact.
 
   const flightTime = x / (v * Math.cos(Math.PI / 4));
-  z = z + targetVelocity[2] * flightTime * 0.5;
-  x = x + targetVelocity[0] * flightTime * 0.5;
+  z = z + targetVel[2] * flightTime * 0.5;
+  x = x + targetVel[0] * flightTime * 0.5;
   if (x < 0) {
     // target is behind us, don't worry about it
     return undefined;
@@ -798,7 +793,7 @@ function getFireDirection(
       if (Math.abs(flightTime - timeToZZero) > 32) {
         continue;
       }*/
-  const rot = cannonRotation;
+  const rot = cannonRot;
   quat.identity(rot);
   quat.rotateZ(rot, theta, rot);
   quat.rotateY(rot, phi, rot);
@@ -850,16 +845,27 @@ EM.addSystem(
 
       const missed = Math.random() < MISS_PROBABILITY;
 
-      const worldRot = getFireDirection(
-        tower.world.transform,
+      const aimPos = getTargetMissOrHitPosition(
         res.party.pos,
         res.party.dir,
+        missed
+      );
+
+      if (DBG_MISS)
+        drawBall(
+          vec3.clone(aimPos),
+          0.5,
+          missed ? ENDESGA16.darkRed : ENDESGA16.darkGreen
+        );
+
+      const worldRot = getFireDirection(
+        tower.world.transform,
+        aimPos,
         targetVelocity,
         tower.stoneTower.projectileSpeed,
         tower.stoneTower.cannon()!.position,
-        missed,
-        tower.stoneTower.firingRadius,
-        tower.stoneTower.cannon()!.rotation
+        tower.stoneTower.cannon()!.rotation,
+        tower.stoneTower.firingRadius
       );
 
       if (!worldRot) continue;

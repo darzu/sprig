@@ -21,6 +21,10 @@ import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { V, vec3 } from "../matrix/sprig-matrix.js";
 import { vec3Dbg } from "../utils/utils-3d.js";
 
+// TODO(@darzu): It'd be great to have a dbg gizmo drawer-y global resources with features:
+//  - mesh: gizmo, arrow, ball, AABBs etc
+//  - pool w/ max number present and option to reuse in ring buffer style
+
 export function getDataDomain(data: vec3[][]): AABB {
   const aabb = createAABB(
     V(Infinity, Infinity, Infinity),

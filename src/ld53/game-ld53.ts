@@ -116,8 +116,9 @@ PERF:
 [ ] reduce triangles on ocean
 */
 
-const DBG_PLAYER = false;
+const DBG_PLAYER = true;
 const DBG_HIDE_LAND = false;
+const DBG_HIDE_WATER = true;
 
 // const SHIP_START_POS = V(100, 0, -100);
 
@@ -359,7 +360,7 @@ export async function initLD53(hosting: boolean) {
         stdRenderPipeline, // SLOW
         stdRiggedRenderPipeline,
         // renderGrassPipe,
-        renderOceanPipe,
+        ...(DBG_HIDE_WATER ? [] : [renderOceanPipe]),
         outlineRender, // 2ms
         deferredPipeline, // 10ms
         skyPipeline,
@@ -715,11 +716,17 @@ export async function initLD53(hosting: boolean) {
     // g.cameraFollow.yawOffset = 0.0;
     // g.cameraFollow.pitchOffset = -0.738;
 
-    vec3.copy(g.position, [57.26, 21.33, -499.14]);
-    quat.copy(g.rotation, [0.0, -0.92, 0.0, 0.4]);
+    // vec3.copy(g.position, [57.26, 21.33, -499.14]);
+    // quat.copy(g.rotation, [0.0, -0.92, 0.0, 0.4]);
+    // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
+    // g.cameraFollow.yawOffset = 0.0;
+    // g.cameraFollow.pitchOffset = -0.627;
+
+    vec3.copy(g.position, [-32.29, 35.61, -356.74]);
+    quat.copy(g.rotation, [0.0, -0.86, 0.0, 0.52]);
     vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
     g.cameraFollow.yawOffset = 0.0;
-    g.cameraFollow.pitchOffset = -0.627;
+    g.cameraFollow.pitchOffset = -0.81;
 
     EM.addSystem(
       "smolGhost",
