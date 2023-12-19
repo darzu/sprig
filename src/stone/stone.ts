@@ -870,18 +870,7 @@ EM.addSystem(
 
       const cannon = tower.stoneTower.cannon()!;
 
-      // let x = towerSpaceTarget[0] - cannonPos[0];
-      // const y = towerSpaceTarget[1] - cannonPos[1];
-      // let z = towerSpaceTarget[2];
-
-      // const cannonPos = .position;
-
-      // const sourcePos = tower.world.position;
-      // sourcePos[0] -= cannonPos[0];
-      // sourcePos[1] -= cannonPos[1];
-
       const sourcePos = cannon.world.position;
-      // const sourcePos = tower.world.position;
 
       const sourceRot = tower.world.rotation;
 
@@ -896,7 +885,10 @@ EM.addSystem(
 
       if (!worldRot) continue;
 
-      // TODO(@darzu): aim tower.stoneTower.cannon()!.rotation toward boat
+      // aim cannon toward boat
+      const invRot = quat.invert(tower.world.rotation);
+      const localRot = quat.mul(invRot, worldRot);
+      quat.copy(cannon.rotation, localRot);
 
       const v = tower.stoneTower.projectileSpeed;
       const g = GRAVITY;
