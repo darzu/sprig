@@ -47,7 +47,8 @@ import { vec3Dbg } from "../utils/utils-3d.js";
 import { SoundSetDef } from "../audio/sound-loader.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { XY } from "../meshes/mesh-loader.js";
-import { drawBall } from "../utils/utils-game.js";
+import { addGizmoChild, drawBall } from "../utils/utils-game.js";
+import { yawpitchToQuat } from "../turret/yawpitch.js";
 
 export const DBG_MISS = true;
 
@@ -503,6 +504,9 @@ export const towerPool = createEntityPool<
     });
 
     EM.set(tower, RenderableConstructDef, tower.stoneTower.stone.mesh);
+
+    // addGizmoChild(tower, 30);
+
     return tower;
   },
   onSpawn: async (p) => {
@@ -668,28 +672,28 @@ function getTargetMissOrHitPosition(
 
   // pick an actual target to aim for on the ship
   if (missed) {
-    let xMul = 0;
-    let zMul = 0;
+    let rightMul = 0;
+    let fwdMul = 0;
     if (Math.random() < 0.5) {
       // miss width-wise
-      xMul = 1;
+      rightMul = 1;
     } else {
       // miss length-wise
-      zMul = 1;
+      fwdMul = 1;
     }
     if (Math.random() < 0.5) {
-      xMul *= -1;
-      zMul *= -1;
+      rightMul *= -1;
+      fwdMul *= -1;
     }
 
     vec3.scale(
       tFwd,
-      zMul * (Math.random() * MISS_BY_MAX + 0.5 * MISS_TARGET_LENGTH),
+      fwdMul * (Math.random() * MISS_BY_MAX + 0.5 * MISS_TARGET_LENGTH),
       tFwd
     );
     vec3.scale(
       tRight,
-      xMul * (Math.random() * MISS_BY_MAX + 0.5 * MISS_TARGET_WIDTH),
+      rightMul * (Math.random() * MISS_BY_MAX + 0.5 * MISS_TARGET_WIDTH),
       tRight
     );
     tRight[1] += 5;
@@ -716,8 +720,11 @@ function getFireDirection(
   projectileSpeed: number,
   maxRadius: number
 ): quat | undefined {
-  const invRot = quat.invert(sourceRot);
-  const invPos = vec3.negate(sourcePos);
+  // TODO(@darzu): we should be able to remove sourceRot
+  // const sourceRot = quat.identity(quat.create());
+
+  // const invRot = quat.invert(sourceRot);
+  // const invPos = vec3.negate(sourcePos);
 
   // const transform = (v: vec3.InputT, out?: vec3) => {
   //   out = vec3.copy(out ?? vec3.tmp(), v);
@@ -725,92 +732,131 @@ function getFireDirection(
   //   vec3.add(out, sourcePos, out);
   //   return out;
   // };
-  const invTransform = (v: vec3.InputT, out?: vec3) => {
-    // valid so long as there is no scale, skew or origin change
-    out = vec3.copy(out ?? vec3.tmp(), v);
-    vec3.add(out, invPos, out);
-    vec3.transformQuat(out, invRot, out);
-    return out;
-  };
+  // const invTransform = (v: vec3.InputT, out?: vec3) => {
+  //   // valid so long as there is no scale, skew or origin change
+  //   out = vec3.copy(out ?? vec3.tmp(), v);
+  //   vec3.add(out, invPos, out);
+  //   vec3.transformQuat(out, invRot, out);
+  //   return out;
+  // };
 
-  const towerSpaceTarget = invTransform(targetPos);
+  // const sourceSpaceTarget = invTransform(targetPos);
 
   // console.log(`towerSpaceTarget: ${vec3Dbg(towerSpaceTarget)}`);
 
-  let x = towerSpaceTarget[0];
-  let y = towerSpaceTarget[1];
-  let z = towerSpaceTarget[2];
-
   const v = projectileSpeed;
   const g = GRAVITY;
+
+  // TODO(@darzu):
+  //  - d0 is initial distance to target
+  //  - don't worry about out of angle, that's for the consumer
+  //  - calc flight time, calc real d (final target)
+  //  - once we know final target, we know phi (yaw)
+  //  - then find theta (pitch)
+
+  const d0 = vec3.dist(
+    [sourcePos[0], 0, sourcePos[2]],
+    [targetPos[0], 0, targetPos[2]]
+  );
 
   // try to lead the target a bit using an approximation of flight
   // time. this will not be exact.
   // TODO(@darzu): sub with exact flight time?
 
-  const flightTime = x / (v * Math.cos(Math.PI / 4));
-  z = z + targetVel[2] * flightTime * 0.5;
-  x = x + targetVel[0] * flightTime * 0.5;
-  if (x < 0) {
-    // target is behind us, don't worry about it
-    // console.log("behind");
-    return undefined;
-  }
-  if (x > MAX_RANGE) {
+  const flightTime = d0 / (v * Math.cos(Math.PI / 4));
+
+  const leadPos = tV(
+    targetPos[0] + targetVel[0] * flightTime * 0.5,
+    targetPos[1],
+    targetPos[2] + targetVel[2] * flightTime * 0.5
+  );
+
+  // calculate delta
+  const delta = vec3.sub(leadPos, sourcePos);
+
+  // calculate yaw
+  const yaw = Math.atan2(delta[0], delta[2]) - Math.PI / 2;
+  // console.log(`delta: ${vec3Dbg(delta)}, yaw: ${yaw}`);
+
+  // calculate horizontal distance to target
+  const d = vec3.length([delta[0], 0, delta[2]]);
+  // vertical distance to target
+  const h = delta[1];
+
+  // let x = sourceSpaceTarget[0];
+  // let y = sourceSpaceTarget[1];
+  // let z = sourceSpaceTarget[2];
+
+  // z = z + targetVel[2] * flightTime * 0.5;
+  // x = x + targetVel[0] * flightTime * 0.5;
+  // if (x < 0) {
+  //   // target is behind us, don't worry about it
+  //   // console.log("behind");
+  //   return undefined;
+  // }
+  if (d > MAX_RANGE) {
     // target is too far away, don't worry about it
     // console.log("out of range");
     return undefined;
   }
 
-  let phi = -Math.atan(z / x);
+  // let phi = -Math.atan(z / x);
 
-  if (Math.abs(phi) > maxRadius) {
-    // console.log("max radius?");
-    return undefined;
-  }
+  // if (Math.abs(phi) > maxRadius) {
+  //   // console.log("max radius?");
+  //   return undefined;
+  // }
 
-  x = Math.sqrt(x * x + z * z);
+  // // calculate horizontal distance to target
+  // const d = Math.sqrt(x * x + z * z);
+
+  // height to target
+  // const h = y;
 
   // now, find the angle from our cannon.
   // https://en.wikipedia.org/wiki/Projectile_motion#Angle_%CE%B8_required_to_hit_coordinate_(x,_y)
-  let theta1 = Math.atan(
-    (v * v + Math.sqrt(v * v * v * v - g * (g * x * x + 2 * y * v * v))) /
-      (g * x)
+  let pitch1 = Math.atan(
+    (v * v + Math.sqrt(v * v * v * v - g * (g * d * d + 2 * h * v * v))) /
+      (g * d)
   );
-  let theta2 = Math.atan(
-    (v * v - Math.sqrt(v * v * v * v - g * (g * x * x + 2 * y * v * v))) /
-      (g * x)
+  let pitch2 = Math.atan(
+    (v * v - Math.sqrt(v * v * v * v - g * (g * d * d + 2 * h * v * v))) /
+      (g * d)
   );
 
   // prefer smaller theta
-  if (theta2 > theta1) {
-    let temp = theta1;
-    theta1 = theta2;
-    theta2 = temp;
+  if (pitch2 > pitch1) {
+    let temp = pitch1;
+    pitch1 = pitch2;
+    pitch2 = temp;
   }
-  let theta = theta2;
-  if (isNaN(theta) || theta > MAX_THETA || theta < MIN_THETA) {
-    theta = theta1;
+  let pitch = pitch2;
+  if (isNaN(pitch) || pitch > MAX_THETA || pitch < MIN_THETA) {
+    pitch = pitch1;
   }
-  if (isNaN(theta) || theta > MAX_THETA || theta < MIN_THETA) {
+  if (isNaN(pitch) || pitch > MAX_THETA || pitch < MIN_THETA) {
     // no firing solution--target is too far or too close
     // console.log("no solution?");
     return undefined;
   }
   // ok, we have a firing solution. rotate to the right angle
 
-  // const rot = cannonRot;
-  // quat.identity(rot);
-  const rot = quat.create();
-  quat.rotateZ(rot, theta, rot);
-  quat.rotateY(rot, phi, rot);
+  // const worldRot = yawpitchToQuat(quat.create(), { yaw, pitch });
+  // const worldRot = quat.rotateY(quat.IDENTITY, yaw);
 
-  // when we fire, add some jitter to both theta and phi
-  quat.rotateZ(rot, jitter(THETA_JITTER), rot);
-  quat.rotateZ(rot, jitter(PHI_JITTER), rot);
   const worldRot = quat.create();
-  // mat4.getRotation(mat4.mul(sourceTransform, mat4.fromQuat(rot)), worldRot);
-  quat.mul(sourceRot, rot, worldRot);
+  quat.rotateY(worldRot, yaw, worldRot);
+  quat.rotateZ(worldRot, pitch, worldRot);
+
+  // // const rot = cannonRot;
+  // // quat.identity(rot);
+  // const rot = quat.create();
+  // quat.rotateZ(rot, pitch, rot);
+  // quat.rotateY(rot, phi, rot);
+
+  // const worldRot = quat.create();
+  // // mat4.getRotation(mat4.mul(sourceTransform, mat4.fromQuat(rot)), worldRot);
+  // quat.mul(sourceRot, rot, worldRot);
 
   // TODO(@darzu): Rotate cannon towards target
 
@@ -820,7 +866,7 @@ function getFireDirection(
 EM.addSystem(
   "stoneTowerAttack",
   Phase.GAME_WORLD,
-  [StoneTowerDef, WorldFrameDef],
+  [StoneTowerDef, WorldFrameDef, RotationDef],
   [TimeDef, PartyDef],
   (es, res) => {
     // pick a random spot on the ship to aim for
@@ -837,19 +883,22 @@ EM.addSystem(
         continue;
       }
 
-      const invertedTransform = mat4.invert(tower.world.transform);
-
-      const towerSpacePos = vec3.transformMat4(
-        res.party.pos,
-        invertedTransform
-      );
-      const prevTowerSpacePos = vec3.transformMat4(
-        __previousPartyPos,
-        invertedTransform
-      );
+      // const invertedTransform = mat4.invert(tower.world.transform);
+      // const towerSpacePos = vec3.transformMat4(
+      //   res.party.pos,
+      //   invertedTransform
+      // );
+      // const prevTowerSpacePos = vec3.transformMat4(
+      //   __previousPartyPos,
+      //   invertedTransform
+      // );
+      // const targetVelocity = vec3.scale(
+      //   vec3.sub(towerSpacePos, prevTowerSpacePos),
+      //   1 / (res.time.time - __prevTime)
+      // );
 
       const targetVelocity = vec3.scale(
-        vec3.sub(towerSpacePos, prevTowerSpacePos),
+        vec3.sub(res.party.pos, __previousPartyPos),
         1 / (res.time.time - __prevTime)
       );
 
@@ -886,6 +935,9 @@ EM.addSystem(
       if (!worldRot) continue;
 
       // aim cannon toward boat
+      // quat.copy(tower.rotation, worldRot);
+      // quat.identity(cannon.rotation);
+
       const invRot = quat.invert(tower.world.rotation);
       const localRot = quat.mul(invRot, worldRot);
       quat.copy(cannon.rotation, localRot);
@@ -895,7 +947,7 @@ EM.addSystem(
 
       const b = fireBullet(
         2,
-        tower.stoneTower.cannon()!.world.position,
+        cannon.world.position,
         worldRot,
         v,
         0.02,
