@@ -119,6 +119,7 @@ const _ballPool = createEntityPool<
   },
 });
 
+// TODO(@darzu): refactor w/ gizmos and arrows and pooling
 export async function drawBall(
   pos: vec3,
   size: number,

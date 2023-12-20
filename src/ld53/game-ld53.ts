@@ -124,6 +124,7 @@ PERF:
 
 const DBG_PLAYER = true;
 const DBG_HIDE_LAND = false;
+const DBG_HIDE_WATER = true;
 
 // const SHIP_START_POS = V(100, 0, -100);
 
@@ -367,11 +368,17 @@ export async function initLD53(hosting: boolean) {
     // g.cameraFollow.pitchOffset = 0.0;
 
     // stone tower:
-    vec3.copy(g.position, [-25.81, 115.83, 72.91]);
-    quat.copy(g.rotation, [0.0, 0.0, -0.49, 0.87]);
+    // vec3.copy(g.position, [-25.81, 115.83, 72.91]);
+    // quat.copy(g.rotation, [0.0, 0.0, -0.49, 0.87]);
+    // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
+    // g.cameraFollow.yawOffset = 0.0;
+    // g.cameraFollow.pitchOffset = -0.522;
+
+    vec3.copy(g.position, [-387.88, -118.78, 128.91]);
+    quat.copy(g.rotation, [0.0, 0.0, -0.2, 0.98]);
     vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
     g.cameraFollow.yawOffset = 0.0;
-    g.cameraFollow.pitchOffset = -0.522;
+    g.cameraFollow.pitchOffset = -0.858;
 
     EM.addSystem(
       "smolGhost",
@@ -414,7 +421,7 @@ export async function initLD53(hosting: boolean) {
         stdRenderPipeline, // SLOW
         stdRiggedRenderPipeline,
         // renderGrassPipe,
-        renderOceanPipe,
+        ...(DBG_HIDE_WATER ? [] : [renderOceanPipe]),
         outlineRender, // 2ms
         deferredPipeline, // 10ms
         skyPipeline,
