@@ -51,7 +51,7 @@ import { transformYUpModelIntoZUp } from "../camera/basis.js";
 import { addGizmoChild, drawBall } from "../utils/utils-game.js";
 import { yawpitchToQuat } from "../turret/yawpitch.js";
 
-export const DBG_MISS = true;
+export const DBG_CANNONS = false;
 
 const GRAVITY = 6.0 * 0.00001;
 const MIN_BRICK_PERCENT = 0.6;
@@ -521,7 +521,7 @@ export const towerPool = createEntityPool<
 
     EM.set(tower, RenderableConstructDef, tower.stoneTower.stone.mesh);
 
-    if (DBG_MISS) addGizmoChild(tower, 30);
+    if (DBG_CANNONS) addGizmoChild(tower, 30);
 
     return tower;
   },
@@ -857,7 +857,7 @@ EM.addSystem(
       );
 
       // debugging
-      if (DBG_MISS)
+      if (DBG_CANNONS)
         drawBall(
           vec3.clone(aimPos),
           0.5,
@@ -911,7 +911,7 @@ EM.addSystem(
       });
 
       // debugging
-      if (DBG_MISS) {
+      if (DBG_CANNONS) {
         b.then((b) => {
           if (missed) {
             vec3.set(1, 0, 0, b.color);
