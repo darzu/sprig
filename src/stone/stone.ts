@@ -873,11 +873,15 @@ EM.addSystem(
         tower.stoneTower.projectileSpeed
       );
 
-      // TODO(@darzu): check max radius
-      const maxRadius = tower.stoneTower.firingRadius;
-
       if (!worldRot)
         // no valid firing solution
+        continue;
+
+      // check max arc
+      const maxRadius = tower.stoneTower.firingRadius;
+      const yaw = quat.getAngle(tower.world.rotation, worldRot);
+      if (maxRadius < Math.abs(yaw))
+        // out of angle
         continue;
 
       // aim cannon toward boat
