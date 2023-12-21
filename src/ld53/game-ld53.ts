@@ -878,7 +878,7 @@ const { Ld53PlayerPropsDef, Ld53PlayerLocalDef, createLd53PlayerAsync } =
 
         // vec3.copy(p.position, [-28.11, -28.39, 26.0]);
         // quat.copy(p.rotation, [0.0, -0.94, 0.0, 0.34]);
-        vec3.copy(p.cameraFollow.positionOffset, [0.0, 5.0, 2.0]);
+        vec3.copy(p.cameraFollow.positionOffset, [0.0, -5.0, 2.0]);
         p.cameraFollow.yawOffset = 0.0;
         p.cameraFollow.pitchOffset = 0.0; // -0.593;
 
