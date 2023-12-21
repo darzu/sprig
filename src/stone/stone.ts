@@ -521,7 +521,7 @@ export const towerPool = createEntityPool<
 
     EM.set(tower, RenderableConstructDef, tower.stoneTower.stone.mesh);
 
-    // addGizmoChild(tower, 30);
+    if (DBG_MISS) addGizmoChild(tower, 30);
 
     return tower;
   },
@@ -680,9 +680,15 @@ function getTargetMissOrHitPosition(
 ): vec3 {
   // return vec3.copy(out ?? vec3.tmp(), targetPos);
 
-  const UP: vec3.InputT = [0, 1, 0];
+  const UP: vec3.InputT = [0, 0, 1];
   let tFwd = vec3.copy(vec3.tmp(), targetDir);
   let tRight = vec3.cross(targetDir, UP);
+
+  // console.log(
+  //   `targetDir: ${vec3Dbg(targetDir)}, tFwd: ${vec3Dbg(
+  //     tFwd
+  //   )}, tRight: ${vec3Dbg(tRight)}`
+  // );
 
   // pick an actual target to aim for on the ship
   if (missed) {
@@ -710,7 +716,9 @@ function getTargetMissOrHitPosition(
       rightMul * (Math.random() * MISS_BY_MAX + 0.5 * MISS_TARGET_WIDTH),
       tRight
     );
-    tRight[1] += 5;
+
+    // TODO: why do we move missed shots up?
+    tRight[2] += 5;
   } else {
     vec3.scale(tFwd, (Math.random() - 0.5) * TARGET_LENGTH, tFwd);
     vec3.scale(tRight, (Math.random() - 0.5) * TARGET_WIDTH, tRight);
@@ -731,13 +739,15 @@ function getFireDirection(
   targetVel: vec3.InputT,
   projectileSpeed: number
 ): quat | undefined {
+  // NOTE: cannon forward is +X
+  // TODO(@darzu): change cannon forward to be +Y?
   const v = projectileSpeed;
   const g = GRAVITY;
 
   // calculate initial distance
   const d0 = vec3.dist(
-    [sourcePos[0], 0, sourcePos[2]],
-    [targetPos[0], 0, targetPos[2]]
+    [sourcePos[0], sourcePos[1], 0],
+    [targetPos[0], targetPos[1], 0]
   );
 
   // try to lead the target a bit using an approximation of flight
@@ -746,7 +756,7 @@ function getFireDirection(
   const flightTime = d0 / (v * Math.cos(Math.PI / 4));
   const leadPos = tV(
     targetPos[0] + targetVel[0] * flightTime * 0.5,
-    targetPos[1],
+    targetPos[1] + targetVel[1] * flightTime * 0.5,
     targetPos[2] + targetVel[2] * flightTime * 0.5
   );
 
@@ -754,13 +764,13 @@ function getFireDirection(
   const delta = vec3.sub(leadPos, sourcePos);
 
   // calculate yaw
-  const yaw = Math.atan2(delta[0], delta[2]) - Math.PI / 2;
+  const yaw = -Math.atan2(delta[1], delta[0]);
 
   // calculate horizontal distance to target
-  const d = vec3.length([delta[0], 0, delta[2]]);
+  const d = vec3.length([delta[0], delta[1], 0]);
 
   // vertical distance to target
-  const h = delta[1];
+  const h = delta[2];
 
   // now, find the angle from our cannon.
   // https://en.wikipedia.org/wiki/Projectile_motion#Angle_%CE%B8_required_to_hit_coordinate_(x,_y)
@@ -772,6 +782,8 @@ function getFireDirection(
     (v * v - Math.sqrt(v * v * v * v - g * (g * d * d + 2 * h * v * v))) /
       (g * d)
   );
+
+  // console.log(`pitch1: ${pitch1}, pitch2: ${pitch2}`);
 
   // prefer smaller theta
   if (pitch2 > pitch1) {
@@ -785,15 +797,19 @@ function getFireDirection(
   }
   if (isNaN(pitch) || pitch > MAX_THETA || pitch < MIN_THETA) {
     // no firing solution--target is too far or too close
-    // console.log("no solution?");
+    // console.log("no solution");
     return undefined;
   }
 
   // ok, we have a firing solution. rotate to the right angle
 
+  // console.log(`yaw: ${yaw}, pitch: ${pitch}`);
+  // pitch = 0;
+
   const worldRot = quat.create();
-  quat.rotateY(worldRot, yaw, worldRot);
-  quat.rotateZ(worldRot, pitch, worldRot);
+  // TODO(@darzu): b/c we're using +X is fwd, we can't use quat.fromYawPitchRoll
+  quat.rotateZ(worldRot, -yaw, worldRot);
+  quat.rotateY(worldRot, -pitch, worldRot);
 
   return worldRot;
 }
@@ -869,6 +885,9 @@ EM.addSystem(
       const localRot = quat.mul(invRot, worldRot);
       quat.copy(cannon.rotation, localRot);
 
+      // quat.identity(cannon.rotation);
+      // quat.copy(tower.rotation, worldRot);
+
       // fire bullet
       const b = fireBullet(
         2,
@@ -879,7 +898,6 @@ EM.addSystem(
         GRAVITY,
         // 2.0,
         20.0,
-        // TODO(@darzu): Z_UP: fix cannon fire axis?
         [1, 0, 0]
       );
 
