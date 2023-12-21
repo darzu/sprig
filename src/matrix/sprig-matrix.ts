@@ -203,6 +203,10 @@ export module vec2 {
     return out;
   }
 
+  export function lerp(v1: InputT, v2: InputT, n: number, out?: T): T {
+    return GL.lerp(out ?? tmp(), v1, v2, n) as T;
+  }
+
   // NOTE: output is normalized
   export function fromRadians(radians: number, out?: T): T {
     return set(Math.cos(radians), Math.sin(radians), out);

@@ -5,7 +5,7 @@ import { ENDESGA16 } from "../color/palettes.js";
 import { DeadDef } from "../ecs/delete.js";
 import { createRef, Ref } from "../ecs/em-helpers.js";
 import { Component, EM, Entity, EntityW } from "../ecs/entity-manager.js";
-import { createEntityPool } from "../ecs/entity-pool.js";
+import { EntityPool, createEntityPool } from "../ecs/entity-pool.js";
 import { Bullet, BulletDef, fireBullet } from "../cannons/bullet.js";
 import { GravityDef } from "../motion/gravity.js";
 import { LifetimeDef } from "../ecs/lifetime.js";
@@ -254,6 +254,7 @@ function knockOutBricks(stone: StoneState, aabb: AABB, shrink = false): number {
 // takes a tower-space AABB--not world space!
 function knockOutBricksByBullet(
   tower: EntityW<[typeof StoneTowerDef]>,
+  bricks: FlyingBrickPool,
   aabb: AABB,
   bullet: Bullet
 ): number {
@@ -274,12 +275,11 @@ function knockOutBricksByBullet(
             knockOutBrickAtIndex(tower.stoneTower.stone, brick.index);
             brick.knockedOut = true;
             bricksKnockedOut++;
-            flyingBrickPool.spawn().then((flyingBrick) => {
-              flyingBrick.physicsParent.id = tower.id;
-              //console.log(brick.pos[0]);
-              vec3.copy(flyingBrick.position, brick.pos[0]);
-              vec3.copy(flyingBrick.color, brick.color);
-            });
+            const flyingBrick = bricks.spawn();
+            flyingBrick.physicsParent.id = tower.id;
+            //console.log(brick.pos[0]);
+            vec3.copy(flyingBrick.position, brick.pos[0]);
+            vec3.copy(flyingBrick.color, brick.color);
           }
         }
       }
@@ -490,93 +490,93 @@ function createTowerState(): StoneState {
   return state;
 }
 
-export const towerPool = createEntityPool<
+type TowerPool = EntityPool<
   [typeof StoneTowerDef, typeof PositionDef, typeof RotationDef]
->({
-  max: maxStoneTowers,
-  maxBehavior: "crash",
-  create: async () => {
-    const res = await EM.whenResources(TowerMeshes);
-    const tower = EM.new();
-    const cannon = EM.new();
-    EM.set(cannon, RenderableConstructDef, res.towerMeshes.ld53_cannon.proto);
-    EM.set(cannon, PositionDef);
-    EM.set(cannon, ColorDef, V(0.05, 0.05, 0.05));
-    EM.set(cannon, RotationDef);
-    EM.set(cannon, PhysicsParentDef, tower.id);
-    EM.set(cannon, WorldFrameDef);
-    vec3.set(baseRadius - 2, 0, height * 0.7, cannon.position);
+>;
+export const TowerPoolDef = EM.defineResource("towerPool", (p: TowerPool) => p);
 
-    const stone = createTowerState();
+EM.addLazyInit([RendererDef], [TowerPoolDef], (res) => {
+  const towerPool: TowerPool = createEntityPool({
+    max: maxStoneTowers,
+    maxBehavior: "crash",
+    create: () => {
+      const tower = EM.new();
+      const cannon = EM.new();
+      EM.set(cannon, RenderableConstructDef, LD53CannonMesh);
+      EM.set(cannon, PositionDef);
+      EM.set(cannon, ColorDef, V(0.05, 0.05, 0.05));
+      EM.set(cannon, RotationDef);
+      EM.set(cannon, PhysicsParentDef, tower.id);
+      EM.set(cannon, WorldFrameDef);
+      vec3.set(baseRadius - 2, 0, height * 0.7, cannon.position);
 
-    EM.set(tower, StoneTowerDef, cannon, stone);
-    EM.set(tower, PositionDef);
-    EM.set(tower, RotationDef);
+      const stone = createTowerState();
 
-    EM.set(tower, ColliderDef, {
-      shape: "AABB",
-      solid: false,
-      aabb: stone.aabb,
-    });
+      EM.set(tower, StoneTowerDef, cannon, stone);
+      EM.set(tower, PositionDef);
+      EM.set(tower, RotationDef);
 
-    EM.set(tower, RenderableConstructDef, tower.stoneTower.stone.mesh);
+      EM.set(tower, ColliderDef, {
+        shape: "AABB",
+        solid: false,
+        aabb: stone.aabb,
+      });
 
-    if (DBG_CANNONS) addGizmoChild(tower, 30);
+      EM.set(tower, RenderableConstructDef, tower.stoneTower.stone.mesh);
 
-    return tower;
-  },
-  onSpawn: async (p) => {
-    const cannon = p.stoneTower.cannon()!;
+      if (DBG_CANNONS) addGizmoChild(tower, 30);
 
-    EM.tryRemoveComponent(p.id, DeadDef);
-    EM.tryRemoveComponent(cannon.id, DeadDef);
+      return tower;
+    },
+    onSpawn: (p) => {
+      const cannon = p.stoneTower.cannon()!;
 
-    if (RenderableDef.isOn(p)) p.renderable.hidden = false;
-    if (RenderableDef.isOn(cannon)) cannon.renderable.hidden = false;
+      EM.tryRemoveComponent(p.id, DeadDef);
+      EM.tryRemoveComponent(cannon.id, DeadDef);
 
-    // platform.towerPlatform.tiltPeriod = tiltPeriod;
-    // platform.towerPlatform.tiltTimer = tiltTimer;
-    p.stoneTower.lastFired = 0;
-    if (restoreAllBricks(p.stoneTower)) {
-      const res = await EM.whenResources(RendererDef);
-      const meshHandle = (await EM.whenEntityHas(p, RenderableDef)).renderable
-        .meshHandle;
-      res.renderer.renderer.stdPool.updateMeshVertices(
-        meshHandle,
-        p.stoneTower.stone.mesh
-      );
-    }
-    p.stoneTower.stone.currentBricks = p.stoneTower.stone.totalBricks;
-    p.stoneTower.alive = true;
-  },
-  onDespawn: (e) => {
-    // tower
-    if (!DeadDef.isOn(e)) {
-      // dead platform
-      EM.set(e, DeadDef);
-      if (RenderableDef.isOn(e)) e.renderable.hidden = true;
-      e.dead.processed = true;
+      if (RenderableDef.isOn(p)) p.renderable.hidden = false;
+      if (RenderableDef.isOn(cannon)) cannon.renderable.hidden = false;
 
-      // dead cannon
-      if (e.stoneTower.cannon()) {
-        const c = e.stoneTower.cannon()!;
-        EM.set(c, DeadDef);
-        if (RenderableDef.isOn(c)) c.renderable.hidden = true;
-        c.dead.processed = true;
+      // platform.towerPlatform.tiltPeriod = tiltPeriod;
+      // platform.towerPlatform.tiltTimer = tiltTimer;
+      p.stoneTower.lastFired = 0;
+      if (restoreAllBricks(p.stoneTower)) {
+        EM.whenEntityHas(p, RenderableDef).then((e) => {
+          res.renderer.renderer.stdPool.updateMeshVertices(
+            e.renderable.meshHandle,
+            p.stoneTower.stone.mesh
+          );
+        });
       }
-    }
-  },
-});
+      p.stoneTower.stone.currentBricks = p.stoneTower.stone.totalBricks;
+      p.stoneTower.alive = true;
+    },
+    onDespawn: (e) => {
+      // tower
+      if (!DeadDef.isOn(e)) {
+        // dead platform
+        EM.set(e, DeadDef);
+        if (RenderableDef.isOn(e)) e.renderable.hidden = true;
+        e.dead.processed = true;
 
-export async function spawnStoneTower() {
-  return towerPool.spawn();
-}
+        // dead cannon
+        if (e.stoneTower.cannon()) {
+          const c = e.stoneTower.cannon()!;
+          EM.set(c, DeadDef);
+          if (RenderableDef.isOn(c)) c.renderable.hidden = true;
+          c.dead.processed = true;
+        }
+      }
+    },
+  });
+  EM.addResource(TowerPoolDef, towerPool);
+});
 
 export const FlyingBrickDef = EM.defineComponent("flyingBrick", () => true);
 
 const maxFlyingBricks = 50;
 
-export const flyingBrickPool = createEntityPool<
+type FlyingBrickPool = EntityPool<
   [
     typeof FlyingBrickDef,
     typeof PositionDef,
@@ -587,74 +587,83 @@ export const flyingBrickPool = createEntityPool<
     typeof LifetimeDef,
     typeof PhysicsParentDef
   ]
->({
-  max: maxFlyingBricks,
-  maxBehavior: "rand-despawn",
-  create: async () => {
-    const res = await EM.whenResources(TowerMeshes);
-    const brick = EM.new();
-    EM.set(brick, FlyingBrickDef);
-    EM.set(brick, PositionDef);
-    EM.set(brick, RotationDef);
-    EM.set(brick, LinearVelocityDef);
-    EM.set(brick, AngularVelocityDef);
-    EM.set(brick, ColorDef);
-    EM.set(brick, LifetimeDef);
-    EM.set(brick, RenderableConstructDef, res.towerMeshes.cube.proto);
-    EM.set(brick, GravityDef, V(0, 0, -GRAVITY));
-    EM.set(
-      brick,
-      ScaleDef,
-      V(approxBrickWidth / 2, approxBrickHeight / 2, brickDepth / 2)
-    );
-    EM.set(brick, PhysicsParentDef);
-    return brick;
-  },
-  onSpawn: async (e) => {
-    EM.tryRemoveComponent(e.id, DeadDef);
-    if (RenderableDef.isOn(e)) e.renderable.hidden = false;
+>;
+export const FlyingBrickPoolDef = EM.defineResource(
+  "flyingBrickPool",
+  (p: FlyingBrickPool) => p
+);
 
-    // set random rotation and angular velocity
-    quat.identity(e.rotation);
-    quat.rotateX(e.rotation, Math.PI * 0.5, e.rotation);
-    quat.rotateY(e.rotation, Math.PI * Math.random(), e.rotation);
-    quat.rotateZ(e.rotation, Math.PI * Math.random(), e.rotation);
+EM.addLazyInit([RendererDef], [FlyingBrickPoolDef], (res) => {
+  const flyingBrickPool: FlyingBrickPool = createEntityPool({
+    max: maxFlyingBricks,
+    maxBehavior: "rand-despawn",
+    create: () => {
+      const brick = EM.new();
+      EM.set(brick, FlyingBrickDef);
+      EM.set(brick, PositionDef);
+      EM.set(brick, RotationDef);
+      EM.set(brick, LinearVelocityDef);
+      EM.set(brick, AngularVelocityDef);
+      EM.set(brick, ColorDef);
+      EM.set(brick, LifetimeDef);
+      EM.set(brick, RenderableConstructDef, CubeMesh);
+      EM.set(brick, GravityDef, V(0, 0, -GRAVITY));
+      EM.set(
+        brick,
+        ScaleDef,
+        V(approxBrickWidth / 2, approxBrickHeight / 2, brickDepth / 2)
+      );
+      EM.set(brick, PhysicsParentDef);
+      return brick;
+    },
+    onSpawn: (e) => {
+      EM.tryRemoveComponent(e.id, DeadDef);
+      if (RenderableDef.isOn(e)) e.renderable.hidden = false;
 
-    vec3.set(
-      Math.random() - 0.5,
-      Math.random() - 0.5,
-      Math.random() - 0.5,
-      e.angularVelocity
-    );
-    vec3.scale(e.angularVelocity, 0.01, e.angularVelocity);
-    vec3.set(
-      Math.random() - 0.5,
-      Math.random() - 0.5,
-      Math.random() - 0.5,
-      e.linearVelocity
-    );
-    vec3.scale(e.linearVelocity, 0.1, e.linearVelocity);
+      // set random rotation and angular velocity
+      quat.identity(e.rotation);
+      quat.rotateX(e.rotation, Math.PI * 0.5, e.rotation);
+      quat.rotateY(e.rotation, Math.PI * Math.random(), e.rotation);
+      quat.rotateZ(e.rotation, Math.PI * Math.random(), e.rotation);
 
-    e.lifetime.startMs = 8000;
-    e.lifetime.ms = e.lifetime.startMs;
-  },
-  onDespawn: (e) => {
-    EM.set(e, DeadDef);
-    if (RenderableDef.isOn(e)) e.renderable.hidden = true;
-    e.dead.processed = true;
-  },
+      vec3.set(
+        Math.random() - 0.5,
+        Math.random() - 0.5,
+        Math.random() - 0.5,
+        e.angularVelocity
+      );
+      vec3.scale(e.angularVelocity, 0.01, e.angularVelocity);
+      vec3.set(
+        Math.random() - 0.5,
+        Math.random() - 0.5,
+        Math.random() - 0.5,
+        e.linearVelocity
+      );
+      vec3.scale(e.linearVelocity, 0.1, e.linearVelocity);
+
+      e.lifetime.startMs = 8000;
+      e.lifetime.ms = e.lifetime.startMs;
+    },
+    onDespawn: (e) => {
+      EM.set(e, DeadDef);
+      if (RenderableDef.isOn(e)) e.renderable.hidden = true;
+      e.dead.processed = true;
+    },
+  });
+
+  EM.addResource(FlyingBrickPoolDef, flyingBrickPool);
 });
 
 EM.addSystem(
   "despawnFlyingBricks",
   Phase.GAME_WORLD,
   [FlyingBrickDef, DeadDef],
-  [],
-  (es, _) =>
+  [FlyingBrickPoolDef],
+  (es, res) =>
     es.forEach((e) => {
       if (!e.dead.processed) {
         //console.log("despawning brick");
-        flyingBrickPool.despawn(e);
+        res.flyingBrickPool.despawn(e);
       }
     })
 );
@@ -932,7 +941,8 @@ EM.addSystem(
 );
 
 function destroyTower(
-  tower: EntityW<[typeof StoneTowerDef, typeof RenderableDef]>
+  tower: EntityW<[typeof StoneTowerDef, typeof RenderableDef]>,
+  bricks: FlyingBrickPool
 ) {
   let knockedOut = 0;
   let i = 0;
@@ -949,12 +959,11 @@ function destroyTower(
       knockedOut++;
       knockOutBrickAtIndex(tower.stoneTower.stone, brick.index);
       brick.knockedOut = true;
-      flyingBrickPool.spawn().then((flyingBrick) => {
-        flyingBrick.physicsParent.id = tower.id;
-        vec3.copy(flyingBrick.position, brick.pos[0]);
-        vec3.copy(flyingBrick.color, brick.color);
-        vec3.set(0, 0.01, 0, flyingBrick.linearVelocity);
-      });
+      const flyingBrick = bricks.spawn();
+      flyingBrick.physicsParent.id = tower.id;
+      vec3.copy(flyingBrick.position, brick.pos[0]);
+      vec3.copy(flyingBrick.color, brick.color);
+      vec3.set(0, 0.01, 0, flyingBrick.linearVelocity);
     }
   }
   tower.renderable.hidden = true;
@@ -969,7 +978,7 @@ EM.addSystem(
   "stoneTowerDamage",
   Phase.GAME_WORLD,
   [StoneTowerDef, RenderableDef, WorldFrameDef],
-  [PhysicsResultsDef, RendererDef],
+  [PhysicsResultsDef, RendererDef, FlyingBrickPoolDef],
   (es, res) => {
     const ballAABB = createAABB();
 
@@ -992,6 +1001,7 @@ EM.addSystem(
           transformAABB(ballAABB, invertedTransform);
           totalKnockedOut += knockOutBricksByBullet(
             tower,
+            res.flyingBrickPool,
             ballAABB,
             ball.bullet
           );
@@ -1010,11 +1020,11 @@ EM.addSystem(
               tower.stoneTower.stone.totalBricks <
             MIN_BRICK_PERCENT
           ) {
-            destroyTower(tower);
+            destroyTower(tower, res.flyingBrickPool);
           } else {
             for (let row of tower.stoneTower.stone.rows) {
               if (row.bricksKnockedOut === row.totalBricks) {
-                destroyTower(tower);
+                destroyTower(tower, res.flyingBrickPool);
               }
             }
           }

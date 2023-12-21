@@ -1,7 +1,12 @@
 import { CameraView } from "../camera/camera.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { EM, Entity, EntityW } from "../ecs/entity-manager.js";
-import { AllMeshesDef, GizmoMesh, UnitCubeMesh } from "../meshes/mesh-list.js";
+import {
+  AllMeshesDef,
+  BallMesh,
+  GizmoMesh,
+  UnitCubeMesh,
+} from "../meshes/mesh-list.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { mathMap } from "./math.js";
 import { getLineEnd, Line, Ray } from "../physics/broadphase.js";
@@ -96,21 +101,21 @@ export function createLine(start: vec3, end: vec3, color: vec3) {
   return e;
 }
 
+// TODO(@darzu): turn this into a resource like TowerPoolDef
 const _ballPool = createEntityPool<
   [typeof ColorDef, typeof PositionDef, typeof ScaleDef]
 >({
   max: 100,
   maxBehavior: "rand-despawn",
-  create: async () => {
-    let res = await EM.whenResources(AllMeshesDef);
+  create: () => {
     const e = EM.new();
     EM.set(e, ColorDef);
-    EM.set(e, RenderableConstructDef, res.allMeshes.ball.proto);
+    EM.set(e, RenderableConstructDef, BallMesh);
     EM.set(e, PositionDef);
     EM.set(e, ScaleDef);
     return e;
   },
-  onSpawn: async (e) => {
+  onSpawn: (e) => {
     EM.tryRemoveComponent(e.id, DeadDef);
   },
   onDespawn: (e) => {
@@ -120,12 +125,12 @@ const _ballPool = createEntityPool<
 });
 
 // TODO(@darzu): refactor w/ gizmos and arrows and pooling
-export async function drawBall(
+export function drawBall(
   pos: vec3,
   size: number,
   color: vec3
-): Promise<EntityW<[typeof PositionDef]>> {
-  const e = await _ballPool.spawn();
+): EntityW<[typeof PositionDef]> {
+  const e = _ballPool.spawn();
   vec3.copy(e.color, color);
   vec3.copy(e.position, pos);
   vec3.set(size, size, size, e.scale);

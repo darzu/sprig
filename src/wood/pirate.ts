@@ -1,11 +1,16 @@
-import { BLACK, AllMeshesDef } from "../meshes/mesh-list.js";
+import {
+  BLACK,
+  AllMeshesDef,
+  HexMesh,
+  CannonLD51Mesh,
+} from "../meshes/mesh-list.js";
 import { AudioDef } from "../audio/audio.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { DeadDef } from "../ecs/delete.js";
 import { createRef } from "../ecs/em-helpers.js";
 import { EM, EntityW } from "../ecs/entity-manager.js";
-import { createEntityPool } from "../ecs/entity-pool.js";
+import { EntityPool, createEntityPool } from "../ecs/entity-pool.js";
 import { mat4, vec3, quat } from "../matrix/sprig-matrix.js";
 import { jitter } from "../utils/math.js";
 import {
@@ -27,6 +32,7 @@ import {
   Mesh,
   getAABBFromMesh,
   RawMesh,
+  normalizeMesh,
 } from "../meshes/mesh.js";
 import {
   RendererDef,
@@ -52,6 +58,7 @@ import {
 } from "./wood.js";
 import { fireBullet } from "../cannons/bullet.js";
 import { Phase } from "../ecs/sys-phase.js";
+import { HEX_MESH } from "../meshes/primatives.js";
 
 const DBG_PIRATES = false;
 
@@ -158,11 +165,12 @@ function rotatePiratePlatform(
 }
 
 export async function startPirates() {
+  const { piratePool } = await EM.whenResources(PiratePoolDef);
   // TODO(@darzu): HACK!
-  registerDestroyPirateHandler(destroyPirateShip);
+  registerDestroyPirateHandler((id) => destroyPirateShip(piratePool, id));
 
   for (let i = 0; i < numStartPirates; i++) {
-    const p = await spawnPirate(i * ((2 * Math.PI) / numStartPirates));
+    const p = spawnPirate(piratePool, i * ((2 * Math.PI) / numStartPirates));
   }
 
   pirateNextSpawn = pirateSpawnTimer;
@@ -183,10 +191,10 @@ export async function startPirates() {
 
         const rad = Math.random() * 2 * Math.PI;
         if (pirateCount < maxPirates) {
-          spawnPirate(rad);
+          spawnPirate(piratePool, rad);
 
           if (pirateCount < 2) {
-            spawnPirate(rad + Math.PI);
+            spawnPirate(piratePool, rad + Math.PI);
           }
         }
         pirateSpawnTimer *= 0.95;
@@ -258,175 +266,184 @@ export async function startPirates() {
   );
 }
 
-const piratePool = createEntityPool<
+type PiratePool = EntityPool<
   [typeof PiratePlatformDef, typeof PositionDef, typeof RotationDef]
->({
-  max: maxPirates,
-  maxBehavior: "crash",
-  create: async () => {
-    const res = await EM.whenResources(AllMeshesDef, RendererDef, TimeDef);
-    // make platform
-    const platform = EM.new();
-    EM.set(platform, ColorDef);
-    vec3.copy(platform.color, ENDESGA16.deepBrown);
-    EM.set(platform, PositionDef);
-    EM.set(platform, RotationDef);
-    const groundMesh = cloneMesh(res.allMeshes.hex.mesh);
-    transformMesh(
-      groundMesh,
-      mat4.fromRotationTranslationScale(quat.IDENTITY, [0, -1, 0], [4, 1, 4])
-    );
-    EM.set(platform, RenderableConstructDef, groundMesh);
+>;
+export const PiratePoolDef = EM.defineResource(
+  "piratePool",
+  (p: PiratePool) => p
+);
 
-    // make cannon
-    const cannon = EM.new();
-    EM.set(cannon, RenderableConstructDef, res.allMeshes.ld51_cannon.proto);
-    EM.set(cannon, PositionDef);
-    EM.set(cannon, PhysicsParentDef, platform.id);
-    EM.set(cannon, ColorDef, ENDESGA16.darkGray);
-    EM.set(cannon, RotationDef);
-    vec3.copy(cannon.position, [0, 2, 0]);
+EM.addLazyInit([RendererDef, TimeDef], [PiratePoolDef], (res) => {
+  const piratePool: PiratePool = createEntityPool({
+    max: maxPirates,
+    maxBehavior: "crash",
+    create: () => {
+      // make platform
+      const platform = EM.new();
+      EM.set(platform, ColorDef);
+      vec3.copy(platform.color, ENDESGA16.deepBrown);
+      EM.set(platform, PositionDef);
+      EM.set(platform, RotationDef);
+      // TODO(@darzu): re-use this mesh!
+      const groundMesh = normalizeMesh(HEX_MESH());
+      transformMesh(
+        groundMesh,
+        mat4.fromRotationTranslationScale(quat.IDENTITY, [0, -1, 0], [4, 1, 4])
+      );
+      EM.set(platform, RenderableConstructDef, groundMesh);
 
-    // make timber
-    const timber = EM.new();
-    const _timberMesh = createEmptyMesh("pirateShip");
-    const builder = createTimberBuilder(_timberMesh);
-    appendPirateShip(builder);
-    _timberMesh.surfaceIds = _timberMesh.colors.map((_, i) => i);
-    const timberState = getBoardsFromMesh(_timberMesh);
-    // unshareProvokingForWood(_timberMesh, timberState);
-    verifyUnsharedProvokingForWood(_timberMesh, timberState);
-    // TODO(@darzu): maybe there shouldn't actually be any unsharing? We should
-    //   be able to get it right at construction time.
-    // console.log(`before: ` + meshStats(_timberMesh));
-    // const timberMesh = normalizeMesh(_timberMesh);
-    // console.log(`after: ` + meshStats(timberMesh));
-    const timberMesh = _timberMesh as Mesh;
-    timberMesh.usesProvoking = true;
-    reserveSplinterSpace(timberState, 10);
-    EM.set(timber, RenderableConstructDef, timberMesh);
-    EM.set(timber, WoodStateDef, timberState);
-    EM.set(timber, ColorDef, ENDESGA16.red);
-    const timberAABB = getAABBFromMesh(timberMesh);
-    EM.set(timber, PositionDef, V(0, builder.width, 0));
-    EM.set(timber, RotationDef);
-    EM.set(timber, ColliderDef, {
-      shape: "AABB",
-      solid: false,
-      aabb: timberAABB,
-    });
-    const timberHealth = createWoodHealth(timberState);
-    EM.set(timber, WoodHealthDef, timberHealth);
-    EM.set(timber, PhysicsParentDef, platform.id);
+      // make cannon
+      const cannon = EM.new();
+      EM.set(cannon, RenderableConstructDef, CannonLD51Mesh);
+      EM.set(cannon, PositionDef);
+      EM.set(cannon, PhysicsParentDef, platform.id);
+      EM.set(cannon, ColorDef, ENDESGA16.darkGray);
+      EM.set(cannon, RotationDef);
+      vec3.copy(cannon.position, [0, 2, 0]);
 
-    // make joint entity
-    EM.set(platform, PiratePlatformDef, cannon, timber);
+      // make timber
+      const timber = EM.new();
+      const _timberMesh = createEmptyMesh("pirateShip");
+      const builder = createTimberBuilder(_timberMesh);
+      appendPirateShip(builder);
+      _timberMesh.surfaceIds = _timberMesh.colors.map((_, i) => i);
+      const timberState = getBoardsFromMesh(_timberMesh);
+      // unshareProvokingForWood(_timberMesh, timberState);
+      verifyUnsharedProvokingForWood(_timberMesh, timberState);
+      // TODO(@darzu): maybe there shouldn't actually be any unsharing? We should
+      //   be able to get it right at construction time.
+      // console.log(`before: ` + meshStats(_timberMesh));
+      // const timberMesh = normalizeMesh(_timberMesh);
+      // console.log(`after: ` + meshStats(timberMesh));
+      const timberMesh = _timberMesh as Mesh;
+      timberMesh.usesProvoking = true;
+      reserveSplinterSpace(timberState, 10);
+      EM.set(timber, RenderableConstructDef, timberMesh);
+      EM.set(timber, WoodStateDef, timberState);
+      EM.set(timber, ColorDef, ENDESGA16.red);
+      const timberAABB = getAABBFromMesh(timberMesh);
+      EM.set(timber, PositionDef, V(0, builder.width, 0));
+      EM.set(timber, RotationDef);
+      EM.set(timber, ColliderDef, {
+        shape: "AABB",
+        solid: false,
+        aabb: timberAABB,
+      });
+      const timberHealth = createWoodHealth(timberState);
+      EM.set(timber, WoodHealthDef, timberHealth);
+      EM.set(timber, PhysicsParentDef, platform.id);
 
-    return platform;
-  },
-  onSpawn: async (p) => {
-    const initialPitch = Math.PI * 0.06;
-    const res = await EM.whenResources(AllMeshesDef, RendererDef, TimeDef);
+      // make joint entity
+      EM.set(platform, PiratePlatformDef, cannon, timber);
 
-    // set/reset platform, cannon, and wood properties
-    const platform = p;
-    const cannon = p.piratePlatform.cannon()!;
-    const timber = p.piratePlatform.timber()!;
+      return platform;
+    },
+    onSpawn: (p) => {
+      const initialPitch = Math.PI * 0.06;
 
-    // reset timber
-    resetWoodHealth(timber.woodHealth);
-    resetWoodState(timber.woodState);
-    const timber2 = await EM.whenEntityHas(timber, RenderableDef);
-    res.renderer.renderer.stdPool.updateMeshQuads(
-      timber2.renderable.meshHandle,
-      timber.woodState.mesh as Mesh,
-      0,
-      timber.woodState.mesh.quad.length
-    );
+      // set/reset platform, cannon, and wood properties
+      const platform = p;
+      const cannon = p.piratePlatform.cannon()!;
+      const timber = p.piratePlatform.timber()!;
 
-    // undead
-    EM.tryRemoveComponent(platform.id, DeadDef);
-    EM.tryRemoveComponent(cannon.id, DeadDef);
+      // reset timber
+      resetWoodHealth(timber.woodHealth);
+      resetWoodState(timber.woodState);
+      EM.whenEntityHas(timber, RenderableDef).then((timber2) => {
+        res.renderer.renderer.stdPool.updateMeshQuads(
+          timber2.renderable.meshHandle,
+          timber.woodState.mesh as Mesh,
+          0,
+          timber.woodState.mesh.quad.length
+        );
+      });
 
-    if (RenderableDef.isOn(platform)) platform.renderable.hidden = false;
-    if (RenderableDef.isOn(cannon)) cannon.renderable.hidden = false;
+      // undead
+      EM.tryRemoveComponent(platform.id, DeadDef);
+      EM.tryRemoveComponent(cannon.id, DeadDef);
 
-    vec3.copy(platform.position, [0, 0, 30]);
-    quat.identity(platform.rotation);
+      if (RenderableDef.isOn(platform)) platform.renderable.hidden = false;
+      if (RenderableDef.isOn(cannon)) cannon.renderable.hidden = false;
 
-    const tiltPeriod = 5700 + jitter(3000);
-    const tiltTimer = Math.random() * tiltPeriod;
+      vec3.copy(platform.position, [0, 0, 30]);
+      quat.identity(platform.rotation);
 
-    platform.piratePlatform.lastFire = res.time.time + startDelay;
-    platform.piratePlatform.tiltPeriod = tiltPeriod;
-    platform.piratePlatform.tiltTimer = tiltTimer;
+      const tiltPeriod = 5700 + jitter(3000);
+      const tiltTimer = Math.random() * tiltPeriod;
 
-    quat.identity(cannon.rotation);
-    quat.rotateX(cannon.rotation, initialPitch, cannon.rotation);
-    // TODO(@darzu): HACK!
-    // so they start slightly different pitches
-    let initTimer = 0;
-    // TODO(@darzu):
-    while (initTimer < tiltTimer) {
-      initTimer += 16.6666;
-      const upMode = initTimer % tiltPeriod > tiltPeriod * 0.5;
-      let r = Math.PI * pitchSpeed * 16.6666 * (upMode ? -1 : 1);
-      quat.rotateX(cannon.rotation, r, cannon.rotation);
-    }
-  },
-  onDespawn: (e) => {
-    // TODO(@darzu): impl
-    // console.log(`destroy ${id}`);
-    const timber = e.piratePlatform.timber()!;
+      platform.piratePlatform.lastFire = res.time.time + startDelay;
+      platform.piratePlatform.tiltPeriod = tiltPeriod;
+      platform.piratePlatform.tiltTimer = tiltTimer;
 
-    // pirateShip
-    if (!DeadDef.isOn(e)) {
-      // dead platform
-      EM.set(e, DeadDef);
-      if (RenderableDef.isOn(e)) e.renderable.hidden = true;
-      e.dead.processed = true;
-
-      // dead cannon
-      if (e.piratePlatform.cannon()) {
-        const c = e.piratePlatform.cannon()!;
-        EM.set(c, DeadDef);
-        if (RenderableDef.isOn(c)) c.renderable.hidden = true;
-        c.dead.processed = true;
+      quat.identity(cannon.rotation);
+      quat.rotateX(cannon.rotation, initialPitch, cannon.rotation);
+      // TODO(@darzu): HACK!
+      // so they start slightly different pitches
+      let initTimer = 0;
+      // TODO(@darzu):
+      while (initTimer < tiltTimer) {
+        initTimer += 16.6666;
+        const upMode = initTimer % tiltPeriod > tiltPeriod * 0.5;
+        let r = Math.PI * pitchSpeed * 16.6666 * (upMode ? -1 : 1);
+        quat.rotateX(cannon.rotation, r, cannon.rotation);
       }
+    },
+    onDespawn: (e) => {
+      // TODO(@darzu): impl
+      // console.log(`destroy ${id}`);
+      const timber = e.piratePlatform.timber()!;
 
-      // kill count
-      pirateKills += 1;
+      // pirateShip
+      if (!DeadDef.isOn(e)) {
+        // dead platform
+        EM.set(e, DeadDef);
+        if (RenderableDef.isOn(e)) e.renderable.hidden = true;
+        e.dead.processed = true;
 
-      // dead music
-      const music = EM.getResource(AudioDef);
-      if (music) music.playChords([3], "minor", 2.0, 5.0, 1);
+        // dead cannon
+        if (e.piratePlatform.cannon()) {
+          const c = e.piratePlatform.cannon()!;
+          EM.set(c, DeadDef);
+          if (RenderableDef.isOn(c)) c.renderable.hidden = true;
+          c.dead.processed = true;
+        }
 
-      // wood state
-      if (WoodHealthDef.isOn(timber) && PhysicsParentDef.isOn(timber)) {
-        // TODO(@darzu): necessary?
-        // timber.physicsParent.id = 0;
-        // EM.set(timber, LifetimeDef, 1000);
-        for (let b of timber.woodHealth.boards) {
-          for (let s of b) {
-            s.health = 0;
+        // kill count
+        pirateKills += 1;
+
+        // dead music
+        const music = EM.getResource(AudioDef);
+        if (music) music.playChords([3], "minor", 2.0, 5.0, 1);
+
+        // wood state
+        if (WoodHealthDef.isOn(timber) && PhysicsParentDef.isOn(timber)) {
+          // TODO(@darzu): necessary?
+          // timber.physicsParent.id = 0;
+          // EM.set(timber, LifetimeDef, 1000);
+          for (let b of timber.woodHealth.boards) {
+            for (let s of b) {
+              s.health = 0;
+            }
           }
         }
       }
-    }
-  },
+    },
+  });
+  EM.addResource(PiratePoolDef, piratePool);
 });
 
-async function spawnPirate(rad: number) {
+async function spawnPirate(pirates: PiratePool, rad: number) {
   // TODO(@darzu): move custom params into spawn fn?
-  const platform = await piratePool.spawn();
+  const platform = pirates.spawn();
   rotatePiratePlatform(platform, rad);
 }
 
-export function destroyPirateShip(id: number) {
+export function destroyPirateShip(pirates: PiratePool, id: number) {
   const pirate = EM.findEntity(id, [
     PiratePlatformDef,
     PositionDef,
     RotationDef,
   ]);
-  if (pirate && !DeadDef.isOn(pirate)) piratePool.despawn(pirate);
+  if (pirate && !DeadDef.isOn(pirate)) pirates.despawn(pirate);
 }

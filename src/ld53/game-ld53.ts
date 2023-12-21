@@ -79,7 +79,7 @@ import {
   createLd53ShipAsync,
 } from "./ship.js";
 import { SAIL_FURL_RATE } from "../wind/sail.js";
-import { spawnStoneTower, StoneTowerDef, towerPool } from "../stone/stone.js";
+import { StoneTowerDef, TowerPoolDef } from "../stone/stone.js";
 import { LandDef } from "./land-collision.js";
 import { DeadDef } from "../ecs/delete.js";
 import { BulletDef, breakBullet } from "../cannons/bullet.js";
@@ -293,7 +293,10 @@ async function setLevelLocal(levelIdx: number) {
   await setMap(MapPaths[levelIdx]);
   await resetLand();
 
-  const { levelMap } = await EM.whenResources(LevelMapDef);
+  const { levelMap, towerPool } = await EM.whenResources(
+    LevelMapDef,
+    TowerPoolDef
+  );
 
   // TODO(@darzu): MULTIPLAYER towers!
   const towers = EM.filterEntities([StoneTowerDef]);
@@ -311,7 +314,7 @@ async function setLevelLocal(levelIdx: number) {
 
   for (let [pos, angle] of tower3dPosesAndDirs) {
     // TODO(@darzu): Z_UP stone towers
-    const stoneTower = await spawnStoneTower();
+    const stoneTower = towerPool.spawn();
     vec3.copy(stoneTower.position, pos);
     quat.setAxisAngle([0, 0, 1], angle, stoneTower.rotation);
   }
@@ -1055,6 +1058,5 @@ async function resetLand() {
     terraMesh
   );
 
-  const landRes = EM.ensureResource(LandDef);
-  landRes.sample = sampleTerra;
+  EM.ensureResource(LandDef, sampleTerra);
 }

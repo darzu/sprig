@@ -1,65 +1,38 @@
-import { AllMeshesDef } from "../meshes/mesh-list.js";
-import { ColorDef } from "../color/color-ecs.js";
-import { ENDESGA16 } from "../color/palettes.js";
-import { DeadDef } from "../ecs/delete.js";
-import { createRef, Ref } from "../ecs/em-helpers.js";
-import { EM, Entity, EntityW } from "../ecs/entity-manager.js";
-import { createEntityPool } from "../ecs/entity-pool.js";
-import { fireBullet } from "../cannons/bullet.js";
+import { EM } from "../ecs/entity-manager.js";
 import { PartyDef } from "../camera/party.js";
-import { jitter } from "../utils/math.js";
-import {
-  AABB,
-  createAABB,
-  doesOverlapAABB,
-  mergeAABBs,
-  pointInAABB,
-  updateAABBWithPoint,
-} from "../physics/aabb.js";
 import { LinearVelocityDef } from "../motion/velocity.js";
 import { PhysicsStateDef, WorldFrameDef } from "../physics/nonintersection.js";
-import {
-  PhysicsParentDef,
-  PositionDef,
-  RotationDef,
-} from "../physics/transform.js";
-import { TextureReader } from "../render/cpu-texture.js";
-import { Mesh } from "../meshes/mesh.js";
-import {
-  RenderableConstructDef,
-  RenderableDef,
-} from "../render/renderer-ecs.js";
+import { PositionDef } from "../physics/transform.js";
 import { LevelMapDef } from "../levels/level-map.js";
 import { LD52ShipDef } from "./ship.js";
-import { mat4, tV, V, vec3, quat, vec2 } from "../matrix/sprig-matrix.js";
-import { TimeDef } from "../time/time.js";
-import { assert } from "../utils/util.js";
+import { tV, V, vec3, vec2 } from "../matrix/sprig-matrix.js";
+import { assert, dbgOnce } from "../utils/util.js";
 import { vec3Dbg } from "../utils/utils-3d.js";
 import { Phase } from "../ecs/sys-phase.js";
+import { drawBall } from "../utils/utils-game.js";
 
 const SAMPLES_PER_EDGE = 5;
 const NUDGE_DIST = 1.0;
 const NUDGE_SPEED = 0.1;
 
-export const LandDef = EM.defineResource("land", () => ({
-  sample: (x: number, y: number) => 0 as number,
-}));
+export const LandDef = EM.defineResource(
+  "land",
+  (sample: (x: number, y: number) => number) => ({
+    sample,
+  })
+);
 
-const zBasis = vec2.create();
-const xBasis = vec2.create();
+const yBasis = vec2.create(); // TODO(@darzu): rename fwd
+const xBasis = vec2.create(); // TODO(@darzu): rename right
 const xBasis3 = vec3.create();
-const corner1 = vec2.create();
-const corner2 = vec2.create();
-const corner3 = vec2.create();
-const corner4 = vec2.create();
 const pointTemp = vec2.create();
 const nudgeTemp = vec3.create();
 const scaledTemp1 = vec2.create();
 const scaledTemp2 = vec2.create();
 
 // TODO: import these from somewhere
-const WORLD_WIDTH = 1024; // width runs +z
-const WORLD_HEIGHT = 512; // height runs +x
+const WORLD_WIDTH = 1024; // width runs +X
+const WORLD_HEIGHT = 512; // height runs +Y
 
 EM.addSystem(
   "landShipCollision",
@@ -70,31 +43,33 @@ EM.addSystem(
     if (!es.length) return;
     const ship = es[0];
     assert(ship._phys.colliders.length >= 1);
-    const worldAABB = ship._phys.colliders[0].aabb;
     const selfAABB = ship._phys.colliders[0].selfAABB;
 
+    // +Y is forward / length-wise
     const shipWidth = selfAABB.max[0] - selfAABB.min[0];
     const halfWidth = shipWidth / 2;
-    const shipLength = selfAABB.max[2] - selfAABB.min[2];
+    const shipLength = selfAABB.max[1] - selfAABB.min[1];
     const halfLength = shipLength / 2;
-    const shipCenter = V(res.party.pos[0], res.party.pos[2]);
+    const shipCenter = V(res.party.pos[0], res.party.pos[1]);
     //console.log(`ship at ${shipCenter[0]}, ${shipCenter[1]}`);
 
-    // res.party.dir is Z
+    // res.party.dir is fwd / +Y
     vec2.set(
       res.party.dir[0] * halfLength,
-      res.party.dir[2] * halfLength,
-      zBasis
+      res.party.dir[1] * halfLength,
+      yBasis
     );
-    vec3.cross([0, 1, 0], res.party.dir, xBasis3);
+    const UP: vec3.InputT = [0, 0, 1];
+    vec3.cross(UP, res.party.dir, xBasis3);
     vec2.set(xBasis3[0] * halfWidth, xBasis3[1] * halfWidth, xBasis);
 
     // corners of the ship in world-space in counter-clockwise order
+    // TODO(@darzu): this seems clockwise to me?
     const cornersFromCenter: vec2[] = [
-      vec2.sub(vec2.sub(vec2.zero(), zBasis), xBasis),
-      vec2.sub(vec2.add(vec2.zero(), zBasis), xBasis),
-      vec2.add(vec2.add(vec2.zero(), zBasis), xBasis),
-      vec2.add(vec2.sub(vec2.zero(), zBasis), xBasis),
+      vec2.sub(vec2.sub(vec2.zero(), yBasis), xBasis),
+      vec2.sub(vec2.add(vec2.zero(), yBasis), xBasis),
+      vec2.add(vec2.add(vec2.zero(), yBasis), xBasis),
+      vec2.add(vec2.sub(vec2.zero(), yBasis), xBasis),
     ];
     const corners: vec2[] = cornersFromCenter.map((v) =>
       vec2.add(shipCenter, v)
@@ -111,12 +86,19 @@ EM.addSystem(
       );
     }
 
+    const dbgCorners = dbgOnce("landCollisionCorners");
+
     let hitLand = false;
     // go through each corner and sample along the edge between it and its neighbor
 
     for (let i = 0; i < corners.length; i++) {
       //console.log(`trying face ${i} -> ${i + (1 % 4)}`);
       const corner = corners[i];
+
+      if (dbgCorners) {
+        // TODO(@darzu): dbging!
+        // drawBall(
+      }
 
       // first, see if the corner itself is making contact
       if (isLand(corner[0], corner[1])) {
@@ -126,7 +108,7 @@ EM.addSystem(
         vec3.normalize(nudge, nudge);
         vec3.scale(nudge, NUDGE_DIST, nudge);
         // TODO: this should be in world space
-        console.log(`nudging by ${vec3Dbg(nudge)}`);
+        console.log(`nudging (corner) by ${vec3Dbg(nudge)}`);
         vec3.add(ship.position, nudge, ship.position);
         vec3.normalize(nudge, nudge);
         vec3.scale(nudge, NUDGE_SPEED, nudge);
@@ -138,23 +120,25 @@ EM.addSystem(
       const neighbor = corners[(i + 1) % 4];
       for (let s = 1; s <= SAMPLES_PER_EDGE; s++) {
         const r = s / (SAMPLES_PER_EDGE + 1);
-        const point = vec2.add(
-          vec2.scale(corner, 1 - r, scaledTemp1),
-          vec2.scale(neighbor, r, scaledTemp2),
-          pointTemp
-        );
+        // TODO(@darzu): replace with lerp?
+        const point = vec2.lerp(corner, neighbor, r, pointTemp);
+        // const point = vec2.add(
+        //   vec2.scale(corner, 1 - r, scaledTemp1),
+        //   vec2.scale(neighbor, r, scaledTemp2),
+        //   pointTemp
+        // );
         //console.log(point);
         if (isLand(point[0], point[1])) {
           //console.log(`touching land at face ${i}`);
           const dist = vec2.sub(neighbor, corner, pointTemp);
           const nudge = vec3.cross(
-            [0, 0, 1],
+            UP,
             vec3.set(dist[0], dist[1], 0, nudgeTemp),
             nudgeTemp
           );
           vec3.normalize(nudge, nudge);
           vec3.scale(nudge, NUDGE_DIST, nudge);
-          console.log(`nudging by ${vec3Dbg(nudge)}`);
+          console.log(`nudging (edge '${s}) by ${vec3Dbg(nudge)}`);
           // TODO: this should be in world space
           vec3.add(ship.position, nudge, ship.position);
           vec3.scale(nudge, NUDGE_SPEED, nudge);
