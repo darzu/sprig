@@ -2,14 +2,17 @@ import { EM } from "../ecs/entity-manager.js";
 import { PartyDef } from "../camera/party.js";
 import { LinearVelocityDef } from "../motion/velocity.js";
 import { PhysicsStateDef, WorldFrameDef } from "../physics/nonintersection.js";
-import { PositionDef } from "../physics/transform.js";
+import { PhysicsParentDef, PositionDef } from "../physics/transform.js";
 import { LevelMapDef } from "../levels/level-map.js";
 import { LD52ShipDef } from "./ship.js";
 import { tV, V, vec3, vec2 } from "../matrix/sprig-matrix.js";
 import { assert, dbgOnce } from "../utils/util.js";
-import { vec3Dbg } from "../utils/utils-3d.js";
+import { vec2Dbg, vec3Dbg } from "../utils/utils-3d.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { drawBall } from "../utils/utils-game.js";
+import { ENDESGA16 } from "../color/palettes.js";
+
+const DBG_COLLISIONS = true;
 
 const SAMPLES_PER_EDGE = 5;
 const NUDGE_DIST = 1.0;
@@ -86,7 +89,36 @@ EM.addSystem(
       );
     }
 
-    const dbgCorners = dbgOnce("landCollisionCorners");
+    // debug corner & edge algorithm
+    if (DBG_COLLISIONS && dbgOnce("landCollisionCorners")) {
+      const scale = 2;
+      console.log("landCollisionCorners!");
+      for (let i = 0; i < corners.length; i++) {
+        const localCorner = cornersFromCenter[i];
+        console.log(`localCorner: ${vec2Dbg(localCorner)}`);
+        const ball = drawBall(
+          [localCorner[0], localCorner[1], 0],
+          scale,
+          ENDESGA16.lightGreen
+        );
+        EM.set(ball, PhysicsParentDef, ship.id);
+
+        // now check for edges
+        for (let s = 1; s <= SAMPLES_PER_EDGE; s++) {
+          const r = s / (SAMPLES_PER_EDGE + 1);
+
+          const localNeighbor = cornersFromCenter[(i + 1) % 4];
+          const localPoint = vec2.lerp(localCorner, localNeighbor, r);
+          console.log(`localPoint: ${vec2Dbg(localPoint)}`);
+          const ball = drawBall(
+            [localPoint[0], localPoint[1], 0],
+            scale,
+            ENDESGA16.red
+          );
+          EM.set(ball, PhysicsParentDef, ship.id);
+        }
+      }
+    }
 
     let hitLand = false;
     // go through each corner and sample along the edge between it and its neighbor
@@ -94,11 +126,6 @@ EM.addSystem(
     for (let i = 0; i < corners.length; i++) {
       //console.log(`trying face ${i} -> ${i + (1 % 4)}`);
       const corner = corners[i];
-
-      if (dbgCorners) {
-        // TODO(@darzu): dbging!
-        // drawBall(
-      }
 
       // first, see if the corner itself is making contact
       if (isLand(corner[0], corner[1])) {
@@ -128,6 +155,7 @@ EM.addSystem(
         //   pointTemp
         // );
         //console.log(point);
+
         if (isLand(point[0], point[1])) {
           //console.log(`touching land at face ${i}`);
           const dist = vec2.sub(neighbor, corner, pointTemp);

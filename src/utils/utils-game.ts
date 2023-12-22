@@ -126,9 +126,9 @@ const _ballPool = createEntityPool<
 
 // TODO(@darzu): refactor w/ gizmos and arrows and pooling
 export function drawBall(
-  pos: vec3,
+  pos: vec3.InputT,
   size: number,
-  color: vec3
+  color: vec3.InputT
 ): EntityW<[typeof PositionDef]> {
   const e = _ballPool.spawn();
   vec3.copy(e.color, color);
