@@ -22,7 +22,7 @@ import { drawVector } from "../utils/util-vec-dbg.js";
 import { createGraph3D } from "../debug/utils-gizmos.js";
 import { DeletedDef } from "../ecs/delete.js";
 
-const DBG_COLLISIONS = true;
+const DBG_COLLISIONS = false;
 
 const SAMPLES_PER_EDGE = 5;
 const NUDGE_DIST = 1.0;
@@ -66,6 +66,7 @@ EM.addSystem(
     });
     transformAABB(localAABB, ship.world.transform);
     const shipSize = getSizeFromAABB(localAABB);
+    vec3.scale(shipSize, 0.75, shipSize); // eh, AABB bounds were a bit too aggressive
 
     // +Y is forward / length-wise
     const shipWidth = shipSize[0];
@@ -130,6 +131,7 @@ EM.addSystem(
       for (let i = 0; i < corners.length; i++) {
         const localCorner = cornersFromCenter[i];
         console.log(`localCorner: ${vec2Dbg(localCorner)}`);
+        // TODO(@darzu): these ball corners actually aren't quite right b/c of the nature of AABBs (not OBB)
         const ball = drawBall(
           [localCorner[0], localCorner[1], 0],
           scale,

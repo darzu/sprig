@@ -124,7 +124,7 @@ PERF:
 
 const DBG_PLAYER = false;
 const DBG_HIDE_LAND = false;
-const DBG_HIDE_WATER = true;
+const DBG_HIDE_WATER = false;
 
 const START_LEVEL_IDX = 0;
 
