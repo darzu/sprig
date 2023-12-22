@@ -46,7 +46,7 @@ const AUTOSTART = true;
 
 const ALL_GAMES = [
   "gjk",
-  "rebound", // broken-ish
+  "rebound",
   "shipyard",
   "grass", // broken-ish; too many temp f32s
   "font",
@@ -62,7 +62,7 @@ const ALL_GAMES = [
   "graybox-sunless",
   "graybox-ship-arena",
 ] as const;
-const GAME: (typeof ALL_GAMES)[number] = "rebound";
+const GAME: (typeof ALL_GAMES)[number] = "shipyard";
 
 // Run simulation with a fixed timestep @ 60hz
 const TIMESTEP = 1000 / 60;

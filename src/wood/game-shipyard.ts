@@ -97,6 +97,7 @@ import { AuthorityDef, MeDef } from "../net/components.js";
 */
 
 const DBG_PLAYER = true;
+const DBG_COLLIDERS = false;
 
 const DISABLE_PRIATES = true;
 
@@ -267,7 +268,7 @@ export async function initShipyardGame(hosting: boolean) {
   const timberHealth = createWoodHealth(timberState);
   EM.set(timber, WoodHealthDef, timberHealth);
 
-  addColliderDbgVis(timber);
+  if (DBG_COLLIDERS) addColliderDbgVis(timber);
 
   addGizmoChild(timber, 10);
 
@@ -402,7 +403,13 @@ export async function initShipyardGame(hosting: boolean) {
       // // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
       // g.cameraFollow.yawOffset = 0.0;
       // g.cameraFollow.pitchOffset = 2.974;
-      vec3.copy(g.cameraFollow.positionOffset, [0.0, -30.0, 0.0]);
+      // vec3.copy(g.cameraFollow.positionOffset, [0.0, -30.0, 0.0]);
+
+      vec3.copy(g.position, [-21.98, -23.58, 11.94]);
+      quat.copy(g.rotation, [0.0, 0.0, -0.36, 0.93]);
+      vec3.copy(g.cameraFollow.positionOffset, [0.0, -15.0, 0.0]);
+      g.cameraFollow.yawOffset = 0.0;
+      g.cameraFollow.pitchOffset = -0.833;
     }
   }
 
