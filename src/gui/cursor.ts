@@ -24,6 +24,8 @@ import { createRef, Ref } from "../ecs/em-helpers.js";
 import { screenPosToRay } from "../utils/utils-game.js";
 import { Phase } from "../ecs/sys-phase.js";
 
+// TODO(@darzu): does global 3d cursor stuff still work??
+
 export const GlobalCursor3dDef = EM.defineResource("globalCursor3d", () => {
   return {
     cursor: createRef(0, [Cursor3dDef, WorldFrameDef, RenderableDef]),

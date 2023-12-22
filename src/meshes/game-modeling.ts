@@ -79,9 +79,8 @@ export async function initModelingGame() {
   EM.set(ground, ScaleDef, V(10, 10, 10));
 
   // avatar
-  const g = createGhost();
+  const g = createGhost(allMeshes.ball.proto);
   g.position[2] = 5;
-  EM.set(g, RenderableConstructDef, allMeshes.ball.proto);
   // vec3.copy(g.position, [2.44, 6.81, 0.96]);
   // quat.copy(g.rotation, [0.0, 0.61, 0.0, 0.79]);
   // g.cameraFollow.pitchOffset = -0.553;

@@ -15,7 +15,7 @@ import {
 import { RendererDef } from "../render/renderer-ecs.js";
 import { assert } from "../utils/util.js";
 import { TimeDef } from "../time/time.js";
-import { AllMeshesDef } from "../meshes/mesh-list.js";
+import { AllMeshesDef, BallMesh, CubeMesh } from "../meshes/mesh-list.js";
 import { GameMesh } from "../meshes/mesh-loader.js";
 // import { ENEMY_SHIP_COLOR } from "./enemy-ship.js";
 // import { ClothConstructDef, ClothLocalDef } from "./cloth.js";
@@ -29,6 +29,7 @@ import { postProcess } from "../render/pipelines/std-post.js";
 import { shadowPipelines } from "../render/pipelines/std-shadow.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
 import { Phase } from "../ecs/sys-phase.js";
+import { PointLightDef } from "../render/lights.js";
 
 // TODO(@darzu): BROKEN. camera is in a wonky place?
 
@@ -37,13 +38,17 @@ export async function initReboundSandbox(hosting: boolean) {
 
   const res = await EM.whenResources(
     AllMeshesDef,
-    GlobalCursor3dDef,
+    // GlobalCursor3dDef,
     RendererDef,
     TextDef,
     CameraDef
   );
 
-  res.camera.fov = Math.PI * 0.5;
+  const camera = res.camera;
+  camera.fov = Math.PI * 0.5;
+  camera.viewDist = 1000;
+  vec3.set(-200, -200, -200, camera.maxWorldAABB.min);
+  vec3.set(+200, +200, +200, camera.maxWorldAABB.max);
 
   res.renderer.pipelines = [
     ...shadowPipelines,
@@ -53,26 +58,44 @@ export async function initReboundSandbox(hosting: boolean) {
     postProcess,
   ];
 
-  const g = createGhost();
-  vec3.copy(g.position, [-6.5, 3.06, 22.51]);
-  quat.copy(g.rotation, [0.0, -0.08, 0.0, 1.0]);
+  // sun
+  const sun = EM.new();
+  EM.set(sun, PointLightDef);
+  EM.set(sun, ColorDef, V(1, 1, 1));
+  EM.set(sun, PositionDef, V(100, 100, 100));
+  EM.set(sun, RenderableConstructDef, res.allMeshes.cube.proto, false);
+  sun.pointLight.constant = 1.0;
+  sun.pointLight.linear = 0.0;
+  sun.pointLight.quadratic = 0.0;
+  vec3.copy(sun.pointLight.ambient, [0.2, 0.2, 0.2]);
+  vec3.copy(sun.pointLight.diffuse, [0.5, 0.5, 0.5]);
+  EM.set(sun, PositionDef, V(50, 300, 10));
+
+  const g = createGhost(BallMesh);
+  g.controllable.speed *= 0.5;
+  g.controllable.sprintMul = 10;
+
+  vec3.copy(g.position, [-2.77, -8.62, -4.65]);
+  quat.copy(g.rotation, [0.0, 0.0, 0.2, -0.98]);
   vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
   g.cameraFollow.yawOffset = 0.0;
-  g.cameraFollow.pitchOffset = 0.145;
+  g.cameraFollow.pitchOffset = -0.507;
 
-  const c = res.globalCursor3d.cursor()!;
-  assert(RenderableDef.isOn(c));
-  c.renderable.enabled = false;
+  // const c = res.globalCursor3d.cursor()!;
+  // assert(RenderableDef.isOn(c));
+  // c.renderable.enabled = false;
 
-  const p = EM.new();
-  EM.set(p, RenderableConstructDef, res.allMeshes.plane.proto);
-  EM.set(p, ColorDef, V(0.2, 0.3, 0.2));
-  EM.set(p, PositionDef, V(0, -10, 0));
-  EM.set(p, ColliderDef, {
+  const ground = EM.new();
+  EM.set(ground, RenderableConstructDef, res.allMeshes.hex.proto);
+  EM.set(ground, ColorDef, V(0.2, 0.3, 0.2));
+  EM.set(ground, PositionDef, V(0, 0, -10));
+  EM.set(ground, ColliderDef, {
     shape: "AABB",
     solid: false,
-    aabb: res.allMeshes.plane.aabb,
+    aabb: res.allMeshes.hex.aabb,
   });
+
+  return;
 
   const t = EM.new();
   EM.set(t, RenderableConstructDef, res.allMeshes.gridPlane.proto);
@@ -99,7 +122,7 @@ export async function initReboundSandbox(hosting: boolean) {
     EM.set(e, ScaleDef, V(0.5, 0.5, 0.5));
     // EM.set(b, RotationDef);
     // EM.set(b, AngularVelocityDef, [0, 0.001, 0.001]);
-    EM.set(e, LinearVelocityDef, V(0, -0.02, 0));
+    EM.set(e, LinearVelocityDef, V(0, 0, -0.02));
     EM.set(e, PhysicsParentDef, tableId);
     EM.set(e, ColliderDef, {
       shape: "AABB",
@@ -127,8 +150,8 @@ export async function initReboundSandbox(hosting: boolean) {
           nextSpawnAccu = 0;
 
           const x = jitter(5);
-          const z = jitter(5);
-          spawn(res.allMeshes.cube, V(x, 20, z));
+          const y = jitter(5);
+          spawn(res.allMeshes.cube, V(x, y, 20));
         }
       }
 
@@ -137,7 +160,7 @@ export async function initReboundSandbox(hosting: boolean) {
         const NUM = 1;
         const SPC = 2;
         for (let i = 0; i < NUM; i++)
-          spawn(res.allMeshes.cube, V(0, 10 + i * SPC, 0));
+          spawn(res.allMeshes.cube, V(0, 0, 10 + i * SPC));
       }
 
       if (res.inputs.keyClicks["backspace"]) {

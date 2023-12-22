@@ -135,9 +135,8 @@ export async function initGalleryGame() {
   drawVector(V(1, 0, 1), { scale: 10 });
 
   // avatar
-  const g = createGhost();
+  const g = createGhost(sg_meshes.ball.proto, false);
   g.position[2] = 5;
-  EM.set(g, RenderableConstructDef, sg_meshes.ball.proto, false);
   g.controllable.speed *= 10;
   g.controllable.sprintMul = 0.1;
 

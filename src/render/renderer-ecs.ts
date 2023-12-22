@@ -60,6 +60,8 @@ export const RendererDef = EM.defineResource(
   }
 );
 
+export type MeshLike = Mesh | MeshHandle | MeshReg;
+
 // TODO(@darzu): we need a better way to handle arbitrary pools
 // TODO(@darzu): support height map?
 // export type PoolKind = "std" | "ocean" | "grass";
@@ -77,7 +79,7 @@ export interface RenderableConstruct {
   //   hidden objects might be more efficient in object pools b/c it causes
   //   less rebundling, but this needs measurement.
   readonly hidden: boolean;
-  meshOrProto: Mesh | MeshHandle | MeshReg;
+  meshOrProto: MeshLike;
   readonly reserve?: MeshReserve;
 }
 
@@ -85,7 +87,7 @@ export const RenderableConstructDef = EM.defineNonupdatableComponent(
   "renderableConstruct",
   (
     // TODO(@darzu): this constructor is too messy, we should use a params obj instead
-    meshOrProto: Mesh | MeshHandle | MeshReg,
+    meshOrProto: MeshLike,
     enabled: boolean = true,
     // TODO(@darzu): do we need sort layers? Do we use them?
     sortLayer: number = 0,

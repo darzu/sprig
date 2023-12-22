@@ -129,8 +129,7 @@ export async function initFontEditor() {
   EM.set(panel, PositionDef, V(0, 0, 0));
 
   if (DBG_3D) {
-    const g = createGhost();
-    EM.set(g, RenderableConstructDef, res.allMeshes.ball.proto);
+    const g = createGhost(res.allMeshes.ball.proto);
 
     // vec3.copy(g.position, [4.36,30.83,-1.53]);
     // quat.copy(g.rotation, [0.00,0.71,0.00,0.70]);

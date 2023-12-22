@@ -5,13 +5,14 @@ import { EM, Entity } from "../ecs/entity-manager.js";
 import { LinearVelocityDef } from "../motion/velocity.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
 import { ControllableDef } from "../input/controllable.js";
+import { MeshLike, RenderableConstructDef } from "../render/renderer-ecs.js";
 
 // TODO(@darzu): HACK. we need a better way to programmatically create sandbox games
 export const gameplaySystems: string[] = [];
 
 export const GhostDef = EM.defineComponent("ghost", () => ({}));
 
-export function createGhost() {
+export function createGhost(mesh: MeshLike, visible = true) {
   const g = EM.new();
   EM.set(g, GhostDef);
   EM.set(g, ControllableDef);
@@ -26,6 +27,8 @@ export function createGhost() {
   // quat.rotateY(g.rotation, quat.IDENTITY, (-5 * Math.PI) / 8);
   // quat.rotateX(g.cameraFollow.rotationOffset, quat.IDENTITY, -Math.PI / 8);
   EM.set(g, LinearVelocityDef);
+
+  EM.set(g, RenderableConstructDef, mesh, visible);
 
   return g;
 }

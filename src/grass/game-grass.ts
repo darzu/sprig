@@ -318,15 +318,12 @@ export async function initGrassGame(hosting: boolean) {
 
   // ghost
   if (DBG_PLAYER) {
-    const g = createGhost();
+    const g = createGhost(res.gg_meshes.ball.proto, false);
     // vec3.copy(g.position, [0, 1, -1.2]);
     // quat.setAxisAngle([0.0, -1.0, 0.0], 1.62, g.rotation);
     // g.cameraFollow.positionOffset = V(0, 0, 5);
     g.controllable.speed *= 2.0;
     g.controllable.sprintMul = 15;
-    const sphereMesh = cloneMesh(res.gg_meshes.ball.mesh);
-    const visible = false;
-    EM.set(g, RenderableConstructDef, sphereMesh, visible);
     EM.set(g, ColorDef, V(0.1, 0.1, 0.1));
     // EM.set(g, PositionDef, V(0, 0, 0));
     // EM.set(b2, PositionDef, [0, 0, -1.2]);

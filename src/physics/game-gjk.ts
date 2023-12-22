@@ -87,23 +87,7 @@ export async function initGJKSandbox(hosting: boolean) {
   EM.set(sunlight, PositionDef, V(10, 10, 100));
   EM.set(sunlight, RenderableConstructDef, res.allMeshes.ball.proto);
 
-  // ghost
-  const g = createGhost();
-  // EM.set(g, RenderableConstructDef, res.allMeshes.cube.proto);
-  // createPlayer();
-
-  vec3.copy(g.position, [-3.42, -1.21, 1.88]);
-  quat.copy(g.rotation, [0.0, 0.0, 0.0, 1.0]);
-  vec3.copy(g.cameraFollow.positionOffset, [0.0, -5.0, 0.0]);
-  g.cameraFollow.yawOffset = -0.034;
-  g.cameraFollow.pitchOffset = -0.428;
-
-  g.controllable.modes.canYaw = false;
-  g.controllable.modes.canCameraYaw = true;
-  // g.controllable.modes.canPitch = true;
-  g.controllable.speed *= 0.5;
-  g.controllable.sprintMul = 10;
-
+  // TODO(@darzu): use or lose global cursor stuff?
   console.log(`assuming global cursor`);
   console.dir(res.globalCursor3d);
   console.dir(res.globalCursor3d.cursor());
@@ -117,11 +101,10 @@ export async function initGJKSandbox(hosting: boolean) {
   EM.set(ground, PositionDef, V(0, 0, -5));
 
   // world gizmo
-  const gizmoMesh = await GizmoMesh.gameMesh();
   const worldGizmo = EM.new();
   EM.set(worldGizmo, PositionDef, V(-10, -10, -5));
   EM.set(worldGizmo, ScaleDef, V(10, 10, 10));
-  EM.set(worldGizmo, RenderableConstructDef, gizmoMesh.proto);
+  EM.set(worldGizmo, RenderableConstructDef, GizmoMesh);
 
   // cube
   const b1 = EM.new();
@@ -146,7 +129,24 @@ export async function initGJKSandbox(hosting: boolean) {
 
   // us / ghost
   const m2 = cloneMesh(res.allMeshes.cube.mesh);
-  EM.set(g, RenderableConstructDef, m2);
+
+  // ghost
+  const g = createGhost(m2);
+  // EM.set(g, RenderableConstructDef, res.allMeshes.cube.proto);
+  // createPlayer();
+
+  vec3.copy(g.position, [-3.42, -1.21, 1.88]);
+  quat.copy(g.rotation, [0.0, 0.0, 0.0, 1.0]);
+  vec3.copy(g.cameraFollow.positionOffset, [0.0, -5.0, 0.0]);
+  g.cameraFollow.yawOffset = -0.034;
+  g.cameraFollow.pitchOffset = -0.428;
+
+  g.controllable.modes.canYaw = false;
+  g.controllable.modes.canCameraYaw = true;
+  // g.controllable.modes.canPitch = true;
+  g.controllable.speed *= 0.5;
+  g.controllable.sprintMul = 10;
+
   EM.set(g, ColorDef, V(0.1, 0.1, 0.1));
   EM.set(g, PositionDef, V(0, 0, 1));
   // EM.set(b2, PositionDef, [0, 0, -1.2]);

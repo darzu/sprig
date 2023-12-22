@@ -200,9 +200,8 @@ export async function initGrayboxSunless() {
 
   // dbg ghost
   if (DBG_GHOST) {
-    const g = createGhost();
+    const g = createGhost(mesh_cube.proto);
     g.position[2] = 5;
-    EM.set(g, RenderableConstructDef, mesh_cube.proto);
 
     // overview
     // vec3.copy(g.position, [102.41, 142.23, 154.95]);

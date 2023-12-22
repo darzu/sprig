@@ -45,22 +45,19 @@ export async function initCubeGame() {
   ];
   res.renderer.pipelines = [...computePipelinesPtrs, ...renderPipelinesPtrs];
 
-  const e = createGhost();
-  vec3.copy(e.position, [0, 1, -1.2]);
-  quat.setAxisAngle([0.0, -1.0, 0.0], 1.62, e.rotation);
-  e.controllable.sprintMul = 3;
-
-  // TODO(@darzu): this shouldn't be necessary
   const m2 = cloneMesh(res.allMeshes.cube.mesh);
-  EM.set(e, RenderableConstructDef, m2);
+  const g = createGhost(m2);
+  vec3.copy(g.position, [0, 1, -1.2]);
+  quat.setAxisAngle([0.0, -1.0, 0.0], 1.62, g.rotation);
+  g.controllable.sprintMul = 3;
 
   {
     // auto-gen; use dbg.saveCamera() to update
-    vec3.copy(e.position, [3.29, 1.69, -1.37]);
-    quat.copy(e.rotation, [0.0, -0.95, 0.0, -0.31]);
-    vec3.copy(e.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
-    e.cameraFollow.yawOffset = 0.0;
-    e.cameraFollow.pitchOffset = -0.267;
+    vec3.copy(g.position, [3.29, 1.69, -1.37]);
+    quat.copy(g.rotation, [0.0, -0.95, 0.0, -0.31]);
+    vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
+    g.cameraFollow.yawOffset = 0.0;
+    g.cameraFollow.pitchOffset = -0.267;
   }
 
   const box = EM.new();

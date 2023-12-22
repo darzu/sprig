@@ -380,12 +380,10 @@ export async function initShipyardGame(hosting: boolean) {
     );
 
     if (DBG_PLAYER) {
-      const g = createGhost();
+      const sphereMesh = cloneMesh(res.allMeshes.ball.mesh);
+      const g = createGhost(sphereMesh, true);
       g.controllable.speed *= 5;
       g.controllable.sprintMul = 0.2;
-      const sphereMesh = cloneMesh(res.allMeshes.ball.mesh);
-      const visible = true;
-      EM.set(g, RenderableConstructDef, sphereMesh, visible);
       EM.set(g, ColorDef, ENDESGA16.darkGreen);
       EM.set(g, PositionDef, V(0, 0, 0));
       EM.set(g, WorldFrameDef);

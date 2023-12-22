@@ -72,9 +72,8 @@ export async function initGrayboxShipArena() {
 
   // dbg ghost
   if (DBG_GHOST) {
-    const g = createGhost();
+    const g = createGhost(mesh_cube.proto);
     g.position[2] = 5;
-    EM.set(g, RenderableConstructDef, mesh_cube.proto);
 
     // hover near origin
     // vec3.copy(g.position, [12.51, 21.4, 15.88]);
