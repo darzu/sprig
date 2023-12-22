@@ -142,7 +142,7 @@ EM.addEagerInit([ControllableDef], [], [], () => {
         // TODO(@darzu): probably need to use yaw-pitch :(
         if (c.controllable.modes.canCameraYaw) {
           c.cameraFollow.yawOffset +=
-            -res.inputs.mouseMov[0] * c.controllable.turnSpeed;
+            res.inputs.mouseMov[0] * c.controllable.turnSpeed;
         }
         if (c.controllable.modes.canPitch)
           c.cameraFollow.pitchOffset +=

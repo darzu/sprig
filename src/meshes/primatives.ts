@@ -239,22 +239,18 @@ export const HEX_MESH: () => RawMesh = () => {
   return { pos, tri, quad: [], lines, colors: tri.map((_) => V(0, 0, 0)) };
 };
 
-// TODO(@darzu): Z_UP
 export function makePlaneMesh(
   x1: number,
   x2: number,
-  z1: number,
-  z2: number
+  y1: number,
+  y2: number
 ): Mesh {
   const res: Mesh = {
-    pos: [V(x2, 0, z2), V(x1, 0, z2), V(x2, 0, z1), V(x1, 0, z1)],
+    pos: [V(x2, y2, 0), V(x1, y2, 0), V(x2, y1, 0), V(x1, y1, 0)],
     tri: [],
     quad: [
       vec4.clone([0, 2, 3, 1]), // top
-      vec4.clone(
-        // top
-        [1, 3, 2, 0]
-      ), // bottom
+      vec4.clone([1, 3, 2, 0]), // bottom
     ],
     lines: [
       vec2.clone([0, 1]),
