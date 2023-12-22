@@ -1917,3 +1917,6 @@ Great graphics vids:
 RESTIR:
   https://interplayoflight.wordpress.com/2023/12/17/a-gentler-introduction-to-restir/
   https://twitter.com/h3r2tic/status/1488368086621343749?lang=en
+
+Wgsl history explanation:
+  https://news.ycombinator.com/item?id=38738820
