@@ -319,18 +319,18 @@ function createGridPlane(width: number, height: number): RawMesh {
   for (let x = 0; x <= width; x++) {
     const i = m.pos.length;
     m.pos.push(V(x, 0, 0));
-    m.pos.push(V(x, 0, height));
+    m.pos.push(V(x, height, 0));
     m.lines!.push(vec2.clone([i, i + 1]));
   }
 
-  for (let z = 0; z <= height; z++) {
+  for (let y = 0; y <= height; y++) {
     const i = m.pos.length;
-    m.pos.push(V(0, 0, z));
-    m.pos.push(V(width, 0, z));
+    m.pos.push(V(0, y, 0));
+    m.pos.push(V(width, y, 0));
     m.lines!.push(vec2.clone([i, i + 1]));
   }
 
-  mapMeshPositions(m, (p) => V(p[0] - width / 2, p[1], p[2] - height / 2));
+  mapMeshPositions(m, (p) => V(p[0] - width / 2, p[1] - height / 2, p[2]));
   scaleMesh(m, 10 / Math.min(width, height));
 
   return m;

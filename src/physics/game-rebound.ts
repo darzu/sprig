@@ -15,7 +15,14 @@ import {
 import { RendererDef } from "../render/renderer-ecs.js";
 import { assert } from "../utils/util.js";
 import { TimeDef } from "../time/time.js";
-import { AllMeshesDef, BallMesh, CubeMesh } from "../meshes/mesh-list.js";
+import {
+  AllMeshesDef,
+  BallMesh,
+  CubeMesh,
+  GizmoMesh,
+  HexMesh,
+  PlaneMesh,
+} from "../meshes/mesh-list.js";
 import { GameMesh } from "../meshes/mesh-loader.js";
 // import { ENEMY_SHIP_COLOR } from "./enemy-ship.js";
 // import { ClothConstructDef, ClothLocalDef } from "./cloth.js";
@@ -30,6 +37,7 @@ import { shadowPipelines } from "../render/pipelines/std-shadow.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { PointLightDef } from "../render/lights.js";
+import { addGizmoChild } from "../utils/utils-game.js";
 
 // TODO(@darzu): BROKEN. camera is in a wonky place?
 
@@ -71,43 +79,52 @@ export async function initReboundSandbox(hosting: boolean) {
   vec3.copy(sun.pointLight.diffuse, [0.5, 0.5, 0.5]);
   EM.set(sun, PositionDef, V(50, 300, 10));
 
+  // world gizmo
+  const worldGizmo = EM.new();
+  EM.set(worldGizmo, PositionDef, V(0, 0, 0));
+  EM.set(worldGizmo, ScaleDef, V(5, 5, 5));
+  EM.set(worldGizmo, RenderableConstructDef, GizmoMesh);
+
   const g = createGhost(BallMesh);
   g.controllable.speed *= 0.5;
   g.controllable.sprintMul = 10;
 
-  vec3.copy(g.position, [-2.77, -8.62, -4.65]);
-  quat.copy(g.rotation, [0.0, 0.0, 0.2, -0.98]);
+  vec3.copy(g.position, [-11.71, -22.45, 11.25]);
+  quat.copy(g.rotation, [0.0, 0.0, 0.25, -0.97]);
   vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
   g.cameraFollow.yawOffset = 0.0;
-  g.cameraFollow.pitchOffset = -0.507;
+  g.cameraFollow.pitchOffset = -0.396;
 
   // const c = res.globalCursor3d.cursor()!;
   // assert(RenderableDef.isOn(c));
   // c.renderable.enabled = false;
 
   const ground = EM.new();
-  EM.set(ground, RenderableConstructDef, res.allMeshes.hex.proto);
+  EM.set(ground, RenderableConstructDef, HexMesh);
   EM.set(ground, ColorDef, V(0.2, 0.3, 0.2));
-  EM.set(ground, PositionDef, V(0, 0, -10));
+  EM.set(ground, ScaleDef, V(10, 10, 1));
+  EM.set(ground, PositionDef, V(0, 0, -1));
   EM.set(ground, ColliderDef, {
     shape: "AABB",
     solid: false,
     aabb: res.allMeshes.hex.aabb,
   });
 
-  return;
+  // return;
 
-  const t = EM.new();
-  EM.set(t, RenderableConstructDef, res.allMeshes.gridPlane.proto);
-  EM.set(t, ColorDef, V(0.2, 0.2, 0.9));
-  EM.set(t, PositionDef, V(0, 0, 0));
-  EM.set(t, AngularVelocityDef, V(0, 0.0002, 0.0002));
-  EM.set(t, ColliderDef, {
+  const table = EM.new();
+  // EM.set(t, RenderableConstructDef, res.allMeshes.gridPlane.proto);
+  EM.set(table, RenderableConstructDef, PlaneMesh);
+  EM.set(table, ColorDef, V(0.2, 0.2, 0.9));
+  EM.set(table, PositionDef, V(0, 0, 10));
+  EM.set(table, AngularVelocityDef, V(0, 0.0002, 0.0002));
+  EM.set(table, ColliderDef, {
     shape: "AABB",
     solid: true,
     aabb: res.allMeshes.gridPlane.aabb,
   });
-  tableId = t.id;
+  tableId = table.id;
+  addGizmoChild(table, 5);
 
   res.text.lowerText = `spawner (p) stack (l) clear (backspace)`;
 

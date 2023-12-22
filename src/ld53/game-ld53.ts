@@ -779,11 +779,10 @@ export async function initLD53(hosting: boolean) {
 
   if (DBG_PLAYER) {
     // world gizmo
-    const gizmoMesh = await GizmoMesh.gameMesh();
     const worldGizmo = EM.new();
     EM.set(worldGizmo, PositionDef, V(-WORLD_WIDTH / 2, -WORLD_HEIGHT / 2, 0));
     EM.set(worldGizmo, ScaleDef, V(100, 100, 100));
-    EM.set(worldGizmo, RenderableConstructDef, gizmoMesh.proto);
+    EM.set(worldGizmo, RenderableConstructDef, GizmoMesh);
   }
 
   // // debugging createGraph3D
