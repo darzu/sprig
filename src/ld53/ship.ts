@@ -145,7 +145,8 @@ export const { createLd53ShipAsync, Ld53ShipPropsDef } = defineNetEntityHelper({
     // addColliderDbgVis(ship);
 
     EM.set(ship, PositionDef, V(0, 0, 0));
-    EM.set(ship, RotationDef, quat.fromYawPitchRoll(Math.PI / 2, 0, 0));
+    EM.set(ship, RotationDef);
+    quat.yaw(ship.rotation, Math.PI / 2, ship.rotation);
     EM.set(ship, LinearVelocityDef);
     // EM.set(ent, ColorDef, V(0.5, 0.3, 0.1));
     EM.set(ship, ColorDef, V(0, 0, 0)); // painted by individual planks!

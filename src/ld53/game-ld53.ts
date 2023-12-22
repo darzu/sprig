@@ -224,8 +224,9 @@ async function hostResetLevel(levelIdx: number) {
 
   // move ship to map start pos
   level2DtoWorld3D(levelMap.startPos, 8, ship.position);
-  quat.identity(ship.rotation);
   vec3.set(0, 0, 0, ship.linearVelocity);
+  quat.identity(ship.rotation);
+  quat.yaw(ship.rotation, Math.PI / 2, ship.rotation);
 
   // reset ship sails and rudder
   const sail = ship.ld52ship.mast()!.mast.sail()!.sail;
