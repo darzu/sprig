@@ -40,26 +40,25 @@ export function createGraph3D(
   pos: vec3,
   data: vec3[][],
   color?: vec3,
-  domain?: AABB
+  domain?: AABB,
+  range?: AABB
 ) {
   color = color ?? ENDESGA16.lightGreen;
   domain = domain ?? getDataDomain(data);
   const domainSize = getSizeFromAABB(domain);
+  range = range ?? createAABB(V(0, 0, 0), V(50, 50, 50));
 
   // console.log("domain");
   // console.dir(domain);
 
   const opts: GraphAxesMeshOpts = {
-    intervalDomainLength: vec3.scale(domainSize, 0.1),
+    intervalDomainLength: vec3.scale(domainSize, 0.1, vec3.create()),
     domainSize: domain,
     // {
     //   min: V(0, 0, 0),
     //   max: V(100, 100, 100),
     // },
-    worldSize: {
-      min: V(0, 0, 0),
-      max: V(50, 50, 50),
-    },
+    worldSize: range,
 
     axisWidth: 0.8,
     intervalGap: 0.4,

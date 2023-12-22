@@ -410,6 +410,9 @@ export function resetFlatQuadMesh(
 
 // Creates a flat mesh on the XY plane with grid
 //  spacing of 1 and width * height number of positions
+// NOTE: If indexing via two for loops, Y is the outer loop, X is the inner loop
+//  idx = yi * width + xi
+// TODO(@darzu): Standardize 2d grid walk for all of sprigland! Always Y outer loop?
 export function createFlatQuadMesh(
   width: number,
   height: number,

@@ -39,7 +39,7 @@ import { GameMesh, XY } from "../meshes/mesh-loader.js";
 import { addGizmoChild } from "../utils/utils-game.js";
 import { makeDome } from "../meshes/primatives.js";
 import { SKY_MASK } from "./pipeline-masks.js";
-import { addVecDbgVis } from "../utils/util-vec-dbg.js";
+import { drawVector } from "../utils/util-vec-dbg.js";
 
 const SHOW_GALLERY = true;
 const SHOW_SKYDOME = false;
@@ -130,9 +130,9 @@ export async function initGalleryGame() {
   EM.set(gizmo, ScaleDef, V(8, 8, 8));
 
   // arrows
-  addVecDbgVis(V(1, 1, 0), { scale: 10, color: ENDESGA16.red });
-  addVecDbgVis(V(0, 1, 1), { scale: 10 });
-  addVecDbgVis(V(1, 0, 1), { scale: 10 });
+  drawVector(V(1, 1, 0), { scale: 10, color: ENDESGA16.red });
+  drawVector(V(0, 1, 1), { scale: 10 });
+  drawVector(V(1, 0, 1), { scale: 10 });
 
   // avatar
   const g = createGhost();

@@ -1,16 +1,26 @@
-import { EM } from "../ecs/entity-manager.js";
+import { EM, Entity } from "../ecs/entity-manager.js";
 import { PartyDef } from "../camera/party.js";
 import { LinearVelocityDef } from "../motion/velocity.js";
-import { PhysicsStateDef, WorldFrameDef } from "../physics/nonintersection.js";
+import { WorldFrameDef } from "../physics/nonintersection.js";
 import { PhysicsParentDef, PositionDef } from "../physics/transform.js";
 import { LevelMapDef } from "../levels/level-map.js";
 import { LD52ShipDef } from "./ship.js";
 import { tV, V, vec3, vec2 } from "../matrix/sprig-matrix.js";
-import { assert, dbgOnce } from "../utils/util.js";
+import { assert, dbgLogOnce, dbgOnce } from "../utils/util.js";
 import { vec2Dbg, vec3Dbg } from "../utils/utils-3d.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { drawBall } from "../utils/utils-game.js";
 import { ENDESGA16 } from "../color/palettes.js";
+import { ColliderDef } from "../physics/collider.js";
+import {
+  createAABB,
+  getSizeFromAABB,
+  mergeAABBs,
+  transformAABB,
+} from "../physics/aabb.js";
+import { drawVector } from "../utils/util-vec-dbg.js";
+import { createGraph3D } from "../debug/utils-gizmos.js";
+import { DeletedDef } from "../ecs/delete.js";
 
 const DBG_COLLISIONS = true;
 
@@ -18,12 +28,10 @@ const SAMPLES_PER_EDGE = 5;
 const NUDGE_DIST = 1.0;
 const NUDGE_SPEED = 0.1;
 
-export const LandDef = EM.defineResource(
-  "land",
-  (sample: (x: number, y: number) => number) => ({
-    sample,
-  })
-);
+export const LandDef = EM.defineResource("land", () => ({
+  // overwritten elsewhere
+  sample: (x: number, y: number) => 0 as number,
+}));
 
 const yBasis = vec2.create(); // TODO(@darzu): rename fwd
 const xBasis = vec2.create(); // TODO(@darzu): rename right
@@ -37,21 +45,32 @@ const scaledTemp2 = vec2.create();
 const WORLD_WIDTH = 1024; // width runs +X
 const WORLD_HEIGHT = 512; // height runs +Y
 
+let __dbgLastLandGraph: Entity | undefined = undefined;
+
 EM.addSystem(
   "landShipCollision",
   Phase.GAME_WORLD,
-  [LD52ShipDef, PositionDef, WorldFrameDef, PhysicsStateDef, LinearVelocityDef],
+  [LD52ShipDef, PositionDef, WorldFrameDef, ColliderDef, LinearVelocityDef],
   [PartyDef, LandDef, LevelMapDef],
   (es, res) => {
     if (!es.length) return;
     const ship = es[0];
-    assert(ship._phys.colliders.length >= 1);
-    const selfAABB = ship._phys.colliders[0].selfAABB;
+
+    // get a representative AABB
+    assert(ship.collider.shape === "Multi");
+    // TODO(@darzu): PERF. we should have a persistent form of this intersected AABB somewhere
+    const localAABB = createAABB();
+    ship.collider.children.forEach((c) => {
+      assert(c.shape === "AABB");
+      mergeAABBs(localAABB, localAABB, c.aabb);
+    });
+    transformAABB(localAABB, ship.world.transform);
+    const shipSize = getSizeFromAABB(localAABB);
 
     // +Y is forward / length-wise
-    const shipWidth = selfAABB.max[0] - selfAABB.min[0];
+    const shipWidth = shipSize[0];
     const halfWidth = shipWidth / 2;
-    const shipLength = selfAABB.max[1] - selfAABB.min[1];
+    const shipLength = shipSize[1];
     const halfLength = shipLength / 2;
     const shipCenter = V(res.party.pos[0], res.party.pos[1]);
     //console.log(`ship at ${shipCenter[0]}, ${shipCenter[1]}`);
@@ -79,6 +98,8 @@ EM.addSystem(
     );
     //console.log(corners);
 
+    // if (DBG_COLLISIONS) dbgLogOnce(`isLand is using ${res.levelMap.name}`);
+
     function isLand(x: number, y: number) {
       return (
         x < -WORLD_WIDTH / 2 ||
@@ -90,7 +111,20 @@ EM.addSystem(
     }
 
     // debug corner & edge algorithm
-    if (DBG_COLLISIONS && dbgOnce("landCollisionCorners")) {
+    if (
+      DBG_COLLISIONS &&
+      dbgOnce(`landCollisionCorners_${res.levelMap.name}`)
+    ) {
+      assert(ColliderDef.isOn(ship));
+
+      // addColliderDbgVis(ship);
+      // const box = createBoxForAABB(localAABB);
+      // EM.set(box, PhysicsParentDef, ship.id);
+      // EM.set(box, ColorDef, ENDESGA16.darkGray);
+
+      // TODO(@darzu): land collisions on level two right side r messed up
+
+      // draw corners and edges of ship
       const scale = 2;
       console.log("landCollisionCorners!");
       for (let i = 0; i < corners.length; i++) {
@@ -118,6 +152,34 @@ EM.addSystem(
           EM.set(ball, PhysicsParentDef, ship.id);
         }
       }
+
+      // draw land as seen by the isLand fn
+      const halfWidth = WORLD_WIDTH * 0.5;
+      const halfHeight = WORLD_HEIGHT * 0.5;
+      let samples: vec3[][] = [];
+      for (let y = -halfHeight + 1; y < halfHeight; y += halfHeight / 20) {
+        const row: vec3[] = [];
+        for (let x = -halfWidth + 1; x < halfWidth; x += halfWidth / 20) {
+          const z = isLand(x, y) ? 1.0 : 0.0;
+          row.push(V(x, y, z));
+        }
+        samples.push(row);
+      }
+
+      if (__dbgLastLandGraph) {
+        EM.set(__dbgLastLandGraph, DeletedDef);
+      }
+      const graph = createGraph3D(
+        V(-halfWidth * 1, -halfHeight * 1, 0),
+        samples,
+        ENDESGA16.red,
+        createAABB(V(-halfWidth, -halfHeight, 0), V(halfWidth, halfHeight, 1)),
+        createAABB(
+          V(-halfWidth * 1, -halfHeight * 1, 0),
+          V(halfWidth * 1, halfHeight * 1, 20)
+        )
+      );
+      __dbgLastLandGraph = graph;
     }
 
     let hitLand = false;
@@ -135,6 +197,12 @@ EM.addSystem(
         vec3.normalize(nudge, nudge);
         vec3.scale(nudge, NUDGE_DIST, nudge);
         // TODO: this should be in world space
+        if (DBG_COLLISIONS)
+          drawVector(nudge, {
+            origin: tV(corner[0], corner[1], ship.position[2]),
+            scale: 30,
+            color: ENDESGA16.lightGreen,
+          });
         console.log(`nudging (corner) by ${vec3Dbg(nudge)}`);
         vec3.add(ship.position, nudge, ship.position);
         vec3.normalize(nudge, nudge);
@@ -166,6 +234,12 @@ EM.addSystem(
           );
           vec3.normalize(nudge, nudge);
           vec3.scale(nudge, NUDGE_DIST, nudge);
+          if (DBG_COLLISIONS)
+            drawVector(nudge, {
+              origin: tV(corner[0], corner[1], ship.position[2]),
+              scale: 30,
+              color: ENDESGA16.red,
+            });
           console.log(`nudging (edge '${s}) by ${vec3Dbg(nudge)}`);
           // TODO: this should be in world space
           vec3.add(ship.position, nudge, ship.position);

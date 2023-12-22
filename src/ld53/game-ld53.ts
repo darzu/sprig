@@ -105,7 +105,7 @@ import { XY } from "../meshes/mesh-loader.js";
 import { MotionSmoothingDef } from "../render/motion-smoothing.js";
 import { TeleportDef } from "../physics/teleport.js";
 import { eventWizard } from "../net/events.js";
-import { addVecUpdatingDbgVis } from "../utils/util-vec-dbg.js";
+import { drawUpdatingVector } from "../utils/util-vec-dbg.js";
 import { vec2Dbg, vec3Dbg } from "../utils/utils-3d.js";
 /*
 NOTES:
@@ -124,7 +124,9 @@ PERF:
 
 const DBG_PLAYER = false;
 const DBG_HIDE_LAND = false;
-const DBG_HIDE_WATER = false;
+const DBG_HIDE_WATER = true;
+
+const START_LEVEL_IDX = 0;
 
 // const SHIP_START_POS = V(100, 0, -100);
 
@@ -470,7 +472,7 @@ export async function initLD53(hosting: boolean) {
   // start map
   // TODO(@darzu): MULTIPLAYER:
   if (res.me.host) {
-    raiseSetLevel(0);
+    raiseSetLevel(START_LEVEL_IDX);
   }
   // const landPromise = setLevelLocal(0);
   // await setMap(MapPaths[0]);
@@ -609,7 +611,7 @@ export async function initLD53(hosting: boolean) {
         if (dbgOnce("windOnMast")) {
           assert(WorldFrameDef.isOn(mast));
           if (DBG_PLAYER)
-            addVecUpdatingDbgVis(res.wind.dir, {
+            drawUpdatingVector(res.wind.dir, {
               origin: vec3.add(mast.world.position, V(0, 0, 30)),
               scale: 20,
               // parentId: mast.id,
@@ -1058,5 +1060,6 @@ async function resetLand() {
     terraMesh
   );
 
-  EM.ensureResource(LandDef, sampleTerra);
+  const landRes = EM.ensureResource(LandDef);
+  landRes.sample = sampleTerra; // TODO(@darzu): hacky..
 }

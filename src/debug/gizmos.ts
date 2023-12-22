@@ -130,16 +130,19 @@ export function createGraph3DAxesMesh(opts: GraphAxesMeshOpts): Mesh {
 
 export function createGraph3DDataMesh(data: vec3[][]): Mesh {
   assert(data.length > 1 && data[0].length > 1);
-  const xLen = data.length;
-  const zLen = data[0].length;
-  const mesh = createFlatQuadMesh(zLen, xLen, true);
+  const yLen = data.length;
+  const xLen = data[0].length;
+  // NOTE: this index fn must match the flat mesh's construction
+  // TODO(@darzu): standardize grid walk and data[?][?] access conventions for sprig
+  const mesh = createFlatQuadMesh(xLen, yLen, true);
+  const idx = (xi: number, yi: number) => yi * xLen + xi;
   // mesh.surfaceIds.fill(1);
-  for (let x = 0; x < xLen; x++) {
-    assert(data[x].length === zLen);
-    for (let z = 0; z < zLen; z++) {
-      const idx = z + x * zLen;
-      const pos = data[x][z];
-      vec3.copy(mesh.pos[idx], pos);
+  for (let yi = 0; yi < yLen; yi++) {
+    for (let xi = 0; xi < xLen; xi++) {
+      assert(data[yi].length === xLen);
+      const i = idx(xi, yi);
+      const pos = data[yi][xi];
+      vec3.copy(mesh.pos[i], pos);
     }
   }
   return mesh;

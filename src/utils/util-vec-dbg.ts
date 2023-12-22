@@ -45,17 +45,17 @@ export const DefaultVecDbgVisOpts: Required<VecDbgVisOpts> = {
   color: ENDESGA16.lightGreen,
 };
 
-export function addVecUpdatingDbgVis(v: vec3, opts?: VecDbgVisOpts) {
+export function drawUpdatingVector(v: vec3, opts?: VecDbgVisOpts) {
   const o = { ...DefaultVecDbgVisOpts, ...opts };
 
-  const ent = addVecDbgVis(v, o);
+  const ent = drawVector(v, o);
 
   EM.set(ent, VecDbgDef, v, o.scale);
 
   return ent;
 }
 
-export function addVecDbgVis(v: vec3.InputT, opts?: VecDbgVisOpts) {
+export function drawVector(v: vec3.InputT, opts?: VecDbgVisOpts) {
   const o = { ...DefaultVecDbgVisOpts, ...opts };
 
   const ent = EM.new();
