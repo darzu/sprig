@@ -107,6 +107,7 @@ import { TeleportDef } from "../physics/teleport.js";
 import { eventWizard } from "../net/events.js";
 import { drawUpdatingVector } from "../utils/util-vec-dbg.js";
 import { vec2Dbg, vec3Dbg } from "../utils/utils-3d.js";
+import { addWorldGizmo } from "../utils/utils-game.js";
 /*
 NOTES:
 - Cut grass by updating a texture that has cut/not cut or maybe cut-height
@@ -777,13 +778,8 @@ export async function initLD53(hosting: boolean) {
   //   await startTowers(tower3DPoses);
   // }
 
-  if (DBG_PLAYER) {
-    // world gizmo
-    const worldGizmo = EM.new();
-    EM.set(worldGizmo, PositionDef, V(-WORLD_WIDTH / 2, -WORLD_HEIGHT / 2, 0));
-    EM.set(worldGizmo, ScaleDef, V(100, 100, 100));
-    EM.set(worldGizmo, RenderableConstructDef, GizmoMesh);
-  }
+  // world gizmo
+  if (DBG_PLAYER) addWorldGizmo(V(-WORLD_WIDTH / 2, -WORLD_HEIGHT / 2, 0), 100);
 
   // // debugging createGraph3D
   // let data: vec3[][] = [];

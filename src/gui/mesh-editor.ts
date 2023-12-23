@@ -167,7 +167,7 @@ async function createMeshEditor() {
         meshPoolPtr,
         false
       );
-      EM.set(hpEnt_, PositionDef, V(0, 0.1, 0));
+      EM.set(hpEnt_, PositionDef, V(0, 0, 0.1));
       // TODO(@darzu): make scale configurable
       EM.set(hpEnt_, ScaleDef, V(5, 5, 5));
       const hpEnt = await EM.whenEntityHas(
@@ -257,7 +257,7 @@ async function createMeshEditor() {
     assert(res.hp && res.hpEnt);
     const pos = vec3.copy(g.position, res.hp.mesh.pos[hv.vi]);
     vec3.transformMat4(pos, res.hpEnt.world.transform, pos);
-    pos[1] = 0.2; // TODO(@darzu): this z-layering stuff is wierd
+    pos[2] = 0.2; // TODO(@darzu): this z-layering stuff is wierd
 
     return g;
   }
@@ -313,7 +313,7 @@ async function createMeshEditor() {
     const posE = vec3.transformMat3(glyph.position, invTrans3);
 
     vertPos[0] = posE[0];
-    vertPos[2] = posE[2];
+    vertPos[1] = posE[1];
   }
   function positionHedge(he: HEdge) {
     // TODO(@darzu): take a glyph?
@@ -327,11 +327,11 @@ async function createMeshEditor() {
       const pos1 = vec3.copy(vec3.tmp(), res.hp.mesh.pos[he.twin.orig.vi]);
       vec3.transformMat4(pos1, res.hpEnt.world.transform, pos1);
       const diff = vec3.sub(pos1, pos0);
-      const theta = Math.atan2(diff[0], diff[2]) + Math.PI * 0.5;
-      quat.fromEuler(0, theta, 0, glyph.rotation);
+      // TODO(@darzu): Z_UP check this atan2 and euler usage
+      const theta = Math.atan2(diff[1], diff[0]) + Math.PI * 0.5;
+      quat.fromEuler(0, 0, theta, glyph.rotation);
       vec3Mid(glyph.position, pos0, pos1);
-      // TODO(@darzu): Z_UP?
-      glyph.position[1] = 0.2;
+      glyph.position[2] = 0.2;
     }
   }
   function extrudeHEdge(he: HEdge) {

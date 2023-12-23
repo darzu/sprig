@@ -37,7 +37,7 @@ import { shadowPipelines } from "../render/pipelines/std-shadow.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { PointLightDef } from "../render/lights.js";
-import { addGizmoChild } from "../utils/utils-game.js";
+import { addGizmoChild, addWorldGizmo } from "../utils/utils-game.js";
 
 // TODO(@darzu): BROKEN. camera is in a wonky place?
 
@@ -80,10 +80,7 @@ export async function initReboundSandbox(hosting: boolean) {
   EM.set(sun, PositionDef, V(50, 300, 10));
 
   // world gizmo
-  const worldGizmo = EM.new();
-  EM.set(worldGizmo, PositionDef, V(0, 0, 0));
-  EM.set(worldGizmo, ScaleDef, V(5, 5, 5));
-  EM.set(worldGizmo, RenderableConstructDef, GizmoMesh);
+  addWorldGizmo(V(0, 0, 0), 5);
 
   const g = createGhost(BallMesh);
   g.controllable.speed *= 0.5;

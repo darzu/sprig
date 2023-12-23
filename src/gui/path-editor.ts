@@ -24,6 +24,8 @@ import { Phase } from "../ecs/sys-phase.js";
 
 // TODO(@darzu): consolidate with spline.ts
 
+const UP: vec3.InputT = [0, 0, 1];
+
 const HLineDef = EM.defineNonupdatableComponent("hline", (hl: HLine) => ({
   hl,
 }));
@@ -138,7 +140,7 @@ async function createPathEditor() {
         false,
         reserve
       );
-      EM.set(hpEnt_, PositionDef, V(0, 0.1, 0));
+      EM.set(hpEnt_, PositionDef, V(0, 0, 0.1));
       // TODO(@darzu): make scale configurable
       // EM.set(hpEnt_, ScaleDef, [5, 5, 5]);
       const hpEnt = await EM.whenEntityHas(
@@ -237,7 +239,7 @@ async function createPathEditor() {
     const pos = vec3.copy(g.position, res.lnMesh.pos[hl.vi]);
     // TODO(@darzu): support world transforms
     // vec3.transformMat4(pos, pos, res.outEnt.world.transform);
-    pos[1] = 0.2; // TODO(@darzu): this z-layering stuff is wierd
+    pos[2] = 0.2; // TODO(@darzu): this z-layering stuff is wierd
 
     return g;
   }
@@ -257,7 +259,7 @@ async function createPathEditor() {
     const posE = glyph.position;
 
     vertPos[0] = posE[0];
-    vertPos[2] = posE[2];
+    vertPos[1] = posE[1];
   }
 }
 
@@ -359,7 +361,7 @@ export function createMeshFromHLine(ln: HLine) {
 // TODO(@darzu): rename
 export async function lineStuff() {
   const lnMesh: RawMesh & LineMesh = {
-    pos: [V(1, 0, 1), V(2, 0, 2), V(4, 0, 3), V(8, 0, 3), V(8, 0, 6)],
+    pos: [V(1, 1, 0), V(2, 2, 0), V(4, 3, 0), V(8, 3, 0), V(8, 6, 0)],
     tri: [],
     quad: [],
     lines: [
@@ -418,7 +420,7 @@ export async function lineStuff() {
 
   const extEnt = EM.new();
   EM.set(extEnt, RenderableConstructDef, gmesh.proto);
-  EM.set(extEnt, PositionDef, V(0, 0.5, 0));
+  EM.set(extEnt, PositionDef, V(0, 0, 0.5));
 
   for (let ln of lns) {
     const vertGlyph = EM.new();
@@ -426,8 +428,7 @@ export async function lineStuff() {
     EM.set(vertGlyph, PositionDef, vec3.clone(lnMesh.pos[ln.vi]));
     EM.set(vertGlyph, ColorDef, V(0.1, 0.2 + ln.vi * 0.1, 0.1));
     EM.set(vertGlyph, ScaleDef, V(0.2, 0.2, 0.2));
-    // TODO(@darzu): Z_UP?
-    vertGlyph.position[1] = 0.5;
+    vertGlyph.position[2] = 0.5;
   }
 
   function getControlPoints(ln: HLine, width: number): [vec3, vec3] {
@@ -444,7 +445,7 @@ export async function lineStuff() {
       if (!ln.next && ln.prev) vec3.negate(dir, dir);
       vec3.normalize(dir, dir);
 
-      const perp = vec3.cross(dir, [0, 1, 0]);
+      const perp = vec3.cross(dir, UP);
 
       // TODO(@darzu): this is right for end caps, not the mids!!
       // TODO(@darzu): this is right for end caps, not the mids!!
@@ -457,7 +458,7 @@ export async function lineStuff() {
       const P = lnMesh.pos[ln.prev.vi];
       const PAdir = vec3.sub(A, P);
       vec3.normalize(PAdir, PAdir);
-      const PAperp = vec3.cross(PAdir, [0, 1, 0]);
+      const PAperp = vec3.cross(PAdir, UP);
       const P1 = vec3.sub(A, vec3.scale(PAperp, width));
       vec3.sub(P1, vec3.scale(PAdir, width * 3), P1);
       const P2 = vec3.add(A, vec3.scale(PAperp, width));
@@ -466,7 +467,7 @@ export async function lineStuff() {
       const N = lnMesh.pos[ln.next.vi];
       const NAdir = vec3.sub(A, N);
       vec3.normalize(NAdir, NAdir);
-      const NAperp = vec3.cross(NAdir, [0, 1, 0]);
+      const NAperp = vec3.cross(NAdir, UP);
       const N1 = vec3.sub(A, vec3.scale(NAperp, width));
       vec3.sub(N1, vec3.scale(NAdir, width * 3), N1);
       const N2 = vec3.add(A, vec3.scale(NAperp, width));

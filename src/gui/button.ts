@@ -11,6 +11,7 @@ import { RendererDef } from "../render/renderer-ecs.js";
 import { assert } from "../utils/util.js";
 import { UICursorDef } from "./game-font.js";
 import { Phase } from "../ecs/sys-phase.js";
+import { transformYUpModelIntoZUp } from "../camera/basis.js";
 
 // TODO(@darzu): this should really go in allMeshes.ts to follow the current patern.
 //    BUT I'm disatisfied with the current pattern. Subsystems should be able to
@@ -72,6 +73,9 @@ function initButtonGUI(res: Resources<[typeof RendererDef]>) {
     assert(
       typeof btnMesh_ !== "string" && btnMesh_.length === 1,
       `btn mesh failed import: ${btnMesh_}`
+    );
+    btnMesh_[0].pos.forEach((v) =>
+      vec3.transformMat4(v, transformYUpModelIntoZUp, v)
     );
     scaleMesh(btnMesh_[0], 0.2);
     const btnGMesh = gameMeshFromMesh(btnMesh_[0], res.renderer.renderer);

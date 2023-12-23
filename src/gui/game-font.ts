@@ -1,4 +1,8 @@
-import { CameraDef, CameraComputedDef } from "../camera/camera.js";
+import {
+  CameraDef,
+  CameraComputedDef,
+  CameraFollowDef,
+} from "../camera/camera.js";
 import { CanvasDef } from "../render/canvas.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
@@ -13,7 +17,7 @@ import { InputsDef } from "../input/inputs.js";
 import { mathMap } from "../utils/math.js";
 import { copyAABB, createAABB } from "../physics/aabb.js";
 import { ColliderDef } from "../physics/collider.js";
-import { PositionDef } from "../physics/transform.js";
+import { PositionDef, RotationDef } from "../physics/transform.js";
 import { PointLightDef } from "../render/lights.js";
 import { MeshReserve } from "../render/mesh-pool.js";
 import { cloneMesh, Mesh, scaleMesh, stringifyMesh } from "../meshes/mesh.js";
@@ -49,6 +53,8 @@ TODO(@darzu):
  [ ] render arbitrary-ish text
 */
 
+// TODO(@darzu): Z_UP: z-layering is all messed up!!!!!
+
 const EXPERIMENTAL_LINE_STUFF = true;
 
 const DBG_3D = false; // TODO(@darzu): add in-game smooth transition!
@@ -67,11 +73,11 @@ EM.addLazyInit([AllMeshesDef], [UICursorDef], ({ allMeshes }) => {
   // Cursor
   const cursor = EM.new();
   EM.set(cursor, ColorDef, V(0.1, 0.1, 0.1));
-  EM.set(cursor, PositionDef, V(0, 1.0, 0));
+  EM.set(cursor, PositionDef, V(0, 0.0, 1.0));
   EM.set(cursor, RenderableConstructDef, allMeshes.he_octo.proto);
   const cursorLocalAABB = copyAABB(createAABB(), allMeshes.he_octo.aabb);
-  cursorLocalAABB.min[1] = -1;
-  cursorLocalAABB.max[1] = 1;
+  cursorLocalAABB.min[2] = -1;
+  cursorLocalAABB.max[2] = 1;
   EM.set(cursor, ColliderDef, {
     shape: "AABB",
     solid: false,
@@ -110,7 +116,7 @@ export async function initFontEditor() {
   EM.set(sunlight, PointLightDef);
   sunlight.pointLight.constant = 1.0;
   vec3.copy(sunlight.pointLight.ambient, [0.8, 0.8, 0.8]);
-  EM.set(sunlight, PositionDef, V(10, 100, 10));
+  EM.set(sunlight, PositionDef, V(10, 10, 100));
   // TODO(@darzu): weird, why does renderable need to be on here?
   EM.set(sunlight, RenderableConstructDef, res.allMeshes.ball.proto, false);
 
@@ -123,9 +129,10 @@ export async function initFontEditor() {
   );
   // panelMesh.colors[0] = [0.1, 0.3, 0.1];
   // panelMesh.colors[1] = [0.1, 0.1, 0.3];
-  panelMesh.colors[0] = V(0.4, 0.4, 0.4);
+  panelMesh.colors[0] = vec3.clone(ENDESGA16.darkGreen);
+  panelMesh.colors[1] = vec3.clone(ENDESGA16.darkRed);
   EM.set(panel, RenderableConstructDef, panelMesh);
-  // EM.set(panel, ColorDef, [0.2, 0.3, 0.2]);
+  // EM.set(panel, ColorDef, ENDESGA16.red);
   EM.set(panel, PositionDef, V(0, 0, 0));
 
   if (DBG_3D) {
@@ -137,16 +144,22 @@ export async function initFontEditor() {
     // g.cameraFollow.yawOffset = 0.000;
     // g.cameraFollow.pitchOffset = -1.496;
     vec3.copy(g.position, [-1.45, 27.5, 6.93]);
-    quat.copy(g.rotation, [0.0, 0.0, 0.0, 1.0]);
+    // quat.copy(g.rotation, [0.0, 0.0, 0.0, 1.0]);
+    quat.identity(g.rotation);
     vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
     g.cameraFollow.yawOffset = 0.0;
-    g.cameraFollow.pitchOffset = -1.496;
+    g.cameraFollow.pitchOffset = -Math.PI / 2;
   }
 
   {
     const { camera } = await EM.whenResources(CameraDef);
     camera.fov = Math.PI * 0.5;
     camera.targetId = 0;
+    // const cameraTarget = EM.new();
+    // EM.set(cameraTarget, PositionDef, V(0, 0, 0));
+    // EM.set(cameraTarget, RotationDef);
+    // EM.set(cameraTarget, CameraFollowDef);
+    // cameraTarget.cameraFollow.pitchOffset = -0.5 * Math.PI;
   }
 
   // TODO(@darzu): mouse lock?
@@ -170,6 +183,7 @@ export async function initFontEditor() {
       if (res.camera.targetId) return;
 
       // update aspect ratio and size
+      // TODO(@darzu): modifying cameraComputed directly is odd
       cameraComputed.aspectRatio = Math.abs(
         htmlCanvas.canvas.width / htmlCanvas.canvas.height
       );
@@ -183,10 +197,7 @@ export async function initFontEditor() {
 
       let viewMatrix = mat4.create();
 
-      mat4.rotateX(viewMatrix, Math.PI * 0.5, viewMatrix);
-      // mat4.translate(viewMatrix, viewMatrix, [0, 10, 0]);
-
-      // mat4.invert(viewMatrix, viewMatrix);
+      // mat4.rotateX(viewMatrix, Math.PI * 0.5, viewMatrix);
 
       const projectionMatrix = mat4.create();
 
@@ -214,7 +225,6 @@ export async function initFontEditor() {
       }
 
       // TODO(@darzu): i don't understand the near/far clipping; why can't they be like -4, 4 ?
-      // TODO(@darzu): i don't understand the near/far clipping; why can't they be like -4, 4 ?
       mat4.ortho(
         -adjPanelW * 0.5,
         adjPanelW * 0.5,
@@ -238,13 +248,13 @@ export async function initFontEditor() {
       const cursorWorldPos = vec3.transformMat4(
         [
           mathMap(cursorFracX, 0, 1, -1, 1),
-          mathMap(cursorFracY, 0, 1, 1, -1),
+          mathMap(cursorFracY, 0, 1, -1, 1),
           0,
         ],
         cameraComputed.invViewProj
       );
       cursor.position[0] = cursorWorldPos[0];
-      cursor.position[2] = cursorWorldPos[2];
+      cursor.position[1] = cursorWorldPos[1];
     }
   );
 
@@ -252,7 +262,7 @@ export async function initFontEditor() {
   const quadMesh: Mesh = {
     quad: [vec4.clone([0, 1, 2, 3])],
     tri: [],
-    pos: [V(1, 0, -1), V(-1, 0, -1), V(-1, 0, 1), V(1, 0, 1)],
+    pos: [V(-1, -1, 0), V(1, -1, 0), V(1, 1, 0), V(-1, 1, 0)],
     colors: [randNormalPosVec3()],
     surfaceIds: [1],
     usesProvoking: true,
@@ -295,7 +305,7 @@ export async function initFontEditor() {
 
     const btn = EM.new();
     EM.set(btn, RenderableConstructDef, gmesh.proto);
-    EM.set(btn, PositionDef, V(-24 + i * 2, 0.1, 12));
+    EM.set(btn, PositionDef, V(-24 + i * 2, -12, 0.1));
     EM.set(btn, ButtonDef, btnKey, i, {
       default: ENDESGA16.lightGray,
       hover: ENDESGA16.darkGray,

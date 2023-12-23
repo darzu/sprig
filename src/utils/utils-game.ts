@@ -147,6 +147,7 @@ export async function randomizeMeshColors(e: Entity) {
   res.renderer.renderer.stdPool.updateMeshVertices(meshH, mesh);
 }
 
+// TODO(@darzu): Z_UP!!
 export function screenPosToWorldPos(
   out: vec3,
   screenPos: vec2,
@@ -156,6 +157,7 @@ export function screenPosToWorldPos(
   const invViewProj = cameraComputed.invViewProj;
 
   const viewX = mathMap(screenPos[0], 0, cameraComputed.width, -1, 1);
+  // TODO(@darzu): Z_UP: what's the right way to map Y to Y??
   const viewY = mathMap(screenPos[1], 0, cameraComputed.height, 1, -1);
   const viewPos3 = vec3.set(viewX, viewY, screenDepth);
 
@@ -202,6 +204,13 @@ export function addGizmoChild(
   EM.set(gizmo, PhysicsParentDef, parent.id);
   EM.set(gizmo, RenderableConstructDef, GizmoMesh);
   return gizmo;
+}
+
+export function addWorldGizmo(origin = V(0, 0, 0), scale = 5) {
+  const worldGizmo = EM.new();
+  EM.set(worldGizmo, PositionDef, origin);
+  EM.set(worldGizmo, ScaleDef, V(scale, scale, scale));
+  EM.set(worldGizmo, RenderableConstructDef, GizmoMesh);
 }
 
 export function createBoxForAABB(
