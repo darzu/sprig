@@ -12,6 +12,7 @@ const _seenKeyCodes: Set<string> = new Set();
 
 export const InputsDef = EM.defineResource("inputs", () => {
   return {
+    // TODO(@darzu): should we map mouse 2D pos to be Y up? Y down is annoying..
     mouseMov: vec2.create(),
     mousePos: vec2.create(),
     // TODO(@darzu): need rising edge vs falling edge distinction

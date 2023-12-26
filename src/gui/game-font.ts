@@ -35,6 +35,7 @@ import { TextDef } from "./ui.js";
 import { makePlaneMesh } from "../meshes/primatives.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
 import { Phase } from "../ecs/sys-phase.js";
+import { addWorldGizmo } from "../utils/utils-game.js";
 
 /*
 TODO(@darzu):
@@ -53,9 +54,11 @@ TODO(@darzu):
  [ ] render arbitrary-ish text
 */
 
-// TODO(@darzu): Z_UP: z-layering is all messed up!!!!!
+const EXPERIMENTAL_LINE_STUFF = false; // TODO(@darzu): broken rn
 
-const EXPERIMENTAL_LINE_STUFF = true;
+// TODO(@darzu): Z_UP: buttons are broken
+
+const DBG_GIZMOS = true;
 
 const DBG_3D = false; // TODO(@darzu): add in-game smooth transition!
 
@@ -135,20 +138,16 @@ export async function initFontEditor() {
   // EM.set(panel, ColorDef, ENDESGA16.red);
   EM.set(panel, PositionDef, V(0, 0, 0));
 
+  if (DBG_GIZMOS) addWorldGizmo(V(-PANEL_W * 0.5, -PANEL_H * 0.5, 0));
+
   if (DBG_3D) {
     const g = createGhost(res.allMeshes.ball.proto);
 
-    // vec3.copy(g.position, [4.36,30.83,-1.53]);
-    // quat.copy(g.rotation, [0.00,0.71,0.00,0.70]);
-    // vec3.copy(g.cameraFollow.positionOffset, [0.00,0.00,0.00]);
-    // g.cameraFollow.yawOffset = 0.000;
-    // g.cameraFollow.pitchOffset = -1.496;
-    vec3.copy(g.position, [-1.45, 27.5, 6.93]);
-    // quat.copy(g.rotation, [0.0, 0.0, 0.0, 1.0]);
-    quat.identity(g.rotation);
+    vec3.copy(g.position, [-21.83, -25.01, 21.79]);
+    quat.copy(g.rotation, [0.0, 0.0, -0.31, 0.95]);
     vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
     g.cameraFollow.yawOffset = 0.0;
-    g.cameraFollow.pitchOffset = -Math.PI / 2;
+    g.cameraFollow.pitchOffset = -0.685;
   }
 
   {
@@ -248,7 +247,7 @@ export async function initFontEditor() {
       const cursorWorldPos = vec3.transformMat4(
         [
           mathMap(cursorFracX, 0, 1, -1, 1),
-          mathMap(cursorFracY, 0, 1, -1, 1),
+          mathMap(cursorFracY, 0, 1, 1, -1), // screen is Y down, world is Y up
           0,
         ],
         cameraComputed.invViewProj

@@ -35,6 +35,7 @@ import { WidgetDef, WidgetLayerDef } from "./widgets.js";
 import { meshPoolPtr } from "../render/pipelines/std-scene.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { GameMesh } from "../meshes/mesh-loader.js";
+import { addGizmoChild } from "../utils/utils-game.js";
 
 // TODO(@darzu): do we need this ptr indirection? can't we just add/remove component? how does this interact
 //  with pools?
@@ -74,6 +75,7 @@ export const MeshEditorDef = EM.defineResource(
 );
 
 // TODO(@darzu): this might be over engineered
+// TODO(@darzu): use entity pools instead of just idx pools
 const MAX_GLYPHS = 100;
 const vertGlyphPool: HVertWEnt[] = [];
 const vertGlyphPoolIdx = createIdxPool(MAX_GLYPHS);
@@ -257,7 +259,7 @@ async function createMeshEditor() {
     assert(res.hp && res.hpEnt);
     const pos = vec3.copy(g.position, res.hp.mesh.pos[hv.vi]);
     vec3.transformMat4(pos, res.hpEnt.world.transform, pos);
-    pos[2] = 0.2; // TODO(@darzu): this z-layering stuff is wierd
+    pos[2] = 0.5; // TODO(@darzu): this z-layering stuff is wierd
 
     return g;
   }
@@ -280,6 +282,9 @@ async function createMeshEditor() {
         RenderableDef,
         ButtonDef
       );
+
+      // addGizmoChild(glyph);
+
       // hedgeGlyphs.set(he.hi, glyph);
       // positionHedge(he);
 

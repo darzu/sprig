@@ -443,27 +443,23 @@ export function mkOctogonMesh(): RawMesh {
       pos: [
         V(1, 0, 0),
         V(2, 0, 0),
-        V(3, 0, 1),
-        V(3, 0, 2),
-        V(2, 0, 3),
-        V(1, 0, 3),
-        V(0, 0, 2),
-        V(0, 0, 1),
+        V(3, 1, 0),
+        V(3, 2, 0),
+        V(2, 3, 0),
+        V(1, 3, 0),
+        V(0, 2, 0),
+        V(0, 1, 0),
       ],
       tri: [],
-      quad: [
-        vec4.clone([0, 5, 4, 1]),
-        vec4.clone([1, 4, 3, 2]),
-        vec4.clone([7, 6, 5, 0]),
-      ],
+      quad: [V(1, 4, 5, 0), V(2, 3, 4, 1), V(0, 5, 6, 7)],
       // colors: range(3).map((_) => randNormalPosVec3()),
-      colors: range(3).map((_) => vec3.clone(V(0, 0, 0))),
+      colors: range(3).map((_) => V(0, 0, 0)),
     },
     mat4.fromRotationTranslationScaleOrigin(
       quat.IDENTITY,
-      [-1.5, 0, -1.5],
+      [-1.5, -1.5, 0],
       [0.2, 0.2, 0.2],
-      [1.5, 0, 1.5]
+      [1.5, 1.5, 0]
     )
   );
 }
@@ -471,16 +467,16 @@ export function mkOctogonMesh(): RawMesh {
 export function mkHalfEdgeQuadMesh(): RawMesh {
   return transformMesh(
     {
-      pos: [V(0, 0, 0), V(0, 0, 3), V(3, 0, 3), V(3, 0, 0)],
+      pos: [V(0, 0, 0), V(3, 0, 0), V(3, 3, 0), V(0, 3, 0)],
       tri: [],
-      quad: [vec4.clone([0, 1, 2, 3])],
-      colors: [vec3.clone(V(0, 0, 0))],
+      quad: [V(0, 1, 2, 3)],
+      colors: [V(0, 0, 0)],
     },
     mat4.fromRotationTranslationScaleOrigin(
       quat.IDENTITY,
-      [-1.5, 0, 0],
-      [0.4, 0.2, 0.2],
-      [1.5, 0, 0]
+      [0, -1.5, 0],
+      [0.2, 0.4, 0.2],
+      [0, 1.5, 0]
     )
   );
 }
