@@ -357,6 +357,7 @@ export interface RayHit {
   dist: number;
 }
 
+// TODO(@darzu): i don't think this fn works in 3d
 export function rayVsRay(ra: Ray, rb: Ray): vec3 | undefined {
   // ra.org[0] + ra.dir[0] * ta === rb.org[0] + rb.dir[0] * tb
   // ra.org[1] + ra.dir[1] * ta === rb.org[1] + rb.dir[1] * tb
@@ -367,7 +368,7 @@ export function rayVsRay(ra: Ray, rb: Ray): vec3 | undefined {
 
   // TODO(@darzu): select axis based on rays
   const x = 0;
-  const y = 2;
+  const y = 1;
 
   const a = ra.org;
   const da = ra.dir;

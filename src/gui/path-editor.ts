@@ -364,12 +364,7 @@ export async function lineStuff() {
     pos: [V(1, 1, 0), V(2, 2, 0), V(4, 3, 0), V(8, 3, 0), V(8, 6, 0)],
     tri: [],
     quad: [],
-    lines: [
-      vec2.clone([0, 1]),
-      vec2.clone([3, 4]),
-      vec2.clone([2, 3]),
-      vec2.clone([1, 2]),
-    ],
+    lines: [V(0, 1), V(3, 4), V(2, 3), V(1, 2)],
     colors: [],
   };
 
@@ -439,7 +434,7 @@ export async function lineStuff() {
       const A1 = vec3.create();
       const A2 = vec3.create();
 
-      const Oln = ln.next ?? ln.prev;
+      const Oln = ln.next ?? ln.prev; // other line
       const O = Oln ? lnMesh.pos[Oln.vi] : vec3.add(A, [1, 0, 0]);
       const dir = vec3.sub(O, A);
       if (!ln.next && ln.prev) vec3.negate(dir, dir);
@@ -447,7 +442,6 @@ export async function lineStuff() {
 
       const perp = vec3.cross(dir, UP);
 
-      // TODO(@darzu): this is right for end caps, not the mids!!
       // TODO(@darzu): this is right for end caps, not the mids!!
       vec3.sub(A, vec3.scale(perp, width), A1);
       vec3.add(A, vec3.scale(perp, width), A2);

@@ -54,7 +54,7 @@ TODO(@darzu):
  [ ] render arbitrary-ish text
 */
 
-const EXPERIMENTAL_LINE_STUFF = false; // TODO(@darzu): broken rn
+const EXPERIMENTAL_LINE_STUFF = true; // TODO(@darzu): broken rn
 
 // TODO(@darzu): Z_UP: buttons are broken
 

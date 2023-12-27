@@ -1920,3 +1920,14 @@ RESTIR:
 
 Wgsl history explanation:
   https://news.ycombinator.com/item?id=38738820
+
+Ray tracing from scratch:
+  https://johanneshoff.com/raytrace-mirror/
+  https://www.gabrielgambetta.com/computer-graphics-from-scratch/00-introduction.html
+  https://www.scratchapixel.com/lessons/3d-basic-rendering/introduction-to-ray-tracing/how-does-it-work.html
+  https://raytracing.github.io
+
+"What do you get when you combine... ah never mind, I call this one "Potato Lumen" 😛
+... because it uses a Lumen-style screen-space radiance cache, but aims to run on potato GPUs, tracing only 1 ray for every 16 pixels.
+How do I feed it so sparsely? ReSTIR of course 🤣🫒🛢️":
+  https://twitter.com/h3r2tic/status/1655494432496517121
