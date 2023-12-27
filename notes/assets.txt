@@ -261,3 +261,11 @@ USD, "Universal Scene Description", for scenes and prefabs?
     [ ] track each carve?
   [ ] forged iron: what structure can we exploit?
     is it just a path of varying thickness and rotations?
+
+3D modeler using common game control scheme:
+  - WASD moves your avatar/camera
+  - "hot bar" assigns "tools" to 1-9
+  maybe also:
+  - inventory has tools and assets to use
+  - character sheet lets you customize
+  - travel to different places in the world to do different tasks

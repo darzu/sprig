@@ -513,7 +513,7 @@ export const LD54AstronautMesh = XY.registerMesh({
   transformBasis: transformYUpModelIntoZUp,
 });
 
-// TODO(@darzu): remove eventually?
+// TODO(@darzu): REMOVE ALL USAGE OF!
 const allMeshesList = [
   // file
   ShipMesh,
