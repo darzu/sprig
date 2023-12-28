@@ -113,17 +113,17 @@ EM.addEagerInit([PlayerRenderDef], [], [], () => {
           e.playerRender.wasJustAccelerating = true;
         }
         // prefer forward, then back, left, right, up, down
-        if (player.spaceSuit.localAccel[2] < 0) {
+        if (player.spaceSuit.localAccel[1] > 0) {
           tweenToPose(e, Poses.Forward, TWEENING_TIME);
-        } else if (player.spaceSuit.localAccel[2] > 0) {
+        } else if (player.spaceSuit.localAccel[1] < 0) {
           tweenToPose(e, Poses.Back, TWEENING_TIME);
         } else if (player.spaceSuit.localAccel[0] < 0) {
           tweenToPose(e, Poses.Left, TWEENING_TIME);
         } else if (player.spaceSuit.localAccel[0] > 0) {
           tweenToPose(e, Poses.Right, TWEENING_TIME);
-        } else if (player.spaceSuit.localAccel[1] > 0) {
+        } else if (player.spaceSuit.localAccel[2] > 0) {
           tweenToPose(e, Poses.Up, TWEENING_TIME);
-        } else if (player.spaceSuit.localAccel[1] < 0) {
+        } else if (player.spaceSuit.localAccel[2] < 0) {
           tweenToPose(e, Poses.Down, TWEENING_TIME);
         }
       }
