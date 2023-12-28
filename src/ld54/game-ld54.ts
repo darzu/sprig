@@ -74,8 +74,11 @@ import {
   getHalfsizeFromAABB,
 } from "../physics/aabb.js";
 import { GraphicsSettingsDef } from "../render/graphics-settings.js";
+import { addGizmoChild } from "../utils/utils-game.js";
 
 const RENDER_TRUTH_CUBE = false;
+
+const DBG_GIZMOS = true;
 
 const ld54Meshes = XY.defineMeshSetResource(
   "ld54_meshes",
@@ -174,31 +177,20 @@ const {
       EM.set(e, CameraFollowDef, 1);
       // quat.setAxisAngle([0.0, -1.0, 0.0], 1.62, e.rotation);
       // vec3.copy(e.cameraFollow.positionOffset, [0.0, 4.0, 10.0]);
-      vec3.copy(e.cameraFollow.positionOffset, [0.0, 0.0, 10.0]);
+      vec3.copy(e.cameraFollow.positionOffset, [0.0, -10.0, 0.0]);
       // e.cameraFollow.yawOffset = 0.0;
       // e.cameraFollow.pitchOffset = -0.593;
 
       // sword hitbox
       const hitbox = EM.new();
       const S = 3;
-      EM.set(hitbox, PositionDef, V(0, 0, -S));
+      EM.set(hitbox, PositionDef, V(0, S, 0));
       EM.set(hitbox, ColliderDef, {
         shape: "AABB",
         solid: false,
-        aabb: createAABB(V(-S, -2 * S, -S), V(S, 2 * S, S)),
+        aabb: createAABB(V(-S, -S, 2 * -S), V(S, S, 2 * S)),
       });
 
-      function debugVizAABB(aabbEnt: EntityW<[typeof ColliderDef]>) {
-        // debug render floor
-        const mesh = cloneMesh(res.ld54_meshes.cube.mesh);
-        assert(aabbEnt.collider.shape === "AABB");
-        const size = getHalfsizeFromAABB(aabbEnt.collider.aabb, vec3.create());
-        const center = aabbCenter(vec3.tmp(), aabbEnt.collider.aabb);
-        scaleMesh3(mesh, size);
-        transformMesh(mesh, mat4.fromTranslation(center));
-        EM.set(aabbEnt, RenderableConstructDef, mesh);
-        EM.set(aabbEnt, ColorDef, ENDESGA16.orange);
-      }
       //debugVizAABB(hitbox);
 
       EM.set(hitbox, PhysicsParentDef, e.id);
@@ -223,8 +215,10 @@ const {
           { pose: 4, t: 1000 },
           { pose: 5, t: 1000 },
           { pose: 6, t: 1000 },
-          ];
-          */
+        ];
+      */
+
+      if (DBG_GIZMOS) addGizmoChild(playerRender, 5);
     }
 
     return e;

@@ -8,6 +8,7 @@ import {
   normalizeMesh,
   RawMesh,
   transformMesh,
+  transformRigging,
   validateMesh,
 } from "./mesh.js";
 import {
@@ -47,7 +48,9 @@ export type MeshDesc<N extends string = string, B extends boolean = false> = {
   name: N;
   data: string | (() => RawMesh);
   transform?: mat4;
-  transformBasis?: mat4; // TODO(@darzu): remove? deprecate somehow? save back out to assets?
+  // TODO(@darzu): remove? deprecate somehow? save back out to assets?
+  // TODO(@darzu): basis transform should be restricted to mat3? Or something more compact since it's just 1s and 0s and it's orthonormalized
+  transformBasis?: mat4;
   modify?: (m: RawMesh) => RawMesh;
 } & (B extends true ? { multi: true } : {});
 
@@ -281,11 +284,18 @@ function processMesh(desc: MeshDesc, m: RawMesh): RawMesh {
   // TODO(@darzu): PERF! This should probably in-place update the mesh.
   if (desc.transform || desc.transformBasis)
     m.pos = m.pos.map((v) => vec3.clone(v));
-  if (desc.transform)
+  if (desc.transform) {
     m.pos.forEach((v) => vec3.transformMat4(v, desc.transform!, v));
-  if (desc.modify) m = desc.modify(m);
-  if (desc.transformBasis)
+    // TODO(@darzu): transformRigging()?
+  }
+  if (desc.modify) {
+    m = desc.modify(m);
+    // TODO(@darzu): transformRigging()?
+  }
+  if (desc.transformBasis) {
     m.pos.forEach((v) => vec3.transformMat4(v, desc.transformBasis!, v));
+    if (m.rigging) transformRigging(m.rigging, desc.transformBasis);
+  }
   if (!m.dbgName) m.dbgName = desc.name;
   return m;
 }

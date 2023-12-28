@@ -1,5 +1,13 @@
 import { ASSET_LOG_VERT_CHANGES, DBG_ASSERT, DBG_FANG_SHIP } from "../flags.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import {
+  vec2,
+  vec3,
+  vec4,
+  quat,
+  mat4,
+  V,
+  mat3,
+} from "../matrix/sprig-matrix.js";
 import { max, sum } from "../utils/math.js";
 import { AABB, createAABB, getAABBFromPositions } from "../physics/aabb.js";
 import { assert, range } from "../utils/util.js";
@@ -64,6 +72,38 @@ export interface Rigging {
   // TODO: support animating properties other than rotation
   // poseRot[a][b] is the rotation for joint b in pose a
   poseRot: quat[][];
+}
+
+export function transformRigging(out: Rigging, tm: mat4.InputT) {
+  /*
+  Z_UP: let's think this through:
+  a normal mesh's World transform moves verts from ent space to world space
+    the inverse moves from world space to ent space
+  transformYUpModelIntoZUp is:
+    [ 1| 0| 0
+      0| 0|-1
+      0| 1| 0]
+    it translates Y-up world into Z-up world
+  to transform a quat or mat:
+      1. first transform the input from Z-up to Y-up, 
+      2. then run the quat/mat, 
+      3. then take that output in Y-up and transform it into Z-up
+      quat.mul(tq, quat.mul(q, tqi, q), q))
+  */
+
+  // TODO(@darzu): PERF. Invert is expensive.
+  const tq = quat.fromMat4(tm);
+  const tmi = mat4.invert(tm);
+  const tqi = quat.fromMat4(tmi);
+
+  out.jointPos.forEach((v) => vec3.transformQuat(v, tq, v));
+  out.jointRot.forEach((q) => quat.mul(tq, quat.mul(q, tqi, q), q));
+  // TODO(@darzu): I don't quite understand why scales shouldn't be transformed..
+  // out.jointScale.forEach((s) => vec3.transformMat3(s, tm3, s));
+  out.poseRot.forEach((qs) =>
+    qs.forEach((q) => quat.mul(tq, quat.mul(q, tqi, q), q))
+  );
+  out.inverseBindMatrices.forEach((m) => mat4.mul(tm, mat4.mul(m, tmi, m), m));
 }
 
 export interface Mesh extends RawMesh {

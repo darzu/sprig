@@ -1931,3 +1931,13 @@ Ray tracing from scratch:
 ... because it uses a Lumen-style screen-space radiance cache, but aims to run on potato GPUs, tracing only 1 ray for every 16 pixels.
 How do I feed it so sparsely? ReSTIR of course 🤣🫒🛢️":
   https://twitter.com/h3r2tic/status/1655494432496517121
+
+How Video Games Work:
+  https://www.youtube.com/watch?v=C8YtdC8mxTU
+
+Introduction to Computer Graphics
+  https://www.youtube.com/@cem_yuksel
+
+lisyarus/Lisitsa Nikita's Web GPU demo (C++):
+  https://github.com/lisyarus/webgpu-demo
+    uses: https://github.com/gfx-rs/wgpu-native

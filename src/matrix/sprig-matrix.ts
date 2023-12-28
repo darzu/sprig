@@ -638,6 +638,11 @@ export module quat {
   export function fromMat3(m: mat3.InputT, out?: T): T {
     return GL.fromMat3(out ?? tmp(), m) as T;
   }
+  const __quat_fromMat4_tmp = float32ArrayOfLength(9) as mat3;
+  export function fromMat4(m: mat4.InputT, out?: T): T {
+    // TODO(@darzu): PERF. Inline to make efficient.
+    return fromMat3(mat3.fromMat4(m, __quat_fromMat4_tmp), out);
+  }
 
   // NOTE: the yaw/pitch/roll functions ASSUME Z-up, Y-fwd, X-right
   export function yaw(v1: InputT, n: number, out?: T) {
@@ -1245,7 +1250,7 @@ export module mat3 {
     return GL.fromQuat(out ?? tmp(), q) as T;
   }
 
-  export function fromMat4(q: mat4, out?: T): T {
+  export function fromMat4(q: mat4.InputT, out?: T): T {
     return GL.fromMat4(out ?? tmp(), q) as T;
   }
 }

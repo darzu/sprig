@@ -23,6 +23,15 @@ export function even(n: number) {
   return n % 2 == 0;
 }
 
+// TODO(@darzu): useful? idea from freya
+// TODO(@darzu): extend number's prototype?
+export function atLeast(val: number, min: number) {
+  return Math.max(val, min);
+}
+export function atMost(val: number, max: number) {
+  return Math.min(val, max);
+}
+
 export const radToDeg = 180 / Math.PI;
 
 export function jitter(radius: number): number {

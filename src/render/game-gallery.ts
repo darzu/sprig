@@ -140,11 +140,17 @@ export async function initGalleryGame() {
   g.controllable.speed *= 10;
   g.controllable.sprintMul = 0.1;
 
-  vec3.copy(g.position, [9.65, -12.47, 15.43]);
-  quat.copy(g.rotation, [0.0, 0.0, 0.11, 0.99]);
+  // vec3.copy(g.position, [9.65, -12.47, 15.43]);
+  // quat.copy(g.rotation, [0.0, 0.0, 0.11, 0.99]);
+  // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
+  // g.cameraFollow.yawOffset = 0.0;
+  // g.cameraFollow.pitchOffset = -0.49;
+
+  vec3.copy(g.position, [428.73, -33.73, 32.1]);
+  quat.copy(g.rotation, [0.0, 0.0, 0.1, 0.99]);
   vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
   g.cameraFollow.yawOffset = 0.0;
-  g.cameraFollow.pitchOffset = -0.49;
+  g.cameraFollow.pitchOffset = -0.651;
 
   // sky dome?
   if (SHOW_SKYDOME) {
