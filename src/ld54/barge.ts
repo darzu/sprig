@@ -1,3 +1,4 @@
+import { transformYUpModelIntoZUp } from "../camera/basis.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { mat4, quat, vec3 } from "../matrix/sprig-matrix.js";
 import { V } from "../matrix/sprig-matrix.js";
@@ -693,6 +694,11 @@ export function createSpaceBarge(): SpaceBarge {
       vec3.transformQuat(v, rotate, v);
       vec3.add(v, [0, -floorHeight, 0], v);
     });
+
+    // TODO(@darzu): Z_UP: basis change. inline this above?
+    _timberMesh.pos.forEach((v) =>
+      vec3.transformMat4(v, transformYUpModelIntoZUp, v)
+    );
   }
 
   // console.dir(_timberMesh.colors);

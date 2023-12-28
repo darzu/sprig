@@ -74,7 +74,7 @@ import {
   getHalfsizeFromAABB,
 } from "../physics/aabb.js";
 import { GraphicsSettingsDef } from "../render/graphics-settings.js";
-import { addGizmoChild } from "../utils/utils-game.js";
+import { addColliderDbgVis, addGizmoChild } from "../utils/utils-game.js";
 
 const RENDER_TRUTH_CUBE = false;
 
@@ -242,8 +242,8 @@ const { RaftPropsDef, createRaft, RaftLocalDef } = defineNetEntityHelper({
     EM.set(raft, RenderableConstructDef, barge.timberMesh);
 
     const aabb = getAABBFromMesh(barge.timberMesh);
-    aabb.min[2] = aabb.min[0];
-    aabb.max[2] = aabb.max[0];
+    aabb.min[1] = aabb.min[0];
+    aabb.max[1] = aabb.max[0];
 
     // DBG AABB
     // const aabbMesh = createGizmoForAABB(aabb, 1);
@@ -261,6 +261,10 @@ const { RaftPropsDef, createRaft, RaftLocalDef } = defineNetEntityHelper({
       solid: true,
       aabb,
     });
+
+    // if (DBG_GIZMOS) addColliderDbgVis(raft);
+
+    addGizmoChild(raft, 10);
 
     // const pedestal = EM.new();
     // EM.set(pedestal, PositionDef, V(0, 1, 0));
