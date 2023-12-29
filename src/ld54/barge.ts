@@ -45,6 +45,8 @@ import {
   WoodState,
 } from "../wood/wood.js";
 
+// TODO(@darzu): HUGE HACK. De-dupe w/ other ship
+
 const railColor = ENDESGA16.darkBrown;
 const keelColor = ENDESGA16.darkBrown;
 const ribColor = ENDESGA16.darkBrown;

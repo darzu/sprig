@@ -35,7 +35,7 @@ export const SpacePathSegmentDef = EM.defineNonupdatableComponent(
   (n: number) => ({ n })
 );
 
-const DEBUG_PATH_POINTS = false;
+const DEBUG_PATH_POINTS = true;
 
 export function createSpacePath() {
   // const points: vec3[] = [
@@ -51,6 +51,7 @@ export function createSpacePath() {
   // ];
 
   const points = getRandomCylindricalPoints(50, 50, 16);
+  points.forEach((v) => vec3.pitch(v, -Math.PI / 2, v));
 
   // let numSeg = 20;
   const meshes: Mesh[] = [];
@@ -67,49 +68,10 @@ export function createSpacePath() {
     }
   }
 
+  const UP: vec3.InputT = [0, 0, 1]; // TODO(@darzu): Z_UP: consolidate all the UP and FWD vectors
+
   const spline = bezierSplineFromPoints(points, 20);
-  const path = createEvenPathFromBezierSpline(spline, 5, [0, 1, 0]);
-
-  // TODO(@darzu): HACK: fix path rotations
-  const up = tV(0, 1, 0); // TODO(@darzu): Z_UP
-  const _t1 = vec3.tmp();
-  const _t2 = vec3.tmp();
-  for (let i = 0; i < path.length - 1; i++) {
-    const start = path[i].pos;
-    const end = path[i + 1].pos;
-
-    // TODO(@darzu): IMPL
-    const fwd = vec3.sub(end, start, _t1);
-    const len = vec3.length(fwd);
-    const right = _t2;
-    orthonormalize(fwd, up, right);
-    // console.log(vec3Dbg(fwd));
-    // console.log(vec3Dbg(up));
-    // console.log(vec3Dbg(right));
-
-    vec3.scale(fwd, len, fwd);
-    // const left = vec3.negate(right);
-    // const down = vec3.negate(up);
-
-    // const forwardish = vec3.sub(node.pos, next.pos);
-    quatFromUpForward_OLD(path[i].rot, up, fwd);
-    // quat.rotateY(node.rot, Math.PI * 1.0, node.rot);
-
-    // quat.rotateZ(node.rot, Math.PI * 0.25, node.rot);
-  }
-
-  // const pathMesh = createEmptyMesh("pathMesh") as Mesh;
-  // pathMesh.usesProvoking = true;
-
-  // appendBoard(
-  //   pathMesh,
-  //   {
-  //     path,
-  //     width: 1.0,
-  //     depth: 1.0,
-  //   },
-  //   V(0, 1, 0)
-  // );
+  const path = createEvenPathFromBezierSpline(spline, 5, UP);
 
   for (let i = 1; i < path.length; i++) {
     if (i % 2 !== 0) continue;
@@ -129,11 +91,12 @@ export function createSpacePath() {
     mesh.surfaceIds = mesh.colors.map((_, i) => i);
     validateMesh(mesh);
     const ent = EM.new();
-    console.log("hidden");
+    // console.log("hidden");
     EM.set(ent, RenderableConstructDef, mesh);
-    EM.whenEntityHas(ent, RenderableDef).then(
-      (e) => (e.renderable.hidden = true)
-    );
+    if (!DEBUG_PATH_POINTS)
+      EM.whenEntityHas(ent, RenderableDef).then(
+        (e) => (e.renderable.hidden = true)
+      );
     EM.set(ent, PositionDef);
     EM.set(ent, SpacePathSegmentDef, i);
   });

@@ -142,6 +142,7 @@ export function vec3Mid(out: vec3, a: vec3, b: vec3): vec3 {
 // TODO(@darzu): replace all usages with the new, better version in sprig-matrix
 // TODO(@darzu): This impl assumes +y is up, +z is fwd
 // assumes local up axis is [0,1,0] and forward is [0,0,1]
+// TODO(@darzu): Z_UP: remove all usage?
 const __t1 = vec3.create();
 const __t2 = vec3.create();
 export function quatFromUpForward_OLD(

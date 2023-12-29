@@ -1494,3 +1494,6 @@ Bazaar vs cathedral style development:
 
 ECS dead:
   mem cpy end to dead slot
+
+one reviewers opinion on gaming masterpieces:
+  "game masterpieces like Journey, Edith Finch, Goragoa, Unfinished Swan, Okami, and Shadow of the Colossus. "

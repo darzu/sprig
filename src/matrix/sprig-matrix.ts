@@ -427,6 +427,32 @@ export module vec3 {
     return GL.rotateZ(out ?? tmp(), point, origin, rad) as T;
   }
 
+  // NOTE: the yaw/pitch/roll functions ASSUME Z-up, Y-fwd, X-right
+  export function yaw(
+    point: InputT,
+    rad: number,
+    // origin: InputT = ZEROS,
+    out?: T
+  ) {
+    return GL.rotateZ(out ?? tmp(), point, ZEROS, -rad) as T;
+  }
+  export function pitch(
+    point: InputT,
+    rad: number,
+    // origin: InputT = ZEROS,
+    out?: T
+  ) {
+    return GL.rotateX(out ?? tmp(), point, ZEROS, rad) as T;
+  }
+  export function roll(
+    point: InputT,
+    rad: number,
+    // origin: InputT = ZEROS,
+    out?: T
+  ) {
+    return GL.rotateY(out ?? tmp(), point, ZEROS, rad) as T;
+  }
+
   // TODO(@darzu): add yaw/pitch/roll fns
 
   export function reverse(v: InputT, out?: T): T {

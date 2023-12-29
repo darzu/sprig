@@ -490,8 +490,8 @@ export async function initLD54() {
   const player = createPlayerNow({ ld54_meshes, me }, V(0, 10, 0), color);
 
   // start pos?
-  vec3.copy(player.position, [18.27, 23.3, -0.87]);
-  quat.copy(player.rotation, [0.38, -0.63, -0.66, 0.0]);
+  vec3.copy(player.position, [-10, -50, -50]);
+  quat.fromForward([0, 1, 0], player.rotation);
   EM.set(player, BreathingPlayerDef);
 
   const res = await EM.whenResources(TextDef);
