@@ -21,7 +21,7 @@ import {
   getRandomCylindricalPoints,
 } from "../utils/spline.js";
 import { quatFromUpForward_OLD } from "../utils/utils-3d.js";
-import { appendBoard } from "../wood/shipyard.js";
+import { appendBoard, dbgPathWithGizmos } from "../wood/shipyard.js";
 
 export const SpacePathDef = EM.defineNonupdatableComponent(
   "spacePath",
@@ -38,18 +38,6 @@ export const SpacePathSegmentDef = EM.defineNonupdatableComponent(
 const DEBUG_PATH_POINTS = true;
 
 export function createSpacePath() {
-  // const points: vec3[] = [
-  //   V(0, -24, -30),
-  //   V(30, -16, 0),
-  //   V(0, -8, 30),
-  //   V(-30, 0, 0),
-  //   V(0, 8, -30),
-  //   V(30, 16, 0),
-  //   V(0, 24, 30),
-  //   V(-30, 32, 0),
-  //   // TODO(@darzu):
-  // ];
-
   const points = getRandomCylindricalPoints(50, 50, 16);
   points.forEach((v) => vec3.pitch(v, -Math.PI / 2, v));
 
@@ -72,6 +60,8 @@ export function createSpacePath() {
 
   const spline = bezierSplineFromPoints(points, 20);
   const path = createEvenPathFromBezierSpline(spline, 5, UP);
+
+  if (DEBUG_PATH_POINTS) dbgPathWithGizmos(path, 5);
 
   for (let i = 1; i < path.length; i++) {
     if (i % 2 !== 0) continue;

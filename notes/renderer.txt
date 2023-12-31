@@ -1941,3 +1941,6 @@ Introduction to Computer Graphics
 lisyarus/Lisitsa Nikita's Web GPU demo (C++):
   https://github.com/lisyarus/webgpu-demo
     uses: https://github.com/gfx-rs/wgpu-native
+
+"High Performance Voxel Engine: Vertex Pooling":
+  https://nickmcd.me/2021/04/04/high-performance-voxel-engine/

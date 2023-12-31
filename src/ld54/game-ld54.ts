@@ -78,7 +78,7 @@ import { addColliderDbgVis, addGizmoChild } from "../utils/utils-game.js";
 
 const RENDER_TRUTH_CUBE = false;
 
-const DBG_GIZMOS = true;
+const DBG_GIZMOS = false;
 
 const ld54Meshes = XY.defineMeshSetResource(
   "ld54_meshes",
@@ -242,8 +242,8 @@ const { RaftPropsDef, createRaft, RaftLocalDef } = defineNetEntityHelper({
     EM.set(raft, RenderableConstructDef, barge.timberMesh);
 
     const aabb = getAABBFromMesh(barge.timberMesh);
-    aabb.min[1] = aabb.min[0];
-    aabb.max[1] = aabb.max[0];
+    // aabb.min[1] = aabb.min[0];
+    // aabb.max[1] = aabb.max[0];
 
     // DBG AABB
     // const aabbMesh = createGizmoForAABB(aabb, 1);
@@ -255,16 +255,17 @@ const { RaftPropsDef, createRaft, RaftLocalDef } = defineNetEntityHelper({
     // EM.set(raft, RenderableConstructDef, res.ld54_meshes.cubeRaft.proto);
 
     // EM.set(raft, ColorDef, ENDESGA16.darkGreen);
-    EM.set(raft, PositionDef, V(0, 5, 0));
+    EM.set(raft, PositionDef, V(0, 0, 5));
     EM.set(raft, ColliderDef, {
       shape: "AABB",
       solid: true,
       aabb,
     });
 
-    // if (DBG_GIZMOS) addColliderDbgVis(raft);
-
-    addGizmoChild(raft, 10);
+    if (DBG_GIZMOS) {
+      addColliderDbgVis(raft);
+      addGizmoChild(raft, 20);
+    }
 
     // const pedestal = EM.new();
     // EM.set(pedestal, PositionDef, V(0, 1, 0));
@@ -326,12 +327,11 @@ export async function initLD54() {
     // init stars
     res.renderer.renderer.submitPipelines([], [...noisePipes, initStars]);
 
+    // TODO(@darzu): move graphics settings stuff outside ld54
     res.graphicsSettings.onGraphicsChange.push((useHighGraphics) =>
       setRenderPipelines(useHighGraphics)
     );
-
     setRenderPipelines(res.graphicsSettings.useHighGraphics);
-
     function setRenderPipelines(high: boolean) {
       if (high) {
         res.renderer.pipelines = [

@@ -1,4 +1,12 @@
-import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import {
+  vec2,
+  vec3,
+  vec4,
+  quat,
+  mat4,
+  V,
+  orthonormalize,
+} from "../matrix/sprig-matrix.js";
 import { avg, mathMap } from "./math.js";
 import { AABB, createAABB, getAABBFromPositions } from "../physics/aabb.js";
 import { tempVec2, tempVec3 } from "../matrix/temp-pool.js";
@@ -142,7 +150,7 @@ export function vec3Mid(out: vec3, a: vec3, b: vec3): vec3 {
 // TODO(@darzu): replace all usages with the new, better version in sprig-matrix
 // TODO(@darzu): This impl assumes +y is up, +z is fwd
 // assumes local up axis is [0,1,0] and forward is [0,0,1]
-// TODO(@darzu): Z_UP: remove all usage?
+// TODO(@darzu): Z_UP: merge into sprig-matrix
 const __t1 = vec3.create();
 const __t2 = vec3.create();
 export function quatFromUpForward_OLD(
@@ -151,11 +159,13 @@ export function quatFromUpForward_OLD(
   forwardish: vec3.InputT
 ): quat {
   // https://stackoverflow.com/questions/52413464/look-at-quaternion-using-up-vector/52551983#52551983
+  // TODO(@darzu): swap this with orthonormalize()
   const side = vec3.cross(forwardish, up, __t1);
   vec3.negate(side, side); // TODO(@darzu): is this negate right?
   vec3.normalize(side, side);
   const backward = vec3.cross(side, up, __t2);
 
+  // TODO(@darzu): replace this with using quat.fromMat3
   const trace = side[0] + up[1] + backward[2];
   if (trace > 0.0) {
     const s = 0.5 / Math.sqrt(trace + 1.0);

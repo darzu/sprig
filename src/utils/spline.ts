@@ -130,11 +130,14 @@ export function createPathFromBezier(
     const pos = bezierPosition(b, t, vec3.create());
     const tan = bezierTangent(b, t, vec3.tmp());
     vec3.normalize(tan, tan);
-    const rot = quatFromUpForward_OLD(quat.create(), up, tan);
+    // const rot = quatFromUpForward_OLD(quat.create(), up, tan);
+    const rot = quat.fromForwardAndUpish(tan, up, quat.create());
     path.push({ pos, rot });
   }
   return path;
 }
+// TODO(@darzu): Z_UP: this function doesn't return good results right now
+// TODO(@darzu): refactor this into getEvenlySpacedTimesFromBezierCurve, maybe as a generator?
 const _numSamples = 100;
 const __tempSamples = range(_numSamples).map((i) => vec3.create());
 export function createEvenPathFromBezierCurve(
@@ -202,7 +205,8 @@ export function createEvenPathFromBezierCurve(
         const pos = bezierPosition(b, t, vec3.create());
         const tan = bezierTangent(b, t, vec3.tmp());
         vec3.normalize(tan, tan);
-        const rot = quatFromUpForward_OLD(quat.create(), up, tan);
+        // const rot = quatFromUpForward_OLD(quat.create(), up, tan);
+        const rot = quat.fromForwardAndUpish(tan, up, quat.create());
         path.push({ pos, rot });
         didAdd = true;
         // console.log(`adding: ${t} -> ${vec3Dbg(pos)}`);
@@ -290,6 +294,7 @@ export function bezierSplineFromPoints(
   return { curves };
 }
 
+// TODO(@darzu): Z_UP: this function doesn't return good results right now
 export function createEvenPathFromBezierSpline(
   spline: BezierSpline,
   spacing: number,

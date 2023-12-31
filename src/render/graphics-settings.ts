@@ -2,6 +2,9 @@ import { EM } from "../ecs/entity-manager.js";
 import { CanvasDef } from "./canvas.js";
 import { RendererDef } from "./renderer-ecs.js";
 
+// TODO(@darzu): ABSTRACTION. there's a whole lot of settings and settings-like things we want
+//  to expose/access throughout game/engine code; how to best handle this?
+
 export const GraphicsSettingsDef = EM.defineResource(
   "graphicsSettings",
   () => ({

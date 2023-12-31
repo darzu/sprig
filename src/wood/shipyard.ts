@@ -218,11 +218,12 @@ export function getPathFrom2DQuadMesh(m: Mesh, perp: vec3.InputT): Path {
   }
 }
 
-function createPathGizmos(path: Path): Mesh {
+function createPathGizmos(path: Path, scale = 1): Mesh {
   let gizmos: Mesh[] = [];
   path.forEach((p) => {
     const g = createGizmoMesh();
     g.pos.forEach((v) => {
+      vec3.scale(v, scale, v);
       vec3.transformQuat(v, p.rot, v);
       vec3.add(v, p.pos, v);
     });
@@ -232,8 +233,8 @@ function createPathGizmos(path: Path): Mesh {
   res.usesProvoking = true;
   return res;
 }
-export async function dbgPathWithGizmos(path: Path) {
-  const mesh = createPathGizmos(path);
+export async function dbgPathWithGizmos(path: Path, scale = 1) {
+  const mesh = createPathGizmos(path, scale);
 
   const e = EM.new();
   EM.set(e, PositionDef);

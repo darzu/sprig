@@ -158,34 +158,39 @@ export async function initOre(spacePath: Path) {
   // fuel slot locations
   const spc = 8;
 
+  // TODO(@darzu): Z_UP: fix these
+  const H = 5;
+  const B = -16;
+  const F = 10;
+
   const fuelSlots = [
-    V(0, 5, -16),
-    V(spc, 5, -16),
-    V(-spc, 5, -16),
-    V(0, 5, -16 - spc),
-    V(spc, 5, -16 - spc),
-    V(-spc, 5, -16 - spc),
-    V(0, 5 + spc, -16),
-    V(spc, 5 + spc, -16),
-    V(-spc, 5 + spc, -16),
-    V(0, 5 + spc, -16 - spc),
-    V(spc, 5 + spc, -16 - spc),
-    V(-spc, 5 + spc, -16 - spc),
+    V(0, H, B),
+    V(spc, H, B),
+    V(-spc, H, B),
+    V(0, H, B - spc),
+    V(spc, H, B - spc),
+    V(-spc, H, B - spc),
+    V(0, H + spc, B),
+    V(spc, H + spc, B),
+    V(-spc, H + spc, B),
+    V(0, H + spc, B - spc),
+    V(spc, H + spc, B - spc),
+    V(-spc, H + spc, B - spc),
   ];
 
   const oxygenSlots = [
-    V(0, 5, 10),
-    V(spc, 5, 10),
-    V(-spc, 5, 10),
-    V(0, 5, 10 + spc),
-    V(spc, 5, 10 + spc),
-    V(-spc, 5, 10 + spc),
-    V(0, 5, 10),
-    V(spc, 5 + spc, 10),
-    V(-spc, 5 + spc, 10),
-    V(0, 5 + spc, 10 + spc),
-    V(spc, 5 + spc, 10 + spc),
-    V(-spc, 5 + spc, 10 + spc),
+    V(0, H, F),
+    V(spc, H, F),
+    V(-spc, H, F),
+    V(0, H, F + spc),
+    V(spc, H, F + spc),
+    V(-spc, H, F + spc),
+    V(0, H, F),
+    V(spc, H + spc, F),
+    V(-spc, H + spc, F),
+    V(0, H + spc, F + spc),
+    V(spc, H + spc, F + spc),
+    V(-spc, H + spc, F + spc),
   ];
 
   function fuelOreToTravelDist(ore: number): number {
@@ -239,7 +244,7 @@ export async function initOre(spacePath: Path) {
         randDistFromTrack,
         vec3.create()
       );
-      pos[2] = seg.pos[2];
+      pos[1] = seg.pos[1];
 
       createFuelOre(pos);
       numFuelSpawned++;
@@ -282,7 +287,7 @@ export async function initOre(spacePath: Path) {
         randDistFromTrack,
         vec3.create()
       );
-      pos[2] = seg.pos[2];
+      pos[1] = seg.pos[1];
 
       createOxygenOre(pos);
 
@@ -359,6 +364,7 @@ export async function initOre(spacePath: Path) {
         ore.ore.carried = true;
         vec3.zero(ore.angularVelocity); // stop spinning
         EM.set(ore, PhysicsParentDef, carrier.id);
+        // TODO(@darzu): Z_UP:
         vec3.set(0, 0, -5, ore.position);
       }
     }
