@@ -56,10 +56,10 @@ export function createMultiBarMesh({
 
   const builder = createTimberBuilder(mesh);
   builder.width = width; // +X
-  builder.depth = width; // +Y (after rotate below)
+  builder.depth = width; // +Z (after rotate below)
 
   // point toward -Z
-  mat4.rotateX(builder.cursor, -Math.PI * 0.5, builder.cursor);
+  // mat4.rotateX(builder.cursor, -Math.PI * 0.5, builder.cursor);
 
   const halflen = length * 0.5;
 
@@ -157,12 +157,12 @@ EM.addEagerInit([HealthDef], [], [], () => {
         const handle = h.renderable.meshHandle;
         assert(handle.mesh);
         const mesh = handle.mesh;
-        const min = mesh.pos.at(0)![2]; // first Z;
-        const max = mesh.pos.at(-1)![2]; // last Z;
+        const min = mesh.pos.at(0)![1]; // first
+        const max = mesh.pos.at(-1)![1]; // last
         const lerped = lerp(min, max, percent);
         mesh.pos.forEach((p, i) => {
           if (startPosIdx <= i && i <= lastPosIdx) {
-            p[2] = lerped;
+            p[1] = lerped;
           }
         });
 

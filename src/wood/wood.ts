@@ -795,6 +795,7 @@ export function setEndQuadIdxs(loopVi: number, q: vec4, facingDown: boolean) {
 
 export type TimberBuilder = ReturnType<typeof createTimberBuilder>;
 export function createTimberBuilder(mesh: RawMesh) {
+  // TODO(@darzu): Z_UP!! check this over
   // TODO(@darzu): have a system for building wood?
 
   // const W = 0.5; // width

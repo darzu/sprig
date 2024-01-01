@@ -164,7 +164,7 @@ initDocks:
 
 const DBG_GRID = true;
 const DBG_GIZMO = true;
-const DBG_GHOST = true;
+const DBG_GHOST = false;
 
 // TODO(@darzu): ADD WARNING THAT OBJ INIT PLACED IN CONTACT
 
@@ -204,9 +204,16 @@ export async function initGrayboxSunless() {
     g.position[2] = 5;
 
     // overview
-    vec3.copy(g.position, [16.63, -27.49, 107.08]);
-    quat.copy(g.rotation, [0.0, 0.0, -0.26, 0.97]);
-    g.cameraFollow.pitchOffset = -0.957;
+    // vec3.copy(g.position, [16.63, -27.49, 107.08]);
+    // quat.copy(g.rotation, [0.0, 0.0, -0.26, 0.97]);
+    // g.cameraFollow.pitchOffset = -0.957;
+
+    // zoom on enemy
+    vec3.copy(g.position, [17.46, 10.74, 4.72]);
+    quat.copy(g.rotation, [0.0, 0.0, 0.09, 1.0]);
+    vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
+    g.cameraFollow.yawOffset = 0.0;
+    g.cameraFollow.pitchOffset = -0.692;
   }
 
   // ground
@@ -259,6 +266,7 @@ async function createWorld() {
   );
 
   // TODO(@darzu): procedural generate this
+  // TODO(@darzu): Since Z_UP, this world desc doesn't match
   const gridWidth = 5;
   const horiEdges = [
     [1, 1, 1, 1],
