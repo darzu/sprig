@@ -158,39 +158,38 @@ export async function initOre(spacePath: Path) {
   // fuel slot locations
   const spc = 8;
 
-  // TODO(@darzu): Z_UP: fix these
   const H = 5;
   const B = -16;
   const F = 10;
 
-  const fuelSlots = [
-    V(0, H, B),
-    V(spc, H, B),
-    V(-spc, H, B),
-    V(0, H, B - spc),
-    V(spc, H, B - spc),
-    V(-spc, H, B - spc),
-    V(0, H + spc, B),
-    V(spc, H + spc, B),
-    V(-spc, H + spc, B),
-    V(0, H + spc, B - spc),
-    V(spc, H + spc, B - spc),
-    V(-spc, H + spc, B - spc),
+  const fuelSlots: vec3[] = [
+    V(0, B, H),
+    V(spc, B, H),
+    V(-spc, B, H),
+    V(0, B - spc, H),
+    V(spc, B - spc, H),
+    V(-spc, B - spc, H),
+    V(0, B, H + spc),
+    V(spc, B, H + spc),
+    V(-spc, B, H + spc),
+    V(0, B - spc, H + spc),
+    V(spc, B - spc, H + spc),
+    V(-spc, B - spc, H + spc),
   ];
 
-  const oxygenSlots = [
-    V(0, H, F),
-    V(spc, H, F),
-    V(-spc, H, F),
-    V(0, H, F + spc),
-    V(spc, H, F + spc),
-    V(-spc, H, F + spc),
-    V(0, H, F),
-    V(spc, H + spc, F),
-    V(-spc, H + spc, F),
-    V(0, H + spc, F + spc),
-    V(spc, H + spc, F + spc),
-    V(-spc, H + spc, F + spc),
+  const oxygenSlots: vec3[] = [
+    V(0, F, H),
+    V(spc, F, H),
+    V(-spc, F, H),
+    V(0, F + spc, H),
+    V(spc, F + spc, H),
+    V(-spc, F + spc, H),
+    V(0, F, H),
+    V(spc, F, H + spc),
+    V(-spc, F, H + spc),
+    V(0, F + spc, H + spc),
+    V(spc, F + spc, H + spc),
+    V(-spc, F + spc, H + spc),
   ];
 
   function fuelOreToTravelDist(ore: number): number {

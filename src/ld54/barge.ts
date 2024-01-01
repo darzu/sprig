@@ -704,6 +704,11 @@ export function createSpaceBarge(): SpaceBarge {
     _timberMesh.pos.forEach((v) =>
       vec3.transformMat4(v, transformYUpModelIntoZUp, v)
     );
+
+    const rotate2 = quat.fromYawPitchRoll(Math.PI, 0, 0);
+    _timberMesh.pos.forEach((v) => {
+      vec3.transformQuat(v, rotate2, v);
+    });
   }
 
   // console.dir(_timberMesh.colors);

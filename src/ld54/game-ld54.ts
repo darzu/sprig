@@ -78,7 +78,8 @@ import { addColliderDbgVis, addGizmoChild } from "../utils/utils-game.js";
 
 const RENDER_TRUTH_CUBE = false;
 
-const DBG_GIZMOS = false;
+const DBG_GIZMOS = true;
+const DBG_COLLIDERS = false;
 
 const ld54Meshes = XY.defineMeshSetResource(
   "ld54_meshes",
@@ -262,10 +263,8 @@ const { RaftPropsDef, createRaft, RaftLocalDef } = defineNetEntityHelper({
       aabb,
     });
 
-    if (DBG_GIZMOS) {
-      addColliderDbgVis(raft);
-      addGizmoChild(raft, 20);
-    }
+    if (DBG_COLLIDERS) addColliderDbgVis(raft);
+    if (DBG_GIZMOS) addGizmoChild(raft, 20);
 
     // const pedestal = EM.new();
     // EM.set(pedestal, PositionDef, V(0, 1, 0));
