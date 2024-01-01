@@ -88,7 +88,7 @@ export const CameraFollowDef = EM.defineComponent(
 );
 
 export const CAMERA_OFFSETS = {
-  thirdPerson: V(0, 10, 0),
+  thirdPerson: V(0, -10, 0),
   // thirdPersonOverShoulder: [1, 3, 2],
   thirdPersonOverShoulder: V(2, -4, 2),
   firstPerson: V(0, 0, 0),
