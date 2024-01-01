@@ -18,7 +18,7 @@ import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
 import { shadowPipelines } from "../render/pipelines/std-shadow.js";
 import { RendererDef, RenderableConstructDef } from "../render/renderer-ecs.js";
-import { addGizmoChild } from "../utils/utils-game.js";
+import { addGizmoChild, addWorldGizmo } from "../utils/utils-game.js";
 
 const DBG_GHOST = true;
 const DBG_GIZMO = true;
@@ -59,14 +59,14 @@ export async function initGrayboxShipArena() {
   sun.pointLight.quadratic = 0.0;
   vec3.copy(sun.pointLight.ambient, [0.2, 0.2, 0.2]);
   vec3.copy(sun.pointLight.diffuse, [0.5, 0.5, 0.5]);
-  EM.set(sun, PositionDef, V(50, 300, 10));
+  EM.set(sun, PositionDef, V(50, 10, 300));
 
   // ocean
   const ocean = EM.new();
   EM.set(ocean, ColorDef, ENDESGA16.blue);
   EM.set(ocean, PositionDef, V(0, 0, 0));
   EM.set(ocean, RenderableConstructDef, mesh_cube.proto);
-  EM.set(ocean, ScaleDef, V(100, 0.1, 100));
+  EM.set(ocean, ScaleDef, V(100, 100, 0.1));
 
   createShip();
 
@@ -76,19 +76,11 @@ export async function initGrayboxShipArena() {
     g.position[2] = 5;
 
     // hover near origin
-    // vec3.copy(g.position, [12.51, 21.4, 15.88]);
-    // quat.copy(g.rotation, [0.0, 0.24, 0.0, 0.96]);
-    // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
-    // g.cameraFollow.yawOffset = 0.0;
-    // g.cameraFollow.pitchOffset = -0.74;
-    // g.cameraFollow.priority = 10;
-
-    // cube
-    vec3.copy(g.position, [30.49, 15.98, 50.5]);
-    quat.copy(g.rotation, [0.0, -0.35, 0.0, 0.93]);
+    vec3.copy(g.position, [43.39, -53.9, 67.92]);
+    quat.copy(g.rotation, [0.0, 0.0, 0.24, 0.97]);
     vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
     g.cameraFollow.yawOffset = 0.0;
-    g.cameraFollow.pitchOffset = -0.623;
+    g.cameraFollow.pitchOffset = -0.809;
   }
 
   // gizmo
@@ -96,7 +88,7 @@ export async function initGrayboxShipArena() {
     const pedestal = EM.new();
     EM.set(pedestal, RenderableConstructDef, mesh_hex.proto);
     EM.set(pedestal, ColorDef, ENDESGA16.darkGray);
-    EM.set(pedestal, PositionDef, V(0, -10, 0));
+    EM.set(pedestal, PositionDef, V(0, 0, -10));
     EM.set(pedestal, ScaleDef, V(10, 10, 10));
     EM.set(pedestal, ColliderDef, {
       shape: "AABB",
@@ -104,11 +96,7 @@ export async function initGrayboxShipArena() {
       aabb: mesh_hex.aabb,
     });
 
-    const gizmoMesh = createGizmoMesh();
-    const gizmo = EM.new();
-    EM.set(gizmo, RenderableConstructDef, gizmoMesh);
-    EM.set(gizmo, PositionDef, V(0, 0, 0));
-    EM.set(gizmo, ScaleDef, V(5, 5, 5));
+    addWorldGizmo();
   }
 }
 
@@ -116,12 +104,12 @@ function createShip() {
   // ship
   const ship = EM.new();
   EM.set(ship, ColorDef, ENDESGA16.midBrown);
-  EM.set(ship, PositionDef, V(40, 3, 40));
+  EM.set(ship, PositionDef, V(40, 40, 3));
   const shipMesh = mkCubeMesh();
-  scaleMesh3(shipMesh, [8, 2, 16]);
+  scaleMesh3(shipMesh, [8, 16, 2]);
   EM.set(ship, RenderableConstructDef, shipMesh);
   EM.set(ship, CameraFollowDef);
-  vec3.copy(ship.cameraFollow.positionOffset, [0.0, 0.0, 50.0]);
+  vec3.copy(ship.cameraFollow.positionOffset, [0.0, -50.0, 0]);
   ship.cameraFollow.pitchOffset = -Math.PI * 0.25;
 
   if (DBG_GIZMO) addGizmoChild(ship, 10);
