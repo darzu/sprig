@@ -696,7 +696,7 @@ export const SHIP_SMALL_AABBS: AABB[] = [
 // console.log(`${(shipMaxX + shipMinX) / 2}`);
 
 export const RAFT_MESH = mkCubeMesh();
-scaleMesh3(RAFT_MESH, V(10, 0.6, 5));
+scaleMesh3(RAFT_MESH, V(5, 10, 0.6));
 
 export const BULLET_MESH = mkCubeMesh();
 scaleMesh(BULLET_MESH, 0.3);
