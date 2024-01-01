@@ -2,6 +2,7 @@
 
 import { RUN_UNIT_TESTS, VERBOSE_LOG } from "../flags.js";
 import { testImporters } from "../meshes/import-obj.js";
+import { testMath } from "./math.js";
 import { Serializer, Deserializer } from "./serialize.js";
 import { assert, testPackUnpackI16 } from "./util.js";
 
@@ -29,6 +30,7 @@ export function test() {
   testSerializeDeserialzers();
   testImporters();
   testPackUnpackI16();
+  testMath();
 
   const end = performance.now();
   console.log(`<<< ENDING TESTS (${(end - start).toFixed(1)}ms)`);

@@ -1906,6 +1906,41 @@ openvdb:
   C++ library for volumetric rendering stuff used by... everyone?
   https://www.openvdb.org
 
+Shaders For People Who Don't Know How To Shader, a tutorial series for beginners!:
+  https://github.com/Xibanya/ShaderTutorials
+
+Great graphics vids:
+  https://www.youtube.com/@simondev758
+  https://store.steampowered.com/app/1270580/Mind_Over_Magic/
+  https://github.com/simondevyoutube/Quick_Grass
+  
 RESTIR:
   https://interplayoflight.wordpress.com/2023/12/17/a-gentler-introduction-to-restir/
   https://twitter.com/h3r2tic/status/1488368086621343749?lang=en
+
+Wgsl history explanation:
+  https://news.ycombinator.com/item?id=38738820
+
+Ray tracing from scratch:
+  https://johanneshoff.com/raytrace-mirror/
+  https://www.gabrielgambetta.com/computer-graphics-from-scratch/00-introduction.html
+  https://www.scratchapixel.com/lessons/3d-basic-rendering/introduction-to-ray-tracing/how-does-it-work.html
+  https://raytracing.github.io
+
+"What do you get when you combine... ah never mind, I call this one "Potato Lumen" 😛
+... because it uses a Lumen-style screen-space radiance cache, but aims to run on potato GPUs, tracing only 1 ray for every 16 pixels.
+How do I feed it so sparsely? ReSTIR of course 🤣🫒🛢️":
+  https://twitter.com/h3r2tic/status/1655494432496517121
+
+How Video Games Work:
+  https://www.youtube.com/watch?v=C8YtdC8mxTU
+
+Introduction to Computer Graphics
+  https://www.youtube.com/@cem_yuksel
+
+lisyarus/Lisitsa Nikita's Web GPU demo (C++):
+  https://github.com/lisyarus/webgpu-demo
+    uses: https://github.com/gfx-rs/wgpu-native
+
+"High Performance Voxel Engine: Vertex Pooling":
+  https://nickmcd.me/2021/04/04/high-performance-voxel-engine/

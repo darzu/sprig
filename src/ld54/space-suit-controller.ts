@@ -38,10 +38,10 @@ EM.addEagerInit([SpaceSuitDef], [], [], () => {
         // 6-DOF translation
         if (res.inputs.keyDowns["a"]) e.spaceSuit.localAccel[0] -= speed;
         if (res.inputs.keyDowns["d"]) e.spaceSuit.localAccel[0] += speed;
-        if (res.inputs.keyDowns["w"]) e.spaceSuit.localAccel[2] -= speed;
-        if (res.inputs.keyDowns["s"]) e.spaceSuit.localAccel[2] += speed;
-        if (res.inputs.keyDowns[" "]) e.spaceSuit.localAccel[1] += speed;
-        if (res.inputs.keyDowns["c"]) e.spaceSuit.localAccel[1] -= speed;
+        if (res.inputs.keyDowns["w"]) e.spaceSuit.localAccel[1] += speed;
+        if (res.inputs.keyDowns["s"]) e.spaceSuit.localAccel[1] -= speed;
+        if (res.inputs.keyDowns[" "]) e.spaceSuit.localAccel[2] += speed;
+        if (res.inputs.keyDowns["c"]) e.spaceSuit.localAccel[2] -= speed;
 
         const rotatedAccel = vec3.transformQuat(
           e.spaceSuit.localAccel,
@@ -67,23 +67,23 @@ EM.addEagerInit([SpaceSuitDef], [], [], () => {
         vec3.add(e.linearVelocity, rotatedAccel, e.linearVelocity);
 
         // camera rotation
-        quat.rotateY(
+        quat.yaw(
           e.rotation,
-          -res.inputs.mouseMov[0] * e.spaceSuit.turnSpeed,
+          res.inputs.mouseMov[0] * e.spaceSuit.turnSpeed,
           e.rotation
         );
 
-        quat.rotateX(
+        quat.pitch(
           e.rotation,
           -res.inputs.mouseMov[1] * e.spaceSuit.turnSpeed,
           e.rotation
         );
 
         let rollSpeed = 0;
-        if (res.inputs.keyDowns["q"]) rollSpeed = 1;
-        if (res.inputs.keyDowns["e"]) rollSpeed = -1;
+        if (res.inputs.keyDowns["q"]) rollSpeed = -1;
+        if (res.inputs.keyDowns["e"]) rollSpeed = +1;
 
-        quat.rotateZ(e.rotation, rollSpeed * e.spaceSuit.rollSpeed, e.rotation);
+        quat.roll(e.rotation, rollSpeed * e.spaceSuit.rollSpeed, e.rotation);
 
         // sword
         if (e.spaceSuit.swingingSword) {

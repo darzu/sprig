@@ -145,15 +145,16 @@ export function compute_gerstner(
     const _cos = Math.cos(dot_w_d_uv_phi_t);
     const _sin = Math.sin(dot_w_d_uv_phi_t);
     outDisp[0] += wave.Q * wave.A * D[0] * _cos;
-    outDisp[2] += wave.Q * wave.A * D[1] * _cos;
-    outDisp[1] -= wave.A * _sin;
+    outDisp[1] += wave.Q * wave.A * D[1] * _cos;
+    // outDisp[2] -= wave.A * _sin;
+    outDisp[2] += wave.A * _sin;
 
     outNorm[0] += -1.0 * D[0] * wave.w * wave.A * _cos * wave.normalWeight;
-    outNorm[2] += -1.0 * D[1] * wave.w * wave.A * _cos * wave.normalWeight;
-    outNorm[1] += wave.Q * wave.w * wave.A * _sin * wave.normalWeight;
+    outNorm[1] += -1.0 * D[1] * wave.w * wave.A * _cos * wave.normalWeight;
+    outNorm[2] += wave.Q * wave.w * wave.A * _sin * wave.normalWeight;
   }
   // TODO(@darzu): this expression seems troubling; `1.0 -` before normalizing?!
-  outNorm[1] = 1.0 - outNorm[1];
+  outNorm[2] = 1.0 - outNorm[2];
   vec3.normalize(outNorm, outNorm);
 }
 

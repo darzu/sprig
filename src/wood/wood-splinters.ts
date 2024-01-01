@@ -192,13 +192,12 @@ EM.addEagerInit([SplinterParticleDef], [], [], () => {
     [],
     (splinters, res) => {
       for (let s of splinters) {
-        if (s.position[1] <= 0) {
-          // TODO(@darzu): zero these instead of remove?
-          EM.removeComponent(s.id, LinearVelocityDef);
-          EM.removeComponent(s.id, GravityDef);
-          EM.removeComponent(s.id, AngularVelocityDef);
+        if (s.position[2] < 0) {
+          vec3.zero(s.linearVelocity);
+          vec3.zero(s.gravity);
+          vec3.zero(s.angularVelocity);
 
-          s.position[1] = 0;
+          s.position[2] = 0;
           quat.identity(s.rotation);
           quat.rotateX(s.rotation, Math.PI * 0.5, s.rotation);
           quat.rotateZ(s.rotation, Math.PI * Math.random(), s.rotation);

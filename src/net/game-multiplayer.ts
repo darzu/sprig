@@ -33,6 +33,7 @@ import { MeDef } from "./components.js";
 import { TimeDef } from "../time/time.js";
 import { eventWizard } from "./events.js";
 import { assert } from "../utils/util.js";
+import { addGizmoChild, addWorldGizmo } from "../utils/utils-game.js";
 
 const mpMeshes = XY.defineMeshSetResource(
   "mp_meshes",
@@ -116,12 +117,13 @@ const {
       e.controllable.modes.canJump = true;
       e.controllable.modes.canFly = false;
       EM.set(e, CameraFollowDef, 1);
-      quat.setAxisAngle([0.0, -1.0, 0.0], 1.62, e.rotation);
+      // quat.setAxisAngle([0.0, -1.0, 0.0], 1.62, e.rotation);
+
       e.controllable.speed *= 2;
       e.controllable.sprintMul = 1;
-      vec3.copy(e.cameraFollow.positionOffset, [0.0, 4.0, 10.0]);
-      e.cameraFollow.yawOffset = 0.0;
-      e.cameraFollow.pitchOffset = -0.593;
+      vec3.copy(e.cameraFollow.positionOffset, [0.0, -10.0, 4.0]);
+      // e.cameraFollow.yawOffset = 0.0;
+      // e.cameraFollow.pitchOffset = -0.593;
 
       console.log(`player has .controllable`);
     }
@@ -142,7 +144,7 @@ const { MpRaftPropsDef, createMpRaft } = defineNetEntityHelper({
   build: (platform, res) => {
     EM.set(platform, RenderableConstructDef, res.mp_meshes.cubeRaft.proto);
     EM.set(platform, ColorDef, ENDESGA16.darkGreen);
-    EM.set(platform, PositionDef, V(0, 5, 0));
+    EM.set(platform, PositionDef, V(0, 0, 5));
     EM.set(platform, ColliderDef, {
       shape: "AABB",
       solid: true,
@@ -150,7 +152,7 @@ const { MpRaftPropsDef, createMpRaft } = defineNetEntityHelper({
     });
 
     const obstacle = EM.new();
-    EM.set(obstacle, PositionDef, V(0, 1, 0));
+    EM.set(obstacle, PositionDef, V(0, 0, 1));
     EM.set(obstacle, RenderableConstructDef, res.mp_meshes.hex.proto);
     EM.set(obstacle, ColorDef, ENDESGA16.white);
     EM.set(obstacle, ColliderDef, {
@@ -159,6 +161,8 @@ const { MpRaftPropsDef, createMpRaft } = defineNetEntityHelper({
       aabb: res.mp_meshes.hex.aabb,
     });
     EM.set(obstacle, PhysicsParentDef, platform.id);
+
+    addGizmoChild(obstacle, 3);
   },
 });
 
@@ -193,7 +197,7 @@ async function setLevelLocal(levelIdx: number) {
   const ground = EM.new();
   EM.set(ground, RenderableConstructDef, mp_meshes.hex.proto);
   EM.set(ground, ColorDef, ENDESGA16.blue);
-  EM.set(ground, PositionDef, V(0, -10, 0));
+  EM.set(ground, PositionDef, V(0, 0, -10));
   EM.set(ground, ScaleDef, V(10, 10, 10));
   EM.set(ground, ColliderDef, {
     shape: "AABB",
@@ -241,21 +245,17 @@ export async function initMPGame() {
   // EM.set(sun, PositionDef, V(100, 100, 0));
   // EM.set(sun, PositionDef, V(-10, 10, 10));
   EM.set(sun, PositionDef, V(100, 100, 100));
-  EM.set(sun, LinearVelocityDef, V(0.001, 0.001, 0.0));
+  EM.set(sun, LinearVelocityDef, V(0.001, 0, 0.001));
   EM.set(sun, RenderableConstructDef, mp_meshes.ball.proto, false);
   sun.pointLight.constant = 1.0;
   sun.pointLight.linear = 0.0;
   sun.pointLight.quadratic = 0.0;
   vec3.copy(sun.pointLight.ambient, [0.2, 0.2, 0.2]);
   vec3.copy(sun.pointLight.diffuse, [0.5, 0.5, 0.5]);
-  EM.set(sun, PositionDef, V(50, 300, 10));
+  EM.set(sun, PositionDef, V(50, 10, 300));
 
   // gizmo
-  const gizmoMesh = createGizmoMesh();
-  const gizmo = EM.new();
-  EM.set(gizmo, RenderableConstructDef, gizmoMesh);
-  EM.set(gizmo, PositionDef, V(0, 1, 0));
-  EM.set(gizmo, ScaleDef, V(2, 2, 2));
+  addWorldGizmo(vec3.ZEROS, 5);
 
   // raft
   if (me.host) {
@@ -274,9 +274,9 @@ export async function initMPGame() {
         const r = 20;
         const x = Math.cos(t) * r;
         const y = Math.sin(t) * r;
-        platform.position[0] = y;
-        platform.position[2] = x;
-        quat.fromEuler(0, t, 0, platform.rotation);
+        platform.position[0] = x;
+        platform.position[1] = y;
+        quat.fromYawPitchRoll(-t, 0, 0, platform.rotation);
       }
     );
   }
@@ -285,5 +285,5 @@ export async function initMPGame() {
 
   // player
   const color = AllEndesga16[me.pid + 4 /*skip browns*/];
-  createMpPlayer(V(0, 10, 0), color, raft.id);
+  createMpPlayer(V(0, 0, 10), color, raft.id);
 }

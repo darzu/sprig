@@ -1,4 +1,12 @@
-import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import {
+  vec2,
+  vec3,
+  vec4,
+  quat,
+  mat4,
+  V,
+  orthonormalize,
+} from "../matrix/sprig-matrix.js";
 import { avg, mathMap } from "./math.js";
 import { AABB, createAABB, getAABBFromPositions } from "../physics/aabb.js";
 import { tempVec2, tempVec3 } from "../matrix/temp-pool.js";
@@ -56,15 +64,8 @@ export function randQuat(out?: quat): quat {
 }
 
 // matrix utilities
-export function pitch(m: mat4, rad: number) {
-  return mat4.rotateX(m, rad, m);
-}
-export function yaw(m: mat4, rad: number) {
-  return mat4.rotateY(m, rad, m);
-}
-export function roll(m: mat4, rad: number) {
-  return mat4.rotateZ(m, rad, m);
-}
+// TODO(@darzu): most of these should move to sprig-matrix
+
 export function moveX(m: mat4, n: number) {
   return mat4.translate(m, [n, 0, 0], m);
 }
@@ -145,35 +146,26 @@ export function vec3Mid(out: vec3, a: vec3, b: vec3): vec3 {
   return out;
 }
 
-// mutates forward and upish and outputs to outRight such that all three are
-//  orthogonal to eachother.
-export function orthonormalize(forward: vec3, upish: vec3, outRight: vec3) {
-  // TODO(@darzu): there's a pattern somewhat similar in many places:
-  //    orthonormalizing, Gram–Schmidt
-  //    quatFromUpForward, getControlPoints, tripleProd?
-  //    targetTo, lookAt ?
-  // Also this can be more efficient by inlining
-  vec3.normalize(forward, forward);
-  vec3.cross(forward, upish, outRight);
-  vec3.normalize(outRight, outRight);
-  vec3.cross(outRight, forward, upish);
-}
-
 // quat utilities
+// TODO(@darzu): replace all usages with the new, better version in sprig-matrix
+// TODO(@darzu): This impl assumes +y is up, +z is fwd
 // assumes local up axis is [0,1,0] and forward is [0,0,1]
+// TODO(@darzu): Z_UP: merge into sprig-matrix
 const __t1 = vec3.create();
 const __t2 = vec3.create();
-export function quatFromUpForward(
+export function quatFromUpForward_OLD(
   out: quat,
   up: vec3.InputT,
   forwardish: vec3.InputT
 ): quat {
   // https://stackoverflow.com/questions/52413464/look-at-quaternion-using-up-vector/52551983#52551983
+  // TODO(@darzu): swap this with orthonormalize()
   const side = vec3.cross(forwardish, up, __t1);
   vec3.negate(side, side); // TODO(@darzu): is this negate right?
   vec3.normalize(side, side);
   const backward = vec3.cross(side, up, __t2);
 
+  // TODO(@darzu): replace this with using quat.fromMat3
   const trace = side[0] + up[1] + backward[2];
   if (trace > 0.0) {
     const s = 0.5 / Math.sqrt(trace + 1.0);
@@ -372,7 +364,7 @@ export function frustumFromBounds(
   mat4.mul(projTmp, viewTmp, outFrust);
 }
 
-export const UP = V(0, 1, 0); // TODO(@darzu): formalize coordinate system somewhere?
+// TODO(@darzu): Z_UP: we probably don't need angleBetweenPosXZ instead of just XY
 const __angleBetweenXZTmp0 = vec3.create();
 const __angleBetweenXZTmp1 = vec3.create();
 const __angleBetweenXZTmp2 = vec3.create();

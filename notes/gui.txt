@@ -107,3 +107,10 @@ Library code "stats" panel:
   basically all effects on the system that can be quantified
   perhaps libraries always have a standard control panel that enables/disables features and the
     effects list is updated in real-time
+
+UI principles resources:
+  https://www.refactoringui.com
+  https://developer.apple.com/design/human-interface-guidelines
+
+Modern iOS Navigation Patterns:
+  https://frankrausch.com/ios-navigation

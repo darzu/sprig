@@ -140,7 +140,7 @@ EM.addEagerInit([CannonPropsDef], [], [], () => {
           g,
           // 2.0,
           20.0,
-          [0, 0, -1]
+          [0, 1, 0]
         );
       }
 

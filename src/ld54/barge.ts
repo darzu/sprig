@@ -1,3 +1,4 @@
+import { transformYUpModelIntoZUp } from "../camera/basis.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { mat4, quat, vec3 } from "../matrix/sprig-matrix.js";
 import { V } from "../matrix/sprig-matrix.js";
@@ -43,6 +44,8 @@ import {
   reserveSplinterSpace,
   WoodState,
 } from "../wood/wood.js";
+
+// TODO(@darzu): HUGE HACK. De-dupe w/ other ship
 
 const railColor = ENDESGA16.darkBrown;
 const keelColor = ENDESGA16.darkBrown;
@@ -290,7 +293,7 @@ export function createSpaceBarge(): SpaceBarge {
   }
   const railNodes = ribCount + 2;
   const railPath = createPathFromBezier(railCurve, railNodes, [0, 1, 0]);
-  fixPathBasis(railPath, [0, 1, 0], [0, 0, 1], [1, 0, 0]);
+  // fixPathBasis(railPath, [0, 1, 0], [0, 0, 1], [1, 0, 0]);
 
   // let ribEnds: vec3[] = [];
   let ribPaths: Path[] = [];
@@ -340,7 +343,7 @@ export function createSpaceBarge(): SpaceBarge {
 
       const numRibSegs = 8;
       const bPath = createPathFromBezier(ribCurve, numRibSegs, [1, 0, 0]);
-      fixPathBasis(bPath, [0, 1, 0], [0, 0, 1], [1, 0, 0]);
+      // fixPathBasis(bPath, [0, 1, 0], [0, 0, 1], [1, 0, 0]);
       ribPaths.push(bPath);
 
       // if (i === 0) {
@@ -434,7 +437,7 @@ export function createSpaceBarge(): SpaceBarge {
         );
         // even.reverse();
         // translatePath(even, [0, 0, 10]);
-        fixPathBasis(even, [0, 0, 1], [0, 1, 0], [-1, 0, 0]);
+        // fixPathBasis(even, [0, 0, 1], [0, 1, 0], [-1, 0, 0]);
         translatePathAlongNormal(even, ribDepth); // + 0.3);
         // fixPathBasis(even, [0, 1, 0], [1, 0, 0], [0, 0, -1]);
         // dbgPathWithGizmos(even);
@@ -505,6 +508,9 @@ export function createSpaceBarge(): SpaceBarge {
         vec3.add(second.pos, diff, first.pos);
         nodes.unshift(first);
       }
+
+      fixPathBasis(nodes, [0, 1, 0], [0, 0, 1], [1, 0, 0]);
+
       plankPaths.push(nodes);
 
       let mirroredPath = mirrorPath(clonePath(nodes), [0, 0, 1]);
@@ -558,6 +564,7 @@ export function createSpaceBarge(): SpaceBarge {
       // dbgPathWithGizmos(path);
       for (let n of path) {
         quat.fromEuler(-Math.PI / 2, 0, Math.PI / 2, n.rot);
+        // TODO(@darzu): Z_UP rotateY
         quat.rotateY(n.rot, -Math.PI / 16, n.rot);
       }
       let color = transomColor;
@@ -691,6 +698,16 @@ export function createSpaceBarge(): SpaceBarge {
     _timberMesh.pos.forEach((v) => {
       vec3.transformQuat(v, rotate, v);
       vec3.add(v, [0, -floorHeight, 0], v);
+    });
+
+    // TODO(@darzu): Z_UP: basis change. inline this above?
+    _timberMesh.pos.forEach((v) =>
+      vec3.transformMat4(v, transformYUpModelIntoZUp, v)
+    );
+
+    const rotate2 = quat.fromYawPitchRoll(Math.PI, 0, 0);
+    _timberMesh.pos.forEach((v) => {
+      vec3.transformQuat(v, rotate2, v);
     });
   }
 

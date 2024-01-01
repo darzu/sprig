@@ -40,8 +40,8 @@ export function createDock() {
   const timberHealth = createWoodHealth(wood);
   EM.set(dock, WoodHealthDef, timberHealth);
   const timberAABB = getAABBFromMesh(mesh);
-  timberAABB.min[1] = -100;
-  timberAABB.max[1] = 100;
+  timberAABB.min[2] = -100;
+  timberAABB.max[2] = 100;
   EM.set(dock, ColliderDef, {
     shape: "AABB",
     solid: false,
@@ -68,13 +68,13 @@ export function createDockWood(): [Mesh, WoodState] {
   for (let i = 0; i < numPlanks; i++) {
     const x = plankWidth * i;
     const start = V(x, 0, 0);
-    const end = V(x, 0, plankLength);
+    const end = V(x, plankLength, 0);
 
     const positions = lerpBetween(start, end, plankSegNum - 2);
 
     const path: Path = positions.map((pos) => ({
       pos,
-      rot: quat.fromEuler(Math.PI / 2, 0, 0, quat.create()),
+      rot: quat.fromEuler(0, 0, 0, quat.create()),
     }));
 
     // dbgPathWithGizmos(path);

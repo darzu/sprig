@@ -1,5 +1,5 @@
 import { align } from "../utils/math.js";
-import { assert, assertDbg, dbgAddBlame } from "../utils/util.js";
+import { assert, assertDbg } from "../utils/util.js";
 import { dbgLogOnce, isNumber } from "../utils/util.js";
 import {
   CyStructDesc,
@@ -24,6 +24,7 @@ import { BLACK } from "../meshes/mesh-list.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { GPUBufferUsage } from "./webgpu-hacks.js";
 import { PERF_DBG_GPU, PERF_DBG_GPU_BLAME } from "../flags.js";
+import { dbgAddBlame } from "../utils/util-no-import.js";
 
 export interface CyBuffer<O extends CyStructDesc> {
   struct: CyStruct<O>;

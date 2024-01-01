@@ -6,9 +6,10 @@ import { FALSE, dbgLogOnce } from "../utils/util.js";
 import { Phase } from "../ecs/sys-phase.js";
 
 // Axis:
-//  z is positive forward
-//  x is positive to the right
-//  y is positive up
+//  x+ is right
+//  y+ is forward
+//  z+ is up
+//  (right-handed, Z up)
 
 // TODO(@darzu): implement local transform instead of Motion's position & rotation?
 //  one problem is that the order in which you interleave rotation/translations matters if it

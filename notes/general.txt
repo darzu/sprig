@@ -1474,3 +1474,26 @@ How To Ask Questions The Smart Way:
 TS + WebGL game on 6 platforms:
   https://ruoyusun.com/2023/10/12/one-game-six-platforms.html
   https://github.com/ValveSoftware/steam-runtime/issues/579
+
+Game of many crafts:
+  Stain glass, wood working, metal forging, mosaic, painting, water color, etc.
+  _The game shader updates based on what you've spent time doing_
+    So after woodworking, everything looks like Potion Craft
+    After stain glass, everything has a stain glass shader
+    After water coloring, everything is splotchy, painterly
+  fades back to normal shader after a while
+
+Better source control than git?
+  - ability to track changes, not just snapshots
+  - keep renaming metadata
+  https://www.fossil-scm.org/home/doc/trunk/www/index.wiki
+
+Bazaar vs cathedral style development:
+  https://opensource.stackexchange.com/questions/511/whats-the-difference-between-bazaar-style-and-cathedral-style-open-source-proje
+  https://www.fossil-scm.org/home/doc/trunk/www/fossil-v-git.wiki
+
+ECS dead:
+  mem cpy end to dead slot
+
+one reviewers opinion on gaming masterpieces:
+  "game masterpieces like Journey, Edith Finch, Goragoa, Unfinished Swan, Okami, and Shadow of the Colossus. "

@@ -182,11 +182,11 @@ EM.addEagerInit([TurretDef], [], [], () => {
         if (c.turret.mannedId !== player.id) continue;
         if (c.turret.keyboardControls) {
           if (res.inputs.keyDowns["a"])
-            c.yawpitch.yaw += c.turret.keyboardSpeed * 0.005;
-          if (res.inputs.keyDowns["d"])
             c.yawpitch.yaw -= c.turret.keyboardSpeed * 0.005;
+          if (res.inputs.keyDowns["d"])
+            c.yawpitch.yaw += c.turret.keyboardSpeed * 0.005;
         } else {
-          c.yawpitch.yaw += -res.inputs.mouseMov[0] * 0.005;
+          c.yawpitch.yaw += res.inputs.mouseMov[0] * 0.005;
         }
         c.yawpitch.yaw = clamp(
           c.yawpitch.yaw,

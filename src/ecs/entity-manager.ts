@@ -9,12 +9,12 @@ import {
 } from "../flags.js";
 import { vec3 } from "../matrix/sprig-matrix.js";
 import { Serializer, Deserializer } from "../utils/serialize.js";
+import { getCallStack } from "../utils/util-no-import.js";
 import {
   assert,
   assertDbg,
   dbgLogOnce,
   dbgOnce,
-  getCallStack,
   hashCode,
   Intersect,
   isPromise,
@@ -290,6 +290,8 @@ export class EntityManager {
     return def;
   }
 
+  // TODO(@darzu): allow components to specify sibling components or component sets
+  //  so that if the marker component is present, the others will be also
   public defineComponent<N extends string, P, UArgs extends any[] = []>(
     name: N,
     construct: () => P,
@@ -644,6 +646,7 @@ export class EntityManager {
     return c;
   }
 
+  // TODO(@darzu): replace most (all?) usage with addResource
   public ensureResource<N extends string, P, Pargs extends any[] = any[]>(
     def: ResourceDef<N, P, Pargs>,
     ...args: Pargs

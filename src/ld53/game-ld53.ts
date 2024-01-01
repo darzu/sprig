@@ -22,7 +22,12 @@ import {
   ScaleDef,
 } from "../physics/transform.js";
 import { PointLightDef } from "../render/lights.js";
-import { cloneMesh, Mesh, RiggedMesh } from "../meshes/mesh.js";
+import {
+  cloneMesh,
+  getAABBFromMesh,
+  Mesh,
+  RiggedMesh,
+} from "../meshes/mesh.js";
 import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
@@ -37,7 +42,6 @@ import {
   RiggedRenderableConstructDef,
 } from "../render/renderer-ecs.js";
 import { mat3, quat, tV, V, vec2, vec3 } from "../matrix/sprig-matrix.js";
-import { quatFromUpForward, vec3Dbg } from "../utils/utils-3d.js";
 import { DevConsoleDef } from "../debug/console.js";
 import { clamp, jitter, max } from "../utils/math.js";
 import { assert, dbgLogMilestone, dbgOnce } from "../utils/util.js";
@@ -70,12 +74,12 @@ import { LandMapTexPtr, LevelMapDef, setMap } from "../levels/level-map.js";
 import { setWindAngle, WindDef } from "../wind/wind.js";
 import {
   Ld53ShipPropsDef,
-  ShipDef,
+  LD52ShipDef,
   cannonDefaultPitch,
   createLd53ShipAsync,
 } from "./ship.js";
 import { SAIL_FURL_RATE } from "../wind/sail.js";
-import { spawnStoneTower, StoneTowerDef, towerPool } from "../stone/stone.js";
+import { StoneTowerDef, TowerPoolDef } from "../stone/stone.js";
 import { LandDef } from "./land-collision.js";
 import { DeadDef } from "../ecs/delete.js";
 import { BulletDef, breakBullet } from "../cannons/bullet.js";
@@ -101,6 +105,9 @@ import { XY } from "../meshes/mesh-loader.js";
 import { MotionSmoothingDef } from "../render/motion-smoothing.js";
 import { TeleportDef } from "../physics/teleport.js";
 import { eventWizard } from "../net/events.js";
+import { drawUpdatingVector } from "../utils/util-vec-dbg.js";
+import { vec2Dbg, vec3Dbg } from "../utils/utils-3d.js";
+import { addWorldGizmo } from "../utils/utils-game.js";
 /*
 NOTES:
 - Cut grass by updating a texture that has cut/not cut or maybe cut-height
@@ -116,15 +123,17 @@ PERF:
 [ ] reduce triangles on ocean
 */
 
-const DBG_PLAYER = true;
+const DBG_PLAYER = false;
 const DBG_HIDE_LAND = false;
-const DBG_HIDE_WATER = true;
+const DBG_HIDE_WATER = false;
+
+const START_LEVEL_IDX = 0;
 
 // const SHIP_START_POS = V(100, 0, -100);
 
 // world map is centered around 0,0
-const WORLD_WIDTH = 1024; // width runs +z
-const WORLD_HEIGHT = 512; // height runs +x
+const WORLD_WIDTH = 1024; // width runs +x
+const WORLD_HEIGHT = 512; // height runs +y
 
 const MOTORBOAT_MODE = false;
 
@@ -136,18 +145,13 @@ const MOTORBOAT_MODE = false;
 
 // const WORLD_HEIGHT = 1024;
 
-const worldXToTexY = (x: number) => Math.floor(x + WORLD_HEIGHT / 2);
-const worldZToTexX = (z: number) => Math.floor(z + WORLD_WIDTH / 2);
-const texXToWorldZ = (x: number) => x - WORLD_WIDTH / 2 + 0.5;
-const texYToWorldX = (y: number) => y - WORLD_HEIGHT / 2 + 0.5;
+const worldXToTexX = (x: number) => Math.floor(x + WORLD_WIDTH / 2);
+const worldYToTexY = (y: number) => Math.floor(y + WORLD_HEIGHT / 2);
+const texXToWorldX = (x: number) => x + 0.5 - WORLD_WIDTH / 2;
+const texYToWorldY = (y: number) => y + 0.5 - WORLD_HEIGHT / 2;
 
-const level2DtoWorld3D = (levelPos: vec2, y: number, out: vec3) =>
-  vec3.set(
-    texYToWorldX(WORLD_HEIGHT - 1 - levelPos[1]),
-    y,
-    texXToWorldZ(levelPos[0]),
-    out
-  );
+const level2DtoWorld3D = (levelPos: vec2, z: number, out: vec3) =>
+  vec3.set(texXToWorldX(levelPos[0]), texYToWorldY(levelPos[1]), z, out);
 
 export const mapJfa = createJfaPipelines(LandMapTexPtr, "exterior");
 
@@ -201,7 +205,7 @@ async function hostResetLevel(levelIdx: number) {
   const ship = await EM.whenSingleEntity(
     PositionDef,
     RotationDef,
-    ShipDef,
+    LD52ShipDef,
     LinearVelocityDef,
     ShipHealthDef,
     WoodHealthDef,
@@ -221,8 +225,9 @@ async function hostResetLevel(levelIdx: number) {
 
   // move ship to map start pos
   level2DtoWorld3D(levelMap.startPos, 8, ship.position);
-  quat.identity(ship.rotation);
   vec3.set(0, 0, 0, ship.linearVelocity);
+  quat.identity(ship.rotation);
+  quat.yaw(ship.rotation, Math.PI / 2, ship.rotation);
 
   // reset ship sails and rudder
   const sail = ship.ld52ship.mast()!.mast.sail()!.sail;
@@ -231,10 +236,8 @@ async function hostResetLevel(levelIdx: number) {
   ship.ld52ship.rudder()!.yawpitch.yaw = 0;
 
   // set map wind angle
-  setWindAngle(
-    wind,
-    Math.atan2(-levelMap.windDir[0], -levelMap.windDir[1]) + Math.PI / 2
-  );
+  const wingAngle = Math.atan2(levelMap.windDir[1], levelMap.windDir[0]);
+  setWindAngle(wind, wingAngle);
 
   // reset cannon orientations
   ship.ld52ship.cannonR()!.yawpitch.pitch = cannonDefaultPitch;
@@ -294,7 +297,10 @@ async function setLevelLocal(levelIdx: number) {
   await setMap(MapPaths[levelIdx]);
   await resetLand();
 
-  const { levelMap } = await EM.whenResources(LevelMapDef);
+  const { levelMap, towerPool } = await EM.whenResources(
+    LevelMapDef,
+    TowerPoolDef
+  );
 
   // TODO(@darzu): MULTIPLAYER towers!
   const towers = EM.filterEntities([StoneTowerDef]);
@@ -306,14 +312,14 @@ async function setLevelLocal(levelIdx: number) {
   const tower3dPosesAndDirs: [vec3, number][] = levelMap.towers.map(
     ([tPos, tDir]) => [
       level2DtoWorld3D(tPos, STONE_TOWER_HEIGHT, vec3.create()),
-      Math.atan2(-tDir[0], -tDir[1]),
+      Math.atan2(tDir[1], tDir[0]),
     ]
   );
 
   for (let [pos, angle] of tower3dPosesAndDirs) {
-    const stoneTower = await spawnStoneTower();
+    const stoneTower = towerPool.spawn();
     vec3.copy(stoneTower.position, pos);
-    quat.setAxisAngle([0, 1, 0], angle, stoneTower.rotation);
+    quat.setAxisAngle([0, 0, 1], angle, stoneTower.rotation);
   }
 
   dbgLogMilestone("Game playable");
@@ -332,6 +338,65 @@ export async function initLD53(hosting: boolean) {
     MeDef
   );
 
+  if (DBG_PLAYER) {
+    const sphereMesh = cloneMesh(res.ld53Meshes.ball.mesh);
+    const g = createGhost(sphereMesh, false);
+    // vec3.copy(g.position, [0, 1, -1.2]);
+    // quat.setAxisAngle([0.0, -1.0, 0.0], 1.62, g.rotation);
+    // g.cameraFollow.positionOffset = V(0, 0, 5);
+    g.controllable.speed *= 2.0;
+    g.controllable.sprintMul = 15;
+    EM.set(g, ColorDef, V(0.1, 0.1, 0.1));
+    // EM.set(g, PositionDef, V(0, 0, 0));
+    // EM.set(b2, PositionDef, [0, 0, -1.2]);
+    EM.set(g, WorldFrameDef);
+    // EM.set(b2, PhysicsParentDef, g.id);
+    EM.set(g, ColliderDef, {
+      shape: "AABB",
+      solid: false,
+      aabb: res.ld53Meshes.ball.aabb,
+    });
+
+    // vec3.copy(g.position, [-399.61, -333.9, 113.58]);
+    // quat.copy(g.rotation, [0.0, 0.0, 0.01, 1.0]);
+    // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
+    // g.cameraFollow.yawOffset = 0.0;
+    // g.cameraFollow.pitchOffset = 2.937;
+
+    // hover above ship:
+    // vec3.copy(g.position, [-369.29, -22.97, 28.91]);
+    // quat.copy(g.rotation, [0.0, 0.0, -0.47, 0.88]);
+    // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
+    // g.cameraFollow.yawOffset = 0.0;
+    // // g.cameraFollow.pitchOffset = 2.631;
+    // g.cameraFollow.pitchOffset = 0.0;
+
+    // stone tower:
+    // vec3.copy(g.position, [-25.81, 115.83, 72.91]);
+    // quat.copy(g.rotation, [0.0, 0.0, -0.49, 0.87]);
+    // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
+    // g.cameraFollow.yawOffset = 0.0;
+    // g.cameraFollow.pitchOffset = -0.522;
+
+    vec3.copy(g.position, [-387.88, -118.78, 128.91]);
+    quat.copy(g.rotation, [0.0, 0.0, -0.2, 0.98]);
+    vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
+    g.cameraFollow.yawOffset = 0.0;
+    g.cameraFollow.pitchOffset = -0.858;
+
+    EM.addSystem(
+      "smolGhost",
+      Phase.GAME_WORLD,
+      [GhostDef, WorldFrameDef, ColliderDef],
+      [InputsDef, HasFirstInteractionDef],
+      async (ps, { inputs }) => {
+        if (!ps.length) return;
+
+        const ghost = ps[0];
+      }
+    );
+  }
+
   // TODO(@darzu): HACK. these have to be set before the CY instantiator runs.
   outlineRender.fragOverrides!.lineWidth = 1.0;
 
@@ -339,8 +404,8 @@ export async function initLD53(hosting: boolean) {
   copyAABB(
     res.camera.maxWorldAABB,
     createAABB(
-      V(-WORLD_HEIGHT * 1.1, -100, -WORLD_WIDTH * 1.1),
-      V(WORLD_HEIGHT * 1.1, 100, WORLD_WIDTH * 1.1)
+      V(-WORLD_WIDTH * 1.1, -WORLD_HEIGHT * 1.1, -100),
+      V(WORLD_WIDTH * 1.1, WORLD_HEIGHT * 1.1, 100)
     )
   );
 
@@ -379,7 +444,7 @@ export async function initLD53(hosting: boolean) {
   sunlight.pointLight.quadratic = 0.0;
   vec3.copy(sunlight.pointLight.ambient, [0.2, 0.2, 0.2]);
   vec3.copy(sunlight.pointLight.diffuse, [0.5, 0.5, 0.5]);
-  EM.set(sunlight, PositionDef, V(50, 300, 10));
+  EM.set(sunlight, PositionDef, V(50, 10, 300));
   EM.set(sunlight, RenderableConstructDef, res.ld53Meshes.ball.proto);
 
   // // pirate test
@@ -406,7 +471,7 @@ export async function initLD53(hosting: boolean) {
   // start map
   // TODO(@darzu): MULTIPLAYER:
   if (res.me.host) {
-    raiseSetLevel(0);
+    raiseSetLevel(START_LEVEL_IDX);
   }
   // const landPromise = setLevelLocal(0);
   // await setMap(MapPaths[0]);
@@ -417,7 +482,7 @@ export async function initLD53(hosting: boolean) {
   const SKY_HALFSIZE = 1000;
   const domeMesh = makeDome(16, 8, SKY_HALFSIZE);
   const sky = EM.new();
-  EM.set(sky, PositionDef, V(0, -100, 0));
+  EM.set(sky, PositionDef, V(0, 0, -100));
   // const skyMesh = cloneMesh(res.allMeshes.cube.mesh);
   // skyMesh.pos.forEach((p) => vec3.scale(p, SKY_HALFSIZE, p));
   // skyMesh.quad.forEach((f) => vec4.reverse(f, f));
@@ -430,28 +495,26 @@ export async function initLD53(hosting: boolean) {
   // const oceanVertsPerWorldUnit = 0.02;
   const oceanVertsPerWorldUnit = 0.25;
   const worldUnitPerOceanVerts = 1 / oceanVertsPerWorldUnit;
-  const oceanZCount = Math.floor(WORLD_WIDTH * oceanVertsPerWorldUnit);
-  const oceanXCount = Math.floor(WORLD_HEIGHT * oceanVertsPerWorldUnit);
-  const oceanMesh = createFlatQuadMesh(oceanZCount, oceanXCount);
+  const oceanXCount = Math.floor(WORLD_WIDTH * oceanVertsPerWorldUnit);
+  const oceanYCount = Math.floor(WORLD_HEIGHT * oceanVertsPerWorldUnit);
+  const oceanMesh = createFlatQuadMesh(oceanXCount, oceanYCount);
   const maxSurfId = max(oceanMesh.surfaceIds);
   // console.log("maxSurfId");
   // console.log(maxSurfId);
   const oceanAABB = createAABB();
   oceanMesh.pos.forEach((p, i) => {
-    const x = p[0] * worldUnitPerOceanVerts - WORLD_HEIGHT * 0.5;
-    const z = p[2] * worldUnitPerOceanVerts - WORLD_WIDTH * 0.5;
-    const y = 0.0;
-    p[0] = x;
-    p[1] = y;
-    p[2] = z;
+    p[0] = p[0] * worldUnitPerOceanVerts - WORLD_WIDTH * 0.5;
+    p[1] = p[1] * worldUnitPerOceanVerts - WORLD_HEIGHT * 0.5;
+    p[2] = 0.0;
     updateAABBWithPoint(oceanAABB, p);
   });
   const oceanSize = getSizeFromAABB(oceanAABB, vec3.create());
+  // TODO(@darzu): how does this uvToPos match with the ocean's gpu-uv-unwrapped thingy?
   function uvToPos([u, v]: vec2, out: vec3): vec3 {
     // console.log(u + " " + v);
-    out[0] = v * oceanSize[0] + oceanAABB.min[0];
-    out[1] = 0;
-    out[2] = u * oceanSize[2] + oceanAABB.min[2];
+    out[0] = u * oceanSize[0] + oceanAABB.min[0];
+    out[1] = v * oceanSize[1] + oceanAABB.min[1];
+    out[2] = 0;
     // if (dbgOnce("uvToPos")) {
     //   console.log("uvToPos");
     //   console.dir(oceanSize);
@@ -470,11 +533,14 @@ export async function initLD53(hosting: boolean) {
 
   // load level
   const level = await EM.whenResources(LevelMapDef);
-  setWindAngle(
-    wind,
-    Math.atan2(-level.levelMap.windDir[0], -level.levelMap.windDir[1]) +
-      Math.PI / 2
+  // console.log(`level.levelMap.windDir: ${vec2Dbg(level.levelMap.windDir)}`);
+  // vec2.set(0, 1, level.levelMap.windDir))
+  const wingAngle = Math.atan2(
+    level.levelMap.windDir[1],
+    level.levelMap.windDir[0]
   );
+  // console.log(`wingAngle: ${wingAngle}`);
+  setWindAngle(wind, wingAngle);
 
   /*
   MULTIPLAYER LEVEL SYNCING
@@ -539,13 +605,37 @@ export async function initLD53(hosting: boolean) {
       [InputsDef, WindDef],
       (_, res) => {
         const mast = ship.ld52ship.mast()!;
+
+        // TODO(@darzu): Debugging
+        if (dbgOnce("windOnMast")) {
+          assert(WorldFrameDef.isOn(mast));
+          if (DBG_PLAYER)
+            drawUpdatingVector(res.wind.dir, {
+              origin: vec3.add(mast.world.position, V(0, 0, 30)),
+              scale: 20,
+              // parentId: mast.id,
+              color: ENDESGA16.yellow,
+            });
+
+          // addVecUpdatingDbgVis(V(0, 1, 0), {
+          //   origin: V(0, 0, 0),
+          //   scale: 20,
+          //   parentId: mast.id,
+          // });
+        }
+
+        // TODO(@darzu): DBGING
+        // console.log(`wind.dir: ${vec3Dbg(res.wind.dir)}`);
+
+        // console.log(`MAST: ${quatDbg(mast.rotation)}`);
+
         // const rudder = ship.ld52ship.rudder()!;
 
         // const shipDir = vec3.transformQuat(V(0, 0, 1), shipWorld.world.rotation);
 
         const invShip = mat3.invert(mat3.fromMat4(shipWorld.world.transform));
         const windLocalDir = vec3.transformMat3(res.wind.dir, invShip);
-        const shipLocalDir = V(0, 0, 1);
+        const shipLocalDir = tV(0, 1, 0);
 
         const optimalSailLocalDir = vec3.normalize(
           vec3.add(windLocalDir, shipLocalDir)
@@ -562,8 +652,13 @@ export async function initLD53(hosting: boolean) {
         // need to maximize: dot(wind, sail) * dot(sail, ship)
 
         // TODO(@darzu): ANIMATE SAIL TOWARD WIND
-        if (vec3.dot(optimalSailLocalDir, shipLocalDir) > 0.01)
-          quatFromUpForward(mast.rotation, V(0, 1, 0), optimalSailLocalDir);
+        if (vec3.dot(optimalSailLocalDir, shipLocalDir) > 0.01) {
+          quat.fromForwardAndUpish(
+            optimalSailLocalDir,
+            [0, 0, 1],
+            mast.rotation
+          );
+        }
       }
     );
 
@@ -586,6 +681,7 @@ export async function initLD53(hosting: boolean) {
 
   // bouyancy
   if (!"true") {
+    // TODO(@darzu): Z_UP for bouyancy
     const bouyDef = EM.defineComponent("bouy", () => true);
     const buoys: EntityW<[typeof PositionDef]>[] = [];
     for (let u = 0.4; u <= 0.6; u += 0.02) {
@@ -636,7 +732,7 @@ export async function initLD53(hosting: boolean) {
   }
 
   // wait for the ship either locally or from the network
-  EM.whenSingleEntity(ShipDef, FinishedDef).then(async (ship) => {
+  EM.whenSingleEntity(LD52ShipDef, FinishedDef).then(async (ship) => {
     // player
     if (!DBG_PLAYER) {
       const color = res.me.host ? tV(0.1, 0.1, 0.1) : ENDESGA16.darkBrown;
@@ -648,9 +744,9 @@ export async function initLD53(hosting: boolean) {
       // teleporting player to rudder
       const rudder = ship.ld52ship.rudder()!;
       vec3.copy(player.position, rudder.position);
-      player.position[1] = 1.45;
+      player.position[2] = 1.45;
       if (!res.me.host) {
-        player.position[2] += 4 * res.me.pid;
+        player.position[1] += 4 * res.me.pid;
       }
       EM.set(player, TeleportDef);
 
@@ -659,87 +755,10 @@ export async function initLD53(hosting: boolean) {
         assert(CameraFollowDef.isOn(rudder));
         raiseManTurret(player, rudder);
       } else {
-        player.position[2] += 5;
+        player.position[1] += 5;
       }
     }
   });
-
-  if (DBG_PLAYER) {
-    const g = createGhost();
-    // vec3.copy(g.position, [0, 1, -1.2]);
-    // quat.setAxisAngle([0.0, -1.0, 0.0], 1.62, g.rotation);
-    // g.cameraFollow.positionOffset = V(0, 0, 5);
-    g.controllable.speed *= 2.0;
-    g.controllable.sprintMul = 15;
-    const sphereMesh = cloneMesh(res.ld53Meshes.ball.mesh);
-    const visible = false;
-    EM.set(g, RenderableConstructDef, sphereMesh, visible);
-    EM.set(g, ColorDef, V(0.1, 0.1, 0.1));
-    // EM.set(g, PositionDef, V(0, 0, 0));
-    // EM.set(b2, PositionDef, [0, 0, -1.2]);
-    EM.set(g, WorldFrameDef);
-    // EM.set(b2, PhysicsParentDef, g.id);
-    EM.set(g, ColliderDef, {
-      shape: "AABB",
-      solid: false,
-      aabb: res.ld53Meshes.ball.aabb,
-    });
-
-    // high up:
-    // vec3.copy(g.position, [-140.25, 226.5, -366.78]);
-    // quat.copy(g.rotation, [0.0, -0.99, 0.0, 0.15]);
-    // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
-    // g.cameraFollow.yawOffset = 0.0;
-    // g.cameraFollow.pitchOffset = -1.009;
-
-    // vec3.copy(g.position, [2.47, 46.5, -22.78]);
-    // quat.copy(g.rotation, [0.0, -0.98, 0.0, -0.21]);
-    // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
-    // g.cameraFollow.yawOffset = 0.0;
-    // g.cameraFollow.pitchOffset = -0.623;
-
-    // vec3.copy(g.position, [77.68, 62.5, -370.74]);
-    // quat.copy(g.rotation, [0.0, 0.01, 0.0, -1.0]);
-    // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
-    // g.cameraFollow.yawOffset = 0.0;
-    // g.cameraFollow.pitchOffset = -1.001;
-
-    // vec3.copy(g.position, [63.61, 22.83, -503.91]);
-    // quat.copy(g.rotation, [0.0, 0.89, 0.0, -0.45]);
-    // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
-    // g.cameraFollow.yawOffset = 0.0;
-    // g.cameraFollow.pitchOffset = -0.615;
-
-    // vec3.copy(g.position, [63.88, 42.83, -53.13]);
-    // quat.copy(g.rotation, [0.0, 0.83, 0.0, 0.56]);
-    // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
-    // g.cameraFollow.yawOffset = 0.0;
-    // g.cameraFollow.pitchOffset = -0.738;
-
-    // vec3.copy(g.position, [57.26, 21.33, -499.14]);
-    // quat.copy(g.rotation, [0.0, -0.92, 0.0, 0.4]);
-    // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
-    // g.cameraFollow.yawOffset = 0.0;
-    // g.cameraFollow.pitchOffset = -0.627;
-
-    vec3.copy(g.position, [-32.29, 35.61, -356.74]);
-    quat.copy(g.rotation, [0.0, -0.86, 0.0, 0.52]);
-    vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
-    g.cameraFollow.yawOffset = 0.0;
-    g.cameraFollow.pitchOffset = -0.81;
-
-    EM.addSystem(
-      "smolGhost",
-      Phase.GAME_WORLD,
-      [GhostDef, WorldFrameDef, ColliderDef],
-      [InputsDef, HasFirstInteractionDef],
-      async (ps, { inputs }) => {
-        if (!ps.length) return;
-
-        const ghost = ps[0];
-      }
-    );
-  }
 
   const { text } = await EM.whenResources(TextDef);
   text.lowerText = "W/S: unfurl/furl sail, A/D: turn, E: drop rudder";
@@ -756,14 +775,8 @@ export async function initLD53(hosting: boolean) {
   //   await startTowers(tower3DPoses);
   // }
 
-  if (DBG_PLAYER) {
-    // world gizmo
-    const gizmoMesh = await GizmoMesh.gameMesh();
-    const worldGizmo = EM.new();
-    EM.set(worldGizmo, PositionDef, V(-WORLD_HEIGHT / 2, 0, -WORLD_WIDTH / 2));
-    EM.set(worldGizmo, ScaleDef, V(100, 100, 100));
-    EM.set(worldGizmo, RenderableConstructDef, gizmoMesh.proto);
-  }
+  // world gizmo
+  if (DBG_PLAYER) addWorldGizmo(V(-WORLD_WIDTH / 2, -WORLD_HEIGHT / 2, 0), 100);
 
   // // debugging createGraph3D
   // let data: vec3[][] = [];
@@ -809,7 +822,7 @@ export async function initLD53(hosting: boolean) {
         if (e.dead.processed) continue;
 
         e.bullet.health = 10;
-        vec3.set(0, -100, 0, e.position);
+        vec3.set(0, 0, -100, e.position);
         e.renderable.hidden = true;
 
         e.dead.processed = true;
@@ -848,23 +861,22 @@ const { Ld53PlayerPropsDef, Ld53PlayerLocalDef, createLd53PlayerAsync } =
         EM.set(p, ControllableDef);
         p.controllable.modes.canFall = false;
         p.controllable.modes.canJump = false;
+
+        p.controllable.speed *= 3.0;
+        p.controllable.sprintMul = 0.2;
+
         // g.controllable.modes.canYaw = true;
         // g.controllable.modes.canPitch = true;
+
         EM.set(p, CameraFollowDef, 1);
         // setCameraFollowPosition(p, "firstPerson");
         // setCameraFollowPosition(p, "thirdPerson");
 
-        p.cameraFollow.positionOffset = V(0, 0, 5);
-        p.controllable.speed *= 0.5;
-        p.controllable.sprintMul = 10;
-
-        vec3.copy(p.position, [0, 1, -1.2]);
-
-        vec3.copy(p.position, [-28.11, 26.0, -28.39]);
-        quat.copy(p.rotation, [0.0, -0.94, 0.0, 0.34]);
-        vec3.copy(p.cameraFollow.positionOffset, [0.0, 2.0, 5.0]);
+        // vec3.copy(p.position, [-28.11, -28.39, 26.0]);
+        // quat.copy(p.rotation, [0.0, -0.94, 0.0, 0.34]);
+        vec3.copy(p.cameraFollow.positionOffset, [0.0, -5.0, 2.0]);
         p.cameraFollow.yawOffset = 0.0;
-        p.cameraFollow.pitchOffset = -0.593;
+        p.cameraFollow.pitchOffset = 0.0; // -0.593;
 
         EM.ensureResource(LocalPlayerEntityDef, p.id);
 
@@ -878,7 +890,7 @@ const { Ld53PlayerPropsDef, Ld53PlayerLocalDef, createLd53PlayerAsync } =
       // quat.rotateX(g.cameraFollow.rotationOffset, quat.IDENTITY, -Math.PI / 8);
       EM.set(p, LinearVelocityDef);
 
-      quat.setAxisAngle([0.0, -1.0, 0.0], 1.62, p.rotation);
+      // quat.setAxisAngle([0.0, -1.0, 0.0], 1.62, p.rotation);
       const sphereMesh = cloneMesh(res.ld53Meshes.ball.mesh);
       const visible = true;
       EM.set(p, RenderableConstructDef, sphereMesh, visible);
@@ -961,8 +973,8 @@ EM.addEagerInit([Ld53PlayerPropsDef], [], [], () => {
 
 const terraVertsPerWorldUnit = 0.25;
 const worldUnitPerTerraVerts = 1 / terraVertsPerWorldUnit;
-const terraZCount = Math.floor(WORLD_WIDTH * terraVertsPerWorldUnit);
-const terraXCount = Math.floor(WORLD_HEIGHT * terraVertsPerWorldUnit);
+const terraXCount = Math.floor(WORLD_WIDTH * terraVertsPerWorldUnit);
+const terraYCount = Math.floor(WORLD_HEIGHT * terraVertsPerWorldUnit);
 let terraMesh: Mesh | undefined = undefined;
 let terraEnt: EntityW<[typeof RenderableDef]> | undefined = undefined;
 async function resetLand() {
@@ -979,10 +991,10 @@ async function resetLand() {
     1,
     mapJfa.sdfTex.format
   );
-  function sampleTerra(worldX: number, worldZ: number) {
-    let xi = ((worldZ + WORLD_WIDTH * 0.5) / WORLD_WIDTH) * terraReader.size[0];
+  function sampleTerra(worldX: number, worldY: number) {
+    let xi = ((worldX + WORLD_WIDTH * 0.5) / WORLD_WIDTH) * terraReader.size[0];
     let yi =
-      ((worldX + WORLD_HEIGHT * 0.5) / WORLD_HEIGHT) * terraReader.size[1];
+      ((worldY + WORLD_HEIGHT * 0.5) / WORLD_HEIGHT) * terraReader.size[1];
     // xi = clamp(xi, 0, terraReader.size[0]);
     // yi = clamp(yi, 0, terraReader.size[1]);
     const height = terraReader.sample(xi, yi) / 256;
@@ -992,7 +1004,7 @@ async function resetLand() {
 
   // height map
   if (!terraMesh) {
-    terraMesh = createFlatQuadMesh(terraZCount, terraXCount);
+    terraMesh = createFlatQuadMesh(terraXCount, terraYCount);
 
     // TODO(@darzu): seperate chunks of land
 
@@ -1006,7 +1018,7 @@ async function resetLand() {
     const hm2 = await EM.whenEntityHas(hm, RenderableDef);
     terraEnt = hm2;
   } else {
-    resetFlatQuadMesh(terraZCount, terraXCount, terraMesh);
+    resetFlatQuadMesh(terraXCount, terraYCount, terraMesh);
   }
 
   // let minY = Infinity;
@@ -1014,15 +1026,15 @@ async function resetLand() {
     // console.log("i: " + vec3Dbg(p));
     // vec3.zero(p);
     // TODO(@darzu): very weird to read from mesh x/z here
-    const x = p[0] * worldUnitPerTerraVerts - WORLD_HEIGHT * 0.5;
-    const z = p[2] * worldUnitPerTerraVerts - WORLD_WIDTH * 0.5;
-    let y = sampleTerra(x, z) * 100.0;
+    const x = p[0] * worldUnitPerTerraVerts - WORLD_WIDTH * 0.5;
+    const y = p[1] * worldUnitPerTerraVerts - WORLD_HEIGHT * 0.5;
+    let z = sampleTerra(x, y) * 100.0;
     // minY = Math.min(minY, y);
 
     // TODO(@darzu): wierd hack for shorline:
-    if (y <= 1.0) y = -30;
+    if (z <= 1.0) z = -30;
 
-    y += Math.random() * 2.0; // TODO(@darzu): jitter for less uniform look?
+    z += Math.random() * 2.0; // TODO(@darzu): jitter for less uniform look?
 
     p[0] = x;
     p[1] = y;
@@ -1038,5 +1050,5 @@ async function resetLand() {
   );
 
   const landRes = EM.ensureResource(LandDef);
-  landRes.sample = sampleTerra;
+  landRes.sample = sampleTerra; // TODO(@darzu): hacky..
 }

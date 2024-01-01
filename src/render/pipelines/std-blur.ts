@@ -4,6 +4,8 @@ import { createCyStruct } from "../gpu-struct.js";
 import { outlinedTexturePtr } from "./std-outline.js";
 import { emissionTexturePtr } from "./std-stars.js";
 
+// video on bloom: https://www.youtube.com/watch?v=ml-5OGZC7vE
+
 // TODO(@darzu): we shouldn't use rgba16float everywhere, probably way too much
 //  memory usage
 

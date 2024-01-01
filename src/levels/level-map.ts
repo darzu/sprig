@@ -4,14 +4,43 @@ import { TextDef } from "../gui/ui.js";
 import { AABB2, aabbCenter2, updateAABBWithPoint2_ } from "../physics/aabb.js";
 import { CY } from "../render/gpu-registry.js";
 import { RendererDef } from "../render/renderer-ecs.js";
-import { V, vec2, vec4 } from "../matrix/sprig-matrix.js";
+import { V, tV, vec2, vec4 } from "../matrix/sprig-matrix.js";
 import { assert, assertDbg } from "../utils/util.js";
-import { vec4Dbg } from "../utils/utils-3d.js";
+import { vec2Dbg, vec4Dbg } from "../utils/utils-3d.js";
 import { MapName, MapBytesSetDef, MapBytes, MapHelp } from "./map-loader.js";
 import { ScoreDef } from "../ld53/score.js";
+import { tempVec4 } from "../matrix/temp-pool.js";
 
-const WIDTH = 1024;
-const HEIGHT = 512;
+const DBG_PRINT_BLOBS = false;
+
+const WIDTH = 1024; // +x
+const HEIGHT = 512; // +y
+
+function mapXYtoImgPxDataIdx(
+  x: number,
+  y: number,
+  width: number,
+  height: number
+) {
+  // NOTE:
+  //  image origin is top-left
+  //  map origin is bottom-left
+  return x + (height - 1 - y) * width;
+}
+
+function mapXYtoCyTexDataIdx(
+  x: number,
+  y: number,
+  width: number,
+  height: number
+) {
+  // TODO(@darzu): verify cy tex?
+  // NOTE:
+  //  map origin is bottom-left
+  //  cy tex origin is bottom-left
+
+  return x + y * width;
+}
 
 export const LandMapTexPtr = CY.createTexture("landMap", {
   size: [WIDTH, HEIGHT],
@@ -21,7 +50,7 @@ export const LandMapTexPtr = CY.createTexture("landMap", {
 // TODO(@darzu): should this thing be game-aware?
 export const LevelMapDef = EM.defineResource("levelMap", () => ({
   name: "unknown",
-  land: new Float32Array(),
+  landCyTexData: new Float32Array(),
   towers: [] as [vec2, vec2][],
   startPos: V(0, 0),
   windDir: V(0, 0),
@@ -29,6 +58,7 @@ export const LevelMapDef = EM.defineResource("levelMap", () => ({
 }));
 type LevelMap = Resource<typeof LevelMapDef>;
 
+// NOTE: this is for some pretty egregiously naive run-length encoding
 type MapBlobRun = {
   y: number;
   x0: number; // inclusive
@@ -95,8 +125,8 @@ function parseAndMutateIntoMapBlobs(
   const white = V(255, 255, 255, 255);
 
   let _tmpclr = vec4.tmp();
-  for (let x = 0; x < width; x += 1) {
-    for (let y = 0; y < height; y += 1) {
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
       const clr = getColor(x, y, _tmpclr);
       // found something?
       if (!vec4.equals(clr, vec4.ZEROS) && !vec4.equals(clr, white)) {
@@ -113,7 +143,7 @@ function parseAndMutateIntoMapBlobs(
     // out of bounds
     if (x < 0 || width <= x || y < 0 || height <= y)
       return vec4.copy(out, vec4.ZEROS);
-    const idx = x * 4 + y * width * 4;
+    const idx = mapXYtoImgPxDataIdx(x, y, width, height) * 4;
     const r = rgbaBytes[idx + 0];
     const g = rgbaBytes[idx + 1];
     const b = rgbaBytes[idx + 2];
@@ -122,7 +152,7 @@ function parseAndMutateIntoMapBlobs(
   }
   // TODO(@darzu): perf. we'd probably get some perf by inlining these
   function clearColor(x: number, y: number): void {
-    const idx = x * 4 + y * width * 4;
+    const idx = mapXYtoImgPxDataIdx(x, y, width, height) * 4;
     rgbaBytes[idx + 0] = 0;
     rgbaBytes[idx + 1] = 0;
     rgbaBytes[idx + 2] = 0;
@@ -131,9 +161,10 @@ function parseAndMutateIntoMapBlobs(
 
   function parseBlob(x: number, y: number): MapBlob {
     // assumptions:
-    //    because we're scanning from (0,0), we know we're
+    //    - because we're scanning from (0,0) going up +y, we know we're
     //    at the start of a run and there are no runs
-    //    above us
+    //    below us.
+    //    - map origin is bottom-left.
     const color = getColor(x, y, vec4.create());
     const blob: MapBlob = {
       color,
@@ -152,6 +183,7 @@ function parseAndMutateIntoMapBlobs(
     return blob;
 
     function parseRun(x: number, y: number): void {
+      // console.log(`parseRun ${x},${y}`);
       // assumption: MOST of the time runs will be started v close to the left end anyway
       assertDbg(checkColor(x, y), `invalid parseRun`);
       // clear to the left
@@ -200,12 +232,16 @@ export function parseAndMutateIntoMapData(
     mapBytes.height
   );
 
-  if (VERBOSE_LOG)
+  if (DBG_PRINT_BLOBS)
     for (let b of blobs)
-      console.log(`clr: ${vec4Dbg(b.color)}, area: ${b.area}`);
+      console.log(
+        `xy: ${vec2Dbg(aabbCenter2(tV(0, 0), b.aabb))}, clr: ${vec4Dbg(
+          b.color
+        )}, area: ${b.area}`
+      );
 
   const W = 2;
-  const landData = new Float32Array(mapBytes.width * mapBytes.height);
+  const landCyTexData = new Float32Array(mapBytes.width * mapBytes.height);
   let totalPurple = 0;
 
   //extract land data
@@ -214,8 +250,13 @@ export function parseAndMutateIntoMapData(
       for (let r of blob.runs) {
         for (let x = r.x0; x < r.x1; x++) {
           // TODO(@darzu): parameterize this transform?
-          const outIdx = x + (mapBytes.height - 1 - r.y) * mapBytes.width;
-          landData[outIdx] = 1.0;
+          const outIdx = mapXYtoCyTexDataIdx(
+            x,
+            r.y,
+            mapBytes.width,
+            mapBytes.height
+          );
+          landCyTexData[outIdx] = 1.0;
         }
       }
     }
@@ -246,9 +287,14 @@ export function parseAndMutateIntoMapData(
         const x = pos[0] + i;
         const y = pos[1] + j;
         // check to see if we're actually within an approximate circle
-        const outIdx = x + (mapBytes.height - 1 - y) * mapBytes.width;
-        if (0 <= outIdx && outIdx < landData.length) {
-          landData[outIdx] = 1.0;
+        const outIdx = mapXYtoCyTexDataIdx(
+          x,
+          y,
+          mapBytes.width,
+          mapBytes.height
+        );
+        if (0 <= outIdx && outIdx < landCyTexData.length) {
+          landCyTexData[outIdx] = 1.0;
         }
       }
     }
@@ -275,7 +321,7 @@ export function parseAndMutateIntoMapData(
   const endZonePos = aabbCenter2(vec2.create(), endZoneBlob.aabb);
 
   const levelMap: LevelMap = {
-    land: landData,
+    landCyTexData,
     name,
     startPos,
     towers,
@@ -319,7 +365,7 @@ export async function setMap(name: MapName) {
 
   // TODO(@darzu): FIX LAND SPAWN
   const texResource = res.renderer.renderer.getCyResource(LandMapTexPtr)!;
-  texResource.queueUpdate(levelMap.land);
+  texResource.queueUpdate(levelMap.landCyTexData);
 
   // TODO(@darzu): hacky. i wish there was a way to do "createOrSet" instead of just "ensure"
   const resLandMap = EM.ensureResource(LevelMapDef);

@@ -29,9 +29,12 @@ import {
   vec4,
 } from "../matrix/sprig-matrix.js";
 import { assert, range } from "../utils/util.js";
-import { orthonormalize, uintToVec3unorm, vec3Dbg } from "../utils/utils-3d.js";
+import { uintToVec3unorm, vec3Dbg } from "../utils/utils-3d.js";
 import { drawBall } from "../utils/utils-game.js";
 import { createTimberBuilder, createEmptyMesh } from "../wood/wood.js";
+import { transformYUpModelIntoZUp } from "../camera/basis.js";
+
+// TODO(@darzu): Z_UP, some of this hasn't been ported
 
 // TODO(@darzu): A bunch of stuff shouldn't be in here like barge and sail stuff
 
@@ -98,6 +101,76 @@ export const mkCubeMesh: () => Mesh = () => ({
   usesProvoking: true,
 });
 
+// points from y=0 to y=1; for debug visualization
+// TODO(@darzu): enhance this with an arrow head?
+export const mkArrowMesh: () => Mesh = () => {
+  const A = 0.2;
+  const B = 0.05;
+
+  return {
+    dbgName: "arrow",
+    pos: [
+      V(+B, 1.0, +B),
+      V(-B, 1.0, +B),
+      V(-A, 0.0, +A),
+      V(+A, 0.0, +A),
+
+      V(+B, 1.0, -B),
+      V(-B, 1.0, -B),
+      V(-A, 0.0, -A),
+      V(+A, 0.0, -A),
+    ],
+    tri: [],
+    quad: [
+      // +Z
+      V(0, 1, 2, 3),
+      // +Y
+      V(4, 5, 1, 0),
+      // +X
+      V(3, 7, 4, 0),
+      // -X
+      V(2, 1, 5, 6),
+      // -Y
+      V(6, 7, 3, 2),
+      // -Z
+      V(5, 4, 7, 6),
+    ],
+    lines: [
+      // top
+      V(0, 1),
+      V(1, 2),
+      V(2, 3),
+      V(3, 0),
+      // bottom
+      V(4, 5),
+      V(5, 6),
+      V(6, 7),
+      V(7, 4),
+      // connectors
+      V(0, 4),
+      V(1, 5),
+      V(2, 6),
+      V(3, 7),
+    ],
+    colors: [
+      V(0, 0, 0),
+      V(0, 0, 0),
+      V(0, 0, 0),
+      V(0, 0, 0),
+      V(0, 0, 0),
+      V(0, 0, 0),
+      // ENDESGA16.lightBlue,
+      // ENDESGA16.lightGreen,
+      // ENDESGA16.red,
+      // ENDESGA16.darkRed,
+      // ENDESGA16.darkGreen,
+      // ENDESGA16.blue,
+    ],
+    surfaceIds: [1, 2, 3, 4, 5, 6],
+    usesProvoking: true,
+  };
+};
+
 export const TETRA_MESH: RawMesh = {
   pos: [V(0, 1, 0), V(-1, 0, -1), V(1, 0, -1), V(0, 0, 1)],
   tri: [V(2, 1, 0), V(3, 2, 0), V(1, 3, 0), V(2, 3, 1)],
@@ -110,31 +183,25 @@ scaleMesh(TETRA_MESH, 2);
 // a = cos PI/3
 // b = sin PI/3
 export const HEX_MESH: () => RawMesh = () => {
-  const A = Math.cos(Math.PI / 3);
-  const B = Math.sin(Math.PI / 3);
-  const topTri = [
-    [4, 2, 1],
-    [1, 5, 4],
-    [0, 5, 1],
-    [4, 3, 2],
-  ];
+  const A = Math.sin(Math.PI / 3);
+  const B = Math.cos(Math.PI / 3);
   const sideTri: (i: number) => vec3[] = (i) => {
     const i2 = (i + 1) % 6;
     return [V(i + 6, i, i2), V(i + 6, i2, i2 + 6)];
   };
   const pos: vec3[] = [
-    V(+1, 1, +0),
-    V(+A, 1, +B),
-    V(-A, 1, +B),
-    V(-1, 1, +0),
-    V(-A, 1, -B),
-    V(+A, 1, -B),
-    V(+1, 0, +0),
-    V(+A, 0, +B),
-    V(-A, 0, +B),
-    V(-1, 0, +0),
-    V(-A, 0, -B),
-    V(+A, 0, -B),
+    V(+0, +1, 1),
+    V(+A, +B, 1),
+    V(+A, -B, 1),
+    V(+0, -1, 1),
+    V(-A, -B, 1),
+    V(-A, +B, 1),
+    V(+0, +1, 0),
+    V(+A, +B, 0),
+    V(+A, -B, 0),
+    V(+0, -1, 0),
+    V(-A, -B, 0),
+    V(-A, +B, 0),
   ];
   const tri: vec3[] = [
     // top 4
@@ -171,27 +238,25 @@ export const HEX_MESH: () => RawMesh = () => {
   // ],
   return { pos, tri, quad: [], lines, colors: tri.map((_) => V(0, 0, 0)) };
 };
+
 export function makePlaneMesh(
   x1: number,
   x2: number,
-  z1: number,
-  z2: number
+  y1: number,
+  y2: number
 ): Mesh {
   const res: Mesh = {
-    pos: [V(x2, 0, z2), V(x1, 0, z2), V(x2, 0, z1), V(x1, 0, z1)],
+    pos: [V(x1, y1, 0), V(x2, y1, 0), V(x2, y2, 0), V(x1, y2, 0)],
     tri: [],
     quad: [
-      vec4.clone([0, 2, 3, 1]), // top
-      vec4.clone(
-        // top
-        [1, 3, 2, 0]
-      ), // bottom
+      V(0, 1, 2, 3), // top
+      V(3, 2, 1, 0), // bottom
     ],
     lines: [
       vec2.clone([0, 1]),
-      vec2.clone([0, 2]),
-      vec2.clone([1, 3]),
+      vec2.clone([1, 2]),
       vec2.clone([2, 3]),
+      vec2.clone([3, 0]),
     ],
     colors: [vec3.create(), vec3.create()],
     // uvs: [
@@ -254,18 +319,18 @@ function createGridPlane(width: number, height: number): RawMesh {
   for (let x = 0; x <= width; x++) {
     const i = m.pos.length;
     m.pos.push(V(x, 0, 0));
-    m.pos.push(V(x, 0, height));
+    m.pos.push(V(x, height, 0));
     m.lines!.push(vec2.clone([i, i + 1]));
   }
 
-  for (let z = 0; z <= height; z++) {
+  for (let y = 0; y <= height; y++) {
     const i = m.pos.length;
-    m.pos.push(V(0, 0, z));
-    m.pos.push(V(width, 0, z));
+    m.pos.push(V(0, y, 0));
+    m.pos.push(V(width, y, 0));
     m.lines!.push(vec2.clone([i, i + 1]));
   }
 
-  mapMeshPositions(m, (p) => V(p[0] - width / 2, p[1], p[2] - height / 2));
+  mapMeshPositions(m, (p) => V(p[0] - width / 2, p[1] - height / 2, p[2]));
   scaleMesh(m, 10 / Math.min(width, height));
 
   return m;
@@ -290,11 +355,11 @@ export function resetFlatQuadMesh(
   // NOTE: z:width, x:height
   {
     let i = 0;
-    for (let x = 0; x < height; x++) {
-      for (let z = 0; z < width; z++) {
-        vec3.set(x, 0, z, mesh.pos[i]);
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        vec3.set(x, y, 0, mesh.pos[i]);
         // NOTE: world_z:tex_x, world_x:tex_y
-        vec2.set(z / width, x / height, mesh.uvs![i]);
+        vec2.set(x / width, y / height, mesh.uvs![i]);
         i++;
       }
     }
@@ -303,23 +368,23 @@ export function resetFlatQuadMesh(
   // create each quad
   {
     let i = 0;
-    for (let x = 0; x < height - 1; x++) {
-      for (let z = 0; z < width - 1; z++) {
+    for (let y = 0; y < height - 1; y++) {
+      for (let x = 0; x < width - 1; x++) {
         vec4.set(
-          idx(x, z + 1), //
-          idx(x + 1, z + 1),
-          idx(x + 1, z),
-          idx(x, z),
+          idx(x + 1, y), //
+          idx(x + 1, y + 1),
+          idx(x, y + 1),
+          idx(x, y),
           mesh.quad[i]
         );
         i++;
 
         if (doubleSided) {
           vec4.set(
-            idx(x, z), //
-            idx(x + 1, z),
-            idx(x + 1, z + 1),
-            idx(x, z + 1),
+            idx(x, y), //
+            idx(x, y + 1),
+            idx(x + 1, y + 1),
+            idx(x + 1, y),
             mesh.quad[i]
           );
           i++;
@@ -330,15 +395,20 @@ export function resetFlatQuadMesh(
   }
 
   // TODO(@darzu): PERF. this is soo much wasted memory
-  mesh.normals!.forEach((n) => vec3.set(0, 1, 0, n));
-  mesh.tangents!.forEach((n) => vec3.set(-1, 0, 0, n));
+  mesh.normals!.forEach((n) => vec3.set(0, 0, 1, n));
+  mesh.tangents!.forEach((n) => vec3.set(1, 0, 0, n));
 
-  function idx(x: number, z: number): number {
-    return z + x * width;
+  function idx(x: number, y: number): number {
+    return x + y * width;
   }
   // TODO(@darzu): return
 }
 
+// Creates a flat mesh on the XY plane with grid
+//  spacing of 1 and width * height number of positions
+// NOTE: If indexing via two for loops, Y is the outer loop, X is the inner loop
+//  idx = yi * width + xi
+// TODO(@darzu): Standardize 2d grid walk for all of sprigland! Always Y outer loop?
 export function createFlatQuadMesh(
   width: number,
   height: number,
@@ -360,13 +430,6 @@ export function createFlatQuadMesh(
     usesProvoking: true,
   };
 
-  assert(width > 1 && height > 1);
-  assert(mesh.uvs);
-  assert(mesh.pos.length === height * width);
-  assert(mesh.quad.length === height * width * (doubleSided ? 2 : 1));
-  assert(mesh.normals!.length === mesh.pos.length);
-  assert(mesh.tangents!.length === mesh.pos.length);
-
   resetFlatQuadMesh(width, height, mesh, doubleSided);
 
   return mesh;
@@ -380,27 +443,23 @@ export function mkOctogonMesh(): RawMesh {
       pos: [
         V(1, 0, 0),
         V(2, 0, 0),
-        V(3, 0, 1),
-        V(3, 0, 2),
-        V(2, 0, 3),
-        V(1, 0, 3),
-        V(0, 0, 2),
-        V(0, 0, 1),
+        V(3, 1, 0),
+        V(3, 2, 0),
+        V(2, 3, 0),
+        V(1, 3, 0),
+        V(0, 2, 0),
+        V(0, 1, 0),
       ],
       tri: [],
-      quad: [
-        vec4.clone([0, 5, 4, 1]),
-        vec4.clone([1, 4, 3, 2]),
-        vec4.clone([7, 6, 5, 0]),
-      ],
+      quad: [V(1, 4, 5, 0), V(2, 3, 4, 1), V(0, 5, 6, 7)],
       // colors: range(3).map((_) => randNormalPosVec3()),
-      colors: range(3).map((_) => vec3.clone(V(0, 0, 0))),
+      colors: range(3).map((_) => V(0, 0, 0)),
     },
     mat4.fromRotationTranslationScaleOrigin(
       quat.IDENTITY,
-      [-1.5, 0, -1.5],
+      [-1.5, -1.5, 0],
       [0.2, 0.2, 0.2],
-      [1.5, 0, 1.5]
+      [1.5, 1.5, 0]
     )
   );
 }
@@ -408,16 +467,16 @@ export function mkOctogonMesh(): RawMesh {
 export function mkHalfEdgeQuadMesh(): RawMesh {
   return transformMesh(
     {
-      pos: [V(0, 0, 0), V(0, 0, 3), V(3, 0, 3), V(3, 0, 0)],
+      pos: [V(0, 0, 0), V(3, 0, 0), V(3, 3, 0), V(0, 3, 0)],
       tri: [],
-      quad: [vec4.clone([0, 1, 2, 3])],
-      colors: [vec3.clone(V(0, 0, 0))],
+      quad: [V(0, 1, 2, 3)],
+      colors: [V(0, 0, 0)],
     },
     mat4.fromRotationTranslationScaleOrigin(
       quat.IDENTITY,
-      [-1.5, 0, 0],
-      [0.4, 0.2, 0.2],
-      [1.5, 0, 0]
+      [0, -1.5, 0],
+      [0.2, 0.4, 0.2],
+      [0, 1.5, 0]
     )
   );
 }
@@ -637,7 +696,7 @@ export const SHIP_SMALL_AABBS: AABB[] = [
 // console.log(`${(shipMaxX + shipMinX) / 2}`);
 
 export const RAFT_MESH = mkCubeMesh();
-scaleMesh3(RAFT_MESH, V(10, 0.6, 5));
+scaleMesh3(RAFT_MESH, V(5, 10, 0.6));
 
 export const BULLET_MESH = mkCubeMesh();
 scaleMesh(BULLET_MESH, 0.3);
@@ -654,9 +713,9 @@ export function makeDome(numLon: number, numLat: number, r: number): Mesh {
     const inc = Math.PI * 0.5 * (lat / numLat);
     for (let lon = 0; lon < numLon; lon++) {
       const azi = Math.PI * 2 * (lon / numLon);
-      const x = r * Math.sin(inc) * Math.cos(azi);
-      const z = r * Math.sin(inc) * Math.sin(azi);
-      const y = r * Math.cos(inc);
+      const x = r * Math.sin(inc) * Math.sin(azi);
+      const y = r * Math.sin(inc) * Math.cos(azi);
+      const z = r * Math.cos(inc);
       pos.push(V(x, y, z));
       const u = azi / (Math.PI * 2.0);
       const v = 1 - inc / (Math.PI * 0.5);
@@ -857,6 +916,14 @@ export function createRudderMesh(): Mesh {
   m.quad.push(V(9, 11, 1, 0));
 
   m.quad.forEach(() => m.colors.push(V(0, 0, 0)));
+
+  // TODO(@darzu): inline this transformation
+  // m.pos.map((v) => vec3.transformMat4(v, ZUpXFwdYLeft_to_YUpZFwdXLeft, v));
+  m.pos.map((v) => vec3.transformMat4(v, transformYUpModelIntoZUp, v));
+
+  // TODO(@darzu): Inline y+ forward
+  const rot = quat.fromYawPitchRoll(Math.PI, 0, 0);
+  m.pos.map((v) => vec3.transformQuat(v, rot, v));
 
   m.surfaceIds = m.quad.map((_, i) => i + 1);
   (m as Mesh).usesProvoking = true;

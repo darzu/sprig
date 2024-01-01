@@ -80,14 +80,11 @@ export async function initClothSandbox(hosting: boolean) {
   ];
   res.renderer.pipelines = [...computePipelinesPtrs, ...renderPipelinesPtrs];
 
-  const g = createGhost();
+  const m2 = cloneMesh(res.allMeshes.cube.mesh);
+  const g = createGhost(m2);
   vec3.copy(g.position, [0, 1, -1.2]);
   quat.setAxisAngle([0.0, -1.0, 0.0], 1.62, g.rotation);
   g.controllable.sprintMul = 3;
-
-  // TODO(@darzu): this shouldn't be necessary
-  const m2 = cloneMesh(res.allMeshes.cube.mesh);
-  EM.set(g, RenderableConstructDef, m2);
 
   {
     // vec3.copy(e.position, [-16.85, 7.11, -4.33]);

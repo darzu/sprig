@@ -8,8 +8,15 @@ import { computeNewError, reduceError } from "../utils/smoothing.js";
 import { TimeDef } from "../time/time.js";
 import { yawpitchToQuat } from "../turret/yawpitch.js";
 import { createAABB } from "../physics/aabb.js";
-import { assert, resizeArray } from "../utils/util.js";
+import { assert, dbgLogOnce, resizeArray } from "../utils/util.js";
 import { Phase } from "../ecs/sys-phase.js";
+import {
+  transformCameraViewForWebGPUsNDC,
+  transformYUpModelIntoZUp,
+} from "./basis.js";
+import { mat4Dbg, quatDbg, vec3Dbg } from "../utils/utils-3d.js";
+
+const VERBOSE_CAMERA = false;
 
 export type PerspectiveMode = "perspective" | "ortho";
 export type CameraMode = "thirdPerson" | "thirdPersonOverShoulder";
@@ -81,9 +88,9 @@ export const CameraFollowDef = EM.defineComponent(
 );
 
 export const CAMERA_OFFSETS = {
-  thirdPerson: V(0, 0, 10),
+  thirdPerson: V(0, 10, 0),
   // thirdPersonOverShoulder: [1, 3, 2],
-  thirdPersonOverShoulder: V(2, 2, 4),
+  thirdPersonOverShoulder: V(2, -4, 2),
   firstPerson: V(0, 0, 0),
 } as const;
 
@@ -97,6 +104,13 @@ export function setCameraFollowPosition(
 // TODO(@darzu): maybe make a shortcut for this; "registerTrivialInit" ?
 EM.addLazyInit([], [CameraDef], () => {
   EM.addResource(CameraDef);
+
+  if (VERBOSE_CAMERA) {
+    console.log("transformModelIntoZUp mat4:");
+    console.log(mat4Dbg(transformYUpModelIntoZUp));
+    console.log("transformCameraViewForWebGPUsNDC mat4:");
+    console.log(mat4Dbg(transformCameraViewForWebGPUsNDC));
+  }
 
   EM.addSystem(
     "smoothCamera",
@@ -150,11 +164,13 @@ EM.addLazyInit([], [CameraDef], () => {
         vec3.copy(res.camera.lastPosition, res.camera.positionOffset);
         return;
       }
+      if (VERBOSE_CAMERA) console.log(`new camera target`);
       const prevTarget = EM.findEntity(res.camera.prevTargetId, [
         WorldFrameDef,
       ]);
       const newTarget = EM.findEntity(res.camera.targetId, [WorldFrameDef])!;
       if (prevTarget && newTarget) {
+        if (VERBOSE_CAMERA) console.log(`retargetting camera`);
         computeNewError(
           prevTarget.world.position,
           newTarget.world.position,
@@ -210,6 +226,7 @@ EM.addLazyInit([], [CameraComputedDef], () => {
       cameraComputed.width = htmlCanvas.canvas.clientWidth;
       cameraComputed.height = htmlCanvas.canvas.clientHeight;
 
+      // compute the view matrix
       let viewMatrix = mat4.tmp();
       if (targetEnt) {
         const computedTranslation = vec3.add(
@@ -224,26 +241,38 @@ EM.addLazyInit([], [CameraComputedDef], () => {
         );
         vec3.copy(cameraComputed.location, computedTranslation);
       }
-
       const computedCameraRotation = quat.mul(
         camera.rotationOffset,
         camera.rotationError
       );
-
       mat4.mul(
         viewMatrix,
         mat4.fromQuat(computedCameraRotation, mat4.tmp()),
         viewMatrix
       );
-
       const computedCameraTranslation = vec3.add(
         camera.positionOffset,
         camera.cameraPositionError
       );
       // const computedCameraTranslation = camera.positionOffset;
-
       mat4.translate(viewMatrix, computedCameraTranslation, viewMatrix);
       mat4.invert(viewMatrix, viewMatrix);
+
+      if (VERBOSE_CAMERA) {
+        dbgLogOnce(
+          `computedCameraTranslation: ${vec3Dbg(computedCameraTranslation)}`
+        );
+        dbgLogOnce(
+          `computedCameraRotation: ${quatDbg(computedCameraRotation)}`
+        );
+      }
+
+      // view matrix is in Z-up right-handed, we need
+      // to convert to Y-up right-handed for WebGPU's NDC
+      mat4.mul(transformCameraViewForWebGPUsNDC, viewMatrix, viewMatrix);
+      if (VERBOSE_CAMERA) {
+        dbgLogOnce(mat4Dbg(viewMatrix));
+      }
 
       if (camera.perspectiveMode === "ortho") {
         const ORTHO_SIZE = 10;
@@ -283,6 +312,7 @@ EM.addLazyInit([], [CameraComputedDef], () => {
       );
       let shadowNearFrac = camera.nearClipDist / camera.viewDist;
       for (let i = 0; i < camera.shadowCascades.length; i++) {
+        // TODO(@darzu): Z_UP: transformations based on the projection?
         const shadowFarFrac = camera.shadowCascades[i];
         assert(shadowFarFrac <= 1.0);
         const cascade = cameraComputed.shadowCascadeMats[i];

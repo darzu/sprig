@@ -1,114 +1,187 @@
-import { AllMeshesDef } from "../meshes/mesh-list.js";
-import { ColorDef } from "../color/color-ecs.js";
-import { ENDESGA16 } from "../color/palettes.js";
-import { DeadDef } from "../ecs/delete.js";
-import { createRef, Ref } from "../ecs/em-helpers.js";
-import { EM, Entity, EntityW } from "../ecs/entity-manager.js";
-import { createEntityPool } from "../ecs/entity-pool.js";
-import { fireBullet } from "../cannons/bullet.js";
+import { EM, Entity } from "../ecs/entity-manager.js";
 import { PartyDef } from "../camera/party.js";
-import { jitter } from "../utils/math.js";
-import {
-  AABB,
-  createAABB,
-  doesOverlapAABB,
-  mergeAABBs,
-  pointInAABB,
-  updateAABBWithPoint,
-} from "../physics/aabb.js";
 import { LinearVelocityDef } from "../motion/velocity.js";
-import { PhysicsStateDef, WorldFrameDef } from "../physics/nonintersection.js";
-import {
-  PhysicsParentDef,
-  PositionDef,
-  RotationDef,
-} from "../physics/transform.js";
-import { TextureReader } from "../render/cpu-texture.js";
-import { Mesh } from "../meshes/mesh.js";
-import {
-  RenderableConstructDef,
-  RenderableDef,
-} from "../render/renderer-ecs.js";
+import { WorldFrameDef } from "../physics/nonintersection.js";
+import { PhysicsParentDef, PositionDef } from "../physics/transform.js";
 import { LevelMapDef } from "../levels/level-map.js";
-import { ShipDef } from "./ship.js";
-import { mat4, tV, V, vec3, quat, vec2 } from "../matrix/sprig-matrix.js";
-import { TimeDef } from "../time/time.js";
-import { assert } from "../utils/util.js";
-import { vec3Dbg } from "../utils/utils-3d.js";
+import { LD52ShipDef } from "./ship.js";
+import { tV, V, vec3, vec2 } from "../matrix/sprig-matrix.js";
+import { assert, dbgLogOnce, dbgOnce } from "../utils/util.js";
+import { vec2Dbg, vec3Dbg } from "../utils/utils-3d.js";
 import { Phase } from "../ecs/sys-phase.js";
+import { drawBall } from "../utils/utils-game.js";
+import { ENDESGA16 } from "../color/palettes.js";
+import { ColliderDef } from "../physics/collider.js";
+import {
+  createAABB,
+  getSizeFromAABB,
+  mergeAABBs,
+  transformAABB,
+} from "../physics/aabb.js";
+import { drawVector } from "../utils/util-vec-dbg.js";
+import { createGraph3D } from "../debug/utils-gizmos.js";
+import { DeletedDef } from "../ecs/delete.js";
+
+const DBG_COLLISIONS = false;
 
 const SAMPLES_PER_EDGE = 5;
 const NUDGE_DIST = 1.0;
 const NUDGE_SPEED = 0.1;
 
 export const LandDef = EM.defineResource("land", () => ({
+  // overwritten elsewhere
   sample: (x: number, y: number) => 0 as number,
 }));
 
-const zBasis = vec2.create();
-const xBasis = vec2.create();
+const yBasis = vec2.create(); // TODO(@darzu): rename fwd
+const xBasis = vec2.create(); // TODO(@darzu): rename right
 const xBasis3 = vec3.create();
-const corner1 = vec2.create();
-const corner2 = vec2.create();
-const corner3 = vec2.create();
-const corner4 = vec2.create();
 const pointTemp = vec2.create();
 const nudgeTemp = vec3.create();
 const scaledTemp1 = vec2.create();
 const scaledTemp2 = vec2.create();
 
 // TODO: import these from somewhere
-const WORLD_WIDTH = 1024; // width runs +z
-const WORLD_HEIGHT = 512; // height runs +x
+const WORLD_WIDTH = 1024; // width runs +X
+const WORLD_HEIGHT = 512; // height runs +Y
+
+let __dbgLastLandGraph: Entity | undefined = undefined;
 
 EM.addSystem(
   "landShipCollision",
   Phase.GAME_WORLD,
-  [ShipDef, PositionDef, WorldFrameDef, PhysicsStateDef, LinearVelocityDef],
+  [LD52ShipDef, PositionDef, WorldFrameDef, ColliderDef, LinearVelocityDef],
   [PartyDef, LandDef, LevelMapDef],
   (es, res) => {
     if (!es.length) return;
     const ship = es[0];
-    assert(ship._phys.colliders.length >= 1);
-    const worldAABB = ship._phys.colliders[0].aabb;
-    const selfAABB = ship._phys.colliders[0].selfAABB;
 
-    const shipWidth = selfAABB.max[0] - selfAABB.min[0];
+    // get a representative AABB
+    assert(ship.collider.shape === "Multi");
+    // TODO(@darzu): PERF. we should have a persistent form of this intersected AABB somewhere
+    const localAABB = createAABB();
+    ship.collider.children.forEach((c) => {
+      assert(c.shape === "AABB");
+      mergeAABBs(localAABB, localAABB, c.aabb);
+    });
+    transformAABB(localAABB, ship.world.transform);
+    const shipSize = getSizeFromAABB(localAABB);
+    vec3.scale(shipSize, 0.75, shipSize); // eh, AABB bounds were a bit too aggressive
+
+    // +Y is forward / length-wise
+    const shipWidth = shipSize[0];
     const halfWidth = shipWidth / 2;
-    const shipLength = selfAABB.max[2] - selfAABB.min[2];
+    const shipLength = shipSize[1];
     const halfLength = shipLength / 2;
-    const shipCenter = V(res.party.pos[0], res.party.pos[2]);
+    const shipCenter = V(res.party.pos[0], res.party.pos[1]);
     //console.log(`ship at ${shipCenter[0]}, ${shipCenter[1]}`);
 
-    // res.party.dir is Z
+    // res.party.dir is fwd / +Y
     vec2.set(
       res.party.dir[0] * halfLength,
-      res.party.dir[2] * halfLength,
-      zBasis
+      res.party.dir[1] * halfLength,
+      yBasis
     );
-    vec3.cross([0, 1, 0], res.party.dir, xBasis3);
+    const UP: vec3.InputT = [0, 0, 1];
+    vec3.cross(UP, res.party.dir, xBasis3);
     vec2.set(xBasis3[0] * halfWidth, xBasis3[1] * halfWidth, xBasis);
 
     // corners of the ship in world-space in counter-clockwise order
+    // TODO(@darzu): this seems clockwise to me?
     const cornersFromCenter: vec2[] = [
-      vec2.sub(vec2.sub(vec2.zero(), zBasis), xBasis),
-      vec2.sub(vec2.add(vec2.zero(), zBasis), xBasis),
-      vec2.add(vec2.add(vec2.zero(), zBasis), xBasis),
-      vec2.add(vec2.sub(vec2.zero(), zBasis), xBasis),
+      vec2.sub(vec2.sub(vec2.zero(), yBasis), xBasis),
+      vec2.sub(vec2.add(vec2.zero(), yBasis), xBasis),
+      vec2.add(vec2.add(vec2.zero(), yBasis), xBasis),
+      vec2.add(vec2.sub(vec2.zero(), yBasis), xBasis),
     ];
     const corners: vec2[] = cornersFromCenter.map((v) =>
       vec2.add(shipCenter, v)
     );
     //console.log(corners);
 
-    function isLand(x: number, z: number) {
+    // if (DBG_COLLISIONS) dbgLogOnce(`isLand is using ${res.levelMap.name}`);
+
+    function isLand(x: number, y: number) {
       return (
-        x < -WORLD_HEIGHT / 2 ||
-        x > WORLD_HEIGHT / 2 ||
-        z < -WORLD_WIDTH / 2 ||
-        z > WORLD_WIDTH / 2 ||
-        res.land.sample(x, z) * 100.0 > 1.0
+        x < -WORLD_WIDTH / 2 ||
+        x > WORLD_WIDTH / 2 ||
+        y < -WORLD_HEIGHT / 2 ||
+        y > WORLD_HEIGHT / 2 ||
+        res.land.sample(x, y) * 100.0 > 1.0
       );
+    }
+
+    // debug corner & edge algorithm
+    if (
+      DBG_COLLISIONS &&
+      dbgOnce(`landCollisionCorners_${res.levelMap.name}`)
+    ) {
+      assert(ColliderDef.isOn(ship));
+
+      // addColliderDbgVis(ship);
+      // const box = createBoxForAABB(localAABB);
+      // EM.set(box, PhysicsParentDef, ship.id);
+      // EM.set(box, ColorDef, ENDESGA16.darkGray);
+
+      // TODO(@darzu): land collisions on level two right side r messed up
+
+      // draw corners and edges of ship
+      const scale = 2;
+      console.log("landCollisionCorners!");
+      for (let i = 0; i < corners.length; i++) {
+        const localCorner = cornersFromCenter[i];
+        console.log(`localCorner: ${vec2Dbg(localCorner)}`);
+        // TODO(@darzu): these ball corners actually aren't quite right b/c of the nature of AABBs (not OBB)
+        const ball = drawBall(
+          [localCorner[0], localCorner[1], 0],
+          scale,
+          ENDESGA16.lightGreen
+        );
+        EM.set(ball, PhysicsParentDef, ship.id);
+
+        // now check for edges
+        for (let s = 1; s <= SAMPLES_PER_EDGE; s++) {
+          const r = s / (SAMPLES_PER_EDGE + 1);
+
+          const localNeighbor = cornersFromCenter[(i + 1) % 4];
+          const localPoint = vec2.lerp(localCorner, localNeighbor, r);
+          console.log(`localPoint: ${vec2Dbg(localPoint)}`);
+          const ball = drawBall(
+            [localPoint[0], localPoint[1], 0],
+            scale,
+            ENDESGA16.red
+          );
+          EM.set(ball, PhysicsParentDef, ship.id);
+        }
+      }
+
+      // draw land as seen by the isLand fn
+      const halfWidth = WORLD_WIDTH * 0.5;
+      const halfHeight = WORLD_HEIGHT * 0.5;
+      let samples: vec3[][] = [];
+      for (let y = -halfHeight + 1; y < halfHeight; y += halfHeight / 20) {
+        const row: vec3[] = [];
+        for (let x = -halfWidth + 1; x < halfWidth; x += halfWidth / 20) {
+          const z = isLand(x, y) ? 1.0 : 0.0;
+          row.push(V(x, y, z));
+        }
+        samples.push(row);
+      }
+
+      if (__dbgLastLandGraph) {
+        EM.set(__dbgLastLandGraph, DeletedDef);
+      }
+      const graph = createGraph3D(
+        V(-halfWidth * 1, -halfHeight * 1, 0),
+        samples,
+        ENDESGA16.red,
+        createAABB(V(-halfWidth, -halfHeight, 0), V(halfWidth, halfHeight, 1)),
+        createAABB(
+          V(-halfWidth * 1, -halfHeight * 1, 0),
+          V(halfWidth * 1, halfHeight * 1, 20)
+        )
+      );
+      __dbgLastLandGraph = graph;
     }
 
     let hitLand = false;
@@ -121,12 +194,18 @@ EM.addSystem(
       // first, see if the corner itself is making contact
       if (isLand(corner[0], corner[1])) {
         // nudge directly away from corner
-        const nudge = tV(-cornersFromCenter[i][0], 0, -cornersFromCenter[i][1]);
+        const nudge = tV(-cornersFromCenter[i][0], -cornersFromCenter[i][1], 0);
         console.log(`nudge is ${vec3Dbg(nudge)}`);
         vec3.normalize(nudge, nudge);
         vec3.scale(nudge, NUDGE_DIST, nudge);
         // TODO: this should be in world space
-        console.log(`nudging by ${vec3Dbg(nudge)}`);
+        if (DBG_COLLISIONS)
+          drawVector(nudge, {
+            origin: tV(corner[0], corner[1], ship.position[2]),
+            scale: 30,
+            color: ENDESGA16.lightGreen,
+          });
+        console.log(`nudging (corner) by ${vec3Dbg(nudge)}`);
         vec3.add(ship.position, nudge, ship.position);
         vec3.normalize(nudge, nudge);
         vec3.scale(nudge, NUDGE_SPEED, nudge);
@@ -138,23 +217,32 @@ EM.addSystem(
       const neighbor = corners[(i + 1) % 4];
       for (let s = 1; s <= SAMPLES_PER_EDGE; s++) {
         const r = s / (SAMPLES_PER_EDGE + 1);
-        const point = vec2.add(
-          vec2.scale(corner, 1 - r, scaledTemp1),
-          vec2.scale(neighbor, r, scaledTemp2),
-          pointTemp
-        );
+        // TODO(@darzu): replace with lerp?
+        const point = vec2.lerp(corner, neighbor, r, pointTemp);
+        // const point = vec2.add(
+        //   vec2.scale(corner, 1 - r, scaledTemp1),
+        //   vec2.scale(neighbor, r, scaledTemp2),
+        //   pointTemp
+        // );
         //console.log(point);
+
         if (isLand(point[0], point[1])) {
           //console.log(`touching land at face ${i}`);
           const dist = vec2.sub(neighbor, corner, pointTemp);
           const nudge = vec3.cross(
-            [0, 1, 0],
-            vec3.set(dist[0], 0, dist[1], nudgeTemp),
+            UP,
+            vec3.set(dist[0], dist[1], 0, nudgeTemp),
             nudgeTemp
           );
           vec3.normalize(nudge, nudge);
           vec3.scale(nudge, NUDGE_DIST, nudge);
-          console.log(`nudging by ${vec3Dbg(nudge)}`);
+          if (DBG_COLLISIONS)
+            drawVector(nudge, {
+              origin: tV(corner[0], corner[1], ship.position[2]),
+              scale: 30,
+              color: ENDESGA16.red,
+            });
+          console.log(`nudging (edge '${s}) by ${vec3Dbg(nudge)}`);
           // TODO: this should be in world space
           vec3.add(ship.position, nudge, ship.position);
           vec3.scale(nudge, NUDGE_SPEED, nudge);

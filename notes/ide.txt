@@ -127,3 +127,6 @@ For every added component, system, resource, library, big chunk of code:
   Producers vs consumers of a symbol
   trace a symbol back through git commits and renames
   when a symbol rename happens, remember that for later history
+
+Sprig lang's error handling:
+  https://joeduffyblog.com/2016/02/07/the-error-model/

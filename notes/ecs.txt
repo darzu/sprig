@@ -114,3 +114,38 @@ Unreal's "Mass Entity":
 
 Our Machinery's "the Truth" data model:
   https://web.archive.org/web/20220727114600/https://ourmachinery.com/post/the-story-behind-the-truth-designing-a-data-model/
+
+BG3 / Larian's "Osiris" ECS database thing:
+  https://docs.larian.game/Osiris_Overview
+
+  example:
+    INIT
+      DB_MyPrefix_Fruit("Apple");		// Defines the database DB_MyPrefix_Fruit with one column of type STRING, and adds a fact consisting of the string "Apple" to it.
+      DB_MyPrefix_Fruit("Pear");		// Adds another fact to the DB_MyPrefix_Fruit database.
+      DB_MyPrefix_Fruit("Banana");		// And one more.
+    KB
+      IF					// Osiris rules always start with IF
+      DB_MyPrefix_Fruit(_SomeFruit)		// This rule will fire when any database with the name "DB_MyPrefix_Fruit" gets defined.
+                // The name of the fruit will be stored in (bound to) the _SomeFruit variable.
+      THEN					// "THEN" indicates that the rule conditions have finished, and the rule actions follow.
+      DB_MyPrefix_AtLeastOneFruit(1);		// We define a new database with the name "DB_MyPrefix_AtLeastOneFruit" and type INTEGER,
+                // and add a fact with the integer value 1 to it. Since there are three rows in the
+                // DB_MyPrefix_Fruit database, this action will execute three times. However, as the value
+                // is always the same (1), in the end the DB_MyPrefix_AtLeastOneFruit database will
+                // contain only a single fact, which consists of the value 1.
+
+      IF
+      DB_MyPrefix_Fruit("Pear")		// This rule will fire when DB_MyPrefix_Fruit("Pear") gets defined.
+      AND					// Osiris rule conditions can only be combined with AND, not with OR. There is
+                // another ways to implement OR-conditions though, explained below (user-defined queries).
+      NOT DB_MyPrefix_Fruit("Lemon")		// This rule's actions will only execute if no DB_MyPrefix_Fruit("Lemon") entry exists.
+      THEN
+      DB_MyPrefix_PearNoLemon(1);
+
+    EXIT
+      NOT DB_MyPrefix_Fruit("Apple");		// Remove the "Apple" fact from the DB_MyPrefix_Fruit when the goal completes.
+      NOT DB_MyPrefix_Fruit("Pear");		// Removing databases that are no longer used anywhere else after a goal completes
+      NOT DB_MyPrefix_Fruit("Banana");	// reduces savegame sizes and speeds up the game.
+
+      NOT DB_MyPrefix_AtLeastOneFruit(1);	// Even if some of these databases would not exist, removing them would not result
+      NOT DB_MyPrefix_AtLeastOneFruit(1);	// in an error. Removing a non-existent database is simply ignored.

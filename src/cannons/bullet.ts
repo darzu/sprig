@@ -146,7 +146,7 @@ export function createOrResetBullet(
     {
       pos: props.location,
       vel: props.linearVelocity,
-      accel: [0, -props.gravity, 0],
+      accel: [0, 0, -props.gravity],
     },
     res.time.time
   );
@@ -281,7 +281,7 @@ async function initBulletPartPool() {
       EM.set(pe, LinearVelocityDef);
       EM.set(pe, AngularVelocityDef);
       // EM.set(pe, LifetimeDef, 2000);
-      EM.set(pe, GravityDef, V(0, -4 * 0.00001, 0));
+      EM.set(pe, GravityDef, V(0, 0, -4 * 0.00001));
       EM.set(pe, SplinterParticleDef);
       bset.push(pe);
     }
@@ -329,7 +329,7 @@ export async function breakBullet(
     vec3.copy(pe.angularVelocity, vel);
     // EM.set(pe, LifetimeDef, 2000);
     EM.set(pe, GravityDef);
-    vec3.copy(pe.gravity, [0, -4 * 0.00001, 0]);
+    vec3.copy(pe.gravity, [0, 0, -4 * 0.00001]);
   }
 
   EM.set(bullet, DeadDef);

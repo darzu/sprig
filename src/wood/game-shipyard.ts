@@ -1,42 +1,22 @@
-import { CameraDef, CameraFollowDef } from "../camera/camera.js";
-import { CanvasDef, HasFirstInteractionDef } from "../render/canvas.js";
+import { CameraDef } from "../camera/camera.js";
+import { HasFirstInteractionDef } from "../render/canvas.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
-import { DeadDef, DeletedDef } from "../ecs/delete.js";
-import { createRef } from "../ecs/em-helpers.js";
-import { EM, Entity, EntityW } from "../ecs/entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { DeadDef } from "../ecs/delete.js";
+import { EM } from "../ecs/entity-manager.js";
+import { vec3, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { InputsDef } from "../input/inputs.js";
-import { jitter } from "../utils/math.js";
-import { AudioDef, randChordId } from "../audio/audio.js";
-import {
-  createAABB,
-  copyAABB,
-  AABB,
-  updateAABBWithPoint,
-  aabbCenter,
-  getHalfsizeFromAABB,
-} from "../physics/aabb.js";
-import { AABBCollider, ColliderDef } from "../physics/collider.js";
-import { AngularVelocityDef, LinearVelocityDef } from "../motion/velocity.js";
-import {
-  PhysicsResultsDef,
-  WorldFrameDef,
-} from "../physics/nonintersection.js";
-import {
-  PhysicsParentDef,
-  PositionDef,
-  RotationDef,
-  ScaleDef,
-} from "../physics/transform.js";
+import { AudioDef } from "../audio/audio.js";
+import { ColliderDef, MultiCollider } from "../physics/collider.js";
+import { LinearVelocityDef } from "../motion/velocity.js";
+import { WorldFrameDef } from "../physics/nonintersection.js";
+import { PositionDef, RotationDef, ScaleDef } from "../physics/transform.js";
 import { PointLightDef } from "../render/lights.js";
 import {
   cloneMesh,
   getAABBFromMesh,
   Mesh,
-  scaleMesh3,
   transformMesh,
-  validateMesh,
 } from "../meshes/mesh.js";
 import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
@@ -47,50 +27,22 @@ import {
   RenderableConstructDef,
   RenderableDef,
 } from "../render/renderer-ecs.js";
-import { tempMat4, tempVec3 } from "../matrix/temp-pool.js";
-import { assert } from "../utils/util.js";
 import { TimeDef } from "../time/time.js";
 import {
-  createEmptyMesh,
-  createTimberBuilder,
   createWoodHealth,
-  getBoardsFromMesh,
-  registerDestroyPirateHandler,
-  reserveSplinterSpace,
   resetWoodHealth,
   resetWoodState,
-  TimberBuilder,
-  unshareProvokingForWood,
-  verifyUnsharedProvokingForWood,
   WoodHealthDef,
   WoodStateDef,
   _dbgNumSplinterEnds,
 } from "./wood.js";
-import { AllMeshesDef, BLACK } from "../meshes/mesh-list.js";
-import {
-  breakBullet,
-  BulletConstructDef,
-  BulletDef,
-  fireBullet,
-} from "../cannons/bullet.js";
-import { ControllableDef } from "../input/controllable.js";
+import { AllMeshesDef } from "../meshes/mesh-list.js";
+import { breakBullet, BulletDef, fireBullet } from "../cannons/bullet.js";
 import { createGhost, GhostDef } from "../debug/ghost.js";
-import { GravityDef } from "../motion/gravity.js";
-import { InRangeDef, InteractableDef } from "../input/interact.js";
-import { LifetimeDef } from "../ecs/lifetime.js";
-import {
-  createHsPlayer,
-  LocalPlayerEntityDef,
-  HsPlayerDef,
-} from "../hyperspace/hs-player.js";
 import { TextDef } from "../gui/ui.js";
-import { createIdxPool } from "../utils/idx-pool.js";
-import { randNormalPosVec3, randNormalVec3 } from "../utils/utils-3d.js";
-import { createHomeShip } from "./shipyard.js";
+import { createLD53Ship, ld53ShipAABBs } from "./shipyard.js";
 import { gameplaySystems } from "../debug/ghost.js";
-import { RenderDataStdDef } from "../render/pipelines/std-scene.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
-import { createEntityPool } from "../ecs/entity-pool.js";
 import {
   pirateKills,
   pirateNextSpawn,
@@ -98,11 +50,9 @@ import {
   startPirates,
 } from "./pirate.js";
 import { ParametricDef } from "../motion/parametric-motion.js";
-import { addGizmoChild } from "../utils/utils-game.js";
-import { createBarrelMesh } from "./barrel.js";
+import { addColliderDbgVis, addGizmoChild } from "../utils/utils-game.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
-import { createSpaceBarge } from "../ld54/barge.js";
 
 /*
   Game mechanics:
@@ -147,6 +97,7 @@ import { createSpaceBarge } from "../ld54/barge.js";
 */
 
 const DBG_PLAYER = true;
+const DBG_COLLIDERS = false;
 
 const DISABLE_PRIATES = true;
 
@@ -197,7 +148,7 @@ export async function initShipyardGame(hosting: boolean) {
   const groundMesh = cloneMesh(res.allMeshes.hex.mesh);
   transformMesh(
     groundMesh,
-    mat4.fromRotationTranslationScale(quat.IDENTITY, [0, -4, 0], [20, 2, 20])
+    mat4.fromRotationTranslationScale(quat.IDENTITY, [0, 0, -4], [20, 20, 2])
   );
   EM.set(ground, RenderableConstructDef, groundMesh);
   EM.set(ground, ColorDef, ENDESGA16.blue);
@@ -262,8 +213,8 @@ export async function initShipyardGame(hosting: boolean) {
     floorHeight,
     floorLength,
     floorWidth,
-  } = createSpaceBarge();
-  // } = createHomeShip();
+    // } = createSpaceBarge();
+  } = createLD53Ship();
 
   // TODO(@darzu): remove
   // const ribCount = 10;
@@ -285,7 +236,6 @@ export async function initShipyardGame(hosting: boolean) {
   const scale = 1;
   const timberAABB = getAABBFromMesh(timberMesh);
   // const timberPos = getCenterFromAABB(timberAABB);
-  const timberPos = vec3.create();
   // timberPos[1] += 5;
   // const timberPos = vec3.clone(res.allMeshes.timber_rib.center);
   // vec3.negate(timberPos, timberPos);
@@ -293,192 +243,33 @@ export async function initShipyardGame(hosting: boolean) {
   // timberPos[1] += 1;
   // timberPos[0] -= ribCount * 0.5 * ribSpace;
   // timberPos[2] -= floorPlankCount * 0.5 * floorSpace;
-  EM.set(timber, PositionDef, timberPos);
+  EM.set(timber, PositionDef, V(0, 0, 20));
   // EM.set(timber, PositionDef, [0, 0, -4]);
   EM.set(timber, RotationDef);
   EM.set(timber, ScaleDef, V(scale, scale, scale));
   EM.set(timber, WorldFrameDef);
-  EM.set(timber, ColliderDef, {
-    shape: "AABB",
-    solid: false,
-    aabb: timberAABB,
-  });
+  // EM.set(timber, ColliderDef, {
+  //   shape: "AABB",
+  //   solid: false,
+  //   aabb: timberAABB,
+  // });
+  const mc: MultiCollider = {
+    shape: "Multi",
+    solid: true,
+    // TODO(@darzu): integrate these in the assets pipeline
+    children: ld53ShipAABBs.map((aabb) => ({
+      shape: "AABB",
+      solid: true,
+      aabb,
+    })),
+  };
+  EM.set(timber, ColliderDef, mc);
   const timberHealth = createWoodHealth(timberState);
   EM.set(timber, WoodHealthDef, timberHealth);
 
+  if (DBG_COLLIDERS) addColliderDbgVis(timber);
+
   addGizmoChild(timber, 10);
-
-  // CANNONS
-  const realCeilHeight = ceilHeight + timberPos[1];
-  const realFloorHeight = timberPos[1] + floorHeight;
-  // for (let i = 0; i < 2; i++) {
-  //   const isLeft = i === 0 ? 1 : -1;
-  //   const cannon = EM.new();
-  //   EM.set(
-  //     cannon,
-  //     RenderableConstructDef,
-  //     res.allMeshes.ld51_cannon.proto
-  //   );
-  //   EM.set(
-  //     cannon,
-  //     PositionDef,
-  //     V(-7.5, realFloorHeight + 2, -4 * isLeft)
-  //   );
-  //   EM.set(cannon, RotationDef);
-  //   quat.rotateX(cannon.rotation, Math.PI * 0.01 * isLeft, cannon.rotation);
-  //   if (isLeft !== 1) {
-  //     quat.rotateY(cannon.rotation, Math.PI, cannon.rotation);
-  //   }
-  //   EM.set(cannon, ColorDef, ENDESGA16.darkGreen);
-  //   // TODO(@darzu): USE PALETTE PROPERLY
-  //   // TODO(@darzu): USE PALETTE PROPERLY
-  //   vec3.scale(cannon.color, 0.5, cannon.color);
-  //   {
-  //     const interactBox = EM.new();
-  //     const interactAABB = copyAABB(createAABB(), res.allMeshes.ld51_cannon.aabb);
-  //     vec3.scale(interactAABB.min, 2, interactAABB.min);
-  //     vec3.scale(interactAABB.max, 2, interactAABB.max);
-  //     EM.set(interactBox, PhysicsParentDef, cannon.id);
-  //     EM.set(interactBox, PositionDef, V(0, 0, 0));
-  //     EM.set(interactBox, ColliderDef, {
-  //       shape: "AABB",
-  //       solid: false,
-  //       aabb: interactAABB,
-  //     });
-  //     EM.set(cannon, InteractableDef, interactBox.id);
-  //   }
-  //   EM.set(cannon, LD51CannonDef);
-  // }
-
-  // TODO(@darzu): use a pool for goodballs
-  const GoodBallDef = EM.defineNonupdatableComponent(
-    "goodBall",
-    (idx: number, interactBoxId: number) => ({
-      idx,
-      interactBoxId,
-    })
-  );
-  const _goodBalls: EntityW<
-    [
-      typeof PositionDef,
-      typeof GravityDef,
-      typeof LinearVelocityDef,
-      typeof GoodBallDef
-    ]
-  >[] = [];
-  const _goodBallPool = createIdxPool(MAX_GOODBALLS);
-  function despawnGoodBall(e: EntityW<[typeof GoodBallDef]>) {
-    EM.set(e, DeadDef);
-    if (RenderableDef.isOn(e)) e.renderable.hidden = true;
-    _goodBallPool.free(e.goodBall.idx);
-    e.dead.processed = true;
-  }
-  function spawnGoodBall(pos: vec3) {
-    const idx = _goodBallPool.next();
-    if (idx === undefined) return;
-
-    let ball = _goodBalls[idx];
-
-    if (!ball) {
-      const newBall = EM.new();
-      EM.set(newBall, RenderableConstructDef, res.allMeshes.ball.proto);
-      EM.set(newBall, ColorDef, ENDESGA16.orange);
-      EM.set(newBall, PositionDef);
-      EM.set(newBall, LinearVelocityDef);
-      EM.set(newBall, GravityDef);
-      const interactBox = EM.new();
-      const interactAABB = copyAABB(createAABB(), res.allMeshes.ball.aabb);
-      vec3.scale(interactAABB.min, 2, interactAABB.min);
-      vec3.scale(interactAABB.max, 2, interactAABB.max);
-      EM.set(interactBox, PhysicsParentDef, newBall.id);
-      EM.set(interactBox, PositionDef, V(0, 0, 0));
-      EM.set(interactBox, ColliderDef, {
-        shape: "AABB",
-        solid: false,
-        aabb: interactAABB,
-      });
-      EM.set(newBall, InteractableDef, interactBox.id);
-      // EM.set(ball, WorldFrameDef);
-      EM.set(newBall, GoodBallDef, idx, interactBox.id);
-
-      ball = newBall;
-      _goodBalls[idx] = newBall;
-    } else {
-      if (RenderableDef.isOn(ball)) ball.renderable.hidden = false;
-      EM.tryRemoveComponent(ball.id, DeadDef);
-      EM.tryRemoveComponent(ball.id, PhysicsParentDef);
-      EM.set(ball, InteractableDef, ball.goodBall.interactBoxId);
-    }
-
-    vec3.copy(ball.position, pos);
-    vec3.copy(ball.gravity, [0, -3 * 0.00001, 0]);
-    vec3.zero(ball.linearVelocity);
-    if (ScaleDef.isOn(ball)) vec3.copy(ball.scale, vec3.ONES);
-  }
-
-  EM.addSystem(
-    "ld51PlayerFireCannon",
-    Phase.GAME_WORLD,
-    [LD51CannonDef, WorldFrameDef, InRangeDef],
-    [InputsDef, LocalPlayerEntityDef, AudioDef],
-    (cannons, res) => {
-      const player = EM.findEntity(res.localPlayerEnt.playerId, [HsPlayerDef])!;
-      if (!player) return;
-      for (let c of cannons) {
-        if (
-          player.hsPlayer.holdingBall &&
-          c.inRange &&
-          res.inputs.lclick /* && c.cannonLocal.fireMs <= 0*/
-        ) {
-          const ballHealth = 2.0;
-
-          let bulletAxis = V(0, 0, -1);
-          // let bulletAxis = V(1, 0, 0);
-          vec3.transformQuat(bulletAxis, c.world.rotation, bulletAxis);
-          vec3.normalize(bulletAxis, bulletAxis);
-          const bulletPos = vec3.clone(c.world.position);
-          vec3.scale(bulletAxis, 2, bulletAxis);
-          vec3.add(bulletPos, bulletAxis, bulletPos);
-          // const bulletRot = quat.rotateY(
-          //   c.world.rotation,
-          //   Math.PI / 2,
-          //   quat.tmp()
-          // );
-
-          fireBullet(
-            1,
-            bulletPos,
-            // bulletRot,
-            c.world.rotation,
-            0.05,
-            0.02,
-            // gravity:
-            // 3, (non-parametric)
-            1.5 * 0.00001, // parametric
-            ballHealth,
-            bulletAxis
-          );
-
-          // remove player ball
-          const heldBall = EM.findEntity(player.hsPlayer.holdingBall, [
-            GoodBallDef,
-          ]);
-          if (heldBall) {
-            despawnGoodBall(heldBall);
-          }
-
-          player.hsPlayer.holdingBall = 0;
-
-          // c.cannonLocal.fireMs = c.cannonLocal.fireDelayMs;
-
-          const chord = randChordId();
-          res.music.playChords([chord], "major", 2.0, 3.0, -2);
-        }
-      }
-    }
-  );
-
-  // const quadIdsNeedReset = new Set<number>();
 
   // assert(_player?.collider.shape === "AABB");
   // console.dir(ghost.collider.aabb);
@@ -526,7 +317,7 @@ export async function initShipyardGame(hosting: boolean) {
           0.02,
           3 * 0.00001,
           ballHealth,
-          [0, 0, -1]
+          [0, 1, 0]
         );
       }
 
@@ -567,190 +358,6 @@ export async function initShipyardGame(hosting: boolean) {
 
   // Create player
   {
-    const ColWallDef = EM.defineComponent("ColWall", () => ({}));
-
-    // create ship bounds
-    // TODO(@darzu): move into shipyard?
-    const colFloor = EM.new();
-    const flAABB: AABB = {
-      // prettier-ignore
-      min: vec3.clone([
-    -floorLength * 0.5 - ribWidth * 3.0,
-    0,
-    -floorWidth * 0.5
-]),
-      max: vec3.clone([
-        +floorLength * 0.5 - ribWidth * 3.0,
-        realFloorHeight,
-        +floorWidth * 0.5,
-      ]),
-    };
-    EM.set(colFloor, ColliderDef, {
-      shape: "AABB",
-      solid: true,
-      aabb: flAABB,
-    });
-    EM.set(colFloor, PositionDef);
-    EM.set(colFloor, ColWallDef);
-
-    const colLeftWall = EM.new();
-    EM.set(colLeftWall, ColliderDef, {
-      shape: "AABB",
-      solid: true,
-      aabb: {
-        min: vec3.clone([
-          flAABB.min[0],
-          realFloorHeight + 0.5,
-          flAABB.min[2] - 2,
-        ]),
-        max: V(flAABB.max[0], realCeilHeight, flAABB.min[2]),
-      },
-    });
-    EM.set(colLeftWall, PositionDef);
-    EM.set(colLeftWall, ColWallDef);
-
-    const colRightWall = EM.new();
-    EM.set(colRightWall, ColliderDef, {
-      shape: "AABB",
-      solid: true,
-      aabb: {
-        min: V(flAABB.min[0], realFloorHeight + 0.5, flAABB.max[2]),
-        max: V(flAABB.max[0], realCeilHeight, flAABB.max[2] + 2),
-      },
-    });
-    EM.set(colRightWall, PositionDef);
-    EM.set(colRightWall, ColWallDef);
-
-    const colFrontWall = EM.new();
-    EM.set(colFrontWall, ColliderDef, {
-      shape: "AABB",
-      solid: true,
-      aabb: {
-        min: vec3.clone([
-          flAABB.max[0],
-          realFloorHeight + 0.5,
-          flAABB.min[2] + 0.5,
-        ]),
-        max: vec3.clone([
-          flAABB.max[0] + 2,
-          realCeilHeight,
-          flAABB.max[2] - 0.5,
-        ]),
-      },
-    });
-    EM.set(colFrontWall, PositionDef);
-    EM.set(colFrontWall, ColWallDef);
-
-    const colBackWall = EM.new();
-    EM.set(colBackWall, ColliderDef, {
-      shape: "AABB",
-      solid: true,
-      aabb: {
-        min: vec3.clone([
-          flAABB.min[0] - 2,
-          realFloorHeight + 0.5,
-          flAABB.min[2] + 0.5,
-        ]),
-        max: V(flAABB.min[0], realCeilHeight, flAABB.max[2] - 0.5),
-      },
-    });
-    EM.set(colBackWall, PositionDef);
-    EM.set(colBackWall, ColWallDef);
-
-    // debugVizAABB(colFloor);
-    // debugVizAABB(colLeftWall);
-    // debugVizAABB(colRightWall);
-    // debugVizAABB(colFrontWall);
-    // debugVizAABB(colBackWall);
-
-    function debugVizAABB(aabbEnt: EntityW<[typeof ColliderDef]>) {
-      // debug render floor
-      const mesh = cloneMesh(res.allMeshes.cube.mesh);
-      assert(aabbEnt.collider.shape === "AABB");
-      const size = getHalfsizeFromAABB(aabbEnt.collider.aabb, vec3.create());
-      const center = aabbCenter(tempVec3(), aabbEnt.collider.aabb);
-      scaleMesh3(mesh, size);
-      transformMesh(mesh, mat4.fromTranslation(center));
-      EM.set(aabbEnt, RenderableConstructDef, mesh);
-      EM.set(aabbEnt, ColorDef, ENDESGA16.orange);
-    }
-
-    // BULLET VS COLLIDERS
-    {
-      const colLeftMid = aabbCenter(
-        vec3.create(),
-        (colLeftWall.collider as AABBCollider).aabb
-      );
-      const colRightMid = aabbCenter(
-        vec3.create(),
-        (colRightWall.collider as AABBCollider).aabb
-      );
-      const colFrontMid = aabbCenter(
-        vec3.create(),
-        (colFrontWall.collider as AABBCollider).aabb
-      );
-      const colBackMid = aabbCenter(
-        vec3.create(),
-        (colBackWall.collider as AABBCollider).aabb
-      );
-
-      EM.addSystem(
-        "bulletBounce",
-        Phase.GAME_WORLD,
-        [
-          BulletConstructDef,
-          BulletDef,
-          ColorDef,
-          // LinearVelocityDef,
-          // GravityDef,
-          ParametricDef,
-          WorldFrameDef,
-        ],
-        [PhysicsResultsDef],
-        (es, res) => {
-          for (let b of es) {
-            if (b.bulletConstruct.team !== 2) continue;
-            const hits = res.physicsResults.collidesWith.get(b.id);
-            if (hits) {
-              const walls = hits
-                .map((h) => EM.findEntity(h, [ColWallDef, WorldFrameDef]))
-                .filter((b) => {
-                  return b;
-                });
-              if (walls.length) {
-                const targetSide =
-                  vec3.sqrDist(b.bulletConstruct.location, colRightMid) >
-                  vec3.sqrDist(b.bulletConstruct.location, colLeftMid)
-                    ? colRightWall
-                    : colLeftWall;
-                const targetFrontBack =
-                  vec3.sqrDist(b.bulletConstruct.location, colFrontMid) >
-                  vec3.sqrDist(b.bulletConstruct.location, colBackMid)
-                    ? colFrontWall
-                    : colBackWall;
-
-                for (let w of walls) {
-                  assert(w);
-                  if (w.id === targetSide.id || w.id === targetFrontBack.id) {
-                    // TODO(@darzu): these don't apply with parametric:
-                    // vec3.zero(b.linearVelocity);
-                    // vec3.zero(b.gravity);
-                    if (_goodBallPool.numFree() > 0) {
-                      // EM.set(b, DeletedDef);
-                      EM.set(b, DeadDef);
-                      spawnGoodBall(b.world.position);
-                    } else {
-                      breakBullet(b);
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      );
-    }
-
     // dead bullet maintenance
     // NOTE: this must be called after any system that can create dead bullets but
     //   before the rendering systems.
@@ -772,75 +379,13 @@ export async function initShipyardGame(hosting: boolean) {
       }
     );
 
-    // // starter ammo
-    // {
-    //   assert(colFloor.collider.shape === "AABB");
-    //   for (let i = 0; i < 3; i++) {
-    //     const pos: vec3 = vec3.clone([
-    //       colFloor.collider.aabb.max[0] - 2,
-    //       colFloor.collider.aabb.max[1] + 2,
-    //       colFloor.collider.aabb.max[2] - 2 * i - 3,
-    //     ]);
-    //     spawnGoodBall(pos);
-    //   }
-    // }
-
-    EM.addSystem(
-      "fallingGoodBalls",
-      Phase.GAME_WORLD,
-      [GoodBallDef, PositionDef, GravityDef, LinearVelocityDef],
-      [],
-      (es, res) => {
-        // TODO(@darzu):
-        for (let ball of es) {
-          if (PhysicsParentDef.isOn(ball)) continue; // being held
-          if (ball.position[1] <= realFloorHeight + 1) {
-            ball.position[1] = realFloorHeight + 1;
-            vec3.zero(ball.linearVelocity);
-            vec3.zero(ball.gravity);
-          }
-        }
-      }
-    );
-
-    EM.addSystem(
-      "pickUpBalls",
-      Phase.GAME_WORLD,
-      [GoodBallDef, InteractableDef, InRangeDef, PositionDef],
-      [InputsDef, LocalPlayerEntityDef],
-      (es, res) => {
-        if (!res.inputs.lclick) return;
-        const player = EM.findEntity(res.localPlayerEnt.playerId, [
-          HsPlayerDef,
-        ])!;
-        if (!player) return;
-        if (player.hsPlayer.holdingBall) return;
-        for (let ball of es) {
-          if (PhysicsParentDef.isOn(ball)) continue;
-          // pick up this ball
-          player.hsPlayer.holdingBall = ball.id;
-          EM.set(ball, PhysicsParentDef, player.id);
-          vec3.set(0, 0, -1, ball.position);
-          EM.set(ball, ScaleDef);
-          vec3.copy(ball.scale, [0.8, 0.8, 0.8]);
-          EM.removeComponent(ball.id, InteractableDef);
-        }
-      }
-    );
-
     if (DBG_PLAYER) {
-      const g = createGhost();
-      vec3.copy(g.position, [0, 1, -1.2]);
-      quat.setAxisAngle([0.0, -1.0, 0.0], 1.62, g.rotation);
-      g.cameraFollow.positionOffset = V(0, 0, 5);
-      g.controllable.speed *= 0.5;
-      g.controllable.sprintMul = 10;
       const sphereMesh = cloneMesh(res.allMeshes.ball.mesh);
-      const visible = false;
-      EM.set(g, RenderableConstructDef, sphereMesh, visible);
-      EM.set(g, ColorDef, V(0.1, 0.1, 0.1));
+      const g = createGhost(sphereMesh, true);
+      g.controllable.speed *= 5;
+      g.controllable.sprintMul = 0.2;
+      EM.set(g, ColorDef, ENDESGA16.darkGreen);
       EM.set(g, PositionDef, V(0, 0, 0));
-      // EM.set(b2, PositionDef, [0, 0, -1.2]);
       EM.set(g, WorldFrameDef);
       // EM.set(b2, PhysicsParentDef, g.id);
       EM.set(g, ColliderDef, {
@@ -849,81 +394,21 @@ export async function initShipyardGame(hosting: boolean) {
         aabb: res.allMeshes.ball.aabb,
       });
 
-      // vec3.copy(g.position, [-28.11, 26.0, -28.39]);
-      // quat.copy(g.rotation, [0.0, -0.94, 0.0, 0.34]);
-      // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
-      // g.cameraFollow.yawOffset = 0.0;
-      // g.cameraFollow.pitchOffset = -0.593;
+      addGizmoChild(g, 3);
 
-      // vec3.copy(g.position, [-3.61, 23.22, 36.56]);
-      // quat.copy(g.rotation, [0.0, -0.11, 0.0, 0.99]);
-      // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
+      // vec3.copy(g.position, [-21.17, 35.39, 10.27]);
+      // quat.copy(g.rotation, [0.0, 0.0, -0.94, 0.32]);
+      // vec3.copy(g.cameraFollow.positionOffset, [0.0, 30.0, 0.0]);
+      // // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
       // g.cameraFollow.yawOffset = 0.0;
-      // g.cameraFollow.pitchOffset = -0.378;
+      // g.cameraFollow.pitchOffset = 2.974;
+      // vec3.copy(g.cameraFollow.positionOffset, [0.0, -30.0, 0.0]);
 
-      // vec3.copy(g.position, [-4.19, 39.19, 4.41]);
-      // quat.copy(g.rotation, [0.0, -0.01, 0.0, 1.0]);
-      // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
-      // g.cameraFollow.yawOffset = 0.0;
-      // g.cameraFollow.pitchOffset = -1.439;
-
-      // vec3.copy(g.position, [21.62, 11.55, 15.21]);
-      // quat.copy(g.rotation, [0.0, 0.21, 0.0, 0.98]);
-      // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
-      // g.cameraFollow.yawOffset = 0.0;
-      // g.cameraFollow.pitchOffset = -0.079;
-
-      // vec3.copy(g.position, [-33.52, 15.72, 11.85]);
-      // quat.copy(g.rotation, [0.0, -0.43, 0.0, 0.91]);
-      // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
-      // g.cameraFollow.yawOffset = 0.0;
-      // g.cameraFollow.pitchOffset = -0.336;
-
-      // vec3.copy(g.position, [-11.36, 27.53, -3.66]);
-      // quat.copy(g.rotation, [0.0, -0.93, 0.0, 0.39]);
-      // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
-      // g.cameraFollow.yawOffset = 0.0;
-      // g.cameraFollow.pitchOffset = -1.233;
-
-      vec3.copy(g.position, [-33.85, 17.11, -17.28]);
-      quat.copy(g.rotation, [0.0, -0.86, 0.0, 0.53]);
-      vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
+      vec3.copy(g.position, [-21.98, -23.58, 11.94]);
+      quat.copy(g.rotation, [0.0, 0.0, -0.36, 0.93]);
+      vec3.copy(g.cameraFollow.positionOffset, [0.0, -15.0, 0.0]);
       g.cameraFollow.yawOffset = 0.0;
-      g.cameraFollow.pitchOffset = -0.243;
-    }
-
-    if (!DBG_PLAYER) {
-      const _player = createHsPlayer();
-      vec3.set(-10, realFloorHeight + 6, 0, _player.hsPlayerProps.location);
-      EM.whenEntityHas(
-        _player,
-        PositionDef,
-        RotationDef,
-        CameraFollowDef,
-        ControllableDef,
-        ColliderDef
-      ).then((player) => {
-        Object.assign(player.controllable.modes, {
-          canCameraYaw: false,
-          canFall: true,
-          // canFly: true,
-          canFly: false,
-          canJump: false,
-          canMove: true,
-          canPitch: true,
-          canSprint: true,
-          canYaw: true,
-        });
-        quat.rotateY(player.rotation, Math.PI * 0.5, player.rotation);
-
-        player.collider.solid = true;
-        // player.cameraFollow.positionOffset = [0, 0, 5];
-        // g.controllable.modes.canYaw = false;
-        // g.controllable.modes.canCameraYaw = true;
-        // g.controllable.modes.canPitch = true;
-        // player.controllable.speed *= 0.5;
-        // player.controllable.sprintMul = 10;
-      });
+      g.cameraFollow.pitchOffset = -0.833;
     }
   }
 

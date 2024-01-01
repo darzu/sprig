@@ -35,7 +35,7 @@ import {
 import { RenderableConstructDef, RendererDef } from "../render/renderer-ecs.js";
 import { mat3, mat4, quat, V, vec2, vec3 } from "../matrix/sprig-matrix.js";
 import { SAIL_FURL_RATE } from "../wind/sail.js";
-import { quatFromUpForward, randNormalVec3 } from "../utils/utils-3d.js";
+import { quatFromUpForward_OLD, randNormalVec3 } from "../utils/utils-3d.js";
 import { randColor } from "../utils/utils-game.js";
 import {
   GrassCutTexPtr,
@@ -46,7 +46,7 @@ import {
 import { WindDef, registerChangeWindSystems } from "../wind/wind.js";
 import { DevConsoleDef } from "../debug/console.js";
 import { clamp, jitter, max, sum } from "../utils/math.js";
-import { ShipDef, createLd53ShipAsync } from "../ld53/ship.js";
+import { LD52ShipDef, createLd53ShipAsync } from "../ld53/ship.js";
 import { assert } from "../utils/util.js";
 import { texTypeToBytes } from "../render/gpu-struct.js";
 import { PartyDef } from "../camera/party.js";
@@ -311,22 +311,19 @@ export async function initGrassGame(hosting: boolean) {
     // vec3.set(0, 3, -1, player.position);
     const rudder = ship.ld52ship.rudder()!;
     vec3.copy(player.position, rudder.position);
-    player.position[1] = 1.45;
+    player.position[2] = 1.45;
     assert(CameraFollowDef.isOn(rudder));
     raiseManTurret(player, rudder);
   }
 
   // ghost
   if (DBG_PLAYER) {
-    const g = createGhost();
+    const g = createGhost(res.gg_meshes.ball.proto, false);
     // vec3.copy(g.position, [0, 1, -1.2]);
     // quat.setAxisAngle([0.0, -1.0, 0.0], 1.62, g.rotation);
     // g.cameraFollow.positionOffset = V(0, 0, 5);
     g.controllable.speed *= 2.0;
     g.controllable.sprintMul = 15;
-    const sphereMesh = cloneMesh(res.gg_meshes.ball.mesh);
-    const visible = false;
-    EM.set(g, RenderableConstructDef, sphereMesh, visible);
     EM.set(g, ColorDef, V(0.1, 0.1, 0.1));
     // EM.set(g, PositionDef, V(0, 0, 0));
     // EM.set(b2, PositionDef, [0, 0, -1.2]);
@@ -483,7 +480,7 @@ export async function initGrassGame(hosting: boolean) {
   EM.addSystem(
     "cutGrassUnderShip",
     Phase.GAME_WORLD,
-    [ShipDef, PositionDef, WorldFrameDef, PhysicsStateDef],
+    [LD52ShipDef, PositionDef, WorldFrameDef, PhysicsStateDef],
     [PartyDef, ScoreDef],
     (es, res) => {
       if (!es.length) return;
@@ -682,7 +679,7 @@ export async function initGrassGame(hosting: boolean) {
 
       // TODO(@darzu): ANIMATE SAIL TOWARD WIND
       if (vec3.dot(optimalSailLocalDir, shipLocalDir) > 0.01)
-        quatFromUpForward(mast.rotation, V(0, 1, 0), optimalSailLocalDir);
+        quatFromUpForward_OLD(mast.rotation, V(0, 1, 0), optimalSailLocalDir);
     }
   );
 

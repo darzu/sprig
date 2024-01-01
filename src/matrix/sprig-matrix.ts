@@ -3,11 +3,24 @@ import {
   PERF_DBG_F32S_BLAME,
   PERF_DBG_F32S_TEMP_BLAME,
 } from "../flags.js";
+import { dbgAddBlame, dbgClearBlame } from "../utils/util-no-import.js";
 import * as GLM from "./gl-matrix.js";
-import { dbgAddBlame, dbgClearBlame } from "../utils/util.js";
+
+/*
+Note on notation:
+[1, 0, 0, 0,
+ 0, 1, 0, 0,
+ 0, 0, 1, 0,
+ tx, ty, tz, 0]
+ tx,ty,tz = translate x,y,z
+*/
 
 const EPSILON = 0.000001;
 
+// TODO(@darzu): PERF!! https://github.com/toji/gl-matrix claims:
+//  "Regarding the current performance in modern web browsers, calling
+//   glMatrix.setMatrixArrayType(Array) to use normal arrays instead of
+//   Float32Arrays can greatly increase the performance."
 interface Float32ArrayOfLength<N extends number> extends Float32Array {
   length: N;
 }
@@ -188,6 +201,10 @@ export module vec2 {
     out[0] = n0;
     out[1] = n1;
     return out;
+  }
+
+  export function lerp(v1: InputT, v2: InputT, n: number, out?: T): T {
+    return GL.lerp(out ?? tmp(), v1, v2, n) as T;
   }
 
   // NOTE: output is normalized
@@ -385,6 +402,14 @@ export module vec3 {
     return GL.zero(out ?? tmp()) as T;
   }
 
+  export function rotateX(
+    point: InputT,
+    origin: InputT,
+    rad: number,
+    out?: T
+  ): T {
+    return GL.rotateX(out ?? tmp(), point, origin, rad) as T;
+  }
   export function rotateY(
     point: InputT,
     origin: InputT,
@@ -393,6 +418,42 @@ export module vec3 {
   ): T {
     return GL.rotateY(out ?? tmp(), point, origin, rad) as T;
   }
+  export function rotateZ(
+    point: InputT,
+    origin: InputT,
+    rad: number,
+    out?: T
+  ): T {
+    return GL.rotateZ(out ?? tmp(), point, origin, rad) as T;
+  }
+
+  // NOTE: the yaw/pitch/roll functions ASSUME Z-up, Y-fwd, X-right
+  export function yaw(
+    point: InputT,
+    rad: number,
+    // origin: InputT = ZEROS,
+    out?: T
+  ) {
+    return GL.rotateZ(out ?? tmp(), point, ZEROS, -rad) as T;
+  }
+  export function pitch(
+    point: InputT,
+    rad: number,
+    // origin: InputT = ZEROS,
+    out?: T
+  ) {
+    return GL.rotateX(out ?? tmp(), point, ZEROS, rad) as T;
+  }
+  export function roll(
+    point: InputT,
+    rad: number,
+    // origin: InputT = ZEROS,
+    out?: T
+  ) {
+    return GL.rotateY(out ?? tmp(), point, ZEROS, rad) as T;
+  }
+
+  // TODO(@darzu): add yaw/pitch/roll fns
 
   export function reverse(v: InputT, out?: T): T {
     return set(v[2], v[1], v[0], out);
@@ -600,10 +661,152 @@ export module quat {
   export function fromEuler(x: number, y: number, z: number, out?: T): T {
     return GL.fromEuler(out ?? tmp(), x, y, z) as T;
   }
-  export function fromMat3(m: mat3, out?: T): T {
+  export function fromMat3(m: mat3.InputT, out?: T): T {
     return GL.fromMat3(out ?? tmp(), m) as T;
   }
+  const __quat_fromMat4_tmp = float32ArrayOfLength(9) as mat3;
+  export function fromMat4(m: mat4.InputT, out?: T): T {
+    // TODO(@darzu): PERF. Inline to make efficient.
+    return fromMat3(mat3.fromMat4(m, __quat_fromMat4_tmp), out);
+  }
+
+  // NOTE: the yaw/pitch/roll functions ASSUME Z-up, Y-fwd, X-right
+  export function yaw(v1: InputT, n: number, out?: T) {
+    return GL.rotateZ(out ?? tmp(), v1, -n) as T;
+  }
+  export function pitch(v1: InputT, n: number, out?: T) {
+    return GL.rotateX(out ?? tmp(), v1, n) as T;
+  }
+  export function roll(v1: InputT, n: number, out?: T) {
+    return GL.rotateY(out ?? tmp(), v1, n) as T;
+  }
+  export function fromYawPitchRoll(
+    yaw: number,
+    pitch: number,
+    roll: number,
+    out?: T
+  ): T {
+    return GL.fromEuler(out ?? tmp(), pitch, roll, -yaw) as T;
+  }
+
+  // TODO(@darzu): IMPL toYawPitchRoll
+  /*
+  https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
+  // this implementation assumes normalized quaternion
+  // converts to Euler angles in 3-2-1 sequence
+  EulerAngles ToEulerAngles(Quaternion q) {
+      EulerAngles angles;
+
+      // roll (x-axis rotation)
+      double sinr_cosp = 2 * (q.w * q.x + q.y * q.z);
+      double cosr_cosp = 1 - 2 * (q.x * q.x + q.y * q.y);
+      angles.roll = std::atan2(sinr_cosp, cosr_cosp);
+
+      // pitch (y-axis rotation)
+      double sinp = std::sqrt(1 + 2 * (q.w * q.y - q.x * q.z));
+      double cosp = std::sqrt(1 - 2 * (q.w * q.y - q.x * q.z));
+      angles.pitch = 2 * std::atan2(sinp, cosp) - M_PI / 2;
+
+      // yaw (z-axis rotation)
+      double siny_cosp = 2 * (q.w * q.z + q.x * q.y);
+      double cosy_cosp = 1 - 2 * (q.y * q.y + q.z * q.z);
+      angles.yaw = std::atan2(siny_cosp, cosy_cosp);
+
+      return angles;
+  }
+  */
+
+  // NOTE: assumes these are orthonormalized
+  export function fromXYZ(
+    x: vec3.InputT,
+    y: vec3.InputT,
+    z: vec3.InputT,
+    out?: T
+  ): T {
+    return quat.fromMat3(
+      [
+        // colum 1
+        x[0],
+        x[1],
+        x[2],
+        // colum 2
+        y[0],
+        y[1],
+        y[2],
+        // colum 3
+        z[0],
+        z[1],
+        z[2],
+      ],
+      out
+    );
+  }
+
+  const _t1 = vec3.create();
+  const _t2 = vec3.create();
+  const _t3 = vec3.create();
+  export function fromYAndZish(
+    newY: vec3.InputT,
+    newZish: vec3.InputT,
+    out?: T
+  ): T {
+    // TODO(@darzu): PERF. this could be sped up by inline a lot of this and simplifying
+    const x = _t1;
+    const y = vec3.copy(_t2, newY);
+    const z = vec3.copy(_t3, newZish);
+    orthonormalize(y, z, x);
+    return fromXYZ(x, y, z, out);
+  }
+
+  // NOTE: assumes identity rotation corrisponds to Y+ being forward and Z+ being up
+  export function fromForwardAndUpish(
+    forward: vec3.InputT,
+    upish: vec3.InputT,
+    out?: T
+  ): T {
+    return fromYAndZish(forward, upish, out);
+  }
+
+  // Creates a rotation that will move <0,1,0> to point towards forward; no guarantees are made
+  //  about its other axis orientations!
+  const _t4 = vec3.create();
+  export function fromForward(forward: vec3.InputT, out?: T): T {
+    // console.log(`fromForward, fwd:${vec3Dbg(forward)}`);
+
+    const y = vec3.copy(_t4, forward);
+    vec3.normalize(y, y);
+
+    // console.log(`normalized y: ${vec3Dbg(y)}`);
+
+    // find an up-ish vector
+    const upish = tV(0, 0, 1);
+    if (Math.abs(vec3.dot(y, upish)) > 0.9) vec3.set(0, 1, 0, upish);
+
+    // console.log(`upish: ${vec3Dbg(upish)}`);
+
+    // orthonormalize
+    const x = vec3.tmp();
+    vec3.cross(y, upish, x);
+    vec3.normalize(x, x);
+
+    // console.log(`x: ${vec3Dbg(x)}`);
+
+    vec3.cross(x, y, upish);
+
+    // console.log(`new upish: ${vec3Dbg(upish)}`);
+
+    // console.log(`x: ${vec3Dbg(x)}, y: ${vec3Dbg(y)}, z: ${vec3Dbg(upish)}`);
+
+    return fromXYZ(x, y, upish, out);
+  }
 }
+
+// TODO(@darzu): HACK FOR DEBUGGING
+// function vec3Dbg(v?: vec3.InputT): string {
+//   return v
+//     ? `[${v[0].toFixed(2)},${v[1].toFixed(2)},${v[2].toFixed(2)}]`
+//     : "NIL";
+// }
 
 export module mat4 {
   export type T = mat4;
@@ -724,7 +927,8 @@ export module mat4 {
     return GL.getScaling(out ?? vec3.tmp(), m) as vec3;
   }
 
-  // NOTE: rotates CCW
+  // TODO(@darzu): wait what, these should all rotate clockwise?
+  //  comment was: "NOTE: rotates CCW"
   export function rotateX(v1: InputT, n: number, out?: T) {
     return GL.rotateX(out ?? tmp(), v1, n) as T;
   }
@@ -733,6 +937,26 @@ export module mat4 {
   }
   export function rotateZ(v1: InputT, n: number, out?: T) {
     return GL.rotateZ(out ?? tmp(), v1, n) as T;
+  }
+
+  // NOTE: the yaw/pitch/roll functions ASSUME Z-up, Y-fwd, X-right
+  export function yaw(v1: InputT, n: number, out?: T) {
+    return GL.rotateZ(out ?? tmp(), v1, -n) as T;
+  }
+  export function pitch(v1: InputT, n: number, out?: T) {
+    return GL.rotateX(out ?? tmp(), v1, n) as T;
+  }
+  export function roll(v1: InputT, n: number, out?: T) {
+    return GL.rotateY(out ?? tmp(), v1, n) as T;
+  }
+  export function fromYaw(rad: number, out?: T): T {
+    return GL.fromZRotation(out ?? tmp(), -rad) as T;
+  }
+  export function fromPitch(rad: number, out?: T): T {
+    return GL.fromXRotation(out ?? tmp(), rad) as T;
+  }
+  export function fromRoll(rad: number, out?: T): T {
+    return GL.fromYRotation(out ?? tmp(), rad) as T;
   }
 
   export function frustum(
@@ -754,6 +978,7 @@ export module mat4 {
   Smooshes left/right/top/bottom/near/far 
   from y-up, right-handed into [-1,-1,0]x[1,1,1], y-up, left-handed (WebGPU NDC clip-space)
   */
+  // TODO(@darzu): Z_UP?
   export function ortho(
     left: number,
     right: number,
@@ -1050,7 +1275,24 @@ export module mat3 {
     return GL.fromQuat(out ?? tmp(), q) as T;
   }
 
-  export function fromMat4(q: mat4, out?: T): T {
+  export function fromMat4(q: mat4.InputT, out?: T): T {
     return GL.fromMat4(out ?? tmp(), q) as T;
   }
+}
+
+// Other utils:
+
+// mutates forward and upish and outputs to outRight such that all three are
+//  orthogonal to eachother.
+// TODO(@darzu): change this to use x,y,z ?
+export function orthonormalize(forward: vec3, upish: vec3, outRight: vec3) {
+  // TODO(@darzu): there's a pattern somewhat similar in many places:
+  //    orthonormalizing, Gram–Schmidt
+  //    quatFromUpForward, getControlPoints, tripleProd?
+  //    targetTo, lookAt ?
+  // Also this can be more efficient by inlining
+  vec3.normalize(forward, forward);
+  vec3.cross(forward, upish, outRight);
+  vec3.normalize(outRight, outRight);
+  vec3.cross(outRight, forward, upish);
 }

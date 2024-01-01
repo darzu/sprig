@@ -158,34 +158,38 @@ export async function initOre(spacePath: Path) {
   // fuel slot locations
   const spc = 8;
 
-  const fuelSlots = [
-    V(0, 5, -16),
-    V(spc, 5, -16),
-    V(-spc, 5, -16),
-    V(0, 5, -16 - spc),
-    V(spc, 5, -16 - spc),
-    V(-spc, 5, -16 - spc),
-    V(0, 5 + spc, -16),
-    V(spc, 5 + spc, -16),
-    V(-spc, 5 + spc, -16),
-    V(0, 5 + spc, -16 - spc),
-    V(spc, 5 + spc, -16 - spc),
-    V(-spc, 5 + spc, -16 - spc),
+  const H = 5;
+  const B = -16;
+  const F = 10;
+
+  const fuelSlots: vec3[] = [
+    V(0, B, H),
+    V(spc, B, H),
+    V(-spc, B, H),
+    V(0, B - spc, H),
+    V(spc, B - spc, H),
+    V(-spc, B - spc, H),
+    V(0, B, H + spc),
+    V(spc, B, H + spc),
+    V(-spc, B, H + spc),
+    V(0, B - spc, H + spc),
+    V(spc, B - spc, H + spc),
+    V(-spc, B - spc, H + spc),
   ];
 
-  const oxygenSlots = [
-    V(0, 5, 10),
-    V(spc, 5, 10),
-    V(-spc, 5, 10),
-    V(0, 5, 10 + spc),
-    V(spc, 5, 10 + spc),
-    V(-spc, 5, 10 + spc),
-    V(0, 5, 10),
-    V(spc, 5 + spc, 10),
-    V(-spc, 5 + spc, 10),
-    V(0, 5 + spc, 10 + spc),
-    V(spc, 5 + spc, 10 + spc),
-    V(-spc, 5 + spc, 10 + spc),
+  const oxygenSlots: vec3[] = [
+    V(0, F, H),
+    V(spc, F, H),
+    V(-spc, F, H),
+    V(0, F + spc, H),
+    V(spc, F + spc, H),
+    V(-spc, F + spc, H),
+    V(0, F, H),
+    V(spc, F, H + spc),
+    V(-spc, F, H + spc),
+    V(0, F + spc, H + spc),
+    V(spc, F + spc, H + spc),
+    V(-spc, F + spc, H + spc),
   ];
 
   function fuelOreToTravelDist(ore: number): number {
@@ -239,7 +243,7 @@ export async function initOre(spacePath: Path) {
         randDistFromTrack,
         vec3.create()
       );
-      pos[2] = seg.pos[2];
+      pos[1] = seg.pos[1];
 
       createFuelOre(pos);
       numFuelSpawned++;
@@ -282,7 +286,7 @@ export async function initOre(spacePath: Path) {
         randDistFromTrack,
         vec3.create()
       );
-      pos[2] = seg.pos[2];
+      pos[1] = seg.pos[1];
 
       createOxygenOre(pos);
 

@@ -1,12 +1,11 @@
 import { AABB, getAABBCornersTemp } from "../physics/aabb.js";
 import { createFlatQuadMesh } from "../meshes/primatives.js";
 import { Mesh, mergeMeshes } from "../meshes/mesh.js";
-import { vec3, V, tV } from "../matrix/sprig-matrix.js";
-import { assert } from "../utils/util.js";
-import { orthonormalize, vec3Dbg } from "../utils/utils-3d.js";
+import { vec3, V, tV, orthonormalize } from "../matrix/sprig-matrix.js";
+import { assert, dbgDirOnce } from "../utils/util.js";
 import { createEmptyMesh } from "../wood/wood.js";
 
-const _UP = V(0, 1, 0);
+const _UP = V(0, 0, 1);
 const _t1 = vec3.create();
 const _t2 = vec3.create();
 const _t3 = vec3.create();
@@ -73,8 +72,8 @@ export function createLineMesh(
 export function createGizmoMesh(): Mesh {
   const mesh = mergeMeshes(
     createLineMesh(0.1, [0.05, 0, 0], [1, 0, 0]),
-    createLineMesh(0.1, [0, 0.05, 0], [0, 1, 0], [1, 0, 0]),
-    createLineMesh(0.1, [0, 0, 0.05], [0, 0, 1])
+    createLineMesh(0.1, [0, 0.05, 0], [0, 1, 0]),
+    createLineMesh(0.1, [0, 0, 0.05], [0, 0, 1], [1, 0, 0])
   ) as Mesh;
   // const mesh = createLineMesh(1, V(0, 0, 0), V(10, 0, 0));
   mesh.colors.forEach((c, i) => {
@@ -84,6 +83,7 @@ export function createGizmoMesh(): Mesh {
   });
   (mesh as Mesh).usesProvoking = true;
   // console.dir(mesh);
+
   return mesh;
 }
 
@@ -130,16 +130,19 @@ export function createGraph3DAxesMesh(opts: GraphAxesMeshOpts): Mesh {
 
 export function createGraph3DDataMesh(data: vec3[][]): Mesh {
   assert(data.length > 1 && data[0].length > 1);
-  const xLen = data.length;
-  const zLen = data[0].length;
-  const mesh = createFlatQuadMesh(zLen, xLen, true);
+  const yLen = data.length;
+  const xLen = data[0].length;
+  // NOTE: this index fn must match the flat mesh's construction
+  // TODO(@darzu): standardize grid walk and data[?][?] access conventions for sprig
+  const mesh = createFlatQuadMesh(xLen, yLen, true);
+  const idx = (xi: number, yi: number) => yi * xLen + xi;
   // mesh.surfaceIds.fill(1);
-  for (let x = 0; x < xLen; x++) {
-    assert(data[x].length === zLen);
-    for (let z = 0; z < zLen; z++) {
-      const idx = z + x * zLen;
-      const pos = data[x][z];
-      vec3.copy(mesh.pos[idx], pos);
+  for (let yi = 0; yi < yLen; yi++) {
+    for (let xi = 0; xi < xLen; xi++) {
+      assert(data[yi].length === xLen);
+      const i = idx(xi, yi);
+      const pos = data[yi][xi];
+      vec3.copy(mesh.pos[i], pos);
     }
   }
   return mesh;

@@ -140,3 +140,9 @@ Sprigland codebase itself will eventually be a big teaching tool
   all-in-one promise
   have videos / tutorials that reenact that invention of core components like physics and cytochrome
   
+many colored lines wire frame creature:
+  like Horizon from Last Horizon,
+  creature made of neon-ish wireframe lines
+  each a different color,
+  starts as mono color, then add more in as a progression mechanic
+  

@@ -41,6 +41,7 @@ export function initDbgViewModes() {
           CameraFollowDef,
         ]);
         if (p) {
+          // TODO(@darzu): hacky heck of positionOffset
           const overShoulder = p.cameraFollow.positionOffset[0] !== 0;
           if (overShoulder) setCameraFollowPosition(p, "thirdPerson");
           else setCameraFollowPosition(p, "thirdPersonOverShoulder");

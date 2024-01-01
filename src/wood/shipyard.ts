@@ -21,7 +21,7 @@ import {
 import { assert, assertDbg, range } from "../utils/util.js";
 import {
   centroid,
-  quatFromUpForward,
+  quatFromUpForward_OLD,
   randNormalPosVec3,
   vec3Dbg,
 } from "../utils/utils-3d.js";
@@ -50,6 +50,7 @@ import {
   AABB,
   createAABB,
   getSizeFromAABB,
+  transformAABB,
   updateAABBWithPoint,
 } from "../physics/aabb.js";
 import { ENDESGA16 } from "../color/palettes.js";
@@ -65,6 +66,7 @@ import {
   translatePath,
   translatePathAlongNormal,
 } from "../utils/spline.js";
+import { transformYUpModelIntoZUp } from "../camera/basis.js";
 
 // TODO(@darzu): use arc-length parameterization to resample splines
 
@@ -82,6 +84,8 @@ const plankStripe2Color = ENDESGA16.white;
 const strip2StartIdx = 7;
 const strip2EndIdx = 8;
 
+// TODO(@darzu): Bad abstraction. It's annoying to provide all these properties ribCount etc and also
+//  not all wood projects will need/have these
 export interface HomeShip {
   timberState: WoodState;
   timberMesh: Mesh;
@@ -102,6 +106,7 @@ export interface ShipyardUI {
 }
 
 // Note: Made w/ game-font !
+// TODO(@darzu): Z_UP: transform these?
 const keelTemplate: Mesh = {
   pos: [
     V(0.58, 0.0, 1.49),
@@ -160,7 +165,7 @@ const keelTemplate: Mesh = {
   usesProvoking: true,
 };
 const __temp1 = vec3.create();
-export function getPathFrom2DQuadMesh(m: Mesh, up: vec3.InputT): Path {
+export function getPathFrom2DQuadMesh(m: Mesh, perp: vec3.InputT): Path {
   const hpoly = meshToHalfEdgePoly(m);
 
   // find the end face
@@ -186,8 +191,8 @@ export function getPathFrom2DQuadMesh(m: Mesh, up: vec3.InputT): Path {
     let v0 = m.pos[e.orig.vi];
     let v1 = m.pos[e.next.orig.vi];
     let pos = centroid(v0, v1);
-    let dir = vec3.cross(vec3.sub(v0, v1, __temp1), up, __temp1);
-    const rot = quatFromUpForward(quat.create(), up, dir);
+    let dir = vec3.cross(vec3.sub(v0, v1, __temp1), perp, __temp1);
+    const rot = quatFromUpForward_OLD(quat.create(), perp, dir);
     path.push({ pos, rot });
 
     if (!e.face) break;
@@ -213,11 +218,12 @@ export function getPathFrom2DQuadMesh(m: Mesh, up: vec3.InputT): Path {
   }
 }
 
-function createPathGizmos(path: Path): Mesh {
+function createPathGizmos(path: Path, scale = 1): Mesh {
   let gizmos: Mesh[] = [];
   path.forEach((p) => {
     const g = createGizmoMesh();
     g.pos.forEach((v) => {
+      vec3.scale(v, scale, v);
       vec3.transformQuat(v, p.rot, v);
       vec3.add(v, p.pos, v);
     });
@@ -227,8 +233,8 @@ function createPathGizmos(path: Path): Mesh {
   res.usesProvoking = true;
   return res;
 }
-export async function dbgPathWithGizmos(path: Path) {
-  const mesh = createPathGizmos(path);
+export async function dbgPathWithGizmos(path: Path, scale = 1) {
+  const mesh = createPathGizmos(path, scale);
 
   const e = EM.new();
   EM.set(e, PositionDef);
@@ -266,7 +272,9 @@ export function snapToPath(path: Path, w: number, dim: 0 | 1 | 2, out: vec3) {
   return out;
 }
 
-export const homeShipAABBs: AABB[] = [
+// Note: these were manually placed via the modeler
+// TODO(@darzu): Z_UP: visualize these to make sure they're right
+export const ld53ShipAABBs: AABB[] = [
   { min: V(-10.6, -2.65, -22.1), max: V(-6.6, 3.65, 18.1) },
   { min: V(7.0, -2.65, -22.1), max: V(11.0, 3.65, 18.1) },
   { min: V(-6.8, -2.65, -30.45), max: V(6.4, 3.65, -25.95) },
@@ -276,9 +284,17 @@ export const homeShipAABBs: AABB[] = [
   { min: V(4.25, -2.65, 17.95), max: V(7.95, 3.65, 22.45) },
   { min: V(-6.15, -2.65, 22.25), max: V(5.55, 3.65, 26.15) },
   { min: V(-6.8, -5.95, -26.1), max: V(7.2, 0.35, 22.5) },
-];
+].map((aabb) =>
+  transformAABB(aabb, mat4.mul(mat4.fromYaw(Math.PI), transformYUpModelIntoZUp))
+);
 
-export function createHomeShip(): HomeShip {
+export function createLD53Ship(): HomeShip {
+  const KEEL = true;
+  const RIBS = true;
+  const PLANKS = true;
+  const RAIL = true;
+  const TRANSOM = true;
+
   const _start = performance.now();
   const _timberMesh = createEmptyMesh("homeShip");
 
@@ -293,6 +309,7 @@ export function createHomeShip(): HomeShip {
 
   let keelPath: Path;
   {
+    // TODO(@darzu): Clean up ship's construction (too many transforms, basis changes, etc)
     // const keelTempAABB = getAABBFromMesh(keelTemplate);
     // console.dir(keelTempAABB);
     let keelTemplate2 = transformMesh(
@@ -304,8 +321,10 @@ export function createHomeShip(): HomeShip {
         [5, 5, 5]
       )
     ) as Mesh;
+    // const keelTemplate2 = keelTemplate;
 
     keelPath = getPathFrom2DQuadMesh(keelTemplate2, [0, 0, 1]);
+    // keelPath = getPathFrom2DQuadMesh(keelTemplate2, [0, 1, 0]);
 
     // fix keel orientation
     // r->g, g->b, b->r
@@ -322,15 +341,16 @@ export function createHomeShip(): HomeShip {
   keelPath.forEach((p) => updateAABBWithPoint(keelAABB, p.pos));
   const keelSize = getSizeFromAABB(keelAABB, vec3.create());
 
-  appendBoard(
-    builder.mesh,
-    {
-      path: keelPath,
-      width: keelWidth,
-      depth: keelDepth,
-    },
-    keelColor
-  );
+  if (KEEL)
+    appendBoard(
+      builder.mesh,
+      {
+        path: keelPath,
+        width: keelWidth,
+        depth: keelDepth,
+      },
+      keelColor
+    );
 
   // RIBS
   const ribWidth = 0.5;
@@ -385,8 +405,12 @@ export function createHomeShip(): HomeShip {
     railCurve = { p0, p1, p2, p3 };
   }
   const railNodes = ribCount + 2;
-  const railPath = createPathFromBezier(railCurve, railNodes, [0, 1, 0]);
-  fixPathBasis(railPath, [0, 1, 0], [0, 0, 1], [1, 0, 0]);
+  const railPath = createPathFromBezier(
+    railCurve,
+    railNodes,
+    [0, 1, 0] // TODO(@darzu): Z_UP
+  );
+  // fixPathBasis(railPath, [0, 1, 0], [0, 0, 1], [1, 0, 0]);
 
   // let ribEnds: vec3[] = [];
   let ribPaths: Path[] = [];
@@ -435,7 +459,7 @@ export function createHomeShip(): HomeShip {
 
     const numRibSegs = 8;
     const bPath = createPathFromBezier(ribCurve, numRibSegs, [1, 0, 0]);
-    fixPathBasis(bPath, [0, 1, 0], [0, 0, 1], [1, 0, 0]);
+    // fixPathBasis(bPath, [0, 1, 0], [0, 0, 1], [1, 0, 0]);
     ribPaths.push(bPath);
 
     // if (i === 0) {
@@ -448,25 +472,27 @@ export function createHomeShip(): HomeShip {
     // }
     // if (i === 1) dbgPathWithGizmos(weirdP);
 
-    appendBoard(
-      builder.mesh,
-      {
-        path: bPath,
-        width: ribWidth,
-        depth: ribDepth,
-      },
-      ribColor
-    );
+    if (RIBS)
+      appendBoard(
+        builder.mesh,
+        {
+          path: bPath,
+          width: ribWidth,
+          depth: ribDepth,
+        },
+        ribColor
+      );
 
-    appendBoard(
-      builder.mesh,
-      {
-        path: mirrorPath(clonePath(bPath), V(0, 0, 1)),
-        width: ribWidth,
-        depth: ribDepth,
-      },
-      ribColor
-    );
+    if (RIBS)
+      appendBoard(
+        builder.mesh,
+        {
+          path: mirrorPath(clonePath(bPath), V(0, 0, 1)),
+          width: ribWidth,
+          depth: ribDepth,
+        },
+        ribColor
+      );
   }
 
   // RAIL
@@ -482,24 +508,26 @@ export function createHomeShip(): HomeShip {
   }
   // rail board:
   const mirrorRailPath = mirrorPath(clonePath(railPath), V(0, 0, 1));
-  appendBoard(
-    builder.mesh,
-    {
-      path: railPath,
-      width: ribWidth,
-      depth: ribDepth,
-    },
-    railColor
-  );
-  appendBoard(
-    builder.mesh,
-    {
-      path: mirrorRailPath,
-      width: ribWidth,
-      depth: ribDepth,
-    },
-    railColor
-  );
+  if (RAIL)
+    appendBoard(
+      builder.mesh,
+      {
+        path: railPath,
+        width: ribWidth,
+        depth: ribDepth,
+      },
+      railColor
+    );
+  if (RAIL)
+    appendBoard(
+      builder.mesh,
+      {
+        path: mirrorRailPath,
+        width: ribWidth,
+        depth: ribDepth,
+      },
+      railColor
+    );
 
   // translatePath(railPath, [0, 0, 8]);
   // dbgPathWithGizmos(railPath);
@@ -524,7 +552,7 @@ export function createHomeShip(): HomeShip {
       );
       // even.reverse();
       // translatePath(even, [0, 0, 10]);
-      fixPathBasis(even, [0, 0, 1], [0, 1, 0], [-1, 0, 0]);
+      // fixPathBasis(even, [0, 0, 1], [0, 1, 0], [-1, 0, 0]);
       translatePathAlongNormal(even, ribDepth); // + 0.3);
       // fixPathBasis(even, [0, 1, 0], [1, 0, 0], [0, 0, -1]);
       // dbgPathWithGizmos(even);
@@ -592,6 +620,11 @@ export function createHomeShip(): HomeShip {
       vec3.add(second.pos, diff, first.pos);
       nodes.unshift(first);
     }
+
+    fixPathBasis(nodes, [0, 1, 0], [0, 0, 1], [1, 0, 0]);
+
+    // dbgPathWithGizmos(nodes);
+
     plankPaths.push(nodes);
 
     let mirroredPath = mirrorPath(clonePath(nodes), [0, 0, 1]);
@@ -602,24 +635,26 @@ export function createHomeShip(): HomeShip {
     if (stripStartIdx <= i && i <= stripEndIdx) color = plankStripeColor;
     if (strip2StartIdx <= i && i <= strip2EndIdx) color = plankStripe2Color;
 
-    appendBoard(
-      builder.mesh,
-      {
-        path: nodes,
-        width: plankWidth,
-        depth: plankDepth,
-      },
-      color
-    );
-    appendBoard(
-      builder.mesh,
-      {
-        path: mirroredPath,
-        width: plankWidth,
-        depth: plankDepth,
-      },
-      color
-    );
+    if (PLANKS)
+      appendBoard(
+        builder.mesh,
+        {
+          path: nodes,
+          width: plankWidth,
+          depth: plankDepth,
+        },
+        color
+      );
+    if (PLANKS)
+      appendBoard(
+        builder.mesh,
+        {
+          path: mirroredPath,
+          width: plankWidth,
+          depth: plankDepth,
+        },
+        color
+      );
   }
 
   // TRANSOM
@@ -649,15 +684,16 @@ export function createHomeShip(): HomeShip {
     if (i === 0) color = topPlankColor;
     if (stripStartIdx <= i && i <= stripEndIdx) color = plankStripeColor;
     if (strip2StartIdx <= i && i <= strip2EndIdx) color = plankStripe2Color;
-    appendBoard(
-      builder.mesh,
-      {
-        path: path,
-        width: plankWidth,
-        depth: plankDepth,
-      },
-      color
-    );
+    if (TRANSOM)
+      appendBoard(
+        builder.mesh,
+        {
+          path: path,
+          width: plankWidth,
+          depth: plankDepth,
+        },
+        color
+      );
   }
   // REAR RAIL
   {
@@ -674,15 +710,16 @@ export function createHomeShip(): HomeShip {
     for (let n of path) {
       quat.fromEuler(-Math.PI / 2, 0, Math.PI / 2, n.rot);
     }
-    appendBoard(
-      builder.mesh,
-      {
-        path: path,
-        width: ribWidth,
-        depth: ribDepth,
-      },
-      railColor
-    );
+    if (RAIL)
+      appendBoard(
+        builder.mesh,
+        {
+          path: path,
+          width: ribWidth,
+          depth: ribDepth,
+        },
+        railColor
+      );
   }
 
   // FLOOR
@@ -740,24 +777,26 @@ export function createHomeShip(): HomeShip {
       }));
       // dbgPathWithGizmos(path);
       let mirroredPath = mirrorPath(clonePath(path), [0, 0, 1]);
-      appendBoard(
-        builder.mesh,
-        {
-          path: path,
-          width: floorBoardWidth / 2 - floorBoardGap,
-          depth: plankDepth,
-        },
-        floorColor
-      );
-      appendBoard(
-        builder.mesh,
-        {
-          path: mirroredPath,
-          width: floorBoardWidth / 2 - floorBoardGap,
-          depth: plankDepth,
-        },
-        floorColor
-      );
+      if (PLANKS)
+        appendBoard(
+          builder.mesh,
+          {
+            path: path,
+            width: floorBoardWidth / 2 - floorBoardGap,
+            depth: plankDepth,
+          },
+          floorColor
+        );
+      if (PLANKS)
+        appendBoard(
+          builder.mesh,
+          {
+            path: mirroredPath,
+            width: floorBoardWidth / 2 - floorBoardGap,
+            depth: plankDepth,
+          },
+          floorColor
+        );
       // break; // TODO(@darzu):
     }
   }
@@ -765,13 +804,28 @@ export function createHomeShip(): HomeShip {
   const ceilHeight = floorHeight + 15; // TODO(@darzu): OLD
 
   // ROTATE WHOLE THING (YIKES)
+  // TODO(@darzu): fix up ship construction
   {
-    const rotate = quat.fromEuler(0, -Math.PI / 2, 0);
+    // TODO(@darzu): Z_UP: basis change. inline this above?
+    _timberMesh.pos.forEach((v) =>
+      vec3.transformMat4(v, transformYUpModelIntoZUp, v)
+    );
+
+    // change so ship faces +y
+    const rotate = quat.fromYawPitchRoll(-Math.PI / 2, 0, 0);
     _timberMesh.pos.forEach((v) => {
       vec3.transformQuat(v, rotate, v);
-      vec3.add(v, [0, -floorHeight, 0], v);
     });
+
+    // TODO(@darzu): CLEAN UP: currently the result is the ship fwd is y-; We should fix everything to have y+ is fwd
   }
+
+  // lower the whole ship so it's main deck is at 0 height
+  const DECK_AT_ZERO = true;
+  if (DECK_AT_ZERO)
+    _timberMesh.pos.forEach((v) => {
+      vec3.add(v, [0, 0, -floorHeight], v);
+    });
 
   // console.dir(_timberMesh.colors);
   _timberMesh.surfaceIds = _timberMesh.colors.map((_, i) => i);
@@ -820,6 +874,7 @@ export function pathNodeFromMat4(cursor: mat4): PathNode {
   };
 }
 
+// TODO(@darzu): PERF. creates a lot of vecs
 export function lerpBetween(start: vec3, end: vec3, numNewMid: number): vec3[] {
   const positions: vec3[] = [];
   positions.push(start);
@@ -904,6 +959,7 @@ export function appendBoard(mesh: RawMesh, board: Board, color = BLACK) {
   }
 }
 
+// TODO(@darzu): perhaps all uses of fixPathBasis are bad?
 export function fixPathBasis(
   path: Path,
   newX: vec3.InputT,

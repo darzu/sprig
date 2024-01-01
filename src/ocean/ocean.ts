@@ -34,7 +34,7 @@ import { TimeDef } from "../time/time.js";
 import { asyncTimeout, dbgLogOnce, range } from "../utils/util.js";
 import {
   quatDbg,
-  quatFromUpForward,
+  quatFromUpForward_OLD,
   randNormalVec2,
   vec2Dbg,
   vec3Dbg,
@@ -112,6 +112,7 @@ EM.registerSerializerPair(
 export const oceanJfa = createJfaPipelines(uvMaskTex, "exterior");
 
 export async function initOcean(oceanMesh: Mesh, color: vec3) {
+  // TODO(@darzu): Z_UP fix ocean
   // console.log("initOcean");
   const res = await EM.whenResources(RendererDef, TimeDef);
 
@@ -135,13 +136,15 @@ export async function initOcean(oceanMesh: Mesh, color: vec3) {
   let ocean2 = await EM.whenEntityHas(ocean, RenderableDef, RenderDataOceanDef);
   // let ocean2 = await EM.whenEntityHas(ocean, RenderableDef, RenderDataStdDef);
 
-  // TODO(@darzu):
+  // TODO(@darzu): dbging ?
   const preOceanGPU = performance.now();
 
   res.renderer.renderer
     .getCyResource(oceanPoolPtr)!
     .updateUniform(ocean2.renderable.meshHandle, ocean2.renderDataOcean);
 
+  // TODO(@darzu): seperate and compose uv unwrapping as its own feature with a more sane
+  //  integration w/ the ocean stuff
   res.renderer.renderer.submitPipelines(
     [ocean2.renderable.meshHandle],
     // [unwrapPipeline, unwrapPipeline2]
@@ -198,6 +201,7 @@ export async function initOcean(oceanMesh: Mesh, color: vec3) {
     oceanJfa.sdfTex.format
   );
 
+  // TODO(@darzu): re-enable all these texture reader things
   const uvToPos = (out: vec3, uv: vec2) => {
     dbgLogOnce(`uvToPos is disabled! tex format issues`, undefined, true);
     const x = uv[0] * uvToPosReader.size[0];
@@ -261,6 +265,7 @@ export async function initOcean(oceanMesh: Mesh, color: vec3) {
     const norm = uvToNorm(__temp3, uv);
     const tang = uvToTang(__temp4, uv);
     const perp = vec3.cross(tang, norm, __temp5);
+    // TODO(@darzu): Z_UP: i think we want to scale disp.x by tangent, .y by perp, .z by norm
     const disp = vec3.add(
       vec3.scale(perp, outDisp[0], __temp6),
       vec3.add(
@@ -389,7 +394,7 @@ export function registerOceanUVFns() {
           const forwardish = vec3.sub(aheadPos, e.position, __temp1);
           const newNorm = __temp2;
           res.ocean.uvToGerstnerDispAndNorm(__temp4, newNorm, e.uvPos);
-          quatFromUpForward(e.rotation, newNorm, forwardish);
+          quatFromUpForward_OLD(e.rotation, newNorm, forwardish);
           // console.log(
           //   `UVDir ${[e.uvDir[0], e.uvDir[1]]} -> ${quatDbg(e.rotation)}`
           // );

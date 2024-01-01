@@ -51,7 +51,7 @@ import {
 import { range } from "../utils/util.js";
 import {
   centroid,
-  quatFromUpForward,
+  quatFromUpForward_OLD,
   randNormalVec3,
   vec3Dbg,
 } from "../utils/utils-3d.js";
@@ -102,8 +102,8 @@ What does compute shader gain us?
 // Flag for serialization dbg. determine the max number of boards and segments; useful for sizing (u8 vs u16) for serializing
 const TRACK_MAX_BOARD_SEG_IDX = false;
 
-// TODO(@darzu): PERF HACK. These temp vecs are used for intermediate calculations.
-//    Be very careful about their liveness / lifetime!!
+export const DBG_WOOD_DMG = false;
+
 const __temp1 = vec3.create();
 const __temp2 = vec3.create();
 
@@ -149,6 +149,8 @@ const raiseDmgWood = eventWizard(
   "dmg-wood",
   [[WoodHealthDef]] as const,
   ([wood], hits: BoardSegHit[]) => {
+    if (DBG_WOOD_DMG)
+      console.log(`dmg-wood against ${wood.id} w/ ${hits.length} hits`);
     for (let { boardIdx, segIdx, dmg } of hits) {
       wood.woodHealth.boards[boardIdx][segIdx].health -= dmg;
 
@@ -343,10 +345,11 @@ EM.addEagerInit([WoodStateDef], [], [], () => {
   EM.addSystem(
     "woodHealth",
     Phase.GAME_WORLD,
-    [WoodStateDef, WorldFrameDef, WoodHealthDef, RenderableDef, ColorDef],
+    [WoodStateDef, WorldFrameDef, WoodHealthDef, RenderableDef],
     [RendererDef, SplinterPoolsDef],
     async (es, res) => {
       const stdPool = res.renderer.renderer.getCyResource(meshPoolPtr)!;
+
       // TODO(@darzu):
       for (let w of es) {
         // TODO(@darzu): track start and end offsets for each
@@ -378,6 +381,11 @@ EM.addEagerInit([WoodStateDef], [], [], () => {
           board.segments.forEach((seg, sIdx) => {
             const h = w.woodHealth.boards[bIdx][sIdx];
             if (!h.broken && h.health <= 0) {
+              if (DBG_WOOD_DMG)
+                console.log(
+                  `breaking ${w.id}.woodHealth.boards[${bIdx}][${sIdx}]`
+                );
+
               h.broken = true;
               // TODO(@darzu): how to unhide?
               // TODO(@darzu): probably a more efficient way to do this..
@@ -411,7 +419,7 @@ EM.addEagerInit([WoodStateDef], [], [], () => {
                 const splinter = pool.getNext();
                 if (RenderableDef.isOn(splinter))
                   splinter.renderable.hidden = false;
-                vec3.copy(splinter.color, w.color);
+                if (ColorDef.isOn(w)) vec3.copy(splinter.color, w.color);
                 vec3.add(splinter.color, quadColor, splinter.color);
                 const pos = getLineMid(vec3.create(), seg.midLine);
                 vec3.transformMat4(pos, w.world.transform, pos);
@@ -425,7 +433,7 @@ EM.addEagerInit([WoodStateDef], [], [], () => {
                 EM.set(splinter, AngularVelocityDef, spin);
                 vec3.scale(vel, 0.01, vel);
                 EM.set(splinter, LinearVelocityDef, spin);
-                EM.set(splinter, GravityDef, [0, -3 * 0.00001, 0]);
+                EM.set(splinter, GravityDef, [0, 0, -3 * 0.00001]);
               }
 
               if (h.prev && !h.prev.broken) {
@@ -571,7 +579,7 @@ function getSegmentRotation(seg: BoardSeg, top: boolean) {
   }
 
   const rot = quat.create();
-  quatFromUpForward(rot, endNorm, segNorm);
+  quatFromUpForward_OLD(rot, endNorm, segNorm);
   return rot;
 }
 
@@ -787,6 +795,7 @@ export function setEndQuadIdxs(loopVi: number, q: vec4, facingDown: boolean) {
 
 export type TimberBuilder = ReturnType<typeof createTimberBuilder>;
 export function createTimberBuilder(mesh: RawMesh) {
+  // TODO(@darzu): Z_UP!! check this over
   // TODO(@darzu): have a system for building wood?
 
   // const W = 0.5; // width

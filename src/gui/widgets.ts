@@ -75,7 +75,7 @@ async function initDragBox(): Promise<EntityW<[typeof PositionDef]>> {
   const dragBoxMesh = cloneMesh(unitCubeMesh.mesh);
   EM.set(dragBox, AlphaDef, 0.2);
   EM.set(dragBox, RenderableConstructDef, dragBoxMesh);
-  EM.set(dragBox, PositionDef, V(0, 0.2, 0));
+  EM.set(dragBox, PositionDef, V(0, 0, -0.2));
   EM.set(dragBox, ScaleDef, V(1, 1, 1));
   EM.set(dragBox, ColorDef, V(0.0, 120 / 255, 209 / 255));
   EM.set(dragBox, ColliderDef, {
@@ -93,7 +93,7 @@ async function initDragBox(): Promise<EntityW<[typeof PositionDef]>> {
       // update dragbox
       if (widgets.cursor || mousedrag.isDragEnd) {
         // hide dragbox
-        vec3.copy(dragBox.position, [0, -1, 0]);
+        vec3.copy(dragBox.position, [0, 0, -1]);
         vec3.copy(dragBox.scale, [0, 0, 0]);
       } else if (mousedrag.isDragging) {
         // place dragbox
@@ -102,13 +102,13 @@ async function initDragBox(): Promise<EntityW<[typeof PositionDef]>> {
           mousedrag.dragMin,
           cameraComputed
         );
-        min[1] = 0;
+        min[2] = 0.1;
         const max = screenPosToWorldPos(
           tempVec3(),
           mousedrag.dragMax,
           cameraComputed
         );
-        max[1] = 1;
+        max[2] = 1;
 
         const size = vec3.sub(max, min);
         vec3.copy(dragBox.position, min);
@@ -164,13 +164,13 @@ async function initWidgets({ allMeshes }: Resources<[typeof AllMeshesDef]>) {
           mousedrag.dragLastEnd,
           cameraComputed
         );
-        start[1] = 0;
+        start[2] = 0;
         const end = screenPosToWorldPos(
           tempVec3(),
           mousedrag.dragEnd,
           cameraComputed
         );
-        end[1] = 0;
+        end[2] = 0;
         vec3.sub(end, start, worldDrag);
       }
 

@@ -24,7 +24,8 @@ import {
 } from "../flags.js";
 import { SyncDef } from "../net/components.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
-import { assert, dbgClearBlame, dbgGetBlame, toMap } from "../utils/util.js";
+import { dbgClearBlame, dbgGetBlame } from "../utils/util-no-import.js";
+import { assert, toMap } from "../utils/util.js";
 import { quatDbg, vec3Dbg, vec4Dbg } from "../utils/utils-3d.js";
 
 // TODO(@darzu): debugging helpers
@@ -233,6 +234,7 @@ export const dbg = {
       console.error(`no target!`);
       return;
     }
+    // TODO(@darzu): use quat.fromYawPitchRoll
     console.log(`
 vec3.copy(g.position, ${vec3Dbg(target.position)});
 quat.copy(g.rotation, ${vec4Dbg(target.rotation)});

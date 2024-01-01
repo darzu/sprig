@@ -1,7 +1,7 @@
-import { mat3, vec3 } from "../matrix/sprig-matrix.js";
+import { V, mat3, orthonormalize, quat, vec3 } from "../matrix/sprig-matrix.js";
 import { EaseFn } from "./util-ease.js";
 import { assert } from "./util.js";
-import { vec3Dbg } from "./utils-3d.js";
+import { quatDbg, vec3Dbg } from "./utils-3d.js";
 
 // functions
 export function sum(ns: number[]): number {
@@ -21,6 +21,15 @@ export function min(ns: number[]): number {
 }
 export function even(n: number) {
   return n % 2 == 0;
+}
+
+// TODO(@darzu): useful? idea from freya
+// TODO(@darzu): extend number's prototype?
+export function atLeast(val: number, min: number) {
+  return Math.max(val, min);
+}
+export function atMost(val: number, max: number) {
+  return Math.min(val, max);
 }
 
 export const radToDeg = 180 / Math.PI;
@@ -134,4 +143,57 @@ export function lerp(a: number, b: number, t: number): number {
 }
 export function unlerp(min: number, max: number, val: number): number {
   return (val - min) / (max - min);
+}
+
+// enable w/ RUN_UNIT_TESTS
+export function testMath() {
+  const fwd = V(0, 1, 0);
+  const upish = V(0.2, 0.2, 1.0);
+  // const right = V(0, 0, 0);
+  const right = new Float32Array([0, 0, 0]) as vec3;
+  // console.log("orthonormalize:");
+  // console.log(`fwd: ${vec3Dbg(fwd)}`);
+  // console.log(`up: ${vec3Dbg(upish)}`);
+  // console.log(`right: ${vec3Dbg(right)}`);
+  // console.log("->");
+  orthonormalize(fwd, upish, right);
+  // console.log(`fwd: ${vec3Dbg(fwd)}`);
+  // console.log(`up: ${vec3Dbg(upish)}`);
+  // console.log(`right: ${vec3Dbg(right)}`);
+  assert(vec3.dist(right, [1, 0, 0]) < 0.3, "orthonormalize test");
+
+  // test quat.fromForward
+  {
+    const vs = [
+      V(0, 3, 0),
+      V(3, 3, 0),
+      V(0, 3, 3),
+      V(0, 0, 3),
+      V(3, 3, 3),
+      V(0, 0, -3),
+      V(-3, -3, 3),
+      V(0, -3, 0),
+      V(0, 0.3, 0),
+      V(0.3, 0, 0),
+    ];
+    console.log("test quat.fromForward");
+    const fwd = V(0, 1, 0);
+    for (let v of vs) {
+      const rot = quat.fromForward(v);
+      const v2 = vec3.transformQuat(fwd, rot, vec3.create());
+      console.log(`${vec3Dbg(v)} ==${quatDbg(rot)}==> ${vec3Dbg(v2)}`);
+    }
+  }
+
+  // understand atan2
+  if (false) {
+    const dir = V(1, 0, 0);
+    const steps = 10;
+    const stepRad = (Math.PI * 2) / steps;
+    for (let i = 0; i < steps; i++) {
+      vec3.rotateZ(dir, [0, 0, 0], stepRad, dir);
+      const angle = Math.atan2(dir[1], dir[0]);
+      console.log(`dir: ${vec3Dbg(dir)}, atan2: ${angle}`);
+    }
+  }
 }

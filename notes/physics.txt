@@ -461,3 +461,6 @@ GPU fluid particle sim:
   https://www.youtube.com/watch?v=rSKMYc1CQHE
     includes gpu-friendly spacial hash, gpu parallel sort
   note to self: makes a bunch of sense to implement all Sebastian Lague videos since he spent a ton of time researching and simplifying some complex topics
+
+Structural integrity:
+  https://lisyarus.github.io/blog/physics/2023/10/15/structural-mechanics.html

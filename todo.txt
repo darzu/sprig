@@ -1,7 +1,7 @@
 (Code base-wide todos only, smaller stuff should go into the relevant .ts file.)
 
 BIG REFACTORS / DEBT:
-[ ] System ordering and phases
+[x] System ordering and phases
   Now that we have dependencies DAG we need to make sure our physics, networking, rendering, gameplay stuff happens in the right order.
 [ ] Multi-game seperation
   Right now we have a bunch of duplicate "ship", "player", "enemy", "cannon" code thats different for the different games. This should be unified or seperated out more cleanly. Long term of course engine and game need to be more seperate.
@@ -18,7 +18,7 @@ BIG REFACTORS / DEBT:
 [ ] Re-enable timestep stuff and fix perf and clarify (disabled for LD51)
 [ ] Re-enable multiple shadow casters
 [ ] Unify shader code snippets like getShadowVis
-[ ] Switch to actual deferred rendering; right now we do way to much in first fragment
+[x] Switch to actual deferred rendering; right now we do way to much in first fragment
 
 BIG FEATURES:
 [ ] Multiplayer reconnect
@@ -34,7 +34,7 @@ BIG FEATURES:
 QUALITY-OF-LIFE:
 [x] EM usability
   rename 'ensureComponentOn', 'registerSystem', 'registerInit'. These are used a ton and 
-[ ] Typed registries pattern
+[x] Typed registries pattern
   Like how Assets and renderer{.stdPool, .grassPool, .oceanPool} provide nice typing, we should be able to figure out the right pattern so that we can have
   nice typed registries of resources that are perhaps also game specific. Also we
   don't want e.g. "cube game" to need load assets for ocean and fang ship just b/c we want the Assets typed registry.
@@ -61,3 +61,10 @@ PERF STRATEGY:
   [ ] change pass-by-ptr to pass-by-value for some vecs?
     e.g. if we know some vector isn't read latter, we can pass its components to a fn instead of the vec
 [ ] visualize where all our data is in memory
+
+STANDALONE PROJECTS FOR A (HYPOTHETICAL) NEW DEV:
+[ ] Scene ray-tracer (for "ground truth" referencing)
+[ ] sound effect maker
+[ ] music maker
+[ ] 3d sterio music playing
+[ ] particle system

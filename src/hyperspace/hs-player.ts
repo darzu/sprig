@@ -120,6 +120,7 @@ EM.addEagerInit([PlayerHsPropsDef], [], [], () => {
         EM.set(
           e,
           RotationDef,
+          // TODO(@darzu): Z_UP rotateY
           quat.rotateY(quat.IDENTITY, Math.PI, quat.create())
         );
         EM.set(e, LinearVelocityDef);
@@ -354,7 +355,7 @@ EM.addEagerInit([PlayerHsPropsDef], [], [], () => {
               vec3.copy(p.position, [0, 0, 0]);
               if (targetEnt.collider.shape === "AABB") {
                 // move above the obj
-                p.position[1] = targetEnt.collider.aabb.max[1] + 3;
+                p.position[2] = targetEnt.collider.aabb.max[2] + 3;
               }
             }
             vec3.copy(p.linearVelocity, vec3.ZEROS);

@@ -13,7 +13,7 @@ import { EM, EntityW } from "../ecs/entity-manager.js";
 import { createGizmoMesh } from "../debug/gizmos.js";
 import { jitter } from "../utils/math.js";
 import { AngularVelocityDef, LinearVelocityDef } from "../motion/velocity.js";
-import { PositionDef, ScaleDef } from "../physics/transform.js";
+import { PositionDef, RotationDef, ScaleDef } from "../physics/transform.js";
 import { PointLightDef } from "./lights.js";
 import { mapMeshPositions } from "../meshes/mesh.js";
 import { createGridComposePipelines } from "./pipelines/std-compose.js";
@@ -37,6 +37,12 @@ import { createGhost } from "../debug/ghost.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { GameMesh, XY } from "../meshes/mesh-loader.js";
 import { addGizmoChild } from "../utils/utils-game.js";
+import { makeDome } from "../meshes/primatives.js";
+import { SKY_MASK } from "./pipeline-masks.js";
+import { drawVector } from "../utils/util-vec-dbg.js";
+
+const SHOW_GALLERY = true;
+const SHOW_SKYDOME = false;
 
 const dbgGrid = [
   //
@@ -56,12 +62,12 @@ const shadingGameMeshesDef = XY.defineMeshSetResource(
   BallMesh
 );
 
-export async function initShadingGame() {
+export async function initGalleryGame() {
   // TODO(@darzu): HACK. these have to be set before the CY instantiator runs.
   // outlineRender.fragOverrides!.lineWidth = 1.0;
 
   EM.addSystem(
-    "grassGameRenderPipelines",
+    "galleryGamePipelines",
     Phase.GAME_WORLD,
     null,
     [RendererDef, DevConsoleDef],
@@ -86,7 +92,7 @@ export async function initShadingGame() {
 
   // camera
   camera.fov = Math.PI * 0.5;
-  camera.viewDist = 100;
+  camera.viewDist = 200;
   vec3.set(-20, -20, -20, camera.maxWorldAABB.min);
   vec3.set(+20, +20, +20, camera.maxWorldAABB.max);
   // camera.perspectiveMode = "ortho";
@@ -100,45 +106,78 @@ export async function initShadingGame() {
   // EM.set(sun, PositionDef, V(100, 100, 0));
   // EM.set(sun, PositionDef, V(-10, 10, 10));
   EM.set(sun, PositionDef, V(100, 100, 100));
-  EM.set(sun, LinearVelocityDef, V(0.001, 0.001, 0.0));
+  EM.set(sun, LinearVelocityDef, V(0.001, 0, 0.001));
   EM.set(sun, RenderableConstructDef, sg_meshes.cube.proto);
   sun.pointLight.constant = 1.0;
   sun.pointLight.linear = 0.0;
   sun.pointLight.quadratic = 0.0;
   vec3.copy(sun.pointLight.ambient, [0.2, 0.2, 0.2]);
   vec3.copy(sun.pointLight.diffuse, [0.5, 0.5, 0.5]);
-  EM.set(sun, PositionDef, V(50, 300, 10));
+  EM.set(sun, PositionDef, V(50, 10, 300));
 
   // ground
   const ground = EM.new();
   EM.set(ground, RenderableConstructDef, sg_meshes.hex.proto);
   EM.set(ground, ColorDef, ENDESGA16.blue);
-  EM.set(ground, PositionDef, V(0, -10, 0));
+  EM.set(ground, PositionDef, V(0, 0, -10));
   EM.set(ground, ScaleDef, V(10, 10, 10));
 
   // gizmo
   const gizmoMesh = createGizmoMesh();
   const gizmo = EM.new();
   EM.set(gizmo, RenderableConstructDef, gizmoMesh);
-  EM.set(gizmo, PositionDef, V(0, 1, 0));
+  EM.set(gizmo, PositionDef, V(0, 0, 0));
+  EM.set(gizmo, ScaleDef, V(8, 8, 8));
+
+  // arrows
+  drawVector(V(1, 1, 0), { scale: 10, color: ENDESGA16.red });
+  drawVector(V(0, 1, 1), { scale: 10 });
+  drawVector(V(1, 0, 1), { scale: 10 });
 
   // avatar
-  const g = createGhost();
-  g.position[1] = 5;
-  EM.set(g, RenderableConstructDef, sg_meshes.ball.proto);
-  // vec3.copy(g.position, [2.44, 6.81, 0.96]);
-  // quat.copy(g.rotation, [0.0, 0.61, 0.0, 0.79]);
-  // g.cameraFollow.pitchOffset = -0.553;
-  vec3.copy(g.position, [-0.5, 10.7, 15.56]);
-  quat.copy(g.rotation, [0.0, -0.09, 0.0, 0.99]);
-  // vec3.copy(g.cameraFollow.positionOffset, [0.00,0.00,0.00]);
+  const g = createGhost(sg_meshes.ball.proto, false);
+  g.position[2] = 5;
+  g.controllable.speed *= 10;
+  g.controllable.sprintMul = 0.1;
+
+  // vec3.copy(g.position, [9.65, -12.47, 15.43]);
+  // quat.copy(g.rotation, [0.0, 0.0, 0.11, 0.99]);
+  // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
   // g.cameraFollow.yawOffset = 0.0;
-  g.cameraFollow.pitchOffset = -0.32;
+  // g.cameraFollow.pitchOffset = -0.49;
+
+  vec3.copy(g.position, [428.73, -33.73, 32.1]);
+  quat.copy(g.rotation, [0.0, 0.0, 0.1, 0.99]);
+  vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
+  g.cameraFollow.yawOffset = 0.0;
+  g.cameraFollow.pitchOffset = -0.651;
+
+  // sky dome?
+  if (SHOW_SKYDOME) {
+    const SKY_HALFSIZE = 100;
+    const domeMesh = makeDome(16, 8, SKY_HALFSIZE);
+    const sky = EM.new();
+    EM.set(sky, PositionDef, V(0, 0, -10));
+    // const skyMesh = cloneMesh(res.allMeshes.cube.mesh);
+    // skyMesh.pos.forEach((p) => vec3.scale(p, SKY_HALFSIZE, p));
+    // skyMesh.quad.forEach((f) => vec4.reverse(f, f));
+    // skyMesh.tri.forEach((f) => vec3.reverse(f, f));
+    const skyMesh = domeMesh;
+    EM.set(
+      sky,
+      RenderableConstructDef,
+      skyMesh
+      // undefined,
+      // undefined,
+      // SKY_MASK
+    );
+    // EM.set(sky, ColorDef, V(0.9, 0.9, 0.9));
+  }
 
   // objects
   const obj = EM.new();
   EM.set(obj, RenderableConstructDef, sg_meshes.grappleGun.proto);
-  EM.set(obj, PositionDef, V(0, 4, 0));
+  EM.set(obj, PositionDef, V(0, 0, 4));
   EM.set(obj, ColorDef, ENDESGA16.midBrown);
   EM.set(obj, AngularVelocityDef, V(0.001, 0.00013, 0.00017));
 
@@ -147,7 +186,7 @@ export async function initShadingGame() {
     const W = 5;
     let worldCorners: vec3[] = [];
     for (let i = 0; i < 4; i++) {
-      const pos = V(jitter(W), jitter(W) + W, jitter(W));
+      const pos = V(jitter(W), jitter(W), jitter(W) + W);
       worldCorners.push(pos);
       const p = EM.new();
       EM.set(p, RenderableConstructDef, sg_meshes.ball.proto);
@@ -206,41 +245,51 @@ export async function initShadingGame() {
   // );
   // EM.requireSystem("dbgViewProj");
 
-  createGallery();
+  if (SHOW_GALLERY) {
+    createGallery();
+  }
 }
 
 async function createGallery() {
   // TODO(@darzu): present a mesh set on a single pedestal.
   const objMargin = 8;
   let lastX = 10;
+  const maxHalfsize = 20;
   function presentGameMesh(m: GameMesh) {
-    const halfsize = Math.max(m.halfsize[0], m.halfsize[2]);
-    // const halfsize = Math.max(m.halfsize[0], m.halfsize[1]);
+    const halfsize = Math.max(m.halfsize[0], m.halfsize[1]);
+
+    const hasScale = halfsize > maxHalfsize;
+    const scale = hasScale ? maxHalfsize / halfsize : 1.0;
 
     // console.log(`halfsize: ${halfsize}`);
 
-    let x = lastX + objMargin + halfsize;
+    let x = lastX + objMargin + halfsize * scale;
 
     let ground = EM.new();
     EM.set(ground, RenderableConstructDef, sg_meshes.hex.mesh);
-    const groundSize = halfsize / sg_meshes.hex.halfsize[0];
-    EM.set(ground, ScaleDef, [groundSize, 1, groundSize]);
-    // EM.set(ground, ScaleDef, [groundSize, groundSize, 1]);
-    // EM.set(ground, PositionDef, V(x, 0, -sg_meshes.hex.aabb.max[2]));
-    EM.set(ground, PositionDef, V(x, -sg_meshes.hex.aabb.max[1], 0));
-    EM.set(ground, ColorDef, ENDESGA16.blue);
+    const groundSize = (halfsize * scale) / sg_meshes.hex.halfsize[0];
+    EM.set(ground, ScaleDef, [groundSize, groundSize, 1]);
+    EM.set(ground, PositionDef, V(x, 0, -sg_meshes.hex.aabb.max[2]));
+    EM.set(ground, ColorDef, hasScale ? ENDESGA16.lightBlue : ENDESGA16.blue);
 
     let obj = EM.new();
     EM.set(obj, RenderableConstructDef, m.mesh);
-    EM.set(obj, PositionDef, V(x - m.center[0], -m.aabb.min[1], -m.center[2]));
-    // EM.set(obj, PositionDef, V(x - m.center[0], -m.center[1], -m.aabb.min[2]));
+    EM.set(
+      obj,
+      PositionDef,
+      V(x - m.center[0] * scale, -m.center[1] * scale, -m.aabb.min[2] * scale)
+    );
+    if (hasScale) EM.set(obj, ScaleDef, V(scale, scale, scale));
 
-    addGizmoChild(obj, halfsize * 1.1);
+    // TODO(@darzu): DBGing yaw,pitch,roll
+    EM.set(obj, RotationDef, quat.fromYawPitchRoll(0.0, 0.0, 0.0));
+
+    addGizmoChild(obj, halfsize * scale * 1.1);
 
     const anyColor = m.mesh.colors.some((c) => !vec3.equals(c, [0, 0, 0]));
     if (!anyColor) EM.set(obj, ColorDef, ENDESGA16.lightGray);
 
-    lastX = x + halfsize;
+    lastX = x + halfsize * scale;
   }
 
   const { renderer, sg_meshes } = await EM.whenResources(
@@ -260,7 +309,6 @@ async function createGallery() {
       meshes.forEach(presentGameMesh);
     } else {
       const mesh = meshOrList;
-      if (mesh.halfsize[0] > 100) continue;
       presentGameMesh(mesh);
     }
 
