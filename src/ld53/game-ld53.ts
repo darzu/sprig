@@ -317,7 +317,6 @@ async function setLevelLocal(levelIdx: number) {
   );
 
   for (let [pos, angle] of tower3dPosesAndDirs) {
-    // TODO(@darzu): Z_UP stone towers
     const stoneTower = towerPool.spawn();
     vec3.copy(stoneTower.position, pos);
     quat.setAxisAngle([0, 0, 1], angle, stoneTower.rotation);
@@ -636,7 +635,7 @@ export async function initLD53(hosting: boolean) {
 
         const invShip = mat3.invert(mat3.fromMat4(shipWorld.world.transform));
         const windLocalDir = vec3.transformMat3(res.wind.dir, invShip);
-        const shipLocalDir = tV(0, 1, 0); // TODO(@darzu): Z_UP?
+        const shipLocalDir = tV(0, 1, 0);
 
         const optimalSailLocalDir = vec3.normalize(
           vec3.add(windLocalDir, shipLocalDir)
@@ -654,8 +653,6 @@ export async function initLD53(hosting: boolean) {
 
         // TODO(@darzu): ANIMATE SAIL TOWARD WIND
         if (vec3.dot(optimalSailLocalDir, shipLocalDir) > 0.01) {
-          // TODO(@darzu): Z_UP !!!!
-          // vec3.set(0, 1, 0, optimalSailLocalDir); // TODO(@darzu): UP_Z dbging
           quat.fromForwardAndUpish(
             optimalSailLocalDir,
             [0, 0, 1],
@@ -893,7 +890,6 @@ const { Ld53PlayerPropsDef, Ld53PlayerLocalDef, createLd53PlayerAsync } =
       // quat.rotateX(g.cameraFollow.rotationOffset, quat.IDENTITY, -Math.PI / 8);
       EM.set(p, LinearVelocityDef);
 
-      // TODO(@darzu): Z_UP
       // quat.setAxisAngle([0.0, -1.0, 0.0], 1.62, p.rotation);
       const sphereMesh = cloneMesh(res.ld53Meshes.ball.mesh);
       const visible = true;
@@ -1008,7 +1004,6 @@ async function resetLand() {
 
   // height map
   if (!terraMesh) {
-    // TODO(@darzu): Z_UP
     terraMesh = createFlatQuadMesh(terraXCount, terraYCount);
 
     // TODO(@darzu): seperate chunks of land

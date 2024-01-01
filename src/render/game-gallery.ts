@@ -251,8 +251,6 @@ export async function initGalleryGame() {
 }
 
 async function createGallery() {
-  // TODO(@darzu): Z_UP: verify yaw,pitch,roll work as expected!!
-
   // TODO(@darzu): present a mesh set on a single pedestal.
   const objMargin = 8;
   let lastX = 10;

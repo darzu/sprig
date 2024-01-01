@@ -332,7 +332,6 @@ async function createMeshEditor() {
       const pos1 = vec3.copy(vec3.tmp(), res.hp.mesh.pos[he.twin.orig.vi]);
       vec3.transformMat4(pos1, res.hpEnt.world.transform, pos1);
       const diff = vec3.sub(pos1, pos0);
-      // TODO(@darzu): Z_UP check this atan2 and euler usage
       const theta = Math.atan2(diff[1], diff[0]) + Math.PI * 0.5;
       quat.fromEuler(0, 0, theta, glyph.rotation);
       vec3Mid(glyph.position, pos0, pos1);

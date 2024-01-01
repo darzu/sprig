@@ -29,14 +29,14 @@ export const WindDef = EM.defineResource("wind", () => {
     targetAngle: WIND_ANGLES[0],
     oldAngle: WIND_ANGLES[0],
   };
-  // TODO(@darzu): Z_UP: use yaw/pitch/roll
+  // TODO(@darzu): use yaw/pitch/roll
   vec3.rotateZ(WIND_X_DIR, ORIGIN, wind.angle, wind.dir);
   return wind;
 });
 
 export function setWindAngle(wind: Resource<typeof WindDef>, angle: number) {
   wind.angle = angle;
-  // TODO(@darzu): Z_UP: use yaw/pitch/roll
+  // TODO(@darzu): use yaw/pitch/roll
   vec3.rotateZ(WIND_X_DIR, ORIGIN, angle, wind.dir);
   // console.log(
   //   `WIND_X_DIR: ${vec3Dbg(WIND_X_DIR)} ORIGIN:${vec3Dbg(

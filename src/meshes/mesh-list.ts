@@ -218,7 +218,6 @@ export const RudderMesh = XY.registerMesh({
   ),
 });
 
-// TODO(@darzu): Z_UP: rotate this for Z to be "up" ?
 export const OceanMesh = XY.registerMesh({
   name: "ocean",
   data: "hyperspace-ocean.sprig.obj",

@@ -48,7 +48,7 @@ const ALL_GAMES = [
   "gjk",
   "rebound",
   "shipyard",
-  "grass", // broken-ish; too many temp f32s
+  "grass", // broken-ish; too many temp f32s; port to Z-up
   "font",
   "hyperspace", // TODO(@darzu): Z_UP: port to Z-up
   "cloth", // broken-ish
@@ -62,7 +62,7 @@ const ALL_GAMES = [
   "graybox-sunless",
   "graybox-ship-arena",
 ] as const;
-const GAME: (typeof ALL_GAMES)[number] = "graybox-ship-arena";
+const GAME: (typeof ALL_GAMES)[number] = "gallery";
 
 // Run simulation with a fixed timestep @ 60hz
 const TIMESTEP = 1000 / 60;

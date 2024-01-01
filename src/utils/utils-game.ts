@@ -147,7 +147,6 @@ export async function randomizeMeshColors(e: Entity) {
   res.renderer.renderer.stdPool.updateMeshVertices(meshH, mesh);
 }
 
-// TODO(@darzu): Z_UP!!
 export function screenPosToWorldPos(
   out: vec3,
   screenPos: vec2,
@@ -157,7 +156,6 @@ export function screenPosToWorldPos(
   const invViewProj = cameraComputed.invViewProj;
 
   const viewX = mathMap(screenPos[0], 0, cameraComputed.width, -1, 1);
-  // TODO(@darzu): Z_UP: what's the right way to map Y to Y??
   const viewY = mathMap(screenPos[1], 0, cameraComputed.height, 1, -1);
   const viewPos3 = vec3.set(viewX, viewY, screenDepth);
 

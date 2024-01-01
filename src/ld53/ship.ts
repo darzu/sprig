@@ -227,8 +227,6 @@ EM.addSystem(
     for (let e of es) {
       // rudder
       let yaw = e.ld52ship.rudder()!.yawpitch.yaw;
-      // TODO(@darzu): Z_UP: check rotateZ/Y locations to see if they should use .yaw
-      // quat.rotateZ(e.rotation, yaw * RUDDER_ROTATION_RATE, e.rotation);
       quat.yaw(e.rotation, yaw * RUDDER_ROTATION_RATE, e.rotation);
 
       // acceleration
@@ -298,7 +296,6 @@ function createRudder(
     0,
     0,
     interactBox,
-    // TODO(@darzu): Z_UP: fix yaw and pitch here
     0.0 * Math.PI,
     // -Math.PI / 8,
     -Math.PI / 12,
@@ -328,7 +325,6 @@ EM.addSystem(
   [MeDef],
   (rudders, res) => {
     for (let r of rudders) {
-      // TODO(@darzu): Z_UP: verify yaw
       if (r.authority.pid !== res.me.pid) return;
       if (r.turret.mannedId !== 0) return;
       if (Math.abs(r.yawpitch.yaw) < 0.01) r.yawpitch.yaw = 0;

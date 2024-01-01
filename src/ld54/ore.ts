@@ -363,7 +363,6 @@ export async function initOre(spacePath: Path) {
         ore.ore.carried = true;
         vec3.zero(ore.angularVelocity); // stop spinning
         EM.set(ore, PhysicsParentDef, carrier.id);
-        // TODO(@darzu): Z_UP:
         vec3.set(0, 0, -5, ore.position);
       }
     }

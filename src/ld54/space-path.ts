@@ -56,7 +56,7 @@ export function createSpacePath() {
     }
   }
 
-  const UP: vec3.InputT = [0, 0, 1]; // TODO(@darzu): Z_UP: consolidate all the UP and FWD vectors
+  const UP: vec3.InputT = [0, 0, 1];
 
   const spline = bezierSplineFromPoints(points, 20);
   const path = createEvenPathFromBezierSpline(spline, 5, UP);

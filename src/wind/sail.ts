@@ -45,7 +45,6 @@ export const SailDef = EM.defineComponent("sail", () => ({
 }));
 
 function sailMesh(sail: Component<typeof SailDef>): Mesh {
-  // TODO(@darzu): Z_UP: make it X and Z
   let x = 0;
   let z = 0;
   let i = 0;
@@ -322,7 +321,7 @@ function useWindToTurn(
   const TURN_SPEED = 0.1;
   if (Math.abs(angleToParty) > 0.01) {
     const angleDelta = clamp(angleToParty, -TURN_SPEED, TURN_SPEED);
-    // TODO(@darzu): Z_UP: use yaw/pitch/roll
+    // TODO(@darzu): use yaw/pitch/roll
     quat.rotateY(us.rotation, angleDelta, us.rotation);
   }
 
@@ -330,7 +329,7 @@ function useWindToTurn(
   const sailFwd = vec3.transformQuat(behind, us.rotation);
   const angleToWind = angleBetweenXZ(sailFwd, windDir);
   const sailAngle = angleToWind - angleToParty;
-  // TODO(@darzu): Z_UP: use yaw/pitch/roll
+  // TODO(@darzu): use yaw/pitch/roll
   quat.rotateY(quat.IDENTITY, sailAngle, outSailRot);
 
   // console.log(`turning by: ${angleBetween}`);

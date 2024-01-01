@@ -572,7 +572,6 @@ async function createPlayerShip() {
   const ship = EM.new();
   EM.set(ship, PositionDef, V(9, 8, 0));
   EM.set(ship, RotationDef);
-  // TODO(@darzu): Z_UP rotateY
   quat.yaw(ship.rotation, Math.PI * 0.4, ship.rotation);
   EM.set(ship, LinearVelocityDef);
   const mesh = cloneMesh(mesh_cube.mesh);

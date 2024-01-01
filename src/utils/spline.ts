@@ -136,8 +136,8 @@ export function createPathFromBezier(
   }
   return path;
 }
-// TODO(@darzu): Z_UP: this function doesn't return good results right now
 // TODO(@darzu): refactor this into getEvenlySpacedTimesFromBezierCurve, maybe as a generator?
+// TODO(@darzu): seperate times from pos/rot results
 const _numSamples = 100;
 const __tempSamples = range(_numSamples).map((i) => vec3.create());
 export function createEvenPathFromBezierCurve(
@@ -294,7 +294,6 @@ export function bezierSplineFromPoints(
   return { curves };
 }
 
-// TODO(@darzu): Z_UP: this function doesn't return good results right now
 export function createEvenPathFromBezierSpline(
   spline: BezierSpline,
   spacing: number,

@@ -26,9 +26,6 @@ function mapXYtoImgPxDataIdx(
   //  image origin is top-left
   //  map origin is bottom-left
   return x + (height - 1 - y) * width;
-  // TODO(@darzu): Z_UP:
-  // OLD LOGIC:
-  // return x + y * width;
 }
 
 function mapXYtoCyTexDataIdx(
@@ -43,9 +40,6 @@ function mapXYtoCyTexDataIdx(
   //  cy tex origin is bottom-left
 
   return x + y * width;
-  // TODO(@darzu): Z_UP:
-  // OLD LOGIC:
-  // return x + (height - 1 - y) * width;
 }
 
 export const LandMapTexPtr = CY.createTexture("landMap", {
@@ -184,7 +178,6 @@ function parseAndMutateIntoMapBlobs(
 
     parseRun(x, y);
 
-    // TODO(@darzu): Z_UP: do we want ascending (bottom up) order here?
     blob.runs.sort((a, b) => a.y - b.y);
 
     return blob;

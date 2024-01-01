@@ -1026,7 +1026,6 @@ export module mat4 {
   @param {mat4} out mat4 frustum matrix will be written into
   @returns {mat4} out
   */
-  // TODO(@darzu): Z_UP?
   export function perspective(
     fovy: number,
     aspect: number,

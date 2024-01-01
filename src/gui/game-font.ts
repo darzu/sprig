@@ -56,8 +56,6 @@ TODO(@darzu):
 
 const EXPERIMENTAL_LINE_STUFF = true; // TODO(@darzu): broken rn
 
-// TODO(@darzu): Z_UP: buttons are broken
-
 const DBG_GIZMOS = true;
 
 const DBG_3D = false; // TODO(@darzu): add in-game smooth transition!

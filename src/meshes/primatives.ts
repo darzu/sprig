@@ -34,7 +34,7 @@ import { drawBall } from "../utils/utils-game.js";
 import { createTimberBuilder, createEmptyMesh } from "../wood/wood.js";
 import { transformYUpModelIntoZUp } from "../camera/basis.js";
 
-// TODO(@darzu): Z_UP, this whole file..
+// TODO(@darzu): Z_UP, some of this hasn't been ported
 
 // TODO(@darzu): A bunch of stuff shouldn't be in here like barge and sail stuff
 
