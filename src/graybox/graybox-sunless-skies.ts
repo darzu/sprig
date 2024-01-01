@@ -163,8 +163,8 @@ initDocks:
 */
 
 const DBG_GRID = true;
-const DBG_GIZMO = false;
-const DBG_GHOST = false;
+const DBG_GIZMO = true;
+const DBG_GHOST = true;
 
 // TODO(@darzu): ADD WARNING THAT OBJ INIT PLACED IN CONTACT
 
@@ -204,18 +204,9 @@ export async function initGrayboxSunless() {
     g.position[2] = 5;
 
     // overview
-    // vec3.copy(g.position, [102.41, 142.23, 154.95]);
-    // quat.copy(g.rotation, [0.0, 0.0, 0.0, 0.99]);
-    // vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
-    // g.cameraFollow.yawOffset = 0.0;
-    // g.cameraFollow.pitchOffset = -1.388;
-
-    // close up of corner
-    vec3.copy(g.position, [6.5, 11.81, 9.94]);
-    quat.copy(g.rotation, [0.0, -0.86, 0.0, 0.49]);
-    vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
-    g.cameraFollow.yawOffset = 0.0;
-    g.cameraFollow.pitchOffset = -0.871;
+    vec3.copy(g.position, [16.63, -27.49, 107.08]);
+    quat.copy(g.rotation, [0.0, 0.0, -0.26, 0.97]);
+    g.cameraFollow.pitchOffset = -0.957;
   }
 
   // ground
@@ -241,7 +232,7 @@ export async function initGrayboxSunless() {
   sun.pointLight.quadratic = 0.0;
   vec3.copy(sun.pointLight.ambient, [0.2, 0.2, 0.2]);
   vec3.copy(sun.pointLight.diffuse, [0.5, 0.5, 0.5]);
-  EM.set(sun, PositionDef, V(50, 300, 10));
+  EM.set(sun, PositionDef, V(50, 10, 300));
 
   // gizmo
   if (DBG_GIZMO) {
@@ -295,10 +286,10 @@ async function createWorld() {
   const wallHeight = 4;
 
   if (DBG_GRID) {
-    for (let zi = 0; zi < gridWidth; zi++) {
+    for (let yi = 0; yi < gridWidth; yi++) {
       for (let xi = 0; xi < gridWidth; xi++) {
         const node = EM.new();
-        EM.set(node, PositionDef, V(xi * gridScale, 0, zi * gridScale));
+        EM.set(node, PositionDef, V(xi * gridScale, yi * gridScale, 0));
         EM.set(node, RenderableConstructDef, mesh_cube.proto);
         // EM.set(node, ScaleDef, V(0.5, 0.5, 0.5));
         EM.set(node, ColorDef, ENDESGA16.lightBlue);
@@ -310,12 +301,12 @@ async function createWorld() {
     const wall = EM.new();
     EM.set(wall, PositionDef, pos);
     EM.set(wall, RenderableConstructDef, mesh_cube.proto);
-    if (vertical) EM.set(wall, ScaleDef, V(wallWidth, wallHeight, length));
-    else EM.set(wall, ScaleDef, V(length, wallHeight, wallWidth));
+    if (vertical) EM.set(wall, ScaleDef, V(wallWidth, length, wallHeight));
+    else EM.set(wall, ScaleDef, V(length, wallWidth, wallHeight));
     vec3.add(
       wall.scale,
-      vec3.scale(randNormalVec3(), wallWidth * 0.1),
-      wall.scale
+      wall.scale,
+      vec3.scale(randNormalVec3(), wallWidth * 0.1)
     ); // jitter it
     EM.set(wall, ColorDef, ENDESGA16.darkGray);
     EM.set(wall, ColliderDef, {
@@ -333,24 +324,24 @@ async function createWorld() {
     EM.set(path, PositionDef, pos);
     EM.set(path, RenderableConstructDef, mesh_cube.proto);
     if (horizontal) EM.set(path, ScaleDef, V(gridHalfScale, 0.2, 0.2));
-    else EM.set(path, ScaleDef, V(0.2, 0.2, gridHalfScale));
+    else EM.set(path, ScaleDef, V(0.2, gridHalfScale, 0.2));
     EM.set(path, ColorDef, ENDESGA16.lightBlue);
   }
 
-  for (let zi = 0; zi < gridWidth; zi++) {
+  for (let yi = 0; yi < gridWidth; yi++) {
     for (let xi = 0; xi < gridWidth - 1; xi++) {
-      const hasEdge = !!horiEdges[zi][xi];
-      const pos = V((xi + 0.5) * gridScale, 0, zi * gridScale);
+      const hasEdge = !!horiEdges[yi][xi];
+      const pos = V((xi + 0.5) * gridScale, yi * gridScale, 0);
       if (!hasEdge) createWall(pos, true, gridHalfScale);
 
       if (DBG_GRID && hasEdge) createDbgPath(pos, true);
     }
   }
 
-  for (let zi = 0; zi < gridWidth - 1; zi++) {
+  for (let yi = 0; yi < gridWidth - 1; yi++) {
     for (let xi = 0; xi < gridWidth; xi++) {
-      const hasEdge = !!vertEdges[zi][xi];
-      const pos = V(xi * gridScale, 0, (zi + 0.5) * gridScale);
+      const hasEdge = !!vertEdges[yi][xi];
+      const pos = V(xi * gridScale, (yi + 0.5) * gridScale, 0);
       if (!hasEdge) createWall(pos, false, gridHalfScale);
 
       if (DBG_GRID && hasEdge) createDbgPath(pos, false);
@@ -359,13 +350,13 @@ async function createWorld() {
 
   // outer walls
   [
-    V(0, 0, gridScale * gridWidth * 0.5),
+    V(0, gridScale * gridWidth * 0.5, 0),
     V(gridScale * gridWidth * 0.5, 0, 0),
-    V(gridScale * gridWidth * 0.5, 0, gridScale * gridWidth),
-    V(gridScale * gridWidth, 0, gridScale * gridWidth * 0.5),
+    V(gridScale * gridWidth * 0.5, gridScale * gridWidth, 0),
+    V(gridScale * gridWidth, gridScale * gridWidth * 0.5, 0),
   ].forEach((pos, i) => {
     const isVertical = i === 0 || i === 3;
-    vec3.add(pos, [-gridHalfScale, 0, -gridHalfScale], pos);
+    vec3.add(pos, [-gridHalfScale, -gridHalfScale, 0], pos);
     createWall(pos, isVertical, gridScale * gridWidth * 0.5);
   });
 
@@ -375,9 +366,9 @@ async function createWorld() {
     EM.set(
       floor,
       ScaleDef,
-      V(gridScale * gridWidth, wallHeight, gridScale * gridWidth)
+      V(gridScale * gridWidth, gridScale * gridWidth, wallHeight)
     );
-    EM.set(floor, PositionDef, V(-gridHalfScale, -wallHeight, -gridHalfScale));
+    EM.set(floor, PositionDef, V(-gridHalfScale, -gridHalfScale, -wallHeight));
     EM.set(floor, RenderableConstructDef, mesh_unitCube.proto);
     EM.set(floor, ColorDef, ENDESGA16.blue);
   }
@@ -388,21 +379,21 @@ async function createWorld() {
   const dockOffset = 20.0;
   const dockHeight = 2;
   const dirToDockOffset = {
-    S: V(0, 0, dockOffset),
-    N: V(0, 0, -dockOffset),
+    S: V(0, -dockOffset, 0),
+    N: V(0, dockOffset, 0),
     E: V(dockOffset, 0, 0),
     W: V(-dockOffset, 0, 0),
   };
-  for (let [xi, zi, dir] of docks) {
+  for (let [xi, yi, dir] of docks) {
     const vert = dir === "N" || dir === "S";
     const node = EM.new();
     EM.set(node, RenderableConstructDef, mesh_cube.proto);
     EM.set(
       node,
       ScaleDef,
-      V(vert ? dockWidth : dockLen, dockHeight, vert ? dockLen : dockWidth)
+      V(vert ? dockWidth : dockLen, vert ? dockLen : dockWidth, dockHeight)
     );
-    EM.set(node, PositionDef, V(xi * gridScale, 0, zi * gridScale));
+    EM.set(node, PositionDef, V(xi * gridScale, yi * gridScale, 0));
     vec3.add(node.position, dirToDockOffset[dir], node.position);
     EM.set(node, ColorDef, ENDESGA16.orange);
   }
@@ -414,10 +405,10 @@ const BulletDef = EM.defineComponent("sunlessBullet", () => ({}));
 
 const SunlessShipDef = EM.defineComponent("sunlessShip", () => ({
   speed: 0.00003,
-  rollSpeed: 0.01,
+  yawSpeed: 0.01,
   doDampen: true,
   localAccel: vec3.create(),
-  localRoll: 0,
+  localYaw: 0,
 }));
 
 EM.addEagerInit([SunlessShipDef], [], [], (_) => {
@@ -436,15 +427,14 @@ EM.addEagerInit([SunlessShipDef], [], [], (_) => {
         );
 
         // turn
-        // TODO(@darzu): Z_UP rotateY
-        quat.rotateY(
+        quat.yaw(
           e.rotation,
-          e.sunlessShip.localRoll * e.sunlessShip.rollSpeed,
+          e.sunlessShip.localYaw * e.sunlessShip.yawSpeed,
           e.rotation
         );
 
         // reset turn
-        e.sunlessShip.localRoll = 0;
+        e.sunlessShip.localYaw = 0;
 
         // dampen
         if (e.sunlessShip.doDampen && vec3.sqrLen(rotatedAccel) === 0) {
@@ -484,12 +474,12 @@ EM.addEagerInit([SunlessPlayerDef], [CubeMesh.def], [], ({ mesh_cube }) => {
       // 4-DOF translation
       if (res.inputs.keyDowns["q"]) e.sunlessShip.localAccel[0] -= speed;
       if (res.inputs.keyDowns["e"]) e.sunlessShip.localAccel[0] += speed;
-      if (res.inputs.keyDowns["w"]) e.sunlessShip.localAccel[2] -= speed;
-      if (res.inputs.keyDowns["s"]) e.sunlessShip.localAccel[2] += speed;
+      if (res.inputs.keyDowns["w"]) e.sunlessShip.localAccel[1] += speed;
+      if (res.inputs.keyDowns["s"]) e.sunlessShip.localAccel[1] -= speed;
 
       // turning
-      if (res.inputs.keyDowns["a"]) e.sunlessShip.localRoll = 1;
-      if (res.inputs.keyDowns["d"]) e.sunlessShip.localRoll = -1;
+      if (res.inputs.keyDowns["a"]) e.sunlessShip.localYaw = -1;
+      if (res.inputs.keyDowns["d"]) e.sunlessShip.localYaw = 1;
 
       // change dampen?
       if (res.inputs.keyClicks["z"])
@@ -497,7 +487,7 @@ EM.addEagerInit([SunlessPlayerDef], [CubeMesh.def], [], ({ mesh_cube }) => {
     }
   );
 
-  const bulletVel = V(0, 0, -0.1);
+  const bulletVel = V(0, 0.1, 0);
   EM.addSystem(
     "controlSunlessShip",
     Phase.GAME_PLAYERS,
@@ -513,7 +503,7 @@ EM.addEagerInit([SunlessPlayerDef], [CubeMesh.def], [], ({ mesh_cube }) => {
         EM.set(bullet, PositionDef, vec3.clone(ship.position));
         EM.set(bullet, RenderableConstructDef, mesh_cube.proto);
         EM.set(bullet, ColorDef, ENDESGA16.darkGreen);
-        EM.set(bullet, ScaleDef, V(0.5, 0.5, 1));
+        EM.set(bullet, ScaleDef, V(0.5, 1, 0.5));
         EM.set(bullet, BulletDef);
         EM.set(bullet, ColliderDef, {
           shape: "AABB",
@@ -572,17 +562,17 @@ async function createPlayerShip() {
   const { mesh_cube } = await EM.whenResources(CubeMesh.def);
 
   const ship = EM.new();
-  EM.set(ship, PositionDef, V(9, 0, 8));
+  EM.set(ship, PositionDef, V(9, 8, 0));
   EM.set(ship, RotationDef);
   // TODO(@darzu): Z_UP rotateY
-  quat.rotateY(ship.rotation, -Math.PI * 0.4, ship.rotation);
+  quat.yaw(ship.rotation, Math.PI * 0.4, ship.rotation);
   EM.set(ship, LinearVelocityDef);
   const mesh = cloneMesh(mesh_cube.mesh);
-  scaleMesh3(mesh, [1, 1, 2]);
+  scaleMesh3(mesh, [1, 2, 1]);
   EM.set(ship, RenderableConstructDef, mesh);
   EM.set(ship, ColorDef, ENDESGA16.lightGreen);
   EM.set(ship, CameraFollowDef);
-  vec3.copy(ship.cameraFollow.positionOffset, [0.0, 0.0, 50.0]);
+  vec3.copy(ship.cameraFollow.positionOffset, [0.0, -50.0, 0.0]);
   ship.cameraFollow.pitchOffset = -Math.PI * 0.5;
   EM.set(ship, ColliderDef, {
     shape: "AABB",
@@ -619,18 +609,17 @@ async function createEnemies() {
   const { mesh_cube } = await EM.whenResources(CubeMesh.def);
 
   const ship = EM.new();
-  EM.set(ship, PositionDef, V(15, 0, 17));
+  EM.set(ship, PositionDef, V(15, 17, 0));
   EM.set(ship, RotationDef);
-  // TODO(@darzu): Z_UP rotateY
-  quat.rotateY(ship.rotation, randRadian(), ship.rotation);
+  quat.yaw(ship.rotation, randRadian(), ship.rotation);
   EM.set(ship, LinearVelocityDef);
   const mesh = cloneMesh(mesh_cube.mesh);
   scaleMesh3(mesh, [1, 1, 2]);
   mesh.pos.forEach((p) => {
-    if (p[2] < 0) {
-      // in -Z, squash X and Y
+    if (p[1] >= 0) {
+      // squash front
       p[0] *= 0.8;
-      p[1] *= 0.8;
+      p[2] *= 0.8;
     }
   });
   EM.set(ship, RenderableConstructDef, mesh);

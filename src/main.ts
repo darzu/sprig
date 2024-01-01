@@ -62,7 +62,7 @@ const ALL_GAMES = [
   "graybox-sunless",
   "graybox-ship-arena",
 ] as const;
-const GAME: (typeof ALL_GAMES)[number] = "graybox-starter";
+const GAME: (typeof ALL_GAMES)[number] = "graybox-sunless";
 
 // Run simulation with a fixed timestep @ 60hz
 const TIMESTEP = 1000 / 60;
