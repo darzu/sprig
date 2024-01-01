@@ -56,7 +56,7 @@ export async function initGrayboxStarter() {
   sun.pointLight.quadratic = 0.0;
   vec3.copy(sun.pointLight.ambient, [0.2, 0.2, 0.2]);
   vec3.copy(sun.pointLight.diffuse, [0.5, 0.5, 0.5]);
-  EM.set(sun, PositionDef, V(50, 300, 10));
+  EM.set(sun, PositionDef, V(50, 10, 300));
 
   // dbg ghost
   if (DBG_GHOST) {
@@ -64,11 +64,11 @@ export async function initGrayboxStarter() {
     g.position[2] = 5;
 
     // hover near origin
-    vec3.copy(g.position, [12.51, 21.4, 15.88]);
-    quat.copy(g.rotation, [0.0, 0.24, 0.0, 0.96]);
+    vec3.copy(g.position, [7.97, -12.45, 10.28]);
+    quat.copy(g.rotation, [0.0, 0.0, 0.27, 0.96]);
     vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
     g.cameraFollow.yawOffset = 0.0;
-    g.cameraFollow.pitchOffset = -0.74;
+    g.cameraFollow.pitchOffset = -0.55;
   }
 
   // gizmo
@@ -76,7 +76,7 @@ export async function initGrayboxStarter() {
     const pedestal = EM.new();
     EM.set(pedestal, RenderableConstructDef, mesh_hex.proto);
     EM.set(pedestal, ColorDef, ENDESGA16.darkGray);
-    EM.set(pedestal, PositionDef, V(0, -10, 0));
+    EM.set(pedestal, PositionDef, V(0, 0, -10));
     EM.set(pedestal, ScaleDef, V(10, 10, 10));
     EM.set(pedestal, ColliderDef, {
       shape: "AABB",

@@ -234,6 +234,7 @@ export const dbg = {
       console.error(`no target!`);
       return;
     }
+    // TODO(@darzu): use quat.fromYawPitchRoll
     console.log(`
 vec3.copy(g.position, ${vec3Dbg(target.position)});
 quat.copy(g.rotation, ${vec4Dbg(target.rotation)});
