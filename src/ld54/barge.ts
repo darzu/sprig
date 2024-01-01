@@ -293,7 +293,7 @@ export function createSpaceBarge(): SpaceBarge {
   }
   const railNodes = ribCount + 2;
   const railPath = createPathFromBezier(railCurve, railNodes, [0, 1, 0]);
-  fixPathBasis(railPath, [0, 1, 0], [0, 0, 1], [1, 0, 0]);
+  // fixPathBasis(railPath, [0, 1, 0], [0, 0, 1], [1, 0, 0]);
 
   // let ribEnds: vec3[] = [];
   let ribPaths: Path[] = [];
@@ -343,7 +343,7 @@ export function createSpaceBarge(): SpaceBarge {
 
       const numRibSegs = 8;
       const bPath = createPathFromBezier(ribCurve, numRibSegs, [1, 0, 0]);
-      fixPathBasis(bPath, [0, 1, 0], [0, 0, 1], [1, 0, 0]);
+      // fixPathBasis(bPath, [0, 1, 0], [0, 0, 1], [1, 0, 0]);
       ribPaths.push(bPath);
 
       // if (i === 0) {
@@ -437,7 +437,7 @@ export function createSpaceBarge(): SpaceBarge {
         );
         // even.reverse();
         // translatePath(even, [0, 0, 10]);
-        fixPathBasis(even, [0, 0, 1], [0, 1, 0], [-1, 0, 0]);
+        // fixPathBasis(even, [0, 0, 1], [0, 1, 0], [-1, 0, 0]);
         translatePathAlongNormal(even, ribDepth); // + 0.3);
         // fixPathBasis(even, [0, 1, 0], [1, 0, 0], [0, 0, -1]);
         // dbgPathWithGizmos(even);
@@ -508,6 +508,9 @@ export function createSpaceBarge(): SpaceBarge {
         vec3.add(second.pos, diff, first.pos);
         nodes.unshift(first);
       }
+
+      fixPathBasis(nodes, [0, 1, 0], [0, 0, 1], [1, 0, 0]);
+
       plankPaths.push(nodes);
 
       let mirroredPath = mirrorPath(clonePath(nodes), [0, 0, 1]);

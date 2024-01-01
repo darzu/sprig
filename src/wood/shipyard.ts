@@ -410,7 +410,7 @@ export function createLD53Ship(): HomeShip {
     railNodes,
     [0, 1, 0] // TODO(@darzu): Z_UP
   );
-  fixPathBasis(railPath, [0, 1, 0], [0, 0, 1], [1, 0, 0]);
+  // fixPathBasis(railPath, [0, 1, 0], [0, 0, 1], [1, 0, 0]);
 
   // let ribEnds: vec3[] = [];
   let ribPaths: Path[] = [];
@@ -459,7 +459,7 @@ export function createLD53Ship(): HomeShip {
 
     const numRibSegs = 8;
     const bPath = createPathFromBezier(ribCurve, numRibSegs, [1, 0, 0]);
-    fixPathBasis(bPath, [0, 1, 0], [0, 0, 1], [1, 0, 0]);
+    // fixPathBasis(bPath, [0, 1, 0], [0, 0, 1], [1, 0, 0]);
     ribPaths.push(bPath);
 
     // if (i === 0) {
@@ -552,7 +552,7 @@ export function createLD53Ship(): HomeShip {
       );
       // even.reverse();
       // translatePath(even, [0, 0, 10]);
-      fixPathBasis(even, [0, 0, 1], [0, 1, 0], [-1, 0, 0]);
+      // fixPathBasis(even, [0, 0, 1], [0, 1, 0], [-1, 0, 0]);
       translatePathAlongNormal(even, ribDepth); // + 0.3);
       // fixPathBasis(even, [0, 1, 0], [1, 0, 0], [0, 0, -1]);
       // dbgPathWithGizmos(even);
@@ -620,6 +620,11 @@ export function createLD53Ship(): HomeShip {
       vec3.add(second.pos, diff, first.pos);
       nodes.unshift(first);
     }
+
+    fixPathBasis(nodes, [0, 1, 0], [0, 0, 1], [1, 0, 0]);
+
+    // dbgPathWithGizmos(nodes);
+
     plankPaths.push(nodes);
 
     let mirroredPath = mirrorPath(clonePath(nodes), [0, 0, 1]);
@@ -954,6 +959,7 @@ export function appendBoard(mesh: RawMesh, board: Board, color = BLACK) {
   }
 }
 
+// TODO(@darzu): perhaps all uses of fixPathBasis are bad?
 export function fixPathBasis(
   path: Path,
   newX: vec3.InputT,

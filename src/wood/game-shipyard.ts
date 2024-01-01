@@ -236,7 +236,6 @@ export async function initShipyardGame(hosting: boolean) {
   const scale = 1;
   const timberAABB = getAABBFromMesh(timberMesh);
   // const timberPos = getCenterFromAABB(timberAABB);
-  const timberPos = vec3.create();
   // timberPos[1] += 5;
   // const timberPos = vec3.clone(res.allMeshes.timber_rib.center);
   // vec3.negate(timberPos, timberPos);
@@ -244,7 +243,7 @@ export async function initShipyardGame(hosting: boolean) {
   // timberPos[1] += 1;
   // timberPos[0] -= ribCount * 0.5 * ribSpace;
   // timberPos[2] -= floorPlankCount * 0.5 * floorSpace;
-  EM.set(timber, PositionDef, timberPos);
+  EM.set(timber, PositionDef, V(0, 0, 20));
   // EM.set(timber, PositionDef, [0, 0, -4]);
   EM.set(timber, RotationDef);
   EM.set(timber, ScaleDef, V(scale, scale, scale));
