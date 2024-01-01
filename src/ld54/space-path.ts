@@ -35,7 +35,7 @@ export const SpacePathSegmentDef = EM.defineNonupdatableComponent(
   (n: number) => ({ n })
 );
 
-const DEBUG_PATH_POINTS = true;
+const DEBUG_PATH_POINTS = false;
 
 export function createSpacePath() {
   const points = getRandomCylindricalPoints(50, 50, 16);

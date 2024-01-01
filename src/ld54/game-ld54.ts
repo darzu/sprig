@@ -78,7 +78,7 @@ import { addColliderDbgVis, addGizmoChild } from "../utils/utils-game.js";
 
 const RENDER_TRUTH_CUBE = false;
 
-const DBG_GIZMOS = true;
+const DBG_GIZMOS = false;
 const DBG_COLLIDERS = false;
 
 const ld54Meshes = XY.defineMeshSetResource(
