@@ -99,6 +99,9 @@ What does compute shader gain us?
   Less CPU work
 */
 
+// TODO(@darzu): implement board heirarchy so that joints between boards are tracked, for
+//  damage and construction purposes
+
 // Flag for serialization dbg. determine the max number of boards and segments; useful for sizing (u8 vs u16) for serializing
 const TRACK_MAX_BOARD_SEG_IDX = false;
 

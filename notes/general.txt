@@ -1412,6 +1412,10 @@ ffmpeg -i space-man.mov -vcodec h264 \
   -acodec aac -filter:v "crop=in_w-278:in_h,scale=720:720" \
   space-man.mp4
 
+ffmpeg -i three-body-solutions.mov -vcodec h264 \
+  -acodec aac  \
+  three-body-solutions.mp4
+
 Bluesky's "Ecosystem Overview":
   https://gitlab.com/bluesky-community1/decentralized-ecosystem#ecosystem-overview
 
@@ -1497,3 +1501,6 @@ ECS dead:
 
 one reviewers opinion on gaming masterpieces:
   "game masterpieces like Journey, Edith Finch, Goragoa, Unfinished Swan, Okami, and Shadow of the Colossus. "
+
+Good online lectures?
+  https://www.thegreatcourses.com

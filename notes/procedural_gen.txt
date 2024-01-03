@@ -338,3 +338,13 @@ gradiant vs value noise:
   gradiant noise: https://www.shadertoy.com/view/XdXGW8
 
 gen art: https://www.isohedron.io
+
+Surface generation:
+  Repulsive surface:
+    https://www.cs.cmu.edu/~kmcrane/Projects/RepulsiveSurfaces/index.html
+    https://www.youtube.com/watch?v=sJgK0jjd6oE
+    https://github.com/icethrush/repulsive-surfaces
+  https://twitter.com/keenanisalive
+  sphere inside out:
+    https://www.youtube.com/watch?v=OI-To1eUtuU
+  https://store.steampowered.com/app/1297210/Tandis/

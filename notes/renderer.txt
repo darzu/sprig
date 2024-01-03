@@ -1927,6 +1927,9 @@ Ray tracing from scratch:
   https://www.scratchapixel.com/lessons/3d-basic-rendering/introduction-to-ray-tracing/how-does-it-work.html
   https://raytracing.github.io
 
+  tinyraytracer:
+    https://github.com/ssloy/tinyrenderer/wiki
+
 "What do you get when you combine... ah never mind, I call this one "Potato Lumen" 😛
 ... because it uses a Lumen-style screen-space radiance cache, but aims to run on potato GPUs, tracing only 1 ray for every 16 pixels.
 How do I feed it so sparsely? ReSTIR of course 🤣🫒🛢️":

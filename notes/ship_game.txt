@@ -15,7 +15,7 @@ You can lose supplies by getting damaged.
   Like the gem heart, supply boxes straddle multiple ship tiles and 
     all need to be broken before you loose them.
 You can repair ship tiles.
-Fire cannons and broad sides.
+Fire cannons and broadsides.
 Steer to line up shots and follow the river.
 Players wear hats depending on their job.
   Maybe done automatically based on station/turret.
@@ -77,6 +77,7 @@ Cannon ball effects (positive and negative):
 Broadsides:
   Master and Commander:
     https://youtu.be/f06_CkYvIik?t=125
+    https://www.youtube.com/watch?v=gJv7i4UfqCE
   Sea of Thieves:
     https://youtu.be/H3NF4IDClKQ?t=85
 
@@ -126,16 +127,6 @@ Ship travels through hyperspace:
   - license to make it spook and have some abstract concepts and madness
   - anything goes
   - can zoom through nebulas!!!
-
-Surface generation:
-  Repulsive surface:
-    https://www.cs.cmu.edu/~kmcrane/Projects/RepulsiveSurfaces/index.html
-    https://www.youtube.com/watch?v=sJgK0jjd6oE
-    https://github.com/icethrush/repulsive-surfaces
-  https://twitter.com/keenanisalive
-  sphere inside out:
-    https://www.youtube.com/watch?v=OI-To1eUtuU
-  https://store.steampowered.com/app/1297210/Tandis/
 
 World building:
   
@@ -219,6 +210,7 @@ flecks of matter.
 "
 
 environment flavor inspiration:
+  https://bleuje.com/animationsite/
   Occassionally a star-shower happens and everyone hunkers down in their shield:
     https://necessary-disorder.tumblr.com/post/667668153745195008
   space time fabric is made up of quantized star clusters laid flat:
@@ -445,4 +437,9 @@ Names:
   hyperspace sailors
   Hypersail: The Fun Game With Real People as Other Sailors
 
+  Winds of Hyperspace
+  Winds of the Dark Stars
 
+Raise and lower keel?
+  Raise to "drift" sideways, good for downstream broadsides,
+  deploy keel to go straight
