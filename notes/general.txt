@@ -1504,3 +1504,12 @@ one reviewers opinion on gaming masterpieces:
 
 Good online lectures?
   https://www.thegreatcourses.com
+
+lisyarus's thoughts on making a game engine:
+  https://lisyarus.github.io/blog/programming/2023/09/15/so-you-want-to-make-a-game-engine.html
+
+Making Small Games, Which Is Fun in Itself:
+  https://abagames.github.io/joys-of-small-game-development-en/fun_to_make_small_games.html
+
+reflections on using bevy:
+  https://taintedcoders.com

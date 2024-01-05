@@ -19,84 +19,26 @@ import { postProcess } from "../render/pipelines/std-post.js";
 import { shadowPipelines } from "../render/pipelines/std-shadow.js";
 import { RendererDef, RenderableConstructDef } from "../render/renderer-ecs.js";
 import { addGizmoChild, addWorldGizmo } from "../utils/utils-game.js";
+import { initGhost, initWorld } from "./graybox-helpers.js";
 
 const DBG_GHOST = true;
 const DBG_GIZMO = true;
 
 export async function initGrayboxShipArena() {
-  EM.addEagerInit([], [RendererDef], [], (res) => {
-    // renderer
-    res.renderer.pipelines = [
-      ...shadowPipelines,
-      stdRenderPipeline,
-      outlineRender,
-      deferredPipeline,
-      postProcess,
-    ];
-  });
-
-  const { camera, me } = await EM.whenResources(CameraDef, MeDef);
-
-  // camera
-  camera.fov = Math.PI * 0.5;
-  camera.viewDist = 1000;
-  vec3.set(-200, -200, -200, camera.maxWorldAABB.min);
-  vec3.set(+200, +200, +200, camera.maxWorldAABB.max);
-
-  const { mesh_cube, mesh_hex } = await EM.whenResources(
-    CubeMesh.def,
-    HexMesh.def
-  );
-
-  // light
-  const sun = EM.new();
-  EM.set(sun, PointLightDef);
-  EM.set(sun, ColorDef, V(1, 1, 1));
-  EM.set(sun, PositionDef, V(100, 100, 100));
-  EM.set(sun, RenderableConstructDef, mesh_cube.proto, false);
-  sun.pointLight.constant = 1.0;
-  sun.pointLight.linear = 0.0;
-  sun.pointLight.quadratic = 0.0;
-  vec3.copy(sun.pointLight.ambient, [0.2, 0.2, 0.2]);
-  vec3.copy(sun.pointLight.diffuse, [0.5, 0.5, 0.5]);
-  EM.set(sun, PositionDef, V(50, 10, 300));
+  initWorld();
 
   // ocean
   const ocean = EM.new();
   EM.set(ocean, ColorDef, ENDESGA16.blue);
   EM.set(ocean, PositionDef, V(0, 0, 0));
-  EM.set(ocean, RenderableConstructDef, mesh_cube.proto);
+  EM.set(ocean, RenderableConstructDef, CubeMesh);
   EM.set(ocean, ScaleDef, V(100, 100, 0.1));
 
   createShip();
 
   // dbg ghost
   if (DBG_GHOST) {
-    const g = createGhost(mesh_cube.proto);
-    g.position[2] = 5;
-
-    // hover near origin
-    vec3.copy(g.position, [43.39, -53.9, 67.92]);
-    quat.copy(g.rotation, [0.0, 0.0, 0.24, 0.97]);
-    vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
-    g.cameraFollow.yawOffset = 0.0;
-    g.cameraFollow.pitchOffset = -0.809;
-  }
-
-  // gizmo
-  if (DBG_GIZMO) {
-    const pedestal = EM.new();
-    EM.set(pedestal, RenderableConstructDef, mesh_hex.proto);
-    EM.set(pedestal, ColorDef, ENDESGA16.darkGray);
-    EM.set(pedestal, PositionDef, V(0, 0, -10));
-    EM.set(pedestal, ScaleDef, V(10, 10, 10));
-    EM.set(pedestal, ColliderDef, {
-      shape: "AABB",
-      solid: true,
-      aabb: mesh_hex.aabb,
-    });
-
-    addWorldGizmo();
+    initGhost();
   }
 }
 

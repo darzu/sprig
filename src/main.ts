@@ -62,6 +62,8 @@ const ALL_GAMES = [
   "graybox-sunless",
   "graybox-ship-arena",
 ] as const;
+
+// TODO(@darzu): current game should probably be saved in local storage, not hard-coded. (Default can be hard-coded)
 const GAME: (typeof ALL_GAMES)[number] = "graybox-ship-arena";
 
 // Run simulation with a fixed timestep @ 60hz

@@ -64,3 +64,7 @@ OKlab on shadertoy:
 
 Color theory:
   https://tint2hue.wordpress.com
+
+"The Hitchhiker's Guide to Digital Colour":
+  https://hg2dc.com
+  The step by step guidebook for digital pixel pushers trying to get a firm grasp on colour to get sh*t done…

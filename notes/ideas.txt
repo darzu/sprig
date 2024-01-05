@@ -146,3 +146,11 @@ many colored lines wire frame creature:
   each a different color,
   starts as mono color, then add more in as a progression mechanic
   
+multi-surface navigation: interactive teaching sandbox thing
+  full 3d movement in space
+  2d movement on a ground plane
+  3d movement on a height map
+  2d movement on a UV surface
+  2d movement w/ polar coordinates on a sphere
+  maybe some sort of mech avatar that can launch off into 3d space
+  show a grid for whichever space you're in

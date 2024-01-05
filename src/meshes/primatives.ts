@@ -7,7 +7,7 @@ import {
   randEndesga16,
   seqEndesga16,
 } from "../color/palettes.js";
-import { AABB } from "../physics/aabb.js";
+import { AABB, createAABB } from "../physics/aabb.js";
 import {
   cloneMesh,
   mapMeshPositions,
@@ -182,9 +182,13 @@ scaleMesh(TETRA_MESH, 2);
 
 // a = cos PI/3
 // b = sin PI/3
+export const HEX_AABB = createAABB(
+  V(-Math.sin(Math.PI / 3), -Math.cos(Math.PI / 3), 0),
+  V(Math.sin(Math.PI / 3), Math.cos(Math.PI / 3), 1)
+);
 export const HEX_MESH: () => RawMesh = () => {
-  const A = Math.sin(Math.PI / 3);
-  const B = Math.cos(Math.PI / 3);
+  const A = HEX_AABB.max[0];
+  const B = HEX_AABB.max[1];
   const sideTri: (i: number) => vec3[] = (i) => {
     const i2 = (i + 1) % 6;
     return [V(i + 6, i, i2), V(i + 6, i2, i2 + 6)];
