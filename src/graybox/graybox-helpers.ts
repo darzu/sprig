@@ -58,8 +58,10 @@ defineObject
 function defineObject<
   N extends string,
   CS extends readonly ComponentDef[],
-  COS extends readonly ChildDef[]
->(def: ObjDefinition<N, CS, COS>): ObjDefinition<N, CS, COS> {
+  // COS extends readonly ChildDef[]
+  C extends Record<string, ObjDefinition>
+  // >(def: ObjDefinition<N, CS, COS>): ObjDefinition<N, CS, COS> {
+>(def: ObjDefinition<N, CS, C>): ObjDefinition<N, CS, C> {
   // TODO(@darzu): define the custom components here
   throw `todo defineObject`;
   return def;
@@ -69,38 +71,43 @@ type ChildDef<
   N extends string = string,
   O extends ObjDefinition = ObjDefinition
 > = readonly [N, O];
+
+// type ChildrenDef =
+
 interface ObjDefinition<
   N extends string = string,
   CS extends readonly ComponentDef[] = any[],
-  COS extends readonly ChildDef[] = any[]
+  // CNS extends string[] = [],
+  // CDS extends ObjDefinition[] = []
+  C extends Record<string, ObjDefinition> = {}
+  // COS extends readonly ChildDef[] = any[]
+  // CNS extends keyof C = keyof C
 > {
   name: N;
   components: readonly [...CS];
-  // children: Intersect<{
-  //   [i in keyof COS]: COS[i] extends ChildDef<infer CN, infer CD>
-  //     ? { [_ in CN]: CD }
-  //     : never;
-  // }>;
-  children: readonly [...COS];
+  children: C;
+  // children: { [i in keyof CNS]: Intersect<{ [_ in CNS[i]]: CDS[i] extends ObjDefinition ?  }> };
+  // children: readonly [...COS];
 }
 
 type ObjComp<D extends ObjDefinition> = D extends ObjDefinition<
   infer N,
   any,
-  infer COS
+  infer C extends Record<string, ObjDefinition>
 >
-  ? ComponentDef<
-      N,
-      Intersect<{ [i in keyof COS]: { [_ in COS[i][0]]: Obj<COS[i][1]> } }>,
-      [],
-      []
-    >
+  ? // ComponentDef<
+    //     N,
+    //     Intersect<{ [i in keyof COS]: { [_ in COS[i][0]]: Obj<COS[i][1]> } }>,
+    //     [],
+    //     []
+    //   >
+    ComponentDef<N, { [n in keyof C]: Obj<C[n]> }, [], []>
   : never;
 
 type Obj<D extends ObjDefinition> = D extends ObjDefinition<
   infer N,
   infer CS,
-  infer COS
+  infer C
 >
   ? EntityW<[ObjComp<D>, ...CS]>
   : never;
@@ -112,48 +119,63 @@ function createObject<D extends ObjDefinition>(def: D /*, args*/): Obj<D> {
 const CannonObj = defineObject({
   name: "cannon",
   components: [PositionDef],
-  children: [],
+  children: {},
 });
 const ShipObj = defineObject({
   name: "ship",
   // components: [PositionDef, ScaleDef, RenderableConstructDef] as const,
   components: [PositionDef],
-  children: [
-    [
-      "mast",
-      {
-        name: "mast",
-        components: [PositionDef, RenderableConstructDef],
-        children: [
-          [
-            "sail",
-            {
-              name: "sail",
-              components: [PositionDef],
-              children: [],
-            },
-          ],
-        ],
+  // children: [
+  //   [
+  //     "mast",
+  //     {
+  //       name: "mast",
+  //       components: [PositionDef, RenderableConstructDef],
+  //       children: [
+  //         [
+  //           "sail",
+  //           {
+  //             name: "sail",
+  //             components: [PositionDef],
+  //             children: [],
+  //           },
+  //         ],
+  //       ],
+  //     },
+  //   ],
+  //   ["cannonL", CannonObj],
+  //   ["cannonR", CannonObj],
+  // ] as const,
+  children: {
+    mast: {
+      name: "mast",
+      components: [ScaleDef, RenderableConstructDef],
+      children: {
+        // [
+        //   "sail",
+        //   {
+        //     name: "sail",
+        //     components: [PositionDef],
+        //     children: [],
+        //   },
+        // ],
       },
-    ],
-    ["cannonL", CannonObj],
-    ["cannonR", CannonObj],
-  ] as const,
-});
+    },
+    cannonL: CannonObj,
+    cannonR: CannonObj,
+  },
+} as const);
 
 type __t5 = (typeof ShipObj)["children"];
 type __t3<D extends ObjDefinition> = D extends ObjDefinition<
   infer N,
   any,
-  infer COS extends ChildDef[]
+  infer C
 >
   ? // Intersect<{ [i in keyof COS]: { [_ in COS[i][0]]: Obj<COS[i][1]> } }>
     // { [i in keyof COS]: { [_ in COS[i][0]]: Obj<COS[i][1]> } }
     {
-      [i in keyof COS]: COS[i] extends ChildDef<
-        infer CN,
-        ObjDefinition<infer N2, infer CS extends readonly ComponentDef[]>
-      >
+      [n in keyof C]: C[n] extends ObjDefinition<infer CN, infer CS>
         ? // ? Obj<ObjDefinition<N2, [...CS]>>
           EntityW<[...CS]>
         : never;
@@ -163,7 +185,7 @@ type __t3<D extends ObjDefinition> = D extends ObjDefinition<
     never;
 type __t4 = __t3<typeof ShipObj>;
 let __o4 = null as unknown as __t4;
-const l23 = __o4[0].renderableConstruct;
+const l23 = __o4.mast.renderableConstruct;
 
 type __t1 = ObjComp<typeof ShipObj>;
 type __t2 = Obj<typeof ShipObj>;
@@ -173,9 +195,9 @@ function testGrayHelpers() {
   const ship = createObject(ShipObj);
   ship.position;
   // const cl = ship.ship["cannonL"];
-  const cl = ship.ship["cannonL"];
+  const cl = ship.ship.cannonL;
   const m = ship.ship.mast;
-  const mp = m.position;
+  const mp = m.scale;
 }
 // const ShipDef = defineObject("ship", {
 //   position: [V(0,0,0)],
