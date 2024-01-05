@@ -52,3 +52,5 @@ In the language, maybe everything should be pipelines / verticalized?
 Dion:
   AST representation stuff: https://dion.systems/blog_0001_hms2020.html
 
+Go lang retro:
+  https://commandcenter.blogspot.com/2024/01/what-we-got-right-what-we-got-wrong.html

@@ -55,4 +55,6 @@ function createShip() {
   ship.cameraFollow.pitchOffset = -Math.PI * 0.25;
 
   if (DBG_GIZMO) addGizmoChild(ship, 10);
+
+  // sail
 }

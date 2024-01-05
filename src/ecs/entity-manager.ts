@@ -97,7 +97,7 @@ export type EntityW<
   ID extends number = number
 > = {
   readonly id: ID;
-} & Intersect<{ [P in keyof CS]: WithComponent<CS[P]> }>;
+} & Intersect<{ [i in keyof CS]: WithComponent<CS[i]> }>;
 
 export type WithResource<D> = D extends ResourceDef<infer N, infer P>
   ? { readonly [k in N]: P }
