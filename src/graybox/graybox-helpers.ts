@@ -58,7 +58,7 @@ defineObject
 function defineObject<
   N extends string,
   CS extends readonly ComponentDef[],
-  COS extends ChildDef[]
+  COS extends readonly ChildDef[]
 >(def: ObjDefinition<N, CS, COS>): ObjDefinition<N, CS, COS> {
   // TODO(@darzu): define the custom components here
   throw `todo defineObject`;
@@ -68,11 +68,11 @@ function defineObject<
 type ChildDef<
   N extends string = string,
   O extends ObjDefinition = ObjDefinition
-> = [N, O];
+> = readonly [N, O];
 interface ObjDefinition<
   N extends string = string,
   CS extends readonly ComponentDef[] = any[],
-  COS extends ChildDef[] = any[]
+  COS extends readonly ChildDef[] = any[]
 > {
   name: N;
   components: readonly [...CS];
@@ -81,7 +81,7 @@ interface ObjDefinition<
   //     ? { [_ in CN]: CD }
   //     : never;
   // }>;
-  children: ChildDef[];
+  children: readonly [...COS];
 }
 
 type ObjComp<D extends ObjDefinition> = D extends ObjDefinition<
@@ -138,7 +138,7 @@ const ShipObj = defineObject({
     ],
     ["cannonL", CannonObj],
     ["cannonR", CannonObj],
-  ],
+  ] as const,
 });
 
 type __t5 = (typeof ShipObj)["children"];
@@ -162,6 +162,8 @@ type __t3<D extends ObjDefinition> = D extends ObjDefinition<
 
     never;
 type __t4 = __t3<typeof ShipObj>;
+let __o4 = null as unknown as __t4;
+const l23 = __o4[0].renderableConstruct;
 
 type __t1 = ObjComp<typeof ShipObj>;
 type __t2 = Obj<typeof ShipObj>;
@@ -170,7 +172,10 @@ type __t2 = Obj<typeof ShipObj>;
 function testGrayHelpers() {
   const ship = createObject(ShipObj);
   ship.position;
-  // ship.ship.
+  // const cl = ship.ship["cannonL"];
+  const cl = ship.ship["cannonL"];
+  const m = ship.ship.mast;
+  const mp = m.position;
 }
 // const ShipDef = defineObject("ship", {
 //   position: [V(0,0,0)],
