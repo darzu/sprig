@@ -96,7 +96,11 @@ type Obj<D extends ObjDefinition> = D extends ObjDefinition<
   ? EntityW<[ObjComp<D>, ...CS]>
   : never;
 
-type ObjArgs<D extends ObjDefinition> = D extends ObjDefinition<any, infer CS>
+type ObjArgs<D extends ObjDefinition> = D extends ObjDefinition<
+  any,
+  infer CS,
+  infer C
+>
   ? {
       args: Intersect<{
         [i in keyof CS]: CS[i] extends ComponentDef<
@@ -108,7 +112,9 @@ type ObjArgs<D extends ObjDefinition> = D extends ObjDefinition<any, infer CS>
           ? { [_ in N]: [...CArgs, ...UArgs] }
           : never;
       }>;
-      children: {};
+      children: {
+        [n in keyof C]: ObjArgs<C[n]>;
+      };
     }
   : never;
 
