@@ -2,14 +2,19 @@ import { CameraDef } from "../camera/camera.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { createGhost } from "../debug/ghost.js";
-import { ComponentDef, EM, EntityW } from "../ecs/entity-manager.js";
+import {
+  ComponentDef,
+  EM,
+  EntityW,
+  _ComponentDef,
+} from "../ecs/entity-manager.js";
 import { quat, vec3 } from "../matrix/sprig-matrix.js";
 import { V } from "../matrix/sprig-matrix.js";
 import { CubeMesh, HexMesh } from "../meshes/mesh-list.js";
 import { HEX_AABB } from "../meshes/primatives.js";
 import { MeDef } from "../net/components.js";
 import { ColliderDef } from "../physics/collider.js";
-import { PositionDef, ScaleDef } from "../physics/transform.js";
+import { PositionDef, RotationDef, ScaleDef } from "../physics/transform.js";
 import { PointLightDef } from "../render/lights.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
 import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
@@ -58,36 +63,21 @@ defineObject
 function defineObject<
   N extends string,
   CS extends readonly ComponentDef[],
-  // COS extends readonly ChildDef[]
   C extends Record<string, ObjDefinition>
-  // >(def: ObjDefinition<N, CS, COS>): ObjDefinition<N, CS, COS> {
 >(def: ObjDefinition<N, CS, C>): ObjDefinition<N, CS, C> {
   // TODO(@darzu): define the custom components here
   throw `todo defineObject`;
   return def;
 }
 
-type ChildDef<
-  N extends string = string,
-  O extends ObjDefinition = ObjDefinition
-> = readonly [N, O];
-
-// type ChildrenDef =
-
 interface ObjDefinition<
   N extends string = string,
   CS extends readonly ComponentDef[] = any[],
-  // CNS extends string[] = [],
-  // CDS extends ObjDefinition[] = []
   C extends Record<string, ObjDefinition> = {}
-  // COS extends readonly ChildDef[] = any[]
-  // CNS extends keyof C = keyof C
 > {
   name: N;
   components: readonly [...CS];
   children: C;
-  // children: { [i in keyof CNS]: Intersect<{ [_ in CNS[i]]: CDS[i] extends ObjDefinition ?  }> };
-  // children: readonly [...COS];
 }
 
 type ObjComp<D extends ObjDefinition> = D extends ObjDefinition<
@@ -95,13 +85,7 @@ type ObjComp<D extends ObjDefinition> = D extends ObjDefinition<
   any,
   infer C extends Record<string, ObjDefinition>
 >
-  ? // ComponentDef<
-    //     N,
-    //     Intersect<{ [i in keyof COS]: { [_ in COS[i][0]]: Obj<COS[i][1]> } }>,
-    //     [],
-    //     []
-    //   >
-    ComponentDef<N, { [n in keyof C]: Obj<C[n]> }, [], []>
+  ? ComponentDef<N, { [n in keyof C]: Obj<C[n]> }, [], []>
   : never;
 
 type Obj<D extends ObjDefinition> = D extends ObjDefinition<
@@ -112,7 +96,26 @@ type Obj<D extends ObjDefinition> = D extends ObjDefinition<
   ? EntityW<[ObjComp<D>, ...CS]>
   : never;
 
-function createObject<D extends ObjDefinition>(def: D /*, args*/): Obj<D> {
+type ObjArgs<D extends ObjDefinition> = D extends ObjDefinition<any, infer CS>
+  ? {
+      args: Intersect<{
+        [i in keyof CS]: CS[i] extends ComponentDef<
+          infer N,
+          any,
+          infer CArgs,
+          infer UArgs
+        >
+          ? { [_ in N]: [...CArgs, ...UArgs] }
+          : never;
+      }>;
+      children: {};
+    }
+  : never;
+
+function createObject<D extends ObjDefinition, A extends ObjArgs<D>>(
+  def: D,
+  args: A
+): Obj<D> {
   throw "TODO createObject";
 }
 
@@ -123,42 +126,17 @@ const CannonObj = defineObject({
 });
 const ShipObj = defineObject({
   name: "ship",
-  // components: [PositionDef, ScaleDef, RenderableConstructDef] as const,
-  components: [PositionDef],
-  // children: [
-  //   [
-  //     "mast",
-  //     {
-  //       name: "mast",
-  //       components: [PositionDef, RenderableConstructDef],
-  //       children: [
-  //         [
-  //           "sail",
-  //           {
-  //             name: "sail",
-  //             components: [PositionDef],
-  //             children: [],
-  //           },
-  //         ],
-  //       ],
-  //     },
-  //   ],
-  //   ["cannonL", CannonObj],
-  //   ["cannonR", CannonObj],
-  // ] as const,
+  components: [PositionDef, RenderableConstructDef],
   children: {
     mast: {
       name: "mast",
-      components: [ScaleDef, RenderableConstructDef],
+      components: [ScaleDef],
       children: {
-        // [
-        //   "sail",
-        //   {
-        //     name: "sail",
-        //     components: [PositionDef],
-        //     children: [],
-        //   },
-        // ],
+        sail: {
+          name: "sail",
+          components: [RotationDef],
+          children: {},
+        },
       },
     },
     cannonL: CannonObj,
@@ -185,19 +163,52 @@ type __t3<D extends ObjDefinition> = D extends ObjDefinition<
     never;
 type __t4 = __t3<typeof ShipObj>;
 let __o4 = null as unknown as __t4;
-const l23 = __o4.mast.renderableConstruct;
+const l23 = __o4.mast.scale;
 
 type __t1 = ObjComp<typeof ShipObj>;
 type __t2 = Obj<typeof ShipObj>;
 // type __t1 = ReturnType<typeof createObject<typeof ShipObj>>;
 
 function testGrayHelpers() {
-  const ship = createObject(ShipObj);
+  const ship = createObject(ShipObj, {
+    args: {
+      position: [V(0, 0, 0)],
+      renderableConstruct: [CubeMesh],
+    },
+    children: {
+      mast: {
+        args: {
+          scale: [V(1, 1, 1)],
+        },
+        children: {
+          sail: {
+            args: {
+              rotation: [],
+            },
+            children: {},
+          },
+        },
+      },
+      cannonL: {
+        args: {
+          position: [V(1, 0, 0)],
+        },
+        children: {},
+      },
+      cannonR: {
+        args: {
+          position: [V(1, 0, 0)],
+        },
+        children: {},
+      },
+    },
+  });
+
   ship.position;
   // const cl = ship.ship["cannonL"];
   const cl = ship.ship.cannonL;
-  const m = ship.ship.mast;
-  const mp = m.scale;
+  const m = ship.ship.mast.mast.sail;
+  const mp = m.rotation;
 }
 // const ShipDef = defineObject("ship", {
 //   position: [V(0,0,0)],
