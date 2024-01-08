@@ -48,8 +48,10 @@ function defineObj<
   N extends string,
   CS extends readonly ComponentDef[],
   C extends undefined | Record<string, ObjDef>,
-  D extends {}
->(def: ObjDef<N, CS, C, D>): ObjDef<N, CS, C, D> {
+  P extends {}
+  // CArgs extends any[],
+  // UArgs extends any[]
+>(def: ObjDef<N, CS, C, P>): ObjDef<N, CS, C, P> {
   // TODO(@darzu): IMPL!
   // TODO(@darzu): define the custom components here
   throw `todo defineObject`;
@@ -62,18 +64,21 @@ interface ObjDef<
   N extends string = string,
   CS extends readonly ComponentDef[] = any[],
   C extends undefined | Record<string, ObjDef> = {},
-  D extends {} = any
-  // P extends {} = {},
-  // CArgs extends any[] = [],
+  P extends {} = any
+  // CArgs extends any[] = any,
+  // UArgs extends any[] = any
 > {
   name: N;
   components: readonly [...CS];
   // TODO(@darzu): dang TS doesn't let you partially pass type parameters.
+  //   So defineObject<MyPropsType>() doesn't work.
   //   And I can't seem to make it work using:
   //      dataType: (d: D) => void;
   //    plus helper function: "function T<N>() {}"
-  dataType: (d: D) => void;
-  // props?:
+  //  actually using "D extends {} = any" works, but T doesn't.
+  dataType?: (d: P) => void;
+  // props?: () => P;
+  // updateProps?: (p: P, ...args: UArgs) => P;
   children?: C;
 }
 
@@ -133,11 +138,14 @@ function createObj<D extends ObjDef, A extends ObjArgs<D>>(
 const CannonObj = defineObj({
   name: "cannon",
   components: [PositionDef],
-  dataType: T<{}>,
 });
 const ShipObj = defineObj({
   name: "ship",
-  dataType: T<{ myProp: number }>(),
+  dataType: (_: { myProp: number }) => {},
+  // updateProps: (p, n: number) => {
+  //   p.myProp = n;
+  //   return p;
+  // },
   // dataType: (p: { myProp: number }) => {},
   components: [PositionDef, RenderableConstructDef],
   children: {
