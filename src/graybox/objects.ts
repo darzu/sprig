@@ -37,6 +37,7 @@ an object has:
 //  3. and custom component
 // could all be seperate concerns.
 // TODO(@darzu): MULTIPLAYER: this doesn't work w/ netEntityHelper
+// TODO(@darzu): MULTIPLAYER: this uses non-updatable component
 // TODO(@darzu): POOLS: this doesn't work with entity pools
 // TODO(@darzu): NAMESPACES? each object and in-line child defines a new component so
 //    the component namespaces could become quite cluttered?
@@ -46,8 +47,10 @@ an object has:
 function defineObj<
   N extends string,
   CS extends readonly ComponentDef[],
-  C extends undefined | Record<string, ObjDef>
->(def: ObjDef<N, CS, C>): ObjDef<N, CS, C> {
+  C extends undefined | Record<string, ObjDef>,
+  D extends {}
+>(def: ObjDef<N, CS, C, D>): ObjDef<N, CS, C, D> {
+  // TODO(@darzu): IMPL!
   // TODO(@darzu): define the custom components here
   throw `todo defineObject`;
   return def;
@@ -58,19 +61,32 @@ function defineObj<
 interface ObjDef<
   N extends string = string,
   CS extends readonly ComponentDef[] = any[],
-  C extends undefined | Record<string, ObjDef> = {}
+  C extends undefined | Record<string, ObjDef> = {},
+  D extends {} = any
+  // P extends {} = {},
+  // CArgs extends any[] = [],
 > {
   name: N;
   components: readonly [...CS];
-  // data ?
+  // TODO(@darzu): dang TS doesn't let you partially pass type parameters.
+  //   And I can't seem to make it work using:
+  //      dataType: (d: D) => void;
+  //    plus helper function: "function T<N>() {}"
+  dataType: (d: D) => void;
+  // props?:
   children?: C;
 }
 
 // the component def the tracks the children and custom data of the object
-type ObjComponentDef<D extends ObjDef> = D extends ObjDef<infer N, any, infer C>
+type ObjComponentDef<D extends ObjDef> = D extends ObjDef<
+  infer N,
+  any,
+  infer C,
+  infer P
+>
   ? C extends Record<string, ObjDef>
-    ? ComponentDef<N, { [n in keyof C]: ObjEnt<C[n]> }, [], []>
-    : ComponentDef<N, {}, [], []>
+    ? ComponentDef<N, { [n in keyof C]: ObjEnt<C[n]> } & P, [], []>
+    : ComponentDef<N, P, [], []>
   : never;
 
 // the entity and all components of an object
@@ -110,24 +126,30 @@ function createObj<D extends ObjDef, A extends ObjArgs<D>>(
   def: D,
   args: A
 ): ObjEnt<D> {
+  // TODO(@darzu): IMPL!
   throw "TODO createObject";
 }
 
 const CannonObj = defineObj({
   name: "cannon",
   components: [PositionDef],
+  dataType: T<{}>,
 });
 const ShipObj = defineObj({
   name: "ship",
+  dataType: T<{ myProp: number }>(),
+  // dataType: (p: { myProp: number }) => {},
   components: [PositionDef, RenderableConstructDef],
   children: {
     mast: {
       name: "mast",
       components: [ScaleDef],
+      dataType: T<{}>,
       children: {
         sail: {
           name: "sail",
           components: [RotationDef],
+          dataType: T<{}>,
         },
       },
     },
@@ -156,6 +178,15 @@ const l23 = __o4.mast.scale;
 type __t1 = ObjComponentDef<typeof ShipObj>;
 type __t2 = ObjEnt<typeof ShipObj>;
 // type __t1 = ReturnType<typeof createObject<typeof ShipObj>>;
+
+type __t6<D extends ObjDef> = D extends ObjDef<infer N, any, infer C, infer P>
+  ? P
+  : never;
+type __t7 = __t6<typeof ShipObj>;
+
+function T<N extends {}>(): (p: N) => void {
+  return (p: N) => {};
+}
 
 function testGrayHelpers() {
   const ship = createObj(ShipObj, {
@@ -189,6 +220,7 @@ function testGrayHelpers() {
     },
   });
 
+  ship.ship.myProp = 8;
   ship.position;
   // const cl = ship.ship["cannonL"];
   const cl = ship.ship.cannonL;
