@@ -1,3 +1,10 @@
+import { ComponentDef, EntityW } from "../ecs/entity-manager.js";
+import { V } from "../matrix/sprig-matrix.js";
+import { CubeMesh } from "../meshes/mesh-list.js";
+import { PositionDef, ScaleDef, RotationDef } from "../physics/transform.js";
+import { RenderableConstructDef } from "../render/renderer-ecs.js";
+import { Intersect } from "../utils/util.js";
+
 /*
 OBJECTS
 goals:
@@ -23,13 +30,6 @@ an object has:
       cannonR
 */
 
-import { ComponentDef, EntityW } from "../ecs/entity-manager.js";
-import { V } from "../matrix/sprig-matrix.js";
-import { CubeMesh } from "../meshes/mesh-list.js";
-import { PositionDef, ScaleDef, RotationDef } from "../physics/transform.js";
-import { RenderableConstructDef } from "../render/renderer-ecs.js";
-import { Intersect } from "../utils/util.js";
-
 // TODO(@darzu): custom component properties on object definition
 // TODO(@darzu): Refactor abstraction?
 //  1. child-tracking component,
@@ -38,6 +38,8 @@ import { Intersect } from "../utils/util.js";
 // could all be seperate concerns.
 // TODO(@darzu): MULTIPLAYER: this doesn't work w/ netEntityHelper
 // TODO(@darzu): POOLS: this doesn't work with entity pools
+// TODO(@darzu): NAMESPACES? each object and in-line child defines a new component so
+//    the component namespaces could become quite cluttered?
 
 function defineObj<
   N extends string,
