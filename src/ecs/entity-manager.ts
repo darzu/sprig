@@ -59,6 +59,32 @@ export type CompId = number;
 //  .update use doesn't seem essential. Mostly just so you can call EM.set without worry
 //  DESERIALIZE: it'd be great if deserializeProps and deserialize didn't have to take in
 //    an already constructed object. That would mean we wouldn't need an empty constructor.
+// TODO(@darzu): Maybe there should be two component types: Direct and Object.
+//    Direct for things like vectors, numbers, Map, directly as the component.
+//    Object for all {}-y, json-y objects w/ multiple proprties
+//    Both have an optional update function so multiple EM.set's don't change memory location
+
+//    Components need:
+//      first EM.set (EM.add ?)
+//      optional subsequent EM.set (EM.addOrUpdate ?)
+//      efficient deserialization:
+//        a. needs a default constructor
+//        or b. needs two deserializers: first time, subsequent times
+//    Component feautres:
+//      (expressed in type and w/ boolean)
+//      R: type (default constructor takes whole type) -(gives)-> EM.add
+//      O: update -(gives)-> EM.update / EM.addOrUpdate
+//      O: serialize
+//      O: deserialize as new -(gives)-> deserialzie like EM.add
+//      O: deserialize as update -(gives)-> deserialize like EM.update
+
+//    Direct types must have a default constructor (and maybe a copy constructor?)
+//      Because during Deserialization, we construct the thing and copy into it?
+//    Object types must take the full object on construction
+//    Updating Object types works via Object.assign w/ Partial<T> (is this ever useful?)
+//    Deserializing into Object types: myObj.myNum = d.readFloat32() which works if
+//    myObj is emptyType to start
+//    How does something like myEnt.myProp = new Map() work?
 
 export interface ComponentDef<
   N extends string = string,
