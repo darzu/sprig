@@ -48,7 +48,7 @@ function defineObj<
   N extends string,
   CS extends readonly ComponentDef[],
   C extends undefined | Record<string, ObjDef>,
-  P extends {}
+  P extends object
   // CArgs extends any[],
   // UArgs extends any[]
 >(def: ObjDef<N, CS, C, P>): ObjDef<N, CS, C, P> {
@@ -64,7 +64,7 @@ interface ObjDef<
   N extends string = string,
   CS extends readonly ComponentDef[] = any[],
   C extends undefined | Record<string, ObjDef> = {},
-  P extends {} = any
+  P extends object = any
   // CArgs extends any[] = any,
   // UArgs extends any[] = any
 > {
@@ -76,7 +76,9 @@ interface ObjDef<
   //      dataType: (d: D) => void;
   //    plus helper function: "function T<N>() {}"
   //  actually using "D extends {} = any" works, but T doesn't.
-  dataType?: (d: P) => void;
+  // TODO(@darzu): HACK. this is a function b/c that lets us annotate a type in
+  //  a data structure. Otherwise there's no good way to pass a type parameter.
+  propsType?: (p: P) => void;
   // props?: () => P;
   // updateProps?: (p: P, ...args: UArgs) => P;
   children?: C;
@@ -90,8 +92,8 @@ type ObjComponentDef<D extends ObjDef> = D extends ObjDef<
   infer P
 >
   ? C extends Record<string, ObjDef>
-    ? ComponentDef<N, { [n in keyof C]: ObjEnt<C[n]> } & P, [], []>
-    : ComponentDef<N, P, [], []>
+    ? ComponentDef<N, { [n in keyof C]: ObjEnt<C[n]> } & P, [P], []>
+    : ComponentDef<N, P, [P], []>
   : never;
 
 // the entity and all components of an object
@@ -112,19 +114,23 @@ type _ObjArgs<D extends ObjDef> = D extends ObjDef<any, infer CS>
         : never;
     }>
   : undefined;
-type ObjArgs<D extends ObjDef> = D extends ObjDef<any, any, infer C>
-  ? C extends Record<any, any>
-    ? {
-        args: _ObjArgs<D>;
-        children: C extends Record<any, any>
-          ? {
-              [n in keyof C]: ObjArgs<C[n]>;
-            }
-          : undefined;
-      }
-    : {
-        args: _ObjArgs<D>;
-      }
+type ObjArgs<D extends ObjDef> = D extends ObjDef<any, any, infer C, infer P>
+  ? {
+      args: _ObjArgs<D>;
+    } & (C extends Record<any, any>
+      ? {
+          children: C extends Record<any, any>
+            ? {
+                [n in keyof C]: ObjArgs<C[n]>;
+              }
+            : undefined;
+        }
+      : {}) &
+      ({} extends P
+        ? {}
+        : {
+            props: P;
+          })
   : never;
 
 function createObj<D extends ObjDef, A extends ObjArgs<D>>(
@@ -141,7 +147,7 @@ const CannonObj = defineObj({
 });
 const ShipObj = defineObj({
   name: "ship",
-  dataType: (_: { myProp: number }) => {},
+  propsType: T<{ myProp: number }>(),
   // updateProps: (p, n: number) => {
   //   p.myProp = n;
   //   return p;
@@ -152,12 +158,10 @@ const ShipObj = defineObj({
     mast: {
       name: "mast",
       components: [ScaleDef],
-      dataType: T<{}>,
       children: {
         sail: {
           name: "sail",
           components: [RotationDef],
-          dataType: T<{}>,
         },
       },
     },
@@ -198,6 +202,9 @@ function T<N extends {}>(): (p: N) => void {
 
 function testGrayHelpers() {
   const ship = createObj(ShipObj, {
+    props: {
+      myProp: 7,
+    },
     args: {
       position: [V(0, 0, 0)],
       renderableConstruct: [CubeMesh],
