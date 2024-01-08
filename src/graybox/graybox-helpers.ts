@@ -63,7 +63,7 @@ defineObject
 function defineObject<
   N extends string,
   CS extends readonly ComponentDef[],
-  C extends Record<string, ObjDefinition>
+  C extends undefined | Record<string, ObjDefinition>
 >(def: ObjDefinition<N, CS, C>): ObjDefinition<N, CS, C> {
   // TODO(@darzu): define the custom components here
   throw `todo defineObject`;
@@ -73,19 +73,21 @@ function defineObject<
 interface ObjDefinition<
   N extends string = string,
   CS extends readonly ComponentDef[] = any[],
-  C extends Record<string, ObjDefinition> = {}
+  C extends undefined | Record<string, ObjDefinition> = {}
 > {
   name: N;
   components: readonly [...CS];
-  children: C;
+  children?: C;
 }
 
 type ObjComp<D extends ObjDefinition> = D extends ObjDefinition<
   infer N,
   any,
-  infer C extends Record<string, ObjDefinition>
+  infer C
 >
-  ? ComponentDef<N, { [n in keyof C]: Obj<C[n]> }, [], []>
+  ? C extends Record<string, ObjDefinition>
+    ? ComponentDef<N, { [n in keyof C]: Obj<C[n]> }, [], []>
+    : ComponentDef<N, {}, [], []>
   : never;
 
 type Obj<D extends ObjDefinition> = D extends ObjDefinition<
@@ -96,26 +98,35 @@ type Obj<D extends ObjDefinition> = D extends ObjDefinition<
   ? EntityW<[ObjComp<D>, ...CS]>
   : never;
 
+type _ObjArgs<D extends ObjDefinition> = D extends ObjDefinition<any, infer CS>
+  ? Intersect<{
+      [i in keyof CS]: CS[i] extends ComponentDef<
+        infer N,
+        any,
+        infer CArgs,
+        infer UArgs
+      >
+        ? { [_ in N]: [...CArgs, ...UArgs] }
+        : never;
+    }>
+  : undefined;
 type ObjArgs<D extends ObjDefinition> = D extends ObjDefinition<
   any,
   infer CS,
   infer C
 >
-  ? {
-      args: Intersect<{
-        [i in keyof CS]: CS[i] extends ComponentDef<
-          infer N,
-          any,
-          infer CArgs,
-          infer UArgs
-        >
-          ? { [_ in N]: [...CArgs, ...UArgs] }
-          : never;
-      }>;
-      children: {
-        [n in keyof C]: ObjArgs<C[n]>;
-      };
-    }
+  ? C extends Record<any, any>
+    ? {
+        args: _ObjArgs<D>;
+        children: C extends Record<any, any>
+          ? {
+              [n in keyof C]: ObjArgs<C[n]>;
+            }
+          : undefined;
+      }
+    : {
+        args: _ObjArgs<D>;
+      }
   : never;
 
 function createObject<D extends ObjDefinition, A extends ObjArgs<D>>(
@@ -128,7 +139,6 @@ function createObject<D extends ObjDefinition, A extends ObjArgs<D>>(
 const CannonObj = defineObject({
   name: "cannon",
   components: [PositionDef],
-  children: {},
 });
 const ShipObj = defineObject({
   name: "ship",
@@ -141,7 +151,6 @@ const ShipObj = defineObject({
         sail: {
           name: "sail",
           components: [RotationDef],
-          children: {},
         },
       },
     },
@@ -191,7 +200,6 @@ function testGrayHelpers() {
             args: {
               rotation: [],
             },
-            children: {},
           },
         },
       },
@@ -199,13 +207,11 @@ function testGrayHelpers() {
         args: {
           position: [V(1, 0, 0)],
         },
-        children: {},
       },
       cannonR: {
         args: {
           position: [V(1, 0, 0)],
         },
-        children: {},
       },
     },
   });
