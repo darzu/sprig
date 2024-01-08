@@ -40,6 +40,8 @@ an object has:
 // TODO(@darzu): POOLS: this doesn't work with entity pools
 // TODO(@darzu): NAMESPACES? each object and in-line child defines a new component so
 //    the component namespaces could become quite cluttered?
+// TODO(@darzu): SYSTEMS: how do objects interact w/ systems? Can you match against
+//  an object instead of (or in addition to?) a set of components?
 
 function defineObj<
   N extends string,
@@ -60,6 +62,7 @@ interface ObjDef<
 > {
   name: N;
   components: readonly [...CS];
+  // data ?
   children?: C;
 }
 
@@ -103,7 +106,7 @@ type ObjArgs<D extends ObjDef> = D extends ObjDef<any, any, infer C>
       }
   : never;
 
-function createObject<D extends ObjDef, A extends ObjArgs<D>>(
+function createObj<D extends ObjDef, A extends ObjArgs<D>>(
   def: D,
   args: A
 ): ObjEnt<D> {
@@ -155,7 +158,7 @@ type __t2 = ObjEnt<typeof ShipObj>;
 // type __t1 = ReturnType<typeof createObject<typeof ShipObj>>;
 
 function testGrayHelpers() {
-  const ship = createObject(ShipObj, {
+  const ship = createObj(ShipObj, {
     args: {
       position: [V(0, 0, 0)],
       renderableConstruct: [CubeMesh],

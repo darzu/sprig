@@ -49,6 +49,17 @@ export interface ResourceDef<
 
 export type CompId = number;
 
+// TODO(@darzu): ABSTRACTION REFACTOR:
+//  why have construct/update instead of just the type?
+//    w/ an optional default value
+//  I think I wanted a "witness" term for the type.
+//  When defining a component, either specify: type, default, or constructor fn
+//  Custom update function is optional, if you don't want to just do full swap on EM.set
+//  For networked components w/ streaming updates, they must provide a custom updater?
+//  .update use doesn't seem essential. Mostly just so you can call EM.set without worry
+//  DESERIALIZE: it'd be great if deserializeProps and deserialize didn't have to take in
+//    an already constructed object. That would mean we wouldn't need an empty constructor.
+
 export interface ComponentDef<
   N extends string = string,
   P = any,
@@ -325,6 +336,10 @@ export class EntityManager {
     if (this.componentDefs.has(id)) {
       throw `Component with name ${name} already defined--hash collision?`;
     }
+
+    // TODO(@darzu): it'd be nice to a default constructor that takes p->p
+    // const _construct = construct ?? ((...args: CArgs) => args[0]);
+
     const component: NonupdatableComponentDef<N, P, CArgs> = {
       _brand: "componentDef", // TODO(@darzu): remove?
       updatable: false,
@@ -594,7 +609,7 @@ export class EntityManager {
         `Trying to double set non-updatable component '${def.name}' on '${e.id}'`
       );
       // if (def.name === "authority") throw new Error(`double-set authority`);
-      // dbgLogOnce(`double-set: ${e.id}.${def.name}`);
+      // dbgLogOnce(`update: ${e.id}.${def.name}`);
       (e as any)[def.name] = def.update((e as any)[def.name], ...args);
     }
   }
