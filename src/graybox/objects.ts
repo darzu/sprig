@@ -39,10 +39,13 @@ an object has:
 // TODO(@darzu): MULTIPLAYER: this doesn't work w/ netEntityHelper
 // TODO(@darzu): MULTIPLAYER: this uses non-updatable component
 // TODO(@darzu): POOLS: this doesn't work with entity pools
+//    To work with pools we just need onSpawn, onDespawn
 // TODO(@darzu): NAMESPACES? each object and in-line child defines a new component so
 //    the component namespaces could become quite cluttered?
 // TODO(@darzu): SYSTEMS: how do objects interact w/ systems? Can you match against
 //  an object instead of (or in addition to?) a set of components?
+
+// defineNetEntityHelper has local vs props component distinction
 
 function defineObj<
   N extends string,
