@@ -40,6 +40,7 @@ Components need/can support:
     c. (slow) deserialize-as-new
     d. (slow) Cy-style auto-deserialize (TODO: could be fast w/ code-gen)
     
+TODO(@darzu): impl this \/
 Component feautres:
   (expressed in type and w/ boolean)
   R: type (default constructor takes whole type) -(gives)-> EM.add

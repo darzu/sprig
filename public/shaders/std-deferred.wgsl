@@ -69,6 +69,8 @@ fn getShadowVis(shadowPos: vec3<f32>, normal: vec3<f32>, lightDir: vec3<f32>, in
 
 @fragment
 fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
+  // TODO(@darzu): should do blinn material based on: https://youtu.be/esC1HnyD9Bk?list=PLplnkTzzqsZS3R5DjmCQsqupu43oS9CFN&t=2271
+
   // TODO(@darzu): Do we need to sample these? can't we just load them?
   var color = textureSample(colorTex, samp, uv).rgb;
   let alpha = 1.0;

@@ -1947,3 +1947,9 @@ lisyarus/Lisitsa Nikita's Web GPU demo (C++):
 
 "High Performance Voxel Engine: Vertex Pooling":
   https://nickmcd.me/2021/04/04/high-performance-voxel-engine/
+
+Gouraud shading:
+  shade at vertex, interp at frag
+
+Texture mapping:
+  https://youtu.be/hKHS08kXtDI?list=PLplnkTzzqsZS3R5DjmCQsqupu43oS9CFN&t=636
