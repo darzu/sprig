@@ -1,4 +1,4 @@
-import { ComponentDef, EntityW } from "../ecs/entity-manager.js";
+import { ComponentDef, EM, EntityW } from "../ecs/entity-manager.js";
 import { V } from "../matrix/sprig-matrix.js";
 import { CubeMesh } from "../meshes/mesh-list.js";
 import { PositionDef, ScaleDef, RotationDef } from "../physics/transform.js";
@@ -50,26 +50,24 @@ an object has:
 function defineObj<
   N extends string,
   CS extends readonly ComponentDef[],
-  C extends undefined | Record<string, ObjDef>,
+  C extends undefined | Record<string, ObjDefOpts>,
   P extends object
   // CArgs extends any[],
   // UArgs extends any[]
->(def: ObjDef<N, CS, C, P>): ObjDef<N, CS, C, P> {
+>(def: ObjDefOpts<N, CS, C, P>): ObjDef<N, CS, C, P> {
   // TODO(@darzu): IMPL!
   // TODO(@darzu): define the custom components here
   throw `todo defineObject`;
-  return def;
+  // return def;
 }
 
 // defines an "object" which is an entity w/ a set of components
 //   and children objects
-interface ObjDef<
+interface ObjDefOpts<
   N extends string = string,
   CS extends readonly ComponentDef[] = any[],
-  C extends undefined | Record<string, ObjDef> = {},
+  C extends undefined | Record<string, ObjDefOpts> = {},
   P extends object = any
-  // CArgs extends any[] = any,
-  // UArgs extends any[] = any
 > {
   name: N;
   components: readonly [...CS];
@@ -86,26 +84,42 @@ interface ObjDef<
   // updateProps?: (p: P, ...args: UArgs) => P;
   children?: C;
 }
+interface ObjDef<
+  N extends string = string,
+  CS extends readonly ComponentDef[] = any[],
+  C extends undefined | Record<string, ObjDefOpts> = {},
+  P extends object = any
+  // CArgs extends any[] = any,
+  // UArgs extends any[] = any
+> extends ObjDefOpts<N, CS, C, P> {
+  propsDef: _ObjComponentDef<N, C, P>;
+}
 
 // the component def the tracks the children and custom data of the object
-type ObjComponentDef<D extends ObjDef> = D extends ObjDef<
+type _ObjComponentDef<
+  N extends string,
+  C extends undefined | Record<string, ObjDefOpts>,
+  P extends object
+> = C extends Record<string, ObjDefOpts>
+  ? ComponentDef<N, { [n in keyof C]: ObjEnt<C[n]> } & P, [P], []>
+  : ComponentDef<N, P, [P], []>;
+
+type ObjComponentDef<D extends ObjDefOpts> = D extends ObjDefOpts<
   infer N,
   any,
   infer C,
   infer P
 >
-  ? C extends Record<string, ObjDef>
-    ? ComponentDef<N, { [n in keyof C]: ObjEnt<C[n]> } & P, [P], []>
-    : ComponentDef<N, P, [P], []>
+  ? _ObjComponentDef<N, C, P>
   : never;
 
 // the entity and all components of an object
-type ObjEnt<D extends ObjDef> = D extends ObjDef<any, infer CS>
+type ObjEnt<D extends ObjDefOpts> = D extends ObjDefOpts<any, infer CS>
   ? EntityW<[ObjComponentDef<D>, ...CS]>
   : never;
 
 // the arguments needed to construct an object
-type _ObjArgs<D extends ObjDef> = D extends ObjDef<any, infer CS>
+type _ObjArgs<D extends ObjDefOpts> = D extends ObjDefOpts<any, infer CS>
   ? Intersect<{
       [i in keyof CS]: CS[i] extends ComponentDef<
         infer N,
@@ -117,7 +131,12 @@ type _ObjArgs<D extends ObjDef> = D extends ObjDef<any, infer CS>
         : never;
     }>
   : undefined;
-type ObjArgs<D extends ObjDef> = D extends ObjDef<any, any, infer C, infer P>
+type ObjArgs<D extends ObjDefOpts> = D extends ObjDefOpts<
+  any,
+  any,
+  infer C,
+  infer P
+>
   ? {
       args: _ObjArgs<D>;
     } & (C extends Record<any, any>
@@ -136,10 +155,12 @@ type ObjArgs<D extends ObjDef> = D extends ObjDef<any, any, infer C, infer P>
           })
   : never;
 
-function createObj<D extends ObjDef, A extends ObjArgs<D>>(
+function createObj<D extends ObjDefOpts, A extends ObjArgs<D>>(
   def: D,
   args: A
 ): ObjEnt<D> {
+  const e = EM.new();
+
   // TODO(@darzu): IMPL!
   throw "TODO createObject";
 }
@@ -174,11 +195,11 @@ const ShipObj = defineObj({
 } as const);
 
 type __t5 = (typeof ShipObj)["children"];
-type __t3<D extends ObjDef> = D extends ObjDef<infer N, any, infer C>
+type __t3<D extends ObjDefOpts> = D extends ObjDefOpts<infer N, any, infer C>
   ? // Intersect<{ [i in keyof COS]: { [_ in COS[i][0]]: Obj<COS[i][1]> } }>
     // { [i in keyof COS]: { [_ in COS[i][0]]: Obj<COS[i][1]> } }
     {
-      [n in keyof C]: C[n] extends ObjDef<infer CN, infer CS>
+      [n in keyof C]: C[n] extends ObjDefOpts<infer CN, infer CS>
         ? // ? Obj<ObjDefinition<N2, [...CS]>>
           EntityW<[...CS]>
         : never;
@@ -194,7 +215,12 @@ type __t1 = ObjComponentDef<typeof ShipObj>;
 type __t2 = ObjEnt<typeof ShipObj>;
 // type __t1 = ReturnType<typeof createObject<typeof ShipObj>>;
 
-type __t6<D extends ObjDef> = D extends ObjDef<infer N, any, infer C, infer P>
+type __t6<D extends ObjDefOpts> = D extends ObjDefOpts<
+  infer N,
+  any,
+  infer C,
+  infer P
+>
   ? P
   : never;
 type __t7 = __t6<typeof ShipObj>;
