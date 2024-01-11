@@ -214,8 +214,21 @@ function createObj<D extends ObjDef, A extends ObjArgs<D["opts"]>>(
   def: D,
   args: A
 ): ObjEnt<D["opts"]> {
-  // TODO(@darzu): IMPL!
-  throw "TODO createObject";
+  // create entity
+  const e = EM.new();
+
+  // add components
+  const cArgs = args.args as Record<string, any[]>;
+  for (let cDef of def.opts.components as ComponentDef[]) {
+    cArgs[cDef.name];
+    EM.set(e, cDef, ...cArgs[cDef.name]);
+  }
+
+  // add props (which creates children)
+  if (args.props) EM.set(e, def.props, args);
+
+  // TODO(@darzu): there's probably some extreme type-foo that could do this impl w/o cast
+  return e as ObjEnt<D["opts"]>;
 }
 
 const CannonObj = defineObj({
@@ -281,11 +294,11 @@ type __t7 = __t6<__t0>;
 
 type __t8 = ObjArgs<__t0>["children"];
 
-function T<N extends {}>(): (p: N) => void {
+export function T<N extends {}>(): (p: N) => void {
   return (p: N) => {};
 }
 
-function testGrayHelpers() {
+export function testGrayHelpers() {
   const ship = createObj(ShipObj, {
     props: {
       myProp: 7,

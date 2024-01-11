@@ -20,6 +20,7 @@ import { shadowPipelines } from "../render/pipelines/std-shadow.js";
 import { RendererDef, RenderableConstructDef } from "../render/renderer-ecs.js";
 import { addGizmoChild, addWorldGizmo } from "../utils/utils-game.js";
 import { initGhost, initWorld } from "./graybox-helpers.js";
+import { testGrayHelpers } from "./objects.js";
 
 const DBG_GHOST = true;
 const DBG_GIZMO = true;
@@ -40,9 +41,13 @@ export async function initGrayboxShipArena() {
   if (DBG_GHOST) {
     initGhost();
   }
+
+  testGrayHelpers();
 }
 
 function createShip() {
+  // TODO(@darzu): IMPL!
+
   // ship
   const ship = EM.new();
   EM.set(ship, ColorDef, ENDESGA16.midBrown);
