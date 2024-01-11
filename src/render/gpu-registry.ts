@@ -50,6 +50,8 @@ export type CyBufferPtr<O extends CyStructDesc> =
 
 // TEXUTRES
 
+// TODO(@darzu): implement/use mipmap chains
+
 export interface CyTexturePtr extends CyResourcePtr {
   kind: "texture";
   // TODO(@darzu): collapse size and onCanvasResize as XOR
@@ -75,6 +77,10 @@ export interface CyDepthTexturePtr extends Omit<CyTexturePtr, "kind"> {
   // TODO(@darzu): other depth properties?
 }
 
+// TODO(@darzu): rethink samplers / texture unit init
+//      little bit about texture unit init in opengl here:
+//      https://youtu.be/bv7vS60qJxg?list=PLplnkTzzqsZS3R5DjmCQsqupu43oS9CFN&t=1931
+//      glGenerateMipmap, GL_LINEAR_MIPMAP_LINEAR
 export const linearSamplerPtr = {
   kind: "sampler",
   name: "linearSampler",

@@ -1953,3 +1953,15 @@ Gouraud shading:
 
 Texture mapping:
   https://youtu.be/hKHS08kXtDI?list=PLplnkTzzqsZS3R5DjmCQsqupu43oS9CFN&t=636
+
+Tri-linear filtering:
+  bilinear filter in two nearest mip-map levels,
+  linear interp between those
+  https://youtu.be/hKHS08kXtDI?list=PLplnkTzzqsZS3R5DjmCQsqupu43oS9CFN&t=2453
+  anisotropic filtering: more accurate
+
+jendrikillner's database of graphics articles:
+  https://www.jendrikillner.com/article_database/
+
+Mesh colors:
+  https://youtu.be/bv7vS60qJxg?list=PLplnkTzzqsZS3R5DjmCQsqupu43oS9CFN&t=3109

@@ -1513,3 +1513,7 @@ Making Small Games, Which Is Fun in Itself:
 
 reflections on using bevy:
   https://taintedcoders.com
+
+PlayWare's throw it against the wall and see what sticks approach:
+  https://howtomarketagame.com/2023/12/22/what-i-respect-about-playway/?utm_source=substack&utm_medium=email
+  https://newsletter.gamediscover.co/p/what-playway-should-and-shouldnt
