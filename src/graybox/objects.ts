@@ -9,16 +9,18 @@ import { Intersect } from "../utils/util.js";
 OBJECTS
 goals:
   hierarchy of entities w/ nice bi pointer syntax
-  declarative components instead of code
+  declarative components instead of imperative code
 
 an object has:
-  a set of components
-  and any number of nested objects
-  optionally those are physics parented
-  optionally custom component (w/ properties or just tag)
-  optional constructor w/ build resources
-  optionally pool'ed
-  optionally works w/ net constructors etc.
+  [x] a set of components
+  [x] and any number of nested objects
+  [ ] optionally those are physics parented
+  [x] optionally custom component (w/ properties or just tag)
+  [ ] optional constructor w/ build resources
+  [ ] optionally entity-pool'ed
+    [ ] "just" add onSpawn/onDespawn ?
+  [ ] optionally works w/ multiplayer and netEntityHelper etc.
+    note: defineNetEntityHelper has local vs props component distinction
 
   e.g.
     ship
@@ -29,14 +31,6 @@ an object has:
       cannonL
       cannonR
 */
-
-// TODO(@darzu): custom component properties on object definition
-// TODO(@darzu): Refactor abstraction?
-//  1. child-tracking component,
-//  2. set of components,
-//  3. and custom component
-// could all be seperate concerns.
-// TODO(@darzu): MULTIPLAYER: this doesn't work w/ netEntityHelper
 // TODO(@darzu): MULTIPLAYER: this uses non-updatable component
 // TODO(@darzu): POOLS: this doesn't work with entity pools
 //    To work with pools we just need onSpawn, onDespawn
@@ -45,11 +39,9 @@ an object has:
 // TODO(@darzu): SYSTEMS: how do objects interact w/ systems? Can you match against
 //  an object instead of (or in addition to?) a set of components?
 
-// defineNetEntityHelper has local vs props component distinction
-
 // defines an "object" which is an entity w/ a set of components
 //   and children objects
-interface ObjDefOpts<
+export interface ObjDefOpts<
   N extends string = string,
   CS extends readonly ComponentDef[] = any[],
   C extends undefined | Record<string, ObjDefOpts | ObjDef> = {},
@@ -73,7 +65,7 @@ interface ObjDefOpts<
   children?: C;
 }
 
-interface ObjDef<D extends ObjDefOpts = ObjDefOpts> {
+export interface ObjDef<D extends ObjDefOpts = ObjDefOpts> {
   opts: D;
   props: ObjComponentDef<D>;
   children: Record<string, ObjDef>;
@@ -103,7 +95,7 @@ type ObjComponentDef<D extends ObjDefOpts> = D extends ObjDefOpts<
   : never;
 
 // the entity and all components of an object
-type ObjEnt<D extends ObjDefOpts = ObjDefOpts> = D extends ObjDefOpts<
+export type ObjEnt<D extends ObjDefOpts = ObjDefOpts> = D extends ObjDefOpts<
   any,
   infer CS
 >
@@ -123,7 +115,7 @@ type _ObjArgs<D extends ObjDefOpts> = D extends ObjDefOpts<any, infer CS>
         : never;
     }>
   : undefined;
-type ObjArgs<D extends ObjDefOpts = ObjDefOpts> = D extends ObjDefOpts<
+export type ObjArgs<D extends ObjDefOpts = ObjDefOpts> = D extends ObjDefOpts<
   any,
   any,
   infer C,
@@ -149,7 +141,7 @@ type ObjArgs<D extends ObjDefOpts = ObjDefOpts> = D extends ObjDefOpts<
           })
   : never;
 
-function defineObj<
+export function defineObj<
   N extends string,
   CS extends readonly ComponentDef[],
   C extends undefined | Record<string, ObjDefOpts | ObjDef>,
@@ -210,7 +202,7 @@ function defineObj<
   return def;
 }
 
-function createObj<D extends ObjDef, A extends ObjArgs<D["opts"]>>(
+export function createObj<D extends ObjDef, A extends ObjArgs<D["opts"]>>(
   def: D,
   args: A
 ): ObjEnt<D["opts"]> {
@@ -225,80 +217,85 @@ function createObj<D extends ObjDef, A extends ObjArgs<D["opts"]>>(
   }
 
   // add props (which creates children)
-  if (args.props) EM.set(e, def.props, args);
+  EM.set(e, def.props, args);
 
   // TODO(@darzu): there's probably some extreme type-foo that could do this impl w/o cast
   return e as ObjEnt<D["opts"]>;
 }
 
-const CannonObj = defineObj({
-  name: "cannon",
-  components: [PositionDef],
-});
-const ShipObj = defineObj({
-  name: "ship",
-  propsType: T<{ myProp: number }>(),
-  // updateProps: (p, n: number) => {
-  //   p.myProp = n;
-  //   return p;
-  // },
-  // dataType: (p: { myProp: number }) => {},
-  components: [PositionDef, RenderableConstructDef],
-  children: {
-    mast: {
-      name: "mast",
-      components: [ScaleDef],
-      children: {
-        sail: {
-          name: "sail",
-          components: [RotationDef],
-        },
-      },
-    },
-    cannonL: CannonObj,
-    cannonR: CannonObj,
-  },
-} as const);
-
-type __t0 = (typeof ShipObj)["opts"];
-type __t5 = (typeof ShipObj)["opts"]["children"];
-type __t3<D extends ObjDefOpts> = D extends ObjDefOpts<infer N, any, infer C>
-  ? // Intersect<{ [i in keyof COS]: { [_ in COS[i][0]]: Obj<COS[i][1]> } }>
-    // { [i in keyof COS]: { [_ in COS[i][0]]: Obj<COS[i][1]> } }
-    {
-      [n in keyof C]: C[n] extends ObjDefOpts<infer CN, infer CS>
-        ? // ? Obj<ObjDefinition<N2, [...CS]>>
-          EntityW<[...CS]>
-        : never;
-    }
-  : // Obj<COS[0][1]>
-
-    never;
-type __t4 = __t3<__t0>;
-let __o4 = null as unknown as __t4;
-const l23 = __o4.mast.scale;
-
-type __t1 = ObjComponentDef<__t0>;
-type __t2 = ObjEnt<__t0>;
-// type __t1 = ReturnType<typeof createObject<typeof ShipObj>>;
-
-type __t6<D extends ObjDefOpts> = D extends ObjDefOpts<
-  infer N,
-  any,
-  infer C,
-  infer P
->
-  ? P
-  : never;
-type __t7 = __t6<__t0>;
-
-type __t8 = ObjArgs<__t0>["children"];
-
 export function T<N extends {}>(): (p: N) => void {
   return (p: N) => {};
 }
 
-export function testGrayHelpers() {
+export function testObjectTS() {
+  const CannonObj = defineObj({
+    name: "cannon",
+    components: [PositionDef],
+  });
+  const ShipObj = defineObj({
+    name: "ship",
+    propsType: T<{ myProp: number }>(),
+    // updateProps: (p, n: number) => {
+    //   p.myProp = n;
+    //   return p;
+    // },
+    // dataType: (p: { myProp: number }) => {},
+    components: [PositionDef, RenderableConstructDef],
+    children: {
+      mast: {
+        name: "mast2",
+        components: [ScaleDef],
+        children: {
+          sail: {
+            name: "sail2",
+            components: [RotationDef],
+          },
+        },
+      },
+      cannonL: CannonObj,
+      cannonR: CannonObj,
+    },
+  } as const);
+
+  type __t0 = (typeof ShipObj)["opts"];
+  type __t5 = (typeof ShipObj)["opts"]["children"];
+  type __t3<D extends ObjDefOpts> = D extends ObjDefOpts<infer N, any, infer C>
+    ? // Intersect<{ [i in keyof COS]: { [_ in COS[i][0]]: Obj<COS[i][1]> } }>
+      // { [i in keyof COS]: { [_ in COS[i][0]]: Obj<COS[i][1]> } }
+      {
+        [n in keyof C]: C[n] extends ObjDefOpts<infer CN, infer CS>
+          ? // ? Obj<ObjDefinition<N2, [...CS]>>
+            EntityW<[...CS]>
+          : never;
+      }
+    : // Obj<COS[0][1]>
+
+      never;
+  type __t4 = __t3<__t0>;
+
+  if (!"true") {
+    let __o4 = null as unknown as __t4;
+    const l23 = __o4.mast.scale;
+  }
+
+  type __t1 = ObjComponentDef<__t0>;
+  type __t2 = ObjEnt<__t0>;
+  // type __t1 = ReturnType<typeof createObject<typeof ShipObj>>;
+
+  type __t6<D extends ObjDefOpts> = D extends ObjDefOpts<
+    infer N,
+    any,
+    infer C,
+    infer P
+  >
+    ? P
+    : never;
+  type __t7 = __t6<__t0>;
+
+  type __t8 = ObjArgs<__t0>["children"];
+
+  console.log("testGrayHelpers".toUpperCase());
+  console.dir(ShipObj);
   const ship = createObj(ShipObj, {
     props: {
       myProp: 7,
@@ -332,16 +329,18 @@ export function testGrayHelpers() {
       },
     },
   });
+  console.dir(ship);
 
   ship.ship.myProp = 8;
   ship.position;
   // const cl = ship.ship["cannonL"];
   const cl = ship.ship.cannonL;
-  const m = ship.ship.mast.mast.sail;
+  const m = ship.ship.mast.mast2.sail;
   const mp = m.rotation;
+
+  // const ShipDef = defineObject("ship", {
+  //   position: [V(0,0,0)],
+  //   scale: [V(1,1,1)],
+  //   renderableConstruct: [CubeMesh, true],
+  // }
 }
-// const ShipDef = defineObject("ship", {
-//   position: [V(0,0,0)],
-//   scale: [V(1,1,1)],
-//   renderableConstruct: [CubeMesh, true],
-// }
