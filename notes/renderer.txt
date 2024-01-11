@@ -1965,3 +1965,6 @@ jendrikillner's database of graphics articles:
 
 Mesh colors:
   https://youtu.be/bv7vS60qJxg?list=PLplnkTzzqsZS3R5DjmCQsqupu43oS9CFN&t=3109
+
+printf from shader code:
+  https://therealmjp.github.io/posts/hlsl-printf/

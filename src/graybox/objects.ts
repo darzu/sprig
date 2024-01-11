@@ -1,4 +1,4 @@
-import { ComponentDef, EntityW } from "../ecs/entity-manager.js";
+import { ComponentDef, EM, EntityW } from "../ecs/entity-manager.js";
 import { V } from "../matrix/sprig-matrix.js";
 import { CubeMesh } from "../meshes/mesh-list.js";
 import { PositionDef, ScaleDef, RotationDef } from "../physics/transform.js";
@@ -47,20 +47,6 @@ an object has:
 
 // defineNetEntityHelper has local vs props component distinction
 
-function defineObj<
-  N extends string,
-  CS extends readonly ComponentDef[],
-  C extends undefined | Record<string, ObjDefOpts | ObjDef>,
-  P extends object
-  // CArgs extends any[],
-  // UArgs extends any[]
->(def: ObjDefOpts<N, CS, C, P>): ObjDef<ObjDefOpts<N, CS, C, P>> {
-  // TODO(@darzu): IMPL!
-  // TODO(@darzu): define the custom components here
-  throw `todo defineObject`;
-  // return def;
-}
-
 // defines an "object" which is an entity w/ a set of components
 //   and children objects
 interface ObjDefOpts<
@@ -90,26 +76,37 @@ interface ObjDefOpts<
 interface ObjDef<D extends ObjDefOpts = ObjDefOpts> {
   opts: D;
   props: ObjComponentDef<D>;
-  // TODO(@darzu): children ? otherwise inline defs won't be stored anywhere
+  children: Record<string, ObjDef>;
+}
+
+function isObjDef(d: ObjDef | ObjDefOpts): d is ObjDef {
+  return "opts" in d;
 }
 
 // helper to grab opts from def or opts
 type ObjOpts<D extends ObjDef | ObjDefOpts> = D extends ObjDef ? D["opts"] : D;
 
 // the component def the tracks the children and custom data of the object
+type _ObjComponentP<
+  C extends undefined | Record<string, ObjDefOpts | ObjDef>,
+  P extends Object
+> = C extends Record<string, ObjDefOpts | ObjDef>
+  ? { [n in keyof C]: ObjEnt<ObjOpts<C[n]>> } & P
+  : P;
 type ObjComponentDef<D extends ObjDefOpts> = D extends ObjDefOpts<
   infer N,
   any,
   infer C,
   infer P
 >
-  ? C extends Record<string, ObjDefOpts | ObjDef>
-    ? ComponentDef<N, { [n in keyof C]: ObjEnt<ObjOpts<C[n]>> } & P, [P], []>
-    : ComponentDef<N, P, [P], []>
+  ? ComponentDef<N, _ObjComponentP<C, P>, [ObjArgs<D>], []>
   : never;
 
 // the entity and all components of an object
-type ObjEnt<D extends ObjDefOpts> = D extends ObjDefOpts<any, infer CS>
+type ObjEnt<D extends ObjDefOpts = ObjDefOpts> = D extends ObjDefOpts<
+  any,
+  infer CS
+>
   ? EntityW<[ObjComponentDef<D>, ...CS]>
   : never;
 
@@ -126,7 +123,7 @@ type _ObjArgs<D extends ObjDefOpts> = D extends ObjDefOpts<any, infer CS>
         : never;
     }>
   : undefined;
-type ObjArgs<D extends ObjDefOpts> = D extends ObjDefOpts<
+type ObjArgs<D extends ObjDefOpts = ObjDefOpts> = D extends ObjDefOpts<
   any,
   any,
   infer C,
@@ -142,13 +139,76 @@ type ObjArgs<D extends ObjDefOpts> = D extends ObjDefOpts<
               }
             : undefined;
         }
-      : {}) &
+      : { children?: undefined }) &
       ({} extends P
-        ? {}
+        ? {
+            props?: undefined;
+          }
         : {
             props: P;
           })
   : never;
+
+function defineObj<
+  N extends string,
+  CS extends readonly ComponentDef[],
+  C extends undefined | Record<string, ObjDefOpts | ObjDef>,
+  P extends object
+  // O extends ObjDefOpts<N, CS, C, P> = ObjDefOpts<N, CS, C, P>
+  // CArgs extends any[],
+  // UArgs extends any[]
+  // >(opts: O): ObjDef<O> {
+>(opts: ObjDefOpts<N, CS, C, P>): ObjDef<ObjDefOpts<N, CS, C, P>> {
+  type O = ObjDefOpts<N, CS, C, P>;
+
+  // define children
+  const childDefs: Record<string, ObjDef> = {};
+  if (opts.children) {
+    for (let cName of Object.keys(opts.children)) {
+      const defOrOpts = opts.children[cName];
+      childDefs[cName] = isObjDef(defOrOpts) ? defOrOpts : defineObj(defOrOpts);
+    }
+  }
+
+  const createChildrenObjsAndProps = function (
+    args: ObjArgs<O>
+  ): _ObjComponentP<C, P> {
+    // create children objects
+    const childEnts: Record<string, ObjEnt> = {};
+    if (args.children) {
+      for (let cName of Object.keys(args.children)) {
+        const cArgs: ObjArgs = args.children[cName];
+        const cDef: ObjDef = childDefs[cName];
+        const cEnt = createObj(cDef, cArgs);
+        childEnts[cName] = cEnt;
+      }
+    }
+
+    const p: P | {} = args.props ?? {};
+
+    // TODO(@darzu): we could probably strengthen these types to remove all casts
+    const res = {
+      ...childEnts,
+      ...p,
+    } as _ObjComponentP<C, P>;
+
+    return res;
+  };
+
+  // TODO(@darzu): Use updatable componets instead; see notes in entity-manager.ts
+  const props: ObjComponentDef<O> = EM.defineNonupdatableComponent(
+    opts.name,
+    createChildrenObjsAndProps
+  );
+
+  const def: ObjDef<O> = {
+    opts,
+    props,
+    children: childDefs,
+  };
+
+  return def;
+}
 
 function createObj<D extends ObjDef, A extends ObjArgs<D["opts"]>>(
   def: D,

@@ -120,6 +120,9 @@ Flat shading:
 "Mesh shaders":
   https://devblogs.microsoft.com/directx/dev-preview-of-new-directx-12-features/#directx-mesh-shader
   https://developer.nvidia.com/blog/introduction-turing-mesh-shaders/
+  https://gpuopen.com/learn/mesh-shaders-on-rdna-graphics-cards/
+  https://developer.apple.com/documentation/metal/metal_sample_code_library/adjusting_the_level_of_detail_using_metal_mesh_shaders
+  https://metalbyexample.com/mesh-shaders/
 
 Shaders Wow:
     Slime and ants: https://www.youtube.com/watch?v=X-iSQQgOd1A
