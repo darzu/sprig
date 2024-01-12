@@ -1,3 +1,5 @@
+import { ColorDef } from "../color/color-ecs.js";
+import { ENDESGA16 } from "../color/palettes.js";
 import { ComponentDef, EM, EntityW } from "../ecs/entity-manager.js";
 import { V, quat, vec3 } from "../matrix/sprig-matrix.js";
 import { CubeMesh } from "../meshes/mesh-list.js";
@@ -322,6 +324,7 @@ export function testObjectTS() {
       },
       cannonL: CannonObj,
       cannonR: CannonObj,
+      gem: [ColorDef, PositionDef],
       rudder: [PositionDef, RotationDef],
     },
   } as const);
@@ -362,6 +365,11 @@ export function testObjectTS() {
   type __t10 = ObjPickOpt<__t9>;
   type __t11 = ObjArgs<__t10>;
 
+  const rudder = createChildObj([PositionDef, RotationDef] as const, [
+    [[1, 1, 1]],
+    [],
+  ]);
+
   console.log("testGrayHelpers".toUpperCase());
   console.dir(ShipObj);
   const ship = createObj(ShipObj, {
@@ -395,7 +403,8 @@ export function testObjectTS() {
           position: [V(1, 0, 0)],
         },
       },
-      rudder: [[[1, 1, 1]], []],
+      gem: [[ENDESGA16.blue], [V(1, 1, 1)]],
+      rudder: rudder,
     },
   });
   console.dir(ship);
