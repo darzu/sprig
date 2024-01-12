@@ -309,3 +309,6 @@ Outline shader from Automation Station:
 
 Compute shaders talk by AMD:
   https://www.youtube.com/watch?v=eDLilzy2mq0
+
+wgsl
+  reflect() function

@@ -90,6 +90,8 @@ export const TransformDef = EM.defineComponent(
 );
 export type Transform = mat4;
 
+// TODO(@darzu): rename "position" -> "pos", "rotation" -> "rot"
+
 // POSITION
 export const PositionDef = EM.defineComponent(
   "position",

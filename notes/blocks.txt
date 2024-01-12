@@ -42,6 +42,7 @@ Structured editting Done Right is a big opportunity
 "Civet: The Modern Way to Write TypeScript":
   https://civet.dev
   a set of potentially interesting ideas for simplifying ts
+  has pipelines
 
 In the language, maybe everything should be pipelines / verticalized?
   e.g. https://github.com/tc39/proposal-pipeline-operator
@@ -54,3 +55,52 @@ Dion:
 
 Go lang retro:
   https://commandcenter.blogspot.com/2024/01/what-we-got-right-what-we-got-wrong.html
+
+Static-y stuff:
+  pre-compile: macros, type systems, 
+  post-compile: linters, static-analysis, code-gen
+  adds expressivity: macros, code-gen
+  restricts expressivity: type systems, linters, static-analysis, code-gen
+  Missing need for some sort of mid-compile or layerd compilation thing?
+    We want to add and restrict expressivity
+  Custom language?
+  Compiler hooks?
+    Hmm now i'm imagining a compiler that will load project-specific extensions when compiling.
+Then with the right hooks those extensions could do things like "Ah, i see you came across struct with the Component trait, I'm going to file that away in my custom book keeping" and later when typing a system query you could be like "Oh for this, I want to run some sanity checks on before we go farther; ah ha! the user forget "X", halt and present "Y"" or "I know it looks like the code forgot to supply Z, but here I can construct Z for you from my own book keeping". So it cooperates with and interrupts the compiler strategically.
+  TODO: gather concrete use cases
+
+  ship:ship.mast:mast.sail:sail.width // ":' as component lookup?
+  if ship:pos {
+    ship:pos.x = 7;
+  }
+  ship+:pos // add component?
+  ship-:pos // remove component?
+  ship=:pos // set component?
+  ship/ship.pos  // "/" as component lookup?
+  ship::
+
+operators, reclaim these symbols!
+  bitwise
+    & | ^ << >> ~
+  pointer
+    *foobar &foobar
+  string:
+    'alwjdklaw `awldjawl
+  other:
+    @ $ # 
+  maybe:
+    % / \ ; ? :
+  probably leave as-is:
+    ! * - + = <> [] {} . ,
+
+entity relations
+  https://ajmmertens.medium.com/building-games-in-ecs-with-entity-relationships-657275ba2c6c
+  https://docs.larian.game/Osiris_Overview
+
+"do" https://github.com/tc39/proposal-do-expressions:
+  let foo = do {
+      return 7 + 8
+    }
+  
+TS proposals to review:
+  https://github.com/tc39?q=%22proposal-%22&type=all&language=&sort=

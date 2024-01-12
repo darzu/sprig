@@ -1968,3 +1968,53 @@ Mesh colors:
 
 printf from shader code:
   https://therealmjp.github.io/posts/hlsl-printf/
+
+Environment mapping / skybox:
+  only need direction (no pos) -> UV coord
+  1. lat/long
+  2. light-probe / angular
+  3. vertical cross / cube map
+  https://youtu.be/PeAvKApuAuA?list=PLplnkTzzqsZS3R5DjmCQsqupu43oS9CFN&t=749
+  to transfer clip-space coordinates of full-screen quad render, use inverse view-projection matrix (3x3)
+  render background last, saves computation
+  could use single triangle 2x2
+
+Reflection:
+  sample from environment map in reflect(n, view_dir)
+    (low mip map for blur?)
+  flat mirror:
+    https://youtu.be/h2RTBs1xl6w?list=PLplnkTzzqsZS3R5DjmCQsqupu43oS9CFN&t=2192
+    render scene reflected through the portal that is the mirror
+    reflect the camera's position
+    environment reflections work fine w/ changed normals
+    for object reflections, need to distort uv coord using frag_coord somehow
+      also probably use alpha value to communicate if there's an object present or not
+  cube map reflections:
+    could render whole scene 6 times to new cube map
+    if ur doing this next to a mirror, use new cube map for reflected scene
+  to get infinite-ish reflections between two objects:
+    swap who gets the new cube map,
+    use the old one as the probe for the other object,
+    ea frame u get another level of reflection 
+  for more reflections:
+    place cube maps throughout scene, hueristically, pick closest
+    could render only 1 cube face per frame
+
+Render Equation:
+  Cem: https://www.youtube.com/watch?v=wawf7Am6xy0&list=PLplnkTzzqsZS3R5DjmCQsqupu43oS9CFN&index=13
+  defined for each point on each surface
+  integral over hemisphere of: lighting_term(inDir) * geo_term(theta) * BRDF(inDir, outDir)
+  Lout(outDir) = int_omega(Lin(inDir)*cos(theta)*BRDF(inDir, outDir)*delta_inDir)
+
+Cem on shadows:
+  https://youtu.be/C2Gn6oOxSu0?list=PLplnkTzzqsZS3R5DjmCQsqupu43oS9CFN&t=143
+  lighting_term(inDir) = intensity(inDir) * visiblity(inDir)
+  light attenuation: intensity is brighter near the light source
+    for point light, attenuation is 1/d^2
+  real-time area lights r possible 
+
+Hmm can u use rtx hardware for gpu-side collision detection?
+  ray vs scene..
+
+Gaussian Splatting is pretty cool!:
+  https://aras-p.info/blog/2023/09/05/Gaussian-Splatting-is-pretty-cool/
