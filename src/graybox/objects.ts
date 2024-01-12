@@ -38,6 +38,8 @@ an object has:
 //    the component namespaces could become quite cluttered?
 // TODO(@darzu): SYSTEMS: how do objects interact w/ systems? Can you match against
 //  an object instead of (or in addition to?) a set of components?
+// TODO(@darzu): NON-OBJ interop: children needs to accept entities instead of objects and built objects instead of obj def
+// TODO(@darzu): self-props is optional? just creates an EntityW<> in that case?
 
 // defines an "object" which is an entity w/ a set of components
 //   and children objects
@@ -75,6 +77,12 @@ function isObjDef(d: ObjDef | ObjDefOpts): d is ObjDef {
   return "opts" in d;
 }
 
+export type ObjOwnProps<D extends ObjDef> = D extends ObjDef<infer O>
+  ? O extends ObjDefOpts<any, any, any, infer P>
+    ? P
+    : never
+  : never;
+
 // helper to grab opts from def or opts
 type ObjOpts<D extends ObjDef | ObjDefOpts> = D extends ObjDef ? D["opts"] : D;
 
@@ -83,7 +91,7 @@ type _ObjComponentP<
   C extends undefined | Record<string, ObjDefOpts | ObjDef>,
   P extends Object
 > = C extends Record<string, ObjDefOpts | ObjDef>
-  ? { [n in keyof C]: ObjEnt<ObjOpts<C[n]>> } & P
+  ? { [n in keyof C]: _ObjEnt<ObjOpts<C[n]>> } & P
   : P;
 type ObjComponentDef<D extends ObjDefOpts> = D extends ObjDefOpts<
   infer N,
@@ -95,12 +103,13 @@ type ObjComponentDef<D extends ObjDefOpts> = D extends ObjDefOpts<
   : never;
 
 // the entity and all components of an object
-export type ObjEnt<D extends ObjDefOpts = ObjDefOpts> = D extends ObjDefOpts<
+type _ObjEnt<D extends ObjDefOpts = ObjDefOpts> = D extends ObjDefOpts<
   any,
   infer CS
 >
   ? EntityW<[ObjComponentDef<D>, ...CS]>
   : never;
+export type ObjEnt<D extends ObjDefOpts | ObjDef> = _ObjEnt<ObjOpts<D>>;
 
 // the arguments needed to construct an object
 type _ObjArgs<D extends ObjDefOpts> = D extends ObjDefOpts<any, infer CS>
@@ -166,7 +175,7 @@ export function defineObj<
     args: ObjArgs<O>
   ): _ObjComponentP<C, P> {
     // create children objects
-    const childEnts: Record<string, ObjEnt> = {};
+    const childEnts: Record<string, _ObjEnt> = {};
     if (args.children) {
       for (let cName of Object.keys(args.children)) {
         const cArgs: ObjArgs = args.children[cName];
@@ -205,7 +214,7 @@ export function defineObj<
 export function createObj<D extends ObjDef, A extends ObjArgs<D["opts"]>>(
   def: D,
   args: A
-): ObjEnt<D["opts"]> {
+): _ObjEnt<D["opts"]> {
   // create entity
   const e = EM.new();
 
@@ -220,7 +229,7 @@ export function createObj<D extends ObjDef, A extends ObjArgs<D["opts"]>>(
   EM.set(e, def.props, args);
 
   // TODO(@darzu): there's probably some extreme type-foo that could do this impl w/o cast
-  return e as ObjEnt<D["opts"]>;
+  return e as _ObjEnt<D["opts"]>;
 }
 
 export function T<N extends {}>(): (p: N) => void {
@@ -279,7 +288,7 @@ export function testObjectTS() {
   }
 
   type __t1 = ObjComponentDef<__t0>;
-  type __t2 = ObjEnt<__t0>;
+  type __t2 = _ObjEnt<__t0>;
   // type __t1 = ReturnType<typeof createObject<typeof ShipObj>>;
 
   type __t6<D extends ObjDefOpts> = D extends ObjDefOpts<
