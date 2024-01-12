@@ -104,3 +104,5 @@ entity relations
   
 TS proposals to review:
   https://github.com/tc39?q=%22proposal-%22&type=all&language=&sort=
+
+Obviously we want a custom robust relation-y query syntax
