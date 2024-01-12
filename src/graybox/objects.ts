@@ -123,7 +123,7 @@ type ObjChildEnt<CO extends ObjChildOpt = ObjChildOpt> = CO extends
   | ObjDef
   ? ObjEnt<CO>
   : CO extends readonly ComponentDef[]
-  ? EntityW<CO>
+  ? EntityW<[...CO]>
   : never;
 
 // the arguments needed to construct an object
@@ -412,6 +412,7 @@ export function testObjectTS() {
 
   const cannonLPos: vec3 = ship.ship.cannonL.position;
   const rudderPos: vec3 = ship.ship.rudder.position;
+  ship.ship.rudder.rotation;
 
   // TODO(@darzu): oo i like this one best
   // const cl3 = ship.child.cannonL;
