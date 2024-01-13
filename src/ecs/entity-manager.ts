@@ -130,11 +130,11 @@ export interface ComponentDef<
   P = any,
   CArgs extends any[] = any,
   UArgs extends any[] = any,
-  MA extends boolean = false
+  MA extends boolean = boolean
 > {
   _brand: "componentDef";
   updatable: boolean;
-  // multiArg: MA; // TODO(@darzu): IMPL
+  multiArg: MA;
   readonly name: N;
   construct: (...args: CArgs) => P;
   update: (p: P, ...args: UArgs) => P;
@@ -412,6 +412,7 @@ export class EntityManager {
       isOn: <E extends Entity>(e: E): e is E & { [K in N]: P } =>
         // (e as Object).hasOwn(name),
         name in e,
+      multiArg: opts.multiArg,
     };
     // TODO(@darzu): I don't love this cast. feels like it should be possible without..
     this.componentDefs.set(id, component as unknown as ComponentDef);
@@ -461,6 +462,7 @@ export class EntityManager {
       isOn: <E extends Entity>(e: E): e is E & { [K in N]: P } =>
         // (e as Object).hasOwn(name),
         name in e,
+      multiArg: opts.multiArg,
     };
     this.componentDefs.set(id, component);
     return component;

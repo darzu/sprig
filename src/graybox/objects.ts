@@ -128,7 +128,7 @@ type ObjChildEnt<CO extends ObjChildOpt = ObjChildOpt> = CO extends
   ? EntityW<[...CO]>
   : never;
 
-// TODO(@darzu): OOff.. this doesn't work b/c we can't tell at run time array of obj vs single obj
+// TODO(@darzu): unused?
 // TODO(@darzu): Sorta yikes. Very cool but maybe too clever for its own good
 // prettier-ignore
 type ArrayOrSingle<AS extends any[], BS extends any[]> = 
@@ -138,15 +138,32 @@ type ArrayOrSingle<AS extends any[], BS extends any[]> =
 : [AS, BS] extends [{length: 0}, {length: 0 | 1}] ? BS[0] | undefined
 : [AS, BS] extends [{length: 0 | 1}, {length: 0}] ? AS[0] | undefined
 : [...AS, ...BS];
+type AsSingle<AS extends any[], BS extends any[]> = [AS, BS] extends [
+  { length: 0 },
+  { length: 0 }
+]
+  ? undefined
+  : [AS, BS] extends [{ length: 0 }, { length: 1 }]
+  ? BS[0]
+  : [AS, BS] extends [{ length: 1 }, { length: 0 }]
+  ? AS[0]
+  : [AS, BS] extends [{ length: 0 }, { length: 0 | 1 }]
+  ? BS[0] | undefined
+  : [AS, BS] extends [{ length: 0 | 1 }, { length: 0 }]
+  ? AS[0] | undefined
+  : never;
 
 // the arguments needed to construct an object
 type _CompArgs<C extends ComponentDef> = C extends ComponentDef<
   any,
   any,
   infer CArgs,
-  infer UArgs
+  infer UArgs,
+  infer MA
 >
-  ? ArrayOrSingle<CArgs, UArgs>
+  ? MA extends false
+    ? AsSingle<CArgs, UArgs>
+    : [...CArgs, ...UArgs]
   : never;
 type _CompName<C extends ComponentDef> = C extends ComponentDef<infer N>
   ? N
@@ -277,10 +294,7 @@ export function defineObj<
 }
 
 function _setComp<C extends ComponentDef>(e: Entity, c: C, args: _CompArgs<C>) {
-  // TODO(@darzu): HACK! this will break if arg[0] is a non-Float32Array array
-  // TODO(@darzu): BROKEN! this actually jsut doesn't work b/c we use [1,0,0] literals all the time
-  const isArr = Array.isArray(args) && !((args as any) instanceof Float32Array);
-  if (isArr) EM.set(e, c, ...args);
+  if (c.multiArg) EM.set(e, c, ...args);
   else EM.set(e, c, args);
 }
 
@@ -331,11 +345,11 @@ export function T<N extends {}>(): (p: N) => void {
 }
 
 export function testObjectTS() {
-  type _A1 = ArrayOrSingle<[2], []>;
-  type _A2 = ArrayOrSingle<[2], [4, 5]>;
-  type _A3 = ArrayOrSingle<[], [3]>;
-  type _A4 = ArrayOrSingle<[4, 5], [3]>;
-  type _A5 = ArrayOrSingle<[4, 5], [2, 3]>;
+  type _A1 = AsSingle<[2], []>;
+  type _A2 = AsSingle<[2], [4, 5]>;
+  type _A3 = AsSingle<[], [3]>;
+  type _A4 = AsSingle<[4, 5], [3]>;
+  type _A5 = AsSingle<[4, 5], [2, 3]>;
 
   type _B1 = typeof PositionDef;
   type _B2 = typeof PositionDef extends ComponentDef<any, any, any, infer UArgs>
