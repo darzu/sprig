@@ -30,7 +30,8 @@ export const HealthDef = EM.defineComponent(
     p.max = max;
     p.value = value;
     return p;
-  }
+  },
+  { multiArg: true }
 );
 
 export const HealthBarDef = EM.defineComponent("healthBar", () => ({

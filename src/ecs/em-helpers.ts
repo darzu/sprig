@@ -25,7 +25,7 @@ export function defineSerializableComponent<
   serialize: (obj: P, buf: Serializer) => void,
   deserialize: (obj: P, buf: Deserializer) => void
 ): ComponentDef<N, P, [], UArgs> {
-  const def = EM.defineComponent(name, make, update);
+  const def = EM.defineComponent(name, make, update, { multiArg: true });
   EM.registerSerializerPair(def, serialize, deserialize);
   return def;
 }

@@ -129,10 +129,12 @@ export interface ComponentDef<
   N extends string = string,
   P = any,
   CArgs extends any[] = any,
-  UArgs extends any[] = any
+  UArgs extends any[] = any,
+  MA extends boolean = false
 > {
   _brand: "componentDef";
   updatable: boolean;
+  // multiArg: MA; // TODO(@darzu): IMPL
   readonly name: N;
   construct: (...args: CArgs) => P;
   update: (p: P, ...args: UArgs) => P;
@@ -145,17 +147,24 @@ export type Component<DEF> = DEF extends ComponentDef<any, infer P> ? P : never;
 export type NonupdatableComponentDef<
   N extends string,
   P,
-  CArgs extends any[]
-> = ComponentDef<N, P, CArgs, []>;
+  CArgs extends any[],
+  MA extends boolean = boolean
+> = ComponentDef<N, P, CArgs, [], MA>;
 export type UpdatableComponentDef<
   N extends string,
   P,
-  UArgs extends any[]
-> = ComponentDef<N, P, [], UArgs>;
+  UArgs extends any[],
+  MA extends boolean = boolean
+> = ComponentDef<N, P, [], UArgs, MA>;
 
-export type _ComponentDef<N extends string, P, PArgs extends any[]> =
-  | NonupdatableComponentDef<N, P, PArgs>
-  | UpdatableComponentDef<N, P, PArgs>;
+export type _ComponentDef<
+  N extends string,
+  P,
+  PArgs extends any[],
+  MA extends boolean = boolean
+> =
+  | NonupdatableComponentDef<N, P, PArgs, MA>
+  | UpdatableComponentDef<N, P, PArgs, MA>;
 
 export type Resource<DEF> = DEF extends ResourceDef<any, infer P> ? P : never;
 
@@ -363,16 +372,37 @@ export class EntityManager {
 
   // TODO(@darzu): allow components to specify sibling components or component sets
   //  so that if the marker component is present, the others will be also
+  public defineComponent<
+    N extends string,
+    P,
+    UArgs extends any[] & { length: 0 | 1 } = []
+  >(
+    name: N,
+    construct: () => P,
+    update?: (p: P, ...args: UArgs) => P
+  ): UpdatableComponentDef<N, P, UArgs, false>;
   public defineComponent<N extends string, P, UArgs extends any[] = []>(
     name: N,
     construct: () => P,
-    update: (p: P, ...args: UArgs) => P = (p, ..._) => p
-  ): UpdatableComponentDef<N, P, UArgs> {
+    update: (p: P, ...args: UArgs) => P,
+    opts: { multiArg: true }
+  ): UpdatableComponentDef<N, P, UArgs, true>;
+  defineComponent<
+    N extends string,
+    P,
+    UArgs extends any[] = [],
+    MA extends boolean = boolean
+  >(
+    name: N,
+    construct: () => P,
+    update: (p: P, ...args: UArgs) => P = (p, ..._) => p,
+    opts: { multiArg: MA } = { multiArg: false as MA } // TODO(@darzu): any way around this cast?
+  ): UpdatableComponentDef<N, P, UArgs, MA> {
     const id = nameToId(name);
     if (this.componentDefs.has(id)) {
       throw `Component with name ${name} already defined--hash collision?`;
     }
-    const component: UpdatableComponentDef<N, P, UArgs> = {
+    const component: UpdatableComponentDef<N, P, UArgs, MA> = {
       _brand: "componentDef", // TODO(@darzu): remove?
       updatable: true,
       name,
@@ -388,10 +418,29 @@ export class EntityManager {
     return component;
   }
 
-  public defineNonupdatableComponent<N extends string, P, CArgs extends any[]>(
+  public defineNonupdatableComponent<
+    N extends string,
+    P,
+    CArgs extends any[] & { length: 0 | 1 }
+  >(
     name: N,
     construct: (...args: CArgs) => P
-  ): NonupdatableComponentDef<N, P, CArgs> {
+  ): NonupdatableComponentDef<N, P, CArgs, false>;
+  public defineNonupdatableComponent<N extends string, P, CArgs extends any[]>(
+    name: N,
+    construct: (...args: CArgs) => P,
+    opts: { multiArg: true }
+  ): NonupdatableComponentDef<N, P, CArgs, true>;
+  defineNonupdatableComponent<
+    N extends string,
+    P,
+    CArgs extends any[],
+    MA extends boolean
+  >(
+    name: N,
+    construct: (...args: CArgs) => P,
+    opts: { multiArg: MA } = { multiArg: false as MA }
+  ): NonupdatableComponentDef<N, P, CArgs, MA> {
     const id = nameToId(name);
     if (this.componentDefs.has(id)) {
       throw `Component with name ${name} already defined--hash collision?`;
@@ -400,7 +449,7 @@ export class EntityManager {
     // TODO(@darzu): it'd be nice to a default constructor that takes p->p
     // const _construct = construct ?? ((...args: CArgs) => args[0]);
 
-    const component: NonupdatableComponentDef<N, P, CArgs> = {
+    const component: NonupdatableComponentDef<N, P, CArgs, MA> = {
       _brand: "componentDef", // TODO(@darzu): remove?
       updatable: false,
       name,
@@ -645,6 +694,8 @@ export class EntityManager {
       return (e as any)[def.name];
     }
   }
+
+  // TODO(@darzu): use MA arg here?
   public set<N extends string, P, PArgs extends any[]>(
     e: Entity,
     def: UpdatableComponentDef<N, P, PArgs>,

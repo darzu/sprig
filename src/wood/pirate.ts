@@ -152,7 +152,8 @@ export const PiratePlatformDef = EM.defineNonupdatableComponent(
       lastFire: 0,
       poolIdx: -1, // TODO(@darzu): HACK. this is for object pooling
     };
-  }
+  },
+  { multiArg: true }
 );
 
 function rotatePiratePlatform(

@@ -42,7 +42,8 @@ export const ParametricDef = EM.defineComponent(
     }
     p.startMs = startMs ?? 0;
     return p;
-  }
+  },
+  { multiArg: true }
 );
 // TODO(@darzu): serializer pairs
 
