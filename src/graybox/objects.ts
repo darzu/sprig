@@ -47,6 +47,11 @@ an object has:
 //    instead of children needing names and a custom component, just use indexes which can
 //    be strongly typed
 
+// TODO(@darzu): OBJ.CHILD.XYZ: Maybe instead of all of this, which is mostly to facilitate the parent->children relationship
+//    we just have some .child convenient way of tracking parent child relationships
+
+// TODO(@darzu): PHYSICS PARENT: parameters for enabling/disabling physics parenting
+
 type ObjChildDef = ObjDef | readonly ComponentDef[];
 type ObjChildOpt = ObjOpt | ObjChildDef;
 
@@ -196,12 +201,12 @@ function isObjChildEnt(ca: _ObjChildArg | ObjChildEnt): ca is ObjChildEnt {
 
 export type ObjArgs<D extends ObjOpt = ObjOpt> = D extends ObjOpt<
   any,
-  any,
+  infer CS,
   infer C,
   infer P
 >
   ? {
-      args: _ObjCSArgs<D>;
+      args: _ObjCSArgs<D> | _CompArrayArgs<CS>;
     } & (C extends Record<any, any>
       ? {
           children: C extends Record<any, ObjChildOpt>
@@ -446,9 +451,7 @@ export function testObjectTS() {
         },
         children: {
           sail: {
-            args: {
-              rotation: undefined,
-            },
+            args: [undefined],
           },
         },
       },
@@ -458,9 +461,7 @@ export function testObjectTS() {
         },
       },
       cannonR: {
-        args: {
-          position: V(1, 0, 0),
-        },
+        args: [V(1, 0, 0)],
       },
       gem: [ENDESGA16.blue, V(1, 1, 1)],
       rudder: rudder,
