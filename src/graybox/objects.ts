@@ -1,6 +1,6 @@
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
-import { ComponentDef, EM, EntityW } from "../ecs/entity-manager.js";
+import { ComponentDef, EM, Entity, EntityW } from "../ecs/entity-manager.js";
 import { V, quat, vec3 } from "../matrix/sprig-matrix.js";
 import { CubeMesh } from "../meshes/mesh-list.js";
 import { PositionDef, ScaleDef, RotationDef } from "../physics/transform.js";
@@ -128,6 +128,17 @@ type ObjChildEnt<CO extends ObjChildOpt = ObjChildOpt> = CO extends
   ? EntityW<[...CO]>
   : never;
 
+// TODO(@darzu): OOff.. this doesn't work b/c we can't tell at run time array of obj vs single obj
+// TODO(@darzu): Sorta yikes. Very cool but maybe too clever for its own good
+// prettier-ignore
+type ArrayOrSingle<AS extends any[], BS extends any[]> = 
+  [AS, BS] extends [{length: 0}, {length: 0}] ? undefined
+: [AS, BS] extends [{length: 0}, {length: 1}] ? BS[0]
+: [AS, BS] extends [{length: 1}, {length: 0}] ? AS[0]
+: [AS, BS] extends [{length: 0}, {length: 0 | 1}] ? BS[0] | undefined
+: [AS, BS] extends [{length: 0 | 1}, {length: 0}] ? AS[0] | undefined
+: [...AS, ...BS];
+
 // the arguments needed to construct an object
 type _CompArgs<C extends ComponentDef> = C extends ComponentDef<
   any,
@@ -135,7 +146,7 @@ type _CompArgs<C extends ComponentDef> = C extends ComponentDef<
   infer CArgs,
   infer UArgs
 >
-  ? [...CArgs, ...UArgs]
+  ? ArrayOrSingle<CArgs, UArgs>
   : never;
 type _CompName<C extends ComponentDef> = C extends ComponentDef<infer N>
   ? N
@@ -233,7 +244,7 @@ export function defineObj<
         } else {
           // create the entity
           const cDef: ObjChildDef = childDefs[cName];
-          const cEnt = createChildObj(cDef, cArgs);
+          const cEnt = createObj(cDef, cArgs);
           childEnts[cName] = cEnt;
         }
       }
@@ -265,14 +276,37 @@ export function defineObj<
   return def;
 }
 
-export function createChildObj<D extends ObjChildDef, A extends ObjChildArg<D>>(
+function _setComp<C extends ComponentDef>(e: Entity, c: C, args: _CompArgs<C>) {
+  // TODO(@darzu): HACK! this will break if arg[0] is a non-Float32Array array
+  // TODO(@darzu): BROKEN! this actually jsut doesn't work b/c we use [1,0,0] literals all the time
+  const isArr = Array.isArray(args) && !((args as any) instanceof Float32Array);
+  if (isArr) EM.set(e, c, ...args);
+  else EM.set(e, c, args);
+}
+
+export function createObj<D extends ObjChildDef, A extends ObjChildArg<D>>(
   def: D,
   args: A
 ): ObjChildEnt<D> {
-  throw "TODO";
+  // TODO(@darzu): i hate all these casts
+  if (isObjChildEnt(args)) {
+    return args as ObjChildEnt<D>;
+  } else if (isCompDefs(def)) {
+    const e = EM.new();
+    const cArgsArr = args as unknown as _CompArrayArgs<any[]>; // TODO(@darzu): We shouldn't need such hacky casts
+    def.forEach((c, i) => {
+      const cArgs: any | any[] = cArgsArr[i];
+      _setComp(e, c, cArgs);
+    });
+    return e as ObjChildEnt<D>;
+  } else if (isObjDef(def)) {
+    return _createObj(def, args as any) as ObjChildEnt<D>;
+  }
+
+  throw "never";
 }
 
-export function createObj<D extends ObjDef, A extends ObjArgs<D["opts"]>>(
+function _createObj<D extends ObjDef, A extends ObjArgs<D["opts"]>>(
   def: D,
   args: A
 ): ObjEnt<D["opts"]> {
@@ -282,8 +316,7 @@ export function createObj<D extends ObjDef, A extends ObjArgs<D["opts"]>>(
   // add components
   const cArgs = args.args as Record<string, any[]>;
   for (let cDef of def.opts.components as ComponentDef[]) {
-    cArgs[cDef.name];
-    EM.set(e, cDef, ...cArgs[cDef.name]);
+    _setComp(e, cDef, cArgs[cDef.name] as any);
   }
 
   // add props (which creates children)
@@ -298,12 +331,24 @@ export function T<N extends {}>(): (p: N) => void {
 }
 
 export function testObjectTS() {
+  type _A1 = ArrayOrSingle<[2], []>;
+  type _A2 = ArrayOrSingle<[2], [4, 5]>;
+  type _A3 = ArrayOrSingle<[], [3]>;
+  type _A4 = ArrayOrSingle<[4, 5], [3]>;
+  type _A5 = ArrayOrSingle<[4, 5], [2, 3]>;
+
+  type _B1 = typeof PositionDef;
+  type _B2 = typeof PositionDef extends ComponentDef<any, any, any, infer UArgs>
+    ? UArgs
+    : never;
+  type _B3 = _B2 extends { length: infer L } ? L : never;
+
   const CannonObj = defineObj({
     name: "cannon",
     components: [PositionDef],
   });
   const ShipObj = defineObj({
-    name: "ship",
+    name: "ship2",
     propsType: T<{ myProp: number }>(),
     // updateProps: (p, n: number) => {
     //   p.myProp = n;
@@ -365,45 +410,45 @@ export function testObjectTS() {
   type __t10 = ObjPickOpt<__t9>;
   type __t11 = ObjArgs<__t10>;
 
-  const rudder = createChildObj([PositionDef, RotationDef] as const, [
-    [[1, 1, 1]],
-    [],
+  const rudder = createObj([PositionDef, RotationDef] as const, [
+    [1, 1, 1],
+    undefined,
   ]);
 
   console.log("testGrayHelpers".toUpperCase());
   console.dir(ShipObj);
-  const ship = createObj(ShipObj, {
+  const ship = _createObj(ShipObj, {
     props: {
       myProp: 7,
     },
     args: {
-      position: [V(0, 0, 0)],
+      position: V(0, 0, 0),
       renderableConstruct: [CubeMesh],
     },
     children: {
       mast: {
         args: {
-          scale: [V(1, 1, 1)],
+          scale: V(1, 1, 1),
         },
         children: {
           sail: {
             args: {
-              rotation: [],
+              rotation: undefined,
             },
           },
         },
       },
       cannonL: {
         args: {
-          position: [V(1, 0, 0)],
+          position: V(1, 0, 0),
         },
       },
       cannonR: {
         args: {
-          position: [V(1, 0, 0)],
+          position: V(1, 0, 0),
         },
       },
-      gem: [[ENDESGA16.blue], [V(1, 1, 1)]],
+      gem: [ENDESGA16.blue, V(1, 1, 1)],
       rudder: rudder,
     },
   });
@@ -412,16 +457,16 @@ export function testObjectTS() {
   let foo = "klj" as string | undefined;
   let bar = foo?.endsWith("j");
 
-  ship.ship.myProp = 8;
+  ship.ship2.myProp = 8;
   ship.position;
   // const cl = ship.ship["cannonL"];
-  const cl = ship.ship.cannonL;
-  const se = ship.ship.mast.mast2.sail;
+  const cl = ship.ship2.cannonL;
+  const se = ship.ship2.mast.mast2.sail;
   const mp: quat = se.rotation;
 
-  const cannonLPos: vec3 = ship.ship.cannonL.position;
-  const rudderPos: vec3 = ship.ship.rudder.position;
-  ship.ship.rudder.rotation;
+  const cannonLPos: vec3 = ship.ship2.cannonL.position;
+  const rudderPos: vec3 = ship.ship2.rudder.position;
+  ship.ship2.rudder.rotation;
 
   // TODO(@darzu): oo i like this one best
   // const cl3 = ship.child.cannonL;

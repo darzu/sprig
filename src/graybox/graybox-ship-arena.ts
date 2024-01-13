@@ -42,7 +42,7 @@ export async function initGrayboxShipArena() {
     initGhost();
   }
 
-  // testObjectTS();
+  testObjectTS();
 }
 
 const ShipObj = defineObj({
@@ -56,8 +56,8 @@ function createShip() {
 
   const ship = createObj(ShipObj, {
     args: {
-      color: [ENDESGA16.midBrown],
-      position: [V(40, 40, 3)],
+      color: ENDESGA16.midBrown,
+      position: [40, 40, 3],
       renderableConstruct: [shipMesh],
       cameraFollow: [],
     },

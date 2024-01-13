@@ -2018,3 +2018,18 @@ Hmm can u use rtx hardware for gpu-side collision detection?
 
 Gaussian Splatting is pretty cool!:
   https://aras-p.info/blog/2023/09/05/Gaussian-Splatting-is-pretty-cool/
+
+Perspective shadow maps:
+  https://youtu.be/C2Gn6oOxSu0?list=PLplnkTzzqsZS3R5DjmCQsqupu43oS9CFN&t=2628
+  compute shadows in canonical view volume
+  seems not as good as cascaded shadow maps
+
+Shadow volumes:
+  https://youtu.be/C2Gn6oOxSu0?list=PLplnkTzzqsZS3R5DjmCQsqupu43oS9CFN&t=3459
+  the downside is generating and dealing with the shadow geometry
+
+stancil buffer: way of counting something per-pixel 🤯
+
+Sand programs, rule based:
+  https://www.youtube.com/watch?v=xvlsJ3FqNYU
+  good fit for GPU?
