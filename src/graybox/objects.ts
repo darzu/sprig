@@ -52,6 +52,34 @@ an object has:
 
 // TODO(@darzu): PHYSICS PARENT: parameters for enabling/disabling physics parenting
 
+/*
+Object is:
+  set of components
+  + (optional) named tag component
+  + (optional) named tag component w/ props
+  + (optional) .child relation(s)
+*/
+
+// TODO(@darzu): .CHILD isn't child?
+//    maybe bidirectional
+//    .other, .relation, .child
+//    could be optional
+//    Also, could be we just add relations via setParentChild(entA, entB) then
+//    that automatically adds a entA.child ? Hmm hard to do that correctly w/ types
+
+// TODO(@darzu): merge ObjDef and ObjChildDef so that the more permissive one is top-level
+
+/*
+Entities vs objects
+  entities have components
+  objects have components and relations
+  objects are entities
+  object definitions can have inline component definitions (props)
+  OR
+  entities have components
+  objects have a list of (component | relation)
+*/
+
 type ObjChildDef = ObjDef | readonly ComponentDef[];
 type ObjChildOpt = ObjOpt | ObjChildDef;
 
@@ -67,6 +95,7 @@ export interface ObjOpt<
   // CArgs extends any[] = any,
   // UArgs extends any[] = any
 > {
+  // TODO(@darzu): make name optional?
   name: N;
   components: readonly [...CS];
   // TODO(@darzu): dang TS doesn't let you partially pass type parameters.
@@ -225,6 +254,7 @@ export type ObjArgs<D extends ObjOpt = ObjOpt> = D extends ObjOpt<
           })
   : never;
 
+// TODO(@darzu): optionally just takes a list of components?
 export function defineObj<
   N extends string,
   CS extends readonly ComponentDef[],

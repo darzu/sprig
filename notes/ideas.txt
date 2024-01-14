@@ -154,3 +154,9 @@ multi-surface navigation: interactive teaching sandbox thing
   2d movement w/ polar coordinates on a sphere
   maybe some sort of mech avatar that can launch off into 3d space
   show a grid for whichever space you're in
+
+Physics stewards game idea:
+  Each world/region has a steward spirit in charge of keeping the laws of nature running properly.
+  Some of them are lazy, corrupt, sad, or otherwise impaired so physics starts getting zany.
+  You're sent in to {negotiate with / mediate for / battle against / replace} these spirits.
+  and each region has unique challanges b/c of the way the regions laws have degraded.

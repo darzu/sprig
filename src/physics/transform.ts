@@ -1,6 +1,6 @@
 import { Component, EM } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
-import { WorldFrameDef } from "./nonintersection.js";
+import { WorldFrameDef, doesOverlap } from "./nonintersection.js";
 import { tempVec3, tempQuat } from "../matrix/temp-pool.js";
 import { FALSE, dbgLogOnce } from "../utils/util.js";
 import { Phase } from "../ecs/sys-phase.js";
@@ -93,6 +93,7 @@ export type Transform = mat4;
 // TODO(@darzu): rename "position" -> "pos", "rotation" -> "rot"
 
 // POSITION
+// TODO(@darzu): drop "Def" suffix from all components?
 export const PositionDef = EM.defineComponent(
   "position",
   () => V(0, 0, 0),
