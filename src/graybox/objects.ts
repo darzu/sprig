@@ -95,6 +95,14 @@ how things are stored
 how things are queried
   ECS queries, +?
 
+We'd love to incorperate delayed construction somehow so we can have things like:
+  RenderableConstructDef,
+  collider using MeshDef not needing AABB right away
+  Authority not needing MeDef
+  massively reduce use of async on creation
+
+Merging objects?
+  Like constructNetTurret, mixin onto entity
 */
 
 type ObjChildDef = ObjDef | readonly ComponentDef[];

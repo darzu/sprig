@@ -29,33 +29,33 @@ export const { CannonPropsDef, CannonLocalDef, createCannon, createCannonNow } =
         location: V(0, 0, 0),
         yaw: 0,
         pitch: 0,
-        parentId: 0,
+        // parentId: 0,
       };
     },
     updateProps: (
       p,
       location?: vec3,
       yaw?: number,
-      pitch?: number,
-      parentId?: number
+      pitch?: number
+      // parentId?: number
     ) => {
       if (location) vec3.copy(p.location, location);
       if (yaw !== undefined) p.yaw = yaw;
       if (pitch !== undefined) p.pitch = pitch;
-      if (parentId !== undefined) p.parentId = parentId;
+      // if (parentId !== undefined) p.parentId = parentId;
       return p;
     },
     serializeProps: (c, buf) => {
       buf.writeVec3(c.location);
       buf.writeFloat32(c.yaw);
       buf.writeFloat32(c.pitch);
-      buf.writeUint32(c.parentId);
+      // buf.writeUint32(c.parentId);
     },
     deserializeProps: (c, buf) => {
       buf.readVec3(c.location);
       c.yaw = buf.readFloat32();
       c.pitch = buf.readFloat32();
-      c.parentId = buf.readUint32();
+      // c.parentId = buf.readUint32();
     },
     defaultLocal: () => {
       return {
@@ -95,7 +95,7 @@ export const { CannonPropsDef, CannonLocalDef, createCannon, createCannonNow } =
         solid: false,
         aabb: res.mesh_ld51_cannon.aabb,
       });
-      EM.set(e, PhysicsParentDef, props.parentId);
+      // EM.set(e, PhysicsParentDef, props.parentId);
       return e;
     },
   });

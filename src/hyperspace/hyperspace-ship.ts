@@ -184,19 +184,11 @@ export const { HsShipPropsDef, HsShipLocalDef, createHsShip } =
 
         // create cannons
         const cannonPitch = Math.PI * +0.05;
-        const cannonR = createCannon(
-          V(-6, 3, 5),
-          Math.PI * 0.5,
-          cannonPitch,
-          s.id
-        );
+        const cannonR = createCannon(V(-6, 3, 5), Math.PI * 0.5, cannonPitch);
+        EM.set(cannonR, PhysicsParentDef, s.id);
         s.hsShipProps.cannonRId = cannonR.id;
-        const cannonL = createCannon(
-          V(6, 3, 5),
-          Math.PI * 1.5,
-          cannonPitch,
-          s.id
-        );
+        const cannonL = createCannon(V(6, 3, 5), Math.PI * 1.5, cannonPitch);
+        EM.set(cannonL, PhysicsParentDef, s.id);
         s.hsShipProps.cannonLId = cannonL.id;
       }
 
