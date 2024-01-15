@@ -78,6 +78,18 @@ Entities vs objects
   OR
   entities have components
   objects have a list of (component | relation)
+
+(can all be seperate:)
+how things are defined
+  series of attributes (component, props/tag, child relations, physics properties, net-entity stuff)
+  can attributes depend on one another? sure
+how things are created
+  constructor system, immediate construct, components for network, dynamic/full sync stuff,
+how things are stored
+  ECS, +? anything else permitted?
+how things are queried
+  ECS queries, +?
+
 */
 
 type ObjChildDef = ObjDef | readonly ComponentDef[];
@@ -172,20 +184,14 @@ type ArrayOrSingle<AS extends any[], BS extends any[]> =
 : [AS, BS] extends [{length: 0}, {length: 0 | 1}] ? BS[0] | undefined
 : [AS, BS] extends [{length: 0 | 1}, {length: 0}] ? AS[0] | undefined
 : [...AS, ...BS];
-type AsSingle<AS extends any[], BS extends any[]> = [AS, BS] extends [
-  { length: 0 },
-  { length: 0 }
-]
-  ? undefined
-  : [AS, BS] extends [{ length: 0 }, { length: 1 }]
-  ? BS[0]
-  : [AS, BS] extends [{ length: 1 }, { length: 0 }]
-  ? AS[0]
-  : [AS, BS] extends [{ length: 0 }, { length: 0 | 1 }]
-  ? BS[0] | undefined
-  : [AS, BS] extends [{ length: 0 | 1 }, { length: 0 }]
-  ? AS[0] | undefined
-  : never;
+// prettier-ignore
+type AsSingle<AS extends any[], BS extends any[]> = 
+  [AS, BS] extends [{ length: 0 }, { length: 0 }] ? undefined
+: [AS, BS] extends [{ length: 0 }, { length: 1 }] ? BS[0]
+: [AS, BS] extends [{ length: 1 }, { length: 0 }] ? AS[0]
+: [AS, BS] extends [{ length: 0 }, { length: 0 | 1 }] ? BS[0] | undefined
+: [AS, BS] extends [{ length: 0 | 1 }, { length: 0 }] ? AS[0] | undefined
+: never;
 
 // the arguments needed to construct an object
 type _CompArgs<C extends ComponentDef> = C extends ComponentDef<
