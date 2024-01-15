@@ -3,7 +3,12 @@ import { ENDESGA16 } from "../color/palettes.js";
 import { ComponentDef, EM, Entity, EntityW } from "../ecs/entity-manager.js";
 import { V, quat, vec3 } from "../matrix/sprig-matrix.js";
 import { CubeMesh } from "../meshes/mesh-list.js";
-import { PositionDef, ScaleDef, RotationDef } from "../physics/transform.js";
+import {
+  PositionDef,
+  ScaleDef,
+  RotationDef,
+  PhysicsParentDef,
+} from "../physics/transform.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { Intersect } from "../utils/util.js";
 
@@ -122,6 +127,7 @@ export interface ObjOpt<
   // props?: () => P;
   // updateProps?: (p: P, ...args: UArgs) => P;
   children?: C;
+  physicsParentChildren?: boolean;
 }
 
 export interface ObjDef<D extends ObjOpt = ObjOpt> {
@@ -219,6 +225,7 @@ type _CompArrayArgs<CS extends readonly ComponentDef[]> = {
   [i in keyof CS]: _CompArgs<CS[i]>;
 };
 
+// TODO(@darzu): for child component args to pass undefined for optional args
 type _ObjChildArg<CO extends ObjChildOpt = ObjChildOpt> = CO extends
   | ObjOpt
   | ObjDef
@@ -377,6 +384,16 @@ function _createObj<D extends ObjDef, A extends ObjArgs<D["opts"]>>(
   // add props (which creates children)
   EM.set(e, def.props, args);
 
+  // physics parent children
+  const physicsParentChildren = def.opts.physicsParentChildren ?? false;
+  if (physicsParentChildren) {
+    const childEnts: Record<string, Entity> = e[def.props.name];
+    for (let cName of Object.keys(args.children)) {
+      const cEnt = childEnts[cName];
+      EM.set(cEnt, PhysicsParentDef, e.id);
+    }
+  }
+
   // TODO(@darzu): there's probably some extreme type-foo that could do this impl w/o cast
   return e as ObjEnt<D["opts"]>;
 }
@@ -411,6 +428,7 @@ export function testObjectTS() {
     // },
     // dataType: (p: { myProp: number }) => {},
     components: [PositionDef, RenderableConstructDef],
+    physicsParentChildren: true,
     children: {
       mast: {
         name: "mast2",

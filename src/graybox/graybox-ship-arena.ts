@@ -42,12 +42,16 @@ export async function initGrayboxShipArena() {
     initGhost();
   }
 
-  testObjectTS();
+  // testObjectTS();
 }
 
 const ShipObj = defineObj({
   name: "ship",
   components: [ColorDef, PositionDef, RenderableConstructDef, CameraFollowDef],
+  physicsParentChildren: true,
+  children: {
+    box: [PositionDef, ScaleDef, ColorDef, RenderableConstructDef],
+  },
 });
 
 function createShip() {
@@ -60,6 +64,9 @@ function createShip() {
       position: [40, 40, 3],
       renderableConstruct: [shipMesh],
       cameraFollow: [],
+    },
+    children: {
+      box: [[0, 0, 5], [4, 4, 4], ENDESGA16.red, [CubeMesh]],
     },
   });
 
