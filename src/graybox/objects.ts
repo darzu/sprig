@@ -188,16 +188,7 @@ type ObjChildEnt<CO extends ObjChildOpt = ObjChildOpt> = CO extends
   ? EntityW<[...CO]>
   : never;
 
-// TODO(@darzu): unused?
 // TODO(@darzu): Sorta yikes. Very cool but maybe too clever for its own good
-// prettier-ignore
-type ArrayOrSingle<AS extends any[], BS extends any[]> = 
-  [AS, BS] extends [{length: 0}, {length: 0}] ? undefined
-: [AS, BS] extends [{length: 0}, {length: 1}] ? BS[0]
-: [AS, BS] extends [{length: 1}, {length: 0}] ? AS[0]
-: [AS, BS] extends [{length: 0}, {length: 0 | 1}] ? BS[0] | undefined
-: [AS, BS] extends [{length: 0 | 1}, {length: 0}] ? AS[0] | undefined
-: [...AS, ...BS];
 // prettier-ignore
 type AsSingle<AS extends any[], BS extends any[]> = 
   [AS, BS] extends [{ length: 0 }, { length: 0 }] ? undefined
