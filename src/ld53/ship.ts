@@ -35,8 +35,7 @@ import { Phase } from "../ecs/sys-phase.js";
 import { ShipHealthDef } from "./ship-health.js";
 import { T, createObj, defineObj } from "../graybox/objects.js";
 import { FinishedDef } from "../ecs/em-helpers.js";
-
-export const RudderDef = EM.defineComponent("rudder", () => true);
+import { RudderDef, createRudder } from "./rudder.js";
 
 // TODO(@darzu): RENAME
 const LD52ShipDefObj = defineObj({
@@ -52,7 +51,10 @@ const LD52ShipDefObj = defineObj({
     LinearVelocityDef,
     ColorDef,
   ],
-  propsType: T<{ cuttingEnabled: boolean }>(),
+  propsType: T<{
+    // TODO(@darzu): remove
+    cuttingEnabled: boolean;
+  }>(),
   physicsParentChildren: true,
   children: {
     mast: [MastDef, RotationDef],
@@ -208,8 +210,6 @@ export async function createLd53ShipAsync() {
   return ship;
 }
 
-const AHEAD_DIR = V(0, 1, 0);
-
 EM.addSystem(
   "sailShip",
   Phase.GAME_PLAYERS,
@@ -222,7 +222,7 @@ EM.addSystem(
       quat.yaw(e.rotation, yaw * RUDDER_ROTATION_RATE, e.rotation);
 
       // acceleration
-      const direction = vec3.transformQuat(AHEAD_DIR, e.world.rotation);
+      const direction = vec3.transformQuat(vec3.FWD, e.world.rotation);
       const sailAccel = vec3.scale(
         direction,
         e.ld52ship.mast.mast.force * SAIL_ACCEL_RATE
@@ -246,76 +246,11 @@ EM.addSystem(
         // TODO: make this better
         const sail = e.ld52ship.mast.mast.sail.sail;
         if (sail.unfurledAmount > sail.minFurl) {
-          vec3.scale(AHEAD_DIR, MIN_SPEED, e.linearVelocity);
+          vec3.scale(vec3.FWD, MIN_SPEED, e.linearVelocity);
         } else {
           vec3.set(0, 0, 0, e.linearVelocity);
         }
       }
-    }
-  }
-);
-
-function createRudder(res: Resources<[typeof MeDef]>) {
-  const rudder = EM.new();
-  EM.set(rudder, RudderDef);
-  EM.set(rudder, RenderableConstructDef, RudderPrimMesh);
-  // EM.set(ent, ColorDef, V(0.2, 0.1, 0.05));
-  EM.set(rudder, ColorDef, ENDESGA16.midBrown);
-  EM.set(rudder, PositionDef);
-  EM.set(rudder, RotationDef);
-  EM.set(rudder, AuthorityDef, res.me.pid);
-
-  addGizmoChild(rudder, 4);
-
-  const interactBox = EM.new();
-  EM.set(interactBox, PhysicsParentDef, rudder.id);
-  EM.set(interactBox, PositionDef);
-  EM.set(interactBox, ColliderDef, {
-    shape: "AABB",
-    solid: false,
-    aabb: {
-      min: V(-1, -2, -2),
-      max: V(1, 2.5, 2.5),
-    },
-  });
-  constructNetTurret(
-    rudder,
-    0,
-    0,
-    interactBox,
-    0.0 * Math.PI,
-    // -Math.PI / 8,
-    -Math.PI / 12,
-    1.6,
-    // V(0, 20, 50),
-    V(0, -30, 10), // camera offset
-    true,
-    1,
-    Math.PI,
-    "W/S: unfurl/furl sail, A/D: turn, E: drop rudder"
-  );
-
-  rudder.turret.maxPitch = 0;
-  rudder.turret.minPitch = 0;
-  rudder.turret.maxYaw = Math.PI / 6;
-  rudder.turret.minYaw = -Math.PI / 6;
-  rudder.turret.invertYaw = true;
-
-  return rudder;
-}
-
-// If a rudder isn't being manned, smooth it back towards straight
-EM.addSystem(
-  "easeRudderLD52",
-  Phase.GAME_WORLD,
-  [RudderDef, TurretDef, YawPitchDef, AuthorityDef],
-  [MeDef],
-  (rudders, res) => {
-    for (let r of rudders) {
-      if (r.authority.pid !== res.me.pid) return;
-      if (r.turret.mannedId !== 0) return;
-      if (Math.abs(r.yawpitch.yaw) < 0.01) r.yawpitch.yaw = 0;
-      r.yawpitch.yaw *= 0.9;
     }
   }
 );
@@ -330,7 +265,7 @@ EM.addSystem(
   [PartyDef],
   (es, res) => {
     if (es[0]) {
-      vec3.transformQuat(AHEAD_DIR, es[0].rotation, res.party.dir);
+      vec3.transformQuat(vec3.FWD, es[0].rotation, res.party.dir);
       vec3.copy(res.party.pos, es[0].position);
     }
   }
