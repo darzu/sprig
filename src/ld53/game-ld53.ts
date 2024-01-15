@@ -229,7 +229,7 @@ async function hostResetLevel(levelIdx: number) {
   quat.yaw(ship.rotation, Math.PI / 2, ship.rotation);
 
   // reset ship sails and rudder
-  const sail = ship.ld52ship.mast.mast.sail()!.sail;
+  const sail = ship.ld52ship.mast.mast.sail.sail;
   sail.unfurledAmount = sail.minFurl;
   ship.ld52ship.cuttingEnabled = true;
   ship.ld52ship.rudder.yawpitch.yaw = 0;
@@ -586,7 +586,7 @@ export async function initLD53(hosting: boolean) {
               );
             }
           } else {
-            const sail = mast.mast.sail()!.sail;
+            const sail = mast.mast.sail.sail;
             if (res.inputs.keyDowns["w"]) sail.unfurledAmount += SAIL_FURL_RATE;
             if (res.inputs.keyDowns["s"]) sail.unfurledAmount -= SAIL_FURL_RATE;
             sail.unfurledAmount = clamp(sail.unfurledAmount, sail.minFurl, 1.0);

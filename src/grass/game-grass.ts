@@ -471,7 +471,7 @@ export async function initGrassGame(hosting: boolean) {
     // level2DtoWorld3D(level.levelMap.startPos, 2, ship.position);
     quat.identity(ship.rotation);
     vec3.set(0, 0, 0, ship.linearVelocity);
-    const sail = ship.ld52ship.mast.mast.sail()!.sail;
+    const sail = ship.ld52ship.mast.mast.sail.sail;
     sail.unfurledAmount = sail.minFurl;
     ship.ld52ship.cuttingEnabled = true;
     ship.ld52ship.rudder.yawpitch.yaw = 0;
@@ -638,7 +638,7 @@ export async function initGrassGame(hosting: boolean) {
 
       // furl/unfurl
       if (rudder.turret.mannedId) {
-        const sail = mast.mast.sail()!.sail;
+        const sail = mast.mast.sail.sail;
         if (res.inputs.keyDowns["w"]) sail.unfurledAmount += SAIL_FURL_RATE;
         if (res.inputs.keyDowns["s"]) sail.unfurledAmount -= SAIL_FURL_RATE;
         sail.unfurledAmount = clamp(sail.unfurledAmount, sail.minFurl, 1.0);

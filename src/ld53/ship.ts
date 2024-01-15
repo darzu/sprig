@@ -244,7 +244,7 @@ EM.addSystem(
       }
       if (vec3.length(e.linearVelocity) < MIN_SPEED) {
         // TODO: make this better
-        const sail = e.ld52ship.mast.mast.sail()!.sail;
+        const sail = e.ld52ship.mast.mast.sail.sail;
         if (sail.unfurledAmount > sail.minFurl) {
           vec3.scale(AHEAD_DIR, MIN_SPEED, e.linearVelocity);
         } else {
