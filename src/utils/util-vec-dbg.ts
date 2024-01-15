@@ -14,7 +14,8 @@ import { RenderableConstructDef } from "../render/renderer-ecs.js";
 
 export const VecDbgDef = EM.defineNonupdatableComponent(
   "vecDbg",
-  (v: vec3, scale: number) => ({ v, scale })
+  (v: vec3, scale: number) => ({ v, scale }),
+  { multiArg: true }
 );
 
 // TODO(@darzu): HACK! This whole system works by tracking a reference to a vector

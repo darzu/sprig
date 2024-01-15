@@ -29,20 +29,32 @@ import { assert } from "../utils/util.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { angleBetweenPosXZ, angleBetweenXZ } from "../utils/utils-3d.js";
 import { Phase } from "../ecs/sys-phase.js";
+import { ObjOwnProps, T, createObj, defineObj } from "../graybox/objects.js";
 
 const SAIL_TURN_SPEED = 5;
 export const SAIL_FURL_RATE = 0.02;
 const BILLOW_FACTOR = 0.2;
 
-export const SailDef = EM.defineComponent("sail", () => ({
-  width: 1,
-  height: 1,
-  unfurledAmount: 0.1,
-  minFurl: 0.1,
-  billowAmount: 0.0,
-  force: 0.0,
-  posMap: new Map<number, number>(),
-}));
+const SailObj = defineObj({
+  name: "sail",
+  propsType: T<{
+    width: number;
+    height: number;
+    unfurledAmount: number;
+    minFurl: number;
+    billowAmount: number;
+    force: number;
+    posMap: Map<number, number>;
+  }>(),
+  components: [
+    RenderableConstructDef,
+    ScaleDef,
+    PositionDef,
+    RotationDef,
+    ColorDef,
+  ],
+} as const);
+const SailDef = SailObj.props;
 
 function sailMesh(sail: Component<typeof SailDef>): Mesh {
   let x = 0;
@@ -109,17 +121,29 @@ export function createSail(
 ): EntityW<
   [typeof SailDef, typeof PositionDef, typeof RotationDef, typeof ScaleDef]
 > {
-  const ent = EM.new();
-  EM.set(ent, SailDef);
-  ent.sail.width = width;
-  ent.sail.height = height;
-  const mesh = sailMesh(ent.sail);
-  EM.set(ent, RenderableConstructDef, mesh);
-  EM.set(ent, ScaleDef, V(scale, scale, scale));
-  EM.set(ent, PositionDef);
-  EM.set(ent, RotationDef);
-  // EM.set(ent, ColorDef, V(0.9, 0.9, 0.9));
-  EM.set(ent, ColorDef, ENDESGA16.red);
+  const props: ObjOwnProps<typeof SailObj> = {
+    width,
+    height,
+    unfurledAmount: 0.1,
+    minFurl: 0.1,
+    billowAmount: 0.0,
+    force: 0.0,
+    posMap: new Map<number, number>(),
+  };
+
+  const mesh = sailMesh(props);
+
+  const ent = createObj(SailObj, {
+    props,
+    args: {
+      renderableConstruct: [mesh],
+      scale: [scale, scale, scale],
+      position: undefined,
+      rotation: undefined,
+      color: ENDESGA16.red,
+    },
+  });
+
   return ent;
 }
 
@@ -192,72 +216,54 @@ EM.addSystem(
 
 // EM.addConstraint(["billow", "after", "applyWindToSail"]);
 
-export const MastDef = EM.defineComponent("mast", () => ({
-  sail: createRef(0, [SailDef]),
-  force: 0.0,
-}));
+const MastObj = defineObj({
+  name: "mast",
+  components: [
+    RenderableConstructDef,
+    ColliderDef,
+    PositionDef,
+    RotationDef,
+    ColorDef,
+    AuthorityDef,
+  ],
+  propsType: T<{ force: number }>(),
+  physicsParentChildren: true,
+  children: {
+    sail: [SailDef],
+  },
+} as const);
+export const MastDef = MastObj.props;
 
 export function createMast(
   res: Resources<[typeof MeDef, typeof MastMesh.def]>
 ) {
-  const mesh = res.mesh_mast;
-  let ent = EM.new();
-  EM.set(ent, MastDef);
-  EM.set(ent, RenderableConstructDef, mesh.proto);
-  EM.set(ent, ColliderDef, {
-    shape: "AABB",
-    solid: false,
-    aabb: mesh.aabb,
-  });
-  EM.set(ent, PositionDef);
-  EM.set(ent, RotationDef);
-  // EM.set(ent, ColorDef, V(0.8, 0.7, 0.3));
-  EM.set(ent, ColorDef, ENDESGA16.darkBrown);
-  EM.set(ent, AuthorityDef, res.me.pid);
-
-  // EM.set(ent, YawPitchDef);
-
-  // const interactBox = EM.new();
-  // EM.set(interactBox, PhysicsParentDef, ent.id);
-  // EM.set(interactBox, PositionDef, V(0, 0, 0));
-  // EM.set(interactBox, ColliderDef, {
-  //   shape: "AABB",
-  //   solid: false,
-  //   aabb: {
-  //     // HACK: put out of reach
-  //     min: V(-1, 10, -1),
-  //     max: V(1, 20, 1),
-  //     // min: V(-1, -1, -1),
-  //     // max: V(1, 1, 1),
-  //   },
-  // });
-  // // TODO: setting the yawFactor to -1 is kind of hacky
-  // constructNetTurret(
-  //   ent,
-  //   0,
-  //   0,
-  //   interactBox,
-  //   Math.PI,
-  //   -Math.PI / 8,
-  //   -1,
-  //   V(0, 20, 50),
-  //   true,
-  //   SAIL_TURN_SPEED
-  // );
-
-  // ent.turret.maxPitch = 0;
-  // ent.turret.minPitch = 0;
-  // ent.turret.maxYaw = Math.PI / 2;
-  // ent.turret.minYaw = -Math.PI / 2;
-
-  // TODO(@darzu): Z_UP
   const sailWidth = 14;
   const sail = createSail(sailWidth, 8, 2);
-  EM.set(sail, PhysicsParentDef, ent.id);
   sail.position[0] = -sailWidth;
   sail.position[1] = 0.51;
   sail.position[2] = 38;
-  ent.mast.sail = createRef(sail);
+
+  const mesh = res.mesh_mast;
+
+  const ent = createObj(MastObj, {
+    props: { force: 0.0 },
+    args: {
+      renderableConstruct: [mesh.proto],
+      collider: {
+        shape: "AABB",
+        solid: false,
+        aabb: mesh.aabb,
+      },
+      position: undefined,
+      rotation: undefined,
+      color: ENDESGA16.darkBrown,
+      authority: res.me.pid,
+    },
+    children: {
+      sail: sail,
+    },
+  });
+
   return ent;
 }
 
@@ -288,7 +294,7 @@ EM.addSystem(
   [],
   (es) => {
     for (let e of es) {
-      const sail = e.mast.sail()!.sail;
+      const sail = e.mast.sail.sail;
       const normal = vec3.transformQuat(AHEAD_DIR, e.rotation);
       e.mast.force = sail.force * vec3.dot(AHEAD_DIR, normal);
     }

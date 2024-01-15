@@ -50,3 +50,10 @@ AAA-game lighting, animation, and polish
   It's professional capable tool, but relatively friendly
   Designs can be exported
   Not OT or CRDT based, good ol' game-style multiplayer
+
+Easiest 3d mp game maker:
+  visit the website,
+  create a simple little scene w/ basic behavior
+  send a link to a friend,
+  they can join your little scene
+  export the whole thing as your own code and website

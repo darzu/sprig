@@ -127,7 +127,8 @@ export const StoneTowerDef = EM.defineNonupdatableComponent(
       projectileSpeed,
       firingRadius,
       alive: true,
-    } as Tower)
+    } as Tower),
+  { multiArg: true }
 );
 
 function knockOutBrickAtIndex(stone: StoneState, index: number) {

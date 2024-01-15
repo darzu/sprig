@@ -20,6 +20,13 @@ import { shadowPipelines } from "../render/pipelines/std-shadow.js";
 import { RendererDef, RenderableConstructDef } from "../render/renderer-ecs.js";
 import { addGizmoChild, addWorldGizmo } from "../utils/utils-game.js";
 import { initGhost, initWorld } from "./graybox-helpers.js";
+import {
+  ObjDef,
+  ObjOpt,
+  createObj,
+  defineObj,
+  testObjectTS,
+} from "./objects.js";
 
 const DBG_GHOST = true;
 const DBG_GIZMO = true;
@@ -40,19 +47,39 @@ export async function initGrayboxShipArena() {
   if (DBG_GHOST) {
     initGhost();
   }
+
+  // testObjectTS();
 }
 
+const ShipObj = defineObj({
+  name: "ship",
+  components: [ColorDef, PositionDef, RenderableConstructDef, CameraFollowDef],
+  physicsParentChildren: true,
+  children: {
+    box: [PositionDef, ScaleDef, ColorDef, RenderableConstructDef],
+  },
+} as const);
+
 function createShip() {
-  // ship
-  const ship = EM.new();
-  EM.set(ship, ColorDef, ENDESGA16.midBrown);
-  EM.set(ship, PositionDef, V(40, 40, 3));
   const shipMesh = mkCubeMesh();
   scaleMesh3(shipMesh, [8, 16, 2]);
-  EM.set(ship, RenderableConstructDef, shipMesh);
-  EM.set(ship, CameraFollowDef);
+
+  const ship = createObj(ShipObj, {
+    args: {
+      color: ENDESGA16.midBrown,
+      position: [40, 40, 3],
+      renderableConstruct: [shipMesh],
+      cameraFollow: undefined,
+    },
+    children: {
+      box: [[0, 0, 5], [4, 4, 4], ENDESGA16.red, [CubeMesh]],
+    },
+  });
+
   vec3.copy(ship.cameraFollow.positionOffset, [0.0, -50.0, 0]);
   ship.cameraFollow.pitchOffset = -Math.PI * 0.25;
 
   if (DBG_GIZMO) addGizmoChild(ship, 10);
+
+  // sail
 }

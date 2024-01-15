@@ -45,7 +45,8 @@ export const ButtonDef = EM.defineNonupdatableComponent(
     // TODO(@darzu): better way to do this? Maybe typed "known" buttons ala assets
     data,
     colors,
-  })
+  }),
+  { multiArg: true }
 );
 
 // TODO(@darzu): GUIStateDef ?

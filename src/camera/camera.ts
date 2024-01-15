@@ -286,6 +286,26 @@ EM.addLazyInit([], [CameraComputedDef], () => {
           cameraComputed.proj
         );
       } else {
+        // TODO(@darzu): break perspective transformation down into perspective + ortho like here:
+        //    https://youtu.be/gQiD2Kd6xoE?t=3069
+        //    Just cache the matrix for perf.
+        /*
+        perspective:
+        n    0    0    0
+        0    n    0    0
+        0    0  n+f  -fn (perserve z = n -> z' = n, z = f -> z' = f)
+        0    0    1    0
+        ortho:
+        2/   0    0   -(r+l)/
+        r-l            (r-l)
+        0    2/   0   -(t+b)/
+             t-b       (t-b)
+        0    0    2/  -(f+n)/
+                  f-n  (f-n)
+        0    0    0     1
+        
+        projM = O*P
+        */
         mat4.perspective(
           camera.fov,
           cameraComputed.aspectRatio,

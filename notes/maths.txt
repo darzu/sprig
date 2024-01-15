@@ -76,3 +76,7 @@ WebGL "normalized device coordinates" NDC:
   t is a cube two units on each side, with one corner at (-1,-1,-1) and the opposite corner at (1,1,1). The center of the cube is the point (0,0,0). This 8 cubic meter coordinate system used by clip space is known as normalized device coordinates (NDC)
 
 det(mat3x3 m) = dot(m.col[0], cross(m.col[1], m.col[2]))
+
+SVD: "singular value decomposition"
+  https://en.wikipedia.org/wiki/Singular_value_decomposition
+  decompose any matrix into Rotation->Scale->Rotation

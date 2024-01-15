@@ -455,3 +455,9 @@ Chrome:
 
 GPU occupancy:
   https://gpuopen.com/learn/occupancy-explained/?utm_source=twitter&utm_medium=social&utm_campaign=occupancy
+
+WebGPU workload simulator:
+  https://webgpu.github.io/webgpu-samples/workload-simulator.html?uploadOptions
+
+WebGPU samples:
+  https://webgpu.github.io/webgpu-samples/

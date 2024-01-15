@@ -41,6 +41,7 @@ export const TurretDef = EM.defineComponent("turret", () => {
   };
 });
 
+// TODO(@darzu): Replace with Object system? Merge objects?
 export function constructNetTurret(
   e: Entity,
   startYaw: number,

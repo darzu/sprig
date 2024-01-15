@@ -85,7 +85,8 @@ export const SpringGridDef = EM.defineNonupdatableComponent(
       externalForce,
       springType,
     };
-  }
+  },
+  { multiArg: true }
 );
 
 export const ForceDef = EM.defineComponent(

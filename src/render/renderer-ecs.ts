@@ -106,7 +106,8 @@ export const RenderableConstructDef = EM.defineNonupdatableComponent(
       reserve,
     };
     return r;
-  }
+  },
+  { multiArg: true }
 );
 
 export const RiggedRenderableConstructDef = EM.defineNonupdatableComponent(
@@ -446,7 +447,8 @@ export const RiggedRenderableDef = EM.defineNonupdatableComponent(
     meshHandle,
     rigging,
     jointMatrices: rigging.parents.map(() => mat4.identity(mat4.create())),
-  })
+  }),
+  { multiArg: true }
 );
 
 EM.addEagerInit([RiggedRenderableConstructDef], [RendererDef], [], (res) => {

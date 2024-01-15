@@ -3,3 +3,22 @@
 
 Audio Worklets for less glitchy audio:
   https://developer.chrome.com/blog/audio-worklet/
+
+Take midi tracks?
+
+Midinous
+  https://store.steampowered.com/app/1727420/Midinous/
+
+NOTE: basically this whole file just tries to implement
+   what Andrew suggests as a good way to start making good sounding
+   music:
+   https://www.youtube.com/watch?v=rgaTLrZGlk0
+
+https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API
+https://developer.mozilla.org/en-US/docs/Web/Media/Formats/Audio_concepts
+
+Shapes and beats:
+  https://store.steampowered.com/app/531510/Just_Shapes__Beats/
+
+Hellsinger:
+  https://store.steampowered.com/app/1061910/Metal_Hellsinger/

@@ -39,7 +39,7 @@ import { drawBall, drawLine } from "../utils/utils-game.js";
 // flags: usesProvoking
 export interface RawMesh {
   // geometry
-  pos: vec3[];
+  pos: vec3[]; // TODO(@darzu): rename to locs ?
   tri: vec3[];
   quad: vec4[]; // MUST NOT be redundant w/ `tri`
   lines?: vec2[];

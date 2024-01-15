@@ -73,7 +73,6 @@ import { ScoreDef } from "./score.js";
 import { LandMapTexPtr, LevelMapDef, setMap } from "../levels/level-map.js";
 import { setWindAngle, WindDef } from "../wind/wind.js";
 import {
-  Ld53ShipPropsDef,
   LD52ShipDef,
   cannonDefaultPitch,
   createLd53ShipAsync,
@@ -230,20 +229,20 @@ async function hostResetLevel(levelIdx: number) {
   quat.yaw(ship.rotation, Math.PI / 2, ship.rotation);
 
   // reset ship sails and rudder
-  const sail = ship.ld52ship.mast()!.mast.sail()!.sail;
+  const sail = ship.ld52ship.mast.mast.sail.sail;
   sail.unfurledAmount = sail.minFurl;
   ship.ld52ship.cuttingEnabled = true;
-  ship.ld52ship.rudder()!.yawpitch.yaw = 0;
+  ship.ld52ship.rudder.yawpitch.yaw = 0;
 
   // set map wind angle
   const wingAngle = Math.atan2(levelMap.windDir[1], levelMap.windDir[0]);
   setWindAngle(wind, wingAngle);
 
   // reset cannon orientations
-  ship.ld52ship.cannonR()!.yawpitch.pitch = cannonDefaultPitch;
-  ship.ld52ship.cannonR()!.yawpitch.yaw = Math.PI * 0.5;
-  ship.ld52ship.cannonL()!.yawpitch.pitch = cannonDefaultPitch;
-  ship.ld52ship.cannonL()!.yawpitch.yaw = Math.PI * 1.5;
+  ship.ld52ship.cannonR.yawpitch.pitch = cannonDefaultPitch;
+  ship.ld52ship.cannonR.yawpitch.yaw = Math.PI * 0.5;
+  ship.ld52ship.cannonL.yawpitch.pitch = cannonDefaultPitch;
+  ship.ld52ship.cannonL.yawpitch.yaw = Math.PI * 1.5;
 
   // reset ship health
   resetWoodHealth(ship.woodHealth);
@@ -572,8 +571,8 @@ export async function initLD53(hosting: boolean) {
       null,
       [InputsDef, PartyDef],
       (_, res) => {
-        const mast = ship.ld52ship.mast()!;
-        const rudder = ship.ld52ship.rudder()!;
+        const mast = ship.ld52ship.mast;
+        const rudder = ship.ld52ship.rudder;
 
         // furl/unfurl
         if (rudder.turret.mannedId) {
@@ -587,7 +586,7 @@ export async function initLD53(hosting: boolean) {
               );
             }
           } else {
-            const sail = mast.mast.sail()!.sail;
+            const sail = mast.mast.sail.sail;
             if (res.inputs.keyDowns["w"]) sail.unfurledAmount += SAIL_FURL_RATE;
             if (res.inputs.keyDowns["s"]) sail.unfurledAmount -= SAIL_FURL_RATE;
             sail.unfurledAmount = clamp(sail.unfurledAmount, sail.minFurl, 1.0);
@@ -604,7 +603,7 @@ export async function initLD53(hosting: boolean) {
       null,
       [InputsDef, WindDef],
       (_, res) => {
-        const mast = ship.ld52ship.mast()!;
+        const mast = ship.ld52ship.mast;
 
         // TODO(@darzu): Debugging
         if (dbgOnce("windOnMast")) {
@@ -742,7 +741,7 @@ export async function initLD53(hosting: boolean) {
       // player.physicsParent.id = ship.id;
 
       // teleporting player to rudder
-      const rudder = ship.ld52ship.rudder()!;
+      const rudder = ship.ld52ship.rudder;
       vec3.copy(player.position, rudder.position);
       player.position[2] = 1.45;
       if (!res.me.host) {

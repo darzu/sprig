@@ -20,6 +20,10 @@ fn vert_main(input: VertexInput) -> VertexOutput {
     output.worldPos = worldPos;
     output.position = scene.cameraViewProjMatrix * worldPos;
     // TODO(@darzu): for non-uniform scaling, we need to use inverse-transpose matrix for normals as per: https://learnopengl.com/Lighting/Basic-Lighting
+    // TODO(@darzu): apply inverse of scale? https://youtu.be/esC1HnyD9Bk?list=PLplnkTzzqsZS3R5DjmCQsqupu43oS9CFN&t=3120
+    //    m3x3 = R2*S*R1
+    //    mNorm = R2*S^-1*R1
+    //    mNorm = ((m3x3)^-1)^T
     output.normal = (meshUni.transform * vec4<f32>(normal, 0.0)).xyz;
     output.color = color + meshUni.tint;
 

@@ -26,9 +26,85 @@ import { Phase, PhaseValueList } from "./sys-phase.js";
 // TODO(@darzu): re-check all uses of "any" and prefer "unknown"
 //    see: https://github.com/Microsoft/TypeScript/pull/24439
 
-// TODO(@darzu): for perf, we really need to move component data to be
+// TODO(@darzu): PERF. we really need to move component data to be
 //  colocated in arrays; and maybe introduce "arch-types" for commonly grouped
 //  components and "worlds" to section off entities.
+
+/*
+Components need/can support:
+  EM.add (or first EM.set)
+  EM.update (or EM.addOrUpdate, subsequent EM.set; skippable if we're not worried about efficiency!)
+  for (de)serialization:
+    a. (efficient) default constructor + deserialize-as-update
+    b. (efficient) deserialize-as-new + deserialize-as-update
+    c. (slow) deserialize-as-new
+    d. (slow) Cy-style auto-deserialize (TODO: could be fast w/ code-gen)
+    
+TODO(@darzu): impl this \/
+Component feautres:
+  (expressed in type and w/ boolean)
+  R: type (default constructor takes whole type) -(gives)-> EM.add
+  O: custom constructor -(gives)-> CArgs-based EM.add
+  O: update -(gives)-> EM.update / EM.addOrUpdate
+  O: serialize
+  O: deserialize-as-new -(gives)-> deserialzie like EM.add
+  O: deserialize-as-update -(gives)-> deserialize like EM.update
+  O: default constructor -(gives)-> skip deserialize-as-new
+  O: type witness can be using Cy shader types for free serializers
+        can include warning when used >X times per frame
+  Common library of component types like vec3, mat4, etc.
+
+Maybe change syntax: (i think this has problems w/ type assertions)
+  "myEnt.add/set/update(PositionDef, [1,2,3])" 
+  "EM.add/set/update(myEnt, PositionDef, [1,2,3])"
+
+Benefits of having a default constructor or witness:
+  potentially auto-serializer?
+  allows you to "alloc". Maybe helps w/ efficient layout? Sub for sizeof() ?
+
+Maybe there should be two component types: Direct and Object.
+  Direct for things like vectors, numbers, Map, directly as the component.
+  Object for all {}-y, json-y objects w/ multiple proprties
+  Objects could have default update w/ Object.assign + Partial<T> ?
+
+In Bevy, you don't get access to myEnt.myComp, instead you're 
+  given (myComp1, myComp2, ...) tuple in systems
+
+Bevy ECS nice-to-have features:
+  Added/Changed/Removed for components queries
+*/
+
+// TODO(@darzu): Instead of having one big EM class,
+//    we should seperate out all seperable concerns,
+//    and then just | them together as the top-level
+//    thing. Maybe even use the "$" symbol?! (probs not)
+
+// TODO(@darzu): PERF TRACKING. Thinking:
+/*
+goal: understand what's happening between 0 and first-playable
+
+could use "milestone" event trackers
+
+perhaps we have frame phases:
+executing systems,
+executing inits,
+waiting for next draw
+
+attribute system time to systems
+  are systems every async?
+
+perhaps entity promises could check to see if they're being created in System, Init, or Other
+  What would "Other" be?
+And then they'd resume themselves in the appropriate system's scheduled time?
+
+How do we track time on vanilla init functions?
+
+I could always resume entity promises in the same phase as what requested them so
+either init time or GAME_WORLD etc
+
+  if we did that i think we could accurately measure self-time for systems
+  but that might not capture other time like file downloading
+*/
 
 export interface Entity {
   readonly id: number;
@@ -53,10 +129,12 @@ export interface ComponentDef<
   N extends string = string,
   P = any,
   CArgs extends any[] = any,
-  UArgs extends any[] = any
+  UArgs extends any[] = any,
+  MA extends boolean = boolean
 > {
   _brand: "componentDef";
   updatable: boolean;
+  multiArg: MA;
   readonly name: N;
   construct: (...args: CArgs) => P;
   update: (p: P, ...args: UArgs) => P;
@@ -69,17 +147,24 @@ export type Component<DEF> = DEF extends ComponentDef<any, infer P> ? P : never;
 export type NonupdatableComponentDef<
   N extends string,
   P,
-  CArgs extends any[]
-> = ComponentDef<N, P, CArgs, []>;
+  CArgs extends any[],
+  MA extends boolean = boolean
+> = ComponentDef<N, P, CArgs, [], MA>;
 export type UpdatableComponentDef<
   N extends string,
   P,
-  UArgs extends any[]
-> = ComponentDef<N, P, [], UArgs>;
+  UArgs extends any[],
+  MA extends boolean = boolean
+> = ComponentDef<N, P, [], UArgs, MA>;
 
-export type _ComponentDef<N extends string, P, PArgs extends any[]> =
-  | NonupdatableComponentDef<N, P, PArgs>
-  | UpdatableComponentDef<N, P, PArgs>;
+export type _ComponentDef<
+  N extends string,
+  P,
+  PArgs extends any[],
+  MA extends boolean = boolean
+> =
+  | NonupdatableComponentDef<N, P, PArgs, MA>
+  | UpdatableComponentDef<N, P, PArgs, MA>;
 
 export type Resource<DEF> = DEF extends ResourceDef<any, infer P> ? P : never;
 
@@ -97,7 +182,7 @@ export type EntityW<
   ID extends number = number
 > = {
   readonly id: ID;
-} & Intersect<{ [P in keyof CS]: WithComponent<CS[P]> }>;
+} & Intersect<{ [i in keyof CS]: WithComponent<CS[i]> }>;
 
 export type WithResource<D> = D extends ResourceDef<infer N, infer P>
   ? { readonly [k in N]: P }
@@ -216,11 +301,6 @@ interface SystemStats {
   calls: number;
 }
 
-// TODO(@darzu): Instead of having one big EM class,
-//    we should seperate out all seperable concerns,
-//    and then just | them together as the top-level
-//    thing. Maybe even use the "$" symbol?! (probs not)
-
 export class EntityManager {
   entities: Map<number, Entity> = new Map();
   allSystemsByName: Map<string, SystemReg> = new Map();
@@ -292,16 +372,37 @@ export class EntityManager {
 
   // TODO(@darzu): allow components to specify sibling components or component sets
   //  so that if the marker component is present, the others will be also
+  public defineComponent<
+    N extends string,
+    P,
+    UArgs extends any[] & { length: 0 | 1 } = []
+  >(
+    name: N,
+    construct: () => P,
+    update?: (p: P, ...args: UArgs) => P
+  ): UpdatableComponentDef<N, P, UArgs, false>;
   public defineComponent<N extends string, P, UArgs extends any[] = []>(
     name: N,
     construct: () => P,
-    update: (p: P, ...args: UArgs) => P = (p, ..._) => p
-  ): UpdatableComponentDef<N, P, UArgs> {
+    update: (p: P, ...args: UArgs) => P,
+    opts: { multiArg: true }
+  ): UpdatableComponentDef<N, P, UArgs, true>;
+  defineComponent<
+    N extends string,
+    P,
+    UArgs extends any[] = [],
+    MA extends boolean = boolean
+  >(
+    name: N,
+    construct: () => P,
+    update: (p: P, ...args: UArgs) => P = (p, ..._) => p,
+    opts: { multiArg: MA } = { multiArg: false as MA } // TODO(@darzu): any way around this cast?
+  ): UpdatableComponentDef<N, P, UArgs, MA> {
     const id = nameToId(name);
     if (this.componentDefs.has(id)) {
       throw `Component with name ${name} already defined--hash collision?`;
     }
-    const component: UpdatableComponentDef<N, P, UArgs> = {
+    const component: UpdatableComponentDef<N, P, UArgs, MA> = {
       _brand: "componentDef", // TODO(@darzu): remove?
       updatable: true,
       name,
@@ -311,21 +412,45 @@ export class EntityManager {
       isOn: <E extends Entity>(e: E): e is E & { [K in N]: P } =>
         // (e as Object).hasOwn(name),
         name in e,
+      multiArg: opts.multiArg,
     };
     // TODO(@darzu): I don't love this cast. feels like it should be possible without..
     this.componentDefs.set(id, component as unknown as ComponentDef);
     return component;
   }
 
-  public defineNonupdatableComponent<N extends string, P, CArgs extends any[]>(
+  public defineNonupdatableComponent<
+    N extends string,
+    P,
+    CArgs extends any[] & { length: 0 | 1 }
+  >(
     name: N,
     construct: (...args: CArgs) => P
-  ): NonupdatableComponentDef<N, P, CArgs> {
+  ): NonupdatableComponentDef<N, P, CArgs, false>;
+  public defineNonupdatableComponent<N extends string, P, CArgs extends any[]>(
+    name: N,
+    construct: (...args: CArgs) => P,
+    opts: { multiArg: true }
+  ): NonupdatableComponentDef<N, P, CArgs, true>;
+  defineNonupdatableComponent<
+    N extends string,
+    P,
+    CArgs extends any[],
+    MA extends boolean
+  >(
+    name: N,
+    construct: (...args: CArgs) => P,
+    opts: { multiArg: MA } = { multiArg: false as MA }
+  ): NonupdatableComponentDef<N, P, CArgs, MA> {
     const id = nameToId(name);
     if (this.componentDefs.has(id)) {
       throw `Component with name ${name} already defined--hash collision?`;
     }
-    const component: NonupdatableComponentDef<N, P, CArgs> = {
+
+    // TODO(@darzu): it'd be nice to a default constructor that takes p->p
+    // const _construct = construct ?? ((...args: CArgs) => args[0]);
+
+    const component: NonupdatableComponentDef<N, P, CArgs, MA> = {
       _brand: "componentDef", // TODO(@darzu): remove?
       updatable: false,
       name,
@@ -337,6 +462,7 @@ export class EntityManager {
       isOn: <E extends Entity>(e: E): e is E & { [K in N]: P } =>
         // (e as Object).hasOwn(name),
         name in e,
+      multiArg: opts.multiArg,
     };
     this.componentDefs.set(id, component);
     return component;
@@ -570,6 +696,8 @@ export class EntityManager {
       return (e as any)[def.name];
     }
   }
+
+  // TODO(@darzu): use MA arg here?
   public set<N extends string, P, PArgs extends any[]>(
     e: Entity,
     def: UpdatableComponentDef<N, P, PArgs>,
@@ -594,7 +722,7 @@ export class EntityManager {
         `Trying to double set non-updatable component '${def.name}' on '${e.id}'`
       );
       // if (def.name === "authority") throw new Error(`double-set authority`);
-      // dbgLogOnce(`double-set: ${e.id}.${def.name}`);
+      // dbgLogOnce(`update: ${e.id}.${def.name}`);
       (e as any)[def.name] = def.update((e as any)[def.name], ...args);
     }
   }
@@ -1187,33 +1315,6 @@ export class EntityManager {
     }
     return res;
   }
-
-  // TODO(@darzu): PERF TRACKING. Thinking:
-  /*
-  goal: understand what's happening between 0 and first-playable
-
-  could use "milestone" event trackers
-
-  perhaps we have frame phases:
-  executing systems,
-  executing inits,
-  waiting for next draw
-
-  attribute system time to systems
-    are systems every async?
-
-  perhaps entity promises could check to see if they're being created in System, Init, or Other
-    What would "Other" be?
-  And then they'd resume themselves in the appropriate system's scheduled time?
-
-  How do we track time on vanilla init functions?
-
-  I could always resume entity promises in the same phase as what requested them so
-  either init time or GAME_WORLD etc
-
-    if we did that i think we could accurately measure self-time for systems
-    but that might not capture other time like file downloading
-  */
 
   // TODO(@darzu): can this consolidate with the InitFn system?
   // TODO(@darzu): PERF TRACKING. Need to rethink how this interacts with system and init fn perf tracking

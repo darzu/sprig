@@ -53,7 +53,8 @@ export const BulletDef = EM.defineComponent(
     p.team = team;
     p.health = health;
     return p;
-  }
+  },
+  { multiArg: true }
 );
 export type Bullet = Component<typeof BulletDef>;
 
