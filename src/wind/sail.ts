@@ -54,7 +54,7 @@ const SailObj = defineObj({
     ColorDef,
   ],
 } as const);
-const SailDef = SailObj.props;
+export const SailDef = SailObj.props;
 
 function sailMesh(sail: Component<typeof SailDef>): Mesh {
   let x = 0;
@@ -147,8 +147,6 @@ export function createSail(
   return ent;
 }
 
-const AHEAD_DIR = V(0, 1, 0);
-
 EM.addSystem(
   "applyWindToSail",
   Phase.GAME_WORLD,
@@ -156,7 +154,7 @@ EM.addSystem(
   [WindDef],
   (es, res) => {
     for (let e of es) {
-      const normal = vec3.transformQuat(AHEAD_DIR, e.world.rotation);
+      const normal = vec3.transformQuat(vec3.FWD, e.world.rotation);
       e.sail.billowAmount = vec3.dot(normal, res.wind.dir);
       if (e.sail.billowAmount < 0) e.sail.billowAmount = 0;
       if (e.sail.unfurledAmount > e.sail.minFurl) {
@@ -211,93 +209,6 @@ EM.addSystem(
     renderer.renderer.stdPool.updateMeshVertices(e.renderable.meshHandle, m);
     _lastSailBillow = e.sail.billowAmount;
     _lastSailUnfurl = e.sail.unfurledAmount;
-  }
-);
-
-// EM.addConstraint(["billow", "after", "applyWindToSail"]);
-
-const MastObj = defineObj({
-  name: "mast",
-  components: [
-    RenderableConstructDef,
-    ColliderDef,
-    PositionDef,
-    RotationDef,
-    ColorDef,
-    AuthorityDef,
-  ],
-  propsType: T<{ force: number }>(),
-  physicsParentChildren: true,
-  children: {
-    sail: [SailDef],
-  },
-} as const);
-export const MastDef = MastObj.props;
-
-export function createMast(
-  res: Resources<[typeof MeDef, typeof MastMesh.def]>
-) {
-  const sailWidth = 14;
-  const sail = createSail(sailWidth, 8, 2);
-  sail.position[0] = -sailWidth;
-  sail.position[1] = 0.51;
-  sail.position[2] = 38;
-
-  const mesh = res.mesh_mast;
-
-  const ent = createObj(MastObj, {
-    props: { force: 0.0 },
-    args: {
-      renderableConstruct: [mesh.proto],
-      collider: {
-        shape: "AABB",
-        solid: false,
-        aabb: mesh.aabb,
-      },
-      position: undefined,
-      rotation: undefined,
-      color: ENDESGA16.darkBrown,
-      authority: res.me.pid,
-    },
-    children: {
-      sail: sail,
-    },
-  });
-
-  return ent;
-}
-
-// EM.registerSystem(
-//   [MastDef, TurretDef],
-//   [InputsDef, LocalPlayerDef],
-//   (es, res) => {
-//     const player = EM.findEntity(res.localPlayerEnt.playerId, [PlayerDef])!;
-//     if (!player) return;
-//     for (let e of es) {
-//       if (DeletedDef.isOn(e)) continue;
-//       if (e.turret.mannedId !== player.id) continue;
-//       const sail = e.mast.sail()!.sail;
-//       if (res.inputs.keyDowns["s"]) sail.unfurledAmount += SAIL_FURL_RATE;
-//       if (res.inputs.keyDowns["w"]) sail.unfurledAmount -= SAIL_FURL_RATE;
-//       sail.unfurledAmount = clamp(sail.unfurledAmount, sail.minFurl, 1.0);
-//     }
-//   },
-//   "furlSail"
-// );
-
-// EM.addConstraint(["furlSail", "before", "applyWindToSail"]);
-
-EM.addSystem(
-  "mastForce",
-  Phase.GAME_WORLD,
-  [MastDef, RotationDef],
-  [],
-  (es) => {
-    for (let e of es) {
-      const sail = e.mast.sail.sail;
-      const normal = vec3.transformQuat(AHEAD_DIR, e.rotation);
-      e.mast.force = sail.force * vec3.dot(AHEAD_DIR, normal);
-    }
   }
 );
 

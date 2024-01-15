@@ -290,6 +290,11 @@ export module vec3 {
   export type InputT = T | readonly [number, number, number];
   const GL = GLM.vec3;
 
+  export const ZEROS = fromValues(0, 0, 0);
+  export const ONES = fromValues(1, 1, 1);
+  export const FWD = fromValues(0, 1, 0);
+  export const UP = fromValues(0, 0, 1);
+
   // export default = fromValues;
 
   export function tmp(): T {
@@ -325,9 +330,6 @@ export module vec3 {
     out[2] = n2;
     return out;
   }
-
-  export const ZEROS = fromValues(0, 0, 0);
-  export const ONES = fromValues(1, 1, 1);
 
   export function equals(v1: InputT, v2: InputT): boolean {
     return GL.equals(v1, v2);
