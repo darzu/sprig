@@ -13,9 +13,6 @@ const WIND_CHANGE_STEPS = 300;
 
 const EPSILON = 0.001;
 
-const ORIGIN = V(0, 0, 0);
-const WIND_X_DIR = V(1, 0, 0);
-
 const WIND_ANGLES = range(8).map((i) => {
   return (Math.PI * i) / 4 - 0.2;
 });
@@ -25,19 +22,19 @@ const WIND_ANGLES = range(8).map((i) => {
 export const WindDef = EM.defineResource("wind", () => {
   const wind = {
     angle: WIND_ANGLES[0],
-    dir: vec3.copy(vec3.create(), WIND_X_DIR),
+    dir: V(1, 0, 0),
     targetAngle: WIND_ANGLES[0],
     oldAngle: WIND_ANGLES[0],
   };
   // TODO(@darzu): use yaw/pitch/roll
-  vec3.rotateZ(WIND_X_DIR, ORIGIN, wind.angle, wind.dir);
+  vec3.yaw(vec3.X, -wind.angle, wind.dir);
   return wind;
 });
 
 export function setWindAngle(wind: Resource<typeof WindDef>, angle: number) {
   wind.angle = angle;
   // TODO(@darzu): use yaw/pitch/roll
-  vec3.rotateZ(WIND_X_DIR, ORIGIN, angle, wind.dir);
+  vec3.yaw(vec3.X, -angle, wind.dir);
   // console.log(
   //   `WIND_X_DIR: ${vec3Dbg(WIND_X_DIR)} ORIGIN:${vec3Dbg(
   //     ORIGIN

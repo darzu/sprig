@@ -119,6 +119,8 @@ EM.registerSerializerPair(
   (o, buf) => buf.readQuat(o)
 );
 
+// TODO(@darzu): create "MeshScaleDef" component or something. 99% of the time when we're using
+//  ScaleDef we actually just want to resize the mesh.
 // SCALE
 export const ScaleDef = EM.defineComponent(
   "scale",

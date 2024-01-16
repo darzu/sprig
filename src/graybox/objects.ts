@@ -430,7 +430,7 @@ function _mixinObj<D extends _ObjDef, A extends ObjArgs<D["opts"]>>(
 
   // physics parent children
   const physicsParentChildren = def.opts.physicsParentChildren ?? false;
-  if (physicsParentChildren) {
+  if (physicsParentChildren && args.children) {
     const childEnts: Record<string, Entity> = e[def.props.name];
     for (let cName of Object.keys(args.children)) {
       const cEnt = childEnts[cName];

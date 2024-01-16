@@ -61,7 +61,8 @@ export function constructNetTurret(
     typeof YawPitchDef,
     typeof InteractableDef,
     typeof SyncDef,
-    typeof RotationDef
+    typeof RotationDef,
+    typeof CameraFollowDef
   ]
 > {
   EM.set(e, YawPitchDef);

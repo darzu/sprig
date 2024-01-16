@@ -108,13 +108,13 @@ EM.addEagerInit([MastDef], [], [], () => {
     [InputsDef, WindDef],
     (es, res) => {
       if (es.length == 0) return;
-      assert(es.length === 1);
+      assert(es.length === 1, `too many ships: ${es.length}`);
       const ship = es[0];
       const mast = ship.hasMast.mast;
+      if (!WorldFrameDef.isOn(mast)) return;
 
       // TODO(@darzu): Debugging
       if (dbgOnce("windOnMast")) {
-        assert(WorldFrameDef.isOn(mast));
         if (DBG_MAST)
           drawUpdatingVector(res.wind.dir, {
             origin: vec3.add(mast.world.position, V(0, 0, 30)),

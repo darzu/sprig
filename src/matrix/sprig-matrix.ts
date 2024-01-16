@@ -294,6 +294,9 @@ export module vec3 {
   export const ONES = fromValues(1, 1, 1);
   export const FWD = fromValues(0, 1, 0);
   export const UP = fromValues(0, 0, 1);
+  export const X = fromValues(1, 0, 0);
+  export const Y = fromValues(0, 1, 0);
+  export const Z = fromValues(0, 0, 1);
 
   // export default = fromValues;
 
