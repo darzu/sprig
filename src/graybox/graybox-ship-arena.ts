@@ -20,13 +20,7 @@ import { shadowPipelines } from "../render/pipelines/std-shadow.js";
 import { RendererDef, RenderableConstructDef } from "../render/renderer-ecs.js";
 import { addGizmoChild, addWorldGizmo } from "../utils/utils-game.js";
 import { initGhost, initWorld } from "./graybox-helpers.js";
-import {
-  ObjDef,
-  ObjOpt,
-  createObj,
-  defineObj,
-  testObjectTS,
-} from "./objects.js";
+import { ObjOpt, defineObj, testObjectTS } from "./objects.js";
 
 const DBG_GHOST = true;
 const DBG_GIZMO = true;
@@ -64,7 +58,7 @@ function createShip() {
   const shipMesh = mkCubeMesh();
   scaleMesh3(shipMesh, [8, 16, 2]);
 
-  const ship = createObj(ShipObj, {
+  const ship = ShipObj.new({
     args: {
       color: ENDESGA16.midBrown,
       position: [40, 40, 3],

@@ -105,7 +105,7 @@ Merging objects?
   Like constructNetTurret, mixin onto entity
 */
 
-type ObjChildDef = ObjDef | readonly ComponentDef[];
+type ObjChildDef = _ObjDef | readonly ComponentDef[];
 type ObjChildOpt = ObjOpt | ObjChildDef;
 
 type CType = undefined | Record<string, ObjChildOpt>;
@@ -138,24 +138,28 @@ export interface ObjOpt<
   physicsParentChildren?: boolean;
 }
 
-export interface ObjDef<D extends ObjOpt = ObjOpt> {
+interface _ObjDef<D extends ObjOpt = ObjOpt> {
   opts: D;
   props: ObjComponentDef<D>;
   children: Record<string, ObjChildDef>;
 }
 
+export type ObjDef<D extends ObjOpt = ObjOpt> = _ObjDef<D> & {
+  new: <A extends ObjChildArg<_ObjDef<D>>>(a: A) => ObjChildEnt<_ObjDef<D>>;
+};
+
 function isCompDefs(d: ObjChildOpt): d is readonly ComponentDef[] {
   return Array.isArray(d);
 }
 
-function isObjDef(d: ObjDef | ObjOpt): d is ObjDef {
+function isObjDef(d: _ObjDef | ObjOpt): d is _ObjDef {
   return "opts" in d;
 }
 
 // helper to grab opts from def or opts
-type ObjPickOpt<D extends ObjDef | ObjOpt> = D extends ObjDef ? D["opts"] : D;
+type ObjPickOpt<D extends _ObjDef | ObjOpt> = D extends _ObjDef ? D["opts"] : D;
 
-export type ObjOwnProps<D extends ObjDef | ObjOpt> =
+export type ObjOwnProps<D extends _ObjDef | ObjOpt> =
   ObjPickOpt<D> extends ObjOpt<any, any, any, infer P> ? P : never;
 
 // the component def the tracks the children and custom data of the object
@@ -175,14 +179,14 @@ type ObjComponentDef<D extends ObjOpt> = D extends ObjOpt<
   : never;
 
 // the entity and all components of an object
-export type ObjEnt<D extends ObjOpt | ObjDef = ObjOpt | ObjDef> =
+export type ObjEnt<D extends ObjOpt | _ObjDef = ObjOpt | _ObjDef> =
   ObjPickOpt<D> extends ObjOpt<any, infer CS>
     ? EntityW<[ObjComponentDef<ObjPickOpt<D>>, ...CS]>
     : never;
 
 type ObjChildEnt<CO extends ObjChildOpt = ObjChildOpt> = CO extends
   | ObjOpt
-  | ObjDef
+  | _ObjDef
   ? ObjEnt<CO>
   : CO extends readonly ComponentDef[]
   ? EntityW<[...CO]>
@@ -227,7 +231,7 @@ type _CompArrayArgs<CS extends readonly ComponentDef[]> = {
 // TODO(@darzu): for child component args to pass undefined for optional args
 type _ObjChildArg<CO extends ObjChildOpt = ObjChildOpt> = CO extends
   | ObjOpt
-  | ObjDef
+  | _ObjDef
   ? ObjArgs<ObjPickOpt<CO>>
   : CO extends readonly ComponentDef[]
   ? _CompArrayArgs<CO>
@@ -331,10 +335,15 @@ export function defineObj<
     createChildrenObjsAndProps
   );
 
-  const def: ObjDef<O> = {
+  const _def: _ObjDef<O> = {
     opts,
     props,
     children: childDefs,
+  };
+
+  const def: ObjDef<O> = {
+    ..._def,
+    new: (a) => createObj(_def, a),
   };
 
   return def;
@@ -345,7 +354,7 @@ function _setComp<C extends ComponentDef>(e: Entity, c: C, args: _CompArgs<C>) {
   else EM.set(e, c, args);
 }
 
-export function createObj<D extends ObjChildDef, A extends ObjChildArg<D>>(
+function createObj<D extends ObjChildDef, A extends ObjChildArg<D>>(
   def: D,
   args: A
 ): ObjChildEnt<D> {
@@ -367,7 +376,7 @@ export function createObj<D extends ObjChildDef, A extends ObjChildArg<D>>(
   throw "never";
 }
 
-function _createObj<D extends ObjDef, A extends ObjArgs<D["opts"]>>(
+function _createObj<D extends _ObjDef, A extends ObjArgs<D["opts"]>>(
   def: D,
   args: A
 ): ObjEnt<D["opts"]> {
@@ -478,7 +487,7 @@ export function testObjectTS() {
 
   type __t8 = ObjArgs<__t0>["children"];
 
-  type __t9 = ObjDef | ObjOpt;
+  type __t9 = _ObjDef | ObjOpt;
   type __t10 = ObjPickOpt<__t9>;
   type __t11 = ObjArgs<__t10>;
 

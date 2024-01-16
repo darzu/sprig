@@ -2,7 +2,7 @@ import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { EM, Resources } from "../ecs/entity-manager.js";
 import { Phase } from "../ecs/sys-phase.js";
-import { defineObj, T, createObj } from "../graybox/objects.js";
+import { defineObj, T } from "../graybox/objects.js";
 import { vec3 } from "../matrix/sprig-matrix.js";
 import { MastMesh } from "../meshes/mesh-list.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
@@ -40,7 +40,7 @@ export function createMast(
 
   const mesh = res.mesh_mast;
 
-  const ent = createObj(MastObj, {
+  const ent = MastObj.new({
     props: { force: 0.0 },
     args: {
       renderableConstruct: [mesh.proto],

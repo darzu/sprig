@@ -33,7 +33,7 @@ import { addGizmoChild } from "../utils/utils-game.js";
 import { CannonLocalDef, createCannonNow } from "../cannons/cannon.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { ShipHealthDef } from "./ship-health.js";
-import { T, createObj, defineObj } from "../graybox/objects.js";
+import { T, defineObj } from "../graybox/objects.js";
 import { FinishedDef } from "../ecs/em-helpers.js";
 import { RudderDef, createRudder } from "./rudder.js";
 
@@ -179,7 +179,7 @@ export async function createLd53ShipAsync() {
   addGizmoChild(cannonR, 3);
   addGizmoChild(cannonL, 3);
 
-  const ship = createObj(LD52ShipDefObj, {
+  const ship = LD52ShipDefObj.new({
     props: { cuttingEnabled: true },
     args: {
       position: [0, 0, 0],

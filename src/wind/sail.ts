@@ -29,7 +29,7 @@ import { assert } from "../utils/util.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { angleBetweenPosXZ, angleBetweenXZ } from "../utils/utils-3d.js";
 import { Phase } from "../ecs/sys-phase.js";
-import { ObjOwnProps, T, createObj, defineObj } from "../graybox/objects.js";
+import { ObjOwnProps, T, defineObj } from "../graybox/objects.js";
 
 const SAIL_TURN_SPEED = 5;
 export const SAIL_FURL_RATE = 0.02;
@@ -133,7 +133,7 @@ export function createSail(
 
   const mesh = sailMesh(props);
 
-  const ent = createObj(SailObj, {
+  const ent = SailObj.new({
     props,
     args: {
       renderableConstruct: [mesh],
