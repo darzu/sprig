@@ -471,7 +471,7 @@ export async function initGrassGame(hosting: boolean) {
     // level2DtoWorld3D(level.levelMap.startPos, 2, ship.position);
     quat.identity(ship.rotation);
     vec3.set(0, 0, 0, ship.linearVelocity);
-    const sail = ship.ld52ship.mast.mast.sail.sail;
+    const sail = ship.hasMast.mast.mast.sail.sail;
     sail.unfurledAmount = sail.minFurl;
     ship.ld52ship.cuttingEnabled = true;
     ship.ld52ship.rudder.yawpitch.yaw = 0;
@@ -633,7 +633,7 @@ export async function initGrassGame(hosting: boolean) {
     null,
     [InputsDef],
     (_, res) => {
-      const mast = ship.ld52ship.mast;
+      const mast = ship.hasMast.mast;
       const rudder = ship.ld52ship.rudder;
 
       // furl/unfurl
@@ -654,7 +654,7 @@ export async function initGrassGame(hosting: boolean) {
     null,
     [InputsDef, WindDef],
     (_, res) => {
-      const mast = ship.ld52ship.mast;
+      const mast = ship.hasMast.mast;
       // const rudder = ship.ld52ship.rudder()!;
 
       // const shipDir = vec3.transformQuat(V(0, 0, 1), shipWorld.world.rotation);

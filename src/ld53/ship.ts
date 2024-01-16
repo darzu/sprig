@@ -14,7 +14,7 @@ import {
 } from "../physics/transform.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { V } from "../matrix/sprig-matrix.js";
-import { createMast, MastDef } from "../wind/mast.js";
+import { createMast, HasMastDef, HasMastObj, MastDef } from "../wind/mast.js";
 import {
   AABBCollider,
   ColliderDef,
@@ -33,7 +33,7 @@ import { addGizmoChild } from "../utils/utils-game.js";
 import { CannonLocalDef, createCannonNow } from "../cannons/cannon.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { ShipHealthDef } from "./ship-health.js";
-import { T, defineObj } from "../graybox/objects.js";
+import { T, defineObj, mixinObj } from "../graybox/objects.js";
 import { FinishedDef } from "../ecs/em-helpers.js";
 import { RudderDef, createRudder } from "./rudder.js";
 
@@ -57,7 +57,7 @@ const LD52ShipDefObj = defineObj({
   }>(),
   physicsParentChildren: true,
   children: {
-    mast: [MastDef, RotationDef],
+    // mast: [MastDef, RotationDef],
     sock: [PositionDef],
     rudder: [
       RudderDef,
@@ -193,11 +193,18 @@ export async function createLd53ShipAsync() {
       color: [0, 0, 0], // painted by individual planks!
     },
     children: {
-      mast,
+      // mast,
       rudder,
       cannonR,
       cannonL,
       sock,
+    },
+  });
+
+  mixinObj(ship, HasMastObj, {
+    args: [],
+    children: {
+      mast,
     },
   });
 
@@ -213,7 +220,7 @@ export async function createLd53ShipAsync() {
 EM.addSystem(
   "sailShip",
   Phase.GAME_PLAYERS,
-  [LD52ShipDef, WorldFrameDef, RotationDef, LinearVelocityDef],
+  [LD52ShipDef, HasMastDef, WorldFrameDef, RotationDef, LinearVelocityDef],
   [],
   (es) => {
     for (let e of es) {
@@ -225,7 +232,7 @@ EM.addSystem(
       const direction = vec3.transformQuat(vec3.FWD, e.world.rotation);
       const sailAccel = vec3.scale(
         direction,
-        e.ld52ship.mast.mast.force * SAIL_ACCEL_RATE
+        e.hasMast.mast.mast.force * SAIL_ACCEL_RATE
       );
       const linVelMag = vec3.length(e.linearVelocity);
       const velDrag = linVelMag * linVelMag * VELOCITY_DRAG;
@@ -244,7 +251,7 @@ EM.addSystem(
       }
       if (vec3.length(e.linearVelocity) < MIN_SPEED) {
         // TODO: make this better
-        const sail = e.ld52ship.mast.mast.sail.sail;
+        const sail = e.hasMast.mast.mast.sail.sail;
         if (sail.unfurledAmount > sail.minFurl) {
           vec3.scale(vec3.FWD, MIN_SPEED, e.linearVelocity);
         } else {

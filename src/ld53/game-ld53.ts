@@ -107,6 +107,7 @@ import { eventWizard } from "../net/events.js";
 import { drawUpdatingVector } from "../utils/util-vec-dbg.js";
 import { vec2Dbg, vec3Dbg } from "../utils/utils-3d.js";
 import { addWorldGizmo } from "../utils/utils-game.js";
+import { HasMastDef } from "../wind/mast.js";
 /*
 NOTES:
 - Cut grass by updating a texture that has cut/not cut or maybe cut-height
@@ -205,6 +206,7 @@ async function hostResetLevel(levelIdx: number) {
     PositionDef,
     RotationDef,
     LD52ShipDef,
+    HasMastDef,
     LinearVelocityDef,
     ShipHealthDef,
     WoodHealthDef,
@@ -229,7 +231,7 @@ async function hostResetLevel(levelIdx: number) {
   quat.yaw(ship.rotation, Math.PI / 2, ship.rotation);
 
   // reset ship sails and rudder
-  const sail = ship.ld52ship.mast.mast.sail.sail;
+  const sail = ship.hasMast.mast.mast.sail.sail;
   sail.unfurledAmount = sail.minFurl;
   ship.ld52ship.cuttingEnabled = true;
   ship.ld52ship.rudder.yawpitch.yaw = 0;
@@ -571,7 +573,7 @@ export async function initLD53(hosting: boolean) {
       null,
       [InputsDef, PartyDef],
       (_, res) => {
-        const mast = ship.ld52ship.mast;
+        const mast = ship.hasMast.mast;
         const rudder = ship.ld52ship.rudder;
 
         // furl/unfurl
@@ -596,70 +598,6 @@ export async function initLD53(hosting: boolean) {
     );
 
     const shipWorld = await EM.whenEntityHas(ship, WorldFrameDef);
-
-    EM.addSystem(
-      "turnMast",
-      Phase.GAME_PLAYERS,
-      null,
-      [InputsDef, WindDef],
-      (_, res) => {
-        const mast = ship.ld52ship.mast;
-
-        // TODO(@darzu): Debugging
-        if (dbgOnce("windOnMast")) {
-          assert(WorldFrameDef.isOn(mast));
-          if (DBG_PLAYER)
-            drawUpdatingVector(res.wind.dir, {
-              origin: vec3.add(mast.world.position, V(0, 0, 30)),
-              scale: 20,
-              // parentId: mast.id,
-              color: ENDESGA16.yellow,
-            });
-
-          // addVecUpdatingDbgVis(V(0, 1, 0), {
-          //   origin: V(0, 0, 0),
-          //   scale: 20,
-          //   parentId: mast.id,
-          // });
-        }
-
-        // TODO(@darzu): DBGING
-        // console.log(`wind.dir: ${vec3Dbg(res.wind.dir)}`);
-
-        // console.log(`MAST: ${quatDbg(mast.rotation)}`);
-
-        // const rudder = ship.ld52ship.rudder()!;
-
-        // const shipDir = vec3.transformQuat(V(0, 0, 1), shipWorld.world.rotation);
-
-        const invShip = mat3.invert(mat3.fromMat4(shipWorld.world.transform));
-        const windLocalDir = vec3.transformMat3(res.wind.dir, invShip);
-        const shipLocalDir = tV(0, 1, 0);
-
-        const optimalSailLocalDir = vec3.normalize(
-          vec3.add(windLocalDir, shipLocalDir)
-        );
-
-        // console.log(`ship to wind: ${vec3.dot(windLocalDir, shipLocalDir)}`);
-
-        // const normal = vec3.transformQuat(AHEAD_DIR, e.world.rotation);
-        // e.sail.billowAmount = vec3.dot(normal, res.wind.dir);
-        // sail.force * vec3.dot(AHEAD_DIR, normal);
-
-        // const currSailForce =
-
-        // need to maximize: dot(wind, sail) * dot(sail, ship)
-
-        // TODO(@darzu): ANIMATE SAIL TOWARD WIND
-        if (vec3.dot(optimalSailLocalDir, shipLocalDir) > 0.01) {
-          quat.fromForwardAndUpish(
-            optimalSailLocalDir,
-            [0, 0, 1],
-            mast.rotation
-          );
-        }
-      }
-    );
 
     // end zone
     const dock = createDock();
