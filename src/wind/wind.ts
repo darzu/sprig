@@ -33,7 +33,6 @@ export const WindDef = EM.defineResource("wind", () => {
 
 export function setWindAngle(wind: Resource<typeof WindDef>, angle: number) {
   wind.angle = angle;
-  // TODO(@darzu): use yaw/pitch/roll
   vec3.yaw(vec3.X, -angle, wind.dir);
   // console.log(
   //   `WIND_X_DIR: ${vec3Dbg(WIND_X_DIR)} ORIGIN:${vec3Dbg(

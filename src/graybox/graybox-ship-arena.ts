@@ -1,54 +1,34 @@
-import { CameraDef, CameraFollowDef } from "../camera/camera.js";
+import { CameraFollowDef } from "../camera/camera.js";
 import { ColorDef } from "../color/color-ecs.js";
-import { ENDESGA16, randEndesga16 } from "../color/palettes.js";
-import { createGhost } from "../debug/ghost.js";
-import { createGizmoMesh } from "../debug/gizmos.js";
-import { EM, Entities, EntityW } from "../ecs/entity-manager.js";
+import { ENDESGA16 } from "../color/palettes.js";
+import { EM, EntityW } from "../ecs/entity-manager.js";
 import { Phase } from "../ecs/sys-phase.js";
-import { createHexGrid, hexXYZ, hexesWithin, xyToHex } from "../hex/hex.js";
+import { createHexGrid, hexXYZ, hexesWithin } from "../hex/hex.js";
 import { LocalPlayerEntityDef } from "../hyperspace/hs-player.js";
 import { InputsDef } from "../input/inputs.js";
 import { HasRudderDef, HasRudderObj, createRudder } from "../ld53/rudder.js";
-import { V, quat, vec3 } from "../matrix/sprig-matrix.js";
-import { BallMesh, CubeMesh, HexMesh, MastMesh } from "../meshes/mesh-list.js";
-import { cloneMesh, normalizeMesh, scaleMesh3 } from "../meshes/mesh.js";
-import { HEX_AABB, mkCubeMesh } from "../meshes/primatives.js";
+import { V, vec3 } from "../matrix/sprig-matrix.js";
+import { BallMesh, HexMesh, MastMesh } from "../meshes/mesh-list.js";
+import { scaleMesh3 } from "../meshes/mesh.js";
+import { mkCubeMesh } from "../meshes/primatives.js";
 import { LinearVelocityDef } from "../motion/velocity.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
-import { ColliderDef } from "../physics/collider.js";
+import { AABBCollider } from "../physics/collider.js";
 import {
   PhysicsParentDef,
   PositionDef,
   ScaleDef,
 } from "../physics/transform.js";
-import { PointLightDef } from "../render/lights.js";
-import { deferredPipeline } from "../render/pipelines/std-deferred.js";
-import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
-import { outlineRender } from "../render/pipelines/std-outline.js";
-import { postProcess } from "../render/pipelines/std-post.js";
-import { shadowPipelines } from "../render/pipelines/std-shadow.js";
-import { RendererDef, RenderableConstructDef } from "../render/renderer-ecs.js";
+import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { CanManDef, raiseManTurret } from "../turret/turret.js";
 import { assert } from "../utils/util.js";
-import { randNormalVec3, randVec3OfLen } from "../utils/utils-3d.js";
-import {
-  addColliderDbgVis,
-  addGizmoChild,
-  addWorldGizmo,
-  createBoxForAABB,
-} from "../utils/utils-game.js";
+import { randVec3OfLen } from "../utils/utils-3d.js";
+import { addGizmoChild } from "../utils/utils-game.js";
 import { HasMastDef, HasMastObj, createMast } from "../wind/mast.js";
-import { WindDef } from "../wind/wind.js";
+import { WindDef, setWindAngle } from "../wind/wind.js";
+import { createSock } from "../wind/windsock.js";
 import { initGhost, initWorld } from "./graybox-helpers.js";
-import {
-  ObjDef,
-  ObjEnt,
-  ObjOpt,
-  createObj,
-  defineObj,
-  mixinObj,
-  testObjectTS,
-} from "./objects.js";
+import { createObj, defineObj, mixinObj } from "./objects.js";
 
 const DBG_GHOST = true;
 const DBG_GIZMO = true;
@@ -89,7 +69,8 @@ export async function initGrayboxShipArena() {
   // ocean
   createOcean();
 
-  EM.addResource(WindDef);
+  const wind = EM.addResource(WindDef);
+  setWindAngle(wind, Math.PI * 0.4);
 
   const ship = await createShip();
 
@@ -178,6 +159,11 @@ async function createShip() {
       mast,
     },
   });
+
+  const sock = createSock(2.0);
+  sock.position[2] =
+    mast.position[2] + (mast.collider as AABBCollider).aabb.max[2];
+  EM.set(sock, PhysicsParentDef, ship.id);
 
   const rudder = createRudder(res);
   // console.log("setting position");

@@ -57,7 +57,7 @@ const LD52ShipDefObj = defineObj({
   }>(),
   physicsParentChildren: true,
   children: {
-    sock: [PositionDef],
+    // sock: [PositionDef],
     cannonR: [
       CannonLocalDef,
       YawPitchDef,
@@ -128,14 +128,6 @@ export async function createLd53ShipAsync() {
 
   //  [{ min: V(-13.8, 4.0, -2.9), max: V(-5.8, 6.0, -0.9) }];
 
-  const mast = createMast(res);
-  addGizmoChild(mast, 20, [0, 0, 0]);
-  // addColliderDbgVis(mast);
-
-  const sock = createSock(2.0);
-  sock.position[2] =
-    mast.position[2] + (mast.collider as AABBCollider).aabb.max[2];
-
   // create cannons
   const cannonR = createCannonNow(
     res,
@@ -173,11 +165,20 @@ export async function createLd53ShipAsync() {
       // rudder,
       cannonR,
       cannonL,
-      sock,
+      // sock,
     },
   });
 
   addGizmoChild(ship, 10);
+
+  const mast = createMast(res);
+  addGizmoChild(mast, 20, [0, 0, 0]);
+  // addColliderDbgVis(mast);
+
+  const sock = createSock(2.0);
+  sock.position[2] =
+    mast.position[2] + (mast.collider as AABBCollider).aabb.max[2];
+  EM.set(sock, PhysicsParentDef, ship.id);
 
   mixinObj(ship, HasMastObj, {
     args: [],
