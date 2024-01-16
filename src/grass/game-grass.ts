@@ -641,7 +641,6 @@ export async function initGrassGame(hosting: boolean) {
         const sail = mast.mast.sail.sail;
         if (res.inputs.keyDowns["w"]) sail.unfurledAmount += SAIL_FURL_RATE;
         if (res.inputs.keyDowns["s"]) sail.unfurledAmount -= SAIL_FURL_RATE;
-        sail.unfurledAmount = clamp(sail.unfurledAmount, sail.minFurl, 1.0);
       }
     }
   );

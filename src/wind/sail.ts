@@ -157,6 +157,7 @@ EM.addSystem(
       const normal = vec3.transformQuat(vec3.FWD, e.world.rotation);
       e.sail.billowAmount = vec3.dot(normal, res.wind.dir);
       if (e.sail.billowAmount < 0) e.sail.billowAmount = 0;
+      e.sail.unfurledAmount = clamp(e.sail.unfurledAmount, e.sail.minFurl, 1.0);
       if (e.sail.unfurledAmount > e.sail.minFurl) {
         e.sail.force = e.sail.billowAmount * e.sail.unfurledAmount;
       } else {

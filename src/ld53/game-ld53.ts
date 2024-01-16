@@ -235,7 +235,6 @@ async function hostResetLevel(levelIdx: number) {
   // reset ship sails and rudder
   const sail = ship.hasMast.mast.mast.sail.sail;
   sail.unfurledAmount = sail.minFurl;
-  ship.ld52ship.cuttingEnabled = true;
   ship.hasRudder.rudder.yawpitch.yaw = 0;
 
   // set map wind angle
@@ -578,6 +577,7 @@ export async function initLD53(hosting: boolean) {
         const mast = ship.hasMast.mast;
         const rudder = ship.hasRudder.rudder;
 
+        // TODO(@darzu): how do we make this code re-usable across games and keybindings?
         // furl/unfurl
         if (rudder.turret.mannedId) {
           if (MOTORBOAT_MODE) {
@@ -593,7 +593,6 @@ export async function initLD53(hosting: boolean) {
             const sail = mast.mast.sail.sail;
             if (res.inputs.keyDowns["w"]) sail.unfurledAmount += SAIL_FURL_RATE;
             if (res.inputs.keyDowns["s"]) sail.unfurledAmount -= SAIL_FURL_RATE;
-            sail.unfurledAmount = clamp(sail.unfurledAmount, sail.minFurl, 1.0);
           }
         }
       }
@@ -755,7 +754,7 @@ export async function initLD53(hosting: boolean) {
   //   before the rendering systems.
   EM.addSystem(
     "deadBullets",
-    Phase.GAME_WORLD,
+    Phase.POST_GAME_WORLD,
     [BulletDef, PositionDef, DeadDef, RenderableDef],
     [],
     (es, _) => {
