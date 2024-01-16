@@ -20,7 +20,7 @@ import { shadowPipelines } from "../render/pipelines/std-shadow.js";
 import { RendererDef, RenderableConstructDef } from "../render/renderer-ecs.js";
 import { addGizmoChild, addWorldGizmo } from "../utils/utils-game.js";
 import { initGhost, initWorld } from "./graybox-helpers.js";
-import { ObjOpt, defineObj, testObjectTS } from "./objects.js";
+import { ObjOpt, createObj, defineObj, testObjectTS } from "./objects.js";
 
 const DBG_GHOST = true;
 const DBG_GIZMO = true;
@@ -29,11 +29,10 @@ export async function initGrayboxShipArena() {
   initWorld();
 
   // ocean
-  const ocean = EM.new();
-  EM.set(ocean, ColorDef, ENDESGA16.blue);
-  EM.set(ocean, PositionDef, V(0, 0, 0));
-  EM.set(ocean, RenderableConstructDef, CubeMesh);
-  EM.set(ocean, ScaleDef, V(100, 100, 0.1));
+  const ocean = createObj(
+    [ColorDef, PositionDef, RenderableConstructDef, ScaleDef],
+    [ENDESGA16.blue, V(0, 0, 0), [CubeMesh], V(100, 100, 0.1)]
+  );
 
   createShip();
 

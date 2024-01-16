@@ -354,7 +354,7 @@ function _setComp<C extends ComponentDef>(e: Entity, c: C, args: _CompArgs<C>) {
   else EM.set(e, c, args);
 }
 
-function createObj<D extends ObjChildDef, A extends ObjChildArg<D>>(
+export function createObj<D extends ObjChildDef, A extends ObjChildArg<D>>(
   def: D,
   args: A
 ): ObjChildEnt<D> {
