@@ -30,7 +30,16 @@ export function computeTriangleNormal(
   return n;
 }
 
-export function randNormalVec3(out?: vec3) {
+export function randFromNormalDist() {
+  // https://stackoverflow.com/a/6178290
+  // https://youtu.be/Qz0KTGYJtUk?t=770
+  const theta = 2 * Math.PI * Math.random();
+  const rho = Math.sqrt(-2 * Math.log(Math.random()));
+  return rho * Math.cos(theta);
+}
+
+export function randNormalVec3_cheap(out?: vec3) {
+  // NOTE: this isn't evenly distributed along a sphere; it's in a box
   const res = vec3.set(
     Math.random() - 0.5,
     Math.random() - 0.5,
@@ -40,8 +49,27 @@ export function randNormalVec3(out?: vec3) {
   vec3.normalize(res, res);
   return res;
 }
+export function randNormalVec3(out?: vec3) {
+  const res = vec3.set(
+    randFromNormalDist(),
+    randFromNormalDist(),
+    randFromNormalDist(),
+    out ?? vec3.tmp()
+  );
+  vec3.normalize(res, res);
+  return res;
+}
+export const randDir3 = randNormalVec3;
+
+export function randVec3OfLen(r: number = 1, out?: vec3) {
+  out = out ?? vec3.tmp();
+  randNormalVec3(out);
+  vec3.scale(out, r, out);
+  return out;
+}
 
 export function randNormalPosVec3(out?: vec3) {
+  // TODO(@darzu): not evenly distributed on sphere!
   if (!out) out = vec3.create();
   vec3.set(Math.random(), Math.random(), Math.random(), out);
   vec3.normalize(out, out);
@@ -49,12 +77,14 @@ export function randNormalPosVec3(out?: vec3) {
 }
 
 export function randNormalVec2(out: vec2) {
+  // TODO(@darzu): not evenly distributed on sphere!
   vec2.set(Math.random() - 0.5, Math.random() - 0.5, out);
   vec2.normalize(out, out);
   return out;
 }
 
 export function randQuat(out?: quat): quat {
+  // TODO(@darzu): evenly distributed on sphere?
   return quat.fromEuler(
     Math.random() * Math.PI * 2,
     Math.random() * Math.PI * 2,

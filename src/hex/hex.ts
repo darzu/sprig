@@ -93,8 +93,8 @@ export function* hexesWithin(
   }
 }
 
-// export type Hex = { q: number; r: number };
-
+// TODO(@darzu): verify this dir stuff still works
+// flat-top; +q along +x ; +r along -y|-x;
 export const HEX_DIRS = [
   V(+0, -1),
   V(+1, -1),

@@ -30,6 +30,7 @@ import { shadowPipelines } from "../render/pipelines/std-shadow.js";
 import { RendererDef, RenderableConstructDef } from "../render/renderer-ecs.js";
 import { CanManDef, raiseManTurret } from "../turret/turret.js";
 import { assert } from "../utils/util.js";
+import { randNormalVec3, randVec3OfLen } from "../utils/utils-3d.js";
 import {
   addColliderDbgVis,
   addGizmoChild,
@@ -62,35 +63,23 @@ function createOcean() {
     ScaleDef,
   ] as const;
   type typeT = EntityW<[...typeof tileCS]>;
-  const createTile = (xyz: vec3.InputT) =>
-    createObj(tileCS, [randEndesga16(), xyz, [HexMesh], V(1, 1, 1)]);
-  const grid = createHexGrid<typeT>();
-  const size = 1;
+  const radius = 5;
+  const size = 100;
 
-  for (let [q, r] of hexesWithin(0, 0, 4)) {
-    // for (let [q, r] of [
-    //   [0, 0],
-    //   [0, 1],
-    //   [0, 2],
-    // ]) {
+  const createTile = (xyz: vec3.InputT) =>
+    createObj(tileCS, [
+      vec3.add(ENDESGA16.blue, randVec3OfLen(0.1)),
+      xyz,
+      [HexMesh], // TODO(@darzu): more efficient if we use one mesh
+      [size, size, 1],
+    ]);
+  const grid = createHexGrid<typeT>();
+
+  for (let [q, r] of hexesWithin(0, 0, radius)) {
     const loc = hexXYZ(vec3.create(), q, r, size);
+    loc[2] -= 0.9;
     const tile = createTile(loc);
     grid.set(q, r, tile);
-    // const dbg = createBoxForAABB(HEX_AABB);
-    // dbg.position[2] += 1;
-    // EM.set(dbg, PhysicsParentDef, tile.id);
-  }
-
-  for (let x = -5; x < 5; x += 0.3) {
-    for (let y = -5; y < 5; y += 0.3) {
-      const [q, r] = xyToHex(x, y, size);
-      const tile = grid.get(q, r);
-      const color = tile ? tile.color : V(0, 0, 0);
-      createObj(
-        [PositionDef, ScaleDef, ColorDef, RenderableConstructDef] as const,
-        [[x, y, 1], [0.1, 0.1, 0.1], color, [CubeMesh]]
-      );
-    }
   }
 }
 
