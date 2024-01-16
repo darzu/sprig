@@ -146,6 +146,11 @@ interface _ObjDef<D extends ObjOpt = ObjOpt> {
 
 export type ObjDef<D extends ObjOpt = ObjOpt> = _ObjDef<D> & {
   new: <A extends ObjChildArg<_ObjDef<D>>>(a: A) => ObjChildEnt<_ObjDef<D>>;
+  mixin: <A extends ObjChildArg<_ObjDef<D>>>(
+    e: Entity,
+    a: A
+  ) => asserts e is ObjChildEnt<_ObjDef<D>>;
+  // TODO(@darzu): IMPL .curry()
 };
 
 function isCompDefs(d: ObjChildOpt): d is readonly ComponentDef[] {
@@ -344,6 +349,7 @@ export function defineObj<
   const def: ObjDef<O> = {
     ..._def,
     new: (a) => createObj(_def, a),
+    mixin: (e, a) => mixinObj(e, _def, a),
   };
 
   return def;
@@ -358,19 +364,34 @@ export function createObj<D extends ObjChildDef, A extends ObjChildArg<D>>(
   def: D,
   args: A
 ): ObjChildEnt<D> {
-  // TODO(@darzu): i hate all these casts
   if (isObjChildEnt(args)) {
     return args as ObjChildEnt<D>;
-  } else if (isCompDefs(def)) {
+  } else {
     const e = EM.new();
+    mixinObj(e, def, args);
+    return e;
+  }
+}
+export function mixinObj<D extends ObjChildDef, A extends ObjChildArg<D>>(
+  e: Entity,
+  def: D,
+  args: A
+): asserts e is ObjChildEnt<D> {
+  // TODO(@darzu): i hate all these casts
+  if (isObjChildEnt(args)) {
+    throw `Cannot mixin two entities: ${e.id} and ${args.id}`;
+  } else if (isCompDefs(def)) {
     const cArgsArr = args as unknown as _CompArrayArgs<any[]>; // TODO(@darzu): We shouldn't need such hacky casts
     def.forEach((c, i) => {
       const cArgs: any | any[] = cArgsArr[i];
       _setComp(e, c, cArgs);
     });
-    return e as ObjChildEnt<D>;
+    // return e as ObjChildEnt<D>;
+    return;
   } else if (isObjDef(def)) {
-    return _createObj(def, args as any) as ObjChildEnt<D>;
+    _mixinObj(e, def, args as any);
+    // return e as ObjChildEnt<D>
+    return;
   }
 
   throw "never";
@@ -380,13 +401,28 @@ function _createObj<D extends _ObjDef, A extends ObjArgs<D["opts"]>>(
   def: D,
   args: A
 ): ObjEnt<D["opts"]> {
-  // create entity
   const e = EM.new();
+  _mixinObj(e, def, args);
+  return e;
+}
+function _mixinObj<D extends _ObjDef, A extends ObjArgs<D["opts"]>>(
+  e: Entity,
+  def: D,
+  args: A
+): asserts e is ObjEnt<D["opts"]> {
+  // TODO(@darzu): there's probably some extreme type-foo that could do this impl w/o cast
 
   // add components
-  const cArgs = args.args as Record<string, any[]>;
-  for (let cDef of def.opts.components as ComponentDef[]) {
-    _setComp(e, cDef, cArgs[cDef.name] as any);
+  if (Array.isArray(args.args)) {
+    const cArgs = args.args as any[][];
+    (def.opts.components as ComponentDef[]).forEach((cDef, i) => {
+      _setComp(e, cDef, cArgs[i] as any);
+    });
+  } else {
+    const cArgs = args.args as Record<string, any[]>;
+    for (let cDef of def.opts.components as ComponentDef[]) {
+      _setComp(e, cDef, cArgs[cDef.name] as any);
+    }
   }
 
   // add props (which creates children)
@@ -401,9 +437,6 @@ function _createObj<D extends _ObjDef, A extends ObjArgs<D["opts"]>>(
       EM.set(cEnt, PhysicsParentDef, e.id);
     }
   }
-
-  // TODO(@darzu): there's probably some extreme type-foo that could do this impl w/o cast
-  return e as ObjEnt<D["opts"]>;
 }
 
 export function T<N extends {}>(): (p: N) => void {
@@ -498,7 +531,7 @@ export function testObjectTS() {
 
   console.log("testGrayHelpers".toUpperCase());
   console.dir(ShipObj);
-  const ship = _createObj(ShipObj, {
+  const ship = createObj(ShipObj, {
     props: {
       myProp: 7,
     },

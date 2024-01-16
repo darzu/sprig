@@ -3,9 +3,9 @@ import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { createGhost } from "../debug/ghost.js";
 import { createGizmoMesh } from "../debug/gizmos.js";
-import { EM } from "../ecs/entity-manager.js";
+import { EM, Entities } from "../ecs/entity-manager.js";
 import { V, quat, vec3 } from "../matrix/sprig-matrix.js";
-import { CubeMesh, HexMesh } from "../meshes/mesh-list.js";
+import { BallMesh, CubeMesh, HexMesh } from "../meshes/mesh-list.js";
 import { cloneMesh, normalizeMesh, scaleMesh3 } from "../meshes/mesh.js";
 import { mkCubeMesh } from "../meshes/primatives.js";
 import { MeDef } from "../net/components.js";
@@ -20,7 +20,15 @@ import { shadowPipelines } from "../render/pipelines/std-shadow.js";
 import { RendererDef, RenderableConstructDef } from "../render/renderer-ecs.js";
 import { addGizmoChild, addWorldGizmo } from "../utils/utils-game.js";
 import { initGhost, initWorld } from "./graybox-helpers.js";
-import { ObjOpt, createObj, defineObj, testObjectTS } from "./objects.js";
+import {
+  ObjDef,
+  ObjEnt,
+  ObjOpt,
+  createObj,
+  defineObj,
+  mixinObj,
+  testObjectTS,
+} from "./objects.js";
 
 const DBG_GHOST = true;
 const DBG_GIZMO = true;
@@ -53,6 +61,15 @@ const ShipObj = defineObj({
   },
 } as const);
 
+const HasSphereObj = defineObj({
+  name: "hasPurple",
+  components: [ColorDef],
+  physicsParentChildren: true,
+  children: {
+    box: [PositionDef, ScaleDef, ColorDef, RenderableConstructDef],
+  },
+} as const);
+
 function createShip() {
   const shipMesh = mkCubeMesh();
   scaleMesh3(shipMesh, [8, 16, 2]);
@@ -66,6 +83,13 @@ function createShip() {
     },
     children: {
       box: [[0, 0, 5], [4, 4, 4], ENDESGA16.red, [CubeMesh]],
+    },
+  });
+
+  mixinObj(ship, HasSphereObj, {
+    args: [ENDESGA16.yellow],
+    children: {
+      box: [[0, 0, 9], [4, 4, 4], ENDESGA16.darkGreen, [BallMesh]],
     },
   });
 
