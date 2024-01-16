@@ -87,11 +87,6 @@ const LD52ShipDefObj = defineObj({
 } as const);
 export const LD52ShipDef = LD52ShipDefObj.props;
 
-const MIN_SPEED = 0.0001;
-const MAX_SPEED = 10.0;
-const VELOCITY_DRAG = 30.0; // squared drag factor
-// const VELOCITY_DECAY = 0.995; // linear decay scalar
-const SAIL_ACCEL_RATE = 0.001;
 const RUDDER_ROTATION_RATE = 0.01;
 
 export const cannonDefaultPitch = Math.PI * +0.05;
@@ -218,46 +213,15 @@ export async function createLd53ShipAsync() {
 }
 
 EM.addSystem(
-  "sailShip",
+  "rudderTurn",
   Phase.GAME_PLAYERS,
-  [LD52ShipDef, HasMastDef, WorldFrameDef, RotationDef, LinearVelocityDef],
+  [LD52ShipDef, RotationDef],
   [],
   (es) => {
     for (let e of es) {
       // rudder
       let yaw = e.ld52ship.rudder.yawpitch.yaw;
       quat.yaw(e.rotation, yaw * RUDDER_ROTATION_RATE, e.rotation);
-
-      // acceleration
-      const direction = vec3.transformQuat(vec3.FWD, e.world.rotation);
-      const sailAccel = vec3.scale(
-        direction,
-        e.hasMast.mast.mast.force * SAIL_ACCEL_RATE
-      );
-      const linVelMag = vec3.length(e.linearVelocity);
-      const velDrag = linVelMag * linVelMag * VELOCITY_DRAG;
-      const dragForce = vec3.scale(vec3.negate(e.linearVelocity), velDrag);
-      // console.log(
-      //   `sail: ${vec3Dbg(vec3.scale(sailAccel, 100))}\n` +
-      //     `drag: ${vec3Dbg(vec3.scale(dragForce, 100))}`
-      // );
-      const accel = vec3.add(sailAccel, dragForce);
-      vec3.add(e.linearVelocity, accel, e.linearVelocity);
-      // vec3.scale(e.linearVelocity, VELOCITY_DECAY, e.linearVelocity);
-      //console.log(`ship speed is ${vec3.length(e.linearVelocity)}`);
-      if (vec3.length(e.linearVelocity) > MAX_SPEED) {
-        vec3.normalize(e.linearVelocity, e.linearVelocity);
-        vec3.scale(e.linearVelocity, MAX_SPEED, e.linearVelocity);
-      }
-      if (vec3.length(e.linearVelocity) < MIN_SPEED) {
-        // TODO: make this better
-        const sail = e.hasMast.mast.mast.sail.sail;
-        if (sail.unfurledAmount > sail.minFurl) {
-          vec3.scale(vec3.FWD, MIN_SPEED, e.linearVelocity);
-        } else {
-          vec3.set(0, 0, 0, e.linearVelocity);
-        }
-      }
     }
   }
 );
