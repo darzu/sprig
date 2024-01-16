@@ -2,7 +2,8 @@ import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { EM, Resources } from "../ecs/entity-manager.js";
 import { Phase } from "../ecs/sys-phase.js";
-import { V } from "../matrix/sprig-matrix.js";
+import { defineObj } from "../graybox/objects.js";
+import { V, quat } from "../matrix/sprig-matrix.js";
 import { RudderPrimMesh } from "../meshes/mesh-list.js";
 import { MeDef, AuthorityDef } from "../net/components.js";
 import { ColliderDef } from "../physics/collider.js";
@@ -16,7 +17,26 @@ import { constructNetTurret, TurretDef } from "../turret/turret.js";
 import { YawPitchDef } from "../turret/yawpitch.js";
 import { addGizmoChild } from "../utils/utils-game.js";
 
+const RUDDER_ROTATION_RATE = 0.01;
+
 export const RudderDef = EM.defineComponent("rudder", () => true);
+
+export const HasRudderObj = defineObj({
+  name: "hasRudder",
+  components: [],
+  physicsParentChildren: true,
+  children: {
+    rudder: [
+      RudderDef,
+      YawPitchDef,
+      TurretDef,
+      // CameraFollowDef,
+      AuthorityDef,
+      PositionDef,
+    ],
+  },
+} as const);
+export const HasRudderDef = HasRudderObj.props;
 
 export function createRudder(res: Resources<[typeof MeDef]>) {
   const rudder = EM.new();
@@ -67,18 +87,34 @@ export function createRudder(res: Resources<[typeof MeDef]>) {
   return rudder;
 }
 
-// If a rudder isn't being manned, smooth it back towards straight
-EM.addSystem(
-  "easeRudderLD52",
-  Phase.GAME_WORLD,
-  [RudderDef, TurretDef, YawPitchDef, AuthorityDef],
-  [MeDef],
-  (rudders, res) => {
-    for (let r of rudders) {
-      if (r.authority.pid !== res.me.pid) return;
-      if (r.turret.mannedId !== 0) return;
-      if (Math.abs(r.yawpitch.yaw) < 0.01) r.yawpitch.yaw = 0;
-      r.yawpitch.yaw *= 0.9;
+EM.addEagerInit([RudderDef], [], [], () => {
+  // If a rudder isn't being manned, smooth it back towards straight
+  EM.addSystem(
+    "easeRudderLD52",
+    Phase.GAME_WORLD,
+    [RudderDef, TurretDef, YawPitchDef, AuthorityDef],
+    [MeDef],
+    (rudders, res) => {
+      for (let r of rudders) {
+        if (r.authority.pid !== res.me.pid) return;
+        if (r.turret.mannedId !== 0) return;
+        if (Math.abs(r.yawpitch.yaw) < 0.01) r.yawpitch.yaw = 0;
+        r.yawpitch.yaw *= 0.9;
+      }
     }
-  }
-);
+  );
+
+  EM.addSystem(
+    "rudderTurn",
+    Phase.GAME_PLAYERS,
+    [HasRudderDef, RotationDef],
+    [],
+    (es) => {
+      for (let e of es) {
+        // rudder
+        let yaw = e.hasRudder.rudder.yawpitch.yaw;
+        quat.yaw(e.rotation, yaw * RUDDER_ROTATION_RATE, e.rotation);
+      }
+    }
+  );
+});

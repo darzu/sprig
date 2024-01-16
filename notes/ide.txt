@@ -130,3 +130,14 @@ For every added component, system, resource, library, big chunk of code:
 
 Sprig lang's error handling:
   https://joeduffyblog.com/2016/02/07/the-error-model/
+
+Static refactors:
+  minimize distance between dependant statements
+  e.g.:
+    let a = 8212
+    [....]
+    let b = a + 10
+    \/
+    [....]
+    let a = 8212
+    let b = a + 10

@@ -108,6 +108,7 @@ import { drawUpdatingVector } from "../utils/util-vec-dbg.js";
 import { vec2Dbg, vec3Dbg } from "../utils/utils-3d.js";
 import { addWorldGizmo } from "../utils/utils-game.js";
 import { HasMastDef } from "../wind/mast.js";
+import { HasRudderDef } from "./rudder.js";
 /*
 NOTES:
 - Cut grass by updating a texture that has cut/not cut or maybe cut-height
@@ -207,6 +208,7 @@ async function hostResetLevel(levelIdx: number) {
     RotationDef,
     LD52ShipDef,
     HasMastDef,
+    HasRudderDef,
     LinearVelocityDef,
     ShipHealthDef,
     WoodHealthDef,
@@ -234,7 +236,7 @@ async function hostResetLevel(levelIdx: number) {
   const sail = ship.hasMast.mast.mast.sail.sail;
   sail.unfurledAmount = sail.minFurl;
   ship.ld52ship.cuttingEnabled = true;
-  ship.ld52ship.rudder.yawpitch.yaw = 0;
+  ship.hasRudder.rudder.yawpitch.yaw = 0;
 
   // set map wind angle
   const wingAngle = Math.atan2(levelMap.windDir[1], levelMap.windDir[0]);
@@ -574,7 +576,7 @@ export async function initLD53(hosting: boolean) {
       [InputsDef, PartyDef],
       (_, res) => {
         const mast = ship.hasMast.mast;
-        const rudder = ship.ld52ship.rudder;
+        const rudder = ship.hasRudder.rudder;
 
         // furl/unfurl
         if (rudder.turret.mannedId) {
@@ -669,33 +671,35 @@ export async function initLD53(hosting: boolean) {
   }
 
   // wait for the ship either locally or from the network
-  EM.whenSingleEntity(LD52ShipDef, FinishedDef).then(async (ship) => {
-    // player
-    if (!DBG_PLAYER) {
-      const color = res.me.host ? tV(0.1, 0.1, 0.1) : ENDESGA16.darkBrown;
+  EM.whenSingleEntity(LD52ShipDef, HasRudderDef, FinishedDef).then(
+    async (ship) => {
+      // player
+      if (!DBG_PLAYER) {
+        const color = res.me.host ? tV(0.1, 0.1, 0.1) : ENDESGA16.darkBrown;
 
-      const player = await createLd53PlayerAsync(ship.id, color);
+        const player = await createLd53PlayerAsync(ship.id, color);
 
-      // player.physicsParent.id = ship.id;
+        // player.physicsParent.id = ship.id;
 
-      // teleporting player to rudder
-      const rudder = ship.ld52ship.rudder;
-      vec3.copy(player.position, rudder.position);
-      player.position[2] = 1.45;
-      if (!res.me.host) {
-        player.position[1] += 4 * res.me.pid;
-      }
-      EM.set(player, TeleportDef);
+        // teleporting player to rudder
+        const rudder = ship.hasRudder.rudder;
+        vec3.copy(player.position, rudder.position);
+        player.position[2] = 1.45;
+        if (!res.me.host) {
+          player.position[1] += 4 * res.me.pid;
+        }
+        EM.set(player, TeleportDef);
 
-      if (res.me.host) {
-        // vec3.set(0, 3, -1, player.position);
-        assert(CameraFollowDef.isOn(rudder));
-        raiseManTurret(player, rudder);
-      } else {
-        player.position[1] += 5;
+        if (res.me.host) {
+          // vec3.set(0, 3, -1, player.position);
+          assert(CameraFollowDef.isOn(rudder));
+          raiseManTurret(player, rudder);
+        } else {
+          player.position[1] += 5;
+        }
       }
     }
-  });
+  );
 
   const { text } = await EM.whenResources(TextDef);
   text.lowerText = "W/S: unfurl/furl sail, A/D: turn, E: drop rudder";

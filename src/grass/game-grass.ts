@@ -309,7 +309,7 @@ export async function initGrassGame(hosting: boolean) {
     const player = await createPlayer();
     player.physicsParent.id = ship.id;
     // vec3.set(0, 3, -1, player.position);
-    const rudder = ship.ld52ship.rudder;
+    const rudder = ship.hasRudder.rudder;
     vec3.copy(player.position, rudder.position);
     player.position[2] = 1.45;
     assert(CameraFollowDef.isOn(rudder));
@@ -474,7 +474,7 @@ export async function initGrassGame(hosting: boolean) {
     const sail = ship.hasMast.mast.mast.sail.sail;
     sail.unfurledAmount = sail.minFurl;
     ship.ld52ship.cuttingEnabled = true;
-    ship.ld52ship.rudder.yawpitch.yaw = 0;
+    ship.hasRudder.rudder.yawpitch.yaw = 0;
   });
 
   EM.addSystem(
@@ -634,7 +634,7 @@ export async function initGrassGame(hosting: boolean) {
     [InputsDef],
     (_, res) => {
       const mast = ship.hasMast.mast;
-      const rudder = ship.ld52ship.rudder;
+      const rudder = ship.hasRudder.rudder;
 
       // furl/unfurl
       if (rudder.turret.mannedId) {

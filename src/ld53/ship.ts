@@ -35,7 +35,7 @@ import { Phase } from "../ecs/sys-phase.js";
 import { ShipHealthDef } from "./ship-health.js";
 import { T, defineObj, mixinObj } from "../graybox/objects.js";
 import { FinishedDef } from "../ecs/em-helpers.js";
-import { RudderDef, createRudder } from "./rudder.js";
+import { HasRudderObj, RudderDef, createRudder } from "./rudder.js";
 
 // TODO(@darzu): RENAME
 const LD52ShipDefObj = defineObj({
@@ -57,16 +57,7 @@ const LD52ShipDefObj = defineObj({
   }>(),
   physicsParentChildren: true,
   children: {
-    // mast: [MastDef, RotationDef],
     sock: [PositionDef],
-    rudder: [
-      RudderDef,
-      YawPitchDef,
-      TurretDef,
-      // CameraFollowDef,
-      AuthorityDef,
-      PositionDef,
-    ],
     cannonR: [
       CannonLocalDef,
       YawPitchDef,
@@ -86,8 +77,6 @@ const LD52ShipDefObj = defineObj({
   },
 } as const);
 export const LD52ShipDef = LD52ShipDefObj.props;
-
-const RUDDER_ROTATION_RATE = 0.01;
 
 export const cannonDefaultPitch = Math.PI * +0.05;
 
@@ -129,22 +118,6 @@ export async function createLd53ShipAsync() {
 
   // addColliderDbgVis(ship);
 
-  const mast = createMast(res);
-
-  addGizmoChild(mast, 20, [0, 0, 0]);
-  // addColliderDbgVis(mast);
-
-  const sock = createSock(2.0);
-  sock.position[2] =
-    mast.position[2] + (mast.collider as AABBCollider).aabb.max[2];
-
-  const rudder = createRudder(res);
-  // console.log("setting position");
-  vec3.set(0, -25, 4, rudder.position);
-  // console.log(`rudder: ${rudder.id}`);
-
-  // addGizmoChild(rudder, 2, [0, 5, 0]);
-
   // make debug gizmo
   // TODO(@darzu): would be nice to have as a little helper function?
   // const gizmo = EM.new();
@@ -154,6 +127,14 @@ export async function createLd53ShipAsync() {
   // EM.set(gizmo, RenderableConstructDef, res.allMeshes.gizmo.proto);
 
   //  [{ min: V(-13.8, 4.0, -2.9), max: V(-5.8, 6.0, -0.9) }];
+
+  const mast = createMast(res);
+  addGizmoChild(mast, 20, [0, 0, 0]);
+  // addColliderDbgVis(mast);
+
+  const sock = createSock(2.0);
+  sock.position[2] =
+    mast.position[2] + (mast.collider as AABBCollider).aabb.max[2];
 
   // create cannons
   const cannonR = createCannonNow(
@@ -189,12 +170,14 @@ export async function createLd53ShipAsync() {
     },
     children: {
       // mast,
-      rudder,
+      // rudder,
       cannonR,
       cannonL,
       sock,
     },
   });
+
+  addGizmoChild(ship, 10);
 
   mixinObj(ship, HasMastObj, {
     args: [],
@@ -203,7 +186,19 @@ export async function createLd53ShipAsync() {
     },
   });
 
-  addGizmoChild(ship, 10);
+  const rudder = createRudder(res);
+  // console.log("setting position");
+  vec3.set(0, -25, 4, rudder.position);
+  // console.log(`rudder: ${rudder.id}`);
+
+  // addGizmoChild(rudder, 2, [0, 5, 0]);
+
+  mixinObj(ship, HasRudderObj, {
+    args: [],
+    children: {
+      rudder,
+    },
+  });
 
   // TODO(@darzu): Incorperate these into Object?
   EM.set(ship, FinishedDef); // TODO(@darzu): remove?
@@ -211,20 +206,6 @@ export async function createLd53ShipAsync() {
 
   return ship;
 }
-
-EM.addSystem(
-  "rudderTurn",
-  Phase.GAME_PLAYERS,
-  [LD52ShipDef, RotationDef],
-  [],
-  (es) => {
-    for (let e of es) {
-      // rudder
-      let yaw = e.ld52ship.rudder.yawpitch.yaw;
-      quat.yaw(e.rotation, yaw * RUDDER_ROTATION_RATE, e.rotation);
-    }
-  }
-);
 
 // EM.addConstraint(["sailShip", "after", "mastForce"]);
 // EM.addConstraint(["sailShip", "after", "easeRudderLD52"]);
