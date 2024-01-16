@@ -180,32 +180,29 @@ export const TETRA_MESH: RawMesh = {
 };
 scaleMesh(TETRA_MESH, 2);
 
-// a = cos PI/3
-// b = sin PI/3
-export const HEX_AABB = createAABB(
-  V(-Math.sin(Math.PI / 3), -Math.cos(Math.PI / 3), 0),
-  V(Math.sin(Math.PI / 3), Math.cos(Math.PI / 3), 1)
-);
+const HEX_XR = Math.cos(Math.PI / 3);
+const HEX_YR = Math.sin(Math.PI / 3);
+export const HEX_AABB = createAABB(V(-1, -HEX_YR, 0), V(1, HEX_YR, 1));
 export const HEX_MESH: () => RawMesh = () => {
-  const A = HEX_AABB.max[0];
-  const B = HEX_AABB.max[1];
+  const A = HEX_XR;
+  const B = HEX_YR;
   const sideTri: (i: number) => vec3[] = (i) => {
     const i2 = (i + 1) % 6;
     return [V(i + 6, i, i2), V(i + 6, i2, i2 + 6)];
   };
   const pos: vec3[] = [
-    V(+0, +1, 1),
-    V(+A, +B, 1),
-    V(+A, -B, 1),
-    V(+0, -1, 1),
-    V(-A, -B, 1),
+    V(-1, +0, 1),
     V(-A, +B, 1),
-    V(+0, +1, 0),
-    V(+A, +B, 0),
-    V(+A, -B, 0),
-    V(+0, -1, 0),
-    V(-A, -B, 0),
+    V(+A, +B, 1),
+    V(+1, +0, 1),
+    V(+A, -B, 1),
+    V(-A, -B, 1),
+    V(-1, +0, 0),
     V(-A, +B, 0),
+    V(+A, +B, 0),
+    V(+1, +0, 0),
+    V(+A, -B, 0),
+    V(-A, -B, 0),
   ];
   const tri: vec3[] = [
     // top 4

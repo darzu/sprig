@@ -1,6 +1,9 @@
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { packI16s, TupleN } from "../utils/util.js";
 
+// Follows: https://www.redblobgames.com/grids/hexagons/
+//  Using FLAT-top; axial; +q along +x ; +r along -y|-x;
+
 export interface HexGrid<D> {
   _grid: Map<number, D>;
   has: (q: number, r: number) => boolean;
@@ -21,25 +24,26 @@ export function createHexGrid<D>(): HexGrid<D> {
   };
 }
 
-const q_z_spc = Math.sqrt(3) / 2;
-const r_z_spc = Math.sqrt(3);
-export function hexZ(q: number, r: number, size: number): number {
-  return -size * (q_z_spc * q + r_z_spc * r);
-}
+const q_y_spc = Math.sqrt(3) / 2;
+const r_y_spc = Math.sqrt(3);
 const q_x_spc = 3 / 2;
+export function hexY(q: number, r: number, size: number): number {
+  return -size * (q_y_spc * q + r_y_spc * r);
+}
 export function hexX(q: number, r: number, size: number): number {
-  return -size * q_x_spc * q;
+  return size * q_x_spc * q;
 }
 export function hexXYZ(out: vec3, q: number, r: number, size: number): vec3 {
   out[0] = hexX(q, r, size);
-  out[1] = 0;
-  out[2] = hexZ(q, r, size);
+  out[1] = hexY(q, r, size);
+  out[2] = 0;
   return out;
 }
 
-export function xzToHex(z: number, x: number, size: number) {
-  const q = -((2 / 3) * z) / size;
-  const r = -((-1 / 3) * z + (Math.sqrt(3) / 3) * x) / size;
+const sqrt_3_3 = Math.sqrt(3) / 3;
+export function xyToHex(x: number, y: number, size: number): [number, number] {
+  const q = ((2 / 3) * x) / size;
+  const r = ((-1 / 3) * x + sqrt_3_3 * -y) / size;
   return hexRound(q, r);
 }
 
@@ -91,14 +95,14 @@ export function* hexesWithin(
 
 // export type Hex = { q: number; r: number };
 
-export const HEX_DIRS: TupleN<vec2, 6> = [
-  vec2.clone([+0, -1]),
-  vec2.clone([+1, -1]),
-  vec2.clone([+1, -0]),
-  vec2.clone([-0, +1]),
-  vec2.clone([-1, +1]),
-  vec2.clone([-1, +0]),
-];
+export const HEX_DIRS = [
+  V(+0, -1),
+  V(+1, -1),
+  V(+1, -0),
+  V(-0, +1),
+  V(-1, +1),
+  V(-1, +0),
+] as const;
 export const HEX_N_IDX = 0;
 export const HEX_NE_IDX = 1;
 export const HEX_SE_IDX = 2;

@@ -1,17 +1,18 @@
 import { CameraDef, CameraFollowDef } from "../camera/camera.js";
 import { ColorDef } from "../color/color-ecs.js";
-import { ENDESGA16 } from "../color/palettes.js";
+import { ENDESGA16, randEndesga16 } from "../color/palettes.js";
 import { createGhost } from "../debug/ghost.js";
 import { createGizmoMesh } from "../debug/gizmos.js";
-import { EM, Entities } from "../ecs/entity-manager.js";
+import { EM, Entities, EntityW } from "../ecs/entity-manager.js";
 import { Phase } from "../ecs/sys-phase.js";
+import { createHexGrid, hexXYZ, hexesWithin, xyToHex } from "../hex/hex.js";
 import { LocalPlayerEntityDef } from "../hyperspace/hs-player.js";
 import { InputsDef } from "../input/inputs.js";
 import { HasRudderDef, HasRudderObj, createRudder } from "../ld53/rudder.js";
 import { V, quat, vec3 } from "../matrix/sprig-matrix.js";
 import { BallMesh, CubeMesh, HexMesh, MastMesh } from "../meshes/mesh-list.js";
 import { cloneMesh, normalizeMesh, scaleMesh3 } from "../meshes/mesh.js";
-import { mkCubeMesh } from "../meshes/primatives.js";
+import { HEX_AABB, mkCubeMesh } from "../meshes/primatives.js";
 import { LinearVelocityDef } from "../motion/velocity.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { ColliderDef } from "../physics/collider.js";
@@ -29,7 +30,12 @@ import { shadowPipelines } from "../render/pipelines/std-shadow.js";
 import { RendererDef, RenderableConstructDef } from "../render/renderer-ecs.js";
 import { CanManDef, raiseManTurret } from "../turret/turret.js";
 import { assert } from "../utils/util.js";
-import { addGizmoChild, addWorldGizmo } from "../utils/utils-game.js";
+import {
+  addColliderDbgVis,
+  addGizmoChild,
+  addWorldGizmo,
+  createBoxForAABB,
+} from "../utils/utils-game.js";
 import { HasMastDef, HasMastObj, createMast } from "../wind/mast.js";
 import { WindDef } from "../wind/wind.js";
 import { initGhost, initWorld } from "./graybox-helpers.js";
@@ -43,19 +49,56 @@ import {
   testObjectTS,
 } from "./objects.js";
 
-const DBG_GHOST = false;
+const DBG_GHOST = true;
 const DBG_GIZMO = true;
 
 const SAIL_FURL_RATE = 0.02;
+
+function createOcean() {
+  const tileCS = [
+    ColorDef,
+    PositionDef,
+    RenderableConstructDef,
+    ScaleDef,
+  ] as const;
+  type typeT = EntityW<[...typeof tileCS]>;
+  const createTile = (xyz: vec3.InputT) =>
+    createObj(tileCS, [randEndesga16(), xyz, [HexMesh], V(1, 1, 1)]);
+  const grid = createHexGrid<typeT>();
+  const size = 1;
+
+  for (let [q, r] of hexesWithin(0, 0, 4)) {
+    // for (let [q, r] of [
+    //   [0, 0],
+    //   [0, 1],
+    //   [0, 2],
+    // ]) {
+    const loc = hexXYZ(vec3.create(), q, r, size);
+    const tile = createTile(loc);
+    grid.set(q, r, tile);
+    // const dbg = createBoxForAABB(HEX_AABB);
+    // dbg.position[2] += 1;
+    // EM.set(dbg, PhysicsParentDef, tile.id);
+  }
+
+  for (let x = -5; x < 5; x += 0.3) {
+    for (let y = -5; y < 5; y += 0.3) {
+      const [q, r] = xyToHex(x, y, size);
+      const tile = grid.get(q, r);
+      const color = tile ? tile.color : V(0, 0, 0);
+      createObj(
+        [PositionDef, ScaleDef, ColorDef, RenderableConstructDef] as const,
+        [[x, y, 1], [0.1, 0.1, 0.1], color, [CubeMesh]]
+      );
+    }
+  }
+}
 
 export async function initGrayboxShipArena() {
   initWorld();
 
   // ocean
-  const ocean = createObj(
-    [ColorDef, PositionDef, RenderableConstructDef, ScaleDef] as const,
-    [ENDESGA16.blue, V(0, 0, 0), [CubeMesh], V(100, 100, 0.1)]
-  );
+  createOcean();
 
   EM.addResource(WindDef);
 
@@ -77,7 +120,7 @@ export async function initGrayboxShipArena() {
 
   EM.ensureResource(LocalPlayerEntityDef, player.id);
 
-  raiseManTurret(player, ship.hasRudder.rudder);
+  if (!DBG_GHOST) raiseManTurret(player, ship.hasRudder.rudder);
 
   // dbg ghost
   if (DBG_GHOST) {
