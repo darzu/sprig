@@ -35,7 +35,7 @@ import { Phase } from "../ecs/sys-phase.js";
 import { ShipHealthDef } from "./ship-health.js";
 import { T, defineObj, mixinObj } from "../graybox/objects.js";
 import { FinishedDef } from "../ecs/em-helpers.js";
-import { HasRudderObj, RudderDef, createRudder } from "./rudder.js";
+import { HasRudderObj, RudderDef, createRudderTurret } from "./rudder.js";
 
 // TODO(@darzu): RENAME
 const LD52ShipDefObj = defineObj({
@@ -187,7 +187,7 @@ export async function createLd53ShipAsync() {
     },
   });
 
-  const rudder = createRudder(res);
+  const rudder = createRudderTurret(res);
   // console.log("setting position");
   vec3.set(0, -25, 4, rudder.position);
   // console.log(`rudder: ${rudder.id}`);

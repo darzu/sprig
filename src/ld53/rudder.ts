@@ -39,7 +39,8 @@ export const HasRudderObj = defineObj({
 } as const);
 export const HasRudderDef = HasRudderObj.props;
 
-export function createRudder(res: Resources<[typeof MeDef]>) {
+// TODO(@darzu): Use Objects and mixins
+export function createRudder() {
   const rudder = EM.new();
   EM.set(rudder, RudderDef);
   EM.set(rudder, RenderableConstructDef, RudderPrimMesh);
@@ -47,7 +48,13 @@ export function createRudder(res: Resources<[typeof MeDef]>) {
   EM.set(rudder, ColorDef, ENDESGA16.midBrown);
   EM.set(rudder, PositionDef);
   EM.set(rudder, RotationDef);
-  EM.set(rudder, AuthorityDef, res.me.pid);
+  EM.set(rudder, YawPitchDef);
+
+  return rudder;
+}
+
+export function createRudderTurret(res: Resources<[typeof MeDef]>) {
+  const rudder = createRudder();
 
   addGizmoChild(rudder, 4);
 

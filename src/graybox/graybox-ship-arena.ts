@@ -6,7 +6,12 @@ import { Phase } from "../ecs/sys-phase.js";
 import { createHexGrid, hexXYZ, hexesWithin } from "../hex/hex.js";
 import { LocalPlayerEntityDef } from "../hyperspace/hs-player.js";
 import { InputsDef } from "../input/inputs.js";
-import { HasRudderDef, HasRudderObj, createRudder } from "../ld53/rudder.js";
+import {
+  HasRudderDef,
+  HasRudderObj,
+  createRudder,
+  createRudderTurret,
+} from "../ld53/rudder.js";
 import { V, vec3 } from "../matrix/sprig-matrix.js";
 import { BallMesh, HexMesh, MastMesh } from "../meshes/mesh-list.js";
 import { scaleMesh3 } from "../meshes/mesh.js";
@@ -166,7 +171,7 @@ async function createShip() {
     mast.position[2] + (mast.collider as AABBCollider).aabb.max[2];
   EM.set(sock, PhysicsParentDef, ship.id);
 
-  const rudder = createRudder(res);
+  const rudder = createRudder();
   // console.log("setting position");
   vec3.set(0, -25, 4, rudder.position);
 
