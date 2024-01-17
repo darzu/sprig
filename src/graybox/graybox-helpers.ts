@@ -24,20 +24,25 @@ import { shadowPipelines } from "../render/pipelines/std-shadow.js";
 import { RendererDef, RenderableConstructDef } from "../render/renderer-ecs.js";
 import { Intersect } from "../utils/util.js";
 import { addWorldGizmo } from "../utils/utils-game.js";
+import { createObj } from "./objects.js";
 
 export function createSun() {
-  // light
-  const sun = EM.new();
-  EM.set(sun, PointLightDef);
-  EM.set(sun, ColorDef, V(1, 1, 1));
-  EM.set(sun, PositionDef, V(100, 100, 100));
-  EM.set(sun, RenderableConstructDef, CubeMesh, false);
-  sun.pointLight.constant = 1.0;
-  sun.pointLight.linear = 0.0;
-  sun.pointLight.quadratic = 0.0;
-  vec3.copy(sun.pointLight.ambient, [0.2, 0.2, 0.2]);
-  vec3.copy(sun.pointLight.diffuse, [0.5, 0.5, 0.5]);
-  EM.set(sun, PositionDef, V(50, 10, 300));
+  const sun = createObj(
+    [PointLightDef, ColorDef, PositionDef, RenderableConstructDef] as const,
+    [
+      {
+        constant: 1.0,
+        linear: 0.0,
+        quadratic: 0.0,
+        ambient: V(0.2, 0.2, 0.2),
+        diffuse: V(0.5, 0.5, 0.5),
+      },
+      [1, 1, 1],
+      [50, 10, 300],
+      [CubeMesh, false],
+    ]
+  );
+
   return sun;
 }
 

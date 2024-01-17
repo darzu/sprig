@@ -51,7 +51,9 @@ function createDefaultPointLight(): PointLightTS {
 
 export const PointLightDef = EM.defineComponent(
   "pointLight",
-  createDefaultPointLight
+  createDefaultPointLight,
+  // TODO(@darzu): PERF. really we should copy the vectors and use vec3.inputT, ugh
+  (p, n?: Partial<PointLightTS>) => (n ? Object.assign(p, n) : p)
 );
 
 export const pointLightsPtr = CY.createArray("pointLight", {
