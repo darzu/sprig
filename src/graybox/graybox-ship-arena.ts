@@ -85,30 +85,10 @@ export async function initGrayboxShipArena() {
 
   const ship = await createShip();
 
-  const res = await EM.whenResources(MeDef);
-
-  const player = createObj(
-    [
-      ColorDef,
-      PositionDef,
-      RenderableConstructDef,
-      CanManDef,
-      AuthorityDef,
-      PhysicsParentDef,
-    ] as const,
-    [ENDESGA16.darkGray, V(0, 0, 2), [BallMesh], undefined, res.me.pid, ship.id]
-  );
-
-  EM.ensureResource(LocalPlayerEntityDef, player.id);
-
-  // if (!DBG_GHOST) raiseManTurret(player, ship.hasRudder.rudder);
-
   // dbg ghost
   if (DBG_GHOST) {
     initGhost();
   }
-
-  // testObjectTS();
 
   EM.addSystem(
     "controlShip",
