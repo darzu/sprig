@@ -167,6 +167,9 @@ EM.addEagerInit([TurretDef], [], [], () => {
     }
   );
 
+  const TURRET_YAW_SPEED = 0.005;
+  const TURRET_PITCH_SPEED = 0.002;
+
   EM.addSystem(
     "turretAim",
     Phase.GAME_PLAYERS,
@@ -180,11 +183,11 @@ EM.addEagerInit([TurretDef], [], [], () => {
         if (c.turret.mannedId !== player.id) continue;
         if (c.turret.keyboardControls) {
           if (res.inputs.keyDowns["a"])
-            c.yawpitch.yaw -= c.turret.keyboardSpeed * 0.005;
+            c.yawpitch.yaw -= c.turret.keyboardSpeed * TURRET_YAW_SPEED;
           if (res.inputs.keyDowns["d"])
-            c.yawpitch.yaw += c.turret.keyboardSpeed * 0.005;
+            c.yawpitch.yaw += c.turret.keyboardSpeed * TURRET_YAW_SPEED;
         } else {
-          c.yawpitch.yaw += res.inputs.mouseMov[0] * 0.005;
+          c.yawpitch.yaw += res.inputs.mouseMov[0] * TURRET_YAW_SPEED;
         }
         c.yawpitch.yaw = clamp(
           c.yawpitch.yaw,
@@ -194,11 +197,11 @@ EM.addEagerInit([TurretDef], [], [], () => {
 
         if (c.turret.keyboardControls) {
           if (res.inputs.keyDowns["s"])
-            c.yawpitch.pitch -= c.turret.keyboardSpeed * 0.002;
+            c.yawpitch.pitch -= c.turret.keyboardSpeed * TURRET_PITCH_SPEED;
           if (res.inputs.keyDowns["w"])
-            c.yawpitch.pitch += c.turret.keyboardSpeed * 0.002;
+            c.yawpitch.pitch += c.turret.keyboardSpeed * TURRET_PITCH_SPEED;
         } else {
-          c.yawpitch.pitch += -res.inputs.mouseMov[1] * 0.002;
+          c.yawpitch.pitch += -res.inputs.mouseMov[1] * TURRET_PITCH_SPEED;
         }
         c.yawpitch.pitch = clamp(
           c.yawpitch.pitch,
