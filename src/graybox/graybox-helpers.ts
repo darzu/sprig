@@ -25,6 +25,22 @@ import { RendererDef, RenderableConstructDef } from "../render/renderer-ecs.js";
 import { Intersect } from "../utils/util.js";
 import { addWorldGizmo } from "../utils/utils-game.js";
 
+export function createSun() {
+  // light
+  const sun = EM.new();
+  EM.set(sun, PointLightDef);
+  EM.set(sun, ColorDef, V(1, 1, 1));
+  EM.set(sun, PositionDef, V(100, 100, 100));
+  EM.set(sun, RenderableConstructDef, CubeMesh, false);
+  sun.pointLight.constant = 1.0;
+  sun.pointLight.linear = 0.0;
+  sun.pointLight.quadratic = 0.0;
+  vec3.copy(sun.pointLight.ambient, [0.2, 0.2, 0.2]);
+  vec3.copy(sun.pointLight.diffuse, [0.5, 0.5, 0.5]);
+  EM.set(sun, PositionDef, V(50, 10, 300));
+  return sun;
+}
+
 export async function initGrayboxWorld() {
   EM.addEagerInit([], [RendererDef], [], (res) => {
     // renderer
@@ -45,18 +61,8 @@ export async function initGrayboxWorld() {
   vec3.set(-200, -200, -200, camera.maxWorldAABB.min);
   vec3.set(+200, +200, +200, camera.maxWorldAABB.max);
 
-  // light
-  const sun = EM.new();
-  EM.set(sun, PointLightDef);
-  EM.set(sun, ColorDef, V(1, 1, 1));
-  EM.set(sun, PositionDef, V(100, 100, 100));
-  EM.set(sun, RenderableConstructDef, CubeMesh, false);
-  sun.pointLight.constant = 1.0;
-  sun.pointLight.linear = 0.0;
-  sun.pointLight.quadratic = 0.0;
-  vec3.copy(sun.pointLight.ambient, [0.2, 0.2, 0.2]);
-  vec3.copy(sun.pointLight.diffuse, [0.5, 0.5, 0.5]);
-  EM.set(sun, PositionDef, V(50, 10, 300));
+  // sun
+  createSun();
 
   // pedestal
   const pedestal = EM.new();

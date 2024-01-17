@@ -1,4 +1,4 @@
-import { CameraFollowDef } from "../camera/camera.js";
+import { CameraDef, CameraFollowDef } from "../camera/camera.js";
 import { fireBullet } from "../cannons/bullet.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
@@ -17,16 +17,17 @@ import { V, quat, vec3 } from "../matrix/sprig-matrix.js";
 import {
   BallMesh,
   CannonMesh,
+  CubeMesh,
   HexMesh,
   MastMesh,
 } from "../meshes/mesh-list.js";
 import { scaleMesh3 } from "../meshes/mesh.js";
-import { mkCubeMesh } from "../meshes/primatives.js";
+import { HEX_AABB, mkCubeMesh } from "../meshes/primatives.js";
 import { GravityDef } from "../motion/gravity.js";
 import { ParametricDef } from "../motion/parametric-motion.js";
 import { LinearVelocityDef } from "../motion/velocity.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
-import { AABBCollider } from "../physics/collider.js";
+import { AABBCollider, ColliderDef } from "../physics/collider.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import {
   Frame,
@@ -36,18 +37,24 @@ import {
   ScaleDef,
 } from "../physics/transform.js";
 import { HasFirstInteractionDef } from "../render/canvas.js";
-import { RenderableConstructDef } from "../render/renderer-ecs.js";
+import { PointLightDef } from "../render/lights.js";
+import { deferredPipeline } from "../render/pipelines/std-deferred.js";
+import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
+import { outlineRender } from "../render/pipelines/std-outline.js";
+import { postProcess } from "../render/pipelines/std-post.js";
+import { shadowPipelines } from "../render/pipelines/std-shadow.js";
+import { RenderableConstructDef, RendererDef } from "../render/renderer-ecs.js";
 import { TimeDef } from "../time/time.js";
 import { CanManDef, raiseManTurret } from "../turret/turret.js";
 import { clamp } from "../utils/math.js";
 import { PI } from "../utils/util-no-import.js";
 import { assert } from "../utils/util.js";
 import { randVec3OfLen } from "../utils/utils-3d.js";
-import { addGizmoChild } from "../utils/utils-game.js";
+import { addGizmoChild, addWorldGizmo } from "../utils/utils-game.js";
 import { HasMastDef, HasMastObj, createMast } from "../wind/mast.js";
 import { WindDef, setWindAngle } from "../wind/wind.js";
 import { createSock } from "../wind/windsock.js";
-import { initGhost, initGrayboxWorld } from "./graybox-helpers.js";
+import { createSun, initGhost, initGrayboxWorld } from "./graybox-helpers.js";
 import { createObj, defineObj, mixinObj } from "./objects.js";
 
 const DBG_GHOST = false;
@@ -146,7 +153,30 @@ function createOcean() {
 }
 
 export async function initGrayboxShipArena() {
-  initGrayboxWorld();
+  EM.addEagerInit([], [RendererDef], [], (res) => {
+    // renderer
+    res.renderer.pipelines = [
+      ...shadowPipelines,
+      stdRenderPipeline,
+      outlineRender,
+      deferredPipeline,
+      postProcess,
+    ];
+  });
+
+  const { camera, me } = await EM.whenResources(CameraDef, MeDef);
+
+  // camera
+  camera.fov = Math.PI * 0.5;
+  camera.viewDist = 1000;
+  vec3.set(-200, -200, -200, camera.maxWorldAABB.min);
+  vec3.set(+200, +200, +200, camera.maxWorldAABB.max);
+
+  // sun
+  createSun();
+
+  // gizmo
+  addWorldGizmo(V(0, 0, 0), 5);
 
   // ocean
   const oceanGrid = createOcean();
