@@ -33,6 +33,7 @@ export const HasRudderObj = defineObj({
       // TurretDef,
       // CameraFollowDef,
       // AuthorityDef,
+      RotationDef,
       PositionDef,
     ],
   },

@@ -12,7 +12,7 @@ import {
   createRudder,
   createRudderTurret,
 } from "../ld53/rudder.js";
-import { V, vec3 } from "../matrix/sprig-matrix.js";
+import { V, quat, vec3 } from "../matrix/sprig-matrix.js";
 import { BallMesh, HexMesh, MastMesh } from "../meshes/mesh-list.js";
 import { scaleMesh3 } from "../meshes/mesh.js";
 import { mkCubeMesh } from "../meshes/primatives.js";
@@ -24,8 +24,10 @@ import {
   PositionDef,
   ScaleDef,
 } from "../physics/transform.js";
+import { HasFirstInteractionDef } from "../render/canvas.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { CanManDef, raiseManTurret } from "../turret/turret.js";
+import { clamp } from "../utils/math.js";
 import { assert } from "../utils/util.js";
 import { randVec3OfLen } from "../utils/utils-3d.js";
 import { addGizmoChild } from "../utils/utils-game.js";
@@ -111,8 +113,8 @@ export async function initGrayboxShipArena() {
   EM.addSystem(
     "controlShip",
     Phase.GAME_PLAYERS,
-    [HasRudderDef, HasMastDef],
-    [InputsDef],
+    [HasRudderDef, HasMastDef, CameraFollowDef],
+    [InputsDef, HasFirstInteractionDef],
     (es, res) => {
       if (es.length === 0) return;
       assert(es.length === 1);
@@ -126,6 +128,30 @@ export async function initGrayboxShipArena() {
       const sail = mast.mast.sail.sail;
       if (res.inputs.keyDowns["w"]) sail.unfurledAmount += SAIL_FURL_RATE;
       if (res.inputs.keyDowns["s"]) sail.unfurledAmount -= SAIL_FURL_RATE;
+
+      // rudder
+      if (res.inputs.keyDowns["a"]) rudder.yawpitch.yaw -= 0.05;
+      if (res.inputs.keyDowns["d"]) rudder.yawpitch.yaw += 0.05;
+      rudder.yawpitch.yaw = clamp(
+        rudder.yawpitch.yaw,
+        -Math.PI * 0.3,
+        Math.PI * 0.3
+      );
+      quat.fromYawPitchRoll(-rudder.yawpitch.yaw, 0, 0, rudder.rotation);
+
+      // TODO(@darzu): extract to some kinda ball cam?
+      ship.cameraFollow.yawOffset += res.inputs.mouseMov[0] * 0.005;
+      ship.cameraFollow.pitchOffset -= res.inputs.mouseMov[1] * 0.005;
+      ship.cameraFollow.pitchOffset = clamp(
+        ship.cameraFollow.pitchOffset,
+        -Math.PI * 0.5,
+        0
+      );
+      ship.cameraFollow.yawOffset = clamp(
+        ship.cameraFollow.yawOffset,
+        -Math.PI * 0.5,
+        Math.PI * 0.5
+      );
     }
   );
 }
