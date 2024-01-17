@@ -2,6 +2,9 @@ import { defineSerializableComponent } from "../ecs/em-helpers.js";
 import { EM, Component } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 
+// TODO(@darzu): do we really need this component? Ideally we'd just have helpers around
+//    Rotation?
+
 export const YawPitchDef = defineSerializableComponent(
   "yawpitch",
   () => {
@@ -25,9 +28,5 @@ export const YawPitchDef = defineSerializableComponent(
   }
 );
 export type YawPitch = Component<typeof YawPitchDef>;
-
-export function yawpitchToQuat(out: quat, { yaw, pitch }: YawPitch): quat {
-  return quat.fromYawPitchRoll(yaw, pitch, 0, out);
-}
 
 // TODO(@darzu): IMPL quat.toYawPitchRoll

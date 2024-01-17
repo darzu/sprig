@@ -20,7 +20,7 @@ import { InputsDef } from "../input/inputs.js";
 import { clamp } from "../utils/math.js";
 import { DeletedDef } from "../ecs/delete.js";
 import { defineSerializableComponent } from "../ecs/em-helpers.js";
-import { YawPitchDef, yawpitchToQuat } from "./yawpitch.js";
+import { YawPitchDef } from "./yawpitch.js";
 import { TextDef } from "../gui/ui.js";
 import { Phase } from "../ecs/sys-phase.js";
 
@@ -161,12 +161,8 @@ EM.addEagerInit([TurretDef], [], [], () => {
     [],
     (turrets, res) => {
       for (let c of turrets) {
-        if (c.turret.invertYaw)
-          yawpitchToQuat(c.rotation, {
-            yaw: -c.yawpitch.yaw,
-            pitch: c.yawpitch.pitch,
-          });
-        else yawpitchToQuat(c.rotation, c.yawpitch);
+        const yaw = c.turret.invertYaw ? -c.yawpitch.yaw : c.yawpitch.yaw;
+        quat.fromYawPitchRoll(yaw, c.yawpitch.pitch, 0, c.rotation);
       }
     }
   );

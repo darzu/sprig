@@ -6,7 +6,6 @@ import { WorldFrameDef } from "../physics/nonintersection.js";
 import { RendererWorldFrameDef } from "../render/renderer-ecs.js";
 import { computeNewError, reduceError } from "../utils/smoothing.js";
 import { TimeDef } from "../time/time.js";
-import { yawpitchToQuat } from "../turret/yawpitch.js";
 import { createAABB } from "../physics/aabb.js";
 import { assert, dbgLogOnce, resizeArray } from "../utils/util.js";
 import { Phase } from "../ecs/sys-phase.js";
@@ -141,10 +140,12 @@ EM.addLazyInit([], [CameraDef], () => {
           res.camera.positionOffset,
           target.cameraFollow.positionOffset
         );
-        yawpitchToQuat(res.camera.rotationOffset, {
-          yaw: target.cameraFollow.yawOffset,
-          pitch: target.cameraFollow.pitchOffset,
-        });
+        quat.fromYawPitchRoll(
+          target.cameraFollow.yawOffset,
+          target.cameraFollow.pitchOffset,
+          0,
+          res.camera.rotationOffset
+        );
       } else {
         res.camera.targetId = 0;
         vec3.zero(res.camera.positionOffset);

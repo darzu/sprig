@@ -49,7 +49,6 @@ import { Phase } from "../ecs/sys-phase.js";
 import { XY } from "../meshes/mesh-loader.js";
 import { transformYUpModelIntoZUp } from "../camera/basis.js";
 import { addGizmoChild, drawBall } from "../utils/utils-game.js";
-import { yawpitchToQuat } from "../turret/yawpitch.js";
 
 export const DBG_CANNONS = false;
 
