@@ -742,6 +742,7 @@ function getTargetMissOrHitPosition(
   return target;
 }
 
+// TODO(@darzu): extract!!
 function getFireDirection(
   sourcePos: vec3.InputT,
   targetPos: vec3.InputT,

@@ -74,7 +74,6 @@ const ShipObj = defineObj({
 
 const ShipDef = ShipObj.props;
 
-// TODO(@darzu): use parametric motion?
 const CannonBallObj = defineObj({
   name: "cannonBall",
   components: [
@@ -86,7 +85,7 @@ const CannonBallObj = defineObj({
   ],
 } as const);
 
-// TODO(@darzu): use pools!!
+// TODO(@darzu): PERF. use pools!!
 function launchBall(frame: Frame, speed: number) {
   const axis = vec3.transformQuat(vec3.FWD, frame.rotation);
   const vel = vec3.scale(axis, speed);
@@ -112,6 +111,8 @@ function launchBall(frame: Frame, speed: number) {
 
   return ball;
 }
+
+// TODO(@darzu): projectile paths: use particle system?
 
 function createOcean() {
   // TODO(@darzu): more efficient if we use one mesh
