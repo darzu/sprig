@@ -2,7 +2,7 @@ import { CameraDef, CameraFollowDef } from "../camera/camera.js";
 import { fireBullet } from "../cannons/bullet.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
-import { EM, EntityW } from "../ecs/entity-manager.js";
+import { EM, EntityW, Resources } from "../ecs/entity-manager.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { createHexGrid, hexXYZ, hexesWithin } from "../hex/hex.js";
 import { LocalPlayerEntityDef } from "../hyperspace/hs-player.js";
@@ -37,10 +37,17 @@ import {
   ScaleDef,
 } from "../physics/transform.js";
 import { HasFirstInteractionDef } from "../render/canvas.js";
+import { CyArray } from "../render/data-webgpu.js";
 import { GraphicsSettingsDef } from "../render/graphics-settings.js";
 import { PointLightDef } from "../render/lights.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
-import { initDots, renderDots } from "../render/pipelines/std-dots.js";
+import {
+  DotStruct,
+  DotTS,
+  dotDataPtr,
+  initDots,
+  renderDots,
+} from "../render/pipelines/std-dots.js";
 import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
 import { noisePipes } from "../render/pipelines/std-noise.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
@@ -60,7 +67,7 @@ import { createSock } from "../wind/windsock.js";
 import { createSun, initGhost, initGrayboxWorld } from "./graybox-helpers.js";
 import { createObj, defineObj, mixinObj } from "./objects.js";
 
-const DBG_GHOST = false;
+const DBG_GHOST = true;
 
 const DBG_GIZMO = true;
 
@@ -124,6 +131,8 @@ function launchBall(frame: Frame, speed: number) {
 
 // TODO(@darzu): projectile paths: use particle system?
 
+const oceanRadius = 5;
+
 function createOcean() {
   // TODO(@darzu): more efficient if we use one mesh
   const tileCS = [
@@ -133,7 +142,6 @@ function createOcean() {
     ScaleDef,
   ] as const;
   type typeT = EntityW<[...typeof tileCS]>;
-  const radius = 5;
   const size = 100;
 
   const createTile = (xyz: vec3.InputT) =>
@@ -145,7 +153,7 @@ function createOcean() {
     ]);
   const grid = createHexGrid<typeT>();
 
-  for (let [q, r] of hexesWithin(0, 0, radius)) {
+  for (let [q, r] of hexesWithin(0, 0, oceanRadius)) {
     const loc = hexXYZ(vec3.create(), q, r, size);
     loc[2] -= 0.9;
     const tile = createTile(loc);
@@ -153,6 +161,28 @@ function createOcean() {
   }
 
   return grid;
+}
+
+const dotData: DotTS[] = [];
+const maxDotUpdateLen = 100;
+function initCPUDotData() {
+  while (dotData.length < maxDotUpdateLen) {
+    dotData.push({
+      pos: V(0, 0, 0),
+      color: V(1, 0, 0),
+      size: 2.0,
+    });
+  }
+}
+function updateDots(res: Resources<[typeof RendererDef]>, num: number) {
+  assert(num <= maxDotUpdateLen);
+  assert(dotData.length === maxDotUpdateLen);
+
+  const dotGPUData: CyArray<typeof DotStruct.desc> =
+    res.renderer.renderer.getCyResource(dotDataPtr)!;
+
+  const bufIdx = 0;
+  dotGPUData.queueUpdates(dotData, bufIdx, 0, num);
 }
 
 export async function initGrayboxShipArena() {
@@ -188,6 +218,23 @@ export async function initGrayboxShipArena() {
 
   // ocean
   const oceanGrid = createOcean();
+
+  // TODO(@darzu): testing dots
+  initCPUDotData();
+  EM.whenResources(RendererDef).then((res) => {
+    let i = 0;
+    for (let [q, r] of hexesWithin(0, 0, oceanRadius - 1)) {
+      const pos = oceanGrid.get(q, r)!.position;
+      const dot = dotData[i];
+      vec3.copy(dot.pos, pos);
+      vec3.copy(dot.color, ENDESGA16.lightGreen);
+      dot.size = 10.0;
+
+      i++;
+    }
+
+    updateDots(res, i);
+  });
 
   const wind = EM.addResource(WindDef);
   setWindAngle(wind, PI * 0.4);

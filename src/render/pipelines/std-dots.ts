@@ -5,7 +5,7 @@ import { litTexturePtr, mainDepthTex, sceneBufPtr } from "./std-scene.js";
 
 // TODO(@darzu): generalize for other billboard usage?
 
-const DotStruct = createCyStruct({
+export const DotStruct = createCyStruct({
   pos: "vec3<f32>",
   color: "vec3<f32>",
   size: "f32",
@@ -14,14 +14,14 @@ export type DotTS = CyToTS<typeof DotStruct.desc>;
 
 let MAX_NUM_DOTS = 1000;
 
-const dotData = CY.createArray("dotData", {
+export const dotDataPtr = CY.createArray("dotData", {
   struct: DotStruct,
   init: MAX_NUM_DOTS,
   // forceUsage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE,
 });
 
 export const initDots = CY.createComputePipeline("initDots", {
-  globals: [dotData],
+  globals: [dotDataPtr],
   shaderComputeEntry: "main",
   shader: (shaders) => `
   ${shaders["std-rand"].code}
@@ -38,7 +38,7 @@ export const initDots = CY.createComputePipeline("initDots", {
 });
 
 export const renderDots = CY.createRenderPipeline("renderDots", {
-  globals: [dotData, sceneBufPtr],
+  globals: [dotDataPtr, sceneBufPtr],
   // TODO(@darzu): use an "override" var for dotBoxSize once supported
   shader: (shaders) => `
   ${shaders["std-dots"].code}
