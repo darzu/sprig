@@ -25,7 +25,7 @@ import { RendererDef, RenderableConstructDef } from "../render/renderer-ecs.js";
 import { Intersect } from "../utils/util.js";
 import { addWorldGizmo } from "../utils/utils-game.js";
 
-export async function initWorld() {
+export async function initGrayboxWorld() {
   EM.addEagerInit([], [RendererDef], [], (res) => {
     // renderer
     res.renderer.pipelines = [

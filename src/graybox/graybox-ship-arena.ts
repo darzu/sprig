@@ -32,10 +32,11 @@ import { addGizmoChild } from "../utils/utils-game.js";
 import { HasMastDef, HasMastObj, createMast } from "../wind/mast.js";
 import { WindDef, setWindAngle } from "../wind/wind.js";
 import { createSock } from "../wind/windsock.js";
-import { initGhost, initWorld } from "./graybox-helpers.js";
+import { initGhost, initGrayboxWorld } from "./graybox-helpers.js";
 import { createObj, defineObj, mixinObj } from "./objects.js";
 
-const DBG_GHOST = true;
+const DBG_GHOST = false;
+
 const DBG_GIZMO = true;
 
 const SAIL_FURL_RATE = 0.02;
@@ -72,7 +73,7 @@ function createOcean() {
 }
 
 export async function initGrayboxShipArena() {
-  initWorld();
+  initGrayboxWorld();
 
   // ocean
   const oceanGrid = createOcean();
@@ -182,8 +183,8 @@ async function createShip() {
     },
   });
 
-  vec3.copy(ship.cameraFollow.positionOffset, [0.0, -50.0, 0]);
-  ship.cameraFollow.pitchOffset = -Math.PI * 0.25;
+  vec3.copy(ship.cameraFollow.positionOffset, [0.0, -100.0, 0]);
+  ship.cameraFollow.pitchOffset = -Math.PI * 0.2;
 
   if (DBG_GIZMO) addGizmoChild(ship, 10);
 

@@ -72,6 +72,8 @@ export const CameraComputedDef = EM.defineResource("cameraComputed", () => {
 });
 export type CameraView = Resource<typeof CameraComputedDef>;
 
+// TODO(@darzu): it'd be great to have standard camera options like BallCam, etc
+
 export const CameraFollowDef = EM.defineComponent(
   "cameraFollow",
   () => ({
