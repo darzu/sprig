@@ -22,8 +22,8 @@ export const ParametricDef = EM.defineComponent(
         pos: V(0, 0, 0),
         vel: V(0, 1, 0),
         accel: V(0, 0, 0),
+        time: 0,
       },
-      startMs: 0,
     };
   },
   (
@@ -32,18 +32,17 @@ export const ParametricDef = EM.defineComponent(
       pos: vec3.InputT;
       vel: vec3.InputT;
       accel: vec3.InputT;
-    },
-    startMs?: number
+      time: number;
+    }
   ) => {
     if (init) {
       vec3.copy(p.init.pos, init.pos);
       vec3.copy(p.init.vel, init.vel);
       vec3.copy(p.init.accel, init.accel);
+      p.init.time = init.time;
     }
-    p.startMs = startMs ?? 0;
     return p;
-  },
-  { multiArg: true }
+  }
 );
 // TODO(@darzu): serializer pairs
 
@@ -59,7 +58,7 @@ EM.addEagerInit([ParametricDef], [], [], () => {
           e.parametric.init.pos,
           e.parametric.init.vel,
           e.parametric.init.accel,
-          res.time.time - e.parametric.startMs,
+          res.time.time - e.parametric.init.time,
           e.position
         );
       }

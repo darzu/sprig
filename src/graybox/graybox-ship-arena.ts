@@ -1,4 +1,5 @@
 import { CameraFollowDef } from "../camera/camera.js";
+import { fireBullet } from "../cannons/bullet.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { EM, EntityW } from "../ecs/entity-manager.js";
@@ -13,21 +14,33 @@ import {
   createRudderTurret,
 } from "../ld53/rudder.js";
 import { V, quat, vec3 } from "../matrix/sprig-matrix.js";
-import { BallMesh, HexMesh, MastMesh } from "../meshes/mesh-list.js";
+import {
+  BallMesh,
+  CannonMesh,
+  HexMesh,
+  MastMesh,
+} from "../meshes/mesh-list.js";
 import { scaleMesh3 } from "../meshes/mesh.js";
 import { mkCubeMesh } from "../meshes/primatives.js";
+import { GravityDef } from "../motion/gravity.js";
+import { ParametricDef } from "../motion/parametric-motion.js";
 import { LinearVelocityDef } from "../motion/velocity.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { AABBCollider } from "../physics/collider.js";
+import { WorldFrameDef } from "../physics/nonintersection.js";
 import {
+  Frame,
   PhysicsParentDef,
   PositionDef,
+  RotationDef,
   ScaleDef,
 } from "../physics/transform.js";
 import { HasFirstInteractionDef } from "../render/canvas.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
+import { TimeDef } from "../time/time.js";
 import { CanManDef, raiseManTurret } from "../turret/turret.js";
 import { clamp } from "../utils/math.js";
+import { PI } from "../utils/util-no-import.js";
 import { assert } from "../utils/util.js";
 import { randVec3OfLen } from "../utils/utils-3d.js";
 import { addGizmoChild } from "../utils/utils-game.js";
@@ -42,6 +55,63 @@ const DBG_GHOST = false;
 const DBG_GIZMO = true;
 
 const SAIL_FURL_RATE = 0.02;
+
+const ShipObj = defineObj({
+  name: "ship",
+  components: [
+    ColorDef,
+    PositionDef,
+    RenderableConstructDef,
+    CameraFollowDef,
+    LinearVelocityDef,
+  ],
+  physicsParentChildren: true,
+  children: {
+    cannonL: [PositionDef, RotationDef],
+    cannonR: [PositionDef, RotationDef],
+  },
+} as const);
+
+const ShipDef = ShipObj.props;
+
+// TODO(@darzu): use parametric motion?
+const CannonBallObj = defineObj({
+  name: "cannonBall",
+  components: [
+    PositionDef,
+    RotationDef,
+    ParametricDef,
+    ColorDef,
+    RenderableConstructDef,
+  ],
+} as const);
+
+// TODO(@darzu): use pools!!
+function launchBall(frame: Frame, speed: number) {
+  const axis = vec3.transformQuat(vec3.FWD, frame.rotation);
+  const vel = vec3.scale(axis, speed);
+
+  const time = EM.getResource(TimeDef)!;
+
+  const GRAVITY = -8 * 0.00001;
+
+  const ball = createObj(CannonBallObj, {
+    args: {
+      position: undefined,
+      rotation: undefined,
+      parametric: {
+        pos: frame.position,
+        vel,
+        accel: [0, 0, GRAVITY],
+        time: time.time,
+      },
+      color: ENDESGA16.darkGray,
+      renderableConstruct: [BallMesh],
+    },
+  });
+
+  return ball;
+}
 
 function createOcean() {
   // TODO(@darzu): more efficient if we use one mesh
@@ -81,7 +151,7 @@ export async function initGrayboxShipArena() {
   const oceanGrid = createOcean();
 
   const wind = EM.addResource(WindDef);
-  setWindAngle(wind, Math.PI * 0.4);
+  setWindAngle(wind, PI * 0.4);
 
   const ship = await createShip();
 
@@ -93,7 +163,7 @@ export async function initGrayboxShipArena() {
   EM.addSystem(
     "controlShip",
     Phase.GAME_PLAYERS,
-    [HasRudderDef, HasMastDef, CameraFollowDef],
+    [ShipDef, HasRudderDef, HasMastDef, CameraFollowDef],
     [InputsDef, HasFirstInteractionDef],
     (es, res) => {
       if (es.length === 0) return;
@@ -112,45 +182,68 @@ export async function initGrayboxShipArena() {
       // rudder
       if (res.inputs.keyDowns["a"]) rudder.yawpitch.yaw -= 0.05;
       if (res.inputs.keyDowns["d"]) rudder.yawpitch.yaw += 0.05;
-      rudder.yawpitch.yaw = clamp(
-        rudder.yawpitch.yaw,
-        -Math.PI * 0.3,
-        Math.PI * 0.3
-      );
+      rudder.yawpitch.yaw = clamp(rudder.yawpitch.yaw, -PI * 0.3, PI * 0.3);
       quat.fromYawPitchRoll(-rudder.yawpitch.yaw, 0, 0, rudder.rotation);
 
+      // camera
       // TODO(@darzu): extract to some kinda ball cam?
       ship.cameraFollow.yawOffset += res.inputs.mouseMov[0] * 0.005;
       ship.cameraFollow.pitchOffset -= res.inputs.mouseMov[1] * 0.005;
       ship.cameraFollow.pitchOffset = clamp(
         ship.cameraFollow.pitchOffset,
-        -Math.PI * 0.5,
+        -PI * 0.5,
         0
       );
       ship.cameraFollow.yawOffset = clamp(
         ship.cameraFollow.yawOffset,
-        -Math.PI * 0.5,
-        Math.PI * 0.5
+        -PI * 0.5,
+        PI * 0.5
       );
+
+      // cannons
+      const ballSpeed = 0.2;
+      if (res.inputs.keyClicks[" "]) {
+        const cannons = [ship.ship.cannonL, ship.ship.cannonR];
+        for (let c of cannons) {
+          if (WorldFrameDef.isOn(c)) launchBall(c.world, ballSpeed);
+        }
+      }
     }
   );
 }
 
-const ShipObj = defineObj({
-  name: "ship",
-  components: [
-    ColorDef,
-    PositionDef,
-    RenderableConstructDef,
-    CameraFollowDef,
-    LinearVelocityDef,
-  ],
-  physicsParentChildren: true,
+const CannonObj = defineObj({
+  name: "cannon2",
+  components: [PositionDef, RotationDef, RenderableConstructDef, ColorDef],
 } as const);
 
 async function createShip() {
   const shipMesh = mkCubeMesh();
-  scaleMesh3(shipMesh, [12, 24, 2]);
+  shipMesh.pos.forEach((p) => {
+    // top of ship at height 0
+    p[2] -= 1.0;
+    // scale
+    p[0] *= 12;
+    p[1] *= 24;
+    p[2] *= 2;
+  });
+
+  const cannonL = createObj(CannonObj, {
+    args: {
+      position: [-10, 0, 2],
+      rotation: quat.fromYawPitchRoll(-PI * 0.5, PI * 0.1, 0),
+      renderableConstruct: [CannonMesh],
+      color: ENDESGA16.darkGray,
+    },
+  });
+  const cannonR = createObj(CannonObj, {
+    args: {
+      position: [+10, 0, 2],
+      rotation: quat.fromYawPitchRoll(PI * 0.5, PI * 0.1, 0),
+      renderableConstruct: [CannonMesh],
+      color: ENDESGA16.darkGray,
+    },
+  });
 
   const ship = ShipObj.new({
     args: {
@@ -159,6 +252,10 @@ async function createShip() {
       renderableConstruct: [shipMesh],
       cameraFollow: undefined,
       linearVelocity: undefined,
+    },
+    children: {
+      cannonL,
+      cannonR,
     },
   });
 
@@ -190,7 +287,7 @@ async function createShip() {
   });
 
   vec3.copy(ship.cameraFollow.positionOffset, [0.0, -100.0, 0]);
-  ship.cameraFollow.pitchOffset = -Math.PI * 0.2;
+  ship.cameraFollow.pitchOffset = -PI * 0.2;
 
   if (DBG_GIZMO) addGizmoChild(ship, 10);
 

@@ -141,16 +141,12 @@ export function createOrResetBullet(
   // e.gravity[1] = -props.gravity;
 
   // TODO(@darzu): MULTIPLAYER: fix sync & predict to work with parametric motion
-  EM.set(
-    e,
-    ParametricDef,
-    {
-      pos: props.location,
-      vel: props.linearVelocity,
-      accel: [0, 0, -props.gravity],
-    },
-    res.time.time
-  );
+  EM.set(e, ParametricDef, {
+    pos: props.location,
+    vel: props.linearVelocity,
+    accel: [0, 0, -props.gravity],
+    time: res.time.time,
+  });
   return e;
 }
 

@@ -911,7 +911,8 @@ EM.addSystem(
         GRAVITY,
         // 2.0,
         20.0,
-        [1, 0, 0]
+        // TODO(@darzu): make this use vec3.FWD
+        vec3.X
       );
 
       // play sound
