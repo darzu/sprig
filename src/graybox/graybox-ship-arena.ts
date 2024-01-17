@@ -37,9 +37,12 @@ import {
   ScaleDef,
 } from "../physics/transform.js";
 import { HasFirstInteractionDef } from "../render/canvas.js";
+import { GraphicsSettingsDef } from "../render/graphics-settings.js";
 import { PointLightDef } from "../render/lights.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
+import { initDots, renderDots } from "../render/pipelines/std-dots.js";
 import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
+import { noisePipes } from "../render/pipelines/std-noise.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
 import { shadowPipelines } from "../render/pipelines/std-shadow.js";
@@ -153,15 +156,20 @@ function createOcean() {
 }
 
 export async function initGrayboxShipArena() {
-  EM.addEagerInit([], [RendererDef], [], (res) => {
-    // renderer
-    res.renderer.pipelines = [
-      ...shadowPipelines,
-      stdRenderPipeline,
-      outlineRender,
-      deferredPipeline,
-      postProcess,
-    ];
+  EM.addEagerInit([], [RendererDef, GraphicsSettingsDef], [], (res) => {
+    res.renderer.renderer.submitPipelines([], [...noisePipes, initDots]);
+
+    EM.addEagerInit([], [RendererDef], [], (res) => {
+      // renderer
+      res.renderer.pipelines = [
+        ...shadowPipelines,
+        stdRenderPipeline,
+        outlineRender,
+        deferredPipeline,
+        renderDots,
+        postProcess,
+      ];
+    });
   });
 
   const { camera, me } = await EM.whenResources(CameraDef, MeDef);

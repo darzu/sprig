@@ -2033,3 +2033,22 @@ stancil buffer: way of counting something per-pixel 🤯
 Sand programs, rule based:
   https://www.youtube.com/watch?v=xvlsJ3FqNYU
   good fit for GPU?
+
+How to approach rendering problems:
+  http://c0de517e.blogspot.com/2023/02/how-to-render-it-ten-ideas-to-solve.html
+  Use the right space.
+  Data representation and its properties.
+    Consider the three main phases of computation. (scene encoding, solver, and real-time retrieval)
+    Consider the dual problem.
+  Compute over time.
+  Think about the limitations of available data.
+    Machine learning as an upper limit.
+  The hierarchy of ground truths.
+  Use computers to help along the way.
+  Humans over math.
+  Find good priors.
+  Delve deep.
+  Shortcut via proxies.
+
+"Machine Learning for Game Devs":
+  https://www.ea.com/seed/news/machine-learning-game-devs-part-1
