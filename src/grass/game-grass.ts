@@ -53,7 +53,7 @@ import { PartyDef } from "../camera/party.js";
 import { copyAABB, createAABB } from "../physics/aabb.js";
 import { InputsDef } from "../input/inputs.js";
 import { ScoreDef } from "../ld53/score.js";
-import { CanManDef, raiseManTurret } from "../turret/turret.js";
+import { CanManDef, TurretDef, raiseManTurret } from "../turret/turret.js";
 import { TextDef } from "../gui/ui.js";
 import { VERBOSE_LOG } from "../flags.js";
 import { CanvasDef, HasFirstInteractionDef } from "../render/canvas.js";
@@ -313,6 +313,8 @@ export async function initGrassGame(hosting: boolean) {
     vec3.copy(player.position, rudder.position);
     player.position[2] = 1.45;
     assert(CameraFollowDef.isOn(rudder));
+    assert(AuthorityDef.isOn(rudder));
+    assert(TurretDef.isOn(rudder));
     raiseManTurret(player, rudder);
   }
 
@@ -637,7 +639,7 @@ export async function initGrassGame(hosting: boolean) {
       const rudder = ship.hasRudder.rudder;
 
       // furl/unfurl
-      if (rudder.turret.mannedId) {
+      if (TurretDef.isOn(rudder) && rudder.turret.mannedId) {
         const sail = mast.mast.sail.sail;
         if (res.inputs.keyDowns["w"]) sail.unfurledAmount += SAIL_FURL_RATE;
         if (res.inputs.keyDowns["s"]) sail.unfurledAmount -= SAIL_FURL_RATE;

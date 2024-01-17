@@ -212,6 +212,8 @@ EM.addEagerInit([TurretDef], [], [], () => {
 
         c.cameraFollow.yawOffset =
           c.turret.cameraYawOffset + c.yawpitch.yaw * c.turret.cameraYawFactor;
+
+        c.cameraFollow.pitchOffset = c.turret.cameraPitchOffset;
       }
     }
   );

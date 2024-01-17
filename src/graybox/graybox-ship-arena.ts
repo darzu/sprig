@@ -36,6 +36,7 @@ const DBG_GIZMO = true;
 const SAIL_FURL_RATE = 0.02;
 
 function createOcean() {
+  // TODO(@darzu): more efficient if we use one mesh
   const tileCS = [
     ColorDef,
     PositionDef,
@@ -50,7 +51,7 @@ function createOcean() {
     createObj(tileCS, [
       vec3.add(ENDESGA16.blue, randVec3OfLen(0.1)),
       xyz,
-      [HexMesh], // TODO(@darzu): more efficient if we use one mesh
+      [HexMesh],
       [size, size, 1],
     ]);
   const grid = createHexGrid<typeT>();
@@ -61,13 +62,15 @@ function createOcean() {
     const tile = createTile(loc);
     grid.set(q, r, tile);
   }
+
+  return grid;
 }
 
 export async function initGrayboxShipArena() {
   initWorld();
 
   // ocean
-  createOcean();
+  const oceanGrid = createOcean();
 
   const wind = EM.addResource(WindDef);
   setWindAngle(wind, Math.PI * 0.4);
@@ -90,7 +93,7 @@ export async function initGrayboxShipArena() {
 
   EM.ensureResource(LocalPlayerEntityDef, player.id);
 
-  if (!DBG_GHOST) raiseManTurret(player, ship.hasRudder.rudder);
+  // if (!DBG_GHOST) raiseManTurret(player, ship.hasRudder.rudder);
 
   // dbg ghost
   if (DBG_GHOST) {
@@ -114,11 +117,9 @@ export async function initGrayboxShipArena() {
 
       // TODO(@darzu): how do we make this code re-usable across games and keybindings?
       // furl/unfurl
-      if (rudder.turret.mannedId) {
-        const sail = mast.mast.sail.sail;
-        if (res.inputs.keyDowns["w"]) sail.unfurledAmount += SAIL_FURL_RATE;
-        if (res.inputs.keyDowns["s"]) sail.unfurledAmount -= SAIL_FURL_RATE;
-      }
+      const sail = mast.mast.sail.sail;
+      if (res.inputs.keyDowns["w"]) sail.unfurledAmount += SAIL_FURL_RATE;
+      if (res.inputs.keyDowns["s"]) sail.unfurledAmount -= SAIL_FURL_RATE;
     }
   );
 }

@@ -402,7 +402,7 @@ export function registerShipSystems() {
 
   // If a rudder isn't being manned, smooth it back towards straight
   EM.addSystem(
-    "easeRudder",
+    "easeRudderHS",
     Phase.GAME_WORLD,
     [RudderPropsDef, TurretDef, YawPitchDef, AuthorityDef],
     [MeDef],
