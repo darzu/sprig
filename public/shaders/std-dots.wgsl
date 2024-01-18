@@ -1,16 +1,10 @@
-// struct VertexOutput {
-//     @builtin(position) Position : vec4<f32>,
-//     @location(0) uv : vec2<f32>,
-//     @location(1) color: vec3<f32>,
-// };
-
-// for outlines (yeah, it's  over kill)
 struct VertexOutput {
-    @location(0) @interpolate(flat) normal : vec3<f32>,
-    @location(1) @interpolate(flat) color : vec3<f32>,
-    @location(2) worldPos: vec4<f32>,
-    @location(3) uv : vec2<f32>,
     @builtin(position) position : vec4<f32>,
+    @location(0) uv : vec2<f32>,
+    @location(1) @interpolate(flat) color: vec3<f32>,
+    // TODO(@darzu): This is probably overkill for outlines:
+    // @location(2) @interpolate(flat) normal : vec3<f32>,
+    @location(2) worldPos: vec4<f32>,
 };
 
 @vertex
@@ -42,11 +36,11 @@ fn vert_main(@builtin(vertex_index) gvIdx : u32) -> VertexOutput {
     scene.cameraViewProjMatrix[1][1], 
     scene.cameraViewProjMatrix[2][1]
   ));
-  let back = normalize(vec3(
-    scene.cameraViewProjMatrix[0][2], 
-    scene.cameraViewProjMatrix[1][2], 
-    scene.cameraViewProjMatrix[2][2]
-  ));
+  // let back = normalize(vec3(
+  //   scene.cameraViewProjMatrix[0][2], 
+  //   scene.cameraViewProjMatrix[1][2], 
+  //   scene.cameraViewProjMatrix[2][2]
+  // ));
 
   let worldPos = dot.pos
     + right * corner.x
@@ -65,12 +59,12 @@ fn vert_main(@builtin(vertex_index) gvIdx : u32) -> VertexOutput {
 
   var output : VertexOutput;
 
-  let normal = -back;
+  // let normal = -back;
 
   output.uv = uv[vIdx];
   output.worldPos = vec4(worldPos, 1.0);
   output.position = screenPos;
-  output.normal = normal;
+  // output.normal = normal;
   output.color = dot.color;
 
   return output;
@@ -78,9 +72,9 @@ fn vert_main(@builtin(vertex_index) gvIdx : u32) -> VertexOutput {
 
 struct FragOut {
   @location(0) color: vec4<f32>,
-  @location(1) normal: vec4<f32>,
-  @location(2) position: vec4<f32>,
-  @location(3) surface: vec2<u32>,
+  @location(1) surface: vec2<u32>,
+  @location(2) normal: vec4<f32>,
+  @location(3) position: vec4<f32>,
 }
 
 @fragment
@@ -100,7 +94,9 @@ fn frag_main(input: VertexOutput) -> FragOut {
 
   const fresnel = 0.0;
 
-  out.normal = vec4<f32>(normalize(input.normal), fresnel);
+  // out.normal = vec4<f32>(normalize(input.normal), fresnel);
+  // TODO(@darzu): hacky? just put the normal straight up
+  out.normal = vec4<f32>(0.0, 0.0, 1.0, fresnel);
 
   // TODO(@darzu): ensure these r unique?
   out.surface.r = 777;

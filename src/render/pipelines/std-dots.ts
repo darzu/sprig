@@ -61,8 +61,8 @@ export const renderDots = CY.createRenderPipeline("renderDots", {
   // output: [litTexturePtr], // no onlines
   output: [
     unlitTexturePtr,
+    surfacesTexturePtr,
     worldNormsAndFresTexPtr,
     positionsTexturePtr,
-    surfacesTexturePtr,
   ],
 });
