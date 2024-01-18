@@ -1520,3 +1520,7 @@ PlayWare's throw it against the wall and see what sticks approach:
 
 Regarding some Rust drama around runtime reflection?
   https://soasis.org/posts/a-mirror-for-rust-a-plan-for-generic-compile-time-introspection-in-rust/
+
+"Around The World, Part 11: Everything is harder on a sphere":
+  more sphere mapping / coordinate stuff
+  https://frozenfractal.com/blog/2024/1/8/around-the-world-11-everything-is-harder-on-a-sphere/

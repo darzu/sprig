@@ -461,3 +461,6 @@ WebGPU workload simulator:
 
 WebGPU samples:
   https://webgpu.github.io/webgpu-samples/
+
+Disable timestamp query quantization:
+  In Chrome browser, you can disable timestamp quantization by enabling the "WebGPU Developer Features" flag at chrome://flags/#enable-webgpu-developer-features during the development of your app
