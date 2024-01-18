@@ -239,7 +239,7 @@ export async function initGrayboxShipArena() {
   createSun();
 
   // gizmo
-  addWorldGizmo(V(0, 0, 0), 5);
+  addWorldGizmo(V(0, 0, 0), 50);
 
   // ocean
   const oceanGrid = createOcean();
@@ -348,7 +348,8 @@ export async function initGrayboxShipArena() {
         const doFire = res.inputs.keyClicks[" "];
 
         // which cannons?
-        const cannons = [ship.ship.cannonL, ship.ship.cannonR];
+        const facingLeft = ship.cameraFollow.yawOffset < 0;
+        const cannons = facingLeft ? [ship.ship.cannonL] : [ship.ship.cannonR];
         for (let c of cannons) {
           if (!WorldFrameDef.isOn(c)) continue;
           // get fire solution

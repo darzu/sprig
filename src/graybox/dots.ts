@@ -1,3 +1,6 @@
+// Inspiration, I think most effects r just dots: https://store.steampowered.com/app/1843760/Rogue_Tower/
+//  change size, color, location over time
+
 // TODO(@darzu): allocate ranges of dots
 
 /*
