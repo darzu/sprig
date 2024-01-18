@@ -207,15 +207,19 @@ export async function initGrayboxShipArena() {
     });
   });
 
-  const res = await EM.whenResources(CameraDef, RendererDef, MeDef); // BROKEN
-  // const res = await EM.whenResources(CameraDef, MeDef); // WORKS!
-  const { camera, me } = res;
+  const { camera } = await EM.whenResources(CameraDef);
 
   // camera
   camera.fov = Math.PI * 0.5;
   camera.viewDist = 1000;
   vec3.set(-200, -200, -200, camera.maxWorldAABB.min);
   vec3.set(+200, +200, +200, camera.maxWorldAABB.max);
+
+  const res = await EM.whenResources(RendererDef, MeDef); // BROKEN
+  // const res = await EM.whenResources(CameraDef, MeDef); // WORKS!
+  const { me, renderer } = res;
+
+  console.log(`has resources!`);
 
   // sun
   createSun();
@@ -230,126 +234,10 @@ export async function initGrayboxShipArena() {
   initCPUDotData();
   // updateDots(res, maxDotUpdateLen);
 
-  // testing dots
-  if (DBG_DOTS) {
-    let i = 0;
-    for (let [q, r] of hexesWithin(0, 0, oceanRadius - 1)) {
-      const pos = oceanGrid.get(q, r)!.position;
-      const dot = dotData[i];
-      vec3.copy(dot.pos, pos);
-      vec3.copy(dot.color, ENDESGA16.lightGreen);
-      dot.size = 10.0;
-
-      i++;
-    }
-    // updateDots(res, i);
-  }
-
   const wind = EM.addResource(WindDef);
   setWindAngle(wind, PI * 0.4);
 
   const ship = await createShip();
-
-  // dbg ghost
-  if (DBG_GHOST) {
-    initGhost();
-  }
-
-  // cannon launch intermediates
-  const _launchPath: Path = range(20).map((_) => ({
-    pos: vec3.create(),
-    rot: quat.create(),
-  }));
-  // const _launchParam: Parametric = createParametric();
-
-  let _pathVisible = false;
-  function showLaunchPath(path: Path) {
-    for (let i = 0; i < path.length; i++) {
-      const dot = dotData[i];
-      vec3.copy(dot.pos, path[i].pos);
-      dot.size = 2.0;
-      vec3.copy(dot.color, ENDESGA16.yellow);
-    }
-    // updateDots(res, path.length);
-    _pathVisible = true;
-  }
-  function hideLaunchPath(len: number) {
-    for (let i = 0; i < len; i++) {
-      const dot = dotData[i];
-      dot.size = 0.0;
-    }
-    // updateDots(res, len);
-    _pathVisible = false;
-  }
-
-  EM.addSystem(
-    "controlShip",
-    Phase.GAME_PLAYERS,
-    [ShipDef, HasRudderDef, HasMastDef, CameraFollowDef],
-    [InputsDef, HasFirstInteractionDef, RendererDef],
-    (es, res) => {
-      if (es.length === 0) return;
-      assert(es.length === 1);
-      const ship = es[0];
-
-      const mast = ship.hasMast.mast;
-      const rudder = ship.hasRudder.rudder;
-
-      // TODO(@darzu): how do we make this code re-usable across games and keybindings?
-      // furl/unfurl
-      const sail = mast.mast.sail.sail;
-      if (res.inputs.keyDowns["w"]) sail.unfurledAmount += SAIL_FURL_RATE;
-      if (res.inputs.keyDowns["s"]) sail.unfurledAmount -= SAIL_FURL_RATE;
-
-      // rudder
-      if (res.inputs.keyDowns["a"]) rudder.yawpitch.yaw -= 0.05;
-      if (res.inputs.keyDowns["d"]) rudder.yawpitch.yaw += 0.05;
-      rudder.yawpitch.yaw = clamp(rudder.yawpitch.yaw, -PI * 0.3, PI * 0.3);
-      quat.fromYawPitchRoll(-rudder.yawpitch.yaw, 0, 0, rudder.rotation);
-
-      // camera
-      // TODO(@darzu): extract to some kinda ball cam?
-      ship.cameraFollow.yawOffset += res.inputs.mouseMov[0] * 0.005;
-      ship.cameraFollow.pitchOffset -= res.inputs.mouseMov[1] * 0.005;
-      ship.cameraFollow.pitchOffset = clamp(
-        ship.cameraFollow.pitchOffset,
-        -PI * 0.5,
-        0
-      );
-      ship.cameraFollow.yawOffset = clamp(
-        ship.cameraFollow.yawOffset,
-        -PI * 0.5,
-        PI * 0.5
-      );
-
-      const ballSpeed = 0.2;
-      // aim mode
-      if (res.inputs.keyDowns["shift"]) {
-        // firing?
-        const doFire = res.inputs.keyClicks[" "];
-
-        // which cannons?
-        const cannons = [ship.ship.cannonL, ship.ship.cannonR];
-        for (let c of cannons) {
-          if (!WorldFrameDef.isOn(c)) continue;
-          // get fire solution
-          // cannonFireCurve(c.world, ballSpeed, _launchParam);
-
-          // display path
-          // createPathFromParameteric(_launchParam, 100, _launchPath);
-          // showLaunchPath(_launchPath);
-
-          // launch?
-          if (doFire) {
-            launchBall(c.world, ballSpeed);
-          }
-        }
-      } else {
-        // hide path?
-        if (_pathVisible) hideLaunchPath(_launchPath.length);
-      }
-    }
-  );
 }
 
 const CannonObj = defineObj({
