@@ -1305,3 +1305,15 @@ export function orthonormalize(forward: vec3, upish: vec3, outRight: vec3) {
   vec3.normalize(outRight, outRight);
   vec3.cross(outRight, forward, upish);
 }
+
+// prettier-ignore
+export type InputT<T extends Record<any, any>> = {
+  [k in keyof T]: 
+    T[k] extends vec3 ? vec3.InputT : 
+    T[k] extends vec2 ? vec2.InputT :
+    T[k] extends quat ? quat.InputT :
+    T[k] extends mat4 ? mat4.InputT :
+    T[k] extends mat3 ? mat3.InputT :
+    T[k] extends vec4 ? vec4.InputT :
+    T[k]
+};

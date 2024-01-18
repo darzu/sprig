@@ -311,7 +311,7 @@ export async function breakBullet(
     vec3.copy(pe.position, bullet.world.position);
     vec3.copy(pe.color, bullet.color);
     // const vel = vec3.clone(bullet.linearVelocity);
-    const vel = vec3.clone(bullet.parametric.init.vel);
+    const vel = vec3.clone(bullet.parametric.vel);
     vel[1] = -vel[1]; // assume we're at the end of a parabola
     vec3.normalize(vel, vel);
     vec3.negate(vel, vel);

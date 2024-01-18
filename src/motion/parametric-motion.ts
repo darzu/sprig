@@ -1,50 +1,80 @@
-import { EM } from "../ecs/entity-manager.js";
-import { vec3, V, vec2, tV } from "../matrix/sprig-matrix.js";
+import { Component, EM } from "../ecs/entity-manager.js";
+import { vec3, V, vec2, tV, InputT, quat } from "../matrix/sprig-matrix.js";
 import { TimeDef } from "../time/time.js";
 import { PositionDef } from "../physics/transform.js";
 import { assert } from "../utils/util.js";
 import { parabolaFromPoints } from "../utils/math.js";
 import { Phase } from "../ecs/sys-phase.js";
+import { Path } from "../utils/spline.js";
 
 // TODO(@darzu): reconcile with stone tower prediction code!!
-
-export interface ParamProjectile {
+export type Parametric = {
   pos: vec3;
   vel: vec3;
   accel: vec3;
+  time: number;
+};
+
+export function createParametric(): Parametric {
+  return {
+    pos: V(0, 0, 0),
+    vel: V(0, 1, 0),
+    accel: V(0, 0, 0),
+    time: 0,
+  };
 }
 
 export const ParametricDef = EM.defineComponent(
   "parametric",
-  () => {
-    return {
-      init: {
-        pos: V(0, 0, 0),
-        vel: V(0, 1, 0),
-        accel: V(0, 0, 0),
-        time: 0,
-      },
-    };
-  },
-  (
-    p,
-    init?: {
-      pos: vec3.InputT;
-      vel: vec3.InputT;
-      accel: vec3.InputT;
-      time: number;
-    }
-  ) => {
+  createParametric,
+  (p, init?: InputT<Parametric>) => {
     if (init) {
-      vec3.copy(p.init.pos, init.pos);
-      vec3.copy(p.init.vel, init.vel);
-      vec3.copy(p.init.accel, init.accel);
-      p.init.time = init.time;
+      copyParamateric(p, init);
     }
     return p;
   }
 );
 // TODO(@darzu): serializer pairs
+
+// export type Parametric = Component<typeof ParametricDef>;
+
+export function copyParamateric(out: Parametric, p: InputT<Parametric>) {
+  vec3.copy(out.pos, p.pos);
+  vec3.copy(out.vel, p.vel);
+  vec3.copy(out.accel, p.accel);
+  out.time = p.time;
+  return out;
+}
+
+export function createPathFromParameteric(
+  p: Parametric,
+  deltaT: number,
+  out: Path
+) {
+  // get positions
+  for (let i = 0; i < out.length; i++) {
+    const t = i * deltaT;
+    projectilePosition(p.pos, p.vel, p.accel, t, out[i].pos);
+  }
+
+  // find rotations
+  // TODO(@darzu): there's probably a more clever way to get UP. We know tangent/fwd,
+  //    perpendicular to that is a disk of directions. sub(the prev & next points avg loc on that
+  //    plane, this points loc on that plane)
+  const up = vec3.UP;
+  for (let i = 1; i < out.length - 1; i++) {
+    const prev = out[i - 1].pos;
+    const next = out[i + 1].pos;
+    const fwd = vec3.sub(next, prev);
+    quat.fromForwardAndUpish(fwd, up, out[i].rot);
+  }
+  // end rotations
+  // TODO(@darzu): ideally we'd project the delta rotation to the ends
+  quat.copy(out[0].rot, out[1].rot);
+  quat.copy(out[out.length - 1].rot, out[out.length - 2].rot);
+
+  return out;
+}
 
 EM.addEagerInit([ParametricDef], [], [], () => {
   EM.addSystem(
@@ -55,10 +85,10 @@ EM.addEagerInit([ParametricDef], [], [], () => {
     (es, res) => {
       for (let e of es) {
         projectilePosition(
-          e.parametric.init.pos,
-          e.parametric.init.vel,
-          e.parametric.init.accel,
-          res.time.time - e.parametric.init.time,
+          e.parametric.pos,
+          e.parametric.vel,
+          e.parametric.accel,
+          res.time.time - e.parametric.time,
           e.position
         );
       }
@@ -68,9 +98,9 @@ EM.addEagerInit([ParametricDef], [], [], () => {
 
 // NOTE: assumes no air resistance
 export function projectilePosition(
-  pos: vec3,
-  vel: vec3,
-  accel: vec3,
+  pos: vec3.InputT,
+  vel: vec3.InputT,
+  accel: vec3.InputT,
   t: number,
   out?: vec3
 ): vec3 {

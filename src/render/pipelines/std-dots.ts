@@ -12,7 +12,7 @@ export const DotStruct = createCyStruct({
 });
 export type DotTS = CyToTS<typeof DotStruct.desc>;
 
-let MAX_NUM_DOTS = 1000;
+export let MAX_NUM_DOTS = 1000;
 
 export const dotDataPtr = CY.createArray("dotData", {
   struct: DotStruct,
