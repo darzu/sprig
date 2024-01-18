@@ -76,7 +76,7 @@ import { dbgPathWithGizmos } from "../wood/shipyard.js";
 import { createSun, initGhost, initGrayboxWorld } from "./graybox-helpers.js";
 import { createObj, defineObj, mixinObj } from "./objects.js";
 
-const DBG_GHOST = true;
+const DBG_GHOST = false;
 
 const DBG_GIZMO = true;
 
@@ -211,9 +211,9 @@ export async function initGrayboxShipArena() {
     res.renderer.pipelines = [
       ...shadowPipelines,
       stdRenderPipeline,
+      renderDots,
       outlineRender,
       deferredPipeline,
-      renderDots,
       postProcess,
     ];
   });

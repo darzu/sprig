@@ -312,6 +312,7 @@ export const worldNormsAndFresTexPtr = CY.createTexture("worldNormsTex", {
   // TODO(@darzu): support anti-aliasing again
 });
 
+// TODO(@darzu): PERF! I probably don't need positions text since I should be able to use depth + screen
 export const positionsTexturePtr = CY.createTexture("positionsTexture", {
   size: [100, 100],
   onCanvasResize: (w, h) => [w, h],

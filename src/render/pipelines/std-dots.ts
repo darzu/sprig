@@ -1,7 +1,15 @@
 import { CY } from "../gpu-registry.js";
 import { createCyStruct, CyToTS } from "../gpu-struct.js";
 import { outlinedTexturePtr } from "./std-outline.js";
-import { litTexturePtr, mainDepthTex, sceneBufPtr } from "./std-scene.js";
+import {
+  litTexturePtr,
+  mainDepthTex,
+  positionsTexturePtr,
+  sceneBufPtr,
+  surfacesTexturePtr,
+  unlitTexturePtr,
+  worldNormsAndFresTexPtr,
+} from "./std-scene.js";
 
 // TODO(@darzu): generalize for other billboard usage?
 
@@ -50,9 +58,11 @@ export const renderDots = CY.createRenderPipeline("renderDots", {
     stepMode: "single-draw",
   },
   depthStencil: mainDepthTex,
-  // TODO(@darzu): if we want outlines:
-  // unlitTexturePtr
-  // worldNormsAndFresTexPtr
-  // surfacesTexturePtr
-  output: [litTexturePtr],
+  // output: [litTexturePtr], // no onlines
+  output: [
+    unlitTexturePtr,
+    worldNormsAndFresTexPtr,
+    positionsTexturePtr,
+    surfacesTexturePtr,
+  ],
 });
