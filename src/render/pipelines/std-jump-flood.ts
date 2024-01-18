@@ -144,8 +144,8 @@ export function createJfaPipelines(
         ${shaders["std-jump-flood"].code}
       `;
       },
-      shaderFragmentEntry: "frag_main",
-      shaderVertexEntry: "vert_main",
+      // shaderFragmentEntry: "frag_main",
+      // shaderVertexEntry: "vert_main",
     });
 
     return pipeline;

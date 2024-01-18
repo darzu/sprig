@@ -57,8 +57,8 @@ export function createBenchmarkTexAndPipe(
       stepMode: "single-draw",
       vertexCount: 6,
     },
-    shaderVertexEntry: "vert_main",
-    shaderFragmentEntry: "frag_main",
+    // shaderVertexEntry: "vert_main",
+    // shaderFragmentEntry: "frag_main",
     shader: (shaders) => `
     ${shaders["std-rand"].code}
     ${shaders["std-screen-quad-vert"].code}

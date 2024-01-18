@@ -43,8 +43,8 @@ export const renderDots = CY.createRenderPipeline("renderDots", {
   shader: (shaders) => `
   ${shaders["std-dots"].code}
   `,
-  shaderVertexEntry: "vert_main",
-  shaderFragmentEntry: "frag_main",
+  // shaderVertexEntry: "vert_main",
+  // shaderFragmentEntry: "frag_main",
   meshOpt: {
     vertexCount: 6 * MAX_NUM_DOTS,
     stepMode: "single-draw",

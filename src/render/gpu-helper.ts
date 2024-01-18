@@ -179,8 +179,8 @@ export function createRenderTextureToQuad(
     },
     output: [outTex],
     shader,
-    shaderFragmentEntry: "frag_main",
-    shaderVertexEntry: "vert_main",
+    // shaderFragmentEntry: "frag_main",
+    // shaderVertexEntry: "vert_main",
   });
 
   return { pipeline, quad };

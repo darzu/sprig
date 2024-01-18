@@ -546,7 +546,7 @@ interface GPUPrimitiveState {
 
 interface GPUProgrammableStage {
   module: GPUShaderModule;
-  entryPoint: string;
+  entryPoint?: string;
   constants?: Record<string, GPUPipelineConstantValue>;
 }
 

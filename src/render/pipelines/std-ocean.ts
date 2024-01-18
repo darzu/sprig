@@ -188,8 +188,8 @@ export const renderOceanPipe = CY.createRenderPipeline("oceanRender", {
     pool: oceanPoolPtr,
     stepMode: "per-mesh-handle",
   },
-  shaderVertexEntry: "vert_main",
-  shaderFragmentEntry: "frag_main",
+  // shaderVertexEntry: "vert_main",
+  // shaderFragmentEntry: "frag_main",
   output: [
     {
       ptr: unlitTexturePtr,

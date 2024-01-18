@@ -68,8 +68,8 @@ export const boidRender = CY.createRenderPipeline("boidRender", {
   output: [],
   depthStencil: boidDepthTex,
   shader: "xp-boid-render",
-  shaderFragmentEntry: "frag_main",
-  shaderVertexEntry: "vert_main",
+  // shaderFragmentEntry: "frag_main",
+  // shaderVertexEntry: "vert_main",
 });
 
 const BoidParams = createCyStruct(

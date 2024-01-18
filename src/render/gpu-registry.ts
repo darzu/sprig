@@ -230,8 +230,8 @@ export interface CyRenderPipelinePtr<
   fragOverrides?: FO;
   vertOverrides?: VO;
   shader: ((shaders: ShaderSet) => string) | ShaderName;
-  shaderVertexEntry: string;
-  shaderFragmentEntry: string;
+  shaderVertexEntry?: string;
+  shaderFragmentEntry?: string;
   cullMode?: GPUCullMode;
   frontFace?: GPUFrontFace;
   // TODO(@darzu): move vertexBuf into mesh opt?

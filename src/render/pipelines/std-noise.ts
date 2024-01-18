@@ -52,8 +52,8 @@ export const whiteNoisePipes = noiseSizes.map((s, i) => {
       stepMode: "single-draw",
       vertexCount: 6,
     },
-    shaderVertexEntry: "vert_main",
-    shaderFragmentEntry: "frag_main",
+    // shaderVertexEntry: "vert_main",
+    // shaderFragmentEntry: "frag_main",
     shader: (shaders) => `
   ${shaders["std-rand"].code}
   ${shaders["std-screen-quad-vert"].code}
@@ -83,8 +83,8 @@ export const vecNoisePipes = noiseSizes.map((s, i) => {
       stepMode: "single-draw",
       vertexCount: 6,
     },
-    shaderVertexEntry: "vert_main",
-    shaderFragmentEntry: "frag_main",
+    // shaderVertexEntry: "vert_main",
+    // shaderFragmentEntry: "frag_main",
     shader: (shaders) => `
   ${shaders["std-rand"].code}
   ${shaders["std-screen-quad-vert"].code}
@@ -147,8 +147,8 @@ function createOctaveNoisePipe(frequencies: number[], persistence: number) {
       stepMode: "single-draw",
       vertexCount: 6,
     },
-    shaderVertexEntry: "vert_main",
-    shaderFragmentEntry: "frag_main",
+    // shaderVertexEntry: "vert_main",
+    // shaderFragmentEntry: "frag_main",
     shader: (shaders) => `
     ${shaders["std-screen-quad-vert"].code}
 
@@ -256,8 +256,8 @@ export const perlinNoisePipe = CY.createRenderPipeline("perlinNoisePipe", {
     stepMode: "single-draw",
     vertexCount: 6,
   },
-  shaderVertexEntry: "vert_main",
-  shaderFragmentEntry: "frag_main",
+  // shaderVertexEntry: "vert_main",
+  // shaderFragmentEntry: "frag_main",
   shader: (shaders) => `
   ${shaders["std-rand"].code}
   ${shaders["std-screen-quad-vert"].code}

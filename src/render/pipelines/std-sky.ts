@@ -24,8 +24,8 @@ export const skyPipeline = CY.createRenderPipeline("skyPipeline", {
     meshMask: SKY_MASK,
     stepMode: "per-mesh-handle",
   },
-  shaderVertexEntry: "vert_main",
-  shaderFragmentEntry: "frag_main",
+  // shaderVertexEntry: "vert_main",
+  // shaderFragmentEntry: "frag_main",
   output: [
     {
       ptr: litTexturePtr,

@@ -22,8 +22,8 @@ export const alphaRenderPipeline = CY.createRenderPipeline("alphaRender", {
     meshMask: ALPHA_MASK,
     stepMode: "per-mesh-handle",
   },
-  shaderVertexEntry: "vert_main",
-  shaderFragmentEntry: "frag_main",
+  // shaderVertexEntry: "vert_main",
+  // shaderFragmentEntry: "frag_main",
   output: [
     {
       ptr: unlitTexturePtr,

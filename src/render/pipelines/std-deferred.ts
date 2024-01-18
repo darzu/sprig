@@ -31,6 +31,6 @@ export const deferredPipeline = CY.createRenderPipeline("deferredRender", {
   },
   output: [litTexturePtr],
   shader: "std-deferred",
-  shaderFragmentEntry: "frag_main",
-  shaderVertexEntry: "vert_main",
+  // shaderFragmentEntry: "frag_main",
+  // shaderVertexEntry: "vert_main",
 });

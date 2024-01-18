@@ -251,8 +251,8 @@ export const stdRiggedRenderPipeline = CY.createRenderPipeline(
       pool: poolPtr,
       stepMode: "per-mesh-handle",
     },
-    shaderVertexEntry: "vert_main",
-    shaderFragmentEntry: "frag_main",
+    // shaderVertexEntry: "vert_main",
+    // shaderFragmentEntry: "frag_main",
     // TODO: do i need other outputs from std-mesh?
     output: [
       {

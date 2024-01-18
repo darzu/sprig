@@ -62,8 +62,8 @@ export const renderStars = CY.createRenderPipeline("renderStars", {
   var<private> starBoxSize = ${STAR_BOX_SIZE.toFixed(1)};
   ${shaders["std-stars"].code}
   `,
-  shaderVertexEntry: "vert_main",
-  shaderFragmentEntry: "frag_main",
+  // shaderVertexEntry: "vert_main",
+  // shaderFragmentEntry: "frag_main",
   meshOpt: {
     vertexCount: 6 * NUM_STARS,
     stepMode: "single-draw",

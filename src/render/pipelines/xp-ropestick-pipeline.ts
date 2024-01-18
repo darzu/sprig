@@ -250,8 +250,8 @@ export const renderRopePipelineDesc = CY.createRenderPipeline("renderRope", {
     index: particleIdxBufPtr,
     stepMode: "per-instance",
   },
-  shaderVertexEntry: "vert_main",
-  shaderFragmentEntry: "frag_main",
+  // shaderVertexEntry: "vert_main",
+  // shaderFragmentEntry: "frag_main",
   output: [litTexturePtr],
   depthStencil: mainDepthTex,
   shader: () =>

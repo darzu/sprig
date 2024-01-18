@@ -72,8 +72,8 @@ export const stdRenderPipeline = CY.createRenderPipeline("stdMeshRender", {
     pool: meshPoolPtr,
     stepMode: "per-mesh-handle",
   },
-  shaderVertexEntry: "vert_main",
-  shaderFragmentEntry: "frag_main",
+  // shaderVertexEntry: "vert_main",
+  // shaderFragmentEntry: "frag_main",
   output: [
     {
       ptr: unlitTexturePtr,

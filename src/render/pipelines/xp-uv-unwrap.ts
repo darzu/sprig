@@ -77,8 +77,8 @@ export const unwrapPipeline2 = CY.createRenderPipeline("unwrapPipe2", {
     return output;
   }
   `,
-  shaderVertexEntry: "vertMain",
-  shaderFragmentEntry: "fragMain",
+  // shaderVertexEntry: "vertMain",
+  // shaderFragmentEntry: "fragMain",
   meshOpt: {
     pool: oceanPoolPtr,
     meshMask: UVUNWRAP_MASK,
@@ -126,8 +126,8 @@ export const unwrapPipeline = CY.createRenderPipeline("unwrapPipe", {
     return output;
   }
   `,
-  shaderVertexEntry: "vertMain",
-  shaderFragmentEntry: "fragMain",
+  // shaderVertexEntry: "vertMain",
+  // shaderFragmentEntry: "fragMain",
   meshOpt: {
     pool: oceanPoolPtr,
     meshMask: UVUNWRAP_MASK,

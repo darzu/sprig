@@ -31,6 +31,6 @@ export const postProcess = CY.createRenderPipeline("postProcess", {
   },
   output: [canvasTexturePtr],
   shader: "std-post",
-  shaderFragmentEntry: "frag_main",
-  shaderVertexEntry: "vert_main",
+  // shaderFragmentEntry: "frag_main",
+  // shaderVertexEntry: "vert_main",
 });

@@ -83,8 +83,8 @@ const cubeRenderPipeline = CY.createRenderPipeline("cubeRender", {
     pool: meshPoolPtr,
     stepMode: "per-mesh-handle",
   },
-  shaderVertexEntry: "vert_main",
-  shaderFragmentEntry: "frag_main",
+  // shaderVertexEntry: "vert_main",
+  // shaderFragmentEntry: "frag_main",
   output: [
     {
       ptr: litTexturePtr,
@@ -192,6 +192,6 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec4<f32> {
 }
   `;
   },
-  shaderFragmentEntry: "frag_main",
-  shaderVertexEntry: "vert_main",
+  // shaderFragmentEntry: "frag_main",
+  // shaderVertexEntry: "vert_main",
 });

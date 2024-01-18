@@ -32,8 +32,8 @@ export const outlineRender = CY.createRenderPipeline("outlineRender", {
   },
   output: [outlinedTexturePtr],
   shader: "std-outline",
-  shaderFragmentEntry: "frag_main",
-  shaderVertexEntry: "vert_main",
+  // shaderFragmentEntry: "frag_main",
+  // shaderVertexEntry: "vert_main",
   fragOverrides: {
     lineWidth: 1.0,
   },

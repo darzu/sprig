@@ -45,8 +45,8 @@ export const shadowPipelines = range(numShadowMaps).map((i) =>
     },
     output: [],
     depthStencil: { ptr: shadowDepthTextures, idx: i },
-    shaderVertexEntry: "vert_main",
-    shaderFragmentEntry: "frag_main",
+    // shaderVertexEntry: "vert_main",
+    // shaderFragmentEntry: "frag_main",
     cullMode: "front", // TODO(@darzu): alternative to depth bias?
     // TODO(@darzu): support multiple lights again
     shader: () => `

@@ -427,7 +427,7 @@ function createCyPipeline(
         }),
         vertex: {
           module: shader,
-          entryPoint: p.shaderVertexEntry,
+          // entryPoint: p.shaderVertexEntry,
           buffers: [
             vertBuf.struct.vertexLayout("vertex", 0),
             instBuf.struct.vertexLayout("instance", vertBuf.struct.memberCount),
@@ -435,7 +435,7 @@ function createCyPipeline(
         },
         fragment: {
           module: shader,
-          entryPoint: p.shaderFragmentEntry,
+          // entryPoint: p.shaderFragmentEntry,
           targets,
         },
       };
@@ -505,12 +505,12 @@ function createCyPipeline(
         }),
         vertex: {
           module: shader,
-          entryPoint: p.shaderVertexEntry,
+          // entryPoint: p.shaderVertexEntry,
           buffers: [pool.ptr.vertsStruct.vertexLayout("vertex", 0)],
         },
         fragment: {
           module: shader,
-          entryPoint: p.shaderFragmentEntry,
+          // entryPoint: p.shaderFragmentEntry,
           targets,
         },
       };
@@ -553,13 +553,13 @@ function createCyPipeline(
         }),
         vertex: {
           module: shader,
-          entryPoint: p.shaderVertexEntry,
+          // entryPoint: p.shaderVertexEntry,
           // TODO(@darzu): constants
           constants: p.vertOverrides,
         },
         fragment: {
           module: shader,
-          entryPoint: p.shaderFragmentEntry,
+          // entryPoint: p.shaderFragmentEntry,
           targets,
           // TODO(@darzu): constants
           constants: p.fragOverrides,
