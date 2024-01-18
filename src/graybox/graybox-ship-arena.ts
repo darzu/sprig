@@ -213,6 +213,7 @@ export async function initGrayboxShipArena() {
   );
   const { camera, me } = res;
 
+  // EM.addSystem("grayboxPipelines", Phase.GAME_WORLD, null, [], () => {
   // renderer
   res.renderer.pipelines = [
     ...shadowPipelines,
@@ -222,6 +223,7 @@ export async function initGrayboxShipArena() {
     renderDots,
     postProcess,
   ];
+  // });
 
   // camera
   camera.fov = Math.PI * 0.5;
