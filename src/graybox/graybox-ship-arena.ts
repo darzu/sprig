@@ -205,31 +205,40 @@ function updateDots(res: Resources<[typeof RendererDef]>, num: number) {
 }
 
 export async function initGrayboxShipArena() {
-  const res = await EM.whenResources(
-    CameraDef,
-    MeDef,
-    RendererDef,
-    GraphicsSettingsDef
-  );
-  const { camera, me } = res;
+  EM.addEagerInit([], [RendererDef, GraphicsSettingsDef], [], (res) => {
+    res.renderer.renderer.submitPipelines([], [...noisePipes, initDots]);
 
-  // EM.addSystem("grayboxPipelines", Phase.GAME_WORLD, null, [], () => {
-  // renderer
-  res.renderer.pipelines = [
-    ...shadowPipelines,
-    stdRenderPipeline,
-    outlineRender,
-    deferredPipeline,
-    renderDots,
-    postProcess,
-  ];
-  // });
+    EM.addEagerInit([], [RendererDef], [], (res) => {
+      // renderer
+      res.renderer.pipelines = [
+        ...shadowPipelines,
+        stdRenderPipeline,
+        outlineRender,
+        deferredPipeline,
+        renderDots,
+        postProcess,
+      ];
+    });
+  });
+
+  const { camera } = await EM.whenResources(CameraDef);
 
   // camera
   camera.fov = Math.PI * 0.5;
   camera.viewDist = 1000;
   vec3.set(-200, -200, -200, camera.maxWorldAABB.min);
   vec3.set(+200, +200, +200, camera.maxWorldAABB.max);
+
+  // TODO(@darzu): WORK AROUND: For whatever reason this particular init order and this obj are
+  //  needed to avoid a bug in canary (122.0.6255.1) not present in retail (120.0.6099.234)
+  //  more on branch: white-screen-bug-repro
+  const __bugWorkAround = createObj([RenderableConstructDef] as const, [
+    [CubeMesh, false],
+  ]);
+
+  const res = await EM.whenResources(RendererDef);
+
+  console.log(`has resources!`);
 
   // sun
   createSun();
@@ -241,7 +250,7 @@ export async function initGrayboxShipArena() {
   const oceanGrid = createOcean();
 
   // init dots
-  res.renderer.renderer.submitPipelines([], [...noisePipes, initDots]);
+  // res.renderer.renderer.submitPipelines([], [...noisePipes, initDots]);
   initCPUDotData();
   updateDots(res, maxDotUpdateLen);
 
