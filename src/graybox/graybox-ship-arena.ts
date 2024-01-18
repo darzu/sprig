@@ -60,7 +60,7 @@ import { CanManDef, raiseManTurret } from "../turret/turret.js";
 import { clamp } from "../utils/math.js";
 import { Path } from "../utils/spline.js";
 import { PI } from "../utils/util-no-import.js";
-import { assert, dbgOnce, range } from "../utils/util.js";
+import { assert, asyncTimeout, dbgOnce, range } from "../utils/util.js";
 import { randVec3OfLen } from "../utils/utils-3d.js";
 import { addGizmoChild, addWorldGizmo } from "../utils/utils-game.js";
 import { HasMastDef, HasMastObj, createMast } from "../wind/mast.js";
@@ -215,26 +215,8 @@ export async function initGrayboxShipArena() {
   vec3.set(-200, -200, -200, camera.maxWorldAABB.min);
   vec3.set(+200, +200, +200, camera.maxWorldAABB.max);
 
-  // createObj(
-  //   [
-  //     // PointLightDef,
-  //     // ColorDef,
-  //     // PositionDef,
-  //     RenderableConstructDef,
-  //   ] as const,
-  //   [
-  //     // {
-  //     //   constant: 1.0,
-  //     //   linear: 0.0,
-  //     //   quadratic: 0.0,
-  //     //   ambient: V(0.2, 0.2, 0.2),
-  //     //   diffuse: V(0.5, 0.5, 0.5),
-  //     // },
-  //     // [1, 1, 1],
-  //     // [50, 10, 300],
-  //     [CubeMesh, false],
-  //   ]
-  // );
+  // createObj([RenderableConstructDef] as const, [[CubeMesh, false]]);
+  // await asyncTimeout(1000);
 
   const res = await EM.whenResources(RendererDef); // BROKEN
   // const res = await EM.whenResources(CameraDef, MeDef); // WORKS!

@@ -52,6 +52,7 @@ EM.addLazyInit([], [CanvasDef], () => {
   );
 
   function onWindowResize() {
+    console.log("onWindowResize");
     // TODO(@darzu): should this be done differently?
     //  https://web.dev/device-pixel-content-box/
     canvas.width = window.innerWidth * comp.pixelRatio;
