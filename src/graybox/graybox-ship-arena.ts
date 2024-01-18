@@ -205,20 +205,17 @@ function updateDots(res: Resources<[typeof RendererDef]>, num: number) {
 }
 
 export async function initGrayboxShipArena() {
+  // TODO(@darzu): WORK AROUND: see below
   EM.addEagerInit([], [RendererDef, GraphicsSettingsDef], [], (res) => {
-    res.renderer.renderer.submitPipelines([], [...noisePipes, initDots]);
-
-    EM.addEagerInit([], [RendererDef], [], (res) => {
-      // renderer
-      res.renderer.pipelines = [
-        ...shadowPipelines,
-        stdRenderPipeline,
-        outlineRender,
-        deferredPipeline,
-        renderDots,
-        postProcess,
-      ];
-    });
+    // renderer
+    res.renderer.pipelines = [
+      ...shadowPipelines,
+      stdRenderPipeline,
+      outlineRender,
+      deferredPipeline,
+      renderDots,
+      postProcess,
+    ];
   });
 
   const { camera } = await EM.whenResources(CameraDef);
@@ -238,8 +235,6 @@ export async function initGrayboxShipArena() {
 
   const res = await EM.whenResources(RendererDef);
 
-  console.log(`has resources!`);
-
   // sun
   createSun();
 
@@ -250,7 +245,7 @@ export async function initGrayboxShipArena() {
   const oceanGrid = createOcean();
 
   // init dots
-  // res.renderer.renderer.submitPipelines([], [...noisePipes, initDots]);
+  res.renderer.renderer.submitPipelines([], [...noisePipes, initDots]);
   initCPUDotData();
   updateDots(res, maxDotUpdateLen);
 
