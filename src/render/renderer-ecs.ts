@@ -380,6 +380,7 @@ EM.addEagerInit([RenderableConstructDef], [RendererDef], [], () => {
       });
       // console.log(`pointLights.length: ${pointLights.length}`);
 
+      // TODO(@darzu): PERF. do change detection here?
       renderer.updatePointLights(pointLights);
 
       // TODO(@darzu): dbg
@@ -392,6 +393,8 @@ EM.addEagerInit([RenderableConstructDef], [RendererDef], [], () => {
       if (objs.length && res.renderer.pipelines.length) {
         dbgLogMilestone("Rendering first frame");
       }
+
+      // console.log(`RENDERED #${objs.length} objs`);
 
       renderObjs.length = 0;
 

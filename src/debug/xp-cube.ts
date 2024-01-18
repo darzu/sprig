@@ -12,7 +12,7 @@ import {
   CY,
   linearSamplerPtr,
 } from "../render/gpu-registry.js";
-import { cloneMesh } from "../meshes/mesh.js";
+import { cloneMesh, getAABBFromMesh } from "../meshes/mesh.js";
 import { RendererDef, RenderableConstructDef } from "../render/renderer-ecs.js";
 import {
   sceneBufPtr,
@@ -26,10 +26,11 @@ import { AllMeshesDef } from "../meshes/mesh-list.js";
 import { GlobalCursor3dDef } from "../gui/cursor.js";
 import { createGhost } from "./ghost.js";
 import { PointLightDef } from "../render/lights.js";
+import { mkCubeMesh } from "../meshes/primatives.js";
 
 export async function initCubeGame() {
   const res = await EM.whenResources(
-    AllMeshesDef,
+    // AllMeshesDef,
     // GlobalCursor3dDef,
     RendererDef,
     CameraDef
@@ -45,7 +46,7 @@ export async function initCubeGame() {
   ];
   res.renderer.pipelines = [...computePipelinesPtrs, ...renderPipelinesPtrs];
 
-  const m2 = cloneMesh(res.allMeshes.cube.mesh);
+  const m2 = mkCubeMesh();
   const g = createGhost(m2);
   g.controllable.sprintMul = 3;
 
@@ -59,7 +60,8 @@ export async function initCubeGame() {
   }
 
   const box = EM.new();
-  const boxM = cloneMesh(res.allMeshes.cube.mesh);
+  const boxM = mkCubeMesh();
+  const aabb = getAABBFromMesh(boxM);
   const sIdMax = max(boxM.surfaceIds);
   boxM.colors = boxM.surfaceIds.map((_, i) => uintToVec3unorm(i, sIdMax));
   // boxM.colors = boxM.surfaceIds.map((_, i) => [0.1, i / 12, 0.1]);
@@ -73,7 +75,7 @@ export async function initCubeGame() {
   EM.set(box, ColliderDef, {
     shape: "AABB",
     solid: false,
-    aabb: res.allMeshes.cube.aabb,
+    aabb,
   });
 }
 

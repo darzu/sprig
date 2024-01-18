@@ -215,9 +215,30 @@ export async function initGrayboxShipArena() {
   vec3.set(-200, -200, -200, camera.maxWorldAABB.min);
   vec3.set(+200, +200, +200, camera.maxWorldAABB.max);
 
-  const res = await EM.whenResources(RendererDef, MeDef); // BROKEN
+  // createObj(
+  //   [
+  //     // PointLightDef,
+  //     // ColorDef,
+  //     // PositionDef,
+  //     RenderableConstructDef,
+  //   ] as const,
+  //   [
+  //     // {
+  //     //   constant: 1.0,
+  //     //   linear: 0.0,
+  //     //   quadratic: 0.0,
+  //     //   ambient: V(0.2, 0.2, 0.2),
+  //     //   diffuse: V(0.5, 0.5, 0.5),
+  //     // },
+  //     // [1, 1, 1],
+  //     // [50, 10, 300],
+  //     [CubeMesh, false],
+  //   ]
+  // );
+
+  const res = await EM.whenResources(RendererDef); // BROKEN
   // const res = await EM.whenResources(CameraDef, MeDef); // WORKS!
-  const { me, renderer } = res;
+  const { renderer } = res;
 
   console.log(`has resources!`);
 

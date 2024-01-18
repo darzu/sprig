@@ -1,5 +1,5 @@
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
-import { assert } from "../utils/util.js";
+import { assert, dbgOnce } from "../utils/util.js";
 import {
   CY,
   CyMeshPoolPtr,
@@ -220,8 +220,14 @@ export function createRenderer(
   }
 
   function updateScene(scene: Partial<SceneTS>) {
-    if (PERF_DBG_GPU) {
-      dbgLogOnce("sceneUniSize", `SceneUni size: ${sceneUni.struct.size}`);
+    if (PERF_DBG_GPU && dbgOnce("sceneUniSize")) {
+      console.log(`SceneUni size: ${sceneUni.struct.size}`);
+
+      console.log(`update scene`);
+      console.dir({
+        ...sceneUni.lastData!,
+        ...scene,
+      });
     }
     sceneUni.queueUpdate({
       ...sceneUni.lastData!,

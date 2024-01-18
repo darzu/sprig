@@ -33,6 +33,8 @@ export const DBG_CHECK_FOR_TMPS_IN_XY = false;
 export const DBG_INIT_CAUSATION = false;
 // prints each time an init fn progresses from lazy->eager->started->finished
 export const DBG_VERBOSE_INIT_SEQ = false;
+// prints each time an init fn starts and finishes
+export const DBG_VERBOSE_INIT_TIMES = true;
 // prints the callsites of entity / resource promises.
 export const DBG_VERBOSE_ENTITY_PROMISE_CALLSITES = false;
 // prints the callsites of init functions

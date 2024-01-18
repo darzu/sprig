@@ -6,6 +6,7 @@ import {
   DBG_VERBOSE_INIT_SEQ,
   DBG_SYSTEM_ORDER,
   DBG_ENITITY_10017_POSITION_CHANGES,
+  DBG_VERBOSE_INIT_TIMES,
 } from "../flags.js";
 import { vec3 } from "../matrix/sprig-matrix.js";
 import { Serializer, Deserializer } from "../utils/serialize.js";
@@ -1703,13 +1704,29 @@ export class EntityManager {
       this._runningInitStack.push(init);
     }
 
+    if (DBG_VERBOSE_INIT_TIMES)
+      console.log(
+        `${performance.now().toFixed(2)}ms: starting ${initFnToString(init)}`
+      );
+
     const promise = init.fn(this.resources);
     this.startedInits.set(init.id, promise);
 
     if (DBG_VERBOSE_INIT_SEQ)
       console.log(`eager => started: ${initFnToString(init)}`);
 
-    if (isPromise(promise)) await promise;
+    if (isPromise(promise)) {
+      if (DBG_VERBOSE_INIT_TIMES)
+        console.log(
+          `${performance.now().toFixed(2)}ms: awaiting ${initFnToString(init)}`
+        );
+      await promise;
+    }
+
+    if (DBG_VERBOSE_INIT_TIMES)
+      console.log(
+        `${performance.now().toFixed(2)}ms: finished ${initFnToString(init)}`
+      );
 
     // assert resources were added
     // TODO(@darzu): verify that init fn doesn't add any resources not mentioned in provides
