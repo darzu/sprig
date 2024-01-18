@@ -44,6 +44,7 @@ import { deferredPipeline } from "../render/pipelines/std-deferred.js";
 import {
   DotStruct,
   DotTS,
+  MAX_NUM_DOTS,
   dotDataPtr,
   initDots,
   renderDots,
@@ -57,19 +58,23 @@ import { RenderableConstructDef, RendererDef } from "../render/renderer-ecs.js";
 import { TimeDef } from "../time/time.js";
 import { CanManDef, raiseManTurret } from "../turret/turret.js";
 import { clamp } from "../utils/math.js";
+import { Path } from "../utils/spline.js";
 import { PI } from "../utils/util-no-import.js";
-import { assert } from "../utils/util.js";
+import { assert, dbgOnce, range } from "../utils/util.js";
 import { randVec3OfLen } from "../utils/utils-3d.js";
 import { addGizmoChild, addWorldGizmo } from "../utils/utils-game.js";
 import { HasMastDef, HasMastObj, createMast } from "../wind/mast.js";
 import { WindDef, setWindAngle } from "../wind/wind.js";
 import { createSock } from "../wind/windsock.js";
+import { dbgPathWithGizmos } from "../wood/shipyard.js";
 import { createSun, initGhost, initGrayboxWorld } from "./graybox-helpers.js";
 import { createObj, defineObj, mixinObj } from "./objects.js";
 
 const DBG_GHOST = true;
 
 const DBG_GIZMO = true;
+
+const DBG_DOTS = false;
 
 const SAIL_FURL_RATE = 0.02;
 
@@ -102,8 +107,8 @@ const CannonBallObj = defineObj({
   ],
 } as const);
 
-// TODO(@darzu): PERF. use pools!!
 function launchBall(frame: Frame, speed: number) {
+  // TODO(@darzu): IMPL!
   const axis = vec3.transformQuat(vec3.FWD, frame.rotation);
   const vel = vec3.scale(axis, speed);
 
@@ -202,7 +207,9 @@ export async function initGrayboxShipArena() {
     });
   });
 
-  const { camera, me } = await EM.whenResources(CameraDef, MeDef);
+  const res = await EM.whenResources(CameraDef, RendererDef, MeDef); // BROKEN
+  // const res = await EM.whenResources(CameraDef, MeDef); // WORKS!
+  const { camera, me } = res;
 
   // camera
   camera.fov = Math.PI * 0.5;
@@ -219,9 +226,12 @@ export async function initGrayboxShipArena() {
   // ocean
   const oceanGrid = createOcean();
 
-  // TODO(@darzu): testing dots
+  // init dots
   initCPUDotData();
-  EM.whenResources(RendererDef).then((res) => {
+  // updateDots(res, maxDotUpdateLen);
+
+  // testing dots
+  if (DBG_DOTS) {
     let i = 0;
     for (let [q, r] of hexesWithin(0, 0, oceanRadius - 1)) {
       const pos = oceanGrid.get(q, r)!.position;
@@ -232,9 +242,8 @@ export async function initGrayboxShipArena() {
 
       i++;
     }
-
-    updateDots(res, i);
-  });
+    // updateDots(res, i);
+  }
 
   const wind = EM.addResource(WindDef);
   setWindAngle(wind, PI * 0.4);
@@ -246,11 +255,38 @@ export async function initGrayboxShipArena() {
     initGhost();
   }
 
+  // cannon launch intermediates
+  const _launchPath: Path = range(20).map((_) => ({
+    pos: vec3.create(),
+    rot: quat.create(),
+  }));
+  // const _launchParam: Parametric = createParametric();
+
+  let _pathVisible = false;
+  function showLaunchPath(path: Path) {
+    for (let i = 0; i < path.length; i++) {
+      const dot = dotData[i];
+      vec3.copy(dot.pos, path[i].pos);
+      dot.size = 2.0;
+      vec3.copy(dot.color, ENDESGA16.yellow);
+    }
+    // updateDots(res, path.length);
+    _pathVisible = true;
+  }
+  function hideLaunchPath(len: number) {
+    for (let i = 0; i < len; i++) {
+      const dot = dotData[i];
+      dot.size = 0.0;
+    }
+    // updateDots(res, len);
+    _pathVisible = false;
+  }
+
   EM.addSystem(
     "controlShip",
     Phase.GAME_PLAYERS,
     [ShipDef, HasRudderDef, HasMastDef, CameraFollowDef],
-    [InputsDef, HasFirstInteractionDef],
+    [InputsDef, HasFirstInteractionDef, RendererDef],
     (es, res) => {
       if (es.length === 0) return;
       assert(es.length === 1);
@@ -286,13 +322,31 @@ export async function initGrayboxShipArena() {
         PI * 0.5
       );
 
-      // cannons
       const ballSpeed = 0.2;
-      if (res.inputs.keyClicks[" "]) {
+      // aim mode
+      if (res.inputs.keyDowns["shift"]) {
+        // firing?
+        const doFire = res.inputs.keyClicks[" "];
+
+        // which cannons?
         const cannons = [ship.ship.cannonL, ship.ship.cannonR];
         for (let c of cannons) {
-          if (WorldFrameDef.isOn(c)) launchBall(c.world, ballSpeed);
+          if (!WorldFrameDef.isOn(c)) continue;
+          // get fire solution
+          // cannonFireCurve(c.world, ballSpeed, _launchParam);
+
+          // display path
+          // createPathFromParameteric(_launchParam, 100, _launchPath);
+          // showLaunchPath(_launchPath);
+
+          // launch?
+          if (doFire) {
+            launchBall(c.world, ballSpeed);
+          }
         }
+      } else {
+        // hide path?
+        if (_pathVisible) hideLaunchPath(_launchPath.length);
       }
     }
   );
