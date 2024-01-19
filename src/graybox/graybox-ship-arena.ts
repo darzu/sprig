@@ -75,7 +75,7 @@ import { WindDef, setWindAngle } from "../wind/wind.js";
 import { createSock } from "../wind/windsock.js";
 import { dbgPathWithGizmos } from "../wood/shipyard.js";
 import { createSun, initGhost, initGrayboxWorld } from "./graybox-helpers.js";
-import { T, createObj, defineObj, mixinObj } from "./objects.js";
+import { ObjEnt, T, createObj, defineObj, mixinObj } from "./objects.js";
 
 /*
 Prioritized ToDo:
@@ -117,8 +117,12 @@ const ShipObj = defineObj({
   ],
   physicsParentChildren: true,
   children: {
-    cannonL: CannonObj,
-    cannonR: CannonObj,
+    cannonL0: CannonObj,
+    cannonL1: CannonObj,
+    cannonL2: CannonObj,
+    cannonR0: CannonObj,
+    cannonR1: CannonObj,
+    cannonR2: CannonObj,
   },
 } as const);
 
@@ -370,7 +374,9 @@ export async function initGrayboxShipArena() {
 
       // which cannons?
       const facingLeft = ship.cameraFollow.yawOffset < 0;
-      const cannons = facingLeft ? [ship.ship.cannonL] : [ship.ship.cannonR];
+      const cannons = facingLeft
+        ? [ship.ship.cannonL0, ship.ship.cannonL1, ship.ship.cannonL2]
+        : [ship.ship.cannonR0, ship.ship.cannonR1, ship.ship.cannonR2];
 
       // aim cannons
       if (aiming) {
@@ -425,32 +431,41 @@ async function createShip() {
     p[2] *= 2;
   });
 
-  const cannonL = createObj(CannonObj, {
-    props: {
-      yaw: -PI * 0.5,
-    },
-    args: {
-      position: [-10, 0, 2],
-      rotation: undefined,
-      renderableConstruct: [CannonMesh],
-      color: ENDESGA16.darkGray,
-      yawpitch: [-PI * 0.5, PI * 0.1],
-    },
-  });
-  quat.fromYawPitch(cannonL.yawpitch, cannonL.rotation);
-  const cannonR = createObj(CannonObj, {
-    props: {
-      yaw: PI * 0.5,
-    },
-    args: {
-      position: [+10, 0, 2],
-      rotation: undefined,
-      renderableConstruct: [CannonMesh],
-      color: ENDESGA16.darkGray,
-      yawpitch: [PI * 0.5, PI * 0.1],
-    },
-  });
-  quat.fromYawPitch(cannonR.yawpitch, cannonR.rotation);
+  const cSpacing = 10;
+  const cannonLs: ObjEnt<typeof CannonObj>[] = [];
+  const cannonRs: ObjEnt<typeof CannonObj>[] = [];
+  for (let i = 0; i < 3; i++) {
+    const y = -cSpacing + i * cSpacing;
+    const cl = createObj(CannonObj, {
+      props: {
+        yaw: -PI * 0.5,
+      },
+      args: {
+        position: [-10, y, 2],
+        rotation: undefined,
+        renderableConstruct: [CannonMesh],
+        color: ENDESGA16.darkGray,
+        yawpitch: [-PI * 0.5, PI * 0.1],
+      },
+    });
+    quat.fromYawPitch(cl.yawpitch, cl.rotation);
+    cannonLs.push(cl);
+
+    const cr = createObj(CannonObj, {
+      props: {
+        yaw: PI * 0.5,
+      },
+      args: {
+        position: [+10, y, 2],
+        rotation: undefined,
+        renderableConstruct: [CannonMesh],
+        color: ENDESGA16.darkGray,
+        yawpitch: [PI * 0.5, PI * 0.1],
+      },
+    });
+    quat.fromYawPitch(cr.yawpitch, cr.rotation);
+    cannonRs.push(cr);
+  }
 
   const ship = ShipObj.new({
     args: {
@@ -461,8 +476,12 @@ async function createShip() {
       linearVelocity: undefined,
     },
     children: {
-      cannonL,
-      cannonR,
+      cannonL0: cannonLs[0],
+      cannonL1: cannonLs[1],
+      cannonL2: cannonLs[2],
+      cannonR0: cannonRs[0],
+      cannonR1: cannonRs[1],
+      cannonR2: cannonRs[2],
     },
   });
 
