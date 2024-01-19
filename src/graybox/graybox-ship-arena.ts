@@ -63,6 +63,7 @@ import { shadowPipelines } from "../render/pipelines/std-shadow.js";
 import { RenderableConstructDef, RendererDef } from "../render/renderer-ecs.js";
 import { TimeDef } from "../time/time.js";
 import { CanManDef, raiseManTurret } from "../turret/turret.js";
+import { YawPitchDef } from "../turret/yawpitch.js";
 import { clamp } from "../utils/math.js";
 import { Path } from "../utils/spline.js";
 import { PI } from "../utils/util-no-import.js";
@@ -74,7 +75,16 @@ import { WindDef, setWindAngle } from "../wind/wind.js";
 import { createSock } from "../wind/windsock.js";
 import { dbgPathWithGizmos } from "../wood/shipyard.js";
 import { createSun, initGhost, initGrayboxWorld } from "./graybox-helpers.js";
-import { createObj, defineObj, mixinObj } from "./objects.js";
+import { T, createObj, defineObj, mixinObj } from "./objects.js";
+
+/*
+Prioritized ToDo:
+[ ] aim cannon
+[ ] enemy exists
+[ ] player and enemy health
+[ ] enemy moves and fires
+[ ] smart enemy ai    
+*/
 
 const DBG_GHOST = false;
 
@@ -83,6 +93,18 @@ const DBG_GIZMO = true;
 const DBG_DOTS = false;
 
 const SAIL_FURL_RATE = 0.02;
+
+const CannonObj = defineObj({
+  name: "cannon2",
+  propsType: T<{ yaw: number }>(),
+  components: [
+    PositionDef,
+    RotationDef,
+    RenderableConstructDef,
+    ColorDef,
+    YawPitchDef,
+  ],
+} as const);
 
 const ShipObj = defineObj({
   name: "ship",
@@ -95,8 +117,8 @@ const ShipObj = defineObj({
   ],
   physicsParentChildren: true,
   children: {
-    cannonL: [PositionDef, RotationDef],
-    cannonR: [PositionDef, RotationDef],
+    cannonL: CannonObj,
+    cannonR: CannonObj,
   },
 } as const);
 
@@ -326,30 +348,50 @@ export async function initGrayboxShipArena() {
       rudder.yawpitch.yaw = clamp(rudder.yawpitch.yaw, -PI * 0.3, PI * 0.3);
       quat.fromYawPitchRoll(-rudder.yawpitch.yaw, 0, 0, rudder.rotation);
 
-      // camera
-      // TODO(@darzu): extract to some kinda ball cam?
-      ship.cameraFollow.yawOffset += res.inputs.mouseMov[0] * 0.005;
-      ship.cameraFollow.pitchOffset -= res.inputs.mouseMov[1] * 0.005;
-      ship.cameraFollow.pitchOffset = clamp(
-        ship.cameraFollow.pitchOffset,
-        -PI * 0.5,
-        0
-      );
-      ship.cameraFollow.yawOffset = clamp(
-        ship.cameraFollow.yawOffset,
-        -PI * 0.5,
-        PI * 0.5
-      );
+      // aiming?
+      const aiming = res.inputs.keyDowns["shift"];
 
+      // camera
+      if (!aiming) {
+        // TODO(@darzu): extract to some kinda ball cam?
+        ship.cameraFollow.yawOffset += res.inputs.mouseMov[0] * 0.005;
+        ship.cameraFollow.pitchOffset -= res.inputs.mouseMov[1] * 0.005;
+        ship.cameraFollow.pitchOffset = clamp(
+          ship.cameraFollow.pitchOffset,
+          -PI * 0.5,
+          0
+        );
+        ship.cameraFollow.yawOffset = clamp(
+          ship.cameraFollow.yawOffset,
+          -PI * 0.5,
+          PI * 0.5
+        );
+      }
+
+      // which cannons?
+      const facingLeft = ship.cameraFollow.yawOffset < 0;
+      const cannons = facingLeft ? [ship.ship.cannonL] : [ship.ship.cannonR];
+
+      // aim cannons
+      if (aiming) {
+        for (let c of cannons) {
+          c.yawpitch.yaw += res.inputs.mouseMov[0] * 0.005;
+          c.yawpitch.pitch -= res.inputs.mouseMov[1] * 0.005;
+          c.yawpitch.pitch = clamp(c.yawpitch.pitch, 0, PI * 0.5);
+          c.yawpitch.yaw =
+            clamp(c.yawpitch.yaw - c.cannon2.yaw, -PI * 0.2, PI * 0.2) +
+            c.cannon2.yaw;
+        }
+      }
+      for (let c of cannons) {
+        quat.fromYawPitch(c.yawpitch, c.rotation);
+      }
+
+      // firing?
       const ballSpeed = 0.2;
-      // aim mode
-      if (res.inputs.keyDowns["shift"]) {
-        // firing?
+      if (aiming) {
         const doFire = res.inputs.keyClicks[" "];
 
-        // which cannons?
-        const facingLeft = ship.cameraFollow.yawOffset < 0;
-        const cannons = facingLeft ? [ship.ship.cannonL] : [ship.ship.cannonR];
         for (let c of cannons) {
           if (!WorldFrameDef.isOn(c)) continue;
           // get fire solution
@@ -372,11 +414,6 @@ export async function initGrayboxShipArena() {
   );
 }
 
-const CannonObj = defineObj({
-  name: "cannon2",
-  components: [PositionDef, RotationDef, RenderableConstructDef, ColorDef],
-} as const);
-
 async function createShip() {
   const shipMesh = mkCubeMesh();
   shipMesh.pos.forEach((p) => {
@@ -389,21 +426,31 @@ async function createShip() {
   });
 
   const cannonL = createObj(CannonObj, {
+    props: {
+      yaw: -PI * 0.5,
+    },
     args: {
       position: [-10, 0, 2],
-      rotation: quat.fromYawPitchRoll(-PI * 0.5, PI * 0.1, 0),
+      rotation: undefined,
       renderableConstruct: [CannonMesh],
       color: ENDESGA16.darkGray,
+      yawpitch: [-PI * 0.5, PI * 0.1],
     },
   });
+  quat.fromYawPitch(cannonL.yawpitch, cannonL.rotation);
   const cannonR = createObj(CannonObj, {
+    props: {
+      yaw: PI * 0.5,
+    },
     args: {
       position: [+10, 0, 2],
-      rotation: quat.fromYawPitchRoll(PI * 0.5, PI * 0.1, 0),
+      rotation: undefined,
       renderableConstruct: [CannonMesh],
       color: ENDESGA16.darkGray,
+      yawpitch: [PI * 0.5, PI * 0.1],
     },
   });
+  quat.fromYawPitch(cannonR.yawpitch, cannonR.rotation);
 
   const ship = ShipObj.new({
     args: {

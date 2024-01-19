@@ -697,6 +697,10 @@ export module quat {
   ): T {
     return GL.fromEuler(out ?? tmp(), pitch, roll, -yaw) as T;
   }
+  // TODO(@darzu): little hacky, this matches our YawPitchDef but doesn't match other sprig-matrix patterns
+  export function fromYawPitch(yp: { yaw: number; pitch: number }, out?: T): T {
+    return fromYawPitchRoll(yp.yaw, yp.pitch, 0, out);
+  }
 
   // TODO(@darzu): IMPL toYawPitchRoll
   /*
