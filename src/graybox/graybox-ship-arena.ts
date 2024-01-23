@@ -276,6 +276,8 @@ export async function initGrayboxShipArena() {
   // TODO(@darzu): WORK AROUND: For whatever reason this particular init order and this obj are
   //  needed to avoid a bug in canary (122.0.6255.1) not present in retail (120.0.6099.234)
   //  more on branch: white-screen-bug-repro
+  // TODO(@darzu): if you're here from the future, try removing this workaround (this obj, collapse the
+  //  whenResources calls, remove the unnecessary addEagerInit)
   const __bugWorkAround = createObj([RenderableConstructDef] as const, [
     [CubeMesh, false],
   ]);
