@@ -85,22 +85,3 @@ export const DotsDef = defineResourceWithInit(
     };
   }
 );
-
-// function showLaunchPath(path: Path) {
-//   for (let i = 0; i < path.length; i++) {
-//     const dot = dotData[i];
-//     vec3.copy(dot.pos, path[i].pos);
-//     dot.size = 2.0;
-//     vec3.copy(dot.color, ENDESGA16.yellow);
-//   }
-//   updateDots(res, path.length);
-//   _pathVisible = true;
-// }
-// function hideLaunchPath(len: number) {
-//   for (let i = 0; i < len; i++) {
-//     const dot = dotData[i];
-//     dot.size = 0.0;
-//   }
-//   updateDots(res, len);
-//   _pathVisible = false;
-// }

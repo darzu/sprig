@@ -306,7 +306,7 @@ export async function initGrayboxShipArena() {
   function getDotPath(i: number) {
     assert(0 <= i && i <= 10);
     while (i >= _dotPaths.length) {
-      _dotPaths.push(mkDotPath(res, 20, ENDESGA16.yellow, 2.0));
+      _dotPaths.push(mkDotPath(res, 20, ENDESGA16.yellow, 1.0));
     }
     return _dotPaths[i];
   }
