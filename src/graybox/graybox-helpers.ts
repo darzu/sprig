@@ -2,12 +2,7 @@ import { CameraDef } from "../camera/camera.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { createGhost } from "../debug/ghost.js";
-import {
-  ComponentDef,
-  EM,
-  EntityW,
-  _ComponentDef,
-} from "../ecs/entity-manager.js";
+import { EM, _ComponentDef } from "../ecs/entity-manager.js";
 import { quat, vec3 } from "../matrix/sprig-matrix.js";
 import { V } from "../matrix/sprig-matrix.js";
 import { CubeMesh, HexMesh } from "../meshes/mesh-list.js";

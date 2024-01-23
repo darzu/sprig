@@ -226,9 +226,10 @@ interface SystemReg {
 
 export type InitFnId = number;
 
-export type InitFn<RS extends ResourceDef[] = ResourceDef[]> =
-  | ((rs: Resources<RS>) => Promise<void>)
-  | ((rs: Resources<RS>) => void);
+export type InitFn<
+  RS extends ResourceDef[] = ResourceDef[],
+  P extends any = any
+> = ((rs: Resources<RS>) => Promise<P>) | ((rs: Resources<RS>) => P);
 
 export interface InitFnReg<RS extends ResourceDef[] = ResourceDef[]> {
   requireRs: [...RS];

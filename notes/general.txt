@@ -1524,3 +1524,6 @@ Regarding some Rust drama around runtime reflection?
 "Around The World, Part 11: Everything is harder on a sphere":
   more sphere mapping / coordinate stuff
   https://frozenfractal.com/blog/2024/1/8/around-the-world-11-everything-is-harder-on-a-sphere/
+
+"implerative programming":
+  Using declarative language for imperative programming

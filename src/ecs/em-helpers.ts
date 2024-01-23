@@ -5,6 +5,7 @@ import {
   EM,
   ResourceDef,
   Resources,
+  InitFn,
 } from "./entity-manager.js";
 import { Authority, AuthorityDef, MeDef, SyncDef } from "../net/components.js";
 import { Serializer, Deserializer } from "../utils/serialize.js";
@@ -276,3 +277,18 @@ export const FinishedDef = EM.defineComponent(
   () => true,
   (p) => p
 );
+
+export function defineResourceWithInit<
+  N extends string,
+  P extends object,
+  RS extends ResourceDef[]
+>(name: N, requires: [...RS], create: InitFn<RS, P>): ResourceDef<N, P, [P]> {
+  const resDef = EM.defineResource<N, P, [P]>(name, (p: P) => p);
+  EM.addLazyInit([...requires], [resDef], async (rs) => {
+    // TODO(@darzu): wish we could make this await optional
+    const p = await create(rs);
+    EM.addResource(resDef, p);
+  });
+
+  return resDef;
+}

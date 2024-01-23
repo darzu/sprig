@@ -74,6 +74,7 @@ import { HasMastDef, HasMastObj, createMast } from "../wind/mast.js";
 import { WindDef, setWindAngle } from "../wind/wind.js";
 import { createSock } from "../wind/windsock.js";
 import { dbgPathWithGizmos } from "../wood/shipyard.js";
+import { DotsDef } from "./dots.js";
 import { createSun, initGhost, initGrayboxWorld } from "./graybox-helpers.js";
 import { ObjEnt, T, createObj, defineObj, mixinObj } from "./objects.js";
 
@@ -173,6 +174,49 @@ function launchBall(params: Parametric) {
   return ball;
 }
 
+interface DotPath {
+  path: Path;
+  isVisible: boolean;
+  update: () => void;
+  hide: () => void;
+}
+function mkDotPath(
+  dotsRes: Resources<[typeof DotsDef]>,
+  len: number,
+  color: vec3.InputT,
+  size: number
+): DotPath {
+  const path: Path = range(len).map((_) => ({
+    pos: vec3.create(),
+    rot: quat.create(),
+  }));
+
+  const dots = dotsRes.dots.allocDots(len);
+
+  const dotPath = {
+    path,
+    // dots,
+    isVisible: false,
+    update,
+    hide,
+  };
+
+  function update() {
+    for (let i = 0; i < path.length; i++) dots.set(i, path[i].pos, color, size);
+    dots.queueUpdate();
+    dotPath.isVisible = true;
+  }
+  function hide() {
+    if (dotPath.isVisible) {
+      dots.data.forEach((d) => (d.size = 0.0));
+      dots.queueUpdate();
+      dotPath.isVisible = false;
+    }
+  }
+
+  return dotPath;
+}
+
 // TODO(@darzu): projectile paths: use particle system?
 
 const oceanRadius = 5;
@@ -207,29 +251,6 @@ function createOcean() {
   return grid;
 }
 
-const dotData: DotTS[] = [];
-const maxDotUpdateLen = MAX_NUM_DOTS;
-assert(maxDotUpdateLen <= MAX_NUM_DOTS);
-function initCPUDotData() {
-  while (dotData.length < maxDotUpdateLen) {
-    dotData.push({
-      pos: V(0, 0, 0),
-      color: V(1, 0, 0),
-      size: 0.0,
-    });
-  }
-}
-function updateDots(res: Resources<[typeof RendererDef]>, num: number) {
-  assert(num <= maxDotUpdateLen);
-  assert(dotData.length === maxDotUpdateLen);
-
-  const dotGPUData: CyArray<typeof DotStruct.desc> =
-    res.renderer.renderer.getCyResource(dotDataPtr)!;
-
-  const bufIdx = 0;
-  dotGPUData.queueUpdates(dotData, bufIdx, 0, num);
-}
-
 export async function initGrayboxShipArena() {
   // TODO(@darzu): WORK AROUND: see below
   EM.addEagerInit([], [RendererDef, GraphicsSettingsDef], [], (res) => {
@@ -259,7 +280,7 @@ export async function initGrayboxShipArena() {
     [CubeMesh, false],
   ]);
 
-  const res = await EM.whenResources(RendererDef);
+  const res = await EM.whenResources(RendererDef, DotsDef);
 
   // sun
   createSun();
@@ -269,26 +290,6 @@ export async function initGrayboxShipArena() {
 
   // ocean
   const oceanGrid = createOcean();
-
-  // init dots
-  res.renderer.renderer.submitPipelines([], [...noisePipes, initDots]);
-  initCPUDotData();
-  updateDots(res, maxDotUpdateLen);
-
-  // testing dots
-  if (DBG_DOTS) {
-    let i = 0;
-    for (let [q, r] of hexesWithin(0, 0, oceanRadius - 1)) {
-      const pos = oceanGrid.get(q, r)!.position;
-      const dot = dotData[i];
-      vec3.copy(dot.pos, pos);
-      vec3.copy(dot.color, ENDESGA16.lightGreen);
-      dot.size = 10.0;
-
-      i++;
-    }
-    updateDots(res, i);
-  }
 
   const wind = EM.addResource(WindDef);
   setWindAngle(wind, PI * 0.4);
@@ -301,31 +302,16 @@ export async function initGrayboxShipArena() {
   }
 
   // cannon launch intermediates
-  const _launchPath: Path = range(20).map((_) => ({
-    pos: vec3.create(),
-    rot: quat.create(),
-  }));
-  const _launchParam: Parametric = createParametric();
+  const _dotPaths: DotPath[] = [];
+  function getDotPath(i: number) {
+    assert(0 <= i && i <= 10);
+    while (i >= _dotPaths.length) {
+      _dotPaths.push(mkDotPath(res, 20, ENDESGA16.yellow, 2.0));
+    }
+    return _dotPaths[i];
+  }
 
-  let _pathVisible = false;
-  function showLaunchPath(path: Path) {
-    for (let i = 0; i < path.length; i++) {
-      const dot = dotData[i];
-      vec3.copy(dot.pos, path[i].pos);
-      dot.size = 2.0;
-      vec3.copy(dot.color, ENDESGA16.yellow);
-    }
-    updateDots(res, path.length);
-    _pathVisible = true;
-  }
-  function hideLaunchPath(len: number) {
-    for (let i = 0; i < len; i++) {
-      const dot = dotData[i];
-      dot.size = 0.0;
-    }
-    updateDots(res, len);
-    _pathVisible = false;
-  }
+  const _launchParam: Parametric = createParametric();
 
   EM.addSystem(
     "controlShip",
@@ -398,23 +384,27 @@ export async function initGrayboxShipArena() {
       if (aiming) {
         const doFire = res.inputs.keyClicks[" "];
 
+        let idx = 0;
         for (let c of cannons) {
           if (!WorldFrameDef.isOn(c)) continue;
           // get fire solution
           cannonFireCurve(c.world, ballSpeed, _launchParam);
 
           // display path
-          createPathFromParameteric(_launchParam, 100, _launchPath);
-          showLaunchPath(_launchPath);
+          const dotPath = getDotPath(idx);
+          createPathFromParameteric(_launchParam, 100, dotPath.path);
+          dotPath.update();
 
           // launch?
           if (doFire) {
             launchBall(_launchParam);
           }
+
+          idx++;
         }
       } else {
         // hide path?
-        if (_pathVisible) hideLaunchPath(_launchPath.length);
+        _dotPaths.forEach((p) => p.hide());
       }
     }
   );

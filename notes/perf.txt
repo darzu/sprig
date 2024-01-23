@@ -464,3 +464,10 @@ WebGPU samples:
 
 Disable timestamp query quantization:
   In Chrome browser, you can disable timestamp quantization by enabling the "WebGPU Developer Features" flag at chrome://flags/#enable-webgpu-developer-features during the development of your app
+
+indirect draw best practices:
+  "put them all in one buffer."
+  https://toji.dev/webgpu-best-practices/indirect-draws.html
+
+"binding bindlessly"
+  https://alextardif.com/Bindless.html

@@ -7,6 +7,20 @@ struct VertexOutput {
     @location(2) worldPos: vec4<f32>,
 };
 
+// TODO(@darzu): simpler:
+/*
+@vertex
+fn vs_main(in : VertexInput) -> VertexOutput {
+  var quad_pos = mat2x3<f32>(render_params.right, render_params.up) * in.quad_pos;
+  var position = in.position + quad_pos * 0.01;
+  var out : VertexOutput;
+  out.position = render_params.modelViewProjectionMatrix * vec4<f32>(position, 1.0);
+  out.color = in.color;
+  out.quad_pos = in.quad_pos;
+  return out;
+}
+*/
+
 @vertex
 fn vert_main(@builtin(vertex_index) gvIdx : u32) -> VertexOutput {
   let vIdx = gvIdx % 6u;

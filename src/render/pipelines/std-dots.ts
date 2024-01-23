@@ -13,6 +13,22 @@ import {
 
 // TODO(@darzu): generalize for other billboard usage?
 
+/*
+Ideas from: https://webgpu.github.io/webgpu-samples/samples/particles
+  instance:
+    3 * 4 + // position
+    1 * 4 + // lifetime
+    4 * 4 + // color
+    3 * 4 + // velocity
+  uniform:
+        4 * 4 * 4 + // modelViewProjectionMatrix : mat4x4<f32>
+        3 * 4 + // right : vec3<f32>
+        4 + // padding
+        3 * 4 + // up : vec3<f32>
+        4 + // padding
+  uses A,B buffer to update and render, like boids
+*/
+
 export const DotStruct = createCyStruct({
   pos: "vec3<f32>",
   color: "vec3<f32>",
@@ -39,7 +55,8 @@ export const initDots = CY.createComputePipeline("initDots", {
     rand_seed = vec2<f32>(f32(gId.x));
     dotDatas.ms[gId.x].pos = vec3(rand(), rand(), rand()) * 100.0;
     dotDatas.ms[gId.x].color = vec3(rand(), rand(), rand());
-    dotDatas.ms[gId.x].size = rand() * 1.0;
+    dotDatas.ms[gId.x].size = 0.0;
+    // dotDatas.ms[gId.x].size = rand() * 1.0;
   }
   `,
   workgroupCounts: [Math.ceil(MAX_NUM_DOTS / 64), 1, 1],
