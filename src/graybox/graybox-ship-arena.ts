@@ -45,7 +45,7 @@ import {
   RotationDef,
   ScaleDef,
 } from "../physics/transform.js";
-import { HasFirstInteractionDef } from "../render/canvas.js";
+import { CanvasDef, HasFirstInteractionDef } from "../render/canvas.js";
 import { CyArray } from "../render/data-webgpu.js";
 import { GraphicsSettingsDef } from "../render/graphics-settings.js";
 import { PointLightDef } from "../render/lights.js";
@@ -374,8 +374,9 @@ export async function initGrayboxShipArena() {
     "controlShip",
     Phase.GAME_PLAYERS,
     [ShipDef, HasRudderDef, HasMastDef, CameraFollowDef],
-    [InputsDef, HasFirstInteractionDef, RendererDef],
+    [InputsDef, CanvasDef, RendererDef],
     (es, res) => {
+      if (!res.htmlCanvas.hasMouseLock()) return;
       if (es.length === 0) return;
       assert(es.length === 1);
       const ship = es[0];
@@ -471,6 +472,8 @@ export async function initGrayboxShipArena() {
     enemy.enemy.healthBar.statBar.value -= 10;
     EM.set(ball, DeletedDef);
   });
+
+  initEnemies();
 }
 
 async function createShip() {
@@ -573,6 +576,36 @@ async function createShip() {
   return ship;
 }
 
+/*
+enemy AI
+--------
+aim for tangent on circle around player
+need:
+  from point get two tangents on circle
+  pick closest based on current direction
+
+
+*/
+
+// TODO(@darzu): move to maths
+// NOTE: works on the XY plane; ignores Z
+function getDirsToTan(
+  src: vec3.InputT,
+  trg: vec3.InputT,
+  trgRad: number,
+  outL: vec3,
+  outR: vec3
+): void {
+  const srcToTrg = vec3.sub(trg, src);
+
+  const perpR: vec3.InputT = [srcToTrg[1], -srcToTrg[0], 0];
+  const normR = vec3.normalize(perpR, outR);
+  const scaledR = vec3.scale(normR, trgRad, outR);
+  const scaledL = vec3.negate(scaledR, outL);
+  vec3.add(trg, scaledR, outR);
+  vec3.add(trg, scaledL, outL);
+}
+
 function createEnemy() {
   const shipMesh = mkCubeMesh();
   shipMesh.pos.forEach((p) => {
@@ -592,6 +625,7 @@ function createEnemy() {
       colliderFromMesh: true,
     },
     children: {
+      // TODO(@darzu): it'd be nice if the healthbar faced the player.
       healthBar: {
         statBar: [0, 100, 80],
         position: [0, 0, 15],
@@ -607,4 +641,35 @@ function createEnemy() {
       },
     },
   });
+}
+
+async function initEnemies() {
+  let _trgL = vec3.create();
+  let _trgR = vec3.create();
+  const attackRadius = 100;
+
+  const player = await EM.whenSingleEntity(ShipDef, PositionDef);
+
+  const { dots } = await EM.whenResources(DotsDef);
+
+  const trgDots = dots.allocDots(10);
+
+  EM.addSystem(
+    "steerEnemies",
+    Phase.GAME_WORLD,
+    [EnemyDef, PositionDef],
+    [TimeDef],
+    (es, res) => {
+      // run once every 20 frames
+      if (res.time.step % 20 !== 0) return;
+
+      for (let e of es) {
+        getDirsToTan(e.position, player.position, attackRadius, _trgL, _trgR);
+
+        trgDots.set(0, _trgL, ENDESGA16.darkGreen, 10);
+        trgDots.set(1, _trgR, ENDESGA16.orange, 10);
+        trgDots.queueUpdate();
+      }
+    }
+  );
 }

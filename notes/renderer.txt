@@ -2052,3 +2052,6 @@ How to approach rendering problems:
 
 "Machine Learning for Game Devs":
   https://www.ea.com/seed/news/machine-learning-game-devs-part-1
+
+GPU sorting overview:
+  https://linebender.org/wiki/gpu/sorting/
