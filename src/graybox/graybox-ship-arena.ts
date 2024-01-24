@@ -298,6 +298,8 @@ export async function initGrayboxShipArena() {
 
   const ship = await createShip();
 
+  createEnemy();
+
   // dbg ghost
   if (DBG_GHOST) {
     initGhost();
@@ -510,4 +512,25 @@ async function createShip() {
   if (DBG_GIZMO) addGizmoChild(ship, 10);
 
   return ship;
+}
+
+function createEnemy() {
+  const shipMesh = mkCubeMesh();
+  shipMesh.pos.forEach((p) => {
+    // top of ship at height 0
+    p[2] -= 1.0;
+    // scale
+    p[0] *= 12;
+    p[1] *= 24;
+    p[2] *= 2;
+  });
+
+  const ship = createObj(
+    [RenderableConstructDef, PositionDef, ColorDef] as const,
+    {
+      color: ENDESGA16.darkRed,
+      position: [-40, -40, 3],
+      renderableConstruct: [shipMesh],
+    }
+  );
 }

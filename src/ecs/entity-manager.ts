@@ -371,6 +371,8 @@ export class EntityManager {
     return def;
   }
 
+  forbiddenComponentNames = new Set<string>(["id"]);
+
   // TODO(@darzu): allow components to specify sibling components or component sets
   //  so that if the marker component is present, the others will be also
   public defineComponent<
@@ -400,9 +402,8 @@ export class EntityManager {
     opts: { multiArg: MA } = { multiArg: false as MA } // TODO(@darzu): any way around this cast?
   ): UpdatableComponentDef<N, P, UArgs, MA> {
     const id = nameToId(name);
-    if (this.componentDefs.has(id)) {
-      throw `Component with name ${name} already defined--hash collision?`;
-    }
+    assert(!this.componentDefs.has(id), `Component '${name}' already defined`);
+    assert(!this.forbiddenComponentNames.has(name), `forbidden name: ${name}`);
     const component: UpdatableComponentDef<N, P, UArgs, MA> = {
       _brand: "componentDef", // TODO(@darzu): remove?
       updatable: true,
