@@ -1,4 +1,3 @@
-import { HealthDef, createMultiBarMesh } from "../adornments/status-bar.js";
 import { CameraDef, CameraFollowDef } from "../camera/camera.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
@@ -545,11 +544,15 @@ EM.addEagerInit([SunlessPlayerDef], [CubeMesh.def], [], ({ mesh_cube }) => {
 
   onCollides(
     [BulletDef, LinearVelocityDef],
-    [EnemyDef, HealthDef, LinearVelocityDef],
+    [
+      EnemyDef,
+      // HealthDef,
+      LinearVelocityDef,
+    ],
     [],
     (bullet, enemy) => {
       // hurt ship
-      enemy.health.value -= 10;
+      // enemy.health.value -= 10;
 
       // knockback ship
       const knockback = vec3.scale(bullet.linearVelocity, 0.1);
@@ -590,7 +593,7 @@ async function createPlayerShip() {
   });
   EM.set(ship, SunlessPlayerDef);
   EM.set(ship, SunlessShipDef);
-  EM.set(ship, HealthDef, 0, 100, 90);
+  // EM.set(ship, HealthDef, 0, 100, 90);
 
   // EM.addSystem(
   //   "dbgSunlessCamera",
@@ -640,5 +643,5 @@ async function createEnemies() {
   });
   EM.set(ship, EnemyDef);
   EM.set(ship, SunlessShipDef);
-  EM.set(ship, HealthDef, 0, 100, 90);
+  // EM.set(ship, HealthDef, 0, 100, 90);
 }

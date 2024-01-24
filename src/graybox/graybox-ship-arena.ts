@@ -1,7 +1,9 @@
+import { StatBarDef, createMultiBarMesh } from "../adornments/status-bar.js";
 import { CameraDef, CameraFollowDef } from "../camera/camera.js";
 import { fireBullet } from "../cannons/bullet.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
+import { DeletedDef } from "../ecs/delete.js";
 import { EM, EntityW, Resources } from "../ecs/entity-manager.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { createHexGrid, hexXYZ, hexesWithin } from "../hex/hex.js";
@@ -21,7 +23,7 @@ import {
   HexMesh,
   MastMesh,
 } from "../meshes/mesh-list.js";
-import { scaleMesh3 } from "../meshes/mesh.js";
+import { getAABBFromMesh, scaleMesh3 } from "../meshes/mesh.js";
 import { HEX_AABB, mkCubeMesh } from "../meshes/primatives.js";
 import { GravityDef } from "../motion/gravity.js";
 import {
@@ -35,6 +37,7 @@ import { LinearVelocityDef } from "../motion/velocity.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { AABBCollider, ColliderDef } from "../physics/collider.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
+import { onCollides } from "../physics/phys-helpers.js";
 import {
   Frame,
   PhysicsParentDef,
@@ -60,7 +63,11 @@ import { noisePipes } from "../render/pipelines/std-noise.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
 import { shadowPipelines } from "../render/pipelines/std-shadow.js";
-import { RenderableConstructDef, RendererDef } from "../render/renderer-ecs.js";
+import {
+  RenderableConstructDef,
+  RenderableDef,
+  RendererDef,
+} from "../render/renderer-ecs.js";
 import { TimeDef } from "../time/time.js";
 import { CanManDef, raiseManTurret } from "../turret/turret.js";
 import { YawPitchDef } from "../turret/yawpitch.js";
@@ -94,6 +101,34 @@ const DBG_GIZMO = true;
 const DBG_DOTS = false;
 
 const SAIL_FURL_RATE = 0.02;
+
+// TODO(@darzu): feels hacky. Move this elsewhere?
+const ColliderFromMeshDef = EM.defineComponent(
+  "colliderFromMesh",
+  () => ({ solid: true }),
+  (p, solid?: boolean) => {
+    p.solid = solid ?? p.solid;
+    return p;
+  }
+);
+EM.addSystem(
+  "colliderFromMeshDef",
+  Phase.GAME_WORLD,
+  [ColliderFromMeshDef, RenderableDef],
+  [],
+  (es, res) => {
+    for (let e of es) {
+      if (ColliderDef.isOn(e)) continue;
+      // TODO(@darzu): cache these? Or get them from the GameObject?
+      const aabb = getAABBFromMesh(e.renderable.meshHandle.mesh);
+      EM.set(e, ColliderDef, {
+        shape: "AABB",
+        aabb,
+        solid: e.colliderFromMesh.solid,
+      });
+    }
+  }
+);
 
 const CannonObj = defineObj({
   name: "cannon2",
@@ -137,8 +172,25 @@ const CannonBallObj = defineObj({
     ParametricDef,
     ColorDef,
     RenderableConstructDef,
+    ColliderFromMeshDef,
   ],
 } as const);
+const CannonBallDef = CannonBallObj.props;
+
+const EnemyObj = defineObj({
+  name: "enemy",
+  components: [
+    RenderableConstructDef,
+    PositionDef,
+    ColorDef,
+    ColliderFromMeshDef,
+  ],
+  physicsParentChildren: true,
+  children: {
+    healthBar: [StatBarDef, PositionDef, RenderableConstructDef],
+  },
+} as const);
+const EnemyDef = EnemyObj.props;
 
 function cannonFireCurve(frame: Frame, speed: number, out: Parametric) {
   // TODO(@darzu): IMPL!
@@ -168,6 +220,7 @@ function launchBall(params: Parametric) {
       parametric: params,
       color: ENDESGA16.darkGray,
       renderableConstruct: [BallMesh],
+      colliderFromMesh: true,
     },
   });
 
@@ -412,6 +465,12 @@ export async function initGrayboxShipArena() {
       }
     }
   );
+
+  onCollides([CannonBallDef], [EnemyDef], [], (ball, enemy) => {
+    // TODO(@darzu):
+    enemy.enemy.healthBar.statBar.value -= 10;
+    EM.set(ball, DeletedDef);
+  });
 }
 
 async function createShip() {
@@ -525,12 +584,27 @@ function createEnemy() {
     p[2] *= 2;
   });
 
-  const ship = createObj(
-    [RenderableConstructDef, PositionDef, ColorDef] as const,
-    {
+  const ship = createObj(EnemyObj, {
+    args: {
       color: ENDESGA16.darkRed,
       position: [-40, -40, 3],
       renderableConstruct: [shipMesh],
-    }
-  );
+      colliderFromMesh: true,
+    },
+    children: {
+      healthBar: {
+        statBar: [0, 100, 80],
+        position: [0, 0, 15],
+        renderableConstruct: [
+          createMultiBarMesh({
+            width: 2,
+            length: 30,
+            centered: true,
+            fullColor: ENDESGA16.red,
+            missingColor: ENDESGA16.darkRed,
+          }),
+        ],
+      },
+    },
+  });
 }

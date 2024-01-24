@@ -18,12 +18,16 @@ import { clamp, unlerp, lerp } from "../utils/math.js";
 import { assert } from "../utils/util.js";
 import { createTimberBuilder } from "../wood/wood.js";
 
-export const HealthDef = EM.defineComponent(
-  "health",
+const DBG_STAT_BAR = true;
+
+export const StatBarDef = EM.defineComponent(
+  "statBar",
   () => ({
     min: 0,
     max: 100,
     value: 80,
+
+    _lastRenderedValue: -1,
   }),
   (p, min: number, max: number, value: number) => {
     p.min = min;
@@ -34,10 +38,6 @@ export const HealthDef = EM.defineComponent(
   { multiArg: true }
 );
 
-export const HealthBarDef = EM.defineComponent("healthBar", () => ({
-  lastRenderedValue: -1,
-}));
-
 export interface MultiBarOpts {
   width: number;
   length: number;
@@ -46,6 +46,8 @@ export interface MultiBarOpts {
   missingColor: vec3;
 }
 
+const statBarMeshName = "statBar";
+
 export function createMultiBarMesh({
   width,
   length,
@@ -53,7 +55,7 @@ export function createMultiBarMesh({
   fullColor,
   missingColor,
 }: MultiBarOpts): Mesh {
-  const mesh = createEmptyMesh("statBar");
+  const mesh = createEmptyMesh(statBarMeshName);
 
   const builder = createTimberBuilder(mesh);
   builder.width = width; // +X
@@ -95,68 +97,37 @@ export function createMultiBarMesh({
   return _mesh;
 }
 
-EM.addEagerInit([HealthDef], [], [], () => {
-  const offset = V(2, 0, 0);
-  const hasBar = new Set<number>();
-
-  const barMesh = createMultiBarMesh({
-    width: 0.2,
-    length: 3.0,
-    centered: true,
-    fullColor: ENDESGA16.red,
-    missingColor: ENDESGA16.darkRed,
-  });
+EM.addEagerInit([StatBarDef], [], [], () => {
+  // const mesh = cloneMesh(barMesh);
 
   EM.addSystem(
-    "createHealthBars",
+    "renderStatBars",
     Phase.GAME_WORLD,
-    [HealthDef],
-    [],
-    (hs, res) => {
-      for (let h of hs) {
-        if (!hasBar.has(h.id)) {
-          // TODO(@darzu): create bar
-          const bar = EM.new();
-          const mesh = cloneMesh(barMesh);
-          EM.set(bar, RenderableConstructDef, mesh);
-          EM.set(bar, PositionDef, vec3.clone(offset));
-          EM.set(bar, PhysicsParentDef, h.id);
-          EM.set(bar, HealthBarDef);
-
-          hasBar.add(h.id);
-        }
-      }
-    }
-  );
-
-  EM.addSystem(
-    "renderHealthBars",
-    Phase.GAME_WORLD,
-    [HealthBarDef, RenderableDef, PhysicsParentDef],
+    [StatBarDef, RenderableDef],
     [RendererDef],
     (hs, res) => {
       const startPosIdx = 4; // TODO(@darzu): these magic numbers come from the mesh; better way?
       const lastPosIdx = startPosIdx + 3;
-      for (let h of hs) {
-        const parent = EM.findEntity(h.physicsParent.id, [HealthDef]);
-        if (!parent) {
-          console.warn(
-            `HealthBar ${h.id} missing parent ${h.physicsParent.id}`
-          );
-          continue;
-        }
 
-        if (h.healthBar.lastRenderedValue === parent.health.value) continue; // nothing to do
-        h.healthBar.lastRenderedValue = parent.health.value;
+      for (let h of hs) {
+        const { statBar } = h;
+
+        // exit early if nothing to do
+        if (statBar._lastRenderedValue === statBar.value) continue;
+        statBar._lastRenderedValue = statBar.value;
 
         const percent = clamp(
-          unlerp(parent.health.min, parent.health.max, parent.health.value),
+          unlerp(statBar.min, statBar.max, statBar.value),
           0,
           1
         );
 
         const handle = h.renderable.meshHandle;
         assert(handle.mesh);
+        assert(
+          handle.mesh.dbgName === statBarMeshName,
+          "StatBar entities must use createMultiBarMesh mesh"
+        );
         const mesh = handle.mesh;
         const min = mesh.pos.at(0)![1]; // first
         const max = mesh.pos.at(-1)![1]; // last

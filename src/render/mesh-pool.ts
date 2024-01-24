@@ -61,7 +61,7 @@ export interface MeshHandle {
 
   // NOTE: changes to this mesh must by manually synced to the
   //  MeshPool & GPU via updateMeshVertices and friends.
-  readonly mesh?: Mesh;
+  readonly mesh: Mesh;
 
   // state
   mask: number; // used for selecting which render pipelines to particpate in
