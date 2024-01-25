@@ -75,7 +75,7 @@ import {
 import { TimeDef } from "../time/time.js";
 import { CanManDef, raiseManTurret } from "../turret/turret.js";
 import { YawPitchDef } from "../turret/yawpitch.js";
-import { clamp, unlerp } from "../utils/math.js";
+import { clamp, lerp, unlerp } from "../utils/math.js";
 import { Path } from "../utils/spline.js";
 import { PI } from "../utils/util-no-import.js";
 import { assert, dbgOnce, range } from "../utils/util.js";
@@ -99,10 +99,9 @@ Prioritized ToDo:
 */
 
 const DBG_GHOST = false;
-
 const DBG_GIZMO = true;
-
 const DBG_DOTS = false;
+const DBG_ENEMY = true;
 
 const SAIL_FURL_RATE = 0.02;
 
@@ -155,6 +154,7 @@ const CannonBallDef = CannonBallObj.props;
 
 const EnemyObj = defineObj({
   name: "enemy",
+  propsType: T<{ sailTarget: vec3 }>(),
   components: [
     RenderableConstructDef,
     PositionDef,
@@ -594,6 +594,9 @@ function createEnemy() {
   });
 
   const ship = createObj(EnemyObj, {
+    props: {
+      sailTarget: V(0, 0, 0),
+    },
     args: {
       color: ENDESGA16.darkRed,
       position: [-40, -40, 3],
@@ -647,23 +650,27 @@ async function initEnemies() {
 
   const { dots } = await EM.whenResources(DotsDef);
 
-  const trgDots = dots.allocDots(10);
+  const trgDots = DBG_ENEMY ? dots.allocDots(10) : undefined;
 
+  const steerFreq = 20;
   EM.addSystem(
-    "steerEnemies",
+    "enemySailTarget",
     Phase.GAME_WORLD,
     [EnemyDef, PositionDef, RotationDef, HasRudderDef],
     [TimeDef],
     (es, res) => {
       // run once every 20 frames
-      if (res.time.step % 20 !== 0) return;
+      if (res.time.step % steerFreq !== 0) return;
 
       for (let e of es) {
         getDirsToTan(e.position, player.position, attackRadius, _trgL, _trgR);
 
-        trgDots.set(0, _trgL, ENDESGA16.darkGreen, 10);
-        trgDots.set(1, _trgR, ENDESGA16.orange, 10);
-        trgDots.queueUpdate();
+        if (DBG_ENEMY) {
+          assert(trgDots);
+          trgDots.set(0, _trgL, ENDESGA16.darkGreen, 10);
+          trgDots.set(1, _trgR, ENDESGA16.orange, 10);
+          trgDots.queueUpdate();
+        }
 
         const toTrgL = vec3.sub(_trgL, e.position);
         vec3.normalize(toTrgL, toTrgL);
@@ -676,9 +683,39 @@ async function initEnemies() {
         const rDot = vec3.dot(toTrgR, curDir);
 
         const turnLeft = lDot > rDot;
-        const turnDot = turnLeft ? lDot : rDot;
 
-        const turnStr = unlerp(-1, 1, turnDot);
+        vec3.copy(e.enemy.sailTarget, turnLeft ? _trgL : _trgR);
+      }
+    }
+  );
+
+  EM.addSystem(
+    "enemySailToward",
+    Phase.GAME_WORLD,
+    [EnemyDef, PositionDef, RotationDef, HasRudderDef],
+    [TimeDef],
+    (es, res) => {
+      if (res.time.step % steerFreq !== 0) return;
+
+      for (let e of es) {
+        // TODO(@darzu): IMPL!
+        // TODO(@darzu): USE enemy.sailTarget
+        // const toTrgL = vec3.sub(_trgL, e.position);
+        // vec3.normalize(toTrgL, toTrgL);
+        // const toTrgR = vec3.sub(_trgR, e.position);
+        // vec3.normalize(toTrgR, toTrgR);
+        // const curDir = vec3.transformQuat(vec3.FWD, e.rotation);
+        // const lDot = vec3.dot(toTrgL, curDir);
+        // const rDot = vec3.dot(toTrgR, curDir);
+        // const turnLeft = lDot > rDot;
+        // const turnDot = turnLeft ? lDot : rDot;
+        // const turnStr = unlerp(-1, 1, turnDot);
+        // const MAX_TURN_STR = 0.05 * steerFreq;
+        // const turnYaw = lerp(0, MAX_TURN_STR * (turnLeft ? -1 : 1), turnStr);
+        // const rudder = e.hasRudder.rudder;
+        // rudder.yawpitch.yaw += turnYaw;
+        // rudder.yawpitch.yaw = clamp(rudder.yawpitch.yaw, -PI * 0.3, PI * 0.3); // TODO(@darzu): extract constants
+        // quat.fromYawPitchRoll(-rudder.yawpitch.yaw, 0, 0, rudder.rotation);
       }
     }
   );
