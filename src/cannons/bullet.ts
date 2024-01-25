@@ -312,12 +312,11 @@ export async function breakBullet(
     vec3.copy(pe.color, bullet.color);
     // const vel = vec3.clone(bullet.linearVelocity);
     const vel = vec3.clone(bullet.parametric.vel);
-    vel[1] = -vel[1]; // assume we're at the end of a parabola
+    // vel[2] = -vel[2]; // assume we're at the end of a parabola
     vec3.normalize(vel, vel);
-    vec3.negate(vel, vel);
+    vec3.negate(vel, vel); // reflact back along path of travel
     vec3.add(vel, randNormalVec3(tempVec3()), vel);
-    // vec3.add(vel, [0, -1, 0], vel);
-    vec3.add(vel, [0, +1, 0], vel);
+    vec3.add(vel, [0, 0, +1], vel); // bias upward
     vec3.normalize(vel, vel);
     vec3.scale(vel, 0.02, vel);
     EM.set(pe, LinearVelocityDef);

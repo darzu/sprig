@@ -1,0 +1,84 @@
+
+// TODO(@darzu): CUSTOM STACK. Is it possible to get mostly value semantics by implementing our own stack?
+//    e.i. have a Float32Array + stack ptr where we copy-in all args, do compute, and then pass out
+//  The hard thing is we can't do anything about assignment: c = vec3.add(a, b)
+//  Eh. Actually we've accomplished nothing. Same right now all the inputTs anyway read and don't modify.
+/*
+is there any way to get value semantics in js...
+  don't use =, always use a fn?
+
+What we want:
+  a = V3.add(b, V3.sub(V3.scale(c, 10), d))
+
+to happen efficiently w/o new allocs or even tmps.
+
+keep track of our call depth
+all fns return a stack ptr id 
+
+
+*/
+
+function exampleVecBad(bulletVel: vec3) {
+  const pe = {
+    linearVelocity: tempVec3(),
+    angularVelocity: tempVec3(),
+    gravity: tempVec3(),
+  };
+
+  const vel = vec3.clone(bulletVel);
+  vel[2] = -vel[2]; // assume we're at the end of a parabola
+  vec3.normalize(vel, vel);
+  vec3.negate(vel, vel);
+  vec3.add(vel, randNormalVec3(tempVec3()), vel);
+  vec3.add(vel, [0, +1, 0], vel);
+  vec3.normalize(vel, vel);
+  vec3.scale(vel, 0.02, vel);
+  vec3.copy(pe.linearVelocity, vel);
+  vec3.copy(pe.angularVelocity, vel);
+  vec3.copy(pe.gravity, [0, 0, -4 * 0.00001]);
+
+  function randNormalVec3(out?: vec3): vec3 {
+    throw "dummy";
+  }
+  function tempVec3(): vec3 {
+    throw "dummy";
+  }
+}
+function exampleVecGood(bulletVel: vec3) {
+  const pe = {
+    linearVelocity: tempVec3(),
+    angularVelocity: tempVec3(),
+    gravity: tempVec3(),
+  };
+
+  // stackMark
+
+  const vel = bulletVel; // copy to stack
+  vel[2] *= -1; // modify parts
+  const reflected = add(add(neg(norm(vel)), randNormalVec3()), [0, +1, 0]);
+  const scaled = scale(norm(reflected), 0.02);
+  pe.linearVelocity = scaled;
+  pe.angularVelocity = scaled;
+  pe.gravity = V(0, 0, -4 * 0.00001);
+
+  // stackPop
+
+  function randNormalVec3(out?: vec3): vec3 {
+    throw "dummy";
+  }
+  function tempVec3(): vec3 {
+    throw "dummy";
+  }
+  function add(a: vec3.InputT, b: vec3.InputT): vec3 {
+    throw "dummy";
+  }
+  function scale(a: vec3, b: number): vec3 {
+    throw "dummy";
+  }
+  function neg(a: vec3): vec3 {
+    throw "dummy";
+  }
+  function norm(a: vec3): vec3 {
+    throw "dummy";
+  }
+}

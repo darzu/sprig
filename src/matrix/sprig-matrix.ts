@@ -82,6 +82,11 @@ let eg_vec3: vec3 = vec3.create() as vec3;
 // eg_vec3fr = eg_vec3; // illegal (could be temp)
 // eg_vec3fr = eg_vec3f; // legal (strengthening w/ readonly promise)
 // eg_vec3fr = eg_vec3r; // illegal (could be temp)
+
+Should be able to overload vec3.add like so:
+vec3.add(a: T, b: T): tT;
+vec3.add<OT extends T | tT>(a: T, b: T, out: OT): OT;
+so if given an out, it'll be that type, otherwise it'll be a temp
 */
 
 export let _f32sCount = 0; // TODO(@darzu): PERF DBG!
@@ -126,6 +131,8 @@ export function resetTempMatrixBuffer() {
     dbgClearBlame("temp_f32s");
   }
 }
+
+// TODO(@darzu): IMPL mark and pop
 
 export function isTmpVec(v: Float32Array): boolean {
   return v.buffer === buffer;
@@ -363,6 +370,7 @@ export module vec3 {
   export function div(v1: InputT, v2: InputT, out?: T): T {
     return GL.div(out ?? tmp(), v1, v2) as T;
   }
+  // TODO(@darzu): rename norm()
   export function normalize(v1: InputT, out?: T): T {
     return GL.normalize(out ?? tmp(), v1) as T;
   }
@@ -395,6 +403,7 @@ export module vec3 {
     return GL.lerp(out ?? tmp(), v1, v2, n) as T;
   }
 
+  // TODO(@darzu): replace many usages with getFwd, getUp, getRight, etc.
   export function transformQuat(v1: InputT, v2: quat.InputT, out?: T): T {
     return GL.transformQuat(out ?? tmp(), v1, v2) as T;
   }
