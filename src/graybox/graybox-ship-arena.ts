@@ -35,7 +35,11 @@ import {
 } from "../motion/parametric-motion.js";
 import { LinearVelocityDef } from "../motion/velocity.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
-import { AABBCollider, ColliderDef } from "../physics/collider.js";
+import {
+  AABBCollider,
+  ColliderDef,
+  ColliderFromMeshDef,
+} from "../physics/collider.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import { onCollides } from "../physics/phys-helpers.js";
 import {
@@ -101,34 +105,6 @@ const DBG_GIZMO = true;
 const DBG_DOTS = false;
 
 const SAIL_FURL_RATE = 0.02;
-
-// TODO(@darzu): feels hacky. Move this elsewhere?
-const ColliderFromMeshDef = EM.defineComponent(
-  "colliderFromMesh",
-  () => ({ solid: true }),
-  (p, solid?: boolean) => {
-    p.solid = solid ?? p.solid;
-    return p;
-  }
-);
-EM.addSystem(
-  "colliderFromMeshDef",
-  Phase.GAME_WORLD,
-  [ColliderFromMeshDef, RenderableDef],
-  [],
-  (es, res) => {
-    for (let e of es) {
-      if (ColliderDef.isOn(e)) continue;
-      // TODO(@darzu): cache these? Or get them from the GameObject?
-      const aabb = getAABBFromMesh(e.renderable.meshHandle.mesh);
-      EM.set(e, ColliderDef, {
-        shape: "AABB",
-        aabb,
-        solid: e.colliderFromMesh.solid,
-      });
-    }
-  }
-);
 
 const CannonObj = defineObj({
   name: "cannon2",
@@ -541,9 +517,7 @@ async function createShip() {
     },
   });
 
-  const res = await EM.whenResources(MastMesh.def, MeDef);
-
-  const mast = createMast(res);
+  const mast = createMast();
 
   mixinObj(ship, HasMastObj, {
     args: [],
@@ -552,10 +526,12 @@ async function createShip() {
     },
   });
 
-  const sock = createSock(2.0);
-  sock.position[2] =
-    mast.position[2] + (mast.collider as AABBCollider).aabb.max[2];
-  EM.set(sock, PhysicsParentDef, ship.id);
+  EM.whenEntityHas(mast, ColliderDef, PositionDef).then((mast) => {
+    const sock = createSock(2.0);
+    sock.position[2] =
+      mast.position[2] + (mast.collider as AABBCollider).aabb.max[2];
+    EM.set(sock, PhysicsParentDef, ship.id);
+  });
 
   const rudder = createRudder();
   // console.log("setting position");
@@ -641,6 +617,31 @@ function createEnemy() {
       },
     },
   });
+
+  // const mast = createMast();
+
+  // mixinObj(ship, HasMastObj, {
+  //   args: [],
+  //   children: {
+  //     mast,
+  //   },
+  // });
+
+  // const sock = createSock(2.0);
+  // sock.position[2] =
+  //   mast.position[2] + (mast.collider as AABBCollider).aabb.max[2];
+  // EM.set(sock, PhysicsParentDef, ship.id);
+
+  // const rudder = createRudder();
+  // // console.log("setting position");
+  // vec3.set(0, -25, 4, rudder.position);
+
+  // mixinObj(ship, HasRudderObj, {
+  //   args: [],
+  //   children: {
+  //     rudder,
+  //   },
+  // });
 }
 
 async function initEnemies() {

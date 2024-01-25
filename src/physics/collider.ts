@@ -1,5 +1,8 @@
 import { Component, EM } from "../ecs/entity-manager.js";
+import { Phase } from "../ecs/sys-phase.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { getAABBFromMesh } from "../meshes/mesh.js";
+import { RenderableDef } from "../render/renderer-ecs.js";
 import { AABB } from "./aabb.js";
 
 export type Layer = number; // a bit mask
@@ -83,3 +86,30 @@ export const ColliderDef = EM.defineNonupdatableComponent(
 const __COLLIDER_ASSERT: Component<typeof ColliderDef> extends Collider
   ? true
   : false = true;
+
+export const ColliderFromMeshDef = EM.defineComponent(
+  "colliderFromMesh",
+  () => ({ solid: true }),
+  (p, solid?: boolean) => {
+    p.solid = solid ?? p.solid;
+    return p;
+  }
+);
+EM.addSystem(
+  "colliderFromMeshDef",
+  Phase.GAME_WORLD,
+  [ColliderFromMeshDef, RenderableDef],
+  [],
+  (es, res) => {
+    for (let e of es) {
+      if (ColliderDef.isOn(e)) continue;
+      // TODO(@darzu): cache these? Or get them from the GameObject?
+      const aabb = getAABBFromMesh(e.renderable.meshHandle.mesh);
+      EM.set(e, ColliderDef, {
+        shape: "AABB",
+        aabb,
+        solid: e.colliderFromMesh.solid,
+      });
+    }
+  }
+);
