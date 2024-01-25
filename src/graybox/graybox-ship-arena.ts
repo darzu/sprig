@@ -75,7 +75,7 @@ import {
 import { TimeDef } from "../time/time.js";
 import { CanManDef, raiseManTurret } from "../turret/turret.js";
 import { YawPitchDef } from "../turret/yawpitch.js";
-import { clamp } from "../utils/math.js";
+import { clamp, unlerp } from "../utils/math.js";
 import { Path } from "../utils/spline.js";
 import { PI } from "../utils/util-no-import.js";
 import { assert, dbgOnce, range } from "../utils/util.js";
@@ -652,7 +652,7 @@ async function initEnemies() {
   EM.addSystem(
     "steerEnemies",
     Phase.GAME_WORLD,
-    [EnemyDef, PositionDef],
+    [EnemyDef, PositionDef, RotationDef, HasRudderDef],
     [TimeDef],
     (es, res) => {
       // run once every 20 frames
@@ -664,6 +664,21 @@ async function initEnemies() {
         trgDots.set(0, _trgL, ENDESGA16.darkGreen, 10);
         trgDots.set(1, _trgR, ENDESGA16.orange, 10);
         trgDots.queueUpdate();
+
+        const toTrgL = vec3.sub(_trgL, e.position);
+        vec3.normalize(toTrgL, toTrgL);
+        const toTrgR = vec3.sub(_trgR, e.position);
+        vec3.normalize(toTrgR, toTrgR);
+
+        const curDir = vec3.transformQuat(vec3.FWD, e.rotation);
+
+        const lDot = vec3.dot(toTrgL, curDir);
+        const rDot = vec3.dot(toTrgR, curDir);
+
+        const turnLeft = lDot > rDot;
+        const turnDot = turnLeft ? lDot : rDot;
+
+        const turnStr = unlerp(-1, 1, turnDot);
       }
     }
   );

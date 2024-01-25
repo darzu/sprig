@@ -14,7 +14,7 @@ import { initMeshEditor, MeshEditorDef } from "./mesh-editor.js";
 import { lineStuff } from "./path-editor.js";
 import { exportObj } from "../meshes/import-obj.js";
 import { InputsDef } from "../input/inputs.js";
-import { mathMap } from "../utils/math.js";
+import { remap } from "../utils/math.js";
 import { copyAABB, createAABB } from "../physics/aabb.js";
 import { ColliderDef } from "../physics/collider.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
@@ -244,8 +244,8 @@ export async function initFontEditor() {
       let cursorFracY = inputs.mousePos[1] / htmlCanvas.canvas.clientHeight;
       const cursorWorldPos = vec3.transformMat4(
         [
-          mathMap(cursorFracX, 0, 1, -1, 1),
-          mathMap(cursorFracY, 0, 1, 1, -1), // screen is Y down, world is Y up
+          remap(cursorFracX, 0, 1, -1, 1),
+          remap(cursorFracY, 0, 1, 1, -1), // screen is Y down, world is Y up
           0,
         ],
         cameraComputed.invViewProj

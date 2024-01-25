@@ -3,7 +3,7 @@ import { ColorDef } from "../color/color-ecs.js";
 import { EM } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { InputsDef } from "../input/inputs.js";
-import { mathMapNEase } from "../utils/math.js";
+import { remapEase } from "../utils/math.js";
 import { ColliderDef } from "../physics/collider.js";
 import { AngularVelocityDef } from "../motion/velocity.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
@@ -194,7 +194,7 @@ export async function initClothSandbox(hosting: boolean) {
       const delta = vec3.sub(clothPos, cursorPos);
       const dist = vec3.length(delta);
       vec3.normalize(delta, cloth.force);
-      const strength = mathMapNEase(dist, 4, 20, 0, 500, (p) =>
+      const strength = remapEase(dist, 4, 20, 0, 500, (p) =>
         EASE_INQUAD(1.0 - p)
       );
       res.text.upperText = `${strength.toFixed(2)}`;

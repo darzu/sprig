@@ -8,7 +8,7 @@ import {
   UnitCubeMesh,
 } from "../meshes/mesh-list.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
-import { mathMap } from "./math.js";
+import { remap } from "./math.js";
 import { getLineEnd, Line, Ray } from "../physics/broadphase.js";
 import {
   PhysicsParentDef,
@@ -155,8 +155,8 @@ export function screenPosToWorldPos(
 ): vec3 {
   const invViewProj = cameraComputed.invViewProj;
 
-  const viewX = mathMap(screenPos[0], 0, cameraComputed.width, -1, 1);
-  const viewY = mathMap(screenPos[1], 0, cameraComputed.height, 1, -1);
+  const viewX = remap(screenPos[0], 0, cameraComputed.width, -1, 1);
+  const viewY = remap(screenPos[1], 0, cameraComputed.height, 1, -1);
   const viewPos3 = vec3.set(viewX, viewY, screenDepth);
 
   return vec3.transformMat4(viewPos3, invViewProj, out);
