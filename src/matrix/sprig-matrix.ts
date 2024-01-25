@@ -138,6 +138,8 @@ export function resetTempMatrixBuffer() {
 
 // TODO(@darzu): have a version of PERF_DBG_F32S_TEMP_BLAME that tracks blame on unmarked/popped!
 // TODO(@darzu): is there some dbg way we could track to see if any tmps are used after free? maybe a generation tracker?
+//                conceivably w/ WeakRef? Maybe w/ FinalizationRegistry?
+//                  if i do a mark and then the scoped obj is collected before a pop happens, we know we have a missing pop
 // TODO(@darzu): eventually we'll get scoped using statements in JS which will make this hideous mess a little better?
 // TODO(@darzu): should these be called for every system and every init?
 const _tmpMarkStack: number[] = [];

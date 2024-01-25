@@ -471,3 +471,32 @@ indirect draw best practices:
 
 "binding bindlessly"
   https://alextardif.com/Bindless.html
+
+Use cases for WeakRef and FinalizationRegistry:
+  https://github.com/tc39/proposal-weakrefs
+  A primary use for weak references is to implement caches or mappings holding large objects, 
+    where it’s desired that a large object is not kept alive solely because it appears in a cache or mapping.
+  Locating and responding to external resource leaks
+    good for tracking missing explicit free()'s by regersting on alloc() and unregister on free() and log error in finalizer
+  Exposing WebAssembly memory to JavaScript
+    in the finalizer, add some big chunk of memory into a free list
+  Avoid memory leaks for cross-worker proxies
+  Weak caches
+  Iterable WeakMaps
+
+investigate WebAssembly.Memory
+
+investigate JS shared memory:
+  https://github.com/tc39/proposal-ecmascript-sharedmem/blob/main/TUTORIAL.md
+  https://hacks.mozilla.org/2016/05/a-taste-of-javascripts-new-parallel-primitives/
+
+investigate JS Reflect and Proxy
+  https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Reflect
+  https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy/Proxy
+    allows you to intercept things like object property accesses
+  https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Meta_programming
+  "the Proxy and Reflect objects allow you to intercept and define custom behavior for fundamental language operations (e.g. property lookup, assignment, enumeration, function invocation, etc.)"
+
+Object.defineProperty()
+  https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/defineProperty
+  Maybe useful for better entity stuff?

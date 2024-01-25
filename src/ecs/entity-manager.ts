@@ -106,6 +106,8 @@ either init time or GAME_WORLD etc
   but that might not capture other time like file downloading
 */
 
+// TODO(@darzu): use defineProperty, Object.preventExtensions(), and such to have more robust entities?
+
 export interface Entity {
   readonly id: number;
 }

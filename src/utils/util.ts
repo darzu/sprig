@@ -372,3 +372,33 @@ export type TAssert<A extends true> = A;
 //     (<T>() => T extends Y ? 1 : 2) ? true : false;
 
 export type IsOptional<T> = T | undefined extends T ? true : false;
+
+export interface WeakCache<V extends object> {
+  _create: (key: string) => V;
+  getOrCreate: (key: string) => V;
+}
+export function makeWeakCache<V extends object>(
+  create: (key: string) => V
+): WeakCache<V> {
+  // From: https://github.com/tc39/proposal-weakrefs
+  const cache = new Map<string, WeakRef<V>>();
+  const cleanup = new FinalizationRegistry<string>((key) => {
+    // TODO(@darzu): check notes concurrency considerations
+    const ref = cache.get(key);
+    if (ref && !ref.deref()) cache.delete(key);
+  });
+
+  function getOrCreate(key: string): V {
+    const cached = cache.get(key)?.deref();
+    if (cached !== undefined) return cached;
+    const fresh = create(key);
+    cache.set(key, new WeakRef(fresh));
+    cleanup.register(fresh, key);
+    return fresh;
+  }
+
+  return {
+    _create: create,
+    getOrCreate,
+  };
+}
