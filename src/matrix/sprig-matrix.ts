@@ -126,6 +126,9 @@ function tmpArray<N extends number>(n: N): Float32ArrayOfLength<N> {
 }
 
 export function resetTempMatrixBuffer() {
+  if (_tmpMarkStack.length)
+    throw `mismatched tmpMark & tmpPop! ${_tmpMarkStack.length} unpopped`;
+
   bufferIndex = 0;
 
   if (PERF_DBG_F32S_TEMP_BLAME) {
@@ -136,6 +139,7 @@ export function resetTempMatrixBuffer() {
 // TODO(@darzu): have a version of PERF_DBG_F32S_TEMP_BLAME that tracks blame on unmarked/popped!
 // TODO(@darzu): is there some dbg way we could track to see if any tmps are used after free? maybe a generation tracker?
 // TODO(@darzu): eventually we'll get scoped using statements in JS which will make this hideous mess a little better?
+// TODO(@darzu): should these be called for every system and every init?
 const _tmpMarkStack: number[] = [];
 export function tmpMark(): void {
   _tmpMarkStack.push(bufferIndex);
@@ -326,6 +330,7 @@ export module vec3 {
     return tmpArray(3);
   }
 
+  // TODO(@darzu): rename mk()
   export function create(): T {
     return float32ArrayOfLength(3);
   }
@@ -335,6 +340,7 @@ export module vec3 {
   }
 
   // TODO(@darzu): maybe copy should have an optional out param?
+  // TODO(@darzu): rename cpy
   export function copy(out: T, v1: InputT): T {
     return GL.copy(out, v1) as T;
   }

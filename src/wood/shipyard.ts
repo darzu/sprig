@@ -7,6 +7,8 @@ import {
   mat4,
   mat3,
   V,
+  tmpMark,
+  tmpPop,
 } from "../matrix/sprig-matrix.js";
 import { jitter } from "../utils/math.js";
 import {
@@ -296,6 +298,9 @@ export function createLD53Ship(): HomeShip {
   const TRANSOM = true;
 
   const _start = performance.now();
+
+  tmpMark();
+
   const _timberMesh = createEmptyMesh("homeShip");
 
   const builder: TimberBuilder = createTimberBuilder(_timberMesh);
@@ -840,6 +845,8 @@ export function createLD53Ship(): HomeShip {
 
   reserveSplinterSpace(timberState, 200);
   validateMesh(timberState.mesh);
+
+  tmpPop();
 
   const _end = performance.now();
   console.log(`createHomeShip took: ${(_end - _start).toFixed(1)}ms`);

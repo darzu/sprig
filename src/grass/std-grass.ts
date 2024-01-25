@@ -17,7 +17,7 @@ import {
   RendererDef,
   RendererWorldFrameDef,
 } from "../render/renderer-ecs.js";
-import { mat4, V, vec3 } from "../matrix/sprig-matrix.js";
+import { mat4, tmpMark, tmpPop, V, vec3 } from "../matrix/sprig-matrix.js";
 import { assertDbg } from "../utils/util.js";
 import { computeTriangleNormal } from "../utils/utils-3d.js";
 import { LandMapTexPtr } from "../levels/level-map.js";
@@ -232,6 +232,7 @@ export function registerUploadGrassData() {
     [RenderableDef, RenderDataGrassDef, RendererWorldFrameDef],
     [RendererDef],
     (objs, res) => {
+      tmpMark();
       const pool = res.renderer.renderer.getCyResource(grassPoolPtr)!;
       for (let o of objs) {
         let lastPos = _lastTilePos.get(o.id);
@@ -260,6 +261,7 @@ export function registerUploadGrassData() {
 
         pool.updateUniform(o.renderable.meshHandle, o.renderDataGrass);
       }
+      tmpPop();
     }
   );
 
