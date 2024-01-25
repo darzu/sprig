@@ -116,6 +116,7 @@ function tmpArray<N extends number>(n: N): Float32ArrayOfLength<N> {
       (Float32Array.BYTES_PER_ELEMENT * BUFFER_SIZE) / 1024
     }kb)`;
   }
+  // TODO(@darzu): For blame, have a mode that exludes stack mark n' pop'ed!
   if (PERF_DBG_F32S_TEMP_BLAME) {
     dbgAddBlame("temp_f32s", n);
   }
@@ -132,7 +133,17 @@ export function resetTempMatrixBuffer() {
   }
 }
 
-// TODO(@darzu): IMPL mark and pop
+// TODO(@darzu): have a version of PERF_DBG_F32S_TEMP_BLAME that tracks blame on unmarked/popped!
+// TODO(@darzu): is there some dbg way we could track to see if any tmps are used after free? maybe a generation tracker?
+// TODO(@darzu): eventually we'll get scoped using statements in JS which will make this hideous mess a little better?
+const _tmpMarkStack: number[] = [];
+export function tmpMark(): void {
+  _tmpMarkStack.push(bufferIndex);
+}
+export function tmpPop(): void {
+  if (_tmpMarkStack.length === 0) throw "tmpPop with zero size stack!";
+  bufferIndex = _tmpMarkStack.pop()!;
+}
 
 export function isTmpVec(v: Float32Array): boolean {
   return v.buffer === buffer;

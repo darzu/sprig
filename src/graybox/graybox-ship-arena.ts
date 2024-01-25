@@ -15,7 +15,7 @@ import {
   createRudder,
   createRudderTurret,
 } from "../ld53/rudder.js";
-import { V, quat, vec3 } from "../matrix/sprig-matrix.js";
+import { V, quat, tmpMark, tmpPop, vec3 } from "../matrix/sprig-matrix.js";
 import {
   BallMesh,
   CannonMesh,
@@ -572,14 +572,15 @@ function getDirsToTan(
   outL: vec3,
   outR: vec3
 ): void {
+  tmpMark();
   const srcToTrg = vec3.sub(trg, src);
-
   const perpR: vec3.InputT = [srcToTrg[1], -srcToTrg[0], 0];
-  const normR = vec3.normalize(perpR, outR);
-  const scaledR = vec3.scale(normR, trgRad, outR);
-  const scaledL = vec3.negate(scaledR, outL);
+  const normR = vec3.normalize(perpR);
+  const scaledR = vec3.scale(normR, trgRad);
+  const scaledL = vec3.negate(scaledR);
   vec3.add(trg, scaledR, outR);
   vec3.add(trg, scaledL, outL);
+  tmpPop();
 }
 
 function createEnemy() {
@@ -642,8 +643,6 @@ function createEnemy() {
 }
 
 async function initEnemies() {
-  let _trgL = vec3.create();
-  let _trgR = vec3.create();
   const attackRadius = 100;
 
   const player = await EM.whenSingleEntity(ShipDef, PositionDef);
@@ -662,7 +661,11 @@ async function initEnemies() {
       // run once every 20 frames
       if (res.time.step % steerFreq !== 0) return;
 
+      tmpMark();
+
       for (let e of es) {
+        const _trgL = vec3.tmp();
+        const _trgR = vec3.tmp();
         getDirsToTan(e.position, player.position, attackRadius, _trgL, _trgR);
 
         if (DBG_ENEMY) {
@@ -672,10 +675,10 @@ async function initEnemies() {
           trgDots.queueUpdate();
         }
 
-        const toTrgL = vec3.sub(_trgL, e.position);
-        vec3.normalize(toTrgL, toTrgL);
-        const toTrgR = vec3.sub(_trgR, e.position);
-        vec3.normalize(toTrgR, toTrgR);
+        let toTrgL = vec3.sub(_trgL, e.position);
+        toTrgL = vec3.normalize(toTrgL);
+        let toTrgR = vec3.sub(_trgR, e.position);
+        toTrgR = vec3.normalize(toTrgR);
 
         const curDir = vec3.transformQuat(vec3.FWD, e.rotation);
 
@@ -686,6 +689,8 @@ async function initEnemies() {
 
         vec3.copy(e.enemy.sailTarget, turnLeft ? _trgL : _trgR);
       }
+
+      tmpPop();
     }
   );
 
