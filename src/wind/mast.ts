@@ -100,15 +100,12 @@ EM.addEagerInit([MastDef], [], [], () => {
     [HasMastDef, WorldFrameDef],
     [InputsDef, WindDef],
     (es, res) => {
-      if (es.length == 0) return;
-      assert(es.length === 1, `too many ships: ${es.length}`);
-      const ship = es[0];
-      const mast = ship.hasMast.mast;
-      if (!WorldFrameDef.isOn(mast)) return;
+      for (let ship of es) {
+        const mast = ship.hasMast.mast;
+        if (!WorldFrameDef.isOn(mast)) continue;
 
-      // TODO(@darzu): Debugging
-      if (dbgOnce("windOnMast")) {
-        if (DBG_MAST)
+        // TODO(@darzu): Debugging
+        if (DBG_MAST && dbgOnce("windOnMast")) {
           drawUpdatingVector(res.wind.dir, {
             origin: vec3.add(mast.world.position, V(0, 0, 30)),
             scale: 20,
@@ -116,43 +113,44 @@ EM.addEagerInit([MastDef], [], [], () => {
             color: ENDESGA16.yellow,
           });
 
-        // addVecUpdatingDbgVis(V(0, 1, 0), {
-        //   origin: V(0, 0, 0),
-        //   scale: 20,
-        //   parentId: mast.id,
-        // });
-      }
+          // addVecUpdatingDbgVis(V(0, 1, 0), {
+          //   origin: V(0, 0, 0),
+          //   scale: 20,
+          //   parentId: mast.id,
+          // });
+        }
 
-      // TODO(@darzu): DBGING
-      // console.log(`wind.dir: ${vec3Dbg(res.wind.dir)}`);
+        // TODO(@darzu): DBGING
+        // console.log(`wind.dir: ${vec3Dbg(res.wind.dir)}`);
 
-      // console.log(`MAST: ${quatDbg(mast.rotation)}`);
+        // console.log(`MAST: ${quatDbg(mast.rotation)}`);
 
-      // const rudder = ship.ld52ship.rudder()!;
+        // const rudder = ship.ld52ship.rudder()!;
 
-      // const shipDir = vec3.transformQuat(V(0, 0, 1), shipWorld.world.rotation);
+        // const shipDir = vec3.transformQuat(V(0, 0, 1), shipWorld.world.rotation);
 
-      const invShip = mat3.invert(mat3.fromMat4(ship.world.transform));
-      const windLocalDir = vec3.transformMat3(res.wind.dir, invShip);
-      const shipLocalDir = vec3.FWD;
+        // TODO(@darzu): PERF. Cache this invert?
+        const invShip = mat3.invert(mat3.fromMat4(ship.world.transform));
+        const windLocalDir = vec3.transformMat3(res.wind.dir, invShip);
+        const shipLocalDir = vec3.FWD;
 
-      const optimalSailLocalDir = vec3.normalize(
-        vec3.add(windLocalDir, shipLocalDir)
-      );
+        const optimalSailLocalDir = vec3.normalize(
+          vec3.add(windLocalDir, shipLocalDir)
+        );
 
-      // console.log(`ship to wind: ${vec3.dot(windLocalDir, shipLocalDir)}`);
+        // console.log(`ship to wind: ${vec3.dot(windLocalDir, shipLocalDir)}`);
 
-      // const normal = vec3.transformQuat(AHEAD_DIR, e.world.rotation);
-      // e.sail.billowAmount = vec3.dot(normal, res.wind.dir);
-      // sail.force * vec3.dot(AHEAD_DIR, normal);
+        // const normal = vec3.transformQuat(AHEAD_DIR, e.world.rotation);
+        // e.sail.billowAmount = vec3.dot(normal, res.wind.dir);
+        // sail.force * vec3.dot(AHEAD_DIR, normal);
 
-      // const currSailForce =
+        // const currSailForce =
 
-      // need to maximize: dot(wind, sail) * dot(sail, ship)
+        // need to maximize: dot(wind, sail) * dot(sail, ship)
 
-      // TODO(@darzu): ANIMATE SAIL TOWARD WIND
-      if (vec3.dot(optimalSailLocalDir, shipLocalDir) > 0.01) {
-        quat.fromForwardAndUpish(optimalSailLocalDir, vec3.UP, mast.rotation);
+        if (vec3.dot(optimalSailLocalDir, shipLocalDir) > 0.01) {
+          quat.fromForwardAndUpish(optimalSailLocalDir, vec3.UP, mast.rotation);
+        }
       }
     }
   );

@@ -618,30 +618,24 @@ function createEnemy() {
     },
   });
 
-  // const mast = createMast();
+  const mast = createMast();
 
-  // mixinObj(ship, HasMastObj, {
-  //   args: [],
-  //   children: {
-  //     mast,
-  //   },
-  // });
+  mixinObj(ship, HasMastObj, {
+    args: [],
+    children: {
+      mast,
+    },
+  });
 
-  // const sock = createSock(2.0);
-  // sock.position[2] =
-  //   mast.position[2] + (mast.collider as AABBCollider).aabb.max[2];
-  // EM.set(sock, PhysicsParentDef, ship.id);
+  const rudder = createRudder();
+  vec3.set(0, -25, 4, rudder.position);
 
-  // const rudder = createRudder();
-  // // console.log("setting position");
-  // vec3.set(0, -25, 4, rudder.position);
-
-  // mixinObj(ship, HasRudderObj, {
-  //   args: [],
-  //   children: {
-  //     rudder,
-  //   },
-  // });
+  mixinObj(ship, HasRudderObj, {
+    args: [],
+    children: {
+      rudder,
+    },
+  });
 }
 
 async function initEnemies() {

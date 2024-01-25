@@ -45,6 +45,8 @@ const SailObj = defineObj({
     billowAmount: number;
     force: number;
     posMap: Map<number, number>;
+    _lastSailBillow: number;
+    _lastSailUnfurl: number;
   }>(),
   components: [
     RenderableConstructDef,
@@ -129,6 +131,8 @@ export function createSail(
     billowAmount: 0.0,
     force: 0.0,
     posMap: new Map<number, number>(),
+    _lastSailBillow: 0,
+    _lastSailUnfurl: 0,
   };
 
   const mesh = sailMesh(props);
@@ -167,49 +171,46 @@ EM.addSystem(
   }
 );
 
-let _lastSailBillow = 0;
-let _lastSailUnfurl = 0;
 EM.addSystem(
-  "billow",
+  "billowSails",
   Phase.GAME_WORLD,
   [SailDef, RenderableDef],
   [RendererDef],
   (es, { renderer }) => {
-    assert(es.length <= 1);
-    if (!es.length) return;
-    const e = es[0];
-    if (
-      Math.abs(e.sail.billowAmount - _lastSailBillow) < 0.01 &&
-      Math.abs(e.sail.unfurledAmount - _lastSailUnfurl) < 0.01
-    )
-      // no change
-      return;
-    // NOTE: this cast is only safe so long as we're sure this mesh isn't being shared
-    const m = e.renderable.meshHandle.mesh! as Mesh;
-    m.pos.forEach((p, i) => {
-      const originalIndex = e.sail.posMap.get(i)!;
-      let z = Math.floor(originalIndex / (e.sail.width + 1));
-      let parabZ;
-      if (e.sail.height % 2 == 0) {
-        parabZ = z - e.sail.height / 2;
-      } else {
-        if (z < e.sail.height / 2) {
-          parabZ = z - Math.ceil(e.sail.height / 2);
+    for (let e of es) {
+      if (
+        Math.abs(e.sail.billowAmount - e.sail._lastSailBillow) < 0.01 &&
+        Math.abs(e.sail.unfurledAmount - e.sail._lastSailUnfurl) < 0.01
+      )
+        // no change
+        continue;
+      // NOTE: this cast is only safe so long as we're sure this mesh isn't being shared
+      const m = e.renderable.meshHandle.mesh! as Mesh;
+      m.pos.forEach((p, i) => {
+        const originalIndex = e.sail.posMap.get(i)!;
+        let z = Math.floor(originalIndex / (e.sail.width + 1));
+        let parabZ;
+        if (e.sail.height % 2 == 0) {
+          parabZ = z - e.sail.height / 2;
         } else {
-          parabZ = z - Math.floor(e.sail.height / 2);
+          if (z < e.sail.height / 2) {
+            parabZ = z - Math.ceil(e.sail.height / 2);
+          } else {
+            parabZ = z - Math.floor(e.sail.height / 2);
+          }
         }
-      }
-      p[1] = -(
-        e.sail.billowAmount *
-        BILLOW_FACTOR *
-        e.sail.unfurledAmount *
-        (parabZ ** 2 - Math.ceil(e.sail.height / 2) ** 2)
-      );
-      p[2] = -z * e.sail.unfurledAmount;
-    });
-    renderer.renderer.stdPool.updateMeshVertices(e.renderable.meshHandle, m);
-    _lastSailBillow = e.sail.billowAmount;
-    _lastSailUnfurl = e.sail.unfurledAmount;
+        p[1] = -(
+          e.sail.billowAmount *
+          BILLOW_FACTOR *
+          e.sail.unfurledAmount *
+          (parabZ ** 2 - Math.ceil(e.sail.height / 2) ** 2)
+        );
+        p[2] = -z * e.sail.unfurledAmount;
+      });
+      renderer.renderer.stdPool.updateMeshVertices(e.renderable.meshHandle, m);
+      e.sail._lastSailBillow = e.sail.billowAmount;
+      e.sail._lastSailUnfurl = e.sail.unfurledAmount;
+    }
   }
 );
 
