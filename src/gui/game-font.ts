@@ -173,7 +173,7 @@ export async function initFontEditor() {
     Phase.GAME_WORLD,
     null,
     [CameraComputedDef, CanvasDef, CameraDef, InputsDef, UICursorDef],
-    async (_, res) => {
+    (_, res) => {
       const { cameraComputed, htmlCanvas, inputs } = res;
       const cursor = res.uiCursor.cursor;
 

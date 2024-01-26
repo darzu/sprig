@@ -203,7 +203,7 @@ export type SystemFn<
 > = (
   es: CS extends ComponentDef[] ? ReadonlyEntities<CS> : [],
   resources: Resources<RS>
-) => void;
+) => void | Promise<void>;
 
 export interface SystemFlags {
   // If set, won't warn you if you remove component during a system that queries that component
@@ -1256,7 +1256,8 @@ export class EntityManager {
       return true;
     }
 
-    // we have the resources
+    // we have the resources, run the system
+    // TODO(@darzu): how do we handle async systems?
     s.callback(es, rs);
 
     // // TODO(@darzu): DEBUG. Promote to a dbg flag? Maybe pre-post system watch predicate

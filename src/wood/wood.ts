@@ -350,7 +350,7 @@ EM.addEagerInit([WoodStateDef], [], [], () => {
     Phase.GAME_WORLD,
     [WoodStateDef, WorldFrameDef, WoodHealthDef, RenderableDef],
     [RendererDef, SplinterPoolsDef],
-    async (es, res) => {
+    (es, res) => {
       const stdPool = res.renderer.renderer.getCyResource(meshPoolPtr)!;
 
       // TODO(@darzu):

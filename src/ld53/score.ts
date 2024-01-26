@@ -55,6 +55,7 @@ EM.addSystem(
   [ShipHealthDef],
   [ScoreDef, TextDef, TimeDef, PartyDef, HostDef],
   async (es, res) => {
+    // TODO(@darzu): does this need to be async?
     const ship = es[0];
     if (!ship) return;
     if (!res.score.endZone()) return;

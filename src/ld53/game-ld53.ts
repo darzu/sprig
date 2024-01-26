@@ -391,7 +391,7 @@ export async function initLD53(hosting: boolean) {
       Phase.GAME_WORLD,
       [GhostDef, WorldFrameDef, ColliderDef],
       [InputsDef, HasFirstInteractionDef],
-      async (ps, { inputs }) => {
+      (ps, { inputs }) => {
         if (!ps.length) return;
 
         const ghost = ps[0];
