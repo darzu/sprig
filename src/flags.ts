@@ -60,6 +60,8 @@ export const PERF_DBG_F32S_BLAME = false;
 export const PERF_DBG_F32S_TEMP_BLAME = false;
 // checks to make sure uses of tmpStack and .pop() are matched; incurs some bookkeeping overhead
 export const DBG_TMP_STACK_MATCH = true;
+// tracks if tmp vecs are being leaked. expensive!
+export const DBG_TMP_LEAK = true;
 
 // PHYSICS
 export const DBG_PHYSICS_AABBS = false;

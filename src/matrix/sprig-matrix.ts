@@ -1,4 +1,5 @@
 import {
+  DBG_TMP_LEAK,
   DBG_TMP_STACK_MATCH,
   PERF_DBG_F32S,
   PERF_DBG_F32S_BLAME,
@@ -103,6 +104,28 @@ function float32ArrayOfLength<N extends number>(n: N): Float32ArrayOfLength<N> {
   return new Float32Array(n) as Float32ArrayOfLength<N>;
 }
 
+let _tmpResetGen = 1;
+
+function mkTmpProxyHandler(gen: number) {
+  const tmpProxyHandler: ProxyHandler<Float32Array> = {
+    get: (v, prop) => {
+      if (gen !== _tmpResetGen)
+        throw `Using tmp from gen ${gen} after reset! Current gen ${_tmpResetGen}`;
+      // TODO(@darzu): huh is TS's ProxyHandler typing wrong? cus this seems to work?
+      return v[prop as unknown as number];
+    },
+    set: (v, prop, val) => {
+      if (gen !== _tmpResetGen)
+        throw `Using tmp from gen ${gen} after reset! Current gen ${_tmpResetGen}`;
+      v[prop as unknown as number] = val;
+      return true;
+    },
+  };
+  return tmpProxyHandler;
+}
+let _tmpProxyHandler: ProxyHandler<Float32Array> =
+  mkTmpProxyHandler(_tmpResetGen);
+
 const BUFFER_SIZE = 8000;
 const buffer = new ArrayBuffer(BUFFER_SIZE);
 let bufferIndex = 0;
@@ -124,6 +147,12 @@ function tmpArray<N extends number>(n: N): Float32ArrayOfLength<N> {
   }
   const arr = new Float32Array(buffer, bufferIndex, n);
   bufferIndex += arr.byteLength;
+
+  if (DBG_TMP_LEAK) {
+    const prox = new Proxy(arr, _tmpProxyHandler);
+    return prox as Float32ArrayOfLength<N>;
+  }
+
   return arr as Float32ArrayOfLength<N>;
 }
 
@@ -132,6 +161,11 @@ export function resetTempMatrixBuffer() {
     throw `mismatched tmpMark & tmpPop! ${_tmpMarkStack.length} unpopped`;
 
   bufferIndex = 0;
+
+  if (DBG_TMP_LEAK) {
+    _tmpResetGen += 1;
+    _tmpProxyHandler = mkTmpProxyHandler(_tmpResetGen);
+  }
 
   if (PERF_DBG_F32S_TEMP_BLAME) {
     dbgClearBlame("temp_f32s");

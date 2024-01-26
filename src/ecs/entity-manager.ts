@@ -7,7 +7,7 @@ import {
   DBG_SYSTEM_ORDER,
   DBG_ENITITY_10017_POSITION_CHANGES,
 } from "../flags.js";
-import { vec3 } from "../matrix/sprig-matrix.js";
+import { resetTempMatrixBuffer, vec3 } from "../matrix/sprig-matrix.js";
 import { Serializer, Deserializer } from "../utils/serialize.js";
 import { getCallStack } from "../utils/util-no-import.js";
 import {
@@ -1259,6 +1259,9 @@ export class EntityManager {
     // we have the resources, run the system
     // TODO(@darzu): how do we handle async systems?
     s.callback(es, rs);
+
+    // TODO(@darzu): tag the generations for easier attribution?
+    resetTempMatrixBuffer();
 
     // // TODO(@darzu): DEBUG. Promote to a dbg flag? Maybe pre-post system watch predicate
     // if (es.length && es[0].id === 10001) {

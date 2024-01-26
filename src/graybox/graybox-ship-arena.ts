@@ -346,6 +346,8 @@ export async function initGrayboxShipArena() {
 
   const _launchParam: Parametric = createParametric();
 
+  let _imATmp = vec3.tmp();
+
   EM.addSystem(
     "controlShip",
     Phase.GAME_PLAYERS,
@@ -359,6 +361,8 @@ export async function initGrayboxShipArena() {
 
       const mast = ship.hasMast.mast;
       const rudder = ship.hasRudder.rudder;
+
+      _imATmp[1] += 2; // causes error! "Using tmp from gen 11 after reset! Current gen 42"
 
       // TODO(@darzu): how do we make this code re-usable across games and keybindings?
       // furl/unfurl
