@@ -511,3 +511,21 @@ JS record and tuple proposals:
   https://github.com/tc39/proposal-record-tuple
   https://tc39.es/proposal-record-tuple/
   hmm so vecs might eventually be fixed
+
+PERFORMANCE STRATEGIES:
+  If we're running into CPU side problems, try these:
+  - write sprig matrix benchmark, evaluate different tweaks
+  - custom wasm fns (probably for physics)
+  - track every alloc (new array, new object, new Map), enforce with static analysis, maybe force them through custom functions
+  - vec inliner script, converts everything to Numbers, with git hash and fn string hash as key, put in *_gen.ts file(s)
+  - write custom compiler to wasm
+  - Use webworkers to offload concurrent tasks esp rendering?
+  - Move programatic mesh geometry code to GPU
+  - Improve GPU perf, which might speed up CPU on integrated systems
+  - Check V8 elements kinds and other browser metrics
+  - Measure CPU cache misses
+  - Move tasks to async gpu compute?
+  - Use more entity pooling
+  - Move to component column storage
+  - Optimize query caching system
+  - Trace chrome using about:tracing
