@@ -1,9 +1,11 @@
 import {
+  DBG_TMP_STACK_MATCH,
   PERF_DBG_F32S,
   PERF_DBG_F32S_BLAME,
   PERF_DBG_F32S_TEMP_BLAME,
 } from "../flags.js";
 import { dbgAddBlame, dbgClearBlame } from "../utils/util-no-import.js";
+import { assert } from "../utils/util.js";
 import * as GLM from "./gl-matrix.js";
 
 /*
@@ -153,11 +155,49 @@ export function resetTempMatrixBuffer() {
 // TODO(@darzu): eventually we'll get scoped using statements in JS which will make this hideous mess a little better?
 // TODO(@darzu): should these be called for every system and every init?
 const _tmpMarkStack: number[] = [];
-export function tmpMark(): void {
-  // TODO(@darzu): track each mark with an id to make sure we're matching them with a pop
+const _tmpMarkGenStack: number[] = [];
+let _tmpStackNextGen = 1;
+export interface TmpStack {
+  readonly pop: () => void;
+}
+const _cheapPop: TmpStack = { pop: tmpPop };
+// const _tmpStackFinReg: FinalizationRegistry<null> | undefined =
+//   DBG_TMP_STACK_MATCH
+//     ? new FinalizationRegistry(tmpStackFinHandler)
+//     : undefined;
+export function tmpStack(): TmpStack {
+  if (!DBG_TMP_STACK_MATCH) {
+    tmpMark();
+    return _cheapPop;
+  }
+
+  _tmpStackNextGen += 1;
+
+  const gen = _tmpStackNextGen;
+  _tmpMarkStack.push(bufferIndex);
+  _tmpMarkGenStack.push(gen);
+
+  const res: TmpStack = { pop };
+
+  // assert(_tmpStackFinReg);
+  // _tmpStackFinReg.register(res, null);
+
+  function pop(): void {
+    if (_tmpMarkStack.length === 0) throw "tmpStack.pop with zero size stack!";
+    const popGen = _tmpMarkGenStack.pop()!;
+    if (popGen !== gen)
+      throw "tmpStack pop mismatch! Did a stack cross async boundries?";
+    bufferIndex = _tmpMarkStack.pop()!;
+  }
+
+  return res;
+}
+// function tmpStackFinHandler() {
+// }
+function tmpMark(): void {
   _tmpMarkStack.push(bufferIndex);
 }
-export function tmpPop(): void {
+function tmpPop(): void {
   if (_tmpMarkStack.length === 0) throw "tmpPop with zero size stack!";
   bufferIndex = _tmpMarkStack.pop()!;
 }

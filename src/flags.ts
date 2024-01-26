@@ -1,30 +1,31 @@
 // NOTE: this file is not allowed to import anything! b/c it can be included anywhere
 
-// General
+// GENERAL
 export const RUN_UNIT_TESTS = false;
 export const VERBOSE_LOG = false;
 export const DBG_ASSERT = true;
 
-// Network
+// NETWORK
 export const DONT_SMOOTH_WORLD_FRAME = true; // TODO(@darzu): PERF HACK for single player
 export const ENABLE_NET = false;
 export const VERBOSE_NET_LOG = false;
 
-// Ocean
+// OCEAN
 export const DISABLE_GERSTNER = false;
 
-// Render
+// RENDER
 export const VERBOSE_MESH_POOL_STATS = false;
 export const ASSET_LOG_VERT_CHANGES = false;
 export const PERF_DBG_GPU = false;
+// tries to track who's allocating GPU resources
 export const PERF_DBG_GPU_BLAME = false;
-export const PERF_DBG_EM = false;
 
-// Audio
+// AUDIO
 export const ENABLE_AUDIO = true;
 
-// Asset
+// ASSET
 export const DBG_FANG_SHIP = false;
+// does a deep scan to look for temp vecs/mats/quats inside meshes
 export const DBG_CHECK_FOR_TMPS_IN_XY = false;
 
 // ECS
@@ -46,13 +47,19 @@ export const DBG_SYSTEM_ORDER = false;
 // TODO(@darzu): GENERALIZE THIS! for other entities and components. this is one-off.
 export const DBG_ENITITY_10017_POSITION_CHANGES = false;
 
-// Input
+// INPUT
+// prints out key codes for each key pressed (first time)
 export const DEBUG_INPUTS = false;
 
-// Vectors
+// VECTORS
+// tracks quantity of vec3s, mat4s, etc.
 export const PERF_DBG_F32S = false;
+// tracks who's creating vec3s, mat4s, etc.
 export const PERF_DBG_F32S_BLAME = false;
+// tracks who's using tmps (doesn't account for tmpStack's)
 export const PERF_DBG_F32S_TEMP_BLAME = false;
+// checks to make sure uses of tmpStack and .pop() are matched; incurs some bookkeeping overhead
+export const DBG_TMP_STACK_MATCH = true;
 
-// Physics
+// PHYSICS
 export const DBG_PHYSICS_AABBS = false;

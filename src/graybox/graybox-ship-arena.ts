@@ -15,7 +15,7 @@ import {
   createRudder,
   createRudderTurret,
 } from "../ld53/rudder.js";
-import { V, quat, tmpMark, tmpPop, vec3 } from "../matrix/sprig-matrix.js";
+import { V, quat, tmpStack, vec3 } from "../matrix/sprig-matrix.js";
 import {
   BallMesh,
   CannonMesh,
@@ -572,7 +572,7 @@ function getDirsToTan(
   outL: vec3,
   outR: vec3
 ): void {
-  tmpMark();
+  const _stk = tmpStack();
   const srcToTrg = vec3.sub(trg, src);
   const perpR: vec3.InputT = [srcToTrg[1], -srcToTrg[0], 0];
   const normR = vec3.normalize(perpR);
@@ -580,7 +580,7 @@ function getDirsToTan(
   const scaledL = vec3.negate(scaledR);
   vec3.add(trg, scaledR, outR);
   vec3.add(trg, scaledL, outL);
-  tmpPop();
+  _stk.pop();
 }
 
 function createEnemy() {
@@ -661,7 +661,7 @@ async function initEnemies() {
       // run once every 20 frames
       if (res.time.step % steerFreq !== 0) return;
 
-      tmpMark();
+      const _stk = tmpStack();
 
       for (let e of es) {
         const _trgL = vec3.tmp();
@@ -690,7 +690,7 @@ async function initEnemies() {
         vec3.copy(e.enemy.sailTarget, turnLeft ? _trgL : _trgR);
       }
 
-      tmpPop();
+      _stk.pop();
     }
   );
 

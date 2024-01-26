@@ -5,8 +5,7 @@ import {
   mat3,
   vec3tmp,
   V,
-  tmpMark,
-  tmpPop,
+  tmpStack,
 } from "../matrix/sprig-matrix.js";
 import { assert, range } from "./util.js";
 import { quatFromUpForward_OLD } from "./utils-3d.js";
@@ -155,7 +154,7 @@ export function createEvenPathFromBezierCurve(
   lead?: number,
   passRemainder?: { remainder: number } // TODO(@darzu): HACK. using a box for an out param.... shame.
 ): Path {
-  tmpMark();
+  const _stk = tmpStack();
   const path: Path = [];
   const samples = range(_numSamples).map((i) =>
     bezierPosition(b, i / (_numSamples - 1), __tempSamples[i])
@@ -247,7 +246,7 @@ export function createEvenPathFromBezierCurve(
   //  = samples.reduce((p, n, i) =>
   // while (true) {}
 
-  tmpPop();
+  _stk.pop();
   return path;
 }
 
