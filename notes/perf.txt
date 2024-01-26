@@ -500,3 +500,14 @@ investigate JS Reflect and Proxy
 Object.defineProperty()
   https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/defineProperty
   Maybe useful for better entity stuff?
+
+interesting option using valueOf for operator overloading:
+  https://stackoverflow.com/a/26228864/814454
+
+operator overloading proposal has been withdrawn:
+  https://github.com/tc39/proposal-operator-overloading
+
+JS record and tuple proposals:
+  https://github.com/tc39/proposal-record-tuple
+  https://tc39.es/proposal-record-tuple/
+  hmm so vecs might eventually be fixed

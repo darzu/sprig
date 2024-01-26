@@ -136,6 +136,16 @@ export function resetTempMatrixBuffer() {
   }
 }
 
+// TODO(@darzu): can i track leaking temps?
+/*
+  mark all temps w/ a generation
+  wrap all temps w/ a proxy?
+  if a temp is used, check the current generation
+  if generation mismatch, throw error
+
+  can we track all usage?
+*/
+
 // TODO(@darzu): have a version of PERF_DBG_F32S_TEMP_BLAME that tracks blame on unmarked/popped!
 // TODO(@darzu): is there some dbg way we could track to see if any tmps are used after free? maybe a generation tracker?
 //                conceivably w/ WeakRef? Maybe w/ FinalizationRegistry?
@@ -144,6 +154,7 @@ export function resetTempMatrixBuffer() {
 // TODO(@darzu): should these be called for every system and every init?
 const _tmpMarkStack: number[] = [];
 export function tmpMark(): void {
+  // TODO(@darzu): track each mark with an id to make sure we're matching them with a pop
   _tmpMarkStack.push(bufferIndex);
 }
 export function tmpPop(): void {
