@@ -1,7 +1,7 @@
 // player controller component and system
 
 // player controller component and system
-import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { vec2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { InputsDef } from "../input/inputs.js";
 import { EM, Entity, EntityW } from "../ecs/entity-manager.js";
 import { TimeDef } from "../time/time.js";
@@ -72,14 +72,14 @@ export const HsPlayerDef = EM.defineComponent("hsPlayer", () => {
     dropping: false,
     leftLegId: 0,
     rightLegId: 0,
-    facingDir: vec3.mk(),
+    facingDir: V3.mk(),
     // TODO(@darzu): HACK. hyperspace game specific
     lookingForShip: true,
     // TODO(@darzu): HACK. LD51 game specific
     holdingBall: 0,
     // disabled noodle limbs
-    // leftFootWorldPos: [0, 0, 0] as vec3,
-    // rightFootWorldPos: [0, 0, 0] as vec3,
+    // leftFootWorldPos: [0, 0, 0] as V3,
+    // rightFootWorldPos: [0, 0, 0] as V3,
   };
 });
 
@@ -93,9 +93,9 @@ export const LocalPlayerEntityDef = EM.defineResource(
 
 export const PlayerHsPropsDef = defineSerializableComponent(
   "hsPlayerProps",
-  () => ({ location: vec3.mk() }),
-  (p, loc?: vec3) => {
-    if (loc) vec3.copy(p.location, loc);
+  () => ({ location: V3.mk() }),
+  (p, loc?: V3) => {
+    if (loc) V3.copy(p.location, loc);
     return p;
   },
   (c, writer) => {
@@ -147,7 +147,7 @@ EM.addEagerInit([PlayerHsPropsDef], [], [], () => {
         e.hsPlayer.leftLegId = makeLeg(-0.5).id;
         e.hsPlayer.rightLegId = makeLeg(0.5).id;
         const aabb = copyAABB(createAABB(), res.allMeshes.cube.aabb);
-        vec3.add(aabb.min, [0, -1, 0], aabb.min);
+        V3.add(aabb.min, [0, -1, 0], aabb.min);
         EM.set(e, ColliderDef, {
           shape: "AABB",
           solid: true,
@@ -179,14 +179,14 @@ EM.addEagerInit([PlayerHsPropsDef], [], [], () => {
     (players, res) => {
       for (let p of players) {
         const facingDir = p.hsPlayer.facingDir;
-        vec3.copy(facingDir, [0, 0, -1]);
-        vec3.tQuat(facingDir, p.world.rotation, facingDir);
+        V3.copy(facingDir, [0, 0, -1]);
+        V3.tQuat(facingDir, p.world.rotation, facingDir);
 
         // use cursor for facingDir if possible
         const cursor = res.globalCursor3d.cursor();
         if (cursor) {
-          vec3.sub(cursor.world.position, p.world.position, facingDir);
-          vec3.norm(facingDir, facingDir);
+          V3.sub(cursor.world.position, p.world.position, facingDir);
+          V3.norm(facingDir, facingDir);
         }
       }
     }
@@ -279,14 +279,14 @@ EM.addEagerInit([PlayerHsPropsDef], [], [], () => {
 
         // add bullet on lclick
         if (cheat && inputs.lclick) {
-          const linearVelocity = vec3.scale(facingDir, 0.02, vec3.mk());
+          const linearVelocity = V3.scale(facingDir, 0.02, V3.mk());
           // TODO(@darzu): adds player motion
           // bulletMotion.linearVelocity = vec3.add(
           //   bulletMotion.linearVelocity,
           //   bulletMotion.linearVelocity,
           //   player.linearVelocity
           // );
-          const angularVelocity = vec3.scale(facingDir, 0.01, vec3.mk());
+          const angularVelocity = V3.scale(facingDir, 0.01, V3.mk());
           // spawnBullet(
           //   EM,
           //   vec3.clone(p.world.position),
@@ -304,15 +304,11 @@ EM.addEagerInit([PlayerHsPropsDef], [], [], () => {
               const x = (xi - SPREAD / 2) * GAP;
               const y = (yi - SPREAD / 2) * GAP;
               let bullet_axis = V(0, 0, -1);
-              bullet_axis = vec3.tQuat(bullet_axis, p.rotation, bullet_axis);
-              const position = vec3.add(
-                p.world.position,
-                V(x, y, 0),
-                vec3.mk()
-              );
-              const linearVelocity = vec3.scale(bullet_axis, 0.005, vec3.mk());
-              vec3.add(linearVelocity, p.linearVelocity, linearVelocity);
-              const angularVelocity = vec3.scale(bullet_axis, 0.01, vec3.mk());
+              bullet_axis = V3.tQuat(bullet_axis, p.rotation, bullet_axis);
+              const position = V3.add(p.world.position, V(x, y, 0), V3.mk());
+              const linearVelocity = V3.scale(bullet_axis, 0.005, V3.mk());
+              V3.add(linearVelocity, p.linearVelocity, linearVelocity);
+              const angularVelocity = V3.scale(bullet_axis, 0.01, V3.mk());
               // spawnBullet( position, linearVelocity, angularVelocity);
             }
           }
@@ -322,10 +318,10 @@ EM.addEagerInit([PlayerHsPropsDef], [], [], () => {
         if (cheat && inputs.keyClicks["r"]) {
           // create our ray
           const r: Ray = {
-            org: vec3.add(
+            org: V3.add(
               p.world.position,
-              vec3.scale(vec3.mul(facingDir, p.world.scale), 3.0),
-              vec3.mk()
+              V3.scale(V3.mul(facingDir, p.world.scale), 3.0),
+              V3.mk()
             ),
             dir: facingDir,
           };
@@ -340,13 +336,13 @@ EM.addEagerInit([PlayerHsPropsDef], [], [], () => {
             p.physicsParent.id = targetId;
             const targetEnt = EM.findEntity(targetId, [ColliderDef]);
             if (targetEnt) {
-              vec3.copy(p.position, [0, 0, 0]);
+              V3.copy(p.position, [0, 0, 0]);
               if (targetEnt.collider.shape === "AABB") {
                 // move above the obj
                 p.position[2] = targetEnt.collider.aabb.max[2] + 3;
               }
             }
-            vec3.copy(p.linearVelocity, vec3.ZEROS);
+            V3.copy(p.linearVelocity, V3.ZEROS);
           } else {
             // unparent
             p.physicsParent.id = 0;
@@ -379,12 +375,8 @@ EM.addEagerInit([PlayerHsPropsDef], [], [], () => {
 
           // draw our ray
           const rayDist = doesHit ? firstHit.dist : 1000;
-          const color: vec3 = doesHit ? V(0, 1, 0) : V(1, 0, 0);
-          const endPoint = vec3.add(
-            r.org,
-            vec3.scale(r.dir, rayDist),
-            vec3.mk()
-          );
+          const color: V3 = doesHit ? V(0, 1, 0) : V(1, 0, 0);
+          const endPoint = V3.add(r.org, V3.scale(r.dir, rayDist), V3.mk());
           drawLine(r.org, endPoint, color);
         }
       }
@@ -433,16 +425,16 @@ EM.addEagerInit([PlayerHsPropsDef], [], [], () => {
 
             const evenPlayer = res.me.pid % 2 === 0;
 
-            const endPos: vec3 = vec3.clone([
+            const endPos: V3 = V3.clone([
               3.5 * (evenPlayer ? 1 : -1),
               shipY + pFeetToMid + 1,
               Math.floor((res.me.pid - 1) / 2) * 4 - 10,
             ]);
-            const startPos = vec3.add(
+            const startPos = V3.add(
               endPos,
               [0, 200, 0],
               // tempVec3(),
-              vec3.mk()
+              V3.mk()
             );
             // console.log("player animateTo:");
             // console.log(vec3Dbg(startPos));
@@ -452,7 +444,7 @@ EM.addEagerInit([PlayerHsPropsDef], [], [], () => {
             p.cameraFollow.yawOffset = 0.0;
             p.cameraFollow.pitchOffset = -0.75;
             quat.copy(p.rotation, [0.0, 1.0, 0.0, 0.0]);
-            vec3.zero(p.linearVelocity);
+            V3.zero(p.linearVelocity);
 
             // TODO(@darzu): uncomment to animate player entry
             // EM.set(p, AnimateToDef, {
@@ -461,7 +453,7 @@ EM.addEagerInit([PlayerHsPropsDef], [], [], () => {
             //   durationMs: 2000,
             //   easeFn: EASE_OUTQUAD,
             // });
-            vec3.copy(p.position, endPos);
+            V3.copy(p.position, endPos);
           }
         }
       }

@@ -13,7 +13,7 @@ import {
   RenderableDef,
   RendererDef,
 } from "../render/renderer-ecs.js";
-import { quat, V, vec2, vec3 } from "../matrix/sprig-matrix.js";
+import { quat, V, vec2, V3 } from "../matrix/sprig-matrix.js";
 import { range } from "../utils/util.js";
 import { defineNetEntityHelper } from "../ecs/em-helpers.js";
 import { MeDef } from "../net/components.js";
@@ -93,7 +93,7 @@ export const { RibSailPropsDef, RibSailLocalDef, createRibSailNow } =
       EM.set(mast, RenderableConstructDef, res.allMeshes.mast.mesh);
       EM.set(mast, PhysicsParentDef, sail.id);
       EM.set(mast, ColorDef, ENDESGA16.lightBrown);
-      vec3.scale(mast.color, 0.5, mast.color);
+      V3.scale(mast.color, 0.5, mast.color);
 
       sail.ribSailLocal.ribs = range(RIB_COUNT).map((i) => {
         const isEnd = i === 0;
@@ -108,7 +108,7 @@ export const { RibSailPropsDef, RibSailLocalDef, createRibSailNow } =
         EM.set(rib, ScaleDef, V(0.5 * width, 0.5, 0.5 * width));
         EM.set(rib, RotationDef);
         EM.set(rib, ColorDef, ENDESGA16.lightBrown);
-        vec3.scale(rib.color, 0.7, rib.color);
+        V3.scale(rib.color, 0.7, rib.color);
         EM.set(rib, PhysicsParentDef, sail.id);
         return rib;
       }
@@ -145,9 +145,9 @@ export function registerRibSailSystems() {
           const ribRotationBot = rotations[ribIndex];
           const ribRotationTop = rotations[ribIndex + 1];
           if (i % 3 == 1) {
-            vec3.tQuat([0, BOOM_LENGTH * 0.9, 0], ribRotationTop, pos);
+            V3.tQuat([0, BOOM_LENGTH * 0.9, 0], ribRotationTop, pos);
           } else if (i % 3 == 2) {
-            vec3.tQuat([0, BOOM_LENGTH * 0.99, 0], ribRotationBot, pos);
+            V3.tQuat([0, BOOM_LENGTH * 0.99, 0], ribRotationBot, pos);
           }
           return pos;
         });
@@ -164,7 +164,7 @@ export function registerRibSailSystems() {
 }
 
 // HACK: ASSUMES MESH IS allMeshes.sail.mesh
-export function getSailMeshArea(verts: vec3[]) {
+export function getSailMeshArea(verts: V3[]) {
   // TODO(@darzu): generalize this for different mesh? Or create the mesh and type it?
   return (
     signedAreaOfTriangle(
@@ -177,8 +177,8 @@ export function getSailMeshArea(verts: vec3[]) {
 
 export function sailForceAndSignedArea(
   sail: EntityW<[typeof RenderableDef, typeof WorldFrameDef]>,
-  starPos: vec3
-): [vec3, number] {
+  starPos: V3
+): [V3, number] {
   const viewProjMatrix = positionAndTargetToOrthoViewProjMatrix(
     tempMat4(),
     starPos,
@@ -188,20 +188,20 @@ export function sailForceAndSignedArea(
   const localVerts = sail.renderable.meshHandle.mesh!.pos;
 
   const worldVerts = localVerts.map((pos) => {
-    return vec3.tMat4(pos, sail.world.transform);
+    return V3.tMat4(pos, sail.world.transform);
   });
 
   const starViewVerts = worldVerts.map((pos) => {
-    return vec3.tMat4(pos, viewProjMatrix);
+    return V3.tMat4(pos, viewProjMatrix);
   });
 
   const area = getSailMeshArea(starViewVerts);
 
-  const sailNormal = vec3.cross(
-    vec3.sub(worldVerts[1], worldVerts[0]),
-    vec3.sub(worldVerts[2], worldVerts[0])
+  const sailNormal = V3.cross(
+    V3.sub(worldVerts[1], worldVerts[0]),
+    V3.sub(worldVerts[2], worldVerts[0])
   );
 
-  vec3.norm(sailNormal, sailNormal);
-  return [vec3.scale(sailNormal, area, sailNormal), area];
+  V3.norm(sailNormal, sailNormal);
+  return [V3.scale(sailNormal, area, sailNormal), area];
 }

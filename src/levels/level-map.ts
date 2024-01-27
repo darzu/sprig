@@ -372,7 +372,7 @@ export async function setMap(name: MapName) {
   Object.assign(resLandMap, levelMap);
 
   // set random secondary/teriary colors
-  // const purpleness = (c: vec3) => c[0] * c[2];
+  // const purpleness = (c: V3) => c[0] * c[2];
   // let secColor = randColor();
   // while (purpleness(secColor) > 0.05) secColor = randColor();
   // let terColor = randColor();

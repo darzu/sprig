@@ -1,5 +1,5 @@
 import { Component, EM, EntityW, Resources } from "../ecs/entity-manager.js";
-import { vec2, vec3, quat, V, tV } from "../matrix/sprig-matrix.js";
+import { vec2, V3, quat, V, tV } from "../matrix/sprig-matrix.js";
 import {
   Frame,
   PhysicsParentDef,
@@ -62,9 +62,9 @@ function sailMesh(sail: Component<typeof SailDef>): Mesh {
   let x = 0;
   let z = 0;
   let i = 0;
-  const pos: vec3[] = [];
-  const tri: vec3[] = [];
-  const colors: vec3[] = [];
+  const pos: V3[] = [];
+  const tri: V3[] = [];
+  const colors: V3[] = [];
   const lines: vec2[] = [];
   const uvs: vec2[] = [];
   while (z <= sail.height) {
@@ -158,8 +158,8 @@ EM.addSystem(
   [WindDef],
   (es, res) => {
     for (let e of es) {
-      const normal = vec3.tQuat(vec3.FWD, e.world.rotation);
-      e.sail.billowAmount = vec3.dot(normal, res.wind.dir);
+      const normal = V3.tQuat(V3.FWD, e.world.rotation);
+      e.sail.billowAmount = V3.dot(normal, res.wind.dir);
       if (e.sail.billowAmount < 0) e.sail.billowAmount = 0;
       e.sail.unfurledAmount = clamp(e.sail.unfurledAmount, e.sail.minFurl, 1.0);
       if (e.sail.unfurledAmount > e.sail.minFurl) {
@@ -220,8 +220,8 @@ EM.addSystem(
 // UNUSED:
 function useWindToTurn(
   us: Frame,
-  targetPos: vec3,
-  windDir: vec3,
+  targetPos: V3,
+  windDir: V3,
   outSailRot: quat
 ) {
   // TODO(@darzu): expensive
@@ -245,7 +245,7 @@ function useWindToTurn(
   }
 
   // set the sail
-  const sailFwd = vec3.tQuat(behind, us.rotation);
+  const sailFwd = V3.tQuat(behind, us.rotation);
   const angleToWind = angleBetweenXZ(sailFwd, windDir);
   const sailAngle = angleToWind - angleToParty;
   // TODO(@darzu): use yaw/pitch/roll

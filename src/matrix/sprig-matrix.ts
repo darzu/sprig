@@ -31,9 +31,9 @@ interface Float32ArrayOfLength<N extends number> extends Float32Array {
 // TODO(@darzu): rename vec2 -> V2, vec3 -> V3 ?
 export type vec2 = Float32ArrayOfLength<2>;
 
-export type vec3 = Float32ArrayOfLength<3>;
+export type V3 = Float32ArrayOfLength<3>;
 
-export type vec3tmp = vec3; // TODO(@darzu): ENFORCE THIS! Right now it's just a description thing.
+export type vec3tmp = V3; // TODO(@darzu): ENFORCE THIS! Right now it's just a description thing.
 
 export type vec4 = Float32ArrayOfLength<4>;
 
@@ -74,7 +74,7 @@ export type vec3 = vec3f | Float32ArrayOfLength<3>;
 
 let eg_vec3f: vec3f = [0, 0, 0] as vec3f;
 let eg_vec3r: vec3r = [0, 0, 0] as vec3r;
-let eg_vec3: vec3 = vec3.create() as vec3;
+let eg_vec3: V3 = vec3.create() as V3;
 
 // eg_vec3 = eg_vec3r; // illegal (weakens "readonly")
 // eg_vec3 = eg_vec3f; // legal (unspecified if its temp or forever)
@@ -357,8 +357,8 @@ export module vec2 {
   export function dot(v1: InputT, v2: InputT): number {
     return GL.dot(v1, v2);
   }
-  export function cross(v1: InputT, v2: InputT, out?: vec3.T): vec3.T {
-    return GL.cross(out ?? vec3.tmp(), v1, v2) as vec3.T;
+  export function cross(v1: InputT, v2: InputT, out?: V3.T): V3.T {
+    return GL.cross(out ?? V3.tmp(), v1, v2) as V3.T;
   }
   export function scale(v1: InputT, n: number, out?: T): T {
     return GL.scale(out ?? tmp(), v1, n) as T;
@@ -379,10 +379,10 @@ export module vec2 {
 
 // TODO(@darzu): PERF. does this have a perf hit?
 export function V(...xs: [number, number]): vec2;
-export function V(...xs: [number, number, number]): vec3;
+export function V(...xs: [number, number, number]): V3;
 export function V(...xs: [number, number, number, number]): vec4;
-export function V(...xs: number[]): vec2 | vec3 | vec4 {
-  if (xs.length === 3) return vec3.fromValues(xs[0], xs[1], xs[2]);
+export function V(...xs: number[]): vec2 | V3 | vec4 {
+  if (xs.length === 3) return V3.fromValues(xs[0], xs[1], xs[2]);
   else if (xs.length === 4) return vec4.fromValues(xs[0], xs[1], xs[2], xs[3]);
   else if (xs.length === 2) return vec2.fromValues(xs[0], xs[1]);
   else throw new Error(`Unsupported vec size: ${xs.length}`);
@@ -390,18 +390,18 @@ export function V(...xs: number[]): vec2 | vec3 | vec4 {
 
 // temp vectors:
 export function tV(...xs: [number, number]): vec2;
-export function tV(...xs: [number, number, number]): vec3;
+export function tV(...xs: [number, number, number]): V3;
 export function tV(...xs: [number, number, number, number]): vec4;
-export function tV(...xs: number[]): vec2 | vec3 | vec4 {
+export function tV(...xs: number[]): vec2 | V3 | vec4 {
   if (xs.length === 4) return vec4.set(xs[0], xs[1], xs[2], xs[3]);
-  else if (xs.length === 3) return vec3.set(xs[0], xs[1], xs[2]);
+  else if (xs.length === 3) return V3.set(xs[0], xs[1], xs[2]);
   else if (xs.length === 2) return vec2.set(xs[0], xs[1]);
   else throw new Error(`Unsupported vec size: ${xs.length}`);
 }
 
 // TODO(@darzu): use "namespace" keyword instead of "module" (re: https://www.typescriptlang.org/docs/handbook/namespaces.html)
-export module vec3 {
-  export type T = vec3;
+export module V3 {
+  export type T = V3;
   export type InputT = T | readonly [number, number, number];
   const GL = GLM.vec3;
 
@@ -783,10 +783,10 @@ export module quat {
     return GL.invert(out ?? tmp(), v1) as T;
   }
 
-  export function setAxisAngle(axis: vec3.InputT, rad: number, out?: T): T {
+  export function setAxisAngle(axis: V3.InputT, rad: number, out?: T): T {
     return GL.setAxisAngle(out ?? tmp(), axis, rad) as T;
   }
-  export function getAxisAngle(q: InputT, out?: vec3.T): number {
+  export function getAxisAngle(q: InputT, out?: V3.T): number {
     return GL.getAxisAngle(out ?? tmp(), q);
   }
   export function getAngle(q1: InputT, q2: InputT): number {
@@ -869,9 +869,9 @@ export module quat {
 
   // NOTE: assumes these are orthonormalized
   export function fromXYZ(
-    x: vec3.InputT,
-    y: vec3.InputT,
-    z: vec3.InputT,
+    x: V3.InputT,
+    y: V3.InputT,
+    z: V3.InputT,
     out?: T
   ): T {
     return quat.fromMat3(
@@ -893,26 +893,26 @@ export module quat {
     );
   }
 
-  const _t1 = vec3.mk();
-  const _t2 = vec3.mk();
-  const _t3 = vec3.mk();
+  const _t1 = V3.mk();
+  const _t2 = V3.mk();
+  const _t3 = V3.mk();
   export function fromYAndZish(
-    newY: vec3.InputT,
-    newZish: vec3.InputT,
+    newY: V3.InputT,
+    newZish: V3.InputT,
     out?: T
   ): T {
     // TODO(@darzu): PERF. this could be sped up by inline a lot of this and simplifying
     const x = _t1;
-    const y = vec3.copy(_t2, newY);
-    const z = vec3.copy(_t3, newZish);
+    const y = V3.copy(_t2, newY);
+    const z = V3.copy(_t3, newZish);
     orthonormalize(y, z, x);
     return fromXYZ(x, y, z, out);
   }
 
   // NOTE: assumes identity rotation corrisponds to Y+ being forward and Z+ being up
   export function fromForwardAndUpish(
-    forward: vec3.InputT,
-    upish: vec3.InputT,
+    forward: V3.InputT,
+    upish: V3.InputT,
     out?: T
   ): T {
     return fromYAndZish(forward, upish, out);
@@ -920,29 +920,29 @@ export module quat {
 
   // Creates a rotation that will move <0,1,0> to point towards forward; no guarantees are made
   //  about its other axis orientations!
-  const _t4 = vec3.mk();
-  export function fromForward(forward: vec3.InputT, out?: T): T {
+  const _t4 = V3.mk();
+  export function fromForward(forward: V3.InputT, out?: T): T {
     // console.log(`fromForward, fwd:${vec3Dbg(forward)}`);
 
-    const y = vec3.copy(_t4, forward);
-    vec3.norm(y, y);
+    const y = V3.copy(_t4, forward);
+    V3.norm(y, y);
 
     // console.log(`normalized y: ${vec3Dbg(y)}`);
 
     // find an up-ish vector
     const upish = tV(0, 0, 1);
-    if (Math.abs(vec3.dot(y, upish)) > 0.9) vec3.set(0, 1, 0, upish);
+    if (Math.abs(V3.dot(y, upish)) > 0.9) V3.set(0, 1, 0, upish);
 
     // console.log(`upish: ${vec3Dbg(upish)}`);
 
     // orthonormalize
-    const x = vec3.tmp();
-    vec3.cross(y, upish, x);
-    vec3.norm(x, x);
+    const x = V3.tmp();
+    V3.cross(y, upish, x);
+    V3.norm(x, x);
 
     // console.log(`x: ${vec3Dbg(x)}`);
 
-    vec3.cross(x, y, upish);
+    V3.cross(x, y, upish);
 
     // console.log(`new upish: ${vec3Dbg(upish)}`);
 
@@ -953,7 +953,7 @@ export module quat {
 }
 
 // TODO(@darzu): HACK FOR DEBUGGING
-// function vec3Dbg(v?: vec3.InputT): string {
+// function vec3Dbg(v?: V3.InputT): string {
 //   return v
 //     ? `[${v[0].toFixed(2)},${v[1].toFixed(2)},${v[2].toFixed(2)}]`
 //     : "NIL";
@@ -1013,13 +1013,13 @@ export module mat4 {
     return GL.invert(out ?? tmp(), v1) as T;
   }
 
-  export function scale(a: InputT, v: vec3.InputT, out?: T): T {
+  export function scale(a: InputT, v: V3.InputT, out?: T): T {
     return GL.scale(out ?? tmp(), a, v) as T;
   }
 
   export function fromRotationTranslation(
     q: quat.InputT,
-    v: vec3.InputT,
+    v: V3.InputT,
     out?: T
   ): T {
     return GL.fromRotationTranslation(out ?? tmp(), q, v) as T;
@@ -1027,8 +1027,8 @@ export module mat4 {
 
   export function fromRotationTranslationScale(
     q: quat.InputT,
-    v: vec3.InputT,
-    s: vec3.InputT,
+    v: V3.InputT,
+    s: V3.InputT,
     out?: T
   ): T {
     return GL.fromRotationTranslationScale(out ?? tmp(), q, v, s) as T;
@@ -1036,19 +1036,19 @@ export module mat4 {
 
   export function fromRotationTranslationScaleOrigin(
     q: quat.InputT,
-    v: vec3.InputT,
-    s: vec3.InputT,
-    o: vec3.InputT,
+    v: V3.InputT,
+    s: V3.InputT,
+    o: V3.InputT,
     out?: T
   ): T {
     return GL.fromRotationTranslationScaleOrigin(out ?? tmp(), q, v, s, o) as T;
   }
 
-  export function fromScaling(v: vec3.InputT, out?: T): T {
+  export function fromScaling(v: V3.InputT, out?: T): T {
     return GL.fromScaling(out ?? tmp(), v) as T;
   }
 
-  export function fromTranslation(v: vec3.InputT, out?: T): T {
+  export function fromTranslation(v: V3.InputT, out?: T): T {
     return GL.fromTranslation(out ?? tmp(), v) as T;
   }
 
@@ -1070,12 +1070,12 @@ export module mat4 {
     return GL.getRotation(out ?? quat.tmp(), m) as quat;
   }
 
-  export function getTranslation(m: InputT, out?: vec3.T): vec3 {
-    return GL.getTranslation(out ?? vec3.tmp(), m) as vec3;
+  export function getTranslation(m: InputT, out?: V3.T): V3 {
+    return GL.getTranslation(out ?? V3.tmp(), m) as V3;
   }
 
-  export function getScaling(m: InputT, out?: vec3.T): vec3 {
-    return GL.getScaling(out ?? vec3.tmp(), m) as vec3;
+  export function getScaling(m: InputT, out?: V3.T): V3 {
+    return GL.getScaling(out ?? V3.tmp(), m) as V3;
   }
 
   // TODO(@darzu): wait what, these should all rotate clockwise?
@@ -1224,9 +1224,9 @@ export module mat4 {
   */
   // TODO(@darzu): extract orthonormalization / Gram–Schmidt process?
   export function lookAt(
-    eye: vec3.InputT,
-    center: vec3.InputT,
-    up: vec3.InputT,
+    eye: V3.InputT,
+    center: V3.InputT,
+    up: V3.InputT,
     out?: T
   ): T {
     const eyex = eye[0];
@@ -1306,7 +1306,7 @@ export module mat4 {
     return _out;
   }
 
-  export function translate(m: InputT, v: vec3.InputT, out?: T): T {
+  export function translate(m: InputT, v: V3.InputT, out?: T): T {
     return GL.translate(out ?? tmp(), m, v) as T;
   }
 }
@@ -1436,22 +1436,22 @@ export module mat3 {
 // mutates forward and upish and outputs to outRight such that all three are
 //  orthogonal to eachother.
 // TODO(@darzu): change this to use x,y,z ?
-export function orthonormalize(forward: vec3, upish: vec3, outRight: vec3) {
+export function orthonormalize(forward: V3, upish: V3, outRight: V3) {
   // TODO(@darzu): there's a pattern somewhat similar in many places:
   //    orthonormalizing, Gram–Schmidt
   //    quatFromUpForward, getControlPoints, tripleProd?
   //    targetTo, lookAt ?
   // Also this can be more efficient by inlining
-  vec3.norm(forward, forward);
-  vec3.cross(forward, upish, outRight);
-  vec3.norm(outRight, outRight);
-  vec3.cross(outRight, forward, upish);
+  V3.norm(forward, forward);
+  V3.cross(forward, upish, outRight);
+  V3.norm(outRight, outRight);
+  V3.cross(outRight, forward, upish);
 }
 
 // prettier-ignore
 export type InputT<T extends Record<any, any>> = {
   [k in keyof T]: 
-    T[k] extends vec3 ? vec3.InputT : 
+    T[k] extends V3 ? V3.InputT : 
     T[k] extends vec2 ? vec2.InputT :
     T[k] extends quat ? quat.InputT :
     T[k] extends mat4 ? mat4.InputT :

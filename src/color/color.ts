@@ -1,5 +1,5 @@
 import { clamp } from "../utils/math.js";
-import { vec3, V } from "../matrix/sprig-matrix.js";
+import { V3, V } from "../matrix/sprig-matrix.js";
 import { assert } from "../utils/util.js";
 import { never, range } from "../utils/util.js";
 import {
@@ -125,7 +125,7 @@ export function toXYZD65(clr: Color): XYZD65 {
   return FLRGBToXYZD65(toFLRGB(clr));
 }
 
-export function toV3(c: Color): vec3 {
+export function toV3(c: Color): V3 {
   if (isHSL(c)) return V(c.h, c.s, c.l);
   else if (isRGB(c)) return V(c.r, c.g, c.b);
   else if (isLAB(c)) return V(c.l, c.a, c.b);

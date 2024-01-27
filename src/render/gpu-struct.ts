@@ -1,4 +1,4 @@
-import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { vec2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { align, max, sum } from "../utils/math.js";
 import { assert } from "../utils/util.js";
 import { objMap } from "../utils/util.js";
@@ -30,7 +30,7 @@ type WGSLTypeToTSType = {
   bool: boolean;
   "vec2<u32>": vec2;
   "vec2<f32>": vec2;
-  "vec3<f32>": vec3;
+  "vec3<f32>": V3;
   "vec4<f32>": vec4;
   "vec4<u32>": vec4;
   "mat4x4<f32>": mat4;
@@ -283,7 +283,7 @@ function cloneValue<T extends WGSLType>(
   function _cloneValue<T extends WGSLType>(wgsl: T, val: any): any {
     if (wgsl === "f32") return val;
     if (wgsl === "vec2<f32>") return vec2.clone(val);
-    if (wgsl === "vec3<f32>") return vec3.clone(val);
+    if (wgsl === "vec3<f32>") return V3.clone(val);
     if (wgsl === "vec4<f32>") return vec4.clone(val);
     if (wgsl === "u32") return val;
     if (wgsl === "mat4x4<f32>") return mat4.clone(val);

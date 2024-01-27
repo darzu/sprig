@@ -3,7 +3,7 @@ import { SoundSetDef } from "../audio/sound-loader.js";
 import { EM, EntityW } from "../ecs/entity-manager.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { InputsDef } from "../input/inputs.js";
-import { quat, vec3 } from "../matrix/sprig-matrix.js";
+import { quat, V3 } from "../matrix/sprig-matrix.js";
 import { LinearVelocityDef } from "../motion/velocity.js";
 import { RotationDef } from "../physics/transform.js";
 import { TimeDef } from "../time/time.js";
@@ -15,7 +15,7 @@ export const SpaceSuitDef = EM.defineComponent("spaceSuit", () => ({
   turnSpeed: 0.001,
   rollSpeed: 0.01,
   doDampen: true,
-  localAccel: vec3.mk(),
+  localAccel: V3.mk(),
   swingingSword: false,
   swordSwingT: 0,
 }));
@@ -34,7 +34,7 @@ EM.addEagerInit([SpaceSuitDef], [], [], () => {
       for (let e of suits) {
         let speed = e.spaceSuit.speed * res.time.dt;
 
-        vec3.zero(e.spaceSuit.localAccel);
+        V3.zero(e.spaceSuit.localAccel);
         // 6-DOF translation
         if (res.inputs.keyDowns["a"]) e.spaceSuit.localAccel[0] -= speed;
         if (res.inputs.keyDowns["d"]) e.spaceSuit.localAccel[0] += speed;
@@ -43,25 +43,25 @@ EM.addEagerInit([SpaceSuitDef], [], [], () => {
         if (res.inputs.keyDowns[" "]) e.spaceSuit.localAccel[2] += speed;
         if (res.inputs.keyDowns["c"]) e.spaceSuit.localAccel[2] -= speed;
 
-        const rotatedAccel = vec3.tQuat(e.spaceSuit.localAccel, e.rotation);
+        const rotatedAccel = V3.tQuat(e.spaceSuit.localAccel, e.rotation);
 
         // change dampen?
         if (res.inputs.keyClicks["z"])
           e.spaceSuit.doDampen = !e.spaceSuit.doDampen;
 
         // dampener
-        if (e.spaceSuit.doDampen && vec3.sqrLen(rotatedAccel) === 0) {
-          const dampDir = vec3.norm(vec3.neg(e.linearVelocity));
-          vec3.scale(dampDir, speed, rotatedAccel);
+        if (e.spaceSuit.doDampen && V3.sqrLen(rotatedAccel) === 0) {
+          const dampDir = V3.norm(V3.neg(e.linearVelocity));
+          V3.scale(dampDir, speed, rotatedAccel);
 
           // halt if at small delta
-          if (vec3.sqrLen(e.linearVelocity) < vec3.sqrLen(rotatedAccel)) {
-            vec3.zero(rotatedAccel);
-            vec3.zero(e.linearVelocity);
+          if (V3.sqrLen(e.linearVelocity) < V3.sqrLen(rotatedAccel)) {
+            V3.zero(rotatedAccel);
+            V3.zero(e.linearVelocity);
           }
         }
 
-        vec3.add(e.linearVelocity, rotatedAccel, e.linearVelocity);
+        V3.add(e.linearVelocity, rotatedAccel, e.linearVelocity);
 
         // camera rotation
         quat.yaw(

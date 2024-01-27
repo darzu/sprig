@@ -1,4 +1,4 @@
-import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { vec2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { packI16s, TupleN } from "../utils/util.js";
 
 // Follows: https://www.redblobgames.com/grids/hexagons/
@@ -35,7 +35,7 @@ export function hexY(q: number, r: number, size: number): number {
 export function hexX(q: number, r: number, size: number): number {
   return size * q_x_spc * q;
 }
-export function hexXYZ(out: vec3, q: number, r: number, size: number): vec3 {
+export function hexXYZ(out: V3, q: number, r: number, size: number): V3 {
   out[0] = hexX(q, r, size);
   out[1] = hexY(q, r, size);
   out[2] = 0;
@@ -142,13 +142,13 @@ export function hexNeighborDirs(dirIdx: number = 0): TupleN<vec2, 6> {
   ];
 }
 
-export function hexDirCCW90(dirIdx: number = 0): vec3 {
+export function hexDirCCW90(dirIdx: number = 0): V3 {
   return hexAvg(
     HEX_DIRS[hexDirAdd(dirIdx, HEX_SW_IDX)],
     HEX_DIRS[hexDirAdd(dirIdx, HEX_NW_IDX)]
   );
 }
-export function hexDirCW90(dirIdx: number = 0): vec3 {
+export function hexDirCW90(dirIdx: number = 0): V3 {
   return hexAvg(
     HEX_DIRS[hexDirAdd(dirIdx, HEX_SE_IDX)],
     HEX_DIRS[hexDirAdd(dirIdx, HEX_NE_IDX)]
@@ -167,7 +167,7 @@ export function hexNeighbors(
   >;
 }
 
-export function hexAvg(qr1: vec2, qr2: vec2): vec3 {
+export function hexAvg(qr1: vec2, qr2: vec2): V3 {
   return V(
     (qr1[0] + qr2[0]) * 0.5,
     (qr1[1] + qr2[1]) * 0.5,

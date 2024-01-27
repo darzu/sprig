@@ -2,7 +2,7 @@ import { ColorDef } from "../color/color-ecs.js";
 import { EM, EntityW, Resources } from "../ecs/entity-manager.js";
 import { GameMesh, gameMeshFromMesh } from "../meshes/mesh-loader.js";
 import { gameplaySystems } from "../debug/ghost.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { vec2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { importObj } from "../meshes/import-obj.js";
 import { InputsDef } from "../input/inputs.js";
 import { PhysicsResultsDef } from "../physics/nonintersection.js";
@@ -33,9 +33,9 @@ f 7// 8// 3// 2//
 
 // TODO(@darzu): seperate component? better, more general GUI way?
 export interface ButtonColors {
-  default: vec3;
-  hover: vec3;
-  down: vec3;
+  default: V3;
+  hover: V3;
+  down: V3;
 }
 
 export const ButtonDef = EM.defineNonupdatableComponent(
@@ -75,10 +75,10 @@ function initButtonGUI(res: Resources<[typeof RendererDef]>) {
       typeof btnMesh_ !== "string" && btnMesh_.length === 1,
       `btn mesh failed import: ${btnMesh_}`
     );
-    btnMesh_[0].pos.forEach((v) => vec3.tMat4(v, transformYUpModelIntoZUp, v));
+    btnMesh_[0].pos.forEach((v) => V3.tMat4(v, transformYUpModelIntoZUp, v));
     scaleMesh(btnMesh_[0], 0.2);
     const btnGMesh = gameMeshFromMesh(btnMesh_[0], res.renderer.renderer);
-    // btnMesh.colors.forEach((c) => vec3.copy(c, ENDESGA16.lightGray));
+    // btnMesh.colors.forEach((c) => V3.copy(c, ENDESGA16.lightGray));
 
     EM.addResource(ButtonsStateDef, btnGMesh);
   }
@@ -133,9 +133,9 @@ function initButtonGUI(res: Resources<[typeof RendererDef]>) {
         const isDown = res.buttonsState.down[btn.id];
         const isClick = res.buttonsState.click[btn.id];
 
-        vec3.copy(btn.color, colors.default);
-        if (isHover) vec3.copy(btn.color, colors.hover);
-        if (isDown) vec3.copy(btn.color, colors.down);
+        V3.copy(btn.color, colors.default);
+        if (isHover) V3.copy(btn.color, colors.hover);
+        if (isDown) V3.copy(btn.color, colors.down);
         // if (isClick) vec3.copy(btn.color, ENDESGA16.red);
 
         // if (isClick) {

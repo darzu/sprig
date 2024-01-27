@@ -1,5 +1,5 @@
 import { Component, EM } from "../ecs/entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { vec2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { WorldFrameDef, doesOverlap } from "./nonintersection.js";
 import { tempVec3, tempQuat } from "../matrix/temp-pool.js";
 import { FALSE, dbgLogOnce } from "../utils/util.js";
@@ -27,22 +27,22 @@ import { Phase } from "../ecs/sys-phase.js";
 // FRAME
 export interface Frame {
   transform: mat4;
-  position: vec3;
+  position: V3;
   rotation: quat;
-  scale: vec3;
+  scale: V3;
 }
 export interface ReadonlyFrame {
   transform: mat4;
-  position: vec3;
+  position: V3;
   rotation: quat;
-  scale: vec3;
+  scale: V3;
 }
 
 export const IDENTITY_FRAME: ReadonlyFrame = {
   transform: mat4.IDENTITY,
-  position: vec3.ZEROS,
+  position: V3.ZEROS,
   rotation: quat.IDENTITY,
-  scale: vec3.ONES,
+  scale: V3.ONES,
 };
 
 export function updateFrameFromTransform(f: Frame): asserts f is Frame {
@@ -61,7 +61,7 @@ export function updateFrameFromPosRotScale(f: Frame) {
 }
 export function createFrame(): Frame {
   return {
-    position: vec3.mk(),
+    position: V3.mk(),
     rotation: quat.create(),
     scale: V(1, 1, 1),
     transform: mat4.create(),
@@ -69,15 +69,15 @@ export function createFrame(): Frame {
 }
 
 export function copyFrame(out: Frame, frame: Frame) {
-  vec3.copy(out.position, frame.position);
-  vec3.copy(out.scale, frame.scale);
+  V3.copy(out.position, frame.position);
+  V3.copy(out.scale, frame.scale);
   quat.copy(out.rotation, frame.rotation);
   mat4.copy(out.transform, frame.transform);
 }
 
 export function identityFrame(out: Frame) {
-  vec3.zero(out.position);
-  vec3.copy(out.scale, vec3.ONES);
+  V3.zero(out.position);
+  V3.copy(out.scale, V3.ONES);
   quat.identity(out.rotation);
   mat4.identity(out.transform);
 }
@@ -97,7 +97,7 @@ export type Transform = mat4;
 export const PositionDef = EM.defineComponent(
   "position",
   () => V(0, 0, 0),
-  (p, v?: vec3.InputT) => (v ? vec3.copy(p, v) : p)
+  (p, v?: V3.InputT) => (v ? V3.copy(p, v) : p)
 );
 export type Position = Component<typeof PositionDef>;
 EM.registerSerializerPair(
@@ -125,7 +125,7 @@ EM.registerSerializerPair(
 export const ScaleDef = EM.defineComponent(
   "scale",
   () => V(1, 1, 1),
-  (p, by?: vec3.InputT) => (by ? vec3.copy(p, by) : p)
+  (p, by?: V3.InputT) => (by ? V3.copy(p, by) : p)
 );
 export type Scale = Component<typeof ScaleDef>;
 EM.registerSerializerPair(

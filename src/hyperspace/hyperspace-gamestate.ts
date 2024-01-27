@@ -1,7 +1,7 @@
 import { CameraDef } from "../camera/camera.js";
 import { DeletedDef } from "../ecs/delete.js";
 import { EM } from "../ecs/entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { vec2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { AuthorityDef, HostDef, MeDef } from "../net/components.js";
 import { eventWizard } from "../net/events.js";
 import { LinearVelocityDef } from "../motion/velocity.js";
@@ -88,7 +88,7 @@ export const endGame = eventWizard(
       p.canMan.manning = false;
       if (p.authority.pid === res.me.pid) {
         p.physicsParent.id = 0;
-        vec3.copy(p.position, p.world.position);
+        V3.copy(p.position, p.world.position);
         quat.copy(p.rotation, p.world.rotation);
       }
     }
@@ -98,7 +98,7 @@ export const endGame = eventWizard(
       PositionDef,
       PhysicsParentDef,
     ])!;
-    vec3.copy(gem.position, gem.world.position);
+    V3.copy(gem.position, gem.world.position);
     EM.set(gem, RotationDef);
     quat.copy(gem.rotation, gem.world.rotation);
     EM.set(gem, LinearVelocityDef, V(0, 0.01, 0));

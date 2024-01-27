@@ -1,6 +1,6 @@
 import {
   vec2,
-  vec3,
+  V3,
   vec4,
   quat,
   mat4,
@@ -16,17 +16,12 @@ import { assertDbg, range, resizeArray, TupleN } from "./util.js";
 //  to subsume gl-matrix into our own libraries.
 
 // math utilities
-const _t1 = vec3.mk();
-const _t2 = vec3.mk();
-export function computeTriangleNormal(
-  p1: vec3,
-  p2: vec3,
-  p3: vec3,
-  out?: vec3
-): vec3 {
+const _t1 = V3.mk();
+const _t2 = V3.mk();
+export function computeTriangleNormal(p1: V3, p2: V3, p3: V3, out?: V3): V3 {
   // cross product of two edges, https://www.khronos.org/opengl/wiki/Calculating_a_Surface_Normal
-  const n = vec3.cross(vec3.sub(p2, p1, _t1), vec3.sub(p3, p1, _t2), out);
-  vec3.norm(n, n);
+  const n = V3.cross(V3.sub(p2, p1, _t1), V3.sub(p3, p1, _t2), out);
+  V3.norm(n, n);
   return n;
 }
 
@@ -38,41 +33,41 @@ export function randFromNormalDist() {
   return rho * Math.cos(theta);
 }
 
-export function randNormalVec3_cheap(out?: vec3) {
+export function randNormalVec3_cheap(out?: V3) {
   // NOTE: this isn't evenly distributed along a sphere; it's in a box
-  const res = vec3.set(
+  const res = V3.set(
     Math.random() - 0.5,
     Math.random() - 0.5,
     Math.random() - 0.5,
-    out ?? vec3.tmp()
+    out ?? V3.tmp()
   );
-  vec3.norm(res, res);
+  V3.norm(res, res);
   return res;
 }
-export function randNormalVec3(out?: vec3) {
-  const res = vec3.set(
+export function randNormalVec3(out?: V3) {
+  const res = V3.set(
     randFromNormalDist(),
     randFromNormalDist(),
     randFromNormalDist(),
-    out ?? vec3.tmp()
+    out ?? V3.tmp()
   );
-  vec3.norm(res, res);
+  V3.norm(res, res);
   return res;
 }
 export const randDir3 = randNormalVec3;
 
-export function randVec3OfLen(r: number = 1, out?: vec3) {
-  out = out ?? vec3.tmp();
+export function randVec3OfLen(r: number = 1, out?: V3) {
+  out = out ?? V3.tmp();
   randNormalVec3(out);
-  vec3.scale(out, r, out);
+  V3.scale(out, r, out);
   return out;
 }
 
-export function randNormalPosVec3(out?: vec3) {
+export function randNormalPosVec3(out?: V3) {
   // TODO(@darzu): not evenly distributed on sphere!
-  if (!out) out = vec3.mk();
-  vec3.set(Math.random(), Math.random(), Math.random(), out);
-  vec3.norm(out, out);
+  if (!out) out = V3.mk();
+  V3.set(Math.random(), Math.random(), Math.random(), out);
+  V3.norm(out, out);
   return out;
 }
 
@@ -105,14 +100,14 @@ export function moveY(m: mat4, n: number) {
 export function moveZ(m: mat4, n: number) {
   return mat4.translate(m, [0, 0, n], m);
 }
-export function getPositionFromTransform(t: mat4): vec3 {
+export function getPositionFromTransform(t: mat4): V3 {
   // TODO(@darzu): not really necessary
-  const pos = vec3.mk();
-  vec3.tMat4(pos, t, pos);
+  const pos = V3.mk();
+  V3.tMat4(pos, t, pos);
   return pos;
 }
 // vec utilities
-export function vec3Floor(out: vec3, v: vec3.InputT): vec3 {
+export function vec3Floor(out: V3, v: V3.InputT): V3 {
   out[0] = Math.floor(v[0]);
   out[1] = Math.floor(v[1]);
   out[2] = Math.floor(v[2]);
@@ -125,12 +120,12 @@ export function aabbDbg(v: AABB): string {
 export function vec2Dbg(v: vec2.InputT): string {
   return `[${v[0].toFixed(2)},${v[1].toFixed(2)}]`;
 }
-export function vec3Dbg(v?: vec3.InputT): string {
+export function vec3Dbg(v?: V3.InputT): string {
   return v
     ? `[${v[0].toFixed(2)},${v[1].toFixed(2)},${v[2].toFixed(2)}]`
     : "NIL";
 }
-export function vec3Dbg2(v: vec3.InputT, precision = 2): string {
+export function vec3Dbg2(v: V3.InputT, precision = 2): string {
   return `V(${v[0].toFixed(precision)},${v[1].toFixed(
     precision
   )},${v[2].toFixed(precision)})`;
@@ -162,14 +157,14 @@ export function mat4Dbg(v: mat4): string {
  ${ns[3]}\t|${ns[7]}\t|${ns[11]}\t|${ns[15]}`
   );
 }
-export function centroid(...vs: vec3[]): vec3 {
+export function centroid(...vs: V3[]): V3 {
   const avgX = avg(vs.map((v) => v[0]));
   const avgY = avg(vs.map((v) => v[1]));
   const avgZ = avg(vs.map((v) => v[2]));
   return V(avgX, avgY, avgZ);
 }
 // TODO(@darzu):  move into gl-matrix?
-export function vec3Mid(out: vec3, a: vec3, b: vec3): vec3 {
+export function vec3Mid(out: V3, a: V3, b: V3): V3 {
   out[0] = (a[0] + b[0]) * 0.5;
   out[1] = (a[1] + b[1]) * 0.5;
   out[2] = (a[2] + b[2]) * 0.5;
@@ -181,19 +176,19 @@ export function vec3Mid(out: vec3, a: vec3, b: vec3): vec3 {
 // TODO(@darzu): This impl assumes +y is up, +z is fwd
 // assumes local up axis is [0,1,0] and forward is [0,0,1]
 // TODO(@darzu): Z_UP: merge into sprig-matrix
-const __t1 = vec3.mk();
-const __t2 = vec3.mk();
+const __t1 = V3.mk();
+const __t2 = V3.mk();
 export function quatFromUpForward_OLD(
   out: quat,
-  up: vec3.InputT,
-  forwardish: vec3.InputT
+  up: V3.InputT,
+  forwardish: V3.InputT
 ): quat {
   // https://stackoverflow.com/questions/52413464/look-at-quaternion-using-up-vector/52551983#52551983
   // TODO(@darzu): swap this with orthonormalize()
-  const side = vec3.cross(forwardish, up, __t1);
-  vec3.neg(side, side); // TODO(@darzu): is this negate right?
-  vec3.norm(side, side);
-  const backward = vec3.cross(side, up, __t2);
+  const side = V3.cross(forwardish, up, __t1);
+  V3.neg(side, side); // TODO(@darzu): is this negate right?
+  V3.norm(side, side);
+  const backward = V3.cross(side, up, __t2);
 
   // TODO(@darzu): replace this with using quat.fromMat3
   const trace = side[0] + up[1] + backward[2];
@@ -227,12 +222,12 @@ export function quatFromUpForward_OLD(
   return out;
 }
 
-export type SupportFn = (d: vec3) => vec3;
-export function farthestPointInDir(points: vec3[], d: vec3): vec3 {
+export type SupportFn = (d: V3) => V3;
+export function farthestPointInDir(points: V3[], d: V3): V3 {
   let max = -Infinity;
-  let maxP: vec3 | null = null;
+  let maxP: V3 | null = null;
   for (let p of points) {
-    const n = vec3.dot(p, d);
+    const n = V3.dot(p, d);
     if (n > max) {
       max = n;
       maxP = p;
@@ -241,8 +236,8 @@ export function farthestPointInDir(points: vec3[], d: vec3): vec3 {
   return maxP!;
 }
 
-export function uintToVec3unorm(i: number, max: number): vec3 {
-  return vec3.clone([
+export function uintToVec3unorm(i: number, max: number): V3 {
+  return V3.clone([
     (((((i % 7) + 1) & 1) >> 0) * (Math.floor(i / 7) + 1)) / Math.ceil(max / 7),
     (((((i % 7) + 1) & 2) >> 1) * (Math.floor(i / 7) + 1)) / Math.ceil(max / 7),
     (((((i % 7) + 1) & 4) >> 2) * (Math.floor(i / 7) + 1)) / Math.ceil(max / 7),
@@ -268,7 +263,7 @@ export function normalizeVec2s(vs: vec2[], min: number, max: number): void {
 }
 
 // corners of the WebGPU NDC clip-space (-1,-1,0):(1,1,1)
-const screenCorners: TupleN<vec3, 8> = [
+const screenCorners: TupleN<V3, 8> = [
   V(+1.0, +1.0, +1.0),
   V(+1.0, +1.0, 0.0),
   V(+1.0, -1.0, +1.0),
@@ -279,30 +274,27 @@ const screenCorners: TupleN<vec3, 8> = [
   V(-1.0, -1.0, 0.0),
 ];
 
-const _tempWorldCorners: TupleN<vec3, 8> = screenCorners.map((_) =>
+const _tempWorldCorners: TupleN<V3, 8> = screenCorners.map((_) =>
   V(0, 0, 0)
-) as TupleN<vec3, 8>;
-export function getFrustumWorldCorners(
-  invViewProj: mat4,
-  out?: TupleN<vec3, 8>
-) {
+) as TupleN<V3, 8>;
+export function getFrustumWorldCorners(invViewProj: mat4, out?: TupleN<V3, 8>) {
   out = out ?? _tempWorldCorners;
   assertDbg(out.length === screenCorners.length);
   for (let i = 0; i < screenCorners.length; i++)
-    vec3.tMat4(screenCorners[i], invViewProj, out[i]);
+    V3.tMat4(screenCorners[i], invViewProj, out[i]);
   return out;
 }
 
 // TODO(@darzu): kinda hate this fn..
 export function positionAndTargetToOrthoViewProjMatrix(
   out: mat4,
-  position: vec3,
-  target: vec3
+  position: V3,
+  target: V3
 ): mat4 {
   const viewMatrix = out;
   mat4.lookAt(position, target, [0, 1, 0], viewMatrix);
   const projectionMatrix = mat4.tmp();
-  const dist = vec3.dist(position, target);
+  const dist = V3.dist(position, target);
   {
     const left = -80;
     const right = 80;
@@ -328,7 +320,7 @@ export function signedAreaOfTriangle(a: vec2, b: vec2, c: vec2): number {
 
 // TODO(@darzu):  move to sprig-matrix.ts
 
-export function vec3Reverse(out: vec3) {
+export function vec3Reverse(out: V3) {
   const t = out[0];
   out[0] = out[2];
   out[2] = t;
@@ -354,11 +346,11 @@ export function vec4RotateLeft(out: vec4) {
   return out;
 }
 
-const _tempViewCorners: vec3[] = [];
+const _tempViewCorners: V3[] = [];
 const _tempViewAABB = createAABB();
 export function frustumFromBounds(
-  worldCorners: vec3[],
-  eyePos: vec3,
+  worldCorners: V3[],
+  eyePos: V3,
   outFrust: mat4
 ) {
   // view matrix
@@ -366,10 +358,10 @@ export function frustumFromBounds(
 
   // resize temp buffers if needed
   // TODO(@darzu): PERF. doesn't work so well if we get variable numbers of world points
-  resizeArray(_tempViewCorners, worldCorners.length, () => vec3.mk());
+  resizeArray(_tempViewCorners, worldCorners.length, () => V3.mk());
 
   // translate & rotate camera frustum world corners into light view
-  worldCorners.forEach((p, i) => vec3.tMat4(p, viewTmp, _tempViewCorners[i]));
+  worldCorners.forEach((p, i) => V3.tMat4(p, viewTmp, _tempViewCorners[i]));
 
   // get view-space bounds
   getAABBFromPositions(_tempViewAABB, _tempViewCorners);
@@ -393,25 +385,25 @@ export function frustumFromBounds(
 }
 
 // TODO(@darzu): Z_UP: we probably don't need angleBetweenPosXZ instead of just XY
-const __angleBetweenXZTmp0 = vec3.mk();
-const __angleBetweenXZTmp1 = vec3.mk();
-const __angleBetweenXZTmp2 = vec3.mk();
+const __angleBetweenXZTmp0 = V3.mk();
+const __angleBetweenXZTmp1 = V3.mk();
+const __angleBetweenXZTmp2 = V3.mk();
 export function angleBetweenPosXZ(
-  pos: vec3,
+  pos: V3,
   rot: quat,
-  fwd: vec3, // NOTE: fwd needs to be normalized and with 0 y component
-  target: vec3
+  fwd: V3, // NOTE: fwd needs to be normalized and with 0 y component
+  target: V3
 ): number {
-  const toward = vec3.norm(
+  const toward = V3.norm(
     [target[0] - pos[0], 0, target[2] - pos[2]],
     __angleBetweenXZTmp0
   );
-  const currFwd = vec3.tQuat(fwd, rot, __angleBetweenXZTmp1);
+  const currFwd = V3.tQuat(fwd, rot, __angleBetweenXZTmp1);
   return angleBetweenXZ(currFwd, toward);
 }
 
 // NOTE: assumes dir1 and dir2 are normalized
-export function angleBetweenXZ(norm1: vec3, norm2: vec3): number {
+export function angleBetweenXZ(norm1: V3, norm2: V3): number {
   // const currSide = vec3.cross(dir1, UP, __angleBetweenXZTmp2);
   // const sign = -Math.sign(vec3.dot(currSide, dir2));
   // const angleBetween = sign * Math.acos(vec3.dot(dir1, dir2));

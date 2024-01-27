@@ -17,7 +17,7 @@ import {
   RotationDef,
   ScaleDef,
 } from "../physics/transform.js";
-import { quat, V, vec3 } from "../matrix/sprig-matrix.js";
+import { quat, V, V3 } from "../matrix/sprig-matrix.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { XY } from "../meshes/mesh-loader.js";
 import { RenderableConstructDef, RendererDef } from "../render/renderer-ecs.js";
@@ -57,17 +57,12 @@ const {
       parentId: 0,
     };
   },
-  updateProps: (
-    p,
-    location: vec3.InputT,
-    color: vec3.InputT,
-    parentId: number
-  ) => {
+  updateProps: (p, location: V3.InputT, color: V3.InputT, parentId: number) => {
     // console.log(
     //   `updating mpPlayerProps w/ ${vec3Dbg(location)} ${vec3Dbg(color)}`
     // );
-    vec3.copy(p.location, location);
-    vec3.copy(p.color, color);
+    V3.copy(p.location, location);
+    V3.copy(p.color, color);
     p.parentId = parentId;
     return p;
   },
@@ -110,7 +105,7 @@ const {
     EM.set(e, PhysicsParentDef, props.parentId);
 
     if (e.authority.pid === res.me.pid) {
-      vec3.copy(e.position, props.location); // TODO(@darzu): should be fine to have this outside loop
+      V3.copy(e.position, props.location); // TODO(@darzu): should be fine to have this outside loop
 
       EM.set(e, ControllableDef);
       e.controllable.modes.canFall = true;
@@ -121,7 +116,7 @@ const {
 
       e.controllable.speed *= 2;
       e.controllable.sprintMul = 1;
-      vec3.copy(e.cameraFollow.positionOffset, [0.0, -10.0, 4.0]);
+      V3.copy(e.cameraFollow.positionOffset, [0.0, -10.0, 4.0]);
       // e.cameraFollow.yawOffset = 0.0;
       // e.cameraFollow.pitchOffset = -0.593;
 
@@ -232,8 +227,8 @@ export async function initMPGame() {
   // camera
   camera.fov = Math.PI * 0.5;
   camera.viewDist = 100;
-  vec3.set(-20, -20, -20, camera.maxWorldAABB.min);
-  vec3.set(+20, +20, +20, camera.maxWorldAABB.max);
+  V3.set(-20, -20, -20, camera.maxWorldAABB.min);
+  V3.set(+20, +20, +20, camera.maxWorldAABB.max);
   // camera.perspectiveMode = "ortho";
 
   const { mp_meshes } = await EM.whenResources(mpMeshes);
@@ -250,12 +245,12 @@ export async function initMPGame() {
   sun.pointLight.constant = 1.0;
   sun.pointLight.linear = 0.0;
   sun.pointLight.quadratic = 0.0;
-  vec3.copy(sun.pointLight.ambient, [0.2, 0.2, 0.2]);
-  vec3.copy(sun.pointLight.diffuse, [0.5, 0.5, 0.5]);
+  V3.copy(sun.pointLight.ambient, [0.2, 0.2, 0.2]);
+  V3.copy(sun.pointLight.diffuse, [0.5, 0.5, 0.5]);
   EM.set(sun, PositionDef, V(50, 10, 300));
 
   // gizmo
-  addWorldGizmo(vec3.ZEROS, 5);
+  addWorldGizmo(V3.ZEROS, 5);
 
   // raft
   if (me.host) {

@@ -18,7 +18,7 @@ all fns return a stack ptr id
 
 */
 
-function exampleVecBad(bulletVel: vec3) {
+function exampleVecBad(bulletVel: V3) {
   const pe = {
     linearVelocity: tempVec3(),
     angularVelocity: tempVec3(),
@@ -37,14 +37,14 @@ function exampleVecBad(bulletVel: vec3) {
   vec3.copy(pe.angularVelocity, vel);
   vec3.copy(pe.gravity, [0, 0, -4 * 0.00001]);
 
-  function randNormalVec3(out?: vec3): vec3 {
+  function randNormalVec3(out?: V3): V3 {
     throw "dummy";
   }
-  function tempVec3(): vec3 {
+  function tempVec3(): V3 {
     throw "dummy";
   }
 }
-function exampleVecGood(bulletVel: vec3) {
+function exampleVecGood(bulletVel: V3) {
   const pe = {
     linearVelocity: tempVec3(),
     angularVelocity: tempVec3(),
@@ -63,22 +63,22 @@ function exampleVecGood(bulletVel: vec3) {
 
   // stackPop
 
-  function randNormalVec3(out?: vec3): vec3 {
+  function randNormalVec3(out?: V3): V3 {
     throw "dummy";
   }
-  function tempVec3(): vec3 {
+  function tempVec3(): V3 {
     throw "dummy";
   }
-  function add(a: vec3.InputT, b: vec3.InputT): vec3 {
+  function add(a: V3.InputT, b: V3.InputT): V3 {
     throw "dummy";
   }
-  function scale(a: vec3, b: number): vec3 {
+  function scale(a: V3, b: number): V3 {
     throw "dummy";
   }
-  function neg(a: vec3): vec3 {
+  function neg(a: V3): V3 {
     throw "dummy";
   }
-  function norm(a: vec3): vec3 {
+  function norm(a: V3): V3 {
     throw "dummy";
   }
 }

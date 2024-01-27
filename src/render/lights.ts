@@ -1,5 +1,5 @@
 import { EM } from "../ecs/entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { vec2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { CY } from "./gpu-registry.js";
 import { createCyStruct, CyToTS } from "./gpu-struct.js";
 import { GPUBufferUsage } from "./webgpu-hacks.js";
@@ -37,10 +37,10 @@ function createDefaultPointLight(): PointLightTS {
     viewProjAll: mat4.create(),
     viewProj0: mat4.create(),
     viewProj1: mat4.create(),
-    position: vec3.mk(),
-    ambient: vec3.mk(),
-    diffuse: vec3.mk(),
-    specular: vec3.mk(),
+    position: V3.mk(),
+    ambient: V3.mk(),
+    diffuse: V3.mk(),
+    specular: V3.mk(),
     constant: 1.0,
     linear: 0.0,
     quadratic: 0.0,

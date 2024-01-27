@@ -2,7 +2,7 @@
 // TODO(@darzu): share code with smoothing?
 
 import { EM } from "../ecs/entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { vec2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { PositionDef } from "../physics/transform.js";
 import { TimeDef } from "../time/time.js";
 import { EaseFn, EASE_LINEAR } from "../utils/util-ease.js";
@@ -10,8 +10,8 @@ import { Phase } from "../ecs/sys-phase.js";
 
 export interface AnimateTo {
   // TODO(@darzu): support rotation, other properties?
-  startPos: vec3;
-  endPos: vec3;
+  startPos: V3;
+  endPos: V3;
   easeFn: EaseFn;
   durationMs: number;
   progressMs: number;
@@ -22,8 +22,8 @@ export const AnimateToDef = EM.defineNonupdatableComponent(
   "animateTo",
   function (a?: Partial<AnimateTo>): AnimateTo {
     return {
-      startPos: a?.startPos ?? vec3.mk(),
-      endPos: a?.endPos ?? vec3.mk(),
+      startPos: a?.startPos ?? V3.mk(),
+      endPos: a?.endPos ?? V3.mk(),
       easeFn: a?.easeFn ?? EASE_LINEAR,
       durationMs: a?.durationMs ?? 1000,
       progressMs: a?.progressMs ?? 0,
@@ -32,7 +32,7 @@ export const AnimateToDef = EM.defineNonupdatableComponent(
 );
 
 EM.addEagerInit([AnimateToDef], [], [], () => {
-  let delta = vec3.mk();
+  let delta = V3.mk();
 
   EM.addSystem(
     "animateTo",
@@ -50,24 +50,24 @@ EM.addEagerInit([AnimateToDef], [], [], () => {
 
         if (percentTime < 0) {
           // outside the time bounds, we're in a start delay
-          vec3.copy(c.position, c.animateTo.startPos);
+          V3.copy(c.position, c.animateTo.startPos);
           continue;
         }
 
         if (percentTime >= 1.0) {
           toRemove.push(c.id);
-          vec3.copy(c.position, c.animateTo.endPos);
+          V3.copy(c.position, c.animateTo.endPos);
           continue;
         }
 
         const percentPath = c.animateTo.easeFn(percentTime);
 
-        vec3.sub(c.animateTo.endPos, c.animateTo.startPos, delta);
+        V3.sub(c.animateTo.endPos, c.animateTo.startPos, delta);
 
         // TODO(@darzu): support other (non-linear) paths
-        vec3.scale(delta, percentPath, delta);
+        V3.scale(delta, percentPath, delta);
 
-        vec3.add(c.animateTo.startPos, delta, c.position);
+        V3.add(c.animateTo.startPos, delta, c.position);
       }
 
       // clean up finished

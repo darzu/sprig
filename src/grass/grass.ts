@@ -9,7 +9,7 @@ import {
   RenderableDef,
   RendererDef,
 } from "../render/renderer-ecs.js";
-import { V, vec3 } from "../matrix/sprig-matrix.js";
+import { V, V3 } from "../matrix/sprig-matrix.js";
 import { getPositionFromTransform } from "../utils/utils-3d.js";
 import { randColor } from "../utils/utils-game.js";
 
@@ -17,7 +17,7 @@ const RENDER_GRASS = true;
 
 // export interface GrassSystem {
 //   getGrassPools: () => MeshPool[];
-//   update: (target: vec3) => void;
+//   update: (target: V3) => void;
 //   // TODO(@darzu): getAABB
 // }
 
@@ -81,10 +81,10 @@ export function createGrassTile(opts: GrassTileOpts): Mesh {
       // const g = (0.5 + jitter(0.2)) * 0.3
       // const b = (0.05 + jitter(0.02)) * 0.3
 
-      const p1: vec3 = V(x1, y1, z1);
-      const p2: vec3 = V(x2, y2, z2);
-      const p3: vec3 = V(x3, y3, z3);
-      const p4: vec3 = V(x4, y4, z4);
+      const p1: V3 = V(x1, y1, z1);
+      const p2: V3 = V(x2, y2, z2);
+      const p3: V3 = V(x3, y3, z3);
+      const p4: V3 = V(x4, y4, z4);
 
       // const norm0 = vec3.cross(
       //   vec3.create(),
@@ -111,8 +111,8 @@ export function createGrassTile(opts: GrassTileOpts): Mesh {
   }
 
   // TODO(@darzu): use this?
-  const aabbMin: vec3 = V(-spacing, 0, -spacing);
-  const aabbMax: vec3 = V(size + spacing, bladeH * 2, size + spacing);
+  const aabbMin: V3 = V(-spacing, 0, -spacing);
+  const aabbMax: V3 = V(size + spacing, bladeH * 2, size + spacing);
 
   // m.setUniform(mat4.create(), aabbMin, aabbMax);
 
@@ -131,7 +131,7 @@ type GrassTile = EntityW<[typeof PositionDef]>;
 
 interface GrassTileset {
   tiles: GrassTile[];
-  update: (target: vec3) => void;
+  update: (target: V3) => void;
   numTris: number;
 }
 
@@ -224,7 +224,7 @@ export async function createGrassTileset(
   // const pool = builder.finish();
 
   // handle grass tile movement
-  function update(target: vec3) {
+  function update(target: V3) {
     const [tx, _, tz] = target;
 
     // compute the N closest centers
@@ -239,7 +239,7 @@ export async function createGrassTileset(
     // compare with current positions
     const occupied: [number, number][] = [];
     const toMoveInds: number[] = [];
-    // const tilePoses: vec3[] = tiles.map((t) =>
+    // const tilePoses: V3[] = tiles.map((t) =>
     //   getPositionFromTransform(t.transform)
     // );
     for (let i = 0; i < tiles.length; i++) {
@@ -269,7 +269,7 @@ export async function createGrassTileset(
         // do move
         occupied.push([xi1, zi1]);
         const targetPos = V(xi1 * opts.tileSize, 0, zi1 * opts.tileSize);
-        vec3.copy(t.position, targetPos);
+        V3.copy(t.position, targetPos);
         // const move = vec3.sub(targetPos, t.position);
         // mat4.translate(t.transform, t.transform, move);
         // console.log(`moving (${tilePoses[i][0]}, ${tilePoses[i][1]}, ${tilePoses[i][2]}) to (${targetPos[0]}, ${targetPos[1]}, ${targetPos[2]}) via (${move[0]}, ${move[1]}, ${move[2]})`)
@@ -388,7 +388,7 @@ function nearestIntegers(target: number, numInts: number): number[] {
 //     createGrassTileset(opts, builderBuilder)
 //   );
 
-//   function updateAll(target: vec3) {
+//   function updateAll(target: V3) {
 //     tilesets.forEach((t) => t.update(target));
 //   }
 

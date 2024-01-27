@@ -1,4 +1,4 @@
-import { V, mat3, orthonormalize, quat, vec3 } from "../matrix/sprig-matrix.js";
+import { V, mat3, orthonormalize, quat, V3 } from "../matrix/sprig-matrix.js";
 import { EaseFn } from "./util-ease.js";
 import { assert } from "./util.js";
 import { quatDbg, vec3Dbg } from "./utils-3d.js";
@@ -103,7 +103,7 @@ export function parabolaFromPoints(
   y1: number,
   x2: number,
   y2: number
-): vec3 {
+): V3 {
   const inv = mat3.invert([
     // column 1
     x0 ** 2,
@@ -118,7 +118,7 @@ export function parabolaFromPoints(
     1,
     1,
   ]);
-  const abc = vec3.tMat3([y0, y1, y2], inv, vec3.mk());
+  const abc = V3.tMat3([y0, y1, y2], inv, V3.mk());
   return abc;
 
   // // parabola test:
@@ -150,7 +150,7 @@ export function testMath() {
   const fwd = V(0, 1, 0);
   const upish = V(0.2, 0.2, 1.0);
   // const right = V(0, 0, 0);
-  const right = new Float32Array([0, 0, 0]) as vec3;
+  const right = new Float32Array([0, 0, 0]) as V3;
   // console.log("orthonormalize:");
   // console.log(`fwd: ${vec3Dbg(fwd)}`);
   // console.log(`up: ${vec3Dbg(upish)}`);
@@ -160,7 +160,7 @@ export function testMath() {
   // console.log(`fwd: ${vec3Dbg(fwd)}`);
   // console.log(`up: ${vec3Dbg(upish)}`);
   // console.log(`right: ${vec3Dbg(right)}`);
-  assert(vec3.dist(right, [1, 0, 0]) < 0.3, "orthonormalize test");
+  assert(V3.dist(right, [1, 0, 0]) < 0.3, "orthonormalize test");
 
   // test quat.fromForward
   {
@@ -180,7 +180,7 @@ export function testMath() {
     const fwd = V(0, 1, 0);
     for (let v of vs) {
       const rot = quat.fromForward(v);
-      const v2 = vec3.tQuat(fwd, rot, vec3.mk());
+      const v2 = V3.tQuat(fwd, rot, V3.mk());
       console.log(`${vec3Dbg(v)} ==${quatDbg(rot)}==> ${vec3Dbg(v2)}`);
     }
   }
@@ -191,7 +191,7 @@ export function testMath() {
     const steps = 10;
     const stepRad = (Math.PI * 2) / steps;
     for (let i = 0; i < steps; i++) {
-      vec3.rotZ(dir, [0, 0, 0], stepRad, dir);
+      V3.rotZ(dir, [0, 0, 0], stepRad, dir);
       const angle = Math.atan2(dir[1], dir[0]);
       console.log(`dir: ${vec3Dbg(dir)}, atan2: ${angle}`);
     }

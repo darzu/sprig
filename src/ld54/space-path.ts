@@ -1,7 +1,7 @@
 import { AllEndesga16, ENDESGA16 } from "../color/palettes.js";
 import { createLineMesh } from "../debug/gizmos.js";
 import { EM } from "../ecs/entity-manager.js";
-import { V, orthonormalize, quat, tV, vec3 } from "../matrix/sprig-matrix.js";
+import { V, orthonormalize, quat, tV, V3 } from "../matrix/sprig-matrix.js";
 import {
   createEmptyRawMesh,
   mergeMeshes,
@@ -39,7 +39,7 @@ const DEBUG_PATH_POINTS = false;
 
 export function createSpacePath() {
   const points = getRandomCylindricalPoints(50, 50, 16);
-  points.forEach((v) => vec3.pitch(v, -Math.PI / 2, v));
+  points.forEach((v) => V3.pitch(v, -Math.PI / 2, v));
 
   // let numSeg = 20;
   const meshes: Mesh[] = [];
@@ -56,7 +56,7 @@ export function createSpacePath() {
     }
   }
 
-  const UP: vec3.InputT = [0, 0, 1];
+  const UP: V3.InputT = [0, 0, 1];
 
   const spline = bezierSplineFromPoints(points, 20);
   const path = createEvenPathFromBezierSpline(spline, 5, UP);
@@ -71,7 +71,7 @@ export function createSpacePath() {
     const seg = createLineMesh(1.0, prevPoint, thisPoint);
     seg.colors.forEach((c) => {
       // vec3.copy(c, AllEndesga16[i % AllEndesga16.length]);
-      vec3.copy(c, ENDESGA16.yellow);
+      V3.copy(c, ENDESGA16.yellow);
     });
     meshes.push(seg);
   }

@@ -5,7 +5,7 @@ import {
   MastMesh,
   RudderPrimMesh,
 } from "../meshes/mesh-list.js";
-import { vec3, quat } from "../matrix/sprig-matrix.js";
+import { V3, quat } from "../matrix/sprig-matrix.js";
 import { LinearVelocityDef } from "../motion/velocity.js";
 import {
   PhysicsParentDef,
@@ -135,14 +135,14 @@ export async function createLd53ShipAsync() {
     0.5 * Math.PI,
     cannonDefaultPitch
   );
-  vec3.copy(cannonR.color, ENDESGA16.darkGray);
+  V3.copy(cannonR.color, ENDESGA16.darkGray);
   const cannonL = createCannonNow(
     res,
     V(-8, -7, 4.7),
     -0.5 * Math.PI,
     cannonDefaultPitch
   );
-  vec3.copy(cannonL.color, ENDESGA16.darkGray);
+  V3.copy(cannonL.color, ENDESGA16.darkGray);
 
   addGizmoChild(cannonR, 3);
   addGizmoChild(cannonL, 3);
@@ -194,7 +194,7 @@ export async function createLd53ShipAsync() {
   EM.set(rudder, AuthorityDef, res.me.pid);
 
   // console.log("setting position");
-  vec3.set(0, -25, 4, rudder.position);
+  V3.set(0, -25, 4, rudder.position);
   // console.log(`rudder: ${rudder.id}`);
 
   // addGizmoChild(rudder, 2, [0, 5, 0]);
@@ -223,8 +223,8 @@ EM.addSystem(
   [PartyDef],
   (es, res) => {
     if (es[0]) {
-      vec3.tQuat(vec3.FWD, es[0].rotation, res.party.dir);
-      vec3.copy(res.party.pos, es[0].position);
+      V3.tQuat(V3.FWD, es[0].rotation, res.party.dir);
+      V3.copy(res.party.pos, es[0].position);
     }
   }
 );

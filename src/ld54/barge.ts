@@ -1,6 +1,6 @@
 import { transformYUpModelIntoZUp } from "../camera/basis.js";
 import { ENDESGA16 } from "../color/palettes.js";
-import { mat4, quat, vec3 } from "../matrix/sprig-matrix.js";
+import { mat4, quat, V3 } from "../matrix/sprig-matrix.js";
 import { V } from "../matrix/sprig-matrix.js";
 import {
   createEmptyRawMesh,
@@ -196,7 +196,7 @@ export function createSpaceBarge(): SpaceBarge {
   let keelPath: Path;
   {
     keelTemplate.pos.forEach((p) => {
-      vec3.mul(p, [1, 1, 0.5], p);
+      V3.mul(p, [1, 1, 0.5], p);
     });
 
     // const keelTempAABB = getAABBFromMesh(keelTemplate);
@@ -227,7 +227,7 @@ export function createSpaceBarge(): SpaceBarge {
 
   const keelAABB = createAABB();
   keelPath.forEach((p) => updateAABBWithPoint(keelAABB, p.pos));
-  const keelSize = getSizeFromAABB(keelAABB, vec3.mk());
+  const keelSize = getSizeFromAABB(keelAABB, V3.mk());
 
   appendBoard(
     builder.mesh,
@@ -268,25 +268,25 @@ export function createSpaceBarge(): SpaceBarge {
     const sternInfluence = 24;
     const prowAngle = (4 * Math.PI) / 16;
     const prowInfluence = 24;
-    const p0 = vec3.add(sternpost, [0, 0, transomWidth * 0.5], vec3.mk());
-    const p1 = vec3.add(
+    const p0 = V3.add(sternpost, [0, 0, transomWidth * 0.5], V3.mk());
+    const p1 = V3.add(
       p0,
       [
         Math.cos(sternAngle) * sternInfluence,
         0,
         Math.sin(sternAngle) * sternInfluence,
       ],
-      vec3.mk()
+      V3.mk()
     );
     const p3 = prow;
-    const p2 = vec3.add(
+    const p2 = V3.add(
       p3,
       [
         -Math.cos(prowAngle) * prowInfluence,
         0,
         Math.sin(prowAngle) * prowInfluence,
       ],
-      vec3.mk()
+      V3.mk()
     );
 
     railCurve = { p0, p1, p2, p3 };
@@ -295,14 +295,14 @@ export function createSpaceBarge(): SpaceBarge {
   const railPath = createPathFromBezier(railCurve, railNodes, [0, 1, 0]);
   // fixPathBasis(railPath, [0, 1, 0], [0, 0, 1], [1, 0, 0]);
 
-  // let ribEnds: vec3[] = [];
+  // let ribEnds: V3[] = [];
   let ribPaths: Path[] = [];
   let ribCurves: BezierCubic[] = [];
   if (FALSE || true) {
     for (let i = 0; i < ribCount; i++) {
       // const ribX = i * ribSpace + 2 + keelAABB.min[0];
       const ribX = i * ribSpace + ribSpace + keelAABB.min[0];
-      const ribStart = snapXToPath(keelPath, ribX, vec3.mk());
+      const ribStart = snapXToPath(keelPath, ribX, V3.mk());
 
       // const p = translatePath(makeRibPath(i), V(i * ribSpace, 0, 0));
       // const weirdP = translatePath(makeRibPathWierd(i), ribStart);
@@ -313,8 +313,8 @@ export function createSpaceBarge(): SpaceBarge {
 
       let ribCurve: BezierCubic;
       {
-        const p0 = vec3.clone(ribStart);
-        const p1 = vec3.add(p0, [0, 0, 5], vec3.mk());
+        const p0 = V3.clone(ribStart);
+        const p1 = V3.add(p0, [0, 0, 5], V3.mk());
         // TODO(@darzu): HACKs for the first and last rib
         // if (i === 0) {
         //   p1[1] += 1;
@@ -324,12 +324,12 @@ export function createSpaceBarge(): SpaceBarge {
           p1[1] += 1;
           p1[2] -= 4;
         }
-        const ribEnd = snapXToPath(railPath, ribStart[0], vec3.mk());
+        const ribEnd = snapXToPath(railPath, ribStart[0], V3.mk());
         // ribEnds.push(ribEnd);
 
         const p3 = ribEnd;
         // const p3 = vec3.add(ribStart, [0, keelSize[1], outboard], vec3.create());
-        const p2 = vec3.add(p3, [0, -5, 2], vec3.mk());
+        const p2 = V3.add(p3, [0, -5, 2], V3.mk());
         ribCurve = { p0, p1, p2, p3 };
 
         // if (i === 0) {
@@ -387,7 +387,7 @@ export function createSpaceBarge(): SpaceBarge {
       const ribPath = ribPaths[i];
       const ribEnd = ribPath[ribPath.length - 1];
       // console.log(`${vec3Dbg(railPath[railIdx].pos)} vs ${ribEnd.pos}`);
-      vec3.copy(railPath[railIdx].pos, ribEnd.pos);
+      V3.copy(railPath[railIdx].pos, ribEnd.pos);
       // railPath[railIdx].pos[0] = ribStarts[i][0];
       // railPath[railIdx].pos[2] = ribStarts[i][2];
     }
@@ -473,7 +473,7 @@ export function createSpaceBarge(): SpaceBarge {
 
     transomPlankNum = evenRibs[0].length;
 
-    const _temp4 = vec3.mk();
+    const _temp4 = V3.mk();
     for (let i = 0; i < plankCount; i++) {
       const nodes: Path = evenRibs
         .filter((rib) => rib.length > i)
@@ -484,7 +484,7 @@ export function createSpaceBarge(): SpaceBarge {
       if (i < 20) {
         const secondToLast = nodes[nodes.length - 1];
         const last: PathNode = {
-          pos: vec3.clone(secondToLast.pos),
+          pos: V3.clone(secondToLast.pos),
           rot: quat.clone(secondToLast.rot),
         };
         const snapped = snapToPath(bowKeelPath, last.pos[1], 1, _temp4);
@@ -498,14 +498,14 @@ export function createSpaceBarge(): SpaceBarge {
         const second = nodes[0];
         const third = nodes[1];
         const first: PathNode = {
-          pos: vec3.clone(second.pos),
+          pos: V3.clone(second.pos),
           rot: quat.clone(second.rot),
         };
-        const diff = vec3.sub(second.pos, third.pos, first.pos);
+        const diff = V3.sub(second.pos, third.pos, first.pos);
         const scale = (transomPlankNum - 1 - i) / (transomPlankNum - 1) + 0.4;
         // console.log("scale: " + scale);
-        vec3.scale(diff, scale, diff);
-        vec3.add(second.pos, diff, first.pos);
+        V3.scale(diff, scale, diff);
+        V3.add(second.pos, diff, first.pos);
         nodes.unshift(first);
       }
 
@@ -547,7 +547,7 @@ export function createSpaceBarge(): SpaceBarge {
     for (let i = 0; i < transomPlankNum; i++) {
       const start = plankPaths[i][0];
       const end = plankPathsMirrored[i][0];
-      const length = vec3.dist(start.pos, end.pos);
+      const length = V3.dist(start.pos, end.pos);
       const transomSegLen = 3.0;
       const numDesired = Math.max(Math.ceil(length / transomSegLen), 2);
 
@@ -587,9 +587,9 @@ export function createSpaceBarge(): SpaceBarge {
   if (FALSE || true) {
     const start = railPath[0];
     const end = mirrorRailPath[0];
-    const midPos = vec3.lerp(start.pos, end.pos, 0.5, vec3.mk());
-    vec3.lerp(midPos, start.pos, 1.2, start.pos);
-    vec3.lerp(midPos, end.pos, 1.2, end.pos);
+    const midPos = V3.lerp(start.pos, end.pos, 0.5, V3.mk());
+    V3.lerp(midPos, start.pos, 1.2, start.pos);
+    V3.lerp(midPos, end.pos, 1.2, end.pos);
     const mid: PathNode = {
       pos: midPos,
       rot: quat.clone(start.rot),
@@ -621,7 +621,7 @@ export function createSpaceBarge(): SpaceBarge {
 
     let midIdx = 0;
     for (let i = 0; i < floorBound1.length; i++) {
-      const dist = vec3.dist(floorBound1[i].pos, floorBound2[i].pos);
+      const dist = V3.dist(floorBound1[i].pos, floorBound2[i].pos);
       if (dist > floorWidth) {
         floorWidth = dist;
         midIdx = i;
@@ -645,7 +645,7 @@ export function createSpaceBarge(): SpaceBarge {
       // console.log(`ribSpace: ${ribSpace}`);
       const floorSegLength = 4.0;
       const halfNumFloorBoards = Math.floor(floorWidth / floorBoardWidth / 2);
-      const __t1 = vec3.mk();
+      const __t1 = V3.mk();
       for (let i = 0; i < halfNumFloorBoards; i++) {
         const z = i * floorBoardWidth + floorBoardWidth * 0.5;
         const fore = V(0, floorHeight, z);
@@ -696,16 +696,16 @@ export function createSpaceBarge(): SpaceBarge {
   {
     const rotate = quat.fromEuler(0, -Math.PI / 2, 0);
     _timberMesh.pos.forEach((v) => {
-      vec3.tQuat(v, rotate, v);
-      vec3.add(v, [0, -floorHeight, 0], v);
+      V3.tQuat(v, rotate, v);
+      V3.add(v, [0, -floorHeight, 0], v);
     });
 
     // TODO(@darzu): Z_UP: basis change. inline this above?
-    _timberMesh.pos.forEach((v) => vec3.tMat4(v, transformYUpModelIntoZUp, v));
+    _timberMesh.pos.forEach((v) => V3.tMat4(v, transformYUpModelIntoZUp, v));
 
     const rotate2 = quat.fromYawPitchRoll(Math.PI, 0, 0);
     _timberMesh.pos.forEach((v) => {
-      vec3.tQuat(v, rotate2, v);
+      V3.tQuat(v, rotate2, v);
     });
   }
 

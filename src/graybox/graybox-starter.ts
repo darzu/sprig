@@ -4,7 +4,7 @@ import { ENDESGA16 } from "../color/palettes.js";
 import { createGhost } from "../debug/ghost.js";
 import { createGizmoMesh } from "../debug/gizmos.js";
 import { EM } from "../ecs/entity-manager.js";
-import { V, quat, vec3 } from "../matrix/sprig-matrix.js";
+import { V, quat, V3 } from "../matrix/sprig-matrix.js";
 import { CubeMesh, HexMesh } from "../meshes/mesh-list.js";
 import { HEX_AABB } from "../meshes/primatives.js";
 import { MeDef } from "../net/components.js";

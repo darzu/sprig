@@ -7,7 +7,7 @@ import {
 import { DeadDef, DeletedDef } from "../../ecs/delete.js";
 import { EM, EntityW } from "../../ecs/entity-manager.js";
 import { Phase } from "../../ecs/sys-phase.js";
-import { vec3, vec4, mat4, V } from "../../matrix/sprig-matrix.js";
+import { V3, vec4, mat4, V } from "../../matrix/sprig-matrix.js";
 import { tempVec3 } from "../../matrix/temp-pool.js";
 import { CY, linearSamplerPtr } from "../gpu-registry.js";
 import { pointLightsPtr } from "../lights.js";
@@ -176,16 +176,16 @@ function updateStdRenderData(
 ): boolean {
   if (o.renderable.hidden) {
     // TODO(@darzu): hidden stuff is a bit wierd
-    mat4.fromScaling(vec3.ZEROS, o.renderDataStd.transform);
+    mat4.fromScaling(V3.ZEROS, o.renderDataStd.transform);
   }
 
   let tintChange = false;
   if (!o.renderable.hidden) {
     // color / tint
-    let prevTint = vec3.copy(tempVec3(), o.renderDataStd.tint);
-    if (ColorDef.isOn(o)) vec3.copy(o.renderDataStd.tint, o.color);
+    let prevTint = V3.copy(tempVec3(), o.renderDataStd.tint);
+    if (ColorDef.isOn(o)) V3.copy(o.renderDataStd.tint, o.color);
     if (TintsDef.isOn(o)) applyTints(o.tints, o.renderDataStd.tint);
-    if (vec3.sqrDist(prevTint, o.renderDataStd.tint) > 0.01) tintChange = true;
+    if (V3.sqrDist(prevTint, o.renderDataStd.tint) > 0.01) tintChange = true;
 
     // apha
     if (AlphaDef.isOn(o)) {

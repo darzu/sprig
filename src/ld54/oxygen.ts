@@ -3,7 +3,7 @@ import { createRef } from "../ecs/em-helpers.js";
 import { EM, EntityW } from "../ecs/entity-manager.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { InputsDef } from "../input/inputs.js";
-import { quat, vec3 } from "../matrix/sprig-matrix.js";
+import { quat, V3 } from "../matrix/sprig-matrix.js";
 import { LinearVelocityDef } from "../motion/velocity.js";
 import { PositionDef, RotationDef, ScaleDef } from "../physics/transform.js";
 import { RendererDef } from "../render/renderer-ecs.js";

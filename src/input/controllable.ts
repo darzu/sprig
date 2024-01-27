@@ -2,7 +2,7 @@ import { AnimateToDef } from "../animation/animate-to.js";
 import { CameraFollowDef } from "../camera/camera.js";
 import { CanvasDef } from "../render/canvas.js";
 import { EM } from "../ecs/entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { vec2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { InputsDef } from "./inputs.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { LinearVelocityDef } from "../motion/velocity.js";
@@ -56,7 +56,7 @@ export const ControllableDef = EM.defineComponent("controllable", () => {
 });
 
 EM.addEagerInit([ControllableDef], [], [], () => {
-  const steerVel = vec3.mk();
+  const steerVel = V3.mk();
 
   // dbgLogOnce(`adding controllableInput`);
 
@@ -81,7 +81,7 @@ EM.addEagerInit([ControllableDef], [], [], () => {
 
         // dbgLogOnce(`Controlling ${c.id}`);
 
-        vec3.zero(steerVel);
+        V3.zero(steerVel);
         const modes = c.controllable.modes;
 
         let speed = c.controllable.speed * res.time.dt;
@@ -111,7 +111,7 @@ EM.addEagerInit([ControllableDef], [], [], () => {
             c.linearVelocity[2] = c.controllable.jumpSpeed * res.time.dt;
 
         // apply our steering velocity
-        vec3.tQuat(steerVel, c.rotation, steerVel);
+        V3.tQuat(steerVel, c.rotation, steerVel);
         c.linearVelocity[0] = steerVel[0];
         c.linearVelocity[1] = steerVel[1];
         if (modes.canFly) c.linearVelocity[2] = steerVel[2];

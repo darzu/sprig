@@ -3,7 +3,7 @@ import { EM, Entity } from "../ecs/entity-manager.js";
 import { AllMeshSymbols, BLACK } from "../meshes/mesh-list.js";
 import { BulletDef } from "../cannons/bullet.js";
 import { GravityDef } from "../motion/gravity.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { vec2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { createIdxPool } from "../utils/idx-pool.js";
 import { jitter } from "../utils/math.js";
 import { AudioDef } from "../audio/audio.js";
@@ -107,8 +107,8 @@ const TRACK_MAX_BOARD_SEG_IDX = false;
 
 export const DBG_WOOD_DMG = false;
 
-const __temp1 = vec3.mk();
-const __temp2 = vec3.mk();
+const __temp1 = V3.mk();
+const __temp2 = V3.mk();
 
 export const WoodStateDef = EM.defineNonupdatableComponent(
   "woodState",
@@ -422,19 +422,19 @@ EM.addEagerInit([WoodStateDef], [], [], () => {
                 const splinter = pool.getNext();
                 if (RenderableDef.isOn(splinter))
                   splinter.renderable.hidden = false;
-                if (ColorDef.isOn(w)) vec3.copy(splinter.color, w.color);
-                vec3.add(splinter.color, quadColor, splinter.color);
-                const pos = getLineMid(vec3.mk(), seg.midLine);
-                vec3.tMat4(pos, w.world.transform, pos);
+                if (ColorDef.isOn(w)) V3.copy(splinter.color, w.color);
+                V3.add(splinter.color, quadColor, splinter.color);
+                const pos = getLineMid(V3.mk(), seg.midLine);
+                V3.tMat4(pos, w.world.transform, pos);
                 EM.set(splinter, PositionDef, pos);
                 const rot = getSegmentRotation(seg, false);
                 quat.mul(rot, w.world.rotation, rot); // TODO(@darzu): !VERIFY! this works
                 EM.set(splinter, RotationDef, rot);
-                const spin = randNormalVec3(vec3.mk());
-                const vel = vec3.clone(spin);
-                vec3.scale(spin, 0.01, spin);
+                const spin = randNormalVec3(V3.mk());
+                const vel = V3.clone(spin);
+                V3.scale(spin, 0.01, spin);
                 EM.set(splinter, AngularVelocityDef, spin);
-                vec3.scale(vel, 0.01, vel);
+                V3.scale(vel, 0.01, vel);
                 EM.set(splinter, LinearVelocityDef, spin);
                 EM.set(splinter, GravityDef, [0, 0, -3 * 0.00001]);
               }
@@ -566,19 +566,19 @@ EM.addEagerInit([WoodStateDef], [], [], () => {
 });
 
 function getSegmentRotation(seg: BoardSeg, top: boolean) {
-  let segNorm = vec3.mk();
+  let segNorm = V3.mk();
   let biggestArea2 = 0;
   for (let v of seg.areaNorms) {
-    const a = vec3.sqrLen(v);
+    const a = V3.sqrLen(v);
     if (a > biggestArea2) {
       biggestArea2 = a;
-      vec3.copy(segNorm, v);
+      V3.copy(segNorm, v);
     }
   }
 
-  const endNorm = vec3.copy(tempVec3(), seg.midLine.ray.dir);
+  const endNorm = V3.copy(tempVec3(), seg.midLine.ray.dir);
   if (top) {
-    vec3.neg(endNorm, endNorm);
+    V3.neg(endNorm, endNorm);
   }
 
   const rot = quat.create();
@@ -599,7 +599,7 @@ function removeSplinterEnd(splinterIdx: number, wood: WoodState) {
   const quadIdx = wood.splinterState.quadOffset + sIdx * _quadsPerSplinter;
 
   for (let i = 0; i < _trisPerSplinter; i++) {
-    vec3.zero(wood.mesh.tri[triIdx + i]);
+    V3.zero(wood.mesh.tri[triIdx + i]);
   }
   for (let i = 0; i < _quadsPerSplinter; i++) {
     vec4.zero(wood.mesh.quad[quadIdx + i]);
@@ -621,7 +621,7 @@ function addSplinterEnd(
 
   const W = seg.width;
   const D = seg.depth;
-  const pos = vec3.copy(tempVec3(), seg.midLine.ray.org);
+  const pos = V3.copy(tempVec3(), seg.midLine.ray.org);
   if (top) {
     getLineEnd(pos, seg.midLine);
   }
@@ -649,9 +649,9 @@ function addSplinterEnd(
       const p = b.mesh.pos[vi];
       for (let vi2 of loop) {
         const lp = wood.mesh.pos[vi2];
-        if (vec3.sqrDist(p, lp) < snapDistSqr) {
+        if (V3.sqrDist(p, lp) < snapDistSqr) {
           // console.log("snap!");
-          vec3.copy(p, lp);
+          V3.copy(p, lp);
           break;
         }
       }
@@ -681,14 +681,14 @@ function addSplinterEnd(
   // console.log(`copying to: ${vertIdx} ${triIdx} ${quadIdx}`);
 
   for (let i = 0; i < _vertsPerSplinter; i++) {
-    vec3.copy(wood.mesh.pos[vertIdx + i], splinterMesh.pos[i]);
+    V3.copy(wood.mesh.pos[vertIdx + i], splinterMesh.pos[i]);
   }
   for (let i = 0; i < _trisPerSplinter; i++) {
     splinterMesh.tri[i][0] += vertIdx;
     splinterMesh.tri[i][1] += vertIdx;
     splinterMesh.tri[i][2] += vertIdx;
-    vec3.copy(wood.mesh.tri[triIdx + i], splinterMesh.tri[i]);
-    vec3.copy(wood.mesh.colors[triColorStartIdx + triIdx + i], color);
+    V3.copy(wood.mesh.tri[triIdx + i], splinterMesh.tri[i]);
+    V3.copy(wood.mesh.colors[triColorStartIdx + triIdx + i], color);
   }
   for (let i = 0; i < _quadsPerSplinter; i++) {
     splinterMesh.quad[i][0] += vertIdx;
@@ -696,7 +696,7 @@ function addSplinterEnd(
     splinterMesh.quad[i][2] += vertIdx;
     splinterMesh.quad[i][3] += vertIdx;
     vec4.copy(wood.mesh.quad[quadIdx + i], splinterMesh.quad[i]);
-    vec3.copy(wood.mesh.colors[quadIdx + i], color);
+    V3.copy(wood.mesh.colors[quadIdx + i], color);
   }
 
   return sIdx;
@@ -709,7 +709,7 @@ function createSplinterEnd(
   W: number,
   D: number
 ) {
-  const pos = vec3.copy(tempVec3(), seg.midLine.ray.org);
+  const pos = V3.copy(tempVec3(), seg.midLine.ray.org);
   if (top) {
     getLineEnd(pos, seg.midLine);
   }
@@ -735,8 +735,8 @@ function createSplinterEnd(
       const p = b.mesh.pos[vi];
       for (let vi2 of loop) {
         const lp = boardMesh.pos[vi2];
-        if (vec3.sqrDist(p, lp) < snapDistSqr) {
-          vec3.copy(p, lp);
+        if (V3.sqrDist(p, lp) < snapDistSqr) {
+          V3.copy(p, lp);
           break;
         }
       }
@@ -748,8 +748,8 @@ function createSplinterEnd(
     b.addSplinteredEnd(b.mesh.pos.length, 5);
 
     // TODO(@darzu): triangle vs quad coloring doesn't work
-    b.mesh.quad.forEach((_) => b.mesh.colors.push(vec3.clone(BLACK)));
-    b.mesh.tri.forEach((_) => b.mesh.colors.push(vec3.clone(BLACK)));
+    b.mesh.quad.forEach((_) => b.mesh.colors.push(V3.clone(BLACK)));
+    b.mesh.tri.forEach((_) => b.mesh.colors.push(V3.clone(BLACK)));
   }
   const splinterMesh = normalizeMesh(_splinterMesh);
   EM.set(splinter, RenderableConstructDef, splinterMesh);
@@ -830,8 +830,8 @@ export function createTimberBuilder(mesh: RawMesh) {
 
     const v0 = V(0, 0, b.depth);
     const v1 = V(0, 0, -b.depth);
-    vec3.tMat4(v0, cursor, v0);
-    vec3.tMat4(v1, cursor, v1);
+    V3.tMat4(v0, cursor, v0);
+    V3.tMat4(v1, cursor, v1);
     mesh.pos.push(v0, v1);
 
     const v_tm = vi + 0;
@@ -874,14 +874,14 @@ export function createTimberBuilder(mesh: RawMesh) {
 
       // +D side
       const vtj = V(x, y, d);
-      vec3.tMat4(vtj, cursor, vtj);
+      V3.tMat4(vtj, cursor, vtj);
       const vtji = mesh.pos.length;
       mesh.pos.push(vtj);
       mesh.tri.push(V(v_tm, vtji, v_tlast));
 
       // -D side
       const vbj = V(x, y, -d);
-      vec3.tMat4(vbj, cursor, vbj);
+      V3.tMat4(vbj, cursor, vbj);
       mesh.pos.push(vbj);
       mesh.tri.push(V(v_tm + 1, v_blast, vtji + 1));
 
@@ -933,10 +933,10 @@ export function createTimberBuilder(mesh: RawMesh) {
     const v1 = V(b.width, 0, -b.depth);
     const v2 = V(-b.width, 0, -b.depth);
     const v3 = V(-b.width, 0, b.depth);
-    vec3.tMat4(v0, cursor, v0);
-    vec3.tMat4(v1, cursor, v1);
-    vec3.tMat4(v2, cursor, v2);
-    vec3.tMat4(v3, cursor, v3);
+    V3.tMat4(v0, cursor, v0);
+    V3.tMat4(v1, cursor, v1);
+    V3.tMat4(v2, cursor, v2);
+    V3.tMat4(v3, cursor, v3);
     mesh.pos.push(v0, v1, v2, v3);
   }
 }
@@ -951,7 +951,7 @@ type QI = number; // quad index
 export interface BoardSeg {
   localAABB: AABB;
   midLine: Line;
-  areaNorms: vec3[]; // TODO(@darzu): fixed size
+  areaNorms: V3[]; // TODO(@darzu): fixed size
   width: number;
   depth: number;
   // TODO(@darzu): establish convention e.g. top-left, top-right, etc.
@@ -998,10 +998,10 @@ export function reserveSplinterSpace(wood: WoodState, maxSplinters: number) {
   const quadOffset = wood.mesh.quad.length;
   const triOffset = wood.mesh.tri.length;
   range(maxSplinters * _vertsPerSplinter).forEach((_) =>
-    wood.mesh.pos.push(vec3.mk())
+    wood.mesh.pos.push(V3.mk())
   );
   range(maxSplinters * _trisPerSplinter).forEach((_) =>
-    wood.mesh.tri.push(vec3.mk())
+    wood.mesh.tri.push(V3.mk())
   );
   range(maxSplinters * _quadsPerSplinter).forEach((_) =>
     wood.mesh.quad.push(vec4.create())
@@ -1009,7 +1009,7 @@ export function reserveSplinterSpace(wood: WoodState, maxSplinters: number) {
   const newFaces = maxSplinters * (_quadsPerSplinter + _trisPerSplinter);
   range(newFaces).forEach((_) => {
     wood.mesh.surfaceIds!.push(wood.mesh.surfaceIds!.length);
-    wood.mesh.colors.push(vec3.clone(BLACK));
+    wood.mesh.colors.push(V3.clone(BLACK));
   });
 
   wood.splinterState = {
@@ -1055,7 +1055,7 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
   const vIsMaybeEnd = new Set<number>();
 
   // const newQuads: vec4[] = [];
-  // const newTris: vec3[] = [];
+  // const newTris: V3[] = [];
 
   // TODO(@darzu): use m.quad as end canidates! b/c we need their cw/ccw order
 
@@ -1184,8 +1184,8 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
       const nextMid = centroid(...[...nextLoop].map((vi) => m.pos[vi]));
       const mid = createLine(lastMid, nextMid);
       const areaNorms = segQis.map(getQiAreaNorm);
-      const len1 = vec3.dist(m.pos[lastLoop[1]], m.pos[lastLoop[0]]);
-      const len2 = vec3.dist(m.pos[lastLoop[3]], m.pos[lastLoop[0]]);
+      const len1 = V3.dist(m.pos[lastLoop[1]], m.pos[lastLoop[0]]);
+      const len2 = V3.dist(m.pos[lastLoop[3]], m.pos[lastLoop[0]]);
       const width = Math.max(len1, len2) * 0.5;
       const depth = Math.min(len1, len2) * 0.5;
       let seg: BoardSeg;
@@ -1195,9 +1195,9 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
         // TODO(@darzu): i hate doing this vec4->number[] conversion just to get map.. wth
         const ps = [...m.quad[qi]].map((vi) => m.pos[vi]);
         // NOTE: assumes segments are parallelograms
-        const ab = vec3.sub(ps[1], ps[0], __temp1);
-        const ac = vec3.sub(ps[3], ps[0], __temp2);
-        const areaNorm = vec3.cross(ab, ac, vec3.mk());
+        const ab = V3.sub(ps[1], ps[0], __temp1);
+        const ac = V3.sub(ps[3], ps[0], __temp2);
+        const areaNorm = V3.cross(ab, ac, V3.mk());
         return areaNorm;
       }
 
@@ -1273,8 +1273,8 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
   }
 
   // const newQuads: vec4[] = [];
-  // const newTri: vec3[] = [];
-  // const newColors: vec3[] = [];
+  // const newTri: V3[] = [];
+  // const newColors: V3[] = [];
   // const newSurfaceIds: number[] = [];
 
   // // TODO(@darzu): transfer quad data
@@ -1350,7 +1350,7 @@ export function resetWoodState(w: WoodState) {
         w.splinterState.maxNumSplinters * _trisPerSplinter;
       ti++
     ) {
-      vec3.zero(w.mesh.tri[ti]);
+      V3.zero(w.mesh.tri[ti]);
     }
   }
 }

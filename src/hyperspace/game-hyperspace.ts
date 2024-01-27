@@ -31,7 +31,7 @@ import {
   registerOceanUVFns,
 } from "../ocean/ocean.js";
 import { asyncTimeout } from "../utils/util.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { vec2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { AnimateToDef } from "../animation/animate-to.js";
 import {
   createSpawner,
@@ -59,23 +59,23 @@ import { registerRibSailSystems } from "./ribsail.js";
 
 function spawnRandomDarkStar(
   res: Resources<[typeof AllMeshesDef]>,
-  approxPosition: vec3,
-  color: vec3
+  approxPosition: V3,
+  color: V3
 ) {
   const orbitalAxis = V(
     Math.random() - 0.5,
     Math.random() - 0.5,
     Math.random() - 0.5
   );
-  vec3.norm(orbitalAxis, orbitalAxis);
+  V3.norm(orbitalAxis, orbitalAxis);
 
-  vec3.norm(orbitalAxis, orbitalAxis);
+  V3.norm(orbitalAxis, orbitalAxis);
 
   // TODO: this only works because the darkstar is orbiting the origin
-  const perpendicular = vec3.cross(approxPosition, orbitalAxis);
-  const starPosition = vec3.cross(orbitalAxis, perpendicular, perpendicular);
-  vec3.norm(starPosition, starPosition);
-  vec3.scale(starPosition, vec3.len(approxPosition), starPosition);
+  const perpendicular = V3.cross(approxPosition, orbitalAxis);
+  const starPosition = V3.cross(orbitalAxis, perpendicular, perpendicular);
+  V3.norm(starPosition, starPosition);
+  V3.scale(starPosition, V3.len(approxPosition), starPosition);
 
   return createDarkStarNow(res, starPosition, color, V(0, 0, 0), orbitalAxis);
 }
@@ -190,10 +190,10 @@ export async function initHyperspaceGame() {
       // }
 
       // const enemyEndPos = ocean.uvToPos(vec3.create(), enemyUVPos);
-      const enemyEndPos = vec3.mk();
+      const enemyEndPos = V3.mk();
       ocean.uvToGerstnerDispAndNorm(enemyEndPos, tempVec3(), enemyUVPos);
       // vec3.add(enemyEndPos, enemyEndPos, [0, 10, 0]);
-      const enemyStartPos = vec3.sub(enemyEndPos, [0, 20, 0], vec3.mk());
+      const enemyStartPos = V3.sub(enemyEndPos, [0, 20, 0], V3.mk());
 
       const towardsPlayerDir = vec2.sub(ship2.uvPos, enemyUVPos, vec2.mk());
       vec2.normalize(towardsPlayerDir, towardsPlayerDir);
@@ -211,14 +211,14 @@ export async function initHyperspaceGame() {
       Math.random() - 0.5,
       Math.random() - 0.5
     );
-    vec3.norm(orbitalAxis, orbitalAxis);
+    V3.norm(orbitalAxis, orbitalAxis);
 
     // TODO: this only works because the darkstar is orbiting the origin
     const approxPosition = V(-1000, 2000, -1000);
-    const perpendicular = vec3.cross(approxPosition, orbitalAxis);
-    const starPosition = vec3.cross(orbitalAxis, perpendicular, perpendicular);
-    vec3.norm(starPosition, starPosition);
-    vec3.scale(starPosition, vec3.len(approxPosition), starPosition);
+    const perpendicular = V3.cross(approxPosition, orbitalAxis);
+    const starPosition = V3.cross(orbitalAxis, perpendicular, perpendicular);
+    V3.norm(starPosition, starPosition);
+    V3.scale(starPosition, V3.len(approxPosition), starPosition);
 
     const star1 = spawnRandomDarkStar(
       res,

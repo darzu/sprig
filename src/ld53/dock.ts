@@ -11,7 +11,7 @@ import { ColliderDef } from "../physics/collider.js";
 import { PositionDef } from "../physics/transform.js";
 import { getAABBFromMesh, Mesh, validateMesh } from "../meshes/mesh.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
-import { quat, V, vec3 } from "../matrix/sprig-matrix.js";
+import { quat, V, V3 } from "../matrix/sprig-matrix.js";
 import {
   createEmptyMesh,
   createTimberBuilder,
@@ -88,7 +88,7 @@ export function createDockWood(): [Mesh, WoodState] {
 
   // recenter
   const size = getHalfsizeFromAABB(getAABBFromMesh(_timberMesh));
-  _timberMesh.pos.forEach((v) => vec3.sub(v, size, v));
+  _timberMesh.pos.forEach((v) => V3.sub(v, size, v));
 
   _timberMesh.surfaceIds = _timberMesh.colors.map((_, i) => i);
   const timberState = getBoardsFromMesh(_timberMesh);

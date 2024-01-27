@@ -1,5 +1,5 @@
 import { EM, Component, Entity, EntityW } from "../ecs/entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4, V, tV } from "../matrix/sprig-matrix.js";
+import { vec2, V3, vec4, quat, mat4, V, tV } from "../matrix/sprig-matrix.js";
 import { FinishedDef } from "../ecs/em-helpers.js";
 import { ColorDef } from "../color/color-ecs.js";
 import {
@@ -72,16 +72,16 @@ export const BulletConstructDef = EM.defineComponent(
   },
   (
     p,
-    loc?: vec3,
-    vel?: vec3,
-    angVel?: vec3,
+    loc?: V3,
+    vel?: V3,
+    angVel?: V3,
     team?: number,
     gravity?: number,
     health?: number
   ) => {
-    if (loc) vec3.copy(p.location, loc);
-    if (vel) vec3.copy(p.linearVelocity, vel);
-    if (angVel) vec3.copy(p.angularVelocity, angVel);
+    if (loc) V3.copy(p.location, loc);
+    if (vel) V3.copy(p.linearVelocity, vel);
+    if (angVel) V3.copy(p.angularVelocity, angVel);
     if (team !== undefined) p.team = team;
     if (gravity !== undefined) p.gravity = gravity;
     if (health !== undefined) p.health = health;
@@ -189,13 +189,13 @@ let _nextBulletIdx = 0;
 // TODO(@darzu): fireBullet has become quite bloated and has wierd parameters like bulletAxis
 export async function fireBullet(
   team: number,
-  location: vec3,
+  location: V3,
   rotation: quat,
   speed: number, // = 0.02,
   rotationSpeed: number, // = 0.02,
   gravity: number, // = 6
   health: number,
-  bulletAxis: vec3.InputT
+  bulletAxis: V3.InputT
 ) {
   {
     const music = EM.getResource(AudioDef);
@@ -224,15 +224,15 @@ export async function fireBullet(
   }
 
   // let bulletAxis = V(1, 0, 0);
-  const axis = vec3.tQuat(bulletAxis, rotation, vec3.tmp());
-  vec3.norm(axis, axis);
-  const linearVelocity = vec3.scale(axis, speed, vec3.mk());
-  const angularVelocity = vec3.scale(axis, rotationSpeed, vec3.mk());
+  const axis = V3.tQuat(bulletAxis, rotation, V3.tmp());
+  V3.norm(axis, axis);
+  const linearVelocity = V3.scale(axis, speed, V3.mk());
+  const angularVelocity = V3.scale(axis, rotationSpeed, V3.mk());
 
   assertDbg(e.bulletConstruct, `bulletConstruct missing on: ${e.id}`);
-  vec3.copy(e.bulletConstruct.location, location);
-  vec3.copy(e.bulletConstruct.linearVelocity, linearVelocity);
-  vec3.copy(e.bulletConstruct.angularVelocity, angularVelocity);
+  V3.copy(e.bulletConstruct.location, location);
+  V3.copy(e.bulletConstruct.linearVelocity, linearVelocity);
+  V3.copy(e.bulletConstruct.angularVelocity, angularVelocity);
   e.bulletConstruct.team = team;
   e.bulletConstruct.gravity = gravity;
   e.bulletConstruct.health = health;
@@ -308,24 +308,24 @@ export async function breakBullet(
   const parts = getNextBulletPartSet();
   for (let pe of parts) {
     if (!pe || !bullet || !bullet.world) continue;
-    vec3.copy(pe.position, bullet.world.position);
-    vec3.copy(pe.color, bullet.color);
+    V3.copy(pe.position, bullet.world.position);
+    V3.copy(pe.color, bullet.color);
     // const vel = vec3.clone(bullet.linearVelocity);
-    const vel = vec3.clone(bullet.parametric.vel);
+    const vel = V3.clone(bullet.parametric.vel);
     // vel[2] = -vel[2]; // assume we're at the end of a parabola
-    vec3.norm(vel, vel);
-    vec3.neg(vel, vel); // reflact back along path of travel
-    vec3.add(vel, randNormalVec3(tempVec3()), vel);
-    vec3.add(vel, [0, 0, +1], vel); // bias upward
-    vec3.norm(vel, vel);
-    vec3.scale(vel, 0.02, vel);
+    V3.norm(vel, vel);
+    V3.neg(vel, vel); // reflact back along path of travel
+    V3.add(vel, randNormalVec3(tempVec3()), vel);
+    V3.add(vel, [0, 0, +1], vel); // bias upward
+    V3.norm(vel, vel);
+    V3.scale(vel, 0.02, vel);
     EM.set(pe, LinearVelocityDef);
-    vec3.copy(pe.linearVelocity, vel);
+    V3.copy(pe.linearVelocity, vel);
     EM.set(pe, AngularVelocityDef);
-    vec3.copy(pe.angularVelocity, vel);
+    V3.copy(pe.angularVelocity, vel);
     // EM.set(pe, LifetimeDef, 2000);
     EM.set(pe, GravityDef);
-    vec3.copy(pe.gravity, [0, 0, -4 * 0.00001]);
+    V3.copy(pe.gravity, [0, 0, -4 * 0.00001]);
   }
 
   EM.set(bullet, DeadDef);
@@ -333,27 +333,27 @@ export async function breakBullet(
 
 // TODO(@darzu): simulateBullet shouldn't be needed any more since we use
 //    the analyitic parameteric equations in parametric-motion.ts
-const __simTemp1 = vec3.mk();
+const __simTemp1 = V3.mk();
 export function* simulateBullet(
-  pos: vec3,
+  pos: V3,
   rot: quat,
   speed: number,
   gravity: number,
   dt: number
-): Generator<vec3, never> {
+): Generator<V3, never> {
   let bulletAxis = tV(0, 0, -1);
-  vec3.tQuat(bulletAxis, rot, bulletAxis);
-  vec3.norm(bulletAxis, bulletAxis);
-  const linVel = vec3.scale(bulletAxis, speed, vec3.mk());
+  V3.tQuat(bulletAxis, rot, bulletAxis);
+  V3.norm(bulletAxis, bulletAxis);
+  const linVel = V3.scale(bulletAxis, speed, V3.mk());
   const grav = V(0, -gravity, 0);
 
   yield pos;
 
   while (true) {
     // gravity
-    vec3.add(linVel, vec3.scale(grav, dt, __simTemp1), linVel);
+    V3.add(linVel, V3.scale(grav, dt, __simTemp1), linVel);
     // velocity
-    vec3.add(pos, vec3.scale(linVel, dt, __simTemp1), pos);
+    V3.add(pos, V3.scale(linVel, dt, __simTemp1), pos);
 
     yield pos;
   }

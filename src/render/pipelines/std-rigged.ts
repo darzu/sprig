@@ -1,5 +1,5 @@
 import { EM } from "../../ecs/entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../../matrix/sprig-matrix.js";
+import { vec2, V3, vec4, quat, mat4, V } from "../../matrix/sprig-matrix.js";
 import { assert, assertDbg } from "../../utils/util.js";
 import { computeTriangleNormal } from "../../utils/utils-3d.js";
 import { randColor } from "../../utils/utils-game.js";
@@ -81,10 +81,10 @@ function createEmptyVertexTS(): VertexTS {
   return {
     jointIds: vec4.create(),
     jointWeights: vec4.create(),
-    position: vec3.mk(),
-    color: vec3.mk(),
+    position: V3.mk(),
+    color: V3.mk(),
     // tangent: m.tangents ? m.tangents[i] : [1.0, 0.0, 0.0],
-    normal: vec3.mk(),
+    normal: V3.mk(),
     uv: V(0, 0),
     surfaceId: 0,
   };

@@ -13,7 +13,7 @@ import { BallMesh } from "../meshes/mesh-list.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { assert } from "../utils/util.js";
 import { CameraComputedDef } from "../camera/camera.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { vec2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import {
   PhysicsResultsDef,
   WorldFrameDef,
@@ -87,23 +87,23 @@ EM.addLazyInit([BallMesh.def], [GlobalCursor3dDef], async (res) => {
       }
       if (nearestHit.dist < c.cursor3d.maxDistance) {
         cursorDistance = nearestHit.dist;
-        vec3.copy(c.color, [0, 1, 0]);
+        V3.copy(c.color, [0, 1, 0]);
 
         // remember what we hit
         c.cursor3d.hitId = nearestHit.id;
       } else {
-        vec3.copy(c.color, [0, 1, 1]);
+        V3.copy(c.color, [0, 1, 1]);
         c.cursor3d.hitId = 0;
       }
 
       // place the cursor
       // place the cursor
-      vec3.add(r.org, vec3.scale(r.dir, cursorDistance), c.position);
+      V3.add(r.org, V3.scale(r.dir, cursorDistance), c.position);
 
       // NOTE/HACK: since the cursor is updated after the render view is updated, we need
       //    to update it's world frame ourselves
       if (RendererWorldFrameDef.isOn(c)) {
-        vec3.copy(c.rendererWorldFrame.position, c.position);
+        V3.copy(c.rendererWorldFrame.position, c.position);
         updateFrameFromPosRotScale(c.rendererWorldFrame);
       }
     }

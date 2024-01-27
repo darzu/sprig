@@ -1,7 +1,7 @@
 import { ColorDef } from "../color/color-ecs.js";
 import { createRef, defineNetEntityHelper } from "../ecs/em-helpers.js";
 import { EM } from "../ecs/entity-manager.js";
-import { vec3, V } from "../matrix/sprig-matrix.js";
+import { V3, V } from "../matrix/sprig-matrix.js";
 import { InputsDef } from "../input/inputs.js";
 import { clamp } from "../utils/math.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
@@ -52,8 +52,8 @@ EM.registerSerializerPair(
 
 const SailColorDef = EM.defineComponent(
   "sailColor",
-  () => vec3.mk(),
-  (p, color?: vec3) => (color ? vec3.copy(p, color) : p)
+  () => V3.mk(),
+  (p, color?: V3) => (color ? V3.copy(p, color) : p)
 );
 
 // TODO: we need warnings if you forget to call the buildProps system!
@@ -97,7 +97,7 @@ export const { HypMastPropsDef, HypMastLocalDef, createHypMastNow } =
       EM.set(mast, RenderableConstructDef, res.allMeshes.mast.mesh);
       EM.set(mast, PhysicsParentDef, mast.hypMastProps.shipId);
       EM.set(mast, ColorDef, ENDESGA16.lightBrown);
-      vec3.scale(mast.color, 0.5, mast.color);
+      V3.scale(mast.color, 0.5, mast.color);
 
       // createRib(mast.id, BOOM_HEIGHT)
       // mast.hypMastLocal.boom1 = createSail();
@@ -256,7 +256,7 @@ export function registerHypersailSystems() {
           ship.hsShipProps.mast()!.hypMastLocal.sail2()!,
         ];
         for (let sail of sails) {
-          const star = stars.find((s) => vec3.equals(s.color, sail.sailColor));
+          const star = stars.find((s) => V3.equals(s.color, sail.sailColor));
           if (!star) {
             console.warn(
               `No matching star for sail with color ${vec3Dbg(sail.sailColor)}`
@@ -267,12 +267,12 @@ export function registerHypersailSystems() {
           //console.log(`Area of sail from star is ${area}`);
 
           const shipDirection = V(0, 0, -1);
-          vec3.tQuat(shipDirection, ship.world.rotation, shipDirection);
+          V3.tQuat(shipDirection, ship.world.rotation, shipDirection);
           const [force, area] = sailForceAndSignedArea(
             sail,
             star.world.position
           );
-          const accel = vec3.dot(shipDirection, force);
+          const accel = V3.dot(shipDirection, force);
 
           const realArea = Math.abs(
             getSailMeshArea(sail.renderable.meshHandle.mesh!.pos)
@@ -289,9 +289,9 @@ export function registerHypersailSystems() {
           //     accel / realArea
           //   }, realArea ${realArea}, accel ${accel}`
           // );
-          vec3.lerp(
+          V3.lerp(
             DEFAULT_SAIL_COLOR,
-            vec3.norm(star.color),
+            V3.norm(star.color),
             clamp((accel / realArea) * 5000, 0, 1),
             sail.color
           );

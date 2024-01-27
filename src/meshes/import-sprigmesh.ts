@@ -1,4 +1,4 @@
-import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { vec2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { RawMesh } from "./mesh.js";
 
 // TODO(@darzu): maybe never mind any of this? doesn't get much more compressed that .toFixed(2)'ing everything
@@ -32,7 +32,7 @@ export function importSprigMesh(smesh: SprigMesh): RawMesh {
   return res as RawMesh;
 }
 
-function serializeVecArray(f32s: vec3[]): string {
+function serializeVecArray(f32s: V3[]): string {
   const buf = new Float32Array(
     f32s.reduce((p, n) => [...p, ...n], [] as number[])
   );
@@ -46,12 +46,12 @@ function serializeBuf(buf: ArrayBufferLike): Base64String {
   return btoa(dataStr);
 }
 
-function deserializeVecArray(b64: string): vec3[] {
+function deserializeVecArray(b64: string): V3[] {
   const buf = deserializeBuf(b64);
   const f32s = new Float32Array(buf);
   if (f32s.length % 3 !== 0)
     throw `cannot deserialize float32 array into vec3s if it isnt a multiple of 3`;
-  const res: vec3[] = [];
+  const res: V3[] = [];
   for (let i = 0; i < f32s.length; i += 3) {
     res.push(V(f32s[i], f32s[i + 1], f32s[i + 2]));
   }

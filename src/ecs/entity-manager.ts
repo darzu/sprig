@@ -7,7 +7,7 @@ import {
   DBG_SYSTEM_ORDER,
   DBG_ENITITY_10017_POSITION_CHANGES,
 } from "../flags.js";
-import { resetTempMatrixBuffer, vec3 } from "../matrix/sprig-matrix.js";
+import { resetTempMatrixBuffer, V3 } from "../matrix/sprig-matrix.js";
 import { Serializer, Deserializer } from "../utils/serialize.js";
 import { getCallStack } from "../utils/util-no-import.js";
 import {
@@ -862,7 +862,7 @@ export class EntityManager {
           // TODO(@darzu): GENERALIZE THIS
           const player = this.entities.get(10017);
           if (player && "position" in player) {
-            const pos = vec3Dbg(player.position as vec3);
+            const pos = vec3Dbg(player.position as V3);
             if (dbgOnce(`${this._dbgChangesToEnt10017}-${pos}`)) {
               console.log(
                 `10017 pos ${pos} after ${s} on loop ${this.dbgLoops}`
@@ -1421,7 +1421,7 @@ export class EntityManager {
       // TODO(@darzu): GENERALIZE THIS
       const player = this.entities.get(10017);
       if (player && "position" in player) {
-        const pos = vec3Dbg(player.position as vec3);
+        const pos = vec3Dbg(player.position as V3);
         if (dbgOnce(`${this._dbgChangesToEnt10017}-${pos}`)) {
           console.log(
             `10017 pos ${pos} after 'entity promises' on loop ${this.dbgLoops}`
@@ -1613,7 +1613,7 @@ export class EntityManager {
       // TODO(@darzu): GENERALIZE THIS
       const player = this.entities.get(10017);
       if (player && "position" in player) {
-        const pos = vec3Dbg(player.position as vec3);
+        const pos = vec3Dbg(player.position as V3);
         if (dbgOnce(`${this._dbgChangesToEnt10017}-${pos}`)) {
           console.log(
             `10017 pos ${pos} after 'init fns' on loop ${this.dbgLoops}`

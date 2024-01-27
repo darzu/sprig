@@ -16,7 +16,7 @@ import {
   CyIdxBufferPtr,
   CyMeshPoolPtr,
 } from "./gpu-registry.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { vec2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { DEFAULT_MASK } from "./pipeline-masks.js";
 import { ComponentDef } from "../ecs/entity-manager.js";
 import { GPUBufferUsage } from "./webgpu-hacks.js";
@@ -159,7 +159,7 @@ let nextMeshId = 1;
 //   });
 //   return triData;
 
-//   function quadToTris(q: vec4): [vec3, vec3] {
+//   function quadToTris(q: vec4): [V3, V3] {
 //     return [
 //       [q[0], q[1], q[2]],
 //       [q[0], q[2], q[3]],

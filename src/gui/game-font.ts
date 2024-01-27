@@ -8,7 +8,7 @@ import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { dbg } from "../debug/debugger.js";
 import { EM, EntityW } from "../ecs/entity-manager.js";
-import { vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { ButtonDef, ButtonsStateDef } from "./button.js";
 import { initMeshEditor, MeshEditorDef } from "./mesh-editor.js";
 import { lineStuff } from "./path-editor.js";
@@ -116,7 +116,7 @@ export async function initFontEditor() {
   const sunlight = EM.new();
   EM.set(sunlight, PointLightDef);
   sunlight.pointLight.constant = 1.0;
-  vec3.copy(sunlight.pointLight.ambient, [0.8, 0.8, 0.8]);
+  V3.copy(sunlight.pointLight.ambient, [0.8, 0.8, 0.8]);
   EM.set(sunlight, PositionDef, V(10, 10, 100));
   // TODO(@darzu): weird, why does renderable need to be on here?
   EM.set(sunlight, RenderableConstructDef, res.allMeshes.ball.proto, false);
@@ -130,8 +130,8 @@ export async function initFontEditor() {
   );
   // panelMesh.colors[0] = [0.1, 0.3, 0.1];
   // panelMesh.colors[1] = [0.1, 0.1, 0.3];
-  panelMesh.colors[0] = vec3.clone(ENDESGA16.darkGreen);
-  panelMesh.colors[1] = vec3.clone(ENDESGA16.darkRed);
+  panelMesh.colors[0] = V3.clone(ENDESGA16.darkGreen);
+  panelMesh.colors[1] = V3.clone(ENDESGA16.darkRed);
   EM.set(panel, RenderableConstructDef, panelMesh);
   // EM.set(panel, ColorDef, ENDESGA16.red);
   EM.set(panel, PositionDef, V(0, 0, 0));
@@ -141,9 +141,9 @@ export async function initFontEditor() {
   if (DBG_3D) {
     const g = createGhost(res.allMeshes.ball.proto);
 
-    vec3.copy(g.position, [-21.83, -25.01, 21.79]);
+    V3.copy(g.position, [-21.83, -25.01, 21.79]);
     quat.copy(g.rotation, [0.0, 0.0, -0.31, 0.95]);
-    vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
+    V3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
     g.cameraFollow.yawOffset = 0.0;
     g.cameraFollow.pitchOffset = -0.685;
   }
@@ -242,7 +242,7 @@ export async function initFontEditor() {
 
       let cursorFracX = inputs.mousePos[0] / htmlCanvas.canvas.clientWidth;
       let cursorFracY = inputs.mousePos[1] / htmlCanvas.canvas.clientHeight;
-      const cursorWorldPos = vec3.tMat4(
+      const cursorWorldPos = V3.tMat4(
         [
           remap(cursorFracX, 0, 1, -1, 1),
           remap(cursorFracY, 0, 1, 1, -1), // screen is Y down, world is Y up

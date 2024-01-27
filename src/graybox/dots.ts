@@ -3,7 +3,7 @@
 
 import { defineResourceWithInit } from "../ecs/em-helpers.js";
 import { EM, Resources } from "../ecs/entity-manager.js";
-import { V, vec3 } from "../matrix/sprig-matrix.js";
+import { V, V3 } from "../matrix/sprig-matrix.js";
 import { CyArray } from "../render/data-webgpu.js";
 import {
   DotTS,
@@ -26,7 +26,7 @@ export interface DotsAlloc {
 
   queueUpdate: () => void;
   // TODO(@darzu): hmm could we use a TS type function to generate a set fn sig from a CyToTS ?
-  set: (i: number, pos: vec3.InputT, color: vec3.InputT, size: number) => void;
+  set: (i: number, pos: V3.InputT, color: V3.InputT, size: number) => void;
 }
 
 export const DotsDef = defineResourceWithInit(
@@ -60,14 +60,9 @@ export const DotsDef = defineResourceWithInit(
         dotGPUData.queueUpdates(data, _idx, 0, len);
       }
 
-      function set(
-        i: number,
-        pos: vec3.InputT,
-        color: vec3.InputT,
-        size: number
-      ) {
-        vec3.copy(data[i].pos, pos);
-        vec3.copy(data[i].color, color);
+      function set(i: number, pos: V3.InputT, color: V3.InputT, size: number) {
+        V3.copy(data[i].pos, pos);
+        V3.copy(data[i].color, color);
         data[i].size = size;
       }
 

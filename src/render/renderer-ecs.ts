@@ -1,6 +1,6 @@
 import { EM, Entity, EntityW } from "../ecs/entity-manager.js";
 import { CameraDef, CameraComputedDef } from "../camera/camera.js";
-import { vec3, quat, mat4 } from "../matrix/sprig-matrix.js";
+import { V3, quat, mat4 } from "../matrix/sprig-matrix.js";
 import {
   Frame,
   TransformDef,
@@ -295,7 +295,7 @@ EM.addEagerInit([RenderableConstructDef], [RendererDef], [], () => {
       // update position
       const pointLights = EM.filterEntities([PointLightDef, WorldFrameDef]).map(
         (e) => {
-          vec3.copy(e.pointLight.position, e.world.position);
+          V3.copy(e.pointLight.position, e.world.position);
           return e.pointLight;
         }
       );

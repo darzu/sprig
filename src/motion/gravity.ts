@@ -1,13 +1,13 @@
 import { EM } from "../ecs/entity-manager.js";
-import { vec3 } from "../matrix/sprig-matrix.js";
+import { V3 } from "../matrix/sprig-matrix.js";
 import { LinearVelocityDef } from "./velocity.js";
 import { TimeDef } from "../time/time.js";
 import { Phase } from "../ecs/sys-phase.js";
 
 export const GravityDef = EM.defineComponent(
   "gravity",
-  () => vec3.mk(),
-  (p, gravity?: vec3.InputT) => (gravity ? vec3.copy(p, gravity) : p)
+  () => V3.mk(),
+  (p, gravity?: V3.InputT) => (gravity ? V3.copy(p, gravity) : p)
 );
 
 EM.addSystem(
@@ -16,10 +16,10 @@ EM.addSystem(
   [GravityDef, LinearVelocityDef],
   [TimeDef],
   (objs, res) => {
-    const t = vec3.tmp();
+    const t = V3.tmp();
     for (let b of objs) {
-      vec3.scale(b.gravity, res.time.dt, t);
-      vec3.add(b.linearVelocity, t, b.linearVelocity);
+      V3.scale(b.gravity, res.time.dt, t);
+      V3.add(b.linearVelocity, t, b.linearVelocity);
     }
   }
 );

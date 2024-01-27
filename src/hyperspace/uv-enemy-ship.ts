@@ -1,6 +1,6 @@
 import { EM, Entity, EntityW, Component } from "../ecs/entity-manager.js";
 import { TimeDef } from "../time/time.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { vec2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { jitter } from "../utils/math.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import {
@@ -49,7 +49,7 @@ export type EnemyCrew = Component<typeof EnemyCrewDef>;
 export function createEnemyCrew(
   allMeshes: AllMeshes,
   parent: number,
-  pos: vec3
+  pos: V3
 ): EntityW<[typeof EnemyCrewDef]> {
   const e = EM.new();
   EM.set(e, EnemyCrewDef);
@@ -179,7 +179,7 @@ export const { EnemyShipPropsDef, EnemyShipLocalDef, createEnemyShip } =
           EM.ensureComponent(enemy.enemyCrew.leftLegId, LifetimeDef, 4000);
           EM.ensureComponent(enemy.enemyCrew.rightLegId, LifetimeDef, 4000);
           EM.removeComponent(enemy.id, PhysicsParentDef);
-          vec3.copy(enemy.position, enemy.world.position);
+          V3.copy(enemy.position, enemy.world.position);
           quat.copy(enemy.rotation, enemy.world.rotation);
           EM.set(enemy, LinearVelocityDef, V(0, -0.002, 0));
         }
@@ -216,7 +216,7 @@ export const { EnemyShipPropsDef, EnemyShipLocalDef, createEnemyShip } =
     },
   });
 
-export const ENEMY_SHIP_COLOR: vec3 = V(0.2, 0.1, 0.05);
+export const ENEMY_SHIP_COLOR: V3 = V(0.2, 0.1, 0.05);
 
 export const raiseBreakEnemyShip = eventWizard(
   "break-enemyShip",
@@ -288,7 +288,7 @@ export function registerEnemyShipSystems() {
               0.02,
               6 * 0.00001,
               10,
-              vec3.FWD
+              V3.FWD
             );
           }
         }
@@ -341,30 +341,30 @@ export function breakEnemyShip(
     EM.set(pe, RenderableConstructDef, part.proto);
     EM.set(pe, ColorDef, ENEMY_SHIP_COLOR);
     EM.set(pe, RotationDef, quat.clone(enemyShip.rotation));
-    EM.set(pe, PositionDef, vec3.clone(enemyShip.position));
+    EM.set(pe, PositionDef, V3.clone(enemyShip.position));
     // EM.set(pe, ColliderDef, {
     //   shape: "AABB",
     //   solid: false,
     //   aabb: part.aabb,
     // });
-    const com = aabbCenter(vec3.mk(), part.aabb);
-    vec3.tQuat(com, enemyShip.rotation, com);
+    const com = aabbCenter(V3.mk(), part.aabb);
+    V3.tQuat(com, enemyShip.rotation, com);
     // vec3.add(com, com, enemyShip.position);
     // vec3.transformQuat(com, com, enemyShip.rotation);
     const vel = com;
     // const vel = vec3.sub(vec3.create(), com, enemyShip.position);
     // const vel = vec3.sub(vec3.create(), com, enemyShip.position);
-    vec3.norm(vel, vel);
-    vec3.add(vel, [0, -0.6, 0], vel);
-    vec3.scale(vel, 0.005, vel);
+    V3.norm(vel, vel);
+    V3.add(vel, [0, -0.6, 0], vel);
+    V3.scale(vel, 0.005, vel);
     EM.set(pe, LinearVelocityDef, vel);
     const spin = V(
       Math.random() - 0.5,
       Math.random() - 0.5,
       Math.random() - 0.5
     );
-    vec3.norm(spin, spin);
-    vec3.scale(spin, 0.001, spin);
+    V3.norm(spin, spin);
+    V3.scale(spin, 0.001, spin);
     EM.set(pe, AngularVelocityDef, spin);
     EM.set(pe, LifetimeDef, 2000);
   }

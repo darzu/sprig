@@ -5,7 +5,7 @@
 // Import .obj files into sprig format
 // https://people.cs.clemson.edu/~dhouse/courses/405/docs/brief-obj-file-format.html
 // http://paulbourke.net/dataformats/obj/
-import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { vec2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { RawMesh } from "./mesh.js";
 import { assert, never } from "../utils/util.js";
 import { idPair, IdPair, isString } from "../utils/util.js";
@@ -30,28 +30,28 @@ export function isParseError(m: any | ParseError): m is ParseError {
 }
 
 function parseVec(p: string[], len: 2): vec2 | ParseError;
-function parseVec(p: string[], len: 3): vec3 | ParseError;
-function parseVec(p: string[], len: number): vec2 | vec3 | ParseError {
+function parseVec(p: string[], len: 3): V3 | ParseError;
+function parseVec(p: string[], len: number): vec2 | V3 | ParseError {
   const nums = p.map((s) => parseFloat(s));
   if (nums.some((n) => isNaN(n) || !isFinite(n)))
     return `invalid vector-${len} format: ${p.join(" ")}`;
   if (nums.length !== len)
     return `invalid vector-${len} format: ${p.join(" ")}`;
   if (len === 2) return vec2.clone(nums as [number, number]);
-  else if (len === 3) return vec3.clone(nums as [number, number, number]);
+  else if (len === 3) return V3.clone(nums as [number, number, number]);
   else assert(false);
 }
 
-function parseFaceVert(s: string): vec3 | ParseError {
+function parseFaceVert(s: string): V3 | ParseError {
   // parse v1/t1/n1 into [v1, t1, n1]
   const parts = s.split("/");
   if (parts.length !== 3) return `invalid face vertex: ${s}`;
   return V(parseFloat(parts[0]), parseFloat(parts[1]), parseFloat(parts[2]));
 }
-function parseFace(p: string[]): vec3[] | ParseError {
+function parseFace(p: string[]): V3[] | ParseError {
   const verts = p.map((s) => parseFaceVert(s));
   for (let v of verts) if (isParseError(v)) return v;
-  return verts as vec3[];
+  return verts as V3[];
 }
 
 function parseLineVert(s: string): vec2 | ParseError {
@@ -100,10 +100,10 @@ export function exportObj(m: RawMesh, iOff: number = 0): string {
 const FLIP_FACES = false;
 export function importObj(obj: string): RawMesh[] | ParseError {
   // TODO(@darzu): implement a streaming parser for better perf
-  let pos: vec3[] = [];
-  let tri: vec3[] = [];
+  let pos: V3[] = [];
+  let tri: V3[] = [];
   let quad: vec4[] = [];
-  let colors: vec3[] = [];
+  let colors: V3[] = [];
   // TODO(@darzu): compute lines
   let lines: vec2[] = [];
   let seenLines: Set<IdPair> = new Set();
@@ -189,8 +189,8 @@ export function importObj(obj: string): RawMesh[] | ParseError {
       } else if (inds.length === 4) {
         // quad
         // // assuming clockwise, then we want 0,1,3 and 1,2,3
-        // const tri1: vec3 = [inds[0], inds[1], inds[3]];
-        // const tri2: vec3 = [inds[1], inds[2], inds[3]];
+        // const tri1: V3 = [inds[0], inds[1], inds[3]];
+        // const tri2: V3 = [inds[1], inds[2], inds[3]];
         if (FLIP_FACES) {
           // tri.push(reverse(tri1));
           // tri.push(reverse(tri2));
@@ -253,7 +253,7 @@ export function importObj(obj: string): RawMesh[] | ParseError {
   return meshes;
 
   function checkIndices(
-    inds: vec3 | number[],
+    inds: V3 | number[],
     maxInd: number
   ): ParseError | null {
     for (let vi of inds)
@@ -275,7 +275,7 @@ export function importObj(obj: string): RawMesh[] | ParseError {
       let minII = -1;
       nextInds.forEach((i1, i1i) => {
         const p1 = pos[i1];
-        const d = vec3.sqrDist(p0, p1);
+        const d = V3.sqrDist(p0, p1);
         if (d < minD) {
           minD = d;
           minII = i1i;

@@ -1,5 +1,5 @@
 import { EM, Component, Resource } from "../ecs/entity-manager.js";
-import { mat4, quat, vec4, vec2, vec3 } from "../matrix/sprig-matrix.js";
+import { mat4, quat, vec4, vec2, V3 } from "../matrix/sprig-matrix.js";
 import { V } from "../matrix/sprig-matrix.js";
 import { assert } from "../utils/util.js";
 import { normalizeVec2s, computeTriangleNormal } from "../utils/utils-3d.js";
@@ -299,21 +299,21 @@ export const OceanMesh = XY.registerMesh({
     // purposes?
 
     //set tangents
-    m.tangents = m.pos.map(() => vec3.mk());
-    m.normals = m.pos.map(() => vec3.mk());
+    m.tangents = m.pos.map(() => V3.mk());
+    m.normals = m.pos.map(() => V3.mk());
     for (let xIndex = 0; xIndex < grid.length; xIndex++) {
       for (let yIndex = 0; yIndex < grid[0].length; yIndex++) {
-        let normal: vec3;
-        let tangent: vec3;
+        let normal: V3;
+        let tangent: V3;
         if (xIndex + 1 < grid.length && yIndex + 1 < grid[0].length) {
           const pos = m.pos[grid[xIndex][yIndex]];
           const posNX = m.pos[grid[xIndex + 1][yIndex]];
           const posNY = m.pos[grid[xIndex][yIndex + 1]];
 
-          normal = computeTriangleNormal(pos, posNX, posNY, vec3.mk());
+          normal = computeTriangleNormal(pos, posNX, posNY, V3.mk());
 
-          tangent = vec3.sub(posNX, pos, m.tangents[grid[xIndex][yIndex]]);
-          vec3.norm(tangent, tangent);
+          tangent = V3.sub(posNX, pos, m.tangents[grid[xIndex][yIndex]]);
+          V3.norm(tangent, tangent);
         } else if (xIndex + 1 >= grid.length) {
           normal = m.normals[grid[xIndex - 1][yIndex]];
           tangent = m.tangents[grid[xIndex - 1][yIndex]];
@@ -323,8 +323,8 @@ export const OceanMesh = XY.registerMesh({
         } else {
           assert(false);
         }
-        vec3.copy(m.normals[grid[xIndex][yIndex]], normal);
-        vec3.copy(m.tangents[grid[xIndex][yIndex]], tangent);
+        V3.copy(m.normals[grid[xIndex][yIndex]], normal);
+        V3.copy(m.tangents[grid[xIndex][yIndex]], tangent);
       }
     }
 
@@ -361,7 +361,7 @@ export const OceanMesh = XY.registerMesh({
       const nY = y + dir[1];
       if (nX < 0 || xLen <= nX || nY < 0 || yLen <= nY) return;
       const nVi = grid[nX][nY];
-      const delta = vec3.dist(m.pos[vi], m.pos[nVi]);
+      const delta = V3.dist(m.pos[vi], m.pos[nVi]);
       const newDist: vec2 = vec2.clone([
         currDist[0] + dir[0] * delta,
         currDist[1] + dir[1] * delta,
@@ -403,7 +403,7 @@ export const ShipBrokenMesh = XY.registerMesh({
   transformBasis: transformYUpModelIntoZUp,
   modify: (m) => {
     m.lines = [];
-    m.pos = m.pos.map((p) => vec3.sub(p, SHIP_OFFSET, vec3.mk()));
+    m.pos = m.pos.map((p) => V3.sub(p, SHIP_OFFSET, V3.mk()));
     scaleMesh(m, 3);
     return m;
   },

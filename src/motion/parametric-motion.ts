@@ -1,5 +1,5 @@
 import { Component, EM } from "../ecs/entity-manager.js";
-import { vec3, V, vec2, tV, InputT, quat } from "../matrix/sprig-matrix.js";
+import { V3, V, vec2, tV, InputT, quat } from "../matrix/sprig-matrix.js";
 import { TimeDef } from "../time/time.js";
 import { PositionDef } from "../physics/transform.js";
 import { assert } from "../utils/util.js";
@@ -9,9 +9,9 @@ import { Path } from "../utils/spline.js";
 
 // TODO(@darzu): reconcile with stone tower prediction code!!
 export type Parametric = {
-  pos: vec3;
-  vel: vec3;
-  accel: vec3;
+  pos: V3;
+  vel: V3;
+  accel: V3;
   time: number;
 };
 
@@ -39,9 +39,9 @@ export const ParametricDef = EM.defineComponent(
 // export type Parametric = Component<typeof ParametricDef>;
 
 export function copyParamateric(out: Parametric, p: InputT<Parametric>) {
-  vec3.copy(out.pos, p.pos);
-  vec3.copy(out.vel, p.vel);
-  vec3.copy(out.accel, p.accel);
+  V3.copy(out.pos, p.pos);
+  V3.copy(out.vel, p.vel);
+  V3.copy(out.accel, p.accel);
   out.time = p.time;
   return out;
 }
@@ -61,11 +61,11 @@ export function createPathFromParameteric(
   // TODO(@darzu): there's probably a more clever way to get UP. We know tangent/fwd,
   //    perpendicular to that is a disk of directions. sub(the prev & next points avg loc on that
   //    plane, this points loc on that plane)
-  const up = vec3.UP;
+  const up = V3.UP;
   for (let i = 1; i < out.length - 1; i++) {
     const prev = out[i - 1].pos;
     const next = out[i + 1].pos;
-    const fwd = vec3.sub(next, prev);
+    const fwd = V3.sub(next, prev);
     quat.fromForwardAndUpish(fwd, up, out[i].rot);
   }
   // end rotations
@@ -98,13 +98,13 @@ EM.addEagerInit([ParametricDef], [], [], () => {
 
 // NOTE: assumes no air resistance
 export function projectilePosition(
-  pos: vec3.InputT,
-  vel: vec3.InputT,
-  accel: vec3.InputT,
+  pos: V3.InputT,
+  vel: V3.InputT,
+  accel: V3.InputT,
   t: number,
-  out?: vec3
-): vec3 {
-  out = out ?? vec3.tmp();
+  out?: V3
+): V3 {
+  out = out ?? V3.tmp();
   out[0] = projectilePosition1D(pos[0], vel[0], accel[0], t);
   out[1] = projectilePosition1D(pos[1], vel[1], accel[1], t);
   out[2] = projectilePosition1D(pos[2], vel[2], accel[2], t);
@@ -222,12 +222,12 @@ export function mkProjectileAngleFromRangeFn(
 
 // TODO(@darzu): IMPL
 // export function bulletRangeToAngle(
-//   initPos: vec3,
+//   initPos: V3,
 //   // TODO(@darzu): use velocity vector again so we can work in 3D?
 //   initVel: number,
-//   grav: vec3,
+//   grav: V3,
 //   range: number,
-//   out?: vec3
+//   out?: V3
 // ): number {
 //   // range = initPos[0] + vel[0] * t + grav[0] * t * t;
 //   // 0 = initPos[1] + vel[1] * t + grav[1] * t * t;

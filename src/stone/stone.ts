@@ -40,7 +40,7 @@ import {
   RenderableDef,
   RendererDef,
 } from "../render/renderer-ecs.js";
-import { mat4, tV, V, vec3, quat } from "../matrix/sprig-matrix.js";
+import { mat4, tV, V, V3, quat } from "../matrix/sprig-matrix.js";
 import { TimeDef } from "../time/time.js";
 import { assert } from "../utils/util.js";
 import { vec3Dbg } from "../utils/utils-3d.js";
@@ -64,8 +64,8 @@ export interface Brick {
   // track whether this brick has been destroyed
   knockedOut: boolean;
   health: number;
-  pos: vec3[];
-  color: vec3;
+  pos: V3[];
+  color: V3;
 }
 
 export interface BrickRow {
@@ -132,12 +132,12 @@ export const StoneTowerDef = EM.defineNonupdatableComponent(
 
 function knockOutBrickAtIndex(stone: StoneState, index: number) {
   for (let i = 0; i < 8; i++) {
-    vec3.set(0, 0, 0, stone.mesh.pos[index + i]);
+    V3.set(0, 0, 0, stone.mesh.pos[index + i]);
   }
 }
 
-let towardsAttractorTmp = vec3.mk();
-let testAABBTmp = vec3.mk();
+let towardsAttractorTmp = V3.mk();
+let testAABBTmp = V3.mk();
 
 function shrinkBrickAtIndex(
   stone: StoneState,
@@ -176,19 +176,15 @@ function shrinkBrickAtIndex(
       console.error("should never happen");
     }
     if (pointInAABB(aabb, attracted)) {
-      let towardsAttractor = vec3.sub(
-        attractor,
-        attracted,
-        towardsAttractorTmp
-      );
+      let towardsAttractor = V3.sub(attractor, attracted, towardsAttractorTmp);
       let min = 0;
       let max = 0.8; // don't want to shrink bricks too much
       if (
         pointInAABB(
           aabb,
-          vec3.add(
+          V3.add(
             attracted,
-            vec3.scale(towardsAttractor, max, testAABBTmp),
+            V3.scale(towardsAttractor, max, testAABBTmp),
             testAABBTmp
           )
         )
@@ -205,9 +201,9 @@ function shrinkBrickAtIndex(
         if (
           pointInAABB(
             aabb,
-            vec3.add(
+            V3.add(
               attracted,
-              vec3.scale(towardsAttractor, half, testAABBTmp),
+              V3.scale(towardsAttractor, half, testAABBTmp),
               testAABBTmp
             )
           )
@@ -218,7 +214,7 @@ function shrinkBrickAtIndex(
         }
       }
       //console.log(`done with iterations, max is ${max}`);
-      vec3.add(attracted, vec3.scale(towardsAttractor, max), attracted);
+      V3.add(attracted, V3.scale(towardsAttractor, max), attracted);
     }
   }
   return true;
@@ -278,8 +274,8 @@ function knockOutBricksByBullet(
             const flyingBrick = bricks.spawn();
             flyingBrick.physicsParent.id = tower.id;
             //console.log(brick.pos[0]);
-            vec3.copy(flyingBrick.position, brick.pos[0]);
-            vec3.copy(flyingBrick.color, brick.color);
+            V3.copy(flyingBrick.position, brick.pos[0]);
+            V3.copy(flyingBrick.color, brick.color);
           }
         }
       }
@@ -292,7 +288,7 @@ function restoreBrick(tower: Tower, brick: Brick): boolean {
   brick.health = startingBrickHealth;
   if (brick.knockedOut) {
     for (let i = 0; i < 8; i++) {
-      vec3.copy(tower.stone.mesh.pos[brick.index + i], brick.pos[i]);
+      V3.copy(tower.stone.mesh.pos[brick.index + i], brick.pos[i]);
     }
     brick.knockedOut = false;
     return true;
@@ -349,12 +345,12 @@ function createTowerState(): StoneState {
   const brickHeight = height / rows;
 
   const cursor = mat4.create();
-  function applyCursor(v: vec3, distort: boolean = false): vec3 {
-    vec3.tMat4(v, cursor, v);
+  function applyCursor(v: V3, distort: boolean = false): V3 {
+    V3.tMat4(v, cursor, v);
     // X is width, Y is height, Z is depth
     // TODO(@darzu): Z_UP: change basis: to X is width, Y is depth, Z is height
     if (distort)
-      vec3.add(
+      V3.add(
         v,
         [
           jitter(approxBrickWidth / 10),
@@ -371,9 +367,9 @@ function createTowerState(): StoneState {
     const index = mesh.pos.length;
     const aabb = createAABB();
     // base
-    const pos: vec3[] = [];
-    function addPos(p: vec3) {
-      pos.push(vec3.clone(p));
+    const pos: V3[] = [];
+    function addPos(p: V3) {
+      pos.push(V3.clone(p));
       mesh.pos.push(p);
       updateAABBWithPoint(aabb, p);
     }
@@ -404,7 +400,7 @@ function createTowerState(): StoneState {
     //
     const brightness = Math.random() * 0.05;
     const color = V(brightness, brightness, brightness);
-    vec3.add(color, baseColor, color);
+    V3.add(color, baseColor, color);
     for (let i = 0; i < 6; i++) {
       mesh.colors.push(color);
     }
@@ -481,7 +477,7 @@ function createTowerState(): StoneState {
 
   {
     // TODO(@darzu): Z_UP: inline this above
-    state.mesh.pos.forEach((v) => vec3.tMat4(v, transformYUpModelIntoZUp, v));
+    state.mesh.pos.forEach((v) => V3.tMat4(v, transformYUpModelIntoZUp, v));
     transformAABB(state.aabb, transformYUpModelIntoZUp);
   }
 
@@ -506,7 +502,7 @@ EM.addLazyInit([RendererDef], [TowerPoolDef], (res) => {
       EM.set(cannon, RotationDef);
       EM.set(cannon, PhysicsParentDef, tower.id);
       EM.set(cannon, WorldFrameDef);
-      vec3.set(baseRadius - 2, 0, height * 0.7, cannon.position);
+      V3.set(baseRadius - 2, 0, height * 0.7, cannon.position);
 
       const stone = createTowerState();
 
@@ -624,20 +620,20 @@ EM.addLazyInit([RendererDef], [FlyingBrickPoolDef], (res) => {
       quat.rotateY(e.rotation, Math.PI * Math.random(), e.rotation);
       quat.rotateZ(e.rotation, Math.PI * Math.random(), e.rotation);
 
-      vec3.set(
+      V3.set(
         Math.random() - 0.5,
         Math.random() - 0.5,
         Math.random() - 0.5,
         e.angularVelocity
       );
-      vec3.scale(e.angularVelocity, 0.01, e.angularVelocity);
-      vec3.set(
+      V3.scale(e.angularVelocity, 0.01, e.angularVelocity);
+      V3.set(
         Math.random() - 0.5,
         Math.random() - 0.5,
         Math.random() - 0.5,
         e.linearVelocity
       );
-      vec3.scale(e.linearVelocity, 0.1, e.linearVelocity);
+      V3.scale(e.linearVelocity, 0.1, e.linearVelocity);
 
       e.lifetime.startMs = 8000;
       e.lifetime.ms = e.lifetime.startMs;
@@ -666,7 +662,7 @@ EM.addSystem(
     })
 );
 
-const __previousPartyPos = vec3.mk();
+const __previousPartyPos = V3.mk();
 let __prevTime = 0;
 
 const MAX_THETA = Math.PI / 2 - Math.PI / 16;
@@ -680,16 +676,16 @@ const MISS_PROBABILITY = 0.25;
 const MAX_RANGE = 300;
 
 function getTargetMissOrHitPosition(
-  targetPos: vec3,
-  targetDir: vec3,
+  targetPos: V3,
+  targetDir: V3,
   missed: boolean,
-  out?: vec3
-): vec3 {
-  // return vec3.copy(out ?? vec3.tmp(), targetPos);
+  out?: V3
+): V3 {
+  // return vec3.copy(out ?? V3.tmp(), targetPos);
 
-  const UP: vec3.InputT = [0, 0, 1];
-  let tFwd = vec3.copy(vec3.tmp(), targetDir);
-  let tRight = vec3.cross(targetDir, UP);
+  const UP: V3.InputT = [0, 0, 1];
+  let tFwd = V3.copy(V3.tmp(), targetDir);
+  let tRight = V3.cross(targetDir, UP);
 
   // console.log(
   //   `targetDir: ${vec3Dbg(targetDir)}, tFwd: ${vec3Dbg(
@@ -713,12 +709,12 @@ function getTargetMissOrHitPosition(
       fwdMul *= -1;
     }
 
-    vec3.scale(
+    V3.scale(
       tFwd,
       fwdMul * (Math.random() * MISS_BY_MAX + 0.5 * MISS_TARGET_LENGTH),
       tFwd
     );
-    vec3.scale(
+    V3.scale(
       tRight,
       rightMul * (Math.random() * MISS_BY_MAX + 0.5 * MISS_TARGET_WIDTH),
       tRight
@@ -727,14 +723,14 @@ function getTargetMissOrHitPosition(
     // TODO: why do we move missed shots up?
     tRight[2] += 5;
   } else {
-    vec3.scale(tFwd, (Math.random() - 0.5) * TARGET_LENGTH, tFwd);
-    vec3.scale(tRight, (Math.random() - 0.5) * TARGET_WIDTH, tRight);
+    V3.scale(tFwd, (Math.random() - 0.5) * TARGET_LENGTH, tFwd);
+    V3.scale(tRight, (Math.random() - 0.5) * TARGET_WIDTH, tRight);
   }
 
-  const target = vec3.add(
+  const target = V3.add(
     targetPos,
-    vec3.add(tFwd, tRight, tRight),
-    out ?? vec3.tmp()
+    V3.add(tFwd, tRight, tRight),
+    out ?? V3.tmp()
   );
 
   return target;
@@ -742,9 +738,9 @@ function getTargetMissOrHitPosition(
 
 // TODO(@darzu): extract!!
 function getFireDirection(
-  sourcePos: vec3.InputT,
-  targetPos: vec3.InputT,
-  targetVel: vec3.InputT,
+  sourcePos: V3.InputT,
+  targetPos: V3.InputT,
+  targetVel: V3.InputT,
   projectileSpeed: number
 ): quat | undefined {
   // NOTE: cannon forward is +X
@@ -753,7 +749,7 @@ function getFireDirection(
   const g = GRAVITY;
 
   // calculate initial distance
-  const d0 = vec3.dist(
+  const d0 = V3.dist(
     [sourcePos[0], sourcePos[1], 0],
     [targetPos[0], targetPos[1], 0]
   );
@@ -769,13 +765,13 @@ function getFireDirection(
   );
 
   // calculate delta between source and target
-  const delta = vec3.sub(leadPos, sourcePos);
+  const delta = V3.sub(leadPos, sourcePos);
 
   // calculate yaw
   const yaw = -Math.atan2(delta[1], delta[0]);
 
   // calculate horizontal distance to target
-  const d = vec3.len([delta[0], delta[1], 0]);
+  const d = V3.len([delta[0], delta[1], 0]);
 
   // vertical distance to target
   const h = delta[2];
@@ -843,14 +839,14 @@ EM.addSystem(
       }
 
       // are we within range?
-      const dist = vec3.dist(tower.world.position, res.party.pos);
+      const dist = V3.dist(tower.world.position, res.party.pos);
       if (MAX_RANGE < dist) {
         continue;
       }
 
       // calc target velocity
-      const targetVel = vec3.scale(
-        vec3.sub(res.party.pos, __previousPartyPos),
+      const targetVel = V3.scale(
+        V3.sub(res.party.pos, __previousPartyPos),
         1 / (res.time.time - __prevTime)
       );
 
@@ -867,7 +863,7 @@ EM.addSystem(
       // debugging
       if (DBG_CANNONS)
         drawBall(
-          vec3.clone(aimPos),
+          V3.clone(aimPos),
           0.5,
           missed ? ENDESGA16.darkRed : ENDESGA16.darkGreen
         );
@@ -911,7 +907,7 @@ EM.addSystem(
         // 2.0,
         20.0,
         // TODO(@darzu): make this use vec3.FWD
-        vec3.X
+        V3.X
       );
 
       // play sound
@@ -923,9 +919,9 @@ EM.addSystem(
       if (DBG_CANNONS) {
         b.then((b) => {
           if (missed) {
-            vec3.set(1, 0, 0, b.color);
+            V3.set(1, 0, 0, b.color);
           } else {
-            vec3.set(0, 1, 0, b.color);
+            V3.set(0, 1, 0, b.color);
           }
         });
       }
@@ -935,7 +931,7 @@ EM.addSystem(
     }
 
     // TODO(@darzu): hacky tracking these this way
-    vec3.copy(__previousPartyPos, res.party.pos);
+    V3.copy(__previousPartyPos, res.party.pos);
     __prevTime = res.time.time;
   }
 );
@@ -961,9 +957,9 @@ function destroyTower(
       brick.knockedOut = true;
       const flyingBrick = bricks.spawn();
       flyingBrick.physicsParent.id = tower.id;
-      vec3.copy(flyingBrick.position, brick.pos[0]);
-      vec3.copy(flyingBrick.color, brick.color);
-      vec3.set(0, 0.01, 0, flyingBrick.linearVelocity);
+      V3.copy(flyingBrick.position, brick.pos[0]);
+      V3.copy(flyingBrick.color, brick.color);
+      V3.set(0, 0.01, 0, flyingBrick.linearVelocity);
     }
   }
   tower.renderable.hidden = true;

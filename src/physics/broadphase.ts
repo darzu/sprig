@@ -1,12 +1,4 @@
-import {
-  vec2,
-  vec3,
-  vec4,
-  quat,
-  mat4,
-  mat3,
-  V,
-} from "../matrix/sprig-matrix.js";
+import { vec2, V3, vec4, quat, mat4, mat3, V } from "../matrix/sprig-matrix.js";
 import { clamp } from "../utils/math.js";
 import { range } from "../utils/util.js";
 import { vec3Floor } from "../utils/utils-3d.js";
@@ -174,8 +166,8 @@ export function checkBroadphase(
         // new object
         ll = _objToObjLL[o.id] = {
           id: o.id,
-          minCoord: vec3.mk(),
-          maxCoord: vec3.mk(),
+          minCoord: V3.mk(),
+          maxCoord: V3.mk(),
           aabb: o.aabb,
           next: null,
           prev: null,
@@ -187,7 +179,7 @@ export function checkBroadphase(
     _cellChecks = 0;
     for (let o of Object.values(_objToObjLL)) {
       if (!o.prev) continue; // not attached
-      if (vec3.equals(o.minCoord, o.maxCoord)) {
+      if (V3.equals(o.minCoord, o.maxCoord)) {
         // we're fully within one cell
         checkCell(o, o.prev);
       } else {
@@ -227,8 +219,8 @@ export let _cellChecks = 0;
 // TODO(@darzu): impl
 interface WorldGrid {
   aabb: AABB;
-  cellSize: vec3;
-  dimensions: vec3;
+  cellSize: V3;
+  dimensions: V3;
   grid: WorldCell[];
 }
 interface WorldCell {
@@ -237,14 +229,14 @@ interface WorldCell {
 interface ObjLL {
   id: number;
   aabb: AABB;
-  minCoord: vec3;
-  maxCoord: vec3;
+  minCoord: V3;
+  maxCoord: V3;
   next: ObjLL | null;
   prev: WorldCell | ObjLL | null;
 }
-function createWorldGrid(aabb: AABB, cellSize: vec3): WorldGrid {
-  const chunkSize = vec3.sub(aabb.max, aabb.min, vec3.mk());
-  const dims = vec3.div(chunkSize, cellSize, vec3.mk());
+function createWorldGrid(aabb: AABB, cellSize: V3): WorldGrid {
+  const chunkSize = V3.sub(aabb.max, aabb.min, V3.mk());
+  const dims = V3.div(chunkSize, cellSize, V3.mk());
   vec3Floor(dims, dims);
   const gridLength = dims[0] * dims[1] * dims[2];
   console.log(gridLength);
@@ -264,7 +256,7 @@ function gridRemove(o: ObjLL) {
   o.next = null;
   o.prev = null;
 }
-function gridIdx(g: WorldGrid, coord: vec3): number {
+function gridIdx(g: WorldGrid, coord: V3): number {
   const idx =
     coord[0] +
     coord[1] * g.dimensions[0] +
@@ -274,8 +266,8 @@ function gridIdx(g: WorldGrid, coord: vec3): number {
     throw `object out of bounds! (${coord.join(",")}), idx: ${idx}`;
   return idx;
 }
-function gridCoord(out: vec3, g: WorldGrid, pos: vec3): vec3 {
-  vec3.div(vec3.sub(pos, g.aabb.min, out), g.cellSize, out);
+function gridCoord(out: V3, g: WorldGrid, pos: V3): V3 {
+  V3.div(V3.sub(pos, g.aabb.min, out), g.cellSize, out);
   // clamp coordinates onto world grid
   // TODO(@darzu): should we use multiple grids?
   out[0] = clamp(Math.floor(out[0]), 0, g.dimensions[0] - 1);
@@ -285,12 +277,12 @@ function gridCoord(out: vec3, g: WorldGrid, pos: vec3): vec3 {
 }
 function gridPlace(g: WorldGrid, o: ObjLL) {
   const minCoord = gridCoord(_scratchVec3, g, o.aabb.min);
-  if (o.prev && vec3.equals(minCoord, o.minCoord)) {
+  if (o.prev && V3.equals(minCoord, o.minCoord)) {
     // same place, do nothing
     return;
   }
   // new placement, update coordinates
-  vec3.copy(o.minCoord, minCoord);
+  V3.copy(o.minCoord, minCoord);
   gridCoord(o.maxCoord, g, o.aabb.max);
   const idx = gridIdx(g, o.minCoord);
   // console.log(`(${coord.join(',')}), idx: ${idx}`)
@@ -349,8 +341,8 @@ function checkPair(
 
 // OctTree implementation
 export interface Ray {
-  org: vec3;
-  dir: vec3;
+  org: V3;
+  dir: V3;
 }
 export interface RayHit {
   id: number;
@@ -358,7 +350,7 @@ export interface RayHit {
 }
 
 // TODO(@darzu): i don't think this fn works in 3d
-export function rayVsRay(ra: Ray, rb: Ray): vec3 | undefined {
+export function rayVsRay(ra: Ray, rb: Ray): V3 | undefined {
   // ra.org[0] + ra.dir[0] * ta === rb.org[0] + rb.dir[0] * tb
   // ra.org[1] + ra.dir[1] * ta === rb.org[1] + rb.dir[1] * tb
   // ra.org[2] + ra.dir[2] * ta === rb.org[2] + rb.dir[2] * tb
@@ -385,7 +377,7 @@ export function rayVsRay(ra: Ray, rb: Ray): vec3 | undefined {
 
   if (isNaN(ta) || !isFinite(ta) || ta < 0.0) return undefined;
 
-  const pt = vec3.add(b, vec3.scale(db, tb), vec3.mk());
+  const pt = V3.add(b, V3.scale(db, tb), V3.mk());
 
   // TODO(@darzu): this doesn't handle the third axis!!
 
@@ -454,7 +446,7 @@ const _mapPool: Map<number, AABB>[] = range(_mapPoolSize).map(
   (_) => new Map<number, AABB>()
 );
 let _nextMap = 0;
-const _scratchVec3: vec3 = vec3.mk();
+const _scratchVec3: V3 = V3.mk();
 // TODO(@darzu): PERF. This is creating waayy too many non-temp vecs
 function octtree(parentObjs: Map<number, AABB>, aabb: AABB): OctTree | null {
   if (_nextMap >= _mapPool.length)
@@ -471,8 +463,8 @@ function octtree(parentObjs: Map<number, AABB>, aabb: AABB): OctTree | null {
     _nextMap--;
     return null;
   }
-  const nextLen = vec3.scale(
-    vec3.sub(aabb.max, aabb.min, _scratchVec3),
+  const nextLen = V3.scale(
+    V3.sub(aabb.max, aabb.min, _scratchVec3),
     0.5,
     _scratchVec3
   );
@@ -489,7 +481,7 @@ function octtree(parentObjs: Map<number, AABB>, aabb: AABB): OctTree | null {
       for (let zMin of [aabb.min[2], aabb.min[2] + nextLen[2]]) {
         childAABBs.push({
           min: V(xMin, yMin, zMin),
-          max: vec3.clone([
+          max: V3.clone([
             xMin + nextLen[0],
             yMin + nextLen[1],
             zMin + nextLen[2],
@@ -538,7 +530,7 @@ export function rayHitDist(b: AABB, r: Ray): number {
 }
 
 export interface Sphere {
-  org: vec3;
+  org: V3;
   rad: number;
 }
 
@@ -546,27 +538,27 @@ export interface Line {
   ray: Ray;
   len: number;
 }
-export function getLineEnd(out: vec3, line: Line) {
-  vec3.scale(line.ray.dir, line.len, out);
-  vec3.add(line.ray.org, out, out);
+export function getLineEnd(out: V3, line: Line) {
+  V3.scale(line.ray.dir, line.len, out);
+  V3.add(line.ray.org, out, out);
   return out;
 }
-export function getLineMid(out: vec3, line: Line) {
-  vec3.scale(line.ray.dir, line.len * 0.5, out);
-  vec3.add(line.ray.org, out, out);
+export function getLineMid(out: V3, line: Line) {
+  V3.scale(line.ray.dir, line.len * 0.5, out);
+  V3.add(line.ray.org, out, out);
   return out;
 }
 
 // TODO(@darzu): do we need this pattern?
 export function emptyRay(): Ray {
   return {
-    org: vec3.mk(),
-    dir: vec3.mk(),
+    org: V3.mk(),
+    dir: V3.mk(),
   };
 }
 export function copyRay(out: Ray, a: Ray): Ray {
-  vec3.copy(out.org, a.org);
-  vec3.copy(out.dir, a.dir);
+  V3.copy(out.org, a.org);
+  V3.copy(out.dir, a.dir);
   return out;
 }
 export function emptyLine(): Line {
@@ -581,13 +573,13 @@ export function copyLine(out: Line, a: Line): Line {
   return out;
 }
 
-export function createLine(a: vec3, b: vec3): Line {
-  const len = vec3.dist(a, b);
-  const dir = vec3.sub(b, a, vec3.mk());
-  vec3.norm(dir, dir);
+export function createLine(a: V3, b: V3): Line {
+  const len = V3.dist(a, b);
+  const dir = V3.sub(b, a, V3.mk());
+  V3.norm(dir, dir);
   return {
     ray: {
-      org: vec3.clone(a),
+      org: V3.clone(a),
       dir,
     },
     len,
@@ -599,13 +591,13 @@ export function transformLine(out: Line, t: mat4) {
   // TODO(@darzu): this code needs review. It might not work right with scaling
   // TODO(@darzu): PERF! This code needs to be inlined and simplified.
   //      There's no way we need this much matrix math for this.
-  vec3.norm(out.ray.dir, out.ray.dir); // might not be needed if inputs r always normalized
-  vec3.tMat4(out.ray.org, t, out.ray.org);
+  V3.norm(out.ray.dir, out.ray.dir); // might not be needed if inputs r always normalized
+  V3.tMat4(out.ray.org, t, out.ray.org);
   const t3 = mat3.fromMat4(t, __temp1);
-  vec3.tMat3(out.ray.dir, t3, out.ray.dir);
-  const lenScale = vec3.len(out.ray.dir);
+  V3.tMat3(out.ray.dir, t3, out.ray.dir);
+  const lenScale = V3.len(out.ray.dir);
   out.len = out.len * lenScale;
-  vec3.norm(out.ray.dir, out.ray.dir);
+  V3.norm(out.ray.dir, out.ray.dir);
   return out;
 }
 
@@ -614,9 +606,9 @@ export function raySphereIntersections(
   sphere: Sphere
 ): vec2 | undefined {
   // https://iquilezles.org/articles/intersectors/
-  const a = vec3.sub(ray.org, sphere.org);
-  const b = vec3.dot(a, ray.dir);
-  const c = vec3.dot(a, a) - sphere.rad * sphere.rad;
+  const a = V3.sub(ray.org, sphere.org);
+  const b = V3.dot(a, ray.dir);
+  const c = V3.dot(a, a) - sphere.rad * sphere.rad;
   const h = b * b - c;
   if (h < 0.0) return undefined; // no intersection
   const h2 = Math.sqrt(h);

@@ -1,5 +1,5 @@
 import { EM, Entity, EntityW, Component } from "../ecs/entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { vec2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import {
   PhysicsParentDef,
   PositionDef,
@@ -50,7 +50,7 @@ export function constructNetTurret(
   cameraYawOffset: number = 0,
   cameraPitchOffset: number = -Math.PI / 8,
   cameraYawFactor: number = 0,
-  cameraFollowOffset: vec3 = CAMERA_OFFSETS.thirdPersonOverShoulder,
+  cameraFollowOffset: V3 = CAMERA_OFFSETS.thirdPersonOverShoulder,
   keyboardControls: boolean = false,
   keyboardSpeed: number = 1,
   yawRange: number = Math.PI,
@@ -84,7 +84,7 @@ export function constructNetTurret(
 
   // setup camera params
   EM.set(e, CameraFollowDef, 0);
-  vec3.copy(e.cameraFollow.positionOffset, cameraFollowOffset);
+  V3.copy(e.cameraFollow.positionOffset, cameraFollowOffset);
   e.cameraFollow.yawOffset = cameraYawOffset;
   e.cameraFollow.pitchOffset = cameraPitchOffset;
 
@@ -93,8 +93,8 @@ export function constructNetTurret(
   if ("min" in aabbOrInteractionEntity) {
     interactBox = EM.new();
     const interactAABB = copyAABB(createAABB(), aabbOrInteractionEntity);
-    vec3.scale(interactAABB.min, 2, interactAABB.min);
-    vec3.scale(interactAABB.max, 2, interactAABB.max);
+    V3.scale(interactAABB.min, 2, interactAABB.min);
+    V3.scale(interactAABB.max, 2, interactAABB.max);
     EM.set(interactBox, PhysicsParentDef, e.id);
     EM.set(interactBox, PositionDef, V(0, 0, 0));
     EM.set(interactBox, ColliderDef, {

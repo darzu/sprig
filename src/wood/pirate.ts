@@ -11,7 +11,7 @@ import { DeadDef } from "../ecs/delete.js";
 import { createRef } from "../ecs/em-helpers.js";
 import { EM, EntityW } from "../ecs/entity-manager.js";
 import { EntityPool, createEntityPool } from "../ecs/entity-pool.js";
-import { mat4, vec3, quat } from "../matrix/sprig-matrix.js";
+import { mat4, V3, quat } from "../matrix/sprig-matrix.js";
 import { jitter } from "../utils/math.js";
 import {
   AABB,
@@ -120,14 +120,14 @@ export function appendPirateShip(b: TimberBuilder): RawMesh {
     mid[1] = 0;
     for (let vi = firstVi; vi < b.mesh.pos.length; vi++) {
       const p = b.mesh.pos[vi];
-      vec3.sub(p, mid, p);
+      V3.sub(p, mid, p);
     }
 
     mat4.translate(cursor2, [-(b.width * 2.0 + 0.05), 0, 0], cursor2);
   }
 
   for (let qi = firstQuadIdx; qi < b.mesh.quad.length; qi++)
-    b.mesh.colors.push(vec3.clone(BLACK));
+    b.mesh.colors.push(V3.clone(BLACK));
   // b.mesh.colors.push(randNormalPosVec3(vec3.create()));
 
   return b.mesh;
@@ -161,7 +161,7 @@ function rotatePiratePlatform(
   rad: number
 ) {
   // TODO(@darzu): use yaw/pitch/roll
-  vec3.rotY(p.position, vec3.ZEROS, rad, p.position);
+  V3.rotY(p.position, V3.ZEROS, rad, p.position);
   quat.rotateY(p.rotation, rad, p.rotation);
 }
 
@@ -258,7 +258,7 @@ export async function startPirates() {
               0.02,
               3 * 0.00001,
               ballHealth,
-              vec3.FWD
+              V3.FWD
             );
           }
         }
@@ -283,7 +283,7 @@ EM.addLazyInit([RendererDef, TimeDef], [PiratePoolDef], (res) => {
       // make platform
       const platform = EM.new();
       EM.set(platform, ColorDef);
-      vec3.copy(platform.color, ENDESGA16.deepBrown);
+      V3.copy(platform.color, ENDESGA16.deepBrown);
       EM.set(platform, PositionDef);
       EM.set(platform, RotationDef);
       // TODO(@darzu): re-use this mesh!
@@ -301,7 +301,7 @@ EM.addLazyInit([RendererDef, TimeDef], [PiratePoolDef], (res) => {
       EM.set(cannon, PhysicsParentDef, platform.id);
       EM.set(cannon, ColorDef, ENDESGA16.darkGray);
       EM.set(cannon, RotationDef);
-      vec3.copy(cannon.position, [0, 2, 0]);
+      V3.copy(cannon.position, [0, 2, 0]);
 
       // make timber
       const timber = EM.new();
@@ -367,7 +367,7 @@ EM.addLazyInit([RendererDef, TimeDef], [PiratePoolDef], (res) => {
       if (RenderableDef.isOn(platform)) platform.renderable.hidden = false;
       if (RenderableDef.isOn(cannon)) cannon.renderable.hidden = false;
 
-      vec3.copy(platform.position, [0, 0, 30]);
+      V3.copy(platform.position, [0, 0, 30]);
       quat.identity(platform.rotation);
 
       const tiltPeriod = 5700 + jitter(3000);

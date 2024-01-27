@@ -14,14 +14,14 @@ import {
 } from "../render/renderer-ecs.js";
 import { assert } from "../utils/util.js";
 import { RendererDef } from "../render/renderer-ecs.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { vec2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { vec3Dbg } from "../utils/utils-3d.js";
 import { mkCubeMesh } from "../meshes/primatives.js";
 import { Phase } from "../ecs/sys-phase.js";
 
 export interface NoodleSeg {
-  pos: vec3;
-  dir: vec3;
+  pos: V3;
+  dir: V3;
 }
 
 export const NoodleDef = EM.defineNonupdatableComponent(
@@ -84,7 +84,7 @@ export function registerNoodleSystem() {
           const seg = e.noodle.segments[segIdx];
           // TODO(@darzu): PERF, don't create vecs here
           // TODO(@darzu): rotate around .dir
-          return vec3.add(p, seg.pos, vec3.mk());
+          return V3.add(p, seg.pos, V3.mk());
         });
         rs.renderer.renderer.stdPool.updateMeshVertices(
           e.renderable.meshHandle,
@@ -95,9 +95,9 @@ export function registerNoodleSystem() {
   );
 }
 
-export function createNoodleMesh(thickness: number, color: vec3): Mesh {
+export function createNoodleMesh(thickness: number, color: V3): Mesh {
   const m = mkCubeMesh();
-  m.colors.forEach((c) => vec3.copy(c, color));
+  m.colors.forEach((c) => V3.copy(c, color));
   scaleMesh3(m, V(thickness, 0.0, thickness));
   return normalizeMesh(m);
 }

@@ -1,5 +1,5 @@
 import { clamp } from "../utils/math.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { vec2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { objMap } from "../utils/util.js";
 import { vec3Dbg } from "../utils/utils-3d.js";
 import { toV3, toFRGB, parseHex, toFLRGB } from "./color.js";
@@ -24,7 +24,7 @@ export const ENDESGA16 = objMap(
     blue: "#0484d1",
   },
   (val, name) => {
-    return toV3(toFLRGB(parseHex(val))) as vec3;
+    return toV3(toFLRGB(parseHex(val))) as V3;
   }
 );
 export const AllEndesga16 = Object.values(ENDESGA16);
@@ -50,7 +50,7 @@ export const COLOR_SAMPLES = objMap(
     jb_skywhite: "#DFE6DB",
   },
   (val, name) => {
-    return toV3(toFLRGB(parseHex(val))) as vec3;
+    return toV3(toFLRGB(parseHex(val))) as V3;
   }
 );
 

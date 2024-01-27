@@ -18,7 +18,7 @@ import {
   ScaleDef,
 } from "../physics/transform.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
-import { V, vec3 } from "../matrix/sprig-matrix.js";
+import { V, V3 } from "../matrix/sprig-matrix.js";
 import { vec3Dbg } from "../utils/utils-3d.js";
 
 // TODO(@darzu): It'd be great to have a dbg gizmo drawer-y global resources with features:
@@ -26,7 +26,7 @@ import { vec3Dbg } from "../utils/utils-3d.js";
 //  - pool w/ max number present and option to reuse in ring buffer style
 // Perhaps all gray boxing should be do-able w/ this immediate mode gizmo dbg stuff!
 
-export function getDataDomain(data: vec3[][]): AABB {
+export function getDataDomain(data: V3[][]): AABB {
   const aabb = createAABB(
     V(Infinity, Infinity, Infinity),
     V(-Infinity, -Infinity, -Infinity)
@@ -37,9 +37,9 @@ export function getDataDomain(data: vec3[][]): AABB {
 
 // TODO(@darzu): take in data
 export function createGraph3D(
-  pos: vec3,
-  data: vec3[][],
-  color?: vec3,
+  pos: V3,
+  data: V3[][],
+  color?: V3,
   domain?: AABB,
   range?: AABB
 ) {
@@ -52,7 +52,7 @@ export function createGraph3D(
   // console.dir(domain);
 
   const opts: GraphAxesMeshOpts = {
-    intervalDomainLength: vec3.scale(domainSize, 0.1, vec3.mk()),
+    intervalDomainLength: V3.scale(domainSize, 0.1, V3.mk()),
     domainSize: domain,
     // {
     //   min: V(0, 0, 0),
@@ -72,7 +72,7 @@ export function createGraph3D(
   EM.set(graph, RenderableConstructDef, graphMesh);
   EM.set(graph, PositionDef, pos);
 
-  const surfScale = vec3.div(worldSize, domainSize, vec3.mk());
+  const surfScale = V3.div(worldSize, domainSize, V3.mk());
   // console.log(`surfScale: ${vec3Dbg(surfScale)}`);
 
   const graphSurf = EM.new();
@@ -81,7 +81,7 @@ export function createGraph3D(
   EM.set(
     graphSurf,
     PositionDef,
-    vec3.mul(vec3.neg(domain.min), surfScale, vec3.mk())
+    V3.mul(V3.neg(domain.min), surfScale, V3.mk())
     // vec3.add(worldGizmo.position, [50, 10, 50], V(0, 0, 0))
   );
   EM.set(graphSurf, PhysicsParentDef, graph.id);

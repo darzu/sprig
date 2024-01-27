@@ -1,7 +1,7 @@
 // BOIDS
 
 // BOIDS
-import { vec2, vec3, vec4, quat, mat4, V } from "../../matrix/sprig-matrix.js";
+import { vec2, V3, vec4, quat, mat4, V } from "../../matrix/sprig-matrix.js";
 import { jitter } from "../../utils/math.js";
 import { range } from "../../utils/util.js";
 import { createRenderTextureToQuad } from "../gpu-helper.js";
@@ -18,8 +18,8 @@ const boidData0 = CY.createArray("boidData0", {
   struct: BoidData,
   init: () =>
     range(numBoids).map((_, i) => ({
-      pos: V(jitter(10), jitter(10), jitter(10)) as vec3,
-      vel: V(jitter(10), jitter(10), jitter(10)) as vec3,
+      pos: V(jitter(10), jitter(10), jitter(10)) as V3,
+      vel: V(jitter(10), jitter(10), jitter(10)) as V3,
     })),
 });
 const boidData1 = CY.createArray("boidData1", {

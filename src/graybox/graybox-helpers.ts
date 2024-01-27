@@ -3,7 +3,7 @@ import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { createGhost } from "../debug/ghost.js";
 import { EM, _ComponentDef } from "../ecs/entity-manager.js";
-import { quat, vec3 } from "../matrix/sprig-matrix.js";
+import { quat, V3 } from "../matrix/sprig-matrix.js";
 import { V } from "../matrix/sprig-matrix.js";
 import { CubeMesh, HexMesh } from "../meshes/mesh-list.js";
 import { HEX_AABB } from "../meshes/primatives.js";
@@ -58,8 +58,8 @@ export async function initGrayboxWorld() {
   // camera
   camera.fov = Math.PI * 0.5;
   camera.viewDist = 1000;
-  vec3.set(-200, -200, -200, camera.maxWorldAABB.min);
-  vec3.set(+200, +200, +200, camera.maxWorldAABB.max);
+  V3.set(-200, -200, -200, camera.maxWorldAABB.min);
+  V3.set(+200, +200, +200, camera.maxWorldAABB.max);
 
   // sun
   createSun();
@@ -87,9 +87,9 @@ export function initGhost() {
   g.position[2] = 5;
 
   // hover near origin
-  vec3.copy(g.position, [7.97, -12.45, 10.28]);
+  V3.copy(g.position, [7.97, -12.45, 10.28]);
   quat.copy(g.rotation, [0.0, 0.0, 0.27, 0.96]);
-  vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
+  V3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
   g.cameraFollow.yawOffset = 0.0;
   g.cameraFollow.pitchOffset = -0.55;
 
