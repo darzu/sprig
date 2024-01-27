@@ -170,7 +170,7 @@ export function screenPosToRay(
   const target = screenPosToWorldPos(tempVec3(), screenPos, cameraComputed, 0);
 
   const dir = vec3.sub(target, origin, vec3.mk());
-  vec3.normalize(dir, dir);
+  vec3.norm(dir, dir);
 
   const r: Ray = {
     org: origin,

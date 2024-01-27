@@ -442,7 +442,7 @@ EM.addEagerInit([SunlessShipDef], [], [], (_) => {
 
         // dampen
         if (e.sunlessShip.doDampen && vec3.sqrLen(rotatedAccel) === 0) {
-          const dampDir = vec3.normalize(vec3.neg(e.linearVelocity));
+          const dampDir = vec3.norm(vec3.neg(e.linearVelocity));
           vec3.scale(dampDir, speed, rotatedAccel);
 
           // halt if at small delta

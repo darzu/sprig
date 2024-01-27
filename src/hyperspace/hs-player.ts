@@ -186,7 +186,7 @@ EM.addEagerInit([PlayerHsPropsDef], [], [], () => {
         const cursor = res.globalCursor3d.cursor();
         if (cursor) {
           vec3.sub(cursor.world.position, p.world.position, facingDir);
-          vec3.normalize(facingDir, facingDir);
+          vec3.norm(facingDir, facingDir);
         }
       }
     }

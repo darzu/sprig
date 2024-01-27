@@ -291,7 +291,7 @@ export function registerHypersailSystems() {
           // );
           vec3.lerp(
             DEFAULT_SAIL_COLOR,
-            vec3.normalize(star.color),
+            vec3.norm(star.color),
             clamp((accel / realArea) * 5000, 0, 1),
             sail.color
           );

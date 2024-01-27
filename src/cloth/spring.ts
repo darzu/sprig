@@ -175,7 +175,7 @@ function addSpringForce(g: SpringGrid, point: number, force: vec3) {
       case SpringType.SimpleDistance:
         vec3.sub(g.positions[point], g.positions[o], distanceVec);
         let distance = vec3.len(distanceVec);
-        vec3.normalize(distanceVec, distanceVec);
+        vec3.norm(distanceVec, distanceVec);
         vec3.scale(
           distanceVec,
           g.kOnAxis * (g.distance - distance),

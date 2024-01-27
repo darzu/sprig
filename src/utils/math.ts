@@ -191,7 +191,7 @@ export function testMath() {
     const steps = 10;
     const stepRad = (Math.PI * 2) / steps;
     for (let i = 0; i < steps; i++) {
-      vec3.rotateZ(dir, [0, 0, 0], stepRad, dir);
+      vec3.rotZ(dir, [0, 0, 0], stepRad, dir);
       const angle = Math.atan2(dir[1], dir[0]);
       console.log(`dir: ${vec3Dbg(dir)}, atan2: ${angle}`);
     }

@@ -161,7 +161,7 @@ function rotatePiratePlatform(
   rad: number
 ) {
   // TODO(@darzu): use yaw/pitch/roll
-  vec3.rotateY(p.position, vec3.ZEROS, rad, p.position);
+  vec3.rotY(p.position, vec3.ZEROS, rad, p.position);
   quat.rotateY(p.rotation, rad, p.rotation);
 }
 

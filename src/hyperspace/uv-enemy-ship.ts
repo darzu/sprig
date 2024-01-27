@@ -354,7 +354,7 @@ export function breakEnemyShip(
     const vel = com;
     // const vel = vec3.sub(vec3.create(), com, enemyShip.position);
     // const vel = vec3.sub(vec3.create(), com, enemyShip.position);
-    vec3.normalize(vel, vel);
+    vec3.norm(vel, vel);
     vec3.add(vel, [0, -0.6, 0], vel);
     vec3.scale(vel, 0.005, vel);
     EM.set(pe, LinearVelocityDef, vel);
@@ -363,7 +363,7 @@ export function breakEnemyShip(
       Math.random() - 0.5,
       Math.random() - 0.5
     );
-    vec3.normalize(spin, spin);
+    vec3.norm(spin, spin);
     vec3.scale(spin, 0.001, spin);
     EM.set(pe, AngularVelocityDef, spin);
     EM.set(pe, LifetimeDef, 2000);

@@ -664,7 +664,7 @@ export async function initGrassGame(hosting: boolean) {
       const windLocalDir = vec3.tMat3(res.wind.dir, invShip);
       const shipLocalDir = V(0, 0, 1);
 
-      const optimalSailLocalDir = vec3.normalize(
+      const optimalSailLocalDir = vec3.norm(
         vec3.add(windLocalDir, shipLocalDir)
       );
 

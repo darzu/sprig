@@ -480,8 +480,7 @@ export module vec3 {
   export function div(v1: InputT, v2: InputT, out?: T): T {
     return GL.div(out ?? tmp(), v1, v2) as T;
   }
-  // TODO(@darzu): rename norm()
-  export function normalize(v1: InputT, out?: T): T {
+  export function norm(v1: InputT, out?: T): T {
     return GL.normalize(out ?? tmp(), v1) as T;
   }
   export function len(v1: InputT): number {
@@ -565,28 +564,13 @@ export module vec3 {
     return out;
   }
 
-  export function rotateX(
-    point: InputT,
-    origin: InputT,
-    rad: number,
-    out?: T
-  ): T {
+  export function rotX(point: InputT, origin: InputT, rad: number, out?: T): T {
     return GL.rotateX(out ?? tmp(), point, origin, rad) as T;
   }
-  export function rotateY(
-    point: InputT,
-    origin: InputT,
-    rad: number,
-    out?: T
-  ): T {
+  export function rotY(point: InputT, origin: InputT, rad: number, out?: T): T {
     return GL.rotateY(out ?? tmp(), point, origin, rad) as T;
   }
-  export function rotateZ(
-    point: InputT,
-    origin: InputT,
-    rad: number,
-    out?: T
-  ): T {
+  export function rotZ(point: InputT, origin: InputT, rad: number, out?: T): T {
     return GL.rotateZ(out ?? tmp(), point, origin, rad) as T;
   }
 
@@ -941,7 +925,7 @@ export module quat {
     // console.log(`fromForward, fwd:${vec3Dbg(forward)}`);
 
     const y = vec3.copy(_t4, forward);
-    vec3.normalize(y, y);
+    vec3.norm(y, y);
 
     // console.log(`normalized y: ${vec3Dbg(y)}`);
 
@@ -954,7 +938,7 @@ export module quat {
     // orthonormalize
     const x = vec3.tmp();
     vec3.cross(y, upish, x);
-    vec3.normalize(x, x);
+    vec3.norm(x, x);
 
     // console.log(`x: ${vec3Dbg(x)}`);
 
@@ -1458,9 +1442,9 @@ export function orthonormalize(forward: vec3, upish: vec3, outRight: vec3) {
   //    quatFromUpForward, getControlPoints, tripleProd?
   //    targetTo, lookAt ?
   // Also this can be more efficient by inlining
-  vec3.normalize(forward, forward);
+  vec3.norm(forward, forward);
   vec3.cross(forward, upish, outRight);
-  vec3.normalize(outRight, outRight);
+  vec3.norm(outRight, outRight);
   vec3.cross(outRight, forward, upish);
 }
 

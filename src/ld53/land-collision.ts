@@ -196,7 +196,7 @@ EM.addSystem(
         // nudge directly away from corner
         const nudge = tV(-cornersFromCenter[i][0], -cornersFromCenter[i][1], 0);
         console.log(`nudge is ${vec3Dbg(nudge)}`);
-        vec3.normalize(nudge, nudge);
+        vec3.norm(nudge, nudge);
         vec3.scale(nudge, NUDGE_DIST, nudge);
         // TODO: this should be in world space
         if (DBG_COLLISIONS)
@@ -207,7 +207,7 @@ EM.addSystem(
           });
         console.log(`nudging (corner) by ${vec3Dbg(nudge)}`);
         vec3.add(ship.position, nudge, ship.position);
-        vec3.normalize(nudge, nudge);
+        vec3.norm(nudge, nudge);
         vec3.scale(nudge, NUDGE_SPEED, nudge);
         vec3.add(ship.linearVelocity, nudge, ship.linearVelocity);
         hitLand = true;
@@ -234,7 +234,7 @@ EM.addSystem(
             vec3.set(dist[0], dist[1], 0, nudgeTemp),
             nudgeTemp
           );
-          vec3.normalize(nudge, nudge);
+          vec3.norm(nudge, nudge);
           vec3.scale(nudge, NUDGE_DIST, nudge);
           if (DBG_COLLISIONS)
             drawVector(nudge, {

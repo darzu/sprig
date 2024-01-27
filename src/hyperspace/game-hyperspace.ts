@@ -67,14 +67,14 @@ function spawnRandomDarkStar(
     Math.random() - 0.5,
     Math.random() - 0.5
   );
-  vec3.normalize(orbitalAxis, orbitalAxis);
+  vec3.norm(orbitalAxis, orbitalAxis);
 
-  vec3.normalize(orbitalAxis, orbitalAxis);
+  vec3.norm(orbitalAxis, orbitalAxis);
 
   // TODO: this only works because the darkstar is orbiting the origin
   const perpendicular = vec3.cross(approxPosition, orbitalAxis);
   const starPosition = vec3.cross(orbitalAxis, perpendicular, perpendicular);
-  vec3.normalize(starPosition, starPosition);
+  vec3.norm(starPosition, starPosition);
   vec3.scale(starPosition, vec3.len(approxPosition), starPosition);
 
   return createDarkStarNow(res, starPosition, color, V(0, 0, 0), orbitalAxis);
@@ -211,13 +211,13 @@ export async function initHyperspaceGame() {
       Math.random() - 0.5,
       Math.random() - 0.5
     );
-    vec3.normalize(orbitalAxis, orbitalAxis);
+    vec3.norm(orbitalAxis, orbitalAxis);
 
     // TODO: this only works because the darkstar is orbiting the origin
     const approxPosition = V(-1000, 2000, -1000);
     const perpendicular = vec3.cross(approxPosition, orbitalAxis);
     const starPosition = vec3.cross(orbitalAxis, perpendicular, perpendicular);
-    vec3.normalize(starPosition, starPosition);
+    vec3.norm(starPosition, starPosition);
     vec3.scale(starPosition, vec3.len(approxPosition), starPosition);
 
     const star1 = spawnRandomDarkStar(

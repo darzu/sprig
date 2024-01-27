@@ -155,7 +155,7 @@ export function compute_gerstner(
   }
   // TODO(@darzu): this expression seems troubling; `1.0 -` before normalizing?!
   outNorm[2] = 1.0 - outNorm[2];
-  vec3.normalize(outNorm, outNorm);
+  vec3.norm(outNorm, outNorm);
 }
 
 // for reference, from: https://catlikecoding.com/unity/tutorials/flow/waves/

@@ -193,7 +193,7 @@ export async function initClothSandbox(hosting: boolean) {
       // scale the force
       const delta = vec3.sub(clothPos, cursorPos);
       const dist = vec3.len(delta);
-      vec3.normalize(delta, cloth.force);
+      vec3.norm(delta, cloth.force);
       const strength = remapEase(dist, 4, 20, 0, 500, (p) =>
         EASE_INQUAD(1.0 - p)
       );

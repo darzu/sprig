@@ -307,7 +307,7 @@ export async function initGJKSandbox(hosting: boolean) {
       }
 
       backTravelD = Math.min(backTravelD, vec3.len(playerShape.travel));
-      const travelN = vec3.normalize(playerShape.travel);
+      const travelN = vec3.norm(playerShape.travel);
       const backTravel = vec3.scale(travelN, backTravelD);
 
       // console.log(backTravel);

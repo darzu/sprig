@@ -578,7 +578,7 @@ function getDirsToTan(
 ): void {
   const srcToTrg = vec3.sub(trg, src);
   const perpR: vec3.InputT = [srcToTrg[1], -srcToTrg[0], 0];
-  const normR = vec3.normalize(perpR);
+  const normR = vec3.norm(perpR);
   const scaledR = vec3.scale(normR, trgRad);
   const scaledL = vec3.neg(scaledR);
   vec3.add(trg, scaledR, outR);
@@ -678,9 +678,9 @@ async function initEnemies() {
         }
 
         let toTrgL = vec3.sub(_trgL, e.position);
-        toTrgL = vec3.normalize(toTrgL);
+        toTrgL = vec3.norm(toTrgL);
         let toTrgR = vec3.sub(_trgR, e.position);
-        toTrgR = vec3.normalize(toTrgR);
+        toTrgR = vec3.norm(toTrgR);
 
         const curDir = vec3.tQuat(vec3.FWD, e.rotation);
 

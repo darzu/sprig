@@ -225,7 +225,7 @@ export async function fireBullet(
 
   // let bulletAxis = V(1, 0, 0);
   const axis = vec3.tQuat(bulletAxis, rotation, vec3.tmp());
-  vec3.normalize(axis, axis);
+  vec3.norm(axis, axis);
   const linearVelocity = vec3.scale(axis, speed, vec3.mk());
   const angularVelocity = vec3.scale(axis, rotationSpeed, vec3.mk());
 
@@ -313,11 +313,11 @@ export async function breakBullet(
     // const vel = vec3.clone(bullet.linearVelocity);
     const vel = vec3.clone(bullet.parametric.vel);
     // vel[2] = -vel[2]; // assume we're at the end of a parabola
-    vec3.normalize(vel, vel);
+    vec3.norm(vel, vel);
     vec3.neg(vel, vel); // reflact back along path of travel
     vec3.add(vel, randNormalVec3(tempVec3()), vel);
     vec3.add(vel, [0, 0, +1], vel); // bias upward
-    vec3.normalize(vel, vel);
+    vec3.norm(vel, vel);
     vec3.scale(vel, 0.02, vel);
     EM.set(pe, LinearVelocityDef);
     vec3.copy(pe.linearVelocity, vel);
@@ -343,7 +343,7 @@ export function* simulateBullet(
 ): Generator<vec3, never> {
   let bulletAxis = tV(0, 0, -1);
   vec3.tQuat(bulletAxis, rot, bulletAxis);
-  vec3.normalize(bulletAxis, bulletAxis);
+  vec3.norm(bulletAxis, bulletAxis);
   const linVel = vec3.scale(bulletAxis, speed, vec3.mk());
   const grav = V(0, -gravity, 0);
 

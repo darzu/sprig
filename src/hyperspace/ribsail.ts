@@ -202,6 +202,6 @@ export function sailForceAndSignedArea(
     vec3.sub(worldVerts[2], worldVerts[0])
   );
 
-  vec3.normalize(sailNormal, sailNormal);
+  vec3.norm(sailNormal, sailNormal);
   return [vec3.scale(sailNormal, area, sailNormal), area];
 }

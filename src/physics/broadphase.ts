@@ -584,7 +584,7 @@ export function copyLine(out: Line, a: Line): Line {
 export function createLine(a: vec3, b: vec3): Line {
   const len = vec3.dist(a, b);
   const dir = vec3.sub(b, a, vec3.mk());
-  vec3.normalize(dir, dir);
+  vec3.norm(dir, dir);
   return {
     ray: {
       org: vec3.clone(a),
@@ -599,13 +599,13 @@ export function transformLine(out: Line, t: mat4) {
   // TODO(@darzu): this code needs review. It might not work right with scaling
   // TODO(@darzu): PERF! This code needs to be inlined and simplified.
   //      There's no way we need this much matrix math for this.
-  vec3.normalize(out.ray.dir, out.ray.dir); // might not be needed if inputs r always normalized
+  vec3.norm(out.ray.dir, out.ray.dir); // might not be needed if inputs r always normalized
   vec3.tMat4(out.ray.org, t, out.ray.org);
   const t3 = mat3.fromMat4(t, __temp1);
   vec3.tMat3(out.ray.dir, t3, out.ray.dir);
   const lenScale = vec3.len(out.ray.dir);
   out.len = out.len * lenScale;
-  vec3.normalize(out.ray.dir, out.ray.dir);
+  vec3.norm(out.ray.dir, out.ray.dir);
   return out;
 }
 

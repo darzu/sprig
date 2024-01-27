@@ -134,7 +134,7 @@ EM.addEagerInit([MastDef], [], [], () => {
         const windLocalDir = vec3.tMat3(res.wind.dir, invShip);
         const shipLocalDir = vec3.FWD;
 
-        const optimalSailLocalDir = vec3.normalize(
+        const optimalSailLocalDir = vec3.norm(
           vec3.add(windLocalDir, shipLocalDir)
         );
 
@@ -180,7 +180,7 @@ EM.addEagerInit([MastDef], [], [], () => {
         // vec3.scale(e.linearVelocity, VELOCITY_DECAY, e.linearVelocity);
         //console.log(`ship speed is ${vec3.length(e.linearVelocity)}`);
         if (vec3.len(e.linearVelocity) > MAX_SPEED) {
-          vec3.normalize(e.linearVelocity, e.linearVelocity);
+          vec3.norm(e.linearVelocity, e.linearVelocity);
           vec3.scale(e.linearVelocity, MAX_SPEED, e.linearVelocity);
         }
         if (vec3.len(e.linearVelocity) < MIN_SPEED) {

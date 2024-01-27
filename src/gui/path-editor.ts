@@ -438,7 +438,7 @@ export async function lineStuff() {
       const O = Oln ? lnMesh.pos[Oln.vi] : vec3.add(A, [1, 0, 0]);
       const dir = vec3.sub(O, A);
       if (!ln.next && ln.prev) vec3.neg(dir, dir);
-      vec3.normalize(dir, dir);
+      vec3.norm(dir, dir);
 
       const perp = vec3.cross(dir, UP);
 
@@ -451,7 +451,7 @@ export async function lineStuff() {
       // mid point
       const P = lnMesh.pos[ln.prev.vi];
       const PAdir = vec3.sub(A, P);
-      vec3.normalize(PAdir, PAdir);
+      vec3.norm(PAdir, PAdir);
       const PAperp = vec3.cross(PAdir, UP);
       const P1 = vec3.sub(A, vec3.scale(PAperp, width));
       vec3.sub(P1, vec3.scale(PAdir, width * 3), P1);
@@ -460,7 +460,7 @@ export async function lineStuff() {
 
       const N = lnMesh.pos[ln.next.vi];
       const NAdir = vec3.sub(A, N);
-      vec3.normalize(NAdir, NAdir);
+      vec3.norm(NAdir, NAdir);
       const NAperp = vec3.cross(NAdir, UP);
       const N1 = vec3.sub(A, vec3.scale(NAperp, width));
       vec3.sub(N1, vec3.scale(NAdir, width * 3), N1);

@@ -296,7 +296,7 @@ export async function initOcean(oceanMesh: Mesh, color: vec3) {
 
     // HACK: smooth out norm?
     vec3.add(outNorm, vec3.scale(norm, 2.0, __temp6), outNorm);
-    vec3.normalize(outNorm, outNorm);
+    vec3.norm(outNorm, outNorm);
   };
 
   // TODO(@darzu): hacky hacky way to do this

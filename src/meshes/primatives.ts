@@ -801,7 +801,7 @@ export function makeSphere(numLon: number, numLat: number, r: number): Mesh {
       const y = r * Math.cos(inc);
       if (lat !== numLat) {
         pos.push(V(x, y, z));
-        normals.push(vec3.normalize(pos[pos.length - 1], vec3.mk()));
+        normals.push(vec3.norm(pos[pos.length - 1], vec3.mk()));
         const u = lon / numLon;
         const v = lat / (numLat + 1);
         uvs.push(V(u, v));

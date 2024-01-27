@@ -136,7 +136,7 @@ export function createPathFromBezier(
     const t = i / (nodeCount - 1);
     const pos = bezierPosition(b, t, vec3.mk());
     const tan = bezierTangent(b, t, vec3.tmp());
-    vec3.normalize(tan, tan);
+    vec3.norm(tan, tan);
     // const rot = quatFromUpForward_OLD(quat.create(), up, tan);
     const rot = quat.fromForwardAndUpish(tan, up, quat.create());
     path.push({ pos, rot });
@@ -212,7 +212,7 @@ export function createEvenPathFromBezierCurve(
         // add our node
         const pos = bezierPosition(b, t, vec3.mk());
         const tan = bezierTangent(b, t, vec3.tmp());
-        vec3.normalize(tan, tan);
+        vec3.norm(tan, tan);
         // const rot = quatFromUpForward_OLD(quat.create(), up, tan);
         const rot = quat.fromForwardAndUpish(tan, up, quat.create());
         path.push({ pos, rot });
@@ -235,7 +235,7 @@ export function createEvenPathFromBezierCurve(
         const lastSample = samples[samples.length - 1];
         const lastSample2 = samples[samples.length - 2];
         const dir = vec3.sub(lastSample, lastSample2, vec3.mk());
-        vec3.normalize(dir, dir);
+        vec3.norm(dir, dir);
         vec3.scale(dir, extraSteps, dir);
         const pos = vec3.add(lastSample, dir, dir);
         const rot = quat.clone(path[path.length - 1].rot);
@@ -277,7 +277,7 @@ export function bezierSplineFromPoints(
     const next = points[i + 2];
 
     // const fromPrev = vec3.normalize(vec3.sub(start, prev));
-    const fromPrev = vec3.normalize(vec3.sub(end, prev));
+    const fromPrev = vec3.norm(vec3.sub(end, prev));
     const startCont = vec3.add(
       start,
       vec3.scale(fromPrev, smoothness),
@@ -285,7 +285,7 @@ export function bezierSplineFromPoints(
     );
 
     // const toNext = vec3.normalize(vec3.sub(end, next));
-    const toNext = vec3.normalize(vec3.sub(start, next));
+    const toNext = vec3.norm(vec3.sub(start, next));
     const endCont = vec3.add(end, vec3.scale(toNext, smoothness), vec3.mk());
     // TODO(@darzu): Ideally the control points would be mirrored for c1 continuity
     curves.push({

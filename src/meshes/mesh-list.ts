@@ -313,7 +313,7 @@ export const OceanMesh = XY.registerMesh({
           normal = computeTriangleNormal(pos, posNX, posNY, vec3.mk());
 
           tangent = vec3.sub(posNX, pos, m.tangents[grid[xIndex][yIndex]]);
-          vec3.normalize(tangent, tangent);
+          vec3.norm(tangent, tangent);
         } else if (xIndex + 1 >= grid.length) {
           normal = m.normals[grid[xIndex - 1][yIndex]];
           tangent = m.tangents[grid[xIndex - 1][yIndex]];

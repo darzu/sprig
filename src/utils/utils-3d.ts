@@ -26,7 +26,7 @@ export function computeTriangleNormal(
 ): vec3 {
   // cross product of two edges, https://www.khronos.org/opengl/wiki/Calculating_a_Surface_Normal
   const n = vec3.cross(vec3.sub(p2, p1, _t1), vec3.sub(p3, p1, _t2), out);
-  vec3.normalize(n, n);
+  vec3.norm(n, n);
   return n;
 }
 
@@ -46,7 +46,7 @@ export function randNormalVec3_cheap(out?: vec3) {
     Math.random() - 0.5,
     out ?? vec3.tmp()
   );
-  vec3.normalize(res, res);
+  vec3.norm(res, res);
   return res;
 }
 export function randNormalVec3(out?: vec3) {
@@ -56,7 +56,7 @@ export function randNormalVec3(out?: vec3) {
     randFromNormalDist(),
     out ?? vec3.tmp()
   );
-  vec3.normalize(res, res);
+  vec3.norm(res, res);
   return res;
 }
 export const randDir3 = randNormalVec3;
@@ -72,7 +72,7 @@ export function randNormalPosVec3(out?: vec3) {
   // TODO(@darzu): not evenly distributed on sphere!
   if (!out) out = vec3.mk();
   vec3.set(Math.random(), Math.random(), Math.random(), out);
-  vec3.normalize(out, out);
+  vec3.norm(out, out);
   return out;
 }
 
@@ -192,7 +192,7 @@ export function quatFromUpForward_OLD(
   // TODO(@darzu): swap this with orthonormalize()
   const side = vec3.cross(forwardish, up, __t1);
   vec3.neg(side, side); // TODO(@darzu): is this negate right?
-  vec3.normalize(side, side);
+  vec3.norm(side, side);
   const backward = vec3.cross(side, up, __t2);
 
   // TODO(@darzu): replace this with using quat.fromMat3
@@ -402,7 +402,7 @@ export function angleBetweenPosXZ(
   fwd: vec3, // NOTE: fwd needs to be normalized and with 0 y component
   target: vec3
 ): number {
-  const toward = vec3.normalize(
+  const toward = vec3.norm(
     [target[0] - pos[0], 0, target[2] - pos[2]],
     __angleBetweenXZTmp0
   );

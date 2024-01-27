@@ -87,10 +87,10 @@ export function doesSimplexOverlapOrigin(s: vec3[]) {
     const AB = vec3.sub(B, A, vec3.mk());
     const AC = vec3.sub(C, A, vec3.mk());
     const ABCperp = vec3.cross(AB, AC, vec3.mk());
-    vec3.normalize(ABCperp, ABCperp);
+    vec3.norm(ABCperp, ABCperp);
     const triCenter = centroid(...t);
     const triCenterToSimplexCenter = vec3.sub(center, triCenter, vec3.mk());
-    vec3.normalize(triCenterToSimplexCenter, triCenterToSimplexCenter);
+    vec3.norm(triCenterToSimplexCenter, triCenterToSimplexCenter);
     if (vec3.dot(ABCperp, triCenterToSimplexCenter) < 0)
       vec3.neg(ABCperp, ABCperp);
     const AO = vec3.sub([0, 0, 0], A, vec3.mk());
@@ -118,10 +118,10 @@ export function gjk(
   let distToOrigin = Infinity;
 
   vec3.sub(s2.center, s1.center, d);
-  vec3.normalize(d, d);
+  vec3.norm(d, d);
   simplex = [mSupport(s1, s2, d)];
   vec3.sub([0, 0, 0], simplex[0], d);
-  vec3.normalize(d, d);
+  vec3.norm(d, d);
   let step = 0;
   while (true) {
     const A = mSupport(s1, s2, d);
@@ -221,7 +221,7 @@ export function penetrationDepth(
 ): number {
   if (vec3.equals(s1.travel, s2.travel)) return Infinity;
   const forwardDir = vec3.sub(s1.travel, s2.travel);
-  vec3.normalize(forwardDir, forwardDir);
+  vec3.norm(forwardDir, forwardDir);
   const backwardDir = vec3.neg(forwardDir);
 
   const [D, C, B, A] = simplex;
@@ -256,7 +256,7 @@ export function penetrationDepth(
   let minNotV: vec3 = V(NaN, NaN, NaN);
 
   if (vec3.dot(ABCperp, backwardDir) > 0) {
-    const ABCnorm = vec3.normalize(ABCperp);
+    const ABCnorm = vec3.norm(ABCperp);
     const n = vec3.dot(AO, ABCnorm);
     const d = n / vec3.dot(ABCnorm, backwardDir);
     // console.log(d);
@@ -268,7 +268,7 @@ export function penetrationDepth(
     }
   }
   if (vec3.dot(ACDperp, backwardDir) > 0) {
-    const ACDnorm = vec3.normalize(ACDperp);
+    const ACDnorm = vec3.norm(ACDperp);
     const n = vec3.dot(AO, ACDnorm);
     const d = n / vec3.dot(ACDnorm, backwardDir);
     // console.log(d);
@@ -280,7 +280,7 @@ export function penetrationDepth(
     }
   }
   if (vec3.dot(ABDperp, backwardDir) > 0) {
-    const ABDnorm = vec3.normalize(ABDperp);
+    const ABDnorm = vec3.norm(ABDperp);
     const n = vec3.dot(AO, ABDnorm);
     const d = n / vec3.dot(ABDnorm, backwardDir);
     // console.log(d);
@@ -293,7 +293,7 @@ export function penetrationDepth(
   }
   // TODO(@darzu): can skip if `offset` === [0,0,0]
   if (vec3.dot(BCDperp, backwardDir) > 0) {
-    const BCDnorm = vec3.normalize(BCDperp);
+    const BCDnorm = vec3.norm(BCDperp);
     const n = vec3.dot(BO, BCDnorm);
     const d = n / vec3.dot(BCDnorm, backwardDir);
     // console.log(d);

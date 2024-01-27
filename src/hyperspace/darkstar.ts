@@ -107,7 +107,7 @@ export function registerDarkstarSystems() {
           toCenter,
           star.darkStarProps.orbitalAxis
         );
-        vec3.normalize(movementDirection, movementDirection);
+        vec3.norm(movementDirection, movementDirection);
         vec3.add(
           star.position,
           vec3.scale(movementDirection, DARKSTAR_SPEED, movementDirection),
@@ -116,7 +116,7 @@ export function registerDarkstarSystems() {
 
         vec3.sub(star.darkStarProps.orbiting, star.position, toCenter);
         const newDistance = vec3.len(toCenter);
-        vec3.normalize(toCenter, toCenter);
+        vec3.norm(toCenter, toCenter);
         vec3.scale(toCenter, newDistance - distance, toCenter);
         //console.log(`distance ${distance}, newDistance ${newDistance}`);
         //console.log(`distance ${distance}, newDistance ${newDistance}`);
