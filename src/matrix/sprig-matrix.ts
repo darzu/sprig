@@ -28,7 +28,6 @@ interface Float32ArrayOfLength<N extends number> extends Float32Array {
   length: N;
 }
 
-// TODO(@darzu): rename vec2 -> V2, vec3 -> V3 ?
 export type V2 = Float32ArrayOfLength<2>;
 
 export type V3 = Float32ArrayOfLength<3>;

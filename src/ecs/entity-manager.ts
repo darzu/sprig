@@ -304,6 +304,7 @@ interface SystemStats {
   calls: number;
 }
 
+// TODO(@darzu): split this apart! Shouldn't be a class and should be in as many pieces as is logical
 export class EntityManager {
   entities: Map<number, Entity> = new Map();
   allSystemsByName: Map<string, SystemReg> = new Map();
@@ -883,6 +884,7 @@ export class EntityManager {
     return this.entities.has(id);
   }
 
+  // TODO(@darzu): rethink how component add/remove happens. This is maybe always flags
   public removeComponent<C extends ComponentDef>(id: number, def: C) {
     if (!this.tryRemoveComponent(id, def))
       throw `Tried to remove absent component ${def.name} from entity ${id}`;
@@ -1526,11 +1528,13 @@ export class EntityManager {
 
   // TODO(@darzu): feels a bit hacky; lets track usages and see if we can make this
   //  feel natural.
-  // TODO(@darzu): PERF. resolve this instantly w/o init if entity exists?
+  // TODO(@darzu): is perf okay here?
   public whenSingleEntity<CS extends ComponentDef[]>(
     ...cs: [...CS]
   ): Promise<EntityW<CS>> {
     return new Promise((resolve) => {
+      const ents = EM.filterEntities(cs);
+      if (ents.length === 1) resolve(ents[0]);
       EM.addEagerInit(cs, [], [], () => {
         const ents = EM.filterEntities(cs);
         if (!ents || ents.length !== 1)
