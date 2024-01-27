@@ -496,7 +496,7 @@ export module vec3 {
   export function scale(v1: InputT, n: number, out?: T): T {
     return GL.scale(out ?? tmp(), v1, n) as T;
   }
-  export function negate(v1: InputT, out?: T): T {
+  export function neg(v1: InputT, out?: T): T {
     return GL.negate(out ?? tmp(), v1) as T;
   }
   export function dist(v1: InputT, v2: InputT): number {

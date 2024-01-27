@@ -437,7 +437,7 @@ export async function lineStuff() {
       const Oln = ln.next ?? ln.prev; // other line
       const O = Oln ? lnMesh.pos[Oln.vi] : vec3.add(A, [1, 0, 0]);
       const dir = vec3.sub(O, A);
-      if (!ln.next && ln.prev) vec3.negate(dir, dir);
+      if (!ln.next && ln.prev) vec3.neg(dir, dir);
       vec3.normalize(dir, dir);
 
       const perp = vec3.cross(dir, UP);

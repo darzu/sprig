@@ -578,7 +578,7 @@ function getSegmentRotation(seg: BoardSeg, top: boolean) {
 
   const endNorm = vec3.copy(tempVec3(), seg.midLine.ray.dir);
   if (top) {
-    vec3.negate(endNorm, endNorm);
+    vec3.neg(endNorm, endNorm);
   }
 
   const rot = quat.create();

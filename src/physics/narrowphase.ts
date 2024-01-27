@@ -92,7 +92,7 @@ export function doesSimplexOverlapOrigin(s: vec3[]) {
     const triCenterToSimplexCenter = vec3.sub(center, triCenter, vec3.mk());
     vec3.normalize(triCenterToSimplexCenter, triCenterToSimplexCenter);
     if (vec3.dot(ABCperp, triCenterToSimplexCenter) < 0)
-      vec3.negate(ABCperp, ABCperp);
+      vec3.neg(ABCperp, ABCperp);
     const AO = vec3.sub([0, 0, 0], A, vec3.mk());
     if (vec3.dot(ABCperp, AO) < 0) return false;
   }
@@ -102,7 +102,7 @@ export function doesSimplexOverlapOrigin(s: vec3[]) {
 // minkowski difference support
 function mSupport(s1: Shape, s2: Shape, d: vec3): vec3 {
   // TODO(@darzu):
-  const nD = vec3.negate(d);
+  const nD = vec3.neg(d);
   return vec3.sub(s2.support(d), s1.support(nD));
 }
 
@@ -169,7 +169,7 @@ export function gjk(
       const AC = vec3.sub(C, A);
       const ABCperp = vec3.cross(AB, AC);
       const AO = vec3.sub([0, 0, 0], A);
-      if (vec3.dot(ABCperp, AO) < 0) vec3.negate(ABCperp, ABCperp);
+      if (vec3.dot(ABCperp, AO) < 0) vec3.neg(ABCperp, ABCperp);
       vec3.copy(d, ABCperp);
       return false;
     } else {
@@ -182,15 +182,15 @@ export function gjk(
 
       const ABCperp = vec3.cross(AB, AC);
       if (vec3.dot(ABCperp, AD) > 0) {
-        vec3.negate(ABCperp, ABCperp);
+        vec3.neg(ABCperp, ABCperp);
       }
       const ACDperp = vec3.cross(AC, AD);
       if (vec3.dot(ACDperp, AB) > 0) {
-        vec3.negate(ACDperp, ACDperp);
+        vec3.neg(ACDperp, ACDperp);
       }
       const ADBperp = vec3.cross(AD, AB);
       if (vec3.dot(ADBperp, AC) > 0) {
-        vec3.negate(ADBperp, ADBperp);
+        vec3.neg(ADBperp, ADBperp);
       }
 
       if (vec3.dot(ABCperp, AO) > 0) {
@@ -222,7 +222,7 @@ export function penetrationDepth(
   if (vec3.equals(s1.travel, s2.travel)) return Infinity;
   const forwardDir = vec3.sub(s1.travel, s2.travel);
   vec3.normalize(forwardDir, forwardDir);
-  const backwardDir = vec3.negate(forwardDir);
+  const backwardDir = vec3.neg(forwardDir);
 
   const [D, C, B, A] = simplex;
   const AB = vec3.sub(B, A);
@@ -235,19 +235,19 @@ export function penetrationDepth(
 
   const ABCperp = vec3.cross(AB, AC);
   if (vec3.dot(ABCperp, AD) > 0) {
-    vec3.negate(ABCperp, ABCperp);
+    vec3.neg(ABCperp, ABCperp);
   }
   const ACDperp = vec3.cross(AC, AD);
   if (vec3.dot(ACDperp, AB) > 0) {
-    vec3.negate(ACDperp, ACDperp);
+    vec3.neg(ACDperp, ACDperp);
   }
   const ABDperp = vec3.cross(AD, AB);
   if (vec3.dot(ABDperp, AC) > 0) {
-    vec3.negate(ABDperp, ABDperp);
+    vec3.neg(ABDperp, ABDperp);
   }
   const BCDperp = vec3.cross(BC, BD);
   if (vec3.dot(BCDperp, AB) < 0) {
-    vec3.negate(BCDperp, BCDperp);
+    vec3.neg(BCDperp, BCDperp);
   }
 
   let minD = Infinity;

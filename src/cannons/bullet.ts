@@ -314,7 +314,7 @@ export async function breakBullet(
     const vel = vec3.clone(bullet.parametric.vel);
     // vel[2] = -vel[2]; // assume we're at the end of a parabola
     vec3.normalize(vel, vel);
-    vec3.negate(vel, vel); // reflact back along path of travel
+    vec3.neg(vel, vel); // reflact back along path of travel
     vec3.add(vel, randNormalVec3(tempVec3()), vel);
     vec3.add(vel, [0, 0, +1], vel); // bias upward
     vec3.normalize(vel, vel);

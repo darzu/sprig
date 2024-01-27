@@ -34,8 +34,8 @@ export function createLineMesh(
   vec3.scale(fwd, len, fwd);
   vec3.scale(right, width * 0.5, right);
   vec3.scale(up, width * 0.5, up);
-  const left = vec3.negate(right, _t4);
-  const down = vec3.negate(up, _t5);
+  const left = vec3.neg(right, _t4);
+  const down = vec3.neg(up, _t5);
 
   const mesh = createEmptyMesh("line");
 

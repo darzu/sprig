@@ -580,7 +580,7 @@ function getDirsToTan(
   const perpR: vec3.InputT = [srcToTrg[1], -srcToTrg[0], 0];
   const normR = vec3.normalize(perpR);
   const scaledR = vec3.scale(normR, trgRad);
-  const scaledL = vec3.negate(scaledR);
+  const scaledL = vec3.neg(scaledR);
   vec3.add(trg, scaledR, outR);
   vec3.add(trg, scaledL, outL);
 }

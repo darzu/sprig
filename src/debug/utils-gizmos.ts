@@ -81,7 +81,7 @@ export function createGraph3D(
   EM.set(
     graphSurf,
     PositionDef,
-    vec3.mul(vec3.negate(domain.min), surfScale, vec3.mk())
+    vec3.mul(vec3.neg(domain.min), surfScale, vec3.mk())
     // vec3.add(worldGizmo.position, [50, 10, 50], V(0, 0, 0))
   );
   EM.set(graphSurf, PhysicsParentDef, graph.id);

@@ -445,7 +445,7 @@ EM.addEagerInit([SunlessShipDef], [], [], (_) => {
 
         // dampen
         if (e.sunlessShip.doDampen && vec3.sqrLen(rotatedAccel) === 0) {
-          const dampDir = vec3.normalize(vec3.negate(e.linearVelocity));
+          const dampDir = vec3.normalize(vec3.neg(e.linearVelocity));
           vec3.scale(dampDir, speed, rotatedAccel);
 
           // halt if at small delta
@@ -535,7 +535,7 @@ EM.addEagerInit([SunlessPlayerDef], [CubeMesh.def], [], ({ mesh_cube }) => {
         );
 
         // kickback
-        const kickback = vec3.negate(bullet.linearVelocity);
+        const kickback = vec3.neg(bullet.linearVelocity);
         vec3.scale(kickback, 0.1, kickback);
         vec3.add(ship.linearVelocity, kickback, ship.linearVelocity);
       }

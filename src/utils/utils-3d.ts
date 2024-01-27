@@ -191,7 +191,7 @@ export function quatFromUpForward_OLD(
   // https://stackoverflow.com/questions/52413464/look-at-quaternion-using-up-vector/52551983#52551983
   // TODO(@darzu): swap this with orthonormalize()
   const side = vec3.cross(forwardish, up, __t1);
-  vec3.negate(side, side); // TODO(@darzu): is this negate right?
+  vec3.neg(side, side); // TODO(@darzu): is this negate right?
   vec3.normalize(side, side);
   const backward = vec3.cross(side, up, __t2);
 

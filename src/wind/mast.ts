@@ -170,7 +170,7 @@ EM.addEagerInit([MastDef], [], [], () => {
         );
         const linVelMag = vec3.len(e.linearVelocity);
         const velDrag = linVelMag * linVelMag * VELOCITY_DRAG;
-        const dragForce = vec3.scale(vec3.negate(e.linearVelocity), velDrag);
+        const dragForce = vec3.scale(vec3.neg(e.linearVelocity), velDrag);
         // console.log(
         //   `sail: ${vec3Dbg(vec3.scale(sailAccel, 100))}\n` +
         //     `drag: ${vec3Dbg(vec3.scale(dragForce, 100))}`
