@@ -1,5 +1,5 @@
 import {
-  vec2,
+  V2,
   V3,
   vec4,
   quat,
@@ -71,10 +71,10 @@ export function randNormalPosVec3(out?: V3) {
   return out;
 }
 
-export function randNormalVec2(out: vec2) {
+export function randNormalVec2(out: V2) {
   // TODO(@darzu): not evenly distributed on sphere!
-  vec2.set(Math.random() - 0.5, Math.random() - 0.5, out);
-  vec2.normalize(out, out);
+  V2.set(Math.random() - 0.5, Math.random() - 0.5, out);
+  V2.normalize(out, out);
   return out;
 }
 
@@ -117,7 +117,7 @@ export function vec3Floor(out: V3, v: V3.InputT): V3 {
 export function aabbDbg(v: AABB): string {
   return `min:${vec3Dbg(v.min)},max:${vec3Dbg(v.max)}`;
 }
-export function vec2Dbg(v: vec2.InputT): string {
+export function vec2Dbg(v: V2.InputT): string {
   return `[${v[0].toFixed(2)},${v[1].toFixed(2)}]`;
 }
 export function vec3Dbg(v?: V3.InputT): string {
@@ -246,7 +246,7 @@ export function uintToVec3unorm(i: number, max: number): V3 {
 
 // Changes all vec2s to be in the range [0,1] based on the max and min values
 //   of the whole array.
-export function normalizeVec2s(vs: vec2[], min: number, max: number): void {
+export function normalizeVec2s(vs: V2[], min: number, max: number): void {
   const minX = vs.reduce((p, n) => (n[0] < p ? n[0] : p), Infinity);
   const maxX = vs.reduce((p, n) => (n[0] > p ? n[0] : p), -Infinity);
   const minY = vs.reduce((p, n) => (n[1] < p ? n[1] : p), Infinity);
@@ -309,12 +309,12 @@ export function positionAndTargetToOrthoViewProjMatrix(
   return viewMatrix;
 }
 
-export function signedAreaOfTriangle(a: vec2, b: vec2, c: vec2): number {
+export function signedAreaOfTriangle(a: V2, b: V2, c: V2): number {
   const ab = tempVec2();
   const ac = tempVec2();
-  vec2.sub(b, a, ab);
-  vec2.sub(c, a, ac);
-  let cross = vec2.cross(ab, ac);
+  V2.sub(b, a, ab);
+  V2.sub(c, a, ac);
+  let cross = V2.cross(ab, ac);
   return 0.5 * cross[2];
 }
 

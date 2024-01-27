@@ -1,6 +1,6 @@
 import { DBG_ASSERT } from "../flags.js";
 import { BLACK } from "./mesh-list.js";
-import { vec2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { hexAvg } from "../hex/hex.js";
 import { RawMesh } from "./mesh.js";
 import { tempVec3 } from "../matrix/temp-pool.js";

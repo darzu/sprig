@@ -13,7 +13,7 @@ import { BallMesh } from "../meshes/mesh-list.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { assert } from "../utils/util.js";
 import { CameraComputedDef } from "../camera/camera.js";
-import { vec2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import {
   PhysicsResultsDef,
   WorldFrameDef,
@@ -69,7 +69,7 @@ EM.addLazyInit([BallMesh.def], [GlobalCursor3dDef], async (res) => {
       assert(cs.length === 1, "we only support one cursor right now");
 
       // shoot a ray from screen center to figure out where to put the cursor
-      const screenMid: vec2 = vec2.clone([
+      const screenMid: V2 = V2.clone([
         res.cameraComputed.width * 0.5,
         res.cameraComputed.height * 0.4,
       ]);

@@ -3,7 +3,7 @@ import { EM, Entity } from "../ecs/entity-manager.js";
 import { AllMeshSymbols, BLACK } from "../meshes/mesh-list.js";
 import { BulletDef } from "../cannons/bullet.js";
 import { GravityDef } from "../motion/gravity.js";
-import { vec2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { createIdxPool } from "../utils/idx-pool.js";
 import { jitter } from "../utils/math.js";
 import { AudioDef } from "../audio/audio.js";
@@ -861,12 +861,12 @@ export function createTimberBuilder(mesh: RawMesh) {
 
       // TODO(@darzu): HACK! This ensures that adjacent "teeth" in the splinter
       //    are properly manifold/convex/something-something
-      let cross_last_this = vec2.cross([lastX, lastY], [x, y], __temp1);
+      let cross_last_this = V2.cross([lastX, lastY], [x, y], __temp1);
       let maxLoop = 10;
       while (cross_last_this[2] > 0 && maxLoop > 0) {
         if (x < 0) y += 0.1;
         else y -= 0.1;
-        vec2.cross([lastX, lastY], [x, y], cross_last_this);
+        V2.cross([lastX, lastY], [x, y], cross_last_this);
         maxLoop--;
       }
       if (VERBOSE_LOG && cross_last_this[2] > 0)

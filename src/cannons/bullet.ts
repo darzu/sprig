@@ -1,5 +1,5 @@
 import { EM, Component, Entity, EntityW } from "../ecs/entity-manager.js";
-import { vec2, V3, vec4, quat, mat4, V, tV } from "../matrix/sprig-matrix.js";
+import { V2, V3, vec4, quat, mat4, V, tV } from "../matrix/sprig-matrix.js";
 import { FinishedDef } from "../ecs/em-helpers.js";
 import { ColorDef } from "../color/color-ecs.js";
 import {

@@ -1,8 +1,10 @@
-import { vec2, V3, vec4, quat, mat4, V } from "./sprig-matrix.js";
+import { V2, V3, vec4, quat, mat4, V } from "./sprig-matrix.js";
 import { range } from "../utils/util.js";
 
+// TODO(@darzu): remove this!! we have a different way to do this now
+
 class _TempPool {
-  private vec2s: vec2[];
+  private vec2s: V2[];
   private nextVec2 = 0;
   private vec3s: V3[];
   private nextVec3 = 0;
@@ -16,14 +18,14 @@ class _TempPool {
   private nextMat4 = 0;
 
   constructor(maxVecs: number, maxQuats: number, maxMat4s: number) {
-    this.vec2s = range(maxVecs).map(() => vec2.mk());
+    this.vec2s = range(maxVecs).map(() => V2.mk());
     this.vec3s = range(maxVecs).map(() => V3.mk());
     this.vec4s = range(maxVecs).map(() => vec4.create());
     this.quats = range(maxQuats).map(() => quat.create());
     this.mat4s = range(maxMat4s).map(() => mat4.create());
   }
 
-  public vec2(): vec2 {
+  public vec2(): V2 {
     if (this.nextVec2 >= this.vec2s.length) this.nextVec2 = 0;
     return this.vec2s[this.nextVec2++];
   }

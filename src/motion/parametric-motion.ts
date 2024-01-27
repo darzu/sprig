@@ -1,5 +1,5 @@
 import { Component, EM } from "../ecs/entity-manager.js";
-import { V3, V, vec2, tV, InputT, quat } from "../matrix/sprig-matrix.js";
+import { V3, V, V2, tV, InputT, quat } from "../matrix/sprig-matrix.js";
 import { TimeDef } from "../time/time.js";
 import { PositionDef } from "../physics/transform.js";
 import { assert } from "../utils/util.js";
@@ -172,7 +172,7 @@ export function mkProjectileAngleFromRangeFn(
   speed: number,
   ay: number
 ) {
-  const data: vec2[] = []; // angle vs range
+  const data: V2[] = []; // angle vs range
   for (let angle of [0, Math.PI / 8, Math.PI / 4]) {
     const range = projectileRange(angle, speed, y0, ay);
     data.push(V(range, angle));

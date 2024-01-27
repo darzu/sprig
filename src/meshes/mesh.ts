@@ -1,5 +1,5 @@
 import { ASSET_LOG_VERT_CHANGES, DBG_ASSERT, DBG_FANG_SHIP } from "../flags.js";
-import { vec2, V3, vec4, quat, mat4, V, mat3 } from "../matrix/sprig-matrix.js";
+import { V2, V3, vec4, quat, mat4, V, mat3 } from "../matrix/sprig-matrix.js";
 import { max, sum } from "../utils/math.js";
 import { AABB, createAABB, getAABBFromPositions } from "../physics/aabb.js";
 import { assert, range } from "../utils/util.js";
@@ -34,13 +34,13 @@ export interface RawMesh {
   pos: V3[]; // TODO(@darzu): rename to locs ?
   tri: V3[];
   quad: vec4[]; // MUST NOT be redundant w/ `tri`
-  lines?: vec2[];
+  lines?: V2[];
   // per-face data, so one per quad and tri
   //  NOTE: first all the quad data is stored, then all the tri data
   colors: V3[]; // in r,g,b float [0-1] format
   surfaceIds?: number[];
   // per-vertex data
-  uvs?: vec2[]; // optional; one uv per vertex
+  uvs?: V2[]; // optional; one uv per vertex
   // TODO(@darzu): normals and tangents need some thought and work. Are they face or vert? Right now seems like vert.
   // TODO(@darzu): right now normals and tangents are only read by the computeOceanVertsData (I think)
   tangents?: V3[]; // optional; one tangent per vertex
@@ -117,7 +117,7 @@ export function isRigged(mesh: Mesh): mesh is RiggedMesh {
 // TODO(@darzu): doesn't fit well with other mesh stuff.....
 export interface LineMesh {
   pos: V3[];
-  lines: vec2[];
+  lines: V2[];
 }
 
 export function meshStats(m: RawMesh): string {
@@ -151,8 +151,8 @@ export function cloneMesh(m: Mesh | RawMesh): Mesh | RawMesh {
     tri: m.tri.map((p) => V3.clone(p)),
     quad: m.quad.map((p) => vec4.clone(p)),
     colors: m.colors.map((p) => V3.clone(p)),
-    lines: m.lines?.map((p) => vec2.clone(p)),
-    uvs: m.uvs?.map((p) => vec2.clone(p)),
+    lines: m.lines?.map((p) => V2.clone(p)),
+    uvs: m.uvs?.map((p) => V2.clone(p)),
     tangents: m.tangents?.map((p) => V3.clone(p)),
     normals: m.normals?.map((p) => V3.clone(p)),
     surfaceIds: (m as Mesh).surfaceIds
@@ -313,7 +313,7 @@ export function unshareProvokingVerticesWithMap(
   provoking: { [key: number]: boolean };
 } {
   const pos: V3[] = [...input.pos];
-  const uvs: vec2[] | undefined = input.uvs ? [...input.uvs] : undefined;
+  const uvs: V2[] | undefined = input.uvs ? [...input.uvs] : undefined;
   const tangents: V3[] | undefined = input.tangents
     ? [...input.tangents]
     : undefined;
@@ -676,13 +676,13 @@ export function getQuadMeshEdges(m: RawMesh): number[][] {
 }
 
 export function getMeshAsGrid(m: RawMesh): {
-  coords: vec2[];
+  coords: V2[];
   grid: number[][];
 } {
   // TODO(@darzu): PERF. can big arrays of vecs be more efficiently allocated
   //  as slices into one big type array or something? Each of these is doing
   //  a "new Float32Array(2)" which seems inefficient. Instead of:
-  //    const coords = new Array(m.pos.length).fill(vec2.create());
+  //    const coords = new Array(m.pos.length).fill(V2.create());
   // TODO(@darzu): PERF. could be made more efficient by using one big typed array
   //  of vert indices w/ 4 slots for edges.
 
@@ -725,7 +725,7 @@ export function getMeshAsGrid(m: RawMesh): {
   const yLen = distToCorner(origin, yDirVert) + 1;
 
   // setup out grid structures
-  const coords: vec2[] = [];
+  const coords: V2[] = [];
   // TODO: figure out grid length
   const grid: number[][] = new Array(xLen)
     .fill([])
@@ -766,7 +766,7 @@ export function getMeshAsGrid(m: RawMesh): {
 
   function place(vi: number, x: number, y: number) {
     grid[x][y] = vi;
-    coords[vi] = vec2.clone([x, y]);
+    coords[vi] = V2.clone([x, y]);
     worklist.push({ vi, x, y });
 
     if (!dbgCheckState()) {
@@ -976,7 +976,7 @@ export function mergeMeshes(...rs: RawMesh[]): RawMesh {
     if (m.lines)
       m.lines = [
         ...m.lines,
-        ...r.lines!.map((t) => vec2.clone([t[0] + posIdx, t[1] + posIdx])),
+        ...r.lines!.map((t) => V2.clone([t[0] + posIdx, t[1] + posIdx])),
       ];
     m.colors = [...m.colors, ...r.colors];
     if (m.surfaceIds) m.surfaceIds = [...m.surfaceIds, ...r.surfaceIds!];

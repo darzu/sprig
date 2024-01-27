@@ -4,7 +4,7 @@ import { ENDESGA16 } from "../color/palettes.js";
 import { EM, EntityW, Resources } from "../ecs/entity-manager.js";
 import { AllMeshes, AllMeshesDef, UnitCubeMesh } from "../meshes/mesh-list.js";
 import { gameplaySystems } from "../debug/ghost.js";
-import { vec2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { MouseDragDef } from "../input/inputs.js";
 import { ColliderDef } from "../physics/collider.js";
 import { PhysicsResultsDef } from "../physics/nonintersection.js";

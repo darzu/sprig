@@ -4,7 +4,7 @@ import { TextDef } from "../gui/ui.js";
 import { AABB2, aabbCenter2, updateAABBWithPoint2_ } from "../physics/aabb.js";
 import { CY } from "../render/gpu-registry.js";
 import { RendererDef } from "../render/renderer-ecs.js";
-import { V, tV, vec2, vec4 } from "../matrix/sprig-matrix.js";
+import { V, tV, V2, vec4 } from "../matrix/sprig-matrix.js";
 import { assert, assertDbg } from "../utils/util.js";
 import { vec2Dbg, vec4Dbg } from "../utils/utils-3d.js";
 import { MapName, MapBytesSetDef, MapBytes, MapHelp } from "./map-loader.js";
@@ -51,7 +51,7 @@ export const LandMapTexPtr = CY.createTexture("landMap", {
 export const LevelMapDef = EM.defineResource("levelMap", () => ({
   name: "unknown",
   landCyTexData: new Float32Array(),
-  towers: [] as [vec2, vec2][],
+  towers: [] as [V2, V2][],
   startPos: V(0, 0),
   windDir: V(0, 0),
   endZonePos: V(0, 0),
@@ -73,7 +73,7 @@ interface MapBlob {
 
 const mapCache = new Map<string, LevelMap>();
 
-function centerOfMassAndDirection(b: MapBlob): [vec2, vec2] {
+function centerOfMassAndDirection(b: MapBlob): [V2, V2] {
   let cx = 0;
   let cy = 0;
   let len = 0;
@@ -105,7 +105,7 @@ function centerOfMassAndDirection(b: MapBlob): [vec2, vec2] {
     }
   }
   const dir = V(fx - cx, fy - cy);
-  vec2.normalize(dir, dir);
+  V2.normalize(dir, dir);
   return [V(cx, cy), dir];
 }
 
@@ -271,7 +271,7 @@ export function parseAndMutateIntoMapData(
     (b) => b.color[0] < 100 && b.color[1] < 100 && b.color[2] > 200
   )[0];
   assert(!!startBlob, `no start blob`);
-  const startPos = aabbCenter2(vec2.mk(), startBlob.aabb);
+  const startPos = aabbCenter2(V2.mk(), startBlob.aabb);
 
   // extract tower locations
   const towers = blobs
@@ -318,7 +318,7 @@ export function parseAndMutateIntoMapData(
     `expected 1 end zone, found ${endZoneBlobs.length}`
   );
   const endZoneBlob = endZoneBlobs[0];
-  const endZonePos = aabbCenter2(vec2.mk(), endZoneBlob.aabb);
+  const endZonePos = aabbCenter2(V2.mk(), endZoneBlob.aabb);
 
   const levelMap: LevelMap = {
     landCyTexData,

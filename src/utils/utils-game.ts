@@ -7,7 +7,7 @@ import {
   GizmoMesh,
   UnitCubeMesh,
 } from "../meshes/mesh-list.js";
-import { vec2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { remap } from "./math.js";
 import { getLineEnd, Line, Ray } from "../physics/broadphase.js";
 import {
@@ -149,7 +149,7 @@ export async function randomizeMeshColors(e: Entity) {
 
 export function screenPosToWorldPos(
   out: V3,
-  screenPos: vec2,
+  screenPos: V2,
   cameraComputed: CameraView,
   screenDepth: number = 0
 ): V3 {
@@ -162,10 +162,7 @@ export function screenPosToWorldPos(
   return V3.tMat4(viewPos3, invViewProj, out);
 }
 
-export function screenPosToRay(
-  screenPos: vec2,
-  cameraComputed: CameraView
-): Ray {
+export function screenPosToRay(screenPos: V2, cameraComputed: CameraView): Ray {
   const origin = screenPosToWorldPos(V3.mk(), screenPos, cameraComputed, -1);
   const target = screenPosToWorldPos(tempVec3(), screenPos, cameraComputed, 0);
 

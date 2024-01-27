@@ -1,4 +1,4 @@
-import { vec2, V3, vec4, quat, mat4, mat3, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, vec4, quat, mat4, mat3, V } from "../matrix/sprig-matrix.js";
 import { clamp } from "../utils/math.js";
 import { range } from "../utils/util.js";
 import { vec3Floor } from "../utils/utils-3d.js";
@@ -604,7 +604,7 @@ export function transformLine(out: Line, t: mat4) {
 export function raySphereIntersections(
   ray: Ray,
   sphere: Sphere
-): vec2 | undefined {
+): V2 | undefined {
   // https://iquilezles.org/articles/intersectors/
   const a = V3.sub(ray.org, sphere.org);
   const b = V3.dot(a, ray.dir);
@@ -618,7 +618,7 @@ export function raySphereIntersections(
 export function lineSphereIntersections(
   line: Line,
   sphere: Sphere
-): vec2 | undefined {
+): V2 | undefined {
   const hits = raySphereIntersections(line.ray, sphere);
   // return hits; // TODO(@darzu): HACK
   if (!hits) return undefined;

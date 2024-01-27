@@ -14,7 +14,7 @@ import {
 } from "../render/renderer-ecs.js";
 import { assert } from "../utils/util.js";
 import { RendererDef } from "../render/renderer-ecs.js";
-import { vec2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { vec3Dbg } from "../utils/utils-3d.js";
 import { mkCubeMesh } from "../meshes/primatives.js";
 import { Phase } from "../ecs/sys-phase.js";

@@ -1,5 +1,5 @@
 import { EM } from "../ecs/entity-manager.js";
-import { vec2, V3, V, mat3, quat } from "../matrix/sprig-matrix.js";
+import { V2, V3, V, mat3, quat } from "../matrix/sprig-matrix.js";
 import { PositionDef, RotationDef, ScaleDef } from "../physics/transform.js";
 import { Mesh } from "../meshes/mesh.js";
 import {
@@ -22,7 +22,7 @@ function sockMesh(): Mesh {
   const pos: V3[] = [V(0, 0, 0), V(0, 0, 2), V(0, 2, 1)];
   const tri: V3[] = [V(0, 1, 2), V(2, 1, 0)];
   const colors: V3[] = tri.map((_) => V(0, 0, 0));
-  const lines: vec2[] = [];
+  const lines: V2[] = [];
 
   return {
     pos,

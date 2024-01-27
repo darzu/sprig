@@ -1,5 +1,5 @@
 import { clamp } from "../utils/math.js";
-import { vec2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { objMap } from "../utils/util.js";
 import { vec3Dbg } from "../utils/utils-3d.js";
 import { toV3, toFRGB, parseHex, toFLRGB } from "./color.js";

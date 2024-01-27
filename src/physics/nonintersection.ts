@@ -1,6 +1,6 @@
 import { Collider, ColliderDef, DefaultLayer, Layer } from "./collider.js";
 import { Component, EM, Entity } from "../ecs/entity-manager.js";
-import { vec2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import {
   CollidesWith,
   computeContactData,

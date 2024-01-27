@@ -1,7 +1,7 @@
 import { AnimateTo, AnimateToDef } from "../animation/animate-to.js";
 import { createRef, Ref } from "../ecs/em-helpers.js";
 import { EM } from "../ecs/entity-manager.js";
-import { vec2, V3, quat } from "../matrix/sprig-matrix.js";
+import { V2, V3, quat } from "../matrix/sprig-matrix.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { eventWizard } from "../net/events.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
@@ -39,8 +39,8 @@ export const SpawnerDef = EM.defineComponent(
 );
 
 export function createSpawner(
-  uvPos: vec2,
-  uvDir: vec2,
+  uvPos: V2,
+  uvDir: V2,
   animate?: Partial<AnimateTo>
 ) {
   const e = EM.new();
@@ -73,9 +73,9 @@ export function registerUvSpawnSystems() {
 
         // TODO(@darzu): parameterize what is spawned
         const b = spawnEnemyShip(
-          vec2.copy(vec2.mk(), t.uvPos),
+          V2.copy(V2.mk(), t.uvPos),
           t.id,
-          vec2.copy(vec2.mk(), t.uvDir)
+          V2.copy(V2.mk(), t.uvDir)
         );
 
         // console.log(`spawning ${b.id} from ${t.id} at ${performance.now()}`);

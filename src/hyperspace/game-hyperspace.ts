@@ -31,7 +31,7 @@ import {
   registerOceanUVFns,
 } from "../ocean/ocean.js";
 import { asyncTimeout } from "../utils/util.js";
-import { vec2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { AnimateToDef } from "../animation/animate-to.js";
 import {
   createSpawner,
@@ -175,15 +175,15 @@ export async function initHyperspaceGame() {
     const eShip = EM.new();
     EM.set(eShip, RenderableConstructDef, res.allMeshes.ship_fangs.proto);
     EM.set(eShip, PositionDef);
-    EM.set(eShip, UVPosDef, vec2.clone([0.2, 0.1]));
+    EM.set(eShip, UVPosDef, V2.clone([0.2, 0.1]));
 
-    const ship = createHsShip(vec2.clone([0.1, 0.1]));
+    const ship = createHsShip(V2.clone([0.1, 0.1]));
     const ship2 = await EM.whenEntityHas(ship, UVPosDef);
 
     const NUM_ENEMY = 40;
 
     for (let i = 0; i < NUM_ENEMY; i++) {
-      let enemyUVPos: vec2 = vec2.clone([Math.random(), Math.random()]);
+      let enemyUVPos: V2 = V2.clone([Math.random(), Math.random()]);
       // TODO(@darzu): re-enable
       // while (ocean.uvToEdgeDist(enemyUVPos) < 0.1) {
       //   enemyUVPos = [Math.random(), Math.random()];
@@ -195,8 +195,8 @@ export async function initHyperspaceGame() {
       // vec3.add(enemyEndPos, enemyEndPos, [0, 10, 0]);
       const enemyStartPos = V3.sub(enemyEndPos, [0, 20, 0], V3.mk());
 
-      const towardsPlayerDir = vec2.sub(ship2.uvPos, enemyUVPos, vec2.mk());
-      vec2.normalize(towardsPlayerDir, towardsPlayerDir);
+      const towardsPlayerDir = V2.sub(ship2.uvPos, enemyUVPos, V2.mk());
+      V2.normalize(towardsPlayerDir, towardsPlayerDir);
 
       // console.log("creating spawner");
       const enemySpawner = createSpawner(enemyUVPos, towardsPlayerDir, {

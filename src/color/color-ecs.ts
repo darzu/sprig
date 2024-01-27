@@ -1,5 +1,5 @@
 import { Component, EM } from "../ecs/entity-manager.js";
-import { vec2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 
 export const ColorDef = EM.defineComponent(
   "color",

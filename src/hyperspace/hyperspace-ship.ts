@@ -1,5 +1,5 @@
 import { EM } from "../ecs/entity-manager.js";
-import { vec2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import {
   RenderableConstructDef,
@@ -138,8 +138,8 @@ export const { HsShipPropsDef, HsShipLocalDef, createHsShip } =
       rudder: createRef(0, [RudderPropsDef, YawPitchDef]),
       mast: createRef(0, [HypMastPropsDef, HypMastLocalDef]),
     }),
-    updateProps: (p, uvPos?: vec2.InputT) => {
-      if (uvPos) vec2.copy(p.uvPos, uvPos);
+    updateProps: (p, uvPos?: V2.InputT) => {
+      if (uvPos) V2.copy(p.uvPos, uvPos);
       return p;
     },
     serializeProps: (c, buf) => {
@@ -192,8 +192,8 @@ export const { HsShipPropsDef, HsShipLocalDef, createHsShip } =
         s.hsShipProps.cannonLId = cannonL.id;
       }
 
-      vec2.copy(s.uvPos, s.hsShipProps.uvPos);
-      vec2.set(1, 0, s.uvDir);
+      V2.copy(s.uvPos, s.hsShipProps.uvPos);
+      V2.set(1, 0, s.uvDir);
 
       EM.set(s, PositionDef);
       EM.set(s, RotationDef);
@@ -385,7 +385,7 @@ export function registerShipSystems() {
         // STEERING
         let yaw = s.hsShipProps.rudder()!.yawpitch.yaw;
 
-        vec2.rotate(s.uvDir, vec2.ZEROS, yaw * 0.02, s.uvDir);
+        V2.rotate(s.uvDir, V2.ZEROS, yaw * 0.02, s.uvDir);
       }
     }
   );

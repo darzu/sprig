@@ -1,6 +1,6 @@
 import { DBG_ASSERT } from "../flags.js";
 import {
-  vec2,
+  V2,
   V3,
   vec4,
   quat,

@@ -5,7 +5,7 @@ import { WorldFrameDef } from "../physics/nonintersection.js";
 import { PhysicsParentDef, PositionDef } from "../physics/transform.js";
 import { LevelMapDef } from "../levels/level-map.js";
 import { LD52ShipDef } from "./ship.js";
-import { tV, V, V3, vec2 } from "../matrix/sprig-matrix.js";
+import { tV, V, V3, V2 } from "../matrix/sprig-matrix.js";
 import { assert, dbgLogOnce, dbgOnce } from "../utils/util.js";
 import { vec2Dbg, vec3Dbg } from "../utils/utils-3d.js";
 import { Phase } from "../ecs/sys-phase.js";
@@ -33,13 +33,13 @@ export const LandDef = EM.defineResource("land", () => ({
   sample: (x: number, y: number) => 0 as number,
 }));
 
-const yBasis = vec2.mk(); // TODO(@darzu): rename fwd
-const xBasis = vec2.mk(); // TODO(@darzu): rename right
+const yBasis = V2.mk(); // TODO(@darzu): rename fwd
+const xBasis = V2.mk(); // TODO(@darzu): rename right
 const xBasis3 = V3.mk();
-const pointTemp = vec2.mk();
+const pointTemp = V2.mk();
 const nudgeTemp = V3.mk();
-const scaledTemp1 = vec2.mk();
-const scaledTemp2 = vec2.mk();
+const scaledTemp1 = V2.mk();
+const scaledTemp2 = V2.mk();
 
 // TODO: import these from somewhere
 const WORLD_WIDTH = 1024; // width runs +X
@@ -77,26 +77,24 @@ EM.addSystem(
     //console.log(`ship at ${shipCenter[0]}, ${shipCenter[1]}`);
 
     // res.party.dir is fwd / +Y
-    vec2.set(
+    V2.set(
       res.party.dir[0] * halfLength,
       res.party.dir[1] * halfLength,
       yBasis
     );
     const UP: V3.InputT = [0, 0, 1];
     V3.cross(UP, res.party.dir, xBasis3);
-    vec2.set(xBasis3[0] * halfWidth, xBasis3[1] * halfWidth, xBasis);
+    V2.set(xBasis3[0] * halfWidth, xBasis3[1] * halfWidth, xBasis);
 
     // corners of the ship in world-space in counter-clockwise order
     // TODO(@darzu): this seems clockwise to me?
-    const cornersFromCenter: vec2[] = [
-      vec2.sub(vec2.sub(vec2.zero(), yBasis), xBasis),
-      vec2.sub(vec2.add(vec2.zero(), yBasis), xBasis),
-      vec2.add(vec2.add(vec2.zero(), yBasis), xBasis),
-      vec2.add(vec2.sub(vec2.zero(), yBasis), xBasis),
+    const cornersFromCenter: V2[] = [
+      V2.sub(V2.sub(V2.zero(), yBasis), xBasis),
+      V2.sub(V2.add(V2.zero(), yBasis), xBasis),
+      V2.add(V2.add(V2.zero(), yBasis), xBasis),
+      V2.add(V2.sub(V2.zero(), yBasis), xBasis),
     ];
-    const corners: vec2[] = cornersFromCenter.map((v) =>
-      vec2.add(shipCenter, v)
-    );
+    const corners: V2[] = cornersFromCenter.map((v) => V2.add(shipCenter, v));
     //console.log(corners);
 
     // if (DBG_COLLISIONS) dbgLogOnce(`isLand is using ${res.levelMap.name}`);
@@ -144,7 +142,7 @@ EM.addSystem(
           const r = s / (SAMPLES_PER_EDGE + 1);
 
           const localNeighbor = cornersFromCenter[(i + 1) % 4];
-          const localPoint = vec2.lerp(localCorner, localNeighbor, r);
+          const localPoint = V2.lerp(localCorner, localNeighbor, r);
           console.log(`localPoint: ${vec2Dbg(localPoint)}`);
           const ball = drawBall(
             [localPoint[0], localPoint[1], 0],
@@ -218,17 +216,17 @@ EM.addSystem(
       for (let s = 1; s <= SAMPLES_PER_EDGE; s++) {
         const r = s / (SAMPLES_PER_EDGE + 1);
         // TODO(@darzu): replace with lerp?
-        const point = vec2.lerp(corner, neighbor, r, pointTemp);
-        // const point = vec2.add(
-        //   vec2.scale(corner, 1 - r, scaledTemp1),
-        //   vec2.scale(neighbor, r, scaledTemp2),
+        const point = V2.lerp(corner, neighbor, r, pointTemp);
+        // const point = V2.add(
+        //   V2.scale(corner, 1 - r, scaledTemp1),
+        //   V2.scale(neighbor, r, scaledTemp2),
         //   pointTemp
         // );
         //console.log(point);
 
         if (isLand(point[0], point[1])) {
           //console.log(`touching land at face ${i}`);
-          const dist = vec2.sub(neighbor, corner, pointTemp);
+          const dist = V2.sub(neighbor, corner, pointTemp);
           const nudge = V3.cross(
             UP,
             V3.set(dist[0], dist[1], 0, nudgeTemp),

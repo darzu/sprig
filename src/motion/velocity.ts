@@ -1,5 +1,5 @@
 import { EM, Component } from "../ecs/entity-manager.js";
-import { vec2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { TimeDef } from "../time/time.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
 import { Phase } from "../ecs/sys-phase.js";

@@ -21,7 +21,7 @@ import {
 } from "./gpu-registry.js";
 import { MeshPool } from "./mesh-pool.js";
 import { BLACK } from "../meshes/mesh-list.js";
-import { vec2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { GPUBufferUsage } from "./webgpu-hacks.js";
 import { PERF_DBG_GPU, PERF_DBG_GPU_BLAME } from "../flags.js";
 import { dbgAddBlame } from "../utils/util-no-import.js";
@@ -79,7 +79,7 @@ export interface CyTexture {
   resize: (width: number, height: number) => void;
   attachment: (opts?: {
     doClear?: boolean;
-    defaultColor?: vec2 | V3 | vec4;
+    defaultColor?: V2 | V3 | vec4;
     viewOverride?: GPUTextureView;
   }) => GPURenderPassColorAttachment;
 }
@@ -459,7 +459,7 @@ export function createCyTexture(
 
   function attachment(opts?: {
     doClear?: boolean;
-    defaultColor?: vec2 | V3 | vec4;
+    defaultColor?: V2 | V3 | vec4;
     viewOverride?: GPUTextureView;
   }): GPURenderPassColorAttachment {
     assert(!ptr.count, `TODO: impl attachment for texture arrays`);

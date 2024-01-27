@@ -1,6 +1,6 @@
 import { DevConsoleDef } from "../debug/console.js";
 import { EM } from "../ecs/entity-manager.js";
-import { vec2 } from "../matrix/sprig-matrix.js";
+import { V2 } from "../matrix/sprig-matrix.js";
 import { InputsDef } from "../input/inputs.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { UVPosDef, UVDirDef } from "../ocean/ocean.js";
@@ -45,9 +45,9 @@ export function registerUVShipSystems() {
           //    UVDir->Rotation works.
           // TODO(@darzu): This doesn't seem great. We need a better way to
           //    do  UVDir->Rotation
-          //vec2.normalize(s.uvDir, s.uvDir);
-          const scaled = vec2.scale(s.uvDir, s.uvship.speed);
-          vec2.add(s.uvPos, scaled, s.uvPos);
+          //V2.normalize(s.uvDir, s.uvDir);
+          const scaled = V2.scale(s.uvDir, s.uvship.speed);
+          V2.add(s.uvPos, scaled, s.uvPos);
         }
       }
     }

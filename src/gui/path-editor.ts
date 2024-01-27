@@ -2,7 +2,7 @@ import { ColorDef } from "../color/color-ecs.js";
 import { EM, EntityW } from "../ecs/entity-manager.js";
 import { AllMeshesDef } from "../meshes/mesh-list.js";
 import { GameMesh, gameMeshFromMesh } from "../meshes/mesh-loader.js";
-import { vec2, V3, vec4, quat, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, vec4, quat, V } from "../matrix/sprig-matrix.js";
 import { createIdxPool } from "../utils/idx-pool.js";
 import { rayVsRay } from "../physics/broadphase.js";
 import { ColliderDef } from "../physics/collider.js";

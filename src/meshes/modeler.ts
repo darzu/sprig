@@ -1,6 +1,6 @@
 import { CanvasDef } from "../render/canvas.js";
 import { EM, EntityW } from "../ecs/entity-manager.js";
-import { vec2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { InputsDef } from "../input/inputs.js";
 import { remap } from "../utils/math.js";
 import { Ray, RayHit } from "../physics/broadphase.js";
@@ -65,7 +65,7 @@ function registerObjClicker() {
       if (!res.modeler.clickerEnabled) return;
 
       if (res.inputs.lclick) {
-        const screenPos: vec2 = res.inputs.mousePos;
+        const screenPos: V2 = res.inputs.mousePos;
 
         const r = screenPosToRay(screenPos, res.cameraComputed);
 

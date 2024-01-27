@@ -1,6 +1,6 @@
 import { EM, Entity, EntityW, Component } from "../ecs/entity-manager.js";
 import { TimeDef } from "../time/time.js";
-import { vec2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { jitter } from "../utils/math.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import {
@@ -89,16 +89,16 @@ export const { EnemyShipPropsDef, EnemyShipLocalDef, createEnemyShip } =
     },
     updateProps: (
       p,
-      uvLoc?: vec2.InputT,
+      uvLoc?: V2.InputT,
       speed?: number,
       wheelSpeed?: number,
-      uvDir?: vec2.InputT,
+      uvDir?: V2.InputT,
       parent?: number
     ) => {
-      if (uvLoc) vec2.copy(p.uvLoc, uvLoc);
+      if (uvLoc) V2.copy(p.uvLoc, uvLoc);
       if (speed !== undefined) p.speed = speed;
       if (wheelSpeed !== undefined) p.wheelSpeed = wheelSpeed;
-      if (uvDir) vec2.copy(p.uvDir, uvDir);
+      if (uvDir) V2.copy(p.uvDir, uvDir);
       if (parent !== undefined) p.parent = parent;
       return p;
     },
@@ -139,9 +139,9 @@ export const { EnemyShipPropsDef, EnemyShipLocalDef, createEnemyShip } =
       EM.set(e, RenderableConstructDef, res.allMeshes.cubeRaft.mesh);
 
       EM.set(e, UVPosDef);
-      vec2.copy(e.uvPos, e.enemyShipProps.uvLoc);
+      V2.copy(e.uvPos, e.enemyShipProps.uvLoc);
       EM.set(e, UVDirDef);
-      vec2.copy(e.uvDir, e.enemyShipProps.uvDir);
+      V2.copy(e.uvDir, e.enemyShipProps.uvDir);
 
       EM.set(e, PhysicsParentDef, e.enemyShipProps.parent);
 
@@ -243,7 +243,7 @@ export function registerEnemyShipSystems() {
 
         // o.enemyShipProps.uvDir += rad;
         // TODO(@darzu):  * 0.02
-        vec2.rotate(o.uvDir, vec2.ZEROS, radYaw, o.uvDir);
+        V2.rotate(o.uvDir, V2.ZEROS, radYaw, o.uvDir);
       }
     }
   );
@@ -373,9 +373,9 @@ export function breakEnemyShip(
 export const FireZoneDef = EM.defineComponent("firezone", () => {});
 
 export function spawnEnemyShip(
-  loc: vec2,
+  loc: V2,
   parentId: number,
-  uvDir: vec2
+  uvDir: V2
 ): EntityW<[typeof EnemyShipPropsDef]> {
   return createEnemyShip(
     loc,

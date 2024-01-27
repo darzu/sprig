@@ -1,7 +1,7 @@
 import { AnimateToDef } from "../animation/animate-to.js";
 import { createRef, Ref } from "../ecs/em-helpers.js";
 import { EM } from "../ecs/entity-manager.js";
-import { vec2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { InputsDef } from "../input/inputs.js";
 import { clamp } from "../utils/math.js";
 import {
@@ -65,12 +65,12 @@ export interface UVSurface {
   // TODO(@darzu): Goal: translate to/from 3D world/local space and 2D uv space
   ent: Ref<[typeof PositionDef]>;
   // TODO(@darzu): uvDistanceToEdge, read the SDF
-  uvToPos: (out: V3, uv: vec2) => V3;
+  uvToPos: (out: V3, uv: V2) => V3;
   // TODO(@darzu): normal and tangent could probably come straight from CPU mesh
-  uvToNorm: (out: V3, uv: vec2) => V3;
-  uvToTang: (out: V3, uv: vec2) => V3;
-  uvToEdgeDist: (uv: vec2) => number;
-  uvToGerstnerDispAndNorm: (outDisp: V3, outNorm: V3, uv: vec2) => void;
+  uvToNorm: (out: V3, uv: V2) => V3;
+  uvToTang: (out: V3, uv: V2) => V3;
+  uvToEdgeDist: (uv: V2) => number;
+  uvToGerstnerDispAndNorm: (outDisp: V3, outNorm: V3, uv: V2) => void;
   gerstnerWaves: GerstnerWaveTS[];
 }
 
@@ -81,8 +81,8 @@ export const OceanDef = EM.defineResource("ocean", (o: UVSurface) => {
 
 export const UVPosDef = EM.defineComponent(
   "uvPos",
-  () => vec2.mk(),
-  (p, uv?: vec2.InputT) => (uv ? vec2.copy(p, uv) : p)
+  () => V2.mk(),
+  (p, uv?: V2.InputT) => (uv ? V2.copy(p, uv) : p)
 );
 EM.registerSerializerPair(
   UVPosDef,
@@ -93,7 +93,7 @@ EM.registerSerializerPair(
 export const UVDirDef = EM.defineComponent(
   "uvDir",
   () => V(0, 1),
-  (p, dir?: vec2.InputT) => (dir ? vec2.copy(p, dir) : p)
+  (p, dir?: V2.InputT) => (dir ? V2.copy(p, dir) : p)
 );
 EM.registerSerializerPair(
   UVDirDef,
@@ -202,21 +202,21 @@ export async function initOcean(oceanMesh: Mesh, color: V3) {
   );
 
   // TODO(@darzu): re-enable all these texture reader things
-  const uvToPos = (out: V3, uv: vec2) => {
+  const uvToPos = (out: V3, uv: V2) => {
     dbgLogOnce(`uvToPos is disabled! tex format issues`, undefined, true);
     const x = uv[0] * uvToPosReader.size[0];
     const y = uv[1] * uvToPosReader.size[1];
     // console.log(`${x},${y}`);
     return uvToPosReader.sample(x, y, out);
   };
-  const uvToNorm = (out: V3, uv: vec2) => {
+  const uvToNorm = (out: V3, uv: V2) => {
     dbgLogOnce(`uvToNorm is disabled! tex format issues`, undefined, true);
     const x = uv[0] * uvToNormReader.size[0];
     const y = uv[1] * uvToNormReader.size[1];
     // console.log(`${x},${y}`);
     return uvToNormReader.sample(x, y, out);
   };
-  const uvToTang = (out: V3, uv: vec2) => {
+  const uvToTang = (out: V3, uv: V2) => {
     dbgLogOnce(`uvToTang is disabled! tex format issues`, undefined, true);
     const x = uv[0] * uvToTangReader.size[0];
     const y = uv[1] * uvToTangReader.size[1];
@@ -224,7 +224,7 @@ export async function initOcean(oceanMesh: Mesh, color: V3) {
     return uvToTangReader.sample(x, y, out);
   };
   // TODO(@darzu): re-enable
-  const uvToEdgeDist = (uv: vec2) => {
+  const uvToEdgeDist = (uv: V2) => {
     dbgLogOnce(`uvToEdgeDist is disabled! tex format issues`, undefined, true);
     const x = uv[0] * uvToNormReader.size[0];
     const y = uv[1] * uvToNormReader.size[1];
@@ -234,7 +234,7 @@ export async function initOcean(oceanMesh: Mesh, color: V3) {
   const gerstnerWaves = createWaves();
 
   // TODO(@darzu): HACK!
-  const __temp1 = vec2.mk();
+  const __temp1 = V2.mk();
   const __temp2 = V3.mk();
   const __temp3 = V3.mk();
   const __temp4 = V3.mk();
@@ -245,7 +245,7 @@ export async function initOcean(oceanMesh: Mesh, color: V3) {
   const __temp9 = V3.mk();
   const __temp10 = V3.mk();
   const __temp11 = V3.mk();
-  const uvToGerstnerDispAndNorm = (outDisp: V3, outNorm: V3, uv: vec2) => {
+  const uvToGerstnerDispAndNorm = (outDisp: V3, outNorm: V3, uv: V2) => {
     // console.log(`uv: ${uv}`);
     // TODO(@darzu): impl
     compute_gerstner(
@@ -254,7 +254,7 @@ export async function initOcean(oceanMesh: Mesh, color: V3) {
       gerstnerWaves,
       // TODO(@darzu): reconcile input xy and uv or worldspace units
       // TODO(@darzu): wtf is this 1000x about?!
-      vec2.scale(uv, 1000, __temp1),
+      V2.scale(uv, 1000, __temp1),
       // uv,
       res.time.time
     );
@@ -357,7 +357,7 @@ export function registerOceanUVFns() {
     }
   );
 
-  const __temp3 = vec2.mk();
+  const __temp3 = V2.mk();
   const __temp4 = V3.mk();
   EM.addSystem(
     "oceanUVDirToRot",
@@ -382,9 +382,9 @@ export function registerOceanUVFns() {
         // res.ocean.uvToGerstnerDispAndNorm(tempVec3(), newNorm, e.uvPos);
         // vec3.copy(e.rotation, newNorm);
         // TODO(@darzu): this is horrible.
-        vec2.normalize(e.uvDir, e.uvDir);
-        const scaledUVDir = vec2.scale(e.uvDir, 0.0001, __temp3);
-        const aheadUV = vec2.add(e.uvPos, scaledUVDir, __temp3);
+        V2.normalize(e.uvDir, e.uvDir);
+        const scaledUVDir = V2.scale(e.uvDir, 0.0001, __temp3);
+        const aheadUV = V2.add(e.uvPos, scaledUVDir, __temp3);
         const aheadPos = __temp1;
         res.ocean.uvToGerstnerDispAndNorm(aheadPos, __temp2, aheadUV);
         // const aheadPos = res.ocean.uvToPos(tempVec3(), aheadUV);
@@ -414,20 +414,20 @@ export function registerOceanUVFns() {
 //       // TODO(@darzu): debug moving
 //       // console.log("moving buoy!");
 //       let speed = 0.001;
-//       const deltaUV = vec2.zero(tempVec2());
+//       const deltaUV = V2.zero(tempVec2());
 //       if (res.inputs.keyDowns["shift"]) speed *= 5;
 //       if (res.inputs.keyDowns["arrowright"]) deltaUV[1] -= speed;
 //       if (res.inputs.keyDowns["arrowleft"]) deltaUV[1] += speed;
 //       if (res.inputs.keyDowns["arrowup"]) deltaUV[0] += speed;
 //       if (res.inputs.keyDowns["arrowdown"]) deltaUV[0] -= speed;
 //       if (deltaUV[0] !== 0.0 || deltaUV[1] !== 0.0) {
-//         const newUV = vec2.add(tempVec2(), e.uvPos, deltaUV);
+//         const newUV = V2.add(tempVec2(), e.uvPos, deltaUV);
 
 //         // TODO(@darzu): need a better way to see if UV is out of map bounds
 //         const newPos = res.ocean.uvToPos(tempVec3(), newUV);
 //         if (!vec3.exactEquals(newPos, vec3.ZEROS)) {
-//           vec2.copy(e.uvPos, newUV);
-//           vec2.copy(e.uvDir, deltaUV);
+//           V2.copy(e.uvPos, newUV);
+//           V2.copy(e.uvDir, deltaUV);
 //         }
 //       }
 //     }

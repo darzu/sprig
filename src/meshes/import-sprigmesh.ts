@@ -1,4 +1,4 @@
-import { vec2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { RawMesh } from "./mesh.js";
 
 // TODO(@darzu): maybe never mind any of this? doesn't get much more compressed that .toFixed(2)'ing everything

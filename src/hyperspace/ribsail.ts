@@ -13,7 +13,7 @@ import {
   RenderableDef,
   RendererDef,
 } from "../render/renderer-ecs.js";
-import { quat, V, vec2, V3 } from "../matrix/sprig-matrix.js";
+import { quat, V, V2, V3 } from "../matrix/sprig-matrix.js";
 import { range } from "../utils/util.js";
 import { defineNetEntityHelper } from "../ecs/em-helpers.js";
 import { MeDef } from "../net/components.js";

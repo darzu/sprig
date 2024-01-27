@@ -1,4 +1,4 @@
-import { vec2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { tempQuat } from "../matrix/temp-pool.js";
 
 const ERROR_SMOOTHING_FACTOR = 0.9 ** (60 / 1000);

@@ -1,6 +1,6 @@
 import { Canvas, CanvasDef } from "../render/canvas.js";
 import { Component, EM, Resource } from "../ecs/entity-manager.js";
-import { vec2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { clamp } from "../utils/math.js";
 import { DEBUG_INPUTS } from "../flags.js";
 import { Phase } from "../ecs/sys-phase.js";
@@ -13,8 +13,8 @@ const _seenKeyCodes: Set<string> = new Set();
 export const InputsDef = EM.defineResource("inputs", () => {
   return {
     // TODO(@darzu): should we map mouse 2D pos to be Y up? Y down is annoying..
-    mouseMov: vec2.mk(),
-    mousePos: vec2.mk(),
+    mouseMov: V2.mk(),
+    mousePos: V2.mk(),
     // TODO(@darzu): need rising edge vs falling edge distinction
     lclick: false,
     rclick: false,
@@ -32,12 +32,12 @@ export type Inputs = Resource<typeof InputsDef>;
 export const MouseDragDef = EM.defineResource("mousedrag", () => ({
   isDragging: false,
   isDragEnd: false,
-  dragStart: vec2.mk(),
-  dragEnd: vec2.mk(),
-  dragMin: vec2.mk(),
-  dragMax: vec2.mk(),
-  dragMov: vec2.mk(),
-  dragLastEnd: vec2.mk(),
+  dragStart: V2.mk(),
+  dragEnd: V2.mk(),
+  dragMin: V2.mk(),
+  dragMax: V2.mk(),
+  dragMov: V2.mk(),
+  dragLastEnd: V2.mk(),
 }));
 
 EM.addLazyInit([], [InputsDef, MouseDragDef], () => {
@@ -69,8 +69,8 @@ EM.addLazyInit([], [InputsDef, MouseDragDef], () => {
       if (inputs.ldown && !mousedrag.isDragging) {
         // drag start
         mousedrag.isDragging = true;
-        vec2.copy(mousedrag.dragStart, inputs.mousePos);
-        vec2.copy(mousedrag.dragEnd, inputs.mousePos);
+        V2.copy(mousedrag.dragStart, inputs.mousePos);
+        V2.copy(mousedrag.dragEnd, inputs.mousePos);
       } else if (!inputs.ldown && mousedrag.isDragging) {
         // drag stop
         mousedrag.isDragging = false;
@@ -79,19 +79,19 @@ EM.addLazyInit([], [InputsDef, MouseDragDef], () => {
 
       // update min/max
       if (mousedrag.isDragging) {
-        vec2.copy(mousedrag.dragLastEnd, mousedrag.dragEnd);
-        vec2.copy(mousedrag.dragEnd, inputs.mousePos);
-        vec2.set(
+        V2.copy(mousedrag.dragLastEnd, mousedrag.dragEnd);
+        V2.copy(mousedrag.dragEnd, inputs.mousePos);
+        V2.set(
           Math.min(mousedrag.dragStart[0], mousedrag.dragEnd[0]),
           Math.min(mousedrag.dragStart[1], mousedrag.dragEnd[1]),
           mousedrag.dragMin
         );
-        vec2.set(
+        V2.set(
           Math.max(mousedrag.dragStart[0], mousedrag.dragEnd[0]),
           Math.max(mousedrag.dragStart[1], mousedrag.dragEnd[1]),
           mousedrag.dragMax
         );
-        vec2.copy(mousedrag.dragMov, inputs.mouseMov);
+        V2.copy(mousedrag.dragMov, inputs.mouseMov);
       }
     }
   );
@@ -134,8 +134,8 @@ function createInputsReader(canvas: Canvas): () => Inputs {
   }
 
   // track mouse movement for use in the game loop
-  let accumulated_mouseMov = vec2.mk();
-  let lastMouse: vec2 = vec2.mk();
+  let accumulated_mouseMov = V2.mk();
+  let lastMouse: V2 = V2.mk();
   window.addEventListener(
     "mousemove",
     (ev) => {
@@ -153,9 +153,9 @@ function createInputsReader(canvas: Canvas): () => Inputs {
     },
     false
   );
-  function takeAccumulatedMouseMovement(): vec2 {
-    const res = vec2.clone(accumulated_mouseMov);
-    vec2.zero(accumulated_mouseMov); // reset accumulators
+  function takeAccumulatedMouseMovement(): V2 {
+    const res = V2.clone(accumulated_mouseMov);
+    V2.zero(accumulated_mouseMov); // reset accumulators
     return res;
   }
 
@@ -199,7 +199,7 @@ function createInputsReader(canvas: Canvas): () => Inputs {
     const keyClicks = takeAccumulatedKeyClicks();
     let inputs: Inputs = {
       mouseMov,
-      mousePos: vec2.clone(lastMouse),
+      mousePos: V2.clone(lastMouse),
       lclick: lClicks > 0,
       rclick: rClicks > 0,
       ldown: isLMouseDown,

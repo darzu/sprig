@@ -1,7 +1,7 @@
 // BOIDS
 
 // BOIDS
-import { vec2, V3, vec4, quat, mat4, V } from "../../matrix/sprig-matrix.js";
+import { V2, V3, vec4, quat, mat4, V } from "../../matrix/sprig-matrix.js";
 import { jitter } from "../../utils/math.js";
 import { range } from "../../utils/util.js";
 import { createRenderTextureToQuad } from "../gpu-helper.js";
@@ -146,8 +146,8 @@ const boidWindow = createCyStruct(
 const boidWindowUni = CY.createSingleton("boidWindow", {
   struct: boidWindow,
   init: () => ({
-    xPos: vec2.clone([0, 1]),
-    yPos: vec2.clone([0, 1]),
+    xPos: V2.clone([0, 1]),
+    yPos: V2.clone([0, 1]),
   }),
 });
 

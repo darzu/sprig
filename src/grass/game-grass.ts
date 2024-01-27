@@ -33,7 +33,7 @@ import {
   shadowPipelines,
 } from "../render/pipelines/std-shadow.js";
 import { RenderableConstructDef, RendererDef } from "../render/renderer-ecs.js";
-import { mat3, mat4, quat, V, vec2, V3 } from "../matrix/sprig-matrix.js";
+import { mat3, mat4, quat, V, V2, V3 } from "../matrix/sprig-matrix.js";
 import { SAIL_FURL_RATE } from "../wind/sail.js";
 import { quatFromUpForward_OLD, randNormalVec3 } from "../utils/utils-3d.js";
 import { randColor } from "../utils/utils-game.js";
@@ -108,7 +108,7 @@ const worldZToTexX = (z: number) => Math.floor(z + WORLD_WIDTH / 2);
 const texXToWorldZ = (x: number) => x - WORLD_WIDTH / 2 + 0.5;
 const texYToWorldX = (y: number) => y - WORLD_HEIGHT / 2 + 0.5;
 
-const level2DtoWorld3D = (levelPos: vec2, y: number, out: V3) =>
+const level2DtoWorld3D = (levelPos: V2, y: number, out: V3) =>
   V3.set(
     texYToWorldX(WORLD_HEIGHT - 1 - levelPos[1]),
     y,

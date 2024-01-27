@@ -41,7 +41,7 @@ import {
   RendererDef,
   RiggedRenderableConstructDef,
 } from "../render/renderer-ecs.js";
-import { mat3, quat, tV, V, vec2, V3 } from "../matrix/sprig-matrix.js";
+import { mat3, quat, tV, V, V2, V3 } from "../matrix/sprig-matrix.js";
 import { DevConsoleDef } from "../debug/console.js";
 import { clamp, jitter, max } from "../utils/math.js";
 import { assert, dbgLogMilestone, dbgOnce } from "../utils/util.js";
@@ -151,7 +151,7 @@ const worldYToTexY = (y: number) => Math.floor(y + WORLD_HEIGHT / 2);
 const texXToWorldX = (x: number) => x + 0.5 - WORLD_WIDTH / 2;
 const texYToWorldY = (y: number) => y + 0.5 - WORLD_HEIGHT / 2;
 
-const level2DtoWorld3D = (levelPos: vec2, z: number, out: V3) =>
+const level2DtoWorld3D = (levelPos: V2, z: number, out: V3) =>
   V3.set(texXToWorldX(levelPos[0]), texYToWorldY(levelPos[1]), z, out);
 
 export const mapJfa = createJfaPipelines(LandMapTexPtr, "exterior");
@@ -512,7 +512,7 @@ export async function initLD53(hosting: boolean) {
   });
   const oceanSize = getSizeFromAABB(oceanAABB, V3.mk());
   // TODO(@darzu): how does this uvToPos match with the ocean's gpu-uv-unwrapped thingy?
-  function uvToPos([u, v]: vec2, out: V3): V3 {
+  function uvToPos([u, v]: V2, out: V3): V3 {
     // console.log(u + " " + v);
     out[0] = u * oceanSize[0] + oceanAABB.min[0];
     out[1] = v * oceanSize[1] + oceanAABB.min[1];
@@ -536,7 +536,7 @@ export async function initLD53(hosting: boolean) {
   // load level
   const level = await EM.whenResources(LevelMapDef);
   // console.log(`level.levelMap.windDir: ${vec2Dbg(level.levelMap.windDir)}`);
-  // vec2.set(0, 1, level.levelMap.windDir))
+  // V2.set(0, 1, level.levelMap.windDir))
   const wingAngle = Math.atan2(
     level.levelMap.windDir[1],
     level.levelMap.windDir[0]

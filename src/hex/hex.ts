@@ -1,4 +1,4 @@
-import { vec2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { packI16s, TupleN } from "../utils/util.js";
 
 // Follows: https://www.redblobgames.com/grids/hexagons/
@@ -131,7 +131,7 @@ export function hexRight(dirIdx: number): number {
   return (dirIdx + 1) % HEX_DIRS.length;
 }
 
-export function hexNeighborDirs(dirIdx: number = 0): TupleN<vec2, 6> {
+export function hexNeighborDirs(dirIdx: number = 0): TupleN<V2, 6> {
   return [
     HEX_DIRS[dirIdx],
     HEX_DIRS[hexDirAdd(dirIdx, 1)],
@@ -159,15 +159,15 @@ export function hexNeighbors(
   q: number,
   r: number,
   dirIdx: number = 0
-): TupleN<vec2, 6> {
+): TupleN<V2, 6> {
   const qr = [q, r] as const;
-  return hexNeighborDirs(dirIdx).map((d) => vec2.add(qr, d, V(0, 0))) as TupleN<
-    vec2,
+  return hexNeighborDirs(dirIdx).map((d) => V2.add(qr, d, V(0, 0))) as TupleN<
+    V2,
     6
   >;
 }
 
-export function hexAvg(qr1: vec2, qr2: vec2): V3 {
+export function hexAvg(qr1: V2, qr2: V2): V3 {
   return V(
     (qr1[0] + qr2[0]) * 0.5,
     (qr1[1] + qr2[1]) * 0.5,

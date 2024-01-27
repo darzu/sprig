@@ -19,7 +19,7 @@ import {
   transformMesh,
   unshareProvokingVertices,
 } from "./mesh.js";
-import { mat3, mat4, quat, V, vec2, V3, vec4 } from "../matrix/sprig-matrix.js";
+import { mat3, mat4, quat, V, V2, V3, vec4 } from "../matrix/sprig-matrix.js";
 import { assert, range } from "../utils/util.js";
 import { uintToVec3unorm, vec3Dbg } from "../utils/utils-3d.js";
 import { drawBall } from "../utils/utils-game.js";
@@ -222,7 +222,7 @@ export const HEX_MESH: () => RawMesh = () => {
     ...sideTri(5),
   ];
   // TODO(@darzu): lines for hex
-  const lines: vec2[] = [];
+  const lines: V2[] = [];
   // lines: [
   //   [0, 1],
   //   [0, 2],
@@ -246,10 +246,10 @@ export function makePlaneMesh(
       V(3, 2, 1, 0), // bottom
     ],
     lines: [
-      vec2.clone([0, 1]),
-      vec2.clone([1, 2]),
-      vec2.clone([2, 3]),
-      vec2.clone([3, 0]),
+      V2.clone([0, 1]),
+      V2.clone([1, 2]),
+      V2.clone([2, 3]),
+      V2.clone([3, 0]),
     ],
     colors: [V3.mk(), V3.mk()],
     // uvs: [
@@ -313,14 +313,14 @@ function createGridPlane(width: number, height: number): RawMesh {
     const i = m.pos.length;
     m.pos.push(V(x, 0, 0));
     m.pos.push(V(x, height, 0));
-    m.lines!.push(vec2.clone([i, i + 1]));
+    m.lines!.push(V2.clone([i, i + 1]));
   }
 
   for (let y = 0; y <= height; y++) {
     const i = m.pos.length;
     m.pos.push(V(0, y, 0));
     m.pos.push(V(width, y, 0));
-    m.lines!.push(vec2.clone([i, i + 1]));
+    m.lines!.push(V2.clone([i, i + 1]));
   }
 
   mapMeshPositions(m, (p) => V(p[0] - width / 2, p[1] - height / 2, p[2]));
@@ -352,7 +352,7 @@ export function resetFlatQuadMesh(
       for (let x = 0; x < width; x++) {
         V3.set(x, y, 0, mesh.pos[i]);
         // NOTE: world_z:tex_x, world_x:tex_y
-        vec2.set(x / width, y / height, mesh.uvs![i]);
+        V2.set(x / width, y / height, mesh.uvs![i]);
         i++;
       }
     }
@@ -412,7 +412,7 @@ export function createFlatQuadMesh(
   const quadNum = height * width * (doubleSided ? 2 : 1);
   const mesh: Mesh = {
     pos: range(width * height).map((_) => V3.mk()),
-    uvs: range(width * height).map((_) => vec2.mk()),
+    uvs: range(width * height).map((_) => V2.mk()),
     quad: range(quadNum).map((_) => vec4.create()),
     tri: [],
     normals: range(width * height).map((_) => V3.mk()),
@@ -697,7 +697,7 @@ scaleMesh(BULLET_MESH, 0.3);
 export function makeDome(numLon: number, numLat: number, r: number): Mesh {
   assert(numLon % 1 === 0 && numLon > 0);
   assert(numLat % 1 === 0 && numLat > 0);
-  const uvs: vec2[] = [];
+  const uvs: V2[] = [];
   const pos: V3[] = [];
   const tri: V3[] = [];
   const quad: vec4[] = [];
@@ -777,7 +777,7 @@ export function makeDome(numLon: number, numLat: number, r: number): Mesh {
 export function makeSphere(numLon: number, numLat: number, r: number): Mesh {
   assert(numLon % 1 === 0 && numLon > 0);
   assert(numLat % 1 === 0 && numLat > 0);
-  const uvs: vec2[] = [];
+  const uvs: V2[] = [];
   const pos: V3[] = [];
   const tri: V3[] = [];
   const quad: vec4[] = [];

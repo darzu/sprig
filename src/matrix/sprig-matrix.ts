@@ -29,7 +29,7 @@ interface Float32ArrayOfLength<N extends number> extends Float32Array {
 }
 
 // TODO(@darzu): rename vec2 -> V2, vec3 -> V3 ?
-export type vec2 = Float32ArrayOfLength<2>;
+export type V2 = Float32ArrayOfLength<2>;
 
 export type V3 = Float32ArrayOfLength<3>;
 
@@ -279,8 +279,8 @@ export function findAnyTmpVec(
   );
 }
 
-export module vec2 {
-  export type T = vec2;
+export module V2 {
+  export type T = V2;
   export type InputT = T | readonly [number, number];
   const GL = GLM.vec2;
 
@@ -378,24 +378,24 @@ export module vec2 {
 }
 
 // TODO(@darzu): PERF. does this have a perf hit?
-export function V(...xs: [number, number]): vec2;
+export function V(...xs: [number, number]): V2;
 export function V(...xs: [number, number, number]): V3;
 export function V(...xs: [number, number, number, number]): vec4;
-export function V(...xs: number[]): vec2 | V3 | vec4 {
+export function V(...xs: number[]): V2 | V3 | vec4 {
   if (xs.length === 3) return V3.fromValues(xs[0], xs[1], xs[2]);
   else if (xs.length === 4) return vec4.fromValues(xs[0], xs[1], xs[2], xs[3]);
-  else if (xs.length === 2) return vec2.fromValues(xs[0], xs[1]);
+  else if (xs.length === 2) return V2.fromValues(xs[0], xs[1]);
   else throw new Error(`Unsupported vec size: ${xs.length}`);
 }
 
 // temp vectors:
-export function tV(...xs: [number, number]): vec2;
+export function tV(...xs: [number, number]): V2;
 export function tV(...xs: [number, number, number]): V3;
 export function tV(...xs: [number, number, number, number]): vec4;
-export function tV(...xs: number[]): vec2 | V3 | vec4 {
+export function tV(...xs: number[]): V2 | V3 | vec4 {
   if (xs.length === 4) return vec4.set(xs[0], xs[1], xs[2], xs[3]);
   else if (xs.length === 3) return V3.set(xs[0], xs[1], xs[2]);
-  else if (xs.length === 2) return vec2.set(xs[0], xs[1]);
+  else if (xs.length === 2) return V2.set(xs[0], xs[1]);
   else throw new Error(`Unsupported vec size: ${xs.length}`);
 }
 
@@ -1414,11 +1414,11 @@ export module mat3 {
     return GL.invert(out ?? tmp(), v1) as T;
   }
 
-  export function scale(a: InputT, v: vec2.InputT, out?: T): T {
+  export function scale(a: InputT, v: V2.InputT, out?: T): T {
     return GL.scale(out ?? tmp(), a, v) as T;
   }
 
-  export function fromScaling(v: vec2.InputT, out?: T): T {
+  export function fromScaling(v: V2.InputT, out?: T): T {
     return GL.fromScaling(out ?? tmp(), v) as T;
   }
 
@@ -1452,7 +1452,7 @@ export function orthonormalize(forward: V3, upish: V3, outRight: V3) {
 export type InputT<T extends Record<any, any>> = {
   [k in keyof T]: 
     T[k] extends V3 ? V3.InputT : 
-    T[k] extends vec2 ? vec2.InputT :
+    T[k] extends V2 ? V2.InputT :
     T[k] extends quat ? quat.InputT :
     T[k] extends mat4 ? mat4.InputT :
     T[k] extends mat3 ? mat3.InputT :

@@ -1,5 +1,5 @@
 import { EM, Component, Resource } from "../ecs/entity-manager.js";
-import { mat4, quat, vec4, vec2, V3 } from "../matrix/sprig-matrix.js";
+import { mat4, quat, vec4, V2, V3 } from "../matrix/sprig-matrix.js";
 import { V } from "../matrix/sprig-matrix.js";
 import { assert } from "../utils/util.js";
 import { normalizeVec2s, computeTriangleNormal } from "../utils/utils-3d.js";
@@ -281,16 +281,10 @@ export const OceanMesh = XY.registerMesh({
     }
 
     // console.log(`xLen:${xLen},yLen:${yLen}`);
-    const uvs = m.pos.map((_, vi) => vec2.mk());
+    const uvs = m.pos.map((_, vi) => V2.mk());
     m.uvs = uvs;
     // setUV(Math.floor(xLen / 2), 0, [0, 1], [0, 0], true);
-    setUV(
-      0,
-      Math.floor(yLen / 2),
-      vec2.clone([1, 0]),
-      vec2.clone([0, 0]),
-      true
-    );
+    setUV(0, Math.floor(yLen / 2), V2.clone([1, 0]), V2.clone([0, 0]), true);
     // TODO(@darzu): lots of little annoying issues happen when you go right to the texture edge
     normalizeVec2s(uvs, 0 + 0.01, 1 - 0.01);
 
@@ -341,19 +335,19 @@ export const OceanMesh = XY.registerMesh({
     function setUV(
       x: number,
       y: number,
-      dir: vec2,
-      currDist: vec2,
+      dir: V2,
+      currDist: V2,
       branch: boolean
     ) {
       // console.log(`setUV ${x} ${y} ${dir} ${currDist} ${branch}`);
       // set this UV
       const vi = grid[x][y];
-      vec2.copy(uvs[vi], currDist);
+      V2.copy(uvs[vi], currDist);
 
       // branch?
       if (branch) {
-        setUV(x, y, vec2.clone([dir[1], dir[0]]), currDist, false);
-        setUV(x, y, vec2.clone([-dir[1], -dir[0]]), currDist, false);
+        setUV(x, y, V2.clone([dir[1], dir[0]]), currDist, false);
+        setUV(x, y, V2.clone([-dir[1], -dir[0]]), currDist, false);
       }
 
       // continue forward?
@@ -362,7 +356,7 @@ export const OceanMesh = XY.registerMesh({
       if (nX < 0 || xLen <= nX || nY < 0 || yLen <= nY) return;
       const nVi = grid[nX][nY];
       const delta = V3.dist(m.pos[vi], m.pos[nVi]);
-      const newDist: vec2 = vec2.clone([
+      const newDist: V2 = V2.clone([
         currDist[0] + dir[0] * delta,
         currDist[1] + dir[1] * delta,
       ]);

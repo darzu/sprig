@@ -1,5 +1,5 @@
 import { clamp } from "../utils/math.js";
-import { mat4, V, vec2, V3 } from "../matrix/sprig-matrix.js";
+import { mat4, V, V2, V3 } from "../matrix/sprig-matrix.js";
 import { range } from "../utils/util.js";
 import { vec3Dbg2, vec3Mid } from "../utils/utils-3d.js";
 
@@ -108,17 +108,17 @@ export function getAABBCornersTemp(aabb: AABB): V3[] {
   return tempAabbCorners;
 }
 
-// const tempAabbXZCorners = range(4).map((_) => vec2.create()) as [
+// const tempAabbXZCorners = range(4).map((_) => V2.create()) as [
 //   vec2,
 //   vec2,
 //   vec2,
 //   vec2
 // ];
 // export function getAabbXZCornersTemp(aabb: AABB): [vec2, vec2, vec2, vec2] {
-//   vec2.set(aabb.max[0], aabb.max[2], tempAabbXZCorners[0]);
-//   vec2.set(aabb.max[0], aabb.min[2], tempAabbXZCorners[1]);
-//   vec2.set(aabb.min[0], aabb.max[2], tempAabbXZCorners[2]);
-//   vec2.set(aabb.min[0], aabb.min[2], tempAabbXZCorners[3]);
+//   V2.set(aabb.max[0], aabb.max[2], tempAabbXZCorners[0]);
+//   V2.set(aabb.max[0], aabb.min[2], tempAabbXZCorners[1]);
+//   V2.set(aabb.min[0], aabb.max[2], tempAabbXZCorners[2]);
+//   V2.set(aabb.min[0], aabb.min[2], tempAabbXZCorners[3]);
 //   return tempAabbXZCorners;
 // }
 
@@ -178,11 +178,11 @@ export function getAABBFromPositions(out: AABB, positions: V3[]): AABB {
 // 2D AABB stuff
 
 export interface AABB2 {
-  min: vec2;
-  max: vec2;
+  min: V2;
+  max: V2;
 }
 
-export function updateAABBWithPoint2(aabb: AABB2, pos: vec2): AABB2 {
+export function updateAABBWithPoint2(aabb: AABB2, pos: V2): AABB2 {
   return updateAABBWithPoint2_(aabb, pos[0], pos[1]);
 }
 export function updateAABBWithPoint2_(
@@ -196,7 +196,7 @@ export function updateAABBWithPoint2_(
   aabb.max[1] = Math.max(y, aabb.max[1]);
   return aabb;
 }
-export function aabbCenter2(out: vec2, a: AABB2): vec2 {
+export function aabbCenter2(out: V2, a: AABB2): V2 {
   out[0] = (a.min[0] + a.max[0]) * 0.5;
   out[1] = (a.min[1] + a.max[1]) * 0.5;
   return out;

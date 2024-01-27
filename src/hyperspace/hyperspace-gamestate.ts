@@ -1,7 +1,7 @@
 import { CameraDef } from "../camera/camera.js";
 import { DeletedDef } from "../ecs/delete.js";
 import { EM } from "../ecs/entity-manager.js";
-import { vec2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { AuthorityDef, HostDef, MeDef } from "../net/components.js";
 import { eventWizard } from "../net/events.js";
 import { LinearVelocityDef } from "../motion/velocity.js";

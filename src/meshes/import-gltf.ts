@@ -1,4 +1,4 @@
-import { vec2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { RawMesh, Rigging } from "./mesh.js";
 import { assert, never } from "../utils/util.js";
 import { idPair, IdPair, isString } from "../utils/util.js";

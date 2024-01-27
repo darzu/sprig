@@ -2,7 +2,7 @@ import { CameraDef } from "../camera/camera.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { DeletedDef } from "../ecs/delete.js";
 import { EM } from "../ecs/entity-manager.js";
-import { vec2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { InputsDef } from "../input/inputs.js";
 import { jitter } from "../utils/math.js";
 import { ColliderDef } from "./collider.js";

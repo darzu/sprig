@@ -1,5 +1,5 @@
 import { Component, EM, EntityW, Resources } from "../ecs/entity-manager.js";
-import { vec2, V3, quat, V, tV } from "../matrix/sprig-matrix.js";
+import { V2, V3, quat, V, tV } from "../matrix/sprig-matrix.js";
 import {
   Frame,
   PhysicsParentDef,
@@ -65,8 +65,8 @@ function sailMesh(sail: Component<typeof SailDef>): Mesh {
   const pos: V3[] = [];
   const tri: V3[] = [];
   const colors: V3[] = [];
-  const lines: vec2[] = [];
-  const uvs: vec2[] = [];
+  const lines: V2[] = [];
+  const uvs: V2[] = [];
   while (z <= sail.height) {
     if (x > sail.width) {
       x = 0;
@@ -96,10 +96,10 @@ function sailMesh(sail: Component<typeof SailDef>): Mesh {
     }
     // add lines
     if (x > 0) {
-      lines.push(vec2.clone([i - 1, i]));
+      lines.push(V2.clone([i - 1, i]));
     }
     if (z > 0) {
-      lines.push(vec2.clone([i - sail.width - 1, i]));
+      lines.push(V2.clone([i - sail.width - 1, i]));
     }
     x = x + 1;
     i = i + 1;
