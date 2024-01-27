@@ -20,7 +20,7 @@ import { InputsDef } from "../input/inputs.js";
 import { clamp } from "../utils/math.js";
 import { DeletedDef } from "../ecs/delete.js";
 import { defineSerializableComponent } from "../ecs/em-helpers.js";
-import { YawPitchDef, yawpitchToQuat } from "./yawpitch.js";
+import { YawPitchDef } from "./yawpitch.js";
 import { TextDef } from "../gui/ui.js";
 import { Phase } from "../ecs/sys-phase.js";
 
@@ -161,15 +161,14 @@ EM.addEagerInit([TurretDef], [], [], () => {
     [],
     (turrets, res) => {
       for (let c of turrets) {
-        if (c.turret.invertYaw)
-          yawpitchToQuat(c.rotation, {
-            yaw: -c.yawpitch.yaw,
-            pitch: c.yawpitch.pitch,
-          });
-        else yawpitchToQuat(c.rotation, c.yawpitch);
+        const yaw = c.turret.invertYaw ? -c.yawpitch.yaw : c.yawpitch.yaw;
+        quat.fromYawPitchRoll(yaw, c.yawpitch.pitch, 0, c.rotation);
       }
     }
   );
+
+  const TURRET_YAW_SPEED = 0.005;
+  const TURRET_PITCH_SPEED = 0.002;
 
   EM.addSystem(
     "turretAim",
@@ -184,11 +183,11 @@ EM.addEagerInit([TurretDef], [], [], () => {
         if (c.turret.mannedId !== player.id) continue;
         if (c.turret.keyboardControls) {
           if (res.inputs.keyDowns["a"])
-            c.yawpitch.yaw -= c.turret.keyboardSpeed * 0.005;
+            c.yawpitch.yaw -= c.turret.keyboardSpeed * TURRET_YAW_SPEED;
           if (res.inputs.keyDowns["d"])
-            c.yawpitch.yaw += c.turret.keyboardSpeed * 0.005;
+            c.yawpitch.yaw += c.turret.keyboardSpeed * TURRET_YAW_SPEED;
         } else {
-          c.yawpitch.yaw += res.inputs.mouseMov[0] * 0.005;
+          c.yawpitch.yaw += res.inputs.mouseMov[0] * TURRET_YAW_SPEED;
         }
         c.yawpitch.yaw = clamp(
           c.yawpitch.yaw,
@@ -198,11 +197,11 @@ EM.addEagerInit([TurretDef], [], [], () => {
 
         if (c.turret.keyboardControls) {
           if (res.inputs.keyDowns["s"])
-            c.yawpitch.pitch -= c.turret.keyboardSpeed * 0.002;
+            c.yawpitch.pitch -= c.turret.keyboardSpeed * TURRET_PITCH_SPEED;
           if (res.inputs.keyDowns["w"])
-            c.yawpitch.pitch += c.turret.keyboardSpeed * 0.002;
+            c.yawpitch.pitch += c.turret.keyboardSpeed * TURRET_PITCH_SPEED;
         } else {
-          c.yawpitch.pitch += -res.inputs.mouseMov[1] * 0.002;
+          c.yawpitch.pitch += -res.inputs.mouseMov[1] * TURRET_PITCH_SPEED;
         }
         c.yawpitch.pitch = clamp(
           c.yawpitch.pitch,
@@ -212,6 +211,8 @@ EM.addEagerInit([TurretDef], [], [], () => {
 
         c.cameraFollow.yawOffset =
           c.turret.cameraYawOffset + c.yawpitch.yaw * c.turret.cameraYawFactor;
+
+        c.cameraFollow.pitchOffset = c.turret.cameraPitchOffset;
       }
     }
   );

@@ -54,6 +54,8 @@ EM.addSystem(
   Phase.POST_GAME_WORLD,
   [ShipHealthDef],
   [ScoreDef, TextDef, TimeDef, PartyDef, HostDef],
+  // TODO(@darzu): does this need to be async? Note we're currently async b/c of
+  //    whenSingleEntity and whenResources calls within hostResetLevel
   async (es, res) => {
     const ship = es[0];
     if (!ship) return;

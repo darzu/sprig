@@ -5,6 +5,7 @@ import { randInt } from "./math.js";
 //    https://github.com/microsoft/TypeScript/blob/main/src/compiler/core.ts
 //    https://github.com/microsoft/TypeScript/blob/main/src/compiler/corePublic.ts
 
+// TODO(@darzu): move to util-no-import
 export function assert(cond: any, msg?: string): asserts cond {
   // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-7.html#assertion-functions
   if (!cond)
@@ -371,3 +372,33 @@ export type TAssert<A extends true> = A;
 //     (<T>() => T extends Y ? 1 : 2) ? true : false;
 
 export type IsOptional<T> = T | undefined extends T ? true : false;
+
+export interface WeakCache<V extends object> {
+  _create: (key: string) => V;
+  getOrCreate: (key: string) => V;
+}
+export function makeWeakCache<V extends object>(
+  create: (key: string) => V
+): WeakCache<V> {
+  // From: https://github.com/tc39/proposal-weakrefs
+  const cache = new Map<string, WeakRef<V>>();
+  const cleanup = new FinalizationRegistry<string>((key) => {
+    // TODO(@darzu): check notes concurrency considerations
+    const ref = cache.get(key);
+    if (ref && !ref.deref()) cache.delete(key);
+  });
+
+  function getOrCreate(key: string): V {
+    const cached = cache.get(key)?.deref();
+    if (cached !== undefined) return cached;
+    const fresh = create(key);
+    cache.set(key, new WeakRef(fresh));
+    cleanup.register(fresh, key);
+    return fresh;
+  }
+
+  return {
+    _create: create,
+    getOrCreate,
+  };
+}

@@ -30,16 +30,18 @@ export const HasRudderObj = defineObj({
     rudder: [
       RudderDef,
       YawPitchDef,
-      TurretDef,
-      CameraFollowDef,
-      AuthorityDef,
+      // TurretDef,
+      // CameraFollowDef,
+      // AuthorityDef,
+      RotationDef,
       PositionDef,
     ],
   },
 } as const);
 export const HasRudderDef = HasRudderObj.props;
 
-export function createRudder(res: Resources<[typeof MeDef]>) {
+// TODO(@darzu): Use Objects and mixins
+export function createRudder() {
   const rudder = EM.new();
   EM.set(rudder, RudderDef);
   EM.set(rudder, RenderableConstructDef, RudderPrimMesh);
@@ -47,7 +49,13 @@ export function createRudder(res: Resources<[typeof MeDef]>) {
   EM.set(rudder, ColorDef, ENDESGA16.midBrown);
   EM.set(rudder, PositionDef);
   EM.set(rudder, RotationDef);
-  EM.set(rudder, AuthorityDef, res.me.pid);
+  EM.set(rudder, YawPitchDef);
+
+  return rudder;
+}
+
+export function createRudderTurret(res: Resources<[typeof MeDef]>) {
+  const rudder = createRudder();
 
   addGizmoChild(rudder, 4);
 
@@ -91,14 +99,14 @@ export function createRudder(res: Resources<[typeof MeDef]>) {
 EM.addEagerInit([RudderDef], [], [], () => {
   // If a rudder isn't being manned, smooth it back towards straight
   EM.addSystem(
-    "easeRudderLD52",
+    "easeRudder",
     Phase.GAME_WORLD,
-    [RudderDef, TurretDef, YawPitchDef, AuthorityDef],
+    [RudderDef, YawPitchDef],
     [MeDef],
     (rudders, res) => {
       for (let r of rudders) {
-        if (r.authority.pid !== res.me.pid) return;
-        if (r.turret.mannedId !== 0) return;
+        if (AuthorityDef.isOn(r) && r.authority.pid !== res.me.pid) continue;
+        if (TurretDef.isOn(r) && r.turret.mannedId !== 0) continue;
         if (Math.abs(r.yawpitch.yaw) < 0.01) r.yawpitch.yaw = 0;
         r.yawpitch.yaw *= 0.9;
       }

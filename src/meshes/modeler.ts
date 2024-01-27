@@ -2,7 +2,7 @@ import { CanvasDef } from "../render/canvas.js";
 import { EM, EntityW } from "../ecs/entity-manager.js";
 import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { InputsDef } from "../input/inputs.js";
-import { mathMap } from "../utils/math.js";
+import { remap } from "../utils/math.js";
 import { Ray, RayHit } from "../physics/broadphase.js";
 import { AABB, aabbListToStr } from "../physics/aabb.js";
 import { ColliderDef } from "../physics/collider.js";

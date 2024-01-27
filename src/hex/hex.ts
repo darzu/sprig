@@ -4,6 +4,8 @@ import { packI16s, TupleN } from "../utils/util.js";
 // Follows: https://www.redblobgames.com/grids/hexagons/
 //  Using FLAT-top; axial; +q along +x ; +r along -y|-x;
 
+// TODO(@darzu): return some interface w/ size included
+
 export interface HexGrid<D> {
   _grid: Map<number, D>;
   has: (q: number, r: number) => boolean;

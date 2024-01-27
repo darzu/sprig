@@ -3,7 +3,7 @@ import { EM } from "../ecs/entity-manager.js";
 import { AllMeshesDef } from "../meshes/mesh-list.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { InputsDef } from "../input/inputs.js";
-import { mathMap } from "../utils/math.js";
+import { remap } from "../utils/math.js";
 import { cloneMesh, mapMeshPositions, RawMesh } from "../meshes/mesh.js";
 import { AABB } from "./aabb.js";
 import {
@@ -150,9 +150,9 @@ function meshFromAABB(aabb: AABB): RawMesh {
   const m = mkCubeMesh();
   mapMeshPositions(m, (p) =>
     vec3.clone([
-      mathMap(p[0], -1, 1, 0, aabb.max[0] - aabb.min[0]),
-      mathMap(p[1], -1, 1, 0, aabb.max[1] - aabb.min[1]),
-      mathMap(p[2], -1, 1, 0, aabb.max[2] - aabb.min[2]),
+      remap(p[0], -1, 1, 0, aabb.max[0] - aabb.min[0]),
+      remap(p[1], -1, 1, 0, aabb.max[1] - aabb.min[1]),
+      remap(p[2], -1, 1, 0, aabb.max[2] - aabb.min[2]),
     ])
   );
   // drop the triangles (wireframe lines only)

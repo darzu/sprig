@@ -10,7 +10,7 @@ const StarStruct = createCyStruct({
   color: "vec3<f32>",
   size: "f32",
 });
-export type StarTS = CyToTS<typeof StarStruct.desc>;
+type StarTS = CyToTS<typeof StarStruct.desc>;
 
 let NUM_STARS = 1000;
 // let NUM_STARS = 100000

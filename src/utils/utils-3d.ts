@@ -7,7 +7,7 @@ import {
   V,
   orthonormalize,
 } from "../matrix/sprig-matrix.js";
-import { avg, mathMap } from "./math.js";
+import { avg, remap } from "./math.js";
 import { AABB, createAABB, getAABBFromPositions } from "../physics/aabb.js";
 import { tempVec2, tempVec3 } from "../matrix/temp-pool.js";
 import { assertDbg, range, resizeArray, TupleN } from "./util.js";

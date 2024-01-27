@@ -1,9 +1,12 @@
 import {
+  DBG_TMP_LEAK,
+  DBG_TMP_STACK_MATCH,
   PERF_DBG_F32S,
   PERF_DBG_F32S_BLAME,
   PERF_DBG_F32S_TEMP_BLAME,
 } from "../flags.js";
 import { dbgAddBlame, dbgClearBlame } from "../utils/util-no-import.js";
+import { assert } from "../utils/util.js";
 import * as GLM from "./gl-matrix.js";
 
 /*
@@ -82,6 +85,11 @@ let eg_vec3: vec3 = vec3.create() as vec3;
 // eg_vec3fr = eg_vec3; // illegal (could be temp)
 // eg_vec3fr = eg_vec3f; // legal (strengthening w/ readonly promise)
 // eg_vec3fr = eg_vec3r; // illegal (could be temp)
+
+Should be able to overload vec3.add like so:
+vec3.add(a: T, b: T): tT;
+vec3.add<OT extends T | tT>(a: T, b: T, out: OT): OT;
+so if given an out, it'll be that type, otherwise it'll be a temp
 */
 
 export let _f32sCount = 0; // TODO(@darzu): PERF DBG!
@@ -95,6 +103,33 @@ function float32ArrayOfLength<N extends number>(n: N): Float32ArrayOfLength<N> {
   }
   return new Float32Array(n) as Float32ArrayOfLength<N>;
 }
+
+let _tmpResetGen = 1;
+
+let _tmpGenHints = ["<zero>", "<one>"];
+
+function mkTmpProxyHandler(gen: number) {
+  const err = () => {
+    throw new Error(
+      `Leak! Using tmp from gen ${gen} "${_tmpGenHints[gen]}" in gen ${_tmpResetGen} "${_tmpGenHints[_tmpResetGen]}"`
+    );
+  };
+  const tmpProxyHandler: ProxyHandler<Float32Array> = {
+    get: (v, prop) => {
+      if (gen !== _tmpResetGen) err();
+      // TODO(@darzu): huh is TS's ProxyHandler typing wrong? cus this seems to work?
+      return v[prop as unknown as number];
+    },
+    set: (v, prop, val) => {
+      if (gen !== _tmpResetGen) err();
+      v[prop as unknown as number] = val;
+      return true;
+    },
+  };
+  return tmpProxyHandler;
+}
+let _tmpProxyHandler: ProxyHandler<Float32Array> =
+  mkTmpProxyHandler(_tmpResetGen);
 
 const BUFFER_SIZE = 8000;
 const buffer = new ArrayBuffer(BUFFER_SIZE);
@@ -111,20 +146,100 @@ function tmpArray<N extends number>(n: N): Float32ArrayOfLength<N> {
       (Float32Array.BYTES_PER_ELEMENT * BUFFER_SIZE) / 1024
     }kb)`;
   }
+  // TODO(@darzu): For blame, have a mode that exludes stack mark n' pop'ed!
   if (PERF_DBG_F32S_TEMP_BLAME) {
     dbgAddBlame("temp_f32s", n);
   }
   const arr = new Float32Array(buffer, bufferIndex, n);
   bufferIndex += arr.byteLength;
+
+  if (DBG_TMP_LEAK) {
+    const prox = new Proxy(arr, _tmpProxyHandler);
+    return prox as Float32ArrayOfLength<N>;
+  }
+
   return arr as Float32ArrayOfLength<N>;
 }
 
-export function resetTempMatrixBuffer() {
+export function resetTempMatrixBuffer(hint: string) {
+  if (_tmpMarkStack.length)
+    throw `mismatched tmpMark & tmpPop! ${_tmpMarkStack.length} unpopped`;
+
   bufferIndex = 0;
+
+  if (DBG_TMP_LEAK) {
+    _tmpResetGen += 1;
+    if (_tmpGenHints.length < 1000) _tmpGenHints[_tmpResetGen] = hint;
+    _tmpProxyHandler = mkTmpProxyHandler(_tmpResetGen);
+  }
 
   if (PERF_DBG_F32S_TEMP_BLAME) {
     dbgClearBlame("temp_f32s");
   }
+}
+
+// TODO(@darzu): can i track leaking temps?
+/*
+  mark all temps w/ a generation
+  wrap all temps w/ a proxy?
+  if a temp is used, check the current generation
+  if generation mismatch, throw error
+
+  can we track all usage?
+*/
+
+// TODO(@darzu): have a version of PERF_DBG_F32S_TEMP_BLAME that tracks blame on unmarked/popped!
+// TODO(@darzu): is there some dbg way we could track to see if any tmps are used after free? maybe a generation tracker?
+//                conceivably w/ WeakRef? Maybe w/ FinalizationRegistry?
+//                  if i do a mark and then the scoped obj is collected before a pop happens, we know we have a missing pop
+// TODO(@darzu): eventually we'll get scoped using statements in JS which will make this hideous mess a little better?
+// TODO(@darzu): should these be called for every system and every init?
+const _tmpMarkStack: number[] = [];
+const _tmpMarkIdStack: number[] = [];
+let _tmpStackNextId = 1;
+export interface TmpStack {
+  readonly pop: () => void;
+}
+const _cheapPop: TmpStack = { pop: tmpPop };
+// const _tmpStackFinReg: FinalizationRegistry<null> | undefined =
+//   DBG_TMP_STACK_MATCH
+//     ? new FinalizationRegistry(tmpStackFinHandler)
+//     : undefined;
+export function tmpStack(): TmpStack {
+  if (!DBG_TMP_STACK_MATCH) {
+    tmpMark();
+    return _cheapPop;
+  }
+
+  _tmpStackNextId += 1;
+
+  const id = _tmpStackNextId;
+  _tmpMarkStack.push(bufferIndex);
+  _tmpMarkIdStack.push(id);
+
+  const res: TmpStack = { pop };
+
+  // assert(_tmpStackFinReg);
+  // _tmpStackFinReg.register(res, null);
+
+  function pop(): void {
+    if (_tmpMarkStack.length === 0) throw "tmpStack.pop with zero size stack!";
+    const popId = _tmpMarkIdStack.pop()!;
+    if (popId !== id)
+      throw "tmpStack pop mismatch! Did a stack cross async boundries?";
+    bufferIndex = _tmpMarkStack.pop()!;
+  }
+
+  return res;
+}
+// function tmpStackFinHandler() {
+// }
+function tmpMark(): void {
+  _tmpMarkStack.push(bufferIndex);
+}
+function tmpPop(): void {
+  if (_tmpMarkStack.length === 0) throw "tmpPop with zero size stack!";
+  bufferIndex = _tmpMarkStack.pop()!;
 }
 
 export function isTmpVec(v: Float32Array): boolean {
@@ -293,7 +408,11 @@ export module vec3 {
   export const ZEROS = fromValues(0, 0, 0);
   export const ONES = fromValues(1, 1, 1);
   export const FWD = fromValues(0, 1, 0);
+  export const BACK = fromValues(0, -1, 0);
   export const UP = fromValues(0, 0, 1);
+  export const DOWN = fromValues(0, 0, -1);
+  export const RIGHT = fromValues(1, 0, 0);
+  export const LEFT = fromValues(-1, 0, 0);
   export const X = fromValues(1, 0, 0);
   export const Y = fromValues(0, 1, 0);
   export const Z = fromValues(0, 0, 1);
@@ -304,6 +423,7 @@ export module vec3 {
     return tmpArray(3);
   }
 
+  // TODO(@darzu): rename mk()
   export function create(): T {
     return float32ArrayOfLength(3);
   }
@@ -313,6 +433,7 @@ export module vec3 {
   }
 
   // TODO(@darzu): maybe copy should have an optional out param?
+  // TODO(@darzu): rename cpy
   export function copy(out: T, v1: InputT): T {
     return GL.copy(out, v1) as T;
   }
@@ -359,6 +480,7 @@ export module vec3 {
   export function div(v1: InputT, v2: InputT, out?: T): T {
     return GL.div(out ?? tmp(), v1, v2) as T;
   }
+  // TODO(@darzu): rename norm()
   export function normalize(v1: InputT, out?: T): T {
     return GL.normalize(out ?? tmp(), v1) as T;
   }
@@ -391,6 +513,7 @@ export module vec3 {
     return GL.lerp(out ?? tmp(), v1, v2, n) as T;
   }
 
+  // TODO(@darzu): replace many usages with getFwd, getUp, getRight, etc.
   export function transformQuat(v1: InputT, v2: quat.InputT, out?: T): T {
     return GL.transformQuat(out ?? tmp(), v1, v2) as T;
   }
@@ -692,6 +815,10 @@ export module quat {
     out?: T
   ): T {
     return GL.fromEuler(out ?? tmp(), pitch, roll, -yaw) as T;
+  }
+  // TODO(@darzu): little hacky, this matches our YawPitchDef but doesn't match other sprig-matrix patterns
+  export function fromYawPitch(yp: { yaw: number; pitch: number }, out?: T): T {
+    return fromYawPitchRoll(yp.yaw, yp.pitch, 0, out);
   }
 
   // TODO(@darzu): IMPL toYawPitchRoll
@@ -1301,3 +1428,15 @@ export function orthonormalize(forward: vec3, upish: vec3, outRight: vec3) {
   vec3.normalize(outRight, outRight);
   vec3.cross(outRight, forward, upish);
 }
+
+// prettier-ignore
+export type InputT<T extends Record<any, any>> = {
+  [k in keyof T]: 
+    T[k] extends vec3 ? vec3.InputT : 
+    T[k] extends vec2 ? vec2.InputT :
+    T[k] extends quat ? quat.InputT :
+    T[k] extends mat4 ? mat4.InputT :
+    T[k] extends mat3 ? mat3.InputT :
+    T[k] extends vec4 ? vec4.InputT :
+    T[k]
+};

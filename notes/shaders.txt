@@ -312,3 +312,9 @@ Compute shaders talk by AMD:
 
 wgsl
   reflect() function
+
+Many dispatches, similar data:
+  "Chewing through some algorithm with each batch separately is pretty easy, but the overhead of the individual dispatches can get pretty large"
+  https://mastodon.gamedev.place/@rygorous/111772520085834063
+  "Lots of dispatches are really slow in multiple ways"
+  "I'd default to metadata index per instance."

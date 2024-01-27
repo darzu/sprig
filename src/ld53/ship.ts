@@ -35,7 +35,7 @@ import { Phase } from "../ecs/sys-phase.js";
 import { ShipHealthDef } from "./ship-health.js";
 import { T, defineObj, mixinObj } from "../graybox/objects.js";
 import { FinishedDef } from "../ecs/em-helpers.js";
-import { HasRudderObj, RudderDef, createRudder } from "./rudder.js";
+import { HasRudderObj, RudderDef, createRudderTurret } from "./rudder.js";
 
 // TODO(@darzu): RENAME
 const LD52ShipDefObj = defineObj({
@@ -82,7 +82,7 @@ export const cannonDefaultPitch = Math.PI * +0.05;
 
 // TODO(@darzu): rename
 export async function createLd53ShipAsync() {
-  const res = await EM.whenResources(MeDef, MastMesh.def, CannonLD51Mesh.def);
+  const res = await EM.whenResources(MeDef, CannonLD51Mesh.def);
   // TODO(@darzu):
 
   const homeShip = createLD53Ship();
@@ -171,14 +171,16 @@ export async function createLd53ShipAsync() {
 
   addGizmoChild(ship, 10);
 
-  const mast = createMast(res);
+  const mast = createMast();
   addGizmoChild(mast, 20, [0, 0, 0]);
   // addColliderDbgVis(mast);
 
-  const sock = createSock(2.0);
-  sock.position[2] =
-    mast.position[2] + (mast.collider as AABBCollider).aabb.max[2];
-  EM.set(sock, PhysicsParentDef, ship.id);
+  EM.whenEntityHas(mast, ColliderDef, PositionDef).then((mast) => {
+    const sock = createSock(2.0);
+    sock.position[2] =
+      mast.position[2] + (mast.collider as AABBCollider).aabb.max[2];
+    EM.set(sock, PhysicsParentDef, ship.id);
+  });
 
   mixinObj(ship, HasMastObj, {
     args: [],
@@ -187,7 +189,10 @@ export async function createLd53ShipAsync() {
     },
   });
 
-  const rudder = createRudder(res);
+  const rudder = createRudderTurret(res);
+
+  EM.set(rudder, AuthorityDef, res.me.pid);
+
   // console.log("setting position");
   vec3.set(0, -25, 4, rudder.position);
   // console.log(`rudder: ${rudder.id}`);

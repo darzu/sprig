@@ -317,7 +317,7 @@ export async function initShipyardGame(hosting: boolean) {
           0.02,
           3 * 0.00001,
           ballHealth,
-          [0, 1, 0]
+          vec3.FWD
         );
       }
 

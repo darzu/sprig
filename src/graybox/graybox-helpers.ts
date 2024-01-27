@@ -2,12 +2,7 @@ import { CameraDef } from "../camera/camera.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { createGhost } from "../debug/ghost.js";
-import {
-  ComponentDef,
-  EM,
-  EntityW,
-  _ComponentDef,
-} from "../ecs/entity-manager.js";
+import { EM, _ComponentDef } from "../ecs/entity-manager.js";
 import { quat, vec3 } from "../matrix/sprig-matrix.js";
 import { V } from "../matrix/sprig-matrix.js";
 import { CubeMesh, HexMesh } from "../meshes/mesh-list.js";
@@ -24,8 +19,29 @@ import { shadowPipelines } from "../render/pipelines/std-shadow.js";
 import { RendererDef, RenderableConstructDef } from "../render/renderer-ecs.js";
 import { Intersect } from "../utils/util.js";
 import { addWorldGizmo } from "../utils/utils-game.js";
+import { createObj } from "./objects.js";
 
-export async function initWorld() {
+export function createSun() {
+  const sun = createObj(
+    [PointLightDef, ColorDef, PositionDef, RenderableConstructDef] as const,
+    [
+      {
+        constant: 1.0,
+        linear: 0.0,
+        quadratic: 0.0,
+        ambient: V(0.2, 0.2, 0.2),
+        diffuse: V(0.5, 0.5, 0.5),
+      },
+      [1, 1, 1],
+      [50, 10, 300],
+      [CubeMesh, false],
+    ]
+  );
+
+  return sun;
+}
+
+export async function initGrayboxWorld() {
   EM.addEagerInit([], [RendererDef], [], (res) => {
     // renderer
     res.renderer.pipelines = [
@@ -45,18 +61,8 @@ export async function initWorld() {
   vec3.set(-200, -200, -200, camera.maxWorldAABB.min);
   vec3.set(+200, +200, +200, camera.maxWorldAABB.max);
 
-  // light
-  const sun = EM.new();
-  EM.set(sun, PointLightDef);
-  EM.set(sun, ColorDef, V(1, 1, 1));
-  EM.set(sun, PositionDef, V(100, 100, 100));
-  EM.set(sun, RenderableConstructDef, CubeMesh, false);
-  sun.pointLight.constant = 1.0;
-  sun.pointLight.linear = 0.0;
-  sun.pointLight.quadratic = 0.0;
-  vec3.copy(sun.pointLight.ambient, [0.2, 0.2, 0.2]);
-  vec3.copy(sun.pointLight.diffuse, [0.5, 0.5, 0.5]);
-  EM.set(sun, PositionDef, V(50, 10, 300));
+  // sun
+  createSun();
 
   // pedestal
   const pedestal = EM.new();

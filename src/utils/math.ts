@@ -63,7 +63,7 @@ export function chance(zeroToOne: number): boolean {
 }
 
 // maps a number from [inMin, inMax] to [outMin, outMax]
-export function mathMap(
+export function remap(
   n: number,
   inMin: number,
   inMax: number,
@@ -74,10 +74,10 @@ export function mathMap(
   // assert(inMin < inMax, "must be: inMin < inMax");
   // assert(outMin <= outMax, "must be: outMin <= outMax");
   // assert(inMin <= n && n <= inMax, "must be: inMin <= n && n <= inMax");
-  const progress = (n - inMin) / (inMax - inMin);
-  return progress * (outMax - outMin) + outMin;
+  const progress = unlerp(inMin, inMax, n);
+  return lerp(outMin, outMax, progress);
 }
-export function mathMapNEase(
+export function remapEase(
   n: number,
   inMin: number,
   inMax: number,
@@ -89,9 +89,9 @@ export function mathMapNEase(
   assert(outMin <= outMax, "must be: outMin <= outMax");
   n = Math.max(n, inMin);
   n = Math.min(n, inMax);
-  let progress = (n - inMin) / (inMax - inMin);
+  let progress = unlerp(inMin, inMax, n);
   if (easeFn) progress = easeFn(progress);
-  return progress * (outMax - outMin) + outMin;
+  return lerp(outMin, outMax, progress);
 }
 
 // returns [a,b,c] from y = a*x^2 + b*x + c

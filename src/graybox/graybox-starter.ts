@@ -18,13 +18,13 @@ import { postProcess } from "../render/pipelines/std-post.js";
 import { shadowPipelines } from "../render/pipelines/std-shadow.js";
 import { RendererDef, RenderableConstructDef } from "../render/renderer-ecs.js";
 import { addWorldGizmo } from "../utils/utils-game.js";
-import { initGhost, initWorld } from "./graybox-helpers.js";
+import { initGhost, initGrayboxWorld } from "./graybox-helpers.js";
 
 const DBG_GHOST = true;
 const DBG_GIZMO = true;
 
 export async function initGrayboxStarter() {
-  initWorld();
+  initGrayboxWorld();
 
   // dbg ghost
   if (DBG_GHOST) {

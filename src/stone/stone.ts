@@ -49,7 +49,6 @@ import { Phase } from "../ecs/sys-phase.js";
 import { XY } from "../meshes/mesh-loader.js";
 import { transformYUpModelIntoZUp } from "../camera/basis.js";
 import { addGizmoChild, drawBall } from "../utils/utils-game.js";
-import { yawpitchToQuat } from "../turret/yawpitch.js";
 
 export const DBG_CANNONS = false;
 
@@ -137,8 +136,8 @@ function knockOutBrickAtIndex(stone: StoneState, index: number) {
   }
 }
 
-let towardsAttractorTmp = vec3.tmp();
-let testAABBTmp = vec3.tmp();
+let towardsAttractorTmp = vec3.create();
+let testAABBTmp = vec3.create();
 
 function shrinkBrickAtIndex(
   stone: StoneState,
@@ -743,6 +742,7 @@ function getTargetMissOrHitPosition(
   return target;
 }
 
+// TODO(@darzu): extract!!
 function getFireDirection(
   sourcePos: vec3.InputT,
   targetPos: vec3.InputT,
@@ -912,7 +912,8 @@ EM.addSystem(
         GRAVITY,
         // 2.0,
         20.0,
-        [1, 0, 0]
+        // TODO(@darzu): make this use vec3.FWD
+        vec3.X
       );
 
       // play sound

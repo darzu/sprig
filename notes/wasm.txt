@@ -9,4 +9,44 @@ JS API:
 
 Wabt, "wabbit":
   https://github.com/webassembly/wabt
+  https://webassembly.org/getting-started/advanced-tools/
+  
+Text:
+  https://developer.mozilla.org/en-US/docs/WebAssembly/Text_format_to_Wasm
 
+Concepts:
+  https://developer.mozilla.org/en-US/docs/WebAssembly/Concepts
+
+JS APIs:
+  https://developer.mozilla.org/en-US/docs/WebAssembly/Using_the_JavaScript_API
+
+Use cases:
+  https://webassembly.org/docs/use-cases/
+
+"JavaScript developers could even think of WebAssembly as just a JavaScript feature for efficiently generating high-performance functions."
+
+AssemblyScript
+  https://www.assemblyscript.org
+  https://www.assemblyscript.org/introduction.html
+  https://github.com/AssemblyScript
+
+Perf vs JS:
+  https://betterprogramming.pub/how-fast-is-webassembly-versus-javascript-bc0eca058a54
+
+JS<->WASM overhead:
+  https://hacks.mozilla.org/2018/10/calls-between-javascript-and-webassembly-are-finally-fast-🎉/
+    "If you can write your code so that JavaScript is always passing the same types to the same WebAssembly 
+    exported function, then your calls are going to be very fast."
+    "There’s only one case where an optimized call from JavaScript » WebAssembly is not faster than 
+    JavaScript » JavaScript. That is when JavaScript has in-lined a function."
+
+Eventually we'll make a language targeting wasm and port all of sprig over?
+
+Possible early uses for WASM:
+  CPU heavy code that has relatively simple inputs/outputs
+  Physics systems?
+    child-parent matrix transforms
+  Can we create a WASM module w/ big memory and our vec3s and mat4s live in that memory
+    we can use JS to manipule
+    or we can head into WASM land and manipulate
+    or we can call WASM fns from JS to manipulate

@@ -92,6 +92,7 @@ async function startGame(localPeerName: string, host: string | null) {
 
   let start_of_time = performance.now();
 
+  // TODO(@darzu): move elsewhere
   EM.setDefaultRange("local");
   EM.setIdRange("local", 1, 10000);
   // TODO(@darzu): ECS stuff
@@ -107,9 +108,11 @@ async function startGame(localPeerName: string, host: string | null) {
     EM.addResource(JoinDef, host);
   }
 
-  initCommonSystems();
+  initCommonSystems(); // TODO(@darzu): move elsewhere!
 
-  addEventComponents();
+  addEventComponents(); // TODO(@darzu): move elsewhere!
+
+  resetTempMatrixBuffer(`initGame ${GAME}`);
 
   if (GAME === "gjk") initGJKSandbox(hosting);
   else if (GAME === "rebound") initReboundSandbox(hosting);
@@ -145,7 +148,7 @@ async function startGame(localPeerName: string, host: string | null) {
       }
       accumulator -= TIMESTEP;
       tick(TIMESTEP);
-      resetTempMatrixBuffer();
+      resetTempMatrixBuffer(`frame_${loops}`);
       callFixedTimestepSystems();
       loops++;
     }

@@ -7,7 +7,7 @@ import {
   DBG_SYSTEM_ORDER,
   DBG_ENITITY_10017_POSITION_CHANGES,
 } from "../flags.js";
-import { vec3 } from "../matrix/sprig-matrix.js";
+import { resetTempMatrixBuffer, vec3 } from "../matrix/sprig-matrix.js";
 import { Serializer, Deserializer } from "../utils/serialize.js";
 import { getCallStack } from "../utils/util-no-import.js";
 import {
@@ -106,6 +106,8 @@ either init time or GAME_WORLD etc
   but that might not capture other time like file downloading
 */
 
+// TODO(@darzu): use defineProperty, Object.preventExtensions(), and such to have more robust entities?
+
 export interface Entity {
   readonly id: number;
 }
@@ -201,7 +203,7 @@ export type SystemFn<
 > = (
   es: CS extends ComponentDef[] ? ReadonlyEntities<CS> : [],
   resources: Resources<RS>
-) => void;
+) => void | Promise<void>;
 
 export interface SystemFlags {
   // If set, won't warn you if you remove component during a system that queries that component
@@ -226,9 +228,10 @@ interface SystemReg {
 
 export type InitFnId = number;
 
-export type InitFn<RS extends ResourceDef[] = ResourceDef[]> =
-  | ((rs: Resources<RS>) => Promise<void>)
-  | ((rs: Resources<RS>) => void);
+export type InitFn<
+  RS extends ResourceDef[] = ResourceDef[],
+  P extends any = any
+> = ((rs: Resources<RS>) => Promise<P>) | ((rs: Resources<RS>) => P);
 
 export interface InitFnReg<RS extends ResourceDef[] = ResourceDef[]> {
   requireRs: [...RS];
@@ -370,6 +373,8 @@ export class EntityManager {
     return def;
   }
 
+  forbiddenComponentNames = new Set<string>(["id"]);
+
   // TODO(@darzu): allow components to specify sibling components or component sets
   //  so that if the marker component is present, the others will be also
   public defineComponent<
@@ -399,9 +404,8 @@ export class EntityManager {
     opts: { multiArg: MA } = { multiArg: false as MA } // TODO(@darzu): any way around this cast?
   ): UpdatableComponentDef<N, P, UArgs, MA> {
     const id = nameToId(name);
-    if (this.componentDefs.has(id)) {
-      throw `Component with name ${name} already defined--hash collision?`;
-    }
+    assert(!this.componentDefs.has(id), `Component '${name}' already defined`);
+    assert(!this.forbiddenComponentNames.has(name), `forbidden name: ${name}`);
     const component: UpdatableComponentDef<N, P, UArgs, MA> = {
       _brand: "componentDef", // TODO(@darzu): remove?
       updatable: true,
@@ -1252,7 +1256,10 @@ export class EntityManager {
       return true;
     }
 
-    // we have the resources
+    resetTempMatrixBuffer(s.name);
+
+    // we have the resources, run the system
+    // TODO(@darzu): how do we handle async systems?
     s.callback(es, rs);
 
     // // TODO(@darzu): DEBUG. Promote to a dbg flag? Maybe pre-post system watch predicate
@@ -1702,6 +1709,9 @@ export class EntityManager {
       this._lastInitTimestamp = before;
       this._runningInitStack.push(init);
     }
+
+    // TODO(@darzu): is this reasonable to do before ea init?
+    resetTempMatrixBuffer(initFnToString(init));
 
     const promise = init.fn(this.resources);
     this.startedInits.set(init.id, promise);

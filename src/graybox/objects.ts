@@ -10,7 +10,7 @@ import {
   PhysicsParentDef,
 } from "../physics/transform.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
-import { Intersect } from "../utils/util.js";
+import { Intersect, isArray } from "../utils/util.js";
 
 /*
 OBJECTS
@@ -223,10 +223,11 @@ type _CompName<C extends ComponentDef> = C extends ComponentDef<infer N>
   ? N
   : never;
 
+type _CompObjArgs<CS extends ComponentDef[]> = Intersect<{
+  [i in keyof CS]: { [N in _CompName<CS[i]>]: _CompArgs<CS[i]> };
+}>;
 type _ObjCSArgs<D extends ObjOpt> = D extends ObjOpt<any, infer CS>
-  ? Intersect<{
-      [i in keyof CS]: { [N in _CompName<CS[i]>]: _CompArgs<CS[i]> };
-    }>
+  ? _CompObjArgs<[...CS]>
   : undefined;
 
 type _CompArrayArgs<CS extends readonly ComponentDef[]> = {
@@ -239,7 +240,7 @@ type _ObjChildArg<CO extends ObjChildOpt = ObjChildOpt> = CO extends
   | _ObjDef
   ? ObjArgs<ObjPickOpt<CO>>
   : CO extends readonly ComponentDef[]
-  ? _CompArrayArgs<CO>
+  ? _CompArrayArgs<CO> | _CompObjArgs<[...CO]>
   : never;
 type ObjChildArg<CO extends ObjChildOpt = ObjChildOpt> =
   | _ObjChildArg<CO>
@@ -381,12 +382,20 @@ export function mixinObj<D extends ObjChildDef, A extends ObjChildArg<D>>(
   if (isObjChildEnt(args)) {
     throw `Cannot mixin two entities: ${e.id} and ${args.id}`;
   } else if (isCompDefs(def)) {
-    const cArgsArr = args as unknown as _CompArrayArgs<any[]>; // TODO(@darzu): We shouldn't need such hacky casts
-    def.forEach((c, i) => {
-      const cArgs: any | any[] = cArgsArr[i];
-      _setComp(e, c, cArgs);
-    });
-    // return e as ObjChildEnt<D>;
+    if (isArray(args)) {
+      const cArgsArr = args as unknown as _CompArrayArgs<any[]>; // TODO(@darzu): We shouldn't need such hacky casts
+      def.forEach((c, i) => {
+        const cArgs: any | any[] = cArgsArr[i];
+        _setComp(e, c, cArgs);
+      });
+      // return e as ObjChildEnt<D>;
+    } else {
+      const cArgsObj = args as Record<string, any>;
+      def.forEach((c, i) => {
+        const cArgs: any | any[] = cArgsObj[c.name];
+        _setComp(e, c, cArgs);
+      });
+    }
     return;
   } else if (isObjDef(def)) {
     _mixinObj(e, def, args as any);
@@ -528,6 +537,10 @@ export function testObjectTS() {
     [1, 1, 1],
     undefined,
   ]);
+  const rudder2 = createObj([PositionDef, RotationDef] as const, {
+    position: [1, 1, 1],
+    rotation: undefined,
+  });
 
   console.log("testGrayHelpers".toUpperCase());
   console.dir(ShipObj);

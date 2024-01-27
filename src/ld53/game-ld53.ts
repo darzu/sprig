@@ -53,7 +53,7 @@ import {
   updateAABBWithPoint,
 } from "../physics/aabb.js";
 import { InputsDef } from "../input/inputs.js";
-import { CanManDef, raiseManTurret } from "../turret/turret.js";
+import { CanManDef, TurretDef, raiseManTurret } from "../turret/turret.js";
 import { TextDef } from "../gui/ui.js";
 import { CanvasDef, HasFirstInteractionDef } from "../render/canvas.js";
 import { createJfaPipelines } from "../render/pipelines/std-jump-flood.js";
@@ -391,7 +391,7 @@ export async function initLD53(hosting: boolean) {
       Phase.GAME_WORLD,
       [GhostDef, WorldFrameDef, ColliderDef],
       [InputsDef, HasFirstInteractionDef],
-      async (ps, { inputs }) => {
+      (ps, { inputs }) => {
         if (!ps.length) return;
 
         const ghost = ps[0];
@@ -579,6 +579,7 @@ export async function initLD53(hosting: boolean) {
 
         // TODO(@darzu): how do we make this code re-usable across games and keybindings?
         // furl/unfurl
+        assert(TurretDef.isOn(rudder));
         if (rudder.turret.mannedId) {
           if (MOTORBOAT_MODE) {
             // console.log("here");
@@ -692,6 +693,8 @@ export async function initLD53(hosting: boolean) {
         if (res.me.host) {
           // vec3.set(0, 3, -1, player.position);
           assert(CameraFollowDef.isOn(rudder));
+          assert(TurretDef.isOn(rudder));
+          assert(AuthorityDef.isOn(rudder));
           raiseManTurret(player, rudder);
         } else {
           player.position[1] += 5;

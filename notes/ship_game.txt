@@ -440,6 +440,13 @@ Names:
   Winds of Hyperspace
   Winds of the Dark Stars
 
+Other games w/ good names:
+  Sea of Stars
+
 Raise and lower keel?
   Raise to "drift" sideways, good for downstream broadsides,
   deploy keel to go straight
+
+Deployable 4 keels:
+  front,back like normal keel
+  left,right like putting a paddle in the water from a kayak

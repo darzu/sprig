@@ -141,16 +141,12 @@ export function createOrResetBullet(
   // e.gravity[1] = -props.gravity;
 
   // TODO(@darzu): MULTIPLAYER: fix sync & predict to work with parametric motion
-  EM.set(
-    e,
-    ParametricDef,
-    {
-      pos: props.location,
-      vel: props.linearVelocity,
-      accel: [0, 0, -props.gravity],
-    },
-    res.time.time
-  );
+  EM.set(e, ParametricDef, {
+    pos: props.location,
+    vel: props.linearVelocity,
+    accel: [0, 0, -props.gravity],
+    time: res.time.time,
+  });
   return e;
 }
 
@@ -315,13 +311,12 @@ export async function breakBullet(
     vec3.copy(pe.position, bullet.world.position);
     vec3.copy(pe.color, bullet.color);
     // const vel = vec3.clone(bullet.linearVelocity);
-    const vel = vec3.clone(bullet.parametric.init.vel);
-    vel[1] = -vel[1]; // assume we're at the end of a parabola
+    const vel = vec3.clone(bullet.parametric.vel);
+    // vel[2] = -vel[2]; // assume we're at the end of a parabola
     vec3.normalize(vel, vel);
-    vec3.negate(vel, vel);
+    vec3.negate(vel, vel); // reflact back along path of travel
     vec3.add(vel, randNormalVec3(tempVec3()), vel);
-    // vec3.add(vel, [0, -1, 0], vel);
-    vec3.add(vel, [0, +1, 0], vel);
+    vec3.add(vel, [0, 0, +1], vel); // bias upward
     vec3.normalize(vel, vel);
     vec3.scale(vel, 0.02, vel);
     EM.set(pe, LinearVelocityDef);
