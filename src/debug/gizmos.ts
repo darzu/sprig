@@ -1,58 +1,58 @@
 import { AABB, getAABBCornersTemp } from "../physics/aabb.js";
 import { createFlatQuadMesh } from "../meshes/primatives.js";
 import { Mesh, mergeMeshes } from "../meshes/mesh.js";
-import { vec3, V, tV, orthonormalize } from "../matrix/sprig-matrix.js";
+import { V3, V, tV, orthonormalize } from "../matrix/sprig-matrix.js";
 import { assert, dbgDirOnce } from "../utils/util.js";
 import { createEmptyMesh } from "../wood/wood.js";
 
 const _UP = V(0, 0, 1);
-const _t1 = vec3.create();
-const _t2 = vec3.create();
-const _t3 = vec3.create();
-const _t4 = vec3.create();
-const _t5 = vec3.create();
+const _t1 = V3.mk();
+const _t2 = V3.mk();
+const _t3 = V3.mk();
+const _t4 = V3.mk();
+const _t5 = V3.mk();
 export function createLineMesh(
   width: number,
-  start: vec3.InputT,
-  end: vec3.InputT,
-  up?: vec3.InputT
+  start: V3.InputT,
+  end: V3.InputT,
+  up?: V3.InputT
 ): Mesh {
   // TODO(@darzu): PERF!! So many temps
   // TODO(@darzu): I'm dissatisfied with how we do mesh building. Should be a
   //    better way. Maybe it's just the stupid vec stuff.
   // TODO(@darzu): consider building straight into the serialize buffers?
-  up = vec3.copy(_t1, up ?? _UP);
+  up = V3.copy(_t1, up ?? _UP);
   // TODO(@darzu): IMPL
-  const fwd = vec3.sub(end, start, _t2);
-  const len = vec3.length(fwd);
+  const fwd = V3.sub(end, start, _t2);
+  const len = V3.len(fwd);
   const right = _t3;
   orthonormalize(fwd, up, right);
   // console.log(vec3Dbg(fwd));
   // console.log(vec3Dbg(up));
   // console.log(vec3Dbg(right));
 
-  vec3.scale(fwd, len, fwd);
-  vec3.scale(right, width * 0.5, right);
-  vec3.scale(up, width * 0.5, up);
-  const left = vec3.negate(right, _t4);
-  const down = vec3.negate(up, _t5);
+  V3.scale(fwd, len, fwd);
+  V3.scale(right, width * 0.5, right);
+  V3.scale(up, width * 0.5, up);
+  const left = V3.neg(right, _t4);
+  const down = V3.neg(up, _t5);
 
   const mesh = createEmptyMesh("line");
 
-  const tr = vec3.add(up, right, vec3.create());
-  const tl = vec3.add(up, left, vec3.create());
-  const bl = vec3.add(down, left, vec3.create());
-  const br = vec3.add(down, right, vec3.create());
-  vec3.add(tr, start, tr);
-  vec3.add(tl, start, tl);
-  vec3.add(bl, start, bl);
-  vec3.add(br, start, br);
+  const tr = V3.add(up, right, V3.mk());
+  const tl = V3.add(up, left, V3.mk());
+  const bl = V3.add(down, left, V3.mk());
+  const br = V3.add(down, right, V3.mk());
+  V3.add(tr, start, tr);
+  V3.add(tl, start, tl);
+  V3.add(bl, start, bl);
+  V3.add(br, start, br);
   mesh.pos.push(tr, tl, bl, br);
   mesh.quad.push(V(0, 1, 2, 3));
-  const ftr = vec3.add(tr, fwd, vec3.create());
-  const ftl = vec3.add(tl, fwd, vec3.create());
-  const fbl = vec3.add(bl, fwd, vec3.create());
-  const fbr = vec3.add(br, fwd, vec3.create());
+  const ftr = V3.add(tr, fwd, V3.mk());
+  const ftl = V3.add(tl, fwd, V3.mk());
+  const fbl = V3.add(bl, fwd, V3.mk());
+  const fbr = V3.add(br, fwd, V3.mk());
   mesh.pos.push(ftr, ftl, fbl, fbr);
   mesh.quad.push(V(7, 6, 5, 4));
 
@@ -88,7 +88,7 @@ export function createGizmoMesh(): Mesh {
 }
 
 export interface GraphAxesMeshOpts {
-  intervalDomainLength: vec3;
+  intervalDomainLength: V3;
   intervalGap: number;
   domainSize: AABB;
   worldSize: AABB;
@@ -105,16 +105,16 @@ export function createGraph3DAxesMesh(opts: GraphAxesMeshOpts): Mesh {
     const numIntervals = Math.ceil(domainLength / opts.intervalDomainLength[i]);
     const worldLength = opts.worldSize.max[i] - opts.worldSize.min[i];
     const worldIntLength = worldLength / numIntervals;
-    let _start = vec3.tmp();
-    let _end = vec3.tmp();
+    let _start = V3.tmp();
+    let _end = V3.tmp();
     for (let j = 0; j < numIntervals; j++) {
-      vec3.set(-halfWidth, -halfWidth, -halfWidth, _start);
-      vec3.set(-halfWidth, -halfWidth, -halfWidth, _end);
+      V3.set(-halfWidth, -halfWidth, -halfWidth, _start);
+      V3.set(-halfWidth, -halfWidth, -halfWidth, _end);
       _start[i] = j * worldIntLength + opts.intervalGap;
       _end[i] = (j + 1) * worldIntLength - opts.intervalGap;
       // TODO(@darzu): TEST world min
-      vec3.add(_start, opts.worldSize.min, _start);
-      vec3.add(_end, opts.worldSize.min, _end);
+      V3.add(_start, opts.worldSize.min, _start);
+      V3.add(_end, opts.worldSize.min, _end);
       // console.log(`${vec3Dbg(_start)} -> ${vec3Dbg(_end)}`);
       const ln = createLineMesh(opts.axisWidth, _start, _end, ups[i]);
       ln.colors.forEach((c) => (c[i] = 1.0)); // set R, G, or B
@@ -128,7 +128,7 @@ export function createGraph3DAxesMesh(opts: GraphAxesMeshOpts): Mesh {
   return mesh;
 }
 
-export function createGraph3DDataMesh(data: vec3[][]): Mesh {
+export function createGraph3DDataMesh(data: V3[][]): Mesh {
   assert(data.length > 1 && data[0].length > 1);
   const yLen = data.length;
   const xLen = data[0].length;
@@ -142,7 +142,7 @@ export function createGraph3DDataMesh(data: vec3[][]): Mesh {
       assert(data[yi].length === xLen);
       const i = idx(xi, yi);
       const pos = data[yi][xi];
-      vec3.copy(mesh.pos[i], pos);
+      V3.copy(mesh.pos[i], pos);
     }
   }
   return mesh;
@@ -166,7 +166,7 @@ export function createGizmoForAABB(aabb: AABB, width: number): Mesh {
         const g = u[1] > 0 && v[1] > 0 ? 1 : 0;
         const b = u[2] > 0 && v[2] > 0 ? 1 : 0;
         ln.colors.forEach((c) => {
-          vec3.set(r, g, b, c);
+          V3.set(r, g, b, c);
         });
         lns.push(ln);
       }

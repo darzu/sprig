@@ -1,7 +1,7 @@
 import { AnimateTo, AnimateToDef } from "../animation/animate-to.js";
 import { createRef, Ref } from "../ecs/em-helpers.js";
 import { EM } from "../ecs/entity-manager.js";
-import { vec2, vec3, quat } from "../matrix/sprig-matrix.js";
+import { V2, V3, quat } from "../matrix/sprig-matrix.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { eventWizard } from "../net/events.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
@@ -39,8 +39,8 @@ export const SpawnerDef = EM.defineComponent(
 );
 
 export function createSpawner(
-  uvPos: vec2,
-  uvDir: vec2,
+  uvPos: V2,
+  uvDir: V2,
   animate?: Partial<AnimateTo>
 ) {
   const e = EM.new();
@@ -73,9 +73,9 @@ export function registerUvSpawnSystems() {
 
         // TODO(@darzu): parameterize what is spawned
         const b = spawnEnemyShip(
-          vec2.copy(vec2.create(), t.uvPos),
+          V2.copy(V2.mk(), t.uvPos),
           t.id,
-          vec2.copy(vec2.create(), t.uvDir)
+          V2.copy(V2.mk(), t.uvDir)
         );
 
         // console.log(`spawning ${b.id} from ${t.id} at ${performance.now()}`);
@@ -94,7 +94,7 @@ export function registerUvSpawnSystems() {
     ([c]) => {
       // TODO(@darzu): DBG
       // console.log(`unparent on: ${c.id}`);
-      vec3.copy(c.position, c.world.position);
+      V3.copy(c.position, c.world.position);
       quat.copy(c.rotation, c.world.rotation);
       c.physicsParent.id = 0;
     }
@@ -130,7 +130,7 @@ export function registerUvSpawnSystems() {
             // );
             // TODO(@darzu): we're doing duplicate work here. we do it so that at least
             //  on the host there is less position flickering
-            vec3.copy(c.position, c.world.position);
+            V3.copy(c.position, c.world.position);
             quat.copy(c.rotation, c.world.rotation);
             c.physicsParent.id = 0;
             runUnparent(c);

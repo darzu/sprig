@@ -33,7 +33,7 @@ import {
   shadowPipelines,
 } from "../render/pipelines/std-shadow.js";
 import { RenderableConstructDef, RendererDef } from "../render/renderer-ecs.js";
-import { mat3, mat4, quat, V, vec2, vec3 } from "../matrix/sprig-matrix.js";
+import { mat3, mat4, quat, V, V2, V3 } from "../matrix/sprig-matrix.js";
 import { SAIL_FURL_RATE } from "../wind/sail.js";
 import { quatFromUpForward_OLD, randNormalVec3 } from "../utils/utils-3d.js";
 import { randColor } from "../utils/utils-game.js";
@@ -99,7 +99,7 @@ const RED_DAMAGE_CUTTING = 10;
 const RED_DAMAGE_PER_FRAME = 40;
 const GREEN_HEALING = 1;
 
-// const SHIP_START_POS: vec3 = V(0, 2, -WORLD_WIDTH * 0.5 * 0.8);
+// const SHIP_START_POS: V3 = V(0, 2, -WORLD_WIDTH * 0.5 * 0.8);
 
 // const WORLD_HEIGHT = 1024;
 
@@ -108,8 +108,8 @@ const worldZToTexX = (z: number) => Math.floor(z + WORLD_WIDTH / 2);
 const texXToWorldZ = (x: number) => x - WORLD_WIDTH / 2 + 0.5;
 const texYToWorldX = (y: number) => y - WORLD_HEIGHT / 2 + 0.5;
 
-const level2DtoWorld3D = (levelPos: vec2, y: number, out: vec3) =>
-  vec3.set(
+const level2DtoWorld3D = (levelPos: V2, y: number, out: V3) =>
+  V3.set(
     texYToWorldX(WORLD_HEIGHT - 1 - levelPos[1]),
     y,
     texXToWorldZ(levelPos[0]),
@@ -183,8 +183,8 @@ export async function initGrassGame(hosting: boolean) {
   sunlight.pointLight.constant = 1.0;
   sunlight.pointLight.linear = 0.0;
   sunlight.pointLight.quadratic = 0.0;
-  vec3.copy(sunlight.pointLight.ambient, [0.2, 0.2, 0.2]);
-  vec3.copy(sunlight.pointLight.diffuse, [0.5, 0.5, 0.5]);
+  V3.copy(sunlight.pointLight.ambient, [0.2, 0.2, 0.2]);
+  V3.copy(sunlight.pointLight.diffuse, [0.5, 0.5, 0.5]);
   EM.set(sunlight, PositionDef, V(50, 300, 10));
   EM.set(sunlight, RenderableConstructDef, res.gg_meshes.ball.proto);
 
@@ -300,7 +300,7 @@ export async function initGrassGame(hosting: boolean) {
   // load level
 
   const ship = await createLd53ShipAsync();
-  vec3.set(0, 10, 0, ship.position);
+  V3.set(0, 10, 0, ship.position);
   // move down
   // vec3.copy(ship.position, SHIP_START_POS);
 
@@ -310,7 +310,7 @@ export async function initGrassGame(hosting: boolean) {
     player.physicsParent.id = ship.id;
     // vec3.set(0, 3, -1, player.position);
     const rudder = ship.hasRudder.rudder;
-    vec3.copy(player.position, rudder.position);
+    V3.copy(player.position, rudder.position);
     player.position[2] = 1.45;
     assert(CameraFollowDef.isOn(rudder));
     assert(AuthorityDef.isOn(rudder));
@@ -359,9 +359,9 @@ export async function initGrassGame(hosting: boolean) {
     // g.cameraFollow.pitchOffset = -1.098;
 
     // tower 1 close up
-    vec3.copy(g.position, [-157.32, 54.5, -328.04]);
+    V3.copy(g.position, [-157.32, 54.5, -328.04]);
     quat.copy(g.rotation, [0.0, -0.7, 0.0, 0.72]);
-    vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
+    V3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 5.0]);
     g.cameraFollow.yawOffset = 0.0;
     g.cameraFollow.pitchOffset = -0.576;
 
@@ -472,7 +472,7 @@ export async function initGrassGame(hosting: boolean) {
     // vec3.copy(ship.position, SHIP_START_POS);
     // level2DtoWorld3D(level.levelMap.startPos, 2, ship.position);
     quat.identity(ship.rotation);
-    vec3.set(0, 0, 0, ship.linearVelocity);
+    V3.set(0, 0, 0, ship.linearVelocity);
     const sail = ship.hasMast.mast.mast.sail.sail;
     sail.unfurledAmount = sail.minFurl;
     ship.ld52ship.cuttingEnabled = true;
@@ -661,12 +661,10 @@ export async function initGrassGame(hosting: boolean) {
       // const shipDir = vec3.transformQuat(V(0, 0, 1), shipWorld.world.rotation);
 
       const invShip = mat3.invert(mat3.fromMat4(shipWorld.world.transform));
-      const windLocalDir = vec3.transformMat3(res.wind.dir, invShip);
+      const windLocalDir = V3.tMat3(res.wind.dir, invShip);
       const shipLocalDir = V(0, 0, 1);
 
-      const optimalSailLocalDir = vec3.normalize(
-        vec3.add(windLocalDir, shipLocalDir)
-      );
+      const optimalSailLocalDir = V3.norm(V3.add(windLocalDir, shipLocalDir));
 
       // console.log(`ship to wind: ${vec3.dot(windLocalDir, shipLocalDir)}`);
 
@@ -679,7 +677,7 @@ export async function initGrassGame(hosting: boolean) {
       // need to maximize: dot(wind, sail) * dot(sail, ship)
 
       // TODO(@darzu): ANIMATE SAIL TOWARD WIND
-      if (vec3.dot(optimalSailLocalDir, shipLocalDir) > 0.01)
+      if (V3.dot(optimalSailLocalDir, shipLocalDir) > 0.01)
         quatFromUpForward_OLD(mast.rotation, V(0, 1, 0), optimalSailLocalDir);
     }
   );
@@ -697,14 +695,14 @@ export async function initGrassGame(hosting: boolean) {
   EM.set(worldGizmo, RenderableConstructDef, gizmoMesh.proto);
 
   // debugging createGraph3D
-  let data: vec3[][] = [];
+  let data: V3[][] = [];
   for (let x = 0; x < 12; x++) {
     data[x] = [];
     for (let z = 0; z < 7; z++) {
       data[x][z] = V(x, x + z, z);
     }
   }
-  createGraph3D(vec3.add(worldGizmo.position, [50, 10, 50], V(0, 0, 0)), data);
+  createGraph3D(V3.add(worldGizmo.position, [50, 10, 50], V(0, 0, 0)), data);
 }
 
 async function createPlayer() {
@@ -724,7 +722,7 @@ async function createPlayer() {
   // quat.rotateX(g.cameraFollow.rotationOffset, quat.IDENTITY, -Math.PI / 8);
   EM.set(p, LinearVelocityDef);
 
-  vec3.copy(p.position, [0, 1, -1.2]);
+  V3.copy(p.position, [0, 1, -1.2]);
   quat.setAxisAngle([0.0, -1.0, 0.0], 1.62, p.rotation);
   p.cameraFollow.positionOffset = V(0, 0, 5);
   p.controllable.speed *= 0.5;
@@ -743,9 +741,9 @@ async function createPlayer() {
     aabb: gg_meshes.ball.aabb,
   });
 
-  vec3.copy(p.position, [-28.11, 26.0, -28.39]);
+  V3.copy(p.position, [-28.11, 26.0, -28.39]);
   quat.copy(p.rotation, [0.0, -0.94, 0.0, 0.34]);
-  vec3.copy(p.cameraFollow.positionOffset, [0.0, 2.0, 5.0]);
+  V3.copy(p.cameraFollow.positionOffset, [0.0, 2.0, 5.0]);
   p.cameraFollow.yawOffset = 0.0;
   p.cameraFollow.pitchOffset = -0.593;
 

@@ -4,7 +4,7 @@ import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { DeadDef } from "../ecs/delete.js";
 import { EM } from "../ecs/entity-manager.js";
-import { vec3, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V3, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { InputsDef } from "../input/inputs.js";
 import { AudioDef } from "../audio/audio.js";
 import { ColliderDef, MultiCollider } from "../physics/collider.js";
@@ -137,8 +137,8 @@ export async function initShipyardGame(hosting: boolean) {
   sun.pointLight.constant = 1.0;
   sun.pointLight.linear = 0.0;
   sun.pointLight.quadratic = 0.0;
-  vec3.copy(sun.pointLight.ambient, [0.2, 0.2, 0.2]);
-  vec3.copy(sun.pointLight.diffuse, [0.5, 0.5, 0.5]);
+  V3.copy(sun.pointLight.ambient, [0.2, 0.2, 0.2]);
+  V3.copy(sun.pointLight.diffuse, [0.5, 0.5, 0.5]);
   EM.set(sun, PositionDef, V(50, 300, 10));
 
   // const c = res.globalCursor3d.cursor()!;
@@ -306,7 +306,7 @@ export async function initShipyardGame(hosting: boolean) {
       if (inputs.lclick) {
         // console.log(`fire!`);
         const firePos = ghost.world.position;
-        const fireDir = quat.create();
+        const fireDir = quat.mk();
         quat.copy(fireDir, ghost.world.rotation);
         const ballHealth = 2.0;
         fireBullet(
@@ -317,7 +317,7 @@ export async function initShipyardGame(hosting: boolean) {
           0.02,
           3 * 0.00001,
           ballHealth,
-          vec3.FWD
+          V3.FWD
         );
       }
 
@@ -371,7 +371,7 @@ export async function initShipyardGame(hosting: boolean) {
           if (e.dead.processed) continue;
 
           e.bullet.health = 10;
-          vec3.set(0, -100, 0, e.position);
+          V3.set(0, -100, 0, e.position);
           e.renderable.hidden = true;
 
           e.dead.processed = true;
@@ -404,9 +404,9 @@ export async function initShipyardGame(hosting: boolean) {
       // g.cameraFollow.pitchOffset = 2.974;
       // vec3.copy(g.cameraFollow.positionOffset, [0.0, -30.0, 0.0]);
 
-      vec3.copy(g.position, [-21.98, -23.58, 11.94]);
+      V3.copy(g.position, [-21.98, -23.58, 11.94]);
       quat.copy(g.rotation, [0.0, 0.0, -0.36, 0.93]);
-      vec3.copy(g.cameraFollow.positionOffset, [0.0, -15.0, 0.0]);
+      V3.copy(g.cameraFollow.positionOffset, [0.0, -15.0, 0.0]);
       g.cameraFollow.yawOffset = 0.0;
       g.cameraFollow.pitchOffset = -0.833;
     }

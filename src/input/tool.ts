@@ -1,7 +1,7 @@
 import { FinishedDef } from "../ecs/em-helpers.js";
 import { AABBCollider, ColliderDef } from "../physics/collider.js";
 import { Component, EM, Entity } from "../ecs/entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
 import { AABB } from "../physics/aabb.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
@@ -56,8 +56,8 @@ export function registerToolSystems() {
       for (let { hsPlayer, id, position, rotation } of players) {
         if (hsPlayer.dropping && hsPlayer.tool > 0) {
           let dropLocation = V(0, 0, -5);
-          vec3.transformQuat(dropLocation, rotation, dropLocation);
-          vec3.add(dropLocation, position, dropLocation);
+          V3.tQuat(dropLocation, rotation, dropLocation);
+          V3.add(dropLocation, position, dropLocation);
           detectedEvents.raise({
             type: "tool-drop",
             origPid: me.pid,
@@ -84,9 +84,9 @@ export function registerToolSystems() {
       // EM.removeComponent(tool.id, InteractableDef);
       // TODO(@darzu): add interact box
       // EM.removeComponent(tool.id, InteractableDef);
-      vec3.set(0, 0, -1.5, tool.position);
+      V3.set(0, 0, -1.5, tool.position);
       EM.set(tool, ScaleDef);
-      vec3.copy(tool.scale, [0.5, 0.5, 0.5]);
+      V3.copy(tool.scale, [0.5, 0.5, 0.5]);
       player.hsPlayer.tool = tool.id;
       if (ColliderDef.isOn(tool)) tool.collider.solid = false;
     },
@@ -98,13 +98,13 @@ export function registerToolSystems() {
     legalEvent: ([player, tool]) => {
       return player.hsPlayer.tool === tool.id;
     },
-    runEvent: ([player, tool], location: vec3) => {
+    runEvent: ([player, tool], location: V3) => {
       tool.physicsParent.id = 0;
       // TODO(@darzu): add interact box
       // EM.addComponent(tool.id, InteractableDef);
-      vec3.copy(tool.position, location);
+      V3.copy(tool.position, location);
       EM.set(tool, ScaleDef);
-      vec3.copy(tool.scale, [1, 1, 1]);
+      V3.copy(tool.scale, [1, 1, 1]);
       player.hsPlayer.tool = 0;
       if (ColliderDef.isOn(tool)) tool.collider.solid = true;
     },
@@ -112,7 +112,7 @@ export function registerToolSystems() {
       buf.writeVec3(location);
     },
     deserializeExtra: (buf) => {
-      return buf.readVec3(vec3.create());
+      return buf.readVec3(V3.mk());
     },
   });
 }

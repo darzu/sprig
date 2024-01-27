@@ -1,8 +1,8 @@
 import { DBG_ASSERT } from "../flags.js";
 import {
-  vec2,
-  vec3,
-  vec4,
+  V2,
+  V3,
+  V4,
   quat,
   mat4,
   mat3,
@@ -165,8 +165,8 @@ const keelTemplate: Mesh = {
   surfaceIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
   usesProvoking: true,
 };
-const __temp1 = vec3.create();
-export function getPathFrom2DQuadMesh(m: Mesh, perp: vec3.InputT): Path {
+const __temp1 = V3.mk();
+export function getPathFrom2DQuadMesh(m: Mesh, perp: V3.InputT): Path {
   const hpoly = meshToHalfEdgePoly(m);
 
   // find the end face
@@ -192,8 +192,8 @@ export function getPathFrom2DQuadMesh(m: Mesh, perp: vec3.InputT): Path {
     let v0 = m.pos[e.orig.vi];
     let v1 = m.pos[e.next.orig.vi];
     let pos = centroid(v0, v1);
-    let dir = vec3.cross(vec3.sub(v0, v1, __temp1), perp, __temp1);
-    const rot = quatFromUpForward_OLD(quat.create(), perp, dir);
+    let dir = V3.cross(V3.sub(v0, v1, __temp1), perp, __temp1);
+    const rot = quatFromUpForward_OLD(quat.mk(), perp, dir);
     path.push({ pos, rot });
 
     if (!e.face) break;
@@ -224,9 +224,9 @@ function createPathGizmos(path: Path, scale = 1): Mesh {
   path.forEach((p) => {
     const g = createGizmoMesh();
     g.pos.forEach((v) => {
-      vec3.scale(v, scale, v);
-      vec3.transformQuat(v, p.rot, v);
-      vec3.add(v, p.pos, v);
+      V3.scale(v, scale, v);
+      V3.tQuat(v, p.rot, v);
+      V3.add(v, p.pos, v);
     });
     gizmos.push(g);
   });
@@ -242,18 +242,18 @@ export async function dbgPathWithGizmos(path: Path, scale = 1) {
   EM.set(e, RenderableConstructDef, mesh);
 }
 
-export function snapXToPath(path: Path, x: number, out: vec3) {
+export function snapXToPath(path: Path, x: number, out: V3) {
   return snapToPath(path, x, 0, out);
 }
-const __temp2 = vec3.create();
-export function snapToPath(path: Path, w: number, dim: 0 | 1 | 2, out: vec3) {
+const __temp2 = V3.mk();
+export function snapToPath(path: Path, w: number, dim: 0 | 1 | 2, out: V3) {
   for (let i = 0; i < path.length; i++) {
     let pos = path[i].pos;
     // are we ahead of w
     if (w < pos[dim]) {
       if (i === 0) {
         // w is before the whole path
-        vec3.copy(out, path[i].pos);
+        V3.copy(out, path[i].pos);
         return out;
       }
       let prev = path[i - 1].pos;
@@ -262,14 +262,14 @@ export function snapToPath(path: Path, w: number, dim: 0 | 1 | 2, out: vec3) {
         `TODO: we assume path is in assending [x,y,z][${dim}] order`
       );
 
-      let diff = vec3.sub(pos, prev, __temp2);
+      let diff = V3.sub(pos, prev, __temp2);
       let percent = (w - prev[dim]) / diff[dim];
-      vec3.add(prev, vec3.scale(diff, percent, out), out);
+      V3.add(prev, V3.scale(diff, percent, out), out);
       return out;
     }
   }
   // the whole path is behind x
-  vec3.copy(out, path[path.length - 1].pos);
+  V3.copy(out, path[path.length - 1].pos);
   return out;
 }
 
@@ -319,7 +319,7 @@ export function createLD53Ship(): HomeShip {
     let keelTemplate2 = transformMesh(
       keelTemplate,
       mat4.fromRotationTranslationScale(
-        quat.rotateX(quat.identity(), Math.PI / 2),
+        quat.rotX(quat.identity(), Math.PI / 2),
         [0, 0, 0],
         // vec3.scale(vec3.negate(keelTempAABB.min), 6),
         [5, 5, 5]
@@ -343,7 +343,7 @@ export function createLD53Ship(): HomeShip {
 
   const keelAABB = createAABB();
   keelPath.forEach((p) => updateAABBWithPoint(keelAABB, p.pos));
-  const keelSize = getSizeFromAABB(keelAABB, vec3.create());
+  const keelSize = getSizeFromAABB(keelAABB, V3.mk());
 
   if (KEEL)
     appendBoard(
@@ -385,25 +385,25 @@ export function createLD53Ship(): HomeShip {
     const sternInfluence = 24;
     const prowAngle = (4 * Math.PI) / 16;
     const prowInfluence = 12;
-    const p0 = vec3.add(sternpost, [0, 0, transomWidth * 0.5], vec3.create());
-    const p1 = vec3.add(
+    const p0 = V3.add(sternpost, [0, 0, transomWidth * 0.5], V3.mk());
+    const p1 = V3.add(
       p0,
       [
         Math.cos(sternAngle) * sternInfluence,
         0,
         Math.sin(sternAngle) * sternInfluence,
       ],
-      vec3.create()
+      V3.mk()
     );
     const p3 = prow;
-    const p2 = vec3.add(
+    const p2 = V3.add(
       p3,
       [
         -Math.cos(prowAngle) * prowInfluence,
         0,
         Math.sin(prowAngle) * prowInfluence,
       ],
-      vec3.create()
+      V3.mk()
     );
 
     railCurve = { p0, p1, p2, p3 };
@@ -416,13 +416,13 @@ export function createLD53Ship(): HomeShip {
   );
   // fixPathBasis(railPath, [0, 1, 0], [0, 0, 1], [1, 0, 0]);
 
-  // let ribEnds: vec3[] = [];
+  // let ribEnds: V3[] = [];
   let ribPaths: Path[] = [];
   let ribCurves: BezierCubic[] = [];
   for (let i = 0; i < ribCount; i++) {
     // const ribX = i * ribSpace + 2 + keelAABB.min[0];
     const ribX = i * ribSpace + ribSpace + keelAABB.min[0];
-    const ribStart = snapXToPath(keelPath, ribX, vec3.create());
+    const ribStart = snapXToPath(keelPath, ribX, V3.mk());
 
     // const p = translatePath(makeRibPath(i), V(i * ribSpace, 0, 0));
     // const weirdP = translatePath(makeRibPathWierd(i), ribStart);
@@ -433,8 +433,8 @@ export function createLD53Ship(): HomeShip {
 
     let ribCurve: BezierCubic;
     {
-      const p0 = vec3.clone(ribStart);
-      const p1 = vec3.add(p0, [0, 0, 5], vec3.create());
+      const p0 = V3.clone(ribStart);
+      const p1 = V3.add(p0, [0, 0, 5], V3.mk());
       // TODO(@darzu): HACKs for the first and last rib
       // if (i === 0) {
       //   p1[1] += 1;
@@ -444,12 +444,12 @@ export function createLD53Ship(): HomeShip {
         p1[1] += 1;
         p1[2] -= 4;
       }
-      const ribEnd = snapXToPath(railPath, ribStart[0], vec3.create());
+      const ribEnd = snapXToPath(railPath, ribStart[0], V3.mk());
       // ribEnds.push(ribEnd);
 
       const p3 = ribEnd;
       // const p3 = vec3.add(ribStart, [0, keelSize[1], outboard], vec3.create());
-      const p2 = vec3.add(p3, [0, -5, 2], vec3.create());
+      const p2 = V3.add(p3, [0, -5, 2], V3.mk());
       ribCurve = { p0, p1, p2, p3 };
 
       // if (i === 0) {
@@ -506,7 +506,7 @@ export function createLD53Ship(): HomeShip {
     const ribPath = ribPaths[i];
     const ribEnd = ribPath[ribPath.length - 1];
     // console.log(`${vec3Dbg(railPath[railIdx].pos)} vs ${ribEnd.pos}`);
-    vec3.copy(railPath[railIdx].pos, ribEnd.pos);
+    V3.copy(railPath[railIdx].pos, ribEnd.pos);
     // railPath[railIdx].pos[0] = ribStarts[i][0];
     // railPath[railIdx].pos[2] = ribStarts[i][2];
   }
@@ -589,7 +589,7 @@ export function createLD53Ship(): HomeShip {
 
   const plankPaths: Path[] = [];
   const plankPathsMirrored: Path[] = [];
-  const _temp4 = vec3.create();
+  const _temp4 = V3.mk();
   for (let i = 0; i < plankCount; i++) {
     const nodes: Path = evenRibs
       .filter((rib) => rib.length > i)
@@ -600,7 +600,7 @@ export function createLD53Ship(): HomeShip {
     if (i < 20) {
       const secondToLast = nodes[nodes.length - 1];
       const last: PathNode = {
-        pos: vec3.clone(secondToLast.pos),
+        pos: V3.clone(secondToLast.pos),
         rot: quat.clone(secondToLast.rot),
       };
       const snapped = snapToPath(bowKeelPath, last.pos[1], 1, _temp4);
@@ -614,14 +614,14 @@ export function createLD53Ship(): HomeShip {
       const second = nodes[0];
       const third = nodes[1];
       const first: PathNode = {
-        pos: vec3.clone(second.pos),
+        pos: V3.clone(second.pos),
         rot: quat.clone(second.rot),
       };
-      const diff = vec3.sub(second.pos, third.pos, first.pos);
+      const diff = V3.sub(second.pos, third.pos, first.pos);
       const scale = (transomPlankNum - 1 - i) / (transomPlankNum - 1) + 0.4;
       // console.log("scale: " + scale);
-      vec3.scale(diff, scale, diff);
-      vec3.add(second.pos, diff, first.pos);
+      V3.scale(diff, scale, diff);
+      V3.add(second.pos, diff, first.pos);
       nodes.unshift(first);
     }
 
@@ -665,7 +665,7 @@ export function createLD53Ship(): HomeShip {
   for (let i = 0; i < transomPlankNum; i++) {
     const start = plankPaths[i][0];
     const end = plankPathsMirrored[i][0];
-    const length = vec3.dist(start.pos, end.pos);
+    const length = V3.dist(start.pos, end.pos);
     const transomSegLen = 3.0;
     const numDesired = Math.max(Math.ceil(length / transomSegLen), 2);
 
@@ -682,7 +682,7 @@ export function createLD53Ship(): HomeShip {
     // dbgPathWithGizmos(path);
     for (let n of path) {
       quat.fromEuler(-Math.PI / 2, 0, Math.PI / 2, n.rot);
-      quat.rotateY(n.rot, -Math.PI / 16, n.rot);
+      quat.rotY(n.rot, -Math.PI / 16, n.rot);
     }
     let color = transomColor;
     if (i === 0) color = topPlankColor;
@@ -703,9 +703,9 @@ export function createLD53Ship(): HomeShip {
   {
     const start = railPath[0];
     const end = mirrorRailPath[0];
-    const midPos = vec3.lerp(start.pos, end.pos, 0.5, vec3.create());
-    vec3.lerp(midPos, start.pos, 1.2, start.pos);
-    vec3.lerp(midPos, end.pos, 1.2, end.pos);
+    const midPos = V3.lerp(start.pos, end.pos, 0.5, V3.mk());
+    V3.lerp(midPos, start.pos, 1.2, start.pos);
+    V3.lerp(midPos, end.pos, 1.2, end.pos);
     const mid: PathNode = {
       pos: midPos,
       rot: quat.clone(start.rot),
@@ -734,7 +734,7 @@ export function createLD53Ship(): HomeShip {
   let floorWidth = 0;
   let midIdx = 0;
   for (let i = 0; i < floorBound1.length; i++) {
-    const dist = vec3.dist(floorBound1[i].pos, floorBound2[i].pos);
+    const dist = V3.dist(floorBound1[i].pos, floorBound2[i].pos);
     if (dist > floorWidth) {
       floorWidth = dist;
       midIdx = i;
@@ -759,7 +759,7 @@ export function createLD53Ship(): HomeShip {
     // console.log(`ribSpace: ${ribSpace}`);
     const floorSegLength = 4.0;
     const halfNumFloorBoards = Math.floor(floorWidth / floorBoardWidth / 2);
-    const __t1 = vec3.create();
+    const __t1 = V3.mk();
     for (let i = 0; i < halfNumFloorBoards; i++) {
       const z = i * floorBoardWidth + floorBoardWidth * 0.5;
       const fore = V(0, floorHeight, z);
@@ -811,14 +811,12 @@ export function createLD53Ship(): HomeShip {
   // TODO(@darzu): fix up ship construction
   {
     // TODO(@darzu): Z_UP: basis change. inline this above?
-    _timberMesh.pos.forEach((v) =>
-      vec3.transformMat4(v, transformYUpModelIntoZUp, v)
-    );
+    _timberMesh.pos.forEach((v) => V3.tMat4(v, transformYUpModelIntoZUp, v));
 
     // change so ship faces +y
     const rotate = quat.fromYawPitchRoll(-Math.PI / 2, 0, 0);
     _timberMesh.pos.forEach((v) => {
-      vec3.transformQuat(v, rotate, v);
+      V3.tQuat(v, rotate, v);
     });
 
     // TODO(@darzu): CLEAN UP: currently the result is the ship fwd is y-; We should fix everything to have y+ is fwd
@@ -828,7 +826,7 @@ export function createLD53Ship(): HomeShip {
   const DECK_AT_ZERO = true;
   if (DECK_AT_ZERO)
     _timberMesh.pos.forEach((v) => {
-      vec3.add(v, [0, 0, -floorHeight], v);
+      V3.add(v, [0, 0, -floorHeight], v);
     });
 
   // console.dir(_timberMesh.colors);
@@ -872,8 +870,8 @@ interface Board {
 }
 
 export function pathNodeFromMat4(cursor: mat4): PathNode {
-  const rot = mat4.getRotation(cursor, quat.create());
-  const pos = mat4.getTranslation(cursor, vec3.create());
+  const rot = mat4.getRotation(cursor, quat.mk());
+  const pos = mat4.getTranslation(cursor, V3.mk());
   return {
     pos,
     rot,
@@ -881,12 +879,12 @@ export function pathNodeFromMat4(cursor: mat4): PathNode {
 }
 
 // TODO(@darzu): PERF. creates a lot of vecs
-export function lerpBetween(start: vec3, end: vec3, numNewMid: number): vec3[] {
-  const positions: vec3[] = [];
+export function lerpBetween(start: V3, end: V3, numNewMid: number): V3[] {
+  const positions: V3[] = [];
   positions.push(start);
   for (let i = 0; i < numNewMid; i++) {
     const t = (i + 1) / (numNewMid + 2 - 1);
-    const pos = vec3.lerp(start, end, t, vec3.create());
+    const pos = V3.lerp(start, end, t, V3.mk());
     positions.push(pos);
   }
   positions.push(end);
@@ -917,7 +915,7 @@ export function appendBoard(mesh: RawMesh, board: Board, color = BLACK) {
 
   // TODO(@darzu): streamline
   for (let qi = firstQuadIdx; qi < mesh.quad.length; qi++)
-    mesh.colors.push(vec3.clone(color));
+    mesh.colors.push(V3.clone(color));
 
   // NOTE: for provoking vertices,
   //  indexes 0, 1 of a loop are for stuff behind (end cap, previous sides)
@@ -927,10 +925,10 @@ export function appendBoard(mesh: RawMesh, board: Board, color = BLACK) {
     const loop2Idx = mesh.pos.length - 4;
     const loop1Idx = mesh.pos.length - 4 - 4;
 
-    const q0 = vec4.create();
-    const q1 = vec4.create();
-    const q2 = vec4.create();
-    const q3 = vec4.create();
+    const q0 = V4.mk();
+    const q1 = V4.mk();
+    const q2 = V4.mk();
+    const q3 = V4.mk();
 
     setSideQuadIdxs(loop1Idx, loop2Idx, q0, q1, q2, q3);
 
@@ -939,7 +937,7 @@ export function appendBoard(mesh: RawMesh, board: Board, color = BLACK) {
 
   function addEndQuad(facingDown: boolean) {
     const lastLoopIdx = mesh.pos.length - 4;
-    const q = vec4.create();
+    const q = V4.mk();
     setEndQuadIdxs(lastLoopIdx, q, facingDown);
     mesh.quad.push(q);
   }
@@ -951,15 +949,15 @@ export function appendBoard(mesh: RawMesh, board: Board, color = BLACK) {
     const v2 = V(-board.width, 0, -board.depth);
     const v3 = V(-board.width, 0, board.depth);
     // rotate
-    vec3.transformQuat(v0, n.rot, v0);
-    vec3.transformQuat(v1, n.rot, v1);
-    vec3.transformQuat(v2, n.rot, v2);
-    vec3.transformQuat(v3, n.rot, v3);
+    V3.tQuat(v0, n.rot, v0);
+    V3.tQuat(v1, n.rot, v1);
+    V3.tQuat(v2, n.rot, v2);
+    V3.tQuat(v3, n.rot, v3);
     // translate
-    vec3.add(v0, n.pos, v0);
-    vec3.add(v1, n.pos, v1);
-    vec3.add(v2, n.pos, v2);
-    vec3.add(v3, n.pos, v3);
+    V3.add(v0, n.pos, v0);
+    V3.add(v1, n.pos, v1);
+    V3.add(v2, n.pos, v2);
+    V3.add(v3, n.pos, v3);
     // append
     mesh.pos.push(v0, v1, v2, v3);
   }
@@ -968,9 +966,9 @@ export function appendBoard(mesh: RawMesh, board: Board, color = BLACK) {
 // TODO(@darzu): perhaps all uses of fixPathBasis are bad?
 export function fixPathBasis(
   path: Path,
-  newX: vec3.InputT,
-  newY: vec3.InputT,
-  newZ: vec3.InputT
+  newX: V3.InputT,
+  newY: V3.InputT,
+  newZ: V3.InputT
 ) {
   // TODO(@darzu): PERF. Must be a better way to do this...
   const fixRot = quat.fromMat3(

@@ -1,6 +1,6 @@
 import { EM, Entity, EntityW, Component } from "../ecs/entity-manager.js";
 import { TimeDef } from "../time/time.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { jitter } from "../utils/math.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import {
@@ -49,12 +49,12 @@ export type EnemyCrew = Component<typeof EnemyCrewDef>;
 export function createEnemyCrew(
   allMeshes: AllMeshes,
   parent: number,
-  pos: vec3
+  pos: V3
 ): EntityW<[typeof EnemyCrewDef]> {
   const e = EM.new();
   EM.set(e, EnemyCrewDef);
   EM.set(e, PositionDef, pos);
-  EM.set(e, RotationDef, quat.create());
+  EM.set(e, RotationDef, quat.mk());
   const torso = cloneMesh(allMeshes.cube.mesh);
   scaleMesh3(torso, V(0.75, 0.75, 0.4));
   EM.set(e, RenderableConstructDef, torso);
@@ -80,25 +80,25 @@ export const { EnemyShipPropsDef, EnemyShipLocalDef, createEnemyShip } =
     name: "enemyShip",
     defaultProps: () => {
       return {
-        uvLoc: vec2.fromValues(0, 0),
+        uvLoc: V(0, 0),
         speed: 0.0,
         wheelSpeed: 0.0,
-        uvDir: vec2.fromValues(1, 0),
+        uvDir: V(1, 0),
         parent: 0,
       };
     },
     updateProps: (
       p,
-      uvLoc?: vec2.InputT,
+      uvLoc?: V2.InputT,
       speed?: number,
       wheelSpeed?: number,
-      uvDir?: vec2.InputT,
+      uvDir?: V2.InputT,
       parent?: number
     ) => {
-      if (uvLoc) vec2.copy(p.uvLoc, uvLoc);
+      if (uvLoc) V2.copy(p.uvLoc, uvLoc);
       if (speed !== undefined) p.speed = speed;
       if (wheelSpeed !== undefined) p.wheelSpeed = wheelSpeed;
-      if (uvDir) vec2.copy(p.uvDir, uvDir);
+      if (uvDir) V2.copy(p.uvDir, uvDir);
       if (parent !== undefined) p.parent = parent;
       return p;
     },
@@ -139,9 +139,9 @@ export const { EnemyShipPropsDef, EnemyShipLocalDef, createEnemyShip } =
       EM.set(e, RenderableConstructDef, res.allMeshes.cubeRaft.mesh);
 
       EM.set(e, UVPosDef);
-      vec2.copy(e.uvPos, e.enemyShipProps.uvLoc);
+      V2.copy(e.uvPos, e.enemyShipProps.uvLoc);
       EM.set(e, UVDirDef);
-      vec2.copy(e.uvDir, e.enemyShipProps.uvDir);
+      V2.copy(e.uvDir, e.enemyShipProps.uvDir);
 
       EM.set(e, PhysicsParentDef, e.enemyShipProps.parent);
 
@@ -179,7 +179,7 @@ export const { EnemyShipPropsDef, EnemyShipLocalDef, createEnemyShip } =
           EM.ensureComponent(enemy.enemyCrew.leftLegId, LifetimeDef, 4000);
           EM.ensureComponent(enemy.enemyCrew.rightLegId, LifetimeDef, 4000);
           EM.removeComponent(enemy.id, PhysicsParentDef);
-          vec3.copy(enemy.position, enemy.world.position);
+          V3.copy(enemy.position, enemy.world.position);
           quat.copy(enemy.rotation, enemy.world.rotation);
           EM.set(enemy, LinearVelocityDef, V(0, -0.002, 0));
         }
@@ -198,11 +198,11 @@ export const { EnemyShipPropsDef, EnemyShipLocalDef, createEnemyShip } =
       EM.set(cannon, PhysicsParentDef, e.id);
       EM.set(cannon, PositionDef, V(0, 2, 0));
 
-      const cannonRot = quat.create();
+      const cannonRot = quat.mk();
       const pitch = Math.PI * 0.08;
       // quat.rotateY(cannonRot, cannonRot, Math.PI * 0.5);
       // quat.rotateY(cannonRot, cannonRot, Math.PI * 0.5);
-      quat.rotateX(cannonRot, pitch, cannonRot);
+      quat.rotX(cannonRot, pitch, cannonRot);
       EM.set(cannon, RotationDef, cannonRot);
       e.enemyShipLocal.childCannonId = cannon.id;
 
@@ -216,7 +216,7 @@ export const { EnemyShipPropsDef, EnemyShipLocalDef, createEnemyShip } =
     },
   });
 
-export const ENEMY_SHIP_COLOR: vec3 = V(0.2, 0.1, 0.05);
+export const ENEMY_SHIP_COLOR: V3 = V(0.2, 0.1, 0.05);
 
 export const raiseBreakEnemyShip = eventWizard(
   "break-enemyShip",
@@ -243,7 +243,7 @@ export function registerEnemyShipSystems() {
 
         // o.enemyShipProps.uvDir += rad;
         // TODO(@darzu):  * 0.02
-        vec2.rotate(o.uvDir, vec2.ZEROS, radYaw, o.uvDir);
+        V2.rotate(o.uvDir, V2.ZEROS, radYaw, o.uvDir);
       }
     }
   );
@@ -288,7 +288,7 @@ export function registerEnemyShipSystems() {
               0.02,
               6 * 0.00001,
               10,
-              vec3.FWD
+              V3.FWD
             );
           }
         }
@@ -341,30 +341,30 @@ export function breakEnemyShip(
     EM.set(pe, RenderableConstructDef, part.proto);
     EM.set(pe, ColorDef, ENEMY_SHIP_COLOR);
     EM.set(pe, RotationDef, quat.clone(enemyShip.rotation));
-    EM.set(pe, PositionDef, vec3.clone(enemyShip.position));
+    EM.set(pe, PositionDef, V3.clone(enemyShip.position));
     // EM.set(pe, ColliderDef, {
     //   shape: "AABB",
     //   solid: false,
     //   aabb: part.aabb,
     // });
-    const com = aabbCenter(vec3.create(), part.aabb);
-    vec3.transformQuat(com, enemyShip.rotation, com);
+    const com = aabbCenter(V3.mk(), part.aabb);
+    V3.tQuat(com, enemyShip.rotation, com);
     // vec3.add(com, com, enemyShip.position);
     // vec3.transformQuat(com, com, enemyShip.rotation);
     const vel = com;
     // const vel = vec3.sub(vec3.create(), com, enemyShip.position);
     // const vel = vec3.sub(vec3.create(), com, enemyShip.position);
-    vec3.normalize(vel, vel);
-    vec3.add(vel, [0, -0.6, 0], vel);
-    vec3.scale(vel, 0.005, vel);
+    V3.norm(vel, vel);
+    V3.add(vel, [0, -0.6, 0], vel);
+    V3.scale(vel, 0.005, vel);
     EM.set(pe, LinearVelocityDef, vel);
     const spin = V(
       Math.random() - 0.5,
       Math.random() - 0.5,
       Math.random() - 0.5
     );
-    vec3.normalize(spin, spin);
-    vec3.scale(spin, 0.001, spin);
+    V3.norm(spin, spin);
+    V3.scale(spin, 0.001, spin);
     EM.set(pe, AngularVelocityDef, spin);
     EM.set(pe, LifetimeDef, 2000);
   }
@@ -373,9 +373,9 @@ export function breakEnemyShip(
 export const FireZoneDef = EM.defineComponent("firezone", () => {});
 
 export function spawnEnemyShip(
-  loc: vec2,
+  loc: V2,
   parentId: number,
-  uvDir: vec2
+  uvDir: V2
 ): EntityW<[typeof EnemyShipPropsDef]> {
   return createEnemyShip(
     loc,

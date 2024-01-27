@@ -1,6 +1,6 @@
 import { ColliderDef } from "../physics/collider.js";
 import { Component, EM } from "../ecs/entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
 import { SyncDef, AuthorityDef, Me, MeDef } from "../net/components.js";
 import { Serializer, Deserializer } from "../utils/serialize.js";
@@ -22,8 +22,8 @@ import { ColorDef } from "../color/color-ecs.js";
 import { Phase } from "../ecs/sys-phase.js";
 
 export interface ClothConstruct {
-  location: vec3;
-  color: vec3;
+  location: V3;
+  color: V3;
   rows: number;
   columns: number;
   distance: number;
@@ -74,11 +74,11 @@ function clothMesh(cloth: ClothConstruct): {
   let x = 0;
   let y = 0;
   let i = 0;
-  const pos: vec3[] = [];
-  const tri: vec3[] = [];
-  const colors: vec3[] = [];
-  const lines: vec2[] = [];
-  const uvs: vec2[] = [];
+  const pos: V3[] = [];
+  const tri: V3[] = [];
+  const colors: V3[] = [];
+  const lines: V2[] = [];
+  const uvs: V2[] = [];
   while (y < cloth.rows) {
     if (x == cloth.columns) {
       x = 0;
@@ -86,7 +86,7 @@ function clothMesh(cloth: ClothConstruct): {
       continue;
     }
     pos.push(V(x * cloth.distance, y * cloth.distance, 0));
-    uvs.push(vec2.clone([x / (cloth.columns - 1), y / (cloth.rows - 1)]));
+    uvs.push(V2.clone([x / (cloth.columns - 1), y / (cloth.rows - 1)]));
     // add triangles
     if (y > 0) {
       if (x > 0) {
@@ -108,10 +108,10 @@ function clothMesh(cloth: ClothConstruct): {
     }
     // add lines
     if (x > 0) {
-      lines.push(vec2.clone([i - 1, i]));
+      lines.push(V2.clone([i - 1, i]));
     }
     if (y > 0) {
-      lines.push(vec2.clone([i - cloth.columns, i]));
+      lines.push(V2.clone([i - cloth.columns, i]));
     }
     x = x + 1;
     i = i + 1;
@@ -176,7 +176,7 @@ EM.addEagerInit([ClothConstructDef], [], [], () => {
         const m = cloth.renderable.meshHandle.mesh! as Mesh;
         m.pos.forEach((p, i) => {
           const originalIndex = cloth.clothLocal.posMap.get(i)!;
-          return vec3.copy(p, cloth.springGrid.positions[originalIndex]);
+          return V3.copy(p, cloth.springGrid.positions[originalIndex]);
         });
         renderer.renderer.stdPool.updateMeshVertices(
           cloth.renderable.meshHandle,

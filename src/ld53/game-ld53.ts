@@ -41,7 +41,7 @@ import {
   RendererDef,
   RiggedRenderableConstructDef,
 } from "../render/renderer-ecs.js";
-import { mat3, quat, tV, V, vec2, vec3 } from "../matrix/sprig-matrix.js";
+import { mat3, quat, tV, V, V2, V3 } from "../matrix/sprig-matrix.js";
 import { DevConsoleDef } from "../debug/console.js";
 import { clamp, jitter, max } from "../utils/math.js";
 import { assert, dbgLogMilestone, dbgOnce } from "../utils/util.js";
@@ -142,7 +142,7 @@ const MOTORBOAT_MODE = false;
 // const RED_DAMAGE_PER_FRAME = 40;
 // const GREEN_HEALING = 1;
 
-// const SHIP_START_POS: vec3 = V(0, 2, -WORLD_WIDTH * 0.5 * 0.8);
+// const SHIP_START_POS: V3 = V(0, 2, -WORLD_WIDTH * 0.5 * 0.8);
 
 // const WORLD_HEIGHT = 1024;
 
@@ -151,8 +151,8 @@ const worldYToTexY = (y: number) => Math.floor(y + WORLD_HEIGHT / 2);
 const texXToWorldX = (x: number) => x + 0.5 - WORLD_WIDTH / 2;
 const texYToWorldY = (y: number) => y + 0.5 - WORLD_HEIGHT / 2;
 
-const level2DtoWorld3D = (levelPos: vec2, z: number, out: vec3) =>
-  vec3.set(texXToWorldX(levelPos[0]), texYToWorldY(levelPos[1]), z, out);
+const level2DtoWorld3D = (levelPos: V2, z: number, out: V3) =>
+  V3.set(texXToWorldX(levelPos[0]), texYToWorldY(levelPos[1]), z, out);
 
 export const mapJfa = createJfaPipelines(LandMapTexPtr, "exterior");
 
@@ -228,7 +228,7 @@ async function hostResetLevel(levelIdx: number) {
 
   // move ship to map start pos
   level2DtoWorld3D(levelMap.startPos, 8, ship.position);
-  vec3.set(0, 0, 0, ship.linearVelocity);
+  V3.set(0, 0, 0, ship.linearVelocity);
   quat.identity(ship.rotation);
   quat.yaw(ship.rotation, Math.PI / 2, ship.rotation);
 
@@ -269,8 +269,8 @@ async function hostResetLevel(levelIdx: number) {
     WoodHealthDef,
     WoodStateDef
   );
-  const endZonePos = level2DtoWorld3D(levelMap.endZonePos, 5, vec3.tmp());
-  vec3.copy(dock.position, endZonePos);
+  const endZonePos = level2DtoWorld3D(levelMap.endZonePos, 5, V3.tmp());
+  V3.copy(dock.position, endZonePos);
   resetWoodHealth(dock.woodHealth);
   resetWoodState(dock.woodState);
   EM.whenEntityHas(dock, RenderableDef, WoodStateDef).then((dock) =>
@@ -311,16 +311,16 @@ async function setLevelLocal(levelIdx: number) {
   }
 
   // spawn towers
-  const tower3dPosesAndDirs: [vec3, number][] = levelMap.towers.map(
+  const tower3dPosesAndDirs: [V3, number][] = levelMap.towers.map(
     ([tPos, tDir]) => [
-      level2DtoWorld3D(tPos, STONE_TOWER_HEIGHT, vec3.create()),
+      level2DtoWorld3D(tPos, STONE_TOWER_HEIGHT, V3.mk()),
       Math.atan2(tDir[1], tDir[0]),
     ]
   );
 
   for (let [pos, angle] of tower3dPosesAndDirs) {
     const stoneTower = towerPool.spawn();
-    vec3.copy(stoneTower.position, pos);
+    V3.copy(stoneTower.position, pos);
     quat.setAxisAngle([0, 0, 1], angle, stoneTower.rotation);
   }
 
@@ -380,9 +380,9 @@ export async function initLD53(hosting: boolean) {
     // g.cameraFollow.yawOffset = 0.0;
     // g.cameraFollow.pitchOffset = -0.522;
 
-    vec3.copy(g.position, [-387.88, -118.78, 128.91]);
+    V3.copy(g.position, [-387.88, -118.78, 128.91]);
     quat.copy(g.rotation, [0.0, 0.0, -0.2, 0.98]);
-    vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
+    V3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
     g.cameraFollow.yawOffset = 0.0;
     g.cameraFollow.pitchOffset = -0.858;
 
@@ -444,8 +444,8 @@ export async function initLD53(hosting: boolean) {
   sunlight.pointLight.constant = 1.0;
   sunlight.pointLight.linear = 0.0;
   sunlight.pointLight.quadratic = 0.0;
-  vec3.copy(sunlight.pointLight.ambient, [0.2, 0.2, 0.2]);
-  vec3.copy(sunlight.pointLight.diffuse, [0.5, 0.5, 0.5]);
+  V3.copy(sunlight.pointLight.ambient, [0.2, 0.2, 0.2]);
+  V3.copy(sunlight.pointLight.diffuse, [0.5, 0.5, 0.5]);
   EM.set(sunlight, PositionDef, V(50, 10, 300));
   EM.set(sunlight, RenderableConstructDef, res.ld53Meshes.ball.proto);
 
@@ -486,9 +486,9 @@ export async function initLD53(hosting: boolean) {
   const sky = EM.new();
   EM.set(sky, PositionDef, V(0, 0, -100));
   // const skyMesh = cloneMesh(res.allMeshes.cube.mesh);
-  // skyMesh.pos.forEach((p) => vec3.scale(p, SKY_HALFSIZE, p));
-  // skyMesh.quad.forEach((f) => vec4.reverse(f, f));
-  // skyMesh.tri.forEach((f) => vec3.reverse(f, f));
+  // skyMesh.pos.forEach((p) => V3.scale(p, SKY_HALFSIZE, p));
+  // skyMesh.quad.forEach((f) => V4.reverse(f, f));
+  // skyMesh.tri.forEach((f) => V3.reverse(f, f));
   const skyMesh = domeMesh;
   EM.set(sky, RenderableConstructDef, skyMesh, undefined, undefined, SKY_MASK);
   // EM.set(sky, ColorDef, V(0.9, 0.9, 0.9));
@@ -510,9 +510,9 @@ export async function initLD53(hosting: boolean) {
     p[2] = 0.0;
     updateAABBWithPoint(oceanAABB, p);
   });
-  const oceanSize = getSizeFromAABB(oceanAABB, vec3.create());
+  const oceanSize = getSizeFromAABB(oceanAABB, V3.mk());
   // TODO(@darzu): how does this uvToPos match with the ocean's gpu-uv-unwrapped thingy?
-  function uvToPos([u, v]: vec2, out: vec3): vec3 {
+  function uvToPos([u, v]: V2, out: V3): V3 {
     // console.log(u + " " + v);
     out[0] = u * oceanSize[0] + oceanAABB.min[0];
     out[1] = v * oceanSize[1] + oceanAABB.min[1];
@@ -536,7 +536,7 @@ export async function initLD53(hosting: boolean) {
   // load level
   const level = await EM.whenResources(LevelMapDef);
   // console.log(`level.levelMap.windDir: ${vec2Dbg(level.levelMap.windDir)}`);
-  // vec2.set(0, 1, level.levelMap.windDir))
+  // V2.set(0, 1, level.levelMap.windDir))
   const wingAngle = Math.atan2(
     level.levelMap.windDir[1],
     level.levelMap.windDir[0]
@@ -584,9 +584,9 @@ export async function initLD53(hosting: boolean) {
           if (MOTORBOAT_MODE) {
             // console.log("here");
             if (res.inputs.keyDowns["w"]) {
-              vec3.add(
+              V3.add(
                 ship.linearVelocity,
-                vec3.scale(res.party.dir, 0.1),
+                V3.scale(res.party.dir, 0.1),
                 ship.linearVelocity
               );
             }
@@ -604,12 +604,8 @@ export async function initLD53(hosting: boolean) {
     // end zone
     const dock = createDock();
     EM.set(dock, AuthorityDef, res.me.pid);
-    const endZonePos = level2DtoWorld3D(
-      level.levelMap.endZonePos,
-      5,
-      vec3.tmp()
-    );
-    vec3.copy(dock.position, endZonePos);
+    const endZonePos = level2DtoWorld3D(level.levelMap.endZonePos, 5, V3.tmp());
+    V3.copy(dock.position, endZonePos);
 
     // drawBall(endZonePos, 4, ENDESGA16.deepGreen);
 
@@ -636,8 +632,8 @@ export async function initLD53(hosting: boolean) {
       }
     }
     // console.dir(buoys);
-    const _t1 = vec3.create();
-    const _t2 = vec3.create();
+    const _t1 = V3.mk();
+    const _t2 = V3.mk();
     EM.addSystem(
       "shipBouyancy",
       Phase.GAME_WORLD,
@@ -661,7 +657,7 @@ export async function initLD53(hosting: boolean) {
           // p[2] = p[2] * worldUnitPerOceanVerts - WORLD_WIDTH * 0.5;
           let disp = _t1;
           ocean.uvToGerstnerDispAndNorm(disp, _t2, uv);
-          vec3.add(bouy.position, disp, bouy.position);
+          V3.add(bouy.position, disp, bouy.position);
           // console.log(vec3Dbg(bouy.position));
 
           i++;
@@ -683,7 +679,7 @@ export async function initLD53(hosting: boolean) {
 
         // teleporting player to rudder
         const rudder = ship.hasRudder.rudder;
-        vec3.copy(player.position, rudder.position);
+        V3.copy(player.position, rudder.position);
         player.position[2] = 1.45;
         if (!res.me.host) {
           player.position[1] += 4 * res.me.pid;
@@ -722,7 +718,7 @@ export async function initLD53(hosting: boolean) {
   if (DBG_PLAYER) addWorldGizmo(V(-WORLD_WIDTH / 2, -WORLD_HEIGHT / 2, 0), 100);
 
   // // debugging createGraph3D
-  // let data: vec3[][] = [];
+  // let data: V3[][] = [];
   // for (let x = 0; x < 12; x++) {
   //   data[x] = [];
   //   for (let z = 0; z < 7; z++) {
@@ -765,7 +761,7 @@ export async function initLD53(hosting: boolean) {
         if (e.dead.processed) continue;
 
         e.bullet.health = 10;
-        vec3.set(0, 0, -100, e.position);
+        V3.set(0, 0, -100, e.position);
         e.renderable.hidden = true;
 
         e.dead.processed = true;
@@ -783,9 +779,9 @@ const { Ld53PlayerPropsDef, Ld53PlayerLocalDef, createLd53PlayerAsync } =
   defineNetEntityHelper({
     name: "ld53Player",
     defaultProps: () => ({ parentId: 0, color: V(0, 0, 0) }),
-    updateProps: (p, parentId: number, color: vec3.InputT) => {
+    updateProps: (p, parentId: number, color: V3.InputT) => {
       p.parentId = parentId;
-      vec3.copy(p.color, color);
+      V3.copy(p.color, color);
       return p;
     },
     serializeProps: (o, buf) => {
@@ -817,7 +813,7 @@ const { Ld53PlayerPropsDef, Ld53PlayerLocalDef, createLd53PlayerAsync } =
 
         // vec3.copy(p.position, [-28.11, -28.39, 26.0]);
         // quat.copy(p.rotation, [0.0, -0.94, 0.0, 0.34]);
-        vec3.copy(p.cameraFollow.positionOffset, [0.0, -5.0, 2.0]);
+        V3.copy(p.cameraFollow.positionOffset, [0.0, -5.0, 2.0]);
         p.cameraFollow.yawOffset = 0.0;
         p.cameraFollow.pitchOffset = 0.0; // -0.593;
 

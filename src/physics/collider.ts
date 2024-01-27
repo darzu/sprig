@@ -1,6 +1,6 @@
 import { Component, EM } from "../ecs/entity-manager.js";
 import { Phase } from "../ecs/sys-phase.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { getAABBFromMesh } from "../meshes/mesh.js";
 import { RenderableDef } from "../render/renderer-ecs.js";
 import { AABB } from "./aabb.js";
@@ -39,19 +39,19 @@ export interface AABBCollider extends ColliderBase {
 
 export interface BoxCollider extends ColliderBase {
   shape: "Box";
-  center: vec3;
-  halfsize: vec3;
+  center: V3;
+  halfsize: V3;
 }
 
 export interface SphereCollider extends ColliderBase {
   shape: "Sphere";
-  center: vec3;
+  center: V3;
   radius: number;
 }
 
 export interface CapsuleCollider extends ColliderBase {
   shape: "Capsule";
-  center: vec3;
+  center: V3;
   height: number;
   radius: number;
   axis: 0 | 1 | 2;

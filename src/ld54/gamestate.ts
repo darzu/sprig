@@ -4,7 +4,7 @@ import { EM, EntityW } from "../ecs/entity-manager.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { LocalPlayerEntityDef } from "../hyperspace/hs-player.js";
 import { InputsDef } from "../input/inputs.js";
-import { quat, vec3 } from "../matrix/sprig-matrix.js";
+import { quat, V3 } from "../matrix/sprig-matrix.js";
 import { LinearVelocityDef } from "../motion/velocity.js";
 import { PositionDef, RotationDef, ScaleDef } from "../physics/transform.js";
 import { RendererDef } from "../render/renderer-ecs.js";
@@ -91,7 +91,7 @@ EM.addEagerInit([], [LD54GameStateDef], [], () => {
       // is the player in the bubble?
       const player = es[0];
       if (player) {
-        const playerToShip = vec3.dist(player.position, res.party.pos);
+        const playerToShip = V3.dist(player.position, res.party.pos);
         if (playerToShip <= res.ld54GameState.bubbleRadius) {
           res.ld54GameState.playerOxygen = STARTING_PLAYER_OXYGEN;
         } else {
@@ -111,7 +111,7 @@ EM.addEagerInit([], [LD54GameStateDef], [], () => {
 
       const path = EM.filterEntities([SpacePathDef])[0];
       if (path) {
-        const distanceToEnd = vec3.dist(
+        const distanceToEnd = V3.dist(
           res.party.pos,
           path.spacePath.path[path.spacePath.path.length - 1].pos
         );

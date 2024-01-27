@@ -2,15 +2,7 @@ import { ColorDef } from "../color/color-ecs.js";
 import { EM, EntityW } from "../ecs/entity-manager.js";
 import { AllMeshesDef } from "../meshes/mesh-list.js";
 import { gameplaySystems } from "../debug/ghost.js";
-import {
-  vec2,
-  vec3,
-  vec4,
-  quat,
-  mat4,
-  mat3,
-  V,
-} from "../matrix/sprig-matrix.js";
+import { V2, V3, V4, quat, mat4, mat3, V } from "../matrix/sprig-matrix.js";
 import {
   extrudeQuad,
   HEdge,
@@ -117,7 +109,7 @@ async function createMeshEditor() {
   function reset() {
     if (res.hp && res.hpEnt) {
       // TODO(@darzu): HACK. this color stuff is.. interesting
-      res.hp.mesh.colors.forEach((c) => vec3.zero(c));
+      res.hp.mesh.colors.forEach((c) => V3.zero(c));
       renderer.renderer.stdPool.updateMeshVertices(
         res.hpEnt.renderable.meshHandle,
         res.hpEnt.renderable.meshHandle.mesh!
@@ -211,7 +203,7 @@ async function createMeshEditor() {
     EM.set(glyph_, RenderableConstructDef, gm.proto, false);
     EM.set(glyph_, ColorDef);
     EM.set(glyph_, PositionDef);
-    EM.set(glyph_, RotationDef, quat.create());
+    EM.set(glyph_, RotationDef, quat.mk());
     EM.set(glyph_, WidgetDef);
     EM.set(glyph_, ColliderDef, {
       shape: "AABB",
@@ -257,8 +249,8 @@ async function createMeshEditor() {
     // TODO(@darzu): need to think about how we position verts
     // console.dir(res);
     assert(res.hp && res.hpEnt);
-    const pos = vec3.copy(g.position, res.hp.mesh.pos[hv.vi]);
-    vec3.transformMat4(pos, res.hpEnt.world.transform, pos);
+    const pos = V3.copy(g.position, res.hp.mesh.pos[hv.vi]);
+    V3.tMat4(pos, res.hpEnt.world.transform, pos);
     pos[2] = 0.5; // TODO(@darzu): this z-layering stuff is wierd
 
     return g;
@@ -315,7 +307,7 @@ async function createMeshEditor() {
     // TODO(@darzu): should be done via parenting
     const invTrans4 = mat4.invert(res.hpEnt.world.transform);
     const invTrans3 = mat3.fromMat4(invTrans4);
-    const posE = vec3.transformMat3(glyph.position, invTrans3);
+    const posE = V3.tMat3(glyph.position, invTrans3);
 
     vertPos[0] = posE[0];
     vertPos[1] = posE[1];
@@ -327,11 +319,11 @@ async function createMeshEditor() {
     if (glyph) {
       assert(res.hp);
 
-      const pos0 = vec3.copy(vec3.tmp(), res.hp.mesh.pos[he.orig.vi]);
-      vec3.transformMat4(pos0, res.hpEnt.world.transform, pos0);
-      const pos1 = vec3.copy(vec3.tmp(), res.hp.mesh.pos[he.twin.orig.vi]);
-      vec3.transformMat4(pos1, res.hpEnt.world.transform, pos1);
-      const diff = vec3.sub(pos1, pos0);
+      const pos0 = V3.copy(V3.tmp(), res.hp.mesh.pos[he.orig.vi]);
+      V3.tMat4(pos0, res.hpEnt.world.transform, pos0);
+      const pos1 = V3.copy(V3.tmp(), res.hp.mesh.pos[he.twin.orig.vi]);
+      V3.tMat4(pos1, res.hpEnt.world.transform, pos1);
+      const diff = V3.sub(pos1, pos0);
       const theta = Math.atan2(diff[1], diff[0]) + Math.PI * 0.5;
       quat.fromEuler(0, 0, theta, glyph.rotation);
       vec3Mid(glyph.position, pos0, pos1);

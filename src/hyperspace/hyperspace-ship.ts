@@ -1,5 +1,5 @@
 import { EM } from "../ecs/entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import {
   RenderableConstructDef,
@@ -56,7 +56,7 @@ import { Phase } from "../ecs/sys-phase.js";
 
 // TODO(@darzu): impl. occassionaly syncable components with auto-versioning
 
-// export const BOAT_COLOR: vec3 = V(0.2, 0.1, 0.05);
+// export const BOAT_COLOR: V3 = V(0.2, 0.1, 0.05);
 
 export const ShipPartDef = EM.defineNonupdatableComponent(
   "shipPart",
@@ -91,7 +91,7 @@ export const { RudderPropsDef, RudderLocalDef, createRudderNow } =
       EM.set(rudder, RenderableConstructDef, res.allMeshes.rudder.mesh);
       EM.set(rudder, PhysicsParentDef, rudder.rudderProps.shipId);
       EM.set(rudder, ColorDef, ENDESGA16.lightBrown);
-      vec3.scale(rudder.color, 0.5, rudder.color);
+      V3.scale(rudder.color, 0.5, rudder.color);
 
       // create seperate hitbox for interacting with the rudder
       const interactBox = EM.new();
@@ -131,15 +131,15 @@ export const { HsShipPropsDef, HsShipLocalDef, createHsShip } =
   defineNetEntityHelper({
     name: "hsShip",
     defaultProps: () => ({
-      uvPos: vec2.fromValues(0.5, 0.5),
+      uvPos: V(0.5, 0.5),
       gemId: 0,
       cannonLId: 0, // TODO(@darzu): use refs?
       cannonRId: 0,
       rudder: createRef(0, [RudderPropsDef, YawPitchDef]),
       mast: createRef(0, [HypMastPropsDef, HypMastLocalDef]),
     }),
-    updateProps: (p, uvPos?: vec2.InputT) => {
-      if (uvPos) vec2.copy(p.uvPos, uvPos);
+    updateProps: (p, uvPos?: V2.InputT) => {
+      if (uvPos) V2.copy(p.uvPos, uvPos);
       return p;
     },
     serializeProps: (c, buf) => {
@@ -192,8 +192,8 @@ export const { HsShipPropsDef, HsShipLocalDef, createHsShip } =
         s.hsShipProps.cannonLId = cannonL.id;
       }
 
-      vec2.copy(s.uvPos, s.hsShipProps.uvPos);
-      vec2.set(1, 0, s.uvDir);
+      V2.copy(s.uvPos, s.hsShipProps.uvPos);
+      V2.set(1, 0, s.uvDir);
 
       EM.set(s, PositionDef);
       EM.set(s, RotationDef);
@@ -385,7 +385,7 @@ export function registerShipSystems() {
         // STEERING
         let yaw = s.hsShipProps.rudder()!.yawpitch.yaw;
 
-        vec2.rotate(s.uvDir, vec2.ZEROS, yaw * 0.02, s.uvDir);
+        V2.rotate(s.uvDir, V2.ZEROS, yaw * 0.02, s.uvDir);
       }
     }
   );
@@ -396,7 +396,7 @@ export function registerShipSystems() {
     [HsShipLocalDef, HsShipPropsDef, PositionDef],
     [PartyDef],
     (ships, res) => {
-      if (ships[0]) vec3.copy(res.party.pos, ships[0].position);
+      if (ships[0]) V3.copy(res.party.pos, ships[0].position);
     }
   );
 

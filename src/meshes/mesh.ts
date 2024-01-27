@@ -1,13 +1,5 @@
 import { ASSET_LOG_VERT_CHANGES, DBG_ASSERT, DBG_FANG_SHIP } from "../flags.js";
-import {
-  vec2,
-  vec3,
-  vec4,
-  quat,
-  mat4,
-  V,
-  mat3,
-} from "../matrix/sprig-matrix.js";
+import { V2, V3, V4, quat, mat4, V, mat3 } from "../matrix/sprig-matrix.js";
 import { max, sum } from "../utils/math.js";
 import { AABB, createAABB, getAABBFromPositions } from "../physics/aabb.js";
 import { assert, range } from "../utils/util.js";
@@ -39,20 +31,20 @@ import { drawBall, drawLine } from "../utils/utils-game.js";
 // flags: usesProvoking
 export interface RawMesh {
   // geometry
-  pos: vec3[]; // TODO(@darzu): rename to locs ?
-  tri: vec3[];
-  quad: vec4[]; // MUST NOT be redundant w/ `tri`
-  lines?: vec2[];
+  pos: V3[]; // TODO(@darzu): rename to locs ?
+  tri: V3[];
+  quad: V4[]; // MUST NOT be redundant w/ `tri`
+  lines?: V2[];
   // per-face data, so one per quad and tri
   //  NOTE: first all the quad data is stored, then all the tri data
-  colors: vec3[]; // in r,g,b float [0-1] format
+  colors: V3[]; // in r,g,b float [0-1] format
   surfaceIds?: number[];
   // per-vertex data
-  uvs?: vec2[]; // optional; one uv per vertex
+  uvs?: V2[]; // optional; one uv per vertex
   // TODO(@darzu): normals and tangents need some thought and work. Are they face or vert? Right now seems like vert.
   // TODO(@darzu): right now normals and tangents are only read by the computeOceanVertsData (I think)
-  tangents?: vec3[]; // optional; one tangent per vertex
-  normals?: vec3[]; // optional; one tangent per vertex
+  tangents?: V3[]; // optional; one tangent per vertex
+  normals?: V3[]; // optional; one tangent per vertex
   // TODO(@darzu):
   dbgName?: string;
   rigging?: Rigging;
@@ -60,12 +52,12 @@ export interface RawMesh {
 
 export interface Rigging {
   // per-vertex info
-  jointIds: vec4[];
-  jointWeights: vec4[];
+  jointIds: V4[];
+  jointWeights: V4[];
   // per-joint info
-  jointPos: vec3[];
+  jointPos: V3[];
   jointRot: quat[];
-  jointScale: vec3[];
+  jointScale: V3[];
   parents: number[];
   inverseBindMatrices: mat4[];
   // TODO: support poses for a subset of bones
@@ -96,10 +88,10 @@ export function transformRigging(out: Rigging, tm: mat4.InputT) {
   const tmi = mat4.invert(tm);
   const tqi = quat.fromMat4(tmi);
 
-  out.jointPos.forEach((v) => vec3.transformQuat(v, tq, v));
+  out.jointPos.forEach((v) => V3.tQuat(v, tq, v));
   out.jointRot.forEach((q) => quat.mul(tq, quat.mul(q, tqi, q), q));
   // TODO(@darzu): I don't quite understand why scales shouldn't be transformed..
-  // out.jointScale.forEach((s) => vec3.transformMat3(s, tm3, s));
+  // out.jointScale.forEach((s) => V3.transformMat3(s, tm3, s));
   out.poseRot.forEach((qs) =>
     qs.forEach((q) => quat.mul(tq, quat.mul(q, tqi, q), q))
   );
@@ -124,8 +116,8 @@ export function isRigged(mesh: Mesh): mesh is RiggedMesh {
 
 // TODO(@darzu): doesn't fit well with other mesh stuff.....
 export interface LineMesh {
-  pos: vec3[];
-  lines: vec2[];
+  pos: V3[];
+  lines: V2[];
 }
 
 export function meshStats(m: RawMesh): string {
@@ -137,12 +129,12 @@ export function meshStats(m: RawMesh): string {
 // TODO: is it actually necessary to clone all these properties?
 function cloneRigging(rigging: Rigging): Rigging {
   return {
-    jointIds: rigging.jointIds.map((v) => vec4.clone(v)),
-    jointWeights: rigging.jointWeights.map((v) => vec4.clone(v)),
+    jointIds: rigging.jointIds.map((v) => V4.clone(v)),
+    jointWeights: rigging.jointWeights.map((v) => V4.clone(v)),
     inverseBindMatrices: rigging.inverseBindMatrices.map((m) => mat4.clone(m)),
-    jointPos: rigging.jointPos.map((v) => vec3.clone(v)),
+    jointPos: rigging.jointPos.map((v) => V3.clone(v)),
     jointRot: rigging.jointRot.map((q) => quat.clone(q)),
-    jointScale: rigging.jointScale.map((v) => vec3.clone(v)),
+    jointScale: rigging.jointScale.map((v) => V3.clone(v)),
     parents: [...rigging.parents],
     poseRot: rigging.poseRot.map((pose) => pose.map((q) => quat.clone(q))),
   };
@@ -155,14 +147,14 @@ export function cloneMesh(m: Mesh | RawMesh): Mesh | RawMesh {
   // TODO(@darzu): i hate having to manually update this
   return {
     ...m,
-    pos: m.pos.map((p) => vec3.clone(p)),
-    tri: m.tri.map((p) => vec3.clone(p)),
-    quad: m.quad.map((p) => vec4.clone(p)),
-    colors: m.colors.map((p) => vec3.clone(p)),
-    lines: m.lines?.map((p) => vec2.clone(p)),
-    uvs: m.uvs?.map((p) => vec2.clone(p)),
-    tangents: m.tangents?.map((p) => vec3.clone(p)),
-    normals: m.normals?.map((p) => vec3.clone(p)),
+    pos: m.pos.map((p) => V3.clone(p)),
+    tri: m.tri.map((p) => V3.clone(p)),
+    quad: m.quad.map((p) => V4.clone(p)),
+    colors: m.colors.map((p) => V3.clone(p)),
+    lines: m.lines?.map((p) => V2.clone(p)),
+    uvs: m.uvs?.map((p) => V2.clone(p)),
+    tangents: m.tangents?.map((p) => V3.clone(p)),
+    normals: m.normals?.map((p) => V3.clone(p)),
     surfaceIds: (m as Mesh).surfaceIds
       ? [...(m as Mesh).surfaceIds]
       : undefined,
@@ -172,8 +164,8 @@ export function cloneMesh(m: Mesh | RawMesh): Mesh | RawMesh {
 
 // TODO(@darzu): support ?
 // function unshareVertices(input: RawMesh): RawMesh {
-//   const pos: vec3[] = [];
-//   const tri: vec3[] = [];
+//   const pos: V3[] = [];
+//   const tri: V3[] = [];
 //   input.tri.forEach(([i0, i1, i2], i) => {
 //     pos.push(input.pos[i0]);
 //     pos.push(input.pos[i1]);
@@ -188,7 +180,7 @@ export function cloneMesh(m: Mesh | RawMesh): Mesh | RawMesh {
 //   assert(!input.uvs, "deduplicateVertices doesn't support UVs");
 //   // TODO(@darzu): using strings to encode vec3s is horrible
 //   const newPosMap: Map<string, number> = new Map();
-//   const newPos: vec3[] = [];
+//   const newPos: V3[] = [];
 //   const oldToNewPosIdx: number[] = [];
 //   for (let oldIdx = 0; oldIdx < input.pos.length; oldIdx++) {
 //     const p = input.pos[oldIdx];
@@ -207,7 +199,7 @@ export function cloneMesh(m: Mesh | RawMesh): Mesh | RawMesh {
 //   // map indices
 //   const newTri = input.tri.map((t) =>
 //     t.map((i) => oldToNewPosIdx[i])
-//   ) as vec3[];
+//   ) as V3[];
 //   let newLines: vec2[] | undefined = undefined;
 //   if (input.lines)
 //     newLines = input.lines.map((t) =>
@@ -224,17 +216,17 @@ export function cloneMesh(m: Mesh | RawMesh): Mesh | RawMesh {
 
 export function validateMesh(m: RawMesh) {
   //  // geometry
-  //  pos: vec3[];
-  //  tri: vec3[];
+  //  pos: V3[];
+  //  tri: V3[];
   //  quad: vec4[]; // MUST NOT be redundant w/ `tri`
   //  lines?: vec2[];
   //  // per-face data, so one per tri and quad
-  //  colors: vec3[]; // in r,g,b float [0-1] format
+  //  colors: V3[]; // in r,g,b float [0-1] format
   //  surfaceIds?: number[];
   //  // per-vertex data
   //  uvs?: vec2[]; // optional; one uv per vertex
-  //  tangents?: vec3[]; // optional; one tangent per vertex
-  //  normals?: vec3[]; // optional; one tangent per vertex
+  //  tangents?: V3[]; // optional; one tangent per vertex
+  //  normals?: V3[]; // optional; one tangent per vertex
   //  // TODO(@darzu):
   //  dbgName?: string;
 
@@ -320,22 +312,22 @@ export function unshareProvokingVerticesWithMap(
   posMap: Map<number, number>;
   provoking: { [key: number]: boolean };
 } {
-  const pos: vec3[] = [...input.pos];
-  const uvs: vec2[] | undefined = input.uvs ? [...input.uvs] : undefined;
-  const tangents: vec3[] | undefined = input.tangents
+  const pos: V3[] = [...input.pos];
+  const uvs: V2[] | undefined = input.uvs ? [...input.uvs] : undefined;
+  const tangents: V3[] | undefined = input.tangents
     ? [...input.tangents]
     : undefined;
-  const normals: vec3[] | undefined = input.normals
+  const normals: V3[] | undefined = input.normals
     ? [...input.normals]
     : undefined;
-  const jointIds: vec4[] | undefined = input.rigging
+  const jointIds: V4[] | undefined = input.rigging
     ? [...input.rigging.jointIds]
     : undefined;
-  const jointWeights: vec4[] | undefined = input.rigging
+  const jointWeights: V4[] | undefined = input.rigging
     ? [...input.rigging.jointWeights]
     : undefined;
-  const tri: vec3[] = [];
-  const quad: vec4[] = [];
+  const tri: V3[] = [];
+  const quad: V4[] = [];
   const provoking: { [key: number]: boolean } = {};
   const posMap: Map<number, number> = new Map();
   pos.forEach((_, i) => posMap.set(i, i));
@@ -414,27 +406,27 @@ export function unshareProvokingVerticesWithMap(
     }
   });
 
-  const unshareProvokingForQuad: (q: vec4, qi: number) => void = (
+  const unshareProvokingForQuad: (q: V4, qi: number) => void = (
     [i0, i1, i2, i3],
     qi
   ) => {
     if (!provoking[i0]) {
       // First vertex is unused as a provoking vertex, so we'll use it for this triangle.
       provoking[i0] = true;
-      quad[qi] = vec4.clone([i0, i1, i2, i3]);
+      quad[qi] = V4.clone([i0, i1, i2, i3]);
     } else if (!provoking[i1]) {
       // First vertex was taken, so let's see if we can rotate the indices to get an unused
       // provoking vertex.
       provoking[i1] = true;
-      quad[qi] = vec4.clone([i1, i2, i3, i0]);
+      quad[qi] = V4.clone([i1, i2, i3, i0]);
     } else if (!provoking[i2]) {
       // ditto
       provoking[i2] = true;
-      quad[qi] = vec4.clone([i2, i3, i0, i1]);
+      quad[qi] = V4.clone([i2, i3, i0, i1]);
     } else if (!provoking[i3]) {
       // ditto
       provoking[i3] = true;
-      quad[qi] = vec4.clone([i3, i0, i1, i2]);
+      quad[qi] = V4.clone([i3, i0, i1, i2]);
     } else {
       // All vertices are taken, so create a new one
       if (strictNoAdd)
@@ -451,7 +443,7 @@ export function unshareProvokingVerticesWithMap(
       if (jointIds) jointIds.push(input.rigging!.jointIds[i0]);
       if (jointWeights) jointWeights.push(input.rigging!.jointWeights[i0]);
       provoking[i4] = true;
-      quad[qi] = vec4.clone([i4, i1, i2, i3]);
+      quad[qi] = V4.clone([i4, i1, i2, i3]);
       // console.log(`duplicating: ${i0}!`);
 
       // // TODO(@darzu): DBG
@@ -587,22 +579,19 @@ export function getAABBFromMesh(m: RawMesh): AABB {
 // TODO(@darzu): PERF. this is pretty inefficient. We're mutating the mesh,
 //   so we should be re-using the vecs
 // TODO(@darzu): rename to "mutateMeshPositions" ?
-export function mapMeshPositions(
-  m: RawMesh,
-  map: (p: vec3, i: number) => vec3
-) {
+export function mapMeshPositions(m: RawMesh, map: (p: V3, i: number) => V3) {
   m.pos = m.pos.map(map);
 }
 export function scaleMesh(m: RawMesh, by: number) {
-  mapMeshPositions(m, (p) => vec3.scale(p, by, p));
+  mapMeshPositions(m, (p) => V3.scale(p, by, p));
 }
-export function scaleMesh3(m: RawMesh, by: vec3.InputT) {
-  mapMeshPositions(m, (p) => vec3.mul(p, by, p));
+export function scaleMesh3(m: RawMesh, by: V3.InputT) {
+  mapMeshPositions(m, (p) => V3.mul(p, by, p));
 }
 // TODO(@darzu): need a version that preserves Mesh vs RawMesh
 // TODO(@darzu): PERF! We probably should be using this v sparingly if it's cloning all positions
 export function transformMesh(m: RawMesh, t: mat4) {
-  mapMeshPositions(m, (p) => vec3.transformMat4(p, t, vec3.create()));
+  mapMeshPositions(m, (p) => V3.tMat4(p, t, V3.mk()));
   return m;
 }
 // split mesh by connectivity
@@ -687,13 +676,13 @@ export function getQuadMeshEdges(m: RawMesh): number[][] {
 }
 
 export function getMeshAsGrid(m: RawMesh): {
-  coords: vec2[];
+  coords: V2[];
   grid: number[][];
 } {
   // TODO(@darzu): PERF. can big arrays of vecs be more efficiently allocated
   //  as slices into one big type array or something? Each of these is doing
   //  a "new Float32Array(2)" which seems inefficient. Instead of:
-  //    const coords = new Array(m.pos.length).fill(vec2.create());
+  //    const coords = new Array(m.pos.length).fill(V2.create());
   // TODO(@darzu): PERF. could be made more efficient by using one big typed array
   //  of vert indices w/ 4 slots for edges.
 
@@ -736,7 +725,7 @@ export function getMeshAsGrid(m: RawMesh): {
   const yLen = distToCorner(origin, yDirVert) + 1;
 
   // setup out grid structures
-  const coords: vec2[] = [];
+  const coords: V2[] = [];
   // TODO: figure out grid length
   const grid: number[][] = new Array(xLen)
     .fill([])
@@ -777,7 +766,7 @@ export function getMeshAsGrid(m: RawMesh): {
 
   function place(vi: number, x: number, y: number) {
     grid[x][y] = vi;
-    coords[vi] = vec2.clone([x, y]);
+    coords[vi] = V2.clone([x, y]);
     worklist.push({ vi, x, y });
 
     if (!dbgCheckState()) {
@@ -976,20 +965,18 @@ export function mergeMeshes(...rs: RawMesh[]): RawMesh {
     m.pos = [...m.pos, ...r.pos];
     m.tri = [
       ...m.tri,
-      ...r.tri.map(
-        (t) => V(t[0] + posIdx, t[1] + posIdx, t[2] + posIdx) as vec3
-      ),
+      ...r.tri.map((t) => V(t[0] + posIdx, t[1] + posIdx, t[2] + posIdx) as V3),
     ];
     m.quad = [
       ...m.quad,
       ...r.quad.map((t) =>
-        vec4.clone([t[0] + posIdx, t[1] + posIdx, t[2] + posIdx, t[3] + posIdx])
+        V4.clone([t[0] + posIdx, t[1] + posIdx, t[2] + posIdx, t[3] + posIdx])
       ),
     ];
     if (m.lines)
       m.lines = [
         ...m.lines,
-        ...r.lines!.map((t) => vec2.clone([t[0] + posIdx, t[1] + posIdx])),
+        ...r.lines!.map((t) => V2.clone([t[0] + posIdx, t[1] + posIdx])),
       ];
     m.colors = [...m.colors, ...r.colors];
     if (m.surfaceIds) m.surfaceIds = [...m.surfaceIds, ...r.surfaceIds!];
@@ -1033,10 +1020,10 @@ export function stringifyMesh(m: Mesh): string {
 
   return res;
 
-  function vec3ListToStr(vs: vec3[], precision: number): string {
+  function vec3ListToStr(vs: V3[], precision: number): string {
     return `[${vs.map((v) => vec3Dbg2(v, precision)).join(",")}]`;
   }
-  function vec4ListToStr(vs: vec4[], precision: number): string {
+  function vec4ListToStr(vs: V4[], precision: number): string {
     return `[${vs.map((v) => vec4Dbg2(v, precision)).join(",")}]`;
   }
 }

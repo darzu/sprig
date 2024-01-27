@@ -1,4 +1,4 @@
-import { vec3, vec2, V } from "../matrix/sprig-matrix.js";
+import { V3, V2, V } from "../matrix/sprig-matrix.js";
 import { GerstnerWaveTS } from "../render/pipelines/std-ocean.js";
 import { DISABLE_GERSTNER } from "../flags.js";
 
@@ -92,7 +92,7 @@ export function createWaves(): GerstnerWaveTS[] {
   return res;
 
   function mkGerstnerFromDirLenSteep(params: GDirLenSteep): GerstnerWaveTS {
-    const D = vec2.fromRadians(params.dirRad, V(0, 0));
+    const D = V2.fromRadians(params.dirRad, V(0, 0));
     const w = (2 * Math.PI) / params.len;
     const A = (params.steep * steepFactor) / w;
     const Q = 1;
@@ -105,7 +105,7 @@ export function createWaves(): GerstnerWaveTS[] {
   function mkGerstnerFromDirLenAmpSpeed(
     params: GDirLenAmpSpeed
   ): GerstnerWaveTS {
-    const D = vec2.fromRadians(params.dirRad, V(0, 0));
+    const D = V2.fromRadians(params.dirRad, V(0, 0));
     const w = (2 * Math.PI) / params.len;
     const A = params.amp;
     const Q = 0;
@@ -130,18 +130,18 @@ function mkGerstnerWaveTS(params: Partial<GerstnerWaveTS>): GerstnerWaveTS {
 
 // IMPORTANT: MUST MATCH std-gerstner.wgsl
 export function compute_gerstner(
-  outDisp: vec3,
-  outNorm: vec3,
+  outDisp: V3,
+  outNorm: V3,
   waves: GerstnerWaveTS[],
-  uv: vec2,
+  uv: V2,
   t: number // ms
 ): void {
-  vec3.zero(outDisp);
-  vec3.zero(outNorm);
+  V3.zero(outDisp);
+  V3.zero(outNorm);
   for (let i = 0; i < waves.length; i++) {
     let wave = waves[i];
     const D = wave.D;
-    const dot_w_d_uv_phi_t = wave.w * vec2.dot(D, uv) + wave.phi * t;
+    const dot_w_d_uv_phi_t = wave.w * V2.dot(D, uv) + wave.phi * t;
     const _cos = Math.cos(dot_w_d_uv_phi_t);
     const _sin = Math.sin(dot_w_d_uv_phi_t);
     outDisp[0] += wave.Q * wave.A * D[0] * _cos;
@@ -155,22 +155,22 @@ export function compute_gerstner(
   }
   // TODO(@darzu): this expression seems troubling; `1.0 -` before normalizing?!
   outNorm[2] = 1.0 - outNorm[2];
-  vec3.normalize(outNorm, outNorm);
+  V3.norm(outNorm, outNorm);
 }
 
 // for reference, from: https://catlikecoding.com/unity/tutorials/flow/waves/
 function catlike_gerstner(
   steepness: number,
   wavelength: number,
-  dir: vec2,
+  dir: V2,
   t: number,
-  uv: vec2,
-  p: vec3
+  uv: V2,
+  p: V3
 ) {
   const k = (2 * Math.PI) / wavelength;
   const c = Math.sqrt(9.8 / k);
-  const d = vec2.normalize(dir);
-  const f = k * (vec2.dot(d, uv) - c * t);
+  const d = V2.norm(dir);
+  const f = k * (V2.dot(d, uv) - c * t);
   const a = steepness / k;
 
   p[0] += d[0] * (a * Math.cos(f));
@@ -191,8 +191,8 @@ function test_gerstner() {
   const wave = mkGerstnerWaveTS({ Q, w, D, A, phi });
   const waves = [wave];
 
-  const disp = vec3.create();
-  const norm = vec3.create();
+  const disp = V3.mk();
+  const norm = V3.mk();
   const uv = V(10, 10);
   // let max = -Infinity;
   for (let t_ms = 0; t_ms < 10 * 1000; t_ms += 16) {

@@ -2,7 +2,7 @@ import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { EM, Entity, EntityW } from "../ecs/entity-manager.js";
 import { Phase } from "../ecs/sys-phase.js";
-import { V, quat, vec3 } from "../matrix/sprig-matrix.js";
+import { V, quat, V3 } from "../matrix/sprig-matrix.js";
 import { ArrowMesh } from "../meshes/mesh-list.js";
 import {
   PhysicsParentDef,
@@ -14,7 +14,7 @@ import { RenderableConstructDef } from "../render/renderer-ecs.js";
 
 export const VecDbgDef = EM.defineNonupdatableComponent(
   "vecDbg",
-  (v: vec3, scale: number) => ({ v, scale }),
+  (v: V3, scale: number) => ({ v, scale }),
   { multiArg: true }
 );
 
@@ -34,10 +34,10 @@ EM.addEagerInit([VecDbgDef], [], [], () => {
 });
 
 export interface VecDbgVisOpts {
-  origin?: vec3.InputT;
+  origin?: V3.InputT;
   scale?: number;
   parentId?: number;
-  color?: vec3.InputT;
+  color?: V3.InputT;
 }
 export const DefaultVecDbgVisOpts: Required<VecDbgVisOpts> = {
   origin: [0, 0, 0],
@@ -46,7 +46,7 @@ export const DefaultVecDbgVisOpts: Required<VecDbgVisOpts> = {
   color: ENDESGA16.lightGreen,
 };
 
-export function drawUpdatingVector(v: vec3, opts?: VecDbgVisOpts) {
+export function drawUpdatingVector(v: V3, opts?: VecDbgVisOpts) {
   const o = { ...DefaultVecDbgVisOpts, ...opts };
 
   const ent = drawVector(v, o);
@@ -56,7 +56,7 @@ export function drawUpdatingVector(v: vec3, opts?: VecDbgVisOpts) {
   return ent;
 }
 
-export function drawVector(v: vec3.InputT, opts?: VecDbgVisOpts) {
+export function drawVector(v: V3.InputT, opts?: VecDbgVisOpts) {
   const o = { ...DefaultVecDbgVisOpts, ...opts };
 
   const ent = EM.new();
@@ -73,14 +73,14 @@ export function drawVector(v: vec3.InputT, opts?: VecDbgVisOpts) {
 }
 
 function updateVecDbgVis(
-  v: vec3.InputT,
+  v: V3.InputT,
   s: number,
   e: EntityW<[typeof ScaleDef, typeof RotationDef]>
 ) {
   // update scale
-  const scale = s * vec3.length(v);
+  const scale = s * V3.len(v);
   // vec3.set(1, scale, 1, e.scale);
-  vec3.set(scale * 0.5, scale, scale * 0.5, e.scale);
+  V3.set(scale * 0.5, scale, scale * 0.5, e.scale);
 
   // update rotation
   quat.fromForward(v, e.rotation);

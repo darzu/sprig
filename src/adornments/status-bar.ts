@@ -1,7 +1,7 @@
 import { ENDESGA16 } from "../color/palettes.js";
 import { EM } from "../ecs/entity-manager.js";
 import { Phase } from "../ecs/sys-phase.js";
-import { V, mat4, vec3 } from "../matrix/sprig-matrix.js";
+import { V, mat4, V3 } from "../matrix/sprig-matrix.js";
 import {
   Mesh,
   cloneMesh,
@@ -42,8 +42,8 @@ export interface MultiBarOpts {
   width: number;
   length: number;
   centered: boolean;
-  fullColor: vec3;
-  missingColor: vec3;
+  fullColor: V3;
+  missingColor: V3;
 }
 
 const statBarMeshName = "statBar";
@@ -81,9 +81,9 @@ export function createMultiBarMesh({
   // const part2Qidx = mesh.quad.length;
 
   mesh.quad.forEach((_, i) => {
-    const c = vec3.create();
-    if (i <= part1Qidx) vec3.copy(c, fullColor);
-    else vec3.copy(c, missingColor);
+    const c = V3.mk();
+    if (i <= part1Qidx) V3.copy(c, fullColor);
+    else V3.copy(c, missingColor);
     mesh.colors.push(c);
   });
   mesh.surfaceIds = mesh.colors.map((_, i) => i + 1);

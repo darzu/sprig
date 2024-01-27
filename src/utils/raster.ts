@@ -3,14 +3,14 @@
 // TODO(@darzu): raster doesn't work yet
 // TODO(@darzu): https://kristoffer-dyrkorn.github.io/triangle-rasterizer/
 
-import { vec2 } from "../matrix/sprig-matrix.js";
+import { V2 } from "../matrix/sprig-matrix.js";
 import { assert } from "./util.js";
 
 // TODO(@darzu): can we be more efficient by rasterizing a quad directly?
 export function rasterizeTri(
-  v1: vec2.InputT,
-  v2: vec2.InputT,
-  v3: vec2.InputT,
+  v1: V2.InputT,
+  v2: V2.InputT,
+  v3: V2.InputT,
   write: (x: number, y: number) => void
 ) {
   // Sort the vertices by y-coordinate in ascending order

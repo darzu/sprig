@@ -1,5 +1,5 @@
 import { clamp } from "../utils/math.js";
-import { mat4, V, vec2, vec3 } from "../matrix/sprig-matrix.js";
+import { mat4, V, V2, V3 } from "../matrix/sprig-matrix.js";
 import { range } from "../utils/util.js";
 import { vec3Dbg2, vec3Mid } from "../utils/utils-3d.js";
 
@@ -46,29 +46,29 @@ export function doesTouchAABB(a: AABB, b: AABB, threshold: number) {
 }
 
 export interface AABB {
-  min: vec3;
-  max: vec3;
+  min: V3;
+  max: V3;
 }
-export function createAABB(min?: vec3, max?: vec3): AABB {
+export function createAABB(min?: V3, max?: V3): AABB {
   return {
     min: min ?? V(Infinity, Infinity, Infinity),
     max: max ?? V(-Infinity, -Infinity, -Infinity),
   };
 }
 export function copyAABB(out: AABB, a: AABB) {
-  vec3.copy(out.min, a.min);
-  vec3.copy(out.max, a.max);
+  V3.copy(out.min, a.min);
+  V3.copy(out.max, a.max);
   return out;
 }
-export function clampToAABB(v: vec3, aabb: AABB, out?: vec3): vec3 {
-  out = out ?? vec3.tmp();
+export function clampToAABB(v: V3, aabb: AABB, out?: V3): V3 {
+  out = out ?? V3.tmp();
   out[0] = clamp(v[0], aabb.min[0], aabb.max[0]);
   out[1] = clamp(v[1], aabb.min[1], aabb.max[1]);
   out[2] = clamp(v[2], aabb.min[2], aabb.max[2]);
   return out;
 }
 
-export function pointInAABB(aabb: AABB, p: vec3) {
+export function pointInAABB(aabb: AABB, p: V3) {
   return (
     aabb.min[0] < p[0] &&
     aabb.min[1] < p[1] &&
@@ -80,8 +80,8 @@ export function pointInAABB(aabb: AABB, p: vec3) {
 }
 
 // TODO(@darzu): too much alloc
-// export function getAABBCorners(aabb: AABB): vec3[] {
-//   const points: vec3[] = [
+// export function getAABBCorners(aabb: AABB): V3[] {
+//   const points: V3[] = [
 //     V(aabb.max[0], aabb.max[1], aabb.max[2]),
 //     V(aabb.max[0], aabb.max[1], aabb.min[2]),
 //     V(aabb.max[0], aabb.min[1], aabb.max[2]),
@@ -95,48 +95,48 @@ export function pointInAABB(aabb: AABB, p: vec3) {
 //   return points;
 // }
 
-const tempAabbCorners: vec3[] = range(8).map((_) => vec3.create());
-export function getAABBCornersTemp(aabb: AABB): vec3[] {
-  vec3.set(aabb.max[0], aabb.max[1], aabb.max[2], tempAabbCorners[0]);
-  vec3.set(aabb.max[0], aabb.max[1], aabb.min[2], tempAabbCorners[1]);
-  vec3.set(aabb.max[0], aabb.min[1], aabb.max[2], tempAabbCorners[2]);
-  vec3.set(aabb.max[0], aabb.min[1], aabb.min[2], tempAabbCorners[3]);
-  vec3.set(aabb.min[0], aabb.max[1], aabb.max[2], tempAabbCorners[4]);
-  vec3.set(aabb.min[0], aabb.max[1], aabb.min[2], tempAabbCorners[5]);
-  vec3.set(aabb.min[0], aabb.min[1], aabb.max[2], tempAabbCorners[6]);
-  vec3.set(aabb.min[0], aabb.min[1], aabb.min[2], tempAabbCorners[7]);
+const tempAabbCorners: V3[] = range(8).map((_) => V3.mk());
+export function getAABBCornersTemp(aabb: AABB): V3[] {
+  V3.set(aabb.max[0], aabb.max[1], aabb.max[2], tempAabbCorners[0]);
+  V3.set(aabb.max[0], aabb.max[1], aabb.min[2], tempAabbCorners[1]);
+  V3.set(aabb.max[0], aabb.min[1], aabb.max[2], tempAabbCorners[2]);
+  V3.set(aabb.max[0], aabb.min[1], aabb.min[2], tempAabbCorners[3]);
+  V3.set(aabb.min[0], aabb.max[1], aabb.max[2], tempAabbCorners[4]);
+  V3.set(aabb.min[0], aabb.max[1], aabb.min[2], tempAabbCorners[5]);
+  V3.set(aabb.min[0], aabb.min[1], aabb.max[2], tempAabbCorners[6]);
+  V3.set(aabb.min[0], aabb.min[1], aabb.min[2], tempAabbCorners[7]);
   return tempAabbCorners;
 }
 
-// const tempAabbXZCorners = range(4).map((_) => vec2.create()) as [
+// const tempAabbXZCorners = range(4).map((_) => V2.create()) as [
 //   vec2,
 //   vec2,
 //   vec2,
 //   vec2
 // ];
 // export function getAabbXZCornersTemp(aabb: AABB): [vec2, vec2, vec2, vec2] {
-//   vec2.set(aabb.max[0], aabb.max[2], tempAabbXZCorners[0]);
-//   vec2.set(aabb.max[0], aabb.min[2], tempAabbXZCorners[1]);
-//   vec2.set(aabb.min[0], aabb.max[2], tempAabbXZCorners[2]);
-//   vec2.set(aabb.min[0], aabb.min[2], tempAabbXZCorners[3]);
+//   V2.set(aabb.max[0], aabb.max[2], tempAabbXZCorners[0]);
+//   V2.set(aabb.max[0], aabb.min[2], tempAabbXZCorners[1]);
+//   V2.set(aabb.min[0], aabb.max[2], tempAabbXZCorners[2]);
+//   V2.set(aabb.min[0], aabb.min[2], tempAabbXZCorners[3]);
 //   return tempAabbXZCorners;
 // }
 
 export function transformAABB(out: AABB, t: mat4) {
   // TODO(@darzu): is there a more performant way to do this?
   const wCorners = getAABBCornersTemp(out);
-  wCorners.forEach((p) => vec3.transformMat4(p, t, p));
+  wCorners.forEach((p) => V3.tMat4(p, t, p));
   getAABBFromPositions(out, wCorners);
   return out;
 }
 
-export function aabbCenter(out: vec3, a: AABB): vec3 {
+export function aabbCenter(out: V3, a: AABB): V3 {
   out[0] = (a.min[0] + a.max[0]) * 0.5;
   out[1] = (a.min[1] + a.max[1]) * 0.5;
   out[2] = (a.min[2] + a.max[2]) * 0.5;
   return out;
 }
-export function updateAABBWithPoint(aabb: AABB, pos: vec3): AABB {
+export function updateAABBWithPoint(aabb: AABB, pos: V3): AABB {
   return updateAABBWithPoint_(aabb, pos[0], pos[1], pos[2]);
 }
 export function updateAABBWithPoint_(
@@ -164,9 +164,9 @@ export function mergeAABBs(out: AABB, a: AABB, b: AABB): AABB {
   return out;
 }
 
-export function getAABBFromPositions(out: AABB, positions: vec3[]): AABB {
-  vec3.set(Infinity, Infinity, Infinity, out.min);
-  vec3.set(-Infinity, -Infinity, -Infinity, out.max);
+export function getAABBFromPositions(out: AABB, positions: V3[]): AABB {
+  V3.set(Infinity, Infinity, Infinity, out.min);
+  V3.set(-Infinity, -Infinity, -Infinity, out.max);
 
   for (let pos of positions) {
     updateAABBWithPoint(out, pos);
@@ -178,11 +178,11 @@ export function getAABBFromPositions(out: AABB, positions: vec3[]): AABB {
 // 2D AABB stuff
 
 export interface AABB2 {
-  min: vec2;
-  max: vec2;
+  min: V2;
+  max: V2;
 }
 
-export function updateAABBWithPoint2(aabb: AABB2, pos: vec2): AABB2 {
+export function updateAABBWithPoint2(aabb: AABB2, pos: V2): AABB2 {
   return updateAABBWithPoint2_(aabb, pos[0], pos[1]);
 }
 export function updateAABBWithPoint2_(
@@ -196,25 +196,25 @@ export function updateAABBWithPoint2_(
   aabb.max[1] = Math.max(y, aabb.max[1]);
   return aabb;
 }
-export function aabbCenter2(out: vec2, a: AABB2): vec2 {
+export function aabbCenter2(out: V2, a: AABB2): V2 {
   out[0] = (a.min[0] + a.max[0]) * 0.5;
   out[1] = (a.min[1] + a.max[1]) * 0.5;
   return out;
 }
 
 // TODO(@darzu): add out param
-export function getCenterFromAABB(aabb: AABB): vec3 {
-  return vec3Mid(vec3.create(), aabb.min, aabb.max);
+export function getCenterFromAABB(aabb: AABB): V3 {
+  return vec3Mid(V3.mk(), aabb.min, aabb.max);
 }
-export function getSizeFromAABB(aabb: AABB, out?: vec3): vec3 {
-  out = out ?? vec3.tmp();
+export function getSizeFromAABB(aabb: AABB, out?: V3): V3 {
+  out = out ?? V3.tmp();
   out[0] = aabb.max[0] - aabb.min[0];
   out[1] = aabb.max[1] - aabb.min[1];
   out[2] = aabb.max[2] - aabb.min[2];
   return out;
 }
-export function getHalfsizeFromAABB(aabb: AABB, out?: vec3): vec3 {
-  out = out ?? vec3.tmp();
+export function getHalfsizeFromAABB(aabb: AABB, out?: V3): V3 {
+  out = out ?? V3.tmp();
   out[0] = (aabb.max[0] - aabb.min[0]) * 0.5;
   out[1] = (aabb.max[1] - aabb.min[1]) * 0.5;
   out[2] = (aabb.max[2] - aabb.min[2]) * 0.5;
@@ -231,7 +231,7 @@ export function aabbListToStr(aabbs: AABB[]): string {
   return resStr;
 }
 
-export function isValidVec3(v: vec3) {
+export function isValidVec3(v: V3) {
   return (
     !isNaN(v[0]) &&
     isFinite(v[0]) &&

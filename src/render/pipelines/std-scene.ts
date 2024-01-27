@@ -1,5 +1,5 @@
 import { EM } from "../../ecs/entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../../matrix/sprig-matrix.js";
+import { V2, V3, V4, quat, mat4, V } from "../../matrix/sprig-matrix.js";
 import { assert, assertDbg } from "../../utils/util.js";
 import { computeTriangleNormal } from "../../utils/utils-3d.js";
 import { randColor } from "../../utils/utils-game.js";
@@ -41,10 +41,10 @@ export const VertexStruct = createCyStruct(
 export type VertexTS = CyToTS<typeof VertexStruct.desc>;
 export function createEmptyVertexTS(): VertexTS {
   return {
-    position: vec3.create(),
-    color: vec3.create(),
+    position: V3.mk(),
+    color: V3.mk(),
     // tangent: m.tangents ? m.tangents[i] : [1.0, 0.0, 0.0],
-    normal: vec3.create(),
+    normal: V3.mk(),
     uv: V(0, 0),
     surfaceId: 0,
   };
@@ -110,7 +110,7 @@ export function computeUniData(m: Mesh): MeshUniformTS {
     // TODO(@darzu): option for aabbs?
     // aabbMin: min,
     // aabbMax: max,
-    tint: vec3.create(),
+    tint: V3.mk(),
     alpha: 1.0,
     id: 0,
     flags: 0,
@@ -268,10 +268,10 @@ export function setupScene(): SceneTS {
     // dirLight1,
     // dirLight2,
     // dirLight3,
-    cameraPos: vec3.create(), // updated later
-    partyPos: vec3.create(), // updated later
-    partyDir: vec3.create(), // updated later
-    windDir: vec3.create(), // updated later
+    cameraPos: V3.mk(), // updated later
+    partyPos: V3.mk(), // updated later
+    partyDir: V3.mk(), // updated later
+    windDir: V3.mk(), // updated later
     secColor: randColor(), // updated later
     terColor: randColor(), // updated later
     time: 0, // updated later

@@ -1,6 +1,6 @@
 import { CanvasDef } from "../render/canvas.js";
 import { Component, EM, EntityW, Resource } from "../ecs/entity-manager.js";
-import { vec3, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V3, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { MeDef } from "../net/components.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import { RendererWorldFrameDef } from "../render/renderer-ecs.js";
@@ -34,15 +34,15 @@ export const CameraDef = EM.defineResource("camera", () => {
       V(-Infinity, -Infinity, -Infinity),
       V(Infinity, Infinity, Infinity)
     ),
-    positionOffset: vec3.create(),
-    rotationOffset: quat.create(),
+    positionOffset: V3.mk(),
+    rotationOffset: quat.mk(),
     // smoothing:
     prevTargetId: 0,
-    lastRotation: quat.create(),
-    lastPosition: vec3.create(),
-    rotationError: quat.identity(quat.create()),
-    targetPositionError: vec3.create(),
-    cameraPositionError: vec3.create(),
+    lastRotation: quat.mk(),
+    lastPosition: V3.mk(),
+    rotationError: quat.identity(quat.mk()),
+    targetPositionError: V3.mk(),
+    cameraPositionError: V3.mk(),
   };
 });
 export type CameraProps = Component<typeof CameraDef>;
@@ -66,7 +66,7 @@ export const CameraComputedDef = EM.defineResource("cameraComputed", () => {
     proj: mat4.create(),
     viewProj: mat4.create(),
     invViewProj: mat4.create(),
-    location: vec3.create(),
+    location: V3.mk(),
     shadowCascadeMats: [] as ShadowCascade[],
   };
 });
@@ -77,7 +77,7 @@ export type CameraView = Resource<typeof CameraComputedDef>;
 export const CameraFollowDef = EM.defineComponent(
   "cameraFollow",
   () => ({
-    positionOffset: vec3.create(),
+    positionOffset: V3.mk(),
     yawOffset: 0,
     pitchOffset: 0,
     priority: 0,
@@ -99,7 +99,7 @@ export function setCameraFollowPosition(
   c: EntityW<[typeof CameraFollowDef]>,
   mode: keyof typeof CAMERA_OFFSETS
 ) {
-  vec3.copy(c.cameraFollow.positionOffset, CAMERA_OFFSETS[mode]);
+  V3.copy(c.cameraFollow.positionOffset, CAMERA_OFFSETS[mode]);
 }
 
 // TODO(@darzu): maybe make a shortcut for this; "registerTrivialInit" ?
@@ -138,10 +138,7 @@ EM.addLazyInit([], [CameraDef], () => {
       );
       if (target) {
         res.camera.targetId = target.id;
-        vec3.copy(
-          res.camera.positionOffset,
-          target.cameraFollow.positionOffset
-        );
+        V3.copy(res.camera.positionOffset, target.cameraFollow.positionOffset);
         quat.fromYawPitchRoll(
           target.cameraFollow.yawOffset,
           target.cameraFollow.pitchOffset,
@@ -150,7 +147,7 @@ EM.addLazyInit([], [CameraDef], () => {
         );
       } else {
         res.camera.targetId = 0;
-        vec3.zero(res.camera.positionOffset);
+        V3.zero(res.camera.positionOffset);
         quat.identity(res.camera.rotationOffset);
       }
     }
@@ -164,7 +161,7 @@ EM.addLazyInit([], [CameraDef], () => {
     function ([], res) {
       if (res.camera.prevTargetId === res.camera.targetId) {
         quat.copy(res.camera.lastRotation, res.camera.rotationOffset);
-        vec3.copy(res.camera.lastPosition, res.camera.positionOffset);
+        V3.copy(res.camera.lastPosition, res.camera.positionOffset);
         return;
       }
       if (VERBOSE_CAMERA) console.log(`new camera target`);
@@ -232,7 +229,7 @@ EM.addLazyInit([], [CameraComputedDef], () => {
       // compute the view matrix
       let viewMatrix = mat4.tmp();
       if (targetEnt) {
-        const computedTranslation = vec3.add(
+        const computedTranslation = V3.add(
           frame.position,
           camera.targetPositionError
         );
@@ -242,7 +239,7 @@ EM.addLazyInit([], [CameraComputedDef], () => {
           frame.scale,
           viewMatrix
         );
-        vec3.copy(cameraComputed.location, computedTranslation);
+        V3.copy(cameraComputed.location, computedTranslation);
       }
       const computedCameraRotation = quat.mul(
         camera.rotationOffset,
@@ -253,7 +250,7 @@ EM.addLazyInit([], [CameraComputedDef], () => {
         mat4.fromQuat(computedCameraRotation, mat4.tmp()),
         viewMatrix
       );
-      const computedCameraTranslation = vec3.add(
+      const computedCameraTranslation = V3.add(
         camera.positionOffset,
         camera.cameraPositionError
       );
@@ -341,10 +338,7 @@ EM.addLazyInit([], [CameraComputedDef], () => {
         const cascade = cameraComputed.shadowCascadeMats[i];
         cascade.near = camera.viewDist * shadowNearFrac;
         cascade.far = camera.viewDist * shadowFarFrac;
-        cascade.farZ = vec3.transformMat4(
-          [0, 0, -cascade.far],
-          cameraComputed.proj
-        )[2];
+        cascade.farZ = V3.tMat4([0, 0, -cascade.far], cameraComputed.proj)[2];
 
         mat4.perspective(
           camera.fov,

@@ -2,7 +2,7 @@ import { CameraDef } from "../camera/camera.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { DeletedDef } from "../ecs/delete.js";
 import { EM } from "../ecs/entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { InputsDef } from "../input/inputs.js";
 import { jitter } from "../utils/math.js";
 import { ColliderDef } from "./collider.js";
@@ -55,8 +55,8 @@ export async function initReboundSandbox(hosting: boolean) {
   const camera = res.camera;
   camera.fov = Math.PI * 0.5;
   camera.viewDist = 1000;
-  vec3.set(-200, -200, -200, camera.maxWorldAABB.min);
-  vec3.set(+200, +200, +200, camera.maxWorldAABB.max);
+  V3.set(-200, -200, -200, camera.maxWorldAABB.min);
+  V3.set(+200, +200, +200, camera.maxWorldAABB.max);
 
   res.renderer.pipelines = [
     ...shadowPipelines,
@@ -75,8 +75,8 @@ export async function initReboundSandbox(hosting: boolean) {
   sun.pointLight.constant = 1.0;
   sun.pointLight.linear = 0.0;
   sun.pointLight.quadratic = 0.0;
-  vec3.copy(sun.pointLight.ambient, [0.2, 0.2, 0.2]);
-  vec3.copy(sun.pointLight.diffuse, [0.5, 0.5, 0.5]);
+  V3.copy(sun.pointLight.ambient, [0.2, 0.2, 0.2]);
+  V3.copy(sun.pointLight.diffuse, [0.5, 0.5, 0.5]);
   EM.set(sun, PositionDef, V(50, 300, 10));
 
   // world gizmo
@@ -86,9 +86,9 @@ export async function initReboundSandbox(hosting: boolean) {
   g.controllable.speed *= 0.5;
   g.controllable.sprintMul = 10;
 
-  vec3.copy(g.position, [-11.71, -22.45, 11.25]);
+  V3.copy(g.position, [-11.71, -22.45, 11.25]);
   quat.copy(g.rotation, [0.0, 0.0, 0.25, -0.97]);
-  vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
+  V3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
   g.cameraFollow.yawOffset = 0.0;
   g.cameraFollow.pitchOffset = -0.396;
 
@@ -127,7 +127,7 @@ export async function initReboundSandbox(hosting: boolean) {
 
   const cubeDef = EM.defineComponent("cube", () => true);
 
-  function spawn(m: GameMesh, pos: vec3) {
+  function spawn(m: GameMesh, pos: V3) {
     const e = EM.new();
     EM.set(e, RenderableConstructDef, m.proto);
     const [r, g, b] = [jitter(0.1) + 0.2, jitter(0.1) + 0.2, jitter(0.1) + 0.2];

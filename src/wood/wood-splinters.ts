@@ -4,7 +4,7 @@ import { ColorDef } from "../color/color-ecs.js";
 import { EntityW, EM } from "../ecs/entity-manager.js";
 import { AllMeshesDef, BLACK } from "../meshes/mesh-list.js";
 import { GravityDef } from "../motion/gravity.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { jitter } from "../utils/math.js";
 import { getLineMid } from "../physics/broadphase.js";
 import { LinearVelocityDef, AngularVelocityDef } from "../motion/velocity.js";
@@ -163,8 +163,8 @@ export const mkTimberSplinterFree = (
   // b.addEndQuad(false);
 
   // TODO(@darzu): triangle vs quad coloring doesn't work
-  b.mesh.quad.forEach((_) => b.mesh.colors.push(vec3.clone(BLACK)));
-  b.mesh.tri.forEach((_) => b.mesh.colors.push(vec3.clone(BLACK)));
+  b.mesh.quad.forEach((_) => b.mesh.colors.push(V3.clone(BLACK)));
+  b.mesh.tri.forEach((_) => b.mesh.colors.push(V3.clone(BLACK)));
 
   // console.dir(b.mesh);
 
@@ -193,14 +193,14 @@ EM.addEagerInit([SplinterParticleDef], [], [], () => {
     (splinters, res) => {
       for (let s of splinters) {
         if (s.position[2] < 0) {
-          vec3.zero(s.linearVelocity);
-          vec3.zero(s.gravity);
-          vec3.zero(s.angularVelocity);
+          V3.zero(s.linearVelocity);
+          V3.zero(s.gravity);
+          V3.zero(s.angularVelocity);
 
           s.position[2] = 0;
           quat.identity(s.rotation);
-          quat.rotateX(s.rotation, Math.PI * 0.5, s.rotation);
-          quat.rotateZ(s.rotation, Math.PI * Math.random(), s.rotation);
+          quat.rotX(s.rotation, Math.PI * 0.5, s.rotation);
+          quat.rotZ(s.rotation, Math.PI * Math.random(), s.rotation);
           s.renderDataStd.id = splinterObjId; // stops z-fighting
           // console.log("freeze!");
         }

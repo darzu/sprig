@@ -17,7 +17,7 @@ import {
   RendererDef,
   RendererWorldFrameDef,
 } from "../render/renderer-ecs.js";
-import { mat4, V, vec3 } from "../matrix/sprig-matrix.js";
+import { mat4, V, V3 } from "../matrix/sprig-matrix.js";
 import { assertDbg } from "../utils/util.js";
 import { computeTriangleNormal } from "../utils/utils-3d.js";
 import { LandMapTexPtr } from "../levels/level-map.js";
@@ -71,10 +71,10 @@ export type GrassMeshHandle = MeshHandle;
 
 function createEmptyVertexTS(): GrassVertTS {
   return {
-    position: vec3.create(),
-    // color: vec3.create(),
+    position: V3.mk(),
+    // color: V3.create(),
     // tangent: m.tangents ? m.tangents[i] : [1.0, 0.0, 0.0],
-    normal: vec3.create(),
+    normal: V3.mk(),
     // uv: m.uvs ? m.uvs[i] : [0.0, 0.0],
     surfaceId: 0,
   };
@@ -150,7 +150,7 @@ export function computeGrassUniData(m: Mesh): GrassUniTS {
     // aabbMin: min,
     // aabbMax: max,
     spawnDist: 20.0, // set elsewhere
-    tint: vec3.create(),
+    tint: V3.mk(),
     id: 0,
   };
   return uni;
@@ -223,7 +223,7 @@ export const renderGrassPipe = CY.createRenderPipeline("grassRender", {
   `,
 });
 
-const _lastTilePos = new Map<number, vec3>();
+const _lastTilePos = new Map<number, V3>();
 
 export function registerUploadGrassData() {
   EM.addSystem(
@@ -240,15 +240,15 @@ export function registerUploadGrassData() {
           _lastTilePos.set(o.id, lastPos);
         }
         const newPos = mat4.getTranslation(o.rendererWorldFrame.transform);
-        if (vec3.sqrDist(lastPos, newPos) < 0.01) {
+        if (V3.sqrDist(lastPos, newPos) < 0.01) {
           continue;
         }
-        vec3.copy(lastPos, newPos);
+        V3.copy(lastPos, newPos);
 
         // TODO(@darzu): do we need all this for grass?
         // color / tint
         if (ColorDef.isOn(o)) {
-          vec3.copy(o.renderDataGrass.tint, o.color);
+          V3.copy(o.renderDataGrass.tint, o.color);
         }
         if (TintsDef.isOn(o)) {
           applyTints(o.tints, o.renderDataGrass.tint);

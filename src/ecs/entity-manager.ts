@@ -7,7 +7,7 @@ import {
   DBG_SYSTEM_ORDER,
   DBG_ENITITY_10017_POSITION_CHANGES,
 } from "../flags.js";
-import { resetTempMatrixBuffer, vec3 } from "../matrix/sprig-matrix.js";
+import { resetTempMatrixBuffer, V3 } from "../matrix/sprig-matrix.js";
 import { Serializer, Deserializer } from "../utils/serialize.js";
 import { getCallStack } from "../utils/util-no-import.js";
 import {
@@ -304,6 +304,7 @@ interface SystemStats {
   calls: number;
 }
 
+// TODO(@darzu): split this apart! Shouldn't be a class and should be in as many pieces as is logical
 export class EntityManager {
   entities: Map<number, Entity> = new Map();
   allSystemsByName: Map<string, SystemReg> = new Map();
@@ -862,7 +863,7 @@ export class EntityManager {
           // TODO(@darzu): GENERALIZE THIS
           const player = this.entities.get(10017);
           if (player && "position" in player) {
-            const pos = vec3Dbg(player.position as vec3);
+            const pos = vec3Dbg(player.position as V3);
             if (dbgOnce(`${this._dbgChangesToEnt10017}-${pos}`)) {
               console.log(
                 `10017 pos ${pos} after ${s} on loop ${this.dbgLoops}`
@@ -883,6 +884,7 @@ export class EntityManager {
     return this.entities.has(id);
   }
 
+  // TODO(@darzu): rethink how component add/remove happens. This is maybe always flags
   public removeComponent<C extends ComponentDef>(id: number, def: C) {
     if (!this.tryRemoveComponent(id, def))
       throw `Tried to remove absent component ${def.name} from entity ${id}`;
@@ -1421,7 +1423,7 @@ export class EntityManager {
       // TODO(@darzu): GENERALIZE THIS
       const player = this.entities.get(10017);
       if (player && "position" in player) {
-        const pos = vec3Dbg(player.position as vec3);
+        const pos = vec3Dbg(player.position as V3);
         if (dbgOnce(`${this._dbgChangesToEnt10017}-${pos}`)) {
           console.log(
             `10017 pos ${pos} after 'entity promises' on loop ${this.dbgLoops}`
@@ -1526,11 +1528,13 @@ export class EntityManager {
 
   // TODO(@darzu): feels a bit hacky; lets track usages and see if we can make this
   //  feel natural.
-  // TODO(@darzu): PERF. resolve this instantly w/o init if entity exists?
+  // TODO(@darzu): is perf okay here?
   public whenSingleEntity<CS extends ComponentDef[]>(
     ...cs: [...CS]
   ): Promise<EntityW<CS>> {
     return new Promise((resolve) => {
+      const ents = EM.filterEntities(cs);
+      if (ents.length === 1) resolve(ents[0]);
       EM.addEagerInit(cs, [], [], () => {
         const ents = EM.filterEntities(cs);
         if (!ents || ents.length !== 1)
@@ -1613,7 +1617,7 @@ export class EntityManager {
       // TODO(@darzu): GENERALIZE THIS
       const player = this.entities.get(10017);
       if (player && "position" in player) {
-        const pos = vec3Dbg(player.position as vec3);
+        const pos = vec3Dbg(player.position as V3);
         if (dbgOnce(`${this._dbgChangesToEnt10017}-${pos}`)) {
           console.log(
             `10017 pos ${pos} after 'init fns' on loop ${this.dbgLoops}`

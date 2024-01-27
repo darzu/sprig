@@ -1,6 +1,6 @@
 import { ColorDef, TintsDef, applyTints } from "../../color/color-ecs.js";
 import { EM, EntityW } from "../../ecs/entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../../matrix/sprig-matrix.js";
+import { V2, V3, V4, quat, mat4, V } from "../../matrix/sprig-matrix.js";
 import { assert } from "../../utils/util.js";
 import { computeTriangleNormal } from "../../utils/utils-3d.js";
 import { comparisonSamplerPtr, CY, linearSamplerPtr } from "../gpu-registry.js";
@@ -128,7 +128,7 @@ function computeOceanVertsData(
     color: V(1.0, 0.0, 1.0), // per-face; changed below
     tangent: m.tangents![i],
     normal: m.normals![i],
-    uv: m.uvs ? m.uvs[i] : vec2.fromValues(0.0, 0.0),
+    uv: m.uvs ? m.uvs[i] : V(0.0, 0.0),
     surfaceId: 0, // per-face; changed below
   }));
   // TODO: compute tangents here? right now tangents are wrong if we
@@ -149,7 +149,7 @@ export function computeOceanUniData(m: Mesh): OceanUniTS {
     transform: mat4.create(),
     aabbMin: min,
     aabbMax: max,
-    tint: vec3.create(),
+    tint: V3.mk(),
     id: 0,
   };
   return uni;
@@ -236,7 +236,7 @@ EM.addEagerInit([RenderDataOceanDef], [], [], () => {
       for (let o of objs) {
         // color / tint
         if (ColorDef.isOn(o)) {
-          vec3.copy(o.renderDataOcean.tint, o.color);
+          V3.copy(o.renderDataOcean.tint, o.color);
         }
         if (TintsDef.isOn(o)) {
           applyTints(o.tints, o.renderDataOcean.tint);

@@ -1,7 +1,7 @@
 import { CameraDef } from "../camera/camera.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { EM } from "../ecs/entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { InputsDef } from "../input/inputs.js";
 import { ColliderDef } from "./collider.js";
 import { AngularVelocityDef } from "../motion/velocity.js";
@@ -81,7 +81,7 @@ export async function initGJKSandbox(hosting: boolean) {
   const sunlight = EM.new();
   EM.set(sunlight, PointLightDef);
   sunlight.pointLight.constant = 1.0;
-  vec3.copy(sunlight.pointLight.ambient, [0.8, 0.8, 0.8]);
+  V3.copy(sunlight.pointLight.ambient, [0.8, 0.8, 0.8]);
   // vec3.scale(sunlight.pointLight.ambient, sunlight.pointLight.ambient, 0.2);
   // vec3.copy(sunlight.pointLight.diffuse, [0.5, 0.5, 0.5]);
   EM.set(sunlight, PositionDef, V(10, 10, 100));
@@ -135,9 +135,9 @@ export async function initGJKSandbox(hosting: boolean) {
   // EM.set(g, RenderableConstructDef, res.allMeshes.cube.proto);
   // createPlayer();
 
-  vec3.copy(g.position, [-3.42, -1.21, 1.88]);
+  V3.copy(g.position, [-3.42, -1.21, 1.88]);
   quat.copy(g.rotation, [0.0, 0.0, 0.0, 1.0]);
-  vec3.copy(g.cameraFollow.positionOffset, [0.0, -5.0, 0.0]);
+  V3.copy(g.cameraFollow.positionOffset, [0.0, -5.0, 0.0]);
   g.cameraFollow.yawOffset = -0.034;
   g.cameraFollow.pitchOffset = -0.428;
 
@@ -197,17 +197,15 @@ export async function initGJKSandbox(hosting: boolean) {
   //    maybe we should transform the dir instead
   function createWorldShape(
     g: GameMesh,
-    pos: vec3,
+    pos: V3,
     rot: quat,
-    lastWorldPos: vec3
+    lastWorldPos: V3
   ): Shape {
     const transform = mat4.fromRotationTranslation(rot, pos, mat4.create());
-    const worldVerts = g.uniqueVerts.map((p) =>
-      vec3.transformMat4(p, transform)
-    );
-    const support = (d: vec3) => farthestPointInDir(worldVerts, d);
-    const center = vec3.transformMat4(g.center, transform);
-    const travel = vec3.sub(pos, lastWorldPos);
+    const worldVerts = g.uniqueVerts.map((p) => V3.tMat4(p, transform));
+    const support = (d: V3) => farthestPointInDir(worldVerts, d);
+    const center = V3.tMat4(g.center, transform);
+    const travel = V3.sub(pos, lastWorldPos);
     return {
       center,
       support,
@@ -215,12 +213,12 @@ export async function initGJKSandbox(hosting: boolean) {
     };
   }
 
-  let lastPlayerPos = vec3.clone(g.position);
+  let lastPlayerPos = V3.clone(g.position);
   let lastPlayerRot = quat.clone(g.rotation);
-  let lastWorldPos: vec3[] = [
-    vec3.clone(b1.position),
-    vec3.clone(b3.position),
-    vec3.clone(b4.position),
+  let lastWorldPos: V3[] = [
+    V3.clone(b1.position),
+    V3.clone(b3.position),
+    V3.clone(b4.position),
   ];
   let lastWorldRot: quat[] = [
     quat.clone(b1.rotation),
@@ -297,7 +295,7 @@ export async function initGJKSandbox(hosting: boolean) {
 
         if (simplex) {
           const penD = penetrationDepth(shapeOther, playerShape, simplex);
-          const travelD = vec3.length(playerShape.travel);
+          const travelD = V3.len(playerShape.travel);
           if (penD < Infinity) {
             backTravelD += penD;
           }
@@ -308,25 +306,25 @@ export async function initGJKSandbox(hosting: boolean) {
         }
       }
 
-      backTravelD = Math.min(backTravelD, vec3.length(playerShape.travel));
-      const travelN = vec3.normalize(playerShape.travel);
-      const backTravel = vec3.scale(travelN, backTravelD);
+      backTravelD = Math.min(backTravelD, V3.len(playerShape.travel));
+      const travelN = V3.norm(playerShape.travel);
+      const backTravel = V3.scale(travelN, backTravelD);
 
       // console.log(backTravel);
       // console.log(backTravel);
-      vec3.sub(g.position, backTravel, g.position);
+      V3.sub(g.position, backTravel, g.position);
 
       lastWorldPos = [
-        vec3.clone(b1.position),
-        vec3.clone(b3.position),
-        vec3.clone(b4.position),
+        V3.clone(b1.position),
+        V3.clone(b3.position),
+        V3.clone(b4.position),
       ];
       lastWorldRot = [
         quat.clone(b1.rotation),
         quat.clone(b3.rotation),
         quat.clone(b4.rotation),
       ];
-      lastPlayerPos = vec3.clone(g.position);
+      lastPlayerPos = V3.clone(g.position);
       lastPlayerRot = quat.clone(g.rotation);
     }
   );

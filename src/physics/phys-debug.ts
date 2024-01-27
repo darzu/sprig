@@ -24,7 +24,7 @@ import {
   ScaleDef,
   updateFrameFromPosRotScale,
 } from "./transform.js";
-import { vec3, V } from "../matrix/sprig-matrix.js";
+import { V3, V } from "../matrix/sprig-matrix.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { mkCubeMesh } from "../meshes/primatives.js";
 
@@ -149,7 +149,7 @@ function meshFromAABB(aabb: AABB): RawMesh {
   // resize
   const m = mkCubeMesh();
   mapMeshPositions(m, (p) =>
-    vec3.clone([
+    V3.clone([
       remap(p[0], -1, 1, 0, aabb.max[0] - aabb.min[0]),
       remap(p[1], -1, 1, 0, aabb.max[1] - aabb.min[1]),
       remap(p[2], -1, 1, 0, aabb.max[2] - aabb.min[2]),

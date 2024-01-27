@@ -1,27 +1,27 @@
-import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { tempQuat } from "../matrix/temp-pool.js";
 
 const ERROR_SMOOTHING_FACTOR = 0.9 ** (60 / 1000);
 const EPSILON = 0.0001;
 const QUAT_EPSILON = 0.001;
 
-const identityQuat: quat = quat.identity(quat.create());
+const identityQuat: quat = quat.identity(quat.mk());
 
-function isVec3(v: quat | vec3): v is vec3 {
+function isVec3(v: quat | V3): v is V3 {
   return v.length === 3;
 }
 
 export function reduceError(
-  v: quat | vec3,
+  v: quat | V3,
   dt: number,
   smoothing_factor = ERROR_SMOOTHING_FACTOR
 ) {
   if (isVec3(v)) {
-    const magnitude = vec3.length(v);
+    const magnitude = V3.len(v);
     if (magnitude > EPSILON) {
-      vec3.scale(v, smoothing_factor ** dt, v);
+      V3.scale(v, smoothing_factor ** dt, v);
     } else if (magnitude > 0) {
-      vec3.set(0, 0, 0, v);
+      V3.set(0, 0, 0, v);
     }
   } else {
     const magnitude = Math.abs(quat.getAngle(v, identityQuat));
@@ -35,15 +35,15 @@ export function reduceError(
 }
 
 export function computeNewError(old: quat, curr: quat, error: quat): void;
-export function computeNewError(old: vec3, curr: vec3, error: vec3): void;
+export function computeNewError(old: V3, curr: V3, error: V3): void;
 export function computeNewError(
-  old: vec3 | quat,
-  curr: vec3 | quat,
-  error: vec3 | quat
+  old: V3 | quat,
+  curr: V3 | quat,
+  error: V3 | quat
 ) {
   if (isVec3(old)) {
-    vec3.add(error as vec3, old, error as vec3);
-    vec3.sub(error as vec3, curr as vec3, error as vec3);
+    V3.add(error as V3, old, error as V3);
+    V3.sub(error as V3, curr as V3, error as V3);
   } else {
     const prevComputed = quat.mul(old, error as quat);
     quat.invert(curr as quat, error as quat);

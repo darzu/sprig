@@ -1,6 +1,6 @@
 import { DBG_ASSERT } from "../flags.js";
 import { BLACK } from "./mesh-list.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { hexAvg } from "../hex/hex.js";
 import { RawMesh } from "./mesh.js";
 import { tempVec3 } from "../matrix/temp-pool.js";
@@ -277,30 +277,30 @@ export function extrudeQuad(hp: HPoly, he: HEdge): HPolyDelta {
   // NEW: 2 verts, 3 inner-hedge, 3 outer-hedge, 1 face
 
   // first, determine our new vert positions by projecting twin's face edges
-  const p0 = vec3.create();
+  const p0 = V3.mk();
   const v0a = he.twin.orig;
   const vi0a = v0a.vi;
   const p0b = hp.mesh.pos[he.twin.prev.orig.vi];
   const p0a = hp.mesh.pos[vi0a];
-  vec3.sub(p0a, p0b, p0);
-  vec3.add(p0, p0a, p0);
+  V3.sub(p0a, p0b, p0);
+  V3.add(p0, p0a, p0);
 
-  const p1 = vec3.create();
+  const p1 = V3.mk();
   const v1a = he.twin.next.orig;
   const vi1a = v1a.vi;
   const p1b = hp.mesh.pos[he.twin.next.next.orig.vi];
   const p1a = hp.mesh.pos[vi1a];
-  vec3.sub(p1a, p1b, p1);
-  vec3.add(p1, p1a, p1);
+  V3.sub(p1a, p1b, p1);
+  V3.add(p1, p1a, p1);
 
   // move positions so they're the same length as the original edge
-  const len = vec3.dist(p0a, p1a);
-  const p01 = vec3.sub(p0, p1);
-  const len2 = vec3.length(p01);
+  const len = V3.dist(p0a, p1a);
+  const p01 = V3.sub(p0, p1);
+  const len2 = V3.len(p01);
   const lenScale = (len2 - len) / (2 * len2);
-  vec3.scale(p01, lenScale, p01);
-  vec3.sub(p0, p01, p0);
-  vec3.add(p1, p01, p1);
+  V3.scale(p01, lenScale, p01);
+  V3.sub(p0, p01, p0);
+  V3.add(p1, p01, p1);
 
   // start verts
   const vi0 = hp.mesh.pos.push(p0) - 1;
@@ -309,7 +309,7 @@ export function extrudeQuad(hp: HPoly, he: HEdge): HPolyDelta {
   const v1: HVert_ = { vi: vi1 };
 
   // create face
-  const qi = hp.mesh.quad.push(vec4.clone([vi0, vi1, vi1a, vi0a])) - 1;
+  const qi = hp.mesh.quad.push(V4.clone([vi0, vi1, vi1a, vi0a])) - 1;
   const f: HFace = {
     fi: qi,
     edg: he,
@@ -360,7 +360,7 @@ export function extrudeQuad(hp: HPoly, he: HEdge): HPolyDelta {
   );
   // TODO(@darzu): DBG colors
   // hp.mesh.colors?.push(randNormalPosVec3(vec3.create()));
-  hp.mesh.colors?.push(vec3.create());
+  hp.mesh.colors?.push(V3.mk());
 
   // we're done! Verify and append to HPoly
   const newHs = [hi0, hi01, hi1, ho1, ho01, ho0];

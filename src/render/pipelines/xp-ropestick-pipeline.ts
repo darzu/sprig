@@ -1,4 +1,4 @@
-import { vec2, vec3, vec4, quat, mat4, V } from "../../matrix/sprig-matrix.js";
+import { V2, V3, V4, quat, mat4, V } from "../../matrix/sprig-matrix.js";
 import { CY } from "../gpu-registry.js";
 import { createCyStruct, CyToTS } from "../gpu-struct.js";
 import { sceneBufPtr, litTexturePtr, mainDepthTex } from "./std-scene.js";
@@ -49,7 +49,7 @@ function generateRopeGrid(): {
     for (let y = 0; y < CLOTH_W; y++) {
       let i = idx(x, y);
       // assert(i === n, "i === n");
-      const pos: vec3 = V(x, y + 4, 0);
+      const pos: V3 = V(x, y + 4, 0);
       const p: RopePointTS = {
         position: pos,
         prevPosition: pos,

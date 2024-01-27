@@ -1,6 +1,6 @@
 import { CanvasDef } from "../render/canvas.js";
 import { EM, EntityW } from "../ecs/entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { InputsDef } from "../input/inputs.js";
 import { remap } from "../utils/math.js";
 import { Ray, RayHit } from "../physics/broadphase.js";
@@ -65,7 +65,7 @@ function registerObjClicker() {
       if (!res.modeler.clickerEnabled) return;
 
       if (res.inputs.lclick) {
-        const screenPos: vec2 = res.inputs.mousePos;
+        const screenPos: V2 = res.inputs.mousePos;
 
         const r = screenPosToRay(screenPos, res.cameraComputed);
 
@@ -90,12 +90,8 @@ function registerObjClicker() {
 
         // draw our ray
         const rayDist = firstHit?.dist || 1000;
-        const color: vec3 = firstHit ? V(0, 1, 0) : V(1, 0, 0);
-        const endPoint = vec3.add(
-          r.org,
-          vec3.scale(r.dir, rayDist),
-          vec3.create()
-        );
+        const color: V3 = firstHit ? V(0, 1, 0) : V(1, 0, 0);
+        const endPoint = V3.add(r.org, V3.scale(r.dir, rayDist), V3.mk());
         drawLine(r.org, endPoint, color);
       }
     }
@@ -133,7 +129,7 @@ function registerAABBBuilder() {
           const aabbs = bs.map((b) => b._phys.colliders[0].aabb);
           console.log(aabbListToStr(aabbs));
           for (let b of bs) {
-            vec3.copy(b.color, [0.3, 0.1, 0.2]);
+            V3.copy(b.color, [0.3, 0.1, 0.2]);
             b.collider.solid = true;
           }
         } else {
@@ -146,8 +142,8 @@ function registerAABBBuilder() {
 
           EM.set(b, ModelBoxDef);
           if (lastB) {
-            EM.set(b, ScaleDef, vec3.copy(vec3.create(), lastB.scale));
-            EM.set(b, PositionDef, vec3.copy(vec3.create(), lastB.position));
+            EM.set(b, ScaleDef, V3.copy(V3.mk(), lastB.scale));
+            EM.set(b, PositionDef, V3.copy(V3.mk(), lastB.position));
           } else {
             EM.set(b, ScaleDef, V(2, 1, 1));
             EM.set(b, PositionDef, V(0, 0, 0));

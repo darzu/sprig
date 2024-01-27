@@ -1,6 +1,6 @@
 import { Collider, ColliderDef, DefaultLayer, Layer } from "./collider.js";
 import { Component, EM, Entity } from "../ecs/entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import {
   CollidesWith,
   computeContactData,
@@ -70,8 +70,8 @@ export interface PhysCollider {
   selfAABB: AABB;
   // TODO(@darzu): NARROW PHASE: add optional more specific collider types here
   // TODO(@darzu): pos, lastPos need to be tracked per parent space
-  localPos: vec3;
-  lastLocalPos: vec3;
+  localPos: V3;
+  lastLocalPos: V3;
   // each of these is a 16 bit mask
   myLayer: number;
   targetLayer: number;
@@ -168,7 +168,7 @@ export function registerUpdateWorldAABBs(s: string = "") {
           copyAABB(wc.aabb, wc.selfAABB);
           transformAABB(wc.aabb, o.world.transform);
           // TODO(@darzu): do we want to update lastPos here? different than obj last pos
-          vec3.copy(wc.lastLocalPos, wc.localPos);
+          V3.copy(wc.lastLocalPos, wc.localPos);
           aabbCenter(wc.localPos, wc.localAABB);
         }
         // const { localAABB, worldAABB, lastWorldAABB, sweepAABB } = o._phys;
@@ -241,8 +241,8 @@ export function registerPhysicsStateInit() {
             if (c.parentOId !== parent) {
               // update parent
               c.parentOId = parent;
-              vec3.copy(c.localPos, o.position);
-              vec3.copy(c.lastLocalPos, o.position);
+              V3.copy(c.localPos, o.position);
+              V3.copy(c.lastLocalPos, o.position);
             }
           }
 
@@ -315,8 +315,8 @@ export function registerPhysicsStateInit() {
           aabb: copyAABB(createAABB(), selfAABB),
           localAABB: copyAABB(createAABB(), selfAABB),
           selfAABB: copyAABB(createAABB(), selfAABB),
-          localPos: aabbCenter(vec3.create(), selfAABB),
-          lastLocalPos: aabbCenter(vec3.create(), selfAABB),
+          localPos: aabbCenter(V3.mk(), selfAABB),
+          lastLocalPos: aabbCenter(V3.mk(), selfAABB),
           myLayer: my,
           targetLayer: target,
         };
@@ -537,16 +537,16 @@ export function registerPhysicsContactSystems() {
           if (objDoesMov) {
             // TODO(@darzu): PARENT. this needs to rebound in the parent frame, not world frame
             const refl = tempVec3();
-            vec3.sub(o._phys.lastLocalPos, o.position, refl);
-            vec3.scale(refl, movFrac, refl);
-            vec3.add(o.position, refl, o.position);
+            V3.sub(o._phys.lastLocalPos, o.position, refl);
+            V3.scale(refl, movFrac, refl);
+            V3.add(o.position, refl, o.position);
 
             // translate non-sweep AABBs
             for (let c of o._phys.colliders) {
               // TODO(@darzu): PARENT. translate world AABBs?
-              vec3.add(c.localAABB.min, refl, c.localAABB.min);
-              vec3.add(c.localAABB.max, refl, c.localAABB.max);
-              vec3.add(c.localPos, refl, c.localPos);
+              V3.add(c.localAABB.min, refl, c.localAABB.min);
+              V3.add(c.localAABB.max, refl, c.localAABB.max);
+              V3.add(c.localPos, refl, c.localPos);
             }
 
             // track that some movement occured
@@ -574,7 +574,7 @@ export function registerPhysicsContactSystems() {
       // TODO(@darzu): needed any more since colliders track these now?
       // TODO(@darzu): it'd be great to expose this to e.g. phys sandboxes
       for (let o of objs) {
-        vec3.copy(o._phys.lastLocalPos, o.position);
+        V3.copy(o._phys.lastLocalPos, o.position);
       }
 
       // update output checkRay function

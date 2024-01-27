@@ -7,7 +7,7 @@ import {
   GizmoMesh,
   UnitCubeMesh,
 } from "../meshes/mesh-list.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { remap } from "./math.js";
 import { getLineEnd, Line, Ray } from "../physics/broadphase.js";
 import {
@@ -38,15 +38,15 @@ import { AABB, getSizeFromAABB, isValidAABB } from "../physics/aabb.js";
 const _linePool: EntityW<[typeof RenderableDef]>[] = [];
 const _linePoolLimit = 100;
 let _linePoolNext = 0;
-export async function drawLine2(line: Line, color: vec3) {
+export async function drawLine2(line: Line, color: V3) {
   const end = getLineEnd(tempVec3(), line);
   return drawLine(line.ray.org, end, color);
 }
-export async function drawLine(start: vec3, end: vec3, color: vec3) {
-  start = vec3.clone(start);
-  const start2 = vec3.add(start, [0.2, 0.2, 0.2], vec3.create());
-  end = vec3.clone(end);
-  const end2 = vec3.add(end, [0.1, 0.1, 0.1], vec3.create());
+export async function drawLine(start: V3, end: V3, color: V3) {
+  start = V3.clone(start);
+  const start2 = V3.add(start, [0.2, 0.2, 0.2], V3.mk());
+  end = V3.clone(end);
+  const end2 = V3.add(end, [0.1, 0.1, 0.1], V3.mk());
 
   const pos = [start, start2, end2, end];
 
@@ -74,11 +74,11 @@ export async function drawLine(start: vec3, end: vec3, color: vec3) {
     return e2;
   }
 }
-export function createLine(start: vec3, end: vec3, color: vec3) {
-  start = vec3.clone(start);
-  const start2 = vec3.add(start, [0.2, 0.2, 0.2], vec3.create());
-  end = vec3.clone(end);
-  const end2 = vec3.add(end, [0.1, 0.1, 0.1], vec3.create());
+export function createLine(start: V3, end: V3, color: V3) {
+  start = V3.clone(start);
+  const start2 = V3.add(start, [0.2, 0.2, 0.2], V3.mk());
+  end = V3.clone(end);
+  const end2 = V3.add(end, [0.1, 0.1, 0.1], V3.mk());
 
   const pos = [start, start2, end2, end];
 
@@ -126,14 +126,14 @@ const _ballPool = createEntityPool<
 
 // TODO(@darzu): refactor w/ gizmos and arrows and pooling
 export function drawBall(
-  pos: vec3.InputT,
+  pos: V3.InputT,
   size: number,
-  color: vec3.InputT
+  color: V3.InputT
 ): EntityW<[typeof PositionDef]> {
   const e = _ballPool.spawn();
-  vec3.copy(e.color, color);
-  vec3.copy(e.position, pos);
-  vec3.set(size, size, size, e.scale);
+  V3.copy(e.color, color);
+  V3.copy(e.position, pos);
+  V3.set(size, size, size, e.scale);
   return e;
 }
 
@@ -143,39 +143,31 @@ export async function randomizeMeshColors(e: Entity) {
   const meshH = e2.renderable.meshHandle;
   const mesh = meshH.mesh!;
   for (let c of mesh.colors)
-    vec3.set(Math.random(), Math.random(), Math.random(), c);
+    V3.set(Math.random(), Math.random(), Math.random(), c);
   res.renderer.renderer.stdPool.updateMeshVertices(meshH, mesh);
 }
 
 export function screenPosToWorldPos(
-  out: vec3,
-  screenPos: vec2,
+  out: V3,
+  screenPos: V2,
   cameraComputed: CameraView,
   screenDepth: number = 0
-): vec3 {
+): V3 {
   const invViewProj = cameraComputed.invViewProj;
 
   const viewX = remap(screenPos[0], 0, cameraComputed.width, -1, 1);
   const viewY = remap(screenPos[1], 0, cameraComputed.height, 1, -1);
-  const viewPos3 = vec3.set(viewX, viewY, screenDepth);
+  const viewPos3 = V3.set(viewX, viewY, screenDepth);
 
-  return vec3.transformMat4(viewPos3, invViewProj, out);
+  return V3.tMat4(viewPos3, invViewProj, out);
 }
 
-export function screenPosToRay(
-  screenPos: vec2,
-  cameraComputed: CameraView
-): Ray {
-  const origin = screenPosToWorldPos(
-    vec3.create(),
-    screenPos,
-    cameraComputed,
-    -1
-  );
+export function screenPosToRay(screenPos: V2, cameraComputed: CameraView): Ray {
+  const origin = screenPosToWorldPos(V3.mk(), screenPos, cameraComputed, -1);
   const target = screenPosToWorldPos(tempVec3(), screenPos, cameraComputed, 0);
 
-  const dir = vec3.sub(target, origin, vec3.create());
-  vec3.normalize(dir, dir);
+  const dir = V3.sub(target, origin, V3.mk());
+  V3.norm(dir, dir);
 
   const r: Ray = {
     org: origin,
@@ -185,19 +177,19 @@ export function screenPosToRay(
   return r;
 }
 
-export function randColor(v?: vec3): vec3 {
+export function randColor(v?: V3): V3 {
   return randNormalPosVec3(v);
 }
 
 export function addGizmoChild(
   parent: Entity,
   scale: number = 1,
-  offset: vec3.InputT = [0, 0, 0]
+  offset: V3.InputT = [0, 0, 0]
 ): Entity {
   // TODO(@darzu): Doesn't need to be async!
   // make debug gizmo
   const gizmo = EM.new();
-  EM.set(gizmo, PositionDef, vec3.clone(offset));
+  EM.set(gizmo, PositionDef, V3.clone(offset));
   EM.set(gizmo, ScaleDef, V(scale, scale, scale));
   EM.set(gizmo, PhysicsParentDef, parent.id);
   EM.set(gizmo, RenderableConstructDef, GizmoMesh);
@@ -216,8 +208,8 @@ export function createBoxForAABB(
 ): EntityW<
   [typeof PositionDef, typeof ScaleDef, typeof RenderableConstructDef]
 > {
-  const scale = getSizeFromAABB(aabb, vec3.create());
-  const offset = vec3.clone(aabb.min);
+  const scale = getSizeFromAABB(aabb, V3.mk());
+  const offset = V3.clone(aabb.min);
 
   const box = EM.new();
   EM.set(box, PositionDef, offset);

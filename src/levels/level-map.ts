@@ -4,7 +4,7 @@ import { TextDef } from "../gui/ui.js";
 import { AABB2, aabbCenter2, updateAABBWithPoint2_ } from "../physics/aabb.js";
 import { CY } from "../render/gpu-registry.js";
 import { RendererDef } from "../render/renderer-ecs.js";
-import { V, tV, vec2, vec4 } from "../matrix/sprig-matrix.js";
+import { V, tV, V2, V4 } from "../matrix/sprig-matrix.js";
 import { assert, assertDbg } from "../utils/util.js";
 import { vec2Dbg, vec4Dbg } from "../utils/utils-3d.js";
 import { MapName, MapBytesSetDef, MapBytes, MapHelp } from "./map-loader.js";
@@ -51,7 +51,7 @@ export const LandMapTexPtr = CY.createTexture("landMap", {
 export const LevelMapDef = EM.defineResource("levelMap", () => ({
   name: "unknown",
   landCyTexData: new Float32Array(),
-  towers: [] as [vec2, vec2][],
+  towers: [] as [V2, V2][],
   startPos: V(0, 0),
   windDir: V(0, 0),
   endZonePos: V(0, 0),
@@ -65,7 +65,7 @@ type MapBlobRun = {
   x1: number; // exclusive
 };
 interface MapBlob {
-  color: vec4;
+  color: V4;
   aabb: AABB2; // NOTE: min is inclusive, max is exclusive
   area: number;
   runs: MapBlobRun[];
@@ -73,7 +73,7 @@ interface MapBlob {
 
 const mapCache = new Map<string, LevelMap>();
 
-function centerOfMassAndDirection(b: MapBlob): [vec2, vec2] {
+function centerOfMassAndDirection(b: MapBlob): [V2, V2] {
   let cx = 0;
   let cy = 0;
   let len = 0;
@@ -105,7 +105,7 @@ function centerOfMassAndDirection(b: MapBlob): [vec2, vec2] {
     }
   }
   const dir = V(fx - cx, fy - cy);
-  vec2.normalize(dir, dir);
+  V2.norm(dir, dir);
   return [V(cx, cy), dir];
 }
 
@@ -124,12 +124,12 @@ function parseAndMutateIntoMapBlobs(
 
   const white = V(255, 255, 255, 255);
 
-  let _tmpclr = vec4.tmp();
+  let _tmpclr = V4.tmp();
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
       const clr = getColor(x, y, _tmpclr);
       // found something?
-      if (!vec4.equals(clr, vec4.ZEROS) && !vec4.equals(clr, white)) {
+      if (!V4.equals(clr, V4.ZEROS) && !V4.equals(clr, white)) {
         blobs.push(parseBlob(x, y));
       }
     }
@@ -138,17 +138,17 @@ function parseAndMutateIntoMapBlobs(
   return blobs;
 
   // NOTE: use of _tmpclr means we require only one caller at a time
-  function getColor(x: number, y: number, out?: vec4): vec4 {
+  function getColor(x: number, y: number, out?: V4): V4 {
     out = out ?? _tmpclr;
     // out of bounds
     if (x < 0 || width <= x || y < 0 || height <= y)
-      return vec4.copy(out, vec4.ZEROS);
+      return V4.copy(out, V4.ZEROS);
     const idx = mapXYtoImgPxDataIdx(x, y, width, height) * 4;
     const r = rgbaBytes[idx + 0];
     const g = rgbaBytes[idx + 1];
     const b = rgbaBytes[idx + 2];
     const a = rgbaBytes[idx + 3];
-    return vec4.set(r, g, b, a, out);
+    return V4.set(r, g, b, a, out);
   }
   // TODO(@darzu): perf. we'd probably get some perf by inlining these
   function clearColor(x: number, y: number): void {
@@ -165,7 +165,7 @@ function parseAndMutateIntoMapBlobs(
     //    at the start of a run and there are no runs
     //    below us.
     //    - map origin is bottom-left.
-    const color = getColor(x, y, vec4.create());
+    const color = getColor(x, y, V4.mk());
     const blob: MapBlob = {
       color,
       aabb: { min: V(Infinity, Infinity), max: V(-Infinity, -Infinity) },
@@ -174,7 +174,7 @@ function parseAndMutateIntoMapBlobs(
     };
 
     const checkColor = (x: number, y: number) =>
-      vec4.equals(color, getColor(x, y));
+      V4.equals(color, getColor(x, y));
 
     parseRun(x, y);
 
@@ -271,7 +271,7 @@ export function parseAndMutateIntoMapData(
     (b) => b.color[0] < 100 && b.color[1] < 100 && b.color[2] > 200
   )[0];
   assert(!!startBlob, `no start blob`);
-  const startPos = aabbCenter2(vec2.create(), startBlob.aabb);
+  const startPos = aabbCenter2(V2.mk(), startBlob.aabb);
 
   // extract tower locations
   const towers = blobs
@@ -318,7 +318,7 @@ export function parseAndMutateIntoMapData(
     `expected 1 end zone, found ${endZoneBlobs.length}`
   );
   const endZoneBlob = endZoneBlobs[0];
-  const endZonePos = aabbCenter2(vec2.create(), endZoneBlob.aabb);
+  const endZonePos = aabbCenter2(V2.mk(), endZoneBlob.aabb);
 
   const levelMap: LevelMap = {
     landCyTexData,
@@ -372,7 +372,7 @@ export async function setMap(name: MapName) {
   Object.assign(resLandMap, levelMap);
 
   // set random secondary/teriary colors
-  // const purpleness = (c: vec3) => c[0] * c[2];
+  // const purpleness = (c: V3) => c[0] * c[2];
   // let secColor = randColor();
   // while (purpleness(secColor) > 0.05) secColor = randColor();
   // let terColor = randColor();

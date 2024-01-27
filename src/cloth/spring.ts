@@ -1,4 +1,4 @@
-import { vec3, V } from "../matrix/sprig-matrix.js";
+import { V3, V } from "../matrix/sprig-matrix.js";
 import { tempVec3 } from "../matrix/temp-pool.js";
 import { EM } from "../ecs/entity-manager.js";
 import { TimeDef } from "../time/time.js";
@@ -22,9 +22,9 @@ export enum SpringType {
 export interface SpringGrid {
   rows: number;
   columns: number;
-  positions: vec3[];
-  prevPositions: vec3[];
-  nextPositions: vec3[];
+  positions: V3[];
+  prevPositions: V3[];
+  nextPositions: V3[];
   // indices of points whose position should not change (i.e., they
   // are affixed to something)
   fixed: Set<number>;
@@ -37,7 +37,7 @@ export interface SpringGrid {
   kOffAxis: number;
   // The sum of any external forces acting on the system
   // (e.g. gravity, drag, wind)
-  externalForce: vec3;
+  externalForce: V3;
   springType: SpringType;
 }
 
@@ -59,18 +59,18 @@ export const SpringGridDef = EM.defineNonupdatableComponent(
     distance = distance || 1;
     kOnAxis = kOnAxis || 5000;
     kOffAxis = kOffAxis || kOnAxis;
-    const positions: vec3[] = [];
-    const prevPositions: vec3[] = [];
-    const nextPositions: vec3[] = [];
+    const positions: V3[] = [];
+    const prevPositions: V3[] = [];
+    const nextPositions: V3[] = [];
     for (let y = 0; y < rows; y++) {
       for (let x = 0; x < columns; x++) {
         let pos = V(x * distance, y * distance, 0);
         positions.push(pos);
-        prevPositions.push(vec3.clone(pos));
-        nextPositions.push(vec3.create());
+        prevPositions.push(V3.clone(pos));
+        nextPositions.push(V3.mk());
       }
     }
-    const externalForce = vec3.create();
+    const externalForce = V3.mk();
     const fixedSet = new Set(fixed);
     return {
       rows,
@@ -92,7 +92,7 @@ export const SpringGridDef = EM.defineNonupdatableComponent(
 export const ForceDef = EM.defineComponent(
   "force",
   () => V(0, 0, 0),
-  (p, v?: vec3.InputT) => (v ? vec3.copy(p, v) : p)
+  (p, v?: V3.InputT) => (v ? V3.copy(p, v) : p)
 );
 
 EM.registerSerializerPair(
@@ -139,9 +139,9 @@ function targetLocation(
   g: SpringGrid,
   neighbor: number,
   inDirection: Direction,
-  out: vec3
+  out: V3
 ) {
-  vec3.copy(out, g.positions[neighbor]);
+  V3.copy(out, g.positions[neighbor]);
   switch (inDirection) {
     case Direction.Up:
       out[1] = out[1] - g.distance;
@@ -158,7 +158,7 @@ function targetLocation(
   }
 }
 
-function addSpringForce(g: SpringGrid, point: number, force: vec3) {
+function addSpringForce(g: SpringGrid, point: number, force: V3) {
   const distanceVec = tempVec3();
   let directions = [
     Direction.Up,
@@ -173,21 +173,17 @@ function addSpringForce(g: SpringGrid, point: number, force: vec3) {
     log(`spring force on ${point}`);
     switch (g.springType) {
       case SpringType.SimpleDistance:
-        vec3.sub(g.positions[point], g.positions[o], distanceVec);
-        let distance = vec3.length(distanceVec);
-        vec3.normalize(distanceVec, distanceVec);
-        vec3.scale(
-          distanceVec,
-          g.kOnAxis * (g.distance - distance),
-          distanceVec
-        );
+        V3.sub(g.positions[point], g.positions[o], distanceVec);
+        let distance = V3.len(distanceVec);
+        V3.norm(distanceVec, distanceVec);
+        V3.scale(distanceVec, g.kOnAxis * (g.distance - distance), distanceVec);
         break;
       case SpringType.DesiredLocation:
         targetLocation(g, o, direction, distanceVec);
         log("vectors");
         log(distanceVec);
         log(g.positions[point]);
-        vec3.sub(distanceVec, g.positions[point], distanceVec);
+        V3.sub(distanceVec, g.positions[point], distanceVec);
 
         // distanceVec now stores the vector between this point and
         // where it "should" be as far as this neighbor is concerned.  We
@@ -207,8 +203,8 @@ function addSpringForce(g: SpringGrid, point: number, force: vec3) {
         }
         distanceVec[2] = distanceVec[2] * g.kOffAxis;
     }
-    vec3.scale(distanceVec, 1.0 / neighbors.length, distanceVec);
-    vec3.add(force, distanceVec, force);
+    V3.scale(distanceVec, 1.0 / neighbors.length, distanceVec);
+    V3.add(force, distanceVec, force);
   }
 }
 
@@ -217,23 +213,23 @@ export function stepSprings(g: SpringGrid, dt: number) {
   const forceVec = tempVec3();
   const velocityVec = tempVec3();
   for (let point = 0; point < g.rows * g.columns; point++) {
-    vec3.copy(g.nextPositions[point], g.positions[point]);
+    V3.copy(g.nextPositions[point], g.positions[point]);
     if (g.fixed.has(point)) {
       log(`${point} fixed`);
       continue;
     }
-    vec3.sub(g.positions[point], g.prevPositions[point], velocityVec);
-    vec3.scale(velocityVec, dt, velocityVec);
+    V3.sub(g.positions[point], g.prevPositions[point], velocityVec);
+    V3.scale(velocityVec, dt, velocityVec);
     //console.log("applying a force");
-    vec3.copy(forceVec, g.externalForce);
+    V3.copy(forceVec, g.externalForce);
     // console.log(`externalForce: ${vec3Dbg(forceVec)}`); // TODO(@darzu):
     addSpringForce(g, point, forceVec);
-    vec3.scale(forceVec, dt * dt, forceVec);
-    if (vec3.length(velocityVec) > EPSILON) {
-      vec3.add(g.nextPositions[point], velocityVec, g.nextPositions[point]);
+    V3.scale(forceVec, dt * dt, forceVec);
+    if (V3.len(velocityVec) > EPSILON) {
+      V3.add(g.nextPositions[point], velocityVec, g.nextPositions[point]);
     }
-    if (vec3.length(forceVec) > EPSILON) {
-      vec3.add(g.nextPositions[point], forceVec, g.nextPositions[point]);
+    if (V3.len(forceVec) > EPSILON) {
+      V3.add(g.nextPositions[point], forceVec, g.nextPositions[point]);
     }
     // vec3.add(g.velocities[point], g.velocities[point], forceVec);
     // const speed = vec3.length(g.velocities[point]);
@@ -246,8 +242,8 @@ export function stepSprings(g: SpringGrid, dt: number) {
     //   );
   }
   for (let point = 0; point < g.rows * g.columns; point++) {
-    vec3.copy(g.prevPositions[point], g.positions[point]);
-    vec3.copy(g.positions[point], g.nextPositions[point]);
+    V3.copy(g.prevPositions[point], g.positions[point]);
+    V3.copy(g.positions[point], g.nextPositions[point]);
   }
 }
 
@@ -259,7 +255,7 @@ EM.addEagerInit([SpringGridDef], [], [], () => {
     [TimeDef],
     (springs, res) => {
       for (let { springGrid, force } of springs) {
-        vec3.copy(springGrid.externalForce, force);
+        V3.copy(springGrid.externalForce, force);
         stepSprings(springGrid, res.time.dt);
       }
     }

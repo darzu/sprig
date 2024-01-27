@@ -1,7 +1,7 @@
 import { ColorDef } from "../color/color-ecs.js";
 import { createRef, Ref } from "../ecs/em-helpers.js";
 import { EM } from "../ecs/entity-manager.js";
-import { vec3, mat4, V } from "../matrix/sprig-matrix.js";
+import { V3, mat4, V } from "../matrix/sprig-matrix.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import {
   PhysicsParentDef,
@@ -67,14 +67,10 @@ export function registerOrrerySystems() {
         const intoOrrerySpace = mat4.invert(orrery.world.transform);
         stars.forEach((star, i) => {
           const orreryStar = orrery.orrery.orreryStars[i]()!;
-          vec3.copy(orreryStar.color, star.color);
-          vec3.copy(orreryStar.position, star.world.position);
-          vec3.transformMat4(
-            orreryStar.position,
-            intoOrrerySpace,
-            orreryStar.position
-          );
-          vec3.scale(orreryStar.position, ORRERY_SCALE, orreryStar.position);
+          V3.copy(orreryStar.color, star.color);
+          V3.copy(orreryStar.position, star.world.position);
+          V3.tMat4(orreryStar.position, intoOrrerySpace, orreryStar.position);
+          V3.scale(orreryStar.position, ORRERY_SCALE, orreryStar.position);
         });
       }
     }

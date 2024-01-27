@@ -1,5 +1,5 @@
 import { EM } from "../ecs/entity-manager.js";
-import { vec2, vec3, V, mat3, quat } from "../matrix/sprig-matrix.js";
+import { V2, V3, V, mat3, quat } from "../matrix/sprig-matrix.js";
 import { PositionDef, RotationDef, ScaleDef } from "../physics/transform.js";
 import { Mesh } from "../meshes/mesh.js";
 import {
@@ -19,10 +19,10 @@ export const SockDef = EM.defineComponent("sock", () => ({
 }));
 
 function sockMesh(): Mesh {
-  const pos: vec3[] = [V(0, 0, 0), V(0, 0, 2), V(0, 2, 1)];
-  const tri: vec3[] = [V(0, 1, 2), V(2, 1, 0)];
-  const colors: vec3[] = tri.map((_) => V(0, 0, 0));
-  const lines: vec2[] = [];
+  const pos: V3[] = [V(0, 0, 0), V(0, 0, 2), V(0, 2, 1)];
+  const tri: V3[] = [V(0, 1, 2), V(2, 1, 0)];
+  const colors: V3[] = tri.map((_) => V(0, 0, 0));
+  const lines: V2[] = [];
 
   return {
     pos,
@@ -51,7 +51,7 @@ export function createSock(scale: number) {
 }
 
 let lastWinAngle = NaN;
-let lastShipRot = quat.create();
+let lastShipRot = quat.mk();
 EM.addSystem(
   "billowSock",
   Phase.GAME_WORLD,
@@ -70,7 +70,7 @@ EM.addSystem(
     // const invShip = mat3.invert(mat3.fromMat4(e.world.transform));
     const invShip = quat.invert(e.world.rotation);
     // const windLocalDir = vec3.transformMat3(wind.dir, invShip);
-    const windLocalDir = vec3.transformQuat(wind.dir, invShip);
+    const windLocalDir = V3.tQuat(wind.dir, invShip);
     // console.log(
     //   `windLocalDir: ${vec3Dbg(windLocalDir)} vs wind.dir: ${vec3Dbg(wind.dir)}`
     // );

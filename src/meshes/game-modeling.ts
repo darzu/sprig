@@ -13,7 +13,7 @@ import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
 import { shadowPipelines } from "../render/pipelines/std-shadow.js";
 import { RenderableConstructDef, RendererDef } from "../render/renderer-ecs.js";
-import { quat, V, vec3 } from "../matrix/sprig-matrix.js";
+import { quat, V, V3 } from "../matrix/sprig-matrix.js";
 import { createGhost } from "../debug/ghost.js";
 import { createLD53Ship } from "../wood/shipyard.js";
 import { TextDef } from "../gui/ui.js";
@@ -50,8 +50,8 @@ export async function initModelingGame() {
   // camera
   camera.fov = Math.PI * 0.5;
   camera.viewDist = 100;
-  vec3.set(-20, -20, -20, camera.maxWorldAABB.min);
-  vec3.set(+20, +20, +20, camera.maxWorldAABB.max);
+  V3.set(-20, -20, -20, camera.maxWorldAABB.min);
+  V3.set(+20, +20, +20, camera.maxWorldAABB.max);
   // camera.perspectiveMode = "ortho";
 
   // light
@@ -66,8 +66,8 @@ export async function initModelingGame() {
   sun.pointLight.constant = 1.0;
   sun.pointLight.linear = 0.0;
   sun.pointLight.quadratic = 0.0;
-  vec3.copy(sun.pointLight.ambient, [0.2, 0.2, 0.2]);
-  vec3.copy(sun.pointLight.diffuse, [0.5, 0.5, 0.5]);
+  V3.copy(sun.pointLight.ambient, [0.2, 0.2, 0.2]);
+  V3.copy(sun.pointLight.diffuse, [0.5, 0.5, 0.5]);
   EM.set(sun, PositionDef, V(50, 10, 300));
 
   // ground
@@ -80,9 +80,9 @@ export async function initModelingGame() {
   // avatar
   const g = createGhost(BallMesh);
 
-  vec3.copy(g.position, [30.8, -17.91, 19.92]);
+  V3.copy(g.position, [30.8, -17.91, 19.92]);
   quat.copy(g.rotation, [-0.06, -0.07, 0.61, 0.78]);
-  vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
+  V3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
   g.cameraFollow.yawOffset = 0.0;
   g.cameraFollow.pitchOffset = -0.176;
 

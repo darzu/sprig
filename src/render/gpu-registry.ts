@@ -1,5 +1,5 @@
 import { ComponentDef } from "../ecs/entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { assert } from "../utils/util.js";
 import {
   CyCompPipeline,
@@ -166,7 +166,7 @@ export type CyGlobalParam =
 
 export interface CyAttachment {
   ptr: CyTexturePtr;
-  defaultColor?: vec2 | vec3 | vec4;
+  defaultColor?: V2 | V3 | V4;
   clear: "always" | "never" | "once";
   blend?: GPUBlendState;
   // TODO(@darzu): potential properties:

@@ -1,6 +1,6 @@
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
-import { V, quat, vec3 } from "../matrix/sprig-matrix.js";
+import { V, quat, V3 } from "../matrix/sprig-matrix.js";
 import { CubeMesh } from "../meshes/mesh-list.js";
 import { PositionDef, ScaleDef, RotationDef } from "../physics/transform.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
@@ -172,7 +172,7 @@ function testObjectTS2() {
   const se = ship.ship2.mast.mast2.sail;
   const mp: quat = se.rotation;
 
-  const cannonLPos: vec3 = ship.ship2.cannonL.position;
-  const rudderPos: vec3 = ship.ship2.rudder.position;
+  const cannonLPos: V3 = ship.ship2.cannonL.position;
+  const rudderPos: V3 = ship.ship2.rudder.position;
   ship.ship2.rudder.rotation;
 }

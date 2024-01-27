@@ -19,15 +19,7 @@ import {
   transformMesh,
   unshareProvokingVertices,
 } from "./mesh.js";
-import {
-  mat3,
-  mat4,
-  quat,
-  V,
-  vec2,
-  vec3,
-  vec4,
-} from "../matrix/sprig-matrix.js";
+import { mat3, mat4, quat, V, V2, V3, V4 } from "../matrix/sprig-matrix.js";
 import { assert, range } from "../utils/util.js";
 import { uintToVec3unorm, vec3Dbg } from "../utils/utils-3d.js";
 import { drawBall } from "../utils/utils-game.js";
@@ -186,11 +178,11 @@ export const HEX_AABB = createAABB(V(-1, -HEX_YR, 0), V(1, HEX_YR, 1));
 export const HEX_MESH: () => RawMesh = () => {
   const A = HEX_XR;
   const B = HEX_YR;
-  const sideTri: (i: number) => vec3[] = (i) => {
+  const sideTri: (i: number) => V3[] = (i) => {
     const i2 = (i + 1) % 6;
     return [V(i + 6, i, i2), V(i + 6, i2, i2 + 6)];
   };
-  const pos: vec3[] = [
+  const pos: V3[] = [
     V(-1, +0, 1),
     V(-A, +B, 1),
     V(+A, +B, 1),
@@ -204,9 +196,9 @@ export const HEX_MESH: () => RawMesh = () => {
     V(+A, -B, 0),
     V(-A, -B, 0),
   ];
-  const tri: vec3[] = [
+  const tri: V3[] = [
     // top 4
-    vec3.clone(
+    V3.clone(
       // top 4
       [4, 2, 1]
     ),
@@ -214,7 +206,7 @@ export const HEX_MESH: () => RawMesh = () => {
     V(0, 5, 1),
     V(4, 3, 2),
     // bottom 4
-    vec3.clone(
+    V3.clone(
       // bottom 4
       [8, 10, 7]
     ),
@@ -230,7 +222,7 @@ export const HEX_MESH: () => RawMesh = () => {
     ...sideTri(5),
   ];
   // TODO(@darzu): lines for hex
-  const lines: vec2[] = [];
+  const lines: V2[] = [];
   // lines: [
   //   [0, 1],
   //   [0, 2],
@@ -254,12 +246,12 @@ export function makePlaneMesh(
       V(3, 2, 1, 0), // bottom
     ],
     lines: [
-      vec2.clone([0, 1]),
-      vec2.clone([1, 2]),
-      vec2.clone([2, 3]),
-      vec2.clone([3, 0]),
+      V2.clone([0, 1]),
+      V2.clone([1, 2]),
+      V2.clone([2, 3]),
+      V2.clone([3, 0]),
     ],
-    colors: [vec3.create(), vec3.create()],
+    colors: [V3.mk(), V3.mk()],
     // uvs: [
     //   [1, 1],
     //   [0, 1],
@@ -274,11 +266,11 @@ export function makePlaneMesh(
 
 const TRI_FENCE_LN = 100;
 export const TRI_FENCE: () => RawMesh = () => {
-  const pos: vec3[] = [];
-  const tri: vec3[] = [];
+  const pos: V3[] = [];
+  const tri: V3[] = [];
   for (let i = 0; i < TRI_FENCE_LN; i++) {
     tri.push(
-      vec3.clone([
+      V3.clone([
         pos.push(V(-0.5 + i, 0, 0)) - 1,
         pos.push(V(0 + i, 2, 0)) - 1,
         pos.push(V(0.5 + i, 0, 0)) - 1,
@@ -321,14 +313,14 @@ function createGridPlane(width: number, height: number): RawMesh {
     const i = m.pos.length;
     m.pos.push(V(x, 0, 0));
     m.pos.push(V(x, height, 0));
-    m.lines!.push(vec2.clone([i, i + 1]));
+    m.lines!.push(V2.clone([i, i + 1]));
   }
 
   for (let y = 0; y <= height; y++) {
     const i = m.pos.length;
     m.pos.push(V(0, y, 0));
     m.pos.push(V(width, y, 0));
-    m.lines!.push(vec2.clone([i, i + 1]));
+    m.lines!.push(V2.clone([i, i + 1]));
   }
 
   mapMeshPositions(m, (p) => V(p[0] - width / 2, p[1] - height / 2, p[2]));
@@ -358,9 +350,9 @@ export function resetFlatQuadMesh(
     let i = 0;
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
-        vec3.set(x, y, 0, mesh.pos[i]);
+        V3.set(x, y, 0, mesh.pos[i]);
         // NOTE: world_z:tex_x, world_x:tex_y
-        vec2.set(x / width, y / height, mesh.uvs![i]);
+        V2.set(x / width, y / height, mesh.uvs![i]);
         i++;
       }
     }
@@ -371,7 +363,7 @@ export function resetFlatQuadMesh(
     let i = 0;
     for (let y = 0; y < height - 1; y++) {
       for (let x = 0; x < width - 1; x++) {
-        vec4.set(
+        V4.set(
           idx(x + 1, y), //
           idx(x + 1, y + 1),
           idx(x, y + 1),
@@ -381,7 +373,7 @@ export function resetFlatQuadMesh(
         i++;
 
         if (doubleSided) {
-          vec4.set(
+          V4.set(
             idx(x, y), //
             idx(x, y + 1),
             idx(x + 1, y + 1),
@@ -390,14 +382,14 @@ export function resetFlatQuadMesh(
           );
           i++;
         }
-        // quad.push(vec4.clone([q[3], q[2], q[1], q[0]]));
+        // quad.push(V4.clone([q[3], q[2], q[1], q[0]]));
       }
     }
   }
 
   // TODO(@darzu): PERF. this is soo much wasted memory
-  mesh.normals!.forEach((n) => vec3.set(0, 0, 1, n));
-  mesh.tangents!.forEach((n) => vec3.set(1, 0, 0, n));
+  mesh.normals!.forEach((n) => V3.set(0, 0, 1, n));
+  mesh.tangents!.forEach((n) => V3.set(1, 0, 0, n));
 
   function idx(x: number, y: number): number {
     return x + y * width;
@@ -419,12 +411,12 @@ export function createFlatQuadMesh(
 
   const quadNum = height * width * (doubleSided ? 2 : 1);
   const mesh: Mesh = {
-    pos: range(width * height).map((_) => vec3.create()),
-    uvs: range(width * height).map((_) => vec2.create()),
-    quad: range(quadNum).map((_) => vec4.create()),
+    pos: range(width * height).map((_) => V3.mk()),
+    uvs: range(width * height).map((_) => V2.mk()),
+    quad: range(quadNum).map((_) => V4.mk()),
     tri: [],
-    normals: range(width * height).map((_) => vec3.create()),
-    tangents: range(width * height).map((_) => vec3.create()),
+    normals: range(width * height).map((_) => V3.mk()),
+    tangents: range(width * height).map((_) => V3.mk()),
     colors: range(quadNum).map((_) => V(0, 0, 0)),
     dbgName: `fabric-${width}x${height}`,
     surfaceIds: range(quadNum).map((_, i) => i + 1),
@@ -504,8 +496,8 @@ export function mkTimberSplinterEnd(loopCursor?: mat4, splintersCursor?: mat4) {
   // b.addEndQuad(false);
 
   // TODO(@darzu): triangle vs quad coloring doesn't work
-  b.mesh.quad.forEach((_) => b.mesh.colors.push(vec3.clone(BLACK)));
-  b.mesh.tri.forEach((_) => b.mesh.colors.push(vec3.clone(BLACK)));
+  b.mesh.quad.forEach((_) => b.mesh.colors.push(V3.clone(BLACK)));
+  b.mesh.tri.forEach((_) => b.mesh.colors.push(V3.clone(BLACK)));
 
   // console.dir(b.mesh);
 
@@ -663,7 +655,7 @@ const RAW_BARGE_AABBS: AABB[] = [
     max: V(19.55, -9.5, 134.95),
   },
 ];
-export const SHIP_OFFSET: vec3 = V(3.85 - 2.16, -0.33 - 0.13, -8.79 + 4.63);
+export const SHIP_OFFSET: V3 = V(3.85 - 2.16, -0.33 - 0.13, -8.79 + 4.63);
 export const BARGE_AABBS: AABB[] = RAW_BARGE_AABBS.map((aabb) => {
   // TODO(@darzu): this is especially hacky offset/scale fixing
   const yShift = 10;
@@ -673,14 +665,14 @@ export const BARGE_AABBS: AABB[] = RAW_BARGE_AABBS.map((aabb) => {
   aabb.min[2] += zShift;
   aabb.max[2] += zShift;
 
-  vec3.scale(aabb.min, 1 / 5, aabb.min);
-  vec3.scale(aabb.max, 1 / 5, aabb.max);
+  V3.scale(aabb.min, 1 / 5, aabb.min);
+  V3.scale(aabb.max, 1 / 5, aabb.max);
 
-  vec3.sub(aabb.min, SHIP_OFFSET, aabb.min);
-  vec3.sub(aabb.max, SHIP_OFFSET, aabb.max);
+  V3.sub(aabb.min, SHIP_OFFSET, aabb.min);
+  V3.sub(aabb.max, SHIP_OFFSET, aabb.max);
 
-  vec3.scale(aabb.min, 3, aabb.min);
-  vec3.scale(aabb.max, 3, aabb.max);
+  V3.scale(aabb.min, 3, aabb.min);
+  V3.scale(aabb.max, 3, aabb.max);
   return aabb;
 });
 
@@ -705,10 +697,10 @@ scaleMesh(BULLET_MESH, 0.3);
 export function makeDome(numLon: number, numLat: number, r: number): Mesh {
   assert(numLon % 1 === 0 && numLon > 0);
   assert(numLat % 1 === 0 && numLat > 0);
-  const uvs: vec2[] = [];
-  const pos: vec3[] = [];
-  const tri: vec3[] = [];
-  const quad: vec4[] = [];
+  const uvs: V2[] = [];
+  const pos: V3[] = [];
+  const tri: V3[] = [];
+  const quad: V4[] = [];
   // TODO(@darzu): polar coordinates from these long and lats
   for (let lat = 0; lat <= numLat; lat++) {
     const inc = Math.PI * 0.5 * (lat / numLat);
@@ -785,11 +777,11 @@ export function makeDome(numLon: number, numLat: number, r: number): Mesh {
 export function makeSphere(numLon: number, numLat: number, r: number): Mesh {
   assert(numLon % 1 === 0 && numLon > 0);
   assert(numLat % 1 === 0 && numLat > 0);
-  const uvs: vec2[] = [];
-  const pos: vec3[] = [];
-  const tri: vec3[] = [];
-  const quad: vec4[] = [];
-  const normals: vec3[] = [];
+  const uvs: V2[] = [];
+  const pos: V3[] = [];
+  const tri: V3[] = [];
+  const quad: V4[] = [];
+  const normals: V3[] = [];
   // TODO(@darzu): polar coordinates from these long and lats
   // HACK: just do 2 * numLat to make a sphere
   for (let lat = 0; lat <= numLat + 1; lat++) {
@@ -801,7 +793,7 @@ export function makeSphere(numLon: number, numLat: number, r: number): Mesh {
       const y = r * Math.cos(inc);
       if (lat !== numLat) {
         pos.push(V(x, y, z));
-        normals.push(vec3.normalize(pos[pos.length - 1], vec3.create()));
+        normals.push(V3.norm(pos[pos.length - 1], V3.mk()));
         const u = lon / numLon;
         const v = lat / (numLat + 1);
         uvs.push(V(u, v));
@@ -919,12 +911,12 @@ export function createRudderMesh(): Mesh {
   m.quad.forEach(() => m.colors.push(V(0, 0, 0)));
 
   // TODO(@darzu): inline this transformation
-  // m.pos.map((v) => vec3.transformMat4(v, ZUpXFwdYLeft_to_YUpZFwdXLeft, v));
-  m.pos.map((v) => vec3.transformMat4(v, transformYUpModelIntoZUp, v));
+  // m.pos.map((v) => V3.transformMat4(v, ZUpXFwdYLeft_to_YUpZFwdXLeft, v));
+  m.pos.map((v) => V3.tMat4(v, transformYUpModelIntoZUp, v));
 
   // TODO(@darzu): Inline y+ forward
   const rot = quat.fromYawPitchRoll(Math.PI, 0, 0);
-  m.pos.map((v) => vec3.transformQuat(v, rot, v));
+  m.pos.map((v) => V3.tQuat(v, rot, v));
 
   m.surfaceIds = m.quad.map((_, i) => i + 1);
   (m as Mesh).usesProvoking = true;

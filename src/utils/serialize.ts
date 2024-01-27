@@ -1,4 +1,4 @@
-import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 
 // use network byte order
 const LITTLE_ENDIAN = false;
@@ -65,14 +65,14 @@ export class Serializer {
     return at;
   }
 
-  writeVec2(value: vec2, at: number | null = null): number {
+  writeVec2(value: V2, at: number | null = null): number {
     at = this.index(at, 8);
     this.dataView.setFloat32(at, value[0], LITTLE_ENDIAN);
     this.dataView.setFloat32(at + 4, value[1], LITTLE_ENDIAN);
     return at;
   }
 
-  writeVec3(value: vec3, at: number | null = null): number {
+  writeVec3(value: V3, at: number | null = null): number {
     at = this.index(at, 12);
     this.dataView.setFloat32(at, value[0], LITTLE_ENDIAN);
     this.dataView.setFloat32(at + 4, value[1], LITTLE_ENDIAN);
@@ -144,7 +144,7 @@ export class Deserializer {
     return this.dataView.getFloat32(at, LITTLE_ENDIAN);
   }
 
-  readVec2(into: vec2): vec2 {
+  readVec2(into: V2): V2 {
     let at = this.cursor;
     this.cursor += 8;
     if (!this.dummy) {
@@ -154,7 +154,7 @@ export class Deserializer {
     return into;
   }
 
-  readVec3(into: vec3): vec3 {
+  readVec3(into: V3): V3 {
     let at = this.cursor;
     this.cursor += 12;
     if (!this.dummy) {

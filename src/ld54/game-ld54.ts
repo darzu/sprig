@@ -18,7 +18,7 @@ import {
   RotationDef,
   ScaleDef,
 } from "../physics/transform.js";
-import { quat, V, vec3, mat4 } from "../matrix/sprig-matrix.js";
+import { quat, V, V3, mat4 } from "../matrix/sprig-matrix.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { XY } from "../meshes/mesh-loader.js";
 import {
@@ -107,15 +107,15 @@ const {
   },
   updateProps: (
     p,
-    location: vec3.InputT,
-    color: vec3.InputT
+    location: V3.InputT,
+    color: V3.InputT
     // parentId: number
   ) => {
     // console.log(
     //   `updating mpPlayerProps w/ ${vec3Dbg(location)} ${vec3Dbg(color)}`
     // );
-    vec3.copy(p.location, location);
-    vec3.copy(p.color, color);
+    V3.copy(p.location, location);
+    V3.copy(p.color, color);
     // p.parentId = parentId;
     return p;
   },
@@ -164,7 +164,7 @@ const {
     // EM.set(e, PhysicsParentDef, props.parentId);
 
     if (e.authority.pid === res.me.pid) {
-      vec3.copy(e.position, props.location); // TODO(@darzu): should be fine to have this outside loop
+      V3.copy(e.position, props.location); // TODO(@darzu): should be fine to have this outside loop
 
       EM.set(e, LinearVelocityDef);
 
@@ -178,7 +178,7 @@ const {
       EM.set(e, CameraFollowDef, 1);
       // quat.setAxisAngle([0.0, -1.0, 0.0], 1.62, e.rotation);
       // vec3.copy(e.cameraFollow.positionOffset, [0.0, 4.0, 10.0]);
-      vec3.copy(e.cameraFollow.positionOffset, [0.0, -10.0, 0.0]);
+      V3.copy(e.cameraFollow.positionOffset, [0.0, -10.0, 0.0]);
       // e.cameraFollow.yawOffset = 0.0;
       // e.cameraFollow.pitchOffset = -0.593;
 
@@ -368,8 +368,8 @@ export async function initLD54() {
   // camera
   camera.fov = Math.PI * 0.5;
   camera.viewDist = 1000;
-  vec3.set(-20, -20, -20, camera.maxWorldAABB.min);
-  vec3.set(+20, +20, +20, camera.maxWorldAABB.max);
+  V3.set(-20, -20, -20, camera.maxWorldAABB.min);
+  V3.set(+20, +20, +20, camera.maxWorldAABB.max);
   // camera.perspectiveMode = "ortho";
 
   const { ld54_meshes } = await EM.whenResources(ld54Meshes);
@@ -386,8 +386,8 @@ export async function initLD54() {
   sun.pointLight.constant = 1.0;
   sun.pointLight.linear = 0.0;
   sun.pointLight.quadratic = 0.0;
-  vec3.copy(sun.pointLight.ambient, [0.2, 0.2, 0.2]);
-  vec3.copy(sun.pointLight.diffuse, [0.5, 0.5, 0.5]);
+  V3.copy(sun.pointLight.ambient, [0.2, 0.2, 0.2]);
+  V3.copy(sun.pointLight.diffuse, [0.5, 0.5, 0.5]);
   EM.set(sun, PositionDef, V(50, 300, 10));
 
   // // gizmo
@@ -459,7 +459,7 @@ export async function initLD54() {
         // raft.position[2] = x;
         // quat.fromEuler(0, t, 0, raft.rotation);
 
-        vec3.copy(res.party.pos, raft.position);
+        V3.copy(res.party.pos, raft.position);
       }
     );
   }
@@ -489,7 +489,7 @@ export async function initLD54() {
   const player = createPlayerNow({ ld54_meshes, me }, V(0, 10, 0), color);
 
   // start pos?
-  vec3.copy(player.position, [-10, -50, -50]);
+  V3.copy(player.position, [-10, -50, -50]);
   quat.fromForward([0, 1, 0], player.rotation);
   EM.set(player, BreathingPlayerDef);
 

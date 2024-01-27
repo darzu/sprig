@@ -1,4 +1,4 @@
-import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { align, max, sum } from "../utils/math.js";
 import { assert } from "../utils/util.js";
 import { objMap } from "../utils/util.js";
@@ -28,11 +28,11 @@ type WGSLTypeToTSType = {
   f32: number;
   u32: number;
   bool: boolean;
-  "vec2<u32>": vec2;
-  "vec2<f32>": vec2;
-  "vec3<f32>": vec3;
-  "vec4<f32>": vec4;
-  "vec4<u32>": vec4;
+  "vec2<u32>": V2;
+  "vec2<f32>": V2;
+  "vec3<f32>": V3;
+  "vec4<f32>": V4;
+  "vec4<u32>": V4;
   "mat4x4<f32>": mat4;
 };
 
@@ -79,8 +79,8 @@ export const TexTypeToElementArity: Partial<
   depth16unorm: 1,
 };
 export type TexTypeToTSType = {
-  rgba32float: vec4;
-  rg32float: vec2;
+  rgba32float: V4;
+  rg32float: V2;
   r32float: number;
 };
 
@@ -243,20 +243,14 @@ function wgslTypeToDummyVal<T extends WGSLType>(
 
   function _wgslTypeToDummyVal<T extends WGSLType>(wgsl: T): any {
     if (wgsl === "f32") return Math.random() * 100.0;
-    if (wgsl === "vec2<f32>")
-      return vec2.fromValues(Math.random(), Math.random());
+    if (wgsl === "vec2<f32>") return V(Math.random(), Math.random());
     const randVec3 = () => V(Math.random(), Math.random(), Math.random());
     if (wgsl === "vec3<f32>") return randVec3();
     const randVec4 = () =>
-      vec4.fromValues(
-        Math.random(),
-        Math.random(),
-        Math.random(),
-        Math.random()
-      );
+      V(Math.random(), Math.random(), Math.random(), Math.random());
     if (wgsl === "vec4<f32>") return randVec4();
     if (wgsl === "vec4<u32>")
-      return vec4.fromValues(
+      return V(
         Math.floor(Math.random() * Number.MAX_SAFE_INTEGER),
         Math.floor(Math.random() * Number.MAX_SAFE_INTEGER),
         Math.floor(Math.random() * Number.MAX_SAFE_INTEGER),
@@ -266,7 +260,7 @@ function wgslTypeToDummyVal<T extends WGSLType>(
       return Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
     const randAngle = () => Math.random() * 2 * Math.PI;
     const randQuat = () =>
-      quat.fromEuler(randAngle(), randAngle(), randAngle(), quat.create());
+      quat.fromEuler(randAngle(), randAngle(), randAngle(), quat.mk());
     if (wgsl === "mat4x4<f32>")
       return mat4.fromRotationTranslationScaleOrigin(
         randQuat(),
@@ -288,9 +282,9 @@ function cloneValue<T extends WGSLType>(
 
   function _cloneValue<T extends WGSLType>(wgsl: T, val: any): any {
     if (wgsl === "f32") return val;
-    if (wgsl === "vec2<f32>") return vec2.clone(val);
-    if (wgsl === "vec3<f32>") return vec3.clone(val);
-    if (wgsl === "vec4<f32>") return vec4.clone(val);
+    if (wgsl === "vec2<f32>") return V2.clone(val);
+    if (wgsl === "vec3<f32>") return V3.clone(val);
+    if (wgsl === "vec4<f32>") return V4.clone(val);
     if (wgsl === "u32") return val;
     if (wgsl === "mat4x4<f32>") return mat4.clone(val);
 

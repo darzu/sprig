@@ -1,10 +1,10 @@
 import { Component, EM } from "../ecs/entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 
 export const ColorDef = EM.defineComponent(
   "color",
   () => V(0, 0, 0),
-  (p, c?: vec3.InputT) => (c ? vec3.copy(p, c) : p)
+  (p, c?: V3.InputT) => (c ? V3.copy(p, c) : p)
 );
 export type Color = Component<typeof ColorDef>;
 
@@ -20,28 +20,28 @@ EM.registerSerializerPair(
 
 export const TintsDef = EM.defineComponent(
   "tints",
-  () => new Map() as Map<string, vec3>
+  () => new Map() as Map<string, V3>
 );
 
 export type Tints = Component<typeof TintsDef>;
 
-export function applyTints(tints: Tints, tint: vec3) {
-  tints.forEach((c) => vec3.add(tint, c, tint));
+export function applyTints(tints: Tints, tint: V3) {
+  tints.forEach((c) => V3.add(tint, c, tint));
 }
 
-export function setTint(tints: Tints, name: string, tint: vec3) {
+export function setTint(tints: Tints, name: string, tint: V3) {
   let current = tints.get(name);
   if (!current) {
-    current = vec3.create();
+    current = V3.mk();
     tints.set(name, current);
   }
-  vec3.copy(current, tint);
+  V3.copy(current, tint);
 }
 
 export function clearTint(tints: Tints, name: string) {
   let current = tints.get(name);
   if (current) {
-    vec3.set(0, 0, 0, current);
+    V3.set(0, 0, 0, current);
   }
 }
 

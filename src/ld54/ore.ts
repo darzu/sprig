@@ -1,7 +1,7 @@
 import { ENDESGA16 } from "../color/palettes.js";
 import { EM, EntityW } from "../ecs/entity-manager.js";
 import { Phase } from "../ecs/sys-phase.js";
-import { V, mat4, quat, vec3 } from "../matrix/sprig-matrix.js";
+import { V, mat4, quat, V3 } from "../matrix/sprig-matrix.js";
 import { BallMesh } from "../meshes/mesh-list.js";
 import {
   Mesh,
@@ -49,8 +49,8 @@ import {
 } from "./gamestate.js";
 import { SpaceSuitDef } from "./space-suit-controller.js";
 
-let _t1 = vec3.create();
-let _t2 = quat.create();
+let _t1 = V3.mk();
+let _t2 = quat.mk();
 
 function createFuelOreMesh(): Mesh {
   const meshes: RawMesh[] = [];
@@ -59,15 +59,15 @@ function createFuelOreMesh(): Mesh {
     // TODO(@darzu):
     const c = mkCubeMesh();
 
-    const randTrans = vec3.scale(randNormalVec3(_t1), 2, _t1);
-    vec3.add(randTrans, [0, 0, 1 * i], randTrans);
+    const randTrans = V3.scale(randNormalVec3(_t1), 2, _t1);
+    V3.add(randTrans, [0, 0, 1 * i], randTrans);
     const randRot = randQuat(_t2);
     const randScale = randFloat(1, 2);
 
     c.pos.forEach((p) => {
-      vec3.transformQuat(p, randRot, p);
-      vec3.scale(p, randScale, p);
-      vec3.add(p, randTrans, p);
+      V3.tQuat(p, randRot, p);
+      V3.scale(p, randScale, p);
+      V3.add(p, randTrans, p);
     });
 
     // const randColorIdx = randInt(0, 2);
@@ -78,7 +78,7 @@ function createFuelOreMesh(): Mesh {
     ][i % 3];
 
     c.colors.forEach((c) => {
-      vec3.copy(c, randColor);
+      V3.copy(c, randColor);
     });
 
     meshes.push(c);
@@ -99,15 +99,15 @@ function createOxygenOreMesh(mkBallMesh: () => Mesh): Mesh {
     // const c = HEX_MESH();
     const c = mkBallMesh();
 
-    const randTrans = vec3.scale(randNormalVec3(_t1), 2, _t1);
-    vec3.add(randTrans, [0, 0, 1 * i], randTrans);
+    const randTrans = V3.scale(randNormalVec3(_t1), 2, _t1);
+    V3.add(randTrans, [0, 0, 1 * i], randTrans);
     const randRot = randQuat(_t2);
     const randScale = randFloat(1, 2);
 
     c.pos.forEach((p) => {
-      vec3.transformQuat(p, randRot, p);
-      vec3.scale(p, randScale, p);
-      vec3.add(p, randTrans, p);
+      V3.tQuat(p, randRot, p);
+      V3.scale(p, randScale, p);
+      V3.add(p, randTrans, p);
     });
 
     // const randColorIdx = randInt(0, 2);
@@ -116,7 +116,7 @@ function createOxygenOreMesh(mkBallMesh: () => Mesh): Mesh {
     ];
 
     c.colors.forEach((c) => {
-      vec3.copy(c, randColor);
+      V3.copy(c, randColor);
     });
 
     meshes.push(c);
@@ -162,7 +162,7 @@ export async function initOre(spacePath: Path) {
   const B = -16;
   const F = 10;
 
-  const fuelSlots: vec3[] = [
+  const fuelSlots: V3[] = [
     V(0, B, H),
     V(spc, B, H),
     V(-spc, B, H),
@@ -177,7 +177,7 @@ export async function initOre(spacePath: Path) {
     V(-spc, B - spc, H + spc),
   ];
 
-  const oxygenSlots: vec3[] = [
+  const oxygenSlots: V3[] = [
     V(0, F, H),
     V(spc, F, H),
     V(-spc, F, H),
@@ -217,7 +217,7 @@ export async function initOre(spacePath: Path) {
     let prevPos = spacePath[0].pos;
     let lastDist = 0;
     for (let i = 0; i < spacePath.length; i++) {
-      const newTravel = vec3.dist(spacePath[i].pos, prevPos);
+      const newTravel = V3.dist(spacePath[i].pos, prevPos);
       const dist = lastDist + newTravel;
       prevPos = spacePath[i].pos;
       lastDist = dist;
@@ -238,11 +238,7 @@ export async function initOre(spacePath: Path) {
       const seg = spacePath[segIdx];
 
       const randDistFromTrack = randFloat(20, 100);
-      const pos = vec3.scale(
-        randNormalVec3(),
-        randDistFromTrack,
-        vec3.create()
-      );
+      const pos = V3.scale(randNormalVec3(), randDistFromTrack, V3.mk());
       pos[1] = seg.pos[1];
 
       createFuelOre(pos);
@@ -261,9 +257,9 @@ export async function initOre(spacePath: Path) {
     const numStarterFuel = Math.ceil(STARTING_FUEL / FUEL_PER_ORE);
     // console.log(`CREATING ${numStarterFuel} starter fuel`);
     for (let i = 0; i < numStarterFuel; i++) {
-      const ore = createFuelOre(vec3.clone(fuelSlots[i]));
+      const ore = createFuelOre(V3.clone(fuelSlots[i]));
       ore.ore.carried = true;
-      vec3.zero(ore.angularVelocity);
+      V3.zero(ore.angularVelocity);
       EM.set(ore, PhysicsParentDef, store.id);
       EM.whenEntityHas(ore, OreDef, PositionDef, RenderableDef).then((ore) => {
         store.oreStore.fuelOres.push(ore);
@@ -281,11 +277,7 @@ export async function initOre(spacePath: Path) {
       const seg = spacePath[segIdx];
 
       const randDistFromTrack = randFloat(20, 100);
-      const pos = vec3.scale(
-        randNormalVec3(),
-        randDistFromTrack,
-        vec3.create()
-      );
+      const pos = V3.scale(randNormalVec3(), randDistFromTrack, V3.mk());
       pos[1] = seg.pos[1];
 
       createOxygenOre(pos);
@@ -296,9 +288,9 @@ export async function initOre(spacePath: Path) {
     // place starter oxygen onboard
     const numStarterOxygen = Math.ceil(STARTING_OXYGEN / OXYGEN_PER_ORE);
     for (let i = 0; i < numStarterOxygen; i++) {
-      const ore = createOxygenOre(vec3.clone(oxygenSlots[i]));
+      const ore = createOxygenOre(V3.clone(oxygenSlots[i]));
       ore.ore.carried = true;
-      vec3.zero(ore.angularVelocity);
+      V3.zero(ore.angularVelocity);
       EM.set(ore, PhysicsParentDef, store.id);
       EM.whenEntityHas(ore, OreDef, PositionDef, RenderableDef).then((ore) => {
         store.oreStore.oxygenOres.push(ore);
@@ -323,12 +315,12 @@ export async function initOre(spacePath: Path) {
         const idx = store.oreStore.fuelOres.length;
         store.oreStore.fuelOres.push(ore);
         const pos = fuelSlots[idx % fuelSlots.length];
-        vec3.copy(ore.position, pos);
+        V3.copy(ore.position, pos);
       } else {
         const idx = store.oreStore.oxygenOres.length;
         store.oreStore.oxygenOres.push(ore);
         const pos = oxygenSlots[idx % oxygenSlots.length];
-        vec3.copy(ore.position, pos);
+        V3.copy(ore.position, pos);
       }
 
       EM.set(ore, PhysicsParentDef, store.id);
@@ -361,9 +353,9 @@ export async function initOre(spacePath: Path) {
         // transfer to carrier
         carrier.oreCarrier.carrying = ore;
         ore.ore.carried = true;
-        vec3.zero(ore.angularVelocity); // stop spinning
+        V3.zero(ore.angularVelocity); // stop spinning
         EM.set(ore, PhysicsParentDef, carrier.id);
-        vec3.set(0, 0, -5, ore.position);
+        V3.set(0, 0, -5, ore.position);
       }
     }
   );
@@ -419,7 +411,7 @@ export async function initOre(spacePath: Path) {
     }
   );
 
-  function createOxygenOre(pos: vec3) {
+  function createOxygenOre(pos: V3) {
     const ore = EM.new();
 
     EM.set(ore, OreDef);
@@ -443,12 +435,12 @@ export async function initOre(spacePath: Path) {
     // spin
     EM.set(ore, AngularVelocityDef);
     randNormalVec3(ore.angularVelocity);
-    vec3.scale(ore.angularVelocity, 0.0005, ore.angularVelocity);
+    V3.scale(ore.angularVelocity, 0.0005, ore.angularVelocity);
 
     return ore;
   }
 
-  function createFuelOre(pos: vec3) {
+  function createFuelOre(pos: V3) {
     const ore = EM.new();
 
     EM.set(ore, OreDef);
@@ -472,7 +464,7 @@ export async function initOre(spacePath: Path) {
 
     // spin
     randNormalVec3(ore.angularVelocity);
-    vec3.scale(ore.angularVelocity, 0.0005, ore.angularVelocity);
+    V3.scale(ore.angularVelocity, 0.0005, ore.angularVelocity);
 
     return ore;
   }

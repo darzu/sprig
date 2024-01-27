@@ -1,7 +1,7 @@
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { ComponentDef, EM, Entity, EntityW } from "../ecs/entity-manager.js";
-import { V, quat, vec3 } from "../matrix/sprig-matrix.js";
+import { V, quat, V3 } from "../matrix/sprig-matrix.js";
 import { CubeMesh } from "../meshes/mesh-list.js";
 import {
   PositionDef,
@@ -587,8 +587,8 @@ export function testObjectTS() {
   const se = ship.ship2.mast.mast2.sail;
   const mp: quat = se.rotation;
 
-  const cannonLPos: vec3 = ship.ship2.cannonL.position;
-  const rudderPos: vec3 = ship.ship2.rudder.position;
+  const cannonLPos: V3 = ship.ship2.cannonL.position;
+  const rudderPos: V3 = ship.ship2.rudder.position;
   ship.ship2.rudder.rotation;
 
   // TODO(@darzu): oo i like this one best

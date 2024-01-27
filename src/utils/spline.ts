@@ -1,6 +1,6 @@
 import { DBG_ASSERT } from "../flags.js";
 import {
-  vec3,
+  V3,
   quat,
   mat3,
   vec3tmp,
@@ -12,7 +12,7 @@ import { quatFromUpForward_OLD } from "./utils-3d.js";
 
 export interface PathNode {
   // TODO(@darzu): different path formats? e.g. bezier, mat4s, relative pos/rot,
-  pos: vec3;
+  pos: V3;
   rot: quat;
 }
 export type Path = PathNode[];
@@ -20,30 +20,30 @@ export type Path = PathNode[];
 export function clonePath(path: Path): Path {
   return path.map((old) => ({
     rot: quat.clone(old.rot),
-    pos: vec3.clone(old.pos),
+    pos: V3.clone(old.pos),
   }));
 }
 
-export function translatePath(p: Path, tran: vec3.InputT) {
-  p.forEach((n) => vec3.add(n.pos, tran, n.pos));
+export function translatePath(p: Path, tran: V3.InputT) {
+  p.forEach((n) => V3.add(n.pos, tran, n.pos));
   return p;
 }
-const __temp3 = vec3.create();
+const __temp3 = V3.mk();
 export function translatePathAlongNormal(p: Path, t: number) {
   p.forEach((n) => {
-    const norm = vec3.transformQuat([0, 0, 1], n.rot, __temp3);
-    vec3.scale(norm, t, norm);
-    vec3.add(n.pos, norm, n.pos);
+    const norm = V3.tQuat([0, 0, 1], n.rot, __temp3);
+    V3.scale(norm, t, norm);
+    V3.add(n.pos, norm, n.pos);
   });
   return p;
 }
 let __mirrorMat = mat3.create();
-let __tq1 = quat.create();
-export function mirrorPath(p: Path, planeNorm: vec3.InputT) {
+let __tq1 = quat.mk();
+export function mirrorPath(p: Path, planeNorm: V3.InputT) {
   // TODO(@darzu): support non-origin planes
   if (DBG_ASSERT)
     assert(
-      Math.abs(vec3.sqrLen(planeNorm) - 1.0) < 0.01,
+      Math.abs(V3.sqrLen(planeNorm) - 1.0) < 0.01,
       `mirror plane must be normalized`
     );
   let a = planeNorm[0];
@@ -71,27 +71,27 @@ export function mirrorPath(p: Path, planeNorm: vec3.InputT) {
   p.forEach((curr) => {
     quat.mul(mirrorQuat, curr.rot, curr.rot);
     quat.mul(curr.rot, mirrorQuat, curr.rot);
-    vec3.transformMat3(curr.pos, mirrorMat3, curr.pos);
+    V3.tMat3(curr.pos, mirrorMat3, curr.pos);
   });
 
   return p;
 }
 
 export interface BezierCubic {
-  p0: vec3;
-  p1: vec3;
-  p2: vec3;
-  p3: vec3;
+  p0: V3;
+  p1: V3;
+  p2: V3;
+  p3: V3;
 }
 export function reverseBezier(b: BezierCubic): BezierCubic {
   return {
-    p0: vec3.clone(b.p3),
-    p1: vec3.clone(b.p2),
-    p2: vec3.clone(b.p1),
-    p3: vec3.clone(b.p0),
+    p0: V3.clone(b.p3),
+    p1: V3.clone(b.p2),
+    p2: V3.clone(b.p1),
+    p3: V3.clone(b.p0),
   };
 }
-export function bezierPosition(b: BezierCubic, t: number, out: vec3): vec3 {
+export function bezierPosition(b: BezierCubic, t: number, out: V3): V3 {
   // https://en.wikipedia.org/wiki/Bézier_curve
   // B =
   //   (1 - t) ** 3 * p0
@@ -107,7 +107,7 @@ export function bezierPosition(b: BezierCubic, t: number, out: vec3): vec3 {
   out[2] = b.p0[2] * t0 + b.p1[2] * t1 + b.p2[2] * t2 + b.p3[2] * t3;
   return out;
 }
-export function bezierTangent(b: BezierCubic, t: number, out: vec3): vec3 {
+export function bezierTangent(b: BezierCubic, t: number, out: V3): V3 {
   const t0 = 3 * (1 - t) ** 2;
   const t1 = 6 * (1 - t) * t;
   const t2 = 3 * t ** 2;
@@ -128,17 +128,17 @@ export function bezierTangent(b: BezierCubic, t: number, out: vec3): vec3 {
 export function createPathFromBezier(
   b: BezierCubic,
   nodeCount: number,
-  up: vec3.InputT
+  up: V3.InputT
 ): Path {
   assert(nodeCount >= 2);
   const path: Path = [];
   for (let i = 0; i < nodeCount; i++) {
     const t = i / (nodeCount - 1);
-    const pos = bezierPosition(b, t, vec3.create());
-    const tan = bezierTangent(b, t, vec3.tmp());
-    vec3.normalize(tan, tan);
+    const pos = bezierPosition(b, t, V3.mk());
+    const tan = bezierTangent(b, t, V3.tmp());
+    V3.norm(tan, tan);
     // const rot = quatFromUpForward_OLD(quat.create(), up, tan);
-    const rot = quat.fromForwardAndUpish(tan, up, quat.create());
+    const rot = quat.fromForwardAndUpish(tan, up, quat.mk());
     path.push({ pos, rot });
   }
   return path;
@@ -146,11 +146,11 @@ export function createPathFromBezier(
 // TODO(@darzu): refactor this into getEvenlySpacedTimesFromBezierCurve, maybe as a generator?
 // TODO(@darzu): seperate times from pos/rot results
 const _numSamples = 100;
-const __tempSamples = range(_numSamples).map((i) => vec3.create());
+const __tempSamples = range(_numSamples).map((i) => V3.mk());
 export function createEvenPathFromBezierCurve(
   b: BezierCubic,
   spacing: number,
-  up: vec3.InputT,
+  up: V3.InputT,
   lead?: number,
   passRemainder?: { remainder: number } // TODO(@darzu): HACK. using a box for an out param.... shame.
 ): Path {
@@ -163,7 +163,7 @@ export function createEvenPathFromBezierCurve(
   let prevPos = samples[0];
   let lastDist = 0;
   for (let i = 0; i < samples.length; i++) {
-    const newTravel = vec3.dist(samples[i], prevPos);
+    const newTravel = V3.dist(samples[i], prevPos);
     const dist = lastDist + newTravel;
     prevPos = samples[i];
     lastDist = dist;
@@ -210,11 +210,11 @@ export function createEvenPathFromBezierCurve(
         prevJ = j;
 
         // add our node
-        const pos = bezierPosition(b, t, vec3.create());
-        const tan = bezierTangent(b, t, vec3.tmp());
-        vec3.normalize(tan, tan);
+        const pos = bezierPosition(b, t, V3.mk());
+        const tan = bezierTangent(b, t, V3.tmp());
+        V3.norm(tan, tan);
         // const rot = quatFromUpForward_OLD(quat.create(), up, tan);
-        const rot = quat.fromForwardAndUpish(tan, up, quat.create());
+        const rot = quat.fromForwardAndUpish(tan, up, quat.mk());
         path.push({ pos, rot });
         didAdd = true;
         // console.log(`adding: ${t} -> ${vec3Dbg(pos)}`);
@@ -234,10 +234,10 @@ export function createEvenPathFromBezierCurve(
         const extraSteps = extra / span;
         const lastSample = samples[samples.length - 1];
         const lastSample2 = samples[samples.length - 2];
-        const dir = vec3.sub(lastSample, lastSample2, vec3.create());
-        vec3.normalize(dir, dir);
-        vec3.scale(dir, extraSteps, dir);
-        const pos = vec3.add(lastSample, dir, dir);
+        const dir = V3.sub(lastSample, lastSample2, V3.mk());
+        V3.norm(dir, dir);
+        V3.scale(dir, extraSteps, dir);
+        const pos = V3.add(lastSample, dir, dir);
         const rot = quat.clone(path[path.length - 1].rot);
         path.push({ pos, rot });
       }
@@ -265,7 +265,7 @@ export interface BezierSpline {
 }
 
 export function bezierSplineFromPoints(
-  points: vec3[],
+  points: V3[],
   smoothness: number
 ): BezierSpline {
   const curves: BezierCubic[] = [];
@@ -277,20 +277,12 @@ export function bezierSplineFromPoints(
     const next = points[i + 2];
 
     // const fromPrev = vec3.normalize(vec3.sub(start, prev));
-    const fromPrev = vec3.normalize(vec3.sub(end, prev));
-    const startCont = vec3.add(
-      start,
-      vec3.scale(fromPrev, smoothness),
-      vec3.create()
-    );
+    const fromPrev = V3.norm(V3.sub(end, prev));
+    const startCont = V3.add(start, V3.scale(fromPrev, smoothness), V3.mk());
 
     // const toNext = vec3.normalize(vec3.sub(end, next));
-    const toNext = vec3.normalize(vec3.sub(start, next));
-    const endCont = vec3.add(
-      end,
-      vec3.scale(toNext, smoothness),
-      vec3.create()
-    );
+    const toNext = V3.norm(V3.sub(start, next));
+    const endCont = V3.add(end, V3.scale(toNext, smoothness), V3.mk());
     // TODO(@darzu): Ideally the control points would be mirrored for c1 continuity
     curves.push({
       p0: start,
@@ -306,7 +298,7 @@ export function bezierSplineFromPoints(
 export function createEvenPathFromBezierSpline(
   spline: BezierSpline,
   spacing: number,
-  up: vec3.InputT
+  up: V3.InputT
 ): Path {
   const paths: Path[] = [];
   let prevRemainder = 0;
@@ -332,18 +324,13 @@ export function createEvenPathFromBezierSpline(
 }
 
 // assumes each segment is 1 integer of t
-export function getPathPosRot(
-  path: Path,
-  t: number,
-  outPos: vec3,
-  outRot: quat
-) {
+export function getPathPosRot(path: Path, t: number, outPos: V3, outRot: quat) {
   const segIdx = Math.floor(t);
   const segT = t % 1;
   assert(segIdx < path.length - 1);
   const start = path[segIdx];
   const end = path[segIdx + 1];
-  vec3.lerp(start.pos, end.pos, segT, outPos);
+  V3.lerp(start.pos, end.pos, segT, outPos);
   quat.slerp(start.rot, end.rot, segT, outRot);
 }
 
@@ -352,7 +339,7 @@ export function getRandomCylindricalPoints(
   stepDistance: number,
   numSteps: number
 ) {
-  const points: vec3[] = [];
+  const points: V3[] = [];
 
   for (let i = 0; i < numSteps; i++) {
     const radian = Math.random() * Math.PI * 2;

@@ -4,7 +4,7 @@ import { EM, Resources } from "../ecs/entity-manager.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { defineObj, T } from "../graybox/objects.js";
 import { InputsDef } from "../input/inputs.js";
-import { V, mat3, quat, tV, vec3 } from "../matrix/sprig-matrix.js";
+import { V, mat3, quat, tV, V3 } from "../matrix/sprig-matrix.js";
 import { MastMesh } from "../meshes/mesh-list.js";
 import { LinearVelocityDef } from "../motion/velocity.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
@@ -88,8 +88,8 @@ EM.addEagerInit([MastDef], [], [], () => {
     (es) => {
       for (let e of es) {
         const sail = e.mast.sail.sail;
-        const normal = vec3.transformQuat(vec3.FWD, e.rotation);
-        e.mast.force = sail.force * vec3.dot(vec3.FWD, normal);
+        const normal = V3.tQuat(V3.FWD, e.rotation);
+        e.mast.force = sail.force * V3.dot(V3.FWD, normal);
       }
     }
   );
@@ -107,7 +107,7 @@ EM.addEagerInit([MastDef], [], [], () => {
         // TODO(@darzu): Debugging
         if (DBG_MAST && dbgOnce("windOnMast")) {
           drawUpdatingVector(res.wind.dir, {
-            origin: vec3.add(mast.world.position, V(0, 0, 30)),
+            origin: V3.add(mast.world.position, V(0, 0, 30)),
             scale: 20,
             // parentId: mast.id,
             color: ENDESGA16.yellow,
@@ -131,12 +131,10 @@ EM.addEagerInit([MastDef], [], [], () => {
 
         // TODO(@darzu): PERF. Cache this invert?
         const invShip = mat3.invert(mat3.fromMat4(ship.world.transform));
-        const windLocalDir = vec3.transformMat3(res.wind.dir, invShip);
-        const shipLocalDir = vec3.FWD;
+        const windLocalDir = V3.tMat3(res.wind.dir, invShip);
+        const shipLocalDir = V3.FWD;
 
-        const optimalSailLocalDir = vec3.normalize(
-          vec3.add(windLocalDir, shipLocalDir)
-        );
+        const optimalSailLocalDir = V3.norm(V3.add(windLocalDir, shipLocalDir));
 
         // console.log(`ship to wind: ${vec3.dot(windLocalDir, shipLocalDir)}`);
 
@@ -148,8 +146,8 @@ EM.addEagerInit([MastDef], [], [], () => {
 
         // need to maximize: dot(wind, sail) * dot(sail, ship)
 
-        if (vec3.dot(optimalSailLocalDir, shipLocalDir) > 0.01) {
-          quat.fromForwardAndUpish(optimalSailLocalDir, vec3.UP, mast.rotation);
+        if (V3.dot(optimalSailLocalDir, shipLocalDir) > 0.01) {
+          quat.fromForwardAndUpish(optimalSailLocalDir, V3.UP, mast.rotation);
         }
       }
     }
@@ -163,33 +161,33 @@ EM.addEagerInit([MastDef], [], [], () => {
     (es) => {
       for (let e of es) {
         // acceleration
-        const direction = vec3.transformQuat(vec3.FWD, e.world.rotation);
-        const sailAccel = vec3.scale(
+        const direction = V3.tQuat(V3.FWD, e.world.rotation);
+        const sailAccel = V3.scale(
           direction,
           e.hasMast.mast.mast.force * SAIL_ACCEL_RATE
         );
-        const linVelMag = vec3.length(e.linearVelocity);
+        const linVelMag = V3.len(e.linearVelocity);
         const velDrag = linVelMag * linVelMag * VELOCITY_DRAG;
-        const dragForce = vec3.scale(vec3.negate(e.linearVelocity), velDrag);
+        const dragForce = V3.scale(V3.neg(e.linearVelocity), velDrag);
         // console.log(
         //   `sail: ${vec3Dbg(vec3.scale(sailAccel, 100))}\n` +
         //     `drag: ${vec3Dbg(vec3.scale(dragForce, 100))}`
         // );
-        const accel = vec3.add(sailAccel, dragForce);
-        vec3.add(e.linearVelocity, accel, e.linearVelocity);
+        const accel = V3.add(sailAccel, dragForce);
+        V3.add(e.linearVelocity, accel, e.linearVelocity);
         // vec3.scale(e.linearVelocity, VELOCITY_DECAY, e.linearVelocity);
         //console.log(`ship speed is ${vec3.length(e.linearVelocity)}`);
-        if (vec3.length(e.linearVelocity) > MAX_SPEED) {
-          vec3.normalize(e.linearVelocity, e.linearVelocity);
-          vec3.scale(e.linearVelocity, MAX_SPEED, e.linearVelocity);
+        if (V3.len(e.linearVelocity) > MAX_SPEED) {
+          V3.norm(e.linearVelocity, e.linearVelocity);
+          V3.scale(e.linearVelocity, MAX_SPEED, e.linearVelocity);
         }
-        if (vec3.length(e.linearVelocity) < MIN_SPEED) {
+        if (V3.len(e.linearVelocity) < MIN_SPEED) {
           // TODO: make this better
           const sail = e.hasMast.mast.mast.sail.sail;
           if (sail.unfurledAmount > sail.minFurl) {
-            vec3.scale(vec3.FWD, MIN_SPEED, e.linearVelocity);
+            V3.scale(V3.FWD, MIN_SPEED, e.linearVelocity);
           } else {
-            vec3.set(0, 0, 0, e.linearVelocity);
+            V3.set(0, 0, 0, e.linearVelocity);
           }
         }
       }

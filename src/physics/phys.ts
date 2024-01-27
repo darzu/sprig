@@ -1,4 +1,4 @@
-import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { dbgDirOnce, __isSMI } from "../utils/util.js";
 import {
   PhysCollider,
@@ -79,7 +79,7 @@ export interface ReboundData {
 }
 
 export interface ContactData {
-  bToANorm: vec3;
+  bToANorm: V3;
   dist: number;
   aCId: number;
   bCId: number;
@@ -171,11 +171,11 @@ export function computeReboundData(
 
 function computeContactDataInternal(
   a: AABB,
-  aLastPos: vec3,
+  aLastPos: V3,
   b: AABB,
-  bLastPos: vec3
+  bLastPos: V3
 ): {
-  bToANorm: vec3;
+  bToANorm: V3;
   dist: number;
 } {
   let dist = -Infinity;
@@ -214,11 +214,11 @@ function computeContactDataInternal(
 }
 function computeReboundDataInternal(
   a: AABB,
-  aLastPos: vec3,
-  aCurrPos: vec3,
+  aLastPos: V3,
+  aCurrPos: V3,
   b: AABB,
-  bLastPos: vec3,
-  bCurrPos: vec3,
+  bLastPos: V3,
+  bCurrPos: V3,
   itr: number
 ): {
   aRebound: number;

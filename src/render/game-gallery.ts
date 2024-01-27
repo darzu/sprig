@@ -26,7 +26,7 @@ import {
   shadowPipelines,
 } from "./pipelines/std-shadow.js";
 import { RenderableConstructDef, RendererDef } from "./renderer-ecs.js";
-import { mat4, quat, V, vec3 } from "../matrix/sprig-matrix.js";
+import { mat4, quat, V, V3 } from "../matrix/sprig-matrix.js";
 import {
   frustumFromBounds,
   getFrustumWorldCorners,
@@ -93,8 +93,8 @@ export async function initGalleryGame() {
   // camera
   camera.fov = Math.PI * 0.5;
   camera.viewDist = 200;
-  vec3.set(-20, -20, -20, camera.maxWorldAABB.min);
-  vec3.set(+20, +20, +20, camera.maxWorldAABB.max);
+  V3.set(-20, -20, -20, camera.maxWorldAABB.min);
+  V3.set(+20, +20, +20, camera.maxWorldAABB.max);
   // camera.perspectiveMode = "ortho";
 
   const { sg_meshes } = await EM.whenResources(shadingGameMeshesDef);
@@ -111,8 +111,8 @@ export async function initGalleryGame() {
   sun.pointLight.constant = 1.0;
   sun.pointLight.linear = 0.0;
   sun.pointLight.quadratic = 0.0;
-  vec3.copy(sun.pointLight.ambient, [0.2, 0.2, 0.2]);
-  vec3.copy(sun.pointLight.diffuse, [0.5, 0.5, 0.5]);
+  V3.copy(sun.pointLight.ambient, [0.2, 0.2, 0.2]);
+  V3.copy(sun.pointLight.diffuse, [0.5, 0.5, 0.5]);
   EM.set(sun, PositionDef, V(50, 10, 300));
 
   // ground
@@ -146,9 +146,9 @@ export async function initGalleryGame() {
   // g.cameraFollow.yawOffset = 0.0;
   // g.cameraFollow.pitchOffset = -0.49;
 
-  vec3.copy(g.position, [428.73, -33.73, 32.1]);
+  V3.copy(g.position, [428.73, -33.73, 32.1]);
   quat.copy(g.rotation, [0.0, 0.0, 0.1, 0.99]);
-  vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
+  V3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
   g.cameraFollow.yawOffset = 0.0;
   g.cameraFollow.pitchOffset = -0.651;
 
@@ -159,9 +159,9 @@ export async function initGalleryGame() {
     const sky = EM.new();
     EM.set(sky, PositionDef, V(0, 0, -10));
     // const skyMesh = cloneMesh(res.allMeshes.cube.mesh);
-    // skyMesh.pos.forEach((p) => vec3.scale(p, SKY_HALFSIZE, p));
-    // skyMesh.quad.forEach((f) => vec4.reverse(f, f));
-    // skyMesh.tri.forEach((f) => vec3.reverse(f, f));
+    // skyMesh.pos.forEach((p) => V3.scale(p, SKY_HALFSIZE, p));
+    // skyMesh.quad.forEach((f) => V4.reverse(f, f));
+    // skyMesh.tri.forEach((f) => V3.reverse(f, f));
     const skyMesh = domeMesh;
     EM.set(
       sky,
@@ -184,7 +184,7 @@ export async function initGalleryGame() {
   // frustum debugging
   {
     const W = 5;
-    let worldCorners: vec3[] = [];
+    let worldCorners: V3[] = [];
     for (let i = 0; i < 4; i++) {
       const pos = V(jitter(W), jitter(W), jitter(W) + W);
       worldCorners.push(pos);
@@ -205,11 +205,11 @@ export async function initGalleryGame() {
     for (let i = 0; i < frustCorners.length; i++) {
       const p = EM.new();
       EM.set(p, RenderableConstructDef, sg_meshes.ball.proto);
-      EM.set(p, PositionDef, vec3.clone(frustCorners[i]));
+      EM.set(p, PositionDef, V3.clone(frustCorners[i]));
       EM.set(p, ColorDef, V(1, 0, 0));
     }
     const frustGizMesh = createGizmoMesh();
-    mapMeshPositions(frustGizMesh, (p) => vec3.transformMat4(p, invFrust, p));
+    mapMeshPositions(frustGizMesh, (p) => V3.tMat4(p, invFrust, p));
     const frustGiz = EM.new();
     EM.set(frustGiz, RenderableConstructDef, frustGizMesh);
     EM.set(frustGiz, PositionDef, V(0, 0, 0));
@@ -218,7 +218,7 @@ export async function initGalleryGame() {
     // positionAndTargetToOrthoViewProjMatrix(frust2, sun.position, V(0, 0, 0));
     // const invFrust2 = mat4.invert(frust2);
     // const frustGiz2Mesh = createGizmoMesh();
-    // mapMeshPositions(frustGiz2Mesh, (p) => vec3.transformMat4(p, invFrust2, p));
+    // mapMeshPositions(frustGiz2Mesh, (p) => V3.transformMat4(p, invFrust2, p));
     // const frustGiz2 = EM.new();
     // EM.set(frustGiz2, RenderableConstructDef, frustGiz2Mesh);
     // EM.set(frustGiz2, PositionDef, V(0, 0, 0));
@@ -286,7 +286,7 @@ async function createGallery() {
 
     addGizmoChild(obj, halfsize * scale * 1.1);
 
-    const anyColor = m.mesh.colors.some((c) => !vec3.equals(c, [0, 0, 0]));
+    const anyColor = m.mesh.colors.some((c) => !V3.equals(c, [0, 0, 0]));
     if (!anyColor) EM.set(obj, ColorDef, ENDESGA16.lightGray);
 
     lastX = x + halfsize * scale;

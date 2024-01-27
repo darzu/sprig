@@ -1,4 +1,4 @@
-import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { RawMesh, Rigging } from "./mesh.js";
 import { assert, never } from "../utils/util.js";
 import { idPair, IdPair, isString } from "../utils/util.js";
@@ -118,12 +118,12 @@ function readArray(
   gltf: Gltf,
   buffers: ArrayBufferLike[],
   accessor: Accessor<"VEC3">
-): vec3[] | ParseError;
+): V3[] | ParseError;
 function readArray(
   gltf: Gltf,
   buffers: ArrayBufferLike[],
   accessor: Accessor<"VEC4">
-): vec4[] | ParseError;
+): V4[] | ParseError;
 function readArray(
   gltf: Gltf,
   buffers: ArrayBufferLike[],
@@ -133,7 +133,7 @@ function readArray(
   gltf: Gltf,
   buffers: ArrayBufferLike[],
   accessor: Accessor<GltfCollection>
-): number[] | vec3[] | vec4[] | mat4[] | ParseError {
+): number[] | V3[] | V4[] | mat4[] | ParseError {
   const arr = typedBufferView(
     gltf,
     buffers,
@@ -152,14 +152,14 @@ function readArray(
       return res;
     }
     case "VEC3": {
-      const res: vec3[] = [];
+      const res: V3[] = [];
       for (let i = 0; i < accessor.count; i++) {
         res.push(V(arr[i * 3], arr[i * 3 + 1], arr[i * 3 + 2]));
       }
       return res;
     }
     case "VEC4": {
-      const res: vec4[] = [];
+      const res: V4[] = [];
       for (let i = 0; i < accessor.count; i++) {
         res.push(V(arr[i * 4], arr[i * 4 + 1], arr[i * 4 + 2], arr[i * 4 + 3]));
       }
@@ -249,7 +249,7 @@ export function importGltf(buf: ArrayBuffer): RawMesh | ParseError {
   if (!isAccessorFor(posAccessor, "VEC3")) {
     return `Unexpected position type ${posAccessor.type}`;
   }
-  const pos: vec3[] | ParseError = readArray(gltf, buffers, posAccessor);
+  const pos: V3[] | ParseError = readArray(gltf, buffers, posAccessor);
   if (isParseError(pos)) {
     return pos;
   }
@@ -258,7 +258,7 @@ export function importGltf(buf: ArrayBuffer): RawMesh | ParseError {
   if (!isAccessorFor(normalAccessor, "VEC3")) {
     return `Unexpected normal type ${normalAccessor.type}`;
   }
-  const normals: vec3[] | ParseError = readArray(gltf, buffers, normalAccessor);
+  const normals: V3[] | ParseError = readArray(gltf, buffers, normalAccessor);
   if (isParseError(normals)) {
     return normals;
   }
@@ -272,12 +272,12 @@ export function importGltf(buf: ArrayBuffer): RawMesh | ParseError {
   if (isParseError(ind)) {
     return ind;
   }
-  const tri: vec3[] = [];
+  const tri: V3[] = [];
   for (let i = 0; i < ind.length / 3; i++) {
     tri.push(V(ind[i * 3], ind[i * 3 + 1], ind[i * 3 + 2]));
   }
 
-  let colors: vec3[];
+  let colors: V3[];
   if (mesh.primitives[0].attributes.COLOR_0 !== undefined) {
     //console.log("loading colors");
     const colorAccessor = gltf.accessors[mesh.primitives[0].attributes.COLOR_0];
@@ -315,7 +315,7 @@ export function importGltf(buf: ArrayBuffer): RawMesh | ParseError {
     if (!isAccessorFor(jointIdsAccessor, "VEC4")) {
       return `Unexpected index type ${jointIdsAccessor.type}`;
     }
-    const jointIds: vec4[] | ParseError = readArray(
+    const jointIds: V4[] | ParseError = readArray(
       gltf,
       buffers,
       jointIdsAccessor
@@ -329,7 +329,7 @@ export function importGltf(buf: ArrayBuffer): RawMesh | ParseError {
     if (!isAccessorFor(jointWeightsAccessor, "VEC4")) {
       return `Unexpected index type ${jointWeightsAccessor.type}`;
     }
-    const jointWeights: vec4[] | ParseError = readArray(
+    const jointWeights: V4[] | ParseError = readArray(
       gltf,
       buffers,
       jointWeightsAccessor
@@ -351,9 +351,9 @@ export function importGltf(buf: ArrayBuffer): RawMesh | ParseError {
     if (isParseError(inverseBindMatrices)) {
       return inverseBindMatrices;
     }
-    const jointPos: vec3[] = [];
+    const jointPos: V3[] = [];
     const jointRot: quat[] = [];
-    const jointScale: vec3[] = [];
+    const jointScale: V3[] = [];
     const parents: number[] = [];
 
     // by default, parent every joint to itself
@@ -370,14 +370,12 @@ export function importGltf(buf: ArrayBuffer): RawMesh | ParseError {
     for (let jointNodeIdx of gltf.skins[0].joints) {
       const jointNode = gltf.nodes[jointNodeIdx];
       jointPos.push(
-        vec3.clone(jointNode.translation ? jointNode.translation : V(0, 0, 0))
+        V3.clone(jointNode.translation ? jointNode.translation : V(0, 0, 0))
       );
       jointRot.push(
-        jointNode.rotation ? quat.clone(jointNode.rotation) : quat.create()
+        jointNode.rotation ? quat.clone(jointNode.rotation) : quat.mk()
       );
-      jointScale.push(
-        jointNode.scale ? vec3.clone(jointNode.scale) : V(1, 1, 1)
-      );
+      jointScale.push(jointNode.scale ? V3.clone(jointNode.scale) : V(1, 1, 1));
 
       if (jointNode.children) {
         for (let childNodeIdx of jointNode.children) {
@@ -432,7 +430,7 @@ export function importGltf(buf: ArrayBuffer): RawMesh | ParseError {
       for (let i = 0; i < nPoses; i++) {
         poseRot.push([]);
         for (let j = 0; j < parents.length; j++) {
-          poseRot[i].push(quat.create());
+          poseRot[i].push(quat.mk());
         }
       }
 
@@ -447,7 +445,7 @@ export function importGltf(buf: ArrayBuffer): RawMesh | ParseError {
         if (!isAccessorFor(outputAccessor, "VEC4")) {
           return `Got bad accessor type for animation sampler`;
         }
-        const rotations: vec4[] | ParseError = readArray(
+        const rotations: V4[] | ParseError = readArray(
           gltf,
           buffers,
           outputAccessor
@@ -481,7 +479,7 @@ export function importGltf(buf: ArrayBuffer): RawMesh | ParseError {
     console.log(rigging);
   }
 
-  const quad: vec4[] = [];
+  const quad: V4[] = [];
   const dbgName = mesh.name;
   // TODO: include normals
   return { pos, tri, normals, quad, colors, dbgName, rigging };

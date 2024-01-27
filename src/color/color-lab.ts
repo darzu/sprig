@@ -1,7 +1,7 @@
 // https://drafts.csswg.org/css-color/#lab-colors
 // https://drafts.csswg.org/css-color/#color-conversion-code
 
-import { vec3, V } from "../matrix/sprig-matrix.js";
+import { V3, V } from "../matrix/sprig-matrix.js";
 import {
   CIELAB,
   FLRGB,
@@ -14,7 +14,6 @@ import {
 } from "./color.js";
 
 // TODO(@darzu): deprecate in favor of gl-matrix style?
-type V3 = vec3;
 // type V3 = [number, number, number];
 type Mat = [
   [number, number, number],
@@ -22,7 +21,7 @@ type Mat = [
   [number, number, number]
 ];
 function multiplyMatrices(a: Mat, b: V3): V3 {
-  return vec3.clone([
+  return V3.clone([
     a[0][0] * b[0] + a[0][1] * b[1] + a[0][2] * b[2],
     a[1][0] * b[0] + a[1][1] * b[1] + a[1][2] * b[2],
     a[2][0] * b[0] + a[2][1] * b[1] + a[2][2] * b[2],

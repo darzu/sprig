@@ -1,6 +1,6 @@
 import { Collider, ColliderDef } from "../physics/collider.js";
 import { EM } from "../ecs/entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { clamp } from "../utils/math.js";
 import {
   AngularVelocityDef,
@@ -57,11 +57,11 @@ export function registerPhysicsClampVelocityByContact() {
         // maybe clamp "b"
         if (LinearVelocityDef.isOn(b) && bParentId === data.parentOId) {
           let bToAInBParent = data.bToANorm;
-          const bInDirOfA = vec3.dot(b.linearVelocity, bToAInBParent);
+          const bInDirOfA = V3.dot(b.linearVelocity, bToAInBParent);
           if (bInDirOfA > 0) {
-            vec3.sub(
+            V3.sub(
               b.linearVelocity,
-              vec3.scale(bToAInBParent, bInDirOfA),
+              V3.scale(bToAInBParent, bInDirOfA),
               b.linearVelocity
             );
           }
@@ -70,11 +70,11 @@ export function registerPhysicsClampVelocityByContact() {
         // maybe clamp "a"
         if (LinearVelocityDef.isOn(a) && aParentId === data.parentOId) {
           let bToAInAParent = data.bToANorm;
-          const aInDirOfB = -vec3.dot(a.linearVelocity, bToAInAParent);
+          const aInDirOfB = -V3.dot(a.linearVelocity, bToAInAParent);
           if (aInDirOfB > 0) {
-            vec3.sub(
+            V3.sub(
               a.linearVelocity,
-              vec3.scale(bToAInAParent, -aInDirOfB),
+              V3.scale(bToAInAParent, -aInDirOfB),
               a.linearVelocity
             );
           }

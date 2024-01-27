@@ -7,7 +7,7 @@ import { DeletedDef } from "../ecs/delete.js";
 import { EM } from "../ecs/entity-manager.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { InputsDef } from "../input/inputs.js";
-import { V, mat4, quat, vec3 } from "../matrix/sprig-matrix.js";
+import { V, mat4, quat, V3 } from "../matrix/sprig-matrix.js";
 import {
   CubeMesh,
   HexMesh,
@@ -188,8 +188,8 @@ export async function initGrayboxSunless() {
   // camera
   camera.fov = Math.PI * 0.5;
   camera.viewDist = 1000;
-  vec3.set(-20, -20, -20, camera.maxWorldAABB.min);
-  vec3.set(+20, +20, +20, camera.maxWorldAABB.max);
+  V3.set(-20, -20, -20, camera.maxWorldAABB.min);
+  V3.set(+20, +20, +20, camera.maxWorldAABB.max);
   // camera.perspectiveMode = "ortho";
 
   const { mesh_cube, mesh_hex } = await EM.whenResources(
@@ -208,9 +208,9 @@ export async function initGrayboxSunless() {
     // g.cameraFollow.pitchOffset = -0.957;
 
     // zoom on enemy
-    vec3.copy(g.position, [17.46, 10.74, 4.72]);
+    V3.copy(g.position, [17.46, 10.74, 4.72]);
     quat.copy(g.rotation, [0.0, 0.0, 0.09, 1.0]);
-    vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
+    V3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
     g.cameraFollow.yawOffset = 0.0;
     g.cameraFollow.pitchOffset = -0.692;
   }
@@ -236,8 +236,8 @@ export async function initGrayboxSunless() {
   sun.pointLight.constant = 1.0;
   sun.pointLight.linear = 0.0;
   sun.pointLight.quadratic = 0.0;
-  vec3.copy(sun.pointLight.ambient, [0.2, 0.2, 0.2]);
-  vec3.copy(sun.pointLight.diffuse, [0.5, 0.5, 0.5]);
+  V3.copy(sun.pointLight.ambient, [0.2, 0.2, 0.2]);
+  V3.copy(sun.pointLight.diffuse, [0.5, 0.5, 0.5]);
   EM.set(sun, PositionDef, V(50, 10, 300));
 
   // gizmo
@@ -304,17 +304,13 @@ async function createWorld() {
     }
   }
 
-  function createWall(pos: vec3, vertical: boolean, length: number) {
+  function createWall(pos: V3, vertical: boolean, length: number) {
     const wall = EM.new();
     EM.set(wall, PositionDef, pos);
     EM.set(wall, RenderableConstructDef, mesh_cube.proto);
     if (vertical) EM.set(wall, ScaleDef, V(wallWidth, length, wallHeight));
     else EM.set(wall, ScaleDef, V(length, wallWidth, wallHeight));
-    vec3.add(
-      wall.scale,
-      wall.scale,
-      vec3.scale(randNormalVec3(), wallWidth * 0.1)
-    ); // jitter it
+    V3.add(wall.scale, wall.scale, V3.scale(randNormalVec3(), wallWidth * 0.1)); // jitter it
     EM.set(wall, ColorDef, ENDESGA16.darkGray);
     EM.set(wall, ColliderDef, {
       shape: "AABB",
@@ -326,7 +322,7 @@ async function createWorld() {
     EM.set(wall, WallDef);
   }
 
-  function createDbgPath(pos: vec3, horizontal: boolean) {
+  function createDbgPath(pos: V3, horizontal: boolean) {
     const path = EM.new();
     EM.set(path, PositionDef, pos);
     EM.set(path, RenderableConstructDef, mesh_cube.proto);
@@ -363,7 +359,7 @@ async function createWorld() {
     V(gridScale * gridWidth, gridScale * gridWidth * 0.5, 0),
   ].forEach((pos, i) => {
     const isVertical = i === 0 || i === 3;
-    vec3.add(pos, [-gridHalfScale, -gridHalfScale, 0], pos);
+    V3.add(pos, [-gridHalfScale, -gridHalfScale, 0], pos);
     createWall(pos, isVertical, gridScale * gridWidth * 0.5);
   });
 
@@ -401,7 +397,7 @@ async function createWorld() {
       V(vert ? dockWidth : dockLen, vert ? dockLen : dockWidth, dockHeight)
     );
     EM.set(node, PositionDef, V(xi * gridScale, yi * gridScale, 0));
-    vec3.add(node.position, dirToDockOffset[dir], node.position);
+    V3.add(node.position, dirToDockOffset[dir], node.position);
     EM.set(node, ColorDef, ENDESGA16.orange);
   }
 }
@@ -414,7 +410,7 @@ const SunlessShipDef = EM.defineComponent("sunlessShip", () => ({
   speed: 0.00003,
   yawSpeed: 0.01,
   doDampen: true,
-  localAccel: vec3.create(),
+  localAccel: V3.mk(),
   localYaw: 0,
 }));
 
@@ -428,10 +424,7 @@ EM.addEagerInit([SunlessShipDef], [], [], (_) => {
       for (let e of ships) {
         // acceleration
         const speed = e.sunlessShip.speed * res.time.dt;
-        const rotatedAccel = vec3.transformQuat(
-          e.sunlessShip.localAccel,
-          e.rotation
-        );
+        const rotatedAccel = V3.tQuat(e.sunlessShip.localAccel, e.rotation);
 
         // turn
         quat.yaw(
@@ -444,22 +437,22 @@ EM.addEagerInit([SunlessShipDef], [], [], (_) => {
         e.sunlessShip.localYaw = 0;
 
         // dampen
-        if (e.sunlessShip.doDampen && vec3.sqrLen(rotatedAccel) === 0) {
-          const dampDir = vec3.normalize(vec3.negate(e.linearVelocity));
-          vec3.scale(dampDir, speed, rotatedAccel);
+        if (e.sunlessShip.doDampen && V3.sqrLen(rotatedAccel) === 0) {
+          const dampDir = V3.norm(V3.neg(e.linearVelocity));
+          V3.scale(dampDir, speed, rotatedAccel);
 
           // halt if at small delta
-          if (vec3.sqrLen(e.linearVelocity) < vec3.sqrLen(rotatedAccel)) {
-            vec3.zero(rotatedAccel);
-            vec3.zero(e.linearVelocity);
+          if (V3.sqrLen(e.linearVelocity) < V3.sqrLen(rotatedAccel)) {
+            V3.zero(rotatedAccel);
+            V3.zero(e.linearVelocity);
           }
         }
 
         // move ship
-        vec3.add(e.linearVelocity, rotatedAccel, e.linearVelocity);
+        V3.add(e.linearVelocity, rotatedAccel, e.linearVelocity);
 
         // reset acceleration
-        vec3.zero(e.sunlessShip.localAccel);
+        V3.zero(e.sunlessShip.localAccel);
       }
     }
   );
@@ -507,7 +500,7 @@ EM.addEagerInit([SunlessPlayerDef], [CubeMesh.def], [], ({ mesh_cube }) => {
 
       if (res.inputs.keyClicks[" "]) {
         const bullet = EM.new();
-        EM.set(bullet, PositionDef, vec3.clone(ship.position));
+        EM.set(bullet, PositionDef, V3.clone(ship.position));
         EM.set(bullet, RenderableConstructDef, mesh_cube.proto);
         EM.set(bullet, ColorDef, ENDESGA16.darkGreen);
         EM.set(bullet, ScaleDef, V(0.5, 1, 0.5));
@@ -521,23 +514,19 @@ EM.addEagerInit([SunlessPlayerDef], [CubeMesh.def], [], ({ mesh_cube }) => {
         });
 
         // orientation & velocity
-        EM.set(bullet, LinearVelocityDef, vec3.clone(bulletVel));
+        EM.set(bullet, LinearVelocityDef, V3.clone(bulletVel));
         EM.set(bullet, RotationDef, quat.clone(ship.rotation));
-        vec3.transformQuat(
-          bullet.linearVelocity,
-          bullet.rotation,
-          bullet.linearVelocity
-        );
-        vec3.add(
+        V3.tQuat(bullet.linearVelocity, bullet.rotation, bullet.linearVelocity);
+        V3.add(
           ship.linearVelocity,
           bullet.linearVelocity,
           bullet.linearVelocity
         );
 
         // kickback
-        const kickback = vec3.negate(bullet.linearVelocity);
-        vec3.scale(kickback, 0.1, kickback);
-        vec3.add(ship.linearVelocity, kickback, ship.linearVelocity);
+        const kickback = V3.neg(bullet.linearVelocity);
+        V3.scale(kickback, 0.1, kickback);
+        V3.add(ship.linearVelocity, kickback, ship.linearVelocity);
       }
     }
   );
@@ -555,8 +544,8 @@ EM.addEagerInit([SunlessPlayerDef], [CubeMesh.def], [], ({ mesh_cube }) => {
       // enemy.health.value -= 10;
 
       // knockback ship
-      const knockback = vec3.scale(bullet.linearVelocity, 0.1);
-      vec3.add(enemy.linearVelocity, knockback, enemy.linearVelocity);
+      const knockback = V3.scale(bullet.linearVelocity, 0.1);
+      V3.add(enemy.linearVelocity, knockback, enemy.linearVelocity);
 
       // delete the bullet
       EM.set(bullet, DeletedDef);
@@ -582,7 +571,7 @@ async function createPlayerShip() {
   EM.set(ship, RenderableConstructDef, mesh);
   EM.set(ship, ColorDef, ENDESGA16.lightGreen);
   EM.set(ship, CameraFollowDef);
-  vec3.copy(ship.cameraFollow.positionOffset, [0.0, -50.0, 0.0]);
+  V3.copy(ship.cameraFollow.positionOffset, [0.0, -50.0, 0.0]);
   ship.cameraFollow.pitchOffset = -Math.PI * 0.5;
   EM.set(ship, ColliderDef, {
     shape: "AABB",

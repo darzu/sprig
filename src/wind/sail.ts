@@ -1,5 +1,5 @@
 import { Component, EM, EntityW, Resources } from "../ecs/entity-manager.js";
-import { vec2, vec3, quat, V, tV } from "../matrix/sprig-matrix.js";
+import { V2, V3, quat, V, tV } from "../matrix/sprig-matrix.js";
 import {
   Frame,
   PhysicsParentDef,
@@ -62,11 +62,11 @@ function sailMesh(sail: Component<typeof SailDef>): Mesh {
   let x = 0;
   let z = 0;
   let i = 0;
-  const pos: vec3[] = [];
-  const tri: vec3[] = [];
-  const colors: vec3[] = [];
-  const lines: vec2[] = [];
-  const uvs: vec2[] = [];
+  const pos: V3[] = [];
+  const tri: V3[] = [];
+  const colors: V3[] = [];
+  const lines: V2[] = [];
+  const uvs: V2[] = [];
   while (z <= sail.height) {
     if (x > sail.width) {
       x = 0;
@@ -96,10 +96,10 @@ function sailMesh(sail: Component<typeof SailDef>): Mesh {
     }
     // add lines
     if (x > 0) {
-      lines.push(vec2.clone([i - 1, i]));
+      lines.push(V2.clone([i - 1, i]));
     }
     if (z > 0) {
-      lines.push(vec2.clone([i - sail.width - 1, i]));
+      lines.push(V2.clone([i - sail.width - 1, i]));
     }
     x = x + 1;
     i = i + 1;
@@ -158,8 +158,8 @@ EM.addSystem(
   [WindDef],
   (es, res) => {
     for (let e of es) {
-      const normal = vec3.transformQuat(vec3.FWD, e.world.rotation);
-      e.sail.billowAmount = vec3.dot(normal, res.wind.dir);
+      const normal = V3.tQuat(V3.FWD, e.world.rotation);
+      e.sail.billowAmount = V3.dot(normal, res.wind.dir);
       if (e.sail.billowAmount < 0) e.sail.billowAmount = 0;
       e.sail.unfurledAmount = clamp(e.sail.unfurledAmount, e.sail.minFurl, 1.0);
       if (e.sail.unfurledAmount > e.sail.minFurl) {
@@ -220,8 +220,8 @@ EM.addSystem(
 // UNUSED:
 function useWindToTurn(
   us: Frame,
-  targetPos: vec3,
-  windDir: vec3,
+  targetPos: V3,
+  windDir: V3,
   outSailRot: quat
 ) {
   // TODO(@darzu): expensive
@@ -241,15 +241,15 @@ function useWindToTurn(
   if (Math.abs(angleToParty) > 0.01) {
     const angleDelta = clamp(angleToParty, -TURN_SPEED, TURN_SPEED);
     // TODO(@darzu): use yaw/pitch/roll
-    quat.rotateY(us.rotation, angleDelta, us.rotation);
+    quat.rotY(us.rotation, angleDelta, us.rotation);
   }
 
   // set the sail
-  const sailFwd = vec3.transformQuat(behind, us.rotation);
+  const sailFwd = V3.tQuat(behind, us.rotation);
   const angleToWind = angleBetweenXZ(sailFwd, windDir);
   const sailAngle = angleToWind - angleToParty;
   // TODO(@darzu): use yaw/pitch/roll
-  quat.rotateY(quat.IDENTITY, sailAngle, outSailRot);
+  quat.rotY(quat.IDENTITY, sailAngle, outSailRot);
 
   // console.log(`turning by: ${angleBetween}`);
 }

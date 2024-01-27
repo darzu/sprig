@@ -1,6 +1,6 @@
 import { defineNetEntityHelper } from "../ecs/em-helpers.js";
 import { EM } from "../ecs/entity-manager.js";
-import { vec3, V } from "../matrix/sprig-matrix.js";
+import { V3, V } from "../matrix/sprig-matrix.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { PositionDef, ScaleDef } from "../physics/transform.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
@@ -27,15 +27,15 @@ export const { DarkStarPropsDef, DarkStarLocalDef, createDarkStarNow } =
     }),
     updateProps: (
       p,
-      pos?: vec3.InputT,
-      color?: vec3.InputT,
-      orbiting?: vec3.InputT,
-      orbitalAxis?: vec3.InputT
+      pos?: V3.InputT,
+      color?: V3.InputT,
+      orbiting?: V3.InputT,
+      orbitalAxis?: V3.InputT
     ) => {
-      if (pos) vec3.copy(p.pos, pos);
-      if (color) vec3.copy(p.color, color);
-      if (orbiting) vec3.copy(p.orbiting, orbiting);
-      if (orbitalAxis) vec3.copy(p.orbitalAxis, orbitalAxis);
+      if (pos) V3.copy(p.pos, pos);
+      if (color) V3.copy(p.color, color);
+      if (orbiting) V3.copy(p.orbiting, orbiting);
+      if (orbitalAxis) V3.copy(p.orbitalAxis, orbitalAxis);
       return p;
     },
     serializeProps: (o, buf) => {
@@ -50,15 +50,15 @@ export const { DarkStarPropsDef, DarkStarLocalDef, createDarkStarNow } =
     dynamicComponents: [PositionDef],
     buildResources: [AllMeshesDef],
     build: (star, res) => {
-      vec3.copy(star.position, star.darkStarProps.pos);
+      V3.copy(star.position, star.darkStarProps.pos);
       EM.set(star, RenderableConstructDef, res.allMeshes.ball.proto);
       EM.set(star, ScaleDef, V(100, 100, 100));
       EM.set(star, ColorDef, star.darkStarProps.color);
       EM.set(star, PointLightDef);
       star.pointLight.constant = 1.0;
-      vec3.copy(star.pointLight.ambient, star.color);
-      vec3.scale(star.pointLight.ambient, 0.2, star.pointLight.ambient);
-      vec3.copy(star.pointLight.diffuse, star.color);
+      V3.copy(star.pointLight.ambient, star.color);
+      V3.scale(star.pointLight.ambient, 0.2, star.pointLight.ambient);
+      V3.copy(star.pointLight.diffuse, star.color);
       EM.whenEntityHas(star, RenderDataStdDef).then((star1) => {
         star1.renderDataStd.flags |= FLAG_UNLIT;
       });
@@ -79,8 +79,8 @@ export function registerDarkstarSystems() {
       }
       for (let star of es) {
         if (star.authority.pid !== res.me.pid) continue;
-        const toCenter = vec3.sub(star.darkStarProps.orbiting, star.position);
-        const distance = vec3.length(toCenter);
+        const toCenter = V3.sub(star.darkStarProps.orbiting, star.position);
+        const distance = V3.len(toCenter);
         // TODO: revisit random orbits
         /*
         let arbitraryVector = V(1, 0, 0);
@@ -103,24 +103,24 @@ export function registerDarkstarSystems() {
         const movementDirection = vec3.add(basis1, basis1, basis2);
         vec3.normalize(movementDirection, movementDirection);
         */
-        const movementDirection = vec3.cross(
+        const movementDirection = V3.cross(
           toCenter,
           star.darkStarProps.orbitalAxis
         );
-        vec3.normalize(movementDirection, movementDirection);
-        vec3.add(
+        V3.norm(movementDirection, movementDirection);
+        V3.add(
           star.position,
-          vec3.scale(movementDirection, DARKSTAR_SPEED, movementDirection),
+          V3.scale(movementDirection, DARKSTAR_SPEED, movementDirection),
           star.position
         );
 
-        vec3.sub(star.darkStarProps.orbiting, star.position, toCenter);
-        const newDistance = vec3.length(toCenter);
-        vec3.normalize(toCenter, toCenter);
-        vec3.scale(toCenter, newDistance - distance, toCenter);
+        V3.sub(star.darkStarProps.orbiting, star.position, toCenter);
+        const newDistance = V3.len(toCenter);
+        V3.norm(toCenter, toCenter);
+        V3.scale(toCenter, newDistance - distance, toCenter);
         //console.log(`distance ${distance}, newDistance ${newDistance}`);
         //console.log(`distance ${distance}, newDistance ${newDistance}`);
-        vec3.add(star.position, toCenter, star.position);
+        V3.add(star.position, toCenter, star.position);
       }
     }
   );

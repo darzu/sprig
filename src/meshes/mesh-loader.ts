@@ -1,5 +1,5 @@
 import { ComponentDef, EM, ResourceDef } from "../ecs/entity-manager.js";
-import { vec3, mat4, V, findAnyTmpVec } from "../matrix/sprig-matrix.js";
+import { V3, mat4, V, findAnyTmpVec } from "../matrix/sprig-matrix.js";
 import { importObj, isParseError } from "./import-obj.js";
 import {
   getAABBFromMesh,
@@ -99,18 +99,18 @@ export type MeshSetDef<
 // TODO(@darzu): these sort of hacky offsets are a pain to deal with. It'd be
 //    nice to have some asset import helper tooling
 const blackoutColor: (m: RawMesh) => RawMesh = (m: RawMesh) => {
-  m.colors.map((c) => vec3.zero(c));
+  m.colors.map((c) => V3.zero(c));
   return m;
 };
 
 export type GameMesh = {
   mesh: Mesh;
   aabb: AABB;
-  center: vec3;
-  halfsize: vec3;
+  center: V3;
+  halfsize: V3;
   // TODO(@darzu): remove dependency on MeshHandleStd
   proto: MeshHandle;
-  uniqueVerts: vec3[];
+  uniqueVerts: V3[];
   support: SupportFn;
   mkAabbCollider: (solid: boolean) => AABBCollider;
 };
@@ -283,9 +283,9 @@ function processMesh(desc: MeshDesc, m: RawMesh): RawMesh {
   // TODO(@darzu): UP_Z: try doing in-place update after everything else works.
   // TODO(@darzu): PERF! This should probably in-place update the mesh.
   if (desc.transform || desc.transformBasis)
-    m.pos = m.pos.map((v) => vec3.clone(v));
+    m.pos = m.pos.map((v) => V3.clone(v));
   if (desc.transform) {
-    m.pos.forEach((v) => vec3.transformMat4(v, desc.transform!, v));
+    m.pos.forEach((v) => V3.tMat4(v, desc.transform!, v));
     // TODO(@darzu): transformRigging()?
   }
   if (desc.modify) {
@@ -293,7 +293,7 @@ function processMesh(desc: MeshDesc, m: RawMesh): RawMesh {
     // TODO(@darzu): transformRigging()?
   }
   if (desc.transformBasis) {
-    m.pos.forEach((v) => vec3.transformMat4(v, desc.transformBasis!, v));
+    m.pos.forEach((v) => V3.tMat4(v, desc.transformBasis!, v));
     if (m.rigging) transformRigging(m.rigging, desc.transformBasis);
   }
   if (!m.dbgName) m.dbgName = desc.name;
@@ -376,10 +376,10 @@ export function gameMeshFromMesh(
   const mesh = normalizeMesh(rawMesh);
   const aabb = getAABBFromMesh(mesh);
   const center = getCenterFromAABB(aabb);
-  const halfsize = getHalfsizeFromAABB(aabb, vec3.create());
+  const halfsize = getHalfsizeFromAABB(aabb, V3.mk());
   const proto = renderer.stdPool.addMesh(mesh, reserve);
   const uniqueVerts = getUniqueVerts(mesh);
-  const support = (d: vec3) => farthestPointInDir(uniqueVerts, d);
+  const support = (d: V3) => farthestPointInDir(uniqueVerts, d);
   const aabbCollider = (solid: boolean) =>
     ({
       shape: "AABB",
@@ -398,8 +398,8 @@ export function gameMeshFromMesh(
   };
 }
 
-function getUniqueVerts(mesh: RawMesh): vec3[] {
-  const res: vec3[] = [];
+function getUniqueVerts(mesh: RawMesh): V3[] {
+  const res: V3[] = [];
   const seen: Set<string> = new Set();
   // TODO(@darzu): might we want to do approx equals?
   for (let v1 of mesh.pos) {

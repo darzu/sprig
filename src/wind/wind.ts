@@ -1,7 +1,7 @@
 import { Component, EM, Resource } from "../ecs/entity-manager.js";
 import { randInt } from "../utils/math.js";
 import { RendererDef } from "../render/renderer-ecs.js";
-import { V, vec3 } from "../matrix/sprig-matrix.js";
+import { V, V3 } from "../matrix/sprig-matrix.js";
 import { TimeDef } from "../time/time.js";
 import { range } from "../utils/util.js";
 import { Phase } from "../ecs/sys-phase.js";
@@ -27,13 +27,13 @@ export const WindDef = EM.defineResource("wind", () => {
     oldAngle: WIND_ANGLES[0],
   };
   // TODO(@darzu): use yaw/pitch/roll
-  vec3.yaw(vec3.X, -wind.angle, wind.dir);
+  V3.yaw(V3.X, -wind.angle, wind.dir);
   return wind;
 });
 
 export function setWindAngle(wind: Resource<typeof WindDef>, angle: number) {
   wind.angle = angle;
-  vec3.yaw(vec3.X, -angle, wind.dir);
+  V3.yaw(V3.X, -angle, wind.dir);
   // console.log(
   //   `WIND_X_DIR: ${vec3Dbg(WIND_X_DIR)} ORIGIN:${vec3Dbg(
   //     ORIGIN

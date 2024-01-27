@@ -15,7 +15,7 @@ import {
   createRudder,
   createRudderTurret,
 } from "../ld53/rudder.js";
-import { V, quat, tmpStack, vec3 } from "../matrix/sprig-matrix.js";
+import { V, quat, tmpStack, V3 } from "../matrix/sprig-matrix.js";
 import {
   BallMesh,
   CannonMesh,
@@ -154,7 +154,7 @@ const CannonBallDef = CannonBallObj.props;
 
 const EnemyObj = defineObj({
   name: "enemy",
-  propsType: T<{ sailTarget: vec3 }>(),
+  propsType: T<{ sailTarget: V3 }>(),
   components: [
     RenderableConstructDef,
     PositionDef,
@@ -170,8 +170,8 @@ const EnemyDef = EnemyObj.props;
 
 function cannonFireCurve(frame: Frame, speed: number, out: Parametric) {
   // TODO(@darzu): IMPL!
-  const axis = vec3.transformQuat(vec3.FWD, frame.rotation);
-  const vel = vec3.scale(axis, speed);
+  const axis = V3.tQuat(V3.FWD, frame.rotation);
+  const vel = V3.scale(axis, speed);
 
   const time = EM.getResource(TimeDef)!;
 
@@ -212,12 +212,12 @@ interface DotPath {
 function mkDotPath(
   dotsRes: Resources<[typeof DotsDef]>,
   len: number,
-  color: vec3.InputT,
+  color: V3.InputT,
   size: number
 ): DotPath {
   const path: Path = range(len).map((_) => ({
-    pos: vec3.create(),
-    rot: quat.create(),
+    pos: V3.mk(),
+    rot: quat.mk(),
   }));
 
   const dots = dotsRes.dots.allocDots(len);
@@ -261,9 +261,9 @@ function createOcean() {
   type typeT = EntityW<[...typeof tileCS]>;
   const size = 100;
 
-  const createTile = (xyz: vec3.InputT) =>
+  const createTile = (xyz: V3.InputT) =>
     createObj(tileCS, [
-      vec3.add(ENDESGA16.blue, randVec3OfLen(0.1)),
+      V3.add(ENDESGA16.blue, randVec3OfLen(0.1)),
       xyz,
       [HexMesh],
       [size, size, 1],
@@ -271,7 +271,7 @@ function createOcean() {
   const grid = createHexGrid<typeT>();
 
   for (let [q, r] of hexesWithin(0, 0, oceanRadius)) {
-    const loc = hexXYZ(vec3.create(), q, r, size);
+    const loc = hexXYZ(V3.mk(), q, r, size);
     loc[2] -= 0.9;
     const tile = createTile(loc);
     grid.set(q, r, tile);
@@ -299,8 +299,8 @@ export async function initGrayboxShipArena() {
   // camera
   camera.fov = Math.PI * 0.5;
   camera.viewDist = 1000;
-  vec3.set(-200, -200, -200, camera.maxWorldAABB.min);
-  vec3.set(+200, +200, +200, camera.maxWorldAABB.max);
+  V3.set(-200, -200, -200, camera.maxWorldAABB.min);
+  V3.set(+200, +200, +200, camera.maxWorldAABB.max);
 
   // TODO(@darzu): WORK AROUND: For whatever reason this particular init order and this obj are
   //  needed to avoid a bug in canary (122.0.6255.1) not present in retail (120.0.6099.234)
@@ -539,7 +539,7 @@ async function createShip() {
 
   const rudder = createRudder();
   // console.log("setting position");
-  vec3.set(0, -25, 4, rudder.position);
+  V3.set(0, -25, 4, rudder.position);
 
   mixinObj(ship, HasRudderObj, {
     args: [],
@@ -548,7 +548,7 @@ async function createShip() {
     },
   });
 
-  vec3.copy(ship.cameraFollow.positionOffset, [0.0, -100.0, 0]);
+  V3.copy(ship.cameraFollow.positionOffset, [0.0, -100.0, 0]);
   ship.cameraFollow.pitchOffset = -PI * 0.2;
 
   if (DBG_GIZMO) addGizmoChild(ship, 10);
@@ -570,19 +570,19 @@ need:
 // TODO(@darzu): move to maths
 // NOTE: works on the XY plane; ignores Z
 function getDirsToTan(
-  src: vec3.InputT,
-  trg: vec3.InputT,
+  src: V3.InputT,
+  trg: V3.InputT,
   trgRad: number,
-  outL: vec3,
-  outR: vec3
+  outL: V3,
+  outR: V3
 ): void {
-  const srcToTrg = vec3.sub(trg, src);
-  const perpR: vec3.InputT = [srcToTrg[1], -srcToTrg[0], 0];
-  const normR = vec3.normalize(perpR);
-  const scaledR = vec3.scale(normR, trgRad);
-  const scaledL = vec3.negate(scaledR);
-  vec3.add(trg, scaledR, outR);
-  vec3.add(trg, scaledL, outL);
+  const srcToTrg = V3.sub(trg, src);
+  const perpR: V3.InputT = [srcToTrg[1], -srcToTrg[0], 0];
+  const normR = V3.norm(perpR);
+  const scaledR = V3.scale(normR, trgRad);
+  const scaledL = V3.neg(scaledR);
+  V3.add(trg, scaledR, outR);
+  V3.add(trg, scaledL, outL);
 }
 
 function createEnemy() {
@@ -634,7 +634,7 @@ function createEnemy() {
   });
 
   const rudder = createRudder();
-  vec3.set(0, -25, 4, rudder.position);
+  V3.set(0, -25, 4, rudder.position);
 
   mixinObj(ship, HasRudderObj, {
     args: [],
@@ -666,8 +666,8 @@ async function initEnemies() {
       const _stk = tmpStack();
 
       for (let e of es) {
-        const _trgL = vec3.tmp();
-        const _trgR = vec3.tmp();
+        const _trgL = V3.tmp();
+        const _trgR = V3.tmp();
         getDirsToTan(e.position, player.position, attackRadius, _trgL, _trgR);
 
         if (DBG_ENEMY) {
@@ -677,19 +677,19 @@ async function initEnemies() {
           trgDots.queueUpdate();
         }
 
-        let toTrgL = vec3.sub(_trgL, e.position);
-        toTrgL = vec3.normalize(toTrgL);
-        let toTrgR = vec3.sub(_trgR, e.position);
-        toTrgR = vec3.normalize(toTrgR);
+        let toTrgL = V3.sub(_trgL, e.position);
+        toTrgL = V3.norm(toTrgL);
+        let toTrgR = V3.sub(_trgR, e.position);
+        toTrgR = V3.norm(toTrgR);
 
-        const curDir = vec3.transformQuat(vec3.FWD, e.rotation);
+        const curDir = V3.tQuat(V3.FWD, e.rotation);
 
-        const lDot = vec3.dot(toTrgL, curDir);
-        const rDot = vec3.dot(toTrgR, curDir);
+        const lDot = V3.dot(toTrgL, curDir);
+        const rDot = V3.dot(toTrgR, curDir);
 
         const turnLeft = lDot > rDot;
 
-        vec3.copy(e.enemy.sailTarget, turnLeft ? _trgL : _trgR);
+        V3.copy(e.enemy.sailTarget, turnLeft ? _trgL : _trgR);
       }
 
       _stk.pop();

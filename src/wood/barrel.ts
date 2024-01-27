@@ -1,7 +1,7 @@
 import { calculateNAndBrickWidth } from "../stone/stone.js";
 import { getHalfsizeFromAABB } from "../physics/aabb.js";
 import { Mesh, getAABBFromMesh, validateMesh } from "../meshes/mesh.js";
-import { V, quat, vec3, mat4 } from "../matrix/sprig-matrix.js";
+import { V, quat, V3, mat4 } from "../matrix/sprig-matrix.js";
 import {
   WoodState,
   createEmptyMesh,
@@ -93,7 +93,7 @@ export function createBarrelMesh(): [Mesh, WoodState] {
 
   // recenter
   // const size = getHalfsizeFromAABB(getAABBFromMesh(_timberMesh));
-  // _timberMesh.pos.forEach((v) => vec3.sub(v, size, v));
+  // _timberMesh.pos.forEach((v) => V3.sub(v, size, v));
 
   _timberMesh.surfaceIds = _timberMesh.colors.map((_, i) => i);
   const timberState = getBoardsFromMesh(_timberMesh);

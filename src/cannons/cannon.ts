@@ -1,6 +1,6 @@
 import { EM } from "../ecs/entity-manager.js";
 import { TimeDef } from "../time/time.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { PhysicsParentDef, PositionDef } from "../physics/transform.js";
@@ -34,12 +34,12 @@ export const { CannonPropsDef, CannonLocalDef, createCannon, createCannonNow } =
     },
     updateProps: (
       p,
-      location?: vec3,
+      location?: V3,
       yaw?: number,
       pitch?: number
       // parentId?: number
     ) => {
-      if (location) vec3.copy(p.location, location);
+      if (location) V3.copy(p.location, location);
       if (yaw !== undefined) p.yaw = yaw;
       if (pitch !== undefined) p.pitch = pitch;
       // if (parentId !== undefined) p.parentId = parentId;
@@ -124,9 +124,9 @@ EM.addEagerInit([CannonPropsDef], [], [], () => {
         const fireDir = cannon.world.rotation;
         // const fireDir = quat.create();
         // quat.rotateY(fireDir, cannon.world.rotation, Math.PI * 0.5);
-        const firePos = vec3.create();
-        vec3.transformQuat(firePos, fireDir, firePos);
-        vec3.add(firePos, cannon.world.position, firePos);
+        const firePos = V3.mk();
+        V3.tQuat(firePos, fireDir, firePos);
+        V3.add(firePos, cannon.world.position, firePos);
         // TODO(@darzu): MULTIPLAYER BULLETS broken b/c LD51
         // console.log("fire-cannon");
         const v = 0.18;
@@ -140,7 +140,7 @@ EM.addEagerInit([CannonPropsDef], [], [], () => {
           g,
           // 2.0,
           20.0,
-          vec3.FWD
+          V3.FWD
         );
       }
 

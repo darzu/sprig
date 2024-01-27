@@ -1,5 +1,5 @@
 import { Component, EM } from "../ecs/entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { InputsDef } from "../input/inputs.js";
 import { RenderableDef } from "../render/renderer-ecs.js";
 import { clearTint, setTint, TintsDef } from "../color/color-ecs.js";
@@ -12,7 +12,7 @@ const NetDebugStateDef = EM.defineResource("netDebugState", () => ({
 
 const AUTHORITY_TINT_NAME = "authority";
 
-const AUTHORITY_TINTS: Record<number, vec3> = {
+const AUTHORITY_TINTS: Record<number, V3> = {
   0: V(0, 0, 0),
   1: V(0.1, 0, 0),
   2: V(0, 0.1, 0),

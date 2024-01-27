@@ -8,7 +8,7 @@ import { createRef } from "../ecs/em-helpers.js";
 import { EM, EntityW } from "../ecs/entity-manager.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { InputsDef } from "../input/inputs.js";
-import { quat, vec3 } from "../matrix/sprig-matrix.js";
+import { quat, V3 } from "../matrix/sprig-matrix.js";
 import { LinearVelocityDef } from "../motion/velocity.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
 import { TimeDef } from "../time/time.js";
@@ -63,7 +63,7 @@ EM.addEagerInit([PlayerRenderDef], [], [], () => {
           continue;
         }
         // for now just set the rendered position = to player position--no smoothing
-        vec3.copy(e.position, player.position);
+        V3.copy(e.position, player.position);
         // move rendered location towards player rotation
         const angle = quat.getAngle(e.rotation, player.rotation);
         if (angle) {
@@ -104,7 +104,7 @@ EM.addEagerInit([PlayerRenderDef], [], [], () => {
         }
 
         // want to trigger the relaxation to bind pose just once
-        if (vec3.sqrLen(player.spaceSuit.localAccel) === 0) {
+        if (V3.sqrLen(player.spaceSuit.localAccel) === 0) {
           if (e.playerRender.wasJustAccelerating) {
             tweenToPose(e, Poses.Bind, TWEENING_TIME);
           }

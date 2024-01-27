@@ -1,7 +1,7 @@
 import { CameraDef } from "../camera/camera.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { EM } from "../ecs/entity-manager.js";
-import { vec2, vec3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { InputsDef } from "../input/inputs.js";
 import { remapEase } from "../utils/math.js";
 import { ColliderDef } from "../physics/collider.js";
@@ -82,7 +82,7 @@ export async function initClothSandbox(hosting: boolean) {
 
   const m2 = cloneMesh(res.allMeshes.cube.mesh);
   const g = createGhost(m2);
-  vec3.copy(g.position, [0, 1, -1.2]);
+  V3.copy(g.position, [0, 1, -1.2]);
   quat.setAxisAngle([0.0, -1.0, 0.0], 1.62, g.rotation);
   g.controllable.sprintMul = 3;
 
@@ -93,9 +93,9 @@ export async function initClothSandbox(hosting: boolean) {
     // e.cameraFollow.yawOffset = 0.0;
     // e.cameraFollow.pitchOffset = -0.368;
 
-    vec3.copy(g.position, [4.46, 9.61, -10.52]);
+    V3.copy(g.position, [4.46, 9.61, -10.52]);
     quat.copy(g.rotation, [0.0, -1.0, 0.0, 0.04]);
-    vec3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
+    V3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
     g.cameraFollow.yawOffset = 0.0;
     g.cameraFollow.pitchOffset = -0.106;
   }
@@ -114,7 +114,7 @@ export async function initClothSandbox(hosting: boolean) {
   EM.set(ship, RenderableConstructDef, res.allMeshes.ship.proto);
   EM.set(ship, ColorDef, ENEMY_SHIP_COLOR);
   EM.set(ship, PositionDef, V(20, -2, 0));
-  EM.set(ship, RotationDef, quat.fromEuler(0, Math.PI * 0.1, 0, quat.create()));
+  EM.set(ship, RotationDef, quat.fromEuler(0, Math.PI * 0.1, 0, quat.mk()));
 
   // const ocean = EM.newEntity();
   // EM.set(
@@ -161,7 +161,7 @@ export async function initClothSandbox(hosting: boolean) {
   const F = 100.0;
   EM.set(cloth, ForceDef, V(F, F, F));
 
-  const line = await drawLine(vec3.create(), vec3.create(), V(0, 1, 0));
+  const line = await drawLine(V3.mk(), V3.mk(), V(0, 1, 0));
 
   EM.addSystem(
     "clothSandbox",
@@ -174,26 +174,26 @@ export async function initClothSandbox(hosting: boolean) {
 
       // cursor to cloth
       const cursorPos = res.globalCursor3d.cursor()!.world.position;
-      const midpoint = vec3.scale(
+      const midpoint = V3.scale(
         [cloth.clothConstruct.columns / 2, cloth.clothConstruct.rows / 2, 0],
         cloth.clothConstruct.distance
       );
-      const clothPos = vec3.add(midpoint, cloth.world.position, midpoint);
+      const clothPos = V3.add(midpoint, cloth.world.position, midpoint);
 
       // line from cursor to cloth
       line.renderable.enabled = true;
       const m = line.renderable.meshHandle.mesh!;
-      vec3.copy(m.pos[0], cursorPos);
-      vec3.copy(m.pos[1], clothPos);
+      V3.copy(m.pos[0], cursorPos);
+      V3.copy(m.pos[1], clothPos);
       res.renderer.renderer.stdPool.updateMeshVertices(
         line.renderable.meshHandle,
         m
       );
 
       // scale the force
-      const delta = vec3.sub(clothPos, cursorPos);
-      const dist = vec3.length(delta);
-      vec3.normalize(delta, cloth.force);
+      const delta = V3.sub(clothPos, cursorPos);
+      const dist = V3.len(delta);
+      V3.norm(delta, cloth.force);
       const strength = remapEase(dist, 4, 20, 0, 500, (p) =>
         EASE_INQUAD(1.0 - p)
       );
@@ -201,9 +201,9 @@ export async function initClothSandbox(hosting: boolean) {
 
       // apply the force?
       if (res.inputs.keyDowns["e"]) {
-        vec3.scale(cloth.force, strength, cloth.force);
+        V3.scale(cloth.force, strength, cloth.force);
       } else {
-        vec3.copy(cloth.force, [0, 0, 0]);
+        V3.copy(cloth.force, [0, 0, 0]);
         if (RenderableDef.isOn(line)) {
           line.renderable.enabled = false;
         }
