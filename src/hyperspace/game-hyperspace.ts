@@ -190,10 +190,10 @@ export async function initHyperspaceGame() {
       // }
 
       // const enemyEndPos = ocean.uvToPos(vec3.create(), enemyUVPos);
-      const enemyEndPos = vec3.create();
+      const enemyEndPos = vec3.mk();
       ocean.uvToGerstnerDispAndNorm(enemyEndPos, tempVec3(), enemyUVPos);
       // vec3.add(enemyEndPos, enemyEndPos, [0, 10, 0]);
-      const enemyStartPos = vec3.sub(enemyEndPos, [0, 20, 0], vec3.create());
+      const enemyStartPos = vec3.sub(enemyEndPos, [0, 20, 0], vec3.mk());
 
       const towardsPlayerDir = vec2.sub(ship2.uvPos, enemyUVPos, vec2.mk());
       vec2.normalize(towardsPlayerDir, towardsPlayerDir);

@@ -299,8 +299,8 @@ export const OceanMesh = XY.registerMesh({
     // purposes?
 
     //set tangents
-    m.tangents = m.pos.map(() => vec3.create());
-    m.normals = m.pos.map(() => vec3.create());
+    m.tangents = m.pos.map(() => vec3.mk());
+    m.normals = m.pos.map(() => vec3.mk());
     for (let xIndex = 0; xIndex < grid.length; xIndex++) {
       for (let yIndex = 0; yIndex < grid[0].length; yIndex++) {
         let normal: vec3;
@@ -310,7 +310,7 @@ export const OceanMesh = XY.registerMesh({
           const posNX = m.pos[grid[xIndex + 1][yIndex]];
           const posNY = m.pos[grid[xIndex][yIndex + 1]];
 
-          normal = computeTriangleNormal(pos, posNX, posNY, vec3.create());
+          normal = computeTriangleNormal(pos, posNX, posNY, vec3.mk());
 
           tangent = vec3.sub(posNX, pos, m.tangents[grid[xIndex][yIndex]]);
           vec3.normalize(tangent, tangent);
@@ -403,7 +403,7 @@ export const ShipBrokenMesh = XY.registerMesh({
   transformBasis: transformYUpModelIntoZUp,
   modify: (m) => {
     m.lines = [];
-    m.pos = m.pos.map((p) => vec3.sub(p, SHIP_OFFSET, vec3.create()));
+    m.pos = m.pos.map((p) => vec3.sub(p, SHIP_OFFSET, vec3.mk()));
     scaleMesh(m, 3);
     return m;
   },

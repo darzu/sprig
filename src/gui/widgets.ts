@@ -157,7 +157,7 @@ async function initWidgets({ allMeshes }: Resources<[typeof AllMeshesDef]>) {
       moved.clear();
 
       // update world drag
-      let worldDrag = vec3.create();
+      let worldDrag = vec3.mk();
       if (mousedrag.isDragging) {
         const start = screenPosToWorldPos(
           tempVec3(),

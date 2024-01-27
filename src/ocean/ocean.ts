@@ -235,16 +235,16 @@ export async function initOcean(oceanMesh: Mesh, color: vec3) {
 
   // TODO(@darzu): HACK!
   const __temp1 = vec2.mk();
-  const __temp2 = vec3.create();
-  const __temp3 = vec3.create();
-  const __temp4 = vec3.create();
-  const __temp5 = vec3.create();
-  const __temp6 = vec3.create();
-  const __temp7 = vec3.create();
-  const __temp8 = vec3.create();
-  const __temp9 = vec3.create();
-  const __temp10 = vec3.create();
-  const __temp11 = vec3.create();
+  const __temp2 = vec3.mk();
+  const __temp3 = vec3.mk();
+  const __temp4 = vec3.mk();
+  const __temp5 = vec3.mk();
+  const __temp6 = vec3.mk();
+  const __temp7 = vec3.mk();
+  const __temp8 = vec3.mk();
+  const __temp9 = vec3.mk();
+  const __temp10 = vec3.mk();
+  const __temp11 = vec3.mk();
   const uvToGerstnerDispAndNorm = (outDisp: vec3, outNorm: vec3, uv: vec2) => {
     // console.log(`uv: ${uv}`);
     // TODO(@darzu): impl
@@ -321,8 +321,8 @@ export async function initOcean(oceanMesh: Mesh, color: vec3) {
 }
 
 export function registerOceanUVFns() {
-  const __temp1 = vec3.create();
-  const __temp2 = vec3.create();
+  const __temp1 = vec3.mk();
+  const __temp2 = vec3.mk();
   EM.addSystem(
     "oceanUVtoPos",
     Phase.GAME_WORLD,
@@ -358,7 +358,7 @@ export function registerOceanUVFns() {
   );
 
   const __temp3 = vec2.mk();
-  const __temp4 = vec3.create();
+  const __temp4 = vec3.mk();
   EM.addSystem(
     "oceanUVDirToRot",
     Phase.GAME_WORLD,

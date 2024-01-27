@@ -52,7 +52,7 @@ EM.registerSerializerPair(
 
 const SailColorDef = EM.defineComponent(
   "sailColor",
-  () => vec3.create(),
+  () => vec3.mk(),
   (p, color?: vec3) => (color ? vec3.copy(p, color) : p)
 );
 

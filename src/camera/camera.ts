@@ -34,15 +34,15 @@ export const CameraDef = EM.defineResource("camera", () => {
       V(-Infinity, -Infinity, -Infinity),
       V(Infinity, Infinity, Infinity)
     ),
-    positionOffset: vec3.create(),
+    positionOffset: vec3.mk(),
     rotationOffset: quat.create(),
     // smoothing:
     prevTargetId: 0,
     lastRotation: quat.create(),
-    lastPosition: vec3.create(),
+    lastPosition: vec3.mk(),
     rotationError: quat.identity(quat.create()),
-    targetPositionError: vec3.create(),
-    cameraPositionError: vec3.create(),
+    targetPositionError: vec3.mk(),
+    cameraPositionError: vec3.mk(),
   };
 });
 export type CameraProps = Component<typeof CameraDef>;
@@ -66,7 +66,7 @@ export const CameraComputedDef = EM.defineResource("cameraComputed", () => {
     proj: mat4.create(),
     viewProj: mat4.create(),
     invViewProj: mat4.create(),
-    location: vec3.create(),
+    location: vec3.mk(),
     shadowCascadeMats: [] as ShadowCascade[],
   };
 });
@@ -77,7 +77,7 @@ export type CameraView = Resource<typeof CameraComputedDef>;
 export const CameraFollowDef = EM.defineComponent(
   "cameraFollow",
   () => ({
-    positionOffset: vec3.create(),
+    positionOffset: vec3.mk(),
     yawOffset: 0,
     pitchOffset: 0,
     priority: 0,

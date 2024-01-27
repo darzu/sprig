@@ -71,10 +71,10 @@ export type GrassMeshHandle = MeshHandle;
 
 function createEmptyVertexTS(): GrassVertTS {
   return {
-    position: vec3.create(),
+    position: vec3.mk(),
     // color: vec3.create(),
     // tangent: m.tangents ? m.tangents[i] : [1.0, 0.0, 0.0],
-    normal: vec3.create(),
+    normal: vec3.mk(),
     // uv: m.uvs ? m.uvs[i] : [0.0, 0.0],
     surfaceId: 0,
   };
@@ -150,7 +150,7 @@ export function computeGrassUniData(m: Mesh): GrassUniTS {
     // aabbMin: min,
     // aabbMax: max,
     spawnDist: 20.0, // set elsewhere
-    tint: vec3.create(),
+    tint: vec3.mk(),
     id: 0,
   };
   return uni;

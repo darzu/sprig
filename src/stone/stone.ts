@@ -136,8 +136,8 @@ function knockOutBrickAtIndex(stone: StoneState, index: number) {
   }
 }
 
-let towardsAttractorTmp = vec3.create();
-let testAABBTmp = vec3.create();
+let towardsAttractorTmp = vec3.mk();
+let testAABBTmp = vec3.mk();
 
 function shrinkBrickAtIndex(
   stone: StoneState,
@@ -668,7 +668,7 @@ EM.addSystem(
     })
 );
 
-const __previousPartyPos = vec3.create();
+const __previousPartyPos = vec3.mk();
 let __prevTime = 0;
 
 const MAX_THETA = Math.PI / 2 - Math.PI / 16;

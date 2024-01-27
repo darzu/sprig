@@ -28,7 +28,7 @@ export function translatePath(p: Path, tran: vec3.InputT) {
   p.forEach((n) => vec3.add(n.pos, tran, n.pos));
   return p;
 }
-const __temp3 = vec3.create();
+const __temp3 = vec3.mk();
 export function translatePathAlongNormal(p: Path, t: number) {
   p.forEach((n) => {
     const norm = vec3.transformQuat([0, 0, 1], n.rot, __temp3);
@@ -134,7 +134,7 @@ export function createPathFromBezier(
   const path: Path = [];
   for (let i = 0; i < nodeCount; i++) {
     const t = i / (nodeCount - 1);
-    const pos = bezierPosition(b, t, vec3.create());
+    const pos = bezierPosition(b, t, vec3.mk());
     const tan = bezierTangent(b, t, vec3.tmp());
     vec3.normalize(tan, tan);
     // const rot = quatFromUpForward_OLD(quat.create(), up, tan);
@@ -146,7 +146,7 @@ export function createPathFromBezier(
 // TODO(@darzu): refactor this into getEvenlySpacedTimesFromBezierCurve, maybe as a generator?
 // TODO(@darzu): seperate times from pos/rot results
 const _numSamples = 100;
-const __tempSamples = range(_numSamples).map((i) => vec3.create());
+const __tempSamples = range(_numSamples).map((i) => vec3.mk());
 export function createEvenPathFromBezierCurve(
   b: BezierCubic,
   spacing: number,
@@ -210,7 +210,7 @@ export function createEvenPathFromBezierCurve(
         prevJ = j;
 
         // add our node
-        const pos = bezierPosition(b, t, vec3.create());
+        const pos = bezierPosition(b, t, vec3.mk());
         const tan = bezierTangent(b, t, vec3.tmp());
         vec3.normalize(tan, tan);
         // const rot = quatFromUpForward_OLD(quat.create(), up, tan);
@@ -234,7 +234,7 @@ export function createEvenPathFromBezierCurve(
         const extraSteps = extra / span;
         const lastSample = samples[samples.length - 1];
         const lastSample2 = samples[samples.length - 2];
-        const dir = vec3.sub(lastSample, lastSample2, vec3.create());
+        const dir = vec3.sub(lastSample, lastSample2, vec3.mk());
         vec3.normalize(dir, dir);
         vec3.scale(dir, extraSteps, dir);
         const pos = vec3.add(lastSample, dir, dir);
@@ -281,16 +281,12 @@ export function bezierSplineFromPoints(
     const startCont = vec3.add(
       start,
       vec3.scale(fromPrev, smoothness),
-      vec3.create()
+      vec3.mk()
     );
 
     // const toNext = vec3.normalize(vec3.sub(end, next));
     const toNext = vec3.normalize(vec3.sub(start, next));
-    const endCont = vec3.add(
-      end,
-      vec3.scale(toNext, smoothness),
-      vec3.create()
-    );
+    const endCont = vec3.add(end, vec3.scale(toNext, smoothness), vec3.mk());
     // TODO(@darzu): Ideally the control points would be mirrored for c1 continuity
     curves.push({
       p0: start,

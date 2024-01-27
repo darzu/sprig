@@ -28,8 +28,8 @@ EM.registerSerializerPair(
   (o, buf) => buf.readVec3(o)
 );
 
-let _linVelDelta = vec3.create();
-let _normalizedVelocity = vec3.create();
+let _linVelDelta = vec3.mk();
+let _normalizedVelocity = vec3.mk();
 let _deltaRotation = quat.create();
 
 export function registerPhysicsApplyLinearVelocity() {

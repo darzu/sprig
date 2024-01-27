@@ -56,7 +56,7 @@ export const ControllableDef = EM.defineComponent("controllable", () => {
 });
 
 EM.addEagerInit([ControllableDef], [], [], () => {
-  const steerVel = vec3.create();
+  const steerVel = vec3.mk();
 
   // dbgLogOnce(`adding controllableInput`);
 

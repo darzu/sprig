@@ -259,7 +259,7 @@ export function makePlaneMesh(
       vec2.clone([2, 3]),
       vec2.clone([3, 0]),
     ],
-    colors: [vec3.create(), vec3.create()],
+    colors: [vec3.mk(), vec3.mk()],
     // uvs: [
     //   [1, 1],
     //   [0, 1],
@@ -419,12 +419,12 @@ export function createFlatQuadMesh(
 
   const quadNum = height * width * (doubleSided ? 2 : 1);
   const mesh: Mesh = {
-    pos: range(width * height).map((_) => vec3.create()),
+    pos: range(width * height).map((_) => vec3.mk()),
     uvs: range(width * height).map((_) => vec2.mk()),
     quad: range(quadNum).map((_) => vec4.create()),
     tri: [],
-    normals: range(width * height).map((_) => vec3.create()),
-    tangents: range(width * height).map((_) => vec3.create()),
+    normals: range(width * height).map((_) => vec3.mk()),
+    tangents: range(width * height).map((_) => vec3.mk()),
     colors: range(quadNum).map((_) => V(0, 0, 0)),
     dbgName: `fabric-${width}x${height}`,
     surfaceIds: range(quadNum).map((_, i) => i + 1),
@@ -801,7 +801,7 @@ export function makeSphere(numLon: number, numLat: number, r: number): Mesh {
       const y = r * Math.cos(inc);
       if (lat !== numLat) {
         pos.push(V(x, y, z));
-        normals.push(vec3.normalize(pos[pos.length - 1], vec3.create()));
+        normals.push(vec3.normalize(pos[pos.length - 1], vec3.mk()));
         const u = lon / numLon;
         const v = lat / (numLat + 1);
         uvs.push(V(u, v));

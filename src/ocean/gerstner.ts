@@ -191,8 +191,8 @@ function test_gerstner() {
   const wave = mkGerstnerWaveTS({ Q, w, D, A, phi });
   const waves = [wave];
 
-  const disp = vec3.create();
-  const norm = vec3.create();
+  const disp = vec3.mk();
+  const norm = vec3.mk();
   const uv = V(10, 10);
   // let max = -Infinity;
   for (let t_ms = 0; t_ms < 10 * 1000; t_ms += 16) {

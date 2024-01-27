@@ -67,10 +67,10 @@ export const SpringGridDef = EM.defineNonupdatableComponent(
         let pos = V(x * distance, y * distance, 0);
         positions.push(pos);
         prevPositions.push(vec3.clone(pos));
-        nextPositions.push(vec3.create());
+        nextPositions.push(vec3.mk());
       }
     }
-    const externalForce = vec3.create();
+    const externalForce = vec3.mk();
     const fixedSet = new Set(fixed);
     return {
       rows,

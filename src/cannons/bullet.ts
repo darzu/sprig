@@ -226,8 +226,8 @@ export async function fireBullet(
   // let bulletAxis = V(1, 0, 0);
   const axis = vec3.transformQuat(bulletAxis, rotation, vec3.tmp());
   vec3.normalize(axis, axis);
-  const linearVelocity = vec3.scale(axis, speed, vec3.create());
-  const angularVelocity = vec3.scale(axis, rotationSpeed, vec3.create());
+  const linearVelocity = vec3.scale(axis, speed, vec3.mk());
+  const angularVelocity = vec3.scale(axis, rotationSpeed, vec3.mk());
 
   assertDbg(e.bulletConstruct, `bulletConstruct missing on: ${e.id}`);
   vec3.copy(e.bulletConstruct.location, location);
@@ -333,7 +333,7 @@ export async function breakBullet(
 
 // TODO(@darzu): simulateBullet shouldn't be needed any more since we use
 //    the analyitic parameteric equations in parametric-motion.ts
-const __simTemp1 = vec3.create();
+const __simTemp1 = vec3.mk();
 export function* simulateBullet(
   pos: vec3,
   rot: quat,
@@ -344,7 +344,7 @@ export function* simulateBullet(
   let bulletAxis = tV(0, 0, -1);
   vec3.transformQuat(bulletAxis, rot, bulletAxis);
   vec3.normalize(bulletAxis, bulletAxis);
-  const linVel = vec3.scale(bulletAxis, speed, vec3.create());
+  const linVel = vec3.scale(bulletAxis, speed, vec3.mk());
   const grav = V(0, -gravity, 0);
 
   yield pos;

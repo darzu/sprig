@@ -84,16 +84,16 @@ export function doesSimplexOverlapOrigin(s: vec3[]) {
 
   for (let t of tris) {
     const [C, B, A] = t;
-    const AB = vec3.sub(B, A, vec3.create());
-    const AC = vec3.sub(C, A, vec3.create());
-    const ABCperp = vec3.cross(AB, AC, vec3.create());
+    const AB = vec3.sub(B, A, vec3.mk());
+    const AC = vec3.sub(C, A, vec3.mk());
+    const ABCperp = vec3.cross(AB, AC, vec3.mk());
     vec3.normalize(ABCperp, ABCperp);
     const triCenter = centroid(...t);
-    const triCenterToSimplexCenter = vec3.sub(center, triCenter, vec3.create());
+    const triCenterToSimplexCenter = vec3.sub(center, triCenter, vec3.mk());
     vec3.normalize(triCenterToSimplexCenter, triCenterToSimplexCenter);
     if (vec3.dot(ABCperp, triCenterToSimplexCenter) < 0)
       vec3.negate(ABCperp, ABCperp);
-    const AO = vec3.sub([0, 0, 0], A, vec3.create());
+    const AO = vec3.sub([0, 0, 0], A, vec3.mk());
     if (vec3.dot(ABCperp, AO) < 0) return false;
   }
   return true;

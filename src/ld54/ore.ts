@@ -49,7 +49,7 @@ import {
 } from "./gamestate.js";
 import { SpaceSuitDef } from "./space-suit-controller.js";
 
-let _t1 = vec3.create();
+let _t1 = vec3.mk();
 let _t2 = quat.create();
 
 function createFuelOreMesh(): Mesh {
@@ -238,11 +238,7 @@ export async function initOre(spacePath: Path) {
       const seg = spacePath[segIdx];
 
       const randDistFromTrack = randFloat(20, 100);
-      const pos = vec3.scale(
-        randNormalVec3(),
-        randDistFromTrack,
-        vec3.create()
-      );
+      const pos = vec3.scale(randNormalVec3(), randDistFromTrack, vec3.mk());
       pos[1] = seg.pos[1];
 
       createFuelOre(pos);
@@ -281,11 +277,7 @@ export async function initOre(spacePath: Path) {
       const seg = spacePath[segIdx];
 
       const randDistFromTrack = randFloat(20, 100);
-      const pos = vec3.scale(
-        randNormalVec3(),
-        randDistFromTrack,
-        vec3.create()
-      );
+      const pos = vec3.scale(randNormalVec3(), randDistFromTrack, vec3.mk());
       pos[1] = seg.pos[1];
 
       createOxygenOre(pos);

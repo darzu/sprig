@@ -16,8 +16,8 @@ import { assertDbg, range, resizeArray, TupleN } from "./util.js";
 //  to subsume gl-matrix into our own libraries.
 
 // math utilities
-const _t1 = vec3.create();
-const _t2 = vec3.create();
+const _t1 = vec3.mk();
+const _t2 = vec3.mk();
 export function computeTriangleNormal(
   p1: vec3,
   p2: vec3,
@@ -70,7 +70,7 @@ export function randVec3OfLen(r: number = 1, out?: vec3) {
 
 export function randNormalPosVec3(out?: vec3) {
   // TODO(@darzu): not evenly distributed on sphere!
-  if (!out) out = vec3.create();
+  if (!out) out = vec3.mk();
   vec3.set(Math.random(), Math.random(), Math.random(), out);
   vec3.normalize(out, out);
   return out;
@@ -107,7 +107,7 @@ export function moveZ(m: mat4, n: number) {
 }
 export function getPositionFromTransform(t: mat4): vec3 {
   // TODO(@darzu): not really necessary
-  const pos = vec3.create();
+  const pos = vec3.mk();
   vec3.transformMat4(pos, t, pos);
   return pos;
 }
@@ -181,8 +181,8 @@ export function vec3Mid(out: vec3, a: vec3, b: vec3): vec3 {
 // TODO(@darzu): This impl assumes +y is up, +z is fwd
 // assumes local up axis is [0,1,0] and forward is [0,0,1]
 // TODO(@darzu): Z_UP: merge into sprig-matrix
-const __t1 = vec3.create();
-const __t2 = vec3.create();
+const __t1 = vec3.mk();
+const __t2 = vec3.mk();
 export function quatFromUpForward_OLD(
   out: quat,
   up: vec3.InputT,
@@ -366,7 +366,7 @@ export function frustumFromBounds(
 
   // resize temp buffers if needed
   // TODO(@darzu): PERF. doesn't work so well if we get variable numbers of world points
-  resizeArray(_tempViewCorners, worldCorners.length, () => vec3.create());
+  resizeArray(_tempViewCorners, worldCorners.length, () => vec3.mk());
 
   // translate & rotate camera frustum world corners into light view
   worldCorners.forEach((p, i) =>
@@ -395,9 +395,9 @@ export function frustumFromBounds(
 }
 
 // TODO(@darzu): Z_UP: we probably don't need angleBetweenPosXZ instead of just XY
-const __angleBetweenXZTmp0 = vec3.create();
-const __angleBetweenXZTmp1 = vec3.create();
-const __angleBetweenXZTmp2 = vec3.create();
+const __angleBetweenXZTmp0 = vec3.mk();
+const __angleBetweenXZTmp1 = vec3.mk();
+const __angleBetweenXZTmp2 = vec3.mk();
 export function angleBetweenPosXZ(
   pos: vec3,
   rot: quat,

@@ -37,10 +37,10 @@ export const MotionSmoothingDef = EM.defineComponent("motionSmoothing", () => {
   return {
     havePrevious: false,
     prevParentId: 0,
-    prevPosition: vec3.create(),
+    prevPosition: vec3.mk(),
     prevRotation: quat.create(),
 
-    positionError: vec3.create(),
+    positionError: vec3.mk(),
     rotationError: quat.create(),
   };
 });
@@ -156,7 +156,7 @@ export function initMotionSmoothingSystems() {
           if (parentId === e.motionSmoothing.prevParentId) {
             computeNewError(
               e.motionSmoothing.prevPosition,
-              PositionDef.isOn(e) ? e.position : vec3.create(),
+              PositionDef.isOn(e) ? e.position : vec3.mk(),
               e.motionSmoothing.positionError
             );
             computeNewError(

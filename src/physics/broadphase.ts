@@ -174,8 +174,8 @@ export function checkBroadphase(
         // new object
         ll = _objToObjLL[o.id] = {
           id: o.id,
-          minCoord: vec3.create(),
-          maxCoord: vec3.create(),
+          minCoord: vec3.mk(),
+          maxCoord: vec3.mk(),
           aabb: o.aabb,
           next: null,
           prev: null,
@@ -243,8 +243,8 @@ interface ObjLL {
   prev: WorldCell | ObjLL | null;
 }
 function createWorldGrid(aabb: AABB, cellSize: vec3): WorldGrid {
-  const chunkSize = vec3.sub(aabb.max, aabb.min, vec3.create());
-  const dims = vec3.div(chunkSize, cellSize, vec3.create());
+  const chunkSize = vec3.sub(aabb.max, aabb.min, vec3.mk());
+  const dims = vec3.div(chunkSize, cellSize, vec3.mk());
   vec3Floor(dims, dims);
   const gridLength = dims[0] * dims[1] * dims[2];
   console.log(gridLength);
@@ -385,7 +385,7 @@ export function rayVsRay(ra: Ray, rb: Ray): vec3 | undefined {
 
   if (isNaN(ta) || !isFinite(ta) || ta < 0.0) return undefined;
 
-  const pt = vec3.add(b, vec3.scale(db, tb), vec3.create());
+  const pt = vec3.add(b, vec3.scale(db, tb), vec3.mk());
 
   // TODO(@darzu): this doesn't handle the third axis!!
 
@@ -454,7 +454,7 @@ const _mapPool: Map<number, AABB>[] = range(_mapPoolSize).map(
   (_) => new Map<number, AABB>()
 );
 let _nextMap = 0;
-const _scratchVec3: vec3 = vec3.create();
+const _scratchVec3: vec3 = vec3.mk();
 // TODO(@darzu): PERF. This is creating waayy too many non-temp vecs
 function octtree(parentObjs: Map<number, AABB>, aabb: AABB): OctTree | null {
   if (_nextMap >= _mapPool.length)
@@ -560,8 +560,8 @@ export function getLineMid(out: vec3, line: Line) {
 // TODO(@darzu): do we need this pattern?
 export function emptyRay(): Ray {
   return {
-    org: vec3.create(),
-    dir: vec3.create(),
+    org: vec3.mk(),
+    dir: vec3.mk(),
   };
 }
 export function copyRay(out: Ray, a: Ray): Ray {
@@ -583,7 +583,7 @@ export function copyLine(out: Line, a: Line): Line {
 
 export function createLine(a: vec3, b: vec3): Line {
   const len = vec3.dist(a, b);
-  const dir = vec3.sub(b, a, vec3.create());
+  const dir = vec3.sub(b, a, vec3.mk());
   vec3.normalize(dir, dir);
   return {
     ray: {

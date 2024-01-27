@@ -72,7 +72,7 @@ export const HsPlayerDef = EM.defineComponent("hsPlayer", () => {
     dropping: false,
     leftLegId: 0,
     rightLegId: 0,
-    facingDir: vec3.create(),
+    facingDir: vec3.mk(),
     // TODO(@darzu): HACK. hyperspace game specific
     lookingForShip: true,
     // TODO(@darzu): HACK. LD51 game specific
@@ -93,7 +93,7 @@ export const LocalPlayerEntityDef = EM.defineResource(
 
 export const PlayerHsPropsDef = defineSerializableComponent(
   "hsPlayerProps",
-  () => ({ location: vec3.create() }),
+  () => ({ location: vec3.mk() }),
   (p, loc?: vec3) => {
     if (loc) vec3.copy(p.location, loc);
     return p;
@@ -279,14 +279,14 @@ EM.addEagerInit([PlayerHsPropsDef], [], [], () => {
 
         // add bullet on lclick
         if (cheat && inputs.lclick) {
-          const linearVelocity = vec3.scale(facingDir, 0.02, vec3.create());
+          const linearVelocity = vec3.scale(facingDir, 0.02, vec3.mk());
           // TODO(@darzu): adds player motion
           // bulletMotion.linearVelocity = vec3.add(
           //   bulletMotion.linearVelocity,
           //   bulletMotion.linearVelocity,
           //   player.linearVelocity
           // );
-          const angularVelocity = vec3.scale(facingDir, 0.01, vec3.create());
+          const angularVelocity = vec3.scale(facingDir, 0.01, vec3.mk());
           // spawnBullet(
           //   EM,
           //   vec3.clone(p.world.position),
@@ -312,19 +312,11 @@ EM.addEagerInit([PlayerHsPropsDef], [], [], () => {
               const position = vec3.add(
                 p.world.position,
                 V(x, y, 0),
-                vec3.create()
+                vec3.mk()
               );
-              const linearVelocity = vec3.scale(
-                bullet_axis,
-                0.005,
-                vec3.create()
-              );
+              const linearVelocity = vec3.scale(bullet_axis, 0.005, vec3.mk());
               vec3.add(linearVelocity, p.linearVelocity, linearVelocity);
-              const angularVelocity = vec3.scale(
-                bullet_axis,
-                0.01,
-                vec3.create()
-              );
+              const angularVelocity = vec3.scale(bullet_axis, 0.01, vec3.mk());
               // spawnBullet( position, linearVelocity, angularVelocity);
             }
           }
@@ -337,7 +329,7 @@ EM.addEagerInit([PlayerHsPropsDef], [], [], () => {
             org: vec3.add(
               p.world.position,
               vec3.scale(vec3.mul(facingDir, p.world.scale), 3.0),
-              vec3.create()
+              vec3.mk()
             ),
             dir: facingDir,
           };
@@ -395,7 +387,7 @@ EM.addEagerInit([PlayerHsPropsDef], [], [], () => {
           const endPoint = vec3.add(
             r.org,
             vec3.scale(r.dir, rayDist),
-            vec3.create()
+            vec3.mk()
           );
           drawLine(r.org, endPoint, color);
         }
@@ -454,7 +446,7 @@ EM.addEagerInit([PlayerHsPropsDef], [], [], () => {
               endPos,
               [0, 200, 0],
               // tempVec3(),
-              vec3.create()
+              vec3.mk()
             );
             // console.log("player animateTo:");
             // console.log(vec3Dbg(startPos));

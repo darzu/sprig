@@ -149,7 +149,7 @@ export function computeOceanUniData(m: Mesh): OceanUniTS {
     transform: mat4.create(),
     aabbMin: min,
     aabbMax: max,
-    tint: vec3.create(),
+    tint: vec3.mk(),
     id: 0,
   };
   return uni;

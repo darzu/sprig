@@ -277,7 +277,7 @@ export function extrudeQuad(hp: HPoly, he: HEdge): HPolyDelta {
   // NEW: 2 verts, 3 inner-hedge, 3 outer-hedge, 1 face
 
   // first, determine our new vert positions by projecting twin's face edges
-  const p0 = vec3.create();
+  const p0 = vec3.mk();
   const v0a = he.twin.orig;
   const vi0a = v0a.vi;
   const p0b = hp.mesh.pos[he.twin.prev.orig.vi];
@@ -285,7 +285,7 @@ export function extrudeQuad(hp: HPoly, he: HEdge): HPolyDelta {
   vec3.sub(p0a, p0b, p0);
   vec3.add(p0, p0a, p0);
 
-  const p1 = vec3.create();
+  const p1 = vec3.mk();
   const v1a = he.twin.next.orig;
   const vi1a = v1a.vi;
   const p1b = hp.mesh.pos[he.twin.next.next.orig.vi];
@@ -360,7 +360,7 @@ export function extrudeQuad(hp: HPoly, he: HEdge): HPolyDelta {
   );
   // TODO(@darzu): DBG colors
   // hp.mesh.colors?.push(randNormalPosVec3(vec3.create()));
-  hp.mesh.colors?.push(vec3.create());
+  hp.mesh.colors?.push(vec3.mk());
 
   // we're done! Verify and append to HPoly
   const newHs = [hi0, hi01, hi1, ho1, ho01, ho0];

@@ -124,7 +124,7 @@ EM.addEagerInit([CannonPropsDef], [], [], () => {
         const fireDir = cannon.world.rotation;
         // const fireDir = quat.create();
         // quat.rotateY(fireDir, cannon.world.rotation, Math.PI * 0.5);
-        const firePos = vec3.create();
+        const firePos = vec3.mk();
         vec3.transformQuat(firePos, fireDir, firePos);
         vec3.add(firePos, cannon.world.position, firePos);
         // TODO(@darzu): MULTIPLAYER BULLETS broken b/c LD51

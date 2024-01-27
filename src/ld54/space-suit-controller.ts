@@ -15,7 +15,7 @@ export const SpaceSuitDef = EM.defineComponent("spaceSuit", () => ({
   turnSpeed: 0.001,
   rollSpeed: 0.01,
   doDampen: true,
-  localAccel: vec3.create(),
+  localAccel: vec3.mk(),
   swingingSword: false,
   swordSwingT: 0,
 }));

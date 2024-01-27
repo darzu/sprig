@@ -22,8 +22,8 @@ export const AnimateToDef = EM.defineNonupdatableComponent(
   "animateTo",
   function (a?: Partial<AnimateTo>): AnimateTo {
     return {
-      startPos: a?.startPos ?? vec3.create(),
-      endPos: a?.endPos ?? vec3.create(),
+      startPos: a?.startPos ?? vec3.mk(),
+      endPos: a?.endPos ?? vec3.mk(),
       easeFn: a?.easeFn ?? EASE_LINEAR,
       durationMs: a?.durationMs ?? 1000,
       progressMs: a?.progressMs ?? 0,
@@ -32,7 +32,7 @@ export const AnimateToDef = EM.defineNonupdatableComponent(
 );
 
 EM.addEagerInit([AnimateToDef], [], [], () => {
-  let delta = vec3.create();
+  let delta = vec3.mk();
 
   EM.addSystem(
     "animateTo",

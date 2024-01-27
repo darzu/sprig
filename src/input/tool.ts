@@ -112,7 +112,7 @@ export function registerToolSystems() {
       buf.writeVec3(location);
     },
     deserializeExtra: (buf) => {
-      return buf.readVec3(vec3.create());
+      return buf.readVec3(vec3.mk());
     },
   });
 }

@@ -313,7 +313,7 @@ async function setLevelLocal(levelIdx: number) {
   // spawn towers
   const tower3dPosesAndDirs: [vec3, number][] = levelMap.towers.map(
     ([tPos, tDir]) => [
-      level2DtoWorld3D(tPos, STONE_TOWER_HEIGHT, vec3.create()),
+      level2DtoWorld3D(tPos, STONE_TOWER_HEIGHT, vec3.mk()),
       Math.atan2(tDir[1], tDir[0]),
     ]
   );
@@ -510,7 +510,7 @@ export async function initLD53(hosting: boolean) {
     p[2] = 0.0;
     updateAABBWithPoint(oceanAABB, p);
   });
-  const oceanSize = getSizeFromAABB(oceanAABB, vec3.create());
+  const oceanSize = getSizeFromAABB(oceanAABB, vec3.mk());
   // TODO(@darzu): how does this uvToPos match with the ocean's gpu-uv-unwrapped thingy?
   function uvToPos([u, v]: vec2, out: vec3): vec3 {
     // console.log(u + " " + v);
@@ -636,8 +636,8 @@ export async function initLD53(hosting: boolean) {
       }
     }
     // console.dir(buoys);
-    const _t1 = vec3.create();
-    const _t2 = vec3.create();
+    const _t1 = vec3.mk();
+    const _t2 = vec3.mk();
     EM.addSystem(
       "shipBouyancy",
       Phase.GAME_WORLD,

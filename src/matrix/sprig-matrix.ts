@@ -424,7 +424,7 @@ export module vec3 {
   }
 
   // TODO(@darzu): rename mk()
-  export function create(): T {
+  export function mk(): T {
     return float32ArrayOfLength(3);
   }
 
@@ -448,7 +448,7 @@ export module vec3 {
   }
 
   export function fromValues(n0: number, n1: number, n2: number): T {
-    const out = create();
+    const out = mk();
     out[0] = n0;
     out[1] = n1;
     out[2] = n2;
@@ -874,9 +874,9 @@ export module quat {
     );
   }
 
-  const _t1 = vec3.create();
-  const _t2 = vec3.create();
-  const _t3 = vec3.create();
+  const _t1 = vec3.mk();
+  const _t2 = vec3.mk();
+  const _t3 = vec3.mk();
   export function fromYAndZish(
     newY: vec3.InputT,
     newZish: vec3.InputT,
@@ -901,7 +901,7 @@ export module quat {
 
   // Creates a rotation that will move <0,1,0> to point towards forward; no guarantees are made
   //  about its other axis orientations!
-  const _t4 = vec3.create();
+  const _t4 = vec3.mk();
   export function fromForward(forward: vec3.InputT, out?: T): T {
     // console.log(`fromForward, fwd:${vec3Dbg(forward)}`);
 

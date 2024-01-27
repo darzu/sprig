@@ -376,7 +376,7 @@ export function gameMeshFromMesh(
   const mesh = normalizeMesh(rawMesh);
   const aabb = getAABBFromMesh(mesh);
   const center = getCenterFromAABB(aabb);
-  const halfsize = getHalfsizeFromAABB(aabb, vec3.create());
+  const halfsize = getHalfsizeFromAABB(aabb, vec3.mk());
   const proto = renderer.stdPool.addMesh(mesh, reserve);
   const uniqueVerts = getUniqueVerts(mesh);
   const support = (d: vec3) => farthestPointInDir(uniqueVerts, d);

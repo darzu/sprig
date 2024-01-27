@@ -414,7 +414,7 @@ const SunlessShipDef = EM.defineComponent("sunlessShip", () => ({
   speed: 0.00003,
   yawSpeed: 0.01,
   doDampen: true,
-  localAccel: vec3.create(),
+  localAccel: vec3.mk(),
   localYaw: 0,
 }));
 

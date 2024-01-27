@@ -118,7 +118,7 @@ export function parabolaFromPoints(
     1,
     1,
   ]);
-  const abc = vec3.transformMat3([y0, y1, y2], inv, vec3.create());
+  const abc = vec3.transformMat3([y0, y1, y2], inv, vec3.mk());
   return abc;
 
   // // parabola test:
@@ -180,7 +180,7 @@ export function testMath() {
     const fwd = V(0, 1, 0);
     for (let v of vs) {
       const rot = quat.fromForward(v);
-      const v2 = vec3.transformQuat(fwd, rot, vec3.create());
+      const v2 = vec3.transformQuat(fwd, rot, vec3.mk());
       console.log(`${vec3Dbg(v)} ==${quatDbg(rot)}==> ${vec3Dbg(v2)}`);
     }
   }

@@ -84,7 +84,7 @@ export function registerNoodleSystem() {
           const seg = e.noodle.segments[segIdx];
           // TODO(@darzu): PERF, don't create vecs here
           // TODO(@darzu): rotate around .dir
-          return vec3.add(p, seg.pos, vec3.create());
+          return vec3.add(p, seg.pos, vec3.mk());
         });
         rs.renderer.renderer.stdPool.updateMeshVertices(
           e.renderable.meshHandle,

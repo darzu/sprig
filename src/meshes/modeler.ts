@@ -91,11 +91,7 @@ function registerObjClicker() {
         // draw our ray
         const rayDist = firstHit?.dist || 1000;
         const color: vec3 = firstHit ? V(0, 1, 0) : V(1, 0, 0);
-        const endPoint = vec3.add(
-          r.org,
-          vec3.scale(r.dir, rayDist),
-          vec3.create()
-        );
+        const endPoint = vec3.add(r.org, vec3.scale(r.dir, rayDist), vec3.mk());
         drawLine(r.org, endPoint, color);
       }
     }
@@ -146,8 +142,8 @@ function registerAABBBuilder() {
 
           EM.set(b, ModelBoxDef);
           if (lastB) {
-            EM.set(b, ScaleDef, vec3.copy(vec3.create(), lastB.scale));
-            EM.set(b, PositionDef, vec3.copy(vec3.create(), lastB.position));
+            EM.set(b, ScaleDef, vec3.copy(vec3.mk(), lastB.scale));
+            EM.set(b, PositionDef, vec3.copy(vec3.mk(), lastB.position));
           } else {
             EM.set(b, ScaleDef, V(2, 1, 1));
             EM.set(b, PositionDef, V(0, 0, 0));

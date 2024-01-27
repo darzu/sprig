@@ -107,8 +107,8 @@ const TRACK_MAX_BOARD_SEG_IDX = false;
 
 export const DBG_WOOD_DMG = false;
 
-const __temp1 = vec3.create();
-const __temp2 = vec3.create();
+const __temp1 = vec3.mk();
+const __temp2 = vec3.mk();
 
 export const WoodStateDef = EM.defineNonupdatableComponent(
   "woodState",
@@ -424,13 +424,13 @@ EM.addEagerInit([WoodStateDef], [], [], () => {
                   splinter.renderable.hidden = false;
                 if (ColorDef.isOn(w)) vec3.copy(splinter.color, w.color);
                 vec3.add(splinter.color, quadColor, splinter.color);
-                const pos = getLineMid(vec3.create(), seg.midLine);
+                const pos = getLineMid(vec3.mk(), seg.midLine);
                 vec3.transformMat4(pos, w.world.transform, pos);
                 EM.set(splinter, PositionDef, pos);
                 const rot = getSegmentRotation(seg, false);
                 quat.mul(rot, w.world.rotation, rot); // TODO(@darzu): !VERIFY! this works
                 EM.set(splinter, RotationDef, rot);
-                const spin = randNormalVec3(vec3.create());
+                const spin = randNormalVec3(vec3.mk());
                 const vel = vec3.clone(spin);
                 vec3.scale(spin, 0.01, spin);
                 EM.set(splinter, AngularVelocityDef, spin);
@@ -566,7 +566,7 @@ EM.addEagerInit([WoodStateDef], [], [], () => {
 });
 
 function getSegmentRotation(seg: BoardSeg, top: boolean) {
-  let segNorm = vec3.create();
+  let segNorm = vec3.mk();
   let biggestArea2 = 0;
   for (let v of seg.areaNorms) {
     const a = vec3.sqrLen(v);
@@ -998,10 +998,10 @@ export function reserveSplinterSpace(wood: WoodState, maxSplinters: number) {
   const quadOffset = wood.mesh.quad.length;
   const triOffset = wood.mesh.tri.length;
   range(maxSplinters * _vertsPerSplinter).forEach((_) =>
-    wood.mesh.pos.push(vec3.create())
+    wood.mesh.pos.push(vec3.mk())
   );
   range(maxSplinters * _trisPerSplinter).forEach((_) =>
-    wood.mesh.tri.push(vec3.create())
+    wood.mesh.tri.push(vec3.mk())
   );
   range(maxSplinters * _quadsPerSplinter).forEach((_) =>
     wood.mesh.quad.push(vec4.create())
@@ -1197,7 +1197,7 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
         // NOTE: assumes segments are parallelograms
         const ab = vec3.sub(ps[1], ps[0], __temp1);
         const ac = vec3.sub(ps[3], ps[0], __temp2);
-        const areaNorm = vec3.cross(ab, ac, vec3.create());
+        const areaNorm = vec3.cross(ab, ac, vec3.mk());
         return areaNorm;
       }
 

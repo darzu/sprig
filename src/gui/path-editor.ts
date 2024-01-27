@@ -403,7 +403,7 @@ export async function lineStuff() {
     const A2 = pi + 1;
     extMesh.quad.push(vec4.clone([A1, pA1, pA2, A2]));
     extMesh.surfaceIds.push(i);
-    extMesh.colors.push(randNormalPosVec3(vec3.create()));
+    extMesh.colors.push(randNormalPosVec3(vec3.mk()));
   }
 
   const { renderer, allMeshes } = await EM.whenResources(
@@ -431,8 +431,8 @@ export async function lineStuff() {
 
     if (!ln.next || !ln.prev) {
       // end cap
-      const A1 = vec3.create();
-      const A2 = vec3.create();
+      const A1 = vec3.mk();
+      const A2 = vec3.mk();
 
       const Oln = ln.next ?? ln.prev; // other line
       const O = Oln ? lnMesh.pos[Oln.vi] : vec3.add(A, [1, 0, 0]);

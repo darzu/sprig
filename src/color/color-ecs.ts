@@ -32,7 +32,7 @@ export function applyTints(tints: Tints, tint: vec3) {
 export function setTint(tints: Tints, name: string, tint: vec3) {
   let current = tints.get(name);
   if (!current) {
-    current = vec3.create();
+    current = vec3.mk();
     tints.set(name, current);
   }
   vec3.copy(current, tint);

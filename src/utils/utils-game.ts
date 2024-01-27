@@ -44,9 +44,9 @@ export async function drawLine2(line: Line, color: vec3) {
 }
 export async function drawLine(start: vec3, end: vec3, color: vec3) {
   start = vec3.clone(start);
-  const start2 = vec3.add(start, [0.2, 0.2, 0.2], vec3.create());
+  const start2 = vec3.add(start, [0.2, 0.2, 0.2], vec3.mk());
   end = vec3.clone(end);
-  const end2 = vec3.add(end, [0.1, 0.1, 0.1], vec3.create());
+  const end2 = vec3.add(end, [0.1, 0.1, 0.1], vec3.mk());
 
   const pos = [start, start2, end2, end];
 
@@ -76,9 +76,9 @@ export async function drawLine(start: vec3, end: vec3, color: vec3) {
 }
 export function createLine(start: vec3, end: vec3, color: vec3) {
   start = vec3.clone(start);
-  const start2 = vec3.add(start, [0.2, 0.2, 0.2], vec3.create());
+  const start2 = vec3.add(start, [0.2, 0.2, 0.2], vec3.mk());
   end = vec3.clone(end);
-  const end2 = vec3.add(end, [0.1, 0.1, 0.1], vec3.create());
+  const end2 = vec3.add(end, [0.1, 0.1, 0.1], vec3.mk());
 
   const pos = [start, start2, end2, end];
 
@@ -166,15 +166,10 @@ export function screenPosToRay(
   screenPos: vec2,
   cameraComputed: CameraView
 ): Ray {
-  const origin = screenPosToWorldPos(
-    vec3.create(),
-    screenPos,
-    cameraComputed,
-    -1
-  );
+  const origin = screenPosToWorldPos(vec3.mk(), screenPos, cameraComputed, -1);
   const target = screenPosToWorldPos(tempVec3(), screenPos, cameraComputed, 0);
 
-  const dir = vec3.sub(target, origin, vec3.create());
+  const dir = vec3.sub(target, origin, vec3.mk());
   vec3.normalize(dir, dir);
 
   const r: Ray = {
@@ -216,7 +211,7 @@ export function createBoxForAABB(
 ): EntityW<
   [typeof PositionDef, typeof ScaleDef, typeof RenderableConstructDef]
 > {
-  const scale = getSizeFromAABB(aabb, vec3.create());
+  const scale = getSizeFromAABB(aabb, vec3.mk());
   const offset = vec3.clone(aabb.min);
 
   const box = EM.new();

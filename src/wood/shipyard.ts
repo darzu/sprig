@@ -165,7 +165,7 @@ const keelTemplate: Mesh = {
   surfaceIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
   usesProvoking: true,
 };
-const __temp1 = vec3.create();
+const __temp1 = vec3.mk();
 export function getPathFrom2DQuadMesh(m: Mesh, perp: vec3.InputT): Path {
   const hpoly = meshToHalfEdgePoly(m);
 
@@ -245,7 +245,7 @@ export async function dbgPathWithGizmos(path: Path, scale = 1) {
 export function snapXToPath(path: Path, x: number, out: vec3) {
   return snapToPath(path, x, 0, out);
 }
-const __temp2 = vec3.create();
+const __temp2 = vec3.mk();
 export function snapToPath(path: Path, w: number, dim: 0 | 1 | 2, out: vec3) {
   for (let i = 0; i < path.length; i++) {
     let pos = path[i].pos;
@@ -343,7 +343,7 @@ export function createLD53Ship(): HomeShip {
 
   const keelAABB = createAABB();
   keelPath.forEach((p) => updateAABBWithPoint(keelAABB, p.pos));
-  const keelSize = getSizeFromAABB(keelAABB, vec3.create());
+  const keelSize = getSizeFromAABB(keelAABB, vec3.mk());
 
   if (KEEL)
     appendBoard(
@@ -385,7 +385,7 @@ export function createLD53Ship(): HomeShip {
     const sternInfluence = 24;
     const prowAngle = (4 * Math.PI) / 16;
     const prowInfluence = 12;
-    const p0 = vec3.add(sternpost, [0, 0, transomWidth * 0.5], vec3.create());
+    const p0 = vec3.add(sternpost, [0, 0, transomWidth * 0.5], vec3.mk());
     const p1 = vec3.add(
       p0,
       [
@@ -393,7 +393,7 @@ export function createLD53Ship(): HomeShip {
         0,
         Math.sin(sternAngle) * sternInfluence,
       ],
-      vec3.create()
+      vec3.mk()
     );
     const p3 = prow;
     const p2 = vec3.add(
@@ -403,7 +403,7 @@ export function createLD53Ship(): HomeShip {
         0,
         Math.sin(prowAngle) * prowInfluence,
       ],
-      vec3.create()
+      vec3.mk()
     );
 
     railCurve = { p0, p1, p2, p3 };
@@ -422,7 +422,7 @@ export function createLD53Ship(): HomeShip {
   for (let i = 0; i < ribCount; i++) {
     // const ribX = i * ribSpace + 2 + keelAABB.min[0];
     const ribX = i * ribSpace + ribSpace + keelAABB.min[0];
-    const ribStart = snapXToPath(keelPath, ribX, vec3.create());
+    const ribStart = snapXToPath(keelPath, ribX, vec3.mk());
 
     // const p = translatePath(makeRibPath(i), V(i * ribSpace, 0, 0));
     // const weirdP = translatePath(makeRibPathWierd(i), ribStart);
@@ -434,7 +434,7 @@ export function createLD53Ship(): HomeShip {
     let ribCurve: BezierCubic;
     {
       const p0 = vec3.clone(ribStart);
-      const p1 = vec3.add(p0, [0, 0, 5], vec3.create());
+      const p1 = vec3.add(p0, [0, 0, 5], vec3.mk());
       // TODO(@darzu): HACKs for the first and last rib
       // if (i === 0) {
       //   p1[1] += 1;
@@ -444,12 +444,12 @@ export function createLD53Ship(): HomeShip {
         p1[1] += 1;
         p1[2] -= 4;
       }
-      const ribEnd = snapXToPath(railPath, ribStart[0], vec3.create());
+      const ribEnd = snapXToPath(railPath, ribStart[0], vec3.mk());
       // ribEnds.push(ribEnd);
 
       const p3 = ribEnd;
       // const p3 = vec3.add(ribStart, [0, keelSize[1], outboard], vec3.create());
-      const p2 = vec3.add(p3, [0, -5, 2], vec3.create());
+      const p2 = vec3.add(p3, [0, -5, 2], vec3.mk());
       ribCurve = { p0, p1, p2, p3 };
 
       // if (i === 0) {
@@ -589,7 +589,7 @@ export function createLD53Ship(): HomeShip {
 
   const plankPaths: Path[] = [];
   const plankPathsMirrored: Path[] = [];
-  const _temp4 = vec3.create();
+  const _temp4 = vec3.mk();
   for (let i = 0; i < plankCount; i++) {
     const nodes: Path = evenRibs
       .filter((rib) => rib.length > i)
@@ -703,7 +703,7 @@ export function createLD53Ship(): HomeShip {
   {
     const start = railPath[0];
     const end = mirrorRailPath[0];
-    const midPos = vec3.lerp(start.pos, end.pos, 0.5, vec3.create());
+    const midPos = vec3.lerp(start.pos, end.pos, 0.5, vec3.mk());
     vec3.lerp(midPos, start.pos, 1.2, start.pos);
     vec3.lerp(midPos, end.pos, 1.2, end.pos);
     const mid: PathNode = {
@@ -759,7 +759,7 @@ export function createLD53Ship(): HomeShip {
     // console.log(`ribSpace: ${ribSpace}`);
     const floorSegLength = 4.0;
     const halfNumFloorBoards = Math.floor(floorWidth / floorBoardWidth / 2);
-    const __t1 = vec3.create();
+    const __t1 = vec3.mk();
     for (let i = 0; i < halfNumFloorBoards; i++) {
       const z = i * floorBoardWidth + floorBoardWidth * 0.5;
       const fore = V(0, floorHeight, z);
@@ -873,7 +873,7 @@ interface Board {
 
 export function pathNodeFromMat4(cursor: mat4): PathNode {
   const rot = mat4.getRotation(cursor, quat.create());
-  const pos = mat4.getTranslation(cursor, vec3.create());
+  const pos = mat4.getTranslation(cursor, vec3.mk());
   return {
     pos,
     rot,
@@ -886,7 +886,7 @@ export function lerpBetween(start: vec3, end: vec3, numNewMid: number): vec3[] {
   positions.push(start);
   for (let i = 0; i < numNewMid; i++) {
     const t = (i + 1) / (numNewMid + 2 - 1);
-    const pos = vec3.lerp(start, end, t, vec3.create());
+    const pos = vec3.lerp(start, end, t, vec3.mk());
     positions.push(pos);
   }
   positions.push(end);

@@ -61,7 +61,7 @@ export function updateFrameFromPosRotScale(f: Frame) {
 }
 export function createFrame(): Frame {
   return {
-    position: vec3.create(),
+    position: vec3.mk(),
     rotation: quat.create(),
     scale: V(1, 1, 1),
     transform: mat4.create(),

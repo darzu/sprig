@@ -52,7 +52,7 @@ export function createGraph3D(
   // console.dir(domain);
 
   const opts: GraphAxesMeshOpts = {
-    intervalDomainLength: vec3.scale(domainSize, 0.1, vec3.create()),
+    intervalDomainLength: vec3.scale(domainSize, 0.1, vec3.mk()),
     domainSize: domain,
     // {
     //   min: V(0, 0, 0),
@@ -72,7 +72,7 @@ export function createGraph3D(
   EM.set(graph, RenderableConstructDef, graphMesh);
   EM.set(graph, PositionDef, pos);
 
-  const surfScale = vec3.div(worldSize, domainSize, vec3.create());
+  const surfScale = vec3.div(worldSize, domainSize, vec3.mk());
   // console.log(`surfScale: ${vec3Dbg(surfScale)}`);
 
   const graphSurf = EM.new();
@@ -81,7 +81,7 @@ export function createGraph3D(
   EM.set(
     graphSurf,
     PositionDef,
-    vec3.mul(vec3.negate(domain.min), surfScale, vec3.create())
+    vec3.mul(vec3.negate(domain.min), surfScale, vec3.mk())
     // vec3.add(worldGizmo.position, [50, 10, 50], V(0, 0, 0))
   );
   EM.set(graphSurf, PhysicsParentDef, graph.id);

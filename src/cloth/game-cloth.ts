@@ -161,7 +161,7 @@ export async function initClothSandbox(hosting: boolean) {
   const F = 100.0;
   EM.set(cloth, ForceDef, V(F, F, F));
 
-  const line = await drawLine(vec3.create(), vec3.create(), V(0, 1, 0));
+  const line = await drawLine(vec3.mk(), vec3.mk(), V(0, 1, 0));
 
   EM.addSystem(
     "clothSandbox",

@@ -35,9 +35,9 @@ export const LandDef = EM.defineResource("land", () => ({
 
 const yBasis = vec2.mk(); // TODO(@darzu): rename fwd
 const xBasis = vec2.mk(); // TODO(@darzu): rename right
-const xBasis3 = vec3.create();
+const xBasis3 = vec3.mk();
 const pointTemp = vec2.mk();
-const nudgeTemp = vec3.create();
+const nudgeTemp = vec3.mk();
 const scaledTemp1 = vec2.mk();
 const scaledTemp2 = vec2.mk();
 

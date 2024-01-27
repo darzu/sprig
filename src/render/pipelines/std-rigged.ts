@@ -81,10 +81,10 @@ function createEmptyVertexTS(): VertexTS {
   return {
     jointIds: vec4.create(),
     jointWeights: vec4.create(),
-    position: vec3.create(),
-    color: vec3.create(),
+    position: vec3.mk(),
+    color: vec3.mk(),
     // tangent: m.tangents ? m.tangents[i] : [1.0, 0.0, 0.0],
-    normal: vec3.create(),
+    normal: vec3.mk(),
     uv: V(0, 0),
     surfaceId: 0,
   };

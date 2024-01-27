@@ -315,8 +315,8 @@ export function registerPhysicsStateInit() {
           aabb: copyAABB(createAABB(), selfAABB),
           localAABB: copyAABB(createAABB(), selfAABB),
           selfAABB: copyAABB(createAABB(), selfAABB),
-          localPos: aabbCenter(vec3.create(), selfAABB),
-          lastLocalPos: aabbCenter(vec3.create(), selfAABB),
+          localPos: aabbCenter(vec3.mk(), selfAABB),
+          lastLocalPos: aabbCenter(vec3.mk(), selfAABB),
           myLayer: my,
           targetLayer: target,
         };

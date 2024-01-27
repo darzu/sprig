@@ -216,7 +216,7 @@ function mkDotPath(
   size: number
 ): DotPath {
   const path: Path = range(len).map((_) => ({
-    pos: vec3.create(),
+    pos: vec3.mk(),
     rot: quat.create(),
   }));
 
@@ -271,7 +271,7 @@ function createOcean() {
   const grid = createHexGrid<typeT>();
 
   for (let [q, r] of hexesWithin(0, 0, oceanRadius)) {
-    const loc = hexXYZ(vec3.create(), q, r, size);
+    const loc = hexXYZ(vec3.mk(), q, r, size);
     loc[2] -= 0.9;
     const tile = createTile(loc);
     grid.set(q, r, tile);

@@ -95,7 +95,7 @@ export function pointInAABB(aabb: AABB, p: vec3) {
 //   return points;
 // }
 
-const tempAabbCorners: vec3[] = range(8).map((_) => vec3.create());
+const tempAabbCorners: vec3[] = range(8).map((_) => vec3.mk());
 export function getAABBCornersTemp(aabb: AABB): vec3[] {
   vec3.set(aabb.max[0], aabb.max[1], aabb.max[2], tempAabbCorners[0]);
   vec3.set(aabb.max[0], aabb.max[1], aabb.min[2], tempAabbCorners[1]);
@@ -204,7 +204,7 @@ export function aabbCenter2(out: vec2, a: AABB2): vec2 {
 
 // TODO(@darzu): add out param
 export function getCenterFromAABB(aabb: AABB): vec3 {
-  return vec3Mid(vec3.create(), aabb.min, aabb.max);
+  return vec3Mid(vec3.mk(), aabb.min, aabb.max);
 }
 export function getSizeFromAABB(aabb: AABB, out?: vec3): vec3 {
   out = out ?? vec3.tmp();

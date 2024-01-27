@@ -6,11 +6,11 @@ import { assert, dbgDirOnce } from "../utils/util.js";
 import { createEmptyMesh } from "../wood/wood.js";
 
 const _UP = V(0, 0, 1);
-const _t1 = vec3.create();
-const _t2 = vec3.create();
-const _t3 = vec3.create();
-const _t4 = vec3.create();
-const _t5 = vec3.create();
+const _t1 = vec3.mk();
+const _t2 = vec3.mk();
+const _t3 = vec3.mk();
+const _t4 = vec3.mk();
+const _t5 = vec3.mk();
 export function createLineMesh(
   width: number,
   start: vec3.InputT,
@@ -39,20 +39,20 @@ export function createLineMesh(
 
   const mesh = createEmptyMesh("line");
 
-  const tr = vec3.add(up, right, vec3.create());
-  const tl = vec3.add(up, left, vec3.create());
-  const bl = vec3.add(down, left, vec3.create());
-  const br = vec3.add(down, right, vec3.create());
+  const tr = vec3.add(up, right, vec3.mk());
+  const tl = vec3.add(up, left, vec3.mk());
+  const bl = vec3.add(down, left, vec3.mk());
+  const br = vec3.add(down, right, vec3.mk());
   vec3.add(tr, start, tr);
   vec3.add(tl, start, tl);
   vec3.add(bl, start, bl);
   vec3.add(br, start, br);
   mesh.pos.push(tr, tl, bl, br);
   mesh.quad.push(V(0, 1, 2, 3));
-  const ftr = vec3.add(tr, fwd, vec3.create());
-  const ftl = vec3.add(tl, fwd, vec3.create());
-  const fbl = vec3.add(bl, fwd, vec3.create());
-  const fbr = vec3.add(br, fwd, vec3.create());
+  const ftr = vec3.add(tr, fwd, vec3.mk());
+  const ftl = vec3.add(tl, fwd, vec3.mk());
+  const fbl = vec3.add(bl, fwd, vec3.mk());
+  const fbr = vec3.add(br, fwd, vec3.mk());
   mesh.pos.push(ftr, ftl, fbl, fbr);
   mesh.quad.push(V(7, 6, 5, 4));
 
