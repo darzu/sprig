@@ -202,7 +202,7 @@ export const { EnemyShipPropsDef, EnemyShipLocalDef, createEnemyShip } =
       const pitch = Math.PI * 0.08;
       // quat.rotateY(cannonRot, cannonRot, Math.PI * 0.5);
       // quat.rotateY(cannonRot, cannonRot, Math.PI * 0.5);
-      quat.rotateX(cannonRot, pitch, cannonRot);
+      quat.rotX(cannonRot, pitch, cannonRot);
       EM.set(cannon, RotationDef, cannonRot);
       e.enemyShipLocal.childCannonId = cannon.id;
 

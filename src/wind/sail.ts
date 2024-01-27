@@ -241,7 +241,7 @@ function useWindToTurn(
   if (Math.abs(angleToParty) > 0.01) {
     const angleDelta = clamp(angleToParty, -TURN_SPEED, TURN_SPEED);
     // TODO(@darzu): use yaw/pitch/roll
-    quat.rotateY(us.rotation, angleDelta, us.rotation);
+    quat.rotY(us.rotation, angleDelta, us.rotation);
   }
 
   // set the sail
@@ -249,7 +249,7 @@ function useWindToTurn(
   const angleToWind = angleBetweenXZ(sailFwd, windDir);
   const sailAngle = angleToWind - angleToParty;
   // TODO(@darzu): use yaw/pitch/roll
-  quat.rotateY(quat.IDENTITY, sailAngle, outSailRot);
+  quat.rotY(quat.IDENTITY, sailAngle, outSailRot);
 
   // console.log(`turning by: ${angleBetween}`);
 }

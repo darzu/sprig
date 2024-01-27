@@ -162,7 +162,7 @@ function rotatePiratePlatform(
 ) {
   // TODO(@darzu): use yaw/pitch/roll
   V3.rotY(p.position, V3.ZEROS, rad, p.position);
-  quat.rotateY(p.rotation, rad, p.rotation);
+  quat.rotY(p.rotation, rad, p.rotation);
 }
 
 export async function startPirates() {
@@ -236,7 +236,7 @@ export async function startPirates() {
           p.piratePlatform.tiltPeriod * 0.5;
         if (RotationDef.isOn(c)) {
           let r = Math.PI * pitchSpeed * res.time.dt * (upMode ? -1 : 1);
-          quat.rotateX(c.rotation, r, c.rotation);
+          quat.rotX(c.rotation, r, c.rotation);
         }
 
         // fire cannons
@@ -378,7 +378,7 @@ EM.addLazyInit([RendererDef, TimeDef], [PiratePoolDef], (res) => {
       platform.piratePlatform.tiltTimer = tiltTimer;
 
       quat.identity(cannon.rotation);
-      quat.rotateX(cannon.rotation, initialPitch, cannon.rotation);
+      quat.rotX(cannon.rotation, initialPitch, cannon.rotation);
       // TODO(@darzu): HACK!
       // so they start slightly different pitches
       let initTimer = 0;
@@ -387,7 +387,7 @@ EM.addLazyInit([RendererDef, TimeDef], [PiratePoolDef], (res) => {
         initTimer += 16.6666;
         const upMode = initTimer % tiltPeriod > tiltPeriod * 0.5;
         let r = Math.PI * pitchSpeed * 16.6666 * (upMode ? -1 : 1);
-        quat.rotateX(cannon.rotation, r, cannon.rotation);
+        quat.rotX(cannon.rotation, r, cannon.rotation);
       }
     },
     onDespawn: (e) => {

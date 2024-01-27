@@ -121,7 +121,7 @@ EM.addEagerInit([PlayerHsPropsDef], [], [], () => {
           e,
           RotationDef,
           // TODO(@darzu): Z_UP rotateY
-          quat.rotateY(quat.IDENTITY, Math.PI, quat.mk())
+          quat.rotY(quat.IDENTITY, Math.PI, quat.mk())
         );
         EM.set(e, LinearVelocityDef);
         // console.log("making player!");

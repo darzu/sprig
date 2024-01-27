@@ -130,7 +130,7 @@ export function registerRibSailSystems() {
 
         sail.ribSailLocal.ribs.forEach((ribRef, i) => {
           const rib = ribRef()!;
-          quat.rotateX(
+          quat.rotX(
             quat.IDENTITY,
             sail.ribSailLocal.pitch * (1 - i / RIB_COUNT),
             rib.rotation

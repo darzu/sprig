@@ -199,8 +199,8 @@ EM.addEagerInit([SplinterParticleDef], [], [], () => {
 
           s.position[2] = 0;
           quat.identity(s.rotation);
-          quat.rotateX(s.rotation, Math.PI * 0.5, s.rotation);
-          quat.rotateZ(s.rotation, Math.PI * Math.random(), s.rotation);
+          quat.rotX(s.rotation, Math.PI * 0.5, s.rotation);
+          quat.rotZ(s.rotation, Math.PI * Math.random(), s.rotation);
           s.renderDataStd.id = splinterObjId; // stops z-fighting
           // console.log("freeze!");
         }

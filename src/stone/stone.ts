@@ -616,9 +616,9 @@ EM.addLazyInit([RendererDef], [FlyingBrickPoolDef], (res) => {
 
       // set random rotation and angular velocity
       quat.identity(e.rotation);
-      quat.rotateX(e.rotation, Math.PI * 0.5, e.rotation);
-      quat.rotateY(e.rotation, Math.PI * Math.random(), e.rotation);
-      quat.rotateZ(e.rotation, Math.PI * Math.random(), e.rotation);
+      quat.rotX(e.rotation, Math.PI * 0.5, e.rotation);
+      quat.rotY(e.rotation, Math.PI * Math.random(), e.rotation);
+      quat.rotZ(e.rotation, Math.PI * Math.random(), e.rotation);
 
       V3.set(
         Math.random() - 0.5,
@@ -812,8 +812,8 @@ function getFireDirection(
 
   const worldRot = quat.mk();
   // TODO(@darzu): b/c we're using +X is fwd, we can't use quat.fromYawPitchRoll
-  quat.rotateZ(worldRot, -yaw, worldRot);
-  quat.rotateY(worldRot, -pitch, worldRot);
+  quat.rotZ(worldRot, -yaw, worldRot);
+  quat.rotY(worldRot, -pitch, worldRot);
 
   return worldRot;
 }

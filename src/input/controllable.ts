@@ -117,7 +117,7 @@ EM.addEagerInit([ControllableDef], [], [], () => {
         if (modes.canFly) c.linearVelocity[2] = steerVel[2];
 
         if (modes.canYaw)
-          quat.rotateZ(
+          quat.rotZ(
             c.rotation,
             -res.inputs.mouseMov[0] * c.controllable.turnSpeed,
             c.rotation

@@ -793,13 +793,13 @@ export module quat {
     return GL.getAngle(q1, q2);
   }
 
-  export function rotateX(v1: InputT, n: number, out?: T) {
+  export function rotX(v1: InputT, n: number, out?: T) {
     return GL.rotateX(out ?? tmp(), v1, n) as T;
   }
-  export function rotateY(v1: InputT, n: number, out?: T) {
+  export function rotY(v1: InputT, n: number, out?: T) {
     return GL.rotateY(out ?? tmp(), v1, n) as T;
   }
-  export function rotateZ(v1: InputT, n: number, out?: T) {
+  export function rotZ(v1: InputT, n: number, out?: T) {
     return GL.rotateZ(out ?? tmp(), v1, n) as T;
   }
   // export function rotateMat3(v1: InputT, m: mat3, out?: T) {

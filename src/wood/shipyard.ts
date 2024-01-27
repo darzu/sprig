@@ -319,7 +319,7 @@ export function createLD53Ship(): HomeShip {
     let keelTemplate2 = transformMesh(
       keelTemplate,
       mat4.fromRotationTranslationScale(
-        quat.rotateX(quat.identity(), Math.PI / 2),
+        quat.rotX(quat.identity(), Math.PI / 2),
         [0, 0, 0],
         // vec3.scale(vec3.negate(keelTempAABB.min), 6),
         [5, 5, 5]
@@ -682,7 +682,7 @@ export function createLD53Ship(): HomeShip {
     // dbgPathWithGizmos(path);
     for (let n of path) {
       quat.fromEuler(-Math.PI / 2, 0, Math.PI / 2, n.rot);
-      quat.rotateY(n.rot, -Math.PI / 16, n.rot);
+      quat.rotY(n.rot, -Math.PI / 16, n.rot);
     }
     let color = transomColor;
     if (i === 0) color = topPlankColor;
