@@ -420,7 +420,7 @@ export function createFlatQuadMesh(
   const quadNum = height * width * (doubleSided ? 2 : 1);
   const mesh: Mesh = {
     pos: range(width * height).map((_) => vec3.create()),
-    uvs: range(width * height).map((_) => vec2.create()),
+    uvs: range(width * height).map((_) => vec2.mk()),
     quad: range(quadNum).map((_) => vec4.create()),
     tri: [],
     normals: range(width * height).map((_) => vec3.create()),

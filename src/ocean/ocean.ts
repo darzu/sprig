@@ -81,7 +81,7 @@ export const OceanDef = EM.defineResource("ocean", (o: UVSurface) => {
 
 export const UVPosDef = EM.defineComponent(
   "uvPos",
-  () => vec2.create(),
+  () => vec2.mk(),
   (p, uv?: vec2.InputT) => (uv ? vec2.copy(p, uv) : p)
 );
 EM.registerSerializerPair(
@@ -234,7 +234,7 @@ export async function initOcean(oceanMesh: Mesh, color: vec3) {
   const gerstnerWaves = createWaves();
 
   // TODO(@darzu): HACK!
-  const __temp1 = vec2.create();
+  const __temp1 = vec2.mk();
   const __temp2 = vec3.create();
   const __temp3 = vec3.create();
   const __temp4 = vec3.create();
@@ -357,7 +357,7 @@ export function registerOceanUVFns() {
     }
   );
 
-  const __temp3 = vec2.create();
+  const __temp3 = vec2.mk();
   const __temp4 = vec3.create();
   EM.addSystem(
     "oceanUVDirToRot",

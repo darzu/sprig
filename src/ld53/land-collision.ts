@@ -33,13 +33,13 @@ export const LandDef = EM.defineResource("land", () => ({
   sample: (x: number, y: number) => 0 as number,
 }));
 
-const yBasis = vec2.create(); // TODO(@darzu): rename fwd
-const xBasis = vec2.create(); // TODO(@darzu): rename right
+const yBasis = vec2.mk(); // TODO(@darzu): rename fwd
+const xBasis = vec2.mk(); // TODO(@darzu): rename right
 const xBasis3 = vec3.create();
-const pointTemp = vec2.create();
+const pointTemp = vec2.mk();
 const nudgeTemp = vec3.create();
-const scaledTemp1 = vec2.create();
-const scaledTemp2 = vec2.create();
+const scaledTemp1 = vec2.mk();
+const scaledTemp2 = vec2.mk();
 
 // TODO: import these from somewhere
 const WORLD_WIDTH = 1024; // width runs +X

@@ -73,9 +73,9 @@ export function registerUvSpawnSystems() {
 
         // TODO(@darzu): parameterize what is spawned
         const b = spawnEnemyShip(
-          vec2.copy(vec2.create(), t.uvPos),
+          vec2.copy(vec2.mk(), t.uvPos),
           t.id,
-          vec2.copy(vec2.create(), t.uvDir)
+          vec2.copy(vec2.mk(), t.uvDir)
         );
 
         // console.log(`spawning ${b.id} from ${t.id} at ${performance.now()}`);

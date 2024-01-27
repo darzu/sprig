@@ -281,7 +281,7 @@ export const OceanMesh = XY.registerMesh({
     }
 
     // console.log(`xLen:${xLen},yLen:${yLen}`);
-    const uvs = m.pos.map((_, vi) => vec2.create());
+    const uvs = m.pos.map((_, vi) => vec2.mk());
     m.uvs = uvs;
     // setUV(Math.floor(xLen / 2), 0, [0, 1], [0, 0], true);
     setUV(

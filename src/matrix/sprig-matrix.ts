@@ -288,7 +288,7 @@ export module vec2 {
     return tmpArray(2);
   }
 
-  export function create(): T {
+  export function mk(): T {
     return float32ArrayOfLength(2);
   }
 
@@ -312,7 +312,7 @@ export module vec2 {
   }
 
   export function fromValues(n0: number, n1: number): T {
-    const out = create();
+    const out = mk();
     out[0] = n0;
     out[1] = n1;
     return out;

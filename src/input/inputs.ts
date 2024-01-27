@@ -13,8 +13,8 @@ const _seenKeyCodes: Set<string> = new Set();
 export const InputsDef = EM.defineResource("inputs", () => {
   return {
     // TODO(@darzu): should we map mouse 2D pos to be Y up? Y down is annoying..
-    mouseMov: vec2.create(),
-    mousePos: vec2.create(),
+    mouseMov: vec2.mk(),
+    mousePos: vec2.mk(),
     // TODO(@darzu): need rising edge vs falling edge distinction
     lclick: false,
     rclick: false,
@@ -32,12 +32,12 @@ export type Inputs = Resource<typeof InputsDef>;
 export const MouseDragDef = EM.defineResource("mousedrag", () => ({
   isDragging: false,
   isDragEnd: false,
-  dragStart: vec2.create(),
-  dragEnd: vec2.create(),
-  dragMin: vec2.create(),
-  dragMax: vec2.create(),
-  dragMov: vec2.create(),
-  dragLastEnd: vec2.create(),
+  dragStart: vec2.mk(),
+  dragEnd: vec2.mk(),
+  dragMin: vec2.mk(),
+  dragMax: vec2.mk(),
+  dragMov: vec2.mk(),
+  dragLastEnd: vec2.mk(),
 }));
 
 EM.addLazyInit([], [InputsDef, MouseDragDef], () => {
@@ -134,8 +134,8 @@ function createInputsReader(canvas: Canvas): () => Inputs {
   }
 
   // track mouse movement for use in the game loop
-  let accumulated_mouseMov = vec2.create();
-  let lastMouse: vec2 = vec2.create();
+  let accumulated_mouseMov = vec2.mk();
+  let lastMouse: vec2 = vec2.mk();
   window.addEventListener(
     "mousemove",
     (ev) => {

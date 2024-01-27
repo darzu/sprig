@@ -271,7 +271,7 @@ export function parseAndMutateIntoMapData(
     (b) => b.color[0] < 100 && b.color[1] < 100 && b.color[2] > 200
   )[0];
   assert(!!startBlob, `no start blob`);
-  const startPos = aabbCenter2(vec2.create(), startBlob.aabb);
+  const startPos = aabbCenter2(vec2.mk(), startBlob.aabb);
 
   // extract tower locations
   const towers = blobs
@@ -318,7 +318,7 @@ export function parseAndMutateIntoMapData(
     `expected 1 end zone, found ${endZoneBlobs.length}`
   );
   const endZoneBlob = endZoneBlobs[0];
-  const endZonePos = aabbCenter2(vec2.create(), endZoneBlob.aabb);
+  const endZonePos = aabbCenter2(vec2.mk(), endZoneBlob.aabb);
 
   const levelMap: LevelMap = {
     landCyTexData,
