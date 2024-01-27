@@ -71,7 +71,7 @@ export function mirrorPath(p: Path, planeNorm: vec3.InputT) {
   p.forEach((curr) => {
     quat.mul(mirrorQuat, curr.rot, curr.rot);
     quat.mul(curr.rot, mirrorQuat, curr.rot);
-    vec3.transformMat3(curr.pos, mirrorMat3, curr.pos);
+    vec3.tMat3(curr.pos, mirrorMat3, curr.pos);
   });
 
   return p;

@@ -131,7 +131,7 @@ EM.addEagerInit([MastDef], [], [], () => {
 
         // TODO(@darzu): PERF. Cache this invert?
         const invShip = mat3.invert(mat3.fromMat4(ship.world.transform));
-        const windLocalDir = vec3.transformMat3(res.wind.dir, invShip);
+        const windLocalDir = vec3.tMat3(res.wind.dir, invShip);
         const shipLocalDir = vec3.FWD;
 
         const optimalSailLocalDir = vec3.normalize(

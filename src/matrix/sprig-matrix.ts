@@ -553,12 +553,16 @@ export module vec3 {
     return GL.transformMat4(out ?? tmp(), v1, v2) as T;
   }
 
-  export function transformMat3(v1: InputT, v2: mat3.InputT, out?: T): T {
+  export function tMat3(v1: InputT, v2: mat3.InputT, out?: T): T {
     return GL.transformMat3(out ?? tmp(), v1, v2) as T;
   }
 
   export function zero(out?: T): T {
-    return GL.zero(out ?? tmp()) as T;
+    out = out ?? tmp();
+    out[0] = 0;
+    out[1] = 0;
+    out[2] = 0;
+    return out;
   }
 
   export function rotateX(

@@ -118,7 +118,7 @@ export function parabolaFromPoints(
     1,
     1,
   ]);
-  const abc = vec3.transformMat3([y0, y1, y2], inv, vec3.mk());
+  const abc = vec3.tMat3([y0, y1, y2], inv, vec3.mk());
   return abc;
 
   // // parabola test:

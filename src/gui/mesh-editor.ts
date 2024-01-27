@@ -315,7 +315,7 @@ async function createMeshEditor() {
     // TODO(@darzu): should be done via parenting
     const invTrans4 = mat4.invert(res.hpEnt.world.transform);
     const invTrans3 = mat3.fromMat4(invTrans4);
-    const posE = vec3.transformMat3(glyph.position, invTrans3);
+    const posE = vec3.tMat3(glyph.position, invTrans3);
 
     vertPos[0] = posE[0];
     vertPos[1] = posE[1];

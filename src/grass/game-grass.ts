@@ -661,7 +661,7 @@ export async function initGrassGame(hosting: boolean) {
       // const shipDir = vec3.transformQuat(V(0, 0, 1), shipWorld.world.rotation);
 
       const invShip = mat3.invert(mat3.fromMat4(shipWorld.world.transform));
-      const windLocalDir = vec3.transformMat3(res.wind.dir, invShip);
+      const windLocalDir = vec3.tMat3(res.wind.dir, invShip);
       const shipLocalDir = V(0, 0, 1);
 
       const optimalSailLocalDir = vec3.normalize(
