@@ -158,7 +158,7 @@ EM.addSystem(
   [WindDef],
   (es, res) => {
     for (let e of es) {
-      const normal = V3.tQuat(V3.FWD, e.world.rotation);
+      const normal = quat.fwd(e.world.rotation);
       e.sail.billowAmount = V3.dot(normal, res.wind.dir);
       if (e.sail.billowAmount < 0) e.sail.billowAmount = 0;
       e.sail.unfurledAmount = clamp(e.sail.unfurledAmount, e.sail.minFurl, 1.0);

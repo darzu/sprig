@@ -949,6 +949,25 @@ export module quat {
 
     return fromXYZ(x, y, upish, out);
   }
+
+  export function right(q: quat.InputT, out?: V3): V3 {
+    return V3.tQuat(V3.RIGHT, q, out);
+  }
+  export function fwd(q: quat.InputT, out?: V3): V3 {
+    return V3.tQuat(V3.FWD, q, out);
+  }
+  export function up(q: quat.InputT, out?: V3): V3 {
+    return V3.tQuat(V3.UP, q, out);
+  }
+  export function left(q: quat.InputT, out?: V3): V3 {
+    return V3.tQuat(V3.LEFT, q, out);
+  }
+  export function back(q: quat.InputT, out?: V3): V3 {
+    return V3.tQuat(V3.BACK, q, out);
+  }
+  export function down(q: quat.InputT, out?: V3): V3 {
+    return V3.tQuat(V3.DOWN, q, out);
+  }
 }
 
 // TODO(@darzu): HACK FOR DEBUGGING

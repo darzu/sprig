@@ -223,7 +223,7 @@ EM.addSystem(
   [PartyDef],
   (es, res) => {
     if (es[0]) {
-      V3.tQuat(V3.FWD, es[0].rotation, res.party.dir);
+      quat.fwd(es[0].rotation, res.party.dir);
       V3.copy(res.party.pos, es[0].position);
     }
   }

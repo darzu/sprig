@@ -170,7 +170,7 @@ const EnemyDef = EnemyObj.props;
 
 function cannonFireCurve(frame: Frame, speed: number, out: Parametric) {
   // TODO(@darzu): IMPL!
-  const axis = V3.tQuat(V3.FWD, frame.rotation);
+  const axis = quat.fwd(frame.rotation);
   const vel = V3.scale(axis, speed);
 
   const time = EM.getResource(TimeDef)!;
@@ -682,7 +682,7 @@ async function initEnemies() {
         let toTrgR = V3.sub(_trgR, e.position);
         toTrgR = V3.norm(toTrgR);
 
-        const curDir = V3.tQuat(V3.FWD, e.rotation);
+        const curDir = quat.fwd(e.rotation);
 
         const lDot = V3.dot(toTrgL, curDir);
         const rDot = V3.dot(toTrgR, curDir);
