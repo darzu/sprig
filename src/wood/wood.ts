@@ -910,10 +910,10 @@ export function createTimberBuilder(mesh: RawMesh) {
     const loop2Idx = mesh.pos.length - 4;
     const loop1Idx = mesh.pos.length - 4 - 4;
 
-    const q0 = V4.create();
-    const q1 = V4.create();
-    const q2 = V4.create();
-    const q3 = V4.create();
+    const q0 = V4.mk();
+    const q1 = V4.mk();
+    const q2 = V4.mk();
+    const q3 = V4.mk();
 
     setSideQuadIdxs(loop1Idx, loop2Idx, q0, q1, q2, q3);
 
@@ -922,7 +922,7 @@ export function createTimberBuilder(mesh: RawMesh) {
 
   function addEndQuad(facingDown: boolean) {
     const lastLoopIdx = mesh.pos.length - 4;
-    const q = V4.create();
+    const q = V4.mk();
     setEndQuadIdxs(lastLoopIdx, q, facingDown);
     mesh.quad.push(q);
   }
@@ -1004,7 +1004,7 @@ export function reserveSplinterSpace(wood: WoodState, maxSplinters: number) {
     wood.mesh.tri.push(V3.mk())
   );
   range(maxSplinters * _quadsPerSplinter).forEach((_) =>
-    wood.mesh.quad.push(V4.create())
+    wood.mesh.quad.push(V4.mk())
   );
   const newFaces = maxSplinters * (_quadsPerSplinter + _trisPerSplinter);
   range(newFaces).forEach((_) => {

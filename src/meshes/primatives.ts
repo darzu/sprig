@@ -413,7 +413,7 @@ export function createFlatQuadMesh(
   const mesh: Mesh = {
     pos: range(width * height).map((_) => V3.mk()),
     uvs: range(width * height).map((_) => V2.mk()),
-    quad: range(quadNum).map((_) => V4.create()),
+    quad: range(quadNum).map((_) => V4.mk()),
     tri: [],
     normals: range(width * height).map((_) => V3.mk()),
     tangents: range(width * height).map((_) => V3.mk()),

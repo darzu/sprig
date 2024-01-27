@@ -925,10 +925,10 @@ export function appendBoard(mesh: RawMesh, board: Board, color = BLACK) {
     const loop2Idx = mesh.pos.length - 4;
     const loop1Idx = mesh.pos.length - 4 - 4;
 
-    const q0 = V4.create();
-    const q1 = V4.create();
-    const q2 = V4.create();
-    const q3 = V4.create();
+    const q0 = V4.mk();
+    const q1 = V4.mk();
+    const q2 = V4.mk();
+    const q3 = V4.mk();
 
     setSideQuadIdxs(loop1Idx, loop2Idx, q0, q1, q2, q3);
 
@@ -937,7 +937,7 @@ export function appendBoard(mesh: RawMesh, board: Board, color = BLACK) {
 
   function addEndQuad(facingDown: boolean) {
     const lastLoopIdx = mesh.pos.length - 4;
-    const q = V4.create();
+    const q = V4.mk();
     setEndQuadIdxs(lastLoopIdx, q, facingDown);
     mesh.quad.push(q);
   }

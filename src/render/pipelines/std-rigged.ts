@@ -79,8 +79,8 @@ const VertexStruct = createCyStruct(
 type VertexTS = CyToTS<typeof VertexStruct.desc>;
 function createEmptyVertexTS(): VertexTS {
   return {
-    jointIds: V4.create(),
-    jointWeights: V4.create(),
+    jointIds: V4.mk(),
+    jointWeights: V4.mk(),
     position: V3.mk(),
     color: V3.mk(),
     // tangent: m.tangents ? m.tangents[i] : [1.0, 0.0, 0.0],

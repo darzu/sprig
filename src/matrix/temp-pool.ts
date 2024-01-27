@@ -20,7 +20,7 @@ class _TempPool {
   constructor(maxVecs: number, maxQuats: number, maxMat4s: number) {
     this.vec2s = range(maxVecs).map(() => V2.mk());
     this.vec3s = range(maxVecs).map(() => V3.mk());
-    this.vec4s = range(maxVecs).map(() => V4.create());
+    this.vec4s = range(maxVecs).map(() => V4.mk());
     this.quats = range(maxQuats).map(() => quat.create());
     this.mat4s = range(maxMat4s).map(() => mat4.create());
   }

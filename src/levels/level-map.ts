@@ -165,7 +165,7 @@ function parseAndMutateIntoMapBlobs(
     //    at the start of a run and there are no runs
     //    below us.
     //    - map origin is bottom-left.
-    const color = getColor(x, y, V4.create());
+    const color = getColor(x, y, V4.mk());
     const blob: MapBlob = {
       color,
       aabb: { min: V(Infinity, Infinity), max: V(-Infinity, -Infinity) },

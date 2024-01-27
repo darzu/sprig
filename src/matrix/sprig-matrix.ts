@@ -616,7 +616,7 @@ export module V4 {
     return tmpArray(4);
   }
 
-  export function create(): T {
+  export function mk(): T {
     return float32ArrayOfLength(4);
   }
 
@@ -649,7 +649,7 @@ export module V4 {
     n2: number,
     n3: number
   ): T {
-    const out = create();
+    const out = mk();
     out[0] = n0;
     out[1] = n1;
     out[2] = n2;
@@ -679,10 +679,10 @@ export module V4 {
   export function div(v1: InputT, v2: InputT, out?: T): T {
     return GL.div(out ?? tmp(), v1, v2) as T;
   }
-  export function normalize(v1: InputT, out?: T): T {
+  export function norm(v1: InputT, out?: T): T {
     return GL.normalize(out ?? tmp(), v1) as T;
   }
-  export function length(v1: InputT): number {
+  export function len(v1: InputT): number {
     return GL.length(v1);
   }
   export function dot(v1: InputT, v2: InputT): number {
@@ -692,7 +692,7 @@ export module V4 {
   export function scale(v1: InputT, n: number, out?: T): T {
     return GL.scale(out ?? tmp(), v1, n) as T;
   }
-  export function negate(v1: InputT, out?: T): T {
+  export function neg(v1: InputT, out?: T): T {
     return GL.negate(out ?? tmp(), v1) as T;
   }
   export function dist(v1: InputT, v2: InputT): number {
@@ -706,11 +706,11 @@ export module V4 {
     return GL.lerp(out ?? tmp(), v1, v2, n) as T;
   }
 
-  export function transformQuat(v1: InputT, v2: quat.InputT, out?: T): T {
+  export function tQuat(v1: InputT, v2: quat.InputT, out?: T): T {
     return GL.transformQuat(out ?? tmp(), v1, v2) as T;
   }
 
-  export function transformMat4(v1: InputT, v2: mat4.InputT, out?: T): T {
+  export function tMat4(v1: InputT, v2: mat4.InputT, out?: T): T {
     return GL.transformMat4(out ?? tmp(), v1, v2) as T;
   }
 
