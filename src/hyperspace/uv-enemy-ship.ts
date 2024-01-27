@@ -1,6 +1,6 @@
 import { EM, Entity, EntityW, Component } from "../ecs/entity-manager.js";
 import { TimeDef } from "../time/time.js";
-import { V2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { jitter } from "../utils/math.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import {

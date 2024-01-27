@@ -1,7 +1,7 @@
 // player controller component and system
 
 // player controller component and system
-import { V2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { InputsDef } from "../input/inputs.js";
 import { EM, Entity, EntityW } from "../ecs/entity-manager.js";
 import { TimeDef } from "../time/time.js";

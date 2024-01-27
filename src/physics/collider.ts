@@ -1,6 +1,6 @@
 import { Component, EM } from "../ecs/entity-manager.js";
 import { Phase } from "../ecs/sys-phase.js";
-import { V2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { getAABBFromMesh } from "../meshes/mesh.js";
 import { RenderableDef } from "../render/renderer-ecs.js";
 import { AABB } from "./aabb.js";

@@ -1,5 +1,5 @@
 import { remap } from "../../utils/math.js";
-import { vec4, V } from "../../matrix/sprig-matrix.js";
+import { V4, V } from "../../matrix/sprig-matrix.js";
 import { createRenderTextureToQuad } from "../gpu-helper.js";
 import { CY } from "../gpu-registry.js";
 import { UVUNWRAP_MASK } from "../pipeline-masks.js";
@@ -89,17 +89,17 @@ export const unwrapPipeline2 = CY.createRenderPipeline("unwrapPipe2", {
     {
       ptr: uvToPosTex,
       clear: "once",
-      defaultColor: vec4.clone([0.0, 0.0, 0.0, 0.0]),
+      defaultColor: V4.clone([0.0, 0.0, 0.0, 0.0]),
     },
     {
       ptr: uvToNormTex,
       clear: "once",
-      defaultColor: vec4.clone([0.0, 0.0, 0.0, 0.0]),
+      defaultColor: V4.clone([0.0, 0.0, 0.0, 0.0]),
     },
     // {
     //   ptr: uvToTangTex,
     //   clear: "once",
-    //   defaultColor: vec4.clone([0.0, 0.0, 0.0, 0.0]),
+    //   defaultColor: V4.clone([0.0, 0.0, 0.0, 0.0]),
     // },
   ],
 });
@@ -143,7 +143,7 @@ export const unwrapPipeline = CY.createRenderPipeline("unwrapPipe", {
     {
       ptr: uvMaskTex,
       clear: "once",
-      defaultColor: vec4.clone([0.0, 0.0, 0.0, 0.0]),
+      defaultColor: V4.clone([0.0, 0.0, 0.0, 0.0]),
     },
   ],
 });

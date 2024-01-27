@@ -2,7 +2,7 @@ import { ColorDef } from "../color/color-ecs.js";
 import { EM, EntityW, Resources } from "../ecs/entity-manager.js";
 import { GameMesh, gameMeshFromMesh } from "../meshes/mesh-loader.js";
 import { gameplaySystems } from "../debug/ghost.js";
-import { V2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { importObj } from "../meshes/import-obj.js";
 import { InputsDef } from "../input/inputs.js";
 import { PhysicsResultsDef } from "../physics/nonintersection.js";

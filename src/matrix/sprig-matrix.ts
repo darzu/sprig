@@ -35,7 +35,7 @@ export type V3 = Float32ArrayOfLength<3>;
 
 export type vec3tmp = V3; // TODO(@darzu): ENFORCE THIS! Right now it's just a description thing.
 
-export type vec4 = Float32ArrayOfLength<4>;
+export type V4 = Float32ArrayOfLength<4>;
 
 export type quat = Float32ArrayOfLength<4>;
 
@@ -380,10 +380,10 @@ export module V2 {
 // TODO(@darzu): PERF. does this have a perf hit?
 export function V(...xs: [number, number]): V2;
 export function V(...xs: [number, number, number]): V3;
-export function V(...xs: [number, number, number, number]): vec4;
-export function V(...xs: number[]): V2 | V3 | vec4 {
+export function V(...xs: [number, number, number, number]): V4;
+export function V(...xs: number[]): V2 | V3 | V4 {
   if (xs.length === 3) return V3.fromValues(xs[0], xs[1], xs[2]);
-  else if (xs.length === 4) return vec4.fromValues(xs[0], xs[1], xs[2], xs[3]);
+  else if (xs.length === 4) return V4.fromValues(xs[0], xs[1], xs[2], xs[3]);
   else if (xs.length === 2) return V2.fromValues(xs[0], xs[1]);
   else throw new Error(`Unsupported vec size: ${xs.length}`);
 }
@@ -391,9 +391,9 @@ export function V(...xs: number[]): V2 | V3 | vec4 {
 // temp vectors:
 export function tV(...xs: [number, number]): V2;
 export function tV(...xs: [number, number, number]): V3;
-export function tV(...xs: [number, number, number, number]): vec4;
-export function tV(...xs: number[]): V2 | V3 | vec4 {
-  if (xs.length === 4) return vec4.set(xs[0], xs[1], xs[2], xs[3]);
+export function tV(...xs: [number, number, number, number]): V4;
+export function tV(...xs: number[]): V2 | V3 | V4 {
+  if (xs.length === 4) return V4.set(xs[0], xs[1], xs[2], xs[3]);
   else if (xs.length === 3) return V3.set(xs[0], xs[1], xs[2]);
   else if (xs.length === 2) return V2.set(xs[0], xs[1]);
   else throw new Error(`Unsupported vec size: ${xs.length}`);
@@ -607,8 +607,8 @@ export module V3 {
   }
 }
 
-export module vec4 {
-  export type T = vec4;
+export module V4 {
+  export type T = V4;
   export type InputT = T | readonly [number, number, number, number];
   const GL = GLM.vec4;
 
@@ -1456,6 +1456,6 @@ export type InputT<T extends Record<any, any>> = {
     T[k] extends quat ? quat.InputT :
     T[k] extends mat4 ? mat4.InputT :
     T[k] extends mat3 ? mat3.InputT :
-    T[k] extends vec4 ? vec4.InputT :
+    T[k] extends V4 ? V4.InputT :
     T[k]
 };

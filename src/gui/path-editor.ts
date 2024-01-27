@@ -2,7 +2,7 @@ import { ColorDef } from "../color/color-ecs.js";
 import { EM, EntityW } from "../ecs/entity-manager.js";
 import { AllMeshesDef } from "../meshes/mesh-list.js";
 import { GameMesh, gameMeshFromMesh } from "../meshes/mesh-loader.js";
-import { V2, V3, vec4, quat, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, V4, quat, V } from "../matrix/sprig-matrix.js";
 import { createIdxPool } from "../utils/idx-pool.js";
 import { rayVsRay } from "../physics/broadphase.js";
 import { ColliderDef } from "../physics/collider.js";
@@ -401,7 +401,7 @@ export async function lineStuff() {
     const pA2 = pi - 1;
     const A1 = pi + 0;
     const A2 = pi + 1;
-    extMesh.quad.push(vec4.clone([A1, pA1, pA2, A2]));
+    extMesh.quad.push(V4.clone([A1, pA1, pA2, A2]));
     extMesh.surfaceIds.push(i);
     extMesh.colors.push(randNormalPosVec3(V3.mk()));
   }

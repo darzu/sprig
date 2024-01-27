@@ -3,7 +3,7 @@ import { EM, Entity } from "../ecs/entity-manager.js";
 import { AllMeshSymbols, BLACK } from "../meshes/mesh-list.js";
 import { BulletDef } from "../cannons/bullet.js";
 import { GravityDef } from "../motion/gravity.js";
-import { V2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { createIdxPool } from "../utils/idx-pool.js";
 import { jitter } from "../utils/math.js";
 import { AudioDef } from "../audio/audio.js";
@@ -401,7 +401,7 @@ EM.addEagerInit([WoodStateDef], [], [], () => {
                 ...(seg.quadFrontIdx ? [seg.quadFrontIdx] : []),
               ]) {
                 const q = mesh.quad[qi];
-                vec4.set(0, 0, 0, 0, q);
+                V4.set(0, 0, 0, 0, q);
                 qMin = Math.min(qMin, qi);
                 qMax = Math.max(qMax, qi);
               }
@@ -602,7 +602,7 @@ function removeSplinterEnd(splinterIdx: number, wood: WoodState) {
     V3.zero(wood.mesh.tri[triIdx + i]);
   }
   for (let i = 0; i < _quadsPerSplinter; i++) {
-    vec4.zero(wood.mesh.quad[quadIdx + i]);
+    V4.zero(wood.mesh.quad[quadIdx + i]);
   }
 }
 
@@ -695,7 +695,7 @@ function addSplinterEnd(
     splinterMesh.quad[i][1] += vertIdx;
     splinterMesh.quad[i][2] += vertIdx;
     splinterMesh.quad[i][3] += vertIdx;
-    vec4.copy(wood.mesh.quad[quadIdx + i], splinterMesh.quad[i]);
+    V4.copy(wood.mesh.quad[quadIdx + i], splinterMesh.quad[i]);
     V3.copy(wood.mesh.colors[quadIdx + i], color);
   }
 
@@ -774,26 +774,26 @@ export function createEmptyMesh(dbgName: string) {
 export function setSideQuadIdxs(
   loop1Vi: number,
   loop2Vi: number,
-  q0: vec4,
-  q1: vec4,
-  q2: vec4,
-  q3: vec4
+  q0: V4,
+  q1: V4,
+  q2: V4,
+  q3: V4
 ) {
   // for provoking, we use loop1:2,3 and loop2:0,1
   // for provoking, we use loop1:2,3 and loop2:0,1
-  vec4.set(loop2Vi + 3, loop2Vi + 2, loop1Vi + 2, loop1Vi + 3, q0);
-  vec4.set(loop2Vi + 2, loop2Vi + 1, loop1Vi + 1, loop1Vi + 2, q1);
-  vec4.set(loop1Vi + 1, loop2Vi + 1, loop2Vi + 0, loop1Vi + 0, q2);
-  vec4.set(loop1Vi + 0, loop2Vi + 0, loop2Vi + 3, loop1Vi + 3, q3);
+  V4.set(loop2Vi + 3, loop2Vi + 2, loop1Vi + 2, loop1Vi + 3, q0);
+  V4.set(loop2Vi + 2, loop2Vi + 1, loop1Vi + 1, loop1Vi + 2, q1);
+  V4.set(loop1Vi + 1, loop2Vi + 1, loop2Vi + 0, loop1Vi + 0, q2);
+  V4.set(loop1Vi + 0, loop2Vi + 0, loop2Vi + 3, loop1Vi + 3, q3);
 }
 
-export function setEndQuadIdxs(loopVi: number, q: vec4, facingDown: boolean) {
+export function setEndQuadIdxs(loopVi: number, q: V4, facingDown: boolean) {
   // for provoking, we use loop 0 or 3
   // prettier-ignore
   if (facingDown)
-    vec4.set(loopVi + 3, loopVi + 2, loopVi + 1, loopVi + 0, q);
+    V4.set(loopVi + 3, loopVi + 2, loopVi + 1, loopVi + 0, q);
   else
-    vec4.set(loopVi + 0, loopVi + 1, loopVi + 2, loopVi + 3, q);
+    V4.set(loopVi + 0, loopVi + 1, loopVi + 2, loopVi + 3, q);
 }
 
 export type TimberBuilder = ReturnType<typeof createTimberBuilder>;
@@ -910,10 +910,10 @@ export function createTimberBuilder(mesh: RawMesh) {
     const loop2Idx = mesh.pos.length - 4;
     const loop1Idx = mesh.pos.length - 4 - 4;
 
-    const q0 = vec4.create();
-    const q1 = vec4.create();
-    const q2 = vec4.create();
-    const q3 = vec4.create();
+    const q0 = V4.create();
+    const q1 = V4.create();
+    const q2 = V4.create();
+    const q3 = V4.create();
 
     setSideQuadIdxs(loop1Idx, loop2Idx, q0, q1, q2, q3);
 
@@ -922,7 +922,7 @@ export function createTimberBuilder(mesh: RawMesh) {
 
   function addEndQuad(facingDown: boolean) {
     const lastLoopIdx = mesh.pos.length - 4;
-    const q = vec4.create();
+    const q = V4.create();
     setEndQuadIdxs(lastLoopIdx, q, facingDown);
     mesh.quad.push(q);
   }
@@ -955,10 +955,10 @@ export interface BoardSeg {
   width: number;
   depth: number;
   // TODO(@darzu): establish convention e.g. top-left, top-right, etc.
-  vertLastLoopIdxs: vec4; // [VI, VI, VI, VI];
-  vertNextLoopIdxs: vec4; // [VI, VI, VI, VI];
+  vertLastLoopIdxs: V4; // [VI, VI, VI, VI];
+  vertNextLoopIdxs: V4; // [VI, VI, VI, VI];
   // TODO(@darzu): establish convention e.g. top, left, right, bottom
-  quadSideIdxs: vec4; // [QI, QI, QI, QI];
+  quadSideIdxs: V4; // [QI, QI, QI, QI];
   quadBackIdx?: QI;
   quadFrontIdx?: QI;
 }
@@ -1004,7 +1004,7 @@ export function reserveSplinterSpace(wood: WoodState, maxSplinters: number) {
     wood.mesh.tri.push(V3.mk())
   );
   range(maxSplinters * _quadsPerSplinter).forEach((_) =>
-    wood.mesh.quad.push(vec4.create())
+    wood.mesh.quad.push(V4.create())
   );
   const newFaces = maxSplinters * (_quadsPerSplinter + _trisPerSplinter);
   range(newFaces).forEach((_) => {
@@ -1080,7 +1080,7 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
     const boardVis = new Set<number>();
     const boardQis = new Set<number>();
 
-    const startLoop = vec4.clone(m.quad[startQi]); // as [VI, VI, VI, VI];
+    const startLoop = V4.clone(m.quad[startQi]); // as [VI, VI, VI, VI];
     startLoop.sort((a, b) => a - b); // TODO(@darzu): HACK?
 
     // build the board
@@ -1111,7 +1111,7 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
     return undefined;
 
     function addBoardSegment(
-      lastLoop: vec4, // [VI, VI, VI, VI],
+      lastLoop: V4, // [VI, VI, VI, VI],
       isFirstLoop: boolean = false
     ): BoardSeg[] | undefined {
       // TODO(@darzu): using too many temps!
@@ -1139,7 +1139,7 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
           console.log(`invalid board: next loop has ${nextLoop_.length} verts`);
         return undefined;
       }
-      const nextLoop = vec4.clone(nextLoop_ as [VI, VI, VI, VI]);
+      const nextLoop = V4.clone(nextLoop_ as [VI, VI, VI, VI]);
       nextLoop.sort((a, b) => a - b); // TODO(@darzu): HACK?
 
       // add next loop verts to segment
@@ -1211,7 +1211,7 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
         );
         if (endQuads.length === 1) {
           const endQuad = endQuads[0];
-          const sideQuads = vec4.clone(
+          const sideQuads = V4.clone(
             segQis.filter((qi) => qi !== endQuad) as [QI, QI, QI, QI]
           );
           seg = {
@@ -1250,7 +1250,7 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
           depth,
           vertLastLoopIdxs: lastLoop,
           vertNextLoopIdxs: nextLoop,
-          quadSideIdxs: vec4.clone(segQis as [QI, QI, QI, QI]),
+          quadSideIdxs: V4.clone(segQis as [QI, QI, QI, QI]),
         };
       }
 
@@ -1341,7 +1341,7 @@ export function resetWoodState(w: WoodState) {
         w.splinterState.maxNumSplinters * _quadsPerSplinter;
       qi++
     ) {
-      vec4.zero(w.mesh.quad[qi]);
+      V4.zero(w.mesh.quad[qi]);
     }
     for (
       let ti = w.splinterState.triOffset;
@@ -1418,34 +1418,34 @@ export function unshareProvokingForWood(m: RawMesh, woodState: WoodState) {
     bIdx++;
   }
   function unshareProvokingForBoardQuad(
-    [i0, i1, i2, i3]: vec4,
+    [i0, i1, i2, i3]: V4,
     qi: number,
     preferVis?: number[]
   ) {
     if ((!preferVis || preferVis.includes(i0)) && !provokingVis.has(i0)) {
       provokingVis.add(i0);
-      m.quad[qi] = vec4.clone([i0, i1, i2, i3]);
+      m.quad[qi] = V4.clone([i0, i1, i2, i3]);
       return true;
     } else if (
       (!preferVis || preferVis.includes(i1)) &&
       !provokingVis.has(i1)
     ) {
       provokingVis.add(i1);
-      m.quad[qi] = vec4.clone([i1, i2, i3, i0]);
+      m.quad[qi] = V4.clone([i1, i2, i3, i0]);
       return true;
     } else if (
       (!preferVis || preferVis.includes(i2)) &&
       !provokingVis.has(i2)
     ) {
       provokingVis.add(i2);
-      m.quad[qi] = vec4.clone([i2, i3, i0, i1]);
+      m.quad[qi] = V4.clone([i2, i3, i0, i1]);
       return true;
     } else if (
       (!preferVis || preferVis.includes(i3)) &&
       !provokingVis.has(i3)
     ) {
       provokingVis.add(i3);
-      m.quad[qi] = vec4.clone([i3, i0, i1, i2]);
+      m.quad[qi] = V4.clone([i3, i0, i1, i2]);
       return true;
     } else {
       return false;

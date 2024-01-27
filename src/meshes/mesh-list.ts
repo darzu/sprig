@@ -1,5 +1,5 @@
 import { EM, Component, Resource } from "../ecs/entity-manager.js";
-import { mat4, quat, vec4, V2, V3 } from "../matrix/sprig-matrix.js";
+import { mat4, quat, V4, V2, V3 } from "../matrix/sprig-matrix.js";
 import { V } from "../matrix/sprig-matrix.js";
 import { assert } from "../utils/util.js";
 import { normalizeVec2s, computeTriangleNormal } from "../utils/utils-3d.js";
@@ -266,7 +266,7 @@ export const OceanMesh = XY.registerMesh({
     for (let xi = 0; xi < xLen - 1; xi++) {
       for (let yi = 0; yi < yLen - 1; yi++) {
         const qi = gridXYtoQuad(xi, yi);
-        vec4.copy(m.quad[qi], [
+        V4.copy(m.quad[qi], [
           grid[xi][yi],
           grid[xi + 1][yi],
           grid[xi + 1][yi + 1],

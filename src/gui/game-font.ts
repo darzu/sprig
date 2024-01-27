@@ -8,7 +8,7 @@ import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { dbg } from "../debug/debugger.js";
 import { EM, EntityW } from "../ecs/entity-manager.js";
-import { V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { ButtonDef, ButtonsStateDef } from "./button.js";
 import { initMeshEditor, MeshEditorDef } from "./mesh-editor.js";
 import { lineStuff } from "./path-editor.js";
@@ -257,7 +257,7 @@ export async function initFontEditor() {
 
   // Starter mesh for each letter
   const quadMesh: Mesh = {
-    quad: [vec4.clone([0, 1, 2, 3])],
+    quad: [V4.clone([0, 1, 2, 3])],
     tri: [],
     pos: [V(-1, -1, 0), V(1, -1, 0), V(1, 1, 0), V(-1, 1, 0)],
     colors: [randNormalPosVec3()],

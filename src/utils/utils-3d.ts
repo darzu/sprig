@@ -1,7 +1,7 @@
 import {
   V2,
   V3,
-  vec4,
+  V4,
   quat,
   mat4,
   V,
@@ -130,14 +130,14 @@ export function vec3Dbg2(v: V3.InputT, precision = 2): string {
     precision
   )},${v[2].toFixed(precision)})`;
 }
-export function vec4Dbg(v?: vec4): string {
+export function vec4Dbg(v?: V4): string {
   return v
     ? `[${v[0].toFixed(2)},${v[1].toFixed(2)},${v[2].toFixed(2)},${v[3].toFixed(
         2
       )}]`
     : "NIL";
 }
-export function vec4Dbg2(v: vec4, precision = 2): string {
+export function vec4Dbg2(v: V4, precision = 2): string {
   return `V(${v[0].toFixed(precision)},${v[1].toFixed(
     precision
   )},${v[2].toFixed(precision)},${v[3].toFixed(precision)})`;
@@ -327,7 +327,7 @@ export function vec3Reverse(out: V3) {
   return out;
 }
 
-export function vec4Reverse(out: vec4) {
+export function vec4Reverse(out: V4) {
   let t = out[0];
   out[0] = out[3];
   out[3] = t;
@@ -337,7 +337,7 @@ export function vec4Reverse(out: vec4) {
   return out;
 }
 
-export function vec4RotateLeft(out: vec4) {
+export function vec4RotateLeft(out: V4) {
   let t = out[0];
   out[0] = out[1];
   out[1] = out[2];

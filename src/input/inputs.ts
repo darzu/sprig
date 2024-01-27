@@ -1,6 +1,6 @@
 import { Canvas, CanvasDef } from "../render/canvas.js";
 import { Component, EM, Resource } from "../ecs/entity-manager.js";
-import { V2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { clamp } from "../utils/math.js";
 import { DEBUG_INPUTS } from "../flags.js";
 import { Phase } from "../ecs/sys-phase.js";

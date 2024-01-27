@@ -1,6 +1,6 @@
 import { PERF_DBG_GPU, VERBOSE_LOG } from "../flags.js";
 import { ControllableDef } from "../input/controllable.js";
-import { vec4, V } from "../matrix/sprig-matrix.js";
+import { V4, V } from "../matrix/sprig-matrix.js";
 import { assert } from "../utils/util.js";
 import {
   never,

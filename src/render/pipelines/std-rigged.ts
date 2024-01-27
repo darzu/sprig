@@ -1,5 +1,5 @@
 import { EM } from "../../ecs/entity-manager.js";
-import { V2, V3, vec4, quat, mat4, V } from "../../matrix/sprig-matrix.js";
+import { V2, V3, V4, quat, mat4, V } from "../../matrix/sprig-matrix.js";
 import { assert, assertDbg } from "../../utils/util.js";
 import { computeTriangleNormal } from "../../utils/utils-3d.js";
 import { randColor } from "../../utils/utils-game.js";
@@ -79,8 +79,8 @@ const VertexStruct = createCyStruct(
 type VertexTS = CyToTS<typeof VertexStruct.desc>;
 function createEmptyVertexTS(): VertexTS {
   return {
-    jointIds: vec4.create(),
-    jointWeights: vec4.create(),
+    jointIds: V4.create(),
+    jointWeights: V4.create(),
     position: V3.mk(),
     color: V3.mk(),
     // tangent: m.tangents ? m.tangents[i] : [1.0, 0.0, 0.0],

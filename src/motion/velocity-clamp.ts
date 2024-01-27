@@ -1,6 +1,6 @@
 import { Collider, ColliderDef } from "../physics/collider.js";
 import { EM } from "../ecs/entity-manager.js";
-import { V2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { clamp } from "../utils/math.js";
 import {
   AngularVelocityDef,

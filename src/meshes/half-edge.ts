@@ -1,6 +1,6 @@
 import { DBG_ASSERT } from "../flags.js";
 import { BLACK } from "./mesh-list.js";
-import { V2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { hexAvg } from "../hex/hex.js";
 import { RawMesh } from "./mesh.js";
 import { tempVec3 } from "../matrix/temp-pool.js";
@@ -309,7 +309,7 @@ export function extrudeQuad(hp: HPoly, he: HEdge): HPolyDelta {
   const v1: HVert_ = { vi: vi1 };
 
   // create face
-  const qi = hp.mesh.quad.push(vec4.clone([vi0, vi1, vi1a, vi0a])) - 1;
+  const qi = hp.mesh.quad.push(V4.clone([vi0, vi1, vi1a, vi0a])) - 1;
   const f: HFace = {
     fi: qi,
     edg: he,

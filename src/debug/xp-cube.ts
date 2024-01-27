@@ -1,6 +1,6 @@
 import { CameraDef } from "../camera/camera.js";
 import { EM } from "../ecs/entity-manager.js";
-import { V2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { max } from "../utils/math.js";
 import { ColliderDef } from "../physics/collider.js";
 import { AngularVelocityDef } from "../motion/velocity.js";
@@ -90,7 +90,7 @@ const cubeRenderPipeline = CY.createRenderPipeline("cubeRender", {
       ptr: litTexturePtr,
       clear: "once",
       // defaultColor: [0.0, 0.0, 0.0, 1.0],
-      defaultColor: vec4.clone([0.1, 0.1, 0.1, 1.0]),
+      defaultColor: V4.clone([0.1, 0.1, 0.1, 1.0]),
       // defaultColor: [0.7, 0.8, 1.0, 1.0],
     },
   ],

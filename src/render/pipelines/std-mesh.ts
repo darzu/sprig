@@ -7,7 +7,7 @@ import {
 import { DeadDef, DeletedDef } from "../../ecs/delete.js";
 import { EM, EntityW } from "../../ecs/entity-manager.js";
 import { Phase } from "../../ecs/sys-phase.js";
-import { V3, vec4, mat4, V } from "../../matrix/sprig-matrix.js";
+import { V3, V4, mat4, V } from "../../matrix/sprig-matrix.js";
 import { tempVec3 } from "../../matrix/temp-pool.js";
 import { CY, linearSamplerPtr } from "../gpu-registry.js";
 import { pointLightsPtr } from "../lights.js";

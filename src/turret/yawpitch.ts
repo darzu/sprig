@@ -1,6 +1,6 @@
 import { defineSerializableComponent } from "../ecs/em-helpers.js";
 import { EM, Component } from "../ecs/entity-manager.js";
-import { V2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 
 // TODO(@darzu): do we really need this component? Ideally we'd just have helpers around
 //    Rotation?

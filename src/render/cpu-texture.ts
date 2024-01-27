@@ -1,4 +1,4 @@
-import { V2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { clamp } from "../utils/math.js";
 import { tempVec2, tempVec3, tempVec4 } from "../matrix/temp-pool.js";
 import { assert } from "../utils/util.js";
@@ -11,7 +11,7 @@ type ArityToVec<N extends 1 | 2 | 3 | 4> = N extends 1
   : N extends 3
   ? V3
   : N extends 4
-  ? vec4
+  ? V4
   : never;
 
 export interface TextureReader<A extends 1 | 2 | 3 | 4> {
@@ -70,8 +70,8 @@ export function createTextureReader<A extends 1 | 2 | 3 | 4>(
   function read(
     x: number,
     y: number,
-    out?: number | V2 | V3 | vec4
-  ): number | V2 | V3 | vec4 {
+    out?: number | V2 | V3 | V4
+  ): number | V2 | V3 | V4 {
     // TODO(@darzu): share code with sample
     const xi = clamp(Math.round(x), 0, size[0] - 1);
     const yi = clamp(Math.round(y), 0, size[1] - 1);
@@ -90,12 +90,12 @@ export function createTextureReader<A extends 1 | 2 | 3 | 4>(
         (out ?? V3.tmp()) as V3
       );
     } else if (outArity === 4) {
-      return vec4.set(
+      return V4.set(
         tData[idx + 0],
         tData[idx + 1],
         tData[idx + 2],
         tData[idx + 3],
-        (out ?? vec4.tmp()) as vec4
+        (out ?? V4.tmp()) as V4
       );
     } else {
       never(outArity);
@@ -111,7 +111,7 @@ export function createTextureReader<A extends 1 | 2 | 3 | 4>(
     } else if (outArity === 3) {
       return V3.equals(read(xi, yi, tempVec3()) as V3, V3.ZEROS);
     } else if (outArity === 4) {
-      return vec4.equals(read(xi, yi, tempVec4()) as vec4, vec4.ZEROS);
+      return V4.equals(read(xi, yi, tempVec4()) as V4, V4.ZEROS);
     } else {
       never(outArity);
     }
@@ -120,8 +120,8 @@ export function createTextureReader<A extends 1 | 2 | 3 | 4>(
   function sample(
     x: number,
     y: number,
-    out?: number | V2 | V3 | vec4
-  ): number | V2 | V3 | vec4 {
+    out?: number | V2 | V3 | V4
+  ): number | V2 | V3 | V4 {
     x = clamp(x, 0, size[0] - 1);
     y = clamp(y, 0, size[1] - 1);
     const xi0 = Math.floor(x);
@@ -180,12 +180,12 @@ export function createTextureReader<A extends 1 | 2 | 3 | 4>(
         (out ?? V3.tmp()) as V3
       );
     } else if (outArity === 4) {
-      return vec4.set(
+      return V4.set(
         _sample(0),
         _sample(1),
         _sample(2),
         _sample(3),
-        (out ?? vec4.tmp()) as vec4
+        (out ?? V4.tmp()) as V4
       );
     } else {
       never(outArity);

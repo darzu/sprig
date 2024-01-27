@@ -160,7 +160,7 @@ export async function initGalleryGame() {
     EM.set(sky, PositionDef, V(0, 0, -10));
     // const skyMesh = cloneMesh(res.allMeshes.cube.mesh);
     // skyMesh.pos.forEach((p) => V3.scale(p, SKY_HALFSIZE, p));
-    // skyMesh.quad.forEach((f) => vec4.reverse(f, f));
+    // skyMesh.quad.forEach((f) => V4.reverse(f, f));
     // skyMesh.tri.forEach((f) => V3.reverse(f, f));
     const skyMesh = domeMesh;
     EM.set(

@@ -1,6 +1,6 @@
 import { EM } from "../ecs/entity-manager.js";
 import { TimeDef } from "../time/time.js";
-import { V2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { PhysicsParentDef, PositionDef } from "../physics/transform.js";

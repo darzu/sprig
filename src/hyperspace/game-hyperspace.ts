@@ -31,7 +31,7 @@ import {
   registerOceanUVFns,
 } from "../ocean/ocean.js";
 import { asyncTimeout } from "../utils/util.js";
-import { V2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { AnimateToDef } from "../animation/animate-to.js";
 import {
   createSpawner,

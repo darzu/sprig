@@ -487,7 +487,7 @@ export async function initLD53(hosting: boolean) {
   EM.set(sky, PositionDef, V(0, 0, -100));
   // const skyMesh = cloneMesh(res.allMeshes.cube.mesh);
   // skyMesh.pos.forEach((p) => V3.scale(p, SKY_HALFSIZE, p));
-  // skyMesh.quad.forEach((f) => vec4.reverse(f, f));
+  // skyMesh.quad.forEach((f) => V4.reverse(f, f));
   // skyMesh.tri.forEach((f) => V3.reverse(f, f));
   const skyMesh = domeMesh;
   EM.set(sky, RenderableConstructDef, skyMesh, undefined, undefined, SKY_MASK);

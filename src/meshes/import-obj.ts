@@ -5,7 +5,7 @@
 // Import .obj files into sprig format
 // https://people.cs.clemson.edu/~dhouse/courses/405/docs/brief-obj-file-format.html
 // http://paulbourke.net/dataformats/obj/
-import { V2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { RawMesh } from "./mesh.js";
 import { assert, never } from "../utils/util.js";
 import { idPair, IdPair, isString } from "../utils/util.js";
@@ -102,7 +102,7 @@ export function importObj(obj: string): RawMesh[] | ParseError {
   // TODO(@darzu): implement a streaming parser for better perf
   let pos: V3[] = [];
   let tri: V3[] = [];
-  let quad: vec4[] = [];
+  let quad: V4[] = [];
   let colors: V3[] = [];
   // TODO(@darzu): compute lines
   let lines: V2[] = [];

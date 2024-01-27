@@ -1,5 +1,5 @@
 import { ASSET_LOG_VERT_CHANGES, DBG_ASSERT, DBG_FANG_SHIP } from "../flags.js";
-import { V2, V3, vec4, quat, mat4, V, mat3 } from "../matrix/sprig-matrix.js";
+import { V2, V3, V4, quat, mat4, V, mat3 } from "../matrix/sprig-matrix.js";
 import { max, sum } from "../utils/math.js";
 import { AABB, createAABB, getAABBFromPositions } from "../physics/aabb.js";
 import { assert, range } from "../utils/util.js";
@@ -33,7 +33,7 @@ export interface RawMesh {
   // geometry
   pos: V3[]; // TODO(@darzu): rename to locs ?
   tri: V3[];
-  quad: vec4[]; // MUST NOT be redundant w/ `tri`
+  quad: V4[]; // MUST NOT be redundant w/ `tri`
   lines?: V2[];
   // per-face data, so one per quad and tri
   //  NOTE: first all the quad data is stored, then all the tri data
@@ -52,8 +52,8 @@ export interface RawMesh {
 
 export interface Rigging {
   // per-vertex info
-  jointIds: vec4[];
-  jointWeights: vec4[];
+  jointIds: V4[];
+  jointWeights: V4[];
   // per-joint info
   jointPos: V3[];
   jointRot: quat[];
@@ -129,8 +129,8 @@ export function meshStats(m: RawMesh): string {
 // TODO: is it actually necessary to clone all these properties?
 function cloneRigging(rigging: Rigging): Rigging {
   return {
-    jointIds: rigging.jointIds.map((v) => vec4.clone(v)),
-    jointWeights: rigging.jointWeights.map((v) => vec4.clone(v)),
+    jointIds: rigging.jointIds.map((v) => V4.clone(v)),
+    jointWeights: rigging.jointWeights.map((v) => V4.clone(v)),
     inverseBindMatrices: rigging.inverseBindMatrices.map((m) => mat4.clone(m)),
     jointPos: rigging.jointPos.map((v) => V3.clone(v)),
     jointRot: rigging.jointRot.map((q) => quat.clone(q)),
@@ -149,7 +149,7 @@ export function cloneMesh(m: Mesh | RawMesh): Mesh | RawMesh {
     ...m,
     pos: m.pos.map((p) => V3.clone(p)),
     tri: m.tri.map((p) => V3.clone(p)),
-    quad: m.quad.map((p) => vec4.clone(p)),
+    quad: m.quad.map((p) => V4.clone(p)),
     colors: m.colors.map((p) => V3.clone(p)),
     lines: m.lines?.map((p) => V2.clone(p)),
     uvs: m.uvs?.map((p) => V2.clone(p)),
@@ -320,14 +320,14 @@ export function unshareProvokingVerticesWithMap(
   const normals: V3[] | undefined = input.normals
     ? [...input.normals]
     : undefined;
-  const jointIds: vec4[] | undefined = input.rigging
+  const jointIds: V4[] | undefined = input.rigging
     ? [...input.rigging.jointIds]
     : undefined;
-  const jointWeights: vec4[] | undefined = input.rigging
+  const jointWeights: V4[] | undefined = input.rigging
     ? [...input.rigging.jointWeights]
     : undefined;
   const tri: V3[] = [];
-  const quad: vec4[] = [];
+  const quad: V4[] = [];
   const provoking: { [key: number]: boolean } = {};
   const posMap: Map<number, number> = new Map();
   pos.forEach((_, i) => posMap.set(i, i));
@@ -406,27 +406,27 @@ export function unshareProvokingVerticesWithMap(
     }
   });
 
-  const unshareProvokingForQuad: (q: vec4, qi: number) => void = (
+  const unshareProvokingForQuad: (q: V4, qi: number) => void = (
     [i0, i1, i2, i3],
     qi
   ) => {
     if (!provoking[i0]) {
       // First vertex is unused as a provoking vertex, so we'll use it for this triangle.
       provoking[i0] = true;
-      quad[qi] = vec4.clone([i0, i1, i2, i3]);
+      quad[qi] = V4.clone([i0, i1, i2, i3]);
     } else if (!provoking[i1]) {
       // First vertex was taken, so let's see if we can rotate the indices to get an unused
       // provoking vertex.
       provoking[i1] = true;
-      quad[qi] = vec4.clone([i1, i2, i3, i0]);
+      quad[qi] = V4.clone([i1, i2, i3, i0]);
     } else if (!provoking[i2]) {
       // ditto
       provoking[i2] = true;
-      quad[qi] = vec4.clone([i2, i3, i0, i1]);
+      quad[qi] = V4.clone([i2, i3, i0, i1]);
     } else if (!provoking[i3]) {
       // ditto
       provoking[i3] = true;
-      quad[qi] = vec4.clone([i3, i0, i1, i2]);
+      quad[qi] = V4.clone([i3, i0, i1, i2]);
     } else {
       // All vertices are taken, so create a new one
       if (strictNoAdd)
@@ -443,7 +443,7 @@ export function unshareProvokingVerticesWithMap(
       if (jointIds) jointIds.push(input.rigging!.jointIds[i0]);
       if (jointWeights) jointWeights.push(input.rigging!.jointWeights[i0]);
       provoking[i4] = true;
-      quad[qi] = vec4.clone([i4, i1, i2, i3]);
+      quad[qi] = V4.clone([i4, i1, i2, i3]);
       // console.log(`duplicating: ${i0}!`);
 
       // // TODO(@darzu): DBG
@@ -970,7 +970,7 @@ export function mergeMeshes(...rs: RawMesh[]): RawMesh {
     m.quad = [
       ...m.quad,
       ...r.quad.map((t) =>
-        vec4.clone([t[0] + posIdx, t[1] + posIdx, t[2] + posIdx, t[3] + posIdx])
+        V4.clone([t[0] + posIdx, t[1] + posIdx, t[2] + posIdx, t[3] + posIdx])
       ),
     ];
     if (m.lines)
@@ -1023,7 +1023,7 @@ export function stringifyMesh(m: Mesh): string {
   function vec3ListToStr(vs: V3[], precision: number): string {
     return `[${vs.map((v) => vec3Dbg2(v, precision)).join(",")}]`;
   }
-  function vec4ListToStr(vs: vec4[], precision: number): string {
+  function vec4ListToStr(vs: V4[], precision: number): string {
     return `[${vs.map((v) => vec4Dbg2(v, precision)).join(",")}]`;
   }
 }

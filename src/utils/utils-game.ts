@@ -7,7 +7,7 @@ import {
   GizmoMesh,
   UnitCubeMesh,
 } from "../meshes/mesh-list.js";
-import { V2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { remap } from "./math.js";
 import { getLineEnd, Line, Ray } from "../physics/broadphase.js";
 import {

@@ -1,7 +1,7 @@
 // BOIDS
 
 // BOIDS
-import { V2, V3, vec4, quat, mat4, V } from "../../matrix/sprig-matrix.js";
+import { V2, V3, V4, quat, mat4, V } from "../../matrix/sprig-matrix.js";
 import { jitter } from "../../utils/math.js";
 import { range } from "../../utils/util.js";
 import { createRenderTextureToQuad } from "../gpu-helper.js";

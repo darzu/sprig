@@ -1,4 +1,4 @@
-import { V2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { RawMesh, Rigging } from "./mesh.js";
 import { assert, never } from "../utils/util.js";
 import { idPair, IdPair, isString } from "../utils/util.js";
@@ -123,7 +123,7 @@ function readArray(
   gltf: Gltf,
   buffers: ArrayBufferLike[],
   accessor: Accessor<"VEC4">
-): vec4[] | ParseError;
+): V4[] | ParseError;
 function readArray(
   gltf: Gltf,
   buffers: ArrayBufferLike[],
@@ -133,7 +133,7 @@ function readArray(
   gltf: Gltf,
   buffers: ArrayBufferLike[],
   accessor: Accessor<GltfCollection>
-): number[] | V3[] | vec4[] | mat4[] | ParseError {
+): number[] | V3[] | V4[] | mat4[] | ParseError {
   const arr = typedBufferView(
     gltf,
     buffers,
@@ -159,7 +159,7 @@ function readArray(
       return res;
     }
     case "VEC4": {
-      const res: vec4[] = [];
+      const res: V4[] = [];
       for (let i = 0; i < accessor.count; i++) {
         res.push(V(arr[i * 4], arr[i * 4 + 1], arr[i * 4 + 2], arr[i * 4 + 3]));
       }
@@ -315,7 +315,7 @@ export function importGltf(buf: ArrayBuffer): RawMesh | ParseError {
     if (!isAccessorFor(jointIdsAccessor, "VEC4")) {
       return `Unexpected index type ${jointIdsAccessor.type}`;
     }
-    const jointIds: vec4[] | ParseError = readArray(
+    const jointIds: V4[] | ParseError = readArray(
       gltf,
       buffers,
       jointIdsAccessor
@@ -329,7 +329,7 @@ export function importGltf(buf: ArrayBuffer): RawMesh | ParseError {
     if (!isAccessorFor(jointWeightsAccessor, "VEC4")) {
       return `Unexpected index type ${jointWeightsAccessor.type}`;
     }
-    const jointWeights: vec4[] | ParseError = readArray(
+    const jointWeights: V4[] | ParseError = readArray(
       gltf,
       buffers,
       jointWeightsAccessor
@@ -445,7 +445,7 @@ export function importGltf(buf: ArrayBuffer): RawMesh | ParseError {
         if (!isAccessorFor(outputAccessor, "VEC4")) {
           return `Got bad accessor type for animation sampler`;
         }
-        const rotations: vec4[] | ParseError = readArray(
+        const rotations: V4[] | ParseError = readArray(
           gltf,
           buffers,
           outputAccessor
@@ -479,7 +479,7 @@ export function importGltf(buf: ArrayBuffer): RawMesh | ParseError {
     console.log(rigging);
   }
 
-  const quad: vec4[] = [];
+  const quad: V4[] = [];
   const dbgName = mesh.name;
   // TODO: include normals
   return { pos, tri, normals, quad, colors, dbgName, rigging };

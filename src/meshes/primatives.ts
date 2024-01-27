@@ -19,7 +19,7 @@ import {
   transformMesh,
   unshareProvokingVertices,
 } from "./mesh.js";
-import { mat3, mat4, quat, V, V2, V3, vec4 } from "../matrix/sprig-matrix.js";
+import { mat3, mat4, quat, V, V2, V3, V4 } from "../matrix/sprig-matrix.js";
 import { assert, range } from "../utils/util.js";
 import { uintToVec3unorm, vec3Dbg } from "../utils/utils-3d.js";
 import { drawBall } from "../utils/utils-game.js";
@@ -363,7 +363,7 @@ export function resetFlatQuadMesh(
     let i = 0;
     for (let y = 0; y < height - 1; y++) {
       for (let x = 0; x < width - 1; x++) {
-        vec4.set(
+        V4.set(
           idx(x + 1, y), //
           idx(x + 1, y + 1),
           idx(x, y + 1),
@@ -373,7 +373,7 @@ export function resetFlatQuadMesh(
         i++;
 
         if (doubleSided) {
-          vec4.set(
+          V4.set(
             idx(x, y), //
             idx(x, y + 1),
             idx(x + 1, y + 1),
@@ -382,7 +382,7 @@ export function resetFlatQuadMesh(
           );
           i++;
         }
-        // quad.push(vec4.clone([q[3], q[2], q[1], q[0]]));
+        // quad.push(V4.clone([q[3], q[2], q[1], q[0]]));
       }
     }
   }
@@ -413,7 +413,7 @@ export function createFlatQuadMesh(
   const mesh: Mesh = {
     pos: range(width * height).map((_) => V3.mk()),
     uvs: range(width * height).map((_) => V2.mk()),
-    quad: range(quadNum).map((_) => vec4.create()),
+    quad: range(quadNum).map((_) => V4.create()),
     tri: [],
     normals: range(width * height).map((_) => V3.mk()),
     tangents: range(width * height).map((_) => V3.mk()),
@@ -700,7 +700,7 @@ export function makeDome(numLon: number, numLat: number, r: number): Mesh {
   const uvs: V2[] = [];
   const pos: V3[] = [];
   const tri: V3[] = [];
-  const quad: vec4[] = [];
+  const quad: V4[] = [];
   // TODO(@darzu): polar coordinates from these long and lats
   for (let lat = 0; lat <= numLat; lat++) {
     const inc = Math.PI * 0.5 * (lat / numLat);
@@ -780,7 +780,7 @@ export function makeSphere(numLon: number, numLat: number, r: number): Mesh {
   const uvs: V2[] = [];
   const pos: V3[] = [];
   const tri: V3[] = [];
-  const quad: vec4[] = [];
+  const quad: V4[] = [];
   const normals: V3[] = [];
   // TODO(@darzu): polar coordinates from these long and lats
   // HACK: just do 2 * numLat to make a sphere

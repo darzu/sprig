@@ -16,7 +16,7 @@ import {
   CyIdxBufferPtr,
   CyMeshPoolPtr,
 } from "./gpu-registry.js";
-import { V2, V3, vec4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { DEFAULT_MASK } from "./pipeline-masks.js";
 import { ComponentDef } from "../ecs/entity-manager.js";
 import { GPUBufferUsage } from "./webgpu-hacks.js";
