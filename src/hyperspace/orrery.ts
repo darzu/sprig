@@ -69,11 +69,7 @@ export function registerOrrerySystems() {
           const orreryStar = orrery.orrery.orreryStars[i]()!;
           vec3.copy(orreryStar.color, star.color);
           vec3.copy(orreryStar.position, star.world.position);
-          vec3.transformMat4(
-            orreryStar.position,
-            intoOrrerySpace,
-            orreryStar.position
-          );
+          vec3.tMat4(orreryStar.position, intoOrrerySpace, orreryStar.position);
           vec3.scale(orreryStar.position, ORRERY_SCALE, orreryStar.position);
         });
       }

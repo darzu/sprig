@@ -125,7 +125,7 @@ export function getAABBCornersTemp(aabb: AABB): vec3[] {
 export function transformAABB(out: AABB, t: mat4) {
   // TODO(@darzu): is there a more performant way to do this?
   const wCorners = getAABBCornersTemp(out);
-  wCorners.forEach((p) => vec3.transformMat4(p, t, p));
+  wCorners.forEach((p) => vec3.tMat4(p, t, p));
   getAABBFromPositions(out, wCorners);
   return out;
 }

@@ -350,7 +350,7 @@ function createTowerState(): StoneState {
 
   const cursor = mat4.create();
   function applyCursor(v: vec3, distort: boolean = false): vec3 {
-    vec3.transformMat4(v, cursor, v);
+    vec3.tMat4(v, cursor, v);
     // X is width, Y is height, Z is depth
     // TODO(@darzu): Z_UP: change basis: to X is width, Y is depth, Z is height
     if (distort)
@@ -481,9 +481,7 @@ function createTowerState(): StoneState {
 
   {
     // TODO(@darzu): Z_UP: inline this above
-    state.mesh.pos.forEach((v) =>
-      vec3.transformMat4(v, transformYUpModelIntoZUp, v)
-    );
+    state.mesh.pos.forEach((v) => vec3.tMat4(v, transformYUpModelIntoZUp, v));
     transformAABB(state.aabb, transformYUpModelIntoZUp);
   }
 

@@ -258,7 +258,7 @@ async function createMeshEditor() {
     // console.dir(res);
     assert(res.hp && res.hpEnt);
     const pos = vec3.copy(g.position, res.hp.mesh.pos[hv.vi]);
-    vec3.transformMat4(pos, res.hpEnt.world.transform, pos);
+    vec3.tMat4(pos, res.hpEnt.world.transform, pos);
     pos[2] = 0.5; // TODO(@darzu): this z-layering stuff is wierd
 
     return g;
@@ -328,9 +328,9 @@ async function createMeshEditor() {
       assert(res.hp);
 
       const pos0 = vec3.copy(vec3.tmp(), res.hp.mesh.pos[he.orig.vi]);
-      vec3.transformMat4(pos0, res.hpEnt.world.transform, pos0);
+      vec3.tMat4(pos0, res.hpEnt.world.transform, pos0);
       const pos1 = vec3.copy(vec3.tmp(), res.hp.mesh.pos[he.twin.orig.vi]);
-      vec3.transformMat4(pos1, res.hpEnt.world.transform, pos1);
+      vec3.tMat4(pos1, res.hpEnt.world.transform, pos1);
       const diff = vec3.sub(pos1, pos0);
       const theta = Math.atan2(diff[1], diff[0]) + Math.PI * 0.5;
       quat.fromEuler(0, 0, theta, glyph.rotation);

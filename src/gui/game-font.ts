@@ -242,7 +242,7 @@ export async function initFontEditor() {
 
       let cursorFracX = inputs.mousePos[0] / htmlCanvas.canvas.clientWidth;
       let cursorFracY = inputs.mousePos[1] / htmlCanvas.canvas.clientHeight;
-      const cursorWorldPos = vec3.transformMat4(
+      const cursorWorldPos = vec3.tMat4(
         [
           remap(cursorFracX, 0, 1, -1, 1),
           remap(cursorFracY, 0, 1, 1, -1), // screen is Y down, world is Y up

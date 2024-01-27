@@ -75,9 +75,7 @@ function initButtonGUI(res: Resources<[typeof RendererDef]>) {
       typeof btnMesh_ !== "string" && btnMesh_.length === 1,
       `btn mesh failed import: ${btnMesh_}`
     );
-    btnMesh_[0].pos.forEach((v) =>
-      vec3.transformMat4(v, transformYUpModelIntoZUp, v)
-    );
+    btnMesh_[0].pos.forEach((v) => vec3.tMat4(v, transformYUpModelIntoZUp, v));
     scaleMesh(btnMesh_[0], 0.2);
     const btnGMesh = gameMeshFromMesh(btnMesh_[0], res.renderer.renderer);
     // btnMesh.colors.forEach((c) => vec3.copy(c, ENDESGA16.lightGray));

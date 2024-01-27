@@ -285,7 +285,7 @@ function processMesh(desc: MeshDesc, m: RawMesh): RawMesh {
   if (desc.transform || desc.transformBasis)
     m.pos = m.pos.map((v) => vec3.clone(v));
   if (desc.transform) {
-    m.pos.forEach((v) => vec3.transformMat4(v, desc.transform!, v));
+    m.pos.forEach((v) => vec3.tMat4(v, desc.transform!, v));
     // TODO(@darzu): transformRigging()?
   }
   if (desc.modify) {
@@ -293,7 +293,7 @@ function processMesh(desc: MeshDesc, m: RawMesh): RawMesh {
     // TODO(@darzu): transformRigging()?
   }
   if (desc.transformBasis) {
-    m.pos.forEach((v) => vec3.transformMat4(v, desc.transformBasis!, v));
+    m.pos.forEach((v) => vec3.tMat4(v, desc.transformBasis!, v));
     if (m.rigging) transformRigging(m.rigging, desc.transformBasis);
   }
   if (!m.dbgName) m.dbgName = desc.name;

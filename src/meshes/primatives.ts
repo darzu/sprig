@@ -920,7 +920,7 @@ export function createRudderMesh(): Mesh {
 
   // TODO(@darzu): inline this transformation
   // m.pos.map((v) => vec3.transformMat4(v, ZUpXFwdYLeft_to_YUpZFwdXLeft, v));
-  m.pos.map((v) => vec3.transformMat4(v, transformYUpModelIntoZUp, v));
+  m.pos.map((v) => vec3.tMat4(v, transformYUpModelIntoZUp, v));
 
   // TODO(@darzu): Inline y+ forward
   const rot = quat.fromYawPitchRoll(Math.PI, 0, 0);

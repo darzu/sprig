@@ -188,11 +188,11 @@ export function sailForceAndSignedArea(
   const localVerts = sail.renderable.meshHandle.mesh!.pos;
 
   const worldVerts = localVerts.map((pos) => {
-    return vec3.transformMat4(pos, sail.world.transform);
+    return vec3.tMat4(pos, sail.world.transform);
   });
 
   const starViewVerts = worldVerts.map((pos) => {
-    return vec3.transformMat4(pos, viewProjMatrix);
+    return vec3.tMat4(pos, viewProjMatrix);
   });
 
   const area = getSailMeshArea(starViewVerts);

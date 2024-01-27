@@ -701,9 +701,7 @@ export function createSpaceBarge(): SpaceBarge {
     });
 
     // TODO(@darzu): Z_UP: basis change. inline this above?
-    _timberMesh.pos.forEach((v) =>
-      vec3.transformMat4(v, transformYUpModelIntoZUp, v)
-    );
+    _timberMesh.pos.forEach((v) => vec3.tMat4(v, transformYUpModelIntoZUp, v));
 
     const rotate2 = quat.fromYawPitchRoll(Math.PI, 0, 0);
     _timberMesh.pos.forEach((v) => {

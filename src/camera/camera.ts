@@ -341,10 +341,7 @@ EM.addLazyInit([], [CameraComputedDef], () => {
         const cascade = cameraComputed.shadowCascadeMats[i];
         cascade.near = camera.viewDist * shadowNearFrac;
         cascade.far = camera.viewDist * shadowFarFrac;
-        cascade.farZ = vec3.transformMat4(
-          [0, 0, -cascade.far],
-          cameraComputed.proj
-        )[2];
+        cascade.farZ = vec3.tMat4([0, 0, -cascade.far], cameraComputed.proj)[2];
 
         mat4.perspective(
           camera.fov,

@@ -425,7 +425,7 @@ EM.addEagerInit([WoodStateDef], [], [], () => {
                 if (ColorDef.isOn(w)) vec3.copy(splinter.color, w.color);
                 vec3.add(splinter.color, quadColor, splinter.color);
                 const pos = getLineMid(vec3.mk(), seg.midLine);
-                vec3.transformMat4(pos, w.world.transform, pos);
+                vec3.tMat4(pos, w.world.transform, pos);
                 EM.set(splinter, PositionDef, pos);
                 const rot = getSegmentRotation(seg, false);
                 quat.mul(rot, w.world.rotation, rot); // TODO(@darzu): !VERIFY! this works
@@ -830,8 +830,8 @@ export function createTimberBuilder(mesh: RawMesh) {
 
     const v0 = V(0, 0, b.depth);
     const v1 = V(0, 0, -b.depth);
-    vec3.transformMat4(v0, cursor, v0);
-    vec3.transformMat4(v1, cursor, v1);
+    vec3.tMat4(v0, cursor, v0);
+    vec3.tMat4(v1, cursor, v1);
     mesh.pos.push(v0, v1);
 
     const v_tm = vi + 0;
@@ -874,14 +874,14 @@ export function createTimberBuilder(mesh: RawMesh) {
 
       // +D side
       const vtj = V(x, y, d);
-      vec3.transformMat4(vtj, cursor, vtj);
+      vec3.tMat4(vtj, cursor, vtj);
       const vtji = mesh.pos.length;
       mesh.pos.push(vtj);
       mesh.tri.push(V(v_tm, vtji, v_tlast));
 
       // -D side
       const vbj = V(x, y, -d);
-      vec3.transformMat4(vbj, cursor, vbj);
+      vec3.tMat4(vbj, cursor, vbj);
       mesh.pos.push(vbj);
       mesh.tri.push(V(v_tm + 1, v_blast, vtji + 1));
 
@@ -933,10 +933,10 @@ export function createTimberBuilder(mesh: RawMesh) {
     const v1 = V(b.width, 0, -b.depth);
     const v2 = V(-b.width, 0, -b.depth);
     const v3 = V(-b.width, 0, b.depth);
-    vec3.transformMat4(v0, cursor, v0);
-    vec3.transformMat4(v1, cursor, v1);
-    vec3.transformMat4(v2, cursor, v2);
-    vec3.transformMat4(v3, cursor, v3);
+    vec3.tMat4(v0, cursor, v0);
+    vec3.tMat4(v1, cursor, v1);
+    vec3.tMat4(v2, cursor, v2);
+    vec3.tMat4(v3, cursor, v3);
     mesh.pos.push(v0, v1, v2, v3);
   }
 }

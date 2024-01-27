@@ -202,11 +202,9 @@ export async function initGJKSandbox(hosting: boolean) {
     lastWorldPos: vec3
   ): Shape {
     const transform = mat4.fromRotationTranslation(rot, pos, mat4.create());
-    const worldVerts = g.uniqueVerts.map((p) =>
-      vec3.transformMat4(p, transform)
-    );
+    const worldVerts = g.uniqueVerts.map((p) => vec3.tMat4(p, transform));
     const support = (d: vec3) => farthestPointInDir(worldVerts, d);
-    const center = vec3.transformMat4(g.center, transform);
+    const center = vec3.tMat4(g.center, transform);
     const travel = vec3.sub(pos, lastWorldPos);
     return {
       center,

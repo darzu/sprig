@@ -108,7 +108,7 @@ export function moveZ(m: mat4, n: number) {
 export function getPositionFromTransform(t: mat4): vec3 {
   // TODO(@darzu): not really necessary
   const pos = vec3.mk();
-  vec3.transformMat4(pos, t, pos);
+  vec3.tMat4(pos, t, pos);
   return pos;
 }
 // vec utilities
@@ -289,7 +289,7 @@ export function getFrustumWorldCorners(
   out = out ?? _tempWorldCorners;
   assertDbg(out.length === screenCorners.length);
   for (let i = 0; i < screenCorners.length; i++)
-    vec3.transformMat4(screenCorners[i], invViewProj, out[i]);
+    vec3.tMat4(screenCorners[i], invViewProj, out[i]);
   return out;
 }
 
@@ -369,9 +369,7 @@ export function frustumFromBounds(
   resizeArray(_tempViewCorners, worldCorners.length, () => vec3.mk());
 
   // translate & rotate camera frustum world corners into light view
-  worldCorners.forEach((p, i) =>
-    vec3.transformMat4(p, viewTmp, _tempViewCorners[i])
-  );
+  worldCorners.forEach((p, i) => vec3.tMat4(p, viewTmp, _tempViewCorners[i]));
 
   // get view-space bounds
   getAABBFromPositions(_tempViewAABB, _tempViewCorners);

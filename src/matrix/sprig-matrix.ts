@@ -549,7 +549,7 @@ export module vec3 {
     return out;
   }
 
-  export function transformMat4(v1: InputT, v2: mat4.InputT, out?: T): T {
+  export function tMat4(v1: InputT, v2: mat4.InputT, out?: T): T {
     return GL.transformMat4(out ?? tmp(), v1, v2) as T;
   }
 

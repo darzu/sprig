@@ -209,7 +209,7 @@ export async function initGalleryGame() {
       EM.set(p, ColorDef, V(1, 0, 0));
     }
     const frustGizMesh = createGizmoMesh();
-    mapMeshPositions(frustGizMesh, (p) => vec3.transformMat4(p, invFrust, p));
+    mapMeshPositions(frustGizMesh, (p) => vec3.tMat4(p, invFrust, p));
     const frustGiz = EM.new();
     EM.set(frustGiz, RenderableConstructDef, frustGizMesh);
     EM.set(frustGiz, PositionDef, V(0, 0, 0));

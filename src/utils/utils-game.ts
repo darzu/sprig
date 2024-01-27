@@ -159,7 +159,7 @@ export function screenPosToWorldPos(
   const viewY = remap(screenPos[1], 0, cameraComputed.height, 1, -1);
   const viewPos3 = vec3.set(viewX, viewY, screenDepth);
 
-  return vec3.transformMat4(viewPos3, invViewProj, out);
+  return vec3.tMat4(viewPos3, invViewProj, out);
 }
 
 export function screenPosToRay(

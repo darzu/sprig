@@ -811,9 +811,7 @@ export function createLD53Ship(): HomeShip {
   // TODO(@darzu): fix up ship construction
   {
     // TODO(@darzu): Z_UP: basis change. inline this above?
-    _timberMesh.pos.forEach((v) =>
-      vec3.transformMat4(v, transformYUpModelIntoZUp, v)
-    );
+    _timberMesh.pos.forEach((v) => vec3.tMat4(v, transformYUpModelIntoZUp, v));
 
     // change so ship faces +y
     const rotate = quat.fromYawPitchRoll(-Math.PI / 2, 0, 0);
