@@ -131,7 +131,7 @@ export const { HsShipPropsDef, HsShipLocalDef, createHsShip } =
   defineNetEntityHelper({
     name: "hsShip",
     defaultProps: () => ({
-      uvPos: vec2.fromValues(0.5, 0.5),
+      uvPos: V(0.5, 0.5),
       gemId: 0,
       cannonLId: 0, // TODO(@darzu): use refs?
       cannonRId: 0,

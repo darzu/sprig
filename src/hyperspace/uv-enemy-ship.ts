@@ -80,10 +80,10 @@ export const { EnemyShipPropsDef, EnemyShipLocalDef, createEnemyShip } =
     name: "enemyShip",
     defaultProps: () => {
       return {
-        uvLoc: vec2.fromValues(0, 0),
+        uvLoc: V(0, 0),
         speed: 0.0,
         wheelSpeed: 0.0,
-        uvDir: vec2.fromValues(1, 0),
+        uvDir: V(1, 0),
         parent: 0,
       };
     },

@@ -58,7 +58,7 @@ function parseLineVert(s: string): vec2 | ParseError {
   // parse v1/t1 into [v1, t1]
   const parts = s.split("/");
   if (parts.length !== 2) return `invalid line vertex: ${s}`;
-  return vec2.fromValues(parseFloat(parts[0]), parseFloat(parts[1]));
+  return V(parseFloat(parts[0]), parseFloat(parts[1]));
 }
 function parseLine(p: string[]): vec2[] | ParseError {
   const verts = p.map((s) => parseLineVert(s));
@@ -194,11 +194,11 @@ export function importObj(obj: string): RawMesh[] | ParseError {
         if (FLIP_FACES) {
           // tri.push(reverse(tri1));
           // tri.push(reverse(tri2));
-          quad.push(vec4.fromValues(inds[3], inds[2], inds[1], inds[0]));
+          quad.push(V(inds[3], inds[2], inds[1], inds[0]));
         } else {
           // tri.push(tri1);
           // tri.push(tri2);
-          quad.push(vec4.fromValues(inds[0], inds[1], inds[2], inds[3]));
+          quad.push(V(inds[0], inds[1], inds[2], inds[3]));
         }
       } else if (inds.length === 8) {
         // TODO(@darzu): any large n-gon that's convex can just be made into a triangle fan

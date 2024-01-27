@@ -128,7 +128,7 @@ function computeOceanVertsData(
     color: V(1.0, 0.0, 1.0), // per-face; changed below
     tangent: m.tangents![i],
     normal: m.normals![i],
-    uv: m.uvs ? m.uvs[i] : vec2.fromValues(0.0, 0.0),
+    uv: m.uvs ? m.uvs[i] : V(0.0, 0.0),
     surfaceId: 0, // per-face; changed below
   }));
   // TODO: compute tangents here? right now tangents are wrong if we

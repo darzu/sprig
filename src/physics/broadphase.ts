@@ -620,7 +620,7 @@ export function raySphereIntersections(
   const h = b * b - c;
   if (h < 0.0) return undefined; // no intersection
   const h2 = Math.sqrt(h);
-  return vec2.fromValues(-b - h2, -b + h2);
+  return V(-b - h2, -b + h2);
 }
 
 export function lineSphereIntersections(

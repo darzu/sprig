@@ -168,9 +168,9 @@ export function getSailMeshArea(verts: vec3[]) {
   // TODO(@darzu): generalize this for different mesh? Or create the mesh and type it?
   return (
     signedAreaOfTriangle(
-      vec2.fromValues(verts[0][1], verts[0][2]),
-      vec2.fromValues(verts[1][1], verts[1][2]),
-      vec2.fromValues(verts[2][1], verts[2][2])
+      V(verts[0][1], verts[0][2]),
+      V(verts[1][1], verts[1][2]),
+      V(verts[2][1], verts[2][2])
     ) * RIB_COUNT
   );
 }

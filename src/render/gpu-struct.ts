@@ -243,20 +243,14 @@ function wgslTypeToDummyVal<T extends WGSLType>(
 
   function _wgslTypeToDummyVal<T extends WGSLType>(wgsl: T): any {
     if (wgsl === "f32") return Math.random() * 100.0;
-    if (wgsl === "vec2<f32>")
-      return vec2.fromValues(Math.random(), Math.random());
+    if (wgsl === "vec2<f32>") return V(Math.random(), Math.random());
     const randVec3 = () => V(Math.random(), Math.random(), Math.random());
     if (wgsl === "vec3<f32>") return randVec3();
     const randVec4 = () =>
-      vec4.fromValues(
-        Math.random(),
-        Math.random(),
-        Math.random(),
-        Math.random()
-      );
+      V(Math.random(), Math.random(), Math.random(), Math.random());
     if (wgsl === "vec4<f32>") return randVec4();
     if (wgsl === "vec4<u32>")
-      return vec4.fromValues(
+      return V(
         Math.floor(Math.random() * Number.MAX_SAFE_INTEGER),
         Math.floor(Math.random() * Number.MAX_SAFE_INTEGER),
         Math.floor(Math.random() * Number.MAX_SAFE_INTEGER),

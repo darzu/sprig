@@ -241,12 +241,12 @@ export const OceanMesh = XY.registerMesh({
     const maxZ = m.pos.reduce((p, n) => (n[2] > p ? n[2] : p), -Infinity);
     // m.uvs = m.pos.map(
     //   (p, i) =>
-    //     vec2.fromValues(
+    //     V(
     //       mathMap(p[0], minX, maxX, 0, 1),
     //       mathMap(p[2], minZ, maxZ, 0, 1)
     //     )
-    //   // vec2.fromValues(i / m.pos.length, 0)
-    //   // vec2.fromValues(0.5, 0.5)
+    //   // V(i / m.pos.length, 0)
+    //   // V(0.5, 0.5)
     // );
 
     // TODO(@darzu): DBG

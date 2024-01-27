@@ -81,7 +81,7 @@ export const stdRenderPipeline = CY.createRenderPipeline("stdMeshRender", {
       // defaultColor: [0.0, 0.0, 0.0, 1.0],
       // defaultColor: [0.1, 0.1, 0.1, 1.0],
       // defaultColor: [0.15, 0.15, 0.6, 1.0],
-      defaultColor: vec4.fromValues(0.015, 0.015, 0.015, 1.0),
+      defaultColor: V(0.015, 0.015, 0.015, 1.0),
       // defaultColor: [...vec3.clone(ENDESGA16.white), 1.0] as vec4,
       // defaultColor: [0.7, 0.8, 1.0, 1.0],
     },
