@@ -514,8 +514,39 @@ export module vec3 {
   }
 
   // TODO(@darzu): replace many usages with getFwd, getUp, getRight, etc.
-  export function transformQuat(v1: InputT, v2: quat.InputT, out?: T): T {
-    return GL.transformQuat(out ?? tmp(), v1, v2) as T;
+  export function transformQuat(a: InputT, q: quat.InputT, out?: T): T {
+    out = out ?? tmp();
+    // benchmarks: https://jsperf.com/quaternion-transform-vec3-implementations-fixed
+    var qx = q[0],
+      qy = q[1],
+      qz = q[2],
+      qw = q[3];
+    var x = a[0],
+      y = a[1],
+      z = a[2]; // var qvec = [qx, qy, qz];
+    // var uv = vec3.cross([], qvec, a);
+
+    var uvx = qy * z - qz * y,
+      uvy = qz * x - qx * z,
+      uvz = qx * y - qy * x; // var uuv = vec3.cross([], qvec, uv);
+
+    var uuvx = qy * uvz - qz * uvy,
+      uuvy = qz * uvx - qx * uvz,
+      uuvz = qx * uvy - qy * uvx; // vec3.scale(uv, uv, 2 * w);
+
+    var w2 = qw * 2;
+    uvx *= w2;
+    uvy *= w2;
+    uvz *= w2; // vec3.scale(uuv, uuv, 2);
+
+    uuvx *= 2;
+    uuvy *= 2;
+    uuvz *= 2; // return vec3.add(out, a, vec3.add(out, uv, uuv));
+
+    out[0] = x + uvx + uuvx;
+    out[1] = y + uvy + uuvy;
+    out[2] = z + uvz + uuvz;
+    return out;
   }
 
   export function transformMat4(v1: InputT, v2: mat4.InputT, out?: T): T {
