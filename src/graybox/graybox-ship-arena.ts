@@ -576,7 +576,6 @@ function getDirsToTan(
   outL: vec3,
   outR: vec3
 ): void {
-  const _stk = tmpStack();
   const srcToTrg = vec3.sub(trg, src);
   const perpR: vec3.InputT = [srcToTrg[1], -srcToTrg[0], 0];
   const normR = vec3.normalize(perpR);
@@ -584,7 +583,6 @@ function getDirsToTan(
   const scaledL = vec3.negate(scaledR);
   vec3.add(trg, scaledR, outR);
   vec3.add(trg, scaledL, outL);
-  _stk.pop();
 }
 
 function createEnemy() {
