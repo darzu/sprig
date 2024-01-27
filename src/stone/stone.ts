@@ -136,8 +136,8 @@ function knockOutBrickAtIndex(stone: StoneState, index: number) {
   }
 }
 
-let towardsAttractorTmp = vec3.tmp();
-let testAABBTmp = vec3.tmp();
+let towardsAttractorTmp = vec3.create();
+let testAABBTmp = vec3.create();
 
 function shrinkBrickAtIndex(
   stone: StoneState,

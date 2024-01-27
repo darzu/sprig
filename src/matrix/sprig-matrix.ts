@@ -106,17 +106,22 @@ function float32ArrayOfLength<N extends number>(n: N): Float32ArrayOfLength<N> {
 
 let _tmpResetGen = 1;
 
+let _tmpGenHints = ["<zero>", "<one>"];
+
 function mkTmpProxyHandler(gen: number) {
+  const err = () => {
+    throw new Error(
+      `Leak! Using tmp from gen ${gen} "${_tmpGenHints[gen]}" in gen ${_tmpResetGen} "${_tmpGenHints[_tmpResetGen]}"`
+    );
+  };
   const tmpProxyHandler: ProxyHandler<Float32Array> = {
     get: (v, prop) => {
-      if (gen !== _tmpResetGen)
-        throw `Using tmp from gen ${gen} after reset! Current gen ${_tmpResetGen}`;
+      if (gen !== _tmpResetGen) err();
       // TODO(@darzu): huh is TS's ProxyHandler typing wrong? cus this seems to work?
       return v[prop as unknown as number];
     },
     set: (v, prop, val) => {
-      if (gen !== _tmpResetGen)
-        throw `Using tmp from gen ${gen} after reset! Current gen ${_tmpResetGen}`;
+      if (gen !== _tmpResetGen) err();
       v[prop as unknown as number] = val;
       return true;
     },
@@ -156,7 +161,7 @@ function tmpArray<N extends number>(n: N): Float32ArrayOfLength<N> {
   return arr as Float32ArrayOfLength<N>;
 }
 
-export function resetTempMatrixBuffer() {
+export function resetTempMatrixBuffer(hint: string) {
   if (_tmpMarkStack.length)
     throw `mismatched tmpMark & tmpPop! ${_tmpMarkStack.length} unpopped`;
 
@@ -164,6 +169,7 @@ export function resetTempMatrixBuffer() {
 
   if (DBG_TMP_LEAK) {
     _tmpResetGen += 1;
+    if (_tmpGenHints.length < 1000) _tmpGenHints[_tmpResetGen] = hint;
     _tmpProxyHandler = mkTmpProxyHandler(_tmpResetGen);
   }
 
@@ -189,8 +195,8 @@ export function resetTempMatrixBuffer() {
 // TODO(@darzu): eventually we'll get scoped using statements in JS which will make this hideous mess a little better?
 // TODO(@darzu): should these be called for every system and every init?
 const _tmpMarkStack: number[] = [];
-const _tmpMarkGenStack: number[] = [];
-let _tmpStackNextGen = 1;
+const _tmpMarkIdStack: number[] = [];
+let _tmpStackNextId = 1;
 export interface TmpStack {
   readonly pop: () => void;
 }
@@ -205,11 +211,11 @@ export function tmpStack(): TmpStack {
     return _cheapPop;
   }
 
-  _tmpStackNextGen += 1;
+  _tmpStackNextId += 1;
 
-  const gen = _tmpStackNextGen;
+  const id = _tmpStackNextId;
   _tmpMarkStack.push(bufferIndex);
-  _tmpMarkGenStack.push(gen);
+  _tmpMarkIdStack.push(id);
 
   const res: TmpStack = { pop };
 
@@ -218,8 +224,8 @@ export function tmpStack(): TmpStack {
 
   function pop(): void {
     if (_tmpMarkStack.length === 0) throw "tmpStack.pop with zero size stack!";
-    const popGen = _tmpMarkGenStack.pop()!;
-    if (popGen !== gen)
+    const popId = _tmpMarkIdStack.pop()!;
+    if (popId !== id)
       throw "tmpStack pop mismatch! Did a stack cross async boundries?";
     bufferIndex = _tmpMarkStack.pop()!;
   }

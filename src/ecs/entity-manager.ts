@@ -1256,12 +1256,11 @@ export class EntityManager {
       return true;
     }
 
+    resetTempMatrixBuffer(s.name);
+
     // we have the resources, run the system
     // TODO(@darzu): how do we handle async systems?
     s.callback(es, rs);
-
-    // TODO(@darzu): tag the generations for easier attribution?
-    resetTempMatrixBuffer();
 
     // // TODO(@darzu): DEBUG. Promote to a dbg flag? Maybe pre-post system watch predicate
     // if (es.length && es[0].id === 10001) {
@@ -1710,6 +1709,9 @@ export class EntityManager {
       this._lastInitTimestamp = before;
       this._runningInitStack.push(init);
     }
+
+    // TODO(@darzu): is this reasonable to do before ea init?
+    resetTempMatrixBuffer(initFnToString(init));
 
     const promise = init.fn(this.resources);
     this.startedInits.set(init.id, promise);

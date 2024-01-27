@@ -529,3 +529,6 @@ PERFORMANCE STRATEGIES:
   - Move to component column storage
   - Optimize query caching system
   - Trace chrome using about:tracing
+
+Running PIX w/ WebGPU:
+  https://toji.dev/webgpu-profiling/pix.html

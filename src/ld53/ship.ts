@@ -190,6 +190,9 @@ export async function createLd53ShipAsync() {
   });
 
   const rudder = createRudderTurret(res);
+
+  EM.set(rudder, AuthorityDef, res.me.pid);
+
   // console.log("setting position");
   vec3.set(0, -25, 4, rudder.position);
   // console.log(`rudder: ${rudder.id}`);
