@@ -74,7 +74,7 @@ export function randNormalPosVec3(out?: V3) {
 export function randNormalVec2(out: V2) {
   // TODO(@darzu): not evenly distributed on sphere!
   V2.set(Math.random() - 0.5, Math.random() - 0.5, out);
-  V2.normalize(out, out);
+  V2.norm(out, out);
   return out;
 }
 

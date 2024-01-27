@@ -279,6 +279,28 @@ export function findAnyTmpVec(
   );
 }
 
+// TODO(@darzu): PERF. does this have a perf hit?
+export function V(...xs: [number, number]): V2;
+export function V(...xs: [number, number, number]): V3;
+export function V(...xs: [number, number, number, number]): V4;
+export function V(...xs: number[]): V2 | V3 | V4 {
+  if (xs.length === 3) return V3.fromValues(xs[0], xs[1], xs[2]);
+  else if (xs.length === 4) return V4.fromValues(xs[0], xs[1], xs[2], xs[3]);
+  else if (xs.length === 2) return V2.fromValues(xs[0], xs[1]);
+  else throw new Error(`Unsupported vec size: ${xs.length}`);
+}
+
+// temp vectors:
+export function tV(...xs: [number, number]): V2;
+export function tV(...xs: [number, number, number]): V3;
+export function tV(...xs: [number, number, number, number]): V4;
+export function tV(...xs: number[]): V2 | V3 | V4 {
+  if (xs.length === 4) return V4.set(xs[0], xs[1], xs[2], xs[3]);
+  else if (xs.length === 3) return V3.set(xs[0], xs[1], xs[2]);
+  else if (xs.length === 2) return V2.set(xs[0], xs[1]);
+  else throw new Error(`Unsupported vec size: ${xs.length}`);
+}
+
 export module V2 {
   export type T = V2;
   export type InputT = T | readonly [number, number];
@@ -348,10 +370,10 @@ export module V2 {
   export function div(v1: InputT, v2: InputT, out?: T): T {
     return GL.div(out ?? tmp(), v1, v2) as T;
   }
-  export function normalize(v1: InputT, out?: T): T {
+  export function norm(v1: InputT, out?: T): T {
     return GL.normalize(out ?? tmp(), v1) as T;
   }
-  export function length(v1: InputT): number {
+  export function len(v1: InputT): number {
     return GL.length(v1);
   }
   export function dot(v1: InputT, v2: InputT): number {
@@ -363,7 +385,7 @@ export module V2 {
   export function scale(v1: InputT, n: number, out?: T): T {
     return GL.scale(out ?? tmp(), v1, n) as T;
   }
-  export function negate(v1: InputT, out?: T): T {
+  export function neg(v1: InputT, out?: T): T {
     return GL.negate(out ?? tmp(), v1) as T;
   }
   export function dist(v1: InputT, v2: InputT): number {
@@ -375,28 +397,6 @@ export module V2 {
   export function rotate(v1: InputT, v2: InputT, rad: number, out?: T): T {
     return GL.rotate(out ?? tmp(), v1, v2, rad) as T;
   }
-}
-
-// TODO(@darzu): PERF. does this have a perf hit?
-export function V(...xs: [number, number]): V2;
-export function V(...xs: [number, number, number]): V3;
-export function V(...xs: [number, number, number, number]): V4;
-export function V(...xs: number[]): V2 | V3 | V4 {
-  if (xs.length === 3) return V3.fromValues(xs[0], xs[1], xs[2]);
-  else if (xs.length === 4) return V4.fromValues(xs[0], xs[1], xs[2], xs[3]);
-  else if (xs.length === 2) return V2.fromValues(xs[0], xs[1]);
-  else throw new Error(`Unsupported vec size: ${xs.length}`);
-}
-
-// temp vectors:
-export function tV(...xs: [number, number]): V2;
-export function tV(...xs: [number, number, number]): V3;
-export function tV(...xs: [number, number, number, number]): V4;
-export function tV(...xs: number[]): V2 | V3 | V4 {
-  if (xs.length === 4) return V4.set(xs[0], xs[1], xs[2], xs[3]);
-  else if (xs.length === 3) return V3.set(xs[0], xs[1], xs[2]);
-  else if (xs.length === 2) return V2.set(xs[0], xs[1]);
-  else throw new Error(`Unsupported vec size: ${xs.length}`);
 }
 
 // TODO(@darzu): use "namespace" keyword instead of "module" (re: https://www.typescriptlang.org/docs/handbook/namespaces.html)

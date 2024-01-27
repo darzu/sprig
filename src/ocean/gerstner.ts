@@ -169,7 +169,7 @@ function catlike_gerstner(
 ) {
   const k = (2 * Math.PI) / wavelength;
   const c = Math.sqrt(9.8 / k);
-  const d = V2.normalize(dir);
+  const d = V2.norm(dir);
   const f = k * (V2.dot(d, uv) - c * t);
   const a = steepness / k;
 

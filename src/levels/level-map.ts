@@ -105,7 +105,7 @@ function centerOfMassAndDirection(b: MapBlob): [V2, V2] {
     }
   }
   const dir = V(fx - cx, fy - cy);
-  V2.normalize(dir, dir);
+  V2.norm(dir, dir);
   return [V(cx, cy), dir];
 }
 

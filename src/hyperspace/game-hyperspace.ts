@@ -196,7 +196,7 @@ export async function initHyperspaceGame() {
       const enemyStartPos = V3.sub(enemyEndPos, [0, 20, 0], V3.mk());
 
       const towardsPlayerDir = V2.sub(ship2.uvPos, enemyUVPos, V2.mk());
-      V2.normalize(towardsPlayerDir, towardsPlayerDir);
+      V2.norm(towardsPlayerDir, towardsPlayerDir);
 
       // console.log("creating spawner");
       const enemySpawner = createSpawner(enemyUVPos, towardsPlayerDir, {

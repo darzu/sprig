@@ -382,7 +382,7 @@ export function registerOceanUVFns() {
         // res.ocean.uvToGerstnerDispAndNorm(tempVec3(), newNorm, e.uvPos);
         // vec3.copy(e.rotation, newNorm);
         // TODO(@darzu): this is horrible.
-        V2.normalize(e.uvDir, e.uvDir);
+        V2.norm(e.uvDir, e.uvDir);
         const scaledUVDir = V2.scale(e.uvDir, 0.0001, __temp3);
         const aheadUV = V2.add(e.uvPos, scaledUVDir, __temp3);
         const aheadPos = __temp1;
