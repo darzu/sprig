@@ -50,7 +50,7 @@ import {
 import { SpaceSuitDef } from "./space-suit-controller.js";
 
 let _t1 = V3.mk();
-let _t2 = quat.create();
+let _t2 = quat.mk();
 
 function createFuelOreMesh(): Mesh {
   const meshes: RawMesh[] = [];

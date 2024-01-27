@@ -114,7 +114,7 @@ export async function initClothSandbox(hosting: boolean) {
   EM.set(ship, RenderableConstructDef, res.allMeshes.ship.proto);
   EM.set(ship, ColorDef, ENEMY_SHIP_COLOR);
   EM.set(ship, PositionDef, V(20, -2, 0));
-  EM.set(ship, RotationDef, quat.fromEuler(0, Math.PI * 0.1, 0, quat.create()));
+  EM.set(ship, RotationDef, quat.fromEuler(0, Math.PI * 0.1, 0, quat.mk()));
 
   // const ocean = EM.newEntity();
   // EM.set(

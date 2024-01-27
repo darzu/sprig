@@ -62,7 +62,7 @@ export function updateFrameFromPosRotScale(f: Frame) {
 export function createFrame(): Frame {
   return {
     position: V3.mk(),
-    rotation: quat.create(),
+    rotation: quat.mk(),
     scale: V(1, 1, 1),
     transform: mat4.create(),
   };
@@ -109,7 +109,7 @@ EM.registerSerializerPair(
 // ROTATION
 export const RotationDef = EM.defineComponent(
   "rotation",
-  () => quat.create(),
+  () => quat.mk(),
   (p, r?: quat.InputT) => (r ? quat.copy(p, r) : p)
 );
 export type Rotation = Component<typeof RotationDef>;

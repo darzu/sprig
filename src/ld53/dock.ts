@@ -74,7 +74,7 @@ export function createDockWood(): [Mesh, WoodState] {
 
     const path: Path = positions.map((pos) => ({
       pos,
-      rot: quat.fromEuler(0, 0, 0, quat.create()),
+      rot: quat.fromEuler(0, 0, 0, quat.mk()),
     }));
 
     // dbgPathWithGizmos(path);

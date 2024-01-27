@@ -373,7 +373,7 @@ export function importGltf(buf: ArrayBuffer): RawMesh | ParseError {
         V3.clone(jointNode.translation ? jointNode.translation : V(0, 0, 0))
       );
       jointRot.push(
-        jointNode.rotation ? quat.clone(jointNode.rotation) : quat.create()
+        jointNode.rotation ? quat.clone(jointNode.rotation) : quat.mk()
       );
       jointScale.push(jointNode.scale ? V3.clone(jointNode.scale) : V(1, 1, 1));
 
@@ -430,7 +430,7 @@ export function importGltf(buf: ArrayBuffer): RawMesh | ParseError {
       for (let i = 0; i < nPoses; i++) {
         poseRot.push([]);
         for (let j = 0; j < parents.length; j++) {
-          poseRot[i].push(quat.create());
+          poseRot[i].push(quat.mk());
         }
       }
 

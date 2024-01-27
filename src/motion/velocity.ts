@@ -30,7 +30,7 @@ EM.registerSerializerPair(
 
 let _linVelDelta = V3.mk();
 let _normalizedVelocity = V3.mk();
-let _deltaRotation = quat.create();
+let _deltaRotation = quat.mk();
 
 export function registerPhysicsApplyLinearVelocity() {
   EM.addSystem(

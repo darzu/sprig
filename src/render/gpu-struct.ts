@@ -260,7 +260,7 @@ function wgslTypeToDummyVal<T extends WGSLType>(
       return Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
     const randAngle = () => Math.random() * 2 * Math.PI;
     const randQuat = () =>
-      quat.fromEuler(randAngle(), randAngle(), randAngle(), quat.create());
+      quat.fromEuler(randAngle(), randAngle(), randAngle(), quat.mk());
     if (wgsl === "mat4x4<f32>")
       return mat4.fromRotationTranslationScaleOrigin(
         randQuat(),

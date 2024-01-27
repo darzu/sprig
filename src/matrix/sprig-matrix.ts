@@ -732,7 +732,7 @@ export module quat {
     return tmpArray(4);
   }
 
-  export function create(): T {
+  export function mk(): T {
     const out = float32ArrayOfLength(4);
     out[3] = 1;
     return out;
@@ -750,7 +750,7 @@ export module quat {
     return GL.set(out ?? tmp(), x, y, z, w) as T;
   }
 
-  export const IDENTITY = identity(create());
+  export const IDENTITY = identity(mk());
 
   export function equals(v1: InputT, v2: InputT): boolean {
     return GL.equals(v1, v2);

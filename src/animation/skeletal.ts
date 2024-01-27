@@ -21,7 +21,7 @@ interface QueuedAnimation {
 // initializes dest if it is empty; otherwise, assumes it has the right length
 function copyPoseRot(dest: quat[], src: quat[]) {
   if (dest.length === 0) {
-    src.forEach((rot) => dest.push(quat.copy(quat.create(), rot)));
+    src.forEach((rot) => dest.push(quat.copy(quat.mk(), rot)));
   } else {
     src.forEach((rot, i) => quat.copy(dest[i], rot));
   }

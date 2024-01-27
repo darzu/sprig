@@ -217,7 +217,7 @@ function mkDotPath(
 ): DotPath {
   const path: Path = range(len).map((_) => ({
     pos: V3.mk(),
-    rot: quat.create(),
+    rot: quat.mk(),
   }));
 
   const dots = dotsRes.dots.allocDots(len);

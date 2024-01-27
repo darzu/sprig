@@ -581,7 +581,7 @@ function getSegmentRotation(seg: BoardSeg, top: boolean) {
     V3.neg(endNorm, endNorm);
   }
 
-  const rot = quat.create();
+  const rot = quat.mk();
   quatFromUpForward_OLD(rot, endNorm, segNorm);
   return rot;
 }

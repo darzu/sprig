@@ -38,7 +38,7 @@ export function translatePathAlongNormal(p: Path, t: number) {
   return p;
 }
 let __mirrorMat = mat3.create();
-let __tq1 = quat.create();
+let __tq1 = quat.mk();
 export function mirrorPath(p: Path, planeNorm: V3.InputT) {
   // TODO(@darzu): support non-origin planes
   if (DBG_ASSERT)
@@ -138,7 +138,7 @@ export function createPathFromBezier(
     const tan = bezierTangent(b, t, V3.tmp());
     V3.norm(tan, tan);
     // const rot = quatFromUpForward_OLD(quat.create(), up, tan);
-    const rot = quat.fromForwardAndUpish(tan, up, quat.create());
+    const rot = quat.fromForwardAndUpish(tan, up, quat.mk());
     path.push({ pos, rot });
   }
   return path;
@@ -214,7 +214,7 @@ export function createEvenPathFromBezierCurve(
         const tan = bezierTangent(b, t, V3.tmp());
         V3.norm(tan, tan);
         // const rot = quatFromUpForward_OLD(quat.create(), up, tan);
-        const rot = quat.fromForwardAndUpish(tan, up, quat.create());
+        const rot = quat.fromForwardAndUpish(tan, up, quat.mk());
         path.push({ pos, rot });
         didAdd = true;
         // console.log(`adding: ${t} -> ${vec3Dbg(pos)}`);

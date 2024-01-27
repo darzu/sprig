@@ -35,12 +35,12 @@ export const CameraDef = EM.defineResource("camera", () => {
       V(Infinity, Infinity, Infinity)
     ),
     positionOffset: V3.mk(),
-    rotationOffset: quat.create(),
+    rotationOffset: quat.mk(),
     // smoothing:
     prevTargetId: 0,
-    lastRotation: quat.create(),
+    lastRotation: quat.mk(),
     lastPosition: V3.mk(),
-    rotationError: quat.identity(quat.create()),
+    rotationError: quat.identity(quat.mk()),
     targetPositionError: V3.mk(),
     cameraPositionError: V3.mk(),
   };

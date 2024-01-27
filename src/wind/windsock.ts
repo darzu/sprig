@@ -51,7 +51,7 @@ export function createSock(scale: number) {
 }
 
 let lastWinAngle = NaN;
-let lastShipRot = quat.create();
+let lastShipRot = quat.mk();
 EM.addSystem(
   "billowSock",
   Phase.GAME_WORLD,

@@ -54,7 +54,7 @@ export function createEnemyCrew(
   const e = EM.new();
   EM.set(e, EnemyCrewDef);
   EM.set(e, PositionDef, pos);
-  EM.set(e, RotationDef, quat.create());
+  EM.set(e, RotationDef, quat.mk());
   const torso = cloneMesh(allMeshes.cube.mesh);
   scaleMesh3(torso, V(0.75, 0.75, 0.4));
   EM.set(e, RenderableConstructDef, torso);
@@ -198,7 +198,7 @@ export const { EnemyShipPropsDef, EnemyShipLocalDef, createEnemyShip } =
       EM.set(cannon, PhysicsParentDef, e.id);
       EM.set(cannon, PositionDef, V(0, 2, 0));
 
-      const cannonRot = quat.create();
+      const cannonRot = quat.mk();
       const pitch = Math.PI * 0.08;
       // quat.rotateY(cannonRot, cannonRot, Math.PI * 0.5);
       // quat.rotateY(cannonRot, cannonRot, Math.PI * 0.5);

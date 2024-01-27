@@ -5,7 +5,7 @@ const ERROR_SMOOTHING_FACTOR = 0.9 ** (60 / 1000);
 const EPSILON = 0.0001;
 const QUAT_EPSILON = 0.001;
 
-const identityQuat: quat = quat.identity(quat.create());
+const identityQuat: quat = quat.identity(quat.mk());
 
 function isVec3(v: quat | V3): v is V3 {
   return v.length === 3;

@@ -810,7 +810,7 @@ function getFireDirection(
   // console.log(`yaw: ${yaw}, pitch: ${pitch}`);
   // pitch = 0;
 
-  const worldRot = quat.create();
+  const worldRot = quat.mk();
   // TODO(@darzu): b/c we're using +X is fwd, we can't use quat.fromYawPitchRoll
   quat.rotateZ(worldRot, -yaw, worldRot);
   quat.rotateY(worldRot, -pitch, worldRot);

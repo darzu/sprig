@@ -306,7 +306,7 @@ export async function initShipyardGame(hosting: boolean) {
       if (inputs.lclick) {
         // console.log(`fire!`);
         const firePos = ghost.world.position;
-        const fireDir = quat.create();
+        const fireDir = quat.mk();
         quat.copy(fireDir, ghost.world.rotation);
         const ballHealth = 2.0;
         fireBullet(

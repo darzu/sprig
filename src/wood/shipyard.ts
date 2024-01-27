@@ -193,7 +193,7 @@ export function getPathFrom2DQuadMesh(m: Mesh, perp: V3.InputT): Path {
     let v1 = m.pos[e.next.orig.vi];
     let pos = centroid(v0, v1);
     let dir = V3.cross(V3.sub(v0, v1, __temp1), perp, __temp1);
-    const rot = quatFromUpForward_OLD(quat.create(), perp, dir);
+    const rot = quatFromUpForward_OLD(quat.mk(), perp, dir);
     path.push({ pos, rot });
 
     if (!e.face) break;
@@ -870,7 +870,7 @@ interface Board {
 }
 
 export function pathNodeFromMat4(cursor: mat4): PathNode {
-  const rot = mat4.getRotation(cursor, quat.create());
+  const rot = mat4.getRotation(cursor, quat.mk());
   const pos = mat4.getTranslation(cursor, V3.mk());
   return {
     pos,

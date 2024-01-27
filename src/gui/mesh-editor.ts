@@ -203,7 +203,7 @@ async function createMeshEditor() {
     EM.set(glyph_, RenderableConstructDef, gm.proto, false);
     EM.set(glyph_, ColorDef);
     EM.set(glyph_, PositionDef);
-    EM.set(glyph_, RotationDef, quat.create());
+    EM.set(glyph_, RotationDef, quat.mk());
     EM.set(glyph_, WidgetDef);
     EM.set(glyph_, ColliderDef, {
       shape: "AABB",
