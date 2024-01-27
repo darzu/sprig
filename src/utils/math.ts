@@ -180,7 +180,7 @@ export function testMath() {
     const fwd = V(0, 1, 0);
     for (let v of vs) {
       const rot = quat.fromForward(v);
-      const v2 = vec3.transformQuat(fwd, rot, vec3.mk());
+      const v2 = vec3.tQuat(fwd, rot, vec3.mk());
       console.log(`${vec3Dbg(v)} ==${quatDbg(rot)}==> ${vec3Dbg(v2)}`);
     }
   }

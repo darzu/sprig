@@ -696,7 +696,7 @@ export function createSpaceBarge(): SpaceBarge {
   {
     const rotate = quat.fromEuler(0, -Math.PI / 2, 0);
     _timberMesh.pos.forEach((v) => {
-      vec3.transformQuat(v, rotate, v);
+      vec3.tQuat(v, rotate, v);
       vec3.add(v, [0, -floorHeight, 0], v);
     });
 
@@ -707,7 +707,7 @@ export function createSpaceBarge(): SpaceBarge {
 
     const rotate2 = quat.fromYawPitchRoll(Math.PI, 0, 0);
     _timberMesh.pos.forEach((v) => {
-      vec3.transformQuat(v, rotate2, v);
+      vec3.tQuat(v, rotate2, v);
     });
   }
 

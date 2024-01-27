@@ -31,7 +31,7 @@ export function translatePath(p: Path, tran: vec3.InputT) {
 const __temp3 = vec3.mk();
 export function translatePathAlongNormal(p: Path, t: number) {
   p.forEach((n) => {
-    const norm = vec3.transformQuat([0, 0, 1], n.rot, __temp3);
+    const norm = vec3.tQuat([0, 0, 1], n.rot, __temp3);
     vec3.scale(norm, t, norm);
     vec3.add(n.pos, norm, n.pos);
   });

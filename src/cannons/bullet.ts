@@ -224,7 +224,7 @@ export async function fireBullet(
   }
 
   // let bulletAxis = V(1, 0, 0);
-  const axis = vec3.transformQuat(bulletAxis, rotation, vec3.tmp());
+  const axis = vec3.tQuat(bulletAxis, rotation, vec3.tmp());
   vec3.normalize(axis, axis);
   const linearVelocity = vec3.scale(axis, speed, vec3.mk());
   const angularVelocity = vec3.scale(axis, rotationSpeed, vec3.mk());
@@ -342,7 +342,7 @@ export function* simulateBullet(
   dt: number
 ): Generator<vec3, never> {
   let bulletAxis = tV(0, 0, -1);
-  vec3.transformQuat(bulletAxis, rot, bulletAxis);
+  vec3.tQuat(bulletAxis, rot, bulletAxis);
   vec3.normalize(bulletAxis, bulletAxis);
   const linVel = vec3.scale(bulletAxis, speed, vec3.mk());
   const grav = V(0, -gravity, 0);

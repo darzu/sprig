@@ -96,7 +96,7 @@ export function transformRigging(out: Rigging, tm: mat4.InputT) {
   const tmi = mat4.invert(tm);
   const tqi = quat.fromMat4(tmi);
 
-  out.jointPos.forEach((v) => vec3.transformQuat(v, tq, v));
+  out.jointPos.forEach((v) => vec3.tQuat(v, tq, v));
   out.jointRot.forEach((q) => quat.mul(tq, quat.mul(q, tqi, q), q));
   // TODO(@darzu): I don't quite understand why scales shouldn't be transformed..
   // out.jointScale.forEach((s) => vec3.transformMat3(s, tm3, s));

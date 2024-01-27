@@ -88,7 +88,7 @@ EM.addEagerInit([MastDef], [], [], () => {
     (es) => {
       for (let e of es) {
         const sail = e.mast.sail.sail;
-        const normal = vec3.transformQuat(vec3.FWD, e.rotation);
+        const normal = vec3.tQuat(vec3.FWD, e.rotation);
         e.mast.force = sail.force * vec3.dot(vec3.FWD, normal);
       }
     }
@@ -163,7 +163,7 @@ EM.addEagerInit([MastDef], [], [], () => {
     (es) => {
       for (let e of es) {
         // acceleration
-        const direction = vec3.transformQuat(vec3.FWD, e.world.rotation);
+        const direction = vec3.tQuat(vec3.FWD, e.world.rotation);
         const sailAccel = vec3.scale(
           direction,
           e.hasMast.mast.mast.force * SAIL_ACCEL_RATE

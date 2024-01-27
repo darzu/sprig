@@ -408,7 +408,7 @@ export function angleBetweenPosXZ(
     [target[0] - pos[0], 0, target[2] - pos[2]],
     __angleBetweenXZTmp0
   );
-  const currFwd = vec3.transformQuat(fwd, rot, __angleBetweenXZTmp1);
+  const currFwd = vec3.tQuat(fwd, rot, __angleBetweenXZTmp1);
   return angleBetweenXZ(currFwd, toward);
 }
 

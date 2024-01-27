@@ -924,7 +924,7 @@ export function createRudderMesh(): Mesh {
 
   // TODO(@darzu): Inline y+ forward
   const rot = quat.fromYawPitchRoll(Math.PI, 0, 0);
-  m.pos.map((v) => vec3.transformQuat(v, rot, v));
+  m.pos.map((v) => vec3.tQuat(v, rot, v));
 
   m.surfaceIds = m.quad.map((_, i) => i + 1);
   (m as Mesh).usesProvoking = true;

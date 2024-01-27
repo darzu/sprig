@@ -145,9 +145,9 @@ export function registerRibSailSystems() {
           const ribRotationBot = rotations[ribIndex];
           const ribRotationTop = rotations[ribIndex + 1];
           if (i % 3 == 1) {
-            vec3.transformQuat([0, BOOM_LENGTH * 0.9, 0], ribRotationTop, pos);
+            vec3.tQuat([0, BOOM_LENGTH * 0.9, 0], ribRotationTop, pos);
           } else if (i % 3 == 2) {
-            vec3.transformQuat([0, BOOM_LENGTH * 0.99, 0], ribRotationBot, pos);
+            vec3.tQuat([0, BOOM_LENGTH * 0.99, 0], ribRotationBot, pos);
           }
           return pos;
         });

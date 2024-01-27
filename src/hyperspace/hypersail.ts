@@ -267,7 +267,7 @@ export function registerHypersailSystems() {
           //console.log(`Area of sail from star is ${area}`);
 
           const shipDirection = V(0, 0, -1);
-          vec3.transformQuat(shipDirection, ship.world.rotation, shipDirection);
+          vec3.tQuat(shipDirection, ship.world.rotation, shipDirection);
           const [force, area] = sailForceAndSignedArea(
             sail,
             star.world.position

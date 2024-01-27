@@ -225,7 +225,7 @@ function createPathGizmos(path: Path, scale = 1): Mesh {
     const g = createGizmoMesh();
     g.pos.forEach((v) => {
       vec3.scale(v, scale, v);
-      vec3.transformQuat(v, p.rot, v);
+      vec3.tQuat(v, p.rot, v);
       vec3.add(v, p.pos, v);
     });
     gizmos.push(g);
@@ -818,7 +818,7 @@ export function createLD53Ship(): HomeShip {
     // change so ship faces +y
     const rotate = quat.fromYawPitchRoll(-Math.PI / 2, 0, 0);
     _timberMesh.pos.forEach((v) => {
-      vec3.transformQuat(v, rotate, v);
+      vec3.tQuat(v, rotate, v);
     });
 
     // TODO(@darzu): CLEAN UP: currently the result is the ship fwd is y-; We should fix everything to have y+ is fwd
@@ -951,10 +951,10 @@ export function appendBoard(mesh: RawMesh, board: Board, color = BLACK) {
     const v2 = V(-board.width, 0, -board.depth);
     const v3 = V(-board.width, 0, board.depth);
     // rotate
-    vec3.transformQuat(v0, n.rot, v0);
-    vec3.transformQuat(v1, n.rot, v1);
-    vec3.transformQuat(v2, n.rot, v2);
-    vec3.transformQuat(v3, n.rot, v3);
+    vec3.tQuat(v0, n.rot, v0);
+    vec3.tQuat(v1, n.rot, v1);
+    vec3.tQuat(v2, n.rot, v2);
+    vec3.tQuat(v3, n.rot, v3);
     // translate
     vec3.add(v0, n.pos, v0);
     vec3.add(v1, n.pos, v1);

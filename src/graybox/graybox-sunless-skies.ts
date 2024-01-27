@@ -428,10 +428,7 @@ EM.addEagerInit([SunlessShipDef], [], [], (_) => {
       for (let e of ships) {
         // acceleration
         const speed = e.sunlessShip.speed * res.time.dt;
-        const rotatedAccel = vec3.transformQuat(
-          e.sunlessShip.localAccel,
-          e.rotation
-        );
+        const rotatedAccel = vec3.tQuat(e.sunlessShip.localAccel, e.rotation);
 
         // turn
         quat.yaw(
@@ -523,7 +520,7 @@ EM.addEagerInit([SunlessPlayerDef], [CubeMesh.def], [], ({ mesh_cube }) => {
         // orientation & velocity
         EM.set(bullet, LinearVelocityDef, vec3.clone(bulletVel));
         EM.set(bullet, RotationDef, quat.clone(ship.rotation));
-        vec3.transformQuat(
+        vec3.tQuat(
           bullet.linearVelocity,
           bullet.rotation,
           bullet.linearVelocity

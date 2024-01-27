@@ -111,7 +111,7 @@ EM.addEagerInit([ControllableDef], [], [], () => {
             c.linearVelocity[2] = c.controllable.jumpSpeed * res.time.dt;
 
         // apply our steering velocity
-        vec3.transformQuat(steerVel, c.rotation, steerVel);
+        vec3.tQuat(steerVel, c.rotation, steerVel);
         c.linearVelocity[0] = steerVel[0];
         c.linearVelocity[1] = steerVel[1];
         if (modes.canFly) c.linearVelocity[2] = steerVel[2];

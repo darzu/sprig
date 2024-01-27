@@ -514,7 +514,7 @@ export module vec3 {
   }
 
   // TODO(@darzu): replace many usages with getFwd, getUp, getRight, etc.
-  export function transformQuat(a: InputT, q: quat.InputT, out?: T): T {
+  export function tQuat(a: InputT, q: quat.InputT, out?: T): T {
     out = out ?? tmp();
     // benchmarks: https://jsperf.com/quaternion-transform-vec3-implementations-fixed
     var qx = q[0],

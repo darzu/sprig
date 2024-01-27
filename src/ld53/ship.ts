@@ -223,7 +223,7 @@ EM.addSystem(
   [PartyDef],
   (es, res) => {
     if (es[0]) {
-      vec3.transformQuat(vec3.FWD, es[0].rotation, res.party.dir);
+      vec3.tQuat(vec3.FWD, es[0].rotation, res.party.dir);
       vec3.copy(res.party.pos, es[0].position);
     }
   }

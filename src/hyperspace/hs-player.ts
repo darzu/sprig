@@ -180,7 +180,7 @@ EM.addEagerInit([PlayerHsPropsDef], [], [], () => {
       for (let p of players) {
         const facingDir = p.hsPlayer.facingDir;
         vec3.copy(facingDir, [0, 0, -1]);
-        vec3.transformQuat(facingDir, p.world.rotation, facingDir);
+        vec3.tQuat(facingDir, p.world.rotation, facingDir);
 
         // use cursor for facingDir if possible
         const cursor = res.globalCursor3d.cursor();
@@ -304,11 +304,7 @@ EM.addEagerInit([PlayerHsPropsDef], [], [], () => {
               const x = (xi - SPREAD / 2) * GAP;
               const y = (yi - SPREAD / 2) * GAP;
               let bullet_axis = V(0, 0, -1);
-              bullet_axis = vec3.transformQuat(
-                bullet_axis,
-                p.rotation,
-                bullet_axis
-              );
+              bullet_axis = vec3.tQuat(bullet_axis, p.rotation, bullet_axis);
               const position = vec3.add(
                 p.world.position,
                 V(x, y, 0),

@@ -70,7 +70,7 @@ EM.addSystem(
     // const invShip = mat3.invert(mat3.fromMat4(e.world.transform));
     const invShip = quat.invert(e.world.rotation);
     // const windLocalDir = vec3.transformMat3(wind.dir, invShip);
-    const windLocalDir = vec3.transformQuat(wind.dir, invShip);
+    const windLocalDir = vec3.tQuat(wind.dir, invShip);
     // console.log(
     //   `windLocalDir: ${vec3Dbg(windLocalDir)} vs wind.dir: ${vec3Dbg(wind.dir)}`
     // );

@@ -43,10 +43,7 @@ EM.addEagerInit([SpaceSuitDef], [], [], () => {
         if (res.inputs.keyDowns[" "]) e.spaceSuit.localAccel[2] += speed;
         if (res.inputs.keyDowns["c"]) e.spaceSuit.localAccel[2] -= speed;
 
-        const rotatedAccel = vec3.transformQuat(
-          e.spaceSuit.localAccel,
-          e.rotation
-        );
+        const rotatedAccel = vec3.tQuat(e.spaceSuit.localAccel, e.rotation);
 
         // change dampen?
         if (res.inputs.keyClicks["z"])

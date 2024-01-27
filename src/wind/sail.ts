@@ -158,7 +158,7 @@ EM.addSystem(
   [WindDef],
   (es, res) => {
     for (let e of es) {
-      const normal = vec3.transformQuat(vec3.FWD, e.world.rotation);
+      const normal = vec3.tQuat(vec3.FWD, e.world.rotation);
       e.sail.billowAmount = vec3.dot(normal, res.wind.dir);
       if (e.sail.billowAmount < 0) e.sail.billowAmount = 0;
       e.sail.unfurledAmount = clamp(e.sail.unfurledAmount, e.sail.minFurl, 1.0);
@@ -245,7 +245,7 @@ function useWindToTurn(
   }
 
   // set the sail
-  const sailFwd = vec3.transformQuat(behind, us.rotation);
+  const sailFwd = vec3.tQuat(behind, us.rotation);
   const angleToWind = angleBetweenXZ(sailFwd, windDir);
   const sailAngle = angleToWind - angleToParty;
   // TODO(@darzu): use yaw/pitch/roll

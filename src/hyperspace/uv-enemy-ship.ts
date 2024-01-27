@@ -348,7 +348,7 @@ export function breakEnemyShip(
     //   aabb: part.aabb,
     // });
     const com = aabbCenter(vec3.mk(), part.aabb);
-    vec3.transformQuat(com, enemyShip.rotation, com);
+    vec3.tQuat(com, enemyShip.rotation, com);
     // vec3.add(com, com, enemyShip.position);
     // vec3.transformQuat(com, com, enemyShip.rotation);
     const vel = com;

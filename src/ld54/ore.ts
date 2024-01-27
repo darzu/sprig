@@ -65,7 +65,7 @@ function createFuelOreMesh(): Mesh {
     const randScale = randFloat(1, 2);
 
     c.pos.forEach((p) => {
-      vec3.transformQuat(p, randRot, p);
+      vec3.tQuat(p, randRot, p);
       vec3.scale(p, randScale, p);
       vec3.add(p, randTrans, p);
     });
@@ -105,7 +105,7 @@ function createOxygenOreMesh(mkBallMesh: () => Mesh): Mesh {
     const randScale = randFloat(1, 2);
 
     c.pos.forEach((p) => {
-      vec3.transformQuat(p, randRot, p);
+      vec3.tQuat(p, randRot, p);
       vec3.scale(p, randScale, p);
       vec3.add(p, randTrans, p);
     });

@@ -56,7 +56,7 @@ export function registerToolSystems() {
       for (let { hsPlayer, id, position, rotation } of players) {
         if (hsPlayer.dropping && hsPlayer.tool > 0) {
           let dropLocation = V(0, 0, -5);
-          vec3.transformQuat(dropLocation, rotation, dropLocation);
+          vec3.tQuat(dropLocation, rotation, dropLocation);
           vec3.add(dropLocation, position, dropLocation);
           detectedEvents.raise({
             type: "tool-drop",
