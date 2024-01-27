@@ -603,7 +603,7 @@ export function transformLine(out: Line, t: mat4) {
   vec3.transformMat4(out.ray.org, t, out.ray.org);
   const t3 = mat3.fromMat4(t, __temp1);
   vec3.transformMat3(out.ray.dir, t3, out.ray.dir);
-  const lenScale = vec3.length(out.ray.dir);
+  const lenScale = vec3.len(out.ray.dir);
   out.len = out.len * lenScale;
   vec3.normalize(out.ray.dir, out.ray.dir);
   return out;

@@ -24,7 +24,7 @@ export function createLineMesh(
   up = vec3.copy(_t1, up ?? _UP);
   // TODO(@darzu): IMPL
   const fwd = vec3.sub(end, start, _t2);
-  const len = vec3.length(fwd);
+  const len = vec3.len(fwd);
   const right = _t3;
   orthonormalize(fwd, up, right);
   // console.log(vec3Dbg(fwd));

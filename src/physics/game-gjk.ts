@@ -297,7 +297,7 @@ export async function initGJKSandbox(hosting: boolean) {
 
         if (simplex) {
           const penD = penetrationDepth(shapeOther, playerShape, simplex);
-          const travelD = vec3.length(playerShape.travel);
+          const travelD = vec3.len(playerShape.travel);
           if (penD < Infinity) {
             backTravelD += penD;
           }
@@ -308,7 +308,7 @@ export async function initGJKSandbox(hosting: boolean) {
         }
       }
 
-      backTravelD = Math.min(backTravelD, vec3.length(playerShape.travel));
+      backTravelD = Math.min(backTravelD, vec3.len(playerShape.travel));
       const travelN = vec3.normalize(playerShape.travel);
       const backTravel = vec3.scale(travelN, backTravelD);
 

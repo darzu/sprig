@@ -168,7 +168,7 @@ EM.addEagerInit([MastDef], [], [], () => {
           direction,
           e.hasMast.mast.mast.force * SAIL_ACCEL_RATE
         );
-        const linVelMag = vec3.length(e.linearVelocity);
+        const linVelMag = vec3.len(e.linearVelocity);
         const velDrag = linVelMag * linVelMag * VELOCITY_DRAG;
         const dragForce = vec3.scale(vec3.negate(e.linearVelocity), velDrag);
         // console.log(
@@ -179,11 +179,11 @@ EM.addEagerInit([MastDef], [], [], () => {
         vec3.add(e.linearVelocity, accel, e.linearVelocity);
         // vec3.scale(e.linearVelocity, VELOCITY_DECAY, e.linearVelocity);
         //console.log(`ship speed is ${vec3.length(e.linearVelocity)}`);
-        if (vec3.length(e.linearVelocity) > MAX_SPEED) {
+        if (vec3.len(e.linearVelocity) > MAX_SPEED) {
           vec3.normalize(e.linearVelocity, e.linearVelocity);
           vec3.scale(e.linearVelocity, MAX_SPEED, e.linearVelocity);
         }
-        if (vec3.length(e.linearVelocity) < MIN_SPEED) {
+        if (vec3.len(e.linearVelocity) < MIN_SPEED) {
           // TODO: make this better
           const sail = e.hasMast.mast.mast.sail.sail;
           if (sail.unfurledAmount > sail.minFurl) {

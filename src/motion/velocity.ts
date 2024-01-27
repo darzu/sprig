@@ -59,7 +59,7 @@ export function registerPhysicsApplyAngularVelocity() {
         // change rotation according to angular velocity
         // change rotation according to angular velocity
         vec3.normalize(o.angularVelocity, _normalizedVelocity);
-        let angle = vec3.length(o.angularVelocity) * res.time.dt;
+        let angle = vec3.len(o.angularVelocity) * res.time.dt;
         _deltaRotation = quat.setAxisAngle(
           _normalizedVelocity,
           angle,

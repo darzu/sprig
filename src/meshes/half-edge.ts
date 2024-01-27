@@ -296,7 +296,7 @@ export function extrudeQuad(hp: HPoly, he: HEdge): HPolyDelta {
   // move positions so they're the same length as the original edge
   const len = vec3.dist(p0a, p1a);
   const p01 = vec3.sub(p0, p1);
-  const len2 = vec3.length(p01);
+  const len2 = vec3.len(p01);
   const lenScale = (len2 - len) / (2 * len2);
   vec3.scale(p01, lenScale, p01);
   vec3.sub(p0, p01, p0);

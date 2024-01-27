@@ -80,7 +80,7 @@ export function registerDarkstarSystems() {
       for (let star of es) {
         if (star.authority.pid !== res.me.pid) continue;
         const toCenter = vec3.sub(star.darkStarProps.orbiting, star.position);
-        const distance = vec3.length(toCenter);
+        const distance = vec3.len(toCenter);
         // TODO: revisit random orbits
         /*
         let arbitraryVector = V(1, 0, 0);
@@ -115,7 +115,7 @@ export function registerDarkstarSystems() {
         );
 
         vec3.sub(star.darkStarProps.orbiting, star.position, toCenter);
-        const newDistance = vec3.length(toCenter);
+        const newDistance = vec3.len(toCenter);
         vec3.normalize(toCenter, toCenter);
         vec3.scale(toCenter, newDistance - distance, toCenter);
         //console.log(`distance ${distance}, newDistance ${newDistance}`);

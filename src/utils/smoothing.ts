@@ -17,7 +17,7 @@ export function reduceError(
   smoothing_factor = ERROR_SMOOTHING_FACTOR
 ) {
   if (isVec3(v)) {
-    const magnitude = vec3.length(v);
+    const magnitude = vec3.len(v);
     if (magnitude > EPSILON) {
       vec3.scale(v, smoothing_factor ** dt, v);
     } else if (magnitude > 0) {

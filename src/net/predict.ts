@@ -21,7 +21,7 @@ export function initNetPredictSystems() {
 
           if (AngularVelocityDef.isOn(entity) && RotationDef.isOn(entity)) {
             let normalizedVelocity = vec3.normalize(entity.angularVelocity);
-            let angle = vec3.length(entity.angularVelocity) * entity.predict.dt;
+            let angle = vec3.len(entity.angularVelocity) * entity.predict.dt;
             let deltaRotation = quat.setAxisAngle(normalizedVelocity, angle);
             quat.normalize(deltaRotation, deltaRotation);
             // note--quat multiplication is not commutative, need to multiply on the left

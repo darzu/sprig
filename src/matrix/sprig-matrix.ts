@@ -484,7 +484,7 @@ export module vec3 {
   export function normalize(v1: InputT, out?: T): T {
     return GL.normalize(out ?? tmp(), v1) as T;
   }
-  export function length(v1: InputT): number {
+  export function len(v1: InputT): number {
     return GL.length(v1);
   }
   export function dot(v1: InputT, v2: InputT): number {

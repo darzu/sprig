@@ -138,7 +138,7 @@ export function gjk(
     }
     // console.log(`adding: ${A}`);
     simplex.push(A);
-    const newDist = vec3.length(centroid(...simplex));
+    const newDist = vec3.len(centroid(...simplex));
     // if (newDist > distToOrigin) {
     //   console.warn(`moving away from origin!`);
     // }
@@ -344,7 +344,7 @@ export function penetrationDepth(
     //       ? `${vec3.length(offset).toFixed(3)} + ${minD.toFixed(3)}`
     //       : ``)
     // );
-    return vec3.length(newOffset);
+    return vec3.len(newOffset);
   }
 
   console.log(`more to do!`);

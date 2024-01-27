@@ -78,7 +78,7 @@ function updateVecDbgVis(
   e: EntityW<[typeof ScaleDef, typeof RotationDef]>
 ) {
   // update scale
-  const scale = s * vec3.length(v);
+  const scale = s * vec3.len(v);
   // vec3.set(1, scale, 1, e.scale);
   vec3.set(scale * 0.5, scale, scale * 0.5, e.scale);
 

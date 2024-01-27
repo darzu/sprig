@@ -777,7 +777,7 @@ function getFireDirection(
   const yaw = -Math.atan2(delta[1], delta[0]);
 
   // calculate horizontal distance to target
-  const d = vec3.length([delta[0], delta[1], 0]);
+  const d = vec3.len([delta[0], delta[1], 0]);
 
   // vertical distance to target
   const h = delta[2];

@@ -174,7 +174,7 @@ function addSpringForce(g: SpringGrid, point: number, force: vec3) {
     switch (g.springType) {
       case SpringType.SimpleDistance:
         vec3.sub(g.positions[point], g.positions[o], distanceVec);
-        let distance = vec3.length(distanceVec);
+        let distance = vec3.len(distanceVec);
         vec3.normalize(distanceVec, distanceVec);
         vec3.scale(
           distanceVec,
@@ -229,10 +229,10 @@ export function stepSprings(g: SpringGrid, dt: number) {
     // console.log(`externalForce: ${vec3Dbg(forceVec)}`); // TODO(@darzu):
     addSpringForce(g, point, forceVec);
     vec3.scale(forceVec, dt * dt, forceVec);
-    if (vec3.length(velocityVec) > EPSILON) {
+    if (vec3.len(velocityVec) > EPSILON) {
       vec3.add(g.nextPositions[point], velocityVec, g.nextPositions[point]);
     }
-    if (vec3.length(forceVec) > EPSILON) {
+    if (vec3.len(forceVec) > EPSILON) {
       vec3.add(g.nextPositions[point], forceVec, g.nextPositions[point]);
     }
     // vec3.add(g.velocities[point], g.velocities[point], forceVec);
