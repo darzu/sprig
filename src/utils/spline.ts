@@ -91,7 +91,7 @@ export function reverseBezier(b: BezierCubic): BezierCubic {
     p3: V3.clone(b.p0),
   };
 }
-export function bezierPosition(b: BezierCubic, t: number, out: V3): V3 {
+export function bezierPosition(b: BezierCubic, t: number, out?: V3): V3 {
   // https://en.wikipedia.org/wiki/Bézier_curve
   // B =
   //   (1 - t) ** 3 * p0
@@ -102,15 +102,17 @@ export function bezierPosition(b: BezierCubic, t: number, out: V3): V3 {
   const t1 = 3 * (1 - t) ** 2 * t;
   const t2 = 3 * (1 - t) * t ** 2;
   const t3 = t ** 3;
+  out = out ?? V3.tmp();
   out[0] = b.p0[0] * t0 + b.p1[0] * t1 + b.p2[0] * t2 + b.p3[0] * t3;
   out[1] = b.p0[1] * t0 + b.p1[1] * t1 + b.p2[1] * t2 + b.p3[1] * t3;
   out[2] = b.p0[2] * t0 + b.p1[2] * t1 + b.p2[2] * t2 + b.p3[2] * t3;
   return out;
 }
-export function bezierTangent(b: BezierCubic, t: number, out: V3): V3 {
+export function bezierTangent(b: BezierCubic, t: number, out?: V3): V3 {
   const t0 = 3 * (1 - t) ** 2;
   const t1 = 6 * (1 - t) * t;
   const t2 = 3 * t ** 2;
+  out = out ?? V3.tmp();
   out[0] =
     t0 * (b.p1[0] - b.p0[0]) +
     t1 * (b.p2[0] - b.p1[0]) +
@@ -135,7 +137,7 @@ export function createPathFromBezier(
   for (let i = 0; i < nodeCount; i++) {
     const t = i / (nodeCount - 1);
     const pos = bezierPosition(b, t, V3.mk());
-    const tan = bezierTangent(b, t, V3.tmp());
+    const tan = bezierTangent(b, t);
     V3.norm(tan, tan);
     // const rot = quatFromUpForward_OLD(quat.create(), up, tan);
     const rot = quat.fromForwardAndUpish(tan, up, quat.mk());
@@ -211,7 +213,7 @@ export function createEvenPathFromBezierCurve(
 
         // add our node
         const pos = bezierPosition(b, t, V3.mk());
-        const tan = bezierTangent(b, t, V3.tmp());
+        const tan = bezierTangent(b, t);
         V3.norm(tan, tan);
         // const rot = quatFromUpForward_OLD(quat.create(), up, tan);
         const rot = quat.fromForwardAndUpish(tan, up, quat.mk());

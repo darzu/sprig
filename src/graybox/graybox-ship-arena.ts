@@ -663,8 +663,6 @@ async function initEnemies() {
       // run once every 20 frames
       if (res.time.step % steerFreq !== 0) return;
 
-      const _stk = tmpStack();
-
       for (let e of es) {
         const _trgL = V3.tmp();
         const _trgR = V3.tmp();
@@ -691,8 +689,6 @@ async function initEnemies() {
 
         V3.copy(e.enemy.sailTarget, turnLeft ? _trgL : _trgR);
       }
-
-      _stk.pop();
     }
   );
 
