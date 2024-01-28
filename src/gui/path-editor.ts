@@ -253,9 +253,9 @@ async function createPathEditor() {
     // TODO(@darzu): PERF, expensive inverse
     // TODO(@darzu): doesn't account for parent translation
     // TODO(@darzu): should be done via parenting
-    // const invTrans4 = mat4.invert(tempMat4(), res.outEnt.world.transform);
+    // const invTrans4 = mat4.invert(mat4.tmp(), res.outEnt.world.transform);
     // const invTrans3 = mat3.fromMat4(tempMat3(), invTrans4);
-    // const posE = vec3.transformMat3(tempVec3(), glyph.position, invTrans3);
+    // const posE = vec3.transformMat3(V3.tmp(), glyph.position, invTrans3);
     const posE = glyph.position;
 
     vertPos[0] = posE[0];

@@ -1,6 +1,5 @@
 import { V3, V } from "../matrix/sprig-matrix.js";
 import { centroid, SupportFn } from "../utils/utils-3d.js";
-import { tempVec3 } from "../matrix/temp-pool.js";
 import { PAD } from "./phys.js";
 import { TupleN } from "../utils/util.js";
 
@@ -109,7 +108,7 @@ function mSupport(s1: Shape, s2: Shape, d: V3): V3 {
 
 // TODO(@darzu): so much perf to improve. #1: don't allocate
 export function gjk(s1: Shape, s2: Shape): [V3, V3, V3, V3] | undefined {
-  let d: V3 = tempVec3();
+  let d: V3 = V3.tmp();
   let simplex: V3[] = [];
   let distToOrigin = Infinity;
 
@@ -155,7 +154,7 @@ export function gjk(s1: Shape, s2: Shape): [V3, V3, V3, V3] | undefined {
       const [B, A] = simplex;
       const AB = V3.sub(B, A);
       const AO = V3.sub([0, 0, 0], A);
-      const ABperp = tripleProd(tempVec3(), AB, AO, AB);
+      const ABperp = tripleProd(V3.tmp(), AB, AO, AB);
       V3.copy(d, ABperp);
       return false;
     } else if (simplex.length === 3) {

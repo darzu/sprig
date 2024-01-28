@@ -32,7 +32,6 @@ import {
   RenderableConstructDef,
   RenderableDef,
 } from "../render/renderer-ecs.js";
-import { tempVec3 } from "../matrix/temp-pool.js";
 import { EASE_INQUAD } from "../utils/util-ease.js";
 import { assert } from "../utils/util.js";
 import { drawLine } from "../utils/utils-game.js";

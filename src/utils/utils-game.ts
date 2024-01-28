@@ -23,7 +23,6 @@ import {
   RenderableDef,
   RendererDef,
 } from "../render/renderer-ecs.js";
-import { tempVec3 } from "../matrix/temp-pool.js";
 import { aabbDbg, randNormalPosVec3, vec3Dbg } from "./utils-3d.js";
 import { createEntityPool } from "../ecs/entity-pool.js";
 import { DeadDef } from "../ecs/delete.js";
@@ -39,7 +38,7 @@ const _linePool: EntityW<[typeof RenderableDef]>[] = [];
 const _linePoolLimit = 100;
 let _linePoolNext = 0;
 export async function drawLine2(line: Line, color: V3) {
-  const end = getLineEnd(tempVec3(), line);
+  const end = getLineEnd(V3.tmp(), line);
   return drawLine(line.ray.org, end, color);
 }
 export async function drawLine(start: V3, end: V3, color: V3) {
@@ -164,7 +163,7 @@ export function screenPosToWorldPos(
 
 export function screenPosToRay(screenPos: V2, cameraComputed: CameraView): Ray {
   const origin = screenPosToWorldPos(V3.mk(), screenPos, cameraComputed, -1);
-  const target = screenPosToWorldPos(tempVec3(), screenPos, cameraComputed, 0);
+  const target = screenPosToWorldPos(V3.tmp(), screenPos, cameraComputed, 0);
 
   const dir = V3.sub(target, origin, V3.mk());
   V3.norm(dir, dir);

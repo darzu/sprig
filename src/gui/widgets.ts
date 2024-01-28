@@ -11,7 +11,6 @@ import { PhysicsResultsDef } from "../physics/nonintersection.js";
 import { PositionDef, ScaleDef } from "../physics/transform.js";
 import { cloneMesh } from "../meshes/mesh.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
-import { tempVec3 } from "../matrix/temp-pool.js";
 import { assert } from "../utils/util.js";
 import { screenPosToWorldPos } from "../utils/utils-game.js";
 import { UICursorDef } from "./game-font.js";
@@ -98,13 +97,13 @@ async function initDragBox(): Promise<EntityW<[typeof PositionDef]>> {
       } else if (mousedrag.isDragging) {
         // place dragbox
         const min = screenPosToWorldPos(
-          tempVec3(),
+          V3.tmp(),
           mousedrag.dragMin,
           cameraComputed
         );
         min[2] = 0.1;
         const max = screenPosToWorldPos(
-          tempVec3(),
+          V3.tmp(),
           mousedrag.dragMax,
           cameraComputed
         );
@@ -160,13 +159,13 @@ async function initWidgets({ allMeshes }: Resources<[typeof AllMeshesDef]>) {
       let worldDrag = V3.mk();
       if (mousedrag.isDragging) {
         const start = screenPosToWorldPos(
-          tempVec3(),
+          V3.tmp(),
           mousedrag.dragLastEnd,
           cameraComputed
         );
         start[2] = 0;
         const end = screenPosToWorldPos(
-          tempVec3(),
+          V3.tmp(),
           mousedrag.dragEnd,
           cameraComputed
         );

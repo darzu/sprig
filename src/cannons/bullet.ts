@@ -31,7 +31,6 @@ import { WorldFrameDef } from "../physics/nonintersection.js";
 import { DeadDef } from "../ecs/delete.js";
 import { AudioDef } from "../audio/audio.js";
 import { randNormalVec3 } from "../utils/utils-3d.js";
-import { tempVec3 } from "../matrix/temp-pool.js";
 import { assert, assertDbg } from "../utils/util.js";
 import { ParametricDef } from "../motion/parametric-motion.js";
 import { Phase } from "../ecs/sys-phase.js";
@@ -315,7 +314,7 @@ export async function breakBullet(
     // vel[2] = -vel[2]; // assume we're at the end of a parabola
     V3.norm(vel, vel);
     V3.neg(vel, vel); // reflact back along path of travel
-    V3.add(vel, randNormalVec3(tempVec3()), vel);
+    V3.add(vel, randNormalVec3(V3.tmp()), vel);
     V3.add(vel, [0, 0, +1], vel); // bias upward
     V3.norm(vel, vel);
     V3.scale(vel, 0.02, vel);

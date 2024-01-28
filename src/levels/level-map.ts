@@ -9,7 +9,6 @@ import { assert, assertDbg } from "../utils/util.js";
 import { vec2Dbg, vec4Dbg } from "../utils/utils-3d.js";
 import { MapName, MapBytesSetDef, MapBytes, MapHelp } from "./map-loader.js";
 import { ScoreDef } from "../ld53/score.js";
-import { tempVec4 } from "../matrix/temp-pool.js";
 
 const DBG_PRINT_BLOBS = false;
 

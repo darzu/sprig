@@ -3,7 +3,6 @@ import { BLACK } from "./mesh-list.js";
 import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { hexAvg } from "../hex/hex.js";
 import { RawMesh } from "./mesh.js";
-import { tempVec3 } from "../matrix/temp-pool.js";
 import { assert, assertDbg, edges, range, TupleN } from "../utils/util.js";
 import { randNormalPosVec3, vec3Dbg } from "../utils/utils-3d.js";
 

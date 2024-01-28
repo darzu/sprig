@@ -29,7 +29,6 @@ import {
   RenderableDef,
   RendererDef,
 } from "../render/renderer-ecs.js";
-import { tempVec2, tempVec3 } from "../matrix/temp-pool.js";
 import { TimeDef } from "../time/time.js";
 import { asyncTimeout, dbgLogOnce, range } from "../utils/util.js";
 import {
@@ -337,7 +336,7 @@ export function registerOceanUVFns() {
         // console.log(`copying: ${e.id}`);
         const newPos = __temp1;
         res.ocean.uvToGerstnerDispAndNorm(newPos, __temp2, e.uvPos);
-        // const newPos = res.ocean.uvToPos(tempVec3(), e.uvPos);
+        // const newPos = res.ocean.uvToPos(V3.tmp(), e.uvPos);
 
         // if (e.id > 10001) {
         //   // [-347.83,25.77,126.72]
@@ -372,14 +371,14 @@ export function registerOceanUVFns() {
         if (AnimateToDef.isOn(e)) continue;
         // console.log(`copying: ${e.id}`);
 
-        // const newNorm = tempVec3();
-        // res.ocean.uvToGerstnerDispAndNorm(tempVec3(), newNorm, e.uvPos);
+        // const newNorm = V3.tmp();
+        // res.ocean.uvToGerstnerDispAndNorm(V3.tmp(), newNorm, e.uvPos);
         // vec3.copy(e.rotation, newNorm);
 
         // TODO(@darzu): this is horrible.
         // console.log(`copying: ${e.id}`);
-        // const newNorm = tempVec3();
-        // res.ocean.uvToGerstnerDispAndNorm(tempVec3(), newNorm, e.uvPos);
+        // const newNorm = V3.tmp();
+        // res.ocean.uvToGerstnerDispAndNorm(V3.tmp(), newNorm, e.uvPos);
         // vec3.copy(e.rotation, newNorm);
         // TODO(@darzu): this is horrible.
         V2.norm(e.uvDir, e.uvDir);
@@ -387,7 +386,7 @@ export function registerOceanUVFns() {
         const aheadUV = V2.add(e.uvPos, scaledUVDir, __temp3);
         const aheadPos = __temp1;
         res.ocean.uvToGerstnerDispAndNorm(aheadPos, __temp2, aheadUV);
-        // const aheadPos = res.ocean.uvToPos(tempVec3(), aheadUV);
+        // const aheadPos = res.ocean.uvToPos(V3.tmp(), aheadUV);
 
         // TODO(@darzu): want SDF-based bounds checking
         if (!V3.exactEquals(aheadPos, V3.ZEROS)) {
@@ -414,17 +413,17 @@ export function registerOceanUVFns() {
 //       // TODO(@darzu): debug moving
 //       // console.log("moving buoy!");
 //       let speed = 0.001;
-//       const deltaUV = V2.zero(tempVec2());
+//       const deltaUV = V2.zero(V2.tmp());
 //       if (res.inputs.keyDowns["shift"]) speed *= 5;
 //       if (res.inputs.keyDowns["arrowright"]) deltaUV[1] -= speed;
 //       if (res.inputs.keyDowns["arrowleft"]) deltaUV[1] += speed;
 //       if (res.inputs.keyDowns["arrowup"]) deltaUV[0] += speed;
 //       if (res.inputs.keyDowns["arrowdown"]) deltaUV[0] -= speed;
 //       if (deltaUV[0] !== 0.0 || deltaUV[1] !== 0.0) {
-//         const newUV = V2.add(tempVec2(), e.uvPos, deltaUV);
+//         const newUV = V2.add(V2.tmp(), e.uvPos, deltaUV);
 
 //         // TODO(@darzu): need a better way to see if UV is out of map bounds
-//         const newPos = res.ocean.uvToPos(tempVec3(), newUV);
+//         const newPos = res.ocean.uvToPos(V3.tmp(), newUV);
 //         if (!vec3.exactEquals(newPos, vec3.ZEROS)) {
 //           V2.copy(e.uvPos, newUV);
 //           V2.copy(e.uvDir, deltaUV);

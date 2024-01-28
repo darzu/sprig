@@ -1,5 +1,4 @@
 import { V3, V } from "../matrix/sprig-matrix.js";
-import { tempVec3 } from "../matrix/temp-pool.js";
 import { EM } from "../ecs/entity-manager.js";
 import { TimeDef } from "../time/time.js";
 import { Phase } from "../ecs/sys-phase.js";
@@ -159,7 +158,7 @@ function targetLocation(
 }
 
 function addSpringForce(g: SpringGrid, point: number, force: V3) {
-  const distanceVec = tempVec3();
+  const distanceVec = V3.tmp();
   let directions = [
     Direction.Up,
     Direction.Down,
@@ -210,8 +209,8 @@ function addSpringForce(g: SpringGrid, point: number, force: V3) {
 
 export function stepSprings(g: SpringGrid, dt: number) {
   dt = dt / 1000;
-  const forceVec = tempVec3();
-  const velocityVec = tempVec3();
+  const forceVec = V3.tmp();
+  const velocityVec = V3.tmp();
   for (let point = 0; point < g.rows * g.columns; point++) {
     V3.copy(g.nextPositions[point], g.positions[point]);
     if (g.fixed.has(point)) {

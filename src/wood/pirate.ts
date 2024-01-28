@@ -40,7 +40,6 @@ import {
   RenderableDef,
 } from "../render/renderer-ecs.js";
 import { V } from "../matrix/sprig-matrix.js";
-import { tempVec3 } from "../matrix/temp-pool.js";
 import { TimeDef } from "../time/time.js";
 import {
   TimberBuilder,
@@ -116,7 +115,7 @@ export function appendPirateShip(b: TimberBuilder): RawMesh {
       const p = b.mesh.pos[vi];
       updateAABBWithPoint(aabb, p);
     }
-    const mid = aabbCenter(tempVec3(), aabb);
+    const mid = aabbCenter(V3.tmp(), aabb);
     mid[1] = 0;
     for (let vi = firstVi; vi < b.mesh.pos.length; vi++) {
       const p = b.mesh.pos[vi];

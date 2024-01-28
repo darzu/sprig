@@ -21,7 +21,6 @@ import { CanvasDef } from "./canvas.js";
 import { createRenderer } from "./renderer-webgpu.js";
 import { CyMeshPoolPtr, CyPipelinePtr } from "./gpu-registry.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
-import { tempVec3 } from "../matrix/temp-pool.js";
 import { isMeshHandle, MeshHandle, MeshReserve } from "./mesh-pool.js";
 import { isRigged, Mesh, RiggedMesh, Rigging } from "../meshes/mesh.js";
 import {
