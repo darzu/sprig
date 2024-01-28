@@ -76,7 +76,8 @@ fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
   let alpha = 1.0;
   // TODO(@darzu): std-ocean and std-mesh store and use normal differently
   let normalAndFresnel = textureSample(normTex, samp, uv);
-  let normal = normalAndFresnel.xyz;
+  // let normal = normalAndFresnel.xyz;
+  let normal = vec3(0.0, 0.0, 1.0);
   let hasFresnel = normalAndFresnel.w;
   let worldPos = textureSample(posTex, samp, uv).xyz;
 
@@ -142,7 +143,8 @@ fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
                                 );
       // return vec4(shadowPos, alpha);
 
-      let shadowVis = getShadowVis(shadowPos, normal, toLight, cascadeIdx);
+      // let shadowVis = getShadowVis(shadowPos, normal, toLight, cascadeIdx);
+      let shadowVis = 1.0;
       //lightingColor = lightingColor + clamp(abs((light.ambient * attenuation) + (light.diffuse * lightAng * attenuation * shadowVis)), vec3(0.0), vec3(1.0));
       //lightingColor += light.ambient;
       // lightingColor = lightingColor + f32(1u - isUnlit) 

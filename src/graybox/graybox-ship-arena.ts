@@ -98,7 +98,7 @@ Prioritized ToDo:
 [ ] smart enemy ai    
 */
 
-const DBG_GHOST = false;
+const DBG_GHOST = true;
 const DBG_GIZMO = true;
 const DBG_DOTS = false;
 const DBG_ENEMY = true;

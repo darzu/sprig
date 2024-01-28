@@ -101,17 +101,17 @@ fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
   let edgeLight = convexity * 0.6 * f32(!objectDidChange);
   let edgeDark = concavity * 0.2 + outlineFactor + depthFactor;
   let edgeLum = clamp(edgeLight - edgeDark, -0.7, 1.0);
-  if (surfaceDidChange || objectDidChange) {
-    color *= 1.0 + edgeLum;
+  if (objectDidChange) {
+    color = vec3(0.0);
 
     // TODO(@darzu): DEBUG WIREFRAME
     // color *= 2.0;
     // color = vec3(0.1);
   }
   // DEBUG WIREFRAME
-  // else {
-  //   color *= 0.0;
-  // }
+  else {
+    color = vec3(1.0);
+  }
 
   return vec4(color, alpha);
 }
