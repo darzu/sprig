@@ -9,7 +9,6 @@ import {
 } from "../matrix/sprig-matrix.js";
 import { avg, remap } from "./math.js";
 import { AABB, createAABB, getAABBFromPositions } from "../physics/aabb.js";
-import { tempVec2, tempVec3 } from "../matrix/temp-pool.js";
 import { assertDbg, range, resizeArray, TupleN } from "./util.js";
 
 // TODO(@darzu): a lot of these need to move into gl-matrix; or rather, we need
@@ -143,7 +142,7 @@ export function vec4Dbg2(v: V4, precision = 2): string {
   )},${v[2].toFixed(precision)},${v[3].toFixed(precision)})`;
 }
 export function quatDbg(q: quat): string {
-  const axis = tempVec3();
+  const axis = V3.tmp();
   const n = quat.getAxisAngle(q, axis);
   return `${vec3Dbg(axis)}*${n.toFixed(2)}`;
 }
@@ -310,8 +309,8 @@ export function positionAndTargetToOrthoViewProjMatrix(
 }
 
 export function signedAreaOfTriangle(a: V2, b: V2, c: V2): number {
-  const ab = tempVec2();
-  const ac = tempVec2();
+  const ab = V2.tmp();
+  const ac = V2.tmp();
   V2.sub(b, a, ab);
   V2.sub(c, a, ac);
   let cross = V2.cross(ab, ac);

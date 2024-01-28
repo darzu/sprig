@@ -8,7 +8,6 @@ import { DeadDef, DeletedDef } from "../../ecs/delete.js";
 import { EM, EntityW } from "../../ecs/entity-manager.js";
 import { Phase } from "../../ecs/sys-phase.js";
 import { V3, V4, mat4, V } from "../../matrix/sprig-matrix.js";
-import { tempVec3 } from "../../matrix/temp-pool.js";
 import { CY, linearSamplerPtr } from "../gpu-registry.js";
 import { pointLightsPtr } from "../lights.js";
 import { ALPHA_MASK } from "../pipeline-masks.js";
@@ -182,7 +181,7 @@ function updateStdRenderData(
   let tintChange = false;
   if (!o.renderable.hidden) {
     // color / tint
-    let prevTint = V3.copy(tempVec3(), o.renderDataStd.tint);
+    let prevTint = V3.copy(V3.tmp(), o.renderDataStd.tint);
     if (ColorDef.isOn(o)) V3.copy(o.renderDataStd.tint, o.color);
     if (TintsDef.isOn(o)) applyTints(o.tints, o.renderDataStd.tint);
     if (V3.sqrDist(prevTint, o.renderDataStd.tint) > 0.01) tintChange = true;

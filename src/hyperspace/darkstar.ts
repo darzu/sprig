@@ -90,7 +90,7 @@ export function registerDarkstarSystems() {
           arbitraryVector = V(0, 1, 0);
           basis1 = vec3.cross(arbitraryVector, arbitraryVector, toCenter);
         }
-        const basis2 = vec3.cross(tempVec3(), basis1, toCenter);
+        const basis2 = vec3.cross(V3.tmp(), basis1, toCenter);
         vec3.normalize(basis1, basis1);
         vec3.normalize(basis2, basis2);
         vec3.scale(basis1, basis1, Math.random() - 0.5);

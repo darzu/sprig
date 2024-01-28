@@ -24,7 +24,6 @@ import { Collider } from "./collider.js";
 import { AABB, aabbCenter } from "./aabb.js";
 import { registerNarrowPhaseSystems } from "./narrowphase.js";
 import { assert } from "../utils/util.js";
-import { tempVec3 } from "../matrix/temp-pool.js";
 import {
   registerPhysicsApplyLinearVelocity,
   registerPhysicsApplyAngularVelocity,
@@ -100,11 +99,11 @@ export function computeContactData(
 
   if (a.parentOId === b.oId) {
     bAABB = b.selfAABB;
-    lastBPos = aabbCenter(tempVec3(), b.selfAABB);
+    lastBPos = aabbCenter(V3.tmp(), b.selfAABB);
     parentOId = b.oId;
   } else if (b.parentOId === a.oId) {
     aAABB = a.selfAABB;
-    lastAPos = aabbCenter(tempVec3(), a.selfAABB);
+    lastAPos = aabbCenter(V3.tmp(), a.selfAABB);
     parentOId = a.oId;
   } else {
     assert(
@@ -137,12 +136,12 @@ export function computeReboundData(
 
   if (a.parentOId === b.oId) {
     bAABB = b.selfAABB;
-    bPos = aabbCenter(tempVec3(), b.selfAABB);
+    bPos = aabbCenter(V3.tmp(), b.selfAABB);
     lastBPos = bPos;
     parentOId = b.oId;
   } else if (b.parentOId === a.oId) {
     aAABB = a.selfAABB;
-    aPos = aabbCenter(tempVec3(), a.selfAABB);
+    aPos = aabbCenter(V3.tmp(), a.selfAABB);
     lastAPos = aPos;
     parentOId = a.oId;
   } else {

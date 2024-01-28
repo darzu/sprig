@@ -25,7 +25,6 @@ import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";
 import { AABBCollider, Collider, ColliderDef } from "../physics/collider.js";
 import { Ray } from "../physics/broadphase.js";
 import { copyAABB, createAABB } from "../physics/aabb.js";
-import { tempVec3 } from "../matrix/temp-pool.js";
 import { cloneMesh, scaleMesh3 } from "../meshes/mesh.js";
 import { AllMeshesDef } from "../meshes/mesh-list.js";
 import { LinearVelocityDef } from "../motion/velocity.js";
@@ -433,7 +432,7 @@ EM.addEagerInit([PlayerHsPropsDef], [], [], () => {
             const startPos = V3.add(
               endPos,
               [0, 200, 0],
-              // tempVec3(),
+              // V3.tmp(),
               V3.mk()
             );
             // console.log("player animateTo:");

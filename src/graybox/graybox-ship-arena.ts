@@ -346,7 +346,7 @@ export async function initGrayboxShipArena() {
 
   const _launchParam: Parametric = createParametric();
 
-  // let _imATmp = vec3.tmp();
+  // let _imATmp = V3.tmp();
 
   EM.addSystem(
     "controlShip",

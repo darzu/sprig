@@ -19,7 +19,6 @@ import {
   WorldFrameDef,
 } from "../physics/nonintersection.js";
 import { RayHit } from "../physics/broadphase.js";
-import { tempVec3 } from "../matrix/temp-pool.js";
 import { createRef, Ref } from "../ecs/em-helpers.js";
 import { screenPosToRay } from "../utils/utils-game.js";
 import { Phase } from "../ecs/sys-phase.js";

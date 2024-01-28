@@ -38,7 +38,6 @@ import {
   updateFrameFromPosRotScale,
 } from "./transform.js";
 import { IdPair, idPair } from "../utils/util.js";
-import { tempVec3 } from "../matrix/temp-pool.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { vec3Dbg } from "../utils/utils-3d.js";
 
@@ -536,7 +535,7 @@ export function registerPhysicsContactSystems() {
           const objDoesMov = !!movFrac;
           if (objDoesMov) {
             // TODO(@darzu): PARENT. this needs to rebound in the parent frame, not world frame
-            const refl = tempVec3();
+            const refl = V3.tmp();
             V3.sub(o._phys.lastLocalPos, o.position, refl);
             V3.scale(refl, movFrac, refl);
             V3.add(o.position, refl, o.position);

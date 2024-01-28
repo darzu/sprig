@@ -41,7 +41,6 @@ import {
   RenderableDef,
   RendererDef,
 } from "../render/renderer-ecs.js";
-import { tempVec3 } from "../matrix/temp-pool.js";
 import {
   assert,
   assertDbg,
@@ -576,7 +575,7 @@ function getSegmentRotation(seg: BoardSeg, top: boolean) {
     }
   }
 
-  const endNorm = V3.copy(tempVec3(), seg.midLine.ray.dir);
+  const endNorm = V3.copy(V3.tmp(), seg.midLine.ray.dir);
   if (top) {
     V3.neg(endNorm, endNorm);
   }
@@ -621,7 +620,7 @@ function addSplinterEnd(
 
   const W = seg.width;
   const D = seg.depth;
-  const pos = V3.copy(tempVec3(), seg.midLine.ray.org);
+  const pos = V3.copy(V3.tmp(), seg.midLine.ray.org);
   if (top) {
     getLineEnd(pos, seg.midLine);
   }
@@ -709,7 +708,7 @@ function createSplinterEnd(
   W: number,
   D: number
 ) {
-  const pos = V3.copy(tempVec3(), seg.midLine.ray.org);
+  const pos = V3.copy(V3.tmp(), seg.midLine.ray.org);
   if (top) {
     getLineEnd(pos, seg.midLine);
   }

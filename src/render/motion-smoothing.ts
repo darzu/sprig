@@ -19,7 +19,6 @@ import { RenderableDef, RendererWorldFrameDef } from "./renderer-ecs.js";
 import { DONT_SMOOTH_WORLD_FRAME } from "../flags.js";
 import { DeletedDef } from "../ecs/delete.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
-import { tempVec3 } from "../matrix/temp-pool.js";
 
 // Determined via binary search--smaller -> jerky, larger -> floaty
 const ERROR_SMOOTHING_FACTOR = 0.75 ** (60 / 1000);
@@ -267,7 +266,7 @@ function extrapolateFrames(
   // see https://answers.unity.com/questions/168779/extrapolating-quaternion-rotation.html
   quat.invert(prev.rotation, out.rotation);
   quat.mul(next.rotation, out.rotation, out.rotation);
-  const axis = tempVec3();
+  const axis = V3.tmp();
   let angle = quat.getAxisAngle(out.rotation, axis);
   // ensure we take the shortest path
   if (angle > Math.PI) {

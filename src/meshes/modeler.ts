@@ -13,7 +13,6 @@ import {
 } from "../physics/nonintersection.js";
 import { PositionDef, ScaleDef } from "../physics/transform.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
-import { tempVec3 } from "../matrix/temp-pool.js";
 import { vec3Dbg, vec3Dbg2 } from "../utils/utils-3d.js";
 import { AllMeshesDef } from "./mesh-list.js";
 import { ColorDef, TintsDef } from "../color/color-ecs.js";

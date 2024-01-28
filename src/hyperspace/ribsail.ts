@@ -13,14 +13,13 @@ import {
   RenderableDef,
   RendererDef,
 } from "../render/renderer-ecs.js";
-import { quat, V, V2, V3 } from "../matrix/sprig-matrix.js";
+import { mat4, quat, V, V2, V3 } from "../matrix/sprig-matrix.js";
 import { range } from "../utils/util.js";
 import { defineNetEntityHelper } from "../ecs/em-helpers.js";
 import { MeDef } from "../net/components.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import { cloneMesh, mapMeshPositions } from "../meshes/mesh.js";
 import { RenderDataStdDef, FLAG_UNLIT } from "../render/pipelines/std-scene.js";
-import { tempQuat, tempMat4 } from "../matrix/temp-pool.js";
 import {
   signedAreaOfTriangle,
   positionAndTargetToOrthoViewProjMatrix,
@@ -139,7 +138,7 @@ export function registerRibSailSystems() {
 
         const rotations = sail.ribSailLocal.ribs.map((b) => b()!.rotation);
 
-        rotations.push(quat.identity(tempQuat()));
+        rotations.push(quat.identity(quat.tmp()));
         mapMeshPositions(sail.renderable.meshHandle.mesh!, (pos, i) => {
           const ribIndex = Math.floor(i / 3);
           const ribRotationBot = rotations[ribIndex];
@@ -180,7 +179,7 @@ export function sailForceAndSignedArea(
   starPos: V3
 ): [V3, number] {
   const viewProjMatrix = positionAndTargetToOrthoViewProjMatrix(
-    tempMat4(),
+    mat4.tmp(),
     starPos,
     sail.world.position
   );

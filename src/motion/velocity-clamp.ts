@@ -15,7 +15,6 @@ import {
   PhysicsStateDef,
   WorldFrameDef,
 } from "../physics/nonintersection.js";
-import { tempVec3 } from "../matrix/temp-pool.js";
 import { TimeDef } from "../time/time.js";
 import {
   Frame,

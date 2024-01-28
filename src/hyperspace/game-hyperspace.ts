@@ -38,7 +38,6 @@ import {
   registerUvSpawnSystems,
   SpawnerDef,
 } from "./uv-spawner.js";
-import { tempVec3 } from "../matrix/temp-pool.js";
 import {
   createDarkStarNow,
   registerDarkstarSystems,
@@ -191,7 +190,7 @@ export async function initHyperspaceGame() {
 
       // const enemyEndPos = ocean.uvToPos(vec3.create(), enemyUVPos);
       const enemyEndPos = V3.mk();
-      ocean.uvToGerstnerDispAndNorm(enemyEndPos, tempVec3(), enemyUVPos);
+      ocean.uvToGerstnerDispAndNorm(enemyEndPos, V3.tmp(), enemyUVPos);
       // vec3.add(enemyEndPos, enemyEndPos, [0, 10, 0]);
       const enemyStartPos = V3.sub(enemyEndPos, [0, 20, 0], V3.mk());
 

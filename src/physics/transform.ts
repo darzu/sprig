@@ -1,7 +1,6 @@
 import { Component, EM } from "../ecs/entity-manager.js";
 import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { WorldFrameDef, doesOverlap } from "./nonintersection.js";
-import { tempVec3, tempQuat } from "../matrix/temp-pool.js";
 import { FALSE, dbgLogOnce } from "../utils/util.js";
 import { Phase } from "../ecs/sys-phase.js";
 

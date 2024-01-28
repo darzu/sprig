@@ -1,6 +1,5 @@
 import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { clamp } from "../utils/math.js";
-import { tempVec2, tempVec3, tempVec4 } from "../matrix/temp-pool.js";
 import { assert } from "../utils/util.js";
 import { never } from "../utils/util.js";
 
@@ -107,11 +106,11 @@ export function createTextureReader<A extends 1 | 2 | 3 | 4>(
     if (outArity === 1) {
       return read(0, xi, yi) === 0;
     } else if (outArity === 2) {
-      return V2.equals(read(xi, yi, tempVec2()) as V2, V2.ZEROS);
+      return V2.equals(read(xi, yi, V2.tmp()) as V2, V2.ZEROS);
     } else if (outArity === 3) {
-      return V3.equals(read(xi, yi, tempVec3()) as V3, V3.ZEROS);
+      return V3.equals(read(xi, yi, V3.tmp()) as V3, V3.ZEROS);
     } else if (outArity === 4) {
-      return V4.equals(read(xi, yi, tempVec4()) as V4, V4.ZEROS);
+      return V4.equals(read(xi, yi, V4.tmp()) as V4, V4.ZEROS);
     } else {
       never(outArity);
     }

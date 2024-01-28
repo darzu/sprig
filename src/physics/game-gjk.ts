@@ -19,7 +19,6 @@ import {
   RenderableConstructDef,
   RenderableDef,
 } from "../render/renderer-ecs.js";
-import { tempVec3 } from "../matrix/temp-pool.js";
 import { farthestPointInDir } from "../utils/utils-3d.js";
 import { AllMeshesDef, GizmoMesh, PlaneMesh } from "../meshes/mesh-list.js";
 import { GameMesh } from "../meshes/mesh-loader.js";
