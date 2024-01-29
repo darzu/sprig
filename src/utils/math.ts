@@ -16,6 +16,12 @@ export function avg(ns: number[]): number {
 export function clamp(n: number, min: number, max: number): number {
   return Math.max(Math.min(n, max), min);
 }
+export function wrap(n: number, min: number, max: number): number {
+  // TODO(@darzu): use while instead?
+  if (n < min) n += max - min;
+  if (max < n) n -= max - min;
+  return n;
+}
 export function min(ns: number[]): number {
   return ns.reduce((p, n) => (p < n ? p : n), Infinity);
 }

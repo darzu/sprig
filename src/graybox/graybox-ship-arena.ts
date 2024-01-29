@@ -75,7 +75,7 @@ import {
 import { TimeDef } from "../time/time.js";
 import { CanManDef, raiseManTurret } from "../turret/turret.js";
 import { YawPitchDef } from "../turret/yawpitch.js";
-import { clamp, lerp, remap, unlerp } from "../utils/math.js";
+import { clamp, lerp, remap, unlerp, wrap } from "../utils/math.js";
 import { Path } from "../utils/spline.js";
 import { PI } from "../utils/util-no-import.js";
 import { assert, dbgOnce, range } from "../utils/util.js";
@@ -95,10 +95,11 @@ import { ObjEnt, T, createObj, defineObj, mixinObj } from "./objects.js";
 
 /*
 Prioritized ToDo:
-[ ] aim cannon
-[ ] enemy exists
+[x] aim cannon
+[x] enemy exists
 [ ] player and enemy health
-[ ] enemy moves and fires
+[x] enemy moves
+[ ] enemy fires
 [ ] smart enemy ai    
 */
 
@@ -394,10 +395,10 @@ export async function initGrayboxShipArena() {
           -PI * 0.5,
           0
         );
-        ship.cameraFollow.yawOffset = clamp(
+        ship.cameraFollow.yawOffset = wrap(
           ship.cameraFollow.yawOffset,
-          -PI * 0.5,
-          PI * 0.5
+          -PI,
+          PI
         );
       }
 
@@ -714,7 +715,7 @@ async function initEnemies() {
         const trgDir = V3.scale(toTrg, 1 / trgDist);
         const turnDot = V3.dot(curDir, trgDir);
         const MAX_TURN_STR = 0.05 * 4; // * steerFreq;
-        const turnStr = remap(turnDot, -1, 1, MAX_TURN_STR, 0);
+        const turnStr = remap(turnDot, -1, 0.8, MAX_TURN_STR, 0);
         const ang = angleBetween(curDir[0], curDir[1], trgDir[0], trgDir[1]);
         const turnSign = ang >= 0 ? -1 : 1;
         const turnYaw = turnSign * turnStr;
