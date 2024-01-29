@@ -42,7 +42,7 @@ const SailObj = defineObj({
     height: number;
     unfurledAmount: number;
     minFurl: number;
-    billowAmount: number;
+    _billowAmount: number;
     force: number;
     posMap: Map<number, number>;
     _lastSailBillow: number;
@@ -128,7 +128,7 @@ export function createSail(
     height,
     unfurledAmount: 0.1,
     minFurl: 0.1,
-    billowAmount: 0.0,
+    _billowAmount: 0.0,
     force: 0.0,
     posMap: new Map<number, number>(),
     _lastSailBillow: 0,
@@ -159,11 +159,11 @@ EM.addSystem(
   (es, res) => {
     for (let e of es) {
       const normal = quat.fwd(e.world.rotation);
-      e.sail.billowAmount = V3.dot(normal, res.wind.dir);
-      if (e.sail.billowAmount < 0) e.sail.billowAmount = 0;
+      e.sail._billowAmount = V3.dot(normal, res.wind.dir);
+      if (e.sail._billowAmount < 0) e.sail._billowAmount = 0;
       e.sail.unfurledAmount = clamp(e.sail.unfurledAmount, e.sail.minFurl, 1.0);
       if (e.sail.unfurledAmount > e.sail.minFurl) {
-        e.sail.force = e.sail.billowAmount * e.sail.unfurledAmount;
+        e.sail.force = e.sail._billowAmount * e.sail.unfurledAmount;
       } else {
         e.sail.force = 0;
       }
@@ -179,7 +179,7 @@ EM.addSystem(
   (es, { renderer }) => {
     for (let e of es) {
       if (
-        Math.abs(e.sail.billowAmount - e.sail._lastSailBillow) < 0.01 &&
+        Math.abs(e.sail._billowAmount - e.sail._lastSailBillow) < 0.01 &&
         Math.abs(e.sail.unfurledAmount - e.sail._lastSailUnfurl) < 0.01
       )
         // no change
@@ -200,7 +200,7 @@ EM.addSystem(
           }
         }
         p[1] = -(
-          e.sail.billowAmount *
+          e.sail._billowAmount *
           BILLOW_FACTOR *
           e.sail.unfurledAmount *
           (parabZ ** 2 - Math.ceil(e.sail.height / 2) ** 2)
@@ -208,7 +208,7 @@ EM.addSystem(
         p[2] = -z * e.sail.unfurledAmount;
       });
       renderer.renderer.stdPool.updateMeshVertices(e.renderable.meshHandle, m);
-      e.sail._lastSailBillow = e.sail.billowAmount;
+      e.sail._lastSailBillow = e.sail._billowAmount;
       e.sail._lastSailUnfurl = e.sail.unfurledAmount;
     }
   }
