@@ -2055,3 +2055,12 @@ How to approach rendering problems:
 
 GPU sorting overview:
   https://linebender.org/wiki/gpu/sorting/
+
+Life of a triangle:
+  "there's this realy great post by nvidia" -simondev
+  https://developer.nvidia.com/content/life-triangle-nvidias-logical-pipeline
+  "amd also has a really great talk"
+  https://www.youtube.com/watch?v=Y2KG_4OxDBg
+
+Humus graphics blog:
+  https://www.humus.name

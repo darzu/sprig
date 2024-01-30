@@ -141,3 +141,25 @@ Static refactors:
     [....]
     let a = 8212
     let b = a + 10
+
+Static analysis help:
+  Better global defs:
+    Find all system registrations, even the ones who won't be initialized b/c their nested in some function
+    Same with components and resources
+    These can be referenced elsewhere like a global
+  Purity check:
+    analyze the code of a system to mark it as pure or impure
+  mutation check:
+    in a system, see which components are mutated
+  data flow:
+    when highlighting a term, see where it's first & last read & write are, see what is influenced by it
+  quick inline:
+    inline a variable or function
+  quick constant folding:
+    simplify constants esp after inlining
+  maintain "optimized" vs "truth" code:
+    e.g. sprig matrix
+    some set of vector operations, "truth" but disabled
+    a bunch of inlined, constant folded code as what actually runs
+    Maybe the optimized code is immutable, but you see some compile-time command or macro that does the unfolding?
+  

@@ -707,7 +707,13 @@ async function initEnemies() {
     (es, res) => {
       // if (res.time.step % steerFreq !== 0) return;
 
+      // TODO(@darzu): can we show a ghost of where the enemy will be in 100 frames, 200 frames, etc... ?
+      //  - find relevant systems, create N ghost copies, run them all in X times
+      //  - systems need to be pure for this to work!
+
       for (let e of es) {
+        // TODO(@darzu): maybe when you're within a certain range, turn to fire instead of turn to chase
+
         // stear
         const curDir = quat.fwd(e.rotation);
         const toTrg = V3.sub(e.enemy.sailTarget, e.position);
