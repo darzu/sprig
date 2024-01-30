@@ -738,4 +738,48 @@ async function initEnemies() {
       }
     }
   );
+
+  // TODO(@darzu): simulateSystems
+  // TODO(@darzu): DBG_SIM_SYSTEMS_INNER_MUTATE_ONLY
+  //    replace all entity components and all resources with proxys so we can
+  //    make sure only that entities components are mutated
+  // TODO(@darzu): would love to have a "clone" object
+
+  // TODO(@darzu): enemy systems:
+  /*
+  linearVelocityMovesPosition
+  enemySailFindTarget
+  enemySailToward
+  rudderTurn
+  autoTurnMast
+  mastPush
+
+  updateLocalFromPosRotScale
+  updateWorldFromLocalAndParent1
+  */
+
+  /*
+  all systems that apply:
+// constructRenderables
+linearVelocityMovesPosition
+// colliderFromMeshDef
+enemySailFindTarget
+enemySailToward
+rudderTurn
+// ensureWorldFrame
+// clampVelocityBySize
+// updateLocalFromPosRotScale
+// updateSmoothedWorldFrames
+// physicsInit
+// updateWorldFromLocalAndParent1
+// updatePhysInContact
+// updateWorldFromLocalAndParent2
+// updateRendererWorldFrames
+autoTurnMast
+// updateWorldAABBs
+mastPush
+// physicsStepContact
+// renderList
+// stdRenderList
+  */
 }

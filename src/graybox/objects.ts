@@ -12,6 +12,9 @@ import {
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { Intersect, isArray } from "../utils/util.js";
 
+// TODO(@darzu): PERF. since w/ objects we're constructing entities w/ batch components
+//    we should batch update the query cache as well, which might have a perf boost
+
 /*
 OBJECTS
 goals:

@@ -1006,6 +1006,14 @@ export class EntityManager {
     return res;
   }
 
+  public dbgGetSystemsForEntity(id: number) {
+    const sysIds = this._entitiesToSystems.get(id) ?? [];
+    const systems = sysIds
+      .map((id) => this.activeSystemsById.get(id))
+      .filter((x) => !!x) as SystemReg[];
+    return systems;
+  }
+
   public dbgFilterEntitiesByKey(cs: string | string[]): Entities<any> {
     // TODO(@darzu): respect "DeadDef" comp ?
     console.log(
