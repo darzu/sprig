@@ -176,15 +176,45 @@ fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
   let coord = uv * vec2<f32>(dims);
   let surf = textureLoad(surfTex, vec2<i32>(coord), 0);
 
-  if (fract(worldPos.x / 10.0) < 0.05 
-   || fract(worldPos.y / 10.0) < 0.05) {
-    if (surf.g == 7u) {
+  let myUV = worldPos.xy / 10.0;
+  let uvDDXY = vec4(dpdx(myUV), dpdy(myUV));
+  if (worldPos.y < -1.0) {
+    // bgolus inspired (right):
+    const lineWidth = vec2(0.05);
+    let uvDeriv = vec2(length(uvDDXY.xz), length(uvDDXY.yw));
+    let drawWidth = clamp(lineWidth, uvDeriv, vec2(0.5));
+    let lineAA = uvDeriv * 1.5;
+    let gridUV = 1.0 - abs(fract(myUV) * 2.0 - 1.0);
+    var grid2 = smoothstep(drawWidth + lineAA, drawWidth - lineAA, gridUV);
+    grid2 *= saturate(lineWidth / drawWidth);
+    grid2 = mix(grid2, lineWidth, saturate(uvDeriv * 2.0 - 1.0));
+    let grid = mix(grid2.x, 1.0, grid2.y);
+    litColor = vec3(0.0, grid, grid);
+  } else if (worldPos.y > 1.0) {
+    // naive (eft):
+    if (fract(worldPos.x / 10.0) < 0.05 
+    || fract(worldPos.y / 10.0) < 0.05) {
       litColor = vec3(0.0, 1.0, 1.0);
+    } else {
+      litColor = vec3(0.0);
     }
-    else if (surf.g == 8u) {
-      litColor = vec3(1.0, 1.0, 0.0);
-    }
+  } else {
+    // white divider
+    litColor = vec3(1.0);
   }
+
+// float2 grid2 = smoothstep(lineWidth + lineAA, lineWidth - lineAA, gridUV);
+// float grid = lerp(grid2.x, 1.0, grid2.y); //
+
+  // if (fract(worldPos.x / 10.0) < 0.05 
+  //  || fract(worldPos.y / 10.0) < 0.05) {
+  //   if (surf.g == 7u) {
+  //     litColor = vec3(0.0, 1.0, 1.0);
+  //   }
+  //   else if (surf.g == 8u) {
+  //     litColor = vec3(1.0, 1.0, 0.0);
+  //   }
+  // }
 
   let distanceToParty = length(scene.partyPos - scene.cameraPos);
   let inBubble = f32(distanceToParty < scene.bubbleRadius);
