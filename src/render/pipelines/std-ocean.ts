@@ -244,6 +244,7 @@ EM.addEagerInit([RenderDataOceanDef], [], [], () => {
 
         // id
         o.renderDataOcean.id = o.renderable.meshHandle.mId;
+        console.log(`o.renderDataOcean.id: ${o.renderDataOcean.id}`);
 
         // transform
         mat4.copy(o.renderDataOcean.transform, o.rendererWorldFrame.transform);

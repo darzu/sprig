@@ -124,7 +124,7 @@ PERF:
 [ ] reduce triangles on ocean
 */
 
-const DBG_PLAYER = false;
+const DBG_PLAYER = true;
 const DBG_HIDE_LAND = false;
 const DBG_HIDE_WATER = false;
 
@@ -955,6 +955,7 @@ async function resetLand() {
     // EM.set(hm, ColorDef, V(0.4, 0.2, 0.2));
     EM.set(hm, ColorDef, ENDESGA16.lightGray);
     const hm2 = await EM.whenEntityHas(hm, RenderableDef);
+    console.log(`LAND ID: ${hm2.renderable.meshHandle.mId}`);
     terraEnt = hm2;
   } else {
     resetFlatQuadMesh(terraXCount, terraYCount, terraMesh);

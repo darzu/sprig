@@ -113,6 +113,11 @@ fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
   //   color *= 0.0;
   // }
 
+  // if (fract(worldPos.x / 10.0) < 0.01 
+  //  || fract(worldPos.y / 10.0) < 0.01) {
+  //   litColor = vec3(1.0, 0.0, 0.0);
+  // }
+
   return vec4(color, alpha);
 }
 

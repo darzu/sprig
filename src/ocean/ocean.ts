@@ -128,6 +128,7 @@ export async function initOcean(oceanMesh: Mesh, color: V3) {
     oceanPoolPtr
     // meshPoolPtr
   );
+  console.log("oceanEntId" + oceanEntId);
   EM.set(ocean, ColorDef, color);
   //EM.set(ocean, PositionDef, [12000, 180, 0]);
   EM.set(ocean, PositionDef);

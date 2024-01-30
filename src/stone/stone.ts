@@ -897,33 +897,33 @@ EM.addSystem(
       // quat.copy(tower.rotation, worldRot);
 
       // fire bullet
-      const b = fireBullet(
-        2,
-        cannon.world.position,
-        worldRot,
-        tower.stoneTower.projectileSpeed,
-        0.02,
-        GRAVITY,
-        // 2.0,
-        20.0,
-        // TODO(@darzu): make this use vec3.FWD
-        V3.X
-      );
+      // const b = fireBullet(
+      //   2,
+      //   cannon.world.position,
+      //   worldRot,
+      //   tower.stoneTower.projectileSpeed,
+      //   0.02,
+      //   GRAVITY,
+      //   // 2.0,
+      //   20.0,
+      //   // TODO(@darzu): make this use vec3.FWD
+      //   V3.X
+      // );
 
       // play sound
-      EM.whenResources(AudioDef, SoundSetDef).then((res) => {
-        res.music.playSound("cannonL", res.soundSet["cannonL.mp3"], 0.1);
-      });
+      // EM.whenResources(AudioDef, SoundSetDef).then((res) => {
+      //   res.music.playSound("cannonL", res.soundSet["cannonL.mp3"], 0.1);
+      // });
 
       // debugging
       if (DBG_CANNONS) {
-        b.then((b) => {
-          if (missed) {
-            V3.set(1, 0, 0, b.color);
-          } else {
-            V3.set(0, 1, 0, b.color);
-          }
-        });
+        // b.then((b) => {
+        //   if (missed) {
+        //     V3.set(1, 0, 0, b.color);
+        //   } else {
+        //     V3.set(0, 1, 0, b.color);
+        //   }
+        // });
       }
 
       // reset fire timer

@@ -171,6 +171,21 @@ fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
     fresnelColor, 
   fresnelIntensity * 0.3); // * 0.5;
 
+
+  let dims : vec2<i32> = vec2<i32>(textureDimensions(surfTex));
+  let coord = uv * vec2<f32>(dims);
+  let surf = textureLoad(surfTex, vec2<i32>(coord), 0);
+
+  if (fract(worldPos.x / 10.0) < 0.05 
+   || fract(worldPos.y / 10.0) < 0.05) {
+    if (surf.g == 7u) {
+      litColor = vec3(0.0, 1.0, 1.0);
+    }
+    else if (surf.g == 8u) {
+      litColor = vec3(1.0, 1.0, 0.0);
+    }
+  }
+
   let distanceToParty = length(scene.partyPos - scene.cameraPos);
   let inBubble = f32(distanceToParty < scene.bubbleRadius);
   const bubbleColor = vec3<f32>(0.02, 0.81, 0.91);
