@@ -114,7 +114,7 @@ export function initDevConsole() {
       let pipelineTimesTxts: string[] = [];
       pipelineTimes.forEach((time, pipeline) =>
         pipelineTimesTxts.push(
-          `\n${pipeline} ${(Number(time / BigInt(1000)) / 1000).toFixed(2)}`
+          `\n${pipeline} ${(Number(time / BigInt(1000)) / 1000).toFixed(3)}`
         )
       );
 

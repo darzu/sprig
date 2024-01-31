@@ -106,7 +106,7 @@ Prioritized ToDo:
 [ ] smart enemy ai    
 */
 
-const DBG_GHOST = false;
+const DBG_GHOST = true;
 const DBG_GIZMO = true;
 const DBG_DOTS = false;
 const DBG_ENEMY = true;
@@ -282,7 +282,7 @@ function createOcean() {
 
   for (let [q, r] of hexesWithin(0, 0, oceanRadius)) {
     const loc = hexXYZ(V3.mk(), q, r, size);
-    loc[2] -= height + 0.01;
+    loc[2] -= height + 0.2;
     const tile = createTile(loc);
     grid.set(q, r, tile);
   }
@@ -343,11 +343,12 @@ export async function initGrayboxShipArena() {
 
   // grid
   const grid = createObj(
-    [RenderableConstructDef, PositionDef, ScaleDef] as const,
+    [RenderableConstructDef, PositionDef, ScaleDef, ColorDef] as const,
     {
       renderableConstruct: [PlaneMesh, true, undefined, GRID_MASK],
       position: [0, 0, 0],
-      scale: [100, 100, 1],
+      scale: [2 * camera.viewDist, 2 * camera.viewDist, 1],
+      color: [0, 1, 1],
     }
   );
 
