@@ -22,6 +22,7 @@ import {
   CubeMesh,
   HexMesh,
   MastMesh,
+  PlaneMesh,
 } from "../meshes/mesh-list.js";
 import { getAABBFromMesh, scaleMesh3 } from "../meshes/mesh.js";
 import { HEX_AABB, mkCubeMesh } from "../meshes/primatives.js";
@@ -53,6 +54,7 @@ import { CanvasDef, HasFirstInteractionDef } from "../render/canvas.js";
 import { CyArray } from "../render/data-webgpu.js";
 import { GraphicsSettingsDef } from "../render/graphics-settings.js";
 import { PointLightDef } from "../render/lights.js";
+import { GRID_MASK } from "../render/pipeline-masks.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
 import {
   DotStruct,
@@ -62,6 +64,7 @@ import {
   initDots,
   renderDots,
 } from "../render/pipelines/std-dots.js";
+import { stdGridRender } from "../render/pipelines/std-grid.js";
 import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
 import { noisePipes } from "../render/pipelines/std-noise.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
@@ -287,6 +290,13 @@ function createOcean() {
 }
 
 export async function initGrayboxShipArena() {
+  // TODO(@darzu): WORLD GRID:
+  /*
+  plane fit to frustum
+  uv based on world pos
+
+  */
+
   // TODO(@darzu): WORK AROUND: see below
   EM.addEagerInit([], [RendererDef, GraphicsSettingsDef], [], (res) => {
     // renderer
@@ -294,6 +304,8 @@ export async function initGrayboxShipArena() {
       ...shadowPipelines,
       stdRenderPipeline,
       renderDots,
+      stdGridRender,
+      // TODO(@darzu): RENDER WORLD GRID
       outlineRender,
       deferredPipeline,
       postProcess,
@@ -328,11 +340,24 @@ export async function initGrayboxShipArena() {
   // ocean
   const oceanGrid = createOcean();
 
+  // grid
+  const grid = createObj(
+    [RenderableConstructDef, PositionDef, ScaleDef] as const,
+    {
+      renderableConstruct: [PlaneMesh, true, undefined, GRID_MASK],
+      position: [0, 0, 2],
+      scale: [100, 100, 1],
+    }
+  );
+
+  // wind
   const wind = EM.addResource(WindDef);
   setWindAngle(wind, PI * 0.4);
 
+  // player ship
   const ship = await createShip();
 
+  // enemy
   createEnemy();
 
   // dbg ghost

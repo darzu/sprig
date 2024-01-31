@@ -2064,3 +2064,11 @@ Life of a triangle:
 
 Humus graphics blog:
   https://www.humus.name
+
+"filterable procedurals":
+  https://iquilezles.org/articles/filterableprocedurals/
+
+Phone wire AA:
+  https://www.humus.name/index.php?page=3D&ID=89&source=post_page-----727f9278b9d8--------------------------------
+
+TODO: how does tri-planar mapping work?

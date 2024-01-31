@@ -39,9 +39,10 @@ fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
 
   // fog
   // TODO: hard to evaluate fog w/o objects to fade in and out
-  if (depth < 1.0) {
-    color = mix(color, vec3(0.2, 0.2, 0.5), pow(depth, 300.0));
-  }
+  // TODO(@darzu): flag to enable fog
+  // if (depth < 1.0) {
+  //   color = mix(color, vec3(0.2, 0.2, 0.5), pow(depth, 300.0));
+  // }
 
   // bloom
   if (scene.highGraphics == 1u) {
