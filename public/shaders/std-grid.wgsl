@@ -31,40 +31,59 @@ fn frag_main(input: VertexOutput) -> FragOut {
 
   var color = input.color;
 
-  const lineWidth = vec2<f32>(0.05);
-  const lineWidth2 = vec2<f32>(0.02);
+  const lineSpacing = 10.0;
+  const lineSpacing2 = 100.0;
 
-  var alpha: f32;
+  const lineWidth = 0.5;
+  const lineWidth2 = 2.0;
 
-  let uv = worldPos.xy / 10.0;
-  let uv2 = worldPos.xy / 100.0;
+  var alpha: f32 = 0.0;
+
+  const lineFrac = vec2<f32>(lineWidth / lineSpacing);
+  const lineFrac2 = vec2<f32>(lineWidth2 / lineSpacing2);
+  let uv = worldPos.xy / lineSpacing;
+  let uv2 = worldPos.xy / lineSpacing2;
   let uvDDXY = vec4(dpdx(uv), dpdy(uv));
+  let uvDDXY2 = vec4(dpdx(uv2), dpdy(uv2));
   if (worldPos.y < -1.0 && worldPos.x < -1.0) {
     // bgolus inspired:
-    let uvDeriv = vec2(length(uvDDXY.xz), length(uvDDXY.yw));
-    let drawWidth = clamp(lineWidth, uvDeriv, vec2(0.5));
-    let lineAA = uvDeriv * 1.5;
-    let gridUV = 1.0 - abs(fract(uv) * 2.0 - 1.0);
-    var grid = smoothstep(drawWidth + lineAA, drawWidth - lineAA, gridUV);
-    grid *= saturate(lineWidth / drawWidth);
-    grid = mix(grid, lineWidth, saturate(uvDeriv * 2.0 - 1.0));
-    alpha = mix(grid.x, 1.0, grid.y);
+    { // grid #1
+      let uvDeriv = vec2(length(uvDDXY.xz), length(uvDDXY.yw));
+      let drawWidth = clamp(lineFrac, uvDeriv, vec2(0.5));
+      let lineAA = uvDeriv * 1.5;
+      let gridUV = 1.0 - abs(fract(uv) * 2.0 - 1.0);
+      var grid = smoothstep(drawWidth + lineAA, drawWidth - lineAA, gridUV);
+      grid *= saturate(lineFrac / drawWidth);
+      grid = mix(grid, lineFrac, saturate(uvDeriv * 2.0 - 1.0));
+      alpha += mix(grid.x, 1.0, grid.y);
+    }
+    { // grid #2
+      let uvDeriv = vec2(length(uvDDXY2.xz), length(uvDDXY2.yw));
+      let drawWidth = clamp(lineFrac2, uvDeriv, vec2(0.5));
+      let lineAA = uvDeriv * 1.5;
+      let gridUV = 1.0 - abs(fract(uv2) * 2.0 - 1.0);
+      var grid = smoothstep(drawWidth + lineAA, drawWidth - lineAA, gridUV);
+      grid *= saturate(lineFrac2 / drawWidth);
+      grid = mix(grid, lineFrac2, saturate(uvDeriv * 2.0 - 1.0));
+      alpha += mix(grid.x, 1.0, grid.y);
+    }
   } else if (worldPos.y < -1.0  && worldPos.x > 1.0) {
     // iquilezles box filter:
-    const N = 1 / lineWidth.x;
+    // TODO(@darzu): center lines
+    const N = 1 / lineFrac.x;
     let w = max(abs(uvDDXY.xy), abs(uvDDXY.zw));
-    let a = uv + 0.5*w + lineWidth.x * 0.5;
-    let b = uv - 0.5*w + lineWidth.x * 0.5;
+    let a = uv + 0.5*w; 
+    let b = uv - 0.5*w; 
     let i = (floor(a)+min(fract(a)*N,vec2(1.0))-
               floor(b)-min(fract(b)*N,vec2(1.0)))/(N*w);
     alpha = mix(i.x, 1.0, i.y);
   } else if (worldPos.y > 1.0 && worldPos.x > 1.0) {
     // naive:
     if (
-         fract(uv.x) < lineWidth.x 
-      || fract(uv.y) < lineWidth.y
-      || fract(uv2.x) < lineWidth2.x
-      || fract(uv2.y) < lineWidth2.y
+         fract(uv.x + lineFrac.x * 0.5) < lineFrac.x 
+      || fract(uv.y + lineFrac.x * 0.5) < lineFrac.y
+      || fract(uv2.x + lineFrac2.x * 0.5) < lineFrac2.x
+      || fract(uv2.y + lineFrac2.x * 0.5) < lineFrac2.y
     ) {
       alpha = 1.0;
     } else {
