@@ -257,7 +257,7 @@ function mkDotPath(
 
 // TODO(@darzu): projectile paths: use particle system?
 
-const oceanRadius = 5;
+const oceanRadius = 1;
 
 function createOcean() {
   // TODO(@darzu): more efficient if we use one mesh
@@ -269,19 +269,20 @@ function createOcean() {
   ] as const;
   type typeT = EntityW<[...typeof tileCS]>;
   const size = 100;
+  const height = 10;
 
   const createTile = (xyz: V3.InputT) =>
     createObj(tileCS, [
       V3.add(ENDESGA16.blue, randVec3OfLen(0.1)),
       xyz,
       [HexMesh],
-      [size, size, 1],
+      [size, size, height],
     ]);
   const grid = createHexGrid<typeT>();
 
   for (let [q, r] of hexesWithin(0, 0, oceanRadius)) {
     const loc = hexXYZ(V3.mk(), q, r, size);
-    loc[2] -= 0.9;
+    loc[2] -= height + 0.01;
     const tile = createTile(loc);
     grid.set(q, r, tile);
   }
@@ -345,7 +346,7 @@ export async function initGrayboxShipArena() {
     [RenderableConstructDef, PositionDef, ScaleDef] as const,
     {
       renderableConstruct: [PlaneMesh, true, undefined, GRID_MASK],
-      position: [0, 0, 2],
+      position: [0, 0, 0],
       scale: [100, 100, 1],
     }
   );

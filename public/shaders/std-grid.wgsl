@@ -29,7 +29,7 @@ fn frag_main(input: VertexOutput) -> FragOut {
 
   let worldPos = input.worldPos;
 
-  var color: vec3<f32>;
+  var color: vec4<f32>;
   
   // let dims : vec2<i32> = vec2<i32>(textureDimensions(surfTex));
   // let coord = uv * vec2<f32>(dims);
@@ -49,21 +49,21 @@ fn frag_main(input: VertexOutput) -> FragOut {
     grid2 *= saturate(lineWidth / drawWidth);
     grid2 = mix(grid2, lineWidth, saturate(uvDeriv * 2.0 - 1.0));
     let grid = mix(grid2.x, 1.0, grid2.y);
-    color = vec3(0.0, grid, grid);
+    color = vec4(0.0, 1.0, 1.0, grid);
     // iquilezles:
     // TODO(@darzu): 
   } else if (worldPos.y > 1.0) {
     // naive (eft):
     if (fract(uv.x) < lineWidth.x 
     || fract(uv.y) < lineWidth.y) {
-      color = vec3(0.0, 1.0, 1.0);
+      color = vec4(0.0, 1.0, 1.0, 1.0);
     } else {
       // color = vec3(0.0);
       discard;
     }
   } else {
     // white divider
-    color = vec3(1.0);
+    color = vec4(1.0);
   }
 
 // float2 grid2 = smoothstep(lineWidth + lineAA, lineWidth - lineAA, gridUV);
@@ -83,7 +83,7 @@ fn frag_main(input: VertexOutput) -> FragOut {
 
   var out: FragOut;
 
-  out.color = vec4(color, 1.0);
+  out.color = color;
   
   return out;
 }

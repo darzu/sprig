@@ -23,6 +23,19 @@ export const stdGridRender = CY.createRenderPipeline("stdGridRender", {
     {
       ptr: unlitTexturePtr,
       clear: "never",
+      // TODO(@darzu): do we want to do this?
+      blend: {
+        color: {
+          srcFactor: "src-alpha",
+          dstFactor: "one-minus-src-alpha",
+          operation: "add",
+        },
+        alpha: {
+          srcFactor: "constant",
+          dstFactor: "zero",
+          operation: "add",
+        },
+      },
     },
   ],
   depthStencil: mainDepthTex,
