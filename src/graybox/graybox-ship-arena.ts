@@ -282,7 +282,7 @@ function createOcean() {
 
   for (let [q, r] of hexesWithin(0, 0, oceanRadius)) {
     const loc = hexXYZ(V3.mk(), q, r, size);
-    loc[2] -= height + 0.2;
+    loc[2] -= height + 2;
     const tile = createTile(loc);
     grid.set(q, r, tile);
   }
@@ -317,7 +317,7 @@ export async function initGrayboxShipArena() {
 
   // camera
   camera.fov = Math.PI * 0.5;
-  camera.viewDist = 1000;
+  camera.viewDist = 10000;
   V3.set(-200, -200, -200, camera.maxWorldAABB.min);
   V3.set(+200, +200, +200, camera.maxWorldAABB.max);
 

@@ -32,10 +32,12 @@ fn frag_main(input: VertexOutput) -> FragOut {
   var color = input.color;
 
   const lineWidth = vec2<f32>(0.05);
+  const lineWidth2 = vec2<f32>(0.02);
 
   var alpha: f32;
 
   let uv = worldPos.xy / 10.0;
+  let uv2 = worldPos.xy / 100.0;
   let uvDDXY = vec4(dpdx(uv), dpdy(uv));
   if (worldPos.y < -1.0 && worldPos.x < -1.0) {
     // bgolus inspired:
@@ -51,15 +53,19 @@ fn frag_main(input: VertexOutput) -> FragOut {
     // iquilezles box filter:
     const N = 1 / lineWidth.x;
     let w = max(abs(uvDDXY.xy), abs(uvDDXY.zw));
-    let a = uv + 0.5*w + lineWidth.x * 0.5;                        
-    let b = uv - 0.5*w + lineWidth.x * 0.5;           
+    let a = uv + 0.5*w + lineWidth.x * 0.5;
+    let b = uv - 0.5*w + lineWidth.x * 0.5;
     let i = (floor(a)+min(fract(a)*N,vec2(1.0))-
               floor(b)-min(fract(b)*N,vec2(1.0)))/(N*w);
     alpha = mix(i.x, 1.0, i.y);
   } else if (worldPos.y > 1.0 && worldPos.x > 1.0) {
     // naive:
-    if (fract(uv.x) < lineWidth.x 
-    || fract(uv.y) < lineWidth.y) {
+    if (
+         fract(uv.x) < lineWidth.x 
+      || fract(uv.y) < lineWidth.y
+      || fract(uv2.x) < lineWidth2.x
+      || fract(uv2.y) < lineWidth2.y
+    ) {
       alpha = 1.0;
     } else {
       alpha = 0.0;
