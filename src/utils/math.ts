@@ -44,6 +44,7 @@ export function jitter(radius: number): number {
   return (Math.random() - 0.5) * radius * 2;
 }
 
+// inclusive of min, inclusive of max
 export function randInt(min: number, max: number) {
   min = Math.ceil(min);
   max = Math.floor(max);

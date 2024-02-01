@@ -24,7 +24,7 @@ import {
   MastMesh,
   PlaneMesh,
 } from "../meshes/mesh-list.js";
-import { getAABBFromMesh, scaleMesh3 } from "../meshes/mesh.js";
+import { cloneMesh, getAABBFromMesh, scaleMesh3 } from "../meshes/mesh.js";
 import { HEX_AABB, mkCubeMesh } from "../meshes/primatives.js";
 import { GravityDef } from "../motion/gravity.js";
 import {
@@ -66,6 +66,7 @@ import {
 } from "../render/pipelines/std-dots.js";
 import { stdGridRender } from "../render/pipelines/std-grid.js";
 import {
+  LineRenderDataDef,
   lineMeshPoolPtr,
   stdLinesRender,
 } from "../render/pipelines/std-line.js";
@@ -82,7 +83,15 @@ import {
 import { TimeDef } from "../time/time.js";
 import { CanManDef, raiseManTurret } from "../turret/turret.js";
 import { YawPitchDef } from "../turret/yawpitch.js";
-import { clamp, jitter, lerp, remap, unlerp, wrap } from "../utils/math.js";
+import {
+  clamp,
+  jitter,
+  lerp,
+  randInt,
+  remap,
+  unlerp,
+  wrap,
+} from "../utils/math.js";
 import { Path } from "../utils/spline.js";
 import { PI } from "../utils/util-no-import.js";
 import { assert, dbgOnce, range } from "../utils/util.js";
@@ -373,6 +382,47 @@ export async function initGrayboxShipArena() {
       position: [0, 0, 40],
       scale: [10, 10, 10],
       color: ENDESGA16.lightGreen,
+    }
+  );
+  EM.whenResources(BallMesh.def).then((ball) => {
+    const mesh = cloneMesh(ball.mesh_ball.mesh);
+    mesh.lines = range(10).map((_) => V(0, 1));
+
+    createObj(
+      [RenderableConstructDef, PositionDef, ColorDef, ScaleDef] as const,
+      {
+        renderableConstruct: [
+          mesh,
+          true,
+          undefined,
+          undefined,
+          lineMeshPoolPtr,
+        ],
+        position: [40, 0, 40],
+        scale: [10, 10, 10],
+        color: ENDESGA16.orange,
+      }
+    );
+  });
+  EM.addSystem(
+    "updateLineBox",
+    Phase.GAME_WORLD,
+    [LineRenderDataDef, RenderableDef],
+    [TimeDef, RendererDef],
+    (es, res) => {
+      if (res.time.step % 10 !== 0) return;
+
+      for (let e of es) {
+        const m = e.renderable.meshHandle.mesh;
+        const randVi = () => randInt(0, m.pos.length - 1);
+        m.lines!.forEach((l, li) => {
+          l[0] = randVi();
+          l[1] = randVi();
+        });
+        res.renderer.renderer
+          .getCyResource(lineMeshPoolPtr)!
+          .updateMeshLines(e.renderable.meshHandle, m);
+      }
     }
   );
 
