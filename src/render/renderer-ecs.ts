@@ -190,6 +190,10 @@ EM.addEagerInit([RenderableConstructDef], [RendererDef], [], () => {
               !e.renderableConstruct.reserve,
               `cannot have a reserve when adding an instance`
             );
+            assert(
+              meshOrProto.pool === pool,
+              `Trying to add a mesh instance into pool "${pool.ptr.name}" based on a mesh from pool "${meshOrProto.pool.ptr.name}"`
+            );
             meshHandle = pool.addMeshInstance(meshOrProto);
             mesh = meshHandle.mesh!;
           } else if (isMeshReg(meshOrProto)) {
@@ -201,6 +205,10 @@ EM.addEagerInit([RenderableConstructDef], [RendererDef], [], () => {
             assert(
               !e.renderableConstruct.reserve,
               `cannot have a reserve when adding an instance`
+            );
+            assert(
+              gameMesh.proto.pool === pool,
+              `Trying to add a mesh instance into pool "${pool.ptr.name}" based on a mesh from pool "${gameMesh.proto.pool.ptr.name}"`
             );
             meshHandle = pool.addMeshInstance(gameMesh.proto);
             mesh = meshHandle.mesh!;

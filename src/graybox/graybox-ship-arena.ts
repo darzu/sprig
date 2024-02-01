@@ -364,7 +364,7 @@ export async function initGrayboxShipArena() {
     [RenderableConstructDef, PositionDef, ColorDef, ScaleDef] as const,
     {
       renderableConstruct: [
-        CubeMesh,
+        mkCubeMesh(),
         true,
         undefined,
         undefined,

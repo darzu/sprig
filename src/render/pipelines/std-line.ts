@@ -56,8 +56,8 @@ export const stdLinesRender = CY.createRenderPipeline("stdLinesRender", {
     stepMode: "per-mesh-handle",
     // meshMask: DEFAULT_MASK,
   },
-  topology: "triangle-list",
-  // topology: "line-list",
+  // topology: "triangle-list",
+  topology: "line-list",
   shaderVertexEntry: "vert_main",
   shaderFragmentEntry: "frag_main",
   output: [
