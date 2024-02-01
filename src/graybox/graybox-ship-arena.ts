@@ -2,7 +2,7 @@ import { StatBarDef, createMultiBarMesh } from "../adornments/status-bar.js";
 import { CameraDef, CameraFollowDef } from "../camera/camera.js";
 import { fireBullet } from "../cannons/bullet.js";
 import { ColorDef } from "../color/color-ecs.js";
-import { ENDESGA16 } from "../color/palettes.js";
+import { AllEndesga16, ENDESGA16, seqEndesga16 } from "../color/palettes.js";
 import { DeletedDef } from "../ecs/delete.js";
 import { EM, EntityW, Resources } from "../ecs/entity-manager.js";
 import { Phase } from "../ecs/sys-phase.js";
@@ -34,7 +34,7 @@ import {
   createParametric,
   createPathFromParameteric,
 } from "../motion/parametric-motion.js";
-import { LinearVelocityDef } from "../motion/velocity.js";
+import { AngularVelocityDef, LinearVelocityDef } from "../motion/velocity.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import {
   AABBCollider,
@@ -78,13 +78,14 @@ import {
 import { TimeDef } from "../time/time.js";
 import { CanManDef, raiseManTurret } from "../turret/turret.js";
 import { YawPitchDef } from "../turret/yawpitch.js";
-import { clamp, lerp, remap, unlerp, wrap } from "../utils/math.js";
+import { clamp, jitter, lerp, remap, unlerp, wrap } from "../utils/math.js";
 import { Path } from "../utils/spline.js";
 import { PI } from "../utils/util-no-import.js";
 import { assert, dbgOnce, range } from "../utils/util.js";
 import {
   angleBetween,
   angleBetweenXZ,
+  randNormalVec3,
   randVec3OfLen,
 } from "../utils/utils-3d.js";
 import { addGizmoChild, addWorldGizmo } from "../utils/utils-game.js";
@@ -305,10 +306,10 @@ export async function initGrayboxShipArena() {
       ...shadowPipelines,
       stdRenderPipeline,
       renderDots,
-      stdGridRender,
       // TODO(@darzu): RENDER WORLD GRID
       outlineRender,
       deferredPipeline,
+      stdGridRender,
       postProcess,
     ];
   });
@@ -339,7 +340,7 @@ export async function initGrayboxShipArena() {
   addWorldGizmo(V(0, 0, 0), 50);
 
   // ocean
-  const oceanGrid = createOcean();
+  // const oceanGrid = createOcean();
 
   // grid
   const grid = createObj(
@@ -348,7 +349,55 @@ export async function initGrayboxShipArena() {
       renderableConstruct: [PlaneMesh, true, undefined, GRID_MASK],
       position: [0, 0, 0],
       scale: [2 * camera.viewDist, 2 * camera.viewDist, 1],
-      color: [0, 1, 1],
+      // color: [0, 1, 1],
+      color: [1, 1, 1],
+    }
+  );
+
+  const ballObj = defineObj({
+    name: "ball",
+    components: [
+      PositionDef,
+      RotationDef,
+      // AngularVelocityDef,
+      ColorDef,
+      RenderableConstructDef,
+      ScaleDef,
+    ],
+  } as const);
+  const NUM = 10;
+  // const RADIUS = 200;
+  for (let i = 0; i < NUM; i++) {
+    const t = i * ((PI * 2) / NUM);
+    // const s = Math.random() * 50 + 5;
+    const s = 25;
+    // const ring = Math.floor(i / NUM);
+    // const r = 100 + s * 5; // * Math.pow(5, ring);
+    const r = 400;
+    const x = Math.cos(t) * r;
+    const y = Math.sin(t) * r;
+    const ball = createObj(ballObj, {
+      args: {
+        scale: [s, s, s],
+        position: [x, y, 0],
+        renderableConstruct: [BallMesh],
+        rotation: undefined,
+        // angularVelocity: V3.scale(randNormalVec3(), 0.001),
+        color: seqEndesga16(),
+      },
+    });
+  }
+
+  EM.addSystem(
+    "bounceBall",
+    Phase.GAME_WORLD,
+    [ballObj.props, PositionDef],
+    [TimeDef],
+    (es, res) => {
+      for (let e of es) {
+        const t = Math.atan2(e.position[1], e.position[0]);
+        e.position[2] = 100 * Math.sin(t * 7.0 + res.time.time * 0.001);
+      }
     }
   );
 
@@ -357,10 +406,10 @@ export async function initGrayboxShipArena() {
   setWindAngle(wind, PI * 0.4);
 
   // player ship
-  const ship = await createShip();
+  // const ship = await createShip();
 
   // enemy
-  createEnemy();
+  // createEnemy();
 
   // dbg ghost
   if (DBG_GHOST) {

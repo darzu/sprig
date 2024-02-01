@@ -5,6 +5,7 @@ import {
   meshPoolPtr,
   unlitTexturePtr,
   mainDepthTex,
+  litTexturePtr,
 } from "./std-scene.js";
 
 // TODO(@darzu): support tri-planar mapping?
@@ -21,7 +22,8 @@ export const stdGridRender = CY.createRenderPipeline("stdGridRender", {
   shaderFragmentEntry: "frag_main",
   output: [
     {
-      ptr: unlitTexturePtr,
+      // ptr: unlitTexturePtr,
+      ptr: litTexturePtr,
       clear: "never",
       // TODO(@darzu): do we want to do this?
       blend: {

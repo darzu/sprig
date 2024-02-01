@@ -51,6 +51,9 @@ import {
 //  [x] light source: scene rendered with multiple point sources
 //      [x] light sailing
 
+// export const BACKGROUND_COLOR = V(0.015, 0.015, 0.015, 1.0);
+export const BACKGROUND_COLOR = V(0.03, 0.03, 0.03, 1.0);
+
 export const stdRenderPipeline = CY.createRenderPipeline("stdMeshRender", {
   globals: [
     sceneBufPtr,
@@ -80,7 +83,7 @@ export const stdRenderPipeline = CY.createRenderPipeline("stdMeshRender", {
       // defaultColor: [0.0, 0.0, 0.0, 1.0],
       // defaultColor: [0.1, 0.1, 0.1, 1.0],
       // defaultColor: [0.15, 0.15, 0.6, 1.0],
-      defaultColor: V(0.015, 0.015, 0.015, 1.0),
+      defaultColor: BACKGROUND_COLOR,
       // defaultColor: [...vec3.clone(ENDESGA16.white), 1.0] as vec4,
       // defaultColor: [0.7, 0.8, 1.0, 1.0],
     },
