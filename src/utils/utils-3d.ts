@@ -129,14 +129,14 @@ export function vec3Dbg2(v: V3.InputT, precision = 2): string {
     precision
   )},${v[2].toFixed(precision)})`;
 }
-export function vec4Dbg(v?: V4): string {
+export function vec4Dbg(v?: V4.InputT): string {
   return v
     ? `[${v[0].toFixed(2)},${v[1].toFixed(2)},${v[2].toFixed(2)},${v[3].toFixed(
         2
       )}]`
     : "NIL";
 }
-export function vec4Dbg2(v: V4, precision = 2): string {
+export function vec4Dbg2(v: V4.InputT, precision = 2): string {
   return `V(${v[0].toFixed(precision)},${v[1].toFixed(
     precision
   )},${v[2].toFixed(precision)},${v[3].toFixed(precision)})`;

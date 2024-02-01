@@ -121,6 +121,7 @@ export interface CyMeshPoolPtr<
   U extends CyStructDesc = CyStructDesc
 > extends CyResourcePtr {
   kind: "meshPool";
+  prim: "tri" | "line" | "point";
   // TODO(@darzu): remove id and name, this doesn't need to be inited directly
   computeVertsData: ComputeVertsDataFn<V>;
   computeUniData: (m: Mesh) => CyToTS<U>;
@@ -129,12 +130,20 @@ export interface CyMeshPoolPtr<
   // TODO(@darzu): do we need these max's? maybe we make them optional
   maxMeshes: number;
   maxSets: number;
-  setMaxTris: number;
-  setMaxLines: number;
+  setMaxPrims: number;
   setMaxVerts: number;
   // TODO(@darzu): really unsure how I feel about having an EM component here in CY
   dataDef: ComponentDef<string, CyToTS<U>, [CyToTS<U>], []>;
 }
+
+export const meshPoolPrimToTopology: Record<
+  CyMeshPoolPtr["prim"],
+  GPUPrimitiveTopology
+> = Object.freeze({
+  tri: "triangle-list",
+  line: "line-list",
+  point: "point-list",
+});
 
 // PIPELINES
 
@@ -232,6 +241,8 @@ export interface CyRenderPipelinePtr<
   shader: ((shaders: ShaderSet) => string) | ShaderName;
   shaderVertexEntry: string;
   shaderFragmentEntry: string;
+
+  topology?: GPUPrimitiveTopology;
   cullMode?: GPUCullMode;
   frontFace?: GPUFrontFace;
   // TODO(@darzu): move vertexBuf into mesh opt?

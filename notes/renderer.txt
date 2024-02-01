@@ -2055,3 +2055,20 @@ How to approach rendering problems:
 
 GPU sorting overview:
   https://linebender.org/wiki/gpu/sorting/
+
+Life of a triangle:
+  "there's this realy great post by nvidia" -simondev
+  https://developer.nvidia.com/content/life-triangle-nvidias-logical-pipeline
+  "amd also has a really great talk"
+  https://www.youtube.com/watch?v=Y2KG_4OxDBg
+
+Humus graphics blog:
+  https://www.humus.name
+
+"filterable procedurals":
+  https://iquilezles.org/articles/filterableprocedurals/
+
+Phone wire AA:
+  https://www.humus.name/index.php?page=3D&ID=89&source=post_page-----727f9278b9d8--------------------------------
+
+TODO: how does tri-planar mapping work?

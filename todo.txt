@@ -33,12 +33,13 @@ BIG FEATURES:
 
 QUALITY-OF-LIFE:
 [x] EM usability
-  rename 'ensureComponentOn', 'registerSystem', 'registerInit'. These are used a ton and 
+  [x] rename 'ensureComponentOn', 'registerSystem', 'registerInit'. These are used a ton and 
 [x] Typed registries pattern
   Like how Assets and renderer{.stdPool, .grassPool, .oceanPool} provide nice typing, we should be able to figure out the right pattern so that we can have
   nice typed registries of resources that are perhaps also game specific. Also we
   don't want e.g. "cube game" to need load assets for ocean and fang ship just b/c we want the Assets typed registry.
 [ ] All "createXX" -> "mkXX" ?
+[ ] All "std-" and "xp-" into "pipe-" or something?
 
 PERF STRATEGY:
 [ ] Rust WASM proof-of-concept

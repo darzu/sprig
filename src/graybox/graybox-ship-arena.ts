@@ -2,7 +2,7 @@ import { StatBarDef, createMultiBarMesh } from "../adornments/status-bar.js";
 import { CameraDef, CameraFollowDef } from "../camera/camera.js";
 import { fireBullet } from "../cannons/bullet.js";
 import { ColorDef } from "../color/color-ecs.js";
-import { ENDESGA16 } from "../color/palettes.js";
+import { AllEndesga16, ENDESGA16, seqEndesga16 } from "../color/palettes.js";
 import { DeletedDef } from "../ecs/delete.js";
 import { EM, EntityW, Resources } from "../ecs/entity-manager.js";
 import { Phase } from "../ecs/sys-phase.js";
@@ -22,8 +22,9 @@ import {
   CubeMesh,
   HexMesh,
   MastMesh,
+  PlaneMesh,
 } from "../meshes/mesh-list.js";
-import { getAABBFromMesh, scaleMesh3 } from "../meshes/mesh.js";
+import { cloneMesh, getAABBFromMesh, scaleMesh3 } from "../meshes/mesh.js";
 import { HEX_AABB, mkCubeMesh } from "../meshes/primatives.js";
 import { GravityDef } from "../motion/gravity.js";
 import {
@@ -33,7 +34,7 @@ import {
   createParametric,
   createPathFromParameteric,
 } from "../motion/parametric-motion.js";
-import { LinearVelocityDef } from "../motion/velocity.js";
+import { AngularVelocityDef, LinearVelocityDef } from "../motion/velocity.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import {
   AABBCollider,
@@ -53,6 +54,7 @@ import { CanvasDef, HasFirstInteractionDef } from "../render/canvas.js";
 import { CyArray } from "../render/data-webgpu.js";
 import { GraphicsSettingsDef } from "../render/graphics-settings.js";
 import { PointLightDef } from "../render/lights.js";
+import { DEFAULT_MASK, GRID_MASK } from "../render/pipeline-masks.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
 import {
   DotStruct,
@@ -62,6 +64,12 @@ import {
   initDots,
   renderDots,
 } from "../render/pipelines/std-dots.js";
+import { stdGridRender } from "../render/pipelines/std-grid.js";
+import {
+  LineRenderDataDef,
+  lineMeshPoolPtr,
+  stdLinesRender,
+} from "../render/pipelines/std-line.js";
 import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
 import { noisePipes } from "../render/pipelines/std-noise.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
@@ -75,11 +83,24 @@ import {
 import { TimeDef } from "../time/time.js";
 import { CanManDef, raiseManTurret } from "../turret/turret.js";
 import { YawPitchDef } from "../turret/yawpitch.js";
-import { clamp, lerp, unlerp } from "../utils/math.js";
+import {
+  clamp,
+  jitter,
+  lerp,
+  randInt,
+  remap,
+  unlerp,
+  wrap,
+} from "../utils/math.js";
 import { Path } from "../utils/spline.js";
 import { PI } from "../utils/util-no-import.js";
 import { assert, dbgOnce, range } from "../utils/util.js";
-import { randVec3OfLen } from "../utils/utils-3d.js";
+import {
+  angleBetween,
+  angleBetweenXZ,
+  randNormalVec3,
+  randVec3OfLen,
+} from "../utils/utils-3d.js";
 import { addGizmoChild, addWorldGizmo } from "../utils/utils-game.js";
 import { HasMastDef, HasMastObj, createMast } from "../wind/mast.js";
 import { WindDef, setWindAngle } from "../wind/wind.js";
@@ -91,14 +112,15 @@ import { ObjEnt, T, createObj, defineObj, mixinObj } from "./objects.js";
 
 /*
 Prioritized ToDo:
-[ ] aim cannon
-[ ] enemy exists
+[x] aim cannon
+[x] enemy exists
 [ ] player and enemy health
-[ ] enemy moves and fires
+[x] enemy moves
+[ ] enemy fires
 [ ] smart enemy ai    
 */
 
-const DBG_GHOST = false;
+const DBG_GHOST = true;
 const DBG_GIZMO = true;
 const DBG_DOTS = false;
 const DBG_ENEMY = true;
@@ -160,6 +182,7 @@ const EnemyObj = defineObj({
     PositionDef,
     ColorDef,
     ColliderFromMeshDef,
+    LinearVelocityDef,
   ],
   physicsParentChildren: true,
   children: {
@@ -248,7 +271,7 @@ function mkDotPath(
 
 // TODO(@darzu): projectile paths: use particle system?
 
-const oceanRadius = 5;
+const oceanRadius = 1;
 
 function createOcean() {
   // TODO(@darzu): more efficient if we use one mesh
@@ -260,19 +283,20 @@ function createOcean() {
   ] as const;
   type typeT = EntityW<[...typeof tileCS]>;
   const size = 100;
+  const height = 10;
 
   const createTile = (xyz: V3.InputT) =>
     createObj(tileCS, [
       V3.add(ENDESGA16.blue, randVec3OfLen(0.1)),
       xyz,
       [HexMesh],
-      [size, size, 1],
+      [size, size, height],
     ]);
   const grid = createHexGrid<typeT>();
 
   for (let [q, r] of hexesWithin(0, 0, oceanRadius)) {
     const loc = hexXYZ(V3.mk(), q, r, size);
-    loc[2] -= 0.9;
+    loc[2] -= height + 2;
     const tile = createTile(loc);
     grid.set(q, r, tile);
   }
@@ -281,15 +305,25 @@ function createOcean() {
 }
 
 export async function initGrayboxShipArena() {
+  // TODO(@darzu): WORLD GRID:
+  /*
+  plane fit to frustum
+  uv based on world pos
+
+  */
+
   // TODO(@darzu): WORK AROUND: see below
   EM.addEagerInit([], [RendererDef, GraphicsSettingsDef], [], (res) => {
     // renderer
     res.renderer.pipelines = [
       ...shadowPipelines,
       stdRenderPipeline,
+      // stdLinesRender,
       renderDots,
       outlineRender,
       deferredPipeline,
+      stdGridRender,
+      stdLinesRender,
       postProcess,
     ];
   });
@@ -298,7 +332,7 @@ export async function initGrayboxShipArena() {
 
   // camera
   camera.fov = Math.PI * 0.5;
-  camera.viewDist = 1000;
+  camera.viewDist = 10000;
   V3.set(-200, -200, -200, camera.maxWorldAABB.min);
   V3.set(+200, +200, +200, camera.maxWorldAABB.max);
 
@@ -322,11 +356,104 @@ export async function initGrayboxShipArena() {
   // ocean
   const oceanGrid = createOcean();
 
+  // grid
+  const grid = createObj(
+    [RenderableConstructDef, PositionDef, ScaleDef, ColorDef] as const,
+    {
+      renderableConstruct: [PlaneMesh, true, undefined, GRID_MASK],
+      position: [0, 0, 0],
+      scale: [2 * camera.viewDist, 2 * camera.viewDist, 1],
+      // color: [0, 1, 1],
+      color: [1, 1, 1],
+    }
+  );
+
+  // line exp
+  const box = createObj(
+    [RenderableConstructDef, PositionDef, ColorDef, ScaleDef] as const,
+    {
+      renderableConstruct: [
+        mkCubeMesh(),
+        true,
+        undefined,
+        undefined,
+        lineMeshPoolPtr,
+      ],
+      position: [0, 0, 40],
+      scale: [10, 10, 10],
+      color: ENDESGA16.lightGreen,
+    }
+  );
+  EM.whenEntityHas(box, RenderableDef).then((box2) => {
+    createObj(
+      [RenderableConstructDef, PositionDef, ColorDef, ScaleDef] as const,
+      {
+        renderableConstruct: [
+          box2.renderable.meshHandle,
+          true,
+          undefined,
+          undefined,
+          lineMeshPoolPtr,
+        ],
+        position: [-40, 0, 40],
+        scale: [10, 10, 10],
+        color: ENDESGA16.darkGreen,
+      }
+    );
+  });
+  EM.whenResources(BallMesh.def).then((ball) => {
+    const mesh = cloneMesh(ball.mesh_ball.mesh);
+    mesh.lines = range(9).map((_) => V(0, 1));
+
+    createObj(
+      [RenderableConstructDef, PositionDef, ColorDef, ScaleDef] as const,
+      {
+        renderableConstruct: [
+          mesh,
+          true,
+          undefined,
+          undefined,
+          lineMeshPoolPtr,
+        ],
+        position: [40, 0, 40],
+        scale: [10, 10, 10],
+        color: ENDESGA16.orange,
+      }
+    );
+  });
+  EM.addSystem(
+    "updateLineBox",
+    Phase.GAME_WORLD,
+    [LineRenderDataDef, RenderableDef],
+    [TimeDef, RendererDef],
+    (es, res) => {
+      if (res.time.step % 10 !== 0) return;
+
+      for (let e of es) {
+        const m = e.renderable.meshHandle.mesh;
+        const randVi = () => randInt(0, m.pos.length - 1);
+        m.lines!.forEach((l, li) => {
+          l[0] = randVi();
+          l[1] = randVi();
+        });
+        res.renderer.renderer
+          .getCyResource(lineMeshPoolPtr)!
+          .updateMeshLines(e.renderable.meshHandle, m);
+      }
+    }
+  );
+
+  // bouncing balls
+  createBouncingBalls();
+
+  // wind
   const wind = EM.addResource(WindDef);
   setWindAngle(wind, PI * 0.4);
 
+  // player ship
   const ship = await createShip();
 
+  // enemy
   createEnemy();
 
   // dbg ghost
@@ -389,10 +516,10 @@ export async function initGrayboxShipArena() {
           -PI * 0.5,
           0
         );
-        ship.cameraFollow.yawOffset = clamp(
+        ship.cameraFollow.yawOffset = wrap(
           ship.cameraFollow.yawOffset,
-          -PI * 0.5,
-          PI * 0.5
+          -PI,
+          PI
         );
       }
 
@@ -456,6 +583,54 @@ export async function initGrayboxShipArena() {
   initEnemies();
 }
 
+function createBouncingBalls() {
+  const ballObj = defineObj({
+    name: "ball",
+    components: [
+      PositionDef,
+      RotationDef,
+      // AngularVelocityDef,
+      ColorDef,
+      RenderableConstructDef,
+      ScaleDef,
+    ],
+  } as const);
+  const NUM = 10;
+  // const RADIUS = 200;
+  for (let i = 0; i < NUM; i++) {
+    const t = i * ((PI * 2) / NUM);
+    // const s = Math.random() * 50 + 5;
+    const s = 25;
+    // const ring = Math.floor(i / NUM);
+    // const r = 100 + s * 5; // * Math.pow(5, ring);
+    const r = 400;
+    const x = Math.cos(t) * r;
+    const y = Math.sin(t) * r;
+    const ball = createObj(ballObj, {
+      args: {
+        scale: [s, s, s],
+        position: [x, y, 0],
+        renderableConstruct: [BallMesh],
+        rotation: undefined,
+        // angularVelocity: V3.scale(randNormalVec3(), 0.001),
+        color: seqEndesga16(),
+      },
+    });
+  }
+  EM.addSystem(
+    "bounceBall",
+    Phase.GAME_WORLD,
+    [ballObj.props, PositionDef],
+    [TimeDef],
+    (es, res) => {
+      for (let e of es) {
+        const t = Math.atan2(e.position[1], e.position[0]);
+        e.position[2] = 100 * Math.sin(t * 7.0 + res.time.time * 0.001);
+      }
+    }
+  );
+}
+
 async function createShip() {
   const shipMesh = mkCubeMesh();
   shipMesh.pos.forEach((p) => {
@@ -506,7 +681,7 @@ async function createShip() {
   const ship = ShipObj.new({
     args: {
       color: ENDESGA16.midBrown,
-      position: [40, 40, 3],
+      position: [-200, -200, 3],
       renderableConstruct: [shipMesh],
       cameraFollow: undefined,
       linearVelocity: undefined,
@@ -605,6 +780,7 @@ function createEnemy() {
       position: [-40, -40, 3],
       renderableConstruct: [shipMesh],
       colliderFromMesh: true,
+      linearVelocity: undefined,
     },
     children: {
       // TODO(@darzu): it'd be nice if the healthbar faced the player.
@@ -655,7 +831,7 @@ async function initEnemies() {
 
   const steerFreq = 20;
   EM.addSystem(
-    "enemySailTarget",
+    "enemySailFindTarget",
     Phase.GAME_WORLD,
     [EnemyDef, PositionDef, RotationDef, HasRudderDef],
     [TimeDef],
@@ -664,20 +840,13 @@ async function initEnemies() {
       if (res.time.step % steerFreq !== 0) return;
 
       for (let e of es) {
-        const _trgL = V3.tmp();
-        const _trgR = V3.tmp();
-        getDirsToTan(e.position, player.position, attackRadius, _trgL, _trgR);
+        const trgL = V3.tmp();
+        const trgR = V3.tmp();
+        getDirsToTan(e.position, player.position, attackRadius, trgL, trgR);
 
-        if (DBG_ENEMY) {
-          assert(trgDots);
-          trgDots.set(0, _trgL, ENDESGA16.darkGreen, 10);
-          trgDots.set(1, _trgR, ENDESGA16.orange, 10);
-          trgDots.queueUpdate();
-        }
-
-        let toTrgL = V3.sub(_trgL, e.position);
+        let toTrgL = V3.sub(trgL, e.position);
         toTrgL = V3.norm(toTrgL);
-        let toTrgR = V3.sub(_trgR, e.position);
+        let toTrgR = V3.sub(trgR, e.position);
         toTrgR = V3.norm(toTrgR);
 
         const curDir = quat.fwd(e.rotation);
@@ -687,7 +856,14 @@ async function initEnemies() {
 
         const turnLeft = lDot > rDot;
 
-        V3.copy(e.enemy.sailTarget, turnLeft ? _trgL : _trgR);
+        V3.copy(e.enemy.sailTarget, turnLeft ? trgL : trgR);
+
+        if (DBG_ENEMY) {
+          assert(trgDots);
+          trgDots.set(0, e.enemy.sailTarget, ENDESGA16.red, 10);
+          trgDots.set(1, turnLeft ? trgR : trgL, ENDESGA16.orange, 10);
+          trgDots.queueUpdate();
+        }
       }
     }
   );
@@ -695,31 +871,84 @@ async function initEnemies() {
   EM.addSystem(
     "enemySailToward",
     Phase.GAME_WORLD,
-    [EnemyDef, PositionDef, RotationDef, HasRudderDef],
+    [EnemyDef, PositionDef, RotationDef, HasRudderDef, HasMastDef],
     [TimeDef],
     (es, res) => {
-      if (res.time.step % steerFreq !== 0) return;
+      // if (res.time.step % steerFreq !== 0) return;
+
+      // TODO(@darzu): can we show a ghost of where the enemy will be in 100 frames, 200 frames, etc... ?
+      //  - find relevant systems, create N ghost copies, run them all in X times
+      //  - systems need to be pure for this to work!
 
       for (let e of es) {
-        // TODO(@darzu): IMPL!
-        // TODO(@darzu): USE enemy.sailTarget
-        // const toTrgL = vec3.sub(_trgL, e.position);
-        // vec3.normalize(toTrgL, toTrgL);
-        // const toTrgR = vec3.sub(_trgR, e.position);
-        // vec3.normalize(toTrgR, toTrgR);
-        // const curDir = vec3.transformQuat(vec3.FWD, e.rotation);
-        // const lDot = vec3.dot(toTrgL, curDir);
-        // const rDot = vec3.dot(toTrgR, curDir);
-        // const turnLeft = lDot > rDot;
-        // const turnDot = turnLeft ? lDot : rDot;
-        // const turnStr = unlerp(-1, 1, turnDot);
-        // const MAX_TURN_STR = 0.05 * steerFreq;
-        // const turnYaw = lerp(0, MAX_TURN_STR * (turnLeft ? -1 : 1), turnStr);
-        // const rudder = e.hasRudder.rudder;
-        // rudder.yawpitch.yaw += turnYaw;
-        // rudder.yawpitch.yaw = clamp(rudder.yawpitch.yaw, -PI * 0.3, PI * 0.3); // TODO(@darzu): extract constants
-        // quat.fromYawPitchRoll(-rudder.yawpitch.yaw, 0, 0, rudder.rotation);
+        // TODO(@darzu): maybe when you're within a certain range, turn to fire instead of turn to chase
+
+        // stear
+        const curDir = quat.fwd(e.rotation);
+        const toTrg = V3.sub(e.enemy.sailTarget, e.position);
+        const trgDist = V3.len(toTrg);
+        const trgDir = V3.scale(toTrg, 1 / trgDist);
+        const turnDot = V3.dot(curDir, trgDir);
+        const MAX_TURN_STR = 0.05 * 4; // * steerFreq;
+        const turnStr = remap(turnDot, -1, 0.8, MAX_TURN_STR, 0);
+        const ang = angleBetween(curDir[0], curDir[1], trgDir[0], trgDir[1]);
+        const turnSign = ang >= 0 ? -1 : 1;
+        const turnYaw = turnSign * turnStr;
+        const rudder = e.hasRudder.rudder;
+        rudder.yawpitch.yaw += turnYaw;
+        rudder.yawpitch.yaw = clamp(rudder.yawpitch.yaw, -PI * 0.3, PI * 0.3); // TODO(@darzu): extract constants
+        quat.fromYawPitchRoll(-rudder.yawpitch.yaw, 0, 0, rudder.rotation);
+
+        // mast
+        const turnFactor = clamp(remap(turnDot, 0, 1, 0, 1), 0, 1);
+        const distFactor = clamp(remap(trgDist, 0, 100, 0, 1), 0, 1);
+        const mastFactor = turnFactor * distFactor;
+        e.hasMast.mast.mast.sail.sail.unfurledAmount = mastFactor;
       }
     }
   );
+
+  // TODO(@darzu): simulateSystems
+  // TODO(@darzu): DBG_SIM_SYSTEMS_INNER_MUTATE_ONLY
+  //    replace all entity components and all resources with proxys so we can
+  //    make sure only that entities components are mutated
+  // TODO(@darzu): would love to have a "clone" object
+
+  // TODO(@darzu): enemy systems:
+  /*
+  linearVelocityMovesPosition
+  enemySailFindTarget
+  enemySailToward
+  rudderTurn
+  autoTurnMast
+  mastPush
+
+  updateLocalFromPosRotScale
+  updateWorldFromLocalAndParent1
+  */
+
+  /*
+  all systems that apply:
+// constructRenderables
+linearVelocityMovesPosition
+// colliderFromMeshDef
+enemySailFindTarget
+enemySailToward
+rudderTurn
+// ensureWorldFrame
+// clampVelocityBySize
+// updateLocalFromPosRotScale
+// updateSmoothedWorldFrames
+// physicsInit
+// updateWorldFromLocalAndParent1
+// updatePhysInContact
+// updateWorldFromLocalAndParent2
+// updateRendererWorldFrames
+autoTurnMast
+// updateWorldAABBs
+mastPush
+// physicsStepContact
+// renderList
+// stdRenderList
+  */
 }

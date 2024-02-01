@@ -95,11 +95,11 @@ export const meshPoolPtr = CY.createMeshPool("meshPool", {
   maxMeshes: MAX_MESHES,
   maxSets: 5,
   // maxSets: 3,
-  setMaxTris: MAX_VERTICES * 2,
-  setMaxLines: MAX_VERTICES,
+  setMaxPrims: MAX_VERTICES * 2,
   setMaxVerts: MAX_VERTICES,
   // TODO(@darzu): this dataDef is v weird
   dataDef: RenderDataStdDef,
+  prim: "tri",
 });
 
 // TODO: does this need to be passed into the mesh pool anymore?
@@ -184,6 +184,8 @@ export function computeVertsData(
     tempVertsData[dIdx].color = m.colors[faceIdx];
     tempVertsData[dIdx].surfaceId = m.surfaceIds[faceIdx];
   });
+
+  // TODO(@darzu): LINES. support other primative data like lines and points?
 
   return tempVertsData;
 }

@@ -1416,6 +1416,13 @@ ffmpeg -i three-body-solutions.mov -vcodec h264 \
   -acodec aac  \
   three-body-solutions.mp4
 
+
+cd /Users/darzu/screenshots/
+ffmpeg -i world-grid-1.mov -vcodec h264 \
+  -acodec aac -filter:v "crop=in_w-270:in_h,scale=720:720" \
+  -filter_complex "[0:v]setpts=0.5*PTS[v];[0:a]atempo=2.0[a]" -map "[v]" -map "[a]"
+  world-grid-1.mp4
+
 Bluesky's "Ecosystem Overview":
   https://gitlab.com/bluesky-community1/decentralized-ecosystem#ecosystem-overview
 

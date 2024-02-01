@@ -85,7 +85,7 @@ export function registerPhysicsClampVelocityByContact() {
 
 export function registerPhysicsClampVelocityBySize() {
   EM.addSystem(
-    "registerPhysicsClampVelocityBySize",
+    "clampVelocityBySize",
     Phase.PHYSICS_MOTION,
     [LinearVelocityDef, ColliderDef],
     [TimeDef],

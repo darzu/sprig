@@ -1,4 +1,8 @@
-import { CameraFollowDef } from "../camera/camera.js";
+import {
+  CameraFollowDef,
+  getCameraSettings,
+  getCameraSettingsCodeStr,
+} from "../camera/camera.js";
 import {
   CompId,
   ComponentDef,
@@ -234,16 +238,7 @@ export const dbg = {
       console.error(`no target!`);
       return;
     }
-    // TODO(@darzu): use quat.fromYawPitchRoll
-    console.log(`
-vec3.copy(g.position, ${vec3Dbg(target.position)});
-quat.copy(g.rotation, ${vec4Dbg(target.rotation)});
-vec3.copy(g.cameraFollow.positionOffset, ${vec3Dbg(
-      target.cameraFollow.positionOffset
-    )});
-g.cameraFollow.yawOffset = ${target.cameraFollow.yawOffset.toFixed(3)};
-g.cameraFollow.pitchOffset = ${target.cameraFollow.pitchOffset.toFixed(3)};
-    `);
+    console.log(getCameraSettingsCodeStr(getCameraSettings(target)));
   },
   listCmps: () => {
     updateCmps();

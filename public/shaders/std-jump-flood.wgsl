@@ -22,9 +22,8 @@ fn frag_main(@location(0) centerUV : vec2<f32>) -> @location(0) vec2<f32> {
       let dist = length(neighUV - centerUV)
          * 4.0; // TODO(@darzu): make configurable
       if (
-        true
         // TODO(@darzu): remove the neighXY if u know content won't touch the edge
-        && neighXY.x < dimsI.x
+           neighXY.x < dimsI.x
         && neighXY.y < dimsI.y
         && neighXY.x >= 0
         && neighXY.y >= 0

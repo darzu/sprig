@@ -377,6 +377,7 @@ export function gameMeshFromMesh(
   const aabb = getAABBFromMesh(mesh);
   const center = getCenterFromAABB(aabb);
   const halfsize = getHalfsizeFromAABB(aabb, V3.mk());
+  // TODO(@darzu): LINES. add mesh to line pool too??
   const proto = renderer.stdPool.addMesh(mesh, reserve);
   const uniqueVerts = getUniqueVerts(mesh);
   const support = (d: V3) => farthestPointInDir(uniqueVerts, d);

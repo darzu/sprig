@@ -1,8 +1,15 @@
-import { CameraDef } from "../camera/camera.js";
+import {
+  CameraDef,
+  CameraFollowDef,
+  CameraSetting,
+  applyCameraSettings,
+  getCameraSettings,
+} from "../camera/camera.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
-import { createGhost } from "../debug/ghost.js";
-import { EM, _ComponentDef } from "../ecs/entity-manager.js";
+import { GhostDef, createGhost } from "../debug/ghost.js";
+import { EM, EntityW, _ComponentDef } from "../ecs/entity-manager.js";
+import { Phase } from "../ecs/sys-phase.js";
 import { quat, V3 } from "../matrix/sprig-matrix.js";
 import { V } from "../matrix/sprig-matrix.js";
 import { CubeMesh, HexMesh } from "../meshes/mesh-list.js";
@@ -17,7 +24,9 @@ import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
 import { shadowPipelines } from "../render/pipelines/std-shadow.js";
 import { RendererDef, RenderableConstructDef } from "../render/renderer-ecs.js";
-import { Intersect } from "../utils/util.js";
+import { TimeDef } from "../time/time.js";
+import { Intersect, assert } from "../utils/util.js";
+import { vec3Dbg, vec4Dbg } from "../utils/utils-3d.js";
 import { addWorldGizmo } from "../utils/utils-game.js";
 import { createObj } from "./objects.js";
 
@@ -80,18 +89,54 @@ export async function initGrayboxWorld() {
   addWorldGizmo(V(0, 0, 0), 5);
 }
 
+// hover near origin
+const defaultCam: CameraSetting = {
+  position: [7.97, -12.45, 10.28],
+  rotation: [0.0, 0.0, 0.27, 0.96],
+  positionOffset: [0.0, 0.0, 0.0],
+  yawOffset: 0.0,
+  pitchOffset: -0.55,
+};
+
 export function initGhost() {
   const g = createGhost(CubeMesh);
   g.controllable.speed *= 10;
   g.controllable.sprintMul = 0.2;
-  g.position[2] = 5;
 
-  // hover near origin
-  V3.copy(g.position, [7.97, -12.45, 10.28]);
-  quat.copy(g.rotation, [0.0, 0.0, 0.27, 0.96]);
-  V3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
-  g.cameraFollow.yawOffset = 0.0;
-  g.cameraFollow.pitchOffset = -0.55;
+  let ghostCam: CameraSetting;
+  let ghostCamStr = localStorage.getItem("ghostCam");
+  if (!ghostCamStr) {
+    ghostCam = defaultCam;
+  } else {
+    // TODO(@darzu): VALIDATE!
+    ghostCam = JSON.parse(ghostCamStr) as CameraSetting;
+  }
+  applyCameraSettings(g, ghostCam);
+
+  let _lastSettings = "";
+  EM.addSystem(
+    "saveGhostCamera",
+    Phase.GAME_WORLD,
+    [GhostDef, PositionDef, RotationDef, CameraFollowDef],
+    [TimeDef],
+    (es, res) => {
+      // save once every ~second
+      if (res.time.step % 60 !== 0) return;
+      if (!es.length) return;
+      assert(es.length === 1);
+      const e = es[0];
+
+      // get settings
+      const settings = getCameraSettings(e);
+      const str = JSON.stringify(settings);
+
+      // have settings changed?
+      if (str == _lastSettings) return;
+
+      // save
+      localStorage.setItem("ghostCam", str);
+    }
+  );
 
   return g;
 }

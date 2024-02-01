@@ -38,6 +38,7 @@ import {
   CyBufferPtr,
   CySamplerPtr,
   CyPipelinePtr,
+  meshPoolPrimToTopology,
 } from "./gpu-registry.js";
 import {
   CyStruct,
@@ -382,7 +383,7 @@ function createCyPipeline(
     }
 
     const primitive: GPUPrimitiveState = {
-      topology: "triangle-list",
+      topology: p.topology ?? "triangle-list",
       cullMode: p.cullMode ?? "back",
       frontFace: p.frontFace ?? "ccw",
     };
@@ -881,10 +882,17 @@ export function bundleRenderPipelines(
       if (p.vertexBuf) bundleEnc.setVertexBuffer(0, p.vertexBuf.buffer);
       bundleEnc.setVertexBuffer(1, p.instanceBuf.buffer);
       bundleEnc.drawIndexed(p.indexBuf.length, p.instanceBuf.length, 0, 0);
+      // TODO(@darzu): LINES. /3 doesn't work for lines or points
       dbgNumTris += p.instanceBuf.length * (p.indexBuf.length / 3);
     } else if (p.ptr.meshOpt.stepMode === "per-mesh-handle") {
       assert(!!p.pool && p.bindGroupLayouts.length >= 2);
       assert(p.pool.ptr === p.ptr.meshOpt.pool);
+      const pipeTopo = p.ptr.topology ?? "triangle-list";
+      const poolPrim = p.pool.ptr.prim;
+      assert(
+        meshPoolPrimToTopology[poolPrim] === pipeTopo,
+        `topology mismatch`
+      );
       const uniBGLayout = p.bindGroupLayouts[1]; // TODO(@darzu): hacky convention?
       const uniUsage: CyGlobalUsage<CyArrayPtr<any>> = {
         ptr: p.pool.unisPtr,
@@ -913,9 +921,27 @@ export function bundleRenderPipelines(
             m.uniIdx * p.pool.unis.struct.size,
           ]);
           // TODO(@darzu): do we always want to draw max or do we want to rebundle?
-          let numTri = m.reserved?.maxTriNum ?? m.triNum;
-          bundleEnc.drawIndexed(numTri * 3, undefined, m.triIdx * 3, m.vertIdx);
-          dbgNumTris += m.triNum * 3;
+          let numPrim = m.reserved?.maxPrimNum ?? m.primNum;
+
+          if (p.pool.ptr.prim === "tri") {
+            bundleEnc.drawIndexed(
+              numPrim * 3,
+              undefined,
+              m.primIdx * 3,
+              m.vertIdx
+            );
+            dbgNumTris += m.primNum * 3;
+          } else if (p.pool.ptr.prim === "line") {
+            bundleEnc.drawIndexed(
+              numPrim * 2,
+              undefined,
+              m.primIdx * 2,
+              m.vertIdx
+            );
+            dbgNumTris += m.primNum * 2;
+          } else {
+            throw `TODO: impl render "${p.pool.ptr.prim}"`;
+          }
         }
       }
     } else if (p.ptr.meshOpt.stepMode === "single-draw") {

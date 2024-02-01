@@ -190,6 +190,10 @@ EM.addEagerInit([RenderableConstructDef], [RendererDef], [], () => {
               !e.renderableConstruct.reserve,
               `cannot have a reserve when adding an instance`
             );
+            assert(
+              meshOrProto.pool === pool,
+              `Trying to add a mesh instance into pool "${pool.ptr.name}" based on a mesh from pool "${meshOrProto.pool.ptr.name}"`
+            );
             meshHandle = pool.addMeshInstance(meshOrProto);
             mesh = meshHandle.mesh!;
           } else if (isMeshReg(meshOrProto)) {
@@ -201,6 +205,10 @@ EM.addEagerInit([RenderableConstructDef], [RendererDef], [], () => {
             assert(
               !e.renderableConstruct.reserve,
               `cannot have a reserve when adding an instance`
+            );
+            assert(
+              gameMesh.proto.pool === pool,
+              `Trying to add a mesh instance into pool "${pool.ptr.name}" based on a mesh from pool "${gameMesh.proto.pool.ptr.name}"`
             );
             meshHandle = pool.addMeshInstance(gameMesh.proto);
             mesh = meshHandle.mesh!;
@@ -399,17 +407,17 @@ EM.addEagerInit([RenderableConstructDef], [RendererDef], [], () => {
         const stdPool = res.renderer.renderer.getCyResource(meshPoolPtr)!;
         const stats = stdPool._stats;
         const totalBytes =
-          stats._accumTriDataQueued +
+          stats._accumPrimDataQueued +
           stats._accumUniDataQueued +
           stats._accumVertDataQueued;
         const totalKb = totalBytes / 1024;
         if (totalKb > 100) {
           console.log(`Big frame: ${totalKb.toFixed(0)}kb`);
-          console.log(`tris: ${stats._accumTriDataQueued / 1024}kb`);
+          console.log(`prims: ${stats._accumPrimDataQueued / 1024}kb`);
           console.log(`uni: ${stats._accumUniDataQueued / 1024}kb`);
           console.log(`vert: ${stats._accumVertDataQueued / 1024}kb`);
         }
-        stats._accumTriDataQueued = 0;
+        stats._accumPrimDataQueued = 0;
         stats._accumUniDataQueued = 0;
         stats._accumVertDataQueued = 0;
       }

@@ -51,6 +51,9 @@ import {
 //  [x] light source: scene rendered with multiple point sources
 //      [x] light sailing
 
+// export const BACKGROUND_COLOR = V(0.015, 0.015, 0.015, 1.0);
+export const BACKGROUND_COLOR = V(0.03, 0.03, 0.03, 1.0);
+
 export const stdRenderPipeline = CY.createRenderPipeline("stdMeshRender", {
   globals: [
     sceneBufPtr,
@@ -80,7 +83,7 @@ export const stdRenderPipeline = CY.createRenderPipeline("stdMeshRender", {
       // defaultColor: [0.0, 0.0, 0.0, 1.0],
       // defaultColor: [0.1, 0.1, 0.1, 1.0],
       // defaultColor: [0.15, 0.15, 0.6, 1.0],
-      defaultColor: V(0.015, 0.015, 0.015, 1.0),
+      defaultColor: BACKGROUND_COLOR,
       // defaultColor: [...vec3.clone(ENDESGA16.white), 1.0] as vec4,
       // defaultColor: [0.7, 0.8, 1.0, 1.0],
     },
@@ -190,7 +193,7 @@ function updateStdRenderData(
     if (AlphaDef.isOn(o)) {
       if (o.renderDataStd.alpha !== o.alpha) tintChange = true;
       o.renderDataStd.alpha = o.alpha;
-      // TODO(@darzu): MASK HACK! it's also in renderable construct?!
+      // TODO(@darzu): ALPHA MASK HACK! it's also in renderable construct?!
       o.renderable.meshHandle.mask = ALPHA_MASK;
     }
   }
@@ -205,7 +208,7 @@ function updateStdRenderData(
   // o.renderDataStd.id = o.renderable.meshHandle.mId;
 
   // transform
-  // TODO(@darzu): hACK! ONLY UPDATE UNIFORM IF WE"VE MOVED/SCALED/ROT OR COLOR CHANGED OR HIDDEN CHANGED
+  // TODO(@darzu): HACK! ONLY UPDATE UNIFORM IF WE"VE MOVED/SCALED/ROT OR COLOR CHANGED OR HIDDEN CHANGED
   // TODO(@darzu): probably the less hacky way to do this is require uniforms provide a
   //    hash function
   let lastTran = _lastMeshHandleTransform.get(o.renderable.meshHandle.mId);

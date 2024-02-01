@@ -34,7 +34,7 @@ let _deltaRotation = quat.mk();
 
 export function registerPhysicsApplyLinearVelocity() {
   EM.addSystem(
-    "registerPhysicsApplyLinearVelocity",
+    "linearVelocityMovesPosition",
     Phase.PHYSICS_MOTION,
     [LinearVelocityDef, PositionDef],
     [TimeDef],

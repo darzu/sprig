@@ -124,8 +124,7 @@ async function createPathEditor() {
 
       const reserve: MeshReserve = {
         maxVertNum: 100,
-        maxTriNum: 100,
-        maxLineNum: 0,
+        maxPrimNum: 100,
       };
 
       const hpEnt_ = EM.new();

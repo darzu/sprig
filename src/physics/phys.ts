@@ -45,6 +45,7 @@ import { DBG_PHYSICS_AABBS } from "../flags.js";
 // [ ] PERF: matrix inversion should be done once per parent
 
 export function initPhysicsSystems() {
+  // TODO(@darzu): unroll this
   registerInitTransforms();
 
   registerPhysicsStateInit();
@@ -61,6 +62,7 @@ export function initPhysicsSystems() {
   // TODO(@darzu): positioning?
   registerNarrowPhaseSystems();
   // TODO(@darzu): get rid of this duplicate call?
+  // TODO(@darzu): PERF! only run this twice for objects that could have been moved by physics
   registerUpdateWorldFromLocalAndParent("2", Phase.PHYSICS_FINISH_WORLD);
 
   if (DBG_PHYSICS_AABBS) {
