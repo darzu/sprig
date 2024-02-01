@@ -173,6 +173,7 @@ export const grassPoolPtr = CY.createMeshPool("grassPool", {
   setMaxVerts: MAX_GRASS_VERTS,
   // TODO(@darzu): this dataDef is v weird
   dataDef: RenderDataGrassDef,
+  prim: "tri",
 });
 
 export const GrassCutTexPtr = CY.createTexture("grassCut", {

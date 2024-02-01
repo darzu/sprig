@@ -13,7 +13,8 @@ import {
   transformCameraViewForWebGPUsNDC,
   transformYUpModelIntoZUp,
 } from "./basis.js";
-import { mat4Dbg, quatDbg, vec3Dbg } from "../utils/utils-3d.js";
+import { mat4Dbg, quatDbg, vec3Dbg, vec4Dbg } from "../utils/utils-3d.js";
+import { PositionDef, RotationDef } from "../physics/transform.js";
 
 const VERBOSE_CAMERA = false;
 
@@ -101,6 +102,48 @@ export function setCameraFollowPosition(
   mode: keyof typeof CAMERA_OFFSETS
 ) {
   V3.copy(c.cameraFollow.positionOffset, CAMERA_OFFSETS[mode]);
+}
+
+export interface CameraSetting {
+  position: [number, number, number];
+  rotation: [number, number, number, number];
+  positionOffset: [number, number, number];
+  yawOffset: number;
+  pitchOffset: number;
+}
+export function getCameraSettings(
+  e: EntityW<[typeof CameraFollowDef, typeof PositionDef, typeof RotationDef]>
+): CameraSetting {
+  return {
+    position: [e.position[0], e.position[1], e.position[2]],
+    rotation: [e.rotation[0], e.rotation[1], e.rotation[2], e.rotation[3]],
+    positionOffset: [
+      e.cameraFollow.positionOffset[0],
+      e.cameraFollow.positionOffset[1],
+      e.cameraFollow.positionOffset[2],
+    ],
+    yawOffset: e.cameraFollow.yawOffset,
+    pitchOffset: e.cameraFollow.pitchOffset,
+  };
+}
+export function applyCameraSettings(
+  e: EntityW<[typeof CameraFollowDef, typeof PositionDef, typeof RotationDef]>,
+  s: CameraSetting
+) {
+  V3.copy(e.position, s.position);
+  quat.copy(e.rotation, s.rotation);
+  V3.copy(e.cameraFollow.positionOffset, s.positionOffset);
+  e.cameraFollow.yawOffset = s.yawOffset;
+  e.cameraFollow.pitchOffset = s.pitchOffset;
+}
+export function getCameraSettingsCodeStr(s: CameraSetting) {
+  return `
+  V3.copy(g.position, ${vec3Dbg(s.position)});
+  quat.copy(g.rotation, ${vec4Dbg(s.rotation)});
+  V3.copy(g.cameraFollow.positionOffset, ${vec3Dbg(s.positionOffset)});
+  g.cameraFollow.yawOffset = ${s.yawOffset.toFixed(3)};
+  g.cameraFollow.pitchOffset = ${s.pitchOffset.toFixed(3)};
+  `;
 }
 
 // TODO(@darzu): maybe make a shortcut for this; "registerTrivialInit" ?

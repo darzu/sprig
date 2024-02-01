@@ -508,6 +508,7 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     if (PERF_DBG_GPU) _stats._accumTriDataQueued += quadData.byteLength;
   }
 
+  // TODO(@darzu): LINES. Update for lines?
   function updateMeshSize(handle: MeshHandle, newMesh: Mesh) {
     const m = newMesh;
 

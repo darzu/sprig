@@ -54,7 +54,7 @@ import { CanvasDef, HasFirstInteractionDef } from "../render/canvas.js";
 import { CyArray } from "../render/data-webgpu.js";
 import { GraphicsSettingsDef } from "../render/graphics-settings.js";
 import { PointLightDef } from "../render/lights.js";
-import { GRID_MASK, LINE_MASK } from "../render/pipeline-masks.js";
+import { DEFAULT_MASK, GRID_MASK } from "../render/pipeline-masks.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
 import {
   DotStruct,
@@ -65,7 +65,10 @@ import {
   renderDots,
 } from "../render/pipelines/std-dots.js";
 import { stdGridRender } from "../render/pipelines/std-grid.js";
-import { stdLinesRender } from "../render/pipelines/std-line.js";
+import {
+  lineMeshPoolPtr,
+  stdLinesRender,
+} from "../render/pipelines/std-line.js";
 import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
 import { noisePipes } from "../render/pipelines/std-noise.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
@@ -306,6 +309,7 @@ export async function initGrayboxShipArena() {
     res.renderer.pipelines = [
       ...shadowPipelines,
       stdRenderPipeline,
+      // stdLinesRender,
       renderDots,
       outlineRender,
       deferredPipeline,
@@ -359,7 +363,13 @@ export async function initGrayboxShipArena() {
   const box = createObj(
     [RenderableConstructDef, PositionDef, ColorDef, ScaleDef] as const,
     {
-      renderableConstruct: [CubeMesh, true, undefined, LINE_MASK],
+      renderableConstruct: [
+        CubeMesh,
+        true,
+        undefined,
+        undefined,
+        lineMeshPoolPtr,
+      ],
       position: [0, 0, 40],
       scale: [10, 10, 10],
       color: ENDESGA16.lightGreen,

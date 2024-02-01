@@ -170,6 +170,7 @@ export const oceanPoolPtr = CY.createMeshPool("oceanPool", {
   setMaxVerts: MAX_OCEAN_VERTS,
   // TODO(@darzu): this dataDef is v weird
   dataDef: RenderDataOceanDef,
+  prim: "tri",
 });
 
 export const renderOceanPipe = CY.createRenderPipeline("oceanRender", {

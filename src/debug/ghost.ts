@@ -6,6 +6,7 @@ import { LinearVelocityDef } from "../motion/velocity.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
 import { ControllableDef } from "../input/controllable.js";
 import { MeshLike, RenderableConstructDef } from "../render/renderer-ecs.js";
+import { Phase } from "../ecs/sys-phase.js";
 
 // TODO(@darzu): HACK. we need a better way to programmatically create sandbox games
 export const gameplaySystems: string[] = [];

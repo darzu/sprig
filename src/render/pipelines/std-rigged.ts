@@ -120,6 +120,7 @@ const poolPtr = CY.createMeshPool("riggedMeshPool", {
   setMaxVerts: MAX_VERTICES,
   // TODO(@darzu): this dataDef is v weird
   dataDef: RenderDataStdDef,
+  prim: "tri",
 });
 
 // TODO: avoid duplicating std-scene

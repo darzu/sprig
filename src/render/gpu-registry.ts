@@ -121,6 +121,7 @@ export interface CyMeshPoolPtr<
   U extends CyStructDesc = CyStructDesc
 > extends CyResourcePtr {
   kind: "meshPool";
+  prim: "tri" | "line" | "point";
   // TODO(@darzu): remove id and name, this doesn't need to be inited directly
   computeVertsData: ComputeVertsDataFn<V>;
   computeUniData: (m: Mesh) => CyToTS<U>;

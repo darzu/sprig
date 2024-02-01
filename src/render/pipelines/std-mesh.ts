@@ -193,7 +193,7 @@ function updateStdRenderData(
     if (AlphaDef.isOn(o)) {
       if (o.renderDataStd.alpha !== o.alpha) tintChange = true;
       o.renderDataStd.alpha = o.alpha;
-      // TODO(@darzu): MASK HACK! it's also in renderable construct?!
+      // TODO(@darzu): ALPHA MASK HACK! it's also in renderable construct?!
       o.renderable.meshHandle.mask = ALPHA_MASK;
     }
   }
@@ -208,7 +208,7 @@ function updateStdRenderData(
   // o.renderDataStd.id = o.renderable.meshHandle.mId;
 
   // transform
-  // TODO(@darzu): hACK! ONLY UPDATE UNIFORM IF WE"VE MOVED/SCALED/ROT OR COLOR CHANGED OR HIDDEN CHANGED
+  // TODO(@darzu): HACK! ONLY UPDATE UNIFORM IF WE"VE MOVED/SCALED/ROT OR COLOR CHANGED OR HIDDEN CHANGED
   // TODO(@darzu): probably the less hacky way to do this is require uniforms provide a
   //    hash function
   let lastTran = _lastMeshHandleTransform.get(o.renderable.meshHandle.mId);
