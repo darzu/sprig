@@ -340,7 +340,7 @@ export async function initGrayboxShipArena() {
   addWorldGizmo(V(0, 0, 0), 50);
 
   // ocean
-  // const oceanGrid = createOcean();
+  const oceanGrid = createOcean();
 
   // grid
   const grid = createObj(
@@ -406,10 +406,10 @@ export async function initGrayboxShipArena() {
   setWindAngle(wind, PI * 0.4);
 
   // player ship
-  // const ship = await createShip();
+  const ship = await createShip();
 
   // enemy
-  // createEnemy();
+  createEnemy();
 
   // dbg ghost
   if (DBG_GHOST) {
