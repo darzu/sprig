@@ -267,8 +267,7 @@ export async function initFontEditor() {
   scaleMesh(quadMesh, 0.5);
   const quadGMesh = gameMeshFromMesh(quadMesh, res.renderer.renderer, {
     maxVertNum: 100,
-    maxTriNum: 100,
-    maxLineNum: 0,
+    maxPrimNum: 100,
   });
 
   // TODO(@darzu): HACK
@@ -292,8 +291,8 @@ export async function initFontEditor() {
     // console.dir(mesh);
     const reserve: MeshReserve = {
       maxVertNum: 100,
-      maxTriNum: 100,
-      maxLineNum: mesh.lines?.length ?? 0,
+      maxPrimNum: 100,
+      // maxLineNum: mesh.lines?.length ?? 0,
     };
     const gmesh = gameMeshFromMesh(mesh, res.renderer.renderer, reserve);
     // TODO(@darzu): update gmesh after half-edge editor changes: aabb etc

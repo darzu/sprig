@@ -45,6 +45,7 @@ export function zip<T, U>(ts: T[], us: U[]): [T, U][] {
   return ts.map((t, i) => <[T, U]>[t, us[i]]);
 }
 
+// TODO(@darzu): move to -never-import.ts
 export function never(x: never, msg?: string): never {
   throw new Error(msg ?? "Unexpected object: " + x);
 }

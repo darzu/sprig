@@ -407,17 +407,17 @@ EM.addEagerInit([RenderableConstructDef], [RendererDef], [], () => {
         const stdPool = res.renderer.renderer.getCyResource(meshPoolPtr)!;
         const stats = stdPool._stats;
         const totalBytes =
-          stats._accumTriDataQueued +
+          stats._accumPrimDataQueued +
           stats._accumUniDataQueued +
           stats._accumVertDataQueued;
         const totalKb = totalBytes / 1024;
         if (totalKb > 100) {
           console.log(`Big frame: ${totalKb.toFixed(0)}kb`);
-          console.log(`tris: ${stats._accumTriDataQueued / 1024}kb`);
+          console.log(`tris: ${stats._accumPrimDataQueued / 1024}kb`);
           console.log(`uni: ${stats._accumUniDataQueued / 1024}kb`);
           console.log(`vert: ${stats._accumVertDataQueued / 1024}kb`);
         }
-        stats._accumTriDataQueued = 0;
+        stats._accumPrimDataQueued = 0;
         stats._accumUniDataQueued = 0;
         stats._accumVertDataQueued = 0;
       }

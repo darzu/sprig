@@ -136,6 +136,15 @@ export interface CyMeshPoolPtr<
   dataDef: ComponentDef<string, CyToTS<U>, [CyToTS<U>], []>;
 }
 
+export const meshPoolPrimToTopology: Record<
+  CyMeshPoolPtr["prim"],
+  GPUPrimitiveTopology
+> = Object.freeze({
+  tri: "triangle-list",
+  line: "line-list",
+  point: "point-list",
+});
+
 // PIPELINES
 
 // TODO(@darzu): support more access modes?
