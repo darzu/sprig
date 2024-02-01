@@ -413,7 +413,7 @@ EM.addEagerInit([RenderableConstructDef], [RendererDef], [], () => {
         const totalKb = totalBytes / 1024;
         if (totalKb > 100) {
           console.log(`Big frame: ${totalKb.toFixed(0)}kb`);
-          console.log(`tris: ${stats._accumPrimDataQueued / 1024}kb`);
+          console.log(`prims: ${stats._accumPrimDataQueued / 1024}kb`);
           console.log(`uni: ${stats._accumUniDataQueued / 1024}kb`);
           console.log(`vert: ${stats._accumVertDataQueued / 1024}kb`);
         }

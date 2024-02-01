@@ -384,9 +384,26 @@ export async function initGrayboxShipArena() {
       color: ENDESGA16.lightGreen,
     }
   );
+  EM.whenEntityHas(box, RenderableDef).then((box2) => {
+    createObj(
+      [RenderableConstructDef, PositionDef, ColorDef, ScaleDef] as const,
+      {
+        renderableConstruct: [
+          box2.renderable.meshHandle,
+          true,
+          undefined,
+          undefined,
+          lineMeshPoolPtr,
+        ],
+        position: [-40, 0, 40],
+        scale: [10, 10, 10],
+        color: ENDESGA16.darkGreen,
+      }
+    );
+  });
   EM.whenResources(BallMesh.def).then((ball) => {
     const mesh = cloneMesh(ball.mesh_ball.mesh);
-    mesh.lines = range(10).map((_) => V(0, 1));
+    mesh.lines = range(9).map((_) => V(0, 1));
 
     createObj(
       [RenderableConstructDef, PositionDef, ColorDef, ScaleDef] as const,

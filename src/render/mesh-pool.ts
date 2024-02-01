@@ -48,7 +48,6 @@ export interface MeshHandle {
   // NOTE: only changable if ".reserved" is set.
   vertNum: number;
   // NOTE: triIdx must always be 4-byte aligned
-  // TODO(@darzu): LINES. replace with primNum
   primNum: number;
 
   // optional extra reserved geo space
@@ -69,7 +68,6 @@ export function isMeshHandle(m: any): m is MeshHandle {
 
 function createMeshPoolDbgStats() {
   return {
-    // TODO(@darzu): LINES. check all references
     _accumPrimDataQueued: 0,
     _accumVertDataQueued: 0,
     _accumUniDataQueued: 0,
@@ -247,7 +245,6 @@ function computeQuadData(
   }
   return new Uint16Array(tempQuadData.buffer, 0, dataLen);
 }
-// TODO(@darzu): LINES: computeLineData
 
 const UNI_USAGE = GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM;
 const VERT_USAGE = GPUBufferUsage.COPY_DST | GPUBufferUsage.VERTEX;
@@ -284,7 +281,6 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     verts: CyArray<V>;
     indsPtr: CyIdxBufferPtr;
     inds: CyIdxBuffer;
-    // TODO(@darzu): LINES. rename to "numPrim" and become tri / line / point agnostic?
     numPrims: number;
     numVerts: number;
     meshes: MeshHandle[];
@@ -364,7 +360,6 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
   };
 
   function addMesh(m: Mesh, reserved?: MeshReserve): MeshHandle {
-    // TODO(@darzu): LINES. handle
     // TODO(@darzu): handle fragmentation! Right now we always try to add
     //    to latest set
 
@@ -456,7 +451,6 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     return handle;
   }
   function addMeshInstance(m: MeshHandle): MeshHandle {
-    // TODO(@darzu): LINES. check over?
     const uniOffset = getTotalMeshCount();
     if (uniOffset + 1 > ptr.maxMeshes) throw "Too many meshes!";
 
@@ -496,7 +490,6 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
       _stats._accumVertDataQueued += vertCount * set.verts.struct.size;
   }
 
-  // TODO(@darzu): LINES. how to handle lines and points??
   function updateMeshLines(
     handle: MeshHandle,
     newMesh: Mesh,
@@ -576,7 +569,6 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     if (PERF_DBG_GPU) _stats._accumPrimDataQueued += quadData.byteLength;
   }
 
-  // TODO(@darzu): LINES. Update for lines?
   function updateMeshSize(handle: MeshHandle, newMesh: Mesh) {
     const m = newMesh;
 
@@ -599,7 +591,6 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
       !m.quad.length || m.tri.length % 2 === 0,
       `tri.length not even for ${m.dbgName}`
     );
-    // TODO(@darzu): LINES. Do lines need to have even num?
 
     handle.primNum = newNumPrim;
     handle.vertNum = newNumVert;

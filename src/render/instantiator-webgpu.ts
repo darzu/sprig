@@ -383,7 +383,6 @@ function createCyPipeline(
     }
 
     const primitive: GPUPrimitiveState = {
-      // TODO(@darzu): LINES. match topology to mesh pool type?
       topology: p.topology ?? "triangle-list",
       cullMode: p.cullMode ?? "back",
       frontFace: p.frontFace ?? "ccw",

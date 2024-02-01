@@ -51,12 +51,9 @@ export const stdLinesRender = CY.createRenderPipeline("stdLinesRender", {
   globals: [sceneBufPtr],
   cullMode: "back",
   meshOpt: {
-    // TODO(@darzu): LINES. special line mesh pool?
     pool: lineMeshPoolPtr,
     stepMode: "per-mesh-handle",
-    // meshMask: DEFAULT_MASK,
   },
-  // topology: "triangle-list",
   topology: "line-list",
   shaderVertexEntry: "vert_main",
   shaderFragmentEntry: "frag_main",

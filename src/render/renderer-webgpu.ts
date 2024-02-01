@@ -143,12 +143,11 @@ export function createRenderer(
   // TODO(@darzu): collapse this with MeshPool._stats
   function getMeshPoolStats() {
     const stats = {
-      // TODO(@darzu): LINES. find all ref, update for lines
-      numTris: 0,
+      numPrims: 0,
       numVerts: 0,
     };
     for (let p of Object.values(cyKindToNameToRes.meshPool)) {
-      stats.numTris += p.sets.reduce((p, n) => p + n.numPrims, 0);
+      stats.numPrims += p.sets.reduce((p, n) => p + n.numPrims, 0);
       stats.numVerts += p.sets.reduce((p, n) => p + n.numVerts, 0);
     }
     return stats;

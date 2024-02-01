@@ -136,7 +136,7 @@ export function initDevConsole() {
         `broad:(${_lastCollisionTestTimeMs.toFixed(1)}ms ` +
         `o:${_doesOverlapAABBs} e:${_enclosedBys} c:${_cellChecks}) ` +
         `fps:${avgFPS.toFixed(1)} ` +
-        `tris:${poolStats.numTris} ` +
+        `prims:${poolStats.numPrims} ` +
         `verts:${poolStats.numVerts} ` +
         (PERF_DBG_GPU ? `avgGpuBytes: ${avgGPUBytes.toFixed(0)}b ` : ``) +
         (PERF_DBG_GPU

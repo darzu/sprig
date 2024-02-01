@@ -8,4 +8,3 @@ export const ALPHA_MASK = 0x0100;
 export const SKY_MASK = 0x1000;
 export const BUBBLE_MASK = 0x10000;
 export const GRID_MASK = 0x100000;
-// export const LINE_MASK = 0x1000000;
