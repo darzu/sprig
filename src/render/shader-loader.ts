@@ -25,6 +25,7 @@ export const ShaderPaths = [
   "xp-bubble",
   "std-dots",
   "std-grid",
+  "std-line",
 ] as const;
 
 export type ShaderName = (typeof ShaderPaths)[number];

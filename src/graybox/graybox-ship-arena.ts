@@ -54,7 +54,7 @@ import { CanvasDef, HasFirstInteractionDef } from "../render/canvas.js";
 import { CyArray } from "../render/data-webgpu.js";
 import { GraphicsSettingsDef } from "../render/graphics-settings.js";
 import { PointLightDef } from "../render/lights.js";
-import { GRID_MASK } from "../render/pipeline-masks.js";
+import { GRID_MASK, LINE_MASK } from "../render/pipeline-masks.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
 import {
   DotStruct,
@@ -65,6 +65,7 @@ import {
   renderDots,
 } from "../render/pipelines/std-dots.js";
 import { stdGridRender } from "../render/pipelines/std-grid.js";
+import { stdLinesRender } from "../render/pipelines/std-line.js";
 import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
 import { noisePipes } from "../render/pipelines/std-noise.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
@@ -306,10 +307,10 @@ export async function initGrayboxShipArena() {
       ...shadowPipelines,
       stdRenderPipeline,
       renderDots,
-      // TODO(@darzu): RENDER WORLD GRID
       outlineRender,
       deferredPipeline,
       stdGridRender,
+      stdLinesRender,
       postProcess,
     ];
   });
@@ -354,52 +355,19 @@ export async function initGrayboxShipArena() {
     }
   );
 
-  const ballObj = defineObj({
-    name: "ball",
-    components: [
-      PositionDef,
-      RotationDef,
-      // AngularVelocityDef,
-      ColorDef,
-      RenderableConstructDef,
-      ScaleDef,
-    ],
-  } as const);
-  const NUM = 10;
-  // const RADIUS = 200;
-  for (let i = 0; i < NUM; i++) {
-    const t = i * ((PI * 2) / NUM);
-    // const s = Math.random() * 50 + 5;
-    const s = 25;
-    // const ring = Math.floor(i / NUM);
-    // const r = 100 + s * 5; // * Math.pow(5, ring);
-    const r = 400;
-    const x = Math.cos(t) * r;
-    const y = Math.sin(t) * r;
-    const ball = createObj(ballObj, {
-      args: {
-        scale: [s, s, s],
-        position: [x, y, 0],
-        renderableConstruct: [BallMesh],
-        rotation: undefined,
-        // angularVelocity: V3.scale(randNormalVec3(), 0.001),
-        color: seqEndesga16(),
-      },
-    });
-  }
-
-  EM.addSystem(
-    "bounceBall",
-    Phase.GAME_WORLD,
-    [ballObj.props, PositionDef],
-    [TimeDef],
-    (es, res) => {
-      for (let e of es) {
-        const t = Math.atan2(e.position[1], e.position[0]);
-        e.position[2] = 100 * Math.sin(t * 7.0 + res.time.time * 0.001);
-      }
+  // line exp
+  const box = createObj(
+    [RenderableConstructDef, PositionDef, ColorDef, ScaleDef] as const,
+    {
+      renderableConstruct: [CubeMesh, true, undefined, LINE_MASK],
+      position: [0, 0, 40],
+      scale: [10, 10, 10],
+      color: ENDESGA16.lightGreen,
     }
   );
+
+  // bouncing balls
+  createBouncingBalls();
 
   // wind
   const wind = EM.addResource(WindDef);
@@ -536,6 +504,54 @@ export async function initGrayboxShipArena() {
   });
 
   initEnemies();
+}
+
+function createBouncingBalls() {
+  const ballObj = defineObj({
+    name: "ball",
+    components: [
+      PositionDef,
+      RotationDef,
+      // AngularVelocityDef,
+      ColorDef,
+      RenderableConstructDef,
+      ScaleDef,
+    ],
+  } as const);
+  const NUM = 10;
+  // const RADIUS = 200;
+  for (let i = 0; i < NUM; i++) {
+    const t = i * ((PI * 2) / NUM);
+    // const s = Math.random() * 50 + 5;
+    const s = 25;
+    // const ring = Math.floor(i / NUM);
+    // const r = 100 + s * 5; // * Math.pow(5, ring);
+    const r = 400;
+    const x = Math.cos(t) * r;
+    const y = Math.sin(t) * r;
+    const ball = createObj(ballObj, {
+      args: {
+        scale: [s, s, s],
+        position: [x, y, 0],
+        renderableConstruct: [BallMesh],
+        rotation: undefined,
+        // angularVelocity: V3.scale(randNormalVec3(), 0.001),
+        color: seqEndesga16(),
+      },
+    });
+  }
+  EM.addSystem(
+    "bounceBall",
+    Phase.GAME_WORLD,
+    [ballObj.props, PositionDef],
+    [TimeDef],
+    (es, res) => {
+      for (let e of es) {
+        const t = Math.atan2(e.position[1], e.position[0]);
+        e.position[2] = 100 * Math.sin(t * 7.0 + res.time.time * 0.001);
+      }
+    }
+  );
 }
 
 async function createShip() {
