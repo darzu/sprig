@@ -129,8 +129,7 @@ export interface CyMeshPoolPtr<
   // TODO(@darzu): do we need these max's? maybe we make them optional
   maxMeshes: number;
   maxSets: number;
-  setMaxTris: number;
-  setMaxLines: number;
+  setMaxPrims: number;
   setMaxVerts: number;
   // TODO(@darzu): really unsure how I feel about having an EM component here in CY
   dataDef: ComponentDef<string, CyToTS<U>, [CyToTS<U>], []>;
@@ -232,6 +231,8 @@ export interface CyRenderPipelinePtr<
   shader: ((shaders: ShaderSet) => string) | ShaderName;
   shaderVertexEntry: string;
   shaderFragmentEntry: string;
+
+  topology?: GPUPrimitiveTopology;
   cullMode?: GPUCullMode;
   frontFace?: GPUFrontFace;
   // TODO(@darzu): move vertexBuf into mesh opt?

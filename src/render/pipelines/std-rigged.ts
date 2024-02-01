@@ -116,8 +116,7 @@ const poolPtr = CY.createMeshPool("riggedMeshPool", {
   maxMeshes: MAX_MESHES,
   maxSets: 5,
   // maxSets: 3,
-  setMaxTris: MAX_VERTICES * 2,
-  setMaxLines: MAX_VERTICES,
+  setMaxPrims: MAX_VERTICES * 2,
   setMaxVerts: MAX_VERTICES,
   // TODO(@darzu): this dataDef is v weird
   dataDef: RenderDataStdDef,

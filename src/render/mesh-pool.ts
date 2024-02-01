@@ -53,6 +53,7 @@ export interface MeshHandle {
   // NOTE: only changable if ".reserved" is set.
   vertNum: number;
   // NOTE: triIdx must always be 4-byte aligned
+  // TODO(@darzu): LINES. replace with primNum
   triNum: number;
   lineNum: number;
 
@@ -91,10 +92,9 @@ export type MeshPool<
 function logMeshPoolStats(pool: MeshPool<any, any>) {
   // TODO(@darzu): re-do this with consideration of multi-buffer stuff
   const maxMeshes = pool.ptr.maxMeshes;
-  const maxTris = pool.sets.length * pool.ptr.setMaxTris;
+  const maxPrims = pool.sets.length * pool.ptr.setMaxPrims;
   const maxVerts = pool.sets.length * pool.ptr.setMaxVerts;
   // const maxLines = opts.lineInds.length / 2;
-  const maxLines = pool.sets.length * pool.ptr.setMaxLines;
   const vertStruct = pool.ptr.vertsStruct;
   const uniStruct = pool.ptr.unisStruct;
 
@@ -104,16 +104,13 @@ function logMeshPoolStats(pool: MeshPool<any, any>) {
   if (VERBOSE_MESH_POOL_STATS) {
     // log our estimated space usage stats
     console.log(
-      `Mesh space usage for up to ${maxMeshes} meshes, ${maxTris} tris, ${maxVerts} verts:`
+      `Mesh space usage for up to ${maxMeshes} meshes, ${maxPrims} tris/prims, ${maxVerts} verts:`
     );
     console.log(
       `   ${((maxVerts * vertStruct.size) / 1024).toFixed(1)} KB for verts`
     );
     console.log(
-      `   ${((maxTris * bytesPerTri) / 1024).toFixed(1)} KB for tri indices`
-    );
-    console.log(
-      `   ${((maxLines * bytesPerLine) / 1024).toFixed(1)} KB for line indices`
+      `   ${((maxPrims * bytesPerTri) / 1024).toFixed(1)} KB for prim indices`
     );
     console.log(
       `   ${((maxMeshes * uniStruct.size) / 1024).toFixed(
@@ -129,8 +126,7 @@ function logMeshPoolStats(pool: MeshPool<any, any>) {
     );
     const totalReservedBytes =
       maxVerts * vertStruct.size +
-      maxTris * bytesPerTri +
-      maxLines * bytesPerLine +
+      maxPrims * bytesPerTri +
       maxMeshes * uniStruct.size;
     console.log(
       `Total space reserved for objects: ${(totalReservedBytes / 1024).toFixed(
@@ -218,6 +214,7 @@ function computeQuadData(
   }
   return new Uint16Array(tempQuadData.buffer, 0, dataLen);
 }
+// TODO(@darzu): LINES: computeLineData
 
 const UNI_USAGE = GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM;
 const VERT_USAGE = GPUBufferUsage.COPY_DST | GPUBufferUsage.VERTEX;
@@ -252,6 +249,7 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     verts: CyArray<V>;
     indsPtr: CyIdxBufferPtr;
     inds: CyIdxBuffer;
+    // TODO(@darzu): LINES. rename to "numPrim" and become tri / line / point agnostic?
     numTris: number;
     numVerts: number;
     numLines: number;
@@ -273,9 +271,9 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     );
     resources.kindToNameToRes.array[vertsPtr.name] = verts;
     const indsPtr = CY.createIdxBuf(indsName(idx), {
-      init: ptr.setMaxTris * 3, // TODO(@darzu): alignment?
+      init: ptr.setMaxPrims * 3, // TODO(@darzu): alignment?
     });
-    const inds = createCyIdxBuf(device, indsPtr.name, ptr.setMaxTris * 3);
+    const inds = createCyIdxBuf(device, indsPtr.name, ptr.setMaxPrims * 3);
     resources.kindToNameToRes.idxBuffer[indsPtr.name] = inds;
     return {
       vertsPtr,
@@ -339,6 +337,7 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     const vertNum = reserved?.maxVertNum ?? _vertNum;
     const _triNum = m.tri.length + m.quad.length * 2;
     const triNum = reserved?.maxTriNum ?? _triNum;
+    // TODO(@darzu): LINES. handle lines
     const _lineNum = m.lines?.length ?? 0;
     const lineNum = reserved?.maxLineNum ?? _lineNum;
     assert(_vertNum <= vertNum, "Inconsistent num of vertices!");
@@ -366,14 +365,12 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
 
     // check if theoretically fit in any set
     assert(vertNum <= ptr.setMaxVerts, `Too many vertices!! ${vertNum}`);
-    assert(triNum <= ptr.setMaxTris, `Too many triangles!! ${triNum}`);
-    assert(lineNum <= ptr.setMaxLines, `Too many lines!! ${lineNum}`);
+    assert(triNum <= ptr.setMaxPrims, `Too many prims/tris!! ${triNum}`);
 
     // check if we fit in the current set
     const doesFit =
       pool.sets[currSetIdx].numVerts + vertNum <= ptr.setMaxVerts &&
-      pool.sets[currSetIdx].numTris + triNum <= ptr.setMaxTris &&
-      pool.sets[currSetIdx].numLines + lineNum <= ptr.setMaxLines;
+      pool.sets[currSetIdx].numTris + triNum <= ptr.setMaxPrims;
 
     // create a new set if needed
     if (!doesFit) pushNewBuffSet();
@@ -454,6 +451,8 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     if (PERF_DBG_GPU)
       _stats._accumVertDataQueued += vertCount * set.verts.struct.size;
   }
+
+  // TODO(@darzu): LINES. how to handle lines and points??
   function updateMeshTriangles(
     handle: MeshHandle,
     newMesh: Mesh,
