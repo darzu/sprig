@@ -417,9 +417,9 @@ export async function initMeshEditor() {
       if (didEnlargeMesh) {
         renderer.renderer.stdPool.updateMeshSize(handle, handle.mesh!);
         if (handle.mesh!.quad.length)
-          renderer.renderer.stdPool.updateMeshQuads(handle, handle.mesh!);
+          renderer.renderer.stdPool.updateMeshQuadInds(handle, handle.mesh!);
         if (handle.mesh!.tri.length)
-          renderer.renderer.stdPool.updateMeshTriangles(handle, handle.mesh!);
+          renderer.renderer.stdPool.updateMeshTriInds(handle, handle.mesh!);
       }
       if (didUpdateMesh || didEnlargeMesh) {
         renderer.renderer.stdPool.updateMeshVertices(handle, handle.mesh!);

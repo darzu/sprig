@@ -252,7 +252,7 @@ async function hostResetLevel(levelIdx: number) {
   ship.shipHealth.health = 1;
   resetWoodState(ship.woodState);
   EM.whenEntityHas(ship, RenderableDef, WoodStateDef).then((ship) =>
-    renderer.renderer.stdPool.updateMeshQuads(
+    renderer.renderer.stdPool.updateMeshQuadInds(
       ship.renderable.meshHandle,
       ship.woodState.mesh as Mesh,
       0,
@@ -274,7 +274,7 @@ async function hostResetLevel(levelIdx: number) {
   resetWoodHealth(dock.woodHealth);
   resetWoodState(dock.woodState);
   EM.whenEntityHas(dock, RenderableDef, WoodStateDef).then((dock) =>
-    renderer.renderer.stdPool.updateMeshQuads(
+    renderer.renderer.stdPool.updateMeshQuadInds(
       dock.renderable.meshHandle,
       dock.woodState.mesh as Mesh,
       0,

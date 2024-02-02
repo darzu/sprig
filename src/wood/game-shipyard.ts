@@ -325,7 +325,7 @@ export async function initShipyardGame(hosting: boolean) {
         const timber2 = await EM.whenEntityHas(timber, RenderableDef);
         resetWoodHealth(timber.woodHealth);
         resetWoodState(timber.woodState);
-        res.renderer.renderer.stdPool.updateMeshQuads(
+        res.renderer.renderer.stdPool.updateMeshQuadInds(
           timber2.renderable.meshHandle,
           timber.woodState.mesh as Mesh,
           0,

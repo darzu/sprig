@@ -32,15 +32,15 @@ EM.addSystem(
           p[2] = randVi();
           p[3] = randVi();
         });
-        if (m.tri.length) pool.updateMeshTriangles(e.renderable.meshHandle, m);
-        if (m.quad.length) pool.updateMeshQuads(e.renderable.meshHandle, m);
+        if (m.tri.length) pool.updateMeshTriInds(e.renderable.meshHandle, m);
+        if (m.quad.length) pool.updateMeshQuadInds(e.renderable.meshHandle, m);
       } else if (pool.ptr.prim === "line") {
         assert(m.lines?.length);
         m.lines.forEach((p) => {
           p[0] = randVi();
           p[1] = randVi();
         });
-        pool.updateMeshLines(e.renderable.meshHandle, m);
+        pool.updateMeshLineInds(e.renderable.meshHandle, m);
       } else {
         throw "TODO: GlitchDef for prim kind: " + pool.ptr.prim;
       }

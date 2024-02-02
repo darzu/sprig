@@ -351,7 +351,7 @@ EM.addLazyInit([RendererDef, TimeDef], [PiratePoolDef], (res) => {
       resetWoodHealth(timber.woodHealth);
       resetWoodState(timber.woodState);
       EM.whenEntityHas(timber, RenderableDef).then((timber2) => {
-        res.renderer.renderer.stdPool.updateMeshQuads(
+        res.renderer.renderer.stdPool.updateMeshQuadInds(
           timber2.renderable.meshHandle,
           timber.woodState.mesh as Mesh,
           0,

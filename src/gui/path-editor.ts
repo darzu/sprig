@@ -160,11 +160,8 @@ async function createPathEditor() {
       // copyMesh(res.outMesh, newOutMesh);
 
       // TODO(@darzu): move elsewhere
-      stdPool.updateMeshQuads(res.outEnt.renderable.meshHandle, res.outMesh);
-      stdPool.updateMeshTriangles(
-        res.outEnt.renderable.meshHandle,
-        res.outMesh
-      );
+      stdPool.updateMeshQuadInds(res.outEnt.renderable.meshHandle, res.outMesh);
+      stdPool.updateMeshTriInds(res.outEnt.renderable.meshHandle, res.outMesh);
       stdPool.updateMeshSize(res.outEnt.renderable.meshHandle, res.outMesh);
       stdPool.updateMeshVertices(res.outEnt.renderable.meshHandle, res.outMesh);
     }
@@ -315,9 +312,9 @@ export async function initPathEditor() {
       if (didEnlargeMesh) {
         stdPool.updateMeshSize(handle, handle.mesh!);
         if (handle.mesh!.quad.length)
-          stdPool.updateMeshQuads(handle, handle.mesh!);
+          stdPool.updateMeshQuadInds(handle, handle.mesh!);
         if (handle.mesh!.tri.length)
-          stdPool.updateMeshTriangles(handle, handle.mesh!);
+          stdPool.updateMeshTriInds(handle, handle.mesh!);
       }
       if (didUpdateMesh || didEnlargeMesh) {
         stdPool.updateMeshVertices(handle, handle.mesh!);
