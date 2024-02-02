@@ -1,7 +1,8 @@
 import { align, alignDown } from "../utils/math.js";
-import { assert, assertDbg, dbgLogOnce, never } from "../utils/util.js";
+import { assert, assertDbg, dbgLogOnce } from "../utils/util.js";
+import { never } from "../utils/util-no-import.js";
 import { CyStructDesc, CyToTS } from "./gpu-struct.js";
-import { Mesh } from "../meshes/mesh.js";
+import { Mesh, RawMesh } from "../meshes/mesh.js";
 import {
   createCyArray,
   createCyIdxBuf,
@@ -15,6 +16,7 @@ import {
   CyArrayPtr,
   CyIdxBufferPtr,
   CyMeshPoolPtr,
+  PrimKind,
 } from "./gpu-registry.js";
 import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { DEFAULT_MASK } from "./pipeline-masks.js";
@@ -359,6 +361,13 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     updateMeshInstance,
   };
 
+  function getNumPrimsOfKind(m: RawMesh, k: PrimKind): number {
+    if (primKind === "tri") return m.tri.length + m.quad.length * 2;
+    else if (primKind === "line") return m.lines?.length ?? 0;
+    else if (primKind === "point") return m.pos.length;
+    else never(primKind);
+  }
+
   function addMesh(m: Mesh, reserved?: MeshReserve): MeshHandle {
     // TODO(@darzu): handle fragmentation! Right now we always try to add
     //    to latest set
@@ -370,11 +379,7 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     // determine this size
     const _vertNum = m.pos.length;
     const vertNum = reserved?.maxVertNum ?? _vertNum;
-    let _primNum;
-    if (primKind === "tri") _primNum = m.tri.length + m.quad.length * 2;
-    else if (primKind === "line") _primNum = m.lines?.length ?? 0;
-    else if (primKind === "point") throw "TODO: points";
-    else never(primKind);
+    let _primNum = getNumPrimsOfKind(m, primKind);
     const primNum = reserved?.maxPrimNum ?? _primNum;
     assert(_vertNum <= vertNum, "Inconsistent num of vertices!");
     assert(_primNum <= primNum, "Inconsistent num of triangles!");

@@ -68,8 +68,9 @@ import { stdGridRender } from "../render/pipelines/std-grid.js";
 import {
   LineRenderDataDef,
   lineMeshPoolPtr,
+  pointMeshPoolPtr,
   stdLinesRender,
-} from "../render/pipelines/std-line.js";
+} from "../render/pipelines/std-line-point.js";
 import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
 import { noisePipes } from "../render/pipelines/std-noise.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
@@ -412,6 +413,29 @@ export async function initGrayboxShipArena() {
     );
 
     EM.set(e, GlitchDef);
+  });
+
+  // point exp
+  EM.whenResources(BallMesh.def).then((ball) => {
+    const mesh = cloneMesh(ball.mesh_ball.mesh);
+
+    const e = createObj(
+      [RenderableConstructDef, PositionDef, ColorDef, ScaleDef] as const,
+      {
+        renderableConstruct: [
+          mesh,
+          true,
+          undefined,
+          undefined,
+          pointMeshPoolPtr,
+        ],
+        position: [-40, 0, 40],
+        scale: [10, 10, 10],
+        color: ENDESGA16.lightBlue,
+      }
+    );
+
+    // EM.set(e, GlitchDef);
   });
 
   // bouncing balls

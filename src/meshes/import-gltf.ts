@@ -1,6 +1,7 @@
 import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { RawMesh, Rigging } from "./mesh.js";
-import { assert, never } from "../utils/util.js";
+import { assert } from "../utils/util.js";
+import { never } from "../utils/util-no-import.js";
 import { idPair, IdPair, isString } from "../utils/util.js";
 import { texTypeIsDepthAndStencil } from "../render/gpu-struct.js";
 import { vec3Dbg } from "../utils/utils-3d.js";

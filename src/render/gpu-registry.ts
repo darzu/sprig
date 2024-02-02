@@ -14,6 +14,7 @@ import {
 } from "./gpu-struct.js";
 import { Mesh } from "../meshes/mesh.js";
 import { ShaderName, ShaderSet } from "./shader-loader.js";
+import { never } from "../utils/util-no-import.js";
 
 // NOTE: this file is supposed to be WebGPU and WebGL agnostic.
 
@@ -115,13 +116,19 @@ export type ComputeVertsDataFn<V extends CyStructDesc> = (
   count: number
 ) => CyToTS<V>[];
 
+export type PrimKind = "tri" | "line" | "point";
+
+export function numIndsPerPrim(k: PrimKind) {
+  return k === "tri" ? 3 : k === "line" ? 2 : k === "point" ? 1 : never(k);
+}
+
 // MESH POOL
 export interface CyMeshPoolPtr<
   V extends CyStructDesc = CyStructDesc,
   U extends CyStructDesc = CyStructDesc
 > extends CyResourcePtr {
   kind: "meshPool";
-  prim: "tri" | "line" | "point";
+  prim: PrimKind;
   // TODO(@darzu): remove id and name, this doesn't need to be inited directly
   computeVertsData: ComputeVertsDataFn<V>;
   computeUniData: (m: Mesh) => CyToTS<U>;

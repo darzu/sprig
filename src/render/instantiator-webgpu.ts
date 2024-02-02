@@ -3,7 +3,6 @@ import { ControllableDef } from "../input/controllable.js";
 import { V4, V } from "../matrix/sprig-matrix.js";
 import { assert } from "../utils/util.js";
 import {
-  never,
   capitalize,
   pluralize,
   uncapitalize,
@@ -11,6 +10,7 @@ import {
   isFunction,
   dbgLogOnce,
 } from "../utils/util.js";
+import { never } from "../utils/util-no-import.js";
 import {
   PtrKindToResourceType,
   createCyArray,
@@ -922,6 +922,8 @@ export function bundleRenderPipelines(
           ]);
           // TODO(@darzu): do we always want to draw max or do we want to rebundle?
           let numPrim = m.reserved?.maxPrimNum ?? m.primNum;
+
+          // TODO(@darzu): POINTS. numIndsPerPrim
 
           if (p.pool.ptr.prim === "tri") {
             bundleEnc.drawIndexed(

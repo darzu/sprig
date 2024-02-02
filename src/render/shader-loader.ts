@@ -26,6 +26,7 @@ export const ShaderPaths = [
   "std-dots",
   "std-grid",
   "std-line",
+  "std-point",
 ] as const;
 
 export type ShaderName = (typeof ShaderPaths)[number];

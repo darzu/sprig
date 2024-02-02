@@ -1,5 +1,6 @@
 import { assert } from "../utils/util.js";
-import { isFunction, never } from "../utils/util.js";
+import { isFunction } from "../utils/util.js";
+import { never } from "../utils/util-no-import.js";
 import {
   CY,
   CyDepthAttachment,
