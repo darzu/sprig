@@ -17,6 +17,9 @@ fn vert_main(input: VertexInput) -> VertexOutput {
     output.position = scene.cameraViewProjMatrix * worldPos;
     output.color = color + meshUni.tint;
 
+    // TODO(@darzu): instead of this depth bias, we should do a surface check
+    output.position.w += 0.1;
+
     return output;
 }
 

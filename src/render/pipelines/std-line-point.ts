@@ -168,6 +168,7 @@ export const stdPointsRender = CY.createRenderPipeline("stdPointsRender", {
     },
   ],
   depthStencil: mainDepthTex,
+  // depthCompare: "less-equal",
   shader: "std-point",
 });
 

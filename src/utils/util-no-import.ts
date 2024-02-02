@@ -31,3 +31,8 @@ export function dbgClearBlame(kind: string) {
 export function never(x: never, msg?: string): never {
   throw new Error(msg ?? `never(${x})`);
 }
+
+// TODO(@darzu): put on prototype?
+export function flatten<A>(doubleArr: A[][]): A[] {
+  return doubleArr.reduce((p, n) => [...p, ...n], []);
+}

@@ -103,7 +103,7 @@ import {
   wrap,
 } from "../utils/math.js";
 import { Path } from "../utils/spline.js";
-import { PI } from "../utils/util-no-import.js";
+import { PI, flatten } from "../utils/util-no-import.js";
 import { assert, dbgOnce, range } from "../utils/util.js";
 import {
   angleBetween,
@@ -446,12 +446,61 @@ export async function initGrayboxShipArena() {
     });
   }
 
+  function distributePointsOnTriangle(pos: V3[], ind: V3, num: number): V3[] {
+    const points: V3[] = [];
+
+    // TODO(@darzu): do something fancy and more evenly distributed
+
+    const p0 = pos[ind[0]];
+    const p1 = pos[ind[1]];
+    const p2 = pos[ind[2]];
+
+    for (let i = 0; i < num; i++) {
+      const u = V3.sub(p2, p0);
+      // const uLen = V3.len(u);
+      const v = V3.sub(p1, p0);
+      // const vLen = V3.len(v);
+
+      let uLen = Math.random();
+      let vLen = Math.random();
+      while (uLen + vLen > 1.0) {
+        // TODO(@darzu): reflect accross u = -v + 1
+        uLen = Math.random();
+        vLen = Math.random();
+      }
+
+      const randU = V3.scale(u, uLen);
+      const randV = V3.scale(v, vLen);
+
+      const newP = V3.add(p0, V3.add(randU, randV), V3.mk());
+      points.push(newP);
+    }
+
+    return points;
+  }
+
   // point exp
   if (DBG_POINTS) {
     EM.whenResources(BallMesh.def).then((ball) => {
-      const mesh = cloneMesh(ball.mesh_ball.mesh);
+      const ptMesh = cloneMesh(ball.mesh_ball.mesh);
+      {
+        let newPoints: V3[][] = [];
+        for (let t of ptMesh.tri) {
+          const _stk = tmpStack();
+          const ps = distributePointsOnTriangle(ptMesh.pos, t, 10);
+          newPoints.push(ps);
+          _stk.pop();
+        }
+        ptMesh.pos = flatten(newPoints);
+        ptMesh.tri = [];
+        ptMesh.quad = [];
+        ptMesh.colors = [];
+        ptMesh.surfaceIds = [];
+        ptMesh.lines = undefined;
+      }
 
-      for (let i = 0; i < 40; i++)
+      for (let i = 0; i < 4; i++) {
+        const color = seqEndesga16();
         createObj(
           [
             RenderableConstructDef,
@@ -462,19 +511,44 @@ export async function initGrayboxShipArena() {
           ] as const,
           {
             renderableConstruct: [
-              mesh,
+              BallMesh,
+              true,
+              undefined,
+              undefined,
+              meshPoolPtr,
+            ],
+            // position: [-40, 0, 40],
+            position: [40 * i, 40 * i, 40],
+            scale: [10, 10, 10],
+            rotation: quat.fromYawPitchRoll(i * PI * 0.123),
+            color,
+          }
+        );
+
+        createObj(
+          [
+            RenderableConstructDef,
+            PositionDef,
+            ColorDef,
+            ScaleDef,
+            RotationDef,
+          ] as const,
+          {
+            renderableConstruct: [
+              ptMesh,
               true,
               undefined,
               undefined,
               pointMeshPoolPtr,
             ],
             // position: [-40, 0, 40],
-            position: [0, 0, 40],
+            position: [40 * i, 40 * i, 40],
             scale: [10, 10, 10],
             rotation: quat.fromYawPitchRoll(i * PI * 0.123),
-            color: ENDESGA16.lightBlue,
+            color,
           }
         );
+      }
 
       // EM.set(e, GlitchDef);
     });
