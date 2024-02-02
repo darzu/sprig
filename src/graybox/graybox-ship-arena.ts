@@ -111,6 +111,7 @@ import { WindDef, setWindAngle } from "../wind/wind.js";
 import { createSock } from "../wind/windsock.js";
 import { dbgPathWithGizmos } from "../wood/shipyard.js";
 import { DotsDef } from "./dots.js";
+import { GlitchDef } from "./glitch.js";
 import { createSun, initGhost, initGrayboxWorld } from "./graybox-helpers.js";
 import { ObjEnt, T, createObj, defineObj, mixinObj } from "./objects.js";
 
@@ -130,8 +131,6 @@ const DBG_DOTS = false;
 const DBG_ENEMY = true;
 
 const SAIL_FURL_RATE = 0.02;
-
-const GlitchDef = EM.defineComponent("glitch", () => true);
 
 const CannonObj = defineObj({
   name: "cannon2",
@@ -376,124 +375,47 @@ export async function initGrayboxShipArena() {
   );
 
   // line exp
-  // const box = createObj(
-  //   [RenderableConstructDef, PositionDef, ColorDef, ScaleDef] as const,
-  //   {
-  //     renderableConstruct: [
-  //       mkCubeMesh(),
-  //       true,
-  //       undefined,
-  //       undefined,
-  //       lineMeshPoolPtr,
-  //     ],
-  //     position: [0, 0, 40],
-  //     scale: [10, 10, 10],
-  //     color: ENDESGA16.lightGreen,
-  //   }
-  // );
-  // EM.whenEntityHas(box, RenderableDef).then((box2) => {
-  //   createObj(
-  //     [RenderableConstructDef, PositionDef, ColorDef, ScaleDef] as const,
-  //     {
-  //       renderableConstruct: [
-  //         box2.renderable.meshHandle,
-  //         true,
-  //         undefined,
-  //         undefined,
-  //         lineMeshPoolPtr,
-  //       ],
-  //       position: [-40, 0, 40],
-  //       scale: [10, 10, 10],
-  //       color: ENDESGA16.darkGreen,
-  //     }
-  //   );
-  // });
-  // EM.whenResources(BallMesh.def).then((ball) => {
-  //   const mesh = cloneMesh(ball.mesh_ball.mesh);
-  //   mesh.lines = range(9).map((_) => V(0, 1));
+  const box = createObj(
+    [RenderableConstructDef, PositionDef, ColorDef, ScaleDef] as const,
+    {
+      renderableConstruct: [
+        mkCubeMesh(),
+        true,
+        undefined,
+        undefined,
+        lineMeshPoolPtr,
+      ],
+      position: [0, 0, 40],
+      scale: [10, 10, 10],
+      color: ENDESGA16.lightGreen,
+    }
+  );
+  EM.set(box, GlitchDef);
+  EM.whenResources(BallMesh.def).then((ball) => {
+    const mesh = cloneMesh(ball.mesh_ball.mesh);
+    mesh.lines = range(9).map((_) => V(0, 1));
 
-  //   createObj(
-  //     [RenderableConstructDef, PositionDef, ColorDef, ScaleDef] as const,
-  //     {
-  //       renderableConstruct: [
-  //         mesh,
-  //         true,
-  //         undefined,
-  //         undefined,
-  //         lineMeshPoolPtr,
-  //       ],
-  //       position: [40, 0, 40],
-  //       scale: [10, 10, 10],
-  //       color: ENDESGA16.orange,
-  //     }
-  //   );
-  // });
-  // EM.addSystem(
-  //   "updateLineBox",
-  //   Phase.GAME_WORLD,
-  //   [LineRenderDataDef, RenderableDef],
-  //   [TimeDef, RendererDef],
-  //   (es, res) => {
-  //     if (res.time.step % 10 !== 0) return;
+    const e = createObj(
+      [RenderableConstructDef, PositionDef, ColorDef, ScaleDef] as const,
+      {
+        renderableConstruct: [
+          mesh,
+          true,
+          undefined,
+          undefined,
+          lineMeshPoolPtr,
+        ],
+        position: [40, 0, 40],
+        scale: [10, 10, 10],
+        color: ENDESGA16.orange,
+      }
+    );
 
-  //     for (let e of es) {
-  //       const m = e.renderable.meshHandle.mesh;
-  //       const randVi = () => randInt(0, m.pos.length - 1);
-  //       m.lines!.forEach((l, li) => {
-  //         l[0] = randVi();
-  //         l[1] = randVi();
-  //       });
-  //       res.renderer.renderer
-  //         .getCyResource(lineMeshPoolPtr)!
-  //         .updateMeshLines(e.renderable.meshHandle, m);
-  //     }
-  //   }
-  // );
+    EM.set(e, GlitchDef);
+  });
 
   // bouncing balls
   createBouncingBalls();
-
-  EM.addSystem(
-    "updateTriLists",
-    Phase.GAME_WORLD,
-    [RenderDataStdDef, RenderableDef, GlitchDef],
-    [TimeDef, RendererDef],
-    (es, res) => {
-      if (res.time.step % 10 !== 0) return;
-
-      console.log("running");
-
-      for (let e of es) {
-        const m = e.renderable.meshHandle.mesh;
-        const randVi = () => randInt(0, m.pos.length - 1);
-        m.tri.forEach((p) => {
-          p[0] = randVi();
-          p[1] = randVi();
-          p[2] = randVi();
-        });
-        m.quad.forEach((p) => {
-          p[0] = randVi();
-          p[1] = randVi();
-          p[2] = randVi();
-          p[3] = randVi();
-        });
-        if (m.tri.length)
-          res.renderer.renderer.stdPool.updateMeshTriangles(
-            e.renderable.meshHandle,
-            m
-          );
-        if (m.quad.length)
-          res.renderer.renderer.stdPool.updateMeshQuads(
-            e.renderable.meshHandle,
-            m
-          );
-        // res.renderer.renderer.stdPool.updateMeshVertices(
-        //   e.renderable.meshHandle,
-        //   m
-        // );
-      }
-    }
-  );
 
   // wind
   const wind = EM.addResource(WindDef);
