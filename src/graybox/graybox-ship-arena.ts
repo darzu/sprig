@@ -3,6 +3,7 @@ import { CameraDef, CameraFollowDef } from "../camera/camera.js";
 import { fireBullet } from "../cannons/bullet.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { AllEndesga16, ENDESGA16, seqEndesga16 } from "../color/palettes.js";
+import { DevConsoleDef } from "../debug/console.js";
 import { DeletedDef } from "../ecs/delete.js";
 import { EM, EntityW, Resources } from "../ecs/entity-manager.js";
 import { Phase } from "../ecs/sys-phase.js";
@@ -55,6 +56,7 @@ import { CyArray } from "../render/data-webgpu.js";
 import { GraphicsSettingsDef } from "../render/graphics-settings.js";
 import { PointLightDef } from "../render/lights.js";
 import { DEFAULT_MASK, GRID_MASK } from "../render/pipeline-masks.js";
+import { createGridComposePipelines } from "../render/pipelines/std-compose.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
 import {
   DotStruct,
@@ -71,6 +73,7 @@ import {
   pointMeshPoolPtr,
   stdLinesRender,
   stdPointsRender,
+  xpPointTex,
 } from "../render/pipelines/std-line-point.js";
 import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
 import { noisePipes } from "../render/pipelines/std-noise.js";
@@ -311,6 +314,12 @@ function createOcean() {
   return grid;
 }
 
+const dbgGrid = [
+  [xpPointTex, xpPointTex],
+  [xpPointTex, xpPointTex],
+];
+let dbgGridCompose = createGridComposePipelines(dbgGrid);
+
 export async function initGrayboxShipArena() {
   // TODO(@darzu): WORLD GRID:
   /*
@@ -320,21 +329,29 @@ export async function initGrayboxShipArena() {
   */
 
   // TODO(@darzu): WORK AROUND: see below
-  EM.addEagerInit([], [RendererDef, GraphicsSettingsDef], [], (res) => {
-    // renderer
-    res.renderer.pipelines = [
-      ...shadowPipelines,
-      stdRenderPipeline,
-      // stdLinesRender,
-      renderDots,
-      outlineRender,
-      deferredPipeline,
-      stdGridRender,
-      stdLinesRender,
-      stdPointsRender,
-      postProcess,
-    ];
-  });
+
+  EM.addSystem(
+    "shipArenaPipelines",
+    Phase.GAME_WORLD,
+    [],
+    [RendererDef, GraphicsSettingsDef, DevConsoleDef],
+    (_, res) => {
+      // renderer
+      res.renderer.pipelines = [
+        ...shadowPipelines,
+        stdRenderPipeline,
+        // stdLinesRender,
+        renderDots,
+        outlineRender,
+        deferredPipeline,
+        stdGridRender,
+        stdLinesRender,
+        stdPointsRender,
+        postProcess,
+        ...(res.dev.showConsole ? dbgGridCompose : []),
+      ];
+    }
+  );
 
   const { camera } = await EM.whenResources(CameraDef);
 

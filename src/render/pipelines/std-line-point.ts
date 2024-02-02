@@ -129,6 +129,12 @@ export const pointMeshPoolPtr = CY.createMeshPool("pointMeshPool", {
   prim: "point",
 });
 
+export const xpPointTex = CY.createTexture("xpPointTex", {
+  size: [100, 100],
+  onCanvasResize: (w, h) => [w, h],
+  format: "rgba8unorm",
+});
+
 export const stdPointsRender = CY.createRenderPipeline("stdPointsRender", {
   globals: [sceneBufPtr],
   cullMode: "back",
@@ -141,8 +147,8 @@ export const stdPointsRender = CY.createRenderPipeline("stdPointsRender", {
   shaderFragmentEntry: "frag_main",
   output: [
     {
-      ptr: litTexturePtr,
-      clear: "never",
+      ptr: xpPointTex,
+      clear: "once",
       blend: {
         color: {
           srcFactor: "src-alpha",
