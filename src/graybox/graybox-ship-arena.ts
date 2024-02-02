@@ -67,6 +67,7 @@ import {
   renderDots,
 } from "../render/pipelines/std-dots.js";
 import { stdGridRender } from "../render/pipelines/std-grid.js";
+import { createJfaPipelines } from "../render/pipelines/std-jump-flood.js";
 import {
   LineRenderDataDef,
   lineMeshPoolPtr,
@@ -134,6 +135,8 @@ const DBG_GHOST = true;
 const DBG_GIZMO = true;
 const DBG_DOTS = false;
 const DBG_ENEMY = true;
+const DBG_POINTS = true;
+const DBG_LINE = false;
 
 const SAIL_FURL_RATE = 0.02;
 
@@ -314,11 +317,14 @@ function createOcean() {
   return grid;
 }
 
+const pointsJFA = createJfaPipelines(xpPointTex, "interior");
+
 const dbgGrid = [
   [xpPointTex, xpPointTex],
   [xpPointTex, xpPointTex],
 ];
-let dbgGridCompose = createGridComposePipelines(dbgGrid);
+// let dbgGridCompose = createGridComposePipelines(dbgGrid);
+let dbgGridCompose = createGridComposePipelines(pointsJFA._debugGrid);
 
 export async function initGrayboxShipArena() {
   // TODO(@darzu): WORLD GRID:
@@ -348,6 +354,9 @@ export async function initGrayboxShipArena() {
         stdLinesRender,
         stdPointsRender,
         postProcess,
+
+        // TODO(@darzu):
+        ...pointsJFA.allPipes(),
         ...(res.dev.showConsole ? dbgGridCompose : []),
       ];
     }
@@ -396,75 +405,80 @@ export async function initGrayboxShipArena() {
   );
 
   // line exp
-  const box = createObj(
-    [RenderableConstructDef, PositionDef, ColorDef, ScaleDef] as const,
-    {
-      renderableConstruct: [
-        mkCubeMesh(),
-        true,
-        undefined,
-        undefined,
-        lineMeshPoolPtr,
-      ],
-      position: [0, 0, 40],
-      scale: [10, 10, 10],
-      color: ENDESGA16.lightGreen,
-    }
-  );
-  // EM.set(box, GlitchDef);
-  EM.whenResources(BallMesh.def).then((ball) => {
-    const mesh = cloneMesh(ball.mesh_ball.mesh);
-    mesh.lines = range(9).map((_) => V(0, 1));
-
-    const e = createObj(
+  if (DBG_LINE) {
+    const box = createObj(
       [RenderableConstructDef, PositionDef, ColorDef, ScaleDef] as const,
       {
         renderableConstruct: [
-          mesh,
+          mkCubeMesh(),
           true,
           undefined,
           undefined,
           lineMeshPoolPtr,
         ],
-        position: [40, 0, 40],
+        position: [0, 0, 40],
         scale: [10, 10, 10],
-        color: ENDESGA16.orange,
+        color: ENDESGA16.lightGreen,
       }
     );
+    // EM.set(box, GlitchDef);
+    EM.whenResources(BallMesh.def).then((ball) => {
+      const mesh = cloneMesh(ball.mesh_ball.mesh);
+      mesh.lines = range(9).map((_) => V(0, 1));
 
-    EM.set(e, GlitchDef);
-  });
-
-  // point exp
-  EM.whenResources(BallMesh.def).then((ball) => {
-    const mesh = cloneMesh(ball.mesh_ball.mesh);
-
-    for (let i = 0; i < 40; i++)
-      createObj(
-        [
-          RenderableConstructDef,
-          PositionDef,
-          ColorDef,
-          ScaleDef,
-          RotationDef,
-        ] as const,
+      const e = createObj(
+        [RenderableConstructDef, PositionDef, ColorDef, ScaleDef] as const,
         {
           renderableConstruct: [
             mesh,
             true,
             undefined,
             undefined,
-            pointMeshPoolPtr,
+            lineMeshPoolPtr,
           ],
-          position: [-40, 0, 40],
+          position: [40, 0, 40],
           scale: [10, 10, 10],
-          rotation: quat.fromYawPitchRoll(i * PI * 0.123),
-          color: ENDESGA16.lightBlue,
+          color: ENDESGA16.orange,
         }
       );
 
-    // EM.set(e, GlitchDef);
-  });
+      EM.set(e, GlitchDef);
+    });
+  }
+
+  // point exp
+  if (DBG_POINTS) {
+    EM.whenResources(BallMesh.def).then((ball) => {
+      const mesh = cloneMesh(ball.mesh_ball.mesh);
+
+      for (let i = 0; i < 40; i++)
+        createObj(
+          [
+            RenderableConstructDef,
+            PositionDef,
+            ColorDef,
+            ScaleDef,
+            RotationDef,
+          ] as const,
+          {
+            renderableConstruct: [
+              mesh,
+              true,
+              undefined,
+              undefined,
+              pointMeshPoolPtr,
+            ],
+            // position: [-40, 0, 40],
+            position: [0, 0, 40],
+            scale: [10, 10, 10],
+            rotation: quat.fromYawPitchRoll(i * PI * 0.123),
+            color: ENDESGA16.lightBlue,
+          }
+        );
+
+      // EM.set(e, GlitchDef);
+    });
+  }
 
   // bouncing balls
   // createBouncingBalls();

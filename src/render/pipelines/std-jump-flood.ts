@@ -25,6 +25,7 @@ export interface JfaResult {
 
 let nextId = 1; // TODO(@darzu): hack so we don't need to name everything
 
+// TODO(@darzu): wish this didn't have to be called at the top level always
 export function createJfaPipelines(
   maskTex: CyTexturePtr,
   maskMode: "interior" | "border" | "exterior"

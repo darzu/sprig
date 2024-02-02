@@ -149,6 +149,10 @@ export const stdPointsRender = CY.createRenderPipeline("stdPointsRender", {
     {
       ptr: xpPointTex,
       clear: "once",
+    },
+    {
+      ptr: litTexturePtr,
+      clear: "never",
       blend: {
         color: {
           srcFactor: "src-alpha",

@@ -21,7 +21,8 @@ fn vert_main(input: VertexInput) -> VertexOutput {
 }
 
 struct FragOut {
-  @location(0) color: vec4<f32>,
+  @location(0) mask: vec4<f32>,
+  @location(1) color: vec4<f32>,
 }
 
 @fragment
@@ -34,6 +35,7 @@ fn frag_main(input: VertexOutput) -> FragOut {
   var out: FragOut;
 
   out.color = vec4(color, alpha);
+  out.mask = vec4(1.0);
   
   return out;
 }
