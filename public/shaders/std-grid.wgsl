@@ -45,7 +45,7 @@ fn frag_main(input: VertexOutput) -> FragOut {
   let uv2 = worldPos.xy / lineSpacing2;
   let uvDDXY = vec4(dpdx(uv), dpdy(uv));
   let uvDDXY2 = vec4(dpdx(uv2), dpdy(uv2));
-  if (worldPos.y < -1.0 && worldPos.x < -1.0) {
+  // if (worldPos.y < -1.0 && worldPos.x < -1.0) {
     // bgolus inspired:
     { // grid #1
       let uvDeriv = vec2(length(uvDDXY.xz), length(uvDDXY.yw));
@@ -67,68 +67,68 @@ fn frag_main(input: VertexOutput) -> FragOut {
       grid = mix(grid, lineFrac2, saturate(uvDeriv * 2.0 - 1.0));
       alpha += mix(grid.x, 1.0, grid.y);
     }
-  } else if (worldPos.y < -1.0  && worldPos.x > 1.0) {
-    // iquilezles box filter:
-    // TODO(@darzu): center lines
-    const N = 1 / lineFrac.x;
-    let w = max(abs(uvDDXY.xy), abs(uvDDXY.zw));
-    let a = uv + 0.5*w; 
-    let b = uv - 0.5*w; 
-    let i = (floor(a)+min(fract(a)*N,vec2(1.0))-
-              floor(b)-min(fract(b)*N,vec2(1.0)))/(N*w);
-    alpha =  1.0 - (1.0-i.x)*(1.0-i.y);
-  } else if (worldPos.y > 1.0 && worldPos.x > 1.0) {
-    // // line width varies by worldPos ??
-    // var width = 0.5;
-    // var num = worldPos.x / 5.0;
-    // var i = 0;
-    // for (i = 0; i < 5; i++) {
-    //   if (fract(num / 5.0) < 0.2) {
-    //     width *= 5.0;
-    //     num /= 5.0;
-    //   }
-    // }
-    // naive:
-    if (
-      fract(uv.x) < lineFrac.x
-      || fract(uv.y) < lineFrac.y
-      // || fract(uv2.x) < lineFrac2.x
-      // || fract(uv2.y) < lineFrac2.y
-    ) {
-      alpha = 1.0;
-    } else {
-      alpha = 0.0;
-    }
-  } else if (worldPos.y > 1.0 && worldPos.x < -1.0) {
-    // iquilezles dots:
-    const N = 1 / lineFrac.x * 0.5;
-    let w = max(abs(uvDDXY.xy), abs(uvDDXY.zw));
-    let a = uv + 0.5*w; 
-    let b = uv - 0.5*w;    
-    let i = (floor(a)+min(fract(a)*N,vec2(1.0))-
-            floor(b)-min(fract(b)*N,vec2(1.0)))/(N*w);
-    alpha += sqrt(i.x*i.y);
+  // } else if (worldPos.y < -1.0  && worldPos.x > 1.0) {
+  //   // iquilezles box filter:
+  //   // TODO(@darzu): center lines
+  //   const N = 1 / lineFrac.x;
+  //   let w = max(abs(uvDDXY.xy), abs(uvDDXY.zw));
+  //   let a = uv + 0.5*w; 
+  //   let b = uv - 0.5*w; 
+  //   let i = (floor(a)+min(fract(a)*N,vec2(1.0))-
+  //             floor(b)-min(fract(b)*N,vec2(1.0)))/(N*w);
+  //   alpha =  1.0 - (1.0-i.x)*(1.0-i.y);
+  // } else if (worldPos.y > 1.0 && worldPos.x > 1.0) {
+  //   // // line width varies by worldPos ??
+  //   // var width = 0.5;
+  //   // var num = worldPos.x / 5.0;
+  //   // var i = 0;
+  //   // for (i = 0; i < 5; i++) {
+  //   //   if (fract(num / 5.0) < 0.2) {
+  //   //     width *= 5.0;
+  //   //     num /= 5.0;
+  //   //   }
+  //   // }
+  //   // naive:
+  //   if (
+  //     fract(uv.x) < lineFrac.x
+  //     || fract(uv.y) < lineFrac.y
+  //     // || fract(uv2.x) < lineFrac2.x
+  //     // || fract(uv2.y) < lineFrac2.y
+  //   ) {
+  //     alpha = 1.0;
+  //   } else {
+  //     alpha = 0.0;
+  //   }
+  // } else if (worldPos.y > 1.0 && worldPos.x < -1.0) {
+  //   // iquilezles dots:
+  //   const N = 1 / lineFrac.x * 0.5;
+  //   let w = max(abs(uvDDXY.xy), abs(uvDDXY.zw));
+  //   let a = uv + 0.5*w; 
+  //   let b = uv - 0.5*w;    
+  //   let i = (floor(a)+min(fract(a)*N,vec2(1.0))-
+  //           floor(b)-min(fract(b)*N,vec2(1.0)))/(N*w);
+  //   alpha += sqrt(i.x*i.y);
 
-    const N2 = 1 / lineFrac2.x * 0.5;
-    let w2 = max(abs(uvDDXY2.xy), abs(uvDDXY2.zw));
-    let a2 = uv2 + 0.5*w2; 
-    let b2 = uv2 - 0.5*w2; 
-    let i2 = (floor(a2)+min(fract(a2)*N2,vec2(1.0))-
-              floor(b2)-min(fract(b2)*N2,vec2(1.0)))/(N2*w2);
-    // alpha += 1.0 - (1.0-i.x)*(1.0-i.y);
-    // alpha +=  1.0 - 1.0-i.x-i.y+2.0*i.x*i.y;
-    // alpha += max(i.x, i2.x) * max(i.y, i2.y);
-    alpha += sqrt(i2.x*i2.y);
-  } else {
-    color = vec3(1);
-    if (abs(worldPos.y) <= 1.0 && worldPos.x > 0) {
-      color = vec3(1,0,0);
-    }
-    else if (abs(worldPos.x) <= 1.0 && worldPos.y > 0) {
-      color = vec3(0,1,0);
-    }
-    alpha = 1.0;
-  }
+  //   const N2 = 1 / lineFrac2.x * 0.5;
+  //   let w2 = max(abs(uvDDXY2.xy), abs(uvDDXY2.zw));
+  //   let a2 = uv2 + 0.5*w2; 
+  //   let b2 = uv2 - 0.5*w2; 
+  //   let i2 = (floor(a2)+min(fract(a2)*N2,vec2(1.0))-
+  //             floor(b2)-min(fract(b2)*N2,vec2(1.0)))/(N2*w2);
+  //   // alpha += 1.0 - (1.0-i.x)*(1.0-i.y);
+  //   // alpha +=  1.0 - 1.0-i.x-i.y+2.0*i.x*i.y;
+  //   // alpha += max(i.x, i2.x) * max(i.y, i2.y);
+  //   alpha += sqrt(i2.x*i2.y);
+  // } else {
+  //   color = vec3(1);
+  //   if (abs(worldPos.y) <= 1.0 && worldPos.x > 0) {
+  //     color = vec3(1,0,0);
+  //   }
+  //   else if (abs(worldPos.x) <= 1.0 && worldPos.y > 0) {
+  //     color = vec3(0,1,0);
+  //   }
+  //   alpha = 1.0;
+  // }
 
   alpha *= 0.5;
 

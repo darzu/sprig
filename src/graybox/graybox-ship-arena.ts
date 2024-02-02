@@ -74,6 +74,10 @@ import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
 import { noisePipes } from "../render/pipelines/std-noise.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
+import {
+  RenderDataStdDef,
+  meshPoolPtr,
+} from "../render/pipelines/std-scene.js";
 import { shadowPipelines } from "../render/pipelines/std-shadow.js";
 import {
   RenderableConstructDef,
@@ -126,6 +130,8 @@ const DBG_DOTS = false;
 const DBG_ENEMY = true;
 
 const SAIL_FURL_RATE = 0.02;
+
+const GlitchDef = EM.defineComponent("glitch", () => true);
 
 const CannonObj = defineObj({
   name: "cannon2",
@@ -351,10 +357,11 @@ export async function initGrayboxShipArena() {
   createSun();
 
   // gizmo
-  addWorldGizmo(V(0, 0, 0), 50);
+  const gizmo = addWorldGizmo(V(0, 0, 0), 50);
+  // EM.set(gizmo, GlitchDef);
 
   // ocean
-  const oceanGrid = createOcean();
+  // const oceanGrid = createOcean();
 
   // grid
   const grid = createObj(
@@ -363,88 +370,130 @@ export async function initGrayboxShipArena() {
       renderableConstruct: [PlaneMesh, true, undefined, GRID_MASK],
       position: [0, 0, 0],
       scale: [2 * camera.viewDist, 2 * camera.viewDist, 1],
-      // color: [0, 1, 1],
-      color: [1, 1, 1],
+      color: [0, 0.5, 0.5],
+      // color: [1, 1, 1],
     }
   );
 
   // line exp
-  const box = createObj(
-    [RenderableConstructDef, PositionDef, ColorDef, ScaleDef] as const,
-    {
-      renderableConstruct: [
-        mkCubeMesh(),
-        true,
-        undefined,
-        undefined,
-        lineMeshPoolPtr,
-      ],
-      position: [0, 0, 40],
-      scale: [10, 10, 10],
-      color: ENDESGA16.lightGreen,
-    }
-  );
-  EM.whenEntityHas(box, RenderableDef).then((box2) => {
-    createObj(
-      [RenderableConstructDef, PositionDef, ColorDef, ScaleDef] as const,
-      {
-        renderableConstruct: [
-          box2.renderable.meshHandle,
-          true,
-          undefined,
-          undefined,
-          lineMeshPoolPtr,
-        ],
-        position: [-40, 0, 40],
-        scale: [10, 10, 10],
-        color: ENDESGA16.darkGreen,
-      }
-    );
-  });
-  EM.whenResources(BallMesh.def).then((ball) => {
-    const mesh = cloneMesh(ball.mesh_ball.mesh);
-    mesh.lines = range(9).map((_) => V(0, 1));
+  // const box = createObj(
+  //   [RenderableConstructDef, PositionDef, ColorDef, ScaleDef] as const,
+  //   {
+  //     renderableConstruct: [
+  //       mkCubeMesh(),
+  //       true,
+  //       undefined,
+  //       undefined,
+  //       lineMeshPoolPtr,
+  //     ],
+  //     position: [0, 0, 40],
+  //     scale: [10, 10, 10],
+  //     color: ENDESGA16.lightGreen,
+  //   }
+  // );
+  // EM.whenEntityHas(box, RenderableDef).then((box2) => {
+  //   createObj(
+  //     [RenderableConstructDef, PositionDef, ColorDef, ScaleDef] as const,
+  //     {
+  //       renderableConstruct: [
+  //         box2.renderable.meshHandle,
+  //         true,
+  //         undefined,
+  //         undefined,
+  //         lineMeshPoolPtr,
+  //       ],
+  //       position: [-40, 0, 40],
+  //       scale: [10, 10, 10],
+  //       color: ENDESGA16.darkGreen,
+  //     }
+  //   );
+  // });
+  // EM.whenResources(BallMesh.def).then((ball) => {
+  //   const mesh = cloneMesh(ball.mesh_ball.mesh);
+  //   mesh.lines = range(9).map((_) => V(0, 1));
 
-    createObj(
-      [RenderableConstructDef, PositionDef, ColorDef, ScaleDef] as const,
-      {
-        renderableConstruct: [
-          mesh,
-          true,
-          undefined,
-          undefined,
-          lineMeshPoolPtr,
-        ],
-        position: [40, 0, 40],
-        scale: [10, 10, 10],
-        color: ENDESGA16.orange,
-      }
-    );
-  });
+  //   createObj(
+  //     [RenderableConstructDef, PositionDef, ColorDef, ScaleDef] as const,
+  //     {
+  //       renderableConstruct: [
+  //         mesh,
+  //         true,
+  //         undefined,
+  //         undefined,
+  //         lineMeshPoolPtr,
+  //       ],
+  //       position: [40, 0, 40],
+  //       scale: [10, 10, 10],
+  //       color: ENDESGA16.orange,
+  //     }
+  //   );
+  // });
+  // EM.addSystem(
+  //   "updateLineBox",
+  //   Phase.GAME_WORLD,
+  //   [LineRenderDataDef, RenderableDef],
+  //   [TimeDef, RendererDef],
+  //   (es, res) => {
+  //     if (res.time.step % 10 !== 0) return;
+
+  //     for (let e of es) {
+  //       const m = e.renderable.meshHandle.mesh;
+  //       const randVi = () => randInt(0, m.pos.length - 1);
+  //       m.lines!.forEach((l, li) => {
+  //         l[0] = randVi();
+  //         l[1] = randVi();
+  //       });
+  //       res.renderer.renderer
+  //         .getCyResource(lineMeshPoolPtr)!
+  //         .updateMeshLines(e.renderable.meshHandle, m);
+  //     }
+  //   }
+  // );
+
+  // bouncing balls
+  createBouncingBalls();
+
   EM.addSystem(
-    "updateLineBox",
+    "updateTriLists",
     Phase.GAME_WORLD,
-    [LineRenderDataDef, RenderableDef],
+    [RenderDataStdDef, RenderableDef, GlitchDef],
     [TimeDef, RendererDef],
     (es, res) => {
       if (res.time.step % 10 !== 0) return;
 
+      console.log("running");
+
       for (let e of es) {
         const m = e.renderable.meshHandle.mesh;
         const randVi = () => randInt(0, m.pos.length - 1);
-        m.lines!.forEach((l, li) => {
-          l[0] = randVi();
-          l[1] = randVi();
+        m.tri.forEach((p) => {
+          p[0] = randVi();
+          p[1] = randVi();
+          p[2] = randVi();
         });
-        res.renderer.renderer
-          .getCyResource(lineMeshPoolPtr)!
-          .updateMeshLines(e.renderable.meshHandle, m);
+        m.quad.forEach((p) => {
+          p[0] = randVi();
+          p[1] = randVi();
+          p[2] = randVi();
+          p[3] = randVi();
+        });
+        if (m.tri.length)
+          res.renderer.renderer.stdPool.updateMeshTriangles(
+            e.renderable.meshHandle,
+            m
+          );
+        if (m.quad.length)
+          res.renderer.renderer.stdPool.updateMeshQuads(
+            e.renderable.meshHandle,
+            m
+          );
+        // res.renderer.renderer.stdPool.updateMeshVertices(
+        //   e.renderable.meshHandle,
+        //   m
+        // );
       }
     }
   );
-
-  // bouncing balls
-  createBouncingBalls();
 
   // wind
   const wind = EM.addResource(WindDef);
@@ -583,7 +632,7 @@ export async function initGrayboxShipArena() {
   initEnemies();
 }
 
-function createBouncingBalls() {
+async function createBouncingBalls() {
   const ballObj = defineObj({
     name: "ball",
     components: [
@@ -595,6 +644,14 @@ function createBouncingBalls() {
       ScaleDef,
     ],
   } as const);
+  const { mesh_ball, renderer } = await EM.whenResources(
+    BallMesh.def,
+    RendererDef
+  );
+  const ballM1 = mesh_ball.proto;
+  const _ballM2 = cloneMesh(ballM1.mesh);
+  const ballM2 = renderer.renderer.stdPool.addMesh(_ballM2);
+
   const NUM = 10;
   // const RADIUS = 200;
   for (let i = 0; i < NUM; i++) {
@@ -606,16 +663,18 @@ function createBouncingBalls() {
     const r = 400;
     const x = Math.cos(t) * r;
     const y = Math.sin(t) * r;
+    const glitch = i % 2 === 0;
     const ball = createObj(ballObj, {
       args: {
         scale: [s, s, s],
         position: [x, y, 0],
-        renderableConstruct: [BallMesh],
+        renderableConstruct: [glitch ? ballM2 : ballM1],
         rotation: undefined,
         // angularVelocity: V3.scale(randNormalVec3(), 0.001),
         color: seqEndesga16(),
       },
     });
+    if (glitch) EM.set(ball, GlitchDef);
   }
   EM.addSystem(
     "bounceBall",
@@ -659,6 +718,7 @@ async function createShip() {
         yawpitch: [-PI * 0.5, PI * 0.1],
       },
     });
+    EM.set(cl, GlitchDef);
     quat.fromYawPitch(cl.yawpitch, cl.rotation);
     cannonLs.push(cl);
 
@@ -674,6 +734,7 @@ async function createShip() {
         yawpitch: [PI * 0.5, PI * 0.1],
       },
     });
+    EM.set(cr, GlitchDef);
     quat.fromYawPitch(cr.yawpitch, cr.rotation);
     cannonRs.push(cr);
   }
@@ -695,8 +756,11 @@ async function createShip() {
       cannonR2: cannonRs[2],
     },
   });
+  EM.set(ship, GlitchDef);
 
   const mast = createMast();
+  EM.set(mast, GlitchDef);
+  EM.set(mast.mast.sail, GlitchDef);
 
   mixinObj(ship, HasMastObj, {
     args: [],
@@ -715,6 +779,7 @@ async function createShip() {
   const rudder = createRudder();
   // console.log("setting position");
   V3.set(0, -25, 4, rudder.position);
+  EM.set(rudder, GlitchDef);
 
   mixinObj(ship, HasRudderObj, {
     args: [],
