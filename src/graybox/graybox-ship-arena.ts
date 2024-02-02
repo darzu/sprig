@@ -359,7 +359,7 @@ export async function initGrayboxShipArena() {
   createSun();
 
   // gizmo
-  const gizmo = addWorldGizmo(V(0, 0, 0), 50);
+  // const gizmo = addWorldGizmo(V(0, 0, 0), 50);
   // EM.set(gizmo, GlitchDef);
 
   // ocean
@@ -372,7 +372,8 @@ export async function initGrayboxShipArena() {
       renderableConstruct: [PlaneMesh, true, undefined, GRID_MASK],
       position: [0, 0, 0],
       scale: [2 * camera.viewDist, 2 * camera.viewDist, 1],
-      color: [0, 0.5, 0.5],
+      // color: [0, 0.5, 0.5],
+      color: [0.5, 0.5, 0.5],
       // color: [1, 1, 1],
     }
   );
@@ -393,7 +394,7 @@ export async function initGrayboxShipArena() {
       color: ENDESGA16.lightGreen,
     }
   );
-  EM.set(box, GlitchDef);
+  // EM.set(box, GlitchDef);
   EM.whenResources(BallMesh.def).then((ball) => {
     const mesh = cloneMesh(ball.mesh_ball.mesh);
     mesh.lines = range(9).map((_) => V(0, 1));
@@ -421,37 +422,45 @@ export async function initGrayboxShipArena() {
   EM.whenResources(BallMesh.def).then((ball) => {
     const mesh = cloneMesh(ball.mesh_ball.mesh);
 
-    const e = createObj(
-      [RenderableConstructDef, PositionDef, ColorDef, ScaleDef] as const,
-      {
-        renderableConstruct: [
-          mesh,
-          true,
-          undefined,
-          undefined,
-          pointMeshPoolPtr,
-        ],
-        position: [-40, 0, 40],
-        scale: [10, 10, 10],
-        color: ENDESGA16.lightBlue,
-      }
-    );
+    for (let i = 0; i < 40; i++)
+      createObj(
+        [
+          RenderableConstructDef,
+          PositionDef,
+          ColorDef,
+          ScaleDef,
+          RotationDef,
+        ] as const,
+        {
+          renderableConstruct: [
+            mesh,
+            true,
+            undefined,
+            undefined,
+            pointMeshPoolPtr,
+          ],
+          position: [-40, 0, 40],
+          scale: [10, 10, 10],
+          rotation: quat.fromYawPitchRoll(i * PI * 0.123),
+          color: ENDESGA16.lightBlue,
+        }
+      );
 
     // EM.set(e, GlitchDef);
   });
 
   // bouncing balls
-  createBouncingBalls();
+  // createBouncingBalls();
 
   // wind
   const wind = EM.addResource(WindDef);
   setWindAngle(wind, PI * 0.4);
 
   // player ship
-  const ship = await createShip();
+  // const ship = await createShip();
 
   // enemy
-  createEnemy();
+  // createEnemy();
 
   // dbg ghost
   if (DBG_GHOST) {
