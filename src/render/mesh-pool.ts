@@ -161,6 +161,25 @@ let nextMeshId = 1;
 //   }
 // }
 
+let tempPointData = new Uint16Array(256);
+function getPointInds(m: Mesh, startIdx: number, count: number): Uint16Array {
+  // NOTE: callee responsible for aligning-up the output length
+  // NOTE: caller responsible for aligning-down start-idx
+  assertDbg(startIdx % 2 === 0);
+  assertDbg(startIdx < m.pos.length);
+  assertDbg(startIdx + count <= m.pos.length);
+  assertDbg(count % 2 === 0, "maybe important alignment?");
+  const dataLen = count;
+  // expand our temp array if needed
+  if (tempPointData.length < dataLen) tempPointData = new Uint16Array(dataLen);
+  // add points
+  for (let i = startIdx; i < startIdx + count; i++) {
+    const dIdx = i - startIdx;
+    tempPointData[dIdx] = i;
+  }
+  return new Uint16Array(tempPointData.buffer, 0, dataLen);
+}
+
 let tempLineData = new Uint16Array(256);
 function getLineInds(m: Mesh, startIdx: number, count: number): Uint16Array {
   // NOTE: callee responsible for aligning-up the output length
@@ -336,6 +355,7 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     addMesh,
     addMeshInstance,
     updateMeshVertices,
+    updateMeshPointInds,
     updateMeshLineInds,
     updateMeshTriInds,
     updateMeshQuadInds,
@@ -421,15 +441,18 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     currSet.numVerts += vertNum;
     currSet.meshes.push(handle);
 
-    // submit data to GPU
+    // submit verts to GPU
+    if (m.pos.length) updateMeshVertices(handle, m);
+    // submit indices to GPU
     if (primKind === "tri") {
       if (m.quad.length) updateMeshQuadInds(handle, m);
       if (m.tri.length) updateMeshTriInds(handle, m);
-    }
-    if (m.pos.length) updateMeshVertices(handle, m);
-    if (primKind === "line") {
+    } else if (primKind === "line") {
       if (m.lines?.length) updateMeshLineInds(handle, m);
+    } else if (primKind === "point") {
+      updateMeshPointInds(handle, m);
     }
+    // submit uniform to GPU
     // TODO(@darzu): PERF. this is duplicating the uniform that will also (probably) be stored
     //  in the data component.
     const uni = ptr.computeUniData(m);
@@ -477,26 +500,25 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
       _stats._accumVertDataQueued += vertCount * set.verts.struct.size;
   }
 
-  // TODO(@darzu): POINTS
-  // function updateMeshPoints(
-  //   handle: MeshHandle,
-  //   newMesh: Mesh,
-  //   lineIdx?: number,
-  //   lineCount?: number
-  // ) {
-  //   assert(primKind === "line");
-  //   lineIdx = lineIdx ?? 0;
-  //   const meshLineCount = newMesh.lines?.length ?? 0;
-  //   assert(meshLineCount > 0);
-  //   lineCount = lineCount ?? meshLineCount;
-  //   assertDbg(0 <= lineIdx && lineIdx + lineCount <= meshLineCount);
+  function updateMeshPointInds(
+    handle: MeshHandle,
+    newMesh: Mesh,
+    pointIdx?: number,
+    pointCount?: number
+  ) {
+    assert(primKind === "point");
+    pointIdx = pointIdx ?? 0;
+    const meshPointCount = newMesh.pos.length;
+    assert(meshPointCount > 0);
+    pointCount = pointCount ?? meshPointCount;
+    assertDbg(0 <= pointIdx && pointIdx + pointCount <= meshPointCount);
 
-  //   const lineData = computeLineData(newMesh, lineIdx, lineCount);
-  //   assertDbg(lineData.byteLength % 4 === 0, "alignment");
-  //   const set = pool.sets[handle.setIdx];
-  //   set.inds.queueUpdate(lineData, (handle.primIdx + lineIdx) * 2);
-  //   if (PERF_DBG_GPU) _stats._accumPrimDataQueued += lineData.byteLength;
-  // }
+    const pointData = getPointInds(newMesh, pointIdx, pointCount);
+    assertDbg(pointData.byteLength % 4 === 0, "alignment");
+    const set = pool.sets[handle.setIdx];
+    set.inds.queueUpdate(pointData, (handle.primIdx + pointIdx) * 1);
+    if (PERF_DBG_GPU) _stats._accumPrimDataQueued += pointData.byteLength;
+  }
   function updateMeshLineInds(
     handle: MeshHandle,
     newMesh: Mesh,
@@ -582,11 +604,7 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     assert(handle.reserved, "Must have .reserved to update MeshHandle's size");
 
     const newNumVert = m.pos.length;
-    let newNumPrim: number;
-    if (primKind === "tri") newNumPrim = m.tri.length + m.quad.length * 2;
-    else if (primKind === "line") newNumPrim = m.lines?.length ?? 0;
-    else if (primKind === "point") throw `TODO: points`;
-    else never(primKind);
+    const newNumPrim = getNumPrimsOfKind(m, primKind);
 
     assert(newNumVert <= handle.reserved.maxVertNum, "Too many vertices!");
     assert(

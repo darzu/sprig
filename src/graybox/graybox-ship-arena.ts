@@ -70,6 +70,7 @@ import {
   lineMeshPoolPtr,
   pointMeshPoolPtr,
   stdLinesRender,
+  stdPointsRender,
 } from "../render/pipelines/std-line-point.js";
 import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
 import { noisePipes } from "../render/pipelines/std-noise.js";
@@ -330,6 +331,7 @@ export async function initGrayboxShipArena() {
       deferredPipeline,
       stdGridRender,
       stdLinesRender,
+      stdPointsRender,
       postProcess,
     ];
   });
