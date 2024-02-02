@@ -827,9 +827,9 @@ export module quat {
     return GL.rotateY(out ?? tmp(), v1, n) as T;
   }
   export function fromYawPitchRoll(
-    yaw: number,
-    pitch: number,
-    roll: number,
+    yaw: number = 0,
+    pitch: number = 0,
+    roll: number = 0,
     out?: T
   ): T {
     return GL.fromEuler(out ?? tmp(), pitch, roll, -yaw) as T;

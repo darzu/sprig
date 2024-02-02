@@ -27,3 +27,7 @@ export function dbgGetBlame(kind: string) {
 export function dbgClearBlame(kind: string) {
   blameMaps.get(kind)?.clear();
 }
+
+export function never(x: never, msg?: string): never {
+  throw new Error(msg ?? `never(${x})`);
+}

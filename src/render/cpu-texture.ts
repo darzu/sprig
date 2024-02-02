@@ -1,7 +1,7 @@
 import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { clamp } from "../utils/math.js";
 import { assert } from "../utils/util.js";
-import { never } from "../utils/util.js";
+import { never } from "../utils/util-no-import.js";
 
 type ArityToVec<N extends 1 | 2 | 3 | 4> = N extends 1
   ? number

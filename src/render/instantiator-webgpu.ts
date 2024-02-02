@@ -3,7 +3,6 @@ import { ControllableDef } from "../input/controllable.js";
 import { V4, V } from "../matrix/sprig-matrix.js";
 import { assert } from "../utils/util.js";
 import {
-  never,
   capitalize,
   pluralize,
   uncapitalize,
@@ -11,6 +10,7 @@ import {
   isFunction,
   dbgLogOnce,
 } from "../utils/util.js";
+import { never } from "../utils/util-no-import.js";
 import {
   PtrKindToResourceType,
   createCyArray,
@@ -39,6 +39,7 @@ import {
   CySamplerPtr,
   CyPipelinePtr,
   meshPoolPrimToTopology,
+  numIndsPerPrim,
 } from "./gpu-registry.js";
 import {
   CyStruct,
@@ -923,25 +924,15 @@ export function bundleRenderPipelines(
           // TODO(@darzu): do we always want to draw max or do we want to rebundle?
           let numPrim = m.reserved?.maxPrimNum ?? m.primNum;
 
-          if (p.pool.ptr.prim === "tri") {
-            bundleEnc.drawIndexed(
-              numPrim * 3,
-              undefined,
-              m.primIdx * 3,
-              m.vertIdx
-            );
-            dbgNumTris += m.primNum * 3;
-          } else if (p.pool.ptr.prim === "line") {
-            bundleEnc.drawIndexed(
-              numPrim * 2,
-              undefined,
-              m.primIdx * 2,
-              m.vertIdx
-            );
-            dbgNumTris += m.primNum * 2;
-          } else {
-            throw `TODO: impl render "${p.pool.ptr.prim}"`;
-          }
+          const indsPer = numIndsPerPrim(p.pool.ptr.prim);
+
+          bundleEnc.drawIndexed(
+            numPrim * indsPer,
+            undefined,
+            m.primIdx * indsPer,
+            m.vertIdx
+          );
+          dbgNumTris += m.primNum * indsPer;
         }
       }
     } else if (p.ptr.meshOpt.stepMode === "single-draw") {

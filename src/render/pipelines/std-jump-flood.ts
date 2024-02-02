@@ -1,4 +1,5 @@
-import { never, range } from "../../utils/util.js";
+import { never } from "../../utils/util-no-import.js";
+import { range } from "../../utils/util.js";
 import { createRenderTextureToQuad, fullQuad } from "../gpu-helper.js";
 import { CY, CyPipelinePtr, CyTexturePtr } from "../gpu-registry.js";
 import { ShaderSet } from "../shader-loader.js";

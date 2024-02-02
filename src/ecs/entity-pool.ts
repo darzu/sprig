@@ -1,6 +1,7 @@
 import { ComponentDef, Entity, EntityW } from "./entity-manager.js";
 import { createIdxPool } from "../utils/idx-pool.js";
-import { assert, never } from "../utils/util.js";
+import { assert } from "../utils/util.js";
+import { never } from "../utils/util-no-import.js";
 
 // Object-pool pattern for entities.
 // TODO(@darzu): perhaps this should be refined and co-implemented w/ archtypes?

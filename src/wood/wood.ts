@@ -551,10 +551,10 @@ EM.addEagerInit([WoodStateDef], [], [], () => {
           vertIntervals.finishInterval();
 
           for (let { min, max } of triIntervals.intervals)
-            stdPool.updateMeshTriangles(meshHandle, mesh, min, max - min + 1);
+            stdPool.updateMeshTriInds(meshHandle, mesh, min, max - min + 1);
 
           for (let { min, max } of quadIntervals.intervals)
-            stdPool.updateMeshQuads(meshHandle, mesh, min, max - min + 1);
+            stdPool.updateMeshQuadInds(meshHandle, mesh, min, max - min + 1);
 
           for (let { min, max } of vertIntervals.intervals)
             stdPool.updateMeshVertices(meshHandle, mesh, min, max - min + 1);

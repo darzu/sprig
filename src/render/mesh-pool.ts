@@ -1,7 +1,8 @@
 import { align, alignDown } from "../utils/math.js";
-import { assert, assertDbg, dbgLogOnce, never } from "../utils/util.js";
+import { assert, assertDbg, dbgLogOnce } from "../utils/util.js";
+import { never } from "../utils/util-no-import.js";
 import { CyStructDesc, CyToTS } from "./gpu-struct.js";
-import { Mesh } from "../meshes/mesh.js";
+import { Mesh, RawMesh } from "../meshes/mesh.js";
 import {
   createCyArray,
   createCyIdxBuf,
@@ -15,6 +16,8 @@ import {
   CyArrayPtr,
   CyIdxBufferPtr,
   CyMeshPoolPtr,
+  numIndsPerPrim,
+  PrimKind,
 } from "./gpu-registry.js";
 import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { DEFAULT_MASK } from "./pipeline-masks.js";
@@ -103,14 +106,7 @@ function logMeshPoolStats(pool: MeshPool<any, any>) {
       `   ${((maxVerts * vertStruct.size) / 1024).toFixed(1)} KB for verts`
     );
     const bytesPerPrim =
-      Uint16Array.BYTES_PER_ELEMENT *
-      (pool.ptr.prim === "tri"
-        ? 3
-        : pool.ptr.prim === "line"
-        ? 2
-        : pool.ptr.prim === "point"
-        ? 1
-        : never(pool.ptr.prim));
+      Uint16Array.BYTES_PER_ELEMENT * numIndsPerPrim(pool.ptr.prim);
     console.log(
       `   ${((maxPrims * bytesPerPrim) / 1024).toFixed(1)} KB for prim indices`
     );
@@ -165,12 +161,27 @@ let nextMeshId = 1;
 //   }
 // }
 
+let tempPointData = new Uint16Array(256);
+function getPointInds(m: Mesh, startIdx: number, count: number): Uint16Array {
+  // NOTE: callee responsible for aligning-up the output length
+  // NOTE: caller responsible for aligning-down start-idx
+  assertDbg(startIdx % 2 === 0);
+  assertDbg(startIdx < m.pos.length);
+  assertDbg(startIdx + count <= m.pos.length);
+  assertDbg(count % 2 === 0, "maybe important alignment?");
+  const dataLen = count;
+  // expand our temp array if needed
+  if (tempPointData.length < dataLen) tempPointData = new Uint16Array(dataLen);
+  // add points
+  for (let i = startIdx; i < startIdx + count; i++) {
+    const dIdx = i - startIdx;
+    tempPointData[dIdx] = i;
+  }
+  return new Uint16Array(tempPointData.buffer, 0, dataLen);
+}
+
 let tempLineData = new Uint16Array(256);
-function computeLineData(
-  m: Mesh,
-  startIdx: number,
-  count: number
-): Uint16Array {
+function getLineInds(m: Mesh, startIdx: number, count: number): Uint16Array {
   // NOTE: callee responsible for aligning-up the output length
   // NOTE: caller responsible for aligning-down start-idx
   assertDbg(startIdx % 2 === 0);
@@ -194,7 +205,7 @@ function computeLineData(
 }
 
 let tempTriData = new Uint16Array(256);
-function computeTriData(m: Mesh, startIdx: number, count: number): Uint16Array {
+function getTriInds(m: Mesh, startIdx: number, count: number): Uint16Array {
   // NOTE: callee responsible for aligning-up the output length
   // NOTE: caller responsible for aligning-down start-idx
   assertDbg(startIdx % 2 === 0);
@@ -225,11 +236,7 @@ function computeTriData(m: Mesh, startIdx: number, count: number): Uint16Array {
 }
 
 let tempQuadData = new Uint16Array(256);
-function computeQuadData(
-  m: Mesh,
-  startIdx: number,
-  count: number
-): Uint16Array {
+function getQuadInds(m: Mesh, startIdx: number, count: number): Uint16Array {
   const dataLen = count * 2 * 3;
   if (tempQuadData.length < dataLen) tempQuadData = new Uint16Array(dataLen);
   for (let qi = startIdx; qi < startIdx + count; qi++) {
@@ -300,11 +307,7 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
       ptr.setMaxVerts
     );
     resources.kindToNameToRes.array[vertsPtr.name] = verts;
-    let primCount: number;
-    if (primKind === "tri") primCount = ptr.setMaxPrims * 3;
-    else if (primKind === "line") primCount = ptr.setMaxPrims * 2;
-    else if (primKind === "point") primCount = ptr.setMaxPrims * 1;
-    else never(primKind);
+    const primCount = ptr.setMaxPrims * numIndsPerPrim(primKind);
     const indsPtr = CY.createIdxBuf(indsName(idx), {
       init: primCount, // TODO(@darzu): alignment?
     });
@@ -352,12 +355,20 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     addMesh,
     addMeshInstance,
     updateMeshVertices,
-    updateMeshLines,
-    updateMeshTriangles,
-    updateMeshQuads,
+    updateMeshPointInds,
+    updateMeshLineInds,
+    updateMeshTriInds,
+    updateMeshQuadInds,
     updateMeshSize,
     updateMeshInstance,
   };
+
+  function getNumPrimsOfKind(m: RawMesh, k: PrimKind): number {
+    if (primKind === "tri") return m.tri.length + m.quad.length * 2;
+    else if (primKind === "line") return m.lines?.length ?? 0;
+    else if (primKind === "point") return m.pos.length;
+    else never(primKind);
+  }
 
   function addMesh(m: Mesh, reserved?: MeshReserve): MeshHandle {
     // TODO(@darzu): handle fragmentation! Right now we always try to add
@@ -370,11 +381,7 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     // determine this size
     const _vertNum = m.pos.length;
     const vertNum = reserved?.maxVertNum ?? _vertNum;
-    let _primNum;
-    if (primKind === "tri") _primNum = m.tri.length + m.quad.length * 2;
-    else if (primKind === "line") _primNum = m.lines?.length ?? 0;
-    else if (primKind === "point") throw "TODO: points";
-    else never(primKind);
+    let _primNum = getNumPrimsOfKind(m, primKind);
     const primNum = reserved?.maxPrimNum ?? _primNum;
     assert(_vertNum <= vertNum, "Inconsistent num of vertices!");
     assert(_primNum <= primNum, "Inconsistent num of triangles!");
@@ -434,15 +441,18 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     currSet.numVerts += vertNum;
     currSet.meshes.push(handle);
 
-    // submit data to GPU
-    if (primKind === "tri") {
-      if (m.quad.length) updateMeshQuads(handle, m);
-      if (m.tri.length) updateMeshTriangles(handle, m);
-    }
+    // submit verts to GPU
     if (m.pos.length) updateMeshVertices(handle, m);
-    if (primKind === "line") {
-      if (m.lines?.length) updateMeshLines(handle, m);
+    // submit indices to GPU
+    if (primKind === "tri") {
+      if (m.quad.length) updateMeshQuadInds(handle, m);
+      if (m.tri.length) updateMeshTriInds(handle, m);
+    } else if (primKind === "line") {
+      if (m.lines?.length) updateMeshLineInds(handle, m);
+    } else if (primKind === "point") {
+      updateMeshPointInds(handle, m);
     }
+    // submit uniform to GPU
     // TODO(@darzu): PERF. this is duplicating the uniform that will also (probably) be stored
     //  in the data component.
     const uni = ptr.computeUniData(m);
@@ -490,7 +500,26 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
       _stats._accumVertDataQueued += vertCount * set.verts.struct.size;
   }
 
-  function updateMeshLines(
+  function updateMeshPointInds(
+    handle: MeshHandle,
+    newMesh: Mesh,
+    pointIdx?: number,
+    pointCount?: number
+  ) {
+    assert(primKind === "point");
+    pointIdx = pointIdx ?? 0;
+    const meshPointCount = newMesh.pos.length;
+    assert(meshPointCount > 0);
+    pointCount = pointCount ?? meshPointCount;
+    assertDbg(0 <= pointIdx && pointIdx + pointCount <= meshPointCount);
+
+    const pointData = getPointInds(newMesh, pointIdx, pointCount);
+    assertDbg(pointData.byteLength % 4 === 0, "alignment");
+    const set = pool.sets[handle.setIdx];
+    set.inds.queueUpdate(pointData, (handle.primIdx + pointIdx) * 1);
+    if (PERF_DBG_GPU) _stats._accumPrimDataQueued += pointData.byteLength;
+  }
+  function updateMeshLineInds(
     handle: MeshHandle,
     newMesh: Mesh,
     lineIdx?: number,
@@ -503,13 +532,13 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     lineCount = lineCount ?? meshLineCount;
     assertDbg(0 <= lineIdx && lineIdx + lineCount <= meshLineCount);
 
-    const lineData = computeLineData(newMesh, lineIdx, lineCount);
+    const lineData = getLineInds(newMesh, lineIdx, lineCount);
     assertDbg(lineData.byteLength % 4 === 0, "alignment");
     const set = pool.sets[handle.setIdx];
     set.inds.queueUpdate(lineData, (handle.primIdx + lineIdx) * 2);
     if (PERF_DBG_GPU) _stats._accumPrimDataQueued += lineData.byteLength;
   }
-  function updateMeshTriangles(
+  function updateMeshTriInds(
     handle: MeshHandle,
     newMesh: Mesh,
     triIdx?: number,
@@ -537,13 +566,13 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
       newMesh.tri.length: ${newMesh.tri.length}`
     );
     assertDbg(handle.primIdx % 2 === 0);
-    const triData = computeTriData(newMesh, alignedTriIdx, alignedTriCount);
+    const triData = getTriInds(newMesh, alignedTriIdx, alignedTriCount);
     assertDbg(triData.byteLength % 4 === 0, "alignment");
     const set = pool.sets[handle.setIdx];
     set.inds.queueUpdate(triData, (handle.primIdx + alignedTriIdx) * 3);
     if (PERF_DBG_GPU) _stats._accumPrimDataQueued += triData.length * 2.0;
   }
-  function updateMeshQuads(
+  function updateMeshQuadInds(
     handle: MeshHandle,
     newMesh: Mesh,
     quadIdx?: number,
@@ -554,7 +583,7 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     quadCount = quadCount ?? newMesh.quad.length;
 
     assertDbg(0 <= quadIdx && quadIdx + quadCount <= newMesh.quad.length);
-    const quadData = computeQuadData(newMesh, quadIdx, quadCount);
+    const quadData = getQuadInds(newMesh, quadIdx, quadCount);
     assertDbg(quadData.length % 2 === 0);
 
     const bufQuadIndsStart = align(
@@ -575,11 +604,7 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     assert(handle.reserved, "Must have .reserved to update MeshHandle's size");
 
     const newNumVert = m.pos.length;
-    let newNumPrim: number;
-    if (primKind === "tri") newNumPrim = m.tri.length + m.quad.length * 2;
-    else if (primKind === "line") newNumPrim = m.lines?.length ?? 0;
-    else if (primKind === "point") throw `TODO: points`;
-    else never(primKind);
+    const newNumPrim = getNumPrimsOfKind(m, primKind);
 
     assert(newNumVert <= handle.reserved.maxVertNum, "Too many vertices!");
     assert(

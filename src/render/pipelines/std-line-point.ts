@@ -109,3 +109,85 @@ EM.addEagerInit([LineRenderDataDef], [], [], () => {
     }
   );
 });
+
+export const PointRenderDataDef = EM.defineNonupdatableComponent(
+  "pointRenderData",
+  (r: MeshUniformTS) => r
+);
+
+// TODO(@darzu): PERF. could probably save perf by using custom vertex data
+export const pointMeshPoolPtr = CY.createMeshPool("pointMeshPool", {
+  computeVertsData,
+  computeUniData,
+  vertsStruct: VertexStruct,
+  unisStruct: MeshUniformStruct,
+  maxMeshes: MAX_MESHES,
+  maxSets: 5,
+  setMaxPrims: MAX_VERTICES,
+  setMaxVerts: MAX_VERTICES,
+  dataDef: PointRenderDataDef,
+  prim: "point",
+});
+
+export const stdPointsRender = CY.createRenderPipeline("stdPointsRender", {
+  globals: [sceneBufPtr],
+  cullMode: "back",
+  meshOpt: {
+    pool: pointMeshPoolPtr,
+    stepMode: "per-mesh-handle",
+  },
+  topology: "point-list",
+  shaderVertexEntry: "vert_main",
+  shaderFragmentEntry: "frag_main",
+  output: [
+    {
+      ptr: litTexturePtr,
+      clear: "never",
+      blend: {
+        color: {
+          srcFactor: "src-alpha",
+          dstFactor: "one-minus-src-alpha",
+          operation: "add",
+        },
+        alpha: {
+          srcFactor: "constant",
+          dstFactor: "zero",
+          operation: "add",
+        },
+      },
+    },
+  ],
+  depthStencil: mainDepthTex,
+  shader: "std-point",
+});
+
+EM.addEagerInit([PointRenderDataDef], [], [], () => {
+  EM.addSystem(
+    "updatePointRenderData",
+    Phase.RENDER_PRE_DRAW,
+    [RenderableDef, PointRenderDataDef, RendererWorldFrameDef],
+    [RendererDef],
+    (objs, res) => {
+      const pool = res.renderer.renderer.getCyResource(pointMeshPoolPtr)!;
+      for (let o of objs) {
+        // console.log("updatePointRenderData: " + o.id);
+
+        // color / tint
+        if (ColorDef.isOn(o)) {
+          V3.copy(o.pointRenderData.tint, o.color);
+        }
+        if (TintsDef.isOn(o)) {
+          applyTints(o.tints, o.pointRenderData.tint);
+        }
+
+        // id
+        o.pointRenderData.id = o.renderable.meshHandle.mId;
+
+        // transform
+        mat4.copy(o.pointRenderData.transform, o.rendererWorldFrame.transform);
+
+        pool.updateUniform(o.renderable.meshHandle, o.pointRenderData);
+      }
+    }
+  );
+});

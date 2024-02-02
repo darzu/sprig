@@ -172,3 +172,9 @@ AST editting:
   Can leave holes, those wholes will either be typed by their surroundings 
     or u can leave a ghost type of the last thing that was in that hole
   symbolic execution still possible w/ holes
+
+Better source control?
+  Super annoying that a symbol rename touches so many lines of code and the history
+    of it being a safe change is totally lost.
+  One of the best parts of working alone is liberal and easy symbol renaming and file reorg.
+  This is one of the big weaknesses of git and text-based source control. Renaming a symbol conceptually touches 1 place, yet today to do it on a team often requires a stop-the-world-while-i-merge-this-2000-line-change.

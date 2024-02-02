@@ -9,7 +9,8 @@ import { DevConsoleDef } from "./debug/console.js";
 import { initReboundSandbox } from "./physics/game-rebound.js";
 // import { callClothSystems } from "./game/cloth.js";
 import { initCommonSystems } from "./game-init.js";
-import { dbgLogMilestone, never } from "./utils/util.js";
+import { dbgLogMilestone } from "./utils/util.js";
+import { never } from "./utils/util-no-import.js";
 // import { initHyperspaceGame } from "./game/game-hyperspace.js";
 import {
   DBG_ASSERT,

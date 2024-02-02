@@ -200,6 +200,7 @@ export function addWorldGizmo(origin = V(0, 0, 0), scale = 5) {
   EM.set(worldGizmo, PositionDef, origin);
   EM.set(worldGizmo, ScaleDef, V(scale, scale, scale));
   EM.set(worldGizmo, RenderableConstructDef, GizmoMesh);
+  return worldGizmo;
 }
 
 export function createBoxForAABB(

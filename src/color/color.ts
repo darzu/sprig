@@ -1,7 +1,8 @@
 import { clamp } from "../utils/math.js";
 import { V3, V } from "../matrix/sprig-matrix.js";
 import { assert } from "../utils/util.js";
-import { never, range } from "../utils/util.js";
+import { range } from "../utils/util.js";
+import { never } from "../utils/util-no-import.js";
 import {
   FLRGBToFRGB,
   XYZD65ToFLRGB,
