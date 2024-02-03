@@ -187,6 +187,14 @@ export function computeVertsData(
 
   // TODO(@darzu): LINES. support other primative data like lines and points?
 
+  if (m.posNormals) {
+    assert(m.posNormals.length === m.pos.length);
+    for (let vi = startIdx; vi < startIdx + count; vi++) {
+      const dIdx = vi - startIdx;
+      tempVertsData[dIdx].normal = m.posNormals[vi];
+    }
+  }
+
   return tempVertsData;
 }
 

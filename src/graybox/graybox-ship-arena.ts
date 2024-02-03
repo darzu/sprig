@@ -16,7 +16,7 @@ import {
   createRudder,
   createRudderTurret,
 } from "../ld53/rudder.js";
-import { V, quat, tmpStack, V3 } from "../matrix/sprig-matrix.js";
+import { V, quat, tmpStack, V3, mat4, V4 } from "../matrix/sprig-matrix.js";
 import {
   BallMesh,
   CannonMesh,
@@ -25,7 +25,14 @@ import {
   MastMesh,
   PlaneMesh,
 } from "../meshes/mesh-list.js";
-import { cloneMesh, getAABBFromMesh, scaleMesh3 } from "../meshes/mesh.js";
+import {
+  Mesh,
+  RawMesh,
+  cloneMesh,
+  getAABBFromMesh,
+  scaleMesh3,
+  transformMesh,
+} from "../meshes/mesh.js";
 import { HEX_AABB, mkCubeMesh } from "../meshes/primatives.js";
 import { GravityDef } from "../motion/gravity.js";
 import {
@@ -53,6 +60,11 @@ import {
 } from "../physics/transform.js";
 import { CanvasDef, HasFirstInteractionDef } from "../render/canvas.js";
 import { CyArray } from "../render/data-webgpu.js";
+import {
+  CY,
+  linearSamplerPtr,
+  nearestSamplerPtr,
+} from "../render/gpu-registry.js";
 import { GraphicsSettingsDef } from "../render/graphics-settings.js";
 import { PointLightDef } from "../render/lights.js";
 import { DEFAULT_MASK, GRID_MASK } from "../render/pipeline-masks.js";
@@ -74,7 +86,8 @@ import {
   pointMeshPoolPtr,
   stdLinesRender,
   stdPointsRender,
-  xpPointTex,
+  xpPointLitTex,
+  xpPointMaskTex,
 } from "../render/pipelines/std-line-point.js";
 import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
 import { noisePipes } from "../render/pipelines/std-noise.js";
@@ -82,7 +95,9 @@ import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
 import {
   RenderDataStdDef,
+  canvasTexturePtr,
   meshPoolPtr,
+  sceneBufPtr,
 } from "../render/pipelines/std-scene.js";
 import { shadowPipelines } from "../render/pipelines/std-shadow.js";
 import {
@@ -104,12 +119,14 @@ import {
 } from "../utils/math.js";
 import { Path } from "../utils/spline.js";
 import { PI, flatten } from "../utils/util-no-import.js";
-import { assert, dbgOnce, range } from "../utils/util.js";
+import { assert, dbgOnce, range, zip } from "../utils/util.js";
 import {
   angleBetween,
   angleBetweenXZ,
+  computeTriangleNormal,
   randNormalVec3,
   randVec3OfLen,
+  vec3Dbg,
 } from "../utils/utils-3d.js";
 import { addGizmoChild, addWorldGizmo } from "../utils/utils-game.js";
 import { HasMastDef, HasMastObj, createMast } from "../wind/mast.js";
@@ -317,14 +334,41 @@ function createOcean() {
   return grid;
 }
 
-const pointsJFA = createJfaPipelines(xpPointTex, "interior");
+const pointsJFA = createJfaPipelines(xpPointMaskTex, "interior");
 
+const pointJFAColorPipe = CY.createRenderPipeline("colorPointsJFA", {
+  globals: [
+    // { ptr: linearSamplerPtr, alias: "samp" },
+    { ptr: nearestSamplerPtr, alias: "samp" },
+    { ptr: pointsJFA.voronoiTex, alias: "voronoiTex" },
+    { ptr: xpPointLitTex, alias: "colorTex" },
+    sceneBufPtr,
+  ],
+  meshOpt: {
+    vertexCount: 6,
+    stepMode: "single-draw",
+  },
+  output: [
+    {
+      ptr: canvasTexturePtr,
+      clear: "once",
+    },
+  ],
+  shader: "xp-point-voronoi",
+  shaderFragmentEntry: "frag_main",
+  shaderVertexEntry: "vert_main",
+});
+
+// const dbgGrid = [
+//   [xpPointTex, xpPointTex],
+//   [xpPointTex, xpPointTex],
+// ];
 const dbgGrid = [
-  [xpPointTex, xpPointTex],
-  [xpPointTex, xpPointTex],
+  [pointsJFA._inputMaskTex, pointsJFA._uvMaskTex],
+  [pointsJFA.voronoiTex, pointsJFA.sdfTex],
 ];
-// let dbgGridCompose = createGridComposePipelines(dbgGrid);
-let dbgGridCompose = createGridComposePipelines(pointsJFA._debugGrid);
+let dbgGridCompose = createGridComposePipelines(dbgGrid);
+// let dbgGridCompose = createGridComposePipelines(pointsJFA._debugGrid);
 
 export async function initGrayboxShipArena() {
   // TODO(@darzu): WORLD GRID:
@@ -336,6 +380,8 @@ export async function initGrayboxShipArena() {
 
   // TODO(@darzu): WORK AROUND: see below
 
+  const normalMode = false;
+
   EM.addSystem(
     "shipArenaPipelines",
     Phase.GAME_WORLD,
@@ -343,22 +389,33 @@ export async function initGrayboxShipArena() {
     [RendererDef, GraphicsSettingsDef, DevConsoleDef],
     (_, res) => {
       // renderer
-      res.renderer.pipelines = [
-        ...shadowPipelines,
-        stdRenderPipeline,
-        // stdLinesRender,
-        renderDots,
-        outlineRender,
-        deferredPipeline,
-        stdGridRender,
-        stdLinesRender,
-        stdPointsRender,
-        postProcess,
-
-        // TODO(@darzu):
-        ...pointsJFA.allPipes(),
-        ...(res.dev.showConsole ? dbgGridCompose : []),
-      ];
+      res.renderer.pipelines = [];
+      if (normalMode)
+        res.renderer.pipelines.push(
+          ...shadowPipelines,
+          stdRenderPipeline,
+          // stdLinesRender,
+          renderDots,
+          outlineRender,
+          deferredPipeline,
+          stdGridRender,
+          stdLinesRender,
+          stdPointsRender,
+          postProcess
+        );
+      else
+        res.renderer.pipelines.push(
+          stdRenderPipeline,
+          // TODO(@darzu): experiment
+          // TODO(@darzu): LIGHTING!
+          // TODO(@darzu): OUTLINE?
+          stdPointsRender,
+          ...pointsJFA.allPipes(),
+          pointJFAColorPipe
+        );
+      res.renderer.pipelines.push(
+        ...(res.dev.showConsole ? dbgGridCompose : [])
+      );
     }
   );
 
@@ -385,7 +442,7 @@ export async function initGrayboxShipArena() {
   createSun();
 
   // gizmo
-  // const gizmo = addWorldGizmo(V(0, 0, 0), 50);
+  const gizmo = addWorldGizmo(V(0, 0, 0), 50);
   // EM.set(gizmo, GlitchDef);
 
   // ocean
@@ -446,14 +503,22 @@ export async function initGrayboxShipArena() {
     });
   }
 
-  function distributePointsOnTriangle(pos: V3[], ind: V3, num: number): V3[] {
+  function distributePointsOnTriangleOrQuad(
+    pos: V3[],
+    ind: V3 | V4,
+    num: number,
+    quad: boolean
+  ): V3[] {
     const points: V3[] = [];
 
     // TODO(@darzu): do something fancy and more evenly distributed
 
     const p0 = pos[ind[0]];
     const p1 = pos[ind[1]];
-    const p2 = pos[ind[2]];
+    const p2 = quad ? pos[ind[3]] : pos[ind[2]];
+    // const p2 = pos[ind[2]];
+
+    const _stk = tmpStack();
 
     for (let i = 0; i < num; i++) {
       const u = V3.sub(p2, p0);
@@ -463,41 +528,122 @@ export async function initGrayboxShipArena() {
 
       let uLen = Math.random();
       let vLen = Math.random();
-      while (uLen + vLen > 1.0) {
-        // TODO(@darzu): reflect accross u = -v + 1
-        uLen = Math.random();
-        vLen = Math.random();
-      }
+      if (!quad)
+        while (uLen + vLen > 1.0) {
+          // TODO(@darzu): reflect accross u = -v + 1
+          uLen = Math.random();
+          vLen = Math.random();
+        }
 
       const randU = V3.scale(u, uLen);
       const randV = V3.scale(v, vLen);
 
       const newP = V3.add(p0, V3.add(randU, randV), V3.mk());
       points.push(newP);
+
+      _stk.popAndRemark();
     }
+    _stk.pop();
 
     return points;
   }
 
+  function morphMeshIntoPts(m: RawMesh, ptsPerTri: number): void {
+    // console.log("MORPH: " + m.dbgName);
+    // TODO(@darzu): points per triangle based on area!
+    let newPoints: V3[] = [];
+    let posNormals: V3[] = [];
+    let _stk = tmpStack();
+    for (let t of [...m.tri, ...m.quad]) {
+      const norm = computeTriangleNormal(
+        m.pos[t[0]],
+        m.pos[t[1]],
+        m.pos[t[2]],
+        V3.mk()
+      );
+      // console.log(vec3Dbg(norm));
+      const isQuad = t.length === 4;
+      const ps = distributePointsOnTriangleOrQuad(m.pos, t, ptsPerTri, isQuad);
+      ps.forEach((p) => newPoints.push(p));
+      ps.forEach((_) => {
+        const n = V3.clone(norm);
+        V3.add(n, V3.scale(randNormalVec3(), 0.1), n);
+        V3.norm(n, n);
+        posNormals.push(V3.clone(norm));
+        _stk.popAndRemark();
+      }); // TODO(@darzu): okay to share normals like this?
+      _stk.popAndRemark();
+    }
+    _stk.pop();
+    m.pos = newPoints;
+    m.tri = [];
+    m.quad = [];
+    m.colors = [];
+    m.surfaceIds = [];
+    m.lines = undefined;
+    m.posNormals = posNormals;
+    // console.dir(m);
+  }
+
   // point exp
   if (DBG_POINTS) {
+    function makePlaneMesh(
+      x1: number,
+      x2: number,
+      y1: number,
+      y2: number
+    ): Mesh {
+      const res: Mesh = {
+        pos: [V(x1, y1, 0), V(x2, y1, 0), V(x2, y2, 0), V(x1, y2, 0)],
+        tri: [],
+        quad: [
+          V(0, 1, 2, 3), // top
+        ],
+        colors: [V3.mk()],
+        surfaceIds: [1],
+        usesProvoking: true,
+      };
+      return res;
+    }
     EM.whenResources(BallMesh.def).then((ball) => {
-      const ptMesh = cloneMesh(ball.mesh_ball.mesh);
-      {
-        let newPoints: V3[][] = [];
-        for (let t of ptMesh.tri) {
-          const _stk = tmpStack();
-          const ps = distributePointsOnTriangle(ptMesh.pos, t, 10);
-          newPoints.push(ps);
-          _stk.pop();
-        }
-        ptMesh.pos = flatten(newPoints);
-        ptMesh.tri = [];
-        ptMesh.quad = [];
-        ptMesh.colors = [];
-        ptMesh.surfaceIds = [];
-        ptMesh.lines = undefined;
+      const xyPlane = makePlaneMesh(0, 256, 0, 256);
+      const xzPlane = makePlaneMesh(0, 256, 0, 256);
+      transformMesh(
+        xzPlane,
+        mat4.mul(mat4.fromYaw(PI / 2), mat4.fromRoll(-PI / 2))
+      );
+      const yzPlane = makePlaneMesh(0, 256, 0, 256);
+      transformMesh(
+        yzPlane,
+        mat4.mul(mat4.fromYaw(-PI / 2), mat4.fromPitch(PI / 2))
+      );
+
+      const L = 0.1;
+      const planeColors: V3.InputT[] = [
+        [L, L, 0],
+        [L, 0, L],
+        [0, L, L],
+      ];
+      for (let [plane, color] of zip(
+        [xyPlane, xzPlane, yzPlane],
+        planeColors
+      )) {
+        if (!normalMode) morphMeshIntoPts(plane, 2048);
+        createObj([RenderableConstructDef, PositionDef, ColorDef] as const, {
+          renderableConstruct: [
+            plane,
+            true,
+            undefined,
+            undefined,
+            normalMode ? meshPoolPtr : pointMeshPoolPtr,
+          ],
+          position: undefined,
+          color,
+        });
       }
+
+      const ptMesh = cloneMesh(ball.mesh_ball.mesh);
+      morphMeshIntoPts(ptMesh, 10);
 
       for (let i = 0; i < 4; i++) {
         const color = seqEndesga16();

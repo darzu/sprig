@@ -48,6 +48,9 @@ export interface RawMesh {
   // TODO(@darzu):
   dbgName?: string;
   rigging?: Rigging;
+
+  // TODO(@darzu): okay, now it's really time to refactor..
+  posNormals?: V3[];
 }
 
 export interface Rigging {
@@ -590,7 +593,7 @@ export function scaleMesh3(m: RawMesh, by: V3.InputT) {
 }
 // TODO(@darzu): need a version that preserves Mesh vs RawMesh
 // TODO(@darzu): PERF! We probably should be using this v sparingly if it's cloning all positions
-export function transformMesh(m: RawMesh, t: mat4) {
+export function transformMesh<M extends RawMesh>(m: M, t: mat4): M {
   mapMeshPositions(m, (p) => V3.tMat4(p, t, V3.mk()));
   return m;
 }

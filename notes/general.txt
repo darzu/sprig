@@ -1538,3 +1538,7 @@ Regarding some Rust drama around runtime reflection?
 
 "implerative programming":
   Using declarative language for imperative programming
+
+Figma's "vector networks":
+  How figma does scalar vector graphics:
+  https://alexharri.com/blog/vector-networks

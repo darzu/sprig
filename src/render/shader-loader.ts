@@ -27,6 +27,7 @@ export const ShaderPaths = [
   "std-grid",
   "std-line",
   "std-point",
+  "xp-point-voronoi",
 ] as const;
 
 export type ShaderName = (typeof ShaderPaths)[number];

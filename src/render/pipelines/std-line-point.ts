@@ -4,6 +4,7 @@ import { Phase } from "../../ecs/sys-phase.js";
 import { mat4 } from "../../matrix/gl-matrix.js";
 import { V3 } from "../../matrix/sprig-matrix.js";
 import { CY } from "../gpu-registry.js";
+import { pointLightsPtr } from "../lights.js";
 import { MAX_INDICES } from "../mesh-pool.js";
 import { DEFAULT_MASK } from "../pipeline-masks.js";
 import {
@@ -129,14 +130,19 @@ export const pointMeshPoolPtr = CY.createMeshPool("pointMeshPool", {
   prim: "point",
 });
 
-export const xpPointTex = CY.createTexture("xpPointTex", {
+export const xpPointMaskTex = CY.createTexture("xpPointMask", {
+  size: [100, 100],
+  onCanvasResize: (w, h) => [w, h],
+  format: "rgba8unorm",
+});
+export const xpPointLitTex = CY.createTexture("xpPointLit", {
   size: [100, 100],
   onCanvasResize: (w, h) => [w, h],
   format: "rgba8unorm",
 });
 
 export const stdPointsRender = CY.createRenderPipeline("stdPointsRender", {
-  globals: [sceneBufPtr],
+  globals: [sceneBufPtr, pointLightsPtr],
   cullMode: "back",
   meshOpt: {
     pool: pointMeshPoolPtr,
@@ -147,9 +153,14 @@ export const stdPointsRender = CY.createRenderPipeline("stdPointsRender", {
   shaderFragmentEntry: "frag_main",
   output: [
     {
-      ptr: xpPointTex,
+      ptr: xpPointMaskTex,
       clear: "once",
     },
+    {
+      ptr: xpPointLitTex,
+      clear: "once",
+    },
+    // TODO(@darzu): remove one
     {
       ptr: litTexturePtr,
       clear: "never",

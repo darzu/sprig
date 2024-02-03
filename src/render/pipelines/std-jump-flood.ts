@@ -35,7 +35,9 @@ export function createJfaPipelines(
   const voronoiTexFmt: Parameters<typeof CY.createTexture>[1] = {
     size: [size, size],
     onCanvasResize: (w, h) => [w, h],
-    format: "rg16float",
+    // format: "rg16float",
+    format: "rg32float",
+    // format: "rg8unorm",
   };
 
   const namePrefix = `jfa${nextId++}`;
