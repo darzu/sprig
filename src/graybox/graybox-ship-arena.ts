@@ -569,7 +569,7 @@ export async function initGrayboxShipArena() {
         const n = V3.clone(norm);
         V3.add(n, V3.scale(randNormalVec3(), 0.1), n);
         V3.norm(n, n);
-        posNormals.push(V3.clone(norm));
+        posNormals.push(n);
         _stk.popAndRemark();
       }); // TODO(@darzu): okay to share normals like this?
       _stk.popAndRemark();
