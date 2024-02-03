@@ -405,12 +405,19 @@ export async function initGrayboxShipArena() {
         );
       else
         res.renderer.pipelines.push(
+          ...shadowPipelines,
           stdRenderPipeline,
+          outlineRender,
+          deferredPipeline,
           // TODO(@darzu): experiment
           // TODO(@darzu): LIGHTING!
           // TODO(@darzu): OUTLINE?
           stdPointsRender,
+
           ...pointsJFA.allPipes(),
+
+          postProcess,
+
           pointJFAColorPipe
         );
       res.renderer.pipelines.push(
@@ -567,7 +574,7 @@ export async function initGrayboxShipArena() {
       ps.forEach((p) => newPoints.push(p));
       ps.forEach((_) => {
         const n = V3.clone(norm);
-        V3.add(n, V3.scale(randNormalVec3(), 0.1), n);
+        V3.add(n, randVec3OfLen(0.05), n);
         V3.norm(n, n);
         posNormals.push(n);
         _stk.popAndRemark();
@@ -619,24 +626,38 @@ export async function initGrayboxShipArena() {
       );
 
       const L = 0.1;
+      // const planeColors: V3.InputT[] = [
+      //   [L, L, 0],
+      //   [L, 0, L],
+      //   [0, L, L],
+      // ];
       const planeColors: V3.InputT[] = [
-        [L, L, 0],
-        [L, 0, L],
-        [0, L, L],
+        ENDESGA16.lightGray,
+        ENDESGA16.lightGray,
+        ENDESGA16.lightGray,
       ];
       for (let [plane, color] of zip(
         [xyPlane, xzPlane, yzPlane],
         planeColors
       )) {
-        if (!normalMode) morphMeshIntoPts(plane, 2048);
+        if (!normalMode) {
+          let planePts = cloneMesh(plane);
+          morphMeshIntoPts(planePts, 2048);
+          createObj([RenderableConstructDef, PositionDef, ColorDef] as const, {
+            renderableConstruct: [
+              planePts,
+              true,
+              undefined,
+              undefined,
+              pointMeshPoolPtr,
+            ],
+            position: undefined,
+            color,
+          });
+        }
+
         createObj([RenderableConstructDef, PositionDef, ColorDef] as const, {
-          renderableConstruct: [
-            plane,
-            true,
-            undefined,
-            undefined,
-            normalMode ? meshPoolPtr : pointMeshPoolPtr,
-          ],
+          renderableConstruct: [plane, true, undefined, undefined, meshPoolPtr],
           position: undefined,
           color,
         });
@@ -645,8 +666,16 @@ export async function initGrayboxShipArena() {
       const ptMesh = cloneMesh(ball.mesh_ball.mesh);
       morphMeshIntoPts(ptMesh, 10);
 
+      let balLColors = [
+        ENDESGA16.orange,
+        ENDESGA16.blue,
+        ENDESGA16.darkRed,
+        ENDESGA16.darkGreen,
+      ];
+
       for (let i = 0; i < 4; i++) {
-        const color = seqEndesga16();
+        // const color = seqEndesga16();
+        const color = balLColors[i];
         createObj(
           [
             RenderableConstructDef,

@@ -3,7 +3,7 @@ import { EM } from "../../ecs/entity-manager.js";
 import { Phase } from "../../ecs/sys-phase.js";
 import { mat4 } from "../../matrix/gl-matrix.js";
 import { V3 } from "../../matrix/sprig-matrix.js";
-import { CY } from "../gpu-registry.js";
+import { CY, comparisonSamplerPtr } from "../gpu-registry.js";
 import { pointLightsPtr } from "../lights.js";
 import { MAX_INDICES } from "../mesh-pool.js";
 import { DEFAULT_MASK } from "../pipeline-masks.js";
@@ -25,6 +25,7 @@ import {
   MeshUniformStruct,
   MeshUniformTS,
 } from "./std-scene.js";
+import { shadowDepthTextures } from "./std-shadow.js";
 
 const MAX_MESHES = 1000;
 const MAX_VERTICES = MAX_INDICES;
@@ -142,7 +143,12 @@ export const xpPointLitTex = CY.createTexture("xpPointLit", {
 });
 
 export const stdPointsRender = CY.createRenderPipeline("stdPointsRender", {
-  globals: [sceneBufPtr, pointLightsPtr],
+  globals: [
+    sceneBufPtr,
+    pointLightsPtr,
+    { ptr: shadowDepthTextures, alias: "shadowMap" },
+    { ptr: comparisonSamplerPtr, alias: "shadowSampler" },
+  ],
   cullMode: "back",
   meshOpt: {
     pool: pointMeshPoolPtr,
