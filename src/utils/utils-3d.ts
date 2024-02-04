@@ -309,12 +309,16 @@ export function positionAndTargetToOrthoViewProjMatrix(
 }
 
 export function signedAreaOfTriangle(a: V2, b: V2, c: V2): number {
-  const ab = V2.tmp();
-  const ac = V2.tmp();
-  V2.sub(b, a, ab);
-  V2.sub(c, a, ac);
+  const ab = V2.sub(b, a);
+  const ac = V2.sub(c, a);
   let cross = V2.cross(ab, ac);
   return 0.5 * cross[2];
+}
+export function signedAreaOfTriangle3(a: V3, b: V3, c: V3): number {
+  const ab = V3.sub(b, a);
+  const ac = V3.sub(c, a);
+  let cross = V3.cross(ab, ac);
+  return 0.5 * V3.len(cross);
 }
 
 // TODO(@darzu):  move to sprig-matrix.ts

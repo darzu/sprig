@@ -24,6 +24,7 @@ import {
   HexMesh,
   MastMesh,
   PlaneMesh,
+  TetraMesh,
 } from "../meshes/mesh-list.js";
 import {
   Mesh,
@@ -109,6 +110,7 @@ import { TimeDef } from "../time/time.js";
 import { CanManDef, raiseManTurret } from "../turret/turret.js";
 import { YawPitchDef } from "../turret/yawpitch.js";
 import {
+  align,
   clamp,
   jitter,
   lerp,
@@ -126,6 +128,7 @@ import {
   computeTriangleNormal,
   randNormalVec3,
   randVec3OfLen,
+  signedAreaOfTriangle,
   vec3Dbg,
 } from "../utils/utils-3d.js";
 import { addGizmoChild, addWorldGizmo } from "../utils/utils-game.js";
@@ -513,7 +516,7 @@ export async function initGrayboxShipArena() {
   function distributePointsOnTriangleOrQuad(
     pos: V3[],
     ind: V3 | V4,
-    num: number,
+    ptsPerArea: number,
     quad: boolean
   ): V3[] {
     const points: V3[] = [];
@@ -525,12 +528,16 @@ export async function initGrayboxShipArena() {
     const p2 = quad ? pos[ind[3]] : pos[ind[2]];
     // const p2 = pos[ind[2]];
 
+    const u = V3.sub(p2, p0);
+    const v = V3.sub(p1, p0);
+    const area = (quad ? 1 : 0.5) * V3.len(V3.cross(u, v));
+    const num = align(Math.ceil(area * ptsPerArea), 2);
+    // console.log(`area: ${area}, num: ${num}`);
+
     const _stk = tmpStack();
 
     for (let i = 0; i < num; i++) {
-      const u = V3.sub(p2, p0);
       // const uLen = V3.len(u);
-      const v = V3.sub(p1, p0);
       // const vLen = V3.len(v);
 
       let uLen = Math.random();
@@ -555,7 +562,7 @@ export async function initGrayboxShipArena() {
     return points;
   }
 
-  function morphMeshIntoPts(m: RawMesh, ptsPerTri: number): void {
+  function morphMeshIntoPts(m: RawMesh, ptsPerArea: number): void {
     // console.log("MORPH: " + m.dbgName);
     // TODO(@darzu): points per triangle based on area!
     let newPoints: V3[] = [];
@@ -570,7 +577,7 @@ export async function initGrayboxShipArena() {
       );
       // console.log(vec3Dbg(norm));
       const isQuad = t.length === 4;
-      const ps = distributePointsOnTriangleOrQuad(m.pos, t, ptsPerTri, isQuad);
+      const ps = distributePointsOnTriangleOrQuad(m.pos, t, ptsPerArea, isQuad);
       ps.forEach((p) => newPoints.push(p));
       ps.forEach((_) => {
         const n = V3.clone(norm);
@@ -612,10 +619,10 @@ export async function initGrayboxShipArena() {
       };
       return res;
     }
-    EM.whenResources(BallMesh.def).then((ball) => {
+    EM.whenResources(BallMesh.def, TetraMesh.def, CubeMesh.def).then((res) => {
       const size = 512;
       const ptsPerArea = 1 / 32.0;
-      const ptsPerPlane = size * size * ptsPerArea;
+      // const ptsPerPlane = size * size * ptsPerArea;
       const xyPlane = makePlaneMesh(0, size, 0, size);
       const xzPlane = makePlaneMesh(0, size, 0, size);
       transformMesh(
@@ -645,7 +652,7 @@ export async function initGrayboxShipArena() {
       )) {
         if (!normalMode) {
           let planePts = cloneMesh(plane);
-          morphMeshIntoPts(planePts, ptsPerPlane);
+          morphMeshIntoPts(planePts, ptsPerArea);
           createObj([RenderableConstructDef, PositionDef, ColorDef] as const, {
             renderableConstruct: [
               planePts,
@@ -666,17 +673,29 @@ export async function initGrayboxShipArena() {
         });
       }
 
-      const ptMesh = cloneMesh(ball.mesh_ball.mesh);
-      morphMeshIntoPts(ptMesh, 10);
+      // const ptMesh = cloneMesh(ball.mesh_ball.mesh);
+      // // console.log(`ball tris: ${ptMesh.tri.length + ptMesh.quad.length * 2}`);
+      // morphMeshIntoPts(ptMesh, 16);
 
-      let objTrMeshes = [BallMesh, BallMesh, BallMesh, BallMesh];
-      let objPtMeshes = [ptMesh, ptMesh, ptMesh, ptMesh];
+      let objMeshes = [
+        res.mesh_ball,
+        res.mesh_tetra,
+        res.mesh_cube,
+        res.mesh_ball,
+      ];
 
       let balLColors = [
         ENDESGA16.orange,
         ENDESGA16.blue,
         ENDESGA16.darkRed,
         ENDESGA16.darkGreen,
+      ];
+
+      let scales: V3.InputT[] = [
+        [10, 10, 10],
+        [10, 10, 20],
+        [15, 15, 15],
+        [10, 10, 10],
       ];
 
       for (let i = 0; i < 4; i++) {
@@ -693,7 +712,7 @@ export async function initGrayboxShipArena() {
           ] as const,
           {
             renderableConstruct: [
-              objTrMeshes[i],
+              objMeshes[i].proto,
               true,
               undefined,
               undefined,
@@ -701,11 +720,14 @@ export async function initGrayboxShipArena() {
             ],
             // position: [-40, 0, 40],
             position: pos,
-            scale: [10, 10, 10],
+            scale: scales[i],
             rotation: quat.fromYawPitchRoll(i * PI * 0.123),
             color,
           }
         );
+
+        const ptMesh = cloneMesh(objMeshes[i].mesh);
+        morphMeshIntoPts(ptMesh, 16);
 
         createObj(
           [
@@ -717,7 +739,7 @@ export async function initGrayboxShipArena() {
           ] as const,
           {
             renderableConstruct: [
-              objPtMeshes[i],
+              ptMesh,
               true,
               undefined,
               undefined,
@@ -725,7 +747,7 @@ export async function initGrayboxShipArena() {
             ],
             // position: [-40, 0, 40],
             position: pos,
-            scale: [10, 10, 10],
+            scale: scales[i],
             rotation: quat.fromYawPitchRoll(i * PI * 0.123),
             color,
           }

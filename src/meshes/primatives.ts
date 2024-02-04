@@ -171,6 +171,7 @@ export const TETRA_MESH: RawMesh = {
   colors: [V(0, 0, 0), V(0, 0, 0), V(0, 0, 0), V(0, 0, 0)],
 };
 scaleMesh(TETRA_MESH, 2);
+transformMesh(TETRA_MESH, transformYUpModelIntoZUp);
 
 const HEX_XR = Math.cos(Math.PI / 3);
 const HEX_YR = Math.sin(Math.PI / 3);
