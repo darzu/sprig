@@ -8,6 +8,9 @@ import { Phase } from "../ecs/sys-phase.js";
 // Consider: https://www.reddit.com/r/gamedev/comments/w1dau6/input_buffering_action_canceling_and_also/
 // TODO(@darzu): needs refactor to address: events, controller vs mouse+keyboard, keybindings
 
+// TODO(@darzu): BUG. on window focus change, we should release all keys probably? Right now the "shift" key gets stuck when doing
+//  a screen recording.
+
 const _seenKeyCodes: Set<string> = new Set();
 
 export const InputsDef = EM.defineResource("inputs", () => {

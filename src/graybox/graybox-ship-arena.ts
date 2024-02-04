@@ -416,7 +416,7 @@ export async function initGrayboxShipArena() {
 
           ...pointsJFA.allPipes(),
 
-          postProcess,
+          // postProcess,
 
           pointJFAColorPipe
         );
@@ -613,13 +613,16 @@ export async function initGrayboxShipArena() {
       return res;
     }
     EM.whenResources(BallMesh.def).then((ball) => {
-      const xyPlane = makePlaneMesh(0, 256, 0, 256);
-      const xzPlane = makePlaneMesh(0, 256, 0, 256);
+      const size = 512;
+      const ptsPerArea = 1 / 32.0;
+      const ptsPerPlane = size * size * ptsPerArea;
+      const xyPlane = makePlaneMesh(0, size, 0, size);
+      const xzPlane = makePlaneMesh(0, size, 0, size);
       transformMesh(
         xzPlane,
         mat4.mul(mat4.fromYaw(PI / 2), mat4.fromRoll(-PI / 2))
       );
-      const yzPlane = makePlaneMesh(0, 256, 0, 256);
+      const yzPlane = makePlaneMesh(0, size, 0, size);
       transformMesh(
         yzPlane,
         mat4.mul(mat4.fromYaw(-PI / 2), mat4.fromPitch(PI / 2))
@@ -642,7 +645,7 @@ export async function initGrayboxShipArena() {
       )) {
         if (!normalMode) {
           let planePts = cloneMesh(plane);
-          morphMeshIntoPts(planePts, 2048);
+          morphMeshIntoPts(planePts, ptsPerPlane);
           createObj([RenderableConstructDef, PositionDef, ColorDef] as const, {
             renderableConstruct: [
               planePts,
@@ -666,6 +669,9 @@ export async function initGrayboxShipArena() {
       const ptMesh = cloneMesh(ball.mesh_ball.mesh);
       morphMeshIntoPts(ptMesh, 10);
 
+      let objTrMeshes = [BallMesh, BallMesh, BallMesh, BallMesh];
+      let objPtMeshes = [ptMesh, ptMesh, ptMesh, ptMesh];
+
       let balLColors = [
         ENDESGA16.orange,
         ENDESGA16.blue,
@@ -675,6 +681,7 @@ export async function initGrayboxShipArena() {
 
       for (let i = 0; i < 4; i++) {
         // const color = seqEndesga16();
+        let pos: V3.InputT = [40 * (i + 1), 40 * (i + 1), 40];
         const color = balLColors[i];
         createObj(
           [
@@ -686,14 +693,14 @@ export async function initGrayboxShipArena() {
           ] as const,
           {
             renderableConstruct: [
-              BallMesh,
+              objTrMeshes[i],
               true,
               undefined,
               undefined,
               meshPoolPtr,
             ],
             // position: [-40, 0, 40],
-            position: [40 * i, 40 * i, 40],
+            position: pos,
             scale: [10, 10, 10],
             rotation: quat.fromYawPitchRoll(i * PI * 0.123),
             color,
@@ -710,14 +717,14 @@ export async function initGrayboxShipArena() {
           ] as const,
           {
             renderableConstruct: [
-              ptMesh,
+              objPtMeshes[i],
               true,
               undefined,
               undefined,
               pointMeshPoolPtr,
             ],
             // position: [-40, 0, 40],
-            position: [40 * i, 40 * i, 40],
+            position: pos,
             scale: [10, 10, 10],
             rotation: quat.fromYawPitchRoll(i * PI * 0.123),
             color,
