@@ -11,6 +11,12 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec2<f32> {
   // let cSeedUV = textureLoad(inTex, fragXY, 0).xy;
   // let cSeedXY = vec2<i32>(cSeedUV * vec2<f32>(dims));
 
+  let fragObj: u32 = textureLoad(surfTex, fragXY, 0).g;
+  // let fragDep: f32 = textureLoad(depthTex, fragXY, 0);
+
+  // let cSeedUV = textureLoad(inTex, fragXY, 0).xy;
+  // let cSeedXY = vec2<i32>(cSeedUV * vec2<f32>(dims));
+
   // let cSeedObj: u32 = textureLoad(surfTex, cSeedXY, 0).g;
   // let cSeedDep: f32 = textureLoad(depthTex, cSeedXY, 0);
 
@@ -52,7 +58,18 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec2<f32> {
         continue;
       }
 
-      if (maxDist < dist) {
+      // if (sSeedObj == fragObj) {
+      //   if (dist < bestDist) {
+      //     bestDist = dist;
+      //     bestUV = sSeedUV;
+      //     bestObj = sSeedObj;
+      //     bestDep = min(bestDep, sSeedDep);
+      //     // bestDep = sSeedDep;
+      //     continue;
+      //   }
+      // }
+
+      if (maxDist < dist && sSeedObj != fragObj) {
         continue;
       }
 
