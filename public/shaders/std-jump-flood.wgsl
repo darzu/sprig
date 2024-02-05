@@ -17,12 +17,15 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec2<f32> {
   // const maxInnerDist = 0.02; // TODO(@darzu): tweak
   // const maxOuterDist = 0.01; // TODO(@darzu): tweak
   // const maxDist = 0.01; // TODO(@darzu): tweak
-  const maxDist = 0.02; // TODO(@darzu): tweak
+  // const maxDist = 0.02; // TODO(@darzu): tweak
+  const maxDist = 0.05; // TODO(@darzu): tweak
+  const diffObjMaxDist = 0.01; // TODO(@darzu): tweak
 
   var bestDist = 999999.9;
   var bestUV = vec2(0.0);
   var bestDep = 999.9;
   var bestObj: u32 = 99999;
+  var first = false;
 
   for (var x = -1; x <= 1; x++) 
   {
@@ -31,6 +34,9 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec2<f32> {
       let sampXY = fragXY + vec2(x,y) * stepSize;
       let sSeedUV = textureLoad(inTex, sampXY, 0).xy;
       let sSeedXY = vec2<i32>(sSeedUV * vec2<f32>(dims));
+      let sSeedObj: u32 = textureLoad(surfTex, sSeedXY, 0).g;
+      let sSeedDep: f32 = textureLoad(depthTex, sSeedXY, 0);
+      var dist = distance(sSeedUV, fragUV);
 
       if (!(
         // TODO(@darzu): remove the sampXY if u know content won't touch the edge
@@ -44,31 +50,48 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec2<f32> {
         continue;
       }
 
-      var dist = distance(sSeedUV, fragUV);
-
       if (maxDist < dist) {
         continue;
       }
 
-      let sSeedObj: u32 = textureLoad(surfTex, sSeedXY, 0).g;
-      let sSeedDep: f32 = textureLoad(depthTex, sSeedXY, 0);
-
-      if (sSeedObj != bestObj) {
-        if (sSeedDep < bestDep) {
-          bestDist = dist;
-          bestUV = sSeedUV;
-          bestObj = sSeedObj;
-          bestDep = sSeedDep;
-        }
-        continue;
-      }
-
-      if (dist < bestDist) 
-      {
+      // TODO(@darzu): can we remove this?
+      if (!first) {
+        first = true;
         bestDist = dist;
         bestUV = sSeedUV;
         bestObj = sSeedObj;
         bestDep = sSeedDep;
+      }
+
+
+      if (sSeedObj == bestObj) {
+        if (dist < bestDist) 
+        {
+          bestDist = dist;
+          bestUV = sSeedUV;
+        }
+        bestDep = min(bestDep, sSeedDep);
+        continue;
+      }
+
+      if (dist <= diffObjMaxDist && diffObjMaxDist < bestDist) {
+        bestDist = dist;
+        bestUV = sSeedUV;
+        bestObj = sSeedObj;
+        bestDep = sSeedDep;
+        continue;
+      }
+
+      if (bestDist <= diffObjMaxDist && diffObjMaxDist < dist) {
+        continue;
+      }
+
+      if (sSeedDep < bestDep) {
+        bestDist = dist;
+        bestUV = sSeedUV;
+        bestObj = sSeedObj;
+        bestDep = sSeedDep;
+        continue;
       }
     }
   }
