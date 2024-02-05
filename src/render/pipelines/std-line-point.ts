@@ -35,7 +35,9 @@ import { shadowDepthTextures } from "./std-shadow.js";
   Useful for debugging?
   Good for particles?
 
-Ideas: JFA sizing based on perspective distance?
+Ideas: JFA sizing based on perspective/distance?
+
+Maybe use another JFA to calc "distance until occluded" and then smooth out the radius of that point
 */
 
 const MAX_MESHES = 1000;

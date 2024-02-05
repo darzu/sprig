@@ -18,14 +18,15 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec2<f32> {
   // const maxOuterDist = 0.01; // TODO(@darzu): tweak
   // const maxDist = 0.01; // TODO(@darzu): tweak
   // const maxDist = 0.02; // TODO(@darzu): tweak
-  const maxDist = 0.05; // TODO(@darzu): tweak
-  const diffObjMaxDist = 0.01; // TODO(@darzu): tweak
+  // const maxDist = 0.05; // TODO(@darzu): tweak
+  const maxDist = 0.01; // TODO(@darzu): tweak
+  // const diffObjMaxDist = 0.01; // TODO(@darzu): tweak
 
   var bestDist = 999999.9;
   var bestUV = vec2(0.0);
   var bestDep = 999.9;
   var bestObj: u32 = 99999;
-  var first = false;
+  // var first = false;
 
   for (var x = -1; x <= 1; x++) 
   {
@@ -47,6 +48,7 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec2<f32> {
         && sSeedUV.x > 0.0
         && sSeedUV.y > 0.0)
       ) {
+        // invalid sample
         continue;
       }
 
@@ -54,45 +56,65 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec2<f32> {
         continue;
       }
 
-      // TODO(@darzu): can we remove this?
-      if (!first) {
-        first = true;
-        bestDist = dist;
-        bestUV = sSeedUV;
-        bestObj = sSeedObj;
-        bestDep = sSeedDep;
-      }
+      // // TODO(@darzu): can we remove this?
+      // if (!first) {
+      //   first = true;
+      //   bestDist = dist;
+      //   bestUV = sSeedUV;
+      //   bestObj = sSeedObj;
+      //   bestDep = sSeedDep;
+      // }
 
-
-      if (sSeedObj == bestObj) {
-        if (dist < bestDist) 
-        {
+      if (sSeedObj != bestObj) {
+        if (sSeedDep < bestDep) {
+          // take new nearer
           bestDist = dist;
           bestUV = sSeedUV;
+          bestObj = sSeedObj;
+          bestDep = sSeedDep;
         }
+        // keep old nearer
+        continue;
+      }
+
+      if (dist < bestDist) {
+        bestDist = dist;
+        bestUV = sSeedUV;
+        bestObj = sSeedObj;
         bestDep = min(bestDep, sSeedDep);
+        // bestDep = sSeedDep;
         continue;
       }
 
-      if (dist <= diffObjMaxDist && diffObjMaxDist < bestDist) {
-        bestDist = dist;
-        bestUV = sSeedUV;
-        bestObj = sSeedObj;
-        bestDep = sSeedDep;
-        continue;
-      }
+      // if (sSeedObj == bestObj) {
+      //   if (dist < bestDist) 
+      //   {
+      //     bestDist = dist;
+      //     bestUV = sSeedUV;
+      //   }
+      //   bestDep = min(bestDep, sSeedDep);
+      //   continue;
+      // }
 
-      if (bestDist <= diffObjMaxDist && diffObjMaxDist < dist) {
-        continue;
-      }
+      // if (dist <= diffObjMaxDist && diffObjMaxDist < bestDist) {
+      //   bestDist = dist;
+      //   bestUV = sSeedUV;
+      //   bestObj = sSeedObj;
+      //   bestDep = sSeedDep;
+      //   continue;
+      // }
 
-      if (sSeedDep < bestDep) {
-        bestDist = dist;
-        bestUV = sSeedUV;
-        bestObj = sSeedObj;
-        bestDep = sSeedDep;
-        continue;
-      }
+      // if (bestDist <= diffObjMaxDist && diffObjMaxDist < dist) {
+      //   continue;
+      // }
+
+      // if (sSeedDep < bestDep) {
+      //   bestDist = dist;
+      //   bestUV = sSeedUV;
+      //   bestObj = sSeedObj;
+      //   bestDep = sSeedDep;
+      //   continue;
+      // }
     }
   }
 
