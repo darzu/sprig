@@ -7,38 +7,68 @@ override stepSize: i32;
 fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec2<f32> {
   let dims = vec2<i32>(textureDimensions(inTex));
   let fragXY = vec2<i32>(fragUV * vec2<f32>(dims));
-  let cSeedUV = textureLoad(inTex, fragXY, 0).xy;
-  let cSeedXY = vec2<i32>(cSeedUV * vec2<f32>(dims));
 
-  let cSeedObj: u32 = textureLoad(surfTex, cSeedXY, 0).g;
-  let cSeedDep: f32 = textureLoad(depthTex, cSeedXY, 0);
+  // let cSeedUV = textureLoad(inTex, fragXY, 0).xy;
+  // let cSeedXY = vec2<i32>(cSeedUV * vec2<f32>(dims));
 
-  var bestDist = 9999.9;
+  // let cSeedObj: u32 = textureLoad(surfTex, cSeedXY, 0).g;
+  // let cSeedDep: f32 = textureLoad(depthTex, cSeedXY, 0);
+
+  // const maxInnerDist = 0.02; // TODO(@darzu): tweak
+  // const maxOuterDist = 0.01; // TODO(@darzu): tweak
+  // const maxDist = 0.01; // TODO(@darzu): tweak
+  const maxDist = 0.02; // TODO(@darzu): tweak
+
+  var bestDist = 999999.9;
   var bestUV = vec2(0.0);
+  var bestDep = 999.9;
+  var bestObj: u32 = 99999;
 
   for (var x = -1; x <= 1; x++) 
   {
     for (var y = -1; y <= 1; y++)
     {
-      let neighXY = fragXY + vec2(x,y) * stepSize;
-      let nSeedUV = textureLoad(inTex, neighXY, 0).xy;
-      let nSeedXY = vec2<i32>(nSeedUV * vec2<f32>(dims));
-      let nSeedObj = textureLoad(surfTex, nSeedXY, 0).g;
-      let nSeedDep: f32 = textureLoad(depthTex, nSeedXY, 0);
-      var dist = distance(nSeedUV, fragUV);
-      if (
-        // TODO(@darzu): remove the neighXY if u know content won't touch the edge
-           neighXY.x < dims.x
-        && neighXY.y < dims.y
-        && neighXY.x >= 0
-        && neighXY.y >= 0
-        && nSeedUV.x > 0.0
-        && nSeedUV.y > 0.0
-        && dist < bestDist
-      ) 
+      let sampXY = fragXY + vec2(x,y) * stepSize;
+      let sSeedUV = textureLoad(inTex, sampXY, 0).xy;
+      let sSeedXY = vec2<i32>(sSeedUV * vec2<f32>(dims));
+
+      if (!(
+        // TODO(@darzu): remove the sampXY if u know content won't touch the edge
+           sampXY.x < dims.x
+        && sampXY.y < dims.y
+        && sampXY.x >= 0
+        && sampXY.y >= 0
+        && sSeedUV.x > 0.0
+        && sSeedUV.y > 0.0)
+      ) {
+        continue;
+      }
+
+      var dist = distance(sSeedUV, fragUV);
+
+      if (maxDist < dist) {
+        continue;
+      }
+
+      let sSeedObj: u32 = textureLoad(surfTex, sSeedXY, 0).g;
+      let sSeedDep: f32 = textureLoad(depthTex, sSeedXY, 0);
+
+      if (sSeedObj != bestObj) {
+        if (sSeedDep < bestDep) {
+          bestDist = dist;
+          bestUV = sSeedUV;
+          bestObj = sSeedObj;
+          bestDep = sSeedDep;
+        }
+        continue;
+      }
+
+      if (dist < bestDist) 
       {
         bestDist = dist;
-        bestUV = nSeedUV;
+        bestUV = sSeedUV;
+        bestObj = sSeedObj;
+        bestDep = sSeedDep;
       }
     }
   }
@@ -47,10 +77,10 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec2<f32> {
 }
 
 
-        // && (dist < bestDist || nSeedDep > cSeedDep)
-        // && nSeedObj == cSeedObj
+        // && (dist < bestDist || sSeedDep > cSeedDep)
+        // && sSeedObj == cSeedObj
         // && objFuz
-        // && nSeedObj <= cSeedObj
+        // && sSeedObj <= cSeedObj
       // let diffObj = nSeedObj != cSeedObj;
       // var objFuz = true;
       // if (diffObj && nSeedDep < cSeedDep && dist < 0.05) {
