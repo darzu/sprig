@@ -154,6 +154,7 @@ export function createJfaPipelines(
       shader: (shaders) => {
         return `
         // const stepSize = ${stepSize};
+        ${shaders["std-helpers"].code}
         ${shaders["std-screen-quad-vert"].code}
         ${shaders["std-jump-flood"].code}
       `;

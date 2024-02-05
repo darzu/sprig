@@ -61,6 +61,7 @@ import {
 } from "../physics/transform.js";
 import { CanvasDef, HasFirstInteractionDef } from "../render/canvas.js";
 import { CyArray } from "../render/data-webgpu.js";
+import { fullQuad } from "../render/gpu-helper.js";
 import {
   CY,
   linearSamplerPtr,
@@ -345,6 +346,7 @@ const pointJFAColorPipe = CY.createRenderPipeline("colorPointsJFA", {
     { ptr: nearestSamplerPtr, alias: "samp" },
     { ptr: pointsJFA.voronoiTex, alias: "voronoiTex" },
     { ptr: xpPointLitTex, alias: "colorTex" },
+    { ptr: fullQuad, alias: "quad" },
     sceneBufPtr,
   ],
   meshOpt: {
@@ -357,7 +359,11 @@ const pointJFAColorPipe = CY.createRenderPipeline("colorPointsJFA", {
       clear: "once",
     },
   ],
-  shader: "xp-point-voronoi",
+  shader: (shaderSet) => `
+  ${shaderSet["std-helpers"].code}
+  ${shaderSet["std-screen-quad-vert"].code}
+  ${shaderSet["xp-point-voronoi"].code}
+  `,
   shaderFragmentEntry: "frag_main",
   shaderVertexEntry: "vert_main",
 });
