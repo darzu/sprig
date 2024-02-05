@@ -3,7 +3,7 @@ import { range } from "../../utils/util.js";
 import { createRenderTextureToQuad, fullQuad } from "../gpu-helper.js";
 import { CY, CyPipelinePtr, CyTexturePtr } from "../gpu-registry.js";
 import { ShaderSet } from "../shader-loader.js";
-import { surfacesTexturePtr } from "./std-scene.js";
+import { mainDepthTex, sceneBufPtr, surfacesTexturePtr } from "./std-scene.js";
 
 // TODO(@darzu): support a sign bit for dist on the mask
 //    I think we'll need this for text -> SDF
@@ -140,6 +140,8 @@ export function createJfaPipelines(
         { ptr: fullQuad, alias: "quad" },
         // TODO(@darzu): generalize this
         { ptr: surfacesTexturePtr, alias: "surfTex" },
+        { ptr: mainDepthTex, alias: "depthTex" },
+        sceneBufPtr,
       ],
       meshOpt: {
         vertexCount: 6,

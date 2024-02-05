@@ -41,6 +41,7 @@ fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
 
 
   let tBounce = abs(fract(scene.time * 0.0002) * 2.0 - 1.0);
+  // let tBounce = 1.0;
 
   let dims : vec2<i32> = vec2<i32>(textureDimensions(voronoiTex));
   let coord = uv * vec2<f32>(dims);
