@@ -452,7 +452,7 @@ export async function initGrayboxShipArena() {
   createSun();
 
   // gizmo
-  const gizmo = addWorldGizmo(V(0, 0, 0), 50);
+  // const gizmo = addWorldGizmo(V(0, 0, 0), 50);
   // EM.set(gizmo, GlitchDef);
 
   // ocean
@@ -616,6 +616,7 @@ export async function initGrayboxShipArena() {
         colors: [V3.mk()],
         surfaceIds: [1],
         usesProvoking: true,
+        dbgName: "plane",
       };
       return res;
     }
@@ -646,6 +647,7 @@ export async function initGrayboxShipArena() {
         ENDESGA16.lightGray,
         ENDESGA16.lightGray,
       ];
+      let planeObjId = 200;
       for (let [plane, color] of zip(
         [xyPlane, xzPlane, yzPlane],
         planeColors
@@ -660,6 +662,9 @@ export async function initGrayboxShipArena() {
               undefined,
               undefined,
               pointMeshPoolPtr,
+              undefined,
+              undefined,
+              planeObjId,
             ],
             position: undefined,
             color,
@@ -667,7 +672,16 @@ export async function initGrayboxShipArena() {
         }
 
         createObj([RenderableConstructDef, PositionDef, ColorDef] as const, {
-          renderableConstruct: [plane, true, undefined, undefined, meshPoolPtr],
+          renderableConstruct: [
+            plane,
+            true,
+            undefined,
+            undefined,
+            meshPoolPtr,
+            undefined,
+            undefined,
+            planeObjId,
+          ],
           position: undefined,
           color,
         });
@@ -699,6 +713,8 @@ export async function initGrayboxShipArena() {
       ];
 
       for (let i = 0; i < 4; i++) {
+        const objId = 100 + i;
+
         // const color = seqEndesga16();
         let pos: V3.InputT = [40 * (i + 1), 40 * (i + 1), 40];
         const color = balLColors[i];
@@ -717,6 +733,9 @@ export async function initGrayboxShipArena() {
               undefined,
               undefined,
               meshPoolPtr,
+              undefined,
+              undefined,
+              objId,
             ],
             // position: [-40, 0, 40],
             position: pos,
@@ -744,6 +763,9 @@ export async function initGrayboxShipArena() {
               undefined,
               undefined,
               pointMeshPoolPtr,
+              undefined,
+              undefined,
+              objId,
             ],
             // position: [-40, 0, 40],
             position: pos,

@@ -4,6 +4,7 @@ struct VertexOutput {
     @builtin(position) position : vec4<f32>,
     @location(1) @interpolate(flat) normal: vec3<f32>,
     @location(2) @interpolate(flat) worldPos: vec4<f32>,
+    @location(3) @interpolate(flat) objId: u32,
 };
 
 @vertex
@@ -26,6 +27,8 @@ fn vert_main(input: VertexInput) -> VertexOutput {
 
     // TODO(@darzu): instead of this depth bias, we should do a surface check
     output.position.w += 0.1;
+    
+    output.objId = meshUni.id;
 
     return output;
 }
@@ -114,6 +117,15 @@ fn frag_main(input: VertexOutput) -> FragOut {
   }
 
   var litColor = color * lightingIntensity;
+
+  // let dims = vec2<f32>(textureDimensions(surfTex));
+  let centerXY = vec2<i32>(input.position.xy);
+  let centerObj: u32 = textureLoad(surfTex, centerXY, 0).g;
+  // litColor = vec3(f32(centerObj) / 100.0);
+
+  if (input.objId != centerObj) {
+    discard;
+  }
 
   var out: FragOut;
 

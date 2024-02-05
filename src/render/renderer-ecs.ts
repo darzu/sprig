@@ -80,6 +80,7 @@ export interface RenderableConstruct {
   readonly hidden: boolean;
   meshOrProto: MeshLike;
   readonly reserve?: MeshReserve;
+  readonly idOverride?: number;
 }
 
 export const RenderableConstructDef = EM.defineNonupdatableComponent(
@@ -93,7 +94,8 @@ export const RenderableConstructDef = EM.defineNonupdatableComponent(
     mask?: number,
     pool?: CyMeshPoolPtr<any, any>,
     hidden: boolean = false,
-    reserve?: MeshReserve
+    reserve?: MeshReserve,
+    idOverride?: number
   ) => {
     const r: RenderableConstruct = {
       enabled,
@@ -103,6 +105,7 @@ export const RenderableConstructDef = EM.defineNonupdatableComponent(
       pool: pool ?? meshPoolPtr,
       hidden,
       reserve,
+      idOverride,
     };
     return r;
   },
@@ -234,11 +237,15 @@ EM.addEagerInit([RenderableConstructDef], [RendererDef], [], () => {
           const uni = pool.ptr.computeUniData(mesh);
           EM.set(e, pool.ptr.dataDef, uni);
           // TODO(@darzu): HACK! We need some notion of required uni data maybe? Or common uni data
+          // TODO(@darzu): Hmmm maybe reserve the first ~100 object IDs for custom stuff like water, terrain, etc ?
           if ("id" in e[pool.ptr.dataDef.name]) {
-            // console.log(
-            //   `setting ${e.id}.${pool.ptr.dataDef.name}.id = ${meshHandle.mId}`
-            // );
-            e[pool.ptr.dataDef.name]["id"] = meshHandle.mId;
+            e[pool.ptr.dataDef.name]["id"] =
+              e.renderableConstruct.idOverride ?? meshHandle.mId;
+            console.log(
+              `setting "${mesh.dbgName}" ${e.id}.${
+                pool.ptr.dataDef.name
+              }.id = ${e[pool.ptr.dataDef.name]["id"]}`
+            );
           }
         }
       }
@@ -467,6 +474,7 @@ EM.addEagerInit([RiggedRenderableConstructDef], [RendererDef], [], (res) => {
     [RiggedRenderableConstructDef],
     [],
     (es, res) => {
+      // TODO(@darzu): DE-DUPLICATE with regular construct above!
       for (let e of es) {
         // TODO(@darzu): this seems somewhat inefficient to look for this every frame
         if (!RenderableDef.isOn(e)) {

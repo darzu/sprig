@@ -47,7 +47,7 @@ fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
   let uv2 = textureLoad(voronoiTex, vec2<i32>(coord), 0).xy;
   let coord2 = uv2 * vec2<f32>(dims);
   // if (distance(coord, coord2) > (100.0 * tBounce + 1.0)) {
-  if (distance(coord, coord2) > 100.0 * smoothstep(0.0, 1.0, tBounce) + 5.0) {
+  if (distance(coord, coord2) > 100.0 * smoothstep(0.1, 0.9, tBounce) + 5.0) {
     discard;
   }
   var color = textureLoad(colorTex, vec2<i32>(coord2), 0).rgb;

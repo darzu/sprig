@@ -3,6 +3,7 @@ import { range } from "../../utils/util.js";
 import { createRenderTextureToQuad, fullQuad } from "../gpu-helper.js";
 import { CY, CyPipelinePtr, CyTexturePtr } from "../gpu-registry.js";
 import { ShaderSet } from "../shader-loader.js";
+import { surfacesTexturePtr } from "./std-scene.js";
 
 // TODO(@darzu): support a sign bit for dist on the mask
 //    I think we'll need this for text -> SDF
@@ -131,20 +132,26 @@ export function createJfaPipelines(
     // console.log(`outIdx: ${outIdx}`);
 
     const stepSize = Math.floor(Math.pow(2, maxStep - i));
+    console.log(`stepSize: ${stepSize}`);
 
     const pipeline = CY.createRenderPipeline(`${namePrefix}Pipe${i}`, {
       globals: [
         { ptr: i === 0 ? uvMaskTex : voronoiTexs[inIdx], alias: "inTex" },
         { ptr: fullQuad, alias: "quad" },
+        // TODO(@darzu): generalize this
+        { ptr: surfacesTexturePtr, alias: "surfTex" },
       ],
       meshOpt: {
         vertexCount: 6,
         stepMode: "single-draw",
       },
       output: [voronoiTexs[outIdx]],
+      fragOverrides: {
+        stepSize: stepSize,
+      },
       shader: (shaders) => {
         return `
-        const stepSize = ${stepSize};
+        // const stepSize = ${stepSize};
         ${shaders["std-screen-quad-vert"].code}
         ${shaders["std-jump-flood"].code}
       `;

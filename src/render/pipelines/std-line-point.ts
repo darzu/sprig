@@ -24,8 +24,19 @@ import {
   VertexStruct,
   MeshUniformStruct,
   MeshUniformTS,
+  surfacesTexturePtr,
 } from "./std-scene.js";
 import { shadowDepthTextures } from "./std-shadow.js";
+
+/*
+(Possible) Advantages of points (and maybe lines):
+  Different authoring than triangles; easier to describe an organice tree w/ points perhaps
+  Possibly easier to get point cloud from SDF created objects
+  Useful for debugging?
+  Good for particles?
+
+Ideas: JFA sizing based on perspective distance?
+*/
 
 const MAX_MESHES = 1000;
 const MAX_VERTICES = MAX_INDICES;
@@ -101,7 +112,8 @@ EM.addEagerInit([LineRenderDataDef], [], [], () => {
         }
 
         // id
-        o.lineRenderData.id = o.renderable.meshHandle.mId;
+        // TODO(@darzu): set at construct time?
+        // o.lineRenderData.id = o.renderable.meshHandle.mId;
 
         // transform
         mat4.copy(o.lineRenderData.transform, o.rendererWorldFrame.transform);
@@ -148,6 +160,7 @@ export const stdPointsRender = CY.createRenderPipeline("stdPointsRender", {
     pointLightsPtr,
     { ptr: shadowDepthTextures, alias: "shadowMap" },
     { ptr: comparisonSamplerPtr, alias: "shadowSampler" },
+    { ptr: surfacesTexturePtr, alias: "surfTex" },
   ],
   cullMode: "back",
   meshOpt: {
@@ -209,7 +222,8 @@ EM.addEagerInit([PointRenderDataDef], [], [], () => {
         }
 
         // id
-        o.pointRenderData.id = o.renderable.meshHandle.mId;
+        // TODO(@darzu): set at construct time?
+        // o.pointRenderData.id = o.renderable.meshHandle.mId;
 
         // transform
         mat4.copy(o.pointRenderData.transform, o.rendererWorldFrame.transform);

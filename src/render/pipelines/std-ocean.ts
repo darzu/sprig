@@ -243,7 +243,8 @@ EM.addEagerInit([RenderDataOceanDef], [], [], () => {
         }
 
         // id
-        o.renderDataOcean.id = o.renderable.meshHandle.mId;
+        // TODO(@darzu): set at renderable construct time?
+        // o.renderDataOcean.id = o.renderable.meshHandle.mId;
 
         // transform
         mat4.copy(o.renderDataOcean.transform, o.rendererWorldFrame.transform);
