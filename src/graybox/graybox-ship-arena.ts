@@ -416,9 +416,9 @@ export async function initGrayboxShipArena() {
       else
         res.renderer.pipelines.push(
           ...shadowPipelines,
-          stdRenderPipeline,
-          outlineRender,
-          deferredPipeline,
+          // stdRenderPipeline,
+          // outlineRender,
+          // deferredPipeline,
           // TODO(@darzu): experiment
           // TODO(@darzu): LIGHTING!
           // TODO(@darzu): OUTLINE?

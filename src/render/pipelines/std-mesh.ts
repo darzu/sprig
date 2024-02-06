@@ -104,6 +104,7 @@ export const stdRenderPipeline = CY.createRenderPipeline("stdMeshRender", {
     },
   ],
   depthStencil: mainDepthTex,
+  // depthCompare: ,
   shader: (shaderSet) => `
   ${shaderSet["std-rand"].code}
   ${shaderSet["std-mesh"].code}
