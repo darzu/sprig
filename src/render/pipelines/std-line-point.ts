@@ -181,25 +181,27 @@ export const stdPointsRender = CY.createRenderPipeline("stdPointsRender", {
       ptr: xpPointLitTex,
       clear: "once",
     },
-    // TODO(@darzu): remove one
-    {
-      ptr: litTexturePtr,
-      clear: "never",
-      blend: {
-        color: {
-          srcFactor: "src-alpha",
-          dstFactor: "one-minus-src-alpha",
-          operation: "add",
-        },
-        alpha: {
-          srcFactor: "constant",
-          dstFactor: "zero",
-          operation: "add",
-        },
-      },
-    },
+    // // TODO(@darzu): remove one
+    // {
+    //   ptr: litTexturePtr,
+    //   clear: "never",
+    //   blend: {
+    //     color: {
+    //       srcFactor: "src-alpha",
+    //       dstFactor: "one-minus-src-alpha",
+    //       operation: "add",
+    //     },
+    //     alpha: {
+    //       srcFactor: "constant",
+    //       dstFactor: "zero",
+    //       operation: "add",
+    //     },
+    //   },
+    // },
+    // { ptr: surfacesTexturePtr, clear: "once" },
   ],
   depthStencil: mainDepthTex,
+  depthCompare: "always",
   // depthCompare: "less-equal",
   shader: "std-point",
 });

@@ -26,7 +26,7 @@ fn vert_main(input: VertexInput) -> VertexOutput {
     output.worldPos = worldPos;
 
     // TODO(@darzu): instead of this depth bias, we should do a surface check
-    output.position.w += 0.1;
+    // output.position.w += 0.1;
     
     output.objId = meshUni.id;
 
@@ -36,7 +36,8 @@ fn vert_main(input: VertexInput) -> VertexOutput {
 struct FragOut {
   @location(0) mask: vec4<f32>,
   @location(1) color: vec4<f32>,
-  @location(2) color2: vec4<f32>,
+  // @location(2) color2: vec4<f32>,
+  // @location(2) surface: vec2<u32>,
 }
 
 
@@ -86,6 +87,11 @@ fn frag_main(input: VertexOutput) -> FragOut {
   let normal = input.normal;
   let worldPos = input.worldPos.xyz;
 
+  let toCamera = scene.cameraPos - worldPos;
+  if (dot(normal, toCamera) < 0) {
+     discard; // back-face cull
+  }
+
   var lightingIntensity = 0.0;
   let isUnlit = 0;
   for (var i: u32 = 0u; i < scene.numPointLights; i++) {
@@ -93,7 +99,6 @@ fn frag_main(input: VertexOutput) -> FragOut {
       let toLight_ = light.position - worldPos;
       let lightDist = length(toLight_);
       let toLight = toLight_ / lightDist;
-      let toCamera = scene.cameraPos - worldPos;
       let attenuation = 1.0 / (light.constant + light.linear * lightDist +
                                 light.quadratic * lightDist * lightDist);
       let lightAng = clamp(dot(toLight, normal), 0.0, 1.0);
@@ -118,11 +123,8 @@ fn frag_main(input: VertexOutput) -> FragOut {
 
   var litColor = color * lightingIntensity;
 
-  // let dims = vec2<f32>(textureDimensions(surfTex));
   let centerXY = vec2<i32>(input.position.xy);
   let centerObj: u32 = textureLoad(surfTex, centerXY, 0).g;
-  // litColor = vec3(f32(centerObj) / 100.0);
-
   if (input.objId != centerObj) {
     discard;
   }
@@ -133,8 +135,11 @@ fn frag_main(input: VertexOutput) -> FragOut {
   // out.color = vec4(color, alpha);
   // out.color = vec4(normal.xyz, alpha);
   // out.color = vec4(normal.xyz, alpha);
-  out.color2 = vec4(litColor, alpha);
+  // out.color2 = vec4(litColor, alpha);
   out.mask = vec4(1.0);
+
+  // out.surface.r = 1;
+  // out.surface.g = input.objId;
   
   return out;
 }

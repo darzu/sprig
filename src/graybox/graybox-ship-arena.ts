@@ -31,6 +31,7 @@ import {
   RawMesh,
   cloneMesh,
   getAABBFromMesh,
+  scaleMesh,
   scaleMesh3,
   transformMesh,
 } from "../meshes/mesh.js";
@@ -417,8 +418,8 @@ export async function initGrayboxShipArena() {
         res.renderer.pipelines.push(
           ...shadowPipelines,
           stdRenderPipeline,
-          outlineRender,
-          deferredPipeline,
+          // outlineRender,
+          // deferredPipeline,
           // TODO(@darzu): experiment
           // TODO(@darzu): LIGHTING!
           // TODO(@darzu): OUTLINE?
@@ -570,6 +571,8 @@ export async function initGrayboxShipArena() {
   }
 
   function morphMeshIntoPts(m: RawMesh, ptsPerArea: number): void {
+    scaleMesh(m, 0.99);
+
     // console.log("MORPH: " + m.dbgName);
     // TODO(@darzu): points per triangle based on area!
     let newPoints: V3[] = [];

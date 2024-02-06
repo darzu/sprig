@@ -84,7 +84,7 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec2<f32> {
         bestDist = dist;
         bestUV = sSeedUV;
         bestObj = sSeedObj;
-        // bestDep = min(bestDep, sSeedDep);
+        bestDep = min(bestDep, sSeedDep);
         bestDep = sSeedDep;
         continue;
       }
