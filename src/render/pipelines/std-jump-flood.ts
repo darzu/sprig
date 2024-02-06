@@ -1,5 +1,5 @@
 import { never } from "../../utils/util-no-import.js";
-import { range } from "../../utils/util.js";
+import { assert, range } from "../../utils/util.js";
 import { createRenderTextureToQuad, fullQuad } from "../gpu-helper.js";
 import { CY, CyPipelinePtr, CyTexturePtr } from "../gpu-registry.js";
 import { ShaderSet } from "../shader-loader.js";
@@ -29,7 +29,8 @@ let nextId = 1; // TODO(@darzu): hack so we don't need to name everything
 // TODO(@darzu): wish this didn't have to be called at the top level always
 export function createJfaPipelines(
   maskTex: CyTexturePtr,
-  maskMode: "interior" | "border" | "exterior"
+  maskMode: "interior" | "border" | "exterior",
+  maxDist?: number
 ): JfaResult {
   let size = 512;
 
@@ -117,7 +118,18 @@ export function createJfaPipelines(
     // format: "r16float",
   });
 
-  const maxStep = Math.ceil(Math.log2(size / 2));
+  console.log(`jfa for ${maskTex.name}`);
+  assert(
+    !maxDist || Math.log2(maxDist) % 1 === 0,
+    `maxDist: ${maxDist} must be power of two`
+  );
+  const biggestMaxStep = Math.ceil(Math.log2(size / 2));
+  const maxStep = maxDist
+    ? Math.min(biggestMaxStep, Math.log2(maxDist))
+    : biggestMaxStep;
+  console.log(
+    `maxStep: ${maxStep}, maxDist: ${maxDist}, biggestMaxStep: ${biggestMaxStep}`
+  );
   const resultIdx = (maxStep + 1) % 2;
 
   // console.log(`resultIdx: ${resultIdx}`);
@@ -131,7 +143,8 @@ export function createJfaPipelines(
     const outIdx = (i + 1) % 2;
     // console.log(`outIdx: ${outIdx}`);
 
-    const stepSize = Math.floor(Math.pow(2, maxStep - i));
+    // const stepSize = Math.floor(Math.pow(2, maxStep - i)); // count down
+    const stepSize = Math.floor(Math.pow(2, i)); // count up
     console.log(`stepSize: ${stepSize}`);
 
     const pipeline = CY.createRenderPipeline(`${namePrefix}Pipe${i}`, {

@@ -36,6 +36,7 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec2<f32> {
 
   for (var x = -1; x <= 1; x++) 
   {
+    // var y = 0;
     for (var y = -1; y <= 1; y++)
     {
       let sampXY = fragXY + vec2(x,y) * stepSize;
@@ -45,6 +46,7 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec2<f32> {
       let sSeedDep: f32 = textureLoad(depthTex, sSeedXY, 0);
       var dist = distance(sSeedUV, fragUV);
 
+      // sample bounds check
       if (!(
         // TODO(@darzu): remove the sampXY if u know content won't touch the edge
            sampXY.x < dims.x
@@ -57,30 +59,13 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec2<f32> {
         // invalid sample
         continue;
       }
-
-      // if (sSeedObj == fragObj) {
-      //   if (dist < bestDist) {
-      //     bestDist = dist;
-      //     bestUV = sSeedUV;
-      //     bestObj = sSeedObj;
-      //     bestDep = min(bestDep, sSeedDep);
-      //     // bestDep = sSeedDep;
-      //     continue;
-      //   }
-      // }
-
-      if (maxDist < dist && sSeedObj != fragObj) {
+      
+      // clamp radius
+      if (maxDist < dist 
+      && sSeedObj != fragObj
+      ) {
         continue;
       }
-
-      // // TODO(@darzu): can we remove this?
-      // if (!first) {
-      //   first = true;
-      //   bestDist = dist;
-      //   bestUV = sSeedUV;
-      //   bestObj = sSeedObj;
-      //   bestDep = sSeedDep;
-      // }
 
       if (sSeedObj != bestObj) {
         if (sSeedDep < bestDep) {
@@ -89,6 +74,7 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec2<f32> {
           bestUV = sSeedUV;
           bestObj = sSeedObj;
           bestDep = sSeedDep;
+          continue;
         }
         // keep old nearer
         continue;
@@ -98,10 +84,17 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec2<f32> {
         bestDist = dist;
         bestUV = sSeedUV;
         bestObj = sSeedObj;
-        bestDep = min(bestDep, sSeedDep);
-        // bestDep = sSeedDep;
+        // bestDep = min(bestDep, sSeedDep);
+        bestDep = sSeedDep;
         continue;
       }
+
+    }
+  }
+
+  return bestUV;
+}
+
 
       // if (sSeedObj == bestObj) {
       //   if (dist < bestDist) 
@@ -132,12 +125,6 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec2<f32> {
       //   bestDep = sSeedDep;
       //   continue;
       // }
-    }
-  }
-
-  return bestUV;
-}
-
 
         // && (dist < bestDist || sSeedDep > cSeedDep)
         // && sSeedObj == cSeedObj

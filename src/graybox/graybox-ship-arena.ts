@@ -338,7 +338,7 @@ function createOcean() {
   return grid;
 }
 
-const pointsJFA = createJfaPipelines(xpPointMaskTex, "interior");
+const pointsJFA = createJfaPipelines(xpPointMaskTex, "interior", 64);
 
 const pointJFAColorPipe = CY.createRenderPipeline("colorPointsJFA", {
   globals: [
@@ -373,8 +373,9 @@ const pointJFAColorPipe = CY.createRenderPipeline("colorPointsJFA", {
 //   [xpPointTex, xpPointTex],
 // ];
 const dbgGrid = [
-  [pointsJFA._inputMaskTex, pointsJFA._uvMaskTex],
-  [pointsJFA.voronoiTex, pointsJFA.sdfTex],
+  // [pointsJFA._inputMaskTex, pointsJFA._uvMaskTex],
+  // [pointsJFA.voronoiTex, pointsJFA.sdfTex],
+  [pointsJFA.voronoiTex],
 ];
 let dbgGridCompose = createGridComposePipelines(dbgGrid);
 // let dbgGridCompose = createGridComposePipelines(pointsJFA._debugGrid);
