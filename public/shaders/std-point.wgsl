@@ -84,10 +84,11 @@ fn frag_main(input: VertexOutput) -> FragOut {
 
   var color = input.color;
 
-  let normal = input.normal;
+  let normal = normalize(input.normal); // TODO(@darzu): BUG. these should already be normalized
+  // let normal = input.normal;
   let worldPos = input.worldPos.xyz;
 
-  let toCamera = scene.cameraPos - worldPos;
+  let toCamera = normalize(scene.cameraPos - worldPos);
   if (dot(normal, toCamera) < 0) {
      discard; // back-face cull
   }
@@ -103,7 +104,7 @@ fn frag_main(input: VertexOutput) -> FragOut {
                                 light.quadratic * lightDist * lightDist);
       let lightAng = clamp(dot(toLight, normal), 0.0, 1.0);
       let halfway = normalize(toLight + normal); // TODO(@darzu): use?!
-      let cameraAng = clamp(dot(normalize(toCamera), normal), 0.0, 1.0);
+      let cameraAng = clamp(dot(toCamera, normal), 0.0, 1.0);
       let shadowFull = (scene.cameraViewProjMatrix * vec4(worldPos, 1.0));
       let shadowFullZ = shadowFull.z / shadowFull.w;
       var cascadeIdx = 0u;
@@ -117,8 +118,12 @@ fn frag_main(input: VertexOutput) -> FragOut {
                                 posFromLight.z
                                 );
       let shadowVis = getShadowVis(shadowPos, normal, toLight, cascadeIdx);
+      const specStr = 0.5;
+      let refl = reflect(-toLight, normal);
+      let specTerm = specStr * pow(max(dot(toCamera, refl), 0.0), 256);
       lightingIntensity += (light.ambient.r * attenuation) 
-        + (light.diffuse.r * lightAng * attenuation * shadowVis);
+        + (light.diffuse.r * lightAng * attenuation * shadowVis)
+        + (specTerm);
   }
 
   var litColor = color * lightingIntensity;

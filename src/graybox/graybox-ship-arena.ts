@@ -573,8 +573,9 @@ export async function initGrayboxShipArena() {
   function morphMeshIntoPts(m: RawMesh, ptsPerArea: number): void {
     scaleMesh(m, 0.99);
 
+    // TODO(@darzu): use blue noise for even-ish distribution?
+
     // console.log("MORPH: " + m.dbgName);
-    // TODO(@darzu): points per triangle based on area!
     let newPoints: V3[] = [];
     let posNormals: V3[] = [];
     let _stk = tmpStack();

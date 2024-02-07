@@ -2072,3 +2072,6 @@ Phone wire AA:
   https://www.humus.name/index.php?page=3D&ID=89&source=post_page-----727f9278b9d8--------------------------------
 
 TODO: how does tri-planar mapping work?
+
+"Demystifying GPU Compute Architectures":
+  https://thechipletter.substack.com/p/demystifying-gpu-compute-architectures
