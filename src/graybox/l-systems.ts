@@ -34,17 +34,22 @@ function createLSys(pa: LSysOpt): LSys {
 export function testingLSys() {
   const cursor = mat4.create();
   const points: V3[] = [];
-  const depth = 3;
+  const normals: V3[] = [];
+  const depth = 10;
 
-  const pushPoint = () => points.push(mat4.getTranslation(cursor, V3.mk()));
+  const pushPoint = (norm: V3) => {
+    points.push(mat4.getTranslation(cursor, V3.mk()));
+    normals.push(norm);
+  };
   const mov = (x: number, y: number, z: number) =>
     mat4.translate(cursor, [x, y, z], cursor);
 
-  mov(80, 240, 40);
+  let norm = V(0, 0, 1);
 
+  mov(80, 240, 0);
   for (let i = 0; i < depth; i++) {
     mov(0, 0, 20);
-    pushPoint();
+    pushPoint(norm);
   }
 
   function stichLines() {
@@ -67,16 +72,19 @@ export function testingLSys() {
     colors: [],
     surfaceIds: [],
     usesProvoking: true,
+    posNormals: normals,
   });
 
   const mesh = mkMesh();
+
+  console.dir(mesh);
 
   const obj = createObj(
     [RenderableConstructDef, PositionDef, ColorDef, ScaleDef] as const,
     {
       renderableConstruct: [mesh, true, undefined, undefined, lineMeshPoolPtr],
       position: [0, 0, 0],
-      scale: [0, 0, 0],
+      scale: [1, 1, 1],
       color: ENDESGA16.lightBrown,
     }
   );
