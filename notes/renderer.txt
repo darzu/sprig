@@ -2205,3 +2205,10 @@ TODO: how does tri-planar mapping work?
 
 "Demystifying GPU Compute Architectures":
   https://thechipletter.substack.com/p/demystifying-gpu-compute-architectures
+
+"CLOSED-FORM IMPLICIT SURFACES ON THE GPU":
+  https://www.mattkeeter.com/research/mpr-ornl-2021.pdf
+
+WebGPU inspector:
+  https://github.com/brendan-duncan/webgpu_inspector
+  https://chromewebstore.google.com/detail/webgpu-inspector/holcbbnljhkpkjkhgkagjkhhpeochfal

@@ -67,6 +67,7 @@ export interface CyTexture {
   texture: GPUTexture;
   format: GPUTextureFormat;
   usage: GPUTextureUsageFlags;
+  _lastView: GPUTextureView | undefined;
   // TODO(@darzu): support partial texture update?
   queueUpdate: (
     data: Float32Array,
@@ -372,6 +373,7 @@ export function createCyTexture(
   assert(bytesPerVal, `TODO format: ${format}`);
 
   const cyTex: CyTexture = {
+    _lastView: undefined,
     ptr,
     size,
     usage,
@@ -413,6 +415,7 @@ export function createCyTexture(
       // sampleCount,
       usage,
     });
+    cyTex._lastView = undefined;
   }
 
   // TODO(@darzu): support updating different data types (instead of Float32Array)
@@ -467,8 +470,14 @@ export function createCyTexture(
     const loadOp: GPULoadOp = opts?.doClear ? "clear" : "load";
 
     const backgroundColor = opts?.defaultColor ?? black;
+
+    let view = opts?.viewOverride ?? cyTex._lastView;
+    if (!view) {
+      cyTex._lastView = cyTex.texture.createView();
+      view = cyTex._lastView;
+    }
     return {
-      view: opts?.viewOverride ?? cyTex.texture.createView(),
+      view,
       loadOp,
       clearValue: backgroundColor,
       storeOp: "store",
@@ -495,14 +504,18 @@ export function createCyDepthTexture(
     clear: boolean,
     layerIdx: number
   ): GPURenderPassDepthStencilAttachment {
-    return {
-      // TODO(@darzu): PERF. create these less often??
-      view: tex.texture.createView({
+    let view = tex._lastView;
+    if (!view) {
+      tex._lastView = tex.texture.createView({
         label: `${ptr.name}_viewForDepthAtt`,
         dimension: "2d",
         baseArrayLayer: layerIdx,
         arrayLayerCount: 1,
-      }),
+      });
+      view = tex._lastView;
+    }
+    return {
+      view,
       depthLoadOp: clear ? "clear" : "load",
       depthClearValue: 1.0,
       depthStoreOp: "store",
