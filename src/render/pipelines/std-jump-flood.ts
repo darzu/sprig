@@ -118,7 +118,7 @@ export function createJfaPipelines(
     // format: "r16float",
   });
 
-  console.log(`jfa for ${maskTex.name}`);
+  // console.log(`jfa for ${maskTex.name}`);
   assert(
     !maxDist || Math.log2(maxDist) % 1 === 0,
     `maxDist: ${maxDist} must be power of two`
@@ -127,9 +127,9 @@ export function createJfaPipelines(
   const maxStep = maxDist
     ? Math.min(biggestMaxStep, Math.log2(maxDist))
     : biggestMaxStep;
-  console.log(
-    `maxStep: ${maxStep}, maxDist: ${maxDist}, biggestMaxStep: ${biggestMaxStep}`
-  );
+  // console.log(
+  //   `maxStep: ${maxStep}, maxDist: ${maxDist}, biggestMaxStep: ${biggestMaxStep}`
+  // );
   const resultIdx = (maxStep + 1) % 2;
 
   // console.log(`resultIdx: ${resultIdx}`);
@@ -145,7 +145,7 @@ export function createJfaPipelines(
 
     // const stepSize = Math.floor(Math.pow(2, maxStep - i)); // count down
     const stepSize = Math.floor(Math.pow(2, i)); // count up
-    console.log(`stepSize: ${stepSize}`);
+    // console.log(`stepSize: ${stepSize}`);
 
     const pipeline = CY.createRenderPipeline(`${namePrefix}Pipe${i}`, {
       globals: [

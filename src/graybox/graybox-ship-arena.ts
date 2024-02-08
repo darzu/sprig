@@ -142,6 +142,7 @@ import { dbgPathWithGizmos } from "../wood/shipyard.js";
 import { DotsDef } from "./dots.js";
 import { GlitchDef } from "./glitch.js";
 import { createSun, initGhost, initGrayboxWorld } from "./graybox-helpers.js";
+import { testingLSys } from "./l-systems.js";
 import { ObjEnt, T, createObj, defineObj, mixinObj } from "./objects.js";
 
 /*
@@ -524,6 +525,8 @@ export async function initGrayboxShipArena() {
     });
   }
 
+  testingLSys();
+
   function distributePointsOnTriangleOrQuad(
     pos: V3[],
     ind: V3 | V4,
@@ -532,7 +535,7 @@ export async function initGrayboxShipArena() {
   ): V3[] {
     const points: V3[] = [];
 
-    // TODO(@darzu): do something fancy and more evenly distributed
+    // TODO(@darzu): use blue noise!
 
     const p0 = pos[ind[0]];
     const p1 = pos[ind[1]];

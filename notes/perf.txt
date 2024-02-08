@@ -532,3 +532,6 @@ PERFORMANCE STRATEGIES:
 
 Running PIX w/ WebGPU:
   https://toji.dev/webgpu-profiling/pix.html
+
+Other good profilers:
+  https://superluminal.eu

@@ -241,11 +241,11 @@ EM.addEagerInit([RenderableConstructDef], [RendererDef], [], () => {
           if ("id" in e[pool.ptr.dataDef.name]) {
             e[pool.ptr.dataDef.name]["id"] =
               e.renderableConstruct.idOverride ?? meshHandle.mId;
-            console.log(
-              `setting "${mesh.dbgName}" ${e.id}.${
-                pool.ptr.dataDef.name
-              }.id = ${e[pool.ptr.dataDef.name]["id"]}`
-            );
+            // console.log(
+            //   `setting "${mesh.dbgName}" ${e.id}.${
+            //     pool.ptr.dataDef.name
+            //   }.id = ${e[pool.ptr.dataDef.name]["id"]}`
+            // );
           }
         }
       }

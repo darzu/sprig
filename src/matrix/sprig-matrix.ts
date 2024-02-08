@@ -414,6 +414,7 @@ export module V2 {
 // TODO(@darzu): use "namespace" keyword instead of "module" (re: https://www.typescriptlang.org/docs/handbook/namespaces.html)
 export module V3 {
   export type T = V3;
+  // TODO(@darzu): RENAME InputT to something smaller "V3i", temp is "V3t" ?
   export type InputT = T | readonly [number, number, number];
   const GL = GLM.vec3;
 

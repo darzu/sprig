@@ -178,3 +178,24 @@ Better source control?
     of it being a safe change is totally lost.
   One of the best parts of working alone is liberal and easy symbol renaming and file reorg.
   This is one of the big weaknesses of git and text-based source control. Renaming a symbol conceptually touches 1 place, yet today to do it on a team often requires a stop-the-world-while-i-merge-this-2000-line-change.
+
+We should support basically all of processing:
+  https://processing.org/examples
+
+MVP IDE:
+  If i had to stop sprigland game engine feature dev now, what simple ide could i make?
+  early goal: shadertoy++
+  scene, you could restart the scene
+  you could add systems and components, those get compiled via TS in browser
+  visual scripting for that
+    struct editor for data
+  late created pipelines
+  allowed to create simple pipelines
+  write simple wgsl
+  drag out 3d objects
+    can do SDF objects turned into point clouds
+    add & remove detail to certain areas
+  re-order existing pipelines
+  give cost metrics for all user added content
+  gather favorite teaching resources
+  add companion content to some of them
