@@ -1004,6 +1004,7 @@ export module mat4 {
     return tmpArray(16);
   }
 
+  // TODO(@darzu): RENAME mk()
   export function create(): T {
     const out = float32ArrayOfLength(16);
     out[0] = 1;

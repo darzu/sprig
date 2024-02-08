@@ -5,7 +5,7 @@ import { randInt } from "./math.js";
 //    https://github.com/microsoft/TypeScript/blob/main/src/compiler/core.ts
 //    https://github.com/microsoft/TypeScript/blob/main/src/compiler/corePublic.ts
 
-// TODO(@darzu): move to util-no-import
+// TODO(@darzu): MOVE to util-no-import
 export function assert(cond: any, msg?: string): asserts cond {
   // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-7.html#assertion-functions
   if (!cond)
