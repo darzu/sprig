@@ -87,12 +87,13 @@ import {
   LineRenderDataDef,
   lineMeshPoolPtr,
   pointMeshPoolPtr,
+  stdLinePrepassPipe,
   stdLinesRender,
   stdPointsRender,
   xpPointLitTex,
   xpPointMaskTex,
 } from "../render/pipelines/std-line-point.js";
-import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
+import { stdMeshPipe } from "../render/pipelines/std-mesh.js";
 import { noisePipes } from "../render/pipelines/std-noise.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
@@ -158,7 +159,7 @@ const DBG_GIZMO = true;
 const DBG_DOTS = false;
 const DBG_ENEMY = true;
 const DBG_POINTS = true;
-const DBG_LINE = false;
+const DBG_LINE = true;
 
 const SAIL_FURL_RATE = 0.02;
 
@@ -374,9 +375,9 @@ const pointJFAColorPipe = CY.createRenderPipeline("colorPointsJFA", {
 //   [xpPointTex, xpPointTex],
 // ];
 const dbgGrid = [
-  // [pointsJFA._inputMaskTex, pointsJFA._uvMaskTex],
-  // [pointsJFA.voronoiTex, pointsJFA.sdfTex],
-  [pointsJFA.voronoiTex],
+  [pointsJFA._inputMaskTex, pointsJFA._uvMaskTex],
+  [pointsJFA.voronoiTex, pointsJFA.sdfTex],
+  // [pointsJFA.voronoiTex],
 ];
 let dbgGridCompose = createGridComposePipelines(dbgGrid);
 // let dbgGridCompose = createGridComposePipelines(pointsJFA._debugGrid);
@@ -404,7 +405,7 @@ export async function initGrayboxShipArena() {
       if (normalMode)
         res.renderer.pipelines.push(
           ...shadowPipelines,
-          stdRenderPipeline,
+          stdMeshPipe,
           // stdLinesRender,
           renderDots,
           outlineRender,
@@ -417,13 +418,15 @@ export async function initGrayboxShipArena() {
       else
         res.renderer.pipelines.push(
           ...shadowPipelines,
-          stdRenderPipeline,
+          stdMeshPipe,
+          stdLinePrepassPipe,
           // outlineRender,
           // deferredPipeline,
           // TODO(@darzu): experiment
           // TODO(@darzu): LIGHTING!
           // TODO(@darzu): OUTLINE?
           stdPointsRender,
+          stdLinesRender,
 
           ...pointsJFA.allPipes(),
 
@@ -491,9 +494,9 @@ export async function initGrayboxShipArena() {
           undefined,
           lineMeshPoolPtr,
         ],
-        position: [0, 0, 40],
+        position: [240, 40, 40],
         scale: [10, 10, 10],
-        color: ENDESGA16.lightGreen,
+        color: ENDESGA16.lightBrown,
       }
     );
     // EM.set(box, GlitchDef);
@@ -511,9 +514,9 @@ export async function initGrayboxShipArena() {
             undefined,
             lineMeshPoolPtr,
           ],
-          position: [40, 0, 40],
+          position: [240, 80, 40],
           scale: [10, 10, 10],
-          color: ENDESGA16.orange,
+          color: ENDESGA16.darkBrown,
         }
       );
 

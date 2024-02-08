@@ -30,7 +30,7 @@ import { GlobalCursor3dDef } from "../gui/cursor.js";
 // import { ForceDef, SpringGridDef } from "./spring.js";
 import { TextDef } from "../gui/ui.js";
 import { createGhost } from "../debug/ghost.js";
-import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
+import { stdMeshPipe } from "../render/pipelines/std-mesh.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
 import { shadowPipelines } from "../render/pipelines/std-shadow.js";
@@ -60,7 +60,7 @@ export async function initReboundSandbox(hosting: boolean) {
 
   res.renderer.pipelines = [
     ...shadowPipelines,
-    stdRenderPipeline,
+    stdMeshPipe,
     outlineRender,
     deferredPipeline,
     postProcess,

@@ -21,7 +21,7 @@ import { PositionDef, RotationDef } from "../physics/transform.js";
 import { PointLightDef } from "../render/lights.js";
 import { MeshReserve } from "../render/mesh-pool.js";
 import { cloneMesh, Mesh, scaleMesh, stringifyMesh } from "../meshes/mesh.js";
-import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
+import { stdMeshPipe } from "../render/pipelines/std-mesh.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
 import { alphaRenderPipeline } from "../render/pipelines/xp-alpha.js";
@@ -106,7 +106,7 @@ export async function initFontEditor() {
   //   postProcess,
   // ];
   res.renderer.pipelines = [
-    stdRenderPipeline,
+    stdMeshPipe,
     alphaRenderPipeline,
     outlineRender,
     deferredPipeline,

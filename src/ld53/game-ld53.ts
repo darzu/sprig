@@ -28,7 +28,7 @@ import {
   Mesh,
   RiggedMesh,
 } from "../meshes/mesh.js";
-import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
+import { stdMeshPipe } from "../render/pipelines/std-mesh.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
 import {
@@ -424,7 +424,7 @@ export async function initLD53(hosting: boolean) {
     (_, res) => {
       res.renderer.pipelines = [
         ...shadowPipelines,
-        stdRenderPipeline, // SLOW
+        stdMeshPipe, // SLOW
         stdRiggedRenderPipeline,
         // renderGrassPipe,
         ...(DBG_HIDE_WATER ? [] : [renderOceanPipe]),

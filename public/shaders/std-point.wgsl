@@ -1,9 +1,9 @@
 struct VertexOutput {
-    @location(0) @interpolate(flat) color: vec3<f32>,
+    @location(0) color: vec3<f32>,
     // @location(1) worldPos: vec4<f32>,
     @builtin(position) position : vec4<f32>,
-    @location(1) @interpolate(flat) normal: vec3<f32>,
-    @location(2) @interpolate(flat) worldPos: vec4<f32>,
+    @location(1) normal: vec3<f32>,
+    @location(2) worldPos: vec4<f32>,
     @location(3) @interpolate(flat) objId: u32,
 };
 
@@ -76,6 +76,8 @@ fn getShadowVis(shadowPos: vec3<f32>, normal: vec3<f32>, lightDir: vec3<f32>, in
   return visibility;
 }
 
+// TODO(@darzu): this isn't working for some reason..
+// override backface: bool = true;
 
 @fragment
 fn frag_main(input: VertexOutput) -> FragOut {
@@ -89,7 +91,7 @@ fn frag_main(input: VertexOutput) -> FragOut {
   let worldPos = input.worldPos.xyz;
 
   let toCamera = normalize(scene.cameraPos - worldPos);
-  if (dot(normal, toCamera) < 0) {
+  if (backface && dot(normal, toCamera) < 0) {
      discard; // back-face cull
   }
 

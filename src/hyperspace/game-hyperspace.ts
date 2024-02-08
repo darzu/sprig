@@ -3,7 +3,7 @@ import { EM, EntityW, Resources } from "../ecs/entity-manager.js";
 import { PositionDef, RotationDef, ScaleDef } from "../physics/transform.js";
 import { RendererDef, RenderableConstructDef } from "../render/renderer-ecs.js";
 import { blurPipelines } from "../render/pipelines/std-blur.js";
-import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
+import { stdMeshPipe } from "../render/pipelines/std-mesh.js";
 import { postProcess } from "../render/pipelines/std-post.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
 import {
@@ -123,7 +123,7 @@ export async function initHyperspaceGame() {
     (_, res) => {
       res.renderer.pipelines = [
         ...shadowPipelines,
-        stdRenderPipeline,
+        stdMeshPipe,
         renderOceanPipe,
         outlineRender,
         deferredPipeline,

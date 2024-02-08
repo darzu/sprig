@@ -27,6 +27,7 @@ export const ShaderPaths = [
   "std-grid",
   "std-line",
   "std-point",
+  "std-point-pre",
   "xp-point-voronoi",
   "std-helpers",
 ] as const;

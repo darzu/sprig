@@ -798,7 +798,9 @@ function createCyPipeline(
   }
 }
 
-function normalizeColorAttachments(atts: CyColorAttachment[]): CyAttachment[] {
+function normalizeColorAttachments(
+  atts: readonly CyColorAttachment[]
+): CyAttachment[] {
   return atts.map((a) => {
     if (isResourcePtr(a)) {
       return {
@@ -811,7 +813,9 @@ function normalizeColorAttachments(atts: CyColorAttachment[]): CyAttachment[] {
   });
 }
 
-function normalizeGlobals(globals: CyGlobalParam[]): CyGlobalUsage<CyGlobal>[] {
+function normalizeGlobals(
+  globals: readonly CyGlobalParam[]
+): CyGlobalUsage<CyGlobal>[] {
   const resUsages = globals.map((r, i) => {
     let usage: CyGlobalUsage<CyGlobal>;
     if (isResourcePtr(r)) {

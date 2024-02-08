@@ -80,6 +80,16 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec2<f32> {
         continue;
       }
 
+      // TODO(@darzu): BUG. this condition definitely violates JFA and introduces some noise
+      if (sSeedDep < bestDep && dist < maxDist) {
+        // take new nearer
+        bestDist = dist;
+        bestUV = sSeedUV;
+        bestObj = sSeedObj;
+        bestDep = sSeedDep;
+        continue;
+      }
+
       if (dist < bestDist) {
         bestDist = dist;
         bestUV = sSeedUV;

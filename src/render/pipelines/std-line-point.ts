@@ -62,36 +62,119 @@ export const lineMeshPoolPtr = CY.createMeshPool("lineMeshPool", {
   prim: "line",
 });
 
-export const stdLinesRender = CY.createRenderPipeline("stdLinesRender", {
-  globals: [sceneBufPtr],
+export const PointRenderDataDef = EM.defineNonupdatableComponent(
+  "pointRenderData",
+  (r: MeshUniformTS) => r
+);
+
+// TODO(@darzu): PERF. could probably save perf by using custom vertex data
+export const pointMeshPoolPtr = CY.createMeshPool("pointMeshPool", {
+  computeVertsData,
+  computeUniData,
+  vertsStruct: VertexStruct,
+  unisStruct: MeshUniformStruct,
+  maxMeshes: MAX_MESHES,
+  maxSets: 5,
+  setMaxPrims: MAX_VERTICES,
+  setMaxVerts: MAX_VERTICES,
+  dataDef: PointRenderDataDef,
+  prim: "point",
+});
+
+export const xpPointMaskTex = CY.createTexture("xpPointMask", {
+  size: [100, 100],
+  onCanvasResize: (w, h) => [w, h],
+  format: "rgba8unorm",
+});
+export const xpPointLitTex = CY.createTexture("xpPointLit", {
+  size: [100, 100],
+  onCanvasResize: (w, h) => [w, h],
+  format: "rgba8unorm",
+});
+
+const voronoiPointLine = {
+  globals: [
+    sceneBufPtr,
+    pointLightsPtr,
+    { ptr: shadowDepthTextures, alias: "shadowMap" },
+    { ptr: comparisonSamplerPtr, alias: "shadowSampler" },
+    { ptr: surfacesTexturePtr, alias: "surfTex" },
+  ],
   cullMode: "back",
+  shaderVertexEntry: "vert_main",
+  shaderFragmentEntry: "frag_main",
+  output: [
+    {
+      ptr: xpPointMaskTex,
+      clear: "once",
+    },
+    {
+      ptr: xpPointLitTex,
+      clear: "once",
+    },
+    // // TODO(@darzu): remove one
+    // {
+    //   ptr: litTexturePtr,
+    //   clear: "never",
+    //   blend: {
+    //     color: {
+    //       srcFactor: "src-alpha",
+    //       dstFactor: "one-minus-src-alpha",
+    //       operation: "add",
+    //     },
+    //     alpha: {
+    //       srcFactor: "constant",
+    //       dstFactor: "zero",
+    //       operation: "add",
+    //     },
+    //   },
+    // },
+    // { ptr: surfacesTexturePtr, clear: "once" },
+  ],
+  depthStencil: mainDepthTex,
+  depthCompare: "always",
+  // depthCompare: "less-equal",
+} as const;
+
+export const stdLinePrepassPipe = CY.createRenderPipeline(
+  "stdLinePrepassPipe",
+  {
+    globals: [sceneBufPtr],
+    cullMode: "none",
+    shaderVertexEntry: "vert_main",
+    shaderFragmentEntry: "frag_main",
+    output: [
+      {
+        ptr: surfacesTexturePtr,
+        clear: "never",
+      },
+    ],
+    depthStencil: mainDepthTex,
+    shader: "std-point-pre",
+    meshOpt: {
+      pool: lineMeshPoolPtr,
+      stepMode: "per-mesh-handle",
+    },
+    topology: "line-list",
+  }
+);
+
+export const stdLinesRender = CY.createRenderPipeline("stdLinesRender", {
+  ...voronoiPointLine,
   meshOpt: {
     pool: lineMeshPoolPtr,
     stepMode: "per-mesh-handle",
   },
   topology: "line-list",
-  shaderVertexEntry: "vert_main",
-  shaderFragmentEntry: "frag_main",
-  output: [
-    {
-      ptr: litTexturePtr,
-      clear: "never",
-      blend: {
-        color: {
-          srcFactor: "src-alpha",
-          dstFactor: "one-minus-src-alpha",
-          operation: "add",
-        },
-        alpha: {
-          srcFactor: "constant",
-          dstFactor: "zero",
-          operation: "add",
-        },
-      },
-    },
-  ],
-  depthStencil: mainDepthTex,
-  shader: "std-line",
+  // fragOverrides: {
+  //   backface: false, // TODO(@darzu): can this be a bool??
+  // },
+  shader: (s) => {
+    return `
+    const backface = false;
+    ${s["std-point"].code}
+    `;
+  },
 });
 
 EM.addEagerInit([LineRenderDataDef], [], [], () => {
@@ -126,84 +209,19 @@ EM.addEagerInit([LineRenderDataDef], [], [], () => {
   );
 });
 
-export const PointRenderDataDef = EM.defineNonupdatableComponent(
-  "pointRenderData",
-  (r: MeshUniformTS) => r
-);
-
-// TODO(@darzu): PERF. could probably save perf by using custom vertex data
-export const pointMeshPoolPtr = CY.createMeshPool("pointMeshPool", {
-  computeVertsData,
-  computeUniData,
-  vertsStruct: VertexStruct,
-  unisStruct: MeshUniformStruct,
-  maxMeshes: MAX_MESHES,
-  maxSets: 5,
-  setMaxPrims: MAX_VERTICES,
-  setMaxVerts: MAX_VERTICES,
-  dataDef: PointRenderDataDef,
-  prim: "point",
-});
-
-export const xpPointMaskTex = CY.createTexture("xpPointMask", {
-  size: [100, 100],
-  onCanvasResize: (w, h) => [w, h],
-  format: "rgba8unorm",
-});
-export const xpPointLitTex = CY.createTexture("xpPointLit", {
-  size: [100, 100],
-  onCanvasResize: (w, h) => [w, h],
-  format: "rgba8unorm",
-});
-
 export const stdPointsRender = CY.createRenderPipeline("stdPointsRender", {
-  globals: [
-    sceneBufPtr,
-    pointLightsPtr,
-    { ptr: shadowDepthTextures, alias: "shadowMap" },
-    { ptr: comparisonSamplerPtr, alias: "shadowSampler" },
-    { ptr: surfacesTexturePtr, alias: "surfTex" },
-  ],
-  cullMode: "back",
+  ...voronoiPointLine,
   meshOpt: {
     pool: pointMeshPoolPtr,
     stepMode: "per-mesh-handle",
   },
   topology: "point-list",
-  shaderVertexEntry: "vert_main",
-  shaderFragmentEntry: "frag_main",
-  output: [
-    {
-      ptr: xpPointMaskTex,
-      clear: "once",
-    },
-    {
-      ptr: xpPointLitTex,
-      clear: "once",
-    },
-    // // TODO(@darzu): remove one
-    // {
-    //   ptr: litTexturePtr,
-    //   clear: "never",
-    //   blend: {
-    //     color: {
-    //       srcFactor: "src-alpha",
-    //       dstFactor: "one-minus-src-alpha",
-    //       operation: "add",
-    //     },
-    //     alpha: {
-    //       srcFactor: "constant",
-    //       dstFactor: "zero",
-    //       operation: "add",
-    //     },
-    //   },
-    // },
-    // { ptr: surfacesTexturePtr, clear: "once" },
-  ],
-  depthStencil: mainDepthTex,
-  depthCompare: "always",
-  // depthCompare: "less-equal",
-  shader: "std-point",
+  shader: (s) => {
+    return `
+    const backface = true;
+    ${s["std-point"].code}
+    `;
+  },
 });
 
 EM.addEagerInit([PointRenderDataDef], [], [], () => {

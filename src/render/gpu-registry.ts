@@ -242,7 +242,7 @@ export interface CyRenderPipelinePtr<
   VO extends Record<string, GPUPipelineConstantValue> = {}
 > extends CyResourcePtr {
   kind: "renderPipeline";
-  globals: CyGlobalParam[];
+  globals: readonly CyGlobalParam[];
   fragOverrides?: FO;
   vertOverrides?: VO;
   shader: ((shaders: ShaderSet) => string) | ShaderName;
@@ -256,7 +256,7 @@ export interface CyRenderPipelinePtr<
   meshOpt: CyMeshOpt;
   // TODO(@darzu): really need to allow changing attachments at runtime. Useful
   //   for tutorial animations at a minimum
-  output: CyColorAttachment[];
+  output: readonly CyColorAttachment[];
   depthStencil?: CyDepthAttachment;
   depthReadonly?: boolean;
   depthCompare?: GPUCompareFunction;

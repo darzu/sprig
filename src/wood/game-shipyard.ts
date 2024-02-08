@@ -18,7 +18,7 @@ import {
   Mesh,
   transformMesh,
 } from "../meshes/mesh.js";
-import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
+import { stdMeshPipe } from "../render/pipelines/std-mesh.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
 import { shadowPipelines } from "../render/pipelines/std-shadow.js";
@@ -123,7 +123,7 @@ export async function initShipyardGame(hosting: boolean) {
 
   res.renderer.pipelines = [
     ...shadowPipelines,
-    stdRenderPipeline,
+    stdMeshPipe,
     outlineRender,
     deferredPipeline,
     postProcess,
