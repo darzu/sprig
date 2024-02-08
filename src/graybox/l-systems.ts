@@ -36,29 +36,41 @@ function createLSys(pa: LSysOpt): LSys {
 export function testingLSys() {
   const points: V3[] = [];
   const normals: V3[] = [];
+  const lines: V2[] = [];
 
-  let _cursors: mat4[] = range(10).map((_) => mat4.create());
-  let cursorIdx = 0;
-  let cursor = _cursors[cursorIdx];
+  const maxStack = 10;
+  let _cursors: mat4[] = range(maxStack).map((_) => mat4.create());
+  let _cursorIdx = 0;
+  let cursor = _cursors[_cursorIdx];
+  let _pointIdxStack: number[] = [];
+  let _lastPointIdx: number = -1;
 
+  // TODO(@darzu): add points vs lines!
+  // TODO(@darzu): add leaves
   const point = (norm: V3) => {
     points.push(mat4.getTranslation(cursor, V3.mk()));
     normals.push(norm);
+    if (_lastPointIdx >= 0) {
+      lines.push(V(_lastPointIdx, points.length - 1));
+    }
+    _lastPointIdx = points.length - 1;
   };
   const mov = (x: number, y: number, z: number) =>
     mat4.translate(cursor, [x, y, z], cursor);
   const push = () => {
-    // TODO(@darzu): have a last point idx stack too!
     let oldCursor = cursor;
-    cursorIdx++;
-    assert(cursorIdx <= _cursors.length - 1, `stack overflow`);
-    cursor = _cursors[cursorIdx];
+    _cursorIdx++;
+    assert(_cursorIdx <= _cursors.length - 1, `stack overflow`);
+    cursor = _cursors[_cursorIdx];
     mat4.copy(cursor, oldCursor);
+    _pointIdxStack.push(_lastPointIdx);
   };
   const pop = () => {
-    cursorIdx--;
-    assert(cursorIdx >= 0, "stack underflow");
-    cursor = _cursors[cursorIdx];
+    _cursorIdx--;
+    assert(_cursorIdx >= 0, "stack underflow");
+    cursor = _cursors[_cursorIdx];
+    assert(_pointIdxStack.length > 0, "stack underflow 2");
+    _lastPointIdx = _pointIdxStack.pop()!;
   };
 
   let norm = V(0, 0, 1);
@@ -83,16 +95,6 @@ export function testingLSys() {
     }
   }
   tree(10);
-
-  function stichLines() {
-    const lines: V2[] = [];
-    for (let i = 1; i < points.length; i++) {
-      lines.push(V(i - 1, i));
-    }
-    return lines;
-  }
-
-  const lines: V2[] = stichLines();
 
   // create mesh
   const mkMesh: () => Mesh = () => ({
