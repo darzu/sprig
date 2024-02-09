@@ -59,7 +59,7 @@ export const PointsUniStruct = createCyStruct(
   }
 );
 
-export const FLAG_BACKFACE = 0b1;
+export const FLAG_BACKFACE_CULL = 0b1;
 
 export type PointsUniTS = CyToTS<typeof PointsUniStruct.desc>;
 
@@ -202,7 +202,7 @@ export const stdLinesRender = CY.createRenderPipeline("stdLinesRender", {
   // },
   shader: (s) => {
     return `
-    const backface = false;
+    // const backface = false;
     ${s["std-point"].code}
     `;
   },
@@ -245,7 +245,7 @@ export const stdPointsRender = CY.createRenderPipeline("stdPointsRender", {
   topology: "point-list",
   shader: (s) => {
     return `
-    const backface = true;
+    // const backface = true;
     ${s["std-point"].code}
     `;
   },

@@ -47,7 +47,7 @@ import {
 import { Phase } from "../ecs/sys-phase.js";
 // TODO(@darzu): is it okay for renderer to depend on XY ? XY depends on Renderer
 import { MeshReg, XY, isMeshReg } from "../meshes/mesh-loader.js";
-import { CyStructDesc, createStruct } from "./gpu-struct.js";
+import { CyStructDesc, CyToTS, createStruct } from "./gpu-struct.js";
 
 // TODO(@darzu): the double "Renderer" naming is confusing. Maybe one should be GPUManager or something?
 export const RendererDef = EM.defineResource(
@@ -263,22 +263,24 @@ EM.addEagerInit([RenderableConstructDef], [RendererDef], [], () => {
             meshHandle,
           });
 
-          // pool.updateUniform
-          // TODO(@darzu): duplicate! createUniform is called inside of addMesh too..
-          // TODO(@darzu): UNI:
-          const uni = pool.ptr.unisStruct.create();
-          EM.set(e, pool.ptr.dataDef, uni);
           // TODO(@darzu): UNI:
           // TODO(@darzu): HACK! We need some notion of required uni data maybe? Or common uni data
           // TODO(@darzu): Hmmm maybe reserve the first ~100 object IDs for custom stuff like water, terrain, etc ?
-          if ("id" in e[pool.ptr.dataDef.name]) {
-            e[pool.ptr.dataDef.name]["id"] =
-              e.renderableConstruct.idOverride ?? meshHandle.mId;
-            // console.log(
-            //   `setting "${mesh.dbgName}" ${e.id}.${
-            //     pool.ptr.dataDef.name
-            //   }.id = ${e[pool.ptr.dataDef.name]["id"]}`
-            // );
+          // pool.updateUniform
+          // TODO(@darzu): duplicate! createUniform is called inside of addMesh too..
+          // TODO(@darzu): UNI:
+          if (!pool.ptr.dataDef.isOn(e)) {
+            const uni = pool.ptr.unisStruct.create();
+            EM.set(e, pool.ptr.dataDef, uni);
+            if ("id" in e[pool.ptr.dataDef.name]) {
+              e[pool.ptr.dataDef.name]["id"] =
+                e.renderableConstruct.idOverride ?? meshHandle.mId;
+              // console.log(
+              //   `setting "${mesh.dbgName}" ${e.id}.${
+              //     pool.ptr.dataDef.name
+              //   }.id = ${e[pool.ptr.dataDef.name]["id"]}`
+              // );
+            }
           }
         }
       }

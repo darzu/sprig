@@ -88,7 +88,10 @@ import {
 import { stdGridRender } from "../render/pipelines/std-grid.js";
 import { createJfaPipelines } from "../render/pipelines/std-jump-flood.js";
 import {
+  FLAG_BACKFACE_CULL,
   LineRenderDataDef,
+  PointRenderDataDef,
+  PointsUniStruct,
   lineMeshPoolPtr,
   pointMeshPoolPtr,
   stdLinePrepassPipe,
@@ -678,20 +681,32 @@ export async function initGrayboxShipArena() {
         if (!normalMode) {
           let planePts = cloneMesh(plane);
           morphMeshIntoPts(planePts, ptsPerArea);
-          createObj([RenderableConstructDef, PositionDef, ColorDef] as const, {
-            renderableConstruct: [
-              planePts,
-              true,
-              undefined,
-              undefined,
-              pointMeshPoolPtr,
-              undefined,
-              undefined,
-              planeObjId,
-            ],
-            position: undefined,
-            color,
-          });
+          createObj(
+            [
+              RenderableConstructDef,
+              PointRenderDataDef,
+              PositionDef,
+              ColorDef,
+            ] as const,
+            {
+              renderableConstruct: [
+                planePts,
+                true,
+                undefined,
+                undefined,
+                pointMeshPoolPtr,
+                undefined,
+                undefined,
+                planeObjId,
+              ],
+              pointRenderData: PointsUniStruct.fromPartial({
+                flags: FLAG_BACKFACE_CULL,
+                id: planeObjId,
+              }),
+              position: undefined,
+              color,
+            }
+          );
         }
 
         createObj([RenderableConstructDef, PositionDef, ColorDef] as const, {
@@ -774,6 +789,7 @@ export async function initGrayboxShipArena() {
         createObj(
           [
             RenderableConstructDef,
+            PointRenderDataDef,
             PositionDef,
             ColorDef,
             ScaleDef,
@@ -790,6 +806,10 @@ export async function initGrayboxShipArena() {
               undefined,
               objId,
             ],
+            pointRenderData: PointsUniStruct.fromPartial({
+              flags: FLAG_BACKFACE_CULL,
+              id: objId,
+            }),
             // position: [-40, 0, 40],
             position: pos,
             scale: scales[i],

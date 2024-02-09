@@ -214,6 +214,7 @@ export interface CyStruct<O extends CyStructDesc> {
   ): GPUVertexBufferLayout;
   clone: (data: CyToTS<O>) => CyToTS<O>;
   create: () => CyToTS<O>;
+  fromPartial: (partial: Partial<CyToTS<O>>) => CyToTS<O>;
   opts: CyStructOpts<O> | undefined;
 }
 
@@ -312,7 +313,7 @@ function createValue<T extends WGSLType>(
 ): T extends keyof WGSLTypeToTSType ? WGSLTypeToTSType[T] : never {
   return _createValue(type);
 
-  // TODO(@darzu): interesting that all these are just zeros. Probably should skip this for many downstream use cases.
+  // NOTE: this isn't just zeros, since mat4 has identity
   function _createValue<T extends WGSLType>(wgsl: T): any {
     if (wgsl === "f32") return 0.0;
     if (wgsl === "vec2<f32>") return V2.mk();
@@ -345,7 +346,9 @@ export function createStructFromPartial<O extends CyStructDesc>(
     if (partial[name] !== undefined) res[name] = partial[name];
     else res[name] = createValue(desc[name]);
   }
-  return partial as CyToTS<O>;
+  // console.dir(partial);
+  // console.dir(res);
+  return res as CyToTS<O>;
 }
 
 function createDummyStruct<O extends CyStructDesc>(desc: O): CyToTS<O> {
@@ -525,8 +528,13 @@ export function createCyStruct<O extends CyStructDesc>(
     vertexLayout,
     clone,
     create: opts?.create ?? create,
+    fromPartial,
     opts,
   };
+
+  function fromPartial(p: Partial<CyToTS<O>>): CyToTS<O> {
+    return createStructFromPartial(desc, p);
+  }
 
   function clone(orig: CyToTS<O>): CyToTS<O> {
     return cloneStruct(desc, orig);

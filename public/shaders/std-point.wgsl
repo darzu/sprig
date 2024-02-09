@@ -91,7 +91,7 @@ fn frag_main(input: VertexOutput) -> FragOut {
   let worldPos = input.worldPos.xyz;
 
   let toCamera = normalize(scene.cameraPos - worldPos);
-  if (backface && dot(normal, toCamera) < 0) {
+  if (((meshUni.flags & 1) != 0) && dot(normal, toCamera) < 0) {
      discard; // back-face cull
   }
 
