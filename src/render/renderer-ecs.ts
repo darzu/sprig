@@ -47,7 +47,7 @@ import {
 import { Phase } from "../ecs/sys-phase.js";
 // TODO(@darzu): is it okay for renderer to depend on XY ? XY depends on Renderer
 import { MeshReg, XY, isMeshReg } from "../meshes/mesh-loader.js";
-import { createStruct } from "./gpu-struct.js";
+import { CyStructDesc, createStruct } from "./gpu-struct.js";
 
 // TODO(@darzu): the double "Renderer" naming is confusing. Maybe one should be GPUManager or something?
 export const RendererDef = EM.defineResource(
@@ -96,6 +96,8 @@ export interface RenderableConstruct {
 // TODO(@darzu): UNI: duplicate, create a struct-y version, deprecate this one
 export const RenderableConstructDef = EM.defineNonupdatableComponent(
   "renderableConstruct",
+  // TODO(@darzu): generic components don't work..
+  // <U extends CyStructDesc>
   (
     // TODO(@darzu): this constructor is too messy, we should use a params obj instead
     meshOrProto: MeshLike,
@@ -121,6 +123,24 @@ export const RenderableConstructDef = EM.defineNonupdatableComponent(
   },
   { multiArg: true }
 );
+
+// TODO(@darzu): new renderable construct: (should do this as a seperate PR)
+/*
+MeshDef:
+  enabled,
+  hidden,
+  pool,
+  reserve,
+  idOverride,
+  meshLike,
+  mask,
+  partialUni
+MeshHandle as promise?
+componentPack ?
+  "sprite": color, position, rotation, worldFrame, renderable
+
+Name: DrawDef, MeshDef, 
+*/
 
 export const RiggedRenderableConstructDef = EM.defineNonupdatableComponent(
   "riggedRenderableConstruct",

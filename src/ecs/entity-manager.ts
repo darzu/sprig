@@ -127,6 +127,7 @@ export interface ResourceDef<
 
 export type CompId = number;
 
+// TODO(@darzu): RENAME: all "xxxxDef" -> "xxxxC" ?
 export interface ComponentDef<
   N extends string = string,
   P = any,
