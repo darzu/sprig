@@ -70,7 +70,11 @@ import {
 } from "../render/gpu-registry.js";
 import { GraphicsSettingsDef } from "../render/graphics-settings.js";
 import { PointLightDef } from "../render/lights.js";
-import { DEFAULT_MASK, GRID_MASK } from "../render/pipeline-masks.js";
+import {
+  DEFAULT_MASK,
+  GRID_MASK,
+  JFA_PRE_PASS_MASK,
+} from "../render/pipeline-masks.js";
 import { createGridComposePipelines } from "../render/pipelines/std-compose.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
 import {
@@ -89,6 +93,7 @@ import {
   pointMeshPoolPtr,
   stdLinePrepassPipe,
   stdLinesRender,
+  stdPointPrepassPipe,
   stdPointsRender,
   xpPointLitTex,
   xpPointMaskTex,
@@ -421,6 +426,7 @@ export async function initGrayboxShipArena() {
           ...shadowPipelines,
           stdMeshPipe,
           stdLinePrepassPipe,
+          stdPointPrepassPipe,
           // outlineRender,
           // deferredPipeline,
           // TODO(@darzu): experiment
@@ -492,7 +498,7 @@ export async function initGrayboxShipArena() {
           mkCubeMesh(),
           true,
           undefined,
-          undefined,
+          JFA_PRE_PASS_MASK | DEFAULT_MASK,
           lineMeshPoolPtr,
         ],
         position: [240, 40, 40],
@@ -512,7 +518,7 @@ export async function initGrayboxShipArena() {
             mesh,
             true,
             undefined,
-            undefined,
+            JFA_PRE_PASS_MASK | DEFAULT_MASK,
             lineMeshPoolPtr,
           ],
           position: [240, 80, 40],

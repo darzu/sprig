@@ -6,7 +6,7 @@ import { V3 } from "../../matrix/sprig-matrix.js";
 import { CY, comparisonSamplerPtr } from "../gpu-registry.js";
 import { pointLightsPtr } from "../lights.js";
 import { MAX_INDICES } from "../mesh-pool.js";
-import { DEFAULT_MASK } from "../pipeline-masks.js";
+import { DEFAULT_MASK, JFA_PRE_PASS_MASK } from "../pipeline-masks.js";
 import {
   RenderableDef,
   RendererWorldFrameDef,
@@ -152,10 +152,23 @@ export const stdLinePrepassPipe = CY.createRenderPipeline(
     depthStencil: mainDepthTex,
     shader: "std-point-pre",
     meshOpt: {
+      meshMask: JFA_PRE_PASS_MASK,
       pool: lineMeshPoolPtr,
       stepMode: "per-mesh-handle",
     },
     topology: "line-list",
+  }
+);
+export const stdPointPrepassPipe = CY.createRenderPipeline(
+  "stdPointPrepassPipe",
+  {
+    ...stdLinePrepassPipe,
+    meshOpt: {
+      meshMask: JFA_PRE_PASS_MASK,
+      pool: pointMeshPoolPtr,
+      stepMode: "per-mesh-handle",
+    },
+    topology: "point-list",
   }
 );
 
