@@ -1,7 +1,7 @@
 import { align, alignDown } from "../utils/math.js";
 import { assert, assertDbg, dbgLogOnce } from "../utils/util.js";
 import { never } from "../utils/util-no-import.js";
-import { CyStructDesc, CyToTS } from "./gpu-struct.js";
+import { CyStructDesc, CyToTS, createStruct } from "./gpu-struct.js";
 import { Mesh, RawMesh } from "../meshes/mesh.js";
 import {
   createCyArray,
@@ -455,7 +455,8 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     // submit uniform to GPU
     // TODO(@darzu): PERF. this is duplicating the uniform that will also (probably) be stored
     //  in the data component.
-    const uni = ptr.createUniform(); // TODO(@darzu): UNI
+    // const uni = ptr.createUniform(); // TODO(@darzu): UNI
+    const uni = createStruct(ptr.unisStruct.desc);
     updateUniform(handle, uni);
 
     return handle;

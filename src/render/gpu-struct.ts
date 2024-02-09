@@ -292,13 +292,40 @@ function cloneValue<T extends WGSLType>(
   }
 }
 
-function cloneStruct<O extends CyStructDesc>(
+export function cloneStruct<O extends CyStructDesc>(
   desc: O,
   data: CyToTS<O>
 ): CyToTS<O> {
   let res: any = {};
   for (let name of Object.keys(desc)) {
     res[name] = cloneValue(desc[name], data[name]);
+  }
+  return res;
+}
+
+function createValue<T extends WGSLType>(
+  type: T
+): T extends keyof WGSLTypeToTSType ? WGSLTypeToTSType[T] : never {
+  return _createValue(type);
+
+  function _createValue<T extends WGSLType>(wgsl: T): any {
+    if (wgsl === "f32") return 0.0;
+    if (wgsl === "vec2<f32>") return V2.mk();
+    if (wgsl === "vec3<f32>") return V3.mk();
+    if (wgsl === "vec4<f32>") return V4.mk();
+    if (wgsl === "u32") return 0;
+    if (wgsl === "mat4x4<f32>") return mat4.create();
+
+    throw `createValue is missing ${wgsl}`;
+  }
+}
+
+// (globalThis as any)._numStructCreates = 0;
+export function createStruct<O extends CyStructDesc>(desc: O): CyToTS<O> {
+  // (globalThis as any)._numStructCreates++;
+  let res: any = {};
+  for (let name of Object.keys(desc)) {
+    res[name] = createValue(desc[name]);
   }
   return res;
 }
@@ -390,6 +417,7 @@ export function createCyStruct<O extends CyStructDesc>(
 
   // TODO(@darzu): support registering a custom serializer for perf reasons
   // TODO(@darzu): emit serialization code
+  // TODO(@darzu): PERF. Have some flag to track slow serialization usage
   const scratch_u8 = new Uint8Array(structSize);
   const views = {
     u8: scratch_u8,
@@ -429,7 +457,7 @@ export function createCyStruct<O extends CyStructDesc>(
   }
 
   // check custom serializer correctness
-  // TODO(@darzu): option to disable this
+  // TODO(@darzu): option to disable this for perf?
   let serialize = serializeSlow;
   if (opts?.serializer) {
     const dummy = createDummyStruct(desc);

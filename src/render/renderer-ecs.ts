@@ -47,6 +47,7 @@ import {
 import { Phase } from "../ecs/sys-phase.js";
 // TODO(@darzu): is it okay for renderer to depend on XY ? XY depends on Renderer
 import { MeshReg, XY, isMeshReg } from "../meshes/mesh-loader.js";
+import { createStruct } from "./gpu-struct.js";
 
 // TODO(@darzu): the double "Renderer" naming is confusing. Maybe one should be GPUManager or something?
 export const RendererDef = EM.defineResource(
@@ -242,7 +243,9 @@ EM.addEagerInit([RenderableConstructDef], [RendererDef], [], () => {
 
           // pool.updateUniform
           // TODO(@darzu): duplicate! createUniform is called inside of addMesh too..
-          const uni = pool.ptr.createUniform(); // TODO(@darzu): UNI
+          // TODO(@darzu): UNI:
+          // const uni = pool.ptr.createUniform(); // TODO(@darzu): UNI
+          const uni = createStruct(pool.ptr.unisStruct.desc);
           EM.set(e, pool.ptr.dataDef, uni);
           // TODO(@darzu): UNI:
           // TODO(@darzu): HACK! We need some notion of required uni data maybe? Or common uni data
