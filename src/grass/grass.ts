@@ -111,8 +111,8 @@ export function createGrassTile(opts: GrassTileOpts): Mesh {
   }
 
   // TODO(@darzu): use this?
-  const aabbMin: V3 = V(-spacing, 0, -spacing);
-  const aabbMax: V3 = V(size + spacing, bladeH * 2, size + spacing);
+  // const aabbMin: V3 = V(-spacing, 0, -spacing);
+  // const aabbMax: V3 = V(size + spacing, bladeH * 2, size + spacing);
 
   // m.setUniform(mat4.create(), aabbMin, aabbMax);
 

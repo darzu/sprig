@@ -72,7 +72,7 @@ export const LineRenderDataDef = EM.defineNonupdatableComponent(
 // TODO(@darzu): PERF. could probably save perf by using custom vertex data
 export const lineMeshPoolPtr = CY.createMeshPool("lineMeshPool", {
   computeVertsData,
-  // TODO(@darzu): replace computeUniData
+  // TODO(@darzu): UNI, replace this
   computeUniData,
   vertsStruct: VertexStruct,
   unisStruct: PointsUniStruct,
@@ -92,7 +92,7 @@ export const PointRenderDataDef = EM.defineNonupdatableComponent(
 // TODO(@darzu): PERF. could probably save perf by using custom vertex data
 export const pointMeshPoolPtr = CY.createMeshPool("pointMeshPool", {
   computeVertsData,
-  // TODO(@darzu): replace computeUniData
+  // TODO(@darzu): UNI, replace computeUniData
   computeUniData,
   vertsStruct: VertexStruct,
   unisStruct: PointsUniStruct,

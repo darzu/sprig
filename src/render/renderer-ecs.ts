@@ -241,7 +241,7 @@ EM.addEagerInit([RenderableConstructDef], [RendererDef], [], () => {
 
           // pool.updateUniform
           // TODO(@darzu): duplicate! computeUniData is called inside of addMesh too..
-          const uni = pool.ptr.computeUniData(mesh);
+          const uni = pool.ptr.computeUniData(mesh); // TODO(@darzu): UNI
           EM.set(e, pool.ptr.dataDef, uni);
           // TODO(@darzu): HACK! We need some notion of required uni data maybe? Or common uni data
           // TODO(@darzu): Hmmm maybe reserve the first ~100 object IDs for custom stuff like water, terrain, etc ?
@@ -500,7 +500,7 @@ EM.addEagerInit([RiggedRenderableConstructDef], [RendererDef], [], (res) => {
 
           // TODO(@darzu): de-duplicate with constructRenderables
           // pool.updateUniform
-          const uni = pool.ptr.computeUniData(mesh);
+          const uni = pool.ptr.computeUniData(mesh); // TODO(@darzu): UNI
           EM.set(e, pool.ptr.dataDef, uni);
           // TODO(@darzu): HACK! We need some notion of required uni data maybe? Or common uni data
           if ("id" in e[pool.ptr.dataDef.name]) {

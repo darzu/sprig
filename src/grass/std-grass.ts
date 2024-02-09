@@ -164,7 +164,7 @@ export const grassPoolPtr = CY.createMeshPool("grassPool", {
   computeVertsData: computeGrassVertsData,
   // TODO(@darzu): per-mesh unis should maybe be optional? I don't think
   //     the grass needs them
-  computeUniData: computeGrassUniData,
+  computeUniData: computeGrassUniData, // TODO(@darzu): UNI
   vertsStruct: GrassVertStruct,
   unisStruct: GrassUniStruct,
   maxMeshes: MAX_GRASS_MESHES,

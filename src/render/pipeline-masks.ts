@@ -1,6 +1,7 @@
 // NOTE: must not import
 
 // TODO(@darzu): implement a proper material system
+// TODO(@darzu): use an enum..
 
 export const DEFAULT_MASK       = 1 << 0; // prettier-ignore
 export const UVUNWRAP_MASK      = 1 << 1; // prettier-ignore

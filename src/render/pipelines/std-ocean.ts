@@ -65,8 +65,8 @@ export type OceanVertTS = CyToTS<typeof OceanVertStruct.desc>;
 export const OceanUniStruct = createCyStruct(
   {
     transform: "mat4x4<f32>",
-    aabbMin: "vec3<f32>",
-    aabbMax: "vec3<f32>",
+    // aabbMin: "vec3<f32>",
+    // aabbMax: "vec3<f32>",
     tint: "vec3<f32>",
     id: "u32",
   },
@@ -74,10 +74,10 @@ export const OceanUniStruct = createCyStruct(
     isUniform: true,
     serializer: (d, _, offsets_32, views) => {
       views.f32.set(d.transform, offsets_32[0]);
-      views.f32.set(d.aabbMin, offsets_32[1]);
-      views.f32.set(d.aabbMax, offsets_32[2]);
-      views.f32.set(d.tint, offsets_32[3]);
-      views.u32[offsets_32[4]] = d.id;
+      // views.f32.set(d.aabbMin, offsets_32[1]);
+      // views.f32.set(d.aabbMax, offsets_32[2]);
+      views.f32.set(d.tint, offsets_32[1]);
+      views.u32[offsets_32[2]] = d.id;
     },
   }
 );
@@ -142,13 +142,14 @@ function computeOceanVertsData(
   return vertsData;
 }
 
+// TODO(@darzu): UNI
 export function computeOceanUniData(m: Mesh): OceanUniTS {
   // TODO(@darzu): change
-  const { min, max } = getAABBFromMesh(m);
+  // const { min, max } = getAABBFromMesh(m);
   const uni: OceanUniTS = {
     transform: mat4.create(),
-    aabbMin: min,
-    aabbMax: max,
+    // aabbMin: min,
+    // aabbMax: max,
     tint: V3.mk(),
     id: 0,
   };
@@ -161,7 +162,7 @@ export const RenderDataOceanDef = EM.defineNonupdatableComponent(
 );
 export const oceanPoolPtr = CY.createMeshPool("oceanPool", {
   computeVertsData: computeOceanVertsData,
-  computeUniData: computeOceanUniData,
+  computeUniData: computeOceanUniData, // TODO(@darzu): UNI
   unisStruct: OceanUniStruct,
   vertsStruct: OceanVertStruct,
   maxMeshes: MAX_OCEAN_MESHES,
