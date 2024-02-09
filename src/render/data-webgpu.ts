@@ -50,6 +50,7 @@ export interface CyArray<O extends CyStructDesc> extends CyBuffer<O> {
     dataIdx: number,
     dataCount: number
   ) => void;
+  queueZeros: (idx: number, dataCount: number) => void;
 }
 
 export interface CyIdxBuffer {
@@ -243,6 +244,7 @@ export function createCyArray<O extends CyStructDesc>(
     length,
     queueUpdate,
     queueUpdates,
+    queueZeros,
     binding,
   };
 
@@ -259,16 +261,23 @@ export function createCyArray<O extends CyStructDesc>(
   function queueUpdate(data: CyToTS<O>, index: number): void {
     const b = struct.serialize(data);
     const bufOffset = index * struct.size;
-    assertDbg(bufOffset % 4 === 0, `alignment`);
-    assertDbg(b.length % 4 === 0, `alignment`);
-    device.queue.writeBuffer(_buf, bufOffset, b);
-    if (PERF_DBG_GPU) _gpuQueueBufferWriteBytes += b.byteLength;
-    if (PERF_DBG_GPU_BLAME) dbgAddBlame("gpu", b.byteLength);
+    _queueUpdates(bufOffset, b.byteLength, b);
   }
 
   // TODO(@darzu): somewhat hacky way to reuse Uint8Arrays here; we could do some more global pool
   //    of these.
   let tempUint8Array: Uint8Array = new Uint8Array(struct.size * 10);
+  function _queueUpdates(
+    bufOffset: number,
+    dataSize: number,
+    data: Uint8Array
+  ): void {
+    assertDbg(dataSize % 4 === 0, `alignment`);
+    assertDbg(bufOffset % 4 === 0, `alignment`);
+    device.queue.writeBuffer(_buf, bufOffset, data, 0, dataSize);
+    if (PERF_DBG_GPU) _gpuQueueBufferWriteBytes += dataSize;
+    if (PERF_DBG_GPU_BLAME) dbgAddBlame("gpu", dataSize);
+  }
   function queueUpdates(
     data: CyToTS<O>[],
     bufIdx: number,
@@ -290,11 +299,17 @@ export function createCyArray<O extends CyStructDesc>(
       serialized.set(struct.serialize(data[i]), struct.size * (i - dataIdx));
 
     const bufOffset = bufIdx * struct.size;
-    assertDbg(dataSize % 4 === 0, `alignment`);
-    assertDbg(bufOffset % 4 === 0, `alignment`);
-    device.queue.writeBuffer(_buf, bufOffset, serialized, 0, dataSize);
-    if (PERF_DBG_GPU) _gpuQueueBufferWriteBytes += dataSize;
-    if (PERF_DBG_GPU_BLAME) dbgAddBlame("gpu", dataSize);
+    _queueUpdates(bufOffset, dataSize, serialized);
+  }
+
+  function queueZeros(idx: number, count: number) {
+    const dataSize = struct.size * count;
+    if (tempUint8Array.byteLength <= dataSize) {
+      tempUint8Array = new Uint8Array(dataSize);
+    }
+    tempUint8Array.fill(0, 0, dataSize);
+    const bufOffset = idx * struct.size;
+    _queueUpdates(bufOffset, dataSize, tempUint8Array);
   }
 
   function binding(idx: number, plurality: "one" | "many"): GPUBindGroupEntry {

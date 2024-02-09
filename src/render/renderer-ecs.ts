@@ -90,6 +90,8 @@ export interface RenderableConstruct {
   readonly idOverride?: number;
 }
 
+// TODO(@darzu): UNI: leverage createStructFromPartial
+
 // TODO(@darzu): UNI: Take uniform as optional parameter
 // TODO(@darzu): UNI: duplicate, create a struct-y version, deprecate this one
 export const RenderableConstructDef = EM.defineNonupdatableComponent(

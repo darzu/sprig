@@ -198,6 +198,7 @@ export interface CyStruct<O extends CyStructDesc> {
   compactSize: number;
   offsets: number[];
   serialize: (data: CyToTS<O>) => Uint8Array;
+  serializeZeros: () => Uint8Array;
   wgsl: (align: boolean, locationStart?: number) => string;
   // webgpu
   layout(
@@ -311,6 +312,7 @@ function createValue<T extends WGSLType>(
 ): T extends keyof WGSLTypeToTSType ? WGSLTypeToTSType[T] : never {
   return _createValue(type);
 
+  // TODO(@darzu): interesting that all these are just zeros. Probably should skip this for many downstream use cases.
   function _createValue<T extends WGSLType>(wgsl: T): any {
     if (wgsl === "f32") return 0.0;
     if (wgsl === "vec2<f32>") return V2.mk();
@@ -331,6 +333,19 @@ export function createStruct<O extends CyStructDesc>(desc: O): CyToTS<O> {
     res[name] = createValue(desc[name]);
   }
   return res;
+}
+
+export function createStructFromPartial<O extends CyStructDesc>(
+  desc: O,
+  partial: Partial<CyToTS<O>>
+): CyToTS<O> {
+  let res: any = {};
+  // TODO(@darzu): NOTE: order is important here! Result fields must be in the order of the keys
+  for (let name of Object.keys(desc)) {
+    if (partial[name] !== undefined) res[name] = partial[name];
+    else res[name] = createValue(desc[name]);
+  }
+  return partial as CyToTS<O>;
 }
 
 function createDummyStruct<O extends CyStructDesc>(desc: O): CyToTS<O> {
@@ -458,6 +473,10 @@ export function createCyStruct<O extends CyStructDesc>(
 
     return scratch_u8;
   }
+  function serializeZeros(): Uint8Array {
+    scratch_u8.fill(0);
+    return scratch_u8;
+  }
 
   // check custom serializer correctness
   // TODO(@darzu): option to disable this for perf?
@@ -500,6 +519,7 @@ export function createCyStruct<O extends CyStructDesc>(
     compactSize: sum(sizes),
     offsets,
     serialize,
+    serializeZeros,
     layout,
     wgsl,
     vertexLayout,

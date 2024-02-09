@@ -452,11 +452,8 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     } else if (primKind === "point") {
       updateMeshPointInds(handle, m);
     }
-    // submit uniform to GPU
-    // TODO(@darzu): PERF. this is duplicating the uniform that will also (probably) be stored
-    //  in the data component.
-    const uni = ptr.unisStruct.create(); // TODO(@darzu): UNI
-    updateUniform(handle, uni);
+    // submit empty uniform to GPU
+    queueEmptyUniform(handle);
 
     return handle;
   }
@@ -623,6 +620,10 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
 
   function updateUniform(m: MeshHandle, d: CyToTS<U>): void {
     pool.unis.queueUpdate(d, m.uniIdx);
+    if (PERF_DBG_GPU) _stats._accumUniDataQueued += pool.unis.struct.size;
+  }
+  function queueEmptyUniform(m: MeshHandle): void {
+    pool.unis.queueZeros(m.uniIdx, 1);
     if (PERF_DBG_GPU) _stats._accumUniDataQueued += pool.unis.struct.size;
   }
 

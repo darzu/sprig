@@ -1477,6 +1477,9 @@ export class EntityManager {
   // TODO(@darzu): Rethink naming here
   // NOTE: if you're gonna change the types, change registerSystem first and just copy
   //  them down to here
+  // TODO(@darzu): Used for waiting on:
+  //    uniform e.g. RenderDataStdDef, Finished, WorldFrame, RenderableDef (enable/hidden/meshHandle)),
+  //    Renderable for updateMeshQuadInds etc, PhysicsStateDef for physCollider aabb,
   public whenEntityHas<
     // eCS extends ComponentDef[],
     CS extends ComponentDef[],
