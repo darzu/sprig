@@ -142,27 +142,17 @@ function computeOceanVertsData(
   return vertsData;
 }
 
-// TODO(@darzu): UNI
-export function computeOceanUniData(m: Mesh): OceanUniTS {
-  // TODO(@darzu): change
-  // const { min, max } = getAABBFromMesh(m);
-  const uni: OceanUniTS = {
-    transform: mat4.create(),
-    // aabbMin: min,
-    // aabbMax: max,
-    tint: V3.mk(),
-    id: 0,
-  };
-  return uni;
-}
-
 export const RenderDataOceanDef = EM.defineNonupdatableComponent(
   "renderDataOcean",
   (r: OceanUniTS) => r
 );
 export const oceanPoolPtr = CY.createMeshPool("oceanPool", {
   computeVertsData: computeOceanVertsData,
-  computeUniData: computeOceanUniData, // TODO(@darzu): UNI
+  createUniform: () => ({
+    transform: mat4.create(),
+    tint: V3.mk(),
+    id: 0,
+  }), // TODO(@darzu): UNI
   unisStruct: OceanUniStruct,
   vertsStruct: OceanVertStruct,
   maxMeshes: MAX_OCEAN_MESHES,

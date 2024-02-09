@@ -24,6 +24,8 @@ import { drawBall, drawLine } from "../utils/utils-game.js";
 // TODO(@darzu): for many attributes we don't want a full dense array but a fn
 //    e.g. for colors, maybe they're all or mostly black; or for normals, they might all be straight up
 
+// TODO(@darzu): MESH PARTS: implement a modular mesh format
+
 // defines the geometry and coloring of a mesh
 // geometry: pos, tri, quad, lines,
 // geo-data: colors, uvs, surfaceIds,

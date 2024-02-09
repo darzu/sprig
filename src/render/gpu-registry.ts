@@ -131,7 +131,7 @@ export interface CyMeshPoolPtr<
   prim: PrimKind;
   // TODO(@darzu): remove id and name, this doesn't need to be inited directly
   computeVertsData: ComputeVertsDataFn<V>;
-  computeUniData: (m: Mesh) => CyToTS<U>; // TODO(@darzu): UNI
+  createUniform: () => CyToTS<U>;
   vertsStruct: CyStruct<V>;
   unisStruct: CyStruct<U>;
   // TODO(@darzu): do we need these max's? maybe we make them optional

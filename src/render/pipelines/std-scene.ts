@@ -89,7 +89,7 @@ export const RenderDataStdDef = EM.defineNonupdatableComponent(
 );
 export const meshPoolPtr = CY.createMeshPool("meshPool", {
   computeVertsData,
-  computeUniData,
+  createUniform,
   vertsStruct: VertexStruct,
   unisStruct: MeshUniformStruct,
   maxMeshes: MAX_MESHES,
@@ -102,8 +102,9 @@ export const meshPoolPtr = CY.createMeshPool("meshPool", {
   prim: "tri",
 });
 
+// TODO(@darzu): UNI.
 // TODO: does this need to be passed into the mesh pool anymore?
-export function computeUniData(m: Mesh): MeshUniformTS {
+export function createUniform(): MeshUniformTS {
   // const { min, max } = getAABBFromMesh(m);
   const uni: MeshUniformTS = {
     transform: mat4.create(),

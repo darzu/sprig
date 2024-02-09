@@ -327,6 +327,7 @@ function alignUp(n: number) {
 }
 
 // TODO(@darzu): handle nested fixed size arrays
+// TODO(@darzu): UNI. Maybe CyStructs should have a create default TS?
 export function createCyStruct<O extends CyStructDesc>(
   desc: O,
   opts?: CyStructOpts<O>

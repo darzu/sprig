@@ -72,7 +72,7 @@ there's a pool -> uni params type mapping
 */
 export interface RenderableConstruct {
   readonly enabled: boolean;
-  readonly sortLayer: number;
+  // readonly sortLayer: number;
   // TODO(@darzu): mask is inconsitently placed; here it is in the component,
   //  later it is in the mesh handle.
   readonly mask?: number;
@@ -89,14 +89,15 @@ export interface RenderableConstruct {
   readonly idOverride?: number;
 }
 
+// TODO(@darzu): UNI: Take uniform as optional parameter
+// TODO(@darzu): UNI: duplicate, create a struct-y version, deprecate this one
 export const RenderableConstructDef = EM.defineNonupdatableComponent(
   "renderableConstruct",
   (
     // TODO(@darzu): this constructor is too messy, we should use a params obj instead
     meshOrProto: MeshLike,
     enabled: boolean = true,
-    // TODO(@darzu): do we need sort layers? Do we use them?
-    sortLayer: number = 0,
+    sortLayer: number = 0, // TODO(@darzu): UNUSED. remove?
     mask?: number,
     pool?: CyMeshPoolPtr<any, any>,
     hidden: boolean = false,
@@ -105,7 +106,7 @@ export const RenderableConstructDef = EM.defineNonupdatableComponent(
   ) => {
     const r: RenderableConstruct = {
       enabled,
-      sortLayer: sortLayer,
+      // sortLayer: sortLayer,
       meshOrProto,
       mask,
       pool: pool ?? meshPoolPtr,
@@ -130,7 +131,7 @@ export interface Renderable {
   // TODO(@darzu): clean up these options...
   enabled: boolean;
   hidden: boolean;
-  sortLayer: number;
+  // sortLayer: number;
   meshHandle: MeshHandle;
 }
 
@@ -235,14 +236,15 @@ EM.addEagerInit([RenderableConstructDef], [RendererDef], [], () => {
           EM.set(e, RenderableDef, {
             enabled: e.renderableConstruct.enabled,
             hidden: false,
-            sortLayer: e.renderableConstruct.sortLayer,
+            // sortLayer: e.renderableConstruct.sortLayer,
             meshHandle,
           });
 
           // pool.updateUniform
-          // TODO(@darzu): duplicate! computeUniData is called inside of addMesh too..
-          const uni = pool.ptr.computeUniData(mesh); // TODO(@darzu): UNI
+          // TODO(@darzu): duplicate! createUniform is called inside of addMesh too..
+          const uni = pool.ptr.createUniform(); // TODO(@darzu): UNI
           EM.set(e, pool.ptr.dataDef, uni);
+          // TODO(@darzu): UNI:
           // TODO(@darzu): HACK! We need some notion of required uni data maybe? Or common uni data
           // TODO(@darzu): Hmmm maybe reserve the first ~100 object IDs for custom stuff like water, terrain, etc ?
           if ("id" in e[pool.ptr.dataDef.name]) {
@@ -263,6 +265,7 @@ EM.addEagerInit([RenderableConstructDef], [RendererDef], [], () => {
   //  query of renderable objects that include dead, hidden objects. The reason
   //  for this is that it causes a more stable entity list when we have object
   //  pools, and thus we have to rebundle less often.
+  // TODO(@darzu): I'd love a better way to do this
   const renderObjs: EntityW<
     [typeof RendererWorldFrameDef, typeof RenderableDef]
   >[] = [];
@@ -492,7 +495,7 @@ EM.addEagerInit([RiggedRenderableConstructDef], [RendererDef], [], (res) => {
           EM.set(e, RenderableDef, {
             enabled: true,
             hidden: false,
-            sortLayer: 0,
+            // sortLayer: 0,
             meshHandle,
           });
 
@@ -500,7 +503,7 @@ EM.addEagerInit([RiggedRenderableConstructDef], [RendererDef], [], (res) => {
 
           // TODO(@darzu): de-duplicate with constructRenderables
           // pool.updateUniform
-          const uni = pool.ptr.computeUniData(mesh); // TODO(@darzu): UNI
+          const uni = pool.ptr.createUniform(); // TODO(@darzu): UNI
           EM.set(e, pool.ptr.dataDef, uni);
           // TODO(@darzu): HACK! We need some notion of required uni data maybe? Or common uni data
           if ("id" in e[pool.ptr.dataDef.name]) {
