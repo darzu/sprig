@@ -212,6 +212,7 @@ export interface CyStruct<O extends CyStructDesc> {
     startLocation: number
   ): GPUVertexBufferLayout;
   clone: (data: CyToTS<O>) => CyToTS<O>;
+  create: () => CyToTS<O>;
   opts: CyStructOpts<O> | undefined;
 }
 
@@ -226,11 +227,13 @@ export interface CyStructOpts<O extends CyStructDesc> {
   // TODO(@darzu): Can we do away with isUniform and isCompact? Maybe infer from usage?
   isUniform?: boolean;
   isCompact?: boolean;
-  // TODO(@darzu): run perf tests to see how much faster custom serializers are?
+  // TODO(@darzu): PERF. run perf tests to see how much faster custom serializers are?
   //    maybe have a dbg flag where we count the number of serializer calls at
   //    runtime and then determine which serializers should be custom and which
   //    are a waste of time to make custom?
   serializer?: Serializer<O>;
+  // TODO(@darzu): PERF. same, perf test these?
+  create?: () => CyToTS<O>;
   hackArray?: boolean;
 }
 
@@ -501,11 +504,15 @@ export function createCyStruct<O extends CyStructDesc>(
     wgsl,
     vertexLayout,
     clone,
+    create: opts?.create ?? create,
     opts,
   };
 
   function clone(orig: CyToTS<O>): CyToTS<O> {
     return cloneStruct(desc, orig);
+  }
+  function create(): CyToTS<O> {
+    return createStruct(desc);
   }
 
   function wgsl(doAlign: boolean, locationStart?: number): string {

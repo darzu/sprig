@@ -13,7 +13,6 @@ import {
   RiggedMesh,
 } from "../../meshes/mesh.js";
 import {
-  createUniform,
   mainDepthTex,
   MeshUniformStruct,
   MeshUniformTS,
@@ -110,7 +109,6 @@ const jointBufPtr = CY.createArray("joint", {
 
 const poolPtr = CY.createMeshPool("riggedMeshPool", {
   computeVertsData,
-  createUniform,
   vertsStruct: VertexStruct,
   unisStruct: MeshUniformStruct,
   maxMeshes: MAX_MESHES,

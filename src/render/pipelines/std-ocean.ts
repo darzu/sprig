@@ -79,6 +79,11 @@ export const OceanUniStruct = createCyStruct(
       views.f32.set(d.tint, offsets_32[1]);
       views.u32[offsets_32[2]] = d.id;
     },
+    create: () => ({
+      transform: mat4.create(),
+      tint: V3.mk(),
+      id: 0,
+    }),
   }
 );
 export type OceanUniTS = CyToTS<typeof OceanUniStruct.desc>;
@@ -148,11 +153,6 @@ export const RenderDataOceanDef = EM.defineNonupdatableComponent(
 );
 export const oceanPoolPtr = CY.createMeshPool("oceanPool", {
   computeVertsData: computeOceanVertsData,
-  createUniform: () => ({
-    transform: mat4.create(),
-    tint: V3.mk(),
-    id: 0,
-  }), // TODO(@darzu): UNI
   unisStruct: OceanUniStruct,
   vertsStruct: OceanVertStruct,
   maxMeshes: MAX_OCEAN_MESHES,

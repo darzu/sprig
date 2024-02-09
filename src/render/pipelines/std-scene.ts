@@ -76,6 +76,16 @@ export const MeshUniformStruct = createCyStruct(
       views.u32[offsets_32[3]] = d.id;
       views.u32[offsets_32[4]] = d.flags;
     },
+    create: () => ({
+      transform: mat4.create(),
+      // TODO(@darzu): option for aabbs?
+      // aabbMin: min,
+      // aabbMax: max,
+      tint: V3.mk(),
+      alpha: 1.0,
+      id: 0,
+      flags: 0,
+    }),
   }
 );
 
@@ -89,7 +99,6 @@ export const RenderDataStdDef = EM.defineNonupdatableComponent(
 );
 export const meshPoolPtr = CY.createMeshPool("meshPool", {
   computeVertsData,
-  createUniform,
   vertsStruct: VertexStruct,
   unisStruct: MeshUniformStruct,
   maxMeshes: MAX_MESHES,
@@ -101,23 +110,6 @@ export const meshPoolPtr = CY.createMeshPool("meshPool", {
   dataDef: RenderDataStdDef,
   prim: "tri",
 });
-
-// TODO(@darzu): UNI.
-// TODO: does this need to be passed into the mesh pool anymore?
-export function createUniform(): MeshUniformTS {
-  // const { min, max } = getAABBFromMesh(m);
-  const uni: MeshUniformTS = {
-    transform: mat4.create(),
-    // TODO(@darzu): option for aabbs?
-    // aabbMin: min,
-    // aabbMax: max,
-    tint: V3.mk(),
-    alpha: 1.0,
-    id: 0,
-    flags: 0,
-  };
-  return uni;
-}
 
 // TODO(@darzu): Allow updates directly to serialized data
 // TODO(@darzu): Related, allow updates that don't change e.g. the normals

@@ -455,8 +455,7 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     // submit uniform to GPU
     // TODO(@darzu): PERF. this is duplicating the uniform that will also (probably) be stored
     //  in the data component.
-    // const uni = ptr.createUniform(); // TODO(@darzu): UNI
-    const uni = createStruct(ptr.unisStruct.desc);
+    const uni = ptr.unisStruct.create(); // TODO(@darzu): UNI
     updateUniform(handle, uni);
 
     return handle;

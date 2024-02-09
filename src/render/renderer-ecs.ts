@@ -244,8 +244,7 @@ EM.addEagerInit([RenderableConstructDef], [RendererDef], [], () => {
           // pool.updateUniform
           // TODO(@darzu): duplicate! createUniform is called inside of addMesh too..
           // TODO(@darzu): UNI:
-          // const uni = pool.ptr.createUniform(); // TODO(@darzu): UNI
-          const uni = createStruct(pool.ptr.unisStruct.desc);
+          const uni = pool.ptr.unisStruct.create();
           EM.set(e, pool.ptr.dataDef, uni);
           // TODO(@darzu): UNI:
           // TODO(@darzu): HACK! We need some notion of required uni data maybe? Or common uni data
@@ -506,7 +505,7 @@ EM.addEagerInit([RiggedRenderableConstructDef], [RendererDef], [], (res) => {
 
           // TODO(@darzu): de-duplicate with constructRenderables
           // pool.updateUniform
-          const uni = pool.ptr.createUniform(); // TODO(@darzu): UNI
+          const uni = pool.ptr.unisStruct.create(); // TODO(@darzu): UNI
           EM.set(e, pool.ptr.dataDef, uni);
           // TODO(@darzu): HACK! We need some notion of required uni data maybe? Or common uni data
           if ("id" in e[pool.ptr.dataDef.name]) {

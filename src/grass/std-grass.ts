@@ -149,14 +149,6 @@ export const RenderDataGrassDef = EM.defineNonupdatableComponent(
 );
 export const grassPoolPtr = CY.createMeshPool("grassPool", {
   computeVertsData: computeGrassVertsData,
-  // TODO(@darzu): UNI. per-mesh unis should maybe be optional? I don't think
-  //     the grass needs them
-  createUniform: () => ({
-    transform: mat4.create(),
-    spawnDist: 20.0, // set elsewhere
-    tint: V3.mk(),
-    id: 0,
-  }),
   vertsStruct: GrassVertStruct,
   unisStruct: GrassUniStruct,
   maxMeshes: MAX_GRASS_MESHES,

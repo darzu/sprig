@@ -21,7 +21,6 @@ import {
   mainDepthTex,
   litTexturePtr,
   computeVertsData,
-  createUniform,
   VertexStruct,
   surfacesTexturePtr,
 } from "./std-scene.js";
@@ -72,8 +71,6 @@ export const LineRenderDataDef = EM.defineNonupdatableComponent(
 // TODO(@darzu): PERF. could probably save perf by using custom vertex data
 export const lineMeshPoolPtr = CY.createMeshPool("lineMeshPool", {
   computeVertsData,
-  // TODO(@darzu): UNI, replace this
-  createUniform,
   vertsStruct: VertexStruct,
   unisStruct: PointsUniStruct,
   maxMeshes: MAX_MESHES,
@@ -92,8 +89,6 @@ export const PointRenderDataDef = EM.defineNonupdatableComponent(
 // TODO(@darzu): PERF. could probably save perf by using custom vertex data
 export const pointMeshPoolPtr = CY.createMeshPool("pointMeshPool", {
   computeVertsData,
-  // TODO(@darzu): UNI, replace createUniform
-  createUniform,
   vertsStruct: VertexStruct,
   unisStruct: PointsUniStruct,
   maxMeshes: MAX_MESHES,
