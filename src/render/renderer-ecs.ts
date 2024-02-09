@@ -54,6 +54,7 @@ export const RendererDef = EM.defineResource(
   (renderer: Renderer, pipelines: CyPipelinePtr[]) => {
     return {
       renderer,
+      // TODO(@darzu): ABSTRACTION. could the pipeline scheduling be handled like init scheduleing? provides, requires, lazy, eager ?
       pipelines,
     };
   }
@@ -64,6 +65,11 @@ export type MeshLike = Mesh | MeshHandle | MeshReg;
 // TODO(@darzu): we need a better way to handle arbitrary pools
 // TODO(@darzu): support height map?
 // export type PoolKind = "std" | "ocean" | "grass";
+// TODO(@darzu): we need a better way to do construct!
+/*
+say which pool
+there's a pool -> uni params type mapping
+*/
 export interface RenderableConstruct {
   readonly enabled: boolean;
   readonly sortLayer: number;
@@ -234,6 +240,7 @@ EM.addEagerInit([RenderableConstructDef], [RendererDef], [], () => {
           });
 
           // pool.updateUniform
+          // TODO(@darzu): duplicate! computeUniData is called inside of addMesh too..
           const uni = pool.ptr.computeUniData(mesh);
           EM.set(e, pool.ptr.dataDef, uni);
           // TODO(@darzu): HACK! We need some notion of required uni data maybe? Or common uni data

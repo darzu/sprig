@@ -2,6 +2,8 @@
 
 // TODO(@darzu): implement a proper material system
 
+// TODO(@darzu): wait woops, these should be 0b not 0x
+
 export const DEFAULT_MASK = 0x0001;
 export const UVUNWRAP_MASK = 0x0010;
 export const ALPHA_MASK = 0x0100;

@@ -4,6 +4,7 @@ import { Phase } from "../../ecs/sys-phase.js";
 import { mat4 } from "../../matrix/gl-matrix.js";
 import { V3 } from "../../matrix/sprig-matrix.js";
 import { CY, comparisonSamplerPtr } from "../gpu-registry.js";
+import { CyToTS, createCyStruct } from "../gpu-struct.js";
 import { pointLightsPtr } from "../lights.js";
 import { MAX_INDICES } from "../mesh-pool.js";
 import { DEFAULT_MASK, JFA_PRE_PASS_MASK } from "../pipeline-masks.js";
@@ -22,8 +23,6 @@ import {
   computeVertsData,
   computeUniData,
   VertexStruct,
-  MeshUniformStruct,
-  MeshUniformTS,
   surfacesTexturePtr,
 } from "./std-scene.js";
 import { shadowDepthTextures } from "./std-shadow.js";
@@ -43,17 +42,40 @@ Maybe use another JFA to calc "distance until occluded" and then smooth out the 
 const MAX_MESHES = 1000;
 const MAX_VERTICES = MAX_INDICES;
 
+export const PointsUniStruct = createCyStruct(
+  {
+    transform: "mat4x4<f32>",
+    tint: "vec3<f32>",
+    id: "u32",
+    flags: "u32",
+  },
+  {
+    isUniform: true,
+    serializer: (d, _, offsets_32, views) => {
+      views.f32.set(d.transform, offsets_32[0]);
+      views.f32.set(d.tint, offsets_32[1]);
+      views.u32[offsets_32[2]] = d.id;
+      views.u32[offsets_32[3]] = d.flags;
+    },
+  }
+);
+
+export const FLAG_BACKFACE = 0b1;
+
+export type PointsUniTS = CyToTS<typeof PointsUniStruct.desc>;
+
 export const LineRenderDataDef = EM.defineNonupdatableComponent(
   "lineRenderData",
-  (r: MeshUniformTS) => r
+  (r: PointsUniTS) => r
 );
 
 // TODO(@darzu): PERF. could probably save perf by using custom vertex data
 export const lineMeshPoolPtr = CY.createMeshPool("lineMeshPool", {
   computeVertsData,
+  // TODO(@darzu): replace computeUniData
   computeUniData,
   vertsStruct: VertexStruct,
-  unisStruct: MeshUniformStruct,
+  unisStruct: PointsUniStruct,
   maxMeshes: MAX_MESHES,
   maxSets: 5,
   setMaxPrims: MAX_VERTICES,
@@ -64,15 +86,16 @@ export const lineMeshPoolPtr = CY.createMeshPool("lineMeshPool", {
 
 export const PointRenderDataDef = EM.defineNonupdatableComponent(
   "pointRenderData",
-  (r: MeshUniformTS) => r
+  (r: PointsUniTS) => r
 );
 
 // TODO(@darzu): PERF. could probably save perf by using custom vertex data
 export const pointMeshPoolPtr = CY.createMeshPool("pointMeshPool", {
   computeVertsData,
+  // TODO(@darzu): replace computeUniData
   computeUniData,
   vertsStruct: VertexStruct,
-  unisStruct: MeshUniformStruct,
+  unisStruct: PointsUniStruct,
   maxMeshes: MAX_MESHES,
   maxSets: 5,
   setMaxPrims: MAX_VERTICES,
@@ -208,10 +231,6 @@ EM.addEagerInit([LineRenderDataDef], [], [], () => {
         if (TintsDef.isOn(o)) {
           applyTints(o.tints, o.lineRenderData.tint);
         }
-
-        // id
-        // TODO(@darzu): set at construct time?
-        // o.lineRenderData.id = o.renderable.meshHandle.mId;
 
         // transform
         mat4.copy(o.lineRenderData.transform, o.rendererWorldFrame.transform);

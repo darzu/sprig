@@ -535,3 +535,7 @@ Running PIX w/ WebGPU:
 
 Other good profilers:
   https://superluminal.eu
+
+6gb?!
+  webgpu inspector extension shows 700mb of textures D: (756,318,112 Bytes)
+  buffers (69,323,272 Bytes)
