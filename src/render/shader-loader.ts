@@ -25,7 +25,6 @@ export const ShaderPaths = [
   "xp-bubble",
   "std-dots",
   "std-grid",
-  "std-line",
   "std-point",
   "std-point-pre",
   "xp-point-voronoi",

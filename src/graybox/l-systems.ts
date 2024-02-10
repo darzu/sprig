@@ -8,7 +8,7 @@ import { DEFAULT_MASK, JFA_PRE_PASS_MASK } from "../render/pipeline-masks.js";
 import {
   lineMeshPoolPtr,
   pointMeshPoolPtr,
-} from "../render/pipelines/std-line-point.js";
+} from "../render/pipelines/std-point.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { jitter } from "../utils/math.js";
 import { assert, range } from "../utils/util.js";

@@ -1,6 +1,6 @@
 import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { align, max, sum } from "../utils/math.js";
-import { assert } from "../utils/util.js";
+import { assert, zip } from "../utils/util.js";
 import { objMap } from "../utils/util.js";
 
 // TABLES, CONSTS and TYPE-LEVEL HELPERS
@@ -336,6 +336,40 @@ export function createStruct<O extends CyStructDesc>(desc: O): CyToTS<O> {
   return res;
 }
 
+function checkValue<T extends WGSLType>(type: T, val: unknown): boolean {
+  if (type === "f32") return typeof val === "number";
+  if (type === "vec2<f32>")
+    return val instanceof Float32Array && val.length === 2;
+  if (type === "vec3<f32>")
+    return val instanceof Float32Array && val.length === 3;
+  if (type === "vec4<f32>")
+    return val instanceof Float32Array && val.length === 4;
+  if (type === "u32") return typeof val === "number" && val % 1 === 0;
+  if (type === "mat4x4<f32>")
+    return val instanceof Float32Array && val.length === 16;
+
+  throw `checkValue is missing ${type}`;
+}
+
+export function checkStruct<O extends CyStructDesc>(
+  desc: O,
+  data: Record<string, unknown>
+): data is CyToTS<O> {
+  const descKeys = Object.keys(desc);
+  const dataKeys = Object.keys(data);
+  assert(descKeys.length === dataKeys.length, `mismatched struct sizes!`);
+  for (let [key1, key2] of zip(descKeys, dataKeys)) {
+    assert(key1 === key2, `mismatched struct keys! ${key1} vs ${key2}`);
+  }
+  for (let name of descKeys) {
+    assert(
+      checkValue(desc[name], data[name]),
+      `bad struct val {${name}: ${desc[name]} = ${data[name]}}`
+    );
+  }
+  return true;
+}
+
 export function createStructFromPartial<O extends CyStructDesc>(
   desc: O,
   partial: Partial<CyToTS<O>>
@@ -515,6 +549,13 @@ export function createCyStruct<O extends CyStructDesc>(
     };
   }
 
+  let create = createSlow;
+  if (opts?.create) {
+    let test = opts.create();
+    checkStruct(desc, test);
+    create = opts.create;
+  }
+
   const struct: CyStruct<O> = {
     desc,
     memberCount: Object.keys(desc).length,
@@ -527,7 +568,7 @@ export function createCyStruct<O extends CyStructDesc>(
     wgsl,
     vertexLayout,
     clone,
-    create: opts?.create ?? create,
+    create,
     fromPartial,
     opts,
   };
@@ -539,7 +580,7 @@ export function createCyStruct<O extends CyStructDesc>(
   function clone(orig: CyToTS<O>): CyToTS<O> {
     return cloneStruct(desc, orig);
   }
-  function create(): CyToTS<O> {
+  function createSlow(): CyToTS<O> {
     return createStruct(desc);
   }
 

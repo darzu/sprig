@@ -1,8 +1,7 @@
 import { ColorDef, TintsDef, applyTints } from "../../color/color-ecs.js";
 import { EM } from "../../ecs/entity-manager.js";
 import { Phase } from "../../ecs/sys-phase.js";
-import { mat4 } from "../../matrix/gl-matrix.js";
-import { V3 } from "../../matrix/sprig-matrix.js";
+import { V3, mat4 } from "../../matrix/sprig-matrix.js";
 import { CY, comparisonSamplerPtr } from "../gpu-registry.js";
 import { CyToTS, createCyStruct } from "../gpu-struct.js";
 import { pointLightsPtr } from "../lights.js";
@@ -47,6 +46,7 @@ export const PointsUniStruct = createCyStruct(
     tint: "vec3<f32>",
     id: "u32",
     flags: "u32",
+    size: "f32",
   },
   {
     isUniform: true,
@@ -55,7 +55,15 @@ export const PointsUniStruct = createCyStruct(
       views.f32.set(d.tint, offsets_32[1]);
       views.u32[offsets_32[2]] = d.id;
       views.u32[offsets_32[3]] = d.flags;
+      views.f32[offsets_32[4]] = d.size;
     },
+    create: () => ({
+      transform: mat4.create(),
+      tint: V3.mk(),
+      id: 0,
+      flags: 0,
+      size: 1,
+    }),
   }
 );
 

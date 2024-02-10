@@ -100,7 +100,7 @@ import {
   stdPointsRender,
   xpPointLitTex,
   xpPointMaskTex,
-} from "../render/pipelines/std-line-point.js";
+} from "../render/pipelines/std-point.js";
 import { stdMeshPipe } from "../render/pipelines/std-mesh.js";
 import { noisePipes } from "../render/pipelines/std-noise.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
