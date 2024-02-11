@@ -154,6 +154,7 @@ export function createJfaPipelines(
         // TODO(@darzu): generalize this
         { ptr: surfacesTexturePtr, alias: "surfTex" },
         { ptr: mainDepthTex, alias: "depthTex" },
+        { ptr: maskTex, alias: "maskTex" },
         sceneBufPtr,
       ],
       meshOpt: {

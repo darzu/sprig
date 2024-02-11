@@ -225,3 +225,7 @@ Lobster:
       early things are easier for later things to depend on but not vice versa
   "The minecraft generation will easily give up 10x in geometric detail just to gain a small amount of agency over the world"
     "dynamic modifications of anything should never cause a longer frame"
+
+Self-balancing cube:
+  https://www.youtube.com/watch?v=n_6p-1J551Y&t=92s
+  https://willempennings.nl/balancing-cube/

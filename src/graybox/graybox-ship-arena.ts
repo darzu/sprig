@@ -384,8 +384,9 @@ const pointJFAColorPipe = CY.createRenderPipeline("colorPointsJFA", {
 //   [xpPointTex, xpPointTex],
 // ];
 const dbgGrid = [
-  [pointsJFA._inputMaskTex, pointsJFA._uvMaskTex],
-  [pointsJFA.voronoiTex, pointsJFA.sdfTex],
+  [pointsJFA._inputMaskTex],
+  // [pointsJFA._inputMaskTex, pointsJFA._uvMaskTex],
+  // [pointsJFA.voronoiTex, pointsJFA.sdfTex],
   // [pointsJFA.voronoiTex],
 ];
 let dbgGridCompose = createGridComposePipelines(dbgGrid);

@@ -110,7 +110,8 @@ export const pointMeshPoolPtr = CY.createMeshPool("pointMeshPool", {
 export const xpPointMaskTex = CY.createTexture("xpPointMask", {
   size: [100, 100],
   onCanvasResize: (w, h) => [w, h],
-  format: "rgba8unorm",
+  // format: "rgba8unorm",
+  format: "rg16float", // TODO(@darzu): PERF. Should probably be able to get away with 1 8bit unorm for size.. maybe 16
 });
 export const xpPointLitTex = CY.createTexture("xpPointLit", {
   size: [100, 100],

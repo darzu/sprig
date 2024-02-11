@@ -44,7 +44,8 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec2<f32> {
       let sSeedXY = vec2<i32>(sSeedUV * vec2<f32>(dims));
       let sSeedObj: u32 = textureLoad(surfTex, sSeedXY, 0).g;
       let sSeedDep: f32 = textureLoad(depthTex, sSeedXY, 0);
-      var dist = distance(sSeedUV, fragUV);
+      let sSeedSize: f32 = textureLoad(maskTex, sSeedXY, 0).g;
+      let dist = distance(sSeedUV, fragUV); 
 
       // sample bounds check
       if (!(
@@ -59,9 +60,24 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec2<f32> {
         // invalid sample
         continue;
       }
+
+      // // DEBUGGING
+      // if (sSeedSize < dist) {
+      //   continue;
+      // }
+      // if (sSeedDep < bestDep && dist < bestDist) {
+      //   bestDist = dist;
+      //   bestUV = sSeedUV;
+      //   bestObj = sSeedObj;
+      //   bestDep = min(bestDep, sSeedDep);
+      //   bestDep = sSeedDep;
+      //   continue;
+      // }
+      // continue;
+
       
       // clamp radius
-      if (maxDist < dist 
+      if (sSeedSize < dist 
       && sSeedObj != fragObj
       ) {
         continue;
@@ -80,8 +96,9 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec2<f32> {
         continue;
       }
 
-      // TODO(@darzu): BUG. this condition definitely violates JFA and introduces some noise
-      if (sSeedDep < bestDep && dist < maxDist) {
+      // TODO(@darzu): BUG. this condition definitely violates JFA and introduces some noise-like 
+      //    artifacts (they kinda look cool tbh, and they're stable)
+      if (sSeedDep < bestDep && dist < sSeedSize) {
         // take new nearer
         bestDist = dist;
         bestUV = sSeedUV;

@@ -647,7 +647,7 @@ PBR:
     frag shader inputs:
       vec3 fragPos,
       vec3 normal,
-      vec3 cameraPos,
+      vec3 cameraPos,w
       vec3 lightDir,
       vec3 lightPos,
       vec3 lightColor,
@@ -2212,3 +2212,27 @@ TODO: how does tri-planar mapping work?
 WebGPU inspector:
   https://github.com/brendan-duncan/webgpu_inspector
   https://chromewebstore.google.com/detail/webgpu-inspector/holcbbnljhkpkjkhgkagjkhhpeochfal
+
+"Building the DirectX shader compiler better than Microsoft?":
+  https://devlog.hexops.com/2024/building-the-directx-shader-compiler-better-than-microsoft/
+  "successor and descendant of WebGPU for native graphics"
+
+mach engine project w/ zig:
+  https://devlog.hexops.com/2024/mach-v0.3-released/
+
+WebGPU impl on android vulkan:
+  https://vulkan.org/user/pages/09.events/vulkanised-2024/vulkanised-2024-brandon-jones-google.pdf
+
+Vulkan synchronization made easy be nice_byte:
+  https://vulkan.org/user/pages/09.events/vulkanised-2024/vulkanised-2024-grigory-dzhavadyan.pdf
+
+Digital Foundry on TAA:
+  https://www.youtube.com/watch?v=WG8w9Yg5B3g
+
+TimothyLottes on TAA:
+  https://twitter.com/NOTimothyLottes/status/1756725714198360576
+  "For TAA sharpness ... 4x4 lanczos filter can be used for reprojection with a clamp to the nearest 2x2 {min,max}"
+
+To render giant view distances w/ high depth buffer precision:
+  https://www.khronos.org/opengl/wiki/Depth_Buffer_Precision
+  The typical approach is to use a multipass technique. The application might divide the geometry database into regions that don't interfere with each other in Z. The geometry in each region is then rendered, starting at the furthest region, with a clear of the depth buffer before each region is rendered. This way the precision of the entire depth buffer is made available to each region.

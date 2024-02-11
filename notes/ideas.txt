@@ -160,3 +160,7 @@ Physics stewards game idea:
   Some of them are lazy, corrupt, sad, or otherwise impaired so physics starts getting zany.
   You're sent in to {negotiate with / mediate for / battle against / replace} these spirits.
   and each region has unique challanges b/c of the way the regions laws have degraded.
+
+Game dev peer feedback tool:
+  Random idea for a gamedev peer feedback website:
+  Akin to Ludum Dare's reciprocal feedback karma system. Upload your demo/dialog/scene/UI snippet, add labels, then explore and provide feedback on others' work and get back as much feedback as you give.

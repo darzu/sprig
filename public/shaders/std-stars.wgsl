@@ -23,6 +23,8 @@ struct VertexOutput {
     let corner = corners[vIdx];
 
     // TODO(@darzu): just include this on the scene?
+    // TODO(@darzu): PERF. precompute
+    // TODO(@darzu): DEDUP w/ dots
     let right = normalize(vec3(
       scene.cameraViewProjMatrix[0][0], 
       scene.cameraViewProjMatrix[1][0], 

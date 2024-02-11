@@ -5,6 +5,7 @@ struct VertexOutput {
     @location(1) normal: vec3<f32>,
     @location(2) worldPos: vec4<f32>,
     @location(3) @interpolate(flat) objId: u32,
+    @location(4) screenSize: f32,
 };
 
 @vertex
@@ -19,8 +20,28 @@ fn vert_main(input: VertexInput) -> VertexOutput {
     let worldPos: vec4<f32> = meshUni.transform * vec4<f32>(position, 1.0);
 
     // output.worldPos = worldPos;
-    output.position = scene.cameraViewProjMatrix * worldPos;
+    let screenPos = scene.cameraViewProjMatrix * worldPos;
+
+    // TODO(@darzu): PERF! Put on scene uni.
+    let right = normalize(vec3(
+      scene.cameraViewProjMatrix[0][0], 
+      scene.cameraViewProjMatrix[1][0], 
+      scene.cameraViewProjMatrix[2][0],
+    ));
+
+    const S = 1.0; // TODO(@darzu): get S from 
+
+    let worldPos2 = worldPos.xyz + S * right;
+    
+    // TODO(@darzu): PERF. Somehow using the depth buffer could maybe be a cheaper way to do this?
+    let screenPos2 = scene.cameraViewProjMatrix * vec4(worldPos2, 1.0); 
+    let screenSize = distance(screenPos.xy / screenPos.w, screenPos2.xy / screenPos2.w) // NOTE: in NDC, should be [0-2]
+      // *0.5  // bring into 0-1, easier to visualize
+      ;
+
+    output.position = screenPos;
     output.color = color + meshUni.tint;
+    // output.color = vec3(screenSize, 0.0, 0.0);
 
     output.normal = (meshUni.transform * vec4<f32>(normal, 0.0)).xyz;
     output.worldPos = worldPos;
@@ -29,6 +50,7 @@ fn vert_main(input: VertexInput) -> VertexOutput {
     // output.position.w += 0.1;
     
     output.objId = meshUni.id;
+    output.screenSize = screenSize;
 
     return output;
 }
@@ -40,7 +62,7 @@ struct FragOut {
   // @location(2) surface: vec2<u32>,
 }
 
-
+// TODO(@darzu): DEDUP: w/ deffered.wgsl
 const shadowDepthTextureSize = 2048.0;
 
 fn sampleShadowTexture(pos: vec2<f32>, depth: f32, index: u32) -> f32 {
@@ -139,11 +161,17 @@ fn frag_main(input: VertexOutput) -> FragOut {
   var out: FragOut;
 
   out.color = vec4(litColor, alpha);
+  // out.color = vec4(input.color, 1.0);
+
   // out.color = vec4(color, alpha);
   // out.color = vec4(normal.xyz, alpha);
   // out.color = vec4(normal.xyz, alpha);
   // out.color2 = vec4(litColor, alpha);
-  out.mask = vec4(1.0);
+  // TODO(@darzu): PERF. don't need size and mask i think
+  out.mask = vec4(
+    1.0, //mask bit
+    input.screenSize, // ish
+    0.0, 0.0); 
 
   // out.surface.r = 1;
   // out.surface.g = input.objId;
