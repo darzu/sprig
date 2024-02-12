@@ -71,9 +71,9 @@ export const FLAG_BACKFACE_CULL = 0b1;
 
 export type PointsUniTS = CyToTS<typeof PointsUniStruct.desc>;
 
-export const LineRenderDataDef = EM.defineNonupdatableComponent(
-  "lineRenderData",
-  (r: PointsUniTS) => r
+export const PointRenderDataDef = EM.defineNonupdatableComponent(
+  "pointRenderData",
+  (r: Partial<PointsUniTS>) => PointsUniStruct.fromPartial(r)
 );
 
 // TODO(@darzu): PERF. could probably save perf by using custom vertex data
@@ -85,14 +85,9 @@ export const lineMeshPoolPtr = CY.createMeshPool("lineMeshPool", {
   maxSets: 5,
   setMaxPrims: MAX_VERTICES,
   setMaxVerts: MAX_VERTICES,
-  dataDef: LineRenderDataDef,
+  dataDef: PointRenderDataDef,
   prim: "line",
 });
-
-export const PointRenderDataDef = EM.defineNonupdatableComponent(
-  "pointRenderData",
-  (r: Partial<PointsUniTS>) => PointsUniStruct.fromPartial(r)
-);
 
 // TODO(@darzu): PERF. could probably save perf by using custom vertex data
 export const pointMeshPoolPtr = CY.createMeshPool("pointMeshPool", {
@@ -217,34 +212,6 @@ export const stdLinesRender = CY.createRenderPipeline("stdLinesRender", {
   },
 });
 
-EM.addEagerInit([LineRenderDataDef], [], [], () => {
-  EM.addSystem(
-    "updateLineRenderData",
-    Phase.RENDER_PRE_DRAW,
-    [RenderableDef, LineRenderDataDef, RendererWorldFrameDef],
-    [RendererDef],
-    (objs, res) => {
-      const pool = res.renderer.renderer.getCyResource(lineMeshPoolPtr)!;
-      for (let o of objs) {
-        // console.log("updateLineRenderData: " + o.id);
-
-        // color / tint
-        if (ColorDef.isOn(o)) {
-          V3.copy(o.lineRenderData.tint, o.color);
-        }
-        if (TintsDef.isOn(o)) {
-          applyTints(o.tints, o.lineRenderData.tint);
-        }
-
-        // transform
-        mat4.copy(o.lineRenderData.transform, o.rendererWorldFrame.transform);
-
-        pool.updateUniform(o.renderable.meshHandle, o.lineRenderData);
-      }
-    }
-  );
-});
-
 export const stdPointsRender = CY.createRenderPipeline("stdPointsRender", {
   ...voronoiPointLine,
   meshOpt: {
@@ -267,8 +234,8 @@ EM.addEagerInit([PointRenderDataDef], [], [], () => {
     [RenderableDef, PointRenderDataDef, RendererWorldFrameDef],
     [RendererDef],
     (objs, res) => {
-      const pool = res.renderer.renderer.getCyResource(pointMeshPoolPtr)!;
       for (let o of objs) {
+        const pool = o.renderable.meshHandle.pool;
         // console.log("updatePointRenderData: " + o.id);
 
         // color / tint

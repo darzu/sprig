@@ -89,7 +89,6 @@ import { stdGridRender } from "../render/pipelines/std-grid.js";
 import { createJfaPipelines } from "../render/pipelines/std-jump-flood.js";
 import {
   FLAG_BACKFACE_CULL,
-  LineRenderDataDef,
   PointRenderDataDef,
   PointsUniStruct,
   lineMeshPoolPtr,
@@ -351,6 +350,7 @@ function createOcean() {
 
 const pointsJFA = createJfaPipelines(xpPointMaskTex, "interior", 64);
 
+// TODO(@darzu): PERF! As of right now, tHis is super expensive. Like ~20ms sometimes :/
 const pointJFAColorPipe = CY.createRenderPipeline("colorPointsJFA", {
   globals: [
     // { ptr: linearSamplerPtr, alias: "samp" },

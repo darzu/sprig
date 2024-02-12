@@ -13,6 +13,7 @@ import {
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { jitter } from "../utils/math.js";
 import { assert, range } from "../utils/util.js";
+import { jitterVec3, randNormalVec3 } from "../utils/utils-3d.js";
 import { createObj } from "./objects.js";
 
 // TODO(@darzu): ABSTRACTION: l-systems, paths, boards all have a lot in common..
@@ -67,7 +68,7 @@ export function testingLSys() {
   // TODO(@darzu): add leaves
   const line = () => {
     nodes.push(mat4.getTranslation(cursor, V3.mk()));
-    nodeNorms.push(V3.clone(norm));
+    nodeNorms.push(jitterVec3(norm, 0.1, V3.mk()));
     if (_lastNodeIdx >= 0) {
       lines.push(V(_lastNodeIdx, nodes.length - 1));
     }
@@ -75,7 +76,7 @@ export function testingLSys() {
   };
   const point = () => {
     points.push(mat4.getTranslation(cursor, V3.mk()));
-    pointNorms.push(V3.clone(norm));
+    pointNorms.push(jitterVec3(norm, 0.1, V3.mk()));
   };
   const mov = (x: number, y: number, z: number) =>
     mat4.translate(cursor, [x, y, z], cursor);
@@ -99,7 +100,7 @@ export function testingLSys() {
   function tree(depth: number) {
     for (let i = 0; i < depth; i++) {
       // up
-      mov(0, 0, 10);
+      mov(0, 0, 3);
       line();
       // bend
       if (Math.random() < 0.1) {
@@ -118,7 +119,7 @@ export function testingLSys() {
       if (i === depth - 1) {
         push();
         for (let j = 0; j < 6; j++) {
-          mov(jitter(2), jitter(2), jitter(2));
+          mov(jitter(5), jitter(5), jitter(5));
           point();
         }
         pop();
@@ -157,7 +158,13 @@ export function testingLSys() {
   console.dir(lineMesh);
 
   const branches = createObj(
-    [RenderableConstructDef, PositionDef, ColorDef, ScaleDef] as const,
+    [
+      RenderableConstructDef,
+      PointRenderDataDef,
+      PositionDef,
+      ColorDef,
+      ScaleDef,
+    ] as const,
     {
       renderableConstruct: [
         lineMesh,
@@ -168,7 +175,8 @@ export function testingLSys() {
       ],
       position: [0, 0, 0],
       scale: [1, 1, 1],
-      color: ENDESGA16.lightBrown,
+      color: ENDESGA16.darkBrown,
+      pointRenderData: { size: 0.5 },
     }
   );
   // TODO(@darzu): leaves need to not have backface culling
@@ -191,7 +199,7 @@ export function testingLSys() {
       position: [0, 0, 0],
       scale: [1, 1, 1],
       color: ENDESGA16.lightGreen,
-      pointRenderData: { size: 3 },
+      pointRenderData: { size: 2 },
     }
   );
 }
