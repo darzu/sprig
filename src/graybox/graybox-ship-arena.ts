@@ -807,10 +807,10 @@ export async function initGrayboxShipArena() {
               undefined,
               objId,
             ],
-            pointRenderData: PointsUniStruct.fromPartial({
+            pointRenderData: {
               flags: FLAG_BACKFACE_CULL,
               id: objId,
-            }),
+            },
             // position: [-40, 0, 40],
             position: pos,
             scale: scales[i],

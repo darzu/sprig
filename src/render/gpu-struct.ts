@@ -216,6 +216,8 @@ export interface CyStruct<O extends CyStructDesc> {
   create: () => CyToTS<O>;
   fromPartial: (partial: Partial<CyToTS<O>>) => CyToTS<O>;
   opts: CyStructOpts<O> | undefined;
+  _names: (keyof O)[];
+  _types: WGSLType[];
 }
 
 export type Serializer<O extends CyStructDesc> = (
@@ -319,10 +321,11 @@ function createValue<T extends WGSLType>(
     if (wgsl === "vec2<f32>") return V2.mk();
     if (wgsl === "vec3<f32>") return V3.mk();
     if (wgsl === "vec4<f32>") return V4.mk();
+    if (wgsl === "vec4<u32>") return V4.mk();
     if (wgsl === "u32") return 0;
     if (wgsl === "mat4x4<f32>") return mat4.create();
 
-    throw `createValue is missing ${wgsl}`;
+    assert(false, `createValue is missing ${wgsl}`);
   }
 }
 
@@ -368,21 +371,6 @@ export function checkStruct<O extends CyStructDesc>(
     );
   }
   return true;
-}
-
-export function createStructFromPartial<O extends CyStructDesc>(
-  desc: O,
-  partial: Partial<CyToTS<O>>
-): CyToTS<O> {
-  let res: any = {};
-  // TODO(@darzu): NOTE: order is important here! Result fields must be in the order of the keys
-  for (let name of Object.keys(desc)) {
-    if (partial[name] !== undefined) res[name] = partial[name];
-    else res[name] = createValue(desc[name]);
-  }
-  // console.dir(partial);
-  // console.dir(res);
-  return res as CyToTS<O>;
 }
 
 function createDummyStruct<O extends CyStructDesc>(desc: O): CyToTS<O> {
@@ -467,8 +455,8 @@ export function createCyStruct<O extends CyStructDesc>(
     structAlign
   );
 
-  const names = Object.keys(desc);
-  const types = Object.values(desc);
+  const names: (keyof O)[] = Object.keys(desc);
+  const types: WGSLType[] = Object.values(desc);
 
   // TODO(@darzu): support registering a custom serializer for perf reasons
   // TODO(@darzu): emit serialization code
@@ -557,6 +545,8 @@ export function createCyStruct<O extends CyStructDesc>(
   }
 
   const struct: CyStruct<O> = {
+    _names: names,
+    _types: types,
     desc,
     memberCount: Object.keys(desc).length,
     size: structSize,
@@ -573,8 +563,18 @@ export function createCyStruct<O extends CyStructDesc>(
     opts,
   };
 
+  const _default = create();
+
   function fromPartial(p: Partial<CyToTS<O>>): CyToTS<O> {
-    return createStructFromPartial(desc, p);
+    let res: any = {};
+    // TODO(@darzu): NOTE: order is important here! Result fields must be in the order of the keys
+    for (let name of Object.keys(struct.desc)) {
+      if (p[name] !== undefined) res[name] = p[name];
+      else res[name] = cloneValue(struct.desc[name], _default[name]);
+    }
+    // console.dir(partial);
+    // console.dir(res);
+    return res as CyToTS<O>;
   }
 
   function clone(orig: CyToTS<O>): CyToTS<O> {

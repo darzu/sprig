@@ -6,6 +6,7 @@ import { mkCubeMesh } from "../meshes/primatives.js";
 import { PositionDef, ScaleDef } from "../physics/transform.js";
 import { DEFAULT_MASK, JFA_PRE_PASS_MASK } from "../render/pipeline-masks.js";
 import {
+  PointRenderDataDef,
   lineMeshPoolPtr,
   pointMeshPoolPtr,
 } from "../render/pipelines/std-point.js";
@@ -172,7 +173,13 @@ export function testingLSys() {
   );
   // TODO(@darzu): leaves need to not have backface culling
   const leaves = createObj(
-    [RenderableConstructDef, PositionDef, ColorDef, ScaleDef] as const,
+    [
+      RenderableConstructDef,
+      PointRenderDataDef,
+      PositionDef,
+      ColorDef,
+      ScaleDef,
+    ] as const,
     {
       renderableConstruct: [
         pointMesh,
@@ -184,6 +191,7 @@ export function testingLSys() {
       position: [0, 0, 0],
       scale: [1, 1, 1],
       color: ENDESGA16.lightGreen,
+      pointRenderData: { size: 3 },
     }
   );
 }

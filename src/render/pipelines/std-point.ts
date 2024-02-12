@@ -91,7 +91,7 @@ export const lineMeshPoolPtr = CY.createMeshPool("lineMeshPool", {
 
 export const PointRenderDataDef = EM.defineNonupdatableComponent(
   "pointRenderData",
-  (r: PointsUniTS) => r
+  (r: Partial<PointsUniTS>) => PointsUniStruct.fromPartial(r)
 );
 
 // TODO(@darzu): PERF. could probably save perf by using custom vertex data

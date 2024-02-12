@@ -29,9 +29,9 @@ fn vert_main(input: VertexInput) -> VertexOutput {
       scene.cameraViewProjMatrix[2][0],
     ));
 
-    const S = 1.0; // TODO(@darzu): get S from 
+    // const S = 1.0; 
 
-    let worldPos2 = worldPos.xyz + S * right;
+    let worldPos2 = worldPos.xyz + meshUni.size * right;
     
     // TODO(@darzu): PERF. Somehow using the depth buffer could maybe be a cheaper way to do this?
     let screenPos2 = scene.cameraViewProjMatrix * vec4(worldPos2, 1.0); 
