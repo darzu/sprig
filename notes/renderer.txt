@@ -2236,3 +2236,7 @@ TimothyLottes on TAA:
 To render giant view distances w/ high depth buffer precision:
   https://www.khronos.org/opengl/wiki/Depth_Buffer_Precision
   The typical approach is to use a multipass technique. The application might divide the geometry database into regions that don't interfere with each other in Z. The geometry in each region is then rendered, starting at the furthest region, with a clear of the depth buffer before each region is rendered. This way the precision of the entire depth buffer is made available to each region.
+
+IQ's 2D SDFs:
+  http://iquilezles.org/articles/distfunctions2d/
+  pie seems very versatile: https://www.shadertoy.com/view/3l23RK

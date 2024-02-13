@@ -27,6 +27,16 @@ import { createObj } from "./objects.js";
   would be great if we could easily do these in compute
 */
 
+// TODO(@darzu): to improve the look:
+//  vary size per vertex
+//  vary color per vertex
+//  add gradient per vertex?
+//  fuzzy borders ?
+//  vary shape ?
+//    per-vertex: little SDF-ish things as data? Some chain of adds, multiplies, abs, that r turned on/off by data ?
+//  give every dot a rounded look?
+//  normal facing out from center of tree
+
 interface LSys {
   run: (depth: number) => void;
 }
