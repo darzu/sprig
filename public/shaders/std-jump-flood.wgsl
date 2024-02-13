@@ -42,6 +42,7 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec2<f32> {
       let sampXY = fragXY + vec2(x,y) * stepSize;
       let sSeedUV = textureLoad(inTex, sampXY, 0).xy;
       let sSeedXY = vec2<i32>(sSeedUV * vec2<f32>(dims));
+      // TODO(@darzu): check surface too
       let sSeedObj: u32 = textureLoad(surfTex, sSeedXY, 0).g;
       let sSeedDep: f32 = textureLoad(depthTex, sSeedXY, 0);
       let sSeedSize: f32 = textureLoad(maskTex, sSeedXY, 0).g;

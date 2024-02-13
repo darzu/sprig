@@ -11,9 +11,9 @@ import {
   pointMeshPoolPtr,
 } from "../render/pipelines/std-point.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
-import { jitter } from "../utils/math.js";
+import { createPseudorandomGen } from "../utils/rand.js";
 import { assert, range } from "../utils/util.js";
-import { jitterVec3, randNormalVec3 } from "../utils/utils-3d.js";
+import { centroid, jitterVec3, randNormalVec3 } from "../utils/utils-3d.js";
 import { createObj } from "./objects.js";
 
 // TODO(@darzu): ABSTRACTION: l-systems, paths, boards all have a lot in common..
@@ -28,14 +28,17 @@ import { createObj } from "./objects.js";
 */
 
 // TODO(@darzu): to improve the look:
-//  vary size per vertex
-//  vary color per vertex
-//  add gradient per vertex?
-//  fuzzy borders ?
-//  vary shape ?
-//    per-vertex: little SDF-ish things as data? Some chain of adds, multiplies, abs, that r turned on/off by data ?
-//  give every dot a rounded look?
-//  normal facing out from center of tree
+//  [ ] vary size per vertex
+//  [ ] vary color per vertex
+//  [ ] add gradient per vertex?
+//  [ ] fuzzy borders ?
+//  [ ] vary shape ?
+//       per-vertex: little SDF-ish things as data? Some chain of adds, multiplies, abs, that r turned on/off by data ?
+//  [ ] give every dot a rounded look?
+//  [x] normal facing out from center of tree
+//  [x] normal facing out from center of leaf cluster
+//  [ ] leaf clusters should share a surface ID and voronoi blob + backface culling
+//  [ ] leaf cluster arranged in better pattern
 
 interface LSys {
   run: (depth: number) => void;
@@ -78,7 +81,8 @@ export function testingLSys() {
   // TODO(@darzu): add leaves
   const line = () => {
     nodes.push(mat4.getTranslation(cursor, V3.mk()));
-    nodeNorms.push(jitterVec3(norm, 0.1, V3.mk()));
+    // nodeNorms.push(jitterVec3(norm, 0.1, V3.mk()));
+    nodeNorms.push(V3.clone(norm));
     if (_lastNodeIdx >= 0) {
       lines.push(V(_lastNodeIdx, nodes.length - 1));
     }
@@ -86,7 +90,8 @@ export function testingLSys() {
   };
   const point = () => {
     points.push(mat4.getTranslation(cursor, V3.mk()));
-    pointNorms.push(jitterVec3(norm, 0.1, V3.mk()));
+    // pointNorms.push(jitterVec3(norm, 0.1, V3.mk()));
+    pointNorms.push(V3.clone(norm));
   };
   const mov = (x: number, y: number, z: number) =>
     mat4.translate(cursor, [x, y, z], cursor);
@@ -106,6 +111,14 @@ export function testingLSys() {
     _lastNodeIdx = _nodeIdxStack.pop()!;
   };
 
+  // NOTE: this rand should only be used for tree structural choices
+  const seed = 3;
+  const { rand, jitter } = createPseudorandomGen(seed);
+  // const { rand, jitter } = {
+  //   rand: () => Math.random(),
+  //   jitter: (radius: number) => (Math.random() - 0.5) * radius * 2,
+  // };
+
   mov(80, 240, 0);
   function tree(depth: number) {
     for (let i = 0; i < depth; i++) {
@@ -113,12 +126,12 @@ export function testingLSys() {
       mov(0, 0, 3);
       line();
       // bend
-      if (Math.random() < 0.1) {
+      if (rand() < 0.1) {
         mat4.yaw(cursor, Math.PI * 0.1 * jitter(1), cursor);
         mat4.pitch(cursor, Math.PI * 0.1 * jitter(1), cursor);
       }
       // branch
-      if (Math.random() < 0.1) {
+      if (rand() < 0.1) {
         push();
         mat4.yaw(cursor, Math.PI * 0.2 * jitter(1), cursor);
         mat4.pitch(cursor, Math.PI * 0.2 * jitter(1), cursor);
@@ -128,15 +141,36 @@ export function testingLSys() {
       // last leaves
       if (i === depth - 1) {
         push();
-        for (let j = 0; j < 6; j++) {
-          mov(jitter(5), jitter(5), jitter(5));
+        let pointIdx = points.length;
+        for (let j = 0; j < 100; j++) {
+          mov(jitter(2), jitter(2), jitter(2));
           point();
         }
+        const leafPoints = points.slice(pointIdx);
+        const centerOfMass = centroid(...leafPoints);
+        leafPoints.forEach((p, i) => {
+          const n = pointNorms[i + pointIdx];
+          V3.sub(p, centerOfMass, n);
+          V3.norm(n, n);
+        });
         pop();
       }
     }
   }
   tree(10);
+
+  const centerOfMass = centroid(...points, ...nodes);
+
+  nodeNorms.forEach((n, i) => {
+    const p = nodes[i];
+    V3.sub(p, centerOfMass, n);
+    V3.norm(n, n);
+  });
+  // pointNorms.forEach((n, i) => {
+  //   const p = points[i];
+  //   V3.sub(p, centerOfMass, n);
+  //   V3.norm(n, n);
+  // });
 
   // create mesh(es)
   const mkLineMesh: () => Mesh = () => ({
@@ -209,7 +243,7 @@ export function testingLSys() {
       position: [0, 0, 0],
       scale: [1, 1, 1],
       color: ENDESGA16.lightGreen,
-      pointRenderData: { size: 2 },
+      pointRenderData: { size: 1 },
     }
   );
 }

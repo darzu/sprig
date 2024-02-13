@@ -212,3 +212,6 @@ Rigging in blender for good glTF export:
   - When in doubt, always apply all transforms (Command-A, All transforms) to both the object and the armature!
 
 Architecting a #D Animation Engine: https://www.gamedeveloper.com/programming/architecting-a-3d-animation-engine
+
+12 principles of animation:
+  https://the12principles.tumblr.com
