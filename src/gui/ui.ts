@@ -20,6 +20,9 @@ In-engine text rendering:
 [ ] font editor: scrible brush for rough shape
 [ ] font editor: triangle editor to triangulate
 [ ] font editor: html reference fonts overlay
+
+first task:
+[ ] slider to control shader effect (1/2 screen, or dot shrink)
 */
 
 export const TextDef = EM.defineResource(
