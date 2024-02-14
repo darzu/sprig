@@ -50,6 +50,7 @@ interface LSysOpt {
 }
 
 function createLSys(pa: LSysOpt): LSys {
+  throw "TODO";
   const lsys: LSys = {
     run,
   };
@@ -67,6 +68,7 @@ export function testingLSys() {
   const lines: V2[] = [];
   const points: V3[] = [];
   const pointNorms: V3[] = [];
+  const pointSurfs: number[] = [];
 
   const maxStack = 10;
   let _cursors: mat4[] = range(maxStack).map((_) => mat4.create());
@@ -88,10 +90,12 @@ export function testingLSys() {
     }
     _lastNodeIdx = nodes.length - 1;
   };
+  let pointSurf = 1;
   const point = () => {
     points.push(mat4.getTranslation(cursor, V3.mk()));
     // pointNorms.push(jitterVec3(norm, 0.1, V3.mk()));
     pointNorms.push(V3.clone(norm));
+    pointSurfs.push(pointSurf);
   };
   const mov = (x: number, y: number, z: number) =>
     mat4.translate(cursor, [x, y, z], cursor);
@@ -102,6 +106,7 @@ export function testingLSys() {
     cursor = _cursors[_cursorIdx];
     mat4.copy(cursor, oldCursor);
     _nodeIdxStack.push(_lastNodeIdx);
+    // TODO(@darzu): push/pop pointSurf ?
   };
   const pop = () => {
     _cursorIdx--;
@@ -141,6 +146,7 @@ export function testingLSys() {
       // last leaves
       if (i === depth - 1) {
         push();
+        pointSurf++;
         let pointIdx = points.length;
         for (let j = 0; j < 100; j++) {
           mov(jitter(2), jitter(2), jitter(2));
@@ -194,12 +200,15 @@ export function testingLSys() {
     surfaceIds: [],
     usesProvoking: true,
     posNormals: pointNorms,
+    posSurfaces: pointSurfs,
   });
 
   const lineMesh = mkLineMesh();
   const pointMesh = mkPointMesh();
 
+  console.log("L_SYSTEM MESHES");
   console.dir(lineMesh);
+  console.dir(pointMesh);
 
   const branches = createObj(
     [
@@ -243,7 +252,7 @@ export function testingLSys() {
       position: [0, 0, 0],
       scale: [1, 1, 1],
       color: ENDESGA16.lightGreen,
-      pointRenderData: { size: 1 },
+      pointRenderData: { size: 0.5 },
     }
   );
 }

@@ -835,6 +835,8 @@ Outlines / edge detection:
   https://github.com/OmarShehata/webgl-outlines
   https://omar-shehata.medium.com/better-outline-rendering-using-surface-ids-with-webgl-e13cdab1fd94
 
+  https://www.videopoetics.com/tutorials/pixel-perfect-outline-shaders-unity/
+
 Linearize depth:
   https://learnopengl.com/Advanced-OpenGL/Depth-testing
   https://learnopengl.com/Advanced-Lighting/Shadows/Shadow-Mapping
@@ -2240,3 +2242,9 @@ To render giant view distances w/ high depth buffer precision:
 IQ's 2D SDFs:
   http://iquilezles.org/articles/distfunctions2d/
   pie seems very versatile: https://www.shadertoy.com/view/3l23RK
+
+Capsule-based ambient occlusion:
+  https://www.shadertoy.com/view/llGyzG
+  https://github.com/Fewes/CapsuleOcclusion
+  http://miciwan.com/SIGGRAPH2013/Lighting%20Technology%20of%20The%20Last%20Of%20Us.pdf
+  https://knarkowicz.files.wordpress.com/2017/05/knarkowicz_rendering_sw2_dd_20171.pdf

@@ -36,3 +36,5 @@ Drums in JS:
     https://www.nickwritesablog.com/drum-synthesis-in-javascript/
 
 https://faust.grame.fr
+
+https://1oogames.itch.io/lovely-composer

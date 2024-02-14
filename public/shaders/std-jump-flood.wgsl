@@ -32,6 +32,7 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec2<f32> {
   var bestUV = vec2(0.0);
   var bestDep = 999.9;
   var bestObj: u32 = 99999;
+  var bestSurf: u32 = 99999;
   // var first = false;
 
   for (var x = -1; x <= 1; x++) 
@@ -43,7 +44,9 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec2<f32> {
       let sSeedUV = textureLoad(inTex, sampXY, 0).xy;
       let sSeedXY = vec2<i32>(sSeedUV * vec2<f32>(dims));
       // TODO(@darzu): check surface too
-      let sSeedObj: u32 = textureLoad(surfTex, sSeedXY, 0).g;
+      let sSeedSurfAndObj: vec2<u32> = textureLoad(surfTex, sSeedXY, 0).rg;
+      let sSeedObj = sSeedSurfAndObj.g;
+      let sSeedSurf = sSeedSurfAndObj.r;
       let sSeedDep: f32 = textureLoad(depthTex, sSeedXY, 0);
       let sSeedSize: f32 = textureLoad(maskTex, sSeedXY, 0).g;
       let dist = distance(sSeedUV, fragUV); 
@@ -90,6 +93,7 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec2<f32> {
           bestDist = dist;
           bestUV = sSeedUV;
           bestObj = sSeedObj;
+          bestSurf = sSeedSurf;
           bestDep = sSeedDep;
           continue;
         }
@@ -97,13 +101,17 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec2<f32> {
         continue;
       }
 
+      // same object
+
       // TODO(@darzu): BUG. this condition definitely violates JFA and introduces some noise-like 
       //    artifacts (they kinda look cool tbh, and they're stable)
+      // if (bestSurf != sSeedSurf && sSeedDep < bestDep && dist < sSeedSize) {
       if (sSeedDep < bestDep && dist < sSeedSize) {
         // take new nearer
         bestDist = dist;
         bestUV = sSeedUV;
         bestObj = sSeedObj;
+        bestSurf = sSeedSurf;
         bestDep = sSeedDep;
         continue;
       }
@@ -112,7 +120,8 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec2<f32> {
         bestDist = dist;
         bestUV = sSeedUV;
         bestObj = sSeedObj;
-        bestDep = min(bestDep, sSeedDep);
+        bestSurf = sSeedSurf;
+        // bestDep = min(bestDep, sSeedDep);
         bestDep = sSeedDep;
         continue;
       }

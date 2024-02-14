@@ -32,6 +32,11 @@ import { drawBall, drawLine } from "../utils/utils-game.js";
 // geo-data: colors, uvs, surfaceIds,
 // metadata: dbgName,
 // flags: usesProvoking
+//
+// list of features; list of computed features
+//    gen fn to compute all (or just missing) computed properties (instead of "Raw" vs not)
+//
+// allow different data representations e.g. sparse run-length encoding, or Float32Array
 export interface RawMesh {
   // geometry
   pos: V3[]; // TODO(@darzu): rename to locs ?
@@ -54,6 +59,12 @@ export interface RawMesh {
 
   // TODO(@darzu): okay, now it's really time to refactor..
   posNormals?: V3[];
+  posSurfaces?: number[];
+
+  // perFace
+  // perVert
+  // perLine
+  // perMesh
 }
 
 export interface Rigging {
@@ -105,6 +116,7 @@ export function transformRigging(out: Rigging, tm: mat4.InputT) {
 }
 
 export interface Mesh extends RawMesh {
+  // TODO(@darzu): MESH refactor: surfaceIds is a good thread to pull on
   // made non-optional
   surfaceIds: NonNullable<RawMesh["surfaceIds"]>;
   // flags
@@ -146,6 +158,7 @@ function cloneRigging(rigging: Rigging): Rigging {
   };
 }
 
+// TODO(@darzu): MESH refactor
 export function cloneMesh(m: Mesh): Mesh;
 export function cloneMesh(m: RiggedMesh): RiggedMesh;
 export function cloneMesh(m: RawMesh): RawMesh;
@@ -238,6 +251,7 @@ export function validateMesh(m: RawMesh) {
 
   const dbgName = `"${m.dbgName ?? "???"}"`;
 
+  // TODO(@darzu): MESH refactor
   // TODO(@darzu): Don't assert, return a boolean + reason!
   assert(
     !m.quad.length || m.tri.length % 2 === 0,

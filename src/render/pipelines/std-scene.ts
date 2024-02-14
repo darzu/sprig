@@ -188,6 +188,14 @@ export function computeVertsData(
     }
   }
 
+  if (m.posSurfaces) {
+    assert(m.posSurfaces.length === m.pos.length);
+    for (let vi = startIdx; vi < startIdx + count; vi++) {
+      const dIdx = vi - startIdx;
+      tempVertsData[dIdx].surfaceId = m.posSurfaces[vi];
+    }
+  }
+
   return tempVertsData;
 }
 

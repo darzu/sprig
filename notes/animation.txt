@@ -215,3 +215,16 @@ Architecting a #D Animation Engine: https://www.gamedeveloper.com/programming/ar
 
 12 principles of animation:
   https://the12principles.tumblr.com
+
+"lottie animations":
+  https://github.com/airbnb/lottie-web
+  https://en.wikipedia.org/wiki/Lottie_(file_format)
+  https://airbnb.design/lottie/
+    https://airbnb.design/introducing-lottie/
+  https://lottiefiles.com/what-is-lottie
+  lottie format:
+    https://lottie.github.io/lottie-spec/
+    https://lottiefiles.github.io/lottie-docs/
+
+Game feel & death animations:
+  https://www.youtube.com/watch?v=pmSAG51BybY
