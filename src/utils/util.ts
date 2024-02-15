@@ -331,6 +331,7 @@ export function boxInBox(
 // TODO(@darzu): would be nice to have a dbg mode where we assert that this isn't
 //    being triggered at different lengths at a callsite in the steady state
 // TODO(@darzu): actually we probably don't want this fn, better to just do a while loop + assert length hasn't shrunk?
+// TODO(@darzu): have a sizeUpArray option?
 export function resizeArray<T, T2 extends T>(
   arr: T[],
   len: number,

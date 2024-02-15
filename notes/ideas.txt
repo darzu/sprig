@@ -164,3 +164,9 @@ Physics stewards game idea:
 Game dev peer feedback tool:
   Random idea for a gamedev peer feedback website:
   Akin to Ludum Dare's reciprocal feedback karma system. Upload your demo/dialog/scene/UI snippet, add labels, then explore and provide feedback on others' work and get back as much feedback as you give.
+
+Compositional shaders:
+  make a little function from vertex input to fragment output w/ needed globals,
+  compose these all together
+  e.g. surface + object ID, is easy to write a standalone fn from input to output
+  it'll also be nice to be able to reference globals in the way that a system references resources

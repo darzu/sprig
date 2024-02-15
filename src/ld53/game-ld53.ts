@@ -124,7 +124,7 @@ PERF:
 [ ] reduce triangles on ocean
 */
 
-const DBG_PLAYER = false;
+const DBG_PLAYER = true;
 const DBG_HIDE_LAND = false;
 const DBG_HIDE_WATER = false;
 
