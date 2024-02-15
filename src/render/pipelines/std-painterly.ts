@@ -10,22 +10,15 @@ import {
 import { CyToTS, createCyStruct } from "../gpu-struct.js";
 import { pointLightsPtr } from "../lights.js";
 import { MAX_INDICES } from "../mesh-pool.js";
-import {
-  DEFAULT_MASK,
-  PAINTERLY_JFA_PRE_PASS_MASK,
-} from "../pipeline-masks.js";
+import { PAINTERLY_JFA_PRE_PASS_MASK } from "../pipeline-masks.js";
 import {
   RenderableDef,
   RendererWorldFrameDef,
   RendererDef,
 } from "../renderer-ecs.js";
-import { oceanPoolPtr } from "./std-ocean.js";
 import {
   sceneBufPtr,
-  meshPoolPtr,
-  unlitTexturePtr,
   mainDepthTex,
-  litTexturePtr,
   computeVertsData,
   VertexStruct,
   surfacesTexturePtr,

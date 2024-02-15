@@ -26,6 +26,7 @@ export const ShaderPaths = [
   "std-dots",
   "std-grid",
   "std-helpers",
+  "std-line",
   "std-painterly-prepass",
   "std-painterly-jfa",
   "std-painterly-main",
