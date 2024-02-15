@@ -33,6 +33,11 @@ fn vert_main(@builtin(vertex_index) VertexIndex : u32) -> VertexOutput {
 
 @fragment
 fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
+  // let tm = abs(fract(scene.time * 0.0002) * 2.0 - 1.0);
+  // if (uv.x >= tm - 0.005) {
+  //   discard;
+  // }
+
   var color = textureSample(colorTex, samp, uv).rgb;
   let bloom = textureSample(bloomTex, samp, uv).rgb;
   let depth = textureSample(depthTex, samp, uv);

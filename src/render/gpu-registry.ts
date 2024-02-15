@@ -123,6 +123,9 @@ export function numIndsPerPrim(k: PrimKind) {
 }
 
 // MESH POOL
+// TODO(@darzu): maybe mesh pool could have a generalized version to just help you keep points into a bunch of CyStructArrays ?
+//                RiggedMeshPool just adds one more buffer. Points don't need an index buffer. Also we'd love per-instance
+//                data in addition to uniforms.
 export interface CyMeshPoolPtr<
   V extends CyStructDesc = CyStructDesc,
   U extends CyStructDesc = CyStructDesc
@@ -131,8 +134,8 @@ export interface CyMeshPoolPtr<
   prim: PrimKind;
   // TODO(@darzu): remove id and name, this doesn't need to be inited directly
   computeVertsData: ComputeVertsDataFn<V>;
-  computeUniData: (m: Mesh) => CyToTS<U>;
   vertsStruct: CyStruct<V>;
+  // TODO(@darzu): RENAME "uniform" everywhere to "perInstance" or similar? We want instance buffers too tho..
   unisStruct: CyStruct<U>;
   // TODO(@darzu): do we need these max's? maybe we make them optional
   maxMeshes: number;
@@ -242,7 +245,7 @@ export interface CyRenderPipelinePtr<
   VO extends Record<string, GPUPipelineConstantValue> = {}
 > extends CyResourcePtr {
   kind: "renderPipeline";
-  globals: CyGlobalParam[];
+  globals: readonly CyGlobalParam[];
   fragOverrides?: FO;
   vertOverrides?: VO;
   shader: ((shaders: ShaderSet) => string) | ShaderName;
@@ -256,7 +259,7 @@ export interface CyRenderPipelinePtr<
   meshOpt: CyMeshOpt;
   // TODO(@darzu): really need to allow changing attachments at runtime. Useful
   //   for tutorial animations at a minimum
-  output: CyColorAttachment[];
+  output: readonly CyColorAttachment[];
   depthStencil?: CyDepthAttachment;
   depthReadonly?: boolean;
   depthCompare?: GPUCompareFunction;

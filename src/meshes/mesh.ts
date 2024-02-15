@@ -24,11 +24,19 @@ import { drawBall, drawLine } from "../utils/utils-game.js";
 // TODO(@darzu): for many attributes we don't want a full dense array but a fn
 //    e.g. for colors, maybe they're all or mostly black; or for normals, they might all be straight up
 
+// TODO(@darzu): MESH PARTS: implement a modular mesh format.
+// TODO(@darzu): MESH PARTS: can this just be a TS union? Or do we need some "features" field / mask? Probably need runtime info.
+
 // defines the geometry and coloring of a mesh
 // geometry: pos, tri, quad, lines,
 // geo-data: colors, uvs, surfaceIds,
 // metadata: dbgName,
 // flags: usesProvoking
+//
+// list of features; list of computed features
+//    gen fn to compute all (or just missing) computed properties (instead of "Raw" vs not)
+//
+// allow different data representations e.g. sparse run-length encoding, or Float32Array
 export interface RawMesh {
   // geometry
   pos: V3[]; // TODO(@darzu): rename to locs ?
@@ -48,6 +56,15 @@ export interface RawMesh {
   // TODO(@darzu):
   dbgName?: string;
   rigging?: Rigging;
+
+  // TODO(@darzu): okay, now it's really time to refactor..
+  posNormals?: V3[];
+  posSurfaces?: number[];
+
+  // perFace
+  // perVert
+  // perLine
+  // perMesh
 }
 
 export interface Rigging {
@@ -99,6 +116,7 @@ export function transformRigging(out: Rigging, tm: mat4.InputT) {
 }
 
 export interface Mesh extends RawMesh {
+  // TODO(@darzu): MESH refactor: surfaceIds is a good thread to pull on
   // made non-optional
   surfaceIds: NonNullable<RawMesh["surfaceIds"]>;
   // flags
@@ -140,6 +158,7 @@ function cloneRigging(rigging: Rigging): Rigging {
   };
 }
 
+// TODO(@darzu): MESH refactor
 export function cloneMesh(m: Mesh): Mesh;
 export function cloneMesh(m: RiggedMesh): RiggedMesh;
 export function cloneMesh(m: RawMesh): RawMesh;
@@ -232,6 +251,7 @@ export function validateMesh(m: RawMesh) {
 
   const dbgName = `"${m.dbgName ?? "???"}"`;
 
+  // TODO(@darzu): MESH refactor
   // TODO(@darzu): Don't assert, return a boolean + reason!
   assert(
     !m.quad.length || m.tri.length % 2 === 0,
@@ -590,7 +610,7 @@ export function scaleMesh3(m: RawMesh, by: V3.InputT) {
 }
 // TODO(@darzu): need a version that preserves Mesh vs RawMesh
 // TODO(@darzu): PERF! We probably should be using this v sparingly if it's cloning all positions
-export function transformMesh(m: RawMesh, t: mat4) {
+export function transformMesh<M extends RawMesh>(m: M, t: mat4): M {
   mapMeshPositions(m, (p) => V3.tMat4(p, t, V3.mk()));
   return m;
 }

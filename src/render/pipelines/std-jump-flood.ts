@@ -1,8 +1,14 @@
 import { never } from "../../utils/util-no-import.js";
-import { range } from "../../utils/util.js";
+import { assert, range } from "../../utils/util.js";
 import { createRenderTextureToQuad, fullQuad } from "../gpu-helper.js";
-import { CY, CyPipelinePtr, CyTexturePtr } from "../gpu-registry.js";
+import {
+  CY,
+  CyGlobalParam,
+  CyPipelinePtr,
+  CyTexturePtr,
+} from "../gpu-registry.js";
 import { ShaderSet } from "../shader-loader.js";
+import { mainDepthTex, sceneBufPtr, surfacesTexturePtr } from "./std-scene.js";
 
 // TODO(@darzu): support a sign bit for dist on the mask
 //    I think we'll need this for text -> SDF
@@ -25,15 +31,30 @@ export interface JfaResult {
 
 let nextId = 1; // TODO(@darzu): hack so we don't need to name everything
 
-export function createJfaPipelines(
-  maskTex: CyTexturePtr,
-  maskMode: "interior" | "border" | "exterior"
-): JfaResult {
+export interface JfaOpts {
+  maskTex: CyTexturePtr;
+  maskMode: "interior" | "border" | "exterior";
+  maxDist?: number;
+  shader?: (shaders: ShaderSet) => string;
+  shaderExtraGlobals?: readonly CyGlobalParam[];
+}
+
+// TODO(@darzu): wish this didn't have to be called at the top level always
+export function createJfaPipelines({
+  maskTex,
+  maskMode,
+  maxDist,
+  shader,
+  shaderExtraGlobals,
+}: JfaOpts): JfaResult {
   let size = 512;
 
   const voronoiTexFmt: Parameters<typeof CY.createTexture>[1] = {
     size: [size, size],
-    format: "rg16float",
+    onCanvasResize: (w, h) => [w, h],
+    // format: "rg16float",
+    format: "rg32float",
+    // format: "rg8unorm",
   };
 
   const namePrefix = `jfa${nextId++}`;
@@ -112,7 +133,18 @@ export function createJfaPipelines(
     // format: "r16float",
   });
 
-  const maxStep = Math.ceil(Math.log2(size / 2));
+  // console.log(`jfa for ${maskTex.name}`);
+  assert(
+    !maxDist || Math.log2(maxDist) % 1 === 0,
+    `maxDist: ${maxDist} must be power of two`
+  );
+  const biggestMaxStep = Math.ceil(Math.log2(size / 2));
+  const maxStep = maxDist
+    ? Math.min(biggestMaxStep, Math.log2(maxDist))
+    : biggestMaxStep;
+  // console.log(
+  //   `maxStep: ${maxStep}, maxDist: ${maxDist}, biggestMaxStep: ${biggestMaxStep}`
+  // );
   const resultIdx = (maxStep + 1) % 2;
 
   // console.log(`resultIdx: ${resultIdx}`);
@@ -126,25 +158,31 @@ export function createJfaPipelines(
     const outIdx = (i + 1) % 2;
     // console.log(`outIdx: ${outIdx}`);
 
-    const stepSize = Math.floor(Math.pow(2, maxStep - i));
+    // const stepSize = Math.floor(Math.pow(2, maxStep - i)); // count down
+    const stepSize = Math.floor(Math.pow(2, i)); // count up
+    // console.log(`stepSize: ${stepSize}`);
 
+    // TODO(@darzu): PERF! Most of the pieces of these pipelines r reusable!
     const pipeline = CY.createRenderPipeline(`${namePrefix}Pipe${i}`, {
       globals: [
         { ptr: i === 0 ? uvMaskTex : voronoiTexs[inIdx], alias: "inTex" },
         { ptr: fullQuad, alias: "quad" },
+        ...(shaderExtraGlobals ?? []),
       ],
       meshOpt: {
         vertexCount: 6,
         stepMode: "single-draw",
       },
       output: [voronoiTexs[outIdx]],
-      shader: (shaders) => {
-        return `
-        const stepSize = ${stepSize};
-        ${shaders["std-screen-quad-vert"].code}
-        ${shaders["std-jump-flood"].code}
-      `;
+      fragOverrides: {
+        stepSize: stepSize,
       },
+      shader:
+        shader ??
+        ((shaders) => `
+          ${shaders["std-screen-quad-vert"].code}
+          ${shaders["std-jump-flood"].code}
+        `),
       shaderFragmentEntry: "frag_main",
       shaderVertexEntry: "vert_main",
     });

@@ -123,19 +123,19 @@ export function createOrResetBullet(
   } else {
     EM.set(e, ColorDef, ENDESGA16.orange);
   }
-  EM.set(e, MotionSmoothingDef);
-  EM.set(e, RenderableConstructDef, res.allMeshes.ball.proto);
-  EM.set(e, AuthorityDef, res.me.pid);
+  EM.setOnce(e, MotionSmoothingDef);
+  EM.setOnce(e, RenderableConstructDef, res.allMeshes.ball.proto);
+  EM.setOnce(e, AuthorityDef, res.me.pid);
   EM.set(e, BulletDef, props.team, props.health);
-  EM.set(e, ColliderDef, {
+  EM.setOnce(e, ColliderDef, {
     shape: "AABB",
     solid: false,
     aabb: res.allMeshes.ball.aabb,
   });
   EM.set(e, LifetimeDef, 8000);
-  EM.set(e, SyncDef, [PositionDef.id]);
+  EM.setOnce(e, SyncDef, [PositionDef.id]);
   e.sync.fullComponents = [BulletConstructDef.id];
-  EM.set(e, PredictDef);
+  EM.setOnce(e, PredictDef);
   // EM.set(e, GravityDef);
   // e.gravity[1] = -props.gravity;
 

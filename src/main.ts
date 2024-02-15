@@ -38,6 +38,7 @@ import { initLD54 } from "./ld54/game-ld54.js";
 import { initGrayboxSunless } from "./graybox/graybox-sunless-skies.js";
 import { initGrayboxShipArena } from "./graybox/graybox-ship-arena.js";
 import { initGrayboxStarter } from "./graybox/graybox-starter.js";
+import { initPainterlyGame } from "./graybox/game-painterly.js";
 
 // dbgLogMilestone("start of main.ts");
 
@@ -62,10 +63,16 @@ const ALL_GAMES = [
   "graybox-starter",
   "graybox-sunless",
   "graybox-ship-arena",
+  "painterly",
 ] as const;
 
 // TODO(@darzu): current game should probably be saved in local storage, not hard-coded. (Default can be hard-coded)
-const GAME: (typeof ALL_GAMES)[number] = "graybox-ship-arena";
+// prettier-ignore
+const GAME: (typeof ALL_GAMES)[number] = (
+  // "painterly"
+  "graybox-ship-arena"
+  // "graybox-starter"
+);
 
 // Run simulation with a fixed timestep @ 60hz
 const TIMESTEP = 1000 / 60;
@@ -131,6 +138,7 @@ async function startGame(localPeerName: string, host: string | null) {
   else if (GAME === "graybox-starter") initGrayboxStarter();
   else if (GAME === "graybox-sunless") initGrayboxSunless();
   else if (GAME === "graybox-ship-arena") initGrayboxShipArena();
+  else if (GAME === "painterly") initPainterlyGame();
   else never(GAME, "TODO game");
 
   let previous_frame_time = start_of_time;

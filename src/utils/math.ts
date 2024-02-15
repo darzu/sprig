@@ -40,6 +40,7 @@ export function atMost(val: number, max: number) {
 
 export const radToDeg = 180 / Math.PI;
 
+// TODO(@darzu): MOVE all random stuff into rand.ts; reconcile with the pseudo random generators
 export function jitter(radius: number): number {
   return (Math.random() - 0.5) * radius * 2;
 }

@@ -114,3 +114,16 @@ UI principles resources:
 
 Modern iOS Navigation Patterns:
   https://frankrausch.com/ios-navigation
+
+Vello: Fast rust 2D library:
+  https://github.com/linebender/vello
+  https://www.youtube.com/watch?v=mmW_RbTyj8c
+  Eurler Spiral Stroking:
+    break bezier into little chunks for offset curve
+  Skia:
+    https://en.wikipedia.org/wiki/Skia_Graphics_Engine
+    Google's 2d graphics library
+  "glyph hinting and caching" issue 204
+  built on work "Cuda Raster" by nvidia
+    natural webgpu workgroup size is 256 = 16x16
+  https://levien.com/vello-demo/

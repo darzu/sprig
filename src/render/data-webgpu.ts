@@ -50,6 +50,7 @@ export interface CyArray<O extends CyStructDesc> extends CyBuffer<O> {
     dataIdx: number,
     dataCount: number
   ) => void;
+  queueZeros: (idx: number, dataCount: number) => void;
 }
 
 export interface CyIdxBuffer {
@@ -67,6 +68,8 @@ export interface CyTexture {
   texture: GPUTexture;
   format: GPUTextureFormat;
   usage: GPUTextureUsageFlags;
+  // TODO(@darzu): maybe view cache should be a service across all textures?
+  _viewCache: Map<number, GPUTextureView>;
   // TODO(@darzu): support partial texture update?
   queueUpdate: (
     data: Float32Array,
@@ -242,6 +245,7 @@ export function createCyArray<O extends CyStructDesc>(
     length,
     queueUpdate,
     queueUpdates,
+    queueZeros,
     binding,
   };
 
@@ -258,16 +262,23 @@ export function createCyArray<O extends CyStructDesc>(
   function queueUpdate(data: CyToTS<O>, index: number): void {
     const b = struct.serialize(data);
     const bufOffset = index * struct.size;
-    assertDbg(bufOffset % 4 === 0, `alignment`);
-    assertDbg(b.length % 4 === 0, `alignment`);
-    device.queue.writeBuffer(_buf, bufOffset, b);
-    if (PERF_DBG_GPU) _gpuQueueBufferWriteBytes += b.byteLength;
-    if (PERF_DBG_GPU_BLAME) dbgAddBlame("gpu", b.byteLength);
+    _queueUpdates(bufOffset, b.byteLength, b);
   }
 
   // TODO(@darzu): somewhat hacky way to reuse Uint8Arrays here; we could do some more global pool
   //    of these.
   let tempUint8Array: Uint8Array = new Uint8Array(struct.size * 10);
+  function _queueUpdates(
+    bufOffset: number,
+    dataSize: number,
+    data: Uint8Array
+  ): void {
+    assertDbg(dataSize % 4 === 0, `alignment`);
+    assertDbg(bufOffset % 4 === 0, `alignment`);
+    device.queue.writeBuffer(_buf, bufOffset, data, 0, dataSize);
+    if (PERF_DBG_GPU) _gpuQueueBufferWriteBytes += dataSize;
+    if (PERF_DBG_GPU_BLAME) dbgAddBlame("gpu", dataSize);
+  }
   function queueUpdates(
     data: CyToTS<O>[],
     bufIdx: number,
@@ -289,11 +300,17 @@ export function createCyArray<O extends CyStructDesc>(
       serialized.set(struct.serialize(data[i]), struct.size * (i - dataIdx));
 
     const bufOffset = bufIdx * struct.size;
-    assertDbg(dataSize % 4 === 0, `alignment`);
-    assertDbg(bufOffset % 4 === 0, `alignment`);
-    device.queue.writeBuffer(_buf, bufOffset, serialized, 0, dataSize);
-    if (PERF_DBG_GPU) _gpuQueueBufferWriteBytes += dataSize;
-    if (PERF_DBG_GPU_BLAME) dbgAddBlame("gpu", dataSize);
+    _queueUpdates(bufOffset, dataSize, serialized);
+  }
+
+  function queueZeros(idx: number, count: number) {
+    const dataSize = struct.size * count;
+    if (tempUint8Array.byteLength <= dataSize) {
+      tempUint8Array = new Uint8Array(dataSize);
+    }
+    tempUint8Array.fill(0, 0, dataSize);
+    const bufOffset = idx * struct.size;
+    _queueUpdates(bufOffset, dataSize, tempUint8Array);
   }
 
   function binding(idx: number, plurality: "one" | "many"): GPUBindGroupEntry {
@@ -371,7 +388,10 @@ export function createCyTexture(
   const bytesPerVal = texTypeToBytes[format]!;
   assert(bytesPerVal, `TODO format: ${format}`);
 
+  const VIEW_CACHE_DEFAULT = 1;
+
   const cyTex: CyTexture = {
+    _viewCache: new Map(),
     ptr,
     size,
     usage,
@@ -396,6 +416,9 @@ export function createCyTexture(
   return cyTex;
 
   function resize(width: number, height: number) {
+    // TODO(@darzu): BUG: this nop doesn't work?
+    // if (cyTex.texture && width === cyTex.size[0] && height === cyTex.size[1])
+    //   return; // nop
     cyTex.size[0] = width;
     cyTex.size[1] = height;
     // TODO(@darzu): HACK. feels wierd to mutate the descriptor...
@@ -413,6 +436,7 @@ export function createCyTexture(
       // sampleCount,
       usage,
     });
+    cyTex._viewCache.clear();
   }
 
   // TODO(@darzu): support updating different data types (instead of Float32Array)
@@ -467,8 +491,14 @@ export function createCyTexture(
     const loadOp: GPULoadOp = opts?.doClear ? "clear" : "load";
 
     const backgroundColor = opts?.defaultColor ?? black;
+
+    let view = opts?.viewOverride ?? cyTex._viewCache.get(VIEW_CACHE_DEFAULT);
+    if (!view) {
+      view = cyTex.texture.createView();
+      cyTex._viewCache.set(VIEW_CACHE_DEFAULT, view);
+    }
     return {
-      view: opts?.viewOverride ?? cyTex.texture.createView(),
+      view,
       loadOp,
       clearValue: backgroundColor,
       storeOp: "store",
@@ -485,6 +515,8 @@ export function createCyDepthTexture(
 
   const hasStencil = ptr.format in texTypeIsStencil;
 
+  const VIEW_CACHE_DEPTH = 1 << 2;
+
   return Object.assign(tex, {
     kind: "depthTexture",
     ptr,
@@ -495,14 +527,19 @@ export function createCyDepthTexture(
     clear: boolean,
     layerIdx: number
   ): GPURenderPassDepthStencilAttachment {
-    return {
-      // TODO(@darzu): PERF. create these less often??
-      view: tex.texture.createView({
+    const cacheKey = VIEW_CACHE_DEPTH | layerIdx;
+    let view = tex._viewCache.get(cacheKey);
+    if (!view) {
+      view = tex.texture.createView({
         label: `${ptr.name}_viewForDepthAtt`,
         dimension: "2d",
         baseArrayLayer: layerIdx,
         arrayLayerCount: 1,
-      }),
+      });
+      tex._viewCache.set(cacheKey, view);
+    }
+    return {
+      view,
       depthLoadOp: clear ? "clear" : "load",
       depthClearValue: 1.0,
       depthStoreOp: "store",

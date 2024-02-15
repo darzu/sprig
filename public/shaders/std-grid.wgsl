@@ -31,11 +31,15 @@ fn frag_main(input: VertexOutput) -> FragOut {
 
   var color = input.color;
 
-  const lineSpacing = 10.0;
-  const lineSpacing2 = 100.0;
+  const lineSpacing = 8.0;
+  const lineSpacing2 = 256.0;
+  const lineWidth = 0.05;
+  const lineWidth2 = 0.2;
 
-  const lineWidth = 0.5;
-  const lineWidth2 = 2.0;
+  // const lineSpacing = 10.0;
+  // const lineSpacing2 = 100.0;
+  // const lineWidth = 0.5;
+  // const lineWidth2 = 2.0;
 
   var alpha: f32 = 0.0;
 

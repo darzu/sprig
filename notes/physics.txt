@@ -464,3 +464,9 @@ GPU fluid particle sim:
 
 Structural integrity:
   https://lisyarus.github.io/blog/physics/2023/10/15/structural-mechanics.html
+
+SAT: Separating Axis Theorem:
+  https://dyn4j.org/2010/01/sat/
+
+Collision detection catalog:
+  https://www.jeffreythompson.org/collision-detection/table_of_contents.php

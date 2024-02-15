@@ -348,3 +348,26 @@ Surface generation:
   sphere inside out:
     https://www.youtube.com/watch?v=OI-To1eUtuU
   https://store.steampowered.com/app/1297210/Tandis/
+
+L-systems:
+  Good for plants and trees
+  https://www.youtube.com/watch?v=feNVBEPXAcE
+  https://en.wikipedia.org/wiki/L-system
+  G = (V, ω, P),
+  alphabet: V 
+  init: ω 
+  rules: P 
+  e.g. 
+    V: F,R
+    w: FR
+    P: F->FRF
+  impl:
+    1. generating as deep a "sentence" as you can
+    2. translate that sentence into geometry
+  note also: turtle language
+  book: "the algorithmic beauty of plants"
+  advanced: add chance, add stochastic grammer (chance on rules)
+
+Procedural 2d trees:
+  https://twitter.com/Thalanor/status/896692863274287105
+  https://twitter.com/Thalanor/status/902901617279864832

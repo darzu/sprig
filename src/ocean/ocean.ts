@@ -108,7 +108,10 @@ EM.registerSerializerPair(
 //   })
 // );
 
-export const oceanJfa = createJfaPipelines(uvMaskTex, "exterior");
+export const oceanJfa = createJfaPipelines({
+  maskTex: uvMaskTex,
+  maskMode: "exterior",
+});
 
 export async function initOcean(oceanMesh: Mesh, color: V3) {
   // TODO(@darzu): Z_UP fix ocean

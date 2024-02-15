@@ -28,7 +28,7 @@ import {
   Mesh,
   RiggedMesh,
 } from "../meshes/mesh.js";
-import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
+import { stdMeshPipe } from "../render/pipelines/std-mesh.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
 import {
@@ -124,7 +124,7 @@ PERF:
 [ ] reduce triangles on ocean
 */
 
-const DBG_PLAYER = false;
+const DBG_PLAYER = true;
 const DBG_HIDE_LAND = false;
 const DBG_HIDE_WATER = false;
 
@@ -154,7 +154,10 @@ const texYToWorldY = (y: number) => y + 0.5 - WORLD_HEIGHT / 2;
 const level2DtoWorld3D = (levelPos: V2, z: number, out: V3) =>
   V3.set(texXToWorldX(levelPos[0]), texYToWorldY(levelPos[1]), z, out);
 
-export const mapJfa = createJfaPipelines(LandMapTexPtr, "exterior");
+export const mapJfa = createJfaPipelines({
+  maskTex: LandMapTexPtr,
+  maskMode: "exterior",
+});
 
 const STONE_TOWER_HEIGHT = 10;
 
@@ -424,7 +427,7 @@ export async function initLD53(hosting: boolean) {
     (_, res) => {
       res.renderer.pipelines = [
         ...shadowPipelines,
-        stdRenderPipeline, // SLOW
+        stdMeshPipe, // SLOW
         stdRiggedRenderPipeline,
         // renderGrassPipe,
         ...(DBG_HIDE_WATER ? [] : [renderOceanPipe]),

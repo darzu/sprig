@@ -54,7 +54,7 @@ import {
 // export const BACKGROUND_COLOR = V(0.015, 0.015, 0.015, 1.0);
 export const BACKGROUND_COLOR = V(0.03, 0.03, 0.03, 1.0);
 
-export const stdRenderPipeline = CY.createRenderPipeline("stdMeshRender", {
+export const stdMeshPipe = CY.createRenderPipeline("stdMeshRender", {
   globals: [
     sceneBufPtr,
     { ptr: linearSamplerPtr, alias: "samp" },
@@ -104,6 +104,7 @@ export const stdRenderPipeline = CY.createRenderPipeline("stdMeshRender", {
     },
   ],
   depthStencil: mainDepthTex,
+  // depthCompare: ,
   shader: (shaderSet) => `
   ${shaderSet["std-rand"].code}
   ${shaderSet["std-mesh"].code}

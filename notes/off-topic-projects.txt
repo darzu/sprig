@@ -1,0 +1,43 @@
+Physical logger:
+  e.g.:
+    track medical diary entries (e.g. cat distress)
+    available-to-hang-out-with-friends logger (multiplayer)
+    calory and weight logger
+    personal job task tracker
+  array of X buttons, ea with a digital label
+    optional parameter knob or slider
+  small screen showing recent logged items
+  pressing a button creates a log entry
+  logs are sent every Y minutes to some server
+  log is csv: timestamp, label, parameter
+  logger is updatable via:
+    phone app?
+    small keyboard?
+    connect phone?
+  metadata log?
+    timestamp, device id, action (label change, adjust clock, etc),
+  multiplayer?:
+    group ID, allows multiple loggers to contribute to the same log
+  limited undo:
+    for ~30 seconds, can backspace to erase recent entries
+  settings:
+    undo time,
+    ntp sync ?
+  build:
+    microbit slots into a board
+    load program onto micro:bit via MakeCode
+    load data off micro:bit via little web app
+    buttons:
+      clickity mechanical switches?
+        allows custom keykaps
+    labels:
+      e-ink (premium) (~$22?)
+      alphanumeric (cheap)
+      paper label
+        optionally pair with Brother P-Touch ?
+      engraved
+  flashing:
+    via webusb
+    via camera + qr codes?
+    via web bluetooth?
+    

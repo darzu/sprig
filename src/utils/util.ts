@@ -5,7 +5,7 @@ import { randInt } from "./math.js";
 //    https://github.com/microsoft/TypeScript/blob/main/src/compiler/core.ts
 //    https://github.com/microsoft/TypeScript/blob/main/src/compiler/corePublic.ts
 
-// TODO(@darzu): move to util-no-import
+// TODO(@darzu): MOVE to util-no-import
 export function assert(cond: any, msg?: string): asserts cond {
   // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-7.html#assertion-functions
   if (!cond)
@@ -331,6 +331,7 @@ export function boxInBox(
 // TODO(@darzu): would be nice to have a dbg mode where we assert that this isn't
 //    being triggered at different lengths at a callsite in the steady state
 // TODO(@darzu): actually we probably don't want this fn, better to just do a while loop + assert length hasn't shrunk?
+// TODO(@darzu): have a sizeUpArray option?
 export function resizeArray<T, T2 extends T>(
   arr: T[],
   len: number,

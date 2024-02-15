@@ -532,3 +532,13 @@ PERFORMANCE STRATEGIES:
 
 Running PIX w/ WebGPU:
   https://toji.dev/webgpu-profiling/pix.html
+
+Other good profilers:
+  https://superluminal.eu
+
+6gb?!
+  webgpu inspector extension shows 700mb of textures D: (756,318,112 Bytes)
+  buffers (69,323,272 Bytes)
+
+Data oriented design:
+  https://www.dataorienteddesign.com/dodbook/dodmain.html

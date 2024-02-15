@@ -50,7 +50,8 @@ type GPUIntegerCoordinate = number;
 type GPUMapModeFlags = number;
 type GPUOrigin2D = Iterable<GPUIntegerCoordinate> | GPUOrigin2DDict;
 type GPUOrigin3D = Iterable<GPUIntegerCoordinate> | GPUOrigin3DDict;
-type GPUPipelineConstantValue = number;
+// TODO(@darzu): update this from the original
+type GPUPipelineConstantValue = number | boolean;
 type GPUSampleMask = number;
 type GPUShaderStageFlags = number;
 type GPUSignedOffset32 = number;

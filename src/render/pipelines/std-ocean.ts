@@ -65,8 +65,8 @@ export type OceanVertTS = CyToTS<typeof OceanVertStruct.desc>;
 export const OceanUniStruct = createCyStruct(
   {
     transform: "mat4x4<f32>",
-    aabbMin: "vec3<f32>",
-    aabbMax: "vec3<f32>",
+    // aabbMin: "vec3<f32>",
+    // aabbMax: "vec3<f32>",
     tint: "vec3<f32>",
     id: "u32",
   },
@@ -74,11 +74,16 @@ export const OceanUniStruct = createCyStruct(
     isUniform: true,
     serializer: (d, _, offsets_32, views) => {
       views.f32.set(d.transform, offsets_32[0]);
-      views.f32.set(d.aabbMin, offsets_32[1]);
-      views.f32.set(d.aabbMax, offsets_32[2]);
-      views.f32.set(d.tint, offsets_32[3]);
-      views.u32[offsets_32[4]] = d.id;
+      // views.f32.set(d.aabbMin, offsets_32[1]);
+      // views.f32.set(d.aabbMax, offsets_32[2]);
+      views.f32.set(d.tint, offsets_32[1]);
+      views.u32[offsets_32[2]] = d.id;
     },
+    create: () => ({
+      transform: mat4.create(),
+      tint: V3.mk(),
+      id: 0,
+    }),
   }
 );
 export type OceanUniTS = CyToTS<typeof OceanUniStruct.desc>;
@@ -142,26 +147,12 @@ function computeOceanVertsData(
   return vertsData;
 }
 
-export function computeOceanUniData(m: Mesh): OceanUniTS {
-  // TODO(@darzu): change
-  const { min, max } = getAABBFromMesh(m);
-  const uni: OceanUniTS = {
-    transform: mat4.create(),
-    aabbMin: min,
-    aabbMax: max,
-    tint: V3.mk(),
-    id: 0,
-  };
-  return uni;
-}
-
 export const RenderDataOceanDef = EM.defineNonupdatableComponent(
   "renderDataOcean",
   (r: OceanUniTS) => r
 );
 export const oceanPoolPtr = CY.createMeshPool("oceanPool", {
   computeVertsData: computeOceanVertsData,
-  computeUniData: computeOceanUniData,
   unisStruct: OceanUniStruct,
   vertsStruct: OceanVertStruct,
   maxMeshes: MAX_OCEAN_MESHES,
@@ -243,7 +234,8 @@ EM.addEagerInit([RenderDataOceanDef], [], [], () => {
         }
 
         // id
-        o.renderDataOcean.id = o.renderable.meshHandle.mId;
+        // TODO(@darzu): set at renderable construct time?
+        // o.renderDataOcean.id = o.renderable.meshHandle.mId;
 
         // transform
         mat4.copy(o.renderDataOcean.transform, o.rendererWorldFrame.transform);

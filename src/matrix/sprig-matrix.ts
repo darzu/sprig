@@ -198,8 +198,9 @@ const _tmpMarkIdStack: number[] = [];
 let _tmpStackNextId = 1;
 export interface TmpStack {
   readonly pop: () => void;
+  readonly popAndRemark: () => void;
 }
-const _cheapPop: TmpStack = { pop: tmpPop };
+const _cheapPop: TmpStack = { pop: tmpPop, popAndRemark: tmpPopAndRemark };
 // const _tmpStackFinReg: FinalizationRegistry<null> | undefined =
 //   DBG_TMP_STACK_MATCH
 //     ? new FinalizationRegistry(tmpStackFinHandler)
@@ -216,7 +217,7 @@ export function tmpStack(): TmpStack {
   _tmpMarkStack.push(bufferIndex);
   _tmpMarkIdStack.push(id);
 
-  const res: TmpStack = { pop };
+  const res: TmpStack = { pop, popAndRemark };
 
   // assert(_tmpStackFinReg);
   // _tmpStackFinReg.register(res, null);
@@ -229,6 +230,14 @@ export function tmpStack(): TmpStack {
     bufferIndex = _tmpMarkStack.pop()!;
   }
 
+  function popAndRemark(): void {
+    if (_tmpMarkStack.length === 0) throw "tmpStack.pop with zero size stack!";
+    const popId = _tmpMarkIdStack[_tmpMarkIdStack.length - 1]!;
+    if (popId !== id)
+      throw "tmpStack pop mismatch! Did a stack cross async boundries?";
+    bufferIndex = _tmpMarkStack[_tmpMarkStack.length - 1]!;
+  }
+
   return res;
 }
 // function tmpStackFinHandler() {
@@ -239,6 +248,10 @@ function tmpMark(): void {
 function tmpPop(): void {
   if (_tmpMarkStack.length === 0) throw "tmpPop with zero size stack!";
   bufferIndex = _tmpMarkStack.pop()!;
+}
+function tmpPopAndRemark(): void {
+  if (_tmpMarkStack.length === 0) throw "tmpPop with zero size stack!";
+  bufferIndex = _tmpMarkStack[_tmpMarkStack.length - 1];
 }
 
 export function isTmpVec(v: Float32Array): boolean {
@@ -401,6 +414,7 @@ export module V2 {
 // TODO(@darzu): use "namespace" keyword instead of "module" (re: https://www.typescriptlang.org/docs/handbook/namespaces.html)
 export module V3 {
   export type T = V3;
+  // TODO(@darzu): RENAME InputT to something smaller "V3i", temp is "V3t" ?
   export type InputT = T | readonly [number, number, number];
   const GL = GLM.vec3;
 
@@ -990,6 +1004,7 @@ export module mat4 {
     return tmpArray(16);
   }
 
+  // TODO(@darzu): RENAME mk()
   export function create(): T {
     const out = float32ArrayOfLength(16);
     out[0] = 1;
@@ -1126,6 +1141,15 @@ export module mat4 {
   }
   export function fromRoll(rad: number, out?: T): T {
     return GL.fromYRotation(out ?? tmp(), rad) as T;
+  }
+  export function fromYawPitchRoll(
+    yaw: number = 0,
+    pitch: number = 0,
+    roll: number = 0,
+    out?: T
+  ): T {
+    // TODO(@darzu): PERF! impl directly
+    return fromQuat(quat.fromYawPitchRoll(yaw, pitch, roll), out);
   }
 
   export function frustum(

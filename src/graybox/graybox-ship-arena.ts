@@ -1,32 +1,24 @@
 import { StatBarDef, createMultiBarMesh } from "../adornments/status-bar.js";
 import { CameraDef, CameraFollowDef } from "../camera/camera.js";
-import { fireBullet } from "../cannons/bullet.js";
 import { ColorDef } from "../color/color-ecs.js";
-import { AllEndesga16, ENDESGA16, seqEndesga16 } from "../color/palettes.js";
+import { ENDESGA16, seqEndesga16 } from "../color/palettes.js";
+import { DevConsoleDef } from "../debug/console.js";
 import { DeletedDef } from "../ecs/delete.js";
 import { EM, EntityW, Resources } from "../ecs/entity-manager.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { createHexGrid, hexXYZ, hexesWithin } from "../hex/hex.js";
-import { LocalPlayerEntityDef } from "../hyperspace/hs-player.js";
 import { InputsDef } from "../input/inputs.js";
-import {
-  HasRudderDef,
-  HasRudderObj,
-  createRudder,
-  createRudderTurret,
-} from "../ld53/rudder.js";
-import { V, quat, tmpStack, V3 } from "../matrix/sprig-matrix.js";
+import { HasRudderDef, HasRudderObj, createRudder } from "../ld53/rudder.js";
+import { V, quat, V3 } from "../matrix/sprig-matrix.js";
 import {
   BallMesh,
   CannonMesh,
   CubeMesh,
   HexMesh,
-  MastMesh,
   PlaneMesh,
 } from "../meshes/mesh-list.js";
-import { cloneMesh, getAABBFromMesh, scaleMesh3 } from "../meshes/mesh.js";
-import { HEX_AABB, mkCubeMesh } from "../meshes/primatives.js";
-import { GravityDef } from "../motion/gravity.js";
+import { cloneMesh } from "../meshes/mesh.js";
+import { mkCubeMesh } from "../meshes/primatives.js";
 import {
   Parametric,
   ParametricDef,
@@ -34,8 +26,7 @@ import {
   createParametric,
   createPathFromParameteric,
 } from "../motion/parametric-motion.js";
-import { AngularVelocityDef, LinearVelocityDef } from "../motion/velocity.js";
-import { AuthorityDef, MeDef } from "../net/components.js";
+import { LinearVelocityDef } from "../motion/velocity.js";
 import {
   AABBCollider,
   ColliderDef,
@@ -50,72 +41,33 @@ import {
   RotationDef,
   ScaleDef,
 } from "../physics/transform.js";
-import { CanvasDef, HasFirstInteractionDef } from "../render/canvas.js";
-import { CyArray } from "../render/data-webgpu.js";
+import { CanvasDef } from "../render/canvas.js";
 import { GraphicsSettingsDef } from "../render/graphics-settings.js";
-import { PointLightDef } from "../render/lights.js";
-import { DEFAULT_MASK, GRID_MASK } from "../render/pipeline-masks.js";
+import { GRID_MASK } from "../render/pipeline-masks.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
-import {
-  DotStruct,
-  DotTS,
-  MAX_NUM_DOTS,
-  dotDataPtr,
-  initDots,
-  renderDots,
-} from "../render/pipelines/std-dots.js";
+import { renderDots } from "../render/pipelines/std-dots.js";
 import { stdGridRender } from "../render/pipelines/std-grid.js";
-import {
-  LineRenderDataDef,
-  lineMeshPoolPtr,
-  pointMeshPoolPtr,
-  stdLinesRender,
-  stdPointsRender,
-} from "../render/pipelines/std-line-point.js";
-import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
-import { noisePipes } from "../render/pipelines/std-noise.js";
+import { stdMeshPipe } from "../render/pipelines/std-mesh.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
-import {
-  RenderDataStdDef,
-  meshPoolPtr,
-} from "../render/pipelines/std-scene.js";
 import { shadowPipelines } from "../render/pipelines/std-shadow.js";
-import {
-  RenderableConstructDef,
-  RenderableDef,
-  RendererDef,
-} from "../render/renderer-ecs.js";
+import { RenderableConstructDef, RendererDef } from "../render/renderer-ecs.js";
 import { TimeDef } from "../time/time.js";
-import { CanManDef, raiseManTurret } from "../turret/turret.js";
 import { YawPitchDef } from "../turret/yawpitch.js";
-import {
-  clamp,
-  jitter,
-  lerp,
-  randInt,
-  remap,
-  unlerp,
-  wrap,
-} from "../utils/math.js";
+import { clamp, remap, wrap } from "../utils/math.js";
 import { Path } from "../utils/spline.js";
 import { PI } from "../utils/util-no-import.js";
-import { assert, dbgOnce, range } from "../utils/util.js";
-import {
-  angleBetween,
-  angleBetweenXZ,
-  randNormalVec3,
-  randVec3OfLen,
-} from "../utils/utils-3d.js";
-import { addGizmoChild, addWorldGizmo } from "../utils/utils-game.js";
+import { assert, range } from "../utils/util.js";
+import { angleBetween, randVec3OfLen } from "../utils/utils-3d.js";
+import { addGizmoChild } from "../utils/utils-game.js";
 import { HasMastDef, HasMastObj, createMast } from "../wind/mast.js";
 import { WindDef, setWindAngle } from "../wind/wind.js";
 import { createSock } from "../wind/windsock.js";
-import { dbgPathWithGizmos } from "../wood/shipyard.js";
 import { DotsDef } from "./dots.js";
-import { GlitchDef } from "./glitch.js";
-import { createSun, initGhost, initGrayboxWorld } from "./graybox-helpers.js";
+import { createSun, initGhost } from "./graybox-helpers.js";
 import { ObjEnt, T, createObj, defineObj, mixinObj } from "./objects.js";
+
+// TODO(@darzu): MERGE: split into ship-arena and shading demo
 
 /*
 Prioritized ToDo:
@@ -127,7 +79,7 @@ Prioritized ToDo:
 [ ] smart enemy ai    
 */
 
-const DBG_GHOST = true;
+const DBG_GHOST = false;
 const DBG_GIZMO = true;
 const DBG_DOTS = false;
 const DBG_ENEMY = true;
@@ -320,21 +272,29 @@ export async function initGrayboxShipArena() {
   */
 
   // TODO(@darzu): WORK AROUND: see below
-  EM.addEagerInit([], [RendererDef, GraphicsSettingsDef], [], (res) => {
-    // renderer
-    res.renderer.pipelines = [
-      ...shadowPipelines,
-      stdRenderPipeline,
-      // stdLinesRender,
-      renderDots,
-      outlineRender,
-      deferredPipeline,
-      stdGridRender,
-      stdLinesRender,
-      stdPointsRender,
-      postProcess,
-    ];
-  });
+
+  EM.addSystem(
+    "shipArenaPipelines",
+    Phase.GAME_WORLD,
+    [],
+    [RendererDef, GraphicsSettingsDef, DevConsoleDef],
+    (_, res) => {
+      // renderer
+      res.renderer.pipelines = [];
+      res.renderer.pipelines.push(
+        ...shadowPipelines,
+        stdMeshPipe,
+        // stdLinesRender,
+        renderDots,
+        outlineRender,
+        deferredPipeline,
+        stdGridRender,
+        // stdLinesRender,
+        // stdPointsRender,
+        postProcess
+      );
+    }
+  );
 
   const { camera } = await EM.whenResources(CameraDef);
 
@@ -378,89 +338,15 @@ export async function initGrayboxShipArena() {
     }
   );
 
-  // line exp
-  const box = createObj(
-    [RenderableConstructDef, PositionDef, ColorDef, ScaleDef] as const,
-    {
-      renderableConstruct: [
-        mkCubeMesh(),
-        true,
-        undefined,
-        undefined,
-        lineMeshPoolPtr,
-      ],
-      position: [0, 0, 40],
-      scale: [10, 10, 10],
-      color: ENDESGA16.lightGreen,
-    }
-  );
-  // EM.set(box, GlitchDef);
-  EM.whenResources(BallMesh.def).then((ball) => {
-    const mesh = cloneMesh(ball.mesh_ball.mesh);
-    mesh.lines = range(9).map((_) => V(0, 1));
-
-    const e = createObj(
-      [RenderableConstructDef, PositionDef, ColorDef, ScaleDef] as const,
-      {
-        renderableConstruct: [
-          mesh,
-          true,
-          undefined,
-          undefined,
-          lineMeshPoolPtr,
-        ],
-        position: [40, 0, 40],
-        scale: [10, 10, 10],
-        color: ENDESGA16.orange,
-      }
-    );
-
-    EM.set(e, GlitchDef);
-  });
-
-  // point exp
-  EM.whenResources(BallMesh.def).then((ball) => {
-    const mesh = cloneMesh(ball.mesh_ball.mesh);
-
-    for (let i = 0; i < 40; i++)
-      createObj(
-        [
-          RenderableConstructDef,
-          PositionDef,
-          ColorDef,
-          ScaleDef,
-          RotationDef,
-        ] as const,
-        {
-          renderableConstruct: [
-            mesh,
-            true,
-            undefined,
-            undefined,
-            pointMeshPoolPtr,
-          ],
-          position: [-40, 0, 40],
-          scale: [10, 10, 10],
-          rotation: quat.fromYawPitchRoll(i * PI * 0.123),
-          color: ENDESGA16.lightBlue,
-        }
-      );
-
-    // EM.set(e, GlitchDef);
-  });
-
-  // bouncing balls
-  // createBouncingBalls();
-
   // wind
   const wind = EM.addResource(WindDef);
   setWindAngle(wind, PI * 0.4);
 
   // player ship
-  // const ship = await createShip();
+  const ship = await createShip();
 
   // enemy
-  // createEnemy();
+  createEnemy();
 
   // dbg ghost
   if (DBG_GHOST) {
@@ -589,64 +475,6 @@ export async function initGrayboxShipArena() {
   initEnemies();
 }
 
-async function createBouncingBalls() {
-  const ballObj = defineObj({
-    name: "ball",
-    components: [
-      PositionDef,
-      RotationDef,
-      // AngularVelocityDef,
-      ColorDef,
-      RenderableConstructDef,
-      ScaleDef,
-    ],
-  } as const);
-  const { mesh_ball, renderer } = await EM.whenResources(
-    BallMesh.def,
-    RendererDef
-  );
-  const ballM1 = mesh_ball.proto;
-  const _ballM2 = cloneMesh(ballM1.mesh);
-  const ballM2 = renderer.renderer.stdPool.addMesh(_ballM2);
-
-  const NUM = 10;
-  // const RADIUS = 200;
-  for (let i = 0; i < NUM; i++) {
-    const t = i * ((PI * 2) / NUM);
-    // const s = Math.random() * 50 + 5;
-    const s = 25;
-    // const ring = Math.floor(i / NUM);
-    // const r = 100 + s * 5; // * Math.pow(5, ring);
-    const r = 400;
-    const x = Math.cos(t) * r;
-    const y = Math.sin(t) * r;
-    const glitch = i % 2 === 0;
-    const ball = createObj(ballObj, {
-      args: {
-        scale: [s, s, s],
-        position: [x, y, 0],
-        renderableConstruct: [glitch ? ballM2 : ballM1],
-        rotation: undefined,
-        // angularVelocity: V3.scale(randNormalVec3(), 0.001),
-        color: seqEndesga16(),
-      },
-    });
-    if (glitch) EM.set(ball, GlitchDef);
-  }
-  EM.addSystem(
-    "bounceBall",
-    Phase.GAME_WORLD,
-    [ballObj.props, PositionDef],
-    [TimeDef],
-    (es, res) => {
-      for (let e of es) {
-        const t = Math.atan2(e.position[1], e.position[0]);
-        e.position[2] = 100 * Math.sin(t * 7.0 + res.time.time * 0.001);
-      }
-    }
-  );
-}
-
 async function createShip() {
   const shipMesh = mkCubeMesh();
   shipMesh.pos.forEach((p) => {
@@ -675,7 +503,7 @@ async function createShip() {
         yawpitch: [-PI * 0.5, PI * 0.1],
       },
     });
-    EM.set(cl, GlitchDef);
+    // EM.set(cl, GlitchDef);
     quat.fromYawPitch(cl.yawpitch, cl.rotation);
     cannonLs.push(cl);
 
@@ -691,7 +519,7 @@ async function createShip() {
         yawpitch: [PI * 0.5, PI * 0.1],
       },
     });
-    EM.set(cr, GlitchDef);
+    // EM.set(cr, GlitchDef);
     quat.fromYawPitch(cr.yawpitch, cr.rotation);
     cannonRs.push(cr);
   }
@@ -713,11 +541,11 @@ async function createShip() {
       cannonR2: cannonRs[2],
     },
   });
-  EM.set(ship, GlitchDef);
+  // EM.set(ship, GlitchDef);
 
   const mast = createMast();
-  EM.set(mast, GlitchDef);
-  EM.set(mast.mast.sail, GlitchDef);
+  // EM.set(mast, GlitchDef);
+  // EM.set(mast.mast.sail, GlitchDef);
 
   mixinObj(ship, HasMastObj, {
     args: [],
@@ -736,7 +564,7 @@ async function createShip() {
   const rudder = createRudder();
   // console.log("setting position");
   V3.set(0, -25, 4, rudder.position);
-  EM.set(rudder, GlitchDef);
+  // EM.set(rudder, GlitchDef);
 
   mixinObj(ship, HasRudderObj, {
     args: [],

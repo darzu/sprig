@@ -2,6 +2,9 @@ import { EM } from "../ecs/entity-manager.js";
 import { Phase } from "../ecs/sys-phase.js";
 
 /*
+Early UI use cases:
+  scene picker, pipeline numbers, gpu texture viewer, game controls, game instructions,
+
 UI needed:
 text, button, check box, radio, sliders, text input?
 

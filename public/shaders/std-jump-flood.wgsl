@@ -1,8 +1,5 @@
-// used in a createRenderTextureToQuad fragSnippet
-// TODO(@darzu): better support for this pattern?
 
-// TODO(@darzu): not implemented yet in Dawn
-// override stepSize = 16;
+override stepSize: i32;
 
  @fragment
 fn frag_main(@location(0) centerUV : vec2<f32>) -> @location(0) vec2<f32> {

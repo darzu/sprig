@@ -35,7 +35,7 @@ import {
 } from "../physics/transform.js";
 import { PointLightDef } from "../render/lights.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
-import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
+import { stdMeshPipe } from "../render/pipelines/std-mesh.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
 import { shadowPipelines } from "../render/pipelines/std-shadow.js";
@@ -176,7 +176,7 @@ export async function initGrayboxSunless() {
     // renderer
     res.renderer.pipelines = [
       ...shadowPipelines,
-      stdRenderPipeline,
+      stdMeshPipe,
       outlineRender,
       deferredPipeline,
       postProcess,

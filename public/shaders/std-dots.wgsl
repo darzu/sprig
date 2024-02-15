@@ -39,7 +39,7 @@ fn vert_main(@builtin(vertex_index) gvIdx : u32) -> VertexOutput {
   );
   let corner = corners[vIdx];
 
-  // TODO(@darzu): just include this on the scene?
+  // TODO(@darzu): PERF! pre-compute these. put on scene uni
   let right = normalize(vec3(
     scene.cameraViewProjMatrix[0][0], 
     scene.cameraViewProjMatrix[1][0], 

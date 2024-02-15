@@ -13,7 +13,7 @@ import {
   CyCompPipelinePtr,
 } from "../render/gpu-registry.js";
 import { cloneMesh } from "../meshes/mesh.js";
-import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
+import { stdMeshPipe } from "../render/pipelines/std-mesh.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
 import { shadowPipelines } from "../render/pipelines/std-shadow.js";
@@ -59,7 +59,7 @@ export async function initClothSandbox(hosting: boolean) {
   let renderPipelinesPtrs: CyRenderPipelinePtr[] = [
     // TODO(@darzu):
     ...shadowPipelines,
-    stdRenderPipeline,
+    stdMeshPipe,
     // renderRopePipelineDesc,
     boidRender,
     // boidCanvasMerge,

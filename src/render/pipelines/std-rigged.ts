@@ -13,7 +13,6 @@ import {
   RiggedMesh,
 } from "../../meshes/mesh.js";
 import {
-  computeUniData,
   mainDepthTex,
   MeshUniformStruct,
   MeshUniformTS,
@@ -110,7 +109,6 @@ const jointBufPtr = CY.createArray("joint", {
 
 const poolPtr = CY.createMeshPool("riggedMeshPool", {
   computeVertsData,
-  computeUniData,
   vertsStruct: VertexStruct,
   unisStruct: MeshUniformStruct,
   maxMeshes: MAX_MESHES,
@@ -203,6 +201,8 @@ function computeVertsData(
   return tempVertsData;
 }
 
+// TODO(@darzu): UNI
+// TODO(@darzu): MESH PARTS: undo this dup
 export interface RiggedMeshPool {
   addRiggedMesh(mesh: RiggedMesh): RiggedMeshHandle;
   // TODO: allow for partial updates?

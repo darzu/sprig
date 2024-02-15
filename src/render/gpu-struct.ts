@@ -1,6 +1,6 @@
 import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { align, max, sum } from "../utils/math.js";
-import { assert } from "../utils/util.js";
+import { assert, zip } from "../utils/util.js";
 import { objMap } from "../utils/util.js";
 
 // TABLES, CONSTS and TYPE-LEVEL HELPERS
@@ -198,6 +198,7 @@ export interface CyStruct<O extends CyStructDesc> {
   compactSize: number;
   offsets: number[];
   serialize: (data: CyToTS<O>) => Uint8Array;
+  serializeZeros: () => Uint8Array;
   wgsl: (align: boolean, locationStart?: number) => string;
   // webgpu
   layout(
@@ -212,7 +213,11 @@ export interface CyStruct<O extends CyStructDesc> {
     startLocation: number
   ): GPUVertexBufferLayout;
   clone: (data: CyToTS<O>) => CyToTS<O>;
+  create: () => CyToTS<O>;
+  fromPartial: (partial: Partial<CyToTS<O>>) => CyToTS<O>;
   opts: CyStructOpts<O> | undefined;
+  _names: (keyof O)[];
+  _types: WGSLType[];
 }
 
 export type Serializer<O extends CyStructDesc> = (
@@ -226,11 +231,13 @@ export interface CyStructOpts<O extends CyStructDesc> {
   // TODO(@darzu): Can we do away with isUniform and isCompact? Maybe infer from usage?
   isUniform?: boolean;
   isCompact?: boolean;
-  // TODO(@darzu): run perf tests to see how much faster custom serializers are?
+  // TODO(@darzu): PERF. run perf tests to see how much faster custom serializers are?
   //    maybe have a dbg flag where we count the number of serializer calls at
   //    runtime and then determine which serializers should be custom and which
   //    are a waste of time to make custom?
   serializer?: Serializer<O>;
+  // TODO(@darzu): PERF. same, perf test these?
+  create?: () => CyToTS<O>;
   hackArray?: boolean;
 }
 
@@ -292,7 +299,7 @@ function cloneValue<T extends WGSLType>(
   }
 }
 
-function cloneStruct<O extends CyStructDesc>(
+export function cloneStruct<O extends CyStructDesc>(
   desc: O,
   data: CyToTS<O>
 ): CyToTS<O> {
@@ -301,6 +308,69 @@ function cloneStruct<O extends CyStructDesc>(
     res[name] = cloneValue(desc[name], data[name]);
   }
   return res;
+}
+
+function createValue<T extends WGSLType>(
+  type: T
+): T extends keyof WGSLTypeToTSType ? WGSLTypeToTSType[T] : never {
+  return _createValue(type);
+
+  // NOTE: this isn't just zeros, since mat4 has identity
+  function _createValue<T extends WGSLType>(wgsl: T): any {
+    if (wgsl === "f32") return 0.0;
+    if (wgsl === "vec2<f32>") return V2.mk();
+    if (wgsl === "vec3<f32>") return V3.mk();
+    if (wgsl === "vec4<f32>") return V4.mk();
+    if (wgsl === "vec4<u32>") return V4.mk();
+    if (wgsl === "u32") return 0;
+    if (wgsl === "mat4x4<f32>") return mat4.create();
+
+    assert(false, `createValue is missing ${wgsl}`);
+  }
+}
+
+// (globalThis as any)._numStructCreates = 0;
+export function createStruct<O extends CyStructDesc>(desc: O): CyToTS<O> {
+  // (globalThis as any)._numStructCreates++;
+  let res: any = {};
+  for (let name of Object.keys(desc)) {
+    res[name] = createValue(desc[name]);
+  }
+  return res;
+}
+
+function checkValue<T extends WGSLType>(type: T, val: unknown): boolean {
+  if (type === "f32") return typeof val === "number";
+  if (type === "vec2<f32>")
+    return val instanceof Float32Array && val.length === 2;
+  if (type === "vec3<f32>")
+    return val instanceof Float32Array && val.length === 3;
+  if (type === "vec4<f32>")
+    return val instanceof Float32Array && val.length === 4;
+  if (type === "u32") return typeof val === "number" && val % 1 === 0;
+  if (type === "mat4x4<f32>")
+    return val instanceof Float32Array && val.length === 16;
+
+  throw `checkValue is missing ${type}`;
+}
+
+export function checkStruct<O extends CyStructDesc>(
+  desc: O,
+  data: Record<string, unknown>
+): data is CyToTS<O> {
+  const descKeys = Object.keys(desc);
+  const dataKeys = Object.keys(data);
+  assert(descKeys.length === dataKeys.length, `mismatched struct sizes!`);
+  for (let [key1, key2] of zip(descKeys, dataKeys)) {
+    assert(key1 === key2, `mismatched struct keys! ${key1} vs ${key2}`);
+  }
+  for (let name of descKeys) {
+    assert(
+      checkValue(desc[name], data[name]),
+      `bad struct val {${name}: ${desc[name]} = ${data[name]}}`
+    );
+  }
+  return true;
 }
 
 function createDummyStruct<O extends CyStructDesc>(desc: O): CyToTS<O> {
@@ -327,6 +397,7 @@ function alignUp(n: number) {
 }
 
 // TODO(@darzu): handle nested fixed size arrays
+// TODO(@darzu): UNI. Maybe CyStructs should have a create default TS?
 export function createCyStruct<O extends CyStructDesc>(
   desc: O,
   opts?: CyStructOpts<O>
@@ -384,11 +455,12 @@ export function createCyStruct<O extends CyStructDesc>(
     structAlign
   );
 
-  const names = Object.keys(desc);
-  const types = Object.values(desc);
+  const names: (keyof O)[] = Object.keys(desc);
+  const types: WGSLType[] = Object.values(desc);
 
   // TODO(@darzu): support registering a custom serializer for perf reasons
   // TODO(@darzu): emit serialization code
+  // TODO(@darzu): PERF. Have some flag to track slow serialization usage
   const scratch_u8 = new Uint8Array(structSize);
   const views = {
     u8: scratch_u8,
@@ -426,9 +498,13 @@ export function createCyStruct<O extends CyStructDesc>(
 
     return scratch_u8;
   }
+  function serializeZeros(): Uint8Array {
+    scratch_u8.fill(0);
+    return scratch_u8;
+  }
 
   // check custom serializer correctness
-  // TODO(@darzu): option to disable this
+  // TODO(@darzu): option to disable this for perf?
   let serialize = serializeSlow;
   if (opts?.serializer) {
     const dummy = createDummyStruct(desc);
@@ -461,22 +537,51 @@ export function createCyStruct<O extends CyStructDesc>(
     };
   }
 
+  let create = createSlow;
+  if (opts?.create) {
+    let test = opts.create();
+    checkStruct(desc, test);
+    create = opts.create;
+  }
+
   const struct: CyStruct<O> = {
+    _names: names,
+    _types: types,
     desc,
     memberCount: Object.keys(desc).length,
     size: structSize,
     compactSize: sum(sizes),
     offsets,
     serialize,
+    serializeZeros,
     layout,
     wgsl,
     vertexLayout,
     clone,
+    create,
+    fromPartial,
     opts,
   };
 
+  const _default = create();
+
+  function fromPartial(p: Partial<CyToTS<O>>): CyToTS<O> {
+    let res: any = {};
+    // TODO(@darzu): NOTE: order is important here! Result fields must be in the order of the keys
+    for (let name of Object.keys(struct.desc)) {
+      if (p[name] !== undefined) res[name] = p[name];
+      else res[name] = cloneValue(struct.desc[name], _default[name]);
+    }
+    // console.dir(partial);
+    // console.dir(res);
+    return res as CyToTS<O>;
+  }
+
   function clone(orig: CyToTS<O>): CyToTS<O> {
     return cloneStruct(desc, orig);
+  }
+  function createSlow(): CyToTS<O> {
+    return createStruct(desc);
   }
 
   function wgsl(doAlign: boolean, locationStart?: number): string {

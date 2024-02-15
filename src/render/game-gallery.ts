@@ -18,7 +18,7 @@ import { PointLightDef } from "./lights.js";
 import { mapMeshPositions } from "../meshes/mesh.js";
 import { createGridComposePipelines } from "./pipelines/std-compose.js";
 import { deferredPipeline } from "./pipelines/std-deferred.js";
-import { stdRenderPipeline } from "./pipelines/std-mesh.js";
+import { stdMeshPipe } from "./pipelines/std-mesh.js";
 import { outlineRender } from "./pipelines/std-outline.js";
 import { postProcess } from "./pipelines/std-post.js";
 import {
@@ -76,7 +76,7 @@ export async function initGalleryGame() {
       res.renderer.pipelines = [
         ...shadowPipelines,
         // skyPipeline,
-        stdRenderPipeline,
+        stdMeshPipe,
         // renderGrassPipe,
         // renderOceanPipe,
         outlineRender,

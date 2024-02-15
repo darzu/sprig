@@ -55,6 +55,20 @@ export function randNormalVec3(out?: V3) {
 }
 export const randDir3 = randNormalVec3;
 
+let _tmp_jitterVec3 = V3.mk();
+// NOTE: preserves length.
+// TODO(@darzu): eh, maybe we want a better way to jitter a normal?
+export function jitterVec3(v: V3.InputT, d: number, out?: V3) {
+  out = out ?? V3.tmp();
+  const startLen = V3.len(v);
+  const norm = randNormalVec3(_tmp_jitterVec3);
+  V3.scale(norm, d, norm);
+  V3.add(v, norm, out);
+  const newLen = V3.len(out);
+  V3.scale(out, startLen / newLen, out);
+  return out;
+}
+
 export function randVec3OfLen(r: number = 1, out?: V3) {
   out = out ?? V3.tmp();
   randNormalVec3(out);
@@ -309,12 +323,16 @@ export function positionAndTargetToOrthoViewProjMatrix(
 }
 
 export function signedAreaOfTriangle(a: V2, b: V2, c: V2): number {
-  const ab = V2.tmp();
-  const ac = V2.tmp();
-  V2.sub(b, a, ab);
-  V2.sub(c, a, ac);
+  const ab = V2.sub(b, a);
+  const ac = V2.sub(c, a);
   let cross = V2.cross(ab, ac);
   return 0.5 * cross[2];
+}
+export function signedAreaOfTriangle3(a: V3, b: V3, c: V3): number {
+  const ab = V3.sub(b, a);
+  const ac = V3.sub(c, a);
+  let cross = V3.cross(ab, ac);
+  return 0.5 * V3.len(cross);
 }
 
 // TODO(@darzu):  move to sprig-matrix.ts

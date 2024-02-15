@@ -25,7 +25,7 @@ import {
 } from "../physics/transform.js";
 import { PointLightDef } from "../render/lights.js";
 import { cloneMesh, transformMesh } from "../meshes/mesh.js";
-import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
+import { stdMeshPipe } from "../render/pipelines/std-mesh.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
 import {
@@ -57,7 +57,6 @@ import { CanManDef, TurretDef, raiseManTurret } from "../turret/turret.js";
 import { TextDef } from "../gui/ui.js";
 import { VERBOSE_LOG } from "../flags.js";
 import { CanvasDef, HasFirstInteractionDef } from "../render/canvas.js";
-import { createJfaPipelines } from "../render/pipelines/std-jump-flood.js";
 import { createGridComposePipelines } from "../render/pipelines/std-compose.js";
 import { createTextureReader } from "../render/cpu-texture.js";
 import { SKY_MASK } from "../render/pipeline-masks.js";
@@ -164,7 +163,7 @@ export async function initGrassGame(hosting: boolean) {
       // renderer
       res.renderer.pipelines = [
         ...shadowPipelines,
-        stdRenderPipeline,
+        stdMeshPipe,
         renderGrassPipe,
         // renderOceanPipe,
         outlineRender,

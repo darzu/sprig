@@ -1,7 +1,7 @@
 import { align, alignDown } from "../utils/math.js";
 import { assert, assertDbg, dbgLogOnce } from "../utils/util.js";
 import { never } from "../utils/util-no-import.js";
-import { CyStructDesc, CyToTS } from "./gpu-struct.js";
+import { CyStructDesc, CyToTS, createStruct } from "./gpu-struct.js";
 import { Mesh, RawMesh } from "../meshes/mesh.js";
 import {
   createCyArray,
@@ -215,7 +215,6 @@ function getTriInds(m: Mesh, startIdx: number, count: number): Uint16Array {
 
   // try to align-up by enumerating more data
   if (startIdx + count < m.tri.length && count % 2 === 1) count += 1;
-  assert(count % 2 === 0);
 
   // but our data output must always be aligned
   const dataLen = align(count * 3, 2);
@@ -452,11 +451,8 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
     } else if (primKind === "point") {
       updateMeshPointInds(handle, m);
     }
-    // submit uniform to GPU
-    // TODO(@darzu): PERF. this is duplicating the uniform that will also (probably) be stored
-    //  in the data component.
-    const uni = ptr.computeUniData(m);
-    updateUniform(handle, uni);
+    // submit empty uniform to GPU
+    queueEmptyUniform(handle);
 
     return handle;
   }
@@ -623,6 +619,10 @@ export function createMeshPool<V extends CyStructDesc, U extends CyStructDesc>(
 
   function updateUniform(m: MeshHandle, d: CyToTS<U>): void {
     pool.unis.queueUpdate(d, m.uniIdx);
+    if (PERF_DBG_GPU) _stats._accumUniDataQueued += pool.unis.struct.size;
+  }
+  function queueEmptyUniform(m: MeshHandle): void {
+    pool.unis.queueZeros(m.uniIdx, 1);
     if (PERF_DBG_GPU) _stats._accumUniDataQueued += pool.unis.struct.size;
   }
 

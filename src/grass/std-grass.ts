@@ -80,6 +80,7 @@ function createEmptyVertexTS(): GrassVertTS {
   };
 }
 
+// TODO(@darzu): MESH PARTS: de-dupe this logic
 const tempVertsData: GrassVertTS[] = [];
 function computeGrassVertsData(
   m: Mesh,
@@ -142,29 +143,12 @@ function computeGrassVertsData(
   return tempVertsData;
 }
 
-export function computeGrassUniData(m: Mesh): GrassUniTS {
-  // TODO(@darzu): change
-  // const { min, max } = getAABBFromMesh(m);
-  const uni: GrassUniTS = {
-    transform: mat4.create(),
-    // aabbMin: min,
-    // aabbMax: max,
-    spawnDist: 20.0, // set elsewhere
-    tint: V3.mk(),
-    id: 0,
-  };
-  return uni;
-}
-
 export const RenderDataGrassDef = EM.defineNonupdatableComponent(
   "renderDataGrass",
   (r: GrassUniTS) => r
 );
 export const grassPoolPtr = CY.createMeshPool("grassPool", {
   computeVertsData: computeGrassVertsData,
-  // TODO(@darzu): per-mesh unis should maybe be optional? I don't think
-  //     the grass needs them
-  computeUniData: computeGrassUniData,
   vertsStruct: GrassVertStruct,
   unisStruct: GrassUniStruct,
   maxMeshes: MAX_GRASS_MESHES,

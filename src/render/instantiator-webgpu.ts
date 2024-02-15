@@ -798,7 +798,9 @@ function createCyPipeline(
   }
 }
 
-function normalizeColorAttachments(atts: CyColorAttachment[]): CyAttachment[] {
+function normalizeColorAttachments(
+  atts: readonly CyColorAttachment[]
+): CyAttachment[] {
   return atts.map((a) => {
     if (isResourcePtr(a)) {
       return {
@@ -811,7 +813,9 @@ function normalizeColorAttachments(atts: CyColorAttachment[]): CyAttachment[] {
   });
 }
 
-function normalizeGlobals(globals: CyGlobalParam[]): CyGlobalUsage<CyGlobal>[] {
+function normalizeGlobals(
+  globals: readonly CyGlobalParam[]
+): CyGlobalUsage<CyGlobal>[] {
   const resUsages = globals.map((r, i) => {
     let usage: CyGlobalUsage<CyGlobal>;
     if (isResourcePtr(r)) {
@@ -1037,6 +1041,9 @@ export function startBundleRenderer(
 
   const black4 = V(0, 0, 0, 1);
 
+  let _lastCanvasTexture: GPUTexture | undefined = undefined;
+  let _lastCanvasView: GPUTextureView | undefined = undefined;
+
   function render(p: CyRenderPipeline, bundle: GPURenderBundle) {
     let colorAttachments: GPURenderPassColorAttachment[] = p.output.map((o) => {
       const isFirst = !seenTextures.has(o.ptr.name);
@@ -1045,9 +1052,18 @@ export function startBundleRenderer(
       const doClear = isFirst ? o.clear === "once" : o.clear === "always";
       const defaultColor = o.defaultColor ?? black4;
       assert(!tex.ptr.count, `TODO: impl array texture for render()`);
-      const viewOverride = o.ptr.attachToCanvas
-        ? context.getCurrentTexture().createView()
-        : undefined;
+      let viewOverride: GPUTextureView | undefined = undefined;
+      const canvasTex = context.getCurrentTexture();
+      if (_lastCanvasTexture !== canvasTex) {
+        _lastCanvasTexture = canvasTex;
+        _lastCanvasView = undefined;
+      }
+      if (o.ptr.attachToCanvas) {
+        if (!_lastCanvasView) {
+          _lastCanvasView = canvasTex.createView();
+        }
+        viewOverride = _lastCanvasView;
+      }
       return tex.attachment({ doClear, defaultColor, viewOverride });
     });
     let depthAtt: GPURenderPassDepthStencilAttachment | undefined = undefined;

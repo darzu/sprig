@@ -19,7 +19,7 @@ import { ColliderDef } from "../physics/collider.js";
 import { PositionDef, RotationDef, ScaleDef } from "../physics/transform.js";
 import { PointLightDef } from "../render/lights.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
-import { stdRenderPipeline } from "../render/pipelines/std-mesh.js";
+import { stdMeshPipe } from "../render/pipelines/std-mesh.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
 import { shadowPipelines } from "../render/pipelines/std-shadow.js";
@@ -48,45 +48,6 @@ export function createSun() {
   );
 
   return sun;
-}
-
-export async function initGrayboxWorld() {
-  EM.addEagerInit([], [RendererDef], [], (res) => {
-    // renderer
-    res.renderer.pipelines = [
-      ...shadowPipelines,
-      stdRenderPipeline,
-      outlineRender,
-      deferredPipeline,
-      postProcess,
-    ];
-  });
-
-  const { camera, me } = await EM.whenResources(CameraDef, MeDef);
-
-  // camera
-  camera.fov = Math.PI * 0.5;
-  camera.viewDist = 1000;
-  V3.set(-200, -200, -200, camera.maxWorldAABB.min);
-  V3.set(+200, +200, +200, camera.maxWorldAABB.max);
-
-  // sun
-  createSun();
-
-  // pedestal
-  const pedestal = EM.new();
-  EM.set(pedestal, RenderableConstructDef, HexMesh);
-  EM.set(pedestal, ColorDef, ENDESGA16.darkGray);
-  EM.set(pedestal, PositionDef, V(0, 0, -10));
-  EM.set(pedestal, ScaleDef, V(10, 10, 10));
-  EM.set(pedestal, ColliderDef, {
-    shape: "AABB",
-    solid: true,
-    aabb: HEX_AABB,
-  });
-
-  // gizmo
-  addWorldGizmo(V(0, 0, 0), 5);
 }
 
 // hover near origin

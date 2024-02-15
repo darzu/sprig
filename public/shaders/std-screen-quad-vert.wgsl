@@ -1,5 +1,6 @@
 struct VertexOutput {
   @builtin(position) Position : vec4<f32>,
+  // TODO(@darzu): we shouldn't need uv since built-in position should give us this?
   @location(0) uv : vec2<f32>,
 };
 

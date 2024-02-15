@@ -647,7 +647,7 @@ PBR:
     frag shader inputs:
       vec3 fragPos,
       vec3 normal,
-      vec3 cameraPos,
+      vec3 cameraPos,w
       vec3 lightDir,
       vec3 lightPos,
       vec3 lightColor,
@@ -834,6 +834,8 @@ Outlines / edge detection:
   https://twitter.com/csims314/status/1482123212188180490
   https://github.com/OmarShehata/webgl-outlines
   https://omar-shehata.medium.com/better-outline-rendering-using-surface-ids-with-webgl-e13cdab1fd94
+
+  https://www.videopoetics.com/tutorials/pixel-perfect-outline-shaders-unity/
 
 Linearize depth:
   https://learnopengl.com/Advanced-OpenGL/Depth-testing
@@ -1512,6 +1514,136 @@ TODO: Dreams' point-based renderer
     thickening problem
     prefiltered AA doesn't work
     binning points === nearest neighbor filtering
+
+Surfels:
+  https://en.wikipedia.org/wiki/Surfel
+  An object is represented by a dense set of points or viewer-facing discs holding lighting information
+  https://www.youtube.com/watch?v=h1ocYFrtsM4
+
+Dreams:
+  https://www.youtube.com/watch?v=u9KNtnCZDMI
+  Alex evens
+  no texture, models, meshes
+  art style + toolset + engine
+  tech direection + art direction
+  1. anton's blob editor
+    exp with distance fields
+  everything out of list of edits, distance field
+  "real csg"
+  operations: add, subtract, color
+  tried: rendering via deforming low poly meshes
+  tried: animate by moving edits around
+    as edit list grows, cost grows
+  plan: edit list -> (compute shader of doom) sparse distance field -> marching cubes in to mesh? OR filter into SVO? scatter into point cloud?
+  eek: 1000x1000x1000x10000 edits
+  split SDF fields up hierarchically
+  SDF distances: "L2" distance doesn't work
+  "efficient distance and efficient voxalization" ??
+  Used the "max norm"
+    not x^2+y^2+z^2
+    instead max(abs(x), abs(y), abs(z))
+  soft_min(a,b,r) {
+    float e = max(r-abs(a,b),0);
+    return min(a,b) - e*e*0.25f/r;
+  } // must equal hard-min after distance r ?
+  need to know how many edits contribute to a surface?
+  how to render
+    anton slide deck: "cultural learnings for making benefit glorious polygonalization of signed distance fields"
+  marching cubes: v dense meshes
+  looked at dual contouring of hermite data
+    sucks when has to decide smooth vs hard surfaces
+    introduces intersections
+  intersection-free contouring on an octree grid
+    becomes non-manifold (watertight)
+  manifold dual contouring
+    brings back intersections
+  pick one: manifold or non-self-intersecting
+  polygons r bad
+    they are amazing as surface rep! but they're surprisingly hard.
+    best rep of flat surface
+  artists like bloby krinkly stuff, not natural for flat surfaces
+  inspired by: "volumetric billboards" decaudin, fabrice neyre
+    "someone should make an indie game"
+    everything is voxels, but little fuzzy voxels,
+    sheets of polygons, aligned with screen, cut through ur texture
+    multiple overlapping objects, effectively order independent transparency
+    mm siggraph slides have way simpler way to impl it
+  gigavoxels
+    sparse voxels
+  engine 2: brick engine
+    let's try a hybrid volumetric billboards / gigavoxels
+    8x8x8 voxel blocks, LOD adjusted,
+      parallax occlusion mapping
+        outputs a depth per pixel
+      from surface of cube to nice bumpy surface
+    models look like untextured poly models
+    really wanted OIT (order independent transparency): long rabbit hole 12-18mo
+      walk cubes, accumulate fuzz on surface, output 
+  argh:
+    polygons? too hard
+    volumetric billboards? too much filtrate
+    gigavoxels: single object
+    hybrid rasterized gigavoxels: too hard to render oit overlaps
+    froxel refinement volumetric render: too slow
+  engine 3: refinement renderer
+    foxels: frustrum shaped voxels
+    each pixel is one stack of foxels
+    heirarchy all the things
+    refine froxels around objects
+    awesome data structure:
+      foundation of frostbites new volumetric work
+    year 2001 demo scene: everyone was doing radial blur w/ one bilinear tap, process pixels from center out
+    compute shaders in concentric shells from light
+      you do four lights in parallel so you don't notice the stalls
+      "iterative diffusion due to repeated bilinear filter" ?
+    only works for onscreen lights
+    super happy, thought this was the end (just offscreen lights and perf issues)
+    problem: too slow, 4x-10x depending on optimism, lots of unsolved problems (offscreen lights, thin feature aliasing)
+      still cool direction!
+    2+ years into project
+  engine 4: splat engine
+    "i hate splats" <- his prejudice
+    evaluator runs in wavefronts of 4^3 voxels ?
+    voxels, actually distance fields
+    spawn one splat on screen per voxel ?
+    groups of 256 points are grouped into clusters by sorting [ ] in hilbert order
+      shoved into BVH
+      use clusters to do vector quantization
+      each cluster stores obb bounds for position and normals
+      surface color is stored in dxtt atlas arranged so 16 nearby points fall in dxt tile (?)
+      each point is then brt painted into 32 bits
+        x 6 bits
+        y 6 bits
+        z 6 bits
+        nx 3
+        ny 3
+        nz 3
+    4.5 bytes per splat
+    single pixel splats
+    simon wrote an engine where it uses the atomic engine on ps4
+      super happy not using the triangle hardware
+    tried retro quads w/ textures
+  final:
+    scene cloud of objects
+      ea object is cloud of points generated from distance fields
+      when far away, just one pixel
+      when close, each is renderer as another cloud of points (micro splats)
+      in e3 trailer: were textured quads
+    a cloud of point clouds of point clouds
+    all levels and fine grain lod via point cloud decimation and precomputed prefiltered clouds at the last z levels
+    for DOF: jitter by "circular confusion" ?
+    edit list -- compute shader of doom --> SDF -> pre-filtered + clustered point clouds (3 levels) -- (atomic min64) --> ID/2 buffer 64bpp -> gbuffer (albedo, N, rough, metalness) ->
+    used "imperfect shadowmaps"
+      "great paper", 
+      don't try good quality shadow maps, blast a bunch of little ones w/ hemispheric/parabaloid views
+      you get shadows, you get god rays
+      painterly style anyway
+    added simple ambient occlusion
+    discovered TAA
+    voxelized the scene ? "tomorrow's children" ?
+  motion blur was hard
+    want each moment in time to have its own z buffer, the avg them ?
+    does traditional post motion blur
   
 
 Concepts to clarify:
@@ -2072,3 +2204,47 @@ Phone wire AA:
   https://www.humus.name/index.php?page=3D&ID=89&source=post_page-----727f9278b9d8--------------------------------
 
 TODO: how does tri-planar mapping work?
+
+"Demystifying GPU Compute Architectures":
+  https://thechipletter.substack.com/p/demystifying-gpu-compute-architectures
+
+"CLOSED-FORM IMPLICIT SURFACES ON THE GPU":
+  https://www.mattkeeter.com/research/mpr-ornl-2021.pdf
+
+WebGPU inspector:
+  https://github.com/brendan-duncan/webgpu_inspector
+  https://chromewebstore.google.com/detail/webgpu-inspector/holcbbnljhkpkjkhgkagjkhhpeochfal
+
+"Building the DirectX shader compiler better than Microsoft?":
+  https://devlog.hexops.com/2024/building-the-directx-shader-compiler-better-than-microsoft/
+  "successor and descendant of WebGPU for native graphics"
+
+mach engine project w/ zig:
+  https://devlog.hexops.com/2024/mach-v0.3-released/
+
+WebGPU impl on android vulkan:
+  https://vulkan.org/user/pages/09.events/vulkanised-2024/vulkanised-2024-brandon-jones-google.pdf
+
+Vulkan synchronization made easy be nice_byte:
+  https://vulkan.org/user/pages/09.events/vulkanised-2024/vulkanised-2024-grigory-dzhavadyan.pdf
+
+Digital Foundry on TAA:
+  https://www.youtube.com/watch?v=WG8w9Yg5B3g
+
+TimothyLottes on TAA:
+  https://twitter.com/NOTimothyLottes/status/1756725714198360576
+  "For TAA sharpness ... 4x4 lanczos filter can be used for reprojection with a clamp to the nearest 2x2 {min,max}"
+
+To render giant view distances w/ high depth buffer precision:
+  https://www.khronos.org/opengl/wiki/Depth_Buffer_Precision
+  The typical approach is to use a multipass technique. The application might divide the geometry database into regions that don't interfere with each other in Z. The geometry in each region is then rendered, starting at the furthest region, with a clear of the depth buffer before each region is rendered. This way the precision of the entire depth buffer is made available to each region.
+
+IQ's 2D SDFs:
+  http://iquilezles.org/articles/distfunctions2d/
+  pie seems very versatile: https://www.shadertoy.com/view/3l23RK
+
+Capsule-based ambient occlusion:
+  https://www.shadertoy.com/view/llGyzG
+  https://github.com/Fewes/CapsuleOcclusion
+  http://miciwan.com/SIGGRAPH2013/Lighting%20Technology%20of%20The%20Last%20Of%20Us.pdf
+  https://knarkowicz.files.wordpress.com/2017/05/knarkowicz_rendering_sw2_dd_20171.pdf
