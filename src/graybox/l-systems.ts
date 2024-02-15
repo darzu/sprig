@@ -9,7 +9,7 @@ import {
   PointRenderDataDef,
   lineMeshPoolPtr,
   pointMeshPoolPtr,
-} from "../render/pipelines/std-point.js";
+} from "../render/pipelines/std-painterly.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { createPseudorandomGen } from "../utils/rand.js";
 import { assert, range } from "../utils/util.js";

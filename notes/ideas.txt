@@ -170,3 +170,7 @@ Compositional shaders:
   compose these all together
   e.g. surface + object ID, is easy to write a standalone fn from input to output
   it'll also be nice to be able to reference globals in the way that a system references resources
+
+To help people make their own engine/software:
+  provide a big test suite!
+  E.g. for their own language, for rendering a scene against a reference ray tracer,
