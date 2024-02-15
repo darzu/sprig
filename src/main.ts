@@ -67,7 +67,11 @@ const ALL_GAMES = [
 ] as const;
 
 // TODO(@darzu): current game should probably be saved in local storage, not hard-coded. (Default can be hard-coded)
-const GAME: (typeof ALL_GAMES)[number] = "graybox-ship-arena";
+// prettier-ignore
+const GAME: (typeof ALL_GAMES)[number] = (
+  // "painterly"
+  "graybox-ship-arena"
+);
 
 // Run simulation with a fixed timestep @ 60hz
 const TIMESTEP = 1000 / 60;

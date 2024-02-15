@@ -14,7 +14,6 @@ export const ShaderPaths = [
   "xp-boid-render",
   "xp-boid-update",
   "std-jump-flood",
-  "std-jfa-point",
   "xp-cloth-update",
   "std-screen-quad-vert",
   "std-rand",
@@ -26,10 +25,11 @@ export const ShaderPaths = [
   "xp-bubble",
   "std-dots",
   "std-grid",
-  "std-point",
-  "std-point-pre",
-  "xp-point-voronoi",
   "std-helpers",
+  "std-painterly-prepass",
+  "std-painterly-jfa",
+  "std-painterly-main",
+  "std-painterly-deferred",
 ] as const;
 
 export type ShaderName = (typeof ShaderPaths)[number];

@@ -62,7 +62,7 @@ const pointsJFA = createJfaPipelines({
   shader: (shaders) => `
     ${shaders["std-helpers"].code}
     ${shaders["std-screen-quad-vert"].code}
-    ${shaders["std-jfa-point"].code}
+    ${shaders["std-painterly-jfa"].code}
   `,
   shaderExtraGlobals: [
     { ptr: xpPointMaskTex, alias: "maskTex" },
@@ -95,7 +95,7 @@ const pointJFAColorPipe = CY.createRenderPipeline("colorPointsJFA", {
   shader: (shaderSet) => `
   ${shaderSet["std-helpers"].code}
   ${shaderSet["std-screen-quad-vert"].code}
-  ${shaderSet["xp-point-voronoi"].code}
+  ${shaderSet["std-painterly-deferred"].code}
   `,
   shaderFragmentEntry: "frag_main",
   shaderVertexEntry: "vert_main",

@@ -172,7 +172,7 @@ export const stdLinePrepassPipe = CY.createRenderPipeline(
       },
     ],
     depthStencil: mainDepthTex,
-    shader: "std-point-pre",
+    shader: "std-painterly-prepass",
     meshOpt: {
       meshMask: JFA_PRE_PASS_MASK,
       pool: lineMeshPoolPtr,
@@ -207,7 +207,7 @@ export const stdLinesRender = CY.createRenderPipeline("stdLinesRender", {
   shader: (s) => {
     return `
     // const backface = false;
-    ${s["std-point"].code}
+    ${s["std-painterly-main"].code}
     `;
   },
 });
@@ -222,7 +222,7 @@ export const stdPointsRender = CY.createRenderPipeline("stdPointsRender", {
   shader: (s) => {
     return `
     // const backface = true;
-    ${s["std-point"].code}
+    ${s["std-painterly-main"].code}
     `;
   },
 });
