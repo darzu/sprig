@@ -40,27 +40,27 @@ import { createObj } from "./objects.js";
 //  [ ] leaf clusters should share a surface ID and voronoi blob + backface culling
 //  [ ] leaf cluster arranged in better pattern
 
-interface LSys {
-  run: (depth: number) => void;
-}
+// interface LSys {
+//   run: (depth: number) => void;
+// }
 
-interface LSysOpt {
-  emitPoint: (p: V3.InputT) => void;
-  emitLine: (a: V3.InputT, b: V3.InputT) => void;
-}
+// interface LSysOpt {
+//   emitPoint: (p: V3.InputT) => void;
+//   emitLine: (a: V3.InputT, b: V3.InputT) => void;
+// }
 
-function createLSys(pa: LSysOpt): LSys {
-  throw "TODO";
-  const lsys: LSys = {
-    run,
-  };
+// function createLSys(pa: LSysOpt): LSys {
+//   throw "TODO";
+//   const lsys: LSys = {
+//     run,
+//   };
 
-  return lsys;
+//   return lsys;
 
-  function run(depth: number) {
-    // TODO(@darzu): IMPL
-  }
-}
+//   function run(depth: number) {
+//     // TODO(@darzu): IMPL
+//   }
+// }
 
 export function testingLSys() {
   const nodes: V3[] = [];
@@ -125,6 +125,8 @@ export function testingLSys() {
   // };
 
   mov(80, 240, 0);
+  tree(10);
+
   function tree(depth: number) {
     for (let i = 0; i < depth; i++) {
       // up
@@ -146,24 +148,30 @@ export function testingLSys() {
       // last leaves
       if (i === depth - 1) {
         push();
-        pointSurf++;
-        let pointIdx = points.length;
-        for (let j = 0; j < 100; j++) {
-          mov(jitter(2), jitter(2), jitter(2));
-          point();
-        }
-        const leafPoints = points.slice(pointIdx);
-        const centerOfMass = centroid(...leafPoints);
-        leafPoints.forEach((p, i) => {
-          const n = pointNorms[i + pointIdx];
-          V3.sub(p, centerOfMass, n);
-          V3.norm(n, n);
-        });
+        leaves();
         pop();
       }
     }
   }
-  tree(10);
+  function leaves() {
+    pointSurf++;
+    let pointIdx = points.length;
+
+    // place leaves
+    for (let j = 0; j < 100; j++) {
+      mov(jitter(2), jitter(2), jitter(2));
+      point();
+    }
+
+    // compute normals
+    const leafPoints = points.slice(pointIdx);
+    const centerOfMass = centroid(...leafPoints);
+    leafPoints.forEach((p, i) => {
+      const n = pointNorms[i + pointIdx];
+      V3.sub(p, centerOfMass, n);
+      V3.norm(n, n);
+    });
+  }
 
   const centerOfMass = centroid(...points, ...nodes);
 
@@ -210,7 +218,7 @@ export function testingLSys() {
   console.dir(lineMesh);
   console.dir(pointMesh);
 
-  const branches = createObj(
+  const branchesObj = createObj(
     [
       RenderableConstructDef,
       PointRenderDataDef,
@@ -233,7 +241,7 @@ export function testingLSys() {
     }
   );
   // TODO(@darzu): leaves need to not have backface culling
-  const leaves = createObj(
+  const leavesObj = createObj(
     [
       RenderableConstructDef,
       PointRenderDataDef,
