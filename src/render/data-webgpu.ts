@@ -68,6 +68,7 @@ export interface CyTexture {
   texture: GPUTexture;
   format: GPUTextureFormat;
   usage: GPUTextureUsageFlags;
+  // TODO(@darzu): maybe view cache should be a service across all textures?
   _viewCache: Map<number, GPUTextureView>;
   // TODO(@darzu): support partial texture update?
   queueUpdate: (
