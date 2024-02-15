@@ -4,11 +4,14 @@ import { V, V2, V3, mat4 } from "../matrix/sprig-matrix.js";
 import { Mesh } from "../meshes/mesh.js";
 import { mkCubeMesh } from "../meshes/primatives.js";
 import { PositionDef, ScaleDef } from "../physics/transform.js";
-import { DEFAULT_MASK, JFA_PRE_PASS_MASK } from "../render/pipeline-masks.js";
 import {
-  PointRenderDataDef,
-  lineMeshPoolPtr,
-  pointMeshPoolPtr,
+  DEFAULT_MASK,
+  PAINTERLY_JFA_PRE_PASS_MASK,
+} from "../render/pipeline-masks.js";
+import {
+  PainterlyUniDef,
+  painterlyLineMeshPoolPtr,
+  painterlyPointMeshPoolPtr,
 } from "../render/pipelines/std-painterly.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { createPseudorandomGen } from "../utils/rand.js";
@@ -221,7 +224,7 @@ export function testingLSys() {
   const branchesObj = createObj(
     [
       RenderableConstructDef,
-      PointRenderDataDef,
+      PainterlyUniDef,
       PositionDef,
       ColorDef,
       ScaleDef,
@@ -231,20 +234,20 @@ export function testingLSys() {
         lineMesh,
         true,
         undefined,
-        JFA_PRE_PASS_MASK | DEFAULT_MASK,
-        lineMeshPoolPtr,
+        PAINTERLY_JFA_PRE_PASS_MASK | DEFAULT_MASK,
+        painterlyLineMeshPoolPtr,
       ],
       position: [0, 0, 0],
       scale: [1, 1, 1],
       color: ENDESGA16.darkBrown,
-      pointRenderData: { size: 0.5 },
+      painterlyUni: { size: 0.5 },
     }
   );
   // TODO(@darzu): leaves need to not have backface culling
   const leavesObj = createObj(
     [
       RenderableConstructDef,
-      PointRenderDataDef,
+      PainterlyUniDef,
       PositionDef,
       ColorDef,
       ScaleDef,
@@ -254,13 +257,13 @@ export function testingLSys() {
         pointMesh,
         true,
         undefined,
-        JFA_PRE_PASS_MASK | DEFAULT_MASK,
-        pointMeshPoolPtr,
+        PAINTERLY_JFA_PRE_PASS_MASK | DEFAULT_MASK,
+        painterlyPointMeshPoolPtr,
       ],
       position: [0, 0, 0],
       scale: [1, 1, 1],
       color: ENDESGA16.lightGreen,
-      pointRenderData: { size: 0.5 },
+      painterlyUni: { size: 0.5 },
     }
   );
 }

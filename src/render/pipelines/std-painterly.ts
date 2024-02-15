@@ -2,11 +2,18 @@ import { ColorDef, TintsDef, applyTints } from "../../color/color-ecs.js";
 import { EM } from "../../ecs/entity-manager.js";
 import { Phase } from "../../ecs/sys-phase.js";
 import { V3, mat4 } from "../../matrix/sprig-matrix.js";
-import { CY, comparisonSamplerPtr } from "../gpu-registry.js";
+import {
+  CY,
+  comparisonSamplerPtr,
+  nearestSamplerPtr,
+} from "../gpu-registry.js";
 import { CyToTS, createCyStruct } from "../gpu-struct.js";
 import { pointLightsPtr } from "../lights.js";
 import { MAX_INDICES } from "../mesh-pool.js";
-import { DEFAULT_MASK, JFA_PRE_PASS_MASK } from "../pipeline-masks.js";
+import {
+  DEFAULT_MASK,
+  PAINTERLY_JFA_PRE_PASS_MASK,
+} from "../pipeline-masks.js";
 import {
   RenderableDef,
   RendererWorldFrameDef,
@@ -22,8 +29,11 @@ import {
   computeVertsData,
   VertexStruct,
   surfacesTexturePtr,
+  canvasTexturePtr,
 } from "./std-scene.js";
 import { shadowDepthTextures } from "./std-shadow.js";
+import { createJfaPipelines } from "./std-jump-flood.js";
+import { fullQuad } from "../gpu-helper.js";
 
 /*
 (Possible) Advantages of points (and maybe lines):
@@ -40,7 +50,7 @@ Maybe use another JFA to calc "distance until occluded" and then smooth out the 
 const MAX_MESHES = 1000;
 const MAX_VERTICES = MAX_INDICES;
 
-export const PointsUniStruct = createCyStruct(
+export const PainterlyUniStruct = createCyStruct(
   {
     transform: "mat4x4<f32>",
     tint: "vec3<f32>",
@@ -69,52 +79,58 @@ export const PointsUniStruct = createCyStruct(
 
 export const FLAG_BACKFACE_CULL = 0b1;
 
-export type PointsUniTS = CyToTS<typeof PointsUniStruct.desc>;
+export type PainterlyUniTS = CyToTS<typeof PainterlyUniStruct.desc>;
 
-export const PointRenderDataDef = EM.defineNonupdatableComponent(
-  "pointRenderData",
-  (r: Partial<PointsUniTS>) => PointsUniStruct.fromPartial(r)
+export const PainterlyUniDef = EM.defineNonupdatableComponent(
+  "painterlyUni",
+  (r: Partial<PainterlyUniTS>) => PainterlyUniStruct.fromPartial(r)
 );
 
 // TODO(@darzu): PERF. could probably save perf by using custom vertex data
-export const lineMeshPoolPtr = CY.createMeshPool("lineMeshPool", {
-  computeVertsData,
-  vertsStruct: VertexStruct,
-  unisStruct: PointsUniStruct,
-  maxMeshes: MAX_MESHES,
-  maxSets: 5,
-  setMaxPrims: MAX_VERTICES,
-  setMaxVerts: MAX_VERTICES,
-  dataDef: PointRenderDataDef,
-  prim: "line",
-});
+export const painterlyLineMeshPoolPtr = CY.createMeshPool(
+  "painterlyLineMeshPool",
+  {
+    computeVertsData,
+    vertsStruct: VertexStruct,
+    unisStruct: PainterlyUniStruct,
+    maxMeshes: MAX_MESHES,
+    maxSets: 5,
+    setMaxPrims: MAX_VERTICES,
+    setMaxVerts: MAX_VERTICES,
+    dataDef: PainterlyUniDef,
+    prim: "line",
+  }
+);
 
 // TODO(@darzu): PERF. could probably save perf by using custom vertex data
-export const pointMeshPoolPtr = CY.createMeshPool("pointMeshPool", {
-  computeVertsData,
-  vertsStruct: VertexStruct,
-  unisStruct: PointsUniStruct,
-  maxMeshes: MAX_MESHES,
-  maxSets: 5,
-  setMaxPrims: MAX_VERTICES,
-  setMaxVerts: MAX_VERTICES,
-  dataDef: PointRenderDataDef,
-  prim: "point",
-});
+export const painterlyPointMeshPoolPtr = CY.createMeshPool(
+  "painterlyPointMeshPool",
+  {
+    computeVertsData,
+    vertsStruct: VertexStruct,
+    unisStruct: PainterlyUniStruct,
+    maxMeshes: MAX_MESHES,
+    maxSets: 5,
+    setMaxPrims: MAX_VERTICES,
+    setMaxVerts: MAX_VERTICES,
+    dataDef: PainterlyUniDef,
+    prim: "point",
+  }
+);
 
-export const xpPointMaskTex = CY.createTexture("xpPointMask", {
+export const painterlyJfaMaskTex = CY.createTexture("painterlyJfaMask", {
   size: [100, 100],
   onCanvasResize: (w, h) => [w, h],
   // format: "rgba8unorm",
   format: "rg16float", // TODO(@darzu): PERF. Should probably be able to get away with 1 8bit unorm for size.. maybe 16
 });
-export const xpPointLitTex = CY.createTexture("xpPointLit", {
+export const painterlyLitTex = CY.createTexture("painterlyLit", {
   size: [100, 100],
   onCanvasResize: (w, h) => [w, h],
   format: "rgba8unorm",
 });
 
-const voronoiPointLine = {
+const painterlyMainPass = {
   globals: [
     sceneBufPtr,
     pointLightsPtr,
@@ -127,11 +143,11 @@ const voronoiPointLine = {
   shaderFragmentEntry: "frag_main",
   output: [
     {
-      ptr: xpPointMaskTex,
+      ptr: painterlyJfaMaskTex,
       clear: "once",
     },
     {
-      ptr: xpPointLitTex,
+      ptr: painterlyLitTex,
       clear: "once",
     },
     // // TODO(@darzu): remove one
@@ -158,8 +174,8 @@ const voronoiPointLine = {
   // depthCompare: "less-equal",
 } as const;
 
-export const stdLinePrepassPipe = CY.createRenderPipeline(
-  "stdLinePrepassPipe",
+export const painterlyLinePrepass = CY.createRenderPipeline(
+  "painterlyLinePrepass",
   {
     globals: [sceneBufPtr],
     cullMode: "none",
@@ -174,87 +190,132 @@ export const stdLinePrepassPipe = CY.createRenderPipeline(
     depthStencil: mainDepthTex,
     shader: "std-painterly-prepass",
     meshOpt: {
-      meshMask: JFA_PRE_PASS_MASK,
-      pool: lineMeshPoolPtr,
+      meshMask: PAINTERLY_JFA_PRE_PASS_MASK,
+      pool: painterlyLineMeshPoolPtr,
       stepMode: "per-mesh-handle",
     },
     topology: "line-list",
   }
 );
-export const stdPointPrepassPipe = CY.createRenderPipeline(
-  "stdPointPrepassPipe",
+export const painterlyPointPrepass = CY.createRenderPipeline(
+  "painterlyPointPrepass",
   {
-    ...stdLinePrepassPipe,
+    ...painterlyLinePrepass,
     meshOpt: {
-      meshMask: JFA_PRE_PASS_MASK,
-      pool: pointMeshPoolPtr,
+      meshMask: PAINTERLY_JFA_PRE_PASS_MASK,
+      pool: painterlyPointMeshPoolPtr,
       stepMode: "per-mesh-handle",
     },
     topology: "point-list",
   }
 );
 
-export const stdLinesRender = CY.createRenderPipeline("stdLinesRender", {
-  ...voronoiPointLine,
-  meshOpt: {
-    pool: lineMeshPoolPtr,
-    stepMode: "per-mesh-handle",
-  },
-  topology: "line-list",
-  // fragOverrides: {
-  //   backface: false, // TODO(@darzu): can this be a bool??
-  // },
-  shader: (s) => {
-    return `
-    // const backface = false;
+export const painterlyLineMainPass = CY.createRenderPipeline(
+  "painterlyLineMainPipe",
+  {
+    ...painterlyMainPass,
+    meshOpt: {
+      pool: painterlyLineMeshPoolPtr,
+      stepMode: "per-mesh-handle",
+    },
+    topology: "line-list",
+    shader: (s) =>
+      `
     ${s["std-painterly-main"].code}
-    `;
-  },
-});
+    `,
+  }
+);
 
-export const stdPointsRender = CY.createRenderPipeline("stdPointsRender", {
-  ...voronoiPointLine,
-  meshOpt: {
-    pool: pointMeshPoolPtr,
-    stepMode: "per-mesh-handle",
-  },
-  topology: "point-list",
-  shader: (s) => {
-    return `
-    // const backface = true;
+export const painterlyPointMainPass = CY.createRenderPipeline(
+  "painterlyPointMainPipe",
+  {
+    ...painterlyMainPass,
+    meshOpt: {
+      pool: painterlyPointMeshPoolPtr,
+      stepMode: "per-mesh-handle",
+    },
+    topology: "point-list",
+    shader: (s) =>
+      `
     ${s["std-painterly-main"].code}
-    `;
-  },
-});
+    `,
+  }
+);
 
-EM.addEagerInit([PointRenderDataDef], [], [], () => {
+EM.addEagerInit([PainterlyUniDef], [], [], () => {
   EM.addSystem(
-    "updatePointRenderData",
+    "updatePainterlyUni",
     Phase.RENDER_PRE_DRAW,
-    [RenderableDef, PointRenderDataDef, RendererWorldFrameDef],
+    [RenderableDef, PainterlyUniDef, RendererWorldFrameDef],
     [RendererDef],
     (objs, res) => {
       for (let o of objs) {
         const pool = o.renderable.meshHandle.pool;
-        // console.log("updatePointRenderData: " + o.id);
+        // console.log("painterlyUni: " + o.id);
 
         // color / tint
         if (ColorDef.isOn(o)) {
-          V3.copy(o.pointRenderData.tint, o.color);
+          V3.copy(o.painterlyUni.tint, o.color);
         }
         if (TintsDef.isOn(o)) {
-          applyTints(o.tints, o.pointRenderData.tint);
+          applyTints(o.tints, o.painterlyUni.tint);
         }
 
         // id
         // TODO(@darzu): set at construct time?
-        // o.pointRenderData.id = o.renderable.meshHandle.mId;
+        // o.painterlyUni.id = o.renderable.meshHandle.mId;
 
         // transform
-        mat4.copy(o.pointRenderData.transform, o.rendererWorldFrame.transform);
+        mat4.copy(o.painterlyUni.transform, o.rendererWorldFrame.transform);
 
-        pool.updateUniform(o.renderable.meshHandle, o.pointRenderData);
+        pool.updateUniform(o.renderable.meshHandle, o.painterlyUni);
       }
     }
   );
+});
+
+export const pointsJFA = createJfaPipelines({
+  maskTex: painterlyJfaMaskTex,
+  maskMode: "interior",
+  maxDist: 64,
+  shader: (shaders) => `
+    ${shaders["std-helpers"].code}
+    ${shaders["std-screen-quad-vert"].code}
+    ${shaders["std-painterly-jfa"].code}
+  `,
+  shaderExtraGlobals: [
+    { ptr: painterlyJfaMaskTex, alias: "maskTex" },
+    { ptr: surfacesTexturePtr, alias: "surfTex" },
+    { ptr: mainDepthTex, alias: "depthTex" },
+    sceneBufPtr,
+  ],
+});
+
+// TODO(@darzu): PERF! As of right now, tHis is super expensive. Like ~20ms sometimes :/
+export const pointJFAColorPipe = CY.createRenderPipeline("colorPointsJFA", {
+  globals: [
+    // { ptr: linearSamplerPtr, alias: "samp" },
+    { ptr: nearestSamplerPtr, alias: "samp" },
+    { ptr: pointsJFA.voronoiTex, alias: "voronoiTex" },
+    { ptr: painterlyLitTex, alias: "colorTex" },
+    { ptr: fullQuad, alias: "quad" },
+    sceneBufPtr,
+  ],
+  meshOpt: {
+    vertexCount: 6,
+    stepMode: "single-draw",
+  },
+  output: [
+    {
+      ptr: canvasTexturePtr,
+      clear: "once",
+    },
+  ],
+  shader: (shaderSet) => `
+  ${shaderSet["std-helpers"].code}
+  ${shaderSet["std-screen-quad-vert"].code}
+  ${shaderSet["std-painterly-deferred"].code}
+  `,
+  shaderFragmentEntry: "frag_main",
+  shaderVertexEntry: "vert_main",
 });

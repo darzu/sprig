@@ -18,21 +18,25 @@ import { PositionDef, RotationDef, ScaleDef } from "../physics/transform.js";
 import { fullQuad } from "../render/gpu-helper.js";
 import { CY, nearestSamplerPtr } from "../render/gpu-registry.js";
 import { GraphicsSettingsDef } from "../render/graphics-settings.js";
-import { DEFAULT_MASK, JFA_PRE_PASS_MASK } from "../render/pipeline-masks.js";
+import {
+  DEFAULT_MASK,
+  PAINTERLY_JFA_PRE_PASS_MASK,
+} from "../render/pipeline-masks.js";
 import { createGridComposePipelines } from "../render/pipelines/std-compose.js";
-import { createJfaPipelines } from "../render/pipelines/std-jump-flood.js";
 import {
   FLAG_BACKFACE_CULL,
-  PointRenderDataDef,
-  PointsUniStruct,
-  lineMeshPoolPtr,
-  pointMeshPoolPtr,
-  stdLinePrepassPipe,
-  stdLinesRender,
-  stdPointPrepassPipe,
-  stdPointsRender,
-  xpPointLitTex,
-  xpPointMaskTex,
+  PainterlyUniDef,
+  PainterlyUniStruct,
+  painterlyLineMeshPoolPtr,
+  painterlyLinePrepass,
+  painterlyLineMainPass,
+  painterlyPointPrepass,
+  painterlyPointMainPass,
+  painterlyLitTex,
+  painterlyJfaMaskTex,
+  pointsJFA,
+  pointJFAColorPipe,
+  painterlyPointMeshPoolPtr,
 } from "../render/pipelines/std-painterly.js";
 import { stdMeshPipe } from "../render/pipelines/std-mesh.js";
 import {
@@ -54,52 +58,6 @@ import { GlitchDef } from "./glitch.js";
 import { createSun, initGhost } from "./graybox-helpers.js";
 import { testingLSys } from "./l-systems.js";
 import { createObj, defineObj } from "./objects.js";
-
-const pointsJFA = createJfaPipelines({
-  maskTex: xpPointMaskTex,
-  maskMode: "interior",
-  maxDist: 64,
-  shader: (shaders) => `
-    ${shaders["std-helpers"].code}
-    ${shaders["std-screen-quad-vert"].code}
-    ${shaders["std-painterly-jfa"].code}
-  `,
-  shaderExtraGlobals: [
-    { ptr: xpPointMaskTex, alias: "maskTex" },
-    { ptr: surfacesTexturePtr, alias: "surfTex" },
-    { ptr: mainDepthTex, alias: "depthTex" },
-    sceneBufPtr,
-  ],
-});
-
-// TODO(@darzu): PERF! As of right now, tHis is super expensive. Like ~20ms sometimes :/
-const pointJFAColorPipe = CY.createRenderPipeline("colorPointsJFA", {
-  globals: [
-    // { ptr: linearSamplerPtr, alias: "samp" },
-    { ptr: nearestSamplerPtr, alias: "samp" },
-    { ptr: pointsJFA.voronoiTex, alias: "voronoiTex" },
-    { ptr: xpPointLitTex, alias: "colorTex" },
-    { ptr: fullQuad, alias: "quad" },
-    sceneBufPtr,
-  ],
-  meshOpt: {
-    vertexCount: 6,
-    stepMode: "single-draw",
-  },
-  output: [
-    {
-      ptr: canvasTexturePtr,
-      clear: "once",
-    },
-  ],
-  shader: (shaderSet) => `
-  ${shaderSet["std-helpers"].code}
-  ${shaderSet["std-screen-quad-vert"].code}
-  ${shaderSet["std-painterly-deferred"].code}
-  `,
-  shaderFragmentEntry: "frag_main",
-  shaderVertexEntry: "vert_main",
-});
 
 // const dbgGrid = [
 //   [xpPointTex, xpPointTex],
@@ -126,15 +84,13 @@ export async function initPainterlyGame() {
       res.renderer.pipelines.push(
         ...shadowPipelines,
         stdMeshPipe,
-        stdLinePrepassPipe,
-        stdPointPrepassPipe,
+        painterlyLinePrepass,
+        painterlyPointPrepass,
         // outlineRender,
         // deferredPipeline,
-        // TODO(@darzu): experiment
-        // TODO(@darzu): LIGHTING!
         // TODO(@darzu): OUTLINE?
-        stdPointsRender,
-        stdLinesRender,
+        painterlyPointMainPass,
+        painterlyLineMainPass,
 
         ...pointsJFA.allPipes(),
 
@@ -178,8 +134,8 @@ export async function initPainterlyGame() {
         mkCubeMesh(),
         true,
         undefined,
-        JFA_PRE_PASS_MASK | DEFAULT_MASK,
-        lineMeshPoolPtr,
+        PAINTERLY_JFA_PRE_PASS_MASK | DEFAULT_MASK,
+        painterlyLineMeshPoolPtr,
       ],
       position: [240, 40, 40],
       scale: [10, 10, 10],
@@ -198,8 +154,8 @@ export async function initPainterlyGame() {
           mesh,
           true,
           undefined,
-          JFA_PRE_PASS_MASK | DEFAULT_MASK,
-          lineMeshPoolPtr,
+          PAINTERLY_JFA_PRE_PASS_MASK | DEFAULT_MASK,
+          painterlyLineMeshPoolPtr,
         ],
         position: [240, 80, 40],
         scale: [10, 10, 10],
@@ -359,7 +315,7 @@ export async function initPainterlyGame() {
         createObj(
           [
             RenderableConstructDef,
-            PointRenderDataDef,
+            PainterlyUniDef,
             PositionDef,
             ColorDef,
           ] as const,
@@ -369,12 +325,12 @@ export async function initPainterlyGame() {
               true,
               undefined,
               undefined,
-              pointMeshPoolPtr,
+              painterlyPointMeshPoolPtr,
               undefined,
               undefined,
               planeObjId,
             ],
-            pointRenderData: PointsUniStruct.fromPartial({
+            painterlyUni: PainterlyUniStruct.fromPartial({
               flags: FLAG_BACKFACE_CULL,
               id: planeObjId,
             }),
@@ -463,7 +419,7 @@ export async function initPainterlyGame() {
         createObj(
           [
             RenderableConstructDef,
-            PointRenderDataDef,
+            PainterlyUniDef,
             PositionDef,
             ColorDef,
             ScaleDef,
@@ -475,12 +431,12 @@ export async function initPainterlyGame() {
               true,
               undefined,
               undefined,
-              pointMeshPoolPtr,
+              painterlyPointMeshPoolPtr,
               undefined,
               undefined,
               objId,
             ],
-            pointRenderData: {
+            painterlyUni: {
               flags: FLAG_BACKFACE_CULL,
               id: objId,
             },

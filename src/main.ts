@@ -69,8 +69,8 @@ const ALL_GAMES = [
 // TODO(@darzu): current game should probably be saved in local storage, not hard-coded. (Default can be hard-coded)
 // prettier-ignore
 const GAME: (typeof ALL_GAMES)[number] = (
-  // "painterly"
-  "graybox-ship-arena"
+  "painterly"
+  // "graybox-ship-arena"
 );
 
 // Run simulation with a fixed timestep @ 60hz
