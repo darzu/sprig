@@ -154,7 +154,10 @@ const texYToWorldY = (y: number) => y + 0.5 - WORLD_HEIGHT / 2;
 const level2DtoWorld3D = (levelPos: V2, z: number, out: V3) =>
   V3.set(texXToWorldX(levelPos[0]), texYToWorldY(levelPos[1]), z, out);
 
-export const mapJfa = createJfaPipelines(LandMapTexPtr, "exterior");
+export const mapJfa = createJfaPipelines({
+  maskTex: LandMapTexPtr,
+  maskMode: "exterior",
+});
 
 const STONE_TOWER_HEIGHT = 10;
 

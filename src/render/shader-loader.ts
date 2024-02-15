@@ -14,6 +14,7 @@ export const ShaderPaths = [
   "xp-boid-render",
   "xp-boid-update",
   "std-jump-flood",
+  "std-jfa-point",
   "xp-cloth-update",
   "std-screen-quad-vert",
   "std-rand",

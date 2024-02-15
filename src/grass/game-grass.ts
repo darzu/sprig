@@ -57,7 +57,6 @@ import { CanManDef, TurretDef, raiseManTurret } from "../turret/turret.js";
 import { TextDef } from "../gui/ui.js";
 import { VERBOSE_LOG } from "../flags.js";
 import { CanvasDef, HasFirstInteractionDef } from "../render/canvas.js";
-import { createJfaPipelines } from "../render/pipelines/std-jump-flood.js";
 import { createGridComposePipelines } from "../render/pipelines/std-compose.js";
 import { createTextureReader } from "../render/cpu-texture.js";
 import { SKY_MASK } from "../render/pipeline-masks.js";

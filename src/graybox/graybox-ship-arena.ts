@@ -107,8 +107,10 @@ import { postProcess } from "../render/pipelines/std-post.js";
 import {
   RenderDataStdDef,
   canvasTexturePtr,
+  mainDepthTex,
   meshPoolPtr,
   sceneBufPtr,
+  surfacesTexturePtr,
 } from "../render/pipelines/std-scene.js";
 import { shadowPipelines } from "../render/pipelines/std-shadow.js";
 import {
@@ -151,6 +153,8 @@ import { GlitchDef } from "./glitch.js";
 import { createSun, initGhost, initGrayboxWorld } from "./graybox-helpers.js";
 import { testingLSys } from "./l-systems.js";
 import { ObjEnt, T, createObj, defineObj, mixinObj } from "./objects.js";
+
+// TODO(@darzu): MERGE: split into ship-arena and shading demo
 
 /*
 Prioritized ToDo:
@@ -348,7 +352,22 @@ function createOcean() {
   return grid;
 }
 
-const pointsJFA = createJfaPipelines(xpPointMaskTex, "interior", 64);
+const pointsJFA = createJfaPipelines({
+  maskTex: xpPointMaskTex,
+  maskMode: "interior",
+  maxDist: 64,
+  shader: (shaders) => `
+    ${shaders["std-helpers"].code}
+    ${shaders["std-screen-quad-vert"].code}
+    ${shaders["std-jfa-point"].code}
+  `,
+  shaderExtraGlobals: [
+    { ptr: xpPointMaskTex, alias: "maskTex" },
+    { ptr: surfacesTexturePtr, alias: "surfTex" },
+    { ptr: mainDepthTex, alias: "depthTex" },
+    sceneBufPtr,
+  ],
+});
 
 // TODO(@darzu): PERF! As of right now, tHis is super expensive. Like ~20ms sometimes :/
 const pointJFAColorPipe = CY.createRenderPipeline("colorPointsJFA", {

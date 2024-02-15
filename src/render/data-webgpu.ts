@@ -413,6 +413,9 @@ export function createCyTexture(
   return cyTex;
 
   function resize(width: number, height: number) {
+    // TODO(@darzu): BUG: this nop doesn't work?
+    // if (cyTex.texture && width === cyTex.size[0] && height === cyTex.size[1])
+    //   return; // nop
     cyTex.size[0] = width;
     cyTex.size[1] = height;
     // TODO(@darzu): HACK. feels wierd to mutate the descriptor...

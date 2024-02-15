@@ -1,7 +1,12 @@
 import { never } from "../../utils/util-no-import.js";
 import { assert, range } from "../../utils/util.js";
 import { createRenderTextureToQuad, fullQuad } from "../gpu-helper.js";
-import { CY, CyPipelinePtr, CyTexturePtr } from "../gpu-registry.js";
+import {
+  CY,
+  CyGlobalParam,
+  CyPipelinePtr,
+  CyTexturePtr,
+} from "../gpu-registry.js";
 import { ShaderSet } from "../shader-loader.js";
 import { mainDepthTex, sceneBufPtr, surfacesTexturePtr } from "./std-scene.js";
 
@@ -26,12 +31,22 @@ export interface JfaResult {
 
 let nextId = 1; // TODO(@darzu): hack so we don't need to name everything
 
+export interface JfaOpts {
+  maskTex: CyTexturePtr;
+  maskMode: "interior" | "border" | "exterior";
+  maxDist?: number;
+  shader?: (shaders: ShaderSet) => string;
+  shaderExtraGlobals?: readonly CyGlobalParam[];
+}
+
 // TODO(@darzu): wish this didn't have to be called at the top level always
-export function createJfaPipelines(
-  maskTex: CyTexturePtr,
-  maskMode: "interior" | "border" | "exterior",
-  maxDist?: number
-): JfaResult {
+export function createJfaPipelines({
+  maskTex,
+  maskMode,
+  maxDist,
+  shader,
+  shaderExtraGlobals,
+}: JfaOpts): JfaResult {
   let size = 512;
 
   const voronoiTexFmt: Parameters<typeof CY.createTexture>[1] = {
@@ -147,15 +162,12 @@ export function createJfaPipelines(
     const stepSize = Math.floor(Math.pow(2, i)); // count up
     // console.log(`stepSize: ${stepSize}`);
 
+    // TODO(@darzu): PERF! Most of the pieces of these pipelines r reusable!
     const pipeline = CY.createRenderPipeline(`${namePrefix}Pipe${i}`, {
       globals: [
         { ptr: i === 0 ? uvMaskTex : voronoiTexs[inIdx], alias: "inTex" },
         { ptr: fullQuad, alias: "quad" },
-        // TODO(@darzu): generalize this
-        { ptr: surfacesTexturePtr, alias: "surfTex" },
-        { ptr: mainDepthTex, alias: "depthTex" },
-        { ptr: maskTex, alias: "maskTex" },
-        sceneBufPtr,
+        ...(shaderExtraGlobals ?? []),
       ],
       meshOpt: {
         vertexCount: 6,
@@ -165,14 +177,12 @@ export function createJfaPipelines(
       fragOverrides: {
         stepSize: stepSize,
       },
-      shader: (shaders) => {
-        return `
-        // const stepSize = ${stepSize};
-        ${shaders["std-helpers"].code}
-        ${shaders["std-screen-quad-vert"].code}
-        ${shaders["std-jump-flood"].code}
-      `;
-      },
+      shader:
+        shader ??
+        ((shaders) => `
+          ${shaders["std-screen-quad-vert"].code}
+          ${shaders["std-jump-flood"].code}
+        `),
       shaderFragmentEntry: "frag_main",
       shaderVertexEntry: "vert_main",
     });

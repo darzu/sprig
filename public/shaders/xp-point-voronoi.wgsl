@@ -6,7 +6,6 @@ fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
   //   discard;
   // }
 
-
   let dims : vec2<i32> = vec2<i32>(textureDimensions(voronoiTex));
   let coord = uv * vec2<f32>(dims);
   let uv2 = textureLoad(voronoiTex, vec2<i32>(coord), 0).xy;
@@ -18,7 +17,6 @@ fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
 
   // var uv2 = textureSample(voronoiTex, samp, uv).rg;
   // var color = textureSample(colorTex, samp, uv2).rgb;
-
 
   let gammaCorrected: vec3<f32> = pow(color, vec3<f32>(1.0/2.2));
   return vec4(gammaCorrected, 1.0);
