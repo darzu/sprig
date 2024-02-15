@@ -215,7 +215,6 @@ function getTriInds(m: Mesh, startIdx: number, count: number): Uint16Array {
 
   // try to align-up by enumerating more data
   if (startIdx + count < m.tri.length && count % 2 === 1) count += 1;
-  assert(count % 2 === 0);
 
   // but our data output must always be aligned
   const dataLen = align(count * 3, 2);
