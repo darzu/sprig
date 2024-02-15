@@ -70,8 +70,8 @@ const ALL_GAMES = [
 // prettier-ignore
 const GAME: (typeof ALL_GAMES)[number] = (
   // "painterly"
-  // "graybox-ship-arena"
-  "graybox-starter"
+  "graybox-ship-arena"
+  // "graybox-starter"
 );
 
 // Run simulation with a fixed timestep @ 60hz
