@@ -68,7 +68,7 @@ export interface CyTexture {
   texture: GPUTexture;
   format: GPUTextureFormat;
   usage: GPUTextureUsageFlags;
-  _lastView: GPUTextureView | undefined;
+  _viewCache: Map<number, GPUTextureView>;
   // TODO(@darzu): support partial texture update?
   queueUpdate: (
     data: Float32Array,
@@ -387,8 +387,10 @@ export function createCyTexture(
   const bytesPerVal = texTypeToBytes[format]!;
   assert(bytesPerVal, `TODO format: ${format}`);
 
+  const VIEW_CACHE_DEFAULT = 1;
+
   const cyTex: CyTexture = {
-    _lastView: undefined,
+    _viewCache: new Map(),
     ptr,
     size,
     usage,
@@ -433,7 +435,7 @@ export function createCyTexture(
       // sampleCount,
       usage,
     });
-    cyTex._lastView = undefined;
+    cyTex._viewCache.clear();
   }
 
   // TODO(@darzu): support updating different data types (instead of Float32Array)
@@ -489,10 +491,10 @@ export function createCyTexture(
 
     const backgroundColor = opts?.defaultColor ?? black;
 
-    let view = opts?.viewOverride ?? cyTex._lastView;
+    let view = opts?.viewOverride ?? cyTex._viewCache.get(VIEW_CACHE_DEFAULT);
     if (!view) {
-      cyTex._lastView = cyTex.texture.createView();
-      view = cyTex._lastView;
+      view = cyTex.texture.createView();
+      cyTex._viewCache.set(VIEW_CACHE_DEFAULT, view);
     }
     return {
       view,
@@ -512,6 +514,8 @@ export function createCyDepthTexture(
 
   const hasStencil = ptr.format in texTypeIsStencil;
 
+  const VIEW_CACHE_DEPTH = 1 << 2;
+
   return Object.assign(tex, {
     kind: "depthTexture",
     ptr,
@@ -522,15 +526,16 @@ export function createCyDepthTexture(
     clear: boolean,
     layerIdx: number
   ): GPURenderPassDepthStencilAttachment {
-    let view = tex._lastView;
+    const cacheKey = VIEW_CACHE_DEPTH | layerIdx;
+    let view = tex._viewCache.get(cacheKey);
     if (!view) {
-      tex._lastView = tex.texture.createView({
+      view = tex.texture.createView({
         label: `${ptr.name}_viewForDepthAtt`,
         dimension: "2d",
         baseArrayLayer: layerIdx,
         arrayLayerCount: 1,
       });
-      view = tex._lastView;
+      tex._viewCache.set(cacheKey, view);
     }
     return {
       view,
