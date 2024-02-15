@@ -274,7 +274,7 @@ EM.addEagerInit([PainterlyUniDef], [], [], () => {
   );
 });
 
-export const pointsJFA = createJfaPipelines({
+export const painterlyJfa = createJfaPipelines({
   maskTex: painterlyJfaMaskTex,
   maskMode: "interior",
   maxDist: 64,
@@ -292,30 +292,33 @@ export const pointsJFA = createJfaPipelines({
 });
 
 // TODO(@darzu): PERF! As of right now, tHis is super expensive. Like ~20ms sometimes :/
-export const pointJFAColorPipe = CY.createRenderPipeline("colorPointsJFA", {
-  globals: [
-    // { ptr: linearSamplerPtr, alias: "samp" },
-    { ptr: nearestSamplerPtr, alias: "samp" },
-    { ptr: pointsJFA.voronoiTex, alias: "voronoiTex" },
-    { ptr: painterlyLitTex, alias: "colorTex" },
-    { ptr: fullQuad, alias: "quad" },
-    sceneBufPtr,
-  ],
-  meshOpt: {
-    vertexCount: 6,
-    stepMode: "single-draw",
-  },
-  output: [
-    {
-      ptr: canvasTexturePtr,
-      clear: "once",
+export const painterlyDeferredPipe = CY.createRenderPipeline(
+  "painterlyDeferredPipe",
+  {
+    globals: [
+      // { ptr: linearSamplerPtr, alias: "samp" },
+      { ptr: nearestSamplerPtr, alias: "samp" },
+      { ptr: painterlyJfa.voronoiTex, alias: "voronoiTex" },
+      { ptr: painterlyLitTex, alias: "colorTex" },
+      { ptr: fullQuad, alias: "quad" },
+      sceneBufPtr,
+    ],
+    meshOpt: {
+      vertexCount: 6,
+      stepMode: "single-draw",
     },
-  ],
-  shader: (shaderSet) => `
+    output: [
+      {
+        ptr: canvasTexturePtr,
+        clear: "once",
+      },
+    ],
+    shader: (shaderSet) => `
   ${shaderSet["std-helpers"].code}
   ${shaderSet["std-screen-quad-vert"].code}
   ${shaderSet["std-painterly-deferred"].code}
   `,
-  shaderFragmentEntry: "frag_main",
-  shaderVertexEntry: "vert_main",
-});
+    shaderFragmentEntry: "frag_main",
+    shaderVertexEntry: "vert_main",
+  }
+);

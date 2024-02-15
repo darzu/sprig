@@ -34,8 +34,8 @@ import {
   painterlyPointMainPass,
   painterlyLitTex,
   painterlyJfaMaskTex,
-  pointsJFA,
-  pointJFAColorPipe,
+  painterlyJfa,
+  painterlyDeferredPipe,
   painterlyPointMeshPoolPtr,
 } from "../render/pipelines/std-painterly.js";
 import { stdMeshPipe } from "../render/pipelines/std-mesh.js";
@@ -64,7 +64,7 @@ import { createObj, defineObj } from "./objects.js";
 //   [xpPointTex, xpPointTex],
 // ];
 const dbgGrid = [
-  [pointsJFA._inputMaskTex],
+  [painterlyJfa._inputMaskTex],
   // [pointsJFA._inputMaskTex, pointsJFA._uvMaskTex],
   // [pointsJFA.voronoiTex, pointsJFA.sdfTex],
   // [pointsJFA.voronoiTex],
@@ -81,22 +81,16 @@ export async function initPainterlyGame() {
     (_, res) => {
       // renderer
       res.renderer.pipelines = [];
+      // TODO(@darzu): OUTLINE?
       res.renderer.pipelines.push(
         ...shadowPipelines,
-        stdMeshPipe,
+        stdMeshPipe, // TODO(@darzu): we should have stdMesh surf + depth prepass
         painterlyLinePrepass,
         painterlyPointPrepass,
-        // outlineRender,
-        // deferredPipeline,
-        // TODO(@darzu): OUTLINE?
         painterlyPointMainPass,
         painterlyLineMainPass,
-
-        ...pointsJFA.allPipes(),
-
-        // postProcess,
-
-        pointJFAColorPipe
+        ...painterlyJfa.allPipes(),
+        painterlyDeferredPipe
       );
       res.renderer.pipelines.push(
         ...(res.dev.showConsole ? dbgGridCompose : [])
