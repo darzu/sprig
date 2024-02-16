@@ -43,6 +43,10 @@ fn frag_main(input: VertexOutput) -> FragOut {
 
   var alpha: f32 = 0.0;
 
+  const ringSmooth = 1;
+  const ringStart = 512;
+  const ringEnd = 524;
+
   const lineFrac = vec2<f32>(lineWidth / lineSpacing);
   const lineFrac2 = vec2<f32>(lineWidth2 / lineSpacing2);
   let uv = worldPos.xy / lineSpacing;
@@ -70,6 +74,15 @@ fn frag_main(input: VertexOutput) -> FragOut {
       grid *= saturate(lineFrac2 / drawWidth);
       grid = mix(grid, lineFrac2, saturate(uvDeriv * 2.0 - 1.0));
       alpha += mix(grid.x, 1.0, grid.y);
+    }
+    { // ring
+      color = vec3(1);
+      let l = length(worldPos);
+      let a = smoothstep(ringStart, ringStart + ringSmooth, l);
+      let b = 1.0 - smoothstep(ringEnd - ringSmooth, ringEnd, l);
+      // color = mix(mix(color, vec3(0.0), alpha), vec3(0.0,0.5, 0.5), a * b);
+      color = mix(color, vec3(0.0,0.5, 0.5), min(a * b * 100, 1.0));
+      alpha += a * b;
     }
   // } else if (worldPos.y < -1.0  && worldPos.x > 1.0) {
   //   // iquilezles box filter:

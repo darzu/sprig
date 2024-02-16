@@ -63,7 +63,7 @@ import { addGizmoChild } from "../utils/utils-game.js";
 import { HasMastDef, HasMastObj, createMast } from "../wind/mast.js";
 import { WindDef, setWindAngle } from "../wind/wind.js";
 import { createSock } from "../wind/windsock.js";
-import { DotsDef } from "./dots.js";
+import { DotsAlloc, DotsDef } from "./dots.js";
 import { createSun, initGhost } from "./graybox-helpers.js";
 import { ObjEnt, T, createObj, defineObj, mixinObj } from "./objects.js";
 
@@ -190,6 +190,9 @@ interface DotPath {
   isVisible: boolean;
   update: () => void;
   hide: () => void;
+  size: number;
+  color: V3.InputT;
+  _dots: DotsAlloc;
 }
 function mkDotPath(
   dotsRes: Resources<[typeof DotsDef]>,
@@ -210,10 +213,14 @@ function mkDotPath(
     isVisible: false,
     update,
     hide,
+    size,
+    color,
+    _dots: dots,
   };
 
   function update() {
-    for (let i = 0; i < path.length; i++) dots.set(i, path[i].pos, color, size);
+    for (let i = 0; i < path.length; i++)
+      dots.set(i, path[i].pos, dotPath.color, dotPath.size);
     dots.queueUpdate();
     dotPath.isVisible = true;
   }
@@ -450,7 +457,16 @@ export async function initGrayboxShipArena() {
           // display path
           const dotPath = getDotPath(idx);
           createPathFromParameteric(_launchParam, 100, dotPath.path);
-          dotPath.update();
+          {
+            // TODO(@darzu): DotPath vs DotAlloc abstraction breaking down here..
+            dotPath.path.forEach((p, i) => {
+              const size = p.pos[2] < 0 ? 0.0 : dotPath.size;
+              dotPath._dots.set(i, p.pos, dotPath.color, size);
+            });
+            dotPath._dots.queueUpdate();
+            dotPath.isVisible = true;
+          }
+          // dotPath.update();
 
           // launch?
           if (doFire) {
