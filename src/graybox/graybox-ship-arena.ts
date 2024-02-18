@@ -82,7 +82,7 @@ Prioritized ToDo:
 const DBG_GHOST = false;
 const DBG_GIZMO = true;
 const DBG_DOTS = false;
-const DBG_ENEMY = false;
+const DBG_ENEMY = true;
 
 const SAIL_FURL_RATE = 0.02;
 
@@ -104,8 +104,8 @@ const ShipObj = defineObj({
     ColorDef,
     PositionDef,
     RenderableConstructDef,
-    CameraFollowDef,
     LinearVelocityDef,
+    ColliderFromMeshDef,
   ],
   physicsParentChildren: true,
   children: {
@@ -118,8 +118,13 @@ const ShipObj = defineObj({
     healthBar: [StatBarDef, PositionDef, RenderableConstructDef],
   },
 } as const);
-
 const ShipDef = ShipObj.props;
+
+const PlayerShipObj = defineObj({
+  name: "playerShip",
+  components: [CameraFollowDef],
+});
+const PlayerShipDef = PlayerShipObj.props;
 
 const CannonBallObj = defineObj({
   name: "cannonBall",
@@ -137,17 +142,7 @@ const CannonBallDef = CannonBallObj.props;
 const EnemyObj = defineObj({
   name: "enemy",
   propsType: T<{ sailTarget: V3 }>(),
-  components: [
-    RenderableConstructDef,
-    PositionDef,
-    ColorDef,
-    ColliderFromMeshDef,
-    LinearVelocityDef,
-  ],
-  physicsParentChildren: true,
-  children: {
-    healthBar: [StatBarDef, PositionDef, RenderableConstructDef],
-  },
+  components: [],
 } as const);
 const EnemyDef = EnemyObj.props;
 
@@ -238,38 +233,37 @@ function mkDotPath(
 
 // TODO(@darzu): projectile paths: use particle system?
 
-const oceanRadius = 1;
+// const oceanRadius = 1;
+// function createOcean() {
+//   // TODO(@darzu): more efficient if we use one mesh
+//   const tileCS = [
+//     ColorDef,
+//     PositionDef,
+//     RenderableConstructDef,
+//     ScaleDef,
+//   ] as const;
+//   type typeT = EntityW<[...typeof tileCS]>;
+//   const size = 100;
+//   const height = 10;
 
-function createOcean() {
-  // TODO(@darzu): more efficient if we use one mesh
-  const tileCS = [
-    ColorDef,
-    PositionDef,
-    RenderableConstructDef,
-    ScaleDef,
-  ] as const;
-  type typeT = EntityW<[...typeof tileCS]>;
-  const size = 100;
-  const height = 10;
+//   const createTile = (xyz: V3.InputT) =>
+//     createObj(tileCS, [
+//       V3.add(ENDESGA16.blue, randVec3OfLen(0.1)),
+//       xyz,
+//       [HexMesh],
+//       [size, size, height],
+//     ]);
+//   const grid = createHexGrid<typeT>();
 
-  const createTile = (xyz: V3.InputT) =>
-    createObj(tileCS, [
-      V3.add(ENDESGA16.blue, randVec3OfLen(0.1)),
-      xyz,
-      [HexMesh],
-      [size, size, height],
-    ]);
-  const grid = createHexGrid<typeT>();
+//   for (let [q, r] of hexesWithin(0, 0, oceanRadius)) {
+//     const loc = hexXYZ(V3.mk(), q, r, size);
+//     loc[2] -= height + 2;
+//     const tile = createTile(loc);
+//     grid.set(q, r, tile);
+//   }
 
-  for (let [q, r] of hexesWithin(0, 0, oceanRadius)) {
-    const loc = hexXYZ(V3.mk(), q, r, size);
-    loc[2] -= height + 2;
-    const tile = createTile(loc);
-    grid.set(q, r, tile);
-  }
-
-  return grid;
-}
+//   return grid;
+// }
 
 export async function initGrayboxShipArena() {
   // TODO(@darzu): WORLD GRID:
@@ -351,7 +345,18 @@ export async function initGrayboxShipArena() {
   setWindAngle(wind, PI * 0.4);
 
   // player ship
-  const ship = await createShip();
+  const playerShip = createShip({
+    healthFullColor: ENDESGA16.darkGreen,
+    healthMissingColor: ENDESGA16.deepGreen,
+    position: [-200, -200, 3],
+  });
+  mixinObj(playerShip, PlayerShipObj, {
+    args: {
+      cameraFollow: undefined,
+    },
+  });
+  V3.copy(playerShip.cameraFollow.positionOffset, [0.0, -100.0, 0]);
+  playerShip.cameraFollow.pitchOffset = -PI * 0.2;
 
   // enemy
   createEnemy();
@@ -378,7 +383,7 @@ export async function initGrayboxShipArena() {
   EM.addSystem(
     "controlShip",
     Phase.GAME_PLAYERS,
-    [ShipDef, HasRudderDef, HasMastDef, CameraFollowDef],
+    [ShipDef, PlayerShipDef, HasRudderDef, HasMastDef, CameraFollowDef],
     [InputsDef, CanvasDef, RendererDef],
     (es, res) => {
       if (!res.htmlCanvas.hasMouseLock()) return;
@@ -483,16 +488,19 @@ export async function initGrayboxShipArena() {
     }
   );
 
-  onCollides([CannonBallDef], [EnemyDef], [], (ball, enemy) => {
-    // TODO(@darzu):
-    enemy.enemy.healthBar.statBar.value -= 10;
+  onCollides([CannonBallDef], [EnemyDef, ShipDef], [], (ball, enemy) => {
+    enemy.ship.healthBar.statBar.value -= 10;
     EM.set(ball, DeletedDef);
   });
 
   initEnemies();
 }
 
-async function createShip() {
+function createShip(opts: {
+  position: V3.InputT;
+  healthFullColor: V3.InputT;
+  healthMissingColor: V3.InputT;
+}) {
   const shipMesh = mkCubeMesh();
   shipMesh.pos.forEach((p) => {
     // top of ship at height 0
@@ -544,10 +552,11 @@ async function createShip() {
   const ship = ShipObj.new({
     args: {
       color: ENDESGA16.midBrown,
-      position: [-200, -200, 3],
+      position: opts.position,
       renderableConstruct: [shipMesh],
-      cameraFollow: undefined,
+      // cameraFollow: undefined,
       linearVelocity: undefined,
+      colliderFromMesh: true,
     },
     children: {
       cannonL0: cannonLs[0],
@@ -564,8 +573,8 @@ async function createShip() {
             width: 2,
             length: 30,
             centered: true,
-            fullColor: ENDESGA16.darkGreen,
-            missingColor: ENDESGA16.deepGreen,
+            fullColor: opts.healthFullColor,
+            missingColor: opts.healthMissingColor,
           }),
         ],
       },
@@ -603,9 +612,6 @@ async function createShip() {
     },
   });
 
-  V3.copy(ship.cameraFollow.positionOffset, [0.0, -100.0, 0]);
-  ship.cameraFollow.pitchOffset = -PI * 0.2;
-
   if (DBG_GIZMO) addGizmoChild(ship, 10);
 
   return ship;
@@ -641,69 +647,24 @@ function getDirsToTan(
 }
 
 function createEnemy() {
-  const shipMesh = mkCubeMesh();
-  shipMesh.pos.forEach((p) => {
-    // top of ship at height 0
-    p[2] -= 1.0;
-    // scale
-    p[0] *= 12;
-    p[1] *= 24;
-    p[2] *= 2;
+  const ship = createShip({
+    healthFullColor: ENDESGA16.red,
+    healthMissingColor: ENDESGA16.darkRed,
+    position: [-40, -40, 3],
   });
-
-  const ship = createObj(EnemyObj, {
+  mixinObj(ship, EnemyObj, {
     props: {
       sailTarget: V(0, 0, 0),
     },
-    args: {
-      color: ENDESGA16.orange,
-      position: [-40, -40, 3],
-      renderableConstruct: [shipMesh],
-      colliderFromMesh: true,
-      linearVelocity: undefined,
-    },
-    children: {
-      // TODO(@darzu): it'd be nice if the healthbar faced the player.
-      healthBar: {
-        statBar: [0, 100, 80],
-        position: [0, 0, 50],
-        renderableConstruct: [
-          createMultiBarMesh({
-            width: 2,
-            length: 30,
-            centered: true,
-            fullColor: ENDESGA16.red,
-            missingColor: ENDESGA16.darkRed,
-          }),
-        ],
-      },
-    },
+    args: {},
   });
-
-  const mast = createMast();
-
-  mixinObj(ship, HasMastObj, {
-    args: [],
-    children: {
-      mast,
-    },
-  });
-
-  const rudder = createRudder();
-  V3.set(0, -25, 4, rudder.position);
-
-  mixinObj(ship, HasRudderObj, {
-    args: [],
-    children: {
-      rudder,
-    },
-  });
+  return ship;
 }
 
 async function initEnemies() {
   const attackRadius = 100;
 
-  const player = await EM.whenSingleEntity(ShipDef, PositionDef);
+  const player = await EM.whenSingleEntity(PlayerShipDef, PositionDef);
 
   const { dots } = await EM.whenResources(DotsDef);
 

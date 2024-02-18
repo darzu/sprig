@@ -58,31 +58,30 @@ EM.addSystem(
   [SockDef, RenderableDef, WorldFrameDef],
   [RendererDef, WindDef],
   (es, { renderer, wind }) => {
-    // TODO(@darzu): PERF. this is crazy, we should just rotate the sock, not update the verts
-    assert(es.length <= 1);
-    const e = es[0];
-    if (!e) return;
-    if (
-      wind.angle === lastWinAngle &&
-      quat.equals(e.world.rotation, lastShipRot)
-    )
-      return;
-    // const invShip = mat3.invert(mat3.fromMat4(e.world.transform));
-    const invShip = quat.invert(e.world.rotation);
-    // const windLocalDir = vec3.transformMat3(wind.dir, invShip);
-    const windLocalDir = V3.tQuat(wind.dir, invShip);
-    // console.log(
-    //   `windLocalDir: ${vec3Dbg(windLocalDir)} vs wind.dir: ${vec3Dbg(wind.dir)}`
-    // );
+    for (let e of es) {
+      // TODO(@darzu): PERF. this is crazy, we should just rotate the sock, not update the verts
+      if (
+        wind.angle === lastWinAngle &&
+        quat.equals(e.world.rotation, lastShipRot)
+      )
+        continue;
+      // const invShip = mat3.invert(mat3.fromMat4(e.world.transform));
+      const invShip = quat.invert(e.world.rotation);
+      // const windLocalDir = vec3.transformMat3(wind.dir, invShip);
+      const windLocalDir = V3.tQuat(wind.dir, invShip);
+      // console.log(
+      //   `windLocalDir: ${vec3Dbg(windLocalDir)} vs wind.dir: ${vec3Dbg(wind.dir)}`
+      // );
 
-    // NOTE: this cast is only safe so long as we're sure this mesh isn't being shared
-    const m = e.renderable.meshHandle.mesh! as Mesh;
-    m.pos[2][0] = windLocalDir[0] * 4.0 * e.sock.scale;
-    m.pos[2][1] = windLocalDir[1] * 4.0 * e.sock.scale;
-    // console.log("billow sock: " + vec3Dbg(m.pos[2]));
-    // TODO: perf: detect when we actually need to update this
-    renderer.renderer.stdPool.updateMeshVertices(e.renderable.meshHandle, m);
-    lastWinAngle = wind.angle;
-    quat.copy(lastShipRot, e.world.rotation);
+      // NOTE: this cast is only safe so long as we're sure this mesh isn't being shared
+      const m = e.renderable.meshHandle.mesh! as Mesh;
+      m.pos[2][0] = windLocalDir[0] * 4.0 * e.sock.scale;
+      m.pos[2][1] = windLocalDir[1] * 4.0 * e.sock.scale;
+      // console.log("billow sock: " + vec3Dbg(m.pos[2]));
+      // TODO: perf: detect when we actually need to update this
+      renderer.renderer.stdPool.updateMeshVertices(e.renderable.meshHandle, m);
+      lastWinAngle = wind.angle;
+      quat.copy(lastShipRot, e.world.rotation);
+    }
   }
 );

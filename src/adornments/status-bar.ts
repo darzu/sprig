@@ -42,8 +42,8 @@ export interface MultiBarOpts {
   width: number;
   length: number;
   centered: boolean;
-  fullColor: V3;
-  missingColor: V3;
+  fullColor: V3.InputT;
+  missingColor: V3.InputT;
 }
 
 const statBarMeshName = "statBar";
