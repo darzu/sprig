@@ -144,7 +144,7 @@ export function createSail(
       scale: [scale, scale, scale],
       position: undefined,
       rotation: undefined,
-      color: ENDESGA16.red,
+      color: ENDESGA16.lightGray,
     },
   });
 

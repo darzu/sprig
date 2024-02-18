@@ -106,3 +106,7 @@ TS proposals to review:
   https://github.com/tc39?q=%22proposal-%22&type=all&language=&sort=
 
 Obviously we want a custom robust relation-y query syntax
+
+Game phases:
+  Certain functions are async or immediate depending on the game phase you're in
+  E.g. if you're in level init, you get to assume X resources are all loaded already

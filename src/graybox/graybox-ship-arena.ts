@@ -82,7 +82,7 @@ Prioritized ToDo:
 const DBG_GHOST = false;
 const DBG_GIZMO = true;
 const DBG_DOTS = false;
-const DBG_ENEMY = true;
+const DBG_ENEMY = false;
 
 const SAIL_FURL_RATE = 0.02;
 
@@ -115,6 +115,7 @@ const ShipObj = defineObj({
     cannonR0: CannonObj,
     cannonR1: CannonObj,
     cannonR2: CannonObj,
+    healthBar: [StatBarDef, PositionDef, RenderableConstructDef],
   },
 } as const);
 
@@ -555,6 +556,19 @@ async function createShip() {
       cannonR0: cannonRs[0],
       cannonR1: cannonRs[1],
       cannonR2: cannonRs[2],
+      healthBar: {
+        statBar: [0, 100, 80],
+        position: [0, 0, 50],
+        renderableConstruct: [
+          createMultiBarMesh({
+            width: 2,
+            length: 30,
+            centered: true,
+            fullColor: ENDESGA16.darkGreen,
+            missingColor: ENDESGA16.deepGreen,
+          }),
+        ],
+      },
     },
   });
   // EM.set(ship, GlitchDef);
@@ -642,7 +656,7 @@ function createEnemy() {
       sailTarget: V(0, 0, 0),
     },
     args: {
-      color: ENDESGA16.darkRed,
+      color: ENDESGA16.orange,
       position: [-40, -40, 3],
       renderableConstruct: [shipMesh],
       colliderFromMesh: true,
@@ -652,7 +666,7 @@ function createEnemy() {
       // TODO(@darzu): it'd be nice if the healthbar faced the player.
       healthBar: {
         statBar: [0, 100, 80],
-        position: [0, 0, 15],
+        position: [0, 0, 50],
         renderableConstruct: [
           createMultiBarMesh({
             width: 2,
