@@ -49,6 +49,7 @@ import { Phase } from "../ecs/sys-phase.js";
 import { XY } from "../meshes/mesh-loader.js";
 import { transformYUpModelIntoZUp } from "../camera/basis.js";
 import { addGizmoChild, drawBall } from "../utils/utils-game.js";
+import { getFireDirection, getTargetMissOrHitPosition } from "./projectile.js";
 
 export const DBG_CANNONS = false;
 
@@ -665,158 +666,8 @@ EM.addSystem(
 const __previousPartyPos = V3.mk();
 let __prevTime = 0;
 
-const MAX_THETA = Math.PI / 2 - Math.PI / 16;
-const MIN_THETA = -MAX_THETA;
-const TARGET_WIDTH = 12;
-const TARGET_LENGTH = 30;
-const MISS_TARGET_LENGTH = 55;
-const MISS_TARGET_WIDTH = 22;
-const MISS_BY_MAX = 10;
 const MISS_PROBABILITY = 0.25;
 const MAX_RANGE = 300;
-
-function getTargetMissOrHitPosition(
-  targetPos: V3,
-  targetDir: V3,
-  missed: boolean,
-  out?: V3
-): V3 {
-  // return vec3.copy(out ?? V3.tmp(), targetPos);
-
-  const UP: V3.InputT = [0, 0, 1];
-  let tFwd = V3.copy(V3.tmp(), targetDir);
-  let tRight = V3.cross(targetDir, UP);
-
-  // console.log(
-  //   `targetDir: ${vec3Dbg(targetDir)}, tFwd: ${vec3Dbg(
-  //     tFwd
-  //   )}, tRight: ${vec3Dbg(tRight)}`
-  // );
-
-  // pick an actual target to aim for on the ship
-  if (missed) {
-    let rightMul = 0;
-    let fwdMul = 0;
-    if (Math.random() < 0.5) {
-      // miss width-wise
-      rightMul = 1;
-    } else {
-      // miss length-wise
-      fwdMul = 1;
-    }
-    if (Math.random() < 0.5) {
-      rightMul *= -1;
-      fwdMul *= -1;
-    }
-
-    V3.scale(
-      tFwd,
-      fwdMul * (Math.random() * MISS_BY_MAX + 0.5 * MISS_TARGET_LENGTH),
-      tFwd
-    );
-    V3.scale(
-      tRight,
-      rightMul * (Math.random() * MISS_BY_MAX + 0.5 * MISS_TARGET_WIDTH),
-      tRight
-    );
-
-    // TODO: why do we move missed shots up?
-    tRight[2] += 5;
-  } else {
-    V3.scale(tFwd, (Math.random() - 0.5) * TARGET_LENGTH, tFwd);
-    V3.scale(tRight, (Math.random() - 0.5) * TARGET_WIDTH, tRight);
-  }
-
-  const target = V3.add(
-    targetPos,
-    V3.add(tFwd, tRight, tRight),
-    out ?? V3.tmp()
-  );
-
-  return target;
-}
-
-// TODO(@darzu): extract!!
-function getFireDirection(
-  sourcePos: V3.InputT,
-  targetPos: V3.InputT,
-  targetVel: V3.InputT,
-  projectileSpeed: number
-): quat | undefined {
-  // NOTE: cannon forward is +X
-  // TODO(@darzu): change cannon forward to be +Y?
-  const v = projectileSpeed;
-  const g = GRAVITY;
-
-  // calculate initial distance
-  const d0 = V3.dist(
-    [sourcePos[0], sourcePos[1], 0],
-    [targetPos[0], targetPos[1], 0]
-  );
-
-  // try to lead the target a bit using an approximation of flight
-  // time. this will not be exact.
-  // TODO(@darzu): sub with exact flight time?
-  const flightTime = d0 / (v * Math.cos(Math.PI / 4));
-  const leadPos = tV(
-    targetPos[0] + targetVel[0] * flightTime * 0.5,
-    targetPos[1] + targetVel[1] * flightTime * 0.5,
-    targetPos[2] + targetVel[2] * flightTime * 0.5
-  );
-
-  // calculate delta between source and target
-  const delta = V3.sub(leadPos, sourcePos);
-
-  // calculate yaw
-  const yaw = -Math.atan2(delta[1], delta[0]);
-
-  // calculate horizontal distance to target
-  const d = V3.len([delta[0], delta[1], 0]);
-
-  // vertical distance to target
-  const h = delta[2];
-
-  // now, find the angle from our cannon.
-  // https://en.wikipedia.org/wiki/Projectile_motion#Angle_%CE%B8_required_to_hit_coordinate_(x,_y)
-  let pitch1 = Math.atan(
-    (v * v + Math.sqrt(v * v * v * v - g * (g * d * d + 2 * h * v * v))) /
-      (g * d)
-  );
-  let pitch2 = Math.atan(
-    (v * v - Math.sqrt(v * v * v * v - g * (g * d * d + 2 * h * v * v))) /
-      (g * d)
-  );
-
-  // console.log(`pitch1: ${pitch1}, pitch2: ${pitch2}`);
-
-  // prefer smaller theta
-  if (pitch2 > pitch1) {
-    let temp = pitch1;
-    pitch1 = pitch2;
-    pitch2 = temp;
-  }
-  let pitch = pitch2;
-  if (isNaN(pitch) || pitch > MAX_THETA || pitch < MIN_THETA) {
-    pitch = pitch1;
-  }
-  if (isNaN(pitch) || pitch > MAX_THETA || pitch < MIN_THETA) {
-    // no firing solution--target is too far or too close
-    // console.log("no solution");
-    return undefined;
-  }
-
-  // ok, we have a firing solution. rotate to the right angle
-
-  // console.log(`yaw: ${yaw}, pitch: ${pitch}`);
-  // pitch = 0;
-
-  const worldRot = quat.mk();
-  // TODO(@darzu): b/c we're using +X is fwd, we can't use quat.fromYawPitchRoll
-  quat.rotZ(worldRot, -yaw, worldRot);
-  quat.rotY(worldRot, -pitch, worldRot);
-
-  return worldRot;
-}
 
 EM.addSystem(
   "stoneTowerAttack",

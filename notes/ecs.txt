@@ -149,3 +149,14 @@ BG3 / Larian's "Osiris" ECS database thing:
 
       NOT DB_MyPrefix_AtLeastOneFruit(1);	// Even if some of these databases would not exist, removing them would not result
       NOT DB_MyPrefix_AtLeastOneFruit(1);	// in an error. Removing a non-existent database is simply ignored.
+
+"Databases are the endgame for data-oriented design":
+  https://spacetimedb.com/blog/databases-and-data-oriented-design
+
+good book on data oriented design:
+  https://www.dataorienteddesign.com/dodmain/
+
+"knowledge graph"
+  interested in triples?
+    source, dest, label
+  best example wiki data
