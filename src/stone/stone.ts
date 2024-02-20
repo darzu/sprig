@@ -49,7 +49,11 @@ import { Phase } from "../ecs/sys-phase.js";
 import { XY } from "../meshes/mesh-loader.js";
 import { transformYUpModelIntoZUp } from "../camera/basis.js";
 import { addGizmoChild, drawBall } from "../utils/utils-game.js";
-import { getFireDirection, getTargetMissOrHitPosition } from "./projectile.js";
+import {
+  getFireDirection,
+  getFireSolution,
+  getTargetMissOrHitPosition,
+} from "./projectile.js";
 
 export const DBG_CANNONS = false;
 
@@ -667,7 +671,6 @@ const __previousPartyPos = V3.mk();
 let __prevTime = 0;
 
 const MISS_PROBABILITY = 0.25;
-const MAX_RANGE = 300;
 
 EM.addSystem(
   "stoneTowerAttack",
@@ -689,55 +692,32 @@ EM.addSystem(
         continue;
       }
 
-      // are we within range?
-      const dist = V3.dist(tower.world.position, res.party.pos);
-      if (MAX_RANGE < dist) {
-        continue;
-      }
+      const cannon = tower.stoneTower.cannon()!;
 
       // calc target velocity
       const targetVel = V3.scale(
         V3.sub(res.party.pos, __previousPartyPos),
         1 / (res.time.time - __prevTime)
       );
+      // console.log("targetVel: " + targetVel);
 
       // should we miss?
-      const missed = Math.random() < MISS_PROBABILITY;
+      const miss = Math.random() < MISS_PROBABILITY;
 
-      // determine where to aim
-      const aimPos = getTargetMissOrHitPosition(
-        res.party.pos,
-        res.party.dir,
-        missed
-      );
-
-      // debugging
-      if (DBG_CANNONS)
-        drawBall(
-          V3.clone(aimPos),
-          0.5,
-          missed ? ENDESGA16.darkRed : ENDESGA16.darkGreen
-        );
-
-      // determine how to aim
-      const cannon = tower.stoneTower.cannon()!;
-      const worldRot = getFireDirection(
-        cannon.world.position,
-        aimPos,
-        targetVel,
-        tower.stoneTower.projectileSpeed
-      );
-
-      if (!worldRot)
-        // no valid firing solution
-        continue;
-
-      // check max arc
       const maxRadius = tower.stoneTower.firingRadius;
-      const yaw = quat.getAngle(tower.world.rotation, worldRot);
-      if (maxRadius < Math.abs(yaw))
-        // out of angle
-        continue;
+
+      const worldRot = getFireSolution({
+        sourcePos: cannon.world.position,
+        sourceRot: tower.world.rotation,
+        maxRadius,
+        targetPos: res.party.pos,
+        targetDir: res.party.dir,
+        targetVel,
+        projectileSpeed: tower.stoneTower.projectileSpeed,
+        miss,
+      });
+
+      if (!worldRot) continue;
 
       // aim cannon toward boat
       const invRot = quat.invert(tower.world.rotation);
@@ -769,7 +749,7 @@ EM.addSystem(
       // debugging
       if (DBG_CANNONS) {
         b.then((b) => {
-          if (missed) {
+          if (miss) {
             V3.set(1, 0, 0, b.color);
           } else {
             V3.set(0, 1, 0, b.color);

@@ -1,6 +1,11 @@
+import { ENDESGA16 } from "../color/palettes.js";
 import { V3, quat, tV } from "../matrix/sprig-matrix.js";
+import { vec3Dbg } from "../utils/utils-3d.js";
+import { drawBall } from "../utils/utils-game.js";
 
 // TODO(@darzu): Move this. Merge this with others like parameteric?
+
+const DBG_CANNONS = true;
 
 const GRAVITY = 6.0 * 0.00001;
 
@@ -13,12 +18,63 @@ const MISS_TARGET_LENGTH = 55;
 const MISS_TARGET_WIDTH = 22;
 const MISS_BY_MAX = 10;
 
+const MAX_RANGE = 300;
+
+export interface FireSolutionOpt {
+  maxRadius: number;
+  sourcePos: V3.InputT;
+  sourceRot: quat.InputT;
+  targetPos: V3.InputT;
+  targetVel: V3.InputT;
+  targetDir: V3.InputT;
+  projectileSpeed: number;
+  miss: boolean;
+}
+
+export function getFireSolution(opt: FireSolutionOpt): quat | undefined {
+  const { sourcePos, targetPos, maxRadius } = opt;
+
+  // are we within range?
+  const dist = V3.dist(sourcePos, targetPos);
+  if (MAX_RANGE < dist) {
+    return undefined;
+  }
+
+  // determine where to aim
+  const aimPos = getTargetMissOrHitPosition(opt);
+
+  console.log(`${opt.miss}: ${vec3Dbg(aimPos)}`);
+
+  // debugging
+  if (DBG_CANNONS)
+    drawBall(
+      V3.clone(aimPos),
+      0.5,
+      opt.miss ? ENDESGA16.darkRed : ENDESGA16.darkGreen
+    );
+
+  // determine how to aim
+  const worldRot = getFireDirection(aimPos, opt);
+
+  if (!worldRot)
+    // no valid firing solution
+    return undefined;
+
+  // check max arc
+  const yaw = quat.getAngle(opt.sourceRot, worldRot);
+  if (maxRadius < Math.abs(yaw))
+    // out of angle
+    return undefined;
+
+  return worldRot;
+}
+
 export function getTargetMissOrHitPosition(
-  targetPos: V3,
-  targetDir: V3,
-  missed: boolean,
+  { targetPos, targetDir, miss }: FireSolutionOpt,
   out?: V3
 ): V3 {
+  // const targetDir = V3.norm(targetVel);
+
   // return vec3.copy(out ?? V3.tmp(), targetPos);
 
   const UP: V3.InputT = [0, 0, 1];
@@ -32,7 +88,7 @@ export function getTargetMissOrHitPosition(
   // );
 
   // pick an actual target to aim for on the ship
-  if (missed) {
+  if (miss) {
     let rightMul = 0;
     let fwdMul = 0;
     if (Math.random() < 0.5) {
@@ -75,10 +131,8 @@ export function getTargetMissOrHitPosition(
 }
 
 export function getFireDirection(
-  sourcePos: V3.InputT,
-  targetPos: V3.InputT,
-  targetVel: V3.InputT,
-  projectileSpeed: number
+  aimPos: V3.InputT,
+  { sourcePos, targetVel, projectileSpeed }: FireSolutionOpt
 ): quat | undefined {
   // NOTE: cannon forward is +X
   // TODO(@darzu): change cannon forward to be +Y?
@@ -88,7 +142,7 @@ export function getFireDirection(
   // calculate initial distance
   const d0 = V3.dist(
     [sourcePos[0], sourcePos[1], 0],
-    [targetPos[0], targetPos[1], 0]
+    [aimPos[0], aimPos[1], 0]
   );
 
   // try to lead the target a bit using an approximation of flight
@@ -96,9 +150,9 @@ export function getFireDirection(
   // TODO(@darzu): sub with exact flight time?
   const flightTime = d0 / (v * Math.cos(Math.PI / 4));
   const leadPos = tV(
-    targetPos[0] + targetVel[0] * flightTime * 0.5,
-    targetPos[1] + targetVel[1] * flightTime * 0.5,
-    targetPos[2] + targetVel[2] * flightTime * 0.5
+    aimPos[0] + targetVel[0] * flightTime * 0.5,
+    aimPos[1] + targetVel[1] * flightTime * 0.5,
+    aimPos[2] + targetVel[2] * flightTime * 0.5
   );
 
   // calculate delta between source and target

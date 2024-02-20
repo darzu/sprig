@@ -133,6 +133,7 @@ export function aabbDbg(v: AABB): string {
 export function vec2Dbg(v: V2.InputT): string {
   return `[${v[0].toFixed(2)},${v[1].toFixed(2)}]`;
 }
+// TODO(@darzu): RENAME AND MOVE
 export function vec3Dbg(v?: V3.InputT): string {
   return v
     ? `[${v[0].toFixed(2)},${v[1].toFixed(2)},${v[2].toFixed(2)}]`
