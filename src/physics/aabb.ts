@@ -3,6 +3,8 @@ import { mat4, V, V2, V3 } from "../matrix/sprig-matrix.js";
 import { range } from "../utils/util.js";
 import { vec3Dbg2, vec3Mid } from "../utils/utils-3d.js";
 
+const TRACK_AABB = true;
+
 export function __resetAABBDbgCounters() {
   _doesOverlapAABBs = 0;
   _enclosedBys = 0;
@@ -10,7 +12,7 @@ export function __resetAABBDbgCounters() {
 
 export let _doesOverlapAABBs = 0;
 export function doesOverlapAABB(a: AABB, b: AABB) {
-  _doesOverlapAABBs++; // TODO(@darzu): debugging
+  if (TRACK_AABB) _doesOverlapAABBs++;
   // TODO(@darzu): less then or less then and equal?
   return (
     b.min[0] < a.max[0] &&
@@ -23,7 +25,7 @@ export function doesOverlapAABB(a: AABB, b: AABB) {
 }
 export let _enclosedBys = 0;
 export function enclosedBy(inner: AABB, outer: AABB) {
-  _enclosedBys++; // TODO(@darzu): debugging
+  if (TRACK_AABB) _enclosedBys++;
   return (
     inner.max[0] < outer.max[0] &&
     inner.max[1] < outer.max[1] &&
@@ -34,7 +36,7 @@ export function enclosedBy(inner: AABB, outer: AABB) {
   );
 }
 export function doesTouchAABB(a: AABB, b: AABB, threshold: number) {
-  _doesOverlapAABBs++; // TODO(@darzu): debugging
+  if (TRACK_AABB) _doesOverlapAABBs++;
   return (
     b.min[0] < a.max[0] + threshold &&
     b.min[1] < a.max[1] + threshold &&

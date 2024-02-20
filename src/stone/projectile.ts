@@ -7,8 +7,8 @@ import { drawBall } from "../utils/utils-game.js";
 
 /*
 ToDo:
-[ ] change to y-forward
-[ ] parameterize target
+[x] change to y-forward
+[ ] parameterize hit box / miss box using 3D projected to 2D OBB w/ projectile profile box too?
 */
 
 const DBG_CANNONS = true;

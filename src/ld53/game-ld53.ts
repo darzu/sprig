@@ -316,7 +316,6 @@ async function setLevelLocal(levelIdx: number) {
   // spawn towers
   const towerPosAndYaw: [V3, number][] = levelMap.towers.map(([tPos, tDir]) => [
     level2DtoWorld3D(tPos, STONE_TOWER_HEIGHT, V3.mk()),
-    // Math.atan2(tDir[1], tDir[0]),
     V2.getYaw(tDir),
   ]);
 
