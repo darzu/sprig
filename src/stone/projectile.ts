@@ -1,9 +1,15 @@
 import { ENDESGA16 } from "../color/palettes.js";
-import { V3, quat, tV } from "../matrix/sprig-matrix.js";
+import { V2, V3, quat, tV } from "../matrix/sprig-matrix.js";
 import { vec3Dbg } from "../utils/utils-3d.js";
 import { drawBall } from "../utils/utils-game.js";
 
 // TODO(@darzu): Move this. Merge this with others like parameteric?
+
+/*
+ToDo:
+[ ] change to y-forward
+[ ] parameterize target
+*/
 
 const DBG_CANNONS = true;
 
@@ -43,7 +49,7 @@ export function getFireSolution(opt: FireSolutionOpt): quat | undefined {
   // determine where to aim
   const aimPos = getTargetMissOrHitPosition(opt);
 
-  console.log(`${opt.miss}: ${vec3Dbg(aimPos)}`);
+  // console.log(`${opt.miss}: ${vec3Dbg(aimPos)}`);
 
   // debugging
   if (DBG_CANNONS)
@@ -60,6 +66,7 @@ export function getFireSolution(opt: FireSolutionOpt): quat | undefined {
     // no valid firing solution
     return undefined;
 
+  // TODO(@darzu): re-enstate
   // check max arc
   const yaw = quat.getAngle(opt.sourceRot, worldRot);
   if (maxRadius < Math.abs(yaw))
@@ -77,9 +84,8 @@ export function getTargetMissOrHitPosition(
 
   // return vec3.copy(out ?? V3.tmp(), targetPos);
 
-  const UP: V3.InputT = [0, 0, 1];
   let tFwd = V3.copy(V3.tmp(), targetDir);
-  let tRight = V3.cross(targetDir, UP);
+  let tRight = V3.cross(targetDir, V3.UP);
 
   // console.log(
   //   `targetDir: ${vec3Dbg(targetDir)}, tFwd: ${vec3Dbg(
@@ -158,16 +164,13 @@ export function getFireDirection(
   // calculate delta between source and target
   const delta = V3.sub(leadPos, sourcePos);
 
-  // calculate yaw
-  const yaw = -Math.atan2(delta[1], delta[0]);
-
   // calculate horizontal distance to target
-  const d = V3.len([delta[0], delta[1], 0]);
+  const d = V2.len([delta[0], delta[1]]);
 
   // vertical distance to target
   const h = delta[2];
 
-  // now, find the angle from our cannon.
+  // now, find the pitch angle from our cannon.
   // https://en.wikipedia.org/wiki/Projectile_motion#Angle_%CE%B8_required_to_hit_coordinate_(x,_y)
   let pitch1 = Math.atan(
     (v * v + Math.sqrt(v * v * v * v - g * (g * d * d + 2 * h * v * v))) /
@@ -201,10 +204,16 @@ export function getFireDirection(
   // console.log(`yaw: ${yaw}, pitch: ${pitch}`);
   // pitch = 0;
 
-  const worldRot = quat.mk();
   // TODO(@darzu): b/c we're using +X is fwd, we can't use quat.fromYawPitchRoll
-  quat.rotZ(worldRot, -yaw, worldRot);
-  quat.rotY(worldRot, -pitch, worldRot);
+  // const worldRot = quat.mk();
+  // quat.rotZ(worldRot, -yaw, worldRot);
+  // quat.rotY(worldRot, -pitch, worldRot);
+
+  // calculate yaw
+  const yaw = V3.getYaw(delta);
+
+  // result
+  const worldRot = quat.fromYawPitchRoll(yaw, pitch);
 
   return worldRot;
 }

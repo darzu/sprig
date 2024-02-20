@@ -194,7 +194,9 @@ export function testMath() {
   }
 
   // understand atan2
-  if (false) {
+  // output is -PI to PI
+  // positive when +Y, negative when -Y
+  if (true) {
     const dir = V(1, 0, 0);
     const steps = 10;
     const stepRad = (Math.PI * 2) / steps;

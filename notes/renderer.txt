@@ -2248,3 +2248,13 @@ Capsule-based ambient occlusion:
   https://github.com/Fewes/CapsuleOcclusion
   http://miciwan.com/SIGGRAPH2013/Lighting%20Technology%20of%20The%20Last%20Of%20Us.pdf
   https://knarkowicz.files.wordpress.com/2017/05/knarkowicz_rendering_sw2_dd_20171.pdf
+
+Blur shader comparison:
+  https://mini.gmshaders.com/p/blur-philosophy
+
+Godot discussing render graph upgrades:
+  https://godotengine.org/article/rendering-acyclic-graph/
+
+"":
+  https://gpu-primitives-course.github.io
+  https://gpu-primitives-course.github.io/sa-course-notes.pdf

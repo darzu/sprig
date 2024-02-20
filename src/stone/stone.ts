@@ -55,7 +55,7 @@ import {
   getTargetMissOrHitPosition,
 } from "./projectile.js";
 
-export const DBG_CANNONS = false;
+export const DBG_CANNONS = true;
 
 const GRAVITY = 6.0 * 0.00001;
 const MIN_BRICK_PERCENT = 0.6;
@@ -464,14 +464,14 @@ function createTowerState(): StoneState {
   const windowHeight = 0.7 * height;
   const windowAABB: AABB = {
     min: V(
-      baseRadius - 4 * brickDepth,
+      -approxBrickWidth,
       windowHeight - 2 * brickHeight,
-      -approxBrickWidth
+      -baseRadius - 4 * brickDepth
     ),
     max: V(
-      baseRadius + 2 * brickDepth,
+      approxBrickWidth,
       windowHeight + 2 * brickHeight,
-      approxBrickWidth
+      -baseRadius + 4 * brickDepth
     ),
   };
   knockOutBricks(state, windowAABB, true);
@@ -507,7 +507,7 @@ EM.addLazyInit([RendererDef], [TowerPoolDef], (res) => {
       EM.set(cannon, RotationDef);
       EM.set(cannon, PhysicsParentDef, tower.id);
       EM.set(cannon, WorldFrameDef);
-      V3.set(baseRadius - 2, 0, height * 0.7, cannon.position);
+      V3.set(0, baseRadius - 2, height * 0.7, cannon.position);
 
       const stone = createTowerState();
 
@@ -738,7 +738,7 @@ EM.addSystem(
         // 2.0,
         20.0,
         // TODO(@darzu): make this use vec3.FWD
-        V3.X
+        V3.FWD
       );
 
       // play sound

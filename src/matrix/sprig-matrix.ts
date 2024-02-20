@@ -409,7 +409,21 @@ export module V2 {
   export function rotate(v1: InputT, v2: InputT, rad: number, out?: T): T {
     return GL.rotate(out ?? tmp(), v1, v2, rad) as T;
   }
+
+  export function getYaw(v: InputT): number {
+    return _getYaw(v[0], v[1]);
+  }
 }
+
+// NOTE: assumes +Y is forward so [0,1] is 0 yaw;
+//       yaw is positive to the right so
+function _getYaw(x: number, y: number): number {
+  // NOTE: atan2 output is [-PI,PI]; positive iff Y is positive
+  //  since we want positive to the "right", we negate
+  //  since we want 0 to be +Y, we add PI/2
+  return -Math.atan2(y, x) + Math.PI * 0.5;
+}
+export const getYaw = _getYaw;
 
 // TODO(@darzu): use "namespace" keyword instead of "module" (re: https://www.typescriptlang.org/docs/handbook/namespaces.html)
 export module V3 {
@@ -525,6 +539,7 @@ export module V3 {
     return GL.lerp(out ?? tmp(), v1, v2, n) as T;
   }
 
+  // TODO(@darzu): RENAME to transformQuat. tQuat, tMat is dense but too hard to remember.
   // TODO(@darzu): replace many usages with getFwd, getUp, getRight, etc.
   export function tQuat(a: InputT, q: quat.InputT, out?: T): T {
     out = out ?? tmp();
@@ -617,6 +632,10 @@ export module V3 {
 
   export function reverse(v: InputT, out?: T): T {
     return set(v[2], v[1], v[0], out);
+  }
+
+  export function getYaw(v: InputT): number {
+    return _getYaw(v[0], v[1]);
   }
 }
 
@@ -848,6 +867,8 @@ export module quat {
   ): T {
     return GL.fromEuler(out ?? tmp(), pitch, roll, -yaw) as T;
   }
+
+  // TODO(@darzu): this is annoying that it shows up in auto-complete. remove this
   // TODO(@darzu): little hacky, this matches our YawPitchDef but doesn't match other sprig-matrix patterns
   export function fromYawPitch(yp: { yaw: number; pitch: number }, out?: T): T {
     return fromYawPitchRoll(yp.yaw, yp.pitch, 0, out);

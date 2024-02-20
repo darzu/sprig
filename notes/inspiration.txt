@@ -229,3 +229,25 @@ Lobster:
 Self-balancing cube:
   https://www.youtube.com/watch?v=n_6p-1J551Y&t=92s
   https://willempennings.nl/balancing-cube/
+
+Drawing OpenStreetMap on html canvas svg + rust + wasm:
+  https://mary.codes/blog/programming/translating_openstreetmaps_to_HTML5_canvas_rust_wasm/#drawing-on-the-canvas
+  similar using webgl: https://gero.dev/blog/webgl-render-osm-streets
+
+Thread at MacRumors upon announcing ipod:
+  https://forums.macrumors.com/threads/apples-new-thing-ipod.500/
+  "Sounds very revolutionary to me. :mad:
+  hey - heres an idea Apple - rather than enter the world of gimmicks and toys, why dont you spend a little more time sorting out your pathetically expensive and crap server line up? :mad:
+  or are you really aiming to become a glorified consumer gimmicks firm? :mad:"
+  "I still can't believe this! All this hype for something so ridiculous! Who cares about an MP3 player? I want something new! I want them to think differently!
+  Why oh why would they do this?! It's so wrong! It's so stupid!"
+  "OH NO! Just checked Apple Store - they want $399.00 for this thing...Ouch!!!"
+  "All that hype for an MP3 player? Break-thru digital device? The Reality Distiortion Field is starting to warp Steve's mind if he thinks for one second that this thing is gonna take off."
+  "I have no use for an Mp3 player.
+  My house has a CD player.
+  My car has a CD player.
+  My Mac has a CD player
+  I don't use headphones.
+  The iPod requires me to change my lifestyle to meet it's needs...
+  I need round holes, not square holes.
+  For $99 I might buy the toy, for $399? Why?"

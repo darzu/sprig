@@ -314,17 +314,17 @@ async function setLevelLocal(levelIdx: number) {
   }
 
   // spawn towers
-  const tower3dPosesAndDirs: [V3, number][] = levelMap.towers.map(
-    ([tPos, tDir]) => [
-      level2DtoWorld3D(tPos, STONE_TOWER_HEIGHT, V3.mk()),
-      Math.atan2(tDir[1], tDir[0]),
-    ]
-  );
+  const towerPosAndYaw: [V3, number][] = levelMap.towers.map(([tPos, tDir]) => [
+    level2DtoWorld3D(tPos, STONE_TOWER_HEIGHT, V3.mk()),
+    // Math.atan2(tDir[1], tDir[0]),
+    V2.getYaw(tDir),
+  ]);
 
-  for (let [pos, angle] of tower3dPosesAndDirs) {
+  for (let [pos, yaw] of towerPosAndYaw) {
     const stoneTower = towerPool.spawn();
     V3.copy(stoneTower.position, pos);
-    quat.setAxisAngle([0, 0, 1], angle, stoneTower.rotation);
+    // quat.setAxisAngle([0, 0, 1], angle, stoneTower.rotation);
+    quat.fromYawPitchRoll(yaw, 0, 0, stoneTower.rotation);
   }
 
   dbgLogMilestone("Game playable");

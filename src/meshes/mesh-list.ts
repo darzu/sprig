@@ -39,6 +39,7 @@ import {
 } from "./primatives.js";
 import { createGizmoMesh } from "../debug/gizmos.js";
 import { transformYUpModelIntoZUp } from "../camera/basis.js";
+import { PI } from "../utils/util-no-import.js";
 
 // TODO(@darzu): move elsewhere?
 export const BLACK = V(0, 0, 0);
@@ -484,6 +485,8 @@ export const LD53CannonMesh = XY.registerMesh({
     let m = mkCubeMesh();
     m.dbgName = "ld53_cannon";
     scaleMesh3(m, V(8, 2, 2));
+    // TODO(@darzu): correct yaw?
+    m.pos.forEach((p) => V3.yaw(p, PI * 0.5, p));
     return m;
   },
 });

@@ -174,3 +174,8 @@ Compositional shaders:
 To help people make their own engine/software:
   provide a big test suite!
   E.g. for their own language, for rendering a scene against a reference ray tracer,
+
+Make a Rounds / Bopl / Duck Game / Spiderheck clone:
+  all ur game programming is on the fun stuff: new weapons and effects
+  small games that have sold well
+  we could customize it to our friends' wants
