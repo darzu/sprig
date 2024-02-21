@@ -109,6 +109,7 @@ import { vec2Dbg, vec3Dbg } from "../utils/utils-3d.js";
 import { addWorldGizmo } from "../utils/utils-game.js";
 import { HasMastDef } from "../wind/mast.js";
 import { HasRudderDef } from "./rudder.js";
+import { obbTests } from "../physics/obb.js";
 /*
 NOTES:
 - Cut grass by updating a texture that has cut/not cut or maybe cut-height
@@ -332,6 +333,8 @@ async function setLevelLocal(levelIdx: number) {
 }
 
 export async function initLD53(hosting: boolean) {
+  obbTests();
+
   const res = await EM.whenResources(
     LD53MeshesDef,
     // WoodAssetsDef,

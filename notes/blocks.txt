@@ -110,3 +110,19 @@ Obviously we want a custom robust relation-y query syntax
 Game phases:
   Certain functions are async or immediate depending on the game phase you're in
   E.g. if you're in level init, you get to assume X resources are all loaded already
+
+Get inspiration from Zig:
+  https://ziglang.org/learn/samples/
+
+Consider erlang:
+  http://jlouisramblings.blogspot.com/2010/12/response-to-erlang-overhyped-or.html
+
+Erlang IO Lists:
+   https://prog21.dadgum.com/70.html
+
+Verse language:
+  https://github.com/UnrealVerseGuru/VerseProgrammingLanguage?tab=readme-ov-file
+  https://www.youtube.com/watch?v=OJv8rFap0Nw
+  https://www.youtube.com/watch?v=teTroOAGZjM&t=22494s
+  https://simon.peytonjones.org/assets/pdfs/verse-March23.pdf
+  https://www.youtube.com/watch?v=5prkKOIilJg

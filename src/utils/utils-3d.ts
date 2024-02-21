@@ -6,6 +6,7 @@ import {
   mat4,
   V,
   orthonormalize,
+  mat3,
 } from "../matrix/sprig-matrix.js";
 import { avg, remap } from "./math.js";
 import { AABB, createAABB, getAABBFromPositions } from "../physics/aabb.js";
@@ -166,11 +167,21 @@ export function mat4Dbg(v: mat4): string {
   return (
     "" +
     `${ns[0]}\t|${ns[4]}\t|${ns[8]}\t|${ns[12]}
- ${ns[1]}\t|${ns[5]}\t|${ns[9]}\t|${ns[13]}
- ${ns[2]}\t|${ns[6]}\t|${ns[10]}\t|${ns[14]}
- ${ns[3]}\t|${ns[7]}\t|${ns[11]}\t|${ns[15]}`
+${ns[1]}\t|${ns[5]}\t|${ns[9]}\t|${ns[13]}
+${ns[2]}\t|${ns[6]}\t|${ns[10]}\t|${ns[14]}
+${ns[3]}\t|${ns[7]}\t|${ns[11]}\t|${ns[15]}`
   );
 }
+export function mat3Dbg(v: mat3): string {
+  const ns = [...v].map((n) => n.toFixed(2));
+  return (
+    "" +
+    `${ns[0]}\t|${ns[3]}\t|${ns[6]}\t
+${ns[1]}\t|${ns[4]}\t|${ns[7]}\t
+${ns[2]}\t|${ns[5]}\t|${ns[8]}\t`
+  );
+}
+
 export function centroid(...vs: V3[]): V3 {
   const avgX = avg(vs.map((v) => v[0]));
   const avgY = avg(vs.map((v) => v[1]));

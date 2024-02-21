@@ -542,3 +542,12 @@ Other good profilers:
 
 Data oriented design:
   https://www.dataorienteddesign.com/dodbook/dodmain.html
+
+JS/WASM SIMD:
+  https://developer.mozilla.org/en-US/docs/Glossary/SIMD
+  https://chromestatus.com/feature/6533147810332672
+  https://github.com/WebAssembly/simd/blob/master/proposals/simd/SIMD.md
+  https://github.com/WebAssembly/simd/tree/master/proposals/simd
+  https://v8.dev/features/simd
+  https://github.com/WebAssembly/relaxed-simd
+  https://github.com/WebAssembly/flexible-vectors

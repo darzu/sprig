@@ -1,5 +1,66 @@
-interface OBB {
+import { V3, mat3, quat } from "../matrix/sprig-matrix.js";
+import { mat3Dbg, vec3Dbg } from "../utils/utils-3d.js";
+import { AABB } from "./aabb.js";
+import { Sphere } from "./broadphase.js";
+import { Frame } from "./transform.js";
+
+/* 
+REPRESENTATION:
+  could express as rotation and x,y,z scale
+  rotation could be: quat, yaw/pitch/roll, yaw/pitch, fwd/right/up, 3x3,
+*/
+
+export interface OBB {
   // TODO(@darzu): 3 axis + lengths
+  mat: mat3;
+  fwd: V3; // view into the mat3, y-axis
+  right: V3; // view into the mat3, x-axis
+  up: V3; // view into the mat3, z-axis
+}
+
+export module OBB {
+  export type T = OBB;
+
+  function fromMat3(mat: mat3): T {
+    const right = new Float32Array(mat.buffer, 0, 3) as V3;
+    const fwd = new Float32Array(mat.buffer, 12, 3) as V3;
+    const up = new Float32Array(mat.buffer, 24, 3) as V3;
+    return {
+      mat,
+      fwd,
+      right,
+      up,
+    };
+  }
+
+  export function mk(): T {
+    const mat = mat3.create();
+    return fromMat3(mat);
+  }
+
+  export function fromRotatedAABB(aabb: AABB, rotation: quat, scale?: V3) {
+    // TODO(@darzu):  IMPL
+  }
+
+  function vsSphere(s: Sphere) {
+    // TODO(@darzu): use inverseTransformPoint ?
+    // note
+  }
+}
+
+export function obbTests() {
+  const o = OBB.mk();
+  console.log(mat3Dbg(o.mat));
+  console.log(vec3Dbg(o.right));
+  console.log(vec3Dbg(o.fwd));
+  console.log(vec3Dbg(o.up));
+  V3.scale(o.right, 1.1, o.right);
+  V3.scale(o.fwd, 1.2, o.fwd);
+  V3.scale(o.up, 1.3, o.up);
+  console.log(mat3Dbg(o.mat));
+  console.log(vec3Dbg(o.right));
+  console.log(vec3Dbg(o.fwd));
+  console.log(vec3Dbg(o.up));
 }
 
 function obbCollision() {

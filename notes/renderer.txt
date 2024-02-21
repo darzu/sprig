@@ -2255,6 +2255,6 @@ Blur shader comparison:
 Godot discussing render graph upgrades:
   https://godotengine.org/article/rendering-acyclic-graph/
 
-"":
+how to think about gpu aglorthims:
   https://gpu-primitives-course.github.io
   https://gpu-primitives-course.github.io/sa-course-notes.pdf

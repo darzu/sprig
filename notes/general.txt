@@ -1549,3 +1549,10 @@ How good are these at teaching:
 
 ZX: scripting platform by google for javascript shell scripts?
   https://github.com/google/zx
+
+Re micro services:
+  https://danluu.com/simple-architectures/
+  https://news.ycombinator.com/item?id=39440179
+  https://www.youtube.com/watch?v=r8mtXJh3hzM
+  https://dl.acm.org/doi/10.1145/3593856.3595909
+    > When writing a distributed application, conventional wisdom says to split your application into separate services that can be rolled out independently. This approach is well-intentioned, but a microservices-based architecture like this often backfires, introducing challenges that counteract the benefits the architecture tries to achieve. Fundamentally, this is because microservices conflate logical boundaries (how code is written) with physical boundaries (how code is deployed). In this paper, we propose a different programming methodology that decouples the two in order to solve these challenges. With our approach, developers write their applications as logical monoliths, offload the decisions of how to distribute and run applications to an automated runtime, and deploy applications atomically. Our prototype implementation reduces application latency by up to 15× and reduces cost by up to 9× compared to the status quo.

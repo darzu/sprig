@@ -297,3 +297,25 @@ Performance holistically considered
     general reusable patterns vs custom solutions
     often its the rational thing
   Consideration of a users' compute resources
+
+"How to Use Math in Your Game"
+  math atoms: curves, vectors, matrices, quats,
+    obb, aabb, 
+    storage efficeincy, which operations it's good at
+  fns: easing fns, trig, linear algebra, 
+  questions:
+    How do I aim this cannon to hit this target? How long will the projectile fly?
+  approaches:
+    numerical vs closed form
+  paramatric vs not
+  interpreting math lingo there
+    e.g. summation / integration is "just" for loop w/ + / *
+  frames of reference
+  implementing algorithms
+
+What's the role of Process ?
+  A trade off: adds overhead, ensures certain types of errors won't happen
+  usually in the human sphere
+  They're like compile or runtime time checks
+    they have a cost
+    they provide a benefit of safety

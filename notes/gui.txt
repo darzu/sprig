@@ -24,6 +24,8 @@ CSS box model:
 
 Xilem: an architecture for UI in Rust:
   https://raphlinus.github.io/rust/gui/2022/05/07/ui-architecture.html
+  https://xilem.dev
+    "drawing considerable inspiration from SwiftUI"
 
 Game UI database:
   https://www.gameuidatabase.com
@@ -127,3 +129,22 @@ Vello: Fast rust 2D library:
   built on work "Cuda Raster" by nvidia
     natural webgpu workgroup size is 256 = 16x16
   https://levien.com/vello-demo/
+
+Fast 2d graphics:
+  Skia,
+  Vello
+    https://github.com/linebender/vello
+    https://www.youtube.com/watch?v=mmW_RbTyj8c
+  https://news.ycombinator.com/item?id=39443465
+    Couple things I've seen in this space looking around the past couple weeks...
+    Flutter made a different engine called Impeller[0] which is replacing Skia. Which is a bit surprising as an ignorant outsider. I hope that works out.
+    Rive (https://rive.app), is a new animation tool that targets multiple platforms including web and their CEO Guido Rosso gave a great interview on School of Motion[1] about how they are building an animation first vector engine. There is a side by side demo at 46:56[2] of Skia, Impeller and Rive.
+    0: https://docs.flutter.dev/perf/impeller
+    1: https://www.youtube.com/watch?v=U0Jd5-eStu4&t=2514s
+    2: https://youtu.be/U0Jd5-eStu4?si=8vv3c2bw3VumLzeu&t=2816
+  GTK:
+    https://docs.gtk.org/gsk4/
+  Impeller:
+    https://medium.com/@wartelski/impeller-rendering-engine-is-it-good-enough-for-flutter-ff2677714343
+  Rive:
+    https://rive.app/renderer
