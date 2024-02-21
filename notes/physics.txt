@@ -470,3 +470,28 @@ SAT: Separating Axis Theorem:
 
 Collision detection catalog:
   https://www.jeffreythompson.org/collision-detection/table_of_contents.php
+
+
+Bounding volumes:
+  OBB:
+    3x3 basis, center, half widths (15 floats)
+  SSV:
+    consider also adding Sphere-Swept Volumes SSV like capsules
+     Sphere vs Capsule: point vs line distance < radius
+     Capsule vs Capsule: line vs line distance < radius
+  Slabs:
+    consider also adding Slabs (normal, nDist, fDist), dot product point w/ normal + compare distance
+    good at ray tests, point tests; bad at object vs object
+  k-DOPs/FDHs:
+    like slabs except there's a finite shared set of normals between all (typically limited components to −1, 0, 1, not normalized)
+    very cheap memory storage (store min & max for each axis)
+    AABB is just a special case of 6-DOP
+    overlap for DOP vs DOP is ~ 10x faster than OBB vs OBB, even for big N
+      OBB is ~14-DOP memory
+        "OBBs will also perform better in situations of close proximity." hmm... why??
+      OBB cheaper to update
+    biggest drawback is must be updated
+    usually pretest w/ spheres
+    best when: few dynamic objects, many static objects; or same object many tests
+    ? efficient update w/ hill climbing algo ? applicable to aabbs too ?
+

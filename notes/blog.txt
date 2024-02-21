@@ -305,6 +305,7 @@ Performance holistically considered
   fns: easing fns, trig, linear algebra, 
   questions:
     How do I aim this cannon to hit this target? How long will the projectile fly?
+    How do I project onto a screen?
   approaches:
     numerical vs closed form
   paramatric vs not

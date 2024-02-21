@@ -179,3 +179,9 @@ Make a Rounds / Bopl / Duck Game / Spiderheck clone:
   all ur game programming is on the fun stuff: new weapons and effects
   small games that have sold well
   we could customize it to our friends' wants
+
+Companion to "Real-Time Collision Detection" book:
+  show's all the colision algorithms with a little test scene
+  branches of code are highlighted when taken
+  variables are color coded
+  shows numbers instead of variable name

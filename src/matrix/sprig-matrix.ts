@@ -528,6 +528,7 @@ export module V3 {
   export function dist(v1: InputT, v2: InputT): number {
     return GL.dist(v1, v2);
   }
+  // TODO(@darzu): RENAME: all "sqr" -> "sq"
   export function sqrDist(v1: InputT, v2: InputT): number {
     return GL.sqrDist(v1, v2);
   }

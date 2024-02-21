@@ -13,9 +13,12 @@ REPRESENTATION:
 interface _OBB {
   // TODO(@darzu): 3 axis + lengths
   mat: mat3;
+  // TODO(@darzu): wait r these from the center or bottom-back-left corner ?
   fwd: V3; // view into the mat3, y-axis
   right: V3; // view into the mat3, x-axis
   up: V3; // view into the mat3, z-axis
+  halfw: V3;
+  center: V3;
 }
 
 export interface OBB extends _OBB {
@@ -37,11 +40,17 @@ export module OBB {
     const fwd = new Float32Array(mat.buffer, 12, 3) as V3;
     const up = new Float32Array(mat.buffer, 24, 3) as V3;
 
+    // TODO(@darzu): IMPL!!
+    const center = V3.mk();
+    const halfw = V3.mk();
+
     return _withMethods({
       mat,
       fwd,
       right,
       up,
+      center,
+      halfw,
     });
   }
 
@@ -54,6 +63,7 @@ export module OBB {
     const sqrLength = () => V3.sqrLen(b.fwd);
 
     function vsSphere(s: Sphere) {
+      throw "TODO: wrong impl.";
       // TODO(@darzu): PERF. Make more efficient by using the transpose.
       //    Orthogonal matrix transpose = inverse
       const inv = mat3.invert(b.mat);

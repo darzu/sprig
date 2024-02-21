@@ -309,6 +309,7 @@ Measuring cache misses?
   https://developers.redhat.com/blog/2014/03/10/determining-whether-an-application-has-poor-cache-performance-2
     Performance Monitoring Units "PMU" hardware
     https://en.wikipedia.org/wiki/Hardware_performance_counter
+  https://stackoverflow.com/questions/48566825/cache-misses-on-macos
 
 Apple GPU perf counters:
   https://developer.apple.com/documentation/metal/performance_tuning/optimizing_performance_with_gpu_counters
