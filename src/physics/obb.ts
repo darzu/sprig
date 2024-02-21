@@ -1,8 +1,8 @@
 import { V3, mat3, quat } from "../matrix/sprig-matrix.js";
+import { assert } from "../utils/util.js";
 import { mat3Dbg, vec3Dbg } from "../utils/utils-3d.js";
 import { AABB } from "./aabb.js";
 import { Sphere } from "./broadphase.js";
-import { Frame } from "./transform.js";
 
 /* 
 REPRESENTATION:
@@ -10,12 +10,23 @@ REPRESENTATION:
   rotation could be: quat, yaw/pitch/roll, yaw/pitch, fwd/right/up, 3x3,
 */
 
-export interface OBB {
+interface _OBB {
   // TODO(@darzu): 3 axis + lengths
   mat: mat3;
   fwd: V3; // view into the mat3, y-axis
   right: V3; // view into the mat3, x-axis
   up: V3; // view into the mat3, z-axis
+}
+
+export interface OBB extends _OBB {
+  width: () => number;
+  length: () => number;
+  height: () => number;
+  sqrWidth: () => number;
+  sqrLength: () => number;
+  sqrHeight: () => number;
+
+  vsSphere: (s: Sphere) => boolean;
 }
 
 export module OBB {
@@ -25,11 +36,45 @@ export module OBB {
     const right = new Float32Array(mat.buffer, 0, 3) as V3;
     const fwd = new Float32Array(mat.buffer, 12, 3) as V3;
     const up = new Float32Array(mat.buffer, 24, 3) as V3;
-    return {
+
+    return _withMethods({
       mat,
       fwd,
       right,
       up,
+    });
+  }
+
+  function _withMethods(b: _OBB): OBB {
+    const width = () => V3.len(b.right);
+    const height = () => V3.len(b.up);
+    const length = () => V3.len(b.fwd);
+    const sqrWidth = () => V3.sqrLen(b.right);
+    const sqrHeight = () => V3.sqrLen(b.up);
+    const sqrLength = () => V3.sqrLen(b.fwd);
+
+    function vsSphere(s: Sphere) {
+      // TODO(@darzu): PERF. Make more efficient by using the transpose.
+      //    Orthogonal matrix transpose = inverse
+      const inv = mat3.invert(b.mat);
+      assert(inv);
+      const p = V3.tMat3(s.org, inv);
+      return (
+        p[0] * p[0] < sqrWidth() &&
+        p[1] * p[1] < sqrLength() &&
+        p[2] * p[2] < sqrHeight()
+      );
+    }
+
+    return {
+      ...b,
+      width,
+      height,
+      length,
+      sqrWidth,
+      sqrHeight,
+      sqrLength,
+      vsSphere,
     };
   }
 
@@ -40,11 +85,6 @@ export module OBB {
 
   export function fromRotatedAABB(aabb: AABB, rotation: quat, scale?: V3) {
     // TODO(@darzu):  IMPL
-  }
-
-  function vsSphere(s: Sphere) {
-    // TODO(@darzu): use inverseTransformPoint ?
-    // note
   }
 }
 
