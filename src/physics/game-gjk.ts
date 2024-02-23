@@ -125,11 +125,11 @@ export async function initGJKSandbox() {
   const c = res.globalCursor3d.cursor()!;
   if (RenderableDef.isOn(c)) c.renderable.enabled = false;
 
-  // ground
-  const ground = createObj(
-    [RenderableConstructDef, ColorDef, PositionDef] as const,
-    [[PlaneMesh], V(0.2, 0.3, 0.2), V(0, 0, -5)]
-  );
+  // // ground
+  // const ground = createObj(
+  //   [RenderableConstructDef, ColorDef, PositionDef] as const,
+  //   [[PlaneMesh], V(0.2, 0.3, 0.2), V(0, 0, -5)]
+  // );
 
   // world gizmo
   const worldGizmo = createObj(
