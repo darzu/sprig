@@ -581,8 +581,27 @@ export module V3 {
     return GL.transformMat4(out ?? tmp(), v1, v2) as T;
   }
 
-  export function tMat3(v1: InputT, v2: mat3.InputT, out?: T): T {
-    return GL.transformMat3(out ?? tmp(), v1, v2) as T;
+  export function tMat3(v: InputT, m: mat3.InputT, out?: T): T {
+    out = out ?? tmp();
+    var x = v[0],
+      y = v[1],
+      z = v[2];
+    out[0] = x * m[0] + y * m[3] + z * m[6];
+    out[1] = x * m[1] + y * m[4] + z * m[7];
+    out[2] = x * m[2] + y * m[5] + z * m[8];
+    return out;
+  }
+
+  // NOTE: transpose matrix then transform V3 by it
+  export function ttMat3(v: InputT, m: mat3.InputT, out?: T) {
+    out = out ?? tmp();
+    var x = v[0],
+      y = v[1],
+      z = v[2];
+    out[0] = x * m[0] + y * m[1] + z * m[2];
+    out[1] = x * m[3] + y * m[4] + z * m[5];
+    out[2] = x * m[6] + y * m[7] + z * m[8];
+    return out;
   }
 
   export function zero(out?: T): T {
@@ -1476,6 +1495,10 @@ export module mat3 {
 
   export function invert(v1: InputT, out?: T): T {
     return GL.invert(out ?? tmp(), v1) as T;
+  }
+
+  export function transpose(v1: InputT, out?: T): T {
+    return GL.transpose(out ?? tmp(), v1) as T;
   }
 
   export function scale(a: InputT, v: V2.InputT, out?: T): T {

@@ -513,7 +513,9 @@ JS record and tuple proposals:
   https://tc39.es/proposal-record-tuple/
   hmm so vecs might eventually be fixed
 
+=======================
 PERFORMANCE STRATEGIES:
+=======================
   If we're running into CPU side problems, try these:
   - write sprig matrix benchmark, evaluate different tweaks
   - custom wasm fns (probably for physics)
@@ -530,6 +532,9 @@ PERFORMANCE STRATEGIES:
   - Move to component column storage
   - Optimize query caching system
   - Trace chrome using about:tracing
+  - Change tracking for components; have a version flag;
+    - Make systems declare if they're going to mutate a component in the query
+    - Only calculate world transform/rot/pos for objects where that's requested
 
 Running PIX w/ WebGPU:
   https://toji.dev/webgpu-profiling/pix.html

@@ -1,7 +1,6 @@
-import { V3, mat3, quat } from "../matrix/sprig-matrix.js";
-import { assert } from "../utils/util.js";
+import { V, V3, mat3, mat4 } from "../matrix/sprig-matrix.js";
 import { mat3Dbg, vec3Dbg } from "../utils/utils-3d.js";
-import { AABB } from "./aabb.js";
+import { AABB, getCenterFromAABB, getHalfsizeFromAABB } from "./aabb.js";
 import { Sphere } from "./broadphase.js";
 
 /* 
@@ -10,39 +9,93 @@ REPRESENTATION:
   rotation could be: quat, yaw/pitch/roll, yaw/pitch, fwd/right/up, 3x3,
 */
 
-interface _OBB {
-  // TODO(@darzu): 3 axis + lengths
-  mat: mat3;
-  // TODO(@darzu): wait r these from the center or bottom-back-left corner ?
+/*
+SCRATCH:
+we transform aabb by getting 8 corners and doing mat4 mul
+we could get matrix from model to orthographic "screenspace" of cannonball inclination perpendicular plane
+then do a 2D 8-DOP test
+gen random point, pick random DOP plane weighted by length, push point outside
+OR
+create 2D OBB after projection
+  walk perimeter
+
+take ea 8 point  
+*/
+
+interface _OBB1 {
+  mat: mat3; // 3 axis orthonormal, normalized
   fwd: V3; // view into the mat3, y-axis
   right: V3; // view into the mat3, x-axis
   up: V3; // view into the mat3, z-axis
+}
+interface _OBB2 extends _OBB1 {
   halfw: V3;
   center: V3;
+  // _inv: mat3 | undefined;
 }
 
-export interface OBB extends _OBB {
-  width: () => number;
-  length: () => number;
-  height: () => number;
-  sqrWidth: () => number;
-  sqrLength: () => number;
-  sqrHeight: () => number;
-
+export interface OBB extends _OBB2 {
   vsSphere: (s: Sphere) => boolean;
 }
+
+const __tmp_vsSphere = V3.mk();
 
 export module OBB {
   export type T = OBB;
 
-  function fromMat3(mat: mat3): T {
+  function _fromMat3(mat: mat3): _OBB1 {
     const right = new Float32Array(mat.buffer, 0, 3) as V3;
     const fwd = new Float32Array(mat.buffer, 12, 3) as V3;
     const up = new Float32Array(mat.buffer, 24, 3) as V3;
+    return {
+      mat,
+      right,
+      fwd,
+      up,
+    };
+  }
 
-    // TODO(@darzu): IMPL!!
-    const center = V3.mk();
-    const halfw = V3.mk();
+  export function mk(): OBB {
+    const b = _fromMat3(mat3.create());
+    return _withMethods({
+      ...b,
+      center: V(0, 0, 0),
+      halfw: V(0.5, 0.5, 0.5),
+    });
+  }
+
+  function _withMethods(b: _OBB2): OBB {
+    function vsSphere(s: Sphere): boolean {
+      // TODO(@darzu): Verify transpose is safe!
+      // const inv = b._inv ?? (b._inv = mat3.invert(b.mat));
+      const p = V3.sub(s.org, b.center, __tmp_vsSphere);
+      V3.ttMat3(p, b.mat, p);
+
+      return (
+        p[0] * p[0] < b.halfw[0] * b.halfw[0] * 2 &&
+        p[1] * p[1] < b.halfw[0] * b.halfw[0] * 2 &&
+        p[2] * p[2] < b.halfw[0] * b.halfw[0] * 2
+      );
+    }
+
+    return {
+      ...b,
+      vsSphere,
+    };
+  }
+
+  export function fromTransformedAABB(aabb: AABB, transform: mat4) {
+    // transformAABB(wc.localAABB, o.transform);
+    const mat = mat3.fromMat4(transform, mat3.create());
+    const { right, fwd, up } = _fromMat3(mat);
+
+    V3.norm(right, right);
+    V3.norm(fwd, fwd);
+    V3.norm(up, up);
+
+    const center = getCenterFromAABB(aabb);
+    V3.tMat4(center, transform, center);
+    const halfw = getHalfsizeFromAABB(aabb);
 
     return _withMethods({
       mat,
@@ -53,64 +106,24 @@ export module OBB {
       halfw,
     });
   }
-
-  function _withMethods(b: _OBB): OBB {
-    const width = () => V3.len(b.right);
-    const height = () => V3.len(b.up);
-    const length = () => V3.len(b.fwd);
-    const sqrWidth = () => V3.sqrLen(b.right);
-    const sqrHeight = () => V3.sqrLen(b.up);
-    const sqrLength = () => V3.sqrLen(b.fwd);
-
-    function vsSphere(s: Sphere) {
-      throw "TODO: wrong impl.";
-      // TODO(@darzu): PERF. Make more efficient by using the transpose.
-      //    Orthogonal matrix transpose = inverse
-      const inv = mat3.invert(b.mat);
-      assert(inv);
-      const p = V3.tMat3(s.org, inv);
-      return (
-        p[0] * p[0] < sqrWidth() &&
-        p[1] * p[1] < sqrLength() &&
-        p[2] * p[2] < sqrHeight()
-      );
-    }
-
-    return {
-      ...b,
-      width,
-      height,
-      length,
-      sqrWidth,
-      sqrHeight,
-      sqrLength,
-      vsSphere,
-    };
-  }
-
-  export function mk(): T {
-    const mat = mat3.create();
-    return fromMat3(mat);
-  }
-
-  export function fromRotatedAABB(aabb: AABB, rotation: quat, scale?: V3) {
-    // TODO(@darzu):  IMPL
-  }
 }
 
 export function obbTests() {
-  const o = OBB.mk();
-  console.log(mat3Dbg(o.mat));
-  console.log(vec3Dbg(o.right));
-  console.log(vec3Dbg(o.fwd));
-  console.log(vec3Dbg(o.up));
-  V3.scale(o.right, 1.1, o.right);
-  V3.scale(o.fwd, 1.2, o.fwd);
-  V3.scale(o.up, 1.3, o.up);
-  console.log(mat3Dbg(o.mat));
-  console.log(vec3Dbg(o.right));
-  console.log(vec3Dbg(o.fwd));
-  console.log(vec3Dbg(o.up));
+  {
+    // test vec view works
+    const o = OBB.mk();
+    console.log(mat3Dbg(o.mat));
+    console.log(vec3Dbg(o.right));
+    console.log(vec3Dbg(o.fwd));
+    console.log(vec3Dbg(o.up));
+    V3.scale(o.right, 1.1, o.right);
+    V3.scale(o.fwd, 1.2, o.fwd);
+    V3.scale(o.up, 1.3, o.up);
+    console.log(mat3Dbg(o.mat));
+    console.log(vec3Dbg(o.right));
+    console.log(vec3Dbg(o.fwd));
+    console.log(vec3Dbg(o.up));
+  }
 }
 
 function obbCollision() {

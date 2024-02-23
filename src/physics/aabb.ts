@@ -125,7 +125,7 @@ export function getAABBCornersTemp(aabb: AABB): V3[] {
 // }
 
 export function transformAABB(out: AABB, t: mat4) {
-  // TODO(@darzu): is there a more performant way to do this?
+  // TODO(@darzu): PERF. is there a more performant way to do this?
   const wCorners = getAABBCornersTemp(out);
   wCorners.forEach((p) => V3.tMat4(p, t, p));
   getAABBFromPositions(out, wCorners);
@@ -205,6 +205,7 @@ export function aabbCenter2(out: V2, a: AABB2): V2 {
 }
 
 // TODO(@darzu): add out param
+// TODO(@darzu): MOVE to gl-matrix
 export function getCenterFromAABB(aabb: AABB): V3 {
   return vec3Mid(V3.mk(), aabb.min, aabb.max);
 }
