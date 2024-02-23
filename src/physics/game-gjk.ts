@@ -1,6 +1,6 @@
 import { CameraDef } from "../camera/camera.js";
 import { ColorDef } from "../color/color-ecs.js";
-import { EM } from "../ecs/entity-manager.js";
+import { EM, Entity, EntityW } from "../ecs/entity-manager.js";
 import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { InputsDef } from "../input/inputs.js";
 import { ColliderDef } from "./collider.js";
@@ -10,7 +10,7 @@ import { WorldFrameDef } from "./nonintersection.js";
 import { PAD } from "./phys.js";
 import { PositionDef, RotationDef, ScaleDef } from "./transform.js";
 import { PointLightDef } from "../render/lights.js";
-import { cloneMesh, getAABBFromMesh, scaleMesh } from "../meshes/mesh.js";
+import { Mesh, cloneMesh, getAABBFromMesh, scaleMesh } from "../meshes/mesh.js";
 import { stdMeshPipe } from "../render/pipelines/std-mesh.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
@@ -57,6 +57,16 @@ Chrome lighthouse estimates:
   
 
 */
+
+const ObjDef = [
+  RenderableConstructDef,
+  ColorDef,
+  PositionDef,
+  RotationDef,
+  WorldFrameDef,
+  ColliderDef,
+  AngularVelocityDef,
+] as const;
 
 let __frame = 0;
 export async function initGJKSandbox() {
@@ -137,15 +147,6 @@ export async function initGJKSandbox() {
     [[0, 0, 0], [1, 1, 1], [GizmoMesh]]
   );
 
-  const objDef = [
-    RenderableConstructDef,
-    ColorDef,
-    PositionDef,
-    RotationDef,
-    WorldFrameDef,
-    ColliderDef,
-  ] as const;
-
   // ghost
   const ghostMesh = cloneMesh(res.allMeshes.cube.mesh);
   scaleMesh(ghostMesh, 0.5);
@@ -182,6 +183,14 @@ export async function initGJKSandbox() {
   //   center: res.allMeshes.cube.center,
   //   halfsize: res.allMeshes.cube.halfsize,
   // });
+  gjkTest(g, ghostGameMesh);
+}
+
+async function gjkTest(
+  g: EntityW<[typeof PositionDef, typeof RotationDef, typeof ColorDef]>,
+  ghostGameMesh: GameMesh
+) {
+  const res = await EM.whenResources(AllMeshesDef, RendererDef);
 
   const gjkGameMeshes = [
     res.allMeshes.cube,
@@ -189,8 +198,8 @@ export async function initGJKSandbox() {
     res.allMeshes.tetra,
   ];
 
-  // spinCube
-  const spinCube = createObj(objDef, [
+  // cube
+  const cube = createObj(ObjDef, [
     [cloneMesh(res.allMeshes.cube.mesh)],
     V(0.1, 0.1, 0.1),
     V(3, 0, 3),
@@ -201,11 +210,11 @@ export async function initGJKSandbox() {
       solid: false,
       aabb: res.allMeshes.cube.aabb,
     },
+    V(0, 0.001, 0.001),
   ]);
-  EM.set(spinCube, AngularVelocityDef, V(0, 0.001, 0.001));
 
   // ball
-  const ball = createObj(objDef, [
+  const ball = createObj(ObjDef, [
     [cloneMesh(res.allMeshes.ball.mesh)],
     V(0.1, 0.1, 0.1),
     V(-4, 0, 3),
@@ -216,11 +225,12 @@ export async function initGJKSandbox() {
       solid: false,
       aabb: res.allMeshes.ball.aabb,
     },
+    undefined,
   ]);
   // EM.set(ball, ScaleDef, [0.5, 0.5, 0.5]);
 
   // tetra
-  const tetra = createObj(objDef, [
+  const tetra = createObj(ObjDef, [
     [cloneMesh(res.allMeshes.tetra.mesh)],
     V(0.1, 0.1, 0.1),
     V(0, 0, 0),
@@ -231,9 +241,10 @@ export async function initGJKSandbox() {
       solid: false,
       aabb: res.allMeshes.tetra.aabb,
     },
+    undefined,
   ]);
 
-  const gjkEnts = [spinCube, ball, tetra];
+  const gjkEnts = [cube, ball, tetra];
 
   // NOTE: this uses temp vectors, it must not live long
   // TODO(@darzu): for perf, this should be done only once per obj per frame;
@@ -259,12 +270,12 @@ export async function initGJKSandbox() {
   let lastPlayerPos = V3.clone(g.position);
   let lastPlayerRot = quat.clone(g.rotation);
   let lastWorldPos: V3[] = [
-    V3.clone(spinCube.position),
+    V3.clone(cube.position),
     V3.clone(ball.position),
     V3.clone(tetra.position),
   ];
   let lastWorldRot: quat[] = [
-    quat.clone(spinCube.rotation),
+    quat.clone(cube.rotation),
     quat.clone(ball.rotation),
     quat.clone(tetra.rotation),
   ];
@@ -351,12 +362,12 @@ export async function initGJKSandbox() {
       V3.sub(g.position, backTravel, g.position);
 
       lastWorldPos = [
-        V3.clone(spinCube.position),
+        V3.clone(cube.position),
         V3.clone(ball.position),
         V3.clone(tetra.position),
       ];
       lastWorldRot = [
-        quat.clone(spinCube.rotation),
+        quat.clone(cube.rotation),
         quat.clone(ball.rotation),
         quat.clone(tetra.rotation),
       ];
