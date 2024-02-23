@@ -602,11 +602,13 @@ export function getAABBFromMesh(m: RawMesh): AABB {
 export function mapMeshPositions(m: RawMesh, map: (p: V3, i: number) => V3) {
   m.pos = m.pos.map(map);
 }
-export function scaleMesh(m: RawMesh, by: number) {
+export function scaleMesh<T extends RawMesh>(m: T, by: number): T {
   mapMeshPositions(m, (p) => V3.scale(p, by, p));
+  return m;
 }
-export function scaleMesh3(m: RawMesh, by: V3.InputT) {
+export function scaleMesh3<T extends RawMesh>(m: T, by: V3.InputT): T {
   mapMeshPositions(m, (p) => V3.mul(p, by, p));
+  return m;
 }
 // TODO(@darzu): need a version that preserves Mesh vs RawMesh
 // TODO(@darzu): PERF! We probably should be using this v sparingly if it's cloning all positions

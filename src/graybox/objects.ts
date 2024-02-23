@@ -192,7 +192,7 @@ export type ObjEnt<D extends ObjOpt | _ObjDef = ObjOpt | _ObjDef> =
     ? EntityW<[ObjComponentDef<ObjPickOpt<D>>, ...CS]>
     : never;
 
-type ObjChildEnt<CO extends ObjChildOpt = ObjChildOpt> = CO extends
+export type ObjChildEnt<CO extends ObjChildOpt = ObjChildOpt> = CO extends
   | ObjOpt
   | _ObjDef
   ? ObjEnt<CO>

@@ -10,7 +10,14 @@ import { WorldFrameDef } from "./nonintersection.js";
 import { PAD } from "./phys.js";
 import { PositionDef, RotationDef, ScaleDef } from "./transform.js";
 import { PointLightDef } from "../render/lights.js";
-import { Mesh, cloneMesh, getAABBFromMesh, scaleMesh } from "../meshes/mesh.js";
+import {
+  Mesh,
+  RawMesh,
+  cloneMesh,
+  getAABBFromMesh,
+  scaleMesh,
+  scaleMesh3,
+} from "../meshes/mesh.js";
 import { stdMeshPipe } from "../render/pipelines/std-mesh.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
@@ -27,7 +34,13 @@ import { createGhost } from "../debug/ghost.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { dbgLogMilestone } from "../utils/util.js";
-import { createObj, defineObj } from "../graybox/objects.js";
+import {
+  ObjChildEnt,
+  ObjEnt,
+  createObj,
+  defineObj,
+  mixinObj,
+} from "../graybox/objects.js";
 import { GRID_MASK } from "../render/pipeline-masks.js";
 import { stdGridRender } from "../render/pipelines/std-grid.js";
 
@@ -184,6 +197,46 @@ export async function initGJKSandbox() {
   //   halfsize: res.allMeshes.cube.halfsize,
   // });
   gjkTest(g, ghostGameMesh);
+
+  obbTest();
+}
+
+async function obbTest() {
+  const res = await EM.whenResources(AllMeshesDef);
+
+  const BoxDef = [RenderableConstructDef, PositionDef] as const;
+
+  const cubeMesh = res.allMeshes.cube.mesh;
+
+  const _cubes = [
+    createObj(BoxDef, [
+      [scaleMesh3(cloneMesh(cubeMesh), [1, 2, 1])],
+      [3, 10, 3],
+    ]),
+    createObj(BoxDef, [
+      [scaleMesh3(cloneMesh(cubeMesh), [1, 2, 1])],
+      [-3, 10, 3],
+    ]),
+  ];
+
+  const cubes = _cubes.map((c) => {
+    mixinObj(
+      c,
+      [ColorDef, RotationDef, WorldFrameDef, ColliderDef, AngularVelocityDef],
+      [
+        V(0.1, 0.1, 0.1),
+        undefined,
+        undefined,
+        {
+          shape: "AABB",
+          solid: false,
+          aabb: getAABBFromMesh(c.renderableConstruct.meshOrProto as RawMesh),
+        },
+        V(0, 0.001, 0.001),
+      ]
+    );
+    return c as ObjChildEnt<typeof ObjDef>;
+  });
 }
 
 async function gjkTest(
@@ -280,101 +333,95 @@ async function gjkTest(
     quat.clone(tetra.rotation),
   ];
 
-  EM.addSystem(
-    "checkGJK",
-    Phase.GAME_WORLD,
-    null,
-    [InputsDef],
-    (_, { inputs }) => {
-      // console.log(__frame);
-      // __frame++;
-      // if (!inputs.keyClicks["g"]) return;
+  EM.addSystem("checkGJK", Phase.GAME_WORLD, null, [], (_, {}) => {
+    // console.log(__frame);
+    // __frame++;
+    // if (!inputs.keyClicks["g"]) return;
 
-      // TODO(@darzu):
+    // TODO(@darzu):
 
-      let playerShape = createWorldShape(
-        ghostGameMesh,
-        g.position,
-        g.rotation,
-        lastPlayerPos
+    let playerShape = createWorldShape(
+      ghostGameMesh,
+      g.position,
+      g.rotation,
+      lastPlayerPos
+    );
+
+    let backTravelD = 0;
+
+    for (let i = 0; i < gjkEnts.length; i++) {
+      g.color[i] = 0.1;
+      gjkEnts[i].color[i] = 0.1;
+
+      let shapeOther = createWorldShape(
+        gjkGameMeshes[i],
+        gjkEnts[i].position,
+        gjkEnts[i].rotation,
+        lastWorldPos[i]
       );
+      let simplex = gjk(shapeOther, playerShape);
+      if (simplex) {
+        g.color[i] = 0.3;
+        gjkEnts[i].color[i] = 0.3;
+      }
+      if (
+        simplex &&
+        (!quat.equals(lastWorldRot[i], gjkEnts[i].rotation) ||
+          !quat.equals(lastPlayerRot, g.rotation))
+      ) {
+        // rotation happened, undo it
+        quat.copy(gjkEnts[i].rotation, lastWorldRot[i]);
+        quat.copy(g.rotation, lastPlayerRot);
 
-      let backTravelD = 0;
-
-      for (let i = 0; i < gjkEnts.length; i++) {
-        g.color[i] = 0.1;
-        gjkEnts[i].color[i] = 0.1;
-
-        let shapeOther = createWorldShape(
+        shapeOther = createWorldShape(
           gjkGameMeshes[i],
           gjkEnts[i].position,
           gjkEnts[i].rotation,
           lastWorldPos[i]
         );
-        let simplex = gjk(shapeOther, playerShape);
-        if (simplex) {
-          g.color[i] = 0.3;
-          gjkEnts[i].color[i] = 0.3;
-        }
-        if (
-          simplex &&
-          (!quat.equals(lastWorldRot[i], gjkEnts[i].rotation) ||
-            !quat.equals(lastPlayerRot, g.rotation))
-        ) {
-          // rotation happened, undo it
-          quat.copy(gjkEnts[i].rotation, lastWorldRot[i]);
-          quat.copy(g.rotation, lastPlayerRot);
-
-          shapeOther = createWorldShape(
-            gjkGameMeshes[i],
-            gjkEnts[i].position,
-            gjkEnts[i].rotation,
-            lastWorldPos[i]
-          );
-          playerShape = createWorldShape(
-            res.allMeshes.cube,
-            g.position,
-            g.rotation,
-            lastPlayerPos
-          );
-          simplex = gjk(shapeOther, playerShape);
-        }
-
-        if (simplex) {
-          const penD = penetrationDepth(shapeOther, playerShape, simplex);
-          const travelD = V3.len(playerShape.travel);
-          if (penD < Infinity) {
-            backTravelD += penD;
-          }
-          if (penD > travelD + PAD) console.error(`penD > travelD`);
-          // console.log(
-          //   `penD: ${penD.toFixed(3)}, travelD: ${travelD.toFixed(3)}`
-          // );
-        }
+        playerShape = createWorldShape(
+          res.allMeshes.cube,
+          g.position,
+          g.rotation,
+          lastPlayerPos
+        );
+        simplex = gjk(shapeOther, playerShape);
       }
 
-      backTravelD = Math.min(backTravelD, V3.len(playerShape.travel));
-      const travelN = V3.norm(playerShape.travel);
-      const backTravel = V3.scale(travelN, backTravelD);
-
-      // console.log(backTravel);
-      // console.log(backTravel);
-      V3.sub(g.position, backTravel, g.position);
-
-      lastWorldPos = [
-        V3.clone(cube.position),
-        V3.clone(ball.position),
-        V3.clone(tetra.position),
-      ];
-      lastWorldRot = [
-        quat.clone(cube.rotation),
-        quat.clone(ball.rotation),
-        quat.clone(tetra.rotation),
-      ];
-      lastPlayerPos = V3.clone(g.position);
-      lastPlayerRot = quat.clone(g.rotation);
+      if (simplex) {
+        const penD = penetrationDepth(shapeOther, playerShape, simplex);
+        const travelD = V3.len(playerShape.travel);
+        if (penD < Infinity) {
+          backTravelD += penD;
+        }
+        if (penD > travelD + PAD) console.error(`penD > travelD`);
+        // console.log(
+        //   `penD: ${penD.toFixed(3)}, travelD: ${travelD.toFixed(3)}`
+        // );
+      }
     }
-  );
+
+    backTravelD = Math.min(backTravelD, V3.len(playerShape.travel));
+    const travelN = V3.norm(playerShape.travel);
+    const backTravel = V3.scale(travelN, backTravelD);
+
+    // console.log(backTravel);
+    // console.log(backTravel);
+    V3.sub(g.position, backTravel, g.position);
+
+    lastWorldPos = [
+      V3.clone(cube.position),
+      V3.clone(ball.position),
+      V3.clone(tetra.position),
+    ];
+    lastWorldRot = [
+      quat.clone(cube.rotation),
+      quat.clone(ball.rotation),
+      quat.clone(tetra.rotation),
+    ];
+    lastPlayerPos = V3.clone(g.position);
+    lastPlayerRot = quat.clone(g.rotation);
+  });
 
   dbgLogMilestone("Game playable");
 }
