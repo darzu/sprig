@@ -71,7 +71,8 @@ const ALL_GAMES = [
 const GAME: (typeof ALL_GAMES)[number] = (
   // "painterly"
   // "graybox-ship-arena"
-  "ld53"
+  // "ld53"
+  "gjk"
   // "graybox-starter"
 );
 
@@ -123,7 +124,7 @@ async function startGame(localPeerName: string, host: string | null) {
 
   resetTempMatrixBuffer(`initGame ${GAME}`);
 
-  if (GAME === "gjk") initGJKSandbox(hosting);
+  if (GAME === "gjk") initGJKSandbox();
   else if (GAME === "rebound") initReboundSandbox(hosting);
   else if (GAME === "cloth") initClothSandbox(hosting);
   else if (GAME === "hyperspace") initHyperspaceGame();

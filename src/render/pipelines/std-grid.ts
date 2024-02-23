@@ -42,4 +42,13 @@ export const stdGridRender = CY.createRenderPipeline("stdGridRender", {
   ],
   depthStencil: mainDepthTex,
   shader: "std-grid",
+  fragOverrides: {
+    // TODO(@darzu): Bug. These initial values don't matter? They init values in shader can't be excluded and these don't apply
+    lineSpacing1: 1,
+    lineWidth1: 1,
+    lineSpacing2: 1,
+    lineWidth2: 1,
+    ringStart: 1,
+    ringWidth: 1,
+  },
 });

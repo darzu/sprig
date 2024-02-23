@@ -27,6 +27,9 @@ import { createGhost } from "../debug/ghost.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { dbgLogMilestone } from "../utils/util.js";
+import { createObj } from "../graybox/objects.js";
+import { GRID_MASK } from "../render/pipeline-masks.js";
+import { stdGridRender } from "../render/pipelines/std-grid.js";
 
 /*
 Init perf work:
@@ -56,7 +59,19 @@ Chrome lighthouse estimates:
 */
 
 let __frame = 0;
-export async function initGJKSandbox(hosting: boolean) {
+export async function initGJKSandbox() {
+  stdGridRender.fragOverrides!.lineSpacing1 = 1.0;
+  stdGridRender.fragOverrides!.lineWidth1 = 0.02;
+  stdGridRender.fragOverrides!.lineSpacing2 = 0.05;
+  stdGridRender.fragOverrides!.lineWidth2 = 0.0;
+  stdGridRender.fragOverrides!.ringStart = 0;
+  stdGridRender.fragOverrides!.ringWidth = 0;
+
+  console.log(`stdGridRender.fragOverrides:`);
+  console.dir(stdGridRender.fragOverrides);
+
+  outlineRender.fragOverrides!.lineWidth = 4;
+
   dbgLogMilestone("GJK waiting for resources");
   const res = await EM.whenResources(
     AllMeshesDef,
@@ -73,8 +88,22 @@ export async function initGJKSandbox(hosting: boolean) {
     stdMeshPipe,
     outlineRender,
     deferredPipeline,
+    stdGridRender,
     postProcess,
   ];
+
+  // grid
+  const grid = createObj(
+    [RenderableConstructDef, PositionDef, ScaleDef, ColorDef] as const,
+    {
+      renderableConstruct: [PlaneMesh, true, undefined, GRID_MASK],
+      position: [0, 0, 0],
+      scale: [2 * res.camera.viewDist, 2 * res.camera.viewDist, 1],
+      // color: [0, 0.5, 0.5],
+      color: [1, 1, 0.5],
+      // color: [1, 1, 1],
+    }
+  );
 
   // sun
   const sunlight = EM.new();
