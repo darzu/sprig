@@ -27,7 +27,7 @@ import { createGhost } from "../debug/ghost.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { dbgLogMilestone } from "../utils/util.js";
-import { createObj } from "../graybox/objects.js";
+import { createObj, defineObj } from "../graybox/objects.js";
 import { GRID_MASK } from "../render/pipeline-masks.js";
 import { stdGridRender } from "../render/pipelines/std-grid.js";
 
@@ -106,14 +106,17 @@ export async function initGJKSandbox() {
   );
 
   // sun
-  const sunlight = EM.new();
-  EM.set(sunlight, PointLightDef);
-  sunlight.pointLight.constant = 1.0;
-  V3.copy(sunlight.pointLight.ambient, [0.8, 0.8, 0.8]);
-  // vec3.scale(sunlight.pointLight.ambient, sunlight.pointLight.ambient, 0.2);
-  // vec3.copy(sunlight.pointLight.diffuse, [0.5, 0.5, 0.5]);
-  EM.set(sunlight, PositionDef, V(10, 10, 100));
-  EM.set(sunlight, RenderableConstructDef, res.allMeshes.ball.proto);
+  const sunlight = createObj(
+    [PointLightDef, PositionDef, RenderableConstructDef] as const,
+    {
+      pointLight: {
+        constant: 1.0,
+        ambient: V(0.8, 0.8, 0.8),
+      },
+      position: [10, 10, 100],
+      renderableConstruct: [res.allMeshes.ball.proto],
+    }
+  );
 
   // TODO(@darzu): use or lose global cursor stuff?
   console.log(`assuming global cursor`);
@@ -123,43 +126,44 @@ export async function initGJKSandbox() {
   if (RenderableDef.isOn(c)) c.renderable.enabled = false;
 
   // ground
-  const ground = EM.new();
-  EM.set(ground, RenderableConstructDef, PlaneMesh);
-  EM.set(ground, ColorDef, V(0.2, 0.3, 0.2));
-  EM.set(ground, PositionDef, V(0, 0, -5));
+  const ground = createObj(
+    [RenderableConstructDef, ColorDef, PositionDef] as const,
+    [[PlaneMesh], V(0.2, 0.3, 0.2), V(0, 0, -5)]
+  );
 
   // world gizmo
-  const worldGizmo = EM.new();
-  EM.set(worldGizmo, PositionDef, V(-10, -10, -5));
-  EM.set(worldGizmo, ScaleDef, V(10, 10, 10));
-  EM.set(worldGizmo, RenderableConstructDef, GizmoMesh);
+  const worldGizmo = createObj(
+    [PositionDef, ScaleDef, RenderableConstructDef] as const,
+    [V(-10, -10, -5), V(10, 10, 10), [GizmoMesh]]
+  );
+
+  const objDef = [
+    RenderableConstructDef,
+    ColorDef,
+    PositionDef,
+    RotationDef,
+    WorldFrameDef,
+    ColliderDef,
+  ] as const;
 
   // cube
-  const b1 = EM.new();
-  const m1 = cloneMesh(res.allMeshes.cube.mesh);
-  EM.set(b1, RenderableConstructDef, m1);
-  EM.set(b1, ColorDef, V(0.1, 0.1, 0.1));
-  EM.set(b1, PositionDef, V(3, 0, 0));
-  EM.set(b1, RotationDef);
+  const b1 = createObj(objDef, [
+    [cloneMesh(res.allMeshes.cube.mesh)],
+    V(0.1, 0.1, 0.1),
+    V(3, 0, 0),
+    undefined,
+    undefined,
+    {
+      shape: "AABB",
+      solid: false,
+      aabb: res.allMeshes.cube.aabb,
+    },
+  ]);
   EM.set(b1, AngularVelocityDef, V(0, 0.001, 0.001));
-  EM.set(b1, WorldFrameDef);
-  EM.set(b1, ColliderDef, {
-    shape: "AABB",
-    solid: false,
-    aabb: res.allMeshes.cube.aabb,
-  });
-  // EM.set(b1, ColliderDef, {
-  //   shape: "Box",
-  //   solid: false,
-  //   center: res.allMeshes.cube.center,
-  //   halfsize: res.allMeshes.cube.halfsize,
-  // });
-
-  // us / ghost
-  const m2 = cloneMesh(res.allMeshes.cube.mesh);
 
   // ghost
-  const g = createGhost(m2);
+  const ghostMesh = cloneMesh(res.allMeshes.cube.mesh);
+  const g = createGhost(ghostMesh);
   // EM.set(g, RenderableConstructDef, res.allMeshes.cube.proto);
   // createPlayer();
 
@@ -193,32 +197,32 @@ export async function initGJKSandbox() {
   // });
 
   // ball
-  const b3 = EM.new();
-  const m3 = cloneMesh(res.allMeshes.ball.mesh);
-  EM.set(b3, RenderableConstructDef, m3);
-  EM.set(b3, ColorDef, V(0.1, 0.1, 0.1));
-  EM.set(b3, PositionDef, V(-4, 0, 0));
-  EM.set(b3, RotationDef);
-  EM.set(b3, WorldFrameDef);
-  EM.set(b3, ColliderDef, {
-    shape: "AABB",
-    solid: false,
-    aabb: res.allMeshes.ball.aabb,
-  });
+  const b3 = createObj(objDef, [
+    [cloneMesh(res.allMeshes.ball.mesh)],
+    V(0.1, 0.1, 0.1),
+    V(-4, 0, 0),
+    undefined,
+    undefined,
+    {
+      shape: "AABB",
+      solid: false,
+      aabb: res.allMeshes.ball.aabb,
+    },
+  ]);
 
   // tetra
-  const b4 = EM.new();
-  const m4 = cloneMesh(res.allMeshes.tetra.mesh);
-  EM.set(b4, RenderableConstructDef, m4);
-  EM.set(b4, ColorDef, V(0.1, 0.1, 0.1));
-  EM.set(b4, PositionDef, V(0, 0, -3));
-  EM.set(b4, RotationDef);
-  EM.set(b4, WorldFrameDef);
-  EM.set(b4, ColliderDef, {
-    shape: "AABB",
-    solid: false,
-    aabb: res.allMeshes.tetra.aabb,
-  });
+  const b4 = createObj(objDef, [
+    [cloneMesh(res.allMeshes.tetra.mesh)],
+    V(0.1, 0.1, 0.1),
+    V(0, 0, -3),
+    undefined,
+    undefined,
+    {
+      shape: "AABB",
+      solid: false,
+      aabb: res.allMeshes.tetra.aabb,
+    },
+  ]);
 
   // NOTE: this uses temp vectors, it must not live long
   // TODO(@darzu): for perf, this should be done only once per obj per frame;
