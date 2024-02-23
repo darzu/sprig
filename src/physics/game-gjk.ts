@@ -10,7 +10,7 @@ import { WorldFrameDef } from "./nonintersection.js";
 import { PAD } from "./phys.js";
 import { PositionDef, RotationDef, ScaleDef } from "./transform.js";
 import { PointLightDef } from "../render/lights.js";
-import { cloneMesh } from "../meshes/mesh.js";
+import { cloneMesh, getAABBFromMesh, scaleMesh } from "../meshes/mesh.js";
 import { stdMeshPipe } from "../render/pipelines/std-mesh.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
@@ -21,7 +21,7 @@ import {
 } from "../render/renderer-ecs.js";
 import { farthestPointInDir } from "../utils/utils-3d.js";
 import { AllMeshesDef, GizmoMesh, PlaneMesh } from "../meshes/mesh-list.js";
-import { GameMesh } from "../meshes/mesh-loader.js";
+import { GameMesh, gameMeshFromMesh } from "../meshes/mesh-loader.js";
 import { GlobalCursor3dDef } from "../gui/cursor.js";
 import { createGhost } from "../debug/ghost.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
@@ -134,7 +134,7 @@ export async function initGJKSandbox() {
   // world gizmo
   const worldGizmo = createObj(
     [PositionDef, ScaleDef, RenderableConstructDef] as const,
-    [V(-10, -10, -5), V(10, 10, 10), [GizmoMesh]]
+    [[0, 0, 0], [1, 1, 1], [GizmoMesh]]
   );
 
   const objDef = [
@@ -146,23 +146,10 @@ export async function initGJKSandbox() {
     ColliderDef,
   ] as const;
 
-  // cube
-  const b1 = createObj(objDef, [
-    [cloneMesh(res.allMeshes.cube.mesh)],
-    V(0.1, 0.1, 0.1),
-    V(3, 0, 0),
-    undefined,
-    undefined,
-    {
-      shape: "AABB",
-      solid: false,
-      aabb: res.allMeshes.cube.aabb,
-    },
-  ]);
-  EM.set(b1, AngularVelocityDef, V(0, 0.001, 0.001));
-
   // ghost
   const ghostMesh = cloneMesh(res.allMeshes.cube.mesh);
+  scaleMesh(ghostMesh, 0.5);
+  const ghostGameMesh = gameMeshFromMesh(ghostMesh, res.renderer.renderer);
   const g = createGhost(ghostMesh);
   // EM.set(g, RenderableConstructDef, res.allMeshes.cube.proto);
   // createPlayer();
@@ -180,14 +167,14 @@ export async function initGJKSandbox() {
   g.controllable.sprintMul = 10;
 
   EM.set(g, ColorDef, V(0.1, 0.1, 0.1));
-  EM.set(g, PositionDef, V(0, 0, 1));
+  EM.set(g, PositionDef, V(0, 0, 4));
   // EM.set(b2, PositionDef, [0, 0, -1.2]);
   EM.set(g, WorldFrameDef);
   // EM.set(b2, PhysicsParentDef, g.id);
   EM.set(g, ColliderDef, {
     shape: "AABB",
     solid: false,
-    aabb: res.allMeshes.cube.aabb,
+    aabb: getAABBFromMesh(ghostMesh),
   });
   // EM.set(b2, ColliderDef, {
   //   shape: "Box",
@@ -196,11 +183,32 @@ export async function initGJKSandbox() {
   //   halfsize: res.allMeshes.cube.halfsize,
   // });
 
+  const gjkGameMeshes = [
+    res.allMeshes.cube,
+    res.allMeshes.ball,
+    res.allMeshes.tetra,
+  ];
+
+  // spinCube
+  const spinCube = createObj(objDef, [
+    [cloneMesh(res.allMeshes.cube.mesh)],
+    V(0.1, 0.1, 0.1),
+    V(3, 0, 3),
+    undefined,
+    undefined,
+    {
+      shape: "AABB",
+      solid: false,
+      aabb: res.allMeshes.cube.aabb,
+    },
+  ]);
+  EM.set(spinCube, AngularVelocityDef, V(0, 0.001, 0.001));
+
   // ball
-  const b3 = createObj(objDef, [
+  const ball = createObj(objDef, [
     [cloneMesh(res.allMeshes.ball.mesh)],
     V(0.1, 0.1, 0.1),
-    V(-4, 0, 0),
+    V(-4, 0, 3),
     undefined,
     undefined,
     {
@@ -209,12 +217,13 @@ export async function initGJKSandbox() {
       aabb: res.allMeshes.ball.aabb,
     },
   ]);
+  // EM.set(ball, ScaleDef, [0.5, 0.5, 0.5]);
 
   // tetra
-  const b4 = createObj(objDef, [
+  const tetra = createObj(objDef, [
     [cloneMesh(res.allMeshes.tetra.mesh)],
     V(0.1, 0.1, 0.1),
-    V(0, 0, -3),
+    V(0, 0, 0),
     undefined,
     undefined,
     {
@@ -223,6 +232,8 @@ export async function initGJKSandbox() {
       aabb: res.allMeshes.tetra.aabb,
     },
   ]);
+
+  const gjkEnts = [spinCube, ball, tetra];
 
   // NOTE: this uses temp vectors, it must not live long
   // TODO(@darzu): for perf, this should be done only once per obj per frame;
@@ -248,14 +259,14 @@ export async function initGJKSandbox() {
   let lastPlayerPos = V3.clone(g.position);
   let lastPlayerRot = quat.clone(g.rotation);
   let lastWorldPos: V3[] = [
-    V3.clone(b1.position),
-    V3.clone(b3.position),
-    V3.clone(b4.position),
+    V3.clone(spinCube.position),
+    V3.clone(ball.position),
+    V3.clone(tetra.position),
   ];
   let lastWorldRot: quat[] = [
-    quat.clone(b1.rotation),
-    quat.clone(b3.rotation),
-    quat.clone(b4.rotation),
+    quat.clone(spinCube.rotation),
+    quat.clone(ball.rotation),
+    quat.clone(tetra.rotation),
   ];
 
   EM.addSystem(
@@ -271,49 +282,42 @@ export async function initGJKSandbox() {
       // TODO(@darzu):
 
       let playerShape = createWorldShape(
-        res.allMeshes.cube,
+        ghostGameMesh,
         g.position,
         g.rotation,
         lastPlayerPos
       );
 
-      const gameMeshes = [
-        res.allMeshes.cube,
-        res.allMeshes.ball,
-        res.allMeshes.tetra,
-      ];
-      const ents = [b1, b3, b4];
-
       let backTravelD = 0;
 
-      for (let i = 0; i < ents.length; i++) {
+      for (let i = 0; i < gjkEnts.length; i++) {
         g.color[i] = 0.1;
-        ents[i].color[i] = 0.1;
+        gjkEnts[i].color[i] = 0.1;
 
         let shapeOther = createWorldShape(
-          gameMeshes[i],
-          ents[i].position,
-          ents[i].rotation,
+          gjkGameMeshes[i],
+          gjkEnts[i].position,
+          gjkEnts[i].rotation,
           lastWorldPos[i]
         );
         let simplex = gjk(shapeOther, playerShape);
         if (simplex) {
           g.color[i] = 0.3;
-          ents[i].color[i] = 0.3;
+          gjkEnts[i].color[i] = 0.3;
         }
         if (
           simplex &&
-          (!quat.equals(lastWorldRot[i], ents[i].rotation) ||
+          (!quat.equals(lastWorldRot[i], gjkEnts[i].rotation) ||
             !quat.equals(lastPlayerRot, g.rotation))
         ) {
           // rotation happened, undo it
-          quat.copy(ents[i].rotation, lastWorldRot[i]);
+          quat.copy(gjkEnts[i].rotation, lastWorldRot[i]);
           quat.copy(g.rotation, lastPlayerRot);
 
           shapeOther = createWorldShape(
-            gameMeshes[i],
-            ents[i].position,
-            ents[i].rotation,
+            gjkGameMeshes[i],
+            gjkEnts[i].position,
+            gjkEnts[i].rotation,
             lastWorldPos[i]
           );
           playerShape = createWorldShape(
@@ -347,14 +351,14 @@ export async function initGJKSandbox() {
       V3.sub(g.position, backTravel, g.position);
 
       lastWorldPos = [
-        V3.clone(b1.position),
-        V3.clone(b3.position),
-        V3.clone(b4.position),
+        V3.clone(spinCube.position),
+        V3.clone(ball.position),
+        V3.clone(tetra.position),
       ];
       lastWorldRot = [
-        quat.clone(b1.rotation),
-        quat.clone(b3.rotation),
-        quat.clone(b4.rotation),
+        quat.clone(spinCube.rotation),
+        quat.clone(ball.rotation),
+        quat.clone(tetra.rotation),
       ];
       lastPlayerPos = V3.clone(g.position);
       lastPlayerRot = quat.clone(g.rotation);
