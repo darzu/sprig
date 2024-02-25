@@ -1,7 +1,11 @@
+import { EM } from "../ecs/entity-manager.js";
+import { Phase } from "../ecs/sys-phase.js";
 import { V, V3, mat3, mat4 } from "../matrix/sprig-matrix.js";
 import { mat3Dbg, vec3Dbg } from "../utils/utils-3d.js";
 import { AABB, getCenterFromAABB, getHalfsizeFromAABB } from "./aabb.js";
 import { Sphere } from "./broadphase.js";
+import { ColliderDef, isAABBCollider } from "./collider.js";
+import { WorldFrameDef } from "./nonintersection.js";
 
 /* 
 REPRESENTATION:
@@ -36,9 +40,29 @@ interface _OBB2 extends _OBB1 {
 
 export interface OBB extends _OBB2 {
   vsSphere: (s: Sphere) => boolean;
+  updateFromMat4: (aabb: AABB, m: mat4) => void;
 }
 
 const __tmp_vsSphere = V3.mk();
+
+export const OBBDef = EM.defineComponent(
+  "obb",
+  () => OBB.mk(),
+  (p) => p
+);
+
+EM.addSystem(
+  "updateOBBFromLocalAABB",
+  Phase.GAME_WORLD,
+  [OBBDef, WorldFrameDef, ColliderDef],
+  [],
+  (es) => {
+    for (let e of es) {
+      if (isAABBCollider(e.collider))
+        e.obb.updateFromMat4(e.collider.aabb, e.world.transform);
+    }
+  }
+);
 
 export module OBB {
   export type T = OBB;
@@ -73,38 +97,38 @@ export module OBB {
 
       return (
         p[0] * p[0] < b.halfw[0] * b.halfw[0] * 2 &&
-        p[1] * p[1] < b.halfw[0] * b.halfw[0] * 2 &&
-        p[2] * p[2] < b.halfw[0] * b.halfw[0] * 2
+        p[1] * p[1] < b.halfw[1] * b.halfw[1] * 2 &&
+        p[2] * p[2] < b.halfw[2] * b.halfw[2] * 2
       );
+    }
+
+    function updateFromMat4(aabb: AABB, transform: mat4): void {
+      // transformAABB(wc.localAABB, o.transform);
+      mat3.fromMat4(transform, b.mat);
+
+      const { fwd, right, up } = b;
+
+      V3.norm(right, right);
+      V3.norm(fwd, fwd);
+      V3.norm(up, up);
+
+      const center = getCenterFromAABB(aabb, b.center);
+      V3.tMat4(center, transform, center);
+
+      getHalfsizeFromAABB(aabb, b.halfw);
     }
 
     return {
       ...b,
       vsSphere,
+      updateFromMat4,
     };
   }
 
   export function fromTransformedAABB(aabb: AABB, transform: mat4) {
-    // transformAABB(wc.localAABB, o.transform);
-    const mat = mat3.fromMat4(transform, mat3.create());
-    const { right, fwd, up } = _fromMat3(mat);
-
-    V3.norm(right, right);
-    V3.norm(fwd, fwd);
-    V3.norm(up, up);
-
-    const center = getCenterFromAABB(aabb);
-    V3.tMat4(center, transform, center);
-    const halfw = getHalfsizeFromAABB(aabb);
-
-    return _withMethods({
-      mat,
-      fwd,
-      right,
-      up,
-      center,
-      halfw,
-    });
+    const b = mk();
+    b.updateFromMat4(aabb, transform);
+    return b;
   }
 }
 

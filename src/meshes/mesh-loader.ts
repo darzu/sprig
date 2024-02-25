@@ -376,7 +376,7 @@ export function gameMeshFromMesh(
   validateMesh(rawMesh);
   const mesh = normalizeMesh(rawMesh);
   const aabb = getAABBFromMesh(mesh);
-  const center = getCenterFromAABB(aabb);
+  const center = getCenterFromAABB(aabb, V3.mk());
   const halfsize = getHalfsizeFromAABB(aabb, V3.mk());
   // TODO(@darzu): LINES. add mesh to line pool too??
   const proto = renderer.stdPool.addMesh(mesh, reserve);

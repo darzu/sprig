@@ -204,10 +204,9 @@ export function aabbCenter2(out: V2, a: AABB2): V2 {
   return out;
 }
 
-// TODO(@darzu): add out param
 // TODO(@darzu): MOVE to gl-matrix
-export function getCenterFromAABB(aabb: AABB): V3 {
-  return vec3Mid(V3.mk(), aabb.min, aabb.max);
+export function getCenterFromAABB(aabb: AABB, out?: V3): V3 {
+  return vec3Mid(out ?? V3.tmp(), aabb.min, aabb.max);
 }
 export function getSizeFromAABB(aabb: AABB, out?: V3): V3 {
   out = out ?? V3.tmp();

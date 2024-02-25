@@ -320,3 +320,11 @@ What's the role of Process ?
   They're like compile or runtime time checks
     they have a cost
     they provide a benefit of safety
+
+Logs are the best source of truth
+  Make state an optimization/cache of the log
+  logs are the capture as much of reality as possible
+  You can do replay, rewind etc.
+  undo/redo is a natural concept
+  can be streamed
+  can be multiplayer

@@ -599,8 +599,12 @@ export function getAABBFromMesh(m: RawMesh): AABB {
 // TODO(@darzu): PERF. this is pretty inefficient. We're mutating the mesh,
 //   so we should be re-using the vecs
 // TODO(@darzu): rename to "mutateMeshPositions" ?
-export function mapMeshPositions(m: RawMesh, map: (p: V3, i: number) => V3) {
+export function mapMeshPositions(
+  m: RawMesh,
+  map: (p: V3, i: number) => V3
+): RawMesh {
   m.pos = m.pos.map(map);
+  return m;
 }
 export function scaleMesh<T extends RawMesh>(m: T, by: number): T {
   mapMeshPositions(m, (p) => V3.scale(p, by, p));
@@ -963,12 +967,12 @@ export function getMeshAsGrid(m: RawMesh): {
 
 // TODO(@darzu): PERF. probably instead of doing merge meshes, we should have a MeshBuilder
 // TODO: this will delete rigging info
-export function mergeMeshes(...rs: RawMesh[]): RawMesh {
+export function mergeMeshes<T extends RawMesh>(...rs: T[]): T {
   if (rs.length === 1) return rs[0];
 
   let posIdx = 0;
 
-  const m: RawMesh = {
+  const m = {
     pos: [],
     tri: [],
     quad: [],
@@ -981,7 +985,10 @@ export function mergeMeshes(...rs: RawMesh[]): RawMesh {
     dbgName: rs.some((r) => r.dbgName)
       ? rs.reduce((p, n, i) => p + "_" + n?.dbgName ?? "mesh", "")
       : undefined,
-  };
+    usesProvoking: rs.every((r) => (r as any as Mesh).usesProvoking)
+      ? true
+      : undefined,
+  } as any as T; // TODO(@darzu): Ugh these casts. Gotta impl this right
 
   for (let r of rs) {
     m.pos = [...m.pos, ...r.pos];

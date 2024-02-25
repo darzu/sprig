@@ -126,3 +126,22 @@ Verse language:
   https://www.youtube.com/watch?v=teTroOAGZjM&t=22494s
   https://simon.peytonjones.org/assets/pdfs/verse-March23.pdf
   https://www.youtube.com/watch?v=5prkKOIilJg
+
+Lang feature ideas:
+  return value can be a parameter: this tells you the return type plus that it's the same reference
+    scaleMesh<T extends RawMesh>(m: T, by: number): T
+    ->
+    scaleMesh<T extends RawMesh>(m: T, by: number): m
+  return value can also have a narrowed type like TS's assert or is but not just a boolean
+
+Requires/Provides:
+  functions(/other constructs?) _requires_ certain type and environment properties,
+  functions _provide_ certain type and environment properties
+  return type as the only provides is insane
+    TS lets you have assertions "asserts e is EntityW<...>" and guards "e is boolean"
+
+TODO: investigate co-routines
+
+TODO: investigate green threads a la microbit
+
+
