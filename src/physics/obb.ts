@@ -97,15 +97,10 @@ export module OBB {
 
   function _withMethods(b: _OBB2): OBB {
     function vsSphere(s: Sphere): boolean {
-      // TODO(@darzu): Verify transpose is safe!
-      // const inv = b._inv ?? (b._inv = mat3.invert(b.mat));
-      // V3.ttMat3(p, b.mat, p);
-
       // bring sphere origin into OBB local space (so OBB center is 0,0,0)
       //  so we just need to test p vs AABB
       const p = V3.sub(s.org, b.center, __tmp_vsSphere0);
-      const inv = mat3.invert(b.mat);
-      V3.tMat3(p, inv, p);
+      V3.ttMat3(p, b.mat, p);
 
       // the problem is symetrical so mirror into 1st quadrant
       V3.abs(p, p);

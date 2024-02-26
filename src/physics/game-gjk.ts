@@ -279,7 +279,7 @@ async function obbTest(
     rad: Math.max(...getHalfsizeFromAABB(g.collider.aabb)),
   };
 
-  const DBG_OBB_VIZ = true;
+  const DBG_OBB_VIZ = false;
 
   const obbViz = new Map<
     number,
