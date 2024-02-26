@@ -80,3 +80,34 @@ det(mat3x3 m) = dot(m.col[0], cross(m.col[1], m.col[2]))
 SVD: "singular value decomposition"
   https://en.wikipedia.org/wiki/Singular_value_decomposition
   decompose any matrix into Rotation->Scale->Rotation
+
+knot theory:
+  # crossings
+  unknot
+  link vs knot
+  trefoil knot
+  3 moves to transform a knot:
+    slide (across crossing)
+    poke (line across bend)
+    twist (x into parallel or vice versa)
+  if two knots have different invariants, you know they are different
+    but different knots can share invariants
+  crossing number is an invariant
+    crossing number only measurable in reduced form?
+  interesting invariants:
+    tricolorability:
+      color each segment (broken by going under a rope)
+      at each intersection all colors must be all the same or all different
+    also p-colorability
+      at crossing: (b1 + b2) % p == (t + t) % p
+    polynomials
+      A(unknot) = 1
+      A(unlink) = 0
+      three types of crossing: forward, backward, seperate
+      A(f) - A(b) + (t^(1/2) - t(-1/2))A(s) = 0
+  summary of equivalence:
+    invariants to prove if they're different,
+    slide/poke/twist to prove if they're the same
+  we knew ~1 million in 1998
+  then in 2020 we tabulated 294 million more
+  can tie chemicals into knots, only know 5 so far

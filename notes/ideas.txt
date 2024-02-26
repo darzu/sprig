@@ -185,3 +185,6 @@ Companion to "Real-Time Collision Detection" book:
   branches of code are highlighted when taken
   variables are color coded
   shows numbers instead of variable name
+
+Use knots (math) w/ different # crossing as loading symbols
+  or maybe knots untangling themselves into other knots or the unknot

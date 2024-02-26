@@ -492,6 +492,13 @@ export module V3 {
   export function add(v1: InputT, v2: InputT, out?: T): T {
     return GL.add(out ?? tmp(), v1, v2) as T;
   }
+  export function abs(v: InputT, out?: T): T {
+    out = out ?? tmp();
+    out[0] = Math.abs(v[0]);
+    out[1] = Math.abs(v[1]);
+    out[2] = Math.abs(v[2]);
+    return out;
+  }
   export function sum(out: T, ...vs: InputT[]): T {
     out[0] = vs.reduce((p, n) => p + n[0], 0);
     out[1] = vs.reduce((p, n) => p + n[1], 0);

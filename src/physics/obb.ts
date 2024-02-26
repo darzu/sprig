@@ -1,8 +1,14 @@
 import { EM } from "../ecs/entity-manager.js";
 import { Phase } from "../ecs/sys-phase.js";
-import { V, V3, mat3, mat4 } from "../matrix/sprig-matrix.js";
+import { V, V3, mat3, mat4, tV } from "../matrix/sprig-matrix.js";
+import { clamp } from "../utils/math.js";
 import { mat3Dbg, vec3Dbg } from "../utils/utils-3d.js";
-import { AABB, getCenterFromAABB, getHalfsizeFromAABB } from "./aabb.js";
+import {
+  AABB,
+  clampToAABB,
+  getCenterFromAABB,
+  getHalfsizeFromAABB,
+} from "./aabb.js";
 import { Sphere } from "./broadphase.js";
 import { ColliderDef, isAABBCollider } from "./collider.js";
 import { WorldFrameDef } from "./nonintersection.js";
@@ -43,7 +49,8 @@ export interface OBB extends _OBB2 {
   updateFromMat4: (aabb: AABB, m: mat4) => void;
 }
 
-const __tmp_vsSphere = V3.mk();
+const __tmp_vsSphere0 = V3.mk();
+const __tmp_vsSphere1 = V3.mk();
 
 export const OBBDef = EM.defineComponent(
   "obb",
@@ -92,14 +99,25 @@ export module OBB {
     function vsSphere(s: Sphere): boolean {
       // TODO(@darzu): Verify transpose is safe!
       // const inv = b._inv ?? (b._inv = mat3.invert(b.mat));
-      const p = V3.sub(s.org, b.center, __tmp_vsSphere);
-      V3.ttMat3(p, b.mat, p);
+      // V3.ttMat3(p, b.mat, p);
 
-      return (
-        p[0] * p[0] < b.halfw[0] * b.halfw[0] * 2 &&
-        p[1] * p[1] < b.halfw[1] * b.halfw[1] * 2 &&
-        p[2] * p[2] < b.halfw[2] * b.halfw[2] * 2
-      );
+      // bring sphere origin into OBB local space (so OBB center is 0,0,0)
+      //  so we just need to test p vs AABB
+      const p = V3.sub(s.org, b.center, __tmp_vsSphere0);
+      const inv = mat3.invert(b.mat);
+      V3.tMat3(p, inv, p);
+
+      // the problem is symetrical so mirror into 1st quadrant
+      V3.abs(p, p);
+
+      // clamp point onto AABB to find nearest AABB point
+      const c = V3.copy(__tmp_vsSphere1, p);
+      c[0] = Math.min(c[0], b.halfw[0]);
+      c[1] = Math.min(c[1], b.halfw[1]);
+      c[2] = Math.min(c[2], b.halfw[2]);
+
+      // check the distance vs radius
+      return V3.sqrDist(c, p) < s.rad ** 2;
     }
 
     function updateFromMat4(aabb: AABB, transform: mat4): void {
