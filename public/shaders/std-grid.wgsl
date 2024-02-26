@@ -24,12 +24,12 @@ struct FragOut {
   @location(0) color: vec4<f32>,
 }
 
-override lineSpacing1 = 8.0;
-override lineWidth1 = 0.05;
-override lineSpacing2 = 256.0;
-override lineWidth2 = 0.2;
-override ringStart = 512f;
-override ringWidth = 12f;
+override lineSpacing1 = 1f;
+override lineWidth1 = 1f;
+override lineSpacing2 = 1f;
+override lineWidth2 = 1f;
+override ringStart = 1f;
+override ringWidth = 1f;
 
 @fragment
 fn frag_main(input: VertexOutput) -> FragOut {

@@ -495,3 +495,6 @@ Bounding volumes:
     best when: few dynamic objects, many static objects; or same object many tests
     ? efficient update w/ hill climbing algo ? applicable to aabbs too ?
 
+GPU collision detection:
+  "The main solution to overcoming this [GPU->CPU] communication bottleneck relies on using hardware-supported
+  occlusion queries to pass information back to the CPU."

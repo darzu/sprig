@@ -266,11 +266,17 @@ function mkDotPath(
 // }
 
 export async function initGrayboxShipArena() {
+  stdGridRender.fragOverrides!.lineSpacing1 = 8.0;
+  stdGridRender.fragOverrides!.lineWidth1 = 0.05;
+  stdGridRender.fragOverrides!.lineSpacing2 = 256;
+  stdGridRender.fragOverrides!.lineWidth2 = 0.2;
+  stdGridRender.fragOverrides!.ringStart = 512;
+  stdGridRender.fragOverrides!.ringWidth = 12;
+
   // TODO(@darzu): WORLD GRID:
   /*
   plane fit to frustum
   uv based on world pos
-
   */
 
   // TODO(@darzu): WORK AROUND: see below
