@@ -27,6 +27,8 @@ import { drawBall, drawLine } from "../utils/utils-game.js";
 // TODO(@darzu): MESH PARTS: implement a modular mesh format.
 // TODO(@darzu): MESH PARTS: can this just be a TS union? Or do we need some "features" field / mask? Probably need runtime info.
 
+// TODO(@darzu): MESH PARTS: need per vertex, per edge (e.g. curvature), per face, per object
+
 // defines the geometry and coloring of a mesh
 // geometry: pos, tri, quad, lines,
 // geo-data: colors, uvs, surfaceIds,

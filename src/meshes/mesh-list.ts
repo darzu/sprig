@@ -424,6 +424,10 @@ export const PlaneMesh = XY.registerMesh({
   name: "plane",
   data: () => makePlaneMesh(-10, 10, -10, 10),
 });
+export const UnitPlaneMesh = XY.registerMesh({
+  name: "unitPlane",
+  data: () => makePlaneMesh(0, 1, 0, 1),
+});
 export const TetraMesh = XY.registerMesh({
   name: "tetra",
   data: () => TETRA_MESH,

@@ -4108,6 +4108,8 @@ export var mat4 = /*#__PURE__*/Object.freeze({
         var z = a[2];
         var len = x * x + y * y + z * z;
 
+        // TODO(@darzu): PERF. exit early if normalized?
+
         if (len > 0) {
             //TODO: evaluate use of glm_invsqrt here?
             len = 1 / Math.sqrt(len);

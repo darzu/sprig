@@ -1,6 +1,6 @@
 import { StatBarDef, createMultiBarMesh } from "../adornments/status-bar.js";
 import { CameraDef, CameraFollowDef } from "../camera/camera.js";
-import { ColorDef } from "../color/color-ecs.js";
+import { AlphaDef, ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16, seqEndesga16 } from "../color/palettes.js";
 import { DevConsoleDef } from "../debug/console.js";
 import { DeletedDef } from "../ecs/delete.js";
@@ -33,6 +33,7 @@ import {
   ColliderFromMeshDef,
 } from "../physics/collider.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
+import { OBB, OBBDef } from "../physics/obb.js";
 import { onCollides } from "../physics/phys-helpers.js";
 import {
   Frame,
@@ -47,11 +48,14 @@ import { GRID_MASK } from "../render/pipeline-masks.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
 import { renderDots } from "../render/pipelines/std-dots.js";
 import { stdGridRender } from "../render/pipelines/std-grid.js";
+import { linePipe, pointPipe } from "../render/pipelines/std-line.js";
 import { stdMeshPipe } from "../render/pipelines/std-mesh.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
 import { shadowPipelines } from "../render/pipelines/std-shadow.js";
+import { alphaRenderPipeline } from "../render/pipelines/xp-alpha.js";
 import { RenderableConstructDef, RendererDef } from "../render/renderer-ecs.js";
+import { getAimAndMissPositions } from "../stone/projectile.js";
 import { TimeDef } from "../time/time.js";
 import { YawPitchDef } from "../turret/yawpitch.js";
 import { clamp, remap, wrap } from "../utils/math.js";
@@ -106,6 +110,7 @@ const ShipObj = defineObj({
     RenderableConstructDef,
     LinearVelocityDef,
     ColliderFromMeshDef,
+    OBBDef,
   ],
   physicsParentChildren: true,
   children: {
@@ -292,13 +297,13 @@ export async function initGrayboxShipArena() {
       res.renderer.pipelines.push(
         ...shadowPipelines,
         stdMeshPipe,
-        // stdLinesRender,
         renderDots,
+        alphaRenderPipeline,
         outlineRender,
         deferredPipeline,
         stdGridRender,
-        // stdLinesRender,
-        // stdPointsRender,
+        linePipe,
+        pointPipe,
         postProcess
       );
     }
@@ -563,6 +568,7 @@ function createShip(opts: {
       // cameraFollow: undefined,
       linearVelocity: undefined,
       colliderFromMesh: true,
+      obb: undefined,
     },
     children: {
       cannonL0: cannonLs[0],
@@ -586,6 +592,8 @@ function createShip(opts: {
       },
     },
   });
+  // TODO(@darzu): debugging
+  EM.set(ship, AlphaDef, 0.5);
   // EM.set(ship, GlitchDef);
 
   const mast = createMast();
@@ -670,7 +678,7 @@ function createEnemy() {
 async function initEnemies() {
   const attackRadius = 100;
 
-  const player = await EM.whenSingleEntity(PlayerShipDef, PositionDef);
+  const player = await EM.whenSingleEntity(PlayerShipDef, PositionDef, OBBDef);
 
   const { dots } = await EM.whenResources(DotsDef);
 
@@ -751,6 +759,24 @@ async function initEnemies() {
         const distFactor = clamp(remap(trgDist, 0, 100, 0, 1), 0, 1);
         const mastFactor = turnFactor * distFactor;
         e.hasMast.mast.mast.sail.sail.unfurledAmount = mastFactor;
+      }
+    }
+  );
+
+  EM.addSystem(
+    "enemyAim",
+    Phase.GAME_WORLD,
+    [EnemyDef, PositionDef, RotationDef],
+    [TimeDef],
+    (es, res) => {
+      if (res.time.step % 100 !== 0) return;
+
+      for (let e of es) {
+        const incomingDir = V3.sub(player.position, e.position);
+        getAimAndMissPositions({
+          target: player.obb,
+          srcToTrg: incomingDir,
+        });
       }
     }
   );

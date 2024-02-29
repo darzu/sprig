@@ -2,6 +2,7 @@ import { EM } from "../ecs/entity-manager.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { V, V3, mat3, mat4, tV } from "../matrix/sprig-matrix.js";
 import { clamp } from "../utils/math.js";
+import { dbgLogOnce, range } from "../utils/util.js";
 import { mat3Dbg, vec3Dbg } from "../utils/utils-3d.js";
 import {
   AABB,
@@ -65,11 +66,40 @@ EM.addSystem(
   [],
   (es) => {
     for (let e of es) {
-      if (isAABBCollider(e.collider))
-        e.obb.updateFromMat4(e.collider.aabb, e.world.transform);
+      if (!isAABBCollider(e.collider)) {
+        dbgLogOnce(
+          `ent ${e.id} has OBBDef and ColliderDef but not an AABBCollider!`,
+          undefined,
+          true
+        );
+        continue;
+      }
+      e.obb.updateFromMat4(e.collider.aabb, e.world.transform);
     }
   }
 );
+
+const _tempObbCorners: V3[] = range(8).map((_) => V3.mk());
+export function getOBBCornersTemp(obb: OBB): V3[] {
+  const a = _tempObbCorners;
+  V3.copy(a[0], obb.center);
+  V3.copy(a[1], obb.center);
+  V3.copy(a[2], obb.center);
+  V3.copy(a[3], obb.center);
+  V3.copy(a[4], obb.center);
+  V3.copy(a[5], obb.center);
+  V3.copy(a[6], obb.center);
+  V3.copy(a[7], obb.center);
+  V3.add(a[0], [+obb.halfw[0], +obb.halfw[1], +obb.halfw[2]], a[0]);
+  V3.add(a[1], [+obb.halfw[0], +obb.halfw[1], -obb.halfw[2]], a[1]);
+  V3.add(a[2], [+obb.halfw[0], -obb.halfw[1], +obb.halfw[2]], a[2]);
+  V3.add(a[3], [+obb.halfw[0], -obb.halfw[1], -obb.halfw[2]], a[3]);
+  V3.add(a[4], [-obb.halfw[0], +obb.halfw[1], +obb.halfw[2]], a[4]);
+  V3.add(a[5], [-obb.halfw[0], +obb.halfw[1], -obb.halfw[2]], a[5]);
+  V3.add(a[6], [-obb.halfw[0], -obb.halfw[1], +obb.halfw[2]], a[6]);
+  V3.add(a[7], [-obb.halfw[0], -obb.halfw[1], -obb.halfw[2]], a[7]);
+  return a;
+}
 
 export module OBB {
   export type T = OBB;

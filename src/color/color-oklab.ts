@@ -13,6 +13,8 @@ import { OKLAB, LRGB } from "./color.js";
 // https://developer.mozilla.org/en-US/docs/Web/CSS/color_value/lab()
 // https://www.w3.org/TR/css-color-4/
 
+// TODO(@darzu): consider using: https://github.com/thi-ng/umbrella/tree/develop/packages/color
+
 export function LRGBToLAB(c: LRGB): OKLAB {
   // linear sRGB to OKLab
   let l = 0.4122214708 * c.lr + 0.5363325363 * c.lg + 0.0514459929 * c.lb;

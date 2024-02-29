@@ -376,6 +376,7 @@ export function createObj<D extends ObjChildDef, A extends ObjChildArg<D>>(
     return e;
   }
 }
+// TODO(@darzu): move onto EM.set ? EM.set takes an array of component defs or ObjDef
 export function mixinObj<D extends ObjChildDef, A extends ObjChildArg<D>>(
   e: Entity,
   def: D,

@@ -1,6 +1,8 @@
 import { DBG_ASSERT, VERBOSE_LOG } from "../flags.js";
 import { randInt } from "./math.js";
 
+// TODO(@darzu): MOVE: re-order utils so everything is either no-import or 1-level from that or no-top-level-exec
+
 // TODO(@darzu): When we need a util, check here first:
 //    https://github.com/microsoft/TypeScript/blob/main/src/compiler/core.ts
 //    https://github.com/microsoft/TypeScript/blob/main/src/compiler/corePublic.ts

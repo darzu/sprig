@@ -189,7 +189,7 @@ export function centroid(...vs: V3[]): V3 {
   return V(avgX, avgY, avgZ);
 }
 // TODO(@darzu): MOVE into gl-matrix?
-export function vec3Mid(out: V3, a: V3, b: V3): V3 {
+export function vec3Mid(out: V3, a: V3.InputT, b: V3.InputT): V3 {
   out[0] = (a[0] + b[0]) * 0.5;
   out[1] = (a[1] + b[1]) * 0.5;
   out[2] = (a[2] + b[2]) * 0.5;

@@ -97,17 +97,17 @@ export function pointInAABB(aabb: AABB, p: V3) {
 //   return points;
 // }
 
-const tempAabbCorners: V3[] = range(8).map((_) => V3.mk());
+const _tempAabbCorners: V3[] = range(8).map((_) => V3.mk());
 export function getAABBCornersTemp(aabb: AABB): V3[] {
-  V3.set(aabb.max[0], aabb.max[1], aabb.max[2], tempAabbCorners[0]);
-  V3.set(aabb.max[0], aabb.max[1], aabb.min[2], tempAabbCorners[1]);
-  V3.set(aabb.max[0], aabb.min[1], aabb.max[2], tempAabbCorners[2]);
-  V3.set(aabb.max[0], aabb.min[1], aabb.min[2], tempAabbCorners[3]);
-  V3.set(aabb.min[0], aabb.max[1], aabb.max[2], tempAabbCorners[4]);
-  V3.set(aabb.min[0], aabb.max[1], aabb.min[2], tempAabbCorners[5]);
-  V3.set(aabb.min[0], aabb.min[1], aabb.max[2], tempAabbCorners[6]);
-  V3.set(aabb.min[0], aabb.min[1], aabb.min[2], tempAabbCorners[7]);
-  return tempAabbCorners;
+  V3.set(aabb.max[0], aabb.max[1], aabb.max[2], _tempAabbCorners[0]);
+  V3.set(aabb.max[0], aabb.max[1], aabb.min[2], _tempAabbCorners[1]);
+  V3.set(aabb.max[0], aabb.min[1], aabb.max[2], _tempAabbCorners[2]);
+  V3.set(aabb.max[0], aabb.min[1], aabb.min[2], _tempAabbCorners[3]);
+  V3.set(aabb.min[0], aabb.max[1], aabb.max[2], _tempAabbCorners[4]);
+  V3.set(aabb.min[0], aabb.max[1], aabb.min[2], _tempAabbCorners[5]);
+  V3.set(aabb.min[0], aabb.min[1], aabb.max[2], _tempAabbCorners[6]);
+  V3.set(aabb.min[0], aabb.min[1], aabb.min[2], _tempAabbCorners[7]);
+  return _tempAabbCorners;
 }
 
 // const tempAabbXZCorners = range(4).map((_) => V2.create()) as [

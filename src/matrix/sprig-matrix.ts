@@ -291,6 +291,8 @@ export function findAnyTmpVec(
   );
 }
 
+// TODO(@darzu): PERF. quat mult improvement? from: https://www.johndcook.com/blog/2021/06/16/faster-quaternion-rotations/
+
 // TODO(@darzu): PERF. does this have a perf hit?
 export function V(...xs: [number, number]): V2;
 export function V(...xs: [number, number, number]): V3;
@@ -1012,6 +1014,23 @@ export module quat {
     return fromXYZ(x, y, upish, out);
   }
 
+  // TODO(@darzu): UNIFY w/ fromForward etc
+  const _t5 = V3.mk();
+  export function fromUp(up: V3.InputT, out?: T): T {
+    const z = V3.copy(_t5, up);
+    V3.norm(z, z);
+
+    // find an x-ish vector
+    const x = tV(1, 0, 0);
+    if (Math.abs(V3.dot(z, x)) > 0.9) V3.set(0, 1, 0, x);
+
+    // orthonormalize
+    const y = V3.tmp();
+    orthonormalize(z, x, y);
+
+    return fromXYZ(x, y, z, out);
+  }
+
   export function right(q: quat.InputT, out?: V3): V3 {
     return V3.tQuat(V3.RIGHT, q, out);
   }
@@ -1030,6 +1049,8 @@ export module quat {
   export function down(q: quat.InputT, out?: V3): V3 {
     return V3.tQuat(V3.DOWN, q, out);
   }
+
+  // TODO(@darzu): REFACTOR: add all swizzle like .xy(), .x(), .zyx(), etc.
 }
 
 // TODO(@darzu): HACK FOR DEBUGGING
@@ -1527,19 +1548,18 @@ export module mat3 {
 
 // Other utils:
 
-// mutates forward and upish and outputs to outRight such that all three are
+// mutates all three vectors so they are all perpendicular and unit
 //  orthogonal to eachother.
-// TODO(@darzu): change this to use x,y,z ?
-export function orthonormalize(forward: V3, upish: V3, outRight: V3) {
+export function orthonormalize(v: V3, perpIsh: V3, outPerp2: V3) {
   // TODO(@darzu): there's a pattern somewhat similar in many places:
   //    orthonormalizing, Gram–Schmidt
   //    quatFromUpForward, getControlPoints, tripleProd?
   //    targetTo, lookAt ?
   // Also this can be more efficient by inlining
-  V3.norm(forward, forward);
-  V3.cross(forward, upish, outRight);
-  V3.norm(outRight, outRight);
-  V3.cross(outRight, forward, upish);
+  V3.norm(v, v);
+  V3.cross(v, perpIsh, outPerp2);
+  V3.norm(outPerp2, outPerp2);
+  V3.cross(outPerp2, v, perpIsh);
 }
 
 // prettier-ignore

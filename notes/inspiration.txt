@@ -251,3 +251,12 @@ Thread at MacRumors upon announcing ipod:
   The iPod requires me to change my lifestyle to meet it's needs...
   I need round holes, not square holes.
   For $99 I might buy the toy, for $399? Why?"
+
+Obra Din, process of discovering the look:
+  https://forums.tigsource.com/index.php?topic=40832.msg1307444#msg1307444
+
+GameDev as a search problem; the 7 problems of search:
+  https://www.youtube.com/watch?v=o5K0uqhxgsE
+  you are running a search algorithm
+  aim for fun, appeal, and scope
+  f*ing optimize your search

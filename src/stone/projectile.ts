@@ -1,7 +1,20 @@
 import { ENDESGA16 } from "../color/palettes.js";
-import { V2, V3, quat, tV } from "../matrix/sprig-matrix.js";
-import { vec3Dbg } from "../utils/utils-3d.js";
-import { drawBall } from "../utils/utils-game.js";
+import { V2, V3, mat4, quat, tV } from "../matrix/sprig-matrix.js";
+import {
+  createAABB,
+  getAABBFromPositions,
+  getCenterFromAABB,
+  transformAABB,
+} from "../physics/aabb.js";
+import { OBB, getOBBCornersTemp } from "../physics/obb.js";
+import { aabbDbg, vec3Dbg, vec3Mid } from "../utils/utils-3d.js";
+import {
+  addWorldGizmo,
+  drawBall,
+  drawGizmosForMat4,
+  drawLine,
+  drawPlane,
+} from "../utils/utils-game.js";
 
 // TODO(@darzu): Move this. Merge this with others like parameteric?
 
@@ -12,6 +25,7 @@ ToDo:
 */
 
 const DBG_CANNONS = true;
+const DBG_getAimAndMissPositions = true;
 
 const GRAVITY = 6.0 * 0.00001;
 
@@ -35,6 +49,71 @@ export interface FireSolutionOpt {
   targetDir: V3.InputT;
   projectileSpeed: number;
   miss: boolean;
+}
+
+interface Plane {
+  org: V3;
+  norm: V3;
+}
+
+function projectOntoPlane(v: V3.InputT, p: Plane, out?: V3): V3 {
+  throw "TODO";
+}
+
+export function getAimAndMissPositions(opt: {
+  // TODO(@darzu):
+  target: OBB;
+  srcToTrg: V3.InputT;
+}) {
+  // TODO(@darzu): BROKEN.
+  const rot = quat.fromForwardAndUpish(opt.srcToTrg, V3.UP);
+  const incomingPos = V3.sub(opt.target.center, opt.srcToTrg);
+  // const viewM = mat4.lookAt(incomingPos, opt.target.center, V3.UP);
+  const worldCorners = getOBBCornersTemp(opt.target);
+  // worldCorners.forEach((v) => drawBall(v, 0.5, ENDESGA16.white));
+  const localToWorldM = mat4.fromRotationTranslation(rot, opt.target.center);
+  const worldToLocalM = mat4.invert(localToWorldM);
+
+  // TODO(@darzu): how to visualize a mat4 ?
+  //    visualize a space transformation:
+  //      point cloud of unit cube colored by x,y,z
+  //      to output points x,y,z
+  //    or just see what it does to the gizmo ? draw lines from tips
+
+  drawGizmosForMat4(localToWorldM, 20);
+
+  // return;
+
+  const localCorners = worldCorners.map((v) => V3.tMat4(v, worldToLocalM, v));
+  // const viewCorners = worldCorners
+  //   .map((v) => V3.sub(v, opt.target.center, v))
+  //   .map((v) => V3.tQuat(v, rot, v));
+  // TODO(@darzu): To be more precise, we should walk the parameter of the 6 outer corners instead of fitting an AABB
+  const localAABB = getAABBFromPositions(createAABB(), localCorners);
+
+  // only care about the xz plane
+  localAABB.min[1] = 0;
+  localAABB.max[1] = 0;
+
+  const worldMin = V3.tMat4(localAABB.min, localToWorldM);
+  const worldMax = V3.tMat4(localAABB.max, localToWorldM);
+
+  if (DBG_getAimAndMissPositions) {
+    console.log(aabbDbg(localAABB));
+    drawBall(worldMin, 1, ENDESGA16.darkRed);
+    drawLine(incomingPos, worldMin, ENDESGA16.darkRed);
+    drawBall(worldMax, 1, ENDESGA16.red);
+    drawLine(incomingPos, worldMax, ENDESGA16.red);
+
+    drawLine(incomingPos, opt.target.center, ENDESGA16.lightBlue);
+    // drawPlane(
+    //   vec3Mid(V3.tmp(), worldMin, worldMax),
+    //   V3.neg(opt.srcToTrg),
+    //   20,
+    //   ENDESGA16.orange
+    // );
+  }
+  // TODO(@darzu): IMPL! Still bugged.
 }
 
 export function getFireSolution(opt: FireSolutionOpt): quat | undefined {

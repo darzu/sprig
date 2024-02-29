@@ -144,4 +144,34 @@ TODO: investigate co-routines
 
 TODO: investigate green threads a la microbit
 
+Support narrowing property check:
+  type DrawPlaneOpt = {
+    norm: V3.InputT;
+    color?: V3.InputT;
+  } & (
+    | {
+        center: V3.InputT;
+        halfsize?: number;
+      }
+    | {
+        corner1: V3.InputT;
+        corner2: V3.InputT;
+      }
+  );
+  if (opt.center) {
+    // center & halfsize r here
+  }
 
+Byte sizes everywhere:
+   type foo = {
+    norm: V3.InputT;
+    color: V3.InputT;
+  } // has size 24
+  type foo = {
+    norm: V3.InputT; } 
+  | {
+    norm: V3.InputT;
+    color: V3.InputT;
+  } // has size min:12 max:24
+
+  can reason about whether a loop will fit into L1 cache?

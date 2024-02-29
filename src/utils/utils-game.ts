@@ -5,7 +5,9 @@ import {
   AllMeshesDef,
   BallMesh,
   GizmoMesh,
+  PlaneMesh,
   UnitCubeMesh,
+  UnitPlaneMesh,
 } from "../meshes/mesh-list.js";
 import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { remap } from "./math.js";
@@ -13,10 +15,17 @@ import { getLineEnd, Line, Ray } from "../physics/broadphase.js";
 import {
   PhysicsParentDef,
   PositionDef,
+  RotationDef,
   ScaleDef,
 } from "../physics/transform.js";
 import { MeshHandle } from "../render/mesh-pool.js";
-import { Mesh } from "../meshes/mesh.js";
+import {
+  Mesh,
+  getAABBFromMesh,
+  mergeMeshes,
+  scaleMesh,
+  transformMesh,
+} from "../meshes/mesh.js";
 import {
   Renderable,
   RenderableConstructDef,
@@ -29,11 +38,28 @@ import { DeadDef } from "../ecs/delete.js";
 import { Collider, ColliderDef } from "../physics/collider.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { AABB, getSizeFromAABB, isValidAABB } from "../physics/aabb.js";
+import { createObj, mixinObj } from "../graybox/objects.js";
+import { PI } from "./util-no-import.js";
+import { createGizmoMesh } from "../debug/gizmos.js";
+
+// TODO(@darzu): DBG DRAW STUFF:
+/*
+lifetime stragies:
+  pool (ring buffer, throw)
+  lifetime
+  key
+objects:
+  for many structs like AABB, OBB, 
+  primatives: ball, plane, line, box, dot
+  advanced: pointCloudOnMeshSurface, checkeredOnMesh
+  w/ transparency
+*/
 
 // TODO(@darzu): move this helper elsewhere?
 // TODO(@darzu): would be dope to support thickness;
 //    probably needs some shader work + a post pass
 // TODO(@darzu): this whole line pool thing needs a hard rethink; it might be okay but it's pretty hacky rn
+// TODO(@darzu): use entity pool
 const _linePool: EntityW<[typeof RenderableDef]>[] = [];
 const _linePoolLimit = 100;
 let _linePoolNext = 0;
@@ -136,6 +162,65 @@ export function drawBall(
   return e;
 }
 
+// TODO(@darzu): Use pool!
+type DrawPlaneOpt = {
+  norm: V3.InputT;
+  color?: V3.InputT;
+} & (
+  | {
+      center: V3.InputT;
+      halfsize?: number;
+    }
+  | {
+      corner1: V3.InputT;
+      corner2: V3.InputT;
+    }
+);
+export function drawPlane(opt: DrawPlaneOpt): EntityW<[typeof PositionDef]> {
+  const e = createObj([ColorDef] as const, {
+    color: opt.color ?? ENDESGA16.darkGray,
+  });
+  if ("center" in opt) {
+    const scale = (opt.halfsize ?? 1.0) / 5;
+    mixinObj(
+      e,
+      [PositionDef, RenderableConstructDef, ScaleDef, RotationDef] as const,
+      {
+        position: [0, 0, 0],
+        renderableConstruct: [PlaneMesh],
+        scale: [scale, scale, scale],
+        rotation: quat.fromUp(opt.norm),
+      }
+    );
+    return e;
+  } else if ("corner1" in opt) {
+    const _1to2 = V3.sub(opt.corner2, opt.corner1);
+    const orig = [
+      Math.min(opt.corner1[0], opt.corner2[0]),
+      Math.min(opt.corner1[0], opt.corner2[0]),
+      Math.min(opt.corner1[0], opt.corner2[0]),
+    ];
+    const height = Math.abs(_1to2[2]);
+    const len = V2.len([_1to2[0], _1to2[1]]);
+    const yaw = V2.getYaw([opt.norm[0], opt.norm[1]]);
+    const rot = quat.tmp();
+    quat.pitch(rot, PI / 2, rot);
+    quat.yaw(rot, yaw, rot);
+    mixinObj(
+      e,
+      [PositionDef, RenderableConstructDef, ScaleDef, RotationDef] as const,
+      {
+        position: [0, 0, 0],
+        renderableConstruct: [PlaneMesh],
+        scale: [len, height, 1],
+        rotation: rot,
+      }
+    );
+    throw "TODO wip";
+    // return e;
+  } else throw "todo";
+}
+
 export async function randomizeMeshColors(e: Entity) {
   const res = await EM.whenResources(RendererDef);
   const e2 = await EM.whenEntityHas(e, RenderableDef);
@@ -201,6 +286,27 @@ export function addWorldGizmo(origin = V(0, 0, 0), scale = 5) {
   EM.set(worldGizmo, ScaleDef, V(scale, scale, scale));
   EM.set(worldGizmo, RenderableConstructDef, GizmoMesh);
   return worldGizmo;
+}
+
+export function drawGizmosForMat4(m: mat4, scale: number) {
+  // const g1 = createGizmoMesh();
+  // scaleMesh(g1, scale);
+  const g2 = createGizmoMesh();
+  scaleMesh(g2, scale);
+  transformMesh(g2, m);
+  // const newX = V3.tMat4([1,0,0], m);
+  // const newY = V3.tMat4([0,1,0], m);
+  // const newZ = V3.tMat4([0,0,1], m);
+
+  // createLineMesh(0.1, [0.05, 0, 0], [1, 0, 0]);
+
+  // const mesh = mergeMeshes(g1, g2);
+  const mesh = g2;
+
+  const ent = EM.new();
+  EM.set(ent, PositionDef);
+  EM.set(ent, RenderableConstructDef, mesh);
+  return ent;
 }
 
 export function createBoxForAABB(

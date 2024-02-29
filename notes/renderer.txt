@@ -790,8 +790,15 @@ Outlines / edge detection:
     normals of nearby pixels. However, I also look for large differences in depth and unlit 
     color and add additional dark edges."
 
-  https://blender.community/c/rightclickselect/J9bbbc/?sorting=hot
-    https://en.wikipedia.org/wiki/Prewitt_operator
+  screenspace curvature shader:
+    blender: https://blender.community/c/rightclickselect/J9bbbc/?sorting=hot
+      https://en.wikipedia.org/wiki/Prewitt_operator
+    
+    https://madebyevan.com/shaders/curvature/
+
+    https://forum.unity.com/threads/released-screen-space-cavity-curvature-for-unity-inspired-by-blenders-cavity-effects.1261145/
+
+    https://assetstore.unity.com/packages/vfx/shaders/fullscreen-camera-effects/screen-space-cavity-curvature-built-in-urp-hdrp-216995
 
   https://alexanderameye.github.io/notes/rendering-outlines/
   https://roystan.net/articles/outline-shader.html
@@ -845,7 +852,6 @@ Linearize depth:
       float z = depth * 2.0 - 1.0; // Back to NDC 
       return (2.0 * near_plane * far_plane) / (far_plane + near_plane - z * (far_plane - near_plane));
   }
-
 
 Particles and techniques:
   http://www.opengl-tutorial.org/intermediate-tutorials/billboards-particles/particles-instancing/
