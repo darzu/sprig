@@ -88,53 +88,50 @@ export type SketchOpt = {
 );
 
 export interface Sketcher {
-  draw: (opt: SketchOpt) => Sketch;
+  sketch: (opt: SketchOpt) => Sketch;
 }
 
 export const SketcherDef = EM.defineResource("sketcher", (p: Sketcher) => p);
 
 EM.addLazyInit([RendererDef], [SketcherDef], (res) => {
-  const pool = createEntityPool(
-    // < [typeof ColorDef, typeof PositionDef, typeof ScaleDef]>
-    {
-      max: 100,
-      maxBehavior: "rand-despawn",
-      create: () => {
-        const e = SketchObj.new({
-          props: {
-            key: "invalid",
-          },
-          args: {
-            position: undefined,
-            transform: undefined,
-            rotation: undefined,
-            scale: undefined,
-            world: undefined,
-            color: undefined,
-          },
-        });
+  const pool = createEntityPool({
+    max: 100,
+    maxBehavior: "rand-despawn",
+    create: () => {
+      const e = SketchObj.new({
+        props: {
+          key: "invalid",
+        },
+        args: {
+          position: undefined,
+          transform: undefined,
+          rotation: undefined,
+          scale: undefined,
+          world: undefined,
+          color: undefined,
+        },
+      });
 
-        return e;
-      },
-      onSpawn: (e) => {
-        EM.tryRemoveComponent(e.id, DeadDef);
-      },
-      onDespawn: (e) => {
-        EM.set(e, DeadDef);
-        e.dead.processed = true;
-      },
-    }
-  );
+      return e;
+    },
+    onSpawn: (e) => {
+      EM.tryRemoveComponent(e.id, DeadDef);
+    },
+    onDespawn: (e) => {
+      EM.set(e, DeadDef);
+      e.dead.processed = true;
+    },
+  });
 
-  const protoMap = new Map<string, Sketch>();
+  const sketchMap = new Map<string, Sketch>();
 
-  function draw(opt: SketchOpt): Sketch {
+  function sketch(opt: SketchOpt): Sketch {
     let e: Sketch | undefined;
-    if (opt.key) e = protoMap.get(opt.key);
+    if (opt.key) e = sketchMap.get(opt.key);
     if (!e) {
       e = pool.spawn();
       const key = opt.key ?? `proto_${e.id}`;
-      protoMap.set(key, e);
+      sketchMap.set(key, e);
       e.sketch.key = key;
     }
 
@@ -187,18 +184,18 @@ EM.addLazyInit([RendererDef], [SketcherDef], (res) => {
   }
 
   EM.addResource(SketcherDef, {
-    draw,
+    sketch,
   });
 });
 
-export async function draw(opt: SketchOpt): Promise<Sketch> {
+export async function sketch(opt: SketchOpt): Promise<Sketch> {
   let sketcher = EM.getResource(SketcherDef);
   if (sketcher) {
-    return sketcher.draw(opt);
+    return sketcher.sketch(opt);
   } else {
     // NOTE: this should be rarely done b/c once the resource is present we'll skip this
     const cloneOpt = cloneTmpsInObj(opt);
     sketcher = (await EM.whenResources(SketcherDef)).sketcher;
-    return sketcher.draw(cloneOpt);
+    return sketcher.sketch(cloneOpt);
   }
 }
