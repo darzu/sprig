@@ -301,9 +301,9 @@ export async function initGrayboxShipArena() {
         alphaRenderPipeline,
         outlineRender,
         deferredPipeline,
-        stdGridRender,
         linePipe,
         pointPipe,
+        stdGridRender,
         postProcess
       );
     }
@@ -769,7 +769,7 @@ async function initEnemies() {
     [EnemyDef, PositionDef, RotationDef],
     [TimeDef],
     (es, res) => {
-      if (res.time.step % 100 !== 0) return;
+      // if (res.time.step % 100 !== 0) return;
 
       for (let e of es) {
         const incomingDir = V3.sub(player.position, e.position);

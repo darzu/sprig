@@ -100,7 +100,7 @@ export function getAimAndMissPositions(opt: {
   const worldMax = V3.tMat4(localAABB.max, localToWorldM);
 
   if (DBG_getAimAndMissPositions) {
-    console.log(aabbDbg(localAABB));
+    // console.log(aabbDbg(localAABB));
     draw({
       key: "projMin",
       shape: "line",
