@@ -7,7 +7,7 @@ import {
   transformAABB,
 } from "../physics/aabb.js";
 import { OBB, getOBBCornersTemp } from "../physics/obb.js";
-import { sketch } from "../utils/sketch.js";
+import { sketch, sketchLine } from "../utils/sketch.js";
 import { aabbDbg, vec3Dbg, vec3Mid } from "../utils/utils-3d.js";
 import {
   addWorldGizmo,
@@ -75,6 +75,15 @@ export function getAimAndMissPositions(opt: {
   const localToWorldM = mat4.fromRotationTranslation(rot, opt.target.center);
   const worldToLocalM = mat4.invert(localToWorldM);
 
+  sketchLine(
+    incomingPos,
+    V3.add(opt.target.center, V3.scale(opt.target.fwd, opt.target.halfw[1])),
+    {
+      key: "obbTest",
+      color: ENDESGA16.orange,
+    }
+  );
+
   // TODO(@darzu): how to visualize a mat4 ?
   //    visualize a space transformation:
   //      point cloud of unit cube colored by x,y,z
@@ -84,6 +93,13 @@ export function getAimAndMissPositions(opt: {
   // drawGizmosForMat4(localToWorldM, 20);
 
   // return;
+
+  worldCorners.forEach((v, i) => {
+    sketchLine(incomingPos, v, {
+      key: `corner${i}`,
+      color: ENDESGA16.white,
+    });
+  });
 
   const localCorners = worldCorners.map((v) => V3.tMat4(v, worldToLocalM, v));
   // const viewCorners = worldCorners
@@ -99,42 +115,31 @@ export function getAimAndMissPositions(opt: {
   const worldMin = V3.tMat4(localAABB.min, localToWorldM);
   const worldMax = V3.tMat4(localAABB.max, localToWorldM);
 
-  if (DBG_getAimAndMissPositions) {
-    // console.log(aabbDbg(localAABB));
-    sketch({
-      key: "projMin",
-      shape: "line",
-      start: incomingPos,
-      end: worldMin,
-      color: ENDESGA16.darkRed,
-    });
-    sketch({
-      key: "projMax",
-      shape: "line",
-      start: incomingPos,
-      end: worldMax,
-      color: ENDESGA16.red,
-    });
-    sketch({
-      key: "projMid",
-      shape: "line",
-      start: incomingPos,
-      end: opt.target.center,
-      color: ENDESGA16.lightBlue,
-    });
-    // drawBall(worldMin, 1, ENDESGA16.darkRed);
-    // drawLine(incomingPos, worldMin, ENDESGA16.darkRed);
-    // drawBall(worldMax, 1, ENDESGA16.red);
-    // drawLine(incomingPos, worldMax, ENDESGA16.red);
+  // console.log(aabbDbg(localAABB));
+  sketchLine(incomingPos, worldMin, {
+    key: "projMin",
+    color: ENDESGA16.darkRed,
+  });
+  sketchLine(incomingPos, worldMax, {
+    key: "projMax",
+    color: ENDESGA16.red,
+  });
+  sketchLine(incomingPos, opt.target.center, {
+    key: "projMid",
+    color: ENDESGA16.lightBlue,
+  });
+  // drawBall(worldMin, 1, ENDESGA16.darkRed);
+  // drawLine(incomingPos, worldMin, ENDESGA16.darkRed);
+  // drawBall(worldMax, 1, ENDESGA16.red);
+  // drawLine(incomingPos, worldMax, ENDESGA16.red);
 
-    // drawLine(incomingPos, opt.target.center, ENDESGA16.lightBlue);
-    // drawPlane(
-    //   vec3Mid(V3.tmp(), worldMin, worldMax),
-    //   V3.neg(opt.srcToTrg),
-    //   20,
-    //   ENDESGA16.orange
-    // );
-  }
+  // drawLine(incomingPos, opt.target.center, ENDESGA16.lightBlue);
+  // drawPlane(
+  //   vec3Mid(V3.tmp(), worldMin, worldMax),
+  //   V3.neg(opt.srcToTrg),
+  //   20,
+  //   ENDESGA16.orange
+  // );
   // TODO(@darzu): IMPL! Still bugged.
 }
 

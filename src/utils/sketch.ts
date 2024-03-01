@@ -1,4 +1,5 @@
 import { ColorDef, TintsDef } from "../color/color-ecs.js";
+import { ENDESGA16 } from "../color/palettes.js";
 import { DeadDef } from "../ecs/delete.js";
 import { EM, Entity } from "../ecs/entity-manager.js";
 import { createEntityPool } from "../ecs/entity-pool.js";
@@ -71,21 +72,23 @@ export const SketchObj = defineObj({
 });
 export type Sketch = ObjChildEnt<typeof SketchObj>;
 
-export type SketchOpt = {
+export interface SketchBaseOpt {
   key?: string;
   // lifeMs?: number;
   color?: V3.InputT;
-} & (
-  | {
-      shape: "line";
-      start: V3.InputT;
-      end: V3.InputT;
-    }
-  | {
-      shape: "cube";
-      halfsize?: number;
-    }
-);
+}
+
+export interface SketchLineOpt {
+  shape: "line";
+  start: V3.InputT;
+  end: V3.InputT;
+}
+export interface SketchCubeOpt {
+  shape: "cube";
+  halfsize?: number;
+}
+
+export type SketchOpt = SketchBaseOpt & (SketchLineOpt | SketchCubeOpt);
 
 export interface Sketcher {
   sketch: (opt: SketchOpt) => Sketch;
@@ -141,7 +144,7 @@ EM.addLazyInit([RendererDef], [SketcherDef], (res) => {
   }
 
   function update(e: Sketch, opt: SketchOpt): Sketch {
-    if (opt.color) V3.copy(e.color, opt.color);
+    V3.copy(e.color, opt.color ?? ENDESGA16.lightGreen);
 
     identityFrame(e);
     identityFrame(e.world);
@@ -198,4 +201,18 @@ export async function sketch(opt: SketchOpt): Promise<Sketch> {
     sketcher = (await EM.whenResources(SketcherDef)).sketcher;
     return sketcher.sketch(cloneOpt);
   }
+}
+
+export function sketchNow(opt: SketchOpt): Sketch | undefined {
+  let sketcher = EM.getResource(SketcherDef);
+  if (sketcher) return sketcher.sketch(opt);
+  return undefined;
+}
+
+export async function sketchLine(
+  start: V3.InputT,
+  end: V3.InputT,
+  opt: SketchBaseOpt = {}
+): Promise<Sketch> {
+  return sketch({ start, end, shape: "line", ...opt });
 }

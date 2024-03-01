@@ -2,7 +2,7 @@ import { EM } from "../ecs/entity-manager.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { V, V3, mat3, mat4, tV } from "../matrix/sprig-matrix.js";
 import { clamp } from "../utils/math.js";
-import { dbgLogOnce, range } from "../utils/util.js";
+import { dbgLogOnce, objMap, range } from "../utils/util.js";
 import { mat3Dbg, vec3Dbg } from "../utils/utils-3d.js";
 import {
   AABB,
@@ -80,25 +80,57 @@ EM.addSystem(
 );
 
 const _tempObbCorners: V3[] = range(8).map((_) => V3.mk());
+const _t_fwd = V3.mk();
+const _t_right = V3.mk();
+const _t_up = V3.mk();
 export function getOBBCornersTemp(obb: OBB): V3[] {
-  const a = _tempObbCorners;
-  V3.copy(a[0], obb.center);
-  V3.copy(a[1], obb.center);
-  V3.copy(a[2], obb.center);
-  V3.copy(a[3], obb.center);
-  V3.copy(a[4], obb.center);
-  V3.copy(a[5], obb.center);
-  V3.copy(a[6], obb.center);
-  V3.copy(a[7], obb.center);
-  V3.add(a[0], [+obb.halfw[0], +obb.halfw[1], +obb.halfw[2]], a[0]);
-  V3.add(a[1], [+obb.halfw[0], +obb.halfw[1], -obb.halfw[2]], a[1]);
-  V3.add(a[2], [+obb.halfw[0], -obb.halfw[1], +obb.halfw[2]], a[2]);
-  V3.add(a[3], [+obb.halfw[0], -obb.halfw[1], -obb.halfw[2]], a[3]);
-  V3.add(a[4], [-obb.halfw[0], +obb.halfw[1], +obb.halfw[2]], a[4]);
-  V3.add(a[5], [-obb.halfw[0], +obb.halfw[1], -obb.halfw[2]], a[5]);
-  V3.add(a[6], [-obb.halfw[0], -obb.halfw[1], +obb.halfw[2]], a[6]);
-  V3.add(a[7], [-obb.halfw[0], -obb.halfw[1], -obb.halfw[2]], a[7]);
-  return a;
+  // TODO(@darzu): hmm, this seems like too many ops
+  const ts = _tempObbCorners;
+  const right = V3.scale(obb.right, obb.halfw[0], _t_right);
+  const fwd = V3.scale(obb.fwd, obb.halfw[1], _t_fwd);
+  const up = V3.scale(obb.up, obb.halfw[2], _t_up);
+  V3.copy(ts[0], obb.center);
+  V3.copy(ts[1], obb.center);
+  V3.copy(ts[2], obb.center);
+  V3.copy(ts[3], obb.center);
+  V3.copy(ts[4], obb.center);
+  V3.copy(ts[5], obb.center);
+  V3.copy(ts[6], obb.center);
+  V3.copy(ts[7], obb.center);
+
+  V3.add(ts[0], right, ts[0]);
+  V3.add(ts[0], fwd, ts[0]);
+  V3.add(ts[0], up, ts[0]);
+
+  V3.add(ts[1], right, ts[1]);
+  V3.add(ts[1], fwd, ts[1]);
+  V3.sub(ts[1], up, ts[1]);
+
+  V3.add(ts[2], right, ts[2]);
+  V3.sub(ts[2], fwd, ts[2]);
+  V3.add(ts[2], up, ts[2]);
+
+  V3.add(ts[3], right, ts[3]);
+  V3.sub(ts[3], fwd, ts[3]);
+  V3.sub(ts[3], up, ts[3]);
+
+  V3.sub(ts[4], right, ts[4]);
+  V3.add(ts[4], fwd, ts[4]);
+  V3.add(ts[4], up, ts[4]);
+
+  V3.sub(ts[5], right, ts[5]);
+  V3.add(ts[5], fwd, ts[5]);
+  V3.sub(ts[5], up, ts[5]);
+
+  V3.sub(ts[6], right, ts[6]);
+  V3.sub(ts[6], fwd, ts[6]);
+  V3.add(ts[6], up, ts[6]);
+
+  V3.sub(ts[7], right, ts[7]);
+  V3.sub(ts[7], fwd, ts[7]);
+  V3.sub(ts[7], up, ts[7]);
+
+  return ts;
 }
 
 export module OBB {

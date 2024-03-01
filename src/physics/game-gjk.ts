@@ -183,7 +183,7 @@ export async function initGJKSandbox() {
   // // createPlayer();
 
   // quat.copy(g.rotation, [0.0, 0.0, 0.0, 1.0]);
-  // V3.copy(g.cameraFollow.positionOffset, [0.0, -5.0, 0.0]);
+  V3.copy(g.cameraFollow.positionOffset, [0.0, -5.0, 0.0]);
   // g.cameraFollow.yawOffset = -0.034;
   // g.cameraFollow.pitchOffset = -0.428;
 
