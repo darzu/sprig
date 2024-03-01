@@ -1,5 +1,5 @@
 import { ComponentDef, Entity, EntityW } from "./entity-manager.js";
-import { createIdxPool } from "../utils/idx-pool.js";
+import { IdxPool, createIdxPool } from "../utils/idx-pool.js";
 import { assert } from "../utils/util.js";
 import { never } from "../utils/util-no-import.js";
 

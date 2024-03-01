@@ -808,6 +808,9 @@ export class EntityManager {
   ): (C extends ResourceDef<any, infer P> ? P : never) | undefined {
     return this.resources[c.name] as any;
   }
+  public hasResource<C extends ResourceDef>(c: C): boolean {
+    return c.name in this.resources;
+  }
   // TODO(@darzu): remove? we should probably be using "whenResources"
   public getResources<RS extends ResourceDef[]>(
     rs: [...RS]

@@ -3,17 +3,31 @@ import { DeadDef } from "../ecs/delete.js";
 import { EM, Entity } from "../ecs/entity-manager.js";
 import { createEntityPool } from "../ecs/entity-pool.js";
 import { ObjChildEnt, T, createObj, defineObj } from "../graybox/objects.js";
-import { V3 } from "../matrix/sprig-matrix.js";
+import { V3, findAnyTmpVec, quat } from "../matrix/sprig-matrix.js";
+import { mkLine } from "../meshes/primatives.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import {
   PositionDef,
   RotationDef,
   ScaleDef,
+  TransformDef,
   createFrame,
+  identityFrame,
 } from "../physics/transform.js";
 import { isMeshHandle } from "../render/mesh-pool.js";
-import { RenderableConstructDef, RendererDef } from "../render/renderer-ecs.js";
+import { lineMeshPoolPtr } from "../render/pipelines/std-line.js";
+import {
+  RenderableConstructDef,
+  RenderableDef,
+  RendererDef,
+} from "../render/renderer-ecs.js";
 import { never } from "./util-no-import.js";
+import { assert, dbgLogOnce } from "./util.js";
+
+const DBG_CHECK_FOR_TMPS_IN_ASYNC_PROTO = true; // pretty cheap most the time
+
+// TODO(@darzu): RENAME:
+//  blocks (block it out), sketcher / sketch, prototype, gizmo, adornment, widgets,
 
 // TODO(@darzu): DBG DRAW STUFF:
 /*
@@ -38,15 +52,22 @@ maybe draw a scene in a seperate little window,
 
 // obj key, poo
 
-const ProtoObj = defineObj({
+export const ProtoObj = defineObj({
   name: "proto",
   propsType: T<{ key: string }>(),
-  components: [PositionDef, RotationDef, ScaleDef, WorldFrameDef, ColorDef],
+  components: [
+    PositionDef,
+    RotationDef,
+    ScaleDef,
+    TransformDef,
+    WorldFrameDef,
+    ColorDef,
+  ],
 });
-type Proto = ObjChildEnt<typeof ProtoObj>;
+export type Proto = ObjChildEnt<typeof ProtoObj>;
 
-type ProtoOpt = {
-  key: string;
+export type ProtoOpt = {
+  key?: string;
   // lifeMs?: number;
   color?: V3.InputT;
 } & (
@@ -61,7 +82,7 @@ type ProtoOpt = {
     }
 );
 
-interface Prototyper {
+export interface Prototyper {
   draw: (opt: ProtoOpt) => Proto;
 }
 
@@ -83,6 +104,7 @@ EM.addLazyInit([RendererDef], [PrototyperDef], (res) => {
           },
           args: {
             position: undefined,
+            transform: undefined,
             rotation: undefined,
             scale: undefined,
             world: undefined,
@@ -105,14 +127,52 @@ EM.addLazyInit([RendererDef], [PrototyperDef], (res) => {
   const protoMap = new Map<string, Proto>();
 
   function draw(opt: ProtoOpt): Proto {
-    let e = protoMap.get(opt.key);
+    let e: Proto | undefined;
+    if (opt.key) e = protoMap.get(opt.key);
     if (!e) {
       e = pool.spawn();
-      protoMap.set(opt.key, e);
-      e.proto.key = opt.key;
+      const key = opt.key ?? `proto_${e.id}`;
+      protoMap.set(key, e);
+      e.proto.key = key;
     }
 
-    updateProto(e, opt);
+    update(e, opt);
+
+    return e;
+  }
+
+  function update(e: Proto, opt: ProtoOpt): Proto {
+    if (opt.color) V3.copy(e.color, opt.color);
+
+    identityFrame(e);
+    identityFrame(e.world);
+
+    if (opt.shape === "line") {
+      if (!RenderableConstructDef.isOn(e)) {
+        const m = mkLine();
+        V3.copy(m.pos[0], opt.start);
+        V3.copy(m.pos[1], opt.end);
+        EM.set(
+          e,
+          RenderableConstructDef,
+          m,
+          true,
+          undefined,
+          undefined,
+          lineMeshPoolPtr
+        );
+      } else {
+        assert(RenderableDef.isOn(e), `race condition`);
+        const h = e.renderable.meshHandle;
+        const m = h.mesh;
+        assert(m.dbgName === "line" && m.pos.length === 2);
+        V3.copy(m.pos[0], opt.start);
+        V3.copy(m.pos[1], opt.end);
+        h.pool.updateMeshVertices(h, m, 0, 2);
+      }
+    } else if (opt.shape === "cube") {
+      throw "TODO cube";
+    } else never(opt);
 
     return e;
   }
@@ -122,19 +182,17 @@ EM.addLazyInit([RendererDef], [PrototyperDef], (res) => {
   });
 });
 
-function updateProto(e: Proto, opt: ProtoOpt): Proto {
-  if (opt.color) V3.copy(e.color, opt.color);
-
-  if (opt.shape === "line") {
-    throw "TODO line";
-  } else if (opt.shape === "cube") {
-    throw "TODO cube";
-  } else never(opt);
-
-  return e;
-}
-
 export async function draw(opt: ProtoOpt): Promise<Proto> {
-  const { prototyper } = await EM.whenResources(PrototyperDef);
-  return prototyper.draw(opt);
+  let prototyper = EM.getResource(PrototyperDef);
+  if (prototyper) {
+    return prototyper.draw(opt);
+  } else {
+    console.log(`async draw`);
+    if (DBG_CHECK_FOR_TMPS_IN_ASYNC_PROTO) {
+      const tmpPath = findAnyTmpVec(opt);
+      console.warn(`Found tmp vec in draw() used across async: opt${tmpPath}`);
+    }
+    prototyper = (await EM.whenResources(PrototyperDef)).prototyper;
+    return prototyper.draw(opt);
+  }
 }

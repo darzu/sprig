@@ -93,6 +93,17 @@ export const mkCubeMesh: () => Mesh = () => ({
   usesProvoking: true,
 });
 
+export const mkLine: () => Mesh = () => ({
+  dbgName: "line",
+  pos: [V(-1.0, -1.0, -1.0), V(+1.0, +1.0, +1.0)],
+  tri: [],
+  quad: [],
+  lines: [V(0, 1)],
+  colors: [],
+  surfaceIds: [],
+  usesProvoking: true,
+});
+
 // points from y=0 to y=1; for debug visualization
 // TODO(@darzu): enhance this with an arrow head?
 export const mkArrowMesh: () => Mesh = () => {

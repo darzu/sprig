@@ -68,8 +68,13 @@ export function initGhost(mesh?: MeshLike) {
   g.controllable.speed *= 10;
   g.controllable.sprintMul = 0.2;
 
+  const gameName = (globalThis as any).GAME; // TODO(@darzu): HACK
+
+  // TODO(@darzu): ABSTRACT / GENERALIZE so other systems can save/load state
+  const storageKey = `ghostCam_${gameName}`;
+
   let ghostCam: CameraSetting;
-  let ghostCamStr = localStorage.getItem("ghostCam");
+  let ghostCamStr = localStorage.getItem(storageKey);
   if (!ghostCamStr) {
     ghostCam = defaultCam;
   } else {
@@ -99,7 +104,7 @@ export function initGhost(mesh?: MeshLike) {
       if (str == _lastSettings) return;
 
       // save
-      localStorage.setItem("ghostCam", str);
+      localStorage.setItem(storageKey, str);
     }
   );
 

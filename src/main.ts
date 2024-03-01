@@ -92,6 +92,7 @@ function callFixedTimestepSystems() {
 
 async function startGame(localPeerName: string, host: string | null) {
   // dbgLogMilestone("startGame()");
+  (globalThis as any).GAME = GAME;
 
   if (gameStarted) return;
   gameStarted = true;

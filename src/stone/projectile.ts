@@ -81,7 +81,7 @@ export function getAimAndMissPositions(opt: {
   //      to output points x,y,z
   //    or just see what it does to the gizmo ? draw lines from tips
 
-  drawGizmosForMat4(localToWorldM, 20);
+  // drawGizmosForMat4(localToWorldM, 20);
 
   // return;
 
@@ -114,6 +114,13 @@ export function getAimAndMissPositions(opt: {
       start: incomingPos,
       end: worldMax,
       color: ENDESGA16.red,
+    });
+    draw({
+      key: "projMid",
+      shape: "line",
+      start: incomingPos,
+      end: opt.target.center,
+      color: ENDESGA16.lightBlue,
     });
     // drawBall(worldMin, 1, ENDESGA16.darkRed);
     // drawLine(incomingPos, worldMin, ENDESGA16.darkRed);
