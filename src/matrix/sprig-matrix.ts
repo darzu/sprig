@@ -291,6 +291,39 @@ export function findAnyTmpVec(
   );
 }
 
+export function cloneTmpsInObj<A extends any>(obj: A, maxDepth = 100): A {
+  if (maxDepth <= 0) {
+    throw `Object too deep or rescursive!`;
+  } else if (!obj) {
+    return obj;
+  } else if (obj instanceof Float32Array) {
+    if (isTmpVec(obj)) {
+      const n = float32ArrayOfLength(obj.length);
+      n.forEach((_, i) => (n[i] = obj[i]));
+      return n as A;
+    }
+    return obj;
+  } else if (obj instanceof Array) {
+    return obj.map((v) => cloneTmpsInObj(v, maxDepth - 1)) as A;
+  } else if (obj instanceof Map) {
+    const res = new Map();
+    for (let [k, v] of obj.entries()) {
+      const v2 = cloneTmpsInObj(v, maxDepth - 1);
+      res.set(k, v2);
+    }
+    return res as A;
+  } else if (typeof obj === "object") {
+    const res = { ...obj };
+    for (let k of Object.keys(res)) {
+      const v2 = cloneTmpsInObj(obj[k as keyof A], maxDepth - 1);
+      res[k as keyof A] = v2;
+    }
+    return res;
+  } else {
+    return obj;
+  }
+}
+
 // TODO(@darzu): PERF. quat mult improvement? from: https://www.johndcook.com/blog/2021/06/16/faster-quaternion-rotations/
 
 // TODO(@darzu): PERF. does this have a perf hit?

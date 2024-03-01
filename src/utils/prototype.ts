@@ -3,7 +3,12 @@ import { DeadDef } from "../ecs/delete.js";
 import { EM, Entity } from "../ecs/entity-manager.js";
 import { createEntityPool } from "../ecs/entity-pool.js";
 import { ObjChildEnt, T, createObj, defineObj } from "../graybox/objects.js";
-import { V3, findAnyTmpVec, quat } from "../matrix/sprig-matrix.js";
+import {
+  V3,
+  cloneTmpsInObj,
+  findAnyTmpVec,
+  quat,
+} from "../matrix/sprig-matrix.js";
 import { mkLine } from "../meshes/primatives.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import {
@@ -24,7 +29,7 @@ import {
 import { never } from "./util-no-import.js";
 import { assert, dbgLogOnce } from "./util.js";
 
-const DBG_CHECK_FOR_TMPS_IN_ASYNC_PROTO = true; // pretty cheap most the time
+export const WARN_DROPPED_EARLY_PROTO = false;
 
 // TODO(@darzu): RENAME:
 //  blocks (block it out), sketcher / sketch, prototype, gizmo, adornment, widgets,
@@ -162,7 +167,14 @@ EM.addLazyInit([RendererDef], [PrototyperDef], (res) => {
           lineMeshPoolPtr
         );
       } else {
-        assert(RenderableDef.isOn(e), `race condition`);
+        if (!RenderableDef.isOn(e)) {
+          // TODO(@darzu): could queue these instead of dropping them.
+          if (WARN_DROPPED_EARLY_PROTO)
+            console.warn(
+              `Dropping early prototype draw() b/c .renderable isn't ready`
+            );
+          return e;
+        }
         const h = e.renderable.meshHandle;
         const m = h.mesh;
         assert(m.dbgName === "line" && m.pos.length === 2);
@@ -187,12 +199,9 @@ export async function draw(opt: ProtoOpt): Promise<Proto> {
   if (prototyper) {
     return prototyper.draw(opt);
   } else {
-    console.log(`async draw`);
-    if (DBG_CHECK_FOR_TMPS_IN_ASYNC_PROTO) {
-      const tmpPath = findAnyTmpVec(opt);
-      console.warn(`Found tmp vec in draw() used across async: opt${tmpPath}`);
-    }
+    // NOTE: this should be rarely done b/c once the resource is present we'll skip this
+    const cloneOpt = cloneTmpsInObj(opt);
     prototyper = (await EM.whenResources(PrototyperDef)).prototyper;
-    return prototyper.draw(opt);
+    return prototyper.draw(cloneOpt);
   }
 }
