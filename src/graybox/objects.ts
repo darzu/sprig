@@ -192,6 +192,7 @@ export type ObjEnt<D extends ObjOpt | _ObjDef = ObjOpt | _ObjDef> =
     ? EntityW<[ObjComponentDef<ObjPickOpt<D>>, ...CS]>
     : never;
 
+// TODO(@darzu): RENAME, this is the real thing we want?
 export type ObjChildEnt<CO extends ObjChildOpt = ObjChildOpt> = CO extends
   | ObjOpt
   | _ObjDef

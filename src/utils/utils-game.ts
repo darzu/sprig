@@ -42,19 +42,6 @@ import { createObj, mixinObj } from "../graybox/objects.js";
 import { PI } from "./util-no-import.js";
 import { createGizmoMesh } from "../debug/gizmos.js";
 
-// TODO(@darzu): DBG DRAW STUFF:
-/*
-lifetime stragies:
-  pool (ring buffer, throw)
-  lifetime
-  key
-objects:
-  for many structs like AABB, OBB, 
-  primatives: ball, plane, line, box, dot
-  advanced: pointCloudOnMeshSurface, checkeredOnMesh
-  w/ transparency
-*/
-
 // TODO(@darzu): move this helper elsewhere?
 // TODO(@darzu): would be dope to support thickness;
 //    probably needs some shader work + a post pass
@@ -180,6 +167,7 @@ export function drawPlane(opt: DrawPlaneOpt): EntityW<[typeof PositionDef]> {
   const e = createObj([ColorDef] as const, {
     color: opt.color ?? ENDESGA16.darkGray,
   });
+  // TODO(@darzu): BROKEN!
   if ("center" in opt) {
     const scale = (opt.halfsize ?? 1.0) / 5;
     mixinObj(

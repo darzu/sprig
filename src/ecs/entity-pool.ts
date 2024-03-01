@@ -7,6 +7,7 @@ import { never } from "../utils/util-no-import.js";
 // TODO(@darzu): perhaps this should be refined and co-implemented w/ archtypes?
 //    in a long running game, any regularly created entities should be using pools or archtypes.
 
+// TODO(@darzu): spawn parameters would be nice
 export interface EntityPoolParams<CS extends readonly ComponentDef[]> {
   max: number;
   maxBehavior: "crash" | "rand-despawn"; // | "ring-buffer",

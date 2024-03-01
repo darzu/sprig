@@ -7,6 +7,7 @@ import {
   transformAABB,
 } from "../physics/aabb.js";
 import { OBB, getOBBCornersTemp } from "../physics/obb.js";
+import { draw } from "../utils/prototype.js";
 import { aabbDbg, vec3Dbg, vec3Mid } from "../utils/utils-3d.js";
 import {
   addWorldGizmo,
@@ -100,12 +101,26 @@ export function getAimAndMissPositions(opt: {
 
   if (DBG_getAimAndMissPositions) {
     console.log(aabbDbg(localAABB));
-    drawBall(worldMin, 1, ENDESGA16.darkRed);
-    drawLine(incomingPos, worldMin, ENDESGA16.darkRed);
-    drawBall(worldMax, 1, ENDESGA16.red);
-    drawLine(incomingPos, worldMax, ENDESGA16.red);
+    draw({
+      key: "projMin",
+      shape: "line",
+      start: incomingPos,
+      end: worldMin,
+      color: ENDESGA16.darkRed,
+    });
+    draw({
+      key: "projMax",
+      shape: "line",
+      start: incomingPos,
+      end: worldMax,
+      color: ENDESGA16.red,
+    });
+    // drawBall(worldMin, 1, ENDESGA16.darkRed);
+    // drawLine(incomingPos, worldMin, ENDESGA16.darkRed);
+    // drawBall(worldMax, 1, ENDESGA16.red);
+    // drawLine(incomingPos, worldMax, ENDESGA16.red);
 
-    drawLine(incomingPos, opt.target.center, ENDESGA16.lightBlue);
+    // drawLine(incomingPos, opt.target.center, ENDESGA16.lightBlue);
     // drawPlane(
     //   vec3Mid(V3.tmp(), worldMin, worldMax),
     //   V3.neg(opt.srcToTrg),

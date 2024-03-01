@@ -260,3 +260,7 @@ GameDev as a search problem; the 7 problems of search:
   you are running a search algorithm
   aim for fun, appeal, and scope
   f*ing optimize your search
+
+Columnar jointing & basalt pillars:
+  https://en.wikipedia.org/wiki/Columnar_jointing
+  wild and beautiful natural geometric rock formations
