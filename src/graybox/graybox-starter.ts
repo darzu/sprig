@@ -24,7 +24,7 @@ import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
 import { shadowPipelines } from "../render/pipelines/std-shadow.js";
 import { RendererDef, RenderableConstructDef } from "../render/renderer-ecs.js";
-import { draw } from "../utils/prototype.js";
+import { draw } from "../utils/sketch.js";
 import { addWorldGizmo } from "../utils/utils-game.js";
 import { createSun, initGhost } from "./graybox-helpers.js";
 import { createObj } from "./objects.js";

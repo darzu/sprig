@@ -29,7 +29,7 @@ import {
 import { never } from "./util-no-import.js";
 import { assert, dbgLogOnce } from "./util.js";
 
-export const WARN_DROPPED_EARLY_PROTO = false;
+export const WARN_DROPPED_EARLY_SKETCH = false;
 
 // TODO(@darzu): RENAME:
 //  blocks (block it out), sketcher / sketch, prototype, gizmo, adornment, widgets,
@@ -57,8 +57,8 @@ maybe draw a scene in a seperate little window,
 
 // obj key, poo
 
-export const ProtoObj = defineObj({
-  name: "proto",
+export const SketchObj = defineObj({
+  name: "sketch",
   propsType: T<{ key: string }>(),
   components: [
     PositionDef,
@@ -69,9 +69,9 @@ export const ProtoObj = defineObj({
     ColorDef,
   ],
 });
-export type Proto = ObjChildEnt<typeof ProtoObj>;
+export type Sketch = ObjChildEnt<typeof SketchObj>;
 
-export type ProtoOpt = {
+export type SketchOpt = {
   key?: string;
   // lifeMs?: number;
   color?: V3.InputT;
@@ -87,23 +87,20 @@ export type ProtoOpt = {
     }
 );
 
-export interface Prototyper {
-  draw: (opt: ProtoOpt) => Proto;
+export interface Sketcher {
+  draw: (opt: SketchOpt) => Sketch;
 }
 
-export const PrototyperDef = EM.defineResource(
-  "prototyper",
-  (p: Prototyper) => p
-);
+export const SketcherDef = EM.defineResource("sketcher", (p: Sketcher) => p);
 
-EM.addLazyInit([RendererDef], [PrototyperDef], (res) => {
+EM.addLazyInit([RendererDef], [SketcherDef], (res) => {
   const pool = createEntityPool(
     // < [typeof ColorDef, typeof PositionDef, typeof ScaleDef]>
     {
       max: 100,
       maxBehavior: "rand-despawn",
       create: () => {
-        const e = ProtoObj.new({
+        const e = SketchObj.new({
           props: {
             key: "invalid",
           },
@@ -129,16 +126,16 @@ EM.addLazyInit([RendererDef], [PrototyperDef], (res) => {
     }
   );
 
-  const protoMap = new Map<string, Proto>();
+  const protoMap = new Map<string, Sketch>();
 
-  function draw(opt: ProtoOpt): Proto {
-    let e: Proto | undefined;
+  function draw(opt: SketchOpt): Sketch {
+    let e: Sketch | undefined;
     if (opt.key) e = protoMap.get(opt.key);
     if (!e) {
       e = pool.spawn();
       const key = opt.key ?? `proto_${e.id}`;
       protoMap.set(key, e);
-      e.proto.key = key;
+      e.sketch.key = key;
     }
 
     update(e, opt);
@@ -146,7 +143,7 @@ EM.addLazyInit([RendererDef], [PrototyperDef], (res) => {
     return e;
   }
 
-  function update(e: Proto, opt: ProtoOpt): Proto {
+  function update(e: Sketch, opt: SketchOpt): Sketch {
     if (opt.color) V3.copy(e.color, opt.color);
 
     identityFrame(e);
@@ -169,7 +166,7 @@ EM.addLazyInit([RendererDef], [PrototyperDef], (res) => {
       } else {
         if (!RenderableDef.isOn(e)) {
           // TODO(@darzu): could queue these instead of dropping them.
-          if (WARN_DROPPED_EARLY_PROTO)
+          if (WARN_DROPPED_EARLY_SKETCH)
             console.warn(
               `Dropping early prototype draw() b/c .renderable isn't ready`
             );
@@ -189,19 +186,19 @@ EM.addLazyInit([RendererDef], [PrototyperDef], (res) => {
     return e;
   }
 
-  EM.addResource(PrototyperDef, {
+  EM.addResource(SketcherDef, {
     draw,
   });
 });
 
-export async function draw(opt: ProtoOpt): Promise<Proto> {
-  let prototyper = EM.getResource(PrototyperDef);
-  if (prototyper) {
-    return prototyper.draw(opt);
+export async function draw(opt: SketchOpt): Promise<Sketch> {
+  let sketcher = EM.getResource(SketcherDef);
+  if (sketcher) {
+    return sketcher.draw(opt);
   } else {
     // NOTE: this should be rarely done b/c once the resource is present we'll skip this
     const cloneOpt = cloneTmpsInObj(opt);
-    prototyper = (await EM.whenResources(PrototyperDef)).prototyper;
-    return prototyper.draw(cloneOpt);
+    sketcher = (await EM.whenResources(SketcherDef)).sketcher;
+    return sketcher.draw(cloneOpt);
   }
 }

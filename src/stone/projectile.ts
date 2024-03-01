@@ -7,7 +7,7 @@ import {
   transformAABB,
 } from "../physics/aabb.js";
 import { OBB, getOBBCornersTemp } from "../physics/obb.js";
-import { draw } from "../utils/prototype.js";
+import { draw } from "../utils/sketch.js";
 import { aabbDbg, vec3Dbg, vec3Mid } from "../utils/utils-3d.js";
 import {
   addWorldGizmo,
