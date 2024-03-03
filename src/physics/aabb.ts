@@ -57,6 +57,12 @@ export function createAABB(min?: V3, max?: V3): AABB {
     max: max ?? V(-Infinity, -Infinity, -Infinity),
   };
 }
+export function createAABB2(min?: V2, max?: V2): AABB2 {
+  return {
+    min: min ?? V(Infinity, Infinity),
+    max: max ?? V(-Infinity, -Infinity),
+  };
+}
 export function copyAABB(out: AABB, a: AABB) {
   V3.copy(out.min, a.min);
   V3.copy(out.max, a.max);

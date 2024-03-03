@@ -1,7 +1,9 @@
 import { ENDESGA16 } from "../color/palettes.js";
-import { V2, V3, mat4, quat, tV } from "../matrix/sprig-matrix.js";
+import { V, V2, V3, mat4, quat, tV } from "../matrix/sprig-matrix.js";
 import {
+  AABB2,
   createAABB,
+  createAABB2,
   getAABBFromPositions,
   getCenterFromAABB,
   transformAABB,
@@ -61,6 +63,48 @@ function projectOntoPlane(v: V3.InputT, p: Plane, out?: V3): V3 {
   throw "TODO";
 }
 
+// TODO(@darzu): MOVE into aabb.ts
+export function getAABB2PerimeterAsParametric(
+  aabb: AABB2
+): (t: number, out?: V2) => V2 {
+  // go clockwise starting from min
+  const width = aabb.max[0] - aabb.min[0];
+  const height = aabb.max[1] - aabb.min[1];
+  const perimeter = width * 2 + height * 2;
+  const horzSegT = width / perimeter;
+  const vertSegT = height / perimeter;
+  const tTL = vertSegT;
+  const tTR = vertSegT + horzSegT;
+  const tBR = vertSegT * 2 + horzSegT;
+  return (t, out) => {
+    out = out ?? V2.tmp();
+    t = Math.abs(t % 1.0); // TODO(@darzu): bug, this doesn't wrap negative smoothly
+    if (t < tTL) {
+      // vert left +y
+      const t2 = t / height;
+      out[0] = aabb.min[0];
+      out[1] = aabb.min[1] + height * t2;
+    } else if (t < tTR) {
+      // horiz top +x
+      const t2 = (t - tTL) / width;
+      out[0] = aabb.min[0] + width * t2;
+      out[1] = aabb.max[1];
+    } else if (t < tBR) {
+      // vert right -y
+      const t2 = (t - tTR) / height;
+      out[0] = aabb.max[0];
+      out[1] = aabb.max[1] - height * t2;
+    } else {
+      // horiz bottom -x
+      const t2 = (t - tBR) / width;
+      out[0] = aabb.max[0] - width * t2;
+      out[1] = aabb.min[1];
+    }
+    return out;
+  };
+}
+
+let _lastT = 0.0; // TODO(@darzu): HACK for debugging
 export function getAimAndMissPositions(opt: {
   // TODO(@darzu):
   target: OBB;
@@ -75,15 +119,6 @@ export function getAimAndMissPositions(opt: {
   const localToWorldM = mat4.fromRotationTranslation(rot, opt.target.center);
   const worldToLocalM = mat4.invert(localToWorldM);
 
-  sketchLine(
-    incomingPos,
-    V3.add(opt.target.center, V3.scale(opt.target.fwd, opt.target.halfw[1])),
-    {
-      key: "obbTest",
-      color: ENDESGA16.orange,
-    }
-  );
-
   // TODO(@darzu): how to visualize a mat4 ?
   //    visualize a space transformation:
   //      point cloud of unit cube colored by x,y,z
@@ -94,12 +129,12 @@ export function getAimAndMissPositions(opt: {
 
   // return;
 
-  worldCorners.forEach((v, i) => {
-    sketchLine(incomingPos, v, {
-      key: `corner${i}`,
-      color: ENDESGA16.white,
-    });
-  });
+  // worldCorners.forEach((v, i) => {
+  //   sketchLine(incomingPos, v, {
+  //     key: `corner${i}`,
+  //     color: ENDESGA16.white,
+  //   });
+  // });
 
   const localCorners = worldCorners.map((v) => V3.tMat4(v, worldToLocalM, v));
   // const viewCorners = worldCorners
@@ -127,6 +162,25 @@ export function getAimAndMissPositions(opt: {
   sketchLine(incomingPos, opt.target.center, {
     key: "projMid",
     color: ENDESGA16.lightBlue,
+  });
+
+  const localAABB2 = createAABB2(
+    V(localAABB.min[0], localAABB.min[2]),
+    V(localAABB.max[0], localAABB.max[2])
+  );
+
+  const tFn = getAABB2PerimeterAsParametric(localAABB2);
+
+  _lastT += 0.01; // TODO(@darzu): DBG hack
+
+  const pos2 = tFn(_lastT);
+  const pos = tV(pos2[0], 0, pos2[1]);
+
+  const worldPos = V3.tMat4(pos, localToWorldM);
+
+  sketchLine(incomingPos, worldPos, {
+    key: "projPerim",
+    color: ENDESGA16.lightGreen,
   });
   // drawBall(worldMin, 1, ENDESGA16.darkRed);
   // drawLine(incomingPos, worldMin, ENDESGA16.darkRed);
