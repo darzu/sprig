@@ -2,7 +2,8 @@ import { V, V2, V3 } from "../matrix/sprig-matrix.js";
 import { createAABB2 } from "../physics/aabb.js";
 import { sum, wrap } from "./math.js";
 import { PI, never } from "./util-no-import.js";
-import { assert } from "./util.js";
+import { assert, range } from "./util.js";
+import { vec2Dbg } from "./utils-3d.js";
 
 // Reference: https://www.w3.org/TR/SVG2/paths.html
 
@@ -48,9 +49,9 @@ interface svg_a {
   dy: number;
 }
 type svg_instr = svg_M | svg_v | svg_h | svg_a;
-type SVG = svg_instr[];
+export type SVG = svg_instr[];
 
-function parseSVG() {
+function _testSvg() {
   const aabb = createAABB2(V(-1, -2), V(3, 4));
   const radius = 3;
   const width = 5;
@@ -95,13 +96,25 @@ export function getCircleCenter(
   return out;
 }
 
-function svgLength(start: V2.InputT, instr: svg_instr): number {
+// NOTE: assumes t is in [0,1]
+function svgPosAndLen(
+  start: V2.InputT,
+  t: number,
+  instr: svg_instr,
+  out?: V2
+): number {
+  out = out ?? V2.tmp();
   if (instr.i === "M") {
+    V2.lerp(start, [instr.x, instr.y], t, out);
     return 0;
   } else if (instr.i === "h") {
-    return instr.dx;
+    out[0] = start[0] + instr.dx * t;
+    out[1] = start[1];
+    return Math.abs(instr.dx);
   } else if (instr.i === "v") {
-    return instr.dy;
+    out[0] = start[0];
+    out[1] = start[1] + instr.dy * t;
+    return Math.abs(instr.dy);
   } else if (instr.i === "a") {
     const vx = start[0] + instr.dx;
     const vy = start[1] + instr.dy;
@@ -111,7 +124,10 @@ function svgLength(start: V2.InputT, instr: svg_instr): number {
     const vTheta = Math.atan2(vy - c[1], vx - c[1]);
     const smallTheta = Math.abs(uTheta - vTheta);
     const arcTheta = instr.largeArc ? 2 * PI - smallTheta : smallTheta;
-    const l = 2 * PI * arcTheta;
+    const theta = uTheta + arcTheta * t;
+    const l = 2 * PI * arcTheta * t;
+    out[0] = Math.cos(theta) * instr.rx;
+    out[1] = Math.sin(theta) * instr.rx;
     return l;
   } else never(instr);
 }
@@ -134,29 +150,56 @@ function svgEnd(start: V2.InputT, instr: svg_instr, out?: V2): V2 {
   return out;
 }
 
-function compileSVG(svg: SVG) {
-  const pos = V(0, 0);
+export interface CompiledSVG {
+  svg: SVG;
+  starts: V2[];
+  lengths: number[];
+  totalLength: number;
+  fn: (t: number, out?: V2) => V2;
+}
+
+export function compileSVG(svg: SVG): CompiledSVG {
+  const starts: V2[] = range(svg.length).map((_) => V(0, 0));
 
   const lengths: number[] = [];
 
   svg.forEach((instr, i) => {
-    throw "TODO";
+    const start = starts[i];
+    const end = i + 1 <= svg.length - 1 ? starts[i + 1] : V2.tmp();
+    const l = svgPosAndLen(start, 1, instr, end);
+    assert(
+      l >= 0,
+      `BUG: ${l} = svgPosAndLen(${vec2Dbg(start)}, 1, ${JSON.stringify(
+        instr
+      )}, ${vec2Dbg(end)})`
+    );
+    svgEnd(start, instr, end); // NOTE: we use the end fn b/c it's more numerically stable (overkill? probably.)
+    lengths.push(l);
   });
 
-  const perimeter = sum(lengths);
+  const totalLength = sum(lengths);
 
-  const parametric = (t: number) => {
+  const parametric = (t: number, out?: V2) => {
+    out = out ?? V2.tmp();
     t = wrapT(t);
-    let toTravel = t * perimeter;
+    let toTravel = t * totalLength;
     let i = 0;
     while (toTravel > lengths[i] && i < lengths.length - 1) {
       toTravel -= lengths[i];
       i++;
     }
     const localT = toTravel / lengths[i];
+    svgPosAndLen(starts[i], localT, svg[i], out);
+    return out;
   };
 
-  throw "TODO impl";
+  return {
+    svg,
+    starts,
+    lengths,
+    totalLength,
+    fn: parametric,
+  };
 }
 
 // TODO(@darzu): MOVE

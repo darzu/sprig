@@ -10,6 +10,7 @@ import {
 } from "../physics/aabb.js";
 import { OBB, getOBBCornersTemp } from "../physics/obb.js";
 import { sketch, sketchLine } from "../utils/sketch.js";
+import { SVG, compileSVG } from "../utils/svg.js";
 import { PI } from "../utils/util-no-import.js";
 import { assert } from "../utils/util.js";
 import { aabbDbg, vec3Dbg } from "../utils/utils-3d.js";
@@ -106,30 +107,27 @@ export function getAABB2PerimeterAsParametric(
   };
 }
 
-export function getAABB2CircleSweptPerimeterAsParametric(
+export function getAABB2CircleSweptPerimeterAsSvg(
   aabb: AABB2,
   radius: number
-): (t: number, out?: V2) => V2 {
-  // TODO(@darzu): DE-DUPE w/ above
+): SVG {
   // go clockwise starting from min
   const width = aabb.max[0] - aabb.min[0];
   const height = aabb.max[1] - aabb.min[1];
 
-  // a rx ry x-axis-rotation large-arc-flag sweep-flag dx dy
-  // M x y
-  const path = `
-    M ${aabb.min[0] - radius},${aabb.min[1]} 
-    v ${height} 
-    a ${radius} ${radius} 0 0 ${+radius} ${+radius}
-    h ${width}
-    a ${radius} ${radius} 0 0 ${+radius} ${-radius}
-    v ${-height}
-    a ${radius} ${radius} 0 0 ${-radius} ${-radius}
-    h ${-width}
-    a ${radius} ${radius} 0 0 ${-radius} ${+radius}
-  `;
+  const svg: SVG = [
+    { i: "M", x: aabb.min[0] - radius, y: aabb.min[1] },
+    { i: "v", dy: height },
+    { i: "a", rx: radius, dx: +radius, dy: +radius },
+    { i: "h", dx: width },
+    { i: "a", rx: radius, dx: +radius, dy: -radius },
+    { i: "v", dy: -height },
+    { i: "a", rx: radius, dx: -radius, dy: -radius },
+    { i: "h", dx: -width },
+    { i: "a", rx: radius, dx: -radius, dy: +radius },
+  ];
 
-  throw "TODO impl";
+  return svg;
 }
 
 let _lastT = 0.0; // TODO(@darzu): HACK for debugging
@@ -197,9 +195,13 @@ export function getAimAndMissPositions(opt: {
     V(localAABB.max[0], localAABB.max[2])
   );
 
-  const tFn = getAABB2PerimeterAsParametric(localAABB2);
+  // const tFn = getAABB2PerimeterAsParametric(localAABB2);
+  const svg = getAABB2CircleSweptPerimeterAsSvg(localAABB2, 50);
+  const compSvg = compileSVG(svg);
+  console.dir(compSvg);
+  const tFn = compSvg.fn;
 
-  _lastT += 0.01; // TODO(@darzu): DBG hack
+  _lastT += 0.005; // TODO(@darzu): DBG hack
 
   const perimPos2d = tFn(_lastT);
   const perimLocalPos = tV(perimPos2d[0], 0, perimPos2d[1]);
