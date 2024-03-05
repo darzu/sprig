@@ -10,7 +10,7 @@ import {
   findAnyTmpVec,
   quat,
 } from "../matrix/sprig-matrix.js";
-import { mkLine } from "../meshes/primatives.js";
+import { mkLine, mkPointCloud } from "../meshes/primatives.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import {
   PositionDef,
@@ -21,7 +21,10 @@ import {
   identityFrame,
 } from "../physics/transform.js";
 import { isMeshHandle } from "../render/mesh-pool.js";
-import { lineMeshPoolPtr } from "../render/pipelines/std-line.js";
+import {
+  lineMeshPoolPtr,
+  pointMeshPoolPtr,
+} from "../render/pipelines/std-line.js";
 import {
   RenderableConstructDef,
   RenderableDef,
@@ -87,8 +90,13 @@ export interface SketchCubeOpt {
   shape: "cube";
   halfsize?: number;
 }
+export interface SketchPointsOpt {
+  shape: "points";
+  vs: V3.InputT[];
+}
 
-export type SketchOpt = SketchBaseOpt & (SketchLineOpt | SketchCubeOpt);
+export type SketchOpt = SketchBaseOpt &
+  (SketchLineOpt | SketchPointsOpt | SketchCubeOpt);
 
 export interface Sketcher {
   sketch: (opt: SketchOpt) => Sketch;
@@ -179,6 +187,36 @@ EM.addLazyInit([RendererDef], [SketcherDef], (res) => {
         V3.copy(m.pos[1], opt.end);
         h.pool.updateMeshVertices(h, m, 0, 2);
       }
+    } else if (opt.shape === "points") {
+      if (!RenderableConstructDef.isOn(e)) {
+        const m = mkPointCloud(opt.vs.length);
+        for (let i = 0; i < opt.vs.length; i++) V3.copy(m.pos[i], opt.vs[i]);
+        EM.set(
+          e,
+          RenderableConstructDef,
+          m,
+          true,
+          undefined,
+          undefined,
+          pointMeshPoolPtr
+        );
+      } else {
+        if (!RenderableDef.isOn(e)) {
+          if (WARN_DROPPED_EARLY_SKETCH)
+            console.warn(
+              `Dropping early prototype draw() b/c .renderable isn't ready`
+            );
+          return e;
+        }
+        const h = e.renderable.meshHandle;
+        const m = h.mesh;
+        assert(
+          m.dbgName === "points" && m.pos.length === opt.vs.length,
+          `sketch point cloud must stay same size! ${m.dbgName} ${m.pos.length} vs ${opt.vs.length}`
+        );
+        for (let i = 0; i < opt.vs.length; i++) V3.copy(m.pos[i], opt.vs[i]);
+        h.pool.updateMeshVertices(h, m);
+      }
     } else if (opt.shape === "cube") {
       throw "TODO cube";
     } else never(opt);
@@ -215,4 +253,11 @@ export async function sketchLine(
   opt: SketchBaseOpt = {}
 ): Promise<Sketch> {
   return sketch({ start, end, shape: "line", ...opt });
+}
+
+export async function sketchPoints(
+  vs: V3.InputT[],
+  opt: SketchBaseOpt = {}
+): Promise<Sketch> {
+  return sketch({ vs, shape: "points", ...opt });
 }

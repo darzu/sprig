@@ -126,8 +126,8 @@ function svgPosAndLen(
     const arcTheta = instr.largeArc ? 2 * PI - smallTheta : smallTheta;
     const theta = uTheta + arcTheta * t;
     const l = 2 * PI * arcTheta * t;
-    out[0] = Math.cos(theta) * instr.rx;
-    out[1] = Math.sin(theta) * instr.rx;
+    out[0] = c[0] + Math.cos(theta) * instr.rx;
+    out[1] = c[1] + Math.sin(theta) * instr.rx;
     return l;
   } else never(instr);
 }

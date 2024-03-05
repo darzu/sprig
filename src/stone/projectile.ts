@@ -9,10 +9,10 @@ import {
   transformAABB,
 } from "../physics/aabb.js";
 import { OBB, getOBBCornersTemp } from "../physics/obb.js";
-import { sketch, sketchLine } from "../utils/sketch.js";
+import { sketch, sketchLine, sketchPoints } from "../utils/sketch.js";
 import { SVG, compileSVG } from "../utils/svg.js";
 import { PI } from "../utils/util-no-import.js";
-import { assert } from "../utils/util.js";
+import { assert, range } from "../utils/util.js";
 import { aabbDbg, vec3Dbg } from "../utils/utils-3d.js";
 import {
   addWorldGizmo,
@@ -196,8 +196,22 @@ export function getAimAndMissPositions(opt: {
   );
 
   // const tFn = getAABB2PerimeterAsParametric(localAABB2);
-  const svg = getAABB2CircleSweptPerimeterAsSvg(localAABB2, 50);
+  const svg = getAABB2CircleSweptPerimeterAsSvg(localAABB2, 10);
   const compSvg = compileSVG(svg);
+
+  const points = range(100)
+    .map((n) => n / 100)
+    .map((t) => {
+      const v2d = compSvg.fn(t);
+      const v = tV(v2d[0], 0, v2d[1]);
+      V3.tMat4(v, localToWorldM, v);
+      return v;
+    });
+  sketchPoints(points, {
+    key: "svgPoints",
+    color: ENDESGA16.lightGreen,
+  });
+
   console.dir(compSvg);
   const tFn = compSvg.fn;
 
