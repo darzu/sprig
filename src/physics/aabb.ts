@@ -1,7 +1,7 @@
 import { clamp } from "../utils/math.js";
 import { mat4, V, V2, V3 } from "../matrix/sprig-matrix.js";
 import { range } from "../utils/util.js";
-import { vec3Dbg2, vec3Mid } from "../utils/utils-3d.js";
+import { vec3Dbg2 } from "../utils/utils-3d.js";
 
 const TRACK_AABB = true;
 
@@ -212,7 +212,7 @@ export function aabbCenter2(out: V2, a: AABB2): V2 {
 
 // TODO(@darzu): MOVE to gl-matrix
 export function getCenterFromAABB(aabb: AABB, out?: V3): V3 {
-  return vec3Mid(out ?? V3.tmp(), aabb.min, aabb.max);
+  return V3.mid(aabb.min, aabb.max, out);
 }
 export function getSizeFromAABB(aabb: AABB, out?: V3): V3 {
   out = out ?? V3.tmp();

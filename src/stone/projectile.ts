@@ -10,7 +10,9 @@ import {
 } from "../physics/aabb.js";
 import { OBB, getOBBCornersTemp } from "../physics/obb.js";
 import { sketch, sketchLine } from "../utils/sketch.js";
-import { aabbDbg, vec3Dbg, vec3Mid } from "../utils/utils-3d.js";
+import { PI } from "../utils/util-no-import.js";
+import { assert } from "../utils/util.js";
+import { aabbDbg, vec3Dbg } from "../utils/utils-3d.js";
 import {
   addWorldGizmo,
   drawBall,
@@ -104,6 +106,32 @@ export function getAABB2PerimeterAsParametric(
   };
 }
 
+export function getAABB2CircleSweptPerimeterAsParametric(
+  aabb: AABB2,
+  radius: number
+): (t: number, out?: V2) => V2 {
+  // TODO(@darzu): DE-DUPE w/ above
+  // go clockwise starting from min
+  const width = aabb.max[0] - aabb.min[0];
+  const height = aabb.max[1] - aabb.min[1];
+
+  // a rx ry x-axis-rotation large-arc-flag sweep-flag dx dy
+  // M x y
+  const path = `
+    M ${aabb.min[0] - radius},${aabb.min[1]} 
+    v ${height} 
+    a ${radius} ${radius} 0 0 ${+radius} ${+radius}
+    h ${width}
+    a ${radius} ${radius} 0 0 ${+radius} ${-radius}
+    v ${-height}
+    a ${radius} ${radius} 0 0 ${-radius} ${-radius}
+    h ${-width}
+    a ${radius} ${radius} 0 0 ${-radius} ${+radius}
+  `;
+
+  throw "TODO impl";
+}
+
 let _lastT = 0.0; // TODO(@darzu): HACK for debugging
 export function getAimAndMissPositions(opt: {
   // TODO(@darzu):
@@ -173,15 +201,16 @@ export function getAimAndMissPositions(opt: {
 
   _lastT += 0.01; // TODO(@darzu): DBG hack
 
-  const pos2 = tFn(_lastT);
-  const pos = tV(pos2[0], 0, pos2[1]);
+  const perimPos2d = tFn(_lastT);
+  const perimLocalPos = tV(perimPos2d[0], 0, perimPos2d[1]);
 
-  const worldPos = V3.tMat4(pos, localToWorldM);
+  const perimWorldPos = V3.tMat4(perimLocalPos, localToWorldM);
 
-  sketchLine(incomingPos, worldPos, {
+  sketchLine(incomingPos, perimWorldPos, {
     key: "projPerim",
     color: ENDESGA16.lightGreen,
   });
+
   // drawBall(worldMin, 1, ENDESGA16.darkRed);
   // drawLine(incomingPos, worldMin, ENDESGA16.darkRed);
   // drawBall(worldMax, 1, ENDESGA16.red);

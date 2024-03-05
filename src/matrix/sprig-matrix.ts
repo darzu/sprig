@@ -438,6 +438,14 @@ export module V2 {
   export function dist(v1: InputT, v2: InputT): number {
     return GL.dist(v1, v2);
   }
+
+  export function mid(a: InputT, b: InputT, out?: V2): V2 {
+    out = out ?? tmp();
+    out[0] = (a[0] + b[0]) * 0.5;
+    out[1] = (a[1] + b[1]) * 0.5;
+    return out;
+  }
+
   export function sqrDist(v1: InputT, v2: InputT): number {
     return GL.sqrDist(v1, v2);
   }
@@ -570,6 +578,15 @@ export module V3 {
   export function dist(v1: InputT, v2: InputT): number {
     return GL.dist(v1, v2);
   }
+
+  export function mid(a: InputT, b: InputT, out?: V3): V3 {
+    out = out ?? tmp();
+    out[0] = (a[0] + b[0]) * 0.5;
+    out[1] = (a[1] + b[1]) * 0.5;
+    out[2] = (a[2] + b[2]) * 0.5;
+    return out;
+  }
+
   // TODO(@darzu): RENAME: all "sqr" -> "sq"
   export function sqrDist(v1: InputT, v2: InputT): number {
     return GL.sqrDist(v1, v2);

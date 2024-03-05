@@ -4,7 +4,7 @@ import { max, sum } from "../utils/math.js";
 import { AABB, createAABB, getAABBFromPositions } from "../physics/aabb.js";
 import { assert, range } from "../utils/util.js";
 import { arraySortedEqual, arrayUnsortedEqual } from "../utils/util.js";
-import { vec3Dbg, vec3Dbg2, vec3Mid, vec4Dbg2 } from "../utils/utils-3d.js";
+import { vec3Dbg, vec3Dbg2, vec4Dbg2 } from "../utils/utils-3d.js";
 import { drawBall, drawLine } from "../utils/utils-game.js";
 
 // TODO(@darzu): NEEDS REFACTOR. we need to rethink these whole mesh family of objects;

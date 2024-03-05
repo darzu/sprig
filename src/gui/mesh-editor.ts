@@ -21,7 +21,7 @@ import {
   RenderableDef,
 } from "../render/renderer-ecs.js";
 import { assert } from "../utils/util.js";
-import { randNormalPosVec3, vec3Mid } from "../utils/utils-3d.js";
+import { randNormalPosVec3 } from "../utils/utils-3d.js";
 import { ButtonsStateDef, ButtonDef } from "./button.js";
 import { WidgetDef, WidgetLayerDef } from "./widgets.js";
 import { meshPoolPtr } from "../render/pipelines/std-scene.js";
@@ -326,7 +326,7 @@ async function createMeshEditor() {
       const diff = V3.sub(pos1, pos0);
       const theta = Math.atan2(diff[1], diff[0]) + Math.PI * 0.5;
       quat.fromEuler(0, 0, theta, glyph.rotation);
-      vec3Mid(glyph.position, pos0, pos1);
+      V3.mid(pos0, pos1, glyph.position);
       glyph.position[2] = 0.2;
     }
   }
