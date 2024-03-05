@@ -3,3 +3,58 @@ self repelling curves
   https://www.cs.cmu.edu/~kmcrane/Projects/RepulsiveSurfaces/index.html
   https://www.youtube.com/watch?v=dtYGiCpzzbA
 
+nurbs:
+  https://ciechanow.ski/curves-and-surfaces/
+  https://www.rhino3d.com/features/nurbs/
+  https://www.web3d.org/x3d/content/examples/Basic/NURBS/NurbsCurveExampleIndex.html
+
+SVG 
+  paths:
+    M = moveto (move from one point to another point)
+    L = lineto (create a line)
+    H = horizontal lineto (create a horizontal line)
+    V = vertical lineto (create a vertical line)
+    C = curveto (create a curve)
+    S = smooth curveto (create a smooth curve)
+    Q = quadratic Bézier curve (create a quadratic Bézier curve)
+    T = smooth quadratic Bézier curveto (create a smooth quadratic Bézier curve)
+    A = elliptical Arc (create a elliptical arc)
+      A rx ry x-axis-rotation large-arc-flag sweep-flag x y
+      a rx ry x-axis-rotation large-arc-flag sweep-flag dx dy
+      note: if end x,y are too far for rx,ry,x-axis-rotation, there's special rules to scale up the radius:
+        https://www.w3.org/TR/SVG2/paths.html#ArcOutOfRangeParameters
+        https://www.w3.org/TR/SVG2/implnote.html#ArcCorrectionOutOfRangeRadii
+    Z = closepath (close the path)
+  basic shapes:
+    rectangle
+    circle
+    ellipse
+    line
+    polyline
+    polygon
+    Path
+
+Curves and Surfaces:
+  https://ciechanow.ski/curves-and-surfaces/
+  two "rails" + dragged segment = surface
+  if rails are bezier curves => bezier patches
+  nurbs: b-splines w/ non-unform knots and adjustable control point weighting
+  subdivision curves: repeatedly cut corners
+    if u always cut 1/4 into a straight line, this converges to quadratic b-splines
+  cut corners on surfaces:
+    Catmull–Clark subdivision surfaces
+    nicely smooth low-poly blocky meshes into progressively rounder meshes
+      http://www.holmes3d.net/graphics/subdivision/
+
+  More:
+    book: http://www.farinhansford.com/books/cagd/
+    youtube: https://www.youtube.com/playlist?list=PL9_jI1bdZmz0hIrNCMQW1YmZysAiIYSSS
+
+bezier curves deep dive:
+  https://pomax.github.io/bezierinfo/
+    arc length approx: https://pomax.github.io/bezierinfo/#arclengthapprox
+
+ideas:
+  bezier curve progress isn't linear. 
+    Can't we just apply some function to t to make it linear?
+    or we can always resample into linear segments

@@ -2264,3 +2264,11 @@ Godot discussing render graph upgrades:
 how to think about gpu aglorthims:
   https://gpu-primitives-course.github.io
   https://gpu-primitives-course.github.io/sa-course-notes.pdf
+
+"Always-Sharp SDF Textures":
+  https://julhe.github.io/posts/always_sharp_sdf_textures/
+  a generalized version of bgolus's "prestine grid" ?
+    https://bgolus.medium.com/the-best-darn-grid-shader-yet-727f9278b9d8
+
+Baking lighting into vertices:
+  https://simonschreibt.de/gat/homeworld-2-backgrounds/

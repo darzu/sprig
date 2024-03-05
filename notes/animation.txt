@@ -226,5 +226,10 @@ Architecting a #D Animation Engine: https://www.gamedeveloper.com/programming/ar
     https://lottie.github.io/lottie-spec/
     https://lottiefiles.github.io/lottie-docs/
 
+    https://lottie.github.io/lottie-spec/specs/shapes/#approximating-ellipses-with-cubic-bezier
+      "These instructions are used to generate the path as a bezier curve."
+      approximating circle w/ bezier:
+        https://spencermortensen.com/articles/bezier-circle/
+
 Game feel & death animations:
   https://www.youtube.com/watch?v=pmSAG51BybY

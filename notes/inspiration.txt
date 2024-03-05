@@ -264,3 +264,6 @@ GameDev as a search problem; the 7 problems of search:
 Columnar jointing & basalt pillars:
   https://en.wikipedia.org/wiki/Columnar_jointing
   wild and beautiful natural geometric rock formations
+
+Little planets:
+  https://oskarstalberg.com/game/planet/planet.html

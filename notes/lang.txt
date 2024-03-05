@@ -175,3 +175,11 @@ Byte sizes everywhere:
   } // has size min:12 max:24
 
   can reason about whether a loop will fit into L1 cache?
+
+Should our language support graph datatypes?
+  https://www.hillelwayne.com/post/graph-types/
+  reasons not:
+    too many representations
+    too many types of graphs
+    too many algorithms
+    too performance sensative
