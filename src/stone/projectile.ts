@@ -1,4 +1,8 @@
-import { ENDESGA16 } from "../color/palettes.js";
+import {
+  AllEndesga16,
+  ENDESGA16,
+  RainbowEndesga16,
+} from "../color/palettes.js";
 import { V, V2, V3, mat4, quat, tV } from "../matrix/sprig-matrix.js";
 import {
   AABB2,
@@ -199,18 +203,39 @@ export function getAimAndMissPositions(opt: {
   const svg = getAABB2CircleSweptPerimeterAsSvg(localAABB2, 10);
   const compSvg = compileSVG(svg);
 
-  const points = range(100)
-    .map((n) => n / 100)
-    .map((t) => {
-      const v2d = compSvg.fn(t);
-      const v = tV(v2d[0], 0, v2d[1]);
-      V3.tMat4(v, localToWorldM, v);
-      return v;
+  for (let i = 0; i < svg.length; i++) {
+    if (compSvg.lengths[i] <= 0) continue;
+
+    const N = 20;
+    const points = range(N)
+      .map((n) => n / N)
+      .map((t) => {
+        const v2d = compSvg.instrFn(i, t);
+        const v = tV(v2d[0], 0, v2d[1]);
+        V3.tMat4(v, localToWorldM, v);
+        return v;
+      });
+    sketchPoints(points, {
+      key: "svgPoints_" + i,
+      color: RainbowEndesga16[i],
     });
-  sketchPoints(points, {
-    key: "svgPoints",
-    color: ENDESGA16.lightGreen,
-  });
+  }
+
+  {
+    // full shape
+    const points = range(100)
+      .map((n) => n / 100)
+      .map((t) => {
+        const v2d = compSvg.fn(t);
+        const v = tV(v2d[0], 0, v2d[1]);
+        V3.tMat4(v, localToWorldM, v);
+        return v;
+      });
+    sketchPoints(points, {
+      key: "svgAllPoints",
+      color: ENDESGA16.lightGray,
+    });
+  }
 
   console.dir(compSvg);
   const tFn = compSvg.fn;

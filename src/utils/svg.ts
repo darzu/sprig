@@ -156,6 +156,7 @@ export interface CompiledSVG {
   lengths: number[];
   totalLength: number;
   fn: (t: number, out?: V2) => V2;
+  instrFn: (i: number, t: number, out?: V2) => V2;
 }
 
 export function compileSVG(svg: SVG): CompiledSVG {
@@ -179,8 +180,13 @@ export function compileSVG(svg: SVG): CompiledSVG {
 
   const totalLength = sum(lengths);
 
-  const parametric = (t: number, out?: V2) => {
+  const localParametric = (i: number, t: number, out?: V2) => {
     out = out ?? V2.tmp();
+    svgPosAndLen(starts[i], t, svg[i], out);
+    return out;
+  };
+
+  const parametric = (t: number, out?: V2) => {
     t = wrapT(t);
     let toTravel = t * totalLength;
     let i = 0;
@@ -189,8 +195,7 @@ export function compileSVG(svg: SVG): CompiledSVG {
       i++;
     }
     const localT = toTravel / lengths[i];
-    svgPosAndLen(starts[i], localT, svg[i], out);
-    return out;
+    return localParametric(i, localT, out);
   };
 
   return {
@@ -199,6 +204,7 @@ export function compileSVG(svg: SVG): CompiledSVG {
     lengths,
     totalLength,
     fn: parametric,
+    instrFn: localParametric,
   };
 }
 
