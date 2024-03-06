@@ -213,19 +213,10 @@ export function normAngle(a: number): number {
   return ((a % PIn2) + PIn2) % PIn2;
 }
 export function angularDiff(a: number, b: number, large = false): number {
-  console.log(`angularDiff(${a}, ${b}, ${large})`);
   a = normAngle(a);
-  console.log(a);
   b = normAngle(b);
-  console.log(b);
   const d = normAngle(a - b);
-  console.log(d);
-  // const s = d >= 0 ? 1 : -1;
-  // console.log(s);
-  // let n = normAngle(d);
-  // console.log(n);
   const isLarge = d > PI;
-  console.log(isLarge);
   if (isLarge && large) return d;
   if (isLarge && !large) return d - PIn2;
   if (!isLarge && large) return d - PIn2;
@@ -241,28 +232,33 @@ export function testAngularDiff() {
   console.log("normAngle(-0.1 - 0.1) = " + normAngle(-0.1 - 0.1));
 
   const ab = [
-    { a: 0.1, b: 0.1, large: false, t: 0.0 },
-    { a: 0.1, b: -0.1, large: false, t: 0.2 },
-    { a: 0.1, b: PIn2 - 0.1, large: false, t: 0.2 },
-    { a: -0.1, b: 0.1, large: false, t: -0.2 },
-    { a: PIn2 - 0.1, b: 0.1, large: false, t: -0.2 },
+    { a: 0.2, b: 0.2, large: false, t: 0.0 },
+    { a: 0.2, b: -0.3, large: false, t: 0.5 },
+    { a: 0.2, b: PIn2 - 0.3, large: false, t: 0.5 },
+    { a: -0.2, b: 0.3, large: false, t: -0.5 },
+    { a: PIn2 - 0.2, b: 0.3, large: false, t: -0.5 },
 
-    { a: 0.1, b: 0.1, large: true, t: PIn2 },
-    { a: 0.1, b: -0.1, large: true, t: PIn2 - 0.2 },
-    { a: 0.1, b: PIn2 - 0.1, large: true, t: PIn2 - 0.2 },
+    { a: 0.1, b: 0.11, large: true, t: PIn2 - 0.01 },
+    { a: 0.1, b: 0.09, large: true, t: 0.01 - PIn2 },
+
+    { a: 0.1, b: -0.1, large: true, t: 0.2 - PIn2 },
+    { a: 0.1, b: PIn2 - 0.1, large: true, t: 0.2 - PIn2 },
     { a: -0.1, b: 0.1, large: true, t: -0.2 + PIn2 },
     { a: PIn2 - 0.1, b: 0.1, large: true, t: -0.2 + PIn2 },
   ];
 
   console.log("testAngularDiff");
+  let pass = true;
   for (let { a, b, large, t } of ab) {
     const r = angularDiff(a, b, large);
     const eq = Math.abs(r - t) < 0.01;
+    pass &&= eq;
     console.log(
       `angularDiff(${a}, ${b}, ${large}) -> ${r} ${
         eq ? "~=" : "!="
       } ${t}; b+r=${b + r} vs ${a}`
     );
   }
+  console.log(pass ? "PASS" : "FAIL!");
 }
 testAngularDiff();
