@@ -217,11 +217,8 @@ export function angularDiff(a: number, b: number, large = false): number {
   b = normAngle(b);
   const d = normAngle(a - b);
   const isLarge = d > PI;
-  if (isLarge && large) return d;
-  if (isLarge && !large) return d - PIn2;
-  if (!isLarge && large) return d - PIn2;
-  if (!isLarge && !large) return d;
-  throw "never";
+  if (isLarge !== large) return d - PIn2;
+  return d;
 }
 
 export function testAngularDiff() {
@@ -261,4 +258,4 @@ export function testAngularDiff() {
   }
   console.log(pass ? "PASS" : "FAIL!");
 }
-testAngularDiff();
+// testAngularDiff();
