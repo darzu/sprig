@@ -115,6 +115,17 @@ export const mkPointCloud: (len: number) => Mesh = (len) => ({
   usesProvoking: true,
 });
 
+export const mkLineChain: (vNum: number) => Mesh = (len) => ({
+  dbgName: "lines",
+  pos: range(len).map((_) => V3.mk()),
+  tri: [],
+  quad: [],
+  lines: range(len - 1).map((_, i) => V(i, i + 1)),
+  colors: [],
+  surfaceIds: [],
+  usesProvoking: true,
+});
+
 // points from y=0 to y=1; for debug visualization
 // TODO(@darzu): enhance this with an arrow head?
 export const mkArrowMesh: () => Mesh = () => {

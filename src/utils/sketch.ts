@@ -10,7 +10,7 @@ import {
   findAnyTmpVec,
   quat,
 } from "../matrix/sprig-matrix.js";
-import { mkLine, mkPointCloud } from "../meshes/primatives.js";
+import { mkLine, mkLineChain, mkPointCloud } from "../meshes/primatives.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import {
   PositionDef,
@@ -94,9 +94,13 @@ export interface SketchPointsOpt {
   shape: "points";
   vs: V3.InputT[];
 }
+export interface SketchLinesOpt {
+  shape: "lines";
+  vs: V3.InputT[];
+}
 
 export type SketchOpt = SketchBaseOpt &
-  (SketchLineOpt | SketchPointsOpt | SketchCubeOpt);
+  (SketchLineOpt | SketchPointsOpt | SketchLinesOpt | SketchCubeOpt);
 
 export interface Sketcher {
   sketch: (opt: SketchOpt) => Sketch;
@@ -217,6 +221,36 @@ EM.addLazyInit([RendererDef], [SketcherDef], (res) => {
         for (let i = 0; i < opt.vs.length; i++) V3.copy(m.pos[i], opt.vs[i]);
         h.pool.updateMeshVertices(h, m);
       }
+    } else if (opt.shape === "lines") {
+      if (!RenderableConstructDef.isOn(e)) {
+        const m = mkLineChain(opt.vs.length);
+        for (let i = 0; i < opt.vs.length; i++) V3.copy(m.pos[i], opt.vs[i]);
+        EM.set(
+          e,
+          RenderableConstructDef,
+          m,
+          true,
+          undefined,
+          undefined,
+          lineMeshPoolPtr
+        );
+      } else {
+        if (!RenderableDef.isOn(e)) {
+          if (WARN_DROPPED_EARLY_SKETCH)
+            console.warn(
+              `Dropping early prototype draw() b/c .renderable isn't ready`
+            );
+          return e;
+        }
+        const h = e.renderable.meshHandle;
+        const m = h.mesh;
+        assert(
+          m.dbgName === "lines" && m.pos.length === opt.vs.length,
+          `sketch line chain must stay same size! ${m.dbgName} ${m.pos.length} vs ${opt.vs.length}`
+        );
+        for (let i = 0; i < opt.vs.length; i++) V3.copy(m.pos[i], opt.vs[i]);
+        h.pool.updateMeshVertices(h, m);
+      }
     } else if (opt.shape === "cube") {
       throw "TODO cube";
     } else never(opt);
@@ -260,4 +294,11 @@ export async function sketchPoints(
   opt: SketchBaseOpt = {}
 ): Promise<Sketch> {
   return sketch({ vs, shape: "points", ...opt });
+}
+
+export async function sketchLines(
+  vs: V3.InputT[],
+  opt: SketchBaseOpt = {}
+): Promise<Sketch> {
+  return sketch({ vs, shape: "lines", ...opt });
 }

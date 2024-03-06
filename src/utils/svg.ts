@@ -118,7 +118,8 @@ function svgPosAndLen(
   } else if (instr.i === "a") {
     const vx = start[0] + instr.dx;
     const vy = start[1] + instr.dy;
-    const s = instr.sweep ? -1 : 1; // TODO(@darzu): TEST AND VERIFY!
+    // const s = instr.sweep ? -1 : 1; // TODO(@darzu): TEST AND VERIFY!
+    const s = 1;
     const c = getCircleCenter(start[0], start[1], vx, vy, instr.rx, s);
     const uTheta = Math.atan2(start[1] - c[1], start[0] - c[1]);
     const vTheta = Math.atan2(vy - c[1], vx - c[1]);
@@ -163,6 +164,8 @@ export function compileSVG(svg: SVG): CompiledSVG {
   const starts: V2[] = range(svg.length).map((_) => V(0, 0));
 
   const lengths: number[] = [];
+
+  // TODO(@darzu): PERF! For arcs, save the intermediate thetas, center etc.
 
   svg.forEach((instr, i) => {
     const start = starts[i];

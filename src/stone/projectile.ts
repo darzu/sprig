@@ -13,7 +13,12 @@ import {
   transformAABB,
 } from "../physics/aabb.js";
 import { OBB, getOBBCornersTemp } from "../physics/obb.js";
-import { sketch, sketchLine, sketchPoints } from "../utils/sketch.js";
+import {
+  sketch,
+  sketchLine,
+  sketchLines,
+  sketchPoints,
+} from "../utils/sketch.js";
 import { SVG, compileSVG } from "../utils/svg.js";
 import { PI } from "../utils/util-no-import.js";
 import { assert, range } from "../utils/util.js";
@@ -181,18 +186,18 @@ export function getAimAndMissPositions(opt: {
   const worldMax = V3.tMat4(localAABB.max, localToWorldM);
 
   // console.log(aabbDbg(localAABB));
-  sketchLine(incomingPos, worldMin, {
-    key: "projMin",
-    color: ENDESGA16.darkRed,
-  });
-  sketchLine(incomingPos, worldMax, {
-    key: "projMax",
-    color: ENDESGA16.red,
-  });
-  sketchLine(incomingPos, opt.target.center, {
-    key: "projMid",
-    color: ENDESGA16.lightBlue,
-  });
+  // sketchLine(incomingPos, worldMin, {
+  //   key: "projMin",
+  //   color: ENDESGA16.darkRed,
+  // });
+  // sketchLine(incomingPos, worldMax, {
+  //   key: "projMax",
+  //   color: ENDESGA16.red,
+  // });
+  // sketchLine(incomingPos, opt.target.center, {
+  //   key: "projMid",
+  //   color: ENDESGA16.lightBlue,
+  // });
 
   const localAABB2 = createAABB2(
     V(localAABB.min[0], localAABB.min[2]),
@@ -215,7 +220,7 @@ export function getAimAndMissPositions(opt: {
         V3.tMat4(v, localToWorldM, v);
         return v;
       });
-    sketchPoints(points, {
+    sketchLines(points, {
       key: "svgPoints_" + i,
       color: RainbowEndesga16[i],
     });
