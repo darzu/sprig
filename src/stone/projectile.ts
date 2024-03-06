@@ -13,6 +13,7 @@ import {
   transformAABB,
 } from "../physics/aabb.js";
 import { OBB, getOBBCornersTemp } from "../physics/obb.js";
+import { testAngularDiff } from "../utils/math.js";
 import {
   sketch,
   sketchDot,
@@ -21,8 +22,8 @@ import {
   sketchPoints,
 } from "../utils/sketch.js";
 import { SVG, compileSVG, getCircleCenter } from "../utils/svg.js";
-import { PI } from "../utils/util-no-import.js";
-import { assert, range } from "../utils/util.js";
+import { PI, PIn2 } from "../utils/util-no-import.js";
+import { assert, dbgOnce, range } from "../utils/util.js";
 import { aabbDbg, vec3Dbg } from "../utils/utils-3d.js";
 import {
   addWorldGizmo,
@@ -225,16 +226,41 @@ export function getAimAndMissPositions(opt: {
       key: "seg_" + i,
     });
 
-    const vx = start[0] + instr.dx;
-    const vy = start[1] + instr.dy;
+    const c = getCircleCenter(start[0], start[1], end[0], end[1], instr.rx, +1);
+    sketchDot(to3d(c), 1, { color: ENDESGA16.lightGreen, key: "c0_" + i });
 
-    const c0 = getCircleCenter(start[0], start[1], vx, vy, instr.rx, +1);
-    sketchDot(to3d(c0), 1, { color: ENDESGA16.lightGreen, key: "c0_" + i });
-
-    const c1 = getCircleCenter(start[0], start[1], vx, vy, instr.rx, -1);
+    const c1 = getCircleCenter(
+      start[0],
+      start[1],
+      end[0],
+      end[1],
+      instr.rx,
+      -1
+    );
     sketchDot(to3d(c1), 1, { color: ENDESGA16.red, key: "c1_" + i });
 
-    // getCircleCenter(
+    const sTheta = Math.atan2(start[1] - c[1], start[0] - c[0]);
+    const eTheta = Math.atan2(end[1] - c[1], end[0] - c[0]);
+
+    const angleToPos = (theta: number) =>
+      tV(c[0] + Math.cos(theta) * instr.rx, c[1] + Math.sin(theta) * instr.rx);
+
+    sketchLine(to3d(c), to3d(angleToPos(sTheta)), {
+      key: "uTheta" + i,
+      color: ENDESGA16.lightBrown,
+    });
+    sketchLine(to3d(c), to3d(angleToPos(eTheta)), {
+      key: "vTheta" + i,
+      color: ENDESGA16.darkBrown,
+    });
+
+    // const smallTheta = Math.abs(uTheta - vTheta);
+    // const largeTheta = 2 * PI - smallTheta;
+    // const arcTheta = smallTheta;
+    // const theta = uTheta + arcTheta * t;
+    // const l = 2 * PI * arcTheta * t;
+    // out[0] = c[0] + Math.cos(theta) * instr.rx;
+    // out[1] = c[1] + Math.sin(theta) * instr.rx;
 
     // const N = 20;
     // const points = range(N)
@@ -267,7 +293,7 @@ export function getAimAndMissPositions(opt: {
     });
   }
 
-  console.dir(compSvg);
+  // console.dir(compSvg);
   const tFn = compSvg.fn;
 
   _lastT += 0.005; // TODO(@darzu): DBG hack

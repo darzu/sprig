@@ -77,7 +77,7 @@ export function getCircleCenter(
   x1: number,
   y1: number,
   r: number,
-  cw: -1 | 1,
+  cw: -1 | 1, // TODO(@darzu): RENAME. cw isn't quite right since a large arc travel could be ccw
   out?: V2
 ): V2 {
   // https://math.stackexchange.com/questions/1781438/finding-the-center-of-a-circle-given-two-points-and-a-radius-algebraically
@@ -121,8 +121,8 @@ function svgPosAndLen(
     // const s = instr.sweep ? -1 : 1; // TODO(@darzu): TEST AND VERIFY!
     const s = 1;
     const c = getCircleCenter(start[0], start[1], vx, vy, instr.rx, s);
-    const uTheta = Math.atan2(start[1] - c[1], start[0] - c[1]);
-    const vTheta = Math.atan2(vy - c[1], vx - c[1]);
+    const uTheta = Math.atan2(start[1] - c[1], start[0] - c[0]);
+    const vTheta = Math.atan2(vy - c[1], vx - c[0]);
     const smallTheta = Math.abs(uTheta - vTheta);
     const arcTheta = instr.largeArc ? 2 * PI - smallTheta : smallTheta;
     const theta = uTheta + arcTheta * t;

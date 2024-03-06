@@ -2,6 +2,8 @@
 // TODO(@darzu): It's annoying to have to work around dependency issues with things like this.
 
 export const PI = Math.PI; // TODO(@darzu): replace all usage with PI
+export const PIn2 = Math.PI * 2; // PI numerator 2
+export const PId2 = Math.PI / 2; // PI denominator 2
 
 export function getCallStack(): string[] {
   return new Error()
