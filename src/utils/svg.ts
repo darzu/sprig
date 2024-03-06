@@ -1,6 +1,6 @@
 import { V, V2, V3 } from "../matrix/sprig-matrix.js";
 import { createAABB2 } from "../physics/aabb.js";
-import { sum, wrap } from "./math.js";
+import { angularDiff, sum, wrap } from "./math.js";
 import { PI, never } from "./util-no-import.js";
 import { assert, range } from "./util.js";
 import { vec2Dbg } from "./utils-3d.js";
@@ -121,12 +121,12 @@ function svgPosAndLen(
     // const s = instr.sweep ? -1 : 1; // TODO(@darzu): TEST AND VERIFY!
     const s = 1;
     const c = getCircleCenter(start[0], start[1], vx, vy, instr.rx, s);
-    const uTheta = Math.atan2(start[1] - c[1], start[0] - c[0]);
-    const vTheta = Math.atan2(vy - c[1], vx - c[0]);
-    const smallTheta = Math.abs(uTheta - vTheta);
-    const arcTheta = instr.largeArc ? 2 * PI - smallTheta : smallTheta;
-    const theta = uTheta + arcTheta * t;
-    const l = 2 * PI * arcTheta * t;
+    const sTheta = Math.atan2(start[1] - c[1], start[0] - c[0]);
+    const eTheta = Math.atan2(vy - c[1], vx - c[0]);
+    const largeArc = !!instr.largeArc;
+    const sToETheta = angularDiff(eTheta, sTheta, largeArc);
+    const theta = sTheta + sToETheta * t;
+    const l = 2 * PI * Math.abs(sToETheta) * t;
     out[0] = c[0] + Math.cos(theta) * instr.rx;
     out[1] = c[1] + Math.sin(theta) * instr.rx;
     return l;
