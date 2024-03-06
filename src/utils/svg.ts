@@ -77,7 +77,7 @@ export function getCircleCenter(
   x1: number,
   y1: number,
   r: number,
-  s: -1 | 1,
+  cw: -1 | 1,
   out?: V2
 ): V2 {
   // https://math.stackexchange.com/questions/1781438/finding-the-center-of-a-circle-given-two-points-and-a-radius-algebraically
@@ -88,8 +88,8 @@ export function getCircleCenter(
   const b = Math.sqrt(r ** 2 - aSqr);
   assert(!isNaN(b));
   const ba = b / a;
-  const cx = x0 + x01 + ba * y01 * s;
-  const cy = y0 + y01 - ba * x01 * s;
+  const cx = x0 + x01 + ba * y01 * cw;
+  const cy = y0 + y01 - ba * x01 * cw;
   out = out ?? V2.tmp();
   out[0] = cx;
   out[1] = cy;
@@ -153,7 +153,7 @@ function svgEnd(start: V2.InputT, instr: svg_instr, out?: V2): V2 {
 
 export interface CompiledSVG {
   svg: SVG;
-  starts: V2[];
+  verts: V2[];
   lengths: number[];
   totalLength: number;
   fn: (t: number, out?: V2) => V2;
@@ -161,15 +161,15 @@ export interface CompiledSVG {
 }
 
 export function compileSVG(svg: SVG): CompiledSVG {
-  const starts: V2[] = range(svg.length).map((_) => V(0, 0));
+  const verts: V2[] = range(svg.length + 1).map((_) => V(0, 0));
 
   const lengths: number[] = [];
 
   // TODO(@darzu): PERF! For arcs, save the intermediate thetas, center etc.
 
   svg.forEach((instr, i) => {
-    const start = starts[i];
-    const end = i + 1 <= svg.length - 1 ? starts[i + 1] : V2.tmp();
+    const start = verts[i];
+    const end = verts[i + 1];
     const l = svgPosAndLen(start, 1, instr, end);
     assert(
       l >= 0,
@@ -185,7 +185,7 @@ export function compileSVG(svg: SVG): CompiledSVG {
 
   const localParametric = (i: number, t: number, out?: V2) => {
     out = out ?? V2.tmp();
-    svgPosAndLen(starts[i], t, svg[i], out);
+    svgPosAndLen(verts[i], t, svg[i], out);
     return out;
   };
 
@@ -203,7 +203,7 @@ export function compileSVG(svg: SVG): CompiledSVG {
 
   return {
     svg,
-    starts,
+    verts,
     lengths,
     totalLength,
     fn: parametric,

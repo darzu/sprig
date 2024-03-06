@@ -15,11 +15,12 @@ import {
 import { OBB, getOBBCornersTemp } from "../physics/obb.js";
 import {
   sketch,
+  sketchDot,
   sketchLine,
   sketchLines,
   sketchPoints,
 } from "../utils/sketch.js";
-import { SVG, compileSVG } from "../utils/svg.js";
+import { SVG, compileSVG, getCircleCenter } from "../utils/svg.js";
 import { PI } from "../utils/util-no-import.js";
 import { assert, range } from "../utils/util.js";
 import { aabbDbg, vec3Dbg } from "../utils/utils-3d.js";
@@ -208,22 +209,46 @@ export function getAimAndMissPositions(opt: {
   const svg = getAABB2CircleSweptPerimeterAsSvg(localAABB2, 10);
   const compSvg = compileSVG(svg);
 
+  const to3d = (v2d: V2.InputT, out?: V3) =>
+    V3.tMat4([v2d[0], 0, v2d[1]], localToWorldM, out);
+
   for (let i = 0; i < svg.length; i++) {
     if (compSvg.lengths[i] <= 0) continue;
 
-    const N = 20;
-    const points = range(N)
-      .map((n) => n / N)
-      .map((t) => {
-        const v2d = compSvg.instrFn(i, t);
-        const v = tV(v2d[0], 0, v2d[1]);
-        V3.tMat4(v, localToWorldM, v);
-        return v;
-      });
-    sketchLines(points, {
-      key: "svgPoints_" + i,
-      color: RainbowEndesga16[i],
+    const start = compSvg.verts[i];
+    const end = compSvg.verts[i + 1];
+
+    const instr = compSvg.svg[i];
+    if (instr.i !== "a") continue;
+
+    sketchLine(to3d(start), to3d(end), {
+      key: "seg_" + i,
     });
+
+    const vx = start[0] + instr.dx;
+    const vy = start[1] + instr.dy;
+
+    const c0 = getCircleCenter(start[0], start[1], vx, vy, instr.rx, +1);
+    sketchDot(to3d(c0), 1, { color: ENDESGA16.lightGreen, key: "c0_" + i });
+
+    const c1 = getCircleCenter(start[0], start[1], vx, vy, instr.rx, -1);
+    sketchDot(to3d(c1), 1, { color: ENDESGA16.red, key: "c1_" + i });
+
+    // getCircleCenter(
+
+    // const N = 20;
+    // const points = range(N)
+    //   .map((n) => n / N)
+    //   .map((t) => {
+    //     const v2d = compSvg.instrFn(i, t);
+    //     const v = tV(v2d[0], 0, v2d[1]);
+    //     V3.tMat4(v, localToWorldM, v);
+    //     return v;
+    //   });
+    // sketchLines(points, {
+    //   key: "svgPoints_" + i,
+    //   color: RainbowEndesga16[i],
+    // });
   }
 
   {

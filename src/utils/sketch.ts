@@ -1,8 +1,10 @@
 import { ColorDef, TintsDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { DeadDef } from "../ecs/delete.js";
+import { defineResourceWithInit as defineResourceWithLazyInit } from "../ecs/em-helpers.js";
 import { EM, Entity } from "../ecs/entity-manager.js";
 import { createEntityPool } from "../ecs/entity-pool.js";
+import { DotsDef } from "../graybox/dots.js";
 import { ObjChildEnt, T, createObj, defineObj } from "../graybox/objects.js";
 import {
   V3,
@@ -30,6 +32,7 @@ import {
   RenderableDef,
   RendererDef,
 } from "../render/renderer-ecs.js";
+import { createIdxPool, createIdxRing } from "./idx-pool.js";
 import { never } from "./util-no-import.js";
 import { assert, dbgLogOnce } from "./util.js";
 
@@ -73,7 +76,7 @@ export const SketchObj = defineObj({
     ColorDef,
   ],
 });
-export type Sketch = ObjChildEnt<typeof SketchObj>;
+export type SketchEnt = ObjChildEnt<typeof SketchObj>;
 
 export interface SketchBaseOpt {
   key?: string;
@@ -99,185 +102,236 @@ export interface SketchLinesOpt {
   vs: V3.InputT[];
 }
 
-export type SketchOpt = SketchBaseOpt &
-  (SketchLineOpt | SketchPointsOpt | SketchLinesOpt | SketchCubeOpt);
-
-export interface Sketcher {
-  sketch: (opt: SketchOpt) => Sketch;
+export interface SketchDotOpt {
+  shape: "dot";
+  v: V3.InputT;
+  radius?: number;
 }
 
-export const SketcherDef = EM.defineResource("sketcher", (p: Sketcher) => p);
+export type SketchEntOpt = SketchBaseOpt &
+  (SketchLineOpt | SketchPointsOpt | SketchLinesOpt | SketchCubeOpt);
 
-EM.addLazyInit([RendererDef], [SketcherDef], (res) => {
-  const pool = createEntityPool({
-    max: 100,
-    maxBehavior: "rand-despawn",
-    create: () => {
-      const e = SketchObj.new({
-        props: {
-          key: "invalid",
-        },
-        args: {
-          position: undefined,
-          transform: undefined,
-          rotation: undefined,
-          scale: undefined,
-          world: undefined,
-          color: undefined,
-        },
-      });
+export type SketchOpt = SketchEntOpt | (SketchBaseOpt & SketchDotOpt);
+
+export interface Sketcher {
+  sketchEnt: (opt: SketchEntOpt) => SketchEnt;
+  sketch: (opt: SketchOpt) => void;
+}
+
+const MAX_ENTS = 100;
+const MAX_DOTS = 100;
+
+export const SketcherDef = defineResourceWithLazyInit(
+  "sketcher",
+  [RendererDef, DotsDef],
+  (res) => {
+    const pool = createEntityPool({
+      max: MAX_ENTS,
+      maxBehavior: "rand-despawn",
+      create: () => {
+        const e = SketchObj.new({
+          props: {
+            key: "invalid",
+          },
+          args: {
+            position: undefined,
+            transform: undefined,
+            rotation: undefined,
+            scale: undefined,
+            world: undefined,
+            color: undefined,
+          },
+        });
+
+        return e;
+      },
+      onSpawn: (e) => {
+        EM.tryRemoveComponent(e.id, DeadDef);
+      },
+      onDespawn: (e) => {
+        EM.set(e, DeadDef);
+        e.dead.processed = true;
+      },
+    });
+
+    const sketchEntMap = new Map<string, SketchEnt>();
+
+    const dots = res.dots.allocDots(MAX_DOTS);
+    const dotPool = createIdxRing(MAX_DOTS);
+    const dotMap = new Map<string, number>();
+
+    function sketchEnt(opt: SketchEntOpt): SketchEnt {
+      let e: SketchEnt | undefined;
+      if (opt.key) e = sketchEntMap.get(opt.key);
+      if (!e) {
+        e = pool.spawn();
+        const key = opt.key ?? `sketch_ent_${e.id}`;
+        sketchEntMap.set(key, e);
+        e.sketch.key = key;
+      }
+
+      updateEnt(e, opt);
 
       return e;
-    },
-    onSpawn: (e) => {
-      EM.tryRemoveComponent(e.id, DeadDef);
-    },
-    onDespawn: (e) => {
-      EM.set(e, DeadDef);
-      e.dead.processed = true;
-    },
-  });
-
-  const sketchMap = new Map<string, Sketch>();
-
-  function sketch(opt: SketchOpt): Sketch {
-    let e: Sketch | undefined;
-    if (opt.key) e = sketchMap.get(opt.key);
-    if (!e) {
-      e = pool.spawn();
-      const key = opt.key ?? `proto_${e.id}`;
-      sketchMap.set(key, e);
-      e.sketch.key = key;
     }
 
-    update(e, opt);
+    const defaultColor = ENDESGA16.lightGreen;
 
-    return e;
+    function sketch(opt: SketchOpt): void {
+      if (opt.shape === "dot") {
+        let idx: number | undefined;
+        if (opt.key) idx = dotMap.get(opt.key);
+        if (!idx) {
+          idx = dotPool.next();
+          const key = opt.key ?? `sketch_dot_${idx}`;
+          dotMap.set(key, idx);
+        }
+        dots.set(idx, opt.v, opt.color ?? defaultColor, opt.radius ?? 1);
+        dots.queueUpdate();
+      } else {
+        sketchEnt(opt);
+      }
+    }
+
+    function updateEnt(e: SketchEnt, opt: SketchEntOpt): SketchEnt {
+      V3.copy(e.color, opt.color ?? defaultColor);
+
+      identityFrame(e);
+      identityFrame(e.world);
+
+      if (opt.shape === "line") {
+        if (!RenderableConstructDef.isOn(e)) {
+          const m = mkLine();
+          V3.copy(m.pos[0], opt.start);
+          V3.copy(m.pos[1], opt.end);
+          EM.set(
+            e,
+            RenderableConstructDef,
+            m,
+            true,
+            undefined,
+            undefined,
+            lineMeshPoolPtr
+          );
+        } else {
+          if (!RenderableDef.isOn(e)) {
+            // TODO(@darzu): could queue these instead of dropping them.
+            if (WARN_DROPPED_EARLY_SKETCH)
+              console.warn(
+                `Dropping early prototype draw() b/c .renderable isn't ready`
+              );
+            return e;
+          }
+          const h = e.renderable.meshHandle;
+          const m = h.mesh;
+          assert(m.dbgName === "line" && m.pos.length === 2);
+          V3.copy(m.pos[0], opt.start);
+          V3.copy(m.pos[1], opt.end);
+          h.pool.updateMeshVertices(h, m, 0, 2);
+        }
+      } else if (opt.shape === "points") {
+        if (!RenderableConstructDef.isOn(e)) {
+          const m = mkPointCloud(opt.vs.length);
+          for (let i = 0; i < opt.vs.length; i++) V3.copy(m.pos[i], opt.vs[i]);
+          EM.set(
+            e,
+            RenderableConstructDef,
+            m,
+            true,
+            undefined,
+            undefined,
+            pointMeshPoolPtr
+          );
+        } else {
+          if (!RenderableDef.isOn(e)) {
+            if (WARN_DROPPED_EARLY_SKETCH)
+              console.warn(
+                `Dropping early prototype draw() b/c .renderable isn't ready`
+              );
+            return e;
+          }
+          const h = e.renderable.meshHandle;
+          const m = h.mesh;
+          assert(
+            m.dbgName === "points" && m.pos.length === opt.vs.length,
+            `sketch point cloud must stay same size! ${m.dbgName} ${m.pos.length} vs ${opt.vs.length}`
+          );
+          for (let i = 0; i < opt.vs.length; i++) V3.copy(m.pos[i], opt.vs[i]);
+          h.pool.updateMeshVertices(h, m);
+        }
+      } else if (opt.shape === "lines") {
+        if (!RenderableConstructDef.isOn(e)) {
+          const m = mkLineChain(opt.vs.length);
+          for (let i = 0; i < opt.vs.length; i++) V3.copy(m.pos[i], opt.vs[i]);
+          EM.set(
+            e,
+            RenderableConstructDef,
+            m,
+            true,
+            undefined,
+            undefined,
+            lineMeshPoolPtr
+          );
+        } else {
+          if (!RenderableDef.isOn(e)) {
+            if (WARN_DROPPED_EARLY_SKETCH)
+              console.warn(
+                `Dropping early prototype draw() b/c .renderable isn't ready`
+              );
+            return e;
+          }
+          const h = e.renderable.meshHandle;
+          const m = h.mesh;
+          assert(
+            m.dbgName === "lines" && m.pos.length === opt.vs.length,
+            `sketch line chain must stay same size! ${m.dbgName} ${m.pos.length} vs ${opt.vs.length}`
+          );
+          for (let i = 0; i < opt.vs.length; i++) V3.copy(m.pos[i], opt.vs[i]);
+          h.pool.updateMeshVertices(h, m);
+        }
+      } else if (opt.shape === "cube") {
+        throw "TODO cube";
+      } else never(opt);
+
+      return e;
+    }
+
+    const result: Sketcher = {
+      sketch,
+      sketchEnt,
+    };
+
+    return result;
   }
+);
 
-  function update(e: Sketch, opt: SketchOpt): Sketch {
-    V3.copy(e.color, opt.color ?? ENDESGA16.lightGreen);
-
-    identityFrame(e);
-    identityFrame(e.world);
-
-    if (opt.shape === "line") {
-      if (!RenderableConstructDef.isOn(e)) {
-        const m = mkLine();
-        V3.copy(m.pos[0], opt.start);
-        V3.copy(m.pos[1], opt.end);
-        EM.set(
-          e,
-          RenderableConstructDef,
-          m,
-          true,
-          undefined,
-          undefined,
-          lineMeshPoolPtr
-        );
-      } else {
-        if (!RenderableDef.isOn(e)) {
-          // TODO(@darzu): could queue these instead of dropping them.
-          if (WARN_DROPPED_EARLY_SKETCH)
-            console.warn(
-              `Dropping early prototype draw() b/c .renderable isn't ready`
-            );
-          return e;
-        }
-        const h = e.renderable.meshHandle;
-        const m = h.mesh;
-        assert(m.dbgName === "line" && m.pos.length === 2);
-        V3.copy(m.pos[0], opt.start);
-        V3.copy(m.pos[1], opt.end);
-        h.pool.updateMeshVertices(h, m, 0, 2);
-      }
-    } else if (opt.shape === "points") {
-      if (!RenderableConstructDef.isOn(e)) {
-        const m = mkPointCloud(opt.vs.length);
-        for (let i = 0; i < opt.vs.length; i++) V3.copy(m.pos[i], opt.vs[i]);
-        EM.set(
-          e,
-          RenderableConstructDef,
-          m,
-          true,
-          undefined,
-          undefined,
-          pointMeshPoolPtr
-        );
-      } else {
-        if (!RenderableDef.isOn(e)) {
-          if (WARN_DROPPED_EARLY_SKETCH)
-            console.warn(
-              `Dropping early prototype draw() b/c .renderable isn't ready`
-            );
-          return e;
-        }
-        const h = e.renderable.meshHandle;
-        const m = h.mesh;
-        assert(
-          m.dbgName === "points" && m.pos.length === opt.vs.length,
-          `sketch point cloud must stay same size! ${m.dbgName} ${m.pos.length} vs ${opt.vs.length}`
-        );
-        for (let i = 0; i < opt.vs.length; i++) V3.copy(m.pos[i], opt.vs[i]);
-        h.pool.updateMeshVertices(h, m);
-      }
-    } else if (opt.shape === "lines") {
-      if (!RenderableConstructDef.isOn(e)) {
-        const m = mkLineChain(opt.vs.length);
-        for (let i = 0; i < opt.vs.length; i++) V3.copy(m.pos[i], opt.vs[i]);
-        EM.set(
-          e,
-          RenderableConstructDef,
-          m,
-          true,
-          undefined,
-          undefined,
-          lineMeshPoolPtr
-        );
-      } else {
-        if (!RenderableDef.isOn(e)) {
-          if (WARN_DROPPED_EARLY_SKETCH)
-            console.warn(
-              `Dropping early prototype draw() b/c .renderable isn't ready`
-            );
-          return e;
-        }
-        const h = e.renderable.meshHandle;
-        const m = h.mesh;
-        assert(
-          m.dbgName === "lines" && m.pos.length === opt.vs.length,
-          `sketch line chain must stay same size! ${m.dbgName} ${m.pos.length} vs ${opt.vs.length}`
-        );
-        for (let i = 0; i < opt.vs.length; i++) V3.copy(m.pos[i], opt.vs[i]);
-        h.pool.updateMeshVertices(h, m);
-      }
-    } else if (opt.shape === "cube") {
-      throw "TODO cube";
-    } else never(opt);
-
-    return e;
-  }
-
-  EM.addResource(SketcherDef, {
-    sketch,
-  });
-});
-
-export async function sketch(opt: SketchOpt): Promise<Sketch> {
+export async function sketch(opt: SketchOpt): Promise<void> {
+  // TODO(@darzu): de-dupe
   let sketcher = EM.getResource(SketcherDef);
   if (sketcher) {
-    return sketcher.sketch(opt);
+    sketcher.sketch(opt);
   } else {
     // NOTE: this should be rarely done b/c once the resource is present we'll skip this
     const cloneOpt = cloneTmpsInObj(opt);
     sketcher = (await EM.whenResources(SketcherDef)).sketcher;
-    return sketcher.sketch(cloneOpt);
+    sketcher.sketch(cloneOpt);
+  }
+}
+export async function sketchEnt(opt: SketchEntOpt): Promise<SketchEnt> {
+  let sketcher = EM.getResource(SketcherDef);
+  if (sketcher) {
+    return sketcher.sketchEnt(opt);
+  } else {
+    // NOTE: this should be rarely done b/c once the resource is present we'll skip this
+    const cloneOpt = cloneTmpsInObj(opt);
+    sketcher = (await EM.whenResources(SketcherDef)).sketcher;
+    return sketcher.sketchEnt(cloneOpt);
   }
 }
 
-export function sketchNow(opt: SketchOpt): Sketch | undefined {
+export function sketchEntNow(opt: SketchEntOpt): SketchEnt | undefined {
   let sketcher = EM.getResource(SketcherDef);
-  if (sketcher) return sketcher.sketch(opt);
+  if (sketcher) return sketcher.sketchEnt(opt);
   return undefined;
 }
 
@@ -285,20 +339,28 @@ export async function sketchLine(
   start: V3.InputT,
   end: V3.InputT,
   opt: SketchBaseOpt = {}
-): Promise<Sketch> {
-  return sketch({ start, end, shape: "line", ...opt });
+): Promise<SketchEnt> {
+  return sketchEnt({ start, end, shape: "line", ...opt });
 }
 
 export async function sketchPoints(
   vs: V3.InputT[],
   opt: SketchBaseOpt = {}
-): Promise<Sketch> {
-  return sketch({ vs, shape: "points", ...opt });
+): Promise<SketchEnt> {
+  return sketchEnt({ vs, shape: "points", ...opt });
 }
 
 export async function sketchLines(
   vs: V3.InputT[],
   opt: SketchBaseOpt = {}
-): Promise<Sketch> {
-  return sketch({ vs, shape: "lines", ...opt });
+): Promise<SketchEnt> {
+  return sketchEnt({ vs, shape: "lines", ...opt });
+}
+
+export async function sketchDot(
+  v: V3.InputT,
+  radius?: number,
+  opt: SketchBaseOpt = {}
+): Promise<void> {
+  return sketch({ v, radius, shape: "dot", ...opt });
 }
