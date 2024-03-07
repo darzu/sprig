@@ -4,6 +4,7 @@ import { objMap } from "../utils/util.js";
 import { vec3Dbg } from "../utils/utils-3d.js";
 import { toV3, toFRGB, parseHex, toFLRGB } from "./color.js";
 
+// TODO(@darzu): RENAME EDG16
 export const ENDESGA16 = objMap(
   {
     lightBrown: "#e4a672",

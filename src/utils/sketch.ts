@@ -1,17 +1,13 @@
-import { ColorDef, TintsDef } from "../color/color-ecs.js";
+import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { DeadDef } from "../ecs/delete.js";
 import { defineResourceWithInit as defineResourceWithLazyInit } from "../ecs/em-helpers.js";
-import { EM, Entity } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/entity-manager.js";
 import { createEntityPool } from "../ecs/entity-pool.js";
+import { Phase } from "../ecs/sys-phase.js";
 import { DotsDef } from "../graybox/dots.js";
-import { ObjChildEnt, T, createObj, defineObj } from "../graybox/objects.js";
-import {
-  V3,
-  cloneTmpsInObj,
-  findAnyTmpVec,
-  quat,
-} from "../matrix/sprig-matrix.js";
+import { ObjChildEnt, T, defineObj } from "../graybox/objects.js";
+import { V3, cloneTmpsInObj } from "../matrix/sprig-matrix.js";
 import { mkLine, mkLineChain, mkPointCloud } from "../meshes/primatives.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import {
@@ -19,10 +15,8 @@ import {
   RotationDef,
   ScaleDef,
   TransformDef,
-  createFrame,
   identityFrame,
 } from "../physics/transform.js";
-import { isMeshHandle } from "../render/mesh-pool.js";
 import {
   lineMeshPoolPtr,
   pointMeshPoolPtr,
@@ -32,9 +26,10 @@ import {
   RenderableDef,
   RendererDef,
 } from "../render/renderer-ecs.js";
-import { createIdxPool, createIdxRing } from "./idx-pool.js";
+import { TimeDef } from "../time/time.js";
+import { createIdxRing } from "./idx-pool.js";
 import { never } from "./util-no-import.js";
-import { assert, dbgLogOnce } from "./util.js";
+import { assert, range } from "./util.js";
 
 export const WARN_DROPPED_EARLY_SKETCH = false;
 
@@ -72,7 +67,7 @@ export const SketchObj = defineObj({
     RotationDef,
     ScaleDef,
     TransformDef,
-    WorldFrameDef,
+    // WorldFrameDef,
     ColorDef,
   ],
 });
@@ -125,6 +120,11 @@ export const SketcherDef = defineResourceWithLazyInit(
   "sketcher",
   [RendererDef, DotsDef],
   (res) => {
+    const sketchEntMap = new Map<string, SketchEnt>();
+    const sketchEntIdToLastKey = new Map<number, string>();
+
+    let _numLeakedMeshHandles = 0;
+
     const pool = createEntityPool({
       max: MAX_ENTS,
       maxBehavior: "rand-despawn",
@@ -149,12 +149,25 @@ export const SketcherDef = defineResourceWithLazyInit(
         EM.tryRemoveComponent(e.id, DeadDef);
       },
       onDespawn: (e) => {
+        // TODO(@darzu): this doesn't seem ideal.
+        const key = sketchEntIdToLastKey.get(e.id);
+        if (key) {
+          sketchEntMap.delete(key);
+        }
+        if (RenderableDef.isOn(e)) {
+          _numLeakedMeshHandles++;
+          if (_numLeakedMeshHandles % 10 === 0) {
+            console.warn(
+              `Sketcher has leaked ${_numLeakedMeshHandles} mesh handles!`
+            );
+          }
+        }
+        EM.tryRemoveComponent(e.id, RenderableConstructDef);
+        EM.tryRemoveComponent(e.id, RenderableDef);
         EM.set(e, DeadDef);
         e.dead.processed = true;
       },
     });
-
-    const sketchEntMap = new Map<string, SketchEnt>();
 
     const dots = res.dots.allocDots(MAX_DOTS);
     const dotPool = createIdxRing(MAX_DOTS);
@@ -164,10 +177,18 @@ export const SketcherDef = defineResourceWithLazyInit(
       let e: SketchEnt | undefined;
       if (opt.key) e = sketchEntMap.get(opt.key);
       if (!e) {
-        e = pool.spawn();
+        if (opt.key) {
+          // NOTE: custom key sketches live outside the pool
+          e = pool.params.create();
+          pool.params.onSpawn(e);
+        } else {
+          e = pool.spawn();
+        }
         const key = opt.key ?? `sketch_ent_${e.id}`;
         sketchEntMap.set(key, e);
+        sketchEntIdToLastKey.set(e.id, key);
         e.sketch.key = key;
+        // console.log(`new sketch ${key}=${e.id} ${opt.shape}`);
       }
 
       updateEnt(e, opt);
@@ -178,6 +199,7 @@ export const SketcherDef = defineResourceWithLazyInit(
     const defaultColor = ENDESGA16.lightGreen;
 
     function sketch(opt: SketchOpt): void {
+      // console.log(`sketch ${opt.key ?? "_"} ${opt.shape}`);
       if (opt.shape === "dot") {
         let idx: number | undefined;
         if (opt.key) idx = dotMap.get(opt.key);
@@ -197,8 +219,9 @@ export const SketcherDef = defineResourceWithLazyInit(
       V3.copy(e.color, opt.color ?? defaultColor);
 
       identityFrame(e);
-      identityFrame(e.world);
+      // identityFrame(e.world);
 
+      // TODO(@darzu): REFACTOR TO DE-DUPE
       if (opt.shape === "line") {
         if (!RenderableConstructDef.isOn(e)) {
           const m = mkLine();
@@ -282,9 +305,10 @@ export const SketcherDef = defineResourceWithLazyInit(
           }
           const h = e.renderable.meshHandle;
           const m = h.mesh;
+          assert(m.dbgName === "lines", `expected "lines" vs "${m.dbgName}"`);
           assert(
-            m.dbgName === "lines" && m.pos.length === opt.vs.length,
-            `sketch line chain must stay same size! ${m.dbgName} ${m.pos.length} vs ${opt.vs.length}`
+            m.pos.length === opt.vs.length,
+            `sketch line chain "${opt.key}" must stay same size! old:${m.pos.length} vs new:${opt.vs.length}`
           );
           for (let i = 0; i < opt.vs.length; i++) V3.copy(m.pos[i], opt.vs[i]);
           h.pool.updateMeshVertices(h, m);
@@ -364,3 +388,52 @@ export async function sketchDot(
 ): Promise<void> {
   return sketch({ v, radius, shape: "dot", ...opt });
 }
+
+export const SketchTrailDef = EM.defineComponent("sketchTrail", () => true);
+
+EM.addEagerInit([SketchTrailDef], [], [], () => {
+  const N = 20;
+  const eToVs = new Map<number, V3[]>();
+  const getVs = (id: number) => {
+    let vs = eToVs.get(id);
+    if (!vs) {
+      vs = range(N).map((_) => V3.mk());
+      eToVs.set(id, vs);
+    }
+    return vs;
+  };
+  // TODO(@darzu): MOVE. And is this at all performant?
+  function rotate<T>(ts: T[]): T[] {
+    const tl = ts.pop();
+    ts.unshift(tl!);
+    return ts;
+  }
+  EM.addSystem(
+    "sketchEntityTrail",
+    Phase.GAME_WORLD,
+    [SketchTrailDef, WorldFrameDef],
+    [TimeDef, SketcherDef],
+    (es, res) => {
+      for (let e of es) {
+        const vs = getVs(e.id);
+        if (V3.equals(vs[0], e.world.position)) continue;
+        if (res.time.step % 10 === 0) rotate(vs);
+        V3.copy(vs[0], e.world.position);
+
+        let lastI = 0;
+        for (let i = 0; i < vs.length; i++) {
+          if (V3.equals(vs[i], V3.ZEROS)) {
+            V3.copy(vs[i], vs[lastI]);
+          } else {
+            lastI = i;
+          }
+        }
+
+        const key = "sketchTrail_" + e.id;
+        assert(vs.length === N);
+        const color = ColorDef.isOn(e) ? e.color : ENDESGA16.lightGray;
+        res.sketcher.sketch({ shape: "lines", vs, key, color });
+      }
+    }
+  );
+});

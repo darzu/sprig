@@ -329,3 +329,8 @@ Logs are the best source of truth
   can be streamed
   can be multiplayer
   Doug says: maybe what you want is the Free Monad
+
+The best compression is shared code
+  e.g. the sticky ball example here: https://gafferongames.com/post/state_synchronization/
+    probably better to store pos/rot relative to the parent ball
+  don't sync all objects in world, just ensure ur running the same setup code

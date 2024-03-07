@@ -35,7 +35,7 @@ import { assert, assertDbg, range } from "../utils/util.js";
 import { ParametricDef } from "../motion/parametric-motion.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { SplinterParticleDef } from "../wood/wood-splinters.js";
-import { SketcherDef, sketchLines } from "../utils/sketch.js";
+import { SketchTrailDef, SketcherDef, sketchLines } from "../utils/sketch.js";
 
 // TODO(@darzu): MULTIPLAYER BULLETS might have been broken during LD51
 
@@ -108,50 +108,6 @@ EM.registerSerializerPair(
   }
 );
 
-// if (DBG_BULLET_TRAILS) {
-//   EM.addEagerInit(
-//     [BulletConstructDef, WorldFrameDef, ColorDef],
-//     [SketcherDef],
-//     [],
-//     (res) => {
-//       const N = 20;
-//       const eToVs = new Map<number, V3[]>();
-//       const getVs = (id: number) => {
-//         let vs = eToVs.get(id);
-//         if (!vs) {
-//           vs = range(N).map((_) => V3.mk());
-//           eToVs.set(id, vs);
-//         }
-//         return vs;
-//       };
-
-//       // TODO(@darzu): MOVE. And is this at all performant?
-//       function rotate<T>(ts: T[]): T[] {
-//         const tl = ts.pop();
-//         ts.unshift(tl!);
-//         return ts;
-//       }
-
-//       EM.addSystem(
-//         "dbgBulletTrails",
-//         Phase.GAME_WORLD,
-//         [BulletConstructDef, WorldFrameDef, ColorDef],
-//         [],
-//         (es) => {
-//           for (let e of es) {
-//             const vs = getVs(e.id);
-//             rotate(vs);
-//             V3.copy(vs[0], e.world.position);
-
-//             const key = "dbgBulletTrails_" + e.id;
-//             res.sketcher.sketch({ shape: "lines", vs, key, color: e.color });
-//           }
-//         }
-//       );
-//     }
-//   );
-// }
-
 export function createOrResetBullet(
   e: Entity & { bulletConstruct: BulletConstruct },
   res: { me: Me; allMeshes: AllMeshes; time: Time }
@@ -193,6 +149,9 @@ export function createOrResetBullet(
     accel: [0, 0, -props.gravity],
     time: res.time.time,
   });
+
+  if (DBG_BULLET_TRAILS) EM.set(e, SketchTrailDef);
+
   return e;
 }
 
