@@ -1579,6 +1579,7 @@ export module mat3 {
     return GL.transpose(out ?? tmp(), v1) as T;
   }
 
+  // TODO(@darzu): bug ? scale V2 input?
   export function scale(a: InputT, v: V2.InputT, out?: T): T {
     return GL.scale(out ?? tmp(), a, v) as T;
   }

@@ -1,9 +1,9 @@
 import { EM } from "../ecs/entity-manager.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { V, V3, mat3, mat4, tV } from "../matrix/sprig-matrix.js";
-import { clamp } from "../utils/math.js";
+import { clamp, jitter } from "../utils/math.js";
 import { dbgLogOnce, objMap, range } from "../utils/util.js";
-import { mat3Dbg, vec3Dbg } from "../utils/utils-3d.js";
+import { jitterVec3, mat3Dbg, vec3Dbg } from "../utils/utils-3d.js";
 import {
   AABB,
   clampToAABB,
@@ -131,6 +131,17 @@ export function getOBBCornersTemp(obb: OBB): V3[] {
   V3.sub(ts[7], up, ts[7]);
 
   return ts;
+}
+
+export function getRandPointInOBB(b: OBB, out?: V3): V3 {
+  const x = jitter(b.halfw[0]);
+  const y = jitter(b.halfw[1]);
+  const z = jitter(b.halfw[2]);
+  out = out ?? V3.tmp();
+  out[0] = b.right[0] * x + b.fwd[0] * y + b.up[0] * z + b.center[0];
+  out[1] = b.right[1] * x + b.fwd[1] * y + b.up[1] * z + b.center[1];
+  out[2] = b.right[2] * x + b.fwd[2] * y + b.up[2] * z + b.center[2];
+  return out;
 }
 
 export module OBB {

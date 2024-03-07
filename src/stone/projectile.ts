@@ -3,7 +3,7 @@ import {
   ENDESGA16,
   RainbowEndesga16,
 } from "../color/palettes.js";
-import { V, V2, V3, mat4, quat, tV } from "../matrix/sprig-matrix.js";
+import { V, V2, V3, mat4, quat, tV, tmpStack } from "../matrix/sprig-matrix.js";
 import {
   AABB2,
   createAABB,
@@ -12,7 +12,7 @@ import {
   getCenterFromAABB,
   transformAABB,
 } from "../physics/aabb.js";
-import { OBB, getOBBCornersTemp } from "../physics/obb.js";
+import { OBB, getOBBCornersTemp, getRandPointInOBB } from "../physics/obb.js";
 import { testAngularDiff } from "../utils/math.js";
 import {
   sketch,
@@ -142,21 +142,25 @@ export function getAABB2CircleSweptPerimeterAsSvg(
   return svg;
 }
 
-export function getAimAndMissPositions(opt: {
-  target: OBB;
-  srcToTrg: V3.InputT;
-  doMiss: boolean;
-}) {
-  // create a local frame based on incoming dir
-  const rot = quat.fromForwardAndUpish(opt.srcToTrg, V3.UP);
-  const incomingPos = V3.sub(opt.target.center, opt.srcToTrg);
-  const worldCorners = getOBBCornersTemp(opt.target);
-  const localToWorldM = mat4.fromRotationTranslation(rot, opt.target.center);
-  const worldToLocalM = mat4.invert(localToWorldM);
-  const localCorners = worldCorners.map((v) => V3.tMat4(v, worldToLocalM, v));
-  const localAABB = getAABBFromPositions(createAABB(), localCorners);
-
+export function getAimAndMissPositions(
+  opt: {
+    target: OBB;
+    srcToTrg: V3.InputT;
+    doMiss: boolean;
+  },
+  out?: V3
+) {
+  out = out ?? V3.tmp();
   if (opt.doMiss) {
+    const _stk = tmpStack();
+    // create a local frame based on incoming dir
+    const rot = quat.fromForwardAndUpish(opt.srcToTrg, V3.UP);
+    const worldCorners = getOBBCornersTemp(opt.target);
+    const localToWorldM = mat4.fromRotationTranslation(rot, opt.target.center);
+    const worldToLocalM = mat4.invert(localToWorldM); // TODO(@darzu): PERF. can i use inverse transpose here?
+    const localCorners = worldCorners.map((v) => V3.tMat4(v, worldToLocalM, v));
+    const localAABB = getAABBFromPositions(createAABB(), localCorners);
+
     // only care about the xz plane
     localAABB.min[1] = 0;
     localAABB.max[1] = 0;
@@ -178,10 +182,13 @@ export function getAimAndMissPositions(opt: {
       V3.tMat4([v2d[0], 0, v2d[1]], localToWorldM, out);
     const perimWorldPos = to3d(perimPos2d);
 
-    sketchLine(incomingPos, perimWorldPos, {
-      key: "projPerim",
-      color: ENDESGA16.lightGreen,
-    });
+    const res = V3.copy(out, perimWorldPos);
+    _stk.pop();
+    return res;
+  } else {
+    const res = getRandPointInOBB(opt.target);
+    V3.copy(out, res);
+    return res;
   }
 }
 

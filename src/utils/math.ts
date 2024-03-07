@@ -67,8 +67,12 @@ export function alignDown(x: number, size: number): number {
   return Math.floor(x / size) * size;
 }
 
-export function chance(zeroToOne: number): boolean {
+export function chance(zeroToOne: number = 0.5): boolean {
   return Math.random() < zeroToOne;
+}
+
+export function randBool(): boolean {
+  return chance(0.5);
 }
 
 // maps a number from [inMin, inMax] to [outMin, outMax]

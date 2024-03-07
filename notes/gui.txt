@@ -148,3 +148,6 @@ Fast 2d graphics:
     https://medium.com/@wartelski/impeller-rendering-engine-is-it-good-enough-for-flutter-ff2677714343
   Rive:
     https://rive.app/renderer
+
+Good browser touch events by redblob:
+  https://twitter.com/redblobgames/status/1765409668850123046

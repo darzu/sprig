@@ -58,7 +58,15 @@ import { RenderableConstructDef, RendererDef } from "../render/renderer-ecs.js";
 import { getAimAndMissPositions } from "../stone/projectile.js";
 import { TimeDef } from "../time/time.js";
 import { YawPitchDef } from "../turret/yawpitch.js";
-import { clamp, remap, wrap } from "../utils/math.js";
+import {
+  chance,
+  clamp,
+  randBool,
+  randInt,
+  remap,
+  wrap,
+} from "../utils/math.js";
+import { sketchPoints } from "../utils/sketch.js";
 import { Path } from "../utils/spline.js";
 import { PI } from "../utils/util-no-import.js";
 import { assert, range } from "../utils/util.js";
@@ -769,15 +777,31 @@ async function initEnemies() {
     [EnemyDef, PositionDef, RotationDef],
     [TimeDef],
     (es, res) => {
-      // if (res.time.step % 100 !== 0) return;
+      if (res.time.step % 100 !== 0) return;
 
       for (let e of es) {
         const incomingDir = V3.sub(player.position, e.position);
-        getAimAndMissPositions({
-          target: player.obb,
-          srcToTrg: incomingDir,
-          doMiss: true,
-        });
+        // const doMiss = chance(0.5);
+        let vs: V3[] = [];
+        for (let i = 0; i < 200; i++) {
+          const aimPos = getAimAndMissPositions({
+            target: player.obb,
+            srcToTrg: incomingDir,
+            doMiss: true,
+          });
+          vs.push(aimPos);
+        }
+        sketchPoints(vs, { color: ENDESGA16.red, key: "misses" });
+        vs.length = 0;
+        for (let i = 0; i < 200; i++) {
+          const aimPos = getAimAndMissPositions({
+            target: player.obb,
+            srcToTrg: incomingDir,
+            doMiss: false,
+          });
+          vs.push(aimPos);
+        }
+        sketchPoints(vs, { color: ENDESGA16.darkGreen, key: "hits" });
       }
     }
   );
