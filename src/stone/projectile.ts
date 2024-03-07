@@ -118,6 +118,7 @@ export function getAABB2PerimeterAsParametric(
   };
 }
 
+// TODO(@darzu): ridiculous? maybe.
 export function getAABB2CircleSweptPerimeterAsSvg(
   aabb: AABB2,
   radius: number
@@ -141,186 +142,47 @@ export function getAABB2CircleSweptPerimeterAsSvg(
   return svg;
 }
 
-let _lastT = 0.0; // TODO(@darzu): HACK for debugging
 export function getAimAndMissPositions(opt: {
-  // TODO(@darzu):
   target: OBB;
   srcToTrg: V3.InputT;
+  doMiss: boolean;
 }) {
-  // TODO(@darzu): BROKEN.
+  // create a local frame based on incoming dir
   const rot = quat.fromForwardAndUpish(opt.srcToTrg, V3.UP);
   const incomingPos = V3.sub(opt.target.center, opt.srcToTrg);
-  // const viewM = mat4.lookAt(incomingPos, opt.target.center, V3.UP);
   const worldCorners = getOBBCornersTemp(opt.target);
-  // worldCorners.forEach((v) => drawBall(v, 0.5, ENDESGA16.white));
   const localToWorldM = mat4.fromRotationTranslation(rot, opt.target.center);
   const worldToLocalM = mat4.invert(localToWorldM);
-
-  // TODO(@darzu): how to visualize a mat4 ?
-  //    visualize a space transformation:
-  //      point cloud of unit cube colored by x,y,z
-  //      to output points x,y,z
-  //    or just see what it does to the gizmo ? draw lines from tips
-
-  // drawGizmosForMat4(localToWorldM, 20);
-
-  // return;
-
-  // worldCorners.forEach((v, i) => {
-  //   sketchLine(incomingPos, v, {
-  //     key: `corner${i}`,
-  //     color: ENDESGA16.white,
-  //   });
-  // });
-
   const localCorners = worldCorners.map((v) => V3.tMat4(v, worldToLocalM, v));
-  // const viewCorners = worldCorners
-  //   .map((v) => V3.sub(v, opt.target.center, v))
-  //   .map((v) => V3.tQuat(v, rot, v));
-  // TODO(@darzu): To be more precise, we should walk the parameter of the 6 outer corners instead of fitting an AABB
   const localAABB = getAABBFromPositions(createAABB(), localCorners);
 
-  // only care about the xz plane
-  localAABB.min[1] = 0;
-  localAABB.max[1] = 0;
+  if (opt.doMiss) {
+    // only care about the xz plane
+    localAABB.min[1] = 0;
+    localAABB.max[1] = 0;
 
-  const worldMin = V3.tMat4(localAABB.min, localToWorldM);
-  const worldMax = V3.tMat4(localAABB.max, localToWorldM);
-
-  // console.log(aabbDbg(localAABB));
-  // sketchLine(incomingPos, worldMin, {
-  //   key: "projMin",
-  //   color: ENDESGA16.darkRed,
-  // });
-  // sketchLine(incomingPos, worldMax, {
-  //   key: "projMax",
-  //   color: ENDESGA16.red,
-  // });
-  // sketchLine(incomingPos, opt.target.center, {
-  //   key: "projMid",
-  //   color: ENDESGA16.lightBlue,
-  // });
-
-  const localAABB2 = createAABB2(
-    V(localAABB.min[0], localAABB.min[2]),
-    V(localAABB.max[0], localAABB.max[2])
-  );
-
-  // const tFn = getAABB2PerimeterAsParametric(localAABB2);
-  const svg = getAABB2CircleSweptPerimeterAsSvg(localAABB2, 10);
-  const compSvg = compileSVG(svg);
-
-  const to3d = (v2d: V2.InputT, out?: V3) =>
-    V3.tMat4([v2d[0], 0, v2d[1]], localToWorldM, out);
-
-  for (let i = 0; i < svg.length; i++) {
-    if (compSvg.lengths[i] <= 0) continue;
-
-    const start = compSvg.verts[i];
-    const end = compSvg.verts[i + 1];
-
-    const instr = compSvg.svg[i];
-    if (instr.i !== "a") continue;
-
-    sketchLine(to3d(start), to3d(end), {
-      key: "seg_" + i,
-    });
-
-    const c = getCircleCenter(start[0], start[1], end[0], end[1], instr.rx, +1);
-    sketchDot(to3d(c), 1, { color: ENDESGA16.lightGreen, key: "c0_" + i });
-
-    const c1 = getCircleCenter(
-      start[0],
-      start[1],
-      end[0],
-      end[1],
-      instr.rx,
-      -1
+    // get perimeter path as an svg
+    const localAABB2 = createAABB2(
+      V(localAABB.min[0], localAABB.min[2]),
+      V(localAABB.max[0], localAABB.max[2])
     );
-    sketchDot(to3d(c1), 1, { color: ENDESGA16.red, key: "c1_" + i });
+    const svg = getAABB2CircleSweptPerimeterAsSvg(localAABB2, 10);
+    const compSvg = compileSVG(svg);
 
-    const sTheta = Math.atan2(start[1] - c[1], start[0] - c[0]);
-    const eTheta = Math.atan2(end[1] - c[1], end[0] - c[0]);
+    // pick a point
+    const t = Math.random();
+    const perimPos2d = compSvg.fn(t);
 
-    const angleToPos = (theta: number) =>
-      tV(c[0] + Math.cos(theta) * instr.rx, c[1] + Math.sin(theta) * instr.rx);
+    // back to world frame
+    const to3d = (v2d: V2.InputT, out?: V3) =>
+      V3.tMat4([v2d[0], 0, v2d[1]], localToWorldM, out);
+    const perimWorldPos = to3d(perimPos2d);
 
-    sketchLine(to3d(c), to3d(angleToPos(sTheta)), {
-      key: "uTheta" + i,
-      color: ENDESGA16.lightBrown,
-    });
-    sketchLine(to3d(c), to3d(angleToPos(eTheta)), {
-      key: "vTheta" + i,
-      color: ENDESGA16.darkBrown,
-    });
-
-    // const smallTheta = Math.abs(uTheta - vTheta);
-    // const largeTheta = 2 * PI - smallTheta;
-    // const arcTheta = smallTheta;
-    // const theta = uTheta + arcTheta * t;
-    // const l = 2 * PI * arcTheta * t;
-    // out[0] = c[0] + Math.cos(theta) * instr.rx;
-    // out[1] = c[1] + Math.sin(theta) * instr.rx;
-
-    // const N = 20;
-    // const points = range(N)
-    //   .map((n) => n / N)
-    //   .map((t) => {
-    //     const v2d = compSvg.instrFn(i, t);
-    //     const v = tV(v2d[0], 0, v2d[1]);
-    //     V3.tMat4(v, localToWorldM, v);
-    //     return v;
-    //   });
-    // sketchLines(points, {
-    //   key: "svgPoints_" + i,
-    //   color: RainbowEndesga16[i],
-    // });
-  }
-
-  {
-    // full shape
-    const points = range(100)
-      .map((n) => n / 100)
-      .map((t) => {
-        const v2d = compSvg.fn(t);
-        const v = tV(v2d[0], 0, v2d[1]);
-        V3.tMat4(v, localToWorldM, v);
-        return v;
-      });
-    sketchPoints(points, {
-      key: "svgAllPoints",
-      color: ENDESGA16.lightGray,
+    sketchLine(incomingPos, perimWorldPos, {
+      key: "projPerim",
+      color: ENDESGA16.lightGreen,
     });
   }
-
-  // console.dir(compSvg);
-  const tFn = compSvg.fn;
-
-  _lastT += 0.005; // TODO(@darzu): DBG hack
-
-  const perimPos2d = tFn(_lastT);
-  const perimLocalPos = tV(perimPos2d[0], 0, perimPos2d[1]);
-
-  const perimWorldPos = V3.tMat4(perimLocalPos, localToWorldM);
-
-  sketchLine(incomingPos, perimWorldPos, {
-    key: "projPerim",
-    color: ENDESGA16.lightGreen,
-  });
-
-  // drawBall(worldMin, 1, ENDESGA16.darkRed);
-  // drawLine(incomingPos, worldMin, ENDESGA16.darkRed);
-  // drawBall(worldMax, 1, ENDESGA16.red);
-  // drawLine(incomingPos, worldMax, ENDESGA16.red);
-
-  // drawLine(incomingPos, opt.target.center, ENDESGA16.lightBlue);
-  // drawPlane(
-  //   vec3Mid(V3.tmp(), worldMin, worldMax),
-  //   V3.neg(opt.srcToTrg),
-  //   20,
-  //   ENDESGA16.orange
-  // );
-  // TODO(@darzu): IMPL! Still bugged.
 }
 
 export function getFireSolution(opt: FireSolutionOpt): quat | undefined {

@@ -776,6 +776,7 @@ async function initEnemies() {
         getAimAndMissPositions({
           target: player.obb,
           srcToTrg: incomingDir,
+          doMiss: true,
         });
       }
     }

@@ -1,6 +1,8 @@
-import { V, V2, V3 } from "../matrix/sprig-matrix.js";
+import { ENDESGA16 } from "../color/palettes.js";
+import { V, V2, V3, tV } from "../matrix/sprig-matrix.js";
 import { createAABB2 } from "../physics/aabb.js";
 import { angularDiff, sum, wrap } from "./math.js";
+import { sketchDot, sketchLine, sketchPoints } from "./sketch.js";
 import { PI, never } from "./util-no-import.js";
 import { assert, range } from "./util.js";
 import { vec2Dbg } from "./utils-3d.js";
@@ -231,3 +233,104 @@ function wrapT(t: number): number {
   a ${radius} ${radius} 0 0 ${-radius} ${+radius}
 `;
 */
+
+function debugSVG(to3d: (v2d: V2.InputT, out?: V3) => V3) {
+  const aabb = createAABB2(V(-20, -20), V(30, 30));
+  const radius = 15;
+
+  // go clockwise starting from min
+  const width = aabb.max[0] - aabb.min[0];
+  const height = aabb.max[1] - aabb.min[1];
+
+  const svg: SVG = [
+    { i: "M", x: aabb.min[0] - radius, y: aabb.min[1] },
+    { i: "v", dy: height },
+    { i: "a", rx: radius, dx: +radius, dy: +radius },
+    { i: "h", dx: width },
+    { i: "a", rx: radius, dx: +radius, dy: -radius },
+    { i: "v", dy: -height },
+    { i: "a", rx: radius, dx: -radius, dy: -radius },
+    { i: "h", dx: -width },
+    { i: "a", rx: radius, dx: -radius, dy: +radius },
+  ];
+
+  const compSvg = compileSVG(svg);
+
+  for (let i = 0; i < svg.length; i++) {
+    if (compSvg.lengths[i] <= 0) continue;
+
+    const start = compSvg.verts[i];
+    const end = compSvg.verts[i + 1];
+
+    const instr = compSvg.svg[i];
+    if (instr.i !== "a") continue;
+
+    sketchLine(to3d(start), to3d(end), {
+      key: "seg_" + i,
+    });
+
+    const c = getCircleCenter(start[0], start[1], end[0], end[1], instr.rx, +1);
+    sketchDot(to3d(c), 1, { color: ENDESGA16.lightGreen, key: "c0_" + i });
+
+    const c1 = getCircleCenter(
+      start[0],
+      start[1],
+      end[0],
+      end[1],
+      instr.rx,
+      -1
+    );
+    sketchDot(to3d(c1), 1, { color: ENDESGA16.red, key: "c1_" + i });
+
+    const sTheta = Math.atan2(start[1] - c[1], start[0] - c[0]);
+    const eTheta = Math.atan2(end[1] - c[1], end[0] - c[0]);
+
+    const angleToPos = (theta: number) =>
+      tV(c[0] + Math.cos(theta) * instr.rx, c[1] + Math.sin(theta) * instr.rx);
+
+    sketchLine(to3d(c), to3d(angleToPos(sTheta)), {
+      key: "uTheta" + i,
+      color: ENDESGA16.lightBrown,
+    });
+    sketchLine(to3d(c), to3d(angleToPos(eTheta)), {
+      key: "vTheta" + i,
+      color: ENDESGA16.darkBrown,
+    });
+
+    // const smallTheta = Math.abs(uTheta - vTheta);
+    // const largeTheta = 2 * PI - smallTheta;
+    // const arcTheta = smallTheta;
+    // const theta = uTheta + arcTheta * t;
+    // const l = 2 * PI * arcTheta * t;
+    // out[0] = c[0] + Math.cos(theta) * instr.rx;
+    // out[1] = c[1] + Math.sin(theta) * instr.rx;
+
+    // const N = 20;
+    // const points = range(N)
+    //   .map((n) => n / N)
+    //   .map((t) => {
+    //     const v2d = compSvg.instrFn(i, t);
+    //     const v = tV(v2d[0], 0, v2d[1]);
+    //     V3.tMat4(v, localToWorldM, v);
+    //     return v;
+    //   });
+    // sketchLines(points, {
+    //   key: "svgPoints_" + i,
+    //   color: RainbowEndesga16[i],
+    // });
+  }
+
+  {
+    // full shape
+    const points = range(100)
+      .map((n) => n / 100)
+      .map((t) => {
+        const v2d = compSvg.fn(t);
+        return to3d(v2d);
+      });
+    sketchPoints(points, {
+      key: "svgAllPoints",
+      color: ENDESGA16.lightGray,
+    });
+  }
+}
