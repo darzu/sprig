@@ -57,6 +57,7 @@ export const PhysicsResultsDef = EM.defineResource("physicsResults", () => {
 });
 export type PhysicsResults = Component<typeof PhysicsResultsDef>;
 
+// TODO(@darzu): MOVE!
 export const WorldFrameDef = EM.defineComponent("world", () => createFrame());
 
 export interface PhysCollider {

@@ -110,6 +110,8 @@ import { addWorldGizmo } from "../utils/utils-game.js";
 import { HasMastDef } from "../wind/mast.js";
 import { HasRudderDef } from "./rudder.js";
 import { obbTests } from "../physics/obb.js";
+import { linePipe, pointPipe } from "../render/pipelines/std-line.js";
+import { renderDots } from "../render/pipelines/std-dots.js";
 /*
 NOTES:
 - Cut grass by updating a texture that has cut/not cut or maybe cut-height
@@ -430,11 +432,14 @@ export async function initLD53(hosting: boolean) {
       res.renderer.pipelines = [
         ...shadowPipelines,
         stdMeshPipe, // SLOW
+        renderDots,
         stdRiggedRenderPipeline,
         // renderGrassPipe,
         ...(DBG_HIDE_WATER ? [] : [renderOceanPipe]),
         outlineRender, // 2ms
         deferredPipeline, // 10ms
+        linePipe,
+        pointPipe,
         skyPipeline,
         postProcess,
         ...(res.dev.showConsole ? dbgGridCompose : []),

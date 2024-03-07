@@ -5,7 +5,7 @@ import {
   MastMesh,
   RudderPrimMesh,
 } from "../meshes/mesh-list.js";
-import { V3, quat } from "../matrix/sprig-matrix.js";
+import { V3, quat, tV } from "../matrix/sprig-matrix.js";
 import { LinearVelocityDef } from "../motion/velocity.js";
 import {
   PhysicsParentDef,
@@ -36,6 +36,8 @@ import { ShipHealthDef } from "./ship-health.js";
 import { T, defineObj, mixinObj } from "../graybox/objects.js";
 import { FinishedDef } from "../ecs/em-helpers.js";
 import { HasRudderObj, RudderDef, createRudderTurret } from "./rudder.js";
+import { assert, dbgOnce } from "../utils/util.js";
+import { createAABB, mergeAABBs } from "../physics/aabb.js";
 
 // TODO(@darzu): RENAME
 const LD52ShipDefObj = defineObj({
@@ -219,12 +221,24 @@ export async function createLd53ShipAsync() {
 EM.addSystem(
   "shipParty",
   Phase.GAME_WORLD,
-  [LD52ShipDef, PositionDef, RotationDef],
+  [LD52ShipDef, PositionDef, RotationDef, ColliderDef, WorldFrameDef],
   [PartyDef],
   (es, res) => {
-    if (es[0]) {
-      quat.fwd(es[0].rotation, res.party.dir);
-      V3.copy(res.party.pos, es[0].position);
-    }
+    if (!es.length) return;
+    const ship = es[0];
+    quat.fwd(ship.rotation, res.party.dir);
+    V3.copy(res.party.pos, ship.position);
+
+    // get obb from ship collider
+    assert(ship.collider.shape === "Multi");
+    const localAABB = createAABB(
+      tV(+Infinity, +Infinity, +Infinity),
+      tV(-Infinity, -Infinity, -Infinity)
+    );
+    ship.collider.children.forEach((c) => {
+      assert(c.shape === "AABB");
+      mergeAABBs(localAABB, localAABB, c.aabb);
+    });
+    res.party.obb.updateFromMat4(localAABB, ship.world.transform);
   }
 );

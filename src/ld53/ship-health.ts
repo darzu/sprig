@@ -2,7 +2,8 @@ import { Component, EM } from "../ecs/entity-manager.js";
 import { WoodHealthDef } from "../wood/wood.js";
 import { Phase } from "../ecs/sys-phase.js";
 
-const MIN_HEALTH_PERCENT = 0.7;
+// const MIN_HEALTH_PERCENT = 0.7;
+const MIN_HEALTH_PERCENT = 0.2;
 
 export const ShipHealthDef = EM.defineComponent("shipHealth", () => ({
   needsUpdate: false,

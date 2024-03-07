@@ -1,18 +1,10 @@
 import { EM } from "../ecs/entity-manager.js";
-import { Phase } from "../ecs/sys-phase.js";
-import { V, V3, mat3, mat4, tV } from "../matrix/sprig-matrix.js";
-import { clamp, jitter } from "../utils/math.js";
-import { dbgLogOnce, objMap, range } from "../utils/util.js";
-import { jitterVec3, mat3Dbg, vec3Dbg } from "../utils/utils-3d.js";
-import {
-  AABB,
-  clampToAABB,
-  getCenterFromAABB,
-  getHalfsizeFromAABB,
-} from "./aabb.js";
+import { V, V3, mat3, mat4 } from "../matrix/sprig-matrix.js";
+import { jitter } from "../utils/math.js";
+import { range } from "../utils/util.js";
+import { mat3Dbg, vec3Dbg } from "../utils/utils-3d.js";
+import { AABB, getCenterFromAABB, getHalfsizeFromAABB } from "./aabb.js";
 import { Sphere } from "./broadphase.js";
-import { ColliderDef, isAABBCollider } from "./collider.js";
-import { WorldFrameDef } from "./nonintersection.js";
 
 /* 
 REPRESENTATION:
@@ -57,26 +49,6 @@ export const OBBDef = EM.defineComponent(
   "obb",
   () => OBB.mk(),
   (p) => p
-);
-
-EM.addSystem(
-  "updateOBBFromLocalAABB",
-  Phase.GAME_WORLD,
-  [OBBDef, WorldFrameDef, ColliderDef],
-  [],
-  (es) => {
-    for (let e of es) {
-      if (!isAABBCollider(e.collider)) {
-        dbgLogOnce(
-          `ent ${e.id} has OBBDef and ColliderDef but not an AABBCollider!`,
-          undefined,
-          true
-        );
-        continue;
-      }
-      e.obb.updateFromMat4(e.collider.aabb, e.world.transform);
-    }
-  }
 );
 
 const _tempObbCorners: V3[] = range(8).map((_) => V3.mk());

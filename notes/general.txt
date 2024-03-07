@@ -1565,3 +1565,6 @@ Bitsy "tiny" game engine:
 
 Media Molecule serialization:
   https://handmade.network/p/29/swedish-cubes-for-unity/blog/p/2723-how_media_molecule_does_serialization
+
+Chrome workspaces, lets u save changes made in dev tools?:
+  https://developer.chrome.com/docs/devtools/settings/workspace

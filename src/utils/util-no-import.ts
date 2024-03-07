@@ -38,3 +38,9 @@ export function never(x: never, msg?: string): never {
 export function flatten<A>(doubleArr: A[][]): A[] {
   return doubleArr.reduce((p, n) => [...p, ...n], []);
 }
+
+export function assert(cond: any, msg?: string): asserts cond {
+  // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-7.html#assertion-functions
+  if (!cond)
+    throw new Error(msg ?? "Assertion failed (consider adding a helpful msg).");
+}

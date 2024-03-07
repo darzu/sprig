@@ -5,8 +5,7 @@ import {
   PERF_DBG_F32S_BLAME,
   PERF_DBG_F32S_TEMP_BLAME,
 } from "../flags.js";
-import { dbgAddBlame, dbgClearBlame } from "../utils/util-no-import.js";
-import { assert } from "../utils/util.js";
+import { assert, dbgAddBlame, dbgClearBlame } from "../utils/util-no-import.js";
 import * as GLM from "./gl-matrix.js";
 
 /*
@@ -1162,7 +1161,15 @@ export module mat4 {
   }
 
   export function invert(v1: InputT, out?: T): T {
-    return GL.invert(out ?? tmp(), v1) as T;
+    const r = GL.invert(out ?? tmp(), v1) as T;
+    // TODO(@darzu): allow invert matrix to fail?
+    assert(
+      r,
+      `can't invert matrix! Probably NaNs or bad src matrix: ${JSON.stringify(
+        v1
+      )}`
+    );
+    return r;
   }
 
   export function scale(a: InputT, v: V3.InputT, out?: T): T {
@@ -1484,6 +1491,7 @@ export module mat3 {
     return tmpArray(9);
   }
 
+  // TODO(@darzu): RENAME to mk()
   /* creates identity matrix */
   export function create(): T {
     const out = float32ArrayOfLength(9);

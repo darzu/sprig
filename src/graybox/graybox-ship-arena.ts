@@ -777,31 +777,17 @@ async function initEnemies() {
     [EnemyDef, PositionDef, RotationDef],
     [TimeDef],
     (es, res) => {
-      if (res.time.step % 100 !== 0) return;
+      // if (res.time.step % 100 !== 0) return;
 
       for (let e of es) {
         const incomingDir = V3.sub(player.position, e.position);
-        // const doMiss = chance(0.5);
-        let vs: V3[] = [];
-        for (let i = 0; i < 200; i++) {
-          const aimPos = getAimAndMissPositions({
-            target: player.obb,
-            srcToTrg: incomingDir,
-            doMiss: true,
-          });
-          vs.push(aimPos);
-        }
-        sketchPoints(vs, { color: ENDESGA16.red, key: "misses" });
-        vs.length = 0;
-        for (let i = 0; i < 200; i++) {
-          const aimPos = getAimAndMissPositions({
-            target: player.obb,
-            srcToTrg: incomingDir,
-            doMiss: false,
-          });
-          vs.push(aimPos);
-        }
-        sketchPoints(vs, { color: ENDESGA16.darkGreen, key: "hits" });
+        const doMiss = chance(0.5);
+        const aimPos = getAimAndMissPositions({
+          target: player.obb,
+          srcToTrg: incomingDir,
+          doMiss: doMiss,
+        });
+        throw "IMPLEMENT AIM";
       }
     }
   );

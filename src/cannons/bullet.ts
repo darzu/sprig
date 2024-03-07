@@ -31,12 +31,15 @@ import { WorldFrameDef } from "../physics/nonintersection.js";
 import { DeadDef } from "../ecs/delete.js";
 import { AudioDef } from "../audio/audio.js";
 import { randNormalVec3 } from "../utils/utils-3d.js";
-import { assert, assertDbg } from "../utils/util.js";
+import { assert, assertDbg, range } from "../utils/util.js";
 import { ParametricDef } from "../motion/parametric-motion.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { SplinterParticleDef } from "../wood/wood-splinters.js";
+import { SketcherDef, sketchLines } from "../utils/sketch.js";
 
 // TODO(@darzu): MULTIPLAYER BULLETS might have been broken during LD51
+
+const DBG_BULLET_TRAILS = true;
 
 const _maxBullets = 100;
 
@@ -104,6 +107,50 @@ EM.registerSerializerPair(
     c.gravity = reader.readFloat32();
   }
 );
+
+// if (DBG_BULLET_TRAILS) {
+//   EM.addEagerInit(
+//     [BulletConstructDef, WorldFrameDef, ColorDef],
+//     [SketcherDef],
+//     [],
+//     (res) => {
+//       const N = 20;
+//       const eToVs = new Map<number, V3[]>();
+//       const getVs = (id: number) => {
+//         let vs = eToVs.get(id);
+//         if (!vs) {
+//           vs = range(N).map((_) => V3.mk());
+//           eToVs.set(id, vs);
+//         }
+//         return vs;
+//       };
+
+//       // TODO(@darzu): MOVE. And is this at all performant?
+//       function rotate<T>(ts: T[]): T[] {
+//         const tl = ts.pop();
+//         ts.unshift(tl!);
+//         return ts;
+//       }
+
+//       EM.addSystem(
+//         "dbgBulletTrails",
+//         Phase.GAME_WORLD,
+//         [BulletConstructDef, WorldFrameDef, ColorDef],
+//         [],
+//         (es) => {
+//           for (let e of es) {
+//             const vs = getVs(e.id);
+//             rotate(vs);
+//             V3.copy(vs[0], e.world.position);
+
+//             const key = "dbgBulletTrails_" + e.id;
+//             res.sketcher.sketch({ shape: "lines", vs, key, color: e.color });
+//           }
+//         }
+//       );
+//     }
+//   );
+// }
 
 export function createOrResetBullet(
   e: Entity & { bulletConstruct: BulletConstruct },
@@ -181,6 +228,7 @@ export function registerBulletUpdate() {
   );
 }
 
+// TODO(@darzu): Use entity pools!!
 type BulletEnt = EntityW<[typeof BulletConstructDef]>;
 const _bulletPool: BulletEnt[] = [];
 let _nextBulletIdx = 0;

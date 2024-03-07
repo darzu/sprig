@@ -49,11 +49,7 @@ import { Phase } from "../ecs/sys-phase.js";
 import { XY } from "../meshes/mesh-loader.js";
 import { transformYUpModelIntoZUp } from "../camera/basis.js";
 import { addGizmoChild, drawBall } from "../utils/utils-game.js";
-import {
-  getFireDirection,
-  getFireSolution,
-  getTargetMissOrHitPosition,
-} from "./projectile.js";
+import { getFireSolution } from "./projectile.js";
 
 export const DBG_CANNONS = true;
 
@@ -712,6 +708,7 @@ EM.addSystem(
         maxRadius,
         targetPos: res.party.pos,
         targetDir: res.party.dir,
+        targetOBB: res.party.obb,
         targetVel,
         projectileSpeed: tower.stoneTower.projectileSpeed,
         miss,

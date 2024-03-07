@@ -64,6 +64,7 @@ export interface FireSolutionOpt {
   targetPos: V3.InputT;
   targetVel: V3.InputT;
   targetDir: V3.InputT;
+  targetOBB: OBB;
   projectileSpeed: number;
   miss: boolean;
 }
@@ -202,7 +203,38 @@ export function getFireSolution(opt: FireSolutionOpt): quat | undefined {
   }
 
   // determine where to aim
-  const aimPos = getTargetMissOrHitPosition(opt);
+  // const aimPos = getTargetMissOrHitPosition(opt);
+  const srcToTrg = V3.sub(opt.targetPos, opt.sourcePos);
+  const aimPos = getAimAndMissPositions({
+    target: opt.targetOBB,
+    srcToTrg: srcToTrg,
+    doMiss: opt.miss,
+  });
+
+  if (DBG_CANNONS) {
+    const _stk = tmpStack();
+    let vs: V3[] = [];
+    for (let i = 0; i < 200; i++) {
+      const aimPos = getAimAndMissPositions({
+        target: opt.targetOBB,
+        srcToTrg: srcToTrg,
+        doMiss: true,
+      });
+      vs.push(aimPos);
+    }
+    sketchPoints(vs, { color: ENDESGA16.red, key: "misses" });
+    vs.length = 0;
+    for (let i = 0; i < 200; i++) {
+      const aimPos = getAimAndMissPositions({
+        target: opt.targetOBB,
+        srcToTrg: srcToTrg,
+        doMiss: false,
+      });
+      vs.push(aimPos);
+    }
+    sketchPoints(vs, { color: ENDESGA16.darkGreen, key: "hits" });
+    _stk.pop();
+  }
 
   // console.log(`${opt.miss}: ${vec3Dbg(aimPos)}`);
 
