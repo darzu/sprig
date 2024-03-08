@@ -498,3 +498,6 @@ Bounding volumes:
 GPU collision detection:
   "The main solution to overcoming this [GPU->CPU] communication bottleneck relies on using hardware-supported
   occlusion queries to pass information back to the CPU."
+
+"Reversibility": the witness's collision detection:
+  https://youtu.be/YE8MVNMzpbo?t=764

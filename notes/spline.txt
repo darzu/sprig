@@ -58,3 +58,6 @@ ideas:
   bezier curve progress isn't linear. 
     Can't we just apply some function to t to make it linear?
     or we can always resample into linear segments
+
+rotation minimizing frames to calc normals and tangents:
+  https://blog.littlepolygon.com/posts/missile/

@@ -57,7 +57,11 @@ maybe draw a scene in a seperate little window,
   composite it over the main ?
 */
 
-// obj key, poo
+// TODO(@darzu): sketchOBB
+// TODO(@darzu): sketchEntity (sketchs collider)
+
+// TODO(@darzu): use JS Proxy's to wrap e.g. vectors in a visualization.
+// TODO(@darzu): sketches can be assigned "local space" that's a transform they belong to e.g. a direction vector relative to some entity's transform
 
 export const SketchObj = defineObj({
   name: "sketch",
@@ -173,6 +177,7 @@ export const SketcherDef = defineResourceWithLazyInit(
     const dotPool = createIdxRing(MAX_DOTS);
     const dotMap = new Map<string, number>();
 
+    // TODO(@darzu): less hacky would be to have a pool per mesh type
     function sketchEnt(opt: SketchEntOpt): SketchEnt {
       let e: SketchEnt | undefined;
       if (opt.key) e = sketchEntMap.get(opt.key);
@@ -247,7 +252,7 @@ export const SketcherDef = defineResourceWithLazyInit(
           }
           const h = e.renderable.meshHandle;
           const m = h.mesh;
-          assert(m.dbgName === "line" && m.pos.length === 2);
+          assert(m.dbgName === "line" && m.pos.length === 2); // TODO(@darzu): have a pool per mesh type; less hacky!
           V3.copy(m.pos[0], opt.start);
           V3.copy(m.pos[1], opt.end);
           h.pool.updateMeshVertices(h, m, 0, 2);

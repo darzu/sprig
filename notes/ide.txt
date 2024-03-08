@@ -200,3 +200,13 @@ MVP IDE:
   give cost metrics for all user added content
   gather favorite teaching resources
   add companion content to some of them
+
+subset scene:
+  select some entities
+  select some systems
+  hide & stop everything else
+  like a little test case
+  like program slicing
+
+git articles:
+  how HEAD works: https://jvns.ca/blog/2024/03/08/how-head-works-in-git/

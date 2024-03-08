@@ -227,7 +227,7 @@ EM.addSystem(
     if (!es.length) return;
     const ship = es[0];
     quat.fwd(ship.rotation, res.party.dir);
-    V3.copy(res.party.pos, ship.position);
+    V3.copy(res.party.pos, ship.world.position);
 
     // get obb from ship collider
     assert(ship.collider.shape === "Multi");

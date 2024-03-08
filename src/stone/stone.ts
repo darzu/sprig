@@ -700,18 +700,27 @@ EM.addSystem(
       // should we miss?
       const miss = Math.random() < MISS_PROBABILITY;
 
-      const maxRadius = tower.stoneTower.firingRadius;
+      const MAX_RANGE = 300;
+      const GRAVITY = 6.0 * 0.00001;
+      const MAX_THETA = Math.PI / 2 - Math.PI / 16;
+      const MIN_THETA = -MAX_THETA;
 
       const worldRot = getFireSolution({
         sourcePos: cannon.world.position,
-        sourceRot: tower.world.rotation,
-        maxRadius,
-        targetPos: res.party.pos,
-        targetDir: res.party.dir,
+        sourceDefaultRot: tower.world.rotation,
+
+        maxYaw: tower.stoneTower.firingRadius,
+        maxPitch: MAX_THETA,
+        minPitch: MIN_THETA,
+        maxRange: MAX_RANGE,
+
+        gravity: GRAVITY,
+        projectileSpeed: tower.stoneTower.projectileSpeed,
+
         targetOBB: res.party.obb,
         targetVel,
-        projectileSpeed: tower.stoneTower.projectileSpeed,
-        miss,
+
+        doMiss: miss,
       });
 
       if (!worldRot) continue;

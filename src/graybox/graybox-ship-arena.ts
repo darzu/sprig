@@ -34,6 +34,7 @@ import {
 } from "../physics/collider.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import { OBB, OBBDef } from "../physics/obb.js";
+import { _OBB_SYSTEMS } from "../physics/obb_systems.js";
 import { onCollides } from "../physics/phys-helpers.js";
 import {
   Frame,
@@ -55,7 +56,10 @@ import { postProcess } from "../render/pipelines/std-post.js";
 import { shadowPipelines } from "../render/pipelines/std-shadow.js";
 import { alphaRenderPipeline } from "../render/pipelines/xp-alpha.js";
 import { RenderableConstructDef, RendererDef } from "../render/renderer-ecs.js";
-import { getAimAndMissPositions } from "../stone/projectile.js";
+import {
+  getAimAndMissPositions,
+  getFireSolution,
+} from "../stone/projectile.js";
 import { TimeDef } from "../time/time.js";
 import { YawPitchDef } from "../turret/yawpitch.js";
 import {
@@ -66,9 +70,9 @@ import {
   remap,
   wrap,
 } from "../utils/math.js";
-import { sketchPoints } from "../utils/sketch.js";
+import { sketchLine, sketchPoints } from "../utils/sketch.js";
 import { Path } from "../utils/spline.js";
-import { PI } from "../utils/util-no-import.js";
+import { PI, PId12, PId2 } from "../utils/util-no-import.js";
 import { assert, range } from "../utils/util.js";
 import { angleBetween, randVec3OfLen } from "../utils/utils-3d.js";
 import { addGizmoChild } from "../utils/utils-game.js";
@@ -97,6 +101,12 @@ const DBG_DOTS = false;
 const DBG_ENEMY = true;
 
 const SAIL_FURL_RATE = 0.02;
+
+const CANNON_MAX_YAW = PI * 0.2;
+
+const GRAVITY = -8 * 0.00001;
+
+let _obb_systems = _OBB_SYSTEMS; // TODO(@darzu): HACK. force import. yuck.
 
 const CannonObj = defineObj({
   name: "cannon2",
@@ -154,7 +164,7 @@ const CannonBallDef = CannonBallObj.props;
 
 const EnemyObj = defineObj({
   name: "enemy",
-  propsType: T<{ sailTarget: V3 }>(),
+  propsType: T<{ sailTarget: V3; reloadMs: number }>(),
   components: [],
 } as const);
 const EnemyDef = EnemyObj.props;
@@ -165,8 +175,6 @@ function cannonFireCurve(frame: Frame, speed: number, out: Parametric) {
   const vel = V3.scale(axis, speed);
 
   const time = EM.getResource(TimeDef)!;
-
-  const GRAVITY = -8 * 0.00001;
 
   copyParamateric(out, {
     pos: frame.position,
@@ -187,7 +195,7 @@ function launchBall(params: Parametric) {
       parametric: params,
       color: ENDESGA16.darkGray,
       renderableConstruct: [BallMesh],
-      colliderFromMesh: true,
+      colliderFromMesh: false,
     },
   });
 
@@ -460,8 +468,11 @@ export async function initGrayboxShipArena() {
           c.yawpitch.pitch -= res.inputs.mouseMov[1] * 0.005;
           c.yawpitch.pitch = clamp(c.yawpitch.pitch, 0, PI * 0.5);
           c.yawpitch.yaw =
-            clamp(c.yawpitch.yaw - c.cannon2.yaw, -PI * 0.2, PI * 0.2) +
-            c.cannon2.yaw;
+            clamp(
+              c.yawpitch.yaw - c.cannon2.yaw,
+              -CANNON_MAX_YAW,
+              CANNON_MAX_YAW
+            ) + c.cannon2.yaw;
         }
       }
       for (let c of cannons) {
@@ -575,7 +586,7 @@ function createShip(opts: {
       renderableConstruct: [shipMesh],
       // cameraFollow: undefined,
       linearVelocity: undefined,
-      colliderFromMesh: true,
+      colliderFromMesh: false,
       obb: undefined,
     },
     children: {
@@ -677,6 +688,7 @@ function createEnemy() {
   mixinObj(ship, EnemyObj, {
     props: {
       sailTarget: V(0, 0, 0),
+      reloadMs: 0,
     },
     args: {},
   });
@@ -746,7 +758,7 @@ async function initEnemies() {
       for (let e of es) {
         // TODO(@darzu): maybe when you're within a certain range, turn to fire instead of turn to chase
 
-        // stear
+        // steer
         const curDir = quat.fwd(e.rotation);
         const toTrg = V3.sub(e.enemy.sailTarget, e.position);
         const trgDist = V3.len(toTrg);
@@ -771,23 +783,73 @@ async function initEnemies() {
     }
   );
 
+  const _lastPlayerPos = V3.clone(player.obb.center);
   EM.addSystem(
-    "enemyAim",
+    "enemyAttack",
     Phase.GAME_WORLD,
-    [EnemyDef, PositionDef, RotationDef],
+    [EnemyDef, ShipDef, PositionDef, RotationDef, WorldFrameDef],
     [TimeDef],
     (es, res) => {
-      // if (res.time.step % 100 !== 0) return;
+      if (res.time.step % 30 !== 0) return;
 
       for (let e of es) {
+        // reload
+        if (e.enemy.reloadMs > 0) e.enemy.reloadMs -= res.time.dt;
+        if (e.enemy.reloadMs > 0) continue;
+
+        // aim
         const incomingDir = V3.sub(player.position, e.position);
         const doMiss = chance(0.5);
-        const aimPos = getAimAndMissPositions({
-          target: player.obb,
-          srcToTrg: incomingDir,
+        // const aimPos = getAimAndMissPositions({
+        //   target: player.obb,
+        //   srcToTrg: incomingDir,
+        //   doMiss: doMiss,
+        // });
+
+        const cannonL = e.ship.cannonL1;
+
+        if (!WorldFrameDef.isOn(cannonL)) continue;
+
+        const defaultWorldRot = quat.yaw(
+          cannonL.world.rotation,
+          -cannonL.yawpitch.yaw + cannonL.cannon2.yaw
+        );
+
+        const vel = V3.sub(player.obb.center, _lastPlayerPos);
+        V3.copy(_lastPlayerPos, player.obb.center);
+
+        const sln = getFireSolution({
+          sourcePos: cannonL.world.position,
+          sourceDefaultRot: defaultWorldRot,
+
+          maxYaw: CANNON_MAX_YAW,
+          minPitch: -PId12,
+          maxPitch: +PId2,
+          maxRange: 200,
+
+          gravity: GRAVITY,
+          projectileSpeed: 0.2,
+
+          targetOBB: player.obb,
+          targetVel: vel,
+
           doMiss: doMiss,
         });
-        throw "IMPLEMENT AIM";
+
+        if (sln) {
+          console.log("FOUND SLN!");
+          const dir = quat.fwd(sln);
+          V3.scale(dir, 20, dir);
+          const firePos = V3.add(player.obb.center, dir);
+          sketchLine(cannonL.world.position, firePos, {
+            key: "fireSln",
+            color: doMiss ? ENDESGA16.lightGreen : ENDESGA16.red,
+          });
+        }
+
+        // TODO(@darzu): moving target adjustment!
+
+        // throw "IMPLEMENT AIM";
       }
     }
   );

@@ -6,6 +6,9 @@ import { mat3Dbg, vec3Dbg } from "../utils/utils-3d.js";
 import { AABB, getCenterFromAABB, getHalfsizeFromAABB } from "./aabb.js";
 import { Sphere } from "./broadphase.js";
 
+// TODO(@darzu): ABSTRACTION. Maybe what we actually want is a bunch of helper functions
+//    for working with local AABBs and a series of world transforms
+
 /* 
 REPRESENTATION:
   could express as rotation and x,y,z scale
@@ -33,7 +36,7 @@ interface _OBB1 {
 }
 interface _OBB2 extends _OBB1 {
   halfw: V3;
-  center: V3;
+  center: V3; // TODO(@darzu): have mat be a mat4 and center be a view on that? then we're just a mat4 + scale3
   // _inv: mat3 | undefined;
 }
 
@@ -105,10 +108,10 @@ export function getOBBCornersTemp(obb: OBB): V3[] {
   return ts;
 }
 
-export function getRandPointInOBB(b: OBB, out?: V3): V3 {
-  const x = jitter(b.halfw[0]);
-  const y = jitter(b.halfw[1]);
-  const z = jitter(b.halfw[2]);
+export function getRandPointInOBB(b: OBB, scale: number, out?: V3): V3 {
+  const x = jitter(b.halfw[0] * scale);
+  const y = jitter(b.halfw[1] * scale);
+  const z = jitter(b.halfw[2] * scale);
   out = out ?? V3.tmp();
   out[0] = b.right[0] * x + b.fwd[0] * y + b.up[0] * z + b.center[0];
   out[1] = b.right[1] * x + b.fwd[1] * y + b.up[1] * z + b.center[1];
@@ -187,6 +190,14 @@ export module OBB {
     const b = mk();
     b.updateFromMat4(aabb, transform);
     return b;
+  }
+
+  export function copy(out: OBB, b: OBB): OBB {
+    mat3.copy(out.mat, b.mat);
+    V3.copy(out.halfw, b.halfw);
+    V3.copy(out.center, b.center);
+    // NOTE: we don't need to copy fwd/right/up b/c they're views into .mat
+    return out;
   }
 }
 

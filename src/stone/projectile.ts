@@ -1,37 +1,15 @@
-import {
-  AllEndesga16,
-  ENDESGA16,
-  RainbowEndesga16,
-} from "../color/palettes.js";
+import { ENDESGA16 } from "../color/palettes.js";
 import { V, V2, V3, mat4, quat, tV, tmpStack } from "../matrix/sprig-matrix.js";
 import {
   AABB2,
   createAABB,
   createAABB2,
   getAABBFromPositions,
-  getCenterFromAABB,
-  transformAABB,
 } from "../physics/aabb.js";
 import { OBB, getOBBCornersTemp, getRandPointInOBB } from "../physics/obb.js";
-import { testAngularDiff } from "../utils/math.js";
-import {
-  sketch,
-  sketchDot,
-  sketchLine,
-  sketchLines,
-  sketchPoints,
-} from "../utils/sketch.js";
-import { SVG, compileSVG, getCircleCenter } from "../utils/svg.js";
-import { PI, PIn2 } from "../utils/util-no-import.js";
-import { assert, dbgOnce, range } from "../utils/util.js";
-import { aabbDbg, vec3Dbg } from "../utils/utils-3d.js";
-import {
-  addWorldGizmo,
-  drawBall,
-  drawGizmosForMat4,
-  drawLine,
-  drawPlane,
-} from "../utils/utils-game.js";
+import { sketchLine, sketchPoints } from "../utils/sketch.js";
+import { SVG, compileSVG } from "../utils/svg.js";
+import { drawBall } from "../utils/utils-game.js";
 
 // TODO(@darzu): Move this. Merge this with others like parameteric?
 
@@ -41,32 +19,29 @@ ToDo:
 [ ] parameterize hit box / miss box using 3D projected to 2D OBB w/ projectile profile box too?
 */
 
-const DBG_CANNONS = true;
-const DBG_getAimAndMissPositions = true;
-
-const GRAVITY = 6.0 * 0.00001;
-
-const MAX_THETA = Math.PI / 2 - Math.PI / 16;
-const MIN_THETA = -MAX_THETA;
-
-const TARGET_WIDTH = 12;
-const TARGET_LENGTH = 30;
-const MISS_TARGET_LENGTH = 55;
-const MISS_TARGET_WIDTH = 22;
-const MISS_BY_MAX = 10;
-
-const MAX_RANGE = 300;
+const DBG_AIM_POS = true;
 
 export interface FireSolutionOpt {
-  maxRadius: number;
+  // cannon state
   sourcePos: V3.InputT;
-  sourceRot: quat.InputT;
-  targetPos: V3.InputT;
-  targetVel: V3.InputT;
-  targetDir: V3.InputT;
-  targetOBB: OBB;
+  sourceDefaultRot: quat.InputT;
+
+  // cannon limits
+  maxYaw: number;
+  maxPitch: number;
+  minPitch: number;
+  maxRange: number;
+
+  // projectile parameters
   projectileSpeed: number;
-  miss: boolean;
+  gravity: number;
+
+  // target data
+  targetVel: V3.InputT;
+  targetOBB: OBB;
+
+  // decision
+  doMiss: boolean;
 }
 
 interface Plane {
@@ -187,31 +162,72 @@ export function getAimAndMissPositions(
     _stk.pop();
     return res;
   } else {
-    const res = getRandPointInOBB(opt.target);
-    V3.copy(out, res);
-    return res;
+    return getRandPointInOBB(opt.target, 0.9, out);
   }
 }
 
+function getApproxFlightTime({
+  projectileSpeed: v,
+  targetOBB,
+  sourcePos,
+}: FireSolutionOpt) {
+  // calculate initial distance
+  const d0 = V3.dist(
+    [sourcePos[0], sourcePos[1], 0],
+    [targetOBB.center[0], targetOBB.center[1], 0]
+  );
+
+  // try to lead the target a bit using an approximation of flight
+  // time. this will not be exact.
+  // TODO(@darzu): sub with exact flight time?
+  const flightTime = d0 / (v * Math.cos(Math.PI / 4));
+
+  return flightTime;
+}
+
+const __t_obb0 = OBB.mk();
 export function getFireSolution(opt: FireSolutionOpt): quat | undefined {
-  const { sourcePos, targetPos, maxRadius } = opt;
+  // get flight time
+  const approxFlightTime = getApproxFlightTime(opt);
+
+  // adjust OBB by approx flight time
+  // TODO(@darzu): We don't normally modify the parameter object like this
+  opt.targetOBB = OBB.copy(__t_obb0, opt.targetOBB);
+  V3.add(
+    opt.targetOBB.center,
+    V3.scale(opt.targetVel, approxFlightTime),
+    opt.targetOBB.center
+  );
+
+  const { sourcePos, maxYaw, targetOBB } = opt;
 
   // are we within range?
-  const dist = V3.dist(sourcePos, targetPos);
-  if (MAX_RANGE < dist) {
+  const dist = V3.dist(sourcePos, targetOBB.center);
+  if (opt.maxRange < dist) {
+    if (DBG_AIM_POS) {
+      console.log("out of range");
+      const toTrg = V3.sub(targetOBB.center, sourcePos);
+      V3.norm(toTrg, toTrg);
+      V3.scale(toTrg, opt.maxRange, toTrg);
+      V3.add(toTrg, sourcePos, toTrg);
+      sketchLine(sourcePos, toTrg, {
+        key: "outOfRange",
+        color: ENDESGA16.white,
+      });
+    }
     return undefined;
   }
 
   // determine where to aim
-  // const aimPos = getTargetMissOrHitPosition(opt);
-  const srcToTrg = V3.sub(opt.targetPos, opt.sourcePos);
+  const srcToTrg = V3.sub(targetOBB.center, opt.sourcePos);
   const aimPos = getAimAndMissPositions({
     target: opt.targetOBB,
     srcToTrg: srcToTrg,
-    doMiss: opt.miss,
+    doMiss: opt.doMiss,
   });
 
-  if (DBG_CANNONS) {
+  if (DBG_AIM_POS) {
+    // debug hit/miss possiblities
     const _stk = tmpStack();
     let vs: V3[] = [];
     for (let i = 0; i < 200; i++) {
@@ -239,117 +255,45 @@ export function getFireSolution(opt: FireSolutionOpt): quat | undefined {
   // console.log(`${opt.miss}: ${vec3Dbg(aimPos)}`);
 
   // debugging
-  if (DBG_CANNONS)
-    drawBall(
-      V3.clone(aimPos),
-      0.5,
-      opt.miss ? ENDESGA16.darkRed : ENDESGA16.darkGreen
-    );
+  // if (DBG_AIM_POS)
+  //   drawBall(
+  //     V3.clone(aimPos),
+  //     0.5,
+  //     opt.doMiss ? ENDESGA16.darkRed : ENDESGA16.darkGreen
+  //   );
 
   // determine how to aim
   const worldRot = getFireDirection(aimPos, opt);
 
-  if (!worldRot)
+  if (!worldRot) {
+    if (DBG_AIM_POS) console.log("no valid direction");
     // no valid firing solution
     return undefined;
+  }
 
   // TODO(@darzu): re-enstate
   // check max arc
-  const yaw = quat.getAngle(opt.sourceRot, worldRot);
-  if (maxRadius < Math.abs(yaw))
+  const yaw = quat.getAngle(opt.sourceDefaultRot, worldRot);
+  if (maxYaw < Math.abs(yaw)) {
+    if (DBG_AIM_POS) console.log("out of yaw");
     // out of angle
     return undefined;
+  }
 
   return worldRot;
 }
 
-export function getTargetMissOrHitPosition(
-  { targetPos, targetDir, miss }: FireSolutionOpt,
-  out?: V3
-): V3 {
-  // const targetDir = V3.norm(targetVel);
-
-  // return vec3.copy(out ?? V3.tmp(), targetPos);
-
-  let tFwd = V3.copy(V3.tmp(), targetDir);
-  let tRight = V3.cross(targetDir, V3.UP);
-
-  // console.log(
-  //   `targetDir: ${vec3Dbg(targetDir)}, tFwd: ${vec3Dbg(
-  //     tFwd
-  //   )}, tRight: ${vec3Dbg(tRight)}`
-  // );
-
-  // pick an actual target to aim for on the ship
-  if (miss) {
-    let rightMul = 0;
-    let fwdMul = 0;
-    if (Math.random() < 0.5) {
-      // miss width-wise
-      rightMul = 1;
-    } else {
-      // miss length-wise
-      fwdMul = 1;
-    }
-    if (Math.random() < 0.5) {
-      rightMul *= -1;
-      fwdMul *= -1;
-    }
-
-    V3.scale(
-      tFwd,
-      fwdMul * (Math.random() * MISS_BY_MAX + 0.5 * MISS_TARGET_LENGTH),
-      tFwd
-    );
-    V3.scale(
-      tRight,
-      rightMul * (Math.random() * MISS_BY_MAX + 0.5 * MISS_TARGET_WIDTH),
-      tRight
-    );
-
-    // TODO: why do we move missed shots up?
-    tRight[2] += 5;
-  } else {
-    V3.scale(tFwd, (Math.random() - 0.5) * TARGET_LENGTH, tFwd);
-    V3.scale(tRight, (Math.random() - 0.5) * TARGET_WIDTH, tRight);
-  }
-
-  const target = V3.add(
-    targetPos,
-    V3.add(tFwd, tRight, tRight),
-    out ?? V3.tmp()
-  );
-
-  return target;
-}
-
 export function getFireDirection(
   aimPos: V3.InputT,
-  { sourcePos, targetVel, projectileSpeed }: FireSolutionOpt
+  { sourcePos, projectileSpeed, gravity, minPitch, maxPitch }: FireSolutionOpt
 ): quat | undefined {
   // NOTE: cannon forward is +X
   // TODO(@darzu): change cannon forward to be +Y?
   const v = projectileSpeed;
-  const g = GRAVITY;
-
-  // calculate initial distance
-  const d0 = V3.dist(
-    [sourcePos[0], sourcePos[1], 0],
-    [aimPos[0], aimPos[1], 0]
-  );
-
-  // try to lead the target a bit using an approximation of flight
-  // time. this will not be exact.
-  // TODO(@darzu): sub with exact flight time?
-  const flightTime = d0 / (v * Math.cos(Math.PI / 4));
-  const leadPos = tV(
-    aimPos[0] + targetVel[0] * flightTime * 0.5,
-    aimPos[1] + targetVel[1] * flightTime * 0.5,
-    aimPos[2] + targetVel[2] * flightTime * 0.5
-  );
+  const g = gravity;
 
   // calculate delta between source and target
-  const delta = V3.sub(leadPos, sourcePos);
+  const delta = V3.sub(aimPos, sourcePos);
 
   // calculate horizontal distance to target
   const d = V2.len([delta[0], delta[1]]);
@@ -370,6 +314,9 @@ export function getFireDirection(
 
   // console.log(`pitch1: ${pitch1}, pitch2: ${pitch2}`);
 
+  // calculate yaw
+  const yaw = V3.getYaw(delta);
+
   // prefer smaller theta
   if (pitch2 > pitch1) {
     let temp = pitch1;
@@ -377,12 +324,32 @@ export function getFireDirection(
     pitch2 = temp;
   }
   let pitch = pitch2;
-  if (isNaN(pitch) || pitch > MAX_THETA || pitch < MIN_THETA) {
+  if (isNaN(pitch) || pitch > maxPitch || pitch < minPitch) {
     pitch = pitch1;
   }
-  if (isNaN(pitch) || pitch > MAX_THETA || pitch < MIN_THETA) {
+  if (isNaN(pitch) || pitch > maxPitch || pitch < minPitch) {
     // no firing solution--target is too far or too close
-    // console.log("no solution");
+    if (DBG_AIM_POS) {
+      console.log("no solution");
+
+      const sketchPitch = (p: number, k: string, c: V3.InputT) => {
+        const rot = quat.fromYawPitchRoll(yaw, p);
+        const fwd = quat.fwd(rot);
+        V3.scale(fwd, 100, fwd);
+        V3.add(fwd, sourcePos, fwd);
+        sketchLine(sourcePos, fwd, {
+          key: k,
+          color: c,
+        });
+      };
+
+      if (!isNaN(pitch1)) sketchPitch(pitch1, "pitch1", ENDESGA16.midBrown);
+      if (!isNaN(pitch2)) sketchPitch(pitch2, "pitch2", ENDESGA16.lightBrown);
+      if (!isNaN(pitch2))
+        sketchPitch(Math.min(pitch1, pitch2), "pitch", ENDESGA16.darkBrown);
+      sketchPitch(minPitch, "minPitch", ENDESGA16.white);
+      sketchPitch(maxPitch, "maxPitch", ENDESGA16.lightGray);
+    }
     return undefined;
   }
 
@@ -395,9 +362,6 @@ export function getFireDirection(
   // const worldRot = quat.mk();
   // quat.rotZ(worldRot, -yaw, worldRot);
   // quat.rotY(worldRot, -pitch, worldRot);
-
-  // calculate yaw
-  const yaw = V3.getYaw(delta);
 
   // result
   const worldRot = quat.fromYawPitchRoll(yaw, pitch);

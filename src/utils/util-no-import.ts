@@ -4,6 +4,11 @@
 export const PI = Math.PI; // TODO(@darzu): replace all usage with PI
 export const PIn2 = Math.PI * 2; // PI numerator 2
 export const PId2 = Math.PI / 2; // PI denominator 2
+export const PId4 = Math.PI / 4; // 45 degrees
+export const PId6 = Math.PI / 6; // 30 degrees
+export const PId8 = Math.PI / 8; // 22.5 degrees
+export const PId12 = Math.PI / 12; // 15 degrees
+export const PId36 = Math.PI / 36; // 5 degrees
 
 export function getCallStack(): string[] {
   return new Error()

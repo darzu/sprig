@@ -22,7 +22,10 @@ EM.addSystem(
         );
         continue;
       }
+      // console.log("updating obb");
       e.obb.updateFromMat4(e.collider.aabb, e.world.transform);
     }
   }
 );
+
+export const _OBB_SYSTEMS = true; // TODO(@darzu): HACK. having files w/ systems but no exports doesn't work b/c these don't get loaded.
