@@ -7,6 +7,7 @@ import {
   getAABBFromPositions,
 } from "../physics/aabb.js";
 import { OBB, getOBBCornersTemp, getRandPointInOBB } from "../physics/obb.js";
+import { YawPitch } from "../turret/yawpitch.js";
 import { angularDiff } from "../utils/math.js";
 import { sketchLine, sketchPoints } from "../utils/sketch.js";
 import { SVG, compileSVG } from "../utils/svg.js";
@@ -187,7 +188,7 @@ function getApproxFlightTime({
 }
 
 const __t_obb0 = OBB.mk();
-export function getFireSolution(opt: FireSolutionOpt): quat | undefined {
+export function getFireSolution(opt: FireSolutionOpt): YawPitch | undefined {
   // get flight time
   const approxFlightTime = getApproxFlightTime(opt);
 
@@ -291,8 +292,7 @@ export function getFireSolution(opt: FireSolutionOpt): quat | undefined {
       : undefined;
 
   if (!pitch && DBG_AIM_POS) {
-    console.log("no solution");
-
+    console.log("no valid pitch");
     const sketchPitch = (p: number, k: string, c: V3.InputT) => {
       const rot = quat.fromYawPitchRoll(worldYaw, p);
       const fwd = quat.fwd(rot);
@@ -312,15 +312,10 @@ export function getFireSolution(opt: FireSolutionOpt): quat | undefined {
     sketchPitch(opt.maxPitch, "maxPitch", ENDESGA16.lightGray);
   }
 
-  if (!pitch) {
-    if (DBG_AIM_POS) console.log("no valid pitch");
-    return undefined;
-  }
+  if (!pitch) return undefined;
 
   // result
-  const worldRot = quat.fromYawPitchRoll(worldYaw, pitch);
-
-  return worldRot;
+  return { yaw: worldYaw, pitch };
 }
 
 export function getFirePitches(

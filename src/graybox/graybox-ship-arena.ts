@@ -839,7 +839,8 @@ async function initEnemies() {
 
         if (sln) {
           console.log("FOUND SLN!");
-          const dir = quat.fwd(sln);
+          const worldRot = quat.fromYawPitch(sln);
+          const dir = quat.fwd(worldRot);
           V3.scale(dir, 20, dir);
           const firePos = V3.add(player.obb.center, dir);
           sketchLine(cannonL.world.position, firePos, {

@@ -8,6 +8,7 @@ import { Phase } from "../ecs/sys-phase.js";
 import { DotsDef } from "../graybox/dots.js";
 import { ObjChildEnt, T, defineObj } from "../graybox/objects.js";
 import { V3, cloneTmpsInObj } from "../matrix/sprig-matrix.js";
+import { Mesh } from "../meshes/mesh.js";
 import { mkLine, mkLineChain, mkPointCloud } from "../meshes/primatives.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import {
@@ -17,11 +18,14 @@ import {
   TransformDef,
   identityFrame,
 } from "../physics/transform.js";
+import { CyMeshPoolPtr } from "../render/gpu-registry.js";
 import {
   lineMeshPoolPtr,
   pointMeshPoolPtr,
 } from "../render/pipelines/std-line.js";
+import { meshPoolPtr } from "../render/pipelines/std-scene.js";
 import {
+  MeshLike,
   RenderableConstructDef,
   RenderableDef,
   RendererDef,
@@ -81,6 +85,7 @@ export interface SketchBaseOpt {
   key?: string;
   // lifeMs?: number;
   color?: V3.InputT;
+  // TODO(@darzu): alpha?
 }
 
 export interface SketchLineOpt {
@@ -88,6 +93,12 @@ export interface SketchLineOpt {
   start: V3.InputT;
   end: V3.InputT;
 }
+// export interface SketchTriOpt {
+//   shape: "tri";
+//   v0: V3.InputT;
+//   v1: V3.InputT;
+//   v2: V3.InputT;
+// }
 export interface SketchCubeOpt {
   shape: "cube";
   halfsize?: number;
@@ -109,6 +120,7 @@ export interface SketchDotOpt {
 
 export type SketchEntOpt = SketchBaseOpt &
   (SketchLineOpt | SketchPointsOpt | SketchLinesOpt | SketchCubeOpt);
+// | SketchTriOpt
 
 export type SketchOpt = SketchEntOpt | (SketchBaseOpt & SketchDotOpt);
 
@@ -220,107 +232,94 @@ export const SketcherDef = defineResourceWithLazyInit(
       }
     }
 
+    interface meshParam<O extends SketchEntOpt> {
+      newMesh: (o: O) => Mesh;
+      updateMesh: (o: O, m: Mesh) => void;
+      pool?: CyMeshPoolPtr<any, any>;
+    }
+
+    type optForShape<k extends SketchEntOpt["shape"]> = SketchEntOpt & {
+      shape: k;
+    };
+    const meshParams: {
+      [k in SketchEntOpt["shape"]]: meshParam<optForShape<k>>;
+    } = {
+      line: {
+        newMesh: (o) => mkLine(),
+        updateMesh: (o, m) => {
+          assert(m.dbgName === "line" && m.pos.length === 2);
+          V3.copy(m.pos[0], o.start);
+          V3.copy(m.pos[1], o.end);
+        },
+        pool: lineMeshPoolPtr,
+      },
+      lines: {
+        newMesh: (o) => mkLineChain(o.vs.length),
+        updateMesh: (o, m) => {
+          assert(m.dbgName === "lines", `expected "lines" vs "${m.dbgName}"`);
+          assert(
+            m.pos.length === o.vs.length,
+            `sketch line chain "${o.key}" must stay same size! old:${m.pos.length} vs new:${o.vs.length}`
+          );
+          for (let i = 0; i < o.vs.length; i++) V3.copy(m.pos[i], o.vs[i]);
+        },
+        pool: lineMeshPoolPtr,
+      },
+      points: {
+        newMesh: (o) => mkPointCloud(o.vs.length),
+        updateMesh: (o, m) => {
+          assert(
+            m.dbgName === "points" && m.pos.length === o.vs.length,
+            `sketch point cloud must stay same size! ${m.dbgName} ${m.pos.length} vs ${o.vs.length}`
+          );
+          for (let i = 0; i < o.vs.length; i++) V3.copy(m.pos[i], o.vs[i]);
+        },
+        pool: pointMeshPoolPtr,
+      },
+      cube: {
+        newMesh: (o) => {
+          throw "todo cube";
+        },
+        updateMesh: (o, m) => {
+          throw "todo cube";
+        },
+      },
+    };
+
     function updateEnt(e: SketchEnt, opt: SketchEntOpt): SketchEnt {
       V3.copy(e.color, opt.color ?? defaultColor);
 
       identityFrame(e);
       // identityFrame(e.world);
 
-      // TODO(@darzu): REFACTOR TO DE-DUPE
-      if (opt.shape === "line") {
-        if (!RenderableConstructDef.isOn(e)) {
-          const m = mkLine();
-          V3.copy(m.pos[0], opt.start);
-          V3.copy(m.pos[1], opt.end);
-          EM.set(
-            e,
-            RenderableConstructDef,
-            m,
-            true,
-            undefined,
-            undefined,
-            lineMeshPoolPtr
-          );
-        } else {
-          if (!RenderableDef.isOn(e)) {
-            // TODO(@darzu): could queue these instead of dropping them.
-            if (WARN_DROPPED_EARLY_SKETCH)
-              console.warn(
-                `Dropping early prototype draw() b/c .renderable isn't ready`
-              );
-            return e;
-          }
-          const h = e.renderable.meshHandle;
-          const m = h.mesh;
-          assert(m.dbgName === "line" && m.pos.length === 2); // TODO(@darzu): have a pool per mesh type; less hacky!
-          V3.copy(m.pos[0], opt.start);
-          V3.copy(m.pos[1], opt.end);
-          h.pool.updateMeshVertices(h, m, 0, 2);
+      const meshP = meshParams[opt.shape];
+
+      if (!RenderableConstructDef.isOn(e)) {
+        const m = meshP.newMesh(opt as any); // TODO(@darzu): hacky casts
+        meshP.updateMesh(opt as any, m);
+        EM.set(
+          e,
+          RenderableConstructDef,
+          m,
+          true,
+          undefined,
+          undefined,
+          meshP.pool ?? meshPoolPtr
+        );
+      } else {
+        if (!RenderableDef.isOn(e)) {
+          // TODO(@darzu): could queue these instead of dropping them.
+          if (WARN_DROPPED_EARLY_SKETCH)
+            console.warn(
+              `Dropping early prototype draw() b/c .renderable isn't ready`
+            );
+          return e;
         }
-      } else if (opt.shape === "points") {
-        if (!RenderableConstructDef.isOn(e)) {
-          const m = mkPointCloud(opt.vs.length);
-          for (let i = 0; i < opt.vs.length; i++) V3.copy(m.pos[i], opt.vs[i]);
-          EM.set(
-            e,
-            RenderableConstructDef,
-            m,
-            true,
-            undefined,
-            undefined,
-            pointMeshPoolPtr
-          );
-        } else {
-          if (!RenderableDef.isOn(e)) {
-            if (WARN_DROPPED_EARLY_SKETCH)
-              console.warn(
-                `Dropping early prototype draw() b/c .renderable isn't ready`
-              );
-            return e;
-          }
-          const h = e.renderable.meshHandle;
-          const m = h.mesh;
-          assert(
-            m.dbgName === "points" && m.pos.length === opt.vs.length,
-            `sketch point cloud must stay same size! ${m.dbgName} ${m.pos.length} vs ${opt.vs.length}`
-          );
-          for (let i = 0; i < opt.vs.length; i++) V3.copy(m.pos[i], opt.vs[i]);
-          h.pool.updateMeshVertices(h, m);
-        }
-      } else if (opt.shape === "lines") {
-        if (!RenderableConstructDef.isOn(e)) {
-          const m = mkLineChain(opt.vs.length);
-          for (let i = 0; i < opt.vs.length; i++) V3.copy(m.pos[i], opt.vs[i]);
-          EM.set(
-            e,
-            RenderableConstructDef,
-            m,
-            true,
-            undefined,
-            undefined,
-            lineMeshPoolPtr
-          );
-        } else {
-          if (!RenderableDef.isOn(e)) {
-            if (WARN_DROPPED_EARLY_SKETCH)
-              console.warn(
-                `Dropping early prototype draw() b/c .renderable isn't ready`
-              );
-            return e;
-          }
-          const h = e.renderable.meshHandle;
-          const m = h.mesh;
-          assert(m.dbgName === "lines", `expected "lines" vs "${m.dbgName}"`);
-          assert(
-            m.pos.length === opt.vs.length,
-            `sketch line chain "${opt.key}" must stay same size! old:${m.pos.length} vs new:${opt.vs.length}`
-          );
-          for (let i = 0; i < opt.vs.length; i++) V3.copy(m.pos[i], opt.vs[i]);
-          h.pool.updateMeshVertices(h, m);
-        }
-      } else if (opt.shape === "cube") {
-        throw "TODO cube";
-      } else never(opt);
+        const h = e.renderable.meshHandle;
+        const m = h.mesh;
+        meshP.updateMesh(opt as any, m);
+        h.pool.updateMeshVertices(h, m);
+      }
 
       return e;
     }
@@ -393,6 +392,15 @@ export async function sketchDot(
 ): Promise<void> {
   return sketch({ v, radius, shape: "dot", ...opt });
 }
+
+// export function sketchFan(
+//   origin: V3.InputT,
+//   dir1: V3.InputT,
+//   dir2: V3.InputT,
+//   opt: SketchBaseOpt = {}
+// ): Promise<void> {
+//   // TODO(@darzu):
+// }
 
 export const SketchTrailDef = EM.defineComponent("sketchTrail", () => true);
 

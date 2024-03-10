@@ -705,7 +705,7 @@ EM.addSystem(
       const MAX_THETA = Math.PI / 2 - Math.PI / 16;
       const MIN_THETA = -MAX_THETA;
 
-      const worldRot = getFireSolution({
+      const yawPitch = getFireSolution({
         sourcePos: cannon.world.position,
         sourceDefaultRot: tower.world.rotation,
 
@@ -723,7 +723,9 @@ EM.addSystem(
         doMiss: miss,
       });
 
-      if (!worldRot) continue;
+      if (!yawPitch) continue;
+
+      const worldRot = quat.fromYawPitch(yawPitch);
 
       // aim cannon toward boat
       const invRot = quat.invert(tower.world.rotation);
