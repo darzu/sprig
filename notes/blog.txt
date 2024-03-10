@@ -334,3 +334,6 @@ The best compression is shared code
   e.g. the sticky ball example here: https://gafferongames.com/post/state_synchronization/
     probably better to store pos/rot relative to the parent ball
   don't sync all objects in world, just ensure ur running the same setup code
+
+You need whole-program analysis
+  list all the PL/SE/synthesis/verification/static-analysis research that's applicable to whole programs.

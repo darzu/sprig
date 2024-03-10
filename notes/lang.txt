@@ -50,6 +50,12 @@ In the language, maybe everything should be pipelines / verticalized?
   or tacit / point-free style:
     https://en.wikipedia.org/wiki/Tacit_programming
 
+  maybe "->"
+    a + b 
+      -> + c 
+      -> .toString() 
+      -> console.log(*)
+
 Dion:
   AST representation stuff: https://dion.systems/blog_0001_hms2020.html
 
@@ -191,3 +197,7 @@ Different variable scope types:
       keys are like variable names and we can know type info and check usage sites
     component and resource definitions
       might be deeply nested, but still clutters one "variable space"
+
+No open types (hopefully)
+  always whole-program
+  interface w/ "sys calls" which can only use simple data types ?

@@ -952,6 +952,13 @@ export module quat {
     return fromYawPitchRoll(yp.yaw, yp.pitch, 0, out);
   }
 
+  const _t6 = V3.mk();
+  export function getYaw(q: InputT): number {
+    // TODO(@darzu): PERF. can improve by inlining and simplifying
+    const f = fwd(q, _t6);
+    return V3.getYaw(f);
+  }
+
   // TODO(@darzu): IMPL toYawPitchRoll
   /*
   https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles

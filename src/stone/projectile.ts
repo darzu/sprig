@@ -7,6 +7,7 @@ import {
   getAABBFromPositions,
 } from "../physics/aabb.js";
 import { OBB, getOBBCornersTemp, getRandPointInOBB } from "../physics/obb.js";
+import { angularDiff } from "../utils/math.js";
 import { sketchLine, sketchPoints } from "../utils/sketch.js";
 import { SVG, compileSVG } from "../utils/svg.js";
 import { drawBall } from "../utils/utils-game.js";
@@ -190,7 +191,7 @@ export function getFireSolution(opt: FireSolutionOpt): quat | undefined {
   // get flight time
   const approxFlightTime = getApproxFlightTime(opt);
 
-  // adjust OBB by approx flight time
+  // adjust OBB by approx flight time (lead the shot)
   // TODO(@darzu): We don't normally modify the parameter object like this
   opt.targetOBB = OBB.copy(__t_obb0, opt.targetOBB);
   V3.add(
@@ -218,7 +219,7 @@ export function getFireSolution(opt: FireSolutionOpt): quat | undefined {
     return undefined;
   }
 
-  // determine where to aim
+  // determine where to aim at
   const srcToTrg = V3.sub(targetOBB.center, opt.sourcePos);
   const aimPos = getAimAndMissPositions({
     target: opt.targetOBB,
@@ -262,36 +263,70 @@ export function getFireSolution(opt: FireSolutionOpt): quat | undefined {
   //     opt.doMiss ? ENDESGA16.darkRed : ENDESGA16.darkGreen
   //   );
 
-  // determine how to aim
-  const worldRot = getFireDirection(aimPos, opt);
+  // calculate yaw
+  const delta = V3.sub(aimPos, sourcePos);
+  const worldYaw = V3.getYaw(delta);
+  const srcBaseYaw = quat.getYaw(opt.sourceDefaultRot);
+  const relYaw = angularDiff(worldYaw, srcBaseYaw);
 
-  if (!worldRot) {
-    if (DBG_AIM_POS) console.log("no valid direction");
-    // no valid firing solution
-    return undefined;
-  }
-
-  // TODO(@darzu): re-enstate
-  // check max arc
-  const yaw = quat.getAngle(opt.sourceDefaultRot, worldRot);
-  if (maxYaw < Math.abs(yaw)) {
+  // check yaw
+  if (maxYaw < Math.abs(relYaw)) {
     if (DBG_AIM_POS) console.log("out of yaw");
-    // out of angle
     return undefined;
   }
+
+  // determine aim pitch
+  const [pitch1, pitch2] = getFirePitches(aimPos, opt);
+  const pitch1Valid =
+    !isNaN(pitch1) && pitch1 <= opt.maxPitch && opt.minPitch <= pitch1;
+  const pitch2Valid =
+    !isNaN(pitch2) && pitch2 <= opt.maxPitch && opt.minPitch <= pitch2;
+  const pitch =
+    pitch1Valid && pitch2Valid
+      ? Math.min(pitch1, pitch2)
+      : pitch1Valid
+      ? pitch1
+      : pitch2Valid
+      ? pitch2
+      : undefined;
+
+  if (!pitch && DBG_AIM_POS) {
+    console.log("no solution");
+
+    const sketchPitch = (p: number, k: string, c: V3.InputT) => {
+      const rot = quat.fromYawPitchRoll(worldYaw, p);
+      const fwd = quat.fwd(rot);
+      V3.scale(fwd, 100, fwd);
+      V3.add(fwd, sourcePos, fwd);
+      sketchLine(sourcePos, fwd, {
+        key: k,
+        color: c,
+      });
+    };
+
+    if (!isNaN(pitch1)) sketchPitch(pitch1, "pitch1", ENDESGA16.midBrown);
+    if (!isNaN(pitch2)) sketchPitch(pitch2, "pitch2", ENDESGA16.lightBrown);
+    if (!isNaN(pitch2))
+      sketchPitch(Math.min(pitch1, pitch2), "pitch", ENDESGA16.darkBrown);
+    sketchPitch(opt.minPitch, "minPitch", ENDESGA16.white);
+    sketchPitch(opt.maxPitch, "maxPitch", ENDESGA16.lightGray);
+  }
+
+  if (!pitch) {
+    if (DBG_AIM_POS) console.log("no valid pitch");
+    return undefined;
+  }
+
+  // result
+  const worldRot = quat.fromYawPitchRoll(worldYaw, pitch);
 
   return worldRot;
 }
 
-export function getFireDirection(
+export function getFirePitches(
   aimPos: V3.InputT,
-  { sourcePos, projectileSpeed, gravity, minPitch, maxPitch }: FireSolutionOpt
-): quat | undefined {
-  // NOTE: cannon forward is +X
-  // TODO(@darzu): change cannon forward to be +Y?
-  const v = projectileSpeed;
-  const g = gravity;
-
+  { sourcePos, projectileSpeed: v, gravity: g }: FireSolutionOpt
+): [number, number] {
   // calculate delta between source and target
   const delta = V3.sub(aimPos, sourcePos);
 
@@ -301,70 +336,11 @@ export function getFireDirection(
   // vertical distance to target
   const h = delta[2];
 
-  // now, find the pitch angle from our cannon.
+  // now, find the pitch angle(s) from our cannon.
   // https://en.wikipedia.org/wiki/Projectile_motion#Angle_%CE%B8_required_to_hit_coordinate_(x,_y)
-  let pitch1 = Math.atan(
-    (v * v + Math.sqrt(v * v * v * v - g * (g * d * d + 2 * h * v * v))) /
-      (g * d)
-  );
-  let pitch2 = Math.atan(
-    (v * v - Math.sqrt(v * v * v * v - g * (g * d * d + 2 * h * v * v))) /
-      (g * d)
-  );
+  const sqrtTerm = Math.sqrt(v * v * v * v - g * (g * d * d + 2 * h * v * v));
+  const pitch1 = Math.atan((v * v + sqrtTerm) / (g * d));
+  const pitch2 = Math.atan((v * v - sqrtTerm) / (g * d));
 
-  // console.log(`pitch1: ${pitch1}, pitch2: ${pitch2}`);
-
-  // calculate yaw
-  const yaw = V3.getYaw(delta);
-
-  // prefer smaller theta
-  if (pitch2 > pitch1) {
-    let temp = pitch1;
-    pitch1 = pitch2;
-    pitch2 = temp;
-  }
-  let pitch = pitch2;
-  if (isNaN(pitch) || pitch > maxPitch || pitch < minPitch) {
-    pitch = pitch1;
-  }
-  if (isNaN(pitch) || pitch > maxPitch || pitch < minPitch) {
-    // no firing solution--target is too far or too close
-    if (DBG_AIM_POS) {
-      console.log("no solution");
-
-      const sketchPitch = (p: number, k: string, c: V3.InputT) => {
-        const rot = quat.fromYawPitchRoll(yaw, p);
-        const fwd = quat.fwd(rot);
-        V3.scale(fwd, 100, fwd);
-        V3.add(fwd, sourcePos, fwd);
-        sketchLine(sourcePos, fwd, {
-          key: k,
-          color: c,
-        });
-      };
-
-      if (!isNaN(pitch1)) sketchPitch(pitch1, "pitch1", ENDESGA16.midBrown);
-      if (!isNaN(pitch2)) sketchPitch(pitch2, "pitch2", ENDESGA16.lightBrown);
-      if (!isNaN(pitch2))
-        sketchPitch(Math.min(pitch1, pitch2), "pitch", ENDESGA16.darkBrown);
-      sketchPitch(minPitch, "minPitch", ENDESGA16.white);
-      sketchPitch(maxPitch, "maxPitch", ENDESGA16.lightGray);
-    }
-    return undefined;
-  }
-
-  // ok, we have a firing solution. rotate to the right angle
-
-  // console.log(`yaw: ${yaw}, pitch: ${pitch}`);
-  // pitch = 0;
-
-  // TODO(@darzu): b/c we're using +X is fwd, we can't use quat.fromYawPitchRoll
-  // const worldRot = quat.mk();
-  // quat.rotZ(worldRot, -yaw, worldRot);
-  // quat.rotY(worldRot, -pitch, worldRot);
-
-  // result
-  const worldRot = quat.fromYawPitchRoll(yaw, pitch);
-
-  return worldRot;
+  return [pitch1, pitch2];
 }

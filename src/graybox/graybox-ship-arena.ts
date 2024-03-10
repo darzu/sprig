@@ -110,7 +110,7 @@ let _obb_systems = _OBB_SYSTEMS; // TODO(@darzu): HACK. force import. yuck.
 
 const CannonObj = defineObj({
   name: "cannon2",
-  propsType: T<{ yaw: number }>(),
+  propsType: T<{ baseYaw: number }>(),
   components: [
     PositionDef,
     RotationDef,
@@ -469,10 +469,10 @@ export async function initGrayboxShipArena() {
           c.yawpitch.pitch = clamp(c.yawpitch.pitch, 0, PI * 0.5);
           c.yawpitch.yaw =
             clamp(
-              c.yawpitch.yaw - c.cannon2.yaw,
+              c.yawpitch.yaw - c.cannon2.baseYaw,
               -CANNON_MAX_YAW,
               CANNON_MAX_YAW
-            ) + c.cannon2.yaw;
+            ) + c.cannon2.baseYaw;
         }
       }
       for (let c of cannons) {
@@ -548,7 +548,7 @@ function createShip(opts: {
     const y = -cSpacing + i * cSpacing;
     const cl = createObj(CannonObj, {
       props: {
-        yaw: -PI * 0.5,
+        baseYaw: -PI * 0.5,
       },
       args: {
         position: [-10, y, 2],
@@ -564,7 +564,7 @@ function createShip(opts: {
 
     const cr = createObj(CannonObj, {
       props: {
-        yaw: PI * 0.5,
+        baseYaw: PI * 0.5,
       },
       args: {
         position: [+10, y, 2],
@@ -698,7 +698,12 @@ function createEnemy() {
 async function initEnemies() {
   const attackRadius = 100;
 
-  const player = await EM.whenSingleEntity(PlayerShipDef, PositionDef, OBBDef);
+  const player = await EM.whenSingleEntity(
+    PlayerShipDef,
+    PositionDef,
+    OBBDef,
+    WorldFrameDef
+  );
 
   const { dots } = await EM.whenResources(DotsDef);
 
@@ -784,12 +789,17 @@ async function initEnemies() {
   );
 
   const _lastPlayerPos = V3.clone(player.obb.center);
+
   EM.addSystem(
     "enemyAttack",
     Phase.GAME_WORLD,
     [EnemyDef, ShipDef, PositionDef, RotationDef, WorldFrameDef],
     [TimeDef],
     (es, res) => {
+      const vel = V3.sub(player.obb.center, _lastPlayerPos);
+      V3.scale(vel, 1 / res.time.dt, vel);
+      V3.copy(_lastPlayerPos, player.obb.center);
+
       if (res.time.step % 30 !== 0) return;
 
       for (let e of es) {
@@ -798,25 +808,16 @@ async function initEnemies() {
         if (e.enemy.reloadMs > 0) continue;
 
         // aim
-        const incomingDir = V3.sub(player.position, e.position);
         const doMiss = chance(0.5);
-        // const aimPos = getAimAndMissPositions({
-        //   target: player.obb,
-        //   srcToTrg: incomingDir,
-        //   doMiss: doMiss,
-        // });
 
-        const cannonL = e.ship.cannonL1;
-
+        // which cannon?
+        const cannonL = e.ship.cannonL1; // TODO(@darzu): pick cannon correctly
         if (!WorldFrameDef.isOn(cannonL)) continue;
 
         const defaultWorldRot = quat.yaw(
-          cannonL.world.rotation,
-          -cannonL.yawpitch.yaw + cannonL.cannon2.yaw
+          player.world.rotation,
+          cannonL.cannon2.baseYaw
         );
-
-        const vel = V3.sub(player.obb.center, _lastPlayerPos);
-        V3.copy(_lastPlayerPos, player.obb.center);
 
         const sln = getFireSolution({
           sourcePos: cannonL.world.position,

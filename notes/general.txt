@@ -1568,3 +1568,6 @@ Media Molecule serialization:
 
 Chrome workspaces, lets u save changes made in dev tools?:
   https://developer.chrome.com/docs/devtools/settings/workspace
+
+Zoom and pan sample script (for godot):
+  https://gist.github.com/thygrrr/8288cabeb5cd25031ce6132c4a886311

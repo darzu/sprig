@@ -464,3 +464,9 @@ in-world names:
   Starwing
   Lunara
   Stardancer
+
+End game zany gameplay:
+  4 cannons -> 8 -> 16 -> 256 -> 2048 -> ...
+    becomes particles
+  guitar-hero-like gameplay
+  
