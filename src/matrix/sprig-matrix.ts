@@ -706,6 +706,12 @@ export module V3 {
     return GL.rotateY(out ?? tmp(), point, ZEROS, rad) as T;
   }
 
+  export function fromYaw(yaw: number, out?: T): T {
+    return V3.yaw(V3.FWD, yaw, out);
+  }
+
+  // TODO(@darzu): fromYawPitchRoll
+
   // TODO(@darzu): add yaw/pitch/roll fns
 
   export function reverse(v: InputT, out?: T): T {

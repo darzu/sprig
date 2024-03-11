@@ -1,4 +1,4 @@
-import { ColorDef } from "../color/color-ecs.js";
+import { AlphaDef, ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { DeadDef } from "../ecs/delete.js";
 import { defineResourceWithInit as defineResourceWithLazyInit } from "../ecs/em-helpers.js";
@@ -7,9 +7,14 @@ import { createEntityPool } from "../ecs/entity-pool.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { DotsDef } from "../graybox/dots.js";
 import { ObjChildEnt, T, defineObj } from "../graybox/objects.js";
-import { V3, cloneTmpsInObj } from "../matrix/sprig-matrix.js";
+import { V3, cloneTmpsInObj, quat } from "../matrix/sprig-matrix.js";
 import { Mesh } from "../meshes/mesh.js";
-import { mkLine, mkLineChain, mkPointCloud } from "../meshes/primatives.js";
+import {
+  mkLine,
+  mkLineChain,
+  mkPointCloud,
+  mkTriangle,
+} from "../meshes/primatives.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import {
   PositionDef,
@@ -85,7 +90,7 @@ export interface SketchBaseOpt {
   key?: string;
   // lifeMs?: number;
   color?: V3.InputT;
-  // TODO(@darzu): alpha?
+  alpha?: number;
 }
 
 export interface SketchLineOpt {
@@ -93,12 +98,12 @@ export interface SketchLineOpt {
   start: V3.InputT;
   end: V3.InputT;
 }
-// export interface SketchTriOpt {
-//   shape: "tri";
-//   v0: V3.InputT;
-//   v1: V3.InputT;
-//   v2: V3.InputT;
-// }
+export interface SketchTriOpt {
+  shape: "tri";
+  v0: V3.InputT;
+  v1: V3.InputT;
+  v2: V3.InputT;
+}
 export interface SketchCubeOpt {
   shape: "cube";
   halfsize?: number;
@@ -119,8 +124,13 @@ export interface SketchDotOpt {
 }
 
 export type SketchEntOpt = SketchBaseOpt &
-  (SketchLineOpt | SketchPointsOpt | SketchLinesOpt | SketchCubeOpt);
-// | SketchTriOpt
+  (
+    | SketchLineOpt
+    | SketchPointsOpt
+    | SketchLinesOpt
+    | SketchCubeOpt
+    | SketchTriOpt
+  );
 
 export type SketchOpt = SketchEntOpt | (SketchBaseOpt & SketchDotOpt);
 
@@ -276,6 +286,16 @@ export const SketcherDef = defineResourceWithLazyInit(
         },
         pool: pointMeshPoolPtr,
       },
+      tri: {
+        newMesh: (o) => mkTriangle(),
+        updateMesh: (o, m) => {
+          assert(m.dbgName === "triangle" && m.pos.length === 3);
+          V3.copy(m.pos[0], o.v0);
+          V3.copy(m.pos[1], o.v1);
+          V3.copy(m.pos[2], o.v2);
+        },
+        pool: meshPoolPtr,
+      },
       cube: {
         newMesh: (o) => {
           throw "todo cube";
@@ -288,6 +308,9 @@ export const SketcherDef = defineResourceWithLazyInit(
 
     function updateEnt(e: SketchEnt, opt: SketchEntOpt): SketchEnt {
       V3.copy(e.color, opt.color ?? defaultColor);
+
+      // TODO(@darzu): support alpha properly in lines and points?
+      if (opt.alpha !== undefined) EM.set(e, AlphaDef, opt.alpha);
 
       identityFrame(e);
       // identityFrame(e.world);
@@ -371,6 +394,28 @@ export async function sketchLine(
   return sketchEnt({ start, end, shape: "line", ...opt });
 }
 
+export async function sketchQuat(
+  orig: V3.InputT,
+  rot: quat.InputT,
+  opt: SketchBaseOpt & { length?: number } = {}
+) {
+  const len = opt.length ?? 10;
+  const fwd = quat.fwd(rot);
+  V3.scale(fwd, len, fwd);
+  V3.add(fwd, orig, fwd);
+  return sketchLine(orig, fwd, opt);
+}
+
+export async function sketchYawPitch(
+  orig: V3.InputT,
+  yaw: number = 0,
+  pitch: number = 0,
+  opt: SketchBaseOpt & { length?: number } = {}
+) {
+  const rot = quat.fromYawPitchRoll(yaw, pitch);
+  return sketchQuat(orig, rot, opt);
+}
+
 export async function sketchPoints(
   vs: V3.InputT[],
   opt: SketchBaseOpt = {}
@@ -393,14 +438,28 @@ export async function sketchDot(
   return sketch({ v, radius, shape: "dot", ...opt });
 }
 
-// export function sketchFan(
-//   origin: V3.InputT,
-//   dir1: V3.InputT,
-//   dir2: V3.InputT,
-//   opt: SketchBaseOpt = {}
-// ): Promise<void> {
-//   // TODO(@darzu):
-// }
+export function sketchTri(
+  v0: V3.InputT,
+  v1: V3.InputT,
+  v2: V3.InputT,
+  opt: SketchBaseOpt = {}
+): Promise<void> {
+  return sketch({ v0, v1, v2, shape: "tri", ...opt });
+}
+
+const _t3 = V3.mk();
+const _t4 = V3.mk();
+export function sketchFan(
+  origin: V3.InputT,
+  dir1: V3.InputT,
+  dir2: V3.InputT,
+  opt: SketchBaseOpt = {}
+): Promise<void> {
+  const v0 = origin;
+  const v1 = V3.add(origin, dir1, _t3);
+  const v2 = V3.add(origin, dir2, _t4);
+  return sketchTri(v0, v1, v2, opt);
+}
 
 export const SketchTrailDef = EM.defineComponent("sketchTrail", () => true);
 

@@ -70,10 +70,10 @@ import {
   remap,
   wrap,
 } from "../utils/math.js";
-import { sketchLine, sketchPoints } from "../utils/sketch.js";
+import { sketchLine, sketchPoints, sketchQuat } from "../utils/sketch.js";
 import { Path } from "../utils/spline.js";
-import { PI, PId12, PId2 } from "../utils/util-no-import.js";
-import { assert, range } from "../utils/util.js";
+import { PI, PId12, PId2, PId3, PId8 } from "../utils/util-no-import.js";
+import { FALSE, TRUE, assert, range } from "../utils/util.js";
 import { angleBetween, randVec3OfLen } from "../utils/utils-3d.js";
 import { addGizmoChild } from "../utils/utils-game.js";
 import { HasMastDef, HasMastObj, createMast } from "../wind/mast.js";
@@ -800,7 +800,7 @@ async function initEnemies() {
       V3.scale(vel, 1 / res.time.dt, vel);
       V3.copy(_lastPlayerPos, player.obb.center);
 
-      if (res.time.step % 30 !== 0) return;
+      // if (res.time.step % 30 !== 0) return;
 
       for (let e of es) {
         // reload
@@ -815,17 +815,27 @@ async function initEnemies() {
         if (!WorldFrameDef.isOn(cannonL)) continue;
 
         const defaultWorldRot = quat.yaw(
-          player.world.rotation,
+          e.world.rotation,
           cannonL.cannon2.baseYaw
         );
+
+        // {
+        //   const sourcePos = cannonL.world.position;
+        //   sketchQuat(sourcePos, defaultWorldRot, {
+        //     length: 100,
+        //     key: "testSrcBaseYaw",
+        //     color: ENDESGA16.lightBlue,
+        //   });
+        // }
+        // if (TRUE) continue;
 
         const sln = getFireSolution({
           sourcePos: cannonL.world.position,
           sourceDefaultRot: defaultWorldRot,
 
           maxYaw: CANNON_MAX_YAW,
-          minPitch: -PId12,
-          maxPitch: +PId2,
+          minPitch: -PId8,
+          maxPitch: +PId3,
           maxRange: 200,
 
           gravity: GRAVITY,

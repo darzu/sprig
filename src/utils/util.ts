@@ -178,10 +178,12 @@ export function toMap<A, V, K extends string | number = string>(
   return res as Map<K, V>;
 }
 
+// TODO(@darzu): MOVE to no-import
 // TODO(@darzu): this is is a typescript hack for the fact that just using "false"
 //  causes type inference (specifically type narrowing) to not work right in
 //  dead code sometimes (last tested with tsc v4.2.3)
 export const FALSE: boolean = false;
+export const TRUE: boolean = true;
 
 export type NumberTuple<ES> = { [_ in keyof ES]: number };
 

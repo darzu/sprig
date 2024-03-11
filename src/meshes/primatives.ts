@@ -104,6 +104,17 @@ export const mkLine: () => Mesh = () => ({
   usesProvoking: true,
 });
 
+export const mkTriangle: () => Mesh = () => ({
+  dbgName: "triangle",
+  pos: [V(0, 0, 0), V(1, 0, 0), V(0, 1, 0)],
+  tri: [V(0, 1, 2), V(2, 1, 0)],
+  quad: [],
+  lines: [],
+  colors: [V(0, 0, 0), V(0, 0, 0)],
+  surfaceIds: [1, 2],
+  usesProvoking: true,
+});
+
 export const mkPointCloud: (len: number) => Mesh = (len) => ({
   dbgName: "points",
   pos: range(len).map((_) => V3.mk()),

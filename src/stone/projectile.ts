@@ -9,7 +9,12 @@ import {
 import { OBB, getOBBCornersTemp, getRandPointInOBB } from "../physics/obb.js";
 import { YawPitch } from "../turret/yawpitch.js";
 import { angularDiff } from "../utils/math.js";
-import { sketchLine, sketchPoints } from "../utils/sketch.js";
+import {
+  sketchFan,
+  sketchLine,
+  sketchPoints,
+  sketchYawPitch,
+} from "../utils/sketch.js";
 import { SVG, compileSVG } from "../utils/svg.js";
 import { drawBall } from "../utils/utils-game.js";
 
@@ -266,14 +271,37 @@ export function getFireSolution(opt: FireSolutionOpt): YawPitch | undefined {
 
   // calculate yaw
   const delta = V3.sub(aimPos, sourcePos);
-  const worldYaw = V3.getYaw(delta);
+  const worldDiffYaw = V3.getYaw(delta);
   const srcBaseYaw = quat.getYaw(opt.sourceDefaultRot);
-  const relYaw = angularDiff(worldYaw, srcBaseYaw);
+  const relYaw = angularDiff(worldDiffYaw, srcBaseYaw);
 
   // check yaw
   if (maxYaw < Math.abs(relYaw)) {
-    if (DBG_AIM_POS) console.log("out of yaw");
+    if (DBG_AIM_POS) {
+      console.log("out of yaw");
+
+      // const minWorldYaw = srcBaseYaw - opt.maxYaw;
+      // const maxWorldYaw = srcBaseYaw + opt.maxYaw;
+      // const dir1 = V3.scale(V3.fromYaw(minWorldYaw), 20);
+      // const dir2 = V3.scale(V3.fromYaw(maxWorldYaw), 20);
+      // sketchFan(sourcePos, dir1, dir2, {
+      //   key: "outOfYaw",
+      //   color: ENDESGA16.lightGreen,
+      // });
+    }
     return undefined;
+  }
+
+  if (DBG_AIM_POS) {
+    const minWorldYaw = srcBaseYaw - opt.maxYaw;
+    const maxWorldYaw = srcBaseYaw + opt.maxYaw;
+    const dir1 = V3.scale(V3.fromYaw(minWorldYaw), 100);
+    const dir2 = V3.scale(V3.fromYaw(maxWorldYaw), 100);
+    sketchFan(sourcePos, dir1, dir2, {
+      key: "outOfYaw",
+      color: ENDESGA16.lightGreen,
+      alpha: 0.5,
+    });
   }
 
   // determine aim pitch
@@ -293,16 +321,14 @@ export function getFireSolution(opt: FireSolutionOpt): YawPitch | undefined {
 
   if (!pitch && DBG_AIM_POS) {
     console.log("no valid pitch");
-    const sketchPitch = (p: number, k: string, c: V3.InputT) => {
-      const rot = quat.fromYawPitchRoll(worldYaw, p);
-      const fwd = quat.fwd(rot);
-      V3.scale(fwd, 100, fwd);
-      V3.add(fwd, sourcePos, fwd);
-      sketchLine(sourcePos, fwd, {
+  }
+  if (DBG_AIM_POS) {
+    const sketchPitch = (p: number, k: string, c: V3.InputT) =>
+      sketchYawPitch(sourcePos, srcBaseYaw, p, {
+        length: 100,
         key: k,
         color: c,
       });
-    };
 
     if (!isNaN(pitch1)) sketchPitch(pitch1, "pitch1", ENDESGA16.midBrown);
     if (!isNaN(pitch2)) sketchPitch(pitch2, "pitch2", ENDESGA16.lightBrown);
@@ -315,7 +341,7 @@ export function getFireSolution(opt: FireSolutionOpt): YawPitch | undefined {
   if (!pitch) return undefined;
 
   // result
-  return { yaw: worldYaw, pitch };
+  return { yaw: worldDiffYaw, pitch };
 }
 
 export function getFirePitches(
