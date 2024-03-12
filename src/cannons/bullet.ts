@@ -204,6 +204,7 @@ export async function fireBullet(
   health: number,
   bulletAxis: V3.InputT
 ) {
+  assert(gravity >= 0, `Gravity (probably) needs to be >= 0`);
   {
     const music = EM.getResource(AudioDef);
     if (music) {
