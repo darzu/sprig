@@ -201,3 +201,5 @@ Different variable scope types:
 No open types (hopefully)
   always whole-program
   interface w/ "sys calls" which can only use simple data types ?
+  also w/ closed types, you can have smallest size runtime type info
+    e.g. 1 byte type tag on some union type b/c u know there's <=8 possibilities

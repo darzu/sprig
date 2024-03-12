@@ -2272,3 +2272,8 @@ how to think about gpu aglorthims:
 
 Baking lighting into vertices:
   https://simonschreibt.de/gat/homeworld-2-backgrounds/
+
+Work graphs:
+  https://developer.nvidia.com/blog/work-graphs-in-direct3d-12-a-case-study-of-deferred-shading/
+  https://devblogs.microsoft.com/directx/d3d12-work-graphs-preview/
+  https://gpuopen.com/gpu-work-graphs-in-vulkan/

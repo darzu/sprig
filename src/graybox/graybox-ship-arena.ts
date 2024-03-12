@@ -70,7 +70,13 @@ import {
   remap,
   wrap,
 } from "../utils/math.js";
-import { sketchLine, sketchPoints, sketchQuat } from "../utils/sketch.js";
+import {
+  SketchTrailDef,
+  sketchLine,
+  sketchPoints,
+  sketchQuat,
+  sketchYawPitch,
+} from "../utils/sketch.js";
 import { Path } from "../utils/spline.js";
 import { PI, PId12, PId2, PId3, PId8 } from "../utils/util-no-import.js";
 import { FALSE, TRUE, assert, range } from "../utils/util.js";
@@ -100,6 +106,8 @@ const DBG_GIZMO = true;
 const DBG_DOTS = false;
 const DBG_ENEMY = true;
 
+const DBG_TRAILS = true;
+
 const SAIL_FURL_RATE = 0.02;
 
 const CANNON_MAX_YAW = PI * 0.2;
@@ -107,6 +115,9 @@ const CANNON_MAX_YAW = PI * 0.2;
 const GRAVITY = -8 * 0.00001;
 
 let _obb_systems = _OBB_SYSTEMS; // TODO(@darzu): HACK. force import. yuck.
+
+const PLAYER_TEAM = 1;
+const ENEMY_TEAM = 2;
 
 const CannonObj = defineObj({
   name: "cannon2",
@@ -151,6 +162,7 @@ const PlayerShipDef = PlayerShipObj.props;
 
 const CannonBallObj = defineObj({
   name: "cannonBall",
+  propsType: T<{ team: number }>(),
   components: [
     PositionDef,
     RotationDef,
@@ -164,13 +176,16 @@ const CannonBallDef = CannonBallObj.props;
 
 const EnemyObj = defineObj({
   name: "enemy",
-  propsType: T<{ sailTarget: V3; reloadMs: number }>(),
+  propsType: T<{ sailTarget: V3; lastFireMs: number; reloadMs: number }>(),
   components: [],
 } as const);
 const EnemyDef = EnemyObj.props;
 
-function cannonFireCurve(frame: Frame, speed: number, out: Parametric) {
-  // TODO(@darzu): IMPL!
+function cannonFireCurve(
+  frame: { rotation: quat; position: V3 },
+  speed: number,
+  out: Parametric
+) {
   const axis = quat.fwd(frame.rotation);
   const vel = V3.scale(axis, speed);
 
@@ -186,9 +201,12 @@ function cannonFireCurve(frame: Frame, speed: number, out: Parametric) {
   return out;
 }
 
-function launchBall(params: Parametric) {
+function launchBall(params: Parametric, team: number) {
   // TODO(@darzu): PERF. use pools!!
   const ball = createObj(CannonBallObj, {
+    props: {
+      team,
+    },
     args: {
       position: undefined,
       rotation: undefined,
@@ -198,6 +216,8 @@ function launchBall(params: Parametric) {
       colliderFromMesh: false,
     },
   });
+
+  if (DBG_TRAILS) EM.set(ball, SketchTrailDef);
 
   return ball;
 }
@@ -491,6 +511,7 @@ export async function initGrayboxShipArena() {
           cannonFireCurve(c.world, ballSpeed, _launchParam);
 
           // display path
+          // TODO(@darzu): SKETCH. create sketchPath or equiv
           const dotPath = getDotPath(idx);
           createPathFromParameteric(_launchParam, 100, dotPath.path);
           {
@@ -506,7 +527,7 @@ export async function initGrayboxShipArena() {
 
           // launch?
           if (doFire) {
-            launchBall(_launchParam);
+            launchBall(_launchParam, PLAYER_TEAM);
           }
 
           idx++;
@@ -518,8 +539,15 @@ export async function initGrayboxShipArena() {
     }
   );
 
-  onCollides([CannonBallDef], [EnemyDef, ShipDef], [], (ball, enemy) => {
-    enemy.ship.healthBar.statBar.value -= 10;
+  onCollides([CannonBallDef], [EnemyDef, ShipDef], [], (ball, ship) => {
+    if (ball.cannonBall.team !== PLAYER_TEAM) return;
+    ship.ship.healthBar.statBar.value -= 10;
+    EM.set(ball, DeletedDef);
+  });
+
+  onCollides([CannonBallDef], [PlayerShipDef, ShipDef], [], (ball, ship) => {
+    if (ball.cannonBall.team !== ENEMY_TEAM) return;
+    ship.ship.healthBar.statBar.value -= 10;
     EM.set(ball, DeletedDef);
   });
 
@@ -688,7 +716,8 @@ function createEnemy() {
   mixinObj(ship, EnemyObj, {
     props: {
       sailTarget: V(0, 0, 0),
-      reloadMs: 0,
+      reloadMs: 1000,
+      lastFireMs: 0,
     },
     args: {},
   });
@@ -790,6 +819,8 @@ async function initEnemies() {
 
   const _lastPlayerPos = V3.clone(player.obb.center);
 
+  const _enemyLaunchParam = createParametric();
+
   EM.addSystem(
     "enemyAttack",
     Phase.GAME_WORLD,
@@ -804,8 +835,7 @@ async function initEnemies() {
 
       for (let e of es) {
         // reload
-        if (e.enemy.reloadMs > 0) e.enemy.reloadMs -= res.time.dt;
-        if (e.enemy.reloadMs > 0) continue;
+        if (res.time.time < e.enemy.lastFireMs + e.enemy.reloadMs) continue;
 
         // aim
         const doMiss = chance(0.5);
@@ -829,6 +859,8 @@ async function initEnemies() {
         // }
         // if (TRUE) continue;
 
+        const projectileSpeed = 0.2;
+
         const sln = getFireSolution({
           sourcePos: cannonL.world.position,
           sourceDefaultRot: defaultWorldRot,
@@ -839,7 +871,8 @@ async function initEnemies() {
           maxRange: 200,
 
           gravity: GRAVITY,
-          projectileSpeed: 0.2,
+
+          projectileSpeed,
 
           targetOBB: player.obb,
           targetVel: vel,
@@ -847,17 +880,25 @@ async function initEnemies() {
           doMiss: doMiss,
         });
 
-        if (sln) {
-          console.log("FOUND SLN!");
-          const worldRot = quat.fromYawPitch(sln);
-          const dir = quat.fwd(worldRot);
-          V3.scale(dir, 20, dir);
-          const firePos = V3.add(player.obb.center, dir);
-          sketchLine(cannonL.world.position, firePos, {
-            key: "fireSln",
-            color: doMiss ? ENDESGA16.lightGreen : ENDESGA16.red,
-          });
-        }
+        if (!sln) continue;
+
+        // console.log("FOUND SLN!");
+        sketchYawPitch(cannonL.world.position, sln.yaw, sln.pitch, {
+          key: `fireSln_m${doMiss}`,
+          color: doMiss ? ENDESGA16.red : ENDESGA16.lightGreen,
+          length: 100,
+        });
+
+        const rotation = quat.fromYawPitch(sln);
+
+        const firePara = cannonFireCurve(
+          { position: cannonL.world.position, rotation },
+          projectileSpeed,
+          _enemyLaunchParam
+        );
+
+        launchBall(firePara, ENEMY_TEAM);
+        e.enemy.lastFireMs = res.time.time;
 
         // TODO(@darzu): moving target adjustment!
 

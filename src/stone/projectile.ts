@@ -295,8 +295,8 @@ export function getFireSolution(opt: FireSolutionOpt): YawPitch | undefined {
   if (DBG_AIM_POS) {
     const minWorldYaw = srcBaseYaw - opt.maxYaw;
     const maxWorldYaw = srcBaseYaw + opt.maxYaw;
-    const dir1 = V3.scale(V3.fromYaw(minWorldYaw), 100);
-    const dir2 = V3.scale(V3.fromYaw(maxWorldYaw), 100);
+    const dir1 = V3.scale(V3.fromYaw(minWorldYaw), opt.maxRange);
+    const dir2 = V3.scale(V3.fromYaw(maxWorldYaw), opt.maxRange);
     sketchFan(sourcePos, dir1, dir2, {
       key: "outOfYaw",
       color: ENDESGA16.lightGreen,
