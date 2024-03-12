@@ -60,7 +60,6 @@ import {
   getAimAndMissPositions,
   getFireSolution,
 } from "../stone/projectile.js";
-import { DBG_CANNONS } from "../stone/stone.js";
 import { TimeDef } from "../time/time.js";
 import { YawPitchDef } from "../turret/yawpitch.js";
 import {
@@ -106,6 +105,7 @@ const DBG_GHOST = false;
 const DBG_GIZMO = true;
 const DBG_DOTS = false;
 const DBG_ENEMY = true;
+const DBG_CANNONS = true;
 
 const DBG_TRAILS = true;
 
@@ -718,7 +718,7 @@ function createEnemy() {
   mixinObj(ship, EnemyObj, {
     props: {
       sailTarget: V(0, 0, 0),
-      reloadMs: 1000,
+      reloadMs: 2000,
       lastFireMs: 0,
     },
     args: {},
@@ -882,7 +882,7 @@ async function initEnemies() {
           maxYaw: CANNON_MAX_YAW,
           minPitch: -PId8,
           maxPitch: +PId3,
-          maxRange: 200,
+          maxRange: 400,
 
           gravity: GRAVITY,
 
@@ -896,12 +896,12 @@ async function initEnemies() {
 
         if (!sln) continue;
 
-        if (DBG_CANNONS)
-          sketchYawPitch(centerCannon.world.position, sln.yaw, sln.pitch, {
-            key: `fireSln_m${doMiss}`,
-            color: doMiss ? ENDESGA16.red : ENDESGA16.lightGreen,
-            length: 100,
-          });
+        // if (DBG_CANNONS)
+        //   sketchYawPitch(centerCannon.world.position, sln.yaw, sln.pitch, {
+        //     key: `fireSln_m${doMiss}`,
+        //     color: doMiss ? ENDESGA16.red : ENDESGA16.lightGreen,
+        //     length: 100,
+        //   });
 
         const rotation = quat.fromYawPitch(sln);
 
@@ -913,7 +913,10 @@ async function initEnemies() {
             _enemyLaunchParam
           );
 
-          launchBall(firePara, ENEMY_TEAM);
+          const ball = launchBall(firePara, ENEMY_TEAM);
+          if (DBG_CANNONS) {
+            V3.copy(ball.color, doMiss ? ENDESGA16.red : ENDESGA16.lightGreen);
+          }
           e.enemy.lastFireMs = res.time.time;
         }
       }

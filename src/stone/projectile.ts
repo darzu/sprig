@@ -27,7 +27,7 @@ ToDo:
 [ ] parameterize hit box / miss box using 3D projected to 2D OBB w/ projectile profile box too?
 */
 
-const DBG_AIM_POS = true;
+const DBG_AIM_POS = false;
 
 export interface FireSolutionOpt {
   // cannon state

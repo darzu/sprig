@@ -51,7 +51,7 @@ import { transformYUpModelIntoZUp } from "../camera/basis.js";
 import { addGizmoChild, drawBall } from "../utils/utils-game.js";
 import { getFireSolution } from "./projectile.js";
 
-export const DBG_CANNONS = true;
+const DBG_CANNONS = true;
 
 const GRAVITY = 6.0 * 0.00001;
 const MIN_BRICK_PERCENT = 0.6;
