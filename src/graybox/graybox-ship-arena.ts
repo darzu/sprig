@@ -112,7 +112,7 @@ const SAIL_FURL_RATE = 0.02;
 
 const CANNON_MAX_YAW = PI * 0.2;
 
-const GRAVITY = -8 * 0.00001;
+const GRAVITY = 8 * 0.00001;
 
 let _obb_systems = _OBB_SYSTEMS; // TODO(@darzu): HACK. force import. yuck.
 
@@ -194,7 +194,7 @@ function cannonFireCurve(
   copyParamateric(out, {
     pos: frame.position,
     vel,
-    accel: [0, 0, GRAVITY],
+    accel: [0, 0, -GRAVITY],
     time: time.time,
   });
 
@@ -202,6 +202,7 @@ function cannonFireCurve(
 }
 
 function launchBall(params: Parametric, team: number) {
+  assert(params.accel[2] <= 0, `You probably meant for z accel to be negative`);
   // TODO(@darzu): PERF. use pools!!
   const ball = createObj(CannonBallObj, {
     props: {

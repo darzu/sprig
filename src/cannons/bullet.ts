@@ -192,6 +192,7 @@ type BulletEnt = EntityW<[typeof BulletConstructDef]>;
 const _bulletPool: BulletEnt[] = [];
 let _nextBulletIdx = 0;
 
+// TODO(@darzu): GRAVITY should NOT have sign included
 // TODO(@darzu): fireBullet has become quite bloated and has wierd parameters like bulletAxis
 export async function fireBullet(
   team: number,

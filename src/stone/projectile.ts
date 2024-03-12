@@ -16,6 +16,7 @@ import {
   sketchYawPitch,
 } from "../utils/sketch.js";
 import { SVG, compileSVG } from "../utils/svg.js";
+import { assert } from "../utils/util-no-import.js";
 import { drawBall } from "../utils/utils-game.js";
 
 // TODO(@darzu): Move this. Merge this with others like parameteric?
@@ -41,7 +42,8 @@ export interface FireSolutionOpt {
 
   // projectile parameters
   projectileSpeed: number;
-  gravity: number;
+  // TODO(@darzu): GRAVITY. should sign be included or not?
+  gravity: number; // NOTE: has sign should NOT be included, direction of gravity has to be passed in a different way
 
   // target data
   targetVel: V3.InputT;
@@ -194,6 +196,11 @@ function getApproxFlightTime({
 
 const __t_obb0 = OBB.mk();
 export function getFireSolution(opt: FireSolutionOpt): YawPitch | undefined {
+  assert(
+    opt.gravity >= 0,
+    `Gravity should be positive. TODO: support different directions of gravity.`
+  );
+
   // get flight time
   const approxFlightTime = getApproxFlightTime(opt);
 

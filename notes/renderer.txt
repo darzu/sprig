@@ -2277,3 +2277,6 @@ Work graphs:
   https://developer.nvidia.com/blog/work-graphs-in-direct3d-12-a-case-study-of-deferred-shading/
   https://devblogs.microsoft.com/directx/d3d12-work-graphs-preview/
   https://gpuopen.com/gpu-work-graphs-in-vulkan/
+  
+vulkan grass w/ instancing and indirect draw:
+  https://www.thegeeko.me/blog/foliage-rendering

@@ -701,6 +701,7 @@ EM.addSystem(
       const miss = Math.random() < MISS_PROBABILITY;
 
       const MAX_RANGE = 300;
+      // TODO(@darzu): GRAVITY should NOT have sign included everywhere
       const GRAVITY = 6.0 * 0.00001;
       const MAX_THETA = Math.PI / 2 - Math.PI / 16;
       const MIN_THETA = -MAX_THETA;
