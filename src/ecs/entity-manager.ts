@@ -1084,6 +1084,8 @@ export class EntityManager {
 
   // TODO(@darzu): "addSystemWInit" that is like wrapping an addSystem in an addEagerInit so you can have
   //  some global resources around
+  // TODO(@darzu): add support for "run every X frames or ms" ?
+  // TODO(@darzu): add change detection
   private _nextSystemId = 1;
   public addSystem<CS extends ComponentDef[], RS extends ResourceDef[]>(
     name: string,

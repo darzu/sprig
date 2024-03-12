@@ -1,6 +1,6 @@
 import { StatBarDef, createMultiBarMesh } from "../adornments/status-bar.js";
 import { CameraDef, CameraFollowDef } from "../camera/camera.js";
-import { AlphaDef, ColorDef } from "../color/color-ecs.js";
+import { AlphaDef, ColorDef, TintsDef } from "../color/color-ecs.js";
 import { ENDESGA16, seqEndesga16 } from "../color/palettes.js";
 import { DevConsoleDef } from "../debug/console.js";
 import { DeletedDef } from "../ecs/delete.js";
@@ -60,6 +60,7 @@ import {
   getAimAndMissPositions,
   getFireSolution,
 } from "../stone/projectile.js";
+import { DBG_CANNONS } from "../stone/stone.js";
 import { TimeDef } from "../time/time.js";
 import { YawPitchDef } from "../turret/yawpitch.js";
 import {
@@ -841,29 +842,41 @@ async function initEnemies() {
         // aim
         const doMiss = chance(0.5);
 
-        // which cannon?
-        const cannonL = e.ship.cannonL1; // TODO(@darzu): pick cannon correctly
-        if (!WorldFrameDef.isOn(cannonL)) continue;
+        // which cannons?
+        const toPlayer = V3.dir(player.world.position, e.world.position);
+        const ourRight = quat.right(e.rotation);
+        const facingRight = V3.dot(toPlayer, ourRight) >= 0;
+        const rightCannons = [
+          e.ship.cannonR0,
+          e.ship.cannonR1,
+          e.ship.cannonR2,
+        ];
+        const leftCannons = [e.ship.cannonL0, e.ship.cannonL1, e.ship.cannonL2];
+        const cannons = facingRight ? rightCannons : leftCannons;
+
+        if (DBG_CANNONS) {
+          for (let c of [...leftCannons, ...rightCannons]) {
+            EM.set(c, TintsDef);
+            c.tints.set("cannonSide", V(0, 0, 0));
+          }
+          for (let c of cannons) {
+            EM.set(c, TintsDef);
+            c.tints.set("cannonSide", V(0, 0.8, 0));
+          }
+        }
+        const centerCannon = cannons[1];
+
+        if (!WorldFrameDef.isOn(centerCannon)) continue;
 
         const defaultWorldRot = quat.yaw(
           e.world.rotation,
-          cannonL.cannon2.baseYaw
+          centerCannon.cannon2.baseYaw
         );
-
-        // {
-        //   const sourcePos = cannonL.world.position;
-        //   sketchQuat(sourcePos, defaultWorldRot, {
-        //     length: 100,
-        //     key: "testSrcBaseYaw",
-        //     color: ENDESGA16.lightBlue,
-        //   });
-        // }
-        // if (TRUE) continue;
 
         const projectileSpeed = 0.2;
 
         const sln = getFireSolution({
-          sourcePos: cannonL.world.position,
+          sourcePos: centerCannon.world.position,
           sourceDefaultRot: defaultWorldRot,
 
           maxYaw: CANNON_MAX_YAW,
@@ -878,32 +891,31 @@ async function initEnemies() {
           targetOBB: player.obb,
           targetVel: vel,
 
-          doMiss: doMiss,
+          doMiss,
         });
 
         if (!sln) continue;
 
-        // console.log("FOUND SLN!");
-        sketchYawPitch(cannonL.world.position, sln.yaw, sln.pitch, {
-          key: `fireSln_m${doMiss}`,
-          color: doMiss ? ENDESGA16.red : ENDESGA16.lightGreen,
-          length: 100,
-        });
+        if (DBG_CANNONS)
+          sketchYawPitch(centerCannon.world.position, sln.yaw, sln.pitch, {
+            key: `fireSln_m${doMiss}`,
+            color: doMiss ? ENDESGA16.red : ENDESGA16.lightGreen,
+            length: 100,
+          });
 
         const rotation = quat.fromYawPitch(sln);
 
-        const firePara = cannonFireCurve(
-          { position: cannonL.world.position, rotation },
-          projectileSpeed,
-          _enemyLaunchParam
-        );
+        for (let c of cannons) {
+          assert(WorldFrameDef.isOn(c));
+          const firePara = cannonFireCurve(
+            { position: c.world.position, rotation },
+            projectileSpeed,
+            _enemyLaunchParam
+          );
 
-        launchBall(firePara, ENEMY_TEAM);
-        e.enemy.lastFireMs = res.time.time;
-
-        // TODO(@darzu): moving target adjustment!
-
-        // throw "IMPLEMENT AIM";
+          launchBall(firePara, ENEMY_TEAM);
+          e.enemy.lastFireMs = res.time.time;
+        }
       }
     }
   );

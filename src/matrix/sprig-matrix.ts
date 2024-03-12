@@ -550,6 +550,13 @@ export module V3 {
   export function sub(v1: InputT, v2: InputT, out?: T): T {
     return GL.sub(out ?? tmp(), v1, v2) as T;
   }
+  // returns a unit vector that points from src to trg like V3.norm(V3.sub(trg, src))
+  export function dir(trg: InputT, src: InputT, out?: T): T {
+    out = out ?? tmp();
+    sub(trg, src, out);
+    norm(out, out);
+    return out;
+  }
   export function mul(v1: InputT, v2: InputT, out?: T): T {
     return GL.mul(out ?? tmp(), v1, v2) as T;
   }
