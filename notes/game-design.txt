@@ -251,3 +251,14 @@ Resources:
     good balance of tension: soulslikes, roguelikes, Outward
 
     too much: permadeath, non-roguelikes
+
+Bullet heavens advice:
+  https://www.wanderbots.com/blog/designing-bullet-heavens?utm_source=substack&utm_medium=email
+  Stats:
+    dmg, attack speed, crit, retaliation damage, area of effect (AoE), 
+      piercing, bounce, damage over time (DoT), stun, disparate damage types, 
+  deep rock survivors:
+    extra piercing, changing damage types, terrain destruction, larger stat boosts, roving turrets, front & back shooting
+    "my personal favorite: combining every projectile into one huge super bullet"
+  " Synthetik lets players prioritize & de-prioritize up to five different weapons & items, which I think is a brilliant way of letting players influence the upgrade pool "
+  "Unlockables should always be visibly paired with an achievement system, where players can pin certain goals and track them during a run."

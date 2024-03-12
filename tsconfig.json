@@ -12,6 +12,7 @@
     // "jsx": "preserve",                     /* Specify JSX code generation: 'preserve', 'react-native', or 'react'. */
     // "declaration": true,                   /* Generates corresponding '.d.ts' file. */
     // "declarationMap": true,                /* Generates a sourcemap for each corresponding '.d.ts' file. */
+    /*todo(dz): sourceMap feature is frusterating to get working w/ debugging and browser source view. but necessary for correct stack traces.*/
     "sourceMap": true /* Generates corresponding '.map' file. */,
     // "outFile": "./",                       /* Concatenate and emit output to single file. */
     "outDir": "./public/" /* Redirect output structure to the directory. */,

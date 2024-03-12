@@ -50,6 +50,12 @@ In the language, maybe everything should be pipelines / verticalized?
   or tacit / point-free style:
     https://en.wikipedia.org/wiki/Tacit_programming
 
+  maybe "->"
+    a + b 
+      -> + c 
+      -> .toString() 
+      -> console.log(*)
+
 Dion:
   AST representation stuff: https://dion.systems/blog_0001_hms2020.html
 
@@ -110,3 +116,107 @@ Obviously we want a custom robust relation-y query syntax
 Game phases:
   Certain functions are async or immediate depending on the game phase you're in
   E.g. if you're in level init, you get to assume X resources are all loaded already
+
+Get inspiration from Zig:
+  https://ziglang.org/learn/samples/
+
+Consider erlang:
+  http://jlouisramblings.blogspot.com/2010/12/response-to-erlang-overhyped-or.html
+
+Erlang IO Lists:
+   https://prog21.dadgum.com/70.html
+
+Verse language:
+  https://github.com/UnrealVerseGuru/VerseProgrammingLanguage?tab=readme-ov-file
+  https://www.youtube.com/watch?v=OJv8rFap0Nw
+  https://www.youtube.com/watch?v=teTroOAGZjM&t=22494s
+  https://simon.peytonjones.org/assets/pdfs/verse-March23.pdf
+  https://www.youtube.com/watch?v=5prkKOIilJg
+
+Lang feature ideas:
+  return value can be a parameter: this tells you the return type plus that it's the same reference
+    scaleMesh<T extends RawMesh>(m: T, by: number): T
+    ->
+    scaleMesh<T extends RawMesh>(m: T, by: number): m
+  return value can also have a narrowed type like TS's assert or is but not just a boolean
+
+Requires/Provides:
+  functions(/other constructs?) _requires_ certain type and environment properties,
+  functions _provide_ certain type and environment properties
+  return type as the only provides is insane
+    TS lets you have assertions "asserts e is EntityW<...>" and guards "e is boolean"
+
+TODO: investigate co-routines
+
+TODO: investigate green threads a la microbit
+
+Support narrowing property check:
+  type DrawPlaneOpt = {
+    norm: V3.InputT;
+    color?: V3.InputT;
+  } & (
+    | {
+        center: V3.InputT;
+        halfsize?: number;
+      }
+    | {
+        corner1: V3.InputT;
+        corner2: V3.InputT;
+      }
+  );
+  if (opt.center) {
+    // center & halfsize r here
+  }
+
+Byte sizes everywhere:
+   type foo = {
+    norm: V3.InputT;
+    color: V3.InputT;
+  } // has size 24
+  type foo = {
+    norm: V3.InputT; } 
+  | {
+    norm: V3.InputT;
+    color: V3.InputT;
+  } // has size min:12 max:24
+
+  can reason about whether a loop will fit into L1 cache?
+
+Should our language support graph datatypes?
+  https://www.hillelwayne.com/post/graph-types/
+  reasons not:
+    too many representations
+    too many types of graphs
+    too many algorithms
+    too performance sensative
+
+Different variable scope types:
+  e.g. normal variables, "let", params, curlys etc
+  but also:
+    sketching -> key: "outOfRange"
+      keys are like variable names and we can know type info and check usage sites
+    component and resource definitions
+      might be deeply nested, but still clutters one "variable space"
+
+No open types (hopefully)
+  always whole-program
+  interface w/ "sys calls" which can only use simple data types ?
+  also w/ closed types, you can have smallest size runtime type info
+    e.g. 1 byte type tag on some union type b/c u know there's <=8 possibilities
+
+shower thoughts:
+  Resource usage gets added to impicit environment needs
+    Can use res?.foo() which only runs if resource exists.
+    Some way to do the same thing but request resource to be inited in the future.
+  Variables r all pointers fundamentally.
+  But Sketcher style “keys” are different in kind. 
+    They’re also not implicit parameters. 
+    But they could have scope and other variable-like rules.
+    Keys have a type
+    We can know by control flow where they might be updated
+  What r the static semantics of ur code? Or that u wish u had? Encode that.
+
+Other languages to research:
+  https://odin-lang.org
+    "Odin is a general-purpose programming language with distinct typing built for high performance, modern systems and data-oriented programming."
+    https://odin-lang.org/docs/faq/#what-does-odin-offer-over-other-languages

@@ -23,7 +23,11 @@ import { stdMeshPipe } from "../render/pipelines/std-mesh.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
 import { shadowPipelines } from "../render/pipelines/std-shadow.js";
-import { RendererDef, RenderableConstructDef } from "../render/renderer-ecs.js";
+import {
+  RendererDef,
+  RenderableConstructDef,
+  MeshLike,
+} from "../render/renderer-ecs.js";
 import { TimeDef } from "../time/time.js";
 import { Intersect, assert } from "../utils/util.js";
 import { vec3Dbg, vec4Dbg } from "../utils/utils-3d.js";
@@ -59,13 +63,18 @@ const defaultCam: CameraSetting = {
   pitchOffset: -0.55,
 };
 
-export function initGhost() {
-  const g = createGhost(CubeMesh);
+export function initGhost(mesh?: MeshLike) {
+  const g = createGhost(mesh ?? CubeMesh);
   g.controllable.speed *= 10;
   g.controllable.sprintMul = 0.2;
 
+  const gameName = (globalThis as any).GAME; // TODO(@darzu): HACK
+
+  // TODO(@darzu): ABSTRACT / GENERALIZE so other systems can save/load state
+  const storageKey = `ghostCam_${gameName}`;
+
   let ghostCam: CameraSetting;
-  let ghostCamStr = localStorage.getItem("ghostCam");
+  let ghostCamStr = localStorage.getItem(storageKey);
   if (!ghostCamStr) {
     ghostCam = defaultCam;
   } else {
@@ -95,7 +104,7 @@ export function initGhost() {
       if (str == _lastSettings) return;
 
       // save
-      localStorage.setItem("ghostCam", str);
+      localStorage.setItem(storageKey, str);
     }
   );
 

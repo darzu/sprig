@@ -1549,3 +1549,25 @@ How good are these at teaching:
 
 ZX: scripting platform by google for javascript shell scripts?
   https://github.com/google/zx
+
+Re micro services:
+  https://danluu.com/simple-architectures/
+  https://news.ycombinator.com/item?id=39440179
+  https://www.youtube.com/watch?v=r8mtXJh3hzM
+  https://dl.acm.org/doi/10.1145/3593856.3595909
+    > When writing a distributed application, conventional wisdom says to split your application into separate services that can be rolled out independently. This approach is well-intentioned, but a microservices-based architecture like this often backfires, introducing challenges that counteract the benefits the architecture tries to achieve. Fundamentally, this is because microservices conflate logical boundaries (how code is written) with physical boundaries (how code is deployed). In this paper, we propose a different programming methodology that decouples the two in order to solve these challenges. With our approach, developers write their applications as logical monoliths, offload the decisions of how to distribute and run applications to an automated runtime, and deploy applications atomically. Our prototype implementation reduces application latency by up to 15× and reduces cost by up to 9× compared to the status quo.
+
+Unreal's startup & gameloop:
+  https://www.youtube.com/watch?v=IaU2Hue-ApI
+
+Bitsy "tiny" game engine:
+  https://make.bitsy.org
+
+Media Molecule serialization:
+  https://handmade.network/p/29/swedish-cubes-for-unity/blog/p/2723-how_media_molecule_does_serialization
+
+Chrome workspaces, lets u save changes made in dev tools?:
+  https://developer.chrome.com/docs/devtools/settings/workspace
+
+Zoom and pan sample script (for godot):
+  https://gist.github.com/thygrrr/8288cabeb5cd25031ce6132c4a886311

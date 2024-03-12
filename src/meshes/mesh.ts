@@ -4,7 +4,7 @@ import { max, sum } from "../utils/math.js";
 import { AABB, createAABB, getAABBFromPositions } from "../physics/aabb.js";
 import { assert, range } from "../utils/util.js";
 import { arraySortedEqual, arrayUnsortedEqual } from "../utils/util.js";
-import { vec3Dbg, vec3Dbg2, vec3Mid, vec4Dbg2 } from "../utils/utils-3d.js";
+import { vec3Dbg, vec3Dbg2, vec4Dbg2 } from "../utils/utils-3d.js";
 import { drawBall, drawLine } from "../utils/utils-game.js";
 
 // TODO(@darzu): NEEDS REFACTOR. we need to rethink these whole mesh family of objects;
@@ -26,6 +26,8 @@ import { drawBall, drawLine } from "../utils/utils-game.js";
 
 // TODO(@darzu): MESH PARTS: implement a modular mesh format.
 // TODO(@darzu): MESH PARTS: can this just be a TS union? Or do we need some "features" field / mask? Probably need runtime info.
+
+// TODO(@darzu): MESH PARTS: need per vertex, per edge (e.g. curvature), per face, per object
 
 // defines the geometry and coloring of a mesh
 // geometry: pos, tri, quad, lines,
@@ -599,14 +601,20 @@ export function getAABBFromMesh(m: RawMesh): AABB {
 // TODO(@darzu): PERF. this is pretty inefficient. We're mutating the mesh,
 //   so we should be re-using the vecs
 // TODO(@darzu): rename to "mutateMeshPositions" ?
-export function mapMeshPositions(m: RawMesh, map: (p: V3, i: number) => V3) {
+export function mapMeshPositions(
+  m: RawMesh,
+  map: (p: V3, i: number) => V3
+): RawMesh {
   m.pos = m.pos.map(map);
+  return m;
 }
-export function scaleMesh(m: RawMesh, by: number) {
+export function scaleMesh<T extends RawMesh>(m: T, by: number): T {
   mapMeshPositions(m, (p) => V3.scale(p, by, p));
+  return m;
 }
-export function scaleMesh3(m: RawMesh, by: V3.InputT) {
+export function scaleMesh3<T extends RawMesh>(m: T, by: V3.InputT): T {
   mapMeshPositions(m, (p) => V3.mul(p, by, p));
+  return m;
 }
 // TODO(@darzu): need a version that preserves Mesh vs RawMesh
 // TODO(@darzu): PERF! We probably should be using this v sparingly if it's cloning all positions
@@ -961,12 +969,12 @@ export function getMeshAsGrid(m: RawMesh): {
 
 // TODO(@darzu): PERF. probably instead of doing merge meshes, we should have a MeshBuilder
 // TODO: this will delete rigging info
-export function mergeMeshes(...rs: RawMesh[]): RawMesh {
+export function mergeMeshes<T extends RawMesh>(...rs: T[]): T {
   if (rs.length === 1) return rs[0];
 
   let posIdx = 0;
 
-  const m: RawMesh = {
+  const m = {
     pos: [],
     tri: [],
     quad: [],
@@ -979,7 +987,10 @@ export function mergeMeshes(...rs: RawMesh[]): RawMesh {
     dbgName: rs.some((r) => r.dbgName)
       ? rs.reduce((p, n, i) => p + "_" + n?.dbgName ?? "mesh", "")
       : undefined,
-  };
+    usesProvoking: rs.every((r) => (r as any as Mesh).usesProvoking)
+      ? true
+      : undefined,
+  } as any as T; // TODO(@darzu): Ugh these casts. Gotta impl this right
 
   for (let r of rs) {
     m.pos = [...m.pos, ...r.pos];

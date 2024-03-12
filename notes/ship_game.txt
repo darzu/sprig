@@ -450,3 +450,27 @@ Raise and lower keel?
 Deployable 4 keels:
   front,back like normal keel
   left,right like putting a paddle in the water from a kayak
+
+in-world names:
+  wizenwood (wizard wood)
+  sunshard
+  sunstone
+  faewrought
+  starleaf
+  dreamshade  
+  runebound
+  Stormbound
+  Moonstrider
+  Starwing
+  Lunara
+  Stardancer
+
+End game zany gameplay:
+  4 cannons -> 8 -> 16 -> 256 -> 2048 -> ...
+    becomes particles
+  guitar-hero-like gameplay
+
+Deck building for ur upgrades:
+  "banish" cards from the pool of possible upgrades
+  open packs where you see half the cards and half are hidden, those cards go into your upgrade pool
+  so you can open packs to widen ur runs possibilities but dilute ur choices

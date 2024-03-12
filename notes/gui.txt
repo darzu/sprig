@@ -24,6 +24,8 @@ CSS box model:
 
 Xilem: an architecture for UI in Rust:
   https://raphlinus.github.io/rust/gui/2022/05/07/ui-architecture.html
+  https://xilem.dev
+    "drawing considerable inspiration from SwiftUI"
 
 Game UI database:
   https://www.gameuidatabase.com
@@ -127,3 +129,70 @@ Vello: Fast rust 2D library:
   built on work "Cuda Raster" by nvidia
     natural webgpu workgroup size is 256 = 16x16
   https://levien.com/vello-demo/
+
+Fast 2d graphics:
+  Skia,
+  Vello
+    https://github.com/linebender/vello
+    https://www.youtube.com/watch?v=mmW_RbTyj8c
+  https://news.ycombinator.com/item?id=39443465
+    Couple things I've seen in this space looking around the past couple weeks...
+    Flutter made a different engine called Impeller[0] which is replacing Skia. Which is a bit surprising as an ignorant outsider. I hope that works out.
+    Rive (https://rive.app), is a new animation tool that targets multiple platforms including web and their CEO Guido Rosso gave a great interview on School of Motion[1] about how they are building an animation first vector engine. There is a side by side demo at 46:56[2] of Skia, Impeller and Rive.
+    0: https://docs.flutter.dev/perf/impeller
+    1: https://www.youtube.com/watch?v=U0Jd5-eStu4&t=2514s
+    2: https://youtu.be/U0Jd5-eStu4?si=8vv3c2bw3VumLzeu&t=2816
+  GTK:
+    https://docs.gtk.org/gsk4/
+  Impeller:
+    https://medium.com/@wartelski/impeller-rendering-engine-is-it-good-enough-for-flutter-ff2677714343
+  Rive:
+    https://rive.app/renderer
+
+Good browser touch events by redblob:
+  https://twitter.com/redblobgames/status/1765409668850123046
+
+MSDF text rendering using webgpu:
+  MSDF = multichannel signed distance fields
+  https://webgpu.github.io/webgpu-samples/?sample=textRenderingMsdf
+  generator: https://msdf-bmfont.donmccurdy.com
+
+Dear ImGui example:
+  https://github.com/ocornut/imgui
+
+  ImGui::Text("Hello, world %d", 123);
+  if (ImGui::Button("Save"))
+      MySaveFunction();
+  ImGui::InputText("string", buf, IM_ARRAYSIZE(buf));
+  ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
+
+  // Create a window called "My First Tool", with a menu bar.
+  ImGui::Begin("My First Tool", &my_tool_active, ImGuiWindowFlags_MenuBar);
+  if (ImGui::BeginMenuBar())
+  {
+      if (ImGui::BeginMenu("File"))
+      {
+          if (ImGui::MenuItem("Open..", "Ctrl+O")) { /* Do stuff */ }
+          if (ImGui::MenuItem("Save", "Ctrl+S"))   { /* Do stuff */ }
+          if (ImGui::MenuItem("Close", "Ctrl+W"))  { my_tool_active = false; }
+          ImGui::EndMenu();
+      }
+      ImGui::EndMenuBar();
+  }
+
+  // Edit a color stored as 4 floats
+  ImGui::ColorEdit4("Color", my_color);
+
+  // Generate samples and plot them
+  float samples[100];
+  for (int n = 0; n < 100; n++)
+      samples[n] = sinf(n * 0.2f + ImGui::GetTime() * 1.5f);
+  ImGui::PlotLines("Samples", samples, 100);
+
+  // Display contents in a scrolling region
+  ImGui::TextColored(ImVec4(1,1,0,1), "Important Stuff");
+  ImGui::BeginChild("Scrolling");
+  for (int n = 0; n < 50; n++)
+      ImGui::Text("%04d: Some text", n);
+  ImGui::EndChild();
+  ImGui::End();

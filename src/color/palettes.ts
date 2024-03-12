@@ -4,6 +4,7 @@ import { objMap } from "../utils/util.js";
 import { vec3Dbg } from "../utils/utils-3d.js";
 import { toV3, toFRGB, parseHex, toFLRGB } from "./color.js";
 
+// TODO(@darzu): RENAME EDG16
 export const ENDESGA16 = objMap(
   {
     lightBrown: "#e4a672",
@@ -27,8 +28,21 @@ export const ENDESGA16 = objMap(
     return toV3(toFLRGB(parseHex(val))) as V3;
   }
 );
+export const RainbowEndesga16 = [
+  // ROYGBIV
+  ENDESGA16.red,
+  ENDESGA16.orange,
+  ENDESGA16.yellow,
+  ENDESGA16.lightGreen,
+  ENDESGA16.lightBlue,
+  // loop
+  ENDESGA16.darkRed,
+  ENDESGA16.midBrown,
+  ENDESGA16.darkGreen,
+  ENDESGA16.blue,
+];
 export const AllEndesga16 = Object.values(ENDESGA16);
-console.log(ENDESGA16);
+// console.log(ENDESGA16);
 export const AllEndesga16Names = Object.keys(ENDESGA16);
 export function randEndesga16() {
   const i = clamp(Math.floor(Math.random() * AllEndesga16.length), 0, 15);

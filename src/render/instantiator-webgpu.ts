@@ -434,11 +434,13 @@ function createCyPipeline(
             vertBuf.struct.vertexLayout("vertex", 0),
             instBuf.struct.vertexLayout("instance", vertBuf.struct.memberCount),
           ],
+          constants: p.vertOverrides,
         },
         fragment: {
           module: shader,
           entryPoint: p.shaderFragmentEntry,
           targets,
+          constants: p.fragOverrides,
         },
       };
       // console.dir(rndrPipelineDesc);
@@ -509,11 +511,13 @@ function createCyPipeline(
           module: shader,
           entryPoint: p.shaderVertexEntry,
           buffers: [pool.ptr.vertsStruct.vertexLayout("vertex", 0)],
+          constants: p.vertOverrides,
         },
         fragment: {
           module: shader,
           entryPoint: p.shaderFragmentEntry,
           targets,
+          constants: p.fragOverrides,
         },
       };
       // console.dir(rndrPipelineDesc);
@@ -556,14 +560,12 @@ function createCyPipeline(
         vertex: {
           module: shader,
           entryPoint: p.shaderVertexEntry,
-          // TODO(@darzu): constants
           constants: p.vertOverrides,
         },
         fragment: {
           module: shader,
           entryPoint: p.shaderFragmentEntry,
           targets,
-          // TODO(@darzu): constants
           constants: p.fragOverrides,
         },
       };

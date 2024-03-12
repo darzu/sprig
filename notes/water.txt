@@ -165,3 +165,6 @@ Determining a waterline on the camera:
 
 Water Wave Simulation 2023:
   https://slembcke.github.io/WaterWaves
+
+Advanced fluid sim shader:
+  https://michaelmoroz.github.io/Reintegration-Tracking/

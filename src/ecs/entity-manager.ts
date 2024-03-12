@@ -808,6 +808,9 @@ export class EntityManager {
   ): (C extends ResourceDef<any, infer P> ? P : never) | undefined {
     return this.resources[c.name] as any;
   }
+  public hasResource<C extends ResourceDef>(c: C): boolean {
+    return c.name in this.resources;
+  }
   // TODO(@darzu): remove? we should probably be using "whenResources"
   public getResources<RS extends ResourceDef[]>(
     rs: [...RS]
@@ -1079,6 +1082,10 @@ export class EntityManager {
     return reg;
   }
 
+  // TODO(@darzu): "addSystemWInit" that is like wrapping an addSystem in an addEagerInit so you can have
+  //  some global resources around
+  // TODO(@darzu): add support for "run every X frames or ms" ?
+  // TODO(@darzu): add change detection
   private _nextSystemId = 1;
   public addSystem<CS extends ComponentDef[], RS extends ResourceDef[]>(
     name: string,

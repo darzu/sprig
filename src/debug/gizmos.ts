@@ -1,7 +1,7 @@
 import { AABB, getAABBCornersTemp } from "../physics/aabb.js";
 import { createFlatQuadMesh } from "../meshes/primatives.js";
 import { Mesh, mergeMeshes } from "../meshes/mesh.js";
-import { V3, V, tV, orthonormalize } from "../matrix/sprig-matrix.js";
+import { V3, V, tV, orthonormalize, mat4 } from "../matrix/sprig-matrix.js";
 import { assert, dbgDirOnce } from "../utils/util.js";
 import { createEmptyMesh } from "../wood/wood.js";
 

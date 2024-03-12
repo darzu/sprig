@@ -24,6 +24,13 @@ struct FragOut {
   @location(0) color: vec4<f32>,
 }
 
+override lineSpacing1 = 1f;
+override lineWidth1 = 1f;
+override lineSpacing2 = 1f;
+override lineWidth2 = 1f;
+override ringStart = 1f;
+override ringWidth = 1f;
+
 @fragment
 fn frag_main(input: VertexOutput) -> FragOut {
 
@@ -31,38 +38,34 @@ fn frag_main(input: VertexOutput) -> FragOut {
 
   var color = input.color;
 
-  const lineSpacing = 8.0;
-  const lineSpacing2 = 256.0;
-  const lineWidth = 0.05;
-  const lineWidth2 = 0.2;
 
-  // const lineSpacing = 10.0;
+  const ringSmooth = 1;
+
+  // const lineSpacing1 = 10.0;
   // const lineSpacing2 = 100.0;
-  // const lineWidth = 0.5;
+  // const lineWidth1 = 0.5;
   // const lineWidth2 = 2.0;
 
   var alpha: f32 = 0.0;
 
-  const ringSmooth = 1;
-  const ringStart = 512;
-  const ringEnd = 524;
+  let ringEnd = ringStart + ringWidth;
 
-  const lineFrac = vec2<f32>(lineWidth / lineSpacing);
-  const lineFrac2 = vec2<f32>(lineWidth2 / lineSpacing2);
-  let uv = worldPos.xy / lineSpacing;
+  let lineFrac1 = vec2<f32>(lineWidth1 / lineSpacing1);
+  let lineFrac2 = vec2<f32>(lineWidth2 / lineSpacing2);
+  let uv1 = worldPos.xy / lineSpacing1;
   let uv2 = worldPos.xy / lineSpacing2;
-  let uvDDXY = vec4(dpdx(uv), dpdy(uv));
+  let uvDDXY1 = vec4(dpdx(uv1), dpdy(uv1));
   let uvDDXY2 = vec4(dpdx(uv2), dpdy(uv2));
   // if (worldPos.y < -1.0 && worldPos.x < -1.0) {
     // bgolus inspired:
     { // grid #1
-      let uvDeriv = vec2(length(uvDDXY.xz), length(uvDDXY.yw));
-      let drawWidth = clamp(lineFrac, uvDeriv, vec2(0.5));
+      let uvDeriv = vec2(length(uvDDXY1.xz), length(uvDDXY1.yw));
+      let drawWidth = clamp(lineFrac1, uvDeriv, vec2(0.5));
       let lineAA = uvDeriv * 1.5;
-      let gridUV = 1.0 - abs(fract(uv) * 2.0 - 1.0);
+      let gridUV = 1.0 - abs(fract(uv1) * 2.0 - 1.0);
       var grid = smoothstep(drawWidth + lineAA, drawWidth - lineAA, gridUV);
-      grid *= saturate(lineFrac / drawWidth);
-      grid = mix(grid, lineFrac, saturate(uvDeriv * 2.0 - 1.0));
+      grid *= saturate(lineFrac1 / drawWidth);
+      grid = mix(grid, lineFrac1, saturate(uvDeriv * 2.0 - 1.0));
       alpha += mix(grid.x, 1.0, grid.y);
     }
     { // grid #2
@@ -87,10 +90,10 @@ fn frag_main(input: VertexOutput) -> FragOut {
   // } else if (worldPos.y < -1.0  && worldPos.x > 1.0) {
   //   // iquilezles box filter:
   //   // TODO(@darzu): center lines
-  //   const N = 1 / lineFrac.x;
-  //   let w = max(abs(uvDDXY.xy), abs(uvDDXY.zw));
-  //   let a = uv + 0.5*w; 
-  //   let b = uv - 0.5*w; 
+  //   const N = 1 / lineFrac1.x;
+  //   let w = max(abs(uvDDXY1.xy), abs(uvDDXY1.zw));
+  //   let a = uv1 + 0.5*w; 
+  //   let b = uv1 - 0.5*w; 
   //   let i = (floor(a)+min(fract(a)*N,vec2(1.0))-
   //             floor(b)-min(fract(b)*N,vec2(1.0)))/(N*w);
   //   alpha =  1.0 - (1.0-i.x)*(1.0-i.y);
@@ -107,8 +110,8 @@ fn frag_main(input: VertexOutput) -> FragOut {
   //   // }
   //   // naive:
   //   if (
-  //     fract(uv.x) < lineFrac.x
-  //     || fract(uv.y) < lineFrac.y
+  //     fract(uv1.x) < lineFrac1.x
+  //     || fract(uv1.y) < lineFrac1.y
   //     // || fract(uv2.x) < lineFrac2.x
   //     // || fract(uv2.y) < lineFrac2.y
   //   ) {
@@ -118,10 +121,10 @@ fn frag_main(input: VertexOutput) -> FragOut {
   //   }
   // } else if (worldPos.y > 1.0 && worldPos.x < -1.0) {
   //   // iquilezles dots:
-  //   const N = 1 / lineFrac.x * 0.5;
-  //   let w = max(abs(uvDDXY.xy), abs(uvDDXY.zw));
-  //   let a = uv + 0.5*w; 
-  //   let b = uv - 0.5*w;    
+  //   const N = 1 / lineFrac1.x * 0.5;
+  //   let w = max(abs(uvDDXY1.xy), abs(uvDDXY1.zw));
+  //   let a = uv1 + 0.5*w; 
+  //   let b = uv1 - 0.5*w;    
   //   let i = (floor(a)+min(fract(a)*N,vec2(1.0))-
   //           floor(b)-min(fract(b)*N,vec2(1.0)))/(N*w);
   //   alpha += sqrt(i.x*i.y);

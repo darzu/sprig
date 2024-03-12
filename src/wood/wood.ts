@@ -940,10 +940,6 @@ export function createTimberBuilder(mesh: RawMesh) {
   }
 }
 
-interface OBB {
-  // TODO(@darzu): 3 axis + lengths
-}
-
 type VI = number; // vertex index
 type QI = number; // quad index
 // each board has an AABB, OBB,

@@ -6,6 +6,7 @@ import {
   mat4,
   V,
   orthonormalize,
+  mat3,
 } from "../matrix/sprig-matrix.js";
 import { avg, remap } from "./math.js";
 import { AABB, createAABB, getAABBFromPositions } from "../physics/aabb.js";
@@ -133,6 +134,7 @@ export function aabbDbg(v: AABB): string {
 export function vec2Dbg(v: V2.InputT): string {
   return `[${v[0].toFixed(2)},${v[1].toFixed(2)}]`;
 }
+// TODO(@darzu): RENAME AND MOVE
 export function vec3Dbg(v?: V3.InputT): string {
   return v
     ? `[${v[0].toFixed(2)},${v[1].toFixed(2)},${v[2].toFixed(2)}]`
@@ -165,23 +167,26 @@ export function mat4Dbg(v: mat4): string {
   return (
     "" +
     `${ns[0]}\t|${ns[4]}\t|${ns[8]}\t|${ns[12]}
- ${ns[1]}\t|${ns[5]}\t|${ns[9]}\t|${ns[13]}
- ${ns[2]}\t|${ns[6]}\t|${ns[10]}\t|${ns[14]}
- ${ns[3]}\t|${ns[7]}\t|${ns[11]}\t|${ns[15]}`
+${ns[1]}\t|${ns[5]}\t|${ns[9]}\t|${ns[13]}
+${ns[2]}\t|${ns[6]}\t|${ns[10]}\t|${ns[14]}
+${ns[3]}\t|${ns[7]}\t|${ns[11]}\t|${ns[15]}`
   );
 }
+export function mat3Dbg(v: mat3): string {
+  const ns = [...v].map((n) => n.toFixed(2));
+  return (
+    "" +
+    `${ns[0]}\t|${ns[3]}\t|${ns[6]}\t
+${ns[1]}\t|${ns[4]}\t|${ns[7]}\t
+${ns[2]}\t|${ns[5]}\t|${ns[8]}\t`
+  );
+}
+
 export function centroid(...vs: V3[]): V3 {
   const avgX = avg(vs.map((v) => v[0]));
   const avgY = avg(vs.map((v) => v[1]));
   const avgZ = avg(vs.map((v) => v[2]));
   return V(avgX, avgY, avgZ);
-}
-// TODO(@darzu):  move into gl-matrix?
-export function vec3Mid(out: V3, a: V3, b: V3): V3 {
-  out[0] = (a[0] + b[0]) * 0.5;
-  out[1] = (a[1] + b[1]) * 0.5;
-  out[2] = (a[2] + b[2]) * 0.5;
-  return out;
 }
 
 // quat utilities

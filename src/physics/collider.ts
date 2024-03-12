@@ -36,6 +36,9 @@ export interface AABBCollider extends ColliderBase {
   shape: "AABB";
   aabb: AABB;
 }
+export function isAABBCollider(c: ColliderBase): c is AABBCollider {
+  return c.shape === "AABB";
+}
 
 export interface BoxCollider extends ColliderBase {
   shape: "Box";

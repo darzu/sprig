@@ -162,6 +162,7 @@ Static analysis help:
     some set of vector operations, "truth" but disabled
     a bunch of inlined, constant folded code as what actually runs
     Maybe the optimized code is immutable, but you see some compile-time command or macro that does the unfolding?
+  Detect V() literal passed to .InputT, switch to []
   
 Keyboard shortcuts:
   up/down ast, left/right siblings, next/prev statement but same AST depth, up to surrounding statement, up to surround fn
@@ -199,3 +200,20 @@ MVP IDE:
   give cost metrics for all user added content
   gather favorite teaching resources
   add companion content to some of them
+
+subset scene:
+  select some entities
+  select some systems
+  hide & stop everything else
+  like a little test case
+  like program slicing
+
+git articles:
+  how HEAD works: https://jvns.ca/blog/2024/03/08/how-head-works-in-git/
+
+Customization watermark:
+  like how games might have a version/build number in the corner,
+    so it's easier to tell what version a bug applies to
+  we should have some sort of customization watermark 
+    so when looking at a youtube video, you can know which changes to the defaults have been applied
+  make it easy to apply the customizations that the instruct had

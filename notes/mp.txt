@@ -502,3 +502,34 @@ TODO: add "versioning" of objects.
 
 "Fast-Paced Multiplayer":
   https://www.gabrielgambetta.com/client-server-game-architecture.html
+
+Chat Feb 25th:
+  no sync full component, just events
+    no constructor components, probably no props component (just event args)
+  only dynamic sync rotation position etc
+  no deletes (just dead but that's by event)
+  [ ] entity pool should know how to do network stuff 
+    if a pool is used for network objects, the whole pool is network objects
+  events don't block waiting for full sync anymore, in fact sync blocks on latest event version
+  only sync w/ entities that are tagged with highest version number i know of
+  events should be result of player interaction
+    or maybe enemy decision like state machine change level
+  are events RPCs?
+    ordered reliable broadcast/multi-cast? from the host
+    if we wanted peer-to-peer, could run consensus
+  [ ] hard problem: compact the event log
+    solve this once its a problem; for now it might not be
+  right now: when you join, you get the whole event log
+  rejoin:
+    conceptually it's like a new player join
+    as an optimization we can reuse logs
+  gossip down detection:
+    nodes say this player is down
+    events do 
+    gossip protocal is: best effort, i'm gonna recieve some info from other nodes, 
+      unreliable messages sent between all nodes all to all
+  seperate network entity ids?
+    b/c event log is same everywhere, i can reliably get next id 
+    can have dbg flags for checkin consistency
+    local mapping from network id to entity id
+    

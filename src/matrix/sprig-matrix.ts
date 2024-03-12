@@ -5,8 +5,7 @@ import {
   PERF_DBG_F32S_BLAME,
   PERF_DBG_F32S_TEMP_BLAME,
 } from "../flags.js";
-import { dbgAddBlame, dbgClearBlame } from "../utils/util-no-import.js";
-import { assert } from "../utils/util.js";
+import { assert, dbgAddBlame, dbgClearBlame } from "../utils/util-no-import.js";
 import * as GLM from "./gl-matrix.js";
 
 /*
@@ -291,6 +290,41 @@ export function findAnyTmpVec(
   );
 }
 
+export function cloneTmpsInObj<A extends any>(obj: A, maxDepth = 100): A {
+  if (maxDepth <= 0) {
+    throw `Object too deep or rescursive!`;
+  } else if (!obj) {
+    return obj;
+  } else if (obj instanceof Float32Array) {
+    if (isTmpVec(obj)) {
+      const n = float32ArrayOfLength(obj.length);
+      n.forEach((_, i) => (n[i] = obj[i]));
+      return n as A;
+    }
+    return obj;
+  } else if (obj instanceof Array) {
+    return obj.map((v) => cloneTmpsInObj(v, maxDepth - 1)) as A;
+  } else if (obj instanceof Map) {
+    const res = new Map();
+    for (let [k, v] of obj.entries()) {
+      const v2 = cloneTmpsInObj(v, maxDepth - 1);
+      res.set(k, v2);
+    }
+    return res as A;
+  } else if (typeof obj === "object") {
+    const res = { ...obj };
+    for (let k of Object.keys(res)) {
+      const v2 = cloneTmpsInObj(obj[k as keyof A], maxDepth - 1);
+      res[k as keyof A] = v2;
+    }
+    return res;
+  } else {
+    return obj;
+  }
+}
+
+// TODO(@darzu): PERF. quat mult improvement? from: https://www.johndcook.com/blog/2021/06/16/faster-quaternion-rotations/
+
 // TODO(@darzu): PERF. does this have a perf hit?
 export function V(...xs: [number, number]): V2;
 export function V(...xs: [number, number, number]): V3;
@@ -403,13 +437,35 @@ export module V2 {
   export function dist(v1: InputT, v2: InputT): number {
     return GL.dist(v1, v2);
   }
+
+  export function mid(a: InputT, b: InputT, out?: V2): V2 {
+    out = out ?? tmp();
+    out[0] = (a[0] + b[0]) * 0.5;
+    out[1] = (a[1] + b[1]) * 0.5;
+    return out;
+  }
+
   export function sqrDist(v1: InputT, v2: InputT): number {
     return GL.sqrDist(v1, v2);
   }
   export function rotate(v1: InputT, v2: InputT, rad: number, out?: T): T {
     return GL.rotate(out ?? tmp(), v1, v2, rad) as T;
   }
+
+  export function getYaw(v: InputT): number {
+    return _getYaw(v[0], v[1]);
+  }
 }
+
+// NOTE: assumes +Y is forward so [0,1] is 0 yaw;
+//       yaw is positive to the right so
+function _getYaw(x: number, y: number): number {
+  // NOTE: atan2 output is [-PI,PI]; positive iff Y is positive
+  //  since we want positive to the "right", we negate
+  //  since we want 0 to be +Y, we add PI/2
+  return -Math.atan2(y, x) + Math.PI * 0.5;
+}
+export const getYaw = _getYaw;
 
 // TODO(@darzu): use "namespace" keyword instead of "module" (re: https://www.typescriptlang.org/docs/handbook/namespaces.html)
 export module V3 {
@@ -478,6 +534,13 @@ export module V3 {
   export function add(v1: InputT, v2: InputT, out?: T): T {
     return GL.add(out ?? tmp(), v1, v2) as T;
   }
+  export function abs(v: InputT, out?: T): T {
+    out = out ?? tmp();
+    out[0] = Math.abs(v[0]);
+    out[1] = Math.abs(v[1]);
+    out[2] = Math.abs(v[2]);
+    return out;
+  }
   export function sum(out: T, ...vs: InputT[]): T {
     out[0] = vs.reduce((p, n) => p + n[0], 0);
     out[1] = vs.reduce((p, n) => p + n[1], 0);
@@ -486,6 +549,13 @@ export module V3 {
   }
   export function sub(v1: InputT, v2: InputT, out?: T): T {
     return GL.sub(out ?? tmp(), v1, v2) as T;
+  }
+  // returns a unit vector that points from src to trg like V3.norm(V3.sub(trg, src))
+  export function dir(trg: InputT, src: InputT, out?: T): T {
+    out = out ?? tmp();
+    sub(trg, src, out);
+    norm(out, out);
+    return out;
   }
   export function mul(v1: InputT, v2: InputT, out?: T): T {
     return GL.mul(out ?? tmp(), v1, v2) as T;
@@ -514,6 +584,16 @@ export module V3 {
   export function dist(v1: InputT, v2: InputT): number {
     return GL.dist(v1, v2);
   }
+
+  export function mid(a: InputT, b: InputT, out?: V3): V3 {
+    out = out ?? tmp();
+    out[0] = (a[0] + b[0]) * 0.5;
+    out[1] = (a[1] + b[1]) * 0.5;
+    out[2] = (a[2] + b[2]) * 0.5;
+    return out;
+  }
+
+  // TODO(@darzu): RENAME: all "sqr" -> "sq"
   export function sqrDist(v1: InputT, v2: InputT): number {
     return GL.sqrDist(v1, v2);
   }
@@ -525,6 +605,7 @@ export module V3 {
     return GL.lerp(out ?? tmp(), v1, v2, n) as T;
   }
 
+  // TODO(@darzu): RENAME to transformQuat. tQuat, tMat is dense but too hard to remember.
   // TODO(@darzu): replace many usages with getFwd, getUp, getRight, etc.
   export function tQuat(a: InputT, q: quat.InputT, out?: T): T {
     out = out ?? tmp();
@@ -565,8 +646,27 @@ export module V3 {
     return GL.transformMat4(out ?? tmp(), v1, v2) as T;
   }
 
-  export function tMat3(v1: InputT, v2: mat3.InputT, out?: T): T {
-    return GL.transformMat3(out ?? tmp(), v1, v2) as T;
+  export function tMat3(v: InputT, m: mat3.InputT, out?: T): T {
+    out = out ?? tmp();
+    var x = v[0],
+      y = v[1],
+      z = v[2];
+    out[0] = x * m[0] + y * m[3] + z * m[6];
+    out[1] = x * m[1] + y * m[4] + z * m[7];
+    out[2] = x * m[2] + y * m[5] + z * m[8];
+    return out;
+  }
+
+  // NOTE: transpose matrix then transform V3 by it
+  export function ttMat3(v: InputT, m: mat3.InputT, out?: T) {
+    out = out ?? tmp();
+    var x = v[0],
+      y = v[1],
+      z = v[2];
+    out[0] = x * m[0] + y * m[1] + z * m[2];
+    out[1] = x * m[3] + y * m[4] + z * m[5];
+    out[2] = x * m[6] + y * m[7] + z * m[8];
+    return out;
   }
 
   export function zero(out?: T): T {
@@ -613,10 +713,20 @@ export module V3 {
     return GL.rotateY(out ?? tmp(), point, ZEROS, rad) as T;
   }
 
+  export function fromYaw(yaw: number, out?: T): T {
+    return V3.yaw(V3.FWD, yaw, out);
+  }
+
+  // TODO(@darzu): fromYawPitchRoll
+
   // TODO(@darzu): add yaw/pitch/roll fns
 
   export function reverse(v: InputT, out?: T): T {
     return set(v[2], v[1], v[0], out);
+  }
+
+  export function getYaw(v: InputT): number {
+    return _getYaw(v[0], v[1]);
   }
 }
 
@@ -848,9 +958,18 @@ export module quat {
   ): T {
     return GL.fromEuler(out ?? tmp(), pitch, roll, -yaw) as T;
   }
+
+  // TODO(@darzu): this is annoying that it shows up in auto-complete. remove this
   // TODO(@darzu): little hacky, this matches our YawPitchDef but doesn't match other sprig-matrix patterns
   export function fromYawPitch(yp: { yaw: number; pitch: number }, out?: T): T {
     return fromYawPitchRoll(yp.yaw, yp.pitch, 0, out);
+  }
+
+  const _t6 = V3.mk();
+  export function getYaw(q: InputT): number {
+    // TODO(@darzu): PERF. can improve by inlining and simplifying
+    const f = fwd(q, _t6);
+    return V3.getYaw(f);
   }
 
   // TODO(@darzu): IMPL toYawPitchRoll
@@ -964,6 +1083,23 @@ export module quat {
     return fromXYZ(x, y, upish, out);
   }
 
+  // TODO(@darzu): UNIFY w/ fromForward etc
+  const _t5 = V3.mk();
+  export function fromUp(up: V3.InputT, out?: T): T {
+    const z = V3.copy(_t5, up);
+    V3.norm(z, z);
+
+    // find an x-ish vector
+    const x = tV(1, 0, 0);
+    if (Math.abs(V3.dot(z, x)) > 0.9) V3.set(0, 1, 0, x);
+
+    // orthonormalize
+    const y = V3.tmp();
+    orthonormalize(z, x, y);
+
+    return fromXYZ(x, y, z, out);
+  }
+
   export function right(q: quat.InputT, out?: V3): V3 {
     return V3.tQuat(V3.RIGHT, q, out);
   }
@@ -982,6 +1118,8 @@ export module quat {
   export function down(q: quat.InputT, out?: V3): V3 {
     return V3.tQuat(V3.DOWN, q, out);
   }
+
+  // TODO(@darzu): REFACTOR: add all swizzle like .xy(), .x(), .zyx(), etc.
 }
 
 // TODO(@darzu): HACK FOR DEBUGGING
@@ -1043,7 +1181,15 @@ export module mat4 {
   }
 
   export function invert(v1: InputT, out?: T): T {
-    return GL.invert(out ?? tmp(), v1) as T;
+    const r = GL.invert(out ?? tmp(), v1) as T;
+    // TODO(@darzu): allow invert matrix to fail?
+    assert(
+      r,
+      `can't invert matrix! Probably NaNs or bad src matrix: ${JSON.stringify(
+        v1
+      )}`
+    );
+    return r;
   }
 
   export function scale(a: InputT, v: V3.InputT, out?: T): T {
@@ -1365,6 +1511,7 @@ export module mat3 {
     return tmpArray(9);
   }
 
+  // TODO(@darzu): RENAME to mk()
   /* creates identity matrix */
   export function create(): T {
     const out = float32ArrayOfLength(9);
@@ -1456,6 +1603,11 @@ export module mat3 {
     return GL.invert(out ?? tmp(), v1) as T;
   }
 
+  export function transpose(v1: InputT, out?: T): T {
+    return GL.transpose(out ?? tmp(), v1) as T;
+  }
+
+  // TODO(@darzu): bug ? scale V2 input?
   export function scale(a: InputT, v: V2.InputT, out?: T): T {
     return GL.scale(out ?? tmp(), a, v) as T;
   }
@@ -1475,19 +1627,18 @@ export module mat3 {
 
 // Other utils:
 
-// mutates forward and upish and outputs to outRight such that all three are
+// mutates all three vectors so they are all perpendicular and unit
 //  orthogonal to eachother.
-// TODO(@darzu): change this to use x,y,z ?
-export function orthonormalize(forward: V3, upish: V3, outRight: V3) {
+export function orthonormalize(v: V3, perpIsh: V3, outPerp2: V3) {
   // TODO(@darzu): there's a pattern somewhat similar in many places:
   //    orthonormalizing, Gram–Schmidt
   //    quatFromUpForward, getControlPoints, tripleProd?
   //    targetTo, lookAt ?
   // Also this can be more efficient by inlining
-  V3.norm(forward, forward);
-  V3.cross(forward, upish, outRight);
-  V3.norm(outRight, outRight);
-  V3.cross(outRight, forward, upish);
+  V3.norm(v, v);
+  V3.cross(v, perpIsh, outPerp2);
+  V3.norm(outPerp2, outPerp2);
+  V3.cross(outPerp2, v, perpIsh);
 }
 
 // prettier-ignore

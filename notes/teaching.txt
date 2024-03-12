@@ -4,3 +4,13 @@ simondev:
   https://simondev.teachable.com
   https://github.com/simondevyoutube/
   https://www.patreon.com/simondevyt/posts
+
+All learning techniques have a floor and a ceiling:
+  floor is entry requirements to using it effectively
+  ceiling is how much you can get out of it
+  LLMs & tutors probably have the lowest floor in many cases b/c u can ask basic clarifying questions a guide might not answer
+  ideas to "lower the floor" of an article:
+    add a "confusion highlighter", people can highlight areas they find confusing
+    comments Q/A section w/ good ranking
+    add a background/assumptions section w/ pointers
+

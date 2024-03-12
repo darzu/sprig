@@ -1,7 +1,9 @@
 import { clamp } from "../utils/math.js";
 import { mat4, V, V2, V3 } from "../matrix/sprig-matrix.js";
 import { range } from "../utils/util.js";
-import { vec3Dbg2, vec3Mid } from "../utils/utils-3d.js";
+import { vec3Dbg2 } from "../utils/utils-3d.js";
+
+const TRACK_AABB = true;
 
 export function __resetAABBDbgCounters() {
   _doesOverlapAABBs = 0;
@@ -10,7 +12,7 @@ export function __resetAABBDbgCounters() {
 
 export let _doesOverlapAABBs = 0;
 export function doesOverlapAABB(a: AABB, b: AABB) {
-  _doesOverlapAABBs++; // TODO(@darzu): debugging
+  if (TRACK_AABB) _doesOverlapAABBs++;
   // TODO(@darzu): less then or less then and equal?
   return (
     b.min[0] < a.max[0] &&
@@ -23,7 +25,7 @@ export function doesOverlapAABB(a: AABB, b: AABB) {
 }
 export let _enclosedBys = 0;
 export function enclosedBy(inner: AABB, outer: AABB) {
-  _enclosedBys++; // TODO(@darzu): debugging
+  if (TRACK_AABB) _enclosedBys++;
   return (
     inner.max[0] < outer.max[0] &&
     inner.max[1] < outer.max[1] &&
@@ -34,7 +36,7 @@ export function enclosedBy(inner: AABB, outer: AABB) {
   );
 }
 export function doesTouchAABB(a: AABB, b: AABB, threshold: number) {
-  _doesOverlapAABBs++; // TODO(@darzu): debugging
+  if (TRACK_AABB) _doesOverlapAABBs++;
   return (
     b.min[0] < a.max[0] + threshold &&
     b.min[1] < a.max[1] + threshold &&
@@ -53,6 +55,12 @@ export function createAABB(min?: V3, max?: V3): AABB {
   return {
     min: min ?? V(Infinity, Infinity, Infinity),
     max: max ?? V(-Infinity, -Infinity, -Infinity),
+  };
+}
+export function createAABB2(min?: V2, max?: V2): AABB2 {
+  return {
+    min: min ?? V(Infinity, Infinity),
+    max: max ?? V(-Infinity, -Infinity),
   };
 }
 export function copyAABB(out: AABB, a: AABB) {
@@ -95,17 +103,17 @@ export function pointInAABB(aabb: AABB, p: V3) {
 //   return points;
 // }
 
-const tempAabbCorners: V3[] = range(8).map((_) => V3.mk());
+const _tempAabbCorners: V3[] = range(8).map((_) => V3.mk());
 export function getAABBCornersTemp(aabb: AABB): V3[] {
-  V3.set(aabb.max[0], aabb.max[1], aabb.max[2], tempAabbCorners[0]);
-  V3.set(aabb.max[0], aabb.max[1], aabb.min[2], tempAabbCorners[1]);
-  V3.set(aabb.max[0], aabb.min[1], aabb.max[2], tempAabbCorners[2]);
-  V3.set(aabb.max[0], aabb.min[1], aabb.min[2], tempAabbCorners[3]);
-  V3.set(aabb.min[0], aabb.max[1], aabb.max[2], tempAabbCorners[4]);
-  V3.set(aabb.min[0], aabb.max[1], aabb.min[2], tempAabbCorners[5]);
-  V3.set(aabb.min[0], aabb.min[1], aabb.max[2], tempAabbCorners[6]);
-  V3.set(aabb.min[0], aabb.min[1], aabb.min[2], tempAabbCorners[7]);
-  return tempAabbCorners;
+  V3.set(aabb.max[0], aabb.max[1], aabb.max[2], _tempAabbCorners[0]);
+  V3.set(aabb.max[0], aabb.max[1], aabb.min[2], _tempAabbCorners[1]);
+  V3.set(aabb.max[0], aabb.min[1], aabb.max[2], _tempAabbCorners[2]);
+  V3.set(aabb.max[0], aabb.min[1], aabb.min[2], _tempAabbCorners[3]);
+  V3.set(aabb.min[0], aabb.max[1], aabb.max[2], _tempAabbCorners[4]);
+  V3.set(aabb.min[0], aabb.max[1], aabb.min[2], _tempAabbCorners[5]);
+  V3.set(aabb.min[0], aabb.min[1], aabb.max[2], _tempAabbCorners[6]);
+  V3.set(aabb.min[0], aabb.min[1], aabb.min[2], _tempAabbCorners[7]);
+  return _tempAabbCorners;
 }
 
 // const tempAabbXZCorners = range(4).map((_) => V2.create()) as [
@@ -123,7 +131,7 @@ export function getAABBCornersTemp(aabb: AABB): V3[] {
 // }
 
 export function transformAABB(out: AABB, t: mat4) {
-  // TODO(@darzu): is there a more performant way to do this?
+  // TODO(@darzu): PERF. is there a more performant way to do this?
   const wCorners = getAABBCornersTemp(out);
   wCorners.forEach((p) => V3.tMat4(p, t, p));
   getAABBFromPositions(out, wCorners);
@@ -202,9 +210,9 @@ export function aabbCenter2(out: V2, a: AABB2): V2 {
   return out;
 }
 
-// TODO(@darzu): add out param
-export function getCenterFromAABB(aabb: AABB): V3 {
-  return vec3Mid(V3.mk(), aabb.min, aabb.max);
+// TODO(@darzu): MOVE to gl-matrix
+export function getCenterFromAABB(aabb: AABB, out?: V3): V3 {
+  return V3.mid(aabb.min, aabb.max, out);
 }
 export function getSizeFromAABB(aabb: AABB, out?: V3): V3 {
   out = out ?? V3.tmp();

@@ -93,6 +93,50 @@ export const mkCubeMesh: () => Mesh = () => ({
   usesProvoking: true,
 });
 
+export const mkLine: () => Mesh = () => ({
+  dbgName: "line",
+  pos: [V(-1.0, -1.0, -1.0), V(+1.0, +1.0, +1.0)],
+  tri: [],
+  quad: [],
+  lines: [V(0, 1)],
+  colors: [],
+  surfaceIds: [],
+  usesProvoking: true,
+});
+
+export const mkTriangle: () => Mesh = () => ({
+  dbgName: "triangle",
+  pos: [V(0, 0, 0), V(1, 0, 0), V(0, 1, 0)],
+  tri: [V(0, 1, 2), V(2, 1, 0)],
+  quad: [],
+  lines: [],
+  colors: [V(0, 0, 0), V(0, 0, 0)],
+  surfaceIds: [1, 2],
+  usesProvoking: true,
+});
+
+export const mkPointCloud: (len: number) => Mesh = (len) => ({
+  dbgName: "points",
+  pos: range(len).map((_) => V3.mk()),
+  tri: [],
+  quad: [],
+  lines: [],
+  colors: [],
+  surfaceIds: [],
+  usesProvoking: true,
+});
+
+export const mkLineChain: (vNum: number) => Mesh = (len) => ({
+  dbgName: "lines",
+  pos: range(len).map((_) => V3.mk()),
+  tri: [],
+  quad: [],
+  lines: range(len - 1).map((_, i) => V(i, i + 1)),
+  colors: [],
+  surfaceIds: [],
+  usesProvoking: true,
+});
+
 // points from y=0 to y=1; for debug visualization
 // TODO(@darzu): enhance this with an arrow head?
 export const mkArrowMesh: () => Mesh = () => {

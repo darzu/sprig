@@ -309,6 +309,7 @@ Measuring cache misses?
   https://developers.redhat.com/blog/2014/03/10/determining-whether-an-application-has-poor-cache-performance-2
     Performance Monitoring Units "PMU" hardware
     https://en.wikipedia.org/wiki/Hardware_performance_counter
+  https://stackoverflow.com/questions/48566825/cache-misses-on-macos
 
 Apple GPU perf counters:
   https://developer.apple.com/documentation/metal/performance_tuning/optimizing_performance_with_gpu_counters
@@ -512,7 +513,9 @@ JS record and tuple proposals:
   https://tc39.es/proposal-record-tuple/
   hmm so vecs might eventually be fixed
 
+=======================
 PERFORMANCE STRATEGIES:
+=======================
   If we're running into CPU side problems, try these:
   - write sprig matrix benchmark, evaluate different tweaks
   - custom wasm fns (probably for physics)
@@ -529,6 +532,9 @@ PERFORMANCE STRATEGIES:
   - Move to component column storage
   - Optimize query caching system
   - Trace chrome using about:tracing
+  - Change tracking for components; have a version flag;
+    - Make systems declare if they're going to mutate a component in the query
+    - Only calculate world transform/rot/pos for objects where that's requested
 
 Running PIX w/ WebGPU:
   https://toji.dev/webgpu-profiling/pix.html
@@ -542,3 +548,12 @@ Other good profilers:
 
 Data oriented design:
   https://www.dataorienteddesign.com/dodbook/dodmain.html
+
+JS/WASM SIMD:
+  https://developer.mozilla.org/en-US/docs/Glossary/SIMD
+  https://chromestatus.com/feature/6533147810332672
+  https://github.com/WebAssembly/simd/blob/master/proposals/simd/SIMD.md
+  https://github.com/WebAssembly/simd/tree/master/proposals/simd
+  https://v8.dev/features/simd
+  https://github.com/WebAssembly/relaxed-simd
+  https://github.com/WebAssembly/flexible-vectors

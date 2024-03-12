@@ -80,7 +80,8 @@ export function createRenderer(
         type: "timestamp",
         count: MAX_PIPELINES + 1, // start of execution + after each pipeline
       })
-    : null;
+    : undefined;
+  // timestampQuerySet = undefined;
   if (VERBOSE_LOG) console.log(`timestamp-query: ${!!timestampQuerySet}`);
 
   const resources = createCyResources(CY, shaders, device);

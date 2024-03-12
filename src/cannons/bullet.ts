@@ -31,12 +31,15 @@ import { WorldFrameDef } from "../physics/nonintersection.js";
 import { DeadDef } from "../ecs/delete.js";
 import { AudioDef } from "../audio/audio.js";
 import { randNormalVec3 } from "../utils/utils-3d.js";
-import { assert, assertDbg } from "../utils/util.js";
+import { assert, assertDbg, range } from "../utils/util.js";
 import { ParametricDef } from "../motion/parametric-motion.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { SplinterParticleDef } from "../wood/wood-splinters.js";
+import { SketchTrailDef, SketcherDef, sketchLines } from "../utils/sketch.js";
 
 // TODO(@darzu): MULTIPLAYER BULLETS might have been broken during LD51
+
+const DBG_BULLET_TRAILS = true;
 
 const _maxBullets = 100;
 
@@ -146,6 +149,9 @@ export function createOrResetBullet(
     accel: [0, 0, -props.gravity],
     time: res.time.time,
   });
+
+  if (DBG_BULLET_TRAILS) EM.set(e, SketchTrailDef);
+
   return e;
 }
 
@@ -181,10 +187,12 @@ export function registerBulletUpdate() {
   );
 }
 
+// TODO(@darzu): Use entity pools!!
 type BulletEnt = EntityW<[typeof BulletConstructDef]>;
 const _bulletPool: BulletEnt[] = [];
 let _nextBulletIdx = 0;
 
+// TODO(@darzu): GRAVITY should NOT have sign included
 // TODO(@darzu): fireBullet has become quite bloated and has wierd parameters like bulletAxis
 export async function fireBullet(
   team: number,
@@ -196,6 +204,7 @@ export async function fireBullet(
   health: number,
   bulletAxis: V3.InputT
 ) {
+  assert(gravity >= 0, `Gravity (probably) needs to be >= 0`);
   {
     const music = EM.getResource(AudioDef);
     if (music) {

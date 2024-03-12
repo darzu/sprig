@@ -13,3 +13,16 @@ Guide:
   <analyze callers, and dependencies on resources and systems; analyze if those
     dependencies are met and if those systems are being run>
   <analyze conditional statements>
+
+Frusterations dealing w/ vscode debugging:
+  sometimes the chrome window will load a cached version of the code
+    recompiling, deleting public/ etc wont work
+    u have to refresh the browser until it picks up the new version
+    super frusterating.
+
+To do a clean rebuild:
+  delete public/
+  make sure you "cd .." out of the public/ folder for ur serve cmd line
+  git checkout -- public/ 
+  ln -s ~/assets-public/ ~/sprig/public/assets
+

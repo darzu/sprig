@@ -1,5 +1,5 @@
 import { ComponentDef, Entity, EntityW } from "./entity-manager.js";
-import { createIdxPool } from "../utils/idx-pool.js";
+import { IdxPool, createIdxPool } from "../utils/idx-pool.js";
 import { assert } from "../utils/util.js";
 import { never } from "../utils/util-no-import.js";
 
@@ -7,6 +7,9 @@ import { never } from "../utils/util-no-import.js";
 // TODO(@darzu): perhaps this should be refined and co-implemented w/ archtypes?
 //    in a long running game, any regularly created entities should be using pools or archtypes.
 
+// TODO(@darzu): would be nice to have a generation idx on entities
+
+// TODO(@darzu): spawn parameters would be nice
 export interface EntityPoolParams<CS extends readonly ComponentDef[]> {
   max: number;
   maxBehavior: "crash" | "rand-despawn"; // | "ring-buffer",

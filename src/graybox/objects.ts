@@ -192,7 +192,8 @@ export type ObjEnt<D extends ObjOpt | _ObjDef = ObjOpt | _ObjDef> =
     ? EntityW<[ObjComponentDef<ObjPickOpt<D>>, ...CS]>
     : never;
 
-type ObjChildEnt<CO extends ObjChildOpt = ObjChildOpt> = CO extends
+// TODO(@darzu): RENAME, this is the real thing we want?
+export type ObjChildEnt<CO extends ObjChildOpt = ObjChildOpt> = CO extends
   | ObjOpt
   | _ObjDef
   ? ObjEnt<CO>
@@ -376,6 +377,7 @@ export function createObj<D extends ObjChildDef, A extends ObjChildArg<D>>(
     return e;
   }
 }
+// TODO(@darzu): move onto EM.set ? EM.set takes an array of component defs or ObjDef
 export function mixinObj<D extends ObjChildDef, A extends ObjChildArg<D>>(
   e: Entity,
   def: D,

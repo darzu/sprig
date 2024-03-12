@@ -1,5 +1,6 @@
 import { V, mat3, orthonormalize, quat, V3 } from "../matrix/sprig-matrix.js";
 import { EaseFn } from "./util-ease.js";
+import { PI, PIn2 } from "./util-no-import.js";
 import { assert } from "./util.js";
 import { quatDbg, vec3Dbg } from "./utils-3d.js";
 
@@ -66,8 +67,12 @@ export function alignDown(x: number, size: number): number {
   return Math.floor(x / size) * size;
 }
 
-export function chance(zeroToOne: number): boolean {
+export function chance(zeroToOne: number = 0.5): boolean {
   return Math.random() < zeroToOne;
+}
+
+export function randBool(): boolean {
+  return chance(0.5);
 }
 
 // maps a number from [inMin, inMax] to [outMin, outMax]
@@ -194,7 +199,9 @@ export function testMath() {
   }
 
   // understand atan2
-  if (false) {
+  // output is -PI to PI
+  // positive when +Y, negative when -Y
+  if (true) {
     const dir = V(1, 0, 0);
     const steps = 10;
     const stepRad = (Math.PI * 2) / steps;
@@ -205,3 +212,54 @@ export function testMath() {
     }
   }
 }
+
+export function normAngle(a: number): number {
+  return ((a % PIn2) + PIn2) % PIn2;
+}
+export function angularDiff(a: number, b: number, large = false): number {
+  a = normAngle(a);
+  b = normAngle(b);
+  const d = normAngle(a - b);
+  const isLarge = d > PI;
+  if (isLarge !== large) return d - PIn2;
+  return d;
+}
+
+export function testAngularDiff() {
+  console.log("normAngle");
+  console.log("normAngle(0.1) = " + normAngle(0.1));
+  console.log("normAngle(-0.1) = " + normAngle(-0.1));
+  console.log("normAngle(0.1- -0.1) = " + normAngle(0.1 + 0.1));
+  console.log("normAngle(-0.1 - 0.1) = " + normAngle(-0.1 - 0.1));
+
+  const ab = [
+    { a: 0.2, b: 0.2, large: false, t: 0.0 },
+    { a: 0.2, b: -0.3, large: false, t: 0.5 },
+    { a: 0.2, b: PIn2 - 0.3, large: false, t: 0.5 },
+    { a: -0.2, b: 0.3, large: false, t: -0.5 },
+    { a: PIn2 - 0.2, b: 0.3, large: false, t: -0.5 },
+
+    { a: 0.1, b: 0.11, large: true, t: PIn2 - 0.01 },
+    { a: 0.1, b: 0.09, large: true, t: 0.01 - PIn2 },
+
+    { a: 0.1, b: -0.1, large: true, t: 0.2 - PIn2 },
+    { a: 0.1, b: PIn2 - 0.1, large: true, t: 0.2 - PIn2 },
+    { a: -0.1, b: 0.1, large: true, t: -0.2 + PIn2 },
+    { a: PIn2 - 0.1, b: 0.1, large: true, t: -0.2 + PIn2 },
+  ];
+
+  console.log("testAngularDiff");
+  let pass = true;
+  for (let { a, b, large, t } of ab) {
+    const r = angularDiff(a, b, large);
+    const eq = Math.abs(r - t) < 0.01;
+    pass &&= eq;
+    console.log(
+      `angularDiff(${a}, ${b}, ${large}) -> ${r} ${
+        eq ? "~=" : "!="
+      } ${t}; b+r=${b + r} vs ${a}`
+    );
+  }
+  console.log(pass ? "PASS" : "FAIL!");
+}
+// testAngularDiff();

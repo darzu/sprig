@@ -2,6 +2,14 @@
 // TODO(@darzu): It's annoying to have to work around dependency issues with things like this.
 
 export const PI = Math.PI; // TODO(@darzu): replace all usage with PI
+export const PIn2 = Math.PI * 2; // PI numerator 2
+export const PId2 = Math.PI / 2; // PI denominator 2
+export const PId3 = Math.PI / 3; // 60 degrees
+export const PId4 = Math.PI / 4; // 45 degrees
+export const PId6 = Math.PI / 6; // 30 degrees
+export const PId8 = Math.PI / 8; // 22.5 degrees
+export const PId12 = Math.PI / 12; // 15 degrees
+export const PId36 = Math.PI / 36; // 5 degrees
 
 export function getCallStack(): string[] {
   return new Error()
@@ -35,4 +43,10 @@ export function never(x: never, msg?: string): never {
 // TODO(@darzu): put on prototype?
 export function flatten<A>(doubleArr: A[][]): A[] {
   return doubleArr.reduce((p, n) => [...p, ...n], []);
+}
+
+export function assert(cond: any, msg?: string): asserts cond {
+  // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-7.html#assertion-functions
+  if (!cond)
+    throw new Error(msg ?? "Assertion failed (consider adding a helpful msg).");
 }

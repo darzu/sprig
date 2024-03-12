@@ -23,6 +23,11 @@ import { Phase } from "../ecs/sys-phase.js";
 // });
 // type TransformLocal = mat4;
 
+// TODO(@darzu): ROTATION REFACTOR:
+//  representation could be: quat, yaw/pitch/roll, yaw/pitch, fwd/right/up, 3x3,
+//  have conversions between all of these
+//  have a generic union type, have runtime checks for each
+
 // FRAME
 export interface Frame {
   transform: mat4;

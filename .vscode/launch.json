@@ -10,10 +10,10 @@
       "name": "Launch Chrome against localhost",
       "url": "http://localhost:4321",
       /*TODO: this is broken and it's impossible to dbg why. feeling angry at vscode.*/
-      "webRoot": "${workspaceFolder}/src",
-      "sourceMapPathOverrides": {
-        "../../src": "${workspaceFolder}/src"
-      }
+      "webRoot": "${workspaceFolder}/src"
+      // "sourceMapPathOverrides": {
+      //   "../../src": "${workspaceFolder}/src"
+      // }
     }
   ]
 }
