@@ -220,3 +220,14 @@ Other languages to research:
   https://odin-lang.org
     "Odin is a general-purpose programming language with distinct typing built for high performance, modern systems and data-oriented programming."
     https://odin-lang.org/docs/faq/#what-does-odin-offer-over-other-languages
+
+DSL for authorization "Cedar":
+  https://arxiv.org/pdf/2403.04651.pdf
+
+Blockers or big scenarios I need to prototype before making a language:
+  state:
+    Multiple levels, loading / unloading a game, restoring a game from save
+  playback:
+    replay state changes w/ rewind & forward like watching a game replay
+  multiplayer editor:
+    multiple users editting ECS state & code

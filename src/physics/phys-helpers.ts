@@ -9,6 +9,7 @@ import { Phase } from "../ecs/sys-phase.js";
 import { PhysicsResultsDef } from "./nonintersection.js";
 
 // TODO(@darzu): make this friendly with multiplayer event system?
+// TODO(@darzu): support narrowphase check? e.g. SphereBV vs OBB
 export function onCollides<
   AS extends ComponentDef[],
   BS extends ComponentDef[],

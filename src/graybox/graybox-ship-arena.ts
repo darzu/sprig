@@ -5,6 +5,7 @@ import { ENDESGA16, seqEndesga16 } from "../color/palettes.js";
 import { DevConsoleDef } from "../debug/console.js";
 import { DeletedDef } from "../ecs/delete.js";
 import { EM, EntityW, Resources } from "../ecs/entity-manager.js";
+import { createEntityPool } from "../ecs/entity-pool.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { createHexGrid, hexXYZ, hexesWithin } from "../hex/hex.js";
 import { InputsDef } from "../input/inputs.js";
@@ -543,8 +544,13 @@ export async function initGrayboxShipArena() {
 
   onCollides([CannonBallDef], [EnemyDef, ShipDef], [], (ball, ship) => {
     if (ball.cannonBall.team !== PLAYER_TEAM) return;
-    ship.ship.healthBar.statBar.value -= 10;
     EM.set(ball, DeletedDef);
+
+    ship.ship.healthBar.statBar.value -= 10;
+    if (ship.ship.healthBar.statBar.value <= 0) {
+      // TODO(@darzu): FIX! doesn't delete children properly and we want to use a pool anyway!
+      EM.set(ship, DeletedDef);
+    }
   });
 
   onCollides([CannonBallDef], [PlayerShipDef, ShipDef], [], (ball, ship) => {
