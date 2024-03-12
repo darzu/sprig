@@ -149,6 +149,7 @@ export function drawBall(
   return e;
 }
 
+// TODO(@darzu): MOVE TO SKETCHER
 // TODO(@darzu): Use pool!
 type DrawPlaneOpt = {
   norm: V3.InputT;
@@ -276,6 +277,7 @@ export function addWorldGizmo(origin = V(0, 0, 0), scale = 5) {
   return worldGizmo;
 }
 
+// TODO(@darzu): MOVE TO SKETCHER
 export function drawGizmosForMat4(m: mat4, scale: number) {
   // const g1 = createGizmoMesh();
   // scaleMesh(g1, scale);

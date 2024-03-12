@@ -335,7 +335,7 @@ async function setLevelLocal(levelIdx: number) {
 }
 
 export async function initLD53(hosting: boolean) {
-  obbTests();
+  // obbTests();
 
   const res = await EM.whenResources(
     LD53MeshesDef,

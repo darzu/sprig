@@ -62,47 +62,6 @@ function projectOntoPlane(v: V3.InputT, p: Plane, out?: V3): V3 {
   throw "TODO";
 }
 
-// TODO(@darzu): MOVE into aabb.ts
-export function getAABB2PerimeterAsParametric(
-  aabb: AABB2
-): (t: number, out?: V2) => V2 {
-  // go clockwise starting from min
-  const width = aabb.max[0] - aabb.min[0];
-  const height = aabb.max[1] - aabb.min[1];
-  const perimeter = width * 2 + height * 2;
-  const horzSegT = width / perimeter;
-  const vertSegT = height / perimeter;
-  const tTL = vertSegT;
-  const tTR = vertSegT + horzSegT;
-  const tBR = vertSegT * 2 + horzSegT;
-  return (t, out) => {
-    out = out ?? V2.tmp();
-    t = Math.abs(t % 1.0); // TODO(@darzu): bug, this doesn't wrap negative smoothly
-    if (t < tTL) {
-      // vert left +y
-      const t2 = t / vertSegT;
-      out[0] = aabb.min[0];
-      out[1] = aabb.min[1] + height * t2;
-    } else if (t < tTR) {
-      // horiz top +x
-      const t2 = (t - tTL) / horzSegT;
-      out[0] = aabb.min[0] + width * t2;
-      out[1] = aabb.max[1];
-    } else if (t < tBR) {
-      // vert right -y
-      const t2 = (t - tTR) / vertSegT;
-      out[0] = aabb.max[0];
-      out[1] = aabb.max[1] - height * t2;
-    } else {
-      // horiz bottom -x
-      const t2 = (t - tBR) / horzSegT;
-      out[0] = aabb.max[0] - width * t2;
-      out[1] = aabb.min[1];
-    }
-    return out;
-  };
-}
-
 // TODO(@darzu): ridiculous? maybe.
 export function getAABB2CircleSweptPerimeterAsSvg(
   aabb: AABB2,

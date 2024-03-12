@@ -74,14 +74,14 @@ export function createRenderer(
   context: GPUCanvasContext,
   shaders: ShaderSet
 ) {
-  let timestampQuerySet = device.features.has("timestamp-query")
+  const timestampQuerySet = device.features.has("timestamp-query")
     ? device.createQuerySet({
         label: `sprigTimestampQuerySet`,
         type: "timestamp",
         count: MAX_PIPELINES + 1, // start of execution + after each pipeline
       })
     : undefined;
-  timestampQuerySet = undefined;
+  // timestampQuerySet = undefined;
   if (VERBOSE_LOG) console.log(`timestamp-query: ${!!timestampQuerySet}`);
 
   const resources = createCyResources(CY, shaders, device);
