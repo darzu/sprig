@@ -2282,3 +2282,6 @@ Work graphs:
   
 vulkan grass w/ instancing and indirect draw:
   https://www.thegeeko.me/blog/foliage-rendering
+
+To do pixel art:
+  start at 360p. 2x is 720, 3x is 1080, 4x is 1440 and 6x is 2160

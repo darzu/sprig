@@ -1571,3 +1571,21 @@ Chrome workspaces, lets u save changes made in dev tools?:
 
 Zoom and pan sample script (for godot):
   https://gist.github.com/thygrrr/8288cabeb5cd25031ce6132c4a886311
+
+Figma's database approach:
+  https://www.figma.com/blog/how-figmas-databases-team-lived-to-tell-the-scale/
+    "However, because we were tailoring horizontal sharding to Figma’s specific architecture, 
+    we could get away with providing a much smaller feature set."
+      specialization is always such a win. use ur domain knowledge!
+    challenges of horizontal sharding:
+      - some SQL queries become inefficient
+      - some SQL queries become impossible
+      - app code must know how to route queries to correct shards
+      - schema changes must be coordinated across shards
+      - forgein keys and globally unique no longer enforced by postgres
+      - no transactional guarantees by postgres; transactions span multiple shards
+    "roughly nine months to shard our first table"
+  https://www.figma.com/blog/how-figma-scaled-to-multiple-databases/#the-logical-choice
+
+Debugging:
+  Was on TS 5.1
