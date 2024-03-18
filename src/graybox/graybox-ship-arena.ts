@@ -79,7 +79,15 @@ import {
   sketchYawPitch,
 } from "../utils/sketch.js";
 import { Path } from "../utils/spline.js";
-import { PI, PId12, PId2, PId3, PId8 } from "../utils/util-no-import.js";
+import {
+  PI,
+  PId12,
+  PId2,
+  PId3,
+  PId4,
+  PId6,
+  PId8,
+} from "../utils/util-no-import.js";
 import { FALSE, TRUE, assert, range } from "../utils/util.js";
 import { angleBetween, randVec3OfLen } from "../utils/utils-3d.js";
 import { addGizmoChild } from "../utils/utils-game.js";
@@ -97,22 +105,25 @@ import {
   mixinObj,
 } from "./objects.js";
 
-// TODO(@darzu): MERGE: split into ship-arena and shading demo
-
 /*
-Prioritized ToDo:
-[x] aim cannon
-[x] enemy exists
-[ ] player and enemy health
-[x] enemy moves
-[ ] enemy fires
-[ ] smart enemy ai    
+ToDo:
+[ ] 1-5 ability bar
+[ ] Wind boost for speed
+  [ ] wind particle system?
+[ ] tracer shot ability
+[ ] tweak ball speed & gravity
+[ ] increase ship hull target size
+[ ] ball particle trail
+[ ] ball splash particles
+[ ] ball hit particles
+[ ] wave skimming torpedoes
+[ ] adjust numbers in-editor
 */
 
 const DBG_GHOST = false;
 const DBG_GIZMO = true;
 const DBG_DOTS = false;
-const DBG_ENEMY = true;
+const DBG_ENEMY_MOV = true;
 const DBG_CANNONS = true;
 
 const DBG_TRAILS = true;
@@ -121,7 +132,14 @@ const SAIL_FURL_RATE = 0.02;
 
 const CANNON_MAX_YAW = PI * 0.2;
 
-const GRAVITY = 8 * 0.00001;
+// FUN: bigger numbers (20, .4) battle is farther apart and AI is OP; nearer (8, .2) much more intimate and player is more powerful
+const GRAVITY = 20 * 0.00001; // TODO(@darzu): UNITS. Would love M/S or similar
+const cannonBallSpeed = 0.4;
+
+const enemyAttackRadius = 500;
+
+const minPitch = -PId8;
+const maxPitch = +PId6; // FUN: higher max pitch up to PI/4 allows farther fighting but bullets flying out of camera view isn't as fun and is hard for player to aim
 
 let _obb_systems = _OBB_SYSTEMS; // TODO(@darzu): HACK. force import. yuck.
 
@@ -241,7 +259,8 @@ EM.addSystem(
   (es) => {
     for (let e of es) {
       if (e.position[2] < 0) {
-        EM.set(e, DeletedDef);
+        EM.set(e, ColorDef, ENDESGA16.blue);
+        EM.set(e, DeadDef);
       }
     }
   }
@@ -516,7 +535,7 @@ export async function initGrayboxShipArena() {
         for (let c of cannons) {
           c.yawpitch.yaw += res.inputs.mouseMov[0] * 0.005;
           c.yawpitch.pitch -= res.inputs.mouseMov[1] * 0.005;
-          c.yawpitch.pitch = clamp(c.yawpitch.pitch, 0, PI * 0.5);
+          c.yawpitch.pitch = clamp(c.yawpitch.pitch, minPitch, maxPitch);
           c.yawpitch.yaw =
             clamp(
               c.yawpitch.yaw - c.cannon2.baseYaw,
@@ -530,7 +549,6 @@ export async function initGrayboxShipArena() {
       }
 
       // aim paths (and fire)
-      const ballSpeed = 0.2;
       if (aiming) {
         // should fire?
         const doFire =
@@ -547,7 +565,7 @@ export async function initGrayboxShipArena() {
         for (let c of cannons) {
           if (!WorldFrameDef.isOn(c)) continue;
           // get fire solution
-          cannonFireCurve(c.world, ballSpeed, _launchParam);
+          cannonFireCurve(c.world, cannonBallSpeed, _launchParam);
 
           // display path
           // TODO(@darzu): SKETCH. create sketchPath or equiv
@@ -785,8 +803,6 @@ function createEnemy(pos: V3.InputT) {
 }
 
 async function initEnemies() {
-  const attackRadius = 100;
-
   const player = await EM.whenSingleEntity(
     PlayerShipDef,
     PositionDef,
@@ -796,7 +812,7 @@ async function initEnemies() {
 
   const { dots } = await EM.whenResources(DotsDef);
 
-  const trgDots = DBG_ENEMY ? dots.allocDots(10) : undefined;
+  const trgDots = DBG_ENEMY_MOV ? dots.allocDots(10) : undefined;
 
   const steerFreq = 20;
   EM.addSystem(
@@ -811,7 +827,13 @@ async function initEnemies() {
       for (let e of es) {
         const trgL = V3.tmp();
         const trgR = V3.tmp();
-        getDirsToTan(e.position, player.position, attackRadius, trgL, trgR);
+        getDirsToTan(
+          e.position,
+          player.position,
+          enemyAttackRadius,
+          trgL,
+          trgR
+        );
 
         let toTrgL = V3.sub(trgL, e.position);
         toTrgL = V3.norm(toTrgL);
@@ -827,7 +849,7 @@ async function initEnemies() {
 
         V3.copy(e.enemy.sailTarget, turnLeft ? trgL : trgR);
 
-        if (DBG_ENEMY) {
+        if (DBG_ENEMY_MOV) {
           assert(trgDots);
           trgDots.set(0, e.enemy.sailTarget, ENDESGA16.red, 10);
           trgDots.set(1, turnLeft ? trgR : trgL, ENDESGA16.orange, 10);
@@ -931,20 +953,18 @@ async function initEnemies() {
           centerCannon.cannon2.baseYaw
         );
 
-        const projectileSpeed = 0.2;
-
         const sln = getFireSolution({
           sourcePos: centerCannon.world.position,
           sourceDefaultRot: defaultWorldRot,
 
           maxYaw: CANNON_MAX_YAW,
-          minPitch: -PId8,
-          maxPitch: +PId3,
-          maxRange: 400,
+          minPitch: minPitch,
+          maxPitch: maxPitch,
+          maxRange: Infinity,
 
           gravity: GRAVITY,
 
-          projectileSpeed,
+          projectileSpeed: cannonBallSpeed,
 
           targetOBB: player.obb,
           targetVel: vel,
@@ -967,7 +987,7 @@ async function initEnemies() {
           assert(WorldFrameDef.isOn(c));
           const firePara = cannonFireCurve(
             { position: c.world.position, rotation },
-            projectileSpeed,
+            cannonBallSpeed,
             _enemyLaunchParam
           );
 
