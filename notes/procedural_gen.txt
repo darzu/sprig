@@ -371,3 +371,10 @@ L-systems:
 Procedural 2d trees:
   https://twitter.com/Thalanor/status/896692863274287105
   https://twitter.com/Thalanor/status/902901617279864832
+
+Everything Procedural conference:
+  http://everythingprocedural.com
+  https://www.youtube.com/playlist?list=PLPdLkAMVHwZ7D50ZHlDtvjvzIaNy-ZW5e
+
+Houdini channel:
+  https://www.youtube.com/channel/UCvuT2bzBB0kzne16DBAtmLQ

@@ -166,6 +166,7 @@ const ShipDef = ShipObj.props;
 const PlayerShipObj = defineObj({
   name: "playerShip",
   components: [CameraFollowDef],
+  propsType: T<{ reloadMs: number; lastFireMs: number }>(),
 });
 const PlayerShipDef = PlayerShipObj.props;
 
@@ -231,6 +232,20 @@ function launchBall(params: Parametric, team: number) {
 
   return ball;
 }
+
+EM.addSystem(
+  "ballHitWater",
+  Phase.GAME_WORLD,
+  [CannonBallDef, PositionDef],
+  [],
+  (es) => {
+    for (let e of es) {
+      if (e.position[2] < 0) {
+        EM.set(e, DeletedDef);
+      }
+    }
+  }
+);
 
 interface DotPath {
   path: Path;
@@ -402,12 +417,17 @@ export async function initGrayboxShipArena() {
   setWindAngle(wind, PI * 0.4);
 
   // player ship
+  const playerStartPos: V3.InputT = [0, -500, 3];
   const playerShip = createShip({
     healthFullColor: ENDESGA16.darkGreen,
     healthMissingColor: ENDESGA16.deepGreen,
-    position: [-200, -200, 3],
+    position: playerStartPos,
   });
   mixinObj(playerShip, PlayerShipObj, {
+    props: {
+      reloadMs: 2000,
+      lastFireMs: 0,
+    },
     args: {
       cameraFollow: undefined,
     },
@@ -416,7 +436,7 @@ export async function initGrayboxShipArena() {
   playerShip.cameraFollow.pitchOffset = -PI * 0.2;
 
   // enemy
-  createEnemy();
+  createEnemy([-40, 500, 3]);
 
   // dbg ghost
   if (DBG_GHOST) {
@@ -441,7 +461,7 @@ export async function initGrayboxShipArena() {
     "controlShip",
     Phase.GAME_PLAYERS,
     [ShipDef, PlayerShipDef, HasRudderDef, HasMastDef, CameraFollowDef],
-    [InputsDef, CanvasDef, RendererDef],
+    [InputsDef, CanvasDef, RendererDef, TimeDef],
     (es, res) => {
       if (!res.htmlCanvas.hasMouseLock()) return;
       if (es.length === 0) return;
@@ -509,10 +529,19 @@ export async function initGrayboxShipArena() {
         quat.fromYawPitch(c.yawpitch, c.rotation);
       }
 
-      // firing?
+      // aim paths (and fire)
       const ballSpeed = 0.2;
       if (aiming) {
-        const doFire = res.inputs.keyClicks[" "];
+        // should fire?
+        const doFire =
+          res.inputs.keyClicks[" "] &&
+          ship.playerShip.lastFireMs + ship.playerShip.reloadMs <=
+            res.time.time;
+
+        if (doFire) {
+          // reload
+          ship.playerShip.lastFireMs = res.time.time;
+        }
 
         let idx = 0;
         for (let c of cannons) {
@@ -542,8 +571,10 @@ export async function initGrayboxShipArena() {
 
           idx++;
         }
-      } else {
-        // hide path?
+      }
+
+      // hide path?
+      if (!aiming) {
         _dotPaths.forEach((p) => p.hide());
       }
     }
@@ -665,7 +696,7 @@ function createShip(opts: {
     },
   });
   // TODO(@darzu): debugging
-  EM.set(ship, AlphaDef, 0.5);
+  // EM.set(ship, AlphaDef, 0.5);
   // EM.set(ship, GlitchDef);
 
   const mast = createMast();
@@ -684,6 +715,7 @@ function createShip(opts: {
     sock.position[2] =
       mast.position[2] + (mast.collider as AABBCollider).aabb.max[2];
     EM.set(sock, PhysicsParentDef, ship.id);
+    ship.children.push(sock);
   });
 
   const rudder = createRudder();
@@ -698,7 +730,10 @@ function createShip(opts: {
     },
   });
 
-  if (DBG_GIZMO) addGizmoChild(ship, 10);
+  if (DBG_GIZMO) {
+    const gizmo = addGizmoChild(ship, 10);
+    ship.children.push(gizmo);
+  }
 
   return ship;
 }
@@ -732,11 +767,11 @@ function getDirsToTan(
   V3.add(trg, scaledL, outL);
 }
 
-function createEnemy() {
+function createEnemy(pos: V3.InputT) {
   const ship = createShip({
     healthFullColor: ENDESGA16.red,
     healthMissingColor: ENDESGA16.darkRed,
-    position: [-40, -40, 3],
+    position: pos,
   });
   mixinObj(ship, EnemyObj, {
     props: {

@@ -252,3 +252,9 @@ Blockers or big scenarios I need to prototype before making a language:
 
 V8, "logical stack", handling callback garbage stack problem:
   https://v8.dev/blog/fast-async
+
+Components & Objects:
+  Find-all Creation
+  Find-all Read
+  Find-all Modify
+  CannonBallObj and CannonBallDef should be the same type-level constructs
