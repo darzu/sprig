@@ -231,3 +231,24 @@ Blockers or big scenarios I need to prototype before making a language:
     replay state changes w/ rewind & forward like watching a game replay
   multiplayer editor:
     multiple users editting ECS state & code
+
+@regehr: "their weakness in optimizing data and data structures has to be one of the most 
+  dissatisfying things about modern compilers":
+  https://mastodon.gamedev.place/@regehr@mastodon.social/112095182685690344
+  an opportunity for our lang
+
+"Layered" computation?
+  runtime code at layer 0
+  types at layer 1
+  Maybe layers before that (2, 3, ...)
+  type operations are just code w/ if and loops instead of "foo extends blah ? {} : never" and "{[k in foo]: bar}"
+  run the layers in order,
+  step-through debuggable,
+  like a more powerful zig comptime ?
+  each layer is optimizable, it's "just" code
+  each layer can output code or types to level -1
+    code at layer x is a term in layer x+1
+  is this just lisp?
+
+V8, "logical stack", handling callback garbage stack problem:
+  https://v8.dev/blog/fast-async

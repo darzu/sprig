@@ -50,3 +50,6 @@ Possible early uses for WASM:
     we can use JS to manipule
     or we can head into WASM land and manipulate
     or we can call WASM fns from JS to manipulate
+
+"A fast and secure runtime for WebAssembly":
+  https://wasmtime.dev

@@ -271,3 +271,9 @@ Little planets:
 Downpour phone game maker:
   https://downpour.games
   https://news.ycombinator.com/item?id=39626657
+
+Blender geometry nodes "energy core" example:
+  https://twitter.com/cmzw_/status/1768638280529068035
+
+"Great Ideas in Theoretical Computer Science":
+  https://www.cs251.com

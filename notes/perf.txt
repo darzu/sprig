@@ -557,3 +557,6 @@ JS/WASM SIMD:
   https://v8.dev/features/simd
   https://github.com/WebAssembly/relaxed-simd
   https://github.com/WebAssembly/flexible-vectors
+
+building a flame graph, walking a stack, frame pointers:
+  https://www.brendangregg.com/blog/2024-03-17/the-return-of-the-frame-pointers.html

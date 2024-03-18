@@ -3,8 +3,8 @@ import { CameraDef, CameraFollowDef } from "../camera/camera.js";
 import { AlphaDef, ColorDef, TintsDef } from "../color/color-ecs.js";
 import { ENDESGA16, seqEndesga16 } from "../color/palettes.js";
 import { DevConsoleDef } from "../debug/console.js";
-import { DeletedDef } from "../ecs/delete.js";
-import { EM, EntityW, Resources } from "../ecs/entity-manager.js";
+import { DeadDef, DeletedDef } from "../ecs/delete.js";
+import { EM, Entity, EntityW, Resources } from "../ecs/entity-manager.js";
 import { createEntityPool } from "../ecs/entity-pool.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { createHexGrid, hexXYZ, hexesWithin } from "../hex/hex.js";
@@ -88,7 +88,14 @@ import { WindDef, setWindAngle } from "../wind/wind.js";
 import { createSock } from "../wind/windsock.js";
 import { DotsAlloc, DotsDef } from "./dots.js";
 import { createSun, initGhost } from "./graybox-helpers.js";
-import { ObjEnt, T, createObj, defineObj, mixinObj } from "./objects.js";
+import {
+  ChildrenDef,
+  ObjEnt,
+  T,
+  createObj,
+  defineObj,
+  mixinObj,
+} from "./objects.js";
 
 // TODO(@darzu): MERGE: split into ship-arena and shading demo
 
@@ -549,7 +556,8 @@ export async function initGrayboxShipArena() {
     ship.ship.healthBar.statBar.value -= 10;
     if (ship.ship.healthBar.statBar.value <= 0) {
       // TODO(@darzu): FIX! doesn't delete children properly and we want to use a pool anyway!
-      EM.set(ship, DeletedDef);
+      // EM.set(ship, DeletedDef);
+      doDeadObjAndChildren(ship);
     }
   });
 
@@ -560,6 +568,15 @@ export async function initGrayboxShipArena() {
   });
 
   initEnemies();
+}
+
+// TODO(@darzu): HACK. This doesn't get rid of the wind sock
+function doDeadObjAndChildren(e: Entity) {
+  if (ChildrenDef.isOn(e)) {
+    e.children.forEach(doDeadObjAndChildren);
+  }
+  EM.set(e, DeadDef);
+  e.dead.processed = true; // TODO(@darzu): HACK. how to manage this?
 }
 
 function createShip(opts: {

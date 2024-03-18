@@ -108,6 +108,12 @@ Merging objects?
   Like constructNetTurret, mixin onto entity
 */
 
+// TODO(@darzu): ABSTRACTION. Rethink how we do this.
+// TODO(@darzu): LANG. Having this component be generic so all children could be well typed would be very useful.
+export const ChildrenDef = EM.defineComponent("children", () => {
+  return [] as Entity[];
+});
+
 type ObjChildDef = _ObjDef | readonly ComponentDef[];
 type ObjChildOpt = ObjOpt | ObjChildDef;
 
@@ -117,8 +123,8 @@ type CType = undefined | Record<string, ObjChildOpt>;
 //   and children objects
 export interface ObjOpt<
   N extends string = string,
-  CS extends readonly ComponentDef[] = any[],
-  C extends CType = {},
+  CS extends readonly ComponentDef[] = readonly any[],
+  C extends CType = {} | undefined,
   P extends object = any
   // CArgs extends any[] = any,
   // UArgs extends any[] = any
@@ -170,12 +176,17 @@ type ObjPickOpt<D extends _ObjDef | ObjOpt> = D extends _ObjDef ? D["opts"] : D;
 export type ObjOwnProps<D extends _ObjDef | ObjOpt> =
   ObjPickOpt<D> extends ObjOpt<any, any, any, infer P> ? P : never;
 
+type ObjNamedChildren<C extends CType = Record<string, ObjChildOpt>> =
+  C extends Record<string, ObjChildOpt>
+    ? { [n in keyof C]: ObjChildEnt<C[n]> }
+    : undefined;
+
 // the component def the tracks the children and custom data of the object
 type ObjComponentP<C extends CType, P extends Object> = C extends Record<
   string,
   ObjChildOpt
 >
-  ? { [n in keyof C]: ObjChildEnt<C[n]> } & P
+  ? ObjNamedChildren<C> & P
   : P;
 type ObjComponentDef<D extends ObjOpt> = D extends ObjOpt<
   infer N,
@@ -183,13 +194,25 @@ type ObjComponentDef<D extends ObjOpt> = D extends ObjOpt<
   infer C,
   infer P
 >
-  ? ComponentDef<N, ObjComponentP<C, P>, [ObjArgs<D>], []>
+  ? ComponentDef<
+      N,
+      ObjComponentP<C, P>,
+      [ObjArgs<D>, ObjNamedChildren<C>],
+      [],
+      true
+    >
   : never;
+
+type ObjListChildrenComp<C extends CType> = C extends Record<any, any>
+  ? [typeof ChildrenDef]
+  : [];
 
 // the entity and all components of an object
 export type ObjEnt<D extends ObjOpt | _ObjDef = ObjOpt | _ObjDef> =
-  ObjPickOpt<D> extends ObjOpt<any, infer CS>
-    ? EntityW<[ObjComponentDef<ObjPickOpt<D>>, ...CS]>
+  ObjPickOpt<D> extends ObjOpt<any, infer CS, infer C>
+    ? EntityW<
+        [ObjComponentDef<ObjPickOpt<D>>, ...ObjListChildrenComp<C>, ...CS]
+      >
     : never;
 
 // TODO(@darzu): RENAME, this is the real thing we want?
@@ -308,26 +331,10 @@ export function defineObj<
     }
   }
 
-  const createChildrenObjsAndProps = function (
-    args: ObjArgs<O>
+  function createObjProps(
+    args: ObjArgs<O>,
+    childEnts: ObjNamedChildren<C>
   ): ObjComponentP<C, P> {
-    // create children objects
-    const childEnts: Record<string, ObjChildEnt> = {};
-    if (args.children) {
-      for (let cName of Object.keys(args.children)) {
-        const cArgs: ObjChildArg = args.children[cName];
-        if (isObjChildEnt(cArgs)) {
-          // already an entity
-          childEnts[cName] = cArgs;
-        } else {
-          // create the entity
-          const cDef: ObjChildDef = childDefs[cName];
-          const cEnt = createObj(cDef, cArgs);
-          childEnts[cName] = cEnt;
-        }
-      }
-    }
-
     const p: P | {} = args.props ?? {};
 
     // TODO(@darzu): we could probably strengthen these types to remove all casts
@@ -337,12 +344,13 @@ export function defineObj<
     } as ObjComponentP<C, P>;
 
     return res;
-  };
+  }
 
   // TODO(@darzu): Use updatable componets instead; see notes in entity-manager.ts
   const props: ObjComponentDef<O> = EM.defineNonupdatableComponent(
     opts.name,
-    createChildrenObjsAndProps
+    createObjProps,
+    { multiArg: true }
   );
 
   const _def: _ObjDef<O> = {
@@ -358,6 +366,30 @@ export function defineObj<
   };
 
   return def;
+}
+
+function createChildrenObjs<C extends CType, O extends ObjOpt<any, any, C>>(
+  def: _ObjDef<O>,
+  args: ObjArgs<O>
+): ObjNamedChildren<C> {
+  // create children objects
+  const childEnts: Record<string, ObjChildEnt> = {};
+  if (args.children) {
+    for (let cName of Object.keys(args.children)) {
+      const cArgs: ObjChildArg = args.children[cName];
+      if (isObjChildEnt(cArgs)) {
+        // already an entity
+        childEnts[cName] = cArgs;
+      } else {
+        // create the entity
+        const cDef: ObjChildDef = def.children[cName];
+        const cEnt = createObj(cDef, cArgs);
+        childEnts[cName] = cEnt;
+      }
+    }
+  }
+
+  return childEnts as ObjNamedChildren<C>;
 }
 
 function _setComp<C extends ComponentDef>(e: Entity, c: C, args: _CompArgs<C>) {
@@ -439,15 +471,24 @@ function _mixinObj<D extends _ObjDef, A extends ObjArgs<D["opts"]>>(
     }
   }
 
-  // add props (which creates children)
-  EM.set(e, def.props, args);
+  // create children
+  const children = createChildrenObjs(def, args) as ObjNamedChildren;
+
+  // add children list
+  EM.set(e, ChildrenDef);
+  for (let cName of Object.keys(children)) {
+    const cEnt = children[cName];
+    e.children.push(cEnt);
+  }
+
+  // add props w/ named & typed children
+  EM.set(e, def.props, args, children);
 
   // physics parent children
   const physicsParentChildren = def.opts.physicsParentChildren ?? false;
   if (physicsParentChildren && args.children) {
-    const childEnts: Record<string, Entity> = e[def.props.name];
     for (let cName of Object.keys(args.children)) {
-      const cEnt = childEnts[cName];
+      const cEnt = children[cName];
       EM.set(cEnt, PhysicsParentDef, e.id);
     }
   }
@@ -455,6 +496,18 @@ function _mixinObj<D extends _ObjDef, A extends ObjArgs<D["opts"]>>(
 
 export function T<N extends {}>(): (p: N) => void {
   return (p: N) => {};
+}
+
+// merge object definitions so it's easier to type
+function mixinObjDef() {
+  throw "TODO impl";
+}
+
+// TODO(@darzu): IMPL despawn w/ children
+function despawnObj() {
+  // either despawn in pool,
+  //  or dead the entity
+  throw "TODO impl";
 }
 
 export function testObjectTS() {
