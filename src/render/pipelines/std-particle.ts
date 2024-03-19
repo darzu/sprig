@@ -79,108 +79,36 @@ const particleQuadVert = CY.createArray("particleVert", {
 });
 
 // TODO(@darzu): RENAME all pipelines to "pipeRndrParticles" and "pipeCmpParticles"
-export const renderParticles = CY.createRenderPipeline("renderParticles", {
-  globals: [sceneBufPtr],
-  meshOpt: {
-    index: particleQuadInds,
-    instance: particleData,
-    vertex: particleQuadVert,
-    stepMode: "per-instance",
-  },
-  depthStencil: mainDepthTex,
-  shader: (shaders) => `
+export const pipeParticleRender = CY.createRenderPipeline(
+  "pipeParticleRender",
+  {
+    globals: [sceneBufPtr],
+    meshOpt: {
+      index: particleQuadInds,
+      instance: particleData,
+      vertex: particleQuadVert,
+      stepMode: "per-instance",
+    },
+    depthStencil: mainDepthTex,
+    shader: (shaders) => `
   ${shaders["std-particle-render"].code}
   `,
-  shaderFragmentEntry: "frag_main",
-  shaderVertexEntry: "vert_main",
-  output: [litTexturePtr],
-});
+    shaderFragmentEntry: "frag_main",
+    shaderVertexEntry: "vert_main",
+    output: [litTexturePtr],
+  }
+);
 
-// const particleComputeParams = createCyStruct(
-//   {
-//     deltaT: "f32",
-//     cohesionDistance: "f32",
-//     seperationDistance: "f32",
-//     alignDistance: "f32",
-//     cohesionScale: "f32",
-//     seperationScale: "f32",
-//     alignScale: "f32",
-//     worldSize: "f32",
-//     speed: "f32",
-//   },
-//   {
-//     // TODO(@darzu): wish we didn't need to specify this
-//     isUniform: true,
-//   }
-// );
-// const boidParams = CY.createSingleton("boidParams", {
-//   struct: particleComputeParams,
-//   init: () => {
-//     return {
-//       deltaT: 0.04,
-//       cohesionDistance: 1.0,
-//       seperationDistance: 0.25,
-//       alignDistance: 0.5,
-//       cohesionScale: 0.02,
-//       seperationScale: 0.2,
-//       alignScale: 0.1,
-//       worldSize: 10.0,
-//       speed: 0.3,
-//     };
-//   },
-// });
-
-// const boidCompDesc: Omit<
-//   Parameters<typeof CY.createComputePipeline>[1],
-//   "globals"
-// > = {
-//   shaderComputeEntry: "main",
-//   shader: (shaders) =>
-//     `var<private> numBoids: u32 = ${maxNumParticles};
-// ${shaders["xp-boid-update"].code}`,
-//   workgroupCounts: [Math.ceil(maxNumParticles / 64), 1, 1],
-// };
-
-// export const boidComp0 = CY.createComputePipeline("boidComp0", {
-//   ...boidCompDesc,
-//   globals: [
-//     boidParams,
-//     { ptr: particleData, access: "read", alias: "inBoids" },
-//     { ptr: boidData1, access: "write", alias: "outBoids" },
-//   ],
-// });
-// export const boidComp1 = CY.createComputePipeline("boidComp1", {
-//   ...boidCompDesc,
-//   globals: [
-//     boidParams,
-//     { ptr: boidData1, access: "read", alias: "inBoids" },
-//     { ptr: particleData, access: "write", alias: "outBoids" },
-//   ],
-// });
-
-// const boidWindow = createCyStruct(
-//   {
-//     xPos: "vec2<f32>",
-//     yPos: "vec2<f32>",
-//   },
-//   {
-//     isUniform: true,
-//   }
-// );
-// const boidWindowUni = CY.createSingleton("boidWindow", {
-//   struct: boidWindow,
-//   init: () => ({
-//     xPos: V2.clone([0, 1]),
-//     yPos: V2.clone([0, 1]),
-//   }),
-// });
-
-// export const { pipeline: boidCanvasMerge } = createRenderTextureToQuad(
-//   "boidCanvasMerge",
-//   boidDepthTex,
-//   litTexturePtr,
-//   0.1,
-//   0.9,
-//   0.1,
-//   0.9
-// );
+export const pipeParticleUpdate = CY.createComputePipeline(
+  "pipeParticleUpdate",
+  {
+    shaderComputeEntry: "main",
+    shader: (shaders) =>
+      `var<private> numParticles: u32 = ${maxNumParticles};
+${shaders["std-rand"].code}
+${shaders["std-particle-update"].code}
+`,
+    workgroupCounts: [Math.ceil(maxNumParticles / 64), 1, 1],
+    globals: [sceneBufPtr, { ptr: particleData, access: "write" }],
+  }
+);

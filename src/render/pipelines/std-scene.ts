@@ -217,6 +217,7 @@ export const SceneStruct = createCyStruct(
 
     // TODO(@darzu): timeDelta vs totalTime
     time: "f32", // in ms
+    // TODO(@darzu): add deltaTime
     canvasAspectRatio: "f32",
     maxSurfaceId: "u32",
     numPointLights: "u32",

@@ -23,7 +23,8 @@ import { stdMeshPipe } from "../render/pipelines/std-mesh.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
 import {
   pipeDbgInitParticles,
-  renderParticles,
+  pipeParticleUpdate,
+  pipeParticleRender,
 } from "../render/pipelines/std-particle.js";
 import { postProcess } from "../render/pipelines/std-post.js";
 import { shadowPipelines } from "../render/pipelines/std-shadow.js";
@@ -54,7 +55,10 @@ export async function initGrayboxStarter() {
       deferredPipeline,
       pointPipe,
       linePipe,
-      renderParticles,
+
+      pipeParticleUpdate,
+      pipeParticleRender,
+
       stdGridRender,
       postProcess,
     ];
