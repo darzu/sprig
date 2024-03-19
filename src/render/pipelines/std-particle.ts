@@ -11,7 +11,7 @@ import {
   unlitTexturePtr,
 } from "./std-scene.js";
 
-const maxNumParticles = 200_000;
+const maxNumParticles = 10_000;
 
 const ParticleStruct = createCyStruct({
   color: "vec4<f32>",
@@ -51,7 +51,7 @@ export const pipeDbgInitParticles = CY.createComputePipeline(
     
     particleDatas.ms[gId.x].vel = (color.xyz - 0.5) * 0.01;
     particleDatas.ms[gId.x].acl = (vec3(rand(), rand(), rand()) - 0.5) * 0.00001;
-    particleDatas.ms[gId.x].sizeVel = 0.0;
+    particleDatas.ms[gId.x].sizeVel = 0.001 * (rand() - 0.5);
     particleDatas.ms[gId.x].life = rand() * 10000 + 1000;
   }
   `,
