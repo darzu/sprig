@@ -258,3 +258,7 @@ Components & Objects:
   Find-all Read
   Find-all Modify
   CannonBallObj and CannonBallDef should be the same type-level constructs
+
+Code block asterisk:
+  Instead of directives like "prettier-ignore",
+  Have a little asterisk appear on top-left of block if there's some modifier

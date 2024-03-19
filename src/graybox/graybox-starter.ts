@@ -21,6 +21,10 @@ import {
 } from "../render/pipelines/std-line.js";
 import { stdMeshPipe } from "../render/pipelines/std-mesh.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
+import {
+  pipeDbgInitParticles,
+  renderParticles,
+} from "../render/pipelines/std-particle.js";
 import { postProcess } from "../render/pipelines/std-post.js";
 import { shadowPipelines } from "../render/pipelines/std-shadow.js";
 import { RendererDef, RenderableConstructDef } from "../render/renderer-ecs.js";
@@ -40,6 +44,8 @@ export async function initGrayboxStarter() {
   stdGridRender.fragOverrides!.ringWidth = 0;
 
   EM.addEagerInit([], [RendererDef], [], (res) => {
+    res.renderer.renderer.submitPipelines([], [pipeDbgInitParticles]);
+
     // renderer
     res.renderer.pipelines = [
       ...shadowPipelines,
@@ -48,6 +54,7 @@ export async function initGrayboxStarter() {
       deferredPipeline,
       pointPipe,
       linePipe,
+      renderParticles,
       stdGridRender,
       postProcess,
     ];

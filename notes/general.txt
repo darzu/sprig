@@ -1589,3 +1589,6 @@ Figma's database approach:
 
 Debugging:
   Was on TS 5.1
+
+Particle Life:
+  https://github.com/Caranea/gpulife

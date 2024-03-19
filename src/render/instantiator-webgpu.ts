@@ -884,6 +884,7 @@ export function bundleRenderPipelines(
     }
 
     if (p.ptr.meshOpt.stepMode === "per-instance") {
+      // TODO(@darzu): support no index buffer
       assert(!!p.instanceBuf && !!p.indexBuf);
       bundleEnc.setIndexBuffer(p.indexBuf.buffer, "uint16");
       if (p.vertexBuf) bundleEnc.setVertexBuffer(0, p.vertexBuf.buffer);

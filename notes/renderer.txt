@@ -2279,6 +2279,7 @@ Work graphs:
   https://gpuopen.com/gpu-work-graphs-in-vulkan/
   https://gpuopen.com/gdc-2024-announce/
   https://gpuopen.com/learn/gpu-work-graphs/gpu-work-graphs-part1/
+  https://gpuopen.com/learn/gdc-2024-workgraphs-drawcalls/
   
 vulkan grass w/ instancing and indirect draw:
   https://www.thegeeko.me/blog/foliage-rendering

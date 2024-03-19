@@ -501,3 +501,6 @@ GPU collision detection:
 
 "Reversibility": the witness's collision detection:
   https://youtu.be/YE8MVNMzpbo?t=764
+
+"Tech Breakdown: Collision Sliding":
+  https://blog.littlepolygon.com/posts/sliding/

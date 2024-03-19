@@ -31,6 +31,8 @@ export const ShaderPaths = [
   "std-painterly-jfa",
   "std-painterly-main",
   "std-painterly-deferred",
+  "std-particle-render",
+  "std-particle-update",
 ] as const;
 
 export type ShaderName = (typeof ShaderPaths)[number];

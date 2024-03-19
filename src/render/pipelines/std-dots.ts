@@ -11,6 +11,8 @@ import {
   worldNormsAndFresTexPtr,
 } from "./std-scene.js";
 
+// TODO(@darzu): RENAME. all "std-" to "pipe-" and "shade-"
+
 // TODO(@darzu): generalize for other billboard usage?
 
 /*

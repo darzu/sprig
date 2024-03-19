@@ -196,3 +196,8 @@ Dear ImGui example:
       ImGui::Text("%04d: Some text", n);
   ImGui::EndChild();
   ImGui::End();
+
+Icon set:
+  https://phosphoricons.com
+    https://github.com/phosphor-icons/homepage#phosphor-icons
+     free and open-source, MIT

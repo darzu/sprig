@@ -249,6 +249,7 @@ export interface CyRenderPipelinePtr<
   fragOverrides?: FO;
   vertOverrides?: VO;
   shader: ((shaders: ShaderSet) => string) | ShaderName;
+  // TODO(@darzu): REFACTOR remove all shaderVertexEntry and shaderFragmentEntry
   shaderVertexEntry: string;
   shaderFragmentEntry: string;
 
