@@ -420,6 +420,7 @@ EM.addEagerInit([RenderableConstructDef], [RendererDef], [], () => {
         cameraViewProjMatrix: cameraComputed.viewProj,
         //lightViewProjMatrix,
         time: res.time.time,
+        dt: res.time.dt,
         canvasAspectRatio: res.cameraComputed.aspectRatio,
         maxSurfaceId,
         partyPos: res.party.pos,

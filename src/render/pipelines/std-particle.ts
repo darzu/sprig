@@ -11,17 +11,17 @@ import {
   unlitTexturePtr,
 } from "./std-scene.js";
 
-const maxNumParticles = 1500;
+const maxNumParticles = 200_000;
 
 const ParticleStruct = createCyStruct({
+  color: "vec4<f32>",
+  colorVel: "vec4<f32>",
   pos: "vec3<f32>",
   vel: "vec3<f32>",
   acl: "vec3<f32>",
-  color: "vec3<f32>",
-  colorVel: "vec3<f32>",
   size: "f32",
   sizeVel: "f32",
-  life: "u32",
+  life: "f32",
 });
 
 const particleData = CY.createArray("particleData", {
@@ -40,15 +40,19 @@ export const pipeDbgInitParticles = CY.createComputePipeline(
   @compute @workgroup_size(64)
   fn main(@builtin(global_invocation_id) gId : vec3<u32>) {
     rand_seed = vec2<f32>(f32(gId.x));
-    particleDatas.ms[gId.x].pos = vec3(rand(), rand(), rand()) * 100.0;
-    particleDatas.ms[gId.x].color = vec3(rand(), rand(), rand());
-    particleDatas.ms[gId.x].size = rand() * 1.0;
 
-    particleDatas.ms[gId.x].vel = vec3(0.0);
-    particleDatas.ms[gId.x].acl = vec3(0.0);
-    particleDatas.ms[gId.x].colorVel = vec3(0.0);
+    let color = vec4(rand(), rand(), rand(), rand());
+    particleDatas.ms[gId.x].color = color;
+    // particleDatas.ms[gId.x].colorVel = vec4(1, -1, -1, 0.0) * 0.0005;
+    particleDatas.ms[gId.x].colorVel = vec4(0.0);
+
+    particleDatas.ms[gId.x].pos = vec3(rand(), rand(), rand()) * 20.0;
+    particleDatas.ms[gId.x].size = rand() * 0.9 + 0.1;
+    
+    particleDatas.ms[gId.x].vel = (color.xyz - 0.5) * 0.01;
+    particleDatas.ms[gId.x].acl = (vec3(rand(), rand(), rand()) - 0.5) * 0.00001;
     particleDatas.ms[gId.x].sizeVel = 0.0;
-    particleDatas.ms[gId.x].life = 1000000u;
+    particleDatas.ms[gId.x].life = rand() * 10000 + 1000;
   }
   `,
     workgroupCounts: [Math.ceil(maxNumParticles / 64), 1, 1],
@@ -95,7 +99,24 @@ export const pipeParticleRender = CY.createRenderPipeline(
   `,
     shaderFragmentEntry: "frag_main",
     shaderVertexEntry: "vert_main",
-    output: [litTexturePtr],
+    output: [
+      {
+        ptr: litTexturePtr,
+        clear: "never",
+        blend: {
+          color: {
+            srcFactor: "src-alpha",
+            dstFactor: "one-minus-src-alpha",
+            operation: "add",
+          },
+          alpha: {
+            srcFactor: "constant",
+            dstFactor: "zero",
+            operation: "add",
+          },
+        },
+      },
+    ],
   }
 );
 

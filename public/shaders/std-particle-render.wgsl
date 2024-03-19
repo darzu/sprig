@@ -1,9 +1,9 @@
 
 struct VertexOutput {
     @builtin(position) position : vec4<f32>,
-    @location(0) uv : vec2<f32>,
-    @location(1) @interpolate(flat) color: vec3<f32>,
-    @location(2) worldPos: vec4<f32>,
+    @location(0) @interpolate(flat) color: vec4<f32>,
+    @location(1) worldPos: vec4<f32>,
+    @location(2) uv : vec2<f32>,
 };
 
 @vertex
@@ -24,9 +24,16 @@ fn vert_main(vert: VertexInput, particle: InstanceInput, @builtin(vertex_index) 
     scene.cameraViewProjMatrix[2][1]
   ));
 
+  // smooth out in the last 0.5 seconds
+  let deathSmooth = smoothstep(0.0, 500.0, particle.life);
+  var color = particle.color;
+  color.a *= deathSmooth;
+  var size = particle.size;
+  size *= deathSmooth;
+
   let worldPos = particle.pos
-    + right * corner.x * particle.size
-    + up * corner.y * particle.size;
+    + right * corner.x * size
+    + up * corner.y * size;
 
   let screenPos = scene.cameraViewProjMatrix * vec4(worldPos, 1.0);
 
@@ -44,7 +51,7 @@ fn vert_main(vert: VertexInput, particle: InstanceInput, @builtin(vertex_index) 
   output.uv = uv[vIdx];
   output.worldPos = vec4(worldPos, 1.0);
   output.position = screenPos;
-  output.color = particle.color;
+  output.color = color;
 
   return output;
 }
@@ -58,6 +65,7 @@ struct FragOut {
 
 @fragment
 fn frag_main(input: VertexOutput) -> FragOut {
+  // TODO(@darzu): smoother edge via alpha
   let dist = length(input.uv - vec2(0.5));
   if (dist > 0.5) {
     discard;
@@ -65,7 +73,7 @@ fn frag_main(input: VertexOutput) -> FragOut {
 
   var out: FragOut;
 
-  out.color = vec4<f32>(input.color, 1.0);
+  out.color = input.color;
 
   // out.position = input.worldPos;
   // const fresnel = 0.0;
