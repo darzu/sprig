@@ -222,7 +222,7 @@ Better than JSON:
     ]
   }}  
 
-  ==>
+  == something like ==>
 
   type item = {
     id: string,
@@ -244,3 +244,7 @@ Better than JSON:
     ]
   ]
 
+Stain glass analytical renderer,
+  glass panel segments are triangles,
+  those get projected mathematically,
+  ray tracing works on triangle segments not texture

@@ -560,3 +560,9 @@ JS/WASM SIMD:
 
 building a flame graph, walking a stack, frame pointers:
   https://www.brendangregg.com/blog/2024-03-17/the-return-of-the-frame-pointers.html
+
+Profiling on Steam deck:
+  https://www.youtube.com/watch?v=If7DotP5YCA
+  https://gpuopen.com/gdc-presentations/2023/GDC-2023-Optimizing-Game-Performance-with-the-Radeon-Developer-Tool-Suite.pdf
+  asking about best graphics card:
+    https://mastodon.gamedev.place/@sprig/112129224383467742

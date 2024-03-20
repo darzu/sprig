@@ -11,6 +11,18 @@ import {
   unlitTexturePtr,
 } from "./std-scene.js";
 
+/*
+Goals:
+cannon ball trail
+upward ship explosion
+water splash
+
+Impl:
+  How to spawn a bunch at once
+  How to spawn many over time
+  How to alloc buffer ranges?
+*/
+
 const maxNumParticles = 10_000;
 
 const ParticleStruct = createCyStruct({

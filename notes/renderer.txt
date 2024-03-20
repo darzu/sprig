@@ -2018,6 +2018,8 @@ Gaussian splatting
   https://huggingface.co/blog/gaussian-splatting
   https://aras-p.info/blog/2023/09/05/Gaussian-Splatting-is-pretty-cool/
 
+  https://www.youtube.com/watch?v=VkIJbpdTujE
+
 GPU driven rendering at anki3d:
   https://anki3d.org/gpu-driven-rendering-in-anki-a-high-level-overview/
 
@@ -2286,3 +2288,17 @@ vulkan grass w/ instancing and indirect draw:
 
 To do pixel art:
   start at 360p. 2x is 720, 3x is 1080, 4x is 1440 and 6x is 2160
+
+Recreating Nanite:
+  https://jglrxavpok.github.io/2024/01/19/recreating-nanite-lod-generation.html
+  https://jglrxavpok.github.io/2024/03/12/recreating-nanite-faster-lod-generation.html
+
+Font and vector art gen using mesh shaders:
+  https://gpuopen.com/learn/mesh_shaders/mesh_shaders-font_and_vector_art_rendering_with_mesh_shaders/
+
+Particle system:
+  Niagara basics:
+    https://www.youtube.com/watch?v=04k9JDx-KTM
+    https://www.youtube.com/watch?v=JepePaqD7-Y&list=PLUi8nuTUEtTshYxpmR7brPE3tV7JsO0VP&index=2
+      systems, emitters, modules ?
+    Spawn: continuous, burst, spawn-per-unit (based on emitter travel?)
