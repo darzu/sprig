@@ -4,6 +4,12 @@ Features:
 - Simple visual logic programmer
 - Export to github project
 - GPU "shader toy" for scene
+- GPU memory viewer
+- On sprig.land
+- About page
+- Multiplayer
+- Port all webgpu-samples
+- Built-in in-memory SQLlite for store/load facts
 
 Scriptable:
 - particle systems
@@ -12,6 +18,7 @@ Scriptable:
 - Scene parameters update loop
 - Buffers -> shader code
 - CPU side, ECS based behavior updates
+- 3D SVG
 
 Engine features:
 - particle system
@@ -27,3 +34,4 @@ Plan:
 - wgsl struct creator
 - CPU side, one-off pipelines
 - CPU side, each frame pipelines
+- 

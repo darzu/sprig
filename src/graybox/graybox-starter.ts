@@ -56,10 +56,11 @@ export async function initGrayboxStarter() {
       pointPipe,
       linePipe,
 
-      pipeParticleUpdate,
       pipeParticleRender,
+      pipeParticleUpdate,
 
       stdGridRender,
+
       postProcess,
     ];
   });

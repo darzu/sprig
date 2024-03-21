@@ -2302,3 +2302,6 @@ Particle system:
     https://www.youtube.com/watch?v=JepePaqD7-Y&list=PLUi8nuTUEtTshYxpmR7brPE3tV7JsO0VP&index=2
       systems, emitters, modules ?
     Spawn: continuous, burst, spawn-per-unit (based on emitter travel?)
+
+Grass w/ mesh shaders:
+  https://gpuopen.com/learn/mesh_shaders/mesh_shaders-procedural_grass_rendering/?utm_source=twitter&utm_medium=social&utm_campaign=meshshaders

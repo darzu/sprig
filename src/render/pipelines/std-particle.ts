@@ -11,21 +11,9 @@ import {
   unlitTexturePtr,
 } from "./std-scene.js";
 
-/*
-Goals:
-cannon ball trail
-upward ship explosion
-water splash
+export const maxNumParticles = 10_000;
 
-Impl:
-  How to spawn a bunch at once
-  How to spawn many over time
-  How to alloc buffer ranges?
-*/
-
-const maxNumParticles = 10_000;
-
-const ParticleStruct = createCyStruct({
+export const ParticleStruct = createCyStruct({
   color: "vec4<f32>",
   colorVel: "vec4<f32>",
   pos: "vec3<f32>",
@@ -36,7 +24,7 @@ const ParticleStruct = createCyStruct({
   life: "f32",
 });
 
-const particleData = CY.createArray("particleData", {
+export const particleData = CY.createArray("particleData", {
   struct: ParticleStruct,
   init: maxNumParticles,
 });
@@ -63,8 +51,11 @@ export const pipeDbgInitParticles = CY.createComputePipeline(
     
     particleDatas.ms[gId.x].vel = (color.xyz - 0.5) * 0.01;
     particleDatas.ms[gId.x].acl = (vec3(rand(), rand(), rand()) - 0.5) * 0.00001;
+    // particleDatas.ms[gId.x].vel = (color.xyz - 0.5) * 0.0001;
+    // particleDatas.ms[gId.x].acl = (vec3(rand(), rand(), rand()) - 0.5) * 0.000001;
     particleDatas.ms[gId.x].sizeVel = 0.001 * (rand() - 0.5);
     particleDatas.ms[gId.x].life = rand() * 10000 + 1000;
+    // particleDatas.ms[gId.x].life = 100000000000;
   }
   `,
     workgroupCounts: [Math.ceil(maxNumParticles / 64), 1, 1],
@@ -106,6 +97,7 @@ export const pipeParticleRender = CY.createRenderPipeline(
       stepMode: "per-instance",
     },
     depthStencil: mainDepthTex,
+    // ${shaders["std-rand"].code}
     shader: (shaders) => `
   ${shaders["std-particle-render"].code}
   `,
@@ -122,6 +114,10 @@ export const pipeParticleRender = CY.createRenderPipeline(
             operation: "add",
           },
           alpha: {
+            // TODO(@darzu): understand blend modes...
+            // srcFactor: "one",
+            // dstFactor: "one",
+            // operation: "max",
             srcFactor: "constant",
             dstFactor: "zero",
             operation: "add",

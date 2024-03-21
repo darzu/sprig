@@ -65,15 +65,33 @@ struct FragOut {
 
 @fragment
 fn frag_main(input: VertexOutput) -> FragOut {
-  // TODO(@darzu): smoother edge via alpha
+
   let dist = length(input.uv - vec2(0.5));
+
+  // dither edges?
+  // let clipProb = smoothstep(0.4, 0.5, dist);
+  // if (rand() < clipProb) {
+  //   discard;
+  // }
+
   if (dist > 0.5) {
     discard;
   }
 
+  
+  var color = input.color;
+
+  // rand_seed = floor(input.uv * 128) / 128; // quantize this for more stability?
+  // let alphaDiscard = rand() > color.a;
+  // if (alphaDiscard) {
+  //   discard;
+  // }
+  // color.a = 1.0;
+
+
   var out: FragOut;
 
-  out.color = input.color;
+  out.color = color;
 
   // out.position = input.worldPos;
   // const fresnel = 0.0;
