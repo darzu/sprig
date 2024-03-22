@@ -63,7 +63,7 @@ export const pipeDbgInitParticles = CY.createComputePipeline(
 );
 
 // TODO(@darzu): PERF. Skip the index buffer.
-const particleQuadInds = CY.createIdxBuf("particleInd", {
+export const particleQuadInds = CY.createIdxBuf("particleInd", {
   init: () =>
     new Uint16Array([
       // tri 1
@@ -73,7 +73,7 @@ const particleQuadInds = CY.createIdxBuf("particleInd", {
     ]),
 });
 
-const particleQuadVert = CY.createArray("particleVert", {
+export const particleQuadVert = CY.createArray("particleVert", {
   struct: createCyStruct({
     pos: "vec3<f32>",
   }),
@@ -133,7 +133,7 @@ export const pipeParticleUpdate = CY.createComputePipeline(
   {
     shaderComputeEntry: "main",
     shader: (shaders) =>
-      `var<private> numParticles: u32 = ${maxNumParticles};
+      `const numParticles: u32 = ${maxNumParticles};
 ${shaders["std-rand"].code}
 ${shaders["std-particle-update"].code}
 `,

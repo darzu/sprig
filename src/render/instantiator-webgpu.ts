@@ -1131,6 +1131,8 @@ export function doCompute(
   //   });
   // }
 
+  // TODO(@darzu): dynamic workgroup count: get workgroup count, skip if 0, else dispatch
+
   const compPassEncoder = commandEncoder.beginComputePass();
   // compPassEncoder.writeTimestamp(querySet, 0);
   compPassEncoder.setPipeline(pipeline.pipeline);

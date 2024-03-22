@@ -262,3 +262,23 @@ Components & Objects:
 Code block asterisk:
   Instead of directives like "prettier-ignore",
   Have a little asterisk appear on top-left of block if there's some modifier
+
+Cyclone:
+  https://www.cs.umd.edu/~mwh/papers/cyclone-cuj.pdf
+  "We can sum up why we prefer C to Java in two words: transparency and control."
+  "In short, C programmers can see the costs of their programs simply by looking 
+    at them, and they can easily change data representations and fundamental 
+    strategies like memory management."
+  Cyclone basically supports three kinds of pointers: fat pointers, thin pointers, and bounded pointers.
+    FAT: @fat, comes w/ bound info, (may) dynamic bound check
+    THIN: single address, no pointer arithmetic, no runtime checks
+    BOUNDED: compile time range, int x[4] = {1,2,3,4}; int *@numelts(4) arr = x;
+      may have dynamic bound check but runtime data is single address
+  Definite initialization: pointer not deferenced before init
+    analysis extends to struct, union members, and pointer contents
+  Null check: inserted by compiler unless A. programmer does manaul check B. @notnull qualifier
+  @tagged for compiler-enforced tagged unions
+  memory regions, e.g. pointer to stack can't outlive fn scope (mini Rust lifetimes)
+
+  https://mastodon.gamedev.place/@sprig/112135327070868066
+
