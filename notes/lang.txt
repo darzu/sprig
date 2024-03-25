@@ -282,3 +282,6 @@ Cyclone:
 
   https://mastodon.gamedev.place/@sprig/112135327070868066
 
+https://www.reddit.com/r/rust/comments/18ul125/writing_a_game_in_rust_the_gnorp_apologue/
+  "My absolute favorite feature of Rust is enumerators" 
+  "and by extension the pattern matching that comes with it."

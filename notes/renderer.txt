@@ -2282,6 +2282,7 @@ Work graphs:
   https://gpuopen.com/gdc-2024-announce/
   https://gpuopen.com/learn/gpu-work-graphs/gpu-work-graphs-part1/
   https://gpuopen.com/learn/gdc-2024-workgraphs-drawcalls/
+  https://gpuopen.com/events/amd-at-gdc-2024/
   
 vulkan grass w/ instancing and indirect draw:
   https://www.thegeeko.me/blog/foliage-rendering
@@ -2305,3 +2306,6 @@ Particle system:
 
 Grass w/ mesh shaders:
   https://gpuopen.com/learn/mesh_shaders/mesh_shaders-procedural_grass_rendering/?utm_source=twitter&utm_medium=social&utm_campaign=meshshaders
+
+Indie dev's approach to a tree:
+  https://youtu.be/q8WL1Z1W4Gs?t=238

@@ -1,7 +1,14 @@
 import { defineResourceWithInit } from "../ecs/em-helpers.js";
 import { EM } from "../ecs/entity-manager.js";
+import { Phase } from "../ecs/sys-phase.js";
 import { mat4 } from "../matrix/gl-matrix.js";
-import { CY, CyPipelinePtr } from "../render/gpu-registry.js";
+import { WorldFrameDef } from "../physics/nonintersection.js";
+import {
+  CY,
+  CyCompPipelinePtr,
+  CyPipelinePtr,
+  CyRenderPipelinePtr,
+} from "../render/gpu-registry.js";
 import {
   ParticleStruct,
   particleData,
@@ -14,6 +21,7 @@ import {
   sceneBufPtr,
 } from "../render/pipelines/std-scene.js";
 import { RendererDef } from "../render/renderer-ecs.js";
+import { TimeDef } from "../time/time.js";
 import { assert } from "../utils/util-no-import.js";
 
 /*
@@ -45,8 +53,7 @@ After init shader, we transform by mat4 (size, pos, vel, acl, sizeVel)
 
 interface ParticleSystemDesc {
   name: string;
-  particlesPerEmitter: number;
-  maxEmitters: number;
+  maxParticles: number;
   maxLifeMs: number;
   initParticle: string;
   // TODO(@darzu): support custom update?
@@ -55,25 +62,33 @@ interface ParticleSystemDesc {
 }
 
 interface ParticleSystem {
-  getPipelinesForFrame: () => CyPipelinePtr[];
+  // TODO(@darzu): IMPL ?
+  desc: ParticleSystemDesc;
+
+  pipeInit: CyCompPipelinePtr;
+  pipeRender: CyRenderPipelinePtr;
+  pipeUpdate: CyCompPipelinePtr;
 }
 
-interface Emitter {
-  id: number;
-  system: ParticleSystem;
-  start: (t: mat4) => void;
-  stop: () => void;
-}
+// interface Emitter {
+//   id: number;
+//   system: ParticleSystem;
+//   start: (t: mat4) => void;
+//   stop: () => void;
+// }
 
 function createParticleSystem(desc: ParticleSystemDesc): ParticleSystem {
-  const maxNumParticles = desc.maxEmitters * desc.particlesPerEmitter;
+  // const maxNumParticles = desc.maxEmitters * desc.particlesPerEmitter;
+  const maxParticles = desc.maxParticles;
 
   // TODO(@darzu): hmm shouldn't this be required?
   // assert(maxNumParticles % 64 === 0
 
-  const dataPtr = CY.createArray(`particleData_${desc.name}`, {
+  const bufName = `particleData_${desc.name}`;
+
+  const dataPtr = CY.createArray(bufName, {
     struct: ParticleStruct,
-    init: maxNumParticles,
+    init: maxParticles,
   });
 
   const threadCount = 64;
@@ -100,6 +115,10 @@ function createParticleSystem(desc: ParticleSystemDesc): ParticleSystem {
     drawIndexedIndirectParameters[3] = baseVertex;
     drawIndexedIndirectParameters[4] = firstInstance;
 
+  or b/c of different data structure nad update, maybe ea one is a different pipeline?
+
+
+
   */
 
   const pipeInit = CY.createComputePipeline(`pipeInitParticles_${desc.name}`, {
@@ -112,12 +131,12 @@ function createParticleSystem(desc: ParticleSystemDesc): ParticleSystem {
     fn main(@builtin(global_invocation_id) gId : vec3<u32>) {
       rand_seed = vec2<f32>(f32(gId.x));
 
-      var particle = particleDatas.ms[gId.x];
-      ${desc.initParticle}      
-      particleDatas.ms[gId.x] = particle;
+      var particle = ${bufName}s.ms[gId.x];
+      ${desc.initParticle}
+      ${bufName}s.ms[gId.x] = particle;
     }
     `,
-    workgroupCounts: [Math.ceil(maxNumParticles / threadCount), 1, 1],
+    workgroupCounts: [Math.ceil(maxParticles / threadCount), 1, 1],
   });
 
   // TODO(@darzu): PERF. probably shouldn't have a seperate pipeline per particle system!
@@ -168,15 +187,15 @@ function createParticleSystem(desc: ParticleSystemDesc): ParticleSystem {
     {
       shaderComputeEntry: "main",
       shader: (shaders) =>
-        `var<private> numParticles: u32 = ${maxNumParticles};
-  ${shaders["std-particle-update"].code}
+        `const numParticles: u32 = ${maxParticles};
+  ${shaders["std-particle-update"].code.replaceAll("particleData", bufName)}
   `,
-      workgroupCounts: [Math.ceil(maxNumParticles / threadCount), 1, 1],
+      workgroupCounts: [Math.ceil(maxParticles / threadCount), 1, 1],
       globals: [sceneBufPtr, { ptr: dataPtr, access: "write" }],
     }
   );
 
-  throw "TODO";
+  return { desc, pipeInit, pipeRender, pipeUpdate };
 }
 
 export const ParticleDef = defineResourceWithInit(
@@ -184,6 +203,51 @@ export const ParticleDef = defineResourceWithInit(
   [RendererDef],
   ({ renderer }) => {
     // TODO(@darzu): IMPL
+
+    EM.addSystem(
+      "updateEmitters",
+      Phase.POST_GAME_WORLD,
+      [EmitterDef, WorldFrameDef],
+      [TimeDef],
+      (es, res) => {
+        const systems = es.reduce(
+          (p, n) => (n.emitter.system ? p.add(n.emitter.system) : p),
+          new Set<ParticleSystem>() // TODO(@darzu): PERF: reuse
+        );
+
+        type spawnEvent = {
+          system: ParticleSystem;
+          transform: mat4;
+          amount: number;
+        };
+
+        const events: spawnEvent[] = [];
+
+        for (let e of es) {
+          if (!e.emitter.system) continue;
+          let amount = 0;
+          if (e.emitter.continuousPerSecNum)
+            amount += e.emitter.continuousPerSecNum * res.time.dt;
+          while (e.emitter.pulseNum.length) amount += e.emitter.pulseNum.pop()!;
+          if (amount)
+            events.push({
+              system: e.emitter.system,
+              transform: e.world.transform,
+              amount,
+            });
+        }
+
+        // TODO(@darzu): IMPL
+        /*
+        per system
+        find all init obligations for frame
+        track active systems
+        setup argument buffer
+        track pipelines
+        */
+      }
+    );
+
     return {
       getPipelinesForFrame: () => {
         throw "TODO";
@@ -192,10 +256,28 @@ export const ParticleDef = defineResourceWithInit(
   }
 );
 
-const cloudBurstSys = createParticleSystem({
+type Emitter = {
+  system: ParticleSystem | undefined;
+  continuousPerSecNum: number;
+  pulseNum: number[];
+};
+
+export const EmitterDef = EM.defineComponent(
+  "emitter",
+  () => {
+    const e: Emitter = {
+      system: undefined,
+      continuousPerSecNum: 0,
+      pulseNum: [],
+    };
+    return e;
+  },
+  (p, n: Partial<Emitter>) => Object.assign(p, n)
+);
+
+export const cloudBurstSys = createParticleSystem({
   name: "cloudBurst",
-  particlesPerEmitter: 100,
-  maxEmitters: 10,
+  maxParticles: 1_000,
   maxLifeMs: 10_000 + 1_000,
   initParticle: `
   let color = vec4(rand(), rand(), rand(), rand());
@@ -203,12 +285,32 @@ const cloudBurstSys = createParticleSystem({
   // particle.colorVel = vec4(1, -1, -1, 0.0) * 0.0005;
   particle.colorVel = vec4(0.0);
 
-  particle.pos = vec3(rand(), rand(), rand()) * 20.0;
+  particle.pos = vec3(rand(), rand(), rand()) * 10.0;
   particle.size = rand() * 0.9 + 0.1;
 
-  particle.vel = (color.xyz - 0.5) * 0.01;
-  particle.acl = (vec3(rand(), rand(), rand()) - 0.5) * 0.00001;
+  particle.vel = (color.xyz - 0.5) * 0.1;
+  particle.acl = (vec3(rand(), rand(), rand()) - 0.5) * 0.0001;
   particle.sizeVel = 0.001 * (rand() - 0.5);
   particle.life = rand() * 10000 + 1000;
+  `,
+});
+
+export const fireTrailSys = createParticleSystem({
+  name: "fireTrail",
+  maxParticles: 1_000,
+  maxLifeMs: 3_000,
+  initParticle: `
+  let color = vec4(rand() * 0.2 + 0.8, rand() * 0.2, rand() * 0.2, 1.0);
+  particle.color = color;
+  // particle.colorVel = vec4(1, -1, -1, 0.0) * 0.0005;
+  // particle.colorVel = vec4(0.0, 0.0, 0.0, -0.00001);
+
+  particle.pos = vec3(rand(), rand(), rand()) * 5.0;
+  particle.size = rand() * 0.4 + 0.1;
+
+  particle.vel = vec3(rand() - 0.5, rand() - 0.5, rand() * 2.0) * 0.01;
+  particle.acl = vec3(0,0,0.00001);
+  // particle.sizeVel = -0.0001;
+  particle.life = rand() * 2000 + 500;
   `,
 });

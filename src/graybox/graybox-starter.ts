@@ -4,10 +4,21 @@ import { ENDESGA16 } from "../color/palettes.js";
 import { createGhost } from "../debug/ghost.js";
 import { createGizmoMesh } from "../debug/gizmos.js";
 import { EM } from "../ecs/entity-manager.js";
+import { LifetimeDef } from "../ecs/lifetime.js";
+import { Phase } from "../ecs/sys-phase.js";
+import { InputsDef } from "../input/inputs.js";
 import { V, quat, V3 } from "../matrix/sprig-matrix.js";
-import { CubeMesh, HexMesh, PlaneMesh } from "../meshes/mesh-list.js";
+import { BallMesh, CubeMesh, HexMesh, PlaneMesh } from "../meshes/mesh-list.js";
 import { HEX_AABB, mkCubeMesh } from "../meshes/primatives.js";
+import { GravityDef } from "../motion/gravity.js";
+import { LinearVelocityDef } from "../motion/velocity.js";
 import { MeDef } from "../net/components.js";
+import {
+  EmitterDef,
+  ParticleDef,
+  cloudBurstSys,
+  fireTrailSys,
+} from "../particle/particle.js";
 import { ColliderDef } from "../physics/collider.js";
 import { PositionDef, ScaleDef } from "../physics/transform.js";
 import { PointLightDef } from "../render/lights.js";
@@ -29,7 +40,8 @@ import {
 import { postProcess } from "../render/pipelines/std-post.js";
 import { shadowPipelines } from "../render/pipelines/std-shadow.js";
 import { RendererDef, RenderableConstructDef } from "../render/renderer-ecs.js";
-import { sketch } from "../utils/sketch.js";
+import { SketchTrailDef, sketch } from "../utils/sketch.js";
+import { randDir3 } from "../utils/utils-3d.js";
 import { addWorldGizmo } from "../utils/utils-game.js";
 import { createSun, initGhost } from "./graybox-helpers.js";
 import { createObj } from "./objects.js";
@@ -45,7 +57,8 @@ export async function initGrayboxStarter() {
   stdGridRender.fragOverrides!.ringWidth = 0;
 
   EM.addEagerInit([], [RendererDef], [], (res) => {
-    res.renderer.renderer.submitPipelines([], [pipeDbgInitParticles]);
+    res.renderer.renderer.submitPipelines([], [cloudBurstSys.pipeInit]);
+    // res.renderer.renderer.submitPipelines([], [fireTrailSys.pipeInit]);
 
     // renderer
     res.renderer.pipelines = [
@@ -56,8 +69,10 @@ export async function initGrayboxStarter() {
       pointPipe,
       linePipe,
 
-      pipeParticleRender,
-      pipeParticleUpdate,
+      cloudBurstSys.pipeRender,
+      cloudBurstSys.pipeUpdate,
+      fireTrailSys.pipeRender,
+      fireTrailSys.pipeUpdate,
 
       stdGridRender,
 
@@ -133,4 +148,49 @@ export async function initGrayboxStarter() {
   if (DBG_GHOST) {
     initGhost();
   }
+
+  // particle test
+  EM.set(pedestal, EmitterDef, { system: cloudBurstSys });
+
+  EM.addSystem(
+    "makeParticles",
+    Phase.GAME_WORLD,
+    null,
+    [ParticleDef, InputsDef],
+    (es, res) => {
+      if (res.inputs.keyClicks["enter"]) {
+        // fire ball
+        const vel = V3.scale(randDir3(), 0.1);
+        vel[2] = Math.abs(vel[2]);
+        const ball = createObj(
+          [
+            PositionDef,
+            ColorDef,
+            RenderableConstructDef,
+            SketchTrailDef,
+            LinearVelocityDef,
+            GravityDef,
+            EmitterDef,
+            LifetimeDef,
+          ] as const,
+          {
+            position: [0, 0, 20],
+            color: ENDESGA16.red,
+            renderableConstruct: [BallMesh],
+            sketchTrail: undefined,
+            linearVelocity: vel,
+            gravity: [0, 0, -0.0001],
+            lifetime: 2000,
+            emitter: {
+              system: fireTrailSys,
+              continuousPerSecNum: 5,
+            },
+          }
+        );
+
+        // spray
+        pedestal.emitter.pulseNum.push(100);
+      }
+    }
+  );
 }
