@@ -7,7 +7,7 @@ import { createEntityPool } from "../ecs/entity-pool.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { DotsDef } from "../graybox/dots.js";
 import { ObjChildEnt, T, defineObj } from "../graybox/objects.js";
-import { V3, cloneTmpsInObj, quat } from "../matrix/sprig-matrix.js";
+import { V3, cloneTmpsInObj, quat, tV } from "../matrix/sprig-matrix.js";
 import { Mesh } from "../meshes/mesh.js";
 import {
   mkLine,
@@ -37,6 +37,7 @@ import {
 } from "../render/renderer-ecs.js";
 import { TimeDef } from "../time/time.js";
 import { createIdxRing } from "./idx-pool.js";
+import { CompiledSVG, SVG, compileSVG } from "./svg.js";
 import { never } from "./util-no-import.js";
 import { assert, range } from "./util.js";
 
@@ -461,6 +462,36 @@ export function sketchFan(
   const v1 = V3.add(origin, dir1, _t3);
   const v2 = V3.add(origin, dir2, _t4);
   return sketchTri(v0, v1, v2, opt);
+}
+
+export async function sketchSvgC(
+  svgC: CompiledSVG,
+  opt: SketchBaseOpt & {
+    origin?: V3.InputT;
+    num?: number;
+  } = {}
+): Promise<SketchEnt> {
+  const num = opt.num ?? 10;
+  assert(num >= 1);
+  const vs: V3.InputT[] = [];
+  for (let i = 0; i < num; i++) {
+    const t = i / num - 1;
+    const v2 = svgC.fn(t);
+    const v3 = tV(v2[0], v2[1], 0);
+    if (opt.origin) V3.add(v3, opt.origin, v3);
+    vs.push(v3);
+  }
+  vs.push(V3.copy(V3.tmp(), vs[0]));
+  return sketchLines(vs, opt);
+}
+export async function sketchSvg(
+  svg: SVG,
+  opt: SketchBaseOpt & {
+    origin?: V3.InputT;
+    num?: number;
+  } = {}
+): Promise<SketchEnt> {
+  return sketchSvgC(compileSVG(svg), opt);
 }
 
 export const SketchTrailDef = EM.defineComponent("sketchTrail", () => true);

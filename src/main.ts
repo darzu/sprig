@@ -73,7 +73,8 @@ const GAME: (typeof ALL_GAMES)[number] = (
   // "graybox-ship-arena"
   // "ld53"
   // "gjk"
-  "graybox-starter"
+  // "graybox-starter"
+  "font"
 );
 
 // Run simulation with a fixed timestep @ 60hz

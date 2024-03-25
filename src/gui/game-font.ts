@@ -36,6 +36,9 @@ import { makePlaneMesh } from "../meshes/primatives.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { addWorldGizmo } from "../utils/utils-game.js";
+import { SVG, compileSVG } from "../utils/svg.js";
+import { sketchLines, sketchSvg } from "../utils/sketch.js";
+import { linePipe, pointPipe } from "../render/pipelines/std-line.js";
 
 /*
 TODO(@darzu):
@@ -54,7 +57,7 @@ TODO(@darzu):
  [ ] render arbitrary-ish text
 */
 
-const EXPERIMENTAL_LINE_STUFF = true; // TODO(@darzu): broken rn
+const EXPERIMENTAL_LINE_STUFF = false; // TODO(@darzu): broken rn
 
 const DBG_GIZMOS = true;
 
@@ -62,6 +65,19 @@ const DBG_3D = false; // TODO(@darzu): add in-game smooth transition!
 
 const PANEL_W = 4 * 12;
 const PANEL_H = 3 * 12;
+
+const CHAR_STR = `1234567890JQKA`;
+const CHARS = CHAR_STR.split("");
+
+const CHAR_SVG: Record<string, SVG> = {
+  "1": [
+    { i: "M", x: -0.5, y: -0.5 },
+    { i: "v", dy: 1 },
+    { i: "h", dx: 1 },
+    { i: "v", dy: -1 },
+    { i: "h", dx: -1 },
+  ],
+};
 
 export const UICursorDef = EM.defineResource(
   "uiCursor",
@@ -110,6 +126,10 @@ export async function initFontEditor() {
     alphaRenderPipeline,
     outlineRender,
     deferredPipeline,
+
+    pointPipe,
+    linePipe,
+
     postProcess,
   ];
 
@@ -276,9 +296,16 @@ export async function initFontEditor() {
     console.log(exportObj(quadMesh));
   };
 
+  // sketchLines([
+  //   [10, 10, 1],
+  //   [20, 15, 1],
+  //   [-50, -50, 1],
+  // ]);
+
   // button per letter
   // TODO(@darzu): render buttons?
-  const CHARS = `abcdefghijklmnopqrstuvwxyz.`.split("");
+  // const CHARS = `abcdefghijklmnopqrstuvwxyz.`.split("");
+  // const CHARS = `1234567890JQKA.`.split("");
   const polyBank = new Map<number, GameMesh>();
   const btnKey = `letter`;
   for (let i = 0; i < CHARS.length; i++) {
@@ -299,8 +326,20 @@ export async function initFontEditor() {
 
     polyBank.set(i, gmesh);
 
-    const btn = EM.new();
-    EM.set(btn, RenderableConstructDef, gmesh.proto);
+    let svg = CHAR_SVG[c];
+    if (!svg)
+      svg = [
+        { i: "M", x: -1, y: -1 },
+        { i: "v", dy: 2 },
+        { i: "h", dx: 2 },
+        { i: "v", dy: -2 },
+        { i: "h", dx: -2 },
+      ];
+    const btn = await sketchSvg(svg, { num: 20, key: letterKey });
+
+    // const btn = EM.new();
+    // EM.set(btn, RenderableConstructDef, gmesh.proto);
+    // EM.set(btn, RenderableConstructDef, svgE.);
     EM.set(btn, PositionDef, V(-24 + i * 2, -12, 0.1));
     EM.set(btn, ButtonDef, btnKey, i, {
       default: ENDESGA16.lightGray,
@@ -330,8 +369,8 @@ export async function initFontEditor() {
         assert(poly);
         res.meshEditor.setMesh(poly.proto);
         res.text.upperText = CHARS[btnIdx];
-        res.text.upperDiv.style.fontSize = "256px";
-        res.text.upperDiv.style.top = "-64px";
+        res.text.upperDiv.style.fontSize = "128px";
+        res.text.upperDiv.style.top = "32px";
         // res.text.upperDiv.style.color = "";
 
         // TODO(@darzu): HACKy export:
