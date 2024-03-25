@@ -57,11 +57,13 @@ const svg_x: SVG = [
 
 const charWorldWidth = 2;
 const charWorldHeight = 2;
+const charPerRow = 5;
+const numRows = Math.ceil(CHARS.length / charPerRow);
 
-const fontLineWorldWidth = CHARS.length * charWorldWidth;
-// const fontLineWorldHeight = charWorldHeight;
-const fontLineWorldHeight = fontLineWorldWidth;
-console.log("fontLineWorldWidth:" + fontLineWorldWidth);
+const fontLineWorldWidth = charPerRow * charWorldWidth;
+const fontLineWorldHeight = numRows * charWorldHeight;
+const fontLineWorldSize = Math.max(fontLineWorldWidth, fontLineWorldHeight);
+console.log("fontLineWorldSize:" + fontLineWorldSize);
 
 const shader_fontLine = `
 struct VertexOutput {
@@ -73,8 +75,8 @@ fn vertMain(input: VertexInput) -> VertexOutput {
   var output: VertexOutput;
   let worldPos = meshUni.transform * vec4<f32>(input.position, 1.0);
 
-  let x = (worldPos.x / ${fontLineWorldWidth}) * 2.0 - 1.0;
-  let y = (worldPos.y / ${fontLineWorldHeight}) * 2.0 - 1.0;
+  let x = (worldPos.x / ${fontLineWorldSize}) * 2.0 - 1.0;
+  let y = (worldPos.y / ${fontLineWorldSize}) * 2.0 - 1.0;
 
   output.fragPos = vec4(x, y, 0.0, 1.0);
   return output;
@@ -94,7 +96,7 @@ struct FragOut {
 `;
 
 export const fontLineMaskTex = CY.createTexture("fontLineMaskTex", {
-  size: [fontLineWorldWidth * 32, fontLineWorldHeight * 32],
+  size: [fontLineWorldSize * 32, fontLineWorldSize * 32],
   format: "r8unorm",
   // format: "rgba8unorm",
 });
@@ -299,11 +301,14 @@ export async function initCardsGame() {
       lineMeshPoolPtr
     );
     EM.set(ent, ColorDef, ENDESGA16.yellow);
-    EM.set(ent, PositionDef, [
-      i * charWorldWidth + charOrigin[0],
-      0 + charOrigin[1],
-      0.1,
-    ]);
+
+    const row = Math.floor(i / charPerRow);
+    const col = i % charPerRow;
+    // const ex = col * charWorldWidth + charOrigin[0];
+    const ex = col * charWorldWidth + charOrigin[0];
+    const ey = row * charWorldHeight + charOrigin[1];
+
+    EM.set(ent, PositionDef, [ex, ey, 0.1]);
 
     promises.push(
       EM.whenEntityHas(
