@@ -17,7 +17,11 @@ import { InputsDef } from "../input/inputs.js";
 import { remap } from "../utils/math.js";
 import { copyAABB, createAABB } from "../physics/aabb.js";
 import { ColliderDef } from "../physics/collider.js";
-import { PositionDef, RotationDef } from "../physics/transform.js";
+import {
+  PositionDef,
+  RotationDef,
+  updateFrameFromPosRotScale,
+} from "../physics/transform.js";
 import { PointLightDef } from "../render/lights.js";
 import { MeshReserve } from "../render/mesh-pool.js";
 import { cloneMesh, Mesh, scaleMesh, stringifyMesh } from "../meshes/mesh.js";
@@ -25,7 +29,11 @@ import { stdMeshPipe } from "../render/pipelines/std-mesh.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
 import { alphaRenderPipeline } from "../render/pipelines/xp-alpha.js";
-import { RendererDef, RenderableConstructDef } from "../render/renderer-ecs.js";
+import {
+  RendererDef,
+  RenderableConstructDef,
+  RenderableDef,
+} from "../render/renderer-ecs.js";
 import { assert } from "../utils/util.js";
 import { randNormalPosVec3 } from "../utils/utils-3d.js";
 import { BallMesh } from "../meshes/mesh-list.js";
@@ -39,6 +47,7 @@ import { addWorldGizmo } from "../utils/utils-game.js";
 import { SVG, compileSVG, svgToLineSeg } from "../utils/svg.js";
 import { sketchLines, sketchSvg } from "../utils/sketch.js";
 import {
+  LineUniDef,
   lineMeshPoolPtr,
   linePipe,
   pointPipe,
@@ -46,6 +55,12 @@ import {
 import { CHAR_SVG, MISSING_CHAR_SVG } from "./svg-font.js";
 import { UICursorDef, registerUICameraSys } from "./game-font.js";
 import { initGhost } from "../graybox/graybox-helpers.js";
+import { DEFAULT_MASK, FONT_JFA_MASK } from "../render/pipeline-masks.js";
+import { createJfaPipelines } from "../render/pipelines/std-jump-flood.js";
+import { CY } from "../render/gpu-registry.js";
+import { createGridComposePipelines } from "../render/pipelines/std-compose.js";
+import { DevConsoleDef } from "../debug/console.js";
+import { WorldFrameDef } from "../physics/nonintersection.js";
 
 const DBG_GIZMOS = true;
 
@@ -64,6 +79,88 @@ const svg_x: SVG = [
   { i: "m", dx: 1, dy: -1 },
 ];
 
+const charWorldWidth = 2;
+const charWorldHeight = 2;
+
+const fontLineWorldWidth = CHARS.length * charWorldWidth;
+// const fontLineWorldHeight = charWorldHeight;
+const fontLineWorldHeight = fontLineWorldWidth;
+
+const shader_fontLine = `
+struct VertexOutput {
+  @builtin(position) fragPos : vec4<f32>,
+}
+
+@vertex
+fn vertMain(input: VertexInput) -> VertexOutput {
+  var output: VertexOutput;
+  let worldPos = meshUni.transform * vec4<f32>(input.position, 1.0);
+
+  let x = (worldPos.x / ${fontLineWorldWidth}) * 2.0 - 1.0;
+  let y = (worldPos.y / ${fontLineWorldHeight}) * 2.0 - 1.0;
+
+  output.fragPos = vec4(x, y, 0.0, 1.0);
+  return output;
+}
+
+struct FragOut {
+  // @location(0) color: f32,
+  @location(0) color: vec4<f32>,
+}
+
+@fragment fn fragMain(input: VertexOutput) -> FragOut {
+  var output: FragOut;
+  // output.color = 1.0;
+  output.color = vec4(1.0);
+  return output;
+}
+`;
+
+export const fontLineMaskTex = CY.createTexture("fontLineMaskTex", {
+  size: [fontLineWorldWidth * 16, fontLineWorldHeight * 16],
+  // format: "r32float",
+  format: "rgba8unorm",
+});
+
+export const pipeFontLineRender = CY.createRenderPipeline(
+  "pipeFontLineRender",
+  {
+    globals: [],
+    shader: () => `
+  ${shader_fontLine}
+  `,
+    shaderVertexEntry: "vertMain",
+    shaderFragmentEntry: "fragMain",
+    meshOpt: {
+      pool: lineMeshPoolPtr,
+      // meshMask: FONT_JFA_MASK,
+      stepMode: "per-mesh-handle",
+    },
+    topology: "line-list",
+    cullMode: "none",
+    output: [
+      {
+        ptr: fontLineMaskTex,
+        clear: "once",
+        // defaultColor: V4.clone([0.1, 0.1, 0.1, 0.0]),
+        defaultColor: V4.clone([0.0, 0.0, 0.0, 0.0]),
+      },
+    ],
+  }
+);
+
+const fontJfa = createJfaPipelines({
+  maskTex: fontLineMaskTex,
+  maskMode: "interior",
+});
+
+// prittier-ignore
+const dbgGrid = [
+  [fontJfa._inputMaskTex, fontJfa._uvMaskTex],
+  [fontJfa.sdfTex, fontLineMaskTex],
+];
+let dbgGridCompose = createGridComposePipelines(dbgGrid);
+
 export async function initCardsGame() {
   // console.log(`panel ${PANEL_W}x${PANEL_H}`);
 
@@ -77,17 +174,30 @@ export async function initCardsGame() {
   //   deferredPipeline,
   //   postProcess,
   // ];
-  res.renderer.pipelines = [
-    stdMeshPipe,
-    alphaRenderPipeline,
-    outlineRender,
-    deferredPipeline,
+  EM.addSystem(
+    "gameCardsPipelines",
+    Phase.GAME_WORLD,
+    null,
+    [RendererDef, DevConsoleDef],
+    (_, res) => {
+      res.renderer.pipelines = [
+        stdMeshPipe,
+        alphaRenderPipeline,
+        outlineRender,
+        deferredPipeline,
 
-    pointPipe,
-    linePipe,
+        pointPipe,
+        linePipe,
 
-    postProcess,
-  ];
+        postProcess,
+
+        // pipeFontLineRender,
+        // ...fontJfa.allPipes(),
+
+        ...(res.dev.showConsole ? dbgGridCompose : []),
+      ];
+    }
+  );
 
   const sunlight = EM.new();
   EM.set(sunlight, PointLightDef);
@@ -144,6 +254,20 @@ export async function initCardsGame() {
 
   registerUICameraSys();
 
+  const promises: Promise<
+    EntityW<
+      [
+        typeof RenderableDef,
+        typeof PositionDef,
+        typeof WorldFrameDef,
+        typeof LineUniDef
+        // typeof ColorDef
+      ]
+    >
+  >[] = [];
+
+  const charOrigin: V3.InputT = [charWorldWidth / 2, charWorldHeight / 2, 0];
+
   for (let i = 0; i < CHARS.length; i++) {
     const c = CHARS[i];
 
@@ -164,9 +288,54 @@ export async function initCardsGame() {
       true,
       undefined,
       undefined,
+      // FONT_JFA_MASK | DEFAULT_MASK,
       lineMeshPoolPtr
     );
     EM.set(ent, ColorDef, ENDESGA16.yellow);
-    EM.set(ent, PositionDef, [-24 + i * 2, -12, 0.1]);
+    EM.set(ent, PositionDef, [
+      i * charWorldWidth + charOrigin[0],
+      0 + charOrigin[1],
+      0.1,
+    ]);
+
+    promises.push(
+      EM.whenEntityHas(
+        ent,
+        RenderableDef,
+        WorldFrameDef,
+        PositionDef,
+        LineUniDef
+        // ColorDef
+      )
+    );
   }
+
+  const allEnts = await Promise.all(promises);
+
+  // allEnts.forEach((e) => {
+  //   e.renderable.meshHandle.pool.updateMeshVertices(
+  //     e.renderable.meshHandle,
+  //     e.renderable.meshHandle.mesh
+  //   );
+  //   quat.identity(e.world.rotation);
+  //   V3.copy(e.world.scale, V3.ONES);
+  //   V3.copy(e.world.position, e.position);
+  //   updateFrameFromPosRotScale(e.world);
+  //   mat4.copy(e.lineUni.transform, e.world.transform);
+  //   // V3.copy(e.lineUni.tint, e.color);
+  // });
+
+  const handles = allEnts.map((e) => e.renderable.meshHandle);
+
+  let _frame = 0; // TODO(@darzu): HACK. idk what the dependency is..
+  EM.addSystem("pipeFontLineRender_HACK", Phase.GAME_WORLD, [], [], () => {
+    if (_frame > 1) return;
+
+    res.renderer.renderer.submitPipelines(handles, [
+      pipeFontLineRender,
+      ...fontJfa.allPipes(),
+    ]);
+
+    _frame++;
+  });
 }
