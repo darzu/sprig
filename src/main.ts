@@ -39,6 +39,7 @@ import { initGrayboxSunless } from "./graybox/graybox-sunless-skies.js";
 import { initGrayboxShipArena } from "./graybox/graybox-ship-arena.js";
 import { initGrayboxStarter } from "./graybox/graybox-starter.js";
 import { initPainterlyGame } from "./graybox/game-painterly.js";
+import { initCardsGame } from "./gui/game-cards.js";
 
 // dbgLogMilestone("start of main.ts");
 
@@ -52,6 +53,7 @@ const ALL_GAMES = [
   "shipyard",
   "grass", // broken-ish; too many temp f32s; port to Z-up
   "font",
+  "cards",
   "hyperspace", // TODO(@darzu): Z_UP: port to Z-up
   "cloth", // broken-ish
   "cube",
@@ -74,7 +76,8 @@ const GAME: (typeof ALL_GAMES)[number] = (
   // "ld53"
   // "gjk"
   // "graybox-starter"
-  "font"
+  // "font"
+  "cards"
 );
 
 // Run simulation with a fixed timestep @ 60hz
@@ -133,6 +136,7 @@ async function startGame(localPeerName: string, host: string | null) {
   else if (GAME === "cube") initCubeGame();
   else if (GAME === "shipyard") initShipyardGame(hosting);
   else if (GAME === "font") initFontEditor();
+  else if (GAME === "cards") initCardsGame();
   else if (GAME === "grass") initGrassGame(hosting);
   else if (GAME === "ld53") initLD53(hosting);
   else if (GAME === "ld54") initLD54();

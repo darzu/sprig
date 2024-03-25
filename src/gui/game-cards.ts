@@ -28,7 +28,7 @@ import { alphaRenderPipeline } from "../render/pipelines/xp-alpha.js";
 import { RendererDef, RenderableConstructDef } from "../render/renderer-ecs.js";
 import { assert } from "../utils/util.js";
 import { randNormalPosVec3 } from "../utils/utils-3d.js";
-import { AllMeshesDef, HeOctoMesh } from "../meshes/mesh-list.js";
+import { BallMesh } from "../meshes/mesh-list.js";
 import { GameMesh, gameMeshFromMesh } from "../meshes/mesh-loader.js";
 import { createGhost, gameplaySystems } from "../debug/ghost.js";
 import { TextDef } from "./ui.js";
@@ -40,25 +40,7 @@ import { SVG, compileSVG } from "../utils/svg.js";
 import { sketchLines, sketchSvg } from "../utils/sketch.js";
 import { linePipe, pointPipe } from "../render/pipelines/std-line.js";
 import { CHAR_SVG, MISSING_CHAR_SVG } from "./svg-font.js";
-
-/*
-TODO(@darzu):
- [x] new faces get new colors
- [ ] allow edge collapse, towards either vert
-  [ ] quad -> tri
-  [ ] tri -> [none]
- [ ] edge extrude should be perp
- [ ] show 2D and 3D spinning preview of glyph
- [ ] show font references
- [ ] show font character bounds
- [ ] loop cut
- [ ] export to font
-  [x] button render w/ click and action
-  [ ] bank of characters: map of character to mesh proto
- [ ] render arbitrary-ish text
-*/
-
-const EXPERIMENTAL_LINE_STUFF = false; // TODO(@darzu): broken rn
+import { UICursorDef } from "./game-font.js";
 
 const DBG_GIZMOS = true;
 
@@ -77,39 +59,10 @@ const svg_x: SVG = [
   { i: "m", dx: 1, dy: -1 },
 ];
 
-export const UICursorDef = EM.defineResource(
-  "uiCursor",
-  (cursor: EntityW<[typeof PositionDef]>) => ({
-    cursor,
-  })
-);
-
-EM.addLazyInit([HeOctoMesh.def], [UICursorDef], ({ mesh_he_octo }) => {
-  // Cursor
-  const cursor = EM.new();
-  EM.set(cursor, ColorDef, V(0.1, 0.1, 0.1));
-  EM.set(cursor, PositionDef, V(0, 0.0, 1.0));
-  EM.set(cursor, RenderableConstructDef, mesh_he_octo.proto);
-  const cursorLocalAABB = copyAABB(createAABB(), mesh_he_octo.aabb);
-  cursorLocalAABB.min[2] = -1;
-  cursorLocalAABB.max[2] = 1;
-  EM.set(cursor, ColliderDef, {
-    shape: "AABB",
-    solid: false,
-    aabb: cursorLocalAABB,
-  });
-
-  EM.addResource(UICursorDef, cursor);
-});
-
-export async function initFontEditor() {
+export async function initCardsGame() {
   // console.log(`panel ${PANEL_W}x${PANEL_H}`);
 
-  const res = await EM.whenResources(
-    AllMeshesDef,
-    RendererDef,
-    ButtonsStateDef
-  );
+  const res = await EM.whenResources(RendererDef, ButtonsStateDef);
 
   // res.renderer.pipelines = [
   //   // ...shadowPipelines,
@@ -137,7 +90,7 @@ export async function initFontEditor() {
   V3.copy(sunlight.pointLight.ambient, [0.8, 0.8, 0.8]);
   EM.set(sunlight, PositionDef, V(10, 10, 100));
   // TODO(@darzu): weird, why does renderable need to be on here?
-  EM.set(sunlight, RenderableConstructDef, res.allMeshes.ball.proto, false);
+  EM.set(sunlight, RenderableConstructDef, BallMesh, false);
 
   const panel = EM.new();
   const panelMesh = makePlaneMesh(
@@ -157,7 +110,7 @@ export async function initFontEditor() {
   if (DBG_GIZMOS) addWorldGizmo(V(-PANEL_W * 0.5, -PANEL_H * 0.5, 0));
 
   if (DBG_3D) {
-    const g = createGhost(res.allMeshes.ball.proto);
+    const g = createGhost(BallMesh);
 
     V3.copy(g.position, [-21.83, -25.01, 21.79]);
     quat.copy(g.rotation, [0.0, 0.0, -0.31, 0.95]);
@@ -370,15 +323,4 @@ export async function initFontEditor() {
       }
     }
   );
-
-  // TODO(@darzu): HACKY. Cursor or 2d gui or something needs some better
-  //    abstracting
-  // EM.whenResources(ButtonsStateDef).then((res) => {
-  // res.buttonsState.cursorId = cursor.id;
-  // });
-
-  initMeshEditor();
-
-  // TODO(@darzu): WIP path editor
-  if (EXPERIMENTAL_LINE_STUFF) lineStuff();
 }
