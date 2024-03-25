@@ -1,30 +1,12 @@
-import {
-  CameraDef,
-  CameraComputedDef,
-  CameraFollowDef,
-} from "../camera/camera.js";
+import { CameraDef } from "../camera/camera.js";
 import { CanvasDef } from "../render/canvas.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
-import { dbg } from "../debug/debugger.js";
 import { EM, EntityW } from "../ecs/entity-manager.js";
-import { V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
-import { ButtonDef, ButtonsStateDef } from "./button.js";
-import { initMeshEditor, MeshEditorDef } from "./mesh-editor.js";
-import { lineStuff } from "./path-editor.js";
-import { exportObj } from "../meshes/import-obj.js";
-import { InputsDef } from "../input/inputs.js";
-import { remap } from "../utils/math.js";
-import { copyAABB, createAABB } from "../physics/aabb.js";
-import { ColliderDef } from "../physics/collider.js";
-import {
-  PositionDef,
-  RotationDef,
-  updateFrameFromPosRotScale,
-} from "../physics/transform.js";
+import { V3, V4, V } from "../matrix/sprig-matrix.js";
+import { ButtonsStateDef } from "./button.js";
+import { PositionDef } from "../physics/transform.js";
 import { PointLightDef } from "../render/lights.js";
-import { MeshReserve } from "../render/mesh-pool.js";
-import { cloneMesh, Mesh, scaleMesh, stringifyMesh } from "../meshes/mesh.js";
 import { stdMeshPipe } from "../render/pipelines/std-mesh.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
@@ -34,18 +16,12 @@ import {
   RenderableConstructDef,
   RenderableDef,
 } from "../render/renderer-ecs.js";
-import { assert } from "../utils/util.js";
-import { randNormalPosVec3 } from "../utils/utils-3d.js";
 import { BallMesh } from "../meshes/mesh-list.js";
-import { GameMesh, gameMeshFromMesh } from "../meshes/mesh-loader.js";
-import { createGhost, gameplaySystems } from "../debug/ghost.js";
-import { TextDef } from "./ui.js";
 import { makePlaneMesh, mkLineSegs } from "../meshes/primatives.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { addWorldGizmo } from "../utils/utils-game.js";
 import { SVG, compileSVG, svgToLineSeg } from "../utils/svg.js";
-import { sketchLines, sketchSvg } from "../utils/sketch.js";
 import {
   LineUniDef,
   lineMeshPoolPtr,
@@ -53,14 +29,14 @@ import {
   pointPipe,
 } from "../render/pipelines/std-line.js";
 import { CHAR_SVG, MISSING_CHAR_SVG } from "./svg-font.js";
-import { UICursorDef, registerUICameraSys } from "./game-font.js";
+import { registerUICameraSys } from "./game-font.js";
 import { initGhost } from "../graybox/graybox-helpers.js";
-import { DEFAULT_MASK, FONT_JFA_MASK } from "../render/pipeline-masks.js";
 import { createJfaPipelines } from "../render/pipelines/std-jump-flood.js";
 import { CY } from "../render/gpu-registry.js";
 import { createGridComposePipelines } from "../render/pipelines/std-compose.js";
 import { DevConsoleDef } from "../debug/console.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
+import { createRenderTextureToQuad } from "../render/gpu-helper.js";
 
 const DBG_GIZMOS = true;
 
@@ -85,6 +61,7 @@ const charWorldHeight = 2;
 const fontLineWorldWidth = CHARS.length * charWorldWidth;
 // const fontLineWorldHeight = charWorldHeight;
 const fontLineWorldHeight = fontLineWorldWidth;
+console.log("fontLineWorldWidth:" + fontLineWorldWidth);
 
 const shader_fontLine = `
 struct VertexOutput {
@@ -104,23 +81,24 @@ fn vertMain(input: VertexInput) -> VertexOutput {
 }
 
 struct FragOut {
-  // @location(0) color: f32,
-  @location(0) color: vec4<f32>,
+  @location(0) color: f32,
+  // @location(0) color: vec4<f32>,
 }
 
 @fragment fn fragMain(input: VertexOutput) -> FragOut {
   var output: FragOut;
-  // output.color = 1.0;
-  output.color = vec4(1.0);
+  output.color = 1.0;
+  // output.color = vec4(1.0);
   return output;
 }
 `;
 
 export const fontLineMaskTex = CY.createTexture("fontLineMaskTex", {
-  size: [fontLineWorldWidth * 16, fontLineWorldHeight * 16],
-  // format: "r32float",
-  format: "rgba8unorm",
+  size: [fontLineWorldWidth * 32, fontLineWorldHeight * 32],
+  format: "r8unorm",
+  // format: "rgba8unorm",
 });
+console.log("fontLineMaskTex.size:" + fontLineMaskTex.size[0]);
 
 export const pipeFontLineRender = CY.createRenderPipeline(
   "pipeFontLineRender",
@@ -152,12 +130,41 @@ export const pipeFontLineRender = CY.createRenderPipeline(
 const fontJfa = createJfaPipelines({
   maskTex: fontLineMaskTex,
   maskMode: "interior",
+  sdfDistFact: 40.0,
+  // maxDist: 16,
 });
+
+export const fontLineSdfExampleTex = CY.createTexture("fontLineSdfExampleTex", {
+  size: fontLineMaskTex.size,
+  format: "r8unorm",
+  // format: "r16float",
+  // format: "rgba8unorm",
+});
+const pipeFontLineSdfExample = createRenderTextureToQuad(
+  "pipeFontLineSdfExample",
+  fontJfa.sdfTex,
+  fontLineSdfExampleTex,
+  -1,
+  1,
+  -1,
+  1,
+  true,
+  () => `
+    // let c = textureLoad(inTex, xy, 0).x;
+    // let c = textureSample(inTex, samp, uv).x;
+    let c = inPx;
+    if (c < 0.1) {
+      return 1.0;
+    } else {
+      return 0.0;
+    }
+  `
+).pipeline;
 
 // prittier-ignore
 const dbgGrid = [
   [fontJfa._inputMaskTex, fontJfa._uvMaskTex],
-  [fontJfa.sdfTex, fontLineMaskTex],
+  [fontJfa.sdfTex, fontLineSdfExampleTex],
 ];
 let dbgGridCompose = createGridComposePipelines(dbgGrid);
 
@@ -334,6 +341,7 @@ export async function initCardsGame() {
     res.renderer.renderer.submitPipelines(handles, [
       pipeFontLineRender,
       ...fontJfa.allPipes(),
+      pipeFontLineSdfExample,
     ]);
 
     _frame++;

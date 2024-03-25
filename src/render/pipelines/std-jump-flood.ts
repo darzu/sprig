@@ -37,6 +37,7 @@ export interface JfaOpts {
   maxDist?: number;
   shader?: (shaders: ShaderSet) => string;
   shaderExtraGlobals?: readonly CyGlobalParam[];
+  sdfDistFact?: number;
 }
 
 // TODO(@darzu): wish this didn't have to be called at the top level always
@@ -46,8 +47,11 @@ export function createJfaPipelines({
   maxDist,
   shader,
   shaderExtraGlobals,
+  sdfDistFact,
 }: JfaOpts): JfaResult {
   let size = 512;
+
+  sdfDistFact = sdfDistFact ?? 4.0;
 
   const voronoiTexFmt: Parameters<typeof CY.createTexture>[1] = {
     size: [size, size],
@@ -127,10 +131,10 @@ export function createJfaPipelines({
 
   // TODO(@darzu): configurable SDF size?
   const sdfTex = CY.createTexture(namePrefix + "SdfTex", {
-    // size: [size, size],
-    size: [256, 256],
-    format: "r8unorm",
-    // format: "r16float",
+    size: [size, size],
+    // size: [256, 256],
+    // format: "r8unorm",
+    format: "r16float",
   });
 
   // console.log(`jfa for ${maskTex.name}`);
@@ -203,7 +207,7 @@ export function createJfaPipelines({
     () => `
       let nearestUV = textureLoad(inTex, xy, 0).xy;
       let dist = length(uv - nearestUV)
-         * 4.0; // TODO: make configurable
+         * ${sdfDistFact};
       return dist;
     `
   ).pipeline;
