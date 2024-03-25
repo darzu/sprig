@@ -271,6 +271,7 @@ export const painterlyJfa = createJfaPipelines({
   maskTex: painterlyJfaMaskTex,
   maskMode: "interior",
   maxDist: 64,
+  sizeToCanvas: true,
   shader: (shaders) => `
     ${shaders["std-helpers"].code}
     ${shaders["std-screen-quad-vert"].code}

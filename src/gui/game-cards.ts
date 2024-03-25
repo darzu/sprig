@@ -96,7 +96,7 @@ struct FragOut {
 `;
 
 export const fontLineMaskTex = CY.createTexture("fontLineMaskTex", {
-  size: [fontLineWorldSize * 32, fontLineWorldSize * 32],
+  size: [fontLineWorldSize * 128, fontLineWorldSize * 128],
   format: "r8unorm",
   // format: "rgba8unorm",
 });
@@ -132,8 +132,9 @@ export const pipeFontLineRender = CY.createRenderPipeline(
 const fontJfa = createJfaPipelines({
   maskTex: fontLineMaskTex,
   maskMode: "interior",
-  sdfDistFact: 40.0,
-  // maxDist: 16,
+  sdfDistFact: 10.0,
+  maxDist: 512,
+  size: 512 * 8,
 });
 
 export const fontLineSdfExampleTex = CY.createTexture("fontLineSdfExampleTex", {
@@ -142,6 +143,7 @@ export const fontLineSdfExampleTex = CY.createTexture("fontLineSdfExampleTex", {
   // format: "r16float",
   // format: "rgba8unorm",
 });
+console.log("fontLineSdfExampleTex.size:" + fontLineSdfExampleTex.size[0]);
 const pipeFontLineSdfExample = createRenderTextureToQuad(
   "pipeFontLineSdfExample",
   fontJfa.sdfTex,
@@ -155,11 +157,12 @@ const pipeFontLineSdfExample = createRenderTextureToQuad(
     // let c = textureLoad(inTex, xy, 0).x;
     // let c = textureSample(inTex, samp, uv).x;
     let c = inPx;
-    if (c < 0.1) {
-      return 1.0;
-    } else {
-      return 0.0;
-    }
+    // if (c < 0.05) {
+    return 1.0 - smoothstep(0.03, 0.05, c);
+      // return 1.0;
+    // } else {
+    //   return 0.0;
+    // }
   `
 ).pipeline;
 
@@ -304,11 +307,10 @@ export async function initCardsGame() {
 
     const row = Math.floor(i / charPerRow);
     const col = i % charPerRow;
-    // const ex = col * charWorldWidth + charOrigin[0];
-    const ex = col * charWorldWidth + charOrigin[0];
-    const ey = row * charWorldHeight + charOrigin[1];
+    const x = col * charWorldWidth + charWorldWidth / 2;
+    const y = row * charWorldHeight + charWorldHeight / 2;
 
-    EM.set(ent, PositionDef, [ex, ey, 0.1]);
+    EM.set(ent, PositionDef, [x, y, 0.1]);
 
     promises.push(
       EM.whenEntityHas(
