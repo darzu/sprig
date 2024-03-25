@@ -12,6 +12,7 @@ import { Mesh } from "../meshes/mesh.js";
 import {
   mkLine,
   mkLineChain,
+  mkLineSegs,
   mkPointCloud,
   mkTriangle,
 } from "../meshes/primatives.js";
@@ -37,7 +38,7 @@ import {
 } from "../render/renderer-ecs.js";
 import { TimeDef } from "../time/time.js";
 import { createIdxRing } from "./idx-pool.js";
-import { CompiledSVG, SVG, compileSVG } from "./svg.js";
+import { CompiledSVG, SVG, compileSVG, svgInstrIsStraight } from "./svg.js";
 import { never } from "./util-no-import.js";
 import { assert, range } from "./util.js";
 
@@ -120,6 +121,11 @@ export interface SketchLinesOpt {
   vs: V3.InputT[];
 }
 
+export interface SketchLineSegsOpt {
+  shape: "lineSegs";
+  lines: [V3.InputT, V3.InputT][];
+}
+
 export interface SketchDotOpt {
   shape: "dot";
   v: V3.InputT;
@@ -131,6 +137,7 @@ export type SketchEntOpt = SketchBaseOpt &
     | SketchLineOpt
     | SketchPointsOpt
     | SketchLinesOpt
+    | SketchLineSegsOpt
     | SketchCubeOpt
     | SketchTriOpt
   );
@@ -275,6 +282,26 @@ export const SketcherDef = defineResourceWithLazyInit(
             `sketch line chain "${o.key}" must stay same size! old:${m.pos.length} vs new:${o.vs.length}`
           );
           for (let i = 0; i < o.vs.length; i++) V3.copy(m.pos[i], o.vs[i]);
+        },
+        pool: lineMeshPoolPtr,
+      },
+      lineSegs: {
+        newMesh: (o) => mkLineSegs(o.lines.length),
+        updateMesh: (o, m) => {
+          assert(
+            m.dbgName === "lineSegs",
+            `expected "lineSegs" vs "${m.dbgName}"`
+          );
+          assert(
+            m.lines!.length === o.lines.length,
+            `sketch line segs "${o.key}" must stay same size! old:${
+              m.lines!.length
+            } vs new:${o.lines.length}`
+          );
+          for (let i = 0; i < o.lines.length; i++) {
+            V3.copy(m.pos[i * 2], o.lines[i][0]);
+            V3.copy(m.pos[i * 2 + 1], o.lines[i][1]);
+          }
         },
         pool: lineMeshPoolPtr,
       },
@@ -432,6 +459,12 @@ export async function sketchLines(
 ): Promise<SketchEnt> {
   return sketchEnt({ vs, shape: "lines", ...opt });
 }
+export async function sketchLineSegs(
+  lines: [V3.InputT, V3.InputT][],
+  opt: SketchBaseOpt = {}
+): Promise<SketchEnt> {
+  return sketchEnt({ lines, shape: "lineSegs", ...opt });
+}
 
 export async function sketchDot(
   v: V3.InputT,
@@ -468,27 +501,37 @@ export async function sketchSvgC(
   svgC: CompiledSVG,
   opt: SketchBaseOpt & {
     origin?: V3.InputT;
-    num?: number;
+    numPerInstr?: number;
   } = {}
 ): Promise<SketchEnt> {
-  const num = opt.num ?? 10;
-  assert(num >= 1);
-  const vs: V3.InputT[] = [];
-  for (let i = 0; i < num; i++) {
-    const t = i / num - 1;
-    const v2 = svgC.fn(t);
-    const v3 = tV(v2[0], v2[1], 0);
-    if (opt.origin) V3.add(v3, opt.origin, v3);
-    vs.push(v3);
+  const numPerInstr = opt.numPerInstr ?? 2;
+  assert(numPerInstr >= 2);
+  const segs: [V3.InputT, V3.InputT][] = [];
+  for (let i = 0; i < svgC.svg.length; i++) {
+    if (svgC.lengths[i] <= 0) continue;
+    const vs: V3.InputT[] = [];
+    const instr = svgC.svg[i];
+    let num = numPerInstr;
+    if (svgInstrIsStraight(instr)) num = 2;
+    for (let j = 0; j < num; j++) {
+      const t = j / (num - 1);
+      const v2 = svgC.instrFn(i, t);
+      const v3 = tV(v2[0], v2[1], 0);
+      if (opt.origin) V3.add(v3, opt.origin, v3);
+      vs.push(v3);
+    }
+    for (let k = 0; k < vs.length - 1; k++) {
+      segs.push([vs[k], vs[k + 1]]);
+    }
   }
-  vs.push(V3.copy(V3.tmp(), vs[0]));
-  return sketchLines(vs, opt);
+  // vs.push(V3.copy(V3.tmp(), vs[0]));
+  return sketchLineSegs(segs, opt);
 }
 export async function sketchSvg(
   svg: SVG,
   opt: SketchBaseOpt & {
     origin?: V3.InputT;
-    num?: number;
+    numPerInstr?: number;
   } = {}
 ): Promise<SketchEnt> {
   return sketchSvgC(compileSVG(svg), opt);
