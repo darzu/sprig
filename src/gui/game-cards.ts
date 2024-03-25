@@ -32,19 +32,24 @@ import { BallMesh } from "../meshes/mesh-list.js";
 import { GameMesh, gameMeshFromMesh } from "../meshes/mesh-loader.js";
 import { createGhost, gameplaySystems } from "../debug/ghost.js";
 import { TextDef } from "./ui.js";
-import { makePlaneMesh } from "../meshes/primatives.js";
+import { makePlaneMesh, mkLineSegs } from "../meshes/primatives.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { addWorldGizmo } from "../utils/utils-game.js";
-import { SVG, compileSVG } from "../utils/svg.js";
+import { SVG, compileSVG, svgToLineSeg } from "../utils/svg.js";
 import { sketchLines, sketchSvg } from "../utils/sketch.js";
-import { linePipe, pointPipe } from "../render/pipelines/std-line.js";
+import {
+  lineMeshPoolPtr,
+  linePipe,
+  pointPipe,
+} from "../render/pipelines/std-line.js";
 import { CHAR_SVG, MISSING_CHAR_SVG } from "./svg-font.js";
-import { UICursorDef } from "./game-font.js";
+import { UICursorDef, registerUICameraSys } from "./game-font.js";
+import { initGhost } from "../graybox/graybox-helpers.js";
 
 const DBG_GIZMOS = true;
 
-const DBG_3D = false; // TODO(@darzu): add in-game smooth transition!
+const DBG_3D = true; // TODO(@darzu): add in-game smooth transition!
 
 const PANEL_W = 4 * 12;
 const PANEL_H = 3 * 12;
@@ -102,7 +107,7 @@ export async function initCardsGame() {
   // panelMesh.colors[0] = [0.1, 0.3, 0.1];
   // panelMesh.colors[1] = [0.1, 0.1, 0.3];
   panelMesh.colors[0] = V3.clone(ENDESGA16.darkGreen);
-  panelMesh.colors[1] = V3.clone(ENDESGA16.darkRed);
+  panelMesh.colors[1] = V3.clone(ENDESGA16.darkRed); // underside
   EM.set(panel, RenderableConstructDef, panelMesh);
   // EM.set(panel, ColorDef, ENDESGA16.red);
   EM.set(panel, PositionDef, V(0, 0, 0));
@@ -110,13 +115,14 @@ export async function initCardsGame() {
   if (DBG_GIZMOS) addWorldGizmo(V(-PANEL_W * 0.5, -PANEL_H * 0.5, 0));
 
   if (DBG_3D) {
-    const g = createGhost(BallMesh);
-
-    V3.copy(g.position, [-21.83, -25.01, 21.79]);
-    quat.copy(g.rotation, [0.0, 0.0, -0.31, 0.95]);
-    V3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
-    g.cameraFollow.yawOffset = 0.0;
-    g.cameraFollow.pitchOffset = -0.685;
+    // const g = createGhost(BallMesh);
+    // V3.copy(g.position, [-21.83, -25.01, 21.79]);
+    // quat.copy(g.rotation, [0.0, 0.0, -0.31, 0.95]);
+    // V3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
+    // g.cameraFollow.yawOffset = 0.0;
+    // g.cameraFollow.pitchOffset = -0.685;
+    const g = initGhost();
+    g.controllable.speed *= 0.4;
   }
 
   {
@@ -136,191 +142,31 @@ export async function initCardsGame() {
       canvas.htmlCanvas.unlockMouse()
     );
 
-  // const { allMeshes} = await EM.whenResources(AssetsDef);
+  registerUICameraSys();
 
-  // TODO(@darzu): de-duplicate this with very similar code in other "games"
-  EM.addSystem(
-    "uiCameraView",
-    Phase.GAME_WORLD,
-    null,
-    [CameraComputedDef, CanvasDef, CameraDef, InputsDef, UICursorDef],
-    (_, res) => {
-      const { cameraComputed, htmlCanvas, inputs } = res;
-      const cursor = res.uiCursor.cursor;
-
-      if (res.camera.targetId) return;
-
-      // update aspect ratio and size
-      // TODO(@darzu): modifying cameraComputed directly is odd
-      cameraComputed.aspectRatio = Math.abs(
-        htmlCanvas.canvas.width / htmlCanvas.canvas.height
-      );
-      cameraComputed.width = htmlCanvas.canvas.clientWidth;
-      cameraComputed.height = htmlCanvas.canvas.clientHeight;
-
-      // dbgLogOnce(
-      //   `ar${cameraComputed.aspectRatio.toFixed(2)}`,
-      //   `ar ${cameraComputed.aspectRatio.toFixed(2)}`
-      // );
-
-      let viewMatrix = mat4.create();
-
-      // mat4.rotateX(viewMatrix, Math.PI * 0.5, viewMatrix);
-
-      const projectionMatrix = mat4.create();
-
-      // TODO(@darzu): PRESERVE ASPECT RATIO!
-      const VIEW_PAD = PANEL_W / 12;
-
-      const padPanelW = PANEL_W + VIEW_PAD * 2;
-      const padPanelH = PANEL_H + VIEW_PAD * 2;
-
-      const padPanelAR = padPanelW / padPanelH;
-      const cameraAR = cameraComputed.width / cameraComputed.height;
-
-      // const maxPanelW = boxInBox(cameraComputed.width, cameraComputed.height, panelAR);
-
-      let adjPanelW: number;
-      let adjPanelH: number;
-      if (cameraAR < padPanelAR) {
-        // camera is "more portrait" than panel, thus we're width-constrained
-        adjPanelW = padPanelW;
-        adjPanelH = adjPanelW * (1 / cameraAR);
-      } else {
-        // conversely, we're height-constrained
-        adjPanelH = padPanelH;
-        adjPanelW = adjPanelH * cameraAR;
-      }
-
-      // TODO(@darzu): i don't understand the near/far clipping; why can't they be like -4, 4 ?
-      mat4.ortho(
-        -adjPanelW * 0.5,
-        adjPanelW * 0.5,
-        -adjPanelH * 0.5,
-        adjPanelH * 0.5,
-        -24,
-        12,
-        projectionMatrix
-      );
-
-      const viewProj = mat4.mul(projectionMatrix, viewMatrix, mat4.create());
-
-      cameraComputed.viewProj = viewProj;
-      cameraComputed.invViewProj = mat4.invert(
-        cameraComputed.viewProj,
-        cameraComputed.invViewProj
-      );
-
-      let cursorFracX = inputs.mousePos[0] / htmlCanvas.canvas.clientWidth;
-      let cursorFracY = inputs.mousePos[1] / htmlCanvas.canvas.clientHeight;
-      const cursorWorldPos = V3.tMat4(
-        [
-          remap(cursorFracX, 0, 1, -1, 1),
-          remap(cursorFracY, 0, 1, 1, -1), // screen is Y down, world is Y up
-          0,
-        ],
-        cameraComputed.invViewProj
-      );
-      cursor.position[0] = cursorWorldPos[0];
-      cursor.position[1] = cursorWorldPos[1];
-    }
-  );
-
-  // Starter mesh for each letter
-  const quadMesh: Mesh = {
-    quad: [V4.clone([0, 1, 2, 3])],
-    tri: [],
-    pos: [V(-1, -1, 0), V(1, -1, 0), V(1, 1, 0), V(-1, 1, 0)],
-    colors: [randNormalPosVec3()],
-    surfaceIds: [1],
-    usesProvoking: true,
-  };
-  scaleMesh(quadMesh, 0.5);
-  const quadGMesh = gameMeshFromMesh(quadMesh, res.renderer.renderer, {
-    maxVertNum: 100,
-    maxPrimNum: 100,
-  });
-
-  // TODO(@darzu): HACK
-  // Export!
-  (dbg as any).exportPoly = () => {
-    console.log(exportObj(quadMesh));
-  };
-
-  // sketchLines([
-  //   [10, 10, 1],
-  //   [20, 15, 1],
-  //   [-50, -50, 1],
-  // ]);
-
-  // button per letter
-  // TODO(@darzu): render buttons?
-  // const CHARS = `abcdefghijklmnopqrstuvwxyz.`.split("");
-  // const CHARS = `1234567890JQKA.`.split("");
-  const polyBank = new Map<number, GameMesh>();
-  const btnKey = `letter`;
   for (let i = 0; i < CHARS.length; i++) {
     const c = CHARS[i];
-    const letterKey = `letter-${c}`;
-    const mesh = cloneMesh(quadGMesh.mesh);
-    // const mesh = cloneMesh(res.buttonsState.gmesh.mesh);
-    mesh.dbgName = letterKey;
-    // console.dir(res.buttonsState.gmesh.mesh);
-    // console.dir(mesh);
-    const reserve: MeshReserve = {
-      maxVertNum: 100,
-      maxPrimNum: 100,
-      // maxLineNum: mesh.lines?.length ?? 0,
-    };
-    const gmesh = gameMeshFromMesh(mesh, res.renderer.renderer, reserve);
-    // TODO(@darzu): update gmesh after half-edge editor changes: aabb etc
-
-    polyBank.set(i, gmesh);
 
     let svg = CHAR_SVG[c];
     if (!svg) svg = MISSING_CHAR_SVG;
-    const btn = await sketchSvg(svg, { numPerInstr: 10, key: letterKey });
-
-    // const btn = EM.new();
-    // EM.set(btn, RenderableConstructDef, gmesh.proto);
-    // EM.set(btn, RenderableConstructDef, svgE.);
-    EM.set(btn, PositionDef, V(-24 + i * 2, -12, 0.1));
-    EM.set(btn, ButtonDef, btnKey, i, {
-      default: ENDESGA16.lightGray,
-      hover: ENDESGA16.darkGray,
-      down: ENDESGA16.orange,
-    });
-    EM.set(btn, ColorDef);
-    EM.set(btn, ColliderDef, {
-      shape: "AABB",
-      solid: false,
-      aabb: gmesh.aabb,
-    });
-
-    // TODO(@darzu): NEED TO UPDATE MeshEditor based on letter button press
-  }
-
-  // Edit letters
-  EM.addSystem(
-    "letterBtnClick",
-    Phase.GAME_WORLD,
-    null,
-    [ButtonsStateDef, MeshEditorDef, TextDef],
-    (_, res) => {
-      const btnIdx = res.buttonsState.clickByKey[btnKey];
-      if (btnIdx !== undefined) {
-        const poly = polyBank.get(btnIdx);
-        assert(poly);
-        res.meshEditor.setMesh(poly.proto);
-        res.text.upperText = CHARS[btnIdx];
-        res.text.upperDiv.style.fontSize = "128px";
-        res.text.upperDiv.style.top = "32px";
-        // res.text.upperDiv.style.color = "";
-
-        // TODO(@darzu): HACKy export:
-        console.log(`mesh '${btnIdx}'`);
-        console.log(stringifyMesh(poly.proto.mesh!));
-      }
+    const segs = svgToLineSeg(compileSVG(svg), { numPerInstr: 10 });
+    const mesh = mkLineSegs(segs.length);
+    for (let i = 0; i < segs.length; i++) {
+      V3.copy(mesh.pos[i * 2], segs[i][0]);
+      V3.copy(mesh.pos[i * 2 + 1], segs[i][1]);
     }
-  );
+
+    const ent = EM.new();
+    EM.set(
+      ent,
+      RenderableConstructDef,
+      mesh,
+      true,
+      undefined,
+      undefined,
+      lineMeshPoolPtr
+    );
+    EM.set(ent, ColorDef, ENDESGA16.yellow);
+    EM.set(ent, PositionDef, [-24 + i * 2, -12, 0.1]);
+  }
 }

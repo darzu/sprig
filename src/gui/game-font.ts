@@ -102,89 +102,7 @@ EM.addLazyInit([HeOctoMesh.def], [UICursorDef], ({ mesh_he_octo }) => {
   EM.addResource(UICursorDef, cursor);
 });
 
-export async function initFontEditor() {
-  // console.log(`panel ${PANEL_W}x${PANEL_H}`);
-
-  const res = await EM.whenResources(
-    AllMeshesDef,
-    RendererDef,
-    ButtonsStateDef
-  );
-
-  // res.renderer.pipelines = [
-  //   // ...shadowPipelines,
-  //   stdRenderPipeline,
-  //   alphaRenderPipeline,
-  //   outlineRender,
-  //   deferredPipeline,
-  //   postProcess,
-  // ];
-  res.renderer.pipelines = [
-    stdMeshPipe,
-    alphaRenderPipeline,
-    outlineRender,
-    deferredPipeline,
-
-    pointPipe,
-    linePipe,
-
-    postProcess,
-  ];
-
-  const sunlight = EM.new();
-  EM.set(sunlight, PointLightDef);
-  sunlight.pointLight.constant = 1.0;
-  V3.copy(sunlight.pointLight.ambient, [0.8, 0.8, 0.8]);
-  EM.set(sunlight, PositionDef, V(10, 10, 100));
-  // TODO(@darzu): weird, why does renderable need to be on here?
-  EM.set(sunlight, RenderableConstructDef, res.allMeshes.ball.proto, false);
-
-  const panel = EM.new();
-  const panelMesh = makePlaneMesh(
-    -PANEL_W * 0.5,
-    PANEL_W * 0.5,
-    -PANEL_H * 0.5,
-    PANEL_H * 0.5
-  );
-  // panelMesh.colors[0] = [0.1, 0.3, 0.1];
-  // panelMesh.colors[1] = [0.1, 0.1, 0.3];
-  panelMesh.colors[0] = V3.clone(ENDESGA16.darkGreen);
-  panelMesh.colors[1] = V3.clone(ENDESGA16.darkRed);
-  EM.set(panel, RenderableConstructDef, panelMesh);
-  // EM.set(panel, ColorDef, ENDESGA16.red);
-  EM.set(panel, PositionDef, V(0, 0, 0));
-
-  if (DBG_GIZMOS) addWorldGizmo(V(-PANEL_W * 0.5, -PANEL_H * 0.5, 0));
-
-  if (DBG_3D) {
-    const g = createGhost(res.allMeshes.ball.proto);
-
-    V3.copy(g.position, [-21.83, -25.01, 21.79]);
-    quat.copy(g.rotation, [0.0, 0.0, -0.31, 0.95]);
-    V3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
-    g.cameraFollow.yawOffset = 0.0;
-    g.cameraFollow.pitchOffset = -0.685;
-  }
-
-  {
-    const { camera } = await EM.whenResources(CameraDef);
-    camera.fov = Math.PI * 0.5;
-    camera.targetId = 0;
-    // const cameraTarget = EM.new();
-    // EM.set(cameraTarget, PositionDef, V(0, 0, 0));
-    // EM.set(cameraTarget, RotationDef);
-    // EM.set(cameraTarget, CameraFollowDef);
-    // cameraTarget.cameraFollow.pitchOffset = -0.5 * Math.PI;
-  }
-
-  // TODO(@darzu): mouse lock?
-  if (!DBG_3D)
-    EM.whenResources(CanvasDef).then((canvas) =>
-      canvas.htmlCanvas.unlockMouse()
-    );
-
-  // const { allMeshes} = await EM.whenResources(AssetsDef);
-
+export function registerUICameraSys() {
   // TODO(@darzu): de-duplicate this with very similar code in other "games"
   EM.addSystem(
     "uiCameraView",
@@ -272,6 +190,92 @@ export async function initFontEditor() {
       cursor.position[1] = cursorWorldPos[1];
     }
   );
+}
+
+export async function initFontEditor() {
+  // console.log(`panel ${PANEL_W}x${PANEL_H}`);
+
+  const res = await EM.whenResources(
+    AllMeshesDef,
+    RendererDef,
+    ButtonsStateDef
+  );
+
+  // res.renderer.pipelines = [
+  //   // ...shadowPipelines,
+  //   stdRenderPipeline,
+  //   alphaRenderPipeline,
+  //   outlineRender,
+  //   deferredPipeline,
+  //   postProcess,
+  // ];
+  res.renderer.pipelines = [
+    stdMeshPipe,
+    alphaRenderPipeline,
+    outlineRender,
+    deferredPipeline,
+
+    pointPipe,
+    linePipe,
+
+    postProcess,
+  ];
+
+  const sunlight = EM.new();
+  EM.set(sunlight, PointLightDef);
+  sunlight.pointLight.constant = 1.0;
+  V3.copy(sunlight.pointLight.ambient, [0.8, 0.8, 0.8]);
+  EM.set(sunlight, PositionDef, V(10, 10, 100));
+  // TODO(@darzu): weird, why does renderable need to be on here?
+  EM.set(sunlight, RenderableConstructDef, res.allMeshes.ball.proto, false);
+
+  const panel = EM.new();
+  const panelMesh = makePlaneMesh(
+    -PANEL_W * 0.5,
+    PANEL_W * 0.5,
+    -PANEL_H * 0.5,
+    PANEL_H * 0.5
+  );
+  // panelMesh.colors[0] = [0.1, 0.3, 0.1];
+  // panelMesh.colors[1] = [0.1, 0.1, 0.3];
+  panelMesh.colors[0] = V3.clone(ENDESGA16.darkGreen);
+  panelMesh.colors[1] = V3.clone(ENDESGA16.darkRed);
+  EM.set(panel, RenderableConstructDef, panelMesh);
+  // EM.set(panel, ColorDef, ENDESGA16.red);
+  EM.set(panel, PositionDef, V(0, 0, 0));
+
+  if (DBG_GIZMOS) addWorldGizmo(V(-PANEL_W * 0.5, -PANEL_H * 0.5, 0));
+
+  if (DBG_3D) {
+    const g = createGhost(res.allMeshes.ball.proto);
+
+    V3.copy(g.position, [-21.83, -25.01, 21.79]);
+    quat.copy(g.rotation, [0.0, 0.0, -0.31, 0.95]);
+    V3.copy(g.cameraFollow.positionOffset, [0.0, 0.0, 0.0]);
+    g.cameraFollow.yawOffset = 0.0;
+    g.cameraFollow.pitchOffset = -0.685;
+  }
+
+  {
+    const { camera } = await EM.whenResources(CameraDef);
+    camera.fov = Math.PI * 0.5;
+    camera.targetId = 0;
+    // const cameraTarget = EM.new();
+    // EM.set(cameraTarget, PositionDef, V(0, 0, 0));
+    // EM.set(cameraTarget, RotationDef);
+    // EM.set(cameraTarget, CameraFollowDef);
+    // cameraTarget.cameraFollow.pitchOffset = -0.5 * Math.PI;
+  }
+
+  // TODO(@darzu): mouse lock?
+  if (!DBG_3D)
+    EM.whenResources(CanvasDef).then((canvas) =>
+      canvas.htmlCanvas.unlockMouse()
+    );
+
+  // const { allMeshes} = await EM.whenResources(AssetsDef);
+
+  registerUICameraSys();
 
   // Starter mesh for each letter
   const quadMesh: Mesh = {

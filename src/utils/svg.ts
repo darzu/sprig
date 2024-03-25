@@ -1,5 +1,5 @@
 import { ENDESGA16 } from "../color/palettes.js";
-import { V, V2, V3, tV } from "../matrix/sprig-matrix.js";
+import { V, V2, V3, tV, tmpStack } from "../matrix/sprig-matrix.js";
 import { createAABB2 } from "../physics/aabb.js";
 import { angularDiff, sum, wrap } from "./math.js";
 import { sketchDot, sketchLine, sketchPoints } from "./sketch.js";
@@ -359,4 +359,36 @@ function debugSVG(to3d: (v2d: V2.InputT, out?: V3) => V3) {
       color: ENDESGA16.lightGray,
     });
   }
+}
+
+export function svgToLineSeg(
+  svgC: CompiledSVG,
+  opt: {
+    origin?: V3.InputT;
+    numPerInstr?: number;
+  } = {}
+): [V3, V3][] {
+  const _stk = tmpStack();
+  const numPerInstr = opt.numPerInstr ?? 2;
+  assert(numPerInstr >= 2);
+  const segs: [V3, V3][] = [];
+  for (let i = 0; i < svgC.svg.length; i++) {
+    if (svgC.lengths[i] <= 0) continue;
+    const vs: V3[] = [];
+    const instr = svgC.svg[i];
+    let num = numPerInstr;
+    if (svgInstrIsStraight(instr)) num = 2;
+    for (let j = 0; j < num; j++) {
+      const t = j / (num - 1);
+      const v2 = svgC.instrFn(i, t);
+      const v3 = V(v2[0], v2[1], 0);
+      if (opt.origin) V3.add(v3, opt.origin, v3);
+      vs.push(v3);
+    }
+    for (let k = 0; k < vs.length - 1; k++) {
+      segs.push([vs[k], vs[k + 1]]);
+    }
+  }
+  _stk.pop();
+  return segs;
 }

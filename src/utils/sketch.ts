@@ -38,7 +38,13 @@ import {
 } from "../render/renderer-ecs.js";
 import { TimeDef } from "../time/time.js";
 import { createIdxRing } from "./idx-pool.js";
-import { CompiledSVG, SVG, compileSVG, svgInstrIsStraight } from "./svg.js";
+import {
+  CompiledSVG,
+  SVG,
+  compileSVG,
+  svgInstrIsStraight,
+  svgToLineSeg,
+} from "./svg.js";
 import { never } from "./util-no-import.js";
 import { assert, range } from "./util.js";
 
@@ -504,27 +510,8 @@ export async function sketchSvgC(
     numPerInstr?: number;
   } = {}
 ): Promise<SketchEnt> {
-  const numPerInstr = opt.numPerInstr ?? 2;
-  assert(numPerInstr >= 2);
-  const segs: [V3.InputT, V3.InputT][] = [];
-  for (let i = 0; i < svgC.svg.length; i++) {
-    if (svgC.lengths[i] <= 0) continue;
-    const vs: V3.InputT[] = [];
-    const instr = svgC.svg[i];
-    let num = numPerInstr;
-    if (svgInstrIsStraight(instr)) num = 2;
-    for (let j = 0; j < num; j++) {
-      const t = j / (num - 1);
-      const v2 = svgC.instrFn(i, t);
-      const v3 = tV(v2[0], v2[1], 0);
-      if (opt.origin) V3.add(v3, opt.origin, v3);
-      vs.push(v3);
-    }
-    for (let k = 0; k < vs.length - 1; k++) {
-      segs.push([vs[k], vs[k + 1]]);
-    }
-  }
   // vs.push(V3.copy(V3.tmp(), vs[0]));
+  const segs = svgToLineSeg(svgC, opt);
   return sketchLineSegs(segs, opt);
 }
 export async function sketchSvg(
