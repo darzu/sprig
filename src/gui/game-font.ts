@@ -149,6 +149,31 @@ const CHAR_SVG: Record<string, SVG> = {
     { i: "v", dy: 0.7 },
     { i: "h", dx: -0.4 },
   ],
+  Q: [
+    { i: "M", x: -0.3, y: 0.2 },
+    { i: "a", rx: 0.3, dx: 0.6, dy: 0, largeArc: true },
+    { i: "v", dy: -0.4 },
+    { i: "a", rx: 0.3, dx: -0.6, dy: 0, largeArc: true },
+    { i: "v", dy: 0.4 },
+    { i: "M", x: 0.05, y: -0.2 },
+    { i: "m", dx: 0.3, dy: -0.4 },
+  ],
+  K: [
+    { i: "M", x: -0.3, y: -0.5 },
+    { i: "v", dy: 1 },
+    { i: "M", x: -0.3, y: -0.1 },
+    { i: "m", dx: 0.6, dy: 0.5 },
+    { i: "M", x: -0.1, y: 0.1 },
+    { i: "m", dx: 0.4, dy: -0.6 },
+  ],
+  A: [
+    { i: "M", x: -0.3, y: -0.5 },
+    { i: "m", dx: 0.3, dy: 1 },
+    { i: "M", x: 0.3, y: -0.5 },
+    { i: "m", dx: -0.3, dy: 1 },
+    { i: "M", x: -0.2, y: 0 },
+    { i: "h", dx: 0.4 },
+  ],
 };
 
 export const UICursorDef = EM.defineResource(
