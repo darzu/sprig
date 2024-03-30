@@ -121,6 +121,8 @@ export interface CyCompPipeline {
   // resourceLayouts: CyBufferPtrLayout<CyStructDesc>[];
   pipeline: GPUComputePipeline;
   bindGroupLayout: GPUBindGroupLayout;
+  // TODO(@darzu): allow function to return dynamic workgroup count
+  // TODO(@darzu): allow indirect dispatch arguments
   workgroupCounts: [number, number, number];
 }
 

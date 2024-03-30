@@ -72,6 +72,8 @@ maybe draw a scene in a seperate little window,
 // TODO(@darzu): use JS Proxy's to wrap e.g. vectors in a visualization.
 // TODO(@darzu): sketches can be assigned "local space" that's a transform they belong to e.g. a direction vector relative to some entity's transform
 
+// TODO(@darzu): pool mesh handles instead of / in addition to entities?
+
 export const SketchObj = defineObj({
   name: "sketch",
   propsType: T<{ key: string }>(),

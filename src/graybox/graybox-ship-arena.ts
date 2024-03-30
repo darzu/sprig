@@ -3,8 +3,9 @@ import { CameraDef, CameraFollowDef } from "../camera/camera.js";
 import { AlphaDef, ColorDef, TintsDef } from "../color/color-ecs.js";
 import { ENDESGA16, seqEndesga16 } from "../color/palettes.js";
 import { DevConsoleDef } from "../debug/console.js";
-import { DeletedDef } from "../ecs/delete.js";
-import { EM, EntityW, Resources } from "../ecs/entity-manager.js";
+import { DeadDef, DeletedDef } from "../ecs/delete.js";
+import { EM, Entity, EntityW, Resources } from "../ecs/entity-manager.js";
+import { createEntityPool } from "../ecs/entity-pool.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { createHexGrid, hexXYZ, hexesWithin } from "../hex/hex.js";
 import { InputsDef } from "../input/inputs.js";
@@ -78,7 +79,15 @@ import {
   sketchYawPitch,
 } from "../utils/sketch.js";
 import { Path } from "../utils/spline.js";
-import { PI, PId12, PId2, PId3, PId8 } from "../utils/util-no-import.js";
+import {
+  PI,
+  PId12,
+  PId2,
+  PId3,
+  PId4,
+  PId6,
+  PId8,
+} from "../utils/util-no-import.js";
 import { FALSE, TRUE, assert, range } from "../utils/util.js";
 import { angleBetween, randVec3OfLen } from "../utils/utils-3d.js";
 import { addGizmoChild } from "../utils/utils-game.js";
@@ -87,24 +96,34 @@ import { WindDef, setWindAngle } from "../wind/wind.js";
 import { createSock } from "../wind/windsock.js";
 import { DotsAlloc, DotsDef } from "./dots.js";
 import { createSun, initGhost } from "./graybox-helpers.js";
-import { ObjEnt, T, createObj, defineObj, mixinObj } from "./objects.js";
-
-// TODO(@darzu): MERGE: split into ship-arena and shading demo
+import {
+  ChildrenDef,
+  ObjEnt,
+  T,
+  createObj,
+  defineObj,
+  mixinObj,
+} from "./objects.js";
 
 /*
-Prioritized ToDo:
-[x] aim cannon
-[x] enemy exists
-[ ] player and enemy health
-[x] enemy moves
-[ ] enemy fires
-[ ] smart enemy ai    
+ToDo:
+[ ] 1-5 ability bar
+[ ] Wind boost for speed
+  [ ] wind particle system?
+[ ] tracer shot ability
+[ ] tweak ball speed & gravity
+[ ] increase ship hull target size
+[ ] ball particle trail
+[ ] ball splash particles
+[ ] ball hit particles
+[ ] wave skimming torpedoes
+[ ] adjust numbers in-editor
 */
 
 const DBG_GHOST = false;
 const DBG_GIZMO = true;
 const DBG_DOTS = false;
-const DBG_ENEMY = true;
+const DBG_ENEMY_MOV = true;
 const DBG_CANNONS = true;
 
 const DBG_TRAILS = true;
@@ -113,7 +132,14 @@ const SAIL_FURL_RATE = 0.02;
 
 const CANNON_MAX_YAW = PI * 0.2;
 
-const GRAVITY = 8 * 0.00001;
+// FUN: bigger numbers (20, .4) battle is farther apart and AI is OP; nearer (8, .2) much more intimate and player is more powerful
+const GRAVITY = 20 * 0.00001; // TODO(@darzu): UNITS. Would love M/S or similar
+const cannonBallSpeed = 0.4;
+
+const enemyAttackRadius = 500;
+
+const minPitch = -PId8;
+const maxPitch = +PId6; // FUN: higher max pitch up to PI/4 allows farther fighting but bullets flying out of camera view isn't as fun and is hard for player to aim
 
 let _obb_systems = _OBB_SYSTEMS; // TODO(@darzu): HACK. force import. yuck.
 
@@ -158,6 +184,7 @@ const ShipDef = ShipObj.props;
 const PlayerShipObj = defineObj({
   name: "playerShip",
   components: [CameraFollowDef],
+  propsType: T<{ reloadMs: number; lastFireMs: number }>(),
 });
 const PlayerShipDef = PlayerShipObj.props;
 
@@ -223,6 +250,21 @@ function launchBall(params: Parametric, team: number) {
 
   return ball;
 }
+
+EM.addSystem(
+  "ballHitWater",
+  Phase.GAME_WORLD,
+  [CannonBallDef, PositionDef],
+  [],
+  (es) => {
+    for (let e of es) {
+      if (e.position[2] < 0) {
+        EM.set(e, ColorDef, ENDESGA16.blue);
+        EM.set(e, DeadDef);
+      }
+    }
+  }
+);
 
 interface DotPath {
   path: Path;
@@ -394,12 +436,17 @@ export async function initGrayboxShipArena() {
   setWindAngle(wind, PI * 0.4);
 
   // player ship
+  const playerStartPos: V3.InputT = [0, -500, 3];
   const playerShip = createShip({
     healthFullColor: ENDESGA16.darkGreen,
     healthMissingColor: ENDESGA16.deepGreen,
-    position: [-200, -200, 3],
+    position: playerStartPos,
   });
   mixinObj(playerShip, PlayerShipObj, {
+    props: {
+      reloadMs: 2000,
+      lastFireMs: 0,
+    },
     args: {
       cameraFollow: undefined,
     },
@@ -408,7 +455,7 @@ export async function initGrayboxShipArena() {
   playerShip.cameraFollow.pitchOffset = -PI * 0.2;
 
   // enemy
-  createEnemy();
+  createEnemy([-40, 500, 3]);
 
   // dbg ghost
   if (DBG_GHOST) {
@@ -433,7 +480,7 @@ export async function initGrayboxShipArena() {
     "controlShip",
     Phase.GAME_PLAYERS,
     [ShipDef, PlayerShipDef, HasRudderDef, HasMastDef, CameraFollowDef],
-    [InputsDef, CanvasDef, RendererDef],
+    [InputsDef, CanvasDef, RendererDef, TimeDef],
     (es, res) => {
       if (!res.htmlCanvas.hasMouseLock()) return;
       if (es.length === 0) return;
@@ -488,7 +535,7 @@ export async function initGrayboxShipArena() {
         for (let c of cannons) {
           c.yawpitch.yaw += res.inputs.mouseMov[0] * 0.005;
           c.yawpitch.pitch -= res.inputs.mouseMov[1] * 0.005;
-          c.yawpitch.pitch = clamp(c.yawpitch.pitch, 0, PI * 0.5);
+          c.yawpitch.pitch = clamp(c.yawpitch.pitch, minPitch, maxPitch);
           c.yawpitch.yaw =
             clamp(
               c.yawpitch.yaw - c.cannon2.baseYaw,
@@ -501,16 +548,24 @@ export async function initGrayboxShipArena() {
         quat.fromYawPitch(c.yawpitch, c.rotation);
       }
 
-      // firing?
-      const ballSpeed = 0.2;
+      // aim paths (and fire)
       if (aiming) {
-        const doFire = res.inputs.keyClicks[" "];
+        // should fire?
+        const doFire =
+          res.inputs.keyClicks[" "] &&
+          ship.playerShip.lastFireMs + ship.playerShip.reloadMs <=
+            res.time.time;
+
+        if (doFire) {
+          // reload
+          ship.playerShip.lastFireMs = res.time.time;
+        }
 
         let idx = 0;
         for (let c of cannons) {
           if (!WorldFrameDef.isOn(c)) continue;
           // get fire solution
-          cannonFireCurve(c.world, ballSpeed, _launchParam);
+          cannonFireCurve(c.world, cannonBallSpeed, _launchParam);
 
           // display path
           // TODO(@darzu): SKETCH. create sketchPath or equiv
@@ -534,8 +589,10 @@ export async function initGrayboxShipArena() {
 
           idx++;
         }
-      } else {
-        // hide path?
+      }
+
+      // hide path?
+      if (!aiming) {
         _dotPaths.forEach((p) => p.hide());
       }
     }
@@ -543,8 +600,14 @@ export async function initGrayboxShipArena() {
 
   onCollides([CannonBallDef], [EnemyDef, ShipDef], [], (ball, ship) => {
     if (ball.cannonBall.team !== PLAYER_TEAM) return;
-    ship.ship.healthBar.statBar.value -= 10;
     EM.set(ball, DeletedDef);
+
+    ship.ship.healthBar.statBar.value -= 10;
+    if (ship.ship.healthBar.statBar.value <= 0) {
+      // TODO(@darzu): FIX! doesn't delete children properly and we want to use a pool anyway!
+      // EM.set(ship, DeletedDef);
+      doDeadObjAndChildren(ship);
+    }
   });
 
   onCollides([CannonBallDef], [PlayerShipDef, ShipDef], [], (ball, ship) => {
@@ -554,6 +617,15 @@ export async function initGrayboxShipArena() {
   });
 
   initEnemies();
+}
+
+// TODO(@darzu): HACK. This doesn't get rid of the wind sock
+function doDeadObjAndChildren(e: Entity) {
+  if (ChildrenDef.isOn(e)) {
+    e.children.forEach(doDeadObjAndChildren);
+  }
+  EM.set(e, DeadDef);
+  e.dead.processed = true; // TODO(@darzu): HACK. how to manage this?
 }
 
 function createShip(opts: {
@@ -642,7 +714,7 @@ function createShip(opts: {
     },
   });
   // TODO(@darzu): debugging
-  EM.set(ship, AlphaDef, 0.5);
+  // EM.set(ship, AlphaDef, 0.5);
   // EM.set(ship, GlitchDef);
 
   const mast = createMast();
@@ -661,6 +733,7 @@ function createShip(opts: {
     sock.position[2] =
       mast.position[2] + (mast.collider as AABBCollider).aabb.max[2];
     EM.set(sock, PhysicsParentDef, ship.id);
+    ship.children.push(sock);
   });
 
   const rudder = createRudder();
@@ -675,7 +748,10 @@ function createShip(opts: {
     },
   });
 
-  if (DBG_GIZMO) addGizmoChild(ship, 10);
+  if (DBG_GIZMO) {
+    const gizmo = addGizmoChild(ship, 10);
+    ship.children.push(gizmo);
+  }
 
   return ship;
 }
@@ -709,11 +785,11 @@ function getDirsToTan(
   V3.add(trg, scaledL, outL);
 }
 
-function createEnemy() {
+function createEnemy(pos: V3.InputT) {
   const ship = createShip({
     healthFullColor: ENDESGA16.red,
     healthMissingColor: ENDESGA16.darkRed,
-    position: [-40, -40, 3],
+    position: pos,
   });
   mixinObj(ship, EnemyObj, {
     props: {
@@ -727,8 +803,6 @@ function createEnemy() {
 }
 
 async function initEnemies() {
-  const attackRadius = 100;
-
   const player = await EM.whenSingleEntity(
     PlayerShipDef,
     PositionDef,
@@ -738,7 +812,7 @@ async function initEnemies() {
 
   const { dots } = await EM.whenResources(DotsDef);
 
-  const trgDots = DBG_ENEMY ? dots.allocDots(10) : undefined;
+  const trgDots = DBG_ENEMY_MOV ? dots.allocDots(10) : undefined;
 
   const steerFreq = 20;
   EM.addSystem(
@@ -753,7 +827,13 @@ async function initEnemies() {
       for (let e of es) {
         const trgL = V3.tmp();
         const trgR = V3.tmp();
-        getDirsToTan(e.position, player.position, attackRadius, trgL, trgR);
+        getDirsToTan(
+          e.position,
+          player.position,
+          enemyAttackRadius,
+          trgL,
+          trgR
+        );
 
         let toTrgL = V3.sub(trgL, e.position);
         toTrgL = V3.norm(toTrgL);
@@ -769,7 +849,7 @@ async function initEnemies() {
 
         V3.copy(e.enemy.sailTarget, turnLeft ? trgL : trgR);
 
-        if (DBG_ENEMY) {
+        if (DBG_ENEMY_MOV) {
           assert(trgDots);
           trgDots.set(0, e.enemy.sailTarget, ENDESGA16.red, 10);
           trgDots.set(1, turnLeft ? trgR : trgL, ENDESGA16.orange, 10);
@@ -873,20 +953,18 @@ async function initEnemies() {
           centerCannon.cannon2.baseYaw
         );
 
-        const projectileSpeed = 0.2;
-
         const sln = getFireSolution({
           sourcePos: centerCannon.world.position,
           sourceDefaultRot: defaultWorldRot,
 
           maxYaw: CANNON_MAX_YAW,
-          minPitch: -PId8,
-          maxPitch: +PId3,
-          maxRange: 400,
+          minPitch: minPitch,
+          maxPitch: maxPitch,
+          maxRange: Infinity,
 
           gravity: GRAVITY,
 
-          projectileSpeed,
+          projectileSpeed: cannonBallSpeed,
 
           targetOBB: player.obb,
           targetVel: vel,
@@ -909,7 +987,7 @@ async function initEnemies() {
           assert(WorldFrameDef.isOn(c));
           const firePara = cannonFireCurve(
             { position: c.world.position, rotation },
-            projectileSpeed,
+            cannonBallSpeed,
             _enemyLaunchParam
           );
 

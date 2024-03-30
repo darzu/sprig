@@ -215,8 +215,9 @@ export const SceneStruct = createCyStruct(
     secColor: "vec3<f32>",
     terColor: "vec3<f32>",
 
-    // TODO(@darzu): timeDelta vs totalTime
     time: "f32", // in ms
+    dt: "f32", // in ms
+    // TODO(@darzu): add deltaTime
     canvasAspectRatio: "f32",
     maxSurfaceId: "u32",
     numPointLights: "u32",
@@ -241,13 +242,14 @@ export const SceneStruct = createCyStruct(
       views.f32.set(data.secColor, offsets_32[5]);
       views.f32.set(data.terColor, offsets_32[6]);
       views.f32[offsets_32[7]] = data.time;
-      views.f32[offsets_32[8]] = data.canvasAspectRatio;
-      views.u32[offsets_32[9]] = data.maxSurfaceId;
-      views.u32[offsets_32[10]] = data.numPointLights;
-      views.u32[offsets_32[11]] = data.numGerstnerWaves;
-      views.f32[offsets_32[12]] = data.bubbleRadius;
-      views.f32[offsets_32[13]] = data.vignetteIntensity;
-      views.u32[offsets_32[14]] = data.highGraphics;
+      views.f32[offsets_32[8]] = data.dt;
+      views.f32[offsets_32[9]] = data.canvasAspectRatio;
+      views.u32[offsets_32[10]] = data.maxSurfaceId;
+      views.u32[offsets_32[11]] = data.numPointLights;
+      views.u32[offsets_32[12]] = data.numGerstnerWaves;
+      views.f32[offsets_32[13]] = data.bubbleRadius;
+      views.f32[offsets_32[14]] = data.vignetteIntensity;
+      views.u32[offsets_32[15]] = data.highGraphics;
     },
   }
 );
@@ -286,6 +288,7 @@ export function setupScene(): SceneTS {
     secColor: randColor(), // updated later
     terColor: randColor(), // updated later
     time: 0, // updated later
+    dt: 0, // updated later
     canvasAspectRatio: 1, // updated later
     maxSurfaceId: 1, // updated later
     numPointLights: 0, // updated later

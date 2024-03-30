@@ -17,6 +17,7 @@ export const DISABLE_GERSTNER = false;
 export const VERBOSE_MESH_POOL_STATS = false;
 export const ASSET_LOG_VERT_CHANGES = false;
 export const PERF_DBG_GPU = false;
+export const PERF_DBG_REBUNDLE = true;
 // tries to track who's allocating GPU resources
 export const PERF_DBG_GPU_BLAME = false;
 

@@ -271,3 +271,30 @@ Little planets:
 Downpour phone game maker:
   https://downpour.games
   https://news.ycombinator.com/item?id=39626657
+
+Blender geometry nodes "energy core" example:
+  https://twitter.com/cmzw_/status/1768638280529068035
+
+"Great Ideas in Theoretical Computer Science":
+  https://www.cs251.com
+
+https://wasm4.org:
+  Build retro games using WebAssembly for a fantasy console
+
+  https://www.fightcade.com
+
+
+https://gamercade.io
+  https://gamercade.io/what-is-gamercade
+
+  default palettes:
+    RESURRECT 64  https://lospec.com/palette-list/resurrect-64
+    AAP-64  https://lospec.com/palette-list/aap-64
+    JOURNEY https://lospec.com/palette-list/journey
+    ENDESGA 64  https://lospec.com/palette-list/endesga-64
+    FAMICUBE  https://lospec.com/palette-list/famicube
+    BLK NX64  https://lospec.com/palette-list/blk-nx64
+    THE PERFECT PALETTE 2.0 https://lospec.com/palette-list/the-perfect-palette-20
+    SWEET CANYON EXTENDED 64  https://lospec.com/palette-list/sweet-canyon-extended-64
+    PASTEL-64 https://lospec.com/palette-list/pastel-64
+    REWILD 64 https://lospec.com/palette-list/rewild-64

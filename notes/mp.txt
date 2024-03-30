@@ -533,3 +533,6 @@ Chat Feb 25th:
     can have dbg flags for checkin consistency
     local mapping from network id to entity id
     
+Wasm-4 rollback netcode:
+  https://wasm4.org/blog/release-2-4-0
+  https://wasm4.org/docs/guides/multiplayer/

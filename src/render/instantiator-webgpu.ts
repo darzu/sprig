@@ -884,6 +884,7 @@ export function bundleRenderPipelines(
     }
 
     if (p.ptr.meshOpt.stepMode === "per-instance") {
+      // TODO(@darzu): support no index buffer
       assert(!!p.instanceBuf && !!p.indexBuf);
       bundleEnc.setIndexBuffer(p.indexBuf.buffer, "uint16");
       if (p.vertexBuf) bundleEnc.setVertexBuffer(0, p.vertexBuf.buffer);
@@ -1129,6 +1130,8 @@ export function doCompute(
   //     count: 10,
   //   });
   // }
+
+  // TODO(@darzu): dynamic workgroup count: get workgroup count, skip if 0, else dispatch
 
   const compPassEncoder = commandEncoder.beginComputePass();
   // compPassEncoder.writeTimestamp(querySet, 0);

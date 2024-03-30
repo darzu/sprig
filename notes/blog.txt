@@ -351,3 +351,7 @@ Define Fwd in addition to Up
   use yaw,pitch,roll
   don't use gizmos, use an airplane
   reduce the layers of translation ur brain has to do while problem solving
+
+Write Less to Write More:
+  https://cohost.org/zeux/post/309475-write-less-to-write
+

@@ -1,0 +1,37 @@
+Features:
+- Scene selector
+- Scene parameter changer
+- Simple visual logic programmer
+- Export to github project
+- GPU "shader toy" for scene
+- GPU memory viewer
+- On sprig.land
+- About page
+- Multiplayer
+- Port all webgpu-samples
+- Built-in in-memory SQLlite for store/load facts
+
+Scriptable:
+- particle systems
+- GLTF->Custom vertex format
+- GLTF->Custom scene parameters
+- Scene parameters update loop
+- Buffers -> shader code
+- CPU side, ECS based behavior updates
+- 3D SVG
+
+Engine features:
+- particle system
+
+Plan:
+- Web based code editor (VSCode)
+- Web TSC recompile
+- Save changes to local
+  - data model: filesystem?
+- Code snippet editor for:
+  - Game init
+  - Game system w/ components & resources
+- wgsl struct creator
+- CPU side, one-off pipelines
+- CPU side, each frame pipelines
+- 

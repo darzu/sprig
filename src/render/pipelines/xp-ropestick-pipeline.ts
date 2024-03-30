@@ -214,7 +214,7 @@ export const compRopePipelinePtr = CY.createComputePipeline("ropeComp", {
 });
 
 // rope particle render
-const ParticleVertStruct = createCyStruct(
+const RopePartVertStruct = createCyStruct(
   {
     position: "vec3<f32>",
   },
@@ -222,30 +222,30 @@ const ParticleVertStruct = createCyStruct(
     isCompact: true,
   }
 );
-const initParticleVertData: () => CyToTS<
-  typeof ParticleVertStruct.desc
+const initRopePartVertData: () => CyToTS<
+  typeof RopePartVertStruct.desc
 >[] = () => [
   { position: V(1, 1, 1) },
   { position: V(1, -1, -1) },
   { position: V(-1, 1, -1) },
   { position: V(-1, -1, 1) },
 ];
-const particleVertBufPtr = CY.createArray("particleVert", {
-  struct: ParticleVertStruct,
-  init: initParticleVertData,
+const ropePartVertBufPtr = CY.createArray("ropePartVert", {
+  struct: RopePartVertStruct,
+  init: initRopePartVertData,
 });
 
 const initParticleIdxData = () =>
   new Uint16Array([2, 1, 0, 3, 2, 0, 1, 3, 0, 2, 3, 1]);
 
-const particleIdxBufPtr = CY.createIdxBuf("particleIdx", {
+const particleIdxBufPtr = CY.createIdxBuf("ropePartIdx", {
   init: initParticleIdxData,
 });
 
 export const renderRopePipelineDesc = CY.createRenderPipeline("renderRope", {
   globals: [sceneBufPtr],
   meshOpt: {
-    vertex: particleVertBufPtr,
+    vertex: ropePartVertBufPtr,
     instance: ropePointBufPtr,
     index: particleIdxBufPtr,
     stepMode: "per-instance",

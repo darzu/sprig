@@ -51,7 +51,7 @@ import {
   OceanVertStruct,
 } from "./pipelines/std-ocean.js";
 import { GPUBufferUsage } from "./webgpu-hacks.js";
-import { PERF_DBG_GPU, VERBOSE_LOG } from "../flags.js";
+import { PERF_DBG_GPU, PERF_DBG_REBUNDLE, VERBOSE_LOG } from "../flags.js";
 import { dbgLogOnce } from "../utils/util.js";
 import {
   GrassVertStruct,
@@ -171,6 +171,7 @@ export function createRenderer(
     renderer.drawLines,
     renderer.drawTris,
   ];
+  let lastRenderPipelines: CyRenderPipeline[] = [];
   let lastPipelines: CyPipeline[] = [];
 
   const cyRenderToBundle: { [pipelineName: string]: GPURenderBundle } = {};
@@ -268,10 +269,12 @@ export function createRenderer(
       }
     });
 
-    const didPipelinesChange =
-      lastPipelines.length !== pipelinePtrs.length ||
-      lastPipelines.reduce(
-        (p, n, i) => p || lastPipelines[i].ptr.name !== pipelinePtrs[i].name,
+    // TODO(@darzu): only check for render bundle changes
+    const didRenderPipelinesChange =
+      lastRenderPipelines.length !== renderPipelines.length ||
+      lastRenderPipelines.reduce(
+        (p, n, i) =>
+          p || lastRenderPipelines[i].ptr.name !== renderPipelines[i].ptr.name,
         false as boolean
       );
 
@@ -292,7 +295,7 @@ export function createRenderer(
     // TODO(@darzu): account for handle masks
     needsRebundle =
       needsRebundle ||
-      didPipelinesChange ||
+      didRenderPipelinesChange ||
       didResize ||
       bundledMIds.size !== handles.length ||
       renderer.drawLines !== lastWireMode[0] ||
@@ -313,10 +316,11 @@ export function createRenderer(
     }
 
     if (needsRebundle) {
-      if (PERF_DBG_GPU) console.log("rebundeling");
+      if (PERF_DBG_REBUNDLE) console.log("rebundeling");
       updateRenderBundle(handles, renderPipelines);
     }
 
+    lastRenderPipelines = renderPipelines;
     lastPipelines = pipelines;
 
     // start collecting our commands for this frame

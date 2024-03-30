@@ -222,7 +222,7 @@ Better than JSON:
     ]
   }}  
 
-  ==>
+  == something like ==>
 
   type item = {
     id: string,
@@ -244,3 +244,23 @@ Better than JSON:
     ]
   ]
 
+Stain glass analytical renderer,
+  glass panel segments are triangles,
+  those get projected mathematically,
+  ray tracing works on triangle segments not texture
+
+3D SVG showcase:
+  svg examples
+  3d,
+  roller coaster
+  traced by:
+    particles
+    dots
+    lines
+    extruded geometry
+  click on a path to see path fn
+  on GPU:
+    linearize path to look-up-table
+      lookup w/ linear interp sample
+    traverse as parametric fn
+  heirarchy of transforms
