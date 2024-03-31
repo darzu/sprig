@@ -32,11 +32,13 @@ import { CHAR_SVG, MISSING_CHAR_SVG } from "./svg-font.js";
 import { registerUICameraSys } from "./game-font.js";
 import { initGhost } from "../graybox/graybox-helpers.js";
 import { createJfaPipelines } from "../render/pipelines/std-jump-flood.js";
-import { CY } from "../render/gpu-registry.js";
+import { CY, CyTexturePtr } from "../render/gpu-registry.js";
 import { createGridComposePipelines } from "../render/pipelines/std-compose.js";
 import { DevConsoleDef } from "../debug/console.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import { createRenderTextureToQuad } from "../render/gpu-helper.js";
+import { defineResourceWithInit } from "../ecs/em-helpers.js";
+import { FONT_JFA_MASK } from "../render/pipeline-masks.js";
 
 const DBG_GIZMOS = true;
 
@@ -100,7 +102,7 @@ export const fontLineMaskTex = CY.createTexture("fontLineMaskTex", {
   format: "r8unorm",
   // format: "rgba8unorm",
 });
-console.log("fontLineMaskTex.size:" + fontLineMaskTex.size[0]);
+// console.log("fontLineMaskTex.size:" + fontLineMaskTex.size[0]);
 
 export const pipeFontLineRender = CY.createRenderPipeline(
   "pipeFontLineRender",
@@ -113,7 +115,7 @@ export const pipeFontLineRender = CY.createRenderPipeline(
     shaderFragmentEntry: "fragMain",
     meshOpt: {
       pool: lineMeshPoolPtr,
-      // meshMask: FONT_JFA_MASK,
+      meshMask: FONT_JFA_MASK,
       stepMode: "per-mesh-handle",
     },
     topology: "line-list",
@@ -143,7 +145,7 @@ export const fontLineSdfExampleTex = CY.createTexture("fontLineSdfExampleTex", {
   // format: "r16float",
   // format: "rgba8unorm",
 });
-console.log("fontLineSdfExampleTex.size:" + fontLineSdfExampleTex.size[0]);
+// console.log("fontLineSdfExampleTex.size:" + fontLineSdfExampleTex.size[0]);
 const pipeFontLineSdfExample = createRenderTextureToQuad(
   "pipeFontLineSdfExample",
   fontJfa.sdfTex,
@@ -173,10 +175,115 @@ const dbgGrid = [
 ];
 let dbgGridCompose = createGridComposePipelines(dbgGrid);
 
+export interface FontResource {
+  fontSdfTex: CyTexturePtr;
+}
+
+export const FontDef = defineResourceWithInit(
+  "font",
+  [RendererDef],
+  async (res) => {
+    return new Promise<FontResource>(async (resolve, reject) => {
+      // const charOrigin: V3.InputT = [charWorldWidth / 2, charWorldHeight / 2, 0];
+
+      const promises: Promise<
+        EntityW<
+          [
+            typeof RenderableDef,
+            typeof PositionDef,
+            typeof WorldFrameDef,
+            typeof LineUniDef
+            // typeof ColorDef
+          ]
+        >
+      >[] = [];
+
+      for (let i = 0; i < CHARS.length; i++) {
+        const c = CHARS[i];
+
+        let svg = CHAR_SVG[c];
+        if (!svg) svg = MISSING_CHAR_SVG;
+        const segs = svgToLineSeg(compileSVG(svg), { numPerInstr: 10 });
+        const mesh = mkLineSegs(segs.length);
+        for (let i = 0; i < segs.length; i++) {
+          V3.copy(mesh.pos[i * 2], segs[i][0]);
+          V3.copy(mesh.pos[i * 2 + 1], segs[i][1]);
+        }
+
+        const ent = EM.new();
+        EM.set(
+          ent,
+          RenderableConstructDef,
+          mesh,
+          true,
+          undefined,
+          FONT_JFA_MASK,
+          lineMeshPoolPtr
+        );
+        EM.set(ent, ColorDef, ENDESGA16.yellow);
+
+        const row = Math.floor(i / charPerRow);
+        const col = i % charPerRow;
+        const x = col * charWorldWidth + charWorldWidth / 2;
+        const y = row * charWorldHeight + charWorldHeight / 2;
+
+        EM.set(ent, PositionDef, [x, y, 0.1]);
+
+        promises.push(
+          EM.whenEntityHas(
+            ent,
+            RenderableDef,
+            WorldFrameDef,
+            PositionDef,
+            LineUniDef
+            // ColorDef
+          )
+        );
+      }
+
+      const allEnts = await Promise.all(promises);
+
+      // allEnts.forEach((e) => {
+      //   e.renderable.meshHandle.pool.updateMeshVertices(
+      //     e.renderable.meshHandle,
+      //     e.renderable.meshHandle.mesh
+      //   );
+      //   quat.identity(e.world.rotation);
+      //   V3.copy(e.world.scale, V3.ONES);
+      //   V3.copy(e.world.position, e.position);
+      //   updateFrameFromPosRotScale(e.world);
+      //   mat4.copy(e.lineUni.transform, e.world.transform);
+      //   // V3.copy(e.lineUni.tint, e.color);
+      // });
+
+      const handles = allEnts.map((e) => e.renderable.meshHandle);
+
+      let _frame = 0; // TODO(@darzu): HACK. idk what the dependency is..
+      EM.addSystem("pipeFontLineRender_HACK", Phase.GAME_WORLD, [], [], () => {
+        if (_frame === 2) {
+          const result: FontResource = {
+            fontSdfTex: fontJfa.sdfTex,
+          };
+          resolve(result);
+        }
+        if (_frame > 1) return;
+
+        res.renderer.renderer.submitPipelines(handles, [
+          pipeFontLineRender,
+          ...fontJfa.allPipes(),
+          pipeFontLineSdfExample,
+        ]);
+
+        _frame++;
+      });
+    });
+  }
+);
+
 export async function initCardsGame() {
   // console.log(`panel ${PANEL_W}x${PANEL_H}`);
 
-  const res = await EM.whenResources(RendererDef, ButtonsStateDef);
+  const res = await EM.whenResources(RendererDef, FontDef);
 
   // res.renderer.pipelines = [
   //   // ...shadowPipelines,
@@ -265,92 +372,4 @@ export async function initCardsGame() {
     );
 
   registerUICameraSys();
-
-  const promises: Promise<
-    EntityW<
-      [
-        typeof RenderableDef,
-        typeof PositionDef,
-        typeof WorldFrameDef,
-        typeof LineUniDef
-        // typeof ColorDef
-      ]
-    >
-  >[] = [];
-
-  const charOrigin: V3.InputT = [charWorldWidth / 2, charWorldHeight / 2, 0];
-
-  for (let i = 0; i < CHARS.length; i++) {
-    const c = CHARS[i];
-
-    let svg = CHAR_SVG[c];
-    if (!svg) svg = MISSING_CHAR_SVG;
-    const segs = svgToLineSeg(compileSVG(svg), { numPerInstr: 10 });
-    const mesh = mkLineSegs(segs.length);
-    for (let i = 0; i < segs.length; i++) {
-      V3.copy(mesh.pos[i * 2], segs[i][0]);
-      V3.copy(mesh.pos[i * 2 + 1], segs[i][1]);
-    }
-
-    const ent = EM.new();
-    EM.set(
-      ent,
-      RenderableConstructDef,
-      mesh,
-      true,
-      undefined,
-      undefined,
-      // FONT_JFA_MASK | DEFAULT_MASK,
-      lineMeshPoolPtr
-    );
-    EM.set(ent, ColorDef, ENDESGA16.yellow);
-
-    const row = Math.floor(i / charPerRow);
-    const col = i % charPerRow;
-    const x = col * charWorldWidth + charWorldWidth / 2;
-    const y = row * charWorldHeight + charWorldHeight / 2;
-
-    EM.set(ent, PositionDef, [x, y, 0.1]);
-
-    promises.push(
-      EM.whenEntityHas(
-        ent,
-        RenderableDef,
-        WorldFrameDef,
-        PositionDef,
-        LineUniDef
-        // ColorDef
-      )
-    );
-  }
-
-  const allEnts = await Promise.all(promises);
-
-  // allEnts.forEach((e) => {
-  //   e.renderable.meshHandle.pool.updateMeshVertices(
-  //     e.renderable.meshHandle,
-  //     e.renderable.meshHandle.mesh
-  //   );
-  //   quat.identity(e.world.rotation);
-  //   V3.copy(e.world.scale, V3.ONES);
-  //   V3.copy(e.world.position, e.position);
-  //   updateFrameFromPosRotScale(e.world);
-  //   mat4.copy(e.lineUni.transform, e.world.transform);
-  //   // V3.copy(e.lineUni.tint, e.color);
-  // });
-
-  const handles = allEnts.map((e) => e.renderable.meshHandle);
-
-  let _frame = 0; // TODO(@darzu): HACK. idk what the dependency is..
-  EM.addSystem("pipeFontLineRender_HACK", Phase.GAME_WORLD, [], [], () => {
-    if (_frame > 1) return;
-
-    res.renderer.renderer.submitPipelines(handles, [
-      pipeFontLineRender,
-      ...fontJfa.allPipes(),
-      pipeFontLineSdfExample,
-    ]);
-
-    _frame++;
-  });
 }
