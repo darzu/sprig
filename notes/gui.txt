@@ -201,3 +201,7 @@ Icon set:
   https://phosphoricons.com
     https://github.com/phosphor-icons/homepage#phosphor-icons
      free and open-source, MIT
+
+"• In a perfect world I'd say ditch the DOM and give me a real displaylist-style interface, with a
+consistent composite architecture. ~awebneck"
+  https://www.paulirish.com/2011/what-feature-would-improve-the-web/

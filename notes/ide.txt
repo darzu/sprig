@@ -217,3 +217,9 @@ Customization watermark:
   we should have some sort of customization watermark 
     so when looking at a youtube video, you can know which changes to the defaults have been applied
   make it easy to apply the customizations that the instruct had
+
+Blocks + runtime tweaking:
+  Enter a "to tweak" mode in blocks editting,
+  select scalars: numbers, booleans, strings,
+  go into "run" mode,
+  a floating settings menu w/ all the tweakable scalars is present

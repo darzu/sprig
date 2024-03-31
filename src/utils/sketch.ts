@@ -7,11 +7,12 @@ import { createEntityPool } from "../ecs/entity-pool.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { DotsDef } from "../graybox/dots.js";
 import { ObjChildEnt, T, defineObj } from "../graybox/objects.js";
-import { V3, cloneTmpsInObj, quat } from "../matrix/sprig-matrix.js";
+import { V3, cloneTmpsInObj, quat, tV } from "../matrix/sprig-matrix.js";
 import { Mesh } from "../meshes/mesh.js";
 import {
   mkLine,
   mkLineChain,
+  mkLineSegs,
   mkPointCloud,
   mkTriangle,
 } from "../meshes/primatives.js";
@@ -37,6 +38,13 @@ import {
 } from "../render/renderer-ecs.js";
 import { TimeDef } from "../time/time.js";
 import { createIdxRing } from "./idx-pool.js";
+import {
+  CompiledSVG,
+  SVG,
+  compileSVG,
+  svgInstrIsStraight,
+  svgToLineSeg,
+} from "./svg.js";
 import { never } from "./util-no-import.js";
 import { assert, range } from "./util.js";
 
@@ -119,6 +127,11 @@ export interface SketchLinesOpt {
   vs: V3.InputT[];
 }
 
+export interface SketchLineSegsOpt {
+  shape: "lineSegs";
+  lines: [V3.InputT, V3.InputT][];
+}
+
 export interface SketchDotOpt {
   shape: "dot";
   v: V3.InputT;
@@ -130,6 +143,7 @@ export type SketchEntOpt = SketchBaseOpt &
     | SketchLineOpt
     | SketchPointsOpt
     | SketchLinesOpt
+    | SketchLineSegsOpt
     | SketchCubeOpt
     | SketchTriOpt
   );
@@ -274,6 +288,26 @@ export const SketcherDef = defineResourceWithLazyInit(
             `sketch line chain "${o.key}" must stay same size! old:${m.pos.length} vs new:${o.vs.length}`
           );
           for (let i = 0; i < o.vs.length; i++) V3.copy(m.pos[i], o.vs[i]);
+        },
+        pool: lineMeshPoolPtr,
+      },
+      lineSegs: {
+        newMesh: (o) => mkLineSegs(o.lines.length),
+        updateMesh: (o, m) => {
+          assert(
+            m.dbgName === "lineSegs",
+            `expected "lineSegs" vs "${m.dbgName}"`
+          );
+          assert(
+            m.lines!.length === o.lines.length,
+            `sketch line segs "${o.key}" must stay same size! old:${
+              m.lines!.length
+            } vs new:${o.lines.length}`
+          );
+          for (let i = 0; i < o.lines.length; i++) {
+            V3.copy(m.pos[i * 2], o.lines[i][0]);
+            V3.copy(m.pos[i * 2 + 1], o.lines[i][1]);
+          }
         },
         pool: lineMeshPoolPtr,
       },
@@ -431,6 +465,12 @@ export async function sketchLines(
 ): Promise<SketchEnt> {
   return sketchEnt({ vs, shape: "lines", ...opt });
 }
+export async function sketchLineSegs(
+  lines: [V3.InputT, V3.InputT][],
+  opt: SketchBaseOpt = {}
+): Promise<SketchEnt> {
+  return sketchEnt({ lines, shape: "lineSegs", ...opt });
+}
 
 export async function sketchDot(
   v: V3.InputT,
@@ -461,6 +501,27 @@ export function sketchFan(
   const v1 = V3.add(origin, dir1, _t3);
   const v2 = V3.add(origin, dir2, _t4);
   return sketchTri(v0, v1, v2, opt);
+}
+
+export async function sketchSvgC(
+  svgC: CompiledSVG,
+  opt: SketchBaseOpt & {
+    origin?: V3.InputT;
+    numPerInstr?: number;
+  } = {}
+): Promise<SketchEnt> {
+  // vs.push(V3.copy(V3.tmp(), vs[0]));
+  const segs = svgToLineSeg(svgC, opt);
+  return sketchLineSegs(segs, opt);
+}
+export async function sketchSvg(
+  svg: SVG,
+  opt: SketchBaseOpt & {
+    origin?: V3.InputT;
+    numPerInstr?: number;
+  } = {}
+): Promise<SketchEnt> {
+  return sketchSvgC(compileSVG(svg), opt);
 }
 
 export const SketchTrailDef = EM.defineComponent("sketchTrail", () => true);

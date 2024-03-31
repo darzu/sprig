@@ -1,5 +1,5 @@
 import { ENDESGA16 } from "../color/palettes.js";
-import { V, V2, V3, tV } from "../matrix/sprig-matrix.js";
+import { V, V2, V3, tV, tmpStack } from "../matrix/sprig-matrix.js";
 import { createAABB2 } from "../physics/aabb.js";
 import { angularDiff, sum, wrap } from "./math.js";
 import { sketchDot, sketchLine, sketchPoints } from "./sketch.js";
@@ -20,6 +20,11 @@ interface svg_M {
   x: number;
   y: number;
 }
+interface svg_m {
+  i: "m";
+  dx: number;
+  dy: number;
+}
 interface svg_v {
   i: "v";
   dy: number;
@@ -34,7 +39,7 @@ interface svg_a {
   rx: number;
   ry?: undefined; // TODO(@darzu): support
   xAxisRot?: undefined; // TODO(@darzu): support
-  largeArc?: undefined; // TODO(@darzu): support
+  largeArc?: boolean; // TODO(@darzu): support
   /*
   If sweep-flag is '1', then the arc will be drawn in a "positive-angle" direction (i.e., the ellipse formula 
     x=cx+rx*cos(theta) and y=cy+ry*sin(theta) is evaluated such that theta starts at an angle corresponding 
@@ -50,8 +55,18 @@ interface svg_a {
   dx: number;
   dy: number;
 }
-type svg_instr = svg_M | svg_v | svg_h | svg_a;
+type svg_instr = svg_M | svg_m | svg_v | svg_h | svg_a;
 export type SVG = svg_instr[];
+
+// TODO(@darzu): make table..
+export function svgInstrIsStraight({ i }: svg_instr): boolean {
+  if (i === "M") return true;
+  else if (i === "a") return false;
+  else if (i === "h") return true;
+  else if (i === "v") return true;
+  else if (i === "m") return true;
+  else never(i);
+}
 
 function _testSvg() {
   const aabb = createAABB2(V(-1, -2), V(3, 4));
@@ -88,7 +103,7 @@ export function getCircleCenter(
   const aSqr = x01 ** 2 + y01 ** 2;
   const a = Math.sqrt(aSqr);
   const b = Math.sqrt(r ** 2 - aSqr);
-  assert(!isNaN(b));
+  assert(!isNaN(b), `radius smaller than travel`);
   const ba = b / a;
   const cx = x0 + x01 + ba * y01 * cw;
   const cy = y0 + y01 - ba * x01 * cw;
@@ -109,6 +124,10 @@ function svgPosAndLen(
   if (instr.i === "M") {
     V2.lerp(start, [instr.x, instr.y], t, out);
     return 0;
+  } else if (instr.i === "m") {
+    out[0] = start[0] + instr.dx * t;
+    out[1] = start[1] + instr.dy * t;
+    return V2.len([instr.dx, instr.dy]);
   } else if (instr.i === "h") {
     out[0] = start[0] + instr.dx * t;
     out[1] = start[1];
@@ -120,8 +139,12 @@ function svgPosAndLen(
   } else if (instr.i === "a") {
     const vx = start[0] + instr.dx;
     const vy = start[1] + instr.dy;
-    // const s = instr.sweep ? -1 : 1; // TODO(@darzu): TEST AND VERIFY!
-    const s = 1;
+    const s = instr.sweep ? -1 : 1; // TODO(@darzu): TEST AND VERIFY!
+    assert(!instr.xAxisRot, `TODO: xAxisRot`);
+    assert(!instr.ry, `TODO: ry`);
+    // assert(!instr.largeArc, `TODO: largeArc`);
+    // assert(!instr.sweep, `TODO: sweep`);
+    // const s = 1;
     const c = getCircleCenter(start[0], start[1], vx, vy, instr.rx, s);
     const sTheta = Math.atan2(start[1] - c[1], start[0] - c[0]);
     const eTheta = Math.atan2(vy - c[1], vx - c[0]);
@@ -140,6 +163,9 @@ function svgEnd(start: V2.InputT, instr: svg_instr, out?: V2): V2 {
   if (instr.i === "M") {
     out[0] = instr.x;
     out[1] = instr.y;
+  } else if (instr.i === "m") {
+    out[0] = start[0] + instr.dx;
+    out[1] = start[1] + instr.dy;
   } else if (instr.i === "h") {
     out[0] = start[0] + instr.dx;
     out[1] = start[1];
@@ -333,4 +359,36 @@ function debugSVG(to3d: (v2d: V2.InputT, out?: V3) => V3) {
       color: ENDESGA16.lightGray,
     });
   }
+}
+
+export function svgToLineSeg(
+  svgC: CompiledSVG,
+  opt: {
+    origin?: V3.InputT;
+    numPerInstr?: number;
+  } = {}
+): [V3, V3][] {
+  const _stk = tmpStack();
+  const numPerInstr = opt.numPerInstr ?? 2;
+  assert(numPerInstr >= 2);
+  const segs: [V3, V3][] = [];
+  for (let i = 0; i < svgC.svg.length; i++) {
+    if (svgC.lengths[i] <= 0) continue;
+    const vs: V3[] = [];
+    const instr = svgC.svg[i];
+    let num = numPerInstr;
+    if (svgInstrIsStraight(instr)) num = 2;
+    for (let j = 0; j < num; j++) {
+      const t = j / (num - 1);
+      const v2 = svgC.instrFn(i, t);
+      const v3 = V(v2[0], v2[1], 0);
+      if (opt.origin) V3.add(v3, opt.origin, v3);
+      vs.push(v3);
+    }
+    for (let k = 0; k < vs.length - 1; k++) {
+      segs.push([vs[k], vs[k + 1]]);
+    }
+  }
+  _stk.pop();
+  return segs;
 }

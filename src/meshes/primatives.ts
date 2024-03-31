@@ -126,12 +126,22 @@ export const mkPointCloud: (len: number) => Mesh = (len) => ({
   usesProvoking: true,
 });
 
-export const mkLineChain: (vNum: number) => Mesh = (len) => ({
+export const mkLineChain: (vNum: number) => Mesh = (vNum) => ({
   dbgName: "lines",
-  pos: range(len).map((_) => V3.mk()),
+  pos: range(vNum).map((_) => V3.mk()),
   tri: [],
   quad: [],
-  lines: range(len - 1).map((_, i) => V(i, i + 1)),
+  lines: range(vNum - 1).map((_, i) => V(i, i + 1)),
+  colors: [],
+  surfaceIds: [],
+  usesProvoking: true,
+});
+export const mkLineSegs: (segNum: number) => Mesh = (segNum) => ({
+  dbgName: "lineSegs",
+  pos: range(segNum * 2).map((_) => V3.mk()),
+  tri: [],
+  quad: [],
+  lines: range(segNum).map((_, i) => V(i * 2, i * 2 + 1)),
   colors: [],
   surfaceIds: [],
   usesProvoking: true,
