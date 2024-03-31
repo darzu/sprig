@@ -269,3 +269,18 @@ USD, "Universal Scene Description", for scenes and prefabs?
   - inventory has tools and assets to use
   - character sheet lets you customize
   - travel to different places in the world to do different tasks
+
+Pixel art app:
+  Like dotpict etc.
+  Drag one finger, confirm other
+  But:
+  One button eye drop
+  Horizontal mode
+  Preview up top right, inspiration top left,
+  Multiple inspiration photos
+  Stream of inspiration photos, using public domain art and photos
+  Palettes from Lospec
+  Easy import/export palettes
+  Animation flip book
+  3d billboard view
+  3d modeler via multi sides
