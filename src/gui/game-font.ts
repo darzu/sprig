@@ -28,7 +28,7 @@ import { alphaRenderPipeline } from "../render/pipelines/xp-alpha.js";
 import { RendererDef, RenderableConstructDef } from "../render/renderer-ecs.js";
 import { assert } from "../utils/util.js";
 import { randNormalPosVec3 } from "../utils/utils-3d.js";
-import { AllMeshesDef, HeOctoMesh } from "../meshes/mesh-list.js";
+import { AllMeshesDef } from "../meshes/mesh-list.js";
 import { GameMesh, gameMeshFromMesh } from "../meshes/mesh-loader.js";
 import { createGhost, gameplaySystems } from "../debug/ghost.js";
 import { TextDef } from "./ui.js";
@@ -36,10 +36,6 @@ import { makePlaneMesh } from "../meshes/primatives.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { addWorldGizmo } from "../utils/utils-game.js";
-import { SVG, compileSVG } from "../utils/svg.js";
-import { sketchLines, sketchSvg } from "../utils/sketch.js";
-import { linePipe, pointPipe } from "../render/pipelines/std-line.js";
-import { CHAR_SVG, MISSING_CHAR_SVG } from "./svg-font.js";
 
 /*
 TODO(@darzu):
@@ -58,7 +54,7 @@ TODO(@darzu):
  [ ] render arbitrary-ish text
 */
 
-const EXPERIMENTAL_LINE_STUFF = false; // TODO(@darzu): broken rn
+const EXPERIMENTAL_LINE_STUFF = true; // TODO(@darzu): broken rn
 
 const DBG_GIZMOS = true;
 
@@ -67,16 +63,6 @@ const DBG_3D = false; // TODO(@darzu): add in-game smooth transition!
 const PANEL_W = 4 * 12;
 const PANEL_H = 3 * 12;
 
-const CHAR_STR = `1023456789JQKA`;
-const CHARS = CHAR_STR.split("");
-
-const svg_x: SVG = [
-  { i: "M", x: -0.5, y: -0.5 },
-  { i: "m", dx: 1, dy: 1 },
-  { i: "M", x: -0.5, y: 0.5 },
-  { i: "m", dx: 1, dy: -1 },
-];
-
 export const UICursorDef = EM.defineResource(
   "uiCursor",
   (cursor: EntityW<[typeof PositionDef]>) => ({
@@ -84,13 +70,13 @@ export const UICursorDef = EM.defineResource(
   })
 );
 
-EM.addLazyInit([HeOctoMesh.def], [UICursorDef], ({ mesh_he_octo }) => {
+EM.addLazyInit([AllMeshesDef], [UICursorDef], ({ allMeshes }) => {
   // Cursor
   const cursor = EM.new();
   EM.set(cursor, ColorDef, V(0.1, 0.1, 0.1));
   EM.set(cursor, PositionDef, V(0, 0.0, 1.0));
-  EM.set(cursor, RenderableConstructDef, mesh_he_octo.proto);
-  const cursorLocalAABB = copyAABB(createAABB(), mesh_he_octo.aabb);
+  EM.set(cursor, RenderableConstructDef, allMeshes.he_octo.proto);
+  const cursorLocalAABB = copyAABB(createAABB(), allMeshes.he_octo.aabb);
   cursorLocalAABB.min[2] = -1;
   cursorLocalAABB.max[2] = 1;
   EM.set(cursor, ColliderDef, {
@@ -214,10 +200,6 @@ export async function initFontEditor() {
     alphaRenderPipeline,
     outlineRender,
     deferredPipeline,
-
-    pointPipe,
-    linePipe,
-
     postProcess,
   ];
 
@@ -298,16 +280,9 @@ export async function initFontEditor() {
     console.log(exportObj(quadMesh));
   };
 
-  // sketchLines([
-  //   [10, 10, 1],
-  //   [20, 15, 1],
-  //   [-50, -50, 1],
-  // ]);
-
   // button per letter
   // TODO(@darzu): render buttons?
-  // const CHARS = `abcdefghijklmnopqrstuvwxyz.`.split("");
-  // const CHARS = `1234567890JQKA.`.split("");
+  const CHARS = `abcdefghijklmnopqrstuvwxyz.`.split("");
   const polyBank = new Map<number, GameMesh>();
   const btnKey = `letter`;
   for (let i = 0; i < CHARS.length; i++) {
@@ -328,13 +303,8 @@ export async function initFontEditor() {
 
     polyBank.set(i, gmesh);
 
-    let svg = CHAR_SVG[c];
-    if (!svg) svg = MISSING_CHAR_SVG;
-    const btn = await sketchSvg(svg, { numPerInstr: 10, key: letterKey });
-
-    // const btn = EM.new();
-    // EM.set(btn, RenderableConstructDef, gmesh.proto);
-    // EM.set(btn, RenderableConstructDef, svgE.);
+    const btn = EM.new();
+    EM.set(btn, RenderableConstructDef, gmesh.proto);
     EM.set(btn, PositionDef, V(-24 + i * 2, -12, 0.1));
     EM.set(btn, ButtonDef, btnKey, i, {
       default: ENDESGA16.lightGray,
@@ -364,8 +334,8 @@ export async function initFontEditor() {
         assert(poly);
         res.meshEditor.setMesh(poly.proto);
         res.text.upperText = CHARS[btnIdx];
-        res.text.upperDiv.style.fontSize = "128px";
-        res.text.upperDiv.style.top = "32px";
+        res.text.upperDiv.style.fontSize = "256px";
+        res.text.upperDiv.style.top = "-64px";
         // res.text.upperDiv.style.color = "";
 
         // TODO(@darzu): HACKy export:
