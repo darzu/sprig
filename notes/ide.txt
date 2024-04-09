@@ -223,3 +223,7 @@ Blocks + runtime tweaking:
   select scalars: numbers, booleans, strings,
   go into "run" mode,
   a floating settings menu w/ all the tweakable scalars is present
+
+voxray, lobster, restructure refactor:
+  https://strlen.com/restructor/
+    automatically refactor entire code-bases down to their least-redundant form (normal form)

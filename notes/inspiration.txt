@@ -298,3 +298,7 @@ https://gamercade.io
     SWEET CANYON EXTENDED 64  https://lospec.com/palette-list/sweet-canyon-extended-64
     PASTEL-64 https://lospec.com/palette-list/pastel-64
     REWILD 64 https://lospec.com/palette-list/rewild-64
+
+Draw a Box: https://drawabox.com/lesson/250boxes
+  idea: show a "Y", allow tweaking the three arms, see the resulting box, allow different "vanishing points"
+    compare this to a 3D generated perspective w/ FOV

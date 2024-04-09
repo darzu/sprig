@@ -1000,6 +1000,12 @@ Current LOC:
   806   .wgsl
   6947  .txt
 
+4/2/2024
+find . -name '*.ts' | xargs wc -l
+  67251 .ts
+find . -name '*.wgsl' | xargs wc -l
+  2516 .wgsl
+
 Core:
   https://coregames.com
   roblox-y
@@ -1602,3 +1608,14 @@ Single-file C libs:
   https://github.com/nothings/stb
   listing of these:
     https://github.com/nothings/single_file_libs
+
+"Give someone state and they'll have a bug one day, but teach them how to represent state in two separate 
+  locations that have to be kept in sync and they'll have bugs for a lifetime"
+  https://twitter.com/rygorous/status/1507178315886444544
+
+Matrix naming: x_from_y
+  https://tomforsyth1000.github.io/blog.wiki.html#%5B%5BMatrix%20maths%20and%20names%5D%5D
+
+Former adobe engineer's engine:
+  https://github.com/renderlet/wander
+  https://news.ycombinator.com/item?id=39907845

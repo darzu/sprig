@@ -160,3 +160,9 @@ good book on data oriented design:
   interested in triples?
     source, dest, label
   best example wiki data
+
+ECS, datalog, egglog,
+  https://mastodon.gamedev.place/@faassen@fosstodon.org/112196955340038467
+
+"Why it is time to start thinking of games as databases":
+  https://ajmmertens.medium.com/why-it-is-time-to-start-thinking-of-games-as-databases-e7971da33ac3
