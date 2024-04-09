@@ -39,6 +39,11 @@ import { drawBall, drawLine } from "../utils/utils-game.js";
 //    gen fn to compute all (or just missing) computed properties (instead of "Raw" vs not)
 //
 // allow different data representations e.g. sparse run-length encoding, or Float32Array
+
+// series of typed buffers, w/ different allocs (global, one-frame (sent to GPU, not updated))
+//    would be easier to do in a language where you can have array of struct that is good.
+//    we could have similar contiguous alloc using typed arrays and we just store the vec views
+
 export interface RawMesh {
   // geometry
   pos: V3[]; // TODO(@darzu): rename to locs ?

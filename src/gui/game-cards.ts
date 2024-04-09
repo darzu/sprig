@@ -40,6 +40,7 @@ import { createRenderTextureToQuad } from "../render/gpu-helper.js";
 import { defineResourceWithInit } from "../ecs/em-helpers.js";
 import { FONT_JFA_MASK } from "../render/pipeline-masks.js";
 import { FontDef, fontJfa, fontLineSdfExampleTex } from "./font.js";
+import { createObj } from "../graybox/objects.js";
 
 const DBG_GIZMOS = true;
 
@@ -147,4 +148,13 @@ export async function initCardsGame() {
     );
 
   registerUICameraSys();
+
+  // test quads
+  {
+    const m = 
+    const ent = createObj([PositionDef, RenderableConstructDef] as const, {
+      position: [0, 0, 0],
+      renderableConstruct: [],
+    });
+  }
 }
