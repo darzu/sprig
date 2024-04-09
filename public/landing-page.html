@@ -5,11 +5,19 @@
   <meta charset="utf-8" />
   <title>sprig.land 🌱🏞</title>
   <style>
+    html {
+      --background-clr: oklch(18% 0.5 150deg);
+      --demo-background-clr: oklch(from var(--background-clr) calc(l + 0.1) c h);
+      --text-clr: oklch(100% 0.1 150deg);
+    }
+
     body {
       font-family: sans-serif;
       display: flex;
       justify-content: center;
       margin: 0px;
+      background-color: var(--background-clr);
+      color: var(--text-clr);
     }
 
     #demo-list {
@@ -21,7 +29,8 @@
 
     .blurb {
       width: 50%;
-      background-color: chartreuse;
+      padding: 12px;
+      /* background-color: chartreuse; */
     }
 
     .blurb-title {}
@@ -30,17 +39,21 @@
 
     .demo {
       width: 50%;
-      background-color: aqua;
+      padding: 12px;
+      margin: 12px;
+      background-color: var(--demo-background-clr);
 
       display: flex;
       justify-content: center;
       align-items: center;
+
+      border-radius: 30px;
     }
 
     .demo img {}
 
     .demo-and-blurb {
-      background-color: aquamarine;
+      /* background-color: aquamarine; */
 
       display: flex;
       align-items: center;
