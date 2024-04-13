@@ -23,7 +23,7 @@ import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
 import { shadowPipelines } from "../render/pipelines/std-shadow.js";
 import { RendererDef, RenderableConstructDef } from "../render/renderer-ecs.js";
-import { sketch } from "../utils/sketch.js";
+import { sketch, sketchSvg } from "../utils/sketch.js";
 import { addWorldGizmo } from "../utils/utils-game.js";
 
 const DBG_GHOST = true;
@@ -92,32 +92,46 @@ export async function initLd55() {
   addWorldGizmo(V(0, 0, 0), 5);
 
   // line box
-  const lineBox = createObj(
-    [RenderableConstructDef, PositionDef, ColorDef, ScaleDef] as const,
-    {
-      renderableConstruct: [
-        mkCubeMesh(),
-        true,
-        undefined,
-        undefined,
-        lineMeshPoolPtr,
-      ],
-      position: [10, 10, 10],
-      scale: [5, 5, 5],
-      color: ENDESGA16.lightGreen,
-    }
-  );
+  // const lineBox = createObj(
+  //   [RenderableConstructDef, PositionDef, ColorDef, ScaleDef] as const,
+  //   {
+  //     renderableConstruct: [
+  //       mkCubeMesh(),
+  //       true,
+  //       undefined,
+  //       undefined,
+  //       lineMeshPoolPtr,
+  //     ],
+  //     position: [10, 10, 10],
+  //     scale: [5, 5, 5],
+  //     color: ENDESGA16.lightGreen,
+  //   }
+  // );
 
   // line test
-  sketch({
-    shape: "line",
-    color: ENDESGA16.orange,
-    start: [-10, -10, -10],
-    end: [10, 10, 10],
-  });
+  // sketch({
+  //   shape: "line",
+  //   color: ENDESGA16.orange,
+  //   start: [-10, -10, -10],
+  //   end: [10, 10, 10],
+  // });
 
   // dbg ghost
   if (DBG_GHOST) {
     initGhost();
   }
+
+  sketchSvg(
+    [
+      { i: "M", x: -3, y: 2 },
+      { i: "a", rx: 3, dx: 6, dy: 0, largeArc: true },
+      { i: "v", dy: -4 },
+      { i: "a", rx: 3, dx: -6, dy: 0, largeArc: true },
+      { i: "v", dy: 4 },
+    ],
+    {
+      origin: [0, 0, 10],
+      color: ENDESGA16.lightGreen,
+    }
+  );
 }
