@@ -17,6 +17,7 @@
       justify-content: center;
       margin: 0px;
       background-color: var(--background-clr);
+
       color: var(--text-clr);
     }
 
@@ -27,9 +28,20 @@
       max-width: 800px;
     }
 
+    .demo,
     .blurb {
       width: 50%;
-      padding: 12px;
+
+      border: 24px solid #0000;
+    }
+
+    .blurb h2 {
+      font-size: 24px;
+    }
+
+    .blurb {
+      font-size: 16px;
+      /* padding: 12px; */
       /* background-color: chartreuse; */
     }
 
@@ -38,16 +50,18 @@
     .blurb-desc {}
 
     .demo {
-      width: 50%;
-      padding: 12px;
-      margin: 12px;
+      /* width: 50%; */
+      /* padding: 12px;
+      margin: 12px; */
       background-color: var(--demo-background-clr);
+
+      background-clip: padding-box;
 
       display: flex;
       justify-content: center;
       align-items: center;
 
-      border-radius: 30px;
+      border-radius: 48px;
     }
 
     .demo img {}
