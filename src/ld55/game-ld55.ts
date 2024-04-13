@@ -31,6 +31,7 @@ import {
   sketchLine,
   sketchSvg,
 } from "../utils/sketch.js";
+import { PIn2 } from "../utils/util-no-import.js";
 import { dbgLogOnce, dbgOnce } from "../utils/util.js";
 import { vec2Dbg } from "../utils/utils-3d.js";
 import { addWorldGizmo } from "../utils/utils-game.js";
@@ -98,7 +99,7 @@ export async function initLd55() {
   const pedestal = EM.new();
   EM.set(pedestal, RenderableConstructDef, HexMesh);
   EM.set(pedestal, ColorDef, ENDESGA16.darkGray);
-  EM.set(pedestal, PositionDef, V(0, 0, -10 - 1));
+  EM.set(pedestal, PositionDef, V(0, 0, -10));
   EM.set(pedestal, ScaleDef, V(20, 20, 10));
   EM.set(pedestal, ColliderDef, {
     shape: "AABB",
@@ -107,7 +108,7 @@ export async function initLd55() {
   });
 
   // gizmo
-  addWorldGizmo(V(0, 0, 0), 5);
+  // addWorldGizmo(V(0, 0, 0), 5);
 
   // line box
   // const lineBox = createObj(
@@ -159,7 +160,7 @@ export async function initLd55() {
   const leftDot = createObj(
     [PositionDef, ColorDef, RenderableConstructDef, ScaleDef] as const,
     {
-      position: [0, 0, 0],
+      position: [0, 0, 2],
       color: ENDESGA16.red,
       renderableConstruct: [BallMesh],
       scale: [0.2, 0.2, 1],
@@ -168,12 +169,15 @@ export async function initLd55() {
   const rightDot = createObj(
     [PositionDef, ColorDef, RenderableConstructDef, ScaleDef] as const,
     {
-      position: [0, 0, 0],
+      position: [0, 0, 2],
       color: ENDESGA16.blue,
       renderableConstruct: [BallMesh],
       scale: [0.2, 0.2, 1],
     }
   );
+
+  const SYMMETRY = 5;
+  const SYM_ANGLE = PIn2 / 5;
 
   EM.addSystem(
     "updateStickDots",
@@ -187,30 +191,49 @@ export async function initLd55() {
       rightDot.position[0] = gamepad.rightStick[0] * radius;
       rightDot.position[1] = gamepad.rightStick[1] * radius;
 
-      sketchLine(leftDot.position, rightDot.position, {
-        key: "hoverLine",
-        color: ENDESGA16.lightGreen,
-      });
+      const doPlace = gamepad.btnClicks["lt"] || gamepad.btnClicks["rt"];
+
+      for (let i = 0; i < SYMMETRY; i++) {
+        let a = SYM_ANGLE * i;
+        const left = V3.yaw([leftDot.position[0], leftDot.position[1], 0], a);
+        const right = V3.yaw(
+          [rightDot.position[0], rightDot.position[1], 0],
+          a
+        );
+
+        let hoverColor = i === 0 ? ENDESGA16.lightBlue : ENDESGA16.blue;
+
+        sketchLine(left, right, {
+          key: `hoverLine_${i}`,
+          color: hoverColor,
+        });
+
+        if (doPlace) {
+          sketchLine(left, right, {
+            color: ENDESGA16.lightGreen,
+          });
+        }
+      }
     }
   );
 }
 
 const xboxLayout = [
-  "DPad-Up",
-  "DPad-Down",
-  "DPad-Left",
-  "DPad-Right",
-  "Start",
-  "Back",
-  "Axis-Left",
-  "Axis-Right",
-  "LB",
-  "RB",
-  "Power",
-  "A",
-  "B",
-  "X",
-  "Y",
+  "up",
+  "down",
+  "left",
+  "right",
+  "start",
+  "back",
+  "lt",
+  "rt",
+  "lb",
+  "rb",
+  "power",
+  "a",
+  "b",
+  "x",
+  "y",
 ];
 
 function gamepadStuff() {
@@ -238,7 +261,14 @@ function gamepadStuff() {
     );
   });
 
-  EM.addResource(GamepadDef);
+  {
+    // init xbox layout
+    const gamepad = EM.addResource(GamepadDef);
+    for (let name of xboxLayout) {
+      gamepad.btnClicks[name] = 0;
+      gamepad.btnDowns[name] = false;
+    }
+  }
 
   EM.addSystem(
     "gamepad",
@@ -261,6 +291,15 @@ function gamepadStuff() {
         return;
       }
 
+      if (rawPad.buttons.length < xboxLayout.length) {
+        dbgLogOnce(
+          "gamepadButtons",
+          `assuming xbox layout, number of buttons: ${rawPad.buttons.length} vs. xbox num: ${xboxLayout.length}`,
+          true
+        );
+        return;
+      }
+
       gamepad.leftStick[0] = rawPad.axes[0];
       gamepad.leftStick[1] = -rawPad.axes[1];
       const lLen = V2.len(gamepad.leftStick);
@@ -280,11 +319,23 @@ function gamepadStuff() {
       //   )}`
       // );
 
-      // TODO(@darzu):
-      // for (let i = 0; i < pad.buttons.length; i++) {
-      //   const btn = pad.buttons[i];
+      // reset clicks
+      for (let name of xboxLayout) {
+        gamepad.btnClicks[name] = 0;
+      }
 
-      // }
+      // check clicks and down
+      for (let i = 0; i < rawPad.buttons.length; i++) {
+        const btn = rawPad.buttons[i];
+
+        const name = xboxLayout[i]; // TODO(@darzu): different layouts
+
+        const wasPressed = gamepad.btnDowns[name];
+
+        if (wasPressed && !btn.pressed) gamepad.btnClicks[name] += 1;
+
+        gamepad.btnDowns[name] = btn.pressed;
+      }
     }
   );
 }

@@ -84,7 +84,7 @@ export const linePipe = CY.createRenderPipeline("linePipe", {
       clear: "never",
     },
   ],
-  depthStencil: mainDepthTex,
+  // depthStencil: mainDepthTex,
   shader: "std-line",
   meshOpt: {
     pool: lineMeshPoolPtr,
