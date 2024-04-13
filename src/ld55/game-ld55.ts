@@ -24,7 +24,13 @@ import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
 import { shadowPipelines } from "../render/pipelines/std-shadow.js";
 import { RendererDef, RenderableConstructDef } from "../render/renderer-ecs.js";
-import { sketch, sketchDot, sketchEntNow, sketchSvg } from "../utils/sketch.js";
+import {
+  sketch,
+  sketchDot,
+  sketchEntNow,
+  sketchLine,
+  sketchSvg,
+} from "../utils/sketch.js";
 import { dbgLogOnce, dbgOnce } from "../utils/util.js";
 import { vec2Dbg } from "../utils/utils-3d.js";
 import { addWorldGizmo } from "../utils/utils-game.js";
@@ -80,7 +86,7 @@ export async function initLd55() {
     [RenderableConstructDef, PositionDef, ScaleDef, ColorDef] as const,
     {
       renderableConstruct: [PlaneMesh, true, undefined, GRID_MASK],
-      position: [0, 0, -1],
+      position: [0, 0, -2],
       scale: [2 * camera.viewDist, 2 * camera.viewDist, 1],
       // color: [0, 0.5, 0.5],
       color: [0.5, 0.5, 0.5],
@@ -92,7 +98,7 @@ export async function initLd55() {
   const pedestal = EM.new();
   EM.set(pedestal, RenderableConstructDef, HexMesh);
   EM.set(pedestal, ColorDef, ENDESGA16.darkGray);
-  EM.set(pedestal, PositionDef, V(0, 0, -10));
+  EM.set(pedestal, PositionDef, V(0, 0, -10 - 1));
   EM.set(pedestal, ScaleDef, V(20, 20, 10));
   EM.set(pedestal, ColliderDef, {
     shape: "AABB",
@@ -142,7 +148,7 @@ export async function initLd55() {
       { i: "a", rx: radius, dx: -diam, dy: 0, largeArc: true },
     ],
     {
-      origin: [0, 0, 1],
+      origin: [0, 0, 0],
       color: ENDESGA16.lightGreen,
       numPerInstr: 20,
     }
@@ -180,6 +186,11 @@ export async function initLd55() {
 
       rightDot.position[0] = gamepad.rightStick[0] * radius;
       rightDot.position[1] = gamepad.rightStick[1] * radius;
+
+      sketchLine(leftDot.position, rightDot.position, {
+        key: "hoverLine",
+        color: ENDESGA16.lightGreen,
+      });
     }
   );
 }
