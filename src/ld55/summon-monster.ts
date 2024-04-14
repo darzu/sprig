@@ -324,7 +324,7 @@ EM.addEagerInit([MonsterDef], [], [], () => {
           const doStep = V3.sqrDist(foot.position, socketPosWorld) > legLenSqr;
 
           if (doStep) {
-            console.log(`step`);
+            // console.log(`step`);
             V3.copy(foot.position, marker.world.position);
           }
 

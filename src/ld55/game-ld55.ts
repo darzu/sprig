@@ -481,7 +481,7 @@ export async function initLd55() {
         let a = sym_angle * i;
         const left = V3.yaw([leftDot.position[0], leftDot.position[1], 0], a);
         const right = V3.yaw(
-          [rightDot.position[0], rightDot.position[1], 0],
+          [rightDot.position[0], rightDot.position[1], 0.1],
           a
         );
 
