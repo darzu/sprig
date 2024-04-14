@@ -36,7 +36,7 @@ export const MonsterObj = defineObj({
     head: [RenderableConstructDef, PositionDef, ColorDef],
   },
   physicsParentChildren: true,
-  propsType: T<SummonStats>(),
+  propsType: T<{ stats: SummonStats }>(),
 } as const);
 export const MonsterDef = MonsterObj.props;
 
@@ -64,7 +64,9 @@ export function summonMonster(stats: SummonStats) {
   const headLoc = randFloat(0.7, 1.1);
 
   const monster = createObj(MonsterObj, {
-    props: stats,
+    props: {
+      stats: stats,
+    },
     args: {
       renderableConstruct: [bodyMesh],
       position: [0, 0, startHeight],
@@ -88,11 +90,24 @@ EM.addSystem(
   [MonsterDef, ...MonsterObj.opts.components], // TODO(@darzu): ABSTRACTION. Need better handling for this
   [TimeDef],
   (es, res) => {
+    let energyDrainPerMs = 0.0001;
+
     for (let e of es) {
-      const speed = e.monster.speed * 0.05;
-      e.position[1] += speed * res.time.dt;
+      let hasEnergy = e.monster.stats.energy > 0;
+
+      if (hasEnergy) {
+        e.monster.stats.energy -= energyDrainPerMs * res.time.dt;
+
+        const speed = e.monster.stats.speed * 0.05;
+        e.position[1] += speed * res.time.dt;
+      } else {
+        e.position[2] = 0;
+      }
 
       // TODO(@darzu): WALK / FLY ANIM
+      // lean back based on speed
+      // animate feet through the air
+      // lean toward side with feet on the ground
     }
   }
 );
