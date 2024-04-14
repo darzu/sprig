@@ -455,6 +455,11 @@ export async function initLd55() {
   let symmetry = 5;
   let maxSymmetry = symmetry;
 
+  let lastTravelPos = V(0, 0, 0.1);
+  let travelLines = [];
+
+  let travelPerSummonDist = 4;
+
   EM.addSystem(
     "updateStickDots",
     Phase.GAME_WORLD,
@@ -479,7 +484,7 @@ export async function initLd55() {
       let toDrawLines: [V3.InputT, V3.InputT][] = [];
       for (let i = 0; i < symmetry; i++) {
         let a = sym_angle * i;
-        const left = V3.yaw([leftDot.position[0], leftDot.position[1], 0], a);
+        const left = V3.yaw([leftDot.position[0], leftDot.position[1], 0.1], a);
         const right = V3.yaw(
           [rightDot.position[0], rightDot.position[1], 0.1],
           a
@@ -494,6 +499,27 @@ export async function initLd55() {
 
         if (doPlace) {
           toDrawLines.push([left, right]);
+        }
+
+        // track travel command
+        if (doPlace && i === 0) {
+          // const leftFirst = left[1] < right[1];
+          const leftFirst = true;
+          const first = leftFirst ? left : right;
+          const second = leftFirst ? right : left;
+          const delta = V3.sub(second, first);
+
+          let travelScale = symmetry * travelPerSummonDist;
+
+          V3.scale(delta, travelScale, delta);
+          const nextTravelPos = V3.add(lastTravelPos, delta, delta);
+          const e = sketcher.sketchEnt({
+            start: lastTravelPos,
+            end: nextTravelPos,
+            shape: "line",
+            color: ENDESGA16.yellow,
+          });
+          V3.copy(lastTravelPos, nextTravelPos);
         }
       }
 
