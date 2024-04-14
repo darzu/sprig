@@ -59,6 +59,7 @@ import { addWorldGizmo } from "../utils/utils-game.js";
 import { MeshHandle } from "../render/mesh-pool.js";
 import { compileSVG, svgToLineSeg } from "../utils/svg.js";
 import { blurOutputTex, blurPipelines } from "../render/pipelines/std-blur.js";
+import { clamp } from "../utils/math.js";
 
 const DBG_GHOST = true;
 
@@ -375,8 +376,8 @@ export async function initLd55() {
     }
   );
 
-  const SYMMETRY = 5;
-  const SYM_ANGLE = PIn2 / 5;
+  let symmetry = 5;
+  let maxSymmetry = symmetry;
 
   EM.addSystem(
     "updateStickDots",
@@ -390,10 +391,17 @@ export async function initLd55() {
       rightDot.position[0] = gamepad.rightStick[0] * radius;
       rightDot.position[1] = gamepad.rightStick[1] * radius;
 
+      if (gamepad.btnClicks["left"]) symmetry -= 1;
+      else if (gamepad.btnClicks["right"]) symmetry += 1;
+      symmetry = clamp(symmetry, 1, 20);
+      maxSymmetry = Math.max(maxSymmetry, symmetry);
+
       const doPlace = gamepad.btnClicks["lt"] || gamepad.btnClicks["rt"];
 
-      for (let i = 0; i < SYMMETRY; i++) {
-        let a = SYM_ANGLE * i;
+      let sym_angle = PIn2 / symmetry;
+
+      for (let i = 0; i < symmetry; i++) {
+        let a = sym_angle * i;
         const left = V3.yaw([leftDot.position[0], leftDot.position[1], 0], a);
         const right = V3.yaw(
           [rightDot.position[0], rightDot.position[1], 0],
@@ -420,26 +428,34 @@ export async function initLd55() {
           );
         }
       }
+
+      for (let i = symmetry; i < maxSymmetry; i++) {
+        sketchLine([0, 0, 0], [0, 0, 0], {
+          key: `hoverLine_${i}`,
+          color: ENDESGA16.darkGray,
+        });
+      }
     }
   );
 }
 
 const xboxLayout = [
-  "up",
-  "down",
-  "left",
-  "right",
-  "start",
-  "back",
-  "lt",
-  "rt",
-  "lb",
-  "rb",
-  "power",
   "a",
   "b",
   "x",
   "y",
+  "lb",
+  "rb",
+  "lt",
+  "rt",
+  "?0",
+  "?1",
+  "?8",
+  "?9",
+  "up",
+  "down",
+  "left",
+  "right",
 ];
 
 function gamepadStuff() {
@@ -538,7 +554,10 @@ function gamepadStuff() {
 
         const wasPressed = gamepad.btnDowns[name];
 
-        if (wasPressed && !btn.pressed) gamepad.btnClicks[name] += 1;
+        if (wasPressed && !btn.pressed) {
+          gamepad.btnClicks[name] += 1;
+          console.log(`click "${name}"`);
+        }
 
         gamepad.btnDowns[name] = btn.pressed;
       }
