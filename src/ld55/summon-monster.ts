@@ -115,7 +115,7 @@ function getMonsterStats(stats: SummonStats): MonsterStats {
   let headSize = Math.pow(headVolume, 1 / 3);
 
   let energy = stats.energy;
-  let speed = stats.speed;
+  let speed = stats.speed * 0.5;
 
   let startHeight = bodyWidth + 2;
   const legLength = startHeight + bodyWidth * 1.0;
@@ -176,6 +176,8 @@ export function summonMonster(summonStats: SummonStats) {
   let footZ = -startHeight;
   for (let i = 0; i < numFeet; i++) {
     let left = i % 2 === 0;
+    let fwd = ((i - 1) >> 1) % 2 === 0;
+    let fwdSign = fwd ? 1 : -1;
     let xSign = left ? -1 : 1;
     let xSocketPos = xSign * (bodyWidth / 2);
     let xPos = xSocketPos + xSign * strideWidth;
@@ -187,7 +189,7 @@ export function summonMonster(summonStats: SummonStats) {
     let footMidY = rearY + footSpacing * pairIdx;
     let footMarkerY = footMidY + footMarkFwdOffset;
 
-    let footY = footMarkerY + jitter(0.5) * legLength;
+    let footY = footMidY + fwdSign * footMarkFwdOffset;
 
     const marker = createObj(MonsterFootMarkerObj, {
       props: {
@@ -270,10 +272,20 @@ EM.addEagerInit([MonsterDef], [], [], () => {
           const speed = e.monster.stats.speed * 0.05;
           e.position[1] += speed * res.time.dt;
         } else {
-          e.position[2] = 0;
+          if (e.position[2] !== 0) {
+            e.position[2] = 0;
 
-          e.monster.feet.forEach((e) => (e.position[2] = 0));
-          e.monster.feetMarkers.forEach((e) => (e.position[2] = 0));
+            e.monster.feet.forEach((f, i) => {
+              // const left = i % 2 === 0 ? -1 : 1;
+              // f.position[0] += left * e.monster.stats.startHeight;
+              f.position[2] = 0;
+            });
+            e.monster.feetMarkers.forEach((f, i) => {
+              // const left = i % 2 === 0 ? -1 : 1;
+              // f.position[0] += left * e.monster.stats.startHeight;
+              f.position[2] = 0;
+            });
+          }
         }
 
         // TODO(@darzu): WALK / FLY ANIM
