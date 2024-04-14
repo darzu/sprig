@@ -398,8 +398,8 @@ export async function initLd55() {
     )! as CyArray<typeof ParticleStruct.desc>;
     assert(!!particleData, `missing particleData`);
 
-    let distances = lines.map(([start, end]) => V3.dist(start, end));
-    let totalDist = sum(distances);
+    const param = linesToParametric(lines);
+    const totalDist = param.len(1);
 
     let maxParticlesPerDist = Math.floor(
       cloudBurstSys.desc.maxParticles / totalDist
@@ -409,55 +409,34 @@ export async function initLd55() {
       particlesPerDist
     );
 
-    let nextDataIdx = 0;
-    for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
-      const [start, end] = lines[lineIdx];
-      const dist = distances[lineIdx];
-      const numParticles = Math.floor(dist * actualParticlesPerDist);
+    let numParticles = Math.floor(actualParticlesPerDist * totalDist);
 
-      while (tsData.length < nextDataIdx + numParticles)
-        tsData.push(ParticleStruct.create());
+    while (tsData.length < numParticles) tsData.push(ParticleStruct.create());
 
-      // console.log("tsData.length: " + tsData.length);
+    for (let i = 0; i < numParticles; i++) {
+      const d = tsData[i];
+      V4.copy(d.color, [
+        ENDESGA16.darkRed[0] + jitter(0.1),
+        ENDESGA16.darkRed[1] + jitter(0.01),
+        ENDESGA16.darkRed[2] + jitter(0.01),
+        1.0,
+      ]);
+      V4.copy(d.colorVel, [-0.001, -0.001, 0.001, 0]);
 
-      for (let i = 0; i < numParticles; i++) {
-        // console.log(`accessing ${i + nextDataIdx}`);
-        const d = tsData[i + nextDataIdx];
-        V4.copy(d.color, [
-          ENDESGA16.darkRed[0] + jitter(0.1),
-          ENDESGA16.darkRed[1] + jitter(0.01),
-          ENDESGA16.darkRed[2] + jitter(0.01),
-          1.0,
-        ]);
-        V4.copy(d.colorVel, [-0.001, -0.001, 0.001, 0]);
+      let t = Math.random();
+      param.pos(t, d.pos);
 
-        V3.lerp(start, end, Math.random(), d.pos);
-        d.pos[0] += jitter(0.1);
-        d.pos[1] += jitter(0.1);
-        d.size = Math.random() * 0.4 + 0.05;
+      d.pos[0] += jitter(0.1);
+      d.pos[1] += jitter(0.1);
+      d.size = Math.random() * 0.4 + 0.05;
 
-        V3.copy(d.vel, [0, 0, 0.05 + jitter(0.02)]);
-        V3.copy(d.acl, [0, 0, 0]);
-        d.sizeVel = -0.001 + jitter(0.0005);
-        d.life = Math.random() * 10000 + 1000;
-
-        // let color = vec4(rand(), rand(), rand(), rand());
-        // particle.color = color;
-        // // particle.colorVel = vec4(1, -1, -1, 0.0) * 0.0005;
-        // particle.colorVel = vec4(0.0);
-
-        // particle.pos = vec3(rand(), rand(), rand()) * 10.0;
-        // particle.size = rand() * 0.9 + 0.1;
-
-        // particle.vel = (color.xyz - 0.5) * 0.1;
-        // particle.acl = (vec3(rand(), rand(), rand()) - 0.5) * 0.0001;
-        // particle.sizeVel = 0.001 * (rand() - 0.5);
-        // particle.life = rand() * 10000 + 1000;
-      }
-      nextDataIdx += numParticles;
+      V3.copy(d.vel, [0, 0, 0.05 + jitter(0.02)]);
+      V3.copy(d.acl, [0, 0, 0]);
+      d.sizeVel = -0.001 + jitter(0.0005);
+      d.life = Math.random() * 10000 + 1000;
     }
 
-    particleData.queueUpdates(tsData, 0, 0, nextDataIdx);
+    particleData.queueUpdates(tsData, 0, 0, numParticles);
   }
 
   const leftDot = createObj(
