@@ -28,6 +28,18 @@ interface SummonStats {
   range: number;
 }
 
+interface MonsterStats {
+  numPairsFeet: number;
+  bodyVolume: number;
+  bodyLength: number;
+  bodyWidth: number;
+  headVolume: number;
+  headSize: number;
+
+  energy: number;
+  speed: number;
+}
+
 export function getSummonStats(): SummonStats {
   // TODO(@darzu): use circle
 
@@ -74,7 +86,7 @@ export const MonsterObj = defineObj({
   },
   physicsParentChildren: true,
   propsType: T<{
-    stats: SummonStats;
+    stats: MonsterStats;
     feet: MonsterFootEnt[];
     feetMarkers: MonsterFootMarkerEnt[];
   }>(),
@@ -84,9 +96,7 @@ export const MonsterDef = MonsterObj.props;
 const stepRadius = 8;
 const footMarkFwdY = stepRadius * 0.4;
 
-export function summonMonster(stats: SummonStats) {
-  // TODO(@darzu): IMPL
-
+function getMonsterStats(stats: SummonStats): MonsterStats {
   let numPairsFeet = Math.floor(1 + stats.speed * 5);
 
   let numFeet = numPairsFeet * 2;
@@ -100,6 +110,29 @@ export function summonMonster(stats: SummonStats) {
 
   let headVolume = 1 + stats.wit * 100;
   let headSize = Math.pow(headVolume, 1 / 3);
+
+  let energy = stats.energy;
+  let speed = stats.speed;
+
+  return {
+    energy,
+    speed,
+
+    numPairsFeet,
+    bodyVolume,
+    bodyLength,
+    bodyWidth,
+    headVolume,
+    headSize,
+  };
+}
+
+export function summonMonster(summonStats: SummonStats) {
+  const stats = getMonsterStats(summonStats);
+
+  const { bodyWidth, bodyLength, headSize, numPairsFeet } = stats;
+
+  const numFeet = numPairsFeet * 2;
 
   const bodyMesh = mkRectMesh(bodyWidth, bodyLength, bodyWidth);
 
@@ -135,7 +168,7 @@ export function summonMonster(stats: SummonStats) {
         world: undefined,
         position: [xPos, footMarkerY, footZ],
         color: ENDESGA16.red,
-        scale: [0.5, 0.5, 0.5],
+        scale: [0.2, 0.2, 0.2],
         renderableConstruct: [CubeMesh],
       },
     });
@@ -209,6 +242,9 @@ EM.addEagerInit([MonsterDef], [], [], () => {
           e.position[1] += speed * res.time.dt;
         } else {
           e.position[2] = 0;
+
+          e.monster.feet.forEach((e) => (e.position[2] = 0));
+          e.monster.feetMarkers.forEach((e) => (e.position[2] = 0));
         }
 
         // TODO(@darzu): WALK / FLY ANIM
