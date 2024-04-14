@@ -67,6 +67,7 @@ import { ParticleStruct } from "../render/pipelines/std-particle.js";
 import { CyToTS } from "../render/gpu-struct.js";
 import { GamepadDef } from "./gamepad.js";
 import { getSummonStats, summonMonster } from "./summon-monster.js";
+import { InputsDef } from "../input/inputs.js";
 
 const DBG_GHOST = true;
 
@@ -526,9 +527,9 @@ export async function initLd55() {
     "summonMonsters",
     Phase.GAME_WORLD,
     null,
-    [GamepadDef],
-    (_, { gamepad }) => {
-      const doSummon = !!gamepad.btnClicks["a"];
+    [GamepadDef, InputsDef],
+    (_, { gamepad, inputs }) => {
+      const doSummon = !!gamepad.btnClicks["a"] || !!inputs.keyClicks["enter"];
 
       if (doSummon) {
         let stats = getSummonStats();
