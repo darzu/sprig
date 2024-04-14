@@ -8,13 +8,19 @@ import { createSun, initGhost } from "../graybox/graybox-helpers.js";
 import { createObj } from "../graybox/objects.js";
 import { V, V2, V3, V4 } from "../matrix/sprig-matrix.js";
 import { BallMesh, CubeMesh, HexMesh, PlaneMesh } from "../meshes/mesh-list.js";
+import { Mesh } from "../meshes/mesh.js";
 import { HEX_AABB, mkCubeMesh } from "../meshes/primatives.js";
 import { MeDef } from "../net/components.js";
 import { ColliderDef } from "../physics/collider.js";
 import { PositionDef, ScaleDef } from "../physics/transform.js";
 import { createRenderTextureToQuad } from "../render/gpu-helper.js";
 import { CY } from "../render/gpu-registry.js";
-import { GRID_MASK } from "../render/pipeline-masks.js";
+import {
+  FONT_JFA_MASK,
+  GAME_JFA_MASK,
+  GRID_MASK,
+  TEXTURED_MASK,
+} from "../render/pipeline-masks.js";
 import { createGridComposePipelines } from "../render/pipelines/std-compose.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
 import { stdGridRender } from "../render/pipelines/std-grid.js";
@@ -30,11 +36,16 @@ import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
 import { shadowPipelines } from "../render/pipelines/std-shadow.js";
 import {
+  meshTexturePtr,
+  stdMeshTexturedPipe,
+} from "../render/pipelines/std-mesh-textured.js";
+import {
   RendererDef,
   RenderableConstructDef,
   RenderableDef,
 } from "../render/renderer-ecs.js";
 import {
+  SketcherDef,
   sketch,
   sketchDot,
   sketchEntNow,
@@ -45,6 +56,8 @@ import { PIn2 } from "../utils/util-no-import.js";
 import { dbgLogOnce, dbgOnce } from "../utils/util.js";
 import { vec2Dbg } from "../utils/utils-3d.js";
 import { addWorldGizmo } from "../utils/utils-game.js";
+import { MeshHandle } from "../render/mesh-pool.js";
+import { compileSVG, svgToLineSeg } from "../utils/svg.js";
 
 const DBG_GHOST = true;
 
@@ -107,7 +120,7 @@ const jfaMaskLineRender = CY.createRenderPipeline("jfaMaskLineRender", {
   shaderFragmentEntry: "fragMain",
   meshOpt: {
     pool: lineMeshPoolPtr,
-    // meshMask: FONT_JFA_MASK,
+    meshMask: GAME_JFA_MASK,
     stepMode: "per-mesh-handle",
   },
   topology: "line-list",
@@ -130,18 +143,18 @@ const summonJfa = createJfaPipelines({
   size: 512 * 8,
 });
 
-const summonSdfExampleTex = CY.createTexture("summonSdfExampleTex", {
-  size: jfaMaskTex.size,
-  format: "r8unorm",
-  // format: "r16float",
-  // format: "rgba8unorm",
-});
+// export const summonSdfExampleTex = CY.createTexture("summonSdfExampleTex", {
+//   size: jfaMaskTex.size,
+//   format: "r8unorm",
+//   // format: "r16float",
+//   // format: "rgba8unorm",
+// });
 
-console.log("summonSdfExampleTex.size:" + summonSdfExampleTex.size[0]);
+// console.log("summonSdfExampleTex.size:" + summonSdfExampleTex.size[0]);
 const pipeSummonJfaLineSdfExample = createRenderTextureToQuad(
   "pipeSummonJfaLineSdfExample",
   summonJfa.sdfTex,
-  summonSdfExampleTex,
+  meshTexturePtr,
   -1,
   1,
   -1,
@@ -151,8 +164,9 @@ const pipeSummonJfaLineSdfExample = createRenderTextureToQuad(
     // let c = textureLoad(inTex, xy, 0).x;
     // let c = textureSample(inTex, samp, uv).x;
     let c = inPx;
+    return c;
     // if (c < 0.05) {
-    return 1.0 - smoothstep(0.03, 0.05, c);
+    // return 1.0 - smoothstep(0.03, 0.05, c);
       // return 1.0;
     // } else {
     //   return 0.0;
@@ -163,7 +177,7 @@ const pipeSummonJfaLineSdfExample = createRenderTextureToQuad(
 // prittier-ignore
 const dbgGrid = [
   [summonJfa._inputMaskTex, summonJfa._uvMaskTex],
-  [summonJfa.sdfTex, summonSdfExampleTex],
+  [summonJfa.sdfTex, meshTexturePtr],
 ];
 let dbgGridCompose = createGridComposePipelines(dbgGrid);
 
@@ -175,7 +189,8 @@ export async function initLd55() {
   stdGridRender.fragOverrides!.ringStart = 512;
   stdGridRender.fragOverrides!.ringWidth = 0;
 
-  let didDraw = false;
+  let summonLines: MeshHandle[] = [];
+  let lastSummonLinesLen = 0;
 
   let _frame = 0; // TODO(@darzu): HACK. idk what the dependency is..
   EM.addSystem(
@@ -185,11 +200,11 @@ export async function initLd55() {
     [RendererDef],
     (es, res) => {
       _frame++;
-      if (_frame > 2 && !didDraw) return;
+      if (_frame > 2 && lastSummonLinesLen === summonLines.length) return;
 
-      const handles = es.map((e) => e.renderable.meshHandle);
+      lastSummonLinesLen = summonLines.length;
 
-      res.renderer.renderer.submitPipelines(handles, [
+      res.renderer.renderer.submitPipelines(summonLines, [
         jfaMaskLineRender,
         ...summonJfa.allPipes(),
         pipeSummonJfaLineSdfExample,
@@ -207,6 +222,7 @@ export async function initLd55() {
       res.renderer.pipelines = [
         ...shadowPipelines,
         stdMeshPipe,
+        stdMeshTexturedPipe,
         outlineRender,
         deferredPipeline,
         pointPipe,
@@ -246,16 +262,35 @@ export async function initLd55() {
   );
 
   // pedestal
-  const pedestal = EM.new();
-  EM.set(pedestal, RenderableConstructDef, CubeMesh);
-  EM.set(pedestal, ColorDef, ENDESGA16.darkGray);
-  EM.set(pedestal, PositionDef, V(0, 0, -10));
-  EM.set(pedestal, ScaleDef, V(20, 20, 10));
-  EM.set(pedestal, ColliderDef, {
-    shape: "AABB",
-    solid: true,
-    aabb: HEX_AABB,
-  });
+  {
+    const x1 = -radiusPlusWidth;
+    const y1 = -radiusPlusWidth;
+    const x2 = radiusPlusWidth;
+    const y2 = radiusPlusWidth;
+    const pedestalMesh: Mesh = {
+      pos: [V(x1, y1, 0), V(x2, y1, 0), V(x2, y2, 0), V(x1, y2, 0)],
+      tri: [],
+      quad: [
+        V(0, 1, 2, 3), // top
+        V(3, 2, 1, 0), // bottom
+      ],
+      colors: [V3.mk(), V3.mk()],
+      uvs: [V(0, 0), V(1, 0), V(1, 1), V(0, 1)],
+      surfaceIds: [1, 2],
+      usesProvoking: true,
+    };
+    const pedestal = EM.new();
+    EM.set(
+      pedestal,
+      RenderableConstructDef,
+      pedestalMesh,
+      true,
+      undefined,
+      TEXTURED_MASK
+    );
+    EM.set(pedestal, ColorDef, ENDESGA16.darkRed);
+    EM.set(pedestal, PositionDef, V(0, 0, 0));
+  }
 
   // gizmo
   // addWorldGizmo(V(0, 0, 0), 5);
@@ -290,18 +325,31 @@ export async function initLd55() {
     initGhost();
   }
 
-  sketchSvg(
-    [
-      { i: "M", x: -radius, y: 0 },
-      { i: "a", rx: radius, dx: diam, dy: 0, largeArc: true },
-      { i: "a", rx: radius, dx: -diam, dy: 0, largeArc: true },
-    ],
-    {
-      origin: [0, 0, 0],
+  {
+    const { sketcher } = await EM.whenResources(SketcherDef);
+
+    const lines = svgToLineSeg(
+      compileSVG([
+        { i: "M", x: -radius, y: 0 },
+        { i: "a", rx: radius, dx: diam, dy: 0, largeArc: true },
+        { i: "a", rx: radius, dx: -diam, dy: 0, largeArc: true },
+      ]),
+      {
+        origin: [0, 0, 0],
+        numPerInstr: 20,
+      }
+    );
+
+    const e = sketcher.sketchEnt({
+      lines,
+      shape: "lineSegs",
       color: ENDESGA16.lightGreen,
-      numPerInstr: 20,
-    }
-  );
+      renderMask: GAME_JFA_MASK,
+    });
+    EM.whenEntityHas(e, RenderableDef).then((e) =>
+      summonLines.push(e.renderable.meshHandle)
+    );
+  }
 
   gamepadStuff();
 
@@ -309,7 +357,7 @@ export async function initLd55() {
     [PositionDef, ColorDef, RenderableConstructDef, ScaleDef] as const,
     {
       position: [0, 0, 2],
-      color: ENDESGA16.red,
+      color: ENDESGA16.darkGreen,
       renderableConstruct: [BallMesh],
       scale: [0.2, 0.2, 1],
     }
@@ -331,10 +379,8 @@ export async function initLd55() {
     "updateStickDots",
     Phase.GAME_WORLD,
     null,
-    [GamepadDef],
-    (_, { gamepad }) => {
-      didDraw = false;
-
+    [GamepadDef, SketcherDef],
+    (_, { gamepad, sketcher }) => {
       leftDot.position[0] = gamepad.leftStick[0] * radius;
       leftDot.position[1] = gamepad.leftStick[1] * radius;
 
@@ -359,10 +405,16 @@ export async function initLd55() {
         });
 
         if (doPlace) {
-          sketchLine(left, right, {
+          const e = sketcher.sketchEnt({
+            start: left,
+            end: right,
+            shape: "line",
             color: ENDESGA16.lightGreen,
+            renderMask: GAME_JFA_MASK,
           });
-          didDraw = true;
+          EM.whenEntityHas(e, RenderableDef).then((e) =>
+            summonLines.push(e.renderable.meshHandle)
+          );
         }
       }
     }
