@@ -200,7 +200,7 @@ export function summonMonster(summonStats: SummonStats) {
         position: [xPos, footMarkerY, footZ],
         color: ENDESGA16.red,
         scale: [0.2, 0.2, 0.2],
-        renderableConstruct: [CubeMesh],
+        renderableConstruct: [CubeMesh, false],
       },
     });
     // V3.copy(marker.world.position, marker.position);
