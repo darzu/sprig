@@ -7,6 +7,7 @@ import { mkCubeMesh, mkRectMesh } from "../meshes/primatives.js";
 import { PositionDef } from "../physics/transform.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { TimeDef } from "../time/time.js";
+import { randFloat } from "../utils/math.js";
 
 interface SummonStats {
   energy: number;
@@ -31,6 +32,10 @@ export function getSummonStats(): SummonStats {
 export const MonsterObj = defineObj({
   name: "monster",
   components: [RenderableConstructDef, PositionDef, ColorDef],
+  children: {
+    head: [RenderableConstructDef, PositionDef, ColorDef],
+  },
+  physicsParentChildren: true,
   propsType: T<SummonStats>(),
 } as const);
 export const MonsterDef = MonsterObj.props;
@@ -47,11 +52,16 @@ export function summonMonster(stats: SummonStats) {
   // volume = length * width * width;
   let bodyWidth = Math.sqrt(bodyVolume / bodyLength);
 
-  let headSize = 1 + stats.wit * 2;
+  let headVolume = 1 + stats.wit * 100;
+  let headSize = Math.pow(headVolume, 1 / 3);
 
   const bodyMesh = mkRectMesh(bodyWidth, bodyLength, bodyWidth);
 
+  const headMesh = mkRectMesh(headSize, headSize, headSize);
+
   let startHeight = bodyWidth + 2;
+
+  const headLoc = randFloat(0.7, 1.1);
 
   const monster = createObj(MonsterObj, {
     props: stats,
@@ -59,6 +69,13 @@ export function summonMonster(stats: SummonStats) {
       renderableConstruct: [bodyMesh],
       position: [0, 0, startHeight],
       color: ENDESGA16.darkRed,
+    },
+    children: {
+      head: {
+        position: [0, (bodyLength / 2) * headLoc, bodyWidth / 2],
+        renderableConstruct: [headMesh],
+        color: ENDESGA16.yellow,
+      },
     },
   });
 
