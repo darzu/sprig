@@ -1,14 +1,15 @@
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
-import { EM } from "../ecs/entity-manager.js";
+import { EM, EntityW } from "../ecs/entity-manager.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { T, createObj, defineObj } from "../graybox/objects.js";
 import { mkCubeMesh, mkRectMesh } from "../meshes/primatives.js";
-import { PositionDef } from "../physics/transform.js";
+import { PhysicsParentDef, PositionDef } from "../physics/transform.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { TimeDef } from "../time/time.js";
 import { randFloat } from "../utils/math.js";
 
+// TODO(@darzu): SummonStats vs MonsterStats
 interface SummonStats {
   energy: number;
   speed: number;
@@ -29,6 +30,9 @@ export function getSummonStats(): SummonStats {
   };
 }
 
+const MonsterFootObj = [RenderableConstructDef, PositionDef, ColorDef] as const;
+type MonsterFootEnt = EntityW<[...typeof MonsterFootObj]>;
+
 export const MonsterObj = defineObj({
   name: "monster",
   components: [RenderableConstructDef, PositionDef, ColorDef],
@@ -36,14 +40,16 @@ export const MonsterObj = defineObj({
     head: [RenderableConstructDef, PositionDef, ColorDef],
   },
   physicsParentChildren: true,
-  propsType: T<{ stats: SummonStats }>(),
+  propsType: T<{ stats: SummonStats; feet: MonsterFootEnt[] }>(),
 } as const);
 export const MonsterDef = MonsterObj.props;
 
 export function summonMonster(stats: SummonStats) {
   // TODO(@darzu): IMPL
 
-  let numFeet = Math.floor(2 + stats.speed * 8);
+  let numPairsFeet = Math.floor(1 + stats.speed * 5);
+
+  let numFeet = numPairsFeet * 2;
 
   let bodyVolume = 1 + stats.energy * 400;
 
@@ -63,9 +69,33 @@ export function summonMonster(stats: SummonStats) {
 
   const headLoc = randFloat(0.7, 1.1);
 
+  let footSize = 1;
+
+  let feet: MonsterFootEnt[] = [];
+  let footSpacing = bodyLength / numPairsFeet;
+  let rearY = -bodyWidth / 2 + footSpacing / 2;
+  let footZ = -startHeight;
+  for (let i = 0; i < numFeet; i++) {
+    let left = i % 2 === 0;
+    let xPos = (left ? -1 : 1) * bodyWidth * 1.5;
+
+    let pairIdx = Math.floor(i / 2);
+
+    const footMesh = mkRectMesh(footSize, footSize, footSize);
+
+    const foot = createObj(MonsterFootObj, {
+      position: [xPos, rearY + footSpacing * pairIdx, footZ],
+      color: ENDESGA16.darkBrown,
+      renderableConstruct: [footMesh],
+    });
+
+    feet.push(foot);
+  }
+
   const monster = createObj(MonsterObj, {
     props: {
       stats: stats,
+      feet,
     },
     args: {
       renderableConstruct: [bodyMesh],
@@ -80,6 +110,11 @@ export function summonMonster(stats: SummonStats) {
       },
     },
   });
+
+  for (let foot of feet) {
+    monster.children.push(foot);
+    EM.set(foot, PhysicsParentDef, monster.id);
+  }
 
   return monster;
 }
