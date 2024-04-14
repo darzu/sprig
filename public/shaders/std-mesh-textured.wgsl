@@ -50,7 +50,7 @@ fn frag_main(input: VertexOutput) -> FragOut {
 
     let texDist: f32 = textureSample(tex, samp, uv).x;
 
-    let texMask = 1.0 - smoothstep(0.03, 0.05, texDist);
+    let texMask = 1.0 - smoothstep(0.15, 0.25, texDist);
 
     out.color = vec4<f32>(input.color, texMask);
 

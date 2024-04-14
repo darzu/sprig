@@ -52,14 +52,19 @@ import {
   sketchLine,
   sketchSvg,
 } from "../utils/sketch.js";
-import { PIn2 } from "../utils/util-no-import.js";
-import { dbgLogOnce, dbgOnce } from "../utils/util.js";
+import { PIn2, assert } from "../utils/util-no-import.js";
+import { dbgLogOnce, dbgOnce, range } from "../utils/util.js";
 import { vec2Dbg } from "../utils/utils-3d.js";
 import { addWorldGizmo } from "../utils/utils-game.js";
 import { MeshHandle } from "../render/mesh-pool.js";
 import { compileSVG, svgToLineSeg } from "../utils/svg.js";
 import { blurOutputTex, blurPipelines } from "../render/pipelines/std-blur.js";
-import { clamp } from "../utils/math.js";
+import { clamp, jitter, lerp, sum } from "../utils/math.js";
+import { cloudBurstSys } from "../particle/particle.js";
+import { TimeDef } from "../time/time.js";
+import { CyArray } from "../render/data-webgpu.js";
+import { ParticleStruct } from "../render/pipelines/std-particle.js";
+import { CyToTS } from "../render/gpu-struct.js";
 
 const DBG_GHOST = true;
 
@@ -140,8 +145,8 @@ const jfaMaskLineRender = CY.createRenderPipeline("jfaMaskLineRender", {
 const summonJfa = createJfaPipelines({
   maskTex: jfaMaskTex,
   maskMode: "interior",
-  sdfDistFact: 10.0,
-  maxDist: 512,
+  sdfDistFact: 50.0,
+  maxDist: 32,
   size: 512 * 8,
 });
 
@@ -179,7 +184,7 @@ const pipeSummonJfaLineSdfExample = createRenderTextureToQuad(
 // prittier-ignore
 const dbgGrid = [
   [summonJfa._inputMaskTex, summonJfa._uvMaskTex],
-  [blurOutputTex, meshTexturePtr],
+  [blurOutputTex, summonJfa.sdfTex],
 ];
 let dbgGridCompose = createGridComposePipelines(dbgGrid);
 
@@ -218,7 +223,7 @@ export async function initLd55() {
     "ld55Pipelines",
     Phase.GAME_WORLD,
     null,
-    [RendererDef, DevConsoleDef],
+    [RendererDef, DevConsoleDef, TimeDef],
     (_, res) => {
       // renderer
       res.renderer.pipelines = [
@@ -229,6 +234,10 @@ export async function initLd55() {
         deferredPipeline,
         pointPipe,
         linePipe,
+
+        // ...(particlesInit ? [cloudBurstSys.pipeInit] : []),
+        cloudBurstSys.pipeRender,
+        cloudBurstSys.pipeUpdate,
 
         stdGridRender,
 
@@ -241,7 +250,11 @@ export async function initLd55() {
     }
   );
 
-  const { camera, me } = await EM.whenResources(CameraDef, MeDef);
+  const { camera, me, renderer } = await EM.whenResources(
+    CameraDef,
+    MeDef,
+    RendererDef
+  );
 
   // camera
   camera.fov = Math.PI * 0.5;
@@ -357,6 +370,77 @@ export async function initLd55() {
 
   gamepadStuff();
 
+  const particlesPerDist = 10;
+  const tsData: CyToTS<typeof ParticleStruct.desc>[] = [];
+
+  function particleTrailOnLines(lines: [V3.InputT, V3.InputT][]) {
+    const particleData = renderer.renderer.getCyResource(
+      cloudBurstSys._data
+    )! as CyArray<typeof ParticleStruct.desc>;
+    assert(!!particleData, `missing particleData`);
+
+    let distances = lines.map(([start, end]) => V3.dist(start, end));
+    let totalDist = sum(distances);
+
+    let maxParticlesPerDist = Math.floor(
+      cloudBurstSys.desc.maxParticles / totalDist
+    );
+    let actualParticlesPerDist = Math.min(
+      maxParticlesPerDist,
+      particlesPerDist
+    );
+
+    let nextDataIdx = 0;
+    for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
+      const [start, end] = lines[lineIdx];
+      const dist = distances[lineIdx];
+      const numParticles = Math.floor(dist * actualParticlesPerDist);
+
+      while (tsData.length < nextDataIdx + numParticles)
+        tsData.push(ParticleStruct.create());
+
+      // console.log("tsData.length: " + tsData.length);
+
+      for (let i = 0; i < numParticles; i++) {
+        // console.log(`accessing ${i + nextDataIdx}`);
+        const d = tsData[i + nextDataIdx];
+        V4.copy(d.color, [
+          ENDESGA16.darkRed[0] + jitter(0.1),
+          ENDESGA16.darkRed[1] + jitter(0.01),
+          ENDESGA16.darkRed[2] + jitter(0.01),
+          1.0,
+        ]);
+        V4.copy(d.colorVel, [-0.001, -0.001, 0.001, 0]);
+
+        V3.lerp(start, end, Math.random(), d.pos);
+        d.pos[0] += jitter(0.1);
+        d.pos[1] += jitter(0.1);
+        d.size = Math.random() * 0.4 + 0.05;
+
+        V3.copy(d.vel, [0, 0, 0.05 + jitter(0.02)]);
+        V3.copy(d.acl, [0, 0, 0]);
+        d.sizeVel = -0.001 + jitter(0.0005);
+        d.life = Math.random() * 10000 + 1000;
+
+        // let color = vec4(rand(), rand(), rand(), rand());
+        // particle.color = color;
+        // // particle.colorVel = vec4(1, -1, -1, 0.0) * 0.0005;
+        // particle.colorVel = vec4(0.0);
+
+        // particle.pos = vec3(rand(), rand(), rand()) * 10.0;
+        // particle.size = rand() * 0.9 + 0.1;
+
+        // particle.vel = (color.xyz - 0.5) * 0.1;
+        // particle.acl = (vec3(rand(), rand(), rand()) - 0.5) * 0.0001;
+        // particle.sizeVel = 0.001 * (rand() - 0.5);
+        // particle.life = rand() * 10000 + 1000;
+      }
+      nextDataIdx += numParticles;
+    }
+
+    particleData.queueUpdates(tsData, 0, 0, nextDataIdx);
+  }
+
   const leftDot = createObj(
     [PositionDef, ColorDef, RenderableConstructDef, ScaleDef] as const,
     {
@@ -400,6 +484,7 @@ export async function initLd55() {
 
       let sym_angle = PIn2 / symmetry;
 
+      let toDrawLines: [V3.InputT, V3.InputT][] = [];
       for (let i = 0; i < symmetry; i++) {
         let a = sym_angle * i;
         const left = V3.yaw([leftDot.position[0], leftDot.position[1], 0], a);
@@ -416,9 +501,15 @@ export async function initLd55() {
         });
 
         if (doPlace) {
+          toDrawLines.push([left, right]);
+        }
+      }
+
+      if (toDrawLines.length) {
+        for (let [start, end] of toDrawLines) {
           const e = sketcher.sketchEnt({
-            start: left,
-            end: right,
+            start,
+            end,
             shape: "line",
             color: ENDESGA16.lightGreen,
             renderMask: GAME_JFA_MASK,
@@ -427,6 +518,8 @@ export async function initLd55() {
             summonLines.push(e.renderable.meshHandle)
           );
         }
+
+        particleTrailOnLines(toDrawLines);
       }
 
       for (let i = symmetry; i < maxSymmetry; i++) {
