@@ -3,8 +3,8 @@ struct VertexOutput {
     @location(1) @interpolate(flat) normal : vec3<f32>,
     @location(2) @interpolate(flat) color : vec3<f32>,
     @location(3) uv : vec2<f32>,
-    @location(4) @interpolate(flat) surface: u32,
-    @location(5) @interpolate(flat) id: u32,
+    // @location(4) @interpolate(flat) surface: u32,
+    // @location(4) @interpolate(flat) id: u32,
     @builtin(position) position : vec4<f32>,
 };
 
@@ -26,8 +26,8 @@ fn vert_main(input: VertexInput) -> VertexOutput {
 
     output.uv = input.uv;
 
-    output.surface = input.surfaceId;
-    output.id = meshUni.id;
+    // output.surface = input.surfaceId;
+    // output.id = meshUni.id;
 
     return output;
 }
@@ -36,7 +36,8 @@ struct FragOut {
   @location(0) color: vec4<f32>,
   @location(1) normal: vec4<f32>,
   @location(2) position: vec4<f32>,
-  @location(3) surface: vec2<u32>,
+  // @location(3) surface: vec2<u32>,
+  @location(3) emissive: vec4<f32>,
 }
 
 @fragment
@@ -53,14 +54,16 @@ fn frag_main(input: VertexOutput) -> FragOut {
 
     out.color = vec4<f32>(input.color, texMask);
 
+    out.emissive = vec4(input.color * texMask, 1.0);
+
     out.position = input.worldPos;
 
     const fresnel = 0.0;
 
     out.normal = vec4<f32>(normalize(input.normal), fresnel);
-    // out.normal = vec4(normalize((scene.cameraViewProjMatrix * vec4<f32>(input.normal, 0.0)).xyz), 1.0);
-    out.surface.r = input.surface;
-    out.surface.g = input.id;
+    
+    // out.surface.r = input.surface;
+    // out.surface.g = input.id;
 
     return out;
 }

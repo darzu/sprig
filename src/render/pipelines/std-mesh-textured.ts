@@ -12,6 +12,7 @@ import {
   surfacesTexturePtr,
   mainDepthTex,
 } from "./std-scene.js";
+import { emissionTexturePtr } from "./std-stars.js";
 
 // TODO(@darzu): allow multiple textures!
 export const meshTexturePtr = CY.createTexture("meshTexture", {
@@ -72,9 +73,13 @@ export const stdMeshTexturedPipe = CY.createRenderPipeline(
         ptr: positionsTexturePtr,
         clear: "never",
       },
+      // {
+      //   ptr: surfacesTexturePtr,
+      //   clear: "never",
+      // },
       {
-        ptr: surfacesTexturePtr,
-        clear: "never",
+        ptr: emissionTexturePtr,
+        clear: "once",
       },
     ],
     depthStencil: mainDepthTex,

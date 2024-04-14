@@ -58,6 +58,7 @@ import { vec2Dbg } from "../utils/utils-3d.js";
 import { addWorldGizmo } from "../utils/utils-game.js";
 import { MeshHandle } from "../render/mesh-pool.js";
 import { compileSVG, svgToLineSeg } from "../utils/svg.js";
+import { blurOutputTex, blurPipelines } from "../render/pipelines/std-blur.js";
 
 const DBG_GHOST = true;
 
@@ -177,7 +178,7 @@ const pipeSummonJfaLineSdfExample = createRenderTextureToQuad(
 // prittier-ignore
 const dbgGrid = [
   [summonJfa._inputMaskTex, summonJfa._uvMaskTex],
-  [summonJfa.sdfTex, meshTexturePtr],
+  [blurOutputTex, meshTexturePtr],
 ];
 let dbgGridCompose = createGridComposePipelines(dbgGrid);
 
@@ -229,6 +230,8 @@ export async function initLd55() {
         linePipe,
 
         stdGridRender,
+
+        ...(res.renderer.renderer.highGraphics ? blurPipelines : []),
 
         postProcess,
 
@@ -336,7 +339,7 @@ export async function initLd55() {
       ]),
       {
         origin: [0, 0, 0],
-        numPerInstr: 20,
+        numPerInstr: 40,
       }
     );
 
