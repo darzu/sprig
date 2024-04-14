@@ -17,7 +17,7 @@ import {
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { TimeDef } from "../time/time.js";
 import { jitter, randFloat } from "../utils/math.js";
-import { SketcherDef, sketchLine } from "../utils/sketch.js";
+import { SketcherDef, sketchLine, sketchLineSegs } from "../utils/sketch.js";
 
 // TODO(@darzu): SummonStats vs MonsterStats
 interface SummonStats {
@@ -176,7 +176,7 @@ export function summonMonster(summonStats: SummonStats) {
   let footZ = -startHeight;
   for (let i = 0; i < numFeet; i++) {
     let left = i % 2 === 0;
-    let fwd = ((i - 1) >> 1) % 2 === 0;
+    let fwd = ((i - 1) >> 1) % 2 === 0; // left:back, right:fwd, left:fwd, right:back, left:back, right:fwd, left:fwd, ...
     let fwdSign = fwd ? 1 : -1;
     let xSign = left ? -1 : 1;
     let xSocketPos = xSign * (bodyWidth / 2);
@@ -328,10 +328,26 @@ EM.addEagerInit([MonsterDef], [], [], () => {
             V3.copy(foot.position, marker.world.position);
           }
 
-          sketchLine(socketPosWorld, foot.world.position, {
+          const kneePos: V3.InputT = V3.lerp(
+            foot.position,
+            socketPosWorld,
+            0.5
+          );
+          kneePos[2] += 2;
+
+          const segs: [V3.InputT, V3.InputT][] = [
+            [foot.world.position, kneePos],
+            [kneePos, socketPosWorld],
+          ];
+
+          sketchLineSegs(segs, {
             key: `leg_${e.id}_to_${foot.id}`,
             color: ENDESGA16.yellow,
           });
+          // sketchLine(socketPosWorld, foot.world.position, {
+          //   key: `leg_${e.id}_to_${foot.id}`,
+          //   color: ENDESGA16.yellow,
+          // });
         }
       }
     }
