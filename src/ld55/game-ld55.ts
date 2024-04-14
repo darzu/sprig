@@ -365,6 +365,33 @@ export async function initLd55() {
   const particlesPerDist = 10;
   const tsData: CyToTS<typeof ParticleStruct.desc>[] = [];
 
+  // TODO(@darzu): use?
+  interface Parametric {
+    pos: (t: number, out?: V3) => V3;
+    len: (t: number) => number;
+  }
+  function linesToParametric(lines: [V3.InputT, V3.InputT][]): Parametric {
+    let distances = lines.map(([start, end]) => V3.dist(start, end));
+    // let startDistances = distances.reduce((p, n) => [...p, n + p[p.length -1]], [0]);
+    let totalDist = sum(distances);
+
+    const len = (t: number) => t * totalDist;
+
+    const pos = (t: number, out?: V3) => {
+      let dist = t * totalDist;
+      let i = 0;
+      while (dist > distances[i]) {
+        dist -= distances[i];
+        i++;
+      }
+      let lineT = dist / distances[i];
+      let [start, end] = lines[i];
+      return V3.lerp(start, end, lineT, out);
+    };
+
+    return { len, pos };
+  }
+
   function particleTrailOnLines(lines: [V3.InputT, V3.InputT][]) {
     const particleData = renderer.renderer.getCyResource(
       cloudBurstSys._data
