@@ -3,7 +3,7 @@ import { ENDESGA16 } from "../color/palettes.js";
 import { EM, EntityW } from "../ecs/entity-manager.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { T, createObj, defineObj } from "../graybox/objects.js";
-import { V3 } from "../matrix/sprig-matrix.js";
+import { V, V3 } from "../matrix/sprig-matrix.js";
 import { CubeMesh } from "../meshes/mesh-list.js";
 import { mkCubeMesh, mkRectMesh } from "../meshes/primatives.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
@@ -35,6 +35,11 @@ interface MonsterStats {
   bodyWidth: number;
   headVolume: number;
   headSize: number;
+  legLength: number;
+  strideWidth: number;
+  startHeight: number;
+  footSpacing: number;
+  footMarkFwdOffset: number;
 
   energy: number;
   speed: number;
@@ -54,6 +59,7 @@ export function getSummonStats(): SummonStats {
 
 const MonsterFootMarkerObj = defineObj({
   name: "monsterFootMarker",
+  propsType: T<{ socketPos: V3 }>(),
   components: [
     RenderableConstructDef,
     ScaleDef,
@@ -93,9 +99,6 @@ export const MonsterObj = defineObj({
 } as const);
 export const MonsterDef = MonsterObj.props;
 
-const stepRadius = 8;
-const footMarkFwdY = stepRadius * 0.4;
-
 function getMonsterStats(stats: SummonStats): MonsterStats {
   let numPairsFeet = Math.floor(1 + stats.speed * 5);
 
@@ -114,6 +117,16 @@ function getMonsterStats(stats: SummonStats): MonsterStats {
   let energy = stats.energy;
   let speed = stats.speed;
 
+  let startHeight = bodyWidth + 2;
+  const legLength = startHeight + bodyWidth * 1.0;
+
+  let footSpacing = bodyLength / numPairsFeet;
+
+  const strideWidth = bodyWidth * 0.5;
+
+  // const footMarkFwdOffset = legLength * 0.2;
+  const footMarkFwdOffset = strideWidth * 1.5;
+
   return {
     energy,
     speed,
@@ -124,13 +137,28 @@ function getMonsterStats(stats: SummonStats): MonsterStats {
     bodyWidth,
     headVolume,
     headSize,
+    legLength,
+    strideWidth,
+    startHeight,
+    footSpacing,
+    footMarkFwdOffset,
   };
 }
 
 export function summonMonster(summonStats: SummonStats) {
   const stats = getMonsterStats(summonStats);
 
-  const { bodyWidth, bodyLength, headSize, numPairsFeet } = stats;
+  const {
+    bodyWidth,
+    bodyLength,
+    headSize,
+    numPairsFeet,
+    legLength,
+    startHeight,
+    footSpacing,
+    footMarkFwdOffset,
+    strideWidth,
+  } = stats;
 
   const numFeet = numPairsFeet * 2;
 
@@ -138,32 +166,33 @@ export function summonMonster(summonStats: SummonStats) {
 
   const headMesh = mkRectMesh(headSize, headSize, headSize);
 
-  let startHeight = bodyWidth + 2;
-
   const headLoc = randFloat(0.7, 1.1);
 
   let footSize = 1;
 
   let feet: MonsterFootEnt[] = [];
   let feetMarkers: MonsterFootMarkerEnt[] = [];
-  let footSpacing = bodyLength / numPairsFeet;
   let rearY = -bodyLength / 2 + footSpacing / 2;
   let footZ = -startHeight;
   for (let i = 0; i < numFeet; i++) {
     let left = i % 2 === 0;
-    let xPos = (left ? -1 : 1) * bodyWidth * 1.5;
+    let xSign = left ? -1 : 1;
+    let xSocketPos = xSign * (bodyWidth / 2);
+    let xPos = xSocketPos + xSign * strideWidth;
 
     let pairIdx = Math.floor(i / 2);
 
     const footMesh = mkRectMesh(footSize, footSize, footSize);
 
     let footMidY = rearY + footSpacing * pairIdx;
-    let footRearY = footMidY - stepRadius / 2;
-    let footMarkerY = footMidY + footMarkFwdY;
+    let footMarkerY = footMidY + footMarkFwdOffset;
 
-    let footY = footMarkerY + jitter(0.5) * stepRadius;
+    let footY = footMarkerY + jitter(0.5) * legLength;
 
     const marker = createObj(MonsterFootMarkerObj, {
+      props: {
+        socketPos: V(xSocketPos, footMidY, 0),
+      },
       args: {
         world: undefined,
         position: [xPos, footMarkerY, footZ],
@@ -259,11 +288,12 @@ EM.addEagerInit([MonsterDef], [], [], () => {
   EM.addSystem(
     "updateMonsterFeet",
     Phase.GAME_WORLD,
-    [MonsterDef, ...MonsterObj.opts.components], // TODO(@darzu): ABSTRACTION. Need better handling for this
+    [MonsterDef, ...MonsterObj.opts.components, WorldFrameDef], // TODO(@darzu): ABSTRACTION. Need better handling for this
     [TimeDef, SketcherDef],
     (es, res) => {
-      let stepRadiusSqr = stepRadius ** 2;
       for (let e of es) {
+        let legLenSqr = e.monster.stats.legLength ** 2;
+
         let firstFrame = firstFrameSeen.get(e.id);
         if (firstFrame === undefined) {
           firstFrame = res.time.step;
@@ -277,15 +307,16 @@ EM.addEagerInit([MonsterDef], [], [], () => {
         for (let foot of e.monster.feet) {
           // TODO(@darzu): use leg length not marker distance!
           const marker = foot.monsterFoot.marker;
-          const doStep =
-            V3.sqrDist(foot.position, marker.world.position) > stepRadiusSqr;
+          const socketPosLocal = marker.monsterFootMarker.socketPos;
+          const socketPosWorld = V3.tMat4(socketPosLocal, e.world.transform);
+          const doStep = V3.sqrDist(foot.position, socketPosWorld) > legLenSqr;
 
           if (doStep) {
             console.log(`step`);
             V3.copy(foot.position, marker.world.position);
           }
 
-          sketchLine(e.position, foot.world.position, {
+          sketchLine(socketPosWorld, foot.world.position, {
             key: `leg_${e.id}_to_${foot.id}`,
             color: ENDESGA16.yellow,
           });
