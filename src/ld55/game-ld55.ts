@@ -66,6 +66,7 @@ import { CyArray } from "../render/data-webgpu.js";
 import { ParticleStruct } from "../render/pipelines/std-particle.js";
 import { CyToTS } from "../render/gpu-struct.js";
 import { GamepadDef } from "./gamepad.js";
+import { getSummonStats, summonMonster } from "./summon-monster.js";
 
 const DBG_GHOST = true;
 
@@ -517,6 +518,21 @@ export async function initLd55() {
           key: `hoverLine_${i}`,
           color: ENDESGA16.darkGray,
         });
+      }
+    }
+  );
+
+  EM.addSystem(
+    "summonMonsters",
+    Phase.GAME_WORLD,
+    null,
+    [GamepadDef],
+    (_, { gamepad }) => {
+      const doSummon = !!gamepad.btnClicks["a"];
+
+      if (doSummon) {
+        let stats = getSummonStats();
+        let monster = summonMonster(stats);
       }
     }
   );
