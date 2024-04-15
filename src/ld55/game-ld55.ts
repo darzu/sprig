@@ -69,6 +69,8 @@ import { GamepadDef } from "./gamepad.js";
 import { getSummonStats, summonMonster } from "./summon-monster.js";
 import { InputsDef } from "../input/inputs.js";
 
+const SHOW_TRAVEL = false;
+
 const DBG_GHOST = true;
 
 const radius = 10;
@@ -462,7 +464,6 @@ export async function initLd55() {
   let maxSymmetry = symmetry;
 
   let lastTravelPos = V(0, 0, 0.1);
-  let travelLines = [];
 
   let travelPerSummonDist = 4;
 
@@ -519,12 +520,14 @@ export async function initLd55() {
 
           V3.scale(delta, travelScale, delta);
           const nextTravelPos = V3.add(lastTravelPos, delta, delta);
-          const e = sketcher.sketchEnt({
-            start: lastTravelPos,
-            end: nextTravelPos,
-            shape: "line",
-            color: ENDESGA16.yellow,
-          });
+          if (SHOW_TRAVEL) {
+            const e = sketcher.sketchEnt({
+              start: lastTravelPos,
+              end: nextTravelPos,
+              shape: "line",
+              color: ENDESGA16.yellow,
+            });
+          }
           V3.copy(lastTravelPos, nextTravelPos);
         }
       }
