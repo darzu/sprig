@@ -338,7 +338,8 @@ export async function initLd55() {
     initGhost();
   }
 
-  {
+  const FIRST_CIRCLE = true;
+  if (FIRST_CIRCLE) {
     const { sketcher } = await EM.whenResources(SketcherDef);
 
     const lines = svgToLineSeg(
@@ -539,7 +540,7 @@ export async function initLd55() {
             end,
             shape: "line",
             color: ENDESGA16.lightGreen,
-            renderMask: GAME_JFA_MASK,
+            renderMask: GAME_JFA_MASK, // TODO(@darzu): mask just to hide; maybe use enable/disables
           });
           EM.whenEntityHas(e, RenderableDef).then((e) =>
             summonLines.push(e.renderable.meshHandle)
