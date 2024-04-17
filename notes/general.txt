@@ -1602,3 +1602,6 @@ Alan Kay on LLM:
   https://www.quora.com/What-does-Alan-Kay-think-about-programming-and-teaching-programming-with-copilots-and-LLMs-of-today
   talks by Alan Kay:
     https://tinlizzie.org/IA/index.php/Talks_by_Alan_Kay
+
+Like shadertoy but for compute
+  https://compute.toys

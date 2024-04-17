@@ -51,7 +51,12 @@ import {
   OceanVertStruct,
 } from "./pipelines/std-ocean.js";
 import { GPUBufferUsage } from "./webgpu-hacks.js";
-import { PERF_DBG_GPU, PERF_DBG_REBUNDLE, VERBOSE_LOG } from "../flags.js";
+import {
+  LOG_WEBGPU_AVAILABLE_FEATURES,
+  PERF_DBG_GPU,
+  PERF_DBG_REBUNDLE,
+  VERBOSE_LOG,
+} from "../flags.js";
 import { dbgLogOnce } from "../utils/util.js";
 import {
   GrassVertStruct,
@@ -74,6 +79,10 @@ export function createRenderer(
   context: GPUCanvasContext,
   shaders: ShaderSet
 ) {
+  if (LOG_WEBGPU_AVAILABLE_FEATURES) {
+    console.log("Available WebGPU features:");
+    console.dir([...device.features.values()]);
+  }
   const timestampQuerySet = device.features.has("timestamp-query")
     ? device.createQuerySet({
         label: `sprigTimestampQuerySet`,

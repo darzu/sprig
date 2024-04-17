@@ -108,7 +108,7 @@ struct FragOut {
 }
 `;
 
-const JFA_SIZE = 512 * 8;
+const JFA_SIZE = 512 * 4;
 
 const jfaMaskTex = CY.createTexture("summonMaskTex", {
   size: [JFA_SIZE, JFA_SIZE],
@@ -188,6 +188,8 @@ const pipeSummonJfaLineSdfExample = createRenderTextureToQuad(
 const dbgGrid = [[summonJfa.voronoiTex]];
 let dbgGridCompose = createGridComposePipelines(dbgGrid);
 
+const ALWAYS_JFA = true;
+
 export async function initLd55() {
   stdGridRender.fragOverrides!.lineSpacing1 = 8.0;
   stdGridRender.fragOverrides!.lineWidth1 = 0.05;
@@ -199,25 +201,27 @@ export async function initLd55() {
   let summonLines: MeshHandle[] = [];
   let lastSummonLinesLen = 0;
 
-  let _frame = 0; // TODO(@darzu): HACK. idk what the dependency is..
-  EM.addSystem(
-    "summonLineJfa",
-    Phase.GAME_WORLD,
-    [LineUniDef, RenderableDef],
-    [RendererDef],
-    (es, res) => {
-      _frame++;
-      if (_frame > 2 && lastSummonLinesLen === summonLines.length) return;
+  if (!ALWAYS_JFA) {
+    let _frame = 0; // TODO(@darzu): HACK. idk what the dependency is..
+    EM.addSystem(
+      "summonLineJfa",
+      Phase.GAME_WORLD,
+      [LineUniDef, RenderableDef],
+      [RendererDef],
+      (es, res) => {
+        _frame++;
+        if (_frame > 2 && lastSummonLinesLen === summonLines.length) return;
 
-      lastSummonLinesLen = summonLines.length;
+        lastSummonLinesLen = summonLines.length;
 
-      res.renderer.renderer.submitPipelines(summonLines, [
-        jfaMaskLineRender,
-        ...summonJfa.allPipes(),
-        pipeSummonJfaLineSdfExample,
-      ]);
-    }
-  );
+        res.renderer.renderer.submitPipelines(summonLines, [
+          jfaMaskLineRender,
+          ...summonJfa.allPipes(),
+          pipeSummonJfaLineSdfExample,
+        ]);
+      }
+    );
+  }
 
   EM.addSystem(
     "ld55Pipelines",
@@ -247,6 +251,15 @@ export async function initLd55() {
 
         ...(res.dev.showConsole ? dbgGridCompose : []),
       ];
+
+      if (ALWAYS_JFA) {
+        res.renderer.pipelines = [
+          jfaMaskLineRender,
+          ...summonJfa.allPipes(),
+          pipeSummonJfaLineSdfExample,
+          ...res.renderer.pipelines,
+        ];
+      }
     }
   );
 

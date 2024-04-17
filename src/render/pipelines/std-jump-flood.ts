@@ -37,6 +37,7 @@ const VORONOI_FORMAT: GPUTextureFormat = "rg32float";
 const SDF_FORMAT: GPUTextureFormat = "r16float";
 // format: "rg16float",
 // format: "rg8unorm",
+// bc5-rg-unorm ??
 
 export interface JfaResult {
   voronoiTex: CyTexturePtr;
