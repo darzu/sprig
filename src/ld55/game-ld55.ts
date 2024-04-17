@@ -339,7 +339,7 @@ export async function initLd55() {
     initGhost();
   }
 
-  const FIRST_CIRCLE = true;
+  const FIRST_CIRCLE = false;
   if (FIRST_CIRCLE) {
     const { sketcher } = await EM.whenResources(SketcherDef);
 
