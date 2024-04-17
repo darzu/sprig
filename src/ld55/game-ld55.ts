@@ -469,23 +469,40 @@ export async function initLd55() {
 
   let travelPerSummonDist = 4;
 
+  let lineColors = [
+    ENDESGA16.darkRed,
+    ENDESGA16.darkGreen,
+    ENDESGA16.orange,
+    ENDESGA16.blue,
+  ];
+  let lineColorIdx = 0;
+
   EM.addSystem(
     "updateStickDots",
     Phase.GAME_WORLD,
     null,
     [GamepadDef, SketcherDef],
     (_, { gamepad, sketcher }) => {
+      // left chalk position
       leftDot.position[0] = gamepad.leftStick[0] * radius;
       leftDot.position[1] = gamepad.leftStick[1] * radius;
 
+      // right chalk position
       rightDot.position[0] = gamepad.rightStick[0] * radius;
       rightDot.position[1] = gamepad.rightStick[1] * radius;
 
+      // symmetry setting
       if (gamepad.btnClicks["left"]) symmetry -= 1;
       else if (gamepad.btnClicks["right"]) symmetry += 1;
       symmetry = clamp(symmetry, 1, 20);
       maxSymmetry = Math.max(maxSymmetry, symmetry);
 
+      // color setting
+      if (gamepad.btnClicks["up"]) lineColorIdx += 1;
+      if (gamepad.btnClicks["down"]) lineColorIdx -= 1;
+      lineColorIdx = (lineColorIdx + lineColors.length) % lineColors.length;
+
+      // placement command
       const doPlace = gamepad.btnClicks["lt"] || gamepad.btnClicks["rt"];
 
       let sym_angle = PIn2 / symmetry;
@@ -535,12 +552,13 @@ export async function initLd55() {
       }
 
       if (toDrawLines.length) {
+        let lineColor = lineColors[lineColorIdx];
         for (let [start, end] of toDrawLines) {
           const e = sketcher.sketchEnt({
             start,
             end,
             shape: "line",
-            color: ENDESGA16.darkRed,
+            color: lineColor,
             renderMask: GAME_JFA_MASK, // TODO(@darzu): mask just to hide; maybe use enable/disables
           });
           EM.whenEntityHas(e, RenderableDef).then((e) =>
