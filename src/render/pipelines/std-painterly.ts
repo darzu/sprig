@@ -268,6 +268,7 @@ EM.addEagerInit([PainterlyUniDef], [], [], () => {
 });
 
 export const painterlyJfa = createJfaPipelines({
+  name: "painterlyJfa",
   maskTex: painterlyJfaMaskTex,
   maskMode: "interior",
   maxDist: 64,

@@ -141,6 +141,7 @@ const jfaMaskLineRender = CY.createRenderPipeline("jfaMaskLineRender", {
 });
 
 const summonJfa = createJfaPipelines({
+  name: "summonJfa",
   maskTex: jfaMaskTex,
   maskMode: "interior",
   sdfDistFact: 50.0,

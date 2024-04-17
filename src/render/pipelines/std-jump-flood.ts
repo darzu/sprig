@@ -33,7 +33,7 @@ https://prideout.net/blog/distance_fields/
   use seperable axis stuff for 3d?
 */
 
-const VORONOI_FORMAT: GPUTextureFormat = "rg32float";
+const VORONOI_FORMAT: GPUTextureFormat = "rg16uint";
 const SDF_FORMAT: GPUTextureFormat = "r16float";
 // format: "rg16float",
 // format: "rg8unorm",
@@ -58,6 +58,7 @@ export interface JfaResult {
 let nextId = 1; // TODO(@darzu): hack so we don't need to name everything
 
 export interface JfaOpts {
+  name: string;
   maskTex: CyTexturePtr;
   maskMode: "interior" | "border" | "exterior";
   maxDist?: number;
@@ -72,6 +73,7 @@ export interface JfaOpts {
 
 // TODO(@darzu): wish this didn't have to be called at the top level always
 export function createJfaPipelines({
+  name,
   maskTex,
   maskMode,
   maxDist,
@@ -92,7 +94,8 @@ export function createJfaPipelines({
     format: VORONOI_FORMAT,
   };
 
-  const namePrefix = `jfa${nextId++}`;
+  // const namePrefix = `jfa${nextId++}`;
+  const namePrefix = name;
 
   const voronoiTexs = [
     // uvPosBorderMask,
@@ -106,6 +109,10 @@ export function createJfaPipelines({
 
   let extractUvMaskShader: () => string;
   if (maskMode === "border") {
+    assert(
+      !VORONOI_FORMAT.endsWith("int"),
+      `TODO: support border JFA w/ VORONOI_FORMAT: ${VORONOI_FORMAT}`
+    );
     extractUvMaskShader = () => `
       // let s = textureSample(inTex, mySampler, uv).x;
       // if (s < 1.0) {
@@ -129,18 +136,18 @@ export function createJfaPipelines({
     extractUvMaskShader = () => `
     let c = textureLoad(inTex, xy, 0).xyz;
     if (dot(c,c) != 0.0) {
-      return uv;
+      return vec2<u32>(uv * dimsF);
     } else {
-      return vec2(0.0);
+      return vec2(0u);
     }
   `;
   } else if (maskMode === "exterior") {
     extractUvMaskShader = () => `
     let c = textureLoad(inTex, xy, 0).xyz;
     if (dot(c,c) == 0.0) {
-      return uv;
+      return vec2<u32>(uv * dimsF);
     } else {
-      return vec2(0.0);
+      return vec2(0u);
     }
   `;
   } else {
@@ -238,7 +245,8 @@ export function createJfaPipelines({
     false,
     // TODO(@darzu): output max distance?
     () => `
-      let nearestUV = textureLoad(inTex, xy, 0).xy;
+      let nearestXY = textureLoad(inTex, xy, 0).xy;
+      let nearestUV = vec2<f32>(nearestXY) / dimsF;
       let dist = length(uv - nearestUV)
          * ${sdfDistFact};
       return dist;

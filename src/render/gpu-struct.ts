@@ -41,6 +41,8 @@ export const TexTypeToWGSLElement: Partial<
 > = {
   rgba32float: "vec4<f32>",
   rg32float: "vec2<f32>",
+  rg16uint: "vec2<u32>",
+  rg16sint: "vec2<i32>",
   r32float: "f32",
   // TODO(@darzu): Support f16? Currently we get the error:
   //  "f16 used without 'f16' extension enabled"
@@ -66,6 +68,8 @@ export const TexTypeToElementArity: Partial<
   r32float: 1,
   rgba16float: 4,
   rg16float: 2,
+  rg16uint: 2,
+  rg16sint: 2,
   r16float: 1,
   r8unorm: 1,
   r8snorm: 1,
