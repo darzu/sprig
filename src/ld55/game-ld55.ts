@@ -35,10 +35,7 @@ import { stdMeshPipe } from "../render/pipelines/std-mesh.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
 import { shadowPipelines } from "../render/pipelines/std-shadow.js";
-import {
-  meshTexturePtr,
-  stdMeshTexturedPipe,
-} from "../render/pipelines/std-mesh-textured.js";
+import { stdMeshTexturedPipe } from "../render/pipelines/std-mesh-textured.js";
 import {
   RendererDef,
   RenderableConstructDef,
@@ -68,6 +65,7 @@ import { CyToTS } from "../render/gpu-struct.js";
 import { GamepadDef } from "./gamepad.js";
 import { getSummonStats, summonMonster } from "./summon-monster.js";
 import { InputsDef } from "../input/inputs.js";
+import { jfaMaskTex, summonJfa } from "./summon-jfa.js";
 
 const SHOW_TRAVEL = false;
 
@@ -81,6 +79,7 @@ const radiusPlusWidth = radius + 6;
 const shader_lineJfaMask = `
 struct VertexOutput {
   @builtin(position) fragPos : vec4<f32>,
+  @location(0) @interpolate(flat) color: vec3<f32>,
 }
 
 @vertex
@@ -92,29 +91,23 @@ fn vertMain(input: VertexInput) -> VertexOutput {
   let y = (worldPos.y / ${radiusPlusWidth}); // -1,1
 
   output.fragPos = vec4(x, y, 0.0, 1.0);
+  output.color = input.color + meshUni.tint;
   return output;
 }
 
 struct FragOut {
-  @location(0) color: f32,
-  // @location(0) color: vec4<f32>,
+  // @location(0) color: f32,
+  @location(0) color: vec4<f32>,
 }
 
 @fragment fn fragMain(input: VertexOutput) -> FragOut {
   var output: FragOut;
-  output.color = 1.0;
+  output.color = vec4<f32>(input.color, 1.0);
+  // output.color = 1.0;
   // output.color = vec4(1.0);
   return output;
 }
 `;
-
-const JFA_SIZE = 512 * 4;
-
-const jfaMaskTex = CY.createTexture("summonMaskTex", {
-  size: [JFA_SIZE, JFA_SIZE],
-  format: "r8unorm",
-});
-console.log("summonMaskTex.size:" + jfaMaskTex.size[0]);
 
 const jfaMaskLineRender = CY.createRenderPipeline("jfaMaskLineRender", {
   globals: [],
@@ -135,19 +128,9 @@ const jfaMaskLineRender = CY.createRenderPipeline("jfaMaskLineRender", {
       ptr: jfaMaskTex,
       clear: "once",
       // defaultColor: V4.clone([0.1, 0.1, 0.1, 0.0]),
-      defaultColor: V4.clone([0.0, 0.0, 0.0, 0.0]),
+      defaultColor: V(0.0, 0.0, 0.0, 0.0),
     },
   ],
-});
-
-const summonJfa = createJfaPipelines({
-  name: "summonJfa",
-  maskTex: jfaMaskTex,
-  maskMode: "interior",
-  sdfDistFact: 50.0,
-  // maxDist: 32,
-  maxDist: 512,
-  size: JFA_SIZE,
 });
 
 // export const summonSdfExampleTex = CY.createTexture("summonSdfExampleTex", {
@@ -158,38 +141,38 @@ const summonJfa = createJfaPipelines({
 // });
 
 // console.log("summonSdfExampleTex.size:" + summonSdfExampleTex.size[0]);
-const pipeSummonJfaLineSdfExample = createRenderTextureToQuad(
-  "pipeSummonJfaLineSdfExample",
-  summonJfa.sdfTex,
-  meshTexturePtr,
-  -1,
-  1,
-  -1,
-  1,
-  true,
-  () => `
-    // let c = textureLoad(inTex, xy, 0).x;
-    // let c = textureSample(inTex, samp, uv).x;
-    let c = inPx;
-    return c;
-    // if (c < 0.05) {
-    // return 1.0 - smoothstep(0.03, 0.05, c);
-      // return 1.0;
-    // } else {
-    //   return 0.0;
-    // }
-  `
-).pipeline;
+// const pipeSummonJfaToTexture = createRenderTextureToQuad(
+//   "pipeSummonJfaToTexture",
+//   summonJfa.sdfTex,
+//   meshTexturePtr,
+//   -1,
+//   1,
+//   -1,
+//   1,
+//   true,
+//   () => `
+//     // let c = textureLoad(inTex, xy, 0).x;
+//     // let c = textureSample(inTex, samp, uv).x;
+//     let c = inPx;
+//     return c;
+//     // if (c < 0.05) {
+//     // return 1.0 - smoothstep(0.03, 0.05, c);
+//       // return 1.0;
+//     // } else {
+//     //   return 0.0;
+//     // }
+//   `
+// ).pipeline;
 
 // prittier-ignore
-// const dbgGrid = [
-//   [summonJfa._inputMaskTex, summonJfa.voronoiTex],
-//   [blurOutputTex, summonJfa.sdfTex],
-// ];
-const dbgGrid = [[summonJfa.voronoiTex]];
+const dbgGrid = [
+  [summonJfa._inputMaskTex, summonJfa.voronoiTex],
+  [blurOutputTex, summonJfa.sdfTex],
+];
+// const dbgGrid = [[summonJfa.voronoiTex]];
 let dbgGridCompose = createGridComposePipelines(dbgGrid);
 
-const ALWAYS_JFA = true;
+const ALWAYS_JFA = false;
 
 export async function initLd55() {
   stdGridRender.fragOverrides!.lineSpacing1 = 8.0;
@@ -218,7 +201,7 @@ export async function initLd55() {
         res.renderer.renderer.submitPipelines(summonLines, [
           jfaMaskLineRender,
           ...summonJfa.allPipes(),
-          pipeSummonJfaLineSdfExample,
+          // pipeSummonJfaToTexture,
         ]);
       }
     );
@@ -257,7 +240,7 @@ export async function initLd55() {
         res.renderer.pipelines = [
           jfaMaskLineRender,
           ...summonJfa.allPipes(),
-          pipeSummonJfaLineSdfExample,
+          // pipeSummonJfaToTexture,
           ...res.renderer.pipelines,
         ];
       }
@@ -319,7 +302,7 @@ export async function initLd55() {
       undefined,
       TEXTURED_MASK
     );
-    EM.set(pedestal, ColorDef, ENDESGA16.darkRed);
+    // EM.set(pedestal, ColorDef, ENDESGA16.darkRed);
     EM.set(pedestal, PositionDef, V(0, 0, 0));
   }
 
@@ -375,7 +358,7 @@ export async function initLd55() {
     const e = sketcher.sketchEnt({
       lines,
       shape: "lineSegs",
-      color: ENDESGA16.lightGreen,
+      color: ENDESGA16.darkRed,
       renderMask: GAME_JFA_MASK,
     });
     EM.whenEntityHas(e, RenderableDef).then((e) =>
@@ -557,7 +540,7 @@ export async function initLd55() {
             start,
             end,
             shape: "line",
-            color: ENDESGA16.lightGreen,
+            color: ENDESGA16.darkRed,
             renderMask: GAME_JFA_MASK, // TODO(@darzu): mask just to hide; maybe use enable/disables
           });
           EM.whenEntityHas(e, RenderableDef).then((e) =>

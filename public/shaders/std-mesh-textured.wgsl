@@ -48,13 +48,22 @@ fn frag_main(input: VertexOutput) -> FragOut {
 
     let uv = vec2(input.uv.x, 1.0 - input.uv.y);
 
-    let texDist: f32 = textureSample(tex, samp, uv).x;
+    let texDist: f32 = textureSample(sdfTex, samp, uv).x;
 
     let texMask = 1.0 - smoothstep(0.15, 0.25, texDist);
 
-    out.color = vec4<f32>(input.color, texMask);
+    let dimsI : vec2<i32> = vec2<i32>(textureDimensions(vorTex)); 
+    let dimsF = vec2<f32>(dimsI);
 
-    out.emissive = vec4(input.color * texMask, 1.0);
+    let xy = vec2<i32>(uv * dimsF);
+    let sourceXY: vec2<u32> = textureLoad(vorTex, xy, 0).xy;
+    let sourceColor = textureLoad(colorTex, sourceXY, 0).rgb;
+
+    let color = sourceColor + input.color;
+
+    out.color = vec4<f32>(color, texMask);
+
+    out.emissive = vec4(color * texMask, 1.0);
 
     out.position = input.worldPos;
 

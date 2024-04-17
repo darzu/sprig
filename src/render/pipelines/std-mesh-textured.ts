@@ -1,3 +1,4 @@
+import { jfaMaskTex, summonJfa } from "../../ld55/summon-jfa.js";
 import { V } from "../../matrix/sprig-matrix.js";
 import { CY, linearSamplerPtr } from "../gpu-registry.js";
 import { pointLightsPtr } from "../lights.js";
@@ -15,12 +16,12 @@ import {
 import { emissionTexturePtr } from "./std-stars.js";
 
 // TODO(@darzu): allow multiple textures!
-export const meshTexturePtr = CY.createTexture("meshTexture", {
-  size: [512, 512],
-  format: "r8unorm",
-  // format: "r16float",
-  // format: "rgba8unorm",
-});
+// export const meshTexturePtr = CY.createTexture("meshTexture", {
+//   size: [512, 512],
+//   // format: "r8unorm",
+//   // format: "r16float",
+//   format: "rgba8unorm",
+// });
 
 export const stdMeshTexturedPipe = CY.createRenderPipeline(
   "stdMeshTexturedRender",
@@ -36,7 +37,9 @@ export const stdMeshTexturedPipe = CY.createRenderPipeline(
       // { ptr: oceanJfa._uvMaskTex, alias: "sdf" },
       // TODO(@darzu): support textures
       // { ptr: clothTexPtr0, access: "read", alias: "clothTex" },
-      { ptr: meshTexturePtr, alias: "tex" },
+      { ptr: summonJfa.sdfTex, alias: "sdfTex" },
+      { ptr: summonJfa.voronoiTex, alias: "vorTex" },
+      { ptr: jfaMaskTex, alias: "colorTex" },
     ],
     // TODO(@darzu): hack for ld52
     cullMode: "back",
