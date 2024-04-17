@@ -108,8 +108,10 @@ struct FragOut {
 }
 `;
 
+const JFA_SIZE = 512 * 8;
+
 const jfaMaskTex = CY.createTexture("summonMaskTex", {
-  size: [diam * 128, diam * 128],
+  size: [JFA_SIZE, JFA_SIZE],
   format: "r8unorm",
 });
 console.log("summonMaskTex.size:" + jfaMaskTex.size[0]);
@@ -142,8 +144,9 @@ const summonJfa = createJfaPipelines({
   maskTex: jfaMaskTex,
   maskMode: "interior",
   sdfDistFact: 50.0,
-  maxDist: 32,
-  size: 512 * 8,
+  // maxDist: 32,
+  maxDist: 512,
+  size: JFA_SIZE,
 });
 
 // export const summonSdfExampleTex = CY.createTexture("summonSdfExampleTex", {
@@ -178,10 +181,11 @@ const pipeSummonJfaLineSdfExample = createRenderTextureToQuad(
 ).pipeline;
 
 // prittier-ignore
-const dbgGrid = [
-  [summonJfa._inputMaskTex, summonJfa._uvMaskTex],
-  [blurOutputTex, summonJfa.sdfTex],
-];
+// const dbgGrid = [
+//   [summonJfa._inputMaskTex, summonJfa.voronoiTex],
+//   [blurOutputTex, summonJfa.sdfTex],
+// ];
+const dbgGrid = [[summonJfa.voronoiTex]];
 let dbgGridCompose = createGridComposePipelines(dbgGrid);
 
 export async function initLd55() {

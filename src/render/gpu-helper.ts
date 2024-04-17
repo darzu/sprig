@@ -91,6 +91,11 @@ export function createRenderTextureToQuad(
   );
   // TODO(@darzu): turn on-off sampling?
   const doSample = !inTexIsUnfilterable && sample;
+  if (sample && inTexIsUnfilterable) {
+    console.warn(
+      `specifying "sample = true" for unfilterable format "${inTex.format}" during ${name}`
+    );
+  }
   // outTex.format;
   const shader = (shaders: ShaderSet) => {
     const inputArity = TexTypeToElementArity[inTex.format];
