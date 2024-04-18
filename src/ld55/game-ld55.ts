@@ -19,7 +19,7 @@ import {
   FONT_JFA_MASK,
   GAME_JFA_MASK,
   GRID_MASK,
-  TEXTURED_MASK,
+  SUMMON_CIRCLE_MASK,
 } from "../render/pipeline-masks.js";
 import { createGridComposePipelines } from "../render/pipelines/std-compose.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
@@ -35,7 +35,7 @@ import { stdMeshPipe } from "../render/pipelines/std-mesh.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
 import { shadowPipelines } from "../render/pipelines/std-shadow.js";
-import { stdMeshTexturedPipe } from "./std-mesh-textured.js";
+import { xpCircleTextured } from "./xp-circle-textured.js";
 import {
   RendererDef,
   RenderableConstructDef,
@@ -217,7 +217,7 @@ export async function initLd55() {
       res.renderer.pipelines = [
         ...shadowPipelines,
         stdMeshPipe,
-        stdMeshTexturedPipe,
+        xpCircleTextured,
         outlineRender,
         deferredPipeline,
         pointPipe,
@@ -300,7 +300,7 @@ export async function initLd55() {
       pedestalMesh,
       true,
       undefined,
-      TEXTURED_MASK
+      SUMMON_CIRCLE_MASK
     );
     // EM.set(pedestal, ColorDef, ENDESGA16.darkRed);
     EM.set(pedestal, PositionDef, V(0, 0, 0));
