@@ -289,3 +289,6 @@ pico-8 palette ?
   https://romanzolotarev.com/pico-8-color-palette/ "licensed under cc-0"
   https://pico-8.fandom.com/wiki/Palette#0..15:_Official_base_colors 
   https://lospec.com/palette-list/pico-8
+  
+pixel composer?
+  https://makham.itch.io/pixel-composer

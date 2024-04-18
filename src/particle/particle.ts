@@ -5,6 +5,7 @@ import { mat4 } from "../matrix/gl-matrix.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import {
   CY,
+  CyArrayPtr,
   CyCompPipelinePtr,
   CyPipelinePtr,
   CyRenderPipelinePtr,
@@ -68,6 +69,8 @@ interface ParticleSystem {
   pipeInit: CyCompPipelinePtr;
   pipeRender: CyRenderPipelinePtr;
   pipeUpdate: CyCompPipelinePtr;
+
+  _data: CyArrayPtr<typeof ParticleStruct.desc>;
 }
 
 // interface Emitter {
@@ -195,7 +198,7 @@ function createParticleSystem(desc: ParticleSystemDesc): ParticleSystem {
     }
   );
 
-  return { desc, pipeInit, pipeRender, pipeUpdate };
+  return { desc, pipeInit, pipeRender, pipeUpdate, _data: dataPtr };
 }
 
 export const ParticleDef = defineResourceWithInit(

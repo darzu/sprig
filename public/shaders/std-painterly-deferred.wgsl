@@ -8,9 +8,12 @@ fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
   // }
 
   let dims : vec2<i32> = vec2<i32>(textureDimensions(voronoiTex));
-  let coord = uv * vec2<f32>(dims);
-  let uv2 = textureLoad(voronoiTex, vec2<i32>(coord), 0).xy;
-  let coord2 = uv2 * vec2<f32>(dims);
+  let dimsF = vec2<f32>(dims);
+  let coord = uv * dimsF;
+  // let uv2 = textureLoad(voronoiTex, vec2<i32>(coord), 0).xy;
+  let dataXY = textureLoad(voronoiTex, vec2<i32>(coord), 0).xy;
+  let uv2 = vec2<f32>(dataXY) / dimsF;
+  let coord2 = uv2 * dimsF;
   // if (distance(coord, coord2) > 100.0 * tBounceSmooth(0.0002, 0.1) + 5.0) {
   //   discard;
   // }

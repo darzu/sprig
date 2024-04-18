@@ -101,6 +101,7 @@ export interface SketchBaseOpt {
   // lifeMs?: number;
   color?: V3.InputT;
   alpha?: number;
+  renderMask?: number;
 }
 
 export interface SketchLineOpt {
@@ -220,7 +221,8 @@ export const SketcherDef = defineResourceWithLazyInit(
       let e: SketchEnt | undefined;
       if (opt.key) e = sketchEntMap.get(opt.key);
       if (!e) {
-        if (opt.key) {
+        const skipPool = opt.key || opt.renderMask;
+        if (skipPool) {
           // NOTE: custom key sketches live outside the pool
           e = pool.params.create();
           pool.params.onSpawn(e);
@@ -353,6 +355,12 @@ export const SketcherDef = defineResourceWithLazyInit(
 
       const meshP = meshParams[opt.shape];
 
+      if (opt.renderMask)
+        assert(
+          !RenderableConstructDef.isOn(e),
+          `TODO: support render mask w/ pooled ents`
+        );
+
       if (!RenderableConstructDef.isOn(e)) {
         const m = meshP.newMesh(opt as any); // TODO(@darzu): hacky casts
         meshP.updateMesh(opt as any, m);
@@ -362,7 +370,7 @@ export const SketcherDef = defineResourceWithLazyInit(
           m,
           true,
           undefined,
-          undefined,
+          opt.renderMask ? opt.renderMask : undefined,
           meshP.pool ?? meshPoolPtr
         );
       } else {

@@ -305,6 +305,7 @@ export const canvasFormat: GPUTextureFormat =
 // export const canvasFormat: GPUTextureFormat = "bgra8unorm";
 // export const canvasFormat: GPUTextureFormat = "bgra8unorm-srgb";
 // export const canvasFormat: GPUTextureFormat = "rgba8unorm";
+// console.log(`canvasFormat: ${canvasFormat}`);
 
 export const unlitTexturePtr = CY.createTexture("unlitTexture", {
   size: [100, 100],

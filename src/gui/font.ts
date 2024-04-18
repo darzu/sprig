@@ -106,6 +106,7 @@ export const pipeFontLineRender = CY.createRenderPipeline(
 );
 
 export const fontJfa = createJfaPipelines({
+  name: "fontJfa",
   maskTex: fontLineMaskTex,
   maskMode: "interior",
   sdfDistFact: 10.0,

@@ -52,6 +52,7 @@ fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
   // bloom
   if (scene.highGraphics == 1u) {
     // color += pow(bloom, vec3(2.0));
+
     // color = max(color, bloom);
     color += bloom; // * 10.0;
     // color = bloom;

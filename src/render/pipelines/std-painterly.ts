@@ -268,10 +268,12 @@ EM.addEagerInit([PainterlyUniDef], [], [], () => {
 });
 
 export const painterlyJfa = createJfaPipelines({
+  name: "painterlyJfa",
   maskTex: painterlyJfaMaskTex,
   maskMode: "interior",
   maxDist: 64,
   sizeToCanvas: true,
+  stepAscending: true,
   shader: (shaders) => `
     ${shaders["std-helpers"].code}
     ${shaders["std-screen-quad-vert"].code}
