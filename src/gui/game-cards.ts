@@ -150,11 +150,12 @@ export async function initCardsGame() {
   registerUICameraSys();
 
   // test quads
-  {
-    const m = 
-    const ent = createObj([PositionDef, RenderableConstructDef] as const, {
-      position: [0, 0, 0],
-      renderableConstruct: [],
-    });
-  }
+  // TODO(@darzu): TEXT
+  // {
+  //   const m =
+  //   const ent = createObj([PositionDef, RenderableConstructDef] as const, {
+  //     position: [0, 0, 0],
+  //     renderableConstruct: [],
+  //   });
+  // }
 }

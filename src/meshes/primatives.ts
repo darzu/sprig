@@ -319,33 +319,34 @@ export function makePlaneMesh(
   return res;
 }
 
-export function makeQuadSpriteStrip(
-  qWidth: number,
-  qHeight: number,
-  uvs: [topLeft: V2, bottomRight: V2][]
-): Mesh {
-  for (let i = 0; i < uvs.length; i++) {
-    const [uvTl, uvBr] = uvs[i];
-  }
-  const res: Mesh = {
-    pos: [V(x1, y1, 0), V(x2, y1, 0), V(x2, y2, 0), V(x1, y2, 0)],
-    tri: [],
-    quad: [
-      V(0, 1, 2, 3), // top
-      V(3, 2, 1, 0), // bottom
-    ],
-    colors: [V3.mk(), V3.mk()],
-    // uvs: [
-    //   [1, 1],
-    //   [0, 1],
-    //   [1, 0],
-    //   [0, 0],
-    // ],
-    surfaceIds: [1, 2],
-    usesProvoking: true,
-  };
-  return res;
-}
+// TODO(@darzu): TEXT
+// export function makeQuadSpriteStrip(
+//   qWidth: number,
+//   qHeight: number,
+//   uvs: [topLeft: V2, bottomRight: V2][]
+// ): Mesh {
+//   for (let i = 0; i < uvs.length; i++) {
+//     const [uvTl, uvBr] = uvs[i];
+//   }
+//   const res: Mesh = {
+//     pos: [V(x1, y1, 0), V(x2, y1, 0), V(x2, y2, 0), V(x1, y2, 0)],
+//     tri: [],
+//     quad: [
+//       V(0, 1, 2, 3), // top
+//       V(3, 2, 1, 0), // bottom
+//     ],
+//     colors: [V3.mk(), V3.mk()],
+//     // uvs: [
+//     //   [1, 1],
+//     //   [0, 1],
+//     //   [1, 0],
+//     //   [0, 0],
+//     // ],
+//     surfaceIds: [1, 2],
+//     usesProvoking: true,
+//   };
+//   return res;
+// }
 
 const TRI_FENCE_LN = 100;
 export const TRI_FENCE: () => RawMesh = () => {
