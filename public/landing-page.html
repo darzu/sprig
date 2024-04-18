@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html style="font-size: 12px">
+
+<head>
+  <meta charset="utf-8" />
+  <title>sprig.land 🌱🏞</title>
+  <style>
+    html {
+      --background-clr: oklch(25% 0.01 145);
+      --demo-background-clr: oklch(from var(--background-clr) calc(l + 0.1) c h);
+      --text-clr: oklch(95% 0.01 145);
+    }
+
+    body {
+      font-family: sans-serif;
+      display: flex;
+      justify-content: center;
+      margin: 0px;
+      background-color: var(--background-clr);
+
+      color: var(--text-clr);
+    }
+
+    #demo-list {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      max-width: 800px;
+    }
+
+    .demo,
+    .blurb {
+      width: 50%;
+
+      border: 24px solid #0000;
+    }
+
+    .blurb h2 {
+      font-size: 24px;
+    }
+
+    .blurb {
+      font-size: 16px;
+      /* padding: 12px; */
+      /* background-color: chartreuse; */
+    }
+
+    .blurb-title {}
+
+    .blurb-desc {}
+
+    .demo {
+      /* width: 50%; */
+      /* padding: 12px;
+      margin: 12px; */
+      background-color: var(--demo-background-clr);
+
+      background-clip: padding-box;
+
+      display: flex;
+      justify-content: center;
+      align-items: center;
+
+      border-radius: 48px;
+    }
+
+    .demo img {}
+
+    .demo-and-blurb {
+      /* background-color: aquamarine; */
+
+      display: flex;
+      align-items: center;
+      flex-direction: row;
+    }
+
+    .demo-and-blurb:nth-child(even) {
+      flex-direction: row-reverse;
+    }
+  </style>
+</head>
+
+<body>
+  <script>
+    console.log(`start of landing-page.html's body at ${performance.now().toFixed(2)}ms`);
+  </script>
+
+  <div id="demo-list">
+    <div class="demo-and-blurb">
+      <div class="blurb">
+        <h2 class="blurb-title">Blurb Title 1</h2>
+        <div class="blurb-desc">
+          Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+          Pellentesque at quam vitae elit vulputate commodo.
+          Vivamus vestibulum blandit ultrices.
+          Proin congue luctus elit, ac commodo sapien eleifend ac.
+        </div>
+      </div>
+      <div class="demo">
+        <img src="/assets/ld53_maps/every-which-way.png" class="demo-img" width="256" height="256">
+      </div>
+    </div>
+    <div class="demo-and-blurb">
+      <div class="blurb">
+        <h2 class="blurb-title">Blurb Title 2</h2>
+        <div class="blurb-desc">
+          Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+          Pellentesque at quam vitae elit vulputate commodo.
+          Vivamus vestibulum blandit ultrices.
+          Proin congue luctus elit, ac commodo sapien eleifend ac.
+        </div>
+      </div>
+      <div class="demo">
+        <img src="/assets/ld53_maps/surprise.png" class="demo-img" width="256" height="256">
+      </div>
+    </div>
+    <div class="demo-and-blurb">
+      <div class="blurb">
+        <h2 class="blurb-title">Blurb Title 3</h2>
+        <div class="blurb-desc">
+          Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+          Pellentesque at quam vitae elit vulputate commodo.
+          Vivamus vestibulum blandit ultrices.
+          Proin congue luctus elit, ac commodo sapien eleifend ac.
+        </div>
+      </div>
+      <div class="demo">
+        <img src="/assets/ld53_maps/every-which-way.png" class="demo-img" width="256" height="256">
+      </div>
+    </div>
+    <div class="demo-and-blurb">
+      <div class="blurb">
+        <h2 class="blurb-title">Blurb Title 4</h2>
+        <div class="blurb-desc">
+          Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+          Pellentesque at quam vitae elit vulputate commodo.
+          Vivamus vestibulum blandit ultrices.
+          Proin congue luctus elit, ac commodo sapien eleifend ac.
+        </div>
+      </div>
+      <div class="demo">
+        <img src="/assets/ld53_maps/surprise.png" class="demo-img" width="256" height="256">
+      </div>
+    </div>
+  </div>
+
+
+  <!-- <script src="./main.js" type="module"></script> -->
+</body>
+
+</html>
