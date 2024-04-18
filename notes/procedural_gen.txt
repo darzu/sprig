@@ -378,3 +378,11 @@ Everything Procedural conference:
 
 Houdini channel:
   https://www.youtube.com/channel/UCvuT2bzBB0kzne16DBAtmLQ
+
+LayerProcGen:
+  https://mastodon.gamedev.place/@runevision/112269788517155576
+  "a framework for layer-based procedural generation that's infinite, deterministic and contextual"
+
+therujik's procedural walk:
+  https://x.com/therujik/status/969581641680195585?s=46&t=o5CM8PutFnPe1JVwCeKsSw
+  https://www.youtube.com/watch?v=z_fmMD-Gazw

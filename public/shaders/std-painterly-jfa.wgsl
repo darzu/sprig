@@ -4,18 +4,19 @@
 override stepSize: i32;
 
  @fragment
-fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec2<f32> {
+fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec2<u32> {
   let dims = vec2<i32>(textureDimensions(inTex));
-  let fragXY = vec2<i32>(fragUV * vec2<f32>(dims));
+  let dimsF = vec2<f32>(dims);
+  let fragXY = vec2<i32>(fragUV * dimsF);
 
   // let cSeedUV = textureLoad(inTex, fragXY, 0).xy;
-  // let cSeedXY = vec2<i32>(cSeedUV * vec2<f32>(dims));
+  // let cSeedXY = vec2<i32>(cSeedUV * dimsF);
 
   let fragObj: u32 = textureLoad(surfTex, fragXY, 0).g;
   // let fragDep: f32 = textureLoad(depthTex, fragXY, 0);
 
   // let cSeedUV = textureLoad(inTex, fragXY, 0).xy;
-  // let cSeedXY = vec2<i32>(cSeedUV * vec2<f32>(dims));
+  // let cSeedXY = vec2<i32>(cSeedUV * dimsF);
 
   // let cSeedObj: u32 = textureLoad(surfTex, cSeedXY, 0).g;
   // let cSeedDep: f32 = textureLoad(depthTex, cSeedXY, 0);
@@ -41,8 +42,10 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec2<f32> {
     for (var y = -1; y <= 1; y++)
     {
       let sampXY = fragXY + vec2(x,y) * stepSize;
-      let sSeedUV = textureLoad(inTex, sampXY, 0).xy;
-      let sSeedXY = vec2<i32>(sSeedUV * vec2<f32>(dims));
+      // let sSeedUV = textureLoad(inTex, sampXY, 0).xy;
+      // let sSeedXY = vec2<i32>(sSeedUV * dimsF);
+      let sSeedXY = vec2<i32>(textureLoad(inTex, sampXY, 0).xy);
+      let sSeedUV = vec2<f32>(sSeedXY) / dimsF;
       // TODO(@darzu): check surface too
       let sSeedSurfAndObj: vec2<u32> = textureLoad(surfTex, sSeedXY, 0).rg;
       let sSeedObj = sSeedSurfAndObj.g;
@@ -129,7 +132,8 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec2<f32> {
     }
   }
 
-  return bestUV;
+  // TODO(@darzu): store and return bestXY
+  return vec2<u32>(bestUV * dimsF);
 }
 
 

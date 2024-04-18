@@ -2316,3 +2316,13 @@ Dom to canvas:
 
 BabylonJS's "greased line":
   https://doc.babylonjs.com/features/featuresDeepDive/mesh/creation/param/greased_line
+  
+Toon shading in Hi Fi Rush
+  https://gdcvault.com/play/1034330/3D-Toon-Rendering-in-Hi
+
+Understanding BC texture compression format:
+  https://learn.microsoft.com/en-us/windows/win32/direct3d10/d3d10-graphics-programming-guide-resources-block-compression
+    "While lossy, block compression works well and is recommended for all textures that get 
+    transformed and filtered by the pipeline. Textures that are directly mapped to the screen 
+    (UI elements like icons and text) are not good choices for compression because artifacts are more noticeable."
+  https://www.reedbeta.com/blog/understanding-bcn-texture-compression-formats/

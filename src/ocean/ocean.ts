@@ -109,6 +109,7 @@ EM.registerSerializerPair(
 // );
 
 export const oceanJfa = createJfaPipelines({
+  name: "oceanJfa",
   maskTex: uvMaskTex,
   maskMode: "exterior",
 });

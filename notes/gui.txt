@@ -152,10 +152,11 @@ Fast 2d graphics:
 Good browser touch events by redblob:
   https://twitter.com/redblobgames/status/1765409668850123046
 
-MSDF text rendering using webgpu:
-  MSDF = multichannel signed distance fields
+multi-channel signed distance field font (MSDF):
   https://webgpu.github.io/webgpu-samples/?sample=textRenderingMsdf
   generator: https://msdf-bmfont.donmccurdy.com
+  https://github.com/Chlumsky/msdfgen
+  cherno: https://www.youtube.com/watch?v=J26hm7r-k6A
 
 Dear ImGui example:
   https://github.com/ocornut/imgui
@@ -205,3 +206,6 @@ Icon set:
 "• In a perfect world I'd say ditch the DOM and give me a real displaylist-style interface, with a
 consistent composite architecture. ~awebneck"
   https://www.paulirish.com/2011/what-feature-would-improve-the-web/
+
+Linearizing arcs and bezier:
+  https://minus-ze.ro/posts/flattening-bezier-curves-and-arcs/

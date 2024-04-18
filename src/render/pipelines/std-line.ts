@@ -17,6 +17,7 @@ import {
   computeVertsData,
   VertexStruct,
 } from "./std-scene.js";
+import { emissionTexturePtr } from "./std-stars.js";
 
 const MAX_MESHES = 1000;
 const MAX_VERTICES = MAX_INDICES;
@@ -83,6 +84,10 @@ export const linePipe = CY.createRenderPipeline("linePipe", {
       ptr: litTexturePtr,
       clear: "never",
     },
+    // {
+    //   ptr: emissionTexturePtr,
+    //   clear: "never",
+    // },
   ],
   depthStencil: mainDepthTex,
   shader: "std-line",

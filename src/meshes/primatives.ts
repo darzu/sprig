@@ -93,6 +93,54 @@ export const mkCubeMesh: () => Mesh = () => ({
   usesProvoking: true,
 });
 
+export function mkRectMesh(xLen: number, yLen: number, zLen: number): Mesh {
+  let hx = xLen / 2;
+  let hy = yLen / 2;
+  let hz = zLen / 2;
+
+  let result: Mesh = {
+    dbgName: "rect",
+    pos: [
+      V(+hx, +hy, +hz),
+      V(-hx, +hy, +hz),
+      V(-hx, -hy, +hz),
+      V(+hx, -hy, +hz),
+
+      V(+hx, +hy, -hz),
+      V(-hx, +hy, -hz),
+      V(-hx, -hy, -hz),
+      V(+hx, -hy, -hz),
+    ],
+    tri: [],
+    quad: [
+      // +Z
+      V(0, 1, 2, 3),
+      // +Y
+      V(4, 5, 1, 0),
+      // +X
+      V(3, 7, 4, 0),
+      // -X
+      V(2, 1, 5, 6),
+      // -Y
+      V(6, 7, 3, 2),
+      // -Z
+      V(5, 4, 7, 6),
+    ],
+    colors: [
+      V(0, 0, 0),
+      V(0, 0, 0),
+      V(0, 0, 0),
+      V(0, 0, 0),
+      V(0, 0, 0),
+      V(0, 0, 0),
+    ],
+    surfaceIds: [1, 2, 3, 4, 5, 6],
+    usesProvoking: true,
+  };
+
+  return result;
+}
+
 export const mkLine: () => Mesh = () => ({
   dbgName: "line",
   pos: [V(-1.0, -1.0, -1.0), V(+1.0, +1.0, +1.0)],
@@ -318,6 +366,35 @@ export function makePlaneMesh(
   };
   return res;
 }
+
+// TODO(@darzu): TEXT
+// export function makeQuadSpriteStrip(
+//   qWidth: number,
+//   qHeight: number,
+//   uvs: [topLeft: V2, bottomRight: V2][]
+// ): Mesh {
+//   for (let i = 0; i < uvs.length; i++) {
+//     const [uvTl, uvBr] = uvs[i];
+//   }
+//   const res: Mesh = {
+//     pos: [V(x1, y1, 0), V(x2, y1, 0), V(x2, y2, 0), V(x1, y2, 0)],
+//     tri: [],
+//     quad: [
+//       V(0, 1, 2, 3), // top
+//       V(3, 2, 1, 0), // bottom
+//     ],
+//     colors: [V3.mk(), V3.mk()],
+//     // uvs: [
+//     //   [1, 1],
+//     //   [0, 1],
+//     //   [1, 0],
+//     //   [0, 0],
+//     // ],
+//     surfaceIds: [1, 2],
+//     usesProvoking: true,
+//   };
+//   return res;
+// }
 
 const TRI_FENCE_LN = 100;
 export const TRI_FENCE: () => RawMesh = () => {
