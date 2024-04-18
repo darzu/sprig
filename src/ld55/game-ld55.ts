@@ -35,7 +35,7 @@ import { stdMeshPipe } from "../render/pipelines/std-mesh.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
 import { shadowPipelines } from "../render/pipelines/std-shadow.js";
-import { stdMeshTexturedPipe } from "../render/pipelines/std-mesh-textured.js";
+import { stdMeshTexturedPipe } from "./std-mesh-textured.js";
 import {
   RendererDef,
   RenderableConstructDef,

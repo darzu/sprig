@@ -1,9 +1,9 @@
-import { jfaMaskTex, summonJfa } from "../../ld55/summon-jfa.js";
-import { V } from "../../matrix/sprig-matrix.js";
-import { CY, linearSamplerPtr } from "../gpu-registry.js";
-import { pointLightsPtr } from "../lights.js";
-import { TEXTURED_MASK } from "../pipeline-masks.js";
-import { BACKGROUND_COLOR } from "./std-mesh.js";
+import { jfaMaskTex, summonJfa } from "./summon-jfa.js";
+import { V } from "../matrix/sprig-matrix.js";
+import { CY, linearSamplerPtr } from "../render/gpu-registry.js";
+import { pointLightsPtr } from "../render/lights.js";
+import { TEXTURED_MASK } from "../render/pipeline-masks.js";
+import { BACKGROUND_COLOR } from "../render/pipelines/std-mesh.js";
 import {
   sceneBufPtr,
   meshPoolPtr,
@@ -12,8 +12,8 @@ import {
   positionsTexturePtr,
   surfacesTexturePtr,
   mainDepthTex,
-} from "./std-scene.js";
-import { emissionTexturePtr } from "./std-stars.js";
+} from "../render/pipelines/std-scene.js";
+import { emissionTexturePtr } from "../render/pipelines/std-stars.js";
 
 // TODO(@darzu): allow multiple textures!
 // export const meshTexturePtr = CY.createTexture("meshTexture", {
