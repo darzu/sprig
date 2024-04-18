@@ -301,3 +301,8 @@ https://gamercade.io
 
 Hexagons are the bestagons:
   https://www.youtube.com/watch?v=thOifuHs6eY
+
+Mod to massively boost performance in Dyson Sphere Program by sampling and replaying:
+  https://github.com/starfi5h/DSP_Mod/tree/master/SampleAndHoldSim
+  and another mod doing misc optimizations:
+    https://github.com/Selsion/DSPMods/tree/main/DSPOptimizations

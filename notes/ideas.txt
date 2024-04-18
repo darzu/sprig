@@ -264,3 +264,8 @@ Stain glass analytical renderer,
       lookup w/ linear interp sample
     traverse as parametric fn
   heirarchy of transforms
+
+4 player coop dungeon crawler roguelike, 
+  twin stick
+  unoriginal, but still lacking in enough great hits
+  unoriginal is probably good for early projects
