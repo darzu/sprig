@@ -96,6 +96,8 @@ Compute shader computes the triangles and vertices,
 What does compute shader gain us?
   Less CPU->GPU bandwidth used
   Less CPU work
+
+could do geometry shader to turn line strips into triangles
 */
 
 // TODO(@darzu): implement board heirarchy so that joints between boards are tracked, for

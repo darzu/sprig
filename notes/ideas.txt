@@ -265,6 +265,12 @@ Stain glass analytical renderer,
     traverse as parametric fn
   heirarchy of transforms
 
+Perfect Grass Cutting Samurai
+  1 second left stick capture buffer for movement
+  1 second right stick analog capture for sword swing arc, height and direction
+  cut bezier style (Ghost of T) computed grass precisely where the sword swing happens,
+  spawn particles for the tops of the grass
+  
 4 player coop dungeon crawler roguelike, 
   twin stick
   unoriginal, but still lacking in enough great hits

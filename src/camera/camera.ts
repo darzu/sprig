@@ -21,6 +21,9 @@ const VERBOSE_CAMERA = false;
 export type PerspectiveMode = "perspective" | "ortho";
 export type CameraMode = "thirdPerson" | "thirdPersonOverShoulder";
 
+// TODO(@darzu): RENAME use "x_from_y" naming?
+//    https://tomforsyth1000.github.io/blog.wiki.html#%5B%5BMatrix%20maths%20and%20names%5D%5D
+
 export const CameraDef = EM.defineResource("camera", () => {
   return {
     perspectiveMode: "perspective" as PerspectiveMode,
