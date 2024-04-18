@@ -205,3 +205,6 @@ Icon set:
 "• In a perfect world I'd say ditch the DOM and give me a real displaylist-style interface, with a
 consistent composite architecture. ~awebneck"
   https://www.paulirish.com/2011/what-feature-would-improve-the-web/
+
+Linearizing arcs and bezier:
+  https://minus-ze.ro/posts/flattening-bezier-curves-and-arcs/

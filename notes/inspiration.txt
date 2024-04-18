@@ -298,3 +298,11 @@ https://gamercade.io
     SWEET CANYON EXTENDED 64  https://lospec.com/palette-list/sweet-canyon-extended-64
     PASTEL-64 https://lospec.com/palette-list/pastel-64
     REWILD 64 https://lospec.com/palette-list/rewild-64
+
+Hexagons are the bestagons:
+  https://www.youtube.com/watch?v=thOifuHs6eY
+
+Mod to massively boost performance in Dyson Sphere Program by sampling and replaying:
+  https://github.com/starfi5h/DSP_Mod/tree/master/SampleAndHoldSim
+  and another mod doing misc optimizations:
+    https://github.com/Selsion/DSPMods/tree/main/DSPOptimizations

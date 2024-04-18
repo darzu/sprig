@@ -5,6 +5,7 @@ const DEFAULT_SHADER_PATH = "shaders/";
 
 export const ShaderPaths = [
   "std-mesh",
+  "xp-circle-textured",
   "std-rigged",
   "std-ocean",
   "std-gerstner",

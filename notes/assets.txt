@@ -284,3 +284,6 @@ Pixel art app:
   Animation flip book
   3d billboard view
   3d modeler via multi sides
+
+pixel composer?
+  https://makham.itch.io/pixel-composer

@@ -20,6 +20,7 @@ export const PERF_DBG_GPU = false;
 export const PERF_DBG_REBUNDLE = true;
 // tries to track who's allocating GPU resources
 export const PERF_DBG_GPU_BLAME = false;
+export const LOG_WEBGPU_AVAILABLE_FEATURES = false;
 
 // AUDIO
 export const ENABLE_AUDIO = true;

@@ -158,6 +158,7 @@ const level2DtoWorld3D = (levelPos: V2, z: number, out: V3) =>
   V3.set(texXToWorldX(levelPos[0]), texYToWorldY(levelPos[1]), z, out);
 
 export const mapJfa = createJfaPipelines({
+  name: "ld53MapJfa",
   maskTex: LandMapTexPtr,
   maskMode: "exterior",
 });

@@ -11,3 +11,5 @@ export const BUBBLE_MASK                  = 1 << 4; // prettier-ignore
 export const GRID_MASK                    = 1 << 5; // prettier-ignore
 export const PAINTERLY_JFA_PRE_PASS_MASK  = 1 << 6; // prettier-ignore
 export const FONT_JFA_MASK                = 1 << 7; // prettier-ignore
+export const SUMMON_CIRCLE_MASK           = 1 << 8; // prettier-ignore
+export const GAME_JFA_MASK                = 1 << 9 // prettier-ignore

@@ -1426,6 +1426,11 @@ cd /Users/darzu/screenshots/
 ffmpeg -i glitch.mov -vcodec h264 \
   -acodec aac -filter:v "crop=in_w-446:in_h,scale=720:720" \
   glitch.mp4
+  
+cd /Users/darzu/screenshots/
+ffmpeg -i summon_1.mov -vcodec h264 \
+  -acodec aac \
+  summon_1.mp4
 
 Bluesky's "Ecosystem Overview":
   https://gitlab.com/bluesky-community1/decentralized-ecosystem#ecosystem-overview
@@ -1597,3 +1602,6 @@ Alan Kay on LLM:
   https://www.quora.com/What-does-Alan-Kay-think-about-programming-and-teaching-programming-with-copilots-and-LLMs-of-today
   talks by Alan Kay:
     https://tinlizzie.org/IA/index.php/Talks_by_Alan_Kay
+
+Like shadertoy but for compute
+  https://compute.toys

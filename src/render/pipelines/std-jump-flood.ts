@@ -14,6 +14,31 @@ import { mainDepthTex, sceneBufPtr, surfacesTexturePtr } from "./std-scene.js";
 // TODO(@darzu): support a sign bit for dist on the mask
 //    I think we'll need this for text -> SDF
 
+/*
+Algorithm 2.0
+mask is R8_unorm
+jumps are R16G16_UNorm
+
+Half resolution: This variant runs normal JFA at a half resolution, and enlarge the result into 
+the original resolution and run one additional pass with step size of 1.
+  https://ieeexplore.ieee.org/document/4276119
+
+"You can’t just use bilinear sampling on the output from the jump flood passes as it’s interpolating an offset position"
+
+https://bgolus.medium.com/the-quest-for-very-wide-outlines-ba82ed442cd9
+https://prideout.net/blog/distance_fields/
+
+3D:
+  https://shaderbits.com/blog/various-distance-field-generation-techniques?source=post_page-----ba82ed442cd9--------------------------------
+  use seperable axis stuff for 3d?
+*/
+
+const VORONOI_FORMAT: GPUTextureFormat = "rg16uint";
+const SDF_FORMAT: GPUTextureFormat = "r16float";
+// format: "rg16float",
+// format: "rg8unorm",
+// bc5-rg-unorm ??
+
 export interface JfaResult {
   voronoiTex: CyTexturePtr;
   sdfTex: CyTexturePtr;
@@ -33,18 +58,22 @@ export interface JfaResult {
 let nextId = 1; // TODO(@darzu): hack so we don't need to name everything
 
 export interface JfaOpts {
+  name: string;
   maskTex: CyTexturePtr;
   maskMode: "interior" | "border" | "exterior";
   maxDist?: number;
   shader?: (shaders: ShaderSet) => string;
   shaderExtraGlobals?: readonly CyGlobalParam[];
-  sdfDistFact?: number;
+  sdfDistFact?: number; // TODO(@darzu): i hate this setting
   size?: number;
   sizeToCanvas?: boolean;
+  // NOTE: Much higher error rate but necessary for my quirky painterly-voronoi point-cloud algorithm
+  stepAscending?: boolean;
 }
 
 // TODO(@darzu): wish this didn't have to be called at the top level always
 export function createJfaPipelines({
+  name,
   maskTex,
   maskMode,
   maxDist,
@@ -53,6 +82,7 @@ export function createJfaPipelines({
   sdfDistFact,
   size,
   sizeToCanvas,
+  stepAscending,
 }: JfaOpts): JfaResult {
   size = size ?? 512;
 
@@ -61,12 +91,11 @@ export function createJfaPipelines({
   const voronoiTexFmt: Parameters<typeof CY.createTexture>[1] = {
     size: [size, size],
     onCanvasResize: sizeToCanvas ? (w, h) => [w, h] : undefined,
-    // format: "rg16float",
-    format: "rg32float",
-    // format: "rg8unorm",
+    format: VORONOI_FORMAT,
   };
 
-  const namePrefix = `jfa${nextId++}`;
+  // const namePrefix = `jfa${nextId++}`;
+  const namePrefix = name;
 
   const voronoiTexs = [
     // uvPosBorderMask,
@@ -80,6 +109,10 @@ export function createJfaPipelines({
 
   let extractUvMaskShader: () => string;
   if (maskMode === "border") {
+    assert(
+      !VORONOI_FORMAT.endsWith("int"),
+      `TODO: support border JFA w/ VORONOI_FORMAT: ${VORONOI_FORMAT}`
+    );
     extractUvMaskShader = () => `
       // let s = textureSample(inTex, mySampler, uv).x;
       // if (s < 1.0) {
@@ -103,18 +136,18 @@ export function createJfaPipelines({
     extractUvMaskShader = () => `
     let c = textureLoad(inTex, xy, 0).xyz;
     if (dot(c,c) != 0.0) {
-      return uv;
+      return vec2<u32>(uv * dimsF);
     } else {
-      return vec2(0.0);
+      return vec2(0u);
     }
   `;
   } else if (maskMode === "exterior") {
     extractUvMaskShader = () => `
     let c = textureLoad(inTex, xy, 0).xyz;
     if (dot(c,c) == 0.0) {
-      return uv;
+      return vec2<u32>(uv * dimsF);
     } else {
-      return vec2(0.0);
+      return vec2(0u);
     }
   `;
   } else {
@@ -139,7 +172,7 @@ export function createJfaPipelines({
     size: [size, size],
     // size: [256, 256],
     // format: "r8unorm",
-    format: "r16float",
+    format: SDF_FORMAT,
   });
 
   // console.log(`jfa for ${maskTex.name}`);
@@ -167,8 +200,9 @@ export function createJfaPipelines({
     const outIdx = (i + 1) % 2;
     // console.log(`outIdx: ${outIdx}`);
 
-    // const stepSize = Math.floor(Math.pow(2, maxStep - i)); // count down
-    const stepSize = Math.floor(Math.pow(2, i)); // count up
+    const stepSize = stepAscending
+      ? Math.floor(Math.pow(2, i))
+      : Math.floor(Math.pow(2, maxStep - i));
     // console.log(`stepSize: ${stepSize}`);
 
     // TODO(@darzu): PERF! Most of the pieces of these pipelines r reusable!
@@ -211,7 +245,8 @@ export function createJfaPipelines({
     false,
     // TODO(@darzu): output max distance?
     () => `
-      let nearestUV = textureLoad(inTex, xy, 0).xy;
+      let nearestXY = textureLoad(inTex, xy, 0).xy;
+      let nearestUV = vec2<f32>(nearestXY) / dimsF;
       let dist = length(uv - nearestUV)
          * ${sdfDistFact};
       return dist;

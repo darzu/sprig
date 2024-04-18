@@ -91,6 +91,11 @@ export function createRenderTextureToQuad(
   );
   // TODO(@darzu): turn on-off sampling?
   const doSample = !inTexIsUnfilterable && sample;
+  if (sample && inTexIsUnfilterable) {
+    console.warn(
+      `specifying "sample = true" for unfilterable format "${inTex.format}" during ${name}`
+    );
+  }
   // outTex.format;
   const shader = (shaders: ShaderSet) => {
     const inputArity = TexTypeToElementArity[inTex.format];
@@ -105,9 +110,19 @@ export function createRenderTextureToQuad(
     //      needs more thought for good abstration.
     // TODO(@darzu): so many macro hacks. what's the principled approach?
 
-    let fSnip = `return ${returnWgslType}(inPx);`;
+    // TODO(@darzu): HACK-y. Parameterize this. And we might want to normalize w/ different values.
+    const inIsInt = inTex.format.endsWith("int");
+
+    let fSnipInExpression = "inPx";
+    if (inIsInt) {
+      if (inputArity === 2) {
+        fSnipInExpression = `(vec2<f32>(inPx) / dimsF)`;
+      } else throw `TODO: inIsInt && inputArity === ${inputArity}`;
+    }
+
+    let fSnip = `return ${returnWgslType}(${fSnipInExpression});`;
     if (inputArity === 2 && outArity === 4)
-      fSnip = `return ${returnWgslType}(inPx.xy, 0.0, 0.0);`;
+      fSnip = `return ${returnWgslType}(${fSnipInExpression}.xy, 0.0, 0.0);`;
 
     if (fragSnippet) {
       if (isFunction(fragSnippet))
