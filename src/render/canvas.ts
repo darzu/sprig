@@ -53,13 +53,17 @@ EM.addLazyInit([], [CanvasDef], () => {
     ).toFixed(1)}MP`
   );
 
+  function setCanvasSize(width: number, height: number) {
+    canvas.width = width * comp.pixelRatio;
+    canvas.style.width = `${width}px`;
+    canvas.height = height * comp.pixelRatio;
+    canvas.style.height = `${height}px`;
+  }
+
   function onWindowResize() {
     // TODO(@darzu): should this be done differently?
     //  https://web.dev/device-pixel-content-box/
-    canvas.width = window.innerWidth * comp.pixelRatio;
-    canvas.style.width = `${window.innerWidth}px`;
-    canvas.height = window.innerHeight * comp.pixelRatio;
-    canvas.style.height = `${window.innerHeight}px`;
+    setCanvasSize(window.innerWidth, window.innerHeight);
   }
 
   if (RESIZE_TO_WINDOW) {
@@ -69,7 +73,10 @@ EM.addLazyInit([], [CanvasDef], () => {
     onWindowResize();
     comp.forceWindowResize = onWindowResize;
   } else {
-    comp.forceWindowResize = () => {};
+    // TODO(@darzu): a bit hacky
+    comp.forceWindowResize = () => {
+      setCanvasSize(canvas.width, canvas.height);
+    };
   }
 
   // This tells Chrome that the canvas should be pixelated instead of blurred.
