@@ -55,7 +55,7 @@ import {
 import { InputsDef } from "../input/inputs.js";
 import { CanManDef, TurretDef, raiseManTurret } from "../turret/turret.js";
 import { TextDef } from "../gui/ui.js";
-import { CanvasDef, HasFirstInteractionDef } from "../render/canvas.js";
+import { HasFirstInteractionDef } from "../render/canvas.js";
 import { createJfaPipelines } from "../render/pipelines/std-jump-flood.js";
 import { createGridComposePipelines } from "../render/pipelines/std-compose.js";
 import { createTextureReader } from "../render/cpu-texture.js";

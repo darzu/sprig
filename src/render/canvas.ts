@@ -3,6 +3,20 @@ import { Phase } from "../ecs/sys-phase.js";
 import { VERBOSE_LOG } from "../flags.js";
 import { InputsDef } from "../input/inputs.js";
 
+/*
+canvas users:
+hasMouseLock
+active canvas width/height
+unlock mouse
+canvas get cursor position
+mouse move, createInputsReader(canvas)
+upperText =
+unlockMouse / shouldLockMouseOnClick
+set pixelRatio
+canvas.getContext("webgpu")
+(!!!) createRenderer(canvas, context) 
+*/
+
 const RESIZE_TO_WINDOW = false;
 
 export const CanvasDef = EM.defineResource(

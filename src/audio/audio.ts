@@ -1,4 +1,4 @@
-import { CanvasDef, HasFirstInteractionDef } from "../render/canvas.js";
+import { HasFirstInteractionDef } from "../render/canvas.js";
 import { Component, EM, Resource } from "../ecs/entity-manager.js";
 import { ENABLE_AUDIO } from "../flags.js";
 import { createIdxPool, createIdxRing, IdxPool } from "../utils/idx-pool.js";
@@ -44,22 +44,16 @@ EM.addLazyInit([HasFirstInteractionDef], [AudioDef], () => {
   // console.log("playing music");
   // res.music.playChords(theme, "major", 2.0, 2.0, -2);
 
-  EM.addSystem(
-    "musicStart",
-    Phase.AUDIO,
-    null,
-    [AudioDef, CanvasDef],
-    (_, res) => {
-      // update the string pool
-      if (res.music.state)
-        for (let i = 0; i < NUM_STRINGS; i++) {
-          const s = res.music.state._strings[i];
-          if (s.endTime < res.music.state.ctx.currentTime) {
-            res.music.state._stringPool.free(i, true);
-          }
+  EM.addSystem("musicStart", Phase.AUDIO, null, [AudioDef], (_, res) => {
+    // update the string pool
+    if (res.music.state)
+      for (let i = 0; i < NUM_STRINGS; i++) {
+        const s = res.music.state._strings[i];
+        if (s.endTime < res.music.state.ctx.currentTime) {
+          res.music.state._stringPool.free(i, true);
         }
-    }
-  );
+      }
+  });
 });
 
 interface AudioString {

@@ -482,6 +482,7 @@ export async function initGrayboxShipArena() {
     [ShipDef, PlayerShipDef, HasRudderDef, HasMastDef, CameraFollowDef],
     [InputsDef, CanvasDef, RendererDef, TimeDef],
     (es, res) => {
+      // TODO(@darzu): CANVAS
       if (!res.htmlCanvas.hasMouseLock()) return;
       if (es.length === 0) return;
       assert(es.length === 1);

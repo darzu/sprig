@@ -266,6 +266,7 @@ EM.addLazyInit([], [CameraComputedDef], () => {
 
       const frame = targetEnt.rendererWorldFrame;
 
+      // TODO(@darzu): CANVAS
       // update aspect ratio and size
       cameraComputed.aspectRatio = Math.abs(
         htmlCanvas.canvas.width / htmlCanvas.canvas.height
