@@ -9,6 +9,7 @@
       --background-clr: oklch(25% 0.01 145);
       --demo-background-clr: oklch(from var(--background-clr) calc(l + 0.1) c h);
       --text-clr: oklch(95% 0.01 145);
+      --hover-background-clr: oklch(from var(--background-clr) calc(l - 0.1) c h);
     }
 
     body {
@@ -72,6 +73,10 @@
       display: flex;
       align-items: center;
       flex-direction: row;
+    }
+
+    .demo-and-blurb:hover {
+      background-color: var(--hover-background-clr);
     }
 
     .demo-and-blurb:nth-child(even) {

@@ -80,8 +80,8 @@ const GAME: (typeof ALL_GAMES)[number] = (
   // "gjk"
   // "graybox-starter"
   // "font"
-  "cards"
-  // "particles"
+  // "cards"
+  "particles"
   // "ld55"
 );
 
