@@ -47,7 +47,6 @@ import { initLd55 } from "./ld55/game-ld55.js";
 
 export const MAX_MESHES = 20000;
 export const MAX_VERTICES = 21844;
-const AUTOSTART = true;
 
 const ALL_GAMES = [
   "gjk",
@@ -218,25 +217,7 @@ async function main() {
   // const peerName = "myPeerName";
   const peerName = !!urlServerId ? "mySprigClient" : "mySprigHost";
 
-  let controls = document.getElementById("server-controls") as HTMLDivElement;
-  let serverStartButton = document.getElementById(
-    "server-start"
-  ) as HTMLButtonElement;
-  let connectButton = document.getElementById("connect") as HTMLButtonElement;
-  let serverIdInput = document.getElementById("server-id") as HTMLInputElement;
-  if (ENABLE_NET && !AUTOSTART && !urlServerId) {
-    serverStartButton.onclick = () => {
-      startGame(peerName, null);
-      controls.hidden = true;
-    };
-    connectButton.onclick = () => {
-      startGame(peerName, serverIdInput.value);
-      controls.hidden = true;
-    };
-  } else {
-    startGame(peerName, urlServerId);
-    controls.hidden = true;
-  }
+  startGame(peerName, urlServerId);
 }
 
 // TODO(@darzu): move elsewhere

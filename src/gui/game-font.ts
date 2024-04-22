@@ -334,6 +334,7 @@ export async function initFontEditor() {
         assert(poly);
         res.meshEditor.setMesh(poly.proto);
         res.text.upperText = CHARS[btnIdx];
+        assert(res.text.upperDiv, `Missing res.text.upperDiv`);
         res.text.upperDiv.style.fontSize = "256px";
         res.text.upperDiv.style.top = "-64px";
         // res.text.upperDiv.style.color = "";

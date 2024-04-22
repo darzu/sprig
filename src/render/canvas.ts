@@ -3,6 +3,8 @@ import { Phase } from "../ecs/sys-phase.js";
 import { VERBOSE_LOG } from "../flags.js";
 import { InputsDef } from "../input/inputs.js";
 
+const RESIZE_TO_WINDOW = false;
+
 export const CanvasDef = EM.defineResource(
   "htmlCanvas",
   (canvas: HTMLCanvasElement) => {
@@ -59,12 +61,16 @@ EM.addLazyInit([], [CanvasDef], () => {
     canvas.height = window.innerHeight * comp.pixelRatio;
     canvas.style.height = `${window.innerHeight}px`;
   }
-  window.onresize = function () {
-    onWindowResize();
-  };
-  onWindowResize();
 
-  comp.forceWindowResize = onWindowResize;
+  if (RESIZE_TO_WINDOW) {
+    window.onresize = function () {
+      onWindowResize();
+    };
+    onWindowResize();
+    comp.forceWindowResize = onWindowResize;
+  } else {
+    comp.forceWindowResize = () => {};
+  }
 
   // This tells Chrome that the canvas should be pixelated instead of blurred.
   //    this looks better in lower resolution games and gives us full control over
