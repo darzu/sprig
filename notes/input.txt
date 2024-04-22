@@ -12,3 +12,9 @@ Gyros good!:
     http://gyrowiki.jibbsmart.com/blog:good-gyro-controls-part-2:the-flick-stick
     needs gyro
     recommended w/ ease-out, .1s
+
+TODO: take notes on controller bindings in:
+  1. Baldur's Gate
+  2. Civilization
+  3. Kodu
+    

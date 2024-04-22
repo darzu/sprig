@@ -81,9 +81,9 @@ const GAME: (typeof ALL_GAMES)[number] = (
   // "gjk"
   // "graybox-starter"
   // "font"
-  // "cards"
+  "cards"
   // "particles"
-  "ld55"
+  // "ld55"
 );
 
 // Run simulation with a fixed timestep @ 60hz

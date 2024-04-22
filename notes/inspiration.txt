@@ -310,3 +310,6 @@ Mod to massively boost performance in Dyson Sphere Program by sampling and repla
   https://github.com/starfi5h/DSP_Mod/tree/master/SampleAndHoldSim
   and another mod doing misc optimizations:
     https://github.com/Selsion/DSPMods/tree/main/DSPOptimizations
+
+https://executable.graphics
+  demo scene curated art
