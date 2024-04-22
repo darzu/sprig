@@ -40,6 +40,7 @@ import {
 import { postProcess } from "../render/pipelines/std-post.js";
 import { shadowPipelines } from "../render/pipelines/std-shadow.js";
 import { RendererDef, RenderableConstructDef } from "../render/renderer-ecs.js";
+import { TimeDef } from "../time/time.js";
 import { SketchTrailDef, sketch } from "../utils/sketch.js";
 import { randDir3 } from "../utils/utils-3d.js";
 import { addWorldGizmo } from "../utils/utils-game.js";
@@ -126,6 +127,18 @@ export async function initGameParticles() {
 
   // particle test
   EM.set(pedestal, EmitterDef, { system: cloudBurstSys });
+
+  EM.addSystem(
+    "repeatSpawn",
+    Phase.GAME_WORLD,
+    null,
+    [TimeDef, RendererDef],
+    (_, res) => {
+      if (res.time.step % (60 * 3) === 0) {
+        res.renderer.renderer.submitPipelines([], [cloudBurstSys.pipeInit]);
+      }
+    }
+  );
 
   EM.addSystem(
     "makeParticles",
