@@ -53,10 +53,11 @@ import { dbgLogOnce } from "../utils/util.js";
 const MAX_PIPELINES = 64;
 
 export function createRenderer(
-  canvas: HTMLCanvasElement,
   device: GPUDevice,
   context: GPUCanvasContext,
-  shaders: ShaderSet
+  shaders: ShaderSet,
+  // TODO(@darzu): CANVAS
+  getCanvasSize: () => readonly [number, number]
 ) {
   if (LOG_WEBGPU_AVAILABLE_FEATURES) {
     console.log("Available WebGPU features:");
@@ -171,8 +172,7 @@ export function createRenderer(
   let lastHeight = 0;
 
   function checkCanvasResize(): boolean {
-    const newWidth = canvas.width;
-    const newHeight = canvas.height;
+    const [newWidth, newHeight] = getCanvasSize();
     if (lastWidth === newWidth && lastHeight === newHeight) return false;
 
     onCanvasResizeAll(device, context, resources, [newWidth, newHeight]);

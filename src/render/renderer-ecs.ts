@@ -610,7 +610,11 @@ EM.addLazyInit(
       throw new Error("Unable to get webgpu context");
     }
 
-    renderer = createRenderer(htmlCanvas.canvas, device, context, shaders);
+    // TODO(@darzu): CANVAS
+    const getCanvasSize = () =>
+      [htmlCanvas.canvas.width, htmlCanvas.canvas.height] as const;
+
+    renderer = createRenderer(device, context, shaders, getCanvasSize);
 
     EM.addResource(RendererDef, renderer, []);
   }

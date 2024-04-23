@@ -5,19 +5,28 @@ import { InputsDef } from "../input/inputs.js";
 
 /*
 canvas users:
-hasMouseLock
-active canvas width/height
-unlock mouse
-canvas get cursor position
-mouse move, createInputsReader(canvas)
-upperText =
-unlockMouse / shouldLockMouseOnClick
-set pixelRatio
-canvas.getContext("webgpu")
-(!!!) createRenderer(canvas, context) 
+
+  mouse:
+    hasMouseLock
+    unlock mouse
+    canvas get cursor position
+    mouse move, createInputsReader(canvas)
+    unlockMouse / shouldLockMouseOnClick
+  text:
+    upperText =
+  rendering:
+    active canvas width/height
+    set pixelRatio
+    canvas.getContext("webgpu")
+    (!!!) createRenderer(canvas, context) 
+
+TODO: canvas.getBoundingClientRect
+
+https://ciechanow.ski/:
+  const ctx = canvas.getContext("2d"); // every repaint!
 */
 
-const RESIZE_TO_WINDOW = false;
+const RESIZE_TO_WINDOW = true;
 
 export const CanvasDef = EM.defineResource(
   "htmlCanvas",
