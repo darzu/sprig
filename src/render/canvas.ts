@@ -30,7 +30,7 @@ https://ciechanow.ski/:
 const RESIZE_TO_WINDOW = true;
 
 // TODO(@darzu): CANVAS
-export const CanvasDef = EM.defineResourceT(
+export const CanvasDef = EM.defineResource(
   "htmlCanvas",
   T<{
     canvas: HTMLCanvasElement;

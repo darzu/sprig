@@ -374,12 +374,6 @@ export class EntityManager {
     this.resourceDefs.set(id, def);
     return def;
   }
-  public defineResourceT<N extends string, P>(
-    name: N,
-    type: (p: P) => void
-  ): ResourceDef<N, P, [P]> {
-    return this.defineResource(name, (p: P) => p);
-  }
 
   forbiddenComponentNames = new Set<string>(["id"]);
 

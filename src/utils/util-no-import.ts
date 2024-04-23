@@ -51,6 +51,6 @@ export function assert(cond: any, msg?: string): asserts cond {
     throw new Error(msg ?? "Assertion failed (consider adding a helpful msg).");
 }
 
-export function T<N extends {}>(): (p: N) => void {
-  return (p: N) => {};
+export function T<N extends {}>(): (p: N) => N {
+  return (p: N) => p;
 }
