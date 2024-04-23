@@ -43,6 +43,7 @@ import { shadowPipelines } from "../render/pipelines/std-shadow.js";
 import { RendererDef, RenderableConstructDef } from "../render/renderer-ecs.js";
 import { TimeDef } from "../time/time.js";
 import { SketchTrailDef, sketch } from "../utils/sketch.js";
+import { assert } from "../utils/util-no-import.js";
 import { randDir3 } from "../utils/utils-3d.js";
 import { addWorldGizmo } from "../utils/utils-game.js";
 import { createSun, initGhost } from "./graybox-helpers.js";
@@ -183,6 +184,23 @@ export async function initGameParticles() {
     }
   );
 
+  // TODO(@darzu): change particle color based on current canvas!
+
+  const blurbs = [...document.getElementsByClassName("demo-and-blurb")].map(
+    (b) => {
+      assert(b.tagName === "DIV", `Element isn't a div, it's a: ${b.tagName}`);
+      return b as HTMLDivElement;
+    }
+  );
+  let _hoverIdx = 0;
+  let _activeIdx = 0;
+  blurbs.forEach(
+    (b, i) =>
+      (b.onmousemove = () => {
+        _hoverIdx = i;
+      })
+  );
+
   EM.addSystem(
     "canvasSwitch",
     Phase.GAME_WORLD,
@@ -190,9 +208,16 @@ export async function initGameParticles() {
     [CanvasDef, InputsDef],
     (_, res) => {
       if (res.inputs.keyClicks["1"]) {
+        _activeIdx = 0;
         res.htmlCanvas.setCanvas("canvas-1");
       } else if (res.inputs.keyClicks["2"]) {
+        _activeIdx = 1;
         res.htmlCanvas.setCanvas("canvas-2");
+      }
+
+      if (_hoverIdx !== _activeIdx) {
+        res.htmlCanvas.setCanvas(`canvas-${_hoverIdx + 1}`);
+        _activeIdx = _hoverIdx;
       }
     }
   );

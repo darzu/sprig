@@ -1434,9 +1434,9 @@ ffmpeg -i glitch.mov -vcodec h264 \
   glitch.mp4
   
 cd /Users/darzu/screenshots/
-ffmpeg -i summon_1.mov -vcodec h264 \
+ffmpeg -i canvas_change.mov -vcodec h264 \
   -acodec aac \
-  summon_1.mp4
+  canvas_change.mp4
 
 Bluesky's "Ecosystem Overview":
   https://gitlab.com/bluesky-community1/decentralized-ecosystem#ecosystem-overview
