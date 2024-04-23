@@ -16,7 +16,7 @@ import {
   SmoothedWorldFrameDef,
 } from "./motion-smoothing.js";
 import { DeadDef, DeletedDef } from "../ecs/delete.js";
-import { meshPoolPtr } from "./pipelines/std-scene.js";
+import { canvasFormat, meshPoolPtr } from "./pipelines/std-scene.js";
 import { CanvasDef } from "./canvas.js";
 import { createRenderer } from "./renderer-webgpu.js";
 import { CyMeshPoolPtr, CyPipelinePtr } from "./gpu-registry.js";
@@ -580,6 +580,12 @@ export type Renderer = ReturnType<typeof createRenderer>;
 //   stats(): Promise<Map<string, bigint>>;
 // }
 
+// TODO(@darzu): CANVAS
+export interface AbstractCanvas {
+  getCanvasTexture: () => GPUTexture;
+  getCanvasSize: () => readonly [number, number];
+}
+
 EM.addLazyInit(
   [CanvasDef, ShadersDef],
   [RendererDef],
@@ -614,7 +620,24 @@ EM.addLazyInit(
     const getCanvasSize = () =>
       [htmlCanvas.canvas.width, htmlCanvas.canvas.height] as const;
 
-    renderer = createRenderer(device, context, shaders, getCanvasSize);
+    // TODO(@darzu): CANVAS
+    context.configure({
+      device: device,
+      format: canvasFormat, // presentationFormat
+      // TODO(@darzu): support transparency?
+      // alphaMode: "premultiplied",
+      alphaMode: "opaque",
+      colorSpace: "srgb",
+    });
+
+    const getCanvasTexture = () => context.getCurrentTexture();
+
+    const absCanvas: AbstractCanvas = {
+      getCanvasSize,
+      getCanvasTexture,
+    };
+
+    renderer = createRenderer(device, shaders, absCanvas);
 
     EM.addResource(RendererDef, renderer, []);
   }

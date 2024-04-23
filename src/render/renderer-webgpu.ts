@@ -42,6 +42,7 @@ import {
   VERBOSE_LOG,
 } from "../flags.js";
 import { dbgLogOnce } from "../utils/util.js";
+import { AbstractCanvas } from "./renderer-ecs.js";
 
 // TODO(@darzu): Try using drawIndirect !!
 //    https://gpuweb.github.io/gpuweb/#dom-gpurendercommandsmixin-drawindirect
@@ -54,10 +55,8 @@ const MAX_PIPELINES = 64;
 
 export function createRenderer(
   device: GPUDevice,
-  context: GPUCanvasContext,
   shaders: ShaderSet,
-  // TODO(@darzu): CANVAS
-  getCanvasSize: () => readonly [number, number]
+  canvas: AbstractCanvas
 ) {
   if (LOG_WEBGPU_AVAILABLE_FEATURES) {
     console.log("Available WebGPU features:");
@@ -172,10 +171,10 @@ export function createRenderer(
   let lastHeight = 0;
 
   function checkCanvasResize(): boolean {
-    const [newWidth, newHeight] = getCanvasSize();
+    const [newWidth, newHeight] = canvas.getCanvasSize();
     if (lastWidth === newWidth && lastHeight === newHeight) return false;
 
-    onCanvasResizeAll(device, context, resources, [newWidth, newHeight]);
+    onCanvasResizeAll(resources, [newWidth, newHeight]);
 
     lastWidth = newWidth;
     lastHeight = newHeight;
@@ -315,7 +314,7 @@ export function createRenderer(
     const commandEncoder = device.createCommandEncoder();
 
     const bundleRenderer = startBundleRenderer(
-      context,
+      canvas.getCanvasTexture,
       commandEncoder,
       resources
     );
