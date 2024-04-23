@@ -103,11 +103,10 @@ export function registerUICameraSys() {
 
       // update aspect ratio and size
       // TODO(@darzu): modifying cameraComputed directly is odd
-      cameraComputed.aspectRatio = Math.abs(
-        htmlCanvas.canvas.width / htmlCanvas.canvas.height
-      );
-      cameraComputed.width = htmlCanvas.canvas.clientWidth;
-      cameraComputed.height = htmlCanvas.canvas.clientHeight;
+      let html = htmlCanvas.getCanvasHtml();
+      cameraComputed.aspectRatio = Math.abs(html.width / html.height);
+      cameraComputed.width = html.clientWidth;
+      cameraComputed.height = html.clientHeight;
 
       // dbgLogOnce(
       //   `ar${cameraComputed.aspectRatio.toFixed(2)}`,
@@ -162,8 +161,8 @@ export function registerUICameraSys() {
         cameraComputed.invViewProj
       );
 
-      let cursorFracX = inputs.mousePos[0] / htmlCanvas.canvas.clientWidth;
-      let cursorFracY = inputs.mousePos[1] / htmlCanvas.canvas.clientHeight;
+      let cursorFracX = inputs.mousePos[0] / html.clientWidth;
+      let cursorFracY = inputs.mousePos[1] / html.clientHeight;
       const cursorWorldPos = V3.tMat4(
         [
           remap(cursorFracX, 0, 1, -1, 1),

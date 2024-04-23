@@ -266,13 +266,13 @@ EM.addLazyInit([], [CameraComputedDef], () => {
 
       const frame = targetEnt.rendererWorldFrame;
 
-      // TODO(@darzu): CANVAS
       // update aspect ratio and size
-      cameraComputed.aspectRatio = Math.abs(
-        htmlCanvas.canvas.width / htmlCanvas.canvas.height
-      );
-      cameraComputed.width = htmlCanvas.canvas.clientWidth;
-      cameraComputed.height = htmlCanvas.canvas.clientHeight;
+      // TODO(@darzu): CANVAS
+      // TODO(@darzu): why do we use width/height vs clientWidth/clientHeight ???
+      let html = htmlCanvas.getCanvasHtml();
+      cameraComputed.aspectRatio = Math.abs(html.width / html.height);
+      cameraComputed.width = html.clientWidth;
+      cameraComputed.height = html.clientHeight;
 
       // compute the view matrix
       let viewMatrix = mat4.tmp();

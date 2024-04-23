@@ -581,6 +581,7 @@ export type Renderer = ReturnType<typeof createRenderer>;
 // }
 
 // TODO(@darzu): CANVAS
+// TODO(@darzu): RENAME GPUCanvas ?
 export interface AbstractCanvas {
   getCanvasTexture: () => GPUTexture;
   getCanvasSize: () => readonly [number, number];
@@ -610,18 +611,17 @@ EM.addLazyInit(
       requiredFeatures: supportsTimestamp ? ["timestamp-query"] : [],
     });
 
-    const context = htmlCanvas.canvas.getContext("webgpu");
-    if (!context) {
+    // TODO(@darzu): CANVAS
+    let _activeCanvas = htmlCanvas.getCanvasHtml();
+
+    const _activeContext = _activeCanvas.getContext("webgpu");
+    if (!_activeContext) {
       displayWebGPUError();
       throw new Error("Unable to get webgpu context");
     }
 
     // TODO(@darzu): CANVAS
-    const getCanvasSize = () =>
-      [htmlCanvas.canvas.width, htmlCanvas.canvas.height] as const;
-
-    // TODO(@darzu): CANVAS
-    context.configure({
+    _activeContext.configure({
       device: device,
       format: canvasFormat, // presentationFormat
       // TODO(@darzu): support transparency?
@@ -629,8 +629,11 @@ EM.addLazyInit(
       alphaMode: "opaque",
       colorSpace: "srgb",
     });
+    const getCanvasTexture = () => _activeContext.getCurrentTexture();
 
-    const getCanvasTexture = () => context.getCurrentTexture();
+    // TODO(@darzu): CANVAS
+    const getCanvasSize = () =>
+      [_activeCanvas.width, _activeCanvas.height] as const;
 
     const absCanvas: AbstractCanvas = {
       getCanvasSize,
@@ -642,7 +645,8 @@ EM.addLazyInit(
     EM.addResource(RendererDef, renderer, []);
   }
 );
-function displayWebGPUError() {
+
+export function displayWebGPUError() {
   const style = `font-size: 48px;
       color: green;
       margin: 24px;

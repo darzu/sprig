@@ -1,8 +1,10 @@
 import { Component, EM, Resource } from "../ecs/entity-manager.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { VERBOSE_LOG } from "../flags.js";
-import { T } from "../utils/util-no-import.js";
+import { T, assert } from "../utils/util-no-import.js";
 import { InputsDef } from "../input/inputs.js";
+import { displayWebGPUError } from "./renderer-ecs.js";
+import { toMap } from "../utils/util.js";
 
 /*
 canvas users:
@@ -31,9 +33,11 @@ const RESIZE_TO_WINDOW = true;
 
 // TODO(@darzu): CANVAS
 export const CanvasDef = EM.defineResource(
-  "htmlCanvas",
+  "htmlCanvas", // TODO(@darzu): rename to canvas ?
   T<{
-    canvas: HTMLCanvasElement;
+    canvasNames: string[];
+    setCanvas: (name: string) => void;
+    getCanvasHtml: () => HTMLCanvasElement;
 
     // mouse
     shouldLockMouseOnClick: boolean;
@@ -58,18 +62,39 @@ let _imgPixelatedTimeoutHandle = 0;
 EM.addLazyInit([], [CanvasDef], () => {
   // TODO(@darzu): CANVAS multi canvases
 
-  let canvases = document.getElementsByTagName("canvas");
+  const canvases = [...document.getElementsByTagName("canvas")];
 
-  const canvasOpt = canvases[0];
-  if (!canvasOpt) throw `can't find HTML canvas to attach to`;
-  const canvas = canvasOpt as HTMLCanvasElement;
+  assert(canvases.length, `No <canvas>!`);
+
+  const canvasNames = canvases.map((e) => {
+    assert(e.id, `canvas missing "id" tag`);
+    return e.id;
+  });
+
+  const canvasesByName = toMap(
+    canvasNames,
+    (n) => n,
+    (_, i) => canvases[i]
+  );
+
+  let _activeCanvas = canvases[0];
+
+  function setCanvas(n: string) {
+    const el = canvasesByName.get(n);
+    assert(el, `Unknown canvas name: ${n}`);
+
+    throw "TODO setCanvas";
+  }
 
   const comp = EM.addResource(CanvasDef, {
-    canvas,
+    canvasNames,
+    getCanvasHtml: () => _activeCanvas,
+    setCanvas,
+
     shouldLockMouseOnClick: true,
     unlockMouse: () => {},
     _hasFirstInteractionDef: false,
-    hasMouseLock: () => document.pointerLockElement === canvas,
+    hasMouseLock: () => document.pointerLockElement === _activeCanvas,
     pixelRatio: 1,
     forceWindowResize: () => {},
   });
@@ -92,29 +117,29 @@ EM.addLazyInit([], [CanvasDef], () => {
     ).toFixed(1)}MP`
   );
 
-  function setCanvasSize(width: number, height: number) {
-    canvas.width = width * comp.pixelRatio;
-    canvas.style.width = `${width}px`;
-    canvas.height = height * comp.pixelRatio;
-    canvas.style.height = `${height}px`;
+  function setActiveCanvasSize(width: number, height: number) {
+    _activeCanvas.width = width * comp.pixelRatio;
+    _activeCanvas.style.width = `${width}px`;
+    _activeCanvas.height = height * comp.pixelRatio;
+    _activeCanvas.style.height = `${height}px`;
   }
 
-  function onWindowResize() {
+  function resizeCanvasToWindow() {
     // TODO(@darzu): should this be done differently?
     //  https://web.dev/device-pixel-content-box/
-    setCanvasSize(window.innerWidth, window.innerHeight);
+    setActiveCanvasSize(window.innerWidth, window.innerHeight);
   }
 
   if (RESIZE_TO_WINDOW) {
     window.onresize = function () {
-      onWindowResize();
+      resizeCanvasToWindow();
     };
-    onWindowResize();
-    comp.forceWindowResize = onWindowResize;
+    resizeCanvasToWindow();
+    comp.forceWindowResize = resizeCanvasToWindow;
   } else {
-    // TODO(@darzu): a bit hacky
+    // TODO(@darzu): CANVAS. HACK.
     comp.forceWindowResize = () => {
-      setCanvasSize(canvas.width, canvas.height);
+      setActiveCanvasSize(_activeCanvas.width, _activeCanvas.height);
     };
   }
 
@@ -127,8 +152,10 @@ EM.addLazyInit([], [CanvasDef], () => {
   //    (Last tested on Version 94.0.4604.0 (Official Build) canary (arm64))
   clearTimeout(_imgPixelatedTimeoutHandle);
   _imgPixelatedTimeoutHandle = setTimeout(() => {
-    canvas.style.imageRendering = `pixelated`;
+    _activeCanvas.style.imageRendering = `pixelated`;
   }, 50);
+
+  // TODO(@darzu): CANVAS. mouse lock stuff update on canvas switch
 
   comp.unlockMouse = () => {
     comp.shouldLockMouseOnClick = false;
@@ -142,11 +169,14 @@ EM.addLazyInit([], [CanvasDef], () => {
       comp._hasFirstInteractionDef = true;
       EM.addResource(HasFirstInteractionDef);
     }
-    if (comp.shouldLockMouseOnClick && document.pointerLockElement !== canvas) {
-      canvas.requestPointerLock();
+    if (
+      comp.shouldLockMouseOnClick &&
+      document.pointerLockElement !== _activeCanvas
+    ) {
+      _activeCanvas.requestPointerLock();
     }
   }
-  canvas.addEventListener("click", tryMouseLock);
+  _activeCanvas.addEventListener("click", tryMouseLock);
 
   // TODO(@darzu): if we need to unlock manually, do this:
   // EM.addSystem(

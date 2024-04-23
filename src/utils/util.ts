@@ -170,11 +170,11 @@ export function toRecord<A, V, K extends string | number = string>(
 }
 export function toMap<A, V, K extends string | number = string>(
   as: readonly A[],
-  key: (a: A) => K,
-  val: (a: A) => V
+  key: (a: A, i: number) => K,
+  val: (a: A, i: number) => V
 ): Map<K, V> {
   const res = new Map();
-  as.forEach((a) => res.set(key(a), val(a)));
+  as.forEach((a, i) => res.set(key(a, i), val(a, i)));
   return res as Map<K, V>;
 }
 
