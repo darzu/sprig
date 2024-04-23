@@ -29,7 +29,7 @@ https://ciechanow.ski/:
   const ctx = canvas.getContext("2d"); // every repaint!
 */
 
-const RESIZE_TO_WINDOW = true;
+const RESIZE_TO_WINDOW = false;
 
 // TODO(@darzu): CANVAS
 export const CanvasDef = EM.defineResource(
@@ -38,6 +38,8 @@ export const CanvasDef = EM.defineResource(
     canvasNames: string[];
     setCanvas: (name: string) => void;
     getCanvasHtml: () => HTMLCanvasElement;
+    getCanvasName: () => string;
+    onCanvasChange: () => void; // TODO(@darzu): allow multiple?
 
     // mouse
     shouldLockMouseOnClick: boolean;
@@ -78,18 +80,14 @@ EM.addLazyInit([], [CanvasDef], () => {
   );
 
   let _activeCanvas = canvases[0];
-
-  function setCanvas(n: string) {
-    const el = canvasesByName.get(n);
-    assert(el, `Unknown canvas name: ${n}`);
-
-    throw "TODO setCanvas";
-  }
+  let _activeCanvasName = canvasNames[0];
 
   const comp = EM.addResource(CanvasDef, {
     canvasNames,
     getCanvasHtml: () => _activeCanvas,
     setCanvas,
+    getCanvasName: () => _activeCanvasName,
+    onCanvasChange: () => {},
 
     shouldLockMouseOnClick: true,
     unlockMouse: () => {},
@@ -99,7 +97,31 @@ EM.addLazyInit([], [CanvasDef], () => {
     forceWindowResize: () => {},
   });
 
-  comp.pixelRatio = 1;
+  setCanvas(_activeCanvasName);
+
+  function setCanvas(n: string) {
+    console.log(`setting canvas to ${n}`);
+
+    const el = canvasesByName.get(n);
+    assert(el, `Unknown canvas name: ${n}`);
+
+    _activeCanvas = el;
+    _activeCanvasName = n;
+
+    // This tells Chrome that the canvas should be pixelated instead of blurred.
+    //    this looks better in lower resolution games and gives us full control over
+    //    resolution and blur.
+    // HACK: for some odd reason, setting this on a timeout is the only way I can get
+    //    Chrome to accept this property. Otherwise it'll only apply after the canvas
+    //    is resized by the user.
+    //    (Last tested on Version 94.0.4604.0 (Official Build) canary (arm64))
+    clearTimeout(_imgPixelatedTimeoutHandle);
+    _imgPixelatedTimeoutHandle = setTimeout(() => {
+      _activeCanvas.style.imageRendering = `pixelated`;
+    }, 50);
+
+    comp.onCanvasChange();
+  }
 
   if (VERBOSE_LOG)
     console.log(
@@ -142,18 +164,6 @@ EM.addLazyInit([], [CanvasDef], () => {
       setActiveCanvasSize(_activeCanvas.width, _activeCanvas.height);
     };
   }
-
-  // This tells Chrome that the canvas should be pixelated instead of blurred.
-  //    this looks better in lower resolution games and gives us full control over
-  //    resolution and blur.
-  // HACK: for some odd reason, setting this on a timeout is the only way I can get
-  //    Chrome to accept this property. Otherwise it'll only apply after the canvas
-  //    is resized by the user.
-  //    (Last tested on Version 94.0.4604.0 (Official Build) canary (arm64))
-  clearTimeout(_imgPixelatedTimeoutHandle);
-  _imgPixelatedTimeoutHandle = setTimeout(() => {
-    _activeCanvas.style.imageRendering = `pixelated`;
-  }, 50);
 
   // TODO(@darzu): CANVAS. mouse lock stuff update on canvas switch
 

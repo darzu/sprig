@@ -21,6 +21,7 @@ import {
 } from "../particle/particle.js";
 import { ColliderDef } from "../physics/collider.js";
 import { PositionDef, ScaleDef } from "../physics/transform.js";
+import { CanvasDef } from "../render/canvas.js";
 import { PointLightDef } from "../render/lights.js";
 import { GRID_MASK } from "../render/pipeline-masks.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
@@ -178,6 +179,20 @@ export async function initGameParticles() {
 
         // spray
         pedestal.emitter.pulseNum.push(100);
+      }
+    }
+  );
+
+  EM.addSystem(
+    "canvasSwitch",
+    Phase.GAME_WORLD,
+    [],
+    [CanvasDef, InputsDef],
+    (_, res) => {
+      if (res.inputs.keyClicks["1"]) {
+        res.htmlCanvas.setCanvas("canvas-1");
+      } else if (res.inputs.keyClicks["2"]) {
+        res.htmlCanvas.setCanvas("canvas-2");
       }
     }
   );

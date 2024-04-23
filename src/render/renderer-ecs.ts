@@ -612,23 +612,46 @@ EM.addLazyInit(
     });
 
     // TODO(@darzu): CANVAS
-    let _activeCanvas = htmlCanvas.getCanvasHtml();
+    let _activeCanvas: HTMLCanvasElement;
+    let _activeCanvasName: string;
+    let _activeContext: GPUCanvasContext;
 
-    const _activeContext = _activeCanvas.getContext("webgpu");
-    if (!_activeContext) {
-      displayWebGPUError();
-      throw new Error("Unable to get webgpu context");
+    const canvasToCtx = new Map<string, GPUCanvasContext>();
+
+    function updateActiveCanvas() {
+      _activeCanvas = htmlCanvas.getCanvasHtml();
+      _activeCanvasName = htmlCanvas.getCanvasName();
+
+      let ctxOpt = canvasToCtx.get(_activeCanvasName);
+      if (!ctxOpt) {
+        ctxOpt = _activeCanvas.getContext("webgpu") ?? undefined;
+        if (!ctxOpt) {
+          displayWebGPUError();
+          throw new Error("Unable to get webgpu context");
+        }
+        initCanvasContext(ctxOpt);
+
+        canvasToCtx.set(_activeCanvasName, ctxOpt);
+      }
+      _activeContext = ctxOpt;
     }
 
-    // TODO(@darzu): CANVAS
-    _activeContext.configure({
-      device: device,
-      format: canvasFormat, // presentationFormat
-      // TODO(@darzu): support transparency?
-      // alphaMode: "premultiplied",
-      alphaMode: "opaque",
-      colorSpace: "srgb",
-    });
+    function initCanvasContext(ctx: GPUCanvasContext) {
+      // TODO(@darzu): CANVAS
+      ctx.configure({
+        device: device,
+        format: canvasFormat, // presentationFormat
+        // TODO(@darzu): support transparency?
+        // alphaMode: "premultiplied",
+        alphaMode: "opaque",
+        colorSpace: "srgb",
+      });
+    }
+
+    updateActiveCanvas();
+
+    htmlCanvas.onCanvasChange = updateActiveCanvas; // TODO(@darzu): register instead
+
     const getCanvasTexture = () => _activeContext.getCurrentTexture();
 
     // TODO(@darzu): CANVAS
