@@ -99,11 +99,11 @@ import { createSun, initGhost } from "./graybox-helpers.js";
 import {
   ChildrenDef,
   ObjEnt,
-  T,
   createObj,
   defineObj,
   mixinObj,
 } from "./objects.js";
+import { T } from "../utils/util-no-import.js";
 
 /*
 ToDo:

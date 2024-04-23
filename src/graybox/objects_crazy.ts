@@ -4,7 +4,7 @@ import { V, quat, V3 } from "../matrix/sprig-matrix.js";
 import { CubeMesh } from "../meshes/mesh-list.js";
 import { PositionDef, ScaleDef, RotationDef } from "../physics/transform.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
-import { T } from "./objects.js";
+import { T } from "../utils/util-no-import.js";
 
 /*
 No positionality when creating ?

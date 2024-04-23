@@ -29,7 +29,8 @@ import { assert } from "../utils/util.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { angleBetweenPosXZ, angleBetweenXZ } from "../utils/utils-3d.js";
 import { Phase } from "../ecs/sys-phase.js";
-import { ObjOwnProps, T, defineObj } from "../graybox/objects.js";
+import { ObjOwnProps, defineObj } from "../graybox/objects.js";
+import { T } from "../utils/util-no-import.js";
 
 const SAIL_TURN_SPEED = 5;
 export const SAIL_FURL_RATE = 0.02;

@@ -1,6 +1,7 @@
 import { Component, EM, Resource } from "../ecs/entity-manager.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { VERBOSE_LOG } from "../flags.js";
+import { T } from "../utils/util-no-import.js";
 import { InputsDef } from "../input/inputs.js";
 
 /*
@@ -28,19 +29,22 @@ https://ciechanow.ski/:
 
 const RESIZE_TO_WINDOW = true;
 
-export const CanvasDef = EM.defineResource(
+// TODO(@darzu): CANVAS
+export const CanvasDef = EM.defineResourceT(
   "htmlCanvas",
-  (canvas: HTMLCanvasElement) => {
-    return {
-      canvas,
-      shouldLockMouseOnClick: true,
-      unlockMouse: () => {},
-      _hasFirstInteractionDef: false,
-      hasMouseLock: () => document.pointerLockElement === canvas,
-      pixelRatio: 1,
-      forceWindowResize: () => {},
-    };
-  }
+  T<{
+    canvas: HTMLCanvasElement;
+
+    // mouse
+    shouldLockMouseOnClick: boolean;
+    unlockMouse: () => void;
+    _hasFirstInteractionDef: boolean;
+    hasMouseLock: () => boolean;
+
+    // rendering
+    pixelRatio: number;
+    forceWindowResize: () => void;
+  }>()
 );
 export type Canvas = Resource<typeof CanvasDef>;
 
@@ -52,11 +56,23 @@ export const HasFirstInteractionDef = EM.defineResource(
 let _imgPixelatedTimeoutHandle = 0;
 
 EM.addLazyInit([], [CanvasDef], () => {
-  const canvasOpt = document.getElementById("sample-canvas");
+  // TODO(@darzu): CANVAS multi canvases
+
+  let canvases = document.getElementsByTagName("canvas");
+
+  const canvasOpt = canvases[0];
   if (!canvasOpt) throw `can't find HTML canvas to attach to`;
   const canvas = canvasOpt as HTMLCanvasElement;
 
-  const comp = EM.addResource(CanvasDef, canvas);
+  const comp = EM.addResource(CanvasDef, {
+    canvas,
+    shouldLockMouseOnClick: true,
+    unlockMouse: () => {},
+    _hasFirstInteractionDef: false,
+    hasMouseLock: () => document.pointerLockElement === canvas,
+    pixelRatio: 1,
+    forceWindowResize: () => {},
+  });
 
   comp.pixelRatio = 1;
 

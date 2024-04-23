@@ -6,7 +6,8 @@ import { EM } from "../ecs/entity-manager.js";
 import { createEntityPool } from "../ecs/entity-pool.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { DotsDef } from "../graybox/dots.js";
-import { ObjChildEnt, T, defineObj } from "../graybox/objects.js";
+import { ObjChildEnt, defineObj } from "../graybox/objects.js";
+import { T } from "./util-no-import.js";
 import { V3, cloneTmpsInObj, quat, tV } from "../matrix/sprig-matrix.js";
 import { Mesh } from "../meshes/mesh.js";
 import {

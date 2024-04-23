@@ -14,7 +14,7 @@ import {
 } from "../render/pipelines/std-dots.js";
 import { RendererDef } from "../render/renderer-ecs.js";
 import { assert, range } from "../utils/util.js";
-import { T } from "./objects.js";
+import { T } from "../utils/util-no-import.js";
 
 // TODO(@darzu): Implement freeAll + generations?
 // TODO(@darzu): impl size change, color change, velocity, accel, lifetimes
