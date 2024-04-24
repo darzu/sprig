@@ -98,10 +98,6 @@ const MAX_SIM_LOOPS = 1;
 
 export let gameStarted = false;
 
-function callFixedTimestepSystems() {
-  EM.update();
-}
-
 async function startGame(localPeerName: string, host: string | null) {
   // dbgLogMilestone("startGame()");
   (globalThis as any).GAME = GAME;
@@ -177,7 +173,7 @@ async function startGame(localPeerName: string, host: string | null) {
       accumulator -= TIMESTEP;
       tick(TIMESTEP);
       resetTempMatrixBuffer(`frame_${loops}`);
-      callFixedTimestepSystems();
+      EM.update();
       loops++;
     }
     setSimulationAlpha(accumulator / TIMESTEP);
