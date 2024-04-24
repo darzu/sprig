@@ -246,7 +246,7 @@ export function registerHypersailSystems() {
       }
       for (let ship of es) {
         if (ship.authority.pid !== res.me.pid) continue;
-        const stars = EM.filterEntities([
+        const stars = EM.filterEntities_uncached([
           DarkStarPropsDef,
           WorldFrameDef,
           ColorDef,

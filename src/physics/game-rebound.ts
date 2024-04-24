@@ -178,7 +178,7 @@ export async function initReboundSandbox(hosting: boolean) {
       }
 
       if (res.inputs.keyClicks["backspace"]) {
-        const es = EM.filterEntities([cubeDef]);
+        const es = EM.filterEntities_uncached([cubeDef]);
         for (let e of es) EM.set(e, DeletedDef);
       }
     }

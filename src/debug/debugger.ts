@@ -225,7 +225,7 @@ function cmpByName(name: string): DbgCmp | null {
 
 export const dbg = {
   saveCamera: () => {
-    const targets = EM.filterEntities([
+    const targets = EM.filterEntities_uncached([
       CameraFollowDef,
       RotationDef,
       PositionDef,

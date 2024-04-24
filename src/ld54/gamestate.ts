@@ -109,7 +109,7 @@ EM.addEagerInit([], [LD54GameStateDef], [], () => {
 
       // have we reached the end of the path and won?
 
-      const path = EM.filterEntities([SpacePathDef])[0];
+      const path = EM.filterEntities_uncached([SpacePathDef])[0];
       if (path) {
         const distanceToEnd = V3.dist(
           res.party.pos,

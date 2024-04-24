@@ -42,7 +42,7 @@ export function initNetSyncSystem() {
       //   its query.
       // TODO: think about other ways of doing this
       if (res.time.step % 3 === 0) {
-        const peers = EM.filterEntities([PeerDef, OutboxDef]);
+        const peers = EM.filterEntities_uncached([PeerDef, OutboxDef]);
         for (let { peer, outbox } of peers) {
           if (res.me.host && !peer.joined) continue;
           const entities = ents.filter(

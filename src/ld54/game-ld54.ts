@@ -434,7 +434,7 @@ export async function initLD54() {
           );
         }
 
-        const pathSegs = EM.filterEntities([
+        const pathSegs = EM.filterEntities_uncached([
           SpacePathSegmentDef,
           RenderableDef,
         ]);

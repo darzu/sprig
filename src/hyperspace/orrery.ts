@@ -47,7 +47,7 @@ export function registerOrrerySystems() {
     [OrreryDef, WorldFrameDef],
     [AllMeshesDef],
     (es, res) => {
-      const stars = EM.filterEntities([
+      const stars = EM.filterEntities_uncached([
         DarkStarPropsDef,
         WorldFrameDef,
         ColorDef,

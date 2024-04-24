@@ -986,7 +986,7 @@ export class EntityManager {
 
   // TODO(@darzu): PERF. cache these responses like we do systems?
   // TODO(@darzu): PERF. evaluate all per-frame uses of this
-  public filterEntities<CS extends ComponentDef[]>(
+  public filterEntities_uncached<CS extends ComponentDef[]>(
     cs: [...CS] | null
   ): Entities<CS> {
     const res: Entities<CS> = [];
@@ -1172,7 +1172,7 @@ export class EntityManager {
     //  pre-compute entities for this system for quicker queries; these caches will be maintained
     //  by add/remove/ensure component calls
     // TODO(@darzu): ability to toggle this optimization on/off for better debugging
-    const es = this.filterEntities(cs);
+    const es = this.filterEntities_uncached(cs);
     this._systemsToEntities.set(id, [...es]);
     if (cs) {
       for (let c of cs) {
@@ -1473,7 +1473,7 @@ export class EntityManager {
       }
     }
 
-    const es = this.filterEntities(sys.cs);
+    const es = this.filterEntities_uncached(sys.cs);
     console.warn(
       `System '${name}' matches ${es.length} entities and has all resources: ${haveAllResources}.`
     );
@@ -1552,10 +1552,10 @@ export class EntityManager {
     ...cs: [...CS]
   ): Promise<EntityW<CS>> {
     return new Promise((resolve) => {
-      const ents = EM.filterEntities(cs);
+      const ents = EM.filterEntities_uncached(cs);
       if (ents.length === 1) resolve(ents[0]);
       EM.addEagerInit(cs, [], [], () => {
-        const ents = EM.filterEntities(cs);
+        const ents = EM.filterEntities_uncached(cs);
         if (!ents || ents.length !== 1)
           assert(
             false,

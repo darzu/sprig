@@ -312,7 +312,7 @@ async function setLevelLocal(levelIdx: number) {
   );
 
   // TODO(@darzu): MULTIPLAYER towers!
-  const towers = EM.filterEntities([StoneTowerDef]);
+  const towers = EM.filterEntities_uncached([StoneTowerDef]);
   for (let tower of towers) {
     towerPool.despawn(tower);
   }

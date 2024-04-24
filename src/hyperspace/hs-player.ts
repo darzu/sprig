@@ -403,7 +403,7 @@ EM.addEagerInit([PlayerHsPropsDef], [], [], () => {
 
         const parent = EM.findEntity(p.physicsParent.id, [ColliderDef]);
         if (!parent) {
-          const ship = EM.filterEntities([
+          const ship = EM.filterEntities_uncached([
             ColliderDef,
             HsShipLocalDef,
             PositionDef,
