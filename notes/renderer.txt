@@ -2326,3 +2326,6 @@ Understanding BC texture compression format:
     transformed and filtered by the pipeline. Textures that are directly mapped to the screen 
     (UI elements like icons and text) are not good choices for compression because artifacts are more noticeable."
   https://www.reedbeta.com/blog/understanding-bcn-texture-compression-formats/
+
+Render filled bezier curve w/ single triangle:
+  https://youtu.be/SO83KQuuZvg?t=1614

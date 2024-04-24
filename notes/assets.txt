@@ -292,3 +292,6 @@ pico-8 palette ?
   
 pixel composer?
   https://makham.itch.io/pixel-composer
+
+gLTF scene structure explained:
+  https://github.com/KhronosGroup/glTF-Tutorials/blob/main/gltfTutorial/gltfTutorial_002_BasicGltfStructure.md
