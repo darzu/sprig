@@ -29,8 +29,6 @@ https://ciechanow.ski/:
   const ctx = canvas.getContext("2d"); // every repaint!
 */
 
-const RESIZE_TO_WINDOW = false;
-
 // TODO(@darzu): CANVAS
 export const CanvasDef = EM.defineResource(
   "htmlCanvas", // TODO(@darzu): rename to canvas ?
@@ -49,7 +47,8 @@ export const CanvasDef = EM.defineResource(
 
     // rendering
     pixelRatio: number;
-    forceWindowResize: () => void;
+    forceWindowResize: () => void; // TODO(@darzu): RENAME: forceUpdateCanvasSize
+    resizeToWindow: boolean;
   }>()
 );
 export type Canvas = Resource<typeof CanvasDef>;
@@ -82,6 +81,10 @@ EM.addLazyInit([], [CanvasDef], () => {
   let _activeCanvas = canvases[0];
   let _activeCanvasName = canvasNames[0];
 
+  // heuristic: when there's only one canvas present, assume it's meant to be full screen
+  // TODO(@darzu): allow change canvas to/from window size mid-game
+  const resizeToWindow = canvasNames.length === 1;
+
   const comp = EM.addResource(CanvasDef, {
     canvasNames,
     getCanvasHtml: () => _activeCanvas,
@@ -95,6 +98,8 @@ EM.addLazyInit([], [CanvasDef], () => {
     hasMouseLock: () => document.pointerLockElement === _activeCanvas,
     pixelRatio: 1,
     forceWindowResize: () => {},
+
+    resizeToWindow,
   });
 
   setCanvas(_activeCanvasName);
@@ -152,18 +157,24 @@ EM.addLazyInit([], [CanvasDef], () => {
     setActiveCanvasSize(window.innerWidth, window.innerHeight);
   }
 
-  if (RESIZE_TO_WINDOW) {
-    window.onresize = function () {
+  window.onresize = function () {
+    if (comp.resizeToWindow) {
       resizeCanvasToWindow();
-    };
+    }
+  };
+
+  if (comp.resizeToWindow) {
     resizeCanvasToWindow();
-    comp.forceWindowResize = resizeCanvasToWindow;
-  } else {
-    // TODO(@darzu): CANVAS. HACK.
-    comp.forceWindowResize = () => {
-      setActiveCanvasSize(_activeCanvas.width, _activeCanvas.height);
-    };
   }
+
+  // TODO(@darzu): CANVAS. HACK.
+  comp.forceWindowResize = () => {
+    if (comp.resizeToWindow) {
+      resizeCanvasToWindow();
+    } else {
+      setActiveCanvasSize(_activeCanvas.width, _activeCanvas.height);
+    }
+  };
 
   // TODO(@darzu): CANVAS. mouse lock stuff update on canvas switch
 
