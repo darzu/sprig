@@ -42,6 +42,7 @@ import { initPainterlyGame } from "./graybox/game-painterly.js";
 import { initCardsGame } from "./gui/game-cards.js";
 import { initGameParticles } from "./graybox/game-particles.js";
 import { initLd55 } from "./ld55/game-ld55.js";
+import { initMultiSceneGame } from "./graybox/game-multi-scene.js";
 
 // dbgLogMilestone("start of main.ts");
 
@@ -69,6 +70,7 @@ const ALL_GAMES = [
   "painterly",
   "particles",
   "ld55",
+  "multi-scene",
 ] as const;
 
 // TODO(@darzu): current game should probably be saved in local storage, not hard-coded. (Default can be hard-coded)
@@ -81,8 +83,9 @@ const GAME: (typeof ALL_GAMES)[number] = (
   // "graybox-starter"
   // "font"
   // "cards"
-  "particles"
+  // "particles"
   // "ld55"
+  "multi-scene"
 );
 
 // Run simulation with a fixed timestep @ 60hz
@@ -154,6 +157,7 @@ async function startGame(localPeerName: string, host: string | null) {
   else if (GAME === "painterly") initPainterlyGame();
   else if (GAME === "particles") initGameParticles();
   else if (GAME === "ld55") initLd55();
+  else if (GAME === "multi-scene") initMultiSceneGame();
   else never(GAME, "TODO game");
 
   let previous_frame_time = start_of_time;
