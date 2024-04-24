@@ -1,4 +1,3 @@
-import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { assert } from "../utils/util.js";
 import {
   CY,
@@ -6,12 +5,9 @@ import {
   CyPipelinePtr,
   CyResourcePtr,
   CyTexturePtr,
-  isRenderPipelinePtr,
   PtrKind,
 } from "./gpu-registry.js";
 import { MeshHandle, MeshPool } from "./mesh-pool.js";
-import { Mesh } from "../meshes/mesh.js";
-import { Renderer } from "./renderer-ecs.js";
 import {
   CyRenderPipeline,
   CyCompPipeline,
@@ -21,13 +17,7 @@ import {
   CyArray,
   PtrKindToResourceType,
 } from "./data-webgpu.js";
-import {
-  VertexStruct,
-  MeshUniformStruct,
-  meshPoolPtr,
-  sceneBufPtr,
-  MeshUniformTS,
-} from "./pipelines/std-scene.js";
+import { meshPoolPtr, sceneBufPtr } from "./pipelines/std-scene.js";
 import {
   bundleRenderPipelines,
   createCyResources,
@@ -38,17 +28,11 @@ import {
 import { SceneStruct, SceneTS } from "./pipelines/std-scene.js";
 import { ShaderSet } from "./shader-loader.js";
 import { CyStructDesc, texTypeToBytes } from "./gpu-struct.js";
-import { align } from "../utils/math.js";
 import { pointLightsPtr, PointLightStruct, PointLightTS } from "./lights.js";
 import {
   gerstnerWavesPtr,
   GerstnerWaveStruct,
   GerstnerWaveTS,
-  OceanMeshHandle,
-  oceanPoolPtr,
-  OceanUniStruct,
-  OceanUniTS,
-  OceanVertStruct,
 } from "./pipelines/std-ocean.js";
 import { GPUBufferUsage } from "./webgpu-hacks.js";
 import {
@@ -58,11 +42,7 @@ import {
   VERBOSE_LOG,
 } from "../flags.js";
 import { dbgLogOnce } from "../utils/util.js";
-import {
-  GrassVertStruct,
-  GrassUniStruct,
-  grassPoolPtr,
-} from "../grass/std-grass.js";
+import { AbstractCanvas } from "./renderer-ecs.js";
 
 // TODO(@darzu): Try using drawIndirect !!
 //    https://gpuweb.github.io/gpuweb/#dom-gpurendercommandsmixin-drawindirect
@@ -74,10 +54,9 @@ import {
 const MAX_PIPELINES = 64;
 
 export function createRenderer(
-  canvas: HTMLCanvasElement,
   device: GPUDevice,
-  context: GPUCanvasContext,
-  shaders: ShaderSet
+  shaders: ShaderSet,
+  canvas: AbstractCanvas
 ) {
   if (LOG_WEBGPU_AVAILABLE_FEATURES) {
     console.log("Available WebGPU features:");
@@ -192,11 +171,10 @@ export function createRenderer(
   let lastHeight = 0;
 
   function checkCanvasResize(): boolean {
-    const newWidth = canvas.width;
-    const newHeight = canvas.height;
+    const [newWidth, newHeight] = canvas.getCanvasSize();
     if (lastWidth === newWidth && lastHeight === newHeight) return false;
 
-    onCanvasResizeAll(device, context, resources, [newWidth, newHeight]);
+    onCanvasResizeAll(resources, [newWidth, newHeight]);
 
     lastWidth = newWidth;
     lastHeight = newHeight;
@@ -336,7 +314,7 @@ export function createRenderer(
     const commandEncoder = device.createCommandEncoder();
 
     const bundleRenderer = startBundleRenderer(
-      context,
+      canvas.getCanvasTexture,
       commandEncoder,
       resources
     );

@@ -1,21 +1,56 @@
 import { Component, EM, Resource } from "../ecs/entity-manager.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { VERBOSE_LOG } from "../flags.js";
+import { T, assert } from "../utils/util-no-import.js";
 import { InputsDef } from "../input/inputs.js";
+import { displayWebGPUError } from "./renderer-ecs.js";
+import { toMap } from "../utils/util.js";
 
+/*
+canvas users:
+
+  mouse:
+    hasMouseLock
+    unlock mouse
+    canvas get cursor position
+    mouse move, createInputsReader(canvas)
+    unlockMouse / shouldLockMouseOnClick
+  text:
+    upperText =
+  rendering:
+    active canvas width/height
+    set pixelRatio
+    canvas.getContext("webgpu")
+    (!!!) createRenderer(canvas, context) 
+
+TODO: canvas.getBoundingClientRect
+
+https://ciechanow.ski/:
+  const ctx = canvas.getContext("2d"); // every repaint!
+*/
+
+const RESIZE_TO_WINDOW = false;
+
+// TODO(@darzu): CANVAS
 export const CanvasDef = EM.defineResource(
-  "htmlCanvas",
-  (canvas: HTMLCanvasElement) => {
-    return {
-      canvas,
-      shouldLockMouseOnClick: true,
-      unlockMouse: () => {},
-      _hasFirstInteractionDef: false,
-      hasMouseLock: () => document.pointerLockElement === canvas,
-      pixelRatio: 1,
-      forceWindowResize: () => {},
-    };
-  }
+  "htmlCanvas", // TODO(@darzu): rename to canvas ?
+  T<{
+    canvasNames: string[];
+    setCanvas: (name: string) => void;
+    getCanvasHtml: () => HTMLCanvasElement;
+    getCanvasName: () => string;
+    onCanvasChange: () => void; // TODO(@darzu): allow multiple?
+
+    // mouse
+    shouldLockMouseOnClick: boolean;
+    unlockMouse: () => void;
+    _hasFirstInteractionDef: boolean;
+    hasMouseLock: () => boolean;
+
+    // rendering
+    pixelRatio: number;
+    forceWindowResize: () => void;
+  }>()
 );
 export type Canvas = Resource<typeof CanvasDef>;
 
@@ -27,13 +62,66 @@ export const HasFirstInteractionDef = EM.defineResource(
 let _imgPixelatedTimeoutHandle = 0;
 
 EM.addLazyInit([], [CanvasDef], () => {
-  const canvasOpt = document.getElementById("sample-canvas");
-  if (!canvasOpt) throw `can't find HTML canvas to attach to`;
-  const canvas = canvasOpt as HTMLCanvasElement;
+  // TODO(@darzu): CANVAS multi canvases
 
-  const comp = EM.addResource(CanvasDef, canvas);
+  const canvases = [...document.getElementsByTagName("canvas")];
 
-  comp.pixelRatio = 1;
+  assert(canvases.length, `No <canvas>!`);
+
+  const canvasNames = canvases.map((e) => {
+    assert(e.id, `canvas missing "id" tag`);
+    return e.id;
+  });
+
+  const canvasesByName = toMap(
+    canvasNames,
+    (n) => n,
+    (_, i) => canvases[i]
+  );
+
+  let _activeCanvas = canvases[0];
+  let _activeCanvasName = canvasNames[0];
+
+  const comp = EM.addResource(CanvasDef, {
+    canvasNames,
+    getCanvasHtml: () => _activeCanvas,
+    setCanvas,
+    getCanvasName: () => _activeCanvasName,
+    onCanvasChange: () => {},
+
+    shouldLockMouseOnClick: true,
+    unlockMouse: () => {},
+    _hasFirstInteractionDef: false,
+    hasMouseLock: () => document.pointerLockElement === _activeCanvas,
+    pixelRatio: 1,
+    forceWindowResize: () => {},
+  });
+
+  setCanvas(_activeCanvasName);
+
+  function setCanvas(n: string) {
+    console.log(`setting canvas to ${n}`);
+
+    const el = canvasesByName.get(n);
+    assert(el, `Unknown canvas name: ${n}`);
+
+    _activeCanvas = el;
+    _activeCanvasName = n;
+
+    // This tells Chrome that the canvas should be pixelated instead of blurred.
+    //    this looks better in lower resolution games and gives us full control over
+    //    resolution and blur.
+    // HACK: for some odd reason, setting this on a timeout is the only way I can get
+    //    Chrome to accept this property. Otherwise it'll only apply after the canvas
+    //    is resized by the user.
+    //    (Last tested on Version 94.0.4604.0 (Official Build) canary (arm64))
+    clearTimeout(_imgPixelatedTimeoutHandle);
+    _imgPixelatedTimeoutHandle = setTimeout(() => {
+      _activeCanvas.style.imageRendering = `pixelated`;
+    }, 50);
+
+    comp.onCanvasChange();
+  }
 
   if (VERBOSE_LOG)
     console.log(
@@ -51,32 +139,33 @@ EM.addLazyInit([], [CanvasDef], () => {
     ).toFixed(1)}MP`
   );
 
-  function onWindowResize() {
+  function setActiveCanvasSize(width: number, height: number) {
+    _activeCanvas.width = width * comp.pixelRatio;
+    _activeCanvas.style.width = `${width}px`;
+    _activeCanvas.height = height * comp.pixelRatio;
+    _activeCanvas.style.height = `${height}px`;
+  }
+
+  function resizeCanvasToWindow() {
     // TODO(@darzu): should this be done differently?
     //  https://web.dev/device-pixel-content-box/
-    canvas.width = window.innerWidth * comp.pixelRatio;
-    canvas.style.width = `${window.innerWidth}px`;
-    canvas.height = window.innerHeight * comp.pixelRatio;
-    canvas.style.height = `${window.innerHeight}px`;
+    setActiveCanvasSize(window.innerWidth, window.innerHeight);
   }
-  window.onresize = function () {
-    onWindowResize();
-  };
-  onWindowResize();
 
-  comp.forceWindowResize = onWindowResize;
+  if (RESIZE_TO_WINDOW) {
+    window.onresize = function () {
+      resizeCanvasToWindow();
+    };
+    resizeCanvasToWindow();
+    comp.forceWindowResize = resizeCanvasToWindow;
+  } else {
+    // TODO(@darzu): CANVAS. HACK.
+    comp.forceWindowResize = () => {
+      setActiveCanvasSize(_activeCanvas.width, _activeCanvas.height);
+    };
+  }
 
-  // This tells Chrome that the canvas should be pixelated instead of blurred.
-  //    this looks better in lower resolution games and gives us full control over
-  //    resolution and blur.
-  // HACK: for some odd reason, setting this on a timeout is the only way I can get
-  //    Chrome to accept this property. Otherwise it'll only apply after the canvas
-  //    is resized by the user.
-  //    (Last tested on Version 94.0.4604.0 (Official Build) canary (arm64))
-  clearTimeout(_imgPixelatedTimeoutHandle);
-  _imgPixelatedTimeoutHandle = setTimeout(() => {
-    canvas.style.imageRendering = `pixelated`;
-  }, 50);
+  // TODO(@darzu): CANVAS. mouse lock stuff update on canvas switch
 
   comp.unlockMouse = () => {
     comp.shouldLockMouseOnClick = false;
@@ -90,11 +179,14 @@ EM.addLazyInit([], [CanvasDef], () => {
       comp._hasFirstInteractionDef = true;
       EM.addResource(HasFirstInteractionDef);
     }
-    if (comp.shouldLockMouseOnClick && document.pointerLockElement !== canvas) {
-      canvas.requestPointerLock();
+    if (
+      comp.shouldLockMouseOnClick &&
+      document.pointerLockElement !== _activeCanvas
+    ) {
+      _activeCanvas.requestPointerLock();
     }
   }
-  canvas.addEventListener("click", tryMouseLock);
+  _activeCanvas.addEventListener("click", tryMouseLock);
 
   // TODO(@darzu): if we need to unlock manually, do this:
   // EM.addSystem(

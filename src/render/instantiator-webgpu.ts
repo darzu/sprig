@@ -1030,7 +1030,7 @@ export interface BundleRenderer {
   render: (pipeline: CyRenderPipeline, bundle: GPURenderBundle) => void;
 }
 export function startBundleRenderer(
-  context: GPUCanvasContext,
+  getCanvasTexture: () => GPUTexture,
   commandEncoder: GPUCommandEncoder,
   resources: CyResources
 ): BundleRenderer {
@@ -1056,7 +1056,8 @@ export function startBundleRenderer(
       const defaultColor = o.defaultColor ?? black4;
       assert(!tex.ptr.count, `TODO: impl array texture for render()`);
       let viewOverride: GPUTextureView | undefined = undefined;
-      const canvasTex = context.getCurrentTexture();
+      // const canvasTex = context.getCurrentTexture();
+      const canvasTex = getCanvasTexture();
       if (_lastCanvasTexture !== canvasTex) {
         _lastCanvasTexture = canvasTex;
         _lastCanvasView = undefined;
@@ -1156,21 +1157,9 @@ export function doCompute(
 }
 
 export function onCanvasResizeAll(
-  device: GPUDevice,
-  context: GPUCanvasContext,
   resources: CyResources,
   canvasSize: [number, number]
 ) {
-  // TODO(@darzu): this call shouldn't be necessary anymore
-  context.configure({
-    device: device,
-    format: canvasFormat, // presentationFormat
-    // TODO(@darzu): support transparency?
-    // alphaMode: "premultiplied",
-    alphaMode: "opaque",
-    colorSpace: "srgb",
-  });
-
   for (let tex of [
     ...Object.values(resources.kindToNameToRes.texture),
     ...Object.values(resources.kindToNameToRes.depthTexture),

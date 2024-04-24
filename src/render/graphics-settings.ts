@@ -19,16 +19,19 @@ EM.addEagerInit([], [RendererDef, CanvasDef], [GraphicsSettingsDef], (res) => {
   // graphics settings
   const graphicsCheckbox = document.getElementById(
     "graphics-check"
-  ) as HTMLInputElement;
+  ) as HTMLInputElement | null;
 
   if (!graphicsCheckbox) {
-    console.error("No graphics checkbox!");
+    console.warn("No graphics checkbox!");
+
+    changeGraphicsSetting(true);
+
     return;
   }
 
   function changeGraphicsSetting(val: boolean) {
     // update checkbox
-    graphicsCheckbox.checked = val;
+    if (graphicsCheckbox) graphicsCheckbox.checked = val;
     // update internal state
     settings.useHighGraphics = val;
     // update renderer

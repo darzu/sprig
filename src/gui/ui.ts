@@ -28,10 +28,10 @@ In-engine text rendering:
 export const TextDef = EM.defineResource(
   "text",
   (
-    upperDiv: HTMLDivElement,
-    debugDiv: HTMLDivElement,
-    lowerDiv: HTMLDivElement,
-    helpDiv: HTMLDivElement
+    upperDiv?: HTMLDivElement,
+    debugDiv?: HTMLDivElement,
+    lowerDiv?: HTMLDivElement,
+    helpDiv?: HTMLDivElement
   ) => {
     return {
       upperText: "",
@@ -47,10 +47,18 @@ export const TextDef = EM.defineResource(
 );
 
 export function initHtmlUI() {
-  const upperDiv = document.getElementById("title-div") as HTMLDivElement;
-  const debugDiv = document.getElementById("debug-div") as HTMLDivElement;
-  const lowerDiv = document.getElementById("lower-div") as HTMLDivElement;
-  const helpDiv = document.getElementById("help-div") as HTMLDivElement;
+  const upperDiv = (document.getElementById("title-div") ?? undefined) as
+    | HTMLDivElement
+    | undefined;
+  const debugDiv = (document.getElementById("debug-div") ?? undefined) as
+    | HTMLDivElement
+    | undefined;
+  const lowerDiv = (document.getElementById("lower-div") ?? undefined) as
+    | HTMLDivElement
+    | undefined;
+  const helpDiv = (document.getElementById("help-div") ?? undefined) as
+    | HTMLDivElement
+    | undefined;
 
   EM.addResource(TextDef, upperDiv, debugDiv, lowerDiv, helpDiv);
 
@@ -58,9 +66,13 @@ export function initHtmlUI() {
     // PERF NOTE: using ".innerText =" creates a new DOM element each frame, whereas
     //    using ".firstChild.nodeValue =" reuses the DOM element. Unfortunately this
     //    means we'll need to do more work to get line breaks.
-    if (res.text.upperText) upperDiv.firstChild!.nodeValue = res.text.upperText;
-    if (res.text.debugText) debugDiv.firstChild!.nodeValue = res.text.debugText;
-    if (res.text.lowerText) lowerDiv.firstChild!.nodeValue = res.text.lowerText;
-    if (res.text.helpText) helpDiv.firstChild!.nodeValue = res.text.helpText;
+    if (res.text.upperText && upperDiv)
+      upperDiv.firstChild!.nodeValue = res.text.upperText;
+    if (res.text.debugText && debugDiv)
+      debugDiv.firstChild!.nodeValue = res.text.debugText;
+    if (res.text.lowerText && lowerDiv)
+      lowerDiv.firstChild!.nodeValue = res.text.lowerText;
+    if (res.text.helpText && helpDiv)
+      helpDiv.firstChild!.nodeValue = res.text.helpText;
   });
 }

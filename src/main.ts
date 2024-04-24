@@ -42,12 +42,12 @@ import { initPainterlyGame } from "./graybox/game-painterly.js";
 import { initCardsGame } from "./gui/game-cards.js";
 import { initGameParticles } from "./graybox/game-particles.js";
 import { initLd55 } from "./ld55/game-ld55.js";
+import { initMultiSceneGame } from "./graybox/game-multi-scene.js";
 
 // dbgLogMilestone("start of main.ts");
 
 export const MAX_MESHES = 20000;
 export const MAX_VERTICES = 21844;
-const AUTOSTART = true;
 
 const ALL_GAMES = [
   "gjk",
@@ -70,6 +70,7 @@ const ALL_GAMES = [
   "painterly",
   "particles",
   "ld55",
+  "multi-scene",
 ] as const;
 
 // TODO(@darzu): current game should probably be saved in local storage, not hard-coded. (Default can be hard-coded)
@@ -81,9 +82,10 @@ const GAME: (typeof ALL_GAMES)[number] = (
   // "gjk"
   // "graybox-starter"
   // "font"
-  "cards"
+  // "cards"
   // "particles"
   // "ld55"
+  "multi-scene"
 );
 
 // Run simulation with a fixed timestep @ 60hz
@@ -155,6 +157,7 @@ async function startGame(localPeerName: string, host: string | null) {
   else if (GAME === "painterly") initPainterlyGame();
   else if (GAME === "particles") initGameParticles();
   else if (GAME === "ld55") initLd55();
+  else if (GAME === "multi-scene") initMultiSceneGame();
   else never(GAME, "TODO game");
 
   let previous_frame_time = start_of_time;
@@ -218,25 +221,7 @@ async function main() {
   // const peerName = "myPeerName";
   const peerName = !!urlServerId ? "mySprigClient" : "mySprigHost";
 
-  let controls = document.getElementById("server-controls") as HTMLDivElement;
-  let serverStartButton = document.getElementById(
-    "server-start"
-  ) as HTMLButtonElement;
-  let connectButton = document.getElementById("connect") as HTMLButtonElement;
-  let serverIdInput = document.getElementById("server-id") as HTMLInputElement;
-  if (ENABLE_NET && !AUTOSTART && !urlServerId) {
-    serverStartButton.onclick = () => {
-      startGame(peerName, null);
-      controls.hidden = true;
-    };
-    connectButton.onclick = () => {
-      startGame(peerName, serverIdInput.value);
-      controls.hidden = true;
-    };
-  } else {
-    startGame(peerName, urlServerId);
-    controls.hidden = true;
-  }
+  startGame(peerName, urlServerId);
 }
 
 // TODO(@darzu): move elsewhere

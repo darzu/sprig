@@ -10,6 +10,7 @@ import {
   PhysicsParentDef,
 } from "../physics/transform.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
+import { T } from "../utils/util-no-import.js";
 import { Intersect, isArray } from "../utils/util.js";
 
 // TODO(@darzu): PERF. since w/ objects we're constructing entities w/ batch components
@@ -492,10 +493,6 @@ function _mixinObj<D extends _ObjDef, A extends ObjArgs<D["opts"]>>(
       EM.set(cEnt, PhysicsParentDef, e.id);
     }
   }
-}
-
-export function T<N extends {}>(): (p: N) => void {
-  return (p: N) => {};
 }
 
 // merge object definitions so it's easier to type

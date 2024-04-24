@@ -9,6 +9,7 @@
       --background-clr: oklch(25% 0.01 145);
       --demo-background-clr: oklch(from var(--background-clr) calc(l + 0.1) c h);
       --text-clr: oklch(95% 0.01 145);
+      --hover-background-clr: oklch(from var(--background-clr) calc(l - 0.1) c h);
     }
 
     body {
@@ -74,6 +75,10 @@
       flex-direction: row;
     }
 
+    .demo-and-blurb:hover {
+      background-color: var(--hover-background-clr);
+    }
+
     .demo-and-blurb:nth-child(even) {
       flex-direction: row-reverse;
     }
@@ -97,7 +102,8 @@
         </div>
       </div>
       <div class="demo">
-        <img src="/assets/ld53_maps/every-which-way.png" class="demo-img" width="256" height="256">
+        <!-- <img src="/assets/ld53_maps/every-which-way.png" class="demo-img" width="256" height="256"> -->
+        <canvas id="canvas-1" width="256" height="256"></canvas>
       </div>
     </div>
     <div class="demo-and-blurb">
@@ -111,7 +117,7 @@
         </div>
       </div>
       <div class="demo">
-        <img src="/assets/ld53_maps/surprise.png" class="demo-img" width="256" height="256">
+        <canvas id="canvas-2" width="256" height="256"></canvas>
       </div>
     </div>
     <div class="demo-and-blurb">
@@ -125,7 +131,7 @@
         </div>
       </div>
       <div class="demo">
-        <img src="/assets/ld53_maps/every-which-way.png" class="demo-img" width="256" height="256">
+        <canvas id="canvas-3" width="256" height="256"></canvas>
       </div>
     </div>
     <div class="demo-and-blurb">
@@ -139,13 +145,12 @@
         </div>
       </div>
       <div class="demo">
-        <img src="/assets/ld53_maps/surprise.png" class="demo-img" width="256" height="256">
+        <canvas id="canvas-4" width="256" height="256"></canvas>
       </div>
     </div>
   </div>
 
-
-  <!-- <script src="./main.js" type="module"></script> -->
+  <script src="./main.js" type="module"></script>
 </body>
 
 </html>

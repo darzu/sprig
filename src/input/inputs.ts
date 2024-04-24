@@ -142,6 +142,7 @@ function createInputsReader(canvas: Canvas): () => Inputs {
   window.addEventListener(
     "mousemove",
     (ev) => {
+      const html = canvas.getCanvasHtml();
       accumulated_mouseMov[0] += ev.movementX;
       accumulated_mouseMov[1] += ev.movementY;
       if (!canvas.hasMouseLock()) {
@@ -149,9 +150,9 @@ function createInputsReader(canvas: Canvas): () => Inputs {
         lastMouse[1] = ev.clientY;
       } else {
         lastMouse[0] += ev.movementX;
-        lastMouse[0] = clamp(lastMouse[0], 0, canvas.canvas.clientWidth);
+        lastMouse[0] = clamp(lastMouse[0], 0, html.clientWidth);
         lastMouse[1] += ev.movementY;
-        lastMouse[1] = clamp(lastMouse[1], 0, canvas.canvas.clientHeight);
+        lastMouse[1] = clamp(lastMouse[1], 0, html.clientHeight);
       }
     },
     false

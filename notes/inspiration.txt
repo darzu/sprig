@@ -313,3 +313,9 @@ Mod to massively boost performance in Dyson Sphere Program by sampling and repla
 
 https://executable.graphics
   demo scene curated art
+
+https://www.littleworkshop.fr/projects/equinox/
+  web game demo about escaping a spaceship
+
+Dafny
+  https://github.com/dafny-lang/dafny

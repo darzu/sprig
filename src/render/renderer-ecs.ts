@@ -16,7 +16,7 @@ import {
   SmoothedWorldFrameDef,
 } from "./motion-smoothing.js";
 import { DeadDef, DeletedDef } from "../ecs/delete.js";
-import { meshPoolPtr } from "./pipelines/std-scene.js";
+import { canvasFormat, meshPoolPtr } from "./pipelines/std-scene.js";
 import { CanvasDef } from "./canvas.js";
 import { createRenderer } from "./renderer-webgpu.js";
 import { CyMeshPoolPtr, CyPipelinePtr } from "./gpu-registry.js";
@@ -580,6 +580,13 @@ export type Renderer = ReturnType<typeof createRenderer>;
 //   stats(): Promise<Map<string, bigint>>;
 // }
 
+// TODO(@darzu): CANVAS
+// TODO(@darzu): RENAME GPUCanvas ?
+export interface AbstractCanvas {
+  getCanvasTexture: () => GPUTexture;
+  getCanvasSize: () => readonly [number, number];
+}
+
 EM.addLazyInit(
   [CanvasDef, ShadersDef],
   [RendererDef],
@@ -604,18 +611,65 @@ EM.addLazyInit(
       requiredFeatures: supportsTimestamp ? ["timestamp-query"] : [],
     });
 
-    const context = htmlCanvas.canvas.getContext("webgpu");
-    if (!context) {
-      displayWebGPUError();
-      throw new Error("Unable to get webgpu context");
+    // TODO(@darzu): CANVAS
+    let _activeCanvas: HTMLCanvasElement;
+    let _activeCanvasName: string;
+    let _activeContext: GPUCanvasContext;
+
+    const canvasToCtx = new Map<string, GPUCanvasContext>();
+
+    function updateActiveCanvas() {
+      _activeCanvas = htmlCanvas.getCanvasHtml();
+      _activeCanvasName = htmlCanvas.getCanvasName();
+
+      let ctxOpt = canvasToCtx.get(_activeCanvasName);
+      if (!ctxOpt) {
+        ctxOpt = _activeCanvas.getContext("webgpu") ?? undefined;
+        if (!ctxOpt) {
+          displayWebGPUError();
+          throw new Error("Unable to get webgpu context");
+        }
+        initCanvasContext(ctxOpt);
+
+        canvasToCtx.set(_activeCanvasName, ctxOpt);
+      }
+      _activeContext = ctxOpt;
     }
 
-    renderer = createRenderer(htmlCanvas.canvas, device, context, shaders);
+    function initCanvasContext(ctx: GPUCanvasContext) {
+      // TODO(@darzu): CANVAS
+      ctx.configure({
+        device: device,
+        format: canvasFormat, // presentationFormat
+        // TODO(@darzu): support transparency?
+        // alphaMode: "premultiplied",
+        alphaMode: "opaque",
+        colorSpace: "srgb",
+      });
+    }
+
+    updateActiveCanvas();
+
+    htmlCanvas.onCanvasChange = updateActiveCanvas; // TODO(@darzu): register instead
+
+    const getCanvasTexture = () => _activeContext.getCurrentTexture();
+
+    // TODO(@darzu): CANVAS
+    const getCanvasSize = () =>
+      [_activeCanvas.width, _activeCanvas.height] as const;
+
+    const absCanvas: AbstractCanvas = {
+      getCanvasSize,
+      getCanvasTexture,
+    };
+
+    renderer = createRenderer(device, shaders, absCanvas);
 
     EM.addResource(RendererDef, renderer, []);
   }
 );
-function displayWebGPUError() {
+
+export function displayWebGPUError() {
   const style = `font-size: 48px;
       color: green;
       margin: 24px;
