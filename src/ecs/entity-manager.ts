@@ -18,81 +18,10 @@ import { EMSystems } from "./em-systems.js";
 //  colocated in arrays; and maybe introduce "arch-types" for commonly grouped
 //  components and "worlds" to section off entities.
 
-/*
-Components need/can support:
-  EM.add (or first EM.set)
-  EM.update (or EM.addOrUpdate, subsequent EM.set; skippable if we're not worried about efficiency!)
-  for (de)serialization:
-    a. (efficient) default constructor + deserialize-as-update
-    b. (efficient) deserialize-as-new + deserialize-as-update
-    c. (slow) deserialize-as-new
-    d. (slow) Cy-style auto-deserialize (TODO: could be fast w/ code-gen)
-    
-TODO(@darzu): impl this \/
-Component feautres:
-  (expressed in type and w/ boolean)
-  R: type (default constructor takes whole type) -(gives)-> EM.add
-  O: custom constructor -(gives)-> CArgs-based EM.add
-  O: update -(gives)-> EM.update / EM.addOrUpdate
-  O: serialize
-  O: deserialize-as-new -(gives)-> deserialzie like EM.add
-  O: deserialize-as-update -(gives)-> deserialize like EM.update
-  O: default constructor -(gives)-> skip deserialize-as-new
-  O: type witness can be using Cy shader types for free serializers
-        can include warning when used >X times per frame
-  Common library of component types like vec3, mat4, etc.
-
-Maybe change syntax: (i think this has problems w/ type assertions)
-  "myEnt.add/set/update(PositionDef, [1,2,3])" 
-  "EM.add/set/update(myEnt, PositionDef, [1,2,3])"
-
-Benefits of having a default constructor or witness:
-  potentially auto-serializer?
-  allows you to "alloc". Maybe helps w/ efficient layout? Sub for sizeof() ?
-
-Maybe there should be two component types: Direct and Object.
-  Direct for things like vectors, numbers, Map, directly as the component.
-  Object for all {}-y, json-y objects w/ multiple proprties
-  Objects could have default update w/ Object.assign + Partial<T> ?
-
-In Bevy, you don't get access to myEnt.myComp, instead you're 
-  given (myComp1, myComp2, ...) tuple in systems
-
-Bevy ECS nice-to-have features:
-  Added/Changed/Removed for components queries
-*/
-
 // TODO(@darzu): Instead of having one big EM class,
 //    we should seperate out all seperable concerns,
 //    and then just | them together as the top-level
 //    thing. Maybe even use the "$" symbol?! (probs not)
-
-// TODO(@darzu): PERF TRACKING. Thinking:
-/*
-goal: understand what's happening between 0 and first-playable
-
-could use "milestone" event trackers
-
-perhaps we have frame phases:
-executing systems,
-executing inits,
-waiting for next draw
-
-attribute system time to systems
-  are systems every async?
-
-perhaps entity promises could check to see if they're being created in System, Init, or Other
-  What would "Other" be?
-And then they'd resume themselves in the appropriate system's scheduled time?
-
-How do we track time on vanilla init functions?
-
-I could always resume entity promises in the same phase as what requested them so
-either init time or GAME_WORLD etc
-
-  if we did that i think we could accurately measure self-time for systems
-  but that might not capture other time like file downloading
-*/
 
 // TODO(@darzu): use defineProperty, Object.preventExtensions(), and such to have more robust entities?
 
