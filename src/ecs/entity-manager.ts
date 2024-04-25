@@ -380,17 +380,10 @@ interface EMSystems {
   allSystemsByName: Map<string, SystemReg>;
   sysStats: Record<string, SystemStats>;
 
-  // TODO(@darzu): don't expose query cache like this?
-  _systemsToEntities: Map<number, Entity[]>;
-  _entitiesToSystems: Map<number, number[]>;
-  _systemsToComponents: Map<number, string[]>;
-  _componentToSystems: Map<string, number[]>;
-
+  _notifyNewEntity(e: Entity): void;
+  _notifyAddComponent(e: Entity, def: ComponentDef): void;
   _notifyRemoveComponent(e: Entity, def: ComponentDef): void;
 
-  getCurrentRunningSystem: () => SystemReg | undefined;
-
-  dbgGetSystemsForEntity(id: number): SystemReg[];
   addSystem<CS extends ComponentDef[], RS extends ResourceDef[]>(
     name: string,
     phase: Phase,
@@ -406,7 +399,10 @@ interface EMSystems {
     callback: SystemFn<CS, RS>
   ): PublicSystemReg;
   hasSystem(name: string): boolean;
+
   callSystems(): void;
+
+  dbgGetSystemsForEntity(id: number): SystemReg[];
 }
 
 function createEMSystems(): EMSystems {
@@ -697,6 +693,38 @@ function createEMSystems(): EMSystems {
     );
   }
 
+  function _notifyNewEntity(e: Entity) {
+    _entitiesToSystems.set(e.id, []);
+  }
+
+  function _notifyAddComponent(e: Entity, def: ComponentDef) {
+    const id = e.id;
+
+    // update query caches
+    let _beforeQueryCache = performance.now();
+    const eSystems = _entitiesToSystems.get(e.id)!;
+    if (isDeadC(def)) {
+      // remove from every current system
+      eSystems.forEach((s) => {
+        const es = _systemsToEntities.get(s)!;
+        // TODO(@darzu): perf. sorted removal
+        const indx = es.findIndex((v) => v.id === id);
+        if (indx >= 0) es.splice(indx, 1);
+      });
+      eSystems.length = 0;
+    }
+    const systems = _componentToSystems.get(def.name);
+    for (let sysId of systems ?? []) {
+      const allNeededCs = _systemsToComponents.get(sysId);
+      if (allNeededCs?.every((n) => n in e)) {
+        // TODO(@darzu): perf. sorted insert
+        _systemsToEntities.get(sysId)!.push(e);
+        eSystems.push(sysId);
+      }
+    }
+    _em.emStats.queryTime += performance.now() - _beforeQueryCache;
+  }
+
   function _notifyRemoveComponent(e: Entity, def: ComponentDef): void {
     const id = e.id;
 
@@ -738,19 +766,16 @@ function createEMSystems(): EMSystems {
   const result: EMSystems = {
     sysStats,
     allSystemsByName,
-    dbgGetSystemsForEntity,
+
     addSystem,
     hasSystem,
     callSystems,
 
-    getCurrentRunningSystem: () => _currentRunningSystem,
+    dbgGetSystemsForEntity,
 
+    _notifyNewEntity,
     _notifyRemoveComponent,
-
-    _systemsToEntities,
-    _entitiesToSystems,
-    _systemsToComponents,
-    _componentToSystems,
+    _notifyAddComponent,
   };
 
   return result;
@@ -1003,7 +1028,8 @@ function createEntityManager(): _EntityManager {
         `We're halfway through our local entity ID space! Physics assumes IDs are < 2^16`
       );
     entities.set(e.id, e);
-    _systems._entitiesToSystems.set(e.id, []);
+
+    _systems._notifyNewEntity(e);
 
     // if (e.id === 10052) throw new Error("Created here!");
 
@@ -1020,7 +1046,9 @@ function createEntityManager(): _EntityManager {
     const e = Object.create(null); // no prototype
     e.id = id;
     entities.set(e.id, e);
-    _systems._entitiesToSystems.set(e.id, []);
+
+    _systems._notifyNewEntity(e);
+
     return e;
   }
 
@@ -1059,32 +1087,9 @@ function createEntityManager(): _EntityManager {
 
     (e as any)[def.name] = c;
 
-    // update query caches
-    {
-      let _beforeQueryCache = performance.now();
-      seenComponents.add(def.id);
-      const eSystems = _systems._entitiesToSystems.get(e.id)!;
-      if (isDeadC(def)) {
-        // remove from every current system
-        eSystems.forEach((s) => {
-          const es = _systems._systemsToEntities.get(s)!;
-          // TODO(@darzu): perf. sorted removal
-          const indx = es.findIndex((v) => v.id === id);
-          if (indx >= 0) es.splice(indx, 1);
-        });
-        eSystems.length = 0;
-      }
-      const systems = _systems._componentToSystems.get(def.name);
-      for (let sysId of systems ?? []) {
-        const allNeededCs = _systems._systemsToComponents.get(sysId);
-        if (allNeededCs?.every((n) => n in e)) {
-          // TODO(@darzu): perf. sorted insert
-          _systems._systemsToEntities.get(sysId)!.push(e);
-          eSystems.push(sysId);
-        }
-      }
-      emStats.queryTime += performance.now() - _beforeQueryCache;
-    }
+    _em.seenComponents.add(def.id);
+
+    _systems._notifyAddComponent(e, def);
 
     // track changes for entity promises
     // TODO(@darzu): PERF. maybe move all the system query update stuff to use this too?
