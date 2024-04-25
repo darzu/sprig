@@ -1,18 +1,14 @@
-import { ResourceDef, Resources, _resources } from "./em-resources.js";
+import { ResourceDef, Resources } from "./em-resources.js";
+import { _resources } from "./ecs.js";
 import { Phase, PhaseValueList } from "./sys-phase.js";
-import {
-  Entity,
-  _entities,
-  Entities,
-  EntityW,
-  ReadonlyEntities,
-} from "./em-entities.js";
+import { Entity, Entities, EntityW, ReadonlyEntities } from "./em-entities.js";
+import { _entities } from "./ecs.js";
 import { isDeadC } from "./em-components.js";
 import { ComponentDef } from "./em-components.js";
 import { DBG_SYSTEM_ORDER, DBG_INIT_CAUSATION } from "../flags.js";
 import { resetTempMatrixBuffer } from "../matrix/sprig-matrix.js";
 import { toMap, assert, assertDbg } from "../utils/util.js";
-import { _init } from "./em-init.js";
+import { _init } from "./ecs.js";
 import { _stats } from "./ecs.js";
 
 export interface SystemReg {
@@ -450,5 +446,3 @@ export function createEMSystems(): EMSystems {
 
   return result;
 }
-
-export const _systems = createEMSystems();

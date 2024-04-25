@@ -15,10 +15,10 @@ import { isDeadE } from "./em-components.js";
 import { componentsToString } from "./em-components.js";
 import { UpdatableComponentDef } from "./em-components.js";
 import { CompId } from "./em-components.js";
-import { _components } from "./em-components.js";
-import { _init } from "./em-init.js";
-import { _resources } from "./em-resources.js";
-import { _systems } from "./em-systems.js";
+import { _components } from "./ecs.js";
+import { _init } from "./ecs.js";
+import { _resources } from "./ecs.js";
+import { _systems } from "./ecs.js";
 
 // TODO(@darzu): re-check all uses of "any" and prefer "unknown"
 //    see: https://github.com/Microsoft/TypeScript/pull/24439
@@ -248,7 +248,7 @@ export function createEMEntities(): EMEntities {
 
     (e as any)[def.name] = c;
 
-    _em.seenComponents.add(def.id);
+    result.seenComponents.add(def.id);
 
     _systems._notifyAddComponent(e, def);
 
@@ -627,7 +627,7 @@ export function createEMEntities(): EMEntities {
     });
   }
 
-  const _em: EMEntities = {
+  const result: EMEntities = {
     // entities
     entities,
     seenComponents,
@@ -655,7 +655,5 @@ export function createEMEntities(): EMEntities {
     progressEntityPromises,
   };
 
-  return _em;
+  return result;
 }
-
-export const _entities: EMEntities = createEMEntities();

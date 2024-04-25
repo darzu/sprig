@@ -1,9 +1,13 @@
-import { _entities } from "./em-entities.js";
-import { EMComponents, _components } from "./em-components.js";
-import { EMInit, _init } from "./em-init.js";
-import { EMResources, _resources } from "./em-resources.js";
-import { EMSystems, _systems } from "./em-systems.js";
+import { EMComponents } from "./em-components.js";
+import { EMInit } from "./em-init.js";
+import { EMResources } from "./em-resources.js";
+import { EMSystems } from "./em-systems.js";
 import { EMEntities } from "./em-entities.js";
+import { createEMEntities } from "./em-entities.js";
+import { createEMComponents } from "./em-components.js";
+import { createEMInit } from "./em-init.js";
+import { createEMResources } from "./em-resources.js";
+import { createEMSystems } from "./em-systems.js";
 
 // EM -> backronym for "Emporium" (originally Entity Manager)
 
@@ -49,12 +53,21 @@ export interface ECS
     EMComponents {}
 
 export const _stats = createEMStats();
+export const _entities = createEMEntities();
+export const _components = createEMComponents();
+export const _init = createEMInit();
+export const _resources = createEMResources();
+export const _systems = createEMSystems();
 
-export const EM: ECS = {
-  ..._stats,
-  ..._systems,
-  ..._resources,
-  ..._entities,
-  ..._init,
-  ..._components,
-};
+function createEmporiumECS(): ECS {
+  return {
+    ..._stats,
+    ..._systems,
+    ..._resources,
+    ..._entities,
+    ..._init,
+    ..._components,
+  };
+}
+
+export const EM: ECS = createEmporiumECS();

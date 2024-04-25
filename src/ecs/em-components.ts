@@ -1,4 +1,5 @@
-import { Entity, _entities } from "./em-entities.js";
+import { Entity } from "./em-entities.js";
+import { _entities } from "./ecs.js";
 import { Serializer, Deserializer } from "../utils/serialize.js";
 import { assert, hashCode } from "../utils/util.js";
 import { ResourceDef } from "./em-resources.js";
@@ -322,5 +323,3 @@ export function createEMComponents(): EMComponents {
 
   return res;
 }
-
-export const _components: EMComponents = createEMComponents();

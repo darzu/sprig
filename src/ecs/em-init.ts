@@ -6,8 +6,9 @@ import {
 import { resetTempMatrixBuffer } from "../matrix/sprig-matrix.js";
 import { getCallStack, assert } from "../utils/util-no-import.js";
 import { isPromise } from "../utils/util.js";
-import { ResourceDef, Resources, ResId, _resources } from "./em-resources.js";
-import { _entities } from "./em-entities.js";
+import { ResourceDef, Resources, ResId } from "./em-resources.js";
+import { _resources } from "./ecs.js";
+import { _entities } from "./ecs.js";
 import { componentsToString } from "./em-components.js";
 import { ComponentDef } from "./em-components.js";
 export type InitFnId = number;
@@ -318,5 +319,3 @@ export function createEMInit(): EMInit {
 
   return result;
 }
-
-export const _init: EMInit = createEMInit();

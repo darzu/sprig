@@ -4,7 +4,7 @@ import {
 } from "../flags.js";
 import { assert, getCallStack } from "../utils/util-no-import.js";
 import { Intersect } from "../utils/util.js";
-import { _init } from "./em-init.js";
+import { _init } from "./ecs.js";
 import { componentNameToId, componentsToString } from "./em-components.js";
 
 type ResourcesPromise<RS extends ResourceDef[]> = {
@@ -255,5 +255,3 @@ export function createEMResources(): EMResources {
 
   return result;
 }
-
-export const _resources: EMResources = createEMResources();
