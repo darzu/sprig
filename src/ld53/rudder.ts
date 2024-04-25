@@ -1,7 +1,7 @@
 import { CameraFollowDef } from "../camera/camera.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
-import { EM } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/ecs.js";
 import { Resources } from "../ecs/em-resources.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { defineObj } from "../graybox/objects.js";

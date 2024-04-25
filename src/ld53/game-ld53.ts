@@ -1,7 +1,8 @@
 import { CameraDef, CameraFollowDef } from "../camera/camera.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
-import { EM, EntityW } from "../ecs/entity-manager.js";
+import { EntityW } from "../ecs/em-entities.js";
+import { EM } from "../ecs/ecs.js";
 import {
   BallMesh,
   CubeMesh,

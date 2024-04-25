@@ -1,4 +1,4 @@
-import { EM } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/ecs.js";
 import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { CY } from "./gpu-registry.js";
 import { createCyStruct, CyToTS } from "./gpu-struct.js";

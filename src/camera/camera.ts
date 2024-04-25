@@ -1,5 +1,6 @@
 import { CanvasDef } from "../render/canvas.js";
-import { EM, EntityW } from "../ecs/entity-manager.js";
+import { EntityW } from "../ecs/em-entities.js";
+import { EM } from "../ecs/ecs.js";
 import { Component } from "../ecs/em-components.js";
 import { Resource } from "../ecs/em-resources.js";
 import { V3, quat, mat4, V } from "../matrix/sprig-matrix.js";

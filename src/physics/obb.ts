@@ -1,4 +1,4 @@
-import { EM } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/ecs.js";
 import { V, V3, mat3, mat4 } from "../matrix/sprig-matrix.js";
 import { jitter } from "../utils/math.js";
 import { range } from "../utils/util.js";

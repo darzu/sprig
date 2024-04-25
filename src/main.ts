@@ -1,6 +1,6 @@
 import { test } from "./utils/test.js";
 import { setupObjImportExporter } from "./meshes/mesh-normalizer.js";
-import { EM } from "./ecs/entity-manager.js";
+import { EM } from "./ecs/ecs.js";
 import { tick } from "./time/time.js";
 import { MeDef, JoinDef, HostDef, PeerNameDef } from "./net/components.js";
 import { addEventComponents } from "./net/events.js";

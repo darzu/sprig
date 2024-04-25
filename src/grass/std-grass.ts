@@ -1,5 +1,5 @@
 import { ColorDef, TintsDef, applyTints } from "../color/color-ecs.js";
-import { EM } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/ecs.js";
 import { CY, linearSamplerPtr } from "../render/gpu-registry.js";
 import { createCyStruct, CyToTS } from "../render/gpu-struct.js";
 import { pointLightsPtr } from "../render/lights.js";

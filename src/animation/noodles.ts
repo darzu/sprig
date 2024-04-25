@@ -1,4 +1,4 @@
-import { EM } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/ecs.js";
 import { Component } from "../ecs/em-components.js";
 import {
   cloneMesh,

@@ -5,7 +5,8 @@ import {
   AlphaDef,
 } from "../../color/color-ecs.js";
 import { DeadDef, DeletedDef } from "../../ecs/delete.js";
-import { EM, EntityW } from "../../ecs/entity-manager.js";
+import { EntityW } from "../../ecs/em-entities.js";
+import { EM } from "../../ecs/ecs.js";
 import { Phase } from "../../ecs/sys-phase.js";
 import { V3, V4, mat4, V } from "../../matrix/sprig-matrix.js";
 import { CY, linearSamplerPtr } from "../gpu-registry.js";

@@ -1,8 +1,8 @@
-import { nameToId, Entity, _entities } from "./entity-manager.js";
+import { nameToId, Entity, _entities } from "./em-entities.js";
 import { Serializer, Deserializer } from "../utils/serialize.js";
 import { assert } from "../utils/util.js";
 import { ResourceDef } from "./em-resources.js";
-import { EntityW } from "./entity-manager.js";
+import { EntityW } from "./em-entities.js";
 
 export interface ComponentDef<
   N extends string = string,

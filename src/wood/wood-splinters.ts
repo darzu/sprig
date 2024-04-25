@@ -1,7 +1,8 @@
 // TODO(@darzu): hacky file split
 
 import { ColorDef } from "../color/color-ecs.js";
-import { EntityW, EM } from "../ecs/entity-manager.js";
+import { EntityW } from "../ecs/em-entities.js";
+import { EM } from "../ecs/ecs.js";
 import { AllMeshesDef, BLACK } from "../meshes/mesh-list.js";
 import { GravityDef } from "../motion/gravity.js";
 import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";

@@ -1,5 +1,5 @@
 import { ColorDef, TintsDef, applyTints } from "../../color/color-ecs.js";
-import { EM } from "../../ecs/entity-manager.js";
+import { EM } from "../../ecs/ecs.js";
 import { Phase } from "../../ecs/sys-phase.js";
 import { V3, mat4 } from "../../matrix/sprig-matrix.js";
 import {

@@ -4,7 +4,7 @@ import { ENDESGA16 } from "../color/palettes.js";
 import { createGhost } from "../debug/ghost.js";
 import { createGizmoMesh } from "../debug/gizmos.js";
 import { DeletedDef } from "../ecs/delete.js";
-import { EM } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/ecs.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { InputsDef } from "../input/inputs.js";
 import { V, mat4, quat, V3 } from "../matrix/sprig-matrix.js";

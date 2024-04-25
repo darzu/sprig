@@ -1,6 +1,7 @@
 import { CameraView } from "../camera/camera.js";
 import { ColorDef } from "../color/color-ecs.js";
-import { EM, Entity, EntityW } from "../ecs/entity-manager.js";
+import { Entity, EntityW } from "../ecs/em-entities.js";
+import { EM } from "../ecs/ecs.js";
 import {
   AllMeshesDef,
   BallMesh,

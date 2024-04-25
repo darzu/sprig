@@ -1,4 +1,5 @@
-import { EM, EntityW } from "../ecs/entity-manager.js";
+import { EntityW } from "../ecs/em-entities.js";
+import { EM } from "../ecs/ecs.js";
 import { Component } from "../ecs/em-components.js";
 import { Resources } from "../ecs/em-resources.js";
 import { V2, V3, quat, V, tV } from "../matrix/sprig-matrix.js";

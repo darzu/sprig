@@ -41,7 +41,7 @@ import { BLACK } from "../meshes/mesh-list.js";
 import { mkHalfEdgeQuadMesh } from "../meshes/primatives.js";
 import { HFace, meshToHalfEdgePoly } from "../meshes/half-edge.js";
 import { createGizmoMesh } from "../debug/gizmos.js";
-import { EM } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/ecs.js";
 import {
   PositionDef,
   updateFrameFromPosRotScale,

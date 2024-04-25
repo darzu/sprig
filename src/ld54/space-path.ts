@@ -1,6 +1,6 @@
 import { AllEndesga16, ENDESGA16 } from "../color/palettes.js";
 import { createLineMesh } from "../debug/gizmos.js";
-import { EM } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/ecs.js";
 import { V, orthonormalize, quat, tV, V3 } from "../matrix/sprig-matrix.js";
 import {
   createEmptyRawMesh,

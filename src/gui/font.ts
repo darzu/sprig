@@ -1,7 +1,8 @@
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { defineResourceWithInit } from "../ecs/em-helpers.js";
-import { EntityW, EM } from "../ecs/entity-manager.js";
+import { EntityW } from "../ecs/em-entities.js";
+import { EM } from "../ecs/ecs.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { V4, V3 } from "../matrix/sprig-matrix.js";
 import { mkLineSegs } from "../meshes/primatives.js";

@@ -2,7 +2,7 @@ import { CameraDef } from "../camera/camera.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16, seqEndesga16 } from "../color/palettes.js";
 import { DevConsoleDef } from "../debug/console.js";
-import { EM } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/ecs.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { V, quat, tmpStack, V3, mat4, V4 } from "../matrix/sprig-matrix.js";
 import { BallMesh, CubeMesh, TetraMesh } from "../meshes/mesh-list.js";

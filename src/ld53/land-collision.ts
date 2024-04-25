@@ -1,4 +1,5 @@
-import { EM, Entity } from "../ecs/entity-manager.js";
+import { Entity } from "../ecs/em-entities.js";
+import { EM } from "../ecs/ecs.js";
 import { PartyDef } from "../camera/party.js";
 import { LinearVelocityDef } from "../motion/velocity.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";

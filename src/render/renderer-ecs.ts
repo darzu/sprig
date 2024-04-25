@@ -1,4 +1,5 @@
-import { EM, Entity, EntityW } from "../ecs/entity-manager.js";
+import { Entity, EntityW } from "../ecs/em-entities.js";
+import { EM } from "../ecs/ecs.js";
 import { CameraDef, CameraComputedDef } from "../camera/camera.js";
 import { V3, quat, mat4 } from "../matrix/sprig-matrix.js";
 import {

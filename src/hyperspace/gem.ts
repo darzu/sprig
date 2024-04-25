@@ -1,7 +1,7 @@
 import { AllMeshesDef } from "../meshes/mesh-list.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { defineNetEntityHelper } from "../ecs/em-helpers.js";
-import { EM } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/ecs.js";
 import { MeDef } from "../net/components.js";
 import { copyAABB, createAABB } from "../physics/aabb.js";
 import { ColliderDef } from "../physics/collider.js";

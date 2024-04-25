@@ -1,4 +1,5 @@
-import { EM, EntityW } from "../ecs/entity-manager.js";
+import { EntityW } from "../ecs/em-entities.js";
+import { EM } from "../ecs/ecs.js";
 import { ComponentDef } from "../ecs/em-components.js";
 import { Mesh } from "../meshes/mesh.js";
 import {

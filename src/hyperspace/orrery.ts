@@ -1,6 +1,6 @@
 import { ColorDef } from "../color/color-ecs.js";
 import { createRef, Ref } from "../ecs/em-helpers.js";
-import { EM } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/ecs.js";
 import { V3, mat4, V } from "../matrix/sprig-matrix.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import {

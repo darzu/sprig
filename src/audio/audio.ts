@@ -1,5 +1,5 @@
 import { HasFirstInteractionDef } from "../render/canvas.js";
-import { EM } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/ecs.js";
 import { Component } from "../ecs/em-components.js";
 import { Resource } from "../ecs/em-resources.js";
 import { ENABLE_AUDIO } from "../flags.js";

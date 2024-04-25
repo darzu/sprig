@@ -1,6 +1,7 @@
 import { FinishedDef } from "../ecs/em-helpers.js";
 import { AABBCollider, ColliderDef } from "../physics/collider.js";
-import { EM, Entity } from "../ecs/entity-manager.js";
+import { Entity } from "../ecs/em-entities.js";
+import { EM } from "../ecs/ecs.js";
 import { Component } from "../ecs/em-components.js";
 import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { AuthorityDef, MeDef, SyncDef } from "../net/components.js";

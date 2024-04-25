@@ -1,4 +1,4 @@
-import { EM } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/ecs.js";
 import { Resource } from "../ecs/em-resources.js";
 import { VERBOSE_LOG } from "../flags.js";
 import { TextDef } from "../gui/ui.js";

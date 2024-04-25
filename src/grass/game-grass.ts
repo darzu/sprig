@@ -1,7 +1,7 @@
 import { CameraDef, CameraFollowDef } from "../camera/camera.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
-import { EM } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/ecs.js";
 import { BallMesh, GizmoMesh, UnitCubeMesh } from "../meshes/mesh-list.js";
 import { XY } from "../meshes/mesh-loader.js";
 import { ControllableDef } from "../input/controllable.js";

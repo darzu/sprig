@@ -7,7 +7,7 @@ import {
 import { CameraDef, CameraFollowDef } from "../camera/camera.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { AllEndesga16, ENDESGA16 } from "../color/palettes.js";
-import { EM } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/ecs.js";
 import { FinishedDef, defineNetEntityHelper } from "../ecs/em-helpers.js";
 import { createGizmoMesh } from "../debug/gizmos.js";
 import { LinearVelocityDef } from "../motion/velocity.js";

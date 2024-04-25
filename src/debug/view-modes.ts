@@ -3,7 +3,7 @@ import {
   CameraFollowDef,
   setCameraFollowPosition,
 } from "../camera/camera.js";
-import { EM } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/ecs.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { LocalPlayerEntityDef } from "../hyperspace/hs-player.js";
 import { InputsDef } from "../input/inputs.js";

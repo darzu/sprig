@@ -1,6 +1,7 @@
 import { PoseDef, tweenToPose } from "../animation/skeletal.js";
 import { createRef } from "../ecs/em-helpers.js";
-import { EM, EntityW } from "../ecs/entity-manager.js";
+import { EntityW } from "../ecs/em-entities.js";
+import { EM } from "../ecs/ecs.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { InputsDef } from "../input/inputs.js";
 import { quat, V3 } from "../matrix/sprig-matrix.js";

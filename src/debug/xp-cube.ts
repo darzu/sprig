@@ -1,5 +1,5 @@
 import { CameraDef } from "../camera/camera.js";
-import { EM } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/ecs.js";
 import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { max } from "../utils/math.js";
 import { ColliderDef } from "../physics/collider.js";

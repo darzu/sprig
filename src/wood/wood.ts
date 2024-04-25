@@ -1,5 +1,6 @@
 import { ColorDef } from "../color/color-ecs.js";
-import { EM, Entity } from "../ecs/entity-manager.js";
+import { Entity } from "../ecs/em-entities.js";
+import { EM } from "../ecs/ecs.js";
 import { AllMeshSymbols, BLACK } from "../meshes/mesh-list.js";
 import { BulletDef } from "../cannons/bullet.js";
 import { GravityDef } from "../motion/gravity.js";

@@ -15,10 +15,9 @@ import { componentsToString } from "./em-components.js";
 import { UpdatableComponentDef } from "./em-components.js";
 import { CompId } from "./em-components.js";
 import { _components } from "./em-components.js";
-import { EMComponents } from "./em-components.js";
-import { EMInit, _init } from "./em-init.js";
-import { EMResources, _resources } from "./em-resources.js";
-import { _systems, EMSystems } from "./em-systems.js";
+import { _init } from "./em-init.js";
+import { _resources } from "./em-resources.js";
+import { _systems } from "./em-systems.js";
 
 // TODO(@darzu): re-check all uses of "any" and prefer "unknown"
 //    see: https://github.com/Microsoft/TypeScript/pull/24439
@@ -72,7 +71,7 @@ export function nameToId(name: string): number {
   return hashCode(name);
 }
 
-interface EMEntities {
+export interface EMEntities {
   entities: Map<number, Entity>;
 
   emStats: { queryTime: number; dbgLoops: number };
@@ -162,13 +161,6 @@ interface EMEntities {
 
   update(): void;
 }
-
-interface ECS
-  extends EMEntities,
-    EMInit,
-    EMResources,
-    EMSystems,
-    EMComponents {}
 
 // TODO(@darzu): split this apart! Shouldn't be a class and should be in as many pieces as is logical
 function createEMEntities(): EMEntities {
@@ -702,11 +694,3 @@ function createEMEntities(): EMEntities {
 }
 
 export const _entities: EMEntities = createEMEntities();
-
-export const EM: ECS = {
-  ..._systems,
-  ..._resources,
-  ..._entities,
-  ..._init,
-  ..._components,
-};

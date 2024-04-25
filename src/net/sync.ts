@@ -1,4 +1,4 @@
-import { EM } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/ecs.js";
 import { OutOfRoomError, Serializer } from "../utils/serialize.js";
 import {
   Authority,

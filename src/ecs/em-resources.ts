@@ -5,7 +5,7 @@ import {
 import { assert, getCallStack } from "../utils/util-no-import.js";
 import { Intersect } from "../utils/util.js";
 import { _init } from "./em-init.js";
-import { nameToId } from "./entity-manager.js";
+import { nameToId } from "./em-entities.js";
 import { componentsToString } from "./em-components.js";
 
 type ResourcesPromise<RS extends ResourceDef[]> = {

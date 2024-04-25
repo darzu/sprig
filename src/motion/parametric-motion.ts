@@ -1,4 +1,4 @@
-import { EM } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/ecs.js";
 import { Component } from "../ecs/em-components.js";
 import { V3, V, V2, tV, InputT, quat } from "../matrix/sprig-matrix.js";
 import { TimeDef } from "../time/time.js";

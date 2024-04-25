@@ -1,5 +1,5 @@
 import { DevConsoleDef } from "../debug/console.js";
-import { EM } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/ecs.js";
 import { V2 } from "../matrix/sprig-matrix.js";
 import { InputsDef } from "../input/inputs.js";
 import { AuthorityDef, MeDef } from "../net/components.js";

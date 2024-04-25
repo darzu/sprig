@@ -1,5 +1,6 @@
 import { ENDESGA16 } from "../color/palettes.js";
-import { EM, EntityW } from "../ecs/entity-manager.js";
+import { EntityW } from "../ecs/em-entities.js";
+import { EM } from "../ecs/ecs.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { V, mat4, quat, V3 } from "../matrix/sprig-matrix.js";
 import { BallMesh } from "../meshes/mesh-list.js";

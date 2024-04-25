@@ -1,4 +1,4 @@
-import { EM } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/ecs.js";
 import { Serializer, Deserializer } from "../utils/serialize.js";
 import {
   AuthorityDef,

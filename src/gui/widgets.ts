@@ -1,7 +1,8 @@
 import { CameraComputedDef } from "../camera/camera.js";
 import { AlphaDef, ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
-import { EM, EntityW } from "../ecs/entity-manager.js";
+import { EntityW } from "../ecs/em-entities.js";
+import { EM } from "../ecs/ecs.js";
 import { Resources } from "../ecs/em-resources.js";
 import { AllMeshes, AllMeshesDef, UnitCubeMesh } from "../meshes/mesh-list.js";
 import { gameplaySystems } from "../debug/ghost.js";

@@ -2,7 +2,7 @@ import { CameraDef } from "../camera/camera.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { DevConsoleDef } from "../debug/console.js";
-import { EM } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/ecs.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { createSun, initGhost } from "../graybox/graybox-helpers.js";
 import { createObj } from "../graybox/objects.js";

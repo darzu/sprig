@@ -6,7 +6,7 @@ import {
   Entities,
   EntityW,
   ReadonlyEntities,
-} from "./entity-manager.js";
+} from "./em-entities.js";
 import { isDeadC } from "./em-components.js";
 import { ComponentDef } from "./em-components.js";
 import { DBG_SYSTEM_ORDER, DBG_INIT_CAUSATION } from "../flags.js";

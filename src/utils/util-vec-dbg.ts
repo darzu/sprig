@@ -1,6 +1,7 @@
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
-import { EM, Entity, EntityW } from "../ecs/entity-manager.js";
+import { Entity, EntityW } from "../ecs/em-entities.js";
+import { EM } from "../ecs/ecs.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { V, quat, V3 } from "../matrix/sprig-matrix.js";
 import { ArrowMesh } from "../meshes/mesh-list.js";
