@@ -1,29 +1,26 @@
 import {
   DBG_ASSERT,
   DBG_VERBOSE_ENTITY_PROMISE_CALLSITES,
-  DBG_VERBOSE_INIT_CALLSITES,
   DBG_INIT_CAUSATION,
-  DBG_VERBOSE_INIT_SEQ,
   DBG_SYSTEM_ORDER,
 } from "../flags.js";
-import { resetTempMatrixBuffer, V3 } from "../matrix/sprig-matrix.js";
+import { resetTempMatrixBuffer } from "../matrix/sprig-matrix.js";
 import { Serializer, Deserializer } from "../utils/serialize.js";
 import { getCallStack } from "../utils/util-no-import.js";
 import {
   assert,
   assertDbg,
-  dbgLogOnce,
-  dbgOnce,
   hashCode,
   Intersect,
-  isPromise,
   toMap,
 } from "../utils/util.js";
-import { vec3Dbg } from "../utils/utils-3d.js";
 import { EMInit, _init } from "./em-init.js";
-import { Resources } from "./em-resources.js";
-import { ResourceDef } from "./em-resources.js";
-import { EMResources, _resources } from "./em-resources.js";
+import {
+  Resources,
+  ResourceDef,
+  EMResources,
+  _resources,
+} from "./em-resources.js";
 import { Phase, PhaseValueList } from "./sys-phase.js";
 
 // TODO(@darzu): re-check all uses of "any" and prefer "unknown"
@@ -1452,18 +1449,8 @@ function createEntityManager(): _EntityManager {
   }
 
   const _em: _EntityManager = {
+    // entities
     entities,
-    allSystemsByName,
-    emStats,
-    sysStats,
-    componentDefs,
-    seenComponents,
-
-    defineComponent,
-    defineNonupdatableComponent,
-    registerSerializerPair,
-    serialize,
-    deserialize,
     setDefaultRange,
     setIdRange,
     mk,
@@ -1481,12 +1468,30 @@ function createEntityManager(): _EntityManager {
     findEntity,
     findEntitySet,
     filterEntities_uncached,
-    dbgGetSystemsForEntity,
     dbgFilterEntitiesByKey,
-    addSystem,
-    hasSystem,
     whenEntityHas,
     whenSingleEntity,
+
+    // systems
+    allSystemsByName,
+    dbgGetSystemsForEntity,
+    addSystem,
+    hasSystem,
+
+    // components
+    componentDefs,
+    seenComponents,
+    defineComponent,
+    defineNonupdatableComponent,
+    registerSerializerPair,
+    serialize,
+    deserialize,
+
+    // stats
+    emStats,
+    sysStats,
+
+    // update all
     update,
   };
 

@@ -6,12 +6,8 @@ import {
 import { resetTempMatrixBuffer } from "../matrix/sprig-matrix.js";
 import { getCallStack, assert } from "../utils/util-no-import.js";
 import { isPromise } from "../utils/util.js";
-import { _resources } from "./em-resources.js";
+import { ResourceDef, Resources, ResId, _resources } from "./em-resources.js";
 import { ComponentDef, componentsToString, _em } from "./entity-manager.js";
-import { Resources } from "./em-resources.js";
-import { ResId } from "./em-resources.js";
-import { ResourceDef } from "./em-resources.js";
-
 export type InitFnId = number;
 
 export type InitFn<
