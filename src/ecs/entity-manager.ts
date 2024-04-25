@@ -8,8 +8,7 @@ import { getCallStack } from "../utils/util-no-import.js";
 import { assert, hashCode, Intersect } from "../utils/util.js";
 import { EMInit, _init } from "./em-init.js";
 import { ResourceDef, EMResources, _resources } from "./em-resources.js";
-import { _systems } from "./em-systems.js";
-import { EMSystems } from "./em-systems.js";
+import { _systems, EMSystems } from "./em-systems.js";
 
 // TODO(@darzu): re-check all uses of "any" and prefer "unknown"
 //    see: https://github.com/Microsoft/TypeScript/pull/24439
@@ -128,14 +127,9 @@ export function nameToId(name: string): number {
   return hashCode(name);
 }
 
-interface _EntityManager {
-  entities: Map<number, Entity>;
-
-  emStats: { queryTime: number; dbgLoops: number };
-
+interface EMComponents {
+  // TODO(@darzu):
   componentDefs: Map<CompId, ComponentDef>;
-
-  seenComponents: Set<CompId>;
 
   defineComponent<
     N extends string,
@@ -173,116 +167,17 @@ interface _EntityManager {
     deserialize: (obj: P, buf: Deserializer) => void
   ): void;
 
+  // TODO(@darzu): serialize/derserialize onto an entity
   serialize(id: number, componentId: number, buf: Serializer): void;
   deserialize(id: number, componentId: number, buf: Deserializer): void;
 
-  setDefaultRange(rangeName: string): void;
-  setIdRange(rangeName: string, nextId: number, maxId: number): void;
-
-  mk(rangeName?: string): Entity;
-  registerEntity(id: number): Entity;
-
-  addComponent<N extends string, P, PArgs extends any[]>(
-    id: number,
-    def: _ComponentDef<N, P, PArgs>,
-    ...args: PArgs
-  ): P;
-
-  addComponentByName(id: number, name: string, ...args: any): any;
-
-  ensureComponent<N extends string, P, PArgs extends any[]>(
-    id: number,
-    def: _ComponentDef<N, P, PArgs>,
-    ...args: PArgs
-  ): P;
-
-  set<N extends string, P, PArgs extends any[]>(
-    e: Entity,
-    def: UpdatableComponentDef<N, P, PArgs>,
-    ...args: PArgs
-  ): asserts e is EntityW<[UpdatableComponentDef<N, P, PArgs>]>;
-  set<N extends string, P, PArgs extends any[]>(
-    e: Entity,
-    def: NonupdatableComponentDef<N, P, PArgs>,
-    ...args: PArgs
-  ): asserts e is EntityW<[NonupdatableComponentDef<N, P, PArgs>]>;
-
-  setOnce<N extends string, P, PArgs extends any[]>(
-    e: Entity,
-    def: UpdatableComponentDef<N, P, PArgs>,
-    ...args: PArgs
-  ): asserts e is EntityW<[UpdatableComponentDef<N, P, PArgs>]>;
-  setOnce<N extends string, P, PArgs extends any[]>(
-    e: Entity,
-    def: NonupdatableComponentDef<N, P, PArgs>,
-    ...args: PArgs
-  ): asserts e is EntityW<[NonupdatableComponentDef<N, P, PArgs>]>;
-
-  hasEntity(id: number): boolean;
-
-  removeComponent<C extends ComponentDef>(id: number, def: C): void;
-
-  tryRemoveComponent<C extends ComponentDef>(id: number, def: C): boolean;
-  keepOnlyComponents<CS extends ComponentDef[]>(id: number, cs: [...CS]): void;
-
-  hasComponents<CS extends ComponentDef[], E extends Entity>(
-    e: E,
-    cs: [...CS]
-  ): e is E & EntityW<CS>;
-
-  findEntity<CS extends ComponentDef[], ID extends number>(
-    id: ID,
-    cs: readonly [...CS]
-  ): EntityW<CS, ID> | undefined;
-
-  filterEntities_uncached<CS extends ComponentDef[]>(
-    cs: [...CS] | null
-  ): Entities<CS>;
-
-  dbgFilterEntitiesByKey(cs: string | string[]): Entities<any>;
-
-  whenEntityHas<
-    // eCS extends ComponentDef[],
-    CS extends ComponentDef[],
-    ID extends number
-  >(
-    e: EntityW<ComponentDef[], ID>,
-    ...cs: CS
-  ): Promise<EntityW<CS, ID>>;
-
-  whenSingleEntity<CS extends ComponentDef[]>(
-    ...cs: [...CS]
-  ): Promise<EntityW<CS>>;
-
-  update(): void;
+  checkComponent(def: ComponentDef): void;
 }
 
-// TODO(@darzu): hacky, special components
-function isDeletedE(e: Entity) {
-  return "deleted" in e;
-}
-function isDeadE(e: Entity) {
-  return "dead" in e;
-}
-export function isDeadC(e: ComponentDef) {
-  return "dead" === e.name;
-}
-
-interface EntityManager
-  extends _EntityManager,
-    EMInit,
-    EMResources,
-    EMSystems {}
-
-// TODO(@darzu): split this apart! Shouldn't be a class and should be in as many pieces as is logical
-function createEntityManager(): _EntityManager {
-  const entities: Map<number, Entity> = new Map();
-
-  const entityPromises: Map<number, EntityPromise<ComponentDef[], any>[]> =
-    new Map();
+function createEMComponents(): EMComponents {
   const componentDefs: Map<CompId, ComponentDef> = new Map(); // TODO(@darzu): rename to componentDefs ?
 
-  const seenComponents = new Set<CompId>();
+  const forbiddenComponentNames = new Set<string>(["id"]);
 
   const serializers: Map<
     number,
@@ -291,15 +186,6 @@ function createEntityManager(): _EntityManager {
       deserialize: (obj: any, buf: Deserializer) => void;
     }
   > = new Map();
-
-  const ranges: Record<string, { nextId: number; maxId: number }> = {};
-  let defaultRange: string = "";
-  const emStats = {
-    queryTime: 0,
-    dbgLoops: 0,
-  };
-
-  const forbiddenComponentNames = new Set<string>(["id"]);
 
   // TODO(@darzu): allow components to specify sibling components or component sets
   //  so that if the marker component is present, the others will be also
@@ -426,7 +312,7 @@ function createEntityManager(): _EntityManager {
   function serialize(id: number, componentId: number, buf: Serializer) {
     const def = componentDefs.get(componentId);
     if (!def) throw `Trying to serialize unknown component id ${componentId}`;
-    const entity = findEntity(id, [def]);
+    const entity = _em.findEntity(id, [def]);
     if (!entity)
       throw `Trying to serialize component ${def.name} on entity ${id}, which doesn't have it`;
     const serializerPair = serializers.get(componentId);
@@ -444,10 +330,10 @@ function createEntityManager(): _EntityManager {
   function deserialize(id: number, componentId: number, buf: Deserializer) {
     const def = componentDefs.get(componentId);
     if (!def) throw `Trying to deserialize unknown component id ${componentId}`;
-    if (!hasEntity(id)) {
+    if (!_em.hasEntity(id)) {
       throw `Trying to deserialize component ${def.name} of unknown entity ${id}`;
     }
-    let entity = findEntity(id, [def]);
+    let entity = _em.findEntity(id, [def]);
 
     const serializerPair = serializers.get(componentId);
     if (!serializerPair)
@@ -466,7 +352,7 @@ function createEntityManager(): _EntityManager {
         def.updatable,
         `Trying to deserialize into non-updatable component '${def.name}'!`
       );
-      addComponentInternal(id, def, deserialize, ...[]);
+      _em.addComponentInternal(id, def, deserialize, ...[]);
     } else {
       deserialize(entity[def.name]);
     }
@@ -476,6 +362,151 @@ function createEntityManager(): _EntityManager {
     //   console.log(`deserializing 1867295084, dummy: ${buf.dummy}`);
     // }
   }
+
+  const res: EMComponents = {
+    componentDefs,
+
+    defineComponent,
+    defineNonupdatableComponent,
+
+    registerSerializerPair,
+    serialize,
+    deserialize,
+
+    checkComponent,
+  };
+
+  return res;
+}
+
+interface _EntityManager {
+  entities: Map<number, Entity>;
+
+  emStats: { queryTime: number; dbgLoops: number };
+
+  seenComponents: Set<CompId>;
+
+  setDefaultRange(rangeName: string): void;
+  setIdRange(rangeName: string, nextId: number, maxId: number): void;
+
+  mk(rangeName?: string): Entity;
+  registerEntity(id: number): Entity;
+
+  addComponent<N extends string, P, PArgs extends any[]>(
+    id: number,
+    def: _ComponentDef<N, P, PArgs>,
+    ...args: PArgs
+  ): P;
+
+  addComponentByName(id: number, name: string, ...args: any): any;
+
+  addComponentInternal<N extends string, P, PArgs extends any[]>(
+    id: number,
+    def: _ComponentDef<N, P, PArgs>,
+    customUpdate: undefined | ((p: P, ...args: PArgs) => P),
+    ...args: PArgs
+  ): P;
+
+  ensureComponent<N extends string, P, PArgs extends any[]>(
+    id: number,
+    def: _ComponentDef<N, P, PArgs>,
+    ...args: PArgs
+  ): P;
+
+  set<N extends string, P, PArgs extends any[]>(
+    e: Entity,
+    def: UpdatableComponentDef<N, P, PArgs>,
+    ...args: PArgs
+  ): asserts e is EntityW<[UpdatableComponentDef<N, P, PArgs>]>;
+  set<N extends string, P, PArgs extends any[]>(
+    e: Entity,
+    def: NonupdatableComponentDef<N, P, PArgs>,
+    ...args: PArgs
+  ): asserts e is EntityW<[NonupdatableComponentDef<N, P, PArgs>]>;
+
+  setOnce<N extends string, P, PArgs extends any[]>(
+    e: Entity,
+    def: UpdatableComponentDef<N, P, PArgs>,
+    ...args: PArgs
+  ): asserts e is EntityW<[UpdatableComponentDef<N, P, PArgs>]>;
+  setOnce<N extends string, P, PArgs extends any[]>(
+    e: Entity,
+    def: NonupdatableComponentDef<N, P, PArgs>,
+    ...args: PArgs
+  ): asserts e is EntityW<[NonupdatableComponentDef<N, P, PArgs>]>;
+
+  hasEntity(id: number): boolean;
+
+  removeComponent<C extends ComponentDef>(id: number, def: C): void;
+
+  tryRemoveComponent<C extends ComponentDef>(id: number, def: C): boolean;
+  keepOnlyComponents<CS extends ComponentDef[]>(id: number, cs: [...CS]): void;
+
+  hasComponents<CS extends ComponentDef[], E extends Entity>(
+    e: E,
+    cs: [...CS]
+  ): e is E & EntityW<CS>;
+
+  findEntity<CS extends ComponentDef[], ID extends number>(
+    id: ID,
+    cs: readonly [...CS]
+  ): EntityW<CS, ID> | undefined;
+
+  filterEntities_uncached<CS extends ComponentDef[]>(
+    cs: [...CS] | null
+  ): Entities<CS>;
+
+  dbgFilterEntitiesByKey(cs: string | string[]): Entities<any>;
+
+  whenEntityHas<
+    // eCS extends ComponentDef[],
+    CS extends ComponentDef[],
+    ID extends number
+  >(
+    e: EntityW<ComponentDef[], ID>,
+    ...cs: CS
+  ): Promise<EntityW<CS, ID>>;
+
+  whenSingleEntity<CS extends ComponentDef[]>(
+    ...cs: [...CS]
+  ): Promise<EntityW<CS>>;
+
+  update(): void;
+}
+
+// TODO(@darzu): hacky, special components
+function isDeletedE(e: Entity) {
+  return "deleted" in e;
+}
+function isDeadE(e: Entity) {
+  return "dead" in e;
+}
+export function isDeadC(e: ComponentDef) {
+  return "dead" === e.name;
+}
+
+interface EntityManager
+  extends _EntityManager,
+    EMInit,
+    EMResources,
+    EMSystems,
+    EMComponents {}
+
+// TODO(@darzu): split this apart! Shouldn't be a class and should be in as many pieces as is logical
+function createEntityManager(): _EntityManager {
+  const entities: Map<number, Entity> = new Map();
+
+  const entityPromises: Map<number, EntityPromise<ComponentDef[], any>[]> =
+    new Map();
+
+  const seenComponents = new Set<CompId>();
+
+  const ranges: Record<string, { nextId: number; maxId: number }> = {};
+  let defaultRange: string = "";
+  const emStats = {
+    queryTime: 0,
+    dbgLoops: 0,
+  };
 
   function setDefaultRange(rangeName: string) {
     defaultRange = rangeName;
@@ -542,7 +573,7 @@ function createEntityManager(): _EntityManager {
     customUpdate: undefined | ((p: P, ...args: PArgs) => P),
     ...args: PArgs
   ): P {
-    checkComponent(def);
+    _components.checkComponent(def);
     if (id === 0) throw `hey, use addResource!`;
     const e = entities.get(id)!;
     // TODO: this is hacky--EM shouldn't know about "deleted"
@@ -578,7 +609,7 @@ function createEntityManager(): _EntityManager {
     console.log(
       "addComponentByName called, should only be called for debugging"
     );
-    let component = componentDefs.get(nameToId(name));
+    let component = _components.componentDefs.get(nameToId(name));
     if (!component) {
       throw `no component named ${name}`;
     }
@@ -590,7 +621,7 @@ function createEntityManager(): _EntityManager {
     def: _ComponentDef<N, P, PArgs>,
     ...args: PArgs
   ): P {
-    checkComponent(def);
+    _components.checkComponent(def);
     const e = entities.get(id)!;
     const alreadyHas = def.name in e;
     if (!alreadyHas) {
@@ -683,7 +714,7 @@ function createEntityManager(): _EntityManager {
   ) {
     let ent = entities.get(id) as any;
     if (!ent) throw `Tried to delete non-existent entity ${id}`;
-    for (let component of componentDefs.values()) {
+    for (let component of _components.componentDefs.values()) {
       if (!cs.includes(component) && ent[component.name]) {
         removeComponent(id, component);
       }
@@ -959,12 +990,15 @@ function createEntityManager(): _EntityManager {
   const _em: _EntityManager = {
     // entities
     entities,
+    seenComponents,
+
     setDefaultRange,
     setIdRange,
     mk,
     registerEntity,
     addComponent,
     addComponentByName,
+    addComponentInternal,
     ensureComponent,
     set,
     setOnce,
@@ -979,15 +1013,6 @@ function createEntityManager(): _EntityManager {
     whenEntityHas,
     whenSingleEntity,
 
-    // components
-    componentDefs,
-    seenComponents,
-    defineComponent,
-    defineNonupdatableComponent,
-    registerSerializerPair,
-    serialize,
-    deserialize,
-
     // stats
     emStats,
 
@@ -998,6 +1023,8 @@ function createEntityManager(): _EntityManager {
   return _em;
 }
 
+export const _components: EMComponents = createEMComponents();
+
 export const _em: _EntityManager = createEntityManager();
 
 export const EM: EntityManager = {
@@ -1005,4 +1032,5 @@ export const EM: EntityManager = {
   ..._resources,
   ..._em,
   ..._init,
+  ..._components,
 };
