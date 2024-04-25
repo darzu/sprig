@@ -93,3 +93,7 @@ scene:
 EM.set(myEnt, PositionDef) // world1.myEnt, global.PositionDef
 
 maybe just: entities + systems
+
+EM.addEagerInit(
+      [PositionDef, BoatDef], // does there exist this component set within a certain world ??
+      ...)

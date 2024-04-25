@@ -305,6 +305,8 @@ interface SystemStats {
   calls: number;
 }
 
+// TODO(@darzu): DE-CLASS this!
+
 // TODO(@darzu): split this apart! Shouldn't be a class and should be in as many pieces as is logical
 export class EntityManager {
   entities: Map<number, Entity> = new Map();
