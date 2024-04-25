@@ -79,13 +79,14 @@ const GAME: (typeof ALL_GAMES)[number] = (
   // "painterly"
   // "graybox-ship-arena"
   // "ld53"
+  "ld54"
   // "gjk"
   // "graybox-starter"
   // "font"
   // "cards"
   // "particles"
   // "ld55"
-  "multi-scene"
+  // "multi-scene"
 );
 
 // Run simulation with a fixed timestep @ 60hz

@@ -308,6 +308,20 @@ interface SystemStats {
 // TODO(@darzu): DE-CLASS this!
 
 interface EntityManager {
+  entities: Map<number, Entity>;
+
+  allSystemsByName: Map<string, SystemReg>;
+
+  dbgLoops: number;
+
+  emStats: { queryTime: number };
+  sysStats: Record<string, SystemStats>;
+  initFnMsStats: Map<InitFnId, number>;
+
+  allInits: Map<InitFnId, InitFnReg>;
+
+  componentDefs: Map<CompId, ComponentDef>;
+
   defineResource<N extends string, P, Pargs extends any[]>(
     name: N,
     construct: (...args: Pargs) => P
@@ -1977,4 +1991,4 @@ class _EntityManager implements EntityManager {
 }
 
 // TODO(@darzu): where to put this?
-export const EM: _EntityManager = new _EntityManager();
+export const EM: EntityManager = new _EntityManager();
