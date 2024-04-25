@@ -8,6 +8,9 @@ import { getCallStack } from "../utils/util-no-import.js";
 import { assert, hashCode, Intersect } from "../utils/util.js";
 import { ComponentDef } from "./em-components.js";
 import { NonupdatableComponentDef } from "./em-components.js";
+import { isDeadC } from "./em-components.js";
+import { isDeletedE } from "./em-components.js";
+import { isDeadE } from "./em-components.js";
 import { componentsToString } from "./em-components.js";
 import { UpdatableComponentDef } from "./em-components.js";
 import { CompId } from "./em-components.js";
@@ -52,18 +55,6 @@ export type Entities<CS extends ComponentDef[]> = EntityW<CS>[];
 export type ReadonlyEntities<CS extends ComponentDef[]> =
   readonly EntityW<CS>[];
 
-// export function initFnToKey(init: InitFnReg) {
-//   return `${init.eager ? "E" : "L"}:${init.requireRs
-//     .map((c) => c.name)
-//     .join("+")}&${
-//     init.requireCompSet?.map((c) => c.name).join("+") ?? ""
-//   }->${init.provideRs.map((c) => c.name).join("+")}`;
-// }
-
-// type _InitFNReg = InitFNReg & {
-//   id: number;
-// }
-
 // TODO(@darzu): think about naming some more...
 type EntityPromise<
   //eCS extends ComponentDef[],
@@ -75,12 +66,6 @@ type EntityPromise<
   cs: CS;
   callback: (e: EntityW<[...CS], ID>) => void;
   // name: string;
-};
-
-// TODO(@darzu): don't love these...
-export type EDef<CS extends ComponentDef[]> = readonly [...CS];
-export type ESet<DS extends EDef<any>[]> = {
-  [K in keyof DS]: DS[K] extends EDef<infer CS> ? EntityW<CS, number> : never;
 };
 
 export function nameToId(name: string): number {
@@ -180,17 +165,6 @@ interface _EntityManager {
   ): Promise<EntityW<CS>>;
 
   update(): void;
-}
-
-// TODO(@darzu): hacky, special components
-function isDeletedE(e: Entity) {
-  return "deleted" in e;
-}
-function isDeadE(e: Entity) {
-  return "dead" in e;
-}
-export function isDeadC(e: ComponentDef) {
-  return "dead" === e.name;
 }
 
 interface EntityManager

@@ -33,6 +33,18 @@ export function initFnToString(init: InitFnReg) {
   )} -> ${componentsToString(init.provideRs)}`;
 }
 
+// export function initFnToKey(init: InitFnReg) {
+//   return `${init.eager ? "E" : "L"}:${init.requireRs
+//     .map((c) => c.name)
+//     .join("+")}&${
+//     init.requireCompSet?.map((c) => c.name).join("+") ?? ""
+//   }->${init.provideRs.map((c) => c.name).join("+")}`;
+// }
+
+// type _InitFNReg = InitFNReg & {
+//   id: number;
+// }
+
 export interface EMInit {
   addLazyInit<RS extends ResourceDef[]>(
     requireRs: [...RS],

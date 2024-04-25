@@ -2,6 +2,7 @@ import { nameToId, Entity, _em } from "./entity-manager.js";
 import { Serializer, Deserializer } from "../utils/serialize.js";
 import { assert } from "../utils/util.js";
 import { ResourceDef } from "./em-resources.js";
+import { EntityW } from "./entity-manager.js";
 
 export interface ComponentDef<
   N extends string = string,
@@ -44,6 +45,20 @@ export type Component<DEF> = DEF extends ComponentDef<any, infer P> ? P : never;
 
 export const componentsToString = (cs: (ComponentDef | ResourceDef)[]) =>
   `(${cs.map((c) => c.name).join(", ")})`;
+
+export type EDef<CS extends ComponentDef[]> = readonly [...CS];
+export type ESet<DS extends EDef<any>[]> = {
+  [K in keyof DS]: DS[K] extends EDef<infer CS> ? EntityW<CS, number> : never;
+};
+export function isDeadC(e: ComponentDef) {
+  return "dead" === e.name;
+}
+export function isDeadE(e: Entity) {
+  return "dead" in e;
+} // TODO(@darzu): hacky, special components
+export function isDeletedE(e: Entity) {
+  return "deleted" in e;
+}
 
 export interface EMComponents {
   // TODO(@darzu):
@@ -301,4 +316,5 @@ export function createEMComponents(): EMComponents {
 
   return res;
 }
-export const _components: EMComponents = createEMComponents(); // TODO(@darzu): RENAME: all "xxxxDef" -> "xxxxC" ?
+
+export const _components: EMComponents = createEMComponents(); // TODO(@darzu): RENAME: all "xxxxDef" -> "xxxxC" ?// TODO(@darzu): don't love these...
