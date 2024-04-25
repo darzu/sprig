@@ -305,18 +305,43 @@ interface SystemStats {
   calls: number;
 }
 
-interface EntityManager {
+interface EMInit {
+  addLazyInit<RS extends ResourceDef[]>(
+    requireRs: [...RS],
+    provideRs: ResourceDef[],
+    callback: InitFn<RS>,
+    name?: string // TODO(@darzu): make required?
+  ): InitFnReg<RS>;
+
+  addEagerInit<RS extends ResourceDef[]>(
+    requireCompSet: ComponentDef[],
+    requireRs: [...RS],
+    provideRs: ResourceDef[],
+    callback: InitFn<RS>,
+    name?: string // TODO(@darzu): make required?
+  ): InitFnReg<RS>;
+
+  progressInitFns(): boolean;
+
+  requestResourceInit(r: ResourceDef): boolean;
+
+  summarizeInitStats(): string;
+}
+
+interface _EntityManager {
   entities: Map<number, Entity>;
+
+  resources: Record<string, unknown>;
 
   allSystemsByName: Map<string, SystemReg>;
 
   emStats: { queryTime: number; dbgLoops: number };
   sysStats: Record<string, SystemStats>;
-  initFnMsStats: Map<InitFnId, number>;
-
-  allInits: Map<InitFnId, InitFnReg>;
 
   componentDefs: Map<CompId, ComponentDef>;
+
+  seenComponents: Set<CompId>;
+  seenResources: Set<ResId>;
 
   defineResource<N extends string, P, Pargs extends any[]>(
     name: N,
@@ -453,21 +478,6 @@ interface EntityManager {
 
   dbgFilterEntitiesByKey(cs: string | string[]): Entities<any>;
 
-  addLazyInit<RS extends ResourceDef[]>(
-    requireRs: [...RS],
-    provideRs: ResourceDef[],
-    callback: InitFn<RS>,
-    name?: string // TODO(@darzu): make required?
-  ): InitFnReg<RS>;
-
-  addEagerInit<RS extends ResourceDef[]>(
-    requireCompSet: ComponentDef[],
-    requireRs: [...RS],
-    provideRs: ResourceDef[],
-    callback: InitFn<RS>,
-    name?: string // TODO(@darzu): make required?
-  ): InitFnReg<RS>;
-
   addSystem<CS extends ComponentDef[], RS extends ResourceDef[]>(
     name: string,
     phase: Phase,
@@ -503,8 +513,261 @@ interface EntityManager {
   update(): void;
 }
 
+interface EntityManager extends _EntityManager, EMInit {}
+
+function createEMInit(): EMInit {
+  const initFnMsStats = new Map<InitFnId, number>();
+  const allInits = new Map<InitFnId, InitFnReg>();
+
+  let _nextInitFnId = 1;
+
+  // INIT SYSTEM
+  // TODO(@darzu): [ ] split entity-manager ?
+  // TODO(@darzu): [ ] consolidate entity promises into init system?
+  // TODO(@darzu): [ ] addLazyInit, addEagerInit require debug name
+
+  const pendingLazyInitsByProvides = new Map<ResId, InitFnReg>();
+  const pendingEagerInits: InitFnReg[] = [];
+  const startedInits = new Map<InitFnId, Promise<void> | void>();
+
+  // TODO(@darzu): how can i tell if the event loop is running dry?
+
+  // TODO(@darzu): EXPERIMENT: returns madeProgress
+  function progressInitFns(): boolean {
+    let madeProgress = false;
+    pendingEagerInits.forEach((e, i) => {
+      let hasAll = true;
+
+      // has component set?
+      // TODO(@darzu): more precise component set tracking:
+      //               not just one of each component, but some entity that has all
+      let hasCompSet = true;
+      if (e.requireCompSet)
+        for (let c of e.requireCompSet)
+          hasCompSet &&= EM.seenComponents.has(c.id);
+      hasAll &&= hasCompSet;
+
+      // has resources?
+      for (let r of e.requireRs) {
+        if (!EM.seenResources.has(r.id)) {
+          if (hasCompSet) {
+            // NOTE: we don't force resources into existance until the components are met
+            //    this is (probably) the behavior we want when there's a system that is
+            //    waiting on some components to exist.
+            // lazy -> eager
+            const forced = requestResourceInit(r);
+            madeProgress ||= forced;
+            if (DBG_INIT_CAUSATION && forced) {
+              const line = _dbgInitBlameLn.get(e.id)!;
+              console.log(
+                `${performance.now().toFixed(0)}ms: '${
+                  r.name
+                }' force by init #${e.id} from: ${line}`
+              );
+            }
+          }
+          hasAll = false;
+        }
+      }
+
+      // run?
+      if (hasAll) {
+        // TODO(@darzu): BUG. this won't work if a resource is added then removed e.g. flags
+        //    need to think if we really want to allow resource removal. should we
+        //    have a seperate concept for flags?
+        // eager -> run
+        runInitFn(e);
+        pendingEagerInits.splice(i, 1);
+        madeProgress = true;
+      }
+    });
+
+    return madeProgress;
+  }
+
+  const _dbgInitBlameLn = new Map<InitFnId, string>();
+  function addInit(reg: InitFnReg) {
+    if (DBG_VERBOSE_INIT_CALLSITES || DBG_INIT_CAUSATION) {
+      // if (dbgOnce("getCallStack")) console.dir(getCallStack());
+      let line = getCallStack().find(
+        (s) =>
+          !s.includes("entity-manager") && //
+          !s.includes("em-helpers")
+      )!;
+
+      // trim "http://localhost:4321/"
+      // const hostIdx = line.indexOf(window.location.host);
+      // if (hostIdx >= 0)
+      //   line = line.slice(hostIdx + window.location.host.length);
+
+      if (DBG_VERBOSE_INIT_CALLSITES)
+        console.log(`init ${initFnToString(reg)} from: ${line}`);
+      _dbgInitBlameLn.set(reg.id, line);
+    }
+    assert(!allInits.has(reg.id), `Double registering ${initFnToString(reg)}`);
+    allInits.set(reg.id, reg);
+    if (reg.eager) {
+      pendingEagerInits.push(reg);
+
+      if (DBG_VERBOSE_INIT_SEQ)
+        console.log(`new eager: ${initFnToString(reg)}`);
+    } else {
+      assert(
+        reg.provideRs.length > 0,
+        `addLazyInit must specify at least 1 provideRs`
+      );
+      for (let p of reg.provideRs) {
+        assert(
+          !pendingLazyInitsByProvides.has(p.id),
+          `Resource: '${p.name}' already has an init fn!`
+        );
+        pendingLazyInitsByProvides.set(p.id, reg);
+      }
+
+      if (DBG_VERBOSE_INIT_SEQ) console.log(`new lazy: ${initFnToString(reg)}`);
+    }
+  }
+
+  function requestResourceInit(r: ResourceDef): boolean {
+    const lazy = pendingLazyInitsByProvides.get(r.id);
+    if (!lazy) return false;
+
+    // remove from all lazy
+    for (let r of lazy.provideRs) pendingLazyInitsByProvides.delete(r.id);
+    // add to eager
+    pendingEagerInits.push(lazy);
+
+    if (DBG_VERBOSE_INIT_SEQ)
+      console.log(`lazy => eager: ${initFnToString(lazy)}`);
+
+    return true; // was forced
+  }
+
+  const _runningInitStack: InitFnReg[] = [];
+  let _lastInitTimestamp: number = -1;
+  async function runInitFn(init: InitFnReg) {
+    // TODO(@darzu): attribute time spent to specific init functions
+
+    // update init fn stats before
+    {
+      assert(!initFnMsStats.has(init.id));
+      initFnMsStats.set(init.id, 0);
+      const before = performance.now();
+      if (_runningInitStack.length) {
+        assert(_lastInitTimestamp >= 0);
+        let elapsed = before - _lastInitTimestamp;
+        let prev = _runningInitStack.at(-1)!;
+        assert(initFnMsStats.has(prev.id));
+        initFnMsStats.set(prev.id, initFnMsStats.get(prev.id)! + elapsed);
+      }
+      _lastInitTimestamp = before;
+      _runningInitStack.push(init);
+    }
+
+    // TODO(@darzu): is this reasonable to do before ea init?
+    resetTempMatrixBuffer(initFnToString(init));
+
+    const promise = init.fn(EM.resources);
+    startedInits.set(init.id, promise);
+
+    if (DBG_VERBOSE_INIT_SEQ)
+      console.log(`eager => started: ${initFnToString(init)}`);
+
+    if (isPromise(promise)) await promise;
+
+    // assert resources were added
+    // TODO(@darzu): verify that init fn doesn't add any resources not mentioned in provides
+    for (let res of init.provideRs)
+      assert(
+        res.name in EM.resources,
+        `Init fn failed to provide: ${res.name}`
+      );
+
+    // update init fn stats after
+    {
+      const after = performance.now();
+      let popped = _runningInitStack.pop();
+      // TODO(@darzu): WAIT. why should the below be true? U should be able to have
+      //   A-start, B-start, A-end, B-end
+      // if A and B are unrelated
+      // assert(popped && popped.id === init.id, `Daryl doesnt understand stacks`);
+      // TODO(@darzu): all this init tracking might be lying.
+      assert(_lastInitTimestamp >= 0);
+      const elapsed = after - _lastInitTimestamp;
+      initFnMsStats.set(init.id, initFnMsStats.get(init.id)! + elapsed);
+      if (_runningInitStack.length) _lastInitTimestamp = after;
+      else _lastInitTimestamp = -1;
+    }
+
+    if (DBG_VERBOSE_INIT_SEQ) console.log(`finished: ${initFnToString(init)}`);
+  }
+
+  function addLazyInit<RS extends ResourceDef[]>(
+    requireRs: [...RS],
+    provideRs: ResourceDef[],
+    callback: InitFn<RS>,
+    name?: string // TODO(@darzu): make required?
+  ): InitFnReg<RS> {
+    const id = _nextInitFnId++;
+    const reg: InitFnReg<RS> = {
+      requireRs,
+      provideRs,
+      fn: callback,
+      eager: false,
+      id,
+      name,
+    };
+    addInit(reg);
+    return reg;
+  }
+
+  function addEagerInit<RS extends ResourceDef[]>(
+    requireCompSet: ComponentDef[],
+    requireRs: [...RS],
+    provideRs: ResourceDef[],
+    callback: InitFn<RS>,
+    name?: string // TODO(@darzu): make required?
+  ): InitFnReg<RS> {
+    const id = _nextInitFnId++;
+    const reg: InitFnReg<RS> = {
+      requireCompSet,
+      requireRs,
+      provideRs,
+      fn: callback,
+      eager: true,
+      id,
+      name,
+    };
+    addInit(reg);
+    return reg;
+  }
+
+  function summarizeInitStats() {
+    const inits = [...initFnMsStats.keys()].map((id) => allInits.get(id)!);
+    const initsAndTimes = inits.map(
+      (reg) => [reg, initFnMsStats.get(reg.id)!] as const
+    );
+    initsAndTimes.sort((a, b) => b[1] - a[1]);
+    let out = initsAndTimes
+      .map(([reg, ms]) => `${ms.toFixed(2)}ms: ${initFnToString(reg)}`)
+      .join("\n");
+    return out;
+  }
+
+  const result: EMInit = {
+    addLazyInit,
+    addEagerInit,
+    progressInitFns,
+    requestResourceInit,
+
+    summarizeInitStats,
+  };
+
+  return result;
+}
+
 // TODO(@darzu): split this apart! Shouldn't be a class and should be in as many pieces as is logical
-function createEntityManager(): EntityManager {
+function createEntityManager(): _EntityManager {
   const entities: Map<number, Entity> = new Map();
   const allSystemsByName: Map<string, SystemReg> = new Map();
   const activeSystemsById: Map<number, SystemReg> = new Map();
@@ -520,6 +783,9 @@ function createEntityManager(): EntityManager {
   const resourceDefs: Map<ResId, ResourceDef> = new Map();
   const resources: Record<string, unknown> = {};
 
+  const seenComponents = new Set<CompId>();
+  const seenResources = new Set<ResId>();
+
   const serializers: Map<
     number,
     {
@@ -531,7 +797,6 @@ function createEntityManager(): EntityManager {
   const ranges: Record<string, { nextId: number; maxId: number }> = {};
   let defaultRange: string = "";
   const sysStats: Record<string, SystemStats> = {};
-  const initFnMsStats = new Map<InitFnId, number>();
   const emStats = {
     queryTime: 0,
     dbgLoops: 0,
@@ -1231,47 +1496,6 @@ function createEntityManager(): EntityManager {
     return res;
   }
 
-  let _nextInitFnId = 1;
-
-  function addLazyInit<RS extends ResourceDef[]>(
-    requireRs: [...RS],
-    provideRs: ResourceDef[],
-    callback: InitFn<RS>,
-    name?: string // TODO(@darzu): make required?
-  ): InitFnReg<RS> {
-    const id = _nextInitFnId++;
-    const reg: InitFnReg<RS> = {
-      requireRs,
-      provideRs,
-      fn: callback,
-      eager: false,
-      id,
-      name,
-    };
-    addInit(reg);
-    return reg;
-  }
-  function addEagerInit<RS extends ResourceDef[]>(
-    requireCompSet: ComponentDef[],
-    requireRs: [...RS],
-    provideRs: ResourceDef[],
-    callback: InitFn<RS>,
-    name?: string // TODO(@darzu): make required?
-  ): InitFnReg<RS> {
-    const id = _nextInitFnId++;
-    const reg: InitFnReg<RS> = {
-      requireCompSet,
-      requireRs,
-      provideRs,
-      fn: callback,
-      eager: true,
-      id,
-      name,
-    };
-    addInit(reg);
-    return reg;
-  }
-
   // TODO(@darzu): "addSystemWInit" that is like wrapping an addSystem in an addEagerInit so you can have
   //  some global resources around
   // TODO(@darzu): add support for "run every X frames or ms" ?
@@ -1331,7 +1555,7 @@ function createEntityManager(): EntityManager {
       // NOTE: we delay activating the system b/c each active system incurs
       //  a cost to maintain its query accelerators on each entity and component
       //  added/removed
-      addEagerInit(
+      EM.addEagerInit(
         sys.cs ?? [],
         sys.rs,
         [],
@@ -1450,7 +1674,7 @@ function createEntityManager(): EntityManager {
     if (!rs) {
       // we don't yet have the resources, check if we can init any
       s.rs.forEach((r) => {
-        const forced = tryForceResourceInit(r);
+        const forced = EM.requestResourceInit(r);
         if (DBG_INIT_CAUSATION && forced) {
           console.log(
             `${performance.now().toFixed(0)}ms: '${r.name}' force by system ${
@@ -1561,7 +1785,7 @@ function createEntityManager(): EntityManager {
       }
       // if it's not ready to run, try to push the required resources along
       p.rs.forEach((r) => {
-        const forced = tryForceResourceInit(r);
+        const forced = EM.requestResourceInit(r);
         madeProgress ||= forced;
         if (DBG_INIT_CAUSATION && forced) {
           const line = _dbgEntityPromiseCallsites.get(p.id)!;
@@ -1755,205 +1979,12 @@ function createEntityManager(): EntityManager {
     });
   }
 
-  // INIT SYSTEM
-  // TODO(@darzu): [ ] split entity-manager ?
-  // TODO(@darzu): [ ] consolidate entity promises into init system?
-  // TODO(@darzu): [ ] addLazyInit, addEagerInit require debug name
-  const seenComponents = new Set<CompId>();
-  const seenResources = new Set<ResId>();
-
-  const pendingLazyInitsByProvides = new Map<ResId, InitFnReg>();
-  const pendingEagerInits: InitFnReg[] = [];
-  const startedInits = new Map<InitFnId, Promise<void> | void>();
-  const allInits = new Map<InitFnId, InitFnReg>();
-
-  // TODO(@darzu): how can i tell if the event loop is running dry?
-
-  // TODO(@darzu): EXPERIMENT: returns madeProgress
-  function progressInitFns(): boolean {
-    let madeProgress = false;
-    pendingEagerInits.forEach((e, i) => {
-      let hasAll = true;
-
-      // has component set?
-      // TODO(@darzu): more precise component set tracking:
-      //               not just one of each component, but some entity that has all
-      let hasCompSet = true;
-      if (e.requireCompSet)
-        for (let c of e.requireCompSet) hasCompSet &&= seenComponents.has(c.id);
-      hasAll &&= hasCompSet;
-
-      // has resources?
-      for (let r of e.requireRs) {
-        if (!seenResources.has(r.id)) {
-          if (hasCompSet) {
-            // NOTE: we don't force resources into existance until the components are met
-            //    this is (probably) the behavior we want when there's a system that is
-            //    waiting on some components to exist.
-            // lazy -> eager
-            const forced = tryForceResourceInit(r);
-            madeProgress ||= forced;
-            if (DBG_INIT_CAUSATION && forced) {
-              const line = _dbgInitBlameLn.get(e.id)!;
-              console.log(
-                `${performance.now().toFixed(0)}ms: '${
-                  r.name
-                }' force by init #${e.id} from: ${line}`
-              );
-            }
-          }
-          hasAll = false;
-        }
-      }
-
-      // run?
-      if (hasAll) {
-        // TODO(@darzu): BUG. this won't work if a resource is added then removed e.g. flags
-        //    need to think if we really want to allow resource removal. should we
-        //    have a seperate concept for flags?
-        // eager -> run
-        runInitFn(e);
-        pendingEagerInits.splice(i, 1);
-        madeProgress = true;
-      }
-    });
-
-    if (DBG_ENITITY_10017_POSITION_CHANGES) {
-      // TODO(@darzu): GENERALIZE THIS
-      const player = entities.get(10017);
-      if (player && "position" in player) {
-        const pos = vec3Dbg(player.position as V3);
-        if (dbgOnce(`${_dbgChangesToEnt10017}-${pos}`)) {
-          console.log(
-            `10017 pos ${pos} after 'init fns' on loop ${emStats.dbgLoops}`
-          );
-          _dbgChangesToEnt10017 += 1;
-          dbgOnce(`${_dbgChangesToEnt10017}-${pos}`);
-        }
-      }
-    }
-
-    return madeProgress;
-  }
-  const _dbgInitBlameLn = new Map<InitFnId, string>();
-  function addInit(reg: InitFnReg) {
-    if (DBG_VERBOSE_INIT_CALLSITES || DBG_INIT_CAUSATION) {
-      // if (dbgOnce("getCallStack")) console.dir(getCallStack());
-      let line = getCallStack().find(
-        (s) =>
-          !s.includes("entity-manager") && //
-          !s.includes("em-helpers")
-      )!;
-
-      // trim "http://localhost:4321/"
-      // const hostIdx = line.indexOf(window.location.host);
-      // if (hostIdx >= 0)
-      //   line = line.slice(hostIdx + window.location.host.length);
-
-      if (DBG_VERBOSE_INIT_CALLSITES)
-        console.log(`init ${initFnToString(reg)} from: ${line}`);
-      _dbgInitBlameLn.set(reg.id, line);
-    }
-    assert(!allInits.has(reg.id), `Double registering ${initFnToString(reg)}`);
-    allInits.set(reg.id, reg);
-    if (reg.eager) {
-      pendingEagerInits.push(reg);
-
-      if (DBG_VERBOSE_INIT_SEQ)
-        console.log(`new eager: ${initFnToString(reg)}`);
-    } else {
-      assert(
-        reg.provideRs.length > 0,
-        `addLazyInit must specify at least 1 provideRs`
-      );
-      for (let p of reg.provideRs) {
-        assert(
-          !pendingLazyInitsByProvides.has(p.id),
-          `Resource: '${p.name}' already has an init fn!`
-        );
-        pendingLazyInitsByProvides.set(p.id, reg);
-      }
-
-      if (DBG_VERBOSE_INIT_SEQ) console.log(`new lazy: ${initFnToString(reg)}`);
-    }
-  }
-  function tryForceResourceInit(r: ResourceDef): boolean {
-    const lazy = pendingLazyInitsByProvides.get(r.id);
-    if (!lazy) return false;
-
-    // remove from all lazy
-    for (let r of lazy.provideRs) pendingLazyInitsByProvides.delete(r.id);
-    // add to eager
-    pendingEagerInits.push(lazy);
-
-    if (DBG_VERBOSE_INIT_SEQ)
-      console.log(`lazy => eager: ${initFnToString(lazy)}`);
-
-    return true; // was forced
-  }
-
-  const _runningInitStack: InitFnReg[] = [];
-  let _lastInitTimestamp: number = -1;
-  async function runInitFn(init: InitFnReg) {
-    // TODO(@darzu): attribute time spent to specific init functions
-
-    // update init fn stats before
-    {
-      assert(!initFnMsStats.has(init.id));
-      initFnMsStats.set(init.id, 0);
-      const before = performance.now();
-      if (_runningInitStack.length) {
-        assert(_lastInitTimestamp >= 0);
-        let elapsed = before - _lastInitTimestamp;
-        let prev = _runningInitStack.at(-1)!;
-        assert(initFnMsStats.has(prev.id));
-        initFnMsStats.set(prev.id, initFnMsStats.get(prev.id)! + elapsed);
-      }
-      _lastInitTimestamp = before;
-      _runningInitStack.push(init);
-    }
-
-    // TODO(@darzu): is this reasonable to do before ea init?
-    resetTempMatrixBuffer(initFnToString(init));
-
-    const promise = init.fn(resources);
-    startedInits.set(init.id, promise);
-
-    if (DBG_VERBOSE_INIT_SEQ)
-      console.log(`eager => started: ${initFnToString(init)}`);
-
-    if (isPromise(promise)) await promise;
-
-    // assert resources were added
-    // TODO(@darzu): verify that init fn doesn't add any resources not mentioned in provides
-    for (let res of init.provideRs)
-      assert(res.name in resources, `Init fn failed to provide: ${res.name}`);
-
-    // update init fn stats after
-    {
-      const after = performance.now();
-      let popped = _runningInitStack.pop();
-      // TODO(@darzu): WAIT. why should the below be true? U should be able to have
-      //   A-start, B-start, A-end, B-end
-      // if A and B are unrelated
-      // assert(popped && popped.id === init.id, `Daryl doesnt understand stacks`);
-      // TODO(@darzu): all this init tracking might be lying.
-      assert(_lastInitTimestamp >= 0);
-      const elapsed = after - _lastInitTimestamp;
-      initFnMsStats.set(init.id, initFnMsStats.get(init.id)! + elapsed);
-      if (_runningInitStack.length) _lastInitTimestamp = after;
-      else _lastInitTimestamp = -1;
-    }
-
-    if (DBG_VERBOSE_INIT_SEQ) console.log(`finished: ${initFnToString(init)}`);
-  }
-
   function update() {
     // TODO(@darzu): can EM.update() be a system?
     let madeProgress: boolean;
     do {
       madeProgress = false;
-      madeProgress ||= progressInitFns();
+      madeProgress ||= EM.progressInitFns();
       madeProgress ||= checkEntityPromises();
     } while (madeProgress);
 
@@ -1961,14 +1992,15 @@ function createEntityManager(): EntityManager {
     emStats.dbgLoops++;
   }
 
-  const _em: EntityManager = {
+  const _em: _EntityManager = {
     entities,
     allSystemsByName,
     emStats,
     sysStats,
-    initFnMsStats,
-    allInits,
     componentDefs,
+    seenComponents,
+    seenResources,
+    resources,
 
     defineResource,
     defineComponent,
@@ -2001,8 +2033,6 @@ function createEntityManager(): EntityManager {
     filterEntities_uncached,
     dbgGetSystemsForEntity,
     dbgFilterEntitiesByKey,
-    addLazyInit,
-    addEagerInit,
     addSystem,
     whenResources,
     hasSystem,
@@ -2014,4 +2044,16 @@ function createEntityManager(): EntityManager {
   return _em;
 }
 
-export const EM: EntityManager = createEntityManager();
+function createEM(): EntityManager {
+  const _em: _EntityManager = createEntityManager();
+  const _init: EMInit = createEMInit();
+
+  const result: EntityManager = {
+    ..._em,
+    ..._init,
+  };
+
+  return result;
+}
+
+export const EM: EntityManager = createEM();

@@ -336,17 +336,8 @@ export const dbg = {
     console.log(res);
   },
   summarizeInit: () => {
-    const inits = [...EM.initFnMsStats.keys()].map(
-      (id) => EM.allInits.get(id)!
-    );
-    const initsAndTimes = inits.map(
-      (reg) => [reg, EM.initFnMsStats.get(reg.id)!] as const
-    );
-    initsAndTimes.sort((a, b) => b[1] - a[1]);
-    let out = initsAndTimes
-      .map(([reg, ms]) => `${ms.toFixed(2)}ms: ${initFnToString(reg)}`)
-      .join("\n");
-    console.log(out);
+    const res = EM.summarizeInitStats();
+    console.log(res);
   },
   summarizeStats: () => {
     let stats = EM.sysStats;
