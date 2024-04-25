@@ -27,11 +27,6 @@ import { _systems } from "./em-systems.js";
 //  colocated in arrays; and maybe introduce "arch-types" for commonly grouped
 //  components and "worlds" to section off entities.
 
-// TODO(@darzu): Instead of having one big EM class,
-//    we should seperate out all seperable concerns,
-//    and then just | them together as the top-level
-//    thing. Maybe even use the "$" symbol?! (probs not)
-
 // TODO(@darzu): use defineProperty, Object.preventExtensions(), and such to have more robust entities?
 
 export interface Entity {
@@ -153,11 +148,10 @@ export interface EMEntities {
     ...cs: [...CS]
   ): Promise<EntityW<CS>>;
 
-  update(): void;
+  progressEntityPromises(): boolean;
 }
 
-// TODO(@darzu): split this apart! Shouldn't be a class and should be in as many pieces as is logical
-function createEMEntities(): EMEntities {
+export function createEMEntities(): EMEntities {
   const entities: Map<number, Entity> = new Map();
 
   const entityPromises: Map<number, EntityPromise<ComponentDef[], any>[]> =
@@ -484,7 +478,7 @@ function createEMEntities(): EMEntities {
   // TODO(@darzu): can this consolidate with the InitFn system?
   // TODO(@darzu): PERF TRACKING. Need to rethink how this interacts with system and init fn perf tracking
   // TODO(@darzu): EXPERIMENT: returns madeProgress
-  function checkEntityPromises(): boolean {
+  function progressEntityPromises(): boolean {
     let madeProgress = false;
     // console.dir(entityPromises);
     // console.log(dbgStrEntityPromises());
@@ -633,20 +627,6 @@ function createEMEntities(): EMEntities {
     });
   }
 
-  function update() {
-    // TODO(@darzu): can EM.update() be a system?
-    let madeProgress: boolean;
-    do {
-      madeProgress = false;
-      madeProgress ||= _init.progressInitFns();
-      madeProgress ||= _resources.progressResourcePromises();
-      madeProgress ||= checkEntityPromises();
-    } while (madeProgress);
-
-    _systems.callSystems();
-    _stats.emStats.dbgLoops++;
-  }
-
   const _em: EMEntities = {
     // entities
     entities,
@@ -672,9 +652,7 @@ function createEMEntities(): EMEntities {
     dbgFilterEntitiesByKey,
     whenEntityHas,
     whenSingleEntity,
-
-    // update all
-    update,
+    progressEntityPromises,
   };
 
   return _em;

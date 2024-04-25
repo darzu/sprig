@@ -63,7 +63,7 @@ export interface EMResources {
   progressResourcePromises(): boolean;
 }
 
-function createEMResources(): EMResources {
+export function createEMResources(): EMResources {
   const resourcePromises: ResourcesPromise<ResourceDef[]>[] = [];
   const resourceDefs: Map<ResId, ResourceDef> = new Map();
   const resources: Record<string, unknown> = {};

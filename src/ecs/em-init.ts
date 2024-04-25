@@ -68,7 +68,7 @@ export interface EMInit {
   summarizeInitStats(): string;
 }
 
-function createEMInit(): EMInit {
+export function createEMInit(): EMInit {
   const initFnMsStats = new Map<InitFnId, number>();
   const allInits = new Map<InitFnId, InitFnReg>();
 
