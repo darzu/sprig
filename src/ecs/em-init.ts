@@ -13,6 +13,7 @@ import {
   componentsToString,
   ResId,
   _em,
+  _resources,
 } from "./entity-manager.js";
 
 export type InitFnId = number;
@@ -95,7 +96,7 @@ function createEMInit(): EMInit {
 
       // has resources?
       for (let r of e.requireRs) {
-        if (!_em.seenResources.has(r.id)) {
+        if (!_resources.seenResources.has(r.id)) {
           if (hasCompSet) {
             // NOTE: we don't force resources into existance until the components are met
             //    this is (probably) the behavior we want when there's a system that is
@@ -213,7 +214,7 @@ function createEMInit(): EMInit {
     // TODO(@darzu): is this reasonable to do before ea init?
     resetTempMatrixBuffer(initFnToString(init));
 
-    const promise = init.fn(_em.resources);
+    const promise = init.fn(_resources.resources);
     startedInits.set(init.id, promise);
 
     if (DBG_VERBOSE_INIT_SEQ)
@@ -225,7 +226,7 @@ function createEMInit(): EMInit {
     // TODO(@darzu): verify that init fn doesn't add any resources not mentioned in provides
     for (let res of init.provideRs)
       assert(
-        res.name in _em.resources,
+        res.name in _resources.resources,
         `Init fn failed to provide: ${res.name}`
       );
 

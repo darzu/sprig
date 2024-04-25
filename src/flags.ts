@@ -45,9 +45,6 @@ export const WARN_DEAD_CLEANUP = false;
 // prints out all systems in order in their phases, whether they are active/deactive
 //    and reprints that every time new systems are added.
 export const DBG_SYSTEM_ORDER = false;
-// prints when 'PositionDef' on '10017' changes after a system call, init fn, or entity promise
-// TODO(@darzu): GENERALIZE THIS! for other entities and components. this is one-off.
-export const DBG_ENITITY_10017_POSITION_CHANGES = false;
 
 // INPUT
 // prints out key codes for each key pressed (first time)
