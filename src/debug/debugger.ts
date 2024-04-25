@@ -395,14 +395,15 @@ export const dbg = {
     let out = "";
     for (let { s, t, m } of callTimes) {
       const percent = ((t * 100) / totalTime).toFixed(1);
-      const avgTime = (t / EM.dbgLoops).toFixed(2);
+      const avgTime = (t / EM.emStats.dbgLoops).toFixed(2);
       const maxTime = m.toFixed(1);
       const sysTotalTime = t.toFixed(1);
       out += `${s}: ${percent}% (${avgTime}ms, max: ${maxTime}ms, total: ${sysTotalTime}ms)\n`;
     }
 
     out += "\n";
-    out += "time per frame: " + (totalTime / EM.dbgLoops).toFixed(3) + "ms";
+    out +=
+      "time per frame: " + (totalTime / EM.emStats.dbgLoops).toFixed(3) + "ms";
     console.log(out);
   },
 };

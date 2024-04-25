@@ -305,16 +305,12 @@ interface SystemStats {
   calls: number;
 }
 
-// TODO(@darzu): DE-CLASS this!
-
 interface EntityManager {
   entities: Map<number, Entity>;
 
   allSystemsByName: Map<string, SystemReg>;
 
-  dbgLoops: number;
-
-  emStats: { queryTime: number };
+  emStats: { queryTime: number; dbgLoops: number };
   sysStats: Record<string, SystemStats>;
   initFnMsStats: Map<InitFnId, number>;
 
@@ -508,22 +504,23 @@ interface EntityManager {
 }
 
 // TODO(@darzu): split this apart! Shouldn't be a class and should be in as many pieces as is logical
-class _EntityManager implements EntityManager {
-  entities: Map<number, Entity> = new Map();
-  allSystemsByName: Map<string, SystemReg> = new Map();
-  activeSystemsById: Map<number, SystemReg> = new Map();
-  phases: Map<Phase, string[]> = toMap(
+function createEntityManager(): EntityManager {
+  const entities: Map<number, Entity> = new Map();
+  const allSystemsByName: Map<string, SystemReg> = new Map();
+  const activeSystemsById: Map<number, SystemReg> = new Map();
+  const phases: Map<Phase, string[]> = toMap(
     PhaseValueList,
     (n) => n,
     (_) => [] as string[]
   );
-  entityPromises: Map<number, EntityPromise<ComponentDef[], any>[]> = new Map();
-  resourcePromises: ResourcesPromise<ResourceDef[]>[] = [];
-  componentDefs: Map<CompId, ComponentDef> = new Map(); // TODO(@darzu): rename to componentDefs ?
-  resourceDefs: Map<ResId, ResourceDef> = new Map();
-  resources: Record<string, unknown> = {};
+  const entityPromises: Map<number, EntityPromise<ComponentDef[], any>[]> =
+    new Map();
+  const resourcePromises: ResourcesPromise<ResourceDef[]>[] = [];
+  const componentDefs: Map<CompId, ComponentDef> = new Map(); // TODO(@darzu): rename to componentDefs ?
+  const resourceDefs: Map<ResId, ResourceDef> = new Map();
+  const resources: Record<string, unknown> = {};
 
-  serializers: Map<
+  const serializers: Map<
     number,
     {
       serialize: (obj: any, buf: Serializer) => void;
@@ -531,40 +528,31 @@ class _EntityManager implements EntityManager {
     }
   > = new Map();
 
-  ranges: Record<string, { nextId: number; maxId: number }> = {};
-  defaultRange: string = "";
-  sysStats: Record<string, SystemStats> = {};
-  initFnMsStats = new Map<InitFnId, number>();
-  emStats = {
+  const ranges: Record<string, { nextId: number; maxId: number }> = {};
+  let defaultRange: string = "";
+  const sysStats: Record<string, SystemStats> = {};
+  const initFnMsStats = new Map<InitFnId, number>();
+  const emStats = {
     queryTime: 0,
+    dbgLoops: 0,
   };
-
-  // TODO(@darzu): move elsewhere
-  dbgLoops: number = 0;
 
   // QUERY SYSTEM
   // TODO(@darzu): PERF. maybe the entities list should be maintained sorted. That
   //    would make certain scan operations (like updating them on component add/remove)
   //    cheaper. And perhaps better gameplay code too.
-  private _systemsToEntities: Map<number, Entity[]> = new Map();
+  const _systemsToEntities: Map<number, Entity[]> = new Map();
   // NOTE: _entitiesToSystems is only needed because of DeadDef
-  private _entitiesToSystems: Map<number, number[]> = new Map();
-  private _systemsToComponents: Map<number, string[]> = new Map();
-  private _componentToSystems: Map<string, number[]> = new Map();
+  const _entitiesToSystems: Map<number, number[]> = new Map();
+  const _systemsToComponents: Map<number, string[]> = new Map();
+  const _componentToSystems: Map<string, number[]> = new Map();
 
-  constructor() {
-    // dummy ent 0
-    // const ent0 = Object.create(null); // no prototype
-    // ent0.id = 0;
-    // this.entities.set(0, ent0);
-  }
-
-  public defineResource<N extends string, P, Pargs extends any[]>(
+  function defineResource<N extends string, P, Pargs extends any[]>(
     name: N,
     construct: (...args: Pargs) => P
   ): ResourceDef<N, P, Pargs> {
     const id = nameToId(name);
-    if (this.resourceDefs.has(id)) {
+    if (resourceDefs.has(id)) {
       throw `Resource with name ${name} already defined--hash collision?`;
     }
     const def: ResourceDef<N, P, Pargs> = {
@@ -573,15 +561,15 @@ class _EntityManager implements EntityManager {
       construct,
       id,
     };
-    this.resourceDefs.set(id, def);
+    resourceDefs.set(id, def);
     return def;
   }
 
-  forbiddenComponentNames = new Set<string>(["id"]);
+  const forbiddenComponentNames = new Set<string>(["id"]);
 
   // TODO(@darzu): allow components to specify sibling components or component sets
   //  so that if the marker component is present, the others will be also
-  public defineComponent<
+  function defineComponent<
     N extends string,
     P,
     UArgs extends any[] & { length: 0 | 1 } = []
@@ -590,13 +578,13 @@ class _EntityManager implements EntityManager {
     construct: () => P,
     update?: (p: P, ...args: UArgs) => P
   ): UpdatableComponentDef<N, P, UArgs, false>;
-  public defineComponent<N extends string, P, UArgs extends any[] = []>(
+  function defineComponent<N extends string, P, UArgs extends any[] = []>(
     name: N,
     construct: () => P,
     update: (p: P, ...args: UArgs) => P,
     opts: { multiArg: true }
   ): UpdatableComponentDef<N, P, UArgs, true>;
-  defineComponent<
+  function defineComponent<
     N extends string,
     P,
     UArgs extends any[] = [],
@@ -608,8 +596,8 @@ class _EntityManager implements EntityManager {
     opts: { multiArg: MA } = { multiArg: false as MA } // TODO(@darzu): any way around this cast?
   ): UpdatableComponentDef<N, P, UArgs, MA> {
     const id = nameToId(name);
-    assert(!this.componentDefs.has(id), `Component '${name}' already defined`);
-    assert(!this.forbiddenComponentNames.has(name), `forbidden name: ${name}`);
+    assert(!componentDefs.has(id), `Component '${name}' already defined`);
+    assert(!forbiddenComponentNames.has(name), `forbidden name: ${name}`);
     const component: UpdatableComponentDef<N, P, UArgs, MA> = {
       _brand: "componentDef", // TODO(@darzu): remove?
       updatable: true,
@@ -623,11 +611,11 @@ class _EntityManager implements EntityManager {
       multiArg: opts.multiArg,
     };
     // TODO(@darzu): I don't love this cast. feels like it should be possible without..
-    this.componentDefs.set(id, component as unknown as ComponentDef);
+    componentDefs.set(id, component as unknown as ComponentDef);
     return component;
   }
 
-  public defineNonupdatableComponent<
+  function defineNonupdatableComponent<
     N extends string,
     P,
     CArgs extends any[] & { length: 0 | 1 }
@@ -635,12 +623,16 @@ class _EntityManager implements EntityManager {
     name: N,
     construct: (...args: CArgs) => P
   ): NonupdatableComponentDef<N, P, CArgs, false>;
-  public defineNonupdatableComponent<N extends string, P, CArgs extends any[]>(
+  function defineNonupdatableComponent<
+    N extends string,
+    P,
+    CArgs extends any[]
+  >(
     name: N,
     construct: (...args: CArgs) => P,
     opts: { multiArg: true }
   ): NonupdatableComponentDef<N, P, CArgs, true>;
-  defineNonupdatableComponent<
+  function defineNonupdatableComponent<
     N extends string,
     P,
     CArgs extends any[],
@@ -651,7 +643,7 @@ class _EntityManager implements EntityManager {
     opts: { multiArg: MA } = { multiArg: false as MA }
   ): NonupdatableComponentDef<N, P, CArgs, MA> {
     const id = nameToId(name);
-    if (this.componentDefs.has(id)) {
+    if (componentDefs.has(id)) {
       throw `Component with name ${name} already defined--hash collision?`;
     }
 
@@ -672,20 +664,20 @@ class _EntityManager implements EntityManager {
         name in e,
       multiArg: opts.multiArg,
     };
-    this.componentDefs.set(id, component);
+    componentDefs.set(id, component);
     return component;
   }
 
-  private checkComponent(def: ComponentDef) {
-    if (!this.componentDefs.has(def.id))
+  function checkComponent(def: ComponentDef) {
+    if (!componentDefs.has(def.id))
       throw `Component ${def.name} (id ${def.id}) not found`;
-    if (this.componentDefs.get(def.id)!.name !== def.name)
+    if (componentDefs.get(def.id)!.name !== def.name)
       throw `Component id ${def.id} has name ${
-        this.componentDefs.get(def.id)!.name
+        componentDefs.get(def.id)!.name
       }, not ${def.name}`;
   }
 
-  public registerSerializerPair<N extends string, P, UArgs extends any[]>(
+  function registerSerializerPair<N extends string, P, UArgs extends any[]>(
     def: ComponentDef<N, P, [], UArgs>,
     serialize: (obj: P, buf: Serializer) => void,
     deserialize: (obj: P, buf: Deserializer) => void
@@ -694,16 +686,16 @@ class _EntityManager implements EntityManager {
       def.updatable,
       `Can't attach serializers to non-updatable component '${def.name}'`
     );
-    this.serializers.set(def.id, { serialize, deserialize });
+    serializers.set(def.id, { serialize, deserialize });
   }
 
-  public serialize(id: number, componentId: number, buf: Serializer) {
-    const def = this.componentDefs.get(componentId);
+  function serialize(id: number, componentId: number, buf: Serializer) {
+    const def = componentDefs.get(componentId);
     if (!def) throw `Trying to serialize unknown component id ${componentId}`;
-    const entity = this.findEntity(id, [def]);
+    const entity = findEntity(id, [def]);
     if (!entity)
       throw `Trying to serialize component ${def.name} on entity ${id}, which doesn't have it`;
-    const serializerPair = this.serializers.get(componentId);
+    const serializerPair = serializers.get(componentId);
     if (!serializerPair)
       throw `No serializer for component ${def.name} (for entity ${id})`;
 
@@ -715,15 +707,15 @@ class _EntityManager implements EntityManager {
     serializerPair.serialize(entity[def.name], buf);
   }
 
-  public deserialize(id: number, componentId: number, buf: Deserializer) {
-    const def = this.componentDefs.get(componentId);
+  function deserialize(id: number, componentId: number, buf: Deserializer) {
+    const def = componentDefs.get(componentId);
     if (!def) throw `Trying to deserialize unknown component id ${componentId}`;
-    if (!this.hasEntity(id)) {
+    if (!hasEntity(id)) {
       throw `Trying to deserialize component ${def.name} of unknown entity ${id}`;
     }
-    let entity = this.findEntity(id, [def]);
+    let entity = findEntity(id, [def]);
 
-    const serializerPair = this.serializers.get(componentId);
+    const serializerPair = serializers.get(componentId);
     if (!serializerPair)
       throw `No deserializer for component ${def.name} (for entity ${id})`;
     const deserialize = (p: any) => {
@@ -740,7 +732,7 @@ class _EntityManager implements EntityManager {
         def.updatable,
         `Trying to deserialize into non-updatable component '${def.name}'!`
       );
-      this.addComponentInternal(id, def, deserialize, ...[]);
+      addComponentInternal(id, def, deserialize, ...[]);
     } else {
       deserialize(entity[def.name]);
     }
@@ -751,18 +743,18 @@ class _EntityManager implements EntityManager {
     // }
   }
 
-  public setDefaultRange(rangeName: string) {
-    this.defaultRange = rangeName;
+  function setDefaultRange(rangeName: string) {
+    defaultRange = rangeName;
   }
 
-  public setIdRange(rangeName: string, nextId: number, maxId: number) {
-    this.ranges[rangeName] = { nextId, maxId };
+  function setIdRange(rangeName: string, nextId: number, maxId: number) {
+    ranges[rangeName] = { nextId, maxId };
   }
 
   // TODO(@darzu): dont return the entity!
-  public mk(rangeName?: string): Entity {
-    if (rangeName === undefined) rangeName = this.defaultRange;
-    const range = this.ranges[rangeName];
+  function mk(rangeName?: string): Entity {
+    if (rangeName === undefined) rangeName = defaultRange;
+    const range = ranges[rangeName];
     if (!range) {
       throw `Entity manager has no ID range (range specifier is ${rangeName})`;
     }
@@ -777,58 +769,58 @@ class _EntityManager implements EntityManager {
       console.warn(
         `We're halfway through our local entity ID space! Physics assumes IDs are < 2^16`
       );
-    this.entities.set(e.id, e);
-    this._entitiesToSystems.set(e.id, []);
+    entities.set(e.id, e);
+    _entitiesToSystems.set(e.id, []);
 
     // if (e.id === 10052) throw new Error("Created here!");
 
     return e;
   }
 
-  public registerEntity(id: number): Entity {
-    assert(!this.entities.has(id), `EntityManager already has id ${id}!`);
+  function registerEntity(id: number): Entity {
+    assert(!entities.has(id), `EntityManager already has id ${id}!`);
     /* TODO: should we do the check below but for all ranges?
-    if (this.nextId <= id && id < this.maxId)
-    throw `EntityManager cannot register foreign ids inside its local range; ${this.nextId} <= ${id} && ${id} < ${this.maxId}!`;
+    if (nextId <= id && id < maxId)
+    throw `EntityManager cannot register foreign ids inside its local range; ${nextId} <= ${id} && ${id} < ${maxId}!`;
     */
     // const e = { id: id };
     const e = Object.create(null); // no prototype
     e.id = id;
-    this.entities.set(e.id, e);
-    this._entitiesToSystems.set(e.id, []);
+    entities.set(e.id, e);
+    _entitiesToSystems.set(e.id, []);
     return e;
   }
 
   // TODO(@darzu): hacky, special components
-  private isDeletedE(e: Entity) {
+  function isDeletedE(e: Entity) {
     return "deleted" in e;
   }
-  private isDeadE(e: Entity) {
+  function isDeadE(e: Entity) {
     return "dead" in e;
   }
-  private isDeadC(e: ComponentDef) {
+  function isDeadC(e: ComponentDef) {
     return "dead" === e.name;
   }
 
-  public addComponent<N extends string, P, PArgs extends any[]>(
+  function addComponent<N extends string, P, PArgs extends any[]>(
     id: number,
     def: _ComponentDef<N, P, PArgs>,
     ...args: PArgs
   ): P {
-    return this.addComponentInternal(id, def, undefined, ...args);
+    return addComponentInternal(id, def, undefined, ...args);
   }
 
-  private addComponentInternal<N extends string, P, PArgs extends any[]>(
+  function addComponentInternal<N extends string, P, PArgs extends any[]>(
     id: number,
     def: _ComponentDef<N, P, PArgs>,
     customUpdate: undefined | ((p: P, ...args: PArgs) => P),
     ...args: PArgs
   ): P {
-    this.checkComponent(def);
+    checkComponent(def);
     if (id === 0) throw `hey, use addResource!`;
-    const e = this.entities.get(id)!;
+    const e = entities.get(id)!;
     // TODO: this is hacky--EM shouldn't know about "deleted"
-    if (DBG_ASSERT && this.isDeletedE(e)) {
+    if (DBG_ASSERT && isDeletedE(e)) {
       console.error(
         `Trying to add component ${def.name} to deleted entity ${id}`
       );
@@ -848,82 +840,82 @@ class _EntityManager implements EntityManager {
     // update query caches
     {
       let _beforeQueryCache = performance.now();
-      this.seenComponents.add(def.id);
-      const eSystems = this._entitiesToSystems.get(e.id)!;
-      if (this.isDeadC(def)) {
+      seenComponents.add(def.id);
+      const eSystems = _entitiesToSystems.get(e.id)!;
+      if (isDeadC(def)) {
         // remove from every current system
         eSystems.forEach((s) => {
-          const es = this._systemsToEntities.get(s)!;
+          const es = _systemsToEntities.get(s)!;
           // TODO(@darzu): perf. sorted removal
           const indx = es.findIndex((v) => v.id === id);
           if (indx >= 0) es.splice(indx, 1);
         });
         eSystems.length = 0;
       }
-      const systems = this._componentToSystems.get(def.name);
+      const systems = _componentToSystems.get(def.name);
       for (let sysId of systems ?? []) {
-        const allNeededCs = this._systemsToComponents.get(sysId);
+        const allNeededCs = _systemsToComponents.get(sysId);
         if (allNeededCs?.every((n) => n in e)) {
           // TODO(@darzu): perf. sorted insert
-          this._systemsToEntities.get(sysId)!.push(e);
+          _systemsToEntities.get(sysId)!.push(e);
           eSystems.push(sysId);
         }
       }
-      this.emStats.queryTime += performance.now() - _beforeQueryCache;
+      emStats.queryTime += performance.now() - _beforeQueryCache;
     }
 
     // track changes for entity promises
     // TODO(@darzu): PERF. maybe move all the system query update stuff to use this too?
-    this._changedEntities.add(e.id);
+    _changedEntities.add(e.id);
 
     return c;
   }
 
-  public addComponentByName(id: number, name: string, ...args: any): any {
+  function addComponentByName(id: number, name: string, ...args: any): any {
     console.log(
       "addComponentByName called, should only be called for debugging"
     );
-    let component = this.componentDefs.get(nameToId(name));
+    let component = componentDefs.get(nameToId(name));
     if (!component) {
       throw `no component named ${name}`;
     }
-    return this.addComponent(id, component, ...args);
+    return addComponent(id, component, ...args);
   }
 
-  public ensureComponent<N extends string, P, PArgs extends any[]>(
+  function ensureComponent<N extends string, P, PArgs extends any[]>(
     id: number,
     def: _ComponentDef<N, P, PArgs>,
     ...args: PArgs
   ): P {
-    this.checkComponent(def);
-    const e = this.entities.get(id)!;
+    checkComponent(def);
+    const e = entities.get(id)!;
     const alreadyHas = def.name in e;
     if (!alreadyHas) {
-      return this.addComponent(id, def, ...args);
+      return addComponent(id, def, ...args);
     } else {
       return (e as any)[def.name];
     }
   }
 
   // TODO(@darzu): use MA arg here?
-  public set<N extends string, P, PArgs extends any[]>(
+  function set<N extends string, P, PArgs extends any[]>(
     e: Entity,
     def: UpdatableComponentDef<N, P, PArgs>,
     ...args: PArgs
   ): asserts e is EntityW<[UpdatableComponentDef<N, P, PArgs>]>;
-  public set<N extends string, P, PArgs extends any[]>(
+  function set<N extends string, P, PArgs extends any[]>(
     e: Entity,
     def: NonupdatableComponentDef<N, P, PArgs>,
     ...args: PArgs
   ): asserts e is EntityW<[NonupdatableComponentDef<N, P, PArgs>]>;
-  public set<N extends string, P, PArgs extends any[]>(
+  function set<N extends string, P, PArgs extends any[]>(
     e: Entity,
     def: _ComponentDef<N, P, PArgs>,
     ...args: PArgs
   ): asserts e is EntityW<[_ComponentDef<N, P, PArgs>]> {
     const alreadyHas = def.name in e;
     if (!alreadyHas) {
-      this.addComponent(e.id, def, ...args);
+      addComponent(e.id, def, ...args);
     } else {
       assert(
         def.updatable,
@@ -935,69 +927,66 @@ class _EntityManager implements EntityManager {
     }
   }
 
-  public setOnce<N extends string, P, PArgs extends any[]>(
+  function setOnce<N extends string, P, PArgs extends any[]>(
     e: Entity,
     def: UpdatableComponentDef<N, P, PArgs>,
     ...args: PArgs
   ): asserts e is EntityW<[UpdatableComponentDef<N, P, PArgs>]>;
-  public setOnce<N extends string, P, PArgs extends any[]>(
+  function setOnce<N extends string, P, PArgs extends any[]>(
     e: Entity,
     def: NonupdatableComponentDef<N, P, PArgs>,
     ...args: PArgs
   ): asserts e is EntityW<[NonupdatableComponentDef<N, P, PArgs>]>;
-  public setOnce<N extends string, P, PArgs extends any[]>(
+  function setOnce<N extends string, P, PArgs extends any[]>(
     e: Entity,
     def: _ComponentDef<N, P, PArgs>,
     ...args: PArgs
   ): asserts e is EntityW<[_ComponentDef<N, P, PArgs>]> {
     const alreadyHas = def.name in e;
     if (!alreadyHas) {
-      this.addComponent(e.id, def, ...args);
+      addComponent(e.id, def, ...args);
     }
   }
 
-  public addResource<N extends string, P, Pargs extends any[] = any[]>(
+  function addResource<N extends string, P, Pargs extends any[] = any[]>(
     def: ResourceDef<N, P, Pargs>,
     ...args: Pargs
   ): P {
     assert(
-      this.resourceDefs.has(def.id),
+      resourceDefs.has(def.id),
       `Resource ${def.name} (id ${def.id}) not found`
     );
     assert(
-      this.resourceDefs.get(def.id)!.name === def.name,
-      `Resource id ${def.id} has name ${
-        this.resourceDefs.get(def.id)!.name
-      }, not ${def.name}`
+      resourceDefs.get(def.id)!.name === def.name,
+      `Resource id ${def.id} has name ${resourceDefs.get(def.id)!.name}, not ${
+        def.name
+      }`
     );
-    assert(
-      !(def.name in this.resources),
-      `double defining resource ${def.name}!`
-    );
+    assert(!(def.name in resources), `double defining resource ${def.name}!`);
 
     const c = def.construct(...args);
-    this.resources[def.name] = c;
-    this._changedEntities.add(0); // TODO(@darzu): seperate Resources from Entities
-    this.seenResources.add(def.id);
+    resources[def.name] = c;
+    _changedEntities.add(0); // TODO(@darzu): seperate Resources from Entities
+    seenResources.add(def.id);
     return c;
   }
 
   // TODO(@darzu): replace most (all?) usage with addResource
-  public ensureResource<N extends string, P, Pargs extends any[] = any[]>(
+  function ensureResource<N extends string, P, Pargs extends any[] = any[]>(
     def: ResourceDef<N, P, Pargs>,
     ...args: Pargs
   ): P {
-    const alreadyHas = def.name in this.resources;
+    const alreadyHas = def.name in resources;
     if (!alreadyHas) {
-      return this.addResource(def, ...args);
+      return addResource(def, ...args);
     } else {
-      return this.resources[def.name] as P;
+      return resources[def.name] as P;
     }
   }
 
-  public removeResource<C extends ResourceDef>(def: C) {
-    if (def.name in this.resources) {
-      delete this.resources[def.name];
+  function removeResource<C extends ResourceDef>(def: C) {
+    if (def.name in resources) {
+      delete resources[def.name];
     } else {
       throw `Tried to remove absent resource ${def.name}`;
     }
@@ -1005,27 +994,26 @@ class _EntityManager implements EntityManager {
 
   // TODO(@darzu): should this be public??
   // TODO(@darzu): rename to findResource
-  public getResource<C extends ResourceDef>(
+  function getResource<C extends ResourceDef>(
     c: C
   ): (C extends ResourceDef<any, infer P> ? P : never) | undefined {
-    return this.resources[c.name] as any;
+    return resources[c.name] as any;
   }
-  public hasResource<C extends ResourceDef>(c: C): boolean {
-    return c.name in this.resources;
+  function hasResource<C extends ResourceDef>(c: C): boolean {
+    return c.name in resources;
   }
   // TODO(@darzu): remove? we should probably be using "whenResources"
-  public getResources<RS extends ResourceDef[]>(
+  function getResources<RS extends ResourceDef[]>(
     rs: [...RS]
   ): Resources<RS> | undefined {
-    if (rs.every((r) => r.name in this.resources))
-      return this.resources as Resources<RS>;
+    if (rs.every((r) => r.name in resources)) return resources as Resources<RS>;
     return undefined;
   }
 
-  _currentRunningSystem: SystemReg | undefined = undefined;
-  _dbgLastSystemLen = 0;
-  _dbgLastActiveSystemLen = 0;
-  private callSystems() {
+  let _currentRunningSystem: SystemReg | undefined = undefined;
+  let _dbgLastSystemLen = 0;
+  let _dbgLastActiveSystemLen = 0;
+  function callSystems() {
     if (DBG_SYSTEM_ORDER) {
       let newTotalSystemLen = 0;
       let newActiveSystemLen = 0;
@@ -1033,9 +1021,9 @@ class _EntityManager implements EntityManager {
       for (let phase of PhaseValueList) {
         const phaseName = Phase[phase];
         res += phaseName + "\n";
-        for (let sysName of this.phases.get(phase)!) {
-          let sys = this.allSystemsByName.get(sysName)!;
-          if (this.activeSystemsById.has(sys.id)) {
+        for (let sysName of phases.get(phase)!) {
+          let sys = allSystemsByName.get(sysName)!;
+          if (activeSystemsById.has(sys.id)) {
             res += "  " + sysName + "\n";
             newActiveSystemLen++;
           } else {
@@ -1045,37 +1033,37 @@ class _EntityManager implements EntityManager {
         }
       }
       if (
-        this._dbgLastSystemLen !== newTotalSystemLen ||
-        this._dbgLastActiveSystemLen !== newActiveSystemLen
+        _dbgLastSystemLen !== newTotalSystemLen ||
+        _dbgLastActiveSystemLen !== newActiveSystemLen
       ) {
         console.log(res);
-        this._dbgLastSystemLen = newTotalSystemLen;
-        this._dbgLastActiveSystemLen = newActiveSystemLen;
+        _dbgLastSystemLen = newTotalSystemLen;
+        _dbgLastActiveSystemLen = newActiveSystemLen;
       }
     }
 
     for (let phase of PhaseValueList) {
-      for (let sName of this.phases.get(phase)!) {
+      for (let sName of phases.get(phase)!) {
         // look up
-        const s = this.allSystemsByName.get(sName);
+        const s = allSystemsByName.get(sName);
         assert(s, `Can't find system with name: ${sName}`);
 
         // run
-        this._currentRunningSystem = s;
-        this.tryCallSystem(s);
-        this._currentRunningSystem = undefined;
+        _currentRunningSystem = s;
+        tryCallSystem(s);
+        _currentRunningSystem = undefined;
 
         if (DBG_ENITITY_10017_POSITION_CHANGES) {
           // TODO(@darzu): GENERALIZE THIS
-          const player = this.entities.get(10017);
+          const player = entities.get(10017);
           if (player && "position" in player) {
             const pos = vec3Dbg(player.position as V3);
-            if (dbgOnce(`${this._dbgChangesToEnt10017}-${pos}`)) {
+            if (dbgOnce(`${_dbgChangesToEnt10017}-${pos}`)) {
               console.log(
-                `10017 pos ${pos} after ${s} on loop ${this.dbgLoops}`
+                `10017 pos ${pos} after ${s} on loop ${emStats.dbgLoops}`
               );
-              this._dbgChangesToEnt10017 += 1;
-              dbgOnce(`${this._dbgChangesToEnt10017}-${pos}`);
+              _dbgChangesToEnt10017 += 1;
+              dbgOnce(`${_dbgChangesToEnt10017}-${pos}`);
             }
           }
         }
@@ -1084,23 +1072,23 @@ class _EntityManager implements EntityManager {
   }
 
   // see DBG_ENITITY_10017_POSITION_CHANGES
-  public _dbgChangesToEnt10017 = 0;
+  let _dbgChangesToEnt10017 = 0;
 
-  public hasEntity(id: number) {
-    return this.entities.has(id);
+  function hasEntity(id: number) {
+    return entities.has(id);
   }
 
   // TODO(@darzu): rethink how component add/remove happens. This is maybe always flags
-  public removeComponent<C extends ComponentDef>(id: number, def: C) {
-    if (!this.tryRemoveComponent(id, def))
+  function removeComponent<C extends ComponentDef>(id: number, def: C) {
+    if (!tryRemoveComponent(id, def))
       throw `Tried to remove absent component ${def.name} from entity ${id}`;
   }
 
-  public tryRemoveComponent<C extends ComponentDef>(
+  function tryRemoveComponent<C extends ComponentDef>(
     id: number,
     def: C
   ): boolean {
-    const e = this.entities.get(id)! as any;
+    const e = entities.get(id)! as any;
     if (def.name in e) {
       delete e[def.name];
     } else {
@@ -1108,18 +1096,18 @@ class _EntityManager implements EntityManager {
     }
 
     // update query cache
-    const systems = this._componentToSystems.get(def.name);
+    const systems = _componentToSystems.get(def.name);
     for (let sysId of systems ?? []) {
       if (
-        sysId === this._currentRunningSystem?.id &&
-        !this._currentRunningSystem.flags.allowQueryEdit
+        sysId === _currentRunningSystem?.id &&
+        !_currentRunningSystem.flags.allowQueryEdit
       )
         console.warn(
-          `Removing component '${def.name}' while running system '${this._currentRunningSystem.name}'` +
+          `Removing component '${def.name}' while running system '${_currentRunningSystem.name}'` +
             ` which queries it. Set the "allowQueryEdit" flag on the system if intentional` +
             ` (and probably loop over the query backwards.`
         );
-      const es = this._systemsToEntities.get(sysId);
+      const es = _systemsToEntities.get(sysId);
       if (es) {
         // TODO(@darzu): perf. sorted removal
         const indx = es.findIndex((v) => v.id === id);
@@ -1128,14 +1116,14 @@ class _EntityManager implements EntityManager {
         }
       }
     }
-    if (this.isDeadC(def)) {
-      const eSystems = this._entitiesToSystems.get(id)!;
+    if (isDeadC(def)) {
+      const eSystems = _entitiesToSystems.get(id)!;
       eSystems.length = 0;
-      for (let sysId of this.activeSystemsById.keys()) {
-        const allNeededCs = this._systemsToComponents.get(sysId);
+      for (let sysId of activeSystemsById.keys()) {
+        const allNeededCs = _systemsToComponents.get(sysId);
         if (allNeededCs?.every((n) => n in e)) {
           // TODO(@darzu): perf. sorted insert
-          this._systemsToEntities.get(sysId)!.push(e);
+          _systemsToEntities.get(sysId)!.push(e);
           eSystems.push(sysId);
         }
       }
@@ -1144,31 +1132,31 @@ class _EntityManager implements EntityManager {
     return true;
   }
 
-  public keepOnlyComponents<CS extends ComponentDef[]>(
+  function keepOnlyComponents<CS extends ComponentDef[]>(
     id: number,
     cs: [...CS]
   ) {
-    let ent = this.entities.get(id) as any;
+    let ent = entities.get(id) as any;
     if (!ent) throw `Tried to delete non-existent entity ${id}`;
-    for (let component of this.componentDefs.values()) {
+    for (let component of componentDefs.values()) {
       if (!cs.includes(component) && ent[component.name]) {
-        this.removeComponent(id, component);
+        removeComponent(id, component);
       }
     }
   }
 
-  public hasComponents<CS extends ComponentDef[], E extends Entity>(
+  function hasComponents<CS extends ComponentDef[], E extends Entity>(
     e: E,
     cs: [...CS]
   ): e is E & EntityW<CS> {
     return cs.every((c) => c.name in e);
   }
 
-  public findEntity<CS extends ComponentDef[], ID extends number>(
+  function findEntity<CS extends ComponentDef[], ID extends number>(
     id: ID,
     cs: readonly [...CS]
   ): EntityW<CS, ID> | undefined {
-    const e = this.entities.get(id);
+    const e = entities.get(id);
     if (!e || !cs.every((c) => c.name in e)) {
       return undefined;
     }
@@ -1176,26 +1164,26 @@ class _EntityManager implements EntityManager {
   }
 
   // TODO(@darzu): remove? i think this is unused
-  public findEntitySet<ES extends EDefId<number, any>[]>(
+  function findEntitySet<ES extends EDefId<number, any>[]>(
     es: [...ES]
   ): ESetId<ES> {
     const res = [];
     for (let [id, ...cs] of es) {
-      res.push(this.findEntity(id, cs));
+      res.push(findEntity(id, cs));
     }
     return res as ESetId<ES>;
   }
 
   // TODO(@darzu): PERF. cache these responses like we do systems?
   // TODO(@darzu): PERF. evaluate all per-frame uses of this
-  public filterEntities_uncached<CS extends ComponentDef[]>(
+  function filterEntities_uncached<CS extends ComponentDef[]>(
     cs: [...CS] | null
   ): Entities<CS> {
     const res: Entities<CS> = [];
     if (cs === null) return res;
-    const inclDead = cs.some((c) => this.isDeadC(c)); // TODO(@darzu): HACK? for DeadDef
-    for (let e of this.entities.values()) {
-      if (!inclDead && this.isDeadE(e)) continue;
+    const inclDead = cs.some((c) => isDeadC(c)); // TODO(@darzu): HACK? for DeadDef
+    for (let e of entities.values()) {
+      if (!inclDead && isDeadE(e)) continue;
       if (e.id === 0) continue; // TODO(@darzu): Remove ent 0, make first-class Resources
       if (cs.every((c) => c.name in e)) {
         res.push(e as EntityW<CS>);
@@ -1212,22 +1200,22 @@ class _EntityManager implements EntityManager {
     return res;
   }
 
-  public dbgGetSystemsForEntity(id: number) {
-    const sysIds = this._entitiesToSystems.get(id) ?? [];
+  function dbgGetSystemsForEntity(id: number) {
+    const sysIds = _entitiesToSystems.get(id) ?? [];
     const systems = sysIds
-      .map((id) => this.activeSystemsById.get(id))
+      .map((id) => activeSystemsById.get(id))
       .filter((x) => !!x) as SystemReg[];
     return systems;
   }
 
-  public dbgFilterEntitiesByKey(cs: string | string[]): Entities<any> {
+  function dbgFilterEntitiesByKey(cs: string | string[]): Entities<any> {
     // TODO(@darzu): respect "DeadDef" comp ?
     console.log(
       "filterEntitiesByKey called--should only be called from console"
     );
     const res: Entities<any> = [];
     if (typeof cs === "string") cs = [cs];
-    for (let e of this.entities.values()) {
+    for (let e of entities.values()) {
       if (cs.every((c) => c in e)) {
         res.push(e as EntityW<any>);
       } else {
@@ -1243,15 +1231,15 @@ class _EntityManager implements EntityManager {
     return res;
   }
 
-  _nextInitFnId = 1;
+  let _nextInitFnId = 1;
 
-  public addLazyInit<RS extends ResourceDef[]>(
+  function addLazyInit<RS extends ResourceDef[]>(
     requireRs: [...RS],
     provideRs: ResourceDef[],
     callback: InitFn<RS>,
     name?: string // TODO(@darzu): make required?
   ): InitFnReg<RS> {
-    const id = this._nextInitFnId++;
+    const id = _nextInitFnId++;
     const reg: InitFnReg<RS> = {
       requireRs,
       provideRs,
@@ -1260,17 +1248,17 @@ class _EntityManager implements EntityManager {
       id,
       name,
     };
-    this.addInit(reg);
+    addInit(reg);
     return reg;
   }
-  public addEagerInit<RS extends ResourceDef[]>(
+  function addEagerInit<RS extends ResourceDef[]>(
     requireCompSet: ComponentDef[],
     requireRs: [...RS],
     provideRs: ResourceDef[],
     callback: InitFn<RS>,
     name?: string // TODO(@darzu): make required?
   ): InitFnReg<RS> {
-    const id = this._nextInitFnId++;
+    const id = _nextInitFnId++;
     const reg: InitFnReg<RS> = {
       requireCompSet,
       requireRs,
@@ -1280,7 +1268,7 @@ class _EntityManager implements EntityManager {
       id,
       name,
     };
-    this.addInit(reg);
+    addInit(reg);
     return reg;
   }
 
@@ -1288,22 +1276,22 @@ class _EntityManager implements EntityManager {
   //  some global resources around
   // TODO(@darzu): add support for "run every X frames or ms" ?
   // TODO(@darzu): add change detection
-  private _nextSystemId = 1;
-  public addSystem<CS extends ComponentDef[], RS extends ResourceDef[]>(
+  let _nextSystemId = 1;
+  function addSystem<CS extends ComponentDef[], RS extends ResourceDef[]>(
     name: string,
     phase: Phase,
     cs: [...CS],
     rs: [...RS],
     callback: SystemFn<CS, RS>
   ): PublicSystemReg;
-  public addSystem<CS extends null, RS extends ResourceDef[]>(
+  function addSystem<CS extends null, RS extends ResourceDef[]>(
     name: string,
     phase: Phase,
     cs: null,
     rs: [...RS],
     callback: SystemFn<CS, RS>
   ): PublicSystemReg;
-  public addSystem<CS extends ComponentDef[], RS extends ResourceDef[]>(
+  function addSystem<CS extends ComponentDef[], RS extends ResourceDef[]>(
     name: string,
     phase: Phase,
     cs: [...CS] | null,
@@ -1316,10 +1304,10 @@ class _EntityManager implements EntityManager {
         `To define a system with an anonymous function, pass an explicit name`
       );
     }
-    if (this.allSystemsByName.has(name))
+    if (allSystemsByName.has(name))
       throw `System named ${name} already defined. Try explicitly passing a name`;
-    const id = this._nextSystemId;
-    this._nextSystemId += 1;
+    const id = _nextSystemId;
+    _nextSystemId += 1;
     const sys: SystemReg = {
       cs,
       rs,
@@ -1329,28 +1317,26 @@ class _EntityManager implements EntityManager {
       id,
       flags: {},
     };
-    this.allSystemsByName.set(name, sys);
+    allSystemsByName.set(name, sys);
 
     // NOTE: even though we might not active the system right away, we want to respect the
     //  order in which it was added to the phase.
-    this.phases.get(phase)!.push(name);
+    phases.get(phase)!.push(name);
 
-    const seenAllCmps = (sys.cs ?? []).every((c) =>
-      this.seenComponents.has(c.id)
-    );
-    const seenAllRes = sys.rs.every((c) => this.seenResources.has(c.id));
+    const seenAllCmps = (sys.cs ?? []).every((c) => seenComponents.has(c.id));
+    const seenAllRes = sys.rs.every((c) => seenResources.has(c.id));
     if (seenAllCmps && seenAllRes) {
-      this.activateSystem(sys);
+      activateSystem(sys);
     } else {
       // NOTE: we delay activating the system b/c each active system incurs
       //  a cost to maintain its query accelerators on each entity and component
       //  added/removed
-      this.addEagerInit(
+      addEagerInit(
         sys.cs ?? [],
         sys.rs,
         [],
         () => {
-          this.activateSystem(sys);
+          activateSystem(sys);
         },
         `sysinit_${sys.name}`
       );
@@ -1359,11 +1345,11 @@ class _EntityManager implements EntityManager {
     return sys;
   }
 
-  private activateSystem(sys: SystemReg) {
+  function activateSystem(sys: SystemReg) {
     const { cs, id, name, phase } = sys;
 
-    this.activeSystemsById.set(id, sys);
-    this.sysStats[name] = {
+    activeSystemsById.set(id, sys);
+    sysStats[name] = {
       calls: 0,
       queries: 0,
       callTime: 0,
@@ -1374,34 +1360,34 @@ class _EntityManager implements EntityManager {
     //  pre-compute entities for this system for quicker queries; these caches will be maintained
     //  by add/remove/ensure component calls
     // TODO(@darzu): ability to toggle this optimization on/off for better debugging
-    const es = this.filterEntities_uncached(cs);
-    this._systemsToEntities.set(id, [...es]);
+    const es = filterEntities_uncached(cs);
+    _systemsToEntities.set(id, [...es]);
     if (cs) {
       for (let c of cs) {
-        if (!this._componentToSystems.has(c.name))
-          this._componentToSystems.set(c.name, [id]);
-        else this._componentToSystems.get(c.name)!.push(id);
+        if (!_componentToSystems.has(c.name))
+          _componentToSystems.set(c.name, [id]);
+        else _componentToSystems.get(c.name)!.push(id);
       }
-      this._systemsToComponents.set(
+      _systemsToComponents.set(
         id,
         cs.map((c) => c.name)
       );
     }
     for (let e of es) {
-      const ss = this._entitiesToSystems.get(e.id);
+      const ss = _entitiesToSystems.get(e.id);
       assertDbg(ss);
       ss.push(id);
     }
   }
 
-  public whenResources<RS extends ResourceDef[]>(
+  function whenResources<RS extends ResourceDef[]>(
     ...rs: RS
   ): Promise<Resources<RS>> {
     // short circuit if we already have the components
-    if (rs.every((c) => c.name in this.resources))
-      return Promise.resolve(this.resources as Resources<RS>);
+    if (rs.every((c) => c.name in resources))
+      return Promise.resolve(resources as Resources<RS>);
 
-    const promiseId = this._nextEntityPromiseId++;
+    const promiseId = _nextEntityPromiseId++;
 
     if (DBG_VERBOSE_ENTITY_PROMISE_CALLSITES || DBG_INIT_CAUSATION) {
       // if (dbgOnce("getCallStack")) console.dir(getCallStack());
@@ -1415,7 +1401,7 @@ class _EntityManager implements EntityManager {
         console.log(
           `promise #${promiseId}: ${componentsToString(rs)} from: ${line}`
         );
-      this._dbgEntityPromiseCallsites.set(promiseId, line);
+      _dbgEntityPromiseCallsites.set(promiseId, line);
     }
 
     return new Promise<Resources<RS>>((resolve, reject) => {
@@ -1425,20 +1411,20 @@ class _EntityManager implements EntityManager {
         callback: resolve,
       };
 
-      this.resourcePromises.push(sys);
+      resourcePromises.push(sys);
     });
   }
 
-  hasSystem(name: string) {
-    return this.allSystemsByName.has(name);
+  function hasSystem(name: string) {
+    return allSystemsByName.has(name);
   }
 
-  private tryCallSystem(s: SystemReg): boolean {
+  function tryCallSystem(s: SystemReg): boolean {
     // TODO(@darzu):
     // if (name.endsWith("Build")) console.log(`calling ${name}`);
     // if (name == "groundPropsBuild") console.log("calling groundPropsBuild");
 
-    if (!this.activeSystemsById.has(s.id)) {
+    if (!activeSystemsById.has(s.id)) {
       return false;
     }
 
@@ -1447,24 +1433,24 @@ class _EntityManager implements EntityManager {
     let es: Entities<any[]>;
     if (s.cs) {
       assertDbg(
-        this._systemsToEntities.has(s.id),
+        _systemsToEntities.has(s.id),
         `System ${s.name} doesn't have a query cache!`
       );
-      es = this._systemsToEntities.get(s.id)! as EntityW<any[]>[];
+      es = _systemsToEntities.get(s.id)! as EntityW<any[]>[];
     } else {
       es = [];
     }
     // TODO(@darzu): uncomment to debug query cache issues
-    // es = this.filterEntities(s.cs);
+    // es = filterEntities(s.cs);
 
-    const rs = this.getResources(s.rs); // TODO(@darzu): remove allocs here
+    const rs = getResources(s.rs); // TODO(@darzu): remove allocs here
     let afterQuery = performance.now();
-    this.sysStats[s.name].queries++;
-    this.emStats.queryTime += afterQuery - start;
+    sysStats[s.name].queries++;
+    emStats.queryTime += afterQuery - start;
     if (!rs) {
       // we don't yet have the resources, check if we can init any
       s.rs.forEach((r) => {
-        const forced = this.tryForceResourceInit(r);
+        const forced = tryForceResourceInit(r);
         if (DBG_INIT_CAUSATION && forced) {
           console.log(
             `${performance.now().toFixed(0)}ms: '${r.name}' force by system ${
@@ -1495,11 +1481,11 @@ class _EntityManager implements EntityManager {
     // }
 
     let afterCall = performance.now();
-    this.sysStats[s.name].calls++;
+    sysStats[s.name].calls++;
     const thisCallTime = afterCall - afterQuery;
-    this.sysStats[s.name].callTime += thisCallTime;
-    this.sysStats[s.name].maxCallTime = Math.max(
-      this.sysStats[s.name].maxCallTime,
+    sysStats[s.name].callTime += thisCallTime;
+    sysStats[s.name].maxCallTime = Math.max(
+      sysStats[s.name].maxCallTime,
       thisCallTime
     );
 
@@ -1507,17 +1493,17 @@ class _EntityManager implements EntityManager {
   }
 
   // private _callSystem(name: string) {
-  //   if (!this.maybeRequireSystem(name)) throw `No system named ${name}`;
+  //   if (!maybeRequireSystem(name)) throw `No system named ${name}`;
   // }
 
   // TODO(@darzu): use version numbers instead of dirty flag?
-  _changedEntities = new Set<number>();
+  const _changedEntities = new Set<number>();
 
   // _dbgFirstXFrames = 10;
   // dbgStrEntityPromises() {
   //   let res = "";
-  //   res += `changed ents: ${[...this._changedEntities.values()].join(",")}\n`;
-  //   this.entityPromises.forEach((promises, id) => {
+  //   res += `changed ents: ${[..._changedEntities.values()].join(",")}\n`;
+  //   entityPromises.forEach((promises, id) => {
   //     for (let s of promises) {
   //       const unmet = s.cs.filter((c) => !c.isOn(s.e)).map((c) => c.name);
   //       res += `#${id} is waiting for ${unmet.join(",")}\n`;
@@ -1526,9 +1512,9 @@ class _EntityManager implements EntityManager {
   //   return res;
   // }
 
-  dbgEntityPromises(): string {
+  function dbgEntityPromises(): string {
     let res = "";
-    for (let [id, prom] of this.entityPromises.entries()) {
+    for (let [id, prom] of entityPromises.entries()) {
       const ent = EM.entities.get(id) || { id };
       const unmet = prom
         .flatMap((p) => p.cs.map((c) => c.name))
@@ -1536,8 +1522,8 @@ class _EntityManager implements EntityManager {
 
       res += `ent waiting: ${id} <- (${unmet.join(",")})\n`;
     }
-    for (let prom of this.resourcePromises) {
-      // if (prom.rs.some((r) => !(r.name in this.resources)))
+    for (let prom of resourcePromises) {
+      // if (prom.rs.some((r) => !(r.name in resources)))
       res += `resources waiting: (${prom.rs.map((r) => r.name).join(",")})\n`;
     }
     return res;
@@ -1546,12 +1532,12 @@ class _EntityManager implements EntityManager {
   // TODO(@darzu): can this consolidate with the InitFn system?
   // TODO(@darzu): PERF TRACKING. Need to rethink how this interacts with system and init fn perf tracking
   // TODO(@darzu): EXPERIMENT: returns madeProgress
-  private checkEntityPromises(): boolean {
+  function checkEntityPromises(): boolean {
     let madeProgress = false;
-    // console.dir(this.entityPromises);
-    // console.log(this.dbgStrEntityPromises());
-    // this._dbgFirstXFrames--;
-    // if (this._dbgFirstXFrames <= 0) throw "STOP";
+    // console.dir(entityPromises);
+    // console.log(dbgStrEntityPromises());
+    // _dbgFirstXFrames--;
+    // if (_dbgFirstXFrames <= 0) throw "STOP";
 
     const beforeOneShots = performance.now();
 
@@ -1559,26 +1545,26 @@ class _EntityManager implements EntityManager {
     // TODO(@darzu): also check and call init functions for systems!!
     for (
       // run backwards so we can remove as we go
-      let idx = this.resourcePromises.length - 1;
+      let idx = resourcePromises.length - 1;
       idx >= 0;
       idx--
     ) {
-      const p = this.resourcePromises[idx];
-      let finished = p.rs.every((r) => r.name in this.resources);
+      const p = resourcePromises[idx];
+      let finished = p.rs.every((r) => r.name in resources);
       if (finished) {
-        this.resourcePromises.splice(idx, 1);
+        resourcePromises.splice(idx, 1);
         // TODO(@darzu): record time?
         // TODO(@darzu): how to handle async callbacks and their timing?
-        p.callback(this.resources);
+        p.callback(resources);
         madeProgress = true;
         continue;
       }
       // if it's not ready to run, try to push the required resources along
       p.rs.forEach((r) => {
-        const forced = this.tryForceResourceInit(r);
+        const forced = tryForceResourceInit(r);
         madeProgress ||= forced;
         if (DBG_INIT_CAUSATION && forced) {
-          const line = this._dbgEntityPromiseCallsites.get(p.id)!;
+          const line = _dbgEntityPromiseCallsites.get(p.id)!;
           console.log(
             `${performance.now().toFixed(0)}ms: '${r.name}' force by promise #${
               p.id
@@ -1590,9 +1576,9 @@ class _EntityManager implements EntityManager {
 
     // check entity promises
     let finishedEntities: Set<number> = new Set();
-    this.entityPromises.forEach((promises, id) => {
+    entityPromises.forEach((promises, id) => {
       // no change
-      if (!this._changedEntities.has(id)) {
+      if (!_changedEntities.has(id)) {
         // console.log(`no change on: ${id}`);
         return;
       }
@@ -1609,9 +1595,9 @@ class _EntityManager implements EntityManager {
 
         // call callback
         const afterOneShotQuery = performance.now();
-        const stats = this.sysStats["__oneShots"];
+        const stats = sysStats["__oneShots"];
         stats.queries += 1;
-        this.emStats.queryTime += afterOneShotQuery - beforeOneShots;
+        emStats.queryTime += afterOneShotQuery - beforeOneShots;
 
         promises.splice(idx, 1);
         // TODO(@darzu): how to handle async callbacks and their timing?
@@ -1633,21 +1619,21 @@ class _EntityManager implements EntityManager {
 
     // clean up
     for (let id of finishedEntities) {
-      this.entityPromises.delete(id);
+      entityPromises.delete(id);
     }
-    this._changedEntities.clear();
+    _changedEntities.clear();
 
     if (DBG_ENITITY_10017_POSITION_CHANGES) {
       // TODO(@darzu): GENERALIZE THIS
-      const player = this.entities.get(10017);
+      const player = entities.get(10017);
       if (player && "position" in player) {
         const pos = vec3Dbg(player.position as V3);
-        if (dbgOnce(`${this._dbgChangesToEnt10017}-${pos}`)) {
+        if (dbgOnce(`${_dbgChangesToEnt10017}-${pos}`)) {
           console.log(
-            `10017 pos ${pos} after 'entity promises' on loop ${this.dbgLoops}`
+            `10017 pos ${pos} after 'entity promises' on loop ${emStats.dbgLoops}`
           );
-          this._dbgChangesToEnt10017 += 1;
-          dbgOnce(`${this._dbgChangesToEnt10017}-${pos}`);
+          _dbgChangesToEnt10017 += 1;
+          dbgOnce(`${_dbgChangesToEnt10017}-${pos}`);
         }
       }
     }
@@ -1658,9 +1644,9 @@ class _EntityManager implements EntityManager {
   // TODO(@darzu): good or terrible name?
   // TODO(@darzu): another version for checking entity promises?
   // TODO(@darzu): update with new init system
-  whyIsntSystemBeingCalled(name: string): void {
+  function whyIsntSystemBeingCalled(name: string): void {
     // TODO(@darzu): more features like check against a specific set of entities
-    const sys = this.allSystemsByName.get(name);
+    const sys = allSystemsByName.get(name);
     if (!sys) {
       console.warn(`No systems found with name: '${name}'`);
       return;
@@ -1669,20 +1655,20 @@ class _EntityManager implements EntityManager {
     let haveAllResources = true;
     for (let _r of sys.rs) {
       let r = _r as ResourceDef;
-      if (!this.getResource(r)) {
+      if (!getResource(r)) {
         console.warn(`System '${name}' missing resource: ${r.name}`);
         haveAllResources = false;
       }
     }
 
-    const es = this.filterEntities_uncached(sys.cs);
+    const es = filterEntities_uncached(sys.cs);
     console.warn(
       `System '${name}' matches ${es.length} entities and has all resources: ${haveAllResources}.`
     );
   }
 
-  _nextEntityPromiseId: number = 0;
-  _dbgEntityPromiseCallsites = new Map<number, string>();
+  let _nextEntityPromiseId: number = 0;
+  const _dbgEntityPromiseCallsites = new Map<number, string>();
 
   // TODO(@darzu): Rethink naming here
   // NOTE: if you're gonna change the types, change registerSystem first and just copy
@@ -1690,7 +1676,7 @@ class _EntityManager implements EntityManager {
   // TODO(@darzu): Used for waiting on:
   //    uniform e.g. RenderDataStdDef, Finished, WorldFrame, RenderableDef (enable/hidden/meshHandle)),
   //    Renderable for updateMeshQuadInds etc, PhysicsStateDef for physCollider aabb,
-  public whenEntityHas<
+  function whenEntityHas<
     // eCS extends ComponentDef[],
     CS extends ComponentDef[],
     ID extends number
@@ -1701,13 +1687,13 @@ class _EntityManager implements EntityManager {
 
     // TODO(@darzu): this is too copy-pasted from registerSystem
     // TODO(@darzu): need unified query maybe?
-    // let _name = "oneShot" + this.++;
+    // let _name = "oneShot" + ++;
 
-    // if (this.entityPromises.has(_name))
+    // if (entityPromises.has(_name))
     //   throw `One-shot single system named ${_name} already defined.`;
 
     // use one bucket for all one shots. Change this if we want more granularity
-    this.sysStats["__oneShots"] = this.sysStats["__oneShots"] ?? {
+    sysStats["__oneShots"] = sysStats["__oneShots"] ?? {
       calls: 0,
       queries: 0,
       callTime: 0,
@@ -1715,7 +1701,7 @@ class _EntityManager implements EntityManager {
       queryTime: 0,
     };
 
-    const promiseId = this._nextEntityPromiseId++;
+    const promiseId = _nextEntityPromiseId++;
 
     if (DBG_VERBOSE_ENTITY_PROMISE_CALLSITES || DBG_INIT_CAUSATION) {
       // if (dbgOnce("getCallStack")) console.dir(getCallStack());
@@ -1729,7 +1715,7 @@ class _EntityManager implements EntityManager {
         console.log(
           `promise #${promiseId}: ${componentsToString(cs)} from: ${line}`
         );
-      this._dbgEntityPromiseCallsites.set(promiseId, line);
+      _dbgEntityPromiseCallsites.set(promiseId, line);
     }
 
     return new Promise<EntityW<CS, ID>>((resolve, reject) => {
@@ -1741,16 +1727,15 @@ class _EntityManager implements EntityManager {
         // name: _name,
       };
 
-      if (this.entityPromises.has(e.id))
-        this.entityPromises.get(e.id)!.push(sys);
-      else this.entityPromises.set(e.id, [sys]);
+      if (entityPromises.has(e.id)) entityPromises.get(e.id)!.push(sys);
+      else entityPromises.set(e.id, [sys]);
     });
   }
 
   // TODO(@darzu): feels a bit hacky; lets track usages and see if we can make this
   //  feel natural.
   // TODO(@darzu): is perf okay here?
-  public whenSingleEntity<CS extends ComponentDef[]>(
+  function whenSingleEntity<CS extends ComponentDef[]>(
     ...cs: [...CS]
   ): Promise<EntityW<CS>> {
     return new Promise((resolve) => {
@@ -1774,20 +1759,20 @@ class _EntityManager implements EntityManager {
   // TODO(@darzu): [ ] split entity-manager ?
   // TODO(@darzu): [ ] consolidate entity promises into init system?
   // TODO(@darzu): [ ] addLazyInit, addEagerInit require debug name
-  seenComponents = new Set<CompId>();
-  seenResources = new Set<ResId>();
+  const seenComponents = new Set<CompId>();
+  const seenResources = new Set<ResId>();
 
-  pendingLazyInitsByProvides = new Map<ResId, InitFnReg>();
-  pendingEagerInits: InitFnReg[] = [];
-  startedInits = new Map<InitFnId, Promise<void> | void>();
-  allInits = new Map<InitFnId, InitFnReg>();
+  const pendingLazyInitsByProvides = new Map<ResId, InitFnReg>();
+  const pendingEagerInits: InitFnReg[] = [];
+  const startedInits = new Map<InitFnId, Promise<void> | void>();
+  const allInits = new Map<InitFnId, InitFnReg>();
 
   // TODO(@darzu): how can i tell if the event loop is running dry?
 
   // TODO(@darzu): EXPERIMENT: returns madeProgress
-  private progressInitFns(): boolean {
+  function progressInitFns(): boolean {
     let madeProgress = false;
-    this.pendingEagerInits.forEach((e, i) => {
+    pendingEagerInits.forEach((e, i) => {
       let hasAll = true;
 
       // has component set?
@@ -1795,22 +1780,21 @@ class _EntityManager implements EntityManager {
       //               not just one of each component, but some entity that has all
       let hasCompSet = true;
       if (e.requireCompSet)
-        for (let c of e.requireCompSet)
-          hasCompSet &&= this.seenComponents.has(c.id);
+        for (let c of e.requireCompSet) hasCompSet &&= seenComponents.has(c.id);
       hasAll &&= hasCompSet;
 
       // has resources?
       for (let r of e.requireRs) {
-        if (!this.seenResources.has(r.id)) {
+        if (!seenResources.has(r.id)) {
           if (hasCompSet) {
             // NOTE: we don't force resources into existance until the components are met
             //    this is (probably) the behavior we want when there's a system that is
             //    waiting on some components to exist.
             // lazy -> eager
-            const forced = this.tryForceResourceInit(r);
+            const forced = tryForceResourceInit(r);
             madeProgress ||= forced;
             if (DBG_INIT_CAUSATION && forced) {
-              const line = this._dbgInitBlameLn.get(e.id)!;
+              const line = _dbgInitBlameLn.get(e.id)!;
               console.log(
                 `${performance.now().toFixed(0)}ms: '${
                   r.name
@@ -1828,31 +1812,31 @@ class _EntityManager implements EntityManager {
         //    need to think if we really want to allow resource removal. should we
         //    have a seperate concept for flags?
         // eager -> run
-        this.runInitFn(e);
-        this.pendingEagerInits.splice(i, 1);
+        runInitFn(e);
+        pendingEagerInits.splice(i, 1);
         madeProgress = true;
       }
     });
 
     if (DBG_ENITITY_10017_POSITION_CHANGES) {
       // TODO(@darzu): GENERALIZE THIS
-      const player = this.entities.get(10017);
+      const player = entities.get(10017);
       if (player && "position" in player) {
         const pos = vec3Dbg(player.position as V3);
-        if (dbgOnce(`${this._dbgChangesToEnt10017}-${pos}`)) {
+        if (dbgOnce(`${_dbgChangesToEnt10017}-${pos}`)) {
           console.log(
-            `10017 pos ${pos} after 'init fns' on loop ${this.dbgLoops}`
+            `10017 pos ${pos} after 'init fns' on loop ${emStats.dbgLoops}`
           );
-          this._dbgChangesToEnt10017 += 1;
-          dbgOnce(`${this._dbgChangesToEnt10017}-${pos}`);
+          _dbgChangesToEnt10017 += 1;
+          dbgOnce(`${_dbgChangesToEnt10017}-${pos}`);
         }
       }
     }
 
     return madeProgress;
   }
-  _dbgInitBlameLn = new Map<InitFnId, string>();
-  private addInit(reg: InitFnReg) {
+  const _dbgInitBlameLn = new Map<InitFnId, string>();
+  function addInit(reg: InitFnReg) {
     if (DBG_VERBOSE_INIT_CALLSITES || DBG_INIT_CAUSATION) {
       // if (dbgOnce("getCallStack")) console.dir(getCallStack());
       let line = getCallStack().find(
@@ -1868,15 +1852,12 @@ class _EntityManager implements EntityManager {
 
       if (DBG_VERBOSE_INIT_CALLSITES)
         console.log(`init ${initFnToString(reg)} from: ${line}`);
-      this._dbgInitBlameLn.set(reg.id, line);
+      _dbgInitBlameLn.set(reg.id, line);
     }
-    assert(
-      !this.allInits.has(reg.id),
-      `Double registering ${initFnToString(reg)}`
-    );
-    this.allInits.set(reg.id, reg);
+    assert(!allInits.has(reg.id), `Double registering ${initFnToString(reg)}`);
+    allInits.set(reg.id, reg);
     if (reg.eager) {
-      this.pendingEagerInits.push(reg);
+      pendingEagerInits.push(reg);
 
       if (DBG_VERBOSE_INIT_SEQ)
         console.log(`new eager: ${initFnToString(reg)}`);
@@ -1887,23 +1868,23 @@ class _EntityManager implements EntityManager {
       );
       for (let p of reg.provideRs) {
         assert(
-          !this.pendingLazyInitsByProvides.has(p.id),
+          !pendingLazyInitsByProvides.has(p.id),
           `Resource: '${p.name}' already has an init fn!`
         );
-        this.pendingLazyInitsByProvides.set(p.id, reg);
+        pendingLazyInitsByProvides.set(p.id, reg);
       }
 
       if (DBG_VERBOSE_INIT_SEQ) console.log(`new lazy: ${initFnToString(reg)}`);
     }
   }
-  private tryForceResourceInit(r: ResourceDef): boolean {
-    const lazy = this.pendingLazyInitsByProvides.get(r.id);
+  function tryForceResourceInit(r: ResourceDef): boolean {
+    const lazy = pendingLazyInitsByProvides.get(r.id);
     if (!lazy) return false;
 
     // remove from all lazy
-    for (let r of lazy.provideRs) this.pendingLazyInitsByProvides.delete(r.id);
+    for (let r of lazy.provideRs) pendingLazyInitsByProvides.delete(r.id);
     // add to eager
-    this.pendingEagerInits.push(lazy);
+    pendingEagerInits.push(lazy);
 
     if (DBG_VERBOSE_INIT_SEQ)
       console.log(`lazy => eager: ${initFnToString(lazy)}`);
@@ -1911,35 +1892,32 @@ class _EntityManager implements EntityManager {
     return true; // was forced
   }
 
-  _runningInitStack: InitFnReg[] = [];
-  _lastInitTimestamp: number = -1;
-  private async runInitFn(init: InitFnReg) {
+  const _runningInitStack: InitFnReg[] = [];
+  let _lastInitTimestamp: number = -1;
+  async function runInitFn(init: InitFnReg) {
     // TODO(@darzu): attribute time spent to specific init functions
 
     // update init fn stats before
     {
-      assert(!this.initFnMsStats.has(init.id));
-      this.initFnMsStats.set(init.id, 0);
+      assert(!initFnMsStats.has(init.id));
+      initFnMsStats.set(init.id, 0);
       const before = performance.now();
-      if (this._runningInitStack.length) {
-        assert(this._lastInitTimestamp >= 0);
-        let elapsed = before - this._lastInitTimestamp;
-        let prev = this._runningInitStack.at(-1)!;
-        assert(this.initFnMsStats.has(prev.id));
-        this.initFnMsStats.set(
-          prev.id,
-          this.initFnMsStats.get(prev.id)! + elapsed
-        );
+      if (_runningInitStack.length) {
+        assert(_lastInitTimestamp >= 0);
+        let elapsed = before - _lastInitTimestamp;
+        let prev = _runningInitStack.at(-1)!;
+        assert(initFnMsStats.has(prev.id));
+        initFnMsStats.set(prev.id, initFnMsStats.get(prev.id)! + elapsed);
       }
-      this._lastInitTimestamp = before;
-      this._runningInitStack.push(init);
+      _lastInitTimestamp = before;
+      _runningInitStack.push(init);
     }
 
     // TODO(@darzu): is this reasonable to do before ea init?
     resetTempMatrixBuffer(initFnToString(init));
 
-    const promise = init.fn(this.resources);
-    this.startedInits.set(init.id, promise);
+    const promise = init.fn(resources);
+    startedInits.set(init.id, promise);
 
     if (DBG_VERBOSE_INIT_SEQ)
       console.log(`eager => started: ${initFnToString(init)}`);
@@ -1949,46 +1927,91 @@ class _EntityManager implements EntityManager {
     // assert resources were added
     // TODO(@darzu): verify that init fn doesn't add any resources not mentioned in provides
     for (let res of init.provideRs)
-      assert(
-        res.name in this.resources,
-        `Init fn failed to provide: ${res.name}`
-      );
+      assert(res.name in resources, `Init fn failed to provide: ${res.name}`);
 
     // update init fn stats after
     {
       const after = performance.now();
-      let popped = this._runningInitStack.pop();
+      let popped = _runningInitStack.pop();
       // TODO(@darzu): WAIT. why should the below be true? U should be able to have
       //   A-start, B-start, A-end, B-end
       // if A and B are unrelated
       // assert(popped && popped.id === init.id, `Daryl doesnt understand stacks`);
       // TODO(@darzu): all this init tracking might be lying.
-      assert(this._lastInitTimestamp >= 0);
-      const elapsed = after - this._lastInitTimestamp;
-      this.initFnMsStats.set(
-        init.id,
-        this.initFnMsStats.get(init.id)! + elapsed
-      );
-      if (this._runningInitStack.length) this._lastInitTimestamp = after;
-      else this._lastInitTimestamp = -1;
+      assert(_lastInitTimestamp >= 0);
+      const elapsed = after - _lastInitTimestamp;
+      initFnMsStats.set(init.id, initFnMsStats.get(init.id)! + elapsed);
+      if (_runningInitStack.length) _lastInitTimestamp = after;
+      else _lastInitTimestamp = -1;
     }
 
     if (DBG_VERBOSE_INIT_SEQ) console.log(`finished: ${initFnToString(init)}`);
   }
 
-  public update() {
+  function update() {
     // TODO(@darzu): can EM.update() be a system?
     let madeProgress: boolean;
     do {
       madeProgress = false;
-      madeProgress ||= this.progressInitFns();
-      madeProgress ||= this.checkEntityPromises();
+      madeProgress ||= progressInitFns();
+      madeProgress ||= checkEntityPromises();
     } while (madeProgress);
 
-    this.callSystems();
-    this.dbgLoops++;
+    callSystems();
+    emStats.dbgLoops++;
   }
+
+  const _em: EntityManager = {
+    entities,
+    allSystemsByName,
+    emStats,
+    sysStats,
+    initFnMsStats,
+    allInits,
+    componentDefs,
+
+    defineResource,
+    defineComponent,
+    defineNonupdatableComponent,
+    registerSerializerPair,
+    serialize,
+    deserialize,
+    setDefaultRange,
+    setIdRange,
+    mk,
+    registerEntity,
+    addComponent,
+    addComponentByName,
+    ensureComponent,
+    set,
+    setOnce,
+    addResource,
+    ensureResource,
+    removeResource,
+    getResource,
+    hasResource,
+    getResources,
+    hasEntity,
+    removeComponent,
+    tryRemoveComponent,
+    keepOnlyComponents,
+    hasComponents,
+    findEntity,
+    findEntitySet,
+    filterEntities_uncached,
+    dbgGetSystemsForEntity,
+    dbgFilterEntitiesByKey,
+    addLazyInit,
+    addEagerInit,
+    addSystem,
+    whenResources,
+    hasSystem,
+    whenEntityHas,
+    whenSingleEntity,
+    update,
+  };
+
+  return _em;
 }
 
-// TODO(@darzu): where to put this?
-export const EM: EntityManager = new _EntityManager();
+export const EM: EntityManager = createEntityManager();
