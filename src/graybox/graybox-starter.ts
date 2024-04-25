@@ -1,7 +1,7 @@
 import { CameraDef } from "../camera/camera.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
-import { EM } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/ecs.js";
 import { V, V3 } from "../matrix/sprig-matrix.js";
 import { HexMesh, PlaneMesh } from "../meshes/mesh-list.js";
 import { HEX_AABB, mkCubeMesh } from "../meshes/primatives.js";
@@ -77,7 +77,7 @@ export async function initGrayboxStarter() {
   );
 
   // pedestal
-  const pedestal = EM.new();
+  const pedestal = EM.mk();
   EM.set(pedestal, RenderableConstructDef, HexMesh);
   EM.set(pedestal, ColorDef, ENDESGA16.darkGray);
   EM.set(pedestal, PositionDef, V(0, 0, -10));

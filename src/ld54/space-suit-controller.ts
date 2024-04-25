@@ -1,6 +1,7 @@
 import { AudioDef } from "../audio/audio.js";
 import { SoundSetDef } from "../audio/sound-loader.js";
-import { EM, EntityW } from "../ecs/entity-manager.js";
+import { EntityW } from "../ecs/em-entities.js";
+import { EM } from "../ecs/ecs.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { InputsDef } from "../input/inputs.js";
 import { quat, V3 } from "../matrix/sprig-matrix.js";

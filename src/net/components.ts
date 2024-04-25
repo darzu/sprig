@@ -1,4 +1,10 @@
-import { EM, Component, Resource } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/ecs.js";
+import {
+  Component,
+  NonupdatableComponentDef,
+  UpdatableComponentDef,
+} from "../ecs/em-components.js";
+import { Resource } from "../ecs/em-resources.js";
 import { Deserializer } from "../utils/serialize.js";
 import { MessageType } from "./message.js";
 import { FromNetworkEvent, ToNetworkEvent } from "./network-events.js";
@@ -143,3 +149,11 @@ export type Predict = Component<typeof PredictDef>;
 
 // Marker component for entities that have just been updated by the sync system
 export const RemoteUpdatesDef = EM.defineComponent("remoteUpdates", () => true);
+export type _ComponentDef<
+  N extends string,
+  P,
+  PArgs extends any[],
+  MA extends boolean = boolean
+> =
+  | NonupdatableComponentDef<N, P, PArgs, MA>
+  | UpdatableComponentDef<N, P, PArgs, MA>;

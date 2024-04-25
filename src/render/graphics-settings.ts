@@ -1,4 +1,4 @@
-import { EM } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/ecs.js";
 import { CanvasDef } from "./canvas.js";
 import { RendererDef } from "./renderer-ecs.js";
 

@@ -1,5 +1,6 @@
 import { ENDESGA16 } from "../color/palettes.js";
-import { EM, EntityW } from "../ecs/entity-manager.js";
+import { EntityW } from "../ecs/em-entities.js";
+import { EM } from "../ecs/ecs.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { V, mat4, quat, V3 } from "../matrix/sprig-matrix.js";
 import { BallMesh } from "../meshes/mesh-list.js";
@@ -412,7 +413,7 @@ export async function initOre(spacePath: Path) {
   );
 
   function createOxygenOre(pos: V3) {
-    const ore = EM.new();
+    const ore = EM.mk();
 
     EM.set(ore, OreDef);
     ore.ore.type = "oxygen";
@@ -441,7 +442,7 @@ export async function initOre(spacePath: Path) {
   }
 
   function createFuelOre(pos: V3) {
-    const ore = EM.new();
+    const ore = EM.mk();
 
     EM.set(ore, OreDef);
     ore.ore.type = "fuel";

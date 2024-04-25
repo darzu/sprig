@@ -1,4 +1,6 @@
-import { EM, Entity, EntityW, Component } from "../ecs/entity-manager.js";
+import { Entity, EntityW } from "../ecs/em-entities.js";
+import { EM } from "../ecs/ecs.js";
+import { Component } from "../ecs/em-components.js";
 import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import {
   PhysicsParentDef,
@@ -91,7 +93,7 @@ export function constructNetTurret(
   let interactBox: Entity;
   // create separate hitbox for interacting with the turret
   if ("min" in aabbOrInteractionEntity) {
-    interactBox = EM.new();
+    interactBox = EM.mk();
     const interactAABB = copyAABB(createAABB(), aabbOrInteractionEntity);
     V3.scale(interactAABB.min, 2, interactAABB.min);
     V3.scale(interactAABB.max, 2, interactAABB.max);

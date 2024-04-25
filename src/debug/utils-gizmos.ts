@@ -1,6 +1,6 @@
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
-import { EM } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/ecs.js";
 import {
   createGraph3DAxesMesh,
   createGraph3DDataMesh,
@@ -68,14 +68,14 @@ export function createGraph3D(
 
   // TODO(@darzu): maybe everything should be created with a scale
   const graphMesh = createGraph3DAxesMesh(opts);
-  const graph = EM.new();
+  const graph = EM.mk();
   EM.set(graph, RenderableConstructDef, graphMesh);
   EM.set(graph, PositionDef, pos);
 
   const surfScale = V3.div(worldSize, domainSize, V3.mk());
   // console.log(`surfScale: ${vec3Dbg(surfScale)}`);
 
-  const graphSurf = EM.new();
+  const graphSurf = EM.mk();
   const graphSurfMesh = createGraph3DDataMesh(data);
   EM.set(graphSurf, RenderableConstructDef, graphSurfMesh);
   EM.set(

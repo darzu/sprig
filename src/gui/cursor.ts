@@ -1,4 +1,6 @@
-import { ComponentDef, EM, EntityW } from "../ecs/entity-manager.js";
+import { EntityW } from "../ecs/em-entities.js";
+import { EM } from "../ecs/ecs.js";
+import { ComponentDef } from "../ecs/em-components.js";
 import { Mesh } from "../meshes/mesh.js";
 import {
   RenderableConstructDef,
@@ -39,7 +41,7 @@ export const Cursor3dDef = EM.defineComponent("cursor3d", () => ({
 EM.addLazyInit([BallMesh.def], [GlobalCursor3dDef], async (res) => {
   {
     console.log(`init global cursor`);
-    const cursor = EM.new();
+    const cursor = EM.mk();
     EM.set(cursor, Cursor3dDef);
     EM.set(cursor, PositionDef);
     // TODO(@darzu): support wireframe

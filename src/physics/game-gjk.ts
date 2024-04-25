@@ -1,6 +1,7 @@
 import { CameraDef } from "../camera/camera.js";
 import { AlphaDef, ColorDef } from "../color/color-ecs.js";
-import { EM, Entity, EntityW } from "../ecs/entity-manager.js";
+import { Entity, EntityW } from "../ecs/em-entities.js";
+import { EM } from "../ecs/ecs.js";
 import { V2, V3, V4, quat, mat4, V, tV } from "../matrix/sprig-matrix.js";
 import { InputsDef } from "../input/inputs.js";
 import { ColliderDef, isAABBCollider } from "./collider.js";

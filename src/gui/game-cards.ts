@@ -2,7 +2,8 @@ import { CameraDef } from "../camera/camera.js";
 import { CanvasDef } from "../render/canvas.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
-import { EM, EntityW } from "../ecs/entity-manager.js";
+import { EntityW } from "../ecs/em-entities.js";
+import { EM } from "../ecs/ecs.js";
 import { V3, V4, V } from "../matrix/sprig-matrix.js";
 import { ButtonsStateDef } from "./button.js";
 import { PositionDef } from "../physics/transform.js";
@@ -94,7 +95,7 @@ export async function initCardsGame() {
     }
   );
 
-  const sunlight = EM.new();
+  const sunlight = EM.mk();
   EM.set(sunlight, PointLightDef);
   sunlight.pointLight.constant = 1.0;
   V3.copy(sunlight.pointLight.ambient, [0.8, 0.8, 0.8]);
@@ -102,7 +103,7 @@ export async function initCardsGame() {
   // TODO(@darzu): weird, why does renderable need to be on here?
   EM.set(sunlight, RenderableConstructDef, BallMesh, false);
 
-  const panel = EM.new();
+  const panel = EM.mk();
   const panelMesh = makePlaneMesh(
     -PANEL_W * 0.5,
     PANEL_W * 0.5,

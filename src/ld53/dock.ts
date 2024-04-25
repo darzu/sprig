@@ -1,6 +1,6 @@
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
-import { EM } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/ecs.js";
 import {
   appendBoard,
   dbgPathWithGizmos,
@@ -32,7 +32,7 @@ export const DockDef = EM.defineComponent("dock", () => true);
 export function createDock() {
   const [mesh, wood] = createDockWood();
 
-  const dock = EM.new();
+  const dock = EM.mk();
   EM.set(dock, DockDef);
   EM.set(dock, PositionDef, V(0, 0, 0));
   EM.set(dock, RenderableConstructDef, mesh);

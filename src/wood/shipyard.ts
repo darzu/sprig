@@ -41,7 +41,7 @@ import { BLACK } from "../meshes/mesh-list.js";
 import { mkHalfEdgeQuadMesh } from "../meshes/primatives.js";
 import { HFace, meshToHalfEdgePoly } from "../meshes/half-edge.js";
 import { createGizmoMesh } from "../debug/gizmos.js";
-import { EM } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/ecs.js";
 import {
   PositionDef,
   updateFrameFromPosRotScale,
@@ -237,7 +237,7 @@ function createPathGizmos(path: Path, scale = 1): Mesh {
 export async function dbgPathWithGizmos(path: Path, scale = 1) {
   const mesh = createPathGizmos(path, scale);
 
-  const e = EM.new();
+  const e = EM.mk();
   EM.set(e, PositionDef);
   EM.set(e, RenderableConstructDef, mesh);
 }

@@ -8,7 +8,8 @@ import {
 import { CameraDef, CameraFollowDef } from "../camera/camera.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { AllEndesga16, ENDESGA16 } from "../color/palettes.js";
-import { EM, EntityW } from "../ecs/entity-manager.js";
+import { EntityW } from "../ecs/em-entities.js";
+import { EM } from "../ecs/ecs.js";
 import { FinishedDef, defineNetEntityHelper } from "../ecs/em-helpers.js";
 import { createGizmoForAABB, createGizmoMesh } from "../debug/gizmos.js";
 import { LinearVelocityDef } from "../motion/velocity.js";
@@ -183,7 +184,7 @@ const {
       // e.cameraFollow.pitchOffset = -0.593;
 
       // sword hitbox
-      const hitbox = EM.new();
+      const hitbox = EM.mk();
       const S = 3;
       EM.set(hitbox, PositionDef, V(0, S, 0));
       EM.set(hitbox, ColliderDef, {
@@ -198,7 +199,7 @@ const {
 
       EM.set(e, OreCarrierDef, hitbox.id);
 
-      const playerRender = EM.new();
+      const playerRender = EM.mk();
       const riggedAstronaut = res.ld54_meshes.ld54_astronaut.mesh as RiggedMesh;
       EM.set(playerRender, RiggedRenderableConstructDef, riggedAstronaut);
       EM.set(playerRender, PositionDef);
@@ -375,7 +376,7 @@ export async function initLD54() {
   const { ld54_meshes } = await EM.whenResources(ld54Meshes);
 
   // light
-  const sun = EM.new();
+  const sun = EM.mk();
   EM.set(sun, PointLightDef);
   EM.set(sun, ColorDef, V(1, 1, 1));
   // EM.set(sun, PositionDef, V(100, 100, 0));
@@ -434,7 +435,7 @@ export async function initLD54() {
           );
         }
 
-        const pathSegs = EM.filterEntities([
+        const pathSegs = EM.filterEntities_uncached([
           SpacePathSegmentDef,
           RenderableDef,
         ]);
@@ -469,7 +470,7 @@ export async function initLD54() {
   const BUBBLE_HALFSIZE = 1;
   const bubbleMesh = makeSphere(16, 8, BUBBLE_HALFSIZE);
   console.log("bubbleMesh", bubbleMesh);
-  const bubble = EM.new();
+  const bubble = EM.mk();
   EM.set(
     bubble,
     RenderableConstructDef,

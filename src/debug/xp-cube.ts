@@ -1,5 +1,5 @@
 import { CameraDef } from "../camera/camera.js";
-import { EM } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/ecs.js";
 import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { max } from "../utils/math.js";
 import { ColliderDef } from "../physics/collider.js";
@@ -58,7 +58,7 @@ export async function initCubeGame() {
     g.cameraFollow.pitchOffset = -0.604;
   }
 
-  const box = EM.new();
+  const box = EM.mk();
   const boxM = cloneMesh(res.allMeshes.cube.mesh);
   const sIdMax = max(boxM.surfaceIds);
   boxM.colors = boxM.surfaceIds.map((_, i) => uintToVec3unorm(i, sIdMax));

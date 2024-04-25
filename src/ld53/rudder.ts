@@ -1,7 +1,8 @@
 import { CameraFollowDef } from "../camera/camera.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
-import { EM, Resources } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/ecs.js";
+import { Resources } from "../ecs/em-resources.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { defineObj } from "../graybox/objects.js";
 import { V, quat } from "../matrix/sprig-matrix.js";
@@ -42,7 +43,7 @@ export const HasRudderDef = HasRudderObj.props;
 
 // TODO(@darzu): Use Objects and mixins
 export function createRudder() {
-  const rudder = EM.new();
+  const rudder = EM.mk();
   EM.set(rudder, RudderDef);
   EM.set(rudder, RenderableConstructDef, RudderPrimMesh);
   // EM.set(ent, ColorDef, V(0.2, 0.1, 0.05));
@@ -59,7 +60,7 @@ export function createRudderTurret(res: Resources<[typeof MeDef]>) {
 
   addGizmoChild(rudder, 4);
 
-  const interactBox = EM.new();
+  const interactBox = EM.mk();
   EM.set(interactBox, PhysicsParentDef, rudder.id);
   EM.set(interactBox, PositionDef);
   EM.set(interactBox, ColliderDef, {

@@ -1,4 +1,5 @@
-import { Component, EM } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/ecs.js";
+import { Component } from "../ecs/em-components.js";
 import {
   cloneMesh,
   mapMeshPositions,
@@ -34,7 +35,7 @@ export type Noodle = Component<typeof NoodleDef>;
 
 // TODO(@darzu): DEBUGGING
 export function debugCreateNoodles() {
-  const e = EM.new();
+  const e = EM.mk();
   EM.set(e, NoodleDef, [
     {
       pos: V(0, 0, 0),

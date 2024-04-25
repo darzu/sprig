@@ -1,5 +1,7 @@
 import { CameraDef } from "../camera/camera.js";
-import { EM, EntityW, Resources } from "../ecs/entity-manager.js";
+import { EntityW } from "../ecs/em-entities.js";
+import { EM } from "../ecs/ecs.js";
+import { Resources } from "../ecs/em-resources.js";
 import { PositionDef, RotationDef, ScaleDef } from "../physics/transform.js";
 import { RendererDef, RenderableConstructDef } from "../render/renderer-ecs.js";
 import { blurPipelines } from "../render/pipelines/std-blur.js";
@@ -171,7 +173,7 @@ export async function initHyperspaceGame() {
 
   if (me.host) {
     // experimental ship:
-    const eShip = EM.new();
+    const eShip = EM.mk();
     EM.set(eShip, RenderableConstructDef, res.allMeshes.ship_fangs.proto);
     EM.set(eShip, PositionDef);
     EM.set(eShip, UVPosDef, V2.clone([0.2, 0.1]));

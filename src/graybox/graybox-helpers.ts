@@ -8,7 +8,9 @@ import {
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { GhostDef, createGhost } from "../debug/ghost.js";
-import { EM, EntityW, _ComponentDef } from "../ecs/entity-manager.js";
+import { EntityW } from "../ecs/em-entities.js";
+import { EM } from "../ecs/ecs.js";
+import { _ComponentDef } from "../net/components.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { quat, V3 } from "../matrix/sprig-matrix.js";
 import { V } from "../matrix/sprig-matrix.js";

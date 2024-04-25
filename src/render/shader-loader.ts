@@ -1,4 +1,5 @@
-import { Component, EM } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/ecs.js";
+import { Component } from "../ecs/em-components.js";
 import { getText } from "../fetch/webget.js";
 
 const DEFAULT_SHADER_PATH = "shaders/";

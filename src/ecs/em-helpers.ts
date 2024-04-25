@@ -1,17 +1,14 @@
-import {
-  ComponentDef,
-  EntityW,
-  Entity,
-  EM,
-  ResourceDef,
-  Resources,
-  InitFn,
-} from "./entity-manager.js";
+import { EntityW, Entity } from "./em-entities.js";
+import { EM } from "./ecs.js";
+import { ComponentDef } from "./em-components.js";
+import { Resources } from "./em-resources.js";
+import { ResourceDef } from "./em-resources.js";
 import { Authority, AuthorityDef, MeDef, SyncDef } from "../net/components.js";
 import { Serializer, Deserializer } from "../utils/serialize.js";
 import { assert } from "../utils/util.js";
 import { capitalize } from "../utils/util.js";
 import { Phase } from "./sys-phase.js";
+import { InitFn } from "./em-init.js";
 
 export function defineSerializableComponent<
   N extends string,
@@ -198,13 +195,13 @@ export function defineNetEntityHelper<
   );
 
   const createNew = (...args: Pargs1) => {
-    const e = EM.new();
+    const e = EM.mk();
     EM.set(e, propsDef, ...args);
     return e;
   };
 
   const createNewNow = (res: Resources<RS>, ...args: Pargs1) => {
-    const e = EM.new();
+    const e = EM.mk();
     EM.set(e, propsDef, ...args);
     // TODO(@darzu): maybe we should force users to give us the MeDef? it's probably always there tho..
     // TODO(@darzu): Think about what if buid() is async...
@@ -214,7 +211,7 @@ export function defineNetEntityHelper<
   };
 
   const createNewAsync = async (...args: Pargs1) => {
-    const e = EM.new();
+    const e = EM.mk();
     EM.set(e, propsDef, ...args);
     await EM.whenEntityHas(e, FinishedDef);
     return e as INITED;
@@ -278,6 +275,7 @@ export const FinishedDef = EM.defineComponent(
   (p) => p
 );
 
+// TODO(@darzu): MOVE to em-resources
 export function defineResourceWithInit<
   N extends string,
   P extends object,

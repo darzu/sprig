@@ -4,7 +4,9 @@ import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { DeadDef } from "../ecs/delete.js";
 import { createRef, Ref } from "../ecs/em-helpers.js";
-import { Component, EM, Entity, EntityW } from "../ecs/entity-manager.js";
+import { Entity, EntityW } from "../ecs/em-entities.js";
+import { EM } from "../ecs/ecs.js";
+import { Component } from "../ecs/em-components.js";
 import { EntityPool, createEntityPool } from "../ecs/entity-pool.js";
 import { Bullet, BulletDef, fireBullet } from "../cannons/bullet.js";
 import { GravityDef } from "../motion/gravity.js";
@@ -495,8 +497,8 @@ EM.addLazyInit([RendererDef], [TowerPoolDef], (res) => {
     max: maxStoneTowers,
     maxBehavior: "crash",
     create: () => {
-      const tower = EM.new();
-      const cannon = EM.new();
+      const tower = EM.mk();
+      const cannon = EM.mk();
       EM.set(cannon, RenderableConstructDef, LD53CannonMesh);
       EM.set(cannon, PositionDef);
       EM.set(cannon, ColorDef, V(0.05, 0.05, 0.05));
@@ -593,7 +595,7 @@ EM.addLazyInit([RendererDef], [FlyingBrickPoolDef], (res) => {
     max: maxFlyingBricks,
     maxBehavior: "rand-despawn",
     create: () => {
-      const brick = EM.new();
+      const brick = EM.mk();
       EM.set(brick, FlyingBrickDef);
       EM.set(brick, PositionDef);
       EM.set(brick, RotationDef);

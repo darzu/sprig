@@ -1627,3 +1627,12 @@ Former adobe engineer's engine:
   
 Like shadertoy but for compute
   https://compute.toys
+
+class -> interface process:
+  replace all "public" "private" with "function"
+  put const in front of all data members
+  fixup missing "function"
+  swap some const -> let as needed
+  const _this: MyInterface = {...}; // use "add missing members" hint
+  remove all "this."
+  for non-boxed/primitives on the interface, add _this. back

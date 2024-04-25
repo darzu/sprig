@@ -1,10 +1,5 @@
-import {
-  registerEventHandler,
-  DetectedEvent,
-  DetectedEventsDef,
-  eventWizard,
-} from "../net/events.js";
-import { ComponentDef, EDef, EM, Entity, ESet } from "../ecs/entity-manager.js";
+import { DetectedEventsDef, eventWizard } from "../net/events.js";
+import { EM } from "../ecs/ecs.js";
 import { HsPlayerDef } from "../hyperspace/hs-player.js";
 import { PhysicsResultsDef } from "../physics/nonintersection.js";
 import { AuthorityDef } from "../net/components.js";
@@ -13,7 +8,6 @@ import { DeletedDef } from "../ecs/delete.js";
 import { AllMeshesDef } from "../meshes/mesh-list.js";
 import { AudioDef } from "../audio/audio.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
-import { assert, NumberTuple } from "../utils/util.js";
 import {
   breakEnemyShip,
   EnemyShipLocalDef,

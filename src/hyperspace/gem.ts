@@ -1,7 +1,7 @@
 import { AllMeshesDef } from "../meshes/mesh-list.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { defineNetEntityHelper } from "../ecs/em-helpers.js";
-import { EM } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/ecs.js";
 import { MeDef } from "../net/components.js";
 import { copyAABB, createAABB } from "../physics/aabb.js";
 import { ColliderDef } from "../physics/collider.js";
@@ -36,7 +36,7 @@ export const { GemPropsDef, GemLocalDef, createGem } = defineNetEntityHelper({
     EM.set(gem, ColorDef);
 
     // create seperate hitbox for interacting with the gem
-    const interactBox = EM.new();
+    const interactBox = EM.mk();
     const interactAABB = copyAABB(createAABB(), res.allMeshes.spacerock.aabb);
     EM.set(interactBox, PhysicsParentDef, gem.id);
     EM.set(interactBox, PositionDef, V(0, 0, 0));

@@ -1,5 +1,6 @@
 import { DeadDef } from "./delete.js";
-import { Component, EM } from "./entity-manager.js";
+import { EM } from "./ecs.js";
+import { Component } from "./em-components.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { TimeDef } from "../time/time.js";
 import { Phase } from "./sys-phase.js";

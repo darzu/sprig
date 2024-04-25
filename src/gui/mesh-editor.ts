@@ -1,5 +1,6 @@
 import { ColorDef } from "../color/color-ecs.js";
-import { EM, EntityW } from "../ecs/entity-manager.js";
+import { EntityW } from "../ecs/em-entities.js";
+import { EM } from "../ecs/ecs.js";
 import { AllMeshesDef } from "../meshes/mesh-list.js";
 import { gameplaySystems } from "../debug/ghost.js";
 import { V2, V3, V4, quat, mat4, mat3, V } from "../matrix/sprig-matrix.js";
@@ -150,7 +151,7 @@ async function createMeshEditor() {
         handle
       );
     } else {
-      const hpEnt_ = EM.new();
+      const hpEnt_ = EM.mk();
       EM.set(
         hpEnt_,
         RenderableConstructDef,
@@ -199,7 +200,7 @@ async function createMeshEditor() {
   }
 
   function _createGlyph(gm: GameMesh) {
-    const glyph_ = EM.new();
+    const glyph_ = EM.mk();
     EM.set(glyph_, RenderableConstructDef, gm.proto, false);
     EM.set(glyph_, ColorDef);
     EM.set(glyph_, PositionDef);

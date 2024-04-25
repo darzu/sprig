@@ -1,6 +1,6 @@
 import { CameraDef } from "../camera/camera.js";
 import { DeletedDef } from "../ecs/delete.js";
-import { EM } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/ecs.js";
 import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { AuthorityDef, HostDef, MeDef } from "../net/components.js";
 import { eventWizard } from "../net/events.js";
@@ -75,7 +75,7 @@ export const endGame = eventWizard(
       EM.ensureComponent(ship.hsShipProps.cannonLId, DeletedDef);
     if (ship.hsShipProps.cannonRId)
       EM.ensureComponent(ship.hsShipProps.cannonRId, DeletedDef);
-    const players = EM.filterEntities([
+    const players = EM.filterEntities_uncached([
       HsPlayerDef,
       CanManDef,
       PositionDef,
@@ -144,7 +144,10 @@ export function registerGameStateSystems() {
         res.hsGameState.time += res.time.dt;
         if (res.hsGameState.time > RESTART_TIME_MS) {
           // Do we have a ship to restart onto yet?
-          const ship = EM.filterEntities([HsShipPropsDef, HsShipLocalDef])[0];
+          const ship = EM.filterEntities_uncached([
+            HsShipPropsDef,
+            HsShipLocalDef,
+          ])[0];
           if (ship) {
             restartGame(ship);
           } else {

@@ -1,5 +1,5 @@
 import { AudioDef } from "./audio.js";
-import { EM } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/ecs.js";
 import { VERBOSE_LOG } from "../flags.js";
 import { assert } from "../utils/util.js";
 
@@ -13,7 +13,7 @@ export const SoundPaths = [
   "sword.mp3",
 ] as const;
 
-export type SoundName = typeof SoundPaths[number];
+export type SoundName = (typeof SoundPaths)[number];
 
 export type SoundSet = { [P in SoundName]: AudioBuffer };
 

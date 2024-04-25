@@ -3,15 +3,11 @@ import {
   getCameraSettings,
   getCameraSettingsCodeStr,
 } from "../camera/camera.js";
-import {
-  CompId,
-  ComponentDef,
-  ResourceDef,
-  EM,
-  Entity,
-  EntityW,
-  initFnToString,
-} from "../ecs/entity-manager.js";
+import { Entity, EntityW } from "../ecs/em-entities.js";
+import { EM } from "../ecs/ecs.js";
+import { CompId } from "../ecs/em-components.js";
+import { ComponentDef } from "../ecs/em-components.js";
+import { ResourceDef } from "../ecs/em-resources.js";
 import {
   MetaPhases,
   NameFromPhase,
@@ -225,7 +221,7 @@ function cmpByName(name: string): DbgCmp | null {
 
 export const dbg = {
   saveCamera: () => {
-    const targets = EM.filterEntities([
+    const targets = EM.filterEntities_uncached([
       CameraFollowDef,
       RotationDef,
       PositionDef,
@@ -336,17 +332,8 @@ export const dbg = {
     console.log(res);
   },
   summarizeInit: () => {
-    const inits = [...EM.initFnMsStats.keys()].map(
-      (id) => EM.allInits.get(id)!
-    );
-    const initsAndTimes = inits.map(
-      (reg) => [reg, EM.initFnMsStats.get(reg.id)!] as const
-    );
-    initsAndTimes.sort((a, b) => b[1] - a[1]);
-    let out = initsAndTimes
-      .map(([reg, ms]) => `${ms.toFixed(2)}ms: ${initFnToString(reg)}`)
-      .join("\n");
-    console.log(out);
+    const res = EM.summarizeInitStats();
+    console.log(res);
   },
   summarizeStats: () => {
     let stats = EM.sysStats;
@@ -395,14 +382,15 @@ export const dbg = {
     let out = "";
     for (let { s, t, m } of callTimes) {
       const percent = ((t * 100) / totalTime).toFixed(1);
-      const avgTime = (t / EM.dbgLoops).toFixed(2);
+      const avgTime = (t / EM.emStats.dbgLoops).toFixed(2);
       const maxTime = m.toFixed(1);
       const sysTotalTime = t.toFixed(1);
       out += `${s}: ${percent}% (${avgTime}ms, max: ${maxTime}ms, total: ${sysTotalTime}ms)\n`;
     }
 
     out += "\n";
-    out += "time per frame: " + (totalTime / EM.dbgLoops).toFixed(3) + "ms";
+    out +=
+      "time per frame: " + (totalTime / EM.emStats.dbgLoops).toFixed(3) + "ms";
     console.log(out);
   },
 };

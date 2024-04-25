@@ -1,4 +1,4 @@
-import { EM } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/ecs.js";
 import { V2, V3, V, mat3, quat } from "../matrix/sprig-matrix.js";
 import { PositionDef, RotationDef, ScaleDef } from "../physics/transform.js";
 import { Mesh } from "../meshes/mesh.js";
@@ -37,7 +37,7 @@ function sockMesh(): Mesh {
 }
 
 export function createSock(scale: number) {
-  const ent = EM.new();
+  const ent = EM.mk();
   EM.set(ent, SockDef);
   ent.sock.scale = scale;
   const mesh = sockMesh();

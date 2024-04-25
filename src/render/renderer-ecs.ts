@@ -1,4 +1,5 @@
-import { EM, Entity, EntityW } from "../ecs/entity-manager.js";
+import { Entity, EntityW } from "../ecs/em-entities.js";
+import { EM } from "../ecs/ecs.js";
 import { CameraDef, CameraComputedDef } from "../camera/camera.js";
 import { V3, quat, mat4 } from "../matrix/sprig-matrix.js";
 import {
@@ -343,12 +344,13 @@ EM.addEagerInit([RenderableConstructDef], [RendererDef], [], () => {
       // console.log(`mId 24: ${!!m24.length}, e10003: ${!!e10003.length}`);
 
       // update position
-      const pointLights = EM.filterEntities([PointLightDef, WorldFrameDef]).map(
-        (e) => {
-          V3.copy(e.pointLight.position, e.world.position);
-          return e.pointLight;
-        }
-      );
+      const pointLights = EM.filterEntities_uncached([
+        PointLightDef,
+        WorldFrameDef,
+      ]).map((e) => {
+        V3.copy(e.pointLight.position, e.world.position);
+        return e.pointLight;
+      });
 
       const NUM_CASCADES = 2;
       // TODO(@darzu): move point light and casading shadow map code to its own system

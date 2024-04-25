@@ -1,4 +1,6 @@
-import { EM, Component, Entity, EntityW } from "../ecs/entity-manager.js";
+import { Entity, EntityW } from "../ecs/em-entities.js";
+import { EM } from "../ecs/ecs.js";
+import { Component } from "../ecs/em-components.js";
 import { V2, V3, V4, quat, mat4, V, tV } from "../matrix/sprig-matrix.js";
 import { FinishedDef } from "../ecs/em-helpers.js";
 import { ColorDef } from "../color/color-ecs.js";
@@ -216,7 +218,7 @@ export async function fireBullet(
 
   let e: BulletEnt;
   if (_bulletPool.length < _maxBullets) {
-    let e_ = EM.new();
+    let e_ = EM.mk();
     EM.set(e_, BulletConstructDef);
     e = e_;
     _bulletPool.push(e);
@@ -278,7 +280,7 @@ async function initBulletPartPool() {
   for (let i = 0; i < numSetsInPool; i++) {
     let bset: BulletPart[] = [];
     for (let part of allMeshes.ball_broken) {
-      const pe = EM.new();
+      const pe = EM.mk();
       EM.set(pe, RenderableConstructDef, part.proto);
       EM.set(pe, ColorDef);
       EM.set(pe, RotationDef);

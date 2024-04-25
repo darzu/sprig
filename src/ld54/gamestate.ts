@@ -1,6 +1,7 @@
 import { PoseDef, tweenToPose } from "../animation/skeletal.js";
 import { createRef } from "../ecs/em-helpers.js";
-import { EM, EntityW } from "../ecs/entity-manager.js";
+import { EntityW } from "../ecs/em-entities.js";
+import { EM } from "../ecs/ecs.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { LocalPlayerEntityDef } from "../hyperspace/hs-player.js";
 import { InputsDef } from "../input/inputs.js";
@@ -109,7 +110,7 @@ EM.addEagerInit([], [LD54GameStateDef], [], () => {
 
       // have we reached the end of the path and won?
 
-      const path = EM.filterEntities([SpacePathDef])[0];
+      const path = EM.filterEntities_uncached([SpacePathDef])[0];
       if (path) {
         const distanceToEnd = V3.dist(
           res.party.pos,

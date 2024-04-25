@@ -1,0 +1,99 @@
+How do we support multiple scenes?
+
+multi-scene
+
+pipelines
+disable old scene entities (take out of systems lists, take out of renderer)
+enable new scene entities 
+
+push scene
+pop scene
+
+optional marking/annotations on systems and entities ?
+
+active / deactive scene
+
+resource tagging
+
+or worlds:
+  all resources attached to a world
+  world swapped loaded/unloaded,
+    all caches swapped
+
+maybe resources are shared
+everything else isn't
+
+goal:
+  scene swapping is useful for game too
+    swap missions areas, store, etc.
+
+questions:
+  is it a new namespace for systems?
+
+for global system queries,
+  which entities match?
+    each scene, concated
+
+multiplayer netcode:
+  events and updates refer to entities which aren't active any more?
+
+local multi-player:
+  split screen: 
+    two cameras, same scenes
+    or two iframes running two spriglands
+
+Bevy:
+  scenes:
+    "You'd use Bevy states to determine which systems should activate and when, then use events to trigger the state switching"
+
+  world:
+    https://bevy-cheatbook.github.io/programming/world.html
+
+  state
+    https://bevy-cheatbook.github.io/programming/states.html
+      systems -> system sets
+      system sets -> 
+        .run_if(in_state(...)) && ...
+        .run_if(run_if_enemies_present)
+        // will only run if all of them return true.
+
+      app.configure_sets(Update, (
+        MyMainMenuSet
+          .run_if(in_state(MyAppState::MainMenu)),
+        MyGameplaySet
+          // note: you can check for a combination of different states
+          .run_if(in_state(MyAppState::InGame))
+          .run_if(in_state(MyPausedState::Running)),
+      ));
+
+      A StateTransitionEvent event is sent.
+      The OnExit(old_state) schedule is run.
+      The OnTransition { from: old_state, to: new_state } schedule is run.
+      The OnEnter(new_state) schedule is run.
+
+pause game:
+  enable/disable certain systems
+
+let e = scene1.new()
+scene1.addSystem(...)
+
+vs. 
+
+let e = EM.new(scene1)
+EM.addSystem(scene1, ...)
+
+scene:
+  entities
+    entPromises
+  components
+  resources
+    resPromises
+  inits
+
+EM.set(myEnt, PositionDef) // world1.myEnt, global.PositionDef
+
+maybe just: entities + systems
+
+EM.addEagerInit(
+      [PositionDef, BoatDef], // does there exist this component set within a certain world ??
+      ...)

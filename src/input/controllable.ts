@@ -1,7 +1,7 @@
 import { AnimateToDef } from "../animation/animate-to.js";
 import { CameraFollowDef } from "../camera/camera.js";
 import { CanvasDef } from "../render/canvas.js";
-import { EM } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/ecs.js";
 import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { InputsDef } from "./inputs.js";
 import { AuthorityDef, MeDef } from "../net/components.js";

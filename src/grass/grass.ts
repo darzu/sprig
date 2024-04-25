@@ -1,5 +1,6 @@
 import { ColorDef } from "../color/color-ecs.js";
-import { EM, EntityW } from "../ecs/entity-manager.js";
+import { EntityW } from "../ecs/em-entities.js";
+import { EM } from "../ecs/ecs.js";
 import { grassPoolPtr, RenderDataGrassDef } from "./std-grass.js";
 import { jitter, align } from "../utils/math.js";
 import { PositionDef } from "../physics/transform.js";
@@ -191,7 +192,7 @@ export async function createGrassTileset(
       const z = zi * tileSize;
       // console.log(`(${xi}, ${zi})`);
       // TODO(@darzu): USE INSTANCING
-      const tile = EM.new();
+      const tile = EM.mk();
       EM.set(tile, PositionDef, V(x, 0, z));
       EM.set(
         tile,

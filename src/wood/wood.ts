@@ -1,5 +1,6 @@
 import { ColorDef } from "../color/color-ecs.js";
-import { EM, Entity } from "../ecs/entity-manager.js";
+import { Entity } from "../ecs/em-entities.js";
+import { EM } from "../ecs/ecs.js";
 import { AllMeshSymbols, BLACK } from "../meshes/mesh-list.js";
 import { BulletDef } from "../cannons/bullet.js";
 import { GravityDef } from "../motion/gravity.js";
@@ -717,7 +718,7 @@ function createSplinterEnd(
 
   const rot = getSegmentRotation(seg, top);
   // TODO(@darzu): put these into a pool
-  const splinter = EM.new();
+  const splinter = EM.mk();
   // TODO(@darzu): perf? probably don't need to normalize, just use same surface ID and provoking vert for all
   const cursor = mat4.fromRotationTranslation(rot, pos, mat4.create());
   let _splinterMesh: RawMesh = createEmptyMesh("splinterEnd");

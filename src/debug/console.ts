@@ -1,4 +1,4 @@
-import { EM } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/ecs.js";
 import { PERF_DBG_F32S, PERF_DBG_GPU } from "../flags.js";
 import { TextDef } from "../gui/ui.js";
 import { InputsDef } from "../input/inputs.js";

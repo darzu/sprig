@@ -1,6 +1,6 @@
 import { ColorDef } from "../color/color-ecs.js";
 import { createRef, Ref } from "../ecs/em-helpers.js";
-import { EM } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/ecs.js";
 import { V3, mat4, V } from "../matrix/sprig-matrix.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import {
@@ -18,13 +18,13 @@ const ORRERY_SCALE = 0.001;
 
 export async function makeOrrery(parentId: number) {
   const res = await EM.whenResources(AllMeshesDef);
-  const orrery = EM.new();
+  const orrery = EM.mk();
   EM.set(orrery, OrreryDef);
   EM.set(orrery, PhysicsParentDef, parentId);
   EM.set(orrery, PositionDef, V(0, 4, 4));
 
   // put a ship model at the center of it
-  const shipModel = EM.new();
+  const shipModel = EM.mk();
   EM.set(shipModel, PhysicsParentDef, orrery.id);
   EM.set(shipModel, PositionDef, V(0, 0, 0));
   EM.set(shipModel, RenderableConstructDef, res.allMeshes.ship.proto);
@@ -47,7 +47,7 @@ export function registerOrrerySystems() {
     [OrreryDef, WorldFrameDef],
     [AllMeshesDef],
     (es, res) => {
-      const stars = EM.filterEntities([
+      const stars = EM.filterEntities_uncached([
         DarkStarPropsDef,
         WorldFrameDef,
         ColorDef,
@@ -56,7 +56,7 @@ export function registerOrrerySystems() {
       for (let orrery of es) {
         // TODO(@darzu): use resizeArray?
         while (orrery.orrery.orreryStars.length < stars.length) {
-          const orreryStar = EM.new();
+          const orreryStar = EM.mk();
           EM.set(orreryStar, PositionDef);
           EM.set(orreryStar, PhysicsParentDef, orrery.id);
           EM.set(orreryStar, ColorDef);

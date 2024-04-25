@@ -1,5 +1,5 @@
 import { ColliderDef } from "./collider.js";
-import { EM } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/ecs.js";
 import { AllMeshesDef } from "../meshes/mesh-list.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { InputsDef } from "../input/inputs.js";
@@ -60,7 +60,7 @@ export function registerPhysicsDebuggerSystem() {
         if (!res._physDbgState.colliderMeshes.has(e.id)) {
           for (let c of e._phys.colliders) {
             // create debug entity
-            const dbgE = EM.new();
+            const dbgE = EM.mk();
 
             // with a wireframe mesh
             // TODO(@darzu): doesn't work w/o our line renderer

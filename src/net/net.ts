@@ -1,6 +1,6 @@
 import { Serializer, Deserializer } from "../utils/serialize.js";
 import { Peer } from "./peer.js";
-import { EM } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/ecs.js";
 import { never } from "../utils/util-no-import.js";
 
 import { MessageType } from "./message.js";

@@ -1,5 +1,8 @@
 import { CanvasDef } from "../render/canvas.js";
-import { Component, EM, EntityW, Resource } from "../ecs/entity-manager.js";
+import { EntityW } from "../ecs/em-entities.js";
+import { EM } from "../ecs/ecs.js";
+import { Component } from "../ecs/em-components.js";
+import { Resource } from "../ecs/em-resources.js";
 import { V3, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { MeDef } from "../net/components.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";

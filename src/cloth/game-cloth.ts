@@ -1,6 +1,6 @@
 import { CameraDef } from "../camera/camera.js";
 import { ColorDef } from "../color/color-ecs.js";
-import { EM } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/ecs.js";
 import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { InputsDef } from "../input/inputs.js";
 import { remapEase } from "../utils/math.js";
@@ -104,12 +104,12 @@ export async function initClothSandbox(hosting: boolean) {
   c.renderable.enabled = true;
   c.cursor3d.maxDistance = 10;
 
-  const plane = EM.new();
+  const plane = EM.mk();
   EM.set(plane, RenderableConstructDef, res.allMeshes.plane.proto);
   EM.set(plane, ColorDef, V(0.2, 0.3, 0.2));
   EM.set(plane, PositionDef, V(0, -5, 0));
 
-  const ship = EM.new();
+  const ship = EM.mk();
   EM.set(ship, RenderableConstructDef, res.allMeshes.ship.proto);
   EM.set(ship, ColorDef, ENEMY_SHIP_COLOR);
   EM.set(ship, PositionDef, V(20, -2, 0));
@@ -136,7 +136,7 @@ export async function initClothSandbox(hosting: boolean) {
   //   quat.fromEuler(quat.create(), 0, Math.PI * 0.1, 0)
   // );
 
-  const box = EM.new();
+  const box = EM.mk();
   EM.set(box, RenderableConstructDef, res.allMeshes.cube.proto);
   EM.set(box, ColorDef, V(0.1, 0.1, 0.1));
   EM.set(box, PositionDef, V(0, 0, 3));
@@ -149,7 +149,7 @@ export async function initClothSandbox(hosting: boolean) {
     aabb: res.allMeshes.cube.aabb,
   });
 
-  const cloth = EM.new();
+  const cloth = EM.mk();
   EM.set(cloth, ClothConstructDef, {
     location: V(0, 0, 0),
     color: V(0.9, 0.9, 0.8),

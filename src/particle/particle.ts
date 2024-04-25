@@ -1,5 +1,5 @@
 import { defineResourceWithInit } from "../ecs/em-helpers.js";
-import { EM } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/ecs.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { mat4 } from "../matrix/gl-matrix.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";

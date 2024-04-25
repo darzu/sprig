@@ -1,4 +1,4 @@
-import { EM } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/ecs.js";
 import {
   FromNetworkEvent,
   ToNetworkEvent,
@@ -32,7 +32,7 @@ export function initNetStateEventSystems() {
           break;
         case NetworkEventType.NewConnection: {
           console.log("new connection");
-          let { id } = EM.new();
+          let { id } = EM.mk();
           let peer = EM.addComponent(id, PeerDef);
           peer.address = event.address;
           EM.addComponent(id, InboxDef);

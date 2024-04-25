@@ -1,4 +1,6 @@
-import { Component, EM, Resource } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/ecs.js";
+import { Component } from "../ecs/em-components.js";
+import { Resource } from "../ecs/em-resources.js";
 import { randInt } from "../utils/math.js";
 import { RendererDef } from "../render/renderer-ecs.js";
 import { V, V3 } from "../matrix/sprig-matrix.js";

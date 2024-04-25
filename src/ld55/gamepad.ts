@@ -1,4 +1,4 @@
-import { EM } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/ecs.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { V, V2 } from "../matrix/sprig-matrix.js";
 import { dbgOnce, dbgLogOnce } from "../utils/util.js";

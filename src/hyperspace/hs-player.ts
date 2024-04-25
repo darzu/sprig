@@ -3,7 +3,8 @@
 // player controller component and system
 import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { InputsDef } from "../input/inputs.js";
-import { EM, Entity, EntityW } from "../ecs/entity-manager.js";
+import { Entity, EntityW } from "../ecs/em-entities.js";
+import { EM } from "../ecs/ecs.js";
 import { TimeDef } from "../time/time.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { FinishedDef } from "../ecs/em-helpers.js";
@@ -53,7 +54,7 @@ import { CanManDef } from "../turret/turret.js";
 
 export function createHsPlayer() {
   // console.log("create player!");
-  const e = EM.new();
+  const e = EM.mk();
   EM.set(e, PlayerHsPropsDef, V(0, 100, 0));
   EM.addResource(LocalPlayerEntityDef, e.id);
   return e;
@@ -135,7 +136,7 @@ EM.addEagerInit([PlayerHsPropsDef], [], [], () => {
 
         // create legs
         function makeLeg(x: number): Entity {
-          const l = EM.new();
+          const l = EM.mk();
           EM.set(l, PositionDef, V(x, -1.5, 0));
           EM.set(l, RenderableConstructDef, res.allMeshes.cube.proto);
           EM.set(l, ScaleDef, V(0.15, 0.75, 0.15));
@@ -403,7 +404,7 @@ EM.addEagerInit([PlayerHsPropsDef], [], [], () => {
 
         const parent = EM.findEntity(p.physicsParent.id, [ColliderDef]);
         if (!parent) {
-          const ship = EM.filterEntities([
+          const ship = EM.filterEntities_uncached([
             ColliderDef,
             HsShipLocalDef,
             PositionDef,

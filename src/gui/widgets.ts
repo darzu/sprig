@@ -1,7 +1,9 @@
 import { CameraComputedDef } from "../camera/camera.js";
 import { AlphaDef, ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
-import { EM, EntityW, Resources } from "../ecs/entity-manager.js";
+import { EntityW } from "../ecs/em-entities.js";
+import { EM } from "../ecs/ecs.js";
+import { Resources } from "../ecs/em-resources.js";
 import { AllMeshes, AllMeshesDef, UnitCubeMesh } from "../meshes/mesh-list.js";
 import { gameplaySystems } from "../debug/ghost.js";
 import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
@@ -70,7 +72,7 @@ async function initDragBox(): Promise<EntityW<[typeof PositionDef]>> {
 
   // create dragbox
   // TODO(@darzu): dragbox should be part of some 2d gui abstraction thing
-  const dragBox = EM.new();
+  const dragBox = EM.mk();
   const dragBoxMesh = cloneMesh(unitCubeMesh.mesh);
   EM.set(dragBox, AlphaDef, 0.2);
   EM.set(dragBox, RenderableConstructDef, dragBoxMesh);

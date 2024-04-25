@@ -1,37 +1,26 @@
 import { test } from "./utils/test.js";
 import { setupObjImportExporter } from "./meshes/mesh-normalizer.js";
-import { EM } from "./ecs/entity-manager.js";
+import { EM } from "./ecs/ecs.js";
 import { tick } from "./time/time.js";
 import { MeDef, JoinDef, HostDef, PeerNameDef } from "./net/components.js";
 import { addEventComponents } from "./net/events.js";
 import { dbg } from "./debug/debugger.js";
 import { DevConsoleDef } from "./debug/console.js";
 import { initReboundSandbox } from "./physics/game-rebound.js";
-// import { callClothSystems } from "./game/cloth.js";
 import { initCommonSystems } from "./game-init.js";
-import { dbgLogMilestone } from "./utils/util.js";
 import { never } from "./utils/util-no-import.js";
-// import { initHyperspaceGame } from "./game/game-hyperspace.js";
-import {
-  DBG_ASSERT,
-  ENABLE_NET,
-  VERBOSE_LOG,
-  VERBOSE_NET_LOG,
-  WARN_DEAD_CLEANUP,
-} from "./flags.js";
+import { VERBOSE_LOG, VERBOSE_NET_LOG } from "./flags.js";
 import { initShipyardGame } from "./wood/game-shipyard.js";
-import { gameplaySystems } from "./debug/ghost.js";
 import { initFontEditor } from "./gui/game-font.js";
 import { initGJKSandbox } from "./physics/game-gjk.js";
 import { initHyperspaceGame } from "./hyperspace/game-hyperspace.js";
 import { initClothSandbox } from "./cloth/game-cloth.js";
 import { initCubeGame } from "./debug/xp-cube.js";
-import { resetTempMatrixBuffer, V } from "./matrix/sprig-matrix.js";
+import { resetTempMatrixBuffer } from "./matrix/sprig-matrix.js";
 import { initGrassGame } from "./grass/game-grass.js";
 import { initLD53 } from "./ld53/game-ld53.js";
 import { initGalleryGame } from "./render/game-gallery.js";
 import { initModelingGame } from "./meshes/game-modeling.js";
-import { Phase } from "./ecs/sys-phase.js";
 import { setSimulationAlpha } from "./render/motion-smoothing.js";
 import { initMPGame } from "./net/game-multiplayer.js";
 import { initLD54 } from "./ld54/game-ld54.js";
@@ -79,13 +68,14 @@ const GAME: (typeof ALL_GAMES)[number] = (
   // "painterly"
   // "graybox-ship-arena"
   // "ld53"
+  "ld54"
   // "gjk"
   // "graybox-starter"
   // "font"
   // "cards"
   // "particles"
   // "ld55"
-  "multi-scene"
+  // "multi-scene"
 );
 
 // Run simulation with a fixed timestep @ 60hz
@@ -97,10 +87,6 @@ const MAX_SIM_LOOPS = 1;
 // const MAX_SIM_LOOPS = 3;
 
 export let gameStarted = false;
-
-function callFixedTimestepSystems() {
-  EM.update();
-}
 
 async function startGame(localPeerName: string, host: string | null) {
   // dbgLogMilestone("startGame()");
@@ -177,7 +163,8 @@ async function startGame(localPeerName: string, host: string | null) {
       accumulator -= TIMESTEP;
       tick(TIMESTEP);
       resetTempMatrixBuffer(`frame_${loops}`);
-      callFixedTimestepSystems();
+      // TODO(@darzu): Update vs FixedUpdate
+      EM.update();
       loops++;
     }
     setSimulationAlpha(accumulator / TIMESTEP);

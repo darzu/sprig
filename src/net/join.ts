@@ -1,4 +1,4 @@
-import { EM } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/ecs.js";
 import { Serializer, Deserializer } from "../utils/serialize.js";
 import {
   FromNetworkEvent,
@@ -44,7 +44,7 @@ function registerConnectToServer() {
           join.state = "connecting";
           break;
         case "connecting":
-          const peers = EM.filterEntities([PeerDef]);
+          const peers = EM.filterEntities_uncached([PeerDef]);
           // TODO: this is a hacky way to tell if we're connected.
           if (peers.length > 0) {
             EM.set(peers[0], HostCompDef);

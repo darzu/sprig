@@ -1,6 +1,6 @@
 import { AnimateToDef } from "../animation/animate-to.js";
 import { createRef, Ref } from "../ecs/em-helpers.js";
-import { EM } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/ecs.js";
 import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { InputsDef } from "../input/inputs.js";
 import { clamp } from "../utils/math.js";
@@ -119,7 +119,7 @@ export async function initOcean(oceanMesh: Mesh, color: V3) {
   // console.log("initOcean");
   const res = await EM.whenResources(RendererDef, TimeDef);
 
-  const ocean = EM.new();
+  const ocean = EM.mk();
   let oceanEntId = ocean.id; // hacky?
   EM.set(
     ocean,

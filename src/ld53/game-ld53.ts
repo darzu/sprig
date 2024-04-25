@@ -1,7 +1,8 @@
 import { CameraDef, CameraFollowDef } from "../camera/camera.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
-import { EM, EntityW } from "../ecs/entity-manager.js";
+import { EntityW } from "../ecs/em-entities.js";
+import { EM } from "../ecs/ecs.js";
 import {
   BallMesh,
   CubeMesh,
@@ -312,7 +313,7 @@ async function setLevelLocal(levelIdx: number) {
   );
 
   // TODO(@darzu): MULTIPLAYER towers!
-  const towers = EM.filterEntities([StoneTowerDef]);
+  const towers = EM.filterEntities_uncached([StoneTowerDef]);
   for (let tower of towers) {
     towerPool.despawn(tower);
   }
@@ -449,7 +450,7 @@ export async function initLD53(hosting: boolean) {
   );
 
   // Sun
-  const sunlight = EM.new();
+  const sunlight = EM.mk();
   EM.set(sunlight, PointLightDef);
   // sunlight.pointLight.constant = 1.0;
   sunlight.pointLight.constant = 1.0;
@@ -494,7 +495,7 @@ export async function initLD53(hosting: boolean) {
   // sky dome?
   const SKY_HALFSIZE = 1000;
   const domeMesh = makeDome(16, 8, SKY_HALFSIZE);
-  const sky = EM.new();
+  const sky = EM.mk();
   EM.set(sky, PositionDef, V(0, 0, -100));
   // const skyMesh = cloneMesh(res.allMeshes.cube.mesh);
   // skyMesh.pos.forEach((p) => V3.scale(p, SKY_HALFSIZE, p));
@@ -632,7 +633,7 @@ export async function initLD53(hosting: boolean) {
     const buoys: EntityW<[typeof PositionDef]>[] = [];
     for (let u = 0.4; u <= 0.6; u += 0.02) {
       for (let v = 0.4; v <= 0.6; v += 0.02) {
-        const bouy = EM.new();
+        const bouy = EM.mk();
         EM.set(bouy, PositionDef, V(0, 0, 0));
         EM.set(bouy, UVPosDef, V(u + jitter(0.01), v + jitter(0.01)));
         // EM.set(bouy, ScaleDef, V(5, 5, 5));
@@ -959,7 +960,7 @@ async function resetLand() {
     // TODO(@darzu): seperate chunks of land
 
     // console.log(`heightmap minY: ${minY}`);
-    const hm = EM.new();
+    const hm = EM.mk();
     EM.set(hm, RenderableConstructDef, terraMesh, !DBG_HIDE_LAND);
     EM.set(hm, PositionDef);
     // TODO(@darzu): maybe do a sable-like gradient accross the terrain, based on view dist or just uv?

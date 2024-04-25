@@ -1,11 +1,9 @@
-import {
-  EM,
-  Component,
-  EDef,
-  ESet,
-  ComponentDef,
-  Entity,
-} from "../ecs/entity-manager.js";
+import { Entity } from "../ecs/em-entities.js";
+import { EM } from "../ecs/ecs.js";
+import { ESet } from "../ecs/em-components.js";
+import { EDef } from "../ecs/em-components.js";
+import { Component } from "../ecs/em-components.js";
+import { ComponentDef } from "../ecs/em-components.js";
 import {
   Serializer,
   Deserializer,

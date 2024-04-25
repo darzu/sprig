@@ -1,6 +1,8 @@
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
-import { ComponentDef, EM, Entity, EntityW } from "../ecs/entity-manager.js";
+import { Entity, EntityW } from "../ecs/em-entities.js";
+import { EM } from "../ecs/ecs.js";
+import { ComponentDef } from "../ecs/em-components.js";
 import { V, quat, V3 } from "../matrix/sprig-matrix.js";
 import { CubeMesh } from "../meshes/mesh-list.js";
 import {
@@ -405,7 +407,7 @@ export function createObj<D extends ObjChildDef, A extends ObjChildArg<D>>(
   if (isObjChildEnt(args)) {
     return args as ObjChildEnt<D>;
   } else {
-    const e = EM.new();
+    const e = EM.mk();
     mixinObj(e, def, args);
     return e;
   }
@@ -448,7 +450,7 @@ function _createObj<D extends _ObjDef, A extends ObjArgs<D["opts"]>>(
   def: D,
   args: A
 ): ObjEnt<D["opts"]> {
-  const e = EM.new();
+  const e = EM.mk();
   _mixinObj(e, def, args);
   return e;
 }

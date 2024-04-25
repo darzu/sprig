@@ -9,7 +9,8 @@ import { CameraDef, CameraComputedDef } from "../camera/camera.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { AllEndesga16, ENDESGA16 } from "../color/palettes.js";
 import { DevConsoleDef } from "../debug/console.js";
-import { EM, EntityW } from "../ecs/entity-manager.js";
+import { EntityW } from "../ecs/em-entities.js";
+import { EM } from "../ecs/ecs.js";
 import { createGizmoMesh } from "../debug/gizmos.js";
 import { jitter } from "../utils/math.js";
 import { AngularVelocityDef, LinearVelocityDef } from "../motion/velocity.js";
@@ -100,7 +101,7 @@ export async function initGalleryGame() {
   const { sg_meshes } = await EM.whenResources(shadingGameMeshesDef);
 
   // light
-  const sun = EM.new();
+  const sun = EM.mk();
   EM.set(sun, PointLightDef);
   EM.set(sun, ColorDef, V(1, 1, 1));
   // EM.set(sun, PositionDef, V(100, 100, 0));
@@ -116,7 +117,7 @@ export async function initGalleryGame() {
   EM.set(sun, PositionDef, V(50, 10, 300));
 
   // ground
-  const ground = EM.new();
+  const ground = EM.mk();
   EM.set(ground, RenderableConstructDef, sg_meshes.hex.proto);
   EM.set(ground, ColorDef, ENDESGA16.blue);
   EM.set(ground, PositionDef, V(0, 0, -10));
@@ -124,7 +125,7 @@ export async function initGalleryGame() {
 
   // gizmo
   const gizmoMesh = createGizmoMesh();
-  const gizmo = EM.new();
+  const gizmo = EM.mk();
   EM.set(gizmo, RenderableConstructDef, gizmoMesh);
   EM.set(gizmo, PositionDef, V(0, 0, 0));
   EM.set(gizmo, ScaleDef, V(8, 8, 8));
@@ -156,7 +157,7 @@ export async function initGalleryGame() {
   if (SHOW_SKYDOME) {
     const SKY_HALFSIZE = 100;
     const domeMesh = makeDome(16, 8, SKY_HALFSIZE);
-    const sky = EM.new();
+    const sky = EM.mk();
     EM.set(sky, PositionDef, V(0, 0, -10));
     // const skyMesh = cloneMesh(res.allMeshes.cube.mesh);
     // skyMesh.pos.forEach((p) => V3.scale(p, SKY_HALFSIZE, p));
@@ -175,7 +176,7 @@ export async function initGalleryGame() {
   }
 
   // objects
-  const obj = EM.new();
+  const obj = EM.mk();
   EM.set(obj, RenderableConstructDef, sg_meshes.grappleGun.proto);
   EM.set(obj, PositionDef, V(0, 0, 4));
   EM.set(obj, ColorDef, ENDESGA16.midBrown);
@@ -188,7 +189,7 @@ export async function initGalleryGame() {
     for (let i = 0; i < 4; i++) {
       const pos = V(jitter(W), jitter(W), jitter(W) + W);
       worldCorners.push(pos);
-      const p = EM.new();
+      const p = EM.mk();
       EM.set(p, RenderableConstructDef, sg_meshes.ball.proto);
       EM.set(p, PositionDef, pos);
       EM.set(p, ColorDef, V(0, 1, 0));
@@ -203,14 +204,14 @@ export async function initGalleryGame() {
     const invFrust = mat4.invert(frust);
     const frustCorners = getFrustumWorldCorners(invFrust);
     for (let i = 0; i < frustCorners.length; i++) {
-      const p = EM.new();
+      const p = EM.mk();
       EM.set(p, RenderableConstructDef, sg_meshes.ball.proto);
       EM.set(p, PositionDef, V3.clone(frustCorners[i]));
       EM.set(p, ColorDef, V(1, 0, 0));
     }
     const frustGizMesh = createGizmoMesh();
     mapMeshPositions(frustGizMesh, (p) => V3.tMat4(p, invFrust, p));
-    const frustGiz = EM.new();
+    const frustGiz = EM.mk();
     EM.set(frustGiz, RenderableConstructDef, frustGizMesh);
     EM.set(frustGiz, PositionDef, V(0, 0, 0));
 
@@ -265,14 +266,14 @@ async function createGallery() {
 
     let x = lastX + objMargin + halfsize * scale;
 
-    let ground = EM.new();
+    let ground = EM.mk();
     EM.set(ground, RenderableConstructDef, sg_meshes.hex.mesh);
     const groundSize = (halfsize * scale) / sg_meshes.hex.halfsize[0];
     EM.set(ground, ScaleDef, [groundSize, groundSize, 1]);
     EM.set(ground, PositionDef, V(x, 0, -sg_meshes.hex.aabb.max[2]));
     EM.set(ground, ColorDef, hasScale ? ENDESGA16.lightBlue : ENDESGA16.blue);
 
-    let obj = EM.new();
+    let obj = EM.mk();
     EM.set(obj, RenderableConstructDef, m.mesh);
     EM.set(
       obj,

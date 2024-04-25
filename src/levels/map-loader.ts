@@ -1,4 +1,4 @@
-import { EM } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/ecs.js";
 
 // TODO(@darzu): games should be able to specify their map path
 // const DEFAULT_MAP_PATH = "assets/ld52_maps/";

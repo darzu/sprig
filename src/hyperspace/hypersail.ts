@@ -1,6 +1,6 @@
 import { ColorDef } from "../color/color-ecs.js";
 import { createRef, defineNetEntityHelper } from "../ecs/em-helpers.js";
-import { EM } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/ecs.js";
 import { V3, V } from "../matrix/sprig-matrix.js";
 import { InputsDef } from "../input/inputs.js";
 import { clamp } from "../utils/math.js";
@@ -130,7 +130,7 @@ export const { HypMastPropsDef, HypMastLocalDef, createHypMastNow } =
       // });
 
       // create seperate hitbox for interacting with the mast
-      const interactBox = EM.new();
+      const interactBox = EM.mk();
       EM.set(interactBox, PhysicsParentDef, mast.hypMastProps.shipId);
       EM.set(interactBox, PositionDef, V(0, 0, 0));
       EM.set(interactBox, ColliderDef, {
@@ -246,7 +246,7 @@ export function registerHypersailSystems() {
       }
       for (let ship of es) {
         if (ship.authority.pid !== res.me.pid) continue;
-        const stars = EM.filterEntities([
+        const stars = EM.filterEntities_uncached([
           DarkStarPropsDef,
           WorldFrameDef,
           ColorDef,

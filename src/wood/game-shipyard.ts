@@ -3,7 +3,7 @@ import { HasFirstInteractionDef } from "../render/canvas.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { DeadDef } from "../ecs/delete.js";
-import { EM } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/ecs.js";
 import { V3, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { InputsDef } from "../input/inputs.js";
 import { AudioDef } from "../audio/audio.js";
@@ -129,7 +129,7 @@ export async function initShipyardGame(hosting: boolean) {
     postProcess,
   ];
 
-  const sun = EM.new();
+  const sun = EM.mk();
   EM.set(sun, PointLightDef);
   EM.set(sun, ColorDef, V(1, 1, 1));
   EM.set(sun, LinearVelocityDef, V(0.001, 0.001, 0.0));
@@ -144,7 +144,7 @@ export async function initShipyardGame(hosting: boolean) {
   // const c = res.globalCursor3d.cursor()!;
   // if (RenderableDef.isOn(c)) c.renderable.enabled = false;
 
-  const ground = EM.new();
+  const ground = EM.mk();
   const groundMesh = cloneMesh(res.allMeshes.hex.mesh);
   transformMesh(
     groundMesh,
@@ -201,7 +201,7 @@ export async function initShipyardGame(hosting: boolean) {
   // });
 
   // TIMBER
-  const timber = EM.new();
+  const timber = EM.mk();
 
   const {
     timberState,

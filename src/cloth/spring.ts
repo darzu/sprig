@@ -1,5 +1,5 @@
 import { V3, V } from "../matrix/sprig-matrix.js";
-import { EM } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/ecs.js";
 import { TimeDef } from "../time/time.js";
 import { Phase } from "../ecs/sys-phase.js";
 

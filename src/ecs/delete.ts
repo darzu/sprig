@@ -1,4 +1,4 @@
-import { EM } from "./entity-manager.js";
+import { EM } from "./ecs.js";
 import { SyncDef } from "../net/components.js";
 import { dbgLogOnce } from "../utils/util.js";
 import { Phase } from "./sys-phase.js";

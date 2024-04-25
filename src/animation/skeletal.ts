@@ -1,7 +1,8 @@
 // TODO(@darzu): Move easing system elsewhere
 // TODO(@darzu): share code with smoothing?
 
-import { EM, EntityW } from "../ecs/entity-manager.js";
+import { EntityW } from "../ecs/em-entities.js";
+import { EM } from "../ecs/ecs.js";
 import { quat, mat4 } from "../matrix/sprig-matrix.js";
 import { TimeDef } from "../time/time.js";
 import { RiggedRenderableDef } from "../render/renderer-ecs.js";
