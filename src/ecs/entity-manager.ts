@@ -230,14 +230,6 @@ type EntityPromise<
   // name: string;
 };
 
-// TODO(@darzu): remove? i think these r unused
-type EDefId<ID extends number, CS extends ComponentDef[]> = [ID, ...CS];
-type ESetId<DS extends EDefId<number, any>[]> = {
-  [K in keyof DS]: DS[K] extends EDefId<infer ID, infer CS>
-    ? EntityW<CS, ID> | undefined
-    : never;
-};
-
 // TODO(@darzu): don't love these...
 export type EDef<CS extends ComponentDef[]> = readonly [...CS];
 export type ESet<DS extends EDef<any>[]> = {
@@ -364,8 +356,6 @@ interface _EntityManager {
     id: ID,
     cs: readonly [...CS]
   ): EntityW<CS, ID> | undefined;
-
-  findEntitySet<ES extends EDefId<number, any>[]>(es: [...ES]): ESetId<ES>;
 
   filterEntities_uncached<CS extends ComponentDef[]>(
     cs: [...CS] | null
@@ -970,17 +960,6 @@ function createEntityManager(): _EntityManager {
     return e as EntityW<CS, ID>;
   }
 
-  // TODO(@darzu): remove? i think this is unused
-  function findEntitySet<ES extends EDefId<number, any>[]>(
-    es: [...ES]
-  ): ESetId<ES> {
-    const res = [];
-    for (let [id, ...cs] of es) {
-      res.push(findEntity(id, cs));
-    }
-    return res as ESetId<ES>;
-  }
-
   // TODO(@darzu): PERF. cache these responses like we do systems?
   // TODO(@darzu): PERF. evaluate all per-frame uses of this
   function filterEntities_uncached<CS extends ComponentDef[]>(
@@ -1466,7 +1445,6 @@ function createEntityManager(): _EntityManager {
     keepOnlyComponents,
     hasComponents,
     findEntity,
-    findEntitySet,
     filterEntities_uncached,
     dbgFilterEntitiesByKey,
     whenEntityHas,
