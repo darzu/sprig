@@ -307,8 +307,60 @@ interface SystemStats {
 
 // TODO(@darzu): DE-CLASS this!
 
+interface EntityManager {
+  defineResource<N extends string, P, Pargs extends any[]>(
+    name: N,
+    construct: (...args: Pargs) => P
+  ): ResourceDef<N, P, Pargs>;
+
+  defineComponent<
+    N extends string,
+    P,
+    UArgs extends any[] & { length: 0 | 1 } = []
+  >(
+    name: N,
+    construct: () => P,
+    update?: (p: P, ...args: UArgs) => P
+  ): UpdatableComponentDef<N, P, UArgs, false>;
+  defineComponent<N extends string, P, UArgs extends any[] = []>(
+    name: N,
+    construct: () => P,
+    update: (p: P, ...args: UArgs) => P,
+    opts: { multiArg: true }
+  ): UpdatableComponentDef<N, P, UArgs, true>;
+
+  defineNonupdatableComponent<
+    N extends string,
+    P,
+    CArgs extends any[] & { length: 0 | 1 }
+  >(
+    name: N,
+    construct: (...args: CArgs) => P
+  ): NonupdatableComponentDef<N, P, CArgs, false>;
+  defineNonupdatableComponent<N extends string, P, CArgs extends any[]>(
+    name: N,
+    construct: (...args: CArgs) => P,
+    opts: { multiArg: true }
+  ): NonupdatableComponentDef<N, P, CArgs, true>;
+
+  registerSerializerPair<N extends string, P, UArgs extends any[]>(
+    def: ComponentDef<N, P, [], UArgs>,
+    serialize: (obj: P, buf: Serializer) => void,
+    deserialize: (obj: P, buf: Deserializer) => void
+  ): void;
+
+  serialize(id: number, componentId: number, buf: Serializer): void;
+  deserialize(id: number, componentId: number, buf: Deserializer): void;
+
+  setDefaultRange(rangeName: string): void;
+  setIdRange(rangeName: string, nextId: number, maxId: number): void;
+
+  // new (rangeName?: string): Entity;
+  registerEntity(id: number): Entity;
+}
+
 // TODO(@darzu): split this apart! Shouldn't be a class and should be in as many pieces as is logical
-export class EntityManager {
+class _EntityManager implements EntityManager {
   entities: Map<number, Entity> = new Map();
   allSystemsByName: Map<string, SystemReg> = new Map();
   activeSystemsById: Map<number, SystemReg> = new Map();
@@ -1791,4 +1843,4 @@ export class EntityManager {
 }
 
 // TODO(@darzu): where to put this?
-export const EM: EntityManager = new EntityManager();
+export const EM: _EntityManager = new _EntityManager();
