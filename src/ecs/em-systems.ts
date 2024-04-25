@@ -13,6 +13,7 @@ import { DBG_SYSTEM_ORDER, DBG_INIT_CAUSATION } from "../flags.js";
 import { resetTempMatrixBuffer } from "../matrix/sprig-matrix.js";
 import { toMap, assert, assertDbg } from "../utils/util.js";
 import { _init } from "./em-init.js";
+import { _stats } from "./ecs.js";
 
 export interface SystemReg {
   cs: ComponentDef[] | null;
@@ -291,7 +292,7 @@ export function createEMSystems(): EMSystems {
     const rs = _resources.getResources(s.rs); // TODO(@darzu): remove allocs here
     let afterQuery = performance.now();
     sysStats[s.name].queries++;
-    _entities.emStats.queryTime += afterQuery - start;
+    _stats.emStats.queryTime += afterQuery - start;
     if (!rs) {
       // we don't yet have the resources, check if we can init any
       s.rs.forEach((r) => {
@@ -391,7 +392,7 @@ export function createEMSystems(): EMSystems {
         eSystems.push(sysId);
       }
     }
-    _entities.emStats.queryTime += performance.now() - _beforeQueryCache;
+    _stats.emStats.queryTime += performance.now() - _beforeQueryCache;
   }
 
   function _notifyRemoveComponent(e: Entity, def: ComponentDef): void {

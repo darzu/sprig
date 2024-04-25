@@ -6,6 +6,7 @@ import {
 import { _ComponentDef } from "../net/components.js";
 import { getCallStack } from "../utils/util-no-import.js";
 import { assert, hashCode, Intersect } from "../utils/util.js";
+import { _stats } from "./ecs.js";
 import { ComponentDef, componentNameToId } from "./em-components.js";
 import { NonupdatableComponentDef } from "./em-components.js";
 import { isDeadC } from "./em-components.js";
@@ -68,8 +69,6 @@ type EntityPromise<
 };
 export interface EMEntities {
   entities: Map<number, Entity>;
-
-  emStats: { queryTime: number; dbgLoops: number };
 
   seenComponents: Set<CompId>;
 
@@ -168,10 +167,6 @@ function createEMEntities(): EMEntities {
 
   const ranges: Record<string, { nextId: number; maxId: number }> = {};
   let defaultRange: string = "";
-  const emStats = {
-    queryTime: 0,
-    dbgLoops: 0,
-  };
 
   function setDefaultRange(rangeName: string) {
     defaultRange = rangeName;
@@ -521,7 +516,7 @@ function createEMEntities(): EMEntities {
         const afterOneShotQuery = performance.now();
         const stats = _systems.sysStats["__oneShots"];
         stats.queries += 1;
-        emStats.queryTime += afterOneShotQuery - beforeOneShots;
+        _stats.emStats.queryTime += afterOneShotQuery - beforeOneShots;
 
         promises.splice(idx, 1);
         // TODO(@darzu): how to handle async callbacks and their timing?
@@ -649,7 +644,7 @@ function createEMEntities(): EMEntities {
     } while (madeProgress);
 
     _systems.callSystems();
-    emStats.dbgLoops++;
+    _stats.emStats.dbgLoops++;
   }
 
   const _em: EMEntities = {
@@ -677,9 +672,6 @@ function createEMEntities(): EMEntities {
     dbgFilterEntitiesByKey,
     whenEntityHas,
     whenSingleEntity,
-
-    // stats
-    emStats,
 
     // update all
     update,
