@@ -173,6 +173,7 @@ async function startGame(localPeerName: string, host: string | null) {
       accumulator -= TIMESTEP;
       tick(TIMESTEP);
       resetTempMatrixBuffer(`frame_${loops}`);
+      // TODO(@darzu): Update vs FixedUpdate
       EM.update();
       loops++;
     }
