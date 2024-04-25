@@ -449,3 +449,5 @@ export function createEMSystems(): EMSystems {
 
   return result;
 }
+
+export const _systems = createEMSystems();

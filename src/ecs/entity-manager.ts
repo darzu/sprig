@@ -8,7 +8,7 @@ import { getCallStack } from "../utils/util-no-import.js";
 import { assert, hashCode, Intersect } from "../utils/util.js";
 import { EMInit, _init } from "./em-init.js";
 import { ResourceDef, EMResources, _resources } from "./em-resources.js";
-import { createEMSystems } from "./em-systems.js";
+import { _systems } from "./em-systems.js";
 import { EMSystems } from "./em-systems.js";
 
 // TODO(@darzu): re-check all uses of "any" and prefer "unknown"
@@ -1068,8 +1068,6 @@ function createEntityManager(): _EntityManager {
 
   return _em;
 }
-
-export const _systems = createEMSystems();
 
 export const _em: _EntityManager = createEntityManager();
 
