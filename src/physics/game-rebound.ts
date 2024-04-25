@@ -67,7 +67,7 @@ export async function initReboundSandbox(hosting: boolean) {
   ];
 
   // sun
-  const sun = EM.new();
+  const sun = EM.mk();
   EM.set(sun, PointLightDef);
   EM.set(sun, ColorDef, V(1, 1, 1));
   EM.set(sun, PositionDef, V(100, 100, 100));
@@ -96,7 +96,7 @@ export async function initReboundSandbox(hosting: boolean) {
   // assert(RenderableDef.isOn(c));
   // c.renderable.enabled = false;
 
-  const ground = EM.new();
+  const ground = EM.mk();
   EM.set(ground, RenderableConstructDef, HexMesh);
   EM.set(ground, ColorDef, V(0.2, 0.3, 0.2));
   EM.set(ground, ScaleDef, V(10, 10, 1));
@@ -109,7 +109,7 @@ export async function initReboundSandbox(hosting: boolean) {
 
   // return;
 
-  const table = EM.new();
+  const table = EM.mk();
   // EM.set(t, RenderableConstructDef, res.allMeshes.gridPlane.proto);
   EM.set(table, RenderableConstructDef, PlaneMesh);
   EM.set(table, ColorDef, V(0.2, 0.2, 0.9));
@@ -128,7 +128,7 @@ export async function initReboundSandbox(hosting: boolean) {
   const cubeDef = EM.defineComponent("cube", () => true);
 
   function spawn(m: GameMesh, pos: V3) {
-    const e = EM.new();
+    const e = EM.mk();
     EM.set(e, RenderableConstructDef, m.proto);
     const [r, g, b] = [jitter(0.1) + 0.2, jitter(0.1) + 0.2, jitter(0.1) + 0.2];
     EM.set(e, ColorDef, V(r, g, b));

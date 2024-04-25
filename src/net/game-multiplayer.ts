@@ -146,7 +146,7 @@ const { MpRaftPropsDef, createMpRaft } = defineNetEntityHelper({
       aabb: res.mp_meshes.cubeRaft.aabb,
     });
 
-    const obstacle = EM.new();
+    const obstacle = EM.mk();
     EM.set(obstacle, PositionDef, V(0, 0, 1));
     EM.set(obstacle, RenderableConstructDef, res.mp_meshes.hex.proto);
     EM.set(obstacle, ColorDef, ENDESGA16.white);
@@ -189,7 +189,7 @@ async function setLevelLocal(levelIdx: number) {
 
   // TODO(@darzu): differentiate level based on idx
   // ground
-  const ground = EM.new();
+  const ground = EM.mk();
   EM.set(ground, RenderableConstructDef, mp_meshes.hex.proto);
   EM.set(ground, ColorDef, ENDESGA16.blue);
   EM.set(ground, PositionDef, V(0, 0, -10));
@@ -234,7 +234,7 @@ export async function initMPGame() {
   const { mp_meshes } = await EM.whenResources(mpMeshes);
 
   // light
-  const sun = EM.new();
+  const sun = EM.mk();
   EM.set(sun, PointLightDef);
   EM.set(sun, ColorDef, V(1, 1, 1));
   // EM.set(sun, PositionDef, V(100, 100, 0));

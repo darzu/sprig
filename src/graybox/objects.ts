@@ -405,7 +405,7 @@ export function createObj<D extends ObjChildDef, A extends ObjChildArg<D>>(
   if (isObjChildEnt(args)) {
     return args as ObjChildEnt<D>;
   } else {
-    const e = EM.new();
+    const e = EM.mk();
     mixinObj(e, def, args);
     return e;
   }
@@ -448,7 +448,7 @@ function _createObj<D extends _ObjDef, A extends ObjArgs<D["opts"]>>(
   def: D,
   args: A
 ): ObjEnt<D["opts"]> {
-  const e = EM.new();
+  const e = EM.mk();
   _mixinObj(e, def, args);
   return e;
 }

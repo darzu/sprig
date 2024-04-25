@@ -80,7 +80,7 @@ export function createSpacePath() {
     mesh.usesProvoking = true;
     mesh.surfaceIds = mesh.colors.map((_, i) => i);
     validateMesh(mesh);
-    const ent = EM.new();
+    const ent = EM.mk();
     // console.log("hidden");
     EM.set(ent, RenderableConstructDef, mesh);
     if (!DEBUG_PATH_POINTS)
@@ -99,7 +99,7 @@ export function createSpacePath() {
 */
   // TODO(@darzu): foo
 
-  const ent = EM.new();
+  const ent = EM.mk();
   //EM.set(ent, RenderableConstructDef, pathMesh);
   //EM.set(ent, PositionDef);
   EM.set(ent, SpacePathDef, path);

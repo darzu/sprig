@@ -94,7 +94,7 @@ export async function initCardsGame() {
     }
   );
 
-  const sunlight = EM.new();
+  const sunlight = EM.mk();
   EM.set(sunlight, PointLightDef);
   sunlight.pointLight.constant = 1.0;
   V3.copy(sunlight.pointLight.ambient, [0.8, 0.8, 0.8]);
@@ -102,7 +102,7 @@ export async function initCardsGame() {
   // TODO(@darzu): weird, why does renderable need to be on here?
   EM.set(sunlight, RenderableConstructDef, BallMesh, false);
 
-  const panel = EM.new();
+  const panel = EM.mk();
   const panelMesh = makePlaneMesh(
     -PANEL_W * 0.5,
     PANEL_W * 0.5,

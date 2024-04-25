@@ -72,7 +72,7 @@ export const UICursorDef = EM.defineResource(
 
 EM.addLazyInit([AllMeshesDef], [UICursorDef], ({ allMeshes }) => {
   // Cursor
-  const cursor = EM.new();
+  const cursor = EM.mk();
   EM.set(cursor, ColorDef, V(0.1, 0.1, 0.1));
   EM.set(cursor, PositionDef, V(0, 0.0, 1.0));
   EM.set(cursor, RenderableConstructDef, allMeshes.he_octo.proto);
@@ -202,7 +202,7 @@ export async function initFontEditor() {
     postProcess,
   ];
 
-  const sunlight = EM.new();
+  const sunlight = EM.mk();
   EM.set(sunlight, PointLightDef);
   sunlight.pointLight.constant = 1.0;
   V3.copy(sunlight.pointLight.ambient, [0.8, 0.8, 0.8]);
@@ -210,7 +210,7 @@ export async function initFontEditor() {
   // TODO(@darzu): weird, why does renderable need to be on here?
   EM.set(sunlight, RenderableConstructDef, res.allMeshes.ball.proto, false);
 
-  const panel = EM.new();
+  const panel = EM.mk();
   const panelMesh = makePlaneMesh(
     -PANEL_W * 0.5,
     PANEL_W * 0.5,
@@ -302,7 +302,7 @@ export async function initFontEditor() {
 
     polyBank.set(i, gmesh);
 
-    const btn = EM.new();
+    const btn = EM.mk();
     EM.set(btn, RenderableConstructDef, gmesh.proto);
     EM.set(btn, PositionDef, V(-24 + i * 2, -12, 0.1));
     EM.set(btn, ButtonDef, btnKey, i, {

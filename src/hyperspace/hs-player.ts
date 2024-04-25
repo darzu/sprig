@@ -53,7 +53,7 @@ import { CanManDef } from "../turret/turret.js";
 
 export function createHsPlayer() {
   // console.log("create player!");
-  const e = EM.new();
+  const e = EM.mk();
   EM.set(e, PlayerHsPropsDef, V(0, 100, 0));
   EM.addResource(LocalPlayerEntityDef, e.id);
   return e;
@@ -135,7 +135,7 @@ EM.addEagerInit([PlayerHsPropsDef], [], [], () => {
 
         // create legs
         function makeLeg(x: number): Entity {
-          const l = EM.new();
+          const l = EM.mk();
           EM.set(l, PositionDef, V(x, -1.5, 0));
           EM.set(l, RenderableConstructDef, res.allMeshes.cube.proto);
           EM.set(l, ScaleDef, V(0.15, 0.75, 0.15));

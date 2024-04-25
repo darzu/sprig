@@ -119,7 +119,7 @@ export async function initOcean(oceanMesh: Mesh, color: V3) {
   // console.log("initOcean");
   const res = await EM.whenResources(RendererDef, TimeDef);
 
-  const ocean = EM.new();
+  const ocean = EM.mk();
   let oceanEntId = ocean.id; // hacky?
   EM.set(
     ocean,

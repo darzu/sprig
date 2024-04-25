@@ -133,7 +133,7 @@ function registerAABBBuilder() {
           }
         } else {
           // create new box
-          const b = EM.new();
+          const b = EM.mk();
           const lastB = EM.findEntity(res.modeler.latestBoxId, [
             PositionDef,
             ScaleDef,

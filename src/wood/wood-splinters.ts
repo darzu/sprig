@@ -78,7 +78,7 @@ function createSplinterPool(
       depth
     );
     const splinterMesh = normalizeMesh(_splinterMesh);
-    const splinter = EM.new();
+    const splinter = EM.mk();
     EM.set(
       splinter,
       RenderableConstructDef,

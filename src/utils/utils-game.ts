@@ -94,7 +94,7 @@ export function createLine(start: V3, end: V3, color: V3) {
 
   const pos = [start, start2, end2, end];
 
-  const e = EM.new();
+  const e = EM.mk();
   EM.set(e, ColorDef, color);
   const m: Mesh = {
     pos,
@@ -120,7 +120,7 @@ const _ballPool = createEntityPool<
   max: 100,
   maxBehavior: "rand-despawn",
   create: () => {
-    const e = EM.new();
+    const e = EM.mk();
     EM.set(e, ColorDef);
     EM.set(e, RenderableConstructDef, BallMesh);
     EM.set(e, PositionDef);
@@ -261,7 +261,7 @@ export function addGizmoChild(
 ): Entity {
   // TODO(@darzu): Doesn't need to be async!
   // make debug gizmo
-  const gizmo = EM.new();
+  const gizmo = EM.mk();
   EM.set(gizmo, PositionDef, V3.clone(offset));
   EM.set(gizmo, ScaleDef, V(scale, scale, scale));
   EM.set(gizmo, PhysicsParentDef, parent.id);
@@ -270,7 +270,7 @@ export function addGizmoChild(
 }
 
 export function addWorldGizmo(origin = V(0, 0, 0), scale = 5) {
-  const worldGizmo = EM.new();
+  const worldGizmo = EM.mk();
   EM.set(worldGizmo, PositionDef, origin);
   EM.set(worldGizmo, ScaleDef, V(scale, scale, scale));
   EM.set(worldGizmo, RenderableConstructDef, GizmoMesh);
@@ -293,7 +293,7 @@ export function drawGizmosForMat4(m: mat4, scale: number) {
   // const mesh = mergeMeshes(g1, g2);
   const mesh = g2;
 
-  const ent = EM.new();
+  const ent = EM.mk();
   EM.set(ent, PositionDef);
   EM.set(ent, RenderableConstructDef, mesh);
   return ent;
@@ -307,7 +307,7 @@ export function createBoxForAABB(
   const scale = getSizeFromAABB(aabb, V3.mk());
   const offset = V3.clone(aabb.min);
 
-  const box = EM.new();
+  const box = EM.mk();
   EM.set(box, PositionDef, offset);
   EM.set(box, ScaleDef, scale);
   console.log(`createBoxForAABB scale ${vec3Dbg(scale)}`);

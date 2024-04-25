@@ -130,7 +130,7 @@ export const { HypMastPropsDef, HypMastLocalDef, createHypMastNow } =
       // });
 
       // create seperate hitbox for interacting with the mast
-      const interactBox = EM.new();
+      const interactBox = EM.mk();
       EM.set(interactBox, PhysicsParentDef, mast.hypMastProps.shipId);
       EM.set(interactBox, PositionDef, V(0, 0, 0));
       EM.set(interactBox, ColliderDef, {

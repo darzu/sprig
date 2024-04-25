@@ -178,7 +178,7 @@ export const FontDef = defineResourceWithInit(
           V3.copy(mesh.pos[i * 2 + 1], segs[i][1]);
         }
 
-        const ent = EM.new();
+        const ent = EM.mk();
         EM.set(
           ent,
           RenderableConstructDef,

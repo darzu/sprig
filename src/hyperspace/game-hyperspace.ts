@@ -171,7 +171,7 @@ export async function initHyperspaceGame() {
 
   if (me.host) {
     // experimental ship:
-    const eShip = EM.new();
+    const eShip = EM.mk();
     EM.set(eShip, RenderableConstructDef, res.allMeshes.ship_fangs.proto);
     EM.set(eShip, PositionDef);
     EM.set(eShip, UVPosDef, V2.clone([0.2, 0.1]));

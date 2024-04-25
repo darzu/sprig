@@ -43,7 +43,7 @@ export function createSpawner(
   uvDir: V2,
   animate?: Partial<AnimateTo>
 ) {
-  const e = EM.new();
+  const e = EM.mk();
   EM.set(e, SpawnerDef);
   EM.set(e, UVPosDef, uvPos);
   EM.set(e, UVDirDef, uvDir);

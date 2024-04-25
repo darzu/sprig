@@ -495,8 +495,8 @@ EM.addLazyInit([RendererDef], [TowerPoolDef], (res) => {
     max: maxStoneTowers,
     maxBehavior: "crash",
     create: () => {
-      const tower = EM.new();
-      const cannon = EM.new();
+      const tower = EM.mk();
+      const cannon = EM.mk();
       EM.set(cannon, RenderableConstructDef, LD53CannonMesh);
       EM.set(cannon, PositionDef);
       EM.set(cannon, ColorDef, V(0.05, 0.05, 0.05));
@@ -593,7 +593,7 @@ EM.addLazyInit([RendererDef], [FlyingBrickPoolDef], (res) => {
     max: maxFlyingBricks,
     maxBehavior: "rand-despawn",
     create: () => {
-      const brick = EM.new();
+      const brick = EM.mk();
       EM.set(brick, FlyingBrickDef);
       EM.set(brick, PositionDef);
       EM.set(brick, RotationDef);

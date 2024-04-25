@@ -14,7 +14,7 @@ export const gameplaySystems: string[] = [];
 export const GhostDef = EM.defineComponent("ghost", () => ({}));
 
 export function createGhost(mesh: MeshLike, visible = true) {
-  const g = EM.new();
+  const g = EM.mk();
   EM.set(g, GhostDef);
   EM.set(g, ControllableDef);
   g.controllable.modes.canFall = false;

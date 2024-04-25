@@ -412,7 +412,7 @@ export async function initOre(spacePath: Path) {
   );
 
   function createOxygenOre(pos: V3) {
-    const ore = EM.new();
+    const ore = EM.mk();
 
     EM.set(ore, OreDef);
     ore.ore.type = "oxygen";
@@ -441,7 +441,7 @@ export async function initOre(spacePath: Path) {
   }
 
   function createFuelOre(pos: V3) {
-    const ore = EM.new();
+    const ore = EM.mk();
 
     EM.set(ore, OreDef);
     ore.ore.type = "fuel";

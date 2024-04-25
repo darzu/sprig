@@ -36,7 +36,7 @@ export const { GemPropsDef, GemLocalDef, createGem } = defineNetEntityHelper({
     EM.set(gem, ColorDef);
 
     // create seperate hitbox for interacting with the gem
-    const interactBox = EM.new();
+    const interactBox = EM.mk();
     const interactAABB = copyAABB(createAABB(), res.allMeshes.spacerock.aabb);
     EM.set(interactBox, PhysicsParentDef, gem.id);
     EM.set(interactBox, PositionDef, V(0, 0, 0));

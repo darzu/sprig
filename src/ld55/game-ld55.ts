@@ -293,7 +293,7 @@ export async function initLd55() {
       surfaceIds: [1, 2],
       usesProvoking: true,
     };
-    const pedestal = EM.new();
+    const pedestal = EM.mk();
     EM.set(
       pedestal,
       RenderableConstructDef,

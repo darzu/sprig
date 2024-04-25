@@ -85,7 +85,7 @@ export const { RibSailPropsDef, RibSailLocalDef, createRibSailNow } =
         // mast.hypMastLocal.sail1 = createRef(sail1);
       });
 
-      const mast = EM.new();
+      const mast = EM.mk();
 
       EM.set(mast, PositionDef, V(0, -20, 0));
       EM.set(mast, ScaleDef, V(0.5, 1.0, 0.5));
@@ -101,7 +101,7 @@ export const { RibSailPropsDef, RibSailLocalDef, createRibSailNow } =
       });
 
       function createRib(width: number) {
-        const rib = EM.new();
+        const rib = EM.mk();
         EM.set(rib, PositionDef);
         EM.set(rib, RenderableConstructDef, res.allMeshes.mast.mesh);
         EM.set(rib, ScaleDef, V(0.5 * width, 0.5, 0.5 * width));

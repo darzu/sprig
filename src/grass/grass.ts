@@ -191,7 +191,7 @@ export async function createGrassTileset(
       const z = zi * tileSize;
       // console.log(`(${xi}, ${zi})`);
       // TODO(@darzu): USE INSTANCING
-      const tile = EM.new();
+      const tile = EM.mk();
       EM.set(tile, PositionDef, V(x, 0, z));
       EM.set(
         tile,

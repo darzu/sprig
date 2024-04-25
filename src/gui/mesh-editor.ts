@@ -150,7 +150,7 @@ async function createMeshEditor() {
         handle
       );
     } else {
-      const hpEnt_ = EM.new();
+      const hpEnt_ = EM.mk();
       EM.set(
         hpEnt_,
         RenderableConstructDef,
@@ -199,7 +199,7 @@ async function createMeshEditor() {
   }
 
   function _createGlyph(gm: GameMesh) {
-    const glyph_ = EM.new();
+    const glyph_ = EM.mk();
     EM.set(glyph_, RenderableConstructDef, gm.proto, false);
     EM.set(glyph_, ColorDef);
     EM.set(glyph_, PositionDef);

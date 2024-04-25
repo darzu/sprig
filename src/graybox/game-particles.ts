@@ -108,7 +108,7 @@ export async function initGameParticles() {
   );
 
   // pedestal
-  const pedestal = EM.new();
+  const pedestal = EM.mk();
   EM.set(pedestal, RenderableConstructDef, HexMesh);
   EM.set(pedestal, ColorDef, ENDESGA16.darkGray);
   EM.set(pedestal, PositionDef, V(0, 0, -10));

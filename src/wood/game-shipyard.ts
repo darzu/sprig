@@ -129,7 +129,7 @@ export async function initShipyardGame(hosting: boolean) {
     postProcess,
   ];
 
-  const sun = EM.new();
+  const sun = EM.mk();
   EM.set(sun, PointLightDef);
   EM.set(sun, ColorDef, V(1, 1, 1));
   EM.set(sun, LinearVelocityDef, V(0.001, 0.001, 0.0));
@@ -144,7 +144,7 @@ export async function initShipyardGame(hosting: boolean) {
   // const c = res.globalCursor3d.cursor()!;
   // if (RenderableDef.isOn(c)) c.renderable.enabled = false;
 
-  const ground = EM.new();
+  const ground = EM.mk();
   const groundMesh = cloneMesh(res.allMeshes.hex.mesh);
   transformMesh(
     groundMesh,
@@ -201,7 +201,7 @@ export async function initShipyardGame(hosting: boolean) {
   // });
 
   // TIMBER
-  const timber = EM.new();
+  const timber = EM.mk();
 
   const {
     timberState,

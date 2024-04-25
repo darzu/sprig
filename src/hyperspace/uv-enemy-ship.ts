@@ -51,7 +51,7 @@ export function createEnemyCrew(
   parent: number,
   pos: V3
 ): EntityW<[typeof EnemyCrewDef]> {
-  const e = EM.new();
+  const e = EM.mk();
   EM.set(e, EnemyCrewDef);
   EM.set(e, PositionDef, pos);
   EM.set(e, RotationDef, quat.mk());
@@ -62,7 +62,7 @@ export function createEnemyCrew(
   EM.set(e, PhysicsParentDef, parent);
 
   function makeLeg(x: number): Entity {
-    const l = EM.new();
+    const l = EM.mk();
     EM.set(l, PositionDef, V(x, -1.75, 0));
     EM.set(l, RenderableConstructDef, allMeshes.cube.proto);
     EM.set(l, ScaleDef, V(0.1, 1.0, 0.1));
@@ -147,7 +147,7 @@ export const { EnemyShipPropsDef, EnemyShipLocalDef, createEnemyShip } =
 
       // fire zone is local, not synced
       // TODO(@darzu): fire zone should probably be host-only
-      const fireZone = EM.new();
+      const fireZone = EM.mk();
       const fireZoneSize = 40;
       EM.set(fireZone, ColliderDef, {
         solid: false,
@@ -193,7 +193,7 @@ export const { EnemyShipPropsDef, EnemyShipLocalDef, createEnemyShip } =
         aabb: res.allMeshes.cubeRaft.aabb,
       });
 
-      const cannon = EM.new();
+      const cannon = EM.mk();
       EM.set(cannon, RenderableConstructDef, res.allMeshes.cannon.proto);
       EM.set(cannon, PhysicsParentDef, e.id);
       EM.set(cannon, PositionDef, V(0, 2, 0));
@@ -335,7 +335,7 @@ export function breakEnemyShip(
   //music.playChords([3], "minor", 2.0, 5.0, -1);
 
   for (let part of enemyShipParts) {
-    const pe = EM.new();
+    const pe = EM.mk();
     // TODO(@darzu): use some sort of chunks particle system, we don't
     //  need entity ids for these.
     EM.set(pe, RenderableConstructDef, part.proto);

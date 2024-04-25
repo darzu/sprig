@@ -228,7 +228,7 @@ export async function initGrayboxSunless() {
   // });
 
   // light
-  const sun = EM.new();
+  const sun = EM.mk();
   EM.set(sun, PointLightDef);
   EM.set(sun, ColorDef, V(1, 1, 1));
   EM.set(sun, PositionDef, V(100, 100, 100));
@@ -243,7 +243,7 @@ export async function initGrayboxSunless() {
   // gizmo
   if (DBG_GIZMO) {
     const gizmoMesh = createGizmoMesh();
-    const gizmo = EM.new();
+    const gizmo = EM.mk();
     EM.set(gizmo, RenderableConstructDef, gizmoMesh);
     EM.set(gizmo, PositionDef, V(0, 0, 0));
     EM.set(gizmo, ScaleDef, V(5, 5, 5));
@@ -295,7 +295,7 @@ async function createWorld() {
   if (DBG_GRID) {
     for (let yi = 0; yi < gridWidth; yi++) {
       for (let xi = 0; xi < gridWidth; xi++) {
-        const node = EM.new();
+        const node = EM.mk();
         EM.set(node, PositionDef, V(xi * gridScale, yi * gridScale, 0));
         EM.set(node, RenderableConstructDef, mesh_cube.proto);
         // EM.set(node, ScaleDef, V(0.5, 0.5, 0.5));
@@ -305,7 +305,7 @@ async function createWorld() {
   }
 
   function createWall(pos: V3, vertical: boolean, length: number) {
-    const wall = EM.new();
+    const wall = EM.mk();
     EM.set(wall, PositionDef, pos);
     EM.set(wall, RenderableConstructDef, mesh_cube.proto);
     if (vertical) EM.set(wall, ScaleDef, V(wallWidth, length, wallHeight));
@@ -323,7 +323,7 @@ async function createWorld() {
   }
 
   function createDbgPath(pos: V3, horizontal: boolean) {
-    const path = EM.new();
+    const path = EM.mk();
     EM.set(path, PositionDef, pos);
     EM.set(path, RenderableConstructDef, mesh_cube.proto);
     if (horizontal) EM.set(path, ScaleDef, V(gridHalfScale, 0.2, 0.2));
@@ -365,7 +365,7 @@ async function createWorld() {
 
   // floor
   {
-    const floor = EM.new();
+    const floor = EM.mk();
     EM.set(
       floor,
       ScaleDef,
@@ -389,7 +389,7 @@ async function createWorld() {
   };
   for (let [xi, yi, dir] of docks) {
     const vert = dir === "N" || dir === "S";
-    const node = EM.new();
+    const node = EM.mk();
     EM.set(node, RenderableConstructDef, mesh_cube.proto);
     EM.set(
       node,
@@ -499,7 +499,7 @@ EM.addEagerInit([SunlessPlayerDef], [CubeMesh.def], [], ({ mesh_cube }) => {
       const ship = ships[0];
 
       if (res.inputs.keyClicks[" "]) {
-        const bullet = EM.new();
+        const bullet = EM.mk();
         EM.set(bullet, PositionDef, V3.clone(ship.position));
         EM.set(bullet, RenderableConstructDef, mesh_cube.proto);
         EM.set(bullet, ColorDef, ENDESGA16.darkGreen);
@@ -561,7 +561,7 @@ EM.addEagerInit([SunlessPlayerDef], [CubeMesh.def], [], ({ mesh_cube }) => {
 async function createPlayerShip() {
   const { mesh_cube } = await EM.whenResources(CubeMesh.def);
 
-  const ship = EM.new();
+  const ship = EM.mk();
   EM.set(ship, PositionDef, V(9, 8, 0));
   EM.set(ship, RotationDef);
   quat.yaw(ship.rotation, Math.PI * 0.4, ship.rotation);
@@ -607,7 +607,7 @@ const EnemyDef = EM.defineComponent("sunlessEnemy", () => ({}));
 async function createEnemies() {
   const { mesh_cube } = await EM.whenResources(CubeMesh.def);
 
-  const ship = EM.new();
+  const ship = EM.mk();
   EM.set(ship, PositionDef, V(15, 17, 0));
   EM.set(ship, RotationDef);
   quat.yaw(ship.rotation, randRadian(), ship.rotation);

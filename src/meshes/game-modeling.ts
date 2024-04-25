@@ -55,7 +55,7 @@ export async function initModelingGame() {
   // camera.perspectiveMode = "ortho";
 
   // light
-  const sun = EM.new();
+  const sun = EM.mk();
   EM.set(sun, PointLightDef);
   // EM.set(sun, ColorDef, V(1, 1, 1));
   // EM.set(sun, PositionDef, V(100, 100, 0));
@@ -71,7 +71,7 @@ export async function initModelingGame() {
   EM.set(sun, PositionDef, V(50, 10, 300));
 
   // ground
-  const ground = EM.new();
+  const ground = EM.mk();
   EM.set(ground, RenderableConstructDef, HexMesh);
   EM.set(ground, ColorDef, ENDESGA16.blue);
   EM.set(ground, PositionDef, V(0, 0, -10));
@@ -90,7 +90,7 @@ export async function initModelingGame() {
   addWorldGizmo(V(0, 0, 0), 10);
 
   // objects
-  const obj = EM.new();
+  const obj = EM.mk();
   const ship = createLD53Ship();
   // EM.set(obj, RenderableConstructDef, allMeshes.ship_small.proto);
   EM.set(obj, RenderableConstructDef, ship.timberMesh);

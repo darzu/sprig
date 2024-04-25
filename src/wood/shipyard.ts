@@ -237,7 +237,7 @@ function createPathGizmos(path: Path, scale = 1): Mesh {
 export async function dbgPathWithGizmos(path: Path, scale = 1) {
   const mesh = createPathGizmos(path, scale);
 
-  const e = EM.new();
+  const e = EM.mk();
   EM.set(e, PositionDef);
   EM.set(e, RenderableConstructDef, mesh);
 }

@@ -59,7 +59,7 @@ export function drawUpdatingVector(v: V3, opts?: VecDbgVisOpts) {
 export function drawVector(v: V3.InputT, opts?: VecDbgVisOpts) {
   const o = { ...DefaultVecDbgVisOpts, ...opts };
 
-  const ent = EM.new();
+  const ent = EM.mk();
   EM.set(ent, PositionDef, o.origin);
   EM.set(ent, RenderableConstructDef, ArrowMesh);
   EM.set(ent, ColorDef, o.color);

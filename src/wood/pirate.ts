@@ -280,7 +280,7 @@ EM.addLazyInit([RendererDef, TimeDef], [PiratePoolDef], (res) => {
     maxBehavior: "crash",
     create: () => {
       // make platform
-      const platform = EM.new();
+      const platform = EM.mk();
       EM.set(platform, ColorDef);
       V3.copy(platform.color, ENDESGA16.deepBrown);
       EM.set(platform, PositionDef);
@@ -294,7 +294,7 @@ EM.addLazyInit([RendererDef, TimeDef], [PiratePoolDef], (res) => {
       EM.set(platform, RenderableConstructDef, groundMesh);
 
       // make cannon
-      const cannon = EM.new();
+      const cannon = EM.mk();
       EM.set(cannon, RenderableConstructDef, CannonLD51Mesh);
       EM.set(cannon, PositionDef);
       EM.set(cannon, PhysicsParentDef, platform.id);
@@ -303,7 +303,7 @@ EM.addLazyInit([RendererDef, TimeDef], [PiratePoolDef], (res) => {
       V3.copy(cannon.position, [0, 2, 0]);
 
       // make timber
-      const timber = EM.new();
+      const timber = EM.mk();
       const _timberMesh = createEmptyMesh("pirateShip");
       const builder = createTimberBuilder(_timberMesh);
       appendPirateShip(builder);

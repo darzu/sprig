@@ -37,7 +37,7 @@ function sockMesh(): Mesh {
 }
 
 export function createSock(scale: number) {
-  const ent = EM.new();
+  const ent = EM.mk();
   EM.set(ent, SockDef);
   ent.sock.scale = scale;
   const mesh = sockMesh();

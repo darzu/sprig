@@ -39,7 +39,7 @@ export const Cursor3dDef = EM.defineComponent("cursor3d", () => ({
 EM.addLazyInit([BallMesh.def], [GlobalCursor3dDef], async (res) => {
   {
     console.log(`init global cursor`);
-    const cursor = EM.new();
+    const cursor = EM.mk();
     EM.set(cursor, Cursor3dDef);
     EM.set(cursor, PositionDef);
     // TODO(@darzu): support wireframe

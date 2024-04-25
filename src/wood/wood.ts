@@ -717,7 +717,7 @@ function createSplinterEnd(
 
   const rot = getSegmentRotation(seg, top);
   // TODO(@darzu): put these into a pool
-  const splinter = EM.new();
+  const splinter = EM.mk();
   // TODO(@darzu): perf? probably don't need to normalize, just use same surface ID and provoking vert for all
   const cursor = mat4.fromRotationTranslation(rot, pos, mat4.create());
   let _splinterMesh: RawMesh = createEmptyMesh("splinterEnd");

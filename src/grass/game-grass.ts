@@ -176,7 +176,7 @@ export async function initGrassGame(hosting: boolean) {
   );
 
   // Sun
-  const sunlight = EM.new();
+  const sunlight = EM.mk();
   EM.set(sunlight, PointLightDef);
   // sunlight.pointLight.constant = 1.0;
   sunlight.pointLight.constant = 1.0;
@@ -193,13 +193,13 @@ export async function initGrassGame(hosting: boolean) {
   // sky dome?
   const SKY_HALFSIZE = 1000;
   const domeMesh = makeDome(16, 8, SKY_HALFSIZE);
-  const sky = EM.new();
+  const sky = EM.mk();
   EM.set(sky, PositionDef, V(0, -100, 0));
   const skyMesh = domeMesh;
   EM.set(sky, RenderableConstructDef, skyMesh, undefined, undefined, SKY_MASK);
 
   // ground
-  const ground = EM.new();
+  const ground = EM.mk();
   const groundMesh = cloneMesh((await UnitCubeMesh.gameMesh()).mesh);
   transformMesh(
     groundMesh,
@@ -266,7 +266,7 @@ export async function initGrassGame(hosting: boolean) {
     maxBladeDraw,
   };
   const grMesh = createGrassTile(tileOpts);
-  const gr = EM.new();
+  const gr = EM.mk();
   EM.set(
     gr,
     RenderableConstructDef,
@@ -688,7 +688,7 @@ export async function initGrassGame(hosting: boolean) {
 
   // world gizmo
   const gizmoMesh = await GizmoMesh.gameMesh();
-  const worldGizmo = EM.new();
+  const worldGizmo = EM.mk();
   EM.set(worldGizmo, PositionDef, V(-WORLD_HEIGHT / 2, 0, -WORLD_WIDTH / 2));
   EM.set(worldGizmo, ScaleDef, V(100, 100, 100));
   EM.set(worldGizmo, RenderableConstructDef, gizmoMesh.proto);
@@ -706,7 +706,7 @@ export async function initGrassGame(hosting: boolean) {
 
 async function createPlayer() {
   const { gg_meshes, me } = await EM.whenResources(grassGameMeshesDef, MeDef);
-  const p = EM.new();
+  const p = EM.mk();
   EM.set(p, ControllableDef);
   p.controllable.modes.canFall = false;
   p.controllable.modes.canJump = false;

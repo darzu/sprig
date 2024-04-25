@@ -612,7 +612,7 @@ class _EntityManager implements EntityManager {
   }
 
   // TODO(@darzu): dont return the entity!
-  public new(rangeName?: string): Entity {
+  public mk(rangeName?: string): Entity {
     if (rangeName === undefined) rangeName = this.defaultRange;
     const range = this.ranges[rangeName];
     if (!range) {

@@ -94,7 +94,7 @@ export const { RudderPropsDef, RudderLocalDef, createRudderNow } =
       V3.scale(rudder.color, 0.5, rudder.color);
 
       // create seperate hitbox for interacting with the rudder
-      const interactBox = EM.new();
+      const interactBox = EM.mk();
       EM.set(interactBox, PhysicsParentDef, rudder.rudderProps.shipId);
       EM.set(interactBox, PositionDef, V(0, 0, -12));
       EM.set(interactBox, ColliderDef, {
@@ -224,7 +224,7 @@ export const { HsShipPropsDef, HsShipLocalDef, createHsShip } =
       const shipFloor = min(BARGE_AABBS.map((c) => c.max[1]));
       for (let i = 0; i < res.allMeshes.ship_broken.length; i++) {
         const m = res.allMeshes.ship_broken[i];
-        const part = EM.new();
+        const part = EM.mk();
         EM.set(part, PhysicsParentDef, s.id);
         EM.set(part, RenderableConstructDef, m.proto);
         EM.set(part, ColorDef, ENDESGA16.lightBrown);
