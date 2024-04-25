@@ -250,10 +250,7 @@ interface SystemStats {
 interface _EntityManager {
   entities: Map<number, Entity>;
 
-  allSystemsByName: Map<string, SystemReg>;
-
   emStats: { queryTime: number; dbgLoops: number };
-  sysStats: Record<string, SystemStats>;
 
   componentDefs: Map<CompId, ComponentDef>;
 
@@ -361,26 +358,7 @@ interface _EntityManager {
     cs: [...CS] | null
   ): Entities<CS>;
 
-  dbgGetSystemsForEntity(id: number): SystemReg[];
-
   dbgFilterEntitiesByKey(cs: string | string[]): Entities<any>;
-
-  addSystem<CS extends ComponentDef[], RS extends ResourceDef[]>(
-    name: string,
-    phase: Phase,
-    cs: [...CS],
-    rs: [...RS],
-    callback: SystemFn<CS, RS>
-  ): PublicSystemReg;
-  addSystem<CS extends null, RS extends ResourceDef[]>(
-    name: string,
-    phase: Phase,
-    cs: null,
-    rs: [...RS],
-    callback: SystemFn<CS, RS>
-  ): PublicSystemReg;
-
-  hasSystem(name: string): boolean;
 
   whenEntityHas<
     // eCS extends ComponentDef[],
@@ -398,11 +376,40 @@ interface _EntityManager {
   update(): void;
 }
 
-interface EntityManager extends _EntityManager, EMInit, EMResources {}
+interface EMSystems {
+  allSystemsByName: Map<string, SystemReg>;
+  sysStats: Record<string, SystemStats>;
 
-// TODO(@darzu): split this apart! Shouldn't be a class and should be in as many pieces as is logical
-function createEntityManager(): _EntityManager {
-  const entities: Map<number, Entity> = new Map();
+  // TODO(@darzu): don't expose query cache like this?
+  _systemsToEntities: Map<number, Entity[]>;
+  _entitiesToSystems: Map<number, number[]>;
+  _systemsToComponents: Map<number, string[]>;
+  _componentToSystems: Map<string, number[]>;
+
+  _notifyRemoveComponent(e: Entity, def: ComponentDef): void;
+
+  getCurrentRunningSystem: () => SystemReg | undefined;
+
+  dbgGetSystemsForEntity(id: number): SystemReg[];
+  addSystem<CS extends ComponentDef[], RS extends ResourceDef[]>(
+    name: string,
+    phase: Phase,
+    cs: [...CS],
+    rs: [...RS],
+    callback: SystemFn<CS, RS>
+  ): PublicSystemReg;
+  addSystem<CS extends null, RS extends ResourceDef[]>(
+    name: string,
+    phase: Phase,
+    cs: null,
+    rs: [...RS],
+    callback: SystemFn<CS, RS>
+  ): PublicSystemReg;
+  hasSystem(name: string): boolean;
+  callSystems(): void;
+}
+
+function createEMSystems(): EMSystems {
   const allSystemsByName: Map<string, SystemReg> = new Map();
   const activeSystemsById: Map<number, SystemReg> = new Map();
   const phases: Map<Phase, string[]> = toMap(
@@ -410,6 +417,366 @@ function createEntityManager(): _EntityManager {
     (n) => n,
     (_) => [] as string[]
   );
+
+  const sysStats: Record<string, SystemStats> = {};
+
+  // QUERY SYSTEM
+  // TODO(@darzu): PERF. maybe the entities list should be maintained sorted. That
+  //    would make certain scan operations (like updating them on component add/remove)
+  //    cheaper. And perhaps better gameplay code too.
+  const _systemsToEntities: Map<number, Entity[]> = new Map();
+  // NOTE: _entitiesToSystems is only needed because of DeadDef
+  const _entitiesToSystems: Map<number, number[]> = new Map();
+  const _systemsToComponents: Map<number, string[]> = new Map();
+  const _componentToSystems: Map<string, number[]> = new Map();
+
+  let _currentRunningSystem: SystemReg | undefined = undefined;
+  let _dbgLastSystemLen = 0;
+  let _dbgLastActiveSystemLen = 0;
+  function callSystems(): void {
+    if (DBG_SYSTEM_ORDER) {
+      let newTotalSystemLen = 0;
+      let newActiveSystemLen = 0;
+      let res = "";
+      for (let phase of PhaseValueList) {
+        const phaseName = Phase[phase];
+        res += phaseName + "\n";
+        for (let sysName of phases.get(phase)!) {
+          let sys = allSystemsByName.get(sysName)!;
+          if (activeSystemsById.has(sys.id)) {
+            res += "  " + sysName + "\n";
+            newActiveSystemLen++;
+          } else {
+            res += "  (" + sysName + ")\n";
+          }
+          newTotalSystemLen++;
+        }
+      }
+      if (
+        _dbgLastSystemLen !== newTotalSystemLen ||
+        _dbgLastActiveSystemLen !== newActiveSystemLen
+      ) {
+        console.log(res);
+        _dbgLastSystemLen = newTotalSystemLen;
+        _dbgLastActiveSystemLen = newActiveSystemLen;
+      }
+    }
+
+    for (let phase of PhaseValueList) {
+      for (let sName of phases.get(phase)!) {
+        // look up
+        const s = allSystemsByName.get(sName);
+        assert(s, `Can't find system with name: ${sName}`);
+
+        // run
+        _currentRunningSystem = s;
+        tryCallSystem(s);
+        _currentRunningSystem = undefined;
+      }
+    }
+  }
+
+  function dbgGetSystemsForEntity(id: number) {
+    const sysIds = _entitiesToSystems.get(id) ?? [];
+    const systems = sysIds
+      .map((id) => activeSystemsById.get(id))
+      .filter((x) => !!x) as SystemReg[];
+    return systems;
+  }
+
+  // TODO(@darzu): "addSystemWInit" that is like wrapping an addSystem in an addEagerInit so you can have
+  //  some global resources around
+  // TODO(@darzu): add support for "run every X frames or ms" ?
+  // TODO(@darzu): add change detection
+  let _nextSystemId = 1;
+  function addSystem<CS extends ComponentDef[], RS extends ResourceDef[]>(
+    name: string,
+    phase: Phase,
+    cs: [...CS],
+    rs: [...RS],
+    callback: SystemFn<CS, RS>
+  ): PublicSystemReg;
+  function addSystem<CS extends null, RS extends ResourceDef[]>(
+    name: string,
+    phase: Phase,
+    cs: null,
+    rs: [...RS],
+    callback: SystemFn<CS, RS>
+  ): PublicSystemReg;
+  function addSystem<CS extends ComponentDef[], RS extends ResourceDef[]>(
+    name: string,
+    phase: Phase,
+    cs: [...CS] | null,
+    rs: [...RS],
+    callback: SystemFn<CS, RS>
+  ): PublicSystemReg {
+    name = name || callback.name;
+    if (name === "") {
+      throw new Error(
+        `To define a system with an anonymous function, pass an explicit name`
+      );
+    }
+    if (allSystemsByName.has(name))
+      throw `System named ${name} already defined. Try explicitly passing a name`;
+    const id = _nextSystemId;
+    _nextSystemId += 1;
+    const sys: SystemReg = {
+      cs,
+      rs,
+      callback,
+      name,
+      phase,
+      id,
+      flags: {},
+    };
+    allSystemsByName.set(name, sys);
+
+    // NOTE: even though we might not active the system right away, we want to respect the
+    //  order in which it was added to the phase.
+    phases.get(phase)!.push(name);
+
+    const seenAllCmps = (sys.cs ?? []).every((c) =>
+      _em.seenComponents.has(c.id)
+    );
+    const seenAllRes = sys.rs.every((c) => _resources.seenResources.has(c.id));
+    if (seenAllCmps && seenAllRes) {
+      activateSystem(sys);
+    } else {
+      // NOTE: we delay activating the system b/c each active system incurs
+      //  a cost to maintain its query accelerators on each entity and component
+      //  added/removed
+      _init.addEagerInit(
+        sys.cs ?? [],
+        sys.rs,
+        [],
+        () => {
+          activateSystem(sys);
+        },
+        `sysinit_${sys.name}`
+      );
+    }
+
+    return sys;
+  }
+
+  function activateSystem(sys: SystemReg) {
+    const { cs, id, name, phase } = sys;
+
+    activeSystemsById.set(id, sys);
+    sysStats[name] = {
+      calls: 0,
+      queries: 0,
+      callTime: 0,
+      maxCallTime: 0,
+    };
+
+    // update query cache:
+    //  pre-compute entities for this system for quicker queries; these caches will be maintained
+    //  by add/remove/ensure component calls
+    // TODO(@darzu): ability to toggle this optimization on/off for better debugging
+    const es = _em.filterEntities_uncached(cs);
+    _systemsToEntities.set(id, [...es]);
+    if (cs) {
+      for (let c of cs) {
+        if (!_componentToSystems.has(c.name))
+          _componentToSystems.set(c.name, [id]);
+        else _componentToSystems.get(c.name)!.push(id);
+      }
+      _systemsToComponents.set(
+        id,
+        cs.map((c) => c.name)
+      );
+    }
+    for (let e of es) {
+      const ss = _entitiesToSystems.get(e.id);
+      assertDbg(ss);
+      ss.push(id);
+    }
+  }
+
+  function hasSystem(name: string) {
+    return allSystemsByName.has(name);
+  }
+
+  function tryCallSystem(s: SystemReg): boolean {
+    // TODO(@darzu):
+    // if (name.endsWith("Build")) console.log(`calling ${name}`);
+    // if (name == "groundPropsBuild") console.log("calling groundPropsBuild");
+
+    if (!activeSystemsById.has(s.id)) {
+      return false;
+    }
+
+    let start = performance.now();
+    // try looking up in the query cache
+    let es: Entities<any[]>;
+    if (s.cs) {
+      assertDbg(
+        _systemsToEntities.has(s.id),
+        `System ${s.name} doesn't have a query cache!`
+      );
+      es = _systemsToEntities.get(s.id)! as EntityW<any[]>[];
+    } else {
+      es = [];
+    }
+    // TODO(@darzu): uncomment to debug query cache issues
+    // es = filterEntities(s.cs);
+
+    const rs = _resources.getResources(s.rs); // TODO(@darzu): remove allocs here
+    let afterQuery = performance.now();
+    sysStats[s.name].queries++;
+    _em.emStats.queryTime += afterQuery - start;
+    if (!rs) {
+      // we don't yet have the resources, check if we can init any
+      s.rs.forEach((r) => {
+        const forced = _init.requestResourceInit(r);
+        if (DBG_INIT_CAUSATION && forced) {
+          console.log(
+            `${performance.now().toFixed(0)}ms: '${r.name}' force by system ${
+              s.name
+            }`
+          );
+        }
+      });
+      return true;
+    }
+
+    resetTempMatrixBuffer(s.name);
+
+    // we have the resources, run the system
+    // TODO(@darzu): how do we handle async systems?
+    s.callback(es, rs);
+
+    // // TODO(@darzu): DEBUG. Promote to a dbg flag? Maybe pre-post system watch predicate
+    // if (es.length && es[0].id === 10001) {
+    //   const doesHave = "rendererWorldFrame" in es[0];
+    //   const isUndefined =
+    //     doesHave && (es[0] as any)["rendererWorldFrame"] === undefined;
+    //   console.log(
+    //     `after ${s.name}: ${es[0].id} ${
+    //       doesHave ? "HAS" : "NOT"
+    //     } .rendererWorldFrame ${isUndefined ? "===" : "!=="} undefined`
+    //   );
+    // }
+
+    let afterCall = performance.now();
+    sysStats[s.name].calls++;
+    const thisCallTime = afterCall - afterQuery;
+    sysStats[s.name].callTime += thisCallTime;
+    sysStats[s.name].maxCallTime = Math.max(
+      sysStats[s.name].maxCallTime,
+      thisCallTime
+    );
+
+    return true;
+  }
+
+  // TODO(@darzu): good or terrible name?
+  // TODO(@darzu): another version for checking entity promises?
+  // TODO(@darzu): update with new init system
+  function whyIsntSystemBeingCalled(name: string): void {
+    // TODO(@darzu): more features like check against a specific set of entities
+    const sys = allSystemsByName.get(name);
+    if (!sys) {
+      console.warn(`No systems found with name: '${name}'`);
+      return;
+    }
+
+    let haveAllResources = true;
+    for (let _r of sys.rs) {
+      let r = _r as ResourceDef;
+      if (!_resources.getResource(r)) {
+        console.warn(`System '${name}' missing resource: ${r.name}`);
+        haveAllResources = false;
+      }
+    }
+
+    const es = _em.filterEntities_uncached(sys.cs);
+    console.warn(
+      `System '${name}' matches ${es.length} entities and has all resources: ${haveAllResources}.`
+    );
+  }
+
+  function _notifyRemoveComponent(e: Entity, def: ComponentDef): void {
+    const id = e.id;
+
+    // update query cache
+    const systems = _componentToSystems.get(def.name);
+    for (let sysId of systems ?? []) {
+      if (
+        sysId === _currentRunningSystem?.id &&
+        !_currentRunningSystem.flags.allowQueryEdit
+      )
+        console.warn(
+          `Removing component '${def.name}' while running system '${_currentRunningSystem.name}'` +
+            ` which queries it. Set the "allowQueryEdit" flag on the system if intentional` +
+            ` (and probably loop over the query backwards.`
+        );
+      const es = _systemsToEntities.get(sysId);
+      if (es) {
+        // TODO(@darzu): perf. sorted removal
+        const indx = es.findIndex((v) => v.id === id);
+        if (indx >= 0) {
+          es.splice(indx, 1);
+        }
+      }
+    }
+    if (isDeadC(def)) {
+      const eSystems = _entitiesToSystems.get(id)!;
+      eSystems.length = 0;
+      for (let sysId of activeSystemsById.keys()) {
+        const allNeededCs = _systemsToComponents.get(sysId);
+        if (allNeededCs?.every((n) => n in e)) {
+          // TODO(@darzu): perf. sorted insert
+          _systemsToEntities.get(sysId)!.push(e);
+          eSystems.push(sysId);
+        }
+      }
+    }
+  }
+
+  const result: EMSystems = {
+    sysStats,
+    allSystemsByName,
+    dbgGetSystemsForEntity,
+    addSystem,
+    hasSystem,
+    callSystems,
+
+    getCurrentRunningSystem: () => _currentRunningSystem,
+
+    _notifyRemoveComponent,
+
+    _systemsToEntities,
+    _entitiesToSystems,
+    _systemsToComponents,
+    _componentToSystems,
+  };
+
+  return result;
+}
+
+// TODO(@darzu): hacky, special components
+function isDeletedE(e: Entity) {
+  return "deleted" in e;
+}
+function isDeadE(e: Entity) {
+  return "dead" in e;
+}
+function isDeadC(e: ComponentDef) {
+  return "dead" === e.name;
+}
+
+interface EntityManager
+  extends _EntityManager,
+    EMInit,
+    EMResources,
+    EMSystems {}
+
+// TODO(@darzu): split this apart! Shouldn't be a class and should be in as many pieces as is logical
+function createEntityManager(): _EntityManager {
+  const entities: Map<number, Entity> = new Map();
+
   const entityPromises: Map<number, EntityPromise<ComponentDef[], any>[]> =
     new Map();
   const componentDefs: Map<CompId, ComponentDef> = new Map(); // TODO(@darzu): rename to componentDefs ?
@@ -426,21 +793,10 @@ function createEntityManager(): _EntityManager {
 
   const ranges: Record<string, { nextId: number; maxId: number }> = {};
   let defaultRange: string = "";
-  const sysStats: Record<string, SystemStats> = {};
   const emStats = {
     queryTime: 0,
     dbgLoops: 0,
   };
-
-  // QUERY SYSTEM
-  // TODO(@darzu): PERF. maybe the entities list should be maintained sorted. That
-  //    would make certain scan operations (like updating them on component add/remove)
-  //    cheaper. And perhaps better gameplay code too.
-  const _systemsToEntities: Map<number, Entity[]> = new Map();
-  // NOTE: _entitiesToSystems is only needed because of DeadDef
-  const _entitiesToSystems: Map<number, number[]> = new Map();
-  const _systemsToComponents: Map<number, string[]> = new Map();
-  const _componentToSystems: Map<string, number[]> = new Map();
 
   const forbiddenComponentNames = new Set<string>(["id"]);
 
@@ -647,7 +1003,7 @@ function createEntityManager(): _EntityManager {
         `We're halfway through our local entity ID space! Physics assumes IDs are < 2^16`
       );
     entities.set(e.id, e);
-    _entitiesToSystems.set(e.id, []);
+    _systems._entitiesToSystems.set(e.id, []);
 
     // if (e.id === 10052) throw new Error("Created here!");
 
@@ -664,19 +1020,8 @@ function createEntityManager(): _EntityManager {
     const e = Object.create(null); // no prototype
     e.id = id;
     entities.set(e.id, e);
-    _entitiesToSystems.set(e.id, []);
+    _systems._entitiesToSystems.set(e.id, []);
     return e;
-  }
-
-  // TODO(@darzu): hacky, special components
-  function isDeletedE(e: Entity) {
-    return "deleted" in e;
-  }
-  function isDeadE(e: Entity) {
-    return "dead" in e;
-  }
-  function isDeadC(e: ComponentDef) {
-    return "dead" === e.name;
   }
 
   function addComponent<N extends string, P, PArgs extends any[]>(
@@ -718,23 +1063,23 @@ function createEntityManager(): _EntityManager {
     {
       let _beforeQueryCache = performance.now();
       seenComponents.add(def.id);
-      const eSystems = _entitiesToSystems.get(e.id)!;
+      const eSystems = _systems._entitiesToSystems.get(e.id)!;
       if (isDeadC(def)) {
         // remove from every current system
         eSystems.forEach((s) => {
-          const es = _systemsToEntities.get(s)!;
+          const es = _systems._systemsToEntities.get(s)!;
           // TODO(@darzu): perf. sorted removal
           const indx = es.findIndex((v) => v.id === id);
           if (indx >= 0) es.splice(indx, 1);
         });
         eSystems.length = 0;
       }
-      const systems = _componentToSystems.get(def.name);
+      const systems = _systems._componentToSystems.get(def.name);
       for (let sysId of systems ?? []) {
-        const allNeededCs = _systemsToComponents.get(sysId);
+        const allNeededCs = _systems._systemsToComponents.get(sysId);
         if (allNeededCs?.every((n) => n in e)) {
           // TODO(@darzu): perf. sorted insert
-          _systemsToEntities.get(sysId)!.push(e);
+          _systems._systemsToEntities.get(sysId)!.push(e);
           eSystems.push(sysId);
         }
       }
@@ -825,52 +1170,6 @@ function createEntityManager(): _EntityManager {
     }
   }
 
-  let _currentRunningSystem: SystemReg | undefined = undefined;
-  let _dbgLastSystemLen = 0;
-  let _dbgLastActiveSystemLen = 0;
-  function callSystems() {
-    if (DBG_SYSTEM_ORDER) {
-      let newTotalSystemLen = 0;
-      let newActiveSystemLen = 0;
-      let res = "";
-      for (let phase of PhaseValueList) {
-        const phaseName = Phase[phase];
-        res += phaseName + "\n";
-        for (let sysName of phases.get(phase)!) {
-          let sys = allSystemsByName.get(sysName)!;
-          if (activeSystemsById.has(sys.id)) {
-            res += "  " + sysName + "\n";
-            newActiveSystemLen++;
-          } else {
-            res += "  (" + sysName + ")\n";
-          }
-          newTotalSystemLen++;
-        }
-      }
-      if (
-        _dbgLastSystemLen !== newTotalSystemLen ||
-        _dbgLastActiveSystemLen !== newActiveSystemLen
-      ) {
-        console.log(res);
-        _dbgLastSystemLen = newTotalSystemLen;
-        _dbgLastActiveSystemLen = newActiveSystemLen;
-      }
-    }
-
-    for (let phase of PhaseValueList) {
-      for (let sName of phases.get(phase)!) {
-        // look up
-        const s = allSystemsByName.get(sName);
-        assert(s, `Can't find system with name: ${sName}`);
-
-        // run
-        _currentRunningSystem = s;
-        tryCallSystem(s);
-        _currentRunningSystem = undefined;
-      }
-    }
-  }
-
   function hasEntity(id: number) {
     return entities.has(id);
   }
@@ -892,39 +1191,7 @@ function createEntityManager(): _EntityManager {
       return false;
     }
 
-    // update query cache
-    const systems = _componentToSystems.get(def.name);
-    for (let sysId of systems ?? []) {
-      if (
-        sysId === _currentRunningSystem?.id &&
-        !_currentRunningSystem.flags.allowQueryEdit
-      )
-        console.warn(
-          `Removing component '${def.name}' while running system '${_currentRunningSystem.name}'` +
-            ` which queries it. Set the "allowQueryEdit" flag on the system if intentional` +
-            ` (and probably loop over the query backwards.`
-        );
-      const es = _systemsToEntities.get(sysId);
-      if (es) {
-        // TODO(@darzu): perf. sorted removal
-        const indx = es.findIndex((v) => v.id === id);
-        if (indx >= 0) {
-          es.splice(indx, 1);
-        }
-      }
-    }
-    if (isDeadC(def)) {
-      const eSystems = _entitiesToSystems.get(id)!;
-      eSystems.length = 0;
-      for (let sysId of activeSystemsById.keys()) {
-        const allNeededCs = _systemsToComponents.get(sysId);
-        if (allNeededCs?.every((n) => n in e)) {
-          // TODO(@darzu): perf. sorted insert
-          _systemsToEntities.get(sysId)!.push(e);
-          eSystems.push(sysId);
-        }
-      }
-    }
+    _systems._notifyRemoveComponent(e, def);
 
     return true;
   }
@@ -986,14 +1253,6 @@ function createEntityManager(): _EntityManager {
     return res;
   }
 
-  function dbgGetSystemsForEntity(id: number) {
-    const sysIds = _entitiesToSystems.get(id) ?? [];
-    const systems = sysIds
-      .map((id) => activeSystemsById.get(id))
-      .filter((x) => !!x) as SystemReg[];
-    return systems;
-  }
-
   function dbgFilterEntitiesByKey(cs: string | string[]): Entities<any> {
     // TODO(@darzu): respect "DeadDef" comp ?
     console.log(
@@ -1015,191 +1274,6 @@ function createEntityManager(): _EntityManager {
       }
     }
     return res;
-  }
-
-  // TODO(@darzu): "addSystemWInit" that is like wrapping an addSystem in an addEagerInit so you can have
-  //  some global resources around
-  // TODO(@darzu): add support for "run every X frames or ms" ?
-  // TODO(@darzu): add change detection
-  let _nextSystemId = 1;
-  function addSystem<CS extends ComponentDef[], RS extends ResourceDef[]>(
-    name: string,
-    phase: Phase,
-    cs: [...CS],
-    rs: [...RS],
-    callback: SystemFn<CS, RS>
-  ): PublicSystemReg;
-  function addSystem<CS extends null, RS extends ResourceDef[]>(
-    name: string,
-    phase: Phase,
-    cs: null,
-    rs: [...RS],
-    callback: SystemFn<CS, RS>
-  ): PublicSystemReg;
-  function addSystem<CS extends ComponentDef[], RS extends ResourceDef[]>(
-    name: string,
-    phase: Phase,
-    cs: [...CS] | null,
-    rs: [...RS],
-    callback: SystemFn<CS, RS>
-  ): PublicSystemReg {
-    name = name || callback.name;
-    if (name === "") {
-      throw new Error(
-        `To define a system with an anonymous function, pass an explicit name`
-      );
-    }
-    if (allSystemsByName.has(name))
-      throw `System named ${name} already defined. Try explicitly passing a name`;
-    const id = _nextSystemId;
-    _nextSystemId += 1;
-    const sys: SystemReg = {
-      cs,
-      rs,
-      callback,
-      name,
-      phase,
-      id,
-      flags: {},
-    };
-    allSystemsByName.set(name, sys);
-
-    // NOTE: even though we might not active the system right away, we want to respect the
-    //  order in which it was added to the phase.
-    phases.get(phase)!.push(name);
-
-    const seenAllCmps = (sys.cs ?? []).every((c) => seenComponents.has(c.id));
-    const seenAllRes = sys.rs.every((c) => _resources.seenResources.has(c.id));
-    if (seenAllCmps && seenAllRes) {
-      activateSystem(sys);
-    } else {
-      // NOTE: we delay activating the system b/c each active system incurs
-      //  a cost to maintain its query accelerators on each entity and component
-      //  added/removed
-      _init.addEagerInit(
-        sys.cs ?? [],
-        sys.rs,
-        [],
-        () => {
-          activateSystem(sys);
-        },
-        `sysinit_${sys.name}`
-      );
-    }
-
-    return sys;
-  }
-
-  function activateSystem(sys: SystemReg) {
-    const { cs, id, name, phase } = sys;
-
-    activeSystemsById.set(id, sys);
-    sysStats[name] = {
-      calls: 0,
-      queries: 0,
-      callTime: 0,
-      maxCallTime: 0,
-    };
-
-    // update query cache:
-    //  pre-compute entities for this system for quicker queries; these caches will be maintained
-    //  by add/remove/ensure component calls
-    // TODO(@darzu): ability to toggle this optimization on/off for better debugging
-    const es = filterEntities_uncached(cs);
-    _systemsToEntities.set(id, [...es]);
-    if (cs) {
-      for (let c of cs) {
-        if (!_componentToSystems.has(c.name))
-          _componentToSystems.set(c.name, [id]);
-        else _componentToSystems.get(c.name)!.push(id);
-      }
-      _systemsToComponents.set(
-        id,
-        cs.map((c) => c.name)
-      );
-    }
-    for (let e of es) {
-      const ss = _entitiesToSystems.get(e.id);
-      assertDbg(ss);
-      ss.push(id);
-    }
-  }
-
-  function hasSystem(name: string) {
-    return allSystemsByName.has(name);
-  }
-
-  function tryCallSystem(s: SystemReg): boolean {
-    // TODO(@darzu):
-    // if (name.endsWith("Build")) console.log(`calling ${name}`);
-    // if (name == "groundPropsBuild") console.log("calling groundPropsBuild");
-
-    if (!activeSystemsById.has(s.id)) {
-      return false;
-    }
-
-    let start = performance.now();
-    // try looking up in the query cache
-    let es: Entities<any[]>;
-    if (s.cs) {
-      assertDbg(
-        _systemsToEntities.has(s.id),
-        `System ${s.name} doesn't have a query cache!`
-      );
-      es = _systemsToEntities.get(s.id)! as EntityW<any[]>[];
-    } else {
-      es = [];
-    }
-    // TODO(@darzu): uncomment to debug query cache issues
-    // es = filterEntities(s.cs);
-
-    const rs = _resources.getResources(s.rs); // TODO(@darzu): remove allocs here
-    let afterQuery = performance.now();
-    sysStats[s.name].queries++;
-    emStats.queryTime += afterQuery - start;
-    if (!rs) {
-      // we don't yet have the resources, check if we can init any
-      s.rs.forEach((r) => {
-        const forced = _init.requestResourceInit(r);
-        if (DBG_INIT_CAUSATION && forced) {
-          console.log(
-            `${performance.now().toFixed(0)}ms: '${r.name}' force by system ${
-              s.name
-            }`
-          );
-        }
-      });
-      return true;
-    }
-
-    resetTempMatrixBuffer(s.name);
-
-    // we have the resources, run the system
-    // TODO(@darzu): how do we handle async systems?
-    s.callback(es, rs);
-
-    // // TODO(@darzu): DEBUG. Promote to a dbg flag? Maybe pre-post system watch predicate
-    // if (es.length && es[0].id === 10001) {
-    //   const doesHave = "rendererWorldFrame" in es[0];
-    //   const isUndefined =
-    //     doesHave && (es[0] as any)["rendererWorldFrame"] === undefined;
-    //   console.log(
-    //     `after ${s.name}: ${es[0].id} ${
-    //       doesHave ? "HAS" : "NOT"
-    //     } .rendererWorldFrame ${isUndefined ? "===" : "!=="} undefined`
-    //   );
-    // }
-
-    let afterCall = performance.now();
-    sysStats[s.name].calls++;
-    const thisCallTime = afterCall - afterQuery;
-    sysStats[s.name].callTime += thisCallTime;
-    sysStats[s.name].maxCallTime = Math.max(
-      sysStats[s.name].maxCallTime,
-      thisCallTime
-    );
-
-    return true;
   }
 
   // private _callSystem(name: string) {
@@ -1268,7 +1342,7 @@ function createEntityManager(): _EntityManager {
 
         // call callback
         const afterOneShotQuery = performance.now();
-        const stats = sysStats["__oneShots"];
+        const stats = _systems.sysStats["__oneShots"];
         stats.queries += 1;
         emStats.queryTime += afterOneShotQuery - beforeOneShots;
 
@@ -1299,32 +1373,6 @@ function createEntityManager(): _EntityManager {
     return madeProgress;
   }
 
-  // TODO(@darzu): good or terrible name?
-  // TODO(@darzu): another version for checking entity promises?
-  // TODO(@darzu): update with new init system
-  function whyIsntSystemBeingCalled(name: string): void {
-    // TODO(@darzu): more features like check against a specific set of entities
-    const sys = allSystemsByName.get(name);
-    if (!sys) {
-      console.warn(`No systems found with name: '${name}'`);
-      return;
-    }
-
-    let haveAllResources = true;
-    for (let _r of sys.rs) {
-      let r = _r as ResourceDef;
-      if (!_resources.getResource(r)) {
-        console.warn(`System '${name}' missing resource: ${r.name}`);
-        haveAllResources = false;
-      }
-    }
-
-    const es = filterEntities_uncached(sys.cs);
-    console.warn(
-      `System '${name}' matches ${es.length} entities and has all resources: ${haveAllResources}.`
-    );
-  }
-
   let _nextEntityPromiseId: number = 0;
   const _dbgEntityPromiseCallsites = new Map<number, string>();
 
@@ -1351,7 +1399,7 @@ function createEntityManager(): _EntityManager {
     //   throw `One-shot single system named ${_name} already defined.`;
 
     // use one bucket for all one shots. Change this if we want more granularity
-    sysStats["__oneShots"] = sysStats["__oneShots"] ?? {
+    _systems.sysStats["__oneShots"] = _systems.sysStats["__oneShots"] ?? {
       calls: 0,
       queries: 0,
       callTime: 0,
@@ -1423,7 +1471,7 @@ function createEntityManager(): _EntityManager {
       madeProgress ||= checkEntityPromises();
     } while (madeProgress);
 
-    callSystems();
+    _systems.callSystems();
     emStats.dbgLoops++;
   }
 
@@ -1450,12 +1498,6 @@ function createEntityManager(): _EntityManager {
     whenEntityHas,
     whenSingleEntity,
 
-    // systems
-    allSystemsByName,
-    dbgGetSystemsForEntity,
-    addSystem,
-    hasSystem,
-
     // components
     componentDefs,
     seenComponents,
@@ -1467,7 +1509,6 @@ function createEntityManager(): _EntityManager {
 
     // stats
     emStats,
-    sysStats,
 
     // update all
     update,
@@ -1476,9 +1517,12 @@ function createEntityManager(): _EntityManager {
   return _em;
 }
 
+export const _systems = createEMSystems();
+
 export const _em: _EntityManager = createEntityManager();
 
 export const EM: EntityManager = {
+  ..._systems,
   ..._resources,
   ..._em,
   ..._init,
