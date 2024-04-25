@@ -2,12 +2,8 @@ import { Entity } from "./entity-manager.js";
 
 // TODO(@darzu): make not a class
 
-/*
-
-*/
-
-export class EMScene {
+export class EMWorld {
   // entities: Map<number, Entity> = new Map();
 }
 
-export const globalScene = new EMScene();
+export const globalScene = new EMWorld();

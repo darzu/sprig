@@ -89,3 +89,7 @@ scene:
   resources
     resPromises
   inits
+
+EM.set(myEnt, PositionDef) // world1.myEnt, global.PositionDef
+
+maybe just: entities + systems
