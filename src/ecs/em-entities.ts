@@ -6,7 +6,7 @@ import {
 import { _ComponentDef } from "../net/components.js";
 import { getCallStack } from "../utils/util-no-import.js";
 import { assert, hashCode, Intersect } from "../utils/util.js";
-import { ComponentDef } from "./em-components.js";
+import { ComponentDef, componentNameToId } from "./em-components.js";
 import { NonupdatableComponentDef } from "./em-components.js";
 import { isDeadC } from "./em-components.js";
 import { isDeletedE } from "./em-components.js";
@@ -66,11 +66,6 @@ type EntityPromise<
   callback: (e: EntityW<[...CS], ID>) => void;
   // name: string;
 };
-
-export function nameToId(name: string): number {
-  return hashCode(name);
-}
-
 export interface EMEntities {
   entities: Map<number, Entity>;
 
@@ -279,7 +274,7 @@ function createEMEntities(): EMEntities {
     console.log(
       "addComponentByName called, should only be called for debugging"
     );
-    let component = _components.componentDefs.get(nameToId(name));
+    let component = _components.componentDefs.get(componentNameToId(name));
     if (!component) {
       throw `no component named ${name}`;
     }

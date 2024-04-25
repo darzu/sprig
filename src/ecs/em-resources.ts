@@ -5,8 +5,7 @@ import {
 import { assert, getCallStack } from "../utils/util-no-import.js";
 import { Intersect } from "../utils/util.js";
 import { _init } from "./em-init.js";
-import { nameToId } from "./em-entities.js";
-import { componentsToString } from "./em-components.js";
+import { componentNameToId, componentsToString } from "./em-components.js";
 
 type ResourcesPromise<RS extends ResourceDef[]> = {
   id: number;
@@ -79,7 +78,7 @@ function createEMResources(): EMResources {
     name: N,
     construct: (...args: Pargs) => P
   ): ResourceDef<N, P, Pargs> {
-    const id = nameToId(name);
+    const id = componentNameToId(name);
     if (resourceDefs.has(id)) {
       throw `Resource with name ${name} already defined--hash collision?`;
     }

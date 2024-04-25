@@ -1,8 +1,14 @@
-import { nameToId, Entity, _entities } from "./em-entities.js";
+import { Entity, _entities } from "./em-entities.js";
 import { Serializer, Deserializer } from "../utils/serialize.js";
-import { assert } from "../utils/util.js";
+import { assert, hashCode } from "../utils/util.js";
 import { ResourceDef } from "./em-resources.js";
 import { EntityW } from "./em-entities.js";
+
+// TODO(@darzu): RENAME: all "xxxxDef" -> "xxxxC" ?
+
+export function componentNameToId(name: string): number {
+  return hashCode(name);
+}
 
 export interface ComponentDef<
   N extends string = string,
@@ -147,7 +153,7 @@ export function createEMComponents(): EMComponents {
     update: (p: P, ...args: UArgs) => P = (p, ..._) => p,
     opts: { multiArg: MA } = { multiArg: false as MA } // TODO(@darzu): any way around this cast?
   ): UpdatableComponentDef<N, P, UArgs, MA> {
-    const id = nameToId(name);
+    const id = componentNameToId(name);
     assert(!componentDefs.has(id), `Component '${name}' already defined`);
     assert(!forbiddenComponentNames.has(name), `forbidden name: ${name}`);
     const component: UpdatableComponentDef<N, P, UArgs, MA> = {
@@ -198,7 +204,7 @@ export function createEMComponents(): EMComponents {
     construct: (...args: CArgs) => P,
     opts: { multiArg: MA } = { multiArg: false as MA }
   ): NonupdatableComponentDef<N, P, CArgs, MA> {
-    const id = nameToId(name);
+    const id = componentNameToId(name);
     if (componentDefs.has(id)) {
       throw `Component with name ${name} already defined--hash collision?`;
     }
@@ -317,4 +323,4 @@ export function createEMComponents(): EMComponents {
   return res;
 }
 
-export const _components: EMComponents = createEMComponents(); // TODO(@darzu): RENAME: all "xxxxDef" -> "xxxxC" ?// TODO(@darzu): don't love these...
+export const _components: EMComponents = createEMComponents();
