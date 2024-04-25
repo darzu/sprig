@@ -544,12 +544,12 @@ function createEMInit(): EMInit {
       let hasCompSet = true;
       if (e.requireCompSet)
         for (let c of e.requireCompSet)
-          hasCompSet &&= EM.seenComponents.has(c.id);
+          hasCompSet &&= _em.seenComponents.has(c.id);
       hasAll &&= hasCompSet;
 
       // has resources?
       for (let r of e.requireRs) {
-        if (!EM.seenResources.has(r.id)) {
+        if (!_em.seenResources.has(r.id)) {
           if (hasCompSet) {
             // NOTE: we don't force resources into existance until the components are met
             //    this is (probably) the behavior we want when there's a system that is
@@ -667,7 +667,7 @@ function createEMInit(): EMInit {
     // TODO(@darzu): is this reasonable to do before ea init?
     resetTempMatrixBuffer(initFnToString(init));
 
-    const promise = init.fn(EM.resources);
+    const promise = init.fn(_em.resources);
     startedInits.set(init.id, promise);
 
     if (DBG_VERBOSE_INIT_SEQ)
@@ -679,7 +679,7 @@ function createEMInit(): EMInit {
     // TODO(@darzu): verify that init fn doesn't add any resources not mentioned in provides
     for (let res of init.provideRs)
       assert(
-        res.name in EM.resources,
+        res.name in _em.resources,
         `Init fn failed to provide: ${res.name}`
       );
 
@@ -1555,7 +1555,7 @@ function createEntityManager(): _EntityManager {
       // NOTE: we delay activating the system b/c each active system incurs
       //  a cost to maintain its query accelerators on each entity and component
       //  added/removed
-      EM.addEagerInit(
+      _init.addEagerInit(
         sys.cs ?? [],
         sys.rs,
         [],
@@ -1674,7 +1674,7 @@ function createEntityManager(): _EntityManager {
     if (!rs) {
       // we don't yet have the resources, check if we can init any
       s.rs.forEach((r) => {
-        const forced = EM.requestResourceInit(r);
+        const forced = _init.requestResourceInit(r);
         if (DBG_INIT_CAUSATION && forced) {
           console.log(
             `${performance.now().toFixed(0)}ms: '${r.name}' force by system ${
@@ -1739,7 +1739,7 @@ function createEntityManager(): _EntityManager {
   function dbgEntityPromises(): string {
     let res = "";
     for (let [id, prom] of entityPromises.entries()) {
-      const ent = EM.entities.get(id) || { id };
+      const ent = entities.get(id) || { id };
       const unmet = prom
         .flatMap((p) => p.cs.map((c) => c.name))
         .filter((n) => !(n in ent));
@@ -1785,7 +1785,7 @@ function createEntityManager(): _EntityManager {
       }
       // if it's not ready to run, try to push the required resources along
       p.rs.forEach((r) => {
-        const forced = EM.requestResourceInit(r);
+        const forced = _init.requestResourceInit(r);
         madeProgress ||= forced;
         if (DBG_INIT_CAUSATION && forced) {
           const line = _dbgEntityPromiseCallsites.get(p.id)!;
@@ -1963,10 +1963,10 @@ function createEntityManager(): _EntityManager {
     ...cs: [...CS]
   ): Promise<EntityW<CS>> {
     return new Promise((resolve) => {
-      const ents = EM.filterEntities_uncached(cs);
+      const ents = filterEntities_uncached(cs);
       if (ents.length === 1) resolve(ents[0]);
-      EM.addEagerInit(cs, [], [], () => {
-        const ents = EM.filterEntities_uncached(cs);
+      _init.addEagerInit(cs, [], [], () => {
+        const ents = filterEntities_uncached(cs);
         if (!ents || ents.length !== 1)
           assert(
             false,
@@ -1984,7 +1984,7 @@ function createEntityManager(): _EntityManager {
     let madeProgress: boolean;
     do {
       madeProgress = false;
-      madeProgress ||= EM.progressInitFns();
+      madeProgress ||= _init.progressInitFns();
       madeProgress ||= checkEntityPromises();
     } while (madeProgress);
 
@@ -2044,16 +2044,10 @@ function createEntityManager(): _EntityManager {
   return _em;
 }
 
-function createEM(): EntityManager {
-  const _em: _EntityManager = createEntityManager();
-  const _init: EMInit = createEMInit();
+const _em: _EntityManager = createEntityManager();
+const _init: EMInit = createEMInit();
 
-  const result: EntityManager = {
-    ..._em,
-    ..._init,
-  };
-
-  return result;
-}
-
-export const EM: EntityManager = createEM();
+export const EM: EntityManager = {
+  ..._em,
+  ..._init,
+};
