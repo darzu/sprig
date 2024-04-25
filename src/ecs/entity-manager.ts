@@ -355,8 +355,142 @@ interface EntityManager {
   setDefaultRange(rangeName: string): void;
   setIdRange(rangeName: string, nextId: number, maxId: number): void;
 
-  // new (rangeName?: string): Entity;
+  mk(rangeName?: string): Entity;
   registerEntity(id: number): Entity;
+
+  addComponent<N extends string, P, PArgs extends any[]>(
+    id: number,
+    def: _ComponentDef<N, P, PArgs>,
+    ...args: PArgs
+  ): P;
+
+  addComponentByName(id: number, name: string, ...args: any): any;
+
+  ensureComponent<N extends string, P, PArgs extends any[]>(
+    id: number,
+    def: _ComponentDef<N, P, PArgs>,
+    ...args: PArgs
+  ): P;
+
+  set<N extends string, P, PArgs extends any[]>(
+    e: Entity,
+    def: UpdatableComponentDef<N, P, PArgs>,
+    ...args: PArgs
+  ): asserts e is EntityW<[UpdatableComponentDef<N, P, PArgs>]>;
+  set<N extends string, P, PArgs extends any[]>(
+    e: Entity,
+    def: NonupdatableComponentDef<N, P, PArgs>,
+    ...args: PArgs
+  ): asserts e is EntityW<[NonupdatableComponentDef<N, P, PArgs>]>;
+
+  setOnce<N extends string, P, PArgs extends any[]>(
+    e: Entity,
+    def: UpdatableComponentDef<N, P, PArgs>,
+    ...args: PArgs
+  ): asserts e is EntityW<[UpdatableComponentDef<N, P, PArgs>]>;
+  setOnce<N extends string, P, PArgs extends any[]>(
+    e: Entity,
+    def: NonupdatableComponentDef<N, P, PArgs>,
+    ...args: PArgs
+  ): asserts e is EntityW<[NonupdatableComponentDef<N, P, PArgs>]>;
+
+  addResource<N extends string, P, Pargs extends any[] = any[]>(
+    def: ResourceDef<N, P, Pargs>,
+    ...args: Pargs
+  ): P;
+
+  ensureResource<N extends string, P, Pargs extends any[] = any[]>(
+    def: ResourceDef<N, P, Pargs>,
+    ...args: Pargs
+  ): P;
+
+  removeResource<C extends ResourceDef>(def: C): void;
+
+  getResource<C extends ResourceDef>(
+    c: C
+  ): (C extends ResourceDef<any, infer P> ? P : never) | undefined;
+
+  hasResource<C extends ResourceDef>(c: C): boolean;
+
+  getResources<RS extends ResourceDef[]>(
+    rs: [...RS]
+  ): Resources<RS> | undefined;
+
+  hasEntity(id: number): boolean;
+
+  removeComponent<C extends ComponentDef>(id: number, def: C): void;
+
+  tryRemoveComponent<C extends ComponentDef>(id: number, def: C): boolean;
+  keepOnlyComponents<CS extends ComponentDef[]>(id: number, cs: [...CS]): void;
+
+  hasComponents<CS extends ComponentDef[], E extends Entity>(
+    e: E,
+    cs: [...CS]
+  ): e is E & EntityW<CS>;
+
+  findEntity<CS extends ComponentDef[], ID extends number>(
+    id: ID,
+    cs: readonly [...CS]
+  ): EntityW<CS, ID> | undefined;
+
+  findEntitySet<ES extends EDefId<number, any>[]>(es: [...ES]): ESetId<ES>;
+
+  filterEntities_uncached<CS extends ComponentDef[]>(
+    cs: [...CS] | null
+  ): Entities<CS>;
+
+  dbgGetSystemsForEntity(id: number): SystemReg[];
+
+  dbgFilterEntitiesByKey(cs: string | string[]): Entities<any>;
+
+  addLazyInit<RS extends ResourceDef[]>(
+    requireRs: [...RS],
+    provideRs: ResourceDef[],
+    callback: InitFn<RS>,
+    name?: string // TODO(@darzu): make required?
+  ): InitFnReg<RS>;
+
+  addEagerInit<RS extends ResourceDef[]>(
+    requireCompSet: ComponentDef[],
+    requireRs: [...RS],
+    provideRs: ResourceDef[],
+    callback: InitFn<RS>,
+    name?: string // TODO(@darzu): make required?
+  ): InitFnReg<RS>;
+
+  addSystem<CS extends ComponentDef[], RS extends ResourceDef[]>(
+    name: string,
+    phase: Phase,
+    cs: [...CS],
+    rs: [...RS],
+    callback: SystemFn<CS, RS>
+  ): PublicSystemReg;
+  addSystem<CS extends null, RS extends ResourceDef[]>(
+    name: string,
+    phase: Phase,
+    cs: null,
+    rs: [...RS],
+    callback: SystemFn<CS, RS>
+  ): PublicSystemReg;
+
+  whenResources<RS extends ResourceDef[]>(...rs: RS): Promise<Resources<RS>>;
+
+  hasSystem(name: string): boolean;
+
+  whenEntityHas<
+    // eCS extends ComponentDef[],
+    CS extends ComponentDef[],
+    ID extends number
+  >(
+    e: EntityW<ComponentDef[], ID>,
+    ...cs: CS
+  ): Promise<EntityW<CS, ID>>;
+
+  whenSingleEntity<CS extends ComponentDef[]>(
+    ...cs: [...CS]
+  ): Promise<EntityW<CS>>;
+
+  update(): void;
 }
 
 // TODO(@darzu): split this apart! Shouldn't be a class and should be in as many pieces as is logical
