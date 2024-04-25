@@ -380,6 +380,7 @@ interface EMSystems {
   allSystemsByName: Map<string, SystemReg>;
   sysStats: Record<string, SystemStats>;
 
+  // TODO(@darzu): modularize query cache so we can have multiple?
   _notifyNewEntity(e: Entity): void;
   _notifyAddComponent(e: Entity, def: ComponentDef): void;
   _notifyRemoveComponent(e: Entity, def: ComponentDef): void;
