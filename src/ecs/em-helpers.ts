@@ -273,6 +273,7 @@ export const FinishedDef = EM.defineComponent(
   (p) => p
 );
 
+// TODO(@darzu): MOVE to em-resources
 export function defineResourceWithInit<
   N extends string,
   P extends object,
