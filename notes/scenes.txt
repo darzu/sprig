@@ -82,3 +82,10 @@ vs.
 let e = EM.new(scene1)
 EM.addSystem(scene1, ...)
 
+scene:
+  entities
+    entPromises
+  components
+  resources
+    resPromises
+  inits
