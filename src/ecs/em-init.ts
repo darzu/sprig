@@ -7,7 +7,7 @@ import { resetTempMatrixBuffer } from "../matrix/sprig-matrix.js";
 import { getCallStack, assert } from "../utils/util-no-import.js";
 import { isPromise } from "../utils/util.js";
 import { ResourceDef, Resources, ResId, _resources } from "./em-resources.js";
-import { _em } from "./entity-manager.js";
+import { _entities } from "./entity-manager.js";
 import { componentsToString } from "./em-components.js";
 import { ComponentDef } from "./em-components.js";
 export type InitFnId = number;
@@ -97,7 +97,7 @@ function createEMInit(): EMInit {
       let hasCompSet = true;
       if (e.requireCompSet)
         for (let c of e.requireCompSet)
-          hasCompSet &&= _em.seenComponents.has(c.id);
+          hasCompSet &&= _entities.seenComponents.has(c.id);
       hasAll &&= hasCompSet;
 
       // has resources?

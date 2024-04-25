@@ -1,6 +1,9 @@
 import { DBG_ASSERT, VERBOSE_LOG } from "../flags.js";
 import { randInt } from "./math.js";
 
+// TODO(@darzu): MOVE: utils/ <- pure, no import. create a utils/ folder where every file can only depend on other utils/ files
+// TODO(@darzu): MOVE: helpers/ <- everything else. create a helpers/ folder where utilities that depend on game resource etc can go
+
 // TODO(@darzu): MOVE: re-order utils so everything is either no-import or 1-level from that or no-top-level-exec
 
 // TODO(@darzu): When we need a util, check here first:

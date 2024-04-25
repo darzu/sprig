@@ -72,7 +72,7 @@ export function nameToId(name: string): number {
   return hashCode(name);
 }
 
-interface _EntityManager {
+interface EMEntities {
   entities: Map<number, Entity>;
 
   emStats: { queryTime: number; dbgLoops: number };
@@ -90,9 +90,7 @@ interface _EntityManager {
     def: _ComponentDef<N, P, PArgs>,
     ...args: PArgs
   ): P;
-
   addComponentByName(id: number, name: string, ...args: any): any;
-
   addComponentInternal<N extends string, P, PArgs extends any[]>(
     id: number,
     def: _ComponentDef<N, P, PArgs>,
@@ -128,10 +126,7 @@ interface _EntityManager {
     ...args: PArgs
   ): asserts e is EntityW<[NonupdatableComponentDef<N, P, PArgs>]>;
 
-  hasEntity(id: number): boolean;
-
   removeComponent<C extends ComponentDef>(id: number, def: C): void;
-
   tryRemoveComponent<C extends ComponentDef>(id: number, def: C): boolean;
   keepOnlyComponents<CS extends ComponentDef[]>(id: number, cs: [...CS]): void;
 
@@ -139,6 +134,8 @@ interface _EntityManager {
     e: E,
     cs: [...CS]
   ): e is E & EntityW<CS>;
+
+  hasEntity(id: number): boolean;
 
   findEntity<CS extends ComponentDef[], ID extends number>(
     id: ID,
@@ -159,7 +156,6 @@ interface _EntityManager {
     e: EntityW<ComponentDef[], ID>,
     ...cs: CS
   ): Promise<EntityW<CS, ID>>;
-
   whenSingleEntity<CS extends ComponentDef[]>(
     ...cs: [...CS]
   ): Promise<EntityW<CS>>;
@@ -167,15 +163,15 @@ interface _EntityManager {
   update(): void;
 }
 
-interface EntityManager
-  extends _EntityManager,
+interface ECS
+  extends EMEntities,
     EMInit,
     EMResources,
     EMSystems,
     EMComponents {}
 
 // TODO(@darzu): split this apart! Shouldn't be a class and should be in as many pieces as is logical
-function createEntityManager(): _EntityManager {
+function createEMEntities(): EMEntities {
   const entities: Map<number, Entity> = new Map();
 
   const entityPromises: Map<number, EntityPromise<ComponentDef[], any>[]> =
@@ -669,7 +665,7 @@ function createEntityManager(): _EntityManager {
     emStats.dbgLoops++;
   }
 
-  const _em: _EntityManager = {
+  const _em: EMEntities = {
     // entities
     entities,
     seenComponents,
@@ -705,12 +701,12 @@ function createEntityManager(): _EntityManager {
   return _em;
 }
 
-export const _em: _EntityManager = createEntityManager();
+export const _entities: EMEntities = createEMEntities();
 
-export const EM: EntityManager = {
+export const EM: ECS = {
   ..._systems,
   ..._resources,
-  ..._em,
+  ..._entities,
   ..._init,
   ..._components,
 };

@@ -2,7 +2,7 @@ import { ResourceDef, Resources, _resources } from "./em-resources.js";
 import { Phase, PhaseValueList } from "./sys-phase.js";
 import {
   Entity,
-  _em,
+  _entities,
   Entities,
   EntityW,
   ReadonlyEntities,
@@ -204,7 +204,7 @@ export function createEMSystems(): EMSystems {
     phases.get(phase)!.push(name);
 
     const seenAllCmps = (sys.cs ?? []).every((c) =>
-      _em.seenComponents.has(c.id)
+      _entities.seenComponents.has(c.id)
     );
     const seenAllRes = sys.rs.every((c) => _resources.seenResources.has(c.id));
     if (seenAllCmps && seenAllRes) {
@@ -242,7 +242,7 @@ export function createEMSystems(): EMSystems {
     //  pre-compute entities for this system for quicker queries; these caches will be maintained
     //  by add/remove/ensure component calls
     // TODO(@darzu): ability to toggle this optimization on/off for better debugging
-    const es = _em.filterEntities_uncached(cs);
+    const es = _entities.filterEntities_uncached(cs);
     _systemsToEntities.set(id, [...es]);
     if (cs) {
       for (let c of cs) {
@@ -291,7 +291,7 @@ export function createEMSystems(): EMSystems {
     const rs = _resources.getResources(s.rs); // TODO(@darzu): remove allocs here
     let afterQuery = performance.now();
     sysStats[s.name].queries++;
-    _em.emStats.queryTime += afterQuery - start;
+    _entities.emStats.queryTime += afterQuery - start;
     if (!rs) {
       // we don't yet have the resources, check if we can init any
       s.rs.forEach((r) => {
@@ -356,7 +356,7 @@ export function createEMSystems(): EMSystems {
       }
     }
 
-    const es = _em.filterEntities_uncached(sys.cs);
+    const es = _entities.filterEntities_uncached(sys.cs);
     console.warn(
       `System '${name}' matches ${es.length} entities and has all resources: ${haveAllResources}.`
     );
@@ -391,7 +391,7 @@ export function createEMSystems(): EMSystems {
         eSystems.push(sysId);
       }
     }
-    _em.emStats.queryTime += performance.now() - _beforeQueryCache;
+    _entities.emStats.queryTime += performance.now() - _beforeQueryCache;
   }
 
   function _notifyRemoveComponent(e: Entity, def: ComponentDef): void {

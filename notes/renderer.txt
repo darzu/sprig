@@ -2329,3 +2329,6 @@ Understanding BC texture compression format:
 
 Render filled bezier curve w/ single triangle:
   https://youtu.be/SO83KQuuZvg?t=1614
+
+Nanite materials:
+  https://www.unrealengine.com/en-US/blog/take-a-deep-dive-into-nanite-gpu-driven-materials

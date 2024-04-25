@@ -1,4 +1,4 @@
-import { nameToId, Entity, _em } from "./entity-manager.js";
+import { nameToId, Entity, _entities } from "./entity-manager.js";
 import { Serializer, Deserializer } from "../utils/serialize.js";
 import { assert } from "../utils/util.js";
 import { ResourceDef } from "./em-resources.js";
@@ -251,7 +251,7 @@ export function createEMComponents(): EMComponents {
   function serialize(id: number, componentId: number, buf: Serializer) {
     const def = componentDefs.get(componentId);
     if (!def) throw `Trying to serialize unknown component id ${componentId}`;
-    const entity = _em.findEntity(id, [def]);
+    const entity = _entities.findEntity(id, [def]);
     if (!entity)
       throw `Trying to serialize component ${def.name} on entity ${id}, which doesn't have it`;
     const serializerPair = serializers.get(componentId);
@@ -268,10 +268,10 @@ export function createEMComponents(): EMComponents {
   function deserialize(id: number, componentId: number, buf: Deserializer) {
     const def = componentDefs.get(componentId);
     if (!def) throw `Trying to deserialize unknown component id ${componentId}`;
-    if (!_em.hasEntity(id)) {
+    if (!_entities.hasEntity(id)) {
       throw `Trying to deserialize component ${def.name} of unknown entity ${id}`;
     }
-    let entity = _em.findEntity(id, [def]);
+    let entity = _entities.findEntity(id, [def]);
 
     const serializerPair = serializers.get(componentId);
     if (!serializerPair)
@@ -290,7 +290,7 @@ export function createEMComponents(): EMComponents {
         def.updatable,
         `Trying to deserialize into non-updatable component '${def.name}'!`
       );
-      _em.addComponentInternal(id, def, deserialize, ...[]);
+      _entities.addComponentInternal(id, def, deserialize, ...[]);
     } else {
       deserialize(entity[def.name]);
     }
