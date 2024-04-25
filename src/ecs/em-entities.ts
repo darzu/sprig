@@ -6,7 +6,7 @@ import {
 import { _ComponentDef } from "../net/components.js";
 import { getCallStack } from "../utils/util-no-import.js";
 import { assert, hashCode, Intersect } from "../utils/util.js";
-import { _stats } from "./ecs.js";
+import { _meta } from "./ecs.js";
 import { ComponentDef, componentNameToId } from "./em-components.js";
 import { NonupdatableComponentDef } from "./em-components.js";
 import { isDeadC } from "./em-components.js";
@@ -510,7 +510,7 @@ export function createEMEntities(): EMEntities {
         const afterOneShotQuery = performance.now();
         const stats = _systems.sysStats["__oneShots"];
         stats.queries += 1;
-        _stats.emStats.queryTime += afterOneShotQuery - beforeOneShots;
+        _meta.emStats.queryTime += afterOneShotQuery - beforeOneShots;
 
         promises.splice(idx, 1);
         // TODO(@darzu): how to handle async callbacks and their timing?

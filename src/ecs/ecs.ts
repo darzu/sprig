@@ -9,14 +9,14 @@ import { createEMInit } from "./em-init.js";
 import { createEMResources } from "./em-resources.js";
 import { createEMSystems } from "./em-systems.js";
 
-// EM -> backronym for "Emporium" (originally Entity Manager)
+// EM -> backronym for "Emporium" (originally EntityManager)
 
-export interface EMStats {
+export interface EMMeta {
   emStats: { queryTime: number; dbgLoops: number };
   update(): void;
 }
 
-function createEMStats(): EMStats {
+function createEMMeta(): EMMeta {
   const emStats = {
     queryTime: 0,
     dbgLoops: 0,
@@ -33,10 +33,10 @@ function createEMStats(): EMStats {
     } while (madeProgress);
 
     _systems.callSystems();
-    _stats.emStats.dbgLoops++;
+    _meta.emStats.dbgLoops++;
   }
 
-  const res: EMStats = {
+  const res: EMMeta = {
     emStats,
     update,
   };
@@ -46,27 +46,27 @@ function createEMStats(): EMStats {
 
 export interface ECS
   extends EMEntities,
-    EMStats,
+    EMMeta,
     EMInit,
     EMResources,
     EMSystems,
     EMComponents {}
 
-export const _stats = createEMStats();
+export const _meta = createEMMeta();
 export const _entities = createEMEntities();
 export const _components = createEMComponents();
-export const _init = createEMInit();
-export const _resources = createEMResources();
 export const _systems = createEMSystems();
+export const _resources = createEMResources();
+export const _init = createEMInit();
 
 function createEmporiumECS(): ECS {
   return {
-    ..._stats,
+    ..._meta,
+    ..._entities,
+    ..._components,
     ..._systems,
     ..._resources,
-    ..._entities,
     ..._init,
-    ..._components,
   };
 }
 
