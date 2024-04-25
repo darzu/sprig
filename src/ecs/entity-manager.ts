@@ -3,12 +3,18 @@ import {
   DBG_VERBOSE_ENTITY_PROMISE_CALLSITES,
   DBG_INIT_CAUSATION,
 } from "../flags.js";
+import { _ComponentDef } from "../net/components.js";
 import { getCallStack } from "../utils/util-no-import.js";
 import { assert, hashCode, Intersect } from "../utils/util.js";
+import { ComponentDef } from "./em-components.js";
+import { NonupdatableComponentDef } from "./em-components.js";
+import { componentsToString } from "./em-components.js";
+import { UpdatableComponentDef } from "./em-components.js";
+import { CompId } from "./em-components.js";
 import { _components } from "./em-components.js";
 import { EMComponents } from "./em-components.js";
 import { EMInit, _init } from "./em-init.js";
-import { ResourceDef, EMResources, _resources } from "./em-resources.js";
+import { EMResources, _resources } from "./em-resources.js";
 import { _systems, EMSystems } from "./em-systems.js";
 
 // TODO(@darzu): re-check all uses of "any" and prefer "unknown"
@@ -28,53 +34,6 @@ import { _systems, EMSystems } from "./em-systems.js";
 export interface Entity {
   readonly id: number;
 }
-
-export type CompId = number;
-
-// TODO(@darzu): RENAME: all "xxxxDef" -> "xxxxC" ?
-export interface ComponentDef<
-  N extends string = string,
-  P = any,
-  CArgs extends any[] = any,
-  UArgs extends any[] = any,
-  MA extends boolean = boolean
-> {
-  _brand: "componentDef";
-  updatable: boolean;
-  multiArg: MA;
-  readonly name: N;
-  construct: (...args: CArgs) => P;
-  update: (p: P, ...args: UArgs) => P;
-  readonly id: CompId;
-  isOn: <E extends Entity>(e: E) => e is E & { [K in N]: P };
-}
-export type Component<DEF> = DEF extends ComponentDef<any, infer P> ? P : never;
-
-// TODO(@darzu): Not entirely sure this "Nonupdatable" split is worth the extra complexity
-export type NonupdatableComponentDef<
-  N extends string,
-  P,
-  CArgs extends any[],
-  MA extends boolean = boolean
-> = ComponentDef<N, P, CArgs, [], MA>;
-export type UpdatableComponentDef<
-  N extends string,
-  P,
-  UArgs extends any[],
-  MA extends boolean = boolean
-> = ComponentDef<N, P, [], UArgs, MA>;
-
-export type _ComponentDef<
-  N extends string,
-  P,
-  PArgs extends any[],
-  MA extends boolean = boolean
-> =
-  | NonupdatableComponentDef<N, P, PArgs, MA>
-  | UpdatableComponentDef<N, P, PArgs, MA>;
-
-export const componentsToString = (cs: (ComponentDef | ResourceDef)[]) =>
-  `(${cs.map((c) => c.name).join(", ")})`;
 
 export type WithComponent<D> = D extends ComponentDef<infer N, infer P>
   ? { readonly [k in N]: P }

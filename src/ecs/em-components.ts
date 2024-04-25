@@ -1,14 +1,49 @@
-import {
-  CompId,
-  ComponentDef,
-  UpdatableComponentDef,
-  NonupdatableComponentDef,
-  nameToId,
-  Entity,
-  _em,
-} from "./entity-manager.js";
+import { nameToId, Entity, _em } from "./entity-manager.js";
 import { Serializer, Deserializer } from "../utils/serialize.js";
 import { assert } from "../utils/util.js";
+import { ResourceDef } from "./em-resources.js";
+
+export interface ComponentDef<
+  N extends string = string,
+  P = any,
+  CArgs extends any[] = any,
+  UArgs extends any[] = any,
+  MA extends boolean = boolean
+> {
+  _brand: "componentDef";
+  updatable: boolean;
+  multiArg: MA;
+  readonly name: N;
+  construct: (...args: CArgs) => P;
+  update: (p: P, ...args: UArgs) => P;
+  readonly id: CompId;
+  isOn: <E extends Entity>(
+    e: E
+  ) => e is E & {
+    [K in N]: P;
+  };
+}
+
+export type NonupdatableComponentDef<
+  N extends string,
+  P,
+  CArgs extends any[],
+  MA extends boolean = boolean
+> = ComponentDef<N, P, CArgs, [], MA>;
+
+export type UpdatableComponentDef<
+  N extends string,
+  P,
+  UArgs extends any[],
+  MA extends boolean = boolean
+> = ComponentDef<N, P, [], UArgs, MA>;
+
+export type CompId = number;
+
+export type Component<DEF> = DEF extends ComponentDef<any, infer P> ? P : never; // TODO(@darzu): Not entirely sure this "Nonupdatable" split is worth the extra complexity
+
+export const componentsToString = (cs: (ComponentDef | ResourceDef)[]) =>
+  `(${cs.map((c) => c.name).join(", ")})`;
 
 export interface EMComponents {
   // TODO(@darzu):
@@ -266,4 +301,4 @@ export function createEMComponents(): EMComponents {
 
   return res;
 }
-export const _components: EMComponents = createEMComponents();
+export const _components: EMComponents = createEMComponents(); // TODO(@darzu): RENAME: all "xxxxDef" -> "xxxxC" ?

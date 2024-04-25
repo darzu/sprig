@@ -3,13 +3,9 @@ import {
   getCameraSettings,
   getCameraSettingsCodeStr,
 } from "../camera/camera.js";
-import {
-  CompId,
-  ComponentDef,
-  EM,
-  Entity,
-  EntityW,
-} from "../ecs/entity-manager.js";
+import { EM, Entity, EntityW } from "../ecs/entity-manager.js";
+import { CompId } from "../ecs/em-components.js";
+import { ComponentDef } from "../ecs/em-components.js";
 import { ResourceDef } from "../ecs/em-resources.js";
 import {
   MetaPhases,

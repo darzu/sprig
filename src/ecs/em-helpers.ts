@@ -1,4 +1,5 @@
-import { ComponentDef, EntityW, Entity, EM } from "./entity-manager.js";
+import { EntityW, Entity, EM } from "./entity-manager.js";
+import { ComponentDef } from "./em-components.js";
 import { Resources } from "./em-resources.js";
 import { ResourceDef } from "./em-resources.js";
 import { Authority, AuthorityDef, MeDef, SyncDef } from "../net/components.js";

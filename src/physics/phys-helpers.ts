@@ -1,4 +1,5 @@
-import { ComponentDef, EntityW, EM } from "../ecs/entity-manager.js";
+import { EntityW, EM } from "../ecs/entity-manager.js";
+import { ComponentDef } from "../ecs/em-components.js";
 import { Resources } from "../ecs/em-resources.js";
 import { ResourceDef } from "../ecs/em-resources.js";
 import { Phase } from "../ecs/sys-phase.js";

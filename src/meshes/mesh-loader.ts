@@ -1,4 +1,5 @@
-import { ComponentDef, EM } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/entity-manager.js";
+import { ComponentDef } from "../ecs/em-components.js";
 import { ResourceDef } from "../ecs/em-resources.js";
 import { V3, mat4, V, findAnyTmpVec } from "../matrix/sprig-matrix.js";
 import { importObj, isParseError } from "./import-obj.js";

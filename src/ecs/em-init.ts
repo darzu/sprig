@@ -7,7 +7,9 @@ import { resetTempMatrixBuffer } from "../matrix/sprig-matrix.js";
 import { getCallStack, assert } from "../utils/util-no-import.js";
 import { isPromise } from "../utils/util.js";
 import { ResourceDef, Resources, ResId, _resources } from "./em-resources.js";
-import { ComponentDef, componentsToString, _em } from "./entity-manager.js";
+import { _em } from "./entity-manager.js";
+import { componentsToString } from "./em-components.js";
+import { ComponentDef } from "./em-components.js";
 export type InitFnId = number;
 
 export type InitFn<

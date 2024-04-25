@@ -2,13 +2,13 @@ import { ResourceDef, Resources, _resources } from "./em-resources.js";
 import { Phase, PhaseValueList } from "./sys-phase.js";
 import {
   Entity,
-  ComponentDef,
   _em,
   Entities,
   EntityW,
   isDeadC,
   ReadonlyEntities,
 } from "./entity-manager.js";
+import { ComponentDef } from "./em-components.js";
 import { DBG_SYSTEM_ORDER, DBG_INIT_CAUSATION } from "../flags.js";
 import { resetTempMatrixBuffer } from "../matrix/sprig-matrix.js";
 import { toMap, assert, assertDbg } from "../utils/util.js";
