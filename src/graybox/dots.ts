@@ -2,7 +2,8 @@
 //  change size, color, location over time
 
 import { defineResourceWithInit } from "../ecs/em-helpers.js";
-import { EM, Resources } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/entity-manager.js";
+import { Resources } from "../ecs/em-resources.js";
 import { V, V3 } from "../matrix/sprig-matrix.js";
 import { CyArray } from "../render/data-webgpu.js";
 import {

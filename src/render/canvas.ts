@@ -1,4 +1,5 @@
-import { Component, EM, Resource } from "../ecs/entity-manager.js";
+import { Component, EM } from "../ecs/entity-manager.js";
+import { Resource } from "../ecs/em-resources.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { VERBOSE_LOG } from "../flags.js";
 import { T, assert } from "../utils/util-no-import.js";

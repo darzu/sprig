@@ -1,5 +1,6 @@
 import { HasFirstInteractionDef } from "../render/canvas.js";
-import { Component, EM, Resource } from "../ecs/entity-manager.js";
+import { Component, EM } from "../ecs/entity-manager.js";
+import { Resource } from "../ecs/em-resources.js";
 import { ENABLE_AUDIO } from "../flags.js";
 import { createIdxPool, createIdxRing, IdxPool } from "../utils/idx-pool.js";
 import { assert, range } from "../utils/util.js";

@@ -1,11 +1,6 @@
-import {
-  ComponentDef,
-  EntityW,
-  Entity,
-  EM,
-  ResourceDef,
-  Resources,
-} from "./entity-manager.js";
+import { ComponentDef, EntityW, Entity, EM } from "./entity-manager.js";
+import { Resources } from "./em-resources.js";
+import { ResourceDef } from "./em-resources.js";
 import { Authority, AuthorityDef, MeDef, SyncDef } from "../net/components.js";
 import { Serializer, Deserializer } from "../utils/serialize.js";
 import { assert } from "../utils/util.js";

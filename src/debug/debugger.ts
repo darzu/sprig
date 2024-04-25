@@ -6,11 +6,11 @@ import {
 import {
   CompId,
   ComponentDef,
-  ResourceDef,
   EM,
   Entity,
   EntityW,
 } from "../ecs/entity-manager.js";
+import { ResourceDef } from "../ecs/em-resources.js";
 import {
   MetaPhases,
   NameFromPhase,

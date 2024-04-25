@@ -1,6 +1,7 @@
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
-import { EM, Resources } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/entity-manager.js";
+import { Resources } from "../ecs/em-resources.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { defineObj } from "../graybox/objects.js";
 import { T } from "../utils/util-no-import.js";

@@ -1,5 +1,6 @@
 import { ColorDef } from "../color/color-ecs.js";
-import { EM, Resources } from "../ecs/entity-manager.js";
+import { EM } from "../ecs/entity-manager.js";
+import { Resources } from "../ecs/em-resources.js";
 import {
   CannonLD51Mesh,
   MastMesh,

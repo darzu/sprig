@@ -1,4 +1,5 @@
-import { Component, EM, Resource } from "../ecs/entity-manager.js";
+import { Component, EM } from "../ecs/entity-manager.js";
+import { Resource } from "../ecs/em-resources.js";
 
 export const TimeDef = EM.defineResource("time", () => ({
   time: 0,
