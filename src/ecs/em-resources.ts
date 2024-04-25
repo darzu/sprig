@@ -59,7 +59,8 @@ export interface EMResources {
     rs: [...RS]
   ): Resources<RS> | undefined;
   whenResources<RS extends ResourceDef[]>(...rs: RS): Promise<Resources<RS>>;
-  checkResourcePromises(): boolean;
+
+  progressResourcePromises(): boolean;
 }
 
 function createEMResources(): EMResources {
@@ -196,7 +197,7 @@ function createEMResources(): EMResources {
     return res;
   }
 
-  function checkResourcePromises(): boolean {
+  function progressResourcePromises(): boolean {
     let madeProgress = false;
 
     // TODO(@darzu): extract into resourcePromises munging into EMResources
@@ -249,7 +250,7 @@ function createEMResources(): EMResources {
     hasResource,
     getResources,
     whenResources,
-    checkResourcePromises,
+    progressResourcePromises,
   };
 
   return result;

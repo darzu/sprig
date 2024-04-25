@@ -257,6 +257,7 @@ interface SystemStats {
   queries: number;
   calls: number;
 }
+
 interface _EntityManager {
   entities: Map<number, Entity>;
 
@@ -1442,7 +1443,7 @@ function createEntityManager(): _EntityManager {
     do {
       madeProgress = false;
       madeProgress ||= _init.progressInitFns();
-      madeProgress ||= _resources.checkResourcePromises();
+      madeProgress ||= _resources.progressResourcePromises();
       madeProgress ||= checkEntityPromises();
     } while (madeProgress);
 
