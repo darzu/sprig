@@ -360,12 +360,15 @@ export function enumAsList<T extends {}>(e: T): T[keyof T][] {
   return values as T[keyof T][];
 }
 
+// TODO(@darzu): MOVE to util-no-import
 export function isPromise(p: unknown): p is Promise<unknown> {
   return p instanceof Promise;
 }
 
+// TODO(@darzu): MOVE to util-no-import
 export type NonNull = string | number | boolean | symbol | object;
 
+// TODO(@darzu): MOVE to util-no-import
 export type TAssert<A extends true> = A;
 
 // export type TEquals<X, Y> =

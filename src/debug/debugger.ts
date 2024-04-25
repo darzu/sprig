@@ -10,7 +10,6 @@ import {
   EM,
   Entity,
   EntityW,
-  initFnToString,
 } from "../ecs/entity-manager.js";
 import {
   MetaPhases,

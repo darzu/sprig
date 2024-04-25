@@ -5,13 +5,13 @@ import {
   EM,
   ResourceDef,
   Resources,
-  InitFn,
 } from "./entity-manager.js";
 import { Authority, AuthorityDef, MeDef, SyncDef } from "../net/components.js";
 import { Serializer, Deserializer } from "../utils/serialize.js";
 import { assert } from "../utils/util.js";
 import { capitalize } from "../utils/util.js";
 import { Phase } from "./sys-phase.js";
+import { InitFn } from "./em-init.js";
 
 export function defineSerializableComponent<
   N extends string,
