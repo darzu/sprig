@@ -26,7 +26,7 @@ per world:
   tryCallSystem,
 
   entityPromises,
-  
+
 */
 
 export interface SystemReg {
@@ -116,6 +116,9 @@ export function createEMSystems(): EMSystems {
   let _currentRunningSystem: SystemReg | undefined = undefined;
   let _dbgLastSystemLen = 0;
   let _dbgLastActiveSystemLen = 0;
+
+  let _nextSystemId = 1;
+
   function callSystems(): void {
     if (DBG_SYSTEM_ORDER) {
       let newTotalSystemLen = 0;
@@ -171,7 +174,6 @@ export function createEMSystems(): EMSystems {
   //  some global resources around
   // TODO(@darzu): add support for "run every X frames or ms" ?
   // TODO(@darzu): add change detection
-  let _nextSystemId = 1;
   function addSystem<CS extends ComponentDef[], RS extends ResourceDef[]>(
     name: string,
     phase: Phase,
