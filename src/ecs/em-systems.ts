@@ -11,6 +11,13 @@ import { toMap, assert, assertDbg } from "../utils/util.js";
 import { _init } from "./ecs.js";
 import { _meta } from "./ecs.js";
 
+/*
+// TODO(@darzu): MULTI-SCENE:
+have QueryCache per EntityWorld
+_notify functions take in a world specifier
+entity ids are unique across worlds
+*/
+
 export interface SystemReg {
   cs: ComponentDef[] | null;
   rs: ResourceDef[];

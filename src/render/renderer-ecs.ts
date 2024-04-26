@@ -331,8 +331,6 @@ EM.addEagerInit([RenderableConstructDef], [RendererDef], [], () => {
       const renderer = res.renderer.renderer;
       const cameraComputed = res.cameraComputed;
 
-      const objs = renderObjs;
-
       // TODO(@darzu): this is currently unused, and maybe should be dropped.
       // sort
       // objs.sort((a, b) => b.renderable.sortLayer - a.renderable.sortLayer);
@@ -438,11 +436,11 @@ EM.addEagerInit([RenderableConstructDef], [RendererDef], [], () => {
       // TODO(@darzu): dbg
       // console.log(`pipelines: ${res.renderer.pipelines.map((p) => p.name)}`);
       renderer.submitPipelines(
-        objs.map((o) => o.renderable.meshHandle),
+        renderObjs.map((o) => o.renderable.meshHandle),
         res.renderer.pipelines
       );
 
-      if (objs.length && res.renderer.pipelines.length) {
+      if (renderObjs.length && res.renderer.pipelines.length) {
         dbgLogMilestone("Rendering first frame");
       }
 
