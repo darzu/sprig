@@ -47,7 +47,7 @@ import { assert } from "../utils/util-no-import.js";
 import { randDir3 } from "../utils/utils-3d.js";
 import { addWorldGizmo } from "../utils/utils-game.js";
 import { createSun, initGhost } from "./graybox-helpers.js";
-import { createObj } from "./objects.js";
+import { createObj } from "../ecs/objects.js";
 
 const DBG_GHOST = true;
 

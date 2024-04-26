@@ -34,7 +34,7 @@ import { TimeDef } from "../time/time.js";
 import { Intersect, assert } from "../utils/util.js";
 import { vec3Dbg, vec4Dbg } from "../utils/utils-3d.js";
 import { addWorldGizmo } from "../utils/utils-game.js";
-import { createObj } from "./objects.js";
+import { createObj } from "../ecs/objects.js";
 
 export function createSun() {
   const sun = createObj(

@@ -66,9 +66,9 @@ const ALL_GAMES = [
 // prettier-ignore
 const GAME: (typeof ALL_GAMES)[number] = (
   // "painterly"
-  // "graybox-ship-arena"
+  "graybox-ship-arena"
   // "ld53"
-  "ld54"
+  // "ld54"
   // "gjk"
   // "graybox-starter"
   // "font"

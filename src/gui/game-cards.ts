@@ -41,7 +41,7 @@ import { createRenderTextureToQuad } from "../render/gpu-helper.js";
 import { defineResourceWithInit } from "../ecs/em-helpers.js";
 import { FONT_JFA_MASK } from "../render/pipeline-masks.js";
 import { FontDef, fontJfa, fontLineSdfExampleTex } from "./font.js";
-import { createObj } from "../graybox/objects.js";
+import { createObj } from "../ecs/objects.js";
 
 const DBG_GIZMOS = true;
 

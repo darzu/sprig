@@ -24,7 +24,7 @@ import { RendererDef, RenderableConstructDef } from "../render/renderer-ecs.js";
 import { sketch } from "../utils/sketch.js";
 import { addWorldGizmo } from "../utils/utils-game.js";
 import { createSun, initGhost } from "./graybox-helpers.js";
-import { createObj } from "./objects.js";
+import { createObj } from "../ecs/objects.js";
 
 const DBG_GHOST = true;
 

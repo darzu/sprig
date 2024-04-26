@@ -34,7 +34,7 @@ import { addGizmoChild } from "../utils/utils-game.js";
 import { CannonLocalDef, createCannonNow } from "../cannons/cannon.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { ShipHealthDef } from "./ship-health.js";
-import { defineObj, mixinObj } from "../graybox/objects.js";
+import { defineObj, mixinObj } from "../ecs/objects.js";
 import { T } from "../utils/util-no-import.js";
 import { FinishedDef } from "../ecs/em-helpers.js";
 import { HasRudderObj, RudderDef, createRudderTurret } from "./rudder.js";

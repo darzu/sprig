@@ -1,8 +1,8 @@
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
-import { Entity, EntityW } from "../ecs/em-entities.js";
-import { EM } from "../ecs/ecs.js";
-import { ComponentDef } from "../ecs/em-components.js";
+import { Entity, EntityW } from "./em-entities.js";
+import { EM } from "./ecs.js";
+import { ComponentDef } from "./em-components.js";
 import { V, quat, V3 } from "../matrix/sprig-matrix.js";
 import { CubeMesh } from "../meshes/mesh-list.js";
 import {

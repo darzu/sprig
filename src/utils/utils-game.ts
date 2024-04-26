@@ -39,7 +39,7 @@ import { DeadDef } from "../ecs/delete.js";
 import { Collider, ColliderDef } from "../physics/collider.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { AABB, getSizeFromAABB, isValidAABB } from "../physics/aabb.js";
-import { createObj, mixinObj } from "../graybox/objects.js";
+import { createObj, mixinObj } from "../ecs/objects.js";
 import { PI } from "./util-no-import.js";
 import { createGizmoMesh } from "../debug/gizmos.js";
 

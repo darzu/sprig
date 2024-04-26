@@ -4,7 +4,7 @@ import { ENDESGA16 } from "../color/palettes.js";
 import { EM } from "../ecs/ecs.js";
 import { Resources } from "../ecs/em-resources.js";
 import { Phase } from "../ecs/sys-phase.js";
-import { defineObj } from "../graybox/objects.js";
+import { defineObj } from "../ecs/objects.js";
 import { V, quat } from "../matrix/sprig-matrix.js";
 import { RudderPrimMesh } from "../meshes/mesh-list.js";
 import { MeDef, AuthorityDef } from "../net/components.js";
