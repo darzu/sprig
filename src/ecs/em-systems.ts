@@ -16,6 +16,17 @@ import { _meta } from "./ecs.js";
 have QueryCache per EntityWorld
 _notify functions take in a world specifier
 entity ids are unique across worlds
+per world:
+  entities,
+  seenComponents,
+  queryCache,
+  activeSystems,
+  phasesCache,
+  activateSystem,
+  tryCallSystem,
+
+  entityPromises,
+  
 */
 
 export interface SystemReg {

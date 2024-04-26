@@ -162,6 +162,12 @@ export function createEMEntities(): EMEntities {
   const ranges: Record<string, { nextId: number; maxId: number }> = {};
   let defaultRange: string = "";
 
+  // TODO(@darzu): use version numbers instead of dirty flag?
+  const _changedEntities = new Set<number>();
+
+  let _nextEntityPromiseId: number = 0;
+  const _dbgEntityPromiseCallsites = new Map<number, string>();
+
   function setDefaultRange(rangeName: string) {
     defaultRange = rangeName;
   }
@@ -446,9 +452,6 @@ export function createEMEntities(): EMEntities {
   //   if (!maybeRequireSystem(name)) throw `No system named ${name}`;
   // }
 
-  // TODO(@darzu): use version numbers instead of dirty flag?
-  const _changedEntities = new Set<number>();
-
   // _dbgFirstXFrames = 10;
   // dbgStrEntityPromises() {
   //   let res = "";
@@ -538,9 +541,6 @@ export function createEMEntities(): EMEntities {
 
     return madeProgress;
   }
-
-  let _nextEntityPromiseId: number = 0;
-  const _dbgEntityPromiseCallsites = new Map<number, string>();
 
   // TODO(@darzu): Rethink naming here
   // NOTE: if you're gonna change the types, change registerSystem first and just copy
