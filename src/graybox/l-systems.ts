@@ -17,7 +17,7 @@ import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { createPseudorandomGen } from "../utils/rand.js";
 import { assert, range } from "../utils/util.js";
 import { centroid, jitterVec3, randNormalVec3 } from "../utils/utils-3d.js";
-import { createObj } from "../ecs/objects.js";
+import { createObj } from "../ecs/em-objects.js";
 
 // TODO(@darzu): ABSTRACTION: l-systems, paths, boards all have a lot in common..
 /*

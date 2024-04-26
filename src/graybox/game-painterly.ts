@@ -57,7 +57,7 @@ import { DotsDef } from "./dots.js";
 import { GlitchDef } from "./glitch.js";
 import { createSun, initGhost } from "./graybox-helpers.js";
 import { testingLSys } from "./l-systems.js";
-import { createObj, defineObj } from "../ecs/objects.js";
+import { createObj, defineObj } from "../ecs/em-objects.js";
 
 // const dbgGrid = [
 //   [xpPointTex, xpPointTex],

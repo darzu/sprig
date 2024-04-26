@@ -5,7 +5,7 @@ import { DevConsoleDef } from "../debug/console.js";
 import { EM } from "../ecs/ecs.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { createSun, initGhost } from "../graybox/graybox-helpers.js";
-import { createObj } from "../ecs/objects.js";
+import { createObj } from "../ecs/em-objects.js";
 import { V, V2, V3, V4 } from "../matrix/sprig-matrix.js";
 import { BallMesh, CubeMesh, HexMesh, PlaneMesh } from "../meshes/mesh-list.js";
 import { Mesh } from "../meshes/mesh.js";

@@ -104,7 +104,7 @@ import {
   createObj,
   defineObj,
   mixinObj,
-} from "../ecs/objects.js";
+} from "../ecs/em-objects.js";
 import { T } from "../utils/util-no-import.js";
 
 /*

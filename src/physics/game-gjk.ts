@@ -43,7 +43,7 @@ import {
   createObj,
   defineObj,
   mixinObj,
-} from "../ecs/objects.js";
+} from "../ecs/em-objects.js";
 import { ALPHA_MASK, GRID_MASK } from "../render/pipeline-masks.js";
 import { stdGridRender } from "../render/pipelines/std-grid.js";
 import { OBB, OBBDef } from "./obb.js";

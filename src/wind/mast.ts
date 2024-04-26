@@ -3,7 +3,7 @@ import { ENDESGA16 } from "../color/palettes.js";
 import { EM } from "../ecs/ecs.js";
 import { Resources } from "../ecs/em-resources.js";
 import { Phase } from "../ecs/sys-phase.js";
-import { defineObj } from "../ecs/objects.js";
+import { defineObj } from "../ecs/em-objects.js";
 import { T } from "../utils/util-no-import.js";
 import { InputsDef } from "../input/inputs.js";
 import { V, mat3, quat, tV, V3 } from "../matrix/sprig-matrix.js";

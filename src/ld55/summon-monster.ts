@@ -3,7 +3,7 @@ import { ENDESGA16 } from "../color/palettes.js";
 import { EntityW } from "../ecs/em-entities.js";
 import { EM } from "../ecs/ecs.js";
 import { Phase } from "../ecs/sys-phase.js";
-import { createObj, defineObj } from "../ecs/objects.js";
+import { createObj, defineObj } from "../ecs/em-objects.js";
 import { T } from "../utils/util-no-import.js";
 import { V, V3 } from "../matrix/sprig-matrix.js";
 import { CubeMesh } from "../meshes/mesh-list.js";
