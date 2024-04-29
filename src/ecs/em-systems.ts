@@ -27,6 +27,18 @@ per world:
 
   entityPromises,
 
+how to deal with two worlds: global and myGame
+  queryCache per ea 
+  entities per ea
+  seenComponents per ea and intersection
+  activeSystems per ea and intersection
+  whenSingleEntity specifies a world
+
+intersection world has a parentWorld
+
+eagerInit waiting for seenComponents:
+  eagerInit is per-world
+
 */
 
 export interface SystemReg {
