@@ -29,6 +29,54 @@ import { _systems } from "./ecs.js";
 
 // TODO(@darzu): use defineProperty, Object.preventExtensions(), and such to have more robust entities?
 
+/*
+world:
+  data:
+    entities,
+    entityPromises
+    _changedEntities
+    _nextEntityPromiseId
+
+  cache over sets of data
+    seenComponents
+    _dbgEntityPromiseCallsites
+
+    activeSystemsById
+    systemNamesByPhase
+    _systemsToEntities
+    _entitiesToSystems
+    _systemsToComponents
+    _componentToSystems
+
+OR
+
+one world at a time,
+  share resources
+ */
+
+// interface EMWorld {
+//   entities: Map<number, Entity>;
+
+//   entityPromises: Map<number, EntityPromise<ComponentDef[], any>[]>;
+
+//   // TODO(@darzu): use version numbers instead of dirty flag?
+//   _changedEntities: Set<number>;
+// }
+
+// interface EMWorldCache {
+//   activeSystemsById: Map<number, SystemReg>;
+//   systemNamesByPhase: Map<Phase, string[]>;
+
+//   sysStats: Record<string, SystemStats>;
+
+//   seenComponents: Set<CompId>;
+
+//   _systemsToEntities: Map<number, Entity[]>;
+//   _entitiesToSystems: Map<number, number[]>;
+//   _systemsToComponents: Map<number, string[]>;
+//   _componentToSystems: Map<string, number[]>;
+// }
+
 export interface Entity {
   readonly id: number;
 }
