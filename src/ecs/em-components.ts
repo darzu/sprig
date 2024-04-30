@@ -113,13 +113,14 @@ export interface EMComponents {
 
   checkComponent(def: ComponentDef): void;
 }
+
+const forbiddenComponentNames = new Set<string>(["id"]);
+
 export function createEMComponents(): EMComponents {
   const componentDefs: Map<CompId, ComponentDef> = new Map(); // TODO(@darzu): rename to componentDefs ?
 
-  const forbiddenComponentNames = new Set<string>(["id"]);
-
   const serializers: Map<
-    number,
+    CompId,
     {
       serialize: (obj: any, buf: Serializer) => void;
       deserialize: (obj: any, buf: Deserializer) => void;

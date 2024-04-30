@@ -159,6 +159,7 @@ export function createEMEntities(): EMEntities {
 
   const seenComponents = new Set<CompId>();
 
+  // TODO(@darzu): MULTIPLAYER. Remove ID ranges, use net ids
   const ranges: Record<string, { nextId: number; maxId: number }> = {};
   let defaultRange: string = "";
 

@@ -39,6 +39,22 @@ intersection world has a parentWorld
 eagerInit waiting for seenComponents:
   eagerInit is per-world
 
+world:
+  data:
+    entities,
+  cache over sets of data
+    seenComponents
+    entityPromises
+    _changedEntities
+    _nextEntityPromiseId
+    _dbgEntityPromiseCallsites
+
+    activeSystemsById
+    systemNamesByPhase
+    _systemsToEntities
+    _entitiesToSystems
+    _systemsToComponents
+    _componentToSystems
 */
 
 export interface SystemReg {
@@ -107,7 +123,7 @@ export interface EMSystems {
 export function createEMSystems(): EMSystems {
   const allSystemsByName: Map<string, SystemReg> = new Map();
   const activeSystemsById: Map<number, SystemReg> = new Map();
-  const phases: Map<Phase, string[]> = toMap(
+  const systemNamesByPhase: Map<Phase, string[]> = toMap(
     PhaseValueList,
     (n) => n,
     (_) => [] as string[]
@@ -139,7 +155,7 @@ export function createEMSystems(): EMSystems {
       for (let phase of PhaseValueList) {
         const phaseName = Phase[phase];
         res += phaseName + "\n";
-        for (let sysName of phases.get(phase)!) {
+        for (let sysName of systemNamesByPhase.get(phase)!) {
           let sys = allSystemsByName.get(sysName)!;
           if (activeSystemsById.has(sys.id)) {
             res += "  " + sysName + "\n";
@@ -161,7 +177,7 @@ export function createEMSystems(): EMSystems {
     }
 
     for (let phase of PhaseValueList) {
-      for (let sName of phases.get(phase)!) {
+      for (let sName of systemNamesByPhase.get(phase)!) {
         // look up
         const s = allSystemsByName.get(sName);
         assert(s, `Can't find system with name: ${sName}`);
@@ -230,7 +246,7 @@ export function createEMSystems(): EMSystems {
 
     // NOTE: even though we might not active the system right away, we want to respect the
     //  order in which it was added to the phase.
-    phases.get(phase)!.push(name);
+    systemNamesByPhase.get(phase)!.push(name);
 
     const seenAllCmps = (sys.cs ?? []).every((c) =>
       _entities.seenComponents.has(c.id)
