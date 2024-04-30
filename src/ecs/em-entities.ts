@@ -30,6 +30,8 @@ import { _systems } from "./ecs.js";
 // TODO(@darzu): use defineProperty, Object.preventExtensions(), and such to have more robust entities?
 
 /*
+MULTI-SCENE:
+
 world:
   data:
     entities,

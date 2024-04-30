@@ -16,16 +16,6 @@ import { _meta } from "./ecs.js";
 have QueryCache per EntityWorld
 _notify functions take in a world specifier
 entity ids are unique across worlds
-per world:
-  entities,
-  seenComponents,
-  queryCache,
-  activeSystems,
-  phasesCache,
-  activateSystem,
-  tryCallSystem,
-
-  entityPromises,
 
 how to deal with two worlds: global and myGame
   queryCache per ea 
@@ -38,23 +28,6 @@ intersection world has a parentWorld
 
 eagerInit waiting for seenComponents:
   eagerInit is per-world
-
-world:
-  data:
-    entities,
-  cache over sets of data
-    seenComponents
-    entityPromises
-    _changedEntities
-    _nextEntityPromiseId
-    _dbgEntityPromiseCallsites
-
-    activeSystemsById
-    systemNamesByPhase
-    _systemsToEntities
-    _entitiesToSystems
-    _systemsToComponents
-    _componentToSystems
 */
 
 export interface SystemReg {
