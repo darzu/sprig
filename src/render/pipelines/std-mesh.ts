@@ -55,6 +55,25 @@ import {
 // export const BACKGROUND_COLOR = V(0.015, 0.015, 0.015, 1.0);
 export const BACKGROUND_COLOR = V(0.03, 0.03, 0.03, 1.0);
 
+function gammaCorrect(c: V3 | V4): V3 {
+  const g = 1.0 / 2.2;
+  return V(Math.pow(c[0], g), Math.pow(c[1], g), Math.pow(c[2], g));
+}
+function toCssColor(c: V3 | V4): string {
+  const r = (c[0] * 100).toFixed(1);
+  const g = (c[1] * 100).toFixed(1);
+  const b = (c[2] * 100).toFixed(1);
+  return `rgb(${r}%,${g}%,${b}%)`;
+}
+const __assumedAmbient: V4.InputT = [0.2, 0.2, 0.2, 1.0];
+// TODO(@darzu): HACK. Alas, this doesn't match what the background color actually is in e.g. ship-arena.
+//  idk where there difference in the light calculation happens..
+// console.log("background:");
+// console.log(
+//   toCssColor(gammaCorrect(V4.mul(BACKGROUND_COLOR, __assumedAmbient)))
+// );
+// console.log(toCssColor(BACKGROUND_COLOR));
+
 export const stdMeshPipe = CY.createRenderPipeline("stdMeshRender", {
   globals: [
     sceneBufPtr,
