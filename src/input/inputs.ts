@@ -145,16 +145,19 @@ function createInputsReader(canvas: Canvas): () => Inputs {
     "mousemove",
     (ev) => {
       const html = canvas.getCanvasHtml();
+      const rect = html.getBoundingClientRect();
       accumulated_mouseMov[0] += ev.movementX;
       accumulated_mouseMov[1] += ev.movementY;
       if (!canvas.hasMouseLock()) {
-        lastMouse[0] = ev.clientX;
-        lastMouse[1] = ev.clientY;
+        // lastMouse[0] = ev.clientX;
+        // lastMouse[1] = ev.clientY;
+        lastMouse[0] = ev.clientX - rect.x;
+        lastMouse[1] = ev.clientY - rect.y;
       } else {
         lastMouse[0] += ev.movementX;
-        lastMouse[0] = clamp(lastMouse[0], 0, html.clientWidth);
+        lastMouse[0] = clamp(lastMouse[0], 0, rect.width);
         lastMouse[1] += ev.movementY;
-        lastMouse[1] = clamp(lastMouse[1], 0, html.clientHeight);
+        lastMouse[1] = clamp(lastMouse[1], 0, rect.height);
       }
     },
     false

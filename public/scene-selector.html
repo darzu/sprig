@@ -9,8 +9,9 @@
       /* --background-clr: rgb(9.8%, 9.8%, 9.8%); */
       /* measured */
       /* --background-clr: #1c1c1c; */
-      --background-clr: oklch(from #1c1c1c calc(l + 0.1) c h);
-      --text-clr: oklch(from #1c1c1c calc(l + 0.8) c h);
+      --game-background-clr: #1c1c1c;
+      --background-clr: oklch(from var(--game-background-clr) calc(l + 0.1) c h);
+      --text-clr: oklch(from var(--game-background-clr) calc(l + 0.8) c h);
     }
 
     body {
@@ -21,7 +22,11 @@
       font-size: 16px;
 
       display: grid;
-      grid-template-columns: 200px auto 50px;
+      grid-template-columns: 200px 1fr 50px;
+      grid-template-rows: 20px 1fr 20px;
+
+      width: 100vw;
+      height: 100vh;
     }
 
     a {
@@ -47,7 +52,12 @@
 
     .canvasHolder {
       grid-column: 2;
+      grid-row: 2;
       /* background-color: green; */
+
+      overflow: hidden;
+
+      background-color: var(--game-background-clr);
 
       box-shadow: rgb(10, 10, 10) 0px 0px 16px 0px;
     }
