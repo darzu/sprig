@@ -22,7 +22,7 @@ import { RendererDef } from "../render/renderer-ecs.js";
 import { Renderer } from "../render/renderer-ecs.js";
 import { Intersect, assert, isString, toRecord } from "../utils/util.js";
 import { never } from "../utils/util-no-import.js";
-import { getBytes, getText } from "../fetch/webget.js";
+import { getBytes, getText } from "../web/webget.js";
 import { AABBCollider } from "../physics/collider.js";
 import { farthestPointInDir, SupportFn } from "../utils/utils-3d.js";
 import { MeshHandle, MeshReserve } from "../render/mesh-pool.js";

@@ -1,6 +1,6 @@
 import { EM } from "../ecs/ecs.js";
 import { Component } from "../ecs/em-components.js";
-import { getText } from "../fetch/webget.js";
+import { getText } from "../web/webget.js";
 
 const DEFAULT_SHADER_PATH = "shaders/";
 
