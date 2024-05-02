@@ -32,39 +32,46 @@ import { initCardsGame } from "./gui/game-cards.js";
 import { initGameParticles } from "./graybox/game-particles.js";
 import { initLd55 } from "./ld55/game-ld55.js";
 import { initMultiSceneGame } from "./graybox/game-multi-scene.js";
+import { objMap } from "./utils/util.js";
 
 // dbgLogMilestone("start of main.ts");
 
-export const MAX_MESHES = 20000;
-export const MAX_VERTICES = 21844;
-
-const ALL_GAMES = [
-  "gjk",
-  "rebound",
-  "shipyard",
-  "grass", // broken-ish; too many temp f32s; port to Z-up
-  "font",
-  "cards",
-  "hyperspace", // TODO(@darzu): Z_UP: port to Z-up
-  "cloth", // broken-ish
-  "cube",
-  "gallery",
-  "modeling",
-  "ld53",
-  "ld54",
-  "mp",
-  "graybox-starter",
-  "graybox-sunless",
-  "graybox-ship-arena",
-  "painterly",
-  "particles",
-  "ld55",
-  "multi-scene",
-] as const;
+export const GAME_INIT = objMap(
+  {
+    gjk: initGJKSandbox,
+    rebound: initReboundSandbox,
+    shipyard: initShipyardGame,
+    // broken-ish; too many temp f32s; port to Z-up
+    grass: initGrassGame,
+    font: initFontEditor,
+    cards: initCardsGame,
+    // TODO(@darzu): Z_UP: port to Z-up
+    hyperspace: initHyperspaceGame,
+    // broken-ish
+    cloth: initClothSandbox,
+    cube: initCubeGame,
+    gallery: initGalleryGame,
+    modeling: initModelingGame,
+    ld53: initLD53,
+    ld54: initLD54,
+    mp: initMPGame,
+    "graybox-starter": initGrayboxStarter,
+    "graybox-sunless": initGrayboxSunless,
+    "graybox-ship-arena": initGrayboxShipArena,
+    painterly: initPainterlyGame,
+    particles: initGameParticles,
+    ld55: initLd55,
+    "multi-scene": initMultiSceneGame,
+  },
+  (val, key) => {
+    return val as () => void;
+  }
+);
+export const GAME_NAMES = Object.keys(GAME_INIT);
 
 // TODO(@darzu): current game should probably be saved in local storage, not hard-coded. (Default can be hard-coded)
 // prettier-ignore
-const GAME: (typeof ALL_GAMES)[number] = (
+const GAME: keyof typeof GAME_INIT = (
   // "painterly"
   // "graybox-ship-arena"
   // "ld53"
@@ -123,28 +130,8 @@ async function startGame(localPeerName: string, host: string | null) {
 
   resetTempMatrixBuffer(`initGame ${GAME}`);
 
-  if (GAME === "gjk") initGJKSandbox();
-  else if (GAME === "rebound") initReboundSandbox(hosting);
-  else if (GAME === "cloth") initClothSandbox(hosting);
-  else if (GAME === "hyperspace") initHyperspaceGame();
-  else if (GAME === "cube") initCubeGame();
-  else if (GAME === "shipyard") initShipyardGame(hosting);
-  else if (GAME === "font") initFontEditor();
-  else if (GAME === "cards") initCardsGame();
-  else if (GAME === "grass") initGrassGame(hosting);
-  else if (GAME === "ld53") initLD53(hosting);
-  else if (GAME === "ld54") initLD54();
-  else if (GAME === "gallery") initGalleryGame();
-  else if (GAME === "modeling") initModelingGame();
-  else if (GAME === "mp") initMPGame();
-  else if (GAME === "graybox-starter") initGrayboxStarter();
-  else if (GAME === "graybox-sunless") initGrayboxSunless();
-  else if (GAME === "graybox-ship-arena") initGrayboxShipArena();
-  else if (GAME === "painterly") initPainterlyGame();
-  else if (GAME === "particles") initGameParticles();
-  else if (GAME === "ld55") initLd55();
-  else if (GAME === "multi-scene") initMultiSceneGame();
-  else never(GAME, "TODO game");
+  const gameInitFn = GAME_INIT[GAME];
+  gameInitFn();
 
   let previous_frame_time = start_of_time;
   let accumulator = 0;
