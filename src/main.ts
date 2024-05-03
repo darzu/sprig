@@ -33,7 +33,6 @@ import { initLd55 } from "./ld55/game-ld55.js";
 import { initMultiSceneGame } from "./graybox/game-multi-scene.js";
 import { objMap } from "./utils/util.js";
 import { startNet } from "./net/net-main.js";
-import { initDbgViewModes } from "./debug/view-modes.js";
 import { initPhysicsSystems } from "./physics/phys.js";
 
 // dbgLogMilestone("start of main.ts");
@@ -95,19 +94,12 @@ const MAX_SIM_LOOPS = 1;
 // TODO(@darzu): PERF ISSUES WITH LD51
 // const MAX_SIM_LOOPS = 3;
 
-export let gameStarted = false;
-
 async function main() {
-  let start_of_time = performance.now();
-
   // dbgLogMilestone("main()");
 
   startNet();
 
   // dbgLogMilestone("startGame()");
-
-  if (gameStarted) return;
-  gameStarted = true;
 
   // TODO(@darzu): move elsewhere
   EM.setDefaultRange("local");
@@ -115,14 +107,13 @@ async function main() {
 
   // TODO(@darzu): move elsewhere!
   initPhysicsSystems();
-  initDbgViewModes();
 
   resetTempMatrixBuffer(`initGame ${GAME}`);
 
   const gameInitFn = GAME_INIT[GAME];
   gameInitFn();
 
-  let previous_frame_time = start_of_time;
+  let previous_frame_time = performance.now();
   let accumulator = 0;
   let frame = (frame_time: number) => {
     // console.log(`requestAnimationFrame: ${frame_time}`);
