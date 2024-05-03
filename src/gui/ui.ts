@@ -46,7 +46,7 @@ export const TextDef = EM.defineResource(
   }
 );
 
-export function initHtmlUI() {
+EM.addLazyInit([], [TextDef], () => {
   const upperDiv = (document.getElementById("title-div") ?? undefined) as
     | HTMLDivElement
     | undefined;
@@ -75,4 +75,4 @@ export function initHtmlUI() {
     if (res.text.helpText && helpDiv)
       helpDiv.firstChild!.nodeValue = res.text.helpText;
   });
-}
+});

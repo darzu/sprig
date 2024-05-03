@@ -37,7 +37,6 @@ import { initMultiSceneGame } from "./graybox/game-multi-scene.js";
 import { objMap } from "./utils/util.js";
 import { startNet } from "./net/net-main.js";
 import { initDbgViewModes } from "./debug/view-modes.js";
-import { initHtmlUI } from "./gui/ui.js";
 import { initPhysicsSystems } from "./physics/phys.js";
 
 // dbgLogMilestone("start of main.ts");
@@ -81,12 +80,12 @@ const GAME: keyof typeof GAME_INIT = (
   // "painterly"
   // "graybox-ship-arena"
   // "ld53"
-  // "ld54"
+  "ld54"
   // "gjk"
   // "graybox-starter"
   // "font"
   // "cards"
-  "particles"
+  // "particles"
   // "ld55"
   // "multi-scene"
 );
@@ -118,7 +117,6 @@ async function main() {
   EM.setIdRange("local", 1, 10000);
 
   // TODO(@darzu): move elsewhere!
-  initHtmlUI();
   initDevConsole();
   initPhysicsSystems();
   initMotionSmoothingSystems();
