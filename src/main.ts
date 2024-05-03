@@ -20,10 +20,7 @@ import { initGrassGame } from "./grass/game-grass.js";
 import { initLD53 } from "./ld53/game-ld53.js";
 import { initGalleryGame } from "./render/game-gallery.js";
 import { initModelingGame } from "./meshes/game-modeling.js";
-import {
-  initMotionSmoothingSystems,
-  setSimulationAlpha,
-} from "./render/motion-smoothing.js";
+import { setSimulationAlpha } from "./render/motion-smoothing.js";
 import { initMPGame } from "./net/game-multiplayer.js";
 import { initLD54 } from "./ld54/game-ld54.js";
 import { initGrayboxSunless } from "./graybox/graybox-sunless-skies.js";
@@ -118,7 +115,6 @@ async function main() {
 
   // TODO(@darzu): move elsewhere!
   initPhysicsSystems();
-  initMotionSmoothingSystems();
   initDbgViewModes();
 
   resetTempMatrixBuffer(`initGame ${GAME}`);

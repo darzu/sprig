@@ -1,6 +1,5 @@
 import { EM } from "../ecs/ecs.js";
 import { ENABLE_NET, VERBOSE_NET_LOG } from "../flags.js";
-import { initNetMotionRecordingSystem } from "../render/motion-smoothing.js";
 import { PeerNameDef, MeDef, HostDef, JoinDef } from "./components.js";
 import { addEventComponents, initNetGameEventSystems } from "./events.js";
 import { initNetJoinSystems } from "./join.js";
@@ -68,7 +67,7 @@ export function startNet(): NetStart {
     initNetSystems();
   }
   initNetStateEventSystems();
-  initNetMotionRecordingSystem();
+
   initNetUpdateSystems();
   initNetPredictSystems();
   initNetJoinSystems();

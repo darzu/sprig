@@ -25,8 +25,8 @@ import { WorldFrameDef } from "../physics/nonintersection.js";
 // Determined via binary search--smaller -> jerky, larger -> floaty
 const ERROR_SMOOTHING_FACTOR = 0.75 ** (60 / 1000);
 
-const BLEND_SIMULATION_FRAMES_STRATEGY: "interpolate" | "extrapolate" | "none" =
-  "none";
+type BlendFramesStrategy = "interpolate" | "extrapolate" | "none";
+const BLEND_SIMULATION_FRAMES_STRATEGY: BlendFramesStrategy = "none";
 
 let _simulationAlpha = 0.0;
 
@@ -46,27 +46,6 @@ export const MotionSmoothingDef = EM.defineComponent("motionSmoothing", () => {
   };
 });
 export type MotionSmoothing = Component<typeof MotionSmoothingDef>;
-
-export function initNetMotionRecordingSystem() {
-  EM.addSystem(
-    "recordPreviousLocations",
-    Phase.NETWORK,
-    [MotionSmoothingDef],
-    [],
-    (es) => {
-      for (let e of es) {
-        e.motionSmoothing.havePrevious = true;
-        if (PositionDef.isOn(e))
-          V3.copy(e.motionSmoothing.prevPosition, e.position);
-        if (RotationDef.isOn(e))
-          quat.copy(e.motionSmoothing.prevRotation, e.rotation);
-        e.motionSmoothing.prevParentId = PhysicsParentDef.isOn(e)
-          ? e.physicsParent.id
-          : 0;
-      }
-    }
-  );
-}
 
 const _hasRendererWorldFrame = new Set();
 
@@ -123,7 +102,26 @@ function updateSmoothedWorldFrame(o: Entity) {
   _hasRendererWorldFrame.add(o.id);
 }
 
-export function initMotionSmoothingSystems() {
+EM.addEagerInit([MotionSmoothingDef], [], [], () => {
+  EM.addSystem(
+    "recordPreviousLocations",
+    Phase.NETWORK,
+    [MotionSmoothingDef],
+    [],
+    (es) => {
+      for (let e of es) {
+        e.motionSmoothing.havePrevious = true;
+        if (PositionDef.isOn(e))
+          V3.copy(e.motionSmoothing.prevPosition, e.position);
+        if (RotationDef.isOn(e))
+          quat.copy(e.motionSmoothing.prevRotation, e.rotation);
+        e.motionSmoothing.prevParentId = PhysicsParentDef.isOn(e)
+          ? e.physicsParent.id
+          : 0;
+      }
+    }
+  );
+
   EM.addSystem(
     "smoothMotion",
     Phase.PRE_RENDER,
@@ -174,7 +172,9 @@ export function initMotionSmoothingSystems() {
       }
     }
   );
+});
 
+EM.addEagerInit([RenderableDef, TransformDef], [], [], () => {
   EM.addSystem(
     "updateSmoothedWorldFrames",
     Phase.PRE_RENDER,
@@ -215,7 +215,7 @@ export function initMotionSmoothingSystems() {
 
         EM.set(o, RendererWorldFrameDef);
 
-        switch (BLEND_SIMULATION_FRAMES_STRATEGY) {
+        switch (BLEND_SIMULATION_FRAMES_STRATEGY as BlendFramesStrategy) {
           case "interpolate":
             interpolateFrames(
               _simulationAlpha,
@@ -238,7 +238,7 @@ export function initMotionSmoothingSystems() {
       }
     }
   );
-}
+});
 
 function interpolateFrames(
   alpha: number,
