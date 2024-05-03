@@ -75,8 +75,8 @@
   </script>
 
   <div id="linksTree">
-    <a href="#foo">foo</a>
-    <a href="#bar">bar</a>
+    <a href="#particles">particles</a>
+    <a href="#graybox-ship-arena">graybox-ship-arena</a>
   </div>
 
   <div class="canvasHolder">
@@ -88,6 +88,12 @@
   </div>
 
   <script src="./main.js" type="module"></script>
+  <script type="module">
+    import { WebNavDef } from "./web/webnav.js";
+    import { EM } from "./ecs/ecs.js";
+    const foo = await EM.whenResources(WebNavDef);
+    console.dir(foo);
+  </script>
 </body>
 
 </html>

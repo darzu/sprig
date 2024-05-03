@@ -95,14 +95,24 @@ const MAX_SIM_LOOPS = 1;
 
 export let gameStarted = false;
 
-async function startGame(localPeerName: string, host: string | null) {
+async function main() {
+  // dbgLogMilestone("main()");
+  const queryString = Object.fromEntries(
+    new URLSearchParams(window.location.search).entries()
+  );
+  const urlServerId = queryString["server"] ?? null;
+
+  // const peerName2 = getPeerName(queryString);
+  // const peerName = "myPeerName";
+  const peerName = !!urlServerId ? "mySprigClient" : "mySprigHost";
+
   // dbgLogMilestone("startGame()");
   (globalThis as any).GAME = GAME;
 
   if (gameStarted) return;
   gameStarted = true;
 
-  const hosting = !host;
+  const hosting = !urlServerId;
 
   if (VERBOSE_NET_LOG) console.log(`hosting: ${hosting}`);
 
@@ -113,7 +123,7 @@ async function startGame(localPeerName: string, host: string | null) {
   EM.setIdRange("local", 1, 10000);
   // TODO(@darzu): ECS stuff
   // init ECS
-  EM.addResource(PeerNameDef, localPeerName);
+  EM.addResource(PeerNameDef, peerName);
   if (hosting) {
     // TODO(@darzu): ECS
     EM.setDefaultRange("net");
@@ -121,7 +131,7 @@ async function startGame(localPeerName: string, host: string | null) {
     EM.addResource(MeDef, 0, true);
     EM.addResource(HostDef);
   } else {
-    EM.addResource(JoinDef, host);
+    EM.addResource(JoinDef, urlServerId);
   }
 
   initCommonSystems(); // TODO(@darzu): move elsewhere!
@@ -169,33 +179,6 @@ async function startGame(localPeerName: string, host: string | null) {
   };
 
   requestAnimationFrame(frame);
-}
-
-// TODO(@darzu): unused?
-function getPeerName(queryString: { [k: string]: string }): string {
-  const user = queryString["user"] || "default";
-  let peerName = localStorage.getItem("peerName-" + user);
-  if (!peerName) {
-    // TODO: better random peer name generation, or get peer name from server
-    const rand = crypto.getRandomValues(new Uint8Array(16));
-    peerName = rand.join("");
-    localStorage.setItem("peerName-" + user, peerName);
-  }
-  return peerName;
-}
-
-async function main() {
-  // dbgLogMilestone("main()");
-  const queryString = Object.fromEntries(
-    new URLSearchParams(window.location.search).entries()
-  );
-  const urlServerId = queryString["server"] ?? null;
-
-  // const peerName2 = getPeerName(queryString);
-  // const peerName = "myPeerName";
-  const peerName = !!urlServerId ? "mySprigClient" : "mySprigHost";
-
-  startGame(peerName, urlServerId);
 }
 
 // TODO(@darzu): move elsewhere

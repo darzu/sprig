@@ -21,7 +21,7 @@ export interface ResourceDef<
   _brand: "resourceDef";
   readonly id: ResId;
   readonly name: N;
-  construct: (...args: Pargs) => P;
+  construct: (...args: Pargs) => P; // TODO(@darzu): allow async?
 }
 export type ResId = number;
 export type Resource<DEF> = DEF extends ResourceDef<any, infer P> ? P : never;
