@@ -5,7 +5,7 @@ import { tick } from "./time/time.js";
 import { MeDef, JoinDef, HostDef, PeerNameDef } from "./net/components.js";
 import { addEventComponents } from "./net/events.js";
 import { dbg } from "./debug/debugger.js";
-import { DevConsoleDef, initDevConsole } from "./debug/console.js";
+import { DevConsoleDef } from "./debug/console.js";
 import { initReboundSandbox } from "./physics/game-rebound.js";
 import { never } from "./utils/util-no-import.js";
 import { VERBOSE_LOG, VERBOSE_NET_LOG } from "./flags.js";
@@ -117,7 +117,6 @@ async function main() {
   EM.setIdRange("local", 1, 10000);
 
   // TODO(@darzu): move elsewhere!
-  initDevConsole();
   initPhysicsSystems();
   initMotionSmoothingSystems();
   initDbgViewModes();
