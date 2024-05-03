@@ -5,9 +5,8 @@ import { tick } from "./time/time.js";
 import { MeDef, JoinDef, HostDef, PeerNameDef } from "./net/components.js";
 import { addEventComponents } from "./net/events.js";
 import { dbg } from "./debug/debugger.js";
-import { DevConsoleDef } from "./debug/console.js";
+import { DevConsoleDef, initDevConsole } from "./debug/console.js";
 import { initReboundSandbox } from "./physics/game-rebound.js";
-import { initCommonSystems } from "./game-init.js";
 import { never } from "./utils/util-no-import.js";
 import { VERBOSE_LOG, VERBOSE_NET_LOG } from "./flags.js";
 import { initShipyardGame } from "./wood/game-shipyard.js";
@@ -21,7 +20,10 @@ import { initGrassGame } from "./grass/game-grass.js";
 import { initLD53 } from "./ld53/game-ld53.js";
 import { initGalleryGame } from "./render/game-gallery.js";
 import { initModelingGame } from "./meshes/game-modeling.js";
-import { setSimulationAlpha } from "./render/motion-smoothing.js";
+import {
+  initMotionSmoothingSystems,
+  setSimulationAlpha,
+} from "./render/motion-smoothing.js";
 import { initMPGame } from "./net/game-multiplayer.js";
 import { initLD54 } from "./ld54/game-ld54.js";
 import { initGrayboxSunless } from "./graybox/graybox-sunless-skies.js";
@@ -33,6 +35,10 @@ import { initGameParticles } from "./graybox/game-particles.js";
 import { initLd55 } from "./ld55/game-ld55.js";
 import { initMultiSceneGame } from "./graybox/game-multi-scene.js";
 import { objMap } from "./utils/util.js";
+import { startNet } from "./net/net-main.js";
+import { initDbgViewModes } from "./debug/view-modes.js";
+import { initHtmlUI } from "./gui/ui.js";
+import { initPhysicsSystems } from "./physics/phys.js";
 
 // dbgLogMilestone("start of main.ts");
 
@@ -96,47 +102,27 @@ const MAX_SIM_LOOPS = 1;
 export let gameStarted = false;
 
 async function main() {
-  // dbgLogMilestone("main()");
-  const queryString = Object.fromEntries(
-    new URLSearchParams(window.location.search).entries()
-  );
-  const urlServerId = queryString["server"] ?? null;
+  let start_of_time = performance.now();
 
-  // const peerName2 = getPeerName(queryString);
-  // const peerName = "myPeerName";
-  const peerName = !!urlServerId ? "mySprigClient" : "mySprigHost";
+  // dbgLogMilestone("main()");
+
+  startNet();
 
   // dbgLogMilestone("startGame()");
-  (globalThis as any).GAME = GAME;
 
   if (gameStarted) return;
   gameStarted = true;
 
-  const hosting = !urlServerId;
-
-  if (VERBOSE_NET_LOG) console.log(`hosting: ${hosting}`);
-
-  let start_of_time = performance.now();
-
   // TODO(@darzu): move elsewhere
   EM.setDefaultRange("local");
   EM.setIdRange("local", 1, 10000);
-  // TODO(@darzu): ECS stuff
-  // init ECS
-  EM.addResource(PeerNameDef, peerName);
-  if (hosting) {
-    // TODO(@darzu): ECS
-    EM.setDefaultRange("net");
-    EM.setIdRange("net", 10001, 20000);
-    EM.addResource(MeDef, 0, true);
-    EM.addResource(HostDef);
-  } else {
-    EM.addResource(JoinDef, urlServerId);
-  }
 
-  initCommonSystems(); // TODO(@darzu): move elsewhere!
-
-  addEventComponents(); // TODO(@darzu): move elsewhere!
+  // TODO(@darzu): move elsewhere!
+  initHtmlUI();
+  initDevConsole();
+  initPhysicsSystems();
+  initMotionSmoothingSystems();
+  initDbgViewModes();
 
   resetTempMatrixBuffer(`initGame ${GAME}`);
 
@@ -200,7 +186,8 @@ window.onload = () => {
 })();
 
 // for debugging
-(window as any).dbg = dbg;
-(window as any).EM = EM;
+(globalThis as any).dbg = dbg;
+(globalThis as any).EM = EM;
+(globalThis as any).GAME = GAME;
 
 // dbgLogMilestone("end of main.ts");
