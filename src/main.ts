@@ -34,10 +34,11 @@ import { initMultiSceneGame } from "./graybox/game-multi-scene.js";
 import { objMap } from "./utils/util.js";
 import { startNet } from "./net/net-main.js";
 import { initPhysicsSystems } from "./physics/phys.js";
+import { GAME_LOADER } from "./game-loader.js";
 
 // dbgLogMilestone("start of main.ts");
 
-export const GAME_INIT: Record<string, () => Promise<void>> = {
+const defaultGames: Record<string, () => Promise<void>> = {
   gjk: initGJKSandbox,
   rebound: initReboundSandbox,
   shipyard: initShipyardGame,
@@ -64,11 +65,13 @@ export const GAME_INIT: Record<string, () => Promise<void>> = {
   "multi-scene": initMultiSceneGame,
 };
 
-export const GAME_NAMES = Object.keys(GAME_INIT);
+Object.entries(defaultGames).forEach(([name, init]) =>
+  GAME_LOADER.registerGame({ name, init })
+);
 
 // TODO(@darzu): current game should probably be saved in local storage, not hard-coded. (Default can be hard-coded)
 // prettier-ignore
-const DEFAULT_GAME: keyof typeof GAME_INIT = (
+const DEFAULT_GAME: keyof typeof defaultGames = (
   // "painterly"
   // "graybox-ship-arena"
   // "ld53"
@@ -92,8 +95,7 @@ const MAX_SIM_LOOPS = 1;
 
 export function startDefaultGame() {
   EM.addEagerInit([], [], [], () => {
-    const gameInitFn = GAME_INIT[DEFAULT_GAME];
-    gameInitFn();
+    GAME_LOADER.startGame(DEFAULT_GAME);
   });
 }
 
@@ -178,6 +180,6 @@ window.onload = () => {
 // for debugging
 (globalThis as any).dbg = dbg;
 (globalThis as any).EM = EM;
-(globalThis as any).GAME = DEFAULT_GAME;
+// (globalThis as any).GAME = DEFAULT_GAME;
 
 // dbgLogMilestone("end of main.ts");
