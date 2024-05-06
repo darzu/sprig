@@ -91,8 +91,10 @@ const MAX_SIM_LOOPS = 1;
 // const MAX_SIM_LOOPS = 3;
 
 function startDefaultGame() {
-  const gameInitFn = GAME_INIT[DEFAULT_GAME];
-  gameInitFn();
+  EM.addEagerInit([], [], [], () => {
+    const gameInitFn = GAME_INIT[DEFAULT_GAME];
+    gameInitFn();
+  });
 }
 
 async function startGameLoop() {
