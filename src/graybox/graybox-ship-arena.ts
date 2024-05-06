@@ -1,15 +1,13 @@
 import { StatBarDef, createMultiBarMesh } from "../adornments/status-bar.js";
 import { CameraDef, CameraFollowDef } from "../camera/camera.js";
-import { AlphaDef, ColorDef, TintsDef } from "../color/color-ecs.js";
-import { ENDESGA16, seqEndesga16 } from "../color/palettes.js";
+import { ColorDef, TintsDef } from "../color/color-ecs.js";
+import { ENDESGA16 } from "../color/palettes.js";
 import { DevConsoleDef } from "../debug/console.js";
 import { DeadDef, DeletedDef } from "../ecs/delete.js";
-import { Entity, EntityW } from "../ecs/em-entities.js";
+import { Entity } from "../ecs/em-entities.js";
 import { EM } from "../ecs/ecs.js";
 import { Resources } from "../ecs/em-resources.js";
-import { createEntityPool } from "../ecs/entity-pool.js";
 import { Phase } from "../ecs/sys-phase.js";
-import { createHexGrid, hexXYZ, hexesWithin } from "../hex/hex.js";
 import { InputsDef } from "../input/inputs.js";
 import { HasRudderDef, HasRudderObj, createRudder } from "../ld53/rudder.js";
 import { V, quat, V3 } from "../matrix/sprig-matrix.js";
@@ -17,10 +15,8 @@ import {
   BallMesh,
   CannonMesh,
   CubeMesh,
-  HexMesh,
   PlaneMesh,
 } from "../meshes/mesh-list.js";
-import { cloneMesh } from "../meshes/mesh.js";
 import { mkCubeMesh } from "../meshes/primatives.js";
 import {
   Parametric,
@@ -36,11 +32,10 @@ import {
   ColliderFromMeshDef,
 } from "../physics/collider.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
-import { OBB, OBBDef } from "../physics/obb.js";
+import { OBBDef } from "../physics/obb.js";
 import { _OBB_SYSTEMS } from "../physics/obb_systems.js";
 import { onCollides } from "../physics/phys-helpers.js";
 import {
-  Frame,
   PhysicsParentDef,
   PositionDef,
   RotationDef,
@@ -59,39 +54,15 @@ import { postProcess } from "../render/pipelines/std-post.js";
 import { shadowPipelines } from "../render/pipelines/std-shadow.js";
 import { alphaRenderPipeline } from "../render/pipelines/xp-alpha.js";
 import { RenderableConstructDef, RendererDef } from "../render/renderer-ecs.js";
-import {
-  getAimAndMissPositions,
-  getFireSolution,
-} from "../stone/projectile.js";
+import { getFireSolution } from "../stone/projectile.js";
 import { TimeDef } from "../time/time.js";
 import { YawPitchDef } from "../turret/yawpitch.js";
-import {
-  chance,
-  clamp,
-  randBool,
-  randInt,
-  remap,
-  wrap,
-} from "../utils/math.js";
-import {
-  SketchTrailDef,
-  sketchLine,
-  sketchPoints,
-  sketchQuat,
-  sketchYawPitch,
-} from "../utils/sketch.js";
+import { chance, clamp, remap, wrap } from "../utils/math.js";
+import { SketchTrailDef } from "../utils/sketch.js";
 import { Path } from "../utils/spline.js";
-import {
-  PI,
-  PId12,
-  PId2,
-  PId3,
-  PId4,
-  PId6,
-  PId8,
-} from "../utils/util-no-import.js";
-import { FALSE, TRUE, assert, range } from "../utils/util.js";
-import { angleBetween, randVec3OfLen } from "../utils/utils-3d.js";
+import { PI, PId6, PId8 } from "../utils/util-no-import.js";
+import { assert, range } from "../utils/util.js";
+import { angleBetween } from "../utils/utils-3d.js";
 import { addGizmoChild } from "../utils/utils-game.js";
 import { HasMastDef, HasMastObj, createMast } from "../wind/mast.js";
 import { WindDef, setWindAngle } from "../wind/wind.js";

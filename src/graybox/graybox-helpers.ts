@@ -35,6 +35,7 @@ import { Intersect, assert } from "../utils/util.js";
 import { vec3Dbg, vec4Dbg } from "../utils/utils-3d.js";
 import { addWorldGizmo } from "../utils/utils-game.js";
 import { createObj } from "../ecs/em-objects.js";
+import { GAME_LOADER } from "../game-loader.js";
 
 export function createSun() {
   const sun = createObj(
@@ -70,7 +71,7 @@ export function initGhost(mesh?: MeshLike) {
   g.controllable.speed *= 10;
   g.controllable.sprintMul = 0.2;
 
-  const gameName = (globalThis as any).GAME; // TODO(@darzu): HACK
+  const gameName = GAME_LOADER.getGameName()!;
 
   // TODO(@darzu): ABSTRACT / GENERALIZE so other systems can save/load state
   const storageKey = `ghostCam_${gameName}`;

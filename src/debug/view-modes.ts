@@ -9,7 +9,7 @@ import { LocalPlayerEntityDef } from "../hyperspace/hs-player.js";
 import { InputsDef } from "../input/inputs.js";
 import { RendererDef } from "../render/renderer-ecs.js";
 
-export function initDbgViewModes() {
+EM.addEagerInit([], [], [], () => {
   EM.addSystem(
     "renderModeToggles",
     Phase.GAME_PLAYERS,
@@ -49,4 +49,4 @@ export function initDbgViewModes() {
       }
     }
   );
-}
+});

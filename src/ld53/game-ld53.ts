@@ -336,7 +336,7 @@ async function setLevelLocal(levelIdx: number) {
   // const { me } = await EM.whenResources(MeDef);
 }
 
-export async function initLD53(hosting: boolean) {
+export async function initLD53() {
   // obbTests();
 
   const res = await EM.whenResources(

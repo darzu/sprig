@@ -7,6 +7,7 @@ import { T, assert } from "../utils/util-no-import.js";
 import { InputsDef } from "../input/inputs.js";
 import { displayWebGPUError } from "./renderer-ecs.js";
 import { toMap } from "../utils/util.js";
+import { clamp } from "../utils/math.js";
 
 /*
 canvas users:
@@ -67,6 +68,9 @@ EM.addLazyInit([], [CanvasDef], () => {
 
   const canvases = [...document.getElementsByTagName("canvas")];
 
+  // TODO(@darzu): PARENT element size
+  // getBoundingClientRect()
+
   assert(canvases.length, `No <canvas>!`);
 
   const canvasNames = canvases.map((e) => {
@@ -85,7 +89,9 @@ EM.addLazyInit([], [CanvasDef], () => {
 
   // heuristic: when there's only one canvas present, assume it's meant to be full screen
   // TODO(@darzu): allow change canvas to/from window size mid-game
-  const resizeToWindow = canvasNames.length === 1;
+  // const resizeToWindow = canvasNames.length === 1;
+  const resizeCanvasToContainer = true;
+  // const resizeCanvasToContainer = false;
 
   const comp = EM.addResource(CanvasDef, {
     canvasNames,
@@ -101,7 +107,7 @@ EM.addLazyInit([], [CanvasDef], () => {
     pixelRatio: 1,
     forceWindowResize: () => {},
 
-    resizeToWindow,
+    resizeToWindow: resizeCanvasToContainer,
   });
 
   setCanvas(_activeCanvasName);
@@ -147,32 +153,42 @@ EM.addLazyInit([], [CanvasDef], () => {
   );
 
   function setActiveCanvasSize(width: number, height: number) {
+    width = clamp(width, 10, 4096);
+    height = clamp(height, 10, 4096);
     _activeCanvas.width = width * comp.pixelRatio;
     _activeCanvas.style.width = `${width}px`;
     _activeCanvas.height = height * comp.pixelRatio;
     _activeCanvas.style.height = `${height}px`;
   }
 
-  function resizeCanvasToWindow() {
+  function resizeCanvasToParent() {
     // TODO(@darzu): should this be done differently?
     //  https://web.dev/device-pixel-content-box/
-    setActiveCanvasSize(window.innerWidth, window.innerHeight);
+    //  https://developer.mozilla.org/en-US/docs/Web/API/ResizeObserverEntry/devicePixelContentBoxSize
+    const p = _activeCanvas.parentElement;
+    assert(p, `canvas doesn't have .parentElement`);
+    // const width = p.clientWidth;
+    // const height = p.clientHeight;
+    let { width, height } = p.getBoundingClientRect();
+    width = Math.floor(width); // TODO(@darzu): do we want to round here?
+    height = Math.floor(height);
+    setActiveCanvasSize(width, height);
   }
 
   window.onresize = function () {
     if (comp.resizeToWindow) {
-      resizeCanvasToWindow();
+      resizeCanvasToParent();
     }
   };
 
   if (comp.resizeToWindow) {
-    resizeCanvasToWindow();
+    resizeCanvasToParent();
   }
 
   // TODO(@darzu): CANVAS. HACK.
   comp.forceWindowResize = () => {
     if (comp.resizeToWindow) {
-      resizeCanvasToWindow();
+      resizeCanvasToParent();
     } else {
       setActiveCanvasSize(_activeCanvas.width, _activeCanvas.height);
     }

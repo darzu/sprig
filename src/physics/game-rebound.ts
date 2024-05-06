@@ -41,7 +41,7 @@ import { addGizmoChild, addWorldGizmo } from "../utils/utils-game.js";
 
 // TODO(@darzu): BROKEN. camera is in a wonky place?
 
-export async function initReboundSandbox(hosting: boolean) {
+export async function initReboundSandbox() {
   let tableId = -1;
 
   const res = await EM.whenResources(

@@ -7,7 +7,6 @@ import { addEventComponents } from "./net/events.js";
 import { dbg } from "./debug/debugger.js";
 import { DevConsoleDef } from "./debug/console.js";
 import { initReboundSandbox } from "./physics/game-rebound.js";
-import { initCommonSystems } from "./game-init.js";
 import { never } from "./utils/util-no-import.js";
 import { VERBOSE_LOG, VERBOSE_NET_LOG } from "./flags.js";
 import { initShipyardGame } from "./wood/game-shipyard.js";
@@ -32,43 +31,51 @@ import { initCardsGame } from "./gui/game-cards.js";
 import { initGameParticles } from "./graybox/game-particles.js";
 import { initLd55 } from "./ld55/game-ld55.js";
 import { initMultiSceneGame } from "./graybox/game-multi-scene.js";
+import { objMap } from "./utils/util.js";
+import { startNet } from "./net/net-main.js";
+import { initPhysicsSystems } from "./physics/phys.js";
+import { GAME_LOADER } from "./game-loader.js";
 
 // dbgLogMilestone("start of main.ts");
 
-export const MAX_MESHES = 20000;
-export const MAX_VERTICES = 21844;
+const defaultGames: Record<string, () => Promise<void>> = {
+  gjk: initGJKSandbox,
+  rebound: initReboundSandbox,
+  shipyard: initShipyardGame,
+  // broken-ish; too many temp f32s; port to Z-up
+  grass: initGrassGame,
+  font: initFontEditor,
+  cards: initCardsGame,
+  // TODO(@darzu): Z_UP: port to Z-up
+  hyperspace: initHyperspaceGame,
+  // broken-ish
+  cloth: initClothSandbox,
+  cube: initCubeGame,
+  gallery: initGalleryGame,
+  modeling: initModelingGame,
+  ld53: initLD53,
+  ld54: initLD54,
+  mp: initMPGame,
+  "graybox-starter": initGrayboxStarter,
+  "graybox-sunless": initGrayboxSunless,
+  "graybox-ship-arena": initGrayboxShipArena,
+  painterly: initPainterlyGame,
+  particles: initGameParticles,
+  ld55: initLd55,
+  "multi-scene": initMultiSceneGame,
+};
 
-const ALL_GAMES = [
-  "gjk",
-  "rebound",
-  "shipyard",
-  "grass", // broken-ish; too many temp f32s; port to Z-up
-  "font",
-  "cards",
-  "hyperspace", // TODO(@darzu): Z_UP: port to Z-up
-  "cloth", // broken-ish
-  "cube",
-  "gallery",
-  "modeling",
-  "ld53",
-  "ld54",
-  "mp",
-  "graybox-starter",
-  "graybox-sunless",
-  "graybox-ship-arena",
-  "painterly",
-  "particles",
-  "ld55",
-  "multi-scene",
-] as const;
+Object.entries(defaultGames).forEach(([name, init]) =>
+  GAME_LOADER.registerGame({ name, init })
+);
 
 // TODO(@darzu): current game should probably be saved in local storage, not hard-coded. (Default can be hard-coded)
 // prettier-ignore
-const GAME: (typeof ALL_GAMES)[number] = (
+const DEFAULT_GAME: keyof typeof defaultGames = (
   // "painterly"
-  "graybox-ship-arena"
+  // "graybox-ship-arena"
   // "ld53"
-  // "ld54"
+  "ld54"
   // "gjk"
   // "graybox-starter"
   // "font"
@@ -86,67 +93,29 @@ const MAX_SIM_LOOPS = 1;
 // TODO(@darzu): PERF ISSUES WITH LD51
 // const MAX_SIM_LOOPS = 3;
 
-export let gameStarted = false;
+export function startDefaultGame() {
+  EM.addEagerInit([], [], [], () => {
+    GAME_LOADER.startGame(DEFAULT_GAME);
+  });
+}
 
-async function startGame(localPeerName: string, host: string | null) {
+async function startGameLoop() {
+  // dbgLogMilestone("main()");
+
+  resetTempMatrixBuffer(`startGameLoop`);
+
+  startNet();
+
   // dbgLogMilestone("startGame()");
-  (globalThis as any).GAME = GAME;
-
-  if (gameStarted) return;
-  gameStarted = true;
-
-  const hosting = !host;
-
-  if (VERBOSE_NET_LOG) console.log(`hosting: ${hosting}`);
-
-  let start_of_time = performance.now();
 
   // TODO(@darzu): move elsewhere
   EM.setDefaultRange("local");
   EM.setIdRange("local", 1, 10000);
-  // TODO(@darzu): ECS stuff
-  // init ECS
-  EM.addResource(PeerNameDef, localPeerName);
-  if (hosting) {
-    // TODO(@darzu): ECS
-    EM.setDefaultRange("net");
-    EM.setIdRange("net", 10001, 20000);
-    EM.addResource(MeDef, 0, true);
-    EM.addResource(HostDef);
-  } else {
-    EM.addResource(JoinDef, host);
-  }
 
-  initCommonSystems(); // TODO(@darzu): move elsewhere!
+  // TODO(@darzu): move elsewhere!
+  initPhysicsSystems();
 
-  addEventComponents(); // TODO(@darzu): move elsewhere!
-
-  resetTempMatrixBuffer(`initGame ${GAME}`);
-
-  if (GAME === "gjk") initGJKSandbox();
-  else if (GAME === "rebound") initReboundSandbox(hosting);
-  else if (GAME === "cloth") initClothSandbox(hosting);
-  else if (GAME === "hyperspace") initHyperspaceGame();
-  else if (GAME === "cube") initCubeGame();
-  else if (GAME === "shipyard") initShipyardGame(hosting);
-  else if (GAME === "font") initFontEditor();
-  else if (GAME === "cards") initCardsGame();
-  else if (GAME === "grass") initGrassGame(hosting);
-  else if (GAME === "ld53") initLD53(hosting);
-  else if (GAME === "ld54") initLD54();
-  else if (GAME === "gallery") initGalleryGame();
-  else if (GAME === "modeling") initModelingGame();
-  else if (GAME === "mp") initMPGame();
-  else if (GAME === "graybox-starter") initGrayboxStarter();
-  else if (GAME === "graybox-sunless") initGrayboxSunless();
-  else if (GAME === "graybox-ship-arena") initGrayboxShipArena();
-  else if (GAME === "painterly") initPainterlyGame();
-  else if (GAME === "particles") initGameParticles();
-  else if (GAME === "ld55") initLd55();
-  else if (GAME === "multi-scene") initMultiSceneGame();
-  else never(GAME, "TODO game");
-
-  let previous_frame_time = start_of_time;
+  let previous_frame_time = performance.now();
   let accumulator = 0;
   let frame = (frame_time: number) => {
     // console.log(`requestAnimationFrame: ${frame_time}`);
@@ -184,35 +153,14 @@ async function startGame(localPeerName: string, host: string | null) {
   requestAnimationFrame(frame);
 }
 
-// TODO(@darzu): unused?
-function getPeerName(queryString: { [k: string]: string }): string {
-  const user = queryString["user"] || "default";
-  let peerName = localStorage.getItem("peerName-" + user);
-  if (!peerName) {
-    // TODO: better random peer name generation, or get peer name from server
-    const rand = crypto.getRandomValues(new Uint8Array(16));
-    peerName = rand.join("");
-    localStorage.setItem("peerName-" + user, peerName);
-  }
-  return peerName;
-}
-
-async function main() {
-  // dbgLogMilestone("main()");
-  const queryString = Object.fromEntries(
-    new URLSearchParams(window.location.search).entries()
-  );
-  const urlServerId = queryString["server"] ?? null;
-
-  // const peerName2 = getPeerName(queryString);
-  // const peerName = "myPeerName";
-  const peerName = !!urlServerId ? "mySprigClient" : "mySprigHost";
-
-  startGame(peerName, urlServerId);
-}
-
 // TODO(@darzu): move elsewhere
 test();
+
+async function main() {
+  await startGameLoop();
+  // NOTE: use the .html page to decide what game (or what strategy for game picking) to run
+  // startDefaultGame();
+}
 
 // dom dependant stuff
 // TODO(@darzu): move to resource
@@ -230,7 +178,8 @@ window.onload = () => {
 })();
 
 // for debugging
-(window as any).dbg = dbg;
-(window as any).EM = EM;
+(globalThis as any).dbg = dbg;
+(globalThis as any).EM = EM;
+// (globalThis as any).GAME = DEFAULT_GAME;
 
 // dbgLogMilestone("end of main.ts");

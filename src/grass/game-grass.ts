@@ -115,7 +115,7 @@ const level2DtoWorld3D = (levelPos: V2, y: number, out: V3) =>
     out
   );
 
-export async function initGrassGame(hosting: boolean) {
+export async function initGrassGame() {
   registerUploadGrassData();
 
   const dbgGrid = [

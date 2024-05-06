@@ -2332,3 +2332,6 @@ Render filled bezier curve w/ single triangle:
 
 Nanite materials:
   https://www.unrealengine.com/en-US/blog/take-a-deep-dive-into-nanite-gpu-driven-materials
+
+Path tracing, bvh in webgpu:
+  https://www.vaultcg.com/blog/casually-raytracing-in-webgpu-part2/

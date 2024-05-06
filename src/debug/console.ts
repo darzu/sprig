@@ -37,7 +37,7 @@ export function updateAvg(avg: number, curr: number): number {
   return avg ? (1 - avgWeight) * avg + avgWeight * curr : curr;
 }
 
-export function initDevConsole() {
+EM.addEagerInit([], [], [DevConsoleDef], () => {
   EM.addResource(DevConsoleDef);
 
   EM.addSystem(
@@ -165,4 +165,4 @@ export function initDevConsole() {
       res.text.debugText = dbgTxt;
     }
   );
-}
+});
