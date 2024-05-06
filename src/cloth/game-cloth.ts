@@ -47,7 +47,7 @@ import { Phase } from "../ecs/sys-phase.js";
 
 // TODO(@darzu): BROKEN. cloth sandbox isn't lit right and cloth isn't there
 
-export async function initClothSandbox(hosting: boolean) {
+export async function initClothSandbox() {
   const res = await EM.whenResources(
     AllMeshesDef,
     GlobalCursor3dDef,

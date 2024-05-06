@@ -109,7 +109,7 @@ export const LD51CannonDef = EM.defineComponent("ld51Cannon", () => {
   return {};
 });
 
-export async function initShipyardGame(hosting: boolean) {
+export async function initShipyardGame() {
   const res = await EM.whenResources(
     AllMeshesDef,
     // WoodAssetsDef,

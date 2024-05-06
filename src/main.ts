@@ -37,42 +37,38 @@ import { initPhysicsSystems } from "./physics/phys.js";
 
 // dbgLogMilestone("start of main.ts");
 
-export const GAME_INIT = objMap(
-  {
-    gjk: initGJKSandbox,
-    rebound: initReboundSandbox,
-    shipyard: initShipyardGame,
-    // broken-ish; too many temp f32s; port to Z-up
-    grass: initGrassGame,
-    font: initFontEditor,
-    cards: initCardsGame,
-    // TODO(@darzu): Z_UP: port to Z-up
-    hyperspace: initHyperspaceGame,
-    // broken-ish
-    cloth: initClothSandbox,
-    cube: initCubeGame,
-    gallery: initGalleryGame,
-    modeling: initModelingGame,
-    ld53: initLD53,
-    ld54: initLD54,
-    mp: initMPGame,
-    "graybox-starter": initGrayboxStarter,
-    "graybox-sunless": initGrayboxSunless,
-    "graybox-ship-arena": initGrayboxShipArena,
-    painterly: initPainterlyGame,
-    particles: initGameParticles,
-    ld55: initLd55,
-    "multi-scene": initMultiSceneGame,
-  },
-  (val, key) => {
-    return val as () => void;
-  }
-);
+const GAME_INIT: Record<string, () => Promise<void>> = {
+  gjk: initGJKSandbox,
+  rebound: initReboundSandbox,
+  shipyard: initShipyardGame,
+  // broken-ish; too many temp f32s; port to Z-up
+  grass: initGrassGame,
+  font: initFontEditor,
+  cards: initCardsGame,
+  // TODO(@darzu): Z_UP: port to Z-up
+  hyperspace: initHyperspaceGame,
+  // broken-ish
+  cloth: initClothSandbox,
+  cube: initCubeGame,
+  gallery: initGalleryGame,
+  modeling: initModelingGame,
+  ld53: initLD53,
+  ld54: initLD54,
+  mp: initMPGame,
+  "graybox-starter": initGrayboxStarter,
+  "graybox-sunless": initGrayboxSunless,
+  "graybox-ship-arena": initGrayboxShipArena,
+  painterly: initPainterlyGame,
+  particles: initGameParticles,
+  ld55: initLd55,
+  "multi-scene": initMultiSceneGame,
+};
+
 export const GAME_NAMES = Object.keys(GAME_INIT);
 
 // TODO(@darzu): current game should probably be saved in local storage, not hard-coded. (Default can be hard-coded)
 // prettier-ignore
-const GAME: keyof typeof GAME_INIT = (
+const DEFAULT_GAME: keyof typeof GAME_INIT = (
   // "painterly"
   // "graybox-ship-arena"
   // "ld53"
@@ -94,8 +90,15 @@ const MAX_SIM_LOOPS = 1;
 // TODO(@darzu): PERF ISSUES WITH LD51
 // const MAX_SIM_LOOPS = 3;
 
-async function main() {
+function startDefaultGame() {
+  const gameInitFn = GAME_INIT[DEFAULT_GAME];
+  gameInitFn();
+}
+
+async function startGameLoop() {
   // dbgLogMilestone("main()");
+
+  resetTempMatrixBuffer(`startGameLoop`);
 
   startNet();
 
@@ -107,11 +110,6 @@ async function main() {
 
   // TODO(@darzu): move elsewhere!
   initPhysicsSystems();
-
-  resetTempMatrixBuffer(`initGame ${GAME}`);
-
-  const gameInitFn = GAME_INIT[GAME];
-  gameInitFn();
 
   let previous_frame_time = performance.now();
   let accumulator = 0;
@@ -154,6 +152,11 @@ async function main() {
 // TODO(@darzu): move elsewhere
 test();
 
+async function main() {
+  await startGameLoop();
+  startDefaultGame();
+}
+
 // dom dependant stuff
 // TODO(@darzu): move to resource
 window.onload = () => {
@@ -172,6 +175,6 @@ window.onload = () => {
 // for debugging
 (globalThis as any).dbg = dbg;
 (globalThis as any).EM = EM;
-(globalThis as any).GAME = GAME;
+(globalThis as any).GAME = DEFAULT_GAME;
 
 // dbgLogMilestone("end of main.ts");
