@@ -98,6 +98,14 @@
 
 
   <script src="./main.js" type="module"></script>
+  <script type="module">
+    import { EM } from "./ecs/ecs.js";
+    import { WebNavDef } from "./web/webnav.js";
+    import { startDefaultGame } from "./main.js";
+    startDefaultGame();
+    const foo = await EM.whenResources(WebNavDef);
+    console.dir(foo);
+  </script>
 </body>
 
 </html>

@@ -89,10 +89,8 @@
 
   <script src="./main.js" type="module"></script>
   <script type="module">
-    import { WebNavDef } from "./web/webnav.js";
-    import { EM } from "./ecs/ecs.js";
-    const foo = await EM.whenResources(WebNavDef);
-    console.dir(foo);
+    import { startGameBasedOnURLHash } from "./main-hash-game.js";
+    startGameBasedOnURLHash();
   </script>
 </body>
 

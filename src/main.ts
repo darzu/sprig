@@ -37,7 +37,7 @@ import { initPhysicsSystems } from "./physics/phys.js";
 
 // dbgLogMilestone("start of main.ts");
 
-const GAME_INIT: Record<string, () => Promise<void>> = {
+export const GAME_INIT: Record<string, () => Promise<void>> = {
   gjk: initGJKSandbox,
   rebound: initReboundSandbox,
   shipyard: initShipyardGame,
@@ -90,7 +90,7 @@ const MAX_SIM_LOOPS = 1;
 // TODO(@darzu): PERF ISSUES WITH LD51
 // const MAX_SIM_LOOPS = 3;
 
-function startDefaultGame() {
+export function startDefaultGame() {
   EM.addEagerInit([], [], [], () => {
     const gameInitFn = GAME_INIT[DEFAULT_GAME];
     gameInitFn();
@@ -156,7 +156,8 @@ test();
 
 async function main() {
   await startGameLoop();
-  startDefaultGame();
+  // NOTE: use the .html page to decide what game (or what strategy for game picking) to run
+  // startDefaultGame();
 }
 
 // dom dependant stuff
