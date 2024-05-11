@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html style="font-size: 12px">
+
+<head>
+  <meta charset="utf-8" />
+  <title>🌱🏞 blocks</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      width: 100vw;
+      height: 100vh;
+
+      position: absolute;
+      overflow: hidden;
+    }
+
+    #canvasHolder {
+      background-color: black;
+      width: 128px;
+      height: 128px;
+    }
+
+    #world {
+      background-color: beige;
+      margin: 20px;
+    }
+
+    path {
+      stroke-width: 1px;
+    }
+
+    .sprites-block {
+      stroke: hsl(222, 71.3%, 32.7%);
+      fill: hsl(222, 71.3%, 57.8%);
+      /* 
+  Reference:
+  stroke: rgb(56, 92, 177);
+  fill: rgb(75, 123, 236); 
+  */
+      stroke: hsl(222, 52%, 46%);
+      fill: hsl(222, 81%, 61%);
+    }
+
+    .variables-block {
+      stroke: hsl(350, 71.3%, 32.7%);
+      fill: hsl(350, 71.3%, 57.8%);
+      /* 
+  Reference:
+  stroke: rgb(177, 44, 67);
+  fill: rgb(236, 59, 89);
+   */
+      stroke: hsl(350, 60%, 43%);
+      fill: hsl(350, 82%, 58%);
+    }
+
+    .loops-block {
+      stroke: hsl(148, 71.3%, 32.7%);
+      fill: hsl(148, 71.3%, 43.7%);
+      /* 
+  Reference:
+  stroke: rgb(24, 143, 80);
+  fill: rgb(32, 191, 107);
+  */
+      stroke: hsl(148, 71%, 33%);
+      fill: hsl(148, 71%, 44%);
+    }
+
+    .game-block {
+      /* Reference:
+  stroke: rgb(102, 63, 156);
+  fill: rgb(136, 84, 208); */
+
+      stroke: hsl(265, 42%, 43%);
+      fill: hsl(265, 57%, 57%);
+    }
+
+    .logic-block {
+      /* stroke: rgb(52, 128, 182);
+  fill: rgb(69, 170, 242); */
+
+      stroke: hsl(205, 56%, 46%);
+      fill: hsl(205, 87%, 61%);
+    }
+
+    text {
+      font-family: Monaco, monospace;
+      font-size: 12pt;
+      fill: white;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="canvasHolder">
+    <canvas width="128" height="128" id="sample-canvas"></canvas>
+  </div>
+
+  <svg id="world" width="640px" viewbox="0 0 640 800">
+
+    <!-- TODO: -->
+    <image
+      xlink:href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABiklEQVRYR2P832j6nwELYKw/zYgsjEsdulZ0fdjMRhZjHDwOKL2C6thuHVQ+ujwur6HpIxQiiBAYKAcsaZ4PTgPR/6ZB/ITuEM5vEPHvXBAaxkcPAZg8ujg0RHCFBOOAOwDmYLhDirPwJ1z0EED3OS55HCEBz2qDxgGOXqrgEJDSdCWUhckLKbSQwAgBujuAYCKkLBwQuQaWVtBDYMAdEOOQAy4HOnsjqBP3xIYYLCQGnwO2FGIvEYn1GS516CUqzhAYKAcsdjyJ1+fPru+mbhpBD4FB44BnPv2oPoXV79BakmohgSsE6O4AWKKFZUdCUQFTDwsJ9ERPbB2ytBfS/oDXBYPOAURHBSzbQoMCQx+OFlLsfnP8IUB3B+BMC+g+Q/MxroIP5gGYPCxtwNJOefEK1BAYNA4g5BCSqwRc/QlYOYDLQIxcQbLNUA3kOgA9JGB8D2djMBPej0Bz2FIm1FY1Rn8DvedEyGOwkBgwB6A7EN1BhDwACzGYOliIwHpKKF1wQoaB5KntAAAGmCxGspzgrwAAAABJRU5ErkJggg=="
+      x="9" y="9" width="32px" height="32px"></image>
+
+    <image x="4" y="50" id="blocklyDropdownArrowSvg" height="36px" width="36px"
+      xlink:href="data:image/svg+xml;base64,PHN2ZyBpZD0iTGF5ZXJfMSIgZGF0YS1uYW1lPSJMYXllciAxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMi43MSIgaGVpZ2h0PSI4Ljc5IiB2aWV3Qm94PSIwIDAgMTIuNzEgOC43OSI+PHRpdGxlPmRyb3Bkb3duLWFycm93PC90aXRsZT48ZyBvcGFjaXR5PSIwLjEiPjxwYXRoIGQ9Ik0xMi43MSwyLjQ0QTIuNDEsMi40MSwwLDAsMSwxMiw0LjE2TDguMDgsOC4wOGEyLjQ1LDIuNDUsMCwwLDEtMy40NSwwTDAuNzIsNC4xNkEyLjQyLDIuNDIsMCwwLDEsMCwyLjQ0LDIuNDgsMi40OCwwLDAsMSwuNzEuNzFDMSwwLjQ3LDEuNDMsMCw2LjM2LDBTMTEuNzUsMC40NiwxMiwuNzFBMi40NCwyLjQ0LDAsMCwxLDEyLjcxLDIuNDRaIiBmaWxsPSIjMjMxZjIwIi8+PC9nPjxwYXRoIGQ9Ik02LjM2LDcuNzlhMS40MywxLjQzLDAsMCwxLTEtLjQyTDEuNDIsMy40NWExLjQ0LDEuNDQsMCwwLDEsMC0yYzAuNTYtLjU2LDkuMzEtMC41Niw5Ljg3LDBhMS40NCwxLjQ0LDAsMCwxLDAsMkw3LjM3LDcuMzdBMS40MywxLjQzLDAsMCwxLDYuMzYsNy43OVoiIGZpbGw9IiNmZmYiLz48L3N2Zz4=">
+    </image>
+  </svg>
+
+  <script src="./main.js" type="module"></script>
+  <script src="./blocks/game-blocks.js" type="module"></script>
+  <script type="module">
+    import { GAME_LOADER } from "./game-loader.js";
+    GAME_LOADER.startGame("blocks");
+  </script>
+</body>
+
+</html>
