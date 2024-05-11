@@ -5,6 +5,7 @@ import * as draw from "./b-draw.js";
 import { setPos } from "./b-draw.js";
 import { emitBlocks } from "./b-resize.js";
 import { codeTree } from "./sample-blocks.js";
+import { getBarsBottom, makeAllColorBars } from "./b-color-bars.js";
 
 GAME_LOADER.registerGame({ name: "blocks", init: initBlocksGame });
 
@@ -23,7 +24,7 @@ export async function initBlocksGame() {
   console.log("loaded DOM2");
 
   // playing with colors:
-  // makeAllColorBars();
+  makeAllColorBars();
 
   // code render
   refreshCode();
@@ -33,6 +34,8 @@ export async function initBlocksGame() {
   const mainMs = perfMainEnd - perfMainStart;
   const mainS = mainMs / 1000;
   console.log(`Main seconds: ${mainS.toPrecision(2)}`);
+
+  createWordWrapBar();
 }
 
 export let world = <SVGSVGElement>(<unknown>document.getElementById("world"));
@@ -40,7 +43,7 @@ export let world = <SVGSVGElement>(<unknown>document.getElementById("world"));
 // WORD WRAP BAR
 // ========================================
 let wwMaxWidth = 600;
-namespace ww {
+function createWordWrapBar() {
   let W = 7;
   let H = world.height.baseVal.value - W * 4;
   let wwPath = (x: number) =>
@@ -92,8 +95,7 @@ export function refreshCode() {
   // console.log(JSON.stringify(renderableTree))
   // TODO(dz): update without full replacement
 
-  // const startY = getBarsBottom() + 50;
-  const startY = 50;
+  const startY = getBarsBottom() + 50;
 
   rSvg = draw.render(renderableTree2);
   setPos(rSvg, 50, startY);
