@@ -1,0 +1,64 @@
+
+
+path {
+  stroke-width: 1px;
+}
+
+.sprites-block {
+  stroke: hsl(222, 71.3%, 32.7%);
+  fill: hsl(222, 71.3%, 57.8%);
+  /* 
+Reference:
+stroke: rgb(56, 92, 177);
+fill: rgb(75, 123, 236); 
+*/
+  stroke: hsl(222, 52%, 46%);
+  fill: hsl(222, 81%, 61%);
+}
+
+.variables-block {
+  stroke: hsl(350, 71.3%, 32.7%);
+  fill: hsl(350, 71.3%, 57.8%);
+  /* 
+Reference:
+stroke: rgb(177, 44, 67);
+fill: rgb(236, 59, 89);
+*/
+  stroke: hsl(350, 60%, 43%);
+  fill: hsl(350, 82%, 58%);
+}
+
+.loops-block {
+  stroke: hsl(148, 71.3%, 32.7%);
+  fill: hsl(148, 71.3%, 43.7%);
+  /* 
+Reference:
+stroke: rgb(24, 143, 80);
+fill: rgb(32, 191, 107);
+*/
+  stroke: hsl(148, 71%, 33%);
+  fill: hsl(148, 71%, 44%);
+}
+
+.game-block {
+  /* Reference:
+stroke: rgb(102, 63, 156);
+fill: rgb(136, 84, 208); */
+
+  stroke: hsl(265, 42%, 43%);
+  fill: hsl(265, 57%, 57%);
+}
+
+.logic-block {
+  /* stroke: rgb(52, 128, 182);
+fill: rgb(69, 170, 242); */
+
+  stroke: hsl(205, 56%, 46%);
+  fill: hsl(205, 87%, 61%);
+}
+
+text {
+  font-family: Monaco, monospace;
+  font-size: 12pt;
+  fill: white;
+}
