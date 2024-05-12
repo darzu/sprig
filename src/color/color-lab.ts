@@ -21,11 +21,11 @@ type Mat = [
   [number, number, number]
 ];
 function multiplyMatrices(a: Mat, b: V3): V3 {
-  return V3.clone([
+  return V(
     a[0][0] * b[0] + a[0][1] * b[1] + a[0][2] * b[2],
     a[1][0] * b[0] + a[1][1] * b[1] + a[1][2] * b[2],
-    a[2][0] * b[0] + a[2][1] * b[1] + a[2][2] * b[2],
-  ]);
+    a[2][0] * b[0] + a[2][1] * b[1] + a[2][2] * b[2]
+  );
 }
 
 // sRGB-related functions
@@ -45,7 +45,8 @@ export function FRGBToFLRGB({ fr, fg, fb }: FRGB): FLRGB {
   function linCheap(val: number) {
     return Math.pow(val, 2.2);
   }
-  const lin = linCheap;
+  // const lin = linCheap;
+  const lin = linOfficial;
   return { flr: lin(fr), flg: lin(fg), flb: lin(fb) };
 }
 
@@ -65,10 +66,12 @@ export function FLRGBToFRGB({ flr, flg, flb }: FLRGB): FRGB {
 
     return 12.92 * val;
   }
+  // TODO(@darzu): BROKEN. gamCheap causes NaNs
   function gamCheap(val: number) {
     return Math.pow(val, 1 / 2.2);
   }
-  const gam = gamCheap;
+  // const gam = gamCheap;
+  const gam = gamOfficial;
   return { fr: gam(flr), fg: gam(flg), fb: gam(flb) };
 }
 

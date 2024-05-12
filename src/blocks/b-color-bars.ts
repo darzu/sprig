@@ -4,8 +4,6 @@ import { range, setStyle, values } from "./b-util.js";
 import { turbo } from "./b-color-turbo.js";
 import {
   contrastClamp,
-  pxtColors,
-  pxtColorsHSL,
   lumDiff,
   perceptualLum,
   toRGB,
@@ -25,9 +23,11 @@ import {
   toFLRGB,
   toOKLAB,
   isLCH,
-} from "./b-color.js";
+} from "../color/color.js";
+// } from "./b-color.js";
 import * as m from "./b-math.js";
 import { world } from "./game-blocks.js";
+import { pxtColors, pxtColorsHSL } from "./b-color.js";
 
 const ENABLE_WIDE_GAMUT = false;
 

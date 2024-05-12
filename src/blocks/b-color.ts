@@ -13,7 +13,7 @@ import {
   XYZD65ToFLRGB,
 } from "./b-color-lab.js";
 import { LABToLRGB, LRGBToLAB } from "./b-color-oklab.js";
-import { clamp, dist, max, min, sub, V3 } from "./b-math.js";
+import { clamp, dist, max, min, sub, N3 } from "./b-math.js";
 import { mapObj, never, values } from "./b-util.js";
 
 export type FRGB = { fr: number; fg: number; fb: number };
@@ -123,7 +123,8 @@ export function toXYZD65(clr: Color): XYZD65 {
   return FLRGBToXYZD65(toFLRGB(clr));
 }
 
-export function toV3(c: Color): V3 {
+export function toN3(c: Color): N3 {
+  // console.error(new Error(`b-color.ts toN3`));
   if (isHSL(c)) return [c.h, c.s, c.l];
   else if (isRGB(c)) return [c.r, c.g, c.b];
   else if (isLAB(c)) return [c.l, c.a, c.b];

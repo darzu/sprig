@@ -7,7 +7,7 @@ import {
   FRGB,
   LAB,
   LCH,
-  toV3,
+  toN3,
   XYZD50,
   XYZD65,
 } from "./b-color.js";
@@ -63,7 +63,7 @@ export function FLRGBToXYZD65(rgb: FLRGB): XYZD65 {
     [0.21263900587151027, 0.715168678767756, 0.07219231536073371],
     [0.01933081871559182, 0.11919477979462598, 0.9505321522496607],
   ];
-  const [x, y, z] = multiplyMatrices(M, toV3(rgb));
+  const [x, y, z] = multiplyMatrices(M, toN3(rgb));
   return { x, y, z, white: "D65" };
 }
 
@@ -77,7 +77,7 @@ export function XYZD65ToFLRGB(xyz: XYZD65): FLRGB {
     [0.05563007969699366, -0.20397695888897652, 1.0569715142428786],
   ];
 
-  const [flr, flg, flb] = multiplyMatrices(M, toV3(xyz));
+  const [flr, flg, flb] = multiplyMatrices(M, toN3(xyz));
   return { flr, flg, flb };
 }
 
@@ -309,7 +309,7 @@ export function D65_to_D50(xyz: XYZD65): XYZD50 {
     [-0.0092345, 0.0150436, 0.7521316],
   ];
 
-  const [x, y, z] = multiplyMatrices(M, toV3(xyz));
+  const [x, y, z] = multiplyMatrices(M, toN3(xyz));
   return { x, y, z, white: "D50" };
 }
 
@@ -321,7 +321,7 @@ export function D50_to_D65(xyz: XYZD50): XYZD65 {
     [0.0122982, -0.020483, 1.3299098],
   ];
 
-  const [x, y, z] = multiplyMatrices(M, toV3(xyz));
+  const [x, y, z] = multiplyMatrices(M, toN3(xyz));
   return { x, y, z, white: "D65" };
 }
 
@@ -335,7 +335,7 @@ export function XYZD50_to_CIELAB(XYZ: XYZD50): CIELAB {
   const white = [0.96422, 1.0, 0.82521]; // D50 reference white
 
   // compute xyz, which is XYZ scaled relative to reference white
-  const xyz = toV3(XYZ).map((value, i) => value / white[i]);
+  const xyz = toN3(XYZ).map((value, i) => value / white[i]);
 
   // now compute f
   const f = xyz.map((value) =>
@@ -351,7 +351,7 @@ export function XYZD50_to_CIELAB(XYZ: XYZD50): CIELAB {
 }
 
 export function Lab_to_XYZD50(lab: CIELAB): XYZD50 {
-  const Lab = toV3(lab);
+  const Lab = toN3(lab);
   // Convert Lab to D50-adapted XYZ
   // http://www.brucelindbloom.com/index.html?Eqn_RGB_XYZ_Matrix.html
   const κ = 24389 / 27; // 29^3/3^3
@@ -377,7 +377,7 @@ export function Lab_to_XYZD50(lab: CIELAB): XYZD50 {
 }
 
 export function Lab_to_LCH(cielab: CIELAB): LCH {
-  const Lab = toV3(cielab);
+  const Lab = toN3(cielab);
   // Convert to polar form
   const hue = (Math.atan2(Lab[2], Lab[1]) * 180) / Math.PI;
   return {
@@ -388,7 +388,7 @@ export function Lab_to_LCH(cielab: CIELAB): LCH {
 }
 
 export function LCH_to_Lab(lch: LCH): CIELAB {
-  const LCH = toV3(lch);
+  const LCH = toN3(lch);
   // Convert from polar form
   return {
     l: LCH[0],

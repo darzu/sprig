@@ -25,7 +25,7 @@ export const ENDESGA16 = objMap(
     blue: "#0484d1",
   },
   (val, name) => {
-    return toV3(toFLRGB(parseHex(val))) as V3;
+    return toV3(toFLRGB(parseHex(val)));
   }
 );
 export const RainbowEndesga16 = [
@@ -64,7 +64,7 @@ export const COLOR_SAMPLES = objMap(
     jb_skywhite: "#DFE6DB",
   },
   (val, name) => {
-    return toV3(toFLRGB(parseHex(val))) as V3;
+    return toV3(toFLRGB(parseHex(val)));
   }
 );
 
