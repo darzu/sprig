@@ -2,16 +2,16 @@ import { clampLCH, toHex, toHSL, toLCH } from "../color/color.js";
 import { bast } from "./bast.js";
 import { V2, max, Sized } from "./b-math.js";
 import {
-  INNER_H_M,
-  INNER_W_M,
-  MOUTH_INDENT,
-  NODE_SPACER,
+  B_INNER_H_M,
+  B_INNER_W_M,
+  B_MOUTH_INDENT,
+  B_NODE_SPACER,
   Renderable,
   RenderableBlock,
   RenderableDropdown,
   RenderableStack,
-  STACK_GAP,
-} from "./b-resize.js";
+  B_STACK_GAP,
+} from "./blocks-resize.js";
 import { setStyle } from "../utils/util-dom.js";
 import { edges } from "../utils/util.js";
 
@@ -72,13 +72,16 @@ function topHelper(
   r: number
 ): string {
   // overkill; for if not can't fit
-  if (notch && w < NOTCH_W + NOTCH_PAD + r * 2 + (fromMouth ? MOUTH_INDENT : 0))
+  if (
+    notch &&
+    w < NOTCH_W + NOTCH_PAD + r * 2 + (fromMouth ? B_MOUTH_INDENT : 0)
+  )
     notch = false;
 
   const leftRect = `${fromMouth ? "" : `m 0,${r}`} ${
     fromMouth ? r2blArc(r) : l2tlArc(r)
   }`;
-  const roomForMouth = fromMouth ? MOUTH_INDENT : 0;
+  const roomForMouth = fromMouth ? B_MOUTH_INDENT : 0;
   const withNotch = `${leftRect} h ${NOTCH_PAD} ${l2rNotch} h ${
     rightOfNotch(w, r) - roomForMouth
   } ${t2trArc(r)}`;
@@ -96,11 +99,11 @@ function bottomHelper(
   r: number
 ): string {
   // if notch can't fit
-  if (notch && w < NOTCH_W + NOTCH_PAD + r * 2 + (toMouth ? MOUTH_INDENT : 0))
+  if (notch && w < NOTCH_W + NOTCH_PAD + r * 2 + (toMouth ? B_MOUTH_INDENT : 0))
     notch = false;
 
   const leftRect = toMouth ? b2tlArc(r) : b2blArc(r);
-  const roomForMouth = toMouth ? MOUTH_INDENT : 0;
+  const roomForMouth = toMouth ? B_MOUTH_INDENT : 0;
   const withNotch = `${r2brArc(r)} h -${
     rightOfNotch(w, r) - roomForMouth
   } ${r2lNotch} h -${NOTCH_PAD} ${leftRect}`;
@@ -247,7 +250,7 @@ function mkBlockFullPath(r: RenderableBlock): string {
         max(s.lines.map((l) => max(l.nodes.map((n) => n.size.y))))
       )
     );
-    let rad = (maxH + INNER_H_M * 2) / 2;
+    let rad = (maxH + B_INNER_H_M * 2) / 2;
     if (rad * 2 > r.size.x) rad = r.size.x / 2;
     if (r.corner === "circular") drawer = circ(rad);
     else if (r.corner === "triangular") drawer = tri(rad);
@@ -307,8 +310,8 @@ function renderBlock(r: RenderableBlock): SVGGElement {
   let secY = 0;
   for (let sec of secs) {
     let isMouth = sec.kind === "mouth";
-    let linX = isMouth ? MOUTH_INDENT : INNER_W_M;
-    let linY = secY + (isMouth ? 0 : INNER_H_M);
+    let linX = isMouth ? B_MOUTH_INDENT : B_INNER_W_M;
+    let linY = secY + (isMouth ? 0 : B_INNER_H_M);
     for (let line of sec.lines) {
       let nodX = linX;
       let nodY = linY;
@@ -319,7 +322,7 @@ function renderBlock(r: RenderableBlock): SVGGElement {
         setPos(cSvg, nodX, nodY + offY);
         g.appendChild(cSvg);
 
-        nodX += n.size.x + NODE_SPACER;
+        nodX += n.size.x + B_NODE_SPACER;
       }
       linY += line.size.y;
     }
@@ -356,7 +359,7 @@ function renderStack(stack: RenderableStack): SVGGElement {
     const child = render(e);
     setPos(child, absX, absY);
     g.appendChild(child);
-    absY += e.size.y + STACK_GAP;
+    absY += e.size.y + B_STACK_GAP;
   }
 
   // setPos(g, absX, absY)

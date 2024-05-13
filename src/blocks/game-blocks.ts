@@ -2,8 +2,8 @@ import { GAME_LOADER } from "../game-loader.js";
 import { pathToSvg } from "./b-draw.js";
 import * as draw from "./b-draw.js"; // TODO(@darzu): remove
 import { setPos } from "./b-draw.js";
-import { emitBlocks } from "./b-resize.js";
-import { codeTree } from "./blocks-samples.js";
+import { emitBlocks } from "./blocks-resize.js";
+import { codeTree } from "./sample-blocks.js";
 import { getBarsBottom, makeAllColorBars } from "./b-color-bars.js";
 import { setStyle } from "../utils/util-dom.js";
 

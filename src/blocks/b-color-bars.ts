@@ -1,5 +1,5 @@
 import { pathToSvg, setPos } from "./b-draw.js";
-import { CHAR_W } from "./b-resize.js";
+import { B_CHAR_W } from "./blocks-resize.js";
 import { turbo } from "../color/color-turbo.js";
 import {
   contrastClamp,
@@ -357,7 +357,7 @@ function mkColorBar(
     let s = document.createElementNS("http://www.w3.org/2000/svg", "text");
     s.setAttribute("dominant-baseline", "central");
     s.setAttribute("dy", dy.toString());
-    s.setAttribute("x", x + w / 2 - CHAR_W / 2 + "");
+    s.setAttribute("x", x + w / 2 - B_CHAR_W / 2 + "");
     s.textContent = Math.trunc(relCont) + "";
     barsG.appendChild(s);
   });
@@ -368,7 +368,7 @@ function mkColorBar(
     let s = document.createElementNS("http://www.w3.org/2000/svg", "text");
     s.setAttribute("dominant-baseline", "central");
     s.setAttribute("dy", dy.toString());
-    s.setAttribute("x", -CHAR_W * lblText.length - CHAR_W / 2 + "");
+    s.setAttribute("x", -B_CHAR_W * lblText.length - B_CHAR_W / 2 + "");
     s.setAttribute("style", "stroke: #000; fill: #000");
     s.textContent = lblText;
     barsG.appendChild(s);

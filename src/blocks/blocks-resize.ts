@@ -13,17 +13,17 @@ rast: Renderable AST
 
 type BlockLook = "event" | "statement" | "norm_exp" | "bool_exp";
 
-export const WRAP_INDENT = 8;
-export const INNER_W_M = 8;
-export const INNER_H_M = 4;
-export const CHAR_H = 16;
-export const CHAR_W = 9.6;
-export const NODE_SPACER = CHAR_W;
-export const MOUTH_INDENT = WRAP_INDENT * 2;
-export const MIN_WIDTH = 12;
+const WRAP_INDENT = 8;
+export const B_INNER_W_M = 8;
+export const B_INNER_H_M = 4;
+const CHAR_H = 16;
+export const B_CHAR_W = 9.6;
+export const B_NODE_SPACER = B_CHAR_W;
+export const B_MOUTH_INDENT = WRAP_INDENT * 2;
+const MIN_WIDTH = 12;
 // export const MIN_WIDTH = 164; // TODO: why was this set to 164?
-export const LABEL_MARGIN = 12;
-export const STACK_GAP = 12;
+const LABEL_MARGIN = 12;
+export const B_STACK_GAP = 12;
 // TODO: handle non-fixed size fonts
 // TODO: calibrate numbers
 
@@ -84,7 +84,7 @@ export function wrapNodes<T extends Sized>(
   for (let n of nodes) {
     let { x: w, y: h } = n.size;
 
-    let proposedLineAdd = (currLine.size.x > 0 ? NODE_SPACER : 0) + w;
+    let proposedLineAdd = (currLine.size.x > 0 ? B_NODE_SPACER : 0) + w;
     if (currLine.size.x + proposedLineAdd > maxWidth && currLine.size.x > 0) {
       // line break
       // console.log("LINE BREAK!") // TODO
@@ -108,7 +108,7 @@ export function wrapNodes<T extends Sized>(
   return lines;
 }
 export function sizeOfText(txt: string): V2 {
-  return { x: CHAR_W * txt.length, y: CHAR_H };
+  return { x: B_CHAR_W * txt.length, y: CHAR_H };
 }
 
 function emitLbl(txt: string): Renderable {
@@ -171,7 +171,7 @@ function emitStmtList(
   es: bast.StmtBlock[],
   maxWidth: number
 ): RenderableSection {
-  let maxMouthChildWidth = maxWidth - MOUTH_INDENT;
+  let maxMouthChildWidth = maxWidth - B_MOUTH_INDENT;
 
   let rs = es.map((e) => emitExpOrStmtBlock(e, maxMouthChildWidth));
 
@@ -180,7 +180,7 @@ function emitStmtList(
   let innerH = sum(lines.map((a) => a.size.y));
 
   let outerW = Math.min(
-    Math.max(innerW + INNER_W_M * 2 + MOUTH_INDENT, MIN_WIDTH),
+    Math.max(innerW + B_INNER_W_M * 2 + B_MOUTH_INDENT, MIN_WIDTH),
     maxWidth
   );
 
@@ -205,7 +205,7 @@ function emitMulti(e: bast.MultiStmt, maxWidth: number): Renderable {
     sections.push({
       lines: [],
       innerSize,
-      outerSize: add(innerSize, { x: INNER_W_M * 2, y: INNER_H_M * 2 }),
+      outerSize: add(innerSize, { x: B_INNER_W_M * 2, y: B_INNER_H_M * 2 }),
       kind: "wrap",
     });
   }
@@ -233,18 +233,21 @@ function emitExpList(es: bast.Exp[], maxWidth: number): RenderableSection {
 
   const nodes = es.map((e) => emitExp(e, maxChildWidth));
 
-  let lines = wrapNodes(nodes, maxWidth - INNER_W_M * 2);
+  let lines = wrapNodes(nodes, maxWidth - B_INNER_W_M * 2);
 
   let innerW = max(lines.map((l) => l.size.x));
   let innerH = sum(lines.map((l) => l.size.y));
   let innerSize: V2 = { x: innerW, y: innerH };
 
-  let outerW = Math.min(Math.max(innerW + INNER_W_M * 2, MIN_WIDTH), maxWidth);
+  let outerW = Math.min(
+    Math.max(innerW + B_INNER_W_M * 2, MIN_WIDTH),
+    maxWidth
+  );
 
   return {
     kind: "wrap",
     innerSize,
-    outerSize: { x: outerW, y: innerH + INNER_H_M * 2 },
+    outerSize: { x: outerW, y: innerH + B_INNER_H_M * 2 },
     lines: lines,
   };
 }
@@ -262,7 +265,7 @@ export function emitBlocks(es: bast.Stmt[], maxWidth: number): RenderableStack {
   );
   const height = rs
     .map((r) => r.size.y)
-    .reduce((p, n) => (p ? p + n + STACK_GAP : n), 0);
+    .reduce((p, n) => (p ? p + n + B_STACK_GAP : n), 0);
   const width = max(rs.map((r) => r.size.x));
   return {
     kind: "stack",
