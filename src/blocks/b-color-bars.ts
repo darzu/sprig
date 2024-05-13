@@ -1,7 +1,7 @@
 import { pathToSvg, setPos } from "./b-draw.js";
 import { CHAR_W } from "./b-resize.js";
 import { mapObj, range, setStyle, values } from "./b-util.js";
-import { turbo } from "./b-color-turbo.js";
+import { turbo } from "./color-turbo.js";
 import {
   contrastClamp,
   lumDiff,
