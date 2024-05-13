@@ -1,5 +1,5 @@
 import { bast } from "./bast.js";
-import { pxtColors } from "./b-color-bars.js";
+import { pxtColors } from "./color-bars.js";
 
 export let codeTree_tri_sizing: bast.Stmt[] = [
   {

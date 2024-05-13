@@ -4,7 +4,7 @@ import * as draw from "./b-draw.js"; // TODO(@darzu): remove
 import { setPos } from "./b-draw.js";
 import { emitBlocks } from "./blocks-resize.js";
 import { codeTree } from "./sample-blocks.js";
-import { getBarsBottom, makeAllColorBars } from "./b-color-bars.js";
+import { getBarsBottom, makeAllColorBars } from "./color-bars.js";
 import { setStyle } from "../utils/util-dom.js";
 
 GAME_LOADER.registerGame({ name: "blocks", init: initBlocksGame });
