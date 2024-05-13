@@ -12,3 +12,10 @@ export function pathToSvgDom(d: string): SVGPathElement {
   blk.setAttribute("d", path);
   return blk;
 }
+
+export function domSetPos(e: SVGElement, x: number, y: number) {
+  // TODO(dz): worried about perf, might prefer to use "M x,y" in path string
+  // e.setAttribute("x", x.toString());
+  // e.setAttribute("y", y.toString());
+  e.setAttribute("transform", `translate(${x},${y})`);
+}

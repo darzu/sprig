@@ -12,7 +12,7 @@ import {
   RenderableStack,
   B_STACK_GAP,
 } from "./blocks-resize.js";
-import { pathToSvgDom, setStyle } from "../utils/util-dom.js";
+import { pathToSvgDom, domSetPos, setStyle } from "../utils/util-dom.js";
 import { edges } from "../utils/util.js";
 import { max } from "../utils/math.js";
 
@@ -275,13 +275,6 @@ function mkBlockFullPath(r: RenderableBlock): string {
   return secs.join() + "Z";
 }
 
-export function setPos(e: SVGElement, x: number, y: number) {
-  // TODO(dz): worried about perf, might prefer to use "M x,y" in path string
-  // e.setAttribute("x", x.toString());
-  // e.setAttribute("y", y.toString());
-  e.setAttribute("transform", `translate(${x},${y})`);
-}
-
 function renderBlock(r: RenderableBlock): SVGGElement {
   // let absX = 0;
   // let absY = 0;
@@ -314,7 +307,7 @@ function renderBlock(r: RenderableBlock): SVGGElement {
         // render
         let offY = (line.size.y - n.size.y) / 2;
         let cSvg = render(n);
-        setPos(cSvg, nodX, nodY + offY);
+        domSetPos(cSvg, nodX, nodY + offY);
         g.appendChild(cSvg);
 
         nodX += n.size.x + B_NODE_SPACER;
@@ -352,7 +345,7 @@ function renderStack(stack: RenderableStack): SVGGElement {
   let absY = 0;
   for (let e of stack.children) {
     const child = render(e);
-    setPos(child, absX, absY);
+    domSetPos(child, absX, absY);
     g.appendChild(child);
     absY += e.size.y + B_STACK_GAP;
   }

@@ -1,4 +1,3 @@
-import { setPos } from "./b-draw.js";
 import { B_CHAR_W } from "./blocks-resize.js";
 import { turbo } from "../color/color-turbo.js";
 import {
@@ -26,7 +25,7 @@ import {
 } from "../color/color.js";
 import { world } from "./game-blocks.js";
 import { objMap, range } from "../utils/util.js";
-import { pathToSvgDom, setStyle } from "../utils/util-dom.js";
+import { pathToSvgDom, domSetPos, setStyle } from "../utils/util-dom.js";
 import { avg } from "../utils/math.js";
 
 const _referenceColors = {
@@ -374,7 +373,7 @@ function mkColorBar(
     barsG.appendChild(s);
   }
 
-  setPos(barsG, 70, getBarsBottom());
+  domSetPos(barsG, 70, getBarsBottom());
   lastColorBarIdx++;
   world.appendChild(barsG);
 
