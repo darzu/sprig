@@ -23,30 +23,8 @@ export function dist(v: V2): number {
   return Math.sqrt(dist2(v));
 }
 
-// functions
-export function sum(ns: number[]): number {
-  return ns.reduce((p, n) => p + n, 0);
-}
-export function max(ns: number[]): number {
-  return ns.reduce((p, n) => (p > n ? p : n), -9999999);
-}
-export function avg(ns: number[]): number {
-  return sum(ns) / ns.length;
-}
-export function clamp(n: number, min: number, max: number): number {
-  if (n < min) return min;
-  else if (n > max) return max;
-  return n;
-}
-export function min(ns: number[]): number {
-  return ns.reduce((p, n) => (p < n ? p : n), 9999999);
-}
-export function even(n: number) {
-  return n % 2 == 0;
-}
-
 export type N3 = [number, number, number];
-export type Mat = [N3, N3, N3];
+type Mat = [N3, N3, N3];
 export function multiplyMatrices(a: Mat, b: N3): N3 {
   return [
     a[0][0] * b[0] + a[0][1] * b[1] + a[0][2] * b[2],

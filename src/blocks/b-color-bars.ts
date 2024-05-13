@@ -24,10 +24,10 @@ import {
   isLCH,
   RGB,
 } from "../color/color.js";
-import * as m from "./b-math.js"; // TODO(@darzu): remove * as
 import { world } from "./game-blocks.js";
 import { objMap, range } from "../utils/util.js";
 import { setStyle } from "../utils/util-dom.js";
+import { avg } from "../utils/math.js";
 
 const _referenceColors = {
   scene: "#4b6584",
@@ -74,9 +74,9 @@ export function makeAllColorBars() {
   mkColorBar(refClrs, "pxt");
 
   const avgMinMax = (vs: number[]) => ({
-    avg: m.avg(vs),
-    min: m.min(vs),
-    max: m.max(vs),
+    avg: avg(vs),
+    min: Math.min(...vs),
+    max: Math.max(...vs),
   });
   const satStats = avgMinMax(Object.values(pxtColorsHSL).map((hsl) => hsl.s));
   const lumStats = avgMinMax(Object.values(pxtColorsHSL).map((hsl) => hsl.l));

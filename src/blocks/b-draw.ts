@@ -1,6 +1,6 @@
 import { clampLCH, toHex, toHSL, toLCH } from "../color/color.js";
 import { bast } from "./bast.js";
-import { V2, max, Sized } from "./b-math.js";
+import { V2, Sized } from "./util-blocks.js";
 import {
   B_INNER_H_M,
   B_INNER_W_M,
@@ -14,6 +14,7 @@ import {
 } from "./blocks-resize.js";
 import { setStyle } from "../utils/util-dom.js";
 import { edges } from "../utils/util.js";
+import { max } from "../utils/math.js";
 
 // TODO: consider WebGL
 

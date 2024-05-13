@@ -1,7 +1,8 @@
-import { add, even, Sized, max, V2, sum } from "./b-math.js";
+import { add, Sized, V2 } from "./util-blocks.js";
 import { Color, HSL, RGB } from "../color/color.js";
 import { bast } from "./bast.js";
 import { never } from "../utils/util-no-import.js";
+import { even, max, sum } from "../utils/math.js";
 
 // TODO: rework this to be bast-to-sized-bast or something less verbose. Or call it "resizer"
 /*
