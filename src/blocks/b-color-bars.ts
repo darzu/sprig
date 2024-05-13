@@ -1,6 +1,6 @@
 import { pathToSvg, setPos } from "./b-draw.js";
 import { CHAR_W } from "./b-resize.js";
-import { range, setStyle, values } from "./b-util.js";
+import { mapObj, range, setStyle, values } from "./b-util.js";
 import { turbo } from "./b-color-turbo.js";
 import {
   contrastClamp,
@@ -23,11 +23,48 @@ import {
   toFLRGB,
   toOKLAB,
   isLCH,
+  RGB,
 } from "../color/color.js";
 // } from "./b-color.js";
 import * as m from "./b-math.js";
 import { world } from "./game-blocks.js";
-import { pxtColors, pxtColorsHSL } from "./b-color.js";
+
+const _referenceColors = {
+  scene: "#4b6584",
+  music: "rgb(227,17,192)",
+  controller: "#d54322",
+  variables: "rgb(237,59,89)",
+  functions: "rgb(35,69,154)",
+  input: "#b4009e",
+  logic: "rgb(69,170,242)",
+  loops: "rgb(32,191,107)",
+  control: "#ff5722",
+  jacdac: "#e79251",
+  display: "#311557",
+  animation: "#03aa74",
+  sprite: "#3b6fea",
+  sprites: "#4b7bec",
+  location: "#401255",
+  gamepad: "#303030",
+  lcd: "#219e42",
+  light: "#0078d7",
+  net: "#8446cf",
+  power: "#898989",
+  images: "#a5b1c2",
+  switch: "#d65cd6",
+  corgio: "#d2b48c",
+  darts: "#6699cc",
+  info: "#cf6a87",
+  sevenseg: "#4682b4",
+  statusbar: "#38364d",
+  tilemaps: "#84b89f",
+  textsprite: "#3e99de",
+  timer: "#700204",
+  story: "#b36634",
+  minimap: "#cfab0c",
+};
+export const pxtColors: { [k: string]: RGB } = mapObj(_referenceColors, parse);
+export const pxtColorsHSL: { [k: string]: HSL } = mapObj(pxtColors, toHSL);
 
 const ENABLE_WIDE_GAMUT = false;
 

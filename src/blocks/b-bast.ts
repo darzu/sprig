@@ -1,5 +1,5 @@
 // blocks AST
-import { Color } from "./b-color";
+import { Color } from "../color/color.js";
 
 // looks
 export type CornerShape = "square" | "circular" | "triangular";

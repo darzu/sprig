@@ -9,7 +9,7 @@ import {
   toHSL,
   toLCH,
   white,
-} from "./b-color.js";
+} from "../color/color.js";
 import { V2, max, Sized, clamp } from "./b-math.js";
 import {
   INNER_H_M,

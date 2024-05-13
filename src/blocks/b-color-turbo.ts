@@ -1,4 +1,4 @@
-import { FRGB, FRGBToRGB, RGB, HSL, toHSL } from "./b-color.js";
+import { FRGB, FRGBToRGB, RGB, HSL, toHSL } from "../color/color.js";
 
 // https://ai.googleblog.com/2019/08/turbo-improved-rainbow-colormap-for.html
 
