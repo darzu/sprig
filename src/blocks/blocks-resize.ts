@@ -1,8 +1,13 @@
-import { add, Sized, V2 } from "./util-blocks.js";
+import { Sized, _XY } from "./util-blocks.js";
 import { Color, HSL, RGB } from "../color/color.js";
 import { bast } from "./bast.js";
 import { never } from "../utils/util-no-import.js";
 import { even, max, sum } from "../utils/math.js";
+
+// TODO(@darzu): remove
+function add(a: _XY, b: _XY): _XY {
+  return { x: a.x + b.x, y: a.y + b.y };
+}
 
 // TODO: rework this to be bast-to-sized-bast or something less verbose. Or call it "resizer"
 /*
@@ -29,12 +34,12 @@ export const B_STACK_GAP = 12;
 // TODO: calibrate numbers
 
 // renderable
-type Line<T> = { nodes: T[]; size: V2 };
+type Line<T> = { nodes: T[]; size: _XY };
 export interface RenderableSection {
   lines: Line<Renderable>[];
   // inner size
-  innerSize: V2; // TODO: currently unused
-  outerSize: V2;
+  innerSize: _XY; // TODO: currently unused
+  outerSize: _XY;
   kind: "wrap" | "mouth";
 }
 export interface RenderableBlockLook {
@@ -42,7 +47,7 @@ export interface RenderableBlockLook {
   // category: BlockCategory,
   color: Color;
   look: BlockLook;
-  size: V2;
+  size: _XY;
 }
 export interface RenderableBlock extends RenderableBlockLook {
   kind: "block";
@@ -52,7 +57,7 @@ export interface RenderableBlock extends RenderableBlockLook {
 export interface RenderableLabel {
   kind: "label";
   // outer size
-  size: V2;
+  size: _XY;
   text: string;
 }
 export interface RenderableDropdown extends RenderableBlockLook {
@@ -62,7 +67,7 @@ export interface RenderableDropdown extends RenderableBlockLook {
 }
 export interface RenderableStack {
   kind: "stack";
-  size: V2;
+  size: _XY;
   children: Renderable[];
 }
 // TODO: add more renderable terminals like image, etc
@@ -108,7 +113,7 @@ export function wrapNodes<T extends Sized>(
 
   return lines;
 }
-export function sizeOfText(txt: string): V2 {
+export function sizeOfText(txt: string): _XY {
   return { x: B_CHAR_W * txt.length, y: CHAR_H };
 }
 
@@ -202,7 +207,7 @@ function emitMulti(e: bast.MultiStmt, maxWidth: number): Renderable {
   // add an end cap if it's missing
   if (even(sections.length)) {
     // TODO(@darzu): seems like a heuristic..
-    let innerSize: V2 = { x: 0, y: 16 + 8 };
+    let innerSize: _XY = { x: 0, y: 16 + 8 };
     sections.push({
       lines: [],
       innerSize,
@@ -238,7 +243,7 @@ function emitExpList(es: bast.Exp[], maxWidth: number): RenderableSection {
 
   let innerW = max(lines.map((l) => l.size.x));
   let innerH = sum(lines.map((l) => l.size.y));
-  let innerSize: V2 = { x: innerW, y: innerH };
+  let innerSize: _XY = { x: innerW, y: innerH };
 
   let outerW = Math.min(
     Math.max(innerW + B_INNER_W_M * 2, MIN_WIDTH),

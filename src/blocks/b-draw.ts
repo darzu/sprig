@@ -1,6 +1,6 @@
 import { clampLCH, toHex, toHSL, toLCH } from "../color/color.js";
 import { bast } from "./bast.js";
-import { V2, Sized } from "./util-blocks.js";
+import { _XY, Sized } from "./util-blocks.js";
 import {
   B_INNER_H_M,
   B_INNER_W_M,
@@ -190,7 +190,7 @@ export const rect = new RectDrawer(4);
 export const circ = (r: number) => new CircDrawer(r);
 export const tri = (r: number) => new TriDrawer(r);
 
-function renderLabel(r: { size: V2; text: string }): SVGTextElement {
+function renderLabel(r: { size: _XY; text: string }): SVGTextElement {
   let h = r.size.y;
   let dy = h / 2;
   let s = document.createElementNS("http://www.w3.org/2000/svg", "text");
@@ -216,7 +216,7 @@ function renderDropdown(r: RenderableDropdown): SVGGElement {
 }
 
 function mkBlockSimplePath(
-  size: V2,
+  size: _XY,
   cornerShape: bast.CornerShape,
   cornerHeight?: number
 ): string {
