@@ -1,6 +1,6 @@
 import { clampLCH, toHex, toHSL, toLCH } from "../color/color.js";
 import { bast } from "./bast.js";
-import { _XY, Sized } from "./util-blocks.js";
+import { _XY, Sized } from "./blocks-resize.js";
 import {
   B_INNER_H_M,
   B_INNER_W_M,

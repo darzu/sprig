@@ -1,8 +1,13 @@
-import { Sized, _XY } from "./util-blocks.js";
 import { Color, HSL, RGB } from "../color/color.js";
 import { bast } from "./bast.js";
 import { never } from "../utils/util-no-import.js";
 import { even, max, sum } from "../utils/math.js";
+
+// types
+export type _XY = { x: number; y: number };
+export interface Sized {
+  size: _XY;
+}
 
 // TODO(@darzu): remove
 function add(a: _XY, b: _XY): _XY {
