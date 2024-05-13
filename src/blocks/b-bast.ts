@@ -1,5 +1,6 @@
-// blocks AST
 import { Color } from "../color/color.js";
+
+// blocks AST
 
 // looks
 export type CornerShape = "square" | "circular" | "triangular";

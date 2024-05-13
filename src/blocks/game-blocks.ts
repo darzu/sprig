@@ -1,7 +1,7 @@
 import { GAME_LOADER } from "../game-loader.js";
 import { pathToSvg } from "./b-draw.js";
 import { setStyle } from "./b-util.js";
-import * as draw from "./b-draw.js";
+import * as draw from "./b-draw.js"; // TODO(@darzu): remove
 import { setPos } from "./b-draw.js";
 import { emitBlocks } from "./b-resize.js";
 import { codeTree } from "./sample-blocks.js";

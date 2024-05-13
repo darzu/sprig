@@ -1,3 +1,5 @@
+// TODO(@darzu): remove!
+
 export function range(length: number): number[] {
   return ((new Array(length) as any).fill(null) as number[]).map((_, i) => i);
 }

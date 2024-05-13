@@ -25,8 +25,7 @@ import {
   isLCH,
   RGB,
 } from "../color/color.js";
-// } from "./b-color.js";
-import * as m from "./b-math.js";
+import * as m from "./b-math.js"; // TODO(@darzu): remove * as
 import { world } from "./game-blocks.js";
 
 const _referenceColors = {

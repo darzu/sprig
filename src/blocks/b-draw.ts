@@ -1,16 +1,6 @@
 import { CornerShape } from "./b-bast.js";
-import {
-  clampHSL,
-  clampLCH,
-  Color,
-  contrastClamp,
-  parseHex,
-  toHex,
-  toHSL,
-  toLCH,
-  white,
-} from "../color/color.js";
-import { V2, max, Sized, clamp } from "./b-math.js";
+import { clampLCH, toHex, toHSL, toLCH } from "../color/color.js";
+import { V2, max, Sized } from "./b-math.js";
 import {
   INNER_H_M,
   INNER_W_M,
@@ -22,7 +12,7 @@ import {
   RenderableStack,
   STACK_GAP,
 } from "./b-resize.js";
-import { edges, never, setStyle } from "./b-util.js";
+import { edges, setStyle } from "./b-util.js";
 
 // TODO: consider WebGL
 
