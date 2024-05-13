@@ -1,6 +1,5 @@
 import { pathToSvg, setPos } from "./b-draw.js";
 import { CHAR_W } from "./b-resize.js";
-import { mapObj, range, setStyle, values } from "./b-util.js";
 import { turbo } from "../color/color-turbo.js";
 import {
   contrastClamp,
@@ -27,6 +26,8 @@ import {
 } from "../color/color.js";
 import * as m from "./b-math.js"; // TODO(@darzu): remove * as
 import { world } from "./game-blocks.js";
+import { objMap, range } from "../utils/util.js";
+import { setStyle } from "../utils/util-dom.js";
 
 const _referenceColors = {
   scene: "#4b6584",
@@ -62,14 +63,14 @@ const _referenceColors = {
   story: "#b36634",
   minimap: "#cfab0c",
 };
-export const pxtColors: { [k: string]: RGB } = mapObj(_referenceColors, parse);
-export const pxtColorsHSL: { [k: string]: HSL } = mapObj(pxtColors, toHSL);
+export const pxtColors: { [k: string]: RGB } = objMap(_referenceColors, parse);
+export const pxtColorsHSL: { [k: string]: HSL } = objMap(pxtColors, toHSL);
 
 const ENABLE_WIDE_GAMUT = false;
 
 export function makeAllColorBars() {
   // reference colors
-  const refClrs = values(pxtColors);
+  const refClrs = Object.values(pxtColors);
   mkColorBar(refClrs, "pxt");
 
   const avgMinMax = (vs: number[]) => ({
@@ -77,8 +78,8 @@ export function makeAllColorBars() {
     min: m.min(vs),
     max: m.max(vs),
   });
-  const satStats = avgMinMax(values(pxtColorsHSL).map((hsl) => hsl.s));
-  const lumStats = avgMinMax(values(pxtColorsHSL).map((hsl) => hsl.l));
+  const satStats = avgMinMax(Object.values(pxtColorsHSL).map((hsl) => hsl.s));
+  const lumStats = avgMinMax(Object.values(pxtColorsHSL).map((hsl) => hsl.l));
   console.log("Reference sat: ");
   console.dir(satStats);
   console.log("Reference lum: ");

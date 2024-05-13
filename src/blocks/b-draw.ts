@@ -12,7 +12,8 @@ import {
   RenderableStack,
   STACK_GAP,
 } from "./b-resize.js";
-import { edges, setStyle } from "./b-util.js";
+import { setStyle } from "../utils/util-dom.js";
+import { edges } from "../utils/util.js";
 
 // TODO: consider WebGL
 
