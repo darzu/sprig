@@ -12,7 +12,7 @@ import {
   RenderableStack,
   B_STACK_GAP,
 } from "./blocks-resize.js";
-import { setStyle } from "../utils/util-dom.js";
+import { pathToSvgDom, setStyle } from "../utils/util-dom.js";
 import { edges } from "../utils/util.js";
 import { max } from "../utils/math.js";
 
@@ -204,7 +204,7 @@ function renderDropdown(r: RenderableDropdown): SVGGElement {
   let cornerHeight = r.size.y / 2;
   let g = document.createElementNS("http://www.w3.org/2000/svg", "g");
   let path = mkBlockSimplePath(r.size, r.corner, cornerHeight);
-  let blk = pathToSvg(path);
+  let blk = pathToSvgDom(path);
   // TODO(@darzu):
   // blk.setAttribute("class", `${r.category}-block`);
   const { h, s, l } = toHSL(r.color);
@@ -275,12 +275,6 @@ function mkBlockFullPath(r: RenderableBlock): string {
   return secs.join() + "Z";
 }
 
-export function pathToSvg(d: string): SVGPathElement {
-  let blk = document.createElementNS("http://www.w3.org/2000/svg", "path");
-  let path = d;
-  blk.setAttribute("d", path);
-  return blk;
-}
 export function setPos(e: SVGElement, x: number, y: number) {
   // TODO(dz): worried about perf, might prefer to use "M x,y" in path string
   // e.setAttribute("x", x.toString());
@@ -296,7 +290,7 @@ function renderBlock(r: RenderableBlock): SVGGElement {
 
   let secs = r.sections instanceof Array ? r.sections : [r.sections];
 
-  let outline = DBG_OUTLINES ? renderRect(r) : pathToSvg(mkBlockFullPath(r));
+  let outline = DBG_OUTLINES ? renderRect(r) : pathToSvgDom(mkBlockFullPath(r));
 
   let fillClr = toLCH(r.color);
   let strokeClr = toLCH(r.color);
@@ -350,7 +344,7 @@ function renderBlock(r: RenderableBlock): SVGGElement {
   return g;
 }
 function renderRect({ size: { x, y } }: Sized): SVGElement {
-  return pathToSvg(`m 0,0 l ${x},0 l 0,${y} l -${x},0 l 0,-${y}`);
+  return pathToSvgDom(`m 0,0 l ${x},0 l 0,${y} l -${x},0 l 0,-${y}`);
 }
 function renderStack(stack: RenderableStack): SVGGElement {
   let g = document.createElementNS("http://www.w3.org/2000/svg", "g");

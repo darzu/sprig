@@ -5,3 +5,10 @@ export function setStyle(e: Element, style: any) {
     .replace(/\,/g, ";\n");
   e.setAttribute("style", styleStr);
 }
+
+export function pathToSvgDom(d: string): SVGPathElement {
+  let blk = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  let path = d;
+  blk.setAttribute("d", path);
+  return blk;
+}
