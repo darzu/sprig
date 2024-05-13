@@ -39,57 +39,57 @@ export const B_STACK_GAP = 12;
 // TODO: calibrate numbers
 
 // renderable
-type Line<T> = { nodes: T[]; size: _XY };
-export interface RenderableSection {
-  lines: Line<Renderable>[];
+type BLine<T> = { nodes: T[]; size: _XY };
+export interface BRenderableSection {
+  lines: BLine<BRenderable>[];
   // inner size
   innerSize: _XY; // TODO: currently unused
   outerSize: _XY;
   kind: "wrap" | "mouth";
 }
-export interface RenderableBlockLook {
+export interface BRenderableBlockLook {
   corner: bast.CornerShape;
   // category: BlockCategory,
   color: Color;
   look: BlockLook;
   size: _XY;
 }
-export interface RenderableBlock extends RenderableBlockLook {
+export interface BRenderableBlock extends BRenderableBlockLook {
   kind: "block";
   // outer size
-  sections: RenderableSection[];
+  sections: BRenderableSection[];
 }
-export interface RenderableLabel {
+export interface BRenderableLabel {
   kind: "label";
   // outer size
   size: _XY;
   text: string;
 }
-export interface RenderableDropdown extends RenderableBlockLook {
+export interface BRenderableDropdown extends BRenderableBlockLook {
   kind: "dropdown";
   // outer size
   text: string;
 }
-export interface RenderableStack {
+export interface BRenderableStack {
   kind: "stack";
   size: _XY;
-  children: Renderable[];
+  children: BRenderable[];
 }
 // TODO(@darzu): RENAME!
 // TODO: add more renderable terminals like image, etc
-export type Renderable =
-  | RenderableBlock
-  | RenderableLabel
-  | RenderableDropdown
-  | RenderableStack;
+export type BRenderable =
+  | BRenderableBlock
+  | BRenderableLabel
+  | BRenderableDropdown
+  | BRenderableStack;
 
 export function wrapNodes<T extends Sized>(
   nodes: T[],
   maxWidth: number
-): Line<T>[] {
-  let lines: Line<T>[] = [];
+): BLine<T>[] {
+  let lines: BLine<T>[] = [];
 
-  let currLine: Line<T> = {
+  let currLine: BLine<T> = {
     nodes: [],
     size: { x: 0, y: 0 },
   };
@@ -123,14 +123,14 @@ export function sizeOfText(txt: string): _XY {
   return { x: B_CHAR_W * txt.length, y: CHAR_H };
 }
 
-function emitLbl(txt: string): Renderable {
+function emitLbl(txt: string): BRenderable {
   return {
     kind: "label",
     text: txt,
     size: add(sizeOfText(txt), { x: 0, y: LABEL_MARGIN * 2 }),
   };
 }
-function emitStr(e: bast.StrLit): Renderable {
+function emitStr(e: bast.StrLit): BRenderable {
   return {
     kind: "label",
     text: e.val,
@@ -141,7 +141,7 @@ function emitStr(e: bast.StrLit): Renderable {
 function emitExpOrStmtBlock(
   exp: bast.ExpBlock | bast.StmtBlock,
   maxWidth: number
-): Renderable {
+): BRenderable {
   // let maxBlockChildWidth = maxWidth - WRAP_INDENT;
 
   // sectionArgs = [codeTree.args.map(v => mkRenderable(v, maxBlockChildWidth))]
@@ -167,7 +167,7 @@ function emitExpOrStmtBlock(
   };
 }
 
-function emitExp(e: bast.Exp, maxWidth: number): Renderable {
+function emitExp(e: bast.Exp, maxWidth: number): BRenderable {
   if (e.kind === "bool") return emitLbl(`(${e.val})`);
   else if (e.kind === "num") return emitLbl(`(${e.val})`);
   else if (e.kind === "str") return emitStr(e);
@@ -182,7 +182,7 @@ function emitExp(e: bast.Exp, maxWidth: number): Renderable {
 function emitStmtList(
   es: bast.StmtBlock[],
   maxWidth: number
-): RenderableSection {
+): BRenderableSection {
   let maxMouthChildWidth = maxWidth - B_MOUTH_INDENT;
 
   let rs = es.map((e) => emitExpOrStmtBlock(e, maxMouthChildWidth));
@@ -204,7 +204,7 @@ function emitStmtList(
   };
 }
 
-function emitMulti(e: bast.MultiStmt, maxWidth: number): Renderable {
+function emitMulti(e: bast.MultiStmt, maxWidth: number): BRenderable {
   // TODO(@darzu):
   let sections = e.ess.map((es) =>
     bast.isStmtList(es) ? emitStmtList(es, maxWidth) : emitExpList(es, maxWidth)
@@ -240,7 +240,7 @@ function emitMulti(e: bast.MultiStmt, maxWidth: number): Renderable {
   };
 }
 
-function emitExpList(es: bast.Exp[], maxWidth: number): RenderableSection {
+function emitExpList(es: bast.Exp[], maxWidth: number): BRenderableSection {
   let maxChildWidth = maxWidth - WRAP_INDENT;
 
   const nodes = es.map((e) => emitExp(e, maxChildWidth));
@@ -264,12 +264,15 @@ function emitExpList(es: bast.Exp[], maxWidth: number): RenderableSection {
   };
 }
 
-export function emitBlock(block: bast.Block, maxWidth: number): Renderable {
+export function emitBlock(block: bast.Block, maxWidth: number): BRenderable {
   if (block.kind === "multi") return emitMulti(block, maxWidth);
   return emitExpOrStmtBlock(block, maxWidth);
 }
 
-export function emitBlocks(es: bast.Stmt[], maxWidth: number): RenderableStack {
+export function emitBlocks(
+  es: bast.Stmt[],
+  maxWidth: number
+): BRenderableStack {
   const rs = es.map((e) =>
     e.kind === "multi"
       ? emitMulti(e, maxWidth)

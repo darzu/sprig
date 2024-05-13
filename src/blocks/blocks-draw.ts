@@ -6,10 +6,10 @@ import {
   B_INNER_W_M,
   B_MOUTH_INDENT,
   B_NODE_SPACER,
-  Renderable,
-  RenderableBlock,
-  RenderableDropdown,
-  RenderableStack,
+  BRenderable,
+  BRenderableBlock,
+  BRenderableDropdown,
+  BRenderableStack,
   B_STACK_GAP,
 } from "./blocks-resize.js";
 import { pathToSvgDom, domSetPos, setStyle } from "../utils/util-dom.js";
@@ -199,7 +199,7 @@ export module BDraw {
     s.textContent = r.text;
     return s;
   }
-  function renderDropdown(r: RenderableDropdown): SVGGElement {
+  function renderDropdown(r: BRenderableDropdown): SVGGElement {
     // TODO(dz):
     let cornerHeight = r.size.y / 2;
     let g = document.createElementNS("http://www.w3.org/2000/svg", "g");
@@ -233,7 +233,7 @@ export module BDraw {
       "Z";
     return path;
   }
-  function mkBlockFullPath(r: RenderableBlock): string {
+  function mkBlockFullPath(r: BRenderableBlock): string {
     let isStmt = r.look === "statement";
     let outerSectionSizes = r.sections.map((s) => ({ size: s.outerSize }));
 
@@ -275,7 +275,7 @@ export module BDraw {
     return secs.join() + "Z";
   }
 
-  function renderBlock(r: RenderableBlock): SVGGElement {
+  function renderBlock(r: BRenderableBlock): SVGGElement {
     // let absX = 0;
     // let absY = 0;
     let g = document.createElementNS("http://www.w3.org/2000/svg", "g");
@@ -341,7 +341,7 @@ export module BDraw {
   function renderRect({ size: { x, y } }: Sized): SVGElement {
     return pathToSvgDom(`m 0,0 l ${x},0 l 0,${y} l -${x},0 l 0,-${y}`);
   }
-  function renderStack(stack: RenderableStack): SVGGElement {
+  function renderStack(stack: BRenderableStack): SVGGElement {
     let g = document.createElementNS("http://www.w3.org/2000/svg", "g");
     let absX = 0;
     let absY = 0;
@@ -355,7 +355,7 @@ export module BDraw {
     // setPos(g, absX, absY)
     return g;
   }
-  export function render(r: Renderable): SVGElement {
+  export function render(r: BRenderable): SVGElement {
     if (r.kind === "block") {
       return renderBlock(r);
     } else if (r.kind === "label") {
