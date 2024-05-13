@@ -75,6 +75,7 @@ export interface RenderableStack {
   size: _XY;
   children: Renderable[];
 }
+// TODO(@darzu): RENAME!
 // TODO: add more renderable terminals like image, etc
 export type Renderable =
   | RenderableBlock
