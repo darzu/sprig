@@ -1,4 +1,4 @@
-import * as bast from "./b-bast.js";
+import { bast } from "./bast.js";
 import { pxtColors } from "./b-color-bars.js";
 
 export let codeTree_tri_sizing: bast.Stmt[] = [

@@ -1,8 +1,7 @@
 import { add, even, Sized, max, V2, sum } from "./b-math.js";
-import * as bast from "./b-bast.js"; // TODO(@darzu): REMOVE
 import { never } from "./b-util.js";
 import { Color, HSL, RGB } from "../color/color.js";
-import { CornerShape } from "./b-bast.js";
+import { bast } from "./bast.js";
 
 // TODO: rework this to be bast-to-sized-bast or something less verbose. Or call it "resizer"
 /*
@@ -38,7 +37,7 @@ export interface RenderableSection {
   kind: "wrap" | "mouth";
 }
 export interface RenderableBlockLook {
-  corner: CornerShape;
+  corner: bast.CornerShape;
   // category: BlockCategory,
   color: Color;
   look: BlockLook;

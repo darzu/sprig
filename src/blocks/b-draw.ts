@@ -1,5 +1,5 @@
-import { CornerShape } from "./b-bast.js";
 import { clampLCH, toHex, toHSL, toLCH } from "../color/color.js";
+import { bast } from "./bast.js";
 import { V2, max, Sized } from "./b-math.js";
 import {
   INNER_H_M,
@@ -212,7 +212,7 @@ function renderDropdown(r: RenderableDropdown): SVGGElement {
 
 function mkBlockSimplePath(
   size: V2,
-  cornerShape: CornerShape,
+  cornerShape: bast.CornerShape,
   cornerHeight?: number
 ): string {
   let drawer: Drawer = rect;
