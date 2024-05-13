@@ -9,13 +9,12 @@ import {
   FRGBToFLRGB,
   FLRGBToXYZD65,
   deltaE2000,
-  // TODO(@darzu): these "as" aliases aren't needed.
-  D50_to_D65 as XYZD50ToXYZD65,
-  D65_to_D50 as XYZD65ToXYZD50,
-  Lab_to_LCH as CIELABToLCH,
-  Lab_to_XYZD50 as XYZCIELABToXYZD50,
-  LCH_to_Lab as LCHToCIELAB,
-  XYZD50_to_CIELAB as XYZD50ToCIELAB,
+  XYZD50ToXYZD65,
+  XYZD65ToXYZD50,
+  CIELABToLCH,
+  XYZCIELABToXYZD50,
+  LCHToCIELAB,
+  XYZD50ToCIELAB,
 } from "./color-lab.js";
 import { LABToLRGB, LRGBToLAB } from "./color-oklab.js";
 

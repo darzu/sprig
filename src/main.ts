@@ -35,6 +35,7 @@ import { objMap } from "./utils/util.js";
 import { startNet } from "./net/net-main.js";
 import { initPhysicsSystems } from "./physics/phys.js";
 import { GAME_LOADER } from "./game-loader.js";
+import { initBlocksGame } from "./blocks/game-blocks.js";
 
 // dbgLogMilestone("start of main.ts");
 

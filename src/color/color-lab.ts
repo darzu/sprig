@@ -1,6 +1,3 @@
-// https://drafts.csswg.org/css-color/#lab-colors
-// https://drafts.csswg.org/css-color/#color-conversion-code
-
 import { V3, V } from "../matrix/sprig-matrix.js";
 import {
   CIELAB,
@@ -13,6 +10,9 @@ import {
   XYZD65,
 } from "./color.js";
 
+// https://drafts.csswg.org/css-color/#lab-colors
+// https://drafts.csswg.org/css-color/#color-conversion-code
+
 // TODO(@darzu): deprecate in favor of gl-matrix style?
 // type V3 = [number, number, number];
 type Mat = [
@@ -21,11 +21,11 @@ type Mat = [
   [number, number, number]
 ];
 function multiplyMatrices(a: Mat, b: V3): V3 {
-  return V3.clone([
+  return V(
     a[0][0] * b[0] + a[0][1] * b[1] + a[0][2] * b[2],
     a[1][0] * b[0] + a[1][1] * b[1] + a[1][2] * b[2],
-    a[2][0] * b[0] + a[2][1] * b[1] + a[2][2] * b[2],
-  ]);
+    a[2][0] * b[0] + a[2][1] * b[1] + a[2][2] * b[2]
+  );
 }
 
 // sRGB-related functions
@@ -45,7 +45,8 @@ export function FRGBToFLRGB({ fr, fg, fb }: FRGB): FLRGB {
   function linCheap(val: number) {
     return Math.pow(val, 2.2);
   }
-  const lin = linCheap;
+  // const lin = linCheap;
+  const lin = linOfficial;
   return { flr: lin(fr), flg: lin(fg), flb: lin(fb) };
 }
 
@@ -65,10 +66,12 @@ export function FLRGBToFRGB({ flr, flg, flb }: FLRGB): FRGB {
 
     return 12.92 * val;
   }
+  // TODO(@darzu): BROKEN. gamCheap causes NaNs
   function gamCheap(val: number) {
     return Math.pow(val, 1 / 2.2);
   }
-  const gam = gamCheap;
+  // const gam = gamCheap;
+  const gam = gamOfficial;
   return { fr: gam(flr), fg: gam(flg), fb: gam(flb) };
 }
 
@@ -313,7 +316,7 @@ export function XYZD65ToFLRGB(xyz: XYZD65): FLRGB {
 // }
 
 // Chromatic adaptation
-export function D65_to_D50(xyz: XYZD65): XYZD50 {
+export function XYZD65ToXYZD50(xyz: XYZD65): XYZD50 {
   // Bradford chromatic adaptation from D65 to D50
   // The matrix below is the result of three operations:
   // - convert from XYZ to retinal cone domain
@@ -330,7 +333,7 @@ export function D65_to_D50(xyz: XYZD65): XYZD50 {
   return { x, y, z, white: "D50" };
 }
 
-export function D50_to_D65(xyz: XYZD50): XYZD65 {
+export function XYZD50ToXYZD65(xyz: XYZD50): XYZD65 {
   // Bradford chromatic adaptation from D50 to D65
   const M: Mat = [
     [0.9555766, -0.0230393, 0.0631636],
@@ -343,7 +346,7 @@ export function D50_to_D65(xyz: XYZD50): XYZD65 {
 }
 
 // Lab and LCH
-export function XYZD50_to_CIELAB(XYZ: XYZD50): CIELAB {
+export function XYZD50ToCIELAB(XYZ: XYZD50): CIELAB {
   // Assuming XYZ is relative to D50, convert to CIE Lab
   // from CIE standard, which now defines these as a rational fraction
   const ε = 216 / 24389; // 6^3/29^3
@@ -366,7 +369,7 @@ export function XYZD50_to_CIELAB(XYZ: XYZD50): CIELAB {
   };
 }
 
-export function Lab_to_XYZD50(lab: CIELAB): XYZD50 {
+export function XYZCIELABToXYZD50(lab: CIELAB): XYZD50 {
   const Lab = toV3(lab);
   // Convert Lab to D50-adapted XYZ
   // http://www.brucelindbloom.com/index.html?Eqn_RGB_XYZ_Matrix.html
@@ -392,7 +395,7 @@ export function Lab_to_XYZD50(lab: CIELAB): XYZD50 {
   return { x, y, z, white: "D50" };
 }
 
-export function Lab_to_LCH(cielab: CIELAB): LCH {
+export function CIELABToLCH(cielab: CIELAB): LCH {
   const Lab = toV3(cielab);
   // Convert to polar form
   const hue = (Math.atan2(Lab[2], Lab[1]) * 180) / Math.PI;
@@ -403,7 +406,7 @@ export function Lab_to_LCH(cielab: CIELAB): LCH {
   };
 }
 
-export function LCH_to_Lab(lch: LCH): CIELAB {
+export function LCHToCIELAB(lch: LCH): CIELAB {
   const LCH = toV3(lch);
   // Convert from polar form
   return {

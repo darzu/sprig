@@ -1,7 +1,7 @@
+import { OKLAB, LRGB } from "./color.js";
+
 // Oklab color space
 // https://bottosson.github.io/posts/oklab/
-
-import { OKLAB, LRGB } from "./color.js";
 
 // References
 // https://bottosson.github.io/posts/oklab/

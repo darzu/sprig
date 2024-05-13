@@ -8,8 +8,9 @@ import { quatDbg, vec3Dbg } from "./utils-3d.js";
 export function sum(ns: number[]): number {
   return ns.reduce((p, n) => p + n, 0);
 }
+// TODO(@darzu): remove in favor of Math.max
 export function max(ns: number[]): number {
-  return ns.reduce((p, n) => (p > n ? p : n), -Infinity);
+  return Math.max(...ns);
 }
 export function avg(ns: number[]): number {
   return sum(ns) / ns.length;
