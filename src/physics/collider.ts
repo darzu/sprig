@@ -91,6 +91,7 @@ const __COLLIDER_ASSERT: Component<typeof ColliderDef> extends Collider
   ? true
   : false = true;
 
+// TODO(@darzu): I don't love this.
 export const ColliderFromMeshDef = EM.defineComponent(
   "colliderFromMesh",
   () => ({ solid: true }),

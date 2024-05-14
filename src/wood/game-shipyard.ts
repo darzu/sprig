@@ -7,7 +7,11 @@ import { EM } from "../ecs/ecs.js";
 import { V3, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { InputsDef } from "../input/inputs.js";
 import { AudioDef } from "../audio/audio.js";
-import { ColliderDef, MultiCollider } from "../physics/collider.js";
+import {
+  ColliderDef,
+  ColliderFromMeshDef,
+  MultiCollider,
+} from "../physics/collider.js";
 import { LinearVelocityDef } from "../motion/velocity.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import { PositionDef, RotationDef, ScaleDef } from "../physics/transform.js";
@@ -36,7 +40,7 @@ import {
   WoodStateDef,
   _dbgNumSplinterEnds,
 } from "./wood.js";
-import { AllMeshesDef } from "../meshes/mesh-list.js";
+import { AllMeshesDef, BallMesh, HexMesh } from "../meshes/mesh-list.js";
 import { breakBullet, BulletDef, fireBullet } from "../cannons/bullet.js";
 import { createGhost, GhostDef } from "../debug/ghost.js";
 import { TextDef } from "../gui/ui.js";
@@ -54,48 +58,6 @@ import { addColliderDbgVis, addGizmoChild } from "../utils/utils-game.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 
-/*
-  Game mechanics:
-  [ ] Planks can be repaired
-  [ ] Two decks?
-
-  Wood:
-  [ ] Shipbuilding file, 
-    [ ] ∞ system refinement
-  [ ] Reproduce fang-ship
-  [ ] Dock
-  [ ] Small objs:
-    [ ] shelf     [ ] crate     [ ] figure head   [ ] bunk
-    [ ] table     [ ] barrel    [ ] bucket        [ ] small boat
-    [ ] ladder    [ ] wheel     [ ] chest         [ ] cannon ball holder
-    [ ] hoist     [ ] hatch     [ ] dingy         [ ] padel
-    [ ] mallet    [ ] stairs    [ ] picture frame [ ] lattice
-    [ ] drawer    [ ] cage      [ ] fiddle        [ ] club
-    [ ] port hole [ ] door      [ ] counter       [ ] cabinet
-    [ ] 
-  [ ] paintable
-  [ ] in-sprig modeling
-
-  "Physically based modeling" (lol):
-    [ ] metal (bends nicely)
-      [ ] barrel bands    [ ] nails     [ ] hinge [ ] latch
-    [ ] rope
-      [ ] pullies         [ ] knots     [ ] coils
-      [ ] anchor rope     [ ] nets
-    [ ] clay (breaks nicely)
-      [ ] pots
-    [ ] cloth: leather, canvas,
-    [ ] stone: walls, bridges, towers, castle
-    [ ] brick: paths, walls, furnace/oven/..., 
-    [ ] plants!: trees, grass, tomatoes, ivy
-  
-  [ ] PERF, huge: GPU-based culling
-
-  [ ] change wood colors
-  [ ] adjust ship size
-  [ ] add dark/fog ends
-*/
-
 const DBG_PLAYER = true;
 const DBG_COLLIDERS = false;
 
@@ -103,21 +65,12 @@ const DISABLE_PRIATES = true;
 
 let healthPercent = 100;
 
-const MAX_GOODBALLS = 10;
-
 export const LD51CannonDef = EM.defineComponent("ld51Cannon", () => {
   return {};
 });
 
 export async function initShipyardGame() {
-  const res = await EM.whenResources(
-    AllMeshesDef,
-    // WoodAssetsDef,
-    // GlobalCursor3dDef,
-    RendererDef,
-    CameraDef,
-    MeDef
-  );
+  const res = await EM.whenResources(RendererDef, CameraDef, MeDef);
 
   res.camera.fov = Math.PI * 0.5;
 
@@ -133,7 +86,7 @@ export async function initShipyardGame() {
   EM.set(sun, PointLightDef);
   EM.set(sun, ColorDef, V(1, 1, 1));
   EM.set(sun, LinearVelocityDef, V(0.001, 0.001, 0.0));
-  EM.set(sun, RenderableConstructDef, res.allMeshes.ball.proto, false);
+  EM.set(sun, RenderableConstructDef, BallMesh, false);
   sun.pointLight.constant = 1.0;
   sun.pointLight.linear = 0.0;
   sun.pointLight.quadratic = 0.0;
@@ -145,85 +98,17 @@ export async function initShipyardGame() {
   // if (RenderableDef.isOn(c)) c.renderable.enabled = false;
 
   const ground = EM.mk();
-  const groundMesh = cloneMesh(res.allMeshes.hex.mesh);
-  transformMesh(
-    groundMesh,
-    mat4.fromRotationTranslationScale(quat.IDENTITY, [0, 0, -4], [20, 20, 2])
-  );
-  EM.set(ground, RenderableConstructDef, groundMesh);
+  EM.set(ground, RenderableConstructDef, HexMesh);
+  EM.set(ground, ScaleDef, [20, 20, 2]);
   EM.set(ground, ColorDef, ENDESGA16.blue);
   // EM.set(p, ColorDef, [0.2, 0.3, 0.2]);
-  EM.set(ground, PositionDef, V(0, 0, 0));
+  EM.set(ground, PositionDef, V(0, 0, -4));
   // EM.set(plane, PositionDef, [0, -5, 0]);
-
-  // const cube = EM.newEntity();
-  // const cubeMesh = cloneMesh(res.allMeshes.cube.mesh);
-  // EM.set(cube, RenderableConstructDef, cubeMesh);
-  // EM.set(cube, ColorDef, [0.1, 0.1, 0.1]);
-  // EM.set(cube, PositionDef, [0, 0, 3]);
-  // EM.set(cube, RotationDef);
-  // EM.set(cube, AngularVelocityDef, [0, 0.001, 0.001]);
-  // EM.set(cube, WorldFrameDef);
-  // EM.set(cube, ColliderDef, {
-  //   shape: "AABB",
-  //   solid: false,
-  //   aabb: res.allMeshes.cube.aabb,
-  // });
-
-  // EM.set(b1, ColliderDef, {
-  //   shape: "Box",
-  //   solid: false,
-  //   center: res.allMeshes.cube.center,
-  //   halfsize: res.allMeshes.cube.halfsize,
-  // });
-
-  // TODO(@darzu): timber system here!
-  // const sphereMesh = cloneMesh(res.allMeshes.ball.mesh);
-  // const visible = false;
-  // EM.set(_player, RenderableConstructDef, sphereMesh, visible);
-  // EM.set(_player, ColorDef, [0.1, 0.1, 0.1]);
-  // EM.set(_player, PositionDef, [0, 0, 0]);
-  // // EM.set(b2, PositionDef, [0, 0, -1.2]);
-  // EM.set(_player, WorldFrameDef);
-  // // EM.set(b2, PhysicsParentDef, g.id);
-  // EM.set(_player, ColliderDef, {
-  //   shape: "AABB",
-  //   solid: false,
-  //   aabb: res.allMeshes.ball.aabb,
-  // });
-  // randomizeMeshColors(b2);
-
-  // EM.set(b2, ColliderDef, {
-  //   shape: "Box",
-  //   solid: false,
-  //   center: res.allMeshes.cube.center,
-  //   halfsize: res.allMeshes.cube.halfsize,
-  // });
 
   // TIMBER
   const timber = EM.mk();
 
-  const {
-    timberState,
-    timberMesh,
-    ribCount,
-    ribSpace,
-    ribWidth,
-    ceilHeight,
-    floorHeight,
-    floorLength,
-    floorWidth,
-    // } = createSpaceBarge();
-  } = createLD53Ship();
-
-  // TODO(@darzu): remove
-  // const ribCount = 10;
-  // const ribSpace = 3;
-  // const ribWidth = 1;
-  // const ceilHeight = 20;
-  // const floorHeight = 10;
-  // const floorLength = 20;
-  // const floorWidth = 10;
+  const { timberState, timberMesh } = createLD53Ship();
 
   // const [timberMesh, timberState] = createBarrelMesh();
 
@@ -380,19 +265,14 @@ export async function initShipyardGame() {
     );
 
     if (DBG_PLAYER) {
-      const sphereMesh = cloneMesh(res.allMeshes.ball.mesh);
-      const g = createGhost(sphereMesh, true);
+      const g = createGhost(BallMesh, true);
       g.controllable.speed *= 5;
       g.controllable.sprintMul = 0.2;
       EM.set(g, ColorDef, ENDESGA16.darkGreen);
       EM.set(g, PositionDef, V(0, 0, 0));
       EM.set(g, WorldFrameDef);
       // EM.set(b2, PhysicsParentDef, g.id);
-      EM.set(g, ColliderDef, {
-        shape: "AABB",
-        solid: false,
-        aabb: res.allMeshes.ball.aabb,
-      });
+      EM.set(g, ColliderFromMeshDef, false);
 
       addGizmoChild(g, 3);
 
