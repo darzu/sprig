@@ -1647,3 +1647,7 @@ https://threlte.xyz
   https://news.ycombinator.com/item?id=40220542
     > For that it would be necessary to make a reverse lookup from pointer address to allocation handle, which would require something like a red-black tree covering the address space, which would no longer be 0(1). If anyone has ideas on this front, I would be happy to hear them.
     A radix tree can solve this: https://en.wikipedia.org/wiki/Radix_tree
+
+Unreal Engine Gameplay Framework:
+  https://dev.epicgames.com/documentation/en-us/unreal-engine/gameplay-framework-in-unreal-engine?application_version=5.0
+  https://dev.epicgames.com/documentation/en-us/unreal-engine/gameplay-framework-quick-reference-in-unreal-engine?application_version=5.0

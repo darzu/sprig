@@ -319,3 +319,21 @@ https://www.littleworkshop.fr/projects/equinox/
 
 Dafny
   https://github.com/dafny-lang/dafny
+
+"beginner's mind":
+  Shoshin
+  It refers to having an attitude of openness, eagerness, and lack of preconceptions when studying, even at an advanced level, just as a beginner would. 
+
+What Factors Explain the Nature of Software?:
+  https://tratt.net/laurie/blog/2024/what_factors_explain_the_nature_of_software.html
+  Software occupies a liminal state between the constraints of the physical world and an anything-goes fantasy world. 
+    We frequently mistake the constraints that software faces.
+  Our ability to specify what a given piece of software should be is limited by the circular specification problem. 
+    We nearly always have to fully build the software in order to know precisely what we want it to be.
+  Software is subject to the observer effect. The act of seeing the software in action changes what we 
+    – or more often others – think the software should be, sometimes radically.
+
+Are we really engineers?
+  https://www.hillelwayne.com/post/are-we-really-engineers/
+  https://www.hillelwayne.com/post/we-are-not-special/
+  https://www.hillelwayne.com/post/what-we-can-learn/

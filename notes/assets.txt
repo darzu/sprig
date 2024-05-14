@@ -298,3 +298,15 @@ gLTF scene structure explained:
 
 "Making a 3D Modeler, in C, in a Week":
   https://danielchasehooper.com/posts/shapeup/
+
+Engineering and Craftsmanship:
+  Engineering:
+    Planning and building factory production lines
+    optimization, min/max, creating functional parts
+    e.g.:
+      designing spaceships and space stations in Space Engineer
+      factorio
+  Craftsmanship:
+    Art, execution, excellence in process
+    e.g.:
+      boat design
