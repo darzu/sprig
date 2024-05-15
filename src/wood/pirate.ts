@@ -46,7 +46,6 @@ import {
   TimberBuilder,
   WoodHealthDef,
   WoodStateDef,
-  registerDestroyPirateHandler,
   createEmptyMesh,
   createTimberBuilder,
   getBoardsFromMesh,
@@ -59,6 +58,7 @@ import {
 import { fireBullet } from "../cannons/bullet.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { HEX_MESH } from "../meshes/primatives.js";
+import { registerDestroyPirateHandler } from "./wood-damage.js";
 
 const DBG_PIRATES = false;
 

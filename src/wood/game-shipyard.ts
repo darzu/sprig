@@ -29,7 +29,6 @@ import {
   resetWoodState,
   WoodHealthDef,
   WoodStateDef,
-  _dbgNumSplinterEnds,
 } from "./wood.js";
 import { BallMesh, HexMesh } from "../meshes/mesh-list.js";
 import { breakBullet, BulletDef, fireBullet } from "../cannons/bullet.js";
