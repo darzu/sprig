@@ -21,7 +21,8 @@ import {
   getRandomCylindricalPoints,
 } from "../utils/spline.js";
 import { quatFromUpForward_OLD } from "../utils/utils-3d.js";
-import { appendBoard, dbgPathWithGizmos } from "../wood/shipyard.js";
+import { appendBoard } from "../wood/shipyard.js";
+import { dbgPathWithGizmos } from "../debug/utils-gizmos.js";
 
 export const SpacePathDef = EM.defineNonupdatableComponent(
   "spacePath",

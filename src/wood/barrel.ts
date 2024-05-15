@@ -11,12 +11,8 @@ import {
   verifyUnsharedProvokingForWood,
   reserveSplinterSpace,
 } from "./wood.js";
-import {
-  lerpBetween,
-  appendBoard,
-  dbgPathWithGizmos,
-  pathNodeFromMat4,
-} from "./shipyard.js";
+import { lerpBetween, appendBoard, pathNodeFromMat4 } from "./shipyard.js";
+import { dbgPathWithGizmos } from "../debug/utils-gizmos.js";
 import { Path } from "../utils/spline.js";
 
 const __tempCursor = mat4.create();

@@ -6,17 +6,9 @@ import {
   mat3,
   V,
   tmpStack,
-  TV1,
 } from "../matrix/sprig-matrix.js";
-import {
-  mergeMeshes,
-  Mesh,
-  RawMesh,
-  transformMesh,
-  validateMesh,
-} from "../meshes/mesh.js";
+import { Mesh, RawMesh, transformMesh, validateMesh } from "../meshes/mesh.js";
 import { assert } from "../utils/util.js";
-import { centroid, quatFromUpForward_OLD } from "../utils/utils-3d.js";
 import {
   createEmptyMesh,
   createTimberBuilder,
@@ -29,11 +21,6 @@ import {
   setEndQuadIdxs,
 } from "./wood.js";
 import { BLACK } from "../meshes/mesh-list.js";
-import { HFace, meshToHalfEdgePoly } from "../meshes/half-edge.js";
-import { createGizmoMesh } from "../debug/gizmos.js";
-import { EM } from "../ecs/ecs.js";
-import { PositionDef } from "../physics/transform.js";
-import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import {
   AABB,
   createAABB,
@@ -55,6 +42,7 @@ import {
   translatePathAlongNormal,
 } from "../utils/spline.js";
 import { transformYUpModelIntoZUp } from "../camera/basis.js";
+import { getPathFrom2DQuadMesh } from "./util-wood.js";
 
 // TODO(@darzu): use arc-length parameterization to resample splines
 
@@ -147,85 +135,10 @@ const keelTemplate: Mesh = {
   usesProvoking: true,
 };
 
-export function getPathFrom2DQuadMesh(m: Mesh, perp: V3.InputT): Path {
-  const hpoly = meshToHalfEdgePoly(m);
-
-  // find the end face
-  let endFaces = hpoly.faces.filter(isEndFace);
-  // console.dir(endFaces);
-  assert(endFaces.length === 2);
-  const endFace =
-    endFaces[0].edg.orig.vi < endFaces[1].edg.orig.vi
-      ? endFaces[0]
-      : endFaces[1];
-
-  // find the end edge
-  let endEdge = endFace.edg;
-  while (!endEdge.twin.face) endEdge = endEdge.next;
-  endEdge = endEdge.next.next;
-  // console.log("endEdge");
-  // console.dir(endEdge);
-
-  // build the path
-  const path: Path = [];
-  let e = endEdge;
-  while (true) {
-    let v0 = m.pos[e.orig.vi];
-    let v1 = m.pos[e.next.orig.vi];
-    let pos = centroid(v0, v1);
-    let dir = V3.cross(V3.sub(v0, v1, TV1), perp, TV1);
-    const rot = quatFromUpForward_OLD(quat.mk(), perp, dir);
-    path.push({ pos, rot });
-
-    if (!e.face) break;
-
-    e = e.next.next.twin;
-  }
-
-  // console.log("path");
-  // console.dir(path);
-
-  return path;
-
-  function isEndFace(f: HFace): boolean {
-    let neighbor: HFace | undefined = undefined;
-    let e = f.edg;
-    for (let i = 0; i < 4; i++) {
-      if (e.twin.face)
-        if (!neighbor) neighbor = e.twin.face;
-        else if (e.twin.face !== neighbor) return false;
-      e = e.next;
-    }
-    return true;
-  }
-}
-
-function createPathGizmos(path: Path, scale = 1): Mesh {
-  let gizmos: Mesh[] = [];
-  path.forEach((p) => {
-    const g = createGizmoMesh();
-    g.pos.forEach((v) => {
-      V3.scale(v, scale, v);
-      V3.tQuat(v, p.rot, v);
-      V3.add(v, p.pos, v);
-    });
-    gizmos.push(g);
-  });
-  const res = mergeMeshes(...gizmos) as Mesh;
-  res.usesProvoking = true;
-  return res;
-}
-export async function dbgPathWithGizmos(path: Path, scale = 1) {
-  const mesh = createPathGizmos(path, scale);
-
-  const e = EM.mk();
-  EM.set(e, PositionDef);
-  EM.set(e, RenderableConstructDef, mesh);
-}
-
 export function snapXToPath(path: Path, x: number, out: V3) {
   return snapToPath(path, x, 0, out);
 }
+
 const __temp2 = V3.mk();
 export function snapToPath(path: Path, w: number, dim: 0 | 1 | 2, out: V3) {
   for (let i = 0; i < path.length; i++) {

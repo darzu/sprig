@@ -32,10 +32,10 @@ import {
   appendBoard,
   snapToPath,
   lerpBetween,
-  getPathFrom2DQuadMesh,
   snapXToPath,
-  dbgPathWithGizmos,
 } from "../wood/shipyard.js";
+import { dbgPathWithGizmos } from "../debug/utils-gizmos.js";
+import { getPathFrom2DQuadMesh } from "../wood/util-wood.js";
 import {
   TimberBuilder,
   createTimberBuilder,

@@ -1,11 +1,8 @@
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { EM } from "../ecs/ecs.js";
-import {
-  appendBoard,
-  dbgPathWithGizmos,
-  lerpBetween,
-} from "../wood/shipyard.js";
+import { appendBoard, lerpBetween } from "../wood/shipyard.js";
+import { dbgPathWithGizmos } from "../debug/utils-gizmos.js";
 import { getHalfsizeFromAABB } from "../physics/aabb.js";
 import { ColliderDef } from "../physics/collider.js";
 import { PositionDef } from "../physics/transform.js";
