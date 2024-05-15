@@ -1,6 +1,4 @@
-import { DBG_ASSERT } from "../flags.js";
 import {
-  V2,
   V3,
   V4,
   quat,
@@ -8,24 +6,17 @@ import {
   mat3,
   V,
   tmpStack,
+  TV1,
 } from "../matrix/sprig-matrix.js";
-import { jitter } from "../utils/math.js";
 import {
-  getAABBFromMesh,
-  mapMeshPositions,
   mergeMeshes,
   Mesh,
   RawMesh,
   transformMesh,
   validateMesh,
 } from "../meshes/mesh.js";
-import { assert, assertDbg, range } from "../utils/util.js";
-import {
-  centroid,
-  quatFromUpForward_OLD,
-  randNormalPosVec3,
-  vec3Dbg,
-} from "../utils/utils-3d.js";
+import { assert } from "../utils/util.js";
+import { centroid, quatFromUpForward_OLD } from "../utils/utils-3d.js";
 import {
   createEmptyMesh,
   createTimberBuilder,
@@ -38,14 +29,10 @@ import {
   setEndQuadIdxs,
 } from "./wood.js";
 import { BLACK } from "../meshes/mesh-list.js";
-import { mkHalfEdgeQuadMesh } from "../meshes/primatives.js";
 import { HFace, meshToHalfEdgePoly } from "../meshes/half-edge.js";
 import { createGizmoMesh } from "../debug/gizmos.js";
 import { EM } from "../ecs/ecs.js";
-import {
-  PositionDef,
-  updateFrameFromPosRotScale,
-} from "../physics/transform.js";
+import { PositionDef } from "../physics/transform.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import {
   AABB,
@@ -87,7 +74,7 @@ const strip2EndIdx = 8;
 
 // TODO(@darzu): Bad abstraction. It's annoying to provide all these properties ribCount etc and also
 //  not all wood projects will need/have these
-export interface HomeShip {
+export interface WoodShip {
   timberState: WoodState;
   timberMesh: Mesh;
   // TODO(@darzu): how to pass this?
@@ -98,12 +85,6 @@ export interface HomeShip {
   floorHeight: number;
   floorLength: number;
   floorWidth: number;
-}
-
-export interface ShipyardUI {
-  kind: "shipyard";
-  ribCount: number;
-  // TODO(@darzu): other params
 }
 
 // Note: Made w/ game-font !
@@ -165,7 +146,7 @@ const keelTemplate: Mesh = {
   surfaceIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
   usesProvoking: true,
 };
-const __temp1 = V3.mk();
+
 export function getPathFrom2DQuadMesh(m: Mesh, perp: V3.InputT): Path {
   const hpoly = meshToHalfEdgePoly(m);
 
@@ -192,7 +173,7 @@ export function getPathFrom2DQuadMesh(m: Mesh, perp: V3.InputT): Path {
     let v0 = m.pos[e.orig.vi];
     let v1 = m.pos[e.next.orig.vi];
     let pos = centroid(v0, v1);
-    let dir = V3.cross(V3.sub(v0, v1, __temp1), perp, __temp1);
+    let dir = V3.cross(V3.sub(v0, v1, TV1), perp, TV1);
     const rot = quatFromUpForward_OLD(quat.mk(), perp, dir);
     path.push({ pos, rot });
 
@@ -289,7 +270,7 @@ export const ld53ShipAABBs: AABB[] = [
   transformAABB(aabb, mat4.mul(mat4.fromYaw(Math.PI), transformYUpModelIntoZUp))
 );
 
-export function createLD53Ship(): HomeShip {
+export function createLD53Ship(): WoodShip {
   const KEEL = true;
   const RIBS = true;
   const PLANKS = true;

@@ -27,7 +27,7 @@ import {
 } from "../utils/spline.js";
 import { assert } from "../utils/util.js";
 import {
-  HomeShip,
+  WoodShip,
   fixPathBasis,
   appendBoard,
   snapToPath,

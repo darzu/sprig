@@ -1625,6 +1625,14 @@ export module mat3 {
   }
 }
 
+// TODO(@darzu): HACKY temps
+export const TV1 = tV(0, 0, 0);
+export const TV2 = tV(0, 0, 0);
+export const TV3 = tV(0, 0, 0);
+export const TV4 = tV(0, 0, 0);
+export const TV5 = tV(0, 0, 0);
+export const TV6 = tV(0, 0, 0);
+
 // Other utils:
 
 // mutates all three vectors so they are all perpendicular and unit

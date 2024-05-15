@@ -4,24 +4,16 @@ import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { DeadDef } from "../ecs/delete.js";
 import { EM } from "../ecs/ecs.js";
-import { V3, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V3, quat, V } from "../matrix/sprig-matrix.js";
 import { InputsDef } from "../input/inputs.js";
-import { AudioDef } from "../audio/audio.js";
 import {
   ColliderDef,
   ColliderFromMeshDef,
   MultiCollider,
 } from "../physics/collider.js";
-import { LinearVelocityDef } from "../motion/velocity.js";
 import { WorldFrameDef } from "../physics/nonintersection.js";
 import { PositionDef, RotationDef, ScaleDef } from "../physics/transform.js";
-import { PointLightDef } from "../render/lights.js";
-import {
-  cloneMesh,
-  getAABBFromMesh,
-  Mesh,
-  transformMesh,
-} from "../meshes/mesh.js";
+import { Mesh } from "../meshes/mesh.js";
 import { stdMeshPipe } from "../render/pipelines/std-mesh.js";
 import { outlineRender } from "../render/pipelines/std-outline.js";
 import { postProcess } from "../render/pipelines/std-post.js";
@@ -31,7 +23,6 @@ import {
   RenderableConstructDef,
   RenderableDef,
 } from "../render/renderer-ecs.js";
-import { TimeDef } from "../time/time.js";
 import {
   createWoodHealth,
   resetWoodHealth,
@@ -40,19 +31,12 @@ import {
   WoodStateDef,
   _dbgNumSplinterEnds,
 } from "./wood.js";
-import { AllMeshesDef, BallMesh, HexMesh } from "../meshes/mesh-list.js";
+import { BallMesh, HexMesh } from "../meshes/mesh-list.js";
 import { breakBullet, BulletDef, fireBullet } from "../cannons/bullet.js";
-import { createGhost, GhostDef } from "../debug/ghost.js";
-import { TextDef } from "../gui/ui.js";
+import { GhostDef } from "../debug/ghost.js";
 import { createLD53Ship, ld53ShipAABBs } from "./shipyard.js";
-import { gameplaySystems } from "../debug/ghost.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
-import {
-  pirateKills,
-  pirateNextSpawn,
-  pirateSpawnTimer,
-  startPirates,
-} from "./pirate.js";
+import { startPirates } from "./pirate.js";
 import { ParametricDef } from "../motion/parametric-motion.js";
 import { addColliderDbgVis, addGizmoChild } from "../utils/utils-game.js";
 import { Phase } from "../ecs/sys-phase.js";
@@ -94,12 +78,8 @@ export async function initShipyardGame() {
   EM.set(timber, RenderableConstructDef, timberMesh);
   EM.set(timber, WoodStateDef, timberState);
   EM.set(timber, AuthorityDef, res.me.pid);
-
-  const scale = 1;
-
   EM.set(timber, PositionDef, V(0, 0, 20));
   EM.set(timber, RotationDef);
-  EM.set(timber, ScaleDef, V(scale, scale, scale));
   EM.set(timber, WorldFrameDef);
 
   const mc: MultiCollider = {
