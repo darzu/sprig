@@ -13,7 +13,7 @@ import { PositionDef, RotationDef } from "../physics/transform.js";
 import { normalizeMesh } from "../meshes/mesh.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { randNormalVec3, vec3Reverse, vec4Reverse } from "../utils/utils-3d.js";
-import { BoardSeg, createEmptyMesh, createTimberBuilder } from "./wood.js";
+import { SegData, createEmptyMesh, createTimberBuilder } from "./wood.js";
 import { RenderDataStdDef } from "../render/pipelines/std-scene.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { VERBOSE_LOG } from "../flags.js";
@@ -31,7 +31,7 @@ export const SplinterParticleDef = EM.defineComponent("splinter", () => {
 export const SplinterPoolsDef = EM.defineResource("splinterPools", () => {
   const _pools = new Map<string, SplinterPool>();
 
-  function getOrCreatePool(seg: BoardSeg) {
+  function getOrCreatePool(seg: SegData) {
     const poolKey: string = `w${seg.width.toFixed(1)}_d${seg.depth.toFixed(
       1
     )}}`;

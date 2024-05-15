@@ -21,6 +21,9 @@ import {
   getAABBFromPositions,
 } from "../physics/aabb.js";
 
+// TODO(@darzu): BUG: sometimes ball colisions don't work
+// TODO(@darzu): BUG: sometimes splinters are misaligned
+
 // TODO(@darzu): remove all references to pirates
 
 /* TODO(@darzu):
@@ -56,6 +59,7 @@ could do geometry shader to turn line strips into triangles
 
 // Flag for serialization dbg. determine the max number of boards and segments; useful for sizing (u8 vs u16) for serializing
 const TRACK_MAX_BOARD_SEG_IDX = false;
+const TRACK_INVALID_BOARDS = false;
 
 const __temp1 = V3.mk();
 const __temp2 = V3.mk();
@@ -76,11 +80,33 @@ interface WoodSplinterState {
   // generation: number;
 }
 
+type VI = number; // vertex index
+type QI = number; // quad index
+// each board has an AABB, OBB,
+export interface SegData {
+  localAABB: AABB;
+  midLine: Line;
+  areaNorms: V3[]; // TODO(@darzu): fixed size
+  width: number;
+  depth: number;
+  // TODO(@darzu): establish convention e.g. top-left, top-right, etc.
+  vertLastLoopIdxs: V4; // [VI, VI, VI, VI];
+  vertNextLoopIdxs: V4; // [VI, VI, VI, VI];
+  // TODO(@darzu): establish convention e.g. top, left, right, bottom
+  quadSideIdxs: V4; // [QI, QI, QI, QI];
+  quadBackIdx?: QI;
+  quadFrontIdx?: QI;
+}
+interface BoardData {
+  segments: SegData[];
+  localAABB: AABB;
+}
+
 export interface WoodState {
   mesh: RawMesh; // TODO(@darzu): make non-raw
   usedVertIdxs: Set<number>;
   usedQuadIdxs: Set<number>;
-  boards: Board[];
+  boards: BoardData[];
 
   splinterState?: WoodSplinterState;
 }
@@ -116,6 +142,8 @@ interface WoodHealth {
   boards: BoardHealth[];
 }
 
+export type TimberBuilder = ReturnType<typeof createTimberBuilder>;
+
 export const WoodHealthDef = EM.defineNonupdatableComponent(
   "woodHealth",
   (s: WoodHealth) => {
@@ -123,7 +151,7 @@ export const WoodHealthDef = EM.defineNonupdatableComponent(
   }
 );
 
-export function getSegmentRotation(seg: BoardSeg, top: boolean) {
+export function getSegmentRotation(seg: SegData, top: boolean) {
   let segNorm = V3.mk();
   let biggestArea2 = 0;
   for (let v of seg.areaNorms) {
@@ -163,12 +191,12 @@ export function removeSplinterEnd(splinterIdx: number, wood: WoodState) {
   }
 }
 
-// TODO(@darzu): DE-DUPE addSplinterEnd
 export function addSplinterEnd(
-  seg: BoardSeg,
+  seg: SegData,
   wood: WoodState,
   top: boolean
 ): number | undefined {
+  console.log("global:addSplinteredEnd");
   assert(wood.splinterState, "!wood.splinterState");
 
   const sIdx = wood.splinterState.splinterIdxPool.next();
@@ -296,7 +324,6 @@ export function setEndQuadIdxs(loopVi: number, q: V4, facingDown: boolean) {
     V4.set(loopVi + 0, loopVi + 1, loopVi + 2, loopVi + 3, q);
 }
 
-export type TimberBuilder = ReturnType<typeof createTimberBuilder>;
 export function createTimberBuilder(mesh: RawMesh) {
   // TODO(@darzu): Z_UP!! check this over
   // TODO(@darzu): have a system for building wood?
@@ -325,8 +352,8 @@ export function createTimberBuilder(mesh: RawMesh) {
     mat4.copy(cursor, newCursor);
   }
 
-  // TODO(@darzu): DE-DUPE addSplinterEnd
   function addSplinteredEnd(lastLoopEndVi: number, numJags: number) {
+    console.log("timberBuilder:addSplinteredEnd");
     const vi = mesh.pos.length;
 
     const v0 = V(0, 0, b.depth);
@@ -442,28 +469,6 @@ export function createTimberBuilder(mesh: RawMesh) {
   }
 }
 
-type VI = number; // vertex index
-type QI = number; // quad index
-// each board has an AABB, OBB,
-export interface BoardSeg {
-  localAABB: AABB;
-  midLine: Line;
-  areaNorms: V3[]; // TODO(@darzu): fixed size
-  width: number;
-  depth: number;
-  // TODO(@darzu): establish convention e.g. top-left, top-right, etc.
-  vertLastLoopIdxs: V4; // [VI, VI, VI, VI];
-  vertNextLoopIdxs: V4; // [VI, VI, VI, VI];
-  // TODO(@darzu): establish convention e.g. top, left, right, bottom
-  quadSideIdxs: V4; // [QI, QI, QI, QI];
-  quadBackIdx?: QI;
-  quadFrontIdx?: QI;
-}
-interface Board {
-  segments: BoardSeg[];
-  localAABB: AABB;
-}
-
 export function reserveSplinterSpace(wood: WoodState, maxSplinters: number) {
   // console.log("reserveSplinterSpace");
   // console.log(meshStats(wood.mesh));
@@ -504,8 +509,6 @@ export function debugBoardSystem(m: RawMesh): RawMesh {
   console.log(`debugBoardSystem: ${(after - before).toFixed(2)}ms`);
   return m;
 }
-
-const TRACK_INVALID_BOARDS = false;
 
 export function getBoardsFromMesh(m: RawMesh): WoodState {
   // What's in a board?
@@ -549,7 +552,7 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
   const structureQis = new Set<number>();
 
   // TODO: vi to board idx ?
-  function createBoard(startQi: number): Board | undefined {
+  function createBoard(startQi: number): BoardData | undefined {
     const boardVis = new Set<number>();
     const boardQis = new Set<number>();
 
@@ -586,7 +589,7 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
     function addBoardSegment(
       lastLoop: V4, // [VI, VI, VI, VI],
       isFirstLoop: boolean = false
-    ): BoardSeg[] | undefined {
+    ): SegData[] | undefined {
       // TODO(@darzu): using too many temps!
       // start tracking this segment
       const segVis = new Set([...lastLoop]);
@@ -661,7 +664,7 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
       const len2 = V3.dist(m.pos[lastLoop[3]], m.pos[lastLoop[0]]);
       const width = Math.max(len1, len2) * 0.5;
       const depth = Math.min(len1, len2) * 0.5;
-      let seg: BoardSeg;
+      let seg: SegData;
 
       function getQiAreaNorm(qi: number) {
         // TODO(@darzu): PERF. Using too many temps!
@@ -737,7 +740,7 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
 
   const qEndCanidates = [...qIsMaybeEnd.values()];
   qEndCanidates.sort((a, b) => a - b);
-  const boards: Board[] = [];
+  const boards: BoardData[] = [];
   for (let qi of qEndCanidates) {
     if (!structureQis.has(qi)) {
       const b = createBoard(qi);

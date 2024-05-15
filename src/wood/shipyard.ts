@@ -77,6 +77,14 @@ export interface WoodShip {
   floorWidth: number;
 }
 
+// TODO(@darzu): BAD: wood.ts has an "interface Board" too
+export interface BoardPath {
+  path: Path;
+
+  width: number;
+  depth: number;
+}
+
 // Note: Made w/ game-font !
 // TODO(@darzu): Z_UP: transform these?
 const keelTemplate: Mesh = {
@@ -725,14 +733,6 @@ export function createLD53Ship(): WoodShip {
   };
 }
 
-// TODO(@darzu): BAD: wood.ts has an "interface Board" too
-interface Board {
-  path: Path;
-
-  width: number;
-  depth: number;
-}
-
 export function pathNodeFromMat4(cursor: mat4): PathNode {
   const rot = mat4.getRotation(cursor, quat.mk());
   const pos = mat4.getTranslation(cursor, V3.mk());
@@ -755,14 +755,14 @@ export function lerpBetween(start: V3, end: V3, numNewMid: number): V3[] {
   return positions;
 }
 
-function cloneBoard(board: Board): Board {
+function cloneBoard(board: BoardPath): BoardPath {
   return {
     ...board,
     path: clonePath(board.path),
   };
 }
 
-export function appendBoard(mesh: RawMesh, board: Board, color = BLACK) {
+export function appendBoard(mesh: RawMesh, board: BoardPath, color = BLACK) {
   // TODO(@darzu): build up wood state along with the mesh!
 
   assert(board.path.length >= 2, `invalid board path!`);
