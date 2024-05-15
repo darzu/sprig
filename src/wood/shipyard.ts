@@ -85,66 +85,6 @@ export interface BoardPath {
   depth: number;
 }
 
-// Note: Made w/ game-font !
-// TODO(@darzu): Z_UP: transform these?
-const keelTemplate: Mesh = {
-  pos: [
-    V(0.58, 0.0, 1.49),
-    V(-1.4, 0.0, 1.52),
-    V(-1.38, 0.0, 1.74),
-    V(0.59, 0.0, 1.71),
-    V(-3.73, 0.0, 1.47),
-    V(-3.72, 0.0, 1.68),
-    V(-4.4, 0.0, 1.22),
-    V(-4.64, 0.0, 1.41),
-    V(-4.76, 0.0, 0.24),
-    V(-5.03, 0.0, 0.3),
-    V(-4.81, 0.0, -0.08),
-    V(-5.13, 0.0, -0.04),
-    V(-5.05, 0.0, -1.12),
-    V(-5.38, 0.0, -1.09),
-    V(2.36, 0.0, 1.46),
-    V(2.28, 0.0, 1.26),
-    V(3.63, 0.0, 1.07),
-    V(3.5, 0.0, 0.89),
-    V(4.51, 0.0, 0.49),
-    V(4.32, 0.0, 0.37),
-    V(5.15, 0.0, -0.4),
-    V(4.93, 0.0, -0.44),
-    V(5.29, 0.0, -1.46),
-    V(5.06, 0.0, -1.46),
-  ],
-  tri: [],
-  quad: [
-    V(0, 1, 2, 3),
-    V(4, 5, 2, 1),
-    V(6, 7, 5, 4),
-    V(8, 9, 7, 6),
-    V(10, 11, 9, 8),
-    V(12, 13, 11, 10),
-    V(14, 15, 0, 3),
-    V(16, 17, 15, 14),
-    V(18, 19, 17, 16),
-    V(20, 21, 19, 18),
-    V(22, 23, 21, 20),
-  ],
-  colors: [
-    V(0.49, 0.16, 0.86),
-    V(0.48, 0.03, 0.88),
-    V(0.47, 0.19, 0.86),
-    V(0.53, 0.5, 0.68),
-    V(0.34, 0.74, 0.58),
-    V(0.62, 0.36, 0.69),
-    V(0.93, 0.32, 0.19),
-    V(0.57, 0.18, 0.8),
-    V(0.67, 0.18, 0.72),
-    V(0.19, 0.92, 0.34),
-    V(0.42, 0.81, 0.42),
-  ],
-  surfaceIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
-  usesProvoking: true,
-};
-
 // Note: these were manually placed via the modeler
 // TODO(@darzu): Z_UP: visualize these to make sure they're right
 export const ld53ShipAABBs: AABB[] = [
@@ -160,6 +100,103 @@ export const ld53ShipAABBs: AABB[] = [
 ].map((aabb) =>
   transformAABB(aabb, mat4.mul(mat4.fromYaw(Math.PI), transformYUpModelIntoZUp))
 );
+
+function getLD53KeelPath(): Path {
+  // Note: Made w/ game-font !
+  // TODO(@darzu): Z_UP: transform these?
+  const keelTemplate: Mesh = {
+    pos: [
+      V(0.58, 0.0, 1.49),
+      V(-1.4, 0.0, 1.52),
+      V(-1.38, 0.0, 1.74),
+      V(0.59, 0.0, 1.71),
+      V(-3.73, 0.0, 1.47),
+      V(-3.72, 0.0, 1.68),
+      V(-4.4, 0.0, 1.22),
+      V(-4.64, 0.0, 1.41),
+      V(-4.76, 0.0, 0.24),
+      V(-5.03, 0.0, 0.3),
+      V(-4.81, 0.0, -0.08),
+      V(-5.13, 0.0, -0.04),
+      V(-5.05, 0.0, -1.12),
+      V(-5.38, 0.0, -1.09),
+      V(2.36, 0.0, 1.46),
+      V(2.28, 0.0, 1.26),
+      V(3.63, 0.0, 1.07),
+      V(3.5, 0.0, 0.89),
+      V(4.51, 0.0, 0.49),
+      V(4.32, 0.0, 0.37),
+      V(5.15, 0.0, -0.4),
+      V(4.93, 0.0, -0.44),
+      V(5.29, 0.0, -1.46),
+      V(5.06, 0.0, -1.46),
+    ],
+    tri: [],
+    quad: [
+      V(0, 1, 2, 3),
+      V(4, 5, 2, 1),
+      V(6, 7, 5, 4),
+      V(8, 9, 7, 6),
+      V(10, 11, 9, 8),
+      V(12, 13, 11, 10),
+      V(14, 15, 0, 3),
+      V(16, 17, 15, 14),
+      V(18, 19, 17, 16),
+      V(20, 21, 19, 18),
+      V(22, 23, 21, 20),
+    ],
+    colors: [
+      V(0.49, 0.16, 0.86),
+      V(0.48, 0.03, 0.88),
+      V(0.47, 0.19, 0.86),
+      V(0.53, 0.5, 0.68),
+      V(0.34, 0.74, 0.58),
+      V(0.62, 0.36, 0.69),
+      V(0.93, 0.32, 0.19),
+      V(0.57, 0.18, 0.8),
+      V(0.67, 0.18, 0.72),
+      V(0.19, 0.92, 0.34),
+      V(0.42, 0.81, 0.42),
+    ],
+    surfaceIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+    usesProvoking: true,
+  };
+
+  // TODO(@darzu): Clean up ship's construction (too many transforms, basis changes, etc)
+  // const keelTempAABB = getAABBFromMesh(keelTemplate);
+  // console.dir(keelTempAABB);
+  let keelTemplate2 = transformMesh(
+    keelTemplate,
+    mat4.fromRotationTranslationScale(
+      quat.rotX(quat.identity(), Math.PI / 2),
+      [0, 0, 0],
+      // vec3.scale(vec3.negate(keelTempAABB.min), 6),
+      [5, 5, 5]
+    )
+  ) as Mesh;
+  // const keelTemplate2 = keelTemplate;
+
+  const keelPath = getPathFrom2DQuadMesh(keelTemplate2, [0, 0, 1]);
+  // keelPath = getPathFrom2DQuadMesh(keelTemplate2, [0, 1, 0]);
+
+  // fix keel orientation
+  // r->g, g->b, b->r
+  fixPathBasis(keelPath, [0, 1, 0], [0, 0, 1], [1, 0, 0]);
+
+  const tempAABB = createAABB();
+  keelPath.forEach((p) => updateAABBWithPoint(tempAABB, p.pos));
+  translatePath(keelPath, [0, -tempAABB.min[1], 0]);
+
+  // dbgPathWithGizmos(keelPath);
+
+  return keelPath;
+}
+
+export function getAABBFromPath(path: Path): AABB {
+  const aabb = createAABB();
+  path.forEach((p) => updateAABBWithPoint(aabb, p.pos));
+  return aabb;
+}
 
 export function createLD53Ship(): WoodShip {
   const KEEL = true;
@@ -177,44 +214,13 @@ export function createLD53Ship(): WoodShip {
   const builder: TimberBuilder = createTimberBuilder(_timberMesh);
 
   // KEEL
-  // TODO(@darzu): IMPL keel!
   const keelWidth = 0.7;
   const keelDepth = 1.2;
   builder.width = keelWidth;
   builder.depth = keelDepth;
 
-  let keelPath: Path;
-  {
-    // TODO(@darzu): Clean up ship's construction (too many transforms, basis changes, etc)
-    // const keelTempAABB = getAABBFromMesh(keelTemplate);
-    // console.dir(keelTempAABB);
-    let keelTemplate2 = transformMesh(
-      keelTemplate,
-      mat4.fromRotationTranslationScale(
-        quat.rotX(quat.identity(), Math.PI / 2),
-        [0, 0, 0],
-        // vec3.scale(vec3.negate(keelTempAABB.min), 6),
-        [5, 5, 5]
-      )
-    ) as Mesh;
-    // const keelTemplate2 = keelTemplate;
-
-    keelPath = getPathFrom2DQuadMesh(keelTemplate2, [0, 0, 1]);
-    // keelPath = getPathFrom2DQuadMesh(keelTemplate2, [0, 1, 0]);
-
-    // fix keel orientation
-    // r->g, g->b, b->r
-    fixPathBasis(keelPath, [0, 1, 0], [0, 0, 1], [1, 0, 0]);
-
-    const tempAABB = createAABB();
-    keelPath.forEach((p) => updateAABBWithPoint(tempAABB, p.pos));
-    translatePath(keelPath, [0, -tempAABB.min[1], 0]);
-
-    // dbgPathWithGizmos(keelPath);
-  }
-
-  const keelAABB = createAABB();
-  keelPath.forEach((p) => updateAABBWithPoint(keelAABB, p.pos));
+  const keelPath = getLD53KeelPath();
+  const keelAABB = getAABBFromPath(keelPath);
   const keelSize = getSizeFromAABB(keelAABB, V3.mk());
 
   if (KEEL)
