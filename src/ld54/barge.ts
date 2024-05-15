@@ -30,10 +30,10 @@ import {
   WoodShip,
   fixPathBasis,
   appendBoard,
-  snapToPath,
   lerpBetween,
-  snapXToPath,
 } from "../wood/shipyard.js";
+import { snapXToPath } from "../utils/spline.js";
+import { snapToPath } from "../utils/spline.js";
 import { dbgPathWithGizmos } from "../debug/utils-gizmos.js";
 import { getPathFrom2DQuadMesh } from "../wood/util-wood.js";
 import {

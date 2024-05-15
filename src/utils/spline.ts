@@ -354,3 +354,34 @@ export function getRandomCylindricalPoints(
 
   return points;
 }
+
+export const __temp2 = V3.mk();
+export function snapToPath(path: Path, w: number, dim: 0 | 1 | 2, out: V3) {
+  for (let i = 0; i < path.length; i++) {
+    let pos = path[i].pos;
+    // are we ahead of w
+    if (w < pos[dim]) {
+      if (i === 0) {
+        // w is before the whole path
+        V3.copy(out, path[i].pos);
+        return out;
+      }
+      let prev = path[i - 1].pos;
+      assert(
+        prev[dim] <= w,
+        `TODO: we assume path is in assending [x,y,z][${dim}] order`
+      );
+
+      let diff = V3.sub(pos, prev, __temp2);
+      let percent = (w - prev[dim]) / diff[dim];
+      V3.add(prev, V3.scale(diff, percent, out), out);
+      return out;
+    }
+  }
+  // the whole path is behind x
+  V3.copy(out, path[path.length - 1].pos);
+  return out;
+}
+export function snapXToPath(path: Path, x: number, out: V3) {
+  return snapToPath(path, x, 0, out);
+}

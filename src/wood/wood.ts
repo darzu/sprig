@@ -208,7 +208,7 @@ const raiseDmgWood = eventWizard(
 
 EM.addEagerInit([WoodStateDef], [], [], () => {
   EM.addSystem(
-    "runWooden",
+    "woodDoCollisions",
     Phase.GAME_WORLD,
     [WoodStateDef, WoodHealthDef, WorldFrameDef, RenderableDef],
     [PhysicsResultsDef, RendererDef],
@@ -348,7 +348,7 @@ EM.addEagerInit([WoodStateDef], [], [], () => {
   );
 
   EM.addSystem(
-    "woodHealth",
+    "woodUpdateDamageAndSplinter",
     Phase.GAME_WORLD,
     [WoodStateDef, WorldFrameDef, WoodHealthDef, RenderableDef],
     [RendererDef, SplinterPoolsDef],
@@ -702,64 +702,6 @@ function addSplinterEnd(
   }
 
   return sIdx;
-}
-
-function createSplinterEnd(
-  seg: BoardSeg,
-  boardMesh: Mesh,
-  top: boolean,
-  W: number,
-  D: number
-) {
-  const pos = V3.copy(V3.tmp(), seg.midLine.ray.org);
-  if (top) {
-    getLineEnd(pos, seg.midLine);
-  }
-
-  const rot = getSegmentRotation(seg, top);
-  // TODO(@darzu): put these into a pool
-  const splinter = EM.mk();
-  // TODO(@darzu): perf? probably don't need to normalize, just use same surface ID and provoking vert for all
-  const cursor = mat4.fromRotationTranslation(rot, pos, mat4.create());
-  let _splinterMesh: RawMesh = createEmptyMesh("splinterEnd");
-  {
-    const b = createTimberBuilder(_splinterMesh);
-    b.width = W;
-    b.depth = D;
-
-    b.setCursor(cursor);
-    b.addLoopVerts();
-    // TODO(@darzu): HACK. We're "snapping" the splinter loop and segment loops
-    //    together via distance; we should be able to do this in a more analytic way
-    const snapDistSqr = Math.pow(0.2 * 0.5, 2);
-    const loop = top ? seg.vertNextLoopIdxs : seg.vertLastLoopIdxs;
-    for (let vi = b.mesh.pos.length - 4; vi < b.mesh.pos.length; vi++) {
-      const p = b.mesh.pos[vi];
-      for (let vi2 of loop) {
-        const lp = boardMesh.pos[vi2];
-        if (V3.sqrDist(p, lp) < snapDistSqr) {
-          V3.copy(p, lp);
-          break;
-        }
-      }
-    }
-    b.addEndQuad(true);
-
-    b.setCursor(cursor);
-    mat4.translate(b.cursor, [0, 0.1, 0], b.cursor);
-    b.addSplinteredEnd(b.mesh.pos.length, 5);
-
-    // TODO(@darzu): triangle vs quad coloring doesn't work
-    b.mesh.quad.forEach((_) => b.mesh.colors.push(V3.clone(BLACK)));
-    b.mesh.tri.forEach((_) => b.mesh.colors.push(V3.clone(BLACK)));
-  }
-  const splinterMesh = normalizeMesh(_splinterMesh);
-  EM.set(splinter, RenderableConstructDef, splinterMesh);
-  EM.set(splinter, ColorDef, V(Math.random(), Math.random(), Math.random()));
-  EM.set(splinter, PositionDef);
-  EM.set(splinter, RotationDef);
-  EM.set(splinter, WorldFrameDef);
-  return splinter;
 }
 
 export function createEmptyMesh(dbgName: string) {
