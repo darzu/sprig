@@ -46,6 +46,23 @@ import { getPathFrom2DQuadMesh } from "./util-wood.js";
 import { snapToPath } from "../utils/spline.js";
 import { snapXToPath } from "../utils/spline.js";
 
+/*
+ship state
+
+BOARD:
+  bezier curves + num of steps
+  raw path
+  positions + global rotation
+  two end points + rotation + num segments
+
+SHEET:
+  keyframe BOARDs
+  tween strategy
+
+BOARD OR SHEET + coloring
+
+*/
+
 // TODO(@darzu): use arc-length parameterization to resample splines
 
 const railColor = ENDESGA16.darkBrown;
@@ -77,7 +94,6 @@ export interface WoodShip {
   floorWidth: number;
 }
 
-// TODO(@darzu): BAD: wood.ts has an "interface Board" too
 export interface BoardPath {
   path: Path;
 

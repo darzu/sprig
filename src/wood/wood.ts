@@ -142,7 +142,7 @@ interface WoodHealth {
   boards: BoardHealth[];
 }
 
-export type TimberBuilder = ReturnType<typeof createTimberBuilder>;
+// export type TimberBuilder = ReturnType<typeof createTimberBuilder>;
 
 export const WoodHealthDef = EM.defineNonupdatableComponent(
   "woodHealth",
@@ -324,7 +324,19 @@ export function setEndQuadIdxs(loopVi: number, q: V4, facingDown: boolean) {
     V4.set(loopVi + 0, loopVi + 1, loopVi + 2, loopVi + 3, q);
 }
 
-export function createTimberBuilder(mesh: RawMesh) {
+export interface TimberBuilder {
+  width: number;
+  depth: number;
+  mesh: RawMesh;
+  cursor: mat4;
+  addSplinteredEnd: (lastLoopEndVi: number, numJags: number) => void;
+  addLoopVerts: () => void;
+  addSideQuads: () => void;
+  addEndQuad: (facingDown: boolean) => void;
+  setCursor: (newCursor: mat4) => void;
+}
+
+export function createTimberBuilder(mesh: RawMesh): TimberBuilder {
   // TODO(@darzu): Z_UP!! check this over
   // TODO(@darzu): have a system for building wood?
 
