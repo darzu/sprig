@@ -2335,3 +2335,6 @@ Nanite materials:
 
 Path tracing, bvh in webgpu:
   https://www.vaultcg.com/blog/casually-raytracing-in-webgpu-part2/
+
+Blue Noise summary by demofox:
+  https://www.youtube.com/watch?v=tethAU66xaA&t=1s

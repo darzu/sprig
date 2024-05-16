@@ -61,6 +61,7 @@ export function registerDestroyPirateHandler(fn: DestroyPirateShipFn) {
 }
 
 interface BoardSegHit {
+  groupIdx: number;
   boardIdx: number;
   segIdx: number;
   dmg: number;
@@ -72,8 +73,8 @@ const raiseDmgWood = eventWizard(
   ([wood], hits: BoardSegHit[]) => {
     if (DBG_WOOD_DMG)
       console.log(`dmg-wood against ${wood.id} w/ ${hits.length} hits`);
-    for (let { boardIdx, segIdx, dmg } of hits) {
-      wood.woodHealth.boards[boardIdx][segIdx].health -= dmg;
+    for (let { groupIdx, boardIdx, segIdx, dmg } of hits) {
+      wood.woodHealth.groups[groupIdx].boards[boardIdx][segIdx].health -= dmg;
 
       EM.whenResources(AudioDef, SoundSetDef).then((res) => {
         res.music.playSound("woodbreak", res.soundSet["woodbreak.mp3"], 0.02);
@@ -93,14 +94,16 @@ const raiseDmgWood = eventWizard(
   {
     legalEvent: ([wood], hits: BoardSegHit[]) => {
       assert(hits.length < 0xff /*uint 8*/);
-      assert(wood.woodHealth.boards.length < 0xff /*uint 8*/);
+      assert(wood.woodHealth.groups.length < 0xff /*uint 8*/);
+      assert(wood.woodHealth.groups[0].boards.length < 0xff /*uint 8*/);
       // NOTE: doesn't thoroughly enforce anything but segments need to fit in uint8 too
-      assert(wood.woodHealth.boards[0].length < 0xff /*uint 8*/);
+      assert(wood.woodHealth.groups[0].boards[0].length < 0xff /*uint 8*/);
       return true;
     },
     serializeExtra: (buf, hits: BoardSegHit[]) => {
       buf.writeUint8(hits.length);
-      for (let { boardIdx, segIdx, dmg } of hits) {
+      for (let { groupIdx, boardIdx, segIdx, dmg } of hits) {
+        buf.writeUint8(groupIdx);
         buf.writeUint8(boardIdx);
         buf.writeUint8(segIdx);
         const dmgAsU8 = dmg * 0xff;
@@ -111,11 +114,12 @@ const raiseDmgWood = eventWizard(
       const len = buf.readUint8();
       const hits: BoardSegHit[] = [];
       for (let i = 0; i < len; i++) {
+        const groupIdx = buf.readUint8();
         const boardIdx = buf.readUint8();
         const segIdx = buf.readUint8();
         const dmgAsU8 = buf.readUint8();
         const dmg = dmgAsU8 / 0xff;
-        hits.push({ boardIdx, segIdx, dmg });
+        hits.push({ groupIdx, boardIdx, segIdx, dmg });
       }
       return hits;
     },
@@ -173,60 +177,63 @@ EM.addEagerInit([WoodStateDef], [], [], () => {
               rad: (ballAABBWorld.max[0] - ballAABBWorld.min[0]) * 0.5,
             };
 
-            // TODO(@darzu): PERF. have groups of boards. Maybe "walls". Or just an oct-tree.
-            w.woodState.boards.forEach((board, boardIdx) => {
-              if (ball.bullet.health <= 0) return;
-
-              // does the ball hit the board?
-              copyAABB(boardAABBWorld, board.localAABB);
-              transformAABB(boardAABBWorld, w.world.transform);
-              overlapChecks++;
-              if (!doesOverlapAABB(ballAABBWorld, boardAABBWorld)) return;
-
-              board.segments.forEach((seg, segIdx) => {
+            // TODO(@darzu): PERF. Use AABBs in the groups!
+            w.woodState.groups.forEach((group, groupIdx) => {
+              group.boards.forEach((board, boardIdx) => {
                 if (ball.bullet.health <= 0) return;
 
-                // does the ball hit the segment?
-                copyAABB(segAABBWorld, seg.localAABB);
-                transformAABB(segAABBWorld, w.world.transform);
+                // does the ball hit the board?
+                copyAABB(boardAABBWorld, board.localAABB);
+                transformAABB(boardAABBWorld, w.world.transform);
                 overlapChecks++;
-                if (doesOverlapAABB(ballAABBWorld, segAABBWorld)) {
-                  segAABBHits += 1;
-                  // for (let qi of seg.quadSideIdxs) {
-                  //   if (DBG_COLOR && mesh.colors[qi][1] < 1) {
-                  //     // dont change green to red
-                  //     mesh.colors[qi] = [1, 0, 0];
-                  //   }
-                  // }
+                if (!doesOverlapAABB(ballAABBWorld, boardAABBWorld)) return;
 
-                  // does the ball hit the middle of the segment?
-                  copyLine(worldLine, seg.midLine);
-                  transformLine(worldLine, w.world.transform);
-                  const midHits = lineSphereIntersections(
-                    worldLine,
-                    worldSphere
-                  );
-                  if (midHits) {
-                    // console.log(`mid hit: ${midHits}`);
-                    segMidHits += 1;
-                    // if (DBG_COLOR)
-                    //   for (let qi of seg.quadSideIdxs) {
-                    //     mesh.colors[qi] = [0, 1, 0];
+                board.segments.forEach((seg, segIdx) => {
+                  if (ball.bullet.health <= 0) return;
+
+                  // does the ball hit the segment?
+                  copyAABB(segAABBWorld, seg.localAABB);
+                  transformAABB(segAABBWorld, w.world.transform);
+                  overlapChecks++;
+                  if (doesOverlapAABB(ballAABBWorld, segAABBWorld)) {
+                    segAABBHits += 1;
+                    // for (let qi of seg.quadSideIdxs) {
+                    //   if (DBG_COLOR && mesh.colors[qi][1] < 1) {
+                    //     // dont change green to red
+                    //     mesh.colors[qi] = [1, 0, 0];
                     //   }
-                    // TODO(@darzu): cannon ball health stuff!
+                    // }
 
-                    // determine dmg
-                    const woodHealth = w.woodHealth.boards[boardIdx][segIdx];
-                    const dmg =
-                      Math.min(woodHealth.health, ball.bullet.health) + 0.001;
+                    // does the ball hit the middle of the segment?
+                    copyLine(worldLine, seg.midLine);
+                    transformLine(worldLine, w.world.transform);
+                    const midHits = lineSphereIntersections(
+                      worldLine,
+                      worldSphere
+                    );
+                    if (midHits) {
+                      // console.log(`mid hit: ${midHits}`);
+                      segMidHits += 1;
+                      // if (DBG_COLOR)
+                      //   for (let qi of seg.quadSideIdxs) {
+                      //     mesh.colors[qi] = [0, 1, 0];
+                      //   }
+                      // TODO(@darzu): cannon ball health stuff!
 
-                    // dmg the ball
-                    ball.bullet.health -= dmg;
+                      // determine dmg
+                      const woodHealth =
+                        w.woodHealth.groups[groupIdx].boards[boardIdx][segIdx];
+                      const dmg =
+                        Math.min(woodHealth.health, ball.bullet.health) + 0.001;
 
-                    // dmg the wood
-                    boardSegHits.push({ boardIdx, segIdx, dmg });
+                      // dmg the ball
+                      ball.bullet.health -= dmg;
+
+                      // dmg the wood
+                      boardSegHits.push({ groupIdx, boardIdx, segIdx, dmg });
+                    }
                   }
-                }
+                });
               });
             });
           }
@@ -297,143 +304,145 @@ EM.addEagerInit([WoodStateDef], [], [], () => {
           console.log(meshStats(mesh));
         }
 
-        w.woodState.boards.forEach((board, bIdx) => {
-          let pool: SplinterPool | undefined = undefined;
-          board.segments.forEach((seg, sIdx) => {
-            const h = w.woodHealth.boards[bIdx][sIdx];
-            if (!h.broken && h.health <= 0) {
-              if (DBG_WOOD_DMG)
-                console.log(
-                  `breaking ${w.id}.woodHealth.boards[${bIdx}][${sIdx}]`
-                );
+        w.woodState.groups.forEach((group, gIdx) => {
+          group.boards.forEach((board, bIdx) => {
+            let pool: SplinterPool | undefined = undefined;
+            board.segments.forEach((seg, sIdx) => {
+              const h = w.woodHealth.groups[gIdx].boards[bIdx][sIdx];
+              if (!h.broken && h.health <= 0) {
+                if (DBG_WOOD_DMG)
+                  console.log(
+                    `breaking ${w.id}.woodHealth.boards[${bIdx}][${sIdx}]`
+                  );
 
-              h.broken = true;
-              // TODO(@darzu): how to unhide?
-              // TODO(@darzu): probably a more efficient way to do this..
-              let qMin = Infinity;
-              let qMax = -Infinity;
-              for (let qi of [
-                ...seg.quadSideIdxs,
-                // TODO(@darzu): PERF. how performant is the below?
-                ...(seg.quadBackIdx ? [seg.quadBackIdx] : []),
-                ...(seg.quadFrontIdx ? [seg.quadFrontIdx] : []),
-              ]) {
-                const q = mesh.quad[qi];
-                V4.set(0, 0, 0, 0, q);
-                qMin = Math.min(qMin, qi);
-                qMax = Math.max(qMax, qi);
-              }
-              // todo something is wrong with seg quads here!!
-              // console.log(`seg quad: ${qMin} ${qMax}`);
-              segQuadIndUpdated.push({ min: qMin, max: qMax });
+                h.broken = true;
+                // TODO(@darzu): how to unhide?
+                // TODO(@darzu): probably a more efficient way to do this..
+                let qMin = Infinity;
+                let qMax = -Infinity;
+                for (let qi of [
+                  ...seg.quadSideIdxs,
+                  // TODO(@darzu): PERF. how performant is the below?
+                  ...(seg.quadBackIdx ? [seg.quadBackIdx] : []),
+                  ...(seg.quadFrontIdx ? [seg.quadFrontIdx] : []),
+                ]) {
+                  const q = mesh.quad[qi];
+                  V4.set(0, 0, 0, 0, q);
+                  qMin = Math.min(qMin, qi);
+                  qMax = Math.max(qMax, qi);
+                }
+                // todo something is wrong with seg quads here!!
+                // console.log(`seg quad: ${qMin} ${qMax}`);
+                segQuadIndUpdated.push({ min: qMin, max: qMax });
 
-              // get the board's pool
-              if (!pool) {
-                pool = res.splinterPools.getOrCreatePool(seg);
-              }
+                // get the board's pool
+                if (!pool) {
+                  pool = res.splinterPools.getOrCreatePool(seg);
+                }
 
-              // create flying splinter (from pool)
-              // TODO(@darzu): MOVE into wood-splinters.ts ?
-              {
-                const qi = seg.quadSideIdxs[0];
-                const quadColor = mesh.colors[qi];
-                const splinter = pool.getNext();
-                if (RenderableDef.isOn(splinter))
-                  splinter.renderable.hidden = false;
-                if (ColorDef.isOn(w)) V3.copy(splinter.color, w.color);
-                V3.add(splinter.color, quadColor, splinter.color);
-                const pos = getLineMid(V3.mk(), seg.midLine);
-                V3.tMat4(pos, w.world.transform, pos);
-                EM.set(splinter, PositionDef, pos);
-                const rot = getSegmentRotation(seg, false);
-                quat.mul(rot, w.world.rotation, rot); // TODO(@darzu): !VERIFY! this works
-                EM.set(splinter, RotationDef, rot);
-                const spin = randNormalVec3(V3.mk());
-                const vel = V3.clone(spin);
-                V3.scale(spin, 0.01, spin);
-                EM.set(splinter, AngularVelocityDef, spin);
-                V3.scale(vel, 0.01, vel);
-                EM.set(splinter, LinearVelocityDef, spin);
-                EM.set(splinter, GravityDef, [0, 0, -3 * 0.00001]);
-              }
+                // create flying splinter (from pool)
+                // TODO(@darzu): MOVE into wood-splinters.ts ?
+                {
+                  const qi = seg.quadSideIdxs[0];
+                  const quadColor = mesh.colors[qi];
+                  const splinter = pool.getNext();
+                  if (RenderableDef.isOn(splinter))
+                    splinter.renderable.hidden = false;
+                  if (ColorDef.isOn(w)) V3.copy(splinter.color, w.color);
+                  V3.add(splinter.color, quadColor, splinter.color);
+                  const pos = getLineMid(V3.mk(), seg.midLine);
+                  V3.tMat4(pos, w.world.transform, pos);
+                  EM.set(splinter, PositionDef, pos);
+                  const rot = getSegmentRotation(seg, false);
+                  quat.mul(rot, w.world.rotation, rot); // TODO(@darzu): !VERIFY! this works
+                  EM.set(splinter, RotationDef, rot);
+                  const spin = randNormalVec3(V3.mk());
+                  const vel = V3.clone(spin);
+                  V3.scale(spin, 0.01, spin);
+                  EM.set(splinter, AngularVelocityDef, spin);
+                  V3.scale(vel, 0.01, vel);
+                  EM.set(splinter, LinearVelocityDef, spin);
+                  EM.set(splinter, GravityDef, [0, 0, -3 * 0.00001]);
+                }
 
-              if (h.prev && !h.prev.broken) {
-                // create end caps
-                assert(w.woodState.splinterState);
-                // const splinterGen = w.woodState.splinterState.generation;
-                const splinterIdx = addSplinterEnd(seg, w.woodState, false);
-                if (splinterIdx !== undefined) {
-                  h.splinterBotIdx = splinterIdx;
-                  // h.splinterBotGeneration = splinterGen;
-                  _dbgNumSplinterEnds++;
-                  splinterIndUpdated.push(splinterIdx);
+                if (h.prev && !h.prev.broken) {
+                  // create end caps
+                  assert(w.woodState.splinterState);
+                  // const splinterGen = w.woodState.splinterState.generation;
+                  const splinterIdx = addSplinterEnd(seg, w.woodState, false);
+                  if (splinterIdx !== undefined) {
+                    h.splinterBotIdx = splinterIdx;
+                    // h.splinterBotGeneration = splinterGen;
+                    _dbgNumSplinterEnds++;
+                    splinterIndUpdated.push(splinterIdx);
+                  }
+                }
+
+                if (h.next && !h.next.broken) {
+                  assert(w.woodState.splinterState);
+                  // const splinterGen = w.woodState.splinterState.generation;
+                  const splinterIdx = addSplinterEnd(seg, w.woodState, true);
+                  if (splinterIdx !== undefined) {
+                    h.splinterTopIdx = splinterIdx;
+                    // h.splinterTopGeneration = splinterGen;
+                    _dbgNumSplinterEnds++;
+                    splinterIndUpdated.push(splinterIdx);
+                  }
+                }
+
+                if (
+                  h.next?.splinterBotIdx !== undefined &&
+                  w.woodState.splinterState
+                ) {
+                  // TODO(@darzu): ugly
+                  // TODO(@darzu): this generation stuff seems somewhat broken
+                  // if (
+                  //   h.splinterBotGeneration ===
+                  //     w.woodState.splinterState.generation ||
+                  //   (h.splinterBotGeneration ===
+                  //     w.woodState.splinterState.generation - 1 &&
+                  //     w.woodState.splinterState.nextSplinterIdx <=
+                  //       h.next.splinterBotIdx)
+                  // ) {
+                  removeSplinterEnd(h.next.splinterBotIdx, w.woodState);
+                  // } else {
+                  //   // console.log(`skipping removal b/c generation mismatch!`);
+                  // }
+                  splinterIndUpdated.push(h.next.splinterBotIdx);
+                  w.woodState.splinterState.splinterIdxPool.free(
+                    h.next.splinterBotIdx
+                  );
+                  h.next.splinterBotIdx = undefined;
+                  // h.next.splinterBotGeneration = undefined;
+                  _dbgNumSplinterEnds--;
+                }
+
+                if (
+                  h.prev?.splinterTopIdx !== undefined &&
+                  w.woodState.splinterState
+                ) {
+                  // if (
+                  //   h.splinterTopGeneration ===
+                  //     w.woodState.splinterState.generation ||
+                  //   (h.splinterTopGeneration ===
+                  //     w.woodState.splinterState.generation - 1 &&
+                  //     w.woodState.splinterState.nextSplinterIdx <=
+                  //       h.prev.splinterTopIdx)
+                  // ) {
+                  removeSplinterEnd(h.prev.splinterTopIdx, w.woodState);
+                  // } else {
+                  //   // console.log(`skipping removal b/c generation mismatch!`);
+                  // }
+                  splinterIndUpdated.push(h.prev.splinterTopIdx);
+                  w.woodState.splinterState.splinterIdxPool.free(
+                    h.prev.splinterTopIdx
+                  );
+                  h.prev.splinterTopIdx = undefined;
+                  // h.prev.splinterTopGeneration = undefined;
+                  _dbgNumSplinterEnds--;
                 }
               }
-
-              if (h.next && !h.next.broken) {
-                assert(w.woodState.splinterState);
-                // const splinterGen = w.woodState.splinterState.generation;
-                const splinterIdx = addSplinterEnd(seg, w.woodState, true);
-                if (splinterIdx !== undefined) {
-                  h.splinterTopIdx = splinterIdx;
-                  // h.splinterTopGeneration = splinterGen;
-                  _dbgNumSplinterEnds++;
-                  splinterIndUpdated.push(splinterIdx);
-                }
-              }
-
-              if (
-                h.next?.splinterBotIdx !== undefined &&
-                w.woodState.splinterState
-              ) {
-                // TODO(@darzu): ugly
-                // TODO(@darzu): this generation stuff seems somewhat broken
-                // if (
-                //   h.splinterBotGeneration ===
-                //     w.woodState.splinterState.generation ||
-                //   (h.splinterBotGeneration ===
-                //     w.woodState.splinterState.generation - 1 &&
-                //     w.woodState.splinterState.nextSplinterIdx <=
-                //       h.next.splinterBotIdx)
-                // ) {
-                removeSplinterEnd(h.next.splinterBotIdx, w.woodState);
-                // } else {
-                //   // console.log(`skipping removal b/c generation mismatch!`);
-                // }
-                splinterIndUpdated.push(h.next.splinterBotIdx);
-                w.woodState.splinterState.splinterIdxPool.free(
-                  h.next.splinterBotIdx
-                );
-                h.next.splinterBotIdx = undefined;
-                // h.next.splinterBotGeneration = undefined;
-                _dbgNumSplinterEnds--;
-              }
-
-              if (
-                h.prev?.splinterTopIdx !== undefined &&
-                w.woodState.splinterState
-              ) {
-                // if (
-                //   h.splinterTopGeneration ===
-                //     w.woodState.splinterState.generation ||
-                //   (h.splinterTopGeneration ===
-                //     w.woodState.splinterState.generation - 1 &&
-                //     w.woodState.splinterState.nextSplinterIdx <=
-                //       h.prev.splinterTopIdx)
-                // ) {
-                removeSplinterEnd(h.prev.splinterTopIdx, w.woodState);
-                // } else {
-                //   // console.log(`skipping removal b/c generation mismatch!`);
-                // }
-                splinterIndUpdated.push(h.prev.splinterTopIdx);
-                w.woodState.splinterState.splinterIdxPool.free(
-                  h.prev.splinterTopIdx
-                );
-                h.prev.splinterTopIdx = undefined;
-                // h.prev.splinterTopGeneration = undefined;
-                _dbgNumSplinterEnds--;
-              }
-            }
+            });
           });
         });
 

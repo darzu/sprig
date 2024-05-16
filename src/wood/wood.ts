@@ -83,7 +83,7 @@ interface WoodSplinterState {
 type VI = number; // vertex index
 type QI = number; // quad index
 // each board has an AABB, OBB,
-export interface SegData {
+export interface SegState {
   localAABB: AABB;
   midLine: Line;
   areaNorms: V3[]; // TODO(@darzu): fixed size
@@ -97,16 +97,23 @@ export interface SegData {
   quadBackIdx?: QI;
   quadFrontIdx?: QI;
 }
-interface BoardData {
-  segments: SegData[];
+export interface BoardState {
+  segments: SegState[];
   localAABB: AABB;
+}
+
+export interface BoardGroupState {
+  // localAABB
+  name: string;
+  boards: BoardState[];
 }
 
 export interface WoodState {
   mesh: RawMesh; // TODO(@darzu): make non-raw
   usedVertIdxs: Set<number>;
   usedQuadIdxs: Set<number>;
-  boards: BoardData[];
+  // boards: BoardState[];
+  groups: BoardGroupState[];
 
   splinterState?: WoodSplinterState;
 }
@@ -138,8 +145,12 @@ interface SegHealth {
   // splinterBotGeneration?: number;
 }
 type BoardHealth = SegHealth[];
-interface WoodHealth {
+interface BoardGroupHealth {
   boards: BoardHealth[];
+}
+interface WoodHealth {
+  // TODO(@darzu): why no pointer to state?
+  groups: BoardGroupHealth[];
 }
 
 // export type TimberBuilder = ReturnType<typeof createTimberBuilder>;
@@ -151,7 +162,7 @@ export const WoodHealthDef = EM.defineNonupdatableComponent(
   }
 );
 
-export function getSegmentRotation(seg: SegData, top: boolean) {
+export function getSegmentRotation(seg: SegState, top: boolean) {
   let segNorm = V3.mk();
   let biggestArea2 = 0;
   for (let v of seg.areaNorms) {
@@ -192,7 +203,7 @@ export function removeSplinterEnd(splinterIdx: number, wood: WoodState) {
 }
 
 export function addSplinterEnd(
-  seg: SegData,
+  seg: SegState,
   wood: WoodState,
   top: boolean
 ): number | undefined {
@@ -564,7 +575,7 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
   const structureQis = new Set<number>();
 
   // TODO: vi to board idx ?
-  function createBoard(startQi: number): BoardData | undefined {
+  function createBoard(startQi: number): BoardState | undefined {
     const boardVis = new Set<number>();
     const boardQis = new Set<number>();
 
@@ -601,7 +612,7 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
     function addBoardSegment(
       lastLoop: V4, // [VI, VI, VI, VI],
       isFirstLoop: boolean = false
-    ): SegData[] | undefined {
+    ): SegState[] | undefined {
       // TODO(@darzu): using too many temps!
       // start tracking this segment
       const segVis = new Set([...lastLoop]);
@@ -676,7 +687,7 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
       const len2 = V3.dist(m.pos[lastLoop[3]], m.pos[lastLoop[0]]);
       const width = Math.max(len1, len2) * 0.5;
       const depth = Math.min(len1, len2) * 0.5;
-      let seg: SegData;
+      let seg: SegState;
 
       function getQiAreaNorm(qi: number) {
         // TODO(@darzu): PERF. Using too many temps!
@@ -752,13 +763,19 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
 
   const qEndCanidates = [...qIsMaybeEnd.values()];
   qEndCanidates.sort((a, b) => a - b);
-  const boards: BoardData[] = [];
+  const boards: BoardState[] = [];
   for (let qi of qEndCanidates) {
     if (!structureQis.has(qi)) {
       const b = createBoard(qi);
       if (b) boards.push(b);
     }
   }
+
+  // TODO(@darzu): group boards better
+  const group: BoardGroupState = {
+    name: "all",
+    boards,
+  };
 
   // const newQuads: vec4[] = [];
   // const newTri: V3[] = [];
@@ -782,7 +799,7 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
 
   const woodenState: WoodState = {
     mesh: m,
-    boards,
+    groups: [group],
     usedVertIdxs: structureVis,
     usedQuadIdxs: structureQis,
   };
@@ -792,32 +809,38 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
 
 // TODO(@darzu): share code with wood repair?
 export function resetWoodState(w: WoodState) {
-  w.boards.forEach((b) => {
-    b.segments.forEach((s) => {
-      // TODO(@darzu): extract for repair
-      // TODO(@darzu): need enough info to reconstruct the mesh!
-      if (s.quadBackIdx) {
-        setEndQuadIdxs(s.vertLastLoopIdxs[0], w.mesh.quad[s.quadBackIdx], true);
-      }
-      if (s.quadFrontIdx) {
-        setEndQuadIdxs(
-          s.vertNextLoopIdxs[0],
-          w.mesh.quad[s.quadFrontIdx],
-          false
+  w.groups.forEach((g) => {
+    g.boards.forEach((b) => {
+      b.segments.forEach((s) => {
+        // TODO(@darzu): extract for repair
+        // TODO(@darzu): need enough info to reconstruct the mesh!
+        if (s.quadBackIdx) {
+          setEndQuadIdxs(
+            s.vertLastLoopIdxs[0],
+            w.mesh.quad[s.quadBackIdx],
+            true
+          );
+        }
+        if (s.quadFrontIdx) {
+          setEndQuadIdxs(
+            s.vertNextLoopIdxs[0],
+            w.mesh.quad[s.quadFrontIdx],
+            false
+          );
+        }
+        assertDbg(
+          s.vertLastLoopIdxs[0] < s.vertNextLoopIdxs[0],
+          `Loops out of order`
         );
-      }
-      assertDbg(
-        s.vertLastLoopIdxs[0] < s.vertNextLoopIdxs[0],
-        `Loops out of order`
-      );
-      setSideQuadIdxs(
-        s.vertLastLoopIdxs[0],
-        s.vertNextLoopIdxs[0],
-        w.mesh.quad[s.quadSideIdxs[0]],
-        w.mesh.quad[s.quadSideIdxs[1]],
-        w.mesh.quad[s.quadSideIdxs[2]],
-        w.mesh.quad[s.quadSideIdxs[3]]
-      );
+        setSideQuadIdxs(
+          s.vertLastLoopIdxs[0],
+          s.vertNextLoopIdxs[0],
+          w.mesh.quad[s.quadSideIdxs[0]],
+          w.mesh.quad[s.quadSideIdxs[1]],
+          w.mesh.quad[s.quadSideIdxs[2]],
+          w.mesh.quad[s.quadSideIdxs[3]]
+        );
+      });
     });
   });
   if (w.splinterState) {
@@ -849,20 +872,22 @@ export function verifyUnsharedProvokingForWood(
 ): asserts m is RawMesh & { usesProvoking: true } {
   if (DBG_ASSERT) {
     const provokingVis = new Set<number>();
-    for (let b of woodState.boards) {
-      for (let seg of b.segments) {
-        for (let qi of [
-          seg.quadBackIdx,
-          seg.quadFrontIdx,
-          ...seg.quadSideIdxs,
-        ]) {
-          if (!qi) continue;
-          const pVi = m.quad[qi][0];
-          assert(
-            !provokingVis.has(pVi),
-            `Shared provoking vert found in quad ${qi} (vi: ${pVi}) for ${m.dbgName}`
-          );
-          provokingVis.add(pVi);
+    for (let g of woodState.groups) {
+      for (let b of g.boards) {
+        for (let seg of b.segments) {
+          for (let qi of [
+            seg.quadBackIdx,
+            seg.quadFrontIdx,
+            ...seg.quadSideIdxs,
+          ]) {
+            if (!qi) continue;
+            const pVi = m.quad[qi][0];
+            assert(
+              !provokingVis.has(pVi),
+              `Shared provoking vert found in quad ${qi} (vi: ${pVi}) for ${m.dbgName}`
+            );
+            provokingVis.add(pVi);
+          }
         }
       }
     }
@@ -876,34 +901,38 @@ export function unshareProvokingForWood(m: RawMesh, woodState: WoodState) {
   //  verify each island is unshared.
   const provokingVis = new Set<number>();
   let bIdx = 0;
-  for (let b of woodState.boards) {
-    // for (let b of [woodState.boards[60]]) {
-    // first, do ends
-    for (let seg of b.segments) {
-      for (let qi of [seg.quadBackIdx, seg.quadFrontIdx]) {
-        if (!qi) continue;
-        const done = unshareProvokingForBoardQuad(m.quad[qi], qi);
-        if (!done)
-          console.error(`invalid board ${bIdx}! End cap can't unshare`);
-        // console.log(`end: ${m.quad[qi]}`);
+  for (let g of woodState.groups) {
+    for (let b of g.boards) {
+      // for (let b of [woodState.boards[60]]) {
+      // first, do ends
+      for (let seg of b.segments) {
+        for (let qi of [seg.quadBackIdx, seg.quadFrontIdx]) {
+          if (!qi) continue;
+          const done = unshareProvokingForBoardQuad(m.quad[qi], qi);
+          if (!done)
+            console.error(`invalid board ${bIdx}! End cap can't unshare`);
+          // console.log(`end: ${m.quad[qi]}`);
+        }
       }
-    }
-    for (let seg of b.segments) {
-      for (let qi of seg.quadSideIdxs) {
-        const done = unshareProvokingForBoardQuad(m.quad[qi], qi, [
-          ...seg.vertLastLoopIdxs,
-        ]);
-        // if (done) console.log(`side: ${m.quad[qi]}`);
-        if (!done) {
-          const done2 = unshareProvokingForBoardQuad(m.quad[qi], qi);
-          // if (done2) console.log(`side(2): ${m.quad[qi]}`);
-          if (!done2) {
-            console.error(`invalid board ${bIdx}; unable to unshare provoking`);
+      for (let seg of b.segments) {
+        for (let qi of seg.quadSideIdxs) {
+          const done = unshareProvokingForBoardQuad(m.quad[qi], qi, [
+            ...seg.vertLastLoopIdxs,
+          ]);
+          // if (done) console.log(`side: ${m.quad[qi]}`);
+          if (!done) {
+            const done2 = unshareProvokingForBoardQuad(m.quad[qi], qi);
+            // if (done2) console.log(`side(2): ${m.quad[qi]}`);
+            if (!done2) {
+              console.error(
+                `invalid board ${bIdx}; unable to unshare provoking`
+              );
+            }
           }
         }
       }
+      bIdx++;
     }
-    bIdx++;
   }
   function unshareProvokingForBoardQuad(
     [i0, i1, i2, i3]: V4,
@@ -941,19 +970,21 @@ export function unshareProvokingForWood(m: RawMesh, woodState: WoodState) {
   }
 }
 
-export function createWoodHealth(w: WoodState) {
+export function createWoodHealth(w: WoodState): WoodHealth {
   if (TRACK_MAX_BOARD_SEG_IDX) {
-    const maxBoardIdx = w.boards.length;
+    const maxBoardIdx = w.groups.reduce((p, n) => p + n.boards.length, 0);
     let maxSegIdx = -1;
-    for (let b of w.boards) {
-      maxSegIdx = Math.max(maxSegIdx, b.segments.length);
+    for (let g of w.groups) {
+      for (let b of g.boards) {
+        maxSegIdx = Math.max(maxSegIdx, b.segments.length);
+      }
     }
     console.log(`maxBoardIdx: ${maxBoardIdx}`);
     console.log(`maxSegIdx: ${maxSegIdx}`);
   }
 
-  return {
-    boards: w.boards.map((b) => {
+  const groups: BoardGroupHealth[] = w.groups.map((g) => {
+    const boards: BoardHealth[] = g.boards.map((b) => {
       let lastSeg = b.segments.reduce((p, n) => {
         const h: SegHealth = {
           prev: p,
@@ -976,17 +1007,26 @@ export function createWoodHealth(w: WoodState) {
       }
       // console.dir(segHealths);
       return segHealths;
-    }),
+    });
+    return {
+      boards,
+    };
+  });
+
+  return {
+    groups,
   };
 }
 
 export function resetWoodHealth(wh: WoodHealth) {
-  wh.boards.forEach((b) =>
-    b.forEach((s) => {
-      s.health = 1.0;
-      s.broken = false;
-      s.splinterTopIdx = undefined;
-      s.splinterBotIdx = undefined;
-    })
-  );
+  wh.groups.forEach((g) => {
+    g.boards.forEach((b) =>
+      b.forEach((s) => {
+        s.health = 1.0;
+        s.broken = false;
+        s.splinterTopIdx = undefined;
+        s.splinterBotIdx = undefined;
+      })
+    );
+  });
 }

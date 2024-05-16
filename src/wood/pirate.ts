@@ -422,9 +422,11 @@ EM.addLazyInit([RendererDef, TimeDef], [PiratePoolDef], (res) => {
           // TODO(@darzu): necessary?
           // timber.physicsParent.id = 0;
           // EM.set(timber, LifetimeDef, 1000);
-          for (let b of timber.woodHealth.boards) {
-            for (let s of b) {
-              s.health = 0;
+          for (let g of timber.woodHealth.groups) {
+            for (let b of g.boards) {
+              for (let s of b) {
+                s.health = 0;
+              }
             }
           }
         }

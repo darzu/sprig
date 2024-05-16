@@ -14,9 +14,11 @@ export const ShipHealthDef = EM.defineComponent("shipHealth", () => ({
 
 function getCurrentHealth(timberHealth: Component<typeof WoodHealthDef>) {
   let health = 0;
-  for (let b of timberHealth.boards) {
-    for (let s of b) {
-      health += s.health;
+  for (let g of timberHealth.groups) {
+    for (let b of g.boards) {
+      for (let s of b) {
+        health += s.health;
+      }
     }
   }
   return health;
