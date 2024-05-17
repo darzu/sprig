@@ -19,12 +19,17 @@ import {
   WoodState,
   setSideQuadIdxs,
   setEndQuadIdxs,
+  BoardState,
+  SegState,
+  getQuadAreaNorm,
+  BoardGroupState,
 } from "./wood.js";
 import { BLACK } from "../meshes/mesh-list.js";
 import {
   AABB,
   createAABB,
   getSizeFromAABB,
+  mergeAABBs,
   transformAABB,
   updateAABBWithPoint,
 } from "../physics/aabb.js";
@@ -45,6 +50,7 @@ import { transformYUpModelIntoZUp } from "../camera/basis.js";
 import { getPathFrom2DQuadMesh } from "./util-wood.js";
 import { snapToPath } from "../utils/spline.js";
 import { snapXToPath } from "../utils/spline.js";
+import { createLine } from "../physics/broadphase.js";
 
 /*
 ship state
@@ -215,12 +221,6 @@ export function getAABBFromPath(path: Path): AABB {
 }
 
 export function createLD53Ship(): WoodShip {
-  const KEEL = true;
-  const RIBS = true;
-  const PLANKS = true;
-  const RAIL = true;
-  const TRANSOM = true;
-
   const _start = performance.now();
 
   const _stk = tmpStack();
@@ -239,7 +239,11 @@ export function createLD53Ship(): WoodShip {
   const keelAABB = getAABBFromPath(keelPath);
   const keelSize = getSizeFromAABB(keelAABB, V3.mk());
 
-  if (KEEL)
+  const keelGroup: BoardGroupState = {
+    name: "keel",
+    boards: [],
+  };
+  keelGroup.boards.push(
     appendBoard(
       builder.mesh,
       {
@@ -248,7 +252,8 @@ export function createLD53Ship(): WoodShip {
         depth: keelDepth,
       },
       keelColor
-    );
+    )
+  );
 
   // RIBS
   const ribWidth = 0.5;
@@ -310,6 +315,10 @@ export function createLD53Ship(): WoodShip {
   );
   // fixPathBasis(railPath, [0, 1, 0], [0, 0, 1], [1, 0, 0]);
 
+  const ribsGroup: BoardGroupState = {
+    name: "ribs",
+    boards: [],
+  };
   // let ribEnds: V3[] = [];
   let ribPaths: Path[] = [];
   let ribCurves: BezierCubic[] = [];
@@ -370,7 +379,7 @@ export function createLD53Ship(): WoodShip {
     // }
     // if (i === 1) dbgPathWithGizmos(weirdP);
 
-    if (RIBS)
+    ribsGroup.boards.push(
       appendBoard(
         builder.mesh,
         {
@@ -379,9 +388,7 @@ export function createLD53Ship(): WoodShip {
           depth: ribDepth,
         },
         ribColor
-      );
-
-    if (RIBS)
+      ),
       appendBoard(
         builder.mesh,
         {
@@ -390,7 +397,8 @@ export function createLD53Ship(): WoodShip {
           depth: ribDepth,
         },
         ribColor
-      );
+      )
+    );
   }
 
   // RAIL
@@ -406,7 +414,12 @@ export function createLD53Ship(): WoodShip {
   }
   // rail board:
   const mirrorRailPath = mirrorPath(clonePath(railPath), V(0, 0, 1));
-  if (RAIL)
+
+  const railGroup: BoardGroupState = {
+    name: "rail",
+    boards: [],
+  };
+  railGroup.boards.push(
     appendBoard(
       builder.mesh,
       {
@@ -415,8 +428,7 @@ export function createLD53Ship(): WoodShip {
         depth: ribDepth,
       },
       railColor
-    );
-  if (RAIL)
+    ),
     appendBoard(
       builder.mesh,
       {
@@ -425,7 +437,8 @@ export function createLD53Ship(): WoodShip {
         depth: ribDepth,
       },
       railColor
-    );
+    )
+  );
 
   // translatePath(railPath, [0, 0, 8]);
   // dbgPathWithGizmos(railPath);
@@ -481,6 +494,10 @@ export function createLD53Ship(): WoodShip {
 
   let transomPlankNum = evenRibs[0].length;
 
+  const planksGroup: BoardGroupState = {
+    name: "planks",
+    boards: [],
+  };
   const plankPaths: Path[] = [];
   const plankPathsMirrored: Path[] = [];
   const _temp4 = V3.mk();
@@ -533,7 +550,7 @@ export function createLD53Ship(): WoodShip {
     if (stripStartIdx <= i && i <= stripEndIdx) color = plankStripeColor;
     if (strip2StartIdx <= i && i <= strip2EndIdx) color = plankStripe2Color;
 
-    if (PLANKS)
+    planksGroup.boards.push(
       appendBoard(
         builder.mesh,
         {
@@ -542,8 +559,7 @@ export function createLD53Ship(): WoodShip {
           depth: plankDepth,
         },
         color
-      );
-    if (PLANKS)
+      ),
       appendBoard(
         builder.mesh,
         {
@@ -552,10 +568,15 @@ export function createLD53Ship(): WoodShip {
           depth: plankDepth,
         },
         color
-      );
+      )
+    );
   }
 
   // TRANSOM
+  const transomGroup: BoardGroupState = {
+    name: "transom",
+    boards: [],
+  };
   for (let i = 0; i < transomPlankNum; i++) {
     const start = plankPaths[i][0];
     const end = plankPathsMirrored[i][0];
@@ -582,7 +603,7 @@ export function createLD53Ship(): WoodShip {
     if (i === 0) color = topPlankColor;
     if (stripStartIdx <= i && i <= stripEndIdx) color = plankStripeColor;
     if (strip2StartIdx <= i && i <= strip2EndIdx) color = plankStripe2Color;
-    if (TRANSOM)
+    transomGroup.boards.push(
       appendBoard(
         builder.mesh,
         {
@@ -591,8 +612,10 @@ export function createLD53Ship(): WoodShip {
           depth: plankDepth,
         },
         color
-      );
+      )
+    );
   }
+
   // REAR RAIL
   {
     const start = railPath[0];
@@ -608,7 +631,7 @@ export function createLD53Ship(): WoodShip {
     for (let n of path) {
       quat.fromEuler(-Math.PI / 2, 0, Math.PI / 2, n.rot);
     }
-    if (RAIL)
+    railGroup.boards.push(
       appendBoard(
         builder.mesh,
         {
@@ -617,10 +640,15 @@ export function createLD53Ship(): WoodShip {
           depth: ribDepth,
         },
         railColor
-      );
+      )
+    );
   }
 
   // FLOOR
+  const floorGroup: BoardGroupState = {
+    name: "floor",
+    boards: [],
+  };
   let floorPlankIdx = 4;
   const floorBound1 = plankPaths[floorPlankIdx];
   const floorBound2 = plankPathsMirrored[floorPlankIdx];
@@ -675,7 +703,7 @@ export function createLD53Ship(): WoodShip {
       }));
       // dbgPathWithGizmos(path);
       let mirroredPath = mirrorPath(clonePath(path), [0, 0, 1]);
-      if (PLANKS)
+      floorGroup.boards.push(
         appendBoard(
           builder.mesh,
           {
@@ -684,8 +712,7 @@ export function createLD53Ship(): WoodShip {
             depth: plankDepth,
           },
           floorColor
-        );
-      if (PLANKS)
+        ),
         appendBoard(
           builder.mesh,
           {
@@ -694,7 +721,8 @@ export function createLD53Ship(): WoodShip {
             depth: plankDepth,
           },
           floorColor
-        );
+        )
+      );
       // break; // TODO(@darzu):
     }
   }
@@ -703,7 +731,7 @@ export function createLD53Ship(): WoodShip {
 
   // ROTATE WHOLE THING (YIKES)
   // TODO(@darzu): fix up ship construction
-  {
+  if (false) {
     // TODO(@darzu): Z_UP: basis change. inline this above?
     _timberMesh.pos.forEach((v) => V3.tMat4(v, transformYUpModelIntoZUp, v));
 
@@ -723,9 +751,28 @@ export function createLD53Ship(): WoodShip {
       V3.add(v, [0, 0, -floorHeight], v);
     });
 
+  const _meshDone = performance.now();
+  console.log(
+    `createLD53Ship, start->mesh: ${(_meshDone - _start).toFixed(1)}ms`
+  );
+
   // console.dir(_timberMesh.colors);
   _timberMesh.surfaceIds = _timberMesh.colors.map((_, i) => i);
-  const timberState = getBoardsFromMesh(_timberMesh);
+
+  // TODO(@darzu): BUGGED! New timberstate doesn't work as well as old.
+  const timberState: WoodState = {
+    mesh: _timberMesh,
+    groups: [
+      keelGroup,
+      ribsGroup,
+      railGroup,
+      planksGroup,
+      floorGroup,
+      transomGroup,
+    ],
+  };
+  // const timberState = getBoardsFromMesh(_timberMesh);
+
   verifyUnsharedProvokingForWood(_timberMesh, timberState);
   // unshareProvokingForWood(_timberMesh, timberState);
   // console.log(`before: ` + meshStats(_timberMesh));
@@ -740,7 +787,10 @@ export function createLD53Ship(): WoodShip {
   _stk.pop();
 
   const _end = performance.now();
-  console.log(`createHomeShip took: ${(_end - _start).toFixed(1)}ms`);
+  console.log(
+    `createLD53Ship, mesh->WoodState: ${(_end - _meshDone).toFixed(1)}ms`
+  );
+  console.log(`createLD53Ship, total: ${(_end - _start).toFixed(1)}ms`);
 
   return {
     timberState,
@@ -784,8 +834,16 @@ function cloneBoard(board: BoardPath): BoardPath {
   };
 }
 
-export function appendBoard(mesh: RawMesh, board: BoardPath, color = BLACK) {
+export function appendBoard(
+  mesh: RawMesh,
+  board: BoardPath,
+  color = BLACK
+): BoardState {
   // TODO(@darzu): build up wood state along with the mesh!
+  const bState: BoardState = {
+    segments: [],
+    localAABB: createAABB(),
+  };
 
   assert(board.path.length >= 2, `invalid board path!`);
   // TODO(@darzu): de-duplicate with TimberBuilder
@@ -793,11 +851,61 @@ export function appendBoard(mesh: RawMesh, board: BoardPath, color = BLACK) {
   // const mesh = b.mesh;
 
   board.path.forEach((p, i) => {
+    // tracking
+    const isFirst = i === 0;
+    const isLast = i === board.path.length - 1;
+    const firstQIdx = mesh.quad.length;
+    const firstVIdx = mesh.pos.length;
+
+    // add verts & quads
     addLoopVerts(p);
-    if (i === 0) addEndQuad(true);
+    if (isFirst) addEndQuad(true);
     else addSideQuads();
+    if (isLast) addEndQuad(false);
+
+    // create states
+    if (!isFirst) {
+      const vertNextLoopIdxs = V(
+        firstVIdx + 0,
+        firstVIdx + 1,
+        firstVIdx + 2,
+        firstVIdx + 3
+      );
+      const vertLastLoopIdxs = V(
+        vertNextLoopIdxs[0] - 1,
+        vertNextLoopIdxs[0] - 2,
+        vertNextLoopIdxs[0] - 3,
+        vertNextLoopIdxs[0] - 4
+      );
+      const segAABB = createAABB();
+      for (let i = vertLastLoopIdxs[0]; i <= vertNextLoopIdxs[3]; i++)
+        updateAABBWithPoint(segAABB, mesh.pos[i]);
+      mergeAABBs(bState.localAABB, bState.localAABB, segAABB);
+      const quadSideIdxs = V(
+        firstQIdx + 0,
+        firstQIdx + 1,
+        firstQIdx + 2,
+        firstQIdx + 3
+      );
+
+      const sState: SegState = {
+        localAABB: segAABB,
+        midLine: createLine(board.path[i - 1].pos, board.path[i].pos),
+        areaNorms: [
+          getQuadAreaNorm(mesh, quadSideIdxs[0]),
+          getQuadAreaNorm(mesh, quadSideIdxs[1]),
+          getQuadAreaNorm(mesh, quadSideIdxs[2]),
+          getQuadAreaNorm(mesh, quadSideIdxs[3]),
+        ],
+        width: board.width,
+        depth: board.depth,
+        vertLastLoopIdxs,
+        vertNextLoopIdxs,
+        quadSideIdxs,
+      };
+      bState.segments.push(sState);
+    }
   });
-  addEndQuad(false);
 
   // TODO(@darzu): streamline
   for (let qi = firstQuadIdx; qi < mesh.quad.length; qi++)
@@ -806,6 +914,8 @@ export function appendBoard(mesh: RawMesh, board: BoardPath, color = BLACK) {
   // NOTE: for provoking vertices,
   //  indexes 0, 1 of a loop are for stuff behind (end cap, previous sides)
   //  indexes 2, 3 of a loop are for stuff ahead (next sides, end cap)
+
+  return bState;
 
   function addSideQuads() {
     const loop2Idx = mesh.pos.length - 4;

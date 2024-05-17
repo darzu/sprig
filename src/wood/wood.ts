@@ -110,8 +110,8 @@ export interface BoardGroupState {
 
 export interface WoodState {
   mesh: RawMesh; // TODO(@darzu): make non-raw
-  usedVertIdxs: Set<number>;
-  usedQuadIdxs: Set<number>;
+  // usedVertIdxs: Set<number>;
+  // usedQuadIdxs: Set<number>;
   // boards: BoardState[];
   groups: BoardGroupState[];
 
@@ -533,6 +533,19 @@ export function debugBoardSystem(m: RawMesh): RawMesh {
   return m;
 }
 
+export function getQuadAreaNorm(m: RawMesh, qi: number): V3 {
+  // NOTE: assumes segments are ~parallelograms
+  const q = m.quad[qi];
+  const p0 = m.pos[q[0]];
+  const p1 = m.pos[q[1]];
+  const p2 = m.pos[q[2]];
+  const p3 = m.pos[q[3]];
+  const ab = V3.sub(p1, p0, __temp1);
+  const ac = V3.sub(p3, p0, __temp2);
+  const areaNorm = V3.cross(ab, ac, V3.mk());
+  return areaNorm;
+}
+
 export function getBoardsFromMesh(m: RawMesh): WoodState {
   // What's in a board?
   // end verts connect to 3 others
@@ -574,10 +587,13 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
   const structureVis = new Set<number>();
   const structureQis = new Set<number>();
 
+  const boardVis = new Set<number>(); // TODO(@darzu): PERF. Insane to create new Sets per board
+  const boardQis = new Set<number>();
+
   // TODO: vi to board idx ?
   function createBoard(startQi: number): BoardState | undefined {
-    const boardVis = new Set<number>();
-    const boardQis = new Set<number>();
+    boardVis.clear();
+    boardQis.clear();
 
     const startLoop = V4.clone(m.quad[startQi]); // as [VI, VI, VI, VI];
     startLoop.sort((a, b) => a - b); // TODO(@darzu): HACK?
@@ -682,23 +698,12 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
       const lastMid = centroid(...[...lastLoop].map((vi) => m.pos[vi]));
       const nextMid = centroid(...[...nextLoop].map((vi) => m.pos[vi]));
       const mid = createLine(lastMid, nextMid);
-      const areaNorms = segQis.map(getQiAreaNorm);
+      const areaNorms = segQis.map((qi) => getQuadAreaNorm(m, qi));
       const len1 = V3.dist(m.pos[lastLoop[1]], m.pos[lastLoop[0]]);
       const len2 = V3.dist(m.pos[lastLoop[3]], m.pos[lastLoop[0]]);
       const width = Math.max(len1, len2) * 0.5;
       const depth = Math.min(len1, len2) * 0.5;
       let seg: SegState;
-
-      function getQiAreaNorm(qi: number) {
-        // TODO(@darzu): PERF. Using too many temps!
-        // TODO(@darzu): i hate doing this vec4->number[] conversion just to get map.. wth
-        const ps = [...m.quad[qi]].map((vi) => m.pos[vi]);
-        // NOTE: assumes segments are parallelograms
-        const ab = V3.sub(ps[1], ps[0], __temp1);
-        const ac = V3.sub(ps[3], ps[0], __temp2);
-        const areaNorm = V3.cross(ab, ac, V3.mk());
-        return areaNorm;
-      }
 
       // are we at an end of the board?
       if (segQis.length === 5) {
@@ -800,8 +805,8 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
   const woodenState: WoodState = {
     mesh: m,
     groups: [group],
-    usedVertIdxs: structureVis,
-    usedQuadIdxs: structureQis,
+    // usedVertIdxs: structureVis,
+    // usedQuadIdxs: structureQis,
   };
 
   return woodenState;

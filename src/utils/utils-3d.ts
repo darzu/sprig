@@ -182,6 +182,7 @@ ${ns[2]}\t|${ns[5]}\t|${ns[8]}\t`
   );
 }
 
+// TODO(@darzu): PERF! Add , out?: V3
 export function centroid(...vs: V3[]): V3 {
   const avgX = avg(vs.map((v) => v[0]));
   const avgY = avg(vs.map((v) => v[1]));
