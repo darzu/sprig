@@ -2338,3 +2338,6 @@ Path tracing, bvh in webgpu:
 
 Blue Noise summary by demofox:
   https://www.youtube.com/watch?v=tethAU66xaA&t=1s
+
+WebGPU features report caniuse:
+  https://webgpureport.org

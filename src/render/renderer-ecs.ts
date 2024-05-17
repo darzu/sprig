@@ -36,6 +36,7 @@ import { PointLightDef } from "./lights.js";
 import { assert } from "../utils/util.js";
 import {
   DONT_SMOOTH_WORLD_FRAME,
+  LOG_WEBGPU_AVAILABLE_FEATURES,
   PERF_DBG_GPU,
   VERBOSE_LOG,
 } from "../flags.js";
@@ -605,6 +606,11 @@ EM.addLazyInit(
       console.log(
         "GPU profiling disabled: device does not support timestamp queries"
       );
+
+    if (LOG_WEBGPU_AVAILABLE_FEATURES) {
+      console.log("available navigator.gpu?.requestAdapter().features");
+      console.dir([...adapter.features.keys()]);
+    }
 
     const device = await adapter.requestDevice({
       label: `sprigDevice`,

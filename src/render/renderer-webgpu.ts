@@ -35,12 +35,7 @@ import {
   GerstnerWaveTS,
 } from "./pipelines/std-ocean.js";
 import { GPUBufferUsage } from "./webgpu-hacks.js";
-import {
-  LOG_WEBGPU_AVAILABLE_FEATURES,
-  PERF_DBG_GPU,
-  PERF_DBG_REBUNDLE,
-  VERBOSE_LOG,
-} from "../flags.js";
+import { PERF_DBG_GPU, PERF_DBG_REBUNDLE, VERBOSE_LOG } from "../flags.js";
 import { dbgLogOnce } from "../utils/util.js";
 import { AbstractCanvas } from "./renderer-ecs.js";
 
@@ -58,10 +53,6 @@ export function createRenderer(
   shaders: ShaderSet,
   canvas: AbstractCanvas
 ) {
-  if (LOG_WEBGPU_AVAILABLE_FEATURES) {
-    console.log("Available WebGPU features:");
-    console.dir([...device.features.values()]);
-  }
   const timestampQuerySet = device.features.has("timestamp-query")
     ? device.createQuerySet({
         label: `sprigTimestampQuerySet`,
