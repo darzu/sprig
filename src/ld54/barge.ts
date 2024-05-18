@@ -27,7 +27,7 @@ import {
 } from "../utils/spline.js";
 import { assert } from "../utils/util.js";
 import {
-  WoodShip,
+  WoodObj,
   fixPathBasis,
   appendBoard,
   lerpBetween,

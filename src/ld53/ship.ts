@@ -97,7 +97,7 @@ export async function createLd53ShipAsync() {
   //   aabb: res.allMeshes.ship.aabb,
   // });
 
-  const timberHealth = createWoodHealth(homeShip.timberState);
+  const timberHealth = createWoodHealth(homeShip.state);
 
   // const timberAABB = getAABBFromMesh(homeShip.timberMesh);
   // console.log("ship size:");
@@ -156,8 +156,8 @@ export async function createLd53ShipAsync() {
     args: {
       position: [0, 0, 0],
       rotation: quat.fromYawPitchRoll(Math.PI / 2, 0, 0),
-      renderableConstruct: [homeShip.timberMesh],
-      woodState: homeShip.timberState,
+      renderableConstruct: [homeShip.mesh],
+      woodState: homeShip.state,
       woodHealth: timberHealth,
       shipHealth: undefined,
       collider: mc,

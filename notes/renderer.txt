@@ -2341,3 +2341,8 @@ Blue Noise summary by demofox:
 
 WebGPU features report caniuse:
   https://webgpureport.org
+
+GPU driven webgpu:
+  ExectureIndirect: https://github.com/gpuweb/gpuweb/issues/431
+  drawIndirect: https://github.com/gpuweb/gpuweb/issues/31
+  bindless: https://github.com/gpuweb/gpuweb/issues/380

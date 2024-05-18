@@ -33,7 +33,7 @@ import {
 import { BallMesh, HexMesh } from "../meshes/mesh-list.js";
 import { breakBullet, BulletDef, fireBullet } from "../cannons/bullet.js";
 import { GhostDef } from "../debug/ghost.js";
-import { createLD53Ship, ld53ShipAABBs } from "./shipyard.js";
+import { createLD53Ship, createWoodenBox, ld53ShipAABBs } from "./shipyard.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
 import { startPirates } from "./pirate.js";
 import { ParametricDef } from "../motion/parametric-motion.js";
@@ -72,7 +72,8 @@ export async function initShipyardGame() {
   // TIMBER
   const timber = EM.mk();
 
-  const { timberState, timberMesh } = createLD53Ship();
+  // const { state: timberState, mesh: timberMesh } = createLD53Ship();
+  const { state: timberState, mesh: timberMesh } = createWoodenBox();
 
   EM.set(timber, RenderableConstructDef, timberMesh);
   EM.set(timber, WoodStateDef, timberState);

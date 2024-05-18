@@ -87,17 +87,9 @@ const strip2EndIdx = 8;
 
 // TODO(@darzu): Bad abstraction. It's annoying to provide all these properties ribCount etc and also
 //  not all wood projects will need/have these
-export interface WoodShip {
-  timberState: WoodState;
-  timberMesh: Mesh;
-  // TODO(@darzu): how to pass this?
-  ribCount: number;
-  ribSpace: number;
-  ribWidth: number;
-  ceilHeight: number;
-  floorHeight: number;
-  floorLength: number;
-  floorWidth: number;
+export interface WoodObj {
+  state: WoodState;
+  mesh: Mesh;
 }
 
 export interface BoardPath {
@@ -220,7 +212,65 @@ export function getAABBFromPath(path: Path): AABB {
   return aabb;
 }
 
-export function createLD53Ship(): WoodShip {
+export function createWoodenBox(): WoodObj {
+  const _stk = tmpStack();
+
+  const mesh = createEmptyMesh("woodBox");
+
+  const wall1: BoardGroupState = {
+    name: "wall1",
+    boards: [],
+  };
+  const rot = quat.fromYawPitchRoll(0, 0, 0);
+  const boardWidth = 0.4;
+  const boardDepth = 0.2;
+  for (let i = 0; i < 10; i++) {
+    const start = V(-20, 0, i);
+    const end = V(+20, 0, i);
+    const length = V3.dist(start, end);
+    const segLen = 3.0;
+    const numSeg = Math.ceil(length / segLen);
+    const positions = lerpBetween(start, end, numSeg - 2);
+    assert(positions.length === numSeg);
+    const path: Path = positions.map((pos) => ({
+      pos,
+      rot: quat.clone(rot),
+    }));
+    const color = i === 5 ? ENDESGA16.lightBlue : ENDESGA16.lightBrown;
+    wall1.boards.push(
+      appendBoard(
+        mesh,
+        {
+          path: path,
+          width: boardWidth,
+          depth: boardDepth,
+        },
+        color
+      )
+    );
+  }
+
+  const woodState: WoodState = {
+    mesh: mesh,
+    groups: [wall1],
+  };
+
+  mesh.surfaceIds = mesh.colors.map((_, i) => i);
+  verifyUnsharedProvokingForWood(mesh, woodState);
+  const finalMesh = mesh as Mesh;
+  finalMesh.usesProvoking = true;
+  reserveSplinterSpace(woodState, 200);
+  validateMesh(woodState.mesh);
+
+  _stk.pop();
+
+  return {
+    state: woodState,
+    mesh: finalMesh,
+  };
+}
+
+export function createLD53Ship(): WoodObj {
   const _start = performance.now();
 
   const _stk = tmpStack();
@@ -745,7 +795,7 @@ export function createLD53Ship(): WoodShip {
   }
 
   // lower the whole ship so it's main deck is at 0 height
-  const DECK_AT_ZERO = true;
+  const DECK_AT_ZERO = false;
   if (DECK_AT_ZERO)
     _timberMesh.pos.forEach((v) => {
       V3.add(v, [0, 0, -floorHeight], v);
@@ -793,15 +843,8 @@ export function createLD53Ship(): WoodShip {
   console.log(`createLD53Ship, total: ${(_end - _start).toFixed(1)}ms`);
 
   return {
-    timberState,
-    timberMesh,
-    ribCount,
-    ribSpace,
-    ribWidth,
-    ceilHeight,
-    floorHeight,
-    floorLength,
-    floorWidth,
+    state: timberState,
+    mesh: timberMesh,
   };
 }
 
