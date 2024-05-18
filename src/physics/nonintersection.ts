@@ -67,6 +67,7 @@ export interface PhysCollider {
   id: number;
   oId: number;
   parentOId: number;
+  // TODO(@darzu): RENAME. Which is worldAABB?
   aabb: AABB;
   localAABB: AABB;
   selfAABB: AABB;

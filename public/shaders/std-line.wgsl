@@ -28,6 +28,11 @@ struct FragOut {
 @fragment
 fn frag_main(input: VertexOutput) -> FragOut {
 
+  // checkerboard
+  // if ((input.position.x + input.position.y) % 12.0 < 6.0) {
+  //   discard;
+  // }
+
   var color = input.color;
 
   var alpha: f32 = 1.0;

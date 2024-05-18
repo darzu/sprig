@@ -207,7 +207,7 @@ export function addSplinterEnd(
   wood: WoodState,
   top: boolean
 ): number | undefined {
-  console.log("global:addSplinteredEnd");
+  // console.log("global:addSplinteredEnd");
   assert(wood.splinterState, "!wood.splinterState");
 
   const sIdx = wood.splinterState.splinterIdxPool.next();
@@ -376,7 +376,7 @@ export function createTimberBuilder(mesh: RawMesh): TimberBuilder {
   }
 
   function addSplinteredEnd(lastLoopEndVi: number, numJags: number) {
-    console.log("timberBuilder:addSplinteredEnd");
+    // console.log("timberBuilder:addSplinteredEnd");
     const vi = mesh.pos.length;
 
     const v0 = V(0, 0, b.depth);

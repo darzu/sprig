@@ -355,7 +355,7 @@ export async function initLd55() {
       }
     );
 
-    const e = sketcher.sketchEnt({
+    const e = sketcher.sketchPrimOrInstance({
       lines,
       shape: "lineSegs",
       color: ENDESGA16.darkRed,
@@ -540,7 +540,7 @@ export async function initLd55() {
           V3.scale(delta, travelScale, delta);
           const nextTravelPos = V3.add(lastTravelPos, delta, delta);
           if (SHOW_TRAVEL) {
-            const e = sketcher.sketchEnt({
+            const e = sketcher.sketchPrimOrInstance({
               start: lastTravelPos,
               end: nextTravelPos,
               shape: "line",
@@ -554,7 +554,7 @@ export async function initLd55() {
       if (toDrawLines.length) {
         let lineColor = lineColors[lineColorIdx];
         for (let [start, end] of toDrawLines) {
-          const e = sketcher.sketchEnt({
+          const e = sketcher.sketchPrimOrInstance({
             start,
             end,
             shape: "line",

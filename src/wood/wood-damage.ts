@@ -2,6 +2,7 @@ import { AudioDef } from "../audio/audio.js";
 import { SoundSetDef } from "../audio/sound-loader.js";
 import { BulletDef } from "../cannons/bullet.js";
 import { ColorDef } from "../color/color-ecs.js";
+import { ENDESGA16 } from "../color/palettes.js";
 import { EM } from "../ecs/ecs.js";
 import { Entity } from "../ecs/em-entities.js";
 import { Phase } from "../ecs/sys-phase.js";
@@ -17,6 +18,7 @@ import {
   copyAABB,
   transformAABB,
   doesOverlapAABB,
+  cloneAABB,
 } from "../physics/aabb.js";
 import {
   emptyLine,
@@ -30,10 +32,12 @@ import { ColliderDef } from "../physics/collider.js";
 import {
   WorldFrameDef,
   PhysicsResultsDef,
+  PhysicsStateDef,
 } from "../physics/nonintersection.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
 import { meshPoolPtr } from "../render/pipelines/std-scene.js";
 import { RenderableDef, RendererDef } from "../render/renderer-ecs.js";
+import { sketchAABB, sketchLine, sketchLine2 } from "../utils/sketch.js";
 import { assert } from "../utils/util-no-import.js";
 import { dbgOnce, createIntervalTracker } from "../utils/util.js";
 import { randNormalVec3 } from "../utils/utils-3d.js";
@@ -49,7 +53,7 @@ import {
   _vertsPerSplinter,
 } from "./wood.js";
 
-const DBG_WOOD_DMG = false;
+const DBG_WOOD_DMG = true;
 
 export let _dbgNumSplinterEnds = 0;
 
@@ -149,6 +153,8 @@ EM.addEagerInit([WoodStateDef], [], [], () => {
       const DBG_COLOR = false;
 
       for (let w of es) {
+        if (!PhysicsStateDef.isOn(w)) continue;
+
         // console.log(`checking wood!`);
         const meshHandle = w.renderable.meshHandle;
         const mesh = meshHandle.mesh!; // TODO(@darzu): again, shouldn't be modifying "readonlyXXXX"
@@ -163,12 +169,24 @@ EM.addEagerInit([WoodStateDef], [], [], () => {
               // TODO(@darzu): check authority and team
               return b && b.bullet.health > 0;
             });
+
+          if (balls.length) {
+            if (DBG_WOOD_DMG) {
+              w._phys.colliders.forEach((col, idx) => {
+                sketchAABB(cloneAABB(col.aabb), {
+                  key: `woodOuterAABB_${idx}`,
+                  color: ENDESGA16.yellow,
+                });
+              });
+            }
+          }
+
           for (let _ball of balls) {
             const ball = _ball!;
             // console.log(`hit: ${ball.id}`);
             // TODO(@darzu): move a bunch of the below into physic system features!
             assert(ball.collider.shape === "AABB");
-            copyAABB(ballAABBWorld, ball.collider.aabb);
+            copyAABB(ballAABBWorld, ball.collider.aabb); // TODO(@darzu): PERF. used physics state aabb
             transformAABB(ballAABBWorld, ball.world.transform);
             // TODO(@darzu): PERF! We should probably translate ball into wood space not both into world space!
             // TODO(@darzu): this sphere should live elsewhere..
@@ -176,6 +194,13 @@ EM.addEagerInit([WoodStateDef], [], [], () => {
               org: ball.world.position,
               rad: (ballAABBWorld.max[0] - ballAABBWorld.min[0]) * 0.5,
             };
+
+            if (DBG_WOOD_DMG) {
+              sketchAABB(cloneAABB(ballAABBWorld), {
+                key: `ballHit_${ball.id}`,
+                color: ENDESGA16.red,
+              });
+            }
 
             // TODO(@darzu): PERF. Use AABBs in the groups!
             w.woodState.groups.forEach((group, groupIdx) => {
@@ -188,6 +213,13 @@ EM.addEagerInit([WoodStateDef], [], [], () => {
                 overlapChecks++;
                 if (!doesOverlapAABB(ballAABBWorld, boardAABBWorld)) return;
 
+                if (DBG_WOOD_DMG) {
+                  sketchAABB(cloneAABB(boardAABBWorld), {
+                    key: `boardHit_${groupIdx}_${boardIdx}`,
+                    color: ENDESGA16.darkRed,
+                  });
+                }
+
                 board.segments.forEach((seg, segIdx) => {
                   if (ball.bullet.health <= 0) return;
 
@@ -195,44 +227,58 @@ EM.addEagerInit([WoodStateDef], [], [], () => {
                   copyAABB(segAABBWorld, seg.localAABB);
                   transformAABB(segAABBWorld, w.world.transform);
                   overlapChecks++;
-                  if (doesOverlapAABB(ballAABBWorld, segAABBWorld)) {
-                    segAABBHits += 1;
-                    // for (let qi of seg.quadSideIdxs) {
-                    //   if (DBG_COLOR && mesh.colors[qi][1] < 1) {
-                    //     // dont change green to red
-                    //     mesh.colors[qi] = [1, 0, 0];
-                    //   }
-                    // }
+                  if (!doesOverlapAABB(ballAABBWorld, segAABBWorld)) return;
 
-                    // does the ball hit the middle of the segment?
-                    copyLine(worldLine, seg.midLine);
-                    transformLine(worldLine, w.world.transform);
-                    const midHits = lineSphereIntersections(
-                      worldLine,
-                      worldSphere
-                    );
-                    if (midHits) {
-                      // console.log(`mid hit: ${midHits}`);
-                      segMidHits += 1;
-                      // if (DBG_COLOR)
-                      //   for (let qi of seg.quadSideIdxs) {
-                      //     mesh.colors[qi] = [0, 1, 0];
-                      //   }
-                      // TODO(@darzu): cannon ball health stuff!
-
-                      // determine dmg
-                      const woodHealth =
-                        w.woodHealth.groups[groupIdx].boards[boardIdx][segIdx];
-                      const dmg =
-                        Math.min(woodHealth.health, ball.bullet.health) + 0.001;
-
-                      // dmg the ball
-                      ball.bullet.health -= dmg;
-
-                      // dmg the wood
-                      boardSegHits.push({ groupIdx, boardIdx, segIdx, dmg });
-                    }
+                  if (DBG_WOOD_DMG) {
+                    sketchAABB(cloneAABB(boardAABBWorld), {
+                      key: `segAABBHit_${groupIdx}_${boardIdx}_${segIdx}`,
+                      color: ENDESGA16.yellow,
+                    });
                   }
+
+                  segAABBHits += 1;
+                  // for (let qi of seg.quadSideIdxs) {
+                  //   if (DBG_COLOR && mesh.colors[qi][1] < 1) {
+                  //     // dont change green to red
+                  //     mesh.colors[qi] = [1, 0, 0];
+                  //   }
+                  // }
+
+                  // does the ball hit the middle of the segment?
+                  copyLine(worldLine, seg.midLine);
+                  transformLine(worldLine, w.world.transform);
+                  const midHits = lineSphereIntersections(
+                    worldLine,
+                    worldSphere
+                  );
+                  if (!midHits) return;
+
+                  if (DBG_WOOD_DMG) {
+                    sketchLine2(worldLine, {
+                      key: `segMidHit_${groupIdx}_${boardIdx}_${segIdx}`,
+                      color: ENDESGA16.red,
+                    });
+                  }
+
+                  // console.log(`mid hit: ${midHits}`);
+                  segMidHits += 1;
+                  // if (DBG_COLOR)
+                  //   for (let qi of seg.quadSideIdxs) {
+                  //     mesh.colors[qi] = [0, 1, 0];
+                  //   }
+                  // TODO(@darzu): cannon ball health stuff!
+
+                  // determine dmg
+                  const woodHealth =
+                    w.woodHealth.groups[groupIdx].boards[boardIdx][segIdx];
+                  const dmg =
+                    Math.min(woodHealth.health, ball.bullet.health) + 0.001;
+
+                  // dmg the ball
+                  ball.bullet.health -= dmg;
+
+                  // dmg the wood
+                  boardSegHits.push({ groupIdx, boardIdx, segIdx, dmg });
                 });
               });
             });

@@ -51,6 +51,7 @@ import { getPathFrom2DQuadMesh } from "./util-wood.js";
 import { snapToPath } from "../utils/spline.js";
 import { snapXToPath } from "../utils/spline.js";
 import { createLine } from "../physics/broadphase.js";
+import { PId2 } from "../utils/util-no-import.js";
 
 /*
 ship state
@@ -221,7 +222,7 @@ export function createWoodenBox(): WoodObj {
     name: "wall1",
     boards: [],
   };
-  const rot = quat.fromYawPitchRoll(0, 0, 0);
+  const rot = quat.fromYawPitchRoll(PId2, 0, PId2);
   const boardWidth = 0.4;
   const boardDepth = 0.2;
   for (let i = 0; i < 10; i++) {
@@ -882,6 +883,7 @@ export function appendBoard(
   board: BoardPath,
   color = BLACK
 ): BoardState {
+  // TODO(@darzu): PERF. Instead of creating V3s, we should be indexing into a f32 array
   // TODO(@darzu): build up wood state along with the mesh!
   const bState: BoardState = {
     segments: [],
@@ -982,7 +984,7 @@ export function appendBoard(
   }
 
   function addLoopVerts(n: PathNode) {
-    // width/depth
+    // forward is y-axis, width is x-axis, depth is z-axis
     const v0 = V(board.width, 0, board.depth);
     const v1 = V(board.width, 0, -board.depth);
     const v2 = V(-board.width, 0, -board.depth);

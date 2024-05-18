@@ -68,6 +68,9 @@ export function copyAABB(out: AABB, a: AABB) {
   V3.copy(out.max, a.max);
   return out;
 }
+export function cloneAABB(a: AABB) {
+  return copyAABB(createAABB(), a);
+}
 export function clampToAABB(v: V3, aabb: AABB, out?: V3): V3 {
   out = out ?? V3.tmp();
   out[0] = clamp(v[0], aabb.min[0], aabb.max[0]);

@@ -950,6 +950,7 @@ export module quat {
   export function roll(v1: InputT, n: number, out?: T) {
     return GL.rotateY(out ?? tmp(), v1, n) as T;
   }
+  // TODO(@darzu): DOCUMENT what order yaw,pitch,roll are applied
   export function fromYawPitchRoll(
     yaw: number = 0,
     pitch: number = 0,
