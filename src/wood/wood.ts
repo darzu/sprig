@@ -162,6 +162,7 @@ export const WoodHealthDef = EM.defineNonupdatableComponent(
   }
 );
 
+// TODO(@darzu): Hmm this seems overly complicated
 export function getSegmentRotation(seg: SegState, top: boolean) {
   let segNorm = V3.mk();
   let biggestArea2 = 0;
@@ -336,9 +337,10 @@ export function setEndQuadIdxs(loopVi: number, q: V4, facingDown: boolean) {
 }
 
 export interface TimberBuilder {
-  width: number;
+  width: number; // TODO(@darzu): RENAME: xLen, zLen
   depth: number;
   mesh: RawMesh;
+  // TODO(@darzu): REFACTOR. convert to pos and rot and merge w/ appendBoard
   cursor: mat4;
   addSplinteredEnd: (lastLoopEndVi: number, numJags: number) => void;
   addLoopVerts: () => void;
@@ -357,7 +359,7 @@ export function createTimberBuilder(mesh: RawMesh): TimberBuilder {
   const cursor: mat4 = mat4.create();
 
   // NOTE: Assumes +y is forward by default
-  const b = {
+  const b: TimberBuilder = {
     width: 0.2, // x-axis
     depth: 0.2, // z-axis
     mesh,

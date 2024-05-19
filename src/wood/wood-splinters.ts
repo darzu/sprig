@@ -6,7 +6,7 @@ import { EM } from "../ecs/ecs.js";
 import { AllMeshesDef, BLACK } from "../meshes/mesh-list.js";
 import { GravityDef } from "../motion/gravity.js";
 import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
-import { jitter } from "../utils/math.js";
+import { jitter, randRadian } from "../utils/math.js";
 import { getLineMid } from "../physics/broadphase.js";
 import { LinearVelocityDef, AngularVelocityDef } from "../motion/velocity.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
@@ -17,6 +17,8 @@ import { SegState, createEmptyMesh, createTimberBuilder } from "./wood.js";
 import { RenderDataStdDef } from "../render/pipelines/std-scene.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { VERBOSE_LOG } from "../flags.js";
+
+const DBG_SPLINTER_POOL_TIME = true;
 
 // TODO(@darzu): generalize for any entity pool
 
@@ -50,12 +52,14 @@ export const SplinterPoolsDef = EM.defineResource("splinterPools", () => {
   };
 });
 
+let _accumPoolCreationTimeMs = 0;
 function createSplinterPool(
   width: number,
   depth: number,
   length: number,
   numInPool: number
 ) {
+  const _start = performance.now();
   const pool: SplinterPart[] = [];
   let nextIdx = 0;
 
@@ -98,6 +102,16 @@ function createSplinterPool(
     EM.set(splinter, GravityDef);
     EM.set(splinter, SplinterParticleDef);
     pool.push(splinter);
+  }
+
+  if (DBG_SPLINTER_POOL_TIME) {
+    const _end = performance.now();
+    _accumPoolCreationTimeMs += _end - _start;
+    console.log(
+      `createSplinterPool ${_accumPoolCreationTimeMs.toFixed(
+        1
+      )}ms (accumulated)`
+    );
   }
 
   return {
@@ -199,11 +213,8 @@ EM.addEagerInit([SplinterParticleDef], [], [], () => {
           V3.zero(s.angularVelocity);
 
           s.position[2] = 0;
-          quat.identity(s.rotation);
-          quat.rotX(s.rotation, Math.PI * 0.5, s.rotation);
-          quat.rotZ(s.rotation, Math.PI * Math.random(), s.rotation);
+          quat.fromYawPitchRoll(randRadian(), 0, 0, s.rotation);
           s.renderDataStd.id = splinterObjId; // stops z-fighting
-          // console.log("freeze!");
         }
       }
     }

@@ -358,7 +358,7 @@ EM.addEagerInit([WoodStateDef], [], [], () => {
               if (!h.broken && h.health <= 0) {
                 if (DBG_WOOD_DMG)
                   console.log(
-                    `breaking ${w.id}.woodHealth.boards[${bIdx}][${sIdx}]`
+                    `breaking ${w.id}:"${group.name}":${bIdx}:${sIdx}`
                   );
 
                 h.broken = true;
