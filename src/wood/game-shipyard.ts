@@ -53,6 +53,7 @@ import { getLineEnd } from "../physics/broadphase.js";
 
 const DBG_PLAYER = true;
 const DBG_COLLIDERS = false;
+const DBG_TRANSPARENT_BOAT = false;
 
 const DISABLE_PRIATES = true;
 
@@ -108,7 +109,7 @@ export async function initShipyardGame() {
   // TIMBER
   const timber = EM.mk();
 
-  EM.set(timber, AlphaDef, 0.5);
+  if (DBG_TRANSPARENT_BOAT) EM.set(timber, AlphaDef, 0.5);
 
   // const { state: timberState, mesh: timberMesh } = createLD53Ship();
   const { state: timberState, mesh: timberMesh } = createWoodenBox();

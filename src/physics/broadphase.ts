@@ -1,5 +1,15 @@
-import { V2, V3, V4, quat, mat4, mat3, V } from "../matrix/sprig-matrix.js";
+import {
+  V2,
+  V3,
+  V4,
+  quat,
+  mat4,
+  mat3,
+  V,
+  TV1,
+} from "../matrix/sprig-matrix.js";
 import { clamp } from "../utils/math.js";
+import { sketchDot } from "../utils/sketch.js";
 import { range } from "../utils/util.js";
 import { vec3Floor } from "../utils/utils-3d.js";
 import {
@@ -601,6 +611,7 @@ export function transformLine(out: Line, t: mat4) {
   return out;
 }
 
+// TODO(@darzu): PERF! Needs optimization
 export function raySphereIntersections(
   ray: Ray,
   sphere: Sphere
@@ -615,6 +626,7 @@ export function raySphereIntersections(
   return V(-b - h2, -b + h2);
 }
 
+// TODO(@darzu): MOVE to narrowphase
 export function lineSphereIntersections(
   line: Line,
   sphere: Sphere
@@ -624,9 +636,15 @@ export function lineSphereIntersections(
   if (!hits) return undefined;
   // TODO(@darzu): what about negative numbers?
   if (
+    // miss 1
     (hits[0] < 0 || line.len < hits[0]) &&
-    (hits[1] < 0 || line.len < hits[1])
-  )
+    // miss 2
+    (hits[1] < 0 || line.len < hits[1]) &&
+    // not inside
+    sphere.rad ** 2 < V3.sqrDist(line.ray.org, sphere.org)
+  ) {
     return undefined;
+  }
+
   return hits;
 }
