@@ -360,8 +360,8 @@ export function createTimberBuilder(mesh: RawMesh): TimberBuilder {
 
   // NOTE: Assumes +y is forward by default
   const b: TimberBuilder = {
-    xLen: 0.2, // x-axis
-    zLen: 0.2, // z-axis
+    xLen: 0.2, // "width"
+    zLen: 0.2, // "depth"
     mesh,
     cursor,
     addSplinteredEnd,

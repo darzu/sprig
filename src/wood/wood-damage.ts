@@ -2,7 +2,7 @@ import { AudioDef } from "../audio/audio.js";
 import { SoundSetDef } from "../audio/sound-loader.js";
 import { BulletDef } from "../cannons/bullet.js";
 import { ColorDef } from "../color/color-ecs.js";
-import { ENDESGA16 } from "../color/palettes.js";
+import { ENDESGA16, colorToStr } from "../color/palettes.js";
 import { EM } from "../ecs/ecs.js";
 import { Entity } from "../ecs/em-entities.js";
 import { Phase } from "../ecs/sys-phase.js";
@@ -40,7 +40,7 @@ import { RenderableDef, RendererDef } from "../render/renderer-ecs.js";
 import { sketchAABB, sketchLine, sketchLine2 } from "../utils/sketch.js";
 import { assert } from "../utils/util-no-import.js";
 import { dbgOnce, createIntervalTracker } from "../utils/util.js";
-import { randNormalVec3 } from "../utils/utils-3d.js";
+import { randNormalVec3, vec3Dbg } from "../utils/utils-3d.js";
 import { SplinterPoolsDef, SplinterPool } from "./wood-splinters.js";
 import {
   WoodStateDef,
@@ -53,7 +53,7 @@ import {
   _vertsPerSplinter,
 } from "./wood.js";
 
-const DBG_WOOD_DMG = true;
+const DBG_WOOD_DMG = false;
 
 export let _dbgNumSplinterEnds = 0;
 
@@ -394,8 +394,13 @@ EM.addEagerInit([WoodStateDef], [], [], () => {
                   const splinter = pool.getNext();
                   if (RenderableDef.isOn(splinter))
                     splinter.renderable.hidden = false;
+                  // set entity color
                   if (ColorDef.isOn(w)) V3.copy(splinter.color, w.color);
+                  else V3.zero(splinter.color);
+                  // set mesh color
+                  // console.log(`splinterColor: ${colorToStr(quadColor)}`);
                   V3.add(splinter.color, quadColor, splinter.color);
+                  // set position
                   const pos = getLineMid(V3.mk(), seg.midLine);
                   V3.tMat4(pos, w.world.transform, pos);
                   EM.set(splinter, PositionDef, pos);
