@@ -58,8 +58,8 @@ export function createMultiBarMesh({
   const mesh = createEmptyMesh(statBarMeshName);
 
   const builder = createTimberBuilder(mesh);
-  builder.width = width; // +X
-  builder.depth = width; // +Z (after rotate below)
+  builder.xLen = width; // +X
+  builder.zLen = width; // +Z (after rotate below)
 
   // point toward -Z
   // mat4.rotateX(builder.cursor, -Math.PI * 0.5, builder.cursor);

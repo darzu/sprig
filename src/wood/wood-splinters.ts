@@ -132,8 +132,8 @@ export const mkTimberSplinterFree = (
 ) => {
   // const b = createTimberBuilder(.5, .2);
   const b = createTimberBuilder(createEmptyMesh("splinter"));
-  b.width = width;
-  b.depth = depth;
+  b.xLen = width;
+  b.zLen = depth;
 
   // mat4.rotateY(b.cursor, b.cursor, Math.PI * -0.5); // TODO(@darzu): DBG
 

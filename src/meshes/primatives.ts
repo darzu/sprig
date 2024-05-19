@@ -610,8 +610,8 @@ export function mkTimberSplinterEnd(loopCursor?: mat4, splintersCursor?: mat4) {
   loopCursor = loopCursor ?? mat4.create();
   splintersCursor = splintersCursor ?? mat4.create();
   const b = createTimberBuilder(createEmptyMesh("splinterEnd"));
-  b.width = 0.5;
-  b.depth = 0.2;
+  b.xLen = 0.5;
+  b.zLen = 0.2;
 
   // mat4.rotateY(b.cursor, b.cursor, Math.PI * -0.5); // TODO(@darzu): DBG
   // b.addLoopVerts();

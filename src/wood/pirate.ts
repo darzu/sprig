@@ -81,8 +81,8 @@ export function appendPirateShip(b: TimberBuilder): RawMesh {
 
   const length = 18;
 
-  b.width = 0.6;
-  b.depth = 0.2;
+  b.xLen = 0.6;
+  b.zLen = 0.2;
 
   const xFactor = 0.333;
 
@@ -123,7 +123,7 @@ export function appendPirateShip(b: TimberBuilder): RawMesh {
       V3.sub(p, mid, p);
     }
 
-    mat4.translate(cursor2, [-(b.width * 2.0 + 0.05), 0, 0], cursor2);
+    mat4.translate(cursor2, [-(b.xLen * 2.0 + 0.05), 0, 0], cursor2);
   }
 
   for (let qi = firstQuadIdx; qi < b.mesh.quad.length; qi++)
@@ -324,7 +324,7 @@ EM.addLazyInit([RendererDef, TimeDef], [PiratePoolDef], (res) => {
       EM.set(timber, WoodStateDef, timberState);
       EM.set(timber, ColorDef, ENDESGA16.red);
       const timberAABB = getAABBFromMesh(timberMesh);
-      EM.set(timber, PositionDef, V(0, builder.width, 0));
+      EM.set(timber, PositionDef, V(0, builder.xLen, 0));
       EM.set(timber, RotationDef);
       EM.set(timber, ColliderDef, {
         shape: "AABB",

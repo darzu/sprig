@@ -234,8 +234,8 @@ export function addSplinterEnd(
   const cursor = mat4.fromRotationTranslation(rot, pos, mat4.create());
   {
     const b = createTimberBuilder(_tempSplinterMesh);
-    b.width = W;
-    b.depth = D;
+    b.xLen = W;
+    b.zLen = D;
 
     b.setCursor(cursor);
     b.addLoopVerts();
@@ -337,8 +337,8 @@ export function setEndQuadIdxs(loopVi: number, q: V4, facingDown: boolean) {
 }
 
 export interface TimberBuilder {
-  width: number; // TODO(@darzu): RENAME: xLen, zLen
-  depth: number;
+  xLen: number;
+  zLen: number;
   mesh: RawMesh;
   // TODO(@darzu): REFACTOR. convert to pos and rot and merge w/ appendBoard
   cursor: mat4;
@@ -360,8 +360,8 @@ export function createTimberBuilder(mesh: RawMesh): TimberBuilder {
 
   // NOTE: Assumes +y is forward by default
   const b: TimberBuilder = {
-    width: 0.2, // x-axis
-    depth: 0.2, // z-axis
+    xLen: 0.2, // x-axis
+    zLen: 0.2, // z-axis
     mesh,
     cursor,
     addSplinteredEnd,
@@ -381,8 +381,8 @@ export function createTimberBuilder(mesh: RawMesh): TimberBuilder {
     // console.log("timberBuilder:addSplinteredEnd");
     const vi = mesh.pos.length;
 
-    const v0 = V(0, 0, b.depth);
-    const v1 = V(0, 0, -b.depth);
+    const v0 = V(0, 0, b.zLen);
+    const v1 = V(0, 0, -b.zLen);
     V3.tMat4(v0, cursor, v0);
     V3.tMat4(v1, cursor, v1);
     mesh.pos.push(v0, v1);
@@ -401,16 +401,16 @@ export function createTimberBuilder(mesh: RawMesh): TimberBuilder {
     let v_blast = v_bbl;
 
     // const numJags = 5;
-    const xStep = (b.width * 2) / numJags;
+    const xStep = (b.xLen * 2) / numJags;
     let lastY = 0;
-    let lastX = -b.width;
+    let lastX = -b.xLen;
     for (let i = 0; i <= numJags; i++) {
-      const x = i * xStep - b.width + jitter(0.05);
+      const x = i * xStep - b.xLen + jitter(0.05);
       let y = lastY;
       while (Math.abs(y - lastY) < 0.1)
         // TODO(@darzu): HACK to make sure it's not too even
         y = i % 2 === 0 ? 0.7 + jitter(0.6) : 0.2 + jitter(0.1);
-      let d = b.depth; // + jitter(0.1);
+      let d = b.zLen; // + jitter(0.1);
 
       // TODO(@darzu): HACK! This ensures that adjacent "teeth" in the splinter
       //    are properly manifold/convex/something-something
@@ -482,10 +482,10 @@ export function createTimberBuilder(mesh: RawMesh): TimberBuilder {
 
   function addLoopVerts() {
     // TODO(@darzu): ensure this agrees with the width/depth calculation in addBoard
-    const v0 = V(b.width, 0, b.depth);
-    const v1 = V(b.width, 0, -b.depth);
-    const v2 = V(-b.width, 0, -b.depth);
-    const v3 = V(-b.width, 0, b.depth);
+    const v0 = V(b.xLen, 0, b.zLen);
+    const v1 = V(b.xLen, 0, -b.zLen);
+    const v2 = V(-b.xLen, 0, -b.zLen);
+    const v3 = V(-b.xLen, 0, b.zLen);
     V3.tMat4(v0, cursor, v0);
     V3.tMat4(v1, cursor, v1);
     V3.tMat4(v2, cursor, v2);

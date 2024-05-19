@@ -283,8 +283,8 @@ export function createLD53Ship(): WoodObj {
   // KEEL
   const keelWidth = 0.7;
   const keelDepth = 1.2;
-  builder.width = keelWidth;
-  builder.depth = keelDepth;
+  builder.xLen = keelWidth;
+  builder.zLen = keelDepth;
 
   const keelPath = getLD53KeelPath();
   const keelAABB = getAABBFromPath(keelPath);
@@ -309,8 +309,8 @@ export function createLD53Ship(): WoodObj {
   // RIBS
   const ribWidth = 0.5;
   const ribDepth = 0.4;
-  builder.width = ribWidth;
-  builder.depth = ribDepth;
+  builder.xLen = ribWidth;
+  builder.zLen = ribDepth;
   const ribCount = 12;
   // const ribSpace = 3;
 
