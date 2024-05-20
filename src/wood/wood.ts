@@ -86,6 +86,7 @@ type QI = number; // quad index
 export interface SegState {
   localAABB: AABB;
   midLine: Line;
+  // TODO(@darzu): REMOVE. this doesn't seem worth it..
   areaNorms: V3[]; // TODO(@darzu): fixed size
   width: number;
   depth: number;

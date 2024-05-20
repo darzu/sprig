@@ -310,3 +310,6 @@ Engineering and Craftsmanship:
     Art, execution, excellence in process
     e.g.:
       boat design
+
+Pontification on generative art
+  https://www.amygoodchild.com/blog/what-is-generative-art

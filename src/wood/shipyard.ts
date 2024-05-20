@@ -898,6 +898,7 @@ export function appendBoard(
   board.path.forEach((p, i) => {
     // tracking
     const isFirst = i === 0;
+    const isFirstSeg = i === 1;
     const isLast = i === board.path.length - 1;
     const firstQIdx = mesh.quad.length;
 
@@ -928,12 +929,15 @@ export function appendBoard(
       for (let i = vertLastLoopIdxs[0]; i <= vertNextLoopIdxs[3]; i++)
         updateAABBWithPoint(segAABB, mesh.pos[i]);
       mergeAABBs(bState.localAABB, bState.localAABB, segAABB);
+      const firstSideQIdx = firstQIdx;
       const quadSideIdxs = V(
-        firstQIdx + 0,
-        firstQIdx + 1,
-        firstQIdx + 2,
-        firstQIdx + 3
+        firstSideQIdx + 0,
+        firstSideQIdx + 1,
+        firstSideQIdx + 2,
+        firstSideQIdx + 3
       );
+      const quadBackIdx = isFirstSeg ? firstQIdx - 1 : undefined;
+      const quadFrontIdx = isLast ? firstQIdx + 4 : undefined;
 
       const sState: SegState = {
         localAABB: segAABB,
@@ -949,6 +953,8 @@ export function appendBoard(
         vertLastLoopIdxs,
         vertNextLoopIdxs,
         quadSideIdxs,
+        quadFrontIdx,
+        quadBackIdx,
       };
       bState.segments.push(sState);
     }
@@ -978,10 +984,10 @@ export function appendBoard(
     mesh.quad.push(q0, q1, q2, q3);
   }
 
-  function addEndQuad(facingDown: boolean) {
+  function addEndQuad(facingNegY: boolean) {
     const lastLoopIdx = mesh.pos.length - 4;
     const q = V4.mk();
-    setEndQuadIdxs(lastLoopIdx, q, facingDown);
+    setEndQuadIdxs(lastLoopIdx, q, facingNegY);
     mesh.quad.push(q);
   }
 
