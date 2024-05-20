@@ -900,7 +900,6 @@ export function appendBoard(
     const isFirst = i === 0;
     const isLast = i === board.path.length - 1;
     const firstQIdx = mesh.quad.length;
-    const firstVIdx = mesh.pos.length;
 
     // add verts & quads
     addLoopVerts(p);
@@ -910,17 +909,20 @@ export function appendBoard(
 
     // create states
     if (!isFirst) {
+      // NOTE: must match setSideQuadIdxs
+      const loop2Idx = mesh.pos.length - 4;
+      const loop1Idx = mesh.pos.length - 4 - 4;
       const vertNextLoopIdxs = V(
-        firstVIdx + 0,
-        firstVIdx + 1,
-        firstVIdx + 2,
-        firstVIdx + 3
+        loop2Idx + 0,
+        loop2Idx + 1,
+        loop2Idx + 2,
+        loop2Idx + 3
       );
       const vertLastLoopIdxs = V(
-        vertNextLoopIdxs[0] - 1,
-        vertNextLoopIdxs[0] - 2,
-        vertNextLoopIdxs[0] - 3,
-        vertNextLoopIdxs[0] - 4
+        loop1Idx + 0,
+        loop1Idx + 1,
+        loop1Idx + 2,
+        loop1Idx + 3
       );
       const segAABB = createAABB();
       for (let i = vertLastLoopIdxs[0]; i <= vertNextLoopIdxs[3]; i++)

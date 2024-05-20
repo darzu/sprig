@@ -90,6 +90,7 @@ export interface SegState {
   width: number;
   depth: number;
   // TODO(@darzu): establish convention e.g. top-left, top-right, etc.
+  // TODO(@darzu): RENAME! loop1, loop2
   vertLastLoopIdxs: V4; // [VI, VI, VI, VI];
   vertNextLoopIdxs: V4; // [VI, VI, VI, VI];
   // TODO(@darzu): establish convention e.g. top, left, right, bottom
