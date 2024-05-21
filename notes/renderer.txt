@@ -2346,3 +2346,9 @@ GPU driven webgpu:
   ExectureIndirect: https://github.com/gpuweb/gpuweb/issues/431
   drawIndirect: https://github.com/gpuweb/gpuweb/issues/31
   bindless: https://github.com/gpuweb/gpuweb/issues/380
+
+Good rendering equation review:
+  https://chuckleplant.github.io/2017/05/28/light-shafts.html
+
+Ambient occlusion overview:
+  https://vr.arvilab.com/blog/ambient-occlusion
