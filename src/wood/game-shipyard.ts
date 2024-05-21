@@ -1,7 +1,11 @@
 import { CameraDef } from "../camera/camera.js";
 import { HasFirstInteractionDef } from "../render/canvas.js";
 import { AlphaDef, ColorDef } from "../color/color-ecs.js";
-import { ENDESGA16 } from "../color/palettes.js";
+import {
+  AllEndesga16,
+  ENDESGA16,
+  RainbowEndesga16,
+} from "../color/palettes.js";
 import { DeadDef } from "../ecs/delete.js";
 import { EM } from "../ecs/ecs.js";
 import { V3, quat, V } from "../matrix/sprig-matrix.js";
@@ -113,6 +117,13 @@ export async function initShipyardGame() {
 
   // const { state: timberState, mesh: timberMesh } = createLD53Ship();
   const { state: timberState, mesh: timberMesh } = createWoodenBox();
+
+  // console.log("timberMesh");
+  // console.dir(timberMesh);
+
+  // timberMesh.colors.forEach((c, i) =>
+  //   V3.copy(c, AllEndesga16[i % AllEndesga16.length])
+  // );
 
   const DBG_WOOD_STATE = false;
   if (DBG_WOOD_STATE) {

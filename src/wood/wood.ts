@@ -20,6 +20,7 @@ import {
   mergeAABBs,
   getAABBFromPositions,
 } from "../physics/aabb.js";
+import { ENDESGA16 } from "../color/palettes.js";
 
 // TODO(@darzu): BUG: sometimes ball colisions don't work
 // TODO(@darzu): BUG: sometimes splinters are misaligned
@@ -514,7 +515,7 @@ export function reserveSplinterSpace(wood: WoodState, maxSplinters: number) {
   const newFaces = maxSplinters * (_quadsPerSplinter + _trisPerSplinter);
   range(newFaces).forEach((_) => {
     wood.mesh.surfaceIds!.push(wood.mesh.surfaceIds!.length);
-    wood.mesh.colors.push(V3.clone(BLACK));
+    wood.mesh.colors.push(V3.clone(ENDESGA16.yellow)); // yellow as an alert, shouldn't ever be visible
   });
 
   wood.splinterState = {

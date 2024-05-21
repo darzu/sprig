@@ -218,6 +218,8 @@ export function createWoodenBox(): WoodObj {
 
   const mesh = createEmptyMesh("woodBox");
 
+  mesh.pos.push(V(0, 0, 0)); // add 1 degenerate vert for degenerate quads (e.g. [0,0,0,0]) to use
+
   const wall1: BoardGroupState = {
     name: "wall1",
     boards: [],
@@ -961,8 +963,10 @@ export function appendBoard(
   });
 
   // TODO(@darzu): streamline
+  assert(mesh.colors.length === firstQuadIdx);
   for (let qi = firstQuadIdx; qi < mesh.quad.length; qi++)
     mesh.colors.push(V3.clone(color));
+  assert(mesh.colors.length === mesh.quad.length);
 
   // NOTE: for provoking vertices,
   //  indexes 0, 1 of a loop are for stuff behind (end cap, previous sides)
