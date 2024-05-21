@@ -43,10 +43,11 @@ export function FRGBToFLRGB({ fr, fg, fb }: FRGB): FLRGB {
     return sign * Math.pow((abs + 0.055) / 1.055, 2.4);
   }
   function linCheap(val: number) {
-    return Math.pow(val, 2.2);
+    let sign = val < 0 ? -1 : 1;
+    return sign * Math.pow(Math.abs(val), 2.2);
   }
-  // const lin = linCheap;
-  const lin = linOfficial;
+  const lin = linCheap;
+  // const lin = linOfficial;
   return { flr: lin(fr), flg: lin(fg), flb: lin(fb) };
 }
 
@@ -66,12 +67,12 @@ export function FLRGBToFRGB({ flr, flg, flb }: FLRGB): FRGB {
 
     return 12.92 * val;
   }
-  // TODO(@darzu): BROKEN. gamCheap causes NaNs
   function gamCheap(val: number) {
-    return Math.pow(val, 1 / 2.2);
+    let sign = val < 0 ? -1 : 1;
+    return sign * Math.pow(Math.abs(val), 1 / 2.2);
   }
-  // const gam = gamCheap;
-  const gam = gamOfficial;
+  const gam = gamCheap;
+  // const gam = gamOfficial;
   return { fr: gam(flr), fg: gam(flg), fb: gam(flb) };
 }
 
