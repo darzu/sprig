@@ -89,9 +89,10 @@ export interface SegState {
   localAABB: AABB;
   midLine: Line;
   // TODO(@darzu): REMOVE. this doesn't seem worth it..
-  areaNorms: V3[]; // TODO(@darzu): fixed size
-  width: number;
-  depth: number;
+  // areaNorms: V3[]; // TODO(@darzu): fixed size
+  rotation: quat;
+  xWidth: number;
+  zDepth: number;
   // TODO(@darzu): establish convention e.g. top-left, top-right, etc.
   // TODO(@darzu): RENAME! loop1, loop2
   vertLastLoopIdxs: V4; // [VI, VI, VI, VI];
@@ -167,10 +168,10 @@ export const WoodHealthDef = EM.defineNonupdatableComponent(
 );
 
 // TODO(@darzu): Hmm this seems overly complicated
-export function getSegmentRotation(seg: SegState, top: boolean) {
+export function getSegmentRotation(areaNorms: V3[], dir: V3, top: boolean) {
   let segNorm = V3.mk();
   let biggestArea2 = 0;
-  for (let v of seg.areaNorms) {
+  for (let v of areaNorms) {
     const a = V3.sqrLen(v);
     if (a > biggestArea2) {
       biggestArea2 = a;
@@ -178,7 +179,7 @@ export function getSegmentRotation(seg: SegState, top: boolean) {
     }
   }
 
-  const endNorm = V3.copy(V3.tmp(), seg.midLine.ray.dir);
+  const endNorm = V3.copy(V3.tmp(), dir);
   if (top) {
     V3.neg(endNorm, endNorm);
   }
@@ -221,8 +222,8 @@ export function addSplinterEnd(
     return undefined;
   }
 
-  const W = seg.width;
-  const D = seg.depth;
+  const W = seg.xWidth;
+  const D = seg.zDepth;
   const pos = V3.copy(V3.tmp(), seg.midLine.ray.org);
   if (top) {
     getLineEnd(pos, seg.midLine);
@@ -232,8 +233,13 @@ export function addSplinterEnd(
   _tempSplinterMesh.quad.length = 0;
   _tempSplinterMesh.tri.length = 0;
 
-  const rot = getSegmentRotation(seg, top);
-  quat.roll(rot, PI, rot);
+  // const rot = getSegmentRotation(seg, top);
+  const rot = quat.copy(quat.tmp(), seg.rotation); // TODO(@darzu): based on top, rot?
+  if (top) {
+    quat.yaw(rot, PI, rot);
+    // quat.pitch(rot, PI, rot);
+    // quat.roll(rot, PI, rot);
+  }
   // TODO(@darzu): put these into a pool
   // TODO(@darzu): perf? probably don't need to normalize, just use same surface ID and provoking vert for all
   const cursor = mat4.fromRotationTranslation(rot, pos, mat4.create());
@@ -251,27 +257,27 @@ export function addSplinterEnd(
     //    together via distance; we should be able to do this in a more analytic way
     const segLoop = top ? seg.vertNextLoopIdxs : seg.vertLastLoopIdxs;
     const snapDistSqr = Math.pow(0.2 * 0.5, 2);
-    for (let vi = b.mesh.pos.length - 4; vi < b.mesh.pos.length; vi++) {
-      const p = b.mesh.pos[vi];
-      for (let vi2 of segLoop) {
-        const lp = wood.mesh.pos[vi2];
-        if (V3.sqrDist(p, lp) < snapDistSqr) {
-          // console.log("snap!");
-          V3.copy(p, lp);
-          break;
-        }
-      }
-    }
+    // for (let vi = b.mesh.pos.length - 4; vi < b.mesh.pos.length; vi++) {
+    //   const p = b.mesh.pos[vi];
+    //   for (let vi2 of segLoop) {
+    //     const lp = wood.mesh.pos[vi2];
+    //     if (V3.sqrDist(p, lp) < snapDistSqr) {
+    //       // console.log("snap!");
+    //       V3.copy(p, lp);
+    //       break;
+    //     }
+    //   }
+    // }
 
     // TODO(@darzu): USE EXISTING LOOP!
     // console.dir(segLoop);
-    // for (let i = 0; i < 4; i++) {
-    //   const splinVi = splinLoopStart + i;
-    //   const segVi = segLoop[i];
-    //   assert(splinVi < b.mesh.pos.length);
-    //   assert(segVi < wood.mesh.pos.length);
-    //   V3.copy(b.mesh.pos[splinVi], wood.mesh.pos[segVi]);
-    // }
+    for (let i = 0; i < 4; i++) {
+      const splinVi = splinLoopStart + i;
+      const segVi = segLoop[top ? 3 - i : i];
+      assert(splinVi < b.mesh.pos.length);
+      assert(segVi < wood.mesh.pos.length);
+      V3.copy(b.mesh.pos[splinVi], wood.mesh.pos[segVi]);
+    }
     b.addEndQuad(true);
 
     b.setCursor(cursor);
@@ -405,6 +411,13 @@ export function createTimberBuilder(mesh: RawMesh): TimberBuilder {
     V3.tMat4(v1, cursor, v1);
     mesh.pos.push(v0, v1);
 
+    // console.log(
+    //   `dist0: ${V3.dist(
+    //     mesh.pos[mesh.pos.length - 1],
+    //     mesh.pos[mesh.pos.length - 2]
+    //   ).toFixed(2)}`
+    // );
+
     const v_tm = vi + 0;
     const v_tbr = lastLoopEndVi + -4;
     const v_tbl = lastLoopEndVi + -1;
@@ -418,6 +431,8 @@ export function createTimberBuilder(mesh: RawMesh): TimberBuilder {
     let v_tlast = v_tbl;
     let v_blast = v_bbl;
 
+    // console.log(`splinter width:${b.xLen},depth:${b.zLen}`);
+
     // const numJags = 5;
     const xStep = (b.xLen * 2) / numJags;
     let lastY = 0;
@@ -428,7 +443,6 @@ export function createTimberBuilder(mesh: RawMesh): TimberBuilder {
       while (Math.abs(y - lastY) < 0.1)
         // TODO(@darzu): HACK to make sure it's not too even
         y = i % 2 === 0 ? 0.7 + jitter(0.6) : 0.2 + jitter(0.1);
-      let d = b.zLen; // + jitter(0.1);
 
       // TODO(@darzu): HACK! This ensures that adjacent "teeth" in the splinter
       //    are properly manifold/convex/something-something
@@ -444,17 +458,24 @@ export function createTimberBuilder(mesh: RawMesh): TimberBuilder {
         console.warn(`splinter non-manifold!`);
 
       // +D side
-      const vtj = V(x, y, d);
+      const vtj = V(x, y, b.zLen);
       V3.tMat4(vtj, cursor, vtj);
       const vtji = mesh.pos.length;
       mesh.pos.push(vtj);
       mesh.tri.push(V(v_tm, vtji, v_tlast));
 
       // -D side
-      const vbj = V(x, y, -d);
+      const vbj = V(x, y, -b.zLen);
       V3.tMat4(vbj, cursor, vbj);
       mesh.pos.push(vbj);
       mesh.tri.push(V(v_tm + 1, v_blast, vtji + 1));
+
+      // console.log(
+      //   `dist: ${V3.dist(
+      //     mesh.pos[mesh.pos.length - 1],
+      //     mesh.pos[mesh.pos.length - 2]
+      //   ).toFixed(2)}`
+      // );
 
       // D to -D quad
       mesh.quad.push(V(v_blast, v_tlast, vtji, vtji + 1));
@@ -719,6 +740,7 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
       const nextMid = centroid(...[...nextLoop].map((vi) => m.pos[vi]));
       const mid = createLine(lastMid, nextMid);
       const areaNorms = segQis.map((qi) => getQuadAreaNorm(m, qi));
+      const rotation = getSegmentRotation(areaNorms, mid.ray.dir, false); // TODO(@darzu): what to do for true/false here
       const len1 = V3.dist(m.pos[lastLoop[1]], m.pos[lastLoop[0]]);
       const len2 = V3.dist(m.pos[lastLoop[3]], m.pos[lastLoop[0]]);
       const width = Math.max(len1, len2) * 0.5;
@@ -741,9 +763,10 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
           seg = {
             localAABB: aabb,
             midLine: mid,
-            areaNorms,
-            width,
-            depth,
+            // areaNorms,
+            rotation,
+            xWidth: width,
+            zDepth: depth,
             vertLastLoopIdxs: lastLoop,
             vertNextLoopIdxs: nextLoop,
             quadSideIdxs: sideQuads,
@@ -769,9 +792,10 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
         seg = {
           localAABB: aabb,
           midLine: mid,
-          areaNorms,
-          width,
-          depth,
+          // areaNorms,
+          rotation,
+          xWidth: width,
+          zDepth: depth,
           vertLastLoopIdxs: lastLoop,
           vertNextLoopIdxs: nextLoop,
           quadSideIdxs: V4.clone(segQis as [QI, QI, QI, QI]),

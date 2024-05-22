@@ -92,8 +92,8 @@ export function createGraph3D(
 
   return graph;
 }
+// TODO(@darzu): SKETCH: replace with sketch API
 export async function dbgPathWithGizmos(path: Path, scale = 1) {
-  // TODO(@darzu): SKETCH: replace with sketch API
   const mesh = createPathGizmosMesh(path, scale);
 
   const e = EM.mk();

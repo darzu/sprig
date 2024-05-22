@@ -34,13 +34,13 @@ export const SplinterPoolsDef = EM.defineResource("splinterPools", () => {
   const _pools = new Map<string, SplinterPool>();
 
   function getOrCreatePool(seg: SegState) {
-    const poolKey: string = `w${seg.width.toFixed(1)}_d${seg.depth.toFixed(
+    const poolKey: string = `w${seg.xWidth.toFixed(1)}_d${seg.zDepth.toFixed(
       1
     )}}`;
     let pool = _pools.get(poolKey);
     if (!pool) {
       if (VERBOSE_LOG) console.log(`new splinter pool!: ${poolKey}`);
-      pool = createSplinterPool(seg.width, seg.depth, 1, 40);
+      pool = createSplinterPool(seg.xWidth, seg.zDepth, 1, 40);
       _pools.set(poolKey, pool);
     }
     return pool;

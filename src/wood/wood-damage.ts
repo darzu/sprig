@@ -7,8 +7,7 @@ import { EM } from "../ecs/ecs.js";
 import { Entity } from "../ecs/em-entities.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { VERBOSE_LOG } from "../flags.js";
-import { quat } from "../matrix/gl-matrix.js";
-import { V4, V3 } from "../matrix/sprig-matrix.js";
+import { V4, V3, quat } from "../matrix/sprig-matrix.js";
 import { meshStats } from "../meshes/mesh.js";
 import { GravityDef } from "../motion/gravity.js";
 import { AngularVelocityDef, LinearVelocityDef } from "../motion/velocity.js";
@@ -385,7 +384,8 @@ EM.addEagerInit([WoodStateDef], [], [], () => {
                   const pos = getLineMid(V3.mk(), seg.midLine);
                   V3.tMat4(pos, w.world.transform, pos);
                   EM.set(splinter, PositionDef, pos);
-                  const rot = getSegmentRotation(seg, false);
+                  // const rot = getSegmentRotation(seg, false);
+                  const rot = quat.copy(quat.tmp(), seg.rotation);
                   quat.mul(rot, w.world.rotation, rot); // TODO(@darzu): !VERIFY! this works
                   EM.set(splinter, RotationDef, rot);
                   const spin = randNormalVec3(V3.mk());

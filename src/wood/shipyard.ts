@@ -51,7 +51,8 @@ import { getPathFrom2DQuadMesh } from "./util-wood.js";
 import { snapToPath } from "../utils/spline.js";
 import { snapXToPath } from "../utils/spline.js";
 import { createLine } from "../physics/broadphase.js";
-import { PId2 } from "../utils/util-no-import.js";
+import { PId2, PId4 } from "../utils/util-no-import.js";
+import { dbgPathWithGizmos } from "../debug/utils-gizmos.js";
 
 /*
 ship state
@@ -224,12 +225,14 @@ export function createWoodenBox(): WoodObj {
     name: "wall1",
     boards: [],
   };
-  const rot = quat.fromYawPitchRoll(PId2, 0, PId2);
+  const rot = quat.fromYawPitchRoll(PId4, 0, PId2);
   const boardWidth = 0.4;
   const boardDepth = 0.2;
   for (let i = 0; i < 10; i++) {
     const start = V(-20, -20, i);
     const end = V(+20, 20, i);
+    // const start = V(-20, -0, i);
+    // const end = V(+20, 0, i);
     const length = V3.dist(start, end);
     const segLen = 3.0;
     const numSeg = Math.ceil(length / segLen);
@@ -239,6 +242,9 @@ export function createWoodenBox(): WoodObj {
       pos,
       rot: quat.clone(rot),
     }));
+
+    dbgPathWithGizmos(path);
+
     const color = i === 5 ? ENDESGA16.lightBlue : ENDESGA16.lightBrown;
     wall1.boards.push(
       appendBoard(
@@ -897,6 +903,8 @@ export function appendBoard(
   const firstQuadIdx = mesh.quad.length;
   // const mesh = b.mesh;
 
+  // console.log(`board width:${board.width},depth:${board.depth}`);
+
   board.path.forEach((p, i) => {
     // tracking
     const isFirst = i === 0;
@@ -909,6 +917,13 @@ export function appendBoard(
     if (isFirst) addEndQuad(true);
     else addSideQuads();
     if (isLast) addEndQuad(false);
+
+    console.log(
+      `board full width: ${V3.dist(
+        mesh.pos[mesh.pos.length - 1],
+        mesh.pos[mesh.pos.length - 2]
+      ).toFixed(2)}`
+    );
 
     // create states
     if (!isFirst) {
@@ -944,14 +959,15 @@ export function appendBoard(
       const sState: SegState = {
         localAABB: segAABB,
         midLine: createLine(board.path[i - 1].pos, board.path[i].pos),
-        areaNorms: [
-          getQuadAreaNorm(mesh, quadSideIdxs[0]),
-          getQuadAreaNorm(mesh, quadSideIdxs[1]),
-          getQuadAreaNorm(mesh, quadSideIdxs[2]),
-          getQuadAreaNorm(mesh, quadSideIdxs[3]),
-        ],
-        width: board.width,
-        depth: board.depth,
+        rotation: board.path[i].rot,
+        // areaNorms: [
+        //   getQuadAreaNorm(mesh, quadSideIdxs[0]),
+        //   getQuadAreaNorm(mesh, quadSideIdxs[1]),
+        //   getQuadAreaNorm(mesh, quadSideIdxs[2]),
+        //   getQuadAreaNorm(mesh, quadSideIdxs[3]),
+        // ],
+        xWidth: board.width,
+        zDepth: board.depth,
         vertLastLoopIdxs,
         vertNextLoopIdxs,
         quadSideIdxs,
