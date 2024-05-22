@@ -337,3 +337,6 @@ Are we really engineers?
   https://www.hillelwayne.com/post/are-we-really-engineers/
   https://www.hillelwayne.com/post/we-are-not-special/
   https://www.hillelwayne.com/post/what-we-can-learn/
+
+Browser based, open source, CAD: https://mattferraro.dev/posts/cadmium
+  truck b-rep kernel?: https://ricos.gitlab.io/truck-tutorial/v0.1/bottle.html

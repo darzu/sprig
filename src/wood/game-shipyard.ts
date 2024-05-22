@@ -50,7 +50,12 @@ import { stdGridRender } from "../render/pipelines/std-grid.js";
 import { pointPipe, linePipe } from "../render/pipelines/std-line.js";
 import { createObj } from "../ecs/em-objects.js";
 import { GRID_MASK } from "../render/pipeline-masks.js";
-import { sketch, sketchAABB, sketchLine } from "../utils/sketch.js";
+import {
+  sketch,
+  sketchAABB,
+  sketchLine,
+  sketchLine2,
+} from "../utils/sketch.js";
 import { renderDots } from "../render/pipelines/std-dots.js";
 import { alphaRenderPipeline } from "../render/pipelines/xp-alpha.js";
 import { getLineEnd } from "../physics/broadphase.js";
@@ -190,6 +195,23 @@ export async function initShipyardGame() {
       if (!ps.length) return;
 
       const ghost = ps[0];
+
+      // dbg aiming
+      {
+        sketchLine2(
+          {
+            ray: {
+              org: ghost.world.position,
+              dir: quat.fwd(ghost.world.rotation),
+            },
+            len: 50,
+          },
+          {
+            key: `ghostAim`,
+            color: ENDESGA16.white,
+          }
+        );
+      }
 
       if (inputs.lclick) {
         // console.log(`fire!`);

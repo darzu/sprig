@@ -228,8 +228,8 @@ export function createWoodenBox(): WoodObj {
   const boardWidth = 0.4;
   const boardDepth = 0.2;
   for (let i = 0; i < 10; i++) {
-    const start = V(-20, 0, i);
-    const end = V(+20, 0, i);
+    const start = V(-20, -20, i);
+    const end = V(+20, 20, i);
     const length = V3.dist(start, end);
     const segLen = 3.0;
     const numSeg = Math.ceil(length / segLen);

@@ -21,6 +21,7 @@ import {
   getAABBFromPositions,
 } from "../physics/aabb.js";
 import { ENDESGA16 } from "../color/palettes.js";
+import { PI } from "../utils/util-no-import.js";
 
 // TODO(@darzu): BUG: sometimes ball colisions don't work
 // TODO(@darzu): BUG: sometimes splinters are misaligned
@@ -232,6 +233,7 @@ export function addSplinterEnd(
   _tempSplinterMesh.tri.length = 0;
 
   const rot = getSegmentRotation(seg, top);
+  quat.roll(rot, PI, rot);
   // TODO(@darzu): put these into a pool
   // TODO(@darzu): perf? probably don't need to normalize, just use same surface ID and provoking vert for all
   const cursor = mat4.fromRotationTranslation(rot, pos, mat4.create());
@@ -241,14 +243,17 @@ export function addSplinterEnd(
     b.zLen = D;
 
     b.setCursor(cursor);
+    // TODO(@darzu): OPTIMIZATION: can we remove this extra loop and just use the one from the segment? Maybe not b/c of
+    //    provoking vertices? But actually that should be fine b/c color and normal info should be the same
+    const splinLoopStart = b.mesh.pos.length;
     b.addLoopVerts();
     // TODO(@darzu): HACK. We're "snapping" the splinter loop and segment loops
     //    together via distance; we should be able to do this in a more analytic way
+    const segLoop = top ? seg.vertNextLoopIdxs : seg.vertLastLoopIdxs;
     const snapDistSqr = Math.pow(0.2 * 0.5, 2);
-    const loop = top ? seg.vertNextLoopIdxs : seg.vertLastLoopIdxs;
     for (let vi = b.mesh.pos.length - 4; vi < b.mesh.pos.length; vi++) {
       const p = b.mesh.pos[vi];
-      for (let vi2 of loop) {
+      for (let vi2 of segLoop) {
         const lp = wood.mesh.pos[vi2];
         if (V3.sqrDist(p, lp) < snapDistSqr) {
           // console.log("snap!");
@@ -257,6 +262,16 @@ export function addSplinterEnd(
         }
       }
     }
+
+    // TODO(@darzu): USE EXISTING LOOP!
+    // console.dir(segLoop);
+    // for (let i = 0; i < 4; i++) {
+    //   const splinVi = splinLoopStart + i;
+    //   const segVi = segLoop[i];
+    //   assert(splinVi < b.mesh.pos.length);
+    //   assert(segVi < wood.mesh.pos.length);
+    //   V3.copy(b.mesh.pos[splinVi], wood.mesh.pos[segVi]);
+    // }
     b.addEndQuad(true);
 
     b.setCursor(cursor);

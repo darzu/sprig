@@ -53,7 +53,7 @@ import {
   _vertsPerSplinter,
 } from "./wood.js";
 
-const DBG_WOOD_DMG = false;
+const DBG_WOOD_DMG = true;
 
 export let _dbgNumSplinterEnds = 0;
 
@@ -132,7 +132,7 @@ const raiseDmgWood = eventWizard(
 
 EM.addEagerInit([WoodStateDef], [], [], () => {
   EM.addSystem(
-    "woodDoCollisions",
+    "woodDetectCollisions",
     Phase.GAME_WORLD,
     [WoodStateDef, WoodHealthDef, WorldFrameDef, RenderableDef],
     [PhysicsResultsDef, RendererDef],
@@ -317,38 +317,19 @@ EM.addEagerInit([WoodStateDef], [], [], () => {
   );
 
   EM.addSystem(
-    "woodUpdateDamageAndSplinter",
+    "woodApplyDamageAndSplinter",
     Phase.GAME_WORLD,
     [WoodStateDef, WorldFrameDef, WoodHealthDef, RenderableDef],
     [RendererDef, SplinterPoolsDef],
     (es, res) => {
       const stdPool = res.renderer.renderer.getCyResource(meshPoolPtr)!;
 
-      // TODO(@darzu):
       for (let w of es) {
-        // TODO(@darzu): track start and end offsets for each
         let splinterIndUpdated: number[] = [];
         let segQuadIndUpdated: { min: number; max: number }[] = [];
 
         const meshHandle = w.renderable.meshHandle;
         const mesh = meshHandle.mesh!;
-
-        if (
-          VERBOSE_LOG &&
-          dbgOnce("homeWoodMesh") &&
-          mesh.dbgName?.includes("home")
-        ) {
-          // console.log(`mesh: ${meshStats(mesh)}`);
-          // console.log(`woodMesh: ${meshStats(w.woodState.mesh)}`);
-          // if (meshHandle.triNum !== mesh.tri.length) {
-          //   console.log("mesh.pos.length");
-          //   console.log(meshHandle.triNum);
-          //   console.log(mesh.tri.length);
-          // }
-          console.dir(meshHandle);
-          console.dir(mesh);
-          console.log(meshStats(mesh));
-        }
 
         w.woodState.groups.forEach((group, gIdx) => {
           group.boards.forEach((board, bIdx) => {
