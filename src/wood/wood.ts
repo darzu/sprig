@@ -1,6 +1,15 @@
 import { EM } from "../ecs/ecs.js";
 import { AllMeshSymbols, BLACK } from "../meshes/mesh-list.js";
-import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import {
+  V2,
+  V3,
+  V4,
+  quat,
+  mat4,
+  V,
+  orthonormalize,
+  mat3,
+} from "../matrix/sprig-matrix.js";
 import { createIdxPool } from "../utils/idx-pool.js";
 import { jitter } from "../utils/math.js";
 import { createLine, getLineEnd, Line } from "../physics/broadphase.js";
@@ -86,6 +95,10 @@ type VI = number; // vertex index
 type QI = number; // quad index
 // each board has an AABB, OBB,
 export interface SegState {
+  // ESSENTIAL
+  // midline or seg points
+
+  // OLD
   localAABB: AABB;
   midLine: Line;
   // TODO(@darzu): REMOVE. this doesn't seem worth it..
@@ -211,7 +224,7 @@ export function removeSplinterEnd(splinterIdx: number, wood: WoodState) {
 export function addSplinterEnd(
   seg: SegState,
   wood: WoodState,
-  top: boolean
+  yNegative: boolean
 ): number | undefined {
   // console.log("global:addSplinteredEnd");
   assert(wood.splinterState, "!wood.splinterState");
@@ -225,7 +238,7 @@ export function addSplinterEnd(
   const W = seg.xWidth;
   const D = seg.zDepth;
   const pos = V3.copy(V3.tmp(), seg.midLine.ray.org);
-  if (top) {
+  if (yNegative) {
     getLineEnd(pos, seg.midLine);
   }
 
@@ -235,7 +248,7 @@ export function addSplinterEnd(
 
   // const rot = getSegmentRotation(seg, top);
   const rot = quat.copy(quat.tmp(), seg.rotation); // TODO(@darzu): based on top, rot?
-  if (top) {
+  if (yNegative) {
     quat.yaw(rot, PI, rot);
     // quat.pitch(rot, PI, rot);
     // quat.roll(rot, PI, rot);
@@ -255,7 +268,7 @@ export function addSplinterEnd(
     b.addLoopVerts();
     // TODO(@darzu): HACK. We're "snapping" the splinter loop and segment loops
     //    together via distance; we should be able to do this in a more analytic way
-    const segLoop = top ? seg.vertNextLoopIdxs : seg.vertLastLoopIdxs;
+    const segLoop = yNegative ? seg.vertNextLoopIdxs : seg.vertLastLoopIdxs;
     const snapDistSqr = Math.pow(0.2 * 0.5, 2);
     // for (let vi = b.mesh.pos.length - 4; vi < b.mesh.pos.length; vi++) {
     //   const p = b.mesh.pos[vi];
@@ -273,7 +286,7 @@ export function addSplinterEnd(
     // console.dir(segLoop);
     for (let i = 0; i < 4; i++) {
       const splinVi = splinLoopStart + i;
-      const segVi = segLoop[top ? 3 - i : i];
+      const segVi = segLoop[yNegative ? 3 - i : i];
       assert(splinVi < b.mesh.pos.length);
       assert(segVi < wood.mesh.pos.length);
       V3.copy(b.mesh.pos[splinVi], wood.mesh.pos[segVi]);
@@ -366,12 +379,13 @@ export interface TimberBuilder {
   mesh: RawMesh;
   // TODO(@darzu): REFACTOR. convert to pos and rot and merge w/ appendBoard
   cursor: mat4;
-  addSplinteredEnd: (lastLoopEndVi: number, numJags: number) => void;
+  addSplinteredEnd: (loop: V4, dir: V3, numJags: number) => void;
   addLoopVerts: () => void;
   addSideQuads: () => void;
   addEndQuad: (facingDown: boolean) => void;
   setCursor: (newCursor: mat4) => void;
 }
+
 
 export function createTimberBuilder(mesh: RawMesh): TimberBuilder {
   // TODO(@darzu): Z_UP!! check this over
@@ -388,7 +402,7 @@ export function createTimberBuilder(mesh: RawMesh): TimberBuilder {
     zLen: 0.2, // "depth"
     mesh,
     cursor,
-    addSplinteredEnd,
+    addSplinteredEnd: addSplinteredEndInternal,
     addLoopVerts,
     addSideQuads,
     addEndQuad,
@@ -401,44 +415,65 @@ export function createTimberBuilder(mesh: RawMesh): TimberBuilder {
     mat4.copy(cursor, newCursor);
   }
 
-  function addSplinteredEnd(lastLoopEndVi: number, numJags: number) {
+  function addSplinteredEndInternal(
+    loop: V4,
+    yDir: V3,
+    numJags: number
+  ) {
+    const i_rat = loop[0]; // +x,-y,+z = Right,Aft,Top = rat
+    const i_lat = loop[3];
+    const i_rab = loop[1];
+    const i_lab = loop[2];
+
+    const v_rat = mesh.pos[i_rat];
+    const v_lat = mesh.pos[i_lat];
+    const v_rab = mesh.pos[i_rab];
+    const v_lab = mesh.pos[i_lab];
+
+    const loopX = V3.sub(v_rat, v_lat);
+    const loopZ = V3.sub(v_rat, v_rab);
+
+    const xLen = V3.len(loopX) / 2;
+    const zLen = V3.len(loopZ) / 2;
+
+    const xDir = loopX;
+    const zDir = loopZ;
+    orthonormalize(yDir, xDir, zDir); // since we're passing yx->z instead of xy->z we should expect Z to be backward
+    V3.neg(zDir, zDir);
+
+    const mat3.fromBasis(xDir, yDir, zDir);
+
+    //zx->y
+    //x: v1-v2
+    //z: v3-v2
+    // orthonormalize(
+    // trust x more than z
+
     // console.log("timberBuilder:addSplinteredEnd");
-    const vi = mesh.pos.length;
+    const i_0 = mesh.pos.length;
 
-    const v0 = V(0, 0, b.zLen);
-    const v1 = V(0, 0, -b.zLen);
-    V3.tMat4(v0, cursor, v0);
-    V3.tMat4(v1, cursor, v1);
-    mesh.pos.push(v0, v1);
+    // midpoints for jag's triangle fan
+    const v_tm = V(0, 0, zLen);
+    const v_bm = V(0, 0, -zLen);
+    V3.tMat4(v_tm, cursor, v_tm);
+    V3.tMat4(v_bm, cursor, v_bm);
+    mesh.pos.push(v_tm, v_bm);
 
-    // console.log(
-    //   `dist0: ${V3.dist(
-    //     mesh.pos[mesh.pos.length - 1],
-    //     mesh.pos[mesh.pos.length - 2]
-    //   ).toFixed(2)}`
-    // );
+    const i_tm = i_0 + 0;
+    const i_bm = i_0 + 1;
 
-    const v_tm = vi + 0;
-    const v_tbr = lastLoopEndVi + -4;
-    const v_tbl = lastLoopEndVi + -1;
-    const v_bbr = lastLoopEndVi + -3;
-    const v_bbl = lastLoopEndVi + -2;
-    // +D side
-    mesh.tri.push(V(v_tm, v_tbl, v_tbr));
-    // -D side
-    mesh.tri.push(V(v_tm + 1, v_bbr, v_bbl));
+    // middle triangles between loop and mid point
+    mesh.tri.push(V(i_tm, i_lat, i_rat));
+    mesh.tri.push(V(i_bm, i_rab, i_lab));
 
-    let v_tlast = v_tbl;
-    let v_blast = v_bbl;
+    let i_tlast = i_lat;
+    let i_blast = i_lab;
 
-    // console.log(`splinter width:${b.xLen},depth:${b.zLen}`);
-
-    // const numJags = 5;
-    const xStep = (b.xLen * 2) / numJags;
+    const xStep = (xLen * 2) / numJags;
     let lastY = 0;
-    let lastX = -b.xLen;
+    let lastX = -xLen;
     for (let i = 0; i <= numJags; i++) {
-      const x = i * xStep - b.xLen + jitter(0.05);
+      const x = i * xStep - xLen + jitter(0.05);
       let y = lastY;
       while (Math.abs(y - lastY) < 0.1)
         // TODO(@darzu): HACK to make sure it's not too even
@@ -455,44 +490,37 @@ export function createTimberBuilder(mesh: RawMesh): TimberBuilder {
         maxLoop--;
       }
       if (VERBOSE_LOG && cross_last_this[2] > 0)
-        console.warn(`splinter non-manifold!`);
+        console.warn(`splinter non-manifold!`); // TODO(@darzu): BUG! shouldn't ever be non-manifold
 
-      // +D side
-      const vtj = V(x, y, b.zLen);
-      V3.tMat4(vtj, cursor, vtj);
-      const vtji = mesh.pos.length;
-      mesh.pos.push(vtj);
-      mesh.tri.push(V(v_tm, vtji, v_tlast));
+      // top triangle in fan from last point (or loop lat) to new point
+      const v_at_j = V(x, y, zLen);
+      V3.tMat4(v_at_j, cursor, v_at_j);
+      const i_at_j = mesh.pos.length;
+      mesh.pos.push(v_at_j);
+      mesh.tri.push(V(i_tm, i_at_j, i_tlast));
 
-      // -D side
-      const vbj = V(x, y, -b.zLen);
-      V3.tMat4(vbj, cursor, vbj);
-      mesh.pos.push(vbj);
-      mesh.tri.push(V(v_tm + 1, v_blast, vtji + 1));
+      // bottom triangle in fan
+      const v_ab_j = V(x, y, -zLen);
+      V3.tMat4(v_ab_j, cursor, v_ab_j);
+      const i_ab_j = mesh.pos.length;
+      mesh.pos.push(v_ab_j);
+      mesh.tri.push(V(i_bm, i_blast, i_ab_j));
 
-      // console.log(
-      //   `dist: ${V3.dist(
-      //     mesh.pos[mesh.pos.length - 1],
-      //     mesh.pos[mesh.pos.length - 2]
-      //   ).toFixed(2)}`
-      // );
+      // side quad
+      mesh.quad.push(V(i_blast, i_tlast, i_at_j, i_ab_j));
 
-      // D to -D quad
-      mesh.quad.push(V(v_blast, v_tlast, vtji, vtji + 1));
-
-      v_tlast = vtji;
-      v_blast = vtji + 1;
+      i_tlast = i_at_j;
+      i_blast = i_ab_j;
 
       lastX = x;
       lastY = y;
     }
-    // +D side
-    mesh.tri.push(V(v_tm, v_tbr, v_tlast));
-    // -D side
-    mesh.tri.push(V(v_tm + 1, v_blast, v_bbr));
+    // final triangle in fan
+    mesh.tri.push(V(i_tm, i_rat, i_tlast));
+    mesh.tri.push(V(i_bm, i_blast, i_rab));
 
-    // D to -D quad
-    mesh.quad.push(V(v_blast, v_tlast, v_tbr, v_bbr));
+    // final quad
+    mesh.quad.push(V(i_blast, i_tlast, i_rat, i_rab));
   }
 
   // NOTE: for provoking vertices,

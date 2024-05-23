@@ -611,27 +611,30 @@ export function transformLine(out: Line, t: mat4) {
   return out;
 }
 
-// TODO(@darzu): PERF! Needs optimization
+const __t2 = V3.mk();
 export function raySphereIntersections(
   ray: Ray,
-  sphere: Sphere
+  sphere: Sphere,
+  out?: V2
 ): V2 | undefined {
   // https://iquilezles.org/articles/intersectors/
-  const a = V3.sub(ray.org, sphere.org);
+  const a = V3.sub(ray.org, sphere.org, __t2);
   const b = V3.dot(a, ray.dir);
   const c = V3.dot(a, a) - sphere.rad * sphere.rad;
   const h = b * b - c;
   if (h < 0.0) return undefined; // no intersection
   const h2 = Math.sqrt(h);
-  return V(-b - h2, -b + h2);
+  out = out ?? V2.tmp();
+  return V2.set(-b - h2, -b + h2, out);
 }
 
 // TODO(@darzu): MOVE to narrowphase
 export function lineSphereIntersections(
   line: Line,
-  sphere: Sphere
+  sphere: Sphere,
+  out?: V2
 ): V2 | undefined {
-  const hits = raySphereIntersections(line.ray, sphere);
+  const hits = raySphereIntersections(line.ray, sphere, out);
   // return hits; // TODO(@darzu): HACK
   if (!hits) return undefined;
   // TODO(@darzu): what about negative numbers?

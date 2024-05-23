@@ -1545,6 +1545,19 @@ export module mat3 {
     out[8] = m22;
     return out;
   }
+  export function fromBasis(xDir: V3.InputT, yDir: V3.InputT, zDir: V3.InputT) {
+    return fromValues(
+      xDir[0],
+      xDir[1],
+      xDir[2],
+      yDir[0],
+      yDir[1],
+      yDir[2],
+      zDir[0],
+      zDir[1],
+      zDir[2]
+    );
+  }
 
   export function clone(v: InputT): T {
     return GL.clone(v) as T;
