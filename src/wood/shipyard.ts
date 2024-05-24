@@ -6,6 +6,9 @@ import {
   mat3,
   V,
   tmpStack,
+  orthonormalize,
+  TV1,
+  TV2,
 } from "../matrix/sprig-matrix.js";
 import { Mesh, RawMesh, transformMesh, validateMesh } from "../meshes/mesh.js";
 import { assert } from "../utils/util.js";
@@ -956,11 +959,23 @@ export function appendBoard(
       const quadBackIdx = isFirstSeg ? firstQIdx - 1 : undefined;
       const quadFrontIdx = isLast ? firstQIdx + 4 : undefined;
 
+      const midLine = createLine(board.path[i - 1].pos, board.path[i].pos);
+
+      const upAft = quat.up(board.path[i - 1].rot, TV1);
+      const upFwd = quat.up(board.path[i].rot, TV2);
+      const up = V3.avg(upAft, upFwd, TV1);
+
+      const midRotation = quat.fromForwardAndUpish(
+        midLine.ray.dir,
+        up,
+        quat.mk()
+      );
+
       const sState: SegState = {
         localAABB: segAABB,
-        midLine: createLine(board.path[i - 1].pos, board.path[i].pos),
+        midLine,
         // TODO(@darzu): IMPL mid board rotation, aligned with the segment
-        midRotation: board.path[i].rot,
+        midRotation,
         // areaNorms: [
         //   getQuadAreaNorm(mesh, quadSideIdxs[0]),
         //   getQuadAreaNorm(mesh, quadSideIdxs[1]),
