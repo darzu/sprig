@@ -959,7 +959,8 @@ export function appendBoard(
       const sState: SegState = {
         localAABB: segAABB,
         midLine: createLine(board.path[i - 1].pos, board.path[i].pos),
-        rotation: board.path[i].rot,
+        // TODO(@darzu): IMPL mid board rotation, aligned with the segment
+        midRotation: board.path[i].rot,
         // areaNorms: [
         //   getQuadAreaNorm(mesh, quadSideIdxs[0]),
         //   getQuadAreaNorm(mesh, quadSideIdxs[1]),

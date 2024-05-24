@@ -5,7 +5,7 @@ import { EntityW } from "../ecs/em-entities.js";
 import { EM } from "../ecs/ecs.js";
 import { AllMeshesDef, BLACK } from "../meshes/mesh-list.js";
 import { GravityDef } from "../motion/gravity.js";
-import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
+import { V2, V3, V4, quat, mat4, V, tV } from "../matrix/sprig-matrix.js";
 import { jitter, randRadian } from "../utils/math.js";
 import { getLineMid } from "../physics/broadphase.js";
 import { LinearVelocityDef, AngularVelocityDef } from "../motion/velocity.js";
@@ -153,12 +153,20 @@ export const mkTimberSplinterFree = (
   const loopBotEndIdx = b.mesh.pos.length;
   mat4.translate(b.cursor, [0, +H, 0], b.cursor);
   mat4.scale(b.cursor, [(1 / Wbot) * Wtop, 1, 1], b.cursor);
+  const splinLoopStart = b.mesh.pos.length;
+  const splinLoop = tV(
+    splinLoopStart + 0,
+    splinLoopStart + 1,
+    splinLoopStart + 2,
+    splinLoopStart + 3
+  );
   b.addLoopVerts();
   const loopTopEndIdx = b.mesh.pos.length;
   b.addSideQuads();
 
   // top splinters
-  b.addSplinteredEnd(loopTopEndIdx, topJags);
+  // TODO(@darzu): IMPL AFTWARD
+  b.addSplinteredEnd(splinLoop, false, topJags);
 
   // mat4.translate(b.cursor, b.cursor, [0, -0.2, 0]);
   {
@@ -168,7 +176,7 @@ export const mkTimberSplinterFree = (
 
     const tIdx = b.mesh.tri.length;
     const qIdx = b.mesh.quad.length;
-    b.addSplinteredEnd(loopBotEndIdx, botJags);
+    b.addSplinteredEnd(splinLoop, false, botJags);
     for (let ti = tIdx; ti < b.mesh.tri.length; ti++)
       vec3Reverse(b.mesh.tri[ti]);
     for (let ti = qIdx; ti < b.mesh.quad.length; ti++)

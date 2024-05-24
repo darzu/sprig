@@ -385,7 +385,7 @@ EM.addEagerInit([WoodStateDef], [], [], () => {
                   V3.tMat4(pos, w.world.transform, pos);
                   EM.set(splinter, PositionDef, pos);
                   // const rot = getSegmentRotation(seg, false);
-                  const rot = quat.copy(quat.tmp(), seg.rotation);
+                  const rot = quat.copy(quat.tmp(), seg.midRotation);
                   quat.mul(rot, w.world.rotation, rot); // TODO(@darzu): !VERIFY! this works
                   EM.set(splinter, RotationDef, rot);
                   const spin = randNormalVec3(V3.mk());

@@ -9,6 +9,7 @@ import {
   V,
   orthonormalize,
   mat3,
+  tV,
 } from "../matrix/sprig-matrix.js";
 import { createIdxPool } from "../utils/idx-pool.js";
 import { jitter } from "../utils/math.js";
@@ -103,7 +104,7 @@ export interface SegState {
   midLine: Line;
   // TODO(@darzu): REMOVE. this doesn't seem worth it..
   // areaNorms: V3[]; // TODO(@darzu): fixed size
-  rotation: quat;
+  midRotation: quat; // TODO(@darzu): FIX HOW THIS IS CALC
   xWidth: number;
   zDepth: number;
   // TODO(@darzu): establish convention e.g. top-left, top-right, etc.
@@ -224,7 +225,7 @@ export function removeSplinterEnd(splinterIdx: number, wood: WoodState) {
 export function addSplinterEnd(
   seg: SegState,
   wood: WoodState,
-  yNegative: boolean
+  aftward: boolean
 ): number | undefined {
   // console.log("global:addSplinteredEnd");
   assert(wood.splinterState, "!wood.splinterState");
@@ -238,7 +239,8 @@ export function addSplinterEnd(
   const W = seg.xWidth;
   const D = seg.zDepth;
   const pos = V3.copy(V3.tmp(), seg.midLine.ray.org);
-  if (yNegative) {
+  // TODO(@darzu): IMPL AFTWARD
+  if (aftward) {
     getLineEnd(pos, seg.midLine);
   }
 
@@ -246,13 +248,43 @@ export function addSplinterEnd(
   _tempSplinterMesh.quad.length = 0;
   _tempSplinterMesh.tri.length = 0;
 
+  // const i_rat = loop[0]; // +x,-y,+z = Right,Aft,Top = rat
+  // const i_lat = loop[3];
+  // const i_rab = loop[1];
+  // const i_lab = loop[2];
+
+  // const v_rat = mesh.pos[i_rat];
+  // const v_lat = mesh.pos[i_lat];
+  // const v_rab = mesh.pos[i_rab];
+  // const v_lab = mesh.pos[i_lab];
+
+  // const loopX = V3.sub(v_rat, v_lat);
+  // const loopZ = V3.sub(v_rat, v_rab);
+
+  // const xLen = V3.len(loopX) / 2;
+  // const zLen = V3.len(loopZ) / 2;
+
+  // const xDir = loopX;
+  // const zDir = loopZ;
+  // orthonormalize(yDir, xDir, zDir); // since we're passing yx->z instead of xy->z we should expect Z to be backward
+  // V3.neg(zDir, zDir);
+
+  // const mat3.fromBasis(xDir, yDir, zDir);
+
+  // //zx->y
+  // //x: v1-v2
+  // //z: v3-v2
+  // // orthonormalize(
+  // // trust x more than z
+
   // const rot = getSegmentRotation(seg, top);
-  const rot = quat.copy(quat.tmp(), seg.rotation); // TODO(@darzu): based on top, rot?
-  if (yNegative) {
-    quat.yaw(rot, PI, rot);
-    // quat.pitch(rot, PI, rot);
-    // quat.roll(rot, PI, rot);
-  }
+  const rot = quat.copy(quat.tmp(), seg.midRotation); // TODO(@darzu): based on top, rot?
+  // TODO(@darzu): IMPL AFTWARD
+  // if (yNegative) {
+  //   quat.yaw(rot, PI, rot);
+  //   // quat.pitch(rot, PI, rot);
+  //   // quat.roll(rot, PI, rot);
+  // }
   // TODO(@darzu): put these into a pool
   // TODO(@darzu): perf? probably don't need to normalize, just use same surface ID and provoking vert for all
   const cursor = mat4.fromRotationTranslation(rot, pos, mat4.create());
@@ -268,7 +300,7 @@ export function addSplinterEnd(
     b.addLoopVerts();
     // TODO(@darzu): HACK. We're "snapping" the splinter loop and segment loops
     //    together via distance; we should be able to do this in a more analytic way
-    const segLoop = yNegative ? seg.vertNextLoopIdxs : seg.vertLastLoopIdxs;
+    const segLoop = aftward ? seg.vertNextLoopIdxs : seg.vertLastLoopIdxs;
     const snapDistSqr = Math.pow(0.2 * 0.5, 2);
     // for (let vi = b.mesh.pos.length - 4; vi < b.mesh.pos.length; vi++) {
     //   const p = b.mesh.pos[vi];
@@ -284,18 +316,25 @@ export function addSplinterEnd(
 
     // TODO(@darzu): USE EXISTING LOOP!
     // console.dir(segLoop);
+    const splinLoop = tV(
+      splinLoopStart + 0,
+      splinLoopStart + 1,
+      splinLoopStart + 2,
+      splinLoopStart + 3
+    );
+
     for (let i = 0; i < 4; i++) {
-      const splinVi = splinLoopStart + i;
-      const segVi = segLoop[yNegative ? 3 - i : i];
+      const splinVi = splinLoop[i];
+      const segVi = segLoop[aftward ? 3 - i : i];
       assert(splinVi < b.mesh.pos.length);
       assert(segVi < wood.mesh.pos.length);
       V3.copy(b.mesh.pos[splinVi], wood.mesh.pos[segVi]);
     }
-    b.addEndQuad(true);
+    b.addEndQuad(true); // TODO(@darzu): IMPL AFTWARD
 
     b.setCursor(cursor);
     mat4.translate(b.cursor, [0, 0.1, 0], b.cursor);
-    b.addSplinteredEnd(b.mesh.pos.length, 5);
+    b.addSplinteredEnd(splinLoop, aftward, 5);
 
     // TODO(@darzu): triangle vs quad coloring doesn't work
     // b.mesh.quad.forEach((_) => b.mesh.colors.push(vec3.clone(BLACK)));
@@ -379,13 +418,12 @@ export interface TimberBuilder {
   mesh: RawMesh;
   // TODO(@darzu): REFACTOR. convert to pos and rot and merge w/ appendBoard
   cursor: mat4;
-  addSplinteredEnd: (loop: V4, dir: V3, numJags: number) => void;
+  addSplinteredEnd: (loop: V4, aftward: boolean, numJags: number) => void;
   addLoopVerts: () => void;
   addSideQuads: () => void;
   addEndQuad: (facingDown: boolean) => void;
   setCursor: (newCursor: mat4) => void;
 }
-
 
 export function createTimberBuilder(mesh: RawMesh): TimberBuilder {
   // TODO(@darzu): Z_UP!! check this over
@@ -416,45 +454,24 @@ export function createTimberBuilder(mesh: RawMesh): TimberBuilder {
   }
 
   function addSplinteredEndInternal(
-    loop: V4,
-    yDir: V3,
+    loop: V4.InputT,
+    aftward: boolean,
     numJags: number
   ) {
-    const i_rat = loop[0]; // +x,-y,+z = Right,Aft,Top = rat
+    // TODO(@darzu): IMPLEMENT aftward
+
+    // NOTE: +x,-y,+z = Right,Aft,Top = rat
+    const i_rat = loop[0];
     const i_lat = loop[3];
     const i_rab = loop[1];
     const i_lab = loop[2];
-
-    const v_rat = mesh.pos[i_rat];
-    const v_lat = mesh.pos[i_lat];
-    const v_rab = mesh.pos[i_rab];
-    const v_lab = mesh.pos[i_lab];
-
-    const loopX = V3.sub(v_rat, v_lat);
-    const loopZ = V3.sub(v_rat, v_rab);
-
-    const xLen = V3.len(loopX) / 2;
-    const zLen = V3.len(loopZ) / 2;
-
-    const xDir = loopX;
-    const zDir = loopZ;
-    orthonormalize(yDir, xDir, zDir); // since we're passing yx->z instead of xy->z we should expect Z to be backward
-    V3.neg(zDir, zDir);
-
-    const mat3.fromBasis(xDir, yDir, zDir);
-
-    //zx->y
-    //x: v1-v2
-    //z: v3-v2
-    // orthonormalize(
-    // trust x more than z
 
     // console.log("timberBuilder:addSplinteredEnd");
     const i_0 = mesh.pos.length;
 
     // midpoints for jag's triangle fan
-    const v_tm = V(0, 0, zLen);
-    const v_bm = V(0, 0, -zLen);
+    const v_tm = V(0, 0, b.zLen);
+    const v_bm = V(0, 0, -b.zLen);
     V3.tMat4(v_tm, cursor, v_tm);
     V3.tMat4(v_bm, cursor, v_bm);
     mesh.pos.push(v_tm, v_bm);
@@ -469,11 +486,11 @@ export function createTimberBuilder(mesh: RawMesh): TimberBuilder {
     let i_tlast = i_lat;
     let i_blast = i_lab;
 
-    const xStep = (xLen * 2) / numJags;
+    const xStep = (b.xLen * 2) / numJags;
     let lastY = 0;
-    let lastX = -xLen;
+    let lastX = -b.xLen;
     for (let i = 0; i <= numJags; i++) {
-      const x = i * xStep - xLen + jitter(0.05);
+      const x = i * xStep - b.xLen + jitter(0.05);
       let y = lastY;
       while (Math.abs(y - lastY) < 0.1)
         // TODO(@darzu): HACK to make sure it's not too even
@@ -493,14 +510,14 @@ export function createTimberBuilder(mesh: RawMesh): TimberBuilder {
         console.warn(`splinter non-manifold!`); // TODO(@darzu): BUG! shouldn't ever be non-manifold
 
       // top triangle in fan from last point (or loop lat) to new point
-      const v_at_j = V(x, y, zLen);
+      const v_at_j = V(x, y, b.zLen);
       V3.tMat4(v_at_j, cursor, v_at_j);
       const i_at_j = mesh.pos.length;
       mesh.pos.push(v_at_j);
       mesh.tri.push(V(i_tm, i_at_j, i_tlast));
 
       // bottom triangle in fan
-      const v_ab_j = V(x, y, -zLen);
+      const v_ab_j = V(x, y, -b.zLen);
       V3.tMat4(v_ab_j, cursor, v_ab_j);
       const i_ab_j = mesh.pos.length;
       mesh.pos.push(v_ab_j);
@@ -792,7 +809,7 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
             localAABB: aabb,
             midLine: mid,
             // areaNorms,
-            rotation,
+            midRotation: rotation,
             xWidth: width,
             zDepth: depth,
             vertLastLoopIdxs: lastLoop,
@@ -821,7 +838,7 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
           localAABB: aabb,
           midLine: mid,
           // areaNorms,
-          rotation,
+          midRotation: rotation,
           xWidth: width,
           zDepth: depth,
           vertLastLoopIdxs: lastLoop,

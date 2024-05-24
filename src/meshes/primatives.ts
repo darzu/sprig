@@ -19,7 +19,7 @@ import {
   transformMesh,
   unshareProvokingVertices,
 } from "./mesh.js";
-import { mat3, mat4, quat, V, V2, V3, V4 } from "../matrix/sprig-matrix.js";
+import { mat3, mat4, quat, tV, V, V2, V3, V4 } from "../matrix/sprig-matrix.js";
 import { assert, range } from "../utils/util.js";
 import { uintToVec3unorm, vec3Dbg } from "../utils/utils-3d.js";
 import { drawBall } from "../utils/utils-game.js";
@@ -617,13 +617,20 @@ export function mkTimberSplinterEnd(loopCursor?: mat4, splintersCursor?: mat4) {
   // b.addLoopVerts();
   // mat4.translate(b.cursor, b.cursor, [0, 2, 0]);
   b.setCursor(loopCursor);
+  const splinLoopStart = b.mesh.pos.length;
+  const splinLoop = tV(
+    splinLoopStart + 0,
+    splinLoopStart + 1,
+    splinLoopStart + 2,
+    splinLoopStart + 3
+  );
   b.addLoopVerts();
   b.addEndQuad(true);
   // b.addSideQuads();
 
   b.setCursor(splintersCursor);
   mat4.translate(b.cursor, [0, 0.1, 0], b.cursor);
-  b.addSplinteredEnd(b.mesh.pos.length, 5);
+  b.addSplinteredEnd(splinLoop, false, 5);
 
   // b.addEndQuad(false);
 

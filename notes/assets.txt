@@ -313,3 +313,9 @@ Engineering and Craftsmanship:
 
 Pontification on generative art
   https://www.amygoodchild.com/blog/what-is-generative-art
+
+The all-around "best" image format for web: webp
+  https://developers.google.com/speed/webp/
+  recommended here:
+    https://developer.chrome.com/docs/lighthouse/performance/uses-webp-images/?utm_source=lighthouse&utm_medium=lr
+  unlike AVIF, it's supported by Safari
