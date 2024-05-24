@@ -109,8 +109,8 @@ export interface SegState {
   zDepth: number;
   // TODO(@darzu): establish convention e.g. top-left, top-right, etc.
   // TODO(@darzu): RENAME! loop1, loop2
-  vertLastLoopIdxs: V4; // [VI, VI, VI, VI];
-  vertNextLoopIdxs: V4; // [VI, VI, VI, VI];
+  aftLoop: V4; // [VI, VI, VI, VI];
+  fwdLoop: V4; // [VI, VI, VI, VI];
   // TODO(@darzu): establish convention e.g. top, left, right, bottom
   quadSideIdxs: V4; // [QI, QI, QI, QI];
   quadBackIdx?: QI;
@@ -300,7 +300,7 @@ export function addSplinterEnd(
     b.addLoopVerts();
     // TODO(@darzu): HACK. We're "snapping" the splinter loop and segment loops
     //    together via distance; we should be able to do this in a more analytic way
-    const segLoop = aftward ? seg.vertNextLoopIdxs : seg.vertLastLoopIdxs;
+    const segLoop = aftward ? seg.fwdLoop : seg.aftLoop;
     const snapDistSqr = Math.pow(0.2 * 0.5, 2);
     // for (let vi = b.mesh.pos.length - 4; vi < b.mesh.pos.length; vi++) {
     //   const p = b.mesh.pos[vi];
@@ -812,8 +812,8 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
             midRotation: rotation,
             xWidth: width,
             zDepth: depth,
-            vertLastLoopIdxs: lastLoop,
-            vertNextLoopIdxs: nextLoop,
+            aftLoop: lastLoop,
+            fwdLoop: nextLoop,
             quadSideIdxs: sideQuads,
             quadBackIdx: isFirstLoop ? endQuad : undefined,
             quadFrontIdx: !isFirstLoop ? endQuad : undefined,
@@ -841,8 +841,8 @@ export function getBoardsFromMesh(m: RawMesh): WoodState {
           midRotation: rotation,
           xWidth: width,
           zDepth: depth,
-          vertLastLoopIdxs: lastLoop,
-          vertNextLoopIdxs: nextLoop,
+          aftLoop: lastLoop,
+          fwdLoop: nextLoop,
           quadSideIdxs: V4.clone(segQis as [QI, QI, QI, QI]),
         };
       }
@@ -909,26 +909,15 @@ export function resetWoodState(w: WoodState) {
         // TODO(@darzu): extract for repair
         // TODO(@darzu): need enough info to reconstruct the mesh!
         if (s.quadBackIdx) {
-          setEndQuadIdxs(
-            s.vertLastLoopIdxs[0],
-            w.mesh.quad[s.quadBackIdx],
-            true
-          );
+          setEndQuadIdxs(s.aftLoop[0], w.mesh.quad[s.quadBackIdx], true);
         }
         if (s.quadFrontIdx) {
-          setEndQuadIdxs(
-            s.vertNextLoopIdxs[0],
-            w.mesh.quad[s.quadFrontIdx],
-            false
-          );
+          setEndQuadIdxs(s.fwdLoop[0], w.mesh.quad[s.quadFrontIdx], false);
         }
-        assertDbg(
-          s.vertLastLoopIdxs[0] < s.vertNextLoopIdxs[0],
-          `Loops out of order`
-        );
+        assertDbg(s.aftLoop[0] < s.fwdLoop[0], `Loops out of order`);
         setSideQuadIdxs(
-          s.vertLastLoopIdxs[0],
-          s.vertNextLoopIdxs[0],
+          s.aftLoop[0],
+          s.fwdLoop[0],
           w.mesh.quad[s.quadSideIdxs[0]],
           w.mesh.quad[s.quadSideIdxs[1]],
           w.mesh.quad[s.quadSideIdxs[2]],
@@ -1011,7 +1000,7 @@ export function unshareProvokingForWood(m: RawMesh, woodState: WoodState) {
       for (let seg of b.segments) {
         for (let qi of seg.quadSideIdxs) {
           const done = unshareProvokingForBoardQuad(m.quad[qi], qi, [
-            ...seg.vertLastLoopIdxs,
+            ...seg.aftLoop,
           ]);
           // if (done) console.log(`side: ${m.quad[qi]}`);
           if (!done) {

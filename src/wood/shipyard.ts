@@ -933,20 +933,10 @@ export function appendBoard(
       // NOTE: must match setSideQuadIdxs
       const loop2Idx = mesh.pos.length - 4;
       const loop1Idx = mesh.pos.length - 4 - 4;
-      const vertNextLoopIdxs = V(
-        loop2Idx + 0,
-        loop2Idx + 1,
-        loop2Idx + 2,
-        loop2Idx + 3
-      );
-      const vertLastLoopIdxs = V(
-        loop1Idx + 0,
-        loop1Idx + 1,
-        loop1Idx + 2,
-        loop1Idx + 3
-      );
+      const fwdLoop = V(loop2Idx + 0, loop2Idx + 1, loop2Idx + 2, loop2Idx + 3);
+      const aftLoop = V(loop1Idx + 0, loop1Idx + 1, loop1Idx + 2, loop1Idx + 3);
       const segAABB = createAABB();
-      for (let i = vertLastLoopIdxs[0]; i <= vertNextLoopIdxs[3]; i++)
+      for (let i = aftLoop[0]; i <= fwdLoop[3]; i++)
         updateAABBWithPoint(segAABB, mesh.pos[i]);
       mergeAABBs(bState.localAABB, bState.localAABB, segAABB);
       const firstSideQIdx = firstQIdx;
@@ -984,8 +974,8 @@ export function appendBoard(
         // ],
         xWidth: board.width,
         zDepth: board.depth,
-        vertLastLoopIdxs,
-        vertNextLoopIdxs,
+        aftLoop,
+        fwdLoop,
         quadSideIdxs,
         quadFrontIdx,
         quadBackIdx,
