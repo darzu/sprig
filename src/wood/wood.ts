@@ -222,7 +222,7 @@ export function removeSplinterEnd(splinterIdx: number, wood: WoodState) {
   }
 }
 
-export function addSplinterEnd(
+export function addSplinterEndToSegment(
   seg: SegState,
   wood: WoodState,
   aftward: boolean
@@ -238,83 +238,38 @@ export function addSplinterEnd(
 
   const W = seg.xWidth;
   const D = seg.zDepth;
-  const pos = V3.copy(V3.tmp(), seg.midLine.ray.org);
-  // TODO(@darzu): IMPL AFTWARD
+  const splinterPos = V3.copy(V3.tmp(), seg.midLine.ray.org);
   if (aftward) {
-    getLineEnd(pos, seg.midLine);
+    getLineEnd(splinterPos, seg.midLine);
   }
 
   _tempSplinterMesh.pos.length = 0;
   _tempSplinterMesh.quad.length = 0;
   _tempSplinterMesh.tri.length = 0;
 
-  // const i_rat = loop[0]; // +x,-y,+z = Right,Aft,Top = rat
-  // const i_lat = loop[3];
-  // const i_rab = loop[1];
-  // const i_lab = loop[2];
-
-  // const v_rat = mesh.pos[i_rat];
-  // const v_lat = mesh.pos[i_lat];
-  // const v_rab = mesh.pos[i_rab];
-  // const v_lab = mesh.pos[i_lab];
-
-  // const loopX = V3.sub(v_rat, v_lat);
-  // const loopZ = V3.sub(v_rat, v_rab);
-
-  // const xLen = V3.len(loopX) / 2;
-  // const zLen = V3.len(loopZ) / 2;
-
-  // const xDir = loopX;
-  // const zDir = loopZ;
-  // orthonormalize(yDir, xDir, zDir); // since we're passing yx->z instead of xy->z we should expect Z to be backward
-  // V3.neg(zDir, zDir);
-
-  // const mat3.fromBasis(xDir, yDir, zDir);
-
-  // //zx->y
-  // //x: v1-v2
-  // //z: v3-v2
-  // // orthonormalize(
-  // // trust x more than z
-
-  // const rot = getSegmentRotation(seg, top);
-  const rot = quat.copy(quat.tmp(), seg.midRotation); // TODO(@darzu): based on top, rot?
+  const splinterRot = quat.copy(quat.tmp(), seg.midRotation);
   if (aftward) {
-    quat.yaw(rot, PI, rot);
-    // quat.pitch(rot, PI, rot);
-    // quat.roll(rot, PI, rot);
+    quat.yaw(splinterRot, PI, splinterRot);
   }
   // TODO(@darzu): put these into a pool
   // TODO(@darzu): perf? probably don't need to normalize, just use same surface ID and provoking vert for all
-  const cursor = mat4.fromRotationTranslation(rot, pos, mat4.create());
+  const cursor = mat4.fromRotationTranslation(
+    splinterRot,
+    splinterPos,
+    mat4.create()
+  );
   {
     const b = createTimberBuilder(_tempSplinterMesh);
     b.xLen = W;
     b.zLen = D;
 
     b.setCursor(cursor);
-    // TODO(@darzu): OPTIMIZATION: can we remove this extra loop and just use the one from the segment? Maybe not b/c of
-    //    provoking vertices? But actually that should be fine b/c color and normal info should be the same
+    // TODO(@darzu): OPTIMIZATION: can we remove this extra loop and just use the one from the segment? Maybe not b/c
+    //    of provoking vertices? But actually that should be fine b/c color and normal info should be the same
     const splinLoopStart = b.mesh.pos.length;
     b.addLoopVerts();
-    // TODO(@darzu): HACK. We're "snapping" the splinter loop and segment loops
-    //    together via distance; we should be able to do this in a more analytic way
     const segLoop = aftward ? seg.fwdLoop : seg.aftLoop;
-    const snapDistSqr = Math.pow(0.2 * 0.5, 2);
-    // for (let vi = b.mesh.pos.length - 4; vi < b.mesh.pos.length; vi++) {
-    //   const p = b.mesh.pos[vi];
-    //   for (let vi2 of segLoop) {
-    //     const lp = wood.mesh.pos[vi2];
-    //     if (V3.sqrDist(p, lp) < snapDistSqr) {
-    //       // console.log("snap!");
-    //       V3.copy(p, lp);
-    //       break;
-    //     }
-    //   }
-    // }
 
-    // TODO(@darzu): USE EXISTING LOOP!
-    // console.dir(segLoop);
     const splinLoop = tV(
       splinLoopStart + 0,
       splinLoopStart + 1,
@@ -322,6 +277,8 @@ export function addSplinterEnd(
       splinLoopStart + 3
     );
 
+    // snap together the vertices of the splinter's loop and the segment's loop
+    //  (might be different b/c mid-segment rotation is different than end point (loop) rotations)
     for (let i = 0; i < 4; i++) {
       const splinVi = splinLoop[i];
       const segVi = segLoop[aftward ? 3 - i : i];
@@ -329,11 +286,11 @@ export function addSplinterEnd(
       assert(segVi < wood.mesh.pos.length);
       V3.copy(b.mesh.pos[splinVi], wood.mesh.pos[segVi]);
     }
-    b.addEndQuad(true); // TODO(@darzu): IMPL AFTWARD
+    b.addEndQuad(true); // TODO(@darzu): Is this quad needed?
 
     b.setCursor(cursor);
     mat4.translate(b.cursor, [0, 0.1, 0], b.cursor);
-    b.addSplinteredEnd(splinLoop, aftward, 5);
+    b.addSplinteredEnd(splinLoop, 5);
 
     // TODO(@darzu): triangle vs quad coloring doesn't work
     // b.mesh.quad.forEach((_) => b.mesh.colors.push(vec3.clone(BLACK)));
@@ -417,7 +374,7 @@ export interface TimberBuilder {
   mesh: RawMesh;
   // TODO(@darzu): REFACTOR. convert to pos and rot and merge w/ appendBoard
   cursor: mat4;
-  addSplinteredEnd: (loop: V4, aftward: boolean, numJags: number) => void;
+  addSplinteredEnd: (loop: V4, numJags: number) => void;
   addLoopVerts: () => void;
   addSideQuads: () => void;
   addEndQuad: (facingDown: boolean) => void;
@@ -439,7 +396,7 @@ export function createTimberBuilder(mesh: RawMesh): TimberBuilder {
     zLen: 0.2, // "depth"
     mesh,
     cursor,
-    addSplinteredEnd: addSplinteredEndInternal,
+    addSplinteredEnd,
     addLoopVerts,
     addSideQuads,
     addEndQuad,
@@ -452,13 +409,7 @@ export function createTimberBuilder(mesh: RawMesh): TimberBuilder {
     mat4.copy(cursor, newCursor);
   }
 
-  function addSplinteredEndInternal(
-    loop: V4.InputT,
-    aftward: boolean,
-    numJags: number
-  ) {
-    // TODO(@darzu): IMPLEMENT aftward
-
+  function addSplinteredEnd(loop: V4.InputT, numJags: number) {
     // NOTE: +x,-y,+z = Right,Aft,Top = rat
     const i_rat = loop[0];
     const i_lat = loop[3];

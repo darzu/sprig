@@ -630,7 +630,7 @@ export function mkTimberSplinterEnd(loopCursor?: mat4, splintersCursor?: mat4) {
 
   b.setCursor(splintersCursor);
   mat4.translate(b.cursor, [0, 0.1, 0], b.cursor);
-  b.addSplinteredEnd(splinLoop, false, 5);
+  b.addSplinteredEnd(splinLoop, 5);
 
   // b.addEndQuad(false);
 

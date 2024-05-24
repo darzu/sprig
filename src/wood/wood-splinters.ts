@@ -165,8 +165,7 @@ export const mkTimberSplinterFree = (
   b.addSideQuads();
 
   // top splinters
-  // TODO(@darzu): IMPL AFTWARD
-  b.addSplinteredEnd(splinLoop, false, topJags);
+  b.addSplinteredEnd(splinLoop, topJags);
 
   // mat4.translate(b.cursor, b.cursor, [0, -0.2, 0]);
   {
@@ -176,7 +175,7 @@ export const mkTimberSplinterFree = (
 
     const tIdx = b.mesh.tri.length;
     const qIdx = b.mesh.quad.length;
-    b.addSplinteredEnd(splinLoop, false, botJags);
+    b.addSplinteredEnd(splinLoop, botJags);
     for (let ti = tIdx; ti < b.mesh.tri.length; ti++)
       vec3Reverse(b.mesh.tri[ti]);
     for (let ti = qIdx; ti < b.mesh.quad.length; ti++)

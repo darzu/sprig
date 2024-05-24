@@ -44,7 +44,7 @@ import { SplinterPoolsDef, SplinterPool } from "./wood-splinters.js";
 import {
   WoodStateDef,
   WoodHealthDef,
-  addSplinterEnd,
+  addSplinterEndToSegment,
   getSegmentRotation,
   removeSplinterEnd,
   _quadsPerSplinter,
@@ -401,7 +401,11 @@ EM.addEagerInit([WoodStateDef], [], [], () => {
                   // create end caps
                   assert(w.woodState.splinterState);
                   // const splinterGen = w.woodState.splinterState.generation;
-                  const splinterIdx = addSplinterEnd(seg, w.woodState, false);
+                  const splinterIdx = addSplinterEndToSegment(
+                    seg,
+                    w.woodState,
+                    false
+                  );
                   if (splinterIdx !== undefined) {
                     h.splinterBotIdx = splinterIdx;
                     // h.splinterBotGeneration = splinterGen;
@@ -413,7 +417,11 @@ EM.addEagerInit([WoodStateDef], [], [], () => {
                 if (h.next && !h.next.broken) {
                   assert(w.woodState.splinterState);
                   // const splinterGen = w.woodState.splinterState.generation;
-                  const splinterIdx = addSplinterEnd(seg, w.woodState, true);
+                  const splinterIdx = addSplinterEndToSegment(
+                    seg,
+                    w.woodState,
+                    true
+                  );
                   if (splinterIdx !== undefined) {
                     h.splinterTopIdx = splinterIdx;
                     // h.splinterTopGeneration = splinterGen;
