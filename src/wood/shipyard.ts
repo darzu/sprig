@@ -27,7 +27,7 @@ import {
   getQuadAreaNorm,
   BoardGroupState,
 } from "./wood.js";
-import { BLACK } from "../meshes/mesh-list.js";
+import { BLACK, ShipFangsMesh } from "../meshes/mesh-list.js";
 import {
   AABB,
   createAABB,
@@ -56,6 +56,10 @@ import { snapXToPath } from "../utils/spline.js";
 import { createLine } from "../physics/broadphase.js";
 import { PId2, PId4 } from "../utils/util-no-import.js";
 import { dbgPathWithGizmos } from "../debug/utils-gizmos.js";
+import { createObj } from "../ecs/em-objects.js";
+import { RenderableConstructDef } from "../render/renderer-ecs.js";
+import { ColorDef } from "../color/color-ecs.js";
+import { PositionDef } from "../physics/transform.js";
 
 /*
 ship state
@@ -215,6 +219,20 @@ export function getAABBFromPath(path: Path): AABB {
   const aabb = createAABB();
   path.forEach((p) => updateAABBWithPoint(aabb, p.pos));
   return aabb;
+}
+
+export async function loadFangShip(): Promise<WoodObj> {
+  const gMesh = await ShipFangsMesh.gameMesh();
+  const _mesh = gMesh.mesh;
+  const woodState = getBoardsFromMesh(_mesh);
+  verifyUnsharedProvokingForWood(_mesh, woodState);
+  const mesh = _mesh as Mesh;
+  reserveSplinterSpace(woodState, 200);
+  validateMesh(woodState.mesh);
+
+  mesh.colors.forEach((c) => V3.copy(c, ENDESGA16.lightBrown));
+
+  return { state: woodState, mesh };
 }
 
 export function createWoodenBox(): WoodObj {

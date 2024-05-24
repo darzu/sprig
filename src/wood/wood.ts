@@ -10,6 +10,7 @@ import {
   orthonormalize,
   mat3,
   tV,
+  TV1,
 } from "../matrix/sprig-matrix.js";
 import { createIdxPool } from "../utils/idx-pool.js";
 import { jitter } from "../utils/math.js";
@@ -182,7 +183,11 @@ export const WoodHealthDef = EM.defineNonupdatableComponent(
 );
 
 // TODO(@darzu): Hmm this seems overly complicated
-export function getSegmentRotation(areaNorms: V3[], dir: V3, top: boolean) {
+export function getSegmentRotation(
+  areaNorms: V3[],
+  dir: V3,
+  top: boolean
+): quat {
   let segNorm = V3.mk();
   let biggestArea2 = 0;
   for (let v of areaNorms) {
@@ -193,7 +198,7 @@ export function getSegmentRotation(areaNorms: V3[], dir: V3, top: boolean) {
     }
   }
 
-  const endNorm = V3.copy(V3.tmp(), dir);
+  const endNorm = V3.copy(TV1, dir);
   if (top) {
     V3.neg(endNorm, endNorm);
   }

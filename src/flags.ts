@@ -56,7 +56,7 @@ export const PERF_DBG_F32S = false;
 // tracks who's creating vec3s, mat4s, etc.
 export const PERF_DBG_F32S_BLAME = false;
 // tracks who's using tmps (doesn't account for tmpStack's)
-export const PERF_DBG_F32S_TEMP_BLAME = false;
+export const PERF_DBG_F32S_TEMP_BLAME = true;
 // checks to make sure uses of tmpStack and .pop() are matched; incurs some bookkeeping overhead
 export const DBG_TMP_STACK_MATCH = false;
 // tracks if tmp vecs are being leaked. expensive? Proxy's every .tmp()
