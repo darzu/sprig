@@ -279,12 +279,11 @@ export function addSplinterEnd(
 
   // const rot = getSegmentRotation(seg, top);
   const rot = quat.copy(quat.tmp(), seg.midRotation); // TODO(@darzu): based on top, rot?
-  // TODO(@darzu): IMPL AFTWARD
-  // if (yNegative) {
-  //   quat.yaw(rot, PI, rot);
-  //   // quat.pitch(rot, PI, rot);
-  //   // quat.roll(rot, PI, rot);
-  // }
+  if (aftward) {
+    quat.yaw(rot, PI, rot);
+    // quat.pitch(rot, PI, rot);
+    // quat.roll(rot, PI, rot);
+  }
   // TODO(@darzu): put these into a pool
   // TODO(@darzu): perf? probably don't need to normalize, just use same surface ID and provoking vert for all
   const cursor = mat4.fromRotationTranslation(rot, pos, mat4.create());
@@ -345,7 +344,7 @@ export function addSplinterEnd(
   const color = wood.mesh.colors[qi];
   const triColorStartIdx = wood.mesh.quad.length;
 
-  // TODO(@darzu): don't alloc all this mesh stuff!!
+  // TODO(@darzu): PERF. don't alloc all this mesh stuff!!
   const splinterMesh = normalizeMesh(_tempSplinterMesh);
 
   // copy mesh into main mesh

@@ -191,7 +191,7 @@ EM.addEagerInit([WoodStateDef], [], [], () => {
             // TODO(@darzu): this sphere should live elsewhere..
             const worldSphere: Sphere = {
               org: ball.world.position,
-              rad: (ballAABBWorld.max[0] - ballAABBWorld.min[0]) * 0.5,
+              rad: (ballAABBWorld.max[0] - ballAABBWorld.min[0]) * 0.4,
             };
 
             if (DBG_WOOD_DMG) {
