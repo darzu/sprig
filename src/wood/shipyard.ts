@@ -247,6 +247,8 @@ export function createWoodenBox(): WoodObj {
   const boardDepth = 0.2;
   const boardGap = 0.1;
 
+  const groups: BoardGroupState[] = [];
+
   const wall1Rot = quat.fromYawPitchRoll(PId4, 0, -PId2);
   const wall1 = createWallFromPath({
     name: "wall1",
@@ -258,6 +260,7 @@ export function createWoodenBox(): WoodObj {
     right: quat.right(wall1Rot),
     count: 10,
   });
+  groups.push(wall1);
 
   const wall2Rot = quat.fromYawPitchRoll(0, PId6, PId12);
   const wall2 = createWallFromPath({
@@ -270,10 +273,61 @@ export function createWoodenBox(): WoodObj {
     right: quat.right(wall2Rot),
     count: 10,
   });
+  groups.push(wall2);
+
+  {
+    const ribCount = 14;
+    let railCurve: BezierCubic;
+    const sternpost: V3.InputT = [0, -20, 5];
+    const transomWidth = 10;
+    const prow: V3.InputT = [0, 20, 20];
+    {
+      // TODO(@darzu): REFACTOR: bezier from end points + rotation & influence
+      const sternAngle = (3 / 16) * Math.PI;
+      const sternInfluence = 24;
+      const prowAngle = (4 / 16) * Math.PI;
+      const prowInfluence = 12;
+      const p0 = V3.add(sternpost, [transomWidth * 0.5, 0, 0], V3.mk());
+      const p1 = V3.add(
+        p0,
+        [
+          Math.cos(sternAngle) * sternInfluence,
+          Math.sin(sternAngle) * sternInfluence,
+          0,
+        ],
+        V3.mk()
+      );
+      const p3 = V3.clone(prow);
+      const p2 = V3.add(
+        p3,
+        [
+          Math.sin(prowAngle) * prowInfluence,
+          -Math.cos(prowAngle) * prowInfluence,
+          0,
+        ],
+        V3.mk()
+      );
+
+      railCurve = { p0, p1, p2, p3 };
+    }
+    const railNodes = ribCount + 2;
+    const railPath = createPathFromBezier(
+      railCurve,
+      railNodes,
+      [0, 0, 1] // TODO(@darzu): Z_UP
+    );
+    const railWall = createWallFromPath({
+      name: "rail",
+      path: railPath,
+      right: [1, 0, 0],
+      count: 10,
+    });
+    groups.push(railWall);
+  }
 
   const woodState: WoodState = {
     mesh: mesh,
-    groups: [wall1, wall2],
+    groups,
   };
   // const woodState = getBoardsFromMesh(mesh);
 
