@@ -247,19 +247,27 @@ export function createWoodenBox(): WoodObj {
   const boardDepth = 0.2;
   const boardGap = 0.1;
 
-  const wall1 = createFlatWall({
+  const wall1Rot = quat.fromYawPitchRoll(PId4, 0, -PId2);
+  const wall1 = createWallFromPath({
     name: "wall1",
-    start: [-20, -20, 0],
-    rot: quat.fromYawPitchRoll(PId4, 0, -PId2),
-    len: 40,
+    path: createPathFromStartRotLen({
+      start: [-20, -20, 0],
+      rot: wall1Rot,
+      len: 40,
+    }),
+    right: quat.right(wall1Rot),
     count: 10,
   });
 
-  const wall2 = createFlatWall({
+  const wall2Rot = quat.fromYawPitchRoll(0, PId6, PId12);
+  const wall2 = createWallFromPath({
     name: "wall2",
-    start: [10, 0, 5],
-    rot: quat.fromYawPitchRoll(0, PId6, PId12),
-    len: 40,
+    path: createPathFromStartRotLen({
+      start: [10, 0, 5],
+      rot: wall2Rot,
+      len: 40,
+    }),
+    right: quat.right(wall2Rot),
     count: 10,
   });
 
@@ -283,41 +291,50 @@ export function createWoodenBox(): WoodObj {
     mesh: finalMesh,
   };
 
-  function createFlatWall({
-    name,
+  function createPathFromStartRotLen({
     start,
     rot,
     len,
-    count,
   }: {
-    name: string;
     start: V3.InputT;
     rot: quat;
     len: number;
+  }): Path {
+    const fwd = quat.fwd(rot);
+    const end = V3.addScaled(start, fwd, len, V3.mk());
+    const length = V3.dist(start, end);
+    const segLen = 3.0;
+    const numSeg = Math.ceil(length / segLen);
+    const positions = lerpBetween(V3.clone(start), end, numSeg - 2);
+    assert(positions.length === numSeg);
+    const path: Path = positions.map((pos) => ({
+      pos,
+      rot: quat.clone(rot),
+    }));
+    return path;
+  }
+
+  function createWallFromPath({
+    name,
+    path,
+    right,
+    count,
+  }: {
+    name: string;
+    path: Path;
+    right: V3.InputT;
     count: number;
   }): BoardGroupState {
     const group: BoardGroupState = {
       name,
       boards: [],
     };
-    const fwd = quat.fwd(rot);
-    const right = quat.right(rot);
-    const rightSpace = boardWidth * 2 + boardGap;
     for (let i = 0; i < count; i++) {
-      const istart = V3.addScaled(start, right, rightSpace * i, V3.mk());
-      const end = V3.addScaled(istart, fwd, len, V3.mk());
-      const length = V3.dist(istart, end);
-      const segLen = 3.0;
-      const numSeg = Math.ceil(length / segLen);
-      const positions = lerpBetween(istart, end, numSeg - 2);
-      assert(positions.length === numSeg);
-      const path: Path = positions.map((pos) => ({
-        pos,
-        rot: quat.clone(rot),
-      }));
+      const trans = V3.scale(right, (boardWidth * 2 + boardGap) * i);
+      const ipath = translatePath(clonePath(path), trans);
 
       if (i % 4 === 0) {
-        dbgPathWithGizmos(path);
+        dbgPathWithGizmos(ipath);
       }
 
       const color = i === 5 ? ENDESGA16.lightBlue : ENDESGA16.lightBrown;
@@ -325,7 +342,7 @@ export function createWoodenBox(): WoodObj {
         appendBoard(
           mesh,
           {
-            path: path,
+            path: ipath,
             width: boardWidth,
             depth: boardDepth,
           },
