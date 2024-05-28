@@ -1116,7 +1116,21 @@ export module quat {
     return V3.tQuat(V3.RIGHT, q, out);
   }
   export function fwd(q: quat.InputT, out?: V3): V3 {
+    // TODO(@darzu): swap with below
     return V3.tQuat(V3.FWD, q, out);
+  }
+  export function fwd_(q: quat.InputT, out?: V3): V3 {
+    // TODO(@darzu): test this thoroughly against V3.tQuat(V3.UP, q, out)!
+    out = out ?? V3.tmp();
+    var qx = q[0],
+      qy = q[1],
+      qz = q[2],
+      qw = q[3];
+
+    out[0] = (-qz * qw + qy * qx) * 2;
+    out[1] = 1 + (qz * qz + qx * qx) * 2;
+    out[2] = (qx * qw + qy * qz) * 2;
+    return out;
   }
   export function up(q: quat.InputT, out?: V3): V3 {
     return V3.tQuat(V3.UP, q, out);
