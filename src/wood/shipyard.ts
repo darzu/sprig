@@ -54,12 +54,13 @@ import { getPathFrom2DQuadMesh } from "./util-wood.js";
 import { snapToPath } from "../utils/spline.js";
 import { snapXToPath } from "../utils/spline.js";
 import { createLine } from "../physics/broadphase.js";
-import { PId2, PId4 } from "../utils/util-no-import.js";
+import { PId12, PId2, PId4, PId6 } from "../utils/util-no-import.js";
 import { dbgPathWithGizmos } from "../debug/utils-gizmos.js";
 import { createObj } from "../ecs/em-objects.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { ColorDef } from "../color/color-ecs.js";
 import { PositionDef } from "../physics/transform.js";
+import { vec3Dbg } from "../utils/utils-3d.js";
 
 /*
 ship state
@@ -242,48 +243,31 @@ export function createWoodenBox(): WoodObj {
 
   mesh.pos.push(V(0, 0, 0)); // add 1 degenerate vert for degenerate quads (e.g. [0,0,0,0]) to use
 
-  const wall1: BoardGroupState = {
-    name: "wall1",
-    boards: [],
-  };
-  const rot = quat.fromYawPitchRoll(PId4, 0, PId2);
   const boardWidth = 0.4;
   const boardDepth = 0.2;
-  for (let i = 0; i < 10; i++) {
-    const start = V(-20, -20, i);
-    const end = V(+20, 20, i);
-    // const start = V(-20, -0, i);
-    // const end = V(+20, 0, i);
-    const length = V3.dist(start, end);
-    const segLen = 3.0;
-    const numSeg = Math.ceil(length / segLen);
-    const positions = lerpBetween(start, end, numSeg - 2);
-    assert(positions.length === numSeg);
-    const path: Path = positions.map((pos) => ({
-      pos,
-      rot: quat.clone(rot),
-    }));
+  const boardGap = 0.1;
 
-    dbgPathWithGizmos(path);
+  const wall1 = createFlatWall({
+    name: "wall1",
+    start: [-20, -20, 0],
+    rot: quat.fromYawPitchRoll(PId4, 0, -PId2),
+    len: 40,
+    count: 10,
+  });
 
-    const color = i === 5 ? ENDESGA16.lightBlue : ENDESGA16.lightBrown;
-    wall1.boards.push(
-      appendBoard(
-        mesh,
-        {
-          path: path,
-          width: boardWidth,
-          depth: boardDepth,
-        },
-        color
-      )
-    );
-  }
+  const wall2 = createFlatWall({
+    name: "wall2",
+    start: [10, 0, 5],
+    rot: quat.fromYawPitchRoll(0, PId6, PId12),
+    len: 40,
+    count: 10,
+  });
 
   const woodState: WoodState = {
     mesh: mesh,
-    groups: [wall1],
+    groups: [wall1, wall2],
   };
+  // const woodState = getBoardsFromMesh(mesh);
 
   mesh.surfaceIds = mesh.colors.map((_, i) => i);
   verifyUnsharedProvokingForWood(mesh, woodState);
@@ -298,6 +282,59 @@ export function createWoodenBox(): WoodObj {
     state: woodState,
     mesh: finalMesh,
   };
+
+  function createFlatWall({
+    name,
+    start,
+    rot,
+    len,
+    count,
+  }: {
+    name: string;
+    start: V3.InputT;
+    rot: quat;
+    len: number;
+    count: number;
+  }): BoardGroupState {
+    const group: BoardGroupState = {
+      name,
+      boards: [],
+    };
+    const fwd = quat.fwd(rot);
+    const right = quat.right(rot);
+    const rightSpace = boardWidth * 2 + boardGap;
+    for (let i = 0; i < count; i++) {
+      const istart = V3.addScaled(start, right, rightSpace * i, V3.mk());
+      const end = V3.addScaled(istart, fwd, len, V3.mk());
+      const length = V3.dist(istart, end);
+      const segLen = 3.0;
+      const numSeg = Math.ceil(length / segLen);
+      const positions = lerpBetween(istart, end, numSeg - 2);
+      assert(positions.length === numSeg);
+      const path: Path = positions.map((pos) => ({
+        pos,
+        rot: quat.clone(rot),
+      }));
+
+      if (i % 4 === 0) {
+        dbgPathWithGizmos(path);
+      }
+
+      const color = i === 5 ? ENDESGA16.lightBlue : ENDESGA16.lightBrown;
+      group.boards.push(
+        appendBoard(
+          mesh,
+          {
+            path: path,
+            width: boardWidth,
+            depth: boardDepth,
+          },
+          color
+        )
+      );
+    }
+    return group;
+  }
 }
 
 export function createLD53Ship(): WoodObj {

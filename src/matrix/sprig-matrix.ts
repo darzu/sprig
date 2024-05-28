@@ -534,6 +534,14 @@ export module V3 {
   export function add(v1: InputT, v2: InputT, out?: T): T {
     return GL.add(out ?? tmp(), v1, v2) as T;
   }
+  // TODO(@darzu): hacky, this is here b/c working with temps is so painful.
+  export function addScaled(a: InputT, b: InputT, bScale: number, out?: T): T {
+    out = out ?? tmp();
+    out[0] = a[0] + b[0] * bScale;
+    out[1] = a[1] + b[1] * bScale;
+    out[2] = a[2] + b[2] * bScale;
+    return out;
+  }
   export function abs(v: InputT, out?: T): T {
     out = out ?? tmp();
     out[0] = Math.abs(v[0]);

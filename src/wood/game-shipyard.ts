@@ -126,8 +126,8 @@ export async function initShipyardGame() {
   if (DBG_TRANSPARENT_BOAT) EM.set(timber, AlphaDef, 0.5);
 
   // const { state: timberState, mesh: timberMesh } = createLD53Ship();
-  // const { state: timberState, mesh: timberMesh } = createWoodenBox();
-  const { state: timberState, mesh: timberMesh } = await loadFangShip();
+  const { state: timberState, mesh: timberMesh } = createWoodenBox();
+  // const { state: timberState, mesh: timberMesh } = await loadFangShip();
 
   // console.log("timberMesh");
   // console.dir(timberMesh);
