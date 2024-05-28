@@ -739,6 +739,46 @@ export module V3 {
   export function getYaw(v: InputT): number {
     return _getYaw(v[0], v[1]);
   }
+
+  // TODO(@darzu): remove roll
+  export function fromYawPitchRollForward(
+    yaw = 0,
+    pitch = 0,
+    roll = 0,
+    out?: T
+  ): T {
+    // TODO(@darzu): test this thoroughly against V3.tQuat(V3.UP, q, out) and quat.fromYawPitchRoll!
+    pitch *= 0.5;
+    roll *= 0.5;
+    yaw *= 0.5;
+
+    var sx = Math.sin(pitch);
+    var cx = Math.cos(pitch);
+    var sy = Math.sin(roll);
+    var cy = Math.cos(roll);
+    var sz = Math.sin(-yaw);
+    var cz = Math.cos(-yaw);
+    var qx = sx * cy * cz - cx * sy * sz;
+    var qy = cx * sy * cz + sx * cy * sz;
+    var qz = cx * cy * sz - sx * sy * cz;
+    var qw = cx * cy * cz + sx * sy * sz;
+
+    // var q = quat.fromYawPitchRoll(yaw, pitch, roll);
+    // var qx = q[0];
+    // var qy = q[1];
+    // var qz = q[2];
+    // var qw = q[3];
+
+    return quat.fwd([qx, qy, qz, qw], out);
+
+    // TODO(@darzu): PERF. fix and inline
+    // out = out ?? V3.tmp();
+    // out[0] = (-qz * qw + qy * qx) * 2;
+    // out[1] = 1 + (qz * qz + qx * qx) * 2;
+    // out[2] = (qx * qw + qy * qz) * 2;
+
+    // return out;
+  }
 }
 
 export module V4 {
@@ -970,6 +1010,14 @@ export module quat {
   ): T {
     return GL.fromEuler(out ?? tmp(), pitch, roll, -yaw) as T;
   }
+  export function fromYPR(
+    yaw: number = 0,
+    pitch: number = 0,
+    roll: number = 0,
+    out?: T
+  ): T {
+    return fromYawPitchRoll(yaw, pitch, roll, out);
+  }
 
   // TODO(@darzu): this is annoying that it shows up in auto-complete. remove this
   // TODO(@darzu): little hacky, this matches our YawPitchDef but doesn't match other sprig-matrix patterns
@@ -1121,6 +1169,7 @@ export module quat {
   }
   export function fwd_(q: quat.InputT, out?: V3): V3 {
     // TODO(@darzu): test this thoroughly against V3.tQuat(V3.UP, q, out)!
+    // TODO(@darzu): broken.
     out = out ?? V3.tmp();
     var qx = q[0],
       qy = q[1],

@@ -281,15 +281,15 @@ export function createWoodenBox(): WoodObj {
     const end: V3.InputT = [0, 20, 20];
     const start: V3.InputT = [0, -20, 5];
     const startInfluence = 24;
-    const startRot = quat.fromYawPitchRoll((5 / 16) * PI);
     const endInfluence = 12;
-    const endRot = quat.fromYawPitchRoll((12 / 16) * PI);
     const railCurve = bezierFromEndsRotationsInfluence({
       start,
-      startRot,
+      startDir: V3.fromYawPitchRollForward((5 / 16) * PI),
+      // startDir: quat.fwd(quat.fromYawPitchRoll((5 / 16) * PI)),
       startInfluence,
       end,
-      endRot,
+      endDir: V3.fromYawPitchRollForward((12 / 16) * PI),
+      // endDir: quat.fwd(quat.fromYawPitchRoll((12 / 16) * PI)),
       endInfluence,
     });
     const railPath = createPathFromBezier(railCurve, railNodes, [1, 0, 0]);
@@ -387,26 +387,26 @@ function createPathFromStartRotLen({
 
 function bezierFromEndsRotationsInfluence({
   start,
-  startRot,
+  startDir,
   startInfluence,
   end,
-  endRot,
+  endDir,
   endInfluence,
 }: {
   start: V3.InputT;
-  startRot: quat.InputT;
+  startDir: V3.InputT;
   startInfluence: number;
   end: V3.InputT;
-  endRot: quat.InputT;
+  endDir: V3.InputT;
   endInfluence: number;
 }): BezierCubic {
   // TODO(@darzu): REFACTOR: bezier from end points + rotation & influence
   let railCurve: BezierCubic;
 
   const p0 = V3.clone(start);
-  const p1 = V3.addScaled(p0, quat.fwd(startRot), startInfluence, V3.mk());
+  const p1 = V3.addScaled(p0, startDir, startInfluence, V3.mk());
   const p3 = V3.clone(end);
-  const p2 = V3.addScaled(p3, quat.fwd(endRot), endInfluence, V3.mk());
+  const p2 = V3.addScaled(p3, endDir, endInfluence, V3.mk());
 
   railCurve = { p0, p1, p2, p3 };
   return railCurve;
