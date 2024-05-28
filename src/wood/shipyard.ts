@@ -311,15 +311,11 @@ export function createWoodenBox(): WoodObj {
       railCurve = { p0, p1, p2, p3 };
     }
     const railNodes = ribCount + 2;
-    const railPath = createPathFromBezier(
-      railCurve,
-      railNodes,
-      [0, 0, 1] // TODO(@darzu): Z_UP
-    );
+    const railPath = createPathFromBezier(railCurve, railNodes, [1, 0, 0]);
     const railWall = createWallFromPath({
       name: "rail",
       path: railPath,
-      right: [1, 0, 0],
+      right: [0, 0, -1],
       count: 10,
     });
     groups.push(railWall);
