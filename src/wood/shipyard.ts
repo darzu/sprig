@@ -278,16 +278,20 @@ export function createWoodenBox(): WoodObj {
   {
     const ribCount = 14;
     const railNodes = ribCount + 2;
-    const prow: V3.InputT = [0, 20, 20];
-    const sternpost: V3.InputT = [0, -20, 5];
+    const end: V3.InputT = [0, 20, 20];
+    const start: V3.InputT = [0, -20, 5];
     const sternAngle = (3 / 16) * PI;
-    const sternInfluence = 24;
+    const startInfluence = 24;
     const startRot = quat.fromYawPitchRoll(PId2 - sternAngle);
+    const endInfluence = 12;
+    const endRot = quat.fromYawPitchRoll(PId2 + (4 / 16) * PI);
     const railCurve = bezierFromEndsRotationsInfluence({
-      start: sternpost,
+      start,
       startRot,
-      startInfluence: sternInfluence,
-      end: prow,
+      startInfluence,
+      end,
+      endRot,
+      endInfluence,
     });
     const railPath = createPathFromBezier(railCurve, railNodes, [1, 0, 0]);
     const railWall = createWallFromPath({
@@ -324,29 +328,23 @@ export function createWoodenBox(): WoodObj {
     startRot,
     startInfluence,
     end,
+    endRot,
+    endInfluence,
   }: {
     start: V3.InputT;
     startRot: quat.InputT;
     startInfluence: number;
     end: V3.InputT;
+    endRot: quat.InputT;
+    endInfluence: number;
   }): BezierCubic {
     // TODO(@darzu): REFACTOR: bezier from end points + rotation & influence
     let railCurve: BezierCubic;
 
-    const prowAngle = (4 / 16) * PI;
-    const prowInfluence = 12;
     const p0 = V3.clone(start);
     const p1 = V3.addScaled(p0, quat.fwd(startRot), startInfluence, V3.mk());
     const p3 = V3.clone(end);
-    const p2 = V3.add(
-      p3,
-      [
-        Math.sin(prowAngle) * prowInfluence,
-        -Math.cos(prowAngle) * prowInfluence,
-        0,
-      ],
-      V3.mk()
-    );
+    const p2 = V3.addScaled(p3, quat.fwd(endRot), endInfluence, V3.mk());
 
     railCurve = { p0, p1, p2, p3 };
     return railCurve;
