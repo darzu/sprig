@@ -741,29 +741,21 @@ export module V3 {
   }
 
   // TODO(@darzu): remove roll
-  export function fromYawPitchRollForward(
-    yaw = 0,
-    pitch = 0,
-    roll = 0,
-    out?: T
-  ): T {
+  export function fromYawPitch(yaw = 0, pitch = 0, out?: T): T {
     // TODO(@darzu): test this thoroughly against V3.tQuat(V3.UP, q, out) and quat.fromYawPitchRoll!
     pitch *= 0.5;
-    roll *= 0.5;
     yaw *= 0.5;
 
     var sx = Math.sin(pitch);
     var cx = Math.cos(pitch);
-    var sy = Math.sin(roll);
-    var cy = Math.cos(roll);
     var sz = Math.sin(-yaw);
     var cz = Math.cos(-yaw);
-    var qx = sx * cy * cz - cx * sy * sz;
-    var qy = cx * sy * cz + sx * cy * sz;
-    var qz = cx * cy * sz - sx * sy * cz;
-    var qw = cx * cy * cz + sx * sy * sz;
+    var qx = sx * cz;
+    var qy = sx * sz;
+    var qz = cx * sz;
+    var qw = cx * cz;
 
-    // var q = quat.fromYawPitchRoll(yaw, pitch, roll);
+    // var q = quat.fromYawPitchRoll(yaw, pitch, 0);
     // var qx = q[0];
     // var qy = q[1];
     // var qz = q[2];

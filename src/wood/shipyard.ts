@@ -276,23 +276,15 @@ export function createWoodenBox(): WoodObj {
   groups.push(wall2);
 
   {
-    const ribCount = 14;
-    const railNodes = ribCount + 2;
-    const end: V3.InputT = [0, 20, 20];
-    const start: V3.InputT = [0, -20, 5];
-    const startInfluence = 24;
-    const endInfluence = 12;
-    const railCurve = bezierFromEndsRotationsInfluence({
-      start,
-      startDir: V3.fromYawPitchRollForward((5 / 16) * PI),
-      // startDir: quat.fwd(quat.fromYawPitchRoll((5 / 16) * PI)),
-      startInfluence,
-      end,
-      endDir: V3.fromYawPitchRollForward((12 / 16) * PI),
-      // endDir: quat.fwd(quat.fromYawPitchRoll((12 / 16) * PI)),
-      endInfluence,
+    const railCurve = bezierFromPointsDirectionsInfluence({
+      start: [0, -20, 5],
+      startDir: V3.fromYawPitch((5 / 16) * PI),
+      startInfluence: 24,
+      end: [0, 20, 20],
+      endDir: V3.fromYawPitch((12 / 16) * PI),
+      endInfluence: 12,
     });
-    const railPath = createPathFromBezier(railCurve, railNodes, [1, 0, 0]);
+    const railPath = createPathFromBezier(railCurve, 16, [1, 0, 0]);
     const railWall = createWallFromPath({
       name: "rail",
       path: railPath,
@@ -385,7 +377,7 @@ function createPathFromStartRotLen({
   return path;
 }
 
-function bezierFromEndsRotationsInfluence({
+function bezierFromPointsDirectionsInfluence({
   start,
   startDir,
   startInfluence,
