@@ -20,7 +20,7 @@ import {
   WoodHealthDef,
   WoodState,
   WoodStateDef,
-} from "../wood/wood.js";
+} from "../wood/wood-builder.js";
 import { Path } from "../utils/spline.js";
 
 export const DockDef = EM.defineComponent("dock", () => true);

@@ -33,7 +33,7 @@ import {
   resetWoodState,
   WoodHealthDef,
   WoodStateDef,
-} from "./wood.js";
+} from "./wood-builder.js";
 import { BallMesh, HexMesh, PlaneMesh } from "../meshes/mesh-list.js";
 import { breakBullet, BulletDef, fireBullet } from "../cannons/bullet.js";
 import { GhostDef } from "../debug/ghost.js";

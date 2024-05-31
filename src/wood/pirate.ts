@@ -54,7 +54,7 @@ import {
   createWoodHealth,
   resetWoodHealth,
   resetWoodState,
-} from "./wood.js";
+} from "./wood-builder.js";
 import { fireBullet } from "../cannons/bullet.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { HEX_MESH } from "../meshes/primatives.js";

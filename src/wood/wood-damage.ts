@@ -50,7 +50,7 @@ import {
   _quadsPerSplinter,
   _trisPerSplinter,
   _vertsPerSplinter,
-} from "./wood.js";
+} from "./wood-builder.js";
 
 const DBG_WOOD_DMG = true;
 

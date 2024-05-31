@@ -16,7 +16,7 @@ import {
 } from "../render/renderer-ecs.js";
 import { clamp, unlerp, lerp } from "../utils/math.js";
 import { assert } from "../utils/util.js";
-import { createBoardBuilder } from "../wood/wood.js";
+import { createBoardBuilder } from "../wood/wood-builder.js";
 
 const DBG_STAT_BAR = true;
 

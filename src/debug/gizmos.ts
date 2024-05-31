@@ -3,7 +3,7 @@ import { createFlatQuadMesh } from "../meshes/primatives.js";
 import { Mesh, mergeMeshes } from "../meshes/mesh.js";
 import { V3, V, tV, orthonormalize, mat4 } from "../matrix/sprig-matrix.js";
 import { assert, dbgDirOnce } from "../utils/util.js";
-import { createEmptyMesh } from "../wood/wood.js";
+import { createEmptyMesh } from "../wood/wood-builder.js";
 import { Path } from "../utils/spline.js";
 
 const _UP = V(0, 0, 1);

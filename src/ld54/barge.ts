@@ -43,7 +43,7 @@ import {
   verifyUnsharedProvokingForWood,
   reserveSplinterSpace,
   WoodState,
-} from "../wood/wood.js";
+} from "../wood/wood-builder.js";
 
 // TODO(@darzu): HUGE HACK. De-dupe w/ other ship
 

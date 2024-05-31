@@ -23,7 +23,7 @@ import { mat3, mat4, quat, tV, V, V2, V3, V4 } from "../matrix/sprig-matrix.js";
 import { assert, range } from "../utils/util.js";
 import { uintToVec3unorm, vec3Dbg } from "../utils/utils-3d.js";
 import { drawBall } from "../utils/utils-game.js";
-import { createBoardBuilder, createEmptyMesh } from "../wood/wood.js";
+import { createBoardBuilder, createEmptyMesh } from "../wood/wood-builder.js";
 import { transformYUpModelIntoZUp } from "../camera/basis.js";
 
 // TODO(@darzu): Z_UP, some of this hasn't been ported

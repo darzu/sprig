@@ -96,7 +96,7 @@ import {
   resetWoodState,
   WoodHealthDef,
   WoodStateDef,
-} from "../wood/wood.js";
+} from "../wood/wood-builder.js";
 import { MapPaths } from "../levels/map-loader.js";
 import { stdRiggedRenderPipeline } from "../render/pipelines/std-rigged.js";
 import { PoseDef } from "../animation/skeletal.js";

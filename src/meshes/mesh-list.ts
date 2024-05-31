@@ -10,7 +10,7 @@ import {
   unshareProvokingForWood,
   WoodAssets,
   WoodAssetsDef,
-} from "../wood/wood.js";
+} from "../wood/wood-builder.js";
 import {
   cloneMesh,
   scaleMesh,

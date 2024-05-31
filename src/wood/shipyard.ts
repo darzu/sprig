@@ -26,7 +26,7 @@ import {
   SegState,
   getQuadAreaNorm,
   BoardGroupState,
-} from "./wood.js";
+} from "./wood-builder.js";
 import { BLACK, ShipFangsMesh } from "../meshes/mesh-list.js";
 import {
   AABB,

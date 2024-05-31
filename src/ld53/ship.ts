@@ -29,7 +29,11 @@ import { WorldFrameDef } from "../physics/nonintersection.js";
 import { createSock } from "../wind/windsock.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { createLD53Ship, ld53ShipAABBs } from "../wood/shipyard.js";
-import { createWoodHealth, WoodHealthDef, WoodStateDef } from "../wood/wood.js";
+import {
+  createWoodHealth,
+  WoodHealthDef,
+  WoodStateDef,
+} from "../wood/wood-builder.js";
 import { addGizmoChild } from "../utils/utils-game.js";
 import { CannonLocalDef, createCannonNow } from "../cannons/cannon.js";
 import { Phase } from "../ecs/sys-phase.js";

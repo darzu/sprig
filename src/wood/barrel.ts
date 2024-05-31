@@ -10,7 +10,7 @@ import {
   verifyUnsharedProvokingForWood,
   reserveSplinterSpace,
   BoardBuilder,
-} from "./wood.js";
+} from "./wood-builder.js";
 import { lerpBetween, appendBoard, pathNodeFromMat4 } from "./shipyard.js";
 import { dbgPathWithGizmos } from "../debug/utils-gizmos.js";
 import { Path } from "../utils/spline.js";

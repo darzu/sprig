@@ -13,7 +13,11 @@ import { PositionDef, RotationDef } from "../physics/transform.js";
 import { normalizeMesh } from "../meshes/mesh.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { randNormalVec3, vec3Reverse, vec4Reverse } from "../utils/utils-3d.js";
-import { SegState, createEmptyMesh, createBoardBuilder } from "./wood.js";
+import {
+  SegState,
+  createEmptyMesh,
+  createBoardBuilder,
+} from "./wood-builder.js";
 import { RenderDataStdDef } from "../render/pipelines/std-scene.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { VERBOSE_LOG } from "../flags.js";
