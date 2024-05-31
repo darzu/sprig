@@ -239,19 +239,15 @@ export async function loadFangShip(): Promise<WoodObj> {
 export function createWoodenBox(): WoodObj {
   const _stk = tmpStack();
 
-  const mesh = createEmptyMesh("woodBox");
+  const w = createWoodBuilder({ meshName: "woodBoxTest" });
+  w.b.xLen = 0.4;
+  w.b.zLen = 0.2;
 
-  mesh.pos.push(V(0, 0, 0)); // add 1 degenerate vert for degenerate quads (e.g. [0,0,0,0]) to use
-
-  const boardWidth = 0.4;
-  const boardDepth = 0.2;
   const boardGap = 0.1;
 
-  const groups: BoardGroupState[] = [];
-
+  w.startGroup("wall1");
   const wall1Rot = quat.fromYawPitchRoll(PId4, 0, -PId2);
-  const wall1 = createWallFromPath({
-    name: "wall1",
+  createWallFromPath({
     path: createPathFromStartRotLen({
       start: [-20, -20, 0],
       rot: wall1Rot,
@@ -260,11 +256,10 @@ export function createWoodenBox(): WoodObj {
     right: quat.right(wall1Rot),
     count: 10,
   });
-  groups.push(wall1);
 
+  w.startGroup("wall2");
   const wall2Rot = quat.fromYawPitchRoll(0, PId6, PId12);
-  const wall2 = createWallFromPath({
-    name: "wall2",
+  createWallFromPath({
     path: createPathFromStartRotLen({
       start: [10, 0, 5],
       rot: wall2Rot,
@@ -273,9 +268,9 @@ export function createWoodenBox(): WoodObj {
     right: quat.right(wall2Rot),
     count: 10,
   });
-  groups.push(wall2);
 
   {
+    w.startGroup("rail");
     const railCurve = bezierFromPointsDirectionsInfluence({
       start: [0, -20, 5],
       startDir: V3.fromYawPitch((5 / 16) * PI),
@@ -285,72 +280,38 @@ export function createWoodenBox(): WoodObj {
       endInfluence: 12,
     });
     const railPath = createPathFromBezier(railCurve, 16, [1, 0, 0]);
-    const railWall = createWallFromPath({
-      name: "rail",
+    createWallFromPath({
       path: railPath,
       right: [0, 0, -1],
       count: 10,
     });
-    groups.push(railWall);
   }
 
-  const woodState: WoodState = {
-    mesh: mesh,
-    groups,
-  };
-  // const woodState = getBoardsFromMesh(mesh);
-
-  mesh.surfaceIds = mesh.colors.map((_, i) => i);
-  verifyUnsharedProvokingForWood(mesh, woodState);
-  const finalMesh = mesh as Mesh;
-  finalMesh.usesProvoking = true;
-  reserveSplinterSpace(woodState, 200);
-  validateMesh(woodState.mesh);
+  const obj = w.finish(200);
 
   _stk.pop();
 
-  return {
-    state: woodState,
-    mesh: finalMesh,
-  };
+  return obj;
 
   function createWallFromPath({
-    name,
     path,
     right,
     count,
   }: {
-    name: string;
     path: Path;
     right: V3.InputT;
     count: number;
-  }): BoardGroupState {
-    const group: BoardGroupState = {
-      name,
-      boards: [],
-    };
+  }): void {
     for (let i = 0; i < count; i++) {
-      const trans = V3.scale(right, (boardWidth * 2 + boardGap) * i);
+      const trans = V3.scale(right, (w.b.xLen * 2 + boardGap) * i);
       const ipath = translatePath(clonePath(path), trans);
-
       if (i % 4 === 0) {
         dbgPathWithGizmos(ipath);
       }
-
-      const color = i === 5 ? ENDESGA16.lightBlue : ENDESGA16.lightBrown;
-      group.boards.push(
-        appendBoard(
-          mesh,
-          {
-            path: ipath,
-            width: boardWidth,
-            depth: boardDepth,
-          },
-          color
-        )
-      );
+      const color =
+        i === 5 || i === 4 ? ENDESGA16.lightBlue : ENDESGA16.lightBrown;
+      w.addBoard(ipath, color);
     }
-    return group;
   }
 }
 
@@ -1011,10 +972,96 @@ function cloneBoard(board: BoardPath): BoardPath {
   };
 }
 
+// TODO(@darzu): use everywhere
+interface WoodBuilder {
+  readonly props: WoodBuilderProps;
+
+  b: BoardBuilder;
+  state: WoodState;
+
+  startGroup(name: string): void;
+  addBoard(path: Path, color: V3.InputT): void;
+  finish(maxNumSplinters: number): WoodObj;
+
+  // TODO(@darzu): finish w/ reserve splinter state etc
+}
+
+interface WoodBuilderProps {
+  meshName: string;
+}
+
+export function createWoodBuilder(props: WoodBuilderProps): WoodBuilder {
+  const mesh = createEmptyMesh(props.meshName);
+
+  mesh.pos.push(V(0, 0, 0)); // add 1 degenerate vert for degenerate quads (e.g. [0,0,0,0]) to use
+
+  const b = createBoardBuilder(mesh);
+
+  let currentGroup: BoardGroupState | undefined = undefined;
+
+  const state: WoodState = {
+    mesh,
+    groups: [],
+  };
+
+  let finished = false;
+
+  const w: WoodBuilder = {
+    b,
+    props,
+    state,
+    startGroup,
+    addBoard,
+    finish,
+  };
+
+  return w;
+
+  function finish(maxNumSplinters: number): WoodObj {
+    assert(!finished);
+    finished = true;
+
+    mesh.surfaceIds = mesh.colors.map((_, i) => i);
+    verifyUnsharedProvokingForWood(mesh, state);
+    const finalMesh = mesh as Mesh;
+    finalMesh.usesProvoking = true;
+    reserveSplinterSpace(state, maxNumSplinters);
+    validateMesh(state.mesh);
+
+    return {
+      state,
+      mesh: finalMesh,
+    };
+  }
+
+  function startGroup(name: string) {
+    currentGroup = {
+      name,
+      boards: [],
+    };
+    state.groups.push(currentGroup);
+  }
+
+  function addBoard(path: Path, color: V3.InputT) {
+    assert(currentGroup, `Must call startGroup() before addBoard()`);
+    const state = appendBoard(
+      mesh,
+      {
+        width: b.xLen,
+        depth: b.zLen,
+        path,
+      },
+      color
+    );
+    currentGroup.boards.push(state);
+  }
+}
+
+// TODO(@darzu): merge into addBoard
 export function appendBoard(
   mesh: RawMesh,
   board: BoardPath,
-  color = BLACK
+  color: V3.InputT = BLACK
 ): BoardState {
   // TODO(@darzu): PERF. Instead of creating V3s, we should be indexing into a f32 array
   // TODO(@darzu): build up wood state along with the mesh!

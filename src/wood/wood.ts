@@ -1,17 +1,6 @@
 import { EM } from "../ecs/ecs.js";
-import { AllMeshSymbols, BLACK } from "../meshes/mesh-list.js";
-import {
-  V2,
-  V3,
-  V4,
-  quat,
-  mat4,
-  V,
-  orthonormalize,
-  mat3,
-  tV,
-  TV1,
-} from "../matrix/sprig-matrix.js";
+import { AllMeshSymbols } from "../meshes/mesh-list.js";
+import { V2, V3, V4, quat, mat4, V, tV, TV1 } from "../matrix/sprig-matrix.js";
 import { createIdxPool } from "../utils/idx-pool.js";
 import { jitter } from "../utils/math.js";
 import { createLine, getLineEnd, Line } from "../physics/broadphase.js";
@@ -33,10 +22,8 @@ import {
 } from "../physics/aabb.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { PI } from "../utils/util-no-import.js";
-import { appendBoard } from "./shipyard.js";
 
-// TODO(@darzu): BUG: sometimes ball colisions don't work
-// TODO(@darzu): BUG: sometimes splinters are misaligned
+// TODO(@darzu): rename file
 
 // TODO(@darzu): remove all references to pirates
 
@@ -374,19 +361,21 @@ export function setEndQuadIdxs(loopVi: number, q: V4, facingDown: boolean) {
     V4.set(loopVi + 0, loopVi + 1, loopVi + 2, loopVi + 3, q);
 }
 
-interface BoardBuilderProps {
+export interface BoardBuilder {
   xLen: number;
   zLen: number;
-  mesh: RawMesh;
-}
-
-export interface BoardBuilder extends BoardBuilderProps {
   cursor: mat4;
+
+  mesh: RawMesh;
+
   addSplinteredEnd: (loop: V4, numJags: number) => void;
   addLoopVerts: () => void;
   addSideQuads: () => void;
   addEndQuad: (facingDown: boolean) => void;
-  setCursor: (newCursor: mat4) => void;
+
+  setSize: (xLen: number, zLen: number) => void;
+  setCursor: (newCursor: mat4.InputT) => void;
+  setPosRot: (newPos: V3.InputT, newRot: quat.InputT) => void;
 }
 
 // TODO(@darzu): take BoardBuilderProps
@@ -410,12 +399,23 @@ export function createBoardBuilder(mesh: RawMesh): BoardBuilder {
     addSideQuads,
     addEndQuad,
     setCursor,
+    setPosRot,
+    setSize,
   };
 
   return b;
 
-  function setCursor(newCursor: mat4) {
-    mat4.copy(cursor, newCursor);
+  function setSize(xLen: number, zLen: number) {
+    b.xLen = xLen;
+    b.zLen = zLen;
+  }
+
+  function setPosRot(newPos: V3.InputT, newRot: quat.InputT) {
+    mat4.fromRotationTranslation(newRot, newPos, b.cursor);
+  }
+
+  function setCursor(newCursor: mat4.InputT) {
+    mat4.copy(b.cursor, newCursor);
   }
 
   function addSplinteredEnd(loop: V4.InputT, numJags: number) {
@@ -537,6 +537,7 @@ export function createBoardBuilder(mesh: RawMesh): BoardBuilder {
   }
 }
 
+// TODO(@darzu): don't export or use outside WoodBuilder
 export function reserveSplinterSpace(wood: WoodState, maxSplinters: number) {
   // console.log("reserveSplinterSpace");
   // console.log(meshStats(wood.mesh));
