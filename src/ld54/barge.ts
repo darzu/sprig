@@ -31,6 +31,7 @@ import {
   fixPathBasis,
   appendBoard,
   lerpBetween,
+  createWoodBuilder,
 } from "../wood/shipyard.js";
 import { snapXToPath } from "../utils/spline.js";
 import { snapToPath } from "../utils/spline.js";
@@ -182,16 +183,16 @@ export interface SpaceBarge {
 
 export function createSpaceBarge(): SpaceBarge {
   const _start = performance.now();
-  const _timberMesh = createEmptyRawMesh("homeShip");
 
-  const builder: BoardBuilder = createBoardBuilder(_timberMesh);
+  const w = createWoodBuilder({ meshName: "homeShip" });
+
+  w.startGroup("all"); // TODO(@darzu): split into groups
 
   // KEEL
   // TODO(@darzu): IMPL keel!
   const keelWidth = 1.4;
   const keelDepth = 1.2;
-  builder.xLen = keelWidth;
-  builder.zLen = keelDepth;
+  w.b.setSize(keelWidth, keelDepth);
 
   let keelPath: Path;
   {
@@ -229,21 +230,12 @@ export function createSpaceBarge(): SpaceBarge {
   keelPath.forEach((p) => updateAABBWithPoint(keelAABB, p.pos));
   const keelSize = getSizeFromAABB(keelAABB, V3.mk());
 
-  appendBoard(
-    builder.mesh,
-    {
-      path: keelPath,
-      width: keelWidth,
-      depth: keelDepth,
-    },
-    keelColor
-  );
+  w.addBoard(keelPath, keelColor);
 
   // RIBS
   const ribWidth = 0.3;
   const ribDepth = 0.4;
-  builder.xLen = ribWidth;
-  builder.zLen = ribDepth;
+  w.b.setSize(ribWidth, ribDepth);
   const ribCount = 16;
   // const ribSpace = 3;
 
@@ -356,30 +348,14 @@ export function createSpaceBarge(): SpaceBarge {
       // }
       // if (i === 1) dbgPathWithGizmos(weirdP);
 
-      appendBoard(
-        builder.mesh,
-        {
-          path: bPath,
-          width: ribWidth,
-          depth: ribDepth,
-        },
-        ribColor
-      );
-
-      appendBoard(
-        builder.mesh,
-        {
-          path: mirrorPath(clonePath(bPath), V(0, 0, 1)),
-          width: ribWidth,
-          depth: ribDepth,
-        },
-        ribColor
-      );
+      w.addBoard(bPath, ribColor);
+      w.addBoard(mirrorPath(clonePath(bPath), V(0, 0, 1)), ribColor);
     }
   }
 
   // RAIL
   let mirrorRailPath: Path = []; // set later
+  w.b.setSize(ribWidth, ribDepth);
   if (FALSE || true) {
     // fix rail spacing to match ribs
     for (let i = 0; i < ribCount; i++) {
@@ -393,24 +369,8 @@ export function createSpaceBarge(): SpaceBarge {
     }
     // rail board:
     mirrorRailPath = mirrorPath(clonePath(railPath), V(0, 0, 1));
-    appendBoard(
-      builder.mesh,
-      {
-        path: railPath,
-        width: ribWidth,
-        depth: ribDepth,
-      },
-      railColor
-    );
-    appendBoard(
-      builder.mesh,
-      {
-        path: mirrorRailPath,
-        width: ribWidth,
-        depth: ribDepth,
-      },
-      railColor
-    );
+    w.addBoard(railPath, railColor);
+    w.addBoard(mirrorRailPath, railColor);
   }
 
   // translatePath(railPath, [0, 0, 8]);
@@ -473,6 +433,8 @@ export function createSpaceBarge(): SpaceBarge {
 
     transomPlankNum = evenRibs[0].length;
 
+    w.b.setSize(plankWidth, plankDepth);
+
     const _temp4 = V3.mk();
     for (let i = 0; i < plankCount; i++) {
       const nodes: Path = evenRibs
@@ -521,28 +483,13 @@ export function createSpaceBarge(): SpaceBarge {
       if (stripStartIdx <= i && i <= stripEndIdx) color = plankStripeColor;
       if (strip2StartIdx <= i && i <= strip2EndIdx) color = plankStripe2Color;
 
-      appendBoard(
-        builder.mesh,
-        {
-          path: nodes,
-          width: plankWidth,
-          depth: plankDepth,
-        },
-        color
-      );
-      appendBoard(
-        builder.mesh,
-        {
-          path: mirroredPath,
-          width: plankWidth,
-          depth: plankDepth,
-        },
-        color
-      );
+      w.addBoard(nodes, color);
+      w.addBoard(mirroredPath, color);
     }
   }
 
   // TRANSOM
+  w.b.setSize(plankWidth, plankDepth);
   if (FALSE || true) {
     for (let i = 0; i < transomPlankNum; i++) {
       const start = plankPaths[i][0];
@@ -571,15 +518,7 @@ export function createSpaceBarge(): SpaceBarge {
       if (i === 0) color = topPlankColor;
       if (stripStartIdx <= i && i <= stripEndIdx) color = plankStripeColor;
       if (strip2StartIdx <= i && i <= strip2EndIdx) color = plankStripe2Color;
-      appendBoard(
-        builder.mesh,
-        {
-          path: path,
-          width: plankWidth,
-          depth: plankDepth,
-        },
-        color
-      );
+      w.addBoard(path, color);
     }
   }
 
@@ -598,15 +537,8 @@ export function createSpaceBarge(): SpaceBarge {
     for (let n of path) {
       quat.fromEuler(-Math.PI / 2, 0, Math.PI / 2, n.rot);
     }
-    appendBoard(
-      builder.mesh,
-      {
-        path: path,
-        width: ribWidth,
-        depth: ribDepth,
-      },
-      railColor
-    );
+    w.b.setSize(ribWidth, ribDepth);
+    w.addBoard(path, railColor);
   }
 
   let floorPlankIdx = 4;
@@ -642,6 +574,8 @@ export function createSpaceBarge(): SpaceBarge {
       // console.dir(boundAft);
       const floorBoardWidth = 1.2;
       const floorBoardGap = 0.05;
+
+      w.b.setSize(floorBoardWidth / 2 - floorBoardGap, plankDepth);
       // console.log(`ribSpace: ${ribSpace}`);
       const floorSegLength = 4.0;
       const halfNumFloorBoards = Math.floor(floorWidth / floorBoardWidth / 2);
@@ -667,24 +601,8 @@ export function createSpaceBarge(): SpaceBarge {
         }));
         // dbgPathWithGizmos(path);
         let mirroredPath = mirrorPath(clonePath(path), [0, 0, 1]);
-        appendBoard(
-          builder.mesh,
-          {
-            path: path,
-            width: floorBoardWidth / 2 - floorBoardGap,
-            depth: plankDepth,
-          },
-          floorColor
-        );
-        appendBoard(
-          builder.mesh,
-          {
-            path: mirroredPath,
-            width: floorBoardWidth / 2 - floorBoardGap,
-            depth: plankDepth,
-          },
-          floorColor
-        );
+        w.addBoard(path, floorColor);
+        w.addBoard(mirroredPath, floorColor);
         // break; // TODO(@darzu):
       }
     }
@@ -692,43 +610,31 @@ export function createSpaceBarge(): SpaceBarge {
 
   const ceilHeight = floorHeight + 15; // TODO(@darzu): OLD
 
+  const obj = w.finish(200);
+
   // ROTATE WHOLE THING (YIKES)
   {
     const rotate = quat.fromEuler(0, -Math.PI / 2, 0);
-    _timberMesh.pos.forEach((v) => {
+    obj.mesh.pos.forEach((v) => {
       V3.tQuat(v, rotate, v);
       V3.add(v, [0, -floorHeight, 0], v);
     });
 
     // TODO(@darzu): Z_UP: basis change. inline this above?
-    _timberMesh.pos.forEach((v) => V3.tMat4(v, transformYUpModelIntoZUp, v));
+    obj.mesh.pos.forEach((v) => V3.tMat4(v, transformYUpModelIntoZUp, v));
 
     const rotate2 = quat.fromYawPitchRoll(Math.PI, 0, 0);
-    _timberMesh.pos.forEach((v) => {
+    obj.mesh.pos.forEach((v) => {
       V3.tQuat(v, rotate2, v);
     });
   }
-
-  // console.dir(_timberMesh.colors);
-  _timberMesh.surfaceIds = _timberMesh.colors.map((_, i) => i);
-  const timberState = getBoardsFromMesh(_timberMesh);
-  verifyUnsharedProvokingForWood(_timberMesh, timberState);
-  // unshareProvokingForWood(_timberMesh, timberState);
-  // console.log(`before: ` + meshStats(_timberMesh));
-  // const timberMesh = normalizeMesh(_timberMesh);
-  // console.log(`after: ` + meshStats(timberMesh));
-  const timberMesh = _timberMesh as Mesh;
-  timberMesh.usesProvoking = true;
-
-  reserveSplinterSpace(timberState, 200);
-  validateMesh(timberState.mesh);
 
   const _end = performance.now();
   console.log(`createSpaceBarge took: ${(_end - _start).toFixed(1)}ms`);
 
   return {
-    timberState,
-    timberMesh,
+    timberState: obj.state,
+    timberMesh: obj.mesh,
     ribCount,
     ribSpace,
     ribWidth,
