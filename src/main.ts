@@ -43,18 +43,15 @@ const defaultGames: Record<string, () => Promise<void>> = {
   gjk: initGJKSandbox,
   rebound: initReboundSandbox,
   shipyard: initShipyardGame,
-  // broken-ish; too many temp f32s; port to Z-up
-  grass: initGrassGame,
+  grass: initGrassGame, // broken-ish; too many temp f32s; port to Z-up
   font: initFontEditor,
   cards: initCardsGame,
-  // TODO(@darzu): Z_UP: port to Z-up
-  hyperspace: initHyperspaceGame,
-  // broken-ish
-  cloth: initClothSandbox,
+  hyperspace: initHyperspaceGame, // TODO(@darzu): Z_UP: port to Z-up
+  cloth: initClothSandbox, // broken-ish
   cube: initCubeGame,
   gallery: initGalleryGame,
   modeling: initModelingGame,
-  ld53: initLD53,
+  ld53: initLD53, // TODO(@darzu): broken; map loading
   ld54: initLD54,
   mp: initMPGame,
   "graybox-starter": initGrayboxStarter,

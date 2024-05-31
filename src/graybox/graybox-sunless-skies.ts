@@ -57,7 +57,7 @@ import { FALSE, assert, dbgOnce } from "../utils/util.js";
 import { randNormalVec3, vec3Dbg } from "../utils/utils-3d.js";
 import { drawLine } from "../utils/utils-game.js";
 import { appendBoard, lerpBetween } from "../wood/shipyard.js";
-import { createTimberBuilder } from "../wood/wood.js";
+import { createBoardBuilder } from "../wood/wood.js";
 
 /*
 # of Sessions: 12

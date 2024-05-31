@@ -43,11 +43,11 @@ import {
 import { V } from "../matrix/sprig-matrix.js";
 import { TimeDef } from "../time/time.js";
 import {
-  TimberBuilder,
+  BoardBuilder,
   WoodHealthDef,
   WoodStateDef,
   createEmptyMesh,
-  createTimberBuilder,
+  createBoardBuilder,
   getBoardsFromMesh,
   verifyUnsharedProvokingForWood,
   reserveSplinterSpace,
@@ -76,7 +76,7 @@ const pitchSpeed = 0.000042;
 
 export let pirateKills = 0;
 
-export function appendPirateShip(b: TimberBuilder): RawMesh {
+export function appendPirateShip(b: BoardBuilder): RawMesh {
   const firstQuadIdx = b.mesh.quad.length;
 
   const length = 18;
@@ -306,7 +306,7 @@ EM.addLazyInit([RendererDef, TimeDef], [PiratePoolDef], (res) => {
       // make timber
       const timber = EM.mk();
       const _timberMesh = createEmptyMesh("pirateShip");
-      const builder = createTimberBuilder(_timberMesh);
+      const builder = createBoardBuilder(_timberMesh);
       appendPirateShip(builder);
       _timberMesh.surfaceIds = _timberMesh.colors.map((_, i) => i);
       const timberState = getBoardsFromMesh(_timberMesh);

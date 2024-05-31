@@ -13,7 +13,7 @@ import { PositionDef, RotationDef } from "../physics/transform.js";
 import { normalizeMesh } from "../meshes/mesh.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { randNormalVec3, vec3Reverse, vec4Reverse } from "../utils/utils-3d.js";
-import { SegState, createEmptyMesh, createTimberBuilder } from "./wood.js";
+import { SegState, createEmptyMesh, createBoardBuilder } from "./wood.js";
 import { RenderDataStdDef } from "../render/pipelines/std-scene.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { VERBOSE_LOG } from "../flags.js";
@@ -131,7 +131,7 @@ export const mkTimberSplinterFree = (
   depth: number
 ) => {
   // const b = createTimberBuilder(.5, .2);
-  const b = createTimberBuilder(createEmptyMesh("splinter"));
+  const b = createBoardBuilder(createEmptyMesh("splinter"));
   b.xLen = width;
   b.zLen = depth;
 

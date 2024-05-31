@@ -33,6 +33,7 @@ import {
 } from "../physics/aabb.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { PI } from "../utils/util-no-import.js";
+import { appendBoard } from "./shipyard.js";
 
 // TODO(@darzu): BUG: sometimes ball colisions don't work
 // TODO(@darzu): BUG: sometimes splinters are misaligned
@@ -264,7 +265,7 @@ export function addSplinterEndToSegment(
     mat4.create()
   );
   {
-    const b = createTimberBuilder(_tempSplinterMesh);
+    const b = createBoardBuilder(_tempSplinterMesh);
     b.xLen = W;
     b.zLen = D;
 
@@ -373,11 +374,13 @@ export function setEndQuadIdxs(loopVi: number, q: V4, facingDown: boolean) {
     V4.set(loopVi + 0, loopVi + 1, loopVi + 2, loopVi + 3, q);
 }
 
-export interface TimberBuilder {
+interface BoardBuilderProps {
   xLen: number;
   zLen: number;
   mesh: RawMesh;
-  // TODO(@darzu): REFACTOR. convert to pos and rot and merge w/ appendBoard
+}
+
+export interface BoardBuilder extends BoardBuilderProps {
   cursor: mat4;
   addSplinteredEnd: (loop: V4, numJags: number) => void;
   addLoopVerts: () => void;
@@ -386,7 +389,8 @@ export interface TimberBuilder {
   setCursor: (newCursor: mat4) => void;
 }
 
-export function createTimberBuilder(mesh: RawMesh): TimberBuilder {
+// TODO(@darzu): take BoardBuilderProps
+export function createBoardBuilder(mesh: RawMesh): BoardBuilder {
   // TODO(@darzu): Z_UP!! check this over
   // TODO(@darzu): have a system for building wood?
 
@@ -396,7 +400,7 @@ export function createTimberBuilder(mesh: RawMesh): TimberBuilder {
   const cursor: mat4 = mat4.create();
 
   // NOTE: Assumes +y is forward by default
-  const b: TimberBuilder = {
+  const b: BoardBuilder = {
     xLen: 0.2, // "width"
     zLen: 0.2, // "depth"
     mesh,

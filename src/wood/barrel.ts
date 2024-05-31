@@ -5,11 +5,11 @@ import { V, quat, V3, mat4 } from "../matrix/sprig-matrix.js";
 import {
   WoodState,
   createEmptyMesh,
-  TimberBuilder,
-  createTimberBuilder,
+  createBoardBuilder,
   getBoardsFromMesh,
   verifyUnsharedProvokingForWood,
   reserveSplinterSpace,
+  BoardBuilder,
 } from "./wood.js";
 import { lerpBetween, appendBoard, pathNodeFromMat4 } from "./shipyard.js";
 import { dbgPathWithGizmos } from "../debug/utils-gizmos.js";
@@ -42,7 +42,7 @@ export function createRingPath(
 export function createBarrelMesh(): [Mesh, WoodState] {
   const _timberMesh = createEmptyMesh("barrel");
 
-  const builder: TimberBuilder = createTimberBuilder(_timberMesh);
+  const builder: BoardBuilder = createBoardBuilder(_timberMesh);
 
   // const ringPath: Path = [];
   // const cursor = mat4.create();

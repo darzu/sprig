@@ -14,11 +14,11 @@ import { Mesh, RawMesh, transformMesh, validateMesh } from "../meshes/mesh.js";
 import { assert } from "../utils/util.js";
 import {
   createEmptyMesh,
-  createTimberBuilder,
+  createBoardBuilder,
   getBoardsFromMesh,
   verifyUnsharedProvokingForWood,
   reserveSplinterSpace,
-  TimberBuilder,
+  BoardBuilder,
   WoodState,
   setSideQuadIdxs,
   setEndQuadIdxs,
@@ -411,7 +411,7 @@ export function createLD53Ship(): WoodObj {
 
   const _timberMesh = createEmptyMesh("homeShip");
 
-  const builder: TimberBuilder = createTimberBuilder(_timberMesh);
+  const builder: BoardBuilder = createBoardBuilder(_timberMesh);
 
   // KEEL
   const keelWidth = 0.7;

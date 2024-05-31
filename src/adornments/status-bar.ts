@@ -16,7 +16,7 @@ import {
 } from "../render/renderer-ecs.js";
 import { clamp, unlerp, lerp } from "../utils/math.js";
 import { assert } from "../utils/util.js";
-import { createTimberBuilder } from "../wood/wood.js";
+import { createBoardBuilder } from "../wood/wood.js";
 
 const DBG_STAT_BAR = true;
 
@@ -57,7 +57,7 @@ export function createMultiBarMesh({
 }: MultiBarOpts): Mesh {
   const mesh = createEmptyMesh(statBarMeshName);
 
-  const builder = createTimberBuilder(mesh);
+  const builder = createBoardBuilder(mesh);
   builder.xLen = width; // +X
   builder.zLen = width; // +Z (after rotate below)
 

@@ -37,8 +37,8 @@ import { snapToPath } from "../utils/spline.js";
 import { dbgPathWithGizmos } from "../debug/utils-gizmos.js";
 import { getPathFrom2DQuadMesh } from "../wood/util-wood.js";
 import {
-  TimberBuilder,
-  createTimberBuilder,
+  BoardBuilder,
+  createBoardBuilder,
   getBoardsFromMesh,
   verifyUnsharedProvokingForWood,
   reserveSplinterSpace,
@@ -184,7 +184,7 @@ export function createSpaceBarge(): SpaceBarge {
   const _start = performance.now();
   const _timberMesh = createEmptyRawMesh("homeShip");
 
-  const builder: TimberBuilder = createTimberBuilder(_timberMesh);
+  const builder: BoardBuilder = createBoardBuilder(_timberMesh);
 
   // KEEL
   // TODO(@darzu): IMPL keel!

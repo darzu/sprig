@@ -11,11 +11,11 @@ import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { quat, V, V3 } from "../matrix/sprig-matrix.js";
 import {
   createEmptyMesh,
-  createTimberBuilder,
+  createBoardBuilder,
   createWoodHealth,
   getBoardsFromMesh,
   reserveSplinterSpace,
-  TimberBuilder,
+  BoardBuilder,
   verifyUnsharedProvokingForWood,
   WoodHealthDef,
   WoodState,
@@ -53,7 +53,7 @@ export function createDock() {
 export function createDockWood(): [Mesh, WoodState] {
   const _timberMesh = createEmptyMesh("dock");
 
-  const builder: TimberBuilder = createTimberBuilder(_timberMesh);
+  const builder: BoardBuilder = createBoardBuilder(_timberMesh);
 
   const numPlanks = 16;
   const plankWidth = 2.0;

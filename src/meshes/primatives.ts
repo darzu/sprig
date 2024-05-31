@@ -23,7 +23,7 @@ import { mat3, mat4, quat, tV, V, V2, V3, V4 } from "../matrix/sprig-matrix.js";
 import { assert, range } from "../utils/util.js";
 import { uintToVec3unorm, vec3Dbg } from "../utils/utils-3d.js";
 import { drawBall } from "../utils/utils-game.js";
-import { createTimberBuilder, createEmptyMesh } from "../wood/wood.js";
+import { createBoardBuilder, createEmptyMesh } from "../wood/wood.js";
 import { transformYUpModelIntoZUp } from "../camera/basis.js";
 
 // TODO(@darzu): Z_UP, some of this hasn't been ported
@@ -609,7 +609,7 @@ export function mkHalfEdgeQuadMesh(): RawMesh {
 export function mkTimberSplinterEnd(loopCursor?: mat4, splintersCursor?: mat4) {
   loopCursor = loopCursor ?? mat4.create();
   splintersCursor = splintersCursor ?? mat4.create();
-  const b = createTimberBuilder(createEmptyMesh("splinterEnd"));
+  const b = createBoardBuilder(createEmptyMesh("splinterEnd"));
   b.xLen = 0.5;
   b.zLen = 0.2;
 
