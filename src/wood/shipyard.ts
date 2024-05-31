@@ -36,7 +36,7 @@ import {
   transformAABB,
   updateAABBWithPoint,
 } from "../physics/aabb.js";
-import { ENDESGA16 } from "../color/palettes.js";
+import { ENDESGA16, RainbowEndesga16 } from "../color/palettes.js";
 import {
   BezierCubic,
   Path,
@@ -370,41 +370,23 @@ export function createLD53Ship(): WoodObj {
 
   const _stk = tmpStack();
 
-  const _timberMesh = createEmptyMesh("homeShip");
-
-  const builder: BoardBuilder = createBoardBuilder(_timberMesh);
+  const w = createWoodBuilder({ meshName: "homeShip" });
 
   // KEEL
   const keelWidth = 0.7;
   const keelDepth = 1.2;
-  builder.xLen = keelWidth;
-  builder.zLen = keelDepth;
+  w.b.setSize(keelWidth, keelDepth);
 
   const keelPath = getLD53KeelPath();
   const keelAABB = getAABBFromPath(keelPath);
   const keelSize = getSizeFromAABB(keelAABB, V3.mk());
 
-  const keelGroup: BoardGroupState = {
-    name: "keel",
-    boards: [],
-  };
-  keelGroup.boards.push(
-    appendBoard(
-      builder.mesh,
-      {
-        path: keelPath,
-        width: keelWidth,
-        depth: keelDepth,
-      },
-      keelColor
-    )
-  );
+  w.startGroup("keel");
+  w.addBoard(keelPath, keelColor);
 
   // RIBS
   const ribWidth = 0.5;
   const ribDepth = 0.4;
-  builder.xLen = ribWidth;
-  builder.zLen = ribDepth;
   const ribCount = 12;
   // const ribSpace = 3;
 
@@ -460,10 +442,10 @@ export function createLD53Ship(): WoodObj {
   );
   // fixPathBasis(railPath, [0, 1, 0], [0, 0, 1], [1, 0, 0]);
 
-  const ribsGroup: BoardGroupState = {
-    name: "ribs",
-    boards: [],
-  };
+  // RIBS
+  w.startGroup("ribs");
+  w.b.setSize(ribWidth, ribDepth);
+
   // let ribEnds: V3[] = [];
   let ribPaths: Path[] = [];
   let ribCurves: BezierCubic[] = [];
@@ -524,26 +506,8 @@ export function createLD53Ship(): WoodObj {
     // }
     // if (i === 1) dbgPathWithGizmos(weirdP);
 
-    ribsGroup.boards.push(
-      appendBoard(
-        builder.mesh,
-        {
-          path: bPath,
-          width: ribWidth,
-          depth: ribDepth,
-        },
-        ribColor
-      ),
-      appendBoard(
-        builder.mesh,
-        {
-          path: mirrorPath(clonePath(bPath), V(0, 0, 1)),
-          width: ribWidth,
-          depth: ribDepth,
-        },
-        ribColor
-      )
-    );
+    w.addBoard(bPath, ribColor);
+    w.addBoard(mirrorPath(clonePath(bPath), V(0, 0, 1)), ribColor);
   }
 
   // RAIL
@@ -560,30 +524,28 @@ export function createLD53Ship(): WoodObj {
   // rail board:
   const mirrorRailPath = mirrorPath(clonePath(railPath), V(0, 0, 1));
 
-  const railGroup: BoardGroupState = {
-    name: "rail",
-    boards: [],
-  };
-  railGroup.boards.push(
-    appendBoard(
-      builder.mesh,
-      {
-        path: railPath,
-        width: ribWidth,
-        depth: ribDepth,
-      },
-      railColor
-    ),
-    appendBoard(
-      builder.mesh,
-      {
-        path: mirrorRailPath,
-        width: ribWidth,
-        depth: ribDepth,
-      },
-      railColor
-    )
-  );
+  w.startGroup("rail");
+  w.b.setSize(ribWidth, ribDepth);
+  w.addBoard(railPath, railColor);
+  w.addBoard(mirrorRailPath, railColor);
+
+  // REAR RAIL
+  {
+    const start = railPath[0];
+    const end = mirrorRailPath[0];
+    const midPos = V3.lerp(start.pos, end.pos, 0.5, V3.mk());
+    V3.lerp(midPos, start.pos, 1.2, start.pos);
+    V3.lerp(midPos, end.pos, 1.2, end.pos);
+    const mid: PathNode = {
+      pos: midPos,
+      rot: quat.clone(start.rot),
+    };
+    const path: Path = [start, end];
+    for (let n of path) {
+      quat.fromEuler(-Math.PI / 2, 0, Math.PI / 2, n.rot);
+    }
+    w.addBoard(path, railColor);
+  }
 
   // translatePath(railPath, [0, 0, 8]);
   // dbgPathWithGizmos(railPath);
@@ -639,10 +601,8 @@ export function createLD53Ship(): WoodObj {
 
   let transomPlankNum = evenRibs[0].length;
 
-  const planksGroup: BoardGroupState = {
-    name: "planks",
-    boards: [],
-  };
+  w.startGroup("planks");
+  w.b.setSize(plankWidth, plankDepth);
   const plankPaths: Path[] = [];
   const plankPathsMirrored: Path[] = [];
   const _temp4 = V3.mk();
@@ -695,33 +655,13 @@ export function createLD53Ship(): WoodObj {
     if (stripStartIdx <= i && i <= stripEndIdx) color = plankStripeColor;
     if (strip2StartIdx <= i && i <= strip2EndIdx) color = plankStripe2Color;
 
-    planksGroup.boards.push(
-      appendBoard(
-        builder.mesh,
-        {
-          path: nodes,
-          width: plankWidth,
-          depth: plankDepth,
-        },
-        color
-      ),
-      appendBoard(
-        builder.mesh,
-        {
-          path: mirroredPath,
-          width: plankWidth,
-          depth: plankDepth,
-        },
-        color
-      )
-    );
+    w.addBoard(nodes, color);
+    w.addBoard(mirroredPath, color);
   }
 
   // TRANSOM
-  const transomGroup: BoardGroupState = {
-    name: "transom",
-    boards: [],
-  };
+  w.startGroup("transom");
+  w.b.setSize(plankWidth, plankDepth);
   for (let i = 0; i < transomPlankNum; i++) {
     const start = plankPaths[i][0];
     const end = plankPathsMirrored[i][0];
@@ -748,52 +688,11 @@ export function createLD53Ship(): WoodObj {
     if (i === 0) color = topPlankColor;
     if (stripStartIdx <= i && i <= stripEndIdx) color = plankStripeColor;
     if (strip2StartIdx <= i && i <= strip2EndIdx) color = plankStripe2Color;
-    transomGroup.boards.push(
-      appendBoard(
-        builder.mesh,
-        {
-          path: path,
-          width: plankWidth,
-          depth: plankDepth,
-        },
-        color
-      )
-    );
-  }
-
-  // REAR RAIL
-  {
-    const start = railPath[0];
-    const end = mirrorRailPath[0];
-    const midPos = V3.lerp(start.pos, end.pos, 0.5, V3.mk());
-    V3.lerp(midPos, start.pos, 1.2, start.pos);
-    V3.lerp(midPos, end.pos, 1.2, end.pos);
-    const mid: PathNode = {
-      pos: midPos,
-      rot: quat.clone(start.rot),
-    };
-    const path: Path = [start, end];
-    for (let n of path) {
-      quat.fromEuler(-Math.PI / 2, 0, Math.PI / 2, n.rot);
-    }
-    railGroup.boards.push(
-      appendBoard(
-        builder.mesh,
-        {
-          path: path,
-          width: ribWidth,
-          depth: ribDepth,
-        },
-        railColor
-      )
-    );
+    w.addBoard(path, color);
   }
 
   // FLOOR
-  const floorGroup: BoardGroupState = {
-    name: "floor",
-    boards: [],
-  };
+  w.startGroup("floor");
   let floorPlankIdx = 4;
   const floorBound1 = plankPaths[floorPlankIdx];
   const floorBound2 = plankPathsMirrored[floorPlankIdx];
@@ -823,6 +722,7 @@ export function createLD53Ship(): WoodObj {
     // console.dir(boundAft);
     const floorBoardWidth = 1.2;
     const floorBoardGap = 0.05;
+    w.b.setSize(floorBoardWidth / 2 - floorBoardGap, plankDepth);
     // console.log(`ribSpace: ${ribSpace}`);
     const floorSegLength = 4.0;
     const halfNumFloorBoards = Math.floor(floorWidth / floorBoardWidth / 2);
@@ -848,41 +748,30 @@ export function createLD53Ship(): WoodObj {
       }));
       // dbgPathWithGizmos(path);
       let mirroredPath = mirrorPath(clonePath(path), [0, 0, 1]);
-      floorGroup.boards.push(
-        appendBoard(
-          builder.mesh,
-          {
-            path: path,
-            width: floorBoardWidth / 2 - floorBoardGap,
-            depth: plankDepth,
-          },
-          floorColor
-        ),
-        appendBoard(
-          builder.mesh,
-          {
-            path: mirroredPath,
-            width: floorBoardWidth / 2 - floorBoardGap,
-            depth: plankDepth,
-          },
-          floorColor
-        )
-      );
+      w.addBoard(path, floorColor);
+      w.addBoard(mirroredPath, floorColor);
       // break; // TODO(@darzu):
     }
   }
 
   const ceilHeight = floorHeight + 15; // TODO(@darzu): OLD
 
+  const _meshDone = performance.now();
+  console.log(
+    `createLD53Ship, start->mesh: ${(_meshDone - _start).toFixed(1)}ms`
+  );
+
+  const shipObj = w.finish(200);
+
   // ROTATE WHOLE THING (YIKES)
   // TODO(@darzu): fix up ship construction
   if (false) {
     // TODO(@darzu): Z_UP: basis change. inline this above?
-    _timberMesh.pos.forEach((v) => V3.tMat4(v, transformYUpModelIntoZUp, v));
+    shipObj.mesh.pos.forEach((v) => V3.tMat4(v, transformYUpModelIntoZUp, v));
 
     // change so ship faces +y
     const rotate = quat.fromYawPitchRoll(-Math.PI / 2, 0, 0);
-    _timberMesh.pos.forEach((v) => {
+    shipObj.mesh.pos.forEach((v) => {
       V3.tQuat(v, rotate, v);
     });
 
@@ -892,42 +781,9 @@ export function createLD53Ship(): WoodObj {
   // lower the whole ship so it's main deck is at 0 height
   const DECK_AT_ZERO = false;
   if (DECK_AT_ZERO)
-    _timberMesh.pos.forEach((v) => {
+    shipObj.mesh.pos.forEach((v) => {
       V3.add(v, [0, 0, -floorHeight], v);
     });
-
-  const _meshDone = performance.now();
-  console.log(
-    `createLD53Ship, start->mesh: ${(_meshDone - _start).toFixed(1)}ms`
-  );
-
-  // console.dir(_timberMesh.colors);
-  _timberMesh.surfaceIds = _timberMesh.colors.map((_, i) => i);
-
-  // TODO(@darzu): BUGGED! New timberstate doesn't work as well as old.
-  const timberState: WoodState = {
-    mesh: _timberMesh,
-    groups: [
-      keelGroup,
-      ribsGroup,
-      railGroup,
-      planksGroup,
-      floorGroup,
-      transomGroup,
-    ],
-  };
-  // const timberState = getBoardsFromMesh(_timberMesh);
-
-  verifyUnsharedProvokingForWood(_timberMesh, timberState);
-  // unshareProvokingForWood(_timberMesh, timberState);
-  // console.log(`before: ` + meshStats(_timberMesh));
-  // const timberMesh = normalizeMesh(_timberMesh);
-  // console.log(`after: ` + meshStats(timberMesh));
-  const timberMesh = _timberMesh as Mesh;
-  timberMesh.usesProvoking = true;
-
-  reserveSplinterSpace(timberState, 200);
-  validateMesh(timberState.mesh);
 
   _stk.pop();
 
@@ -937,10 +793,7 @@ export function createLD53Ship(): WoodObj {
   );
   console.log(`createLD53Ship, total: ${(_end - _start).toFixed(1)}ms`);
 
-  return {
-    state: timberState,
-    mesh: timberMesh,
-  };
+  return shipObj;
 }
 
 export function pathNodeFromMat4(cursor: mat4): PathNode {
@@ -988,6 +841,27 @@ interface WoodBuilder {
 
 interface WoodBuilderProps {
   meshName: string;
+}
+
+// TODO(@darzu): just for debugging?
+export function colorGroup(
+  mesh: RawMesh,
+  group: BoardGroupState,
+  color: V3.InputT
+) {
+  group.boards.forEach((b) =>
+    b.segments.forEach((s) => {
+      for (let qi of s.quadSideIdxs) V3.copy(mesh.colors[qi], color);
+      if (s.quadFrontIdx) V3.copy(mesh.colors[s.quadFrontIdx], color);
+      if (s.quadBackIdx) V3.copy(mesh.colors[s.quadBackIdx], color);
+    })
+  );
+}
+export function rainbowColorWood(obj: WoodObj) {
+  obj.state.groups.forEach((g, i) => {
+    const color = RainbowEndesga16[i % (RainbowEndesga16.length - 1)];
+    colorGroup(obj.mesh, g, color);
+  });
 }
 
 export function createWoodBuilder(props: WoodBuilderProps): WoodBuilder {
@@ -1057,7 +931,7 @@ export function createWoodBuilder(props: WoodBuilderProps): WoodBuilder {
   }
 }
 
-// TODO(@darzu): merge into addBoard
+// TODO(@darzu): de-export, merge into addBoard, use BoardBuilder
 export function appendBoard(
   mesh: RawMesh,
   board: BoardPath,
@@ -1089,13 +963,6 @@ export function appendBoard(
     if (isFirst) addEndQuad(true);
     else addSideQuads();
     if (isLast) addEndQuad(false);
-
-    console.log(
-      `board full width: ${V3.dist(
-        mesh.pos[mesh.pos.length - 1],
-        mesh.pos[mesh.pos.length - 2]
-      ).toFixed(2)}`
-    );
 
     // create states
     if (!isFirst) {

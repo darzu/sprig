@@ -39,6 +39,7 @@ import {
   createWoodenBox,
   ld53ShipAABBs,
   loadFangShip,
+  rainbowColorWood,
 } from "./shipyard.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
 import { startPirates } from "./pirate.js";
@@ -122,9 +123,14 @@ export async function initShipyardGame() {
 
   if (DBG_TRANSPARENT_BOAT) EM.set(timber, AlphaDef, 0.5);
 
-  // const { state: timberState, mesh: timberMesh } = createLD53Ship();
-  const { state: timberState, mesh: timberMesh } = createWoodenBox();
-  // const { state: timberState, mesh: timberMesh } = await loadFangShip();
+  const woodObj = createLD53Ship();
+  // const woodObj = createWoodenBox();
+  // const woodObj = await loadFangShip();
+
+  // console.log(woodObj.state.groups.map((g) => g.name));
+  // rainbowColorWood(woodObj);
+
+  const { state: timberState, mesh: timberMesh } = woodObj;
 
   // console.log("timberMesh");
   // console.dir(timberMesh);
