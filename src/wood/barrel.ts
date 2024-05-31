@@ -11,9 +11,15 @@ import {
   reserveSplinterSpace,
   BoardBuilder,
 } from "./wood-builder.js";
-import { lerpBetween, appendBoard, pathNodeFromMat4 } from "./shipyard.js";
+import {
+  lerpBetween,
+  pathNodeFromMat4,
+  createWoodBuilder,
+  WoodObj,
+} from "./shipyard.js";
 import { dbgPathWithGizmos } from "../debug/utils-gizmos.js";
 import { Path } from "../utils/spline.js";
+import { BLACK } from "../meshes/mesh-list.js";
 
 const __tempCursor = mat4.create();
 export function createRingPath(
@@ -39,10 +45,10 @@ export function createRingPath(
   return path;
 }
 
-export function createBarrelMesh(): [Mesh, WoodState] {
-  const _timberMesh = createEmptyMesh("barrel");
+export function createBarrelMesh(): WoodObj {
+  const w = createWoodBuilder({ meshName: "barrel" });
 
-  const builder: BoardBuilder = createBoardBuilder(_timberMesh);
+  w.startGroup("all");
 
   // const ringPath: Path = [];
   // const cursor = mat4.create();
@@ -68,6 +74,8 @@ export function createBarrelMesh(): [Mesh, WoodState] {
   const initialAngle = Math.PI / 6;
   const angleStep = 2 * (initialAngle / numSeg);
 
+  w.b.setSize(plankWidth / 2 - plankGap, plankDepth / 2);
+
   const cursor = mat4.create();
   for (let rn of ringPath) {
     let path: Path = [];
@@ -79,26 +87,12 @@ export function createBarrelMesh(): [Mesh, WoodState] {
       mat4.translate(cursor, [0, segLen, 0], cursor);
     }
 
-    appendBoard(builder.mesh, {
-      path: path,
-      width: plankWidth / 2 - plankGap,
-      depth: plankDepth / 2,
-    });
+    w.addBoard(path, BLACK);
     // dbgPathWithGizmos(path);
   }
 
   // recenter
   // const size = getHalfsizeFromAABB(getAABBFromMesh(_timberMesh));
   // _timberMesh.pos.forEach((v) => V3.sub(v, size, v));
-
-  _timberMesh.surfaceIds = _timberMesh.colors.map((_, i) => i);
-  const timberState = getBoardsFromMesh(_timberMesh);
-  verifyUnsharedProvokingForWood(_timberMesh, timberState);
-  const timberMesh = _timberMesh as Mesh;
-  timberMesh.usesProvoking = true;
-
-  reserveSplinterSpace(timberState, 5);
-  validateMesh(timberState.mesh);
-
-  return [timberMesh, timberState];
+  return w.finish(5);
 }

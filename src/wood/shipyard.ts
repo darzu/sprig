@@ -931,8 +931,8 @@ export function createWoodBuilder(props: WoodBuilderProps): WoodBuilder {
   }
 }
 
-// TODO(@darzu): de-export, merge into addBoard, use BoardBuilder
-export function appendBoard(
+// TODO(@darzu): merge into addBoard, use BoardBuilder
+function appendBoard(
   mesh: RawMesh,
   board: BoardPath,
   color: V3.InputT = BLACK

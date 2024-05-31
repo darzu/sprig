@@ -29,7 +29,6 @@ import { assert } from "../utils/util.js";
 import {
   WoodObj,
   fixPathBasis,
-  appendBoard,
   lerpBetween,
   createWoodBuilder,
 } from "../wood/shipyard.js";
