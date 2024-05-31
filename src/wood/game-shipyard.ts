@@ -27,13 +27,10 @@ import {
   RenderableConstructDef,
   RenderableDef,
 } from "../render/renderer-ecs.js";
-import {
-  createWoodHealth,
-  resetWoodHealth,
-  resetWoodState,
-  WoodHealthDef,
-  WoodStateDef,
-} from "./wood-builder.js";
+import { resetWoodState, WoodStateDef } from "./wood-builder.js";
+import { WoodHealthDef } from "./wood-health.js";
+import { createWoodHealth } from "./wood-health.js";
+import { resetWoodHealth } from "./wood-health.js";
 import { BallMesh, HexMesh, PlaneMesh } from "../meshes/mesh-list.js";
 import { breakBullet, BulletDef, fireBullet } from "../cannons/bullet.js";
 import { GhostDef } from "../debug/ghost.js";

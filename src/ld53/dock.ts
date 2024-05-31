@@ -12,15 +12,15 @@ import { quat, V, V3 } from "../matrix/sprig-matrix.js";
 import {
   createEmptyMesh,
   createBoardBuilder,
-  createWoodHealth,
   getBoardsFromMesh,
   reserveSplinterSpace,
   BoardBuilder,
   verifyUnsharedProvokingForWood,
-  WoodHealthDef,
   WoodState,
   WoodStateDef,
 } from "../wood/wood-builder.js";
+import { WoodHealthDef } from "../wood/wood-health.js";
+import { createWoodHealth } from "../wood/wood-health.js";
 import { Path } from "../utils/spline.js";
 
 export const DockDef = EM.defineComponent("dock", () => true);

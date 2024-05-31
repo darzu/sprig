@@ -91,12 +91,9 @@ import {
   createRef,
   defineNetEntityHelper,
 } from "../ecs/em-helpers.js";
-import {
-  resetWoodHealth,
-  resetWoodState,
-  WoodHealthDef,
-  WoodStateDef,
-} from "../wood/wood-builder.js";
+import { resetWoodState, WoodStateDef } from "../wood/wood-builder.js";
+import { WoodHealthDef } from "../wood/wood-health.js";
+import { resetWoodHealth } from "../wood/wood-health.js";
 import { MapPaths } from "../levels/map-loader.js";
 import { stdRiggedRenderPipeline } from "../render/pipelines/std-rigged.js";
 import { PoseDef } from "../animation/skeletal.js";

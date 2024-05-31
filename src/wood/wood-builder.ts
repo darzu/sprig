@@ -59,7 +59,7 @@ could do geometry shader to turn line strips into triangles
 //  damage and construction purposes
 
 // Flag for serialization dbg. determine the max number of boards and segments; useful for sizing (u8 vs u16) for serializing
-const TRACK_MAX_BOARD_SEG_IDX = false;
+export const TRACK_MAX_BOARD_SEG_IDX = false;
 const TRACK_INVALID_BOARDS = false;
 
 const __temp1 = V3.mk();
@@ -140,34 +140,6 @@ export type WoodAssets = Partial<{
 export const WoodAssetsDef = EM.defineResource(
   "woodAssets",
   (registry: WoodAssets = {}) => registry
-);
-
-interface SegHealth {
-  prev?: SegHealth;
-  next?: SegHealth;
-  health: number;
-  broken: boolean;
-  splinterTopIdx?: number;
-  splinterBotIdx?: number;
-  // splinterTopGeneration?: number;
-  // splinterBotGeneration?: number;
-}
-type BoardHealth = SegHealth[];
-interface BoardGroupHealth {
-  boards: BoardHealth[];
-}
-interface WoodHealth {
-  // TODO(@darzu): why no pointer to state?
-  groups: BoardGroupHealth[];
-}
-
-// export type TimberBuilder = ReturnType<typeof createTimberBuilder>;
-
-export const WoodHealthDef = EM.defineNonupdatableComponent(
-  "woodHealth",
-  (s: WoodHealth) => {
-    return s;
-  }
 );
 
 // TODO(@darzu): Hmm this seems overly complicated
@@ -1011,65 +983,4 @@ export function unshareProvokingForWood(m: RawMesh, woodState: WoodState) {
       return false;
     }
   }
-}
-
-export function createWoodHealth(w: WoodState): WoodHealth {
-  if (TRACK_MAX_BOARD_SEG_IDX) {
-    const maxBoardIdx = w.groups.reduce((p, n) => p + n.boards.length, 0);
-    let maxSegIdx = -1;
-    for (let g of w.groups) {
-      for (let b of g.boards) {
-        maxSegIdx = Math.max(maxSegIdx, b.segments.length);
-      }
-    }
-    console.log(`maxBoardIdx: ${maxBoardIdx}`);
-    console.log(`maxSegIdx: ${maxSegIdx}`);
-  }
-
-  const groups: BoardGroupHealth[] = w.groups.map((g) => {
-    const boards: BoardHealth[] = g.boards.map((b) => {
-      let lastSeg = b.segments.reduce((p, n) => {
-        const h: SegHealth = {
-          prev: p,
-          health: 1.0,
-          broken: false,
-        };
-        return h;
-      }, undefined as SegHealth | undefined);
-      if (!lastSeg) return [] as SegHealth[];
-      // patch up "next" ptrs
-      while (lastSeg.prev) {
-        lastSeg.prev.next = lastSeg;
-        lastSeg = lastSeg.prev;
-      }
-      let nextSeg: SegHealth | undefined = lastSeg;
-      const segHealths: SegHealth[] = [];
-      while (nextSeg) {
-        segHealths.push(nextSeg);
-        nextSeg = nextSeg.next;
-      }
-      // console.dir(segHealths);
-      return segHealths;
-    });
-    return {
-      boards,
-    };
-  });
-
-  return {
-    groups,
-  };
-}
-
-export function resetWoodHealth(wh: WoodHealth) {
-  wh.groups.forEach((g) => {
-    g.boards.forEach((b) =>
-      b.forEach((s) => {
-        s.health = 1.0;
-        s.broken = false;
-        s.splinterTopIdx = undefined;
-        s.splinterBotIdx = undefined;
-      })
-    );
-  });
 }

@@ -44,17 +44,17 @@ import { V } from "../matrix/sprig-matrix.js";
 import { TimeDef } from "../time/time.js";
 import {
   BoardBuilder,
-  WoodHealthDef,
   WoodStateDef,
   createEmptyMesh,
   createBoardBuilder,
   getBoardsFromMesh,
   verifyUnsharedProvokingForWood,
   reserveSplinterSpace,
-  createWoodHealth,
-  resetWoodHealth,
   resetWoodState,
 } from "./wood-builder.js";
+import { WoodHealthDef } from "./wood-health.js";
+import { createWoodHealth } from "./wood-health.js";
+import { resetWoodHealth } from "./wood-health.js";
 import { fireBullet } from "../cannons/bullet.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { HEX_MESH } from "../meshes/primatives.js";

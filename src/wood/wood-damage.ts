@@ -43,7 +43,6 @@ import { randNormalVec3, vec3Dbg } from "../utils/utils-3d.js";
 import { SplinterPoolsDef, SplinterPool } from "./wood-splinters.js";
 import {
   WoodStateDef,
-  WoodHealthDef,
   addSplinterEndToSegment,
   getSegmentRotation,
   removeSplinterEnd,
@@ -51,6 +50,7 @@ import {
   _trisPerSplinter,
   _vertsPerSplinter,
 } from "./wood-builder.js";
+import { WoodHealthDef } from "./wood-health.js";
 
 const DBG_WOOD_DMG = true;
 

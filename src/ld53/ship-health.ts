@@ -1,6 +1,6 @@
 import { EM } from "../ecs/ecs.js";
 import { Component } from "../ecs/em-components.js";
-import { WoodHealthDef } from "../wood/wood-builder.js";
+import { WoodHealthDef } from "../wood/wood-health.js";
 import { Phase } from "../ecs/sys-phase.js";
 
 // const MIN_HEALTH_PERCENT = 0.7;
