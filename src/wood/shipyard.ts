@@ -918,23 +918,15 @@ export function createWoodBuilder(props: WoodBuilderProps): WoodBuilder {
 
   function addBoard(path: Path, color: V3.InputT) {
     assert(currentGroup, `Must call startGroup() before addBoard()`);
-    const state = appendBoard(
-      mesh,
-      {
-        width: b.xLen,
-        depth: b.zLen,
-        path,
-      },
-      color
-    );
+    const state = appendBoard(b, path, color);
     currentGroup.boards.push(state);
   }
 }
 
 // TODO(@darzu): merge into addBoard, use BoardBuilder
 function appendBoard(
-  mesh: RawMesh,
-  board: BoardPath,
+  b: BoardBuilder,
+  path: Path,
   color: V3.InputT = BLACK
 ): BoardState {
   // TODO(@darzu): PERF. Instead of creating V3s, we should be indexing into a f32 array
@@ -944,25 +936,29 @@ function appendBoard(
     localAABB: createAABB(),
   };
 
-  assert(board.path.length >= 2, `invalid board path!`);
+  const mesh = b.mesh;
+
+  assert(path.length >= 2, `invalid board path!`);
   // TODO(@darzu): de-duplicate with TimberBuilder
   const firstQuadIdx = mesh.quad.length;
   // const mesh = b.mesh;
 
   // console.log(`board width:${board.width},depth:${board.depth}`);
 
-  board.path.forEach((p, i) => {
+  path.forEach((p, i) => {
     // tracking
     const isFirst = i === 0;
     const isFirstSeg = i === 1;
-    const isLast = i === board.path.length - 1;
+    const isLast = i === path.length - 1;
     const firstQIdx = mesh.quad.length;
 
+    b.setPosRot(p.pos, p.rot);
+
     // add verts & quads
-    addLoopVerts(p);
-    if (isFirst) addEndQuad(true);
-    else addSideQuads();
-    if (isLast) addEndQuad(false);
+    b.addLoopVerts();
+    if (isFirst) b.addEndQuad(true);
+    else b.addSideQuads();
+    if (isLast) b.addEndQuad(false);
 
     // create states
     if (!isFirst) {
@@ -985,10 +981,10 @@ function appendBoard(
       const quadBackIdx = isFirstSeg ? firstQIdx - 1 : undefined;
       const quadFrontIdx = isLast ? firstQIdx + 4 : undefined;
 
-      const midLine = createLine(board.path[i - 1].pos, board.path[i].pos);
+      const midLine = createLine(path[i - 1].pos, path[i].pos);
 
-      const upAft = quat.up(board.path[i - 1].rot, TV1);
-      const upFwd = quat.up(board.path[i].rot, TV2);
+      const upAft = quat.up(path[i - 1].rot, TV1);
+      const upFwd = quat.up(path[i].rot, TV2);
       const up = V3.avg(upAft, upFwd, TV1);
 
       const midRotation = quat.fromForwardAndUpish(
@@ -1008,8 +1004,8 @@ function appendBoard(
         //   getQuadAreaNorm(mesh, quadSideIdxs[2]),
         //   getQuadAreaNorm(mesh, quadSideIdxs[3]),
         // ],
-        xWidth: board.width,
-        zDepth: board.depth,
+        xWidth: b.xLen,
+        zDepth: b.zLen,
         aftLoop,
         fwdLoop,
         quadSideIdxs,
@@ -1031,47 +1027,6 @@ function appendBoard(
   //  indexes 2, 3 of a loop are for stuff ahead (next sides, end cap)
 
   return bState;
-
-  function addSideQuads() {
-    const loop2Idx = mesh.pos.length - 4;
-    const loop1Idx = mesh.pos.length - 4 - 4;
-
-    const q0 = V4.mk();
-    const q1 = V4.mk();
-    const q2 = V4.mk();
-    const q3 = V4.mk();
-
-    setSideQuadIdxs(loop1Idx, loop2Idx, q0, q1, q2, q3);
-
-    mesh.quad.push(q0, q1, q2, q3);
-  }
-
-  function addEndQuad(facingNegY: boolean) {
-    const lastLoopIdx = mesh.pos.length - 4;
-    const q = V4.mk();
-    setEndQuadIdxs(lastLoopIdx, q, facingNegY);
-    mesh.quad.push(q);
-  }
-
-  function addLoopVerts(n: PathNode) {
-    // forward is y-axis, width is x-axis, depth is z-axis
-    const v0 = V(board.width, 0, board.depth);
-    const v1 = V(board.width, 0, -board.depth);
-    const v2 = V(-board.width, 0, -board.depth);
-    const v3 = V(-board.width, 0, board.depth);
-    // rotate
-    V3.tQuat(v0, n.rot, v0);
-    V3.tQuat(v1, n.rot, v1);
-    V3.tQuat(v2, n.rot, v2);
-    V3.tQuat(v3, n.rot, v3);
-    // translate
-    V3.add(v0, n.pos, v0);
-    V3.add(v1, n.pos, v1);
-    V3.add(v2, n.pos, v2);
-    V3.add(v3, n.pos, v3);
-    // append
-    mesh.pos.push(v0, v1, v2, v3);
-  }
 }
 
 // TODO(@darzu): perhaps all uses of fixPathBasis are bad?
