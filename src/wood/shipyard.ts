@@ -367,6 +367,38 @@ function bezierFromPointsDirectionsInfluence({
   return railCurve;
 }
 
+// TODO(@darzu): REFACTOR ABSTRACTION w/ "keyframe" beziers
+type CurvesBetweenPaths = {
+  start: Path;
+  end: Path;
+  makeCurve: (start: V3, end: V3, i: number) => BezierCubic;
+  snapAxis: 0 | 1 | 2;
+  intervals: Generator<number>;
+};
+
+function* createCurvesBetweenPaths(
+  p: CurvesBetweenPaths
+): Generator<BezierCubic> {
+  let i = 0;
+  for (let u of p.intervals) {
+    const start = snapToPath(p.start, u, p.snapAxis, V3.mk());
+    const end = snapToPath(p.end, u, p.snapAxis, V3.mk());
+    let curve = p.makeCurve(start, end, i);
+    yield curve;
+    i++;
+  }
+}
+
+// TODO(@darzu): eh, idk about generators. Save memory at best I think, so not worth it for numbers.
+function rangeGen<T>(num: number, fn: (i) => T): Generator<T> {
+  function* gen(): Generator<T> {
+    for (let i = 0; i < num; i++) {
+      yield fn(i);
+    }
+  }
+  return gen();
+}
+
 export function createLD53Ship(): WoodObj {
   const _start = performance.now();
 
@@ -448,12 +480,6 @@ export function createLD53Ship(): WoodObj {
   w.startGroup("ribs");
   w.b.setSize(ribWidth, ribDepth);
 
-  function* nextRibX(): Generator<number> {
-    for (let i = 0; i < ribCount; i++) {
-      yield i * ribSpace + ribSpace + keelAABB.min[0];
-    }
-  }
-
   const numRibSegs = 8;
 
   w.b.setSize(ribWidth * 1.2, ribDepth * 1.2);
@@ -472,7 +498,11 @@ export function createLD53Ship(): WoodObj {
         endInfluence: 5,
       }),
     snapAxis: 0,
-    intervals: nextRibX(),
+    // intervals: nextRibX(),
+    intervals: rangeGen(
+      ribCount,
+      (i) => i * ribSpace + ribSpace + keelAABB.min[0]
+    ),
   });
   const ribCurves = [...ribCurvesGen];
 
@@ -480,28 +510,6 @@ export function createLD53Ship(): WoodObj {
     const path = createPathFromBezier(c, numRibSegs, [1, 0, 0]);
     w.addBoard(path, ribColor);
     w.addBoard(mirrorPath(clonePath(path), V(0, 0, 1)), ribColor);
-  }
-
-  // TODO(@darzu): REFACTOR ABSTRACTION w/ "keyframe" beziers
-  type WallBetweenPaths = {
-    start: Path;
-    end: Path;
-    makeCurve: (start: V3, end: V3, i: number) => BezierCubic;
-    snapAxis: 0 | 1 | 2;
-    intervals: Generator<number>;
-  };
-
-  function* createCurvesBetweenPaths(
-    p: WallBetweenPaths
-  ): Generator<BezierCubic> {
-    let i = 0;
-    for (let u of p.intervals) {
-      const start = snapToPath(p.start, u, p.snapAxis, V3.mk());
-      const end = snapToPath(p.end, u, p.snapAxis, V3.mk());
-      let curve = p.makeCurve(start, end, i);
-      yield curve;
-      i++;
-    }
   }
 
   // RAIL
