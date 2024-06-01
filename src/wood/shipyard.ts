@@ -338,6 +338,15 @@ function createPathFromStartRotLen({
   return path;
 }
 
+type BezierFromPointsDirectionsInfluence = {
+  start: V3.InputT;
+  startDir: V3.InputT;
+  startInfluence: number;
+  end: V3.InputT;
+  endDir: V3.InputT;
+  endInfluence: number;
+};
+
 function bezierFromPointsDirectionsInfluence({
   start,
   startDir,
@@ -345,14 +354,7 @@ function bezierFromPointsDirectionsInfluence({
   end,
   endDir,
   endInfluence,
-}: {
-  start: V3.InputT;
-  startDir: V3.InputT;
-  startInfluence: number;
-  end: V3.InputT;
-  endDir: V3.InputT;
-  endInfluence: number;
-}): BezierCubic {
+}: BezierFromPointsDirectionsInfluence): BezierCubic {
   // TODO(@darzu): REFACTOR: bezier from end points + rotation & influence
   let railCurve: BezierCubic;
 
@@ -446,82 +448,64 @@ export function createLD53Ship(): WoodObj {
   w.startGroup("ribs");
   w.b.setSize(ribWidth, ribDepth);
 
-  // let ribEnds: V3[] = [];
-  let ribPaths: Path[] = [];
-  let ribCurves: BezierCubic[] = [];
-  for (let i = 0; i < ribCount; i++) {
-    // const ribX = i * ribSpace + 2 + keelAABB.min[0];
-    const ribX = i * ribSpace + ribSpace + keelAABB.min[0];
-    const ribStart = snapXToPath(keelPath, ribX, V3.mk());
-
-    // const p = translatePath(makeRibPath(i), V(i * ribSpace, 0, 0));
-    // const weirdP = translatePath(makeRibPathWierd(i), ribStart);
-    // if (i === 0) dbgPathWithGizmos(p);
-
-    // TODO(@darzu): compute outboard with bezier curve
-    // const outboard = (1 - Math.abs(i - ribCount / 2) / (ribCount / 2)) * 10;
-
-    let ribCurve: BezierCubic;
-    {
-      const p0 = V3.clone(ribStart);
-      const p1 = V3.add(p0, [0, 0, 5], V3.mk());
-      // TODO(@darzu): HACKs for the first and last rib
-      // if (i === 0) {
-      //   p1[1] += 1;
-      //   p1[2] -= 4;
-      // }
-      if (i === ribCount - 1) {
-        p1[1] += 1;
-        p1[2] -= 4;
-      }
-      const ribEnd = snapXToPath(railPath, ribStart[0], V3.mk());
-      // ribEnds.push(ribEnd);
-
-      const p3 = ribEnd;
-      // const p3 = vec3.add(ribStart, [0, keelSize[1], outboard], vec3.create());
-      const p2 = V3.add(p3, [0, -5, 2], V3.mk());
-      ribCurve = { p0, p1, p2, p3 };
-
-      // if (i === 0) {
-      //   console.dir(railPath);
-      //   console.log(vec3Dbg(ribStart));
-      //   console.log(vec3Dbg(ribEnd));
-      //   console.dir(ribCurve);
-      // }
+  function* nextRibX(): Generator<number> {
+    for (let i = 0; i < ribCount; i++) {
+      yield i * ribSpace + ribSpace + keelAABB.min[0];
     }
-    ribCurves.push(ribCurve);
+  }
 
-    const numRibSegs = 8;
-    const bPath = createPathFromBezier(ribCurve, numRibSegs, [1, 0, 0]);
-    // fixPathBasis(bPath, [0, 1, 0], [0, 0, 1], [1, 0, 0]);
-    ribPaths.push(bPath);
+  const numRibSegs = 8;
 
-    // if (i === 0) {
-    //   console.log("RIB BEZIER PATH");
-    //   // console.log(outboard);
-    //   console.dir(ribCurve);
-    //   console.dir(bPath);
-    //   dbgPathWithGizmos(bPath);
-    //   dbgPathWithGizmos(mirrorPath(clonePath(bPath), V(0, 0, 1)));
-    // }
-    // if (i === 1) dbgPathWithGizmos(weirdP);
+  w.b.setSize(ribWidth * 1.2, ribDepth * 1.2);
 
-    w.addBoard(bPath, ribColor);
-    w.addBoard(mirrorPath(clonePath(bPath), V(0, 0, 1)), ribColor);
+  const ribCurvesGen = createCurvesBetweenPaths({
+    start: keelPath,
+    end: railPath,
+    makeCurve: (start, end, i) =>
+      // TODO(@darzu): ABSTRACTION. this could be bezier-2D since we're fixed to a plane sort of
+      bezierFromPointsDirectionsInfluence({
+        start,
+        startDir: V3.fromYawPitch(0, PId2), // TODO(@darzu): ABSTRACTION. Don't love specifying these angles like this
+        startInfluence: i === ribCount - 1 ? 2 : 5,
+        end,
+        endDir: V3.fromYawPitch(PI, PId6), // [0, -5, 2]
+        endInfluence: 5,
+      }),
+    snapAxis: 0,
+    intervals: nextRibX(),
+  });
+  const ribCurves = [...ribCurvesGen];
+
+  for (let c of ribCurves) {
+    const path = createPathFromBezier(c, numRibSegs, [1, 0, 0]);
+    w.addBoard(path, ribColor);
+    w.addBoard(mirrorPath(clonePath(path), V(0, 0, 1)), ribColor);
+  }
+
+  // TODO(@darzu): REFACTOR ABSTRACTION w/ "keyframe" beziers
+  type WallBetweenPaths = {
+    start: Path;
+    end: Path;
+    makeCurve: (start: V3, end: V3, i: number) => BezierCubic;
+    snapAxis: 0 | 1 | 2;
+    intervals: Generator<number>;
+  };
+
+  function* createCurvesBetweenPaths(
+    p: WallBetweenPaths
+  ): Generator<BezierCubic> {
+    let i = 0;
+    for (let u of p.intervals) {
+      const start = snapToPath(p.start, u, p.snapAxis, V3.mk());
+      const end = snapToPath(p.end, u, p.snapAxis, V3.mk());
+      let curve = p.makeCurve(start, end, i);
+      yield curve;
+      i++;
+    }
   }
 
   // RAIL
-  // fix rail spacing to match ribs
-  for (let i = 0; i < ribCount; i++) {
-    const railIdx = i + 1;
-    const ribPath = ribPaths[i];
-    const ribEnd = ribPath[ribPath.length - 1];
-    // console.log(`${vec3Dbg(railPath[railIdx].pos)} vs ${ribEnd.pos}`);
-    V3.copy(railPath[railIdx].pos, ribEnd.pos);
-    // railPath[railIdx].pos[0] = ribStarts[i][0];
-    // railPath[railIdx].pos[2] = ribStarts[i][2];
-  }
-  // rail board:
+  // TODO(@darzu): mirror rail
   const mirrorRailPath = mirrorPath(clonePath(railPath), V(0, 0, 1));
 
   w.startGroup("rail");
