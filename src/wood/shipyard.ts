@@ -418,7 +418,7 @@ export function createLD53Ship(): WoodObj {
   w.startGroup("keel");
   w.addBoard(keelPath, keelColor);
 
-  // RIBS
+  // RAIL
   const ribWidth = 0.5;
   const ribDepth = 0.4;
   const ribCount = 12;
@@ -431,50 +431,26 @@ export function createLD53Ship(): WoodObj {
   const prow = V(keelAABB.max[0] + prowOverhang, railHeight, 0);
   const sternOverhang = 1;
   const sternpost = V(keelAABB.min[0] - sternOverhang, railHeight, 0);
-  // const transomWidth = 12;
   const transomWidth = 6;
   const railLength = keelLength + prowOverhang + sternOverhang;
 
   const ribSpace = railLength / (ribCount + 1);
-  // const ribSpace = (railLength - 2) / ribCount;
 
-  let railCurve: BezierCubic;
-  {
-    // const sternAngle = (1 * Math.PI) / 16;
-    const sternAngle = (3 * Math.PI) / 16;
-    const sternInfluence = 24;
-    const prowAngle = (4 * Math.PI) / 16;
-    const prowInfluence = 12;
-    const p0 = V3.add(sternpost, [0, 0, transomWidth * 0.5], V3.mk());
-    const p1 = V3.add(
-      p0,
-      [
-        Math.cos(sternAngle) * sternInfluence,
-        0,
-        Math.sin(sternAngle) * sternInfluence,
-      ],
-      V3.mk()
-    );
-    const p3 = prow;
-    const p2 = V3.add(
-      p3,
-      [
-        -Math.cos(prowAngle) * prowInfluence,
-        0,
-        Math.sin(prowAngle) * prowInfluence,
-      ],
-      V3.mk()
-    );
+  let railCurve = bezierFromPointsDirectionsInfluence({
+    start: V3.add(sternpost, [0, 0, transomWidth * 0.5], V3.mk()),
+    startDir: V3.fromYawPitch(PId2, (3 * Math.PI) / 16),
+    startInfluence: 24,
+    end: prow,
+    endDir: V3.fromYawPitch(-PId2, (4 * Math.PI) / 16),
+    endInfluence: 12,
+  });
 
-    railCurve = { p0, p1, p2, p3 };
-  }
   const railNodes = ribCount + 2;
   const railPath = createPathFromBezier(
     railCurve,
     railNodes,
     [0, 1, 0] // TODO(@darzu): Z_UP
   );
-  // fixPathBasis(railPath, [0, 1, 0], [0, 0, 1], [1, 0, 0]);
 
   // RIBS
   w.startGroup("ribs");
@@ -498,7 +474,6 @@ export function createLD53Ship(): WoodObj {
         endInfluence: 5,
       }),
     snapAxis: 0,
-    // intervals: nextRibX(),
     intervals: rangeGen(
       ribCount,
       (i) => i * ribSpace + ribSpace + keelAABB.min[0]
