@@ -355,3 +355,69 @@ Define Fwd in addition to Up
 Write Less to Write More:
   https://cohost.org/zeux/post/309475-write-less-to-write
 
+The trick to working in 3D is to work in 2D as much as possible.
+  Most algorithms should first be worked out in 2D and then extended to 3D.
+  Cardboard/billboards work perfectly well as stand-in or shipable assets in 3D
+  Many problems can be simplified to work on either a 
+    2D world-map view (e.g. pathfinding, level layout)
+    2D cross-section (e.g. bullet trajectory)
+
+Code + data flow left-to-right: 🧵
+
+  Maybe we've been writing code backwards this whole time.
+  Why should data flow right-to-left while we read left-to-right?
+
+  R2L: widget = makeWidget(param1, param2)
+
+  Instead perhaps we should have data flow left-to-right so it matches how you read code, inputs flow into outputs:
+
+  L2R: (param1, param2)makeWidget => widget
+
+  right-to-left is constantly awkward when you then want to take the output and pass it through another function:
+
+  R2L: thingy = toThingy(makeWidget(param1, param2))
+
+  🧵👇
+
+  While writing R2L code you are constantly appending new code on the left. 
+  And while reading, you have to maintain a mental "stack" and jump forward and backward to trace the data
+  Or you reason backwards from the output type. And it only gets worse with more levels of nesting.
+
+  R2L: gizmo = asGizmo(toThingy(makeWidget(param2, parma2)))
+
+  In an L2R alternate universe this could be:
+
+  L2R: (((param1, param2)makeWidget)toThingy)asGizmo => gizmo
+
+
+  In L2R your reading comprehension and the data flow in the same direction, and it doesn't get worse with more nesting.
+
+  I think we actually already admit this is the better way to write code. 
+  L2R patterns show up over and over again in method chaining:
+
+  L2R: name.concat("code").toUpperCase().trim()
+
+  and bash-style pipe'ing:
+
+  L2R: $ cat file.txt | sort | uniq
+
+  and point-free and tacit programming.
+
+
+  But it's really awkward trying to retro-fit L2R into C-style languages, just look at the wonky syntax needed in the Javascript pipeline operator proposal: https://github.com/tc39/proposal-pipeline-operator
+
+  I suspect total beginners to programming would have an easier time learning a left-to-right syntax.
+
+  So anyway, maybe I'll make a left-to-right language someday.
+
+  R2L:
+  const firstRib = bezierFromPointsDirectionsInfluence({
+      start,
+      startDir: V3.fromYawPitch(0, PId6),
+      startInfluence: i === ribCount - 1 ? 2 : 5,
+      end,
+      endDir: V3.fromYawPitch(PI, PId6),
+      endInfluence: 5,
+    });
+
+  L2R:
