@@ -81,6 +81,9 @@ BOARD OR SHEET + coloring
 
 // TODO(@darzu): use arc-length parameterization to resample splines
 
+// TODO(@darzu): REFACTOR ABSTRACTION w/ "keyframe" beziers. TweenBetweenKeyframes
+//  keyframe curves are editable
+
 const railColor = ENDESGA16.darkBrown;
 const keelColor = ENDESGA16.darkBrown;
 const ribColor = ENDESGA16.darkBrown;
@@ -367,7 +370,6 @@ function bezierFromPointsDirectionsInfluence({
   return railCurve;
 }
 
-// TODO(@darzu): REFACTOR ABSTRACTION w/ "keyframe" beziers
 type CurvesBetweenPaths = {
   start: Path;
   end: Path;
@@ -418,7 +420,7 @@ export function createLD53Ship(): WoodObj {
   w.startGroup("keel");
   w.addBoard(keelPath, keelColor);
 
-  // RAIL
+  // RIBS
   const ribWidth = 0.5;
   const ribDepth = 0.4;
   const ribCount = 12;
@@ -426,6 +428,7 @@ export function createLD53Ship(): WoodObj {
 
   const keelLength = keelSize[0];
 
+  // RAIL
   const railHeight = keelAABB.max[1] - 1;
   const prowOverhang = 0.5;
   const prow = V(keelAABB.max[0] + prowOverhang, railHeight, 0);
@@ -458,8 +461,6 @@ export function createLD53Ship(): WoodObj {
 
   const numRibSegs = 8;
 
-  w.b.setSize(ribWidth * 1.2, ribDepth * 1.2);
-
   const ribCurvesGen = createCurvesBetweenPaths({
     start: keelPath,
     end: railPath,
@@ -467,7 +468,9 @@ export function createLD53Ship(): WoodObj {
       // TODO(@darzu): ABSTRACTION. this could be bezier-2D since we're fixed to a plane sort of
       bezierFromPointsDirectionsInfluence({
         start,
-        startDir: V3.fromYawPitch(0, PId2), // TODO(@darzu): ABSTRACTION. Don't love specifying these angles like this
+        // TODO(@darzu): ABSTRACTION. Don't love specifying these angles like this
+        startDir: V3.fromYawPitch(0, PId6),
+        // startDir: V3.fromYawPitch(0, PId2),
         startInfluence: i === ribCount - 1 ? 2 : 5,
         end,
         endDir: V3.fromYawPitch(PI, PId6), // [0, -5, 2]
@@ -475,11 +478,32 @@ export function createLD53Ship(): WoodObj {
       }),
     snapAxis: 0,
     intervals: rangeGen(
-      ribCount,
-      (i) => i * ribSpace + ribSpace + keelAABB.min[0]
+      ribCount - 1,
+      (i) => i * ribSpace + ribSpace + keelAABB.min[0] + 2
     ),
   });
-  const ribCurves = [...ribCurvesGen];
+
+  // TODO(@darzu): transom rib!
+  const transomRibStart = V(keelAABB.min[0] + 2.5, 2, 0);
+  const transomRibEnd = V(
+    keelAABB.min[0] - sternOverhang,
+    railHeight,
+    transomWidth * 0.5
+  );
+  const transomRibStartDir = V3.dir(transomRibEnd, transomRibStart, V3.mk());
+  V3.pitch(transomRibStartDir, -PId12, transomRibStartDir);
+  const transomRibEndDir = V3.dir(transomRibStart, transomRibEnd, V3.mk());
+  V3.pitch(transomRibEndDir, -PId6, transomRibEndDir);
+  const transomRibCurve = bezierFromPointsDirectionsInfluence({
+    start: transomRibStart,
+    startDir: transomRibStartDir,
+    startInfluence: 5,
+    end: transomRibEnd,
+    endDir: transomRibEndDir,
+    endInfluence: 5,
+  });
+
+  const ribCurves = [transomRibCurve, ...ribCurvesGen];
 
   for (let c of ribCurves) {
     const path = createPathFromBezier(c, numRibSegs, [1, 0, 0]);
@@ -488,12 +512,10 @@ export function createLD53Ship(): WoodObj {
   }
 
   // RAIL
-  // TODO(@darzu): mirror rail
-  const mirrorRailPath = mirrorPath(clonePath(railPath), V(0, 0, 1));
-
   w.startGroup("rail");
   w.b.setSize(ribWidth, ribDepth);
   w.addBoard(railPath, railColor);
+  const mirrorRailPath = mirrorPath(clonePath(railPath), V(0, 0, 1));
   w.addBoard(mirrorRailPath, railColor);
 
   // REAR RAIL
@@ -503,10 +525,6 @@ export function createLD53Ship(): WoodObj {
     const midPos = V3.lerp(start.pos, end.pos, 0.5, V3.mk());
     V3.lerp(midPos, start.pos, 1.2, start.pos);
     V3.lerp(midPos, end.pos, 1.2, end.pos);
-    const mid: PathNode = {
-      pos: midPos,
-      rot: quat.clone(start.rot),
-    };
     const path: Path = [start, end];
     for (let n of path) {
       quat.fromEuler(-Math.PI / 2, 0, Math.PI / 2, n.rot);
@@ -514,11 +532,7 @@ export function createLD53Ship(): WoodObj {
     w.addBoard(path, railColor);
   }
 
-  // translatePath(railPath, [0, 0, 8]);
-  // dbgPathWithGizmos(railPath);
-
   // PLANK PARAMS
-  // const plankCount = 20;
   const plankWidth = 0.4;
   const plankDepth = 0.2;
 
