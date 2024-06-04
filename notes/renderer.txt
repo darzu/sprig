@@ -2368,3 +2368,5 @@ Getting started with Graphics Programming:
       Indirect lighting, Volumetrics, Anti-aliasing
   "The general recommendation is to develop a project or demo that you can show off."
   
+Logarithmic depth buffer:
+  https://threejs.org/examples/?q=dept#webgl_camera_logarithmicdepthbuffer

@@ -421,3 +421,55 @@ Code + data flow left-to-right: 🧵
     });
 
   L2R:
+
+  ---
+  However I think I’m still on team R2L in this context for a couple of reasons:
+
+  1. I like knowing the context for a list of params first, as that allows me to contextualize each parameter as I read it. L2R forces me to read them without context, then recontextualize them after discovering the context. This kind of forces me to “build a stack” in my mind (I know you used that as a similar argument for L2R).
+
+  2. Defining variables first makes them all line up with each other. When I’m reading code, finding a variable is one of the things that needs to be super fast. I saw your argument about syntax highlighting, but I still think even in that context not having left alignment would be a loss.
+
+  ---
+  I hadn’t thought about #1 and yeah that makes sense. Maybe there’s just no escaping having a “conceptual stack” while parsing code b/c I feel both methods involve a bit of that.
+
+  I think #1 is very dependent on exactly what’s going on.
+  Exhibit A: ((myString)toUpperCase)trim
+  Exhibit B: (123, "foo", false)myFunction
+
+  In A I think L2R is more natural (and would normal be method chaining), in B the parameters mean nothing until you read the function name.
+
+  For #2 I think I'll have to build some toy language to be able to answer that. Variables on the left certainly feels "natural" and important but it's hard to seperate that from all conditioning.
+
+  For #2, maybe one way to think about it is: what's the most important thing happening in that line of code? Is it the fact that a variable is being bound/updated? Or that an expresion was executed? R2L favors the former, L2R favors the latter.
+
+  Anyway, I think this is probably endlessly explorable, but I do find it curious that R2L is so accepted and I can't find any languages that do L2R that aren't full on posfix stack based. It seems easy to imageine a c-like language that simply flips function vs params and assignment direciton
+
+ScriptType Language:
+  Exactly TypeScript except:
+    (arguments...)function 
+      instead of function(arguments...)
+    myExp() = let foo
+      instead of let foo = myExp()
+
+Pipe Language?
+  Everything is pipelines.
+  Statements always flow left to right
+  expressions, arguments, data flows from left to right, each "stage" is a "pipe"
+
+  maybe what I'm looking for is Dataflow Programming?
+
+  Can we now have Kodu style expressions?
+    When see apple Do move towards 
+    =>
+    Every frame:
+      If see apple ->X
+      MoveTo X
+    =>
+    Every frame:
+      (ifSeeApple)MoveTo
+    =>
+    every frame:
+      (if(See(apple)))moveToward    // conditions are R2L, expressions are L2R
+
+  conditions are R2L, expressions are L2R ??
+  

@@ -319,3 +319,39 @@ The all-around "best" image format for web: webp
   recommended here:
     https://developer.chrome.com/docs/lighthouse/performance/uses-webp-images/?utm_source=lighthouse&utm_medium=lr
   unlike AVIF, it's supported by Safari
+
+
+Bevy: Here's an example how Bevy creates programmatic meshes:
+   https://bevyengine.org//examples/3D%20Rendering/generate-custom-mesh/
+    Mesh::new(PrimitiveTopology::TriangleList, RenderAssetUsages::MAIN_WORLD | RenderAssetUsages::RENDER_WORLD)
+      .with_inserted_attribute(Mesh::ATTRIBUTE_POSITION, vec![
+            [-0.5, 0.5, -0.5], 
+            ...
+        ])
+    .with_inserted_attribute(Mesh::ATTRIBUTE_UV_0, vec![
+        [0.0, 0.2], [0.0, 0.0], [1.0, 0.0], [1.0, 0.25],
+        ...
+      ])
+    .with_inserted_indices(Indices::U32(vec![
+        0,3,1 , 1,3,2, 
+        ...
+      ]))
+
+  and to change mesh:
+
+    fn input_handler(
+        mesh_query: Query<&Handle<Mesh>, With<CustomUV>>,
+        mut meshes: ResMut<Assets<Mesh>>,
+    ) {
+      let mesh_handle = mesh_query.get_single().expect("Query not successful");
+      let mesh_to_change = meshes.get_mut(mesh_handle).unwrap();
+      let uv_attribute = mesh_to_change.attribute_mut(Mesh::ATTRIBUTE_UV_0).unwrap();
+      let VertexAttributeValues::Float32x2(uv_attribute) = uv_attribute else { panic!(); };
+      for uv_coord in uv_attribute.iter_mut() {
+          if (uv_coord[1] + 0.5) < 1.0 {
+              uv_coord[1] += 0.5;
+          } else {
+              uv_coord[1] -= 0.5;
+          }
+      }
+    }

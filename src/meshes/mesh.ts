@@ -43,7 +43,6 @@ import { drawBall, drawLine } from "../utils/utils-game.js";
 // series of typed buffers, w/ different allocs (global, one-frame (sent to GPU, not updated))
 //    would be easier to do in a language where you can have array of struct that is good.
 //    we could have similar contiguous alloc using typed arrays and we just store the vec views
-
 export interface RawMesh {
   // geometry
   pos: V3[]; // TODO(@darzu): rename to locs ?
