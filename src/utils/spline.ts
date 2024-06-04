@@ -29,7 +29,7 @@ export function translatePath(p: Path, tran: V3.InputT) {
   return p;
 }
 const __temp3 = V3.mk();
-export function translatePathAlongNormal(p: Path, t: number) {
+export function translatePathAlongZ(p: Path, t: number) {
   p.forEach((n) => {
     const norm = V3.tQuat([0, 0, 1], n.rot, __temp3);
     V3.scale(norm, t, norm);
@@ -77,6 +77,7 @@ export function mirrorPath(p: Path, planeNorm: V3.InputT) {
   return p;
 }
 
+// TODO(@darzu): rename Bez3d ?
 export interface BezierCubic {
   p0: V3;
   p1: V3;

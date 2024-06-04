@@ -22,7 +22,7 @@ import {
   clonePath,
   reverseBezier,
   createEvenPathFromBezierCurve,
-  translatePathAlongNormal,
+  translatePathAlongZ,
   PathNode,
 } from "../utils/spline.js";
 import { assert } from "../utils/util.js";
@@ -397,7 +397,7 @@ export function createSpaceBarge(): SpaceBarge {
         // even.reverse();
         // translatePath(even, [0, 0, 10]);
         // fixPathBasis(even, [0, 0, 1], [0, 1, 0], [-1, 0, 0]);
-        translatePathAlongNormal(even, ribDepth); // + 0.3);
+        translatePathAlongZ(even, ribDepth); // + 0.3);
         // fixPathBasis(even, [0, 1, 0], [1, 0, 0], [0, 0, -1]);
         // dbgPathWithGizmos(even);
         // dbgPathWithGizmos([even[0]]);

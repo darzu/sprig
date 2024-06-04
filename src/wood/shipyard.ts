@@ -47,7 +47,7 @@ import {
   mirrorPath,
   reverseBezier,
   translatePath,
-  translatePathAlongNormal,
+  translatePathAlongZ,
 } from "../utils/spline.js";
 import { transformYUpModelIntoZUp } from "../camera/basis.js";
 import { getPathFrom2DQuadMesh } from "./util-wood.js";
@@ -506,9 +506,10 @@ export function createLD53Ship(): WoodObj {
   const ribCurves = [transomRibCurve, ...ribCurvesGen];
 
   for (let c of ribCurves) {
-    const path = createPathFromBezier(c, numRibSegs, [1, 0, 0]);
+    const path = createPathFromBezier(c, numRibSegs, [0, 0, 1]);
     w.addBoard(path, ribColor);
     w.addBoard(mirrorPath(clonePath(path), V(0, 0, 1)), ribColor);
+    // dbgPathWithGizmos(path, 2);
   }
 
   // RAIL
@@ -534,42 +535,36 @@ export function createLD53Ship(): WoodObj {
 
   // PLANK PARAMS
   const plankWidth = 0.4;
+  const plankGap = plankWidth * 0.25;
   const plankDepth = 0.2;
 
   // RIBS W/ SLOTS
-  const evenRibs: Path[] = [];
+  const ribWithSlots: Path[] = [];
   let plankCount = 0;
   let longestRibIdx = 0;
   {
     let ribIdx = 0;
     for (let curve of ribCurves) {
       let topToBottomCurve = reverseBezier(curve);
-      const even = createEvenPathFromBezierCurve(
+      const path = createEvenPathFromBezierCurve(
         topToBottomCurve,
-        plankWidth * 2.0, // * 0.95,
-        [1, 0, 0]
+        plankWidth * 2.0 + plankGap,
+        [0, 0, 1]
       );
-      // even.reverse();
-      // translatePath(even, [0, 0, 10]);
-      // fixPathBasis(even, [0, 0, 1], [0, 1, 0], [-1, 0, 0]);
-      translatePathAlongNormal(even, ribDepth); // + 0.3);
-      // fixPathBasis(even, [0, 1, 0], [1, 0, 0], [0, 0, -1]);
-      // dbgPathWithGizmos(even);
-      // dbgPathWithGizmos([even[0]]);
-      evenRibs.push(even);
-      if (even.length > plankCount) {
-        plankCount = even.length;
+      // TODO(@darzu): translate along normal BEFORE segmenting into even bits
+      translatePathAlongZ(path, ribDepth);
+      // dbgPathWithGizmos(path, 2);
+
+      ribWithSlots.push(path);
+      if (path.length > plankCount) {
+        plankCount = path.length;
         longestRibIdx = ribIdx;
       }
       ribIdx++;
     }
   }
-  // console.log(`plankCount: ${plankCount}`);
 
-  // PLANKS (take 2)
-  // const centerRibP = ribPaths[longestRibIdx];
-  // const centerRibC = ribCurves[longestRibIdx];
-  // dbgPathWithGizmos(centerRibP);
+  // PLANKS
 
   const sternKeelPath = keelPath.reduce(
     (p, n, i) => (i < 4 ? [...p, n] : p),
@@ -580,7 +575,9 @@ export function createLD53Ship(): WoodObj {
     [] as Path
   );
 
-  let transomPlankNum = evenRibs[0].length;
+  const transomRibWithSlots = ribWithSlots[0];
+  let transomPlankNum = transomRibWithSlots.length;
+  const prowRibWithSlots = ribWithSlots[ribWithSlots.length - 1];
 
   w.startGroup("planks");
   w.b.setSize(plankWidth, plankDepth);
@@ -588,43 +585,44 @@ export function createLD53Ship(): WoodObj {
   const plankPathsMirrored: Path[] = [];
   const _temp4 = V3.mk();
   for (let i = 0; i < plankCount; i++) {
-    const nodes: Path = evenRibs
-      .filter((rib) => rib.length > i)
+    const nodes: Path = ribWithSlots
+      .filter((rib) => i < rib.length)
       .map((rib) => rib[i]);
+
     if (nodes.length < 2) continue;
 
-    // one extra board to connect to the keel up front
-    if (i < 20) {
-      const secondToLast = nodes[nodes.length - 1];
-      const last: PathNode = {
-        pos: V3.clone(secondToLast.pos),
-        rot: quat.clone(secondToLast.rot),
+    // one extra segment to connect to the keel up front
+    if (i < prowRibWithSlots.length) {
+      const lastRibNode = nodes[nodes.length - 1];
+      const prowNode: PathNode = {
+        pos: V3.clone(lastRibNode.pos),
+        rot: quat.clone(lastRibNode.rot),
       };
-      const snapped = snapToPath(bowKeelPath, last.pos[1], 1, _temp4);
-      last.pos[0] = snapped[0] + 1;
-      last.pos[2] = snapped[2];
-      nodes.push(last);
+      const snapped = snapToPath(bowKeelPath, prowNode.pos[1], 1, _temp4);
+      prowNode.pos[0] = snapped[0] + 1;
+      prowNode.pos[2] = snapped[2];
+      nodes.push(prowNode);
     }
 
     // extend boards backward for the transom
-    if (i < transomPlankNum) {
-      const second = nodes[0];
-      const third = nodes[1];
-      const first: PathNode = {
-        pos: V3.clone(second.pos),
-        rot: quat.clone(second.rot),
-      };
-      const diff = V3.sub(second.pos, third.pos, first.pos);
-      const scale = (transomPlankNum - 1 - i) / (transomPlankNum - 1) + 0.4;
-      // console.log("scale: " + scale);
-      V3.scale(diff, scale, diff);
-      V3.add(second.pos, diff, first.pos);
-      nodes.unshift(first);
-    }
+    // if (i < transomPlankNum) {
+    //   const second = nodes[0];
+    //   const third = nodes[1];
+    //   const first: PathNode = {
+    //     pos: V3.clone(second.pos),
+    //     rot: quat.clone(second.rot),
+    //   };
+    //   const diff = V3.sub(second.pos, third.pos, first.pos);
+    //   const scale = (transomPlankNum - 1 - i) / (transomPlankNum - 1) + 0.4;
+    //   // console.log("scale: " + scale);
+    //   V3.scale(diff, scale, diff);
+    //   V3.add(second.pos, diff, first.pos);
+    //   nodes.unshift(first);
+    // }
 
-    fixPathBasis(nodes, [0, 1, 0], [0, 0, 1], [1, 0, 0]);
+    fixPathBasis(nodes, [0, 1, 0], [-1, 0, 0], [0, 0, 1]);
 
-    // dbgPathWithGizmos(nodes);
+    dbgPathWithGizmos(nodes);
 
     plankPaths.push(nodes);
 
