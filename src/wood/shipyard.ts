@@ -48,7 +48,7 @@ import {
   reverseBezier,
   transformPath,
   translatePath,
-  translatePathAlongZ,
+  translatePathAlongRelativeNorm,
 } from "../utils/spline.js";
 import { transformYUpModelIntoZUp } from "../camera/basis.js";
 import { getPathFrom2DQuadMesh } from "./util-wood.js";
@@ -556,10 +556,10 @@ export function createLD53Ship(): WoodObj {
       const path = createEvenPathFromBezierCurve(
         topToBottomCurve,
         plankWidth * 2.0 + plankGap,
-        [0, 0, 1]
+        V3.RIGHT
       );
       // TODO(@darzu): translate along normal BEFORE segmenting into even bits
-      translatePathAlongZ(path, ribDepth);
+      translatePathAlongRelativeNorm(path, V3.UP, ribDepth);
       // dbgPathWithGizmos(path, 2);
 
       ribWithSlots.push(path);

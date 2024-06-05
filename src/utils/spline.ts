@@ -36,11 +36,14 @@ export function transformPath(p: Path, tran: mat4.InputT) {
   return p;
 }
 const __temp3 = V3.mk();
-export function translatePathAlongZ(p: Path, t: number) {
+export function translatePathAlongRelativeNorm(
+  p: Path,
+  relNorm: V3.InputT,
+  t: number
+) {
   p.forEach((n) => {
-    const norm = V3.tQuat([0, 0, 1], n.rot, __temp3);
-    V3.scale(norm, t, norm);
-    V3.add(n.pos, norm, n.pos);
+    const norm = V3.tQuat(relNorm, n.rot, __temp3);
+    V3.addScaled(n.pos, norm, t, n.pos);
   });
   return p;
 }

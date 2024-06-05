@@ -340,3 +340,6 @@ Are we really engineers?
 
 Browser based, open source, CAD: https://mattferraro.dev/posts/cadmium
   truck b-rep kernel?: https://ricos.gitlab.io/truck-tutorial/v0.1/bottle.html
+
+research vessel RV Flip:
+  ship that pitches 90 degrees intentionally to submerge tail
