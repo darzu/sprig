@@ -605,9 +605,9 @@ export function createLD53Ship(): WoodObj {
         pos: V3.clone(lastRibNode.pos),
         rot: quat.clone(lastRibNode.rot),
       };
-      const snapped = snapToPath(bowKeelPath, prowNode.pos[1], 1, _temp4);
-      prowNode.pos[0] = snapped[0] + 1;
-      prowNode.pos[2] = snapped[2];
+      const snapped = snapToPath(bowKeelPath, prowNode.pos[2], 2, _temp4);
+      prowNode.pos[1] = snapped[1] + 1;
+      prowNode.pos[0] = snapped[0];
       nodes.push(prowNode);
     }
 
@@ -627,13 +627,15 @@ export function createLD53Ship(): WoodObj {
     //   nodes.unshift(first);
     // }
 
+    // dbgPathWithGizmos(nodes);
+
     fixPathBasis(nodes, [0, 1, 0], [-1, 0, 0], [0, 0, 1]);
 
     // dbgPathWithGizmos(nodes);
 
     plankPaths.push(nodes);
 
-    let mirroredPath = mirrorPath(clonePath(nodes), [0, 0, 1]);
+    let mirroredPath = mirrorPath(clonePath(nodes), mirrorNorm);
     plankPathsMirrored.push(mirroredPath);
 
     let color = plankColor;
