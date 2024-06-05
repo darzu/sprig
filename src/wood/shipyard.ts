@@ -473,11 +473,11 @@ export function createLD53Ship(): WoodObj {
       bezierFromPointsDirectionsInfluence({
         start,
         // TODO(@darzu): ABSTRACTION. Don't love specifying these angles like this
-        startDir: V3.fromYawPitch(0, PId6),
+        startDir: V3.fromYawPitch(-PId2, PId2 + PId6),
         // startDir: V3.fromYawPitch(0, PId2),
         startInfluence: i === ribCount - 1 ? 2 : 5,
         end,
-        endDir: V3.fromYawPitch(PI, PId6), // [0, -5, 2]
+        endDir: V3.fromYawPitch(PId2, -PId2 + PId6), // [0, -5, 2]
         endInfluence: 5,
       }),
     snapAxis: 1,
@@ -488,16 +488,16 @@ export function createLD53Ship(): WoodObj {
   });
 
   // TODO(@darzu): transom rib!
-  const transomRibStart = V(keelAABB.min[0] + 2.5, 2, 0);
+  const transomRibStart = V(0, keelAABB.min[1] + 2.5, 2);
   const transomRibEnd = V(
-    keelAABB.min[0] - sternOverhang,
-    railHeight,
-    transomWidth * 0.5
+    transomWidth * 0.5,
+    keelAABB.min[1] - sternOverhang,
+    railHeight
   );
   const transomRibStartDir = V3.dir(transomRibEnd, transomRibStart, V3.mk());
-  V3.pitch(transomRibStartDir, -PId12, transomRibStartDir);
+  V3.roll(transomRibStartDir, -PId12, transomRibStartDir);
   const transomRibEndDir = V3.dir(transomRibStart, transomRibEnd, V3.mk());
-  V3.pitch(transomRibEndDir, -PId6, transomRibEndDir);
+  V3.roll(transomRibEndDir, -PId6, transomRibEndDir);
   const transomRibCurve = bezierFromPointsDirectionsInfluence({
     start: transomRibStart,
     startDir: transomRibStartDir,
@@ -510,7 +510,7 @@ export function createLD53Ship(): WoodObj {
   const ribCurves = [transomRibCurve, ...ribCurvesGen];
 
   for (let c of ribCurves) {
-    const path = createPathFromBezier(c, numRibSegs, [0, 0, 1]);
+    const path = createPathFromBezier(c, numRibSegs, [1, 0, 0]);
     w.addBoard(path, ribColor);
     w.addBoard(mirrorPath(clonePath(path), mirrorNorm), ribColor);
     // dbgPathWithGizmos(path, 2);
