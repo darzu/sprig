@@ -216,7 +216,7 @@ function getLD53KeelPath(): Path {
   const tempAABB = getAABBFromPath(keelPath);
   translatePath(keelPath, [0, -tempAABB.min[1], 0]);
 
-  dbgPathWithGizmos(keelPath);
+  // dbgPathWithGizmos(keelPath);
 
   transformPath(keelPath, mat4.fromYawPitchRoll(-PId2, PId2));
 
@@ -533,7 +533,7 @@ export function createLD53Ship(): WoodObj {
     V3.lerp(midPos, end.pos, 1.2, end.pos);
     quat.fromYawPitchRoll(-PId2, 0, 0, start.rot);
     quat.fromYawPitchRoll(-PId2, 0, 0, end.rot);
-    dbgPathWithGizmos(path);
+    // dbgPathWithGizmos(path);
     for (let n of path) {
       // quat.fromEuler(-Math.PI / 2, 0, Math.PI / 2, n.rot);
     }
@@ -681,18 +681,19 @@ export function createLD53Ship(): WoodObj {
   let floorPlankIdx = 4;
   const floorBound1 = plankPaths[floorPlankIdx];
   const floorBound2 = plankPathsMirrored[floorPlankIdx];
-  let floorHeight = floorBound1[0].pos[1];
+  let floorHeight = floorBound1[0].pos[2];
   let floorWidth = 0;
   let midIdx = 0;
   for (let i = 0; i < floorBound1.length; i++) {
-    const dist = V3.dist(floorBound1[i].pos, floorBound2[i].pos);
+    const dist = V3.dist(floorBound1[i].pos, floorBound2[i].pos); // TODO(@darzu): perf distSqr
     if (dist > floorWidth) {
       floorWidth = dist;
       midIdx = i;
     }
   }
   let floorLength = -1;
-  if (FALSE) {
+  {
+    // TODO(@darzu): REFACTOR. impl splitPath(idx) function
     const boundFore = floorBound1.reduce(
       (p, n, i) => (i >= midIdx ? [...p, n] : p),
       [] as Path
@@ -702,44 +703,36 @@ export function createLD53Ship(): WoodObj {
       (p, n, i) => (i < midIdx ? [...p, n] : p),
       [] as Path
     );
-    // console.log("fore and aft:");
-    // console.dir(boundFore);
-    // console.dir(boundAft);
     const floorBoardWidth = 1.2;
     const floorBoardGap = 0.05;
     w.b.setSize(floorBoardWidth / 2 - floorBoardGap, plankDepth);
-    // console.log(`ribSpace: ${ribSpace}`);
     const floorSegLength = 4.0;
     const halfNumFloorBoards = Math.floor(floorWidth / floorBoardWidth / 2);
     const __t1 = V3.mk();
     for (let i = 0; i < halfNumFloorBoards; i++) {
-      const z = i * floorBoardWidth + floorBoardWidth * 0.5;
-      const fore = V(0, floorHeight, z);
-      const foreSnap = snapToPath(boundFore, fore[2], 2, __t1);
-      // console.log(`foreSnap: ${vec3Dbg(foreSnap)}`);
-      fore[0] = foreSnap[0] - 1.0;
-      const aft = V(0, floorHeight, z);
-      const aftSnap = snapToPath(boundAft, aft[2], 2, __t1);
-      aft[0] = aftSnap[0] + 1.0;
-      // const positions = [aft, fore];
-      const length = fore[0] - aft[0];
+      const x = i * floorBoardWidth + floorBoardWidth * 0.5;
+      const fore = V(x, 0, floorHeight);
+      const foreSnap = snapToPath(boundFore, fore[0], 0, __t1);
+      fore[1] = foreSnap[1] - 1.0;
+      const aft = V(x, 0, floorHeight);
+      const aftSnap = snapToPath(boundAft, aft[0], 0, __t1);
+      aft[1] = aftSnap[1] + 1.0;
+      const length = fore[1] - aft[1];
       if (i === 0) floorLength = length;
       const numDesired = Math.ceil(length / floorSegLength);
       const positions = lerpBetween(aft, fore, numDesired - 2);
-      // TODO(@darzu): LERP!
       const path: Path = positions.map((pos) => ({
         pos,
-        rot: quat.fromEuler(0, -Math.PI / 2, -Math.PI / 2),
+        rot: quat.fromYawPitchRoll(0, 0, 0, quat.mk()),
       }));
       // dbgPathWithGizmos(path);
-      let mirroredPath = mirrorPath(clonePath(path), [0, 0, 1]);
+      let mirroredPath = mirrorPath(clonePath(path), mirrorNorm);
       w.addBoard(path, floorColor);
       w.addBoard(mirroredPath, floorColor);
-      // break; // TODO(@darzu):
     }
   }
 
-  const ceilHeight = floorHeight + 15; // TODO(@darzu): OLD
+  const ceilHeight = floorHeight + 15;
 
   const _meshDone = performance.now();
   console.log(
@@ -747,28 +740,6 @@ export function createLD53Ship(): WoodObj {
   );
 
   const shipObj = w.finish(200);
-
-  // ROTATE WHOLE THING (YIKES)
-  // TODO(@darzu): fix up ship construction
-  if (false) {
-    // TODO(@darzu): Z_UP: basis change. inline this above?
-    shipObj.mesh.pos.forEach((v) => V3.tMat4(v, transformYUpModelIntoZUp, v));
-
-    // change so ship faces +y
-    const rotate = quat.fromYawPitchRoll(-Math.PI / 2, 0, 0);
-    shipObj.mesh.pos.forEach((v) => {
-      V3.tQuat(v, rotate, v);
-    });
-
-    // TODO(@darzu): CLEAN UP: currently the result is the ship fwd is y-; We should fix everything to have y+ is fwd
-  }
-
-  // lower the whole ship so it's main deck is at 0 height
-  const DECK_AT_ZERO = false;
-  if (DECK_AT_ZERO)
-    shipObj.mesh.pos.forEach((v) => {
-      V3.add(v, [0, 0, -floorHeight], v);
-    });
 
   _stk.pop();
 
