@@ -510,7 +510,7 @@ export function createLD53Ship(): WoodObj {
   const ribCurves = [transomRibCurve, ...ribCurvesGen];
 
   for (let c of ribCurves) {
-    const path = createPathFromBezier(c, numRibSegs, [1, 0, 0]);
+    const path = createPathFromBezier(c, numRibSegs, V3.RIGHT);
     w.addBoard(path, ribColor);
     w.addBoard(mirrorPath(clonePath(path), mirrorNorm), ribColor);
     // dbgPathWithGizmos(path, 2);
@@ -520,20 +520,22 @@ export function createLD53Ship(): WoodObj {
   w.startGroup("rail");
   w.b.setSize(ribWidth, ribDepth);
   w.addBoard(railPath, railColor);
-  dbgPathWithGizmos(railPath);
+  // dbgPathWithGizmos(railPath);
   const mirrorRailPath = mirrorPath(clonePath(railPath), mirrorNorm);
   w.addBoard(mirrorRailPath, railColor);
 
   // REAR RAIL
   {
-    const start = railPath[0];
-    const end = mirrorRailPath[0];
-    const midPos = V3.lerp(start.pos, end.pos, 0.5, V3.mk());
+    const path: Path = clonePath([railPath[0], mirrorRailPath[0]]);
+    const [start, end] = path;
+    const midPos = V3.lerp(start.pos, end.pos, 0.5);
     V3.lerp(midPos, start.pos, 1.2, start.pos);
     V3.lerp(midPos, end.pos, 1.2, end.pos);
-    const path: Path = [start, end];
+    quat.fromYawPitchRoll(-PId2, 0, 0, start.rot);
+    quat.fromYawPitchRoll(-PId2, 0, 0, end.rot);
+    dbgPathWithGizmos(path);
     for (let n of path) {
-      quat.fromEuler(-Math.PI / 2, 0, Math.PI / 2, n.rot);
+      // quat.fromEuler(-Math.PI / 2, 0, Math.PI / 2, n.rot);
     }
     w.addBoard(path, railColor);
   }
