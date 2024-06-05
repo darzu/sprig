@@ -650,7 +650,8 @@ export function createLD53Ship(): WoodObj {
   // TRANSOM
   w.startGroup("transom");
   w.b.setSize(plankWidth, plankDepth);
-  for (let i = 0; i < transomPlankNum && false; i++) {
+  for (let i = 0; i < transomPlankNum; i++) {
+    // TODO(@darzu): REFACTOR make an evenPathBetweenPoints function
     const start = plankPaths[i][0];
     const end = plankPathsMirrored[i][0];
     const length = V3.dist(start.pos, end.pos);
@@ -658,24 +659,20 @@ export function createLD53Ship(): WoodObj {
     const numDesired = Math.max(Math.ceil(length / transomSegLen), 2);
 
     let positions = lerpBetween(start.pos, end.pos, numDesired - 2);
-    // console.log(numDesired);
-    // console.log(positions.length);
+
     assert(positions.length === numDesired);
     let path: Path = positions.map((pos) => ({
       pos,
-      rot: quat.clone(start.rot),
+      rot: quat.fromYawPitchRoll(-PId2, 0, -PId2),
     }));
 
-    // if (i == 2)
     // dbgPathWithGizmos(path);
-    for (let n of path) {
-      quat.fromEuler(-Math.PI / 2, 0, Math.PI / 2, n.rot);
-      quat.rotY(n.rot, -Math.PI / 16, n.rot);
-    }
+
     let color = transomColor;
     if (i === 0) color = topPlankColor;
     if (stripStartIdx <= i && i <= stripEndIdx) color = plankStripeColor;
     if (strip2StartIdx <= i && i <= strip2EndIdx) color = plankStripe2Color;
+
     w.addBoard(path, color);
   }
 
