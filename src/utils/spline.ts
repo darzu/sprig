@@ -6,6 +6,7 @@ import {
   vec3tmp,
   V,
   tmpStack,
+  mat4,
 } from "../matrix/sprig-matrix.js";
 import { assert, range } from "./util.js";
 import { quatFromUpForward_OLD } from "./utils-3d.js";
@@ -26,6 +27,12 @@ export function clonePath(path: Path): Path {
 
 export function translatePath(p: Path, tran: V3.InputT) {
   p.forEach((n) => V3.add(n.pos, tran, n.pos));
+  return p;
+}
+export function transformPath(p: Path, tran: mat4.InputT) {
+  p.forEach((n) => V3.tMat4(n.pos, tran, n.pos));
+  const rot = quat.fromMat4(tran);
+  p.forEach((n) => quat.mul(rot, n.rot, n.rot));
   return p;
 }
 const __temp3 = V3.mk();

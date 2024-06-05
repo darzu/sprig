@@ -11,7 +11,7 @@ import {
   TV2,
 } from "../matrix/sprig-matrix.js";
 import { Mesh, RawMesh, transformMesh, validateMesh } from "../meshes/mesh.js";
-import { assert } from "../utils/util.js";
+import { FALSE, assert } from "../utils/util.js";
 import {
   createEmptyMesh,
   createBoardBuilder,
@@ -46,6 +46,7 @@ import {
   createPathFromBezier,
   mirrorPath,
   reverseBezier,
+  transformPath,
   translatePath,
   translatePathAlongZ,
 } from "../utils/spline.js";
@@ -206,13 +207,18 @@ function getLD53KeelPath(): Path {
   const keelPath = getPathFrom2DQuadMesh(keelTemplate2, [0, 0, 1]);
   // keelPath = getPathFrom2DQuadMesh(keelTemplate2, [0, 1, 0]);
 
+  // dbgPathWithGizmos(keelPath);
+
   // fix keel orientation
   // r->g, g->b, b->r
   fixPathBasis(keelPath, [0, 1, 0], [0, 0, 1], [1, 0, 0]);
 
-  const tempAABB = createAABB();
-  keelPath.forEach((p) => updateAABBWithPoint(tempAABB, p.pos));
+  const tempAABB = getAABBFromPath(keelPath);
   translatePath(keelPath, [0, -tempAABB.min[1], 0]);
+
+  dbgPathWithGizmos(keelPath);
+
+  transformPath(keelPath, mat4.fromYawPitchRoll(-PId2, PId2));
 
   // dbgPathWithGizmos(keelPath);
 
@@ -309,7 +315,7 @@ export function createWoodenBox(): WoodObj {
       const trans = V3.scale(right, (w.b.xLen * 2 + boardGap) * i);
       const ipath = translatePath(clonePath(path), trans);
       if (i % 4 === 0) {
-        dbgPathWithGizmos(ipath);
+        // dbgPathWithGizmos(ipath);
       }
       const color =
         i === 5 || i === 4 ? ENDESGA16.lightBlue : ENDESGA16.lightBrown;
@@ -392,7 +398,7 @@ function* createCurvesBetweenPaths(
 }
 
 // TODO(@darzu): eh, idk about generators. Save memory at best I think, so not worth it for numbers.
-function rangeGen<T>(num: number, fn: (i) => T): Generator<T> {
+function rangeGen<T>(num: number, fn: (i: number) => T): Generator<T> {
   function* gen(): Generator<T> {
     for (let i = 0; i < num; i++) {
       yield fn(i);
@@ -426,34 +432,32 @@ export function createLD53Ship(): WoodObj {
   const ribCount = 12;
   // const ribSpace = 3;
 
-  const keelLength = keelSize[0];
+  const keelLength = keelSize[1];
+
+  const mirrorNorm = V3.LEFT;
 
   // RAIL
-  const railHeight = keelAABB.max[1] - 1;
+  const railHeight = keelAABB.max[2] - 1;
   const prowOverhang = 0.5;
-  const prow = V(keelAABB.max[0] + prowOverhang, railHeight, 0);
+  const prow = V(0, keelAABB.max[1] + prowOverhang, railHeight);
   const sternOverhang = 1;
-  const sternpost = V(keelAABB.min[0] - sternOverhang, railHeight, 0);
+  const sternpost = V(0, keelAABB.min[1] - sternOverhang, railHeight);
   const transomWidth = 6;
   const railLength = keelLength + prowOverhang + sternOverhang;
 
   const ribSpace = railLength / (ribCount + 1);
 
   let railCurve = bezierFromPointsDirectionsInfluence({
-    start: V3.add(sternpost, [0, 0, transomWidth * 0.5], V3.mk()),
-    startDir: V3.fromYawPitch(PId2, (3 * Math.PI) / 16),
+    start: V3.add(sternpost, [transomWidth * 0.5, 0, 0], V3.mk()),
+    startDir: V3.fromYawPitch((3 * Math.PI) / 16),
     startInfluence: 24,
     end: prow,
-    endDir: V3.fromYawPitch(-PId2, (4 * Math.PI) / 16),
+    endDir: V3.fromYawPitch(PI + -(4 * Math.PI) / 16),
     endInfluence: 12,
   });
 
   const railNodes = ribCount + 2;
-  const railPath = createPathFromBezier(
-    railCurve,
-    railNodes,
-    [0, 1, 0] // TODO(@darzu): Z_UP
-  );
+  const railPath = createPathFromBezier(railCurve, railNodes, [0, 0, 1]);
 
   // RIBS
   w.startGroup("ribs");
@@ -476,10 +480,10 @@ export function createLD53Ship(): WoodObj {
         endDir: V3.fromYawPitch(PI, PId6), // [0, -5, 2]
         endInfluence: 5,
       }),
-    snapAxis: 0,
+    snapAxis: 1,
     intervals: rangeGen(
       ribCount - 1,
-      (i) => i * ribSpace + ribSpace + keelAABB.min[0] + 2
+      (i) => i * ribSpace + ribSpace + keelAABB.min[1] + 2
     ),
   });
 
@@ -508,7 +512,7 @@ export function createLD53Ship(): WoodObj {
   for (let c of ribCurves) {
     const path = createPathFromBezier(c, numRibSegs, [0, 0, 1]);
     w.addBoard(path, ribColor);
-    w.addBoard(mirrorPath(clonePath(path), V(0, 0, 1)), ribColor);
+    w.addBoard(mirrorPath(clonePath(path), mirrorNorm), ribColor);
     // dbgPathWithGizmos(path, 2);
   }
 
@@ -516,7 +520,8 @@ export function createLD53Ship(): WoodObj {
   w.startGroup("rail");
   w.b.setSize(ribWidth, ribDepth);
   w.addBoard(railPath, railColor);
-  const mirrorRailPath = mirrorPath(clonePath(railPath), V(0, 0, 1));
+  dbgPathWithGizmos(railPath);
+  const mirrorRailPath = mirrorPath(clonePath(railPath), mirrorNorm);
   w.addBoard(mirrorRailPath, railColor);
 
   // REAR RAIL
@@ -622,7 +627,7 @@ export function createLD53Ship(): WoodObj {
 
     fixPathBasis(nodes, [0, 1, 0], [-1, 0, 0], [0, 0, 1]);
 
-    dbgPathWithGizmos(nodes);
+    // dbgPathWithGizmos(nodes);
 
     plankPaths.push(nodes);
 
@@ -641,7 +646,7 @@ export function createLD53Ship(): WoodObj {
   // TRANSOM
   w.startGroup("transom");
   w.b.setSize(plankWidth, plankDepth);
-  for (let i = 0; i < transomPlankNum; i++) {
+  for (let i = 0; i < transomPlankNum && false; i++) {
     const start = plankPaths[i][0];
     const end = plankPathsMirrored[i][0];
     const length = V3.dist(start.pos, end.pos);
@@ -686,7 +691,7 @@ export function createLD53Ship(): WoodObj {
     }
   }
   let floorLength = -1;
-  {
+  if (FALSE) {
     const boundFore = floorBound1.reduce(
       (p, n, i) => (i >= midIdx ? [...p, n] : p),
       [] as Path

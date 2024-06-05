@@ -1700,6 +1700,7 @@ export module mat3 {
     return GL.fromQuat(out ?? tmp(), q) as T;
   }
 
+  // Copies the upper-left 3x3 values into the given mat3.
   export function fromMat4(q: mat4.InputT, out?: T): T {
     return GL.fromMat4(out ?? tmp(), q) as T;
   }
