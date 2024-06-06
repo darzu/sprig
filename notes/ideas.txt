@@ -287,14 +287,23 @@ The perfect uber game:
     analog smithing,
   
 calendar.bingo
-availability.exchange
-availability.chat
-timeslots.lol
-timeslots.social
-timeslots.day
-timeslots.fyi
+  availability.exchange
+  availability.chat
+  timeslots.lol
+  timeslots.social
+  timeslots.day
+  timeslots.fyi
   startDay (day since jan1 2024)
   numWeeks (1/7,1,2,3,default 4)
   granularity (10min, 1hr, morning/late-morning/afternoon/evening)
   click and drag cells
   color pallette (not available, ideal, less-ideal)
+
+Wierd non-sensical GI approach:
+  scatter triangles throughout the scene
+  render those triangles from camera and each light
+    for light, sort back to front (or linked list)
+  use triangles to approx volumetric info
+  secondary rays from light angle to other triangles
+    accelerated with bvh
+  

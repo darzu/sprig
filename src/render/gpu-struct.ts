@@ -131,7 +131,7 @@ export const texTypeIsDepthNoStencil: Partial<Record<GPUTextureFormat, true>> =
 export const texTypeIsDepthAndStencil: Partial<Record<GPUTextureFormat, true>> =
   {
     "depth24plus-stencil8": true,
-    "depth24unorm-stencil8": true,
+    // "depth24unorm-stencil8": true,
     "depth32float-stencil8": true,
   };
 export const texTypeIsStencil: Partial<Record<GPUTextureFormat, true>> = {

@@ -1,5 +1,5 @@
 import { CameraDef } from "../camera/camera.js";
-import { HasFirstInteractionDef } from "../render/canvas.js";
+import { CanvasDef, HasFirstInteractionDef } from "../render/canvas.js";
 import { AlphaDef, ColorDef } from "../color/color-ecs.js";
 import {
   AllEndesga16,
@@ -15,7 +15,11 @@ import {
   ColliderFromMeshDef,
   MultiCollider,
 } from "../physics/collider.js";
-import { PhysicsStateDef, WorldFrameDef } from "../physics/nonintersection.js";
+import {
+  PhysicsResultsDef,
+  PhysicsStateDef,
+  WorldFrameDef,
+} from "../physics/nonintersection.js";
 import { PositionDef, RotationDef, ScaleDef } from "../physics/transform.js";
 import { Mesh } from "../meshes/mesh.js";
 import { stdMeshPipe } from "../render/pipelines/std-mesh.js";
@@ -35,6 +39,7 @@ import { BallMesh, HexMesh, PlaneMesh } from "../meshes/mesh-list.js";
 import { breakBullet, BulletDef, fireBullet } from "../cannons/bullet.js";
 import { GhostDef } from "../debug/ghost.js";
 import {
+  WoodObj,
   createLD53Ship,
   createWoodenBox,
   ld53ShipAABBs,
@@ -62,6 +67,7 @@ import {
 import { renderDots } from "../render/pipelines/std-dots.js";
 import { alphaRenderPipeline } from "../render/pipelines/xp-alpha.js";
 import { getLineEnd } from "../physics/broadphase.js";
+import { dbgPathWithGizmos } from "../debug/utils-gizmos.js";
 
 const DBG_PLAYER = true;
 const DBG_COLLIDERS = false;
@@ -317,6 +323,25 @@ export async function initShipyardGame() {
       addGizmoChild(g, 3);
     }
   }
+
+  // EM.addSystem(
+  //   "selectWoodParts",
+  //   Phase.GAME_WORLD,
+  //   null,
+  //   [CanvasDef, InputsDef, PhysicsResultsDef],
+  //   (_, res) => {
+  //     const ship: WoodObj;
+  //     // if (res.inputs.lclick) {
+  //     const mouseRay = getMouseRay(res.inputs.mousePos);
+  //     const hit = getFirstRayIntersectWood(ship, ray);
+  //     if (hit) {
+  //       woodHighlight(hit.group, ENDESGA16.darkGreen);
+  //       woodHighlight(hit.board, ENDESGA16.lightGreen);
+  //       dbgPathWithGizmos(hit.board.path);
+  //     }
+  //     // }
+  //   }
+  // );
 
   if (!DISABLE_PRIATES) startPirates();
 }
