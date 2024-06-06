@@ -845,7 +845,7 @@ interface GPUObjectDescriptorBase {
   /**
    * The initial value of {@link GPUObjectBase#label|GPUObjectBase.label}.
    */
-  label?: string;
+  label: string;
 }
 
 interface GPUOrigin2DDict {
