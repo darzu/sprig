@@ -1,4 +1,4 @@
-import { CameraDef } from "../camera/camera.js";
+import { CameraDef, CameraFollowDef } from "../camera/camera.js";
 import { CanvasDef, HasFirstInteractionDef } from "../render/canvas.js";
 import { AlphaDef, ColorDef } from "../color/color-ecs.js";
 import {
@@ -35,7 +35,7 @@ import { resetWoodState, WoodStateDef } from "./wood-builder.js";
 import { WoodHealthDef } from "./wood-health.js";
 import { createWoodHealth } from "./wood-health.js";
 import { resetWoodHealth } from "./wood-health.js";
-import { BallMesh, HexMesh, PlaneMesh } from "../meshes/mesh-list.js";
+import { BallMesh, CubeMesh, HexMesh, PlaneMesh } from "../meshes/mesh-list.js";
 import { breakBullet, BulletDef, fireBullet } from "../cannons/bullet.js";
 import { GhostDef } from "../debug/ghost.js";
 import {
@@ -68,12 +68,55 @@ import { renderDots } from "../render/pipelines/std-dots.js";
 import { alphaRenderPipeline } from "../render/pipelines/xp-alpha.js";
 import { getLineEnd } from "../physics/broadphase.js";
 import { dbgPathWithGizmos } from "../debug/utils-gizmos.js";
+import { GAME_LOADER } from "../game-loader.js";
+import { TimeDef } from "../time/time.js";
+import { clamp } from "../utils/math.js";
 
-const DBG_PLAYER = true;
+const DBG_PLAYER = false;
 const DBG_COLLIDERS = false;
 const DBG_TRANSPARENT_BOAT = false;
 
 const DISABLE_PRIATES = true;
+
+async function initDemoPanCamera() {
+  const g = EM.mk();
+  EM.set(g, CameraFollowDef, 1);
+  V3.set(0, -50, 0, g.cameraFollow.positionOffset);
+  g.cameraFollow.yawOffset = -1.308;
+  g.cameraFollow.pitchOffset = -0.478;
+
+  // TODO(@darzu): wish we didn't need these
+  EM.set(g, PositionDef);
+  EM.set(g, RotationDef);
+  EM.set(g, RenderableConstructDef, CubeMesh, false);
+
+  const turnSpeed = 0.0003;
+  const zoomSpeed = 0.1;
+
+  const { htmlCanvas } = await EM.whenResources(CanvasDef);
+  htmlCanvas.shouldLockMouseOnClick = false;
+  htmlCanvas.unlockMouse();
+
+  EM.addSystem(
+    "demoPanCamera",
+    Phase.GAME_PLAYERS,
+    null,
+    [InputsDef, CanvasDef, TimeDef],
+    (_, { inputs, htmlCanvas, time }) => {
+      if (inputs.ldown) {
+        g.cameraFollow.yawOffset += inputs.mouseMov[0] * turnSpeed * time.dt;
+        g.cameraFollow.pitchOffset += -inputs.mouseMov[1] * turnSpeed * time.dt;
+      }
+      g.cameraFollow.positionOffset[1] +=
+        -inputs.mouseWheel * zoomSpeed * time.dt;
+      g.cameraFollow.positionOffset[1] = clamp(
+        g.cameraFollow.positionOffset[1],
+        -200,
+        -5
+      );
+    }
+  );
+}
 
 export async function initShipyardGame() {
   stdGridRender.fragOverrides!.lineSpacing1 = 8.0;
@@ -115,6 +158,9 @@ export async function initShipyardGame() {
       // color: [1, 1, 1],
     }
   );
+
+  // camera
+  initDemoPanCamera();
 
   const sun = createSun([250, 10, 300]);
 
@@ -201,73 +247,74 @@ export async function initShipyardGame() {
 
   addGizmoChild(timber, 10);
 
-  EM.addSystem(
-    "ld51Ghost",
-    Phase.GAME_WORLD,
-    [GhostDef, WorldFrameDef, ColliderDef],
-    [InputsDef, HasFirstInteractionDef],
-    async (ps, { inputs }) => {
-      if (!ps.length) return;
+  if (DBG_PLAYER) {
+    EM.addSystem(
+      "ld51Ghost",
+      Phase.GAME_WORLD,
+      [GhostDef, WorldFrameDef, ColliderDef],
+      [InputsDef, HasFirstInteractionDef],
+      async (ps, { inputs }) => {
+        if (!ps.length) return;
 
-      const ghost = ps[0];
+        const ghost = ps[0];
 
-      // dbg aiming
-      {
-        sketchLine2(
-          {
-            ray: {
-              org: ghost.world.position,
-              dir: quat.fwd(ghost.world.rotation),
+        // dbg aiming
+        {
+          sketchLine2(
+            {
+              ray: {
+                org: ghost.world.position,
+                dir: quat.fwd(ghost.world.rotation),
+              },
+              len: 50,
             },
-            len: 50,
-          },
-          {
-            key: `ghostAim`,
-            color: ENDESGA16.white,
-          }
-        );
-      }
+            {
+              key: `ghostAim`,
+              color: ENDESGA16.white,
+            }
+          );
+        }
 
-      if (inputs.lclick) {
-        // console.log(`fire!`);
-        const firePos = ghost.world.position;
-        const fireDir = quat.mk();
-        quat.copy(fireDir, ghost.world.rotation);
-        quat.pitch(fireDir, PId4);
-        const ballHealth = 2.0;
-        fireBullet(
-          1,
-          firePos,
-          fireDir,
-          0.05 * 2,
-          0.02,
-          3 * 0.00001,
-          ballHealth,
-          V3.FWD
-        );
-      }
+        if (inputs.lclick) {
+          // console.log(`fire!`);
+          const firePos = ghost.world.position;
+          const fireDir = quat.mk();
+          quat.copy(fireDir, ghost.world.rotation);
+          quat.pitch(fireDir, PId4);
+          const ballHealth = 2.0;
+          fireBullet(
+            1,
+            firePos,
+            fireDir,
+            0.05 * 2,
+            0.02,
+            3 * 0.00001,
+            ballHealth,
+            V3.FWD
+          );
+        }
 
-      if (inputs.keyClicks["r"]) {
-        const timber2 = await EM.whenEntityHas(timber, RenderableDef);
-        resetWoodHealth(timber.woodHealth);
-        resetWoodState(timber.woodState);
-        res.renderer.renderer.stdPool.updateMeshQuadInds(
-          timber2.renderable.meshHandle,
-          timber.woodState.mesh as Mesh,
-          0,
-          timber.woodState.mesh.quad.length
-        );
-      }
+        if (inputs.keyClicks["r"]) {
+          const timber2 = await EM.whenEntityHas(timber, RenderableDef);
+          resetWoodHealth(timber.woodHealth);
+          resetWoodState(timber.woodState);
+          res.renderer.renderer.stdPool.updateMeshQuadInds(
+            timber2.renderable.meshHandle,
+            timber.woodState.mesh as Mesh,
+            0,
+            timber.woodState.mesh.quad.length
+          );
+        }
 
-      assert(ghost.collider.shape === "AABB");
-      if (PhysicsStateDef.isOn(ghost)) {
-        sketchAABB(ghost._phys.colliders[0].aabb, {
-          key: "ghostAABB",
-        });
+        assert(ghost.collider.shape === "AABB");
+        if (PhysicsStateDef.isOn(ghost)) {
+          sketchAABB(ghost._phys.colliders[0].aabb, {
+            key: "ghostAABB",
+          });
+        }
       }
-    }
-  );
-  if (DBG_PLAYER)
+    );
+
     // TODO(@darzu): breakBullet
     EM.addSystem(
       "breakBullets",
@@ -289,8 +336,7 @@ export async function initShipyardGame() {
       }
     );
 
-  // Create player
-  {
+    // Create player
     // dead bullet maintenance
     // NOTE: this must be called after any system that can create dead bullets but
     //   before the rendering systems.
@@ -312,16 +358,14 @@ export async function initShipyardGame() {
       }
     );
 
-    if (DBG_PLAYER) {
-      const g = initGhost(BallMesh);
+    const g = initGhost(BallMesh);
 
-      V3.copy(g.cameraFollow.positionOffset, [0.0, -15.0, 0.0]);
+    V3.copy(g.cameraFollow.positionOffset, [0.0, -15.0, 0.0]);
 
-      EM.set(g, ColorDef, ENDESGA16.darkGreen);
-      EM.set(g, ColliderFromMeshDef, false);
+    EM.set(g, ColorDef, ENDESGA16.darkGreen);
+    EM.set(g, ColliderFromMeshDef, false);
 
-      addGizmoChild(g, 3);
-    }
+    addGizmoChild(g, 3);
   }
 
   // EM.addSystem(

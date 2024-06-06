@@ -220,6 +220,8 @@ function getLD53KeelPath(): Path {
 
   transformPath(keelPath, mat4.fromYawPitchRoll(-PId2, PId2));
 
+  // translatePath(keelPath, [0, 0, -10]); // TODO(@darzu): BROKEN. Translating down breaks everything
+
   // dbgPathWithGizmos(keelPath);
 
   return keelPath;

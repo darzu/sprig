@@ -13,6 +13,8 @@ import { Phase } from "../ecs/sys-phase.js";
 // TODO(@darzu): BUG. on window focus change, we should release all keys probably? Right now the "shift" key gets stuck when doing
 //  a screen recording.
 
+// TODO(@darzu): use pointer events instead of mouse: https://www.redblobgames.com/making-of/draggable/
+
 const _seenKeyCodes: Set<string> = new Set();
 
 export const InputsDef = EM.defineResource("inputs", () => {
@@ -20,6 +22,7 @@ export const InputsDef = EM.defineResource("inputs", () => {
     // TODO(@darzu): should we map mouse 2D pos to be Y up? Y down is annoying..
     mouseMov: V2.mk(),
     mousePos: V2.mk(),
+    mouseWheel: 0,
     // TODO(@darzu): need rising edge vs falling edge distinction
     lclick: false,
     rclick: false,
@@ -142,7 +145,7 @@ function createInputsReader(canvas: Canvas): () => Inputs {
   let accumulated_mouseMov = V2.mk();
   let lastMouse: V2 = V2.mk();
   window.addEventListener(
-    "mousemove",
+    "pointermove",
     (ev) => {
       const html = canvas.getCanvasHtml();
       const rect = html.getBoundingClientRect();
@@ -162,9 +165,25 @@ function createInputsReader(canvas: Canvas): () => Inputs {
     },
     false
   );
+
   function takeAccumulatedMouseMovement(): V2 {
     const res = V2.clone(accumulated_mouseMov);
     V2.zero(accumulated_mouseMov); // reset accumulators
+    return res;
+  }
+
+  // track mouse wheel
+  let accumulated_mouseWheel = 0;
+  window.addEventListener(
+    "wheel",
+    (ev) => {
+      accumulated_mouseWheel += ev.deltaY;
+    },
+    false
+  );
+  function takeAccumulatedMouseWheel(): number {
+    const res = accumulated_mouseWheel;
+    accumulated_mouseWheel = 0;
     return res;
   }
 
@@ -173,7 +192,7 @@ function createInputsReader(canvas: Canvas): () => Inputs {
   let accumulated_rClicks = 0;
   let isLMouseDown = false;
   let isRMouseDown = false;
-  window.addEventListener("mousedown", (ev) => {
+  window.addEventListener("pointerdown", (ev) => {
     if (ev.button === 0) {
       if (!isLMouseDown) accumulated_lClicks += 1;
       isLMouseDown = true;
@@ -181,9 +200,12 @@ function createInputsReader(canvas: Canvas): () => Inputs {
       if (!isRMouseDown) accumulated_rClicks += 1;
       isRMouseDown = true;
     }
+    canvas.getCanvasHtml().setPointerCapture(ev.pointerId);
     return false;
   });
-  window.addEventListener("mouseup", (ev) => {
+  // TODO(@darzu): TEST MOBILE
+  window.addEventListener("touchstart", (e) => e.preventDefault());
+  window.addEventListener("pointerup", (ev) => {
     if (ev.button === 0) {
       isLMouseDown = false;
     } else {
@@ -209,6 +231,7 @@ function createInputsReader(canvas: Canvas): () => Inputs {
     let inputs: Inputs = {
       mouseMov,
       mousePos: V2.clone(lastMouse),
+      mouseWheel: takeAccumulatedMouseWheel(),
       lclick: lClicks > 0,
       rclick: rClicks > 0,
       ldown: isLMouseDown,
