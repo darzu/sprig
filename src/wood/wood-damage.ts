@@ -29,6 +29,7 @@ import {
   lineSphereIntersections,
   getLineMid,
   Ray,
+  rayVsRay,
 } from "../physics/broadphase.js";
 import { ColliderDef } from "../physics/collider.js";
 import {
@@ -155,8 +156,12 @@ EM.addEagerInit([WoodStateDef], [], [], () => {
 
       const DBG_COLOR = false;
 
+      const tmpAABB = createAABB();
+
       for (let w of es) {
         if (!PhysicsStateDef.isOn(w)) continue;
+
+        // const woodFromWorld = mat4.invert(w.world.transform);
 
         // console.log(`checking wood!`);
         const meshHandle = w.renderable.meshHandle;
@@ -200,11 +205,15 @@ EM.addEagerInit([WoodStateDef], [], [], () => {
 
             getAABBFromSphere(worldSphere, ballAABBWorld);
 
-            const hitsIter = woodVsAABB(
-              w.woodState,
-              w.world.transform,
-              ballAABBWorld
-            );
+            const vsAABB = (localAABB: AABB) => {
+              // TODO(@darzu): PERF!!! We should probably translate ball into wood space not both into world space!
+              const worldAABB = copyAABB(tmpAABB, localAABB);
+              transformAABB(worldAABB, w.world.transform);
+              // overlapChecks++;
+              return doesOverlapAABB(worldAABB, ballAABBWorld);
+            };
+
+            const hitsIter = woodVsAABB(w.woodState, vsAABB);
             for (let hit of hitsIter) {
               // segAABBHits += 1;
               // for (let qi of seg.quadSideIdxs) {
@@ -218,6 +227,15 @@ EM.addEagerInit([WoodStateDef], [], [], () => {
                 continue;
 
               const [groupIdx, boardIdx, segIdx, seg] = hit;
+
+              if (DBG_WOOD_DMG) {
+                const worldAABB = copyAABB(tmpAABB, seg.localAABB);
+                transformAABB(worldAABB, w.world.transform);
+                sketchAABB(cloneAABB(worldAABB), {
+                  key: `segAABBHit_${groupIdx}_${boardIdx}_${segIdx}`,
+                  color: ENDESGA16.yellow,
+                });
+              }
 
               // console.log(`mid hit: ${midHits}`);
               segMidHits += 1;
@@ -502,20 +520,9 @@ type WoodHit = [
 
 export function* woodVsAABB(
   wood: WoodState,
-  worldFromWood: mat4.InputT,
-  worldAABB: AABB
+  vsAABB: (woodLocalAABB: AABB) => boolean
 ): Generator<WoodHit> {
   // TODO(@darzu): move a bunch of the below into physic system features!
-  // TODO(@darzu): PERF!!! We should probably translate ball into wood space not both into world space!
-
-  if (DBG_WOOD_DMG) {
-    sketchAABB(cloneAABB(worldAABB), {
-      key: `woodVsAABB_target`,
-      color: ENDESGA16.red,
-    });
-  }
-
-  const tmpAABB = createAABB();
 
   // TODO(@darzu): PERF. Use AABBs in the groups!
   for (let groupIdx = 0; groupIdx < wood.groups.length; groupIdx++) {
@@ -524,33 +531,13 @@ export function* woodVsAABB(
       const board = group.boards[boardIdx];
 
       // does the target hit the board?
-      const boardAABBWorld = copyAABB(tmpAABB, board.localAABB);
-      transformAABB(boardAABBWorld, worldFromWood);
-      // overlapChecks++;
-      if (!doesOverlapAABB(worldAABB, boardAABBWorld)) continue;
-
-      if (DBG_WOOD_DMG) {
-        sketchAABB(cloneAABB(boardAABBWorld), {
-          key: `boardHit_${groupIdx}_${boardIdx}`,
-          color: ENDESGA16.darkRed,
-        });
-      }
+      if (!vsAABB(board.localAABB)) continue;
 
       for (let segIdx = 0; segIdx < board.segments.length; segIdx++) {
         const seg = board.segments[segIdx];
 
         // does the ball hit the segment?
-        const segAABBWorld = copyAABB(tmpAABB, seg.localAABB);
-        transformAABB(segAABBWorld, worldFromWood);
-        // overlapChecks++;
-        if (!doesOverlapAABB(worldAABB, segAABBWorld)) continue;
-
-        if (DBG_WOOD_DMG) {
-          sketchAABB(cloneAABB(boardAABBWorld), {
-            key: `segAABBHit_${groupIdx}_${boardIdx}_${segIdx}`,
-            color: ENDESGA16.yellow,
-          });
-        }
+        if (!vsAABB(seg.localAABB)) continue;
 
         yield [groupIdx, boardIdx, segIdx, seg];
       }

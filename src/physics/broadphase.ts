@@ -412,14 +412,14 @@ export function rayVsRay(ra: Ray, rb: Ray): V3 | undefined {
 
 function checkRayVsOct(tree: OctTree, ray: Ray): RayHit[] {
   // check this node's AABB
-  const d = rayHitDist(tree.aabb, ray);
+  const d = rayVsAABBHitDist(tree.aabb, ray);
   if (isNaN(d)) return [];
 
   let hits: RayHit[] = [];
 
   // check this node's objects
   for (let [id, b] of tree.objs.entries()) {
-    const dist = rayHitDist(b, ray);
+    const dist = rayVsAABBHitDist(b, ray);
     if (!isNaN(d)) hits.push({ id, dist });
   }
 
@@ -509,7 +509,7 @@ function octtree(parentObjs: Map<number, AABB>, aabb: AABB): OctTree | null {
 
 // AABB utils
 // returns NaN if they don't hit
-export function rayHitDist(b: AABB, r: Ray): number {
+export function rayVsAABBHitDist(b: AABB, r: Ray): number {
   // TODO(@darzu): can be made faster using inverse ray direction:
   //    https://tavianator.com/2011/ray_box.html
   //    https://tavianator.com/2015/ray_box_nan.html

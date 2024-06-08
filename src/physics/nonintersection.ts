@@ -16,7 +16,7 @@ import {
   collisionPairs,
   Ray,
   RayHit,
-  rayHitDist,
+  rayVsAABBHitDist,
   resetCollidesWithSet,
 } from "./broadphase.js";
 import {
@@ -589,7 +589,7 @@ export function registerPhysicsContactSystems() {
           //  are collider indices not entity IDs
           const c = res._physBColliders.colliders[mh.id];
           // TODO(@darzu): this is one of the places we would replace with narrow phase
-          const dist = rayHitDist(c.aabb, r);
+          const dist = rayVsAABBHitDist(c.aabb, r);
           if (!isNaN(dist)) hits.push({ id: c.oId, dist });
         }
         return hits;
