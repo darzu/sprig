@@ -307,3 +307,15 @@ Wierd non-sensical GI approach:
   secondary rays from light angle to other triangles
     accelerated with bvh
   
+Factory code visualization
+  bus on the left,
+    each lane is a variable
+    grouped by scope (local, loop, environment, ...)
+  each line pulls from the bus, chains through a number of functions (left-to-right), optionally puts back on the bus
+  starting lines on the bus come from parameters
+  output lines go to the return
+  updating a variable swaps the contents on a line (break in the line)
+  bus represents scoped variables over time
+  lambdas: mini in-line factories
+  TODO:
+    how best to represent structured data, arrays, etc?
