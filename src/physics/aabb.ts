@@ -2,7 +2,7 @@ import { clamp } from "../utils/math.js";
 import { mat4, V, V2, V3 } from "../matrix/sprig-matrix.js";
 import { range } from "../utils/util.js";
 import { vec3Dbg2 } from "../utils/utils-3d.js";
-import { Sphere } from "./broadphase.js";
+import { createSphere, Sphere } from "./broadphase.js";
 
 const TRACK_AABB = true;
 
@@ -272,6 +272,15 @@ export function getAABBFromSphere(sphere: Sphere, out?: AABB) {
   out.max[0] = sphere.org[0] + sphere.rad;
   out.max[1] = sphere.org[1] + sphere.rad;
   out.max[2] = sphere.org[2] + sphere.rad;
+
+  return out;
+}
+export function getInnerSphereFromAABB(aabb: AABB, out?: Sphere) {
+  out = out ?? createSphere();
+
+  const halfSize = getHalfsizeFromAABB(aabb, out.org); // temp store in org
+  out.rad = Math.min(halfSize[0], halfSize[1], halfSize[2]);
+  V3.add(aabb.min, halfSize, out.org);
 
   return out;
 }

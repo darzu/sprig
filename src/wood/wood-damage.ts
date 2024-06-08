@@ -20,6 +20,7 @@ import {
   cloneAABB,
   AABB,
   getAABBFromSphere,
+  getInnerSphereFromAABB,
 } from "../physics/aabb.js";
 import {
   emptyLine,
@@ -30,6 +31,7 @@ import {
   getLineMid,
   Ray,
   rayVsRay,
+  createSphere,
 } from "../physics/broadphase.js";
 import { ColliderDef } from "../physics/collider.js";
 import {
@@ -137,6 +139,11 @@ const raiseDmgWood = eventWizard(
 );
 
 EM.addEagerInit([WoodStateDef], [], [], () => {
+  const tmpAABB = createAABB();
+  const ballAABB = createAABB();
+  const tmpLine = emptyLine();
+  const tmpSphere = createSphere();
+
   EM.addSystem(
     "woodDetectCollisions",
     Phase.GAME_WORLD,
@@ -144,9 +151,6 @@ EM.addEagerInit([WoodStateDef], [], [], () => {
     [PhysicsResultsDef, RendererDef],
     (es, res) => {
       const { collidesWith } = res.physicsResults;
-
-      const ballAABBWorld = createAABB();
-      const worldLine = emptyLine();
 
       const before = performance.now();
 
@@ -156,16 +160,11 @@ EM.addEagerInit([WoodStateDef], [], [], () => {
 
       const DBG_COLOR = false;
 
-      const tmpAABB = createAABB();
-
       for (let w of es) {
         if (!PhysicsStateDef.isOn(w)) continue;
 
-        // const woodFromWorld = mat4.invert(w.world.transform);
+        const woodFromWorld = mat4.invert(w.world.transform);
 
-        // console.log(`checking wood!`);
-        const meshHandle = w.renderable.meshHandle;
-        const mesh = meshHandle.mesh!; // TODO(@darzu): again, shouldn't be modifying "readonlyXXXX"
         const hits = collidesWith.get(w.id);
         if (hits) {
           let boardSegHits: BoardSegHit[] = []; // TODO(@darzu): PERF. reuse for better memory?
@@ -194,27 +193,25 @@ EM.addEagerInit([WoodStateDef], [], [], () => {
             // console.log(`hit: ${ball.id}`);
             // TODO(@darzu): move a bunch of the below into physic system features!
             assert(ball.collider.shape === "AABB");
-            copyAABB(ballAABBWorld, ball.collider.aabb); // TODO(@darzu): PERF. used physics state aabb
-            transformAABB(ballAABBWorld, ball.world.transform);
-            // TODO(@darzu): PERF! We should probably translate ball into wood space not both into world space!
-            // TODO(@darzu): this sphere should live elsewhere..
-            const worldSphere: Sphere = {
-              org: ball.world.position,
-              rad: (ballAABBWorld.max[0] - ballAABBWorld.min[0]) * 0.4,
-            };
+            copyAABB(ballAABB, ball.collider.aabb); // TODO(@darzu): PERF. used physics state aabb
+            const worldBallAABB = transformAABB(ballAABB, ball.world.transform);
+            const woodLocalBallAABB = transformAABB(
+              worldBallAABB,
+              woodFromWorld
+            );
 
-            getAABBFromSphere(worldSphere, ballAABBWorld);
+            const woodLocalSphere = getInnerSphereFromAABB(
+              woodLocalBallAABB,
+              tmpSphere
+            );
 
             const vsAABB = (localAABB: AABB) => {
-              // TODO(@darzu): PERF!!! We should probably translate ball into wood space not both into world space!
-              const worldAABB = copyAABB(tmpAABB, localAABB);
-              transformAABB(worldAABB, w.world.transform);
               // overlapChecks++;
-              return doesOverlapAABB(worldAABB, ballAABBWorld);
+              return doesOverlapAABB(localAABB, woodLocalBallAABB);
             };
 
             const hitsIter = woodVsAABB(w.woodState, vsAABB);
-            for (let hit of hitsIter) {
+            for (let [groupIdx, boardIdx, segIdx, seg] of hitsIter) {
               // segAABBHits += 1;
               // for (let qi of seg.quadSideIdxs) {
               //   if (DBG_COLOR && mesh.colors[qi][1] < 1) {
@@ -223,12 +220,21 @@ EM.addEagerInit([WoodStateDef], [], [], () => {
               //   }
               // }
 
-              if (!woodHitVsSphere(hit, w.world.transform, worldSphere))
-                continue;
-
-              const [groupIdx, boardIdx, segIdx, seg] = hit;
+              const midHits = lineSphereIntersections(
+                seg.midLine,
+                woodLocalSphere
+              );
+              if (!midHits) continue;
 
               if (DBG_WOOD_DMG) {
+                // sketch midline
+                const worldLine = copyLine(tmpLine, seg.midLine);
+                transformLine(worldLine, w.world.transform);
+                sketchLine2(worldLine, {
+                  key: `segMidHit_${groupIdx}_${boardIdx}_${segIdx}`,
+                  color: ENDESGA16.red,
+                });
+                // sketch aabb
                 const worldAABB = copyAABB(tmpAABB, seg.localAABB);
                 transformAABB(worldAABB, w.world.transform);
                 sketchAABB(cloneAABB(worldAABB), {
@@ -543,28 +549,4 @@ export function* woodVsAABB(
       }
     }
   }
-}
-
-const tmpLine = emptyLine();
-export function woodHitVsSphere(
-  hit: WoodHit,
-  worldFromWood: mat4.InputT,
-  worldSphere: Sphere
-): boolean {
-  let [groupIdx, boardIdx, segIdx, seg] = hit;
-
-  // does the ball hit the middle of the segment?
-  const worldLine = copyLine(tmpLine, seg.midLine);
-  transformLine(worldLine, worldFromWood);
-  const midHits = lineSphereIntersections(worldLine, worldSphere);
-  if (!midHits) return false;
-
-  if (DBG_WOOD_DMG) {
-    sketchLine2(worldLine, {
-      key: `segMidHit_${groupIdx}_${boardIdx}_${segIdx}`,
-      color: ENDESGA16.red,
-    });
-  }
-
-  return true;
 }

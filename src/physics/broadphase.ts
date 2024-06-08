@@ -543,6 +543,12 @@ export interface Sphere {
   org: V3;
   rad: number;
 }
+export function createSphere(org?: V3, rad?: number): Sphere {
+  return {
+    org: org ?? V3.mk(),
+    rad: 0,
+  };
+}
 
 export interface Line {
   ray: Ray;
