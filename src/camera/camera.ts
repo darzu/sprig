@@ -290,7 +290,6 @@ EM.addLazyInit([], [CameraComputedDef], () => {
           frame.scale,
           viewMatrix
         );
-        V3.copy(cameraComputed.location, computedTranslation);
       }
       const computedCameraRotation = quat.mul(
         camera.rotationOffset,
@@ -307,6 +306,9 @@ EM.addLazyInit([], [CameraComputedDef], () => {
       );
       // const computedCameraTranslation = camera.positionOffset;
       mat4.translate(viewMatrix, computedCameraTranslation, viewMatrix);
+
+      mat4.getTranslation(viewMatrix, cameraComputed.location);
+
       mat4.invert(viewMatrix, viewMatrix);
 
       if (VERBOSE_CAMERA) {

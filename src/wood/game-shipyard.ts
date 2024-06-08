@@ -1,4 +1,8 @@
-import { CameraDef, CameraFollowDef } from "../camera/camera.js";
+import {
+  CameraComputedDef,
+  CameraDef,
+  CameraFollowDef,
+} from "../camera/camera.js";
 import { CanvasDef, HasFirstInteractionDef } from "../render/canvas.js";
 import { AlphaDef, ColorDef } from "../color/color-ecs.js";
 import {
@@ -61,16 +65,20 @@ import { GRID_MASK } from "../render/pipeline-masks.js";
 import {
   sketch,
   sketchAABB,
+  sketchDot,
   sketchLine,
   sketchLine2,
+  sketchRay,
 } from "../utils/sketch.js";
 import { renderDots } from "../render/pipelines/std-dots.js";
 import { alphaRenderPipeline } from "../render/pipelines/xp-alpha.js";
-import { getLineEnd } from "../physics/broadphase.js";
+import { copyRay, mkRay, getLineEnd } from "../physics/broadphase.js";
 import { dbgPathWithGizmos } from "../debug/utils-gizmos.js";
 import { GAME_LOADER } from "../game-loader.js";
 import { TimeDef } from "../time/time.js";
-import { clamp } from "../utils/math.js";
+import { clamp, remap } from "../utils/math.js";
+import { defineResourceWithInit } from "../ecs/em-helpers.js";
+import { MouseRayDef } from "../input/screen-input.js";
 
 const DBG_PLAYER = false;
 const DBG_COLLIDERS = false;
@@ -368,24 +376,28 @@ export async function initShipyardGame() {
     addGizmoChild(g, 3);
   }
 
-  // EM.addSystem(
-  //   "selectWoodParts",
-  //   Phase.GAME_WORLD,
-  //   null,
-  //   [CanvasDef, InputsDef, PhysicsResultsDef],
-  //   (_, res) => {
-  //     const ship: WoodObj;
-  //     // if (res.inputs.lclick) {
-  //     const mouseRay = getMouseRay(res.inputs.mousePos);
-  //     const hit = getFirstRayIntersectWood(ship, ray);
-  //     if (hit) {
-  //       woodHighlight(hit.group, ENDESGA16.darkGreen);
-  //       woodHighlight(hit.board, ENDESGA16.lightGreen);
-  //       dbgPathWithGizmos(hit.board.path);
-  //     }
-  //     // }
-  //   }
-  // );
+  EM.addSystem(
+    "selectWoodParts",
+    Phase.GAME_WORLD,
+    null,
+    [InputsDef, MouseRayDef, PhysicsResultsDef, CameraComputedDef],
+    (_, res) => {
+      // const ship: WoodObj;
+      if (res.inputs.lclick) {
+        sketchRay(res.mouseRay, { length: 20, color: ENDESGA16.orange });
+        sketchDot(res.cameraComputed.location);
+      }
+      // const mouseRay = getMouseRay(res.inputs.mousePos);
+      // sketchRay(mouseRay);
+      // const hit = getFirstRayIntersectWood(ship, ray);
+      // if (hit) {
+      //   woodHighlight(hit.group, ENDESGA16.darkGreen);
+      //   woodHighlight(hit.b00oard, ENDESGA16.lightGreen);
+      //   dbgPathWithGizmos(hit.board.path);
+      // }
+      // }
+    }
+  );
 
   if (!DISABLE_PRIATES) startPirates();
 }

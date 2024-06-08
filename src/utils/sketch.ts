@@ -55,7 +55,7 @@ import {
   WireCubeMesh,
   WireUnitCubeMesh,
 } from "../meshes/mesh-list.js";
-import { Line, getLineEnd } from "../physics/broadphase.js";
+import { Line, Ray, getLineEnd } from "../physics/broadphase.js";
 
 export const WARN_DROPPED_EARLY_SKETCH = false;
 
@@ -541,6 +541,13 @@ export async function sketchLine(
   opt: SketchBaseOpt = {}
 ): Promise<SketchEnt> {
   return sketchEnt({ start, end, shape: "line", ...opt });
+}
+export async function sketchRay(
+  ray: Ray,
+  opt: SketchBaseOpt & { length?: number } = {}
+): Promise<SketchEnt> {
+  const end = V3.addScaled(ray.org, ray.dir, opt.length ?? 10);
+  return sketchEnt({ start: ray.org, end, shape: "line", ...opt });
 }
 export async function sketchLine2(
   line: Line,

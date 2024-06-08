@@ -559,11 +559,10 @@ export function getLineMid(out: V3, line: Line) {
   return out;
 }
 
-// TODO(@darzu): do we need this pattern?
-export function emptyRay(): Ray {
+export function mkRay(org?: V3, dir?: V3): Ray {
   return {
-    org: V3.mk(),
-    dir: V3.mk(),
+    org: org ?? V3.mk(),
+    dir: dir ?? V3.mk(),
   };
 }
 export function copyRay(out: Ray, a: Ray): Ray {
@@ -573,7 +572,7 @@ export function copyRay(out: Ray, a: Ray): Ray {
 }
 export function emptyLine(): Line {
   return {
-    ray: emptyRay(),
+    ray: mkRay(),
     len: 0,
   };
 }
