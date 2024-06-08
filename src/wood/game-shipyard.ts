@@ -80,7 +80,7 @@ import { clamp, remap } from "../utils/math.js";
 import { defineResourceWithInit } from "../ecs/em-helpers.js";
 import { MouseRayDef } from "../input/screen-input.js";
 
-const DBG_PLAYER = false;
+const DBG_PLAYER = true;
 const DBG_COLLIDERS = false;
 const DBG_TRANSPARENT_BOAT = false;
 

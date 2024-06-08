@@ -596,7 +596,7 @@ export function createLine(a: V3, b: V3): Line {
 }
 
 const __temp1 = mat3.create();
-export function transformLine(out: Line, t: mat4) {
+export function transformLine(out: Line, t: mat4.InputT) {
   // TODO(@darzu): this code needs review. It might not work right with scaling
   // TODO(@darzu): PERF! This code needs to be inlined and simplified.
   //      There's no way we need this much matrix math for this.

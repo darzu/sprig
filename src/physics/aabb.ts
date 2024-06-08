@@ -2,6 +2,7 @@ import { clamp } from "../utils/math.js";
 import { mat4, V, V2, V3 } from "../matrix/sprig-matrix.js";
 import { range } from "../utils/util.js";
 import { vec3Dbg2 } from "../utils/utils-3d.js";
+import { Sphere } from "./broadphase.js";
 
 const TRACK_AABB = true;
 
@@ -260,4 +261,17 @@ export function isValidAABB(aabb: AABB) {
     aabb.min[2] <= aabb.max[2];
   const validNums = isValidVec3(aabb.min) && isValidVec3(aabb.max);
   return validBounds && validNums;
+}
+
+export function getAABBFromSphere(sphere: Sphere, out?: AABB) {
+  out = out ?? createAABB();
+
+  out.min[0] = sphere.org[0] - sphere.rad;
+  out.min[1] = sphere.org[1] - sphere.rad;
+  out.min[2] = sphere.org[2] - sphere.rad;
+  out.max[0] = sphere.org[0] + sphere.rad;
+  out.max[1] = sphere.org[1] + sphere.rad;
+  out.max[2] = sphere.org[2] + sphere.rad;
+
+  return out;
 }

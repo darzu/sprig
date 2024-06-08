@@ -19,6 +19,7 @@ import {
   doesOverlapAABB,
   cloneAABB,
   AABB,
+  getAABBFromSphere,
 } from "../physics/aabb.js";
 import {
   emptyLine,
@@ -52,8 +53,10 @@ import {
   _trisPerSplinter,
   _vertsPerSplinter,
   WoodState,
+  SegState,
 } from "./wood-builder.js";
 import { WoodHealthDef } from "./wood-health.js";
+import { createLine } from "../utils/utils-game.js";
 
 const DBG_WOOD_DMG = true;
 
@@ -195,34 +198,19 @@ EM.addEagerInit([WoodStateDef], [], [], () => {
               rad: (ballAABBWorld.max[0] - ballAABBWorld.min[0]) * 0.4,
             };
 
-            const aabbHitsItr = woodVsAABB(
+            const sphereHitsItr = woodVsSphere(
               w.woodState,
               w.world.transform,
-              ballAABBWorld
+              worldSphere
             );
-            for (let [groupIdx, boardIdx, segIdx] of aabbHitsItr) {
-              segAABBHits += 1;
+            for (let [groupIdx, boardIdx, segIdx] of sphereHitsItr) {
+              // segAABBHits += 1;
               // for (let qi of seg.quadSideIdxs) {
               //   if (DBG_COLOR && mesh.colors[qi][1] < 1) {
               //     // dont change green to red
               //     mesh.colors[qi] = [1, 0, 0];
               //   }
               // }
-
-              // does the ball hit the middle of the segment?
-              const seg =
-                w.woodState.groups[groupIdx].boards[boardIdx].segments[segIdx];
-              copyLine(worldLine, seg.midLine);
-              transformLine(worldLine, w.world.transform);
-              const midHits = lineSphereIntersections(worldLine, worldSphere);
-              if (!midHits) continue;
-
-              if (DBG_WOOD_DMG) {
-                sketchLine2(worldLine, {
-                  key: `segMidHit_${groupIdx}_${boardIdx}_${segIdx}`,
-                  color: ENDESGA16.red,
-                });
-              }
 
               // console.log(`mid hit: ${midHits}`);
               segMidHits += 1;
@@ -498,11 +486,18 @@ EM.addEagerInit([WoodStateDef], [], [], () => {
   );
 });
 
+type WoodHit = [
+  groupIdx: number,
+  boardIdx: number,
+  segIdx: number,
+  seg: SegState
+];
+
 export function* woodVsAABB(
   wood: WoodState,
   worldFromWood: mat4.InputT,
   worldAABB: AABB
-): Generator<[groupIdx: number, boardIdx: number, segIdx: number]> {
+): Generator<WoodHit> {
   // TODO(@darzu): move a bunch of the below into physic system features!
   // TODO(@darzu): PERF!!! We should probably translate ball into wood space not both into world space!
 
@@ -550,8 +545,35 @@ export function* woodVsAABB(
           });
         }
 
-        yield [groupIdx, boardIdx, segIdx];
+        yield [groupIdx, boardIdx, segIdx, seg];
       }
     }
+  }
+}
+
+export function* woodVsSphere(
+  wood: WoodState,
+  worldFromWood: mat4.InputT,
+  worldSphere: Sphere
+): Generator<WoodHit> {
+  const aabb = getAABBFromSphere(worldSphere);
+  const tmpLine = emptyLine();
+
+  const aabbHitsItr = woodVsAABB(wood, worldFromWood, aabb);
+  for (let [groupIdx, boardIdx, segIdx, seg] of aabbHitsItr) {
+    // does the ball hit the middle of the segment?
+    const worldLine = copyLine(tmpLine, seg.midLine);
+    transformLine(worldLine, worldFromWood);
+    const midHits = lineSphereIntersections(worldLine, worldSphere);
+    if (!midHits) continue;
+
+    if (DBG_WOOD_DMG) {
+      sketchLine2(worldLine, {
+        key: `segMidHit_${groupIdx}_${boardIdx}_${segIdx}`,
+        color: ENDESGA16.red,
+      });
+    }
+
+    yield [groupIdx, boardIdx, segIdx, seg];
   }
 }
