@@ -198,12 +198,14 @@ EM.addEagerInit([WoodStateDef], [], [], () => {
               rad: (ballAABBWorld.max[0] - ballAABBWorld.min[0]) * 0.4,
             };
 
-            const sphereHitsItr = woodVsSphere(
+            getAABBFromSphere(worldSphere, ballAABBWorld);
+
+            const hitsIter = woodVsAABB(
               w.woodState,
               w.world.transform,
-              worldSphere
+              ballAABBWorld
             );
-            for (let [groupIdx, boardIdx, segIdx] of sphereHitsItr) {
+            for (let hit of hitsIter) {
               // segAABBHits += 1;
               // for (let qi of seg.quadSideIdxs) {
               //   if (DBG_COLOR && mesh.colors[qi][1] < 1) {
@@ -211,6 +213,11 @@ EM.addEagerInit([WoodStateDef], [], [], () => {
               //     mesh.colors[qi] = [1, 0, 0];
               //   }
               // }
+
+              if (!woodHitVsSphere(hit, w.world.transform, worldSphere))
+                continue;
+
+              const [groupIdx, boardIdx, segIdx, seg] = hit;
 
               // console.log(`mid hit: ${midHits}`);
               segMidHits += 1;
@@ -551,29 +558,26 @@ export function* woodVsAABB(
   }
 }
 
-export function* woodVsSphere(
-  wood: WoodState,
+const tmpLine = emptyLine();
+export function woodHitVsSphere(
+  hit: WoodHit,
   worldFromWood: mat4.InputT,
   worldSphere: Sphere
-): Generator<WoodHit> {
-  const aabb = getAABBFromSphere(worldSphere);
-  const tmpLine = emptyLine();
+): boolean {
+  let [groupIdx, boardIdx, segIdx, seg] = hit;
 
-  const aabbHitsItr = woodVsAABB(wood, worldFromWood, aabb);
-  for (let [groupIdx, boardIdx, segIdx, seg] of aabbHitsItr) {
-    // does the ball hit the middle of the segment?
-    const worldLine = copyLine(tmpLine, seg.midLine);
-    transformLine(worldLine, worldFromWood);
-    const midHits = lineSphereIntersections(worldLine, worldSphere);
-    if (!midHits) continue;
+  // does the ball hit the middle of the segment?
+  const worldLine = copyLine(tmpLine, seg.midLine);
+  transformLine(worldLine, worldFromWood);
+  const midHits = lineSphereIntersections(worldLine, worldSphere);
+  if (!midHits) return false;
 
-    if (DBG_WOOD_DMG) {
-      sketchLine2(worldLine, {
-        key: `segMidHit_${groupIdx}_${boardIdx}_${segIdx}`,
-        color: ENDESGA16.red,
-      });
-    }
-
-    yield [groupIdx, boardIdx, segIdx, seg];
+  if (DBG_WOOD_DMG) {
+    sketchLine2(worldLine, {
+      key: `segMidHit_${groupIdx}_${boardIdx}_${segIdx}`,
+      color: ENDESGA16.red,
+    });
   }
+
+  return true;
 }
