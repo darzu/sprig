@@ -200,7 +200,8 @@ function createInputsReader(canvas: Canvas): () => Inputs {
       if (!isRMouseDown) accumulated_rClicks += 1;
       isRMouseDown = true;
     }
-    canvas.getCanvasHtml().setPointerCapture(ev.pointerId);
+    // TODO(@darzu): figure out pointer events
+    // canvas.getCanvasHtml().setPointerCapture(ev.pointerId);
     return false;
   });
   // TODO(@darzu): TEST MOBILE

@@ -4,7 +4,16 @@ import { assert } from "./utils/util-no-import.js";
 import { WebNavDef } from "./web/webnav.js";
 
 export async function main_sceneSelector() {
-  startGameBasedOnURLHash();
+  window.onhashchange = () => {
+    // console.log("hash: " + window.location.hash);
+    window.location.reload(); // TODO(@darzu): would be great to not reload
+  };
+
+  (async () => {
+    const { webNav } = await EM.whenResources(WebNavDef);
+    const gameName = webNav.getHash();
+    GAME_LOADER.startGame(gameName);
+  })();
 
   const linksTreeId = "linksTree";
   const linksTree = document.getElementById(
@@ -18,10 +27,7 @@ export async function main_sceneSelector() {
     aEl.setAttribute("href", destUrl);
     aEl.textContent = gameName;
     aEl.onclick = () => {
-      // TODO(@darzu): BUG!
-      console.log(`TRYING! ${destUrl}`);
-      // window.location.assign(destUrl);
-      // window.location.reload();
+      window.location.assign(destUrl);
     };
     return aEl;
   };
@@ -30,10 +36,4 @@ export async function main_sceneSelector() {
   for (let name of GAME_LOADER.getAvailableGameNames()) {
     linksTree.appendChild(createGameLink(name));
   }
-}
-
-export async function startGameBasedOnURLHash() {
-  const { webNav } = await EM.whenResources(WebNavDef);
-  const gameName = webNav.getHash();
-  GAME_LOADER.startGame(gameName);
 }
