@@ -7,7 +7,7 @@ import { EM } from "../ecs/ecs.js";
 import { Entity } from "../ecs/em-entities.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { VERBOSE_LOG } from "../flags.js";
-import { V4, V3, quat } from "../matrix/sprig-matrix.js";
+import { V4, V3, quat, mat4 } from "../matrix/sprig-matrix.js";
 import { meshStats } from "../meshes/mesh.js";
 import { GravityDef } from "../motion/gravity.js";
 import { AngularVelocityDef, LinearVelocityDef } from "../motion/velocity.js";
@@ -18,6 +18,7 @@ import {
   transformAABB,
   doesOverlapAABB,
   cloneAABB,
+  AABB,
 } from "../physics/aabb.js";
 import {
   emptyLine,
@@ -26,6 +27,7 @@ import {
   transformLine,
   lineSphereIntersections,
   getLineMid,
+  Ray,
 } from "../physics/broadphase.js";
 import { ColliderDef } from "../physics/collider.js";
 import {
@@ -49,6 +51,7 @@ import {
   _quadsPerSplinter,
   _trisPerSplinter,
   _vertsPerSplinter,
+  WoodState,
 } from "./wood-builder.js";
 import { WoodHealthDef } from "./wood-health.js";
 
@@ -139,15 +142,13 @@ EM.addEagerInit([WoodStateDef], [], [], () => {
       const { collidesWith } = res.physicsResults;
 
       const ballAABBWorld = createAABB();
-      const segAABBWorld = createAABB();
-      const boardAABBWorld = createAABB();
       const worldLine = emptyLine();
 
       const before = performance.now();
 
       let segAABBHits = 0;
       let segMidHits = 0;
-      let overlapChecks = 0;
+      // let overlapChecks = 0;
 
       const DBG_COLOR = false;
 
@@ -194,93 +195,58 @@ EM.addEagerInit([WoodStateDef], [], [], () => {
               rad: (ballAABBWorld.max[0] - ballAABBWorld.min[0]) * 0.4,
             };
 
-            if (DBG_WOOD_DMG) {
-              sketchAABB(cloneAABB(ballAABBWorld), {
-                key: `ballHit_${ball.id}`,
-                color: ENDESGA16.red,
-              });
-            }
+            const aabbHitsItr = woodVsAABB(
+              w.woodState,
+              w.world.transform,
+              ballAABBWorld
+            );
+            for (let [groupIdx, boardIdx, segIdx] of aabbHitsItr) {
+              segAABBHits += 1;
+              // for (let qi of seg.quadSideIdxs) {
+              //   if (DBG_COLOR && mesh.colors[qi][1] < 1) {
+              //     // dont change green to red
+              //     mesh.colors[qi] = [1, 0, 0];
+              //   }
+              // }
 
-            // TODO(@darzu): PERF. Use AABBs in the groups!
-            w.woodState.groups.forEach((group, groupIdx) => {
-              group.boards.forEach((board, boardIdx) => {
-                if (ball.bullet.health <= 0) return;
+              // does the ball hit the middle of the segment?
+              const seg =
+                w.woodState.groups[groupIdx].boards[boardIdx].segments[segIdx];
+              copyLine(worldLine, seg.midLine);
+              transformLine(worldLine, w.world.transform);
+              const midHits = lineSphereIntersections(worldLine, worldSphere);
+              if (!midHits) continue;
 
-                // does the ball hit the board?
-                copyAABB(boardAABBWorld, board.localAABB);
-                transformAABB(boardAABBWorld, w.world.transform);
-                overlapChecks++;
-                if (!doesOverlapAABB(ballAABBWorld, boardAABBWorld)) return;
-
-                if (DBG_WOOD_DMG) {
-                  sketchAABB(cloneAABB(boardAABBWorld), {
-                    key: `boardHit_${groupIdx}_${boardIdx}`,
-                    color: ENDESGA16.darkRed,
-                  });
-                }
-
-                board.segments.forEach((seg, segIdx) => {
-                  if (ball.bullet.health <= 0) return;
-
-                  // does the ball hit the segment?
-                  copyAABB(segAABBWorld, seg.localAABB);
-                  transformAABB(segAABBWorld, w.world.transform);
-                  overlapChecks++;
-                  if (!doesOverlapAABB(ballAABBWorld, segAABBWorld)) return;
-
-                  if (DBG_WOOD_DMG) {
-                    sketchAABB(cloneAABB(boardAABBWorld), {
-                      key: `segAABBHit_${groupIdx}_${boardIdx}_${segIdx}`,
-                      color: ENDESGA16.yellow,
-                    });
-                  }
-
-                  segAABBHits += 1;
-                  // for (let qi of seg.quadSideIdxs) {
-                  //   if (DBG_COLOR && mesh.colors[qi][1] < 1) {
-                  //     // dont change green to red
-                  //     mesh.colors[qi] = [1, 0, 0];
-                  //   }
-                  // }
-
-                  // does the ball hit the middle of the segment?
-                  copyLine(worldLine, seg.midLine);
-                  transformLine(worldLine, w.world.transform);
-                  const midHits = lineSphereIntersections(
-                    worldLine,
-                    worldSphere
-                  );
-                  if (!midHits) return;
-
-                  if (DBG_WOOD_DMG) {
-                    sketchLine2(worldLine, {
-                      key: `segMidHit_${groupIdx}_${boardIdx}_${segIdx}`,
-                      color: ENDESGA16.red,
-                    });
-                  }
-
-                  // console.log(`mid hit: ${midHits}`);
-                  segMidHits += 1;
-                  // if (DBG_COLOR)
-                  //   for (let qi of seg.quadSideIdxs) {
-                  //     mesh.colors[qi] = [0, 1, 0];
-                  //   }
-                  // TODO(@darzu): cannon ball health stuff!
-
-                  // determine dmg
-                  const woodHealth =
-                    w.woodHealth.groups[groupIdx].boards[boardIdx][segIdx];
-                  const dmg =
-                    Math.min(woodHealth.health, ball.bullet.health) + 0.001;
-
-                  // dmg the ball
-                  ball.bullet.health -= dmg;
-
-                  // dmg the wood
-                  boardSegHits.push({ groupIdx, boardIdx, segIdx, dmg });
+              if (DBG_WOOD_DMG) {
+                sketchLine2(worldLine, {
+                  key: `segMidHit_${groupIdx}_${boardIdx}_${segIdx}`,
+                  color: ENDESGA16.red,
                 });
-              });
-            });
+              }
+
+              // console.log(`mid hit: ${midHits}`);
+              segMidHits += 1;
+              // if (DBG_COLOR)
+              //   for (let qi of seg.quadSideIdxs) {
+              //     mesh.colors[qi] = [0, 1, 0];
+              //   }
+              // TODO(@darzu): cannon ball health stuff!
+
+              // determine dmg
+              const woodHealth =
+                w.woodHealth.groups[groupIdx].boards[boardIdx][segIdx];
+              const dmg =
+                Math.min(woodHealth.health, ball.bullet.health) + 0.001;
+
+              // dmg the ball
+              ball.bullet.health -= dmg;
+
+              // dmg the wood
+              boardSegHits.push({ groupIdx, boardIdx, segIdx, dmg });
+
+              // continue?
+              if (ball.bullet.health <= 0) break;
+            }
           }
 
           if (boardSegHits.length) {
@@ -531,3 +497,61 @@ EM.addEagerInit([WoodStateDef], [], [], () => {
     }
   );
 });
+
+export function* woodVsAABB(
+  wood: WoodState,
+  worldFromWood: mat4.InputT,
+  worldAABB: AABB
+): Generator<[groupIdx: number, boardIdx: number, segIdx: number]> {
+  // TODO(@darzu): move a bunch of the below into physic system features!
+  // TODO(@darzu): PERF!!! We should probably translate ball into wood space not both into world space!
+
+  if (DBG_WOOD_DMG) {
+    sketchAABB(cloneAABB(worldAABB), {
+      key: `woodVsAABB_target`,
+      color: ENDESGA16.red,
+    });
+  }
+
+  const tmpAABB = createAABB();
+
+  // TODO(@darzu): PERF. Use AABBs in the groups!
+  for (let groupIdx = 0; groupIdx < wood.groups.length; groupIdx++) {
+    const group = wood.groups[groupIdx];
+    for (let boardIdx = 0; boardIdx < group.boards.length; boardIdx++) {
+      const board = group.boards[boardIdx];
+
+      // does the target hit the board?
+      const boardAABBWorld = copyAABB(tmpAABB, board.localAABB);
+      transformAABB(boardAABBWorld, worldFromWood);
+      // overlapChecks++;
+      if (!doesOverlapAABB(worldAABB, boardAABBWorld)) continue;
+
+      if (DBG_WOOD_DMG) {
+        sketchAABB(cloneAABB(boardAABBWorld), {
+          key: `boardHit_${groupIdx}_${boardIdx}`,
+          color: ENDESGA16.darkRed,
+        });
+      }
+
+      for (let segIdx = 0; segIdx < board.segments.length; segIdx++) {
+        const seg = board.segments[segIdx];
+
+        // does the ball hit the segment?
+        const segAABBWorld = copyAABB(tmpAABB, seg.localAABB);
+        transformAABB(segAABBWorld, worldFromWood);
+        // overlapChecks++;
+        if (!doesOverlapAABB(worldAABB, segAABBWorld)) continue;
+
+        if (DBG_WOOD_DMG) {
+          sketchAABB(cloneAABB(boardAABBWorld), {
+            key: `segAABBHit_${groupIdx}_${boardIdx}_${segIdx}`,
+            color: ENDESGA16.yellow,
+          });
+        }
+
+        yield [groupIdx, boardIdx, segIdx];
+      }
+    }
+  }
+}

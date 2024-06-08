@@ -133,7 +133,7 @@ export function getAABBCornersTemp(aabb: AABB): V3[] {
 //   return tempAabbXZCorners;
 // }
 
-export function transformAABB(out: AABB, t: mat4) {
+export function transformAABB(out: AABB, t: mat4.InputT) {
   // TODO(@darzu): PERF. is there a more performant way to do this?
   const wCorners = getAABBCornersTemp(out);
   wCorners.forEach((p) => V3.tMat4(p, t, p));

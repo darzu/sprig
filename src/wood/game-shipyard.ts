@@ -168,7 +168,7 @@ export async function initShipyardGame() {
   );
 
   // camera
-  initDemoPanCamera();
+  if (!DBG_PLAYER) initDemoPanCamera();
 
   const sun = createSun([250, 10, 300]);
 
