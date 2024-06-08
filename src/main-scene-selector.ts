@@ -18,8 +18,10 @@ export async function main_sceneSelector() {
     aEl.setAttribute("href", destUrl);
     aEl.textContent = gameName;
     aEl.onclick = () => {
-      window.location.assign(destUrl);
-      window.location.reload();
+      // TODO(@darzu): BUG!
+      console.log(`TRYING! ${destUrl}`);
+      // window.location.assign(destUrl);
+      // window.location.reload();
     };
     return aEl;
   };

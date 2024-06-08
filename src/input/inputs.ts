@@ -204,7 +204,7 @@ function createInputsReader(canvas: Canvas): () => Inputs {
     return false;
   });
   // TODO(@darzu): TEST MOBILE
-  window.addEventListener("touchstart", (e) => e.preventDefault());
+  // window.addEventListener("touchstart", (e) => e.preventDefault());
   window.addEventListener("pointerup", (ev) => {
     if (ev.button === 0) {
       isLMouseDown = false;
