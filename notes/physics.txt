@@ -504,3 +504,6 @@ GPU collision detection:
 
 "Tech Breakdown: Collision Sliding":
   https://blog.littlepolygon.com/posts/sliding/
+
+2D rigid body, nice interactive article:
+  https://www.sassnow.ski/rigid-body-collisions/1

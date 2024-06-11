@@ -37,7 +37,7 @@ import { addWorldGizmo } from "../utils/utils-game.js";
 import { createObj } from "../ecs/em-objects.js";
 import { GAME_LOADER } from "../game-loader.js";
 
-export function createSun() {
+export function createSun(pos?: V3.InputT) {
   const sun = createObj(
     [PointLightDef, ColorDef, PositionDef, RenderableConstructDef] as const,
     [
@@ -49,7 +49,7 @@ export function createSun() {
         diffuse: V(0.5, 0.5, 0.5),
       },
       [1, 1, 1],
-      [50, 10, 300],
+      pos ?? [50, 10, 300],
       [CubeMesh, false],
     ]
   );
@@ -66,6 +66,7 @@ const defaultCam: CameraSetting = {
   pitchOffset: -0.55,
 };
 
+// TODO(@darzu): collapse w/ createGhost
 export function initGhost(mesh?: MeshLike) {
   const g = createGhost(mesh ?? CubeMesh);
   g.controllable.speed *= 10;

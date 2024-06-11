@@ -3,7 +3,8 @@ import { createFlatQuadMesh } from "../meshes/primatives.js";
 import { Mesh, mergeMeshes } from "../meshes/mesh.js";
 import { V3, V, tV, orthonormalize, mat4 } from "../matrix/sprig-matrix.js";
 import { assert, dbgDirOnce } from "../utils/util.js";
-import { createEmptyMesh } from "../wood/wood.js";
+import { createEmptyMesh } from "../wood/wood-builder.js";
+import { Path } from "../utils/spline.js";
 
 const _UP = V(0, 0, 1);
 const _t1 = V3.mk();
@@ -176,4 +177,21 @@ export function createGizmoForAABB(aabb: AABB, width: number): Mesh {
   const result = mergeMeshes(...lns) as Mesh;
   result.usesProvoking = true;
   return result;
+}
+
+// TODO(@darzu): This should probably move into the Sketcher
+export function createPathGizmosMesh(path: Path, scale = 1): Mesh {
+  let gizmos: Mesh[] = [];
+  path.forEach((p) => {
+    const g = createGizmoMesh();
+    g.pos.forEach((v) => {
+      V3.scale(v, scale, v);
+      V3.tQuat(v, p.rot, v);
+      V3.add(v, p.pos, v);
+    });
+    gizmos.push(g);
+  });
+  const res = mergeMeshes(...gizmos) as Mesh;
+  res.usesProvoking = true;
+  return res;
 }

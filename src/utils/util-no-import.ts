@@ -54,3 +54,19 @@ export function assert(cond: any, msg?: string): asserts cond {
 export function T<N extends {}>(): (p: N) => N {
   return (p: N) => p;
 }
+
+export function shuffle(array: unknown[]): void {
+  // https://stackoverflow.com/questions/2450954/how-to-randomize-shuffle-a-javascript-array
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+}
+
+export function mkLazy<T>(mk: () => T): () => T {
+  let _t: T | undefined = undefined;
+  return () => {
+    if (!_t) _t = mk();
+    return _t;
+  };
+}

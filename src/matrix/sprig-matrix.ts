@@ -534,6 +534,14 @@ export module V3 {
   export function add(v1: InputT, v2: InputT, out?: T): T {
     return GL.add(out ?? tmp(), v1, v2) as T;
   }
+  // TODO(@darzu): hacky, this is here b/c working with temps is so painful.
+  export function addScaled(a: InputT, b: InputT, bScale: number, out?: T): T {
+    out = out ?? tmp();
+    out[0] = a[0] + b[0] * bScale;
+    out[1] = a[1] + b[1] * bScale;
+    out[2] = a[2] + b[2] * bScale;
+    return out;
+  }
   export function abs(v: InputT, out?: T): T {
     out = out ?? tmp();
     out[0] = Math.abs(v[0]);
@@ -591,6 +599,9 @@ export module V3 {
     out[1] = (a[1] + b[1]) * 0.5;
     out[2] = (a[2] + b[2]) * 0.5;
     return out;
+  }
+  export function avg(v1: InputT, v2: InputT, out?: T): T {
+    return mid(v1, v2, out);
   }
 
   // TODO(@darzu): RENAME: all "sqr" -> "sq"
@@ -727,6 +738,38 @@ export module V3 {
 
   export function getYaw(v: InputT): number {
     return _getYaw(v[0], v[1]);
+  }
+
+  // TODO(@darzu): remove roll
+  export function fromYawPitch(yaw = 0, pitch = 0, out?: T): T {
+    // TODO(@darzu): test this thoroughly against V3.tQuat(V3.UP, q, out) and quat.fromYawPitchRoll!
+    pitch *= 0.5;
+    yaw *= 0.5;
+
+    var sx = Math.sin(pitch);
+    var cx = Math.cos(pitch);
+    var sz = Math.sin(-yaw);
+    var cz = Math.cos(-yaw);
+    var qx = sx * cz;
+    var qy = sx * sz;
+    var qz = cx * sz;
+    var qw = cx * cz;
+
+    // var q = quat.fromYawPitchRoll(yaw, pitch, 0);
+    // var qx = q[0];
+    // var qy = q[1];
+    // var qz = q[2];
+    // var qw = q[3];
+
+    return quat.fwd([qx, qy, qz, qw], out);
+
+    // TODO(@darzu): PERF. fix and inline
+    // out = out ?? V3.tmp();
+    // out[0] = (-qz * qw + qy * qx) * 2;
+    // out[1] = 1 + (qz * qz + qx * qx) * 2;
+    // out[2] = (qx * qw + qy * qz) * 2;
+
+    // return out;
   }
 }
 
@@ -950,6 +993,7 @@ export module quat {
   export function roll(v1: InputT, n: number, out?: T) {
     return GL.rotateY(out ?? tmp(), v1, n) as T;
   }
+  // TODO(@darzu): DOCUMENT what order yaw,pitch,roll are applied
   export function fromYawPitchRoll(
     yaw: number = 0,
     pitch: number = 0,
@@ -957,6 +1001,14 @@ export module quat {
     out?: T
   ): T {
     return GL.fromEuler(out ?? tmp(), pitch, roll, -yaw) as T;
+  }
+  export function fromYPR(
+    yaw: number = 0,
+    pitch: number = 0,
+    roll: number = 0,
+    out?: T
+  ): T {
+    return fromYawPitchRoll(yaw, pitch, roll, out);
   }
 
   // TODO(@darzu): this is annoying that it shows up in auto-complete. remove this
@@ -1104,7 +1156,22 @@ export module quat {
     return V3.tQuat(V3.RIGHT, q, out);
   }
   export function fwd(q: quat.InputT, out?: V3): V3 {
+    // TODO(@darzu): swap with below
     return V3.tQuat(V3.FWD, q, out);
+  }
+  export function fwd_(q: quat.InputT, out?: V3): V3 {
+    // TODO(@darzu): test this thoroughly against V3.tQuat(V3.UP, q, out)!
+    // TODO(@darzu): broken.
+    out = out ?? V3.tmp();
+    var qx = q[0],
+      qy = q[1],
+      qz = q[2],
+      qw = q[3];
+
+    out[0] = (-qz * qw + qy * qx) * 2;
+    out[1] = 1 + (qz * qz + qx * qx) * 2;
+    out[2] = (qx * qw + qy * qz) * 2;
+    return out;
   }
   export function up(q: quat.InputT, out?: V3): V3 {
     return V3.tQuat(V3.UP, q, out);
@@ -1544,6 +1611,19 @@ export module mat3 {
     out[8] = m22;
     return out;
   }
+  export function fromBasis(xDir: V3.InputT, yDir: V3.InputT, zDir: V3.InputT) {
+    return fromValues(
+      xDir[0],
+      xDir[1],
+      xDir[2],
+      yDir[0],
+      yDir[1],
+      yDir[2],
+      zDir[0],
+      zDir[1],
+      zDir[2]
+    );
+  }
 
   export function clone(v: InputT): T {
     return GL.clone(v) as T;
@@ -1620,10 +1700,19 @@ export module mat3 {
     return GL.fromQuat(out ?? tmp(), q) as T;
   }
 
+  // Copies the upper-left 3x3 values into the given mat3.
   export function fromMat4(q: mat4.InputT, out?: T): T {
     return GL.fromMat4(out ?? tmp(), q) as T;
   }
 }
+
+// TODO(@darzu): HACKY temps
+export const TV1 = V(0, 0, 0);
+export const TV2 = V(0, 0, 0);
+export const TV3 = V(0, 0, 0);
+export const TV4 = V(0, 0, 0);
+export const TV5 = V(0, 0, 0);
+export const TV6 = V(0, 0, 0);
 
 // Other utils:
 

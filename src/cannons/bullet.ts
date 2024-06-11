@@ -41,7 +41,7 @@ import { SketchTrailDef, SketcherDef, sketchLines } from "../utils/sketch.js";
 
 // TODO(@darzu): MULTIPLAYER BULLETS might have been broken during LD51
 
-const DBG_BULLET_TRAILS = true;
+const DBG_BULLET_TRAILS = false;
 
 const _maxBullets = 100;
 

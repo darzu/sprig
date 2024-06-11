@@ -48,6 +48,7 @@ export interface FireSolutionOpt {
   // target data
   targetVel: V3.InputT;
   targetOBB: OBB;
+  // TODO(@darzu): allow other target info like just a point
 
   // decision
   doMiss: boolean;

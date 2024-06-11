@@ -1,27 +1,20 @@
-import { AllEndesga16, ENDESGA16 } from "../color/palettes.js";
+import { ENDESGA16 } from "../color/palettes.js";
 import { createLineMesh } from "../debug/gizmos.js";
 import { EM } from "../ecs/ecs.js";
-import { V, orthonormalize, quat, tV, V3 } from "../matrix/sprig-matrix.js";
-import {
-  createEmptyRawMesh,
-  mergeMeshes,
-  Mesh,
-  validateMesh,
-} from "../meshes/mesh.js";
-import { PositionDef, RotationDef, ScaleDef } from "../physics/transform.js";
+import { V3 } from "../matrix/sprig-matrix.js";
+import { Mesh, validateMesh } from "../meshes/mesh.js";
+import { PositionDef } from "../physics/transform.js";
 import {
   RenderableConstructDef,
   RenderableDef,
 } from "../render/renderer-ecs.js";
 import {
-  BezierCubic,
   Path,
   bezierSplineFromPoints,
   createEvenPathFromBezierSpline,
   getRandomCylindricalPoints,
 } from "../utils/spline.js";
-import { quatFromUpForward_OLD } from "../utils/utils-3d.js";
-import { appendBoard, dbgPathWithGizmos } from "../wood/shipyard.js";
+import { dbgPathWithGizmos } from "../debug/utils-gizmos.js";
 
 export const SpacePathDef = EM.defineNonupdatableComponent(
   "spacePath",

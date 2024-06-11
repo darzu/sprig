@@ -1651,3 +1651,8 @@ https://threlte.xyz
 Unreal Engine Gameplay Framework:
   https://dev.epicgames.com/documentation/en-us/unreal-engine/gameplay-framework-in-unreal-engine?application_version=5.0
   https://dev.epicgames.com/documentation/en-us/unreal-engine/gameplay-framework-quick-reference-in-unreal-engine?application_version=5.0
+
+Bend: High level language that runs on GPUs
+  https://higherorderco.com
+  https://github.com/HigherOrderCO/Bend
+  https://news.ycombinator.com/item?id=40390287

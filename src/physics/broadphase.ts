@@ -1,5 +1,15 @@
-import { V2, V3, V4, quat, mat4, mat3, V } from "../matrix/sprig-matrix.js";
+import {
+  V2,
+  V3,
+  V4,
+  quat,
+  mat4,
+  mat3,
+  V,
+  TV1,
+} from "../matrix/sprig-matrix.js";
 import { clamp } from "../utils/math.js";
+import { sketchDot } from "../utils/sketch.js";
 import { range } from "../utils/util.js";
 import { vec3Floor } from "../utils/utils-3d.js";
 import {
@@ -11,6 +21,7 @@ import {
   enclosedBy,
   __resetAABBDbgCounters,
 } from "./aabb.js";
+import { OBB } from "./obb.js";
 
 const BROAD_PHASE: "N^2" | "OCT" | "GRID" = "OCT";
 
@@ -344,6 +355,7 @@ export interface Ray {
   org: V3;
   dir: V3;
 }
+
 export interface RayHit {
   id: number;
   dist: number;
@@ -402,14 +414,14 @@ export function rayVsRay(ra: Ray, rb: Ray): V3 | undefined {
 
 function checkRayVsOct(tree: OctTree, ray: Ray): RayHit[] {
   // check this node's AABB
-  const d = rayHitDist(tree.aabb, ray);
+  const d = rayVsAABBHitDist(tree.aabb, ray);
   if (isNaN(d)) return [];
 
   let hits: RayHit[] = [];
 
   // check this node's objects
   for (let [id, b] of tree.objs.entries()) {
-    const dist = rayHitDist(b, ray);
+    const dist = rayVsAABBHitDist(b, ray);
     if (!isNaN(d)) hits.push({ id, dist });
   }
 
@@ -497,9 +509,35 @@ function octtree(parentObjs: Map<number, AABB>, aabb: AABB): OctTree | null {
   };
 }
 
+const _tmpRay = mkRay();
+const _tmpAABB = createAABB();
+export function rayVsOBBHitDist(b: OBB, r: Ray): number {
+  // TODO(@darzu): PERF! Probably faster if we inline this all. See Real-time Collision Detection 5.3.3. Intersecting Ray or Segment Against Box
+  // transform ray into OBB's space, effectively making the OBB a AABB
+  const localRay = _tmpRay;
+  V3.sub(r.org, b.center, localRay.org);
+  V3.set(
+    V3.dot(localRay.org, b.right),
+    V3.dot(localRay.org, b.fwd),
+    V3.dot(localRay.org, b.up),
+    localRay.org
+  );
+  V3.copy(localRay.dir, r.dir);
+  V3.set(
+    V3.dot(localRay.dir, b.right),
+    V3.dot(localRay.dir, b.fwd),
+    V3.dot(localRay.dir, b.up),
+    localRay.dir
+  );
+  const localAABB = _tmpAABB;
+  V3.neg(b.halfw, localAABB.min);
+  V3.copy(localAABB.max, b.halfw);
+  return rayVsAABBHitDist(localAABB, localRay);
+}
+
 // AABB utils
 // returns NaN if they don't hit
-export function rayHitDist(b: AABB, r: Ray): number {
+export function rayVsAABBHitDist(b: AABB, r: Ray): number {
   // TODO(@darzu): can be made faster using inverse ray direction:
   //    https://tavianator.com/2011/ray_box.html
   //    https://tavianator.com/2015/ray_box_nan.html
@@ -533,6 +571,12 @@ export interface Sphere {
   org: V3;
   rad: number;
 }
+export function createSphere(org?: V3, rad?: number): Sphere {
+  return {
+    org: org ?? V3.mk(),
+    rad: 0,
+  };
+}
 
 export interface Line {
   ray: Ray;
@@ -549,11 +593,10 @@ export function getLineMid(out: V3, line: Line) {
   return out;
 }
 
-// TODO(@darzu): do we need this pattern?
-export function emptyRay(): Ray {
+export function mkRay(org?: V3, dir?: V3): Ray {
   return {
-    org: V3.mk(),
-    dir: V3.mk(),
+    org: org ?? V3.mk(),
+    dir: dir ?? V3.mk(),
   };
 }
 export function copyRay(out: Ray, a: Ray): Ray {
@@ -561,9 +604,12 @@ export function copyRay(out: Ray, a: Ray): Ray {
   V3.copy(out.dir, a.dir);
   return out;
 }
+export function cloneRay(ray: Ray): Ray {
+  return copyRay(mkRay(), ray);
+}
 export function emptyLine(): Line {
   return {
-    ray: emptyRay(),
+    ray: mkRay(),
     len: 0,
   };
 }
@@ -587,7 +633,7 @@ export function createLine(a: V3, b: V3): Line {
 }
 
 const __temp1 = mat3.create();
-export function transformLine(out: Line, t: mat4) {
+export function transformLine(out: Line, t: mat4.InputT) {
   // TODO(@darzu): this code needs review. It might not work right with scaling
   // TODO(@darzu): PERF! This code needs to be inlined and simplified.
   //      There's no way we need this much matrix math for this.
@@ -601,32 +647,55 @@ export function transformLine(out: Line, t: mat4) {
   return out;
 }
 
+export function transformRay(out: Ray, t: mat4.InputT) {
+  // TODO(@darzu): this code needs review. It might not work right with scaling
+  // TODO(@darzu): PERF! This code needs to be inlined and simplified.
+  //      There's no way we need this much matrix math for this.
+  V3.norm(out.dir, out.dir); // might not be needed if inputs r always normalized
+  V3.tMat4(out.org, t, out.org);
+  const t3 = mat3.fromMat4(t, __temp1);
+  V3.tMat3(out.dir, t3, out.dir);
+  V3.norm(out.dir, out.dir);
+  return out;
+}
+
+const __t2 = V3.mk();
 export function raySphereIntersections(
   ray: Ray,
-  sphere: Sphere
+  sphere: Sphere,
+  out?: V2
 ): V2 | undefined {
   // https://iquilezles.org/articles/intersectors/
-  const a = V3.sub(ray.org, sphere.org);
+  const a = V3.sub(ray.org, sphere.org, __t2);
   const b = V3.dot(a, ray.dir);
   const c = V3.dot(a, a) - sphere.rad * sphere.rad;
   const h = b * b - c;
   if (h < 0.0) return undefined; // no intersection
   const h2 = Math.sqrt(h);
-  return V(-b - h2, -b + h2);
+  out = out ?? V2.tmp();
+  return V2.set(-b - h2, -b + h2, out);
 }
 
+// TODO(@darzu): MOVE to narrowphase
 export function lineSphereIntersections(
   line: Line,
-  sphere: Sphere
+  sphere: Sphere,
+  out?: V2
 ): V2 | undefined {
-  const hits = raySphereIntersections(line.ray, sphere);
+  const hits = raySphereIntersections(line.ray, sphere, out);
   // return hits; // TODO(@darzu): HACK
   if (!hits) return undefined;
   // TODO(@darzu): what about negative numbers?
   if (
+    // miss 1
     (hits[0] < 0 || line.len < hits[0]) &&
-    (hits[1] < 0 || line.len < hits[1])
-  )
+    // miss 2
+    (hits[1] < 0 || line.len < hits[1]) &&
+    // not inside
+    sphere.rad ** 2 < V3.sqrDist(line.ray.org, sphere.org)
+  ) {
     return undefined;
+  }
+
   return hits;
 }

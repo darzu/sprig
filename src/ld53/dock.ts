@@ -1,11 +1,8 @@
 import { ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { EM } from "../ecs/ecs.js";
-import {
-  appendBoard,
-  dbgPathWithGizmos,
-  lerpBetween,
-} from "../wood/shipyard.js";
+import { WoodObj, createWoodBuilder, lerpBetween } from "../wood/shipyard.js";
+import { dbgPathWithGizmos } from "../debug/utils-gizmos.js";
 import { getHalfsizeFromAABB } from "../physics/aabb.js";
 import { ColliderDef } from "../physics/collider.js";
 import { PositionDef } from "../physics/transform.js";
@@ -14,23 +11,24 @@ import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { quat, V, V3 } from "../matrix/sprig-matrix.js";
 import {
   createEmptyMesh,
-  createTimberBuilder,
-  createWoodHealth,
+  createBoardBuilder,
   getBoardsFromMesh,
   reserveSplinterSpace,
-  TimberBuilder,
+  BoardBuilder,
   verifyUnsharedProvokingForWood,
-  WoodHealthDef,
   WoodState,
   WoodStateDef,
-} from "../wood/wood.js";
+} from "../wood/wood-builder.js";
+import { WoodHealthDef } from "../wood/wood-health.js";
+import { createWoodHealth } from "../wood/wood-health.js";
 import { Path } from "../utils/spline.js";
+import { BLACK } from "../meshes/mesh-list.js";
 
 export const DockDef = EM.defineComponent("dock", () => true);
 
 // TODO(@darzu): MULTIPLAYER. Use netEntityHelper
 export function createDock() {
-  const [mesh, wood] = createDockWood();
+  const { mesh, state: wood } = createDockWood();
 
   const dock = EM.mk();
   EM.set(dock, DockDef);
@@ -53,10 +51,9 @@ export function createDock() {
 }
 
 // const __tq1 = quat.create();
-export function createDockWood(): [Mesh, WoodState] {
-  const _timberMesh = createEmptyMesh("dock");
-
-  const builder: TimberBuilder = createTimberBuilder(_timberMesh);
+export function createDockWood(): WoodObj {
+  const w = createWoodBuilder({ meshName: "dock" });
+  w.startGroup("all");
 
   const numPlanks = 16;
   const plankWidth = 2.0;
@@ -65,6 +62,7 @@ export function createDockWood(): [Mesh, WoodState] {
   const plankLength = 60;
   const segLen = 20 / 6;
   const plankSegNum = plankLength / segLen;
+  w.b.setSize(plankWidth / 2 - plankGap, plankDepth / 2);
   for (let i = 0; i < numPlanks; i++) {
     const x = plankWidth * i;
     const start = V(x, 0, 0);
@@ -79,25 +77,14 @@ export function createDockWood(): [Mesh, WoodState] {
 
     // dbgPathWithGizmos(path);
 
-    appendBoard(builder.mesh, {
-      path: path,
-      width: plankWidth / 2 - plankGap,
-      depth: plankDepth / 2,
-    });
+    w.addBoard(path, BLACK);
   }
 
+  const obj = w.finish(200);
+
   // recenter
-  const size = getHalfsizeFromAABB(getAABBFromMesh(_timberMesh));
-  _timberMesh.pos.forEach((v) => V3.sub(v, size, v));
+  const size = getHalfsizeFromAABB(getAABBFromMesh(obj.mesh));
+  obj.mesh.pos.forEach((v) => V3.sub(v, size, v));
 
-  _timberMesh.surfaceIds = _timberMesh.colors.map((_, i) => i);
-  const timberState = getBoardsFromMesh(_timberMesh);
-  verifyUnsharedProvokingForWood(_timberMesh, timberState);
-  const timberMesh = _timberMesh as Mesh;
-  timberMesh.usesProvoking = true;
-
-  reserveSplinterSpace(timberState, 200);
-  validateMesh(timberState.mesh);
-
-  return [timberMesh, timberState];
+  return obj;
 }

@@ -4,7 +4,7 @@ import { jitter } from "../utils/math.js";
 import { range } from "../utils/util.js";
 import { mat3Dbg, vec3Dbg } from "../utils/utils-3d.js";
 import { AABB, getCenterFromAABB, getHalfsizeFromAABB } from "./aabb.js";
-import { Sphere } from "./broadphase.js";
+import { Ray, Sphere, rayVsAABBHitDist } from "./broadphase.js";
 
 // TODO(@darzu): ABSTRACTION. Maybe what we actually want is a bunch of helper functions
 //    for working with local AABBs and a series of world transforms
@@ -41,6 +41,7 @@ interface _OBB2 extends _OBB1 {
 }
 
 export interface OBB extends _OBB2 {
+  // TODO(@darzu): REFACTOR. I don't like these being methods b/c how do you discover sphereVsOBB if you're thinking sphere-first ?
   vsSphere: (s: Sphere) => boolean;
   updateFromMat4: (aabb: AABB, m: mat4) => void;
 }
@@ -122,6 +123,8 @@ export function getRandPointInOBB(b: OBB, scale: number, out?: V3): V3 {
 export module OBB {
   export type T = OBB;
 
+  export const ZERO = mk();
+
   function _fromMat3(mat: mat3): _OBB1 {
     const right = new Float32Array(mat.buffer, 0, 3) as V3;
     const fwd = new Float32Array(mat.buffer, 12, 3) as V3;
@@ -139,7 +142,7 @@ export module OBB {
     return _withMethods({
       ...b,
       center: V(0, 0, 0),
-      halfw: V(0.5, 0.5, 0.5),
+      halfw: V(0, 0, 0),
     });
   }
 

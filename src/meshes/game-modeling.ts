@@ -93,7 +93,7 @@ export async function initModelingGame() {
   const obj = EM.mk();
   const ship = createLD53Ship();
   // EM.set(obj, RenderableConstructDef, allMeshes.ship_small.proto);
-  EM.set(obj, RenderableConstructDef, ship.timberMesh);
+  EM.set(obj, RenderableConstructDef, ship.mesh);
   EM.set(obj, PositionDef, V(0, 0, 0));
   // EM.set(obj, ColorDef, ENDESGA16.midBrown);
   // EM.set(obj, AngularVelocityDef, V(0.001, 0.00013, 0.00017));

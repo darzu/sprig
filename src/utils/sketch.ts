@@ -48,6 +48,15 @@ import {
 } from "./svg.js";
 import { never } from "./util-no-import.js";
 import { assert, range } from "./util.js";
+import { AABB } from "../physics/aabb.js";
+import { MeshReg } from "../meshes/mesh-loader.js";
+import {
+  UnitCubeMesh,
+  WireCubeMesh,
+  WireUnitCubeMesh,
+} from "../meshes/mesh-list.js";
+import { Line, Ray, getLineEnd } from "../physics/broadphase.js";
+import { OBB } from "../physics/obb.js";
 
 export const WARN_DROPPED_EARLY_SKETCH = false;
 
@@ -118,6 +127,7 @@ export interface SketchTriOpt {
 }
 export interface SketchCubeOpt {
   shape: "cube";
+  pos: V3.InputT;
   halfsize?: number;
 }
 export interface SketchPointsOpt {
@@ -140,20 +150,71 @@ export interface SketchDotOpt {
   radius?: number;
 }
 
-export type SketchEntOpt = SketchBaseOpt &
+export interface SketchAABBOpt {
+  shape: "aabb";
+  aabb: AABB;
+}
+
+export interface SketchOBBOpt {
+  shape: "obb";
+  obb: OBB;
+}
+
+export type SketchPrimOpt = SketchBaseOpt &
   (
     | SketchLineOpt
     | SketchPointsOpt
     | SketchLinesOpt
     | SketchLineSegsOpt
-    | SketchCubeOpt
     | SketchTriOpt
   );
 
-export type SketchOpt = SketchEntOpt | (SketchBaseOpt & SketchDotOpt);
+const SketchPrimShapes: { [k in SketchPrimOpt["shape"]]: true } = {
+  line: true,
+  points: true,
+  tri: true,
+  lines: true,
+  lineSegs: true,
+};
+
+// prettier-ignore
+export type SketchInstanceOpt = SketchBaseOpt &
+  (
+    | SketchCubeOpt
+    | SketchAABBOpt
+    | SketchOBBOpt
+  );
+
+const SketchInstanceShapes: { [k in SketchInstanceOpt["shape"]]: true } = {
+  cube: true,
+  aabb: true,
+  obb: true,
+};
+
+// prettier-ignore
+export type SketchParticleOpt = SketchBaseOpt &
+(
+  | SketchDotOpt
+);
+
+const SketchParticleShapes: { [k in SketchParticleOpt["shape"]]: true } = {
+  dot: true,
+};
+
+export type SketchOpt = SketchPrimOpt | SketchParticleOpt | SketchInstanceOpt;
+
+function isSketchPrimOpt(opt: SketchOpt): opt is SketchPrimOpt {
+  return opt.shape in SketchPrimShapes;
+}
+function isSketchParticleOpt(opt: SketchOpt): opt is SketchParticleOpt {
+  return opt.shape in SketchParticleShapes;
+}
+function isSketchInstanceOpt(opt: SketchOpt): opt is SketchInstanceOpt {
+  return opt.shape in SketchInstanceShapes;
+}
 
 export interface Sketcher {
-  sketchEnt: (opt: SketchEntOpt) => SketchEnt;
+  sketchPrimOrInstance: (opt: SketchPrimOpt | SketchInstanceOpt) => SketchEnt;
   sketch: (opt: SketchOpt) => void;
 }
 
@@ -206,7 +267,7 @@ export const SketcherDef = defineResourceWithLazyInit(
             );
           }
         }
-        EM.tryRemoveComponent(e.id, RenderableConstructDef);
+        EM.tryRemoveComponent(e.id, RenderableConstructDef); // TODO(@darzu): PERF. urgh, this isn't efficient
         EM.tryRemoveComponent(e.id, RenderableDef);
         EM.set(e, DeadDef);
         e.dead.processed = true;
@@ -218,7 +279,9 @@ export const SketcherDef = defineResourceWithLazyInit(
     const dotMap = new Map<string, number>();
 
     // TODO(@darzu): less hacky would be to have a pool per mesh type
-    function sketchEnt(opt: SketchEntOpt): SketchEnt {
+    function sketchPrimOrInstance(
+      opt: SketchPrimOpt | SketchInstanceOpt
+    ): SketchEnt {
       let e: SketchEnt | undefined;
       if (opt.key) e = sketchEntMap.get(opt.key);
       if (!e) {
@@ -237,7 +300,24 @@ export const SketcherDef = defineResourceWithLazyInit(
         // console.log(`new sketch ${key}=${e.id} ${opt.shape}`);
       }
 
-      updateEnt(e, opt);
+      // update common properties
+      V3.copy(e.color, opt.color ?? defaultColor);
+      // TODO(@darzu): support alpha properly in lines and points?
+      if (opt.alpha !== undefined) EM.set(e, AlphaDef, opt.alpha);
+      identityFrame(e);
+      // identityFrame(e.world);
+
+      if (opt.renderMask)
+        assert(
+          !RenderableConstructDef.isOn(e),
+          `TODO: support render mask w/ pooled ents`
+        );
+
+      if (isSketchPrimOpt(opt)) {
+        updatePrimEnt(e, opt);
+      } else if (isSketchInstanceOpt(opt)) {
+        updateInstanceEnt(e, opt);
+      }
 
       return e;
     }
@@ -246,7 +326,8 @@ export const SketcherDef = defineResourceWithLazyInit(
 
     function sketch(opt: SketchOpt): void {
       // console.log(`sketch ${opt.key ?? "_"} ${opt.shape}`);
-      if (opt.shape === "dot") {
+      if (isSketchParticleOpt(opt)) {
+        assert(opt.shape === "dot");
         let idx: number | undefined;
         if (opt.key) idx = dotMap.get(opt.key);
         if (!idx) {
@@ -257,21 +338,20 @@ export const SketcherDef = defineResourceWithLazyInit(
         dots.set(idx, opt.v, opt.color ?? defaultColor, opt.radius ?? 1);
         dots.queueUpdate();
       } else {
-        sketchEnt(opt);
+        sketchPrimOrInstance(opt);
       }
     }
 
-    interface meshParam<O extends SketchEntOpt> {
+    interface primMeshParam<O extends SketchPrimOpt> {
       newMesh: (o: O) => Mesh;
       updateMesh: (o: O, m: Mesh) => void;
       pool?: CyMeshPoolPtr<any, any>;
     }
-
-    type optForShape<k extends SketchEntOpt["shape"]> = SketchEntOpt & {
+    type optForShape<k extends SketchPrimOpt["shape"]> = SketchPrimOpt & {
       shape: k;
     };
-    const meshParams: {
-      [k in SketchEntOpt["shape"]]: meshParam<optForShape<k>>;
+    const primMeshParams: {
+      [k in SketchPrimOpt["shape"]]: primMeshParam<optForShape<k>>;
     } = {
       line: {
         newMesh: (o) => mkLine(),
@@ -335,32 +415,10 @@ export const SketcherDef = defineResourceWithLazyInit(
         },
         pool: meshPoolPtr,
       },
-      cube: {
-        newMesh: (o) => {
-          throw "todo cube";
-        },
-        updateMesh: (o, m) => {
-          throw "todo cube";
-        },
-      },
     };
 
-    function updateEnt(e: SketchEnt, opt: SketchEntOpt): SketchEnt {
-      V3.copy(e.color, opt.color ?? defaultColor);
-
-      // TODO(@darzu): support alpha properly in lines and points?
-      if (opt.alpha !== undefined) EM.set(e, AlphaDef, opt.alpha);
-
-      identityFrame(e);
-      // identityFrame(e.world);
-
-      const meshP = meshParams[opt.shape];
-
-      if (opt.renderMask)
-        assert(
-          !RenderableConstructDef.isOn(e),
-          `TODO: support render mask w/ pooled ents`
-        );
+    function updatePrimEnt(e: SketchEnt, opt: SketchPrimOpt): SketchEnt {
+      const meshP = primMeshParams[opt.shape];
 
       if (!RenderableConstructDef.isOn(e)) {
         const m = meshP.newMesh(opt as any); // TODO(@darzu): hacky casts
@@ -392,9 +450,68 @@ export const SketcherDef = defineResourceWithLazyInit(
       return e;
     }
 
+    function updateInstanceEnt(
+      e: SketchEnt,
+      opt: SketchInstanceOpt
+    ): SketchEnt {
+      if (!RenderableConstructDef.isOn(e)) {
+        let instance: MeshReg;
+        let pool: CyMeshPoolPtr<any, any>;
+        if (opt.shape === "cube") {
+          instance = UnitCubeMesh;
+          pool = meshPoolPtr;
+        } else if (opt.shape === "aabb") {
+          instance = WireUnitCubeMesh;
+          pool = lineMeshPoolPtr;
+        } else if (opt.shape === "obb") {
+          instance = WireCubeMesh;
+          pool = lineMeshPoolPtr;
+        } else never(opt);
+
+        EM.set(
+          e,
+          RenderableConstructDef,
+          instance,
+          true,
+          undefined,
+          opt.renderMask ? opt.renderMask : undefined,
+          pool
+        );
+      } else {
+        if (!RenderableDef.isOn(e)) {
+          // TODO(@darzu): could queue these instead of dropping them.
+          if (WARN_DROPPED_EARLY_SKETCH)
+            console.warn(
+              `Dropping early prototype draw() b/c .renderable isn't ready`
+            );
+          return e;
+        }
+        // nothing to do?
+      }
+
+      if (opt.shape === "cube") {
+        const halfsize = opt.halfsize ?? 1;
+        EM.set(e, ScaleDef, [halfsize, halfsize, halfsize]);
+        EM.set(e, PositionDef, opt.pos);
+      } else if (opt.shape === "aabb") {
+        EM.set(e, PositionDef, opt.aabb.min);
+        EM.set(e, ScaleDef, [
+          opt.aabb.max[0] - opt.aabb.min[0],
+          opt.aabb.max[1] - opt.aabb.min[1],
+          opt.aabb.max[2] - opt.aabb.min[2],
+        ]);
+      } else if (opt.shape === "obb") {
+        EM.set(e, PositionDef, opt.obb.center);
+        EM.set(e, ScaleDef, opt.obb.halfw);
+        EM.set(e, RotationDef, quat.fromMat3(opt.obb.mat));
+      } else never(opt);
+
+      return e;
+    }
+
     const result: Sketcher = {
       sketch,
-      sketchEnt,
+      sketchPrimOrInstance,
     };
 
     return result;
@@ -413,21 +530,23 @@ export async function sketch(opt: SketchOpt): Promise<void> {
     sketcher.sketch(cloneOpt);
   }
 }
-export async function sketchEnt(opt: SketchEntOpt): Promise<SketchEnt> {
+export async function sketchEnt(
+  opt: SketchPrimOpt | SketchInstanceOpt
+): Promise<SketchEnt> {
   let sketcher = EM.getResource(SketcherDef);
   if (sketcher) {
-    return sketcher.sketchEnt(opt);
+    return sketcher.sketchPrimOrInstance(opt);
   } else {
     // NOTE: this should be rarely done b/c once the resource is present we'll skip this
     const cloneOpt = cloneTmpsInObj(opt);
     sketcher = (await EM.whenResources(SketcherDef)).sketcher;
-    return sketcher.sketchEnt(cloneOpt);
+    return sketcher.sketchPrimOrInstance(cloneOpt);
   }
 }
 
-export function sketchEntNow(opt: SketchEntOpt): SketchEnt | undefined {
+export function sketchEntNow(opt: SketchPrimOpt): SketchEnt | undefined {
   let sketcher = EM.getResource(SketcherDef);
-  if (sketcher) return sketcher.sketchEnt(opt);
+  if (sketcher) return sketcher.sketchPrimOrInstance(opt);
   return undefined;
 }
 
@@ -437,6 +556,20 @@ export async function sketchLine(
   opt: SketchBaseOpt = {}
 ): Promise<SketchEnt> {
   return sketchEnt({ start, end, shape: "line", ...opt });
+}
+export async function sketchRay(
+  ray: Ray,
+  opt: SketchBaseOpt & { length?: number } = {}
+): Promise<SketchEnt> {
+  const end = V3.addScaled(ray.org, ray.dir, opt.length ?? 10);
+  return sketchEnt({ start: ray.org, end, shape: "line", ...opt });
+}
+export async function sketchLine2(
+  line: Line,
+  opt: SketchBaseOpt = {}
+): Promise<SketchEnt> {
+  const end = getLineEnd(V3.tmp(), line);
+  return sketchEnt({ start: line.ray.org, end, shape: "line", ...opt });
 }
 
 export async function sketchQuat(
@@ -531,6 +664,20 @@ export async function sketchSvg(
   } = {}
 ): Promise<SketchEnt> {
   return sketchSvgC(compileSVG(svg), opt);
+}
+
+export async function sketchAABB(
+  aabb: AABB,
+  opt: SketchBaseOpt = {}
+): Promise<SketchEnt> {
+  return sketchEnt({ shape: "aabb", aabb, ...opt });
+}
+
+export async function sketchOBB(
+  obb: OBB,
+  opt: SketchBaseOpt = {}
+): Promise<SketchEnt> {
+  return sketchEnt({ shape: "obb", obb, ...opt });
 }
 
 export const SketchTrailDef = EM.defineComponent("sketchTrail", () => true);

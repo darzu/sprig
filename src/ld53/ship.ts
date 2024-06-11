@@ -29,7 +29,9 @@ import { WorldFrameDef } from "../physics/nonintersection.js";
 import { createSock } from "../wind/windsock.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { createLD53Ship, ld53ShipAABBs } from "../wood/shipyard.js";
-import { createWoodHealth, WoodHealthDef, WoodStateDef } from "../wood/wood.js";
+import { WoodStateDef } from "../wood/wood-builder.js";
+import { WoodHealthDef } from "../wood/wood-health.js";
+import { createWoodHealth } from "../wood/wood-health.js";
 import { addGizmoChild } from "../utils/utils-game.js";
 import { CannonLocalDef, createCannonNow } from "../cannons/cannon.js";
 import { Phase } from "../ecs/sys-phase.js";
@@ -97,7 +99,7 @@ export async function createLd53ShipAsync() {
   //   aabb: res.allMeshes.ship.aabb,
   // });
 
-  const timberHealth = createWoodHealth(homeShip.timberState);
+  const timberHealth = createWoodHealth(homeShip.state);
 
   // const timberAABB = getAABBFromMesh(homeShip.timberMesh);
   // console.log("ship size:");
@@ -156,8 +158,8 @@ export async function createLd53ShipAsync() {
     args: {
       position: [0, 0, 0],
       rotation: quat.fromYawPitchRoll(Math.PI / 2, 0, 0),
-      renderableConstruct: [homeShip.timberMesh],
-      woodState: homeShip.timberState,
+      renderableConstruct: [homeShip.mesh],
+      woodState: homeShip.state,
       woodHealth: timberHealth,
       shipHealth: undefined,
       collider: mc,

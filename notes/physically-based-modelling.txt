@@ -1,0 +1,39 @@
+  Game mechanics:
+  [ ] Planks can be repaired
+  [ ] Two decks?
+
+  Wood:
+  [ ] Shipbuilding file, 
+    [ ] ∞ system refinement
+  [ ] Reproduce fang-ship
+  [ ] Dock
+  [ ] Small objs:
+    [ ] shelf     [ ] crate     [ ] figure head   [ ] bunk
+    [ ] table     [ ] barrel    [ ] bucket        [ ] small boat
+    [ ] ladder    [ ] wheel     [ ] chest         [ ] cannon ball holder
+    [ ] hoist     [ ] hatch     [ ] dingy         [ ] padel
+    [ ] mallet    [ ] stairs    [ ] picture frame [ ] lattice
+    [ ] drawer    [ ] cage      [ ] fiddle        [ ] club
+    [ ] port hole [ ] door      [ ] counter       [ ] cabinet
+    [ ] 
+  [ ] paintable
+  [ ] in-sprig modeling
+
+  "Physically based modeling" (lol):
+    [ ] metal (bends nicely)
+      [ ] barrel bands    [ ] nails     [ ] hinge [ ] latch
+    [ ] rope
+      [ ] pullies         [ ] knots     [ ] coils
+      [ ] anchor rope     [ ] nets
+    [ ] clay (breaks nicely)
+      [ ] pots
+    [ ] cloth: leather, canvas,
+    [ ] stone: walls, bridges, towers, castle
+    [ ] brick: paths, walls, furnace/oven/..., 
+    [ ] plants!: trees, grass, tomatoes, ivy
+  
+  [ ] PERF, huge: GPU-based culling
+
+  [ ] change wood colors
+  [ ] adjust ship size
+  [ ] add dark/fog ends

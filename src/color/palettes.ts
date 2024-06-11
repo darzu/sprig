@@ -76,3 +76,10 @@ export const COLOR_SAMPLES = objMap(
 //   const k = _k as keyof typeof COLOR_SAMPLES;
 //   console.log(`${k}: ${vec3Dbg(COLOR_SAMPLES[k])}`);
 // }
+
+export function colorToStr(c: V3): string {
+  for (let i = 0; i < AllEndesga16.length; i++) {
+    if (V3.sqrDist(AllEndesga16[i], c) < 0.05) return AllEndesga16Names[i];
+  }
+  return vec3Dbg(c);
+}

@@ -317,6 +317,7 @@ export function createBoxForAABB(
 }
 
 export function addColliderDbgVis(ent: EntityW<[typeof ColliderDef]>): void {
+  // TODO(@darzu): REFACTOR. SKETCH. reconcile this with sketch()!!
   addColliderDbgVisForCollider(ent.collider);
 
   function addColliderDbgVisForCollider(c: Collider) {

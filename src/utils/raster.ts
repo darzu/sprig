@@ -3,6 +3,8 @@
 // TODO(@darzu): raster doesn't work yet
 // TODO(@darzu): https://kristoffer-dyrkorn.github.io/triangle-rasterizer/
 
+// TODO(@darzu): better? https://www.youtube.com/watch?v=k5wtuKWmV48 ?
+
 import { V2 } from "../matrix/sprig-matrix.js";
 import { assert } from "./util.js";
 

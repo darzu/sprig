@@ -68,3 +68,6 @@ Color theory:
 "The Hitchhiker's Guide to Digital Colour":
   https://hg2dc.com
   The step by step guidebook for digital pixel pushers trying to get a firm grasp on colour to get sh*t done…
+
+How to Generate Random Colors Programmatically
+  https://martin.ankerl.com/2009/12/09/how-to-create-random-colors-programmatically/

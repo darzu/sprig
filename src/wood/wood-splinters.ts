@@ -5,18 +5,24 @@ import { EntityW } from "../ecs/em-entities.js";
 import { EM } from "../ecs/ecs.js";
 import { AllMeshesDef, BLACK } from "../meshes/mesh-list.js";
 import { GravityDef } from "../motion/gravity.js";
-import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
-import { jitter } from "../utils/math.js";
+import { V2, V3, V4, quat, mat4, V, tV } from "../matrix/sprig-matrix.js";
+import { jitter, randRadian } from "../utils/math.js";
 import { getLineMid } from "../physics/broadphase.js";
 import { LinearVelocityDef, AngularVelocityDef } from "../motion/velocity.js";
 import { PositionDef, RotationDef } from "../physics/transform.js";
 import { normalizeMesh } from "../meshes/mesh.js";
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { randNormalVec3, vec3Reverse, vec4Reverse } from "../utils/utils-3d.js";
-import { BoardSeg, createEmptyMesh, createTimberBuilder } from "./wood.js";
+import {
+  SegState,
+  createEmptyMesh,
+  createBoardBuilder,
+} from "./wood-builder.js";
 import { RenderDataStdDef } from "../render/pipelines/std-scene.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { VERBOSE_LOG } from "../flags.js";
+
+const DBG_SPLINTER_POOL_TIME = true;
 
 // TODO(@darzu): generalize for any entity pool
 
@@ -31,14 +37,14 @@ export const SplinterParticleDef = EM.defineComponent("splinter", () => {
 export const SplinterPoolsDef = EM.defineResource("splinterPools", () => {
   const _pools = new Map<string, SplinterPool>();
 
-  function getOrCreatePool(seg: BoardSeg) {
-    const poolKey: string = `w${seg.width.toFixed(1)}_d${seg.depth.toFixed(
+  function getOrCreatePool(seg: SegState) {
+    const poolKey: string = `w${seg.xWidth.toFixed(1)}_d${seg.zDepth.toFixed(
       1
     )}}`;
     let pool = _pools.get(poolKey);
     if (!pool) {
       if (VERBOSE_LOG) console.log(`new splinter pool!: ${poolKey}`);
-      pool = createSplinterPool(seg.width, seg.depth, 1, 40);
+      pool = createSplinterPool(seg.xWidth, seg.zDepth, 1, 40);
       _pools.set(poolKey, pool);
     }
     return pool;
@@ -50,12 +56,14 @@ export const SplinterPoolsDef = EM.defineResource("splinterPools", () => {
   };
 });
 
+let _accumPoolCreationTimeMs = 0;
 function createSplinterPool(
   width: number,
   depth: number,
   length: number,
   numInPool: number
 ) {
+  const _start = performance.now();
   const pool: SplinterPart[] = [];
   let nextIdx = 0;
 
@@ -100,6 +108,16 @@ function createSplinterPool(
     pool.push(splinter);
   }
 
+  if (DBG_SPLINTER_POOL_TIME) {
+    const _end = performance.now();
+    _accumPoolCreationTimeMs += _end - _start;
+    console.log(
+      `createSplinterPool ${_accumPoolCreationTimeMs.toFixed(
+        1
+      )}ms (accumulated)`
+    );
+  }
+
   return {
     width,
     depth,
@@ -117,9 +135,9 @@ export const mkTimberSplinterFree = (
   depth: number
 ) => {
   // const b = createTimberBuilder(.5, .2);
-  const b = createTimberBuilder(createEmptyMesh("splinter"));
-  b.width = width;
-  b.depth = depth;
+  const b = createBoardBuilder(createEmptyMesh("splinter"));
+  b.xLen = width;
+  b.zLen = depth;
 
   // mat4.rotateY(b.cursor, b.cursor, Math.PI * -0.5); // TODO(@darzu): DBG
 
@@ -139,12 +157,19 @@ export const mkTimberSplinterFree = (
   const loopBotEndIdx = b.mesh.pos.length;
   mat4.translate(b.cursor, [0, +H, 0], b.cursor);
   mat4.scale(b.cursor, [(1 / Wbot) * Wtop, 1, 1], b.cursor);
+  const splinLoopStart = b.mesh.pos.length;
+  const splinLoop = tV(
+    splinLoopStart + 0,
+    splinLoopStart + 1,
+    splinLoopStart + 2,
+    splinLoopStart + 3
+  );
   b.addLoopVerts();
   const loopTopEndIdx = b.mesh.pos.length;
   b.addSideQuads();
 
   // top splinters
-  b.addSplinteredEnd(loopTopEndIdx, topJags);
+  b.addSplinteredEnd(splinLoop, topJags);
 
   // mat4.translate(b.cursor, b.cursor, [0, -0.2, 0]);
   {
@@ -154,7 +179,7 @@ export const mkTimberSplinterFree = (
 
     const tIdx = b.mesh.tri.length;
     const qIdx = b.mesh.quad.length;
-    b.addSplinteredEnd(loopBotEndIdx, botJags);
+    b.addSplinteredEnd(splinLoop, botJags);
     for (let ti = tIdx; ti < b.mesh.tri.length; ti++)
       vec3Reverse(b.mesh.tri[ti]);
     for (let ti = qIdx; ti < b.mesh.quad.length; ti++)
@@ -199,11 +224,8 @@ EM.addEagerInit([SplinterParticleDef], [], [], () => {
           V3.zero(s.angularVelocity);
 
           s.position[2] = 0;
-          quat.identity(s.rotation);
-          quat.rotX(s.rotation, Math.PI * 0.5, s.rotation);
-          quat.rotZ(s.rotation, Math.PI * Math.random(), s.rotation);
+          quat.fromYawPitchRoll(randRadian(), 0, 0, s.rotation);
           s.renderDataStd.id = splinterObjId; // stops z-fighting
-          // console.log("freeze!");
         }
       }
     }

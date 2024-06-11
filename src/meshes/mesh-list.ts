@@ -10,7 +10,7 @@ import {
   unshareProvokingForWood,
   WoodAssets,
   WoodAssetsDef,
-} from "../wood/wood.js";
+} from "../wood/wood-builder.js";
 import {
   cloneMesh,
   scaleMesh,
@@ -42,6 +42,7 @@ import {
 import { createGizmoMesh } from "../debug/gizmos.js";
 import { transformYUpModelIntoZUp } from "../camera/basis.js";
 import { PI } from "../utils/util-no-import.js";
+import { lineMeshPoolPtr } from "../render/pipelines/std-line.js";
 
 // TODO(@darzu): move elsewhere?
 export const BLACK = V(0, 0, 0);
@@ -467,6 +468,7 @@ export const TriFenceMesh = XY.registerMesh({
 // TODO(@darzu): wire cube is kinda broken; needs line renderer
 export const WireCubeMesh = XY.registerMesh({
   name: "wireCube",
+  pool: lineMeshPoolPtr,
   data: () => ({
     ...mkCubeMesh(),
     tri: [],
@@ -475,6 +477,26 @@ export const WireCubeMesh = XY.registerMesh({
     surfaceIds: [],
     dbgName: "wireCube",
   }),
+});
+export const WireUnitCubeMesh = XY.registerMesh({
+  name: "wireUnitCube",
+  pool: lineMeshPoolPtr,
+  data: () => {
+    const m = {
+      ...mkCubeMesh(),
+      tri: [],
+      quad: [],
+      colors: [],
+      surfaceIds: [],
+      dbgName: "wireUnitCube",
+    };
+    m.pos.forEach((p) => {
+      p[0] = p[0] < 0 ? 0 : 1;
+      p[1] = p[1] < 0 ? 0 : 1;
+      p[2] = p[2] < 0 ? 0 : 1;
+    });
+    return m;
+  },
 });
 export const MastMesh = XY.registerMesh({
   name: "mast",

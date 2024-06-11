@@ -1,0 +1,111 @@
+Demofox on blue noise:
+  https://www.youtube.com/watch?v=tethAU66xaA&list=WL&index=9&t=111s
+    https://media.contentapi.ea.com/content/dam/ea/seed/presentations/seed-wolfe-beyond-white-noise-deck.pdf
+  gabler falacy: randomness feels unfair at small numbers
+  golden ratio for fair-ish shuffling w/ one number
+    fills circle pretty well, each new itr fills in largest gap on circle
+    gives random-ish but near perfect histogram (probabilities "match" the loot table)
+  golden ratio: the most irrational number, least well approximated by integer division
+  PI: one of the "worst" irrational numbers, pretty well aproximated by 22/7 and 355/113
+  blog on irrational numbers:
+    https://blog.demofox.org/2020/07/26/irrational-numbers/
+  golden ratio index for hue -> get maximally distinct colors
+    https://martin.ankerl.com/2009/12/09/how-to-create-random-colors-programmatically/
+
+  Mitchell's Best Canidate (blue noise) (1,2,3, *D)
+    with N blue noise values,
+    generate N+1 white noise values,
+    pick canidate farthest from any existing point
+    repeat
+    https://blog.demofox.org/2017/10/20/generating-blue-noise-sample-points-with-mitchells-best-candidate-algorithm/
+
+  blue noise also useful for efficient object placement!
+
+  multi-class blue: 2 things blue noise independantly and combined
+    e.g. different color photo receptors in a chicken's eye
+    maybe?
+    https://extremelearning.com.au/unreasonable-effectiveness-of-quasirandom-sequences/
+
+  blue noise ~= "disordered hyperuniformity"
+
+  golden ratio is "low discrepancy sequence" like "Halton, Sobol, friends"
+
+  stochastic rendering:
+    stochastic = random ish ?
+    fog/clouds: integrate scattering and absorption along line from camera to depth buffer
+    ambient occlusion: integrate visibility over each pixel's positive hemisphere
+    specular reflection: integrate light*material over a reflection cone
+
+    numerical integration is very tunable: quality (more samples) vs speed (less samples)
+
+    kinda applies to:
+      texture sampling: use fractional UV coordinates as probabilities. Read fewer pixels
+      convolution (blur, depth of field, filter): use weights as probabilities. Read fewer pixels
+      material blending: use blend weights as probabilities, evaluate fewer materials
+
+  LDS vs bue noise:
+    blue noise is more "random" feeling,
+    LDS/golden ratio has more optimal equidistant distribution and thus convergence for something like integration 
+
+  when only 1 sample per pixel, convergence doesn't matter (?)
+
+  TAA: "leaky integration over time", gather multiple frames for a final result
+
+  corrolated noise => red noise
+  white noise: lots of clumps and voids
+
+  rendering a pixel:
+    x <- input vector (loc, textures, etc.)
+    y <- output rgb
+    f <- usually: small changes in x produce small changes in y
+    y = f(x)
+
+  "blue noise has a more correct histogram over what possibilities of the pixels should be"
+
+  blue noise has high frequencies, white noise has all frequencies (?)
+    gaussian kernel also has high frequencies
+  
+  low pass filter removes high frequencies but leaves low
+    with blue noise there's no low frequency
+    so low pass removes noise and leaves noiseless
+
+  your visual system applies a gaussian filter as part of processing
+    central limit theorem: if you have a bunch of little filters they're going to add up to be gaussian
+
+  beyond blue noise - fast noise
+    ? arbitrary filters over space and time
+
+  to use noise textures:
+    rng = Texture[uint3(pixel.xy % textureSize.xy, frameIndex % textureSize.z)]
+
+  My takeaways:
+  LDS means single index with unknown upper limit produces even distribution
+  LDS: great for when you want even distribution w/ unknown length  
+  Golden ratio: pretty much ideal LDS for 1D, but for higher dimensions maybe see R2
+  BN: better than LDS if you want the properties or feel of randomness
+  BN: can help you trade quality for speed by sampling w/ small probability tables (beware the cache)
+  BN: a lot easier to denoise than WN, in fact your visual system might naturally be denoising
+  BN: ideal for small sample counts were you don't have the luxury of convergence
+  many small filters add up to gaussian; gaussian removes high frequencies
+  WN: has clumps and voids, might be what you want for e.g. perlin noise
+  Fast noise: u can design noise around the filter for better BN-like properties in the output domain(?)
+
+  Demofox additions:
+  LDS is deterministic.  It can be a set (must use all points for it to work well) or a sequence (can use any points from 0 to N and it works well).
+  LDS wins over BN at numerical integration and similar "do a thing with RNG and calculate error" situations.
+  BN is randomized and is high frequency noise.
+  There is 2 kinds of BN. BN points and BN textures.
+  BN points can be sets or sequences too.
+  At dimensions > 2 Owen Scrambled Sobol seems to be the winner.
+  BN textures are for perceptual error.
+
+  Uses of random in sprigland:
+    procedural generation
+      placing vegitation, etc.
+
+  enemy aiming: making hit vs miss more fair w/ LDS
+  evenly spaced colors: Like Martin's approach, but use a more perceptual color space, like OkLab, and use LDS with A & B and with fixed-ish L
+  network queue: When there's more objects to be synced over the network than capacity, assign priority weights and than using an LDS to reduce starvation of lower priority items instead of just top-priority first.
+  
+  weighted round robin for queues?
+    https://blog.demofox.org/2020/06/23/weighted-round-robin-using-the-golden-ratio-low-discrepancy-sequence/

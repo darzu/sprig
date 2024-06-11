@@ -2,6 +2,7 @@ import { clamp } from "../utils/math.js";
 import { mat4, V, V2, V3 } from "../matrix/sprig-matrix.js";
 import { range } from "../utils/util.js";
 import { vec3Dbg2 } from "../utils/utils-3d.js";
+import { createSphere, Sphere } from "./broadphase.js";
 
 const TRACK_AABB = true;
 
@@ -68,6 +69,9 @@ export function copyAABB(out: AABB, a: AABB) {
   V3.copy(out.max, a.max);
   return out;
 }
+export function cloneAABB(a: AABB) {
+  return copyAABB(createAABB(), a);
+}
 export function clampToAABB(v: V3, aabb: AABB, out?: V3): V3 {
   out = out ?? V3.tmp();
   out[0] = clamp(v[0], aabb.min[0], aabb.max[0]);
@@ -130,7 +134,7 @@ export function getAABBCornersTemp(aabb: AABB): V3[] {
 //   return tempAabbXZCorners;
 // }
 
-export function transformAABB(out: AABB, t: mat4) {
+export function transformAABB(out: AABB, t: mat4.InputT) {
   // TODO(@darzu): PERF. is there a more performant way to do this?
   const wCorners = getAABBCornersTemp(out);
   wCorners.forEach((p) => V3.tMat4(p, t, p));
@@ -258,3 +262,27 @@ export function isValidAABB(aabb: AABB) {
   const validNums = isValidVec3(aabb.min) && isValidVec3(aabb.max);
   return validBounds && validNums;
 }
+
+export function getAABBFromSphere(sphere: Sphere, out?: AABB) {
+  out = out ?? createAABB();
+
+  out.min[0] = sphere.org[0] - sphere.rad;
+  out.min[1] = sphere.org[1] - sphere.rad;
+  out.min[2] = sphere.org[2] - sphere.rad;
+  out.max[0] = sphere.org[0] + sphere.rad;
+  out.max[1] = sphere.org[1] + sphere.rad;
+  out.max[2] = sphere.org[2] + sphere.rad;
+
+  return out;
+}
+export function getInnerSphereFromAABB(aabb: AABB, out?: Sphere) {
+  out = out ?? createSphere();
+
+  const halfSize = getHalfsizeFromAABB(aabb, out.org); // temp store in org
+  out.rad = Math.min(halfSize[0], halfSize[1], halfSize[2]);
+  V3.add(aabb.min, halfSize, out.org);
+
+  return out;
+}
+
+export const ZERO_AABB = createAABB(V(0, 0, 0), V(0, 0, 0));

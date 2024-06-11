@@ -66,6 +66,17 @@
     .rightBar {
       grid-column: 3;
     }
+
+    #debug-div {
+      grid-column: 2;
+      grid-row: 2;
+      z-index: 1;
+      pointer-events: none;
+
+      color: rgb(255, 0, 0);
+      font-family: monospace;
+      font-size: 16px;
+    }
   </style>
 </head>
 
@@ -78,6 +89,8 @@
     <a href="#particles">particles</a>
     <a href="#graybox-ship-arena">graybox-ship-arena</a>
   </div>
+
+  <div id="debug-div"> </div>
 
   <div class="canvasHolder">
     <canvas id="canvas-1" width="512" height="512"></canvas>

@@ -1,6 +1,6 @@
 import { EM } from "../ecs/ecs.js";
 import { Component } from "../ecs/em-components.js";
-import { WoodHealthDef } from "../wood/wood.js";
+import { WoodHealthDef } from "../wood/wood-health.js";
 import { Phase } from "../ecs/sys-phase.js";
 
 // const MIN_HEALTH_PERCENT = 0.7;
@@ -14,9 +14,11 @@ export const ShipHealthDef = EM.defineComponent("shipHealth", () => ({
 
 function getCurrentHealth(timberHealth: Component<typeof WoodHealthDef>) {
   let health = 0;
-  for (let b of timberHealth.boards) {
-    for (let s of b) {
-      health += s.health;
+  for (let g of timberHealth.groups) {
+    for (let b of g.boards) {
+      for (let s of b) {
+        health += s.health;
+      }
     }
   }
   return health;

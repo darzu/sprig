@@ -25,10 +25,12 @@ import { never } from "../utils/util-no-import.js";
 import { getBytes, getText } from "../web/webget.js";
 import { AABBCollider } from "../physics/collider.js";
 import { farthestPointInDir, SupportFn } from "../utils/utils-3d.js";
-import { MeshHandle, MeshReserve } from "../render/mesh-pool.js";
+import { MeshHandle, MeshPool, MeshReserve } from "../render/mesh-pool.js";
 import { createGizmoMesh } from "../debug/gizmos.js";
 import { importGltf } from "./import-gltf.js";
 import { DBG_CHECK_FOR_TMPS_IN_XY } from "../flags.js";
+import { CyMeshPoolPtr } from "../render/gpu-registry.js";
+import { meshPoolPtr } from "../render/pipelines/std-scene.js";
 
 // TODO: load these via streaming
 // TODO(@darzu): it's really bad that all these assets are loaded for each game
@@ -55,6 +57,7 @@ export type MeshDesc<N extends string = string, B extends boolean = false> = {
   // TODO(@darzu): basis transform should be restricted to mat3? Or something more compact since it's just 1s and 0s and it's orthonormalized
   transformBasis?: mat4;
   modify?: (m: RawMesh) => RawMesh;
+  pool?: CyMeshPoolPtr<any, any>;
 } & (B extends true ? { multi: true } : {});
 
 function isMultiMeshDesc<N extends string, B extends boolean>(
@@ -267,7 +270,9 @@ async function internalLoadMeshDesc(
     assert(isString(desc.data), `TODO: support local multi-meshes`);
     const raw = await loadMeshSetInternal(desc.data);
     const processed = raw.map((m) => processMesh(desc, m));
-    const game = processed.map((m) => gameMeshFromMesh(m, renderer!));
+    const game = processed.map((m) =>
+      gameMeshFromMesh(m, renderer!, undefined, desc.pool)
+    );
     return game;
   } else {
     let raw: RawMesh;
@@ -277,7 +282,7 @@ async function internalLoadMeshDesc(
       raw = desc.data();
     }
     const processed = processMesh(desc, raw);
-    const game = gameMeshFromMesh(processed, renderer!);
+    const game = gameMeshFromMesh(processed, renderer!, undefined, desc.pool);
     return game;
   }
 }
@@ -373,7 +378,8 @@ async function loadMeshSetInternal(relPath: string): Promise<RawMesh[]> {
 export function gameMeshFromMesh(
   rawMesh: RawMesh,
   renderer: Renderer,
-  reserve?: MeshReserve
+  reserve?: MeshReserve,
+  poolPtr?: CyMeshPoolPtr<any, any>
 ): GameMesh {
   validateMesh(rawMesh);
   const mesh = normalizeMesh(rawMesh);
@@ -381,7 +387,8 @@ export function gameMeshFromMesh(
   const center = getCenterFromAABB(aabb, V3.mk());
   const halfsize = getHalfsizeFromAABB(aabb, V3.mk());
   // TODO(@darzu): LINES. add mesh to line pool too??
-  const proto = renderer.stdPool.addMesh(mesh, reserve);
+  const pool = poolPtr ? renderer.getCyResource(poolPtr)! : renderer.stdPool;
+  const proto = pool.addMesh(mesh, reserve);
   const uniqueVerts = getUniqueVerts(mesh);
   const support = (d: V3) => farthestPointInDir(uniqueVerts, d);
   const aabbCollider = (solid: boolean) =>

@@ -4,6 +4,7 @@ import { EM } from "../ecs/ecs.js";
 import {
   createGraph3DAxesMesh,
   createGraph3DDataMesh,
+  createPathGizmosMesh,
   GraphAxesMeshOpts,
 } from "./gizmos.js";
 import {
@@ -20,6 +21,7 @@ import {
 import { RenderableConstructDef } from "../render/renderer-ecs.js";
 import { V, V3 } from "../matrix/sprig-matrix.js";
 import { vec3Dbg } from "../utils/utils-3d.js";
+import { Path } from "../utils/spline.js";
 
 // TODO(@darzu): It'd be great to have a dbg gizmo drawer-y global resources with features:
 //  - mesh: gizmo, arrow, ball, AABBs etc
@@ -89,4 +91,12 @@ export function createGraph3D(
   EM.set(graphSurf, ScaleDef, surfScale);
 
   return graph;
+}
+// TODO(@darzu): SKETCH: replace with sketch API
+export async function dbgPathWithGizmos(path: Path, scale = 1) {
+  const mesh = createPathGizmosMesh(path, scale);
+
+  const e = EM.mk();
+  EM.set(e, PositionDef);
+  EM.set(e, RenderableConstructDef, mesh);
 }

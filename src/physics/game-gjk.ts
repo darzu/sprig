@@ -53,6 +53,7 @@ import { min, sum } from "../utils/math.js";
 import { mkCubeMesh } from "../meshes/primatives.js";
 import { alphaRenderPipeline } from "../render/pipelines/xp-alpha.js";
 import { initGhost } from "../graybox/graybox-helpers.js";
+import { linePipe } from "../render/pipelines/std-line.js";
 
 /*
 Init perf work:
@@ -122,6 +123,7 @@ export async function initGJKSandbox() {
     // alphaRenderPipeline,
     outlineRender,
     deferredPipeline,
+    linePipe,
     stdGridRender,
     postProcess,
   ];
@@ -208,6 +210,15 @@ export async function initGJKSandbox() {
   gjkTest(g, ghostGameMesh);
 
   obbTest(g);
+
+  lineTest(g);
+}
+
+async function lineTest(
+  g: EntityW<[typeof WorldFrameDef, typeof ColorDef, typeof ColliderDef]>
+) {
+  // TODO(@darzu): line test
+  // EM.addSystem("lineVsSphereTest",
 }
 
 async function obbTest(

@@ -19,11 +19,11 @@ import {
   transformMesh,
   unshareProvokingVertices,
 } from "./mesh.js";
-import { mat3, mat4, quat, V, V2, V3, V4 } from "../matrix/sprig-matrix.js";
+import { mat3, mat4, quat, tV, V, V2, V3, V4 } from "../matrix/sprig-matrix.js";
 import { assert, range } from "../utils/util.js";
 import { uintToVec3unorm, vec3Dbg } from "../utils/utils-3d.js";
 import { drawBall } from "../utils/utils-game.js";
-import { createTimberBuilder, createEmptyMesh } from "../wood/wood.js";
+import { createBoardBuilder, createEmptyMesh } from "../wood/wood-builder.js";
 import { transformYUpModelIntoZUp } from "../camera/basis.js";
 
 // TODO(@darzu): Z_UP, some of this hasn't been ported
@@ -609,21 +609,28 @@ export function mkHalfEdgeQuadMesh(): RawMesh {
 export function mkTimberSplinterEnd(loopCursor?: mat4, splintersCursor?: mat4) {
   loopCursor = loopCursor ?? mat4.create();
   splintersCursor = splintersCursor ?? mat4.create();
-  const b = createTimberBuilder(createEmptyMesh("splinterEnd"));
-  b.width = 0.5;
-  b.depth = 0.2;
+  const b = createBoardBuilder(createEmptyMesh("splinterEnd"));
+  b.xLen = 0.5;
+  b.zLen = 0.2;
 
   // mat4.rotateY(b.cursor, b.cursor, Math.PI * -0.5); // TODO(@darzu): DBG
   // b.addLoopVerts();
   // mat4.translate(b.cursor, b.cursor, [0, 2, 0]);
   b.setCursor(loopCursor);
+  const splinLoopStart = b.mesh.pos.length;
+  const splinLoop = tV(
+    splinLoopStart + 0,
+    splinLoopStart + 1,
+    splinLoopStart + 2,
+    splinLoopStart + 3
+  );
   b.addLoopVerts();
   b.addEndQuad(true);
   // b.addSideQuads();
 
   b.setCursor(splintersCursor);
   mat4.translate(b.cursor, [0, 0.1, 0], b.cursor);
-  b.addSplinteredEnd(b.mesh.pos.length, 5);
+  b.addSplinteredEnd(splinLoop, 5);
 
   // b.addEndQuad(false);
 

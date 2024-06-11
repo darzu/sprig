@@ -113,3 +113,5 @@ knot theory:
 Linear algebra toolbox:
   https://fgiesen.wordpress.com/2012/06/03/linear-algebra-toolbox-1/
 
+3D Math Primer for Graphics and Game Development
+  https://gamemath.com/book/

@@ -43,22 +43,22 @@ import {
 import { V } from "../matrix/sprig-matrix.js";
 import { TimeDef } from "../time/time.js";
 import {
-  TimberBuilder,
-  WoodHealthDef,
+  BoardBuilder,
   WoodStateDef,
-  registerDestroyPirateHandler,
   createEmptyMesh,
-  createTimberBuilder,
+  createBoardBuilder,
   getBoardsFromMesh,
   verifyUnsharedProvokingForWood,
   reserveSplinterSpace,
-  createWoodHealth,
-  resetWoodHealth,
   resetWoodState,
-} from "./wood.js";
+} from "./wood-builder.js";
+import { WoodHealthDef } from "./wood-health.js";
+import { createWoodHealth } from "./wood-health.js";
+import { resetWoodHealth } from "./wood-health.js";
 import { fireBullet } from "../cannons/bullet.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { HEX_MESH } from "../meshes/primatives.js";
+import { registerDestroyPirateHandler } from "./wood-damage.js";
 
 const DBG_PIRATES = false;
 
@@ -76,13 +76,13 @@ const pitchSpeed = 0.000042;
 
 export let pirateKills = 0;
 
-export function appendPirateShip(b: TimberBuilder): RawMesh {
+export function appendPirateShip(b: BoardBuilder): RawMesh {
   const firstQuadIdx = b.mesh.quad.length;
 
   const length = 18;
 
-  b.width = 0.6;
-  b.depth = 0.2;
+  b.xLen = 0.6;
+  b.zLen = 0.2;
 
   const xFactor = 0.333;
 
@@ -123,7 +123,7 @@ export function appendPirateShip(b: TimberBuilder): RawMesh {
       V3.sub(p, mid, p);
     }
 
-    mat4.translate(cursor2, [-(b.width * 2.0 + 0.05), 0, 0], cursor2);
+    mat4.translate(cursor2, [-(b.xLen * 2.0 + 0.05), 0, 0], cursor2);
   }
 
   for (let qi = firstQuadIdx; qi < b.mesh.quad.length; qi++)
@@ -306,7 +306,7 @@ EM.addLazyInit([RendererDef, TimeDef], [PiratePoolDef], (res) => {
       // make timber
       const timber = EM.mk();
       const _timberMesh = createEmptyMesh("pirateShip");
-      const builder = createTimberBuilder(_timberMesh);
+      const builder = createBoardBuilder(_timberMesh);
       appendPirateShip(builder);
       _timberMesh.surfaceIds = _timberMesh.colors.map((_, i) => i);
       const timberState = getBoardsFromMesh(_timberMesh);
@@ -324,7 +324,7 @@ EM.addLazyInit([RendererDef, TimeDef], [PiratePoolDef], (res) => {
       EM.set(timber, WoodStateDef, timberState);
       EM.set(timber, ColorDef, ENDESGA16.red);
       const timberAABB = getAABBFromMesh(timberMesh);
-      EM.set(timber, PositionDef, V(0, builder.width, 0));
+      EM.set(timber, PositionDef, V(0, builder.xLen, 0));
       EM.set(timber, RotationDef);
       EM.set(timber, ColliderDef, {
         shape: "AABB",
@@ -422,9 +422,11 @@ EM.addLazyInit([RendererDef, TimeDef], [PiratePoolDef], (res) => {
           // TODO(@darzu): necessary?
           // timber.physicsParent.id = 0;
           // EM.set(timber, LifetimeDef, 1000);
-          for (let b of timber.woodHealth.boards) {
-            for (let s of b) {
-              s.health = 0;
+          for (let g of timber.woodHealth.groups) {
+            for (let b of g.boards) {
+              for (let s of b) {
+                s.health = 0;
+              }
             }
           }
         }

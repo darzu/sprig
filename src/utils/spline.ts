@@ -6,6 +6,7 @@ import {
   vec3tmp,
   V,
   tmpStack,
+  mat4,
 } from "../matrix/sprig-matrix.js";
 import { assert, range } from "./util.js";
 import { quatFromUpForward_OLD } from "./utils-3d.js";
@@ -28,12 +29,21 @@ export function translatePath(p: Path, tran: V3.InputT) {
   p.forEach((n) => V3.add(n.pos, tran, n.pos));
   return p;
 }
+export function transformPath(p: Path, tran: mat4.InputT) {
+  p.forEach((n) => V3.tMat4(n.pos, tran, n.pos));
+  const rot = quat.fromMat4(tran);
+  p.forEach((n) => quat.mul(rot, n.rot, n.rot));
+  return p;
+}
 const __temp3 = V3.mk();
-export function translatePathAlongNormal(p: Path, t: number) {
+export function translatePathAlongRelativeNorm(
+  p: Path,
+  relNorm: V3.InputT,
+  t: number
+) {
   p.forEach((n) => {
-    const norm = V3.tQuat([0, 0, 1], n.rot, __temp3);
-    V3.scale(norm, t, norm);
-    V3.add(n.pos, norm, n.pos);
+    const norm = V3.tQuat(relNorm, n.rot, __temp3);
+    V3.addScaled(n.pos, norm, t, n.pos);
   });
   return p;
 }
@@ -77,6 +87,7 @@ export function mirrorPath(p: Path, planeNorm: V3.InputT) {
   return p;
 }
 
+// TODO(@darzu): rename Bez3d ?
 export interface BezierCubic {
   p0: V3;
   p1: V3;
@@ -353,4 +364,35 @@ export function getRandomCylindricalPoints(
   }
 
   return points;
+}
+
+export const __temp2 = V3.mk();
+export function snapToPath(path: Path, w: number, dim: 0 | 1 | 2, out: V3) {
+  for (let i = 0; i < path.length; i++) {
+    let pos = path[i].pos;
+    // are we ahead of w
+    if (w < pos[dim]) {
+      if (i === 0) {
+        // w is before the whole path
+        V3.copy(out, path[i].pos);
+        return out;
+      }
+      let prev = path[i - 1].pos;
+      assert(
+        prev[dim] <= w,
+        `TODO: we assume path is in assending [x,y,z][${dim}] order`
+      );
+
+      let diff = V3.sub(pos, prev, __temp2);
+      let percent = (w - prev[dim]) / diff[dim];
+      V3.add(prev, V3.scale(diff, percent, out), out);
+      return out;
+    }
+  }
+  // the whole path is behind x
+  V3.copy(out, path[path.length - 1].pos);
+  return out;
+}
+export function snapXToPath(path: Path, x: number, out: V3) {
+  return snapToPath(path, x, 0, out);
 }

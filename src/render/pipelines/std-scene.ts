@@ -113,6 +113,7 @@ export const meshPoolPtr = CY.createMeshPool("meshPool", {
 
 // TODO(@darzu): Allow updates directly to serialized data
 // TODO(@darzu): Related, allow updates that don't change e.g. the normals
+// TODO(@darzu): PERF! This is a real bottleneck to updating face data
 const tempVertsData: VertexTS[] = [];
 export function computeVertsData(
   m: Mesh,
@@ -138,6 +139,7 @@ export function computeVertsData(
     // TODO(@darzu): UVs and other properties?
   }
   // NOTE: for per-face data (e.g. color and surface IDs), first all the quads then tris
+  // TODO(@darzu): PERF! This linear scan for triangles w/ provoking vertex is v slow
   m.tri.forEach((triInd, i) => {
     // set provoking vertex data
     const provVi = triInd[0];
@@ -162,6 +164,7 @@ export function computeVertsData(
   m.quad.forEach((quadInd, i) => {
     // set provoking vertex data
     const provVi = quadInd[0];
+    // TODO(@darzu): PERF. this vert -> quad index reverse lookup is pretty inefficient for small scattered vertex changes
     // is quad relevant to changed vertices?
     if (provVi < startIdx || startIdx + count <= provVi) return;
 
