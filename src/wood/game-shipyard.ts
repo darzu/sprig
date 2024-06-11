@@ -92,7 +92,6 @@ import {
 } from "../physics/aabb.js";
 import { getFireSolution } from "../stone/projectile.js";
 
-const DBG_PLAYER = false;
 const DBG_COLLIDERS = false;
 const DBG_TRANSPARENT_BOAT = false;
 
@@ -180,7 +179,7 @@ export async function initShipyardGame() {
   );
 
   // camera
-  if (!DBG_PLAYER) initDemoPanCamera();
+  initDemoPanCamera();
 
   const sun = createSun([250, 10, 300]);
 
@@ -278,72 +277,6 @@ export async function initShipyardGame() {
       // rotation: quat.fromYawPitchRoll(),
     }
   );
-
-  if (DBG_PLAYER) {
-    EM.addSystem(
-      "ld51Ghost",
-      Phase.GAME_WORLD,
-      [GhostDef, WorldFrameDef, ColliderDef],
-      [InputsDef, HasFirstInteractionDef],
-      async (ps, { inputs }) => {
-        if (!ps.length) return;
-
-        const ghost = ps[0];
-
-        // dbg aiming
-        {
-          sketchLine2(
-            {
-              ray: {
-                org: ghost.world.position,
-                dir: quat.fwd(ghost.world.rotation),
-              },
-              len: 50,
-            },
-            {
-              key: `ghostAim`,
-              color: ENDESGA16.white,
-            }
-          );
-        }
-
-        if (inputs.lclick) {
-          // console.log(`fire!`);
-          const firePos = ghost.world.position;
-          const fireDir = quat.mk();
-          quat.copy(fireDir, ghost.world.rotation);
-          quat.pitch(fireDir, PId4);
-          const ballHealth = 2.0;
-          fireBullet(
-            1,
-            firePos,
-            fireDir,
-            0.05 * 2,
-            0.02,
-            3 * 0.00001,
-            ballHealth,
-            V3.FWD
-          );
-        }
-
-        assert(ghost.collider.shape === "AABB");
-        if (PhysicsStateDef.isOn(ghost)) {
-          sketchAABB(ghost._phys.colliders[0].aabb, {
-            key: "ghostAABB",
-          });
-        }
-      }
-    );
-
-    const g = initGhost(BallMesh);
-
-    V3.copy(g.cameraFollow.positionOffset, [0.0, -15.0, 0.0]);
-
-    EM.set(g, ColorDef, ENDESGA16.darkGreen);
-    EM.set(g, ColliderFromMeshDef, false);
-
-    addGizmoChild(g, 3);
-  }
 
   EM.addSystem(
     "breakBullets",
