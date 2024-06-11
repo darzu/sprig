@@ -36,7 +36,13 @@ import {
 import { WoodHealthDef } from "./wood-health.js";
 import { createWoodHealth } from "./wood-health.js";
 import { resetWoodHealth } from "./wood-health.js";
-import { BallMesh, CubeMesh, HexMesh, PlaneMesh } from "../meshes/mesh-list.js";
+import {
+  BallMesh,
+  CannonLD51Mesh,
+  CubeMesh,
+  HexMesh,
+  PlaneMesh,
+} from "../meshes/mesh-list.js";
 import { breakBullet, BulletDef, fireBullet } from "../cannons/bullet.js";
 import { GhostDef } from "../debug/ghost.js";
 import { createLD53Ship } from "./shipyard.js";
@@ -47,7 +53,7 @@ import { addGizmoChild } from "../utils/utils-game.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { createSun, initGhost } from "../graybox/graybox-helpers.js";
-import { PId4, assert, mkLazy } from "../utils/util-no-import.js";
+import { PId4, PId6, PId8, assert, mkLazy } from "../utils/util-no-import.js";
 import { stdGridRender } from "../render/pipelines/std-grid.js";
 import { pointPipe, linePipe } from "../render/pipelines/std-line.js";
 import { createObj } from "../ecs/em-objects.js";
@@ -84,6 +90,7 @@ import {
   createAABB,
   transformAABB,
 } from "../physics/aabb.js";
+import { getFireSolution } from "../stone/projectile.js";
 
 const DBG_PLAYER = false;
 const DBG_COLLIDERS = false;
@@ -260,6 +267,18 @@ export async function initShipyardGame() {
 
   addGizmoChild(woodEnt, 10);
 
+  // cannon
+  const cannon = createObj(
+    [PositionDef, RenderableConstructDef, ColorDef, RotationDef] as const,
+    {
+      position: V(30, -50, 0),
+      renderableConstruct: [CannonLD51Mesh],
+      color: ENDESGA16.lightGray,
+      rotation: quat.fromYawPitchRoll(-PId4, PId8),
+      // rotation: quat.fromYawPitchRoll(),
+    }
+  );
+
   if (DBG_PLAYER) {
     EM.addSystem(
       "ld51Ghost",
@@ -307,66 +326,11 @@ export async function initShipyardGame() {
           );
         }
 
-        if (inputs.keyClicks["r"]) {
-          const timber2 = await EM.whenEntityHas(woodEnt, RenderableDef);
-          resetWoodHealth(woodEnt.woodHealth);
-          resetWoodState(woodEnt.woodState);
-          res.renderer.renderer.stdPool.updateMeshQuadInds(
-            timber2.renderable.meshHandle,
-            woodEnt.woodState.mesh as Mesh,
-            0,
-            woodEnt.woodState.mesh.quad.length
-          );
-        }
-
         assert(ghost.collider.shape === "AABB");
         if (PhysicsStateDef.isOn(ghost)) {
           sketchAABB(ghost._phys.colliders[0].aabb, {
             key: "ghostAABB",
           });
-        }
-      }
-    );
-
-    // TODO(@darzu): breakBullet
-    EM.addSystem(
-      "breakBullets",
-      Phase.GAME_WORLD,
-      [
-        BulletDef,
-        ColorDef,
-        WorldFrameDef,
-        // LinearVelocityDef
-        ParametricDef,
-      ],
-      [],
-      (es, res) => {
-        for (let b of es) {
-          if (b.bullet.health <= 0) {
-            breakBullet(b);
-          }
-        }
-      }
-    );
-
-    // Create player
-    // dead bullet maintenance
-    // NOTE: this must be called after any system that can create dead bullets but
-    //   before the rendering systems.
-    EM.addSystem(
-      "deadBullets",
-      Phase.GAME_WORLD,
-      [BulletDef, PositionDef, DeadDef, RenderableDef],
-      [],
-      (es, _) => {
-        for (let e of es) {
-          if (e.dead.processed) continue;
-
-          e.bullet.health = 10;
-          V3.set(0, -100, 0, e.position);
-          e.renderable.hidden = true;
-
-          e.dead.processed = true;
         }
       }
     );
@@ -381,6 +345,42 @@ export async function initShipyardGame() {
     addGizmoChild(g, 3);
   }
 
+  EM.addSystem(
+    "breakBullets",
+    Phase.GAME_WORLD,
+    [BulletDef, ColorDef, WorldFrameDef, ParametricDef],
+    [],
+    (es, res) => {
+      for (let b of es) {
+        if (b.bullet.health <= 0) {
+          breakBullet(b);
+        }
+      }
+    }
+  );
+
+  // Create player
+  // dead bullet maintenance
+  // NOTE: this must be called after any system that can create dead bullets but
+  //   before the rendering systems.
+  EM.addSystem(
+    "deadBullets",
+    Phase.GAME_WORLD,
+    [BulletDef, PositionDef, DeadDef, RenderableDef],
+    [],
+    (es, _) => {
+      for (let e of es) {
+        if (e.dead.processed) continue;
+
+        e.bullet.health = 10;
+        V3.set(0, 0, -100, e.position);
+        e.renderable.hidden = true;
+
+        e.dead.processed = true;
+      }
+    }
+  );
+
   const tempOBB = OBB.mk();
 
   const { renderable: woodRenderable } = await EM.whenEntityHas(
@@ -389,6 +389,26 @@ export async function initShipyardGame() {
   );
 
   // let _maxSketchAABB = 0;
+
+  // actions
+  EM.addSystem(
+    "shipyardActions",
+    Phase.GAME_WORLD,
+    null,
+    [InputsDef],
+    async (_, res) => {
+      if (res.inputs.keyClicks["r"]) {
+        resetWoodHealth(woodEnt.woodHealth);
+        resetWoodState(woodEnt.woodState);
+        woodRenderable.meshHandle.pool.updateMeshQuadInds(
+          woodRenderable.meshHandle,
+          woodEnt.woodState.mesh as Mesh,
+          0,
+          woodEnt.woodState.mesh.quad.length
+        );
+      }
+    }
+  );
 
   EM.addSystem(
     "selectWoodParts",
@@ -469,6 +489,47 @@ export async function initShipyardGame() {
           });
           if (res.inputs.lclick) {
             woodColorSegment(minSeg, ENDESGA16.darkRed);
+          }
+
+          // fire cannon
+          {
+            const aimOBB = OBB.copy(OBB.mk(), obb);
+            V3.zero(aimOBB.halfw);
+            const gravity = 20 * 0.00001;
+            const projectileSpeed = 0.2;
+            const sln = getFireSolution({
+              sourcePos: cannon.position,
+              sourceDefaultRot: quat.fromYawPitchRoll(),
+
+              maxYaw: Infinity,
+              minPitch: -Infinity,
+              maxPitch: Infinity,
+              maxRange: Infinity,
+
+              gravity,
+
+              projectileSpeed,
+
+              targetOBB: aimOBB,
+              targetVel: [0, 0, 0],
+
+              doMiss: false,
+            });
+            assert(sln, `no firing solution?`);
+            quat.fromYawPitchRoll(sln.yaw, sln.pitch, 0, cannon.rotation);
+            const bulletHealth = 4.0;
+            if (res.inputs.lclick) {
+              fireBullet(
+                1,
+                cannon.position,
+                cannon.rotation,
+                projectileSpeed,
+                0.02,
+                gravity,
+                bulletHealth,
+                V3.FWD
+              );
+            }
           }
         }
 

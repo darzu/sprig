@@ -64,7 +64,7 @@ import { createLine } from "../utils/utils-game.js";
 import { OBB } from "../physics/obb.js";
 import { MeshHandle } from "../render/mesh-pool.js";
 
-const DBG_WOOD_DMG = true;
+const DBG_WOOD_DMG = false;
 
 export let _dbgNumSplinterEnds = 0;
 
