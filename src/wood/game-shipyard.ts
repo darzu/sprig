@@ -57,6 +57,7 @@ import {
   sketchDot,
   sketchLine,
   sketchLine2,
+  sketchOBB,
   sketchRay,
 } from "../utils/sketch.js";
 import { renderDots } from "../render/pipelines/std-dots.js";
@@ -94,8 +95,8 @@ async function initDemoPanCamera() {
   const g = EM.mk();
   EM.set(g, CameraFollowDef, 1);
   V3.set(0, -50, 0, g.cameraFollow.positionOffset);
-  g.cameraFollow.yawOffset = -1.308;
-  g.cameraFollow.pitchOffset = -0.478;
+  g.cameraFollow.yawOffset = -2.088;
+  g.cameraFollow.pitchOffset = -0.553;
 
   // TODO(@darzu): wish we didn't need these
   EM.set(g, PositionDef);
@@ -387,7 +388,7 @@ export async function initShipyardGame() {
     RenderableDef
   );
 
-  let _maxSketchAABB = 0;
+  // let _maxSketchAABB = 0;
 
   EM.addSystem(
     "selectWoodParts",
@@ -400,7 +401,7 @@ export async function initShipyardGame() {
       );
       let hasChange = false;
 
-      let _sketchAABBNum = 0;
+      // let _sketchAABBNum = 0;
 
       function woodColorSegment(seg: SegState, color: V3.InputT) {
         hasChange = true;
@@ -410,13 +411,13 @@ export async function initShipyardGame() {
         }
       }
 
-      // const ship: WoodObj;
-      if (res.inputs.lclick || true) {
-        sketchRay(res.mouseRay, {
-          key: "mouseRay",
-          length: 20,
-          color: ENDESGA16.orange,
-        });
+      // if (res.inputs.lclick)
+      {
+        // sketchRay(res.mouseRay, {
+        //   key: "mouseRay",
+        //   length: 20,
+        //   color: ENDESGA16.orange,
+        // });
         // sketchDot(res.cameraComputed.location);
 
         const woodFromWorld = mat4.invert(woodEnt.world.transform);
@@ -431,16 +432,16 @@ export async function initShipyardGame() {
           const dist = rayVsAABBHitDist(localAABB, woodLocalRay);
           const isHit = !!dist && dist < minDist;
           if (isHit) {
-            // const worldAABB =transformAABB(cloneAABB(localAABB), woodEnt.world.transform)
-            sketchAABB(localAABB, {
-              key: `hitAABB_${++_sketchAABBNum}`,
-              color: ENDESGA16.yellow,
-            });
+            // const worldAABB =transformAABB(cloneAABB(localAABB), woodEnt.world.transform) // unnecessary since ship is at 0,0,0
+            // sketchAABB(localAABB, {
+            //   key: `hitAABB_${++_sketchAABBNum}`,
+            //   color: ENDESGA16.yellow,
+            // });
           }
           return isHit;
         });
         for (let [_, __, ___, seg] of hitItr) {
-          woodColorSegment(seg, ENDESGA16.orange);
+          // woodColorSegment(seg, ENDESGA16.orange);
 
           const localOBB = getOBBFromWoodSeg(seg, tempOBB);
           const hitDist = rayVsOBBHitDist(localOBB, woodLocalRay);
@@ -449,30 +450,41 @@ export async function initShipyardGame() {
               minDist = hitDist;
               minSeg = seg;
             }
-            woodColorSegment(seg, ENDESGA16.yellow);
-            sketchAABB(seg.localAABB, {
-              key: `hitAABB_${_sketchAABBNum}`,
-              color: ENDESGA16.darkGreen,
-            });
+            // woodColorSegment(seg, ENDESGA16.yellow);
+            // sketchAABB(seg.localAABB, {
+            //   key: `hitAABB_${_sketchAABBNum}`,
+            //   color: ENDESGA16.darkGreen,
+            // });
           }
 
           // if (rayVsCapsule(woodLocalRay, hit.seg)) {
           // }
         }
-        if (minSeg) woodColorSegment(minSeg, ENDESGA16.lightGreen);
+        if (minSeg) {
+          const obb = getOBBFromWoodSeg(minSeg);
+          V3.add(obb.halfw, [0.2, 0.2, 0.2], obb.halfw);
+          sketchOBB(obb, {
+            key: "hoverWoodSeg",
+            color: ENDESGA16.red,
+          });
+          if (res.inputs.lclick) {
+            woodColorSegment(minSeg, ENDESGA16.darkRed);
+          }
+        }
+
+        // _maxSketchAABB = Math.max(_sketchAABBNum, _maxSketchAABB);
+        // for (let i = _sketchAABBNum; _sketchAABBNum < _maxSketchAABB; i++) {
+        //   // TODO(@darzu): Hide sketch function??
+        //   sketchAABB(ZERO_AABB, {
+        //     key: `hitAABB_${++_sketchAABBNum}`,
+        //   });
+        // }
       }
 
       if (hasChange) {
         meshTracker().submitChangesToGPU();
       }
 
-      _maxSketchAABB = Math.max(_sketchAABBNum, _maxSketchAABB);
-      for (let i = _sketchAABBNum; _sketchAABBNum < _maxSketchAABB; i++) {
-        // TODO(@darzu): Hide sketch function??
-        sketchAABB(ZERO_AABB, {
-          key: `hitAABB_${++_sketchAABBNum}`,
-        });
-      }
       // const mouseRay = getMouseRay(res.inputs.mousePos);
       // sketchRay(mouseRay);
       // const hit = getFirstRayIntersectWood(ship, ray);

@@ -56,6 +56,7 @@ import {
   WireUnitCubeMesh,
 } from "../meshes/mesh-list.js";
 import { Line, Ray, getLineEnd } from "../physics/broadphase.js";
+import { OBB } from "../physics/obb.js";
 
 export const WARN_DROPPED_EARLY_SKETCH = false;
 
@@ -154,6 +155,11 @@ export interface SketchAABBOpt {
   aabb: AABB;
 }
 
+export interface SketchOBBOpt {
+  shape: "obb";
+  obb: OBB;
+}
+
 export type SketchPrimOpt = SketchBaseOpt &
   (
     | SketchLineOpt
@@ -176,11 +182,13 @@ export type SketchInstanceOpt = SketchBaseOpt &
   (
     | SketchCubeOpt
     | SketchAABBOpt
+    | SketchOBBOpt
   );
 
 const SketchInstanceShapes: { [k in SketchInstanceOpt["shape"]]: true } = {
   cube: true,
   aabb: true,
+  obb: true,
 };
 
 // prettier-ignore
@@ -455,6 +463,9 @@ export const SketcherDef = defineResourceWithLazyInit(
         } else if (opt.shape === "aabb") {
           instance = WireUnitCubeMesh;
           pool = lineMeshPoolPtr;
+        } else if (opt.shape === "obb") {
+          instance = WireCubeMesh;
+          pool = lineMeshPoolPtr;
         } else never(opt);
 
         EM.set(
@@ -489,6 +500,10 @@ export const SketcherDef = defineResourceWithLazyInit(
           opt.aabb.max[1] - opt.aabb.min[1],
           opt.aabb.max[2] - opt.aabb.min[2],
         ]);
+      } else if (opt.shape === "obb") {
+        EM.set(e, PositionDef, opt.obb.center);
+        EM.set(e, ScaleDef, opt.obb.halfw);
+        EM.set(e, RotationDef, quat.fromMat3(opt.obb.mat));
       } else never(opt);
 
       return e;
@@ -656,6 +671,13 @@ export async function sketchAABB(
   opt: SketchBaseOpt = {}
 ): Promise<SketchEnt> {
   return sketchEnt({ shape: "aabb", aabb, ...opt });
+}
+
+export async function sketchOBB(
+  obb: OBB,
+  opt: SketchBaseOpt = {}
+): Promise<SketchEnt> {
+  return sketchEnt({ shape: "obb", obb, ...opt });
 }
 
 export const SketchTrailDef = EM.defineComponent("sketchTrail", () => true);
