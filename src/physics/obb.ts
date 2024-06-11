@@ -123,6 +123,8 @@ export function getRandPointInOBB(b: OBB, scale: number, out?: V3): V3 {
 export module OBB {
   export type T = OBB;
 
+  export const ZERO = mk();
+
   function _fromMat3(mat: mat3): _OBB1 {
     const right = new Float32Array(mat.buffer, 0, 3) as V3;
     const fwd = new Float32Array(mat.buffer, 12, 3) as V3;
@@ -140,7 +142,7 @@ export module OBB {
     return _withMethods({
       ...b,
       center: V(0, 0, 0),
-      halfw: V(0.5, 0.5, 0.5),
+      halfw: V(0, 0, 0),
     });
   }
 

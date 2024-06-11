@@ -59,6 +59,7 @@ import { pointPipe, linePipe } from "../render/pipelines/std-line.js";
 import { createObj } from "../ecs/em-objects.js";
 import { GRID_MASK } from "../render/pipeline-masks.js";
 import {
+  SketcherDef,
   sketchAABB,
   sketchDot,
   sketchLine,
@@ -201,7 +202,7 @@ export async function initShipyardGame() {
   // console.log(woodObj.state.groups.map((g) => g.name));
   // rainbowColorWood(woodObj);
 
-  const { state: timberState, mesh: timberMesh } = woodObj;
+  const { state: woodState, mesh: woodMesh } = woodObj;
 
   // console.log("timberMesh");
   // console.dir(timberMesh);
@@ -214,7 +215,7 @@ export async function initShipyardGame() {
   if (DBG_WOOD_STATE) {
     let _bIdx = 0;
     let _sIdx = 0;
-    for (let g of timberState.groups) {
+    for (let g of woodState.groups) {
       for (let b of g.boards) {
         _bIdx++;
         sketchAABB(b.localAABB, {
@@ -239,8 +240,8 @@ export async function initShipyardGame() {
     }
   }
 
-  EM.set(woodEnt, RenderableConstructDef, timberMesh);
-  EM.set(woodEnt, WoodStateDef, timberState);
+  EM.set(woodEnt, RenderableConstructDef, woodMesh);
+  EM.set(woodEnt, WoodStateDef, woodState);
   EM.set(woodEnt, AuthorityDef, res.me.pid);
   EM.set(woodEnt, PositionDef, V(0, 0, 0));
   EM.set(woodEnt, RotationDef);
@@ -261,10 +262,10 @@ export async function initShipyardGame() {
 
   EM.set(woodEnt, ColliderFromMeshDef);
 
-  const timberHealth = createWoodHealth(timberState);
-  EM.set(woodEnt, WoodHealthDef, timberHealth);
+  const woodHealth = createWoodHealth(woodState);
+  EM.set(woodEnt, WoodHealthDef, woodHealth);
 
-  addGizmoChild(woodEnt, 10);
+  // addGizmoChild(woodEnt, 10);
 
   // cannon
   const cannon = createObj(
@@ -347,12 +348,22 @@ export async function initShipyardGame() {
     "selectWoodParts",
     Phase.GAME_WORLD,
     null,
-    [InputsDef, MouseRayDef, PhysicsResultsDef, CameraComputedDef],
+    [
+      InputsDef,
+      MouseRayDef,
+      PhysicsResultsDef,
+      CameraComputedDef,
+      SketcherDef,
+      TimeDef,
+    ],
     (_, res) => {
       let meshTracker = mkLazy(() =>
         createMeshUpdateTracker(woodRenderable.meshHandle)
       );
       let hasChange = false;
+
+      let doFire =
+        res.inputs.lclick || (res.inputs.ldown && res.time.step % 30 === 0);
 
       // let _sketchAABBNum = 0;
 
@@ -393,8 +404,11 @@ export async function initShipyardGame() {
           }
           return isHit;
         });
-        for (let [_, __, ___, seg] of hitItr) {
+        for (let [groupIdx, boardIdx, segIdx, seg] of hitItr) {
           // woodColorSegment(seg, ENDESGA16.orange);
+
+          const health = woodHealth.groups[groupIdx].boards[boardIdx][segIdx];
+          if (health.health <= 0) continue;
 
           const localOBB = getOBBFromWoodSeg(seg, tempOBB);
           const hitDist = rayVsOBBHitDist(localOBB, woodLocalRay);
@@ -413,26 +427,29 @@ export async function initShipyardGame() {
           // if (rayVsCapsule(woodLocalRay, hit.seg)) {
           // }
         }
+
         if (minSeg) {
-          const obb = getOBBFromWoodSeg(minSeg);
+          const obb = getOBBFromWoodSeg(minSeg, tempOBB);
           V3.add(obb.halfw, [0.2, 0.2, 0.2], obb.halfw);
-          sketchOBB(obb, {
+          res.sketcher.sketch({
+            shape: "obb",
+            obb,
             key: "hoverWoodSeg",
             color: ENDESGA16.red,
           });
-          if (res.inputs.lclick) {
+          if (doFire) {
             woodColorSegment(minSeg, ENDESGA16.darkRed);
           }
 
           // fire cannon
           {
-            const aimOBB = OBB.copy(OBB.mk(), obb);
+            const aimOBB = obb;
             V3.zero(aimOBB.halfw);
             const gravity = 20 * 0.00001;
             const projectileSpeed = 0.2;
             const sln = getFireSolution({
               sourcePos: cannon.position,
-              sourceDefaultRot: quat.fromYawPitchRoll(),
+              sourceDefaultRot: quat.IDENTITY,
 
               maxYaw: Infinity,
               minPitch: -Infinity,
@@ -451,7 +468,7 @@ export async function initShipyardGame() {
             assert(sln, `no firing solution?`);
             quat.fromYawPitchRoll(sln.yaw, sln.pitch, 0, cannon.rotation);
             const bulletHealth = 4.0;
-            if (res.inputs.lclick) {
+            if (doFire) {
               fireBullet(
                 1,
                 cannon.position,
@@ -464,6 +481,12 @@ export async function initShipyardGame() {
               );
             }
           }
+        } else {
+          res.sketcher.sketch({
+            shape: "obb",
+            obb: OBB.ZERO,
+            key: "hoverWoodSeg",
+          });
         }
 
         // _maxSketchAABB = Math.max(_sketchAABBNum, _maxSketchAABB);
