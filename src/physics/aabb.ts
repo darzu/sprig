@@ -284,3 +284,5 @@ export function getInnerSphereFromAABB(aabb: AABB, out?: Sphere) {
 
   return out;
 }
+
+export const ZERO_AABB = createAABB(V(0, 0, 0), V(0, 0, 0));

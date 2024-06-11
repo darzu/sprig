@@ -21,6 +21,7 @@ import {
   enclosedBy,
   __resetAABBDbgCounters,
 } from "./aabb.js";
+import { OBB } from "./obb.js";
 
 const BROAD_PHASE: "N^2" | "OCT" | "GRID" = "OCT";
 
@@ -354,6 +355,7 @@ export interface Ray {
   org: V3;
   dir: V3;
 }
+
 export interface RayHit {
   id: number;
   dist: number;
@@ -507,6 +509,32 @@ function octtree(parentObjs: Map<number, AABB>, aabb: AABB): OctTree | null {
   };
 }
 
+const _tmpRay = mkRay();
+const _tmpAABB = createAABB();
+export function rayVsOBBHitDist(b: OBB, r: Ray): number {
+  // TODO(@darzu): PERF! Probably faster if we inline this all. See Real-time Collision Detection 5.3.3. Intersecting Ray or Segment Against Box
+  // transform ray into OBB's space, effectively making the OBB a AABB
+  const localRay = _tmpRay;
+  V3.sub(r.org, b.center, localRay.org);
+  V3.set(
+    V3.dot(localRay.org, b.right),
+    V3.dot(localRay.org, b.fwd),
+    V3.dot(localRay.org, b.up),
+    localRay.org
+  );
+  V3.copy(localRay.dir, r.dir);
+  V3.set(
+    V3.dot(localRay.dir, b.right),
+    V3.dot(localRay.dir, b.fwd),
+    V3.dot(localRay.dir, b.up),
+    localRay.dir
+  );
+  const localAABB = _tmpAABB;
+  V3.neg(b.halfw, localAABB.min);
+  V3.copy(localAABB.max, b.halfw);
+  return rayVsAABBHitDist(localAABB, localRay);
+}
+
 // AABB utils
 // returns NaN if they don't hit
 export function rayVsAABBHitDist(b: AABB, r: Ray): number {
@@ -576,6 +604,9 @@ export function copyRay(out: Ray, a: Ray): Ray {
   V3.copy(out.dir, a.dir);
   return out;
 }
+export function cloneRay(ray: Ray): Ray {
+  return copyRay(mkRay(), ray);
+}
 export function emptyLine(): Line {
   return {
     ray: mkRay(),
@@ -613,6 +644,18 @@ export function transformLine(out: Line, t: mat4.InputT) {
   const lenScale = V3.len(out.ray.dir);
   out.len = out.len * lenScale;
   V3.norm(out.ray.dir, out.ray.dir);
+  return out;
+}
+
+export function transformRay(out: Ray, t: mat4.InputT) {
+  // TODO(@darzu): this code needs review. It might not work right with scaling
+  // TODO(@darzu): PERF! This code needs to be inlined and simplified.
+  //      There's no way we need this much matrix math for this.
+  V3.norm(out.dir, out.dir); // might not be needed if inputs r always normalized
+  V3.tMat4(out.org, t, out.org);
+  const t3 = mat3.fromMat4(t, __temp1);
+  V3.tMat3(out.dir, t3, out.dir);
+  V3.norm(out.dir, out.dir);
   return out;
 }
 

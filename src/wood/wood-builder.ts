@@ -85,10 +85,9 @@ type VI = number; // vertex index
 type QI = number; // quad index
 // each board has an AABB, OBB,
 export interface SegState {
-  // ESSENTIAL
-  // midline or seg points
+  // TODO(@darzu): REFACTOR into a smaller set of essentials
+  //    maybe just have an OBB?
 
-  // OLD
   localAABB: AABB;
   midLine: Line;
   // TODO(@darzu): REMOVE. this doesn't seem worth it..
@@ -983,4 +982,13 @@ export function unshareProvokingForWood(m: RawMesh, woodState: WoodState) {
       return false;
     }
   }
+}
+
+export function* iterateWoodSegmentQuadIndices(
+  seg: SegState
+): Generator<number> {
+  // TODO(@darzu): PERF?
+  for (let qi of seg.quadSideIdxs) yield qi;
+  if (seg.quadBackIdx) yield seg.quadBackIdx;
+  if (seg.quadFrontIdx) yield seg.quadFrontIdx;
 }

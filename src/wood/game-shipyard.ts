@@ -5,20 +5,12 @@ import {
 } from "../camera/camera.js";
 import { CanvasDef, HasFirstInteractionDef } from "../render/canvas.js";
 import { AlphaDef, ColorDef } from "../color/color-ecs.js";
-import {
-  AllEndesga16,
-  ENDESGA16,
-  RainbowEndesga16,
-} from "../color/palettes.js";
+import { ENDESGA16 } from "../color/palettes.js";
 import { DeadDef } from "../ecs/delete.js";
 import { EM } from "../ecs/ecs.js";
-import { V3, quat, V } from "../matrix/sprig-matrix.js";
+import { V3, quat, V, mat4 } from "../matrix/sprig-matrix.js";
 import { InputsDef } from "../input/inputs.js";
-import {
-  ColliderDef,
-  ColliderFromMeshDef,
-  MultiCollider,
-} from "../physics/collider.js";
+import { ColliderDef, ColliderFromMeshDef } from "../physics/collider.js";
 import {
   PhysicsResultsDef,
   PhysicsStateDef,
@@ -35,35 +27,32 @@ import {
   RenderableConstructDef,
   RenderableDef,
 } from "../render/renderer-ecs.js";
-import { resetWoodState, WoodStateDef } from "./wood-builder.js";
+import {
+  iterateWoodSegmentQuadIndices,
+  resetWoodState,
+  SegState,
+  WoodStateDef,
+} from "./wood-builder.js";
 import { WoodHealthDef } from "./wood-health.js";
 import { createWoodHealth } from "./wood-health.js";
 import { resetWoodHealth } from "./wood-health.js";
 import { BallMesh, CubeMesh, HexMesh, PlaneMesh } from "../meshes/mesh-list.js";
 import { breakBullet, BulletDef, fireBullet } from "../cannons/bullet.js";
 import { GhostDef } from "../debug/ghost.js";
-import {
-  WoodObj,
-  createLD53Ship,
-  createWoodenBox,
-  ld53ShipAABBs,
-  loadFangShip,
-  rainbowColorWood,
-} from "./shipyard.js";
+import { createLD53Ship } from "./shipyard.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
 import { startPirates } from "./pirate.js";
 import { ParametricDef } from "../motion/parametric-motion.js";
-import { addColliderDbgVis, addGizmoChild } from "../utils/utils-game.js";
+import { addGizmoChild } from "../utils/utils-game.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
 import { createSun, initGhost } from "../graybox/graybox-helpers.js";
-import { PId4, assert } from "../utils/util-no-import.js";
+import { PId4, assert, mkLazy } from "../utils/util-no-import.js";
 import { stdGridRender } from "../render/pipelines/std-grid.js";
 import { pointPipe, linePipe } from "../render/pipelines/std-line.js";
 import { createObj } from "../ecs/em-objects.js";
 import { GRID_MASK } from "../render/pipeline-masks.js";
 import {
-  sketch,
   sketchAABB,
   sketchDot,
   sketchLine,
@@ -72,15 +61,30 @@ import {
 } from "../utils/sketch.js";
 import { renderDots } from "../render/pipelines/std-dots.js";
 import { alphaRenderPipeline } from "../render/pipelines/xp-alpha.js";
-import { copyRay, mkRay, getLineEnd } from "../physics/broadphase.js";
-import { dbgPathWithGizmos } from "../debug/utils-gizmos.js";
-import { GAME_LOADER } from "../game-loader.js";
+import {
+  getLineEnd,
+  transformRay,
+  cloneRay,
+  rayVsAABBHitDist,
+  rayVsOBBHitDist,
+} from "../physics/broadphase.js";
 import { TimeDef } from "../time/time.js";
-import { clamp, remap } from "../utils/math.js";
-import { defineResourceWithInit } from "../ecs/em-helpers.js";
+import { clamp } from "../utils/math.js";
 import { MouseRayDef } from "../input/screen-input.js";
+import {
+  createMeshUpdateTracker,
+  getOBBFromWoodSeg,
+  woodVsAABB,
+} from "./wood-damage.js";
+import { OBB } from "../physics/obb.js";
+import {
+  ZERO_AABB,
+  cloneAABB,
+  createAABB,
+  transformAABB,
+} from "../physics/aabb.js";
 
-const DBG_PLAYER = true;
+const DBG_PLAYER = false;
 const DBG_COLLIDERS = false;
 const DBG_TRANSPARENT_BOAT = false;
 
@@ -172,16 +176,16 @@ export async function initShipyardGame() {
 
   const sun = createSun([250, 10, 300]);
 
-  const ground = EM.mk();
-  EM.set(ground, RenderableConstructDef, HexMesh);
-  EM.set(ground, ScaleDef, [20, 20, 2]);
-  EM.set(ground, ColorDef, ENDESGA16.blue);
-  EM.set(ground, PositionDef, V(0, 0, -4));
+  // const ground = EM.mk();
+  // EM.set(ground, RenderableConstructDef, HexMesh);
+  // EM.set(ground, ScaleDef, [20, 20, 2]);
+  // EM.set(ground, ColorDef, ENDESGA16.blue);
+  // EM.set(ground, PositionDef, V(0, 0, -4));
 
   // TIMBER
-  const timber = EM.mk();
+  const woodEnt = EM.mk();
 
-  if (DBG_TRANSPARENT_BOAT) EM.set(timber, AlphaDef, 0.5);
+  if (DBG_TRANSPARENT_BOAT) EM.set(woodEnt, AlphaDef, 0.5);
 
   const woodObj = createLD53Ship();
   // const woodObj = createWoodenBox();
@@ -228,12 +232,12 @@ export async function initShipyardGame() {
     }
   }
 
-  EM.set(timber, RenderableConstructDef, timberMesh);
-  EM.set(timber, WoodStateDef, timberState);
-  EM.set(timber, AuthorityDef, res.me.pid);
-  EM.set(timber, PositionDef, V(0, 0, 0));
-  EM.set(timber, RotationDef);
-  EM.set(timber, WorldFrameDef);
+  EM.set(woodEnt, RenderableConstructDef, timberMesh);
+  EM.set(woodEnt, WoodStateDef, timberState);
+  EM.set(woodEnt, AuthorityDef, res.me.pid);
+  EM.set(woodEnt, PositionDef, V(0, 0, 0));
+  EM.set(woodEnt, RotationDef);
+  EM.set(woodEnt, WorldFrameDef);
 
   // const mc: MultiCollider = {
   //   shape: "Multi",
@@ -248,12 +252,12 @@ export async function initShipyardGame() {
   // EM.set(timber, ColliderDef, mc);
   // if (DBG_COLLIDERS) addColliderDbgVis(timber);
 
-  EM.set(timber, ColliderFromMeshDef);
+  EM.set(woodEnt, ColliderFromMeshDef);
 
   const timberHealth = createWoodHealth(timberState);
-  EM.set(timber, WoodHealthDef, timberHealth);
+  EM.set(woodEnt, WoodHealthDef, timberHealth);
 
-  addGizmoChild(timber, 10);
+  addGizmoChild(woodEnt, 10);
 
   if (DBG_PLAYER) {
     EM.addSystem(
@@ -303,14 +307,14 @@ export async function initShipyardGame() {
         }
 
         if (inputs.keyClicks["r"]) {
-          const timber2 = await EM.whenEntityHas(timber, RenderableDef);
-          resetWoodHealth(timber.woodHealth);
-          resetWoodState(timber.woodState);
+          const timber2 = await EM.whenEntityHas(woodEnt, RenderableDef);
+          resetWoodHealth(woodEnt.woodHealth);
+          resetWoodState(woodEnt.woodState);
           res.renderer.renderer.stdPool.updateMeshQuadInds(
             timber2.renderable.meshHandle,
-            timber.woodState.mesh as Mesh,
+            woodEnt.woodState.mesh as Mesh,
             0,
-            timber.woodState.mesh.quad.length
+            woodEnt.woodState.mesh.quad.length
           );
         }
 
@@ -376,16 +380,98 @@ export async function initShipyardGame() {
     addGizmoChild(g, 3);
   }
 
+  const tempOBB = OBB.mk();
+
+  const { renderable: woodRenderable } = await EM.whenEntityHas(
+    woodEnt,
+    RenderableDef
+  );
+
+  let _maxSketchAABB = 0;
+
   EM.addSystem(
     "selectWoodParts",
     Phase.GAME_WORLD,
     null,
     [InputsDef, MouseRayDef, PhysicsResultsDef, CameraComputedDef],
     (_, res) => {
+      let meshTracker = mkLazy(() =>
+        createMeshUpdateTracker(woodRenderable.meshHandle)
+      );
+      let hasChange = false;
+
+      let _sketchAABBNum = 0;
+
+      function woodColorSegment(seg: SegState, color: V3.InputT) {
+        hasChange = true;
+        for (let qi of iterateWoodSegmentQuadIndices(seg)) {
+          V3.copy(woodObj.mesh.colors[qi], color);
+          meshTracker().trackQuadDataChange(qi);
+        }
+      }
+
       // const ship: WoodObj;
-      if (res.inputs.lclick) {
-        sketchRay(res.mouseRay, { length: 20, color: ENDESGA16.orange });
-        sketchDot(res.cameraComputed.location);
+      if (res.inputs.lclick || true) {
+        sketchRay(res.mouseRay, {
+          key: "mouseRay",
+          length: 20,
+          color: ENDESGA16.orange,
+        });
+        // sketchDot(res.cameraComputed.location);
+
+        const woodFromWorld = mat4.invert(woodEnt.world.transform);
+        const woodLocalRay = transformRay(
+          cloneRay(res.mouseRay),
+          woodFromWorld
+        );
+
+        let minDist = +Infinity;
+        let minSeg: SegState | undefined = undefined;
+        const hitItr = woodVsAABB(woodObj.state, (localAABB) => {
+          const dist = rayVsAABBHitDist(localAABB, woodLocalRay);
+          const isHit = !!dist && dist < minDist;
+          if (isHit) {
+            // const worldAABB =transformAABB(cloneAABB(localAABB), woodEnt.world.transform)
+            sketchAABB(localAABB, {
+              key: `hitAABB_${++_sketchAABBNum}`,
+              color: ENDESGA16.yellow,
+            });
+          }
+          return isHit;
+        });
+        for (let [_, __, ___, seg] of hitItr) {
+          woodColorSegment(seg, ENDESGA16.orange);
+
+          const localOBB = getOBBFromWoodSeg(seg, tempOBB);
+          const hitDist = rayVsOBBHitDist(localOBB, woodLocalRay);
+          if (!Number.isNaN(hitDist) && hitDist > 0) {
+            if (hitDist < minDist) {
+              minDist = hitDist;
+              minSeg = seg;
+            }
+            woodColorSegment(seg, ENDESGA16.yellow);
+            sketchAABB(seg.localAABB, {
+              key: `hitAABB_${_sketchAABBNum}`,
+              color: ENDESGA16.darkGreen,
+            });
+          }
+
+          // if (rayVsCapsule(woodLocalRay, hit.seg)) {
+          // }
+        }
+        if (minSeg) woodColorSegment(minSeg, ENDESGA16.lightGreen);
+      }
+
+      if (hasChange) {
+        meshTracker().submitChangesToGPU();
+      }
+
+      _maxSketchAABB = Math.max(_sketchAABBNum, _maxSketchAABB);
+      for (let i = _sketchAABBNum; _sketchAABBNum < _maxSketchAABB; i++) {
+        // TODO(@darzu): Hide sketch function??
+        sketchAABB(ZERO_AABB, {
+          key: `hitAABB_${++_sketchAABBNum}`,
+        });
       }
       // const mouseRay = getMouseRay(res.inputs.mousePos);
       // sketchRay(mouseRay);

@@ -57,9 +57,12 @@ import {
   _vertsPerSplinter,
   WoodState,
   SegState,
+  iterateWoodSegmentQuadIndices,
 } from "./wood-builder.js";
 import { WoodHealthDef } from "./wood-health.js";
 import { createLine } from "../utils/utils-game.js";
+import { OBB } from "../physics/obb.js";
+import { MeshHandle } from "../render/mesh-pool.js";
 
 const DBG_WOOD_DMG = true;
 
@@ -310,10 +313,12 @@ EM.addEagerInit([WoodStateDef], [], [], () => {
 
       for (let w of es) {
         let splinterIndUpdated: number[] = [];
-        let segQuadIndUpdated: { min: number; max: number }[] = [];
+        // let segQuadIndUpdated: { min: number; max: number }[] = [];
 
         const meshHandle = w.renderable.meshHandle;
         const mesh = meshHandle.mesh!;
+
+        const meshTracker = createMeshUpdateTracker(meshHandle);
 
         w.woodState.groups.forEach((group, gIdx) => {
           group.boards.forEach((board, bIdx) => {
@@ -327,24 +332,21 @@ EM.addEagerInit([WoodStateDef], [], [], () => {
                   );
 
                 h.broken = true;
+
+                // TODO(@darzu): IMPL
+                // function iterSegQi
+                // function getSegMinMaxQi
+
                 // TODO(@darzu): how to unhide?
-                // TODO(@darzu): probably a more efficient way to do this..
                 let qMin = Infinity;
                 let qMax = -Infinity;
-                for (let qi of [
-                  ...seg.quadSideIdxs,
-                  // TODO(@darzu): PERF. how performant is the below?
-                  ...(seg.quadBackIdx ? [seg.quadBackIdx] : []),
-                  ...(seg.quadFrontIdx ? [seg.quadFrontIdx] : []),
-                ]) {
+                for (let qi of iterateWoodSegmentQuadIndices(seg)) {
                   const q = mesh.quad[qi];
                   V4.set(0, 0, 0, 0, q);
                   qMin = Math.min(qMin, qi);
                   qMax = Math.max(qMax, qi);
                 }
-                // todo something is wrong with seg quads here!!
-                // console.log(`seg quad: ${qMin} ${qMax}`);
-                segQuadIndUpdated.push({ min: qMin, max: qMax });
+                meshTracker.trackQuadIndsChange(qMin, qMax);
 
                 // get the board's pool
                 if (!pool) {
@@ -472,50 +474,85 @@ EM.addEagerInit([WoodStateDef], [], [], () => {
         });
 
         const ws = w.woodState;
-        if (
-          ws.splinterState &&
-          (splinterIndUpdated.length || segQuadIndUpdated.length)
-        ) {
-          // TODO(@darzu): probably just create these trackers above? Persist them
-          //    frame to frame.
-          const triIntervals = createIntervalTracker(100);
-          const quadIntervals = createIntervalTracker(100);
-          const vertIntervals = createIntervalTracker(100);
-
+        if (ws.splinterState && splinterIndUpdated.length) {
           for (let spI of splinterIndUpdated) {
             const tMin = ws.splinterState.triOffset + spI * _trisPerSplinter;
             const tMax = tMin + _trisPerSplinter - 1;
-            triIntervals.addRange(tMin, tMax);
+            meshTracker.trackTriIndsChange(tMin, tMax);
 
             const qMin = ws.splinterState.quadOffset + spI * _quadsPerSplinter;
             const qMax = qMin + _quadsPerSplinter - 1;
-            quadIntervals.addRange(qMin, qMax);
+            meshTracker.trackQuadIndsChange(qMin, qMax);
 
             const vMin = ws.splinterState.vertOffset + spI * _vertsPerSplinter;
             const vMax = vMin + _vertsPerSplinter - 1;
-            vertIntervals.addRange(vMin, vMax);
+            meshTracker.trackVertsChange(vMin, vMax);
           }
 
-          for (let { min, max } of segQuadIndUpdated)
-            quadIntervals.addRange(min, max);
-
-          triIntervals.finishInterval();
-          quadIntervals.finishInterval();
-          vertIntervals.finishInterval();
-
-          for (let { min, max } of triIntervals.intervals)
-            stdPool.updateMeshTriInds(meshHandle, mesh, min, max - min + 1);
-
-          for (let { min, max } of quadIntervals.intervals)
-            stdPool.updateMeshQuadInds(meshHandle, mesh, min, max - min + 1);
-
-          for (let { min, max } of vertIntervals.intervals)
-            stdPool.updateMeshVertices(meshHandle, mesh, min, max - min + 1);
+          meshTracker.submitChangesToGPU();
         }
       }
     }
   );
 });
+
+// TODO(@darzu): MOVE ELSEWHER
+// NOTE: all mins and maxs are inclusive
+export interface MeshUpdateTracker {
+  trackTriIndsChange(minTi: number, maxTi: number): void;
+  trackQuadIndsChange(minQi: number, maxQi: number): void;
+  trackVertsChange(minVi: number, maxVi: number): void;
+  trackQuadDataChange(qi: number): void;
+  trackTriDataChange(ti: number): void;
+  submitChangesToGPU(): void;
+}
+
+export function createMeshUpdateTracker(handle: MeshHandle): MeshUpdateTracker {
+  // TODO(@darzu): PERF! Reuse these trackers? Persist them
+  //    frame to frame. Generally there's a lot we could do to minimze allocs here.
+  const triIntervals = createIntervalTracker(100);
+  const quadIntervals = createIntervalTracker(100);
+  const vertIntervals = createIntervalTracker(100);
+
+  function trackTriIndsChange(minTi: number, maxTi: number): void {
+    triIntervals.addRange(minTi, maxTi);
+  }
+  function trackQuadIndsChange(minQi: number, maxQi: number): void {
+    quadIntervals.addRange(minQi, maxQi);
+  }
+  function trackVertsChange(minVi: number, maxVi: number): void {
+    vertIntervals.addRange(minVi, maxVi);
+  }
+  function trackQuadDataChange(qi: number): void {
+    const provokingVi = handle.mesh.quad[qi][0];
+    trackVertsChange(provokingVi, provokingVi);
+  }
+  function trackTriDataChange(ti: number): void {
+    const provokingVi = handle.mesh.tri[ti][0];
+    trackVertsChange(provokingVi, provokingVi);
+  }
+
+  function submitChangesToGPU() {
+    triIntervals.finishInterval();
+    quadIntervals.finishInterval();
+    vertIntervals.finishInterval();
+    for (let { min, max } of triIntervals.intervals)
+      handle.pool.updateMeshTriInds(handle, handle.mesh, min, max - min + 1);
+    for (let { min, max } of quadIntervals.intervals)
+      handle.pool.updateMeshQuadInds(handle, handle.mesh, min, max - min + 1);
+    for (let { min, max } of vertIntervals.intervals)
+      handle.pool.updateMeshVertices(handle, handle.mesh, min, max - min + 1);
+  }
+
+  return {
+    trackTriIndsChange,
+    trackQuadIndsChange,
+    trackVertsChange,
+    trackQuadDataChange,
+    trackTriDataChange,
+    submitChangesToGPU,
+  };
+}
 
 type WoodHit = [
   groupIdx: number,
@@ -549,4 +586,21 @@ export function* woodVsAABB(
       }
     }
   }
+}
+
+export function getOBBFromWoodSeg(seg: SegState, out?: OBB): OBB {
+  out = out ?? OBB.mk();
+  V3.tQuat(V3.RIGHT, seg.midRotation, out.right);
+  V3.tQuat(V3.FWD, seg.midRotation, out.fwd);
+  V3.tQuat(V3.UP, seg.midRotation, out.up);
+  out.halfw[0] = seg.xWidth; // * 0.5;
+  out.halfw[1] = seg.midLine.len * 0.5;
+  out.halfw[2] = seg.zDepth; // * 0.5;
+  V3.addScaled(
+    seg.midLine.ray.org,
+    seg.midLine.ray.dir,
+    out.halfw[1],
+    out.center
+  );
+  return out;
 }

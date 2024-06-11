@@ -62,3 +62,11 @@ export function shuffle(array: unknown[]): void {
     [array[i], array[j]] = [array[j], array[i]];
   }
 }
+
+export function mkLazy<T>(mk: () => T): () => T {
+  let _t: T | undefined = undefined;
+  return () => {
+    if (!_t) _t = mk();
+    return _t;
+  };
+}
