@@ -178,6 +178,8 @@ export function createGizmoForAABB(aabb: AABB, width: number): Mesh {
   result.usesProvoking = true;
   return result;
 }
+
+// TODO(@darzu): This should probably move into the Sketcher
 export function createPathGizmosMesh(path: Path, scale = 1): Mesh {
   let gizmos: Mesh[] = [];
   path.forEach((p) => {
