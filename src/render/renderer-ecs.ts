@@ -680,7 +680,7 @@ export function displayWebGPUError() {
       color: green;
       margin: 24px;
       max-width: 600px;`;
-  document.getElementsByTagName(
-    "body"
+  document.getElementsByClassName(
+    "canvasHolder"
   )[0].innerHTML = `<div style="${style}">This page requires WebGPU which isn't yet supported in your browser!<br>Or something else went wrong that was my fault.<br><br>Probably Chrome on Windows will work.<br><br>🙂</div>`;
 }

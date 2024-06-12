@@ -23,7 +23,7 @@
 
       display: grid;
       grid-template-columns: 200px 1fr 20px;
-      grid-template-rows: 20px 1fr 20px;
+      grid-template-rows: 20px 1fr 200px;
 
       width: 100vw;
       height: 100vh;
@@ -33,21 +33,44 @@
       color: var(--text-clr);
     }
 
-    #linksTree {
+    h1 {
+      margin: 20px 0;
+      font-size: 24px;
+    }
+
+    h1:first-child {
+      margin-top: 10px;
+    }
+
+    h2 {
+      margin: 20px 0 10px 0;
+      font-size: 18px;
+    }
+
+    #leftBar {
       grid-column: 1;
+      display: flex;
+      flex-direction: column;
+      margin: 10px;
+    }
+
+    #linksTree {
       /* background- color: rebeccapurple; */
       display: flex;
       flex-direction: column;
 
+      /* overflow: auto; */
     }
 
     #linksTree a {
-      margin: 10px;
-      margin-top: 0px;
+      /* margin: 10px; */
+      /* margin-top: 0px; */
+      margin-top: 10px;
     }
 
     #linksTree a:first-child {
-      margin-top: 10px;
+      /* margin-top: 10px; */
+      margin-top: 0px;
     }
 
     .canvasHolder {
@@ -62,7 +85,6 @@
       box-shadow: rgb(10, 10, 10) 0px 0px 16px 0px;
     }
 
-    /* TODO: for debuggin */
     .rightBar {
       grid-column: 3;
     }
@@ -77,6 +99,41 @@
       font-family: monospace;
       font-size: 16px;
     }
+
+    #infoZone {
+      grid-column: 2;
+      grid-row: 3;
+
+      display: flex;
+      flex-direction: row;
+
+      margin: 10px;
+      overflow-x: scroll;
+      overflow-y: hidden;
+    }
+
+    .infoPanel h2 {
+      margin-top: 0px;
+    }
+
+    .infoPanel {
+      width: 200px;
+      flex-shrink: 0;
+      margin: 0 10px;
+    }
+
+    .infoPanel:first-child,
+    .infoPanel:last-child {
+      margin: 0 0;
+    }
+
+    .infoPanel:first-child {
+      /* width: 300px; */
+    }
+
+    ul {
+      padding-inline-start: 15px;
+    }
   </style>
 </head>
 
@@ -85,9 +142,14 @@
     console.log(`start of html body at ${performance.now().toFixed(2)}ms`);
   </script>
 
-  <div id="linksTree">
-    <a href="#particles">particles</a>
-    <a href="#graybox-ship-arena">graybox-ship-arena</a>
+  <div id="leftBar">
+    <h1>Sprig.land</h1>
+    <a href="about">about</a>
+    <h2>Tech Demos</h2>
+    <div id="linksTree">
+      <a href="#particles">particles</a>
+      <a href="#graybox-ship-arena">graybox-ship-arena</a>
+    </div>
   </div>
 
   <div id="debug-div"> </div>
@@ -96,8 +158,46 @@
     <canvas id="canvas-1" width="512" height="512"></canvas>
   </div>
 
-
   <div class="rightBar">
+  </div>
+
+  <div id="infoZone">
+    <div class="infoPanel">
+      <h2>Shipyard</h2>
+      The ship is defined with paths and constraints.
+      These then procedurally generate a mesh and metadata (e.g. colliders), which support runtime modification.
+    </div>
+    <div class="infoPanel">
+      <h2>Controls</h2>
+      <ul>
+        <li>Drag to pan</li>
+        <li>Scroll to zoom</li>
+        <li>Refresh to reset</li>
+        <li>Click to: fire a cannon at the cursor</li>
+      </ul>
+    </div>
+    <div class="infoPanel">
+      <h2>Painting</h2>
+      <input type="checkbox" name="clickPaint">
+      <label for="clickPaint">Painting Mode</label>
+    </div>
+    <div class="infoPanel">
+      <h2>Shaping</h2>
+      TODO
+    </div>
+    <div class="infoPanel">
+      <h2>Destruction</h2>
+      Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore
+    </div>
+    <div class="infoPanel">
+      <h2>Panel 6</h2>
+      Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore
+    </div>
+    <div class="infoPanel">
+      <h2>Panel 7</h2>
+      Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore
+    </div>
+
   </div>
 
   <script src="./main.js" type="module"></script>
