@@ -218,12 +218,12 @@ EM.addEagerInit([SplinterParticleDef], [], [], () => {
     [],
     (splinters, res) => {
       for (let s of splinters) {
-        if (s.position[2] < 0) {
+        if (s.position[2] < -0.1) {
           V3.zero(s.linearVelocity);
           V3.zero(s.gravity);
           V3.zero(s.angularVelocity);
 
-          s.position[2] = 0;
+          s.position[2] = 0 + jitter(0.1);
           quat.fromYawPitchRoll(randRadian(), 0, 0, s.rotation);
           s.renderDataStd.id = splinterObjId; // stops z-fighting
         }

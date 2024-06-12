@@ -494,12 +494,12 @@ export async function initLD53() {
   const domeMesh = makeDome(16, 8, SKY_HALFSIZE);
   const sky = EM.mk();
   EM.set(sky, PositionDef, V(0, 0, -100));
+  const skyMesh = domeMesh;
+  EM.set(sky, RenderableConstructDef, skyMesh, undefined, undefined, SKY_MASK);
   // const skyMesh = cloneMesh(res.allMeshes.cube.mesh);
   // skyMesh.pos.forEach((p) => V3.scale(p, SKY_HALFSIZE, p));
   // skyMesh.quad.forEach((f) => V4.reverse(f, f));
   // skyMesh.tri.forEach((f) => V3.reverse(f, f));
-  const skyMesh = domeMesh;
-  EM.set(sky, RenderableConstructDef, skyMesh, undefined, undefined, SKY_MASK);
   // EM.set(sky, ColorDef, V(0.9, 0.9, 0.9));
 
   // ocean
