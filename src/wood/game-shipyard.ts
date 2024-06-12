@@ -3,17 +3,16 @@ import {
   CameraDef,
   CameraFollowDef,
 } from "../camera/camera.js";
-import { CanvasDef, HasFirstInteractionDef } from "../render/canvas.js";
+import { CanvasDef } from "../render/canvas.js";
 import { AlphaDef, ColorDef } from "../color/color-ecs.js";
 import { ENDESGA16 } from "../color/palettes.js";
 import { DeadDef } from "../ecs/delete.js";
 import { EM } from "../ecs/ecs.js";
 import { V3, quat, V, mat4 } from "../matrix/sprig-matrix.js";
 import { InputsDef } from "../input/inputs.js";
-import { ColliderDef, ColliderFromMeshDef } from "../physics/collider.js";
+import { ColliderFromMeshDef } from "../physics/collider.js";
 import {
   PhysicsResultsDef,
-  PhysicsStateDef,
   WorldFrameDef,
 } from "../physics/nonintersection.js";
 import { PositionDef, RotationDef, ScaleDef } from "../physics/transform.js";
@@ -36,37 +35,21 @@ import {
 import { WoodHealthDef } from "./wood-health.js";
 import { createWoodHealth } from "./wood-health.js";
 import { resetWoodHealth } from "./wood-health.js";
-import {
-  BallMesh,
-  CannonLD51Mesh,
-  CubeMesh,
-  HexMesh,
-  PlaneMesh,
-} from "../meshes/mesh-list.js";
+import { CannonLD51Mesh, CubeMesh, PlaneMesh } from "../meshes/mesh-list.js";
 import { breakBullet, BulletDef, fireBullet } from "../cannons/bullet.js";
-import { GhostDef } from "../debug/ghost.js";
 import { createLD53Ship } from "./shipyard.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
 import { startPirates } from "./pirate.js";
 import { ParametricDef } from "../motion/parametric-motion.js";
-import { addGizmoChild } from "../utils/utils-game.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
-import { createSun, initGhost } from "../graybox/graybox-helpers.js";
-import { PId4, PId6, PId8, assert, mkLazy } from "../utils/util-no-import.js";
+import { createSun } from "../graybox/graybox-helpers.js";
+import { PId4, PId8, assert, mkLazy } from "../utils/util-no-import.js";
 import { stdGridRender } from "../render/pipelines/std-grid.js";
 import { pointPipe, linePipe } from "../render/pipelines/std-line.js";
 import { createObj } from "../ecs/em-objects.js";
 import { GRID_MASK } from "../render/pipeline-masks.js";
-import {
-  SketcherDef,
-  sketchAABB,
-  sketchDot,
-  sketchLine,
-  sketchLine2,
-  sketchOBB,
-  sketchRay,
-} from "../utils/sketch.js";
+import { SketcherDef, sketchAABB, sketchLine } from "../utils/sketch.js";
 import { renderDots } from "../render/pipelines/std-dots.js";
 import { alphaRenderPipeline } from "../render/pipelines/xp-alpha.js";
 import {
@@ -85,12 +68,6 @@ import {
   woodVsAABB,
 } from "./wood-damage.js";
 import { OBB } from "../physics/obb.js";
-import {
-  ZERO_AABB,
-  cloneAABB,
-  createAABB,
-  transformAABB,
-} from "../physics/aabb.js";
 import { getFireSolution } from "../stone/projectile.js";
 
 const DBG_COLLIDERS = false;
