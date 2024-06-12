@@ -134,6 +134,75 @@
     ul {
       padding-inline-start: 15px;
     }
+
+    .switch {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+
+      --switch-size: 24px;
+      --switch-inner-padding: 2px;
+      --switch-knob-size: calc(var(--switch-size) - var(--switch-inner-padding)*2);
+      --switch-knob-travel: calc(var(--switch-knob-size) - 4px);
+      --switch-width: calc(var(--switch-knob-size) + var(--switch-knob-travel) + var(--switch-inner-padding)*2);
+      --switch-transition: 0.2s;
+
+      height: var(--switch-size);
+
+      /*leave room for switch*/
+      padding-left: calc(var(--switch-width) + 5px);
+    }
+
+    .switch *,
+    .switch {
+      cursor: pointer;
+    }
+
+    .switch input {
+      /* undo browser appearance */
+      appearance: none;
+      margin: 0;
+      font: inherit;
+      color: currentColor;
+      border: 0;
+      border-radius: 0;
+
+      width: var(--switch-width);
+      height: var(--switch-size);
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      --switch-background-clr: oklch(from var(--background-clr) calc(l + 0.2) c h);
+      background-color: var(--switch-background-clr);
+      transition: var(--switch-transition);
+
+      border-radius: var(--switch-size);
+    }
+
+    .switch input:before {
+      position: absolute;
+      content: "";
+      height: var(--switch-knob-size);
+      width: var(--switch-knob-size);
+      left: var(--switch-inner-padding);
+      bottom: var(--switch-inner-padding);
+      background-color: var(--text-clr);
+      transition: var(--switch-transition);
+
+      border-radius: 50%;
+    }
+
+    .switch input:checked:before {
+      transform: translateX(var(--switch-knob-travel));
+    }
+
+    .switch input:checked {
+      /* background-color: #0484d1; */
+      background-color: #327345;
+    }
   </style>
 </head>
 
@@ -178,8 +247,19 @@
     </div>
     <div class="infoPanel">
       <h2>Painting</h2>
-      <input type="checkbox" name="clickPaint">
-      <label for="clickPaint">Painting Mode</label>
+
+      <label class="switch">
+        <input type="checkbox" name="paintMode">
+        Painting Mode
+      </label>
+
+      <div>foobar</div>
+      <div>foobar</div>
+
+
+      <!-- <input type="checkbox" name="paintMode2" />
+      <label for="paintMode2">Painting Mode2</label> -->
+      <!-- <label for="clickPaint"></label> -->
     </div>
     <div class="infoPanel">
       <h2>Shaping</h2>
