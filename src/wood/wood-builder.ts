@@ -115,6 +115,8 @@ export interface BoardGroupState {
   boards: BoardState[];
 }
 
+export type SegIndex = [groupIdx: number, boardIdx: number, segIdx: number];
+
 export interface WoodState {
   mesh: RawMesh; // TODO(@darzu): make non-raw
   // usedVertIdxs: Set<number>;

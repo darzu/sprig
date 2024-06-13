@@ -12,6 +12,24 @@
       --game-background-clr: #1c1c1c;
       --background-clr: oklch(from var(--game-background-clr) calc(l + 0.1) c h);
       --text-clr: oklch(from var(--game-background-clr) calc(l + 0.8) c h);
+
+      /* endesga16 color palette */
+      --lightBrown: #e4a672;
+      --midBrown: #b86f50;
+      --darkBrown: #743f39;
+      --deepBrown: #3f2832;
+      --darkRed: #9e2835;
+      --red: #e53b44;
+      --orange: #fb922b;
+      --yellow: #ffe762;
+      --lightGreen: #63c64d;
+      --darkGreen: #327345;
+      --deepGreen: #193d3f;
+      --darkGray: #4f6781;
+      --lightGray: #afbfd2;
+      --white: #ffffff;
+      --lightBlue: #2ce8f4;
+      --blue: #0484d1;
     }
 
     body {
@@ -117,9 +135,15 @@
     }
 
     .infoPanel {
-      width: 200px;
+      width: 150px;
       flex-shrink: 0;
       margin: 0 10px;
+
+      display: flex;
+      flex-direction: column;
+
+      /* TODO(@darzu): use gap everywhere */
+      gap: 10px;
     }
 
     .infoPanel:first-child,
@@ -128,11 +152,12 @@
     }
 
     .infoPanel:first-child {
-      /* width: 300px; */
+      width: 250px;
     }
 
     ul {
       padding-inline-start: 15px;
+      margin: 0px;
     }
 
     .switch {
@@ -200,8 +225,111 @@
     }
 
     .switch input:checked {
+      background-color: var(--blue);
+    }
+
+    #paintColorPicker {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+
+    #paintColorPicker * {
+      flex-shrink: 0;
+    }
+
+    #paintColorPicker input {
+      appearance: none;
+      margin: 0;
+      font: inherit;
+      color: currentColor;
+      border: 0;
+      border-radius: 0;
+
+      width: 24px;
+      height: 24px;
+
+      border-radius: 4px;
+
+      cursor: pointer;
+
+      transition: 0.2s;
+
       /* background-color: #0484d1; */
-      background-color: #327345;
+    }
+
+    #paintColorPicker input:checked {
+      transform: scale(1.5);
+    }
+
+    #paintColorPicker input.disabled {
+      transform: scale(0.7);
+      border-radius: 50%;
+      /* cursor: not-allowed; */
+    }
+
+    .lightBrown {
+      background-color: var(--lightBrown);
+    }
+
+    .midBrown {
+      background-color: var(--midBrown);
+    }
+
+    .darkBrown {
+      background-color: var(--darkBrown);
+    }
+
+    .deepBrown {
+      background-color: var(--deepBrown);
+    }
+
+    .darkRed {
+      background-color: var(--darkRed);
+    }
+
+    .red {
+      background-color: var(--red);
+    }
+
+    .orange {
+      background-color: var(--orange);
+    }
+
+    .yellow {
+      background-color: var(--yellow);
+    }
+
+    .lightGreen {
+      background-color: var(--lightGreen);
+    }
+
+    .darkGreen {
+      background-color: var(--darkGreen);
+    }
+
+    .deepGreen {
+      background-color: var(--deepGreen);
+    }
+
+    .darkGray {
+      background-color: var(--darkGray);
+    }
+
+    .lightGray {
+      background-color: var(--lightGray);
+    }
+
+    .white {
+      background-color: var(--white);
+    }
+
+    .lightBlue {
+      background-color: var(--lightBlue);
+    }
+
+    .blue {
+      background-color: var(--blue);
     }
   </style>
 </head>
@@ -245,29 +373,45 @@
         <li>Click to: fire a cannon at the cursor</li>
       </ul>
     </div>
-    <div class="infoPanel">
+    <div class="infoPanel paintingPanel">
       <h2>Painting</h2>
 
       <label class="switch">
-        <input type="checkbox" name="paintMode">
+        <input type="checkbox" name="paintMode" id="paintMode">
         Painting Mode
       </label>
 
-      <div>foobar</div>
-      <div>foobar</div>
+      <div id="paintColorPicker">
+        <input type="radio" name="paintColor" class="lightBrown disabled" />
+        <input type="radio" name="paintColor" class="midBrown disabled" />
+        <input type="radio" name="paintColor" class="darkBrown disabled" />
+        <input type="radio" name="paintColor" class="deepBrown disabled" />
+        <input type="radio" name="paintColor" class="darkRed disabled" />
+        <input type="radio" name="paintColor" class="red disabled" />
+        <input type="radio" name="paintColor" class="orange disabled" />
+        <input type="radio" name="paintColor" class="yellow disabled" />
+        <input type="radio" name="paintColor" class="lightGreen disabled" />
+        <input type="radio" name="paintColor" class="darkGreen disabled" />
+        <input type="radio" name="paintColor" class="deepGreen disabled" />
+        <input type="radio" name="paintColor" class="darkGray disabled" />
+        <input type="radio" name="paintColor" class="lightGray disabled" />
+        <input type="radio" name="paintColor" class="white disabled" />
+        <input type="radio" name="paintColor" class="lightBlue disabled" />
+        <input type="radio" name="paintColor" class="blue disabled" checked />
+      </div>
 
+    </div>
+    <div class="infoPanel">
+      <h2>Destruction</h2>
 
-      <!-- <input type="checkbox" name="paintMode2" />
-      <label for="paintMode2">Painting Mode2</label> -->
-      <!-- <label for="clickPaint"></label> -->
+      <label class="switch">
+        <input type="checkbox" name="cannonMode" id="cannonMode">
+        Cannon Mode
+      </label>
     </div>
     <div class="infoPanel">
       <h2>Shaping</h2>
       TODO
-    </div>
-    <div class="infoPanel">
-      <h2>Destruction</h2>
-      Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore
     </div>
     <div class="infoPanel">
       <h2>Panel 6</h2>
