@@ -564,6 +564,10 @@ async function initShipyardHtml() {
     "paintColorPicker"
   ) as HTMLDivElement | null;
   assert(paintColorPickerEl);
+  const clickModeStringEl = document.getElementById(
+    "clickModeString"
+  ) as HTMLSpanElement | null;
+  assert(clickModeStringEl);
 
   type ColorSwatch = { color: Endesga16Name; el: HTMLInputElement };
   const swatches = ([...paintColorPickerEl.children] as HTMLInputElement[]).map(
@@ -588,11 +592,18 @@ async function initShipyardHtml() {
   //   toggleSwatches(mode === ShipyardClickMode.Paint);
   // }
 
+  const clickToStringByMode: { [k in ShipyardClickMode]: string } = {
+    [ShipyardClickMode.None]: "",
+    [ShipyardClickMode.Cannon]: "fire a cannon at the cursor",
+    [ShipyardClickMode.Paint]: "paint a board",
+  };
+
   function setClickMode(mode: ShipyardClickMode) {
     shipyardGameState.mode = mode;
     cannonModeEl!.checked = mode === ShipyardClickMode.Cannon;
     paintModeEl!.checked = mode === ShipyardClickMode.Paint;
     toggleSwatches(mode === ShipyardClickMode.Paint);
+    clickModeStringEl!.textContent = clickToStringByMode[mode];
   }
 
   setClickMode(ShipyardClickMode.Cannon);
