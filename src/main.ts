@@ -40,31 +40,34 @@ import { initBlocksGame } from "./blocks/game-blocks.js";
 // dbgLogMilestone("start of main.ts");
 
 const _gameRegs = {
-  gjk: initGJKSandbox,
-  rebound: initReboundSandbox,
-  shipyard: initShipyardGame,
-  grass: initGrassGame, // broken-ish; too many temp f32s; port to Z-up
-  font: initFontEditor,
-  cards: initCardsGame,
-  hyperspace: initHyperspaceGame, // TODO(@darzu): Z_UP: port to Z-up
-  cloth: initClothSandbox, // broken-ish
-  cube: initCubeGame,
-  gallery: initGalleryGame,
-  modeling: initModelingGame,
-  ld53: initLD53, // TODO(@darzu): broken; map loading
-  ld54: initLD54,
-  mp: initMPGame,
-  "graybox-starter": initGrayboxStarter,
-  "graybox-sunless": initGrayboxSunless,
-  "graybox-ship-arena": initGrayboxShipArena,
-  painterly: initPainterlyGame,
-  particles: initGameParticles,
-  ld55: initLd55,
-  "multi-scene": initMultiSceneGame,
+  gjk: { init: initGJKSandbox, displayName: "TODO" },
+  rebound: { init: initReboundSandbox, displayName: "TODO" },
+  shipyard: { init: initShipyardGame, displayName: "Shipyard" },
+  grass: { init: initGrassGame, displayName: "Grass" }, // broken-ish; too many temp f32s; port to Z-up
+  font: { init: initFontEditor, displayName: "Glyph Editor" },
+  cards: { init: initCardsGame, displayName: "TODO" },
+  hyperspace: { init: initHyperspaceGame, displayName: "Space Sailing" }, // broken-ish
+  cloth: { init: initClothSandbox, displayName: "TODO" }, // broken-ish
+  cube: { init: initCubeGame, displayName: "TODO" },
+  gallery: { init: initGalleryGame, displayName: "Model Gallery" },
+  modeling: { init: initModelingGame, displayName: "AABB Builder" },
+  ld53: { init: initLD53, displayName: "Game Jam: LD 53" }, // TODO(@darzu): broken; map loading
+  ld54: { init: initLD54, displayName: "Game Jam: LD 54" },
+  mp: { init: initMPGame, displayName: "Multiplayer" },
+  "graybox-starter": { init: initGrayboxStarter, displayName: "TODO" },
+  "graybox-sunless": { init: initGrayboxSunless, displayName: "TODO" },
+  "graybox-ship-arena": {
+    init: initGrayboxShipArena,
+    displayName: "Endless Arena",
+  },
+  painterly: { init: initPainterlyGame, displayName: "Painterly Dots" },
+  particles: { init: initGameParticles, displayName: "Particles" },
+  ld55: { init: initLd55, displayName: "Summoning Circle" },
+  "multi-scene": { init: initMultiSceneGame, displayName: "TODO" },
 };
 
-const gameRegs = objMap(_gameRegs, (init, name) => {
-  return GAME_LOADER.registerGame({ name, init });
+const gameRegs = objMap(_gameRegs, ({ init, displayName }, name) => {
+  return GAME_LOADER.registerGame({ key: name, init, displayName });
 });
 
 export const showcaseGameRegs = [
@@ -76,12 +79,11 @@ export const showcaseGameRegs = [
   gameRegs.ld55,
   gameRegs.font,
   gameRegs.gallery,
+  gameRegs.mp,
   gameRegs.modeling,
+  gameRegs["graybox-ship-arena"],
   gameRegs.ld53,
   gameRegs.ld54,
-  gameRegs.mp,
-  gameRegs["graybox-sunless"],
-  gameRegs["graybox-ship-arena"],
 ];
 
 // TODO(@darzu): current game should probably be saved in local storage, not hard-coded. (Default can be hard-coded)

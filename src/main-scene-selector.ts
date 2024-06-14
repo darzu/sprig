@@ -1,5 +1,5 @@
 import { EM } from "./ecs/ecs.js";
-import { GAME_LOADER } from "./game-loader.js";
+import { GAME_LOADER, GameReg } from "./game-loader.js";
 import { showcaseGameRegs } from "./main.js";
 import { assert } from "./utils/util-no-import.js";
 import { WebNavDef } from "./web/webnav.js";
@@ -22,11 +22,11 @@ export async function main_sceneSelector() {
   ) as HTMLDivElement | null;
   assert(linksTree, `requires <div id="${linksTreeId}">`);
 
-  const createGameLink = (gameName: string) => {
+  const createGameLink = (reg: GameReg) => {
     const aEl = document.createElement("a");
-    const destUrl = `#${gameName}`;
+    const destUrl = `#${reg.key}`;
     aEl.setAttribute("href", destUrl);
-    aEl.textContent = gameName;
+    aEl.textContent = reg.displayName;
     aEl.onclick = () => {
       window.location.assign(destUrl);
     };
@@ -36,6 +36,6 @@ export async function main_sceneSelector() {
   linksTree.textContent = ""; // clear all children: https://developer.mozilla.org/en-US/docs/Web/API/Node/textContent
   // for (let name of GAME_LOADER.getAvailableGameNames()) {
   for (let reg of showcaseGameRegs) {
-    linksTree.appendChild(createGameLink(reg.name));
+    linksTree.appendChild(createGameLink(reg));
   }
 }

@@ -5,7 +5,11 @@ import { getBarsBottom, makeAllColorBars } from "./color-bars.js";
 import { pathToSvgDom, domSetPos, setStyle } from "../utils/util-dom.js";
 import { BDraw } from "./blocks-draw.js";
 
-GAME_LOADER.registerGame({ name: "blocks", init: initBlocksGame });
+GAME_LOADER.registerGame({
+  key: "blocks",
+  init: initBlocksGame,
+  displayName: "Code Blocks",
+});
 
 export async function initBlocksGame() {
   // TODO(@darzu): IMPL
