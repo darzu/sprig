@@ -71,7 +71,7 @@ import {
 } from "./wood-damage.js";
 import { OBB } from "../physics/obb.js";
 import { getFireSolution } from "../stone/projectile.js";
-import { toMap } from "../utils/util.js";
+import { IdPair, idPair, packI16s, toMap, unpackI16s } from "../utils/util.js";
 
 const DBG_COLLIDERS = false;
 const DBG_TRANSPARENT_BOAT = false;
@@ -346,31 +346,33 @@ export async function initShipyardGame() {
     }
   );
 
+  // TODO(@darzu): This is all pretty hacky. I guess I want some sort of arena for hover sketches that is cleared.
   let _hoverTmpOBB = OBB.mk();
-  let _lastHoverBySegIdx = new Map<number, boolean>();
+  let _lastHoverByBoardSegIdx = new Map<number, boolean>();
   function hoverSegments(color: V3.InputT, ...segs: SegIndex[]) {
     for (let [gIdx, bIdx, sIdx] of segs) {
-      _lastHoverBySegIdx.set(sIdx, true);
+      const pair = packI16s(bIdx, sIdx);
+      _lastHoverByBoardSegIdx.set(pair, true);
       const seg = woodObj.state.groups[gIdx].boards[bIdx].segments[sIdx];
       const obb = getOBBFromWoodSeg(seg, _hoverTmpOBB);
       V3.add(obb.halfw, [0.2, 0.2, 0.2], obb.halfw);
       sketcher.sketch({
         shape: "obb",
         obb,
-        key: `hoverWoodSeg_${sIdx}`,
+        key: `hoverWoodSeg_${pair}`,
         color,
       });
     }
   }
   function unhoverAllSegments() {
-    for (let [segIdx, wasHovering] of _lastHoverBySegIdx.entries()) {
+    for (let [pair, wasHovering] of _lastHoverByBoardSegIdx.entries()) {
       if (wasHovering) {
         sketcher.sketch({
           shape: "obb",
           obb: OBB.ZERO,
-          key: `hoverWoodSeg_${segIdx}`,
+          key: `hoverWoodSeg_${pair}`,
         });
-        _lastHoverBySegIdx.set(segIdx, false);
+        _lastHoverByBoardSegIdx.set(pair, false);
       }
     }
   }
@@ -460,23 +462,39 @@ export async function initShipyardGame() {
 
         if (minHit) {
           if (shipyardGameState.mode === ShipyardClickMode.Paint) {
+            // paint mode
             const [gIdx, bIdx] = minHit;
-            const board = woodObj.state.groups[gIdx].boards[bIdx];
-            const segIdxs = board.segments.map(
-              (s, sIdx) => [gIdx, bIdx, sIdx] as SegIndex
-            );
+            let toPaintSegIdxs: SegIndex[] = [];
+            if (res.inputs.keyDowns["shift"]) {
+              // TODO(@darzu): document shift key usage
+              woodObj.state.groups[gIdx].boards.forEach((board, bIdx) => {
+                board.segments.forEach((_, sIdx) => {
+                  toPaintSegIdxs.push([gIdx, bIdx, sIdx] as SegIndex);
+                });
+              });
+            } else {
+              const board = woodObj.state.groups[gIdx].boards[bIdx];
+              board.segments.forEach((_, sIdx) => {
+                toPaintSegIdxs.push([gIdx, bIdx, sIdx] as SegIndex);
+              });
+            }
             const color = ENDESGA16[shipyardGameState.paintColor];
-            hoverSegments(color, ...segIdxs);
+            hoverSegments(color, ...toPaintSegIdxs);
 
             if (doPaint) {
-              for (let seg of board.segments) woodColorSegment(seg, color);
+              for (let [gIdx, bIdx, sIdx] of toPaintSegIdxs)
+                woodColorSegment(
+                  woodObj.state.groups[gIdx].boards[bIdx].segments[sIdx],
+                  color
+                );
             }
           } else if (shipyardGameState.mode === ShipyardClickMode.Cannon) {
+            // cannon mode
             hoverSegments(ENDESGA16.red, [minHit[0], minHit[1], minHit[2]]);
 
-            if (doFire) {
-              woodColorSegment(minHit[3], ENDESGA16.darkRed);
-            }
+            // if (doFire) {
+            //   woodColorSegment(minHit[3], ENDESGA16.darkRed);
+            // }
 
             const aimOBB = getOBBFromWoodSeg(minHit[3], tempOBB);
             V3.zero(aimOBB.halfw);

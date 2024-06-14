@@ -221,6 +221,8 @@ export interface Sketcher {
 const MAX_ENTS = 100;
 const MAX_DOTS = 100;
 
+let _tmpQuat = quat.mk();
+
 export const SketcherDef = defineResourceWithLazyInit(
   "sketcher",
   [RendererDef, DotsDef],
@@ -503,7 +505,7 @@ export const SketcherDef = defineResourceWithLazyInit(
       } else if (opt.shape === "obb") {
         EM.set(e, PositionDef, opt.obb.center);
         EM.set(e, ScaleDef, opt.obb.halfw);
-        EM.set(e, RotationDef, quat.fromMat3(opt.obb.mat));
+        EM.set(e, RotationDef, quat.fromMat3(opt.obb.mat, _tmpQuat));
       } else never(opt);
 
       return e;
