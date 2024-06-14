@@ -27,6 +27,8 @@ import {
   RenderableDef,
 } from "../render/renderer-ecs.js";
 import {
+  _quadsPerSplinter,
+  _trisPerSplinter,
   iterateWoodSegmentQuadIndices,
   resetWoodState,
   SegIndex,
@@ -396,11 +398,35 @@ export async function initShipyardGame() {
 
       // let _sketchAABBNum = 0;
 
-      function woodColorSegment(seg: SegState, color: V3.InputT) {
+      function woodColorSegment(
+        [gIdx, bIdx, sIdx]: SegIndex,
+        color: V3.InputT
+      ) {
+        const health = woodHealth.groups[gIdx].boards[bIdx][sIdx];
+        const seg = woodObj.state.groups[gIdx].boards[bIdx].segments[sIdx];
+
         hasChange = true;
         for (let qi of iterateWoodSegmentQuadIndices(seg)) {
           V3.copy(woodObj.mesh.colors[qi], color);
           meshTracker().trackQuadDataChange(qi);
+        }
+
+        // color the splinters
+        for (let spIdx of [health.splinterBotIdx, health.splinterTopIdx]) {
+          if (!spIdx) continue;
+          assert(woodObj.state.splinterState);
+          const quadIdx =
+            woodObj.state.splinterState.quadOffset + spIdx * _quadsPerSplinter;
+          for (let qi = quadIdx; qi < quadIdx + _quadsPerSplinter; qi++) {
+            V3.copy(woodObj.mesh.colors[qi], color);
+            meshTracker().trackQuadDataChange(qi);
+          }
+          const triIdx =
+            woodObj.state.splinterState.triOffset + spIdx * _trisPerSplinter;
+          for (let ti = triIdx; ti < triIdx + _trisPerSplinter; ti++) {
+            V3.copy(woodObj.mesh.colors[woodObj.mesh.quad.length + ti], color);
+            meshTracker().trackTriDataChange(ti);
+          }
         }
       }
 
@@ -482,11 +508,8 @@ export async function initShipyardGame() {
             hoverSegments(color, ...toPaintSegIdxs);
 
             if (doPaint) {
-              for (let [gIdx, bIdx, sIdx] of toPaintSegIdxs)
-                woodColorSegment(
-                  woodObj.state.groups[gIdx].boards[bIdx].segments[sIdx],
-                  color
-                );
+              for (let segIdx of toPaintSegIdxs)
+                woodColorSegment(segIdx, color);
             }
           } else if (shipyardGameState.mode === ShipyardClickMode.Cannon) {
             // cannon mode
