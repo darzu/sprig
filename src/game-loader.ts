@@ -1,6 +1,6 @@
 import { assert } from "./utils/util-no-import.js";
 
-interface GameReg {
+export interface GameReg {
   name: string;
   init: () => Promise<void>;
 }
@@ -17,6 +17,7 @@ function createGameLoader() {
   }
   function registerGame(reg: GameReg) {
     gameRegistry[reg.name] = reg;
+    return reg;
   }
   function startGame(name: string) {
     const reg = gameRegistry[name];

@@ -39,7 +39,7 @@ import { initBlocksGame } from "./blocks/game-blocks.js";
 
 // dbgLogMilestone("start of main.ts");
 
-const defaultGames: Record<string, () => Promise<void>> = {
+const _gameRegs = {
   gjk: initGJKSandbox,
   rebound: initReboundSandbox,
   shipyard: initShipyardGame,
@@ -63,13 +63,30 @@ const defaultGames: Record<string, () => Promise<void>> = {
   "multi-scene": initMultiSceneGame,
 };
 
-Object.entries(defaultGames).forEach(([name, init]) =>
-  GAME_LOADER.registerGame({ name, init })
-);
+const gameRegs = objMap(_gameRegs, (init, name) => {
+  return GAME_LOADER.registerGame({ name, init });
+});
+
+export const showcaseGameRegs = [
+  gameRegs.shipyard,
+  gameRegs.painterly,
+  gameRegs.particles,
+  gameRegs.grass,
+  gameRegs.hyperspace,
+  gameRegs.ld55,
+  gameRegs.font,
+  gameRegs.gallery,
+  gameRegs.modeling,
+  gameRegs.ld53,
+  gameRegs.ld54,
+  gameRegs.mp,
+  gameRegs["graybox-sunless"],
+  gameRegs["graybox-ship-arena"],
+];
 
 // TODO(@darzu): current game should probably be saved in local storage, not hard-coded. (Default can be hard-coded)
 // prettier-ignore
-const DEFAULT_GAME: keyof typeof defaultGames = (
+const DEFAULT_GAME: keyof typeof _gameRegs = (
   // "painterly"
   // "graybox-ship-arena"
   // "ld53"

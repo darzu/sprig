@@ -566,3 +566,43 @@ Profiling on Steam deck:
   https://gpuopen.com/gdc-presentations/2023/GDC-2023-Optimizing-Game-Performance-with-the-Radeon-Developer-Tool-Suite.pdf
   asking about best graphics card:
     https://mastodon.gamedev.place/@sprig/112129224383467742
+
+See what's up with glmatrix, maybe take some new ideas:
+  https://github.com/toji/gl-matrix/issues/453#issuecomment-2166979058
+
+  export class Vec3 extends Float32Array {
+    constructor(...values) {
+      switch(values.length) {
+        case 3: super(values); break;
+        case 2:
+        case 1: super(values[0], value[1] ?? 0, 3); break;
+        default: super(3); break;
+      }
+    }
+    
+    add(b) {
+      this[0] += b[0];
+      this[1] += b[1];
+      this[2] += b[2];
+      return this;
+    }
+
+    get x() { return this[0]; }
+    set x(value) { this[0] = value; }
+
+    get y() { return this[1]; }
+    set y(value) { this[1] = value; }
+
+    get z() { return this[2]; }
+    set z(value) { this[2] = value; }
+
+    get xxx() { return new Vec3(this[0], this[0], this[0]); } // use temps
+    get xxy() { return new Vec3(this[0], this[0], this[1]); }
+    get xxz() { return new Vec3(this[0], this[0], this[2]); }
+    get xyx() { return new Vec3(this[0], this[1], this[0]); }
+    get xyy() { return new Vec3(this[0], this[1], this[1]); }
+    // etc...
+    get zzx() { return new Vec3(this[2], this[2], this[0]); }
+    get zzy() { return new Vec3(this[2], this[2], this[1]); }
+    get zzz() { return new Vec3(this[2], this[2], this[2]); }
+  }

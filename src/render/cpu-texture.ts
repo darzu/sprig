@@ -44,6 +44,9 @@ export function createTextureReader<A extends 1 | 2 | 3 | 4>(
   if (format === "rgba32float") {
     stride = 4;
     tData = new Float32Array(data);
+  } else if (format === "r16float") {
+    stride = 1;
+    tData = new Float32Array(data);
   } else if (format === "r8unorm") {
     stride = 1;
     tData = new Uint8Array(data);

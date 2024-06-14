@@ -1,5 +1,6 @@
 import { EM } from "./ecs/ecs.js";
 import { GAME_LOADER } from "./game-loader.js";
+import { showcaseGameRegs } from "./main.js";
 import { assert } from "./utils/util-no-import.js";
 import { WebNavDef } from "./web/webnav.js";
 
@@ -33,7 +34,8 @@ export async function main_sceneSelector() {
   };
 
   linksTree.textContent = ""; // clear all children: https://developer.mozilla.org/en-US/docs/Web/API/Node/textContent
-  for (let name of GAME_LOADER.getAvailableGameNames()) {
-    linksTree.appendChild(createGameLink(name));
+  // for (let name of GAME_LOADER.getAvailableGameNames()) {
+  for (let reg of showcaseGameRegs) {
+    linksTree.appendChild(createGameLink(reg.name));
   }
 }
