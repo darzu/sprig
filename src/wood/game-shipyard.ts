@@ -328,26 +328,6 @@ export async function initShipyardGame() {
 
   // let _maxSketchAABB = 0;
 
-  // actions
-  EM.addSystem(
-    "shipyardActions",
-    Phase.GAME_WORLD,
-    null,
-    [InputsDef],
-    async (_, res) => {
-      if (res.inputs.keyClicks["r"]) {
-        resetWoodHealth(woodEnt.woodHealth);
-        resetWoodState(woodEnt.woodState);
-        woodRenderable.meshHandle.pool.updateMeshQuadInds(
-          woodRenderable.meshHandle,
-          woodEnt.woodState.mesh as Mesh,
-          0,
-          woodEnt.woodState.mesh.quad.length
-        );
-      }
-    }
-  );
-
   // TODO(@darzu): This is all pretty hacky. I guess I want some sort of arena for hover sketches that is cleared.
   let _hoverTmpOBB = OBB.mk();
   let _lastHoverByBoardSegIdx = new Map<number, boolean>();
