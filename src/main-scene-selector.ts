@@ -10,11 +10,9 @@ export async function main_sceneSelector() {
     window.location.reload(); // TODO(@darzu): would be great to not reload
   };
 
-  (async () => {
-    const { webNav } = await EM.whenResources(WebNavDef);
-    const gameName = webNav.getHash();
-    GAME_LOADER.startGame(gameName);
-  })();
+  const { webNav } = await EM.whenResources(WebNavDef);
+  const gameKey = webNav.getHash();
+  GAME_LOADER.startGame(gameKey);
 
   const linksTreeId = "linksTree";
   const linksTree = document.getElementById(
@@ -30,6 +28,9 @@ export async function main_sceneSelector() {
     aEl.onclick = () => {
       window.location.assign(destUrl);
     };
+    if (gameKey === reg.key) {
+      aEl.classList.add("active");
+    }
     return aEl;
   };
 

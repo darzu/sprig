@@ -30,6 +30,17 @@
       --white: #ffffff;
       --lightBlue: #2ce8f4;
       --blue: #0484d1;
+
+      --switch-size: 24px;
+      --switch-inner-padding: 2px;
+      --switch-knob-size: calc(var(--switch-size) - var(--switch-inner-padding)*2);
+      --switch-knob-travel: calc(var(--switch-knob-size) - 4px);
+      --switch-width: calc(var(--switch-knob-size) + var(--switch-knob-travel) + var(--switch-inner-padding)*2);
+      --switch-transition: 0.2s;
+      --switch-background-clr: oklch(from var(--background-clr) calc(l + 0.2) c h);
+
+      /* --darkerGreen: oklch(from var(--darkGreen) calc(l + 0.1) c h); */
+      --darkBlue: oklch(from var(--blue) calc(l - 0.1) calc(c - 0.01) h);
     }
 
     body {
@@ -51,24 +62,46 @@
       color: var(--text-clr);
     }
 
+    h1,
+    h2,
+    h3,
+    #leftBar h1,
+    #leftBar h2,
+    #leftBar h3 {
+      margin: 0px;
+      padding: 0px;
+    }
+
     h1 {
-      margin: 20px 0;
-      font-size: 24px;
+      font-size: 36px;
     }
 
-    h1:first-child {
-      margin-top: 10px;
+    #leftBar h2 {
+      font-size: 20px;
     }
 
-    h2 {
-      margin: 20px 0 10px 0;
-      font-size: 18px;
+    #leftBar h1 {
+      margin: 20px 10px;
+    }
+
+    #leftBar h2 {
+      margin: 30px 10px 5px;
+    }
+
+    #leftBar h1+*,
+    #leftBar h2+*,
+    #leftBar h3+* {
+      margin-top: 0px;
     }
 
     #leftBar {
       grid-column: 1;
       display: flex;
       flex-direction: column;
+      /* margin: 10px; */
+    }
+
+    #leftBar>* {
       margin: 10px;
     }
 
@@ -77,18 +110,44 @@
       display: flex;
       flex-direction: column;
 
+      margin: 0px;
+
       /* overflow: auto; */
     }
 
     #linksTree a {
-      /* margin: 10px; */
-      /* margin-top: 0px; */
-      margin-top: 10px;
+      padding: 5px 10px;
+      transition: 0.2s;
+      transform-origin: 10px 50%;
+    }
+
+    a {
+      transition: 0.2s;
+      transform-origin: 10px 50%;
+    }
+
+    a:hover {
+      transform: scale(1.2);
+    }
+
+
+    a.active:hover {
+      transform: unset;
+    }
+
+    #linksTree a.active {
+      /* background-color: var(--darkGreen); */
+      background-color: var(--darkBlue);
+      /* border-color: var(--darkGray);
+      border-width: 2px 0px 2px 0px;
+      border-style: solid; */
+      /* box-shadow: rgb(10, 10, 10) 0px 0px 4px 0px */
+      /* box-shadow: var(--darkBlue) 0px 0px 4px 0px; */
+      /* linear-gradient(to right, var(--darkBlue), var(--game-background-clr)) */
     }
 
     #linksTree a:first-child {
-      /* margin-top: 10px; */
-      margin-top: 0px;
+      /* margin-top: 0px; */
     }
 
     .canvasHolder {
@@ -132,6 +191,9 @@
 
     .infoPanel h2 {
       margin-top: 0px;
+      margin-bottom: 10px;
+
+      font-size: 18px;
     }
 
     .infoPanel {
@@ -144,6 +206,10 @@
 
       /* TODO(@darzu): use gap everywhere */
       gap: 10px;
+    }
+
+    .infoPanel>* {
+      flex-shrink: 0;
     }
 
     .infoPanel:first-child,
@@ -165,13 +231,6 @@
       display: flex;
       flex-direction: column;
       justify-content: center;
-
-      --switch-size: 24px;
-      --switch-inner-padding: 2px;
-      --switch-knob-size: calc(var(--switch-size) - var(--switch-inner-padding)*2);
-      --switch-knob-travel: calc(var(--switch-knob-size) - 4px);
-      --switch-width: calc(var(--switch-knob-size) + var(--switch-knob-travel) + var(--switch-inner-padding)*2);
-      --switch-transition: 0.2s;
 
       height: var(--switch-size);
 
@@ -200,7 +259,6 @@
       left: 0;
       right: 0;
       bottom: 0;
-      --switch-background-clr: oklch(from var(--background-clr) calc(l + 0.2) c h);
       background-color: var(--switch-background-clr);
       transition: var(--switch-transition);
 
@@ -246,8 +304,9 @@
       border: 0;
       border-radius: 0;
 
-      width: 24px;
-      height: 24px;
+      --size: 21px;
+      width: var(--size);
+      height: var(--size);
 
       border-radius: 4px;
 
