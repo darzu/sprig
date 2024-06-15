@@ -5,8 +5,8 @@ import { objMap } from "../utils/util.js";
 
 // TABLES, CONSTS and TYPE-LEVEL HELPERS
 
-const WGSLScalars = ["bool", "i32", "u32", "f32", "f16"] as const;
-type WGSLScalar = (typeof WGSLScalars)[number];
+export const WGSLScalars = ["bool", "i32", "u32", "f32", "f16"] as const;
+export type WGSLScalar = (typeof WGSLScalars)[number];
 type WGSLVec = {
   [S in WGSLScalar]: `vec2<${S}>` | `vec3<${S}>` | `vec4<${S}>`;
 }[WGSLScalar];
@@ -22,7 +22,7 @@ const WGSLMats = [
   "mat4x4<f32>",
 ] as const;
 type WGSLMat = (typeof WGSLMats)[number];
-type WGSLType = WGSLScalar | WGSLVec | WGSLMat;
+export type WGSLType = WGSLScalar | WGSLVec | WGSLMat;
 
 type WGSLTypeToTSType = {
   f32: number;
@@ -182,7 +182,7 @@ const wgslTypeToAlign = objMap(wgslTypeToSize, alignUp) as Partial<
 
 export type CyStructDesc = Record<string, WGSLType>;
 
-export type CyToTS<O extends CyStructDesc> = {
+export type CyToTS<O extends Record<string, WGSLType>> = {
   [N in keyof O]: O[N] extends keyof WGSLTypeToTSType
     ? WGSLTypeToTSType[O[N]]
     : never;

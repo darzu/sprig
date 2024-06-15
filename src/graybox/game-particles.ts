@@ -171,6 +171,7 @@ export async function initGameParticles() {
         );
 
         // spray
+        // TODO(@darzu): IMPL! This pulse emitter doesn't work yet
         pedestal.emitter.pulseNum.push(100);
       }
     }

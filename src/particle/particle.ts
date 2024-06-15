@@ -7,12 +7,11 @@ import {
   CY,
   CyArrayPtr,
   CyCompPipelinePtr,
-  CyPipelinePtr,
   CyRenderPipelinePtr,
+  CySingletonPtr,
 } from "../render/gpu-registry.js";
 import {
   ParticleStruct,
-  particleData,
   particleQuadInds,
   particleQuadVert,
 } from "../render/pipelines/std-particle.js";
@@ -23,7 +22,7 @@ import {
 } from "../render/pipelines/std-scene.js";
 import { RendererDef } from "../render/renderer-ecs.js";
 import { TimeDef } from "../time/time.js";
-import { assert } from "../utils/util-no-import.js";
+import { CyStructDesc, CyToTS, createCyStruct } from "../render/gpu-struct.js";
 
 /*
 Goals:
@@ -52,11 +51,13 @@ Buffer(s):
 After init shader, we transform by mat4 (size, pos, vel, acl, sizeVel)
 */
 
-interface ParticleSystemDesc {
+interface ParticleSystemDesc<U extends CyStructDesc = CyStructDesc> {
   name: string;
   maxParticles: number;
   maxLifeMs: number;
   initParticle: string;
+  initParameters?: U;
+  initParameterDefaults?: CyToTS<U>;
   // TODO(@darzu): support custom update?
   // updateShader: `
   // `,
@@ -80,7 +81,9 @@ interface ParticleSystem {
 //   stop: () => void;
 // }
 
-function createParticleSystem(desc: ParticleSystemDesc): ParticleSystem {
+function createParticleSystem<U extends CyStructDesc = CyStructDesc>(
+  desc: ParticleSystemDesc<U>
+): ParticleSystem {
   // const maxNumParticles = desc.maxEmitters * desc.particlesPerEmitter;
   const maxParticles = desc.maxParticles;
 
@@ -119,17 +122,38 @@ function createParticleSystem(desc: ParticleSystemDesc): ParticleSystem {
     drawIndexedIndirectParameters[4] = firstInstance;
 
   or b/c of different data structure nad update, maybe ea one is a different pipeline?
-
-
-
   */
 
+  let uniBufPtr: CySingletonPtr<U> | undefined = undefined;
+
+  if (desc.initParameters) {
+    const uniStruct = createCyStruct(desc.initParameters, {
+      isUniform: true,
+    });
+    uniBufPtr = CY.createSingleton(`pipeInitParticles_${desc.name}_uni`, {
+      struct: uniStruct,
+      init: desc.initParameterDefaults
+        ? () => desc.initParameterDefaults!
+        : undefined,
+    });
+  }
+
   const pipeInit = CY.createComputePipeline(`pipeInitParticles_${desc.name}`, {
-    globals: [dataPtr],
+    globals: [
+      dataPtr,
+      ...(uniBufPtr
+        ? [
+            {
+              ptr: uniBufPtr,
+              alias: "param",
+            },
+          ]
+        : []),
+    ],
     shaderComputeEntry: "main",
     shader: (shaders) => `
     ${shaders["std-rand"].code}
-  
+
     @compute @workgroup_size(${threadCount})
     fn main(@builtin(global_invocation_id) gId : vec3<u32>) {
       rand_seed = vec2<f32>(f32(gId.x));
@@ -185,6 +209,7 @@ function createParticleSystem(desc: ParticleSystemDesc): ParticleSystem {
     }
   );
 
+  // TODO(@darzu): PERF: probably multiple particles per thread is better
   const pipeUpdate = CY.createComputePipeline(
     `pipeParticleUpdate_${desc.name}`,
     {
@@ -285,17 +310,28 @@ export const cloudBurstSys = createParticleSystem({
   initParticle: `
   let color = vec4(rand(), rand(), rand(), rand());
   particle.color = color;
-  // particle.colorVel = vec4(1, -1, -1, 0.0) * 0.0005;
   particle.colorVel = vec4(0.0);
 
   particle.pos = vec3(rand(), rand(), rand()) * 10.0;
-  particle.size = rand() * 0.9 + 0.1;
+  particle.size = mix(param.minSize, param.maxSize, rand());
 
   particle.vel = (color.xyz - 0.5) * 0.1;
   particle.acl = (vec3(rand(), rand(), rand()) - 0.5) * 0.0001;
-  particle.sizeVel = 0.001 * (rand() - 0.5);
+  particle.sizeVel = mix(param.minSizeVel, param.maxSizeVel,  rand());
   particle.life = rand() * 10000 + 1000;
   `,
+  initParameters: {
+    minSize: "f32",
+    maxSize: "f32",
+    minSizeVel: "f32",
+    maxSizeVel: "f32",
+  },
+  initParameterDefaults: {
+    minSize: 0.1,
+    maxSize: 1.0,
+    minSizeVel: -0.0005,
+    maxSizeVel: +0.0005,
+  },
 });
 
 export const fireTrailSys = createParticleSystem({
