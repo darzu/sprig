@@ -46,10 +46,15 @@ import { SketchTrailDef, sketch } from "../utils/sketch.js";
 import { assert } from "../utils/util-no-import.js";
 import { randDir3 } from "../utils/utils-3d.js";
 import { addWorldGizmo } from "../utils/utils-game.js";
-import { createSun, initGhost, initStdGrid } from "./graybox-helpers.js";
+import {
+  createSun,
+  initDemoPanCamera,
+  initGhost,
+  initStdGrid,
+} from "./graybox-helpers.js";
 import { createObj } from "../ecs/em-objects.js";
 
-const DBG_GHOST = true;
+const DBG_GHOST = false;
 
 export async function initGameParticles() {
   EM.addEagerInit([], [RendererDef], [], (res) => {
@@ -81,11 +86,15 @@ export async function initGameParticles() {
 
   const { camera, me } = await EM.whenResources(CameraDef, MeDef);
 
-  // camera
+  // camera settings
+  // TODO(@darzu): is this all necessary?
   camera.fov = Math.PI * 0.5;
   camera.viewDist = 1000;
   V3.set(-200, -200, -200, camera.maxWorldAABB.min);
   V3.set(+200, +200, +200, camera.maxWorldAABB.max);
+
+  // pan camera
+  initDemoPanCamera();
 
   // sun
   createSun();
@@ -94,8 +103,8 @@ export async function initGameParticles() {
   const pedestal = EM.mk();
   EM.set(pedestal, RenderableConstructDef, HexMesh);
   EM.set(pedestal, ColorDef, ENDESGA16.darkGray);
-  EM.set(pedestal, PositionDef, V(0, 0, -10));
-  EM.set(pedestal, ScaleDef, V(10, 10, 10));
+  EM.set(pedestal, PositionDef, V(0, 0, -3));
+  EM.set(pedestal, ScaleDef, V(10, 10, 2));
   EM.set(pedestal, ColliderDef, {
     shape: "AABB",
     solid: true,

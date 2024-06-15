@@ -46,7 +46,11 @@ import { startPirates } from "./pirate.js";
 import { ParametricDef } from "../motion/parametric-motion.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
-import { createSun, initStdGrid } from "../graybox/graybox-helpers.js";
+import {
+  createSun,
+  initDemoPanCamera,
+  initStdGrid,
+} from "../graybox/graybox-helpers.js";
 import { PId4, PId8, assert, mkLazy } from "../utils/util-no-import.js";
 import { stdGridRender } from "../render/pipelines/std-grid.js";
 import { pointPipe, linePipe } from "../render/pipelines/std-line.js";
@@ -79,46 +83,6 @@ const DBG_COLLIDERS = false;
 const DBG_TRANSPARENT_BOAT = false;
 
 const DISABLE_PRIATES = true;
-
-async function initDemoPanCamera() {
-  const g = EM.mk();
-  EM.set(g, CameraFollowDef, 1);
-  V3.set(0, -50, 0, g.cameraFollow.positionOffset);
-  g.cameraFollow.yawOffset = -2.088;
-  g.cameraFollow.pitchOffset = -0.553;
-
-  // TODO(@darzu): wish we didn't need these
-  EM.set(g, PositionDef);
-  EM.set(g, RotationDef);
-  EM.set(g, RenderableConstructDef, CubeMesh, false);
-
-  const turnSpeed = 0.0003;
-  const zoomSpeed = 0.1;
-
-  const { htmlCanvas } = await EM.whenResources(CanvasDef);
-  htmlCanvas.shouldLockMouseOnClick = false;
-  htmlCanvas.unlockMouse();
-
-  EM.addSystem(
-    "demoPanCamera",
-    Phase.GAME_PLAYERS,
-    null,
-    [InputsDef, CanvasDef, TimeDef],
-    (_, { inputs, htmlCanvas, time }) => {
-      if (inputs.ldown) {
-        g.cameraFollow.yawOffset += inputs.mouseMov[0] * turnSpeed * time.dt;
-        g.cameraFollow.pitchOffset += -inputs.mouseMov[1] * turnSpeed * time.dt;
-      }
-      g.cameraFollow.positionOffset[1] +=
-        -inputs.mouseWheel * zoomSpeed * time.dt;
-      g.cameraFollow.positionOffset[1] = clamp(
-        g.cameraFollow.positionOffset[1],
-        -200,
-        -5
-      );
-    }
-  );
-}
 
 enum ShipyardClickMode {
   None,

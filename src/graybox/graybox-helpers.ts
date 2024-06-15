@@ -38,6 +38,9 @@ import { createObj } from "../ecs/em-objects.js";
 import { GAME_LOADER } from "../game-loader.js";
 import { stdGridRender } from "../render/pipelines/std-grid.js";
 import { GRID_MASK } from "../render/pipeline-masks.js";
+import { InputsDef } from "../input/inputs.js";
+import { CanvasDef } from "../render/canvas.js";
+import { clamp } from "../utils/math.js";
 
 export function createSun(pos?: V3.InputT) {
   const sun = createObj(
@@ -138,6 +141,46 @@ export function initStdGrid() {
       // color: [0, 0.5, 0.5],
       color: [0.5, 0.5, 0.5],
       // color: [1, 1, 1],
+    }
+  );
+}
+
+export async function initDemoPanCamera() {
+  const g = EM.mk();
+  EM.set(g, CameraFollowDef, 1);
+  V3.set(0, -50, 0, g.cameraFollow.positionOffset);
+  g.cameraFollow.yawOffset = -2.088;
+  g.cameraFollow.pitchOffset = -0.553;
+
+  // TODO(@darzu): wish we didn't need these
+  EM.set(g, PositionDef);
+  EM.set(g, RotationDef);
+  EM.set(g, RenderableConstructDef, CubeMesh, false);
+
+  const turnSpeed = 0.0003;
+  const zoomSpeed = 0.1;
+
+  const { htmlCanvas } = await EM.whenResources(CanvasDef);
+  htmlCanvas.shouldLockMouseOnClick = false;
+  htmlCanvas.unlockMouse();
+
+  EM.addSystem(
+    "demoPanCamera",
+    Phase.GAME_PLAYERS,
+    null,
+    [InputsDef, CanvasDef, TimeDef],
+    (_, { inputs, htmlCanvas, time }) => {
+      if (inputs.ldown) {
+        g.cameraFollow.yawOffset += inputs.mouseMov[0] * turnSpeed * time.dt;
+        g.cameraFollow.pitchOffset += -inputs.mouseMov[1] * turnSpeed * time.dt;
+      }
+      g.cameraFollow.positionOffset[1] +=
+        -inputs.mouseWheel * zoomSpeed * time.dt;
+      g.cameraFollow.positionOffset[1] = clamp(
+        g.cameraFollow.positionOffset[1],
+        -200,
+        -5
+      );
     }
   );
 }
