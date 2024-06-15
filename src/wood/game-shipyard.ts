@@ -571,6 +571,17 @@ export async function initShipyardGame() {
 }
 
 async function initShipyardHtml() {
+  const infoPanelsHolderEl = document.getElementById(
+    "infoPanelsHolder"
+  ) as HTMLInputElement | null;
+
+  if (!infoPanelsHolderEl) {
+    console.warn("no infoPanelsHolder detected");
+    return;
+  }
+
+  infoPanelsHolderEl.innerHTML = GameShipyard_InfoPanelsHtml; // wow this returns instantly?
+
   // TODO(@darzu):
   // paintColorPicker
   const paintModeEl = document.getElementById(
@@ -655,3 +666,52 @@ async function initShipyardHtml() {
     };
   }
 }
+
+export const GameShipyard_InfoPanelsHtml = `
+<div class="infoPanel">
+  <h2>Shipyard</h2>
+  The ship is defined with paths and constraints.
+  These then procedurally generate a mesh and metadata (e.g. colliders), which support runtime modification.
+</div>
+<div class="infoPanel">
+  <h2>Controls</h2>
+  <ul>
+    <li>Drag to pan</li>
+    <li>Scroll to zoom</li>
+    <li>Refresh to reset</li>
+    <li>Click to: <span id="clickModeString"></span></li>
+  </ul>
+</div>
+<div class="infoPanel paintingPanel">
+  <h2>Painting</h2>
+  <label class="switch">
+    <input type="checkbox" name="paintMode" id="paintMode">
+    Painting Mode
+  </label>
+  <div id="paintColorPicker">
+    <input type="radio" name="paintColor" class="lightBrown disabled" />
+    <input type="radio" name="paintColor" class="midBrown disabled" />
+    <input type="radio" name="paintColor" class="darkBrown disabled" />
+    <input type="radio" name="paintColor" class="deepBrown disabled" />
+    <input type="radio" name="paintColor" class="darkRed disabled" />
+    <input type="radio" name="paintColor" class="red disabled" />
+    <input type="radio" name="paintColor" class="orange disabled" />
+    <input type="radio" name="paintColor" class="yellow disabled" />
+    <input type="radio" name="paintColor" class="lightGreen disabled" />
+    <input type="radio" name="paintColor" class="darkGreen disabled" />
+    <input type="radio" name="paintColor" class="deepGreen disabled" />
+    <input type="radio" name="paintColor" class="darkGray disabled" />
+    <input type="radio" name="paintColor" class="lightGray disabled" />
+    <input type="radio" name="paintColor" class="white disabled" />
+    <input type="radio" name="paintColor" class="lightBlue disabled" />
+    <input type="radio" name="paintColor" class="blue disabled" checked />
+  </div>
+</div>
+<div class="infoPanel">
+  <h2>Destruction</h2>
+  <label class="switch">
+    <input type="checkbox" name="cannonMode" id="cannonMode">
+    Cannon Mode
+  </label>
+</div>
+`;

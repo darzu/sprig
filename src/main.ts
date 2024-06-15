@@ -72,8 +72,8 @@ const gameRegs = objMap(_gameRegs, ({ init, displayName }, name) => {
 
 export const showcaseGameRegs = [
   gameRegs.shipyard,
-  gameRegs.painterly,
   gameRegs.particles,
+  gameRegs.painterly,
   gameRegs.grass,
   gameRegs.hyperspace,
   gameRegs.ld55,
