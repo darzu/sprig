@@ -16,6 +16,7 @@ import { MeDef } from "../net/components.js";
 import {
   EmitterDef,
   ParticleDef,
+  ParticleSystem,
   cloudBurstSys,
   fireTrailSys,
 } from "../particle/particle.js";
@@ -45,7 +46,7 @@ import { TimeDef } from "../time/time.js";
 import { SketchTrailDef, sketch } from "../utils/sketch.js";
 import { assert } from "../utils/util-no-import.js";
 import { randDir3 } from "../utils/utils-3d.js";
-import { addWorldGizmo } from "../utils/utils-game.js";
+import { addWorldGizmo, randColor } from "../utils/utils-game.js";
 import {
   createSun,
   initDemoPanCamera,
@@ -120,7 +121,7 @@ export async function initGameParticles() {
   }
 
   // particle test
-  EM.set(pedestal, EmitterDef, { system: cloudBurstSys });
+  EM.set(pedestal, EmitterDef, { system: cloudBurstSys as ParticleSystem });
 
   EM.addSystem(
     "repeatSpawn",
@@ -129,6 +130,25 @@ export async function initGameParticles() {
     [TimeDef, RendererDef],
     (_, res) => {
       if (res.time.step % (60 * 3) === 0) {
+        const color = randColor();
+        cloudBurstSys.submitParametersUpdate!(res.renderer.renderer, {
+          minColor: V(color[0], color[1], color[2], 0),
+          maxColor: V(color[0], color[1], color[2], 1),
+          minColorVel: V(0, 0, 0, 0),
+          maxColorVel: V(-0.1, -0.1, +0.1, 0),
+          minPos: V(-10, -10, -10),
+          maxPos: V(+10, +10, +10),
+          minVel: V(-0.5, -0.5, -0.5),
+          maxVel: V(+0.5, +0.5, +0.5),
+          minAcl: V(-0.5, -0.5, -0.5),
+          maxAcl: V(+0.5, +0.5, +0.5),
+          minSize: 0.1,
+          maxSize: 1.0,
+          minSizeVel: -0.5,
+          maxSizeVel: +0.5,
+          minLife: 1,
+          maxLife: 10,
+        });
         res.renderer.renderer.submitPipelines([], [cloudBurstSys.pipeInit]);
       }
     }

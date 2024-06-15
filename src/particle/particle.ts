@@ -20,9 +20,10 @@ import {
   mainDepthTex,
   sceneBufPtr,
 } from "../render/pipelines/std-scene.js";
-import { RendererDef } from "../render/renderer-ecs.js";
+import { Renderer, RendererDef } from "../render/renderer-ecs.js";
 import { TimeDef } from "../time/time.js";
 import { CyStructDesc, CyToTS, createCyStruct } from "../render/gpu-struct.js";
+import { V } from "../matrix/sprig-matrix.js";
 
 /*
 Goals:
@@ -51,7 +52,7 @@ Buffer(s):
 After init shader, we transform by mat4 (size, pos, vel, acl, sizeVel)
 */
 
-interface ParticleSystemDesc<U extends CyStructDesc = CyStructDesc> {
+export interface ParticleSystemDesc<U extends CyStructDesc = CyStructDesc> {
   name: string;
   maxParticles: number;
   maxLifeMs: number;
@@ -63,13 +64,15 @@ interface ParticleSystemDesc<U extends CyStructDesc = CyStructDesc> {
   // `,
 }
 
-interface ParticleSystem {
+export interface ParticleSystem<U extends CyStructDesc = CyStructDesc> {
   // TODO(@darzu): IMPL ?
-  desc: ParticleSystemDesc;
+  desc: ParticleSystemDesc<U>;
 
   pipeInit: CyCompPipelinePtr;
   pipeRender: CyRenderPipelinePtr;
   pipeUpdate: CyCompPipelinePtr;
+
+  submitParametersUpdate?: (renderer: Renderer, params: CyToTS<U>) => void;
 
   _data: CyArrayPtr<typeof ParticleStruct.desc>;
 }
@@ -81,9 +84,9 @@ interface ParticleSystem {
 //   stop: () => void;
 // }
 
-function createParticleSystem<U extends CyStructDesc = CyStructDesc>(
+function createParticleSystem<U extends CyStructDesc = {}>(
   desc: ParticleSystemDesc<U>
-): ParticleSystem {
+): ParticleSystem<U> {
   // const maxNumParticles = desc.maxEmitters * desc.particlesPerEmitter;
   const maxParticles = desc.maxParticles;
 
@@ -125,6 +128,9 @@ function createParticleSystem<U extends CyStructDesc = CyStructDesc>(
   */
 
   let uniBufPtr: CySingletonPtr<U> | undefined = undefined;
+  let submitParametersUpdate:
+    | ((r: Renderer, p: CyToTS<U>) => void)
+    | undefined = undefined;
 
   if (desc.initParameters) {
     const uniStruct = createCyStruct(desc.initParameters, {
@@ -136,10 +142,15 @@ function createParticleSystem<U extends CyStructDesc = CyStructDesc>(
         ? () => desc.initParameterDefaults!
         : undefined,
     });
+    submitParametersUpdate = (r: Renderer, p: CyToTS<U>) => {
+      const uniBuf = r.getCyResource(uniBufPtr!)!;
+      uniBuf.queueUpdate(p);
+    };
   }
 
   const pipeInit = CY.createComputePipeline(`pipeInitParticles_${desc.name}`, {
     globals: [
+      sceneBufPtr,
       dataPtr,
       ...(uniBufPtr
         ? [
@@ -151,12 +162,13 @@ function createParticleSystem<U extends CyStructDesc = CyStructDesc>(
         : []),
     ],
     shaderComputeEntry: "main",
+    // TODO(@darzu): BUG. setting the rand seed from the time isn't quite working right
     shader: (shaders) => `
     ${shaders["std-rand"].code}
 
     @compute @workgroup_size(${threadCount})
     fn main(@builtin(global_invocation_id) gId : vec3<u32>) {
-      rand_seed = vec2<f32>(f32(gId.x));
+      rand_seed = vec2<f32>(f32(gId.x), fract(scene.time * 0.01));
 
       var particle = ${bufName}s.ms[gId.x];
       ${desc.initParticle}
@@ -223,7 +235,14 @@ function createParticleSystem<U extends CyStructDesc = CyStructDesc>(
     }
   );
 
-  return { desc, pipeInit, pipeRender, pipeUpdate, _data: dataPtr };
+  return {
+    desc,
+    pipeInit,
+    pipeRender,
+    pipeUpdate,
+    _data: dataPtr,
+    submitParametersUpdate,
+  };
 }
 
 export const ParticleDef = defineResourceWithInit(
@@ -308,29 +327,51 @@ export const cloudBurstSys = createParticleSystem({
   maxParticles: 1_000,
   maxLifeMs: 10_000 + 1_000,
   initParticle: `
-  let color = vec4(rand(), rand(), rand(), rand());
+  let color = mix(param.minColor, param.maxColor, vec4(rand(), rand(), rand(), rand()));
   particle.color = color;
-  particle.colorVel = vec4(0.0);
-
-  particle.pos = vec3(rand(), rand(), rand()) * 10.0;
+  particle.colorVel = mix(param.minColorVel, param.maxColorVel, vec4(rand(), rand(), rand(), rand())) * 0.001;
+  particle.pos = mix(param.minPos, param.maxPos, vec3(rand(), rand(), rand()));
   particle.size = mix(param.minSize, param.maxSize, rand());
-
-  particle.vel = (color.xyz - 0.5) * 0.1;
-  particle.acl = (vec3(rand(), rand(), rand()) - 0.5) * 0.0001;
-  particle.sizeVel = mix(param.minSizeVel, param.maxSizeVel,  rand());
-  particle.life = rand() * 10000 + 1000;
+  particle.vel = mix(param.minVel, param.maxVel, vec3(rand(), rand(), rand())) * 0.1;
+  particle.acl = mix(param.minAcl, param.maxAcl, vec3(rand(), rand(), rand())) * 0.0001;
+  particle.sizeVel = mix(param.minSizeVel, param.maxSizeVel,  rand()) * 0.001;
+  particle.life = mix(param.minLife, param.maxLife, rand()) * 1000;
   `,
   initParameters: {
+    minColor: "vec4<f32>",
+    maxColor: "vec4<f32>",
+    minColorVel: "vec4<f32>",
+    maxColorVel: "vec4<f32>",
+    minPos: "vec3<f32>",
+    maxPos: "vec3<f32>",
+    minVel: "vec3<f32>",
+    maxVel: "vec3<f32>",
+    minAcl: "vec3<f32>",
+    maxAcl: "vec3<f32>",
     minSize: "f32",
     maxSize: "f32",
     minSizeVel: "f32",
     maxSizeVel: "f32",
+    minLife: "f32",
+    maxLife: "f32",
   },
   initParameterDefaults: {
+    minColor: V(0, 0, 0, 0),
+    maxColor: V(1, 1, 1, 1),
+    minColorVel: V(0, 0, 0, 0),
+    maxColorVel: V(-0.1, -0.1, +0.1, 0),
+    minPos: V(-10, -10, -10),
+    maxPos: V(+10, +10, +10),
+    minVel: V(-0.5, -0.5, -0.5),
+    maxVel: V(+0.5, +0.5, +0.5),
+    minAcl: V(-0.5, -0.5, -0.5),
+    maxAcl: V(+0.5, +0.5, +0.5),
     minSize: 0.1,
     maxSize: 1.0,
-    minSizeVel: -0.0005,
-    maxSizeVel: +0.0005,
+    minSizeVel: -0.5,
+    maxSizeVel: +0.5,
+    minLife: 1,
+    maxLife: 10,
   },
 });
 
