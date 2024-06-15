@@ -46,19 +46,12 @@ import { SketchTrailDef, sketch } from "../utils/sketch.js";
 import { assert } from "../utils/util-no-import.js";
 import { randDir3 } from "../utils/utils-3d.js";
 import { addWorldGizmo } from "../utils/utils-game.js";
-import { createSun, initGhost } from "./graybox-helpers.js";
+import { createSun, initGhost, initStdGrid } from "./graybox-helpers.js";
 import { createObj } from "../ecs/em-objects.js";
 
 const DBG_GHOST = true;
 
 export async function initGameParticles() {
-  stdGridRender.fragOverrides!.lineSpacing1 = 8.0;
-  stdGridRender.fragOverrides!.lineWidth1 = 0.05;
-  stdGridRender.fragOverrides!.lineSpacing2 = 256;
-  stdGridRender.fragOverrides!.lineWidth2 = 0.2;
-  stdGridRender.fragOverrides!.ringStart = 512;
-  stdGridRender.fragOverrides!.ringWidth = 0;
-
   EM.addEagerInit([], [RendererDef], [], (res) => {
     res.renderer.renderer.submitPipelines([], [cloudBurstSys.pipeInit]);
     // res.renderer.renderer.submitPipelines([], [fireTrailSys.pipeInit]);
@@ -83,6 +76,9 @@ export async function initGameParticles() {
     ];
   });
 
+  // grid
+  initStdGrid();
+
   const { camera, me } = await EM.whenResources(CameraDef, MeDef);
 
   // camera
@@ -93,19 +89,6 @@ export async function initGameParticles() {
 
   // sun
   createSun();
-
-  // grid
-  const grid = createObj(
-    [RenderableConstructDef, PositionDef, ScaleDef, ColorDef] as const,
-    {
-      renderableConstruct: [PlaneMesh, true, undefined, GRID_MASK],
-      position: [0, 0, 0],
-      scale: [2 * camera.viewDist, 2 * camera.viewDist, 1],
-      // color: [0, 0.5, 0.5],
-      color: [0.5, 0.5, 0.5],
-      // color: [1, 1, 1],
-    }
-  );
 
   // pedestal
   const pedestal = EM.mk();
@@ -183,4 +166,52 @@ export async function initGameParticles() {
       }
     }
   );
+
+  initParticlesHtml();
 }
+
+async function initParticlesHtml() {
+  const infoPanelsHolderEl = document.getElementById(
+    "infoPanelsHolder"
+  ) as HTMLInputElement | null;
+
+  if (!infoPanelsHolderEl) {
+    console.warn("no infoPanelsHolder detected");
+    return;
+  }
+
+  infoPanelsHolderEl.innerHTML = GameParticles_InfoPanelsHtml;
+
+  // paintColorPicker
+  const paintModeEl = document.getElementById(
+    "paintMode"
+  ) as HTMLInputElement | null;
+  assert(paintModeEl);
+
+  paintModeEl.onchange = (e) => {
+    const mode = paintModeEl!.checked;
+    console.log(`toggle: ${mode}`); // TODO(@darzu): impl
+  };
+}
+
+export const GameParticles_InfoPanelsHtml = `
+<div class="infoPanel">
+  <h2>Particles</h2>
+  TODO
+</div>
+<div class="infoPanel">
+  <h2>Controls</h2>
+  <ul>
+    <li>Drag to pan</li>
+    <li>Scroll to zoom</li>
+    <li>Refresh to reset</li>
+    <li>Click to: <span id="clickModeString"></span></li>
+  </ul>
+</div>
+<div class="infoPanel paintingPanel">
+  <h2>Painting</h2>
+  <label class="switch">
+    <input type="checkbox" name="paintMode" id="paintMode">
+    Painting Mode
+  </label>
+`;

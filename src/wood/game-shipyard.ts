@@ -46,7 +46,7 @@ import { startPirates } from "./pirate.js";
 import { ParametricDef } from "../motion/parametric-motion.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
-import { createSun } from "../graybox/graybox-helpers.js";
+import { createSun, initStdGrid } from "../graybox/graybox-helpers.js";
 import { PId4, PId8, assert, mkLazy } from "../utils/util-no-import.js";
 import { stdGridRender } from "../render/pipelines/std-grid.js";
 import { pointPipe, linePipe } from "../render/pipelines/std-line.js";
@@ -137,12 +137,8 @@ let shipyardGameState: ShipyardGameState = {
 };
 
 export async function initShipyardGame() {
-  stdGridRender.fragOverrides!.lineSpacing1 = 8.0;
-  stdGridRender.fragOverrides!.lineWidth1 = 0.05;
-  stdGridRender.fragOverrides!.lineSpacing2 = 256;
-  stdGridRender.fragOverrides!.lineWidth2 = 0.2;
-  stdGridRender.fragOverrides!.ringStart = 512;
-  stdGridRender.fragOverrides!.ringWidth = 0;
+  // grid
+  initStdGrid();
 
   const res = await EM.whenResources(
     RendererDef,
@@ -170,29 +166,10 @@ export async function initShipyardGame() {
     postProcess,
   ];
 
-  // grid
-  const grid = createObj(
-    [RenderableConstructDef, PositionDef, ScaleDef, ColorDef] as const,
-    {
-      renderableConstruct: [PlaneMesh, true, undefined, GRID_MASK],
-      position: [0, 0, 0],
-      scale: [2 * res.camera.viewDist, 2 * res.camera.viewDist, 1],
-      // color: [0, 0.5, 0.5],
-      color: [0.5, 0.5, 0.5],
-      // color: [1, 1, 1],
-    }
-  );
-
   // camera
   initDemoPanCamera();
 
   const sun = createSun([250, 10, 300]);
-
-  // const ground = EM.mk();
-  // EM.set(ground, RenderableConstructDef, HexMesh);
-  // EM.set(ground, ScaleDef, [20, 20, 2]);
-  // EM.set(ground, ColorDef, ENDESGA16.blue);
-  // EM.set(ground, PositionDef, V(0, 0, -4));
 
   // TIMBER
   const woodEnt = EM.mk();

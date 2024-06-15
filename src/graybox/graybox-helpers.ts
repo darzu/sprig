@@ -14,7 +14,7 @@ import { _ComponentDef } from "../net/components.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { quat, V3 } from "../matrix/sprig-matrix.js";
 import { V } from "../matrix/sprig-matrix.js";
-import { CubeMesh, HexMesh } from "../meshes/mesh-list.js";
+import { CubeMesh, HexMesh, PlaneMesh } from "../meshes/mesh-list.js";
 import { HEX_AABB } from "../meshes/primatives.js";
 import { MeDef } from "../net/components.js";
 import { ColliderDef } from "../physics/collider.js";
@@ -36,6 +36,8 @@ import { vec3Dbg, vec4Dbg } from "../utils/utils-3d.js";
 import { addWorldGizmo } from "../utils/utils-game.js";
 import { createObj } from "../ecs/em-objects.js";
 import { GAME_LOADER } from "../game-loader.js";
+import { stdGridRender } from "../render/pipelines/std-grid.js";
+import { GRID_MASK } from "../render/pipeline-masks.js";
 
 export function createSun(pos?: V3.InputT) {
   const sun = createObj(
@@ -113,4 +115,29 @@ export function initGhost(mesh?: MeshLike) {
   );
 
   return g;
+}
+
+export function initStdGrid() {
+  // TODO(@darzu): BUG. we shouldn't need to do these overrides in this way
+  stdGridRender.fragOverrides!.lineSpacing1 = 8.0;
+  stdGridRender.fragOverrides!.lineWidth1 = 0.05;
+  stdGridRender.fragOverrides!.lineSpacing2 = 256;
+  stdGridRender.fragOverrides!.lineWidth2 = 0.2;
+  stdGridRender.fragOverrides!.ringStart = 512;
+  stdGridRender.fragOverrides!.ringWidth = 0;
+
+  const cameraViewDist = 1000;
+
+  // grid
+  const grid = createObj(
+    [RenderableConstructDef, PositionDef, ScaleDef, ColorDef] as const,
+    {
+      renderableConstruct: [PlaneMesh, true, undefined, GRID_MASK],
+      position: [0, 0, 0],
+      scale: [2 * cameraViewDist, 2 * cameraViewDist, 1],
+      // color: [0, 0.5, 0.5],
+      color: [0.5, 0.5, 0.5],
+      // color: [1, 1, 1],
+    }
+  );
 }
