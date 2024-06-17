@@ -223,17 +223,6 @@ async function initParticlesHtml() {
   // TODO(@darzu): IMPL
   // infoPanelsHolderEl.innerHTML = GameParticles_InfoPanelsHtml;
 
-  // paintColorPicker
-  const paintModeEl = document.getElementById(
-    "paintMode"
-  ) as HTMLInputElement | null;
-  assert(paintModeEl);
-
-  paintModeEl.onchange = (e) => {
-    const mode = paintModeEl!.checked;
-    console.log(`toggle: ${mode}`); // TODO(@darzu): impl
-  };
-
   const numMinToStr = (n: number) => `${n.toFixed(1)}`;
   const numMaxToStr = (n: number) => `${n.toFixed(1)}`;
 

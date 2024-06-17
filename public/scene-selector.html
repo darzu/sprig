@@ -401,7 +401,38 @@
       display: grid;
       grid-template-columns: 50px 1fr;
       justify-items: center;
-      grid-gap: 2px 0;
+      grid-gap: 2px;
+    }
+
+    .sliderV3 {
+      grid-template-columns: 50px 1fr 1fr 1fr;
+    }
+
+    .slider input[type="range"],
+    .slider span {
+      grid-row: 1;
+      grid-column: 2;
+      align-self: center;
+    }
+
+    .slider span.col1,
+    .slider input[type="range"].col1 {
+      grid-column: 1;
+    }
+
+    .slider span.col2,
+    .slider input[type="range"].col2 {
+      grid-column: 2;
+    }
+
+    .slider span.col3,
+    .slider input[type="range"].col3 {
+      grid-column: 3;
+    }
+
+    .slider span.col4,
+    .slider input[type="range"].col4 {
+      grid-column: 4;
     }
 
     .slider label {
@@ -410,15 +441,11 @@
       grid-row: span 2;
     }
 
-    .slider input[type="range"],
-    .slider span {
-      grid-area: 1 / 2;
-      align-self: center;
-    }
 
     .slider input[type="range"].maxSlider,
     .slider span.maxVal {
-      grid-area: 2 / 2;
+      /* grid-column: 2; */
+      grid-row: 2;
       align-self: center;
     }
 
@@ -514,12 +541,7 @@
     </div>
     <div class="infoPanel paintingPanel">
       <h2>Painting</h2>
-      <label class="switch">
-        <input type="checkbox" name="paintMode" id="paintMode">
-        Painting Mode
-      </label>
 
-      <!-- <div class="sliderGrid"> -->
       <div class="slider">
         <label name="minSize">
           Size
@@ -532,18 +554,24 @@
         <span id="maxSizeVal" class="maxVal"> </span>
       </div>
 
-      <div class="slider">
+      <div class="slider sliderV3">
         <label name="minSize">
-          Life
+          Pos
         </label>
-        <input type="range" id="minSize" class="minSlider" name="minSize" min="0" max="5" step="0.1" />
-        <span id="minSizeVal" class="minVal"></span>
-        <span class="minLabel">min</span>
-        <span class="maxLabel">max</span>
-        <input type="range" id="maxSize" class="maxSlider" name="maxSize" min="0" max="5" step="0.1" />
-        <span id="maxSizeVal" class="maxVal"> </span>
+        <input type="range" id="minSize0" class="minSlider col2" name="minSize0" min="0" max="5" step="0.1" />
+        <input type="range" id="minSize1" class="minSlider col3" name="minSize1" min="0" max="5" step="0.1" />
+        <input type="range" id="minSize2" class="minSlider col4" name="minSize2" min="0" max="5" step="0.1" />
+        <span id="minSizeVal0" class="minVal col2">?</span>
+        <span id="minSizeVal1" class="minVal col3">?</span>
+        <span id="minSizeVal2" class="minVal col4">?</span>
+        <input type="range" id="maxSize0" class="maxSlider col2" name="maxSize0" min="0" max="5" step="0.1" />
+        <input type="range" id="maxSize1" class="maxSlider col3" name="maxSize1" min="0" max="5" step="0.1" />
+        <input type="range" id="maxSize2" class="maxSlider col4" name="maxSize2" min="0" max="5" step="0.1" />
+        <span id="maxSizeVal0" class="maxVal col2">?</span>
+        <span id="maxSizeVal1" class="maxVal col3">?</span>
+        <span id="maxSizeVal2" class="maxVal col4">?</span>
       </div>
-      <!-- </div> -->
+
 
 
     </div>
