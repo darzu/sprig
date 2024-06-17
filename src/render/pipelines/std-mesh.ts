@@ -205,10 +205,15 @@ function updateStdRenderData(
   let tintChange = false;
   if (!o.renderable.hidden) {
     // color / tint
-    let prevTint = V3.copy(V3.tmp(), o.renderDataStd.tint);
-    if (ColorDef.isOn(o)) V3.copy(o.renderDataStd.tint, o.color);
-    if (TintsDef.isOn(o)) applyTints(o.tints, o.renderDataStd.tint);
-    if (V3.sqrDist(prevTint, o.renderDataStd.tint) > 0.01) tintChange = true;
+    // TODO(@darzu): allow configurable tint change sensativity
+    const prevTint = o.renderDataStd.tint;
+    const newTint = V3.zero(V3.tmp());
+    if (ColorDef.isOn(o)) V3.copy(newTint, o.color);
+    if (TintsDef.isOn(o)) applyTints(o.tints, newTint);
+    if (V3.sqrDist(prevTint, newTint) > 0.01) {
+      tintChange = true;
+      V3.copy(o.renderDataStd.tint, newTint);
+    }
 
     // apha
     if (AlphaDef.isOn(o)) {
