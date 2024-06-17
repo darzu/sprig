@@ -185,6 +185,7 @@
       flex-direction: row;
 
       margin: 10px;
+      gap: 10px;
       overflow-x: scroll;
       overflow-y: hidden;
     }
@@ -199,7 +200,7 @@
     .infoPanel {
       width: 150px;
       flex-shrink: 0;
-      margin: 0 10px;
+      /* margin: 0 10px; */
 
       display: flex;
       flex-direction: column;
@@ -391,7 +392,7 @@
       background-color: var(--blue);
     }
 
-    .sliderGroup input[type="range"] {
+    .inputGrid input[type="range"] {
       -webkit-appearance: none;
       appearance: none;
       width: 100%;
@@ -406,7 +407,7 @@
 
     /* TODO(@darzu): bug, for some reason including -moz-range-thumb makes it not work in chrome */
     /* input[type="range"]::-moz-range-thumb, */
-    .sliderGroup input[type="range"]::-webkit-slider-thumb {
+    .inputGrid input[type="range"]::-webkit-slider-thumb {
       /* z-index: 2; */
       -webkit-appearance: none;
       appearance: none;
@@ -418,86 +419,86 @@
       cursor: pointer;
     }
 
-    .sliderGroup {
+    .inputGrid {
       display: grid;
       grid-template-columns: 50px 1fr;
       gap: 2px;
     }
 
-    .sliderGroup label {
+    .inputGrid label {
       grid-column: 1;
       grid-row: span 2;
     }
 
-    .sliderGroup div {
+    .inputGrid div {
       grid-column: 2;
     }
 
-    .sliderGroup div:nth-of-type(1) {
+    .inputGrid div:nth-of-type(1) {
       grid-row: 1;
     }
 
-    .sliderGroup div:nth-of-type(2) {
+    .inputGrid div:nth-of-type(2) {
       grid-row: 2;
     }
 
-    .sliderGroup div:nth-of-type(3) {
+    .inputGrid div:nth-of-type(3) {
       grid-row: 3;
     }
 
-    .sliderGroup span {
+    .inputGrid span {
       user-select: none;
       pointer-events: none;
     }
 
-    .sliderGroup .valLabel {
+    .inputGrid .valLabel {
       justify-self: center;
       font-size: 14px;
     }
 
-    .sliderGroup .leftLabel,
-    .sliderGroup .rightLabel {
+    .inputGrid .leftLabel,
+    .inputGrid .rightLabel {
       opacity: 0.5;
       font-size: 12px;
       margin: 0 4px;
     }
 
-    .sliderGroup .leftLabel {
+    .inputGrid .leftLabel {
       justify-self: left;
     }
 
-    .sliderGroup .rightLabel {
+    .inputGrid .rightLabel {
       justify-self: right;
     }
 
     /* slider: single value */
-    .sliderGroup .slider {
+    .inputGrid .slider {
       display: grid;
       grid-template: 1fr / 1fr;
       align-items: center;
     }
 
-    .sliderGroup .slider>* {
+    .inputGrid .slider>* {
       grid-area: 1 / 1;
     }
 
 
-    .sliderGroup .sliderV3 {
+    .inputGrid .sliderV3 {
       display: grid;
       grid-template: 1fr / 1fr 1fr 1fr;
       align-items: center;
       gap: 2px;
     }
 
-    .sliderGroup .sliderV3>*:nth-of-type(1) {
+    .inputGrid .sliderV3>*:nth-of-type(1) {
       grid-area: 1 / 1;
     }
 
-    .sliderGroup .sliderV3>*:nth-of-type(2) {
+    .inputGrid .sliderV3>*:nth-of-type(2) {
       grid-area: 1 / 2;
     }
 
-    .sliderGroup .sliderV3>*:nth-of-type(3) {
+    .inputGrid .sliderV3>*:nth-of-type(3) {
       grid-area: 1 / 3;
     }
   </style>
@@ -541,10 +542,11 @@
         <li>Click to: <span id="clickModeString"></span></li>
       </ul>
     </div>
+
     <div class="infoPanel paintingPanel">
       <h2>Painting</h2>
 
-      <div class="sliderGroup">
+      <div class="inputGrid">
         <label>
           Size
         </label>
@@ -560,7 +562,7 @@
         </div>
       </div>
 
-      <div class="sliderGroup">
+      <div class="inputGrid">
         <label>
           Pos
         </label>
@@ -585,11 +587,13 @@
 
     </div>
 
-    <script src="./main.js" type="module"></script>
-    <script type="module">
-      import { main_sceneSelector } from "./main-scene-selector.js";
-      main_sceneSelector();
-    </script>
+  </div>
+
+  <script src="./main.js" type="module"></script>
+  <script type="module">
+    import { main_sceneSelector } from "./main-scene-selector.js";
+    main_sceneSelector();
+  </script>
 </body>
 
 </html>

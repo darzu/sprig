@@ -221,7 +221,10 @@ async function initParticlesHtml() {
   }
 
   // TODO(@darzu): IMPL
-  // infoPanelsHolderEl.innerHTML = GameParticles_InfoPanelsHtml;
+  infoPanelsHolderEl.insertAdjacentHTML(
+    "beforeend",
+    GameParticles_InfoPanelsHtml
+  );
 
   const numMinToStr = (n: number) => `${n.toFixed(1)}`;
   const numMaxToStr = (n: number) => `${n.toFixed(1)}`;
@@ -250,6 +253,5 @@ async function initParticlesHtml() {
 }
 
 export const GameParticles_InfoPanelsHtml = `
-
 
 `;
