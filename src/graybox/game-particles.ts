@@ -55,6 +55,7 @@ import {
 } from "./graybox-helpers.js";
 import { createObj } from "../ecs/em-objects.js";
 import { CyToTS } from "../render/gpu-struct.js";
+import { createHtmlBuilder } from "../web/html-builder.js";
 
 const DBG_GHOST = false;
 
@@ -211,45 +212,27 @@ export async function initGameParticles() {
 }
 
 async function initParticlesHtml() {
-  const infoPanelsHolderEl = document.getElementById(
-    "infoPanelsHolder"
-  ) as HTMLInputElement | null;
-
-  if (!infoPanelsHolderEl) {
-    console.warn("no infoPanelsHolder detected");
+  if (!document.getElementById("infoPanelsHolder")) {
+    console.warn("no infoPanelsHolder");
     return;
   }
 
-  // TODO(@darzu): IMPL
-  infoPanelsHolderEl.insertAdjacentHTML(
-    "beforeend",
-    GameParticles_InfoPanelsHtml
-  );
+  const htmlBuilder = createHtmlBuilder();
 
-  const numMinToStr = (n: number) => `${n.toFixed(1)}`;
-  const numMaxToStr = (n: number) => `${n.toFixed(1)}`;
+  const appPanel = htmlBuilder.addInfoPanel("Appearance");
 
-  const minSizeEl = document.getElementById("minSize")! as HTMLInputElement;
-  const minSizeValEl = document.getElementById(
-    "minSizeVal"
-  )! as HTMLSpanElement;
-  minSizeEl.value = particleParams.minSize.toString();
-  minSizeValEl.textContent = numMinToStr(particleParams.minSize);
-  minSizeEl.oninput = () => {
-    particleParams.minSize = parseFloat(minSizeEl.value);
-    minSizeValEl.textContent = numMinToStr(particleParams.minSize);
-  };
-
-  const maxSizeEl = document.getElementById("maxSize")! as HTMLInputElement;
-  const maxSizeValEl = document.getElementById(
-    "maxSizeVal"
-  )! as HTMLSpanElement;
-  maxSizeEl.value = particleParams.maxSize.toString();
-  maxSizeValEl.textContent = numMaxToStr(particleParams.maxSize);
-  maxSizeEl.oninput = () => {
-    particleParams.maxSize = parseFloat(maxSizeEl.value);
-    maxSizeValEl.textContent = numMaxToStr(particleParams.maxSize);
-  };
+  appPanel.addEditor({
+    kind: "minMax",
+    label: "Size",
+    min: 0,
+    max: 5,
+    defaultMin: particleParams.minSize,
+    defaultMax: particleParams.maxSize,
+    onChange: (min, max) => {
+      particleParams.minSize = min;
+      particleParams.maxSize = max;
+    },
+  });
 }
 
 export const GameParticles_InfoPanelsHtml = `
