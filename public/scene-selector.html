@@ -37,7 +37,7 @@
       --switch-knob-travel: calc(var(--switch-knob-size) - 4px);
       --switch-width: calc(var(--switch-knob-size) + var(--switch-knob-travel) + var(--switch-inner-padding)*2);
       --switch-transition: 0.2s;
-      --switch-background-clr: oklch(from var(--background-clr) calc(l + 0.2) c h);
+      --input-background-clr: oklch(from var(--background-clr) calc(l + 0.2) c h);
 
       /* --darkerGreen: oklch(from var(--darkGreen) calc(l + 0.1) c h); */
       --darkBlue: oklch(from var(--blue) calc(l - 0.1) calc(c - 0.01) h);
@@ -259,7 +259,7 @@
       left: 0;
       right: 0;
       bottom: 0;
-      background-color: var(--switch-background-clr);
+      background-color: var(--input-background-clr);
       transition: var(--switch-transition);
 
       border-radius: var(--switch-size);
@@ -390,6 +390,81 @@
     .blue {
       background-color: var(--blue);
     }
+
+    .sliderGrid {
+      display: flex;
+      flex-direction: column;
+
+    }
+
+    .slider {
+      display: grid;
+      grid-template-columns: 50px 1fr;
+      justify-items: center;
+    }
+
+    .slider label {
+      justify-self: left;
+      grid-column: 1;
+    }
+
+    .slider input[type="range"],
+    .slider span {
+      grid-area: 1 / 2;
+      align-self: center;
+    }
+
+    .slider span {
+      user-select: none;
+      pointer-events: none;
+      font-size: 14px;
+    }
+
+    .slider span.valLabel {
+      /* z-index: 3; */
+    }
+
+    .slider span.leftLabel {
+      justify-self: left;
+    }
+
+    .slider span.rightLabel {
+      justify-self: right;
+    }
+
+    .slider span.rightLabel,
+    .slider span.leftLabel {
+      opacity: 0.5;
+      font-size: 12px;
+      margin: 0 4px;
+    }
+
+    .slider input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 16px;
+      margin: 0px;
+      padding: 0px;
+      border-radius: 4px;
+      background: var(--input-background-clr);
+      outline: none;
+      cursor: pointer;
+    }
+
+    /* TODO(@darzu): bug, for some reason including -moz-range-thumb makes it not work in chrome */
+    /* input[type="range"]::-moz-range-thumb, */
+    input[type="range"]::-webkit-slider-thumb {
+      /* z-index: 2; */
+      -webkit-appearance: none;
+      appearance: none;
+      width: 10px;
+      height: 16px;
+      border-radius: 4px;
+      background: var(--blue);
+      outline: none;
+      cursor: pointer;
+    }
   </style>
 </head>
 
@@ -418,15 +493,53 @@
   </div>
 
   <div id="infoPanelsHolder">
+    <div class="infoPanel">
+      <h2>Particles</h2>
+      TODO
+    </div>
+    <div class="infoPanel">
+      <h2>Controls</h2>
+      <ul>
+        <li>Drag to pan</li>
+        <li>Scroll to zoom</li>
+        <li>Refresh to reset</li>
+        <li>Click to: <span id="clickModeString"></span></li>
+      </ul>
+    </div>
+    <div class="infoPanel paintingPanel">
+      <h2>Painting</h2>
+      <label class="switch">
+        <input type="checkbox" name="paintMode" id="paintMode">
+        Painting Mode
+      </label>
+
+      <div class="sliderGrid">
+        <div class="slider">
+          <label name="minSize">
+            Size
+          </label>
+          <input type="range" id="minSize" name="minSize" min="0" max="5" step="0.1" />
+          <span id="minSizeVal" class="valLabel"></span>
+          <span class="leftLabel">min</span>
+          <span class="rightLabel">max</span>
+        </div>
+        <div class="slider">
+          <label name="maxSize">
+
+          </label>
+          <input type="range" id="maxSize" name="maxSize" min="0" max="5" step="0.1" />
+          <span id="maxSizeVal"></span>
+        </div>
+      </div>
 
 
-  </div>
+    </div>
 
-  <script src="./main.js" type="module"></script>
-  <script type="module">
-    import { main_sceneSelector } from "./main-scene-selector.js";
-    main_sceneSelector();
-  </script>
+    <script src="./main.js" type="module"></script>
+    <script type="module">
+      import { main_sceneSelector } from "./main-scene-selector.js";
+      main_sceneSelector();
+    </script>
 </body>
 
 </html>

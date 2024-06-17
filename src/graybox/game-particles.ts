@@ -54,8 +54,32 @@ import {
   initStdGrid,
 } from "./graybox-helpers.js";
 import { createObj } from "../ecs/em-objects.js";
+import { CyToTS } from "../render/gpu-struct.js";
 
 const DBG_GHOST = false;
+
+type ParticleParams = typeof cloudBurstSys extends ParticleSystem<infer U>
+  ? CyToTS<U>
+  : never;
+
+const particleParams: ParticleParams = {
+  minColor: V(0, 0, 0, 0),
+  maxColor: V(1, 1, 1, 1),
+  minColorVel: V(0, 0, 0, 0),
+  maxColorVel: V(-0.1, -0.1, +0.1, 0),
+  minPos: V(-10, -10, -10),
+  maxPos: V(+10, +10, +10),
+  minVel: V(-0.5, -0.5, -0.5),
+  maxVel: V(+0.5, +0.5, +0.5),
+  minAcl: V(-0.5, -0.5, -0.5),
+  maxAcl: V(+0.5, +0.5, +0.5),
+  minSize: 0.1,
+  maxSize: 1.0,
+  minSizeVel: -0.5,
+  maxSizeVel: +0.5,
+  minLife: 1,
+  maxLife: 10,
+};
 
 export async function initGameParticles() {
   EM.addEagerInit([], [RendererDef], [], (res) => {
@@ -131,24 +155,10 @@ export async function initGameParticles() {
     (_, res) => {
       if (res.time.step % (60 * 3) === 0) {
         const color = randColor();
-        cloudBurstSys.submitParametersUpdate!(res.renderer.renderer, {
-          minColor: V(color[0], color[1], color[2], 0),
-          maxColor: V(color[0], color[1], color[2], 1),
-          minColorVel: V(0, 0, 0, 0),
-          maxColorVel: V(-0.1, -0.1, +0.1, 0),
-          minPos: V(-10, -10, -10),
-          maxPos: V(+10, +10, +10),
-          minVel: V(-0.5, -0.5, -0.5),
-          maxVel: V(+0.5, +0.5, +0.5),
-          minAcl: V(-0.5, -0.5, -0.5),
-          maxAcl: V(+0.5, +0.5, +0.5),
-          minSize: 0.1,
-          maxSize: 1.0,
-          minSizeVel: -0.5,
-          maxSizeVel: +0.5,
-          minLife: 1,
-          maxLife: 10,
-        });
+        cloudBurstSys.submitParametersUpdate!(
+          res.renderer.renderer,
+          particleParams
+        );
         res.renderer.renderer.submitPipelines([], [cloudBurstSys.pipeInit]);
       }
     }
@@ -210,7 +220,8 @@ async function initParticlesHtml() {
     return;
   }
 
-  infoPanelsHolderEl.innerHTML = GameParticles_InfoPanelsHtml;
+  // TODO(@darzu): IMPL
+  // infoPanelsHolderEl.innerHTML = GameParticles_InfoPanelsHtml;
 
   // paintColorPicker
   const paintModeEl = document.getElementById(
@@ -222,26 +233,34 @@ async function initParticlesHtml() {
     const mode = paintModeEl!.checked;
     console.log(`toggle: ${mode}`); // TODO(@darzu): impl
   };
+
+  const numMinToStr = (n: number) => `${n.toFixed(1)}`;
+  const numMaxToStr = (n: number) => `${n.toFixed(1)}`;
+
+  const minSizeEl = document.getElementById("minSize")! as HTMLInputElement;
+  const minSizeValEl = document.getElementById(
+    "minSizeVal"
+  )! as HTMLSpanElement;
+  minSizeEl.value = particleParams.minSize.toString();
+  minSizeValEl.textContent = numMinToStr(particleParams.minSize);
+  minSizeEl.oninput = () => {
+    particleParams.minSize = parseFloat(minSizeEl.value);
+    minSizeValEl.textContent = numMinToStr(particleParams.minSize);
+  };
+
+  const maxSizeEl = document.getElementById("maxSize")! as HTMLInputElement;
+  const maxSizeValEl = document.getElementById(
+    "maxSizeVal"
+  )! as HTMLSpanElement;
+  maxSizeEl.value = particleParams.maxSize.toString();
+  maxSizeValEl.textContent = numMaxToStr(particleParams.maxSize);
+  maxSizeEl.oninput = () => {
+    particleParams.maxSize = parseFloat(maxSizeEl.value);
+    maxSizeValEl.textContent = numMaxToStr(particleParams.maxSize);
+  };
 }
 
 export const GameParticles_InfoPanelsHtml = `
-<div class="infoPanel">
-  <h2>Particles</h2>
-  TODO
-</div>
-<div class="infoPanel">
-  <h2>Controls</h2>
-  <ul>
-    <li>Drag to pan</li>
-    <li>Scroll to zoom</li>
-    <li>Refresh to reset</li>
-    <li>Click to: <span id="clickModeString"></span></li>
-  </ul>
-</div>
-<div class="infoPanel paintingPanel">
-  <h2>Painting</h2>
-  <label class="switch">
-    <input type="checkbox" name="paintMode" id="paintMode">
-    Painting Mode
-  </label>
+
+
 `;
