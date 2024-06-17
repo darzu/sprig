@@ -1,5 +1,8 @@
 // TODO(@darzu): experimenting w/ html template abstractions
 
+// TODO(@darzu): use WebComponents ?
+//  https://github.com/mdn/web-components-examples/blob/main/edit-word/index.html
+
 interface ElementOpts {
   class: string;
   id: string;
