@@ -219,6 +219,50 @@ async function initParticlesHtml() {
 
   const htmlBuilder = createHtmlBuilder();
 
+  const movPanel = htmlBuilder.addInfoPanel("Movement");
+
+  movPanel.addEditor({
+    kind: "minMaxV3",
+    label: "Pos",
+    min: [-100, -100, -100],
+    max: [+100, +100, +100],
+    defaultMin: [-10, -10, -10],
+    defaultMax: [+10, +10, +10],
+    step: 1,
+    onChange: (min, max) => {
+      V3.copy(particleParams.minPos, min);
+      V3.copy(particleParams.maxPos, max);
+    },
+  });
+
+  movPanel.addEditor({
+    kind: "minMaxV3",
+    label: "Vel",
+    min: [-2, -2, -2],
+    max: [+2, +2, +2],
+    defaultMin: [-0.5, -0.5, -0.5],
+    defaultMax: [+0.5, +0.5, +0.5],
+    step: 0.1,
+    onChange: (min, max) => {
+      V3.copy(particleParams.minVel, min);
+      V3.copy(particleParams.maxVel, max);
+    },
+  });
+
+  movPanel.addEditor({
+    kind: "minMaxV3",
+    label: "Acl",
+    min: [-2, -2, -2],
+    max: [+2, +2, +2],
+    defaultMin: [-0.5, -0.5, -0.5],
+    defaultMax: [+0.5, +0.5, +0.5],
+    step: 0.1,
+    onChange: (min, max) => {
+      V3.copy(particleParams.minAcl, min);
+      V3.copy(particleParams.maxAcl, max);
+    },
+  });
+
   const appPanel = htmlBuilder.addInfoPanel("Appearance");
 
   appPanel.addEditor({
@@ -226,6 +270,7 @@ async function initParticlesHtml() {
     label: "Size",
     min: 0,
     max: 5,
+    step: 0.1,
     defaultMin: particleParams.minSize,
     defaultMax: particleParams.maxSize,
     onChange: (min, max) => {
