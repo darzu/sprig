@@ -125,6 +125,7 @@ export function toXYZD65(clr: Color): XYZD65 {
   return FLRGBToXYZD65(toFLRGB(clr));
 }
 
+// TODO(@darzu): BUG. really this should always go through FRGB or FLRGB first!
 export function toV3(c: Color): V3 {
   if (isHSL(c)) return V(c.h, c.s, c.l);
   else if (isRGB(c)) return V(c.r, c.g, c.b);
@@ -135,6 +136,14 @@ export function toV3(c: Color): V3 {
   else if (isXYZ(c)) return V(c.x, c.y, c.z);
   else if (isLCH(c)) return V(c.l, c.c, c.h);
   never(c);
+}
+
+export function FRGBfromV3(v: V3.InputT): FRGB {
+  return {
+    fr: v[0],
+    fg: v[1],
+    fb: v[2],
+  };
 }
 
 export function fromHue(h: number): LCH {

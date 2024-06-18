@@ -502,9 +502,12 @@ export module V3 {
   }
 
   // TODO(@darzu): maybe copy should have an optional out param?
-  // TODO(@darzu): rename cpy
-  export function copy(out: T, v1: InputT): T {
-    return GL.copy(out, v1) as T;
+  // TODO(@darzu): RENAME cpy
+  export function copy(out: T, v1: InputT | V4.InputT): T {
+    out[0] = v1[0];
+    out[1] = v1[1];
+    out[2] = v1[2];
+    return out;
   }
 
   // TODO(@darzu): "set" should probably follow copy and have the out param first and required
@@ -521,6 +524,16 @@ export module V3 {
     out[0] = n0;
     out[1] = n1;
     out[2] = n2;
+    return out;
+  }
+
+  // TODO(@darzu): version w/ out param ?
+  // TODO(@darzu): swizzle operators
+  export function fromV4(v4: V4.InputT): T {
+    const out = mk();
+    out[0] = v4[0];
+    out[1] = v4[1];
+    out[2] = v4[2];
     return out;
   }
 
@@ -791,7 +804,19 @@ export module V4 {
   }
 
   export function copy(out: T, v1: InputT): T {
-    return GL.copy(out, v1) as T;
+    out[0] = v1[0];
+    out[1] = v1[1];
+    out[2] = v1[2];
+    out[3] = v1[3];
+    return out;
+  }
+
+  // TODO(@darzu): handle this better via swizzle
+  export function copyV3(out: T, v1: V3.InputT): T {
+    out[0] = v1[0];
+    out[1] = v1[1];
+    out[2] = v1[2];
+    return out;
   }
 
   export function set(

@@ -1,3 +1,4 @@
+import { FRGBfromV3, parseHex, toFRGB, toHex, toV3 } from "../color/color.js";
 import { V3 } from "../matrix/sprig-matrix.js";
 import { assert } from "../utils/util-no-import.js";
 
@@ -203,11 +204,42 @@ export function createHtmlBuilder(): HtmlBuilder {
 
       _panelDiv.appendChild(div);
     }
+
+    function addMinMaxColorEditor(editor: MinMaxColorEditorOpt): void {
+      const color0 = mkEl("input", {
+        type: "color",
+        value: toHex(FRGBfromV3(editor.defaultMin)),
+      });
+      const color1 = mkEl("input", {
+        type: "color",
+        value: toHex(FRGBfromV3(editor.defaultMax)),
+      });
+      const div = mkEl("div", { class: "inputGrid" }, [
+        mkEl("label", {}, editor.label),
+        mkEl("div", { class: "colorPickerV2" }, [color0, color1]),
+      ]);
+
+      const oninput = () => {
+        const c0 = toV3(toFRGB(parseHex(color0.value)));
+        const c1 = toV3(toFRGB(parseHex(color1.value)));
+        editor.onChange(c0, c1);
+      };
+
+      oninput();
+
+      color0.oninput = oninput;
+      color1.oninput = oninput;
+
+      _panelDiv.appendChild(div);
+    }
+
     function addEditor(editor: Editor): void {
       if (editor.kind === "minMax") {
         addMinMaxEditor(editor);
       } else if (editor.kind === "minMaxV3") {
         addMinMaxV3Editor(editor);
+      } else if (editor.kind === "minMaxColor") {
+        addMinMaxColorEditor(editor);
       } else {
         throw `TODO: editor ${editor.kind}`;
       }
@@ -233,43 +265,3 @@ export function mkEl<K extends keyof HTMLElementTagNameMap>(
     else for (let c of children) e.appendChild(c);
   return e;
 }
-
-`
-<div class="infoPanel paintingPanel">
-      <h2>Painting</h2>
-
-      <div class="inputGrid">
-        <label>
-          Pos
-        </label>
-        <div class="sliderV3">
-          <input type="range" id="minSize0" min="0" max="5" step="0.1" />
-          <input type="range" id="minSize1" min="0" max="5" step="0.1" />
-          <input type="range" id="minSize2" min="0" max="5" step="0.1" />
-          <span id="minSizeVal0" class="valLabel">?</span>
-          <span id="minSizeVal1" class="valLabel">?</span>
-          <span id="minSizeVal2" class="valLabel">?</span>
-        </div>
-
-        <div class="sliderV3">
-          <input type="range" id="maxSize0" min="0" max="5" step="0.1" />
-          <input type="range" id="maxSize1" min="0" max="5" step="0.1" />
-          <input type="range" id="maxSize2" min="0" max="5" step="0.1" />
-          <span id="maxSizeVal0" class="valLabel">?</span>
-          <span id="maxSizeVal1" class="valLabel">?</span>
-          <span id="maxSizeVal2" class="valLabel">?</span>
-        </div>
-      </div>
-
-      <div class="inputGrid">
-        <label>
-          Color
-        </label>
-        <div class="colorPickerV2">
-          <input type="color" />
-          <input type="color" />
-        </div>
-      </div>
-
-    </div>
-    `;

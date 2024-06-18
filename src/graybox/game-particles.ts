@@ -7,7 +7,7 @@ import { EM } from "../ecs/ecs.js";
 import { LifetimeDef } from "../ecs/lifetime.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { InputsDef } from "../input/inputs.js";
-import { V, quat, V3 } from "../matrix/sprig-matrix.js";
+import { V, quat, V3, V4 } from "../matrix/sprig-matrix.js";
 import { BallMesh, CubeMesh, HexMesh, PlaneMesh } from "../meshes/mesh-list.js";
 import { HEX_AABB, mkCubeMesh } from "../meshes/primatives.js";
 import { GravityDef } from "../motion/gravity.js";
@@ -278,8 +278,15 @@ async function initParticlesHtml() {
       particleParams.maxSize = max;
     },
   });
+
+  appPanel.addEditor({
+    kind: "minMaxColor",
+    label: "Color",
+    defaultMin: V3.fromV4(particleParams.minColor),
+    defaultMax: V3.fromV4(particleParams.maxColor),
+    onChange: (min, max) => {
+      V4.copyV3(particleParams.minColor, min);
+      V4.copyV3(particleParams.maxColor, max);
+    },
+  });
 }
-
-export const GameParticles_InfoPanelsHtml = `
-
-`;
