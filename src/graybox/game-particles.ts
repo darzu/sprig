@@ -219,10 +219,25 @@ async function initParticlesHtml() {
 
   const htmlBuilder = createHtmlBuilder();
 
+  // about
+  const aboutPanel = htmlBuilder.addInfoPanel("Shipyard");
+  aboutPanel.addText(`
+     TODO
+  `);
+
+  // controls
+  const controlsPanel = htmlBuilder.addInfoPanel("Controls");
+  controlsPanel.addHTML(`
+    <ul>
+      <li>Drag to pan</li>
+      <li>Scroll to zoom</li>
+    </ul>
+  `);
+
+  // movement
   const movPanel = htmlBuilder.addInfoPanel("Movement");
 
-  movPanel.addEditor({
-    kind: "minMaxV3",
+  movPanel.addMinMaxV3Editor({
     label: "Pos",
     min: [-100, -100, -100],
     max: [+100, +100, +100],
@@ -235,8 +250,7 @@ async function initParticlesHtml() {
     },
   });
 
-  movPanel.addEditor({
-    kind: "minMaxV3",
+  movPanel.addMinMaxV3Editor({
     label: "Vel",
     min: [-2, -2, -2],
     max: [+2, +2, +2],
@@ -249,8 +263,7 @@ async function initParticlesHtml() {
     },
   });
 
-  movPanel.addEditor({
-    kind: "minMaxV3",
+  movPanel.addMinMaxV3Editor({
     label: "Acl",
     min: [-2, -2, -2],
     max: [+2, +2, +2],
@@ -263,10 +276,10 @@ async function initParticlesHtml() {
     },
   });
 
+  // appearance
   const appPanel = htmlBuilder.addInfoPanel("Appearance");
 
-  appPanel.addEditor({
-    kind: "minMax",
+  appPanel.addMinMaxEditor({
     label: "Size",
     min: 0,
     max: 5,
@@ -279,8 +292,7 @@ async function initParticlesHtml() {
     },
   });
 
-  appPanel.addEditor({
-    kind: "minMaxColor",
+  appPanel.addMinMaxColorEditor({
     label: "Color",
     defaultMin: V3.fromV4(particleParams.minColor),
     defaultMax: V3.fromV4(particleParams.maxColor),

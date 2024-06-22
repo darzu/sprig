@@ -287,17 +287,17 @@
       background-color: var(--blue);
     }
 
-    #paintColorPicker {
+    .paintColorPicker {
       display: flex;
       gap: 4px;
       flex-wrap: wrap;
     }
 
-    #paintColorPicker * {
+    .paintColorPicker * {
       flex-shrink: 0;
     }
 
-    #paintColorPicker input {
+    .paintColorPicker input {
       appearance: none;
       margin: 0;
       font: inherit;
@@ -318,11 +318,11 @@
       /* background-color: #0484d1; */
     }
 
-    #paintColorPicker input:checked {
+    .paintColorPicker input:checked {
       transform: scale(1.5);
     }
 
-    #paintColorPicker input.disabled {
+    .paintColorPicker input.disabled {
       transform: scale(0.7);
       border-radius: 50%;
       /* cursor: not-allowed; */
@@ -558,22 +558,6 @@
   </div>
 
   <div id="infoPanelsHolder">
-    <div class="infoPanel">
-      <h2>Particles</h2>
-      TODO
-    </div>
-    <div class="infoPanel">
-      <h2>Controls</h2>
-      <ul>
-        <li>Drag to pan</li>
-        <li>Scroll to zoom</li>
-        <li>Refresh to reset</li>
-        <li>Click to: <span id="clickModeString"></span></li>
-      </ul>
-    </div>
-
-
-
   </div>
 
   </div>

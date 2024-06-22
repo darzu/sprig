@@ -5,7 +5,13 @@ import {
 } from "../camera/camera.js";
 import { CanvasDef } from "../render/canvas.js";
 import { AlphaDef, ColorDef } from "../color/color-ecs.js";
-import { ENDESGA16, Endesga16Name } from "../color/palettes.js";
+import {
+  AllEndesga16,
+  AllEndesga16Names,
+  ENDESGA16,
+  Endesga16Idx,
+  Endesga16Name,
+} from "../color/palettes.js";
 import { DeadDef } from "../ecs/delete.js";
 import { EM } from "../ecs/ecs.js";
 import { V3, quat, V, mat4 } from "../matrix/sprig-matrix.js";
@@ -78,6 +84,7 @@ import {
 import { OBB } from "../physics/obb.js";
 import { getFireSolution } from "../stone/projectile.js";
 import { IdPair, idPair, packI16s, toMap, unpackI16s } from "../utils/util.js";
+import { createHtmlBuilder } from "../web/html-builder.js";
 
 const DBG_COLLIDERS = false;
 const DBG_TRANSPARENT_BOAT = false;
@@ -512,59 +519,70 @@ export async function initShipyardGame() {
 }
 
 async function initShipyardHtml() {
-  const infoPanelsHolderEl = document.getElementById(
-    "infoPanelsHolder"
-  ) as HTMLInputElement | null;
-
-  if (!infoPanelsHolderEl) {
-    console.warn("no infoPanelsHolder detected");
+  if (!document.getElementById("infoPanelsHolder")) {
+    console.warn("no infoPanelsHolder");
     return;
   }
 
-  infoPanelsHolderEl.innerHTML = GameShipyard_InfoPanelsHtml; // wow this returns instantly?
+  const htmlBuilder = createHtmlBuilder();
 
-  // TODO(@darzu):
-  // paintColorPicker
-  const paintModeEl = document.getElementById(
-    "paintMode"
-  ) as HTMLInputElement | null;
-  assert(paintModeEl);
-  const cannonModeEl = document.getElementById(
-    "cannonMode"
-  ) as HTMLInputElement | null;
-  assert(cannonModeEl);
-  const paintColorPickerEl = document.getElementById(
-    "paintColorPicker"
-  ) as HTMLDivElement | null;
-  assert(paintColorPickerEl);
-  const clickModeStringEl = document.getElementById(
-    "clickModeString"
-  ) as HTMLSpanElement | null;
-  assert(clickModeStringEl);
+  // about
+  const aboutPanel = htmlBuilder.addInfoPanel("Shipyard");
+  aboutPanel.addText(`
+    The ship is defined with paths and constraints.
+    These then procedurally generate a mesh and metadata (e.g. colliders), which support runtime modification.
+  `);
 
-  type ColorSwatch = { color: Endesga16Name; el: HTMLInputElement };
-  const swatches = ([...paintColorPickerEl.children] as HTMLInputElement[]).map(
-    (el) => {
-      const color = el.className.split(" ")[0]; // hack, assume first class is the color
-      assert(color in ENDESGA16, `invalid color name: ${el.className}`);
-      const s: ColorSwatch = { color: color as Endesga16Name, el };
-      return s;
-    }
-  );
+  // controls
+  const controlsPanel = htmlBuilder.addInfoPanel("Controls");
+  controlsPanel.addHTML(`
+    <ul>
+      <li>Drag to pan</li>
+      <li>Scroll to zoom</li>
+      <li>Click to: <span id="clickModeString"></span></li>
+    </ul>
+  `);
+  const clickModeStringEl = document.getElementById("clickModeString")!;
 
-  function toggleSwatches(enable: boolean) {
-    for (let { el } of swatches) {
-      if (!enable) el.classList.add("disabled");
-      else el.classList.remove("disabled");
-    }
-  }
+  // painting
+  const paintPanel = htmlBuilder.addInfoPanel("Painting");
 
-  // function _setClickModeHtml(mode: ShipyardClickMode) {
-  //   cannonModeEl!.checked = mode === ShipyardClickMode.Cannon;
-  //   paintModeEl!.checked = mode === ShipyardClickMode.Paint;
-  //   toggleSwatches(mode === ShipyardClickMode.Paint);
-  // }
+  const paintModeToggle = paintPanel.addToggleEditor({
+    label: "Painting Mode",
+    default: false,
+    onChange: (v) => {
+      const mode = v ? ShipyardClickMode.Paint : ShipyardClickMode.None;
+      setClickMode(mode);
+    },
+  });
 
+  const paletteEditor = paintPanel.addPaletteColorEditor({
+    defaultIdx: Endesga16Idx.blue,
+    onClick: (idx) => {
+      if (!paletteEditor.isEnabled()) {
+        setClickMode(ShipyardClickMode.Paint);
+        shipyardGameState.paintColor = AllEndesga16Names[idx];
+      }
+    },
+    onChange: (idx) => {
+      shipyardGameState.paintColor = AllEndesga16Names[idx];
+    },
+  });
+  paletteEditor.doEnable(false);
+
+  // destruction
+  const destPanel = htmlBuilder.addInfoPanel("Destruction");
+
+  const cannonModeToggle = destPanel.addToggleEditor({
+    label: "Cannon Mode",
+    default: true,
+    onChange: (v) => {
+      const mode = v ? ShipyardClickMode.Cannon : ShipyardClickMode.None;
+      setClickMode(mode);
+    },
+  });
+
+  // click mode
   const clickToStringByMode: { [k in ShipyardClickMode]: string } = {
     [ShipyardClickMode.None]: "",
     [ShipyardClickMode.Cannon]: "fire a cannon at the cursor",
@@ -573,86 +591,12 @@ async function initShipyardHtml() {
 
   function setClickMode(mode: ShipyardClickMode) {
     shipyardGameState.mode = mode;
-    cannonModeEl!.checked = mode === ShipyardClickMode.Cannon;
-    paintModeEl!.checked = mode === ShipyardClickMode.Paint;
-    toggleSwatches(mode === ShipyardClickMode.Paint);
+    cannonModeToggle.doEnable(mode === ShipyardClickMode.Cannon);
+    paintModeToggle.doEnable(mode === ShipyardClickMode.Paint);
+    paletteEditor.doEnable(mode === ShipyardClickMode.Paint);
+
     clickModeStringEl!.textContent = clickToStringByMode[mode];
   }
 
   setClickMode(ShipyardClickMode.Cannon);
-
-  paintModeEl.onchange = (e) => {
-    const mode = paintModeEl!.checked
-      ? ShipyardClickMode.Paint
-      : ShipyardClickMode.None;
-    setClickMode(mode);
-  };
-
-  cannonModeEl.onchange = (e) => {
-    const mode = paintModeEl!.checked
-      ? ShipyardClickMode.Cannon
-      : ShipyardClickMode.None;
-    setClickMode(mode);
-  };
-
-  for (let { el, color } of swatches) {
-    el.onchange = (e) => {
-      if (el.checked) shipyardGameState.paintColor = color;
-    };
-    el.onclick = (e) => {
-      if (el.classList.contains("disabled")) {
-        setClickMode(ShipyardClickMode.Paint);
-        shipyardGameState.paintColor = color;
-      }
-    };
-  }
 }
-
-export const GameShipyard_InfoPanelsHtml = `
-<div class="infoPanel">
-  <h2>Shipyard</h2>
-  The ship is defined with paths and constraints.
-  These then procedurally generate a mesh and metadata (e.g. colliders), which support runtime modification.
-</div>
-<div class="infoPanel">
-  <h2>Controls</h2>
-  <ul>
-    <li>Drag to pan</li>
-    <li>Scroll to zoom</li>
-    <li>Refresh to reset</li>
-    <li>Click to: <span id="clickModeString"></span></li>
-  </ul>
-</div>
-<div class="infoPanel paintingPanel">
-  <h2>Painting</h2>
-  <label class="switch">
-    <input type="checkbox" name="paintMode" id="paintMode">
-    Painting Mode
-  </label>
-  <div id="paintColorPicker">
-    <input type="radio" name="paintColor" class="lightBrown disabled" />
-    <input type="radio" name="paintColor" class="midBrown disabled" />
-    <input type="radio" name="paintColor" class="darkBrown disabled" />
-    <input type="radio" name="paintColor" class="deepBrown disabled" />
-    <input type="radio" name="paintColor" class="darkRed disabled" />
-    <input type="radio" name="paintColor" class="red disabled" />
-    <input type="radio" name="paintColor" class="orange disabled" />
-    <input type="radio" name="paintColor" class="yellow disabled" />
-    <input type="radio" name="paintColor" class="lightGreen disabled" />
-    <input type="radio" name="paintColor" class="darkGreen disabled" />
-    <input type="radio" name="paintColor" class="deepGreen disabled" />
-    <input type="radio" name="paintColor" class="darkGray disabled" />
-    <input type="radio" name="paintColor" class="lightGray disabled" />
-    <input type="radio" name="paintColor" class="white disabled" />
-    <input type="radio" name="paintColor" class="lightBlue disabled" />
-    <input type="radio" name="paintColor" class="blue disabled" checked />
-  </div>
-</div>
-<div class="infoPanel">
-  <h2>Destruction</h2>
-  <label class="switch">
-    <input type="checkbox" name="cannonMode" id="cannonMode">
-    Cannon Mode
-  </label>
-</div>
-`;

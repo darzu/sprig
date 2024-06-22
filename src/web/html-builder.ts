@@ -1,6 +1,12 @@
 import { FRGBfromV3, parseHex, toFRGB, toHex, toV3 } from "../color/color.js";
+import {
+  Endesga16Name,
+  ENDESGA16,
+  AllEndesga16Names,
+} from "../color/palettes.js";
 import { V3 } from "../matrix/sprig-matrix.js";
 import { assert } from "../utils/util-no-import.js";
+import { isString } from "../utils/util.js";
 
 // TODO(@darzu): experimenting w/ html template abstractions
 
@@ -8,7 +14,7 @@ import { assert } from "../utils/util-no-import.js";
 //  https://github.com/mdn/web-components-examples/blob/main/edit-word/index.html
 
 export type MinMaxEditorOpt = {
-  kind: "minMax";
+  // kind: "minMax";
   label: string;
   min: number;
   max: number;
@@ -17,9 +23,10 @@ export type MinMaxEditorOpt = {
   step: number;
   onChange: (min: number, max: number) => void;
 };
+export type MinMaxEditor = void;
 
 export type MinMaxV3EditorOpt = {
-  kind: "minMaxV3";
+  // kind: "minMaxV3";
   label: string;
   min: V3.InputT;
   max: V3.InputT;
@@ -28,34 +35,43 @@ export type MinMaxV3EditorOpt = {
   step: number;
   onChange: (min: V3.InputT, max: V3.InputT) => void;
 };
+export type MinMaxV3Editor = void;
 
 export type MinMaxColorEditorOpt = {
-  kind: "minMaxColor";
+  // kind: "minMaxColor";
   label: string;
   defaultMin: V3.InputT;
   defaultMax: V3.InputT;
   onChange: (min: V3.InputT, max: V3.InputT) => void;
 };
+export type MinMaxColorEditor = void;
 
 export type PaletteColorEditorOpt = {
-  kind: "paletteColor";
-  label: string;
+  // kind: "paletteColor";
   defaultIdx: number;
   onChange: (idx: number) => void;
+  onClick: (idx: number) => void;
 };
 
-export type ToogleEditorOpt = {
-  kind: "toggle";
+export type PaletteColorEditor = {
+  isEnabled: () => boolean;
+  doEnable: (enable: boolean) => void;
+};
+
+export type ToggleEditorOpt = {
   label: string;
   default: boolean;
   onChange: (boolean: boolean) => void;
+};
+export type ToggleEditor = {
+  doEnable: (enable: boolean) => void;
 };
 
 export type Editor =
   | MinMaxEditorOpt
   | MinMaxV3EditorOpt
   | MinMaxColorEditorOpt
-  | ToogleEditorOpt
+  | ToggleEditorOpt
   | PaletteColorEditorOpt;
 
 export interface HtmlBuilder {
@@ -64,7 +80,13 @@ export interface HtmlBuilder {
 
 export interface InfoPanel {
   _panelDiv: HTMLDivElement;
-  addEditor(editor: Editor): void;
+  addText(txt: string): void;
+  addHTML(html: string): void; // TODO(@darzu): remove all uses, move into other editors
+  addMinMaxEditor(e: MinMaxEditorOpt): MinMaxEditor;
+  addMinMaxV3Editor(e: MinMaxV3EditorOpt): MinMaxV3Editor;
+  addMinMaxColorEditor(e: MinMaxColorEditorOpt): MinMaxColorEditor;
+  addToggleEditor(e: ToggleEditorOpt): ToggleEditor;
+  addPaletteColorEditor(e: PaletteColorEditorOpt): PaletteColorEditor;
 }
 
 export function createHtmlBuilder(): HtmlBuilder {
@@ -86,8 +108,22 @@ export function createHtmlBuilder(): HtmlBuilder {
 
     return {
       _panelDiv,
-      addEditor,
+      addText,
+      addHTML,
+      addMinMaxColorEditor,
+      addMinMaxV3Editor,
+      addMinMaxEditor,
+      addPaletteColorEditor,
+      addToggleEditor,
     };
+
+    function addText(txt: string): void {
+      _panelDiv.insertAdjacentText("beforeend", txt);
+    }
+
+    function addHTML(html: string): void {
+      _panelDiv.insertAdjacentHTML("beforeend", html);
+    }
 
     function addMinMaxEditor(editor: MinMaxEditorOpt): void {
       const label = editor.label;
@@ -233,15 +269,63 @@ export function createHtmlBuilder(): HtmlBuilder {
       _panelDiv.appendChild(div);
     }
 
-    function addEditor(editor: Editor): void {
-      if (editor.kind === "minMax") {
-        addMinMaxEditor(editor);
-      } else if (editor.kind === "minMaxV3") {
-        addMinMaxV3Editor(editor);
-      } else if (editor.kind === "minMaxColor") {
-        addMinMaxColorEditor(editor);
-      } else {
-        throw `TODO: editor ${editor.kind}`;
+    function addToggleEditor(e: ToggleEditorOpt): ToggleEditor {
+      const toggle = mkEl("input", { type: "checkbox" });
+      const lbl = mkEl("label", { class: "switch" }, [toggle, e.label]);
+
+      lbl.onchange = () => {
+        e.onChange(toggle.checked);
+      };
+
+      _panelDiv.appendChild(lbl);
+
+      return {
+        doEnable,
+      };
+
+      function doEnable(enable: boolean) {
+        toggle.checked = enable;
+      }
+    }
+
+    function addPaletteColorEditor(
+      editor: PaletteColorEditorOpt
+    ): PaletteColorEditor {
+      const swatches = AllEndesga16Names.map((name, i) => {
+        const checked = i === editor.defaultIdx ? "checked" : "";
+        const el = mkEl("input", {
+          type: "radio",
+          class: name,
+          ...(checked ? { checked } : {}),
+        });
+        el.onchange = () => {
+          swatches.forEach((el2, i2) => {
+            el2.checked = i2 === i;
+          });
+          editor.onChange(i);
+        };
+        el.onclick = () => {
+          editor.onClick(i);
+        };
+        return el;
+      });
+
+      const div = mkEl("div", { class: "paintColorPicker" }, swatches);
+
+      _panelDiv.appendChild(div);
+
+      return {
+        doEnable,
+        isEnabled,
+      };
+
+      function isEnabled(): boolean {
+        return !swatches[0].classList.contains("disabled");
+      }
+
+      function doEnable(enable: boolean) {
+        if (enable) swatches.forEach((el) => el.classList.remove("disabled"));
+        else swatches.forEach((el) => el.classList.add("disabled"));
       }
     }
   }
@@ -255,13 +339,17 @@ function fractionDigitsFromStepSize(step: number): number {
 export function mkEl<K extends keyof HTMLElementTagNameMap>(
   tag: K,
   attributes: Record<string, string | number>,
-  children?: HTMLElement[] | string
+  children?: (HTMLElement | string)[] | string
 ): HTMLElementTagNameMap[K] {
   const e = document.createElement(tag);
   for (let [key, val] of Object.entries(attributes))
     e.setAttribute(key, val.toString());
   if (children)
-    if (typeof children === "string") e.textContent = children;
-    else for (let c of children) e.appendChild(c);
+    if (isString(children)) e.textContent = children;
+    else
+      for (let c of children) {
+        if (isString(c)) e.insertAdjacentText("beforeend", c);
+        else e.appendChild(c);
+      }
   return e;
 }

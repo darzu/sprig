@@ -3,6 +3,7 @@ import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { objMap } from "../utils/util.js";
 import { vec3Dbg } from "../utils/utils-3d.js";
 import { toV3, toFRGB, parseHex, toFLRGB } from "./color.js";
+import { objectKeys } from "../utils/util-no-import.js";
 
 // TODO(@darzu): RENAME EDG16
 export const ENDESGA16 = objMap(
@@ -41,10 +42,11 @@ export const RainbowEndesga16 = [
   ENDESGA16.darkGreen,
   ENDESGA16.blue,
 ];
+export const Endesga16Idx = objMap(ENDESGA16, (v, k, i) => i);
 export const AllEndesga16 = Object.values(ENDESGA16);
 // console.log(ENDESGA16);
 export type Endesga16Name = keyof typeof ENDESGA16;
-export const AllEndesga16Names = Object.keys(ENDESGA16);
+export const AllEndesga16Names = objectKeys(ENDESGA16);
 export function randEndesga16() {
   const i = clamp(Math.floor(Math.random() * AllEndesga16.length), 0, 15);
   return AllEndesga16[i];
