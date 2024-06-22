@@ -210,7 +210,7 @@ function updateStdRenderData(
     const newTint = V3.zero(V3.tmp());
     if (ColorDef.isOn(o)) V3.copy(newTint, o.color);
     if (TintsDef.isOn(o)) applyTints(o.tints, newTint);
-    if (V3.sqrDist(prevTint, newTint) > 0.01) {
+    if (V3.sqrDist(prevTint, newTint) > 0.001) {
       tintChange = true;
       V3.copy(o.renderDataStd.tint, newTint);
     }
