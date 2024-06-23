@@ -24,6 +24,7 @@ import { Renderer, RendererDef } from "../render/renderer-ecs.js";
 import { TimeDef } from "../time/time.js";
 import { CyStructDesc, CyToTS, createCyStruct } from "../render/gpu-struct.js";
 import { V } from "../matrix/sprig-matrix.js";
+import { assert } from "../utils/util-no-import.js";
 
 /*
 Goals:
@@ -72,7 +73,8 @@ export interface ParticleSystem<U extends CyStructDesc = CyStructDesc> {
   pipeRender: CyRenderPipelinePtr;
   pipeUpdate: CyCompPipelinePtr;
 
-  submitParametersUpdate?: (renderer: Renderer, params: CyToTS<U>) => void;
+  updateParameters?: (renderer: Renderer, params: CyToTS<U>) => void;
+  updateSpawnParameters: (renderer: Renderer, count: number) => void;
 
   _data: CyArrayPtr<typeof ParticleStruct.desc>;
 }
@@ -84,7 +86,7 @@ export interface ParticleSystem<U extends CyStructDesc = CyStructDesc> {
 //   stop: () => void;
 // }
 
-function createParticleSystem<U extends CyStructDesc = {}>(
+export function createParticleSystem<U extends CyStructDesc = {}>(
   desc: ParticleSystemDesc<U>
 ): ParticleSystem<U> {
   // const maxNumParticles = desc.maxEmitters * desc.particlesPerEmitter;
@@ -100,7 +102,7 @@ function createParticleSystem<U extends CyStructDesc = {}>(
     init: maxParticles,
   });
 
-  const threadCount = 64;
+  const threadCount = 32;
 
   // TODO(@darzu): IMPL continuous spawning
 
@@ -128,9 +130,8 @@ function createParticleSystem<U extends CyStructDesc = {}>(
   */
 
   let uniBufPtr: CySingletonPtr<U> | undefined = undefined;
-  let submitParametersUpdate:
-    | ((r: Renderer, p: CyToTS<U>) => void)
-    | undefined = undefined;
+  let updateParameters: ((r: Renderer, p: CyToTS<U>) => void) | undefined =
+    undefined;
 
   if (desc.initParameters) {
     const uniStruct = createCyStruct(desc.initParameters, {
@@ -142,16 +143,57 @@ function createParticleSystem<U extends CyStructDesc = {}>(
         ? () => desc.initParameterDefaults!
         : undefined,
     });
-    submitParametersUpdate = (r: Renderer, p: CyToTS<U>) => {
+    updateParameters = (r: Renderer, p: CyToTS<U>) => {
       const uniBuf = r.getCyResource(uniBufPtr!)!;
       uniBuf.queueUpdate(p);
     };
   }
 
+  // spawn parameters
+  let _spawnIdx = 0;
+  let _spawnCount = maxParticles;
+
+  const spawnUniStruct = createCyStruct(
+    {
+      startIdx: "u32",
+      endIdxExcl: "u32",
+    },
+    {
+      isUniform: true,
+    }
+  );
+  const spawnUniBufPtr = CY.createSingleton(
+    `pipeInitParticles_${desc.name}_spawnUni`,
+    {
+      struct: spawnUniStruct,
+      init: () => ({
+        startIdx: _spawnIdx,
+        endIdxExcl: _spawnIdx + _spawnCount,
+      }),
+    }
+  );
+  const updateSpawnParameters = (r: Renderer, count: number) => {
+    assert(
+      count <= maxParticles,
+      `invalid spawn count ${count}, max particles: ${maxParticles}`
+    );
+    _spawnCount = count;
+
+    _spawnIdx += _spawnCount;
+    if (_spawnIdx + _spawnCount > maxParticles) _spawnIdx = 0;
+
+    const uniBuf = r.getCyResource(spawnUniBufPtr!)!;
+    uniBuf.queueUpdate({
+      startIdx: _spawnIdx,
+      endIdxExcl: _spawnIdx + _spawnCount,
+    });
+  };
+
   const pipeInit = CY.createComputePipeline(`pipeInitParticles_${desc.name}`, {
     globals: [
       sceneBufPtr,
       dataPtr,
+      { ptr: spawnUniBufPtr, alias: "spawn" },
       ...(uniBufPtr
         ? [
             {
@@ -168,14 +210,28 @@ function createParticleSystem<U extends CyStructDesc = {}>(
 
     @compute @workgroup_size(${threadCount})
     fn main(@builtin(global_invocation_id) gId : vec3<u32>) {
-      rand_seed = vec2<f32>(f32(gId.x), fract(scene.time * 0.01));
+      let idx = spawn.startIdx + gId.x;
 
-      var particle = ${bufName}s.ms[gId.x];
+      rand_seed = vec2<f32>(f32(idx), fract(scene.time * 0.01));
+
+      if (idx >= spawn.endIdxExcl) { return; }
+
+      var particle = ${bufName}s.ms[idx];
       ${desc.initParticle}
-      ${bufName}s.ms[gId.x] = particle;
+      ${bufName}s.ms[idx] = particle;
     }
     `,
-    workgroupCounts: [Math.ceil(maxParticles / threadCount), 1, 1],
+    workgroupCounts: {
+      onDispatch: () => {
+        let res: [number, number, number] = [
+          Math.ceil(_spawnCount / threadCount),
+          1,
+          1,
+        ];
+
+        return res;
+      },
+    },
   });
 
   // TODO(@darzu): PERF. probably shouldn't have a seperate pipeline per particle system!
@@ -241,7 +297,8 @@ function createParticleSystem<U extends CyStructDesc = {}>(
     pipeRender,
     pipeUpdate,
     _data: dataPtr,
-    submitParametersUpdate,
+    updateParameters,
+    updateSpawnParameters,
   };
 }
 

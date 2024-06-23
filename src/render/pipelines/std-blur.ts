@@ -77,9 +77,11 @@ export const blurPipelines = range(BLUR_ITERATIONS * 2).map((i) => {
     shaderComputeEntry: "main",
     // workgroupCounts: [1, 1, 1],
     // TODO(@darzu): this isn't true to original yet, got to flip/flop w/h
-    workgroupCounts: ([w, h]) => {
-      if (horizontal) return [Math.ceil(w / blockDim), Math.ceil(h / 4), 1];
-      else return [Math.ceil(h / blockDim), Math.ceil(w / 4), 1];
+    workgroupCounts: {
+      onCanvasResize: ([w, h]) => {
+        if (horizontal) return [Math.ceil(w / blockDim), Math.ceil(h / 4), 1];
+        else return [Math.ceil(h / blockDim), Math.ceil(w / 4), 1];
+      },
     },
     // workgroupCounts: [
     //   // TODO(@darzu): HACK. need sizes based on

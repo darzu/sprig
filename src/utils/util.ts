@@ -237,6 +237,10 @@ export function isArray(t: any): t is readonly unknown[] {
   // See: https://github.com/microsoft/TypeScript/issues/17002
   return Array.isArray(t);
 }
+export function isObject(t: any): t is object {
+  // TODO(@darzu): is this enough?
+  return typeof t === "object" && !Array.isArray(t);
+}
 export function isFunction(t: any): t is (...args: any[]) => any {
   return typeof t === "function";
 }

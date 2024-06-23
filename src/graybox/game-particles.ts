@@ -17,8 +17,7 @@ import {
   EmitterDef,
   ParticleDef,
   ParticleSystem,
-  cloudBurstSys,
-  fireTrailSys,
+  createParticleSystem,
 } from "../particle/particle.js";
 import { ColliderDef } from "../physics/collider.js";
 import { PositionDef, ScaleDef } from "../physics/transform.js";
@@ -56,10 +55,69 @@ import {
 import { createObj } from "../ecs/em-objects.js";
 import { CyToTS } from "../render/gpu-struct.js";
 import { createHtmlBuilder } from "../web/html-builder.js";
+import { remap } from "../utils/math.js";
 
 const DBG_GHOST = false;
 
-type ParticleParams = typeof cloudBurstSys extends ParticleSystem<infer U>
+const gameParticlesState = {
+  emitIntervalFrames: 20,
+  numEmit: 200,
+};
+
+export const sampleParticlesSys = createParticleSystem({
+  name: "sampleParticles",
+  maxParticles: 1_000,
+  maxLifeMs: 10_000 + 1_000,
+  initParticle: `
+  let color = mix(param.minColor, param.maxColor, vec4(rand(), rand(), rand(), rand()));
+  particle.color = color;
+  particle.colorVel = mix(param.minColorVel, param.maxColorVel, vec4(rand(), rand(), rand(), rand())) * 0.001;
+  particle.pos = mix(param.minPos, param.maxPos, vec3(rand(), rand(), rand()));
+  particle.size = mix(param.minSize, param.maxSize, rand());
+  particle.vel = mix(param.minVel, param.maxVel, vec3(rand(), rand(), rand())) * 0.1;
+  particle.acl = mix(param.minAcl, param.maxAcl, vec3(rand(), rand(), rand())) * 0.0001;
+  particle.sizeVel = mix(param.minSizeVel, param.maxSizeVel,  rand()) * 0.001;
+  particle.life = mix(param.minLife, param.maxLife, rand()) * 1000;
+  `,
+  initParameters: {
+    minColor: "vec4<f32>",
+    maxColor: "vec4<f32>",
+    minColorVel: "vec4<f32>",
+    maxColorVel: "vec4<f32>",
+    minPos: "vec3<f32>",
+    maxPos: "vec3<f32>",
+    minVel: "vec3<f32>",
+    maxVel: "vec3<f32>",
+    minAcl: "vec3<f32>",
+    maxAcl: "vec3<f32>",
+    minSize: "f32",
+    maxSize: "f32",
+    minSizeVel: "f32",
+    maxSizeVel: "f32",
+    minLife: "f32",
+    maxLife: "f32",
+  },
+  initParameterDefaults: {
+    minColor: V(0, 0, 0, 0),
+    maxColor: V(1, 1, 1, 1),
+    minColorVel: V(0, 0, 0, 0),
+    maxColorVel: V(-0.1, -0.1, +0.1, 0),
+    minPos: V(-10, -10, -10),
+    maxPos: V(+10, +10, +10),
+    minVel: V(-0.5, -0.5, -0.5),
+    maxVel: V(+0.5, +0.5, +0.5),
+    minAcl: V(-0.5, -0.5, -0.5),
+    maxAcl: V(+0.5, +0.5, +0.5),
+    minSize: 0.1,
+    maxSize: 1.0,
+    minSizeVel: -0.5,
+    maxSizeVel: +0.5,
+    minLife: 1,
+    maxLife: 10,
+  },
+});
+
+type ParticleParams = typeof sampleParticlesSys extends ParticleSystem<infer U>
   ? CyToTS<U>
   : never;
 
@@ -82,13 +140,9 @@ const particleParams: ParticleParams = {
   maxLife: 10,
 };
 
-const gameParticlesState = {
-  emitIntervalFrames: 20,
-};
-
 export async function initGameParticles() {
   EM.addEagerInit([], [RendererDef], [], (res) => {
-    res.renderer.renderer.submitPipelines([], [cloudBurstSys.pipeInit]);
+    res.renderer.renderer.submitPipelines([], [sampleParticlesSys.pipeInit]);
     // res.renderer.renderer.submitPipelines([], [fireTrailSys.pipeInit]);
 
     // renderer
@@ -100,10 +154,8 @@ export async function initGameParticles() {
       pointPipe,
       linePipe,
 
-      cloudBurstSys.pipeRender,
-      cloudBurstSys.pipeUpdate,
-      fireTrailSys.pipeRender,
-      fireTrailSys.pipeUpdate,
+      sampleParticlesSys.pipeRender,
+      sampleParticlesSys.pipeUpdate,
 
       stdGridRender,
 
@@ -150,9 +202,11 @@ export async function initGameParticles() {
   }
 
   // particle test
-  EM.set(pedestal, EmitterDef, { system: cloudBurstSys as ParticleSystem });
+  EM.set(pedestal, EmitterDef, {
+    system: sampleParticlesSys as ParticleSystem,
+  });
 
-  let nextEmit = 0;
+  let lastEmit = -Infinity;
 
   EM.addSystem(
     "repeatSpawn",
@@ -160,14 +214,20 @@ export async function initGameParticles() {
     null,
     [TimeDef, RendererDef],
     (_, res) => {
-      if (res.time.step >= nextEmit) {
-        nextEmit = res.time.step + gameParticlesState.emitIntervalFrames;
-        const color = randColor();
-        cloudBurstSys.submitParametersUpdate!(
+      if (res.time.step >= lastEmit + gameParticlesState.emitIntervalFrames) {
+        lastEmit = res.time.step;
+        sampleParticlesSys.updateParameters!(
           res.renderer.renderer,
           particleParams
         );
-        res.renderer.renderer.submitPipelines([], [cloudBurstSys.pipeInit]);
+        sampleParticlesSys.updateSpawnParameters(
+          res.renderer.renderer,
+          gameParticlesState.numEmit
+        );
+        res.renderer.renderer.submitPipelines(
+          [],
+          [sampleParticlesSys.pipeInit]
+        );
       }
     }
   );
@@ -182,35 +242,36 @@ export async function initGameParticles() {
         // fire ball
         const vel = V3.scale(randDir3(), 0.1);
         vel[2] = Math.abs(vel[2]);
-        const ball = createObj(
-          [
-            PositionDef,
-            ColorDef,
-            RenderableConstructDef,
-            SketchTrailDef,
-            LinearVelocityDef,
-            GravityDef,
-            EmitterDef,
-            LifetimeDef,
-          ] as const,
-          {
-            position: [0, 0, 20],
-            color: ENDESGA16.red,
-            renderableConstruct: [BallMesh],
-            sketchTrail: undefined,
-            linearVelocity: vel,
-            gravity: [0, 0, -0.0001],
-            lifetime: 2000,
-            emitter: {
-              system: fireTrailSys,
-              continuousPerSecNum: 5,
-            },
-          }
-        );
+        // TODO(@darzu): IMPL!
+        // const ball = createObj(
+        //   [
+        //     PositionDef,
+        //     ColorDef,
+        //     RenderableConstructDef,
+        //     SketchTrailDef,
+        //     LinearVelocityDef,
+        //     GravityDef,
+        //     EmitterDef,
+        //     LifetimeDef,
+        //   ] as const,
+        //   {
+        //     position: [0, 0, 20],
+        //     color: ENDESGA16.red,
+        //     renderableConstruct: [BallMesh],
+        //     sketchTrail: undefined,
+        //     linearVelocity: vel,
+        //     gravity: [0, 0, -0.0001],
+        //     lifetime: 2000,
+        //     emitter: {
+        //       system: fireTrailSys,
+        //       continuousPerSecNum: 5,
+        //     },
+        //   }
+        // );
 
-        // spray
-        // TODO(@darzu): IMPL! This pulse emitter doesn't work yet
-        pedestal.emitter.pulseNum.push(100);
+        // // spray
+        // // TODO(@darzu): IMPL! This pulse emitter doesn't work yet
+        // pedestal.emitter.pulseNum.push(100);
       }
     }
   );
@@ -317,11 +378,22 @@ async function initParticlesHtml() {
   emitPanel.addNumberEditor({
     label: "Freq",
     min: 1,
-    max: 180,
+    max: 100,
     step: 1,
-    default: 180,
+    default: 50,
     onChange: (val) => {
-      gameParticlesState.emitIntervalFrames = val;
+      const steps = remap(val, 1, 100, 180, 1);
+      gameParticlesState.emitIntervalFrames = steps;
+    },
+  });
+  emitPanel.addNumberEditor({
+    label: "Num",
+    min: 0,
+    max: 200,
+    step: 1,
+    default: 100,
+    onChange: (val) => {
+      gameParticlesState.numEmit = val;
     },
   });
 }
