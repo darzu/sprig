@@ -145,15 +145,18 @@ export function initStdGrid() {
   );
 }
 
-export async function initDemoPanCamera() {
+export async function initDemoPanCamera(
+  origin?: V3.InputT,
+  zoomOffset: number = 50
+) {
   const g = EM.mk();
   EM.set(g, CameraFollowDef, 1);
-  V3.set(0, -50, 0, g.cameraFollow.positionOffset);
+  V3.set(0, -zoomOffset, 0, g.cameraFollow.positionOffset);
   g.cameraFollow.yawOffset = -2.088;
   g.cameraFollow.pitchOffset = -0.553;
 
   // TODO(@darzu): wish we didn't need these
-  EM.set(g, PositionDef);
+  EM.set(g, PositionDef, origin);
   EM.set(g, RotationDef);
   EM.set(g, RenderableConstructDef, CubeMesh, false);
 

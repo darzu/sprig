@@ -55,7 +55,7 @@ import { range, zip } from "../utils/util.js";
 import { computeTriangleNormal, randVec3OfLen } from "../utils/utils-3d.js";
 import { DotsDef } from "./dots.js";
 import { GlitchDef } from "./glitch.js";
-import { createSun, initGhost } from "./graybox-helpers.js";
+import { createSun, initDemoPanCamera, initGhost } from "./graybox-helpers.js";
 import { testingLSys } from "./l-systems.js";
 import { createObj, defineObj } from "../ecs/em-objects.js";
 import { createHtmlBuilder } from "../web/html-builder.js";
@@ -106,6 +106,9 @@ export async function initPainterlyGame() {
   camera.viewDist = 10000;
   V3.set(-200, -200, -200, camera.maxWorldAABB.min);
   V3.set(+200, +200, +200, camera.maxWorldAABB.max);
+
+  // pan camera
+  initDemoPanCamera([100, 100, 0], 200);
 
   // TODO(@darzu): WORK AROUND: For whatever reason this particular init order and this obj are
   //  needed to avoid a bug in canary (122.0.6255.1) not present in retail (120.0.6099.234)
@@ -451,8 +454,8 @@ export async function initPainterlyGame() {
   // bouncing balls
   // createBouncingBalls();
 
-  // dbg ghost
-  initGhost();
+  // // dbg ghost
+  // initGhost();
 
   // GUI
   initHtml();
