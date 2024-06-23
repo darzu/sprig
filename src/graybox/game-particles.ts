@@ -306,9 +306,10 @@ async function initParticlesHtml() {
   `);
 
   // panel order
-  const movPanel = htmlBuilder.addInfoPanel("Movement");
-  const appPanel = htmlBuilder.addInfoPanel("Appearance");
   const emitPanel = htmlBuilder.addInfoPanel("Emission");
+  const colorPanel = htmlBuilder.addInfoPanel("Color");
+  const movPanel = htmlBuilder.addInfoPanel("Movement");
+  const sizePanel = htmlBuilder.addInfoPanel("Size");
 
   // movement
   movPanel.addMinMaxV3Editor({
@@ -348,8 +349,8 @@ async function initParticlesHtml() {
     },
   });
 
-  // appearance
-  appPanel.addMinMaxColorEditor({
+  // color
+  colorPanel.addMinMaxColorEditor({
     label: "Color",
     defaultMin: V3.fromV4(particleParams.minColor),
     defaultMax: V3.fromV4(particleParams.maxColor),
@@ -358,7 +359,30 @@ async function initParticlesHtml() {
       V4.copyV3(particleParams.maxColor, max);
     },
   });
-  appPanel.addMinMaxEditor({
+  colorPanel.addMinMaxEditor({
+    label: "Alpha",
+    min: 0,
+    max: 1,
+    step: 0.01,
+    defaultMin: particleParams.minColor[3],
+    defaultMax: particleParams.maxColor[3],
+    onChange: (min, max) => {
+      particleParams.minColor[3] = min;
+      particleParams.maxColor[3] = max;
+    },
+  });
+  // colorPanel.addMinMaxColorEditor({
+  //   label: "Color Δ/t",
+  //   defaultMin: V3.fromV4(particleParams.minColorVel),
+  //   defaultMax: V3.fromV4(particleParams.maxColorVel),
+  //   onChange: (min, max) => {
+  //     V4.copyV3(particleParams.minColorVel, min);
+  //     V4.copyV3(particleParams.maxColorVel, max);
+  //   },
+  // });
+
+  // size
+  sizePanel.addMinMaxEditor({
     label: "Size",
     min: 0,
     max: 5,
@@ -370,7 +394,7 @@ async function initParticlesHtml() {
       particleParams.maxSize = max;
     },
   });
-  appPanel.addMinMaxEditor({
+  sizePanel.addMinMaxEditor({
     label: "Size Δ/t",
     min: -2,
     max: 2,
