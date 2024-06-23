@@ -305,9 +305,12 @@ async function initParticlesHtml() {
     </ul>
   `);
 
-  // movement
+  // panel order
   const movPanel = htmlBuilder.addInfoPanel("Movement");
+  const appPanel = htmlBuilder.addInfoPanel("Appearance");
+  const emitPanel = htmlBuilder.addInfoPanel("Emission");
 
+  // movement
   movPanel.addMinMaxV3Editor({
     label: "Pos",
     min: [-100, -100, -100],
@@ -320,7 +323,6 @@ async function initParticlesHtml() {
       V3.copy(particleParams.maxPos, max);
     },
   });
-
   movPanel.addMinMaxV3Editor({
     label: "Vel",
     min: [-2, -2, -2],
@@ -333,7 +335,6 @@ async function initParticlesHtml() {
       V3.copy(particleParams.maxVel, max);
     },
   });
-
   movPanel.addMinMaxV3Editor({
     label: "Acl",
     min: [-2, -2, -2],
@@ -348,8 +349,15 @@ async function initParticlesHtml() {
   });
 
   // appearance
-  const appPanel = htmlBuilder.addInfoPanel("Appearance");
-
+  appPanel.addMinMaxColorEditor({
+    label: "Color",
+    defaultMin: V3.fromV4(particleParams.minColor),
+    defaultMax: V3.fromV4(particleParams.maxColor),
+    onChange: (min, max) => {
+      V4.copyV3(particleParams.minColor, min);
+      V4.copyV3(particleParams.maxColor, max);
+    },
+  });
   appPanel.addMinMaxEditor({
     label: "Size",
     min: 0,
@@ -362,19 +370,20 @@ async function initParticlesHtml() {
       particleParams.maxSize = max;
     },
   });
-
-  appPanel.addMinMaxColorEditor({
-    label: "Color",
-    defaultMin: V3.fromV4(particleParams.minColor),
-    defaultMax: V3.fromV4(particleParams.maxColor),
+  appPanel.addMinMaxEditor({
+    label: "Size Δ/t",
+    min: -2,
+    max: 2,
+    step: 0.1,
+    defaultMin: particleParams.minSizeVel,
+    defaultMax: particleParams.maxSizeVel,
     onChange: (min, max) => {
-      V4.copyV3(particleParams.minColor, min);
-      V4.copyV3(particleParams.maxColor, max);
+      particleParams.minSizeVel = min;
+      particleParams.maxSizeVel = max;
     },
   });
 
   // emission
-  const emitPanel = htmlBuilder.addInfoPanel("Emission");
   emitPanel.addNumberEditor({
     label: "Freq",
     min: 1,
@@ -394,6 +403,18 @@ async function initParticlesHtml() {
     default: 100,
     onChange: (val) => {
       gameParticlesState.numEmit = val;
+    },
+  });
+  emitPanel.addMinMaxEditor({
+    label: "Life",
+    min: 0,
+    max: 10,
+    step: 0.1,
+    defaultMin: particleParams.minLife,
+    defaultMax: particleParams.maxLife,
+    onChange: (min, max) => {
+      particleParams.minLife = min;
+      particleParams.maxLife = max;
     },
   });
 }
