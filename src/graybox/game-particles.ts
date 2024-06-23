@@ -389,7 +389,7 @@ async function initParticlesHtml() {
   emitPanel.addNumberEditor({
     label: "Num",
     min: 0,
-    max: 200,
+    max: 1000,
     step: 1,
     default: 100,
     onChange: (val) => {
