@@ -82,6 +82,10 @@ const particleParams: ParticleParams = {
   maxLife: 10,
 };
 
+const gameParticlesState = {
+  emitIntervalFrames: 20,
+};
+
 export async function initGameParticles() {
   EM.addEagerInit([], [RendererDef], [], (res) => {
     res.renderer.renderer.submitPipelines([], [cloudBurstSys.pipeInit]);
@@ -148,13 +152,16 @@ export async function initGameParticles() {
   // particle test
   EM.set(pedestal, EmitterDef, { system: cloudBurstSys as ParticleSystem });
 
+  let nextEmit = 0;
+
   EM.addSystem(
     "repeatSpawn",
     Phase.GAME_WORLD,
     null,
     [TimeDef, RendererDef],
     (_, res) => {
-      if (res.time.step % (60 * 3) === 0) {
+      if (res.time.step >= nextEmit) {
+        nextEmit = res.time.step + gameParticlesState.emitIntervalFrames;
         const color = randColor();
         cloudBurstSys.submitParametersUpdate!(
           res.renderer.renderer,
@@ -220,10 +227,13 @@ async function initParticlesHtml() {
   const htmlBuilder = createHtmlBuilder();
 
   // about
-  const aboutPanel = htmlBuilder.addInfoPanel("Shipyard");
+  const aboutPanel = htmlBuilder.addInfoPanel("Particles");
   aboutPanel.addText(`
-     TODO
-  `);
+     A particle simulation running on the GPU.
+     Particles are camera-facing unsorted quads alpha-clipped into circles.
+     GPU uniform buffer parameters control initialization.
+    `);
+  //  TODO: continuous partial emission, growable buffers, custom init/update shaders.
 
   // controls
   const controlsPanel = htmlBuilder.addInfoPanel("Controls");
@@ -299,6 +309,19 @@ async function initParticlesHtml() {
     onChange: (min, max) => {
       V4.copyV3(particleParams.minColor, min);
       V4.copyV3(particleParams.maxColor, max);
+    },
+  });
+
+  // emission
+  const emitPanel = htmlBuilder.addInfoPanel("Emission");
+  emitPanel.addNumberEditor({
+    label: "Freq",
+    min: 1,
+    max: 180,
+    step: 1,
+    default: 180,
+    onChange: (val) => {
+      gameParticlesState.emitIntervalFrames = val;
     },
   });
 }

@@ -25,6 +25,16 @@ export type MinMaxEditorOpt = {
 };
 export type MinMaxEditor = void;
 
+export type NumberEditorOpt = {
+  label: string;
+  min: number;
+  max: number;
+  default: number;
+  step: number;
+  onChange: (val: number) => void;
+};
+export type NumberEditor = void;
+
 export type MinMaxV3EditorOpt = {
   // kind: "minMaxV3";
   label: string;
@@ -83,6 +93,7 @@ export interface InfoPanel {
   addText(txt: string): void;
   addHTML(html: string): void; // TODO(@darzu): remove all uses, move into other editors
   addMinMaxEditor(e: MinMaxEditorOpt): MinMaxEditor;
+  addNumberEditor(e: NumberEditorOpt): NumberEditor;
   addMinMaxV3Editor(e: MinMaxV3EditorOpt): MinMaxV3Editor;
   addMinMaxColorEditor(e: MinMaxColorEditorOpt): MinMaxColorEditor;
   addToggleEditor(e: ToggleEditorOpt): ToggleEditor;
@@ -113,6 +124,7 @@ export function createHtmlBuilder(): HtmlBuilder {
       addMinMaxColorEditor,
       addMinMaxV3Editor,
       addMinMaxEditor,
+      addNumberEditor,
       addPaletteColorEditor,
       addToggleEditor,
     };
@@ -170,6 +182,36 @@ export function createHtmlBuilder(): HtmlBuilder {
 
       minSlider.oninput = oninput;
       maxSlider.oninput = oninput;
+
+      _panelDiv.appendChild(div);
+    }
+
+    function addNumberEditor(editor: NumberEditorOpt): NumberEditor {
+      const label = editor.label;
+      const slider = mkEl("input", {
+        type: "range",
+        min: editor.min,
+        max: editor.max,
+        step: editor.step,
+        value: editor.default,
+      });
+
+      const valEl = mkEl("span", { class: "valLabel" });
+
+      const div = mkEl("div", { class: "inputGrid" }, [
+        mkEl("label", {}, label),
+        mkEl("div", { class: "slider" }, [slider, valEl]),
+      ]);
+
+      const fractDigits = fractionDigitsFromStepSize(editor.step);
+      const oninput = () => {
+        const newVal = parseFloat(slider.value);
+        valEl.textContent = newVal.toFixed(fractDigits);
+        editor.onChange(newVal);
+      };
+      oninput();
+
+      slider.oninput = oninput;
 
       _panelDiv.appendChild(div);
     }

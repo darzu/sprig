@@ -58,6 +58,7 @@ import { GlitchDef } from "./glitch.js";
 import { createSun, initGhost } from "./graybox-helpers.js";
 import { testingLSys } from "./l-systems.js";
 import { createObj, defineObj } from "../ecs/em-objects.js";
+import { createHtmlBuilder } from "../web/html-builder.js";
 
 // const dbgGrid = [
 //   [xpPointTex, xpPointTex],
@@ -452,6 +453,23 @@ export async function initPainterlyGame() {
 
   // dbg ghost
   initGhost();
+
+  // GUI
+  initHtml();
+}
+
+async function initHtml() {
+  if (!document.getElementById("infoPanelsHolder")) {
+    console.warn("no infoPanelsHolder");
+    return;
+  }
+  const htmlBuilder = createHtmlBuilder();
+
+  // about
+  const aboutPanel = htmlBuilder.addInfoPanel("Painterly Dots");
+  aboutPanel.addText(`TODO!`);
+
+  throw "TODO!";
 }
 
 async function createBouncingBalls() {

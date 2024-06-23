@@ -1,14 +1,14 @@
 import { defineResourceWithInit } from "../ecs/em-helpers.js";
 
-export const WebNavDef = defineResourceWithInit("webNav", [], () => {
-  let _hash: string = _readHash();
+export function getWebLocationHash() {
+  return window.location.hash.toLowerCase().trim().slice(1);
+}
 
-  function _readHash() {
-    return window.location.hash.toLowerCase().trim().slice(1);
-  }
+export const WebNavDef = defineResourceWithInit("webNav", [], () => {
+  let _hash: string = getWebLocationHash();
 
   window.addEventListener("hashchange", function (e) {
-    _hash = _readHash();
+    _hash = getWebLocationHash();
   });
 
   return {
