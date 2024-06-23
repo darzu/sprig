@@ -310,6 +310,7 @@ async function initParticlesHtml() {
   const colorPanel = htmlBuilder.addInfoPanel("Color");
   const movPanel = htmlBuilder.addInfoPanel("Movement");
   const sizePanel = htmlBuilder.addInfoPanel("Size");
+  const colorVelPanel = htmlBuilder.addInfoPanel("Color Δ/t");
 
   // movement
   movPanel.addMinMaxV3Editor({
@@ -351,7 +352,7 @@ async function initParticlesHtml() {
 
   // color
   colorPanel.addMinMaxColorEditor({
-    label: "Color",
+    label: "Range",
     defaultMin: V3.fromV4(particleParams.minColor),
     defaultMax: V3.fromV4(particleParams.maxColor),
     onChange: (min, max) => {
@@ -371,6 +372,18 @@ async function initParticlesHtml() {
       particleParams.maxColor[3] = max;
     },
   });
+  // colorPanel.addMinMaxEditor({
+  //   label: "Alpha Δ/t",
+  //   min: -2,
+  //   max: 2,
+  //   step: 0.01,
+  //   defaultMin: particleParams.minColorVel[3],
+  //   defaultMax: particleParams.maxColorVel[3],
+  //   onChange: (min, max) => {
+  //     particleParams.minColorVel[3] = min;
+  //     particleParams.maxColorVel[3] = max;
+  //   },
+  // });
   // colorPanel.addMinMaxColorEditor({
   //   label: "Color Δ/t",
   //   defaultMin: V3.fromV4(particleParams.minColorVel),
@@ -380,6 +393,23 @@ async function initParticlesHtml() {
   //     V4.copyV3(particleParams.maxColorVel, max);
   //   },
   // });
+
+  // color vel
+  for (let i = 0; i < 3; i++) {
+    const name = ["Red", "Green", "Blue"][i];
+    colorVelPanel.addMinMaxEditor({
+      label: `${name} Δ/t`,
+      min: -1.5,
+      max: 1.5,
+      step: 0.01,
+      defaultMin: particleParams.minColorVel[i],
+      defaultMax: particleParams.maxColorVel[i],
+      onChange: (min, max) => {
+        particleParams.minColorVel[i] = min;
+        particleParams.maxColorVel[i] = max;
+      },
+    });
+  }
 
   // size
   sizePanel.addMinMaxEditor({
