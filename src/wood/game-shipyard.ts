@@ -542,10 +542,12 @@ async function initShipyardHtml() {
     <ul>
       <li>Drag to pan</li>
       <li>Scroll to zoom</li>
-      <li>Click to: <span id="clickModeString"></span></li>
+      <li id="clickModeString"></li>
+      <li id="clickModeLi2" style="visibility:hidden;"></li>
     </ul>
   `);
   const clickModeStringEl = document.getElementById("clickModeString")!;
+  const clickModeLi2El = document.getElementById("clickModeLi2")!;
 
   // painting
   const paintPanel = htmlBuilder.addInfoPanel("Painting");
@@ -599,8 +601,8 @@ async function initShipyardHtml() {
   // click mode
   const clickToStringByMode: { [k in ShipyardClickMode]: string } = {
     [ShipyardClickMode.None]: "",
-    [ShipyardClickMode.Cannon]: "fire a cannon at the cursor",
-    [ShipyardClickMode.Paint]: "paint a board",
+    [ShipyardClickMode.Cannon]: "Click to fire a cannon at the cursor",
+    [ShipyardClickMode.Paint]: "Click to paint a board",
   };
 
   function setClickMode(mode: ShipyardClickMode) {
@@ -610,6 +612,13 @@ async function initShipyardHtml() {
     paletteEditor.doEnable(mode === ShipyardClickMode.Paint);
 
     clickModeStringEl!.textContent = clickToStringByMode[mode];
+
+    if (mode === ShipyardClickMode.Cannon) {
+      clickModeLi2El.setAttribute("style", "visibility:hidden;");
+    } else if (mode === ShipyardClickMode.Paint) {
+      clickModeLi2El.removeAttribute("style");
+      clickModeLi2El.textContent = `Shift + Click to paint group`;
+    }
   }
 
   setClickMode(ShipyardClickMode.Cannon);

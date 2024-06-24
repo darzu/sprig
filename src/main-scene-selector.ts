@@ -31,12 +31,26 @@ const externalLinks = {
 };
 
 export async function main_sceneSelector() {
+  let gameKey = getWebLocationHash();
+  // HACK: doing the location assign on blank load is triggering the event listener below. Skip one reload.
+  let _hack_oneChangeIgnore = false;
+
+  if (!gameKey) {
+    gameKey = showcaseGameRegs[0].key;
+    _hack_oneChangeIgnore = true;
+    window.location.assign(`#${showcaseGameRegs[0].key}`);
+  }
+
   window.addEventListener("hashchange", () => {
+    if (_hack_oneChangeIgnore) {
+      _hack_oneChangeIgnore = false;
+      return;
+    }
+
     // console.log("hash: " + window.location.hash);
     window.location.reload(); // TODO(@darzu): would be great to not reload
   });
 
-  const gameKey = getWebLocationHash();
   GAME_LOADER.startGame(gameKey);
 
   const linksTreeId = "linksTree";
