@@ -749,7 +749,8 @@ EM.addSystem(
         // 2.0,
         20.0,
         // TODO(@darzu): make this use vec3.FWD
-        V3.FWD
+        V3.FWD,
+        false
       );
 
       // play sound

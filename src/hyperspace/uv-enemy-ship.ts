@@ -290,7 +290,8 @@ export function registerEnemyShipSystems() {
               0.02,
               6 * 0.00001,
               10,
-              V3.FWD
+              V3.FWD,
+              false
             );
           }
         }

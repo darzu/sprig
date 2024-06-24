@@ -72,6 +72,7 @@ export const BulletConstructDef = EM.defineComponent(
       team: 0,
       gravity: 0,
       health: 0,
+      trail: false,
     };
   },
   (
@@ -81,7 +82,8 @@ export const BulletConstructDef = EM.defineComponent(
     angVel?: V3,
     team?: number,
     gravity?: number,
-    health?: number
+    health?: number,
+    trail?: boolean
   ) => {
     if (loc) V3.copy(p.location, loc);
     if (vel) V3.copy(p.linearVelocity, vel);
@@ -89,6 +91,7 @@ export const BulletConstructDef = EM.defineComponent(
     if (team !== undefined) p.team = team;
     if (gravity !== undefined) p.gravity = gravity;
     if (health !== undefined) p.health = health;
+    p.trail = !!trail;
     return p;
   }
 );
@@ -152,7 +155,10 @@ export function createOrResetBullet(
     time: res.time.time,
   });
 
-  if (DBG_BULLET_TRAILS) EM.set(e, SketchTrailDef);
+  let trail = props.trail || DBG_BULLET_TRAILS;
+
+  if (trail) EM.set(e, SketchTrailDef);
+  else EM.tryRemoveComponent(e.id, SketchTrailDef); // TODO(@darzu): hate removal
 
   return e;
 }
@@ -204,7 +210,8 @@ export async function fireBullet(
   rotationSpeed: number, // = 0.02,
   gravity: number, // = 6
   health: number,
-  bulletAxis: V3.InputT
+  bulletAxis: V3.InputT,
+  trail: boolean
 ) {
   assert(gravity >= 0, `Gravity (probably) needs to be >= 0`);
   {
@@ -246,6 +253,7 @@ export async function fireBullet(
   e.bulletConstruct.team = team;
   e.bulletConstruct.gravity = gravity;
   e.bulletConstruct.health = health;
+  e.bulletConstruct.trail = trail;
 
   // TODO(@darzu): This breaks multiplayer maybe!
   // TODO(@darzu): MULTIPLAYER. need to think how multiplayer and entity pools interact.

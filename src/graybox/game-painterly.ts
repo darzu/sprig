@@ -491,7 +491,11 @@ async function initHtml() {
 
   // about
   const aboutPanel = htmlBuilder.addInfoPanel("Painterly Dots");
-  aboutPanel.addText(`TODO!`);
+  aboutPanel.addText(`
+    This scene shows an experimental rendering technique using point primitives
+    which are randomly distributed across scene surfaces 
+    and then in screen-space we fill the gaps with a heavily customized jump flooding algorithm.
+  `);
 
   // controls
   const controlsPanel = htmlBuilder.addInfoPanel("Controls");

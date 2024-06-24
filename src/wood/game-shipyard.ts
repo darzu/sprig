@@ -85,6 +85,7 @@ import { OBB } from "../physics/obb.js";
 import { getFireSolution } from "../stone/projectile.js";
 import { IdPair, idPair, packI16s, toMap, unpackI16s } from "../utils/util.js";
 import { createHtmlBuilder } from "../web/html-builder.js";
+import { transformAABB, cloneAABB, ZERO_AABB } from "../physics/aabb.js";
 
 const DBG_COLLIDERS = false;
 const DBG_TRANSPARENT_BOAT = false;
@@ -97,14 +98,10 @@ enum ShipyardClickMode {
   Paint,
 }
 
-type ShipyardGameState = {
-  mode: ShipyardClickMode;
-  paintColor: Endesga16Name;
-};
-
-let shipyardGameState: ShipyardGameState = {
+const shipyardGameState = {
   mode: ShipyardClickMode.Cannon,
-  paintColor: "blue",
+  paintColor: "blue" as Endesga16Name,
+  showColliders: false,
 };
 
 export async function initShipyardGame() {
@@ -274,7 +271,7 @@ export async function initShipyardGame() {
     RenderableDef
   );
 
-  // let _maxSketchAABB = 0;
+  let _maxSketchAABB = 0;
 
   // TODO(@darzu): This is all pretty hacky. I guess I want some sort of arena for hover sketches that is cleared.
   let _hoverTmpOBB = OBB.mk();
@@ -324,7 +321,7 @@ export async function initShipyardGame() {
       let doPaint =
         shipyardGameState.mode === ShipyardClickMode.Paint && res.inputs.lclick;
 
-      // let _sketchAABBNum = 0;
+      let _sketchAABBNum = 0;
 
       function woodColorSegment(
         [gIdx, bIdx, sIdx]: SegIndex,
@@ -380,12 +377,15 @@ export async function initShipyardGame() {
         const hitItr = woodVsAABB(woodObj.state, (localAABB) => {
           const dist = rayVsAABBHitDist(localAABB, woodLocalRay);
           const isHit = !!dist && dist < minDist;
-          if (isHit) {
-            // const worldAABB =transformAABB(cloneAABB(localAABB), woodEnt.world.transform) // unnecessary since ship is at 0,0,0
-            // sketchAABB(localAABB, {
-            //   key: `hitAABB_${++_sketchAABBNum}`,
-            //   color: ENDESGA16.yellow,
-            // });
+          if (isHit && shipyardGameState.showColliders) {
+            const worldAABB = transformAABB(
+              cloneAABB(localAABB),
+              woodEnt.world.transform
+            ); // unnecessary since ship is at 0,0,0
+            sketchAABB(localAABB, {
+              key: `hitAABB_${++_sketchAABBNum}`,
+              color: ENDESGA16.yellow,
+            });
           }
           return isHit;
         });
@@ -404,10 +404,12 @@ export async function initShipyardGame() {
               minHit = hit;
             }
             // woodColorSegment(seg, ENDESGA16.yellow);
-            // sketchAABB(seg.localAABB, {
-            //   key: `hitAABB_${_sketchAABBNum}`,
-            //   color: ENDESGA16.darkGreen,
-            // });
+            if (shipyardGameState.showColliders) {
+              sketchAABB(seg.localAABB, {
+                key: `hitAABB_${_sketchAABBNum}`,
+                color: ENDESGA16.darkGreen,
+              });
+            }
           }
 
           // if (rayVsCapsule(woodLocalRay, hit.seg)) {
@@ -481,19 +483,20 @@ export async function initShipyardGame() {
                 0.02,
                 gravity,
                 bulletHealth,
-                V3.FWD
+                V3.FWD,
+                shipyardGameState.showColliders
               );
             }
           }
         }
 
-        // _maxSketchAABB = Math.max(_sketchAABBNum, _maxSketchAABB);
-        // for (let i = _sketchAABBNum; _sketchAABBNum < _maxSketchAABB; i++) {
-        //   // TODO(@darzu): Hide sketch function??
-        //   sketchAABB(ZERO_AABB, {
-        //     key: `hitAABB_${++_sketchAABBNum}`,
-        //   });
-        // }
+        _maxSketchAABB = Math.max(_sketchAABBNum, _maxSketchAABB);
+        for (let i = _sketchAABBNum; _sketchAABBNum < _maxSketchAABB; i++) {
+          // TODO(@darzu): Hide sketch function??
+          sketchAABB(ZERO_AABB, {
+            key: `hitAABB_${++_sketchAABBNum}`,
+          });
+        }
       }
 
       if (hasChange) {
@@ -579,6 +582,17 @@ async function initShipyardHtml() {
     onChange: (v) => {
       const mode = v ? ShipyardClickMode.Cannon : ShipyardClickMode.None;
       setClickMode(mode);
+    },
+  });
+
+  // view
+  const viewPanel = htmlBuilder.addInfoPanel("View");
+
+  const collidersToggle = viewPanel.addToggleEditor({
+    label: "Show Colliders",
+    default: shipyardGameState.showColliders,
+    onChange: (v) => {
+      shipyardGameState.showColliders = v;
     },
   });
 
