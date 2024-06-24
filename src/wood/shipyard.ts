@@ -256,9 +256,10 @@ export function createWoodenBox(): WoodObj {
 
   const boardGap = 0.1;
 
-  w.startGroup("wall1");
+  const wall1G = w.addGroup("wall1");
   const wall1Rot = quat.fromYawPitchRoll(PId4, 0, -PId2);
   createWallFromPath({
+    group: wall1G,
     path: createPathFromStartRotLen({
       start: [-20, -20, 0],
       rot: wall1Rot,
@@ -268,9 +269,10 @@ export function createWoodenBox(): WoodObj {
     count: 10,
   });
 
-  w.startGroup("wall2");
+  const wall2G = w.addGroup("wall2");
   const wall2Rot = quat.fromYawPitchRoll(0, PId6, PId12);
   createWallFromPath({
+    group: wall2G,
     path: createPathFromStartRotLen({
       start: [10, 0, 5],
       rot: wall2Rot,
@@ -281,7 +283,7 @@ export function createWoodenBox(): WoodObj {
   });
 
   {
-    w.startGroup("rail");
+    const railG = w.addGroup("rail");
     const railCurve = bezierFromPointsDirectionsInfluence({
       start: [0, -20, 5],
       startDir: V3.fromYawPitch((5 / 16) * PI),
@@ -292,6 +294,7 @@ export function createWoodenBox(): WoodObj {
     });
     const railPath = createPathFromBezier(railCurve, 16, [1, 0, 0]);
     createWallFromPath({
+      group: railG,
       path: railPath,
       right: [0, 0, -1],
       count: 10,
@@ -305,10 +308,12 @@ export function createWoodenBox(): WoodObj {
   return obj;
 
   function createWallFromPath({
+    group,
     path,
     right,
     count,
   }: {
+    group: WoodGroupBuider;
     path: Path;
     right: V3.InputT;
     count: number;
@@ -321,7 +326,7 @@ export function createWoodenBox(): WoodObj {
       }
       const color =
         i === 5 || i === 4 ? ENDESGA16.lightBlue : ENDESGA16.lightBrown;
-      w.addBoard(ipath, color);
+      group.addBoard(ipath, color);
     }
   }
 }
@@ -425,8 +430,8 @@ export function createLD53Ship(): WoodObj {
   const keelAABB = getAABBFromPath(keelPath);
   const keelSize = getSizeFromAABB(keelAABB, V3.mk());
 
-  w.startGroup("keel");
-  w.addBoard(keelPath, keelColor);
+  const keelG = w.addGroup("keel");
+  keelG.addBoard(keelPath, keelColor);
 
   // RIBS
   const ribWidth = 0.5;
@@ -462,7 +467,7 @@ export function createLD53Ship(): WoodObj {
   const railPath = createPathFromBezier(railCurve, railNodes, [0, 0, 1]);
 
   // RIBS
-  w.startGroup("ribs");
+  const ribsG = w.addGroup("ribs");
   w.b.setSize(ribWidth, ribDepth);
 
   const numRibSegs = 8;
@@ -513,18 +518,18 @@ export function createLD53Ship(): WoodObj {
 
   for (let c of ribCurves) {
     const path = createPathFromBezier(c, numRibSegs, V3.RIGHT);
-    w.addBoard(path, ribColor);
-    w.addBoard(mirrorPath(clonePath(path), mirrorNorm), ribColor);
+    ribsG.addBoard(path, ribColor);
+    ribsG.addBoard(mirrorPath(clonePath(path), mirrorNorm), ribColor);
     // dbgPathWithGizmos(path, 2);
   }
 
   // RAIL
-  w.startGroup("rail");
+  const railG = w.addGroup("rail");
   w.b.setSize(ribWidth, ribDepth);
-  w.addBoard(railPath, railColor);
+  railG.addBoard(railPath, railColor);
   // dbgPathWithGizmos(railPath);
   const mirrorRailPath = mirrorPath(clonePath(railPath), mirrorNorm);
-  w.addBoard(mirrorRailPath, railColor);
+  railG.addBoard(mirrorRailPath, railColor);
 
   // REAR RAIL
   {
@@ -539,7 +544,7 @@ export function createLD53Ship(): WoodObj {
     for (let n of path) {
       // quat.fromEuler(-Math.PI / 2, 0, Math.PI / 2, n.rot);
     }
-    w.addBoard(path, railColor);
+    railG.addBoard(path, railColor);
   }
 
   // PLANK PARAMS
@@ -588,7 +593,8 @@ export function createLD53Ship(): WoodObj {
   let transomPlankNum = transomRibWithSlots.length;
   const prowRibWithSlots = ribWithSlots[ribWithSlots.length - 1];
 
-  w.startGroup("planks");
+  const planksLeftG = w.addGroup("planksLeft");
+  const planksRightG = w.addGroup("planksRight");
   w.b.setSize(plankWidth, plankDepth);
   const plankPaths: Path[] = [];
   const plankPathsMirrored: Path[] = [];
@@ -645,12 +651,12 @@ export function createLD53Ship(): WoodObj {
     if (stripStartIdx <= i && i <= stripEndIdx) color = plankStripeColor;
     if (strip2StartIdx <= i && i <= strip2EndIdx) color = plankStripe2Color;
 
-    w.addBoard(nodes, color);
-    w.addBoard(mirroredPath, color);
+    planksRightG.addBoard(nodes, color);
+    planksLeftG.addBoard(mirroredPath, color);
   }
 
   // TRANSOM
-  w.startGroup("transom");
+  const tansomG = w.addGroup("transom");
   w.b.setSize(plankWidth, plankDepth);
   for (let i = 0; i < transomPlankNum; i++) {
     // TODO(@darzu): REFACTOR make an evenPathBetweenPoints function
@@ -675,11 +681,11 @@ export function createLD53Ship(): WoodObj {
     if (stripStartIdx <= i && i <= stripEndIdx) color = plankStripeColor;
     if (strip2StartIdx <= i && i <= strip2EndIdx) color = plankStripe2Color;
 
-    w.addBoard(path, color);
+    tansomG.addBoard(path, color);
   }
 
   // FLOOR
-  w.startGroup("floor");
+  const floorG = w.addGroup("floor");
   let floorPlankIdx = 4;
   const floorBound1 = plankPaths[floorPlankIdx];
   const floorBound2 = plankPathsMirrored[floorPlankIdx];
@@ -729,8 +735,8 @@ export function createLD53Ship(): WoodObj {
       }));
       // dbgPathWithGizmos(path);
       let mirroredPath = mirrorPath(clonePath(path), mirrorNorm);
-      w.addBoard(path, floorColor);
-      w.addBoard(mirroredPath, floorColor);
+      floorG.addBoard(path, floorColor);
+      floorG.addBoard(mirroredPath, floorColor);
     }
   }
 
@@ -790,11 +796,14 @@ interface WoodBuilder {
   b: BoardBuilder;
   state: WoodState;
 
-  startGroup(name: string): void;
-  addBoard(path: Path, color: V3.InputT): void;
+  addGroup(name: string): WoodGroupBuider;
   finish(maxNumSplinters: number): WoodObj;
 
   // TODO(@darzu): finish w/ reserve splinter state etc
+}
+
+interface WoodGroupBuider {
+  addBoard(path: Path, color: V3.InputT): void;
 }
 
 interface WoodBuilderProps {
@@ -829,7 +838,7 @@ export function createWoodBuilder(props: WoodBuilderProps): WoodBuilder {
 
   const b = createBoardBuilder(mesh);
 
-  let currentGroup: BoardGroupState | undefined = undefined;
+  // let currentGroup: BoardGroupState | undefined = undefined;
 
   const state: WoodState = {
     mesh,
@@ -842,8 +851,7 @@ export function createWoodBuilder(props: WoodBuilderProps): WoodBuilder {
     b,
     props,
     state,
-    startGroup,
-    addBoard,
+    addGroup,
     finish,
   };
 
@@ -866,18 +874,22 @@ export function createWoodBuilder(props: WoodBuilderProps): WoodBuilder {
     };
   }
 
-  function startGroup(name: string) {
-    currentGroup = {
+  function addGroup(name: string): WoodGroupBuider {
+    let group: BoardGroupState = {
       name,
       boards: [],
     };
-    state.groups.push(currentGroup);
-  }
+    state.groups.push(group);
 
-  function addBoard(path: Path, color: V3.InputT) {
-    assert(currentGroup, `Must call startGroup() before addBoard()`);
-    const state = appendBoard(b, path, color);
-    currentGroup.boards.push(state);
+    return {
+      addBoard,
+    };
+
+    function addBoard(path: Path, color: V3.InputT) {
+      assert(group, `Must call startGroup() before addBoard()`);
+      const state = appendBoard(b, path, color);
+      group.boards.push(state);
+    }
   }
 }
 

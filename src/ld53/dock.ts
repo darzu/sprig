@@ -53,7 +53,7 @@ export function createDock() {
 // const __tq1 = quat.create();
 export function createDockWood(): WoodObj {
   const w = createWoodBuilder({ meshName: "dock" });
-  w.startGroup("all");
+  const allG = w.addGroup("all");
 
   const numPlanks = 16;
   const plankWidth = 2.0;
@@ -77,7 +77,7 @@ export function createDockWood(): WoodObj {
 
     // dbgPathWithGizmos(path);
 
-    w.addBoard(path, BLACK);
+    allG.addBoard(path, BLACK);
   }
 
   const obj = w.finish(200);
