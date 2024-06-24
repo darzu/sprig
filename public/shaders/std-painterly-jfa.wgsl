@@ -30,7 +30,7 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec2<u32> {
   // const diffObjMaxDist = 0.01; // TODO(@darzu): tweak
 
   var bestDist = 999999.9;
-  var bestUV = vec2(0.0);
+  var bestXY: vec2<u32> = vec2(0);
   var bestDep = 999.9;
   var bestObj: u32 = 99999;
   var bestSurf: u32 = 99999;
@@ -42,9 +42,9 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec2<u32> {
     for (var y = -1; y <= 1; y++)
     {
       let sampXY = fragXY + vec2(x,y) * stepSize;
-      // let sSeedUV = textureLoad(inTex, sampXY, 0).xy;
-      // let sSeedXY = vec2<i32>(sSeedUV * dimsF);
-      let sSeedXY = vec2<i32>(textureLoad(inTex, sampXY, 0).xy);
+      // let sSeedXY = textureLoad(inTex, sampXY, 0).xy;
+      // let sSeedXY = vec2<i32>(sSeedXY * dimsF);
+      let sSeedXY: vec2<u32> = textureLoad(inTex, sampXY, 0).xy;
       let sSeedUV = vec2<f32>(sSeedXY) / dimsF;
       // TODO(@darzu): check surface too
       let sSeedSurfAndObj: vec2<u32> = textureLoad(surfTex, sSeedXY, 0).rg;
@@ -61,8 +61,8 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec2<u32> {
         && sampXY.y < dims.y
         && sampXY.x >= 0
         && sampXY.y >= 0
-        && sSeedUV.x > 0.0
-        && sSeedUV.y > 0.0)
+        && sSeedXY.x > 0
+        && sSeedXY.y > 0)
       ) {
         // invalid sample
         continue;
@@ -74,7 +74,7 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec2<u32> {
       // }
       // if (sSeedDep < bestDep && dist < bestDist) {
       //   bestDist = dist;
-      //   bestUV = sSeedUV;
+      //   bestXY = sSeedXY;
       //   bestObj = sSeedObj;
       //   bestDep = min(bestDep, sSeedDep);
       //   bestDep = sSeedDep;
@@ -94,7 +94,7 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec2<u32> {
         if (sSeedDep < bestDep) {
           // take new nearer
           bestDist = dist;
-          bestUV = sSeedUV;
+          bestXY = sSeedXY;
           bestObj = sSeedObj;
           bestSurf = sSeedSurf;
           bestDep = sSeedDep;
@@ -112,7 +112,7 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec2<u32> {
       if (sSeedDep < bestDep && dist < sSeedSize) {
         // take new nearer
         bestDist = dist;
-        bestUV = sSeedUV;
+        bestXY = sSeedXY;
         bestObj = sSeedObj;
         bestSurf = sSeedSurf;
         bestDep = sSeedDep;
@@ -121,7 +121,7 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec2<u32> {
 
       if (dist < bestDist) {
         bestDist = dist;
-        bestUV = sSeedUV;
+        bestXY = sSeedXY;
         bestObj = sSeedObj;
         bestSurf = sSeedSurf;
         // bestDep = min(bestDep, sSeedDep);
@@ -132,8 +132,7 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec2<u32> {
     }
   }
 
-  // TODO(@darzu): store and return bestXY
-  return vec2<u32>(bestUV * dimsF);
+  return bestXY;
 }
 
 
@@ -141,7 +140,7 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec2<u32> {
       //   if (dist < bestDist) 
       //   {
       //     bestDist = dist;
-      //     bestUV = sSeedUV;
+      //     bestXY = sSeedXY;
       //   }
       //   bestDep = min(bestDep, sSeedDep);
       //   continue;
@@ -149,7 +148,7 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec2<u32> {
 
       // if (dist <= diffObjMaxDist && diffObjMaxDist < bestDist) {
       //   bestDist = dist;
-      //   bestUV = sSeedUV;
+      //   bestXY = sSeedXY;
       //   bestObj = sSeedObj;
       //   bestDep = sSeedDep;
       //   continue;
@@ -161,7 +160,7 @@ fn frag_main(@location(0) fragUV : vec2<f32>) -> @location(0) vec2<u32> {
 
       // if (sSeedDep < bestDep) {
       //   bestDist = dist;
-      //   bestUV = sSeedUV;
+      //   bestXY = sSeedXY;
       //   bestObj = sSeedObj;
       //   bestDep = sSeedDep;
       //   continue;
