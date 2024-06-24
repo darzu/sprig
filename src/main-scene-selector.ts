@@ -1,8 +1,33 @@
 import { EM } from "./ecs/ecs.js";
 import { GAME_LOADER, GameReg } from "./game-loader.js";
-import { showcaseGameRegs } from "./main.js";
+import { gameRegs } from "./main.js";
 import { assert } from "./utils/util-no-import.js";
 import { WebNavDef, getWebLocationHash } from "./web/webnav.js";
+
+// TODO(@darzu): add a github code link for each game
+
+export const showcaseGameRegs = [
+  gameRegs.shipyard,
+  gameRegs.painterly,
+  gameRegs.particles,
+  // TODO(@darzu): FIX AND SHOW THESE GAMES!
+  // gameRegs.hyperspace,
+  // gameRegs.ld55,
+  // gameRegs.font,
+  // gameRegs.gallery,
+  // gameRegs.mp,
+  // gameRegs.modeling,
+  // gameRegs["graybox-ship-arena"],
+];
+
+// prettier-ignore
+const externalLinks = {
+  "Ludum Dare 54": "https://ldjam.com/events/ludum-dare/54/space-knight",
+  "Ludum Dare 53": "https://ldjam.com/events/ludum-dare/53/blockade-runner",
+  "Ludum Dare 52": "https://ldjam.com/events/ludum-dare/52/purple-grain-sailors",
+  "Ludum Dare 51": "https://ldjam.com/events/ludum-dare/51/darkstar-sailor",
+  "Ludum Dare 50": "https://ldjam.com/events/ludum-dare/50/gemship-wars",
+};
 
 export async function main_sceneSelector() {
   window.addEventListener("hashchange", () => {
@@ -33,9 +58,20 @@ export async function main_sceneSelector() {
     return aEl;
   };
 
+  const createExternalLink = (displayName: string, destUrl: string) => {
+    const aEl = document.createElement("a");
+    aEl.setAttribute("href", destUrl);
+    aEl.setAttribute("target", "_blank");
+    aEl.textContent = `${displayName}`;
+    return aEl;
+  };
+
   linksTree.textContent = ""; // clear all children: https://developer.mozilla.org/en-US/docs/Web/API/Node/textContent
   // for (let name of GAME_LOADER.getAvailableGameNames()) {
   for (let reg of showcaseGameRegs) {
     linksTree.appendChild(createGameLink(reg));
+  }
+  for (let [name, url] of Object.entries(externalLinks)) {
+    linksTree.appendChild(createExternalLink(name, url));
   }
 }

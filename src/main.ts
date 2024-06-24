@@ -66,25 +66,9 @@ const _gameRegs = {
   "multi-scene": { init: initMultiSceneGame, displayName: "TODO" },
 };
 
-const gameRegs = objMap(_gameRegs, ({ init, displayName }, name) => {
+export const gameRegs = objMap(_gameRegs, ({ init, displayName }, name) => {
   return GAME_LOADER.registerGame({ key: name, init, displayName });
 });
-
-export const showcaseGameRegs = [
-  gameRegs.shipyard,
-  gameRegs.painterly,
-  gameRegs.particles,
-  gameRegs.grass,
-  gameRegs.hyperspace,
-  gameRegs.ld55,
-  gameRegs.font,
-  gameRegs.gallery,
-  gameRegs.mp,
-  gameRegs.modeling,
-  gameRegs["graybox-ship-arena"],
-  gameRegs.ld53,
-  gameRegs.ld54,
-];
 
 // TODO(@darzu): current game should probably be saved in local storage, not hard-coded. (Default can be hard-coded)
 // prettier-ignore
