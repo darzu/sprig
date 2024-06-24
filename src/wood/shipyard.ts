@@ -11,7 +11,7 @@ import {
   TV2,
 } from "../matrix/sprig-matrix.js";
 import { Mesh, RawMesh, transformMesh, validateMesh } from "../meshes/mesh.js";
-import { FALSE, assert } from "../utils/util.js";
+import { FALSE, assert, range } from "../utils/util.js";
 import {
   createEmptyMesh,
   createBoardBuilder,
@@ -593,8 +593,14 @@ export function createLD53Ship(): WoodObj {
   let transomPlankNum = transomRibWithSlots.length;
   const prowRibWithSlots = ribWithSlots[ribWithSlots.length - 1];
 
-  const planksLeftG = w.addGroup("planksLeft");
-  const planksRightG = w.addGroup("planksRight");
+  const planksGs = range(4).map((i) => w.addGroup("panks" + i));
+  const plankDefaultColors = [
+    plankColor,
+    plankStripeColor,
+    plankStripe2Color,
+    plankColor,
+  ];
+  const plankGroupIdxs = [0, stripStartIdx, strip2StartIdx, strip2EndIdx + 1];
   w.b.setSize(plankWidth, plankDepth);
   const plankPaths: Path[] = [];
   const plankPathsMirrored: Path[] = [];
@@ -646,17 +652,23 @@ export function createLD53Ship(): WoodObj {
     let mirroredPath = mirrorPath(clonePath(nodes), mirrorNorm);
     plankPathsMirrored.push(mirroredPath);
 
-    let color = plankColor;
-    if (i === 0) color = topPlankColor;
-    if (stripStartIdx <= i && i <= stripEndIdx) color = plankStripeColor;
-    if (strip2StartIdx <= i && i <= strip2EndIdx) color = plankStripe2Color;
+    // TODO(@darzu): hack-y, consider the top plank part of the rail
+    if (i === 0) {
+      railG.addBoard(nodes, topPlankColor);
+      railG.addBoard(mirroredPath, topPlankColor);
+      continue;
+    }
 
-    planksRightG.addBoard(nodes, color);
-    planksLeftG.addBoard(mirroredPath, color);
+    let gIdx = 0;
+    for (let j = 0; j < plankGroupIdxs.length; j++) {
+      if (i >= plankGroupIdxs[j]) gIdx = j;
+    }
+
+    planksGs[gIdx].addBoard(nodes, plankDefaultColors[gIdx]);
+    planksGs[gIdx].addBoard(mirroredPath, plankDefaultColors[gIdx]);
   }
 
   // TRANSOM
-  const tansomG = w.addGroup("transom");
   w.b.setSize(plankWidth, plankDepth);
   for (let i = 0; i < transomPlankNum; i++) {
     // TODO(@darzu): REFACTOR make an evenPathBetweenPoints function
@@ -676,12 +688,18 @@ export function createLD53Ship(): WoodObj {
 
     // dbgPathWithGizmos(path);
 
-    let color = transomColor;
-    if (i === 0) color = topPlankColor;
-    if (stripStartIdx <= i && i <= stripEndIdx) color = plankStripeColor;
-    if (strip2StartIdx <= i && i <= strip2EndIdx) color = plankStripe2Color;
+    // TODO(@darzu): hack-y, consider the top plank part of the rail
+    if (i === 0) {
+      railG.addBoard(path, topPlankColor);
+      continue;
+    }
 
-    tansomG.addBoard(path, color);
+    let gIdx = 0;
+    for (let j = 0; j < plankGroupIdxs.length; j++) {
+      if (i >= plankGroupIdxs[j]) gIdx = j;
+    }
+
+    planksGs[gIdx].addBoard(path, plankDefaultColors[gIdx]);
   }
 
   // FLOOR
@@ -739,8 +757,6 @@ export function createLD53Ship(): WoodObj {
       floorG.addBoard(mirroredPath, floorColor);
     }
   }
-
-  const ceilHeight = floorHeight + 15;
 
   const _meshDone = performance.now();
   console.log(
@@ -886,7 +902,6 @@ export function createWoodBuilder(props: WoodBuilderProps): WoodBuilder {
     };
 
     function addBoard(path: Path, color: V3.InputT) {
-      assert(group, `Must call startGroup() before addBoard()`);
       const state = appendBoard(b, path, color);
       group.boards.push(state);
     }
