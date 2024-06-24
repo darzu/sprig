@@ -11,11 +11,12 @@ export const showcaseGameRegs = [
   gameRegs.painterly,
   gameRegs.particles,
   // TODO(@darzu): FIX AND SHOW THESE GAMES!
+  // TODO(@darzu): TOP PRIORITY:
+  // gameRegs.mp,
   // gameRegs.hyperspace,
-  // gameRegs.ld55,
+  // TODO(@darzu): mid priority:
   // gameRegs.font,
   // gameRegs.gallery,
-  // gameRegs.mp,
   // gameRegs.modeling,
   // gameRegs["graybox-ship-arena"],
 ];
