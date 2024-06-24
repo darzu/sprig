@@ -312,7 +312,11 @@ export function createHtmlBuilder(): HtmlBuilder {
     }
 
     function addToggleEditor(e: ToggleEditorOpt): ToggleEditor {
-      const toggle = mkEl("input", { type: "checkbox" });
+      const checked = e.default ? "checked" : "";
+      const toggle = mkEl("input", {
+        type: "checkbox",
+        ...(checked ? { checked } : {}),
+      });
       const lbl = mkEl("label", { class: "switch" }, [toggle, e.label]);
 
       lbl.onchange = () => {

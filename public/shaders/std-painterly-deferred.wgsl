@@ -14,9 +14,12 @@ fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
   let dataXY = textureLoad(voronoiTex, vec2<i32>(coord), 0).xy;
   let uv2 = vec2<f32>(dataXY) / dimsF;
   let coord2 = uv2 * dimsF;
-  // if (distance(coord, coord2) > 100.0 * tBounceSmooth(0.0002, 0.1) + 5.0) {
-  //   discard;
-  // }
+
+  // TODO(@darzu): parameterize this
+  if (((params.flags & 0x1) == 0x1) && (distance(coord, coord2) > 100.0 * tBounceSmooth(0.0002, 0.1) + 5.0)) {
+    discard;
+  }
+
   var color = textureLoad(colorTex, vec2<i32>(coord2), 0).rgb;
 
   // var uv2 = textureSample(voronoiTex, samp, uv).rg;
