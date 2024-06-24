@@ -115,7 +115,9 @@
       /* overflow: auto; */
     }
 
-    #linksTree a {
+    /* #linksTree a { */
+    #leftBar a {
+      margin: 0px;
       padding: 5px 10px;
       transition: 0.2s;
       transform-origin: 10px 50%;
@@ -147,7 +149,7 @@
       display: inline-block;
     }
 
-    #linksTree a.active {
+    a.active {
       /* background-color: var(--darkGreen); */
       background-color: var(--darkBlue);
       /* border-color: var(--darkGray);
@@ -542,6 +544,14 @@
     .inputGrid .colorPickerV2>*:nth-of-type(2) {
       grid-area: 1 / 2;
     }
+
+    #aboutDiv {
+      margin: 20px;
+    }
+
+    /* #aboutDiv a {
+      font-size: 14px;
+    } */
   </style>
 </head>
 
@@ -552,7 +562,7 @@
 
   <div id="leftBar">
     <h1>sprig.land</h1>
-    <a href="about">about</a>
+    <a id="aboutLink" href="#about">about</a>
     <h2>Tech Demos</h2>
     <div id="linksTree">
       <!-- <a href="#particles">particles</a>
@@ -564,6 +574,29 @@
 
   <div class="canvasHolder">
     <canvas id="canvas-1" width="512" height="512"></canvas>
+    <div id="aboutDiv" style="display:none;">
+      sprig.land is a game engine designed for beginner game makers.
+      <br>
+      <br>
+      sprig.land
+      <ul>
+        <li>is free and open source</li>
+        <li>includes graphics, physics, state management (ECS), and multiplayer</li>
+        <li>is built by Daryl Zuniga with the help of many wonderful people</li>
+        <li>is written in TypeScript and WGSL</li>
+        <li>is 2MB unminified with no external library dependencies or package management and uses only web standards
+        </li>
+      </ul>
+      <br>
+      <br>
+      <a href="https://github.com/darzu/sprig" target="_blank">GitHub</a>
+      <br>
+      <a href="https://mastodon.gamedev.place/@sprig" target="_blank">Mastodon</a>
+      <br>
+      <a href="https://darzu.io/" target="_blank">Daryl's homepage</a>
+      <br>
+      <a href="https://www.patreon.com/darzu" target="_blank">Patreon</a>
+    </div>
   </div>
 
   <div class="rightBar">

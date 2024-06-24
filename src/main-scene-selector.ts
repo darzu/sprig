@@ -2,6 +2,7 @@ import { EM } from "./ecs/ecs.js";
 import { GAME_LOADER, GameReg } from "./game-loader.js";
 import { gameRegs } from "./main.js";
 import { assert } from "./utils/util-no-import.js";
+import { mkEl } from "./web/html-builder.js";
 import { WebNavDef, getWebLocationHash } from "./web/webnav.js";
 
 // TODO(@darzu): add a github code link for each game
@@ -13,12 +14,12 @@ export const showcaseGameRegs = [
   // TODO(@darzu): FIX AND SHOW THESE GAMES!
   // TODO(@darzu): TOP PRIORITY:
   // gameRegs.mp,
+  // gameRegs["graybox-ship-arena"],
   // gameRegs.hyperspace,
   // TODO(@darzu): mid priority:
   // gameRegs.font,
   // gameRegs.gallery,
   // gameRegs.modeling,
-  // gameRegs["graybox-ship-arena"],
 ];
 
 // prettier-ignore
@@ -51,7 +52,11 @@ export async function main_sceneSelector() {
     window.location.reload(); // TODO(@darzu): would be great to not reload
   });
 
-  GAME_LOADER.startGame(gameKey);
+  if (gameKey === "about") {
+    showAboutPage();
+  } else {
+    GAME_LOADER.startGame(gameKey);
+  }
 
   const linksTreeId = "linksTree";
   const linksTree = document.getElementById(
@@ -89,4 +94,19 @@ export async function main_sceneSelector() {
   for (let [name, url] of Object.entries(externalLinks)) {
     linksTree.appendChild(createExternalLink(name, url));
   }
+}
+
+function showAboutPage() {
+  const aEl = document.getElementById("aboutLink")!;
+  aEl.classList.add("active");
+  // TODO(@darzu):
+
+  const canvasHolderEl = document.getElementsByClassName(
+    "canvasHolder"
+  )[0] as HTMLDivElement;
+  for (let canvas of canvasHolderEl.getElementsByTagName("canvas"))
+    canvas.setAttribute("style", "display:none;");
+
+  const aboutDivEl = document.getElementById("aboutDiv")! as HTMLDivElement;
+  aboutDivEl.removeAttribute("style");
 }
