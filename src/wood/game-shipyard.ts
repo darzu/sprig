@@ -135,7 +135,7 @@ export async function initShipyardGame() {
   ];
 
   // camera
-  initDemoPanCamera();
+  initDemoPanCamera([0, 0, 5]);
 
   const sun = createSun([250, 10, 300]);
 
