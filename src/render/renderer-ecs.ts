@@ -602,7 +602,9 @@ EM.addLazyInit(
       throw new Error("Unable to get gpu adapter");
     }
 
-    const supportsTimestamp = adapter.features.has("timestamp-query");
+    const isLocalhost = window.location.hostname === "localhost";
+    const supportsTimestamp =
+      isLocalhost && adapter.features.has("timestamp-query");
     if (!supportsTimestamp && VERBOSE_LOG)
       console.log(
         "GPU profiling disabled: device does not support timestamp queries"
