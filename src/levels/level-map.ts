@@ -9,7 +9,7 @@ import { V, tV, V2, V4 } from "../matrix/sprig-matrix.js";
 import { assert, assertDbg } from "../utils/util.js";
 import { vec2Dbg, vec4Dbg } from "../utils/utils-3d.js";
 import { MapName, MapBytesSetDef, MapBytes, MapHelp } from "./map-loader.js";
-import { ScoreDef } from "../ld53/score.js";
+import { ScoreDef } from "../game-ld53/score.js";
 
 const DBG_PRINT_BLOBS = false;
 

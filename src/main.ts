@@ -17,7 +17,7 @@ import { initClothSandbox } from "./cloth/game-cloth.js";
 import { initCubeGame } from "./debug/xp-cube.js";
 import { resetTempMatrixBuffer } from "./matrix/sprig-matrix.js";
 import { initGrassGame } from "./grass/game-grass.js";
-import { initLD53 } from "./ld53/game-ld53.js";
+import { initLD53 } from "./game-ld53/game-ld53.js";
 import { initGalleryGame } from "./render/game-gallery.js";
 import { initModelingGame } from "./meshes/game-modeling.js";
 import { setSimulationAlpha } from "./render/motion-smoothing.js";
