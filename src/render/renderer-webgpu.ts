@@ -53,13 +53,15 @@ export function createRenderer(
   shaders: ShaderSet,
   canvas: AbstractCanvas
 ) {
-  const timestampQuerySet = device.features.has("timestamp-query")
-    ? device.createQuerySet({
-        label: `sprigTimestampQuerySet`,
-        type: "timestamp",
-        count: MAX_PIPELINES + 1, // start of execution + after each pipeline
-      })
-    : undefined;
+  const isLocalhost = window.location.hostname === "localhost";
+  const timestampQuerySet =
+    isLocalhost && device.features.has("timestamp-query")
+      ? device.createQuerySet({
+          label: `sprigTimestampQuerySet`,
+          type: "timestamp",
+          count: MAX_PIPELINES + 1, // start of execution + after each pipeline
+        })
+      : undefined;
   // timestampQuerySet = undefined;
   if (VERBOSE_LOG) console.log(`timestamp-query: ${!!timestampQuerySet}`);
 
