@@ -606,3 +606,9 @@ See what's up with glmatrix, maybe take some new ideas:
     get zzy() { return new Vec3(this[2], this[2], this[1]); }
     get zzz() { return new Vec3(this[2], this[2], this[2]); }
   }
+
+Measurements on IdeaPad 3 (6/25/24)
+  tech demos
+  Shipyard ~60fps idle, ~30fps combat, spikes lower than that
+  Painterly ~20fps
+  Particles 60fps throughout
