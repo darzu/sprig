@@ -545,8 +545,9 @@
       grid-area: 1 / 2;
     }
 
-    #aboutDiv {
+    .canvasHolder div {
       margin: 20px;
+      max-width: 800px;
     }
 
     /* #aboutDiv a {
@@ -581,10 +582,12 @@
       sprig.land
       <ul>
         <li>is free and open source</li>
-        <li>includes graphics, physics, state management (ECS), and multiplayer</li>
+        <li>includes custom graphics, physics, state management (ECS), and multiplayer</li>
         <li>is built by Daryl Zuniga with the help of many wonderful people</li>
         <li>is written in TypeScript and WGSL</li>
         <li>is 2MB unminified with no external library dependencies or package management and uses only web standards
+        </li>
+        <li>is a work-in-progress, undocummented, and not recommended for use yet
         </li>
       </ul>
       <br>
@@ -596,6 +599,24 @@
       <a href="https://darzu.io/" target="_blank">Daryl's homepage</a>
       <br>
       <a href="https://www.patreon.com/darzu" target="_blank">Patreon</a>
+    </div>
+    <div id="webgpuErrorDiv" style="display:none;">
+      Error: Unfortunately, the WebGPU standard does not appear to be supported by your browser yet. We recommend Chrome
+      or Edge for the moment, see the links below for more details.
+      <br>
+      <br>
+      sprig.land exclusively
+      uses WebGPU
+      (the successor to WebGL) for all its graphics and GPU programming.
+      <br>
+      <br>
+      <a href="https://caniuse.com/webgpu" target="_blank">caniuse.com/webgpu</a>
+      <br>
+      <a href="https://webgpureport.org/" target="_blank">WebGPU report</a>
+      <br>
+      <a href="https://gpuweb.github.io/gpuweb/explainer/" target="_blank">Official WebGPU Explainer</a>
+      <br>
+      <a href="https://developer.mozilla.org/en-US/docs/Web/API/WebGPU_API" target="_blank">MDN</a>
     </div>
   </div>
 

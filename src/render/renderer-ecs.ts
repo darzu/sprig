@@ -50,6 +50,7 @@ import { Phase } from "../ecs/sys-phase.js";
 // TODO(@darzu): is it okay for renderer to depend on XY ? XY depends on Renderer
 import { MeshReg, XY, isMeshReg } from "../meshes/mesh-loader.js";
 import { CyStructDesc, CyToTS, createStruct } from "./gpu-struct.js";
+import { getWebLocationHash } from "../web/webnav.js";
 
 // TODO(@darzu): the double "Renderer" naming is confusing. Maybe one should be GPUManager or something?
 export const RendererDef = EM.defineResource(
@@ -676,11 +677,23 @@ EM.addLazyInit(
 );
 
 export function displayWebGPUError() {
-  const style = `font-size: 48px;
-      color: green;
-      margin: 24px;
-      max-width: 600px;`;
-  document.getElementsByClassName(
-    "canvasHolder"
-  )[0].innerHTML = `<div style="${style}">This page requires WebGPU which isn't yet supported in your browser!<br>Or something else went wrong that was my fault.<br><br>Probably Chrome on Windows will work.<br><br>🙂</div>`;
+  const canvasHolder = document.getElementsByClassName("canvasHolder")[0]!;
+
+  const errorDiv = document.getElementById("webgpuErrorDiv");
+
+  if (errorDiv) {
+    // TODO(@darzu): HACK. Don't show this error on the about page
+    if (getWebLocationHash() === "about") {
+      return;
+    }
+    for (let child of canvasHolder.children)
+      child.setAttribute("style", "display:none;");
+    errorDiv.removeAttribute("style");
+  } else {
+    const style = `font-size: 48px;
+        color: green;
+        margin: 24px;
+        max-width: 600px;`;
+    canvasHolder.innerHTML = `<div style="${style}">This page requires WebGPU which isn't yet supported in your browser!<br>Or something else went wrong that was my fault.<br><br>Probably Chrome on Windows will work.<br><br>🙂</div>`;
+  }
 }
