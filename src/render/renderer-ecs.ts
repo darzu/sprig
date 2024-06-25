@@ -677,8 +677,6 @@ EM.addLazyInit(
 );
 
 export function displayWebGPUError() {
-  const canvasHolder = document.getElementsByClassName("canvasHolder")[0]!;
-
   const errorDiv = document.getElementById("webgpuErrorDiv");
 
   if (errorDiv) {
@@ -686,6 +684,7 @@ export function displayWebGPUError() {
     if (getWebLocationHash() === "about") {
       return;
     }
+    const canvasHolder = document.getElementsByClassName("canvasHolder")[0]!;
     for (let child of canvasHolder.children)
       child.setAttribute("style", "display:none;");
     errorDiv.removeAttribute("style");
@@ -694,6 +693,6 @@ export function displayWebGPUError() {
         color: green;
         margin: 24px;
         max-width: 600px;`;
-    canvasHolder.innerHTML = `<div style="${style}">This page requires WebGPU which isn't yet supported in your browser!<br>Or something else went wrong that was my fault.<br><br>Probably Chrome on Windows will work.<br><br>🙂</div>`;
+    document.body.innerHTML = `<div style="${style}">This page requires WebGPU which isn't yet supported in your browser!<br>Or something else went wrong that was my fault.<br><br>Probably Chrome on Windows will work.<br><br>🙂</div>`;
   }
 }
