@@ -59,6 +59,11 @@
       height: 100vh;
     }
 
+    body.fullscreen {
+      grid-template-columns: 0px 1fr 0px;
+      grid-template-rows: 0px 1fr 0px;
+    }
+
     a {
       color: var(--text-clr);
     }
@@ -175,6 +180,20 @@
       background-color: var(--game-background-clr);
 
       box-shadow: rgb(10, 10, 10) 0px 0px 16px 0px;
+
+      display: flex;
+      flex-direction: row;
+
+    }
+
+    .canvasHolder div {
+      flex: 1;
+    }
+
+    .canvasHolder canvas,
+    .canvasHolder iframe {
+      width: 100%;
+      height: 100%;
     }
 
     .rightBar {
@@ -546,7 +565,7 @@
       grid-area: 1 / 2;
     }
 
-    .canvasHolder div {
+    .mainMessageDiv {
       margin: 20px;
       max-width: 800px;
     }
@@ -554,6 +573,10 @@
     /* #aboutDiv a {
       font-size: 14px;
     } */
+
+    iframe {
+      border: 0px;
+    }
   </style>
 </head>
 
@@ -575,8 +598,19 @@
   <div id="debug-div"> </div>
 
   <div class="canvasHolder">
-    <canvas id="canvas-1" width="512" height="512"></canvas>
-    <div id="aboutDiv" style="display:none;">
+    <div>
+      <canvas id="canvas-1" width="512" height="512"></canvas>
+    </div>
+    <!-- TODO(@darzu): multi-canvas -->
+    <!-- <div>
+      <canvas id="canvas-2" width="512" height="512"></canvas>
+    </div> -->
+    <!-- TODO(@darzu): multiplayer -->
+    <!-- <div>
+      <iframe id="multiplayerFrame-1" src="/full-screen.html#blank" title="Player 2">
+      </iframe>
+    </div> -->
+    <div class="mainMessageDiv" id="aboutDiv" style="display:none;">
       sprig.land is a game engine designed for beginner game makers.
       <br>
       <br>
@@ -609,7 +643,7 @@
       <br>
       <a href="https://www.patreon.com/darzu" target="_blank">Patreon</a>
     </div>
-    <div id="webgpuErrorDiv" style="display:none;">
+    <div class="mainMessageDiv" id="webgpuErrorDiv" style="display:none;">
       🚧 Error: Unfortunately, the WebGPU standard is not supported by your browser yet.
       <br>
       <br>

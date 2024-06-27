@@ -12,9 +12,17 @@
       padding: 0;
     }
 
+    html {
+      /* TODO(@darzu): DE-DUPLICATE */
+      --game-background-clr: #1c1c1c;
+      --background-clr: oklch(from var(--game-background-clr) calc(l + 0.1) c h);
+    }
+
     body {
       width: 100vw;
       height: 100vh;
+
+      background-color: var(--background-clr);
 
       position: absolute;
       overflow: hidden;
@@ -27,6 +35,11 @@
       /* top: -100px; */
     }
 
+    canvas {
+      width: 100%;
+      height: 100%;
+    }
+
     #debug-div {
       position: absolute;
       top: 128px;
@@ -37,6 +50,9 @@
     }
 
     #graphics-div {
+      /* TODO(@darzu): Figure out a better way to show settings */
+      display: none;
+
       position: absolute;
       bottom: 64px;
       left: 24px;
@@ -82,7 +98,6 @@
 
   <canvas width="570" height="570" id="sample-canvas"></canvas>
 
-
   <div id="debug-div"> </div>
   <!-- <div id="debug-div" style="visibility: hidden;"> </div> -->
   <div id="lower-div"> </div>
@@ -99,12 +114,10 @@
 
   <script src="./main.js" type="module"></script>
   <script type="module">
-    import { EM } from "./ecs/ecs.js";
-    import { WebNavDef } from "./web/webnav.js";
-    import { startDefaultGame } from "./main.js";
-    startDefaultGame();
-    const foo = await EM.whenResources(WebNavDef);
-    console.dir(foo);
+    // import { startDefaultGame } from "./main.js";
+    // startDefaultGame();
+    import { main_sceneSelector } from "./main-scene-selector.js";
+    main_sceneSelector();
   </script>
 </body>
 

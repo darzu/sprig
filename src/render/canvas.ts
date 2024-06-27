@@ -156,9 +156,9 @@ EM.addLazyInit([], [CanvasDef], () => {
     width = clamp(width, 10, 4096);
     height = clamp(height, 10, 4096);
     _activeCanvas.width = width * comp.pixelRatio;
-    _activeCanvas.style.width = `${width}px`;
+    // _activeCanvas.style.width = `${width}px`;
     _activeCanvas.height = height * comp.pixelRatio;
-    _activeCanvas.style.height = `${height}px`;
+    // _activeCanvas.style.height = `${height}px`;
   }
 
   function resizeCanvasToParent() {

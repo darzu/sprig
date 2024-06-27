@@ -34,6 +34,8 @@ import { TimeDef } from "../time/time.js";
 import { eventWizard } from "./events.js";
 import { assert } from "../utils/util.js";
 import { addGizmoChild, addWorldGizmo } from "../utils/utils-game.js";
+import { mkEl } from "../web/html-builder.js";
+import { getWebLocationHash, isTopLevelFrame } from "../web/webnav.js";
 
 const mpMeshes = XY.defineMeshSetResource(
   "mp_meshes",
@@ -202,6 +204,24 @@ async function setLevelLocal(levelIdx: number) {
 }
 
 export async function initMPGame() {
+  if (isTopLevelFrame()) {
+    const canvasHolder = document.getElementsByClassName("canvasHolder")[0];
+    if (canvasHolder) {
+      const currenthash = getWebLocationHash();
+      const iFrame = mkEl("div", {}, [
+        mkEl("iframe", {
+          id: "multiplayerFrame-1",
+          // TODO(@darzu): proper url!
+          src: `/full-screen.html?server=sprig-mySprigHost&user=2#${currenthash}`,
+          title: "Player 2",
+        }),
+      ]);
+      canvasHolder.appendChild(iFrame);
+    }
+  }
+
+  // TODO(@darzu): implement server<->client
+
   EM.addEagerInit([], [RendererDef], [], (res) => {
     // renderer
     res.renderer.pipelines = [

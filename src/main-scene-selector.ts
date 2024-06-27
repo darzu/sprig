@@ -3,7 +3,11 @@ import { GAME_LOADER, GameReg } from "./game-loader.js";
 import { gameRegs } from "./main.js";
 import { assert } from "./utils/util-no-import.js";
 import { mkEl } from "./web/html-builder.js";
-import { WebNavDef, getWebLocationHash } from "./web/webnav.js";
+import {
+  WebNavDef,
+  getWebLocationHash,
+  getWebQueryString,
+} from "./web/webnav.js";
 
 // TODO(@darzu): add a github code link for each game
 
@@ -11,6 +15,7 @@ export const showcaseGameRegs = [
   gameRegs.shipyard,
   gameRegs.painterly,
   gameRegs.particles,
+  gameRegs.mp,
   // TODO(@darzu): FIX AND SHOW THESE GAMES!
   // TODO(@darzu): TOP PRIORITY:
   // gameRegs.mp,
@@ -42,6 +47,11 @@ export async function main_sceneSelector() {
     window.location.assign(`#${showcaseGameRegs[0].key}`);
   }
 
+  const queryString = getWebQueryString();
+  if (queryString.has("fullscreen")) {
+    document.body.classList.add("fullscreen");
+  }
+
   window.addEventListener("hashchange", () => {
     if (_hack_oneChangeIgnore) {
       _hack_oneChangeIgnore = false;
@@ -52,7 +62,14 @@ export async function main_sceneSelector() {
     window.location.reload(); // TODO(@darzu): would be great to not reload
   });
 
+  if (gameKey === "blank") {
+    // TODO(@darzu): HACK.
+    document.body.innerText = "";
+    return;
+  }
+
   if (gameKey === "about") {
+    // TODO(@darzu): HACK.
     showAboutPage();
   } else {
     GAME_LOADER.startGame(gameKey);
@@ -62,37 +79,37 @@ export async function main_sceneSelector() {
   const linksTree = document.getElementById(
     linksTreeId
   ) as HTMLDivElement | null;
-  assert(linksTree, `requires <div id="${linksTreeId}">`);
-
-  const createGameLink = (reg: GameReg) => {
-    const aEl = document.createElement("a");
-    const destUrl = `#${reg.key}`;
-    aEl.setAttribute("href", destUrl);
-    aEl.textContent = reg.displayName;
-    aEl.onclick = () => {
-      window.location.assign(destUrl);
+  if (linksTree) {
+    const createGameLink = (reg: GameReg) => {
+      const aEl = document.createElement("a");
+      const destUrl = `#${reg.key}`;
+      aEl.setAttribute("href", destUrl);
+      aEl.textContent = reg.displayName;
+      aEl.onclick = () => {
+        window.location.assign(destUrl);
+      };
+      if (gameKey === reg.key) {
+        aEl.classList.add("active");
+      }
+      return aEl;
     };
-    if (gameKey === reg.key) {
-      aEl.classList.add("active");
+
+    const createExternalLink = (displayName: string, destUrl: string) => {
+      const aEl = document.createElement("a");
+      aEl.setAttribute("href", destUrl);
+      aEl.setAttribute("target", "_blank");
+      aEl.textContent = `${displayName}`;
+      return aEl;
+    };
+
+    linksTree.textContent = ""; // clear all children: https://developer.mozilla.org/en-US/docs/Web/API/Node/textContent
+    // for (let name of GAME_LOADER.getAvailableGameNames()) {
+    for (let reg of showcaseGameRegs) {
+      linksTree.appendChild(createGameLink(reg));
     }
-    return aEl;
-  };
-
-  const createExternalLink = (displayName: string, destUrl: string) => {
-    const aEl = document.createElement("a");
-    aEl.setAttribute("href", destUrl);
-    aEl.setAttribute("target", "_blank");
-    aEl.textContent = `${displayName}`;
-    return aEl;
-  };
-
-  linksTree.textContent = ""; // clear all children: https://developer.mozilla.org/en-US/docs/Web/API/Node/textContent
-  // for (let name of GAME_LOADER.getAvailableGameNames()) {
-  for (let reg of showcaseGameRegs) {
-    linksTree.appendChild(createGameLink(reg));
-  }
-  for (let [name, url] of Object.entries(externalLinks)) {
-    linksTree.appendChild(createExternalLink(name, url));
+    for (let [name, url] of Object.entries(externalLinks)) {
+      linksTree.appendChild(createExternalLink(name, url));
+    }
   }
 }
 
