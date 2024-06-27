@@ -53,6 +53,7 @@ export function createRenderer(
   shaders: ShaderSet,
   canvas: AbstractCanvas
 ) {
+  // TODO(@darzu): BUG. timestamp-query and writeTimestamp don't work on all chrome versions
   const isLocalhost = window.location.hostname === "localhost";
   const timestampQuerySet =
     isLocalhost && device.features.has("timestamp-query")
