@@ -37,6 +37,8 @@ import {
   painterlyJfa,
   painterlyDeferredPipe,
   painterlyPointMeshPoolPtr,
+  painterlyParamsUniPtr,
+  PainterlyFlags,
 } from "../render/pipelines/std-painterly.js";
 import { stdMeshPipe } from "../render/pipelines/std-mesh.js";
 import {
@@ -47,7 +49,11 @@ import {
   surfacesTexturePtr,
 } from "../render/pipelines/std-scene.js";
 import { shadowPipelines } from "../render/pipelines/std-shadow.js";
-import { RenderableConstructDef, RendererDef } from "../render/renderer-ecs.js";
+import {
+  RenderableConstructDef,
+  RenderableDef,
+  RendererDef,
+} from "../render/renderer-ecs.js";
 import { TimeDef } from "../time/time.js";
 import { align } from "../utils/math.js";
 import { PI } from "../utils/util-no-import.js";
@@ -55,22 +61,32 @@ import { range, zip } from "../utils/util.js";
 import { computeTriangleNormal, randVec3OfLen } from "../utils/utils-3d.js";
 import { DotsDef } from "./dots.js";
 import { GlitchDef } from "./glitch.js";
-import { createSun, initGhost } from "./graybox-helpers.js";
-import { testingLSys } from "./l-systems.js";
+import { createSun, initDemoPanCamera, initGhost } from "./graybox-helpers.js";
+import { createTestLSys } from "./l-systems.js";
 import { createObj, defineObj } from "../ecs/em-objects.js";
+import { createHtmlBuilder } from "../web/html-builder.js";
+import { Entity, EntityW } from "../ecs/em-entities.js";
 
 // const dbgGrid = [
 //   [xpPointTex, xpPointTex],
 //   [xpPointTex, xpPointTex],
 // ];
 const dbgGrid = [
-  [painterlyJfa._inputMaskTex],
+  // [painterlyJfa._inputMaskTex],
+  [painterlyJfaMaskTex],
   // [pointsJFA._inputMaskTex, pointsJFA._uvMaskTex],
   // [pointsJFA.voronoiTex, pointsJFA.sdfTex],
   // [pointsJFA.voronoiTex],
 ];
 let dbgGridCompose = createGridComposePipelines(dbgGrid);
 // let dbgGridCompose = createGridComposePipelines(pointsJFA._debugGrid);
+
+const painterlyGameState = {
+  bounceDots: true,
+  showSticks: false,
+  showLSys: false,
+  _lSys: undefined as undefined | EntityW<[typeof RenderableDef]>[],
+};
 
 export async function initPainterlyGame() {
   EM.addSystem(
@@ -84,11 +100,17 @@ export async function initPainterlyGame() {
       // TODO(@darzu): OUTLINE?
       res.renderer.pipelines.push(
         ...shadowPipelines,
-        stdMeshPipe, // TODO(@darzu): we should have stdMesh surf + depth prepass
-        painterlyLinePrepass,
+        stdMeshPipe // TODO(@darzu): we should have stdMesh surf + depth prepass
+      );
+      if (painterlyGameState.showSticks)
+        res.renderer.pipelines.push(painterlyLinePrepass);
+      res.renderer.pipelines.push(
         painterlyPointPrepass,
-        painterlyPointMainPass,
-        painterlyLineMainPass,
+        painterlyPointMainPass
+      );
+      if (painterlyGameState.showSticks)
+        res.renderer.pipelines.push(painterlyLineMainPass);
+      res.renderer.pipelines.push(
         ...painterlyJfa.allPipes(),
         painterlyDeferredPipe
       );
@@ -105,6 +127,9 @@ export async function initPainterlyGame() {
   camera.viewDist = 10000;
   V3.set(-200, -200, -200, camera.maxWorldAABB.min);
   V3.set(+200, +200, +200, camera.maxWorldAABB.max);
+
+  // pan camera
+  initDemoPanCamera([100, 100, 0], 200);
 
   // TODO(@darzu): WORK AROUND: For whatever reason this particular init order and this obj are
   //  needed to avoid a bug in canary (122.0.6255.1) not present in retail (120.0.6099.234)
@@ -160,7 +185,7 @@ export async function initPainterlyGame() {
     EM.set(e, GlitchDef);
   });
 
-  testingLSys();
+  // createTestLSys();
 
   function distributePointsOnTriangleOrQuad(
     pos: V3[],
@@ -450,8 +475,84 @@ export async function initPainterlyGame() {
   // bouncing balls
   // createBouncingBalls();
 
-  // dbg ghost
-  initGhost();
+  // // dbg ghost
+  // initGhost();
+
+  // GUI
+  initHtml();
+}
+
+async function initHtml() {
+  if (!document.getElementById("infoPanelsHolder")) {
+    console.warn("no infoPanelsHolder");
+    return;
+  }
+  const htmlBuilder = createHtmlBuilder();
+
+  // about
+  const aboutPanel = htmlBuilder.addInfoPanel("Painterly Dots");
+  aboutPanel.addText(`
+    This scene shows an experimental rendering technique using point primitives
+    which are randomly distributed across scene surfaces 
+    and then in screen-space we fill the gaps with a heavily customized jump flooding algorithm.
+  `);
+
+  // controls
+  const controlsPanel = htmlBuilder.addInfoPanel("Controls");
+  controlsPanel.addHTML(`
+    <ul>
+      <li>Drag to pan</li>
+      <li>Scroll to zoom</li>
+    </ul>
+  `);
+
+  // painterly uniform
+  const { renderer } = await EM.whenResources(RendererDef);
+  function submitPainterlyFlags() {
+    const uni = renderer.renderer.getCyResource(painterlyParamsUniPtr)!;
+    uni.queueUpdate({
+      flags: painterlyGameState.bounceDots ? PainterlyFlags.BounceDots : 0x0,
+    });
+  }
+  submitPainterlyFlags();
+
+  // view
+  const viewPanel = htmlBuilder.addInfoPanel("View");
+  viewPanel.addToggleEditor({
+    label: "Vizualize Dots",
+    default: painterlyGameState.bounceDots,
+    onChange: function (val: boolean): void {
+      if (val !== painterlyGameState.bounceDots) {
+        painterlyGameState.bounceDots = val;
+        submitPainterlyFlags();
+      }
+    },
+  });
+
+  // experiments
+  const expPanel = htmlBuilder.addInfoPanel("Experiments");
+  expPanel.addToggleEditor({
+    label: "Show Lines",
+    default: painterlyGameState.showSticks,
+    onChange: function (val: boolean): void {
+      painterlyGameState.showSticks = val;
+    },
+  });
+
+  expPanel.addToggleEditor({
+    label: "Experimental L-System",
+    default: painterlyGameState.showLSys,
+    onChange: async function (val: boolean) {
+      if (val !== painterlyGameState.showLSys) {
+        painterlyGameState.showLSys = val;
+        if (!painterlyGameState._lSys) {
+          painterlyGameState._lSys = await createTestLSys();
+        }
+      }
+    },
+  });
+
+  throw "TODO!";
 }
 
 async function createBouncingBalls() {

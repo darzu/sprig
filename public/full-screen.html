@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html style="font-size: 12px">
+
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="origin-trial"
+    content="AqUcFYiVuU2a6zW8Q7gp5Ujs1FS4oh1VzQxiv2v0IFvkFqebGgKlfP0cV2NlQcnHo/cLdiyKJETsB0P8yAaE3g4AAABKeyJvcmlnaW4iOiJodHRwczovL3NwcmlnLmxhbmQ6NDQzIiwiZmVhdHVyZSI6IldlYkdQVSIsImV4cGlyeSI6MTY5MTcxMTk5OX0=" />
+  <title>🌱🏞</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      width: 100vw;
+      height: 100vh;
+
+      position: absolute;
+      overflow: hidden;
+      /* useful when screen capturing with:
+          AA
+          --
+          BB
+          window arrangement
+          */
+      /* top: -100px; */
+    }
+
+    #debug-div {
+      position: absolute;
+      top: 128px;
+      left: 24px;
+      color: rgb(255, 0, 0);
+      font-family: monospace;
+      font-size: 16px;
+    }
+
+    #graphics-div {
+      position: absolute;
+      bottom: 64px;
+      left: 24px;
+      color: yellow;
+      font-family: monospace;
+      font-size: 24px;
+    }
+
+    #lower-div {
+      position: absolute;
+      bottom: 24px;
+      left: 24px;
+      color: yellow;
+      font-family: monospace;
+      font-size: 24px;
+    }
+
+    #help-div {
+      position: absolute;
+      bottom: 60px;
+      left: 24px;
+      color: white;
+      font-family: monospace;
+      font-size: 24px;
+    }
+
+    #title-div {
+      position: absolute;
+      top: 24px;
+      width: 100%;
+      color: #ccc;
+      font-family: monospace;
+      font-size: 48px;
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body>
+  <script>
+    console.log(`start of index.html's body at ${performance.now().toFixed(2)}ms`);
+  </script>
+
+  <canvas width="570" height="570" id="sample-canvas"></canvas>
+
+
+  <div id="debug-div"> </div>
+  <!-- <div id="debug-div" style="visibility: hidden;"> </div> -->
+  <div id="lower-div"> </div>
+  <div id="title-div"> </div>
+  <div id="help-div"> </div>
+
+  <!-- <div id="graphics-div" style="visibility: hidden;">  -->
+  <div id="graphics-div">
+    <input type="checkbox" id="graphics-check">
+    <label for="graphics-check">High Graphics</label>
+    <!-- <button id="reset-settings">Reset</button> -->
+  </div>
+
+
+  <script src="./main.js" type="module"></script>
+  <script type="module">
+    import { EM } from "./ecs/ecs.js";
+    import { WebNavDef } from "./web/webnav.js";
+    import { startDefaultGame } from "./main.js";
+    startDefaultGame();
+    const foo = await EM.whenResources(WebNavDef);
+    console.dir(foo);
+  </script>
+</body>
+
+</html>

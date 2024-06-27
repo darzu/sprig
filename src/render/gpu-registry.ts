@@ -205,7 +205,12 @@ export interface CyCompPipelinePtr extends CyResourcePtr {
   // TODO(@darzu): dynamic workgroup counts feels hacky?
   workgroupCounts:
     | [number, number, number]
-    | ((canvasSize: [number, number]) => [number, number, number]);
+    | {
+        onCanvasResize?: (
+          canvasSize: [number, number]
+        ) => [number, number, number];
+        onDispatch?: () => [number, number, number];
+      }; // TODO(@darzu): rethink these dynamic workgroup counts
   shaderComputeEntry: string;
   // TODO(@darzu): get access to shader set
   shader: ((shaderSet: ShaderSet) => string) | ShaderName;

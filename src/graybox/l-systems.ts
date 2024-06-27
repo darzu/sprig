@@ -13,11 +13,17 @@ import {
   painterlyLineMeshPoolPtr,
   painterlyPointMeshPoolPtr,
 } from "../render/pipelines/std-painterly.js";
-import { RenderableConstructDef } from "../render/renderer-ecs.js";
+import {
+  Renderable,
+  RenderableConstructDef,
+  RenderableDef,
+} from "../render/renderer-ecs.js";
 import { createPseudorandomGen } from "../utils/rand.js";
 import { assert, range } from "../utils/util.js";
 import { centroid, jitterVec3, randNormalVec3 } from "../utils/utils-3d.js";
 import { createObj } from "../ecs/em-objects.js";
+import { EntityW } from "../ecs/em-entities.js";
+import { EM } from "../ecs/ecs.js";
 
 // TODO(@darzu): ABSTRACTION: l-systems, paths, boards all have a lot in common..
 /*
@@ -65,7 +71,9 @@ import { createObj } from "../ecs/em-objects.js";
 //   }
 // }
 
-export function testingLSys() {
+export async function createTestLSys(): Promise<
+  EntityW<[typeof RenderableDef]>[]
+> {
   const nodes: V3[] = [];
   const nodeNorms: V3[] = [];
   const lines: V2[] = [];
@@ -266,4 +274,9 @@ export function testingLSys() {
       painterlyUni: { size: 0.5 },
     }
   );
+
+  return Promise.all([
+    EM.whenEntityHas(branchesObj, RenderableDef),
+    EM.whenEntityHas(leavesObj, RenderableDef),
+  ]);
 }

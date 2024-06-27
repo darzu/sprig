@@ -9,7 +9,11 @@ import { EM } from "../ecs/ecs.js";
 import { Resources } from "../ecs/em-resources.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { InputsDef } from "../input/inputs.js";
-import { HasRudderDef, HasRudderObj, createRudder } from "../ld53/rudder.js";
+import {
+  HasRudderDef,
+  HasRudderObj,
+  createRudder,
+} from "../game-ld53/rudder.js";
 import { V, quat, V3 } from "../matrix/sprig-matrix.js";
 import {
   BallMesh,

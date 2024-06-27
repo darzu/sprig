@@ -70,3 +70,7 @@ export function mkLazy<T>(mk: () => T): () => T {
     return _t;
   };
 }
+
+export function objectKeys<T extends object>(o: T): (keyof T)[] {
+  return Object.keys(o) as (keyof T)[];
+}

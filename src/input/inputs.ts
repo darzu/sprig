@@ -106,6 +106,8 @@ EM.addLazyInit([], [InputsDef, MouseDragDef], () => {
 });
 
 function createInputsReader(canvas: Canvas): () => Inputs {
+  const canvasEl = canvas.getCanvasHtml();
+
   // track which keys are pressed for use in the game loop
   const keyDowns: { [keycode: string]: boolean } = {};
   const accumulated_keyClicks: { [keycode: string]: number } = {};
@@ -144,7 +146,7 @@ function createInputsReader(canvas: Canvas): () => Inputs {
   // track mouse movement for use in the game loop
   let accumulated_mouseMov = V2.mk();
   let lastMouse: V2 = V2.mk();
-  window.addEventListener(
+  canvasEl.addEventListener(
     "pointermove",
     (ev) => {
       const html = canvas.getCanvasHtml();
@@ -174,7 +176,7 @@ function createInputsReader(canvas: Canvas): () => Inputs {
 
   // track mouse wheel
   let accumulated_mouseWheel = 0;
-  window.addEventListener(
+  canvasEl.addEventListener(
     "wheel",
     (ev) => {
       accumulated_mouseWheel += ev.deltaY;
@@ -192,7 +194,7 @@ function createInputsReader(canvas: Canvas): () => Inputs {
   let accumulated_rClicks = 0;
   let isLMouseDown = false;
   let isRMouseDown = false;
-  window.addEventListener("pointerdown", (ev) => {
+  canvasEl.addEventListener("pointerdown", (ev) => {
     if (ev.button === 0) {
       if (!isLMouseDown) accumulated_lClicks += 1;
       isLMouseDown = true;
@@ -206,7 +208,7 @@ function createInputsReader(canvas: Canvas): () => Inputs {
   });
   // TODO(@darzu): TEST MOBILE
   // window.addEventListener("touchstart", (e) => e.preventDefault());
-  window.addEventListener("pointerup", (ev) => {
+  canvasEl.addEventListener("pointerup", (ev) => {
     if (ev.button === 0) {
       isLMouseDown = false;
     } else {

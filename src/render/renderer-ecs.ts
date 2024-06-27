@@ -50,6 +50,7 @@ import { Phase } from "../ecs/sys-phase.js";
 // TODO(@darzu): is it okay for renderer to depend on XY ? XY depends on Renderer
 import { MeshReg, XY, isMeshReg } from "../meshes/mesh-loader.js";
 import { CyStructDesc, CyToTS, createStruct } from "./gpu-struct.js";
+import { getWebLocationHash } from "../web/webnav.js";
 
 // TODO(@darzu): the double "Renderer" naming is confusing. Maybe one should be GPUManager or something?
 export const RendererDef = EM.defineResource(
@@ -601,7 +602,9 @@ EM.addLazyInit(
       throw new Error("Unable to get gpu adapter");
     }
 
-    const supportsTimestamp = adapter.features.has("timestamp-query");
+    const isLocalhost = window.location.hostname === "localhost";
+    const supportsTimestamp =
+      isLocalhost && adapter.features.has("timestamp-query");
     if (!supportsTimestamp && VERBOSE_LOG)
       console.log(
         "GPU profiling disabled: device does not support timestamp queries"
@@ -676,11 +679,22 @@ EM.addLazyInit(
 );
 
 export function displayWebGPUError() {
-  const style = `font-size: 48px;
-      color: green;
-      margin: 24px;
-      max-width: 600px;`;
-  document.getElementsByTagName(
-    "body"
-  )[0].innerHTML = `<div style="${style}">This page requires WebGPU which isn't yet supported in your browser!<br>Or something else went wrong that was my fault.<br><br>Probably Chrome on Windows will work.<br><br>🙂</div>`;
+  const errorDiv = document.getElementById("webgpuErrorDiv");
+
+  if (errorDiv) {
+    // TODO(@darzu): HACK. Don't show this error on the about page
+    if (getWebLocationHash() === "about") {
+      return;
+    }
+    const canvasHolder = document.getElementsByClassName("canvasHolder")[0]!;
+    for (let child of canvasHolder.children)
+      child.setAttribute("style", "display:none;");
+    errorDiv.removeAttribute("style");
+  } else {
+    const style = `font-size: 48px;
+        color: green;
+        margin: 24px;
+        max-width: 600px;`;
+    document.body.innerHTML = `<div style="${style}">This page requires WebGPU which isn't yet supported in your browser!<br>Or something else went wrong that was my fault.<br><br>Probably Chrome on Windows will work.<br><br>🙂</div>`;
+  }
 }

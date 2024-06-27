@@ -17,19 +17,19 @@ import { initClothSandbox } from "./cloth/game-cloth.js";
 import { initCubeGame } from "./debug/xp-cube.js";
 import { resetTempMatrixBuffer } from "./matrix/sprig-matrix.js";
 import { initGrassGame } from "./grass/game-grass.js";
-import { initLD53 } from "./ld53/game-ld53.js";
+import { initLD53 } from "./game-ld53/game-ld53.js";
 import { initGalleryGame } from "./render/game-gallery.js";
 import { initModelingGame } from "./meshes/game-modeling.js";
 import { setSimulationAlpha } from "./render/motion-smoothing.js";
 import { initMPGame } from "./net/game-multiplayer.js";
-import { initLD54 } from "./ld54/game-ld54.js";
+import { initLD54 } from "./game-ld54/game-ld54.js";
 import { initGrayboxSunless } from "./graybox/graybox-sunless-skies.js";
 import { initGrayboxShipArena } from "./graybox/graybox-ship-arena.js";
 import { initGrayboxStarter } from "./graybox/graybox-starter.js";
 import { initPainterlyGame } from "./graybox/game-painterly.js";
 import { initCardsGame } from "./gui/game-cards.js";
 import { initGameParticles } from "./graybox/game-particles.js";
-import { initLd55 } from "./ld55/game-ld55.js";
+import { initLd55 } from "./game-ld55/game-ld55.js";
 import { initMultiSceneGame } from "./graybox/game-multi-scene.js";
 import { objMap } from "./utils/util.js";
 import { startNet } from "./net/net-main.js";
@@ -39,37 +39,40 @@ import { initBlocksGame } from "./blocks/game-blocks.js";
 
 // dbgLogMilestone("start of main.ts");
 
-const defaultGames: Record<string, () => Promise<void>> = {
-  gjk: initGJKSandbox,
-  rebound: initReboundSandbox,
-  shipyard: initShipyardGame,
-  grass: initGrassGame, // broken-ish; too many temp f32s; port to Z-up
-  font: initFontEditor,
-  cards: initCardsGame,
-  hyperspace: initHyperspaceGame, // TODO(@darzu): Z_UP: port to Z-up
-  cloth: initClothSandbox, // broken-ish
-  cube: initCubeGame,
-  gallery: initGalleryGame,
-  modeling: initModelingGame,
-  ld53: initLD53, // TODO(@darzu): broken; map loading
-  ld54: initLD54,
-  mp: initMPGame,
-  "graybox-starter": initGrayboxStarter,
-  "graybox-sunless": initGrayboxSunless,
-  "graybox-ship-arena": initGrayboxShipArena,
-  painterly: initPainterlyGame,
-  particles: initGameParticles,
-  ld55: initLd55,
-  "multi-scene": initMultiSceneGame,
+const _gameRegs = {
+  gjk: { init: initGJKSandbox, displayName: "TODO" },
+  rebound: { init: initReboundSandbox, displayName: "TODO" },
+  shipyard: { init: initShipyardGame, displayName: "Shipyard" },
+  grass: { init: initGrassGame, displayName: "Grass" }, // broken-ish; too many temp f32s; port to Z-up
+  font: { init: initFontEditor, displayName: "Glyph Editor" },
+  cards: { init: initCardsGame, displayName: "TODO" },
+  hyperspace: { init: initHyperspaceGame, displayName: "Space Sailing" }, // broken-ish
+  cloth: { init: initClothSandbox, displayName: "TODO" }, // broken-ish
+  cube: { init: initCubeGame, displayName: "TODO" },
+  gallery: { init: initGalleryGame, displayName: "Model Gallery" },
+  modeling: { init: initModelingGame, displayName: "AABB Builder" },
+  ld53: { init: initLD53, displayName: "Game Jam: LD 53" }, // TODO(@darzu): broken; map loading
+  ld54: { init: initLD54, displayName: "Game Jam: LD 54" },
+  mp: { init: initMPGame, displayName: "Multiplayer" },
+  "graybox-starter": { init: initGrayboxStarter, displayName: "TODO" },
+  "graybox-sunless": { init: initGrayboxSunless, displayName: "TODO" },
+  "graybox-ship-arena": {
+    init: initGrayboxShipArena,
+    displayName: "Endless Arena",
+  },
+  painterly: { init: initPainterlyGame, displayName: "Painterly Dots" },
+  particles: { init: initGameParticles, displayName: "Particles" },
+  ld55: { init: initLd55, displayName: "Summoning Circle" },
+  "multi-scene": { init: initMultiSceneGame, displayName: "TODO" },
 };
 
-Object.entries(defaultGames).forEach(([name, init]) =>
-  GAME_LOADER.registerGame({ name, init })
-);
+export const gameRegs = objMap(_gameRegs, ({ init, displayName }, name) => {
+  return GAME_LOADER.registerGame({ key: name, init, displayName });
+});
 
 // TODO(@darzu): current game should probably be saved in local storage, not hard-coded. (Default can be hard-coded)
 // prettier-ignore
-const DEFAULT_GAME: keyof typeof defaultGames = (
+const DEFAULT_GAME: keyof typeof _gameRegs = (
   // "painterly"
   // "graybox-ship-arena"
   // "ld53"

@@ -3,108 +3,641 @@
 
 <head>
   <meta charset="utf-8" />
-  <meta http-equiv="origin-trial"
-    content="AqUcFYiVuU2a6zW8Q7gp5Ujs1FS4oh1VzQxiv2v0IFvkFqebGgKlfP0cV2NlQcnHo/cLdiyKJETsB0P8yAaE3g4AAABKeyJvcmlnaW4iOiJodHRwczovL3NwcmlnLmxhbmQ6NDQzIiwiZmVhdHVyZSI6IldlYkdQVSIsImV4cGlyeSI6MTY5MTcxMTk5OX0=" />
-  <title>🌱🏞</title>
+  <title>sprig.land 🌱🏞</title>
+  <link rel="me" href="https://mastodon.gamedev.place/@sprig">
   <style>
-    * {
-      margin: 0;
-      padding: 0;
+    html {
+      /* --background-clr: rgb(9.8%, 9.8%, 9.8%); */
+      /* measured */
+      /* --background-clr: #1c1c1c; */
+      --game-background-clr: #1c1c1c;
+      --background-clr: oklch(from var(--game-background-clr) calc(l + 0.1) c h);
+      --text-clr: oklch(from var(--game-background-clr) calc(l + 0.8) c h);
+
+      /* endesga16 color palette */
+      --lightBrown: #e4a672;
+      --midBrown: #b86f50;
+      --darkBrown: #743f39;
+      --deepBrown: #3f2832;
+      --darkRed: #9e2835;
+      --red: #e53b44;
+      --orange: #fb922b;
+      --yellow: #ffe762;
+      --lightGreen: #63c64d;
+      --darkGreen: #327345;
+      --deepGreen: #193d3f;
+      --darkGray: #4f6781;
+      --lightGray: #afbfd2;
+      --white: #ffffff;
+      --lightBlue: #2ce8f4;
+      --blue: #0484d1;
+
+      --switch-size: 24px;
+      --switch-inner-padding: 2px;
+      --switch-knob-size: calc(var(--switch-size) - var(--switch-inner-padding)*2);
+      --switch-knob-travel: calc(var(--switch-knob-size) - 4px);
+      --switch-width: calc(var(--switch-knob-size) + var(--switch-knob-travel) + var(--switch-inner-padding)*2);
+      --switch-transition: 0.2s;
+      --input-background-clr: oklch(from var(--background-clr) calc(l + 0.2) c h);
+
+      /* --darkerGreen: oklch(from var(--darkGreen) calc(l + 0.1) c h); */
+      --darkBlue: oklch(from var(--blue) calc(l - 0.1) calc(c - 0.01) h);
     }
 
     body {
+      font-family: sans-serif;
+      margin: 0px;
+      background-color: var(--background-clr);
+      color: var(--text-clr);
+      font-size: 16px;
+
+      display: grid;
+      grid-template-columns: 200px 1fr 20px;
+      grid-template-rows: 20px 1fr 200px;
+
       width: 100vw;
       height: 100vh;
+    }
 
-      position: absolute;
+    a {
+      color: var(--text-clr);
+    }
+
+    h1,
+    h2,
+    h3,
+    #leftBar h1,
+    #leftBar h2,
+    #leftBar h3 {
+      margin: 0px;
+      padding: 0px;
+    }
+
+    h1 {
+      font-size: 36px;
+    }
+
+    #leftBar h2 {
+      font-size: 20px;
+    }
+
+    #leftBar h1 {
+      margin: 20px 10px;
+    }
+
+    #leftBar h2 {
+      margin: 30px 10px 5px;
+    }
+
+    #leftBar h1+*,
+    #leftBar h2+*,
+    #leftBar h3+* {
+      margin-top: 0px;
+    }
+
+    #leftBar {
+      grid-column: 1;
+      display: flex;
+      flex-direction: column;
+      /* margin: 10px; */
+    }
+
+    #leftBar>* {
+      margin: 10px;
+    }
+
+    #linksTree {
+      /* background- color: rebeccapurple; */
+      display: flex;
+      flex-direction: column;
+
+      margin: 0px;
+
+      /* overflow: auto; */
+    }
+
+    /* #linksTree a { */
+    #leftBar a {
+      margin: 0px;
+      padding: 5px 10px;
+      transition: 0.2s;
+      transform-origin: 10px 50%;
+    }
+
+    a {
+      transition: 0.2s;
+      transform-origin: 10px 50%;
+    }
+
+    a:hover {
+      transform: scale(1.2);
+    }
+
+
+    a.active:hover {
+      transform: unset;
+    }
+
+    a[href^="https://"]::after {
+      content: "";
+      width: 11px;
+      height: 11px;
+      margin-left: 4px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='white' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5z'/%3E%3Cpath fill-rule='evenodd' d='M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0v-5z'/%3E%3C/svg%3E");
+      background-position: center;
+      background-repeat: no-repeat;
+      background-size: contain;
+      display: inline-block;
+    }
+
+    a.active {
+      /* background-color: var(--darkGreen); */
+      background-color: var(--darkBlue);
+      /* border-color: var(--darkGray);
+      border-width: 2px 0px 2px 0px;
+      border-style: solid; */
+      /* box-shadow: rgb(10, 10, 10) 0px 0px 4px 0px */
+      /* box-shadow: var(--darkBlue) 0px 0px 4px 0px; */
+      /* linear-gradient(to right, var(--darkBlue), var(--game-background-clr)) */
+    }
+
+    #linksTree a:first-child {
+      /* margin-top: 0px; */
+    }
+
+    .canvasHolder {
+      grid-column: 2;
+      grid-row: 2;
+      /* background-color: green; */
+
       overflow: hidden;
-      /* useful when screen capturing with:
-          AA
-          --
-          BB
-          window arrangement
-          */
-      /* top: -100px; */
+
+      background-color: var(--game-background-clr);
+
+      box-shadow: rgb(10, 10, 10) 0px 0px 16px 0px;
+    }
+
+    .rightBar {
+      grid-column: 3;
     }
 
     #debug-div {
-      position: absolute;
-      top: 128px;
-      left: 24px;
+      grid-column: 2;
+      grid-row: 2;
+      z-index: 1;
+      pointer-events: none;
+
       color: rgb(255, 0, 0);
       font-family: monospace;
       font-size: 16px;
     }
 
-    #graphics-div {
-      position: absolute;
-      bottom: 64px;
-      left: 24px;
-      color: yellow;
-      font-family: monospace;
-      font-size: 24px;
+    #infoPanelsHolder {
+      grid-column: 2;
+      grid-row: 3;
+
+      display: flex;
+      flex-direction: row;
+
+      margin: 10px;
+      gap: 10px;
+      overflow-x: scroll;
+      overflow-y: hidden;
     }
 
-    #lower-div {
-      position: absolute;
-      bottom: 24px;
-      left: 24px;
-      color: yellow;
-      font-family: monospace;
-      font-size: 24px;
+    .infoPanel h2 {
+      margin-top: 0px;
+      margin-bottom: 10px;
+
+      font-size: 18px;
     }
 
-    #help-div {
-      position: absolute;
-      bottom: 60px;
-      left: 24px;
-      color: white;
-      font-family: monospace;
-      font-size: 24px;
+    .infoPanel {
+      width: 150px;
+      flex-shrink: 0;
+      /* margin: 0 10px; */
+
+      display: flex;
+      flex-direction: column;
+
+      /* TODO(@darzu): use gap everywhere */
+      gap: 10px;
     }
 
-    #title-div {
+    .infoPanel>* {
+      flex-shrink: 0;
+    }
+
+    .infoPanel:first-child,
+    .infoPanel:last-child {
+      margin: 0 0;
+    }
+
+    .infoPanel:first-child {
+      width: 250px;
+    }
+
+    ul {
+      padding-inline-start: 15px;
+      margin: 0px;
+    }
+
+    .switch {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+
+      height: var(--switch-size);
+
+      /*leave room for switch*/
+      padding-left: calc(var(--switch-width) + 5px);
+    }
+
+    .switch *,
+    .switch {
+      cursor: pointer;
+    }
+
+    .switch input {
+      /* undo browser appearance */
+      appearance: none;
+      margin: 0;
+      font: inherit;
+      color: currentColor;
+      border: 0;
+      border-radius: 0;
+
+      width: var(--switch-width);
+      height: var(--switch-size);
       position: absolute;
-      top: 24px;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: var(--input-background-clr);
+      transition: var(--switch-transition);
+
+      border-radius: var(--switch-size);
+    }
+
+    .switch input:before {
+      position: absolute;
+      content: "";
+      height: var(--switch-knob-size);
+      width: var(--switch-knob-size);
+      left: var(--switch-inner-padding);
+      bottom: var(--switch-inner-padding);
+      background-color: var(--text-clr);
+      transition: var(--switch-transition);
+
+      border-radius: 50%;
+    }
+
+    .switch input:checked:before {
+      transform: translateX(var(--switch-knob-travel));
+    }
+
+    .switch input:checked {
+      background-color: var(--blue);
+    }
+
+    .paintColorPicker {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+
+    .paintColorPicker * {
+      flex-shrink: 0;
+    }
+
+    .paintColorPicker input {
+      appearance: none;
+      margin: 0;
+      font: inherit;
+      color: currentColor;
+      border: 0;
+      border-radius: 0;
+
+      --size: 21px;
+      width: var(--size);
+      height: var(--size);
+
+      border-radius: 4px;
+
+      cursor: pointer;
+
+      transition: 0.2s;
+
+      /* background-color: #0484d1; */
+    }
+
+    .paintColorPicker input:checked {
+      transform: scale(1.5);
+    }
+
+    .paintColorPicker input.disabled {
+      transform: scale(0.7);
+      border-radius: 50%;
+      /* cursor: not-allowed; */
+    }
+
+    .lightBrown {
+      background-color: var(--lightBrown);
+    }
+
+    .midBrown {
+      background-color: var(--midBrown);
+    }
+
+    .darkBrown {
+      background-color: var(--darkBrown);
+    }
+
+    .deepBrown {
+      background-color: var(--deepBrown);
+    }
+
+    .darkRed {
+      background-color: var(--darkRed);
+    }
+
+    .red {
+      background-color: var(--red);
+    }
+
+    .orange {
+      background-color: var(--orange);
+    }
+
+    .yellow {
+      background-color: var(--yellow);
+    }
+
+    .lightGreen {
+      background-color: var(--lightGreen);
+    }
+
+    .darkGreen {
+      background-color: var(--darkGreen);
+    }
+
+    .deepGreen {
+      background-color: var(--deepGreen);
+    }
+
+    .darkGray {
+      background-color: var(--darkGray);
+    }
+
+    .lightGray {
+      background-color: var(--lightGray);
+    }
+
+    .white {
+      background-color: var(--white);
+    }
+
+    .lightBlue {
+      background-color: var(--lightBlue);
+    }
+
+    .blue {
+      background-color: var(--blue);
+    }
+
+    .inputGrid input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
       width: 100%;
-      color: #ccc;
-      font-family: monospace;
-      font-size: 48px;
-      text-align: center;
+      height: 16px;
+      margin: 0px;
+      padding: 0px;
+      border-radius: 4px;
+      background: var(--input-background-clr);
+      outline: none;
+      cursor: pointer;
     }
+
+    /* TODO(@darzu): bug, for some reason including -moz-range-thumb makes it not work in chrome */
+    /* input[type="range"]::-moz-range-thumb, */
+    .inputGrid input[type="range"]::-webkit-slider-thumb {
+      /* z-index: 2; */
+      -webkit-appearance: none;
+      appearance: none;
+      width: 10px;
+      height: 16px;
+      border-radius: 4px;
+      background: var(--blue);
+      outline: none;
+      cursor: pointer;
+    }
+
+    .inputGrid {
+      display: grid;
+      grid-template-columns: 50px 1fr;
+      gap: 2px;
+    }
+
+    .inputGrid label {
+      grid-column: 1;
+      grid-row: span 2;
+    }
+
+    .inputGrid div {
+      grid-column: 2;
+    }
+
+    .inputGrid div:nth-of-type(1) {
+      grid-row: 1;
+    }
+
+    .inputGrid div:nth-of-type(2) {
+      grid-row: 2;
+    }
+
+    .inputGrid div:nth-of-type(3) {
+      grid-row: 3;
+    }
+
+    .inputGrid span {
+      user-select: none;
+      pointer-events: none;
+    }
+
+    .inputGrid .valLabel {
+      justify-self: center;
+      font-size: 14px;
+    }
+
+    .inputGrid .leftLabel,
+    .inputGrid .rightLabel {
+      opacity: 0.5;
+      font-size: 12px;
+      margin: 0 4px;
+    }
+
+    .inputGrid .leftLabel {
+      justify-self: left;
+    }
+
+    .inputGrid .rightLabel {
+      justify-self: right;
+    }
+
+    /* slider: single value */
+    .inputGrid .slider {
+      display: grid;
+      grid-template: 1fr / 1fr;
+      align-items: center;
+    }
+
+    .inputGrid .slider>* {
+      grid-area: 1 / 1;
+    }
+
+
+    .inputGrid .sliderV3 {
+      display: grid;
+      grid-template: 1fr / 1fr 1fr 1fr;
+      align-items: center;
+      gap: 2px;
+    }
+
+    .inputGrid .sliderV3>*:nth-of-type(1) {
+      grid-area: 1 / 1;
+    }
+
+    .inputGrid .sliderV3>*:nth-of-type(2) {
+      grid-area: 1 / 2;
+    }
+
+    .inputGrid .sliderV3>*:nth-of-type(3) {
+      grid-area: 1 / 3;
+    }
+
+    input[type="color"] {
+      padding: 0px;
+      margin: 0px;
+      outline: none;
+      width: 24px;
+      height: 24px;
+    }
+
+    input[type="color"]::-webkit-color-swatch-wrapper {
+      padding: 0px;
+      margin: 0px;
+      outline: none;
+    }
+
+    .inputGrid .colorPickerV2 {
+      display: grid;
+      grid-template: 1fr / 1fr 1fr;
+
+      justify-items: center;
+    }
+
+    .inputGrid .colorPickerV2>*:nth-of-type(1) {
+      grid-area: 1 / 1;
+    }
+
+    .inputGrid .colorPickerV2>*:nth-of-type(2) {
+      grid-area: 1 / 2;
+    }
+
+    .canvasHolder div {
+      margin: 20px;
+      max-width: 800px;
+    }
+
+    /* #aboutDiv a {
+      font-size: 14px;
+    } */
   </style>
 </head>
 
 <body>
   <script>
-    console.log(`start of index.html's body at ${performance.now().toFixed(2)}ms`);
+    console.log(`start of html body at ${performance.now().toFixed(2)}ms`);
   </script>
 
-  <canvas width="570" height="570" id="sample-canvas"></canvas>
-
-
-  <div id="debug-div"> </div>
-  <!-- <div id="debug-div" style="visibility: hidden;"> </div> -->
-  <div id="lower-div"> </div>
-  <div id="title-div"> </div>
-  <div id="help-div"> </div>
-
-  <!-- <div id="graphics-div" style="visibility: hidden;">  -->
-  <div id="graphics-div">
-    <input type="checkbox" id="graphics-check">
-    <label for="graphics-check">High Graphics</label>
-    <!-- <button id="reset-settings">Reset</button> -->
+  <div id="leftBar">
+    <h1>sprig.land</h1>
+    <a id="aboutLink" href="#about">about</a>
+    <h2>Tech Demos</h2>
+    <div id="linksTree">
+      <!-- <a href="#particles">particles</a>
+      <a href="#graybox-ship-arena">graybox-ship-arena</a> -->
+    </div>
   </div>
 
+  <div id="debug-div"> </div>
+
+  <div class="canvasHolder">
+    <canvas id="canvas-1" width="512" height="512"></canvas>
+    <div id="aboutDiv" style="display:none;">
+      sprig.land is a game engine designed for beginner game makers.
+      <br>
+      <br>
+      sprig.land
+      <ul>
+        <li>is free and open source</li>
+        <li>includes custom graphics, physics, state management (ECS), and multiplayer</li>
+        <li>is built by Daryl Zuniga with the help of many wonderful people</li>
+        <li>is written in TypeScript and WGSL</li>
+        <li>
+          is 2MB unminified with no external library dependencies or package management and uses only web standards
+        </li>
+        <li>
+          is a work-in-progress, undocumented, and not recommended for use yet
+        </li>
+        <li>
+          minimum requirements ($120 chromebook):
+          processor: Intel Celeron N4020 (1.1-2.8ghz),
+          graphics: Intel UHD Graphics 600 (120 GFLOPS),
+          memory: 4GB
+        </li>
+      </ul>
+      <br>
+      <br>
+      <a href="https://github.com/darzu/sprig" target="_blank">GitHub</a>
+      <br>
+      <a href="https://mastodon.gamedev.place/@sprig" target="_blank">Mastodon</a>
+      <br>
+      <a href="https://darzu.io/" target="_blank">Daryl's homepage</a>
+      <br>
+      <a href="https://www.patreon.com/darzu" target="_blank">Patreon</a>
+    </div>
+    <div id="webgpuErrorDiv" style="display:none;">
+      🚧 Error: Unfortunately, the WebGPU standard is not supported by your browser yet.
+      <br>
+      <br>
+      We recommend Chrome or Edge for the moment.
+      <br>
+      <br>
+      <a href="https://caniuse.com/webgpu" target="_blank">caniuse.com/webgpu</a>
+      <br>
+      <a href="https://webgpureport.org/" target="_blank">WebGPU report</a>
+      <br>
+      <a href="https://gpuweb.github.io/gpuweb/explainer/" target="_blank">Official WebGPU Explainer</a>
+      <br>
+      <a href="https://developer.mozilla.org/en-US/docs/Web/API/WebGPU_API" target="_blank">MDN</a>
+    </div>
+  </div>
+
+  <div class="rightBar">
+  </div>
+
+  <div id="infoPanelsHolder">
+  </div>
+
+  </div>
 
   <script src="./main.js" type="module"></script>
   <script type="module">
-    import { EM } from "./ecs/ecs.js";
-    import { WebNavDef } from "./web/webnav.js";
-    import { startDefaultGame } from "./main.js";
-    startDefaultGame();
-    const foo = await EM.whenResources(WebNavDef);
-    console.dir(foo);
+    import { main_sceneSelector } from "./main-scene-selector.js";
+    main_sceneSelector();
   </script>
 </body>
 

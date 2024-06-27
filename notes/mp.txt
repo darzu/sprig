@@ -536,3 +536,6 @@ Chat Feb 25th:
 Wasm-4 rollback netcode:
   https://wasm4.org/blog/release-2-4-0
   https://wasm4.org/docs/guides/multiplayer/
+
+Serious Sam netcode:
+  https://staniks.github.io/articles/serious-engine-networking-analysis

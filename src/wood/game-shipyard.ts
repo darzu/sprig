@@ -3,17 +3,22 @@ import {
   CameraDef,
   CameraFollowDef,
 } from "../camera/camera.js";
-import { CanvasDef, HasFirstInteractionDef } from "../render/canvas.js";
+import { CanvasDef } from "../render/canvas.js";
 import { AlphaDef, ColorDef } from "../color/color-ecs.js";
-import { ENDESGA16 } from "../color/palettes.js";
+import {
+  AllEndesga16,
+  AllEndesga16Names,
+  ENDESGA16,
+  Endesga16Idx,
+  Endesga16Name,
+} from "../color/palettes.js";
 import { DeadDef } from "../ecs/delete.js";
 import { EM } from "../ecs/ecs.js";
 import { V3, quat, V, mat4 } from "../matrix/sprig-matrix.js";
 import { InputsDef } from "../input/inputs.js";
-import { ColliderDef, ColliderFromMeshDef } from "../physics/collider.js";
+import { ColliderFromMeshDef } from "../physics/collider.js";
 import {
   PhysicsResultsDef,
-  PhysicsStateDef,
   WorldFrameDef,
 } from "../physics/nonintersection.js";
 import { PositionDef, RotationDef, ScaleDef } from "../physics/transform.js";
@@ -28,45 +33,36 @@ import {
   RenderableDef,
 } from "../render/renderer-ecs.js";
 import {
+  _quadsPerSplinter,
+  _trisPerSplinter,
   iterateWoodSegmentQuadIndices,
   resetWoodState,
+  SegIndex,
   SegState,
   WoodStateDef,
 } from "./wood-builder.js";
 import { WoodHealthDef } from "./wood-health.js";
 import { createWoodHealth } from "./wood-health.js";
 import { resetWoodHealth } from "./wood-health.js";
-import {
-  BallMesh,
-  CannonLD51Mesh,
-  CubeMesh,
-  HexMesh,
-  PlaneMesh,
-} from "../meshes/mesh-list.js";
+import { CannonLD51Mesh, CubeMesh, PlaneMesh } from "../meshes/mesh-list.js";
 import { breakBullet, BulletDef, fireBullet } from "../cannons/bullet.js";
-import { GhostDef } from "../debug/ghost.js";
 import { createLD53Ship } from "./shipyard.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
 import { startPirates } from "./pirate.js";
 import { ParametricDef } from "../motion/parametric-motion.js";
-import { addGizmoChild } from "../utils/utils-game.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { AuthorityDef, MeDef } from "../net/components.js";
-import { createSun, initGhost } from "../graybox/graybox-helpers.js";
-import { PId4, PId6, PId8, assert, mkLazy } from "../utils/util-no-import.js";
+import {
+  createSun,
+  initDemoPanCamera,
+  initStdGrid,
+} from "../graybox/graybox-helpers.js";
+import { PId4, PId8, assert, mkLazy } from "../utils/util-no-import.js";
 import { stdGridRender } from "../render/pipelines/std-grid.js";
 import { pointPipe, linePipe } from "../render/pipelines/std-line.js";
 import { createObj } from "../ecs/em-objects.js";
 import { GRID_MASK } from "../render/pipeline-masks.js";
-import {
-  SketcherDef,
-  sketchAABB,
-  sketchDot,
-  sketchLine,
-  sketchLine2,
-  sketchOBB,
-  sketchRay,
-} from "../utils/sketch.js";
+import { SketcherDef, sketchAABB, sketchLine } from "../utils/sketch.js";
 import { renderDots } from "../render/pipelines/std-dots.js";
 import { alphaRenderPipeline } from "../render/pipelines/xp-alpha.js";
 import {
@@ -80,73 +76,45 @@ import { TimeDef } from "../time/time.js";
 import { clamp } from "../utils/math.js";
 import { MouseRayDef } from "../input/screen-input.js";
 import {
+  WoodHit,
   createMeshUpdateTracker,
   getOBBFromWoodSeg,
   woodVsAABB,
 } from "./wood-damage.js";
 import { OBB } from "../physics/obb.js";
-import {
-  ZERO_AABB,
-  cloneAABB,
-  createAABB,
-  transformAABB,
-} from "../physics/aabb.js";
 import { getFireSolution } from "../stone/projectile.js";
+import { IdPair, idPair, packI16s, toMap, unpackI16s } from "../utils/util.js";
+import { createHtmlBuilder } from "../web/html-builder.js";
+import { transformAABB, cloneAABB, ZERO_AABB } from "../physics/aabb.js";
 
 const DBG_COLLIDERS = false;
 const DBG_TRANSPARENT_BOAT = false;
 
 const DISABLE_PRIATES = true;
 
-async function initDemoPanCamera() {
-  const g = EM.mk();
-  EM.set(g, CameraFollowDef, 1);
-  V3.set(0, -50, 0, g.cameraFollow.positionOffset);
-  g.cameraFollow.yawOffset = -2.088;
-  g.cameraFollow.pitchOffset = -0.553;
-
-  // TODO(@darzu): wish we didn't need these
-  EM.set(g, PositionDef);
-  EM.set(g, RotationDef);
-  EM.set(g, RenderableConstructDef, CubeMesh, false);
-
-  const turnSpeed = 0.0003;
-  const zoomSpeed = 0.1;
-
-  const { htmlCanvas } = await EM.whenResources(CanvasDef);
-  htmlCanvas.shouldLockMouseOnClick = false;
-  htmlCanvas.unlockMouse();
-
-  EM.addSystem(
-    "demoPanCamera",
-    Phase.GAME_PLAYERS,
-    null,
-    [InputsDef, CanvasDef, TimeDef],
-    (_, { inputs, htmlCanvas, time }) => {
-      if (inputs.ldown) {
-        g.cameraFollow.yawOffset += inputs.mouseMov[0] * turnSpeed * time.dt;
-        g.cameraFollow.pitchOffset += -inputs.mouseMov[1] * turnSpeed * time.dt;
-      }
-      g.cameraFollow.positionOffset[1] +=
-        -inputs.mouseWheel * zoomSpeed * time.dt;
-      g.cameraFollow.positionOffset[1] = clamp(
-        g.cameraFollow.positionOffset[1],
-        -200,
-        -5
-      );
-    }
-  );
+enum ShipyardClickMode {
+  None,
+  Cannon,
+  Paint,
 }
 
-export async function initShipyardGame() {
-  stdGridRender.fragOverrides!.lineSpacing1 = 8.0;
-  stdGridRender.fragOverrides!.lineWidth1 = 0.05;
-  stdGridRender.fragOverrides!.lineSpacing2 = 256;
-  stdGridRender.fragOverrides!.lineWidth2 = 0.2;
-  stdGridRender.fragOverrides!.ringStart = 512;
-  stdGridRender.fragOverrides!.ringWidth = 0;
+const shipyardGameState = {
+  mode: ShipyardClickMode.Cannon,
+  paintColor: "blue" as Endesga16Name,
+  showColliders: false,
+};
 
-  const res = await EM.whenResources(RendererDef, CameraDef, MeDef);
+export async function initShipyardGame() {
+  // grid
+  initStdGrid();
+
+  const res = await EM.whenResources(
+    RendererDef,
+    CameraDef,
+    MeDef,
+    SketcherDef
+  );
+  const { sketcher } = res;
 
   res.camera.fov = Math.PI * 0.5;
 
@@ -166,29 +134,10 @@ export async function initShipyardGame() {
     postProcess,
   ];
 
-  // grid
-  const grid = createObj(
-    [RenderableConstructDef, PositionDef, ScaleDef, ColorDef] as const,
-    {
-      renderableConstruct: [PlaneMesh, true, undefined, GRID_MASK],
-      position: [0, 0, 0],
-      scale: [2 * res.camera.viewDist, 2 * res.camera.viewDist, 1],
-      // color: [0, 0.5, 0.5],
-      color: [0.5, 0.5, 0.5],
-      // color: [1, 1, 1],
-    }
-  );
-
   // camera
-  initDemoPanCamera();
+  initDemoPanCamera([0, 0, 5]);
 
   const sun = createSun([250, 10, 300]);
-
-  // const ground = EM.mk();
-  // EM.set(ground, RenderableConstructDef, HexMesh);
-  // EM.set(ground, ScaleDef, [20, 20, 2]);
-  // EM.set(ground, ColorDef, ENDESGA16.blue);
-  // EM.set(ground, PositionDef, V(0, 0, -4));
 
   // TIMBER
   const woodEnt = EM.mk();
@@ -322,40 +271,44 @@ export async function initShipyardGame() {
     RenderableDef
   );
 
-  // let _maxSketchAABB = 0;
+  let _maxSketchAABB = 0;
 
-  // actions
-  EM.addSystem(
-    "shipyardActions",
-    Phase.GAME_WORLD,
-    null,
-    [InputsDef],
-    async (_, res) => {
-      if (res.inputs.keyClicks["r"]) {
-        resetWoodHealth(woodEnt.woodHealth);
-        resetWoodState(woodEnt.woodState);
-        woodRenderable.meshHandle.pool.updateMeshQuadInds(
-          woodRenderable.meshHandle,
-          woodEnt.woodState.mesh as Mesh,
-          0,
-          woodEnt.woodState.mesh.quad.length
-        );
+  // TODO(@darzu): This is all pretty hacky. I guess I want some sort of arena for hover sketches that is cleared.
+  let _hoverTmpOBB = OBB.mk();
+  let _lastHoverByBoardSegIdx = new Map<number, boolean>();
+  function hoverSegments(color: V3.InputT, ...segs: SegIndex[]) {
+    for (let [gIdx, bIdx, sIdx] of segs) {
+      const pair = packI16s(bIdx, sIdx);
+      _lastHoverByBoardSegIdx.set(pair, true);
+      const seg = woodObj.state.groups[gIdx].boards[bIdx].segments[sIdx];
+      const obb = getOBBFromWoodSeg(seg, _hoverTmpOBB);
+      V3.add(obb.halfw, [0.2, 0.2, 0.2], obb.halfw);
+      sketcher.sketch({
+        shape: "obb",
+        obb,
+        key: `hoverWoodSeg_${pair}`,
+        color,
+      });
+    }
+  }
+  function unhoverAllSegments() {
+    for (let [pair, wasHovering] of _lastHoverByBoardSegIdx.entries()) {
+      if (wasHovering) {
+        sketcher.sketch({
+          shape: "obb",
+          obb: OBB.ZERO,
+          key: `hoverWoodSeg_${pair}`,
+        });
+        _lastHoverByBoardSegIdx.set(pair, false);
       }
     }
-  );
+  }
 
   EM.addSystem(
     "selectWoodParts",
     Phase.GAME_WORLD,
     null,
-    [
-      InputsDef,
-      MouseRayDef,
-      PhysicsResultsDef,
-      CameraComputedDef,
-      SketcherDef,
-      TimeDef,
-    ],
+    [InputsDef, MouseRayDef, PhysicsResultsDef, CameraComputedDef, TimeDef],
     (_, res) => {
       let meshTracker = mkLazy(() =>
         createMeshUpdateTracker(woodRenderable.meshHandle)
@@ -363,17 +316,46 @@ export async function initShipyardGame() {
       let hasChange = false;
 
       let doFire =
-        res.inputs.lclick || (res.inputs.ldown && res.time.step % 30 === 0);
+        shipyardGameState.mode === ShipyardClickMode.Cannon &&
+        (res.inputs.lclick || (res.inputs.ldown && res.time.step % 30 === 0));
+      let doPaint =
+        shipyardGameState.mode === ShipyardClickMode.Paint && res.inputs.lclick;
 
-      // let _sketchAABBNum = 0;
+      let _sketchAABBNum = 0;
 
-      function woodColorSegment(seg: SegState, color: V3.InputT) {
+      function woodColorSegment(
+        [gIdx, bIdx, sIdx]: SegIndex,
+        color: V3.InputT
+      ) {
+        const health = woodHealth.groups[gIdx].boards[bIdx][sIdx];
+        const seg = woodObj.state.groups[gIdx].boards[bIdx].segments[sIdx];
+
         hasChange = true;
         for (let qi of iterateWoodSegmentQuadIndices(seg)) {
           V3.copy(woodObj.mesh.colors[qi], color);
           meshTracker().trackQuadDataChange(qi);
         }
+
+        // color the splinters
+        for (let spIdx of [health.splinterBotIdx, health.splinterTopIdx]) {
+          if (!spIdx) continue;
+          assert(woodObj.state.splinterState);
+          const quadIdx =
+            woodObj.state.splinterState.quadOffset + spIdx * _quadsPerSplinter;
+          for (let qi = quadIdx; qi < quadIdx + _quadsPerSplinter; qi++) {
+            V3.copy(woodObj.mesh.colors[qi], color);
+            meshTracker().trackQuadDataChange(qi);
+          }
+          const triIdx =
+            woodObj.state.splinterState.triOffset + spIdx * _trisPerSplinter;
+          for (let ti = triIdx; ti < triIdx + _trisPerSplinter; ti++) {
+            V3.copy(woodObj.mesh.colors[woodObj.mesh.quad.length + ti], color);
+            meshTracker().trackTriDataChange(ti);
+          }
+        }
       }
+
+      unhoverAllSegments();
 
       // if (res.inputs.lclick)
       {
@@ -391,20 +373,24 @@ export async function initShipyardGame() {
         );
 
         let minDist = +Infinity;
-        let minSeg: SegState | undefined = undefined;
+        let minHit: WoodHit | undefined = undefined;
         const hitItr = woodVsAABB(woodObj.state, (localAABB) => {
           const dist = rayVsAABBHitDist(localAABB, woodLocalRay);
           const isHit = !!dist && dist < minDist;
-          if (isHit) {
-            // const worldAABB =transformAABB(cloneAABB(localAABB), woodEnt.world.transform) // unnecessary since ship is at 0,0,0
-            // sketchAABB(localAABB, {
-            //   key: `hitAABB_${++_sketchAABBNum}`,
-            //   color: ENDESGA16.yellow,
-            // });
+          if (isHit && shipyardGameState.showColliders) {
+            const worldAABB = transformAABB(
+              cloneAABB(localAABB),
+              woodEnt.world.transform
+            ); // unnecessary since ship is at 0,0,0
+            sketchAABB(localAABB, {
+              key: `hitAABB_${++_sketchAABBNum}`,
+              color: ENDESGA16.yellow,
+            });
           }
           return isHit;
         });
-        for (let [groupIdx, boardIdx, segIdx, seg] of hitItr) {
+        for (let hit of hitItr) {
+          const [groupIdx, boardIdx, segIdx, seg] = hit;
           // woodColorSegment(seg, ENDESGA16.orange);
 
           const health = woodHealth.groups[groupIdx].boards[boardIdx][segIdx];
@@ -415,35 +401,55 @@ export async function initShipyardGame() {
           if (!Number.isNaN(hitDist) && hitDist > 0) {
             if (hitDist < minDist) {
               minDist = hitDist;
-              minSeg = seg;
+              minHit = hit;
             }
             // woodColorSegment(seg, ENDESGA16.yellow);
-            // sketchAABB(seg.localAABB, {
-            //   key: `hitAABB_${_sketchAABBNum}`,
-            //   color: ENDESGA16.darkGreen,
-            // });
+            if (shipyardGameState.showColliders) {
+              sketchAABB(seg.localAABB, {
+                key: `hitAABB_${_sketchAABBNum}`,
+                color: ENDESGA16.darkGreen,
+              });
+            }
           }
 
           // if (rayVsCapsule(woodLocalRay, hit.seg)) {
           // }
         }
 
-        if (minSeg) {
-          const obb = getOBBFromWoodSeg(minSeg, tempOBB);
-          V3.add(obb.halfw, [0.2, 0.2, 0.2], obb.halfw);
-          res.sketcher.sketch({
-            shape: "obb",
-            obb,
-            key: "hoverWoodSeg",
-            color: ENDESGA16.red,
-          });
-          if (doFire) {
-            woodColorSegment(minSeg, ENDESGA16.darkRed);
-          }
+        if (minHit) {
+          if (shipyardGameState.mode === ShipyardClickMode.Paint) {
+            // paint mode
+            const [gIdx, bIdx] = minHit;
+            let toPaintSegIdxs: SegIndex[] = [];
+            if (res.inputs.keyDowns["shift"]) {
+              // TODO(@darzu): document shift key usage
+              woodObj.state.groups[gIdx].boards.forEach((board, bIdx) => {
+                board.segments.forEach((_, sIdx) => {
+                  toPaintSegIdxs.push([gIdx, bIdx, sIdx] as SegIndex);
+                });
+              });
+            } else {
+              const board = woodObj.state.groups[gIdx].boards[bIdx];
+              board.segments.forEach((_, sIdx) => {
+                toPaintSegIdxs.push([gIdx, bIdx, sIdx] as SegIndex);
+              });
+            }
+            const color = ENDESGA16[shipyardGameState.paintColor];
+            hoverSegments(color, ...toPaintSegIdxs);
 
-          // fire cannon
-          {
-            const aimOBB = obb;
+            if (doPaint) {
+              for (let segIdx of toPaintSegIdxs)
+                woodColorSegment(segIdx, color);
+            }
+          } else if (shipyardGameState.mode === ShipyardClickMode.Cannon) {
+            // cannon mode
+            hoverSegments(ENDESGA16.red, [minHit[0], minHit[1], minHit[2]]);
+
+            // if (doFire) {
+            //   woodColorSegment(minHit[3], ENDESGA16.darkRed);
+            // }
+
+            const aimOBB = getOBBFromWoodSeg(minHit[3], tempOBB);
             V3.zero(aimOBB.halfw);
             const gravity = 20 * 0.00001;
             const projectileSpeed = 0.2;
@@ -477,25 +483,20 @@ export async function initShipyardGame() {
                 0.02,
                 gravity,
                 bulletHealth,
-                V3.FWD
+                V3.FWD,
+                shipyardGameState.showColliders
               );
             }
           }
-        } else {
-          res.sketcher.sketch({
-            shape: "obb",
-            obb: OBB.ZERO,
-            key: "hoverWoodSeg",
-          });
         }
 
-        // _maxSketchAABB = Math.max(_sketchAABBNum, _maxSketchAABB);
-        // for (let i = _sketchAABBNum; _sketchAABBNum < _maxSketchAABB; i++) {
-        //   // TODO(@darzu): Hide sketch function??
-        //   sketchAABB(ZERO_AABB, {
-        //     key: `hitAABB_${++_sketchAABBNum}`,
-        //   });
-        // }
+        _maxSketchAABB = Math.max(_sketchAABBNum, _maxSketchAABB);
+        for (let i = _sketchAABBNum; _sketchAABBNum < _maxSketchAABB; i++) {
+          // TODO(@darzu): Hide sketch function??
+          sketchAABB(ZERO_AABB, {
+            key: `hitAABB_${++_sketchAABBNum}`,
+          });
+        }
       }
 
       if (hasChange) {
@@ -515,4 +516,110 @@ export async function initShipyardGame() {
   );
 
   if (!DISABLE_PRIATES) startPirates();
+
+  // TODO(@darzu): REFACTOR. We should be generating the HTML and linking it more systematically.
+  initShipyardHtml();
+}
+
+async function initShipyardHtml() {
+  if (!document.getElementById("infoPanelsHolder")) {
+    console.warn("no infoPanelsHolder");
+    return;
+  }
+
+  const htmlBuilder = createHtmlBuilder();
+
+  // about
+  const aboutPanel = htmlBuilder.addInfoPanel("Shipyard");
+  aboutPanel.addText(`
+    The ship is defined with paths and constraints.
+    These then procedurally generate a mesh and metadata (e.g. colliders), which support runtime modification.
+  `);
+
+  // controls
+  const controlsPanel = htmlBuilder.addInfoPanel("Controls");
+  controlsPanel.addHTML(`
+    <ul>
+      <li>Drag to pan</li>
+      <li>Scroll to zoom</li>
+      <li id="clickModeString"></li>
+      <li id="clickModeLi2" style="visibility:hidden;"></li>
+    </ul>
+  `);
+  const clickModeStringEl = document.getElementById("clickModeString")!;
+  const clickModeLi2El = document.getElementById("clickModeLi2")!;
+
+  // painting
+  const paintPanel = htmlBuilder.addInfoPanel("Painting");
+
+  const paintModeToggle = paintPanel.addToggleEditor({
+    label: "Painting Mode",
+    default: false,
+    onChange: (v) => {
+      const mode = v ? ShipyardClickMode.Paint : ShipyardClickMode.None;
+      setClickMode(mode);
+    },
+  });
+
+  const paletteEditor = paintPanel.addPaletteColorEditor({
+    defaultIdx: Endesga16Idx.blue,
+    onClick: (idx) => {
+      if (!paletteEditor.isEnabled()) {
+        setClickMode(ShipyardClickMode.Paint);
+        shipyardGameState.paintColor = AllEndesga16Names[idx];
+      }
+    },
+    onChange: (idx) => {
+      shipyardGameState.paintColor = AllEndesga16Names[idx];
+    },
+  });
+  paletteEditor.doEnable(false);
+
+  // destruction
+  const destPanel = htmlBuilder.addInfoPanel("Destruction");
+
+  const cannonModeToggle = destPanel.addToggleEditor({
+    label: "Cannon Mode",
+    default: true,
+    onChange: (v) => {
+      const mode = v ? ShipyardClickMode.Cannon : ShipyardClickMode.None;
+      setClickMode(mode);
+    },
+  });
+
+  // view
+  const viewPanel = htmlBuilder.addInfoPanel("View");
+
+  const collidersToggle = viewPanel.addToggleEditor({
+    label: "Show Colliders",
+    default: shipyardGameState.showColliders,
+    onChange: (v) => {
+      shipyardGameState.showColliders = v;
+    },
+  });
+
+  // click mode
+  const clickToStringByMode: { [k in ShipyardClickMode]: string } = {
+    [ShipyardClickMode.None]: "",
+    [ShipyardClickMode.Cannon]: "Click to fire a cannon at the cursor",
+    [ShipyardClickMode.Paint]: "Click to paint a board",
+  };
+
+  function setClickMode(mode: ShipyardClickMode) {
+    shipyardGameState.mode = mode;
+    cannonModeToggle.doEnable(mode === ShipyardClickMode.Cannon);
+    paintModeToggle.doEnable(mode === ShipyardClickMode.Paint);
+    paletteEditor.doEnable(mode === ShipyardClickMode.Paint);
+
+    clickModeStringEl!.textContent = clickToStringByMode[mode];
+
+    if (mode === ShipyardClickMode.Cannon) {
+      clickModeLi2El.setAttribute("style", "visibility:hidden;");
+    } else if (mode === ShipyardClickMode.Paint) {
+      clickModeLi2El.removeAttribute("style");
+      clickModeLi2El.textContent = `Shift + Click to paint group`;
+    }
+  }
+
+  setClickMode(ShipyardClickMode.Cannon);
 }

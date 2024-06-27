@@ -258,7 +258,8 @@ export async function startPirates() {
               0.02,
               3 * 0.00001,
               ballHealth,
-              V3.FWD
+              V3.FWD,
+              false
             );
           }
         }

@@ -46,13 +46,13 @@ import {
 import { WindDef, registerChangeWindSystems } from "../wind/wind.js";
 import { DevConsoleDef } from "../debug/console.js";
 import { clamp, jitter, max, sum } from "../utils/math.js";
-import { LD52ShipDef, createLd53ShipAsync } from "../ld53/ship.js";
+import { LD52ShipDef, createLd53ShipAsync } from "../game-ld53/ship.js";
 import { assert } from "../utils/util.js";
 import { texTypeToBytes } from "../render/gpu-struct.js";
 import { PartyDef } from "../camera/party.js";
 import { copyAABB, createAABB } from "../physics/aabb.js";
 import { InputsDef } from "../input/inputs.js";
-import { ScoreDef } from "../ld53/score.js";
+import { ScoreDef } from "../game-ld53/score.js";
 import { CanManDef, TurretDef, raiseManTurret } from "../turret/turret.js";
 import { TextDef } from "../gui/ui.js";
 import { VERBOSE_LOG } from "../flags.js";

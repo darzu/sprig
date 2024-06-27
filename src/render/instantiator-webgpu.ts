@@ -1,7 +1,7 @@
 import { PERF_DBG_GPU, VERBOSE_LOG } from "../flags.js";
 import { ControllableDef } from "../input/controllable.js";
 import { V4, V } from "../matrix/sprig-matrix.js";
-import { assert } from "../utils/util.js";
+import { assert, isArray, isObject } from "../utils/util.js";
 import {
   capitalize,
   pluralize,
@@ -600,13 +600,18 @@ function createCyPipeline(
         constants: p.overrides,
       },
     });
+    let workgroupCounts: [number, number, number] = [1, 1, 1];
+    if (isArray(p.workgroupCounts)) {
+      workgroupCounts = p.workgroupCounts;
+    } else {
+      if (p.workgroupCounts.onCanvasResize)
+        workgroupCounts = p.workgroupCounts.onCanvasResize([100, 100]);
+    }
     const cyPipeline: CyCompPipeline = {
       ptr: p,
       pipeline: compPipeline,
       bindGroupLayout: resBindGroupLayout,
-      workgroupCounts: isFunction(p.workgroupCounts)
-        ? p.workgroupCounts([100, 100])
-        : p.workgroupCounts,
+      workgroupCounts,
     };
     return cyPipeline;
   }
@@ -1150,7 +1155,13 @@ export function doCompute(
   );
 
   compPassEncoder.setBindGroup(0, resBindGroup);
-  compPassEncoder.dispatchWorkgroups(...pipeline.workgroupCounts);
+  let workgroupCounts = pipeline.workgroupCounts;
+  if (
+    !isArray(pipeline.ptr.workgroupCounts) &&
+    pipeline.ptr.workgroupCounts.onDispatch
+  )
+    workgroupCounts = pipeline.ptr.workgroupCounts.onDispatch();
+  compPassEncoder.dispatchWorkgroups(...workgroupCounts);
   // compPassEncoder.writeTimestamp(querySet, 1);
 
   compPassEncoder.end();
@@ -1171,8 +1182,12 @@ export function onCanvasResizeAll(
   }
 
   for (let comp of Object.values(resources.kindToNameToRes.compPipeline)) {
-    if (isFunction(comp.ptr.workgroupCounts)) {
-      comp.workgroupCounts = comp.ptr.workgroupCounts(canvasSize);
+    if (
+      !isArray(comp.ptr.workgroupCounts) &&
+      comp.ptr.workgroupCounts.onCanvasResize
+    ) {
+      comp.workgroupCounts =
+        comp.ptr.workgroupCounts.onCanvasResize(canvasSize);
     }
   }
 }

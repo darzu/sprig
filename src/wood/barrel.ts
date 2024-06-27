@@ -48,7 +48,7 @@ export function createRingPath(
 export function createBarrelMesh(): WoodObj {
   const w = createWoodBuilder({ meshName: "barrel" });
 
-  w.startGroup("all");
+  const allG = w.addGroup("all");
 
   // const ringPath: Path = [];
   // const cursor = mat4.create();
@@ -87,7 +87,7 @@ export function createBarrelMesh(): WoodObj {
       mat4.translate(cursor, [0, segLen, 0], cursor);
     }
 
-    w.addBoard(path, BLACK);
+    allG.addBoard(path, BLACK);
     // dbgPathWithGizmos(path);
   }
 

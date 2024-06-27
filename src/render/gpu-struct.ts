@@ -5,8 +5,8 @@ import { objMap } from "../utils/util.js";
 
 // TABLES, CONSTS and TYPE-LEVEL HELPERS
 
-const WGSLScalars = ["bool", "i32", "u32", "f32", "f16"] as const;
-type WGSLScalar = (typeof WGSLScalars)[number];
+export const WGSLScalars = ["bool", "i32", "u32", "f32", "f16"] as const;
+export type WGSLScalar = (typeof WGSLScalars)[number];
 type WGSLVec = {
   [S in WGSLScalar]: `vec2<${S}>` | `vec3<${S}>` | `vec4<${S}>`;
 }[WGSLScalar];
@@ -22,7 +22,7 @@ const WGSLMats = [
   "mat4x4<f32>",
 ] as const;
 type WGSLMat = (typeof WGSLMats)[number];
-type WGSLType = WGSLScalar | WGSLVec | WGSLMat;
+export type WGSLType = WGSLScalar | WGSLVec | WGSLMat;
 
 type WGSLTypeToTSType = {
   f32: number;
@@ -165,6 +165,7 @@ const wgslTypeToVertType: Partial<Record<WGSLType, GPUVertexFormat>> = {
 
 // https://www.w3.org/TR/WGSL/#alignment-and-size
 const wgslTypeToSize: Partial<Record<WGSLType, number>> = {
+  bool: 1,
   i32: 4,
   u32: 4,
   f32: 4,
@@ -182,7 +183,7 @@ const wgslTypeToAlign = objMap(wgslTypeToSize, alignUp) as Partial<
 
 export type CyStructDesc = Record<string, WGSLType>;
 
-export type CyToTS<O extends CyStructDesc> = {
+export type CyToTS<O extends Record<string, WGSLType>> = {
   [N in keyof O]: O[N] extends keyof WGSLTypeToTSType
     ? WGSLTypeToTSType[O[N]]
     : never;
@@ -321,6 +322,7 @@ function createValue<T extends WGSLType>(
 
   // NOTE: this isn't just zeros, since mat4 has identity
   function _createValue<T extends WGSLType>(wgsl: T): any {
+    if (wgsl === "bool") return false;
     if (wgsl === "f32") return 0.0;
     if (wgsl === "vec2<f32>") return V2.mk();
     if (wgsl === "vec3<f32>") return V3.mk();
@@ -497,6 +499,7 @@ export function createCyStruct<O extends CyStructDesc>(
       else if (t === "vec4<f32>") views.f32.set(v, o32);
       else if (t === "vec4<u32>") views.u32.set(v, o32);
       else if (t === "mat4x4<f32>") views.f32.set(v, o32);
+      // else if (t === "bool") views.u8[o] = v;
       else throw `Unimplemented type in serializer: ${t}`;
     });
 

@@ -185,7 +185,7 @@ export function createSpaceBarge(): SpaceBarge {
 
   const w = createWoodBuilder({ meshName: "homeShip" });
 
-  w.startGroup("all"); // TODO(@darzu): split into groups
+  const G = w.addGroup("all"); // TODO(@darzu): split into groups
 
   // KEEL
   // TODO(@darzu): IMPL keel!
@@ -229,7 +229,7 @@ export function createSpaceBarge(): SpaceBarge {
   keelPath.forEach((p) => updateAABBWithPoint(keelAABB, p.pos));
   const keelSize = getSizeFromAABB(keelAABB, V3.mk());
 
-  w.addBoard(keelPath, keelColor);
+  G.addBoard(keelPath, keelColor);
 
   // RIBS
   const ribWidth = 0.3;
@@ -347,8 +347,8 @@ export function createSpaceBarge(): SpaceBarge {
       // }
       // if (i === 1) dbgPathWithGizmos(weirdP);
 
-      w.addBoard(bPath, ribColor);
-      w.addBoard(mirrorPath(clonePath(bPath), V(0, 0, 1)), ribColor);
+      G.addBoard(bPath, ribColor);
+      G.addBoard(mirrorPath(clonePath(bPath), V(0, 0, 1)), ribColor);
     }
   }
 
@@ -368,8 +368,8 @@ export function createSpaceBarge(): SpaceBarge {
     }
     // rail board:
     mirrorRailPath = mirrorPath(clonePath(railPath), V(0, 0, 1));
-    w.addBoard(railPath, railColor);
-    w.addBoard(mirrorRailPath, railColor);
+    G.addBoard(railPath, railColor);
+    G.addBoard(mirrorRailPath, railColor);
   }
 
   // translatePath(railPath, [0, 0, 8]);
@@ -482,8 +482,8 @@ export function createSpaceBarge(): SpaceBarge {
       if (stripStartIdx <= i && i <= stripEndIdx) color = plankStripeColor;
       if (strip2StartIdx <= i && i <= strip2EndIdx) color = plankStripe2Color;
 
-      w.addBoard(nodes, color);
-      w.addBoard(mirroredPath, color);
+      G.addBoard(nodes, color);
+      G.addBoard(mirroredPath, color);
     }
   }
 
@@ -517,7 +517,7 @@ export function createSpaceBarge(): SpaceBarge {
       if (i === 0) color = topPlankColor;
       if (stripStartIdx <= i && i <= stripEndIdx) color = plankStripeColor;
       if (strip2StartIdx <= i && i <= strip2EndIdx) color = plankStripe2Color;
-      w.addBoard(path, color);
+      G.addBoard(path, color);
     }
   }
 
@@ -537,7 +537,7 @@ export function createSpaceBarge(): SpaceBarge {
       quat.fromEuler(-Math.PI / 2, 0, Math.PI / 2, n.rot);
     }
     w.b.setSize(ribWidth, ribDepth);
-    w.addBoard(path, railColor);
+    G.addBoard(path, railColor);
   }
 
   let floorPlankIdx = 4;
@@ -600,8 +600,8 @@ export function createSpaceBarge(): SpaceBarge {
         }));
         // dbgPathWithGizmos(path);
         let mirroredPath = mirrorPath(clonePath(path), [0, 0, 1]);
-        w.addBoard(path, floorColor);
-        w.addBoard(mirroredPath, floorColor);
+        G.addBoard(path, floorColor);
+        G.addBoard(mirroredPath, floorColor);
         // break; // TODO(@darzu):
       }
     }

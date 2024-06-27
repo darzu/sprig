@@ -140,7 +140,8 @@ EM.addEagerInit([CannonPropsDef], [], [], () => {
           g,
           // 2.0,
           20.0,
-          V3.FWD
+          V3.FWD,
+          false
         );
       }
 

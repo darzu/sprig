@@ -306,6 +306,8 @@ const raiseSetLevel = eventWizard(
 );
 
 async function setLevelLocal(levelIdx: number) {
+  // todo fix terrain loading!
+
   const { ld54_meshes } = await EM.whenResources(ld54Meshes);
 
   // TODO(@darzu): differentiate level based on idx

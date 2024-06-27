@@ -5,6 +5,7 @@ import { V3, mat4 } from "../../matrix/sprig-matrix.js";
 import {
   CY,
   comparisonSamplerPtr,
+  linearSamplerPtr,
   nearestSamplerPtr,
 } from "../gpu-registry.js";
 import { CyToTS, createCyStruct } from "../gpu-struct.js";
@@ -15,6 +16,7 @@ import {
   RenderableDef,
   RendererWorldFrameDef,
   RendererDef,
+  Renderer,
 } from "../renderer-ecs.js";
 import {
   sceneBufPtr,
@@ -287,6 +289,24 @@ export const painterlyJfa = createJfaPipelines({
   ],
 });
 
+export enum PainterlyFlags {
+  BounceDots = 0x1,
+}
+
+export const painterlyParamsUniPtr = CY.createSingleton(`painterlyParamsUni`, {
+  struct: createCyStruct(
+    {
+      flags: "u32",
+    },
+    {
+      isUniform: true,
+    }
+  ),
+  init: () => ({
+    flags: 0x0,
+  }),
+});
+
 // TODO(@darzu): PERF! As of right now, tHis is super expensive. Like ~20ms sometimes :/
 export const painterlyDeferredPipe = CY.createRenderPipeline(
   "painterlyDeferredPipe",
@@ -298,6 +318,7 @@ export const painterlyDeferredPipe = CY.createRenderPipeline(
       { ptr: painterlyLitTex, alias: "colorTex" },
       { ptr: fullQuad, alias: "quad" },
       sceneBufPtr,
+      { ptr: painterlyParamsUniPtr, alias: "params" },
     ],
     meshOpt: {
       vertexCount: 6,

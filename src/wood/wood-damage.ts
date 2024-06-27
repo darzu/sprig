@@ -554,7 +554,7 @@ export function createMeshUpdateTracker(handle: MeshHandle): MeshUpdateTracker {
   };
 }
 
-type WoodHit = [
+export type WoodHit = [
   groupIdx: number,
   boardIdx: number,
   segIdx: number,
