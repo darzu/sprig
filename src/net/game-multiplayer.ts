@@ -34,7 +34,7 @@ import { TimeDef } from "../time/time.js";
 import { eventWizard } from "./events.js";
 import { assert } from "../utils/util.js";
 import { addGizmoChild, addWorldGizmo } from "../utils/utils-game.js";
-import { mkEl } from "../web/html-builder.js";
+import { createHtmlBuilder, mkEl } from "../web/html-builder.js";
 import { getWebLocationHash, isTopLevelFrame } from "../web/webnav.js";
 
 const mpMeshes = XY.defineMeshSetResource(
@@ -301,4 +301,36 @@ export async function initMPGame() {
   // player
   const color = AllEndesga16[me.pid + 4 /*skip browns*/];
   createMpPlayer(V(0, 0, 10), color, raft.id);
+
+  // html for the host
+  if (me.host) {
+    initHtml();
+  }
+}
+
+async function initHtml() {
+  if (!document.getElementById("infoPanelsHolder")) {
+    console.warn("no infoPanelsHolder");
+    return;
+  }
+  const htmlBuilder = createHtmlBuilder();
+
+  // about
+  for (let i = 0; i < 5; i++) {
+    const aboutPanel = htmlBuilder.addInfoPanel("Multiplayer");
+    aboutPanel.addText(`
+     TODO: A particle simulation running on the GPU.
+     Particles are camera-facing unsorted quads alpha-clipped into circles.
+     GPU uniform buffer parameters control initialization.
+    `);
+  }
+
+  // controls
+  const controlsPanel = htmlBuilder.addInfoPanel("Controls");
+  controlsPanel.addHTML(`
+    <ul>
+      <li>Drag to pan</li>
+      <li>Scroll to zoom</li>
+    </ul>
+  `);
 }

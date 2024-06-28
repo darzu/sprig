@@ -177,17 +177,17 @@
 
       overflow: hidden;
 
-      background-color: var(--game-background-clr);
-
-      box-shadow: rgb(10, 10, 10) 0px 0px 16px 0px;
-
       display: flex;
       flex-direction: row;
-
+      gap: 20px;
     }
 
     .canvasHolder div {
       flex: 1;
+
+      /* TODO(@darzu): doesnt work how we'd want */
+      background-color: var(--game-background-clr);
+      box-shadow: rgb(10, 10, 10) 0px 0px 16px 0px;
     }
 
     .canvasHolder canvas,
@@ -618,7 +618,7 @@
       <ul>
         <li>is free and open source</li>
         <li>includes custom graphics, physics, state management (ECS), and multiplayer</li>
-        <li>is built by Daryl Zuniga with the help of many wonderful people</li>
+        <li>is built by Daryl Zuniga with contributions from Doug Woos and the help of many other wonderful people</li>
         <li>is written in TypeScript and WGSL</li>
         <li>
           is 2MB unminified with no external library dependencies or package management and uses only web standards
