@@ -175,7 +175,10 @@
       grid-row: 2;
       /* background-color: green; */
 
-      overflow: hidden;
+      /* overflow: hidden; */
+      /* TODO(@darzu): HACK. We're fixing this height b/c I can't figure out the box sizing so that this stays properly sized to it's grid cell.
+      it sizes correctly with overflow: hidden but not otherwise. */
+      height: calc(100vh - 200px - 20px);
 
       display: flex;
       flex-direction: row;
@@ -566,7 +569,7 @@
     }
 
     .mainMessageDiv {
-      margin: 20px;
+      padding: 20px;
       max-width: 800px;
     }
 

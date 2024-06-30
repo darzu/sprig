@@ -121,8 +121,8 @@ function showAboutPage() {
   const canvasHolderEl = document.getElementsByClassName(
     "canvasHolder"
   )[0] as HTMLDivElement;
-  for (let canvas of canvasHolderEl.getElementsByTagName("canvas"))
-    canvas.setAttribute("style", "display:none;");
+  for (let child of canvasHolderEl.children)
+    child.setAttribute("style", "display:none;");
 
   const aboutDivEl = document.getElementById("aboutDiv")! as HTMLDivElement;
   aboutDivEl.removeAttribute("style");
