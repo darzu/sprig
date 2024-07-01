@@ -171,7 +171,6 @@ function createInputsReader(canvas: Canvas): () => Inputs {
         ev.clientY < rect.top ||
         rect.bottom < ev.clientY;
       isMouseHover = !mouseOutOfBounds;
-      console.log(`mouseinBounds: ${!mouseOutOfBounds}`);
     },
     false
   );
