@@ -32,6 +32,7 @@ export const InputsDef = EM.defineResource("inputs", () => {
     // TODO(@darzu): we might need a better way to track and think about events
     keyClicks: {} as { [key: string]: number },
     keyDowns: {} as { [key: string]: boolean },
+    anyDown: false,
   };
 });
 
@@ -109,6 +110,8 @@ EM.addLazyInit([], [InputsDef, MouseDragDef], () => {
 function createInputsReader(canvas: Canvas): () => Inputs {
   const canvasEl = canvas.getCanvasHtml();
 
+  let accumulated_anyDown = false;
+
   // track which keys are pressed for use in the game loop
   const keyDowns: { [keycode: string]: boolean } = {};
   const accumulated_keyClicks: { [keycode: string]: number } = {};
@@ -125,6 +128,7 @@ function createInputsReader(canvas: Canvas): () => Inputs {
       if (!keyDowns[k])
         accumulated_keyClicks[k] = (accumulated_keyClicks[k] ?? 0) + 1;
       keyDowns[k] = true;
+      accumulated_anyDown = true;
     },
     false
   );
@@ -209,6 +213,7 @@ function createInputsReader(canvas: Canvas): () => Inputs {
       if (!isRMouseDown) accumulated_rClicks += 1;
       isRMouseDown = true;
     }
+    accumulated_anyDown = true;
     // TODO(@darzu): figure out pointer events
     // canvas.getCanvasHtml().setPointerCapture(ev.pointerId);
     return false;
@@ -229,6 +234,7 @@ function createInputsReader(canvas: Canvas): () => Inputs {
     "pointerenter",
     () => {
       isMouseHover = true;
+      // console.log(document.activeElement?.ownerDocument === document);
     },
     false
   );
@@ -256,6 +262,8 @@ function createInputsReader(canvas: Canvas): () => Inputs {
     const mouseMov = takeAccumulatedMouseMovement();
     const { lClicks, rClicks } = takeAccumulatedMouseClicks();
     const keyClicks = takeAccumulatedKeyClicks();
+    const anyDown = accumulated_anyDown;
+    accumulated_anyDown = false;
     let inputs: Inputs = {
       mouseMov,
       mousePos: V2.clone(lastMouse),
@@ -267,6 +275,7 @@ function createInputsReader(canvas: Canvas): () => Inputs {
       rdown: isRMouseDown,
       keyDowns,
       keyClicks,
+      anyDown,
     };
     return inputs;
   }

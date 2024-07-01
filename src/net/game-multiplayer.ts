@@ -37,6 +37,7 @@ import { addGizmoChild, addWorldGizmo } from "../utils/utils-game.js";
 import { createHtmlBuilder, mkEl } from "../web/html-builder.js";
 import { getWebLocationHash, isTopLevelFrame } from "../web/webnav.js";
 import { CanvasDef } from "../render/canvas.js";
+import { InputsDef } from "../input/inputs.js";
 
 const mpMeshes = XY.defineMeshSetResource(
   "mp_meshes",
@@ -214,10 +215,15 @@ function joinURL(address: string): string {
 }
 
 export async function initMPGame() {
+  let hostDiv: HTMLDivElement | undefined = undefined;
+  let childDiv: HTMLDivElement | undefined = undefined;
   if (isTopLevelFrame()) {
     const canvasHolder = document.getElementsByClassName("canvasHolder")[0];
     if (canvasHolder) {
+      hostDiv = canvasHolder.getElementsByTagName("canvas")[0]
+        .parentElement as HTMLDivElement;
       const iFrameDiv = mkEl("div", {}, "loading...");
+      childDiv = iFrameDiv;
       canvasHolder.appendChild(iFrameDiv);
       EM.whenResources(NetworkReadyDef).then(
         ({ networkReady: { address } }) => {
@@ -227,7 +233,7 @@ export async function initMPGame() {
             title: `Client of ${address}`,
           });
           iFrameDiv.replaceChildren(iFrame);
-          canvasHolder.classList.add("hoverable");
+          // canvasHolder.classList.add("hoverable");
         }
       );
     }
@@ -323,6 +329,50 @@ export async function initMPGame() {
   const color =
     AllEndesga16[(me.pid + 4) /*skip browns*/ % AllEndesga16.length];
   createMpPlayer(V(0, 0, 10), color, raft.id);
+
+  // active canvas
+  let childIsActive = false;
+  if (!isTopLevelFrame()) {
+    EM.addSystem(
+      "notifyParentOfActivity",
+      Phase.GAME_WORLD,
+      null,
+      [InputsDef],
+      (_, res) => {
+        if (res.inputs.anyDown) {
+          window.top!.postMessage("iframeActivity");
+        }
+      }
+    );
+  } else if (hostDiv && childDiv) {
+    window.addEventListener("message", (e) => {
+      if (e.data === "iframeActivity") {
+        childIsActive = true;
+      }
+    });
+    let _lastChildIsActive: boolean | undefined = undefined;
+    EM.addSystem(
+      "notifyParentOfActivity",
+      Phase.GAME_WORLD,
+      null,
+      [InputsDef],
+      (_, res) => {
+        if (res.inputs.anyDown) {
+          childIsActive = false;
+        }
+        if (_lastChildIsActive !== childIsActive) {
+          _lastChildIsActive = childIsActive;
+          if (childIsActive) {
+            hostDiv.classList.remove("hoverable");
+            childDiv.classList.add("hoverable");
+          } else {
+            hostDiv.classList.add("hoverable");
+            childDiv.classList.remove("hoverable");
+          }
+        }
+      }
+    );
+  }
 
   // html for the host
   if (me.host) {
