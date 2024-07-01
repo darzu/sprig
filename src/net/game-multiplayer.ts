@@ -203,6 +203,10 @@ async function setLevelLocal(levelIdx: number) {
   });
 }
 
+function joinURL(address: string): string {
+  return `/full-screen.html?server=${address}${window.location.hash}`;
+}
+
 export async function initMPGame() {
   if (isTopLevelFrame()) {
     const canvasHolder = document.getElementsByClassName("canvasHolder")[0];
@@ -211,11 +215,9 @@ export async function initMPGame() {
       canvasHolder.appendChild(iFrameDiv);
       EM.whenResources(NetworkReadyDef).then(
         ({ networkReady: { address } }) => {
-          const currenthash = getWebLocationHash();
-          const joinUrl = `/full-screen.html?server=${address}#${currenthash}`;
           const iFrame = mkEl("iframe", {
             id: "multiplayerFrame-1",
-            src: joinUrl,
+            src: joinURL(address),
             title: `Client of ${address}`,
           });
           iFrameDiv.replaceChildren(iFrame);
@@ -304,7 +306,8 @@ export async function initMPGame() {
   const raft = await EM.whenSingleEntity(MpRaftPropsDef, FinishedDef);
 
   // player
-  const color = AllEndesga16[me.pid + 4 /*skip browns*/];
+  const color =
+    AllEndesga16[(me.pid + 4) /*skip browns*/ % AllEndesga16.length];
   createMpPlayer(V(0, 0, 10), color, raft.id);
 
   // html for the host
@@ -321,14 +324,12 @@ async function initHtml() {
   const htmlBuilder = createHtmlBuilder();
 
   // about
-  for (let i = 0; i < 5; i++) {
-    const aboutPanel = htmlBuilder.addInfoPanel("Multiplayer");
-    aboutPanel.addText(`
-     TODO: A particle simulation running on the GPU.
-     Particles are camera-facing unsorted quads alpha-clipped into circles.
-     GPU uniform buffer parameters control initialization.
-    `);
-  }
+  const aboutPanel = htmlBuilder.addInfoPanel("Multiplayer");
+  aboutPanel.addText(`
+     Each player is a cube that moves around on a shared platform.
+     The first player hosts the game and sends updates for the platform.
+     Each player owns and sends updates for their own position.
+  `);
 
   // controls
   const controlsPanel = htmlBuilder.addInfoPanel("Controls");
@@ -336,6 +337,20 @@ async function initHtml() {
     <ul>
       <li>Drag to pan</li>
       <li>Scroll to zoom</li>
+      <li>Hover mouse to active the player</li>
+      <li>WASD or arrow keys to move</li>
+      <li>Spacebar to jump</li>
     </ul>
+  `);
+
+  const {
+    networkReady: { address },
+  } = await EM.whenResources(NetworkReadyDef);
+
+  // multiplayer
+  const mpPanel = htmlBuilder.addInfoPanel("Join");
+  mpPanel.addHTML(`
+    <a href="${joinURL(address)}" target="_blank">New Player</a>
+    <span class="note">NOTE: Each browser tab, especially the host, must remain on visible for data to be sent and recieved.</span>
   `);
 }
