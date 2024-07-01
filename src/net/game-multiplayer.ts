@@ -211,16 +211,15 @@ export async function initMPGame() {
       canvasHolder.appendChild(iFrameDiv);
       EM.whenResources(NetworkReadyDef).then(
         ({ networkReady: { address } }) => {
-          if (canvasHolder) {
-            const currenthash = getWebLocationHash();
-            const joinUrl = `/full-screen.html?server=${address}#${currenthash}`;
-            const iFrame = mkEl("iframe", {
-              id: "multiplayerFrame-1",
-              src: joinUrl,
-              title: `Client of ${address}`,
-            });
-            iFrameDiv.replaceChildren(iFrame);
-          }
+          const currenthash = getWebLocationHash();
+          const joinUrl = `/full-screen.html?server=${address}#${currenthash}`;
+          const iFrame = mkEl("iframe", {
+            id: "multiplayerFrame-1",
+            src: joinUrl,
+            title: `Client of ${address}`,
+          });
+          iFrameDiv.replaceChildren(iFrame);
+          canvasHolder.classList.add("hoverable");
         }
       );
     }
