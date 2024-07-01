@@ -1,5 +1,8 @@
 import { EM } from "../ecs/ecs.js";
 import { ENABLE_NET, VERBOSE_NET_LOG } from "../flags.js";
+import { randInt } from "../utils/math.js";
+import { toInt } from "../utils/util-no-import.js";
+import { getWebQueryString } from "../web/webnav.js";
 import { PeerNameDef, MeDef, HostDef, JoinDef } from "./components.js";
 import { addEventComponents, initNetGameEventSystems } from "./events.js";
 import { initNetJoinSystems } from "./join.js";
@@ -36,16 +39,19 @@ export interface NetStart {
 }
 
 export function startNet(): NetStart {
-  const queryString = Object.fromEntries(
-    new URLSearchParams(window.location.search).entries()
-  );
-  const urlServerId = queryString["server"] ?? null;
+  const queryString = getWebQueryString();
+  const urlServerId = queryString.get("server");
+
+  const isHosting = !urlServerId;
+
+  // const userId = toInt(queryString.get("user")) ?? 1;
+  // TODO(@darzu): RE-JOIN. don't assign random client user ids
 
   // const peerName2 = getPeerName(queryString);
   // const peerName = "myPeerName";
-  const peerName = !!urlServerId ? "mySprigClient" : "mySprigHost";
-
-  const isHosting = !urlServerId;
+  const peerName = isHosting
+    ? `sprigHost_${randInt(1, 2 ** 20)}`
+    : `sprigClient_${randInt(1, 256)}`;
 
   if (VERBOSE_NET_LOG) console.log(`hosting: ${isHosting}`);
 

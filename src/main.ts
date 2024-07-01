@@ -105,6 +105,7 @@ async function startGameLoop() {
 
   resetTempMatrixBuffer(`startGameLoop`);
 
+  // TODO(@darzu): refactor net to use init system
   startNet();
 
   // dbgLogMilestone("startGame()");

@@ -29,7 +29,7 @@ import { postProcess } from "../render/pipelines/std-post.js";
 import { shadowPipelines } from "../render/pipelines/std-shadow.js";
 import { ControllableDef } from "../input/controllable.js";
 import { ColliderDef } from "../physics/collider.js";
-import { MeDef } from "./components.js";
+import { MeDef, NetworkReadyDef } from "./components.js";
 import { TimeDef } from "../time/time.js";
 import { eventWizard } from "./events.js";
 import { assert } from "../utils/util.js";
@@ -207,16 +207,22 @@ export async function initMPGame() {
   if (isTopLevelFrame()) {
     const canvasHolder = document.getElementsByClassName("canvasHolder")[0];
     if (canvasHolder) {
-      const currenthash = getWebLocationHash();
-      const iFrame = mkEl("div", {}, [
-        mkEl("iframe", {
-          id: "multiplayerFrame-1",
-          // TODO(@darzu): proper url!
-          src: `/full-screen.html?server=sprig-mySprigHost&user=2#${currenthash}`,
-          title: "Player 2",
-        }),
-      ]);
-      canvasHolder.appendChild(iFrame);
+      const iFrameDiv = mkEl("div", {}, "loading...");
+      canvasHolder.appendChild(iFrameDiv);
+      EM.whenResources(NetworkReadyDef).then(
+        ({ networkReady: { address } }) => {
+          if (canvasHolder) {
+            const currenthash = getWebLocationHash();
+            const joinUrl = `/full-screen.html?server=${address}#${currenthash}`;
+            const iFrame = mkEl("iframe", {
+              id: "multiplayerFrame-1",
+              src: joinUrl,
+              title: `Client of ${address}`,
+            });
+            iFrameDiv.replaceChildren(iFrame);
+          }
+        }
+      );
     }
   }
 

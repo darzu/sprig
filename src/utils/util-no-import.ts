@@ -74,3 +74,9 @@ export function mkLazy<T>(mk: () => T): () => T {
 export function objectKeys<T extends object>(o: T): (keyof T)[] {
   return Object.keys(o) as (keyof T)[];
 }
+
+export function toInt(s: string | undefined): number | undefined {
+  const res = parseInt(s as string); // NOTE: parseInt just returns NaN if you pass undefined
+  if (isNaN(res)) return undefined;
+  return res;
+}
