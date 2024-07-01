@@ -23,6 +23,7 @@ export const InputsDef = EM.defineResource("inputs", () => {
     mouseMov: V2.mk(),
     mousePos: V2.mk(),
     mouseWheel: 0,
+    mouseHover: false,
     // TODO(@darzu): need rising edge vs falling edge distinction
     lclick: false,
     rclick: false,
@@ -164,6 +165,13 @@ function createInputsReader(canvas: Canvas): () => Inputs {
         lastMouse[1] += ev.movementY;
         lastMouse[1] = clamp(lastMouse[1], 0, rect.height);
       }
+      const mouseOutOfBounds =
+        ev.clientX < rect.left ||
+        rect.right < ev.clientX ||
+        ev.clientY < rect.top ||
+        rect.bottom < ev.clientY;
+      isMouseHover = !mouseOutOfBounds;
+      console.log(`mouseinBounds: ${!mouseOutOfBounds}`);
     },
     false
   );
@@ -217,6 +225,24 @@ function createInputsReader(canvas: Canvas): () => Inputs {
     return false;
   });
 
+  let isMouseHover = false;
+  canvasEl.addEventListener(
+    "pointerenter",
+    () => {
+      isMouseHover = true;
+    },
+    false
+  );
+  canvasEl.addEventListener(
+    "pointerleave",
+    () => {
+      isMouseHover = false;
+      isLMouseDown = false;
+      isRMouseDown = false;
+    },
+    false
+  );
+
   function takeAccumulatedMouseClicks(): { lClicks: number; rClicks: number } {
     const result = {
       lClicks: accumulated_lClicks,
@@ -235,6 +261,7 @@ function createInputsReader(canvas: Canvas): () => Inputs {
       mouseMov,
       mousePos: V2.clone(lastMouse),
       mouseWheel: takeAccumulatedMouseWheel(),
+      mouseHover: isMouseHover,
       lclick: lClicks > 0,
       rclick: rClicks > 0,
       ldown: isLMouseDown,

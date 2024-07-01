@@ -36,6 +36,7 @@ import { assert } from "../utils/util.js";
 import { addGizmoChild, addWorldGizmo } from "../utils/utils-game.js";
 import { createHtmlBuilder, mkEl } from "../web/html-builder.js";
 import { getWebLocationHash, isTopLevelFrame } from "../web/webnav.js";
+import { CanvasDef } from "../render/canvas.js";
 
 const mpMeshes = XY.defineMeshSetResource(
   "mp_meshes",
@@ -110,17 +111,22 @@ const {
       V3.copy(e.position, props.location); // TODO(@darzu): should be fine to have this outside loop
 
       EM.set(e, ControllableDef);
+      e.controllable.requiresPointerLock = false;
+      e.controllable.requiresPointerHover = true;
       e.controllable.modes.canFall = true;
       e.controllable.modes.canJump = true;
       e.controllable.modes.canFly = false;
+      e.controllable.modes.canZoom = true;
+      e.controllable.modes.mustDragPan = true;
+      e.controllable.maxZoom = 50;
       EM.set(e, CameraFollowDef, 1);
       // quat.setAxisAngle([0.0, -1.0, 0.0], 1.62, e.rotation);
 
       e.controllable.speed *= 2;
       e.controllable.sprintMul = 1;
-      V3.copy(e.cameraFollow.positionOffset, [0.0, -10.0, 4.0]);
+      V3.copy(e.cameraFollow.positionOffset, [0.0, -10.0, 0.0]);
       // e.cameraFollow.yawOffset = 0.0;
-      // e.cameraFollow.pitchOffset = -0.593;
+      e.cameraFollow.pitchOffset = -0.593;
 
       console.log(`player has .controllable`);
     }
@@ -244,7 +250,11 @@ export async function initMPGame() {
     ];
   });
 
-  const { camera, me } = await EM.whenResources(CameraDef, MeDef);
+  const { camera, me, htmlCanvas } = await EM.whenResources(
+    CameraDef,
+    MeDef,
+    CanvasDef
+  );
 
   // start level
   if (me.host) {
@@ -257,6 +267,10 @@ export async function initMPGame() {
   V3.set(-20, -20, -20, camera.maxWorldAABB.min);
   V3.set(+20, +20, +20, camera.maxWorldAABB.max);
   // camera.perspectiveMode = "ortho";
+
+  // camera lock
+  htmlCanvas.shouldLockMouseOnClick = false;
+  htmlCanvas.unlockMouse();
 
   const { mp_meshes } = await EM.whenResources(mpMeshes);
 
@@ -336,10 +350,10 @@ async function initHtml() {
   controlsPanel.addHTML(`
     <ul>
       <li>Drag to pan</li>
-      <li>Scroll to zoom</li>
-      <li>Hover mouse to active the player</li>
+      <li>Click mouse to activate</li>
       <li>WASD or arrow keys to move</li>
       <li>Spacebar to jump</li>
+      <li>Scroll to zoom</li>
     </ul>
   `);
 
