@@ -52,6 +52,7 @@ const {
   MpPlayerPropsDef,
   createMpPlayer,
   createMpPlayerNow,
+  createMpPlayerAsync,
 } = defineNetEntityHelper({
   name: "mpPlayer",
   defaultProps: () => {
@@ -307,7 +308,23 @@ export async function initMPGame() {
   // player
   const color =
     AllEndesga16[(me.pid + 4) /*skip browns*/ % AllEndesga16.length];
-  createMpPlayer(V(0, 0, 10), color, raft.id);
+  const myPlayer = await createMpPlayerAsync(
+    getPlayerRaftSpawnPos(me.pid),
+    color,
+    raft.id
+  );
+
+  EM.addSystem("playerFallThrough", Phase.GAME_WORLD, null, [], () => {
+    if (myPlayer.position[2] < -100) {
+      V3.copy(myPlayer.position, getPlayerRaftSpawnPos(me.pid));
+      myPlayer.physicsParent.id = raft.id;
+      if (LinearVelocityDef.isOn(myPlayer)) V3.zero(myPlayer.linearVelocity);
+    }
+  });
+}
+
+function getPlayerRaftSpawnPos(pid: number): V3 {
+  return V(0, -10 + pid * 4, 10);
 }
 
 async function initHtml(isHost: boolean) {
