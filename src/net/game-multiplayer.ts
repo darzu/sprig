@@ -215,30 +215,6 @@ function joinURL(address: string): string {
 }
 
 export async function initMPGame() {
-  let hostDiv: HTMLDivElement | undefined = undefined;
-  let childDiv: HTMLDivElement | undefined = undefined;
-  if (isTopLevelFrame()) {
-    const canvasHolder = document.getElementsByClassName("canvasHolder")[0];
-    if (canvasHolder) {
-      hostDiv = canvasHolder.getElementsByTagName("canvas")[0]
-        .parentElement as HTMLDivElement;
-      const iFrameDiv = mkEl("div", {}, "loading...");
-      childDiv = iFrameDiv;
-      canvasHolder.appendChild(iFrameDiv);
-      EM.whenResources(NetworkReadyDef).then(
-        ({ networkReady: { address } }) => {
-          const iFrame = mkEl("iframe", {
-            id: "multiplayerFrame-1",
-            src: joinURL(address),
-            title: `Client of ${address}`,
-          });
-          iFrameDiv.replaceChildren(iFrame);
-          // canvasHolder.classList.add("hoverable");
-        }
-      );
-    }
-  }
-
   // TODO(@darzu): implement server<->client
 
   EM.addEagerInit([], [RendererDef], [], (res) => {
@@ -261,6 +237,9 @@ export async function initMPGame() {
     MeDef,
     CanvasDef
   );
+
+  // html
+  initHtml(me.host);
 
   // start level
   if (me.host) {
@@ -329,10 +308,37 @@ export async function initMPGame() {
   const color =
     AllEndesga16[(me.pid + 4) /*skip browns*/ % AllEndesga16.length];
   createMpPlayer(V(0, 0, 10), color, raft.id);
+}
 
-  // active canvas
+async function initHtml(isHost: boolean) {
+  let hostDiv: HTMLDivElement | undefined = undefined;
+  let childDiv: HTMLDivElement | undefined = undefined;
+  if (isHost && isTopLevelFrame()) {
+    const canvasHolder = document.getElementsByClassName("canvasHolder")[0];
+    if (canvasHolder) {
+      hostDiv = canvasHolder.getElementsByTagName("canvas")[0]
+        .parentElement as HTMLDivElement;
+      const iFrameDiv = mkEl("div", {}, "loading...");
+      childDiv = iFrameDiv;
+      canvasHolder.appendChild(iFrameDiv);
+      EM.whenResources(NetworkReadyDef).then(
+        ({ networkReady: { address } }) => {
+          const iFrame = mkEl("iframe", {
+            id: "multiplayerFrame-1",
+            src: joinURL(address),
+            title: `Client of ${address}`,
+          });
+          iFrameDiv.replaceChildren(iFrame);
+          // canvasHolder.classList.add("hoverable");
+        }
+      );
+    }
+  }
+
+  // cross-iframe notifications
   let childIsActive = false;
   if (!isTopLevelFrame()) {
+    console.log("am child!");
     EM.addSystem(
       "notifyParentOfActivity",
       Phase.GAME_WORLD,
@@ -374,13 +380,6 @@ export async function initMPGame() {
     );
   }
 
-  // html for the host
-  if (me.host) {
-    initHtml();
-  }
-}
-
-async function initHtml() {
   if (!document.getElementById("infoPanelsHolder")) {
     console.warn("no infoPanelsHolder");
     return;
@@ -407,14 +406,16 @@ async function initHtml() {
     </ul>
   `);
 
-  const {
-    networkReady: { address },
-  } = await EM.whenResources(NetworkReadyDef);
+  if (isHost) {
+    const {
+      networkReady: { address },
+    } = await EM.whenResources(NetworkReadyDef);
 
-  // multiplayer
-  const mpPanel = htmlBuilder.addInfoPanel("Join");
-  mpPanel.addHTML(`
+    // multiplayer
+    const mpPanel = htmlBuilder.addInfoPanel("Join");
+    mpPanel.addHTML(`
     <a href="${joinURL(address)}" target="_blank">New Player</a>
     <span class="note">NOTE: Each browser tab, especially the host, must remain on visible for data to be sent and recieved.</span>
   `);
+  }
 }
