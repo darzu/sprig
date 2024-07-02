@@ -47,11 +47,6 @@ export async function main_sceneSelector() {
     window.location.assign(`#${showcaseGameRegs[0].key}`);
   }
 
-  const queryString = getWebQueryString();
-  if (queryString.has("fullscreen")) {
-    document.body.classList.add("fullscreen");
-  }
-
   window.addEventListener("hashchange", () => {
     if (_hack_oneChangeIgnore) {
       _hack_oneChangeIgnore = false;
