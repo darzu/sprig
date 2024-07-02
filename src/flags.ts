@@ -7,7 +7,7 @@ export const DBG_ASSERT = true;
 
 // NETWORK
 export const DONT_SMOOTH_WORLD_FRAME = true; // TODO(@darzu): PERF HACK for single player
-export const ENABLE_NET = false;
+export const ENABLE_NET = true; // TODO(@darzu): Move out of global flags, need this enabled per-game
 export const VERBOSE_NET_LOG = false;
 
 // OCEAN

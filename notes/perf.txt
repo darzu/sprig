@@ -612,3 +612,34 @@ Measurements on IdeaPad 3 (6/25/24)
   Shipyard ~60fps idle, ~30fps combat, spikes lower than that
   Painterly ~20fps
   Particles 60fps throughout
+
+"":
+  PLDI Keynotes [PLDI'24]
+  https://www.youtube.com/watch?v=66oKqvwoIv0
+
+  "this gap between reasonable efforts writing a clean modular portable code and the very
+  best performance achievable with unbounded effort is enormous and it's a big problem if we
+  actually want to use this bounty that the hardware gods have given us"
+
+  "I'd argue that 90% of nvidia's
+  market cap and the insane margins that they're able to charge all of us are because they're the only company that's
+  consistently able to ship enough of these hyper optimized kernels for each new generation of Hardware to actually
+  deliver reasonable Peak Performance on all the ml models that everyone wants"
+
+  Hardware has changed much more radically than software.
+  Software hasn't kept up with hardware.
+
+  core abstractions of mainstream programming models remains unchanged ~50 years:
+  - sequential, scalar primitive computation
+  - uniform, global heap memory
+  - abstractions through subroutines & pointers
+
+  arm & intel have instruction sets dating back to the 70s-80s
+
+  to rethink software, we need to:
+  1. better understand the hardware
+  2. 
+
+
+"Exploring How Cache Memory Really Works":
+  https://pikuma.com/blog/understanding-computer-cache

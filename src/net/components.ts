@@ -131,7 +131,13 @@ export const EventsToNetworkDef = EM.defineResource(
 
 export type EventsToNetwork = Component<typeof EventsToNetworkDef>;
 
-export const NetworkReadyDef = EM.defineResource("networkReady", () => true);
+// TODO(@darzu): rethink state communication; de-duplicate address everywhere
+export const NetworkReadyDef = EM.defineResource(
+  "networkReady",
+  (address: string) => ({
+    address,
+  })
+);
 export const JoinDef = EM.defineResource("join", (address: string) => ({
   address,
   state: "start" as "start" | "connecting" | "joining",

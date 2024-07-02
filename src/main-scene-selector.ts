@@ -3,7 +3,11 @@ import { GAME_LOADER, GameReg } from "./game-loader.js";
 import { gameRegs } from "./main.js";
 import { assert } from "./utils/util-no-import.js";
 import { mkEl } from "./web/html-builder.js";
-import { WebNavDef, getWebLocationHash } from "./web/webnav.js";
+import {
+  WebNavDef,
+  getWebLocationHash,
+  getWebQueryString,
+} from "./web/webnav.js";
 
 // TODO(@darzu): add a github code link for each game
 
@@ -11,6 +15,7 @@ export const showcaseGameRegs = [
   gameRegs.shipyard,
   gameRegs.painterly,
   gameRegs.particles,
+  gameRegs.mp,
   // TODO(@darzu): FIX AND SHOW THESE GAMES!
   // TODO(@darzu): TOP PRIORITY:
   // gameRegs.mp,
@@ -53,6 +58,7 @@ export async function main_sceneSelector() {
   });
 
   if (gameKey === "about") {
+    // TODO(@darzu): HACK.
     showAboutPage();
   } else {
     GAME_LOADER.startGame(gameKey);
@@ -62,37 +68,37 @@ export async function main_sceneSelector() {
   const linksTree = document.getElementById(
     linksTreeId
   ) as HTMLDivElement | null;
-  assert(linksTree, `requires <div id="${linksTreeId}">`);
-
-  const createGameLink = (reg: GameReg) => {
-    const aEl = document.createElement("a");
-    const destUrl = `#${reg.key}`;
-    aEl.setAttribute("href", destUrl);
-    aEl.textContent = reg.displayName;
-    aEl.onclick = () => {
-      window.location.assign(destUrl);
+  if (linksTree) {
+    const createGameLink = (reg: GameReg) => {
+      const aEl = document.createElement("a");
+      const destUrl = `#${reg.key}`;
+      aEl.setAttribute("href", destUrl);
+      aEl.textContent = reg.displayName;
+      aEl.onclick = () => {
+        window.location.assign(destUrl);
+      };
+      if (gameKey === reg.key) {
+        aEl.classList.add("active");
+      }
+      return aEl;
     };
-    if (gameKey === reg.key) {
-      aEl.classList.add("active");
+
+    const createExternalLink = (displayName: string, destUrl: string) => {
+      const aEl = document.createElement("a");
+      aEl.setAttribute("href", destUrl);
+      aEl.setAttribute("target", "_blank");
+      aEl.textContent = `${displayName}`;
+      return aEl;
+    };
+
+    linksTree.textContent = ""; // clear all children: https://developer.mozilla.org/en-US/docs/Web/API/Node/textContent
+    // for (let name of GAME_LOADER.getAvailableGameNames()) {
+    for (let reg of showcaseGameRegs) {
+      linksTree.appendChild(createGameLink(reg));
     }
-    return aEl;
-  };
-
-  const createExternalLink = (displayName: string, destUrl: string) => {
-    const aEl = document.createElement("a");
-    aEl.setAttribute("href", destUrl);
-    aEl.setAttribute("target", "_blank");
-    aEl.textContent = `${displayName}`;
-    return aEl;
-  };
-
-  linksTree.textContent = ""; // clear all children: https://developer.mozilla.org/en-US/docs/Web/API/Node/textContent
-  // for (let name of GAME_LOADER.getAvailableGameNames()) {
-  for (let reg of showcaseGameRegs) {
-    linksTree.appendChild(createGameLink(reg));
-  }
-  for (let [name, url] of Object.entries(externalLinks)) {
-    linksTree.appendChild(createExternalLink(name, url));
+    for (let [name, url] of Object.entries(externalLinks)) {
+      linksTree.appendChild(createExternalLink(name, url));
+    }
   }
 }
 
@@ -104,8 +110,8 @@ function showAboutPage() {
   const canvasHolderEl = document.getElementsByClassName(
     "canvasHolder"
   )[0] as HTMLDivElement;
-  for (let canvas of canvasHolderEl.getElementsByTagName("canvas"))
-    canvas.setAttribute("style", "display:none;");
+  for (let child of canvasHolderEl.children)
+    child.setAttribute("style", "display:none;");
 
   const aboutDivEl = document.getElementById("aboutDiv")! as HTMLDivElement;
   aboutDivEl.removeAttribute("style");

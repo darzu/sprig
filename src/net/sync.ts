@@ -105,17 +105,19 @@ export function initNetSyncSystem() {
 }
 
 export function initNetUpdateSystems() {
-  EM.addSystem(
+  const clearRemoteUpdatesMarkerSys = EM.addSystem(
     "clearRemoteUpdatesMarker",
     Phase.NETWORK,
     [RemoteUpdatesDef],
     [],
     (es) => {
-      for (const e of es) {
-        EM.removeComponent(e.id, RemoteUpdatesDef);
+      for (let i = es.length - 1; i >= 0; i--) {
+        EM.removeComponent(es[i].id, RemoteUpdatesDef);
       }
     }
   );
+  clearRemoteUpdatesMarkerSys.flags.allowQueryEdit = true;
+
   EM.addSystem(
     "netUpdate",
     Phase.NETWORK,

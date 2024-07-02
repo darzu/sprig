@@ -4,6 +4,7 @@ import { Phase } from "../../ecs/sys-phase.js";
 import { V3, mat4 } from "../../matrix/sprig-matrix.js";
 import {
   CY,
+  CyRenderPipelinePtr,
   comparisonSamplerPtr,
   linearSamplerPtr,
   nearestSamplerPtr,
@@ -29,6 +30,7 @@ import {
 import { shadowDepthTextures } from "./std-shadow.js";
 import { createJfaPipelines } from "./std-jump-flood.js";
 import { fullQuad } from "../gpu-helper.js";
+import { BACKGROUND_COLOR } from "./std-mesh.js";
 
 /*
 (Possible) Advantages of points (and maybe lines):
@@ -328,6 +330,8 @@ export const painterlyDeferredPipe = CY.createRenderPipeline(
       {
         ptr: canvasTexturePtr,
         clear: "once",
+        // TODO(@darzu): doesn't work?
+        // defaultColor: BACKGROUND_COLOR,
       },
     ],
     shader: (shaderSet) => `

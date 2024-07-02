@@ -23,6 +23,7 @@ export const InputsDef = EM.defineResource("inputs", () => {
     mouseMov: V2.mk(),
     mousePos: V2.mk(),
     mouseWheel: 0,
+    mouseHover: false,
     // TODO(@darzu): need rising edge vs falling edge distinction
     lclick: false,
     rclick: false,
@@ -31,6 +32,7 @@ export const InputsDef = EM.defineResource("inputs", () => {
     // TODO(@darzu): we might need a better way to track and think about events
     keyClicks: {} as { [key: string]: number },
     keyDowns: {} as { [key: string]: boolean },
+    anyDown: false,
   };
 });
 
@@ -108,6 +110,8 @@ EM.addLazyInit([], [InputsDef, MouseDragDef], () => {
 function createInputsReader(canvas: Canvas): () => Inputs {
   const canvasEl = canvas.getCanvasHtml();
 
+  let accumulated_anyDown = false;
+
   // track which keys are pressed for use in the game loop
   const keyDowns: { [keycode: string]: boolean } = {};
   const accumulated_keyClicks: { [keycode: string]: number } = {};
@@ -124,6 +128,7 @@ function createInputsReader(canvas: Canvas): () => Inputs {
       if (!keyDowns[k])
         accumulated_keyClicks[k] = (accumulated_keyClicks[k] ?? 0) + 1;
       keyDowns[k] = true;
+      accumulated_anyDown = true;
     },
     false
   );
@@ -164,6 +169,12 @@ function createInputsReader(canvas: Canvas): () => Inputs {
         lastMouse[1] += ev.movementY;
         lastMouse[1] = clamp(lastMouse[1], 0, rect.height);
       }
+      const mouseOutOfBounds =
+        ev.clientX < rect.left ||
+        rect.right < ev.clientX ||
+        ev.clientY < rect.top ||
+        rect.bottom < ev.clientY;
+      isMouseHover = !mouseOutOfBounds;
     },
     false
   );
@@ -202,6 +213,7 @@ function createInputsReader(canvas: Canvas): () => Inputs {
       if (!isRMouseDown) accumulated_rClicks += 1;
       isRMouseDown = true;
     }
+    accumulated_anyDown = true;
     // TODO(@darzu): figure out pointer events
     // canvas.getCanvasHtml().setPointerCapture(ev.pointerId);
     return false;
@@ -217,6 +229,25 @@ function createInputsReader(canvas: Canvas): () => Inputs {
     return false;
   });
 
+  let isMouseHover = false;
+  canvasEl.addEventListener(
+    "pointerenter",
+    () => {
+      isMouseHover = true;
+      // console.log(document.activeElement?.ownerDocument === document);
+    },
+    false
+  );
+  canvasEl.addEventListener(
+    "pointerleave",
+    () => {
+      isMouseHover = false;
+      isLMouseDown = false;
+      isRMouseDown = false;
+    },
+    false
+  );
+
   function takeAccumulatedMouseClicks(): { lClicks: number; rClicks: number } {
     const result = {
       lClicks: accumulated_lClicks,
@@ -231,16 +262,20 @@ function createInputsReader(canvas: Canvas): () => Inputs {
     const mouseMov = takeAccumulatedMouseMovement();
     const { lClicks, rClicks } = takeAccumulatedMouseClicks();
     const keyClicks = takeAccumulatedKeyClicks();
+    const anyDown = accumulated_anyDown;
+    accumulated_anyDown = false;
     let inputs: Inputs = {
       mouseMov,
       mousePos: V2.clone(lastMouse),
       mouseWheel: takeAccumulatedMouseWheel(),
+      mouseHover: isMouseHover,
       lclick: lClicks > 0,
       rclick: rClicks > 0,
       ldown: isLMouseDown,
       rdown: isRMouseDown,
       keyDowns,
       keyClicks,
+      anyDown,
     };
     return inputs;
   }

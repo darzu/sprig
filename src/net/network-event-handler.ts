@@ -27,8 +27,10 @@ export function initNetStateEventSystems() {
       const event = eventsFromNetwork.shift()!;
       switch (event.type) {
         case NetworkEventType.Ready:
-          console.log(`localhost:4321/?server=${event.address}&user=2`);
-          EM.addResource(NetworkReadyDef);
+          console.log(
+            `${window.location.host}/full-screen.html?server=${event.address}${window.location.hash}`
+          );
+          EM.addResource(NetworkReadyDef, event.address);
           break;
         case NetworkEventType.NewConnection: {
           console.log("new connection");

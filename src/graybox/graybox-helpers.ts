@@ -145,9 +145,13 @@ export function initStdGrid() {
   );
 }
 
+export const CAM_DEFAULT_PAN_SPEED = 0.0003;
+export const CAM_DEFAULT_ZOOM_SPEED = 0.1;
+export const CAM_DEFAULT_ZOOM_OFFSET = 50;
+
 export async function initDemoPanCamera(
   origin?: V3.InputT,
-  zoomOffset: number = 50
+  zoomOffset: number = CAM_DEFAULT_ZOOM_OFFSET
 ) {
   const g = EM.mk();
   EM.set(g, CameraFollowDef, 1);
@@ -160,8 +164,8 @@ export async function initDemoPanCamera(
   EM.set(g, RotationDef);
   EM.set(g, RenderableConstructDef, CubeMesh, false);
 
-  const turnSpeed = 0.0003;
-  const zoomSpeed = 0.1;
+  const turnSpeed = CAM_DEFAULT_PAN_SPEED;
+  const zoomSpeed = CAM_DEFAULT_ZOOM_SPEED;
 
   const { htmlCanvas } = await EM.whenResources(CanvasDef);
   htmlCanvas.shouldLockMouseOnClick = false;

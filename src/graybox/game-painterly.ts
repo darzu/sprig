@@ -551,8 +551,6 @@ async function initHtml() {
       }
     },
   });
-
-  throw "TODO!";
 }
 
 async function createBouncingBalls() {
