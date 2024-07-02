@@ -546,8 +546,9 @@ async function initHtml(isHost: boolean) {
   const aboutPanel = htmlBuilder.addInfoPanel("Multiplayer");
   aboutPanel.addText(`
      Each player is a cube that moves around on a shared platform.
-     The first player hosts the game and sends updates for the platform.
-     Each player owns and sends updates for their own position.
+     The first player hosts the game and sends updates for the platforms.
+     Each player owns and sends updates for their position.
+     Built with WebRTC.
   `);
 
   // controls
