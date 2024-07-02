@@ -125,7 +125,7 @@ const {
 
       e.controllable.speed *= 2;
       e.controllable.sprintMul = 1;
-      V3.copy(e.cameraFollow.positionOffset, [0.0, -10.0, 0.0]);
+      V3.copy(e.cameraFollow.positionOffset, [0.0, -20.0, 0.0]);
       // e.cameraFollow.yawOffset = 0.0;
       e.cameraFollow.pitchOffset = -0.593;
 
@@ -247,7 +247,7 @@ export async function initMPGame() {
   }
 
   // camera
-  camera.fov = Math.PI * 0.5;
+  camera.fov = Math.PI * 0.4;
   camera.viewDist = 100;
   V3.set(-20, -20, -20, camera.maxWorldAABB.min);
   V3.set(+20, +20, +20, camera.maxWorldAABB.max);
