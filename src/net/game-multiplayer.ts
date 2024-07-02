@@ -272,7 +272,7 @@ async function setLevelLocal(levelIdx: number) {
 }
 
 function joinURL(address: string): string {
-  return `/full-screen.html?server=${address}${window.location.hash}`;
+  return `${window.location.protocol}//${window.location.host}/full-screen.html?server=${address}${window.location.hash}`;
 }
 
 export async function initMPGame() {
@@ -568,10 +568,36 @@ async function initHtml(isHost: boolean) {
     } = await EM.whenResources(NetworkReadyDef);
 
     // multiplayer
-    const mpPanel = htmlBuilder.addInfoPanel("Join");
-    mpPanel.addHTML(`
-    <a href="${joinURL(address)}" target="_blank">New Player</a>
-    <span class="note">NOTE: Each browser tab, especially the host, must remain on visible for data to be sent and recieved.</span>
-  `);
+    const joinPanel = htmlBuilder.addInfoPanel("Join");
+    // <a href="${joinURL(address)}" target="_blank">New Player Link</a>
+    joinPanel.addHTML(`
+    Send this to a friend:
+    <input id="addressBox" type="text" readonly value="${joinURL(
+      address
+    )}"></input>
+    <button id="copyBtn">copy url</button>
+    `);
+
+    {
+      const addressBox = document.getElementById(
+        "addressBox"
+      ) as HTMLInputElement;
+      const copyBtn = document.getElementById("copyBtn") as HTMLButtonElement;
+      copyBtn.onclick = () => {
+        addressBox.select();
+        addressBox.setSelectionRange(0, 99999);
+        navigator.clipboard.writeText(addressBox.value);
+      };
+    }
+
+    const caveatsPanel = htmlBuilder.addInfoPanel("Known Issues");
+    caveatsPanel._panelDiv.style.width = "300px";
+    caveatsPanel.addHTML(`
+    <ul>
+      <li>Each browser tab must remain visible for the network to update.</li>
+      <li>Each time the New Player Link is visited or refreshed, a new player will be spawned.</li>
+      <li>There is no rejoin (yet).</li>
+    </ul>
+    `);
   }
 }

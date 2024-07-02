@@ -57,12 +57,6 @@ export async function main_sceneSelector() {
     window.location.reload(); // TODO(@darzu): would be great to not reload
   });
 
-  if (gameKey === "blank") {
-    // TODO(@darzu): HACK.
-    document.body.innerText = "";
-    return;
-  }
-
   if (gameKey === "about") {
     // TODO(@darzu): HACK.
     showAboutPage();
