@@ -194,6 +194,7 @@ export interface EMEntities {
     e: EntityW<ComponentDef[], ID>,
     ...cs: CS
   ): Promise<EntityW<CS, ID>>;
+
   whenSingleEntity<CS extends ComponentDef[]>(
     ...cs: [...CS]
   ): Promise<EntityW<CS>>;

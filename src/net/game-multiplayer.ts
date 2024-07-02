@@ -46,6 +46,7 @@ import {
 } from "../physics/nonintersection.js";
 import { onCollides } from "../physics/phys-helpers.js";
 import { TeleportDef } from "../physics/teleport.js";
+import { T } from "../utils/util-no-import.js";
 
 const mpMeshes = XY.defineMeshSetResource(
   "mp_meshes",
@@ -173,18 +174,37 @@ const raiseSetParent = eventWizard(
   }
 );
 
+const StartRaftDef = EM.defineComponent("starterRaft", () => true);
+
 const { MpRaftPropsDef, createMpRaft } = defineNetEntityHelper({
   name: "mpRaft",
-  defaultProps: () => ({}),
-  updateProps: (p) => p,
-  serializeProps: (obj, buf) => {},
-  deserializeProps: (obj, buf) => {},
+  defaultProps: () => ({
+    color: V(0, 0, 0),
+    scale: V(1, 1, 1),
+    starter: false,
+  }),
+  updateProps: (p, color: V3.InputT, scale: V3.InputT, starter: boolean) => {
+    V3.copy(p.color, color);
+    V3.copy(p.scale, scale);
+    p.starter = starter;
+    return p;
+  },
+  serializeProps: (obj, buf) => {
+    buf.writeVec3(obj.color);
+    buf.writeVec3(obj.scale);
+    buf.writeUint8(obj.starter ? 1 : 0);
+  },
+  deserializeProps: (obj, buf) => {
+    buf.readVec3(obj.color);
+    buf.readVec3(obj.scale);
+    obj.starter = !!buf.readUint8();
+  },
   defaultLocal: () => {},
   dynamicComponents: [PositionDef, RotationDef],
   buildResources: [mpMeshes],
   build: (platform, res) => {
     EM.set(platform, RenderableConstructDef, res.mp_meshes.cubeRaft.proto);
-    EM.set(platform, ColorDef, ENDESGA16.darkGreen);
+    EM.set(platform, ColorDef, platform.mpRaftProps.color);
     EM.set(platform, PositionDef, V(0, 0, 5));
     EM.set(platform, ColliderDef, {
       shape: "AABB",
@@ -192,6 +212,8 @@ const { MpRaftPropsDef, createMpRaft } = defineNetEntityHelper({
       aabb: res.mp_meshes.cubeRaft.aabb,
     });
     EM.set(platform, MpPatformDef, platform.id);
+    EM.set(platform, ScaleDef, platform.mpRaftProps.scale);
+    if (platform.mpRaftProps.starter) EM.set(platform, StartRaftDef);
 
     const obstacle = EM.mk();
     EM.set(obstacle, PositionDef, V(0, 0, 1));
@@ -287,7 +309,7 @@ export async function initMPGame() {
 
   // camera
   camera.fov = Math.PI * 0.4;
-  camera.viewDist = 100;
+  camera.viewDist = 200;
   V3.set(-20, -20, -20, camera.maxWorldAABB.min);
   V3.set(+20, +20, +20, camera.maxWorldAABB.max);
   // camera.perspectiveMode = "ortho";
@@ -319,29 +341,57 @@ export async function initMPGame() {
 
   // raft
   if (me.host) {
-    createMpRaft();
+    const raftHostParam = EM.defineNonupdatableComponent(
+      "raftParam",
+      T<{ speed: number; radius: number; zPos: number }>()
+    );
+
+    const raft1 = createMpRaft(ENDESGA16.darkGreen, V(1, 1, 1), true);
+    EM.set(raft1, raftHostParam, {
+      speed: 1,
+      radius: 20,
+      zPos: 5,
+    });
+
+    const raft2 = createMpRaft(ENDESGA16.deepGreen, V(4, 4, 4), false);
+    EM.set(raft2, raftHostParam, {
+      speed: 0.5,
+      radius: 50,
+      zPos: -30,
+    });
+
+    // const raft3 = createMpRaft(ENDESGA16.lightGreen, V(0.4, 0.4, 0.4), false);
+    // EM.set(raft3, raftHostParam, {
+    //   speed: 0.7,
+    //   radius: 30,
+    //   zPos: -0,
+    // });
 
     EM.addSystem(
       "movePlatform",
       Phase.GAME_WORLD,
-      [MpRaftPropsDef, PositionDef, RotationDef],
+      [MpRaftPropsDef, PositionDef, RotationDef, raftHostParam],
       [TimeDef],
       (es, res) => {
-        if (es.length !== 1) return;
-        const platform = es[0];
-
-        const t = res.time.time * 0.001;
-        const r = 20;
-        const x = Math.cos(t) * r;
-        const y = Math.sin(t) * r;
-        platform.position[0] = x;
-        platform.position[1] = y;
-        quat.fromYawPitchRoll(-t, 0, 0, platform.rotation);
+        for (let platform of es) {
+          const t = res.time.time * 0.001 * platform.raftParam.speed;
+          const r = platform.raftParam.radius;
+          const x = Math.cos(t) * r;
+          const y = Math.sin(t) * r;
+          platform.position[0] = x;
+          platform.position[1] = y;
+          platform.position[2] = platform.raftParam.zPos;
+          quat.fromYawPitchRoll(-t, 0, 0, platform.rotation);
+        }
       }
     );
   }
 
-  const raft = await EM.whenSingleEntity(MpRaftPropsDef, FinishedDef);
+  const raft = await EM.whenSingleEntity(
+    MpRaftPropsDef,
+    StartRaftDef,
+    FinishedDef
+  );
 
   // player
   const color =
@@ -356,6 +406,7 @@ export async function initMPGame() {
     if (myPlayer.position[2] < -100) {
       V3.copy(myPlayer.position, getPlayerRaftSpawnPos(me.pid));
       myPlayer.physicsParent.id = raft.id;
+      raiseSetParent(myPlayer, raft.id);
       if (LinearVelocityDef.isOn(myPlayer)) V3.zero(myPlayer.linearVelocity);
       console.log("player fell through");
     }
