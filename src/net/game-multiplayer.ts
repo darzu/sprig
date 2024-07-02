@@ -16,8 +16,10 @@ import {
   PositionDef,
   RotationDef,
   ScaleDef,
+  TransformDef,
+  updateFrameFromTransform,
 } from "../physics/transform.js";
-import { quat, V, V3 } from "../matrix/sprig-matrix.js";
+import { mat4, quat, V, V3 } from "../matrix/sprig-matrix.js";
 import { Phase } from "../ecs/sys-phase.js";
 import { XY } from "../meshes/mesh-loader.js";
 import { RenderableConstructDef, RendererDef } from "../render/renderer-ecs.js";
@@ -29,7 +31,7 @@ import { postProcess } from "../render/pipelines/std-post.js";
 import { shadowPipelines } from "../render/pipelines/std-shadow.js";
 import { ControllableDef } from "../input/controllable.js";
 import { ColliderDef } from "../physics/collider.js";
-import { MeDef, NetworkReadyDef } from "./components.js";
+import { AuthorityDef, MeDef, NetworkReadyDef } from "./components.js";
 import { TimeDef } from "../time/time.js";
 import { eventWizard } from "./events.js";
 import { assert } from "../utils/util.js";
@@ -38,6 +40,12 @@ import { createHtmlBuilder, mkEl } from "../web/html-builder.js";
 import { getWebLocationHash, isTopLevelFrame } from "../web/webnav.js";
 import { CanvasDef } from "../render/canvas.js";
 import { InputsDef } from "../input/inputs.js";
+import {
+  PhysicsResultsDef,
+  WorldFrameDef,
+} from "../physics/nonintersection.js";
+import { onCollides } from "../physics/phys-helpers.js";
+import { TeleportDef } from "../physics/teleport.js";
 
 const mpMeshes = XY.defineMeshSetResource(
   "mp_meshes",
@@ -137,6 +145,34 @@ const {
   },
 });
 
+const MpPatformDef = EM.defineComponent(
+  "mpPlatform",
+  () => ({
+    setParentId: 0,
+  }),
+  (p, setParentId?: number) => {
+    if (setParentId) p.setParentId = setParentId;
+    return p;
+  }
+);
+
+const raiseSetParent = eventWizard(
+  "mp-set-parent",
+  [[PhysicsParentDef]] as const,
+  ([e], newParentId: number) => {
+    e.physicsParent.id = newParentId;
+  },
+  {
+    serializeExtra: (buf, newParentId: number) => {
+      buf.writeUint32(newParentId);
+    },
+    deserializeExtra: (buf) => {
+      const newParentId = buf.readUint32();
+      return newParentId;
+    },
+  }
+);
+
 const { MpRaftPropsDef, createMpRaft } = defineNetEntityHelper({
   name: "mpRaft",
   defaultProps: () => ({}),
@@ -155,6 +191,7 @@ const { MpRaftPropsDef, createMpRaft } = defineNetEntityHelper({
       solid: true,
       aabb: res.mp_meshes.cubeRaft.aabb,
     });
+    EM.set(platform, MpPatformDef, platform.id);
 
     const obstacle = EM.mk();
     EM.set(obstacle, PositionDef, V(0, 0, 1));
@@ -209,6 +246,7 @@ async function setLevelLocal(levelIdx: number) {
     solid: true,
     aabb: mp_meshes.hex.aabb,
   });
+  EM.set(ground, MpPatformDef, 0);
 }
 
 function joinURL(address: string): string {
@@ -319,8 +357,58 @@ export async function initMPGame() {
       V3.copy(myPlayer.position, getPlayerRaftSpawnPos(me.pid));
       myPlayer.physicsParent.id = raft.id;
       if (LinearVelocityDef.isOn(myPlayer)) V3.zero(myPlayer.linearVelocity);
+      console.log("player fell through");
     }
   });
+
+  // change platform
+  onCollides(
+    [
+      MpPlayerPropsDef,
+      AuthorityDef,
+      PositionDef,
+      RotationDef,
+      ScaleDef,
+      TransformDef,
+      WorldFrameDef,
+      PhysicsParentDef,
+      ColliderDef,
+    ],
+    [MpPatformDef, ColliderDef, TransformDef],
+    [MeDef],
+    (player, platform, res) => {
+      if (player.authority.pid !== res.me.pid) return;
+      if (player.physicsParent.id === platform.mpPlatform.setParentId) return;
+      console.log(`hit new platform ${platform.id}!`);
+      player.physicsParent.id = platform.mpPlatform.setParentId;
+
+      // notify other players we're changing our parent
+      raiseSetParent(player, platform.mpPlatform.setParentId);
+
+      // notify the physics system we're going to be lurching
+      EM.set(player, TeleportDef);
+      // update player's frame to the new parent
+      const worldFromPlayer = player.world.transform;
+      const worldFromPlatform =
+        platform.mpPlatform.setParentId === 0
+          ? mat4.IDENTITY
+          : platform.transform; // NOTE: assumes platform doesn't have a parent
+      const platformFromWorld = mat4.invert(worldFromPlatform);
+      const platformFromPlayer = mat4.mul(platformFromWorld, worldFromPlayer);
+      mat4.copy(player.transform, platformFromPlayer);
+      updateFrameFromTransform(player);
+      // except scale
+      V3.copy(player.scale, V3.ONES);
+      // halt fall
+      EM.set(player, LinearVelocityDef, V3.ZEROS);
+      // and make sure position is above parent
+      assert(platform.collider.shape === "AABB");
+      const parentTopZ = platform.collider.aabb.max[2];
+      assert(player.collider.shape === "AABB");
+      const playerBotZ = player.collider.aabb.min[2];
+      player.position[2] = parentTopZ - playerBotZ + 0.1;
+    }
+  );
 }
 
 function getPlayerRaftSpawnPos(pid: number): V3 {
