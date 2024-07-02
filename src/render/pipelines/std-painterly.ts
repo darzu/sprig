@@ -329,7 +329,7 @@ export const painterlyDeferredPipe = CY.createRenderPipeline(
     output: [
       {
         ptr: canvasTexturePtr,
-        clear: "always",
+        clear: "once",
         // TODO(@darzu): doesn't work?
         // defaultColor: BACKGROUND_COLOR,
       },
