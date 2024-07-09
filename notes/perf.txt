@@ -640,6 +640,41 @@ Measurements on IdeaPad 3 (6/25/24)
   1. better understand the hardware
   2. 
 
+  --
+
+  Take aways:
+  Data movement not computation dominates power consumption
+  CISC might be more power efficient b/c alu->alu moves are much cheaper than alu->reg->alu
+    "ASIC in an instruction" (10-100x better than primative instructions)
+  Explained latency hiding really well
+  Talked about minimizing control overhead
+  And motived well the case for optimizing for throughput
+  arithmetic intensity = work(ops)/data(bytes)
+  All acceleratable computations have high ops/bytes ratio (e.g. matrix multiply and not sorting)
+
+  future will be throughput oriented. fundamental trade-offs:
+  multicore b/c better transitor usage
+  simd b/c of better control overhead amortization
+  threads for latency hiding (better than speculation)
+  minimize precision for superlinear hw utilization
+  amortize data transfer w/ complex instructions
+  seek high ops/bytes
+
+  high performance DSL are actually more "data-structure specific"
+    e.g. SQL queries are highly analyizable, huge space for program implementation
+    e.g. Halide: multi-dimensional arrays and stencils
+    e.g. Taichi: heirarchical sparse grids
+    e.g. Simit: mesh graphs & sparse matrices
+  getting the data abstraction right allows for simpler more declarative programs
+    and better optimization
+  exo: user code writes semmantics for a new instruction, annoted with preconditions, postconditions, and hw instr
+
+  automation, safety, and control
+
+
 
 "Exploring How Cache Memory Really Works":
   https://pikuma.com/blog/understanding-computer-cache
+
+"20 million particles in javascript":
+  https://dgerrells.com/blog/how-fast-is-javascript-simulating-20-000-000-particles

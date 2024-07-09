@@ -115,3 +115,7 @@ Linear algebra toolbox:
 
 3D Math Primer for Graphics and Game Development
   https://gamemath.com/book/
+
+Posits for representing numbers?
+  https://www.cs.cornell.edu/courses/cs6120/2019fa/blog/posits/
+  https://mastodon.gamedev.place/@rygorous/112747207858056837

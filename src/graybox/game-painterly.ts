@@ -83,10 +83,13 @@ let dbgGridCompose = createGridComposePipelines(dbgGrid);
 
 const painterlyGameState = {
   bounceDots: true,
+  moveShapes: false,
   showSticks: false,
   showLSys: false,
   _lSys: undefined as undefined | EntityW<[typeof RenderableDef]>[],
 };
+
+const DoBounceDef = EM.defineComponent("doBounce", () => true);
 
 export async function initPainterlyGame() {
   EM.addSystem(
@@ -297,6 +300,7 @@ export async function initPainterlyGame() {
       };
       return res;
     }
+
     EM.whenResources(BallMesh.def, TetraMesh.def, CubeMesh.def).then((res) => {
       const size = 512;
       const ptsPerArea = 1 / 32.0;
@@ -405,13 +409,14 @@ export async function initPainterlyGame() {
         // const color = seqEndesga16();
         let pos: V3.InputT = [40 * (i + 1), 40 * (i + 1), 40];
         const color = balLColors[i];
-        createObj(
+        const obj1 = createObj(
           [
             RenderableConstructDef,
             PositionDef,
             ColorDef,
             ScaleDef,
             RotationDef,
+            DoBounceDef,
           ] as const,
           {
             renderableConstruct: [
@@ -429,13 +434,14 @@ export async function initPainterlyGame() {
             scale: scales[i],
             rotation: quat.fromYawPitchRoll(i * PI * 0.123),
             color,
+            doBounce: undefined,
           }
         );
 
         const ptMesh = cloneMesh(objMeshes[i].mesh);
         morphMeshIntoPts(ptMesh, 16);
 
-        createObj(
+        const obj2 = createObj(
           [
             RenderableConstructDef,
             PainterlyUniDef,
@@ -443,6 +449,7 @@ export async function initPainterlyGame() {
             ColorDef,
             ScaleDef,
             RotationDef,
+            DoBounceDef,
           ] as const,
           {
             renderableConstruct: [
@@ -464,6 +471,7 @@ export async function initPainterlyGame() {
             scale: scales[i],
             rotation: quat.fromYawPitchRoll(i * PI * 0.123),
             color,
+            doBounce: undefined,
           }
         );
       }
@@ -471,6 +479,33 @@ export async function initPainterlyGame() {
       // EM.set(e, GlitchDef);
     });
   }
+
+  const bounceRad = 50;
+  const bounceOffset = V(100, 100, 50);
+  EM.addSystem(
+    "doBounce",
+    Phase.GAME_WORLD,
+    [PositionDef, DoBounceDef],
+    [TimeDef],
+    (es, res) => {
+      if (!painterlyGameState.moveShapes) return;
+
+      for (let i = 0; i < es.length; i++) {
+        const e = es[i];
+        const t = Math.floor(i / 2) / (es.length / 2);
+        // const t = Math.atan2(e.position[1], e.position[0]);
+        e.position[0] =
+          bounceOffset[0] +
+          bounceRad * Math.cos(t * 7.0 + res.time.time * 0.0005);
+        e.position[1] =
+          bounceOffset[1] +
+          bounceRad * Math.sin(t * 7.0 + res.time.time * 0.0005);
+        e.position[2] =
+          bounceOffset[2] +
+          bounceRad * Math.sin(t * 7.0 + res.time.time * 0.001);
+      }
+    }
+  );
 
   // bouncing balls
   // createBouncingBalls();
@@ -531,6 +566,14 @@ async function initHtml() {
 
   // experiments
   const expPanel = htmlBuilder.addInfoPanel("Experiments");
+  expPanel.addToggleEditor({
+    label: "Move Shapes",
+    default: painterlyGameState.moveShapes,
+    onChange: (v) => {
+      painterlyGameState.moveShapes = v;
+    },
+  });
+
   expPanel.addToggleEditor({
     label: "Show Lines",
     default: painterlyGameState.showSticks,

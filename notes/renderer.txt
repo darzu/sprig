@@ -2164,6 +2164,13 @@ Perspective shadow maps:
   compute shadows in canonical view volume
   seems not as good as cascaded shadow maps
 
+  TomF says don't do it:
+    https://mastodon.gamedev.place/@TomF/112740966292197547
+  
+TomF "Extremely Practical Shadows":
+  https://tomforsyth1000.github.io/papers/papers.html
+  https://tomforsyth1000.github.io/papers/shadowbuffer_pseudocode.html
+
 Shadow volumes:
   https://youtu.be/C2Gn6oOxSu0?list=PLplnkTzzqsZS3R5DjmCQsqupu43oS9CFN&t=3459
   the downside is generating and dealing with the shadow geometry
@@ -2370,3 +2377,6 @@ Getting started with Graphics Programming:
   
 Logarithmic depth buffer:
   https://threejs.org/examples/?q=dept#webgl_camera_logarithmicdepthbuffer
+
+Line drawing, 3D, screen-space:
+  https://mattdesl.svbtle.com/drawing-lines-is-hard
