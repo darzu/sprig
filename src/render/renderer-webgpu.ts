@@ -54,9 +54,9 @@ export function createRenderer(
   canvas: AbstractCanvas
 ) {
   // TODO(@darzu): BUG. timestamp-query and writeTimestamp don't work on all chrome versions
-  const isLocalhost = window.location.hostname === "localhost";
+  const useTimestampQuery = false; // window.location.hostname === "localhost";
   const timestampQuerySet =
-    isLocalhost && device.features.has("timestamp-query")
+    useTimestampQuery && device.features.has("timestamp-query")
       ? device.createQuerySet({
           label: `sprigTimestampQuerySet`,
           type: "timestamp",
