@@ -1,0 +1,12 @@
+  https://vkguide.dev
+  https://vulkan-tutorial.com
+
+  https://github.com/SaschaWillems/Vulkan/blob/master/examples/triangle/triangle.cpp
+  https://github.com/KhronosGroup/Vulkan-Samples
+
+  https://vulkan.org/user/pages/09.events/vulkanised-2024/vulkanised-2024-grigory-dzhavadyan.pdf
+
+  https://vulkan.org/user/pages/09.events/vulkanised-2024/vulkanised-2024-brandon-jones-google.pdf
+
+  https://github.com/KhronosGroup/Vulkan-Guide
+  https://github.com/KhronosGroup/Vulkan-Samples/blob/main/samples/api/README.adoc
