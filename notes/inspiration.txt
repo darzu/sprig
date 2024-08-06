@@ -343,3 +343,9 @@ Browser based, open source, CAD: https://mattferraro.dev/posts/cadmium
 
 research vessel RV Flip:
   ship that pitches 90 degrees intentionally to submerge tail
+
+Factorio belt optimizations:
+  https://www.factorio.com/blog/post/fff-176
+    "whenever a belt compresses - it will stay that way forever"
+    "cache the index of the last positive gap location, and update it on the fly 
+      because that index can never increase, only decrease"
