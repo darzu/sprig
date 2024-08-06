@@ -2380,3 +2380,14 @@ Logarithmic depth buffer:
 
 Line drawing, 3D, screen-space:
   https://mattdesl.svbtle.com/drawing-lines-is-hard
+
+Ray tracing, BVH:
+  Coding Adventure: Ray Tracing
+    https://www.youtube.com/watch?v=Qz0KTGYJtUk
+  Coding Adventure: Optimizing a Ray Tracer (by building a BVH)
+    https://www.youtube.com/watch?v=C1H4zIiCOaI
+  How to build a BVH (10 part series, Jacco Bikker):
+    https://jacco.ompf2.com/2022/04/13/how-to-build-a-bvh-part-1-basics/
+
+  
+  
