@@ -2389,5 +2389,10 @@ Ray tracing, BVH:
   How to build a BVH (10 part series, Jacco Bikker):
     https://jacco.ompf2.com/2022/04/13/how-to-build-a-bvh-part-1-basics/
 
-  
-  
+Parallax mapping:
+  https://www.youtube.com/watch?v=cM7RjEtZGHw
+
+Voxel displacement renderer:
+  https://blog.danielschroeder.me/2024/05/voxel-displacement-modernizing-retro-3d/
+  https://blog.danielschroeder.me/2024/05/voxel-displacement-where-this-goes/
+  https://x.com/dan5sch
