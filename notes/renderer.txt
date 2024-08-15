@@ -2396,3 +2396,9 @@ Voxel displacement renderer:
   https://blog.danielschroeder.me/2024/05/voxel-displacement-modernizing-retro-3d/
   https://blog.danielschroeder.me/2024/05/voxel-displacement-where-this-goes/
   https://x.com/dan5sch
+
+Rendering perf: instruction cache:
+  https://developer.nvidia.com/blog/improving-gpu-performance-by-reducing-instruction-cache-misses-2/
+
+PIX capture as sqllite, queries:
+  https://devblogs.microsoft.com/pix/querying-the-pix-timing-capture-file-format/
