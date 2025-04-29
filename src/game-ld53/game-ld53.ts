@@ -624,7 +624,7 @@ export async function initLD53() {
   }
 
   // bouyancy
-  if (!"true") {
+  if (!true) {
     // TODO(@darzu): Z_UP for bouyancy
     const bouyDef = EM.defineComponent("bouy", () => true);
     const buoys: EntityW<[typeof PositionDef]>[] = [];

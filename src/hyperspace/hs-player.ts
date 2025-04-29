@@ -141,7 +141,7 @@ EM.addEagerInit([PlayerHsPropsDef], [], [], () => {
           EM.set(l, RenderableConstructDef, res.allMeshes.cube.proto);
           EM.set(l, ScaleDef, V(0.15, 0.75, 0.15));
           EM.set(l, ColorDef, V(0.05, 0.05, 0.05));
-          EM.set(l, PhysicsParentDef, e.id);
+          EM.set(l, PhysicsParentDef, e!.id);
           return l;
         }
         e.hsPlayer.leftLegId = makeLeg(-0.5).id;

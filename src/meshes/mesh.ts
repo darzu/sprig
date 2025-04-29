@@ -989,7 +989,7 @@ export function mergeMeshes<T extends RawMesh>(...rs: T[]): T {
     tangents: rs.every((r) => r.tangents) ? [] : undefined,
     normals: rs.every((r) => r.normals) ? [] : undefined,
     dbgName: rs.some((r) => r.dbgName)
-      ? rs.reduce((p, n, i) => p + "_" + n?.dbgName ?? "mesh", "")
+      ? rs.reduce((p, n, i) => p + "_" + (n?.dbgName ?? "mesh"), "")
       : undefined,
     usesProvoking: rs.every((r) => (r as any as Mesh).usesProvoking)
       ? true

@@ -570,10 +570,10 @@ export function testObjectTS() {
       never;
   type __t4 = __t3<__t0>;
 
-  if (!"true") {
-    // let __o4 = null as unknown as __t4;
-    // const l23 = __o4.mast.scale;
-  }
+  // if (!"true") {
+  //   // let __o4 = null as unknown as __t4;
+  //   // const l23 = __o4.mast.scale;
+  // }
 
   type __t1 = ObjComponentDef<__t0>;
   // type __t2 = _ObjEnt<__t0>;
