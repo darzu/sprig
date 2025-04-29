@@ -56,8 +56,6 @@ fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
   let dims : vec2<i32> = vec2<i32>(textureDimensions(surfTex));
   let dimsF = vec2<f32>(dims);
 
-  let h = textureSample(depthTex, samp, uv);
-
   let coord = uv * vec2<f32>(dims);
   let t = coord - vec2(0.0, lineWidth);
   let l = coord - vec2(lineWidth, 0.0);
@@ -69,10 +67,11 @@ fn frag_main(@location(0) uv : vec2<f32>) -> @location(0) vec4<f32> {
   let sB = textureLoad(surfTex, vec2<i32>(b), 0);  
 
   // TODO(@darzu): do i need to do expensive sampling for depth and norm? why not just load
-  let hT = textureSample(depthTex, samp, t / dimsF);
-  let hL = textureSample(depthTex, samp, l / dimsF);
-  let hR = textureSample(depthTex, samp, r / dimsF);
-  let hB = textureSample(depthTex, samp, b / dimsF);  
+  let h = textureLoad(depthTex, vec2i(coord), 0);
+  let hT = textureLoad(depthTex, vec2i(t), 0);
+  let hL = textureLoad(depthTex, vec2i(l), 0);
+  let hR = textureLoad(depthTex, vec2i(r), 0);
+  let hB = textureLoad(depthTex, vec2i(b), 0);  
 
   // NOTE: since depth changes naturally along a surface, we can't
   //  just compare depth values, we have to see if the delta in depth
