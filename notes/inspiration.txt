@@ -349,3 +349,7 @@ Factorio belt optimizations:
     "whenever a belt compresses - it will stay that way forever"
     "cache the index of the last positive gap location, and update it on the fly 
       because that index can never increase, only decrease"
+
+Cool dot rendering for plants:
+  https://ambient.garden
+  https://github.com/pac-dev/AmbientGarden

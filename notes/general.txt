@@ -1438,6 +1438,11 @@ ffmpeg -i canvas_change.mov -vcodec h264 \
   -acodec aac \
   canvas_change.mp4
 
+cd /Users/darzu/screenshots/
+ffmpeg -i hotswapInline.mov -vcodec h264 \
+  -acodec aac \
+  hotswapInline.mp4
+
 Bluesky's "Ecosystem Overview":
   https://gitlab.com/bluesky-community1/decentralized-ecosystem#ecosystem-overview
 
