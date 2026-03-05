@@ -540,5 +540,10 @@ Wasm-4 rollback netcode:
 Serious Sam netcode:
   https://staniks.github.io/articles/serious-engine-networking-analysis
 
-QUIC drawbacks:
-    https://www.reddit.com/r/programming/comments/1g7vv66/quic_is_not_quick_enough_over_fast_internet/
+Connect A to B:
+    https://www.dumbpipe.dev/
+    Iroh
+        https://crates.io/crates/iroh
+        QUIC
+            https://en.wikipedia.org/wiki/QUIC
+    https://github.com/samyk/pwnat

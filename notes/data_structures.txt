@@ -1,0 +1,42 @@
+Segmented Array:
+    https://danielchasehooper.com/posts/segment_array/
+                        Growable                Stable  Random Access        Contiguous
+    Fixed Size Array    ❌                      ✅      ✅                  ✅
+    Dynamic Array       ✅                      ❌      ✅                  ✅
+    Chunked Linked List ✅                      ✅      ❌                  ❌
+    Hybrid Approach     ✅(at creation)         ✅      ✅(after creation)  ✅(after creation)
+    Virtual Memory Array✅(up to reservation)   ✅      ✅                  ✅
+    Segment Array       ✅                      ✅      ✅                  ❌
+
+Handles vs pointers:
+    https://floooh.github.io/2018/06/17/handles-vs-pointers.html
+
+Seg array:
+    https://gist.github.com/pervognsen/c9d18e8012ce497e7a92d3f86c112337
+    
+    typedef T = int;
+    var segs: T**;
+    var seg: T*;
+    var segcap = 1;
+    var segidx = 1;
+
+    func grow() {
+        seg = 0;
+        asetcap(seg, segcap);
+        apush(segs, seg);
+        segcap *= 2;
+    }
+
+    func add(x: T): usize {
+        if (alen(seg) == acap(seg)) {
+            grow();
+        }
+        apush(seg, x);
+        return segidx++;
+    }
+
+    func get(i: usize): T* {
+        e := log2(i);
+        b := pow2(e);
+        return &segs[e][i-b];
+    }

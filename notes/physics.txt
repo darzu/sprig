@@ -507,3 +507,101 @@ GPU collision detection:
 
 2D rigid body, nice interactive article:
   https://www.sassnow.ski/rigid-body-collisions/1
+
+Voxel physics:
+    https://funkyburitto.github.io/Voxel-Physics-Post/
+
+GPU spatial hashing?
+    https://gist.github.com/paniq/2a68fe0340703757e111bd799b5be99e
+    https://hhoppe.com/perfecthash.pdf
+
+    gpu nearest neighbor:
+        https://github.com/kodai100/Unity_GPUNearestNeighbor
+
+BVH for AABB ray tracing:
+    https://en.wikipedia.org/wiki/Bounding_volume_hierarchy
+    https://box2d.org/files/ErinCatto_DynamicBVH_Full.pdf
+    https://gdcvault.com/play/1025909/Math-for-Game-Developers-Dynamic
+    wgsl bvh:
+        https://www.vaultcg.com/blog/casually-raytracing-in-webgpu-part2/
+            references:
+                https://github.com/Fierykev/RayTraceBVH
+                https://www.scratchapixel.com/lessons/3d-basic-rendering/introduction-acceleration-structure/bounding-volume-hierarchy-BVH-part1.html
+                https://pbrt.org/chapters/pbrt-2ed-chap4.pdf
+                https://programmerkevin.wordpress.com/bvh-ray-tracing/
+                    https://github.com/Fierykev/RayTraceVoxel
+                    https://github.com/Fierykev/RayTraceBVH
+                https://developer.nvidia.com/blog/thinking-parallel-part-iii-tree-construction-gpu/
+                https://developer.nvidia.com/blog/thinking-parallel-part-ii-tree-traversal-gpu/
+
+
+BVH:
+    https://gdcvault.com/play/1025909/Math-for-Game-Developers-Dynamic
+    ~9k objects per scene
+    core ops: union, surface area
+    brute force is loop all objects
+        next: enclose in AABBs
+        next: two level AABB
+        next: BVH
+    BVH for AABB
+        BVH could be spheres or OBB, but AABB fast
+        binary tree representation
+        circle internal, square leaf
+        n internal = n leave - 1
+        always two children for every node
+        no required sort order
+
+    building BVH:
+        bottom up, top down, incremental
+        bottom up:
+            repeat:
+                combine two closest*, replace with one in the working set
+        top down:
+            wrap all under one
+            while too many children:
+                split in half
+
+    dynamic BVH:
+        inserting and removing as world changes
+        especially streaming
+        key is insertion algorithm:
+            adding node to existing tree
+
+    struct Tree {
+        nodes: Node*,
+        nodeCount: int,
+        rootIdx: int,
+    }
+    struct Node {
+        box: AABB,
+        gameObjId: int,
+        parentIdx: int,
+        child1: int,
+        child2: int,
+        isLeaf: bool,
+    }
+
+    bool TreeRayCast(Tree tree, Vec3 p1, Vec3 p2) { 
+        // could be recursive, but choosing own stack
+        Stack<int> stack;
+        Push(stack, tree.rootIndex);
+        while (IsEmpty(stack) == false) {
+            int index = Pop(stack);
+            if (TestOverlap(tree.nodes[index].box, p1, p2) == false)
+                continue;
+                
+            if (nodes[index].isLeaf) {
+                int objectIndex = tree.nodes[index].objectIndex;
+                if (RayCast(objects[objectIndex], p1, p2))
+                    return true;
+            }
+            else {
+                Push(stack, tree.nodes[index].child1);
+                Push(stack, tree.nodes[index].child2);
+            }
+        }
+        return false;
+    }
+
+36*3 = 108
+108x as many ray traces as the main view

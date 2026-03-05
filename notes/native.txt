@@ -33,3 +33,9 @@ Node + Dawn:
 Deno + WebGPU:
   https://deno.com/blog/v1.8#experimental-support-for-the-webgpu-api
   https://github.com/denoland/webgpu-examples
+
+Tauri, the electron for deno?
+  https://v2.tauri.app/
+
+Orca:
+  https://github.com/orca-app/orca

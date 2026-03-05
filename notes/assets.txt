@@ -355,3 +355,9 @@ Bevy: Here's an example how Bevy creates programmatic meshes:
           }
       }
     }
+
+Cool voxel artists:
+  https://x.com/cryptallic
+  https://x.com/rivinext
+  https://x.com/LuanKirra
+  https://x.com/MadMaraca

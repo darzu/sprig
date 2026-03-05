@@ -109,3 +109,116 @@ Demofox on blue noise:
   
   weighted round robin for queues?
     https://blog.demofox.org/2020/06/23/weighted-round-robin-using-the-golden-ratio-low-discrepancy-sequence/
+
+  
+IQ on noise, voronoise
+  all:
+    https://www.shadertoy.com/playlist/fXlXzf&from=0&num=12
+  voronoise:
+    https://www.shadertoy.com/view/Xd23Dh
+
+Xor on noise:
+  https://www.shadertoy.com/view/DdBGDh
+  https://mini.gmshaders.com/p/gm-shaders-mini-noise-1437243
+
+Shuffle iterator:
+	https://github.com/Atrix256/GoldenRatioShuffle2D
+	https://blog.demofox.org/2024/05/19/a-low-discrepancy-shuffle-iterator-random-access-inversion/
+
+PRNG fights:
+  xoshiro: rust, .net, java, julia, lua, 
+  xorshift: javascript (chrome, safari, firefox)
+  xoroshiro: not much
+
+  Vigna, xoshiro/xoroshiro: https://prng.di.unimi.it/
+    anti PCG: https://pcg.di.unimi.it/pcg.php
+      rebuttle: https://www.pcg-random.org/posts/on-vignas-pcg-critique.html
+		  and https://www.pcg-random.org/posts/xoshiro-repeat-flaws.html
+  O'Neill, PCG: https://www.pcg-random.org/
+    "Sadly, Xoroshiro128+ and Xorshift128+ are not on this list. 
+    I thought they were good because good claims are made about them, 
+    but I have recently discovered otherwise."
+
+  MT, Mersenne Twister is bad: https://arxiv.org/pdf/1910.06437
+
+  Discussions:
+    https://chasethedevil.github.io/post/war-of-the-random-number-generators/
+    https://news.ycombinator.com/item?id=24785322
+
+  xoshiro simd on gpu:
+    https://www.shadertoy.com/view/MdVBWK
+
+  DZ conclusion:
+    use: xoshiro (err, wait nvm pcg is better on GPU and works as a hash too)
+
+    seed: https://prng.di.unimi.it/splitmix64.c
+  
+  hash for GPU:
+    https://www.reedbeta.com/blog/hash-functions-for-gpu-rendering/
+    https://rene.ruhr/gfx/gpuhash/
+    pcg hash:
+      uint pcg_hash(uint input)
+      {
+          uint state = input * 747796405u + 2891336453u;
+          uint word = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
+          return (word >> 22u) ^ word;
+      }
+
+    https://www.shadertoy.com/view/4djSRW
+    
+    https://jcgt.org/published/0009/03/02/
+      https://www.shadertoy.com/view/XlGcRh
+      basically pcg3d seems best
+      // http://www.jcgt.org/published/0009/03/02/
+      // https://www.pcg-random.org/
+      uint pcg(uint v)
+      {
+        uint state = v * 747796405u + 2891336453u;
+        uint word = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
+        return (word >> 22u) ^ word;
+      }
+      uvec2 pcg2d(uvec2 v)
+      {
+          v = v * 1664525u + 1013904223u;
+
+          v.x += v.y * 1664525u;
+          v.y += v.x * 1664525u;
+
+          v = v ^ (v>>16u);
+
+          v.x += v.y * 1664525u;
+          v.y += v.x * 1664525u;
+
+          v = v ^ (v>>16u);
+
+          return v;
+      }
+      uvec3 pcg3d(uvec3 v) {
+
+          v = v * 1664525u + 1013904223u;
+
+          v.x += v.y*v.z;
+          v.y += v.z*v.x;
+          v.z += v.x*v.y;
+
+          v ^= v >> 16u;
+
+          v.x += v.y*v.z;
+          v.y += v.z*v.x;
+          v.z += v.x*v.y;
+
+          return v;
+      }
+    
+    PCG rng:
+      uint rng_state;
+      uint rand_pcg()
+      {
+          uint state = rng_state;
+          rng_state = rng_state * 747796405u + 2891336453u;
+          uint word = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
+          return (word >> 22u) ^ word;
+      }
+
+The Unreasonable Effectiveness of Quasirandom Sequences
+  https://extremelearning.com.au/unreasonable-effectiveness-of-quasirandom-sequences/

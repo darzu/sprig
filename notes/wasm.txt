@@ -53,3 +53,13 @@ Possible early uses for WASM:
 
 "A fast and secure runtime for WebAssembly":
   https://wasmtime.dev
+
+wasm compiler that fits in a tweet:
+  https://wasmgroundup.com/blog/wasm-compiler-in-a-tweet/
+
+Wasm 2:
+  https://webassembly.org/news/2025-03-20-wasm-2.0/
+  SIMD, bulk memory, multi-value results (?), opaque JS reference types, ...
+
+Wasm from the ground up course:
+  https://wasmgroundup.com/

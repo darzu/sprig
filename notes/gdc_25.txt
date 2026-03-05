@@ -1,0 +1,11 @@
+
+VFX Tricks that Might Save Your Life:
+    mostly material graph
+    erosion:
+        shift instead of multiply
+        nice transition
+    gradiant mapping:
+        squash hand painted profile into 1D for gradiant mapping
+
+
+Re: gdc

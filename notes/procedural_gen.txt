@@ -6,6 +6,8 @@ http://bit-player.org/2011/a-slight-discrepancy
 http://www-cs-students.stanford.edu/~amitp/game-programming/polygon-map-generation/
 https://www.complexity-explorables.org/explorables/baristas-secret/
 
+https://www.possibilityspace.org
+
 voronoi:
     https://en.wikipedia.org/wiki/Voronoi_diagram
     https://www.redblobgames.com/x/1929-voronoi-percolation/
@@ -386,3 +388,21 @@ LayerProcGen:
 therujik's procedural walk:
   https://x.com/therujik/status/969581641680195585?s=46&t=o5CM8PutFnPe1JVwCeKsSw
   https://www.youtube.com/watch?v=z_fmMD-Gazw
+
+Inspired MarkovJunior:
+  https://journal.stuffwithstuff.com/2014/12/21/rooms-and-mazes/
+    https://github.com/munificent/hauberk/blob/db360d9efa714efb6d937c31953ef849c7394a39/lib/src/content/dungeon.dart
+
+Dijkstra maps / fields ?
+  https://www.roguebasin.com/index.php?title=The_Incredible_Power_of_Dijkstra_Maps
+  https://www.roguebasin.com/index.php?title=Dijkstra_Maps_Visualized
+  https://groups.google.com/g/rec.games.roguelike.development/c/6yNIuhSerpM 
+  impls:
+    https://ondras.github.io/rot.js/manual/#path
+    https://github.com/azsdaja/FloodSpill-CSharp
+
+Imagegram:
+  https://zaratustra.itch.io/imagegram
+  
+Roguelike dev resources:
+  https://github.com/marukrap/RoguelikeDevResources?tab=readme-ov-file

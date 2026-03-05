@@ -319,3 +319,155 @@ Factory code visualization
   lambdas: mini in-line factories
   TODO:
     how best to represent structured data, arrays, etc?
+
+Modal indicator lights:
+  Every editor/command line/app etc that can have different "modes" _MUST_ inlcude 
+    little indicator lights (~few pixels in size) that together tell you exactly what mode you're in
+  You can hover over the indicators to see what modes are active and how to exit them.
+  
+  I just got my command line stuck in some wierd state b/c I must have hit some key cord and I had to exit
+    and restart the whole thing.
+
+Visual programming of the GPU:
+  Build webgpu pipelines w/ drag n drop
+    Resources, groups, pipelines, textures
+    late binding,
+  program simple logic that runs in compute shaders
+  code generated can be efficient enough to build a whole advanced renderer
+  System provided uniform buffers w/ key and mouse inputs
+  perhaps using my "factory" style programming language paradigm
+    builds are sized based on the number of cycles needed to run those instructions?
+  visualization of a GPU die, showing which areas are lit up and which times 
+    shows bandwidth amounts between different areas
+    shows amount of ALU, samplers, etc
+  nice controlled environment w/ lots of dbg instruments/counters
+  but a very thin stack of software (compared to e.g. web, desktop, or mobile)
+
+Perfect module system:
+  mostly like JS's import { foo } from "./bar.js"
+  but allow importing partial modules. It is like it awaits the export statements.
+  So if a module has "await promiseFoo;" halfway through it, any exports before that
+  can be imported just fine without stalling until the whole module is finished.
+  Mixes in some of dynamic import();
+
+Sprigland content:
+  Once sprigland is at peak usability,
+  reproduce all the technical content from redblob, coding adventures, others
+  Obviously with plenty of attribution,
+  meant to be a unified playground for exploring technical topics
+
+Game idea:
+  cut down trees like valheim
+  dig ground like minecraft
+  cut grass like ???
+  tight combat like {hades? dark souls?}
+
+Game about efficient (GPU?) programming:
+  You start with this enormous factory
+  You pass it instructions
+  Small parts of the factory light up at a time
+    One little pocket of light moving through the factory
+  You slowly use more and more parallelism and ensure all areas are saturated with work (ALU, L2, occupancy, etc)
+  Then there's a global throttle based on wattage, or heat
+  You're scored based on computation done per watt, while accomplishing the task
+
+  Maybe there's a catalog of common GPUs / CPUs built in and you get to play your own chip w/ hardware counters from e.g. NVidia NSight
+  
+Cracked planets:
+    the Galactic Republic visist a planet and shatters it to harvest the metal at the core
+    the Free Factions follow in their wake, and restich the parts together with some gravity tech
+    the planet is loosly held together set of planet shards, still moving around through space
+    You can fly throughout the planet Fragments, each developes into little empires
+    Perhaps you can build up rockets on a Fragment and drive it away from the planet to be an interstellar ship
+
+    Maybe the core contains the Essence of Gravity and once the core is taken the Fragments can drift through space
+      more easily since they're robbed of gravity. Making them great scafolds for a space colony.
+
+    The old outer shell/crust is where the habitable fragments mainly come from.
+    But there's also geodes freed from the magma
+
+Combat shapes:
+  Combat is about doing damage
+  All attacks have a shape they trace through space and time
+    Arc, beam, ball, etc
+  Different material take dmg differently
+  So to get around armour, .. go around it, or in the cracks
+
+Systems gameplay:
+  You gain instruments which you then manually arrange for your own steampunk hud
+    E.g. how much damage a material needs etc, enemies,
+    so many things are measurable
+
+First game: 3D engine, 2D gameplay
+  Can't give up on 3D, but makes sense to do things 2D to start
+
+Game with 100 physics systems:
+  Most games have 1
+  But every material is different
+    Voxel-y ground
+    Splinter rocks
+    chop trees
+    mill trunks into planks
+    forge metal
+    sharpen a blade
+    connect a water wheel to a river
+  instead of simulating these actions everywhere always in 100 systems
+    you instead prove it works
+      you connected your contraption to a water source,
+      you proved the wheel spins, dilvering rotational power
+      and proved that moves the blade, which will mill wood below a certain size and hardness
+    now your machine runs reliably with inputs and outputs but no internal simulation, just some baked (from your physics) animation
+
+Delightful resource gathering:
+  throwing the hook in Raft
+  chopping trees in Valheim
+  using magic mining & chopping in Dragonwilds
+  excavator + dump druck + reclaimer + train car
+  mining in minecraft
+  mining in space engineers
+  hoovering in astroneer
+  
+Cool engineering:  
+  use 10:1 reduction system to create precise parts, panto-router or pantograph
+  use cam shaft to run 2d fourier transform for arbitrary shapes
+
+Cool mining:
+  Wait, why a pick axe? we've got magic! Use explosives like modern mining
+  Drill a hole in rock, launch a spell down, huge explosion, cracking the stone
+    better dodge the backlash that comes up the hole
+  huge cliff face of rock falls down
+  dust everywhere...
+    use rain spell to bring dust down
+  go in, find the ore, break it smaller, load it onto a levetation pad
+  optimal problem involves creating a strip mine, inverted pyramid thing
+
+Cool wood chopping:
+  tree is a bundle of fibers, maybe ~10x10 fibers,
+  as you cut them, it recalculates mass, strain, etc
+  falls accurately
+  use old metal gear slicing thing to precisely aim the axe or spell blade
+
+  eventually machines that grab a log, strip it's leaves and bark
+
+  u get logs in the length and thickness you cut
+  only get so many boards per tree
+
+Learning blogs like https://ciechanow.ski except:
+  - they also have Q/A study cards that you can one click add to a Anki like study pack
+  - they also have a note taking section, u should write ur own notes along with the article
+      - each new bullet point remembers where in the article u were when u created the bullet
+
+Don't prevent resource gathering:
+  Fruit Ninja is a whole game about slicing. Once you're in the flow, you might not want to get out, and that should be rewarded with steady progress.
+  Like that time i cut a whole forest in Valheim. Just let the player keep doing what they want. And it's pretty fun to stockpile a huge amount of wood while being in the zone.
+  Resource veins should be nearly infinite, the effort of the mini-game is the limiter.
+
+Simple multiplayer game ideas:
+  Hell Divers -like
+  Boomer shooter co-op, Serious Sam -ish
+  Guantlet-style action RPG
+  Minecraft clone
+  Escape From Duckov but co-op
+  Wanderburg but co-op
+
+Slow is smooth, smooth is fast

@@ -350,6 +350,114 @@ Factorio belt optimizations:
     "cache the index of the last positive gap location, and update it on the fly 
       because that index can never increase, only decrease"
 
-Cool dot rendering for plants:
-  https://ambient.garden
-  https://github.com/pac-dev/AmbientGarden
+John Carmack on software:
+  https://medium.com/bits-and-behavior/john-carmack-discusses-the-art-and-science-of-software-engineering-a56e100c27aa
+  https://www.youtube.com/watch?v=wt-iVFxgFWk
+
+  https://github.com/TehShrike/mirror.joshduff.com/blob/master/content/john-carmack-functional-programming-in-c.md
+
+  https://x.com/ID_AA_Carmack/status/835164026984243201
+    Abstraction trades an increase in real complexity for a decrease in perceived complexity.  That isn't always a win.
+
+https://github.com/cubzh/cubzh
+  Is it open source? Seems Apache-2.0
+
+Clouds from The Witness:
+  https://www.artofluis.com/3d-work/the-art-of-the-witness/clouds/
+
+Dyson hatching for cave map:
+  https://www.patreon.com/posts/hatching-in-1pdg-31716880
+
+Explorables:
+  https://simonwillison.net/tags/explorables/
+  https://explorabl.es/
+
+https://htmx.org/essays/prefer-if-statements/https://htmx.org/essays/prefer-if-statements/
+
+Project Dragon concept art (cancelled voxel game):
+  https://www.artstation.com/artwork/rJbLna
+
+Portals:
+  https://www.youtube.com/@optozorax_en
+  https://optozorax.github.io/portal/
+  https://kenbrakke.com/polycut/polycut.htm#algorithms
+
+"the permutohedron":
+  Permutohedron of order 3, a hexagon
+  Permutohedron of order 4, a truncated octahedron
+  https://hexnet.org/content/permutohedron
+  https://paulbourke.net/geometry/mecon/
+  super hexagon? https://superhexagon.com/
+
+GIGI:
+  https://www.ea.com/seed/news/gigi
+
+Goxel.xyz:
+  https://goxel.xyz/
+  voxel editor
+
+Handmade network:
+  https://handmade.network/
+
+
+Beautiful. Controller tester:
+  https://hardwaretester.com/gamepad
+
+Particle Life:
+  https://lisyarus.github.io/blog/posts/particle-life-simulation-in-browser-using-webgpu.html
+  Phase 1: compute the number of particles in each bin
+  Phase 2: run parallel prefix sum to compute the offset for each bin
+  Phase 3: place each particle into the corresponding bin
+
+Differentiable Logic Cellular Automata
+  https://google-research.github.io/self-organising-systems/difflogic-ca/
+  https://slightknack.dev/blog/difflogic/
+  Instead of NN w/ activation functions, use logic gates
+  needs to stay differentiable
+  
+Games reviewed by Richard Garfield (creator of Magic: The Gathering)
+  https://steamcommunity.com/profiles/76561197965552909/recommended/
+
+Dynamic wood and mesh breaking:
+  https://simonschreibt.de/gat/metal-gear-rising-slicing/
+
+Building Mechabellum:
+  https://www.youtube.com/watch?v=4VC3uEPFtlQ
+  lots of good insights on balancing a game
+    goal is fun, not necessarily balance or variety etc
+    units that are less fun, get weakend, not balanced
+  two key stats: pick rate, win rate
+    double red, double green rule:
+    high win rate, low pick rate, not really a problem
+    low pick rate, low win rate, maybe a problem
+    high pick rate, high win rate, big problem
+      meta has converged
+    low win rate, high pick rate, not a problem
+      player is happy, they're picking the unit
+        opportunity to learn
+      opponent is happy, they're winning, lol
+  unit being weak only affects itself
+  unit being strong becomes required
+  initial design process:
+    spreadsheet of variables: low/high hp, low/high range, low/high count,
+    pick most distinct options
+    spreadsheet function generate stats automatically
+      1 vs 1 the units should kill each other at the same time
+        so long range vs short range
+    needs balancing after, but it generates baseline
+      always mark why changing from baseline
+    basic counters:
+      high dmg counters single target
+      aoe dmg counts crowd
+      crowd counters high dmg
+      rock->scissors->paper->
+        high dmg -> single target
+        aoe -> crowd
+        crowd -> high dmg
+        aoe is single target ???
+    don't normally design units to counter
+      every unit has unique role
+    balancing issue usually has to do with all-arounder: no weakness, no strength
+    for melee unit, increasing hp is not healthy
+    for long range unit, esp high frequency, increasing dmg is not healthy
+  [tbc https://youtu.be/4VC3uEPFtlQ?t=2357]

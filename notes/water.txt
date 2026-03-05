@@ -168,3 +168,15 @@ Water Wave Simulation 2023:
 
 Advanced fluid sim shader:
   https://michaelmoroz.github.io/Reintegration-Tracking/
+
+Fast screenspace water:
+  https://www.shadertoy.com/view/MdXyzX
+
+particle sim for water over land:
+  https://lisyarus.github.io/blog/posts/simulating-water-over-terrain.html
+
+Timberborn on their water:
+  https://www.gamedeveloper.com/design/deep-dive-timberborn-s-water-mechanics
+
+water wall:
+  https://www.artstation.com/artwork/zxeeQ2

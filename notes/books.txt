@@ -5,3 +5,10 @@ Computer Graphics from Scratch
 
 Sprigland companion books:
   All the key algorithms printed out and annotated
+
+Learning Modern 3D Graphics Programming
+  (recommended by official Vulkan tutorial)
+  https://paroj.github.io/gltut/
+  plus:
+    https://github.com/RayTracing/raytracing.github.io
+    https://www.pbr-book.org/

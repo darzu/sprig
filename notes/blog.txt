@@ -473,3 +473,16 @@ Pipe Language?
 
   conditions are R2L, expressions are L2R ??
   
+How to learn computer graphics
+
+  Things i didn't realize:
+    it's easy to combine techniques if u have gbuffers
+      e.g. voxel oct tree ray tracer + slices rasterizer = no problem!
+    
+The main bottleneck to productivity is Understanding
+  understanding the code 
+    this is why excess code compexity is evil
+  understanding the problem
+  understanding the solution
+  once you "see the matrix", you become 10x
+  being 10x isn't about a person, it's about understanding

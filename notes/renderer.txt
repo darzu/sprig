@@ -878,6 +878,7 @@ What are mesh shaders?
   WebGPU support (post v1):
     https://github.com/gpuweb/gpuweb/issues/3015
   Likely emulatable with compute shaders
+  https://chaoticbob.github.io/2024/01/24/mesh-shading-part-1.html
 
 Some tips on improving Unity's default look:
   https://www.youtube.com/watch?v=f6zUot73-gg
@@ -936,6 +937,10 @@ Doom 3 glow:
 dithering types:
   https://tannerhelland.com/2012/12/28/dithering-eleven-algorithms-source-code.html
   https://ieeexplore.ieee.org/document/3288
+
+Dithering explainer:
+  https://visualrambling.space/dithering-part-1/
+  threshold map: just a repeating grayscale LUT used as a varying threshold
 
 
 "Next Generation Geometry" / shader culling:
@@ -1780,6 +1785,15 @@ Teardown voxel frame analysis:
     "Interestingly, while it looks like a height-based fog which thins out by elevation, it is actually just based on vertical view direction. A clever trick, and a fair amount cheaper.
   "This is now the fourth time that temporal reprojection and blending was applied in one frame: this is no surprise, given how much stochastic sampling was used to produce the image in the first place."
 
+  smoke w/ light scattering:
+    It will also alternate smoke pixels between forward-facing and backward-facing in the normal buffer, to achieve a faux light-scattering effect.
+
+  water ripples:
+    The game also has dynamic foam ripples on the water, when swimming or driving a boat. For this, the last N ripples are stored and evaluated in the same water shader, expanding and fading out over time:
+
+  "voxel cone tracing for shadows":
+    There are in fact two tracing modes coded: sparse and "super sparse". The latter will only do a few steps in each MIP level, starting at -1, before moving to the next coarser one. This effectively does a very rough version of voxel cone tracing, and is the mode used for puddle visibility.
+
 Teardown author blog:
   https://blog.voxagon.se/2020/12/03/spraycan.html
 
@@ -2402,3 +2416,622 @@ Rendering perf: instruction cache:
 
 PIX capture as sqllite, queries:
   https://devblogs.microsoft.com/pix/querying-the-pix-timing-capture-file-format/
+
+Mesh shaders in DirectX, Vulkan, and Metal:
+  https://chaoticbob.github.io/2024/01/24/mesh-shading-part-1.html
+  
+SSAO:
+  https://iquilezles.org/articles/ssao/
+
+Voxel renderers:
+  https://medium.com/@calebleak/cube-voxel-rendering-bc5d87c24c3
+    https://medium.com/@calebleak/quads-all-the-way-down-simple-voxel-rendering-fea1e4488e26
+
+Alpha to coverage:
+  https://www.humus.name/index.php?page=3D&ID=61
+  https://bgolus.medium.com/anti-aliased-alpha-test-the-esoteric-alpha-to-coverage-8b177335ae4f
+    The fwidth() function returns the sum of the pixel’s partial derivatives for a value, usually described as the equivalent of abs(ddx(value)) + abs(ddy(value))
+    fwidth() gives a good approximation of how much a value changes per pixel. If you divide a value by how much it’s changing it’ll rescale it to give you a nice crisp edge.
+  https://webgpu.github.io/webgpu-samples/?sample=alphaToCoverageEmulator
+
+How MSAA works:
+  https://therealmjp.github.io/posts/msaa-overview/
+
+Shadow mapping in The Witness:
+  http://the-witness.net/news/2013/09/shadow-mapping-summary-part-1/
+
+wrap shading / subsurface scattering:
+  https://developer.nvidia.com/gpugems/gpugems/part-iii-materials/chapter-16-real-time-approximations-subsurface-scattering
+  useds in clouds and Vegitation in The Witness
+
+wireframe w/ barycentric coordinates
+  https://web.archive.org/web/20130424093557/http://codeflow.org/entries/2012/aug/02/easy-wireframe-display-with-barycentric-coordinates/
+
+transform normals using adjugate:
+  https://x.com/EricLengyel/status/1867348503443476873
+  https://terathon.com/blog/transforming-normals.html
+
+IQ on voxel edges:
+  https://www.shadertoy.com/view/4dfGzs
+  https://iquilezles.org/articles/voxellines/
+
+Text rendering w/ SDFs in depth:
+https://acko.net/blog/subpixel-distance-transform/
+
+Sky:
+  https://www.shadertoy.com/view/slSXRW
+    https://old.reddit.com/r/GraphicsProgramming/comments/osbbhg/shadertoy_implementation_of_a_scalable_and/
+    https://sebh.github.io/publications/egsr2020.pdf
+      https://github.com/sebh/UnrealEngineSkyAtmosphere
+  Clouds:
+    https://old.reddit.com/r/GraphicsProgramming/comments/ops9ef/some_more_improvements_to_my_volumetric_clouds/
+      https://media.contentapi.ea.com/content/dam/eacom/frostbite/files/s2016-pbs-frostbite-sky-clouds-new.pdf
+      https://advances.realtimerendering.com/s2017/Nubis%20-%20Authoring%20Realtime%20Volumetric%20Cloudscapes%20with%20the%20Decima%20Engine%20-%20Final%20.pdf
+
+Shadow mapping + PCF:
+  https://www.shadertoy.com/view/lsKcDD
+  https://github.com/bevyengine/bevy/issues/3628
+  http://the-witness.net/news/2013/09/shadow-mapping-summary-part-1/
+    bias:
+      receiver plane (nixed?)
+      slope-scalenormal
+      float2 get_shadow_offsets(float3 N, float3 L) {
+        float cos_alpha = saturate(dot(N, L));
+        float offset_scale_N = sqrt(1 - cos_alpha*cos_alpha); // sin(acos(L·N))
+        float offset_scale_L = offset_scale_N / cos_alpha;    // tan(acos(L·N))
+        return float2(offset_scale_N, min(2, offset_scale_L));
+      }
+  https://learn.microsoft.com/en-us/windows/win32/dxtecharts/cascaded-shadow-maps
+  https://mynameismjp.wordpress.com/2013/09/10/shadow-maps/
+    https://github.com/TheRealMJP/Shadows
+  oriented depth bias: http://www.jp.square-enix.com/tech/library/pdf/2023_FFXVIShadowTechPaper.pdf#page=28
+
+Path of Exile 2:
+  https://www.youtube.com/watch?v=TrHHTQqmAaM
+    recommends TBN: (tangent, bitangent, normal)
+      transforms world space steps into texture space steps, and back
+      similar but not eq normal mapping
+      very powerful & useful
+  flow maps: https://www.shadertoy.com/view/mlscz8
+  subsurface raymarching (cheaper volumetric)
+  motion vectors for smoother flip book animations w/ low res
+  flow maps, subsurface raymarching, motion vectors for flip book animations,
+  beach waves on shore,
+  most techniques use TBN basis, 
+  most use fields
+    liquids tie normal map to opacity?
+  field = value (f32?) + gradient (vec3f) ?
+    can add, multiply
+    carries info on surface opacity and normal of surface
+  global illumination:
+    others:
+      radiance probes everywhere (low resolution)
+      bake everything (not dynamic)
+      path trace everything (and then try to denoise)
+      TAA will fix it (it won't)
+      small radius SSGI (looks terrible)
+      wait until GPU's become more powerful
+      (let's not talk about RTX) 
+      previously: SSVGI
+        +uses exclusively image space data
+        -calculates GI for every point from scratch
+        -still needs denoising
+    inspiration from screen space shadows,
+      low res shadows need low res info ?
+      screenspace shadows hierarchy (cascades)
+    radiance probes
+      do we need lots of low resolution probes? Or a few high res ones?
+        Lumen uses two levels
+        everyone does it a little differently
+
+DDA:
+  https://lodev.org/cgtutor/raycasting.html
+
+Radiance cascades:
+  3D: https://www.shadertoy.com/view/X3XfRM
+  https://m4xc.dev/articles/fundamental-rc/
+    https://drive.google.com/file/d/1L6v1_7HY2X-LV3Ofb6oyTIxgEaP4LOI6/view
+  https://mini.gmshaders.com/p/radiance-cascades
+  https://tmpvar.com/poc/radiance-cascades/
+    https://tmpvar.com/poc/radiance-cascades/flatland-2d/flatland-2d.js
+  idea: require 2x2x2 min emitter size, allows cheaper DDA
+  https://github.com/simondevyoutube/Shaders_RadianceCascades/
+  https://www.shadertoy.com/view/mtlBzX
+  https://jason.today/rc
+
+  partial impl in bevy (abandoned): https://github.com/bevyengine/bevy/pull/10000
+
+  Juan:
+    https://x.com/reduzio/status/1810647110536032402
+    There is still such level of hype about radiance cascades even a year after the announcement.
+
+    The problem is, this technique, as great as it is, does not do what most people thinks it does…
+
+    So, let me make it clear, for 2D its actually really useful due to how 2D works, but for 3D to me its a non starter for the most part. There are a lot of problems with it that are very hard to solve. The main issue is that, as it writes “by using the higher cascade probes to continue the ray” what this really means is that you have to interpolate the 8 nearby probes depending on the UVW coordinates inside of the octant.
+
+    In 3D this does not work as simple as in 2D, because to interpolate you need to have a means of occlusion (otherwise light will come through walls). To solve this you can prooobably raycast from bigger to smaller cascades, few rays and compute a general occlusion term. But at the smaller cascade size, you need to interpolate the pixel 3D position between the 8 neighboring probes anyway and you still need occlusion (else again, light coming through walls). This can probably be done in screen space, which may have artifacts (i don´t know)…
+
+    Additionally, there is another problem. Again because we have to interpolate and occlude the bigger cascades, if the space between them is too big, interiors will probably not get any lighting at all. This means the bigger cascade needs to have a limit. So at much, your whole system will likely have only 3, at much 4 levels of cascades, kind of limiting the technique usefulness. But, okay, if you have a level of a limited size, it can be made to work.
+
+    But what about open world?.. That’s another can of worms, because the memory required would be too big. Instead, you have to use cascading of radiance cascades for this! (basically running the whole thing several times at different sizes and interpolating). Or have them clip-map style, still really hard…
+
+    So, at the end of the day. My feeling is that this is a great technique for 2D, but extremely limited for 3D. The only way I can see it working is kind of as an extension to DDGI to give it more high frequency detail… but which you can still do in screen space… Ah but I know what you think, doesn’t Path of Exile use this in production? Yes, but they use it in screen space, which works because the game has a limited view range…
+
+    So, don’t be dissapointed, GI is like this, thousands of papers come out, but most have very limited use
+
+  3D voxels: https://www.shadertoy.com/view/M3ycWt
+
+  https://x.com/mxacop/status/1822851339635867878?s=46&t=ZjF9if4qtE9ppAnug9UOPQ
+
+meshlets / nanite in Bevy:
+  https://jms55.github.io/posts/2024-06-09-virtual-geometry-bevy-0-14/
+  https://jms55.github.io/posts/2024-11-14-virtual-geometry-bevy-0-15/
+
+Restir, gentler intro:
+  https://interplayoflight.wordpress.com/2023/12/17/a-gentler-introduction-to-restir/
+
+GI w/ surfels (gibs ?)
+  https://www.youtube.com/watch?v=Uea9Wq1XdA4
+  EA, spawn little disks on objects
+    spawn using gbuffer, trying to maintain density
+    despawn when too dense
+  gbuffer has object ID / transform ID so surfel knows their transform and can be updated in future frames
+  60mb
+  cool spatial hash!
+    it's a grid near the camera and skewed trapezoids farther away. It gives similar properties to a perspective matrix w/ near content has higher resolution, but it's dead simple to index into.
+
+DDGI:
+  https://morgan3d.github.io/articles/2019-04-01-ddgi/
+
+Anti-aliasing resource:
+  https://blog.frost.kiwi/analytical-anti-aliasing/
+  "Analytical AA":
+    We evaluate the shadow per-pixel against the mathematical equation of the stretched sphere or capsule. This makes capsule shadows analytical.
+  
+MSAA x4 is "free" on mobile?
+  "Developing High Performance Games for Different Mobile VR Platforms"
+    https://gdcvault.com/play/1024538
+  "Next-Generation AAA Mobile Rendering"
+    https://gdcvault.com/play/1020756
+  https://github.com/KhronosGroup/Vulkan-Samples/tree/main/samples/performance/msaa#color-resolve
+
+FXAA:
+  https://github.com/FrostKiwi/treasurechest/blob/main/posts/analytical-anti-aliasing/shader/FXAA-3.11.glsl
+  4.0 with TAA? https://web.archive.org/web/20120120082725/http://timothylottes.blogspot.com/2011/12/fxaa-40-stills-and-features.html
+
+TAA:
+  https://sugulee.wordpress.com/2021/06/21/temporal-anti-aliasingtaa-tutorial/
+
+Soft shadows with capsules:
+  https://www.shadertoy.com/view/3stcD4
+  like Last of Us
+
+Ambient Occlusion
+  analytical w/ sphere: https://www.shadertoy.com/view/4djSDy
+  analytical approaches for complex geo: https://research.nvidia.com/sites/default/files/pubs/2010-06_Ambient-Occlusion-Volumes/McGuire10AOV.pdf
+
+Dithering:
+  How to (and how not to) fix color banding
+    https://blog.frost.kiwi/GLSL-noise-and-radial-gradient/
+
+Voxel Octtree:
+  https://www.shadertoy.com/view/4sVfWw
+    derivative: https://www.shadertoy.com/view/NtySWw
+  https://www.shadertoy.com/view/DlGGDd
+  quad tree:
+    https://www.shadertoy.com/view/MlsXDf
+
+DDA explained:
+   Digital Differential Analyzer Algorithm
+  https://aaaa.sh/creatures/dda-algorithm-interactive
+
+After Blinn Phong:
+  https://graphicscompendium.com/gamedev/15-pbr
+
+WebGPU Occlusion Query/Queries:
+  https://jsgist.org/?src=907078b04dde43a95d34d6ba46a21f69
+
+Assassin's Creed Shadows
+  https://www.youtube.com/watch?v=yj5pYktC3X8
+  Anvil
+    Nicolas Lopez
+    Gen 5 only (PS5, XB SX, XB SS)
+  16km x 16km
+    cells
+    stream grid layers
+  systems:
+    time of day
+    destruction
+    ray tracing
+    virtual geo
+    weather
+    seasons
+  grid chunks:
+    16km x 16km
+    short range grid
+      load: 96m, cell: 32m
+      small objects
+    main grid
+      load: 128m, cell: 32m
+      regular props, NPC spawners, ... heaviest
+    long range grid
+      load: 384m, cell: 128m
+      large objects
+    Fake entity grid
+      load: 1024m-4096m, cell: 512m
+      decimated assets, aggregated assets
+    Point Cloud
+      mass imposter rendering (?)
+      until 8182m
+      lots of trees
+        huge amount of quads, billboards
+    Terrain Vista
+  GPU driven rendering:
+    Unity
+      GPU cluster culling, indirect draw
+      DX11, MultiDrawIndexedInstanceIndirect
+      Discrete LODs, clusted meshes
+      culling at instance/cluster/triangle level
+      batching on CPU
+      no bindless: 
+        per-material batching
+        large number of draw calls
+      no async: 
+        per-pass culling before each pass
+        delays actual rendering
+    Valhalla/Mirage
+      Mass instancing, batching
+      DX12
+      GPU Instance Renderer (GPUIR)
+      Execute indirect
+      More work on GPU
+      Batch on load
+      Bindless
+      Async culling
+      Before:
+        CPU: Per pass, per node, per lod, gather batches, sort batches, fill instance list
+        GPU: cull instances, draw batches
+      After:
+        CPU: Per frame, cull nodes
+        GPU: cull instances, update LOD, expand batches, per pass, cull instances, draw batches
+      culls millions of instances per frame
+    Shadows
+      Continuous LODs, pixel precise geometry
+    Database:
+      container for data structures shared between CPU and GPU
+      DOD (Data Oriented Design), with the convenience of C++ OOP on GPU (?)
+      Relieds on Shader Input Groups (SIG) to generate binding code for C++ and HLSL [Rodrigues17]
+      Share full scene description between CPU and GPU
+      database analogy:
+        each member in the structure would be a column
+        each instance within the array of MyObject would be a row in the table
+        databasetable MyObject <RowsPerPage = 16384> {
+          f32_4x4 transform;
+          u32 type;
+          u32 flags;
+          Row<MyObject> parent;
+        }
+        relations:
+          1 to 1 relation, kinda like:
+          struct MyObject {
+            f32_4x4 transform;
+            u32 type;
+            u32 flags;
+            MyObject* parent;
+          }
+          also does 1 to N relations:
+          databasetable MyObject {
+            Range<MyObject> children; // like ptr + count
+          }
+        different table instances for CPU and GPU storage
+        Copy: copy whole table from CPU to GPU
+        Dirty rows/pages update
+          CPU data storage
+          writing maintains a dirty bitfield
+          copy dirty row/page ranges
+        Dirty page copy
+          no CPU storage
+          writing creates a dirty page memory
+          compute shader writes dirty pages
+        can decide SoA vs SoA per table, (even mix and match?)
+  GPUIR:
+    CPU Frame Culling
+      coarse frustum culling
+      indirect draw calls buckets
+    GPU Frame Culling
+      multi frustum culling, of all passes
+      LOD selection and blending
+    GPU Pass Culling
+      frustum + occlusion culling
+        on tile (?) per pass culling, per cascade
+      data required by VS+PS
+    Render
+  MPH (Micropolygon geometry)
+    based on Nanite
+    heirarchy of continuous LODs
+      METIS partitioning for cluster DAG continuous LOD selection
+        https://github.com/KarypisLab/METIS
+      Mesh Shader / Softwar Rasterization into 64bit visibility buffer
+      2 pass HZB occlusion culling
+      deferred material rendering from visiblity buffer into gbuffer
+      GPU feedback based on cluster page streaming
+      128 triangles per cluster
+    per clsuter geometry streaming
+    for both gbuffer and shadow raster
+    1/2 memory of standard GPUIR
+    differences:
+      Simplygon for cluster group simplification
+      support of user custom shader code
+      bindless material support with draw call compaction
+      scanline SW rasterization using XY swapping w/ virtual coords (better branch coherency)
+      lots of tweaking to reduce root page size for a high amount of "lego-kits"
+  city scene example:
+    MPH (ONLY for static opaque geometry)
+      main city architecture
+      instances: 28k main view
+      triangles: 34m rendered (all passes), 18m main view + 16m shadows & misc
+      rasterization: 30m software, 4m hardware
+    instance renderer
+      instances: 1.3m pre-culling, 9k rendered, ~99% cull efficiency
+      triangles: 410m pre-culling, 1.7m rendered
+  forest scene example:
+    MPH:
+      instances: 1k main view
+      triangles: 7.6m, 1.6m main view, 6m shadows
+      rasterization: 7.3m software, 0.3m hardware
+    instance renderer:
+      instances: 3m pre culling, 31k rendered (~99% efficiency)
+      triangles: 1.5b pre-culling, 6.8m rendered
+  so no need for alpha test with MPH
+  GI:
+    start: https://youtu.be/yj5pYktC3X8?t=1348
+    Unity: volumetric open world GI
+      baked irradiance volumes
+      time of day support added in Syndicate w/ key frame blending
+      great talk: Josh Hobson 2019 (god of war)
+      uniform probe distrubtion, mimapped 3d volumes, cover the whole world
+    Origins: sparse, adapt to very large open worlds
+    Shadows: Seasons + RTX GI pipeline
+      mandatory ray tracing in the hideout
+      baked volumetric diffuse gi w/ cpu path tracing (easier to debug, no memory cliffs, easier to distribute)
+    low: baked diffuse, dynamic global cubemap, relightable local cubemap, screen space reflections
+    med: -baked diffuse +rtx diffuse
+    high: rtx diffuse, rtx specular
+    baked GI:
+      hand painted density map
+      probes distributed in sparse octtree
+        node subdivided if it contains surfels
+        discard probes in geometry
+        avg 10% vs uniform
+      format: YCoCg, Y: directional luma as spherical harmonic, CoCg: chroma as scalar
+    run time baked GI:
+      voxels inserted in cascaded 3d volumes
+        uniform, not sparse (too slow with live decompression & blending)
+        cascade blending
+      sparse data -> (decompressed) -> not sparse, cascades
+    baked data size: 9gb
+    sepecular:
+      screen space reflections -> relightable cubemaps -> dynamic cubemap at player pos
+  Rtx:
+    typical urban: 2k+ BLASes, 30k+ instances, 300mb BLAS, 20mb TLAS
+    software ray tracing for low end PCs like 1070s
+      3-level BVH with partial updates
+  Use explicit indoor volumes:
+    avoid light leaks, list of planes, same data as bakedGI
+  light probes convoluted into
+    irradiance volume
+      cosine weighted irradiance, 5x5 octahedral mapping
+    radiance cache
+      high frequency
+      10x10 pixel octahedral
+  radiance cache
+    short rays with probe fallback, 
+    temporally stable, less precise, trade-off between precision and stability
+  transparency:
+    stochastically flip rays (w/ blue noise)
+  point lights (ray traced indirect diffuse):
+    omni-directional clustered lights
+    based on deferred clustered lighting
+      2 level hierarchy
+        l0: 260k clusters
+        l1: 4k "highclusters" (16x16x16)
+          a highcluster is 4x4x4 clusters
+    uniform grid instead of froxels
+      centered around camera
+      "just" a different spatial mapping
+    10x speed up in challenging scenes
+  specular raytrace indirect
+    (reflections?)
+    denoising more difficult
+    BVH quality issues more important
+  denoising: A-Trous, ReBLUR, Modular Snowdrop Denoiser (MSD)
+    use material masking for characters, vegetation, dynamic objects
+  costs:
+    1024 diffuse probes: gbuffer 0.34ms, sun shadows: 0.19ms, lighting update: 0.36ms, lighting convolution: 0.05ms, probe relocation: 0.09ms (1.03ms PS5)
+    per pixel rtx diffuse (W/2, H/2 res): SS trace 0.54ms, WS trace 1.38ms, lighting 1.17ms, denoising 1.91ms (5ms total PS5 1440p)
+    per pixel rtx specular (W/2): tracing 2.73ms, lighting 1.51ms, denoising 2.43ms, total 6.67ms (PS5 pro 1440p) (RTX 4080 1440p is 1.9ms)
+  weather and seasons:
+    "Atmos" fluid simulation
+      advects humidity, temperature
+    "Ambiance Graph" drives all logic
+      VFX, Fog, Rain, Wetness, Puddle level
+    Deferred rain and snow
+    Deep snow for footsteps
+    Multistate entities
+  deferred rain
+    Lagarde 12
+    wetness mask in gbuffer (single float)
+      darken albedo, lower roughness
+    puddle mask
+  deep snow:
+    stamp cpasules and textures
+    terrain deformation, heightmap
+  weather occlusion, top-down indoor depth map
+    raster, same indoor volumes used for GI (medium range)
+    for rain: orient depth map w/ rain direction (close range)
+  profiler:
+    high level:
+      find transient memory peak per frame
+      track resource lifetimes
+    low level:
+      inspect allocators
+      debug and optimize aliasing
+      memory waster
+  telemetry:
+    track performance in world cells
+  future:
+    baked GI is really hard, want to do more RTX for simpler pipelines
+  lower end mac, used software ray tracing (~M1)
+  future: data driven frame graph scheduling?
+
+Anvil: https://www.youtube.com/watch?v=CcYq18bkvyU
+  editor in C#
+    "editor as a SKU", WYSIWYG
+  engine in C++
+  use TCP/IP to communicate between: editor, engine, data service
+  engine:
+    very jobified: culling, animation
+    GPU driven pipelines
+  shaders:
+    code shaders: authored by programmer, boiler plate gen, versioned with code
+      lazy load or pre-warm: auto-detect spiky lazy load and flag for future pre-warm
+    data shaders: authored by tech artists, shader graph, versioned with data
+      QA sessions are used to determine which shader permutations are needed
+        merge similar?
+      pre-warm aggressively
+  frame graph:
+    resource producer / consumer
+    partially explicit scheduling
+    resource lifetime resolution
+    memory aliasing for non-overlapping resources
+
+Async compute:
+  https://raphlinus.github.io/gpu/2025/03/21/good-parallel-computer.html
+  https://www.youtube.com/watch?v=ctow9BO79nA (Building Acceleration Structures Using Async Compute)
+  classic: most work through single queue (graphics runs in serial with compute)
+  async style: ~3 queues, 1 graphics, 1 compute, 1 copy
+  use explicit sync to coordinate accross queues
+  great for: ALU heavy, low bandwidth, like:
+    cloth, particle, skinning, culling, compaction, occlussion
+    gpu-driven scene prep (building draw & dispatch args)
+  downside:
+    async can slow things if multiple queues fight for limited bandwidth
+    async can cause cache thrashing
+    sync overhead
+    AMD/NVIDIA works better, mobile tilers less well
+    scheduling balance
+  WebGPU: only single queue per device (DX12,Vulkan,Metal support multiple queues)
+  frame graphcs used to place passes on appropriate queues and insert minimal sync
+
+  https://docs.nvidia.com/deeplearning/tensorrt-rtx/latest/inference-library/compute-graphics.html
+
+Async compute:
+  https://interplayoflight.wordpress.com/2025/05/27/async-compute-all-the-things/
+  parallel by default: batches of vertices, pixels, threads
+  serial by default: pipeline of fixed functions, passes, commands, queues,
+  (world pipe = geometry processing)
+  fences signal resource dependencies
+
+
+
+
+WebGPU sync:
+  no explicit semaphores/fences and resource barriers
+  single queue: work executes in submission order
+  command buffers: cmds run in order recorded
+    passes are strongly ordered -> end of pass means you can view its writes
+  no explicit pipeline barriers
+  given declared usages and pass roles, implementation does all layou/state transitions and memory visiblity ops
+  validation prevents hazards like writing to color attachment and reading from it
+    split into different passes to create a sync point
+  device.queue.onSubmittedWorkDone or resource.mapAsync acts like a fence
+  within shaders:
+    workgroupBarrier(), storageBarrier(),
+      for intra-dispatch ordering, doesn't change pass boundries
+  for rendering 6 point lights to 6 cube faces:
+    try rendering all faces in one pass (6 render targets?) ... hmmm ..
+    run compute first to pre-load work, hopefully causes more parallelism
+    FUTURE: multi-view: @builtin(view_index)
+
+Perf optimization, use Peak-performance-percentage:
+  https://developer.nvidia.com/blog/the-peak-performance-analysis-method-for-optimizing-any-gpu-workload/
+  also good:
+  https://developer.nvidia.com/blog/advanced-api-performance-async-compute-and-overlap/
+  overlap different data paths: FP, ALU, Memory Requests, RT Core, Tensor Core, Graphics-pipe
+  compute overlap with compute is easier for GPU, try moving more things to compute (like post processing)
+  try running async work between frames
+
+Async deep dive:
+  https://gpuopen.com/download/GDC2017-Asynchronous-Compute-Deep-Dive.pdf
+  https://www.gdcvault.com/play/1024385/Advanced-Graphics-Tech-Async-Compute
+  kinda like hyperthreading, sharing resources
+
+about barriers / GPU synchronization:
+  https://gpuopen.com/download/gdc-2019-agtd5-breaking-down-barriers.pdf
+  https://www.gdcvault.com/play/1025818/Advanced-Graphics-Techniques-Tutorial-Breaking
+
+A good parallel computer:
+  https://raphlinus.github.io/gpu/2025/03/21/good-parallel-computer.html
+  https://docs.google.com/document/d/1gEqf7ehTzd89Djf_VpkL0B_Fb15e0w5fuv_UzyacAPU/edit?tab=t.0#heading=h.27frrspcevv4
+
+  https://www.ea.com/seed/news/seed-siggraph2017-compute-for-graphics
+
+Fake soft body:
+  https://heyyocg.link/en/niagara-easy-soft-body-simulation/
+
+Forum for vfx:
+  https://realtimevfx.com/
+
+Doom vfx reel:
+  https://www.youtube.com/watch?v=PLbTLg8jOG8
+
+Voxel engines spreadsheet:
+  https://docs.google.com/spreadsheets/d/1pVuhjBp57mqdu9N5Dt4jicEucWlLDNgM2f1MveOiwF0/edit?gid=0#gid=0
+
+Clipmaps:
+  Clipmaps (a.k.a. cascaded voxel volumes) are a way to keep a large, world-space voxel GI volume around the camera without exploding memory or update cost.
+
+  What they are
+
+  A stack of N cubic voxel volumes centered on the camera.
+  Each level L has the same resolution (e.g., 128³ or 256³) but doubles voxel size and coverage: voxelSizeL = baseSize * 2^L, extentL = res * voxelSizeL.
+  Levels overlap; you sample the highest-res level that contains the point and blend across a small band to avoid popping.
+  Key rules
+
+  - Grid alignment: snap each level’s origin to its voxel grid (origin = floor(cameraPos / voxelSizeL) * voxelSizeL). This prevents shimmer.
+  - Ring-buffer updates: when the camera crosses a voxel boundary, slide the volume and only re-voxelize the newly exposed slabs, not the whole volume.
+  - Two LODs: within-level mip for cone width; cross-level selection for distance/coverage.
+
+Brickmap:
+  unpack brick coordinate from u32
+
+    // Unpack atlas brick coord (e.g., 10 bits per axis), or store xyz in 3×u16s.
+    let abx = (pt      ) & 1023u;
+    let aby = (pt >>10 ) & 1023u;
+    let abz = (pt >>20 ) & 1023u;
+
+Neat golden ratio spiral:
+  https://www.shadertoy.com/view/mdlXz4
+  const float goldenAngle = 2.39996323;
+
+  void mainImage( out vec4 fragColor, in vec2 fragCoord )
+  {
+      vec2 uv = fragCoord/iResolution.xy;
+      uv.x *= iResolution.x / iResolution.y;
+      
+    float sum = 0.0;
+    float ang = 0.0;
+    for (float radius = 0.0; radius < 0.15; ang += goldenAngle, radius += 0.002)
+    {
+      vec2 samplePos = vec2(0.5, 0.5) + vec2(cos(ang), sin(ang)) * radius * 2.;
+          sum += 1.0 - smoothstep(0.005, .01, distance(uv, samplePos));
+    }
+      
+      fragColor = vec4(sum);
+  }
+
+Better voxel raycasting w/ transparency and normals ?
+  https://www.shadertoy.com/view/dsSXWh
+
+Arrow renderer in 3D flat:
+  https://gitlab.com/unconed/use.gpu/-/blob/master/packages/workbench/src/primitives/raw-arrows.ts

@@ -237,3 +237,6 @@ either init time or GAME_WORLD etc
   if we did that i think we could accurately measure self-time for systems
   but that might not capture other time like file downloading
 */
+
+Very good article:
+  https://blog.voxagon.se/2025/03/28/thoughts-on-ecs.html

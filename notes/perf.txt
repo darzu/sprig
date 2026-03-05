@@ -678,3 +678,66 @@ Measurements on IdeaPad 3 (6/25/24)
 
 "20 million particles in javascript":
   https://dgerrells.com/blog/how-fast-is-javascript-simulating-20-000-000-particles
+
+JS micro tasks:
+  https://developer.mozilla.org/en-US/docs/Web/API/HTML_DOM_API/Microtask_guide
+  https://developer.mozilla.org/en-US/docs/Web/API/HTML_DOM_API/Microtask_guide/In_depth
+
+Javscript structs:
+  https://github.com/tc39/proposal-structs?tab=readme-ov-file
+
+Record & Tuple:
+  https://github.com/tc39/proposal-record-tuple
+    https://immutable-js.com/
+    https://hypirion.com/musings/understanding-persistent-vector-pt-1
+
+WebGPU best practices:
+  https://docs.google.com/presentation/d/1Q-RCJrZhw9nlZ5py7QxUVgKSyq61awHr2TyIjXxBmI0/edit#slide=id.g10c3f09cda1_0_268
+
+Chrome timestamp queries:
+  "enable-webgpu-developer-features" in about:flags,
+
+nvidia nsight:
+  https://frguthmann.github.io/posts/profiling_webgpu/
+  https://toji.dev/webgpu-profiling/pix.html#enabling-debug-markers
+  run as admin 
+  "C:\Program Files\Google\Chrome Dev\Application\chrome.exe"
+  --disable-gpu-sandbox --disable-gpu-watchdog --enable-dawn-features=emit_hlsl_debug_symbols,disable_symbol_renaming --no-sandbox --disable-direct-composition -gpu-startup-dialog
+
+  maybe:
+    "C:\Program Files\Google\Chrome Dev\Application\chrome.exe" --type=gpu-process --disable-gpu-sandbox --no-sandbox --string-annotations=is-enterprise-managed=no --start-stack-profiler --gpu-preferences=UAAAAAAAAADsAAAEAAAAAAAAAAAAAAAAAABgAAEAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAYAAAAAAAAAAYAAAAAgAAABAAAAAAAAAAKAAAAAAAAAAfAAAAFwAAAGVtaXRfaGxzbF9kZWJ1Z19zeW1ib2xzAB8AAAAXAAAAZGlzYWJsZV9zeW1ib2xfcmVuYW1pbmcACAAAAAAAAAA= --field-trial-handle=2052,i,14851821319444508321,17419945985304791007,262144 --variations-seed-version=20240923-140055.592000 --mojo-platform-channel-handle=2028 /prefetch:2
+
+nvidia nsight tested version:
+  Application: NVIDIA Nsight Graphics
+  Version: 2024.2.0.0 (build 34634673) (public-release)
+
+nsight getting started:
+  https://developer.nvidia.com/nsight-graphics/get-started#documentation
+  https://developer.nvidia.com/blog/harness-powerful-shader-insights-using-shader-debug-info-with-nvidia-nsight-graphics/
+  https://developer.nvidia.com/blog/identifying-shader-limiters-with-the-shader-profiler-in-nvidia-nsight-graphics/
+  https://developer.nvidia.com/blog/optimizing-vk-vkr-and-dx12-dxr-applications-using-nsight-graphics-gpu-trace-advanced-mode-metrics/
+
+  good 101:
+    https://www.nvidia.com/en-us/on-demand/session/gtcspring21-e32683/
+      peek-perf% method
+        https://developer.nvidia.com/blog/the-peak-performance-analysis-method-for-optimizing-any-gpu-workload/
+      top throughput unit%:
+        <60% -> latency limited by unit X -> reduce latency & increase parallelism
+        >80% -> throughput limited by unit X -> remove work from unit X
+  
+  https://docs.nvidia.com/nsight-compute/ProfilingGuide/index.html#statistical-sampler
+
+Generational references:
+  https://verdagon.dev/blog/generational-references
+
+Dig deeper into arena allocators
+
+Raph on Zen vs Cuda vs Tensor cores:
+  https://news.ycombinator.com/item?id=41471947
+
+SIMD matters:
+  https://box2d.org/posts/2024/08/simd-matters/
+
+RTX perf:
+  https://zeux.io/2025/03/31/measuring-acceleration-structures/
+  "And I’m not repeating all of this again for fp32. I would argue that fp32 is quite excessive for 99% of meshes in any game, and you need to be using either fp16 or snorm16 position components if you are trying to actually optimize the memory footprint of your game. ↩"

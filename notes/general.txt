@@ -1438,11 +1438,6 @@ ffmpeg -i canvas_change.mov -vcodec h264 \
   -acodec aac \
   canvas_change.mp4
 
-cd /Users/darzu/screenshots/
-ffmpeg -i hotswapInline.mov -vcodec h264 \
-  -acodec aac \
-  hotswapInline.mp4
-
 Bluesky's "Ecosystem Overview":
   https://gitlab.com/bluesky-community1/decentralized-ecosystem#ecosystem-overview
 
@@ -1661,3 +1656,57 @@ Bend: High level language that runs on GPUs
   https://higherorderco.com
   https://github.com/HigherOrderCO/Bend
   https://news.ycombinator.com/item?id=40390287
+
+Floating point numbers:
+  https://blog.demofox.org/2017/11/21/floating-point-precision/
+    That means that from 0 to 1, you have [between 6 and 7 digits of precision] to work with
+    ...
+    floating point numbers can exactly represent a large number of integers.
+    For floats, it’s -16,777,216 to +16,777,216. (\pm 2^{24})
+  https://fabiensanglard.net/floating_point_visually_explained/
+  https://tomforsyth1000.github.io/blog.wiki.html#[[A%20matter%20of%20precision]]
+  https://docs.oracle.com/cd/E19957-01/806-3568/ncg_goldberg.html
+  https://www.h-schmidt.net/FloatConverter/IEEE754.html
+  https://randomascii.wordpress.com/category/floating-point/
+  
+Posits:
+  https://posithub.org/docs/BeatingFloatingPoint.pdf
+  alternative to floats?
+  just use ints?
+    https://x.com/tom_forsyth/status/1886314782501810486
+
+Explaining dependant types:
+  https://www.cs.cornell.edu/courses/cs4110/2018fa/lectures/lecture31.pdf
+  https://en.wikipedia.org/wiki/Lambda_cube
+
+Language wars
+  Better C:
+    Odin, Zig, Nim, D, Beef
+  I think Odin or Zig probably
+
+Post mortem on Bramble deck builder roguelite:
+  https://slothwerks.substack.com/p/bramble-royale-steam-launch-retro
+
+"Best programmers:"
+  https://endler.dev/2025/best-programmers/
+
+"Migrating away from Rust" (and Bevy):
+  https://deadmoney.gg/news/articles/migrating-away-from-rust
+
+Odin lang:
+  https://zylinski.se/posts/a-programming-language-for-me/
+
+How Media Molecule Does Serialization:
+  https://handmade.network/p/29/swedish-cubes-for-unity/blog/p/2723-how_media_molecule_does_serialization
+
+Simple serialization system:
+  https://rxi.github.io/a_simple_serialization_system.html
+
+GPU erosion system:
+  https://diglib.eg.org/server/api/core/bitstreams/a5c270b1-da1c-498d-bb6d-5fa372ec54e0/content
+
+Different memory allocators:
+  https://www.slembcke.net/blog/CustomAllocators/
+  https://www.gingerbill.org/series/memory-allocation-strategies/
+  https://zeux.io/2020/02/27/writing-an-efficient-vulkan-renderer/
+  https://advances.realtimerendering.com/s2023/AaltonenHypeHypeAdvances2023.pdf

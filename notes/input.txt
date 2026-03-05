@@ -21,3 +21,6 @@ TODO: take notes on controller bindings in:
 
 Chrome: keyboard layout
   getLayoutMap
+
+Latency considerations:
+  https://james.darpinian.com/blog/latency-platform-considerations

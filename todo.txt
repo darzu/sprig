@@ -71,3 +71,9 @@ STANDALONE PROJECTS FOR A (HYPOTHETICAL) NEW DEV:
 [ ] music maker
 [ ] 3d sterio music playing
 [ ] particle system
+
+----
+[ ] fix shadow maps!
+  choose a lighting strategy. Maybe it's unlit + shadow.
+  shadowmap use objectIds instead of depth? or faceId?
+[ ] fix up sprig.lang, add more samples, seperate projects
