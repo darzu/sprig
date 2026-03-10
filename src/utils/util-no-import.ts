@@ -80,3 +80,8 @@ export function toInt(s: string | undefined): number | undefined {
   if (isNaN(res)) return undefined;
   return res;
 }
+
+// TODO(@darzu): 
+// export function toFixedWidth(n: number, preDigits = 2, postDigits = 2, onlyPos = false) {
+// // e.g. "+00.01", "-01.00"
+// }

@@ -236,7 +236,7 @@ function getTriInds(m: Mesh, startIdx: number, count: number): U16Array {
 }
 
 let tempQuadData = new Uint16Array(256);
-function getQuadInds(m: Mesh, startIdx: number, count: number): U16Array {
+export function getQuadInds(m: Mesh, startIdx: number, count: number): U16Array {
   const dataLen = count * 2 * 3;
   if (tempQuadData.length < dataLen) tempQuadData = new Uint16Array(dataLen);
   for (let qi = startIdx; qi < startIdx + count; qi++) {

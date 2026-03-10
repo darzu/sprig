@@ -127,6 +127,6 @@ export function triggerDownload(filename: string, body: string) {
   fakeBtn.click();
   setTimeout(() => {
     // TODO(@darzu): throws error?
-    document.removeChild(fakeBtn);
+    document.body.removeChild(fakeBtn);
   }, 500);
 }

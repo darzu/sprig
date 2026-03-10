@@ -381,7 +381,6 @@ function fractionDigitsFromStepSize(step: number): number {
   return step >= 1 ? 0 : Math.ceil(Math.log10(1 / step));
 }
 
-// TODO(@darzu): REFACTOR. use this everywhere
 export function mkEl<K extends keyof HTMLElementTagNameMap>(
   tag: K,
   attributes: Record<string, string | number>,
@@ -391,10 +390,10 @@ export function mkEl<K extends keyof HTMLElementTagNameMap>(
   for (let [key, val] of Object.entries(attributes))
     e.setAttribute(key, val.toString());
   if (children)
-    if (isString(children)) e.textContent = children;
+    if (typeof children === "string") e.textContent = children;
     else
       for (let c of children) {
-        if (isString(c)) e.insertAdjacentText("beforeend", c);
+        if (typeof c === "string") e.insertAdjacentText("beforeend", c);
         else e.appendChild(c);
       }
   return e;

@@ -732,6 +732,7 @@ function createCyPipeline(
         const fixedSize =
           typeof r.ptr.init === "number" ? `, ${r.ptr.init}` : "";
         return (
+          // TODO(@darzu): we no longer need this struct wrapping an array, we can just have top-level arrays
           structStr +
           `struct ${pluralize(capitalize(r.ptr.name))} {\n` +
           `ms : array<${capitalize(r.ptr.name)}${fixedSize}>,\n` +
@@ -911,6 +912,7 @@ export function bundleRenderPipelines(
         ptr: p.pool.unisPtr,
         access: "read",
       };
+      // TODO(@darzu): get rid of dynamic bind group creation
       const uniBG = mkBindGroup(
         device,
         resources,
@@ -930,6 +932,7 @@ export function bundleRenderPipelines(
           if (!meshHandleIds.has(m.mId)) continue;
           let mask = p.ptr.meshOpt.meshMask ?? DEFAULT_MASK;
           if ((mask & m.mask) === 0) continue;
+          // TODO(@darzu): instead of updating the bind group per mesh, just use an index into a storage array?
           bundleEnc.setBindGroup(1, uniBG, [
             m.uniIdx * p.pool.unis.struct.size,
           ]);

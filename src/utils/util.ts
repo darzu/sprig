@@ -413,3 +413,11 @@ export function makeWeakCache<V extends object>(
     getOrCreate,
   };
 }
+
+export function lazy<R>(fn: () => R): () => R {
+	let cache: R | undefined = undefined;
+	return () => {
+		cache ??= fn();
+		return cache;
+	};
+}

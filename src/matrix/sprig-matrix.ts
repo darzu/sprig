@@ -348,7 +348,7 @@ export function tV(...xs: number[]): V2 | V3 | V4 {
   else throw new Error(`Unsupported vec size: ${xs.length}`);
 }
 
-export module V2 {
+export namespace V2 {
   export type T = V2;
   export type InputT = T | readonly [number, number];
   const GL = GLM.vec2;
@@ -468,8 +468,7 @@ function _getYaw(x: number, y: number): number {
 }
 export const getYaw = _getYaw;
 
-// TODO(@darzu): use "namespace" keyword instead of "module" (re: https://www.typescriptlang.org/docs/handbook/namespaces.html)
-export module V3 {
+export namespace V3 {
   export type T = V3;
   // TODO(@darzu): RENAME InputT to something smaller "V3i", temp is "V3t" ?
   export type InputT = T | readonly [number, number, number];
@@ -787,7 +786,7 @@ export module V3 {
   }
 }
 
-export module V4 {
+export namespace V4 {
   export type T = V4;
   export type InputT = T | readonly [number, number, number, number];
   const GL = GLM.vec4;
@@ -915,7 +914,7 @@ export module V4 {
   }
 }
 
-export module quat {
+export namespace quat {
   export type T = quat;
   export type InputT = T | readonly [number, number, number, number];
   const GL = GLM.quat;
@@ -1222,7 +1221,7 @@ export module quat {
 //     : "NIL";
 // }
 
-export module mat4 {
+export namespace mat4 {
   export type T = mat4;
   // prettier-ignore
   export type InputT = T | readonly [number, number, number, number,
@@ -1590,9 +1589,19 @@ export module mat4 {
   export function translate(m: InputT, v: V3.InputT, out?: T): T {
     return GL.translate(out ?? tmp(), m, v) as T;
   }
+
+  export function toString(m: mat4.InputT, fractionDigits = 1): string {
+    const fd = fractionDigits;
+    return (
+      `[${m[ 0].toFixed(fd)}, ${m[ 1].toFixed(fd)}, ${m[ 2].toFixed(fd)}, ${m[ 3].toFixed(fd)},\n`
+    + ` ${m[ 4].toFixed(fd)}, ${m[ 5].toFixed(fd)}, ${m[ 6].toFixed(fd)}, ${m[ 7].toFixed(fd)},\n`
+    + ` ${m[ 8].toFixed(fd)}, ${m[ 9].toFixed(fd)}, ${m[10].toFixed(fd)}, ${m[11].toFixed(fd)},\n`
+    + ` ${m[12].toFixed(fd)}, ${m[13].toFixed(fd)}, ${m[14].toFixed(fd)}, ${m[15].toFixed(fd)}]\n`
+    )
+  }
 }
 
-export module mat3 {
+export namespace mat3 {
   export type T = mat3;
   // prettier-ignore
   export type InputT = T | readonly [number, number, number,

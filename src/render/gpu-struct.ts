@@ -6,6 +6,8 @@ import { objMap } from "../utils/util.js";
 
 // TABLES, CONSTS and TYPE-LEVEL HELPERS
 
+// Memory layout: https://webgpufundamentals.org/webgpu/lessons/webgpu-memory-layout.html
+
 export const WGSLScalars = ["bool", "i32", "u32", "f32", "f16"] as const;
 export type WGSLScalar = (typeof WGSLScalars)[number];
 type WGSLVec = {
