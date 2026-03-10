@@ -15,6 +15,7 @@ import {
 import { Mesh } from "../meshes/mesh.js";
 import { ShaderName, ShaderSet } from "./shader-loader.js";
 import { never } from "../utils/util-no-import.js";
+import { F32Array, U16Array } from "../utils/typed-arrays.js";
 
 // NOTE: this file is supposed to be WebGPU and WebGL agnostic.
 
@@ -30,7 +31,7 @@ export interface CyResourcePtr<K extends PtrKind = PtrKind> {
 // BUFFERS
 export interface CyIdxBufferPtr extends CyResourcePtr {
   kind: "idxBuffer";
-  init: (() => Uint16Array) | number;
+  init: (() => U16Array) | number;
 }
 
 export interface CyArrayPtr<O extends CyStructDesc> extends CyResourcePtr {
@@ -69,7 +70,7 @@ export interface CyTexturePtr extends CyResourcePtr {
   // sampleCount?: number;
   attachToCanvas?: boolean;
   // TODO(@darzu): make optional:
-  init?: () => Float32Array; // TODO(@darzu): | TexTypeAsTSType<F>[]
+  init?: () => F32Array; // TODO(@darzu): | TexTypeAsTSType<F>[]
 }
 
 export interface CyDepthTexturePtr extends Omit<CyTexturePtr, "kind"> {

@@ -72,10 +72,14 @@ export function initNetSendOutboxes() {
     } of peers) {
       while (outbox.length > 0) {
         const message = outbox.shift()!;
+        // TODO(@darzu): HACK around typed arrays
+        const msgCopy = message
+        // const msgCopy = message as DataView<ArrayBuffer>;
+        // const msgCopy = copyArrayBufferLike(message); 
         eventsToNetwork.push({
           type: NetworkEventType.MessageSend,
           to: address,
-          buf: message,
+          buf: msgCopy,
         });
       }
     }

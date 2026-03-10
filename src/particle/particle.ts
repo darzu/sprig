@@ -114,12 +114,12 @@ export function createParticleSystem<U extends CyStructDesc = {}>(
 
   "run this program X times w/ these offsets+lengths"
   dispatchWorkgroupsIndirect(indirectBuffer, indirectOffset)
-    let dispatchIndirectParameters = new Uint32Array(3);
+    let dispatchIndirectParameters = new U32Array(3);
     dispatchIndirectParameters[0] = workgroupCountX;
     dispatchIndirectParameters[1] = workgroupCountY;
     dispatchIndirectParameters[2] = workgroupCountZ;
   "indirect-first-instance"
-    let drawIndexedIndirectParameters = new Uint32Array(5);
+    let drawIndexedIndirectParameters = new U32Array(5);
     drawIndexedIndirectParameters[0] = indexCount;
     drawIndexedIndirectParameters[1] = instanceCount;
     drawIndexedIndirectParameters[2] = firstIndex;

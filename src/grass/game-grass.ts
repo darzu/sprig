@@ -65,6 +65,7 @@ import { createFlatQuadMesh, makeDome } from "../meshes/primatives.js";
 import { deferredPipeline } from "../render/pipelines/std-deferred.js";
 import { createGraph3D } from "../debug/utils-gizmos.js";
 import { Phase } from "../ecs/sys-phase.js";
+import { F32Array } from "../utils/typed-arrays.js";
 
 /*
 NOTES:
@@ -415,8 +416,8 @@ export async function initGrassGame() {
   const bytesPerVal = texTypeToBytes[GrassCutTexPtr.format]!;
   // grass cutting
   // cutGrassAt(100, 100, 100, 100);
-  let f32BySize = new Map<number, Float32Array>();
-  function getArrayForBox(w: number, h: number): Float32Array {
+  let f32BySize = new Map<number, F32Array>();
+  function getArrayForBox(w: number, h: number): F32Array {
     let size = w * h * bytesPerVal;
     // TODO(@darzu): PERF. Cache these!
     let data = f32BySize.get(size);

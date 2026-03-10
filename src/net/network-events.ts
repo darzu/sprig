@@ -32,7 +32,7 @@ export interface MessageRecv {
 interface MessageSend {
   type: NetworkEventType.MessageSend;
   to: string;
-  buf: ArrayBufferView;
+  buf: ArrayBufferView<ArrayBuffer>;
 }
 
 interface Connect {

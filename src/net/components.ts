@@ -102,11 +102,11 @@ export const InboxDef = EM.defineComponent(
 
 export type Inbox = Component<typeof InboxDef>;
 
-export const OutboxDef = EM.defineComponent("outbox", () => [] as DataView[]);
+export const OutboxDef = EM.defineComponent("outbox", () => [] as DataView<ArrayBuffer>[]);
 
 export type Outbox = Component<typeof OutboxDef>;
 
-export function send(outbox: Outbox, buffer: DataView) {
+export function send(outbox: Outbox, buffer: DataView<ArrayBuffer>) {
   outbox.push(buffer);
 }
 

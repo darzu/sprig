@@ -89,7 +89,7 @@ class Net {
     }
   }
 
-  private send(address: string, message: ArrayBufferView) {
+  private send(address: string, message: ArrayBufferView<ArrayBuffer>) {
     // TODO: figure out if we need to do something smarter than just not sending if the connection isn't present and open
     let conn = this.channels[address];
     if (conn && conn.readyState === "open") {

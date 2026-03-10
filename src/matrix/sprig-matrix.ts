@@ -5,6 +5,7 @@ import {
   PERF_DBG_F32S_BLAME,
   PERF_DBG_F32S_TEMP_BLAME,
 } from "../flags.js";
+import { F32Array } from "../utils/typed-arrays.js";
 import { assert, dbgAddBlame, dbgClearBlame } from "../utils/util-no-import.js";
 import * as GLM from "./gl-matrix.js";
 
@@ -23,7 +24,7 @@ const EPSILON = 0.000001;
 //  "Regarding the current performance in modern web browsers, calling
 //   glMatrix.setMatrixArrayType(Array) to use normal arrays instead of
 //   Float32Arrays can greatly increase the performance."
-interface Float32ArrayOfLength<N extends number> extends Float32Array {
+interface Float32ArrayOfLength<N extends number> extends F32Array {
   length: N;
 }
 
@@ -112,7 +113,7 @@ function mkTmpProxyHandler(gen: number) {
       `Leak! Using tmp from gen ${gen} "${_tmpGenHints[gen]}" in gen ${_tmpResetGen} "${_tmpGenHints[_tmpResetGen]}"`
     );
   };
-  const tmpProxyHandler: ProxyHandler<Float32Array> = {
+  const tmpProxyHandler: ProxyHandler<F32Array> = {
     get: (v, prop) => {
       if (gen !== _tmpResetGen) err();
       // TODO(@darzu): huh is TS's ProxyHandler typing wrong? cus this seems to work?
@@ -126,7 +127,7 @@ function mkTmpProxyHandler(gen: number) {
   };
   return tmpProxyHandler;
 }
-let _tmpProxyHandler: ProxyHandler<Float32Array> =
+let _tmpProxyHandler: ProxyHandler<F32Array> =
   mkTmpProxyHandler(_tmpResetGen);
 
 const BUFFER_SIZE = 8000;
@@ -253,7 +254,7 @@ function tmpPopAndRemark(): void {
   bufferIndex = _tmpMarkStack[_tmpMarkStack.length - 1];
 }
 
-export function isTmpVec(v: Float32Array): boolean {
+export function isTmpVec(v: F32Array): boolean {
   return v.buffer === buffer;
 }
 
@@ -268,7 +269,7 @@ export function findAnyTmpVec(
   } else if (!obj) {
     return null;
   } else if (obj instanceof Float32Array) {
-    return isTmpVec(obj) ? path : null;
+    return isTmpVec(obj as F32Array) ? path : null;
   } else if (obj instanceof Array) {
     return obj.reduce(
       (p: string | null, n, i) =>
@@ -296,7 +297,7 @@ export function cloneTmpsInObj<A extends any>(obj: A, maxDepth = 100): A {
   } else if (!obj) {
     return obj;
   } else if (obj instanceof Float32Array) {
-    if (isTmpVec(obj)) {
+    if (isTmpVec(obj as F32Array)) {
       const n = float32ArrayOfLength(obj.length);
       n.forEach((_, i) => (n[i] = obj[i]));
       return n as A;

@@ -24,6 +24,7 @@ import { DEFAULT_MASK } from "./pipeline-masks.js";
 import { ComponentDef } from "../ecs/em-components.js";
 import { GPUBufferUsage } from "./webgpu-hacks.js";
 import { CyResources } from "./instantiator-webgpu.js";
+import { U16Array } from "../utils/typed-arrays.js";
 
 // Mesh: lossless, all the data of a model/asset from blender
 // MeshPool: lossy, a reduced set of attributes for vertex, line, triangle, and model uniforms
@@ -137,7 +138,7 @@ function logMeshPoolStats(pool: MeshPool<any, any>) {
 // TODO(@darzu): HACK. should be scoped; removed as global
 let nextMeshId = 1;
 
-// function OLD_computeTriData(m: Mesh): Uint16Array {
+// function OLD_computeTriData(m: Mesh): U16Array {
 //   const numTri = m.tri.length + m.quad.length * 2;
 //   const triData = new Uint16Array(align(numTri * 3, 2));
 //   // add tris
@@ -162,7 +163,7 @@ let nextMeshId = 1;
 // }
 
 let tempPointData = new Uint16Array(256);
-function getPointInds(m: Mesh, startIdx: number, count: number): Uint16Array {
+function getPointInds(m: Mesh, startIdx: number, count: number): U16Array {
   // NOTE: callee responsible for aligning-up the output length
   // NOTE: caller responsible for aligning-down start-idx
   assertDbg(startIdx % 2 === 0);
@@ -181,7 +182,7 @@ function getPointInds(m: Mesh, startIdx: number, count: number): Uint16Array {
 }
 
 let tempLineData = new Uint16Array(256);
-function getLineInds(m: Mesh, startIdx: number, count: number): Uint16Array {
+function getLineInds(m: Mesh, startIdx: number, count: number): U16Array {
   // NOTE: callee responsible for aligning-up the output length
   // NOTE: caller responsible for aligning-down start-idx
   assertDbg(startIdx % 2 === 0);
@@ -205,7 +206,7 @@ function getLineInds(m: Mesh, startIdx: number, count: number): Uint16Array {
 }
 
 let tempTriData = new Uint16Array(256);
-function getTriInds(m: Mesh, startIdx: number, count: number): Uint16Array {
+function getTriInds(m: Mesh, startIdx: number, count: number): U16Array {
   // NOTE: callee responsible for aligning-up the output length
   // NOTE: caller responsible for aligning-down start-idx
   assertDbg(startIdx % 2 === 0);
@@ -235,7 +236,7 @@ function getTriInds(m: Mesh, startIdx: number, count: number): Uint16Array {
 }
 
 let tempQuadData = new Uint16Array(256);
-function getQuadInds(m: Mesh, startIdx: number, count: number): Uint16Array {
+function getQuadInds(m: Mesh, startIdx: number, count: number): U16Array {
   const dataLen = count * 2 * 3;
   if (tempQuadData.length < dataLen) tempQuadData = new Uint16Array(dataLen);
   for (let qi = startIdx; qi < startIdx + count; qi++) {

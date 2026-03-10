@@ -38,7 +38,7 @@ import { drawBall, drawLine } from "../utils/utils-game.js";
 // list of features; list of computed features
 //    gen fn to compute all (or just missing) computed properties (instead of "Raw" vs not)
 //
-// allow different data representations e.g. sparse run-length encoding, or Float32Array
+// allow different data representations e.g. sparse run-length encoding, or F32Array
 
 // series of typed buffers, w/ different allocs (global, one-frame (sent to GPU, not updated))
 //    would be easier to do in a language where you can have array of struct that is good.

@@ -25,6 +25,7 @@ import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { GPUBufferUsage } from "./webgpu-hacks.js";
 import { PERF_DBG_GPU, PERF_DBG_GPU_BLAME } from "../flags.js";
 import { dbgAddBlame } from "../utils/util-no-import.js";
+import { F32Array, U16Array, U8Array } from "../utils/typed-arrays.js";
 
 export interface CyBuffer<O extends CyStructDesc> {
   struct: CyStruct<O>;
@@ -58,7 +59,7 @@ export interface CyIdxBuffer {
   size: number;
   buffer: GPUBuffer;
   // NOTE: Callers must ensure 4-byte aligned startIdx and data.byteLength
-  queueUpdate: (data: Uint16Array, startIdx: number) => void;
+  queueUpdate: (data: U16Array, startIdx: number) => void;
 }
 
 // TODO(@darzu): texture
@@ -72,7 +73,7 @@ export interface CyTexture {
   _viewCache: Map<number, GPUTextureView>;
   // TODO(@darzu): support partial texture update?
   queueUpdate: (
-    data: Float32Array,
+    data: F32Array,
     // TODO(@darzu): make optional
     x?: number,
     y?: number,
@@ -269,11 +270,11 @@ export function createCyArray<O extends CyStructDesc>(
 
   // TODO(@darzu): somewhat hacky way to reuse Uint8Arrays here; we could do some more global pool
   //    of these.
-  let tempUint8Array: Uint8Array = new Uint8Array(struct.size * 10);
+  let tempUint8Array: U8Array = new Uint8Array(struct.size * 10);
   function _queueUpdates(
     bufOffset: number,
     dataSize: number,
-    data: Uint8Array
+    data: U8Array
   ): void {
     assertDbg(dataSize % 4 === 0, `alignment`);
     assertDbg(bufOffset % 4 === 0, `alignment`);
@@ -333,7 +334,7 @@ export function createCyIdxBuf(
   device: GPUDevice,
   name: string,
   length: number,
-  data?: Uint16Array
+  data?: U16Array
 ): CyIdxBuffer {
   const hasInitData = !!data;
 
@@ -362,7 +363,7 @@ export function createCyIdxBuf(
     _buf.unmap();
   }
 
-  function queueUpdate(data: Uint16Array, startIdx: number): void {
+  function queueUpdate(data: U16Array, startIdx: number): void {
     const startByte = startIdx * 2;
     assertDbg(data.byteLength % 4 === 0, `alignment`);
     assertDbg(startByte % 4 === 0, `alignment`);
@@ -441,9 +442,9 @@ export function createCyTexture(
     cyTex._viewCache.clear();
   }
 
-  // TODO(@darzu): support updating different data types (instead of Float32Array)
+  // TODO(@darzu): support updating different data types (instead of F32Array)
   function queueUpdate(
-    data: Float32Array,
+    data: F32Array,
     x?: number,
     y?: number,
     w?: number,

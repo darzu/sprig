@@ -1,39 +1,46 @@
 // DZ mod all these types to remove the "| [number, number, number, number" option
-// export type mat2 = Float32Array;
-// export type mat2d = Float32Array;
-// export type mat3 = Float32Array;
-// export type mat4 = Float32Array;
-// export type quat = Float32Array;
-// export type quat2 = Float32Array;
-// export type vec2 = Float32Array;
-// export type ReadonlyMat2 = Float32Array;
-// export type ReadonlyMat2d = Float32Array;
-// export type ReadonlyMat3 = Float32Array;
-// export type ReadonlyMat4 = Float32Array;
-// export type ReadonlyQuat = Float32Array;
-// export type ReadonlyQuat2 = Float32Array;
-// export type ReadonlyVec2 = Float32Array;
-// export type ReadonlyVec3 = Float32Array;
-// export type ReadonlyVec4 = Float32Array;
+
+import { F32Array } from "../utils/typed-arrays.js";
+
+// type F32Array = Float32Array<ArrayBuffer>;
+
+// export type mat2 = F32Array;
+// export type mat2d = F32Array;
+// export type mat3 = F32Array;
+// export type mat4 = F32Array;
+// export type quat = F32Array;
+// export type quat2 = F32Array;
+// export type vec2 = F32Array;
+// export type ReadonlyMat2 = F32Array;
+// export type ReadonlyMat2d = F32Array;
+// export type ReadonlyMat3 = F32Array;
+// export type ReadonlyMat4 = F32Array;
+// export type ReadonlyQuat = F32Array;
+// export type ReadonlyQuat2 = F32Array;
+// export type ReadonlyVec2 = F32Array;
+// export type ReadonlyVec3 = F32Array;
+// export type ReadonlyVec4 = F32Array;
+
+
 // prettier-ignore
 export type mat2 =
         | [number, number,
             number, number]
-        | Float32Array;
+        | F32Array;
 
 // prettier-ignore
 export type mat2d =
         | [number, number,
             number, number,
             number, number]
-        | Float32Array;
+        | F32Array;
 
 // prettier-ignore
 export type mat3 =
         | [number, number, number,
             number, number, number,
             number, number, number]
-        | Float32Array;
+        | F32Array;
 
 // prettier-ignore
 export type mat4 =
@@ -41,19 +48,19 @@ export type mat4 =
             number, number, number, number,
             number, number, number, number,
             number, number, number, number]
-        | Float32Array;
+        | F32Array;
 
-export type quat = [number, number, number, number] | Float32Array;
+export type quat = [number, number, number, number] | F32Array;
 
 // prettier-ignore
 export type quat2 =
         | [number, number, number, number,
             number, number, number, number]
-        | Float32Array;
+        | F32Array;
 
-export type vec2 = [number, number] | Float32Array;
-export type vec3 = [number, number, number] | Float32Array;
-export type vec4 = [number, number, number, number] | Float32Array;
+export type vec2 = [number, number] | F32Array;
+export type vec3 = [number, number, number] | F32Array;
+export type vec4 = [number, number, number, number] | F32Array;
 
 // prettier-ignore
 export type ReadonlyMat2 =
@@ -61,7 +68,7 @@ export type ReadonlyMat2 =
             number, number,
             number, number
         ]
-        | Float32Array;
+        | F32Array;
 
 // prettier-ignore
 export type ReadonlyMat2d =
@@ -70,7 +77,7 @@ export type ReadonlyMat2d =
             number, number,
             number, number
         ]
-        | Float32Array;
+        | F32Array;
 
 // prettier-ignore
 export type ReadonlyMat3 =
@@ -79,7 +86,7 @@ export type ReadonlyMat3 =
             number, number, number,
             number, number, number
         ]
-        | Float32Array;
+        | F32Array;
 
 // prettier-ignore
 export type ReadonlyMat4 =
@@ -89,27 +96,27 @@ export type ReadonlyMat4 =
             number, number, number, number,
             number, number, number, number
         ]
-        | Float32Array;
+        | F32Array;
 
 export type ReadonlyQuat =
   | readonly [number, number, number, number]
-  | Float32Array;
+  | F32Array;
 
 export type ReadonlyQuat2 =
   | readonly [number, number, number, number, number, number, number, number]
-  | Float32Array;
+  | F32Array;
 
-export type ReadonlyVec2 = readonly [number, number] | Float32Array;
-export type ReadonlyVec3 = readonly [number, number, number] | Float32Array;
+export type ReadonlyVec2 = readonly [number, number] | F32Array;
+export type ReadonlyVec3 = readonly [number, number, number] | F32Array;
 export type ReadonlyVec4 =
   | readonly [number, number, number, number]
-  | Float32Array;
+  | F32Array;
 
 export module glMatrix {
   /**
    * Sets the type of array used when creating new vectors and matrices
    *
-   * @param {Float32ArrayConstructor | ArrayConstructor} type Array type, such as Float32Array or Array
+   * @param {Float32ArrayConstructor | ArrayConstructor} type Array type, such as F32Array or Array
    */
   export function setMatrixArrayType(
     type: ArrayConstructor | Float32ArrayConstructor

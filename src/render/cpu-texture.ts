@@ -2,6 +2,7 @@ import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { clamp } from "../utils/math.js";
 import { assert } from "../utils/util.js";
 import { never } from "../utils/util-no-import.js";
+import { F32Array, U8Array } from "../utils/typed-arrays.js";
 
 type ArityToVec<N extends 1 | 2 | 3 | 4> = N extends 1
   ? number
@@ -39,7 +40,7 @@ export function createTextureReader<A extends 1 | 2 | 3 | 4>(
   format: GPUTextureFormat
 ): TextureReader<A> {
   // TODO(@darzu): make generic?
-  let tData: Float32Array | Uint8Array;
+  let tData: F32Array | U8Array;
   let stride: number;
   if (format === "rgba32float") {
     stride = 4;

@@ -1,5 +1,6 @@
 import { V2, V3, V4, quat, mat4, V } from "../matrix/sprig-matrix.js";
 import { align, max, sum } from "../utils/math.js";
+import { F32Array, U32Array, U8Array } from "../utils/typed-arrays.js";
 import { assert, zip } from "../utils/util.js";
 import { objMap } from "../utils/util.js";
 
@@ -202,8 +203,8 @@ export interface CyStruct<O extends CyStructDesc> {
   size: number;
   compactSize: number;
   offsets: number[];
-  serialize: (data: CyToTS<O>) => Uint8Array;
-  serializeZeros: () => Uint8Array;
+  serialize: (data: CyToTS<O>) => U8Array;
+  serializeZeros: () => U8Array;
   wgsl: (align: boolean, locationStart?: number) => string;
   // webgpu
   layout(
@@ -229,7 +230,7 @@ export type Serializer<O extends CyStructDesc> = (
   data: CyToTS<O>,
   offsets: number[],
   offsets_32: number[],
-  views: { f32: Float32Array; u32: Uint32Array; u8: Uint8Array }
+  views: { f32: F32Array; u32: U32Array; u8: U8Array }
 ) => void;
 
 export interface CyStructOpts<O extends CyStructDesc> {
@@ -473,7 +474,7 @@ export function createCyStruct<O extends CyStructDesc>(
     f32: new Float32Array(scratch_u8.buffer),
     u32: new Uint32Array(scratch_u8.buffer),
   };
-  function serializeSlow(data: CyToTS<O>): Uint8Array {
+  function serializeSlow(data: CyToTS<O>): U8Array {
     // TODO(@darzu): disable this check for perf
     Object.keys(data).forEach((n, i) => {
       if (n !== names[i])
@@ -505,7 +506,7 @@ export function createCyStruct<O extends CyStructDesc>(
 
     return scratch_u8;
   }
-  function serializeZeros(): Uint8Array {
+  function serializeZeros(): U8Array {
     scratch_u8.fill(0);
     return scratch_u8;
   }
