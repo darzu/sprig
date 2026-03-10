@@ -1,5 +1,13 @@
 (Code base-wide todos only, smaller stuff should go into the relevant .ts file.)
 
+BREAKING CHANGES:
+[ ] https://sprig.land/ld54/ (broken 3/10/26)
+[ ] https://sprig.land/ld53-submit/  (broken 3/10/26)
+[ ] https://sprig.land/ld52/ (broken 3/10/26)
+[ ] https://sprig.land/ld51/ (broken 3/10/26)
+[ ] https://sprig.land/ld51-betterperf/ (broken 3/10/26)
+[ ] https://sprig.land/ld50/ (fall through boat, broken 3/10/26)
+
 BIG REFACTORS / DEBT:
 [ ] redo RenderableConstruct as struct
 [ ] Mesh/RawMesh and asset data
