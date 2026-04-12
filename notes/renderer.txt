@@ -3039,3 +3039,9 @@ Arrow renderer in 3D flat:
 Vulkan tutorials, "Build Your Own Production-Ready Rendering Engine":
   https://www.khronos.org/blog/new-vulkan-game-engine-tutorial-build-your-own-production-ready-rendering-engine
   https://docs.vulkan.org/tutorial/latest/Building_a_Simple_Engine/introduction.html
+
+Text rendering w/ Slug:
+  https://terathon.com/blog/decade-slug.html
+
+Spherical Harmonics Intro:
+  https://gpfault.net/posts/sph.html
