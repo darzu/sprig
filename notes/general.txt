@@ -1710,3 +1710,6 @@ Different memory allocators:
   https://www.gingerbill.org/series/memory-allocation-strategies/
   https://zeux.io/2020/02/27/writing-an-efficient-vulkan-renderer/
   https://advances.realtimerendering.com/s2023/AaltonenHypeHypeAdvances2023.pdf
+
+Sokol C libraries:
+  https://github.com/floooh/sokol

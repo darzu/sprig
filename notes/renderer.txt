@@ -3045,3 +3045,6 @@ Text rendering w/ Slug:
 
 Spherical Harmonics Intro:
   https://gpfault.net/posts/sph.html
+
+Good shadow mapping:
+  https://www.ludicon.com/castano/blog/articles/shadow-mapping-summary-part-1/
