@@ -3048,3 +3048,12 @@ Spherical Harmonics Intro:
 
 Good shadow mapping:
   https://www.ludicon.com/castano/blog/articles/shadow-mapping-summary-part-1/
+
+Nanite + Reyes:
+  https://graphicrants.blogspot.com/2026/02/nanite-reyes.html
+
+Brian Karis on variable size work:
+  https://graphicrants.blogspot.com/2026/03/variable-sized-work.html
+
+Nanite Tessellation:
+  https://graphicrants.blogspot.com/2026/02/nanite-tessellation.html
