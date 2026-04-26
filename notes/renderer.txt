@@ -3057,3 +3057,6 @@ Brian Karis on variable size work:
 
 Nanite Tessellation:
   https://graphicrants.blogspot.com/2026/02/nanite-tessellation.html
+
+Designing mesh shaders for wgpu lib:
+  https://hackmd.io/@inner-daemons/rJ2AELR8Zx

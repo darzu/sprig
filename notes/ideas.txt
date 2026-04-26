@@ -471,3 +471,6 @@ Simple multiplayer game ideas:
   Wanderburg but co-op
 
 Slow is smooth, smooth is fast
+
+Bonsai is great inspiration for important trees in games:
+  https://longwoodgardens.org/blog/2023-05-17/beauty-bonsai-styles

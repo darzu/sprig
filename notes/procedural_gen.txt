@@ -406,3 +406,6 @@ Imagegram:
   
 Roguelike dev resources:
   https://github.com/marukrap/RoguelikeDevResources?tab=readme-ov-file
+
+Terrain gen like genshin impact:
+  https://zhuanlan.zhihu.com/p/565348841
